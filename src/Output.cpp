@@ -1,14 +1,30 @@
+#include <iostream>
+
 #include "../include/Output.hpp"
 
 
 std::string const Output::BASEPATH = "/data/%T/";
 
+std::ostream& operator<<(std::ostream& os, IterationEncoding ie)
+{
+    switch(ie)
+    {
+        case IterationEncoding::fileBased:
+            os << "fileBased";
+            break;
+        case IterationEncoding::groupBased:
+            os << "groupBased";
+            break;
+    }
+    return os;
+}
+
+Output::Output(Output&& o) = default;
+
 Output::Output(Output const& o)
         : iterations{o.iterations},
           m_iterationEncoding{o.m_iterationEncoding}
 { }
-
-Output::Output(Output&& o) = default;
 
 Output::Output(IterationEncoding ie)
         : iterations{Container< Iteration, uint64_t >()},
@@ -17,7 +33,7 @@ Output::Output(IterationEncoding ie)
     setName("new_openpmd_output");
     setAttribute("basePath", BASEPATH);
     setMeshesPath("meshes");
-    setParticlesPath("paticles");
+    setParticlesPath("particles");
 }
 
 Output::Output(IterationEncoding ie, std::string const& name)
@@ -27,7 +43,7 @@ Output::Output(IterationEncoding ie, std::string const& name)
     setName(name);
     setAttribute("basePath", BASEPATH);
     setMeshesPath("meshes");
-    setParticlesPath("paticles");
+    setParticlesPath("particles");
 }
 
 Output::Output(IterationEncoding ie,
@@ -59,7 +75,7 @@ Output::setIterationEncoding(IterationEncoding ie)
 std::string const
 Output::name() const
 {
-    return getAttribute("name");
+    return boost::get< std::string >(getAttribute("name"));
 }
 
 Output
@@ -72,13 +88,13 @@ Output::setName(std::string const& n)
 std::string const
 Output::basePath() const
 {
-    return getAttribute("basePath");
+    return boost::get< std::string >(getAttribute("basePath"));
 }
 
 std::string const
 Output::meshesPath() const
 {
-    return getAttribute("meshesPath");
+    return boost::get< std::string >(getAttribute("meshesPath"));
 }
 
 Output
@@ -91,7 +107,7 @@ Output::setMeshesPath(std::string const& mp)
 std::string const
 Output::particlesPath() const
 {
-    return getAttribute("particlesPath");
+    return boost::get< std::string >(getAttribute("particlesPath"));
 }
 
 Output

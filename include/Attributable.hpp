@@ -4,7 +4,7 @@
 #include <string>
 #include <map>
 
-#include "../include/Attribute.h"
+#include "../include/Attribute.hpp"
 
 
 class Attributable
@@ -12,15 +12,31 @@ class Attributable
     using A_MAP = std::map< std::string, std::shared_ptr< Attribute > >;
 
 public:
-    Attributable() : m_attributes(std::make_unique< A_MAP >())
+    Attributable() : m_attributes(std::make_shared< A_MAP >())
     { }
 
     Attributable(Attributable const& rhs)
-            : m_attributes(std::make_unique< A_MAP >(*rhs.m_attributes))
+            : m_attributes(std::make_shared< A_MAP >(*rhs.m_attributes))
     { } // Deep-copy the entries in the Attribute map
     Attributable(Attributable&& rhs)
-            : m_attributes(rhs.m_attributes.release())
+            : m_attributes(rhs.m_attributes)
     { } // Take ownership of the unique Attribute map
+    Attributable& operator=(Attributable const& a)
+    {
+        if( this != &a )
+        {
+            Attributable tmp(a);
+            std::swap(m_attributes, tmp.m_attributes);
+        }
+        return *this;
+    }
+
+    Attributable& operator=(Attributable&& a)
+    {
+        m_attributes = std::move(a.m_attributes);
+        return *this;
+    }
+
     virtual ~Attributable()
     { }
 
@@ -29,13 +45,16 @@ public:
     void setAttribute(std::string const& key, T value);
     bool deleteAttribute(std::string const& key);
 
+    std::vector< std::string > attributes() const;
+    size_t numAttributes() const;
+
 //    std::ostream &writeAttributes(std::ostream &);
 
 protected:
     Attribute::resource getAttribute(std::string const& key) const;
 
 private:
-    std::unique_ptr< A_MAP > m_attributes;
+    std::shared_ptr< A_MAP > m_attributes;
 };  //Attributable
 
 
@@ -44,6 +63,7 @@ inline void
 Attributable::setAttribute(std::string const& key, T value)
 {
     using std::make_shared;
+    using std::make_pair;
     A_MAP::iterator it = m_attributes->lower_bound(key);
     if( it != m_attributes->end() && !m_attributes->key_comp()(key, it->first) )
     {
@@ -52,7 +72,9 @@ Attributable::setAttribute(std::string const& key, T value)
     } else
     {
         // emplace a new map element for an unknown key
-        m_attributes->emplace_hint(it, {key, make_shared< Attribute >(value)});
+        m_attributes->emplace_hint(it,
+                                   make_pair(key,
+                                             make_shared< Attribute >(value)));
     }
 }
 
@@ -66,6 +88,24 @@ Attributable::deleteAttribute(std::string const& key)
         return true;
     }
     return false;
+}
+
+inline std::vector< std::string >
+Attributable::attributes() const
+{
+    std::vector< std::string > ret;
+    ret.reserve(m_attributes->size());
+    for( auto const& entry : *m_attributes )
+    {
+        ret.emplace_back(entry.first);
+    }
+    return ret;
+}
+
+inline size_t
+Attributable::numAttributes() const
+{
+    return m_attributes->size();
 }
 
 inline Attribute::resource

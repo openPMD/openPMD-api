@@ -1,9 +1,9 @@
 #pragma once
 
 
-#include <std::array>
-#include <std::string>
-#include <std::vector>
+#include <array>
+#include <string>
+#include <vector>
 
 #include <boost/variant.hpp>
 

@@ -14,7 +14,7 @@ class Container
     using MapType = std::unordered_map< T_key, T >;
 
 public:
-    std::size_t Size() const;
+    std::size_t size() const;
     T& operator[](T_key const& key);
     bool remove(T_key const& key);
 
@@ -38,6 +38,7 @@ Container< T, T_key >::operator[](T_key const& key)
         // TODO in this verison, the "operator[]" requires "T()" to be available
         // which is a problem for Meshes and ParticleSpecies
         // trivial solution - "friend" Container in both, make a private default constructor
+        // another solution - make the MapType "map<T_key, boost:optional<T>>"
         m_data[key] = T();
         return m_data[key];
     }
@@ -64,5 +65,5 @@ template<
         typename T_key
 >
 inline std::size_t
-Container< T, T_key >::Size() const
+Container< T, T_key >::size() const
 { return m_data.size(); }
