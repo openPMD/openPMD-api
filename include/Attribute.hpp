@@ -15,7 +15,6 @@ public:
     boost::variant< char, int, float, double,
                     uint32_t, uint64_t, std::string,
                     std::array< double, 7 >,
-                    std::vector< char >,
                     std::vector< int >,
                     std::vector< float >,
                     std::vector< double >,

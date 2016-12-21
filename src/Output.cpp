@@ -5,15 +5,16 @@
 
 std::string const Output::BASEPATH = "/data/%T/";
 
-std::ostream& operator<<(std::ostream& os, IterationEncoding ie)
+std::ostream&
+operator<<(std::ostream& os, IterationEncoding ie)
 {
-    switch(ie)
+    switch( ie )
     {
         case IterationEncoding::fileBased:
-            os << "fileBased";
+            os<<"fileBased";
             break;
         case IterationEncoding::groupBased:
-            os << "groupBased";
+            os<<"groupBased";
             break;
     }
     return os;

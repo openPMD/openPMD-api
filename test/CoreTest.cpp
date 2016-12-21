@@ -82,3 +82,9 @@ BOOST_AUTO_TEST_CASE(iteration_modification_test)
     i.setTimeUnitSI(0.000000000001);
     BOOST_TEST(i.timeUnitSI() == static_cast<double>(0.000000000001));
 }
+
+
+BOOST_AUTO_TEST_CASE(record_default_test)
+{
+
+}
