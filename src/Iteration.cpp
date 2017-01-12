@@ -1,8 +1,9 @@
 #include "../include/Iteration.hpp"
 
 
-Iteration::Iteration() : meshes{Container< Mesh >()},
-                         particles{Container< ParticleSpecies >()}
+Iteration::Iteration()
+        : meshes{Container< Mesh >()},
+          particles{Container< ParticleSpecies >()}
 {
     setTime(0);
     setDt(0);
@@ -11,8 +12,10 @@ Iteration::Iteration() : meshes{Container< Mesh >()},
 
 Iteration::Iteration(Iteration&&) = default;
 
-Iteration::Iteration(Iteration const& i) : meshes{i.meshes},
-                                           particles{i.particles}
+Iteration::Iteration(Iteration const& i)
+        : Attributable(i),
+          meshes{i.meshes},
+          particles{i.particles}
 { }
 
 Iteration::Iteration(float time,

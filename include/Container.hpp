@@ -18,6 +18,18 @@ public:
     T& operator[](T_key const& key);
     bool remove(T_key const& key);
 
+    typename MapType::iterator begin()
+    { return m_data.begin(); }
+
+    typename MapType::const_iterator begin() const
+    { return m_data.cbegin(); }
+
+    typename MapType::iterator end()
+    { return m_data.end(); }
+
+    typename MapType::const_iterator end() const
+    { return m_data.cend(); }
+
 private:
     MapType m_data;
 };  //Container
@@ -67,3 +79,24 @@ template<
 inline std::size_t
 Container< T, T_key >::size() const
 { return m_data.size(); }
+
+
+template<
+        typename T,
+        typename T_key
+>
+typename Container< T, T_key >::MapType::iterator
+begin(Container< T, T_key >& c)
+{
+    return c.begin();
+};
+
+template<
+        typename T,
+        typename T_key
+>
+typename Container< T, T_key >::MapType::iterator
+end(Container< T, T_key >& c)
+{
+    return c.end();
+};

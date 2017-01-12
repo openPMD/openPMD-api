@@ -10,6 +10,7 @@
 BOOST_AUTO_TEST_CASE(container_default_test)
 {
     Container< int > c = Container< int >();
+
     BOOST_TEST(c.size() == 0);
     BOOST_TEST(c.remove("nonExistentKey") == false);
 }
@@ -26,10 +27,13 @@ struct Widget
 BOOST_AUTO_TEST_CASE(container_access_test)
 {
     Container< Widget > c = Container< Widget >();
+
     c["firstWidget"] = Widget(0);
     BOOST_TEST(c.size() == 1);
+
     c["firstWidget"] = Widget(1);
     BOOST_TEST(c.size() == 1);
+
     c["secondWidget"] = Widget(2);
     BOOST_TEST(c.size() == 2);
     BOOST_TEST(c.remove("firstWidget") == true);
@@ -43,6 +47,7 @@ BOOST_AUTO_TEST_CASE(container_access_test)
 BOOST_AUTO_TEST_CASE(attributable_default_test)
 {
     Attributable a = Attributable();
+
     BOOST_TEST(a.numAttributes() == 0);
 }
 
@@ -58,12 +63,15 @@ public:
 BOOST_AUTO_TEST_CASE(attributable_access_test)
 {
     AttributedWidget a = AttributedWidget();
+
     a.setAttribute("key", "value");
     BOOST_TEST(a.numAttributes() == 1);
     BOOST_TEST(boost::get< std::string >(a.get("key")) == "value");
+
     a.setAttribute("key", "newValue");
     BOOST_TEST(a.numAttributes() == 1);
     BOOST_TEST(boost::get< std::string >(a.get("key")) == "newValue");
+
     using array_t = std::array< double, 7 >;
     array_t arr{{1, 2, 3, 4, 5, 6, 7}};
     a.setAttribute("array", arr);

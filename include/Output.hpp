@@ -1,21 +1,21 @@
 #pragma once
 
+
 #include <iosfwd>
 
 #include "Attributable.hpp"
 #include "Container.hpp"
 #include "Iteration.hpp"
 
-enum class IterationEncoding
-{
-    fileBased, groupBased
-};
-
-std::ostream& operator<<(std::ostream& os, IterationEncoding ie);
 
 class Output : public Attributable
 {
 public:
+    enum class IterationEncoding
+    {
+        fileBased, groupBased
+    };  //IterationEncoding
+
     Output(Output&&);
     Output(Output const&);
     Output(IterationEncoding iterationEncoding);
@@ -55,3 +55,6 @@ public:
 private:
     IterationEncoding m_iterationEncoding;
 };  //Output
+
+std::ostream&
+operator<<(std::ostream& os, Output::IterationEncoding ie);

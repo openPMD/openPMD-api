@@ -42,7 +42,7 @@ public:
 
     /* This could be done via universal references to gain speed */
     template< typename T >
-    void setAttribute(std::string const& key, T value);
+    void setAttribute(std::string const& key, T&& value);
     bool deleteAttribute(std::string const& key);
 
     std::vector< std::string > attributes() const;
@@ -60,7 +60,7 @@ private:
 
 template< typename T >
 inline void
-Attributable::setAttribute(std::string const& key, T value)
+Attributable::setAttribute(std::string const& key, T&& value)
 {
     using std::make_shared;
     using std::make_pair;

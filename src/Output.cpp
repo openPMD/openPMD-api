@@ -6,14 +6,14 @@
 std::string const Output::BASEPATH = "/data/%T/";
 
 std::ostream&
-operator<<(std::ostream& os, IterationEncoding ie)
+operator<<(std::ostream& os, Output::IterationEncoding ie)
 {
     switch( ie )
     {
-        case IterationEncoding::fileBased:
+        case Output::IterationEncoding::fileBased:
             os<<"fileBased";
             break;
-        case IterationEncoding::groupBased:
+        case Output::IterationEncoding::groupBased:
             os<<"groupBased";
             break;
     }
@@ -23,7 +23,8 @@ operator<<(std::ostream& os, IterationEncoding ie)
 Output::Output(Output&& o) = default;
 
 Output::Output(Output const& o)
-        : iterations{o.iterations},
+        : Attributable(o),
+          iterations{o.iterations},
           m_iterationEncoding{o.m_iterationEncoding}
 { }
 
@@ -60,14 +61,14 @@ Output::Output(IterationEncoding ie,
     setParticlesPath(particlesPath);
 }
 
-IterationEncoding
+Output::IterationEncoding
 Output::iterationEncoding() const
 {
     return m_iterationEncoding;
 }
 
 Output
-Output::setIterationEncoding(IterationEncoding ie)
+Output::setIterationEncoding(Output::IterationEncoding ie)
 {
     m_iterationEncoding = ie;
     return *this;

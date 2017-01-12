@@ -7,10 +7,9 @@
 
 #include "Attributable.hpp"
 #include "Container.hpp"
-//#include "Mesh.h"
+#include "Mesh.hpp"
 //#include "ParticleSpecies.h"
 
-class Mesh { };
 class ParticleSpecies { };
 
 
