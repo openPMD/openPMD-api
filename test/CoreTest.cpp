@@ -14,7 +14,8 @@ BOOST_AUTO_TEST_CASE(output_default_test)
     BOOST_TEST(o.basePath() == "/data/%T/");
     BOOST_TEST(o.meshesPath() == "meshes");
     BOOST_TEST(o.particlesPath() == "particles");
-    BOOST_TEST(o.numAttributes() == 4); /* basePath, meshesPath, particlesPath, name */
+    BOOST_TEST(o.numAttributes() ==
+               4); /* basePath, meshesPath, particlesPath, name */
     BOOST_TEST(o.iterations.size() == 0);
     BOOST_TEST(o.iterationEncoding() == Output::IterationEncoding::fileBased);
 }
@@ -103,79 +104,89 @@ BOOST_AUTO_TEST_CASE(iteration_modification_test)
 BOOST_AUTO_TEST_CASE(record_constructor_test)
 {
     using D = Record::Dimension;
-    Record r = Record("1D3C", D::one, {"x", "y", "z"});
+    Record r = Record(D::one, {"x", "y", "z"});
 
-    BOOST_TEST(r.name() == "1D3C");
-    BOOST_TEST(r["x"].name() == "x");
+    std::array< std::size_t, 3 > ones{{1, 1, 1}};
     BOOST_TEST(r["x"].unitSI() == 1);
-    BOOST_TEST(r["x"].numAttributes() == 2); /* unitSI, name */
-    BOOST_TEST(r["y"].name() == "y");
+    BOOST_TEST(r["x"].extents == ones);
+    BOOST_TEST(r["x"].numAttributes() == 1); /* unitSI */
     BOOST_TEST(r["y"].unitSI() == 1);
-    BOOST_TEST(r["y"].numAttributes() == 2); /* unitSI, name */
-    BOOST_TEST(r["z"].name() == "z");
+    BOOST_TEST(r["y"].extents == ones);
+    BOOST_TEST(r["y"].numAttributes() == 1); /* unitSI */
     BOOST_TEST(r["z"].unitSI() == 1);
-    BOOST_TEST(r["z"].numAttributes() == 2); /* unitSI, name */
-    std::array< double, 7 > empty{{0., 0., 0., 0., 0., 0., 0.}};
-    BOOST_TEST(r.unitDimension() == empty);
+    BOOST_TEST(r["z"].extents == ones);
+    BOOST_TEST(r["z"].numAttributes() == 1); /* unitSI */
+    std::array< double, 7 > zeros{{0., 0., 0., 0., 0., 0., 0.}};
+    BOOST_TEST(r.unitDimension() == zeros);
     BOOST_TEST(r.timeOffset() == static_cast<float>(0));
-    BOOST_TEST(r.numAttributes() == 3); /* timeOffset, unitDimension, name */
+    BOOST_TEST(r.numAttributes() == 2); /* timeOffset, unitDimension */
 }
 
 BOOST_AUTO_TEST_CASE(record_modification_test)
 {
-    using D = Record::Dimension;
-    Record r = Record("3D3C", D::three, {"x", "y", "z"});
+    using RD = Record::Dimension;
+    Record r = Record(RD::three, {"x", "y", "z"});
 
-    r.setName("E_to_B");
-    BOOST_TEST(r.name() == "E_to_B");
-
-    using RD = Record::UnitDimension;
-    r.setUnitDimension({{RD::L, 1.},
-                        {RD::M, 1.},
-                        {RD::T, -3.},
-                        {RD::I, -1.}});
+    using RUD = Record::UnitDimension;
+    r.setUnitDimension({{RUD::L, 1.},
+                        {RUD::M, 1.},
+                        {RUD::T, -3.},
+                        {RUD::I, -1.}});
     std::array< double, 7 > e_field_unitDimension{{1., 1., -3., -1., 0., 0., 0.}};
     BOOST_TEST(r.unitDimension() == e_field_unitDimension);
 
-    r.setUnitDimension({{RD::L, 0.},
-                        {RD::T, -2.}});
+    r.setUnitDimension({{RUD::L, 0.},
+                        {RUD::T, -2.}});
     std::array< double, 7 > b_field_unitDimension{{0., 1., -2., -1., 0., 0., 0.}};
     BOOST_TEST(r.unitDimension() == b_field_unitDimension);
 
     r.setTimeOffset(0.314);
     BOOST_TEST(r.timeOffset() == static_cast<float>(0.314));
+}
 
-    r.setUnitSI({{"x", 2.55999e-7},
-                 {"y", 4.42999e-8}});
-    BOOST_TEST(r["x"].name() == "x");
+BOOST_AUTO_TEST_CASE(recordComponent_modification_test)
+{
+    using RD = Record::Dimension;
+    Record r = Record(RD::three, {"x", "y", "z"});
+
+    r["x"].setUnitSI(2.55999e-7);
+    r["y"].setUnitSI(4.42999e-8);
     BOOST_TEST(r["x"].unitSI() == static_cast<double>(2.55999e-7));
-    BOOST_TEST(r["x"].numAttributes() == 2); /* unitSI, name */
-    BOOST_TEST(r["y"].name() == "y");
+    BOOST_TEST(r["x"].numAttributes() == 1); /* unitSI */
     BOOST_TEST(r["y"].unitSI() == static_cast<double>(4.42999e-8));
-    BOOST_TEST(r["y"].numAttributes() == 2); /* unitSI, name */
+    BOOST_TEST(r["y"].numAttributes() == 1); /* unitSI */
 
     r["z"].setUnitSI(1);
-    BOOST_TEST(r["z"].name() == "z");
     BOOST_TEST(r["z"].unitSI() == static_cast<double>(1));
-    BOOST_TEST(r["z"].numAttributes() == 2); /* unitSI, name */
+    BOOST_TEST(r["z"].numAttributes() == 1); /* unitSI */
+}
 
+BOOST_AUTO_TEST_CASE(recordComponent_link_test)
+{
+    using RD = Record::Dimension;
+    Record r = Record(RD::one, {"x"});
 
+    double arr3D[5][3][2] = {{{0,  1},  {2,  3},  {4,  5}},
+                             {{6,  7},  {8,  9},  {10, 11}},
+                             {{12, 13}, {14, 15}, {16, 17}},
+                             {{18, 19}, {20, 21}, {22, 23}},
+                             {{24, 25}, {26, 27}, {28, 29}}};
+    std::array< std::size_t, 3 > twos{{5, 3, 2}};
+    RecordComponent &rc = r["x"];
+    rc.linkData(arr3D, {5, 3, 2});
+    BOOST_TEST(r["x"].extents == twos);
 }
 
 BOOST_AUTO_TEST_CASE(mesh_constructor_test)
 {
-    Mesh m = Record("B", Record::Dimension::three, {"x", "y", "z"});
+    Mesh m = Record(Record::Dimension::three, {"x", "y", "z"});
 
-    BOOST_TEST(m.name() == "B");
-    BOOST_TEST(m["x"].name() == "x");
     BOOST_TEST(m["x"].unitSI() == 1);
-    BOOST_TEST(m["x"].numAttributes() == 3); /* unitSI, position, name */
-    BOOST_TEST(m["y"].name() == "y");
+    BOOST_TEST(m["x"].numAttributes() == 2); /* unitSI, position */
     BOOST_TEST(m["y"].unitSI() == 1);
-    BOOST_TEST(m["y"].numAttributes() == 3); /* unitSI, position, name */
-    BOOST_TEST(m["z"].name() == "z");
+    BOOST_TEST(m["y"].numAttributes() == 2); /* unitSI, position */
     BOOST_TEST(m["z"].unitSI() == 1);
-    BOOST_TEST(m["z"].numAttributes() == 3); /* unitSI, position, name */
+    BOOST_TEST(m["z"].numAttributes() == 2); /* unitSI, position */
     BOOST_TEST(m.geometry() == Mesh::Geometry::cartesian);
     BOOST_TEST(m.dataOrder() == Mesh::DataOrder::C);
     std::vector< std::string > al{"z", "y", "x"};
@@ -185,5 +196,43 @@ BOOST_AUTO_TEST_CASE(mesh_constructor_test)
     std::vector< double > ggo{0, 0, 0};
     BOOST_TEST(m.gridGlobalOffset() == ggo);
     BOOST_TEST(m.gridUnitSI() == static_cast<double>(1));
-    BOOST_TEST(m.numAttributes() == 9); /* axisLabels, dataOrder, geometry, gridGlobalOffset, gridSpacing, gridUnitSI, timeOffset, unitDimension, name */
+    BOOST_TEST(m.numAttributes() == 8); /* axisLabels, dataOrder, geometry, gridGlobalOffset, gridSpacing, gridUnitSI, timeOffset, unitDimension */
+}
+
+BOOST_AUTO_TEST_CASE(mesh_modification_test)
+{
+    Mesh m = Record(Record::Dimension::three, {"x", "y", "z"});
+
+    m.setGeometry(Mesh::Geometry::spherical);
+    BOOST_TEST(m.geometry() == Mesh::Geometry::spherical);
+    BOOST_TEST(m.numAttributes() == 8);
+    m.setDataOrder(Mesh::DataOrder::F);
+    BOOST_TEST(m.dataOrder() == Mesh::DataOrder::F);
+    BOOST_TEST(m.numAttributes() == 8);
+    std::vector< std::string > al{"z_", "y_", "x_"};
+    m.setAxisLabels({"z_", "y_", "x_"});
+    BOOST_TEST(m.axisLabels() == al);
+    BOOST_TEST(m.numAttributes() == 8);
+    std::vector< float > gs{1e-5, 2e-5, 3e-5};
+    m.setGridSpacing({1e-5, 2e-5, 3e-5});
+    BOOST_TEST(m.gridSpacing() == gs);
+    BOOST_TEST(m.numAttributes() == 8);
+    std::vector< double > ggo{1e-10, 2e-10, 3e-10};
+    m.setGridGlobalOffset({1e-10, 2e-10, 3e-10});
+    BOOST_TEST(m.gridGlobalOffset() == ggo);
+    BOOST_TEST(m.numAttributes() == 8);
+    m.setGridUnitSI(42.0);
+    BOOST_TEST(m.gridUnitSI() == static_cast<double>(42));
+    BOOST_TEST(m.numAttributes() == 8);
+    std::string gp{"FORMULA GOES HERE"};
+    m.setGeometryParameters("FORMULA GOES HERE");
+    BOOST_TEST(m.geometryParameters() == gp);
+    BOOST_TEST(m.numAttributes() == 9);
+    std::map< std::string, std::vector< double > > pos{{"x", {0, 0, 0}},
+                                                       {"y", {1, 1, 1}},
+                                                       {"z", {2, 2, 2}}};
+    m.setPosition({{"y", {1, 1, 1}},
+                   {"z", {2, 2, 2}}});
+    BOOST_TEST(m.position() == pos);
+    BOOST_TEST(m.numAttributes() == 9);
 }

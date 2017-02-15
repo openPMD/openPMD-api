@@ -3,30 +3,27 @@
 #include "../include/Record.hpp"
 
 
-Record::Record(std::string name,
-               Dimension dim,
+Record::Record(Dimension dim,
                std::initializer_list< std::string > comps,
                bool isRecordComponent)
-        : m_components{std::map< std::string, Record >()},
+        : m_components{std::map< std::string, RecordComponent >()},
           m_isComponent{isRecordComponent},
           m_dimension{dim}
 {
     for( std::string const& component : comps )
     {
-        using it_t = std::map< std::string, Record >::iterator;
-        std::pair< it_t, bool > res = m_components.emplace(component,
-                                                           Record(component,
-                                                                  dim,
-                                                                  {},
-                                                                  true));
+        using it_t = std::map< std::string, RecordComponent >::iterator;
+        std::pair< it_t, bool > res =
+                m_components.emplace(component,
+                                     RecordComponent());
         res.first->second.setAttribute("unitSI", static_cast<double>(1));
     }
-    setName(name);
-    if( !m_isComponent )
+    setAttribute("unitDimension",
+                 std::array< double, 7 >{{0., 0., 0., 0., 0., 0., 0.}});
+    setTimeOffset(0);
+    if( m_isComponent )
     {
-        setAttribute("unitDimension",
-                     std::array< double, 7 >{{0., 0., 0., 0., 0., 0., 0.}});
-        setTimeOffset(0);
+        setUnitSI(1);
     }
 }
 
@@ -36,19 +33,6 @@ Record::Record(Record const& r)
           m_isComponent{r.m_isComponent},
           m_dimension{r.m_dimension}
 { }
-
-std::string const
-Record::name() const
-{
-    return boost::get< std::string >(getAttribute("name"));
-}
-
-Record
-Record::setName(std::string const& n)
-{
-    setAttribute("name", n);
-    return *this;
-}
 
 std::array< double, 7 >
 Record::unitDimension() const
@@ -87,36 +71,34 @@ Record::setTimeOffset(float timeOffset)
 double
 Record::unitSI() const
 {
-    return boost::get< double >(getAttribute("unitSI"));
+    if( m_isComponent )
+    {
+        return boost::get< double >(getAttribute("unitSI"));
+    } else
+    {
+        std::cerr<<"You have to use "
+                 <<"\'record[\"component\"].unitSI()\'"
+                 <<" if you want to get unitSI on skalar records!\n";
+        return 1;
+    }
 }
 
 Record
 Record::setUnitSI(double usi)
 {
-    assert(m_isComponent);
-    setAttribute("unitSI", usi);
-    return *this;
-}
-
-Record
-Record::setUnitSI(std::map< std::string, double > usi)
-{
-    assert(!m_isComponent);
-    for( auto const& entry : usi )
+    if( m_isComponent )
     {
-        auto it = m_components.find(entry.first);
-        if( it != m_components.end() )
-        {
-            it->second.setAttribute("unitSI", entry.second);
-        } else
-        {
-            std::cerr<<"Unknown record component."<<std::endl;
-        }
+        setAttribute("unitSI", usi);
+    } else
+    {
+        std::cerr<<"You have to use "
+                 <<"\'record[\"component\"].setUnitSI("<<usi<<")\'"
+                 <<" if you want to set unitSI on skalar records!\n";
     }
     return *this;
 }
 
-Record&
+RecordComponent&
 Record::operator[](std::string const& component)
 {
     assert(!m_isComponent);
@@ -129,7 +111,3 @@ Record::operator[](std::string const& component)
         std::cerr<<"Unknown record component."<<std::endl;
     }
 }
-
-void
-Record::unlinkData()
-{ }

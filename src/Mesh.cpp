@@ -142,14 +142,15 @@ Mesh::setGridUnitSI(double gusi)
 }
 
 std::map< std::string, std::vector< double > >
-Mesh::position()
+Mesh::position() const
 {
     std::map< std::string, std::vector< double > > ret;
     for( auto const& component : m_components )
     {
         ret.insert({component.first,
-                    boost::get< std::vector< double > >(component.second.getAttribute("position"))});
+                    component.second.position()});
     }
+    return ret;
 }
 
 Mesh
@@ -164,7 +165,7 @@ Mesh::setPosition(std::map< std::string, std::vector< double > > const& pos)
         auto it = m_components.find(entry.first);
         if( it != m_components.end() )
         {
-            it->second.setAttribute("position", entry.second);
+            it->second.setPosition(entry.second);
         } else
         {
             std::cerr<<"Unknown Record component: "<<entry.first<<'\n';

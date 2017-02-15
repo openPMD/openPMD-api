@@ -3,7 +3,10 @@
 
 #include <memory>
 
+#include <boost/variant.hpp>
+
 #include "Attributable.hpp"
+#include "RecordComponent.hpp"
 
 //class Record_base;
 
@@ -21,11 +24,12 @@ public:
         L = 0, M, T, I, theta, N, J
     };
 
-    Record(std::string name, Dimension dim, std::initializer_list< std::string > comps, bool isRecordComponent = false);
+    static Record makeTensorRecord();
+    static Record makeVectorRecord();
+    static Record makeScalarRecord();
+    static Record makeConstantRecord();
+    Record(Dimension dim, std::initializer_list< std::string > comps, bool isRecordComponent = false);
     Record(Record const &);
-
-    std::string const name() const;
-    Record setName(std::string const&);
 
     std::array< double, 7 > unitDimension() const;
     Record setUnitDimension(std::map< Record::UnitDimension, double > const &);
@@ -35,17 +39,12 @@ public:
 
     double unitSI() const;
     Record setUnitSI(double);
-    Record setUnitSI(std::map< std::string, double >);
 
-    Record& operator[](std::string const&);
-
-    template< typename T >
-    Record linkData(T* /*data*/);
-
-    void unlinkData();
+    RecordComponent& operator[](std::string const&);
 
 protected:
-    std::map< std::string, Record > m_components;
+    std::map< std::string, RecordComponent > m_components;
+    RecordComponent m_component;
     bool m_isComponent;
     Dimension m_dimension;
 };  //Record

@@ -25,7 +25,7 @@ public:
     };  //DataOrder
 
     //TODO
-    Mesh(): Record("Dummy", Record::Dimension::three, {}, true) { }
+    Mesh(): Record(Record::Dimension::three, {}, true) { }
     //TODO
     Mesh(Mesh const&) = default;
     Mesh(Record const&);
@@ -42,7 +42,7 @@ public:
     Mesh setDataOrder(DataOrder);
 
     std::vector< std::string > axisLabels() const;
-    Mesh setAxisLabels(std::vector< std::string >);   //Might have to be the same size as the records dimensions
+    Mesh setAxisLabels(std::vector< std::string >);
 
     std::vector< float > gridSpacing() const;
     Mesh setGridSpacing(std::vector< float >);
@@ -53,7 +53,7 @@ public:
     double gridUnitSI() const;
     Mesh setGridUnitSI(double);
 
-    std::map< std::string, std::vector< double > > position();
+    std::map< std::string, std::vector< double > > position() const;
     Mesh setPosition(std::map< std::string, std::vector< double > > const&);
 
     Record record() const;
