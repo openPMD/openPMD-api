@@ -8,20 +8,18 @@
 #include "Attributable.hpp"
 #include "Container.hpp"
 #include "Mesh.hpp"
-//#include "ParticleSpecies.h"
 
-class ParticleSpecies { };
-
+using ParticleSpecies = Container< Record >;
 
 class Iteration : public Attributable
 {
 public:
     Iteration();
-    Iteration(Iteration&&);
-    Iteration(Iteration const&);
+//    Iteration(Iteration&&);
+//    Iteration(Iteration const&);
     Iteration(float time, float dt, double timeUnitSI);
-    Iteration& operator=(Iteration&&);
-    Iteration& operator=(Iteration const&);
+//    Iteration& operator=(Iteration&&);
+//    Iteration& operator=(Iteration const&);
     ~Iteration();
 
     float time() const;
@@ -35,11 +33,4 @@ public:
 
     Container< Mesh > meshes;
     Container< ParticleSpecies > particles; //particleSpecies?
-
-private:
-    /*
-    const uint64_t                      m_iteration;
-    std::vector<Mesh>                   m_meshRecords;
-    std::vector<ParticleSpecies>        m_particleSpecies;
-     */
 };  //Iteration

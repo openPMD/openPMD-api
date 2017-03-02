@@ -24,10 +24,10 @@ public:
         L = 0, M, T, I, theta, N, J
     };
 
-    static Record makeTensorRecord();
-    static Record makeVectorRecord();
-    static Record makeScalarRecord();
-    static Record makeConstantRecord();
+    static Record makeTensorRecord(Dimension, std::initializer_list< std::string >);
+    static Record makeVectorRecord(Dimension, std::initializer_list< std::string >);
+    static Record makeScalarRecord(std::initializer_list< std::string >);
+    static Record makeConstantRecord(Dimension, std::initializer_list< int >, std::initializer_list< std::string >);
     Record(Dimension dim, std::initializer_list< std::string > comps, bool isRecordComponent = false);
     Record(Record const &);
 

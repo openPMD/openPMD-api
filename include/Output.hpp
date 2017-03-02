@@ -16,8 +16,8 @@ public:
         fileBased, groupBased
     };  //IterationEncoding
 
-    Output(Output&&);
-    Output(Output const&);
+//    Output(Output&&);
+//    Output(Output const&);
     Output(IterationEncoding iterationEncoding);
     Output(IterationEncoding iterationEncoding,
            std::string const& name);

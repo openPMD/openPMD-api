@@ -33,25 +33,6 @@ RecordComponent::setPosition(std::vector< double > pos)
     return *this;
 }
 
-template< typename T >
-void
-RecordComponent::linkData(T* ptr, std::vector< std::size_t > ext)
-{
-    assert(0 < ext.size() && ext.size() < 4);
-    m_data = reinterpret_cast<unsigned char*>(ptr);
-    for( int i = 0; i < ext.size(); ++i )
-    {
-        extents[2 - i] = ext[ext.size() - 1 - i];
-    }
-}
-
-template< typename T >
-T*
-RecordComponent::retrieveData()
-{
-    return reinterpret_cast<T*>(m_data);
-}
-
 void
 RecordComponent::unlinkData()
 {

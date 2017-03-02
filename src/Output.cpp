@@ -20,13 +20,13 @@ operator<<(std::ostream& os, Output::IterationEncoding ie)
     return os;
 }
 
-Output::Output(Output&& o) = default;
-
-Output::Output(Output const& o)
-        : Attributable(o),
-          iterations{o.iterations},
-          m_iterationEncoding{o.m_iterationEncoding}
-{ }
+//Output::Output(Output&& o) = default;
+//
+//Output::Output(Output const& o)
+//        : Attributable(o),
+//          iterations{o.iterations},
+//          m_iterationEncoding{o.m_iterationEncoding}
+//{ }
 
 Output::Output(IterationEncoding ie)
         : iterations{Container< Iteration, uint64_t >()},

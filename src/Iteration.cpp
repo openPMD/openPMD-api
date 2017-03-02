@@ -10,13 +10,13 @@ Iteration::Iteration()
     setTimeUnitSI(0);
 }
 
-Iteration::Iteration(Iteration&&) = default;
-
-Iteration::Iteration(Iteration const& i)
-        : Attributable(i),
-          meshes{i.meshes},
-          particles{i.particles}
-{ }
+//Iteration::Iteration(Iteration&&) = default;
+//
+//Iteration::Iteration(Iteration const& i)
+//        : Attributable(i),
+//          meshes{i.meshes},
+//          particles{i.particles}
+//{ }
 
 Iteration::Iteration(float time,
                      float dt,
@@ -29,25 +29,25 @@ Iteration::Iteration(float time,
     setTimeUnitSI(timeUnitSI);
 }
 
-Iteration&
-Iteration::operator=(Iteration&& i)
-{
-    meshes = std::move(i.meshes);
-    particles = std::move(i.particles);
-    return *this;
-}
-
-Iteration&
-Iteration::operator=(Iteration const& i)
-{
-    if( this != &i )
-    {
-        using std::swap;
-        Iteration tmp(i);
-        swap(*this, tmp);
-    }
-    return *this;
-}
+//Iteration&
+//Iteration::operator=(Iteration&& i)
+//{
+//    meshes = std::move(i.meshes);
+//    particles = std::move(i.particles);
+//    return *this;
+//}
+//
+//Iteration&
+//Iteration::operator=(Iteration const& i)
+//{
+//    if( this != &i )
+//    {
+//        using std::swap;
+//        Iteration tmp(i);
+//        swap(*this, tmp);
+//    }
+//    return *this;
+//}
 
 Iteration::~Iteration()
 { }

@@ -15,6 +15,68 @@ BOOST_AUTO_TEST_CASE(container_default_test)
     BOOST_TEST(c.remove("nonExistentKey") == false);
 }
 
+class structure : public Attributable
+{
+public:
+    std::string string_ = "Hello, world!";
+    int int_ = 42;
+    float float_ = 3.14f;
+
+    std::string text() const { return boost::get< std::string >(getAttribute("text")); }
+    structure& setText(std::string text) { setAttribute("text", text); return *this; }
+};
+
+BOOST_AUTO_TEST_CASE(container_retrieve_test)
+{
+    Container< structure > c = Container< structure >();
+
+    structure s;
+    std::string text = "The openPMD standard, short for open standard for particle-mesh data files is not a file format per se. It is a standard for meta data and naming schemes.";
+    s.setText(text);
+    c["entry"] = s;
+    BOOST_TEST(c["entry"].string_ == "Hello, world!");
+    BOOST_TEST(c["entry"].int_ == 42);
+    BOOST_TEST(c["entry"].float_ == 3.14f);
+    BOOST_TEST(c["entry"].text() == text);
+    BOOST_TEST(s.text() == text);
+
+
+    structure s2 = c["entry"];
+    BOOST_TEST(s2.string_ == "Hello, world!");
+    BOOST_TEST(s2.int_ == 42);
+    BOOST_TEST(s2.float_ == 3.14f);
+    BOOST_TEST(s2.text() == text);
+    BOOST_TEST(c["entry"].text() == text);
+
+
+    s2.string_ = "New string";
+    s2.int_ = -1;
+    s2.float_ = 0.0f;
+    text = "New text";
+    s2.setText(text);
+    c["entry"] = s2;
+    BOOST_TEST(c["entry"].string_ == "New string");
+    BOOST_TEST(c["entry"].int_ == -1);
+    BOOST_TEST(c["entry"].float_ == 0.0f);
+    BOOST_TEST(c["entry"].text() == text);
+    BOOST_TEST(s2.text() == text);
+
+    s = c["entry"];
+    BOOST_TEST(s.string_ == "New string");
+    BOOST_TEST(s.int_ == -1);
+    BOOST_TEST(s.float_ == 0.0f);
+    BOOST_TEST(s.text() == text);
+    BOOST_TEST(c["entry"].text() == text);
+
+    c["entry"].setText("Different text");
+    BOOST_TEST(s.text() == text);
+    BOOST_TEST(c["entry"].text() != text);
+
+    s.setText("Also different text");
+    BOOST_TEST(s.text() == "Also different text");
+    BOOST_TEST(c["entry"].text() == "Different text");
+}
+
 struct Widget
 {
     Widget()
@@ -83,4 +145,36 @@ BOOST_AUTO_TEST_CASE(attributable_access_test)
     BOOST_TEST(a.numAttributes() == 1);
     BOOST_TEST(a.deleteAttribute("array") == true);
     BOOST_TEST(a.numAttributes() == 0);
+}
+
+class Dotty : public Attributable
+{
+public:
+    Dotty()
+    {
+        setAtt1(1);
+        setAtt2(2);
+        setAtt3("3");
+    }
+
+    int att1() const { return boost::get< int >(getAttribute("att1")); }
+    double att2() const { return boost::get< double >(getAttribute("att2")); }
+    std::string att3() const { return boost::get< std::string >(getAttribute("att3")); }
+    Dotty& setAtt1(int i) { setAttribute("att1", i); return *this; }
+    Dotty& setAtt2(double d) { setAttribute("att2", d); return *this; }
+    Dotty& setAtt3(std::string s) { setAttribute("att3", s); return *this; }
+};
+
+BOOST_AUTO_TEST_CASE(dot_test)
+{
+    Dotty d;
+    BOOST_TEST(d.att1() == 1);
+    BOOST_TEST(d.att2() == static_cast<double>(2));
+    BOOST_TEST(d.att3() == "3");
+
+    d.setAtt1(10).setAtt2(20).setAtt3("30");
+    BOOST_TEST(d.att1() == 10);
+    BOOST_TEST(d.att2() == static_cast<double>(20));
+    BOOST_TEST(d.att3() == "30");
+
 }

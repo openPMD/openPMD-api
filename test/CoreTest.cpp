@@ -14,8 +14,7 @@ BOOST_AUTO_TEST_CASE(output_default_test)
     BOOST_TEST(o.basePath() == "/data/%T/");
     BOOST_TEST(o.meshesPath() == "meshes");
     BOOST_TEST(o.particlesPath() == "particles");
-    BOOST_TEST(o.numAttributes() ==
-               4); /* basePath, meshesPath, particlesPath, name */
+    BOOST_TEST(o.numAttributes() == 4); /* basePath, meshesPath, particlesPath, name */
     BOOST_TEST(o.iterations.size() == 0);
     BOOST_TEST(o.iterationEncoding() == Output::IterationEncoding::fileBased);
 }
@@ -171,10 +170,10 @@ BOOST_AUTO_TEST_CASE(recordComponent_link_test)
                              {{12, 13}, {14, 15}, {16, 17}},
                              {{18, 19}, {20, 21}, {22, 23}},
                              {{24, 25}, {26, 27}, {28, 29}}};
-    std::array< std::size_t, 3 > twos{{5, 3, 2}};
-    RecordComponent &rc = r["x"];
-    rc.linkData(arr3D, {5, 3, 2});
-    BOOST_TEST(r["x"].extents == twos);
+    std::array< std::size_t, 3 > shape{{5, 3, 2}};
+    r["x"].linkData(arr3D, RecordComponent::Dtype::DOUBLE, {5, 3, 2});
+    BOOST_TEST(r["x"].extents == shape);
+    BOOST_TEST(*(r["x"].retrieveData<double>() + 1) == 1);
 }
 
 BOOST_AUTO_TEST_CASE(mesh_constructor_test)
