@@ -20,16 +20,16 @@ public:
     Iteration(float time, float dt, double timeUnitSI);
 //    Iteration& operator=(Iteration&&);
 //    Iteration& operator=(Iteration const&);
-    ~Iteration();
+//    ~Iteration();
 
     float time() const;
-    Iteration setTime(float);
+    Iteration& setTime(float);
 
     float dt() const;
-    Iteration setDt(float);
+    Iteration& setDt(float);
 
     double timeUnitSI() const;
-    Iteration setTimeUnitSI(double);
+    Iteration& setTimeUnitSI(double);
 
     Container< Mesh > meshes;
     Container< ParticleSpecies > particles; //particleSpecies?

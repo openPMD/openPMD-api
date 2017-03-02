@@ -19,10 +19,11 @@ public:
         UCHAR,
         BOOL
     };
+
     RecordComponent();
 
     double unitSI() const;
-    RecordComponent setUnitSI(double);
+    RecordComponent& setUnitSI(double);
 
     template< typename T >
     void linkData(T* ptr, Dtype, std::vector< std::size_t > ext);
@@ -36,7 +37,7 @@ public:
 
 private:
     std::vector< double > position() const;
-    RecordComponent setPosition(std::vector< double >);
+    RecordComponent& setPosition(std::vector< double >);
 
     unsigned char* m_data;
     Dtype m_dtype;

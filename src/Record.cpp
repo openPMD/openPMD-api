@@ -40,7 +40,7 @@ Record::unitDimension() const
     return boost::get< std::array< double, 7 > >(getAttribute("unitDimension"));
 }
 
-Record
+Record&
 Record::setUnitDimension(std::map< Record::UnitDimension, double > const& udim)
 {
     if( udim.size() != 0 )
@@ -61,7 +61,7 @@ Record::timeOffset() const
     return boost::get< float >(getAttribute("timeOffset"));
 }
 
-Record
+Record&
 Record::setTimeOffset(float timeOffset)
 {
     setAttribute("timeOffset", timeOffset);
@@ -83,7 +83,7 @@ Record::unitSI() const
     }
 }
 
-Record
+Record&
 Record::setUnitSI(double usi)
 {
     if( m_isComponent )

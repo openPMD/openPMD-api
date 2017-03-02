@@ -2,7 +2,8 @@
 
 
 RecordComponent::RecordComponent()
-        : extents{{1, 1, 1}}, m_data{nullptr}
+        : extents{{1, 1, 1}},
+          m_data{nullptr}
 {
     setUnitSI(1);
 }
@@ -13,7 +14,7 @@ RecordComponent::unitSI() const
     return boost::get< double >(getAttribute("unitSI"));
 }
 
-RecordComponent
+RecordComponent&
 RecordComponent::setUnitSI(double usi)
 {
     setAttribute("unitSI", usi);
@@ -26,7 +27,7 @@ RecordComponent::position() const
     return boost::get< std::vector< double > >(getAttribute("position"));
 }
 
-RecordComponent
+RecordComponent&
 RecordComponent::setPosition(std::vector< double > pos)
 {
     setAttribute("position", pos);

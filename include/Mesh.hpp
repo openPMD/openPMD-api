@@ -33,28 +33,28 @@ public:
     Mesh& operator=(Record const&);
 
     Geometry geometry() const;
-    Mesh setGeometry(Geometry);
+    Mesh& setGeometry(Geometry);
 
     std::string geometryParameters() const;
-    Mesh setGeometryParameters(std::string const&);
+    Mesh& setGeometryParameters(std::string const&);
 
     DataOrder dataOrder() const;
-    Mesh setDataOrder(DataOrder);
+    Mesh& setDataOrder(DataOrder);
 
     std::vector< std::string > axisLabels() const;
-    Mesh setAxisLabels(std::vector< std::string >);
+    Mesh& setAxisLabels(std::vector< std::string >);
 
     std::vector< float > gridSpacing() const;
-    Mesh setGridSpacing(std::vector< float >);
+    Mesh& setGridSpacing(std::vector< float >);
 
     std::vector< double > gridGlobalOffset() const;
-    Mesh setGridGlobalOffset(std::vector< double >);
+    Mesh& setGridGlobalOffset(std::vector< double >);
 
     double gridUnitSI() const;
-    Mesh setGridUnitSI(double);
+    Mesh& setGridUnitSI(double);
 
     std::map< std::string, std::vector< double > > position() const;
-    Mesh setPosition(std::map< std::string, std::vector< double > > const&);
+    Mesh& setPosition(std::map< std::string, std::vector< double > > const&);
 
     Record record() const;
 };  //Mesh

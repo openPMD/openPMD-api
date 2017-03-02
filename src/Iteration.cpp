@@ -11,7 +11,7 @@ Iteration::Iteration()
 }
 
 //Iteration::Iteration(Iteration&&) = default;
-//
+
 //Iteration::Iteration(Iteration const& i)
 //        : Attributable(i),
 //          meshes{i.meshes},
@@ -20,9 +20,9 @@ Iteration::Iteration()
 
 Iteration::Iteration(float time,
                      float dt,
-                     double timeUnitSI) : meshes{Container< Mesh >()},
-                                          particles{
-                                                  Container< ParticleSpecies >()}
+                     double timeUnitSI)
+        : meshes{Container< Mesh >()},
+          particles{Container< ParticleSpecies >()}
 {
     setTime(time);
     setDt(dt);
@@ -36,7 +36,7 @@ Iteration::Iteration(float time,
 //    particles = std::move(i.particles);
 //    return *this;
 //}
-//
+
 //Iteration&
 //Iteration::operator=(Iteration const& i)
 //{
@@ -49,8 +49,8 @@ Iteration::Iteration(float time,
 //    return *this;
 //}
 
-Iteration::~Iteration()
-{ }
+//Iteration::~Iteration()
+//{ }
 
 float
 Iteration::time() const
@@ -58,7 +58,7 @@ Iteration::time() const
     return boost::get< float >(getAttribute("time"));
 }
 
-Iteration
+Iteration&
 Iteration::setTime(float time)
 {
     setAttribute("time", time);
@@ -71,7 +71,7 @@ Iteration::dt() const
     return boost::get< float >(getAttribute("dt"));
 }
 
-Iteration
+Iteration&
 Iteration::setDt(float dt)
 {
     setAttribute("dt", dt);
@@ -84,7 +84,7 @@ Iteration::timeUnitSI() const
     return boost::get< double >(getAttribute("timeUnitSI"));
 }
 
-Iteration
+Iteration&
 Iteration::setTimeUnitSI(double timeUnitSI)
 {
     setAttribute("timeUnitSI", timeUnitSI);

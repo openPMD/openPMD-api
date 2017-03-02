@@ -16,8 +16,8 @@ public:
     { }
 
     Attributable(Attributable const& rhs)
-            : m_attributes(rhs.m_attributes)
-    { } // Take ownership of the Attribute map
+            : m_attributes(std::make_shared< A_MAP >(*rhs.m_attributes))
+    { } // Deep-copy the entries in the Attribute map
     Attributable(Attributable&& rhs)
             : m_attributes(rhs.m_attributes)
     { } // Take ownership of the Attribute map
@@ -26,7 +26,6 @@ public:
         if( this != &a )
         {
             Attributable tmp(a);
-            tmp.m_attributes = std::make_shared< A_MAP >(*a.m_attributes); // Deep-copy the entries in the Attribute map
             std::swap(m_attributes, tmp.m_attributes);
         }
         return *this;

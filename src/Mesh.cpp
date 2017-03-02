@@ -40,7 +40,7 @@ Mesh::geometry() const
     if( ret == "spherical" ) { return Geometry::spherical; }
 }
 
-Mesh
+Mesh&
 Mesh::setGeometry(Mesh::Geometry g)
 {
     switch( g )
@@ -67,7 +67,7 @@ Mesh::geometryParameters() const
     return boost::get< std::string >(getAttribute("geometryParameters"));
 }
 
-Mesh
+Mesh&
 Mesh::setGeometryParameters(std::string const& gp)
 {
     setAttribute("geometryParameters", gp);
@@ -80,7 +80,7 @@ Mesh::dataOrder() const
     return Mesh::DataOrder(boost::get< char >(getAttribute("dataOrder")));
 }
 
-Mesh
+Mesh&
 Mesh::setDataOrder(Mesh::DataOrder dor)
 {
     setAttribute("dataOrder", static_cast<char>(dor));
@@ -93,7 +93,7 @@ Mesh::axisLabels() const
     return boost::get< std::vector< std::string > >(getAttribute("axisLabels"));
 }
 
-Mesh
+Mesh&
 Mesh::setAxisLabels(std::vector< std::string > als)
 {
     setAttribute("axisLabels", als);
@@ -106,7 +106,7 @@ Mesh::gridSpacing() const
     return boost::get< std::vector< float > >(getAttribute("gridSpacing"));
 }
 
-Mesh
+Mesh&
 Mesh::setGridSpacing(std::vector< float > gs)
 {
     assert(gs.size() == m_components.size());
@@ -120,7 +120,7 @@ Mesh::gridGlobalOffset() const
     return boost::get< std::vector< double>>(getAttribute("gridGlobalOffset"));
 }
 
-Mesh
+Mesh&
 Mesh::setGridGlobalOffset(std::vector< double > ggo)
 {
     assert(ggo.size() == m_components.size());
@@ -134,7 +134,7 @@ Mesh::gridUnitSI() const
     return boost::get< double >(getAttribute("gridUnitSI"));
 }
 
-Mesh
+Mesh&
 Mesh::setGridUnitSI(double gusi)
 {
     setAttribute("gridUnitSI", gusi);
@@ -153,7 +153,7 @@ Mesh::position() const
     return ret;
 }
 
-Mesh
+Mesh&
 Mesh::setPosition(std::map< std::string, std::vector< double > > const& pos)
 {
     for( auto const& entry : pos )

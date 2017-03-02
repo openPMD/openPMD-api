@@ -32,19 +32,19 @@ public:
 //           std::string const &particlesPath);
 
     IterationEncoding iterationEncoding() const;
-    Output setIterationEncoding(IterationEncoding iterationEncoding);
+    Output& setIterationEncoding(IterationEncoding iterationEncoding);
 
     std::string const name() const;
-    Output setName(std::string const& name);
+    Output& setName(std::string const& name);
 
     std::string const basePath() const;
-//    Output setBasePath(std::string const &); //Custom basePath not available in openPMD <=1.0.1
+//    Output& setBasePath(std::string const &); //Custom basePath not available in openPMD <=1.0.1
 
     std::string const meshesPath() const;
-    Output setMeshesPath(std::string const&);
+    Output& setMeshesPath(std::string const&);
 
     std::string const particlesPath() const;
-    Output setParticlesPath(std::string const&);
+    Output& setParticlesPath(std::string const&);
 
 //    void write();
 
