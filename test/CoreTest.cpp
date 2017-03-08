@@ -8,59 +8,85 @@
 
 BOOST_AUTO_TEST_CASE(output_default_test)
 {
-    Output o = Output(Output::IterationEncoding::fileBased);
+    using IE = Output::IterationEncoding;
+    Output o = Output(IE::fileBased);
 
-    BOOST_TEST(o.name() == "new_openpmd_output");
+    BOOST_TEST(o.openPMD() == "1.0.1");
+    BOOST_TEST(o.openPMDextension() == static_cast<uint32_t>(0));
     BOOST_TEST(o.basePath() == "/data/%T/");
-    BOOST_TEST(o.meshesPath() == "meshes");
-    BOOST_TEST(o.particlesPath() == "particles");
-    BOOST_TEST(o.numAttributes() == 4); /* basePath, meshesPath, particlesPath, name */
+    BOOST_TEST(o.meshesPath() == "meshes/");
+    BOOST_TEST(o.particlesPath() == "particles/");
+    BOOST_TEST(o.iterationEncoding() == IE::fileBased);
+    BOOST_TEST(o.iterationFormat() == "new_openpmd_output_%T");
     BOOST_TEST(o.iterations.size() == 0);
-    BOOST_TEST(o.iterationEncoding() == Output::IterationEncoding::fileBased);
+    BOOST_TEST(o.numAttributes() == 7); /* openPMD, openPMDextension, basePath, meshesPath, particlesPath, iterationEncoding, iterationFormat */
+    BOOST_TEST(o.name() == "new_openpmd_output");
 }
 
 BOOST_AUTO_TEST_CASE(output_constructor_test)
 {
-    Output o1 = Output(Output::IterationEncoding::fileBased, "MyOutput");
+    using IE = Output::IterationEncoding;
+    Output o1 = Output(IE::fileBased, "MyOutput");
 
-    BOOST_TEST(o1.name() == "MyOutput");
+    BOOST_TEST(o1.openPMD() == "1.0.1");
+    BOOST_TEST(o1.openPMDextension() == static_cast<uint32_t>(0));
     BOOST_TEST(o1.basePath() == "/data/%T/");
-    BOOST_TEST(o1.meshesPath() == "meshes");
-    BOOST_TEST(o1.particlesPath() == "particles");
+    BOOST_TEST(o1.meshesPath() == "meshes/");
+    BOOST_TEST(o1.particlesPath() == "particles/");
+    BOOST_TEST(o1.iterationEncoding() == IE::fileBased);
+    BOOST_TEST(o1.iterationFormat() == "MyOutput_%T");
     BOOST_TEST(o1.iterations.size() == 0);
-    BOOST_TEST(o1.iterationEncoding() == Output::IterationEncoding::fileBased);
+    BOOST_TEST(o1.numAttributes() == 7); /* openPMD, openPMDextension, basePath, meshesPath, particlesPath, iterationEncoding, iterationFormat */
+    BOOST_TEST(o1.name() == "MyOutput");
 
-    Output o2 = Output(Output::IterationEncoding::fileBased,
+    Output o2 = Output(IE::groupBased,
                        "MyCustomOutput",
                        "customMeshesPath",
                        "customParticlesPath");
 
-    BOOST_TEST(o2.name() == "MyCustomOutput");
+    BOOST_TEST(o1.openPMD() == "1.0.1");
+    BOOST_TEST(o1.openPMDextension() == static_cast<uint32_t>(0));
     BOOST_TEST(o2.basePath() == "/data/%T/");
     BOOST_TEST(o2.meshesPath() == "customMeshesPath");
     BOOST_TEST(o2.particlesPath() == "customParticlesPath");
+    BOOST_TEST(o2.iterationEncoding() == IE::groupBased);
+    BOOST_TEST(o2.iterationFormat() == "/data/%T/");
     BOOST_TEST(o2.iterations.size() == 0);
-    BOOST_TEST(o2.iterationEncoding() == Output::IterationEncoding::fileBased);
+    BOOST_TEST(o2.numAttributes() == 7); /* openPMD, openPMDextension, basePath, meshesPath, particlesPath, iterationEncoding, iterationFormat */
+    BOOST_TEST(o2.name() == "MyCustomOutput");
 }
 
 BOOST_AUTO_TEST_CASE(output_modification_test)
 {
-    Output o = Output(Output::IterationEncoding::fileBased);
+    using IE = Output::IterationEncoding;
+    Output o = Output(IE::fileBased);
 
-    o.setIterationEncoding(Output::IterationEncoding::groupBased);
-    BOOST_TEST(o.iterationEncoding() == Output::IterationEncoding::groupBased);
+    o.setOpenPMD("1.0.0");
+    BOOST_TEST(o.openPMD() == "1.0.0");
 
-    o.setIterationEncoding(Output::IterationEncoding::fileBased);
-    BOOST_TEST(o.iterationEncoding() == Output::IterationEncoding::fileBased);
-
-    o.setName("MyOutput");
-    BOOST_TEST(o.name() == "MyOutput");
+    o.setOpenPMDextension(1);
+    BOOST_TEST(o.openPMDextension() == static_cast<uint32_t>(1));
 
     o.setMeshesPath("customMeshesPath");
     BOOST_TEST(o.meshesPath() == "customMeshesPath");
 
     o.setParticlesPath("customParticlesPath");
     BOOST_TEST(o.particlesPath() == "customParticlesPath");
+
+    o.setIterationEncoding(IE::groupBased);
+    BOOST_TEST(o.iterationEncoding() == IE::groupBased);
+    BOOST_TEST(o.iterationFormat() == "/data/%T/");
+
+    o.setIterationFormat("/strictlyForbidden/%T");
+    BOOST_TEST(o.iterationFormat() == "/strictlyForbidden/%T");
+
+    o.setIterationEncoding(IE::fileBased);
+    BOOST_TEST(o.iterationEncoding() == IE::fileBased);
+    BOOST_TEST(o.iterationFormat() == "new_openpmd_output_%T");
+
+    o.setName("MyOutput");
+    BOOST_TEST(o.name() == "MyOutput");
+
 }
 
 BOOST_AUTO_TEST_CASE(iteration_default_test)

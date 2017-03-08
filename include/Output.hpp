@@ -16,8 +16,6 @@ public:
         fileBased, groupBased
     };  //IterationEncoding
 
-//    Output(Output&&);
-//    Output(Output const&);
     Output(IterationEncoding iterationEncoding);
     Output(IterationEncoding iterationEncoding,
            std::string const& name);
@@ -25,35 +23,39 @@ public:
            std::string const& name,
            std::string const& meshesPath,
            std::string const& particlesPath);
-//    Output(IterationEncoding,
-//           std::string const &name,
-//           std::string const &basePath,
-//           std::string const &meshesPath,
-//           std::string const &particlesPath);
 
-    IterationEncoding iterationEncoding() const;
-    Output& setIterationEncoding(IterationEncoding iterationEncoding);
+    std::string openPMD() const;
+    Output& setOpenPMD(std::string const &);
 
-    std::string const name() const;
-    Output& setName(std::string const& name);
+    uint32_t openPMDextension() const;
+    Output& setOpenPMDextension(uint32_t);
 
-    std::string const basePath() const;
+    std::string basePath() const;
 //    Output& setBasePath(std::string const &); //Custom basePath not available in openPMD <=1.0.1
 
-    std::string const meshesPath() const;
+    std::string meshesPath() const;
     Output& setMeshesPath(std::string const&);
 
-    std::string const particlesPath() const;
+    std::string particlesPath() const;
     Output& setParticlesPath(std::string const&);
 
-//    void write();
+    IterationEncoding iterationEncoding() const;
+    Output& setIterationEncoding(IterationEncoding);
+
+    std::string iterationFormat() const;
+    Output& setIterationFormat(std::string const&);
+
+    std::string name() const;
+    Output& setName(std::string const&);
 
     Container< Iteration, uint64_t > iterations;
 
-    static std::string const BASEPATH;
-
 private:
+    void setIterationAttributes(IterationEncoding);
+    static std::string const BASEPATH;
+    static std::string const OPENPMD;
     IterationEncoding m_iterationEncoding;
+    std::string m_name;
 };  //Output
 
 std::ostream&

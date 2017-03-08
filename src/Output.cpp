@@ -4,6 +4,7 @@
 
 
 std::string const Output::BASEPATH = "/data/%T/";
+std::string const Output::OPENPMD = "1.0.1";
 
 std::ostream&
 operator<<(std::ostream& os, Output::IterationEncoding ie)
@@ -20,32 +21,28 @@ operator<<(std::ostream& os, Output::IterationEncoding ie)
     return os;
 }
 
-//Output::Output(Output&& o) = default;
-//
-//Output::Output(Output const& o)
-//        : Attributable(o),
-//          iterations{o.iterations},
-//          m_iterationEncoding{o.m_iterationEncoding}
-//{ }
-
 Output::Output(IterationEncoding ie)
         : iterations{Container< Iteration, uint64_t >()},
-          m_iterationEncoding{ie}
+          m_name{"new_openpmd_output"}
 {
-    setName("new_openpmd_output");
+    setOpenPMD(OPENPMD);
+    setOpenPMDextension(0);
     setAttribute("basePath", BASEPATH);
-    setMeshesPath("meshes");
-    setParticlesPath("particles");
+    setMeshesPath("meshes/");
+    setParticlesPath("particles/");
+    setIterationAttributes(ie);
 }
 
 Output::Output(IterationEncoding ie, std::string const& name)
         : iterations{Container< Iteration, uint64_t >()},
-          m_iterationEncoding{ie}
+          m_name{name}
 {
-    setName(name);
+    setOpenPMD(OPENPMD);
+    setOpenPMDextension(0);
     setAttribute("basePath", BASEPATH);
-    setMeshesPath("meshes");
-    setParticlesPath("particles");
+    setMeshesPath("meshes/");
+    setParticlesPath("particles/");
+    setIterationAttributes(ie);
 }
 
 Output::Output(IterationEncoding ie,
@@ -53,47 +50,49 @@ Output::Output(IterationEncoding ie,
                std::string const& meshesPath,
                std::string const& particlesPath)
         : iterations{Container< Iteration, uint64_t >()},
-          m_iterationEncoding{ie}
+          m_name{name}
 {
-    setName(name);
+    setOpenPMD(OPENPMD);
+    setOpenPMDextension(0);
     setAttribute("basePath", BASEPATH);
     setMeshesPath(meshesPath);
     setParticlesPath(particlesPath);
+    setIterationAttributes(ie);
 }
 
-Output::IterationEncoding
-Output::iterationEncoding() const
+std::string
+Output::openPMD() const
 {
-    return m_iterationEncoding;
+    return boost::get< std::string >(getAttribute("openPMD").getResource());
 }
 
 Output&
-Output::setIterationEncoding(Output::IterationEncoding ie)
+Output::setOpenPMD(std::string const& o)
 {
-    m_iterationEncoding = ie;
+    setAttribute("openPMD", o);
     return *this;
 }
 
-std::string const
-Output::name() const
+uint32_t
+Output::openPMDextension() const
 {
-    return boost::get< std::string >(getAttribute("name").getResource());
+    return boost::get< uint32_t>(getAttribute("openPMDextension").getResource());
 }
 
 Output&
-Output::setName(std::string const& n)
+Output::setOpenPMDextension(uint32_t oe)
 {
-    setAttribute("name", n);
+    setAttribute("openPMDextension", oe);
     return *this;
 }
 
-std::string const
+std::string
 Output::basePath() const
 {
     return boost::get< std::string >(getAttribute("basePath").getResource());
 }
 
-std::string const
+std::string
 Output::meshesPath() const
 {
     return boost::get< std::string >(getAttribute("meshesPath").getResource());
@@ -106,7 +105,7 @@ Output::setMeshesPath(std::string const& mp)
     return *this;
 }
 
-std::string const
+std::string
 Output::particlesPath() const
 {
     return boost::get< std::string >(getAttribute("particlesPath").getResource());
@@ -117,4 +116,60 @@ Output::setParticlesPath(std::string const& pp)
 {
     setAttribute("particlesPath", pp);
     return *this;
+}
+
+Output::IterationEncoding
+Output::iterationEncoding() const
+{
+    return m_iterationEncoding;
+}
+
+Output&
+Output::setIterationEncoding(Output::IterationEncoding ie)
+{
+    setIterationAttributes(ie);
+    return *this;
+}
+
+std::string
+Output::iterationFormat() const
+{
+    return boost::get< std::string >(getAttribute("iterationFormat").getResource());
+}
+
+Output&
+Output::setIterationFormat(std::string const& i)
+{
+    setAttribute("iterationFormat", i);
+    return *this;
+}
+
+std::string
+Output::name() const
+{
+    return m_name;
+}
+
+Output&
+Output::setName(std::string const& n)
+{
+    m_name = n;
+    return *this;
+}
+
+void
+Output::setIterationAttributes(IterationEncoding ie)
+{
+    m_iterationEncoding = ie;
+    switch( ie )
+    {
+        case Output::IterationEncoding::fileBased:
+            setAttribute("iterationEncoding", "fileBased");
+            setIterationFormat(m_name + "_%T");
+            break;
+        case Output::IterationEncoding::groupBased:
+            setAttribute("iterationEncoding", "groupBased");
+            setIterationFormat("/data/%T/");
+            break;
+    }
 }

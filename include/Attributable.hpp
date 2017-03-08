@@ -50,6 +50,9 @@ public:
 
     Attribute getAttribute(std::string const& key) const;
 
+    std::string comment() const;
+    Attributable& setComment(std::string const &);
+
 private:
     std::shared_ptr< A_MAP > m_attributes;
 };  //Attributable
@@ -113,4 +116,17 @@ Attributable::getAttribute(std::string const& key) const
     {
         return *(it->second);
     }
+}
+
+inline std::string
+Attributable::comment() const
+{
+    return boost::get< std::string >(getAttribute("comment").getResource());
+}
+
+inline Attributable&
+Attributable::setComment(std::string const& c)
+{
+    setAttribute("comment", c);
+    return *this;
 }

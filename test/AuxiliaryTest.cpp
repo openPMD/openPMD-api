@@ -22,7 +22,7 @@ public:
     int int_ = 42;
     float float_ = 3.14f;
 
-    std::string text() const { return boost::get< std::string >(getAttribute("text")); }
+    std::string text() const { return boost::get< std::string >(getAttribute("text").getResource()); }
     structure& setText(std::string text) { setAttribute("text", text); return *this; }
 };
 
@@ -118,7 +118,7 @@ class AttributedWidget : public Attributable
 public:
     Attribute::resource get(std::string key)
     {
-        return getAttribute(key);
+        return getAttribute(key).getResource();
     }
 };
 
@@ -145,6 +145,10 @@ BOOST_AUTO_TEST_CASE(attributable_access_test)
     BOOST_TEST(a.numAttributes() == 1);
     BOOST_TEST(a.deleteAttribute("array") == true);
     BOOST_TEST(a.numAttributes() == 0);
+
+    a.setComment("This is a comment");
+    BOOST_TEST(a.comment() == "This is a comment");
+    BOOST_TEST(a.numAttributes() == 1);
 }
 
 class Dotty : public Attributable
@@ -157,9 +161,9 @@ public:
         setAtt3("3");
     }
 
-    int att1() const { return boost::get< int >(getAttribute("att1")); }
-    double att2() const { return boost::get< double >(getAttribute("att2")); }
-    std::string att3() const { return boost::get< std::string >(getAttribute("att3")); }
+    int att1() const { return boost::get< int >(getAttribute("att1").getResource()); }
+    double att2() const { return boost::get< double >(getAttribute("att2").getResource()); }
+    std::string att3() const { return boost::get< std::string >(getAttribute("att3").getResource()); }
     Dotty& setAtt1(int i) { setAttribute("att1", i); return *this; }
     Dotty& setAtt2(double d) { setAttribute("att2", d); return *this; }
     Dotty& setAtt3(std::string s) { setAttribute("att3", s); return *this; }

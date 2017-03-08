@@ -13,7 +13,7 @@ void
 mesh()
 {
     Output f(Output::IterationEncoding::fileBased);
-    f.setName("001_3D_simData");
+    f.setName("001_3D_simData"); // _%04T_x_y_z
     f.setMeshesPath("custom_meshes_path");
     f.setParticlesPath("very_custom_particles_path");
 
