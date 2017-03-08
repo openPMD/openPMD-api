@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "include/Output.hpp"
+#include "include/writer/HDF5Writer.hpp"
 
 
 // Presume this is your data in memory with a shape of 192x768x1
@@ -68,7 +69,7 @@ void particle()
     Output f(Output::IterationEncoding::fileBased);
     f.iterations[0] = Iteration();
 
-    f.iterations[0].particles["electrons"]["weighting"] = Record::makeScalarRecord();
+//    f.iterations[0].particles["electrons"]["weighting"] = Record::makeScalarRecord();
 }
 
 int

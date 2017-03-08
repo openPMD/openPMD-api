@@ -48,10 +48,7 @@ public:
     std::vector< std::string > attributes() const;
     size_t numAttributes() const;
 
-//    std::ostream &writeAttributes(std::ostream &);
-
-protected:
-    Attribute::resource getAttribute(std::string const& key) const;
+    Attribute getAttribute(std::string const& key) const;
 
 private:
     std::shared_ptr< A_MAP > m_attributes;
@@ -108,13 +105,12 @@ Attributable::numAttributes() const
     return m_attributes->size();
 }
 
-inline Attribute::resource
+inline Attribute
 Attributable::getAttribute(std::string const& key) const
 {
     A_MAP::const_iterator it = m_attributes->find(key);
     if( it != m_attributes->cend() )
     {
-        return it->second->get();
+        return *(it->second);
     }
-    return Attribute::resource();
 }

@@ -55,7 +55,7 @@ Iteration::Iteration(float time,
 float
 Iteration::time() const
 {
-    return boost::get< float >(getAttribute("time"));
+    return boost::get< float >(getAttribute("time").getResource());
 }
 
 Iteration&
@@ -68,7 +68,7 @@ Iteration::setTime(float time)
 float
 Iteration::dt() const
 {
-    return boost::get< float >(getAttribute("dt"));
+    return boost::get< float >(getAttribute("dt").getResource());
 }
 
 Iteration&
@@ -81,7 +81,7 @@ Iteration::setDt(float dt)
 double
 Iteration::timeUnitSI() const
 {
-    return boost::get< double >(getAttribute("timeUnitSI"));
+    return boost::get< double >(getAttribute("timeUnitSI").getResource());
 }
 
 Iteration&

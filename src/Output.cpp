@@ -77,7 +77,7 @@ Output::setIterationEncoding(Output::IterationEncoding ie)
 std::string const
 Output::name() const
 {
-    return boost::get< std::string >(getAttribute("name"));
+    return boost::get< std::string >(getAttribute("name").getResource());
 }
 
 Output&
@@ -90,13 +90,13 @@ Output::setName(std::string const& n)
 std::string const
 Output::basePath() const
 {
-    return boost::get< std::string >(getAttribute("basePath"));
+    return boost::get< std::string >(getAttribute("basePath").getResource());
 }
 
 std::string const
 Output::meshesPath() const
 {
-    return boost::get< std::string >(getAttribute("meshesPath"));
+    return boost::get< std::string >(getAttribute("meshesPath").getResource());
 }
 
 Output&
@@ -109,7 +109,7 @@ Output::setMeshesPath(std::string const& mp)
 std::string const
 Output::particlesPath() const
 {
-    return boost::get< std::string >(getAttribute("particlesPath"));
+    return boost::get< std::string >(getAttribute("particlesPath").getResource());
 }
 
 Output&

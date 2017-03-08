@@ -33,7 +33,7 @@ Mesh::operator=(Record const& r)
 Mesh::Geometry
 Mesh::geometry() const
 {
-    std::string ret = boost::get< std::string >(getAttribute("geometry"));
+    std::string ret = boost::get< std::string >(getAttribute("geometry").getResource());
     if( ret == "cartesian" ) { return Geometry::cartesian; }
     if( ret == "thetaMode" ) { return Geometry::thetaMode; }
     if( ret == "cylindrical" ) { return Geometry::cylindrical; }
@@ -64,7 +64,7 @@ Mesh::setGeometry(Mesh::Geometry g)
 std::string
 Mesh::geometryParameters() const
 {
-    return boost::get< std::string >(getAttribute("geometryParameters"));
+    return boost::get< std::string >(getAttribute("geometryParameters").getResource());
 }
 
 Mesh&
@@ -77,7 +77,7 @@ Mesh::setGeometryParameters(std::string const& gp)
 Mesh::DataOrder
 Mesh::dataOrder() const
 {
-    return Mesh::DataOrder(boost::get< char >(getAttribute("dataOrder")));
+    return Mesh::DataOrder(boost::get< char >(getAttribute("dataOrder").getResource()));
 }
 
 Mesh&
@@ -90,7 +90,7 @@ Mesh::setDataOrder(Mesh::DataOrder dor)
 std::vector< std::string >
 Mesh::axisLabels() const
 {
-    return boost::get< std::vector< std::string > >(getAttribute("axisLabels"));
+    return boost::get< std::vector< std::string > >(getAttribute("axisLabels").getResource());
 }
 
 Mesh&
@@ -103,7 +103,7 @@ Mesh::setAxisLabels(std::vector< std::string > als)
 std::vector< float >
 Mesh::gridSpacing() const
 {
-    return boost::get< std::vector< float > >(getAttribute("gridSpacing"));
+    return boost::get< std::vector< float > >(getAttribute("gridSpacing").getResource());
 }
 
 Mesh&
@@ -117,7 +117,7 @@ Mesh::setGridSpacing(std::vector< float > gs)
 std::vector< double >
 Mesh::gridGlobalOffset() const
 {
-    return boost::get< std::vector< double>>(getAttribute("gridGlobalOffset"));
+    return boost::get< std::vector< double>>(getAttribute("gridGlobalOffset").getResource());
 }
 
 Mesh&
@@ -131,7 +131,7 @@ Mesh::setGridGlobalOffset(std::vector< double > ggo)
 double
 Mesh::gridUnitSI() const
 {
-    return boost::get< double >(getAttribute("gridUnitSI"));
+    return boost::get< double >(getAttribute("gridUnitSI").getResource());
 }
 
 Mesh&

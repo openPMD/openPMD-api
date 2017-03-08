@@ -11,7 +11,7 @@ RecordComponent::RecordComponent()
 double
 RecordComponent::unitSI() const
 {
-    return boost::get< double >(getAttribute("unitSI"));
+    return boost::get< double >(getAttribute("unitSI").getResource());
 }
 
 RecordComponent&
@@ -24,7 +24,7 @@ RecordComponent::setUnitSI(double usi)
 std::vector< double >
 RecordComponent::position() const
 {
-    return boost::get< std::vector< double > >(getAttribute("position"));
+    return boost::get< std::vector< double > >(getAttribute("position").getResource());
 }
 
 RecordComponent&

@@ -37,7 +37,7 @@ Record::Record(Record const& r)
 std::array< double, 7 >
 Record::unitDimension() const
 {
-    return boost::get< std::array< double, 7 > >(getAttribute("unitDimension"));
+    return boost::get< std::array< double, 7 > >(getAttribute("unitDimension").getResource());
 }
 
 Record&
@@ -58,7 +58,7 @@ Record::setUnitDimension(std::map< Record::UnitDimension, double > const& udim)
 float
 Record::timeOffset() const
 {
-    return boost::get< float >(getAttribute("timeOffset"));
+    return boost::get< float >(getAttribute("timeOffset").getResource());
 }
 
 Record&
@@ -73,7 +73,7 @@ Record::unitSI() const
 {
     if( m_isComponent )
     {
-        return boost::get< double >(getAttribute("unitSI"));
+        return boost::get< double >(getAttribute("unitSI").getResource());
     } else
     {
         std::cerr<<"You have to use "

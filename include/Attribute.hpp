@@ -11,6 +11,19 @@
 class Attribute
 {
 public:
+    enum class Dtype : int
+    {
+        CHAR = 0, INT, FLOAT, DOUBLE,
+        UINT32, UINT64, STRING,
+        ARR_DBL_7,
+        VEC_INT,
+        VEC_FLOAT,
+        VEC_DOUBLE,
+        VEC_UINT64,
+        VEC_STRING,
+        UNDEFINED
+    };
+
     using resource =
     boost::variant< char, int, float, double,
                     uint32_t, uint64_t, std::string,
@@ -22,13 +35,17 @@ public:
                     std::vector< std::string >
     >;
 
-    Attribute(resource r) : m_data{r}
+    Attribute(resource r)
+            : dtype{static_cast<Attribute::Dtype>(r.which())},
+              m_data{r}
     { }
 
-    resource get() const
+    resource getResource() const
     {
         return m_data;
     }
+
+    Dtype dtype;
 
 private:
     resource m_data;
