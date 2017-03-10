@@ -131,15 +131,15 @@ BOOST_AUTO_TEST_CASE(record_constructor_test)
     using D = Record::Dimension;
     Record r = Record(D::one, {"x", "y", "z"});
 
-    std::array< std::size_t, 3 > ones{{1, 1, 1}};
+    std::vector< std::size_t > none{};
     BOOST_TEST(r["x"].unitSI() == 1);
-    BOOST_TEST(r["x"].extents == ones);
+    BOOST_TEST(r["x"].extents == none);
     BOOST_TEST(r["x"].numAttributes() == 1); /* unitSI */
     BOOST_TEST(r["y"].unitSI() == 1);
-    BOOST_TEST(r["y"].extents == ones);
+    BOOST_TEST(r["y"].extents == none);
     BOOST_TEST(r["y"].numAttributes() == 1); /* unitSI */
     BOOST_TEST(r["z"].unitSI() == 1);
-    BOOST_TEST(r["z"].extents == ones);
+    BOOST_TEST(r["z"].extents == none);
     BOOST_TEST(r["z"].numAttributes() == 1); /* unitSI */
     std::array< double, 7 > zeros{{0., 0., 0., 0., 0., 0., 0.}};
     BOOST_TEST(r.unitDimension() == zeros);
@@ -196,7 +196,7 @@ BOOST_AUTO_TEST_CASE(recordComponent_link_test)
                              {{12, 13}, {14, 15}, {16, 17}},
                              {{18, 19}, {20, 21}, {22, 23}},
                              {{24, 25}, {26, 27}, {28, 29}}};
-    std::array< std::size_t, 3 > shape{{5, 3, 2}};
+    std::vector< std::size_t > shape{{5, 3, 2}};
     r["x"].linkData(arr3D, RecordComponent::Dtype::DOUBLE, {5, 3, 2});
     BOOST_TEST(r["x"].extents == shape);
     BOOST_TEST(*(r["x"].retrieveData<double>() + 1) == 1);

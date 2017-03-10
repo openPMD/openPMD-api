@@ -8,7 +8,7 @@ Mesh::Mesh(Record const& r)
     setGeometry(Geometry::cartesian);
     setDataOrder(DataOrder::C);
 
-    std::size_t size = r.m_components.size();
+    std::size_t size = static_cast<size_t>(m_dimension);
     std::vector< float > ones(size, 1);
     std::vector< double > zeros(size, 0);
 
@@ -17,9 +17,15 @@ Mesh::Mesh(Record const& r)
     setGridGlobalOffset(zeros);
     setGridUnitSI(1);
 
-    setPosition({{"z", zeros},
-                 {"y", zeros},
-                 {"x", zeros}});
+    if( !m_isComponent )
+    {
+        setPosition({{"z", zeros},
+                     {"y", zeros},
+                     {"x", zeros}});
+    } else
+    {
+        scalar.setPosition(zeros);
+    }
 }
 
 Mesh&
@@ -109,7 +115,6 @@ Mesh::gridSpacing() const
 Mesh&
 Mesh::setGridSpacing(std::vector< float > gs)
 {
-    assert(gs.size() == m_components.size());
     setAttribute("gridSpacing", gs);
     return *this;
 }
@@ -123,7 +128,6 @@ Mesh::gridGlobalOffset() const
 Mesh&
 Mesh::setGridGlobalOffset(std::vector< double > ggo)
 {
-    assert(ggo.size() == m_components.size());
     setAttribute("gridGlobalOffset", ggo);
     return *this;
 }
@@ -156,10 +160,6 @@ Mesh::position() const
 Mesh&
 Mesh::setPosition(std::map< std::string, std::vector< double > > const& pos)
 {
-    for( auto const& entry : pos )
-    {
-        assert(entry.second.size() == static_cast<size_t>(m_dimension));
-    }
     for( auto const& entry : pos )
     {
         auto it = m_components.find(entry.first);

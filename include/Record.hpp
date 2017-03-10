@@ -8,11 +8,10 @@
 #include "Attributable.hpp"
 #include "RecordComponent.hpp"
 
-//class Record_base;
-
 class Record : public Attributable
 {
     friend class Mesh;
+    friend class HDF5Writer;
 public:
     enum class Dimension : size_t
     {
@@ -26,7 +25,7 @@ public:
 
     static Record makeTensorRecord(Dimension, std::initializer_list< std::string >);
     static Record makeVectorRecord(Dimension, std::initializer_list< std::string >);
-    static Record makeScalarRecord(std::initializer_list< std::string >);
+    static Record makeScalarRecord(Record::Dimension rd);
     static Record makeConstantRecord(Dimension, std::initializer_list< int >, std::initializer_list< std::string >);
     Record(Dimension dim, std::initializer_list< std::string > comps, bool isRecordComponent = false);
     Record(Record const &);
@@ -37,14 +36,12 @@ public:
     float timeOffset() const;
     Record& setTimeOffset(float const);
 
-    double unitSI() const;
-    Record& setUnitSI(double);
-
     RecordComponent& operator[](std::string const&);
+
+    RecordComponent scalar;
 
 protected:
     std::map< std::string, RecordComponent > m_components;
-    RecordComponent m_component;
     bool m_isComponent;
     Dimension m_dimension;
 };  //Record

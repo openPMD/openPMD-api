@@ -2,7 +2,9 @@
 
 
 RecordComponent::RecordComponent()
-        : extents{{1, 1, 1}},
+        : rank{0},
+          extents{},
+          dtype{Dtype::UNDEFINED},
           m_data{nullptr}
 {
     setUnitSI(1);
@@ -32,10 +34,4 @@ RecordComponent::setPosition(std::vector< double > pos)
 {
     setAttribute("position", pos);
     return *this;
-}
-
-void
-RecordComponent::unlinkData()
-{
-    m_data = nullptr;
 }

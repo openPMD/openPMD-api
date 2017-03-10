@@ -3,6 +3,12 @@
 #include "../include/Record.hpp"
 
 
+Record
+Record::makeScalarRecord(Record::Dimension rd)
+{
+    return Record(rd, {}, true);
+}
+
 Record::Record(Dimension dim,
                std::initializer_list< std::string > comps,
                bool isRecordComponent)
@@ -21,14 +27,11 @@ Record::Record(Dimension dim,
     setAttribute("unitDimension",
                  std::array< double, 7 >{{0., 0., 0., 0., 0., 0., 0.}});
     setTimeOffset(0);
-    if( m_isComponent )
-    {
-        setUnitSI(1);
-    }
 }
 
 Record::Record(Record const& r)
         : Attributable(r),
+          scalar{r.scalar},
           m_components{r.m_components},
           m_isComponent{r.m_isComponent},
           m_dimension{r.m_dimension}
@@ -68,40 +71,9 @@ Record::setTimeOffset(float timeOffset)
     return *this;
 }
 
-double
-Record::unitSI() const
-{
-    if( m_isComponent )
-    {
-        return boost::get< double >(getAttribute("unitSI").getResource());
-    } else
-    {
-        std::cerr<<"You have to use "
-                 <<"\'record[\"component\"].unitSI()\'"
-                 <<" if you want to get unitSI on skalar records!\n";
-        return 1;
-    }
-}
-
-Record&
-Record::setUnitSI(double usi)
-{
-    if( m_isComponent )
-    {
-        setAttribute("unitSI", usi);
-    } else
-    {
-        std::cerr<<"You have to use "
-                 <<"\'record[\"component\"].setUnitSI("<<usi<<")\'"
-                 <<" if you want to set unitSI on skalar records!\n";
-    }
-    return *this;
-}
-
 RecordComponent&
 Record::operator[](std::string const& component)
 {
-    assert(!m_isComponent);
     auto it = m_components.find(component);
     if( it != m_components.end() )
     {

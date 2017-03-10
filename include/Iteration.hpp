@@ -15,12 +15,7 @@ class Iteration : public Attributable
 {
 public:
     Iteration();
-//    Iteration(Iteration&&);
-//    Iteration(Iteration const&);
     Iteration(float time, float dt, double timeUnitSI);
-//    Iteration& operator=(Iteration&&);
-//    Iteration& operator=(Iteration const&);
-//    ~Iteration();
 
     float time() const;
     Iteration& setTime(float);
