@@ -4,9 +4,16 @@
 
 
 Record
-Record::makeScalarRecord(Record::Dimension rd)
+Record::makeScalarRecord(Dimension rd)
 {
     return Record(rd, {}, true);
+}
+
+Record
+Record::makeTensorRecord(Dimension rd,
+                         std::initializer_list< std::string > il)
+{
+    return Record(rd, il, il.size() == 0);
 }
 
 Record::Record(Dimension dim,
@@ -78,8 +85,6 @@ Record::operator[](std::string const& component)
     if( it != m_components.end() )
     {
         return it->second;
-    } else
-    {
-        std::cerr<<"Unknown record component."<<std::endl;
     }
+    throw std::runtime_error("Unknown recordComponent " + component);
 }

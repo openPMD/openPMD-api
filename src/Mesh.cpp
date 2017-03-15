@@ -44,6 +44,7 @@ Mesh::geometry() const
     if( ret == "thetaMode" ) { return Geometry::thetaMode; }
     if( ret == "cylindrical" ) { return Geometry::cylindrical; }
     if( ret == "spherical" ) { return Geometry::spherical; }
+    throw std::runtime_error("Unkonwn geometry " + ret);
 }
 
 Mesh&

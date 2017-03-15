@@ -1,8 +1,12 @@
 #pragma once
 
 
+#include <type_traits>
+
 #include "Attributable.hpp"
 
+
+using Extent = std::vector< std::size_t >;
 
 class RecordComponent : public Attributable
 {
@@ -19,15 +23,15 @@ public:
         UCHAR,
         BOOL,
         UNDEFINED
-    };
+    };  //Dtype
 
     RecordComponent();
 
+    template< typename T >
+    RecordComponent(T* ptr, Extent ext);
+
     double unitSI() const;
     RecordComponent& setUnitSI(double);
-
-    template< typename T >
-    void linkData(T* ptr, Dtype, std::vector< std::size_t > ext);
 
     template< typename T >
     T* retrieveData() const;
@@ -42,16 +46,38 @@ private:
     std::vector< double > position() const;
     RecordComponent& setPosition(std::vector< double >);
 
-    unsigned char* m_data;
+    void* m_data;
 };
 
+template<
+        typename T,
+        typename U
+>
+struct decay_equiv :
+        std::is_same<
+                typename std::decay< typename std::remove_all_extents< T >::type >::type,
+                U
+        >::type
+{ };
+
 template< typename T >
-inline void
-RecordComponent::linkData(T* ptr, Dtype dt, std::vector< std::size_t > ext)
+inline
+RecordComponent::RecordComponent(T* ptr, Extent ext)
 {
-    m_data = reinterpret_cast<unsigned char*>(ptr);
+    m_data = reinterpret_cast<void*>(ptr);
     rank = ext.size();
-    dtype = dt;
+    if( decay_equiv< T, double >::value ) { dtype = Dtype::DOUBLE; }
+    else if( decay_equiv< T, float >::value ) { dtype = Dtype::FLOAT; }
+    else if( decay_equiv< T, int16_t >::value ) { dtype = Dtype::INT16; }
+    else if( decay_equiv< T, int32_t >::value ) { dtype = Dtype::INT32; }
+    else if( decay_equiv< T, int64_t >::value ) { dtype = Dtype::INT64; }
+    else if( decay_equiv< T, uint16_t >::value ) { dtype = Dtype::UINT16; }
+    else if( decay_equiv< T, uint32_t >::value ) { dtype = Dtype::UINT32; }
+    else if( decay_equiv< T, uint64_t >::value ) { dtype = Dtype::UINT64; }
+    else if( decay_equiv< T, char >::value ) { dtype = Dtype::CHAR; }
+    else if( decay_equiv< T, unsigned char >::value ) { dtype = Dtype::UCHAR; }
+    else if( decay_equiv< T, bool >::value ) { dtype = Dtype::BOOL; }
+    else { throw std::runtime_error(std::string() + "Unknown datatype" + typeid(ptr).name()); }
     extents = ext;
 }
 

@@ -22,7 +22,7 @@ public:
         VEC_UINT64,
         VEC_STRING,
         UNDEFINED
-    };
+    };  //Dtype
 
     using resource =
     boost::variant< char, int, float, double,

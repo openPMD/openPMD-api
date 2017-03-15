@@ -48,7 +48,6 @@ Container< T, T_key >::operator[](T_key const& key)
     } else
     {
         // TODO in this verison, the "operator[]" requires "T()" to be available
-        // which is a problem for Meshes and ParticleSpecies
         // trivial solution - "friend" Container in both, make a private default constructor
         // another solution - make the MapType "map<T_key, boost:optional<T>>"
         m_data[key] = T();

@@ -24,9 +24,10 @@ public:
     };
 
     static Record makeTensorRecord(Dimension, std::initializer_list< std::string >);
-    static Record makeVectorRecord(Dimension, std::initializer_list< std::string >);
+    static Record makeVectorRecord(std::initializer_list< std::string >);
     static Record makeScalarRecord(Record::Dimension rd);
     static Record makeConstantRecord(Dimension, std::initializer_list< int >, std::initializer_list< std::string >);
+
     Record(Dimension dim, std::initializer_list< std::string > comps, bool isRecordComponent = false);
     Record(Record const &);
 

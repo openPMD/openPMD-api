@@ -1,62 +1,73 @@
 #pragma once
 
 
-#include <string>
 #include <map>
+#include <string>
 
 #include "../include/Attribute.hpp"
 
 
 class Attributable
 {
-    using A_MAP = std::map< std::string, std::shared_ptr< Attribute > >;
+    using A_MAP = std::map< std::string, Attribute >;
 
 public:
-    Attributable() : m_attributes(std::make_shared< A_MAP >())
-    { }
-
-    Attributable(Attributable const& rhs)
-            : m_attributes(std::make_shared< A_MAP >(*rhs.m_attributes))
-    { } // Deep-copy the entries in the Attribute map
-    Attributable(Attributable&& rhs)
-            : m_attributes(rhs.m_attributes)
-    { } // Take ownership of the Attribute map
-    Attributable& operator=(Attributable const& a)
-    {
-        if( this != &a )
-        {
-            Attributable tmp(a);
-            std::swap(m_attributes, tmp.m_attributes);
-        }
-        return *this;
-    }
-
-    Attributable& operator=(Attributable&& a)
-    {
-        m_attributes = std::move(a.m_attributes);
-        return *this;
-    }
+    Attributable();
+    Attributable(Attributable const&);
+    Attributable(Attributable&&);
 
     virtual ~Attributable()
     { }
 
-    /* This could be done via universal references to gain speed */
+    Attributable& operator=(Attributable const&);
+    Attributable& operator=(Attributable&&);
+
     template< typename T >
     void setAttribute(std::string const& key, T&& value);
+    Attribute getAttribute(std::string const& key) const;
     bool deleteAttribute(std::string const& key);
 
     std::vector< std::string > attributes() const;
     size_t numAttributes() const;
 
-    Attribute getAttribute(std::string const& key) const;
-
     std::string comment() const;
-    Attributable& setComment(std::string const &);
+    Attributable& setComment(std::string const&);
 
 private:
     std::shared_ptr< A_MAP > m_attributes;
 };  //Attributable
 
+inline Attributable::Attributable()
+        : m_attributes(std::make_shared< A_MAP >())
+{ }
+
+inline Attributable::Attributable(Attributable const& rhs)
+// Deep-copy the entries in the Attribute map since the lifetime of the rhs does not end
+        : m_attributes(std::make_shared< A_MAP >(*rhs.m_attributes))
+{ }
+
+inline Attributable::Attributable(Attributable&& rhs)
+// Take ownership of the Attribute map since the lifetime of the rhs does end
+        : m_attributes(rhs.m_attributes)
+{ }
+
+inline Attributable&
+Attributable::operator=(Attributable const& a)
+{
+    if( this != &a )
+    {
+        Attributable tmp(a);
+        std::swap(m_attributes, tmp.m_attributes);
+    }
+    return *this;
+}
+
+inline Attributable&
+Attributable::operator=(Attributable&& a)
+{
+    m_attributes = std::move(a.m_attributes);
+    return *this;
+}
 
 template< typename T >
 inline void
@@ -68,14 +79,24 @@ Attributable::setAttribute(std::string const& key, T&& value)
     if( it != m_attributes->end() && !m_attributes->key_comp()(key, it->first) )
     {
         // key already exists in map, just replace the value
-        it->second = make_shared< Attribute >(value);
+        it->second = Attribute(value);
     } else
     {
         // emplace a new map element for an unknown key
         m_attributes->emplace_hint(it,
-                                   make_pair(key,
-                                             make_shared< Attribute >(value)));
+                                   make_pair(key, Attribute(value)));
     }
+}
+
+inline Attribute
+Attributable::getAttribute(std::string const& key) const
+{
+    A_MAP::const_iterator it = m_attributes->find(key);
+    if( it != m_attributes->cend() )
+    {
+        return it->second;
+    }
+    throw std::runtime_error("No such attribute" + key);
 }
 
 inline bool
@@ -106,16 +127,6 @@ inline size_t
 Attributable::numAttributes() const
 {
     return m_attributes->size();
-}
-
-inline Attribute
-Attributable::getAttribute(std::string const& key) const
-{
-    A_MAP::const_iterator it = m_attributes->find(key);
-    if( it != m_attributes->cend() )
-    {
-        return *(it->second);
-    }
 }
 
 inline std::string
