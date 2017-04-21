@@ -1,11 +1,9 @@
 #include "../include/RecordComponent.hpp"
+#include "../include/Dataset.hpp"
 
 
 RecordComponent::RecordComponent()
-        : rank{0},
-          extents{},
-          dtype{Dtype::UNDEFINED},
-          m_data{nullptr}
+        : m_dataset(std::shared_ptr<void>(nullptr), {1})
 {
     setUnitSI(1);
 }

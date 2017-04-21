@@ -9,13 +9,16 @@ template<
         typename T,
         typename T_key = std::string
 >
-class Container
+class Container : public Attributable
 {
+protected:
     using MapType = std::unordered_map< T_key, T >;
+    MapType m_data;
 
 public:
     std::size_t size() const;
     T& operator[](T_key const& key);
+    bool insert(typename MapType::value_type const& value);
     bool remove(T_key const& key);
 
     typename MapType::iterator begin()
@@ -30,8 +33,8 @@ public:
     typename MapType::const_iterator end() const
     { return m_data.cend(); }
 
-private:
-    MapType m_data;
+    std::vector< T_key > keys() const;
+
 };  //Container
 
 template<
@@ -53,6 +56,16 @@ Container< T, T_key >::operator[](T_key const& key)
         m_data[key] = T();
         return m_data[key];
     }
+}
+
+template<
+        typename T,
+        typename T_key
+>
+inline bool
+Container< T, T_key >::insert(typename MapType::value_type const& value)
+{
+    return m_data.insert(value).second;
 }
 
 template<
@@ -99,3 +112,20 @@ end(Container< T, T_key >& c)
 {
     return c.end();
 };
+
+template<
+        typename T,
+        typename T_key
+>
+inline std::vector< T_key >
+Container<T, T_key>::keys() const
+{
+    std::vector< T_key > ret;
+    ret.reserve(m_data.size());
+    auto e = m_data.cend();
+    for( auto it = m_data.cbegin(); it != e; ++it )
+    {
+        ret.emplace_back(it->first);
+    }
+    return ret;
+}

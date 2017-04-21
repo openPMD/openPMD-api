@@ -2,6 +2,7 @@
 
 
 #include <iosfwd>
+#include <future>
 
 #include "Attributable.hpp"
 #include "Container.hpp"
@@ -49,6 +50,8 @@ public:
     Output& setName(std::string const&);
 
     Container< Iteration, uint64_t > iterations;
+
+    std::future<void> flush();
 
 private:
     void setIterationAttributes(IterationEncoding);

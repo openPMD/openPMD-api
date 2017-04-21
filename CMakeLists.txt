@@ -12,15 +12,19 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-disabled-macro-expansion -Wno-c++98
 #Silence HDF5
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-reserved-id-macro -Wno-deprecated")
 
-set(SOURCE_FILES src/Output.cpp src/Iteration.cpp src/Record.cpp src/RecordComponent.cpp src/Mesh.cpp)
+set(SOURCE_FILES
+        src/Output.cpp
+        src/Iteration.cpp
+        src/Record.cpp
+        src/RecordComponent.cpp
+        src/Mesh.cpp
+        src/ParticleSpecies.cpp)
 add_executable(libopenpmd ${SOURCE_FILES})
 
 set(TESTS test/CoreTest.cpp)
 set(AUXTESTS test/AuxiliaryTest.cpp)
-#set(WRITETESTS test/WriterTest.cpp src/TxtWriter.cpp)
 add_executable(libopenpmdCoreTests ${TESTS} ${SOURCE_FILES})
 add_executable(libopenpmdAuxiliaryTests ${AUXTESTS})
-add_executable(libopenpmdWriterTests ${WRITETESTS} ${SOURCE_FILES})
 add_executable(poc main.cpp ${SOURCE_FILES})
 
 find_package(HDF5 COMPONENTS C CXX HL REQUIRED)

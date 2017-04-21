@@ -5,6 +5,7 @@
 
 #include "../include/Attributable.hpp"
 #include "../include/Container.hpp"
+#include "../include/Dataset.hpp"
 
 
 BOOST_AUTO_TEST_CASE(container_default_test)
@@ -181,4 +182,24 @@ BOOST_AUTO_TEST_CASE(dot_test)
     BOOST_TEST(d.att2() == static_cast<double>(20));
     BOOST_TEST(d.att3() == "30");
 
+}
+
+BOOST_AUTO_TEST_CASE(dataset_test)
+{
+    std::shared_ptr<double> spd = std::make_shared<double>(1.0);
+    BOOST_TEST(spd.use_count() == 1);
+
+    {
+        Extent ext{1};
+        Dataset d = Dataset(spd, ext);
+        bool dtype_check = d.dtype == Dataset::Dtype::DOUBLE;
+        BOOST_TEST(dtype_check);
+        BOOST_TEST(spd.use_count() == 2);
+        Dataset d2(d);
+        dtype_check = d2.dtype == Dataset::Dtype::DOUBLE;
+        BOOST_TEST(dtype_check);
+        BOOST_TEST(spd.use_count() == 3);
+    }
+
+    BOOST_TEST(spd.use_count() == 1);
 }

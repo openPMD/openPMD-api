@@ -25,7 +25,7 @@ public:
     };  //DataOrder
 
     //TODO
-    Mesh(): Record(Record::Dimension::three, {}, true) { }
+    Mesh(): Record() { }
     //TODO
     Mesh(Mesh const&) = default;
     Mesh(Record const&);

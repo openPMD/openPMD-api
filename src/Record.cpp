@@ -4,31 +4,28 @@
 
 
 Record
-Record::makeScalarRecord(Dimension rd)
+Record::makeScalarRecord(Extent ext)
 {
-    return Record(rd, {}, true);
+    return Record(ext, {}, true);
 }
 
 Record
-Record::makeTensorRecord(Dimension rd,
+Record::makeTensorRecord(Extent ext,
                          std::initializer_list< std::string > il)
 {
-    return Record(rd, il, il.size() == 0);
+    return Record(ext, il, il.size() == 0);
 }
 
-Record::Record(Dimension dim,
+Record::Record(Extent ext,
                std::initializer_list< std::string > comps,
                bool isRecordComponent)
-        : m_components{std::map< std::string, RecordComponent >()},
-          m_isComponent{isRecordComponent},
-          m_dimension{dim}
+        : m_isComponent{isRecordComponent},
+          m_extent{ext}
 {
     for( std::string const& component : comps )
     {
-        using it_t = std::map< std::string, RecordComponent >::iterator;
-        std::pair< it_t, bool > res =
-                m_components.emplace(component,
-                                     RecordComponent());
+        using it_t = MapType::iterator;
+        std::pair< it_t, bool > res = m_data.emplace(component, RecordComponent());
         res.first->second.setAttribute("unitSI", static_cast<double>(1));
     }
     setAttribute("unitDimension",
@@ -37,11 +34,14 @@ Record::Record(Dimension dim,
 }
 
 Record::Record(Record const& r)
-        : Attributable(r),
+        : Container< RecordComponent >(r),
           scalar{r.scalar},
-          m_components{r.m_components},
           m_isComponent{r.m_isComponent},
-          m_dimension{r.m_dimension}
+          m_extent{r.m_extent}
+{ }
+
+Record::Record()
+        : Record(Extent{1, 1, 1}, {}, true)
 { }
 
 std::array< double, 7 >
@@ -76,15 +76,4 @@ Record::setTimeOffset(float timeOffset)
 {
     setAttribute("timeOffset", timeOffset);
     return *this;
-}
-
-RecordComponent&
-Record::operator[](std::string const& component)
-{
-    auto it = m_components.find(component);
-    if( it != m_components.end() )
-    {
-        return it->second;
-    }
-    throw std::runtime_error("Unknown recordComponent " + component);
 }

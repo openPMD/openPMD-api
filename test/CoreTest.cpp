@@ -197,9 +197,11 @@ BOOST_AUTO_TEST_CASE(recordComponent_link_test)
                              {{18, 19}, {20, 21}, {22, 23}},
                              {{24, 25}, {26, 27}, {28, 29}}};
     std::vector< std::size_t > shape{{5, 3, 2}};
-    r["x"] = RecordComponent(arr3D, {5, 3, 2});
+    r["x"].linkDataToDisk(arr3D, {5, 3, 2});
     BOOST_TEST(r["x"].extents == shape);
     BOOST_TEST(*(r["x"].retrieveData<double>() + 1) == 1);
+    BOOST_TEST(r["x"].unitSI() == static_cast<double>(1));
+    BOOST_TEST(r["x"].numAttributes() == 1); /* unitSI */
 }
 
 BOOST_AUTO_TEST_CASE(mesh_constructor_test)

@@ -8,8 +8,8 @@
 #include "Attributable.hpp"
 #include "Container.hpp"
 #include "Mesh.hpp"
+#include "ParticleSpecies.hpp"
 
-using ParticleSpecies = Container< Record >;
 
 class Iteration : public Attributable
 {

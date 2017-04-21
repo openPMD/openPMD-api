@@ -2,6 +2,7 @@
 
 #include "include/Output.hpp"
 #include "include/writer/HDF5Writer.hpp"
+#include "Dataset.h"
 
 
 // Presume this is your data in memory with a shape of 192x768x1
@@ -42,20 +43,20 @@ mesh()
     lowRez.setGridGlobalOffset({0, 613.4, 0});
     lowRez.setGridUnitSI(4.1671151662e-8);
     lowRez.setPosition({{"y", {0.5, 0.5, 0.5}}});
-    lowRez["x"].linkData(x_data_lr, DT::DOUBLE, {96, 384});
-    lowRez["y"].linkData(y_data_lr, DT::DOUBLE, {96, 384});
-    lowRez["z"].linkData(z_data_lr, DT::DOUBLE, {96, 384});
+    lowRez["x"].linkDataToDisk(x_data_lr, DT::DOUBLE, {96, 384});
+    lowRez["y"].linkDataToDisk(y_data_lr, DT::DOUBLE, {96, 384});
+    lowRez["z"].linkDataToDisk(z_data_lr, DT::DOUBLE, {96, 384});
 
     Mesh highRez = i.meshes["generic_3D_field"];
     highRez.setGridSpacing({3.115, 0.53, 1});
     highRez.setGridGlobalOffset({0, 613.4, 0});
     highRez.setGridUnitSI(2.0835575831e-08);
     highRez.setPosition({{"y", {0.5, 0.5, 0.5}}});
-    highRez["x"].linkData(x_data, DT::DOUBLE, {192, 768});
+    highRez["x"].linkDataToDisk(x_data, DT::DOUBLE, {192, 768});
     highRez["x"].setUnitSI(1.279995e-07);
-    highRez["y"].linkData(y_data, DT::DOUBLE, {192, 768});
+    highRez["y"].linkDataToDisk(y_data, DT::DOUBLE, {192, 768});
     highRez["y"].setUnitSI(2.214995e-08);
-    highRez["z"].linkData(z_data, DT::DOUBLE, {192, 768});
+    highRez["z"].linkDataToDisk(z_data, DT::DOUBLE, {192, 768});
 
     i.meshes.remove("generic_3D_field");
     i.meshes["lowRez_3D_field"] = lowRez;

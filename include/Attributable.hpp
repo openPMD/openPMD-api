@@ -96,7 +96,7 @@ Attributable::getAttribute(std::string const& key) const
     {
         return it->second;
     }
-    throw std::runtime_error("No such attribute" + key);
+    throw std::runtime_error("No such attribute: " + key);
 }
 
 inline bool

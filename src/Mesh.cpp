@@ -8,7 +8,7 @@ Mesh::Mesh(Record const& r)
     setGeometry(Geometry::cartesian);
     setDataOrder(DataOrder::C);
 
-    std::size_t size = static_cast<size_t>(m_dimension);
+    std::size_t size = m_extent.size();
     std::vector< float > ones(size, 1);
     std::vector< double > zeros(size, 0);
 
@@ -41,9 +41,9 @@ Mesh::geometry() const
 {
     std::string ret = boost::get< std::string >(getAttribute("geometry").getResource());
     if( ret == "cartesian" ) { return Geometry::cartesian; }
-    if( ret == "thetaMode" ) { return Geometry::thetaMode; }
-    if( ret == "cylindrical" ) { return Geometry::cylindrical; }
-    if( ret == "spherical" ) { return Geometry::spherical; }
+    else if( ret == "thetaMode" ) { return Geometry::thetaMode; }
+    else if( ret == "cylindrical" ) { return Geometry::cylindrical; }
+    else if( ret == "spherical" ) { return Geometry::spherical; }
     throw std::runtime_error("Unkonwn geometry " + ret);
 }
 
@@ -150,7 +150,7 @@ std::map< std::string, std::vector< double > >
 Mesh::position() const
 {
     std::map< std::string, std::vector< double > > ret;
-    for( auto const& component : m_components )
+    for( auto const& component : m_data )
     {
         ret.insert({component.first,
                     component.second.position()});
@@ -163,8 +163,8 @@ Mesh::setPosition(std::map< std::string, std::vector< double > > const& pos)
 {
     for( auto const& entry : pos )
     {
-        auto it = m_components.find(entry.first);
-        if( it != m_components.end() )
+        auto it = m_data.find(entry.first);
+        if( it != m_data.end() )
         {
             it->second.setPosition(entry.second);
         } else
