@@ -24,8 +24,8 @@ Record::Record(Extent ext,
 {
     for( std::string const& component : comps )
     {
-        using it_t = MapType::iterator;
-        std::pair< it_t, bool > res = m_data.emplace(component, RecordComponent());
+        using it_t = Container::iterator;
+        std::pair< it_t, bool > res = emplace(component, RecordComponent());
         res.first->second.setAttribute("unitSI", static_cast<double>(1));
     }
     setAttribute("unitDimension",

@@ -5,7 +5,6 @@
 
 #include "Attributable.hpp"
 #include "Dataset.hpp"
-#include "openPMD.hpp"
 
 
 
@@ -19,12 +18,12 @@ public:
     double unitSI() const;
     RecordComponent& setUnitSI(double);
 
-    void linkDataToDisk(Dataset);
+    RecordComponent& linkDataToDisk(Dataset);
 
     template< typename T >
     void linkDataToMemory(T* ptr, Extent ext);
 
-    void unlinkData();
+    RecordComponent& unlinkData();
 
 private:
     std::vector< double > position() const;
@@ -33,10 +32,11 @@ private:
     Dataset m_dataset;
 };
 
-inline void
+inline RecordComponent&
 RecordComponent::linkDataToDisk(Dataset ds)
 {
     m_dataset = std::move(ds);
+    return *this;
 }
 
 /*
@@ -48,8 +48,9 @@ RecordComponent::retrieveData() const
 }
  */
 
-inline void
+inline RecordComponent&
 RecordComponent::unlinkData()
 {
     m_dataset.~Dataset();
+    return *this;
 }

@@ -1,6 +1,8 @@
 #include <iostream>
 
 #include "../include/Output.hpp"
+#include "../include/IO/HDF5/HDF5IOHandler.hpp"
+#include "../include/IO/HDF5/HDF5FilePosition.hpp"
 
 
 std::string const Output::BASEPATH = "/data/%T/";
@@ -21,44 +23,70 @@ operator<<(std::ostream& os, Output::IterationEncoding ie)
     return os;
 }
 
-Output::Output(IterationEncoding ie)
-        : iterations{Container< Iteration, uint64_t >()},
-          m_name{"new_openpmd_output"}
-{
-    setOpenPMD(OPENPMD);
-    setOpenPMDextension(0);
-    setAttribute("basePath", BASEPATH);
-    setMeshesPath("meshes/");
-    setParticlesPath("particles/");
-    setIterationAttributes(ie);
-}
-
-Output::Output(IterationEncoding ie, std::string const& name)
-        : iterations{Container< Iteration, uint64_t >()},
-          m_name{name}
-{
-    setOpenPMD(OPENPMD);
-    setOpenPMDextension(0);
-    setAttribute("basePath", BASEPATH);
-    setMeshesPath("meshes/");
-    setParticlesPath("particles/");
-    setIterationAttributes(ie);
-}
-
-Output::Output(IterationEncoding ie,
+Output::Output(std::string const& path,
                std::string const& name,
-               std::string const& meshesPath,
-               std::string const& particlesPath)
+               IterationEncoding ie,
+               Format f,
+               AccessType at)
         : iterations{Container< Iteration, uint64_t >()},
+          m_iterationEncoding{ie},
           m_name{name}
 {
+    switch( f )
+    {
+        case Format::HDF5:
+            m_io = std::make_unique<HDF5IOHandler>(path, at);
+            break;
+        //TODO
+        case Format::ADIOS:
+            m_io = std::make_unique<AbstractIOHandler>(path, at);
+            break;
+    }
     setOpenPMD(OPENPMD);
     setOpenPMDextension(0);
     setAttribute("basePath", BASEPATH);
-    setMeshesPath(meshesPath);
-    setParticlesPath(particlesPath);
-    setIterationAttributes(ie);
+    setMeshesPath("meshes/");
+    setParticlesPath("particles/");
 }
+
+//Output::Output(IterationEncoding ie)
+//        : iterations{Container< Iteration, uint64_t >()},
+//          m_name{"new_openpmd_output"}
+//{
+//    setOpenPMD(OPENPMD);
+//    setOpenPMDextension(0);
+//    setAttribute("basePath", BASEPATH);
+//    setMeshesPath("meshes/");
+//    setParticlesPath("particles/");
+//    setIterationAttributes(ie);
+//}
+//
+//Output::Output(IterationEncoding ie, std::string const& name)
+//        : iterations{Container< Iteration, uint64_t >()},
+//          m_name{name}
+//{
+//    setOpenPMD(OPENPMD);
+//    setOpenPMDextension(0);
+//    setAttribute("basePath", BASEPATH);
+//    setMeshesPath("meshes/");
+//    setParticlesPath("particles/");
+//    setIterationAttributes(ie);
+//}
+//
+//Output::Output(IterationEncoding ie,
+//               std::string const& name,
+//               std::string const& meshesPath,
+//               std::string const& particlesPath)
+//        : iterations{Container< Iteration, uint64_t >()},
+//          m_name{name}
+//{
+//    setOpenPMD(OPENPMD);
+//    setOpenPMDextension(0);
+//    setAttribute("basePath", BASEPATH);
+//    setMeshesPath(meshesPath);
+//    setParticlesPath(particlesPath);
+//    setIterationAttributes(ie);
+//}
 
 std::string
 Output::openPMD() const
@@ -124,12 +152,12 @@ Output::iterationEncoding() const
     return m_iterationEncoding;
 }
 
-Output&
-Output::setIterationEncoding(Output::IterationEncoding ie)
-{
-    setIterationAttributes(ie);
-    return *this;
-}
+//Output&
+//Output::setIterationEncoding(Output::IterationEncoding ie)
+//{
+//    setIterationAttributes(ie);
+//    return *this;
+//}
 
 std::string
 Output::iterationFormat() const
@@ -158,18 +186,60 @@ Output::setName(std::string const& n)
 }
 
 void
-Output::setIterationAttributes(IterationEncoding ie)
+Output::flush()
 {
-    m_iterationEncoding = ie;
-    switch( ie )
+    switch( m_iterationEncoding )
     {
-        case Output::IterationEncoding::fileBased:
-            setAttribute("iterationEncoding", "fileBased");
-            setIterationFormat(m_name + "_%T");
-            break;
-        case Output::IterationEncoding::groupBased:
-            setAttribute("iterationEncoding", "groupBased");
-            setIterationFormat("/data/%T/");
-            break;
+        using IE = IterationEncoding;
+        case IE::fileBased:std::map< std::string, Attribute > parameter;
+            parameter["name"] = Attribute(m_name);
+            parameter["openPMD"] = getAttribute("openPMD");
+            parameter["openPMDextension"] = getAttribute("openPMDextension");
+            parameter["basePath"] = getAttribute("basePath");
+            parameter["meshesPath"] = getAttribute("meshesPath");
+            parameter["particlesPath"] = getAttribute("particlesPath");
+            try
+            {
+                parameter["iterationFormat"] = getAttribute("iterationFormat");
+            } catch (std::runtime_error e) {
+                std::cerr << e.what() << std::endl;
+            }
+
+            for( auto i : iterations )
+            {
+                parameter["iteration"] = Attribute(i.first);
+                m_io->enqueue(IOTask(abstractFilePosition,
+                                     Operation::CREATE_FILE,
+                                     parameter)
+                );
+            }
+        case IE::groupBased:
+            for( auto i : iterations )
+            {
+                std::map< std::string, Attribute > parameter;
+                m_io->enqueue(IOTask(HDF5FilePosition(),
+                                     Operation::CREATE_PATH,
+                                     parameter)
+                );
+            }
     }
+
+    m_io->flush();
 }
+
+//void
+//Output::setIterationAttributes(IterationEncoding ie)
+//{
+//    m_iterationEncoding = ie;
+//    switch( ie )
+//    {
+//        case Output::IterationEncoding::fileBased:
+//            setAttribute("iterationEncoding", "fileBased");
+//            setIterationFormat(m_name + "_%T");
+//            break;
+//        case Output::IterationEncoding::groupBased:
+//            setAttribute("iterationEncoding", "groupBased");
+//            setIterationFormat("/data/%T/");
+//            break;
+//    }
+//}

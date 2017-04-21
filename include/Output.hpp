@@ -1,15 +1,16 @@
 #pragma once
 
 
-#include <iosfwd>
-#include <future>
-
 #include "Attributable.hpp"
 #include "Container.hpp"
+#include "IO/AbstractIOHandler.hpp"
+#include "IO/AccessType.hpp"
+#include "IO/Format.hpp"
 #include "Iteration.hpp"
+#include "Writable.hpp"
 
 
-class Output : public Attributable
+class Output : public Attributable, private Writable
 {
 public:
     enum class IterationEncoding
@@ -17,16 +18,21 @@ public:
         fileBased, groupBased
     };  //IterationEncoding
 
-    Output(IterationEncoding iterationEncoding);
-    Output(IterationEncoding iterationEncoding,
-           std::string const& name);
-    Output(IterationEncoding iterationEncoding,
+    Output(std::string const& path,
            std::string const& name,
-           std::string const& meshesPath,
-           std::string const& particlesPath);
+           IterationEncoding ie,
+           Format f,
+           AccessType at);
+//    Output(IterationEncoding iterationEncoding);
+//    Output(IterationEncoding iterationEncoding,
+//           std::string const& name);
+//    Output(IterationEncoding iterationEncoding,
+//           std::string const& name,
+//           std::string const& meshesPath,
+//           std::string const& particlesPath);
 
     std::string openPMD() const;
-    Output& setOpenPMD(std::string const &);
+    Output& setOpenPMD(std::string const&);
 
     uint32_t openPMDextension() const;
     Output& setOpenPMDextension(uint32_t);
@@ -41,7 +47,7 @@ public:
     Output& setParticlesPath(std::string const&);
 
     IterationEncoding iterationEncoding() const;
-    Output& setIterationEncoding(IterationEncoding);
+//    Output& setIterationEncoding(IterationEncoding); //Allowing this makes writing extremely messy
 
     std::string iterationFormat() const;
     Output& setIterationFormat(std::string const&);
@@ -49,16 +55,17 @@ public:
     std::string name() const;
     Output& setName(std::string const&);
 
+    void flush();
+
     Container< Iteration, uint64_t > iterations;
 
-    std::future<void> flush();
-
 private:
-    void setIterationAttributes(IterationEncoding);
+//    void setIterationAttributes(IterationEncoding);
     static std::string const BASEPATH;
     static std::string const OPENPMD;
     IterationEncoding m_iterationEncoding;
     std::string m_name;
+    std::unique_ptr<AbstractIOHandler> m_io;
 };  //Output
 
 std::ostream&
