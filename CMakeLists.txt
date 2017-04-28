@@ -17,6 +17,7 @@ set(SOURCE_FILES
         src/Iteration.cpp
         src/Record.cpp
         src/RecordComponent.cpp
+        src/Dataset.cpp
         src/Mesh.cpp
         src/ParticleSpecies.cpp)
 add_executable(libopenpmd ${SOURCE_FILES})
@@ -25,14 +26,36 @@ set(TESTS test/CoreTest.cpp)
 set(AUXTESTS test/AuxiliaryTest.cpp)
 add_executable(libopenpmdCoreTests ${TESTS} ${SOURCE_FILES})
 add_executable(libopenpmdAuxiliaryTests ${AUXTESTS})
-add_executable(poc main.cpp ${SOURCE_FILES})
+
+find_package(Boost REQUIRED COMPONENTS system filesystem)
+if (Boost_FOUND)
+    include_directories(${Boost_INCLUDE_DIRS})
+endif ()
 
 find_package(HDF5 COMPONENTS C CXX HL REQUIRED)
 if (HDF5_FOUND)
     link_directories(${HDF5_LIBRARY_DIRS})
     include_directories(${HDF5_INCLUDE_DIRS})
-    add_executable(poc_HDF5Writer writer.cpp src/writer/HDF5Writer.cpp ${SOURCE_FILES})
-    target_link_libraries(poc_HDF5Writer ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES} ${HDF5_CXX_LIBRARIES})
-    add_executable(poc_HDF5Reader reader.cpp src/reader/HDF5Reader.cpp ${SOURCE_FILES})
-    target_link_libraries(poc_HDF5Reader ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES} ${HDF5_CXX_LIBRARIES})
 endif ()
+
+add_executable(poc main.cpp)
+add_executable(poc_HDF5Writer
+        writer.cpp
+        src/IO/IOTask.cpp
+        src/IO/AbstractIOHandler.cpp
+        src/IO/HDF5/HDF5IOHandler.cpp
+        ${SOURCE_FILES})
+add_executable(poc_HDF5Reader
+        reader.cpp
+        src/reader/HDF5Reader.cpp
+        ${SOURCE_FILES})
+
+target_link_libraries(poc_HDF5Writer
+        ${HDF5_LIBRARIES}
+        ${HDF5_HL_LIBRARIES}
+        ${HDF5_CXX_LIBRARIES}
+        ${Boost_LIBRARIES})
+target_link_libraries(poc_HDF5Reader
+        ${HDF5_LIBRARIES}
+        ${HDF5_HL_LIBRARIES}
+        ${HDF5_CXX_LIBRARIES})

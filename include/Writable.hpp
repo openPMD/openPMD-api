@@ -15,6 +15,7 @@ public:
     virtual ~Writable()
     { }
 
-    std::shared_ptr<AbstractFilePosition> abstractFilePosition;
+    std::shared_ptr< AbstractFilePosition > abstractFilePosition;
     bool dirty;
+    Writable* parent;
 };

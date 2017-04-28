@@ -40,6 +40,12 @@ public:
               m_data{r}
     { }
 
+    template< typename T >
+    T get() const
+    {
+        return boost::get< T >(m_data);
+    }
+
     resource getResource() const
     {
         return m_data;

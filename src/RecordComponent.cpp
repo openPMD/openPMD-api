@@ -3,7 +3,7 @@
 
 
 RecordComponent::RecordComponent()
-        : m_dataset(std::shared_ptr<void>(nullptr), {1})
+        : m_dataset(Dataset())
 {
     setUnitSI(1);
 }

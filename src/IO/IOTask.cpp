@@ -1,12 +1,18 @@
 #include "../../include/IO/IOTask.hpp"
 
 
-IOTask::IOTask(std::shared_ptr<AbstractFilePosition> fp,
-               Operation o,
-               std::map< std::string, Attribute > parameter)
-        : abstractFilePosition{fp},
-          operation{o},
-          parameter{parameter}
+template<>
+std::map< std::string, Attribute > structToMap(Parameter< Operation::CREATE_FILE > p)
 {
+    std::map< std::string, Attribute > ret;
+    ret.insert({"openPMP", Attribute(p.openPMD)});
+    ret.insert({"openPMDextension", Attribute(p.openPMDextension)});
+    ret.insert({"basePath", Attribute(p.basePath)});
+    ret.insert({"meshesPath", Attribute(p.meshesPath)});
+    ret.insert({"particlesPath", Attribute(p.particlesPath)});
+    ret.insert({"iterationFormat", Attribute(p.iterationFormat)});
+    ret.insert({"name", Attribute(p.name)});
+    ret.insert({"iteration", Attribute(p.iteration)});
+    return ret;
+};
 
-}

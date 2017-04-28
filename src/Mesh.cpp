@@ -150,7 +150,7 @@ std::map< std::string, std::vector< double > >
 Mesh::position() const
 {
     std::map< std::string, std::vector< double > > ret;
-    for( auto const& component : m_data )
+    for( auto const& component : *this )
     {
         ret.insert({component.first,
                     component.second.position()});
@@ -163,8 +163,8 @@ Mesh::setPosition(std::map< std::string, std::vector< double > > const& pos)
 {
     for( auto const& entry : pos )
     {
-        auto it = m_data.find(entry.first);
-        if( it != m_data.end() )
+        auto it = find(entry.first);
+        if( it != end() )
         {
             it->second.setPosition(entry.second);
         } else

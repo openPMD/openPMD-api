@@ -2,7 +2,6 @@
 
 #include "../include/Output.hpp"
 #include "../include/IO/HDF5/HDF5IOHandler.hpp"
-#include "../include/IO/HDF5/HDF5FilePosition.hpp"
 
 
 std::string const Output::BASEPATH = "/data/%T/";
@@ -37,9 +36,8 @@ Output::Output(std::string const& path,
         case Format::HDF5:
             m_io = std::make_unique<HDF5IOHandler>(path, at);
             break;
-        //TODO
         case Format::ADIOS:
-            m_io = std::make_unique<AbstractIOHandler>(path, at);
+            //TODO
             break;
     }
     setOpenPMD(OPENPMD);
@@ -47,46 +45,16 @@ Output::Output(std::string const& path,
     setAttribute("basePath", BASEPATH);
     setMeshesPath("meshes/");
     setParticlesPath("particles/");
+    switch( ie )
+    {
+        case Output::IterationEncoding::fileBased:
+            setIterationFormat(m_name + "_%T");
+            break;
+        case Output::IterationEncoding::groupBased:
+            setIterationFormat("/data/%T/");
+            break;
+    }
 }
-
-//Output::Output(IterationEncoding ie)
-//        : iterations{Container< Iteration, uint64_t >()},
-//          m_name{"new_openpmd_output"}
-//{
-//    setOpenPMD(OPENPMD);
-//    setOpenPMDextension(0);
-//    setAttribute("basePath", BASEPATH);
-//    setMeshesPath("meshes/");
-//    setParticlesPath("particles/");
-//    setIterationAttributes(ie);
-//}
-//
-//Output::Output(IterationEncoding ie, std::string const& name)
-//        : iterations{Container< Iteration, uint64_t >()},
-//          m_name{name}
-//{
-//    setOpenPMD(OPENPMD);
-//    setOpenPMDextension(0);
-//    setAttribute("basePath", BASEPATH);
-//    setMeshesPath("meshes/");
-//    setParticlesPath("particles/");
-//    setIterationAttributes(ie);
-//}
-//
-//Output::Output(IterationEncoding ie,
-//               std::string const& name,
-//               std::string const& meshesPath,
-//               std::string const& particlesPath)
-//        : iterations{Container< Iteration, uint64_t >()},
-//          m_name{name}
-//{
-//    setOpenPMD(OPENPMD);
-//    setOpenPMDextension(0);
-//    setAttribute("basePath", BASEPATH);
-//    setMeshesPath(meshesPath);
-//    setParticlesPath(particlesPath);
-//    setIterationAttributes(ie);
-//}
 
 std::string
 Output::openPMD() const
@@ -152,13 +120,6 @@ Output::iterationEncoding() const
     return m_iterationEncoding;
 }
 
-//Output&
-//Output::setIterationEncoding(Output::IterationEncoding ie)
-//{
-//    setIterationAttributes(ie);
-//    return *this;
-//}
-
 std::string
 Output::iterationFormat() const
 {
@@ -188,58 +149,53 @@ Output::setName(std::string const& n)
 void
 Output::flush()
 {
+    //std::map< std::string, Attribute > parameter;
     switch( m_iterationEncoding )
     {
         using IE = IterationEncoding;
-        case IE::fileBased:std::map< std::string, Attribute > parameter;
-            parameter["name"] = Attribute(m_name);
-            parameter["openPMD"] = getAttribute("openPMD");
-            parameter["openPMDextension"] = getAttribute("openPMDextension");
-            parameter["basePath"] = getAttribute("basePath");
-            parameter["meshesPath"] = getAttribute("meshesPath");
-            parameter["particlesPath"] = getAttribute("particlesPath");
-            try
-            {
-                parameter["iterationFormat"] = getAttribute("iterationFormat");
-            } catch (std::runtime_error e) {
-                std::cerr << e.what() << std::endl;
-            }
+        case IE::fileBased:
+        {
+            Parameter< Operation::CREATE_FILE > file_parameter;
+            file_parameter.openPMD = getAttribute("openPMD").get< std::string >();
+            file_parameter.openPMDextension = getAttribute("openPMDextension").get< uint32_t >();
+            file_parameter.basePath = getAttribute("basePath").get< std::string >();
+            file_parameter.meshesPath = getAttribute("meshesPath").get< std::string >();
+            file_parameter.particlesPath = getAttribute("particlesPath").get< std::string >();
+            file_parameter.iterationFormat = getAttribute("iterationFormat").get< std::string >();
 
             for( auto i : iterations )
             {
-                parameter["iteration"] = Attribute(i.first);
+                file_parameter.name = m_name;
+                file_parameter.iteration = i.first;
                 m_io->enqueue(IOTask(abstractFilePosition,
                                      Operation::CREATE_FILE,
-                                     parameter)
+                                     file_parameter)
                 );
+                for( auto const & name : attributes() )
+                {
+//                    Parameter< Operation::WRITE_ATT > att_parameter;
+//                    att_parameter.name = name;
+//                    att_parameter.value = getAttribute(name);
+//                    m_io->enqueue(IOTask(abstractFilePosition,
+//                                         Operation::WRITE_ATT,
+//                                         file_parameter));
+                }
             }
+            break;
+        }
         case IE::groupBased:
+        {
             for( auto i : iterations )
             {
-                std::map< std::string, Attribute > parameter;
-                m_io->enqueue(IOTask(HDF5FilePosition(),
-                                     Operation::CREATE_PATH,
-                                     parameter)
-                );
+//                parameter.name = Attribute(i.first);
+//                m_io->enqueue(IOTask(abstractFilePosition,
+//                                     Operation::CREATE_PATH,
+//                                     parameter)
+//                );
             }
+            break;
+        }
     }
 
     m_io->flush();
 }
-
-//void
-//Output::setIterationAttributes(IterationEncoding ie)
-//{
-//    m_iterationEncoding = ie;
-//    switch( ie )
-//    {
-//        case Output::IterationEncoding::fileBased:
-//            setAttribute("iterationEncoding", "fileBased");
-//            setIterationFormat(m_name + "_%T");
-//            break;
-//        case Output::IterationEncoding::groupBased:
-//            setAttribute("iterationEncoding", "groupBased");
-//            setIterationFormat("/data/%T/");
-//            break;
-//    }
-//}

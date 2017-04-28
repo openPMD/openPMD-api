@@ -18,10 +18,7 @@ public:
     double unitSI() const;
     RecordComponent& setUnitSI(double);
 
-    RecordComponent& linkDataToDisk(Dataset);
-
-    template< typename T >
-    void linkDataToMemory(T* ptr, Extent ext);
+    RecordComponent& linkDataToDisk(Dataset, Extent, Offset);
 
     RecordComponent& unlinkData();
 
@@ -33,20 +30,11 @@ private:
 };
 
 inline RecordComponent&
-RecordComponent::linkDataToDisk(Dataset ds)
+RecordComponent::linkDataToDisk(Dataset ds, Extent e, Offset o)
 {
     m_dataset = std::move(ds);
     return *this;
 }
-
-/*
-template< typename T >
-inline T*
-RecordComponent::retrieveData() const
-{
-    return reinterpret_cast<T*>(m_dataset.m_data);
-}
- */
 
 inline RecordComponent&
 RecordComponent::unlinkData()

@@ -1,26 +1,28 @@
+#include <boost/filesystem.hpp>
+
+#include "../../../include/Attribute.hpp"
+#include "../../../include/IO/IOTask.hpp"
 #include "../../../include/IO/HDF5/HDF5IOHandler.hpp"
 
 
-HDF5IOHandler::HDF5IOHandler(std::string const& path, AccessType)
-        : m_work{std::queue< IOTask >()}
-{
-
-}
+HDF5IOHandler::HDF5IOHandler(std::string const& path, AccessType at)
+        : AbstractIOHandler(path, at)
+{ }
 
 std::future< void >
 HDF5IOHandler::flush()
 {
-    IOTask i;
     while( !m_work.empty() )
     {
-        i = m_work.front();
+        IOTask i = m_work.front();
         //TODO
         switch( i.operation )
         {
             using O = Operation;
-            case O::CREATE_ATT:
             case O::CREATE_DATASET:
             case O::CREATE_FILE:
+                createFile(i.parameter, nullptr);
+                break;
             case O::CREATE_PATH:
             case O::WRITE_ATT:
             case O::WRITE_DATASET:
@@ -29,9 +31,21 @@ HDF5IOHandler::flush()
             case O::DELETE_ATT:
             case O::DELETE_DATASET:
             case O::DELETE_FILE:
-            case O::DELETE_PATH:
-                break;
+            case O::DELETE_PATH:break;
         }
         m_work.pop();
     }
+}
+
+void
+HDF5IOHandler::createFile(std::map< std::string, Attribute > parameter,
+                          Writable* w)
+{
+    using namespace boost::filesystem;
+    path dir(directory);
+    if( !exists(dir) )
+        create_directories(dir);
+
+    std::string name = parameter.at("name").get< std::string >();
+    H5::H5File f(directory + name + ".h5", H5F_ACC_TRUNC);
 }

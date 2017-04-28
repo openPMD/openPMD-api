@@ -12,6 +12,12 @@ class Dataset
 {
     friend class RecordComponent;
 
+private:
+    Dataset();
+
+    std::shared_ptr<void> m_ownership;
+    void* m_data;
+
 public:
     enum class Dtype
     {
@@ -32,12 +38,6 @@ public:
     Extent extents;
     Dtype dtype;
 
-private:
-    //TODO Default, empty dataset
-    Dataset();
-
-    void* m_data;
-    std::shared_ptr<void> m_ownership;
 };
 
 template<
@@ -52,11 +52,12 @@ struct decay_equiv :
 { };
 
 template< typename T >
-Dataset::Dataset(std::shared_ptr< T > ptr, Extent ext)
+inline Dataset::Dataset(std::shared_ptr< T > ptr, Extent ext)
+        : m_ownership{std::static_pointer_cast< void >(ptr)},
+          m_data{reinterpret_cast<void*>(ptr.get())},
+          rank{static_cast<uint8_t>(ext.size())},
+          extents{ext}
 {
-    m_ownership = std::static_pointer_cast< void >(ptr);
-    m_data = reinterpret_cast<void*>(ptr.get());
-    rank = ext.size();
     if( decay_equiv< T, double >::value ) { dtype = Dtype::DOUBLE; }
     else if( decay_equiv< T, float >::value ) { dtype = Dtype::FLOAT; }
     else if( decay_equiv< T, int16_t >::value ) { dtype = Dtype::INT16; }
@@ -73,5 +74,4 @@ Dataset::Dataset(std::shared_ptr< T > ptr, Extent ext)
         throw std::runtime_error(
                 std::string() + "Unknown datatype" + typeid(ptr.get()).name());
     }
-    extents = ext;
 }

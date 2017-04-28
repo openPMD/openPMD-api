@@ -17,6 +17,7 @@ public:
     void enqueue(IOTask const);
     virtual std::future< void > flush() = 0;
 
-private:
+    std::string const directory;
+    AccessType const accessType;
     std::queue<IOTask> m_work;
 };
