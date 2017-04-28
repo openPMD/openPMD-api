@@ -21,6 +21,10 @@ Iteration::Iteration(float time,
     setTimeUnitSI(timeUnitSI);
 }
 
+Iteration::Iteration(Iteration const& i)
+        : Attributable{i}, meshes{i.meshes}, particles{i.particles}
+{ }
+
 float
 Iteration::time() const
 {

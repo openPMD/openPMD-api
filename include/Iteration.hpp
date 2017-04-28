@@ -11,11 +11,20 @@
 #include "ParticleSpecies.hpp"
 
 
-class Iteration : public Attributable
+class Iteration : public Attributable, public Writable
 {
-public:
+    template<
+            typename T,
+            typename T_key
+    >
+    friend class Container;
+
+private:
     Iteration();
     Iteration(float time, float dt, double timeUnitSI);
+
+public:
+    Iteration(Iteration const &);
 
     float time() const;
     Iteration& setTime(float);

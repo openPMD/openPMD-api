@@ -14,5 +14,20 @@ template<
 class Container
         : public std::unordered_map< T_key, T >,
           public Attributable,
-          private Writable
-{ };
+          public Writable
+{
+public:
+    T& operator[](T_key key)
+    {
+        auto it = this->find(key);
+        if( it != this->end() )
+            return it->second;
+        else
+        {
+            this->insert({key, T()});
+            auto t = this->find(key);
+            t->second.IOHandler = IOHandler;
+            return t->second;
+        }
+    }
+};

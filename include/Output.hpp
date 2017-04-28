@@ -10,7 +10,7 @@
 #include "Writable.hpp"
 
 
-class Output : public Attributable, private Writable
+class Output : public Attributable, public Writable
 {
 public:
     enum class IterationEncoding
@@ -23,13 +23,6 @@ public:
            IterationEncoding ie,
            Format f,
            AccessType at);
-//    Output(IterationEncoding iterationEncoding);
-//    Output(IterationEncoding iterationEncoding,
-//           std::string const& name);
-//    Output(IterationEncoding iterationEncoding,
-//           std::string const& name,
-//           std::string const& meshesPath,
-//           std::string const& particlesPath);
 
     std::string openPMD() const;
     Output& setOpenPMD(std::string const&);
@@ -60,12 +53,10 @@ public:
     Container< Iteration, uint64_t > iterations;
 
 private:
-//    void setIterationAttributes(IterationEncoding);
     static std::string const BASEPATH;
     static std::string const OPENPMD;
     IterationEncoding m_iterationEncoding;
     std::string m_name;
-    std::unique_ptr<AbstractIOHandler> m_io;
 };  //Output
 
 std::ostream&

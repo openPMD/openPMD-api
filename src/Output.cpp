@@ -34,12 +34,13 @@ Output::Output(std::string const& path,
     switch( f )
     {
         case Format::HDF5:
-            m_io = std::make_unique<HDF5IOHandler>(path, at);
+            IOHandler = std::make_unique<HDF5IOHandler>(path, at);
             break;
         case Format::ADIOS:
             //TODO
             break;
     }
+    iterations.IOHandler = IOHandler;
     setOpenPMD(OPENPMD);
     setOpenPMDextension(0);
     setAttribute("basePath", BASEPATH);
@@ -51,6 +52,7 @@ Output::Output(std::string const& path,
             setIterationFormat(m_name + "_%T");
             break;
         case Output::IterationEncoding::groupBased:
+            //TODO write file
             setIterationFormat("/data/%T/");
             break;
     }
@@ -167,9 +169,10 @@ Output::flush()
             {
                 file_parameter.name = m_name;
                 file_parameter.iteration = i.first;
-                m_io->enqueue(IOTask(abstractFilePosition,
-                                     Operation::CREATE_FILE,
-                                     file_parameter)
+                IOHandler->enqueue(
+                        IOTask(abstractFilePosition,
+                               Operation::CREATE_FILE,
+                               file_parameter)
                 );
                 for( auto const & name : attributes() )
                 {
@@ -197,5 +200,5 @@ Output::flush()
         }
     }
 
-    m_io->flush();
+    IOHandler->flush();
 }

@@ -24,7 +24,8 @@ Mesh::Mesh(Record const& r)
                      {"x", zeros}});
     } else
     {
-        scalar.setPosition(zeros);
+        //TODO
+        //scalar.setPosition(zeros);
     }
 }
 

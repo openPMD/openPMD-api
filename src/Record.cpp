@@ -3,19 +3,6 @@
 #include "../include/Record.hpp"
 
 
-Record
-Record::makeScalarRecord(Extent ext)
-{
-    return Record(ext, {}, true);
-}
-
-Record
-Record::makeTensorRecord(Extent ext,
-                         std::initializer_list< std::string > il)
-{
-    return Record(ext, il, il.size() == 0);
-}
-
 Record::Record(Extent ext,
                std::initializer_list< std::string > comps,
                bool isRecordComponent)
@@ -35,7 +22,6 @@ Record::Record(Extent ext,
 
 Record::Record(Record const& r)
         : Container< RecordComponent >(r),
-          scalar{r.scalar},
           m_isComponent{r.m_isComponent},
           m_extent{r.m_extent}
 { }
@@ -58,7 +44,7 @@ Record::setUnitDimension(std::map< Record::UnitDimension, double > const& udim)
         std::array< double, 7 > unitDimension = this->unitDimension();
         for( auto const& entry : udim )
         {
-            unitDimension[static_cast<size_t>(entry.first)] = entry.second;
+            unitDimension[static_cast<uint8_t>(entry.first)] = entry.second;
         }
         setAttribute("unitDimension", unitDimension);
     }

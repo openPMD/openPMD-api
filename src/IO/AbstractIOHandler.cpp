@@ -5,9 +5,7 @@ AbstractIOHandler::AbstractIOHandler(std::string const& path, AccessType at)
 { }
 
 AbstractIOHandler::~AbstractIOHandler()
-{
-    flush();
-}
+{ }
 
 void
 AbstractIOHandler::enqueue(IOTask const i)

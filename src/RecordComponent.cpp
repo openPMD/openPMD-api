@@ -1,5 +1,4 @@
 #include "../include/RecordComponent.hpp"
-#include "../include/Dataset.hpp"
 
 
 RecordComponent::RecordComponent()
@@ -18,6 +17,20 @@ RecordComponent&
 RecordComponent::setUnitSI(double usi)
 {
     setAttribute("unitSI", usi);
+    return *this;
+}
+
+RecordComponent&
+RecordComponent::linkData(Dataset ds, Extent e, Offset o, Direction d)
+{
+    m_dataset = std::move(ds);
+    return *this;
+}
+
+RecordComponent&
+RecordComponent::unlinkData()
+{
+    m_dataset.~Dataset();
     return *this;
 }
 

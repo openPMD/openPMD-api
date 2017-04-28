@@ -1,44 +1,45 @@
 #pragma once
 
 
-#include <type_traits>
-
 #include "Attributable.hpp"
 #include "Dataset.hpp"
+#include "Writable.hpp"
 
 
-
-class RecordComponent : public Attributable
+enum class Direction
 {
+    MemoryToDisk,
+    DiskToMemory
+};  //Direction
+
+
+class RecordComponent : public Attributable, public Writable
+{
+    template<
+            typename T,
+            typename T_key
+    >
+    friend class Container;
+    friend class Record;
     friend class Mesh;
 
-public:
+private:
     RecordComponent();
 
-    double unitSI() const;
-    RecordComponent& setUnitSI(double);
-
-    RecordComponent& linkDataToDisk(Dataset, Extent, Offset);
-
-    RecordComponent& unlinkData();
-
-private:
     std::vector< double > position() const;
     RecordComponent& setPosition(std::vector< double >);
 
     Dataset m_dataset;
-};
 
-inline RecordComponent&
-RecordComponent::linkDataToDisk(Dataset ds, Extent e, Offset o)
-{
-    m_dataset = std::move(ds);
-    return *this;
-}
+public:
+    double unitSI() const;
+    RecordComponent& setUnitSI(double);
 
-inline RecordComponent&
-RecordComponent::unlinkData()
-{
-    m_dataset.~Dataset();
-    return *this;
-}
+    RecordComponent& makeConstant(/*yadda*/);
+
+    RecordComponent& linkData(Dataset, Extent, Offset, Direction);
+
+    RecordComponent& unlinkData();
+
+private:
+};  //RecordComponent

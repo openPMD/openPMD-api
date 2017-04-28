@@ -9,6 +9,11 @@ HDF5IOHandler::HDF5IOHandler(std::string const& path, AccessType at)
         : AbstractIOHandler(path, at)
 { }
 
+HDF5IOHandler::~HDF5IOHandler()
+{
+    flush();
+}
+
 std::future< void >
 HDF5IOHandler::flush()
 {
