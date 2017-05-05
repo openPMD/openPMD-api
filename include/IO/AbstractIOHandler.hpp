@@ -21,3 +21,12 @@ public:
     AccessType const accessType;
     std::queue<IOTask> m_work;
 };
+
+class NONEIOHandler : public AbstractIOHandler
+{
+public:
+    NONEIOHandler(std::string const&, AccessType);
+    ~NONEIOHandler();
+
+    std::future< void > flush();
+};

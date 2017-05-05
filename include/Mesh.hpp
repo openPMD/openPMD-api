@@ -9,7 +9,23 @@
 
 class Mesh : public Record
 {
+    template<
+            typename T,
+            typename T_key
+    >
+    friend class Container;
+
+private:
+    //TODO
+    Mesh(): Mesh(Record()) { }
+    //TODO
+    Mesh(Record const&);
+
+    Mesh& operator=(Record const&);
+
 public:
+    Mesh(Mesh const&) = default;
+
     enum class Geometry
     {
         cartesian,
@@ -23,14 +39,6 @@ public:
         C = 'C',
         F = 'F'
     };  //DataOrder
-
-    //TODO
-    Mesh(): Record() { }
-    //TODO
-    Mesh(Mesh const&) = default;
-    Mesh(Record const&);
-
-    Mesh& operator=(Record const&);
 
     Geometry geometry() const;
     Mesh& setGeometry(Geometry);

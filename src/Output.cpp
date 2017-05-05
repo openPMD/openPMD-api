@@ -39,6 +39,8 @@ Output::Output(std::string const& path,
         case Format::ADIOS:
             //TODO
             break;
+        case Format::NONE:
+            IOHandler = std::make_unique<NONEIOHandler>(path, at);
     }
     iterations.IOHandler = IOHandler;
     setOpenPMD(OPENPMD);
@@ -50,10 +52,12 @@ Output::Output(std::string const& path,
     {
         case Output::IterationEncoding::fileBased:
             setIterationFormat(m_name + "_%T");
+            setAttribute("iterationEncoding", "fileBased");
             break;
         case Output::IterationEncoding::groupBased:
             //TODO write file
             setIterationFormat("/data/%T/");
+            setAttribute("iterationEncoding", "groupBased");
             break;
     }
 }

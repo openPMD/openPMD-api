@@ -4,5 +4,6 @@
 enum class Format
 {
     HDF5,
-    ADIOS
+    ADIOS,
+    NONE
 };  //Format

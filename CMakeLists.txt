@@ -12,7 +12,19 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-disabled-macro-expansion -Wno-c++98
 #Silence HDF5
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-reserved-id-macro -Wno-deprecated")
 
-set(SOURCE_FILES
+find_package(Boost REQUIRED COMPONENTS system filesystem)
+if (Boost_FOUND)
+    include_directories(${Boost_INCLUDE_DIRS})
+endif ()
+
+find_package(HDF5 REQUIRED COMPONENTS C CXX HL)
+if (HDF5_FOUND)
+    link_directories(${HDF5_LIBRARY_DIRS})
+    include_directories(${HDF5_INCLUDE_DIRS})
+endif ()
+
+
+set(CORE_SOURCE
         src/Output.cpp
         src/Iteration.cpp
         src/Record.cpp
@@ -20,36 +32,35 @@ set(SOURCE_FILES
         src/Dataset.cpp
         src/Mesh.cpp
         src/ParticleSpecies.cpp)
-add_executable(libopenpmd ${SOURCE_FILES})
+set(IO_SOURCE
+        src/IO/AbstractIOHandler.cpp
+        src/IO/IOTask.cpp
+        src/IO/HDF5/HDF5IOHandler.cpp)
+set(CORE_TESTS
+        test/CoreTest.cpp)
+set(AUX_TESTS
+        test/AuxiliaryTest.cpp)
 
-set(TESTS test/CoreTest.cpp)
-set(AUXTESTS test/AuxiliaryTest.cpp)
-add_executable(libopenpmdCoreTests ${TESTS} ${SOURCE_FILES})
-add_executable(libopenpmdAuxiliaryTests ${AUXTESTS})
-
-find_package(Boost REQUIRED COMPONENTS system filesystem)
-if (Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIRS})
-endif ()
-
-find_package(HDF5 COMPONENTS C CXX HL REQUIRED)
-if (HDF5_FOUND)
-    link_directories(${HDF5_LIBRARY_DIRS})
-    include_directories(${HDF5_INCLUDE_DIRS})
-endif ()
-
-add_executable(poc main.cpp)
+add_executable(libopenpmdCoreTests
+        ${CORE_TESTS}
+        ${CORE_SOURCE}
+        ${IO_SOURCE})
+add_executable(libopenpmdAuxiliaryTests
+        ${AUX_TESTS})
 add_executable(poc_HDF5Writer
         writer.cpp
-        src/IO/IOTask.cpp
-        src/IO/AbstractIOHandler.cpp
-        src/IO/HDF5/HDF5IOHandler.cpp
-        ${SOURCE_FILES})
+        ${CORE_SOURCE}
+        ${IO_SOURCE})
 add_executable(poc_HDF5Reader
         reader.cpp
-        src/reader/HDF5Reader.cpp
+#        src/reader/HDF5Reader.cpp
         ${SOURCE_FILES})
 
+target_link_libraries(libopenpmdCoreTests
+        ${HDF5_LIBRARIES}
+        ${HDF5_HL_LIBRARIES}
+        ${HDF5_CXX_LIBRARIES}
+        ${Boost_LIBRARIES})
 target_link_libraries(poc_HDF5Writer
         ${HDF5_LIBRARIES}
         ${HDF5_HL_LIBRARIES}
