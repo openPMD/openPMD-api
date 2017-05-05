@@ -14,6 +14,8 @@ class Writable
     >
     friend class Container;
     friend class Output;
+
+    friend class HDF5IOHandler;
 public:
     Writable()
             : abstractFilePosition{nullptr},

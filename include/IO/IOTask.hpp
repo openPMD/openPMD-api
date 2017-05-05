@@ -3,8 +3,10 @@
 
 #include <map>
 
-#include "AbstractFilePosition.hpp"
 #include "../Attribute.hpp"
+//#include "../Writable.hpp"
+
+class Writable;
 
 
 enum class Operation
@@ -23,7 +25,6 @@ enum class Operation
 
     CREATE_PATH,
     DELETE_PATH
-
 };  //Operation
 
 
@@ -35,7 +36,8 @@ template<>
 struct Parameter< Operation::WRITE_ATT >
 {
     std::string name;
-    Attribute value;
+    Attribute::resource resource;
+    Attribute::Dtype dtype;
 };
 
 template<>
@@ -59,15 +61,15 @@ class IOTask
 public:
     //TODO this has to recieve an optional dataset including patch information
     template< Operation op >
-    IOTask(std::shared_ptr< AbstractFilePosition > fp,
+    IOTask(std::shared_ptr< Writable > w,
            Operation o,
            Parameter< op > p)
-            : abstractFilePosition{fp},
+            : writable{w},
               operation{o},
               parameter{structToMap(p)}
     { }
 
-    std::shared_ptr< AbstractFilePosition > abstractFilePosition;
+    std::shared_ptr< Writable > writable;
     Operation const operation;
     std::map< std::string, Attribute > const parameter;
 };  //IOTask

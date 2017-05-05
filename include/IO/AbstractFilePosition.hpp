@@ -1,7 +1,8 @@
 #pragma once
 
 
-class AbstractFilePosition
+struct AbstractFilePosition
 {
+    virtual ~AbstractFilePosition() { }
 
 };  //AbstractFilePosition

@@ -164,40 +164,33 @@ Output::flush()
             file_parameter.meshesPath = getAttribute("meshesPath").get< std::string >();
             file_parameter.particlesPath = getAttribute("particlesPath").get< std::string >();
             file_parameter.iterationFormat = getAttribute("iterationFormat").get< std::string >();
+            file_parameter.name = m_name;
 
             for( auto i : iterations )
             {
-                file_parameter.name = m_name;
                 file_parameter.iteration = i.first;
                 IOHandler->enqueue(
-                        IOTask(abstractFilePosition,
+                        IOTask(std::shared_ptr< Writable >(this),
                                Operation::CREATE_FILE,
                                file_parameter)
                 );
                 for( auto const & name : attributes() )
                 {
-//                    Parameter< Operation::WRITE_ATT > att_parameter;
-//                    att_parameter.name = name;
-//                    att_parameter.value = getAttribute(name);
-//                    m_io->enqueue(IOTask(abstractFilePosition,
-//                                         Operation::WRITE_ATT,
-//                                         file_parameter));
+                    Parameter< Operation::WRITE_ATT > att_parameter;
+                    att_parameter.name = name;
+                    Attribute a = getAttribute(name);
+                    att_parameter.resource = a.getResource();
+                    att_parameter.dtype = a.dtype;
+                    IOHandler->enqueue(IOTask(std::shared_ptr< Writable >(this),
+                                              Operation::WRITE_ATT,
+                                              att_parameter));
                 }
             }
             break;
         }
         case IE::groupBased:
-        {
-            for( auto i : iterations )
-            {
-//                parameter.name = Attribute(i.first);
-//                m_io->enqueue(IOTask(abstractFilePosition,
-//                                     Operation::CREATE_PATH,
-//                                     parameter)
-//                );
-            }
+            //TODO
             break;
-        }
     }
 
     IOHandler->flush();

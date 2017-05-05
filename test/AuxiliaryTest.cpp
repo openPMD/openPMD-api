@@ -13,7 +13,7 @@ BOOST_AUTO_TEST_CASE(container_default_test)
     Container< int > c = Container< int >();
 
     BOOST_TEST(c.size() == 0);
-    BOOST_TEST(c.remove("nonExistentKey") == false);
+    BOOST_TEST(c.erase("nonExistentKey") == false);
 }
 
 class structure : public Attributable
@@ -99,11 +99,11 @@ BOOST_AUTO_TEST_CASE(container_access_test)
 
     c["secondWidget"] = Widget(2);
     BOOST_TEST(c.size() == 2);
-    BOOST_TEST(c.remove("firstWidget") == true);
+    BOOST_TEST(c.erase("firstWidget") == true);
     BOOST_TEST(c.size() == 1);
-    BOOST_TEST(c.remove("nonExistentWidget") == false);
+    BOOST_TEST(c.erase("nonExistentWidget") == false);
     BOOST_TEST(c.size() == 1);
-    BOOST_TEST(c.remove("secondWidget") == true);
+    BOOST_TEST(c.erase("secondWidget") == true);
     BOOST_TEST(c.size() == 0);
 }
 

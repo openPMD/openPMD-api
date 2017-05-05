@@ -2,10 +2,19 @@
 
 
 template<>
+std::map< std::string, Attribute > structToMap(Parameter< Operation::WRITE_ATT > p)
+{
+    std::map< std::string, Attribute > ret;
+    ret.insert({"attribute", Attribute(p.resource)});
+    ret.insert({"name", Attribute(p.name)});
+    return ret;
+};
+
+template<>
 std::map< std::string, Attribute > structToMap(Parameter< Operation::CREATE_FILE > p)
 {
     std::map< std::string, Attribute > ret;
-    ret.insert({"openPMP", Attribute(p.openPMD)});
+    ret.insert({"openPMD", Attribute(p.openPMD)});
     ret.insert({"openPMDextension", Attribute(p.openPMDextension)});
     ret.insert({"basePath", Attribute(p.basePath)});
     ret.insert({"meshesPath", Attribute(p.meshesPath)});

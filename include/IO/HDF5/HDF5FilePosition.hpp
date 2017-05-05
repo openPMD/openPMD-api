@@ -5,7 +5,12 @@
 
 #include "../AbstractFilePosition.hpp"
 
+
 struct HDF5FilePosition : public AbstractFilePosition
 {
-    H5::H5Location* h5Location;
+    HDF5FilePosition(std::string const& s)
+            : location{s}
+    { }
+
+    std::string location;
 };  //HDF5FilePosition

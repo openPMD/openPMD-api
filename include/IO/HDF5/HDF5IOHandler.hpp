@@ -17,5 +17,9 @@ public:
     std::future< void > flush();
 
 private:
-    void createFile(std::map< std::string, Attribute > parameter, Writable*);
+    H5::H5File m_handle;
+    void createFile(std::shared_ptr< Writable >,
+                    std::map< std::string, Attribute >);
+    void writeAttribute(std::shared_ptr< Writable >,
+                        std::map< std::string, Attribute >);
 };
