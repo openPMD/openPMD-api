@@ -88,3 +88,14 @@ CTestTestfile.cmake
 # Tools #
 #########
 .stfolder
+
+###########
+# Doxygen #
+###########
+docs/xml/
+docs/doxygen_sqlite3.db
+
+####################
+# Sphinx & Breathe #
+####################
+docs/build/

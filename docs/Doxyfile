@@ -1,0 +1,17 @@
+PROJECT_NAME      = "libopenPMD"
+XML_OUTPUT        = xml
+INPUT             = ../
+GENERATE_LATEX    = NO
+GENERATE_MAN      = NO
+GENERATE_RTF      = NO
+CASE_SENSE_NAMES  = NO
+GENERATE_HTML     = NO
+GENERATE_XML      = YES
+RECURSIVE         = YES
+#QUIET             = YES
+JAVADOC_AUTOBRIEF = YES
+
+# ideally, you want to warn on missing doc coverage!
+WARN_IF_UNDOCUMENTED = NO
+WARN_NO_PARAMDOC = NO
+# the ideal CI enforcing world: WARN_AS_ERROR = YES
