@@ -13,6 +13,7 @@ class Writable
             typename T_key
     >
     friend class Container;
+    friend class Mesh;
     friend class Output;
 
     friend class HDF5IOHandler;

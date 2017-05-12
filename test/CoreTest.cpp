@@ -250,21 +250,23 @@ BOOST_AUTO_TEST_CASE(mesh_constructor_test)
 
     Mesh &m = o.iterations[42].meshes["E"];
 
+    std::vector< double > pos = {0};
     BOOST_TEST(m["x"].unitSI() == 1);
     BOOST_TEST(m["x"].numAttributes() == 2); /* unitSI, position */
+    BOOST_TEST(m["x"].position() == pos);
     BOOST_TEST(m["y"].unitSI() == 1);
-    for( auto const & att : m["y"].attributes() )
-        std::cout << att << std::endl;
     BOOST_TEST(m["y"].numAttributes() == 2); /* unitSI, position */
+    BOOST_TEST(m["y"].position() == pos);
     BOOST_TEST(m["z"].unitSI() == 1);
     BOOST_TEST(m["z"].numAttributes() == 2); /* unitSI, position */
+    BOOST_TEST(m["z"].position() == pos);
     BOOST_TEST(m.geometry() == Mesh::Geometry::cartesian);
     BOOST_TEST(m.dataOrder() == Mesh::DataOrder::C);
-    std::vector< std::string > al{"z", "y", "x"};
+    std::vector< std::string > al{};
     BOOST_TEST(m.axisLabels() == al);
-    std::vector< float > gs{1, 1, 1};
+    std::vector< float > gs{};
     BOOST_TEST(m.gridSpacing() == gs);
-    std::vector< double > ggo{0, 0, 0};
+    std::vector< double > ggo{};
     BOOST_TEST(m.gridGlobalOffset() == ggo);
     BOOST_TEST(m.gridUnitSI() == static_cast<double>(1));
     BOOST_TEST(m.numAttributes() == 8); /* axisLabels, dataOrder, geometry, gridGlobalOffset, gridSpacing, gridUnitSI, timeOffset, unitDimension */
@@ -312,6 +314,7 @@ BOOST_AUTO_TEST_CASE(mesh_modification_test)
     std::map< std::string, std::vector< double > > pos{{"x", {0, 0, 0}},
                                                        {"y", {1, 1, 1}},
                                                        {"z", {2, 2, 2}}};
+    m["x"].setPosition({0, 0, 0});
     m.setPosition({{"y", {1, 1, 1}},
                    {"z", {2, 2, 2}}});
     BOOST_TEST(m.position() == pos);

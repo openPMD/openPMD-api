@@ -24,16 +24,16 @@ class RecordComponent : public Attributable, public Writable
     friend class Mesh;
 
 private:
-    RecordComponent();
-
-    std::vector< double > position() const;
-    RecordComponent& setPosition(std::vector< double >);
+    RecordComponent(bool isMeshComponent = false);
 
     Dataset m_dataset;
 
 public:
     double unitSI() const;
     RecordComponent& setUnitSI(double);
+
+    std::vector< double > position() const;
+    RecordComponent& setPosition(std::vector< double >);
 
     RecordComponent& makeConstant(/*yadda*/);
 

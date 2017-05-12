@@ -1,10 +1,12 @@
 #include "../include/RecordComponent.hpp"
 
 
-RecordComponent::RecordComponent()
+RecordComponent::RecordComponent(bool isMeshComponent)
         : m_dataset(Dataset())
 {
     setUnitSI(1);
+    if( isMeshComponent )
+        setPosition({0});
 }
 
 double

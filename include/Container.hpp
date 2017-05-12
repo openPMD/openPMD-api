@@ -17,6 +17,9 @@ class Container
           public Writable
 {
 public:
+    using value_type = T;
+    using key_type = T_key;
+
     T& operator[](T_key key)
     {
         auto it = this->find(key);

@@ -40,6 +40,8 @@ public:
         F = 'F'
     };  //DataOrder
 
+    RecordComponent& operator[](std::string);
+
     Geometry geometry() const;
     Mesh& setGeometry(Geometry);
 

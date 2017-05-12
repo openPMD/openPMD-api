@@ -20,7 +20,7 @@ class Record : public Container< RecordComponent >
     friend class Mesh;
 
 private:
-    Record(Extent ext, std::initializer_list< std::string > comps, bool isRecordComponent = false);
+//    Record(Extent ext, std::initializer_list< std::string > comps);
     Record();
 
 public:
@@ -38,6 +38,6 @@ public:
     Record& setTimeOffset(float const);
 
 protected:
-    bool m_isComponent;
-    Extent m_extent;
+//    bool m_isComponent;
+//    Extent m_extent;
 };  //Record

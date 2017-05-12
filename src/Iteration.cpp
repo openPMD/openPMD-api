@@ -22,7 +22,9 @@ Iteration::Iteration(float time,
 }
 
 Iteration::Iteration(Iteration const& i)
-        : Attributable{i}, meshes{i.meshes}, particles{i.particles}
+        : Attributable{i},
+          meshes{i.meshes},
+          particles{i.particles}
 { }
 
 float

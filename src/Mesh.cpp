@@ -8,25 +8,10 @@ Mesh::Mesh(Record const& r)
     setGeometry(Geometry::cartesian);
     setDataOrder(DataOrder::C);
 
-    std::size_t size = m_extent.size();
-    std::vector< float > ones(size, 1);
-    std::vector< double > zeros(size, 0);
-
-    setAxisLabels({"z", "y", "x"});
-    setGridSpacing(ones);
-    setGridGlobalOffset(zeros);
+    setAxisLabels({});
+    setGridSpacing({});
+    setGridGlobalOffset({});
     setGridUnitSI(1);
-
-    if( !m_isComponent )
-    {
-        setPosition({{"z", zeros},
-                     {"y", zeros},
-                     {"x", zeros}});
-    } else
-    {
-        //TODO
-        //scalar.setPosition(zeros);
-    }
 }
 
 Mesh&
@@ -35,6 +20,21 @@ Mesh::operator=(Record const& r)
     Mesh tmp(r);
     std::swap(*this, tmp);
     return *this;
+}
+
+RecordComponent&
+Mesh::operator[](std::string key)
+{
+    auto it = this->find(key);
+    if( it != this->end() )
+        return it->second;
+    else
+    {
+        this->insert({key, RecordComponent(true)});
+        auto t = this->find(key);
+        t->second.IOHandler = IOHandler;
+        return t->second;
+    }
 }
 
 Mesh::Geometry
