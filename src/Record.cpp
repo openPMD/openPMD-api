@@ -3,23 +3,6 @@
 #include "../include/Record.hpp"
 
 
-//Record::Record(Extent ext,
-//               std::initializer_list< std::string > comps,
-//               bool isRecordComponent)
-//        : m_isComponent{isRecordComponent},
-//          m_extent{ext}
-//{
-//    for( std::string const& component : comps )
-//    {
-//        using it_t = Container::iterator;
-//        std::pair< it_t, bool > res = emplace(component, RecordComponent());
-//        res.first->second.setAttribute("unitSI", static_cast<double>(1));
-//    }
-//    setAttribute("unitDimension",
-//                 std::array< double, 7 >{{0., 0., 0., 0., 0., 0., 0.}});
-//    setTimeOffset(0);
-//}
-
 Record::Record()
 {
     setAttribute("unitDimension",
@@ -29,8 +12,9 @@ Record::Record()
 
 Record::Record(Record const& r)
         : Container< RecordComponent >(r)//,
-//          m_isComponent{r.m_isComponent},
-//          m_extent{r.m_extent}
+{ }
+
+Record::~Record()
 { }
 
 std::array< double, 7 >

@@ -21,7 +21,6 @@ std::map< std::string, Attribute > structToMap(Parameter< Operation::CREATE_FILE
     ret.insert({"particlesPath", Attribute(p.particlesPath)});
     ret.insert({"iterationFormat", Attribute(p.iterationFormat)});
     ret.insert({"name", Attribute(p.name)});
-    ret.insert({"iteration", Attribute(p.iteration)});
     return ret;
 };
 

@@ -21,14 +21,16 @@ public:
     Writable()
             : abstractFilePosition{nullptr},
               parent{nullptr},
-              dirty{false}
+              dirty{true},
+              written{false}
     { }
     virtual ~Writable()
     { }
 
 private:
     std::shared_ptr< AbstractFilePosition > abstractFilePosition;
-    std::shared_ptr< Writable > parent;
+    Writable* parent;
     std::shared_ptr< AbstractIOHandler > IOHandler;
     bool dirty;
+    bool written;
 };

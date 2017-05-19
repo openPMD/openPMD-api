@@ -1,20 +1,44 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
-bool ends_with(std::string const &s, std::string const &suffix)
+inline bool
+contains(std::string const & s, std::string const &infix)
 {
-    if( s.length() >= suffix.length() )
-        return (0 == s.compare(s.length() - suffix.length(), suffix.length(), suffix));
+    return s.find(infix) != std::string::npos;
+}
+
+inline bool
+ends_with(std::string const &s, std::string const &suffix)
+{
+    if( s.size() >= suffix.size() )
+        return (0 == s.compare(s.size() - suffix.size(), suffix.size(), suffix));
     else
         return false;
 }
 
-std::string replace(std::string s, std::string target, std::string replacement)
+inline std::string
+replace(std::string s, std::string const & target, std::string const & replacement)
 {
     std::string::size_type pos = s.find(target);
     if( pos == std::string::npos )
         return s;
-    s.replace(pos, replacement.size(), replacement);
+    s.replace(pos, target.size(), replacement);
+
     return s;
+}
+
+inline std::vector< std::string >
+split(std::string const &s, std::string const &delimiter, bool includeDelimiter = true)
+{
+    std::vector< std::string > ret;
+    size_t pos, lastPos = 0;
+    while( (pos = s.find(delimiter, lastPos + 1)) != std::string::npos )
+    {
+        ret.push_back(s.substr(lastPos + 1, pos - lastPos - (includeDelimiter ? 0 : delimiter.size())));
+        lastPos = pos;
+    }
+
+    return ret;
 }

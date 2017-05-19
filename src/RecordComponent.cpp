@@ -2,11 +2,12 @@
 
 
 RecordComponent::RecordComponent(bool isMeshComponent)
-        : m_dataset(Dataset())
+        : m_dataset(Dataset()),
+          m_isMeshComponent{isMeshComponent}
 {
     setUnitSI(1);
-    if( isMeshComponent )
-        setPosition({0});
+    if( m_isMeshComponent )
+        setPosition({});
 }
 
 double

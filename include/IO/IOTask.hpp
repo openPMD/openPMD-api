@@ -50,7 +50,12 @@ struct Parameter< Operation::CREATE_FILE >
     std::string particlesPath;
     std::string iterationFormat;
     std::string name;
-    uint64_t iteration;
+};
+
+template<>
+struct Parameter< Operation::CREATE_PATH >
+{
+    std::string name;
 };
 
 template< Operation o >
@@ -61,15 +66,14 @@ class IOTask
 public:
     //TODO this has to recieve an optional dataset including patch information
     template< Operation op >
-    IOTask(std::shared_ptr< Writable > w,
-           Operation o,
+    IOTask(Writable* w,
            Parameter< op > p)
             : writable{w},
-              operation{o},
+              operation{op},
               parameter{structToMap(p)}
     { }
 
-    std::shared_ptr< Writable > writable;
+    Writable* writable;
     Operation const operation;
     std::map< std::string, Attribute > const parameter;
 };  //IOTask

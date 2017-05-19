@@ -27,6 +27,7 @@ private:
     RecordComponent(bool isMeshComponent = false);
 
     Dataset m_dataset;
+    bool m_isMeshComponent;
 
 public:
     double unitSI() const;

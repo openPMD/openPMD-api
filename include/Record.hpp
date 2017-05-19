@@ -30,6 +30,7 @@ public:
     };
 
     Record(Record const&);
+    virtual ~Record();
 
     std::array< double, 7 > unitDimension() const;
     Record& setUnitDimension(std::map< Record::UnitDimension, double > const&);
@@ -37,7 +38,7 @@ public:
     float timeOffset() const;
     Record& setTimeOffset(float const);
 
-protected:
+//protected:
 //    bool m_isComponent;
 //    Extent m_extent;
 };  //Record

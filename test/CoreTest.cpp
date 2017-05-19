@@ -88,8 +88,8 @@ BOOST_AUTO_TEST_CASE(output_modification_test)
     o.setParticlesPath("customParticlesPath");
     BOOST_TEST(o.particlesPath() == "customParticlesPath");
 
-    o.setIterationFormat("/strictlyForbidden/%T");
-    BOOST_TEST(o.iterationFormat() == "/strictlyForbidden/%T");
+    o.setIterationFormat("SomeOtherOutputScheme_%T");
+    BOOST_TEST(o.iterationFormat() == "SomeOtherOutputScheme_%T");
 
     o.setName("MyOutput");
     BOOST_TEST(o.name() == "MyOutput");
@@ -250,7 +250,7 @@ BOOST_AUTO_TEST_CASE(mesh_constructor_test)
 
     Mesh &m = o.iterations[42].meshes["E"];
 
-    std::vector< double > pos = {0};
+    std::vector< double > pos = {};
     BOOST_TEST(m["x"].unitSI() == 1);
     BOOST_TEST(m["x"].numAttributes() == 2); /* unitSI, position */
     BOOST_TEST(m["x"].position() == pos);

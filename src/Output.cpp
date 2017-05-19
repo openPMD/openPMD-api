@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "../include/Auxiliary.hpp"
 #include "../include/Output.hpp"
 #include "../include/IO/HDF5/HDF5IOHandler.hpp"
 
@@ -103,7 +104,10 @@ Output::meshesPath() const
 Output&
 Output::setMeshesPath(std::string const& mp)
 {
-    setAttribute("meshesPath", mp);
+    if( ends_with(mp, "/") )
+        setAttribute("meshesPath", mp);
+    else
+        setAttribute("meshesPath", mp + "/");
     return *this;
 }
 
@@ -116,7 +120,10 @@ Output::particlesPath() const
 Output&
 Output::setParticlesPath(std::string const& pp)
 {
-    setAttribute("particlesPath", pp);
+    if( ends_with(pp, "/") )
+        setAttribute("particlesPath", pp);
+    else
+        setAttribute("particlesPath", pp + "/");
     return *this;
 }
 
@@ -135,6 +142,16 @@ Output::iterationFormat() const
 Output&
 Output::setIterationFormat(std::string const& i)
 {
+    if( m_iterationEncoding == IterationEncoding::groupBased )
+    {
+        if( basePath() != i && (openPMD() == "1.0.1" || openPMD() == "1.0.0") )
+            throw std::invalid_argument( "iterationFormat must not differ from basePath " + basePath());
+    }
+    if( m_iterationEncoding == IterationEncoding::fileBased )
+    {
+        if( i.find("/") != std::string::npos )
+            throw std::invalid_argument( "iterationFormat must not contain slashes");
+    }
     setAttribute("iterationFormat", i);
     return *this;
 }
@@ -155,46 +172,38 @@ Output::setName(std::string const& n)
 void
 Output::flush()
 {
-    //std::map< std::string, Attribute > parameter;
     switch( m_iterationEncoding )
     {
         using IE = IterationEncoding;
         case IE::fileBased:
         {
-            Parameter< Operation::CREATE_FILE > file_parameter;
-            file_parameter.openPMD = getAttribute("openPMD").get< std::string >();
-            file_parameter.openPMDextension = getAttribute("openPMDextension").get< uint32_t >();
-            file_parameter.basePath = getAttribute("basePath").get< std::string >();
-            file_parameter.meshesPath = getAttribute("meshesPath").get< std::string >();
-            file_parameter.particlesPath = getAttribute("particlesPath").get< std::string >();
-            file_parameter.iterationFormat = getAttribute("iterationFormat").get< std::string >();
-            file_parameter.name = m_name;
-
-            for( auto i : iterations )
+            if( !written )
             {
-                file_parameter.iteration = i.first;
-                IOHandler->enqueue(
-                        IOTask(std::shared_ptr< Writable >(this),
-                               Operation::CREATE_FILE,
-                               file_parameter)
-                );
-                for( auto const & name : attributes() )
-                {
-                    Parameter< Operation::WRITE_ATT > att_parameter;
-                    att_parameter.name = name;
-                    Attribute a = getAttribute(name);
-                    att_parameter.resource = a.getResource();
-                    att_parameter.dtype = a.dtype;
-                    IOHandler->enqueue(IOTask(std::shared_ptr< Writable >(this),
-                                              Operation::WRITE_ATT,
-                                              att_parameter));
-                }
+                Parameter< Operation::CREATE_FILE > file_parameter;
+                file_parameter.name = m_name;
+                file_parameter.basePath = getAttribute("basePath").get< std::string >();
+                IOHandler->enqueue(IOTask(this, file_parameter));
             }
-            break;
+            Parameter< Operation::WRITE_ATT > attribute_parameter;
+            attribute_parameter.name = "iterationFormat";
+            attribute_parameter.resource = Attribute(std::string("fileBased")).getResource();
+            attribute_parameter.dtype = Attribute::Dtype::STRING;
+            IOHandler->enqueue(IOTask(this, attribute_parameter));
+
+            for( std::string const & att_name : attributes() )
+            {
+                attribute_parameter.name = att_name;
+                attribute_parameter.resource = getAttribute(att_name).getResource();
+                attribute_parameter.dtype = getAttribute(att_name).dtype;
+                IOHandler->enqueue(IOTask(this, attribute_parameter));
+            }
         }
-        case IE::groupBased:
-            //TODO
             break;
+        case IE::groupBased:
+        {
+
+        }
+        break;
     }
 
     IOHandler->flush();
