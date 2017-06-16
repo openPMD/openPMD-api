@@ -13,7 +13,7 @@ RecordComponent::RecordComponent(bool isMeshComponent)
 double
 RecordComponent::unitSI() const
 {
-    return boost::get< double >(getAttribute("unitSI").getResource());
+    return getAttribute("unitSI").get< double >();
 }
 
 RecordComponent&
@@ -40,7 +40,7 @@ RecordComponent::unlinkData()
 std::vector< double >
 RecordComponent::position() const
 {
-    return boost::get< std::vector< double > >(getAttribute("position").getResource());
+    return getAttribute("position").get< std::vector< double > >();
 }
 
 RecordComponent&

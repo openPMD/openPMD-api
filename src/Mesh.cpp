@@ -8,7 +8,7 @@ Mesh::Mesh(Record const& r)
     setGeometry(Geometry::cartesian);
     setDataOrder(DataOrder::C);
 
-    setAxisLabels({});
+    setAxisLabels({""});
     setGridSpacing({});
     setGridGlobalOffset({});
     setGridUnitSI(1);
@@ -40,7 +40,7 @@ Mesh::operator[](std::string key)
 Mesh::Geometry
 Mesh::geometry() const
 {
-    std::string ret = boost::get< std::string >(getAttribute("geometry").getResource());
+    std::string ret = getAttribute("geometry").get< std::string >();
     if( ret == "cartesian" ) { return Geometry::cartesian; }
     else if( ret == "thetaMode" ) { return Geometry::thetaMode; }
     else if( ret == "cylindrical" ) { return Geometry::cylindrical; }
@@ -66,19 +66,21 @@ Mesh::setGeometry(Mesh::Geometry g)
             setAttribute("geometry", "spherical");
             break;
     }
+    dirty = true;
     return *this;
 }
 
 std::string
 Mesh::geometryParameters() const
 {
-    return boost::get< std::string >(getAttribute("geometryParameters").getResource());
+    return getAttribute("geometryParameters").get< std::string >();
 }
 
 Mesh&
 Mesh::setGeometryParameters(std::string const& gp)
 {
     setAttribute("geometryParameters", gp);
+    dirty = true;
     return *this;
 }
 
@@ -92,32 +94,35 @@ Mesh&
 Mesh::setDataOrder(Mesh::DataOrder dor)
 {
     setAttribute("dataOrder", static_cast<char>(dor));
+    dirty = true;
     return *this;
 }
 
 std::vector< std::string >
 Mesh::axisLabels() const
 {
-    return boost::get< std::vector< std::string > >(getAttribute("axisLabels").getResource());
+    return getAttribute("axisLabels").get< std::vector< std::string > >();
 }
 
 Mesh&
 Mesh::setAxisLabels(std::vector< std::string > als)
 {
     setAttribute("axisLabels", als);
+    dirty = true;
     return *this;
 }
 
 std::vector< float >
 Mesh::gridSpacing() const
 {
-    return boost::get< std::vector< float > >(getAttribute("gridSpacing").getResource());
+    return getAttribute("gridSpacing").get< std::vector< float > >();
 }
 
 Mesh&
 Mesh::setGridSpacing(std::vector< float > gs)
 {
     setAttribute("gridSpacing", gs);
+    dirty = true;
     return *this;
 }
 
@@ -131,19 +136,21 @@ Mesh&
 Mesh::setGridGlobalOffset(std::vector< double > ggo)
 {
     setAttribute("gridGlobalOffset", ggo);
+    dirty = true;
     return *this;
 }
 
 double
 Mesh::gridUnitSI() const
 {
-    return boost::get< double >(getAttribute("gridUnitSI").getResource());
+    return getAttribute("gridUnitSI").get< double >();
 }
 
 Mesh&
 Mesh::setGridUnitSI(double gusi)
 {
     setAttribute("gridUnitSI", gusi);
+    dirty = true;
     return *this;
 }
 
@@ -173,7 +180,26 @@ Mesh::setPosition(std::map< std::string, std::vector< double > > const& pos)
             std::cerr<<"Unknown Record component: "<<entry.first<<'\n';
         }
     }
+    dirty = true;
     return *this;
+}
+
+void
+Mesh::flush()
+{
+    if( dirty )
+    {
+        Parameter< Operation::WRITE_ATT > attribute_parameter;
+        for( std::string const & att_name : attributes() )
+        {
+            attribute_parameter.name = att_name;
+            attribute_parameter.resource = getAttribute(att_name).getResource();
+            attribute_parameter.dtype = getAttribute(att_name).dtype;
+            IOHandler->enqueue(IOTask(this, attribute_parameter));
+        }
+    }
+
+    dirty = false;
 }
 
 std::ostream&

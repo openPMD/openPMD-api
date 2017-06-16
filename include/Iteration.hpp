@@ -18,6 +18,7 @@ class Iteration : public Attributable, public Writable
             typename T_key
     >
     friend class Container;
+    friend class Output;
 
 private:
     Iteration();
@@ -37,4 +38,7 @@ public:
 
     Container< Mesh > meshes;
     Container< ParticleSpecies > particles; //particleSpecies?
+
+private:
+    void flush();
 };  //Iteration

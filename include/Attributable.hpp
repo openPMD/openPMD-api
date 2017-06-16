@@ -93,9 +93,8 @@ Attributable::getAttribute(std::string const& key) const
 {
     A_MAP::const_iterator it = m_attributes->find(key);
     if( it != m_attributes->cend() )
-    {
         return it->second;
-    }
+
     throw std::runtime_error("No such attribute: " + key);
 }
 
@@ -117,9 +116,8 @@ Attributable::attributes() const
     std::vector< std::string > ret;
     ret.reserve(m_attributes->size());
     for( auto const& entry : *m_attributes )
-    {
         ret.emplace_back(entry.first);
-    }
+
     return ret;
 }
 

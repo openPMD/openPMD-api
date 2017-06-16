@@ -11,7 +11,7 @@ Record::Record()
 }
 
 Record::Record(Record const& r)
-        : Container< RecordComponent >(r)//,
+        : Container< RecordComponent >(r)
 { }
 
 Record::~Record()
@@ -20,7 +20,7 @@ Record::~Record()
 std::array< double, 7 >
 Record::unitDimension() const
 {
-    return boost::get< std::array< double, 7 > >(getAttribute("unitDimension").getResource());
+    return getAttribute("unitDimension").get< std::array< double, 7 > >();
 }
 
 Record&
@@ -41,7 +41,7 @@ Record::setUnitDimension(std::map< Record::UnitDimension, double > const& udim)
 float
 Record::timeOffset() const
 {
-    return boost::get< float >(getAttribute("timeOffset").getResource());
+    return getAttribute("timeOffset").get< float >();
 }
 
 Record&

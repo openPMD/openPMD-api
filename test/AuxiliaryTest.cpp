@@ -4,10 +4,41 @@
 #include <boost/test/included/unit_test.hpp>
 
 #include "../include/Attributable.hpp"
+#include "../include/Auxiliary.hpp"
 #include "../include/Container.hpp"
 #include "../include/Dataset.hpp"
 #include "../include/Writable.hpp"
 
+
+BOOST_AUTO_TEST_CASE(string_test)
+{
+    std::string s = "Man muss noch Chaos in sich haben, "
+                    "um einen tanzenden Stern gebären zu können.";
+    BOOST_TEST(starts_with(s, "M"));
+    BOOST_TEST(starts_with(s, "Man"));
+    BOOST_TEST(starts_with(s, "Man muss noch"));
+    BOOST_TEST(!starts_with(s, " "));
+
+    BOOST_TEST(ends_with(s, "."));
+    BOOST_TEST(ends_with(s, "können."));
+    BOOST_TEST(ends_with(s, "gebären zu können."));
+
+    BOOST_TEST(contains(s, "M"));
+    BOOST_TEST(contains(s, "."));
+    BOOST_TEST(contains(s, "noch Chaos"));
+    BOOST_TEST(!contains(s, "foo"));
+
+    BOOST_TEST("String" == replace("string", "s", "S"));
+    BOOST_TEST("sTRING" == replace("string", "tring", "TRING"));
+    BOOST_TEST("string" == replace("string", " ", "_"));
+
+    std::vector< std::string > expected1{"0", "string", " ",  "1234", "te st"};
+    std::vector< std::string > expected2{"0_DELIM_", "string_DELIM_", " _DELIM_",  "1234_DELIM_", "te st_DELIM_"};
+    std::vector< std::string > expected3{"path", "to", "relevant", "data"};
+    BOOST_TEST(expected1 == split("_DELIM_0_DELIM_string_DELIM_ _DELIM_1234_DELIM_te st_DELIM_", "_DELIM_", false));
+    BOOST_TEST(expected2 == split("_DELIM_0_DELIM_string_DELIM_ _DELIM_1234_DELIM_te st_DELIM_", "_DELIM_", true));
+    BOOST_TEST(expected3 == split("/path/to/relevant/data/", "/"));
+}
 
 BOOST_AUTO_TEST_CASE(container_default_test)
 {

@@ -38,7 +38,6 @@ public:
     float timeOffset() const;
     Record& setTimeOffset(float const);
 
-//protected:
-//    bool m_isComponent;
-//    Extent m_extent;
+private:
+    void flush();
 };  //Record

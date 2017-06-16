@@ -14,6 +14,7 @@ class Mesh : public Record
             typename T_key
     >
     friend class Container;
+    friend class Iteration;
 
 private:
     //TODO
@@ -67,6 +68,9 @@ public:
     Mesh& setPosition(std::map< std::string, std::vector< double > > const&);
 
     Record record() const;
+
+private:
+    void flush();
 };  //Mesh
 
 std::ostream&

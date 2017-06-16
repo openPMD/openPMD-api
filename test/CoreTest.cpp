@@ -58,8 +58,8 @@ BOOST_AUTO_TEST_CASE(output_constructor_test)
     BOOST_TEST(o2.openPMD() == "1.0.1");
     BOOST_TEST(o2.openPMDextension() == static_cast<uint32_t>(0));
     BOOST_TEST(o2.basePath() == "/data/%T/");
-    BOOST_TEST(o2.meshesPath() == "customMeshesPath");
-    BOOST_TEST(o2.particlesPath() == "customParticlesPath");
+    BOOST_TEST(o2.meshesPath() == "customMeshesPath/");
+    BOOST_TEST(o2.particlesPath() == "customParticlesPath/");
     BOOST_TEST(o2.iterationEncoding() == IE::groupBased);
     BOOST_TEST(o2.iterationFormat() == "/data/%T/");
     BOOST_TEST(o2.iterations.size() == 0);
@@ -83,10 +83,10 @@ BOOST_AUTO_TEST_CASE(output_modification_test)
     BOOST_TEST(o.openPMDextension() == static_cast<uint32_t>(1));
 
     o.setMeshesPath("customMeshesPath");
-    BOOST_TEST(o.meshesPath() == "customMeshesPath");
+    BOOST_TEST(o.meshesPath() == "customMeshesPath/");
 
     o.setParticlesPath("customParticlesPath");
-    BOOST_TEST(o.particlesPath() == "customParticlesPath");
+    BOOST_TEST(o.particlesPath() == "customParticlesPath/");
 
     o.setIterationFormat("SomeOtherOutputScheme_%T");
     BOOST_TEST(o.iterationFormat() == "SomeOtherOutputScheme_%T");

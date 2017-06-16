@@ -41,21 +41,39 @@ struct Parameter< Operation::WRITE_ATT >
 };
 
 template<>
+struct Parameter< Operation::DELETE_ATT >
+{
+    std::string name;
+};
+
+template<>
+struct Parameter< Operation::CREATE_DATASET >
+{
+    std::string name;
+};
+
+template<>
 struct Parameter< Operation::CREATE_FILE >
 {
-    std::string openPMD;
-    uint32_t openPMDextension;
-    std::string basePath;
-    std::string meshesPath;
-    std::string particlesPath;
-    std::string iterationFormat;
+    std::string name;
+};
+
+template<>
+struct Parameter< Operation::DELETE_FILE >
+{
     std::string name;
 };
 
 template<>
 struct Parameter< Operation::CREATE_PATH >
 {
-    std::string name;
+    std::string path;
+};
+
+template<>
+struct Parameter< Operation::DELETE_PATH >
+{
+    std::string path;
 };
 
 template< Operation o >

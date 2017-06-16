@@ -20,6 +20,8 @@ private:
     hid_t m_fileID;
     void createFile(Writable*,
                     std::map< std::string, Attribute >);
+    void createPath(Writable*,
+                    std::map< std::string, Attribute >);
     void writeAttribute(Writable*,
                         std::map< std::string, Attribute >);
 };

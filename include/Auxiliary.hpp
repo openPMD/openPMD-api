@@ -1,12 +1,22 @@
 #pragma once
 
 #include <string>
+#include <sstream>
 #include <vector>
 
 inline bool
 contains(std::string const & s, std::string const &infix)
 {
     return s.find(infix) != std::string::npos;
+}
+
+inline bool
+starts_with(std::string const &s, std::string const &prefix)
+{
+    if( s.size() >= prefix.size() )
+        return (0 == s.compare(0, prefix.size(), prefix));
+    else
+        return false;
 }
 
 inline bool
@@ -30,14 +40,23 @@ replace(std::string s, std::string const & target, std::string const & replaceme
 }
 
 inline std::vector< std::string >
-split(std::string const &s, std::string const &delimiter, bool includeDelimiter = true)
+split(std::string const &s, std::string const &delimiter, bool includeDelimiter = false)
 {
     std::vector< std::string > ret;
-    size_t pos, lastPos = 0;
-    while( (pos = s.find(delimiter, lastPos + 1)) != std::string::npos )
+    std::string::size_type pos, lastPos = 0, length = s.size();
+    while( lastPos < length + 1 )
     {
-        ret.push_back(s.substr(lastPos + 1, pos - lastPos - (includeDelimiter ? 0 : delimiter.size())));
-        lastPos = pos;
+        pos = s.find_first_of(delimiter, lastPos);
+        if( pos == std::string::npos )
+        {
+            pos = length;
+            includeDelimiter = false;
+        }
+
+        if( pos != lastPos )
+            ret.push_back(s.substr(lastPos, pos + (includeDelimiter ? delimiter.size() : 0) - lastPos));
+
+        lastPos = pos + 1;
     }
 
     return ret;

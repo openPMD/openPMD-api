@@ -5,8 +5,8 @@
 #include "../include/IO/HDF5/HDF5IOHandler.hpp"
 
 
-std::string const Output::BASEPATH = "/data/%T/";
-std::string const Output::OPENPMD = "1.0.1";
+char const * const Output::BASEPATH = "/data/%T/";
+char const * const Output::OPENPMD = "1.0.1";
 
 std::ostream&
 operator<<(std::ostream& os, Output::IterationEncoding ie)
@@ -44,6 +44,7 @@ Output::Output(std::string const& path,
             IOHandler = std::make_unique<NONEIOHandler>(path, at);
     }
     iterations.IOHandler = IOHandler;
+    iterations.parent = this;
     setOpenPMD(OPENPMD);
     setOpenPMDextension(0);
     setAttribute("basePath", BASEPATH);
@@ -56,7 +57,6 @@ Output::Output(std::string const& path,
             setAttribute("iterationEncoding", "fileBased");
             break;
         case Output::IterationEncoding::groupBased:
-            //TODO write file
             setIterationFormat("/data/%T/");
             setAttribute("iterationEncoding", "groupBased");
             break;
@@ -66,39 +66,41 @@ Output::Output(std::string const& path,
 std::string
 Output::openPMD() const
 {
-    return boost::get< std::string >(getAttribute("openPMD").getResource());
+    return getAttribute("openPMD").get< std::string >();
 }
 
 Output&
 Output::setOpenPMD(std::string const& o)
 {
     setAttribute("openPMD", o);
+    dirty = true;
     return *this;
 }
 
 uint32_t
 Output::openPMDextension() const
 {
-    return boost::get< uint32_t>(getAttribute("openPMDextension").getResource());
+    return getAttribute("openPMDextension").get< uint32_t >();
 }
 
 Output&
 Output::setOpenPMDextension(uint32_t oe)
 {
     setAttribute("openPMDextension", oe);
+    dirty = true;
     return *this;
 }
 
 std::string
 Output::basePath() const
 {
-    return boost::get< std::string >(getAttribute("basePath").getResource());
+    return getAttribute("basePath").get< std::string >();
 }
 
 std::string
 Output::meshesPath() const
 {
-    return boost::get< std::string >(getAttribute("meshesPath").getResource());
+    return getAttribute("meshesPath").get< std::string >();
 }
 
 Output&
@@ -108,13 +110,14 @@ Output::setMeshesPath(std::string const& mp)
         setAttribute("meshesPath", mp);
     else
         setAttribute("meshesPath", mp + "/");
+    dirty = true;
     return *this;
 }
 
 std::string
 Output::particlesPath() const
 {
-    return boost::get< std::string >(getAttribute("particlesPath").getResource());
+    return getAttribute("particlesPath").get< std::string >();
 }
 
 Output&
@@ -124,6 +127,7 @@ Output::setParticlesPath(std::string const& pp)
         setAttribute("particlesPath", pp);
     else
         setAttribute("particlesPath", pp + "/");
+    dirty = true;
     return *this;
 }
 
@@ -136,7 +140,7 @@ Output::iterationEncoding() const
 std::string
 Output::iterationFormat() const
 {
-    return boost::get< std::string >(getAttribute("iterationFormat").getResource());
+    return getAttribute("iterationFormat").get< std::string >();
 }
 
 Output&
@@ -145,14 +149,15 @@ Output::setIterationFormat(std::string const& i)
     if( m_iterationEncoding == IterationEncoding::groupBased )
     {
         if( basePath() != i && (openPMD() == "1.0.1" || openPMD() == "1.0.0") )
-            throw std::invalid_argument( "iterationFormat must not differ from basePath " + basePath());
+            throw std::invalid_argument("iterationFormat must not differ from basePath " + basePath());
     }
     if( m_iterationEncoding == IterationEncoding::fileBased )
     {
         if( i.find("/") != std::string::npos )
-            throw std::invalid_argument( "iterationFormat must not contain slashes");
+            throw std::invalid_argument("iterationFormat must not contain slashes");
     }
     setAttribute("iterationFormat", i);
+    dirty = true;
     return *this;
 }
 
@@ -165,7 +170,10 @@ Output::name() const
 Output&
 Output::setName(std::string const& n)
 {
+    //TODO It might make sense to only allow this before the first flush(),
+    //i.e. when the output is !written
     m_name = n;
+    dirty = true;
     return *this;
 }
 
@@ -181,30 +189,52 @@ Output::flush()
             {
                 Parameter< Operation::CREATE_FILE > file_parameter;
                 file_parameter.name = m_name;
-                file_parameter.basePath = getAttribute("basePath").get< std::string >();
                 IOHandler->enqueue(IOTask(this, file_parameter));
             }
-            Parameter< Operation::WRITE_ATT > attribute_parameter;
-            attribute_parameter.name = "iterationFormat";
-            attribute_parameter.resource = Attribute(std::string("fileBased")).getResource();
-            attribute_parameter.dtype = Attribute::Dtype::STRING;
-            IOHandler->enqueue(IOTask(this, attribute_parameter));
 
-            for( std::string const & att_name : attributes() )
+            if( dirty )
             {
-                attribute_parameter.name = att_name;
-                attribute_parameter.resource = getAttribute(att_name).getResource();
-                attribute_parameter.dtype = getAttribute(att_name).dtype;
+                Parameter< Operation::WRITE_ATT > attribute_parameter;
+                attribute_parameter.name = "iterationFormat";
+                attribute_parameter.resource = Attribute(std::string("fileBased")).getResource();
+                attribute_parameter.dtype = Attribute::Dtype::STRING;
                 IOHandler->enqueue(IOTask(this, attribute_parameter));
+                for( std::string const & att_name : attributes() )
+                {
+                    attribute_parameter.name = att_name;
+                    attribute_parameter.resource = getAttribute(att_name).getResource();
+                    attribute_parameter.dtype = getAttribute(att_name).dtype;
+                    IOHandler->enqueue(IOTask(this, attribute_parameter));
+                }
+            }
+
+            Parameter< Operation::CREATE_PATH > iteration_parameter;
+            if( !iterations.written )
+            {
+                iteration_parameter.path = replace(getAttribute("basePath").get< std::string >(),
+                                                   "%T/",
+                                                   "");
+                IOHandler->enqueue(IOTask(&iterations, iteration_parameter));
+            }
+            iterations.flush();
+            for( auto& i : iterations )
+            {
+                if( !i.second.written )
+                {
+                    iteration_parameter.path = std::to_string(i.first);
+                    IOHandler->enqueue(IOTask(&i.second, iteration_parameter));
+                }
+                i.second.flush();
             }
         }
-            break;
+        break;
         case IE::groupBased:
         {
+          //TODO
 
         }
         break;
     }
-
     IOHandler->flush();
+    dirty = false;
 }

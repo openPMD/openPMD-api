@@ -16,6 +16,9 @@ class Container
           public Attributable,
           public Writable
 {
+    friend class Iteration;
+    friend class Output;
+
 public:
     using value_type = T;
     using key_type = T_key;
@@ -27,10 +30,23 @@ public:
             return it->second;
         else
         {
-            this->insert({key, T()});
-            auto t = this->find(key);
-            t->second.IOHandler = IOHandler;
-            return t->second;
+            T t = T();
+            t.IOHandler = IOHandler;
+            t.parent = this;
+            return this->insert({key, t}).first->second;
+        }
+    }
+
+private:
+    void flush()
+    {
+        Parameter< Operation::WRITE_ATT > attribute_parameter;
+        for( std::string const & att_name : attributes() )
+        {
+            attribute_parameter.name = att_name;
+            attribute_parameter.resource = getAttribute(att_name).getResource();
+            attribute_parameter.dtype = getAttribute(att_name).dtype;
+            IOHandler->enqueue(IOTask(this, attribute_parameter));
         }
     }
 };

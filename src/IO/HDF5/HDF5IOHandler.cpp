@@ -35,6 +35,8 @@ HDF5IOHandler::flush()
                 createFile(i.writable, i.parameter);
                 break;
             case O::CREATE_PATH:
+                createPath(i.writable, i.parameter);
+                break;
             case O::WRITE_ATT:
                 writeAttribute(i.writable, i.parameter);
                 break;
@@ -76,10 +78,15 @@ getH5DataType(Attribute const& att)
         case DT::VEC_UINT64:
             return H5T_NATIVE_UINT64;
         case DT::STRING:
-        case DT::VEC_STRING:
         {
             hid_t string_t_id = H5Tcopy(H5T_C_S1);
             H5Tset_size(string_t_id, att.get< std::string >().size());
+            return string_t_id;
+        }
+        case DT::VEC_STRING:
+        {
+            hid_t string_t_id = H5Tcopy(H5T_C_S1);
+            H5Tset_size(string_t_id, H5T_VARIABLE);
             return string_t_id;
         }
         case DT::UNDEFINED:
@@ -87,6 +94,7 @@ getH5DataType(Attribute const& att)
     }
 }
 
+//TODO The dataspaces returned form this should be H5Sclose()'d since they are global
 hid_t
 getH5DataSpace(Attribute const& att)
 {
@@ -163,8 +171,6 @@ HDF5IOHandler::createFile(Writable* writable,
         if( !exists(dir) )
             create_directories(dir);
 
-        herr_t      status;
-
         /* Create a new file using default properties. */
         std::string name = directory + parameters.at("name").get< std::string >() + ".h5";
         m_fileID = H5Fcreate(name.c_str(),
@@ -172,13 +178,47 @@ HDF5IOHandler::createFile(Writable* writable,
                              H5P_DEFAULT,
                              H5P_DEFAULT);
 
+        writable->dirty = false;
+        writable->written = true;
+        writable->abstractFilePosition = std::make_shared< HDF5FilePosition >("/");
+    } else if( writable->dirty )
+    {
+        //Should this even be possible?
+    }
+}
+
+void
+HDF5IOHandler::createPath(Writable* writable,
+                          std::map< std::string, Attribute > parameters)
+{
+    if( !writable->written )
+    {
+        std::string path = parameters.at("path").get< std::string >();
+        if( starts_with(path, "/") )
+            path = replace(path, "/", "");
+        if( !ends_with(path, "/") )
+            path += '/';
+
+        std::stack< Writable * > hierarchy;
+        Writable *tmp = writable;
+        while( (tmp = tmp->parent) )
+            hierarchy.push(tmp);
+
+        std::string pathToWritable;
+        while( !hierarchy.empty() )
+        {
+            tmp = hierarchy.top();
+            pathToWritable += std::dynamic_pointer_cast< HDF5FilePosition >(tmp->abstractFilePosition)->location;
+            hierarchy.pop();
+        }
+
+        hid_t node_id;
+        node_id = H5Oopen(m_fileID, pathToWritable.c_str(), H5P_DEFAULT);
+
         /* Create the base path in the file. */
         std::stack< hid_t > groups;
-        groups.push(m_fileID);
-        std::string basePath = replace(parameters.at("basePath").get< std::string >(),
-                                       "%T/",
-                                       "");
-        for( std::string const & folder : split(basePath, "/", false) )
+        groups.push(node_id);
+        for( std::string const & folder : split(path, "/", false) )
         {
             hid_t group_id = H5Gcreate(groups.top(),
                                        folder.c_str(),
@@ -189,7 +229,8 @@ HDF5IOHandler::createFile(Writable* writable,
         }
 
         /* Close the groups. */
-        while( groups.top() != m_fileID )
+        herr_t status;
+        while( !groups.empty() )
         {
             status = H5Gclose(groups.top());
             groups.pop();
@@ -197,10 +238,7 @@ HDF5IOHandler::createFile(Writable* writable,
 
         writable->dirty = false;
         writable->written = true;
-        writable->abstractFilePosition = std::make_shared< HDF5FilePosition >("/");
-    } else if( writable->dirty )
-    {
-        //Should this even be possible?
+        writable->abstractFilePosition = std::make_shared< HDF5FilePosition >(path);
     }
 }
 
