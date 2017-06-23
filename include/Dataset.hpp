@@ -2,11 +2,14 @@
 
 
 #include <type_traits>
+#include <string>
+#include <vector>
 
-#include "Attributable.hpp"
+#include "Datatype.hpp"
 
-using Extent = std::vector< std::size_t >;
-using Offset = std::vector< std::size_t >;
+
+using Extent = std::vector< std::uint64_t >;
+using Offset = std::vector< std::uint64_t >;
 
 class Dataset
 {
@@ -19,24 +22,12 @@ private:
     void* m_data;
 
 public:
-    enum class Dtype
-    {
-        DOUBLE,
-        FLOAT,
-        INT16, INT32, INT64,
-        UINT16, UINT32, UINT64,
-        CHAR,
-        UCHAR,
-        BOOL,
-        UNDEFINED
-    };
-
     template< typename T >
     Dataset(std::shared_ptr< T >, Extent);
 
     uint8_t rank;
     Extent extents;
-    Dtype dtype;
+    Datatype dtype;
 
 };
 
@@ -58,17 +49,18 @@ inline Dataset::Dataset(std::shared_ptr< T > ptr, Extent ext)
           rank{static_cast<uint8_t>(ext.size())},
           extents{ext}
 {
-    if( decay_equiv< T, double >::value ) { dtype = Dtype::DOUBLE; }
-    else if( decay_equiv< T, float >::value ) { dtype = Dtype::FLOAT; }
-    else if( decay_equiv< T, int16_t >::value ) { dtype = Dtype::INT16; }
-    else if( decay_equiv< T, int32_t >::value ) { dtype = Dtype::INT32; }
-    else if( decay_equiv< T, int64_t >::value ) { dtype = Dtype::INT64; }
-    else if( decay_equiv< T, uint16_t >::value ) { dtype = Dtype::UINT16; }
-    else if( decay_equiv< T, uint32_t >::value ) { dtype = Dtype::UINT32; }
-    else if( decay_equiv< T, uint64_t >::value ) { dtype = Dtype::UINT64; }
-    else if( decay_equiv< T, char >::value ) { dtype = Dtype::CHAR; }
-    else if( decay_equiv< T, unsigned char >::value ) { dtype = Dtype::UCHAR; }
-    else if( decay_equiv< T, bool >::value ) { dtype = Dtype::BOOL; }
+    using DT = Datatype;
+    if( decay_equiv< T, double >::value ) { dtype = DT::DOUBLE; }
+    else if( decay_equiv< T, float >::value ) { dtype = DT::FLOAT; }
+    else if( decay_equiv< T, int16_t >::value ) { dtype = DT::INT16; }
+    else if( decay_equiv< T, int32_t >::value ) { dtype = DT::INT32; }
+    else if( decay_equiv< T, int64_t >::value ) { dtype = DT::INT64; }
+    else if( decay_equiv< T, uint16_t >::value ) { dtype = DT::UINT16; }
+    else if( decay_equiv< T, uint32_t >::value ) { dtype = DT::UINT32; }
+    else if( decay_equiv< T, uint64_t >::value ) { dtype = DT::UINT64; }
+    else if( decay_equiv< T, char >::value ) { dtype = DT::CHAR; }
+    else if( decay_equiv< T, unsigned char >::value ) { dtype = DT::UCHAR; }
+    else if( decay_equiv< T, bool >::value ) { dtype = DT::BOOL; }
     else
     {
         throw std::runtime_error(

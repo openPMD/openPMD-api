@@ -18,6 +18,7 @@ class Record : public Container< RecordComponent >
     >
     friend class Container;
     friend class Mesh;
+    friend class Iteration;
 
 private:
 //    Record(Extent ext, std::initializer_list< std::string > comps);
@@ -32,6 +33,10 @@ public:
     Record(Record const&);
     virtual ~Record();
 
+    //Specialize access to elements for RecordComponent::SCALAR's
+    RecordComponent& operator[](std::string key);
+    size_type erase(std::string const& key);
+
     std::array< double, 7 > unitDimension() const;
     Record& setUnitDimension(std::map< Record::UnitDimension, double > const&);
 
@@ -40,4 +45,6 @@ public:
 
 private:
     void flush();
+
+    bool m_containsScalar;
 };  //Record

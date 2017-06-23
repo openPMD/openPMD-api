@@ -33,7 +33,7 @@ public:
             T t = T();
             t.IOHandler = IOHandler;
             t.parent = this;
-            return this->insert({key, t}).first->second;
+            return this->insert({key, std::move(t)}).first->second;
         }
     }
 

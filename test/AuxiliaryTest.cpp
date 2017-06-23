@@ -28,9 +28,9 @@ BOOST_AUTO_TEST_CASE(string_test)
     BOOST_TEST(contains(s, "noch Chaos"));
     BOOST_TEST(!contains(s, "foo"));
 
-    BOOST_TEST("String" == replace("string", "s", "S"));
-    BOOST_TEST("sTRING" == replace("string", "tring", "TRING"));
-    BOOST_TEST("string" == replace("string", " ", "_"));
+    BOOST_TEST("String" == replace_first("string", "s", "S"));
+    BOOST_TEST("sTRING" == replace_first("string", "tring", "TRING"));
+    BOOST_TEST("string" == replace_first("string", " ", "_"));
 
     std::vector< std::string > expected1{"0", "string", " ",  "1234", "te st"};
     std::vector< std::string > expected2{"0_DELIM_", "string_DELIM_", " _DELIM_",  "1234_DELIM_", "te st_DELIM_"};
@@ -224,11 +224,11 @@ BOOST_AUTO_TEST_CASE(dataset_test)
     {
         Extent ext{1};
         Dataset d = Dataset(spd, ext);
-        bool dtype_check = d.dtype == Dataset::Dtype::DOUBLE;
+        bool dtype_check = d.dtype == Datatype::DOUBLE;
         BOOST_TEST(dtype_check);
         BOOST_TEST(spd.use_count() == 2);
         Dataset d2(d);
-        dtype_check = d2.dtype == Dataset::Dtype::DOUBLE;
+        dtype_check = d2.dtype == Datatype::DOUBLE;
         BOOST_TEST(dtype_check);
         BOOST_TEST(spd.use_count() == 3);
     }

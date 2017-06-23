@@ -5,13 +5,15 @@
 #include <vector>
 
 inline bool
-contains(std::string const & s, std::string const &infix)
+contains(std::string const & s,
+         std::string const &infix)
 {
     return s.find(infix) != std::string::npos;
 }
 
 inline bool
-starts_with(std::string const &s, std::string const &prefix)
+starts_with(std::string const &s,
+            std::string const &prefix)
 {
     if( s.size() >= prefix.size() )
         return (0 == s.compare(0, prefix.size(), prefix));
@@ -20,7 +22,8 @@ starts_with(std::string const &s, std::string const &prefix)
 }
 
 inline bool
-ends_with(std::string const &s, std::string const &suffix)
+ends_with(std::string const &s,
+          std::string const &suffix)
 {
     if( s.size() >= suffix.size() )
         return (0 == s.compare(s.size() - suffix.size(), suffix.size(), suffix));
@@ -29,7 +32,9 @@ ends_with(std::string const &s, std::string const &suffix)
 }
 
 inline std::string
-replace(std::string s, std::string const & target, std::string const & replacement)
+replace_first(std::string s,
+              std::string const& target,
+              std::string const& replacement)
 {
     std::string::size_type pos = s.find(target);
     if( pos == std::string::npos )
@@ -40,7 +45,9 @@ replace(std::string s, std::string const & target, std::string const & replaceme
 }
 
 inline std::vector< std::string >
-split(std::string const &s, std::string const &delimiter, bool includeDelimiter = false)
+split(std::string const &s,
+      std::string const &delimiter,
+      bool includeDelimiter = false)
 {
     std::vector< std::string > ret;
     std::string::size_type pos, lastPos = 0, length = s.size();

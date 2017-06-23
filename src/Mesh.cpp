@@ -30,10 +30,10 @@ Mesh::operator[](std::string key)
         return it->second;
     else
     {
-        this->insert({key, RecordComponent(true)});
-        auto t = this->find(key);
-        t->second.IOHandler = IOHandler;
-        return t->second;
+        RecordComponent r = RecordComponent(true);
+        r.IOHandler = IOHandler;
+        r.parent = this;
+        return this->insert({key, std::move(r)}).first->second;
     }
 }
 
@@ -187,17 +187,7 @@ Mesh::setPosition(std::map< std::string, std::vector< double > > const& pos)
 void
 Mesh::flush()
 {
-    if( dirty )
-    {
-        Parameter< Operation::WRITE_ATT > attribute_parameter;
-        for( std::string const & att_name : attributes() )
-        {
-            attribute_parameter.name = att_name;
-            attribute_parameter.resource = getAttribute(att_name).getResource();
-            attribute_parameter.dtype = getAttribute(att_name).dtype;
-            IOHandler->enqueue(IOTask(this, attribute_parameter));
-        }
-    }
+    Record::flush();
 
     dirty = false;
 }

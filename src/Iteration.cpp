@@ -1,5 +1,6 @@
 #include <memory>
 
+#include "../include/Dataset.hpp"
 #include "../include/Iteration.hpp"
 #include "../include/Output.hpp"
 
@@ -94,46 +95,80 @@ Iteration::flush()
         }
     }
 
+    /* Find the root point [Output] of this file,
+     * meshesPath and particlesPath are stored there */
     Writable *w = this;
     while( w->parent )
         w = w->parent;
 
     Output* o = dynamic_cast<Output *>(w);
-    std::string mp = o->getAttribute("meshesPath").get< std::string >();
-    std::string pp = o->getAttribute("particlesPath").get< std::string >();
-    Parameter< Operation::CREATE_PATH > parameter;
+    Parameter< Operation::CREATE_PATH > path_parameter;
+    /* Create the meshesPath */
     if( !meshes.written )
     {
-        parameter.path = mp;
-        IOHandler->enqueue(IOTask(&meshes, parameter));
+        path_parameter.path = o->getAttribute("meshesPath").get< std::string >();
+        IOHandler->enqueue(IOTask(&meshes, path_parameter));
     }
     meshes.flush();
     for( auto& m : meshes )
     {
+        /* Create the meshes path/dataset */
         if( !m.second.written )
         {
-            parameter.path = m.first;
-            //TODO this might be a scalar, i.e. might not require a group
-            IOHandler->enqueue(IOTask(&m.second, parameter));
+            if( m.second.m_containsScalar )
+            {
+                Parameter< Operation::CREATE_DATASET > ds_parameter;
+                ds_parameter.name = m.first;
+                Dataset const& ds = m.second.at(RecordComponent::SCALAR).m_dataset;
+                ds_parameter.dtype = ds.dtype;
+                ds_parameter.extent = ds.extents;
+                IOHandler->enqueue(IOTask(&m.second, ds_parameter));
+            } else
+            {
+                path_parameter.path = m.first;
+                IOHandler->enqueue(IOTask(&m.second, path_parameter));
+            }
         }
         m.second.flush();
     }
 
+    /* Create the particlesPath */
     if( !particles.written )
     {
-        parameter.path = pp;
-        IOHandler->enqueue(IOTask(&particles, parameter));
+        path_parameter.path = o->getAttribute("particlesPath").get< std::string >();
+        IOHandler->enqueue(IOTask(&particles, path_parameter));
     }
     particles.flush();
-    for( auto& p : particles )
+    for( auto& spec : particles )
     {
-        if( !p.second.written )
+        /* Create a path to the particle species */
+        if( !spec.second.written )
         {
-            parameter.path = p.first;
-            //TODO this might be a scalar, i.e. might not require a group
-            IOHandler->enqueue(IOTask(&p.second, parameter));
+            path_parameter.path = spec.first;
+            IOHandler->enqueue(IOTask(&spec.second, path_parameter));
         }
-        p.second.flush();
+        spec.second.flush();
+        for( auto& rec : spec.second )
+        {
+            /* Create the particle record's path/dataset */
+            if( !rec.second.written )
+            {
+                if( rec.second.m_containsScalar )
+                {
+                    Parameter< Operation::CREATE_DATASET > ds_parameter;
+                    ds_parameter.name = rec.first;
+                    Dataset const& ds = rec.second[RecordComponent::SCALAR].m_dataset;
+                    ds_parameter.dtype = ds.dtype;
+                    ds_parameter.extent = ds.extents;
+                    IOHandler->enqueue(IOTask(&rec.second, ds_parameter));
+                } else
+                {
+                    path_parameter.path = rec.first;
+                    IOHandler->enqueue(IOTask(&rec.second, path_parameter));
+                }
+            }
+            rec.second.flush();
+        }
     }
 
     dirty = false;

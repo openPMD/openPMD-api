@@ -22,6 +22,7 @@ class RecordComponent : public Attributable, public Writable
     friend class Container;
     friend class Record;
     friend class Mesh;
+    friend class Iteration;
 
 private:
     RecordComponent(bool isMeshComponent = false);
@@ -38,9 +39,13 @@ public:
 
     RecordComponent& makeConstant(/*yadda*/);
 
-    RecordComponent& linkData(Dataset, Extent, Offset, Direction);
+    RecordComponent& resetDataset(Dataset);
+    RecordComponent& linkData(Extent, Offset, Direction);
 
     RecordComponent& unlinkData();
 
+    constexpr static char const * const SCALAR = "\tThisStringShouldNeverBeEnteredByHand";
+
 private:
+    void flush();
 };  //RecordComponent

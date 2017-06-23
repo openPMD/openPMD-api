@@ -12,6 +12,7 @@ void
 AbstractIOHandler::enqueue(IOTask const i)
 {
     m_work.push(i);
+    flush();
 }
 
 NONEIOHandler::NONEIOHandler(std::string const& path, AccessType at)

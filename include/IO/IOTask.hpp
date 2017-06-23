@@ -4,6 +4,7 @@
 #include <map>
 
 #include "../Attribute.hpp"
+#include "../Dataset.hpp"
 //#include "../Writable.hpp"
 
 class Writable;
@@ -37,7 +38,7 @@ struct Parameter< Operation::WRITE_ATT >
 {
     std::string name;
     Attribute::resource resource;
-    Attribute::Dtype dtype;
+    Datatype dtype;
 };
 
 template<>
@@ -50,6 +51,8 @@ template<>
 struct Parameter< Operation::CREATE_DATASET >
 {
     std::string name;
+    Extent extent;
+    Datatype dtype;
 };
 
 template<>

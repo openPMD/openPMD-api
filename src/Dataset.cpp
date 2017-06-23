@@ -3,5 +3,5 @@
 Dataset::Dataset()
         : rank{0},
           extents{},
-          dtype{ Dtype::UNDEFINED }
+          dtype{ Datatype::UNDEFINED }
 { }

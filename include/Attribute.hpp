@@ -7,6 +7,8 @@
 
 #include <boost/variant.hpp>
 
+#include "Datatype.hpp"
+
 
 //TODO This might have to be a Writable
 //Reasoning - Flushes are expeted to be done often.
@@ -15,19 +17,9 @@
 class Attribute
 {
 public:
-    enum class Dtype : int
-    {
-        CHAR = 0, INT, FLOAT, DOUBLE,
-        UINT32, UINT64, STRING,
-        ARR_DBL_7,
-        VEC_INT,
-        VEC_FLOAT,
-        VEC_DOUBLE,
-        VEC_UINT64,
-        VEC_STRING,
-        UNDEFINED
-    };  //Dtype
-
+    /* To guarantee that the resource type is detected correctly,
+     * the order of types in this variant MUST match
+     * the order of types in Dtype. */
     using resource =
     boost::variant< char, int, float, double,
                     uint32_t, uint64_t, std::string,
@@ -40,7 +32,7 @@ public:
     >;
 
     Attribute(resource r)
-            : dtype{static_cast<Attribute::Dtype>(r.which())},
+            : dtype{static_cast<Datatype>(r.which())},
               m_data{r}
     { }
 
@@ -55,7 +47,7 @@ public:
         return m_data;
     }
 
-    Dtype dtype;
+    Datatype dtype;
 
 private:
     resource m_data;

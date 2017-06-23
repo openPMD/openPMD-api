@@ -195,10 +195,6 @@ Output::flush()
             if( dirty )
             {
                 Parameter< Operation::WRITE_ATT > attribute_parameter;
-                attribute_parameter.name = "iterationFormat";
-                attribute_parameter.resource = Attribute(std::string("fileBased")).getResource();
-                attribute_parameter.dtype = Attribute::Dtype::STRING;
-                IOHandler->enqueue(IOTask(this, attribute_parameter));
                 for( std::string const & att_name : attributes() )
                 {
                     attribute_parameter.name = att_name;
@@ -209,16 +205,18 @@ Output::flush()
             }
 
             Parameter< Operation::CREATE_PATH > iteration_parameter;
+            /* Create the basePath */
             if( !iterations.written )
             {
-                iteration_parameter.path = replace(getAttribute("basePath").get< std::string >(),
-                                                   "%T/",
-                                                   "");
+                iteration_parameter.path = replace_first(getAttribute("basePath").get< std::string >(),
+                                                         "%T/",
+                                                         "");
                 IOHandler->enqueue(IOTask(&iterations, iteration_parameter));
             }
             iterations.flush();
             for( auto& i : iterations )
             {
+                /* Create the iteration's path in the basePath */
                 if( !i.second.written )
                 {
                     iteration_parameter.path = std::to_string(i.first);
@@ -231,10 +229,10 @@ Output::flush()
         case IE::groupBased:
         {
           //TODO
-
         }
         break;
     }
+
     IOHandler->flush();
     dirty = false;
 }

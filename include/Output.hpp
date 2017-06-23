@@ -53,8 +53,6 @@ public:
     Container< Iteration, uint64_t > iterations;
 
 private:
-    static void writeOutput(Output &o);
-    void writeIteration(Iteration &i);
     static char const * const BASEPATH;
     static char const * const OPENPMD;
     IterationEncoding m_iterationEncoding;

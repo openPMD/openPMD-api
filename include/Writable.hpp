@@ -14,11 +14,8 @@ class Writable
     >
     friend class Container;
     friend class Iteration;
-    friend class Mesh;
-    friend class Output;
-    friend class Record;
-
     friend class HDF5IOHandler;
+
 public:
     Writable()
             : abstractFilePosition{nullptr},
@@ -29,7 +26,7 @@ public:
     virtual ~Writable()
     { }
 
-private:
+protected:
     std::shared_ptr< AbstractFilePosition > abstractFilePosition;
     Writable* parent;
     std::shared_ptr< AbstractIOHandler > IOHandler;
