@@ -25,10 +25,9 @@ class RecordComponent : public Attributable, public Writable
     friend class Iteration;
 
 private:
-    RecordComponent(bool isMeshComponent = false);
+    RecordComponent();
 
     Dataset m_dataset;
-    bool m_isMeshComponent;
 
 public:
     double unitSI() const;

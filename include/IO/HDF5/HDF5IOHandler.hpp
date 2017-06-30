@@ -2,6 +2,8 @@
 
 
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 
 #include "../AbstractIOHandler.hpp"
 #include "../HDF5/HDF5FilePosition.hpp"
@@ -17,8 +19,9 @@ public:
     std::future< void > flush();
 
 private:
-    //TODO This should not be a single, global id (multiple files may be created from one handler
-    hid_t m_fileID;
+    std::unordered_map< Writable*, hid_t > m_fileIDs;
+    std::unordered_set< hid_t > m_openFileIDs;
+    std::string concrete_file_position(Writable *w);
     void createDataset(Writable *,
                        std::map< std::string, Attribute > const&);
     void createFile(Writable*,

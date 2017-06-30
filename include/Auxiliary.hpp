@@ -44,6 +44,18 @@ replace_first(std::string s,
     return s;
 }
 
+inline std::string
+replace_all(std::string s,
+            std::string const& target,
+            std::string const& replacement)
+{
+    std::string::size_type pos;
+    while( (pos = s.find(target)) != std::string::npos )
+        s.replace(pos, target.size(), replacement);
+
+    return s;
+}
+
 inline std::vector< std::string >
 split(std::string const &s,
       std::string const &delimiter,

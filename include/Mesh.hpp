@@ -17,9 +17,7 @@ class Mesh : public Record
     friend class Iteration;
 
 private:
-    //TODO
     Mesh(): Mesh(Record()) { }
-    //TODO
     Mesh(Record const&);
 
     Mesh& operator=(Record const&);

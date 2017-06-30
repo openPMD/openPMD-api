@@ -32,6 +32,8 @@ BOOST_AUTO_TEST_CASE(string_test)
     BOOST_TEST("sTRING" == replace_first("string", "tring", "TRING"));
     BOOST_TEST("string" == replace_first("string", " ", "_"));
 
+    BOOST_TEST("/normal/path" == replace_all("////normal//////path", "//", "/"));
+
     std::vector< std::string > expected1{"0", "string", " ",  "1234", "te st"};
     std::vector< std::string > expected2{"0_DELIM_", "string_DELIM_", " _DELIM_",  "1234_DELIM_", "te st_DELIM_"};
     std::vector< std::string > expected3{"path", "to", "relevant", "data"};

@@ -17,7 +17,8 @@ HDF5IOHandler::~HDF5IOHandler()
 {
     flush();
     herr_t      status;
-    status = H5Fclose(m_fileID);
+    for( hid_t const& entry : m_openFileIDs )
+        status = H5Fclose(entry);
 }
 
 std::future< void >
@@ -161,6 +162,28 @@ getH5DataSpace(Attribute const& att)
     }
 }
 
+std::string
+HDF5IOHandler::concrete_file_position(Writable *w)
+{
+    std::stack< Writable * > hierarchy;
+    if( !w->abstractFilePosition )
+        w = w->parent;
+    while( w )
+    {
+        hierarchy.push(w);
+        w = w->parent;
+    }
+
+    std::string pos;
+    while( !hierarchy.empty() )
+    {
+        pos += std::dynamic_pointer_cast< HDF5FilePosition >(hierarchy.top()->abstractFilePosition)->location;
+        hierarchy.pop();
+    }
+
+    return replace_all(pos, "//", "/");
+}
+
 void
 HDF5IOHandler::createDataset(Writable* writable,
                              std::map< std::string, Attribute > const& parameters)
@@ -173,22 +196,16 @@ HDF5IOHandler::createDataset(Writable* writable,
         if( ends_with(name, "/") )
             name = replace_first(name, "/", "");
 
-        std::stack< Writable * > hierarchy;
-        Writable *tmp = writable;
-        while( (tmp = tmp->parent) )
-            hierarchy.push(tmp);
 
-        std::string pathToWritable;
-        while( !hierarchy.empty() )
-        {
-            tmp = hierarchy.top();
-            pathToWritable += std::dynamic_pointer_cast< HDF5FilePosition >(tmp->abstractFilePosition)->location;
-            hierarchy.pop();
-        }
+        /* Open H5Object to write into */
+        auto res = m_fileIDs.find(writable);
+        if( res == m_fileIDs.end() )
+            res = m_fileIDs.find(writable->parent);
+        hid_t node_id = H5Oopen(res->second,
+                                concrete_file_position(writable).c_str(),
+                                H5P_DEFAULT);
 
-        hid_t node_id;
-        node_id = H5Oopen(m_fileID, pathToWritable.c_str(), H5P_DEFAULT);
-
+        //TODO Generate datatype & -space dependant on dataset
         hsize_t dims[2] = {10, 10};
         hid_t space = H5Screate_simple(2, dims, NULL);
         hid_t group_id = H5Dcreate(node_id,
@@ -204,6 +221,8 @@ HDF5IOHandler::createDataset(Writable* writable,
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared< HDF5FilePosition >(name);
+
+        m_fileIDs.insert({writable, res->second});
     }
 }
 
@@ -219,14 +238,21 @@ HDF5IOHandler::createFile(Writable* writable,
             create_directories(dir);
 
         /* Create a new file using default properties. */
-        std::string name = directory + parameters.at("name").get< std::string >() + ".h5";
-        m_fileID = H5Fcreate(name.c_str(),
+        std::string name = directory + parameters.at("name").get< std::string >();
+        if( !ends_with(name, ".h5") )
+            name += ".h5";
+        hid_t id = H5Fcreate(name.c_str(),
                              H5F_ACC_TRUNC,
                              H5P_DEFAULT,
                              H5P_DEFAULT);
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared< HDF5FilePosition >("/");
+
+        m_fileIDs.insert({writable, id});
+        m_openFileIDs.insert(id);
+        while( (writable = writable->parent) )
+            m_fileIDs.insert({writable, id});
     }
 }
 
@@ -236,29 +262,22 @@ HDF5IOHandler::createPath(Writable* writable,
 {
     if( !writable->written )
     {
+        /* Sanitize path */
         std::string path = parameters.at("path").get< std::string >();
         if( starts_with(path, "/") )
             path = replace_first(path, "/", "");
         if( !ends_with(path, "/") )
             path += '/';
 
-        std::stack< Writable * > hierarchy;
-        Writable *tmp = writable;
-        while( (tmp = tmp->parent) )
-            hierarchy.push(tmp);
+        /* Open H5Object to write into */
+        auto res = m_fileIDs.find(writable);
+        if( res == m_fileIDs.end() )
+            res = m_fileIDs.find(writable->parent);
+        hid_t node_id = H5Oopen(res->second,
+                                concrete_file_position(writable).c_str(),
+                                H5P_DEFAULT);
 
-        std::string pathToWritable;
-        while( !hierarchy.empty() )
-        {
-            tmp = hierarchy.top();
-            pathToWritable += std::dynamic_pointer_cast< HDF5FilePosition >(tmp->abstractFilePosition)->location;
-            hierarchy.pop();
-        }
-
-        hid_t node_id;
-        node_id = H5Oopen(m_fileID, pathToWritable.c_str(), H5P_DEFAULT);
-
-        /* Create the base path in the file. */
+        /* Create the path in the file */
         std::stack< hid_t > groups;
         groups.push(node_id);
         for( std::string const & folder : split(path, "/", false) )
@@ -271,7 +290,7 @@ HDF5IOHandler::createPath(Writable* writable,
             groups.push(group_id);
         }
 
-        /* Close the groups. */
+        /* Close the groups */
         herr_t status;
         while( !groups.empty() )
         {
@@ -281,6 +300,8 @@ HDF5IOHandler::createPath(Writable* writable,
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared< HDF5FilePosition >(path);
+
+        m_fileIDs.insert({writable, res->second});
     }
 }
 
@@ -288,27 +309,15 @@ void
 HDF5IOHandler::writeAttribute(Writable* writable,
                               std::map< std::string, Attribute > const& parameters)
 {
-    std::stack< Writable* > hierarchy;
-    while( writable )
-    {
-        hierarchy.push(writable);
-        writable = writable->parent;
-    }
-
-    std::string location;
-    while( !hierarchy.empty() )
-    {
-        Writable * w = hierarchy.top();
-        location += std::dynamic_pointer_cast< HDF5FilePosition >(w->abstractFilePosition)->location;
-        hierarchy.pop();
-    }
-
-    Attribute const& att = parameters.at("attribute");
-
-    herr_t status;
+    auto res = m_fileIDs.find(writable);
+    if( res == m_fileIDs.end() )
+        res = m_fileIDs.find(writable->parent);
     hid_t node_id, attribute_id;
-    node_id = H5Oopen(m_fileID, location.c_str(), H5P_DEFAULT);
+    node_id = H5Oopen(res->second,
+                      concrete_file_position(writable).c_str(),
+                      H5P_DEFAULT);
     std::string name = parameters.at("name").get< std::string >();
+    Attribute const& att = parameters.at("attribute");
     if( H5Aexists(node_id, name.c_str()) == 0 )
     {
         attribute_id = H5Acreate(node_id,
@@ -324,6 +333,7 @@ HDF5IOHandler::writeAttribute(Writable* writable,
                                H5P_DEFAULT);
     }
 
+    herr_t status;
     using DT = Datatype;
     switch( att.dtype )
     {
@@ -395,4 +405,6 @@ HDF5IOHandler::writeAttribute(Writable* writable,
 
     status = H5Aclose(attribute_id);
     status = H5Oclose(node_id);
+
+    m_fileIDs.insert({writable, res->second});
 }

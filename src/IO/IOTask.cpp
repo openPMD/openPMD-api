@@ -2,7 +2,7 @@
 
 
 template<>
-std::map< std::string, Attribute > structToMap(Parameter< Operation::WRITE_ATT > p)
+std::map< std::string, Attribute > structToMap(Parameter< Operation::WRITE_ATT > const& p)
 {
     std::map< std::string, Attribute > ret;
     ret.insert({"attribute", Attribute(p.resource)});
@@ -11,7 +11,7 @@ std::map< std::string, Attribute > structToMap(Parameter< Operation::WRITE_ATT >
 }
 
 template<>
-std::map< std::string, Attribute > structToMap(Parameter< Operation::DELETE_ATT> p)
+std::map< std::string, Attribute > structToMap(Parameter< Operation::DELETE_ATT> const& p)
 {
     std::map< std::string, Attribute > ret;
     ret.insert({"name", Attribute(p.name)});
@@ -19,7 +19,7 @@ std::map< std::string, Attribute > structToMap(Parameter< Operation::DELETE_ATT>
 }
 
 template<>
-std::map< std::string, Attribute > structToMap(Parameter< Operation::CREATE_DATASET > p)
+std::map< std::string, Attribute > structToMap(Parameter< Operation::CREATE_DATASET > const& p)
 {
     std::map< std::string, Attribute > ret;
     ret.insert({"name", Attribute(p.name)});
@@ -29,7 +29,7 @@ std::map< std::string, Attribute > structToMap(Parameter< Operation::CREATE_DATA
 }
 
 template<>
-std::map< std::string, Attribute > structToMap(Parameter< Operation::CREATE_FILE > p)
+std::map< std::string, Attribute > structToMap(Parameter< Operation::CREATE_FILE > const& p)
 {
     std::map< std::string, Attribute > ret;
     ret.insert({"name", Attribute(p.name)});
@@ -37,7 +37,7 @@ std::map< std::string, Attribute > structToMap(Parameter< Operation::CREATE_FILE
 }
 
 template<>
-std::map< std::string, Attribute > structToMap(Parameter< Operation::CREATE_PATH > p)
+std::map< std::string, Attribute > structToMap(Parameter< Operation::CREATE_PATH > const& p)
 {
     std::map< std::string, Attribute > ret;
     ret.insert({"path", Attribute(p.path)});

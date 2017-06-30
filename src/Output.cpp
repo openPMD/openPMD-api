@@ -38,7 +38,6 @@ Output::Output(std::string const& path,
             IOHandler = std::make_unique<HDF5IOHandler>(path, at);
             break;
         case Format::ADIOS:
-            //TODO
             break;
         case Format::NONE:
             IOHandler = std::make_unique<NONEIOHandler>(path, at);
@@ -170,10 +169,12 @@ Output::name() const
 Output&
 Output::setName(std::string const& n)
 {
-    //TODO It might make sense to only allow this before the first flush(),
-    //i.e. when the output is !written
-    m_name = n;
-    dirty = true;
+    if( !written )
+    {
+        m_name = n;
+        dirty = true;
+    } else
+        throw std::runtime_error("A files name can not (yet) be changed after it has been written.");
     return *this;
 }
 
@@ -184,6 +185,58 @@ Output::flush()
     {
         using IE = IterationEncoding;
         case IE::fileBased:
+        {
+            for( auto& i : iterations )
+            {
+                //TODO Only the first iteration is correctly created, all latter ones are marked 'written'
+                if( !i.second.written )
+                {
+                    Parameter< Operation::CREATE_FILE > file_parameter;
+                    std::string name = getAttribute("iterationFormat").get< std::string >();
+                    file_parameter.name = replace_first(name, "%T", std::to_string(i.first));
+                    IOHandler->enqueue(IOTask(&i.second, file_parameter));
+
+                    /* Manually build the hierarchy for the files */
+                    abstractFilePosition = i.second.abstractFilePosition;
+                    i.second.parent = this;
+
+                    /* Create the basePath */
+                    Parameter< Operation::CREATE_PATH > iteration_parameter;
+                    iteration_parameter.path = replace_first(getAttribute("basePath").get< std::string >(),
+                                                             "%T/",
+                                                             "");
+                    /* 'this' is used to skip the iterations container */
+                    IOHandler->enqueue(IOTask(this, iteration_parameter));
+                    iterations.abstractFilePosition = this->abstractFilePosition; /* basePath */
+                    abstractFilePosition = i.second.abstractFilePosition; /* root */
+
+                    auto basePath = iterations.abstractFilePosition;
+                    iteration_parameter.path = std::to_string(i.first);
+                    IOHandler->enqueue(IOTask(&iterations, iteration_parameter));
+
+                    i.second.abstractFilePosition = iterations.abstractFilePosition; /* iteration number */
+                    i.second.parent = &iterations;
+                    iterations.abstractFilePosition = basePath;
+                }
+
+                if( dirty )
+                {
+                    Parameter< Operation::WRITE_ATT > attribute_parameter;
+                    for( std::string const & att_name : attributes() )
+                    {
+                        attribute_parameter.name = att_name;
+                        attribute_parameter.resource = getAttribute(att_name).getResource();
+                        attribute_parameter.dtype = getAttribute(att_name).dtype;
+                        IOHandler->enqueue(IOTask(this, attribute_parameter));
+                    }
+                }
+
+                i.second.flush();
+            }
+            iterations.flush();
+            break;
+        }
+        case IE::groupBased:
         {
             if( !written )
             {
@@ -224,11 +277,6 @@ Output::flush()
                 }
                 i.second.flush();
             }
-        }
-        break;
-        case IE::groupBased:
-        {
-          //TODO
         }
         break;
     }

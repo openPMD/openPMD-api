@@ -1,13 +1,10 @@
 #include "../include/RecordComponent.hpp"
 
 
-RecordComponent::RecordComponent(bool isMeshComponent)
-        : m_dataset(Dataset()),
-          m_isMeshComponent{isMeshComponent}
+RecordComponent::RecordComponent()
+        : m_dataset(Dataset())
 {
     setUnitSI(1);
-    if( m_isMeshComponent )
-        setPosition({});
 }
 
 double
@@ -34,7 +31,7 @@ RecordComponent::linkData(Extent e, Offset o, Direction d)
 RecordComponent&
 RecordComponent::unlinkData()
 {
-    m_dataset.~Dataset();
+    //TODO
     return *this;
 }
 

@@ -80,7 +80,7 @@ struct Parameter< Operation::DELETE_PATH >
 };
 
 template< Operation o >
-std::map< std::string, Attribute > structToMap(Parameter< o >);
+std::map< std::string, Attribute > structToMap(Parameter< o > const&);
 
 class IOTask
 {
@@ -88,7 +88,7 @@ public:
     //TODO this has to recieve an optional dataset including patch information
     template< Operation op >
     IOTask(Writable* w,
-           Parameter< op > p)
+           Parameter< op > const& p)
             : writable{w},
               operation{op},
               parameter{structToMap(p)}

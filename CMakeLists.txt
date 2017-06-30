@@ -17,12 +17,20 @@ if (Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
 endif ()
 
-find_package(HDF5 REQUIRED COMPONENTS C)
+find_package(MPI)
+if (MPI_FOUND)
+    add_definitions(-DLIBOPENPMD_WITH_MPI)
+endif()
+
+find_package(HDF5 COMPONENTS C)
 if (HDF5_FOUND)
+    add_definitions(-DLIBOPENPMD_WITH_HDF5)
+    if (HDF5_IS_PARALLEL)
+        add_definitions(-DLIBOPENPMD_WITH_PARALLEL_HDF5)
+    endif()
     link_directories(${HDF5_LIBRARY_DIRS})
     include_directories(${HDF5_INCLUDE_DIRS})
 endif ()
-
 
 set(CORE_SOURCE
         src/Output.cpp
@@ -53,7 +61,6 @@ add_executable(poc_HDF5Writer
         ${IO_SOURCE})
 add_executable(poc_HDF5Reader
         reader.cpp
-#        src/reader/HDF5Reader.cpp
         ${SOURCE_FILES})
 
 target_link_libraries(libopenpmdCoreTests

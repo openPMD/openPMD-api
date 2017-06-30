@@ -25,13 +25,17 @@ Record::operator[](std::string key)
     bool scalar = (key == RecordComponent::SCALAR);
     if( (scalar && size() > 0 && !m_containsScalar)
         || (m_containsScalar && !scalar) )
+    {
         throw std::runtime_error("A scalar component can not be contained at "
                                  "the same time as one or more regular components.");
+    }
     else
     {
         if( scalar )
             m_containsScalar = true;
-        return Container< RecordComponent >::operator[](key);
+        RecordComponent & ret = Container< RecordComponent >::operator[](key);
+        ret.parent = this;
+        return ret;
     }
 }
 
@@ -93,8 +97,6 @@ Record::flush()
         }
     }
 
-    // TODO abstractFilePosition is null
-    /*
     if( m_containsScalar )
     {
         RecordComponent& r = at(RecordComponent::SCALAR);
@@ -117,7 +119,6 @@ Record::flush()
             comp.second.flush();
         }
     }
-    */
 
     dirty = false;
 }

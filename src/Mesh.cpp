@@ -9,8 +9,8 @@ Mesh::Mesh(Record const& r)
     setDataOrder(DataOrder::C);
 
     setAxisLabels({""});
-    setGridSpacing({});
-    setGridGlobalOffset({});
+    setGridSpacing({1});
+    setGridGlobalOffset({0});
     setGridUnitSI(1);
 }
 
@@ -30,10 +30,10 @@ Mesh::operator[](std::string key)
         return it->second;
     else
     {
-        RecordComponent r = RecordComponent(true);
-        r.IOHandler = IOHandler;
-        r.parent = this;
-        return this->insert({key, std::move(r)}).first->second;
+        RecordComponent & ret = Record::operator[](key);
+        ret.setPosition({0});
+        ret.parent = this;
+        return ret;
     }
 }
 
@@ -187,7 +187,42 @@ Mesh::setPosition(std::map< std::string, std::vector< double > > const& pos)
 void
 Mesh::flush()
 {
-    Record::flush();
+    if( dirty )
+    {
+        Parameter< Operation::WRITE_ATT > attribute_parameter;
+        for( std::string const & att_name : attributes() )
+        {
+            attribute_parameter.name = att_name;
+            attribute_parameter.resource = getAttribute(att_name).getResource();
+            attribute_parameter.dtype = getAttribute(att_name).dtype;
+            IOHandler->enqueue(IOTask(this, attribute_parameter));
+        }
+    }
+
+    if( m_containsScalar )
+    {
+        RecordComponent& r = at(RecordComponent::SCALAR);
+        r.abstractFilePosition = abstractFilePosition;
+        r.parent = parent;
+        r.flush();
+    } else
+    {
+        for( auto& comp : *this )
+        {
+            if( !comp.second.written )
+            {
+                Parameter< Operation::CREATE_DATASET > ds_parameter;
+                ds_parameter.name = comp.first;
+                Dataset const& ds = comp.second.m_dataset;
+                ds_parameter.dtype = ds.dtype;
+                ds_parameter.extent = ds.extents;
+                //TODO Without this workaround, parent points to a wrong writable
+                comp.second.parent = this;
+                IOHandler->enqueue(IOTask(&comp.second, ds_parameter));
+            }
+            comp.second.flush();
+        }
+    }
 
     dirty = false;
 }
