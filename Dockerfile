@@ -1,15 +1,18 @@
-FROM       ubuntu:16.04
+FROM       ubuntu:17.04
 MAINTAINER Fabian Koller <f.koller@hzdr.de>
 
 ADD        . /root/src/libopenPMD
 ENV        HOME /root
 ENV        DEBIAN_FRONTEND noninteractive
+ENV        CXXFLAGS -Werror
+ARG        CXX=g++
 
 # install dependencies provided by packages
 RUN        apt-get update \
            && apt-get install -y --no-install-recommends \
               build-essential \
               ca-certificates \
+              clang \
               cmake \
               git \
               libadios-dev \

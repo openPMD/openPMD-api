@@ -1,0 +1,17 @@
+language: cpp
+sudo: required
+
+services:
+  - docker
+
+compiler:
+  - gcc
+  - clang
+
+#env:
+#  matrix:
+#    - PARALLEL=ON
+#    - PARALLEL=OFF
+
+script:
+  - docker build --build-arg CXX=$CXX .
