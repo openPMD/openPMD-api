@@ -28,7 +28,8 @@ public:
                     std::vector< float >,
                     std::vector< double >,
                     std::vector< uint64_t >,
-                    std::vector< std::string >
+                    std::vector< std::string >,
+                    Datatype
     >;
 
     Attribute(resource r)

@@ -44,6 +44,8 @@ HDF5IOHandler::flush()
                 writeAttribute(i.writable, i.parameter);
                 break;
             case O::WRITE_DATASET:
+                writeDataset(i.writable, i.parameter);
+                break;
             case O::READ_ATT:
             case O::READ_DATASET:
             case O::DELETE_ATT:
@@ -92,6 +94,20 @@ getH5DataType(Attribute const& att)
             H5Tset_size(string_t_id, H5T_VARIABLE);
             return string_t_id;
         }
+        case DT::DATATYPE:
+            throw std::runtime_error("Meta-Datatype leaked into IO");
+        case DT::INT16:
+            return H5T_NATIVE_INT16;
+        case DT::INT32:
+            return H5T_NATIVE_INT32;
+        case DT::INT64:
+            return H5T_NATIVE_INT64;
+        case DT::UINT16:
+            return H5T_NATIVE_UINT16;
+        case DT::UCHAR:
+            return H5T_NATIVE_UCHAR;
+        case DT::BOOL:
+            return H5T_NATIVE_HBOOL;
         case DT::UNDEFINED:
             throw std::runtime_error("Unknown Attribute datatype");
     }
@@ -205,12 +221,22 @@ HDF5IOHandler::createDataset(Writable* writable,
                                 concrete_file_position(writable).c_str(),
                                 H5P_DEFAULT);
 
-        //TODO Generate datatype & -space dependant on dataset
-        hsize_t dims[2] = {10, 10};
-        hid_t space = H5Screate_simple(2, dims, NULL);
+        Datatype d = parameters.at("dtype").get< Datatype >();
+        if( d == Datatype::UNDEFINED )
+        {
+            // TODO handle unknown dtype
+            std::cerr << "Unknown datatype caught during writing (serial HDF5)" << std::endl;
+            d = Datatype::BOOL;
+        }
+        Attribute a(d);
+        a.dtype = d;
+        std::vector< hsize_t > dims;
+        for( auto const & val : parameters.at("extent").get< Extent >() )
+            dims.push_back(static_cast< hsize_t >(val));
+        hid_t space = H5Screate_simple(dims.size(), dims.data(), NULL);
         hid_t group_id = H5Dcreate(node_id,
                                    name.c_str(),
-                                   H5T_STD_I32LE,
+                                   getH5DataType(a),
                                    space,
                                    H5P_DEFAULT,
                                    H5P_DEFAULT,
@@ -407,4 +433,11 @@ HDF5IOHandler::writeAttribute(Writable* writable,
     status = H5Oclose(node_id);
 
     m_fileIDs.insert({writable, res->second});
+}
+
+void
+HDF5IOHandler::writeDataset(Writable* writable,
+                            std::map< std::string, Attribute > const& parameters)
+{
+
 }

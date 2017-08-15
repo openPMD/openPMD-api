@@ -19,17 +19,15 @@ class Dataset
 private:
     Dataset();
 
-    std::shared_ptr<void> m_ownership;
     void* m_data;
 
 public:
     template< typename T >
-    Dataset(std::shared_ptr< T >, Extent);
+    Dataset(T, Extent);
 
     uint8_t rank;
     Extent extents;
     Datatype dtype;
-
 };
 
 template<
@@ -38,16 +36,20 @@ template<
 >
 struct decay_equiv :
         std::is_same<
-                typename std::decay< typename std::remove_all_extents< T >::type >::type,
+                typename std::remove_pointer<
+                        typename std::remove_cv<
+                                typename std::decay<
+                                        typename std::remove_all_extents< T >::type
+                                >::type
+                        >::type
+                >::type,
                 U
         >::type
 { };
 
 template< typename T >
-inline Dataset::Dataset(std::shared_ptr< T > ptr, Extent ext)
-        : m_ownership{std::static_pointer_cast< void >(ptr)},
-          m_data{reinterpret_cast<void*>(ptr.get())},
-          rank{static_cast<uint8_t>(ext.size())},
+inline Dataset::Dataset(T ptr, Extent ext)
+        : rank{static_cast<uint8_t>(ext.size())},
           extents{ext}
 {
     using DT = Datatype;
@@ -64,7 +66,6 @@ inline Dataset::Dataset(std::shared_ptr< T > ptr, Extent ext)
     else if( decay_equiv< T, bool >::value ) { dtype = DT::BOOL; }
     else
     {
-        throw std::runtime_error(
-                std::string() + "Unknown datatype" + typeid(ptr.get()).name());
+        throw std::runtime_error(std::string("Unknown datatype - ") + typeid(ptr).name());
     }
 }

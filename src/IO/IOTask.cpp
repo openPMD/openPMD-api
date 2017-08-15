@@ -24,9 +24,18 @@ std::map< std::string, Attribute > structToMap(Parameter< Operation::CREATE_DATA
     std::map< std::string, Attribute > ret;
     ret.insert({"name", Attribute(p.name)});
     ret.insert({"extent", Attribute(p.extent)});
-    //ret.insert({"dtype", Attribute(p.dtype)});
+    ret.insert({"dtype", Attribute(p.dtype)});
     return ret;
 }
+
+template<>
+std::map< std::string, Attribute > structToMap(Parameter< Operation::WRITE_DATASET > const& p)
+{
+    std::map< std::string, Attribute > ret;
+    ret.insert({"extent", Attribute(p.extent)});
+    ret.insert({"offset", Attribute(p.offset)});
+    return ret;
+};
 
 template<>
 std::map< std::string, Attribute > structToMap(Parameter< Operation::CREATE_FILE > const& p)

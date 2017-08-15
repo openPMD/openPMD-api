@@ -56,6 +56,13 @@ struct Parameter< Operation::CREATE_DATASET >
 };
 
 template<>
+struct Parameter< Operation::WRITE_DATASET >
+{
+    Extent extent;
+    Offset offset;
+};
+
+template<>
 struct Parameter< Operation::CREATE_FILE >
 {
     std::string name;

@@ -221,18 +221,17 @@ BOOST_AUTO_TEST_CASE(dot_test)
 BOOST_AUTO_TEST_CASE(dataset_test)
 {
     std::shared_ptr<double> spd = std::make_shared<double>(1.0);
+    double *ptr = spd.get();
     BOOST_TEST(spd.use_count() == 1);
 
     {
         Extent ext{1};
-        Dataset d = Dataset(spd, ext);
+        Dataset d = Dataset(ptr, ext);
         bool dtype_check = d.dtype == Datatype::DOUBLE;
         BOOST_TEST(dtype_check);
-        BOOST_TEST(spd.use_count() == 2);
         Dataset d2(d);
         dtype_check = d2.dtype == Datatype::DOUBLE;
         BOOST_TEST(dtype_check);
-        BOOST_TEST(spd.use_count() == 3);
     }
 
     BOOST_TEST(spd.use_count() == 1);

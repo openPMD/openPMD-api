@@ -30,4 +30,6 @@ private:
                     std::map< std::string, Attribute > const&);
     void writeAttribute(Writable*,
                         std::map< std::string, Attribute > const&);
+    void writeDataset(Writable*,
+                      std::map< std::string, Attribute > const&);
 };

@@ -11,6 +11,8 @@ enum class Datatype : int
     VEC_UINT64,
     VEC_STRING,
 
+    DATATYPE,
+
     INT16 = 1000, INT32, INT64,
     UINT16,
     UCHAR,

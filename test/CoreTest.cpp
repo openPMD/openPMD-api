@@ -108,8 +108,8 @@ BOOST_AUTO_TEST_CASE(iteration_default_test)
     Iteration& i = o.iterations[42];
 
     BOOST_TEST(i.time() == static_cast<float>(0));
-    BOOST_TEST(i.dt() == static_cast<float>(0));
-    BOOST_TEST(i.timeUnitSI() == static_cast<double>(0));
+    BOOST_TEST(i.dt() == static_cast<float>(1));
+    BOOST_TEST(i.timeUnitSI() == static_cast<double>(1));
     BOOST_TEST(i.numAttributes() == 3);
     BOOST_TEST(i.meshes.size() == 0);
     BOOST_TEST(i.particles.size() == 0);

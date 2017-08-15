@@ -10,8 +10,8 @@ Iteration::Iteration()
           particles{Container< ParticleSpecies >()}
 {
     setTime(0);
-    setDt(0);
-    setTimeUnitSI(0);
+    setDt(1);
+    setTimeUnitSI(1);
 }
 
 Iteration::Iteration(float time,

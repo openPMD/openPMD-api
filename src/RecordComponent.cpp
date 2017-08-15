@@ -21,20 +21,6 @@ RecordComponent::setUnitSI(double usi)
     return *this;
 }
 
-RecordComponent&
-RecordComponent::linkData(Extent e, Offset o, Direction d)
-{
-    //TODO
-    return *this;
-}
-
-RecordComponent&
-RecordComponent::unlinkData()
-{
-    //TODO
-    return *this;
-}
-
 std::vector< double >
 RecordComponent::position() const
 {
@@ -46,6 +32,39 @@ RecordComponent::setPosition(std::vector< double > pos)
 {
     setAttribute("position", pos);
     dirty = true;
+    return *this;
+}
+
+RecordComponent&
+RecordComponent::resetDataset(Dataset d)
+{
+    m_dataset = d;
+    dirty = true;
+    return *this;
+}
+
+Datatype
+RecordComponent::getDatatype()
+{
+    return m_dataset.dtype;
+}
+
+uint8_t
+RecordComponent::getDimensionality()
+{
+    return m_dataset.rank;
+}
+
+Extent
+RecordComponent::getExtent()
+{
+    return m_dataset.extents;
+}
+
+RecordComponent&
+RecordComponent::makeConstant()
+{
+    //TODO
     return *this;
 }
 
