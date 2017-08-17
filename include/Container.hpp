@@ -37,9 +37,27 @@ public:
         }
     }
 
-private:
-    void flush()
+    typename std::unordered_map< T_key, T >::size_type erase(T_key const& key)
     {
+        auto res = std::unordered_map< T_key, T >::find(key);
+        if( res != std::unordered_map< T_key, T >::end() && res->second.written )
+        {
+            // TODO delete element on disk
+        }
+        return std::unordered_map< T_key, T >::erase(key);
+    }
+
+private:
+    void flush(std::string const path)
+    {
+        if( !written )
+        {
+            Parameter< Operation::CREATE_PATH > path_parameter;
+            path_parameter.path = path;
+            IOHandler->enqueue(IOTask(this, path_parameter));
+            IOHandler->flush();
+        }
+
         Parameter< Operation::WRITE_ATT > attribute_parameter;
         for( std::string const & att_name : attributes() )
         {

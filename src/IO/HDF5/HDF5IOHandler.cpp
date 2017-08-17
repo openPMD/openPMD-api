@@ -110,6 +110,8 @@ getH5DataType(Attribute const& att)
             return H5T_NATIVE_HBOOL;
         case DT::UNDEFINED:
             throw std::runtime_error("Unknown Attribute datatype");
+        default:
+            throw std::runtime_error("Datatype not implemented in HDF5 IO");
     }
 }
 
@@ -175,6 +177,8 @@ getH5DataSpace(Attribute const& att)
         }
         case DT::UNDEFINED:
             throw std::runtime_error("Unknown Attribute datatype");
+        default:
+            throw std::runtime_error("Datatype not implemented in HDF5 IO");
     }
 }
 
@@ -439,5 +443,37 @@ void
 HDF5IOHandler::writeDataset(Writable* writable,
                             std::map< std::string, Attribute > const& parameters)
 {
+    auto res = m_fileIDs.find(writable);
+    if( res == m_fileIDs.end() )
+        res = m_fileIDs.find(writable->parent);
+    hid_t dataset_id;
+    herr_t status;
+    dataset_id = H5Dopen(res->second,
+                         concrete_file_position(writable).c_str(),
+                         H5P_DEFAULT);
 
+    switch( parameters.at("dtype").get< Datatype >() )
+    {
+        using DT = Datatype;
+        case DT::DOUBLE:
+        case DT::FLOAT:
+        case DT::INT16:
+        case DT::INT32:
+        case DT::INT64:
+        case DT::UINT16:
+        case DT::UINT32:
+        case DT::UINT64:
+        case DT::CHAR:
+        case DT::UCHAR:
+        case DT::BOOL:
+        case DT::UNDEFINED:
+            throw std::runtime_error("Unknown Attribute datatype");
+        case DT::DATATYPE:
+            throw std::runtime_error("Meta-Datatype leaked into IO");
+        default:
+            throw std::runtime_error("Datatype not implemented in HDF5 IO");
+    }
+    status = H5Dclose(dataset_id);
+
+    m_fileIDs.insert({writable, res->second});
 }

@@ -44,7 +44,12 @@ BOOST_AUTO_TEST_CASE(string_test)
 
 BOOST_AUTO_TEST_CASE(container_default_test)
 {
-    Container< int > c = Container< int >();
+    struct S
+    {
+        int val;
+        bool written;
+    };
+    Container< S > c = Container< S >();
 
     BOOST_TEST(c.size() == 0);
     BOOST_TEST(c.erase("nonExistentKey") == false);

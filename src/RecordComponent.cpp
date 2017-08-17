@@ -69,8 +69,25 @@ RecordComponent::makeConstant()
 }
 
 void
-RecordComponent::flush()
+RecordComponent::flush(std::string const& name)
 {
+    if( !written )
+    {
+        Parameter< Operation::CREATE_DATASET > ds_parameter;
+        ds_parameter.name = name;
+        ds_parameter.dtype = getDatatype();
+        ds_parameter.extent = getExtent();
+        IOHandler->enqueue(IOTask(this, ds_parameter));
+        IOHandler->flush();
+    }
+
+    while( !m_chunks.empty() )
+    {
+        IOHandler->enqueue(m_chunks.front());
+        m_chunks.pop();
+        IOHandler->flush();
+    }
+
     if( dirty )
     {
         Parameter< Operation::WRITE_ATT > attribute_parameter;

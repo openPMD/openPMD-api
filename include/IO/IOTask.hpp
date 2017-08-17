@@ -60,6 +60,8 @@ struct Parameter< Operation::WRITE_DATASET >
 {
     Extent extent;
     Offset offset;
+    Datatype dtype;
+    std::shared_ptr< void > data;
 };
 
 template<>
@@ -89,10 +91,10 @@ struct Parameter< Operation::DELETE_PATH >
 template< Operation o >
 std::map< std::string, Attribute > structToMap(Parameter< o > const&);
 
+// TODO replace "Attribute" as the parameter type with something more generic in the backend
 class IOTask
 {
 public:
-    //TODO this has to recieve an optional dataset including patch information
     template< Operation op >
     IOTask(Writable* w,
            Parameter< op > const& p)

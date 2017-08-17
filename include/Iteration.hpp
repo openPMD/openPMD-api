@@ -40,5 +40,7 @@ public:
     Container< ParticleSpecies > particles; //particleSpecies?
 
 private:
+    void flushFileBased(uint64_t);
+    void flushGroupBased(uint64_t);
     void flush();
 };  //Iteration

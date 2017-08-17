@@ -68,7 +68,7 @@ public:
     Record record() const;
 
 private:
-    void flush();
+    void flush(std::string const&);
 };  //Mesh
 
 std::ostream&

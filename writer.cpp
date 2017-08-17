@@ -69,48 +69,50 @@ write2()
     cur_it.meshes["generic_3D_field"].setGridUnitSI(4).setUnitDimension({{Record::UnitDimension::L, -3}});
     cur_it.meshes["generic_3D_field"]["y"].setUnitSI(4);
 
-    // as this is a copy, it does not modify the sunk resource and can be modified independently
-    Mesh lowRez = cur_it.meshes["generic_3D_field"];
-    lowRez.setGridSpacing({6, 1, 1}).setGridGlobalOffset({0, 600, 0});
+    {
+        // as this is a copy, it does not modify the sunk resource and can be modified independently
+        Mesh lowRez = cur_it.meshes["generic_3D_field"];
+        lowRez.setGridSpacing({6, 1, 1}).setGridGlobalOffset({0, 600, 0});
 
-    Mesh highRez = cur_it.meshes["generic_3D_field"];
-    highRez.setGridSpacing({6, 0.5, 1}).setGridGlobalOffset({0, 1200, 0});
+        Mesh highRez = cur_it.meshes["generic_3D_field"];
+        highRez.setGridSpacing({6, 0.5, 1}).setGridGlobalOffset({0, 1200, 0});
 
-    cur_it.meshes.erase("generic_3D_field");
-    cur_it.meshes["lowRez_3D_field"] = lowRez;
-    cur_it.meshes["highRez_3D_field"] = highRez;
+        cur_it.meshes.erase("generic_3D_field");
+        cur_it.meshes["lowRez_3D_field"] = lowRez;
+        cur_it.meshes["highRez_3D_field"] = highRez;
+    }
 
     cur_it.particles["e"].setAttribute("NoteWorthyParticleProperty",
                                        "This particle was observed to be very particle-esque.");
     cur_it.particles["e"]["weighting"][RecordComponent::SCALAR].setUnitSI(1e-5);
 
     // this wires up the numeric data
+    Mesh& lr = cur_it.meshes["lowRez_3D_field"];
     Dataset d = Dataset(x_data_lr[0][0], Extent{2, 5});
-    cur_it.meshes["lowRez_3D_field"]["x"].resetDataset(d);
-    cur_it.meshes["lowRez_3D_field"]["y"].resetDataset(d);
-    cur_it.meshes["lowRez_3D_field"]["z"].resetDataset(d);
-    cur_it.particles["e"]["weighting"][RecordComponent::SCALAR].resetDataset(d);
-//    for( int i = 0; i < 2; ++i )
-//    {
-//        Offset o = Offset{static_cast<unsigned long>(i), 0};
-//        Extent e = Extent{1, 5};
-//        double *ptr = &x_data_lr[i][0];
-//
-//        auto my_deleter = [](double *p){ /* do nothing */ };
-//        // indicate shared ownership during IO
-//        // if you want to manage the lifetime of your numeric data, specify a deleter
-//        std::shared_ptr< double > chunk = std::shared_ptr< double >(ptr, my_deleter);
-//        lowRez["x"].storeChunk(o, e, chunk);
-//        // operations between store and flush are permitted, but MUST NOT modify the pointed-to data
-//        f.flush();
-//        // after the flush completes successfully, exclusive access to the shared resource is returned to the caller
-//
-//        auto read = lowRez["x"].loadChunk< double >(o, e);
+    lr["x"].resetDataset(d);
+    lr["y"].resetDataset(d);
+    lr["z"].resetDataset(d);
+    for( unsigned long i = 0; i < 2; ++i )
+    {
+        Offset o = Offset{i, 0};
+        Extent e = Extent{1, 5};
+        double *ptrToStart = &x_data_lr[i][0];
+
+        auto my_deleter = [](double *p){ /* do nothing */ };
+        // indicate shared ownership during IO
+        // if you want to manage the lifetime of your numeric data, specify a deleter
+        std::shared_ptr< double > chunk = std::shared_ptr< double >(ptrToStart, my_deleter);
+        lr["x"].storeChunk(o, e, chunk);
+        // operations between store and flush are permitted, but MUST NOT modify the pointed-to data
+        f.flush();
+        // after the flush completes successfully, exclusive access to the shared resource is returned to the caller
+
+//        auto read = lr["x"].loadChunk< double >(o, e);
 //        for( uint8_t i = 0; i < 2; ++i )
 //            for( uint8_t j = 0; j < 5; ++j )
 //                if( chunk.get()[i*5 + j] != read.get()[i*5 + j] )
 //                    std::cerr << "IO is incorrect!" << std::endl;
-//    }
+    }
 //
 //
 //    for( int i = 0; i < 2; ++i )
@@ -123,7 +125,6 @@ write2()
 //        */
 //        f.flush();                      // Now it may be deleted.
 //    }
-    f.flush();
 }
 
 

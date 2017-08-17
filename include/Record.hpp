@@ -44,7 +44,7 @@ public:
     Record& setTimeOffset(float const);
 
 private:
-    void flush();
+    void flush(std::string const&);
 
     bool m_containsScalar;
 };  //Record

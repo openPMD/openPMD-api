@@ -34,6 +34,9 @@ std::map< std::string, Attribute > structToMap(Parameter< Operation::WRITE_DATAS
     std::map< std::string, Attribute > ret;
     ret.insert({"extent", Attribute(p.extent)});
     ret.insert({"offset", Attribute(p.offset)});
+    ret.insert({"dtype", Attribute(p.dtype)});
+    // see TODO in IOTask.hpp
+    //ret.insert({"data", Attribute(p.data)});
     return ret;
 };
 

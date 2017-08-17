@@ -83,8 +83,34 @@ Record::setTimeOffset(float timeOffset)
 }
 
 void
-Record::flush()
+Record::flush(std::string const& name)
 {
+    if( !written )
+    {
+        if( m_containsScalar )
+        {
+            Parameter< Operation::CREATE_DATASET > ds_parameter;
+            ds_parameter.name = name;
+            RecordComponent& r = at(RecordComponent::SCALAR);
+            r.parent = parent;
+            ds_parameter.dtype = r.m_dataset.dtype;
+            ds_parameter.extent = r.m_dataset.extents;
+            IOHandler->enqueue(IOTask(this, ds_parameter));
+            IOHandler->flush();
+        } else
+        {
+            Parameter< Operation::CREATE_PATH > path_parameter;
+            path_parameter.path = name;
+            IOHandler->enqueue(IOTask(this, path_parameter));
+            IOHandler->flush();
+            for( auto& comp : *this )
+            {
+                comp.second.parent = this;
+                comp.second.flush(comp.first);
+            }
+        }
+    }
+
     if( dirty )
     {
         Parameter< Operation::WRITE_ATT > attribute_parameter;
@@ -94,29 +120,6 @@ Record::flush()
             attribute_parameter.resource = getAttribute(att_name).getResource();
             attribute_parameter.dtype = getAttribute(att_name).dtype;
             IOHandler->enqueue(IOTask(this, attribute_parameter));
-        }
-    }
-
-    if( m_containsScalar )
-    {
-        RecordComponent& r = at(RecordComponent::SCALAR);
-        r.abstractFilePosition = abstractFilePosition;
-        r.parent = parent;
-        r.flush();
-    } else
-    {
-        for( auto& comp : *this )
-        {
-            if( !comp.second.written )
-            {
-                Parameter< Operation::CREATE_DATASET > ds_parameter;
-                ds_parameter.name = comp.first;
-                Dataset const& ds = comp.second.m_dataset;
-                ds_parameter.dtype = ds.dtype;
-                ds_parameter.extent = ds.extents;
-                IOHandler->enqueue(IOTask(&comp.second, ds_parameter));
-            }
-            comp.second.flush();
         }
     }
 
