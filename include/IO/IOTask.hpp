@@ -9,6 +9,22 @@
 
 class Writable;
 
+enum class ArgumentDatatype : int
+{
+    STRING = 0,
+    VEC_UINT64,
+    SHARED_PTR_VOID,
+    DATATYPE,
+    ATT_RESOURCE,
+
+    UNDEFINED
+};
+using Argument = Variadic< ArgumentDatatype,
+                           std::string,
+                           std::vector< uint64_t >,
+                           std::shared_ptr< void >,
+                           Datatype,
+                           Attribute::resource >;
 
 enum class Operation
 {
@@ -89,7 +105,7 @@ struct Parameter< Operation::DELETE_PATH >
 };
 
 template< Operation o >
-std::map< std::string, Attribute > structToMap(Parameter< o > const&);
+std::map< std::string, Argument > structToMap(Parameter< o > const&);
 
 // TODO replace "Attribute" as the parameter type with something more generic in the backend
 class IOTask
@@ -105,5 +121,5 @@ public:
 
     Writable* writable;
     Operation const operation;
-    std::map< std::string, Attribute > const parameter;
+    std::map< std::string, Argument > const parameter;
 };  //IOTask

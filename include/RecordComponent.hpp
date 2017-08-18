@@ -78,7 +78,10 @@ RecordComponent::storeChunk(Offset o, Extent e, std::shared_ptr<T> data)
     Extent dse = getExtent();
     for( uint8_t i = 0; i < dim; ++i )
         if( o[i] < 0 || dse[i] < o[i] + e[i] )
-            throw std::runtime_error("Chunk does not reside inside dataset.");
+            throw std::runtime_error("Chunk does not reside inside dataset (Dimension on index " + std::to_string(i)
+                                     + " - DS: " + std::to_string(dse[i])
+                                     + " - Chunk: " + std::to_string(o[i] + e[i])
+                                     + ")");
 
     Parameter< Operation::WRITE_DATASET > chunk_parameter;
     chunk_parameter.offset = o;

@@ -206,7 +206,7 @@ HDF5IOHandler::concrete_file_position(Writable *w)
 
 void
 HDF5IOHandler::createDataset(Writable* writable,
-                             std::map< std::string, Attribute > const& parameters)
+                             std::map< std::string, Argument > const& parameters)
 {
     if( !writable->written )
     {
@@ -232,7 +232,7 @@ HDF5IOHandler::createDataset(Writable* writable,
             std::cerr << "Unknown datatype caught during writing (serial HDF5)" << std::endl;
             d = Datatype::BOOL;
         }
-        Attribute a(d);
+        Attribute a(0);
         a.dtype = d;
         std::vector< hsize_t > dims;
         for( auto const & val : parameters.at("extent").get< Extent >() )
@@ -258,7 +258,7 @@ HDF5IOHandler::createDataset(Writable* writable,
 
 void
 HDF5IOHandler::createFile(Writable* writable,
-                          std::map< std::string, Attribute > const& parameters)
+                          std::map< std::string, Argument > const& parameters)
 {
     if( !writable->written )
     {
@@ -288,7 +288,7 @@ HDF5IOHandler::createFile(Writable* writable,
 
 void
 HDF5IOHandler::createPath(Writable* writable,
-                          std::map< std::string, Attribute > const& parameters)
+                          std::map< std::string, Argument > const& parameters)
 {
     if( !writable->written )
     {
@@ -337,7 +337,7 @@ HDF5IOHandler::createPath(Writable* writable,
 
 void
 HDF5IOHandler::writeAttribute(Writable* writable,
-                              std::map< std::string, Attribute > const& parameters)
+                              std::map< std::string, Argument > const& parameters)
 {
     auto res = m_fileIDs.find(writable);
     if( res == m_fileIDs.end() )
@@ -347,7 +347,7 @@ HDF5IOHandler::writeAttribute(Writable* writable,
                       concrete_file_position(writable).c_str(),
                       H5P_DEFAULT);
     std::string name = parameters.at("name").get< std::string >();
-    Attribute const& att = parameters.at("attribute");
+    Attribute const att(parameters.at("attribute").get< Attribute::resource >());
     if( H5Aexists(node_id, name.c_str()) == 0 )
     {
         attribute_id = H5Acreate(node_id,
@@ -365,7 +365,7 @@ HDF5IOHandler::writeAttribute(Writable* writable,
 
     herr_t status;
     using DT = Datatype;
-    switch( att.dtype )
+    switch( parameters.at("dtype").get< Datatype >() )
     {
         case DT::CHAR:
         {
@@ -441,18 +441,34 @@ HDF5IOHandler::writeAttribute(Writable* writable,
 
 void
 HDF5IOHandler::writeDataset(Writable* writable,
-                            std::map< std::string, Attribute > const& parameters)
+                            std::map< std::string, Argument > const& parameters)
 {
     auto res = m_fileIDs.find(writable);
     if( res == m_fileIDs.end() )
         res = m_fileIDs.find(writable->parent);
-    hid_t dataset_id;
+
+    hid_t dataset_id, space;
     herr_t status;
     dataset_id = H5Dopen(res->second,
                          concrete_file_position(writable).c_str(),
                          H5P_DEFAULT);
 
-    switch( parameters.at("dtype").get< Datatype >() )
+    space = H5Dget_space(dataset_id);
+    std::vector< hsize_t > start;
+    for( auto const & val : parameters.at("offset").get< Offset >() )
+        start.push_back(static_cast< hsize_t >(val));
+    std::vector< hsize_t > stride(start.size(), 1); /* contiguous region */
+    std::vector< hsize_t > count(start.size(), 1); /* single region */
+    std::vector< hsize_t > block;
+    for( auto const & val : parameters.at("extent").get< Extent >() )
+        block.push_back(static_cast< hsize_t >(val));
+    status = H5Sselect_hyperslab(space, H5S_SELECT_SET, start.data(), stride.data(), count.data(), block.data());
+
+    std::shared_ptr< void > data = parameters.at("data").get< std::shared_ptr< void > >();
+
+    Attribute a(0);
+    a.dtype = parameters.at("dtype").get< Datatype >();
+    switch( a.dtype )
     {
         using DT = Datatype;
         case DT::DOUBLE:
@@ -466,6 +482,13 @@ HDF5IOHandler::writeDataset(Writable* writable,
         case DT::CHAR:
         case DT::UCHAR:
         case DT::BOOL:
+            status = H5Dwrite(dataset_id,
+                              getH5DataType(a),
+                              H5S_ALL,
+                              space,
+                              H5P_DEFAULT,
+                              data.get());
+            break;
         case DT::UNDEFINED:
             throw std::runtime_error("Unknown Attribute datatype");
         case DT::DATATYPE:

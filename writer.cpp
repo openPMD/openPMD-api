@@ -102,6 +102,7 @@ write2()
         // indicate shared ownership during IO
         // if you want to manage the lifetime of your numeric data, specify a deleter
         std::shared_ptr< double > chunk = std::shared_ptr< double >(ptrToStart, my_deleter);
+        // TODO only first chunk is written
         lr["x"].storeChunk(o, e, chunk);
         // operations between store and flush are permitted, but MUST NOT modify the pointed-to data
         f.flush();

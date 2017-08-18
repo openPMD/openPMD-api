@@ -23,13 +23,13 @@ private:
     std::unordered_set< hid_t > m_openFileIDs;
     std::string concrete_file_position(Writable *w);
     void createDataset(Writable *,
-                       std::map< std::string, Attribute > const&);
+                       std::map< std::string, Argument > const&);
     void createFile(Writable*,
-                    std::map< std::string, Attribute > const&);
+                    std::map< std::string, Argument > const&);
     void createPath(Writable*,
-                    std::map< std::string, Attribute > const&);
+                    std::map< std::string, Argument > const&);
     void writeAttribute(Writable*,
-                        std::map< std::string, Attribute > const&);
+                        std::map< std::string, Argument > const&);
     void writeDataset(Writable*,
-                      std::map< std::string, Attribute > const&);
+                      std::map< std::string, Argument > const&);
 };
