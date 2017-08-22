@@ -1,13 +1,17 @@
-#include "include/reader/HDF5Reader.hpp"
+#include <iostream>
+
+#include "include/Output.hpp"
 
 int main()
 {
-    HDF5Reader test("../data00000100.h5");
-    Output o = test.read();
+    Output o = Output("./working/directory/",
+                      "3D_simData.h5",
+                      Output::IterationEncoding::groupBased,
+                      Format::HDF5,
+                      AccessType::READ_ONLY);
 
-    uint64_t it = o.iterations.begin()->first;
-    std::string m = o.iterations[it].meshes.begin()->first;
-    std::string c = o.iterations[it].meshes[m].keys()[0];
-    RecordComponent r = o.iterations[it].meshes[m][c];
+    for( auto const& val : o.attributes() )
+        std::cout << val << std::endl;
+
     return 0;
 }

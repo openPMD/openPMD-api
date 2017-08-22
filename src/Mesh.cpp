@@ -203,12 +203,12 @@ Mesh::flush(std::string const& name)
             IOHandler->enqueue(IOTask(this, path_parameter));
             IOHandler->flush();
             for( auto& comp : *this )
-            {
                 comp.second.parent = this;
-                comp.second.flush(comp.first);
-            }
         }
     }
+
+    for( auto& comp : *this )
+        comp.second.flush(comp.first);
 
     if( dirty )
     {

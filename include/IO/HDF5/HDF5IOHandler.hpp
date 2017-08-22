@@ -32,4 +32,10 @@ private:
                         std::map< std::string, Argument > const&);
     void writeDataset(Writable*,
                       std::map< std::string, Argument > const&);
+    void openFile(Writable*,
+                  std::map< std::string, Argument > const&);
+    void readAttribute(Writable*,
+                       std::map< std::string, Argument > &);
+    void listAttributes(Writable*,
+                        std::map< std::string, Argument > &);
 };

@@ -61,7 +61,8 @@ add_executable(poc_HDF5Writer
         ${IO_SOURCE})
 add_executable(poc_HDF5Reader
         reader.cpp
-        ${SOURCE_FILES})
+        ${CORE_SOURCE}
+        ${IO_SOURCE})
 
 target_link_libraries(libopenpmdCoreTests
         ${HDF5_LIBRARIES}
@@ -70,4 +71,6 @@ target_link_libraries(poc_HDF5Writer
         ${HDF5_LIBRARIES}
         ${Boost_LIBRARIES})
 target_link_libraries(poc_HDF5Reader
-        ${HDF5_LIBRARIES})
+        ${HDF5_LIBRARIES}
+        ${Boost_LIBRARIES})
+

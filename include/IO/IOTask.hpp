@@ -16,6 +16,9 @@ enum class ArgumentDatatype : int
     SHARED_PTR_VOID,
     DATATYPE,
     ATT_RESOURCE,
+    SHARED_PTR_DATATYPE,
+    SHARED_PTR_ATT_RESOURCE,
+    SHARED_PTR_VEC_STRING,
 
     UNDEFINED
 };
@@ -24,13 +27,17 @@ using Argument = Variadic< ArgumentDatatype,
                            std::vector< uint64_t >,
                            std::shared_ptr< void >,
                            Datatype,
-                           Attribute::resource >;
+                           Attribute::resource,
+                           std::shared_ptr< Datatype >,
+                           std::shared_ptr< Attribute::resource >,
+                           std::shared_ptr< std::vector< std::string > > >;
 
 enum class Operation
 {
     WRITE_ATT,
     READ_ATT,
     DELETE_ATT,
+    LIST_ATTS,
 
     CREATE_DATASET,
     WRITE_DATASET,
@@ -38,10 +45,12 @@ enum class Operation
     DELETE_DATASET,
 
     CREATE_FILE,
+    OPEN_FILE,
     DELETE_FILE,
 
     CREATE_PATH,
-    DELETE_PATH
+    DELETE_PATH,
+    LIST_PATHS
 };  //Operation
 
 
@@ -53,14 +62,31 @@ template<>
 struct Parameter< Operation::WRITE_ATT >
 {
     std::string name;
-    Attribute::resource resource;
     Datatype dtype;
+    Attribute::resource resource;
+};
+
+template<>
+struct Parameter< Operation::READ_ATT >
+{
+    std::string name;
+    std::shared_ptr< Datatype > dtype
+            = std::make_shared< Datatype >();
+    std::shared_ptr< Attribute::resource > resource
+            = std::make_shared< Attribute::resource >();
 };
 
 template<>
 struct Parameter< Operation::DELETE_ATT >
 {
     std::string name;
+};
+
+template<>
+struct Parameter< Operation::LIST_ATTS >
+{
+    std::shared_ptr< std::vector< std::string > > attributes
+            = std::make_shared< std::vector< std::string > >();
 };
 
 template<>
@@ -87,6 +113,12 @@ struct Parameter< Operation::CREATE_FILE >
 };
 
 template<>
+struct Parameter< Operation::OPEN_FILE >
+{
+    std::string name;
+};
+
+template<>
 struct Parameter< Operation::DELETE_FILE >
 {
     std::string name;
@@ -104,10 +136,16 @@ struct Parameter< Operation::DELETE_PATH >
     std::string path;
 };
 
+template<>
+struct Parameter< Operation::LIST_PATHS >
+{
+    std::shared_ptr< std::vector< std::string > > paths
+            = std::make_shared< std::vector< std::string > >();
+};
+
 template< Operation o >
 std::map< std::string, Argument > structToMap(Parameter< o > const&);
 
-// TODO replace "Attribute" as the parameter type with something more generic in the backend
 class IOTask
 {
 public:
@@ -121,5 +159,5 @@ public:
 
     Writable* writable;
     Operation const operation;
-    std::map< std::string, Argument > const parameter;
+    std::map< std::string, Argument > parameter;
 };  //IOTask

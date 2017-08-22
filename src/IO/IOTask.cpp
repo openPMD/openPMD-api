@@ -6,16 +6,34 @@ std::map< std::string, Argument > structToMap(Parameter< Operation::WRITE_ATT > 
 {
     std::map< std::string, Argument > ret;
     ret.insert({"name", Argument(p.name)});
-    ret.insert({"attribute", Argument(p.resource)});
     ret.insert({"dtype", Argument(p.dtype)});
+    ret.insert({"attribute", Argument(p.resource)});
     return ret;
 }
 
 template<>
-std::map< std::string, Argument > structToMap(Parameter< Operation::DELETE_ATT> const& p)
+std::map< std::string, Argument > structToMap(Parameter< Operation::READ_ATT > const& p)
 {
     std::map< std::string, Argument > ret;
     ret.insert({"name", Argument(p.name)});
+    ret.insert({"dtype", Argument(p.dtype)});
+    ret.insert({"resource", Argument(p.resource)});
+    return ret;
+}
+
+template<>
+std::map< std::string, Argument > structToMap(Parameter< Operation::DELETE_ATT > const& p)
+{
+    std::map< std::string, Argument > ret;
+    ret.insert({"name", Argument(p.name)});
+    return ret;
+}
+
+template<>
+std::map< std::string, Argument > structToMap(Parameter< Operation::LIST_ATTS > const& p)
+{
+    std::map< std::string, Argument > ret;
+    ret.insert({"attributes", Argument(p.attributes)});
     return ret;
 }
 
@@ -42,6 +60,14 @@ std::map< std::string, Argument > structToMap(Parameter< Operation::WRITE_DATASE
 
 template<>
 std::map< std::string, Argument > structToMap(Parameter< Operation::CREATE_FILE > const& p)
+{
+    std::map< std::string, Argument > ret;
+    ret.insert({"name", Argument(p.name)});
+    return ret;
+}
+
+template<>
+std::map< std::string, Argument > structToMap(Parameter< Operation::OPEN_FILE > const& p)
 {
     std::map< std::string, Argument > ret;
     ret.insert({"name", Argument(p.name)});

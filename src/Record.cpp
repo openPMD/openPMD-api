@@ -89,14 +89,11 @@ Record::flush(std::string const& name)
     {
         if( m_containsScalar )
         {
-            Parameter< Operation::CREATE_DATASET > ds_parameter;
-            ds_parameter.name = name;
             RecordComponent& r = at(RecordComponent::SCALAR);
             r.parent = parent;
-            ds_parameter.dtype = r.m_dataset.dtype;
-            ds_parameter.extent = r.m_dataset.extents;
-            IOHandler->enqueue(IOTask(this, ds_parameter));
-            IOHandler->flush();
+            r.flush(name);
+            abstractFilePosition = r.abstractFilePosition;
+            written = true;
         } else
         {
             Parameter< Operation::CREATE_PATH > path_parameter;
@@ -104,12 +101,12 @@ Record::flush(std::string const& name)
             IOHandler->enqueue(IOTask(this, path_parameter));
             IOHandler->flush();
             for( auto& comp : *this )
-            {
                 comp.second.parent = this;
-                comp.second.flush(comp.first);
-            }
         }
     }
+
+    for( auto& comp : *this )
+        comp.second.flush(comp.first);
 
     if( dirty )
     {

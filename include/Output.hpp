@@ -53,6 +53,8 @@ public:
     Container< Iteration, uint64_t > iterations;
 
 private:
+    void read();
+
     static char const * const BASEPATH;
     static char const * const OPENPMD;
     IterationEncoding m_iterationEncoding;
