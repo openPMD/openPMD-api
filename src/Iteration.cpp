@@ -155,19 +155,102 @@ Iteration::flush()
             record.second.flush(record.first);
     }
 
-    if( dirty )
+    flushAttributes();
+}
+
+void
+Iteration::read()
+{
+    using DT = Datatype;
+    Parameter< Operation::READ_ATT > attribute_parameter;
+
+    attribute_parameter.name = "dt";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::FLOAT )
+        setDt(Attribute(*attribute_parameter.resource).get< float >());
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'dt'");
+
+    attribute_parameter.name = "time";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::FLOAT )
+        setTime(Attribute(*attribute_parameter.resource).get< float >());
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'time'");
+
+    attribute_parameter.name = "timeUnitSI";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::DOUBLE )
+        setTimeUnitSI(Attribute(*attribute_parameter.resource).get< double >());
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'timeUnitSI'");
+
+    readAttributes();
+
+    /* Find the root point [Output] of this file,
+     * meshesPath and particlesPath are stored there */
+    Writable *w = this;
+    while( w->parent )
+        w = w->parent;
+    Output* o = dynamic_cast<Output *>(w);
+
+    Parameter< Operation::OPEN_PATH > path_parameter;
+    path_parameter.path = o->meshesPath();
+    IOHandler->enqueue(IOTask(&meshes, path_parameter));
+    IOHandler->flush();
+
+    meshes.readAttributes();
+
+    /* obtain all meshes */
+    Parameter< Operation::LIST_PATHS > plist_parameter;
+    IOHandler->enqueue(IOTask(&meshes, plist_parameter));
+    IOHandler->flush();
+
+    for( auto const& me : *plist_parameter.paths )
     {
-        Parameter< Operation::WRITE_ATT > attribute_parameter;
-        for( std::string const & att_name : attributes() )
-        {
-            attribute_parameter.name = att_name;
-            attribute_parameter.resource = getAttribute(att_name).getResource();
-            attribute_parameter.dtype = getAttribute(att_name).dtype;
-            IOHandler->enqueue(IOTask(this, attribute_parameter));
-        }
+        //TODO these may be constant scalar records
+        Mesh& m = meshes[me];
+        path_parameter.path = me;
+        IOHandler->enqueue(IOTask(&m, path_parameter));
+        IOHandler->flush();
+        m.read();
     }
 
-    dirty = false;
+    Parameter< Operation::LIST_DATASETS > dlist_parameter;
+    IOHandler->enqueue(IOTask(&meshes, plist_parameter));
+    IOHandler->flush();
+
+    Parameter< Operation::OPEN_DATASET > dataset_parameter;
+    for( auto const& me : *dlist_parameter.datasets )
+    {
+        Mesh& m = meshes[me];
+        dataset_parameter.name = me;
+        IOHandler->enqueue(IOTask(&m, dataset_parameter));
+        IOHandler->flush();
+        m.read();
+    }
+
+    path_parameter.path = o->particlesPath();
+    IOHandler->enqueue(IOTask(&particles, path_parameter));
+    IOHandler->flush();
+
+    particles.readAttributes();
+
+    /* obtain all particle species */
+    IOHandler->enqueue(IOTask(&particles, plist_parameter));
+    IOHandler->flush();
+
+    for( auto const& ps : *plist_parameter.paths )
+    {
+        ParticleSpecies& p = particles[ps];
+        path_parameter.path = ps;
+        IOHandler->enqueue(IOTask(&p, path_parameter));
+        IOHandler->flush();
+        p.read();
+    }
 }
 
 

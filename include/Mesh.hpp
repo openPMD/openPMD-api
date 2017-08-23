@@ -69,6 +69,7 @@ public:
 
 private:
     void flush(std::string const&);
+    void read();
 };  //Mesh
 
 std::ostream&

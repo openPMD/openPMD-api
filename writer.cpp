@@ -92,6 +92,7 @@ write2()
     lr["x"].resetDataset(d);
     lr["y"].resetDataset(d);
     lr["z"].resetDataset(d);
+    f.flush();
     for( unsigned long i = 0; i < 2; ++i )
     {
         Offset o = Offset{i, 0};

@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(container_default_test)
     BOOST_TEST(c.erase("nonExistentKey") == false);
 }
 
-class structure : public Attributable, public Writable
+class structure : public Attributable
 {
 public:
     std::string string_ = "Hello, world!";

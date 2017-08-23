@@ -210,19 +210,85 @@ Mesh::flush(std::string const& name)
     for( auto& comp : *this )
         comp.second.flush(comp.first);
 
-    if( dirty )
-    {
-        Parameter< Operation::WRITE_ATT > attribute_parameter;
-        for( std::string const & att_name : attributes() )
-        {
-            attribute_parameter.name = att_name;
-            attribute_parameter.resource = getAttribute(att_name).getResource();
-            attribute_parameter.dtype = getAttribute(att_name).dtype;
-            IOHandler->enqueue(IOTask(this, attribute_parameter));
-        }
-    }
+    flushAttributes();
+}
 
-    dirty = false;
+void
+Mesh::read()
+{
+    using DT = Datatype;
+    Parameter< Operation::READ_ATT > attribute_parameter;
+
+    attribute_parameter.name = "geometry";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::STRING )
+    {
+        std::string const& geometry
+                = Attribute(*attribute_parameter.resource).get< std::string >();
+        if( geometry == "cartesian" )
+            setGeometry(Geometry::cartesian);
+        else if( geometry == "thetaMode" )
+            setGeometry(Geometry::thetaMode);
+        else if( geometry == "cylindrical" )
+            setGeometry(Geometry::cylindrical);
+        else if( geometry == "spherical" )
+            setGeometry(Geometry::spherical);
+        else
+            throw std::runtime_error("Unkonwn geometry " + geometry);
+    }
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'geometry'");
+
+    attribute_parameter.name = "dataOrder";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::CHAR )
+        setDataOrder(static_cast<DataOrder>(Attribute(*attribute_parameter.resource).get< char >()));
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'dataOrder'");
+
+    attribute_parameter.name = "axisLabels";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::VEC_STRING )
+        setAxisLabels(Attribute(*attribute_parameter.resource).get< std::vector< std::string > >());
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'axisLabels'");
+
+    attribute_parameter.name = "gridSpacing";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::VEC_FLOAT )
+        setGridSpacing(Attribute(*attribute_parameter.resource).get< std::vector< float > >());
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'gridSpacing'");
+
+    attribute_parameter.name = "gridGlobalOffset";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::VEC_DOUBLE )
+        setGridGlobalOffset(Attribute(*attribute_parameter.resource).get< std::vector< double > >());
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'gridGlobalOffset'");
+
+    attribute_parameter.name = "gridUnitSI";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::DOUBLE )
+        setGridUnitSI(Attribute(*attribute_parameter.resource).get< double >());
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'gridUnitSI'");
+
+    attribute_parameter.name = "gridUnitSI";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::DOUBLE )
+        setGridUnitSI(Attribute(*attribute_parameter.resource).get< double >());
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'gridUnitSI'");
+
+    readAttributes();
 }
 
 std::ostream&

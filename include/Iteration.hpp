@@ -11,7 +11,7 @@
 #include "ParticleSpecies.hpp"
 
 
-class Iteration : public Attributable, public Writable
+class Iteration : public Attributable
 {
     template<
             typename T,
@@ -43,4 +43,5 @@ private:
     void flushFileBased(uint64_t);
     void flushGroupBased(uint64_t);
     void flush();
+    void read();
 };  //Iteration

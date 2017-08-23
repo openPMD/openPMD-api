@@ -45,3 +45,9 @@ ParticleSpecies::setNumParticlesLocalOffset(uint64_t nplo)
     m_numParticlesLocalOffset = nplo;
     return *this;
 }
+
+void
+ParticleSpecies::read()
+{
+    readAttributes();
+}

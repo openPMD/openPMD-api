@@ -6,7 +6,7 @@
 #include "Writable.hpp"
 
 
-class RecordComponent : public Attributable, public Writable
+class RecordComponent : public Attributable
 {
     template<
             typename T,

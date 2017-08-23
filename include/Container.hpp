@@ -3,6 +3,7 @@
 
 #include <string>
 #include <unordered_map>
+
 #include "Attributable.hpp"
 #include "Writable.hpp"
 
@@ -13,8 +14,7 @@ template<
 >
 class Container
         : public std::unordered_map< T_key, T >,
-          public Attributable,
-          public Writable
+          public Attributable
 {
     friend class Iteration;
     friend class Output;
@@ -56,15 +56,14 @@ private:
             path_parameter.path = path;
             IOHandler->enqueue(IOTask(this, path_parameter));
             IOHandler->flush();
+
+            for( auto& entry : *this )
+            {
+                entry.second.IOHandler = IOHandler;
+                entry.second.parent = this;
+            }
         }
 
-        Parameter< Operation::WRITE_ATT > attribute_parameter;
-        for( std::string const & att_name : attributes() )
-        {
-            attribute_parameter.name = att_name;
-            attribute_parameter.resource = getAttribute(att_name).getResource();
-            attribute_parameter.dtype = getAttribute(att_name).dtype;
-            IOHandler->enqueue(IOTask(this, attribute_parameter));
-        }
+        flushAttributes();
     }
 };

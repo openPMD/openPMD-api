@@ -10,7 +10,7 @@
 #include "Writable.hpp"
 
 
-class Output : public Attributable, public Writable
+class Output : public Attributable
 {
 public:
     enum class IterationEncoding

@@ -22,20 +22,30 @@ private:
     std::unordered_map< Writable*, hid_t > m_fileIDs;
     std::unordered_set< hid_t > m_openFileIDs;
     std::string concrete_file_position(Writable *w);
-    void createDataset(Writable *,
-                       std::map< std::string, Argument > const&);
     void createFile(Writable*,
                     std::map< std::string, Argument > const&);
     void createPath(Writable*,
                     std::map< std::string, Argument > const&);
-    void writeAttribute(Writable*,
-                        std::map< std::string, Argument > const&);
-    void writeDataset(Writable*,
-                      std::map< std::string, Argument > const&);
+    void createDataset(Writable *,
+                       std::map< std::string, Argument > const&);
     void openFile(Writable*,
                   std::map< std::string, Argument > const&);
+    void openPath(Writable*,
+                  std::map< std::string, Argument > const&);
+    void openDataset(Writable*,
+                     std::map< std::string, Argument > &);
+    void writeDataset(Writable*,
+                      std::map< std::string, Argument > const&);
+    void writeAttribute(Writable*,
+                        std::map< std::string, Argument > const&);
+    void readDataset(Writable*,
+                     std::map< std::string, Argument > &);
     void readAttribute(Writable*,
                        std::map< std::string, Argument > &);
+    void listPaths(Writable*,
+                   std::map< std::string, Argument > &);
+    void listDatasets(Writable*,
+                      std::map< std::string, Argument > &);
     void listAttributes(Writable*,
                         std::map< std::string, Argument > &);
 };

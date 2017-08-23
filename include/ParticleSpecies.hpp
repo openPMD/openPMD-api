@@ -13,6 +13,7 @@ class ParticleSpecies : public Container< Record >
             typename T_key
     >
     friend class Container;
+    friend class Iteration;
 
 private:
     ParticleSpecies();
@@ -20,6 +21,8 @@ private:
     uint64_t m_numParticlesGlobal;
     uint64_t m_numParticlesLocal;
     uint64_t m_numParticlesLocalOffset;
+
+    void read();
 
 public:
     uint64_t numParticlesGlobal() const;

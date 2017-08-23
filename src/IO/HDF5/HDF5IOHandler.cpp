@@ -27,39 +27,52 @@ HDF5IOHandler::flush()
     while( !m_work.empty() )
     {
         IOTask& i = m_work.front();
-        //TODO
         switch( i.operation )
         {
             using O = Operation;
-            case O::CREATE_DATASET:
-                createDataset(i.writable, i.parameter);
-                break;
             case O::CREATE_FILE:
                 createFile(i.writable, i.parameter);
                 break;
             case O::CREATE_PATH:
                 createPath(i.writable, i.parameter);
                 break;
-            case O::WRITE_ATT:
-                writeAttribute(i.writable, i.parameter);
-                break;
-            case O::WRITE_DATASET:
-                writeDataset(i.writable, i.parameter);
+            case O::CREATE_DATASET:
+                createDataset(i.writable, i.parameter);
                 break;
             case O::OPEN_FILE:
                 openFile(i.writable, i.parameter);
                 break;
+            case O::OPEN_PATH:
+                openPath(i.writable, i.parameter);
+                break;
+            case O::OPEN_DATASET:
+                openDataset(i.writable, i.parameter);
+                break;
+            case O::DELETE_FILE:
+            case O::DELETE_PATH:
+            case O::DELETE_DATASET:
+            case O::DELETE_ATT:
+                break;
+            case O::WRITE_DATASET:
+                writeDataset(i.writable, i.parameter);
+                break;
+            case O::WRITE_ATT:
+                writeAttribute(i.writable, i.parameter);
+                break;
+            case O::READ_DATASET:
+                readDataset(i.writable, i.parameter);
+                break;
             case O::READ_ATT:
                 readAttribute(i.writable, i.parameter);
                 break;
-            case O::READ_DATASET:
+            case O::LIST_PATHS:
+                listPaths(i.writable, i.parameter);
+                break;
+            case O::LIST_DATASETS:
+                listDatasets(i.writable, i.parameter);
+                break;
             case O::LIST_ATTS:
                 listAttributes(i.writable, i.parameter);
-                break;
-            case O::DELETE_ATT:
-            case O::DELETE_DATASET:
-            case O::DELETE_FILE:
-            case O::DELETE_PATH:
                 break;
         }
         m_work.pop();
@@ -740,7 +753,7 @@ void HDF5IOHandler::listAttributes(Writable* writable,
     auto res = m_fileIDs.find(writable);
     if( res == m_fileIDs.end() )
         res = m_fileIDs.find(writable->parent);
-    hid_t node_id, attribute_id;
+    hid_t node_id;
     node_id = H5Oopen(res->second,
                       concrete_file_position(writable).c_str(),
                       H5P_DEFAULT);
@@ -770,6 +783,112 @@ void HDF5IOHandler::listAttributes(Writable* writable,
                            name_length+1,
                            H5P_DEFAULT);
         strings->push_back(std::string(name, name_length));
+    }
+
+    H5Oclose(node_id);
+}
+
+void
+HDF5IOHandler::openPath(Writable* writable,
+                        std::map< std::string, Argument > const& parameters)
+{
+    auto res = m_fileIDs.find(writable);
+    if( res == m_fileIDs.end() )
+        res = m_fileIDs.find(writable->parent);
+    hid_t node_id, path_id;
+    node_id = H5Gopen(res->second,
+                      concrete_file_position(writable).c_str(),
+                      H5P_DEFAULT);
+
+    /* Sanitize path */
+    std::string path = parameters.at("path").get< std::string >();
+    if( starts_with(path, "/") )
+        path = replace_first(path, "/", "");
+    if( !ends_with(path, "/") )
+        path += '/';
+
+    path_id = H5Gopen(node_id,
+                      path.c_str(),
+                      H5P_DEFAULT);
+
+    H5Gclose(path_id);
+    H5Gclose(node_id);
+
+    writable->written = true;
+    writable->abstractFilePosition = std::make_shared< HDF5FilePosition >(path);
+
+    m_fileIDs.insert({writable, res->second});
+}
+
+void
+HDF5IOHandler::openDataset(Writable* writable,
+                           std::map< std::string, Argument > & parameters)
+{
+    //TODO
+    throw std::runtime_error("openDataset not implemented");
+}
+
+void
+HDF5IOHandler::readDataset(Writable* writable,
+                           std::map< std::string, Argument > & parameters)
+{
+    //TODO
+    throw std::runtime_error("readDataset not implemented");
+}
+
+void
+HDF5IOHandler::listPaths(Writable* writable,
+                         std::map< std::string, Argument > & parameters)
+{
+    auto res = m_fileIDs.find(writable);
+    if( res == m_fileIDs.end() )
+        res = m_fileIDs.find(writable->parent);
+    hid_t node_id = H5Gopen(res->second,
+                            concrete_file_position(writable).c_str(),
+                            H5P_DEFAULT);
+
+    H5G_info_t group_info;
+    herr_t status = H5Gget_info(node_id, &group_info);
+
+    auto paths = parameters.at("paths").get< std::shared_ptr< std::vector< std::string > > >();
+    for( hsize_t i = 0; i < group_info.nlinks; ++i )
+    {
+        if( H5G_GROUP == H5Gget_objtype_by_idx(node_id, i) )
+        {
+            ssize_t name_length = H5Gget_objname_by_idx(node_id, i, NULL, 0);
+            char name[name_length+1];
+            H5Gget_objname_by_idx(node_id, i, name, name_length+1);
+            paths->push_back(std::string(name, name_length));
+        }
+    }
+
+    H5Oclose(node_id);
+}
+
+void
+HDF5IOHandler::listDatasets(Writable* writable,
+                            std::map< std::string, Argument >& parameters)
+{
+    auto res = m_fileIDs.find(writable);
+    if( res == m_fileIDs.end() )
+        res = m_fileIDs.find(writable->parent);
+    hid_t node_id = H5Gopen(res->second,
+                            concrete_file_position(writable).c_str(),
+                            H5P_DEFAULT);
+
+    H5G_info_t group_info;
+    herr_t status = H5Gget_info(node_id, &group_info);
+
+    auto datasets = parameters.at("datasets").get< std::shared_ptr< std::vector< std::string > > >();
+    for( hsize_t i = 0; i < group_info.nlinks; ++i )
+    {
+        if( H5G_DATASET == H5Gget_objtype_by_idx(node_id, i) )
+        {
+            ssize_t name_length = H5Gget_objname_by_idx(node_id, i, NULL, 0);
+            char name[name_length+1];
+            H5Gget_objname_by_idx(node_id, i, name, name_length+1);
+            datasets->push_back(std::string(name, name_length));
+        }
     }
 
     H5Oclose(node_id);

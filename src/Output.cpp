@@ -229,6 +229,7 @@ Output::flush()
                         IOHandler->enqueue(IOTask(this, attribute_parameter));
                     }
                     IOHandler->flush();
+                    dirty = false;
                 }
             }
             break;
@@ -254,39 +255,23 @@ Output::flush()
                 i.second.flushGroupBased(i.first);
             }
 
-            if( dirty )
-            {
-                Parameter< Operation::WRITE_ATT > attribute_parameter;
-                for( std::string const & att_name : attributes() )
-                {
-                    attribute_parameter.name = att_name;
-                    attribute_parameter.resource = getAttribute(att_name).getResource();
-                    attribute_parameter.dtype = getAttribute(att_name).dtype;
-                    IOHandler->enqueue(IOTask(this, attribute_parameter));
-                }
-            }
-
+            flushAttributes();
         }
         break;
     }
 
     IOHandler->flush();
-    dirty = false;
 }
 
 void
 Output::read()
 {
+    //TODO find solution for handling fileBased output
+
     Parameter< Operation::OPEN_FILE > file_parameter;
     file_parameter.name = m_name;
     IOHandler->enqueue(IOTask(this, file_parameter));
     IOHandler->flush();
-
-    Parameter< Operation::LIST_ATTS > list_parameter;
-    IOHandler->enqueue(IOTask(this, list_parameter));
-    IOHandler->flush();
-    std::set< std::string > attributes(list_parameter.attributes->begin(),
-                                       list_parameter.attributes->end());
 
     using DT = Datatype;
     Parameter< Operation::READ_ATT > attribute_parameter;
@@ -298,7 +283,6 @@ Output::read()
         setOpenPMD(Attribute(*attribute_parameter.resource).get< std::string >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'openPMD'");
-    attributes.erase("openPMD");
 
     attribute_parameter.name = "openPMDextension";
     IOHandler->enqueue(IOTask(this, attribute_parameter));
@@ -307,7 +291,6 @@ Output::read()
         setOpenPMDextension(Attribute(*attribute_parameter.resource).get< uint32_t >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'openPMDextension'");
-    attributes.erase("openPMDextension");
 
     attribute_parameter.name = "basePath";
     IOHandler->enqueue(IOTask(this, attribute_parameter));
@@ -316,7 +299,6 @@ Output::read()
         setAttribute("basePath", Attribute(*attribute_parameter.resource).get< std::string >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'basePath'");
-    attributes.erase("basePath");
 
     attribute_parameter.name = "meshesPath";
     IOHandler->enqueue(IOTask(this, attribute_parameter));
@@ -325,7 +307,6 @@ Output::read()
         setMeshesPath(Attribute(*attribute_parameter.resource).get< std::string >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'meshesPath'");
-    attributes.erase("meshesPath");
 
     attribute_parameter.name = "particlesPath";
     IOHandler->enqueue(IOTask(this, attribute_parameter));
@@ -334,7 +315,6 @@ Output::read()
         setParticlesPath(Attribute(*attribute_parameter.resource).get< std::string >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'particlesPath'");
-    attributes.erase("particlesPath");
 
     attribute_parameter.name = "iterationEncoding";
     IOHandler->enqueue(IOTask(this, attribute_parameter));
@@ -357,7 +337,6 @@ Output::read()
     }
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'iterationEncoding'");
-    attributes.erase("iterationEncoding");
 
     attribute_parameter.name = "iterationFormat";
     IOHandler->enqueue(IOTask(this, attribute_parameter));
@@ -366,58 +345,31 @@ Output::read()
         setIterationFormat(Attribute(*attribute_parameter.resource).get< std::string >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
-    attributes.erase("iterationFormat");
 
-    for( auto const& att : attributes )
+    readAttributes();
+
+    Parameter< Operation::OPEN_PATH > path_parameter;
+    std::string version = openPMD();
+    if( version == "1.0.0" || version == "1.0.1" )
+        path_parameter.path = replace_first(basePath(), "/%T/", "");
+    else
+        throw std::runtime_error("Unknown openPMD version - " + version);
+    IOHandler->enqueue(IOTask(&iterations, path_parameter));
+    IOHandler->flush();
+
+    iterations.readAttributes();
+
+    /* obtain all paths inside the basepath (i.e. all iterations) */
+    Parameter< Operation::LIST_PATHS > list_parameter;
+    IOHandler->enqueue(IOTask(&iterations, list_parameter));
+    IOHandler->flush();
+
+    for( auto const& it : *list_parameter.paths )
     {
-        attribute_parameter.name = "iterationFormat";
-        IOHandler->enqueue(IOTask(this, attribute_parameter));
+        Iteration& i = iterations[std::stoull(it)];
+        path_parameter.path = it;
+        IOHandler->enqueue(IOTask(&i, path_parameter));
         IOHandler->flush();
-        Attribute a(*attribute_parameter.resource);
-        switch( *attribute_parameter.dtype )
-        {
-            case DT::CHAR:
-                setAttribute(att, a.get< char >());
-                break;
-            case DT::INT:
-                setAttribute(att, a.get< int >());
-                break;
-            case DT::FLOAT:
-                setAttribute(att, a.get< float >());
-                break;
-            case DT::DOUBLE:
-                setAttribute(att, a.get< double >());
-                break;
-            case DT::UINT32:
-                setAttribute(att, a.get< uint32_t >());
-                break;
-            case DT::UINT64:
-                setAttribute(att, a.get< uint64_t >());
-                break;
-            case DT::STRING:
-                setAttribute(att, a.get< std::string >());
-                break;
-            case DT::ARR_DBL_7:
-                setAttribute(att, a.get< std::array< double, 7 > >());
-                break;
-            case DT::VEC_INT:
-                setAttribute(att, a.get< std::vector< int > >());
-                break;
-            case DT::VEC_FLOAT:
-                setAttribute(att, a.get< std::vector< float > >());
-                break;
-            case DT::VEC_DOUBLE:
-                setAttribute(att, a.get< std::vector< double > >());
-                break;
-            case DT::VEC_UINT64:
-                setAttribute(att, a.get< std::vector< uint64_t > >());
-                break;
-            case DT::VEC_STRING:
-                setAttribute(att, a.get< std::vector< std::string > >());
-                break;
-        }
+        i.read();
     }
-
-    //TODO find solution for handling fileBased output
-    //TODO recursively read Iterations
 }
