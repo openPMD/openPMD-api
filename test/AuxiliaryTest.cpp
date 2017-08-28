@@ -166,11 +166,11 @@ BOOST_AUTO_TEST_CASE(attributable_access_test)
 {
     AttributedWidget a = AttributedWidget();
 
-    a.setAttribute("key", "value");
+    a.setAttribute("key", std::string("value"));
     BOOST_TEST(a.numAttributes() == 1);
     BOOST_TEST(boost::get< std::string >(a.get("key")) == "value");
 
-    a.setAttribute("key", "newValue");
+    a.setAttribute("key", std::string("newValue"));
     BOOST_TEST(a.numAttributes() == 1);
     BOOST_TEST(boost::get< std::string >(a.get("key")) == "newValue");
 

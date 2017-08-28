@@ -174,6 +174,10 @@ Attributable::readAttributes()
     IOHandler->flush();
     std::vector< std::string > written_attributes = attributes();
 
+    /* std::set_difference requires sorted ranges */
+    std::sort(list_parameter.attributes->begin(), list_parameter.attributes->end());
+    std::sort(written_attributes.begin(), written_attributes.end());
+
     std::set< std::string > attributes;
     std::set_difference(list_parameter.attributes->begin(), list_parameter.attributes->end(),
                         written_attributes.begin(), written_attributes.end(),

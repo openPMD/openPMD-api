@@ -72,6 +72,7 @@ std::map< std::string, Argument > structToMap(Parameter< Operation::OPEN_DATASET
     std::map< std::string, Argument > ret;
     ret.insert({"name", Argument(p.name)});
     ret.insert({"dtype", Argument(p.dtype)});
+    ret.insert({"extent", Argument(p.extent)});
     return ret;
 }
 
@@ -120,7 +121,6 @@ std::map< std::string, Argument > structToMap(Parameter< Operation::DELETE_ATT >
     ret.insert({"name", Argument(p.name)});
     return ret;
 }
-
 
 template<>
 std::map< std::string, Argument > structToMap(Parameter< Operation::WRITE_ATT > const& p)

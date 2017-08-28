@@ -3,27 +3,15 @@
 #include "../include/Record.hpp"
 
 
-Record::Record()
-  : m_containsScalar{false}
-{
-    setAttribute("unitDimension",
-                 std::array< double, 7 >{{0., 0., 0., 0., 0., 0., 0.}});
-    setTimeOffset(0);
-}
-
-Record::Record(Record const& r)
-        : Container< RecordComponent >(r),
-          m_containsScalar{r.m_containsScalar}
-{ }
-
-Record::~Record()
-{ }
+Record::Record() = default;
+Record::Record(Record const& r) = default;
+Record::~Record() = default;
 
 RecordComponent&
 Record::operator[](std::string key)
 {
     bool scalar = (key == RecordComponent::SCALAR);
-    if( (scalar && size() > 0 && !m_containsScalar)
+    if( (scalar && !empty() && !m_containsScalar)
         || (m_containsScalar && !scalar) )
     {
         throw std::runtime_error("A scalar component can not be contained at "
@@ -57,7 +45,7 @@ Record::unitDimension() const
 Record&
 Record::setUnitDimension(std::map< Record::UnitDimension, double > const& udim)
 {
-    if( udim.size() != 0 )
+    if( !udim.empty() )
     {
         std::array< double, 7 > unitDimension = this->unitDimension();
         for( auto const& entry : udim )
@@ -75,9 +63,9 @@ Record::timeOffset() const
 }
 
 Record&
-Record::setTimeOffset(float timeOffset)
+Record::setTimeOffset(float to)
 {
-    setAttribute("timeOffset", timeOffset);
+    setAttribute("timeOffset", to);
     dirty = true;
     return *this;
 }
@@ -109,4 +97,49 @@ Record::flush(std::string const& name)
         comp.second.flush(comp.first);
 
     flushAttributes();
+}
+
+void
+Record::read()
+{
+    if( m_containsScalar )
+    {
+        /* using operator[] will falsely update parent */
+        (*this).find(RecordComponent::SCALAR)->second.read();
+    } else
+    {
+        Parameter< Operation::LIST_PATHS > plist_parameter;
+        IOHandler->enqueue(IOTask(this, plist_parameter));
+        IOHandler->flush();
+
+        Parameter< Operation::OPEN_PATH > path_parameter;
+        for( auto const& component : *plist_parameter.paths )
+        {
+            RecordComponent& rc = (*this)[component];
+            path_parameter.path = component;
+            IOHandler->enqueue(IOTask(&rc, path_parameter));
+            IOHandler->flush();
+            rc.m_isConstant = true;
+            rc.read();
+        }
+
+        Parameter< Operation::LIST_DATASETS > dlist_parameter;
+        IOHandler->enqueue(IOTask(this, dlist_parameter));
+        IOHandler->flush();
+
+        Parameter< Operation::OPEN_DATASET > dataset_parameter;
+        for( auto const& component : *dlist_parameter.datasets )
+        {
+            RecordComponent& rc = (*this)[component];
+            dataset_parameter.name = component;
+            IOHandler->enqueue(IOTask(&rc, dataset_parameter));
+            IOHandler->flush();
+            rc.resetDataset(Dataset(*dataset_parameter.dtype, *dataset_parameter.extent));
+            rc.read();
+        }
+    }
+
+    readBase();
+
+    readAttributes();
 }

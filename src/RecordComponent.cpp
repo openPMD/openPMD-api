@@ -1,8 +1,10 @@
+#include <iostream>
 #include "../include/RecordComponent.hpp"
 
 
 RecordComponent::RecordComponent()
-        : m_dataset(Dataset())
+        : m_dataset(Dataset(Datatype::UNDEFINED, {})),
+          m_isConstant{false}
 {
     setUnitSI(1);
 }
@@ -17,20 +19,6 @@ RecordComponent&
 RecordComponent::setUnitSI(double usi)
 {
     setAttribute("unitSI", usi);
-    dirty = true;
-    return *this;
-}
-
-std::vector< double >
-RecordComponent::position() const
-{
-    return getAttribute("position").get< std::vector< double > >();
-}
-
-RecordComponent&
-RecordComponent::setPosition(std::vector< double > pos)
-{
-    setAttribute("position", pos);
     dirty = true;
     return *this;
 }
@@ -61,13 +49,6 @@ RecordComponent::getExtent()
     return m_dataset.extents;
 }
 
-RecordComponent&
-RecordComponent::makeConstant()
-{
-    //TODO
-    return *this;
-}
-
 void
 RecordComponent::flush(std::string const& name)
 {
@@ -90,3 +71,140 @@ RecordComponent::flush(std::string const& name)
 
     flushAttributes();
 }
+
+void
+RecordComponent::read()
+{
+    readBase();
+}
+
+void
+RecordComponent::readBase()
+{
+    if( m_isConstant )
+    {
+        Parameter< Operation::READ_ATT > attribute_parameter;
+        attribute_parameter.name = "value";
+        IOHandler->enqueue(IOTask(this, attribute_parameter));
+        IOHandler->flush();
+
+        using DT = Datatype;
+        Attribute a(*attribute_parameter.resource);
+        DT dtype = *attribute_parameter.dtype;
+        switch( dtype )
+        {
+            case DT::DOUBLE:
+                makeConstant(a.get< double >());
+                break;
+            case DT::FLOAT:
+                makeConstant(a.get< float >());
+                break;
+            case DT::INT16:
+                makeConstant(a.get< int16_t >());
+                break;
+            case DT::INT32:
+                makeConstant(a.get< int32_t >());
+                break;
+            case DT::INT64:
+                makeConstant(a.get< int64_t >());
+                break;
+            case DT::UINT16:
+                makeConstant(a.get< uint16_t >());
+                break;
+            case DT::UINT32:
+                makeConstant(a.get< uint32_t >());
+                break;
+            case DT::UINT64:
+                makeConstant(a.get< uint64_t >());
+                break;
+            case DT::CHAR:
+                makeConstant(a.get< char >());
+                break;
+            case DT::UCHAR:
+                makeConstant(a.get< unsigned char >());
+                break;
+            case DT::BOOL:
+                makeConstant(a.get< bool >());
+                break;
+            default:
+                throw std::runtime_error("Unexpected constant datatype");
+        }
+
+        attribute_parameter.name = "shape";
+        IOHandler->enqueue(IOTask(this, attribute_parameter));
+        IOHandler->flush();
+        a = Attribute(*attribute_parameter.resource);
+        Extent e;
+        switch( *attribute_parameter.dtype )
+        {
+            case DT::UINT64:
+                e.push_back(a.get< uint64_t >());
+                break;
+            case DT::VEC_UINT64:
+                for( auto const& val : a.get< std::vector< uint64_t > >() )
+                    e.push_back(val);
+            default:
+                throw std::runtime_error("Unexpected Attribute datatype for 'shape'");
+        }
+        resetDataset(Dataset(dtype, e));
+    }
+
+    using DT = Datatype;
+    Parameter< Operation::READ_ATT > attribute_parameter;
+
+    attribute_parameter.name = "unitSI";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::DOUBLE )
+        setUnitSI(Attribute(*attribute_parameter.resource).get< double >());
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'unitSI'");
+
+    readAttributes();
+}
+
+MeshRecordComponent::MeshRecordComponent()
+        : RecordComponent()
+{
+    setPosition({0});
+}
+
+void
+MeshRecordComponent::read()
+{
+    using DT = Datatype;
+    Parameter< Operation::READ_ATT > attribute_parameter;
+
+    attribute_parameter.name = "position";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::VEC_FLOAT )
+        setPosition(Attribute(*attribute_parameter.resource).get< std::vector< float > >());
+    else if( *attribute_parameter.dtype == DT::VEC_DOUBLE )
+    {
+        std::cerr << "Non-standard attribute datatype for 'position' (should be vector of float, is vector of double)\n";
+        std::vector< float > position;
+        for( auto const& val : Attribute(*attribute_parameter.resource).get< std::vector< double > >())
+            position.push_back(static_cast<float>(val));
+        setPosition(position);
+    }
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'position'");
+
+    readBase();
+}
+
+std::vector< float >
+MeshRecordComponent::position() const
+{
+    return getAttribute("position").get< std::vector< float > >();
+}
+
+MeshRecordComponent&
+MeshRecordComponent::setPosition(std::vector< float > pos)
+{
+    setAttribute("position", pos);
+    dirty = true;
+    return *this;
+}
+

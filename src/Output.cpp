@@ -52,18 +52,18 @@ Output::Output(std::string const& path,
         {
             setOpenPMD(OPENPMD);
             setOpenPMDextension(0);
-            setAttribute("basePath", BASEPATH);
+            setAttribute("basePath", std::string(BASEPATH));
             setMeshesPath("meshes/");
             setParticlesPath("particles/");
             switch( ie )
             {
                 case Output::IterationEncoding::fileBased:
                     setIterationFormat(m_name + "_%T");
-                    setAttribute("iterationEncoding", "fileBased");
+                    setAttribute("iterationEncoding", std::string("fileBased"));
                     break;
                 case Output::IterationEncoding::groupBased:
                     setIterationFormat("/data/%T/");
-                    setAttribute("iterationEncoding", "groupBased");
+                    setAttribute("iterationEncoding", std::string("groupBased"));
                     break;
             }
             break;

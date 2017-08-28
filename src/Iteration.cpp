@@ -1,4 +1,5 @@
 #include <memory>
+#include <iostream>
 
 #include "../include/Auxiliary.hpp"
 #include "../include/Dataset.hpp"
@@ -169,6 +170,11 @@ Iteration::read()
     IOHandler->flush();
     if( *attribute_parameter.dtype == DT::FLOAT )
         setDt(Attribute(*attribute_parameter.resource).get< float >());
+    else if( *attribute_parameter.dtype == DT::DOUBLE )
+    {
+        std::cerr << "Non-standard attribute datatype for 'dt' (should be float, is double)\n";
+        setDt(static_cast<float>(Attribute(*attribute_parameter.resource).get< double >()));
+    }
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'dt'");
 
@@ -177,6 +183,11 @@ Iteration::read()
     IOHandler->flush();
     if( *attribute_parameter.dtype == DT::FLOAT )
         setTime(Attribute(*attribute_parameter.resource).get< float >());
+    else if( *attribute_parameter.dtype == DT::DOUBLE )
+    {
+        std::cerr << "Non-standard attribute datatype for 'time' (should be float, is double)\n";
+        setTime(static_cast<float>(Attribute(*attribute_parameter.resource).get< double >()));
+    }
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'time'");
 
@@ -204,32 +215,50 @@ Iteration::read()
 
     meshes.readAttributes();
 
-    /* obtain all meshes */
+    /* obtain all non-scalar meshes */
     Parameter< Operation::LIST_PATHS > plist_parameter;
     IOHandler->enqueue(IOTask(&meshes, plist_parameter));
     IOHandler->flush();
 
-    for( auto const& me : *plist_parameter.paths )
+    Parameter< Operation::LIST_ATTS > alist_parameter;
+    for( auto const& mesh_name : *plist_parameter.paths )
     {
-        //TODO these may be constant scalar records
-        Mesh& m = meshes[me];
-        path_parameter.path = me;
+        Mesh& m = meshes[mesh_name];
+        path_parameter.path = mesh_name;
+        alist_parameter.attributes->clear();
         IOHandler->enqueue(IOTask(&m, path_parameter));
+        IOHandler->enqueue(IOTask(&m, alist_parameter));
         IOHandler->flush();
+
+        auto begin = alist_parameter.attributes->begin();
+        auto end = alist_parameter.attributes->end();
+        auto value = std::find(begin, end, "value");
+        auto shape = std::find(begin, end, "shape");
+        if( value != end && shape != end )
+        {
+            //TODO
+            throw std::runtime_error("Constant scalar records not implemented yet");
+        }
         m.read();
     }
 
+    /* obtain all scalar meshes */
     Parameter< Operation::LIST_DATASETS > dlist_parameter;
-    IOHandler->enqueue(IOTask(&meshes, plist_parameter));
+    IOHandler->enqueue(IOTask(&meshes, dlist_parameter));
     IOHandler->flush();
 
     Parameter< Operation::OPEN_DATASET > dataset_parameter;
-    for( auto const& me : *dlist_parameter.datasets )
+    for( auto const& mesh_name : *dlist_parameter.datasets )
     {
-        Mesh& m = meshes[me];
-        dataset_parameter.name = me;
+        Mesh& m = meshes[mesh_name];
+        dataset_parameter.name = mesh_name;
         IOHandler->enqueue(IOTask(&m, dataset_parameter));
         IOHandler->flush();
+        RecordComponent& r = m[RecordComponent::SCALAR];
+        r.abstractFilePosition = m.abstractFilePosition;
+        r.parent = m.parent;
+        r.written = true;
+        r.resetDataset(Dataset(*dataset_parameter.dtype, *dataset_parameter.extent));
         m.read();
     }
 
@@ -240,13 +269,14 @@ Iteration::read()
     particles.readAttributes();
 
     /* obtain all particle species */
+    plist_parameter.paths->clear();
     IOHandler->enqueue(IOTask(&particles, plist_parameter));
     IOHandler->flush();
 
-    for( auto const& ps : *plist_parameter.paths )
+    for( auto const& species_name : *plist_parameter.paths )
     {
-        ParticleSpecies& p = particles[ps];
-        path_parameter.path = ps;
+        ParticleSpecies& p = particles[species_name];
+        path_parameter.path = species_name;
         IOHandler->enqueue(IOTask(&p, path_parameter));
         IOHandler->flush();
         p.read();

@@ -7,7 +7,7 @@
 #include "Record.hpp"
 
 
-class Mesh : public Record
+class Mesh : public BaseRecord< MeshRecordComponent >
 {
     template<
             typename T,
@@ -17,10 +17,7 @@ class Mesh : public Record
     friend class Iteration;
 
 private:
-    Mesh(): Mesh(Record()) { }
-    Mesh(Record const&);
-
-    Mesh& operator=(Record const&);
+    Mesh();
 
 public:
     Mesh(Mesh const&) = default;
@@ -39,7 +36,7 @@ public:
         F = 'F'
     };  //DataOrder
 
-    RecordComponent& operator[](std::string);
+    MeshRecordComponent& operator[](std::string);
 
     Geometry geometry() const;
     Mesh& setGeometry(Geometry);
@@ -62,14 +59,15 @@ public:
     double gridUnitSI() const;
     Mesh& setGridUnitSI(double);
 
-    std::map< std::string, std::vector< double > > position() const;
-    Mesh& setPosition(std::map< std::string, std::vector< double > > const&);
+    std::array< double, 7 > unitDimension() const override;
+    Mesh& setUnitDimension(std::map< Mesh::UnitDimension, double > const&);
 
-    Record record() const;
+    float timeOffset() const override;
+    Mesh& setTimeOffset(float const);
 
 private:
-    void flush(std::string const&);
-    void read();
+    void flush(std::string const&) override;
+    void read() override;
 };  //Mesh
 
 std::ostream&

@@ -16,14 +16,10 @@ class Dataset
 {
     friend class RecordComponent;
 
-private:
-    Dataset();
-
-    void* m_data;
-
 public:
     template< typename T >
     Dataset(T, Extent);
+    Dataset(Datatype, Extent);
 
     uint8_t rank;
     Extent extents;

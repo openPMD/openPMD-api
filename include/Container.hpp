@@ -56,12 +56,6 @@ private:
             path_parameter.path = path;
             IOHandler->enqueue(IOTask(this, path_parameter));
             IOHandler->flush();
-
-            for( auto& entry : *this )
-            {
-                entry.second.IOHandler = IOHandler;
-                entry.second.parent = this;
-            }
         }
 
         flushAttributes();

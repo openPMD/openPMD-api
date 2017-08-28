@@ -49,4 +49,8 @@ using Attribute = Variadic< Datatype,
                             std::vector< float >,
                             std::vector< double >,
                             std::vector< uint64_t >,
-                            std::vector< std::string > >;
+                            std::vector< std::string >,
+                            int16_t, int32_t, int64_t,
+                            uint16_t,
+                            unsigned char,
+                            bool >;

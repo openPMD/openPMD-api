@@ -87,7 +87,11 @@ getH5DataType(Attribute const& att)
     switch( att.dtype )
     {
         case DT::CHAR:
-            return H5T_NATIVE_CHAR;
+        {
+            hid_t string_t_id = H5Tcopy(H5T_C_S1);
+            H5Tset_size(string_t_id, 1);
+            return string_t_id;
+        }
         case DT::INT:
         case DT::VEC_INT:
             return H5T_NATIVE_INT;
@@ -150,10 +154,7 @@ getH5DataSpace(Attribute const& att)
         case DT::UINT32:
         case DT::UINT64:
         case DT::STRING:
-        {
-            hsize_t dims[1] = {1};
-            return H5Screate_simple(1, dims, NULL);
-        }
+            return H5Screate(H5S_SCALAR);
         case DT::ARR_DBL_7:
         {
             hid_t array_t_id = H5Screate(H5S_SIMPLE);
@@ -603,117 +604,53 @@ HDF5IOHandler::readAttribute(Writable* writable,
                               dims.data(),
                               maxdims.data());
 
+    H5S_class_t attr_class = H5Sget_simple_extent_type(attr_space);
     Attribute a(0);
-    if( H5Tequal(attr_type, H5T_NATIVE_CHAR) )
+    if( attr_class == H5S_SCALAR || attr_class == H5S_SIMPLE && ndims == 1 && dims[0] == 1 )
     {
-        if( ndims == 1 && dims[0] == 1 )
+        if( H5Tequal(attr_type, H5T_NATIVE_CHAR) )
         {
             char c;
             status = H5Aread(attr_id,
                              attr_type,
                              &c);
             a = Attribute(c);
-        } else
-            throw std::runtime_error("Unsupported Attribute datatype "
-                                     "(char array)");
-    } else if( H5Tequal(attr_type, H5T_NATIVE_INT) )
-    {
-        if( ndims == 1 && dims[0] == 1 )
+        } else if( H5Tequal(attr_type, H5T_NATIVE_INT) )
         {
             int i;
             status = H5Aread(attr_id,
                              attr_type,
                              &i);
             a = Attribute(i);
-        } else if( ndims == 1 )
-        {
-            std::vector< int > vi(dims[0], 0);
-            status = H5Aread(attr_id,
-                             attr_type,
-                             vi.data());
-            a = Attribute(vi);
-        } else
-            throw std::runtime_error("Unsupported Attribute datatype "
-                                     "(int array with >1 dimension)");
-    } else if( H5Tequal(attr_type, H5T_NATIVE_FLOAT) )
-    {
-        if( ndims == 1 && dims[0] == 1 )
+        } else if( H5Tequal(attr_type, H5T_NATIVE_FLOAT) )
         {
             float f;
             status = H5Aread(attr_id,
                              attr_type,
                              &f);
             a = Attribute(f);
-        } else if( ndims == 1 )
-        {
-            std::vector< float > vf(dims[0], 0);
-            status = H5Aread(attr_id,
-                             attr_type,
-                             vf.data());
-            a = Attribute(vf);
-        } else
-            throw std::runtime_error("Unsupported Attribute datatype "
-                                     "(float array with >1 dimension)");
-    } else if( H5Tequal(attr_type, H5T_NATIVE_DOUBLE) )
-    {
-        if( ndims == 1 && dims[0] == 1 )
+        } else if( H5Tequal(attr_type, H5T_NATIVE_DOUBLE) )
         {
             double d;
             status = H5Aread(attr_id,
                              attr_type,
                              &d);
             a = Attribute(d);
-        } else if( ndims == 1 && dims[0] == 7 && attr_name == "unitDimension" )
-        {
-            std::array< double, 7 > ad;
-            status = H5Aread(attr_id,
-                             attr_type,
-                             &ad);
-            a = Attribute(ad);
-        } else if( ndims == 1 )
-        {
-            std::vector< double > vd(dims[0], 0);
-            status = H5Aread(attr_id,
-                             attr_type,
-                             vd.data());
-            a = Attribute(vd);
-        } else
-            throw std::runtime_error("Unsupported Attribute datatype "
-                                     "(float array with >1 dimension)");
-    } else if( H5Tequal(attr_type, H5T_NATIVE_UINT32) )
-    {
-        if( ndims == 1 && dims[0] == 1 )
+        } else if( H5Tequal(attr_type, H5T_NATIVE_UINT32) )
         {
             uint32_t u;
             status = H5Aread(attr_id,
                              attr_type,
                              &u);
             a = Attribute(u);
-        } else
-            throw std::runtime_error("Unsupported Attribute datatype "
-                                     "(uint32_t array)");
-    } else if( H5Tequal(attr_type, H5T_NATIVE_UINT64) )
-    {
-        if( ndims == 1 && dims[0] == 1 )
+        } else if( H5Tequal(attr_type, H5T_NATIVE_UINT64) )
         {
             uint64_t u;
             status = H5Aread(attr_id,
                              attr_type,
                              &u);
             a = Attribute(u);
-        } else if( ndims == 1 )
-        {
-            std::vector< uint64_t > vu(dims[0], 0);
-            status = H5Aread(attr_id,
-                             attr_type,
-                             vu.data());
-            a = Attribute(vu);
-        } else
-            throw std::runtime_error("Unsupported Attribute datatype "
-                                     "(float array with >1 dimension)");
-    } else if( H5Tget_class(attr_type) == H5T_STRING )
-    {
-        if( ndims == 1 && dims[0] == 1 )
+        } else if( H5Tget_class(attr_type) == H5T_STRING )
         {
             if( H5Tis_variable_str(attr_type) )
             {
@@ -728,16 +665,74 @@ HDF5IOHandler::readAttribute(Writable* writable,
                                  c);
                 a = Attribute(std::string(c, size));
             }
-        } else if( ndims == 1 )
+        } else
+            throw std::runtime_error("Unsupported scalar attribute type");
+    } else if( attr_class == H5S_SIMPLE )
+    {
+        if( ndims != 1 )
+            throw std::runtime_error("Unsupported attribute (array with ndims != 1)");
+
+        if( H5Tequal(attr_type, H5T_NATIVE_INT) )
+        {
+            std::vector< int > vi(dims[0], 0);
+            status = H5Aread(attr_id,
+                             attr_type,
+                             vi.data());
+            a = Attribute(vi);
+        } else if( H5Tequal(attr_type, H5T_NATIVE_FLOAT) )
+        {
+            std::vector< float > vf(dims[0], 0);
+            status = H5Aread(attr_id,
+                             attr_type,
+                             vf.data());
+            a = Attribute(vf);
+        } else if( H5Tequal(attr_type, H5T_NATIVE_DOUBLE) )
+        {
+            if( dims[0] == 7 && attr_name == "unitDimension" )
+            {
+                std::array< double, 7 > ad;
+                status = H5Aread(attr_id,
+                                 attr_type,
+                                 &ad);
+                a = Attribute(ad);
+            } else
+            {
+                std::vector< double > vd(dims[0], 0);
+                status = H5Aread(attr_id,
+                                 attr_type,
+                                 vd.data());
+                a = Attribute(vd);
+            }
+        } else if( H5Tequal(attr_type, H5T_NATIVE_UINT32) )
+        {
+            throw std::runtime_error("Unexpected attribute type (vector of uint32)");
+        } else if( H5Tequal(attr_type, H5T_NATIVE_UINT64) )
+        {
+            std::vector< uint64_t > vu(dims[0], 0);
+            status = H5Aread(attr_id,
+                             attr_type,
+                             vu.data());
+            a = Attribute(vu);
+        } else if( H5Tget_class(attr_type) == H5T_STRING )
         {
             std::vector< std::string > vs(dims[0]);
+            /*
+            if( H5Tis_variable_str(attr_type) )
+            {
+                //TODO
+                throw std::runtime_error("Variable length strings not implemented yet");
+            } else
+            {
+                //TODO
+                throw std::runtime_error("String arrays not implemented yet");
+            }
+             */
+            a = Attribute(vs);
         } else
-            throw std::runtime_error("Unsupported Attribute datatype "
-                                     "(string array with >1 dimension)");
+            throw std::runtime_error("Unsupported simple attribute type");
     } else
-    {
-        throw std::runtime_error("Unsupported Attribute datatype");
-    }
+        throw std::runtime_error("Unsupported attribute class");
+
     auto dtype = parameters.at("dtype").get< std::shared_ptr< Datatype > >();
     *dtype = a.dtype;
     auto resource = parameters.at("resource").get< std::shared_ptr< Attribute::resource > >();
@@ -824,16 +819,179 @@ void
 HDF5IOHandler::openDataset(Writable* writable,
                            std::map< std::string, Argument > & parameters)
 {
-    //TODO
-    throw std::runtime_error("openDataset not implemented");
+    auto res = m_fileIDs.find(writable);
+    if( res == m_fileIDs.end() )
+        res = m_fileIDs.find(writable->parent);
+    hid_t node_id, dataset_id;
+    node_id = H5Gopen(res->second,
+                      concrete_file_position(writable).c_str(),
+                      H5P_DEFAULT);
+
+    /* Sanitize name */
+    std::string name = parameters.at("name").get< std::string >();
+    if( starts_with(name, "/") )
+        name = replace_first(name, "/", "");
+    if( !ends_with(name, "/") )
+        name += '/';
+
+    dataset_id = H5Dopen(node_id,
+                         name.c_str(),
+                         H5P_DEFAULT);
+
+    hid_t dataset_type, dataset_space;
+    dataset_type = H5Dget_type(dataset_id);
+    dataset_space = H5Dget_space(dataset_id);
+
+    H5S_class_t dataset_class = H5Sget_simple_extent_type(dataset_space);
+
+    using DT = Datatype;
+    Datatype d;
+    if( dataset_class == H5S_SIMPLE || dataset_class == H5S_SCALAR )
+    {
+        if( H5Tequal(dataset_type, H5T_NATIVE_CHAR) )
+            d = DT::CHAR;
+        else if( H5Tequal(dataset_type, H5T_NATIVE_UCHAR) )
+            d = DT::UCHAR;
+        else if( H5Tequal(dataset_type, H5T_NATIVE_INT) )
+            d = DT::INT;
+        else if( H5Tequal(dataset_type, H5T_NATIVE_INT16) )
+            d = DT::INT16;
+        else if( H5Tequal(dataset_type, H5T_NATIVE_INT32) )
+            d = DT::INT32;
+        else if( H5Tequal(dataset_type, H5T_NATIVE_INT64) )
+            d = DT::INT64;
+        else if( H5Tequal(dataset_type, H5T_NATIVE_FLOAT) )
+            d = DT::FLOAT;
+        else if( H5Tequal(dataset_type, H5T_NATIVE_DOUBLE) )
+            d = DT::DOUBLE;
+        else if( H5Tequal(dataset_type, H5T_NATIVE_UINT16) )
+            d = DT::UINT16;
+        else if( H5Tequal(dataset_type, H5T_NATIVE_UINT32) )
+            d = DT::UINT32;
+        else if( H5Tequal(dataset_type, H5T_NATIVE_UINT64) )
+            d = DT::UINT64;
+        else if( H5Tget_class(dataset_type) == H5T_STRING )
+            d = DT::STRING;
+        else
+            throw std::runtime_error("Unknown dataset type");
+    } else
+        throw std::runtime_error("Unsupported dataset class");
+
+    auto dtype = parameters.at("dtype").get< std::shared_ptr< Datatype > >();
+    *dtype = d;
+
+    int ndims = H5Sget_simple_extent_ndims(dataset_space);
+    std::vector< hsize_t > dims(ndims, 0);
+    std::vector< hsize_t > maxdims(ndims, 0);
+
+    H5Sget_simple_extent_dims(dataset_space,
+                              dims.data(),
+                              maxdims.data());
+    Extent e;
+    for( auto const& val : dims )
+        e.push_back(val);
+    auto extent = parameters.at("extent").get< std::shared_ptr< Extent > >();
+    *extent = e;
+
+    H5Dclose(dataset_id);
+    H5Gclose(node_id);
+
+    writable->written = true;
+    writable->abstractFilePosition = std::make_shared< HDF5FilePosition >(name);
+
+    m_fileIDs.insert({writable, res->second});
 }
 
 void
 HDF5IOHandler::readDataset(Writable* writable,
                            std::map< std::string, Argument > & parameters)
 {
-    //TODO
-    throw std::runtime_error("readDataset not implemented");
+    auto res = m_fileIDs.find(writable);
+    if( res == m_fileIDs.end() )
+        res = m_fileIDs.find(writable->parent);
+    hid_t dataset_id;
+    herr_t status;
+    dataset_id = H5Dopen(res->second,
+                         concrete_file_position(writable).c_str(),
+                         H5P_DEFAULT);
+
+    hid_t dataset_type, dataset_space;
+    dataset_space = H5Dget_space(dataset_id);
+
+    std::vector< hsize_t > start;
+    for( auto const& val : parameters.at("offset").get< Offset >() )
+        start.push_back(static_cast<hsize_t>(val));
+    std::vector< hsize_t > stride(start.size(), 1); /* contiguous region */
+    std::vector< hsize_t > count(start.size(), 1); /* single region */
+    size_t points = 1;
+    std::vector< hsize_t > block;
+    for( auto const& val : parameters.at("extent").get< Extent >() )
+    {
+        block.push_back(static_cast< hsize_t >(val));
+        points *= val;
+    }
+    status = H5Sselect_hyperslab(dataset_space,
+                                 H5S_SELECT_SET,
+                                 start.data(),
+                                 stride.data(),
+                                 count.data(),
+                                 block.data());
+
+    std::shared_ptr< void > data = parameters.at("data").get< std::shared_ptr< void > >();
+
+    Attribute a(0);
+    a.dtype = parameters.at("dtype").get< Datatype >();
+    switch( a.dtype )
+    {
+        using DT = Datatype;
+        case DT::DOUBLE:
+            data.reset(new double[points], [](double *ptr){});
+            break;
+        case DT::FLOAT:
+            data.reset(new float[points], [](float *ptr){});
+            break;
+        case DT::INT16:
+            data.reset(new int16_t[points], [](int16_t *ptr){});
+            break;
+        case DT::INT32:
+            data.reset(new int32_t[points], [](int32_t *ptr){});
+            break;
+        case DT::INT64:
+            data.reset(new int64_t[points], [](int64_t *ptr){});
+            break;
+        case DT::UINT16:
+            data.reset(new uint16_t[points], [](uint16_t *ptr){});
+            break;
+        case DT::UINT32:
+            data.reset(new uint32_t[points], [](uint32_t *ptr){});
+            break;
+        case DT::UINT64:
+            data.reset(new uint64_t[points], [](uint64_t *ptr){});
+            break;
+        case DT::CHAR:
+            data.reset(new char[points], [](char *ptr){});
+            break;
+        case DT::UCHAR:
+            data.reset(new unsigned char[points], [](unsigned char *ptr){});
+            break;
+        case DT::BOOL:
+            data.reset(new bool[points], [](bool *ptr){});
+            break;
+        case DT::UNDEFINED:
+            throw std::runtime_error("Unknown Attribute datatype");
+        case DT::DATATYPE:
+            throw std::runtime_error("Meta-Datatype leaked into IO");
+        default:
+            throw std::runtime_error("Datatype not implemented in HDF5 IO");
+    }
+    status = H5Dread(dataset_id,
+                     getH5DataType(a),
+                     H5S_ALL,
+                     dataset_space,
+                     H5P_DEFAULT,
+                     data.get());
+
+    H5Dclose(dataset_id);
 }
 
 void

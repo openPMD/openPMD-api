@@ -2,8 +2,7 @@
 #include "../include/Mesh.hpp"
 
 
-Mesh::Mesh(Record const& r)
-        : Record(r)
+Mesh::Mesh()
 {
     setGeometry(Geometry::cartesian);
     setDataOrder(DataOrder::C);
@@ -14,15 +13,7 @@ Mesh::Mesh(Record const& r)
     setGridUnitSI(1);
 }
 
-Mesh&
-Mesh::operator=(Record const& r)
-{
-    Mesh tmp(r);
-    std::swap(*this, tmp);
-    return *this;
-}
-
-RecordComponent&
+MeshRecordComponent&
 Mesh::operator[](std::string key)
 {
     auto it = this->find(key);
@@ -30,10 +21,21 @@ Mesh::operator[](std::string key)
         return it->second;
     else
     {
-        RecordComponent & ret = Record::operator[](key);
-        ret.setPosition({0});
-        ret.parent = this;
-        return ret;
+        bool scalar = (key == MeshRecordComponent::SCALAR);
+        if( (scalar && !empty() && !m_containsScalar)
+            || (m_containsScalar && !scalar) )
+        {
+            throw std::runtime_error("A scalar component can not be contained at "
+                                     "the same time as one or more regular components.");
+        }
+        else
+        {
+            if( scalar )
+                m_containsScalar = true;
+            MeshRecordComponent & ret = Container< MeshRecordComponent >::operator[](key);
+            ret.parent = this;
+            return ret;
+        }
     }
 }
 
@@ -54,16 +56,16 @@ Mesh::setGeometry(Mesh::Geometry g)
     switch( g )
     {
         case Geometry::cartesian:
-            setAttribute("geometry", "cartesian");
+            setAttribute("geometry", std::string("cartesian"));
             break;
         case Geometry::thetaMode:
-            setAttribute("geometry", "thetaMode");
+            setAttribute("geometry", std::string("thetaMode"));
             break;
         case Geometry::cylindrical:
-            setAttribute("geometry", "cylindrical");
+            setAttribute("geometry", std::string("cylindrical"));
             break;
         case Geometry::spherical:
-            setAttribute("geometry", "spherical");
+            setAttribute("geometry", std::string("spherical"));
             break;
     }
     dirty = true;
@@ -154,32 +156,36 @@ Mesh::setGridUnitSI(double gusi)
     return *this;
 }
 
-std::map< std::string, std::vector< double > >
-Mesh::position() const
+std::array< double, 7 >
+Mesh::unitDimension() const
 {
-    std::map< std::string, std::vector< double > > ret;
-    for( auto const& component : *this )
+    return getAttribute("unitDimension").get< std::array< double, 7 > >();
+};
+
+Mesh&
+Mesh::setUnitDimension(std::map< Mesh::UnitDimension, double > const& udim)
+{
+    if( !udim.empty() )
     {
-        ret.insert({component.first,
-                    component.second.position()});
+        std::array< double, 7 > unitDimension = this->unitDimension();
+        for( auto const& entry : udim )
+            unitDimension[static_cast<uint8_t>(entry.first)] = entry.second;
+        setAttribute("unitDimension", unitDimension);
+        dirty = true;
     }
-    return ret;
+    return *this;
+}
+
+float
+Mesh::timeOffset() const
+{
+    return getAttribute("timeOffset").get< float >();
 }
 
 Mesh&
-Mesh::setPosition(std::map< std::string, std::vector< double > > const& pos)
+Mesh::setTimeOffset(float const to)
 {
-    for( auto const& entry : pos )
-    {
-        auto it = find(entry.first);
-        if( it != end() )
-        {
-            it->second.setPosition(entry.second);
-        } else
-        {
-            std::cerr<<"Unknown Record component: "<<entry.first<<'\n';
-        }
-    }
+    setAttribute("timeOffset", to);
     dirty = true;
     return *this;
 }
@@ -191,7 +197,7 @@ Mesh::flush(std::string const& name)
     {
         if( m_containsScalar )
         {
-            RecordComponent& r = at(RecordComponent::SCALAR);
+           MeshRecordComponent& r = at(RecordComponent::SCALAR);
             r.parent = parent;
             r.flush(name);
             abstractFilePosition = r.abstractFilePosition;
@@ -245,6 +251,14 @@ Mesh::read()
     IOHandler->flush();
     if( *attribute_parameter.dtype == DT::CHAR )
         setDataOrder(static_cast<DataOrder>(Attribute(*attribute_parameter.resource).get< char >()));
+    else if( *attribute_parameter.dtype == DT::STRING )
+    {
+        std::string dataOrder = Attribute(*attribute_parameter.resource).get< std::string >();
+        if( dataOrder.size() == 1 )
+            setDataOrder(static_cast<DataOrder>(dataOrder[0]));
+        else
+            throw std::runtime_error("Unexpected Attribute value for 'dataOrder': " + dataOrder);
+    }
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'dataOrder'");
 
@@ -261,6 +275,14 @@ Mesh::read()
     IOHandler->flush();
     if( *attribute_parameter.dtype == DT::VEC_FLOAT )
         setGridSpacing(Attribute(*attribute_parameter.resource).get< std::vector< float > >());
+    else if( *attribute_parameter.dtype == DT::VEC_DOUBLE )
+    {
+        std::cerr << "Non-standard attribute datatype for 'gridSpacing' (should be float, is double)\n";
+        std::vector< float > gridSpacing;
+        for( auto const& val : Attribute(*attribute_parameter.resource).get< std::vector< double > >() )
+            gridSpacing.push_back(static_cast<float>(val));
+        setGridSpacing(gridSpacing);
+    }
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'gridSpacing'");
 
@@ -280,13 +302,44 @@ Mesh::read()
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'gridUnitSI'");
 
-    attribute_parameter.name = "gridUnitSI";
-    IOHandler->enqueue(IOTask(this, attribute_parameter));
-    IOHandler->flush();
-    if( *attribute_parameter.dtype == DT::DOUBLE )
-        setGridUnitSI(Attribute(*attribute_parameter.resource).get< double >());
-    else
-        throw std::runtime_error("Unexpected Attribute datatype for 'gridUnitSI'");
+    if( m_containsScalar )
+    {
+        /* using operator[] will falsely update parent */
+        (*this).find(MeshRecordComponent::SCALAR)->second.read();
+    } else
+    {
+        Parameter< Operation::LIST_PATHS > plist_parameter;
+        IOHandler->enqueue(IOTask(this, plist_parameter));
+        IOHandler->flush();
+
+        Parameter< Operation::OPEN_PATH > path_parameter;
+        for( auto const& component : *plist_parameter.paths )
+        {
+            MeshRecordComponent& rc = (*this)[component];
+            path_parameter.path = component;
+            IOHandler->enqueue(IOTask(&rc, path_parameter));
+            IOHandler->flush();
+            rc.m_isConstant = true;
+            rc.read();
+        }
+
+        Parameter< Operation::LIST_DATASETS > dlist_parameter;
+        IOHandler->enqueue(IOTask(this, dlist_parameter));
+        IOHandler->flush();
+
+        Parameter< Operation::OPEN_DATASET > dataset_parameter;
+        for( auto const& component : *dlist_parameter.datasets )
+        {
+            MeshRecordComponent& rc = (*this)[component];
+            dataset_parameter.name = component;
+            IOHandler->enqueue(IOTask(&rc, dataset_parameter));
+            IOHandler->flush();
+            rc.resetDataset(Dataset(*dataset_parameter.dtype, *dataset_parameter.extent));
+            rc.read();
+        }
+    }
+
+    readBase();
 
     readAttributes();
 }

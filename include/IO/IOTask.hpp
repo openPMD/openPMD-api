@@ -16,6 +16,7 @@ enum class ArgumentDatatype : int
     SHARED_PTR_VOID,
     DATATYPE,
     ATT_RESOURCE,
+    SHARED_PTR_EXTENT,
     SHARED_PTR_DATATYPE,
     SHARED_PTR_ATT_RESOURCE,
     SHARED_PTR_VEC_STRING,
@@ -28,6 +29,7 @@ using Argument = Variadic< ArgumentDatatype,
                            std::shared_ptr< void >,
                            Datatype,
                            Attribute::resource,
+                           std::shared_ptr< Extent >,
                            std::shared_ptr< Datatype >,
                            std::shared_ptr< Attribute::resource >,
                            std::shared_ptr< std::vector< std::string > > >;
@@ -118,6 +120,8 @@ struct Parameter< Operation::OPEN_DATASET >
     std::string name;
     std::shared_ptr< Datatype > dtype
             = std::make_shared< Datatype >();
+    std::shared_ptr< Extent > extent
+            = std::make_shared< Extent >();
 };
 
 template<>
@@ -141,7 +145,8 @@ struct Parameter< Operation::READ_DATASET >
     Extent extent;
     Offset offset;
     Datatype dtype;
-    std::shared_ptr< void > data;
+    std::shared_ptr< void > data
+            = std::make_shared< char >('\0');
 };
 
 template<>

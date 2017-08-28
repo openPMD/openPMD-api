@@ -46,7 +46,7 @@ write2()
     // removing attributes required by the standard typically makes the file unusable for post-processing
     f.setComment("This is fine and actually encouraged by the standard");
     f.setAttribute("custom_attribute_name",
-                   "This attribute is manually added and can contain about any datatype you would want");
+                   std::string("This attribute is manually added and can contain about any datatype you would want"));
     f.deleteAttribute("custom_attribute_name");
 
     // everything that is accessed with [] should be interpreted as permanent storage
@@ -66,7 +66,7 @@ write2()
     // the underlying concept for numeric data is the openPMD Record
     // https://github.com/openPMD/openPMD-standard/blob/upcoming-1.0.1/STANDARD.md#scalar-vector-and-tensor-records
     // Meshes are specialized records
-    cur_it.meshes["generic_3D_field"].setGridUnitSI(4).setUnitDimension({{Record::UnitDimension::L, -3}});
+    cur_it.meshes["generic_3D_field"].setGridUnitSI(4).setUnitDimension({{Mesh::UnitDimension::L, -3}});
     cur_it.meshes["generic_3D_field"]["y"].setUnitSI(4);
 
     {
@@ -81,13 +81,15 @@ write2()
         cur_it.meshes["lowRez_3D_field"] = lowRez;
         cur_it.meshes["highRez_3D_field"] = highRez;
     }
+    cur_it.meshes.erase("highRez_3D_field");
 
     cur_it.particles["e"].setAttribute("NoteWorthyParticleProperty",
-                                       "This particle was observed to be very particle-esque.");
+                                       std::string("This particle was observed to be very particle-esque."));
     cur_it.particles["e"]["weighting"][RecordComponent::SCALAR].setUnitSI(1e-5);
 
     // this wires up the numeric data
     Mesh& lr = cur_it.meshes["lowRez_3D_field"];
+    lr.setAxisLabels({"x", "y", "z"});
     Dataset d = Dataset(x_data_lr[0][0], Extent{2, 5});
     lr["x"].resetDataset(d);
     lr["y"].resetDataset(d);
