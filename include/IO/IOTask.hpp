@@ -13,6 +13,7 @@ enum class ArgumentDatatype : int
 {
     STRING = 0,
     VEC_UINT64,
+    PTR_VOID,
     SHARED_PTR_VOID,
     DATATYPE,
     ATT_RESOURCE,
@@ -26,6 +27,7 @@ enum class ArgumentDatatype : int
 using Argument = Variadic< ArgumentDatatype,
                            std::string,
                            std::vector< uint64_t >,
+                           void*,
                            std::shared_ptr< void >,
                            Datatype,
                            Attribute::resource,
@@ -145,8 +147,7 @@ struct Parameter< Operation::READ_DATASET >
     Extent extent;
     Offset offset;
     Datatype dtype;
-    std::shared_ptr< void > data
-            = std::make_shared< char >('\0');
+    void* data = nullptr;
 };
 
 template<>

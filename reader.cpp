@@ -157,13 +157,19 @@ int main()
         }
     }
 
-    auto& x = o.iterations[100].meshes["E"]["x"];
-    Extent e = x.getExtent();
-
-    //TODO deallocation causes memory leak
-    auto data = x.loadChunk< double >({0,0,0}, e);
-
-    std::cout << data.get()[0] << std::endl;
+    Output exact_copy("working/directory",
+                      "data00000100.h5",
+                      Output::IterationEncoding::fileBased,
+                      Format::HDF5,
+                      AccessType::CREAT);
+    exact_copy.setOpenPMD(o.openPMD());
+    exact_copy.setOpenPMDextension(o.openPMDextension());
+    exact_copy.setMeshesPath(o.meshesPath());
+    exact_copy.setParticlesPath(o.particlesPath());
+    exact_copy.setIterationFormat(o.iterationFormat());
+    for( auto const& i : o.iterations )
+        exact_copy.iterations[i.first] = i.second;
+    exact_copy.flush();
 
     return 0;
 }

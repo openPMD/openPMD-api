@@ -23,6 +23,7 @@ public:
            IterationEncoding ie,
            Format f,
            AccessType at);
+    ~Output();
 
     std::string openPMD() const;
     Output& setOpenPMD(std::string const&);

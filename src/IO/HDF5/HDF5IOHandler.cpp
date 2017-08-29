@@ -147,12 +147,17 @@ getH5DataSpace(Attribute const& att)
     using DT = Datatype;
     switch( att.dtype )
     {
-        case DT::CHAR:
-        case DT::INT:
-        case DT::FLOAT:
         case DT::DOUBLE:
+        case DT::FLOAT:
+        case DT::INT16:
+        case DT::INT32:
+        case DT::INT64:
+        case DT::UINT16:
         case DT::UINT32:
         case DT::UINT64:
+        case DT::CHAR:
+        case DT::UCHAR:
+        case DT::BOOL:
         case DT::STRING:
             return H5Screate(H5S_SCALAR);
         case DT::ARR_DBL_7:
@@ -481,13 +486,12 @@ HDF5IOHandler::writeDataset(Writable* writable,
     if( res == m_fileIDs.end() )
         res = m_fileIDs.find(writable->parent);
 
-    hid_t dataset_id, space;
+    hid_t dataset_id, filespace, memspace;
     herr_t status;
     dataset_id = H5Dopen(res->second,
                          concrete_file_position(writable).c_str(),
                          H5P_DEFAULT);
 
-    space = H5Dget_space(dataset_id);
     std::vector< hsize_t > start;
     for( auto const& val : parameters.at("offset").get< Offset >() )
         start.push_back(static_cast< hsize_t >(val));
@@ -496,7 +500,9 @@ HDF5IOHandler::writeDataset(Writable* writable,
     std::vector< hsize_t > block;
     for( auto const& val : parameters.at("extent").get< Extent >() )
         block.push_back(static_cast< hsize_t >(val));
-    status = H5Sselect_hyperslab(space,
+    memspace = H5Screate_simple(block.size(), block.data(), NULL);
+    filespace = H5Dget_space(dataset_id);
+    status = H5Sselect_hyperslab(filespace,
                                  H5S_SELECT_SET,
                                  start.data(),
                                  stride.data(),
@@ -523,8 +529,8 @@ HDF5IOHandler::writeDataset(Writable* writable,
         case DT::BOOL:
             status = H5Dwrite(dataset_id,
                               getH5DataType(a),
-                              H5S_ALL,
-                              space,
+                              memspace,
+                              filespace,
                               H5P_DEFAULT,
                               data.get());
             break;
@@ -909,14 +915,11 @@ HDF5IOHandler::readDataset(Writable* writable,
     auto res = m_fileIDs.find(writable);
     if( res == m_fileIDs.end() )
         res = m_fileIDs.find(writable->parent);
-    hid_t dataset_id;
+    hid_t dataset_id, memspace, filespace;
     herr_t status;
     dataset_id = H5Dopen(res->second,
                          concrete_file_position(writable).c_str(),
                          H5P_DEFAULT);
-
-    hid_t dataset_type, dataset_space;
-    dataset_space = H5Dget_space(dataset_id);
 
     std::vector< hsize_t > start;
     for( auto const& val : parameters.at("offset").get< Offset >() )
@@ -926,18 +929,17 @@ HDF5IOHandler::readDataset(Writable* writable,
     size_t points = 1;
     std::vector< hsize_t > block;
     for( auto const& val : parameters.at("extent").get< Extent >() )
-    {
         block.push_back(static_cast< hsize_t >(val));
-        points *= val;
-    }
-    status = H5Sselect_hyperslab(dataset_space,
+    memspace = H5Screate_simple(block.size(), block.data(), NULL);
+    filespace = H5Dget_space(dataset_id);
+    status = H5Sselect_hyperslab(filespace,
                                  H5S_SELECT_SET,
                                  start.data(),
                                  stride.data(),
                                  count.data(),
                                  block.data());
 
-    std::shared_ptr< void > data = parameters.at("data").get< std::shared_ptr< void > >();
+    void* data = parameters.at("data").get< void* >();
 
     Attribute a(0);
     a.dtype = parameters.at("dtype").get< Datatype >();
@@ -945,37 +947,16 @@ HDF5IOHandler::readDataset(Writable* writable,
     {
         using DT = Datatype;
         case DT::DOUBLE:
-            data.reset(new double[points], [](double *ptr){});
-            break;
         case DT::FLOAT:
-            data.reset(new float[points], [](float *ptr){});
-            break;
         case DT::INT16:
-            data.reset(new int16_t[points], [](int16_t *ptr){});
-            break;
         case DT::INT32:
-            data.reset(new int32_t[points], [](int32_t *ptr){});
-            break;
         case DT::INT64:
-            data.reset(new int64_t[points], [](int64_t *ptr){});
-            break;
         case DT::UINT16:
-            data.reset(new uint16_t[points], [](uint16_t *ptr){});
-            break;
         case DT::UINT32:
-            data.reset(new uint32_t[points], [](uint32_t *ptr){});
-            break;
         case DT::UINT64:
-            data.reset(new uint64_t[points], [](uint64_t *ptr){});
-            break;
         case DT::CHAR:
-            data.reset(new char[points], [](char *ptr){});
-            break;
         case DT::UCHAR:
-            data.reset(new unsigned char[points], [](unsigned char *ptr){});
-            break;
         case DT::BOOL:
-            data.reset(new bool[points], [](bool *ptr){});
             break;
         case DT::UNDEFINED:
             throw std::runtime_error("Unknown Attribute datatype");
@@ -986,10 +967,10 @@ HDF5IOHandler::readDataset(Writable* writable,
     }
     status = H5Dread(dataset_id,
                      getH5DataType(a),
-                     H5S_ALL,
-                     dataset_space,
+                     memspace,
+                     filespace,
                      H5P_DEFAULT,
-                     data.get());
+                     data);
 
     H5Dclose(dataset_id);
 }

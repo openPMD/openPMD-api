@@ -23,6 +23,8 @@ public:
     using value_type = T;
     using key_type = T_key;
 
+    virtual ~Container() { }
+
     T& operator[](T_key key)
     {
         auto it = this->find(key);

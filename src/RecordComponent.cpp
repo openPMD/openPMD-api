@@ -4,7 +4,8 @@
 
 RecordComponent::RecordComponent()
         : m_dataset(Dataset(Datatype::UNDEFINED, {})),
-          m_isConstant{false}
+          m_isConstant{false},
+          m_constantValue{-1}
 {
     setUnitSI(1);
 }
@@ -54,11 +55,29 @@ RecordComponent::flush(std::string const& name)
 {
     if( !written )
     {
-        Parameter< Operation::CREATE_DATASET > ds_parameter;
-        ds_parameter.name = name;
-        ds_parameter.dtype = getDatatype();
-        ds_parameter.extent = getExtent();
-        IOHandler->enqueue(IOTask(this, ds_parameter));
+        if( m_isConstant )
+        {
+            Parameter< Operation::CREATE_PATH > path_parameter;
+            path_parameter.path = name;
+            IOHandler->enqueue(IOTask(this, path_parameter));
+            Parameter< Operation::WRITE_ATT > attribute_parameter;
+            attribute_parameter.name = "value";
+            attribute_parameter.dtype = m_constantValue.dtype;
+            attribute_parameter.resource = m_constantValue.getResource();
+            IOHandler->enqueue(IOTask(this, attribute_parameter));
+            attribute_parameter.name = "shape";
+            Attribute a(getExtent());
+            attribute_parameter.dtype = a.dtype;
+            attribute_parameter.resource = a.getResource();
+            IOHandler->enqueue(IOTask(this, attribute_parameter));
+        } else
+        {
+            Parameter< Operation::CREATE_DATASET > ds_parameter;
+            ds_parameter.name = name;
+            ds_parameter.dtype = getDatatype();
+            ds_parameter.extent = getExtent();
+            IOHandler->enqueue(IOTask(this, ds_parameter));
+        }
         IOHandler->flush();
     }
 
@@ -91,6 +110,7 @@ RecordComponent::readBase()
         using DT = Datatype;
         Attribute a(*attribute_parameter.resource);
         DT dtype = *attribute_parameter.dtype;
+        written = false;
         switch( dtype )
         {
             case DT::DOUBLE:
@@ -129,6 +149,7 @@ RecordComponent::readBase()
             default:
                 throw std::runtime_error("Unexpected constant datatype");
         }
+        written = true;
 
         attribute_parameter.name = "shape";
         IOHandler->enqueue(IOTask(this, attribute_parameter));

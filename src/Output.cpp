@@ -81,6 +81,11 @@ Output::Output(std::string const& path,
     }
 }
 
+Output::~Output()
+{
+    flush();
+}
+
 std::string
 Output::openPMD() const
 {
@@ -188,12 +193,10 @@ Output::name() const
 Output&
 Output::setName(std::string const& n)
 {
-    if( !written )
-    {
-        m_name = n;
-        dirty = true;
-    } else
+    if( written )
         throw std::runtime_error("A files name can not (yet) be changed after it has been written.");
+    m_name = n;
+    dirty = true;
     return *this;
 }
 
@@ -207,7 +210,7 @@ Output::flush()
         {
             for( auto& i : iterations )
             {
-                if( !i.second.parent )
+                if( !i.second.written )
                     i.second.parent = this;
                 i.second.flushFileBased(i.first);
 
@@ -250,7 +253,7 @@ Output::flush()
 
             for( auto& i : iterations )
             {
-                if( !i.second.parent )
+                if( !i.second.written )
                     i.second.parent = &iterations;
                 i.second.flushGroupBased(i.first);
             }

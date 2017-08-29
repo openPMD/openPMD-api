@@ -61,6 +61,7 @@ public:
             : Container< T_elem >(b),
               m_containsScalar{b.m_containsScalar}
     { }
+    virtual ~BaseRecord() { }
 
     virtual std::array< double, 7 > unitDimension() const = 0;
 

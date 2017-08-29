@@ -2,17 +2,27 @@
 
 #include "include/Output.hpp"
 
-using std::shared_ptr;
-
 
 void
 write()
 {
     Output o("./working/directory/",
-             "%4d_3D_simData",
+             "const_test",
              Output::IterationEncoding::fileBased,
              Format::HDF5,
              AccessType::CREAT);
+
+    Mesh& m = o.iterations[1].meshes["mesh_name"];
+    auto& scalar = m[RecordComponent::SCALAR];
+
+    double *d;
+    Dataset dset = Dataset(d, {1000, 1000, 1000});
+    scalar.resetDataset(dset);
+
+    std::shared_ptr< double > data(d);
+    scalar.storeChunk({0, 0, 0}, {1000, 1000, 1000}, data);
+
+    o.flush();
 }
 
 double x_data_lr[2][5] = {{1,  3,  5,  7,  9},
@@ -33,10 +43,11 @@ void
 write2()
 {
     Output f("./working/directory/",
-             "3D_simData",
+             "2D_simData",
              Output::IterationEncoding::groupBased,
              Format::HDF5,
              AccessType::CREAT);
+
     // all required openPMD attributes will be set to reasonable default values (all ones, all zeros, empty strings,...)
     // manually setting them enforces the openPMD standard
     f.setMeshesPath("custom_meshes_path");
@@ -56,79 +67,96 @@ write2()
         f.iterations[1].setTime(42).setDt(1.0).setTimeUnitSI(1.39e-16);
         f.iterations[2].setTimeUnitSI(1.39e-16);
         f.iterations.erase(2);
-        f.iterations[42];
     }
 
-    // the wish to modify a sunk resource (rather than a copy) must be stated explicitly
-    // alternatively, a copy may be created and later re-assigned to f.iterations[1]
+    {
+        // the wish to modify a sunk resource (rather than a copy) must be stated
+        Iteration& reference = f.iterations[1];
+
+        // alternatively, a copy may be created and later re-assigned to f.iterations[1]
+        Iteration copy = f.iterations[1];
+        /* copy.changeParameters(); */
+        f.iterations[1] = copy;
+    }
+
     Iteration& cur_it = f.iterations[1];
 
     // the underlying concept for numeric data is the openPMD Record
     // https://github.com/openPMD/openPMD-standard/blob/upcoming-1.0.1/STANDARD.md#scalar-vector-and-tensor-records
     // Meshes are specialized records
-    cur_it.meshes["generic_3D_field"].setGridUnitSI(4).setUnitDimension({{Mesh::UnitDimension::L, -3}});
-    cur_it.meshes["generic_3D_field"]["y"].setUnitSI(4);
+    cur_it.meshes["generic_2D_field"].setGridUnitSI(4).setUnitDimension({{Mesh::UnitDimension::L, -3}});
 
     {
         // as this is a copy, it does not modify the sunk resource and can be modified independently
-        Mesh lowRez = cur_it.meshes["generic_3D_field"];
-        lowRez.setGridSpacing({6, 1, 1}).setGridGlobalOffset({0, 600, 0});
+        Mesh lowRez = cur_it.meshes["generic_2D_field"];
+        lowRez.setGridSpacing({6, 1}).setGridGlobalOffset({0, 600});
 
-        Mesh highRez = cur_it.meshes["generic_3D_field"];
-        highRez.setGridSpacing({6, 0.5, 1}).setGridGlobalOffset({0, 1200, 0});
+        Mesh highRez = cur_it.meshes["generic_2D_field"];
+        highRez.setGridSpacing({6, 0.5}).setGridGlobalOffset({0, 1200});
 
-        cur_it.meshes.erase("generic_3D_field");
-        cur_it.meshes["lowRez_3D_field"] = lowRez;
-        cur_it.meshes["highRez_3D_field"] = highRez;
+        cur_it.meshes.erase("generic_2D_field");
+        cur_it.meshes["lowRez_2D_field"] = lowRez;
+        cur_it.meshes["highRez_2D_field"] = highRez;
     }
-    cur_it.meshes.erase("highRez_3D_field");
+    cur_it.meshes.erase("highRez_2D_field");
 
-    cur_it.particles["e"].setAttribute("NoteWorthyParticleProperty",
-                                       std::string("This particle was observed to be very particle-esque."));
-    cur_it.particles["e"]["weighting"][RecordComponent::SCALAR].setUnitSI(1e-5);
-
-    // this wires up the numeric data
-    Mesh& lr = cur_it.meshes["lowRez_3D_field"];
-    lr.setAxisLabels({"x", "y", "z"});
-    Dataset d = Dataset(x_data_lr[0][0], Extent{2, 5});
-    lr["x"].resetDataset(d);
-    lr["y"].resetDataset(d);
-    lr["z"].resetDataset(d);
-    f.flush();
-    for( unsigned long i = 0; i < 2; ++i )
     {
-        Offset o = Offset{i, 0};
-        Extent e = Extent{1, 5};
-        double *ptrToStart = &x_data_lr[i][0];
+        // particles handle very similar
+        ParticleSpecies& electrons = cur_it.particles["electrons"];
+        electrons.setAttribute("NoteWorthyParticleSpeciesProperty",
+                               std::string("Observing this species was a blast."));
+        electrons["weighting"][RecordComponent::SCALAR].setUnitSI(1e-5);
+        electrons["momentum"]["x"];
+        electrons["momentum"]["y"];
+    }
+    cur_it.particles.erase("electrons");
 
-        auto my_deleter = [](double *p){ /* do nothing */ };
-        // indicate shared ownership during IO
-        // if you want to manage the lifetime of your numeric data, specify a deleter
-        std::shared_ptr< double > chunk = std::shared_ptr< double >(ptrToStart, my_deleter);
-        // TODO wrong data is stored (2nd flush writes data from y_data_lr)
-        lr["x"].storeChunk(o, e, chunk);
-        // operations between store and flush are permitted, but MUST NOT modify the pointed-to data
+    Mesh& mesh = cur_it.meshes["lowRez_2D_field"];
+    f.flush();
+    mesh.setAxisLabels({"x", "y"});
+    f.flush();
+
+    // before storing record data, you must specify the dataset once per component
+    // this describes the datatype and shape of data as it should be written to disk
+    Dataset d = Dataset(Datatype::DOUBLE, Extent{2, 5});
+    mesh["x"].resetDataset(d);
+    // at any point in time you may decide to dump already created output to disk
+    // note that this will make some operations impossible (e.g. renaming files)
+    f.flush();
+
+    // writing only parts of the final dataset at a time is supported
+    // this shows how to write every row of a 2D dataset at a time
+    double x_data_lr[2][5] = {{1,  3,  5,  7,  9},
+                              {11, 13, 15, 17, 19}};
+    for( int i = 0; i < 2; ++i )
+    {
+        // your data is assumed to reside behind a pointer
+        // as a contiguous column-major array
+        double* simulation_data = new double[5];
+        for( int j = 0; j < 5; ++j )
+            simulation_data[j] = x_data_lr[i][j];
+
+        // indicate shared data ownership during IO with a smart pointer
+        auto no_deleter = [](double *p){ /* if YOU want to manage the lifetime of your pointer, do nothing */ };
+        auto my_deleter = [](double *p){ delete[] p; /* otherwise, let the API destroy your data when not needed any more */ };
+        std::shared_ptr< double > chunk = std::shared_ptr< double >(simulation_data, no_deleter);
+
+        Offset o = Offset{static_cast<unsigned long>(i), 0};
+        Extent e = Extent{1, 5};
+        mesh["x"].storeChunk(o, e, chunk);
+        // operations between store and flush MUST NOT modify the pointed-to data
         f.flush();
         // after the flush completes successfully, exclusive access to the shared resource is returned to the caller
 
-//        auto read = lr["x"].loadChunk< double >(o, e);
-//        for( uint8_t i = 0; i < 2; ++i )
-//            for( uint8_t j = 0; j < 5; ++j )
-//                if( chunk.get()[i*5 + j] != read.get()[i*5 + j] )
-//                    std::cerr << "IO is incorrect!" << std::endl;
+        delete[] simulation_data;
     }
-//
-//
-//    for( int i = 0; i < 2; ++i )
-//    {
-//        /*
-//        highRez["x"].linkDataToDisk(x); // Until the later call to flush completes,
-//        highRez["y"].linkDataToDisk(y); // the numeric data behind the Datesets
-//        highRez["z"].linkDataToDisk(z); // must be present in memory.
-//                                        //
-//        */
-//        f.flush();                      // Now it may be deleted.
-//    }
+
+    mesh["y"].resetDataset(d);
+    mesh["y"].setUnitSI(4);
+    double constant_value = 0.3183098861837907;
+    // for datasets that only contain one unique value, openPMD offers constant records
+    mesh["y"].makeConstant(constant_value);
+    f.flush();
 }
 
 
