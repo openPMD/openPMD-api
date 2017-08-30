@@ -4,6 +4,7 @@
 #include "../include/Auxiliary.hpp"
 #include "../include/Output.hpp"
 #include "../include/IO/HDF5/HDF5IOHandler.hpp"
+#include "../include/IO/HDF5/ParallelHDF5IOHandler.hpp"
 
 
 char const * const Output::BASEPATH = "/data/%T/";
@@ -37,6 +38,9 @@ Output::Output(std::string const& path,
     {
         case Format::HDF5:
             IOHandler = std::make_shared<HDF5IOHandler>(path, at);
+            break;
+        case Format::PARALLEL_HDF5:
+            IOHandler = std::make_shared<ParallelHDF5IOHandler>(path, at);
             break;
         case Format::ADIOS:
             break;
@@ -83,7 +87,8 @@ Output::Output(std::string const& path,
 
 Output::~Output()
 {
-    flush();
+    if( IOHandler->accessType == AccessType::CREAT || IOHandler->accessType == AccessType::READ_WRITE )
+        flush();
 }
 
 std::string
@@ -247,7 +252,7 @@ Output::flush()
                 IOHandler->flush();
             }
 
-            if( !iterations.parent )
+            if( !iterations.written )
                 iterations.parent = this;
             iterations.flush(replace_first(basePath(), "%T/", ""));
 

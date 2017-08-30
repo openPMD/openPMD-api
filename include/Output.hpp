@@ -63,4 +63,4 @@ private:
 };  //Output
 
 std::ostream&
-operator<<(std::ostream& os, Output::IterationEncoding ie);
+operator<<(std::ostream&, Output::IterationEncoding);

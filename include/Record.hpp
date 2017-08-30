@@ -74,11 +74,7 @@ private:
 
 class Record : public BaseRecord< RecordComponent >
 {
-    template<
-            typename T,
-            typename T_key
-    >
-    friend class Container;
+    friend class Container< Record >;
     friend class Iteration;
     friend class ParticleSpecies;
 

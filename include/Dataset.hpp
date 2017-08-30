@@ -21,9 +21,9 @@ public:
     Dataset(T, Extent);
     Dataset(Datatype, Extent);
 
-    uint8_t rank;
     Extent extents;
     Datatype dtype;
+    uint8_t rank;
 };
 
 template<
@@ -45,8 +45,8 @@ struct decay_equiv :
 
 template< typename T >
 inline Dataset::Dataset(T ptr, Extent ext)
-        : rank{static_cast<uint8_t>(ext.size())},
-          extents{ext}
+        : extents{ext},
+          rank{static_cast<uint8_t>(ext.size())}
 {
     using DT = Datatype;
     if( decay_equiv< T, double >::value ) { dtype = DT::DOUBLE; }

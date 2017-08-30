@@ -6,6 +6,7 @@
 #include <string>
 
 #include "Attribute.hpp"
+#include "IO/AbstractIOHandler.hpp"
 #include "Writable.hpp"
 
 
@@ -233,6 +234,27 @@ Attributable::readAttributes()
             case DT::VEC_STRING:
                 setAttribute(att, a.get< std::vector< std::string > >());
                 break;
+            case DT::INT16:
+                setAttribute(att, a.get< int16_t >());
+                break;
+            case DT::INT32:
+                setAttribute(att, a.get< int32_t >());
+                break;
+            case DT::INT64:
+                setAttribute(att, a.get< int64_t >());
+                break;
+            case DT::UINT16:
+                setAttribute(att, a.get< uint16_t >());
+                break;
+            case DT::UCHAR:
+                setAttribute(att, a.get< unsigned char >());
+                break;
+            case DT::BOOL:
+                setAttribute(att, a.get< bool >());
+                break;
+            case DT::DATATYPE:
+            case DT::UNDEFINED:
+                throw std::runtime_error("Invalid Attribute datatype during read");
         }
     }
 }

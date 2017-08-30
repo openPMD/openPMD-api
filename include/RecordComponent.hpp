@@ -87,12 +87,14 @@ RecordComponent::makeConstant(T value)
     return *this;
 }
 
+/*
 template< typename T >
 inline void
 RecordComponent::loadChunkInto(Offset o, Extent e, std::shared_ptr<T> data, double targetUnitSI)
 {
     throw std::runtime_error("loadChunkInto not yet implemented");
 }
+ */
 
 template< typename T >
 inline std::unique_ptr< T, std::function< void(T*) > >
@@ -108,7 +110,7 @@ RecordComponent::loadChunk(Offset o, Extent e, double targetUnitSI)
         throw std::runtime_error("Dimensionality of chunk and dataset do not match.");
     Extent dse = getExtent();
     for( uint8_t i = 0; i < dim; ++i )
-        if( o[i] < 0 || dse[i] < o[i] + e[i] )
+        if( dse[i] < o[i] + e[i] )
             throw std::runtime_error("Chunk does not reside inside dataset (Dimension on index " + std::to_string(i)
                                      + " - DS: " + std::to_string(dse[i])
                                      + " - Chunk: " + std::to_string(o[i] + e[i])
@@ -118,7 +120,7 @@ RecordComponent::loadChunk(Offset o, Extent e, double targetUnitSI)
     for( auto const& val : e )
         points *= val;
 
-    void* data;
+    void* data = nullptr;
     switch( getDatatype() )
     {
         using DT = Datatype;
@@ -181,7 +183,7 @@ RecordComponent::loadChunk(Offset o, Extent e, double targetUnitSI)
     }
 
     T* ptr = static_cast< T* >(data);
-    auto deleter = [](auto ptr){ delete[] ptr; };
+    auto deleter = [](auto p){ delete[] p; };
     return std::unique_ptr< T, decltype(deleter) >(ptr, deleter);
 }
 
@@ -197,7 +199,7 @@ RecordComponent::storeChunk(Offset o, Extent e, std::shared_ptr<T> data)
         throw std::runtime_error("Dimensionality of chunk and dataset do not match.");
     Extent dse = getExtent();
     for( uint8_t i = 0; i < dim; ++i )
-        if( o[i] < 0 || dse[i] < o[i] + e[i] )
+        if( dse[i] < o[i] + e[i] )
             throw std::runtime_error("Chunk does not reside inside dataset (Dimension on index " + std::to_string(i)
                                      + " - DS: " + std::to_string(dse[i])
                                      + " - Chunk: " + std::to_string(o[i] + e[i])

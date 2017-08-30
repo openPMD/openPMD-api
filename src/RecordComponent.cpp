@@ -164,6 +164,7 @@ RecordComponent::readBase()
             case DT::VEC_UINT64:
                 for( auto const& val : a.get< std::vector< uint64_t > >() )
                     e.push_back(val);
+                break;
             default:
                 throw std::runtime_error("Unexpected Attribute datatype for 'shape'");
         }

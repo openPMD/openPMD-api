@@ -9,11 +9,7 @@
 
 class Mesh : public BaseRecord< MeshRecordComponent >
 {
-    template<
-            typename T,
-            typename T_key
-    >
-    friend class Container;
+    friend class Container< Mesh >;
     friend class Iteration;
 
 private:

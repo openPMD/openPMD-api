@@ -8,11 +8,8 @@
 
 class ParticleSpecies : public Container< Record >
 {
-    template<
-            typename T,
-            typename T_key
-    >
-    friend class Container;
+    friend class Container< ParticleSpecies >;
+    friend class Container< Record >;
     friend class Iteration;
 
 private:

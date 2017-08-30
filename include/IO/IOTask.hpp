@@ -5,9 +5,8 @@
 
 #include "../Attribute.hpp"
 #include "../Dataset.hpp"
+#include "../Writable.hpp"
 
-
-class Writable;
 
 enum class ArgumentDatatype : int
 {
@@ -166,9 +165,9 @@ struct Parameter< Operation::DELETE_ATT >
 template<>
 struct Parameter< Operation::WRITE_ATT >
 {
+    Attribute::resource resource;
     std::string name;
     Datatype dtype;
-    Attribute::resource resource;
 };
 
 template<>
@@ -205,6 +204,6 @@ public:
     { }
 
     Writable* writable;
-    Operation const operation;
+    Operation operation;
     std::map< std::string, Argument > parameter;
 };  //IOTask

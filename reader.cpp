@@ -159,14 +159,13 @@ int main()
 
     Output exact_copy("working/directory",
                       "data00000100.h5",
-                      Output::IterationEncoding::fileBased,
+                      Output::IterationEncoding::groupBased,
                       Format::HDF5,
                       AccessType::CREAT);
     exact_copy.setOpenPMD(o.openPMD());
     exact_copy.setOpenPMDextension(o.openPMDextension());
     exact_copy.setMeshesPath(o.meshesPath());
     exact_copy.setParticlesPath(o.particlesPath());
-    exact_copy.setIterationFormat(o.iterationFormat());
     for( auto const& i : o.iterations )
         exact_copy.iterations[i.first] = i.second;
     exact_copy.flush();

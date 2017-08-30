@@ -247,7 +247,7 @@ BOOST_AUTO_TEST_CASE(mesh_constructor_test)
 
     Mesh &m = o.iterations[42].meshes["E"];
 
-    std::vector< double > pos = {0};
+    std::vector< float > pos = {0};
     BOOST_TEST(m["x"].unitSI() == 1);
     BOOST_TEST(m["x"].numAttributes() == 2); /* unitSI, position */
     BOOST_TEST(m["x"].position() == pos);

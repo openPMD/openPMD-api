@@ -2,9 +2,9 @@
 
 
 #include <memory>
-#include "IO/AbstractFilePosition.hpp"
-#include "IO/AbstractIOHandler.hpp"
 
+class AbstractFilePosition;
+class AbstractIOHandler;
 
 class Writable
 {
@@ -15,6 +15,7 @@ class Writable
     friend class Container;
     friend class Iteration;
     friend class HDF5IOHandler;
+    friend class HDF5IOHandlerImpl;
 
 public:
     Writable()
