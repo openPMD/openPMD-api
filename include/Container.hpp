@@ -3,6 +3,7 @@
 
 #include <string>
 #include <unordered_map>
+
 #include "Attributable.hpp"
 #include "Writable.hpp"
 
@@ -13,8 +14,7 @@ template<
 >
 class Container
         : public std::unordered_map< T_key, T >,
-          public Attributable,
-          public Writable
+          public Attributable
 {
     friend class Iteration;
     friend class Output;
@@ -22,6 +22,8 @@ class Container
 public:
     using value_type = T;
     using key_type = T_key;
+
+    virtual ~Container() { }
 
     T& operator[](T_key key)
     {
@@ -37,16 +39,27 @@ public:
         }
     }
 
-private:
-    void flush()
+    typename std::unordered_map< T_key, T >::size_type erase(T_key const& key)
     {
-        Parameter< Operation::WRITE_ATT > attribute_parameter;
-        for( std::string const & att_name : attributes() )
+        auto res = std::unordered_map< T_key, T >::find(key);
+        if( res != std::unordered_map< T_key, T >::end() && res->second.written )
         {
-            attribute_parameter.name = att_name;
-            attribute_parameter.resource = getAttribute(att_name).getResource();
-            attribute_parameter.dtype = getAttribute(att_name).dtype;
-            IOHandler->enqueue(IOTask(this, attribute_parameter));
+            // TODO delete element on disk
         }
+        return std::unordered_map< T_key, T >::erase(key);
+    }
+
+private:
+    void flush(std::string const path)
+    {
+        if( !written )
+        {
+            Parameter< Operation::CREATE_PATH > path_parameter;
+            path_parameter.path = path;
+            IOHandler->enqueue(IOTask(this, path_parameter));
+            IOHandler->flush();
+        }
+
+        flushAttributes();
     }
 };

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iosfwd>
+
 enum class Datatype : int
 {
     CHAR = 0, INT, FLOAT, DOUBLE,
@@ -11,10 +13,15 @@ enum class Datatype : int
     VEC_UINT64,
     VEC_STRING,
 
-    INT16 = 1000, INT32, INT64,
+    INT16, INT32, INT64,
     UINT16,
     UCHAR,
     BOOL,
 
+    DATATYPE = 1000,
+
     UNDEFINED
-};
+};  //Datatype
+
+std::ostream&
+operator<<(std::ostream&, Datatype);

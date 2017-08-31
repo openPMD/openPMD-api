@@ -44,13 +44,18 @@ BOOST_AUTO_TEST_CASE(string_test)
 
 BOOST_AUTO_TEST_CASE(container_default_test)
 {
-    Container< int > c = Container< int >();
+    struct S
+    {
+        int val;
+        bool written;
+    };
+    Container< S > c = Container< S >();
 
     BOOST_TEST(c.size() == 0);
     BOOST_TEST(c.erase("nonExistentKey") == false);
 }
 
-class structure : public Attributable, public Writable
+class structure : public Attributable
 {
 public:
     std::string string_ = "Hello, world!";
@@ -161,11 +166,11 @@ BOOST_AUTO_TEST_CASE(attributable_access_test)
 {
     AttributedWidget a = AttributedWidget();
 
-    a.setAttribute("key", "value");
+    a.setAttribute("key", std::string("value"));
     BOOST_TEST(a.numAttributes() == 1);
     BOOST_TEST(boost::get< std::string >(a.get("key")) == "value");
 
-    a.setAttribute("key", "newValue");
+    a.setAttribute("key", std::string("newValue"));
     BOOST_TEST(a.numAttributes() == 1);
     BOOST_TEST(boost::get< std::string >(a.get("key")) == "newValue");
 
@@ -221,18 +226,17 @@ BOOST_AUTO_TEST_CASE(dot_test)
 BOOST_AUTO_TEST_CASE(dataset_test)
 {
     std::shared_ptr<double> spd = std::make_shared<double>(1.0);
+    double *ptr = spd.get();
     BOOST_TEST(spd.use_count() == 1);
 
     {
         Extent ext{1};
-        Dataset d = Dataset(spd, ext);
+        Dataset d = Dataset(ptr, ext);
         bool dtype_check = d.dtype == Datatype::DOUBLE;
         BOOST_TEST(dtype_check);
-        BOOST_TEST(spd.use_count() == 2);
         Dataset d2(d);
         dtype_check = d2.dtype == Datatype::DOUBLE;
         BOOST_TEST(dtype_check);
-        BOOST_TEST(spd.use_count() == 3);
     }
 
     BOOST_TEST(spd.use_count() == 1);

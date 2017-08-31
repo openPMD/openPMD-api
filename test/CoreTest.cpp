@@ -108,8 +108,8 @@ BOOST_AUTO_TEST_CASE(iteration_default_test)
     Iteration& i = o.iterations[42];
 
     BOOST_TEST(i.time() == static_cast<float>(0));
-    BOOST_TEST(i.dt() == static_cast<float>(0));
-    BOOST_TEST(i.timeUnitSI() == static_cast<double>(0));
+    BOOST_TEST(i.dt() == static_cast<float>(1));
+    BOOST_TEST(i.timeUnitSI() == static_cast<double>(1));
     BOOST_TEST(i.numAttributes() == 3);
     BOOST_TEST(i.meshes.size() == 0);
     BOOST_TEST(i.particles.size() == 0);
@@ -232,9 +232,6 @@ BOOST_AUTO_TEST_CASE(recordComponent_link_test)
                              {{18, 19}, {20, 21}, {22, 23}},
                              {{24, 25}, {26, 27}, {28, 29}}};
     std::vector< std::size_t > shape{{5, 3, 2}};
-    //r["x"].linkDataToDisk(arr3D, {5, 3, 2});
-    //BOOST_TEST(r["x"].extents == shape);
-    //BOOST_TEST(*(r["x"].retrieveData<double>() + 1) == 1);
     BOOST_TEST(r["x"].unitSI() == static_cast<double>(1));
     BOOST_TEST(r["x"].numAttributes() == 1); /* unitSI */
 }
@@ -250,7 +247,7 @@ BOOST_AUTO_TEST_CASE(mesh_constructor_test)
 
     Mesh &m = o.iterations[42].meshes["E"];
 
-    std::vector< double > pos = {0};
+    std::vector< float > pos = {0};
     BOOST_TEST(m["x"].unitSI() == 1);
     BOOST_TEST(m["x"].numAttributes() == 2); /* unitSI, position */
     BOOST_TEST(m["x"].position() == pos);
@@ -311,12 +308,7 @@ BOOST_AUTO_TEST_CASE(mesh_modification_test)
     m.setGeometryParameters("FORMULA GOES HERE");
     BOOST_TEST(m.geometryParameters() == gp);
     BOOST_TEST(m.numAttributes() == 9);
-    std::map< std::string, std::vector< double > > pos{{"x", {0, 0, 0}},
-                                                       {"y", {1, 1, 1}},
-                                                       {"z", {2, 2, 2}}};
+
     m["x"].setPosition({0, 0, 0});
-    m.setPosition({{"y", {1, 1, 1}},
-                   {"z", {2, 2, 2}}});
-    BOOST_TEST(m.position() == pos);
     BOOST_TEST(m.numAttributes() == 9);
 }

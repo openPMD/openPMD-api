@@ -8,11 +8,9 @@
 
 class ParticleSpecies : public Container< Record >
 {
-    template<
-            typename T,
-            typename T_key
-    >
-    friend class Container;
+    friend class Container< ParticleSpecies >;
+    friend class Container< Record >;
+    friend class Iteration;
 
 private:
     ParticleSpecies();
@@ -20,6 +18,8 @@ private:
     uint64_t m_numParticlesGlobal;
     uint64_t m_numParticlesLocal;
     uint64_t m_numParticlesLocalOffset;
+
+    void read();
 
 public:
     uint64_t numParticlesGlobal() const;

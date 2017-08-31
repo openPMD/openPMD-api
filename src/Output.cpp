@@ -1,8 +1,10 @@
 #include <iostream>
+#include <set>
 
 #include "../include/Auxiliary.hpp"
 #include "../include/Output.hpp"
 #include "../include/IO/HDF5/HDF5IOHandler.hpp"
+#include "../include/IO/HDF5/ParallelHDF5IOHandler.hpp"
 
 
 char const * const Output::BASEPATH = "/data/%T/";
@@ -35,31 +37,58 @@ Output::Output(std::string const& path,
     switch( f )
     {
         case Format::HDF5:
-            IOHandler = std::make_unique<HDF5IOHandler>(path, at);
+            IOHandler = std::make_shared<HDF5IOHandler>(path, at);
+            break;
+        case Format::PARALLEL_HDF5:
+            IOHandler = std::make_shared<ParallelHDF5IOHandler>(path, at);
             break;
         case Format::ADIOS:
             break;
         case Format::NONE:
-            IOHandler = std::make_unique<NONEIOHandler>(path, at);
+            IOHandler = std::make_shared<NONEIOHandler>(path, at);
+            break;
     }
     iterations.IOHandler = IOHandler;
     iterations.parent = this;
-    setOpenPMD(OPENPMD);
-    setOpenPMDextension(0);
-    setAttribute("basePath", BASEPATH);
-    setMeshesPath("meshes/");
-    setParticlesPath("particles/");
-    switch( ie )
+    switch( at )
     {
-        case Output::IterationEncoding::fileBased:
-            setIterationFormat(m_name + "_%T");
-            setAttribute("iterationEncoding", "fileBased");
+        case AccessType::CREAT:
+        {
+            setOpenPMD(OPENPMD);
+            setOpenPMDextension(0);
+            setAttribute("basePath", std::string(BASEPATH));
+            setMeshesPath("meshes/");
+            setParticlesPath("particles/");
+            switch( ie )
+            {
+                case Output::IterationEncoding::fileBased:
+                    setIterationFormat(m_name + "_%T");
+                    setAttribute("iterationEncoding", std::string("fileBased"));
+                    break;
+                case Output::IterationEncoding::groupBased:
+                    setIterationFormat("/data/%T/");
+                    setAttribute("iterationEncoding", std::string("groupBased"));
+                    break;
+            }
             break;
-        case Output::IterationEncoding::groupBased:
-            setIterationFormat("/data/%T/");
-            setAttribute("iterationEncoding", "groupBased");
+        }
+        case AccessType::READ_ONLY:
+        {
+            read();
             break;
+        }
+        case AccessType::READ_WRITE:
+        {
+            read();
+            break;
+        }
     }
+}
+
+Output::~Output()
+{
+    if( IOHandler->accessType == AccessType::CREAT || IOHandler->accessType == AccessType::READ_WRITE )
+        flush();
 }
 
 std::string
@@ -169,12 +198,10 @@ Output::name() const
 Output&
 Output::setName(std::string const& n)
 {
-    if( !written )
-    {
-        m_name = n;
-        dirty = true;
-    } else
+    if( written )
         throw std::runtime_error("A files name can not (yet) be changed after it has been written.");
+    m_name = n;
+    dirty = true;
     return *this;
 }
 
@@ -188,36 +215,13 @@ Output::flush()
         {
             for( auto& i : iterations )
             {
-                //TODO Only the first iteration is correctly created, all latter ones are marked 'written'
                 if( !i.second.written )
-                {
-                    Parameter< Operation::CREATE_FILE > file_parameter;
-                    std::string name = getAttribute("iterationFormat").get< std::string >();
-                    file_parameter.name = replace_first(name, "%T", std::to_string(i.first));
-                    IOHandler->enqueue(IOTask(&i.second, file_parameter));
-
-                    /* Manually build the hierarchy for the files */
-                    abstractFilePosition = i.second.abstractFilePosition;
                     i.second.parent = this;
+                i.second.flushFileBased(i.first);
 
-                    /* Create the basePath */
-                    Parameter< Operation::CREATE_PATH > iteration_parameter;
-                    iteration_parameter.path = replace_first(getAttribute("basePath").get< std::string >(),
-                                                             "%T/",
-                                                             "");
-                    /* 'this' is used to skip the iterations container */
-                    IOHandler->enqueue(IOTask(this, iteration_parameter));
-                    iterations.abstractFilePosition = this->abstractFilePosition; /* basePath */
-                    abstractFilePosition = i.second.abstractFilePosition; /* root */
-
-                    auto basePath = iterations.abstractFilePosition;
-                    iteration_parameter.path = std::to_string(i.first);
-                    IOHandler->enqueue(IOTask(&iterations, iteration_parameter));
-
-                    i.second.abstractFilePosition = iterations.abstractFilePosition; /* iteration number */
-                    i.second.parent = &iterations;
-                    iterations.abstractFilePosition = basePath;
-                }
+                // TODO same problem as below
+                // [HDF5 backend: Container only corresponds to the ID written the earliest]
+                iterations.flush(replace_first(basePath(), "%T/", ""));
 
                 if( dirty )
                 {
@@ -227,13 +231,15 @@ Output::flush()
                         attribute_parameter.name = att_name;
                         attribute_parameter.resource = getAttribute(att_name).getResource();
                         attribute_parameter.dtype = getAttribute(att_name).dtype;
+                        // TODO "this" is too general for writing file-based root attributes
+                        // [HDF5 backend: only one fileID is saved per Writable,
+                        //  thus this Output only corresponds to the ID written the earliest]
                         IOHandler->enqueue(IOTask(this, attribute_parameter));
                     }
+                    IOHandler->flush();
+                    dirty = false;
                 }
-
-                i.second.flush();
             }
-            iterations.flush();
             break;
         }
         case IE::groupBased:
@@ -243,44 +249,135 @@ Output::flush()
                 Parameter< Operation::CREATE_FILE > file_parameter;
                 file_parameter.name = m_name;
                 IOHandler->enqueue(IOTask(this, file_parameter));
+                IOHandler->flush();
             }
 
-            if( dirty )
-            {
-                Parameter< Operation::WRITE_ATT > attribute_parameter;
-                for( std::string const & att_name : attributes() )
-                {
-                    attribute_parameter.name = att_name;
-                    attribute_parameter.resource = getAttribute(att_name).getResource();
-                    attribute_parameter.dtype = getAttribute(att_name).dtype;
-                    IOHandler->enqueue(IOTask(this, attribute_parameter));
-                }
-            }
-
-            Parameter< Operation::CREATE_PATH > iteration_parameter;
-            /* Create the basePath */
             if( !iterations.written )
-            {
-                iteration_parameter.path = replace_first(getAttribute("basePath").get< std::string >(),
-                                                         "%T/",
-                                                         "");
-                IOHandler->enqueue(IOTask(&iterations, iteration_parameter));
-            }
-            iterations.flush();
+                iterations.parent = this;
+            iterations.flush(replace_first(basePath(), "%T/", ""));
+
             for( auto& i : iterations )
             {
-                /* Create the iteration's path in the basePath */
                 if( !i.second.written )
-                {
-                    iteration_parameter.path = std::to_string(i.first);
-                    IOHandler->enqueue(IOTask(&i.second, iteration_parameter));
-                }
-                i.second.flush();
+                    i.second.parent = &iterations;
+                i.second.flushGroupBased(i.first);
             }
+
+            flushAttributes();
         }
         break;
     }
 
     IOHandler->flush();
-    dirty = false;
+}
+
+void
+Output::read()
+{
+    //TODO find solution for handling fileBased output
+
+    Parameter< Operation::OPEN_FILE > file_parameter;
+    file_parameter.name = m_name;
+    IOHandler->enqueue(IOTask(this, file_parameter));
+    IOHandler->flush();
+
+    using DT = Datatype;
+    Parameter< Operation::READ_ATT > attribute_parameter;
+
+    attribute_parameter.name = "openPMD";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::STRING )
+        setOpenPMD(Attribute(*attribute_parameter.resource).get< std::string >());
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'openPMD'");
+
+    attribute_parameter.name = "openPMDextension";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::UINT32 )
+        setOpenPMDextension(Attribute(*attribute_parameter.resource).get< uint32_t >());
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'openPMDextension'");
+
+    attribute_parameter.name = "basePath";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::STRING )
+        setAttribute("basePath", Attribute(*attribute_parameter.resource).get< std::string >());
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'basePath'");
+
+    attribute_parameter.name = "meshesPath";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::STRING )
+        setMeshesPath(Attribute(*attribute_parameter.resource).get< std::string >());
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'meshesPath'");
+
+    attribute_parameter.name = "particlesPath";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::STRING )
+        setParticlesPath(Attribute(*attribute_parameter.resource).get< std::string >());
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'particlesPath'");
+
+    attribute_parameter.name = "iterationEncoding";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::STRING )
+    {
+        std::string encoding = Attribute(*attribute_parameter.resource).get< std::string >();
+        if( encoding == "fileBased" )
+        {
+            if( m_iterationEncoding != IterationEncoding::fileBased)
+                throw std::runtime_error("Supplied and read iterationEncoding do not match");
+        }
+        else if( encoding == "groupBased" )
+        {
+            if( m_iterationEncoding != IterationEncoding::groupBased)
+                throw std::runtime_error("Supplied and read iterationEncoding do not match");
+        } else
+            throw std::runtime_error("Unknown iterationEncoding: " + encoding);
+        setAttribute("iterationEncoding", encoding);
+    }
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'iterationEncoding'");
+
+    attribute_parameter.name = "iterationFormat";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::STRING )
+        setIterationFormat(Attribute(*attribute_parameter.resource).get< std::string >());
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
+
+    readAttributes();
+
+    Parameter< Operation::OPEN_PATH > path_parameter;
+    std::string version = openPMD();
+    if( version == "1.0.0" || version == "1.0.1" )
+        path_parameter.path = replace_first(basePath(), "/%T/", "");
+    else
+        throw std::runtime_error("Unknown openPMD version - " + version);
+    IOHandler->enqueue(IOTask(&iterations, path_parameter));
+    IOHandler->flush();
+
+    iterations.readAttributes();
+
+    /* obtain all paths inside the basepath (i.e. all iterations) */
+    Parameter< Operation::LIST_PATHS > list_parameter;
+    IOHandler->enqueue(IOTask(&iterations, list_parameter));
+    IOHandler->flush();
+
+    for( auto const& it : *list_parameter.paths )
+    {
+        Iteration& i = iterations[std::stoull(it)];
+        path_parameter.path = it;
+        IOHandler->enqueue(IOTask(&i, path_parameter));
+        IOHandler->flush();
+        i.read();
+    }
 }

@@ -10,7 +10,7 @@
 #include "Writable.hpp"
 
 
-class Output : public Attributable, public Writable
+class Output : public Attributable
 {
 public:
     enum class IterationEncoding
@@ -23,6 +23,7 @@ public:
            IterationEncoding ie,
            Format f,
            AccessType at);
+    ~Output();
 
     std::string openPMD() const;
     Output& setOpenPMD(std::string const&);
@@ -53,6 +54,8 @@ public:
     Container< Iteration, uint64_t > iterations;
 
 private:
+    void read();
+
     static char const * const BASEPATH;
     static char const * const OPENPMD;
     IterationEncoding m_iterationEncoding;
@@ -60,4 +63,4 @@ private:
 };  //Output
 
 std::ostream&
-operator<<(std::ostream& os, Output::IterationEncoding ie);
+operator<<(std::ostream&, Output::IterationEncoding);

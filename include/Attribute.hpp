@@ -10,36 +10,20 @@
 #include "Datatype.hpp"
 
 
-//TODO This might have to be a Writable
-//Reasoning - Flushes are expeted to be done often.
-//Attributes should not be written unless dirty.
-//At the moment the dirty check is done at Attributable level
-class Attribute
+template< class T_DTYPES, typename ... T >
+class Variadic
 {
 public:
-    /* To guarantee that the resource type is detected correctly,
-     * the order of types in this variant MUST match
-     * the order of types in Dtype. */
-    using resource =
-    boost::variant< char, int, float, double,
-                    uint32_t, uint64_t, std::string,
-                    std::array< double, 7 >,
-                    std::vector< int >,
-                    std::vector< float >,
-                    std::vector< double >,
-                    std::vector< uint64_t >,
-                    std::vector< std::string >
-    >;
-
-    Attribute(resource r)
-            : dtype{static_cast<Datatype>(r.which())},
+    using resource = boost::variant< T ... >;
+    Variadic(resource r)
+            : dtype{static_cast<T_DTYPES>(r.which())},
               m_data{r}
-    { }
+    { static_assert(std::is_enum< T_DTYPES >::value, "Datatypes to variadic have to be supplied as enum."); }
 
-    template< typename T >
-    T get() const
+    template< typename U >
+    U get() const
     {
-        return boost::get< T >(m_data);
+        return boost::get< U >(m_data);
     }
 
     resource getResource() const
@@ -47,8 +31,26 @@ public:
         return m_data;
     }
 
-    Datatype dtype;
+    T_DTYPES dtype;
 
 private:
     resource m_data;
-};  //Attribute
+};
+
+//TODO This might have to be a Writable
+//Reasoning - Flushes are expeted to be done often.
+//Attributes should not be written unless dirty.
+//At the moment the dirty check is done at Attributable level
+using Attribute = Variadic< Datatype,
+                            char, int, float, double,
+                            uint32_t, uint64_t, std::string,
+                            std::array< double, 7 >,
+                            std::vector< int >,
+                            std::vector< float >,
+                            std::vector< double >,
+                            std::vector< uint64_t >,
+                            std::vector< std::string >,
+                            int16_t, int32_t, int64_t,
+                            uint16_t,
+                            unsigned char,
+                            bool >;

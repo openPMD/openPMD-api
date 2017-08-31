@@ -1,5 +1,7 @@
 #include <memory>
+#include <iostream>
 
+#include "../include/Auxiliary.hpp"
 #include "../include/Dataset.hpp"
 #include "../include/Iteration.hpp"
 #include "../include/Output.hpp"
@@ -10,8 +12,8 @@ Iteration::Iteration()
           particles{Container< ParticleSpecies >()}
 {
     setTime(0);
-    setDt(0);
-    setTimeUnitSI(0);
+    setDt(1);
+    setTimeUnitSI(1);
 }
 
 Iteration::Iteration(float time,
@@ -81,97 +83,204 @@ Iteration::setTimeUnitSI(double timeUnitSI)
 }
 
 void
+Iteration::flushFileBased(uint64_t i)
+{
+    if( !written )
+    {
+        /* create file */
+        Output* o = dynamic_cast<Output *>(parent);
+        Parameter< Operation::CREATE_FILE > file_parameter;
+        file_parameter.name = replace_first(o->iterationFormat(), "%T", std::to_string(i));
+        IOHandler->enqueue(IOTask(this, file_parameter));
+        IOHandler->flush();
+        o->abstractFilePosition = abstractFilePosition;
+        o->written = true;
+
+        /* create basePath */
+        Parameter< Operation::CREATE_PATH > iteration_parameter;
+        iteration_parameter.path = replace_first(o->basePath(), "%T/", "");
+        written = false;
+        IOHandler->enqueue(IOTask(this, iteration_parameter));
+        IOHandler->flush();
+        o->iterations.abstractFilePosition = abstractFilePosition;
+        o->iterations.written = true;
+        parent = &o->iterations;
+
+        /* create iteration path */
+        iteration_parameter.path = std::to_string(i);
+        abstractFilePosition = std::shared_ptr< AbstractFilePosition >(nullptr);
+        written = false;
+        IOHandler->enqueue(IOTask(this, iteration_parameter));
+        IOHandler->flush();
+    }
+
+    flush();
+}
+
+void
+Iteration::flushGroupBased(uint64_t i)
+{
+    if( !written )
+    {
+        /* create iteration path */
+        Parameter< Operation::CREATE_PATH > iteration_parameter;
+        iteration_parameter.path = std::to_string(i);
+        IOHandler->enqueue(IOTask(this, iteration_parameter));
+        IOHandler->flush();
+    }
+
+    flush();
+}
+
+void
 Iteration::flush()
 {
-    if( dirty )
+    /* Find the root point [Output] of this file,
+     * meshesPath and particlesPath are stored there */
+    Writable *w = this;
+    while( w->parent )
+        w = w->parent;
+    Output* o = dynamic_cast<Output *>(w);
+
+    meshes.flush(o->meshesPath());
+    for( auto& m : meshes )
     {
-        Parameter< Operation::WRITE_ATT > attribute_parameter;
-        for( std::string const & att_name : attributes() )
-        {
-            attribute_parameter.name = att_name;
-            attribute_parameter.resource = getAttribute(att_name).getResource();
-            attribute_parameter.dtype = getAttribute(att_name).dtype;
-            IOHandler->enqueue(IOTask(this, attribute_parameter));
-        }
+        m.second.flush(m.first);
     }
+
+    particles.flush(o->particlesPath());
+    for( auto& species : particles )
+    {
+        species.second.flush(species.first);
+        for( auto& record : species.second )
+            record.second.flush(record.first);
+    }
+
+    flushAttributes();
+}
+
+void
+Iteration::read()
+{
+    using DT = Datatype;
+    Parameter< Operation::READ_ATT > attribute_parameter;
+
+    attribute_parameter.name = "dt";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::FLOAT )
+        setDt(Attribute(*attribute_parameter.resource).get< float >());
+    else if( *attribute_parameter.dtype == DT::DOUBLE )
+    {
+        std::cerr << "Non-standard attribute datatype for 'dt' (should be float, is double)\n";
+        setDt(static_cast<float>(Attribute(*attribute_parameter.resource).get< double >()));
+    }
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'dt'");
+
+    attribute_parameter.name = "time";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::FLOAT )
+        setTime(Attribute(*attribute_parameter.resource).get< float >());
+    else if( *attribute_parameter.dtype == DT::DOUBLE )
+    {
+        std::cerr << "Non-standard attribute datatype for 'time' (should be float, is double)\n";
+        setTime(static_cast<float>(Attribute(*attribute_parameter.resource).get< double >()));
+    }
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'time'");
+
+    attribute_parameter.name = "timeUnitSI";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::DOUBLE )
+        setTimeUnitSI(Attribute(*attribute_parameter.resource).get< double >());
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'timeUnitSI'");
+
+    readAttributes();
 
     /* Find the root point [Output] of this file,
      * meshesPath and particlesPath are stored there */
     Writable *w = this;
     while( w->parent )
         w = w->parent;
-
     Output* o = dynamic_cast<Output *>(w);
-    Parameter< Operation::CREATE_PATH > path_parameter;
-    /* Create the meshesPath */
-    if( !meshes.written )
+
+    Parameter< Operation::OPEN_PATH > path_parameter;
+    path_parameter.path = o->meshesPath();
+    IOHandler->enqueue(IOTask(&meshes, path_parameter));
+    IOHandler->flush();
+
+    meshes.readAttributes();
+
+    /* obtain all non-scalar meshes */
+    Parameter< Operation::LIST_PATHS > plist_parameter;
+    IOHandler->enqueue(IOTask(&meshes, plist_parameter));
+    IOHandler->flush();
+
+    Parameter< Operation::LIST_ATTS > alist_parameter;
+    for( auto const& mesh_name : *plist_parameter.paths )
     {
-        path_parameter.path = o->getAttribute("meshesPath").get< std::string >();
-        IOHandler->enqueue(IOTask(&meshes, path_parameter));
-    }
-    meshes.flush();
-    for( auto& m : meshes )
-    {
-        /* Create the meshes path/dataset */
-        if( !m.second.written )
+        Mesh& m = meshes[mesh_name];
+        path_parameter.path = mesh_name;
+        alist_parameter.attributes->clear();
+        IOHandler->enqueue(IOTask(&m, path_parameter));
+        IOHandler->enqueue(IOTask(&m, alist_parameter));
+        IOHandler->flush();
+
+        auto begin = alist_parameter.attributes->begin();
+        auto end = alist_parameter.attributes->end();
+        auto value = std::find(begin, end, "value");
+        auto shape = std::find(begin, end, "shape");
+        if( value != end && shape != end )
         {
-            if( m.second.m_containsScalar )
-            {
-                Parameter< Operation::CREATE_DATASET > ds_parameter;
-                ds_parameter.name = m.first;
-                Dataset const& ds = m.second.at(RecordComponent::SCALAR).m_dataset;
-                ds_parameter.dtype = ds.dtype;
-                ds_parameter.extent = ds.extents;
-                IOHandler->enqueue(IOTask(&m.second, ds_parameter));
-            } else
-            {
-                path_parameter.path = m.first;
-                IOHandler->enqueue(IOTask(&m.second, path_parameter));
-            }
+            //TODO
+            throw std::runtime_error("Constant scalar records not implemented yet");
         }
-        m.second.flush();
+        m.read();
     }
 
-    /* Create the particlesPath */
-    if( !particles.written )
+    /* obtain all scalar meshes */
+    Parameter< Operation::LIST_DATASETS > dlist_parameter;
+    IOHandler->enqueue(IOTask(&meshes, dlist_parameter));
+    IOHandler->flush();
+
+    Parameter< Operation::OPEN_DATASET > dataset_parameter;
+    for( auto const& mesh_name : *dlist_parameter.datasets )
     {
-        path_parameter.path = o->getAttribute("particlesPath").get< std::string >();
-        IOHandler->enqueue(IOTask(&particles, path_parameter));
-    }
-    particles.flush();
-    for( auto& spec : particles )
-    {
-        /* Create a path to the particle species */
-        if( !spec.second.written )
-        {
-            path_parameter.path = spec.first;
-            IOHandler->enqueue(IOTask(&spec.second, path_parameter));
-        }
-        spec.second.flush();
-        for( auto& rec : spec.second )
-        {
-            /* Create the particle record's path/dataset */
-            if( !rec.second.written )
-            {
-                if( rec.second.m_containsScalar )
-                {
-                    Parameter< Operation::CREATE_DATASET > ds_parameter;
-                    ds_parameter.name = rec.first;
-                    Dataset const& ds = rec.second[RecordComponent::SCALAR].m_dataset;
-                    ds_parameter.dtype = ds.dtype;
-                    ds_parameter.extent = ds.extents;
-                    IOHandler->enqueue(IOTask(&rec.second, ds_parameter));
-                } else
-                {
-                    path_parameter.path = rec.first;
-                    IOHandler->enqueue(IOTask(&rec.second, path_parameter));
-                }
-            }
-            rec.second.flush();
-        }
+        Mesh& m = meshes[mesh_name];
+        dataset_parameter.name = mesh_name;
+        IOHandler->enqueue(IOTask(&m, dataset_parameter));
+        IOHandler->flush();
+        RecordComponent& r = m[RecordComponent::SCALAR];
+        r.abstractFilePosition = m.abstractFilePosition;
+        r.parent = m.parent;
+        r.written = true;
+        r.resetDataset(Dataset(*dataset_parameter.dtype, *dataset_parameter.extent));
+        m.read();
     }
 
-    dirty = false;
+    path_parameter.path = o->particlesPath();
+    IOHandler->enqueue(IOTask(&particles, path_parameter));
+    IOHandler->flush();
+
+    particles.readAttributes();
+
+    /* obtain all particle species */
+    plist_parameter.paths->clear();
+    IOHandler->enqueue(IOTask(&particles, plist_parameter));
+    IOHandler->flush();
+
+    for( auto const& species_name : *plist_parameter.paths )
+    {
+        ParticleSpecies& p = particles[species_name];
+        path_parameter.path = species_name;
+        IOHandler->enqueue(IOTask(&p, path_parameter));
+        IOHandler->flush();
+        p.read();
+    }
 }
 
 
