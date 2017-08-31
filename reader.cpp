@@ -5,7 +5,7 @@
 
 int main()
 {
-    Output o = Output("./git-sample/",
+    Output o = Output("../samples/git-sample/",
                       "data00000100.h5",
                       Output::IterationEncoding::fileBased,
                       Format::HDF5,

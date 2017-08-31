@@ -59,7 +59,7 @@ public:
 
 HDF5IOHandler::HDF5IOHandler(std::string const& path, AccessType at)
         : AbstractIOHandler(path, at),
-          m_impl{std::make_unique< HDF5IOHandlerImpl >(this)}
+          m_impl{new HDF5IOHandlerImpl(this)}
 { }
 
 HDF5IOHandler::~HDF5IOHandler()

@@ -183,7 +183,7 @@ RecordComponent::loadChunk(Offset o, Extent e, double targetUnitSI)
     }
 
     T* ptr = static_cast< T* >(data);
-    auto deleter = [](auto p){ delete[] p; };
+    auto deleter = [](T* p){ delete[] p; };
     return std::unique_ptr< T, decltype(deleter) >(ptr, deleter);
 }
 

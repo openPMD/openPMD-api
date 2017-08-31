@@ -4,7 +4,7 @@
 
 
 Record::Record() = default;
-Record::Record(Record const& r) = default;
+Record::Record(Record const&) = default;
 Record::~Record() = default;
 
 RecordComponent&

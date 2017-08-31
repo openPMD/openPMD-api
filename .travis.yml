@@ -1,5 +1,7 @@
 language: cpp
-sudo: required
+os: linux
+dist: xenial
+sudo: false
 
 services:
   - docker
