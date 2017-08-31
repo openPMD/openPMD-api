@@ -99,3 +99,13 @@ docs/doxygen_sqlite3.db
 # Sphinx & Breathe #
 ####################
 docs/build/
+
+################
+# Sample files #
+################
+samples/
+
+################
+# Binaries #
+################
+bin/

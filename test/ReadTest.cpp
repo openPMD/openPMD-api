@@ -9,7 +9,7 @@
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_test)
 {
     //TODO check non-standard attributes
-    Output o = Output("./git-sample/",
+    Output o = Output("../samples/git-sample/",
                       "data00000100.h5",
                       Output::IterationEncoding::fileBased,
                       Format::HDF5,

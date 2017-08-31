@@ -1,0 +1,104 @@
+language: cpp
+os: linux
+dist: xenial
+sudo: false
+
+
+cache:
+  apt: true
+  directories:
+    - $HOME/.cache/boost
+
+
+env:
+  global:
+    - BOOST_ROOT: $HOME/.cache/boost
+
+addons:
+  apt:
+    packages:
+      - libhdf5-10
+    sources:
+      - ubuntu-toolchain-r-test
+      - llvm-toolchain-xenial-3.8
+      - llvm-toolchain-xenial-3.9
+      - llvm-toolchain-xenial-4.0
+
+matrix:
+  include:
+    - env: CXX=g++-4.9 CC=gcc-4.9
+      addons:
+        apt:
+          packages: g++-4.9
+          sources: *sources
+    - env: CXX=g++-5 CC=gcc-5
+      addons:
+        apt:
+          packages: g++-5
+          sources: *sources
+    - env: CXX=g++-6 CC=gcc-6
+      addons:
+        apt:
+          packages: g++-6
+          sources: *sources
+    - env: CXX=g++-6 CC=gcc-6
+      addons:
+        apt:
+          packages: g++-7
+          sources: *sources
+    - env: CXX=clang++-3.8 CC=clang-3.8
+      addons:
+        apt:
+          packages: clang-3.8
+          sources: *sources
+    - env: CXX=clang++-3.9 CC=clang-3.9
+      addons:
+        apt:
+          packages: clang-3.9
+          sources: *sources
+    - env: CXX=clang++-4.0 CC=clang-4.0
+      addons:
+        apt:
+          packages: clang-4.0
+          sources: *sources
+
+before_install:
+  - mkdir -p $BOOST_ROOT
+
+install:
+  # install boost
+  - cd $BOOST_ROOT
+  - travis_retry wget --no-check-certificate -O boost.tar.bz2 https://dl.bintray.com/boostorg/release/1.64.0/source/boost_1_64_0.tar.bz2
+  - tar -xjf boost.tar.bz2
+  - cd boost_1_64_0
+  - ./bootstrap.sh --with-libraries=system,filesystem --prefix=$BOOST_ROOT
+  - ./b2 -j2
+  - ./b2 install
+  - rm -rf boost.tar.bz2 boost_1_64_0
+  - cd $HOME
+
+before_script:
+  - mkdir -p $HOME/CoreTest
+  - mkdir -p $HOME/AuxiliaryTest
+  - mkdir -p $HOME/ReadTest
+  - mkdir -p $HOME/samples/git-sample
+  - travis_retry wget --no-check-certificate https://github.com/openPMD/openPMD-example-datasets/raw/draft/example-2d.tar.gz
+  - tar -xf example-2d.tar.gz
+  - cp example-2d/hdf5/* $HOME/samples/git-sample/
+  - rm -rf example-2d.tar.gz example-2d
+
+script:
+  - cd $HOME/AuxiliaryTest
+  - cmake $TRAVIS_BUILD_DIR $CMAKE_FLAGS
+  - make -j libopenpmdAuxiliaryTests
+  - ./libopenpmdAuxiliaryTests
+  
+  - cd $HOME/CoreTest
+  - cmake $TRAVIS_BUILD_DIR $CMAKE_FLAGS
+  - make -j libopenpmdCoreTests
+  - ./libopenpmdCoreTests
+  
+  - cd $HOME/ReadTest
+  - cmake $TRAVIS_BUILD_DIR $CMAKE_FLAGS
+  - make -j libopenpmdReadTests
+  - ./libopenpmdReadTests

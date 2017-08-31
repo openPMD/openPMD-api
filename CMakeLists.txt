@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.6)
 project(libopenpmd)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g -std=c++14")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-weak-vtables -Wno-padded -Wno-switch-enum -Wno-vla -Wno-vla-extension -Wno-undefined-func-template")
@@ -71,22 +74,24 @@ add_executable(poc_HDF5Writer
         writer.cpp
         ${CORE_SOURCE}
         ${IO_SOURCE})
-add_executable(poc_HDF5Reader
+add_executable(
         reader.cpp
         ${CORE_SOURCE}
         ${IO_SOURCE})
 
-target_link_libraries(libopenpmdCoreTests
-        ${HDF5_LIBRARIES}
-        ${Boost_LIBRARIES})
-target_link_libraries(libopenpmdReadTests
-        ${HDF5_LIBRARIES}
-        ${Boost_LIBRARIES}
-        ${MPI_LIBRARIES})
-target_link_libraries(poc_HDF5Writer
-        ${HDF5_LIBRARIES}
-        ${Boost_LIBRARIES})
-target_link_libraries(poc_HDF5Reader
-        ${HDF5_LIBRARIES}
-        ${Boost_LIBRARIES})
-
+if (HDF5_FOUND)
+    target_link_libraries(libopenpmdReadTests ${HDF5_LIBRARIES})
+    target_link_libraries(poc_HDF5Writer ${HDF5_LIBRARIES})
+    target_link_libraries(poc_HDF5Reader ${HDF5_LIBRARIES})
+endif ()
+if (Boost_FOUND)
+    target_link_libraries(libopenpmdCoreTests ${Boost_LIBRARIES})
+    target_link_libraries(libopenpmdReadTests ${Boost_LIBRARIES})
+    target_link_libraries(poc_HDF5Writer ${Boost_LIBRARIES})
+    target_link_libraries(poc_HDF5Reader ${Boost_LIBRARIES})
+endif ()
+if (MPI_FOUND)
+    target_link_libraries(libopenpmdReadTests ${MPI_LIBRARIES})
+    target_link_libraries(poc_HDF5Writer ${MPI_LIBRARIES})
+    target_link_libraries(poc_HDF5Reader ${MPI_LIBRARIES})
+endif()

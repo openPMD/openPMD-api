@@ -1163,6 +1163,15 @@ class HDF5IOHandlerImpl
 HDF5IOHandler::HDF5IOHandler(std::string const& path, AccessType at)
         : AbstractIOHandler(path, at)
 {
-    static_assert(false, "libopenPMD build without HDF5 support");
+    throw std::runtime_error("libopenPMD built without HDF5 support");
+}
+
+HDF5IOHandler::~HDF5IOHandler()
+{ }
+
+std::future< void >
+HDF5IOHandler::flush()
+{
+    return std::future< void >();
 }
 #endif

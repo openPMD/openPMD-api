@@ -93,6 +93,15 @@ ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string const& path,
                                              AccessType at)
         : AbstractIOHandler(path, at)
 {
-    static_assert(false, "libopenPMD build without parallel HDF5 support");
+    throw std::runtime_error("libopenPMD built without parallel HDF5 support");
+}
+
+ParallelHDF5IOHandler::~ParallelHDF5IOHandler()
+{ }
+
+std::future< void >
+ParallelHDF5IOHandler::flush()
+{
+    return std::future< void >();
 }
 #endif
