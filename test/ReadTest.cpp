@@ -3,10 +3,52 @@
 
 #include <boost/test/included/unit_test.hpp>
 
+/* make Writable::parent visible for hierarchy check */
+#define protected public
 #include "../include/Output.hpp"
 
 
-BOOST_AUTO_TEST_CASE(git_hdf5_sample_test)
+BOOST_AUTO_TEST_CASE(git_hdf5_sample_structure_test)
+{
+    Output o = Output("../samples/git-sample/",
+                      "data00000100.h5",
+                      Output::IterationEncoding::fileBased,
+                      Format::HDF5,
+                      AccessType::READ_ONLY);
+
+    BOOST_TEST(o.parent == nullptr);
+    BOOST_TEST(o.iterations.parent == static_cast< Writable* >(&o));
+    BOOST_TEST(o.iterations[100].parent == static_cast< Writable* >(&o.iterations));
+    BOOST_TEST(o.iterations[100].meshes.parent == static_cast< Writable* >(&o.iterations[100]));
+    BOOST_TEST(o.iterations[100].meshes["E"].parent == static_cast< Writable* >(&o.iterations[100].meshes));
+    BOOST_TEST(o.iterations[100].meshes["E"]["x"].parent == static_cast< Writable* >(&o.iterations[100].meshes["E"]));
+    BOOST_TEST(o.iterations[100].meshes["E"]["y"].parent == static_cast< Writable* >(&o.iterations[100].meshes["E"]));
+    BOOST_TEST(o.iterations[100].meshes["E"]["z"].parent == static_cast< Writable* >(&o.iterations[100].meshes["E"]));
+    BOOST_TEST(o.iterations[100].meshes["rho"].parent == static_cast< Writable* >(&o.iterations[100].meshes));
+    BOOST_TEST(o.iterations[100].meshes["rho"][MeshRecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[100].meshes));
+    BOOST_TEST(o.iterations[100].particles.parent == static_cast< Writable* >(&o.iterations[100]));
+    BOOST_TEST(o.iterations[100].particles["electrons"].parent == static_cast< Writable* >(&o.iterations[100].particles));
+    BOOST_TEST(o.iterations[100].particles["electrons"]["charge"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
+    BOOST_TEST(o.iterations[100].particles["electrons"]["charge"][RecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
+    BOOST_TEST(o.iterations[100].particles["electrons"]["mass"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
+    BOOST_TEST(o.iterations[100].particles["electrons"]["mass"][RecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
+    BOOST_TEST(o.iterations[100].particles["electrons"]["momentum"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
+    BOOST_TEST(o.iterations[100].particles["electrons"]["momentum"]["x"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["momentum"]));
+    BOOST_TEST(o.iterations[100].particles["electrons"]["momentum"]["y"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["momentum"]));
+    BOOST_TEST(o.iterations[100].particles["electrons"]["momentum"]["z"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["momentum"]));
+    BOOST_TEST(o.iterations[100].particles["electrons"]["position"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
+    BOOST_TEST(o.iterations[100].particles["electrons"]["position"]["x"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["position"]));
+    BOOST_TEST(o.iterations[100].particles["electrons"]["position"]["y"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["position"]));
+    BOOST_TEST(o.iterations[100].particles["electrons"]["position"]["z"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["position"]));
+    BOOST_TEST(o.iterations[100].particles["electrons"]["positionOffset"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
+    BOOST_TEST(o.iterations[100].particles["electrons"]["positionOffset"]["x"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["positionOffset"]));
+    BOOST_TEST(o.iterations[100].particles["electrons"]["positionOffset"]["y"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["positionOffset"]));
+    BOOST_TEST(o.iterations[100].particles["electrons"]["positionOffset"]["z"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["positionOffset"]));
+    BOOST_TEST(o.iterations[100].particles["electrons"]["weighting"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
+    BOOST_TEST(o.iterations[100].particles["electrons"]["weighting"][RecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
+}
+
+BOOST_AUTO_TEST_CASE(git_hdf5_sample_attribute_test)
 {
     //TODO check non-standard attributes
     Output o = Output("../samples/git-sample/",

@@ -1,3 +1,4 @@
+#include "../include/Auxiliary.hpp"
 #include "../include/ParticleSpecies.hpp"
 
 
@@ -53,14 +54,14 @@ ParticleSpecies::read()
     Parameter< Operation::LIST_PATHS > plist_parameter;
     IOHandler->enqueue(IOTask(this, plist_parameter));
     IOHandler->flush();
-    std::remove(plist_parameter.paths->begin(),
-                plist_parameter.paths->end(),
-                "particlePatches");
 
     Parameter< Operation::OPEN_PATH > path_parameter;
     Parameter< Operation::LIST_ATTS > alist_parameter;
     for( auto const& record_name : *plist_parameter.paths )
     {
+        if( strip(record_name, {'\0'}) == "particlePatches")
+            continue;
+
         Record& r = (*this)[record_name];
         path_parameter.path = record_name;
         alist_parameter.attributes->clear();
@@ -82,7 +83,7 @@ ParticleSpecies::read()
         r.read();
     }
 
-    /* obtain all scalar meshes */
+    /* obtain all scalar records */
     Parameter< Operation::LIST_DATASETS > dlist_parameter;
     IOHandler->enqueue(IOTask(this, dlist_parameter));
     IOHandler->flush();

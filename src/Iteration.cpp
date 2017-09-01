@@ -162,6 +162,9 @@ Iteration::flush()
 void
 Iteration::read()
 {
+    /* allow all attributes to be set */
+    written = false;
+
     using DT = Datatype;
     Parameter< Operation::READ_ATT > attribute_parameter;
 
@@ -199,8 +202,6 @@ Iteration::read()
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'timeUnitSI'");
 
-    readAttributes();
-
     /* Find the root point [Output] of this file,
      * meshesPath and particlesPath are stored there */
     Writable *w = this;
@@ -236,8 +237,10 @@ Iteration::read()
         auto shape = std::find(begin, end, "shape");
         if( value != end && shape != end )
         {
-            //TODO
-            throw std::runtime_error("Constant scalar records not implemented yet");
+            MeshRecordComponent& mrc = m[MeshRecordComponent::SCALAR];
+            mrc.m_isConstant = true;
+            mrc.parent = m.parent;
+            mrc.abstractFilePosition = m.abstractFilePosition;
         }
         m.read();
     }
@@ -254,11 +257,11 @@ Iteration::read()
         dataset_parameter.name = mesh_name;
         IOHandler->enqueue(IOTask(&m, dataset_parameter));
         IOHandler->flush();
-        RecordComponent& r = m[RecordComponent::SCALAR];
-        r.abstractFilePosition = m.abstractFilePosition;
-        r.parent = m.parent;
-        r.written = true;
-        r.resetDataset(Dataset(*dataset_parameter.dtype, *dataset_parameter.extent));
+        MeshRecordComponent& mrc = m[MeshRecordComponent::SCALAR];
+        mrc.abstractFilePosition = m.abstractFilePosition;
+        mrc.parent = m.parent;
+        mrc.written = true;
+        mrc.resetDataset(Dataset(*dataset_parameter.dtype, *dataset_parameter.extent));
         m.read();
     }
 
@@ -281,6 +284,13 @@ Iteration::read()
         IOHandler->flush();
         p.read();
     }
+
+    readAttributes();
+
+    /* this file need not be flushed */
+    meshes.written = true;
+    particles.written = true;
+    written = true;
 }
 
 

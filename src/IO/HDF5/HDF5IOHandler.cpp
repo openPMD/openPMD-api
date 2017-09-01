@@ -76,7 +76,15 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(HDF5IOHandler* handler)
 { }
 
 HDF5IOHandlerImpl::~HDF5IOHandlerImpl()
-{ }
+{
+    herr_t status;
+    for( auto& file : m_openFileIDs )
+    {
+        status = H5Fclose(file);
+        if( status != 0 )
+            std::cerr << "Internal error: Unable to close HDF5 file\n";
+    }
+}
 
 std::future< void >
 HDF5IOHandlerImpl::flush()
@@ -664,6 +672,8 @@ HDF5IOHandlerImpl::openFile(Writable* writable,
         flags = H5F_ACC_RDONLY;
     else if( m_handler->accessType == AccessType::READ_WRITE )
         flags = H5F_ACC_RDWR;
+    else if( m_handler->accessType == AccessType::CREAT )
+        flags = H5F_ACC_CREAT;
     else
         throw std::runtime_error("Unknown file AccessType");
     hid_t file_id;
@@ -772,13 +782,15 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
             } else
             {
                 hsize_t size = H5Tget_size(attr_type);
-                char c[size];
+                std::vector< char > vc(size);
                 status = H5Aread(attr_id,
                                  attr_type,
-                                 c);
-                a = Attribute(std::string(c, size));
+                                 vc.data());
+                a = Attribute(std::string(vc.data(), size));
             }
-        } else
+        } else if( H5Tget_class(attr_type) == H5T_COMPOUND)
+            throw std::runtime_error("Compound attribute type not supported");
+        else
             throw std::runtime_error("Unsupported scalar attribute type");
     } else if( attr_class == H5S_SIMPLE )
     {
@@ -844,12 +856,12 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
             } else
             {
                 size_t length = H5Tget_size(attr_type);
-                char c[dims[0]][length];
+                std::vector< char > c(dims[0] * length);
                 status = H5Aread(attr_id,
                                  attr_type,
-                                 c);
+                                 c.data());
                 for( hsize_t i = 0; i < dims[0]; ++i )
-                    vs.push_back(std::string(c[i], length));
+                    vs.push_back(std::string(c.data() + i*length, length));
             }
             a = Attribute(vs);
         } else
@@ -883,6 +895,7 @@ void HDF5IOHandlerImpl::listAttributes(Writable* writable,
     H5O_info_t object_info;
     herr_t status;
     status = H5Oget_info(node_id, &object_info);
+    ASSERT(status == 0, "Internal error: Failed to get info for object " + concrete_file_position(writable));
 
     auto strings = parameters.at("attributes").get< std::shared_ptr< std::vector< std::string > > >();
     for( hsize_t i = 0; i < object_info.num_attrs; ++i )
@@ -895,16 +908,16 @@ void HDF5IOHandlerImpl::listAttributes(Writable* writable,
                                                  NULL,
                                                  0,
                                                  H5P_DEFAULT);
-        char name[name_length+1];
+        std::vector< char > name(name_length+1);
         H5Aget_name_by_idx(node_id,
                            ".",
                            H5_INDEX_CRT_ORDER,
                            H5_ITER_INC,
                            i,
-                           name,
+                           name.data(),
                            name_length+1,
                            H5P_DEFAULT);
-        strings->push_back(std::string(name, name_length));
+        strings->push_back(std::string(name.data(), name_length));
     }
 
     H5Oclose(node_id);
@@ -1058,6 +1071,7 @@ HDF5IOHandlerImpl::readDataset(Writable* writable,
                                  stride.data(),
                                  count.data(),
                                  block.data());
+    ASSERT(status == 0, "Internal error: Failed to select hyperslab");
 
     void* data = parameters.at("data").get< void* >();
 
@@ -1116,9 +1130,9 @@ HDF5IOHandlerImpl::listPaths(Writable* writable,
         if( H5G_GROUP == H5Gget_objtype_by_idx(node_id, i) )
         {
             ssize_t name_length = H5Gget_objname_by_idx(node_id, i, NULL, 0);
-            char name[name_length+1];
-            H5Gget_objname_by_idx(node_id, i, name, name_length+1);
-            paths->push_back(std::string(name, name_length));
+            std::vector< char > name(name_length+1);
+            H5Gget_objname_by_idx(node_id, i, name.data(), name_length+1);
+            paths->push_back(std::string(name.data(), name_length));
         }
     }
 
@@ -1147,9 +1161,9 @@ HDF5IOHandlerImpl::listDatasets(Writable* writable,
         if( H5G_DATASET == H5Gget_objtype_by_idx(node_id, i) )
         {
             ssize_t name_length = H5Gget_objname_by_idx(node_id, i, NULL, 0);
-            char name[name_length+1];
-            H5Gget_objname_by_idx(node_id, i, name, name_length+1);
-            datasets->push_back(std::string(name, name_length));
+            std::vector< char > name(name_length+1);
+            H5Gget_objname_by_idx(node_id, i, name.data(), name_length+1);
+            datasets->push_back(std::string(name.data(), name_length));
         }
     }
 

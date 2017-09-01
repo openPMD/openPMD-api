@@ -20,9 +20,9 @@ public:
 
     Output(std::string const& path,
            std::string const& name,
-           IterationEncoding ie,
-           Format f,
-           AccessType at);
+           IterationEncoding,
+           Format,
+           AccessType);
     ~Output();
 
     std::string openPMD() const;
@@ -32,7 +32,7 @@ public:
     Output& setOpenPMDextension(uint32_t);
 
     std::string basePath() const;
-//    Output& setBasePath(std::string const &); //Custom basePath not available in openPMD <=1.0.1
+    Output& setBasePath(std::string const &);
 
     std::string meshesPath() const;
     Output& setMeshesPath(std::string const&);
@@ -41,7 +41,7 @@ public:
     Output& setParticlesPath(std::string const&);
 
     IterationEncoding iterationEncoding() const;
-//    Output& setIterationEncoding(IterationEncoding); //Allowing this makes writing extremely messy
+    Output& setIterationEncoding(IterationEncoding);
 
     std::string iterationFormat() const;
     Output& setIterationFormat(std::string const&);

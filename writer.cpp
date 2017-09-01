@@ -3,6 +3,7 @@
 #include "include/Output.hpp"
 
 
+double *d;
 void
 write()
 {
@@ -15,12 +16,13 @@ write()
     Mesh& m = o.iterations[1].meshes["mesh_name"];
     auto& scalar = m[RecordComponent::SCALAR];
 
-    double *d;
-    Dataset dset = Dataset(d, {1000, 1000, 1000});
-    scalar.resetDataset(dset);
-
     std::shared_ptr< double > data(d);
-    scalar.storeChunk({0, 0, 0}, {1000, 1000, 1000}, data);
+    Datatype dtype = DetermineType(data);
+    //TODO do not allow raw pointer decay
+    Dataset dset = Dataset(dtype, {1000, 1000, 1000});
+    m[RecordComponent::SCALAR].resetDataset(dset);
+
+    scalar.storeChunk({0, 0, 0}, {10, 10, 10}, data);
 
     o.flush();
 }

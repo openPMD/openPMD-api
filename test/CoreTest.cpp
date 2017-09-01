@@ -1,6 +1,8 @@
 #define BOOST_TEST_MODULE libopenpmd_core_test
 
 
+/* make Writable::parent, Writable::IOHandler visible for structure_test */
+#define protected public
 #include <boost/test/included/unit_test.hpp>
 
 #include "../include/Output.hpp"
@@ -311,4 +313,90 @@ BOOST_AUTO_TEST_CASE(mesh_modification_test)
 
     m["x"].setPosition({0, 0, 0});
     BOOST_TEST(m.numAttributes() == 9);
+}
+
+BOOST_AUTO_TEST_CASE(structure_test)
+{
+    Output o = Output("./",
+                      "new_openpmd_output",
+                      Output::IterationEncoding::fileBased,
+                      Format::NONE,
+                      AccessType::CREAT);
+
+    BOOST_TEST(o.IOHandler);
+    BOOST_TEST(o.iterations.IOHandler);
+    BOOST_TEST(o.parent == nullptr);
+    BOOST_TEST(o.iterations.parent == static_cast< Writable* >(&o));
+
+    Iteration i = o.iterations[1];
+    BOOST_TEST(i.IOHandler);
+    BOOST_TEST(o.iterations[1].IOHandler);
+    BOOST_TEST(i.parent == static_cast< Writable* >(&o.iterations));
+    BOOST_TEST(o.iterations[1].parent == static_cast< Writable* >(&o.iterations));
+
+    Mesh m = o.iterations[1].meshes["M"];
+    BOOST_TEST(m.IOHandler);
+    BOOST_TEST(o.iterations[1].meshes["M"].IOHandler);
+    BOOST_TEST(m.parent == static_cast< Writable* >(&o.iterations[1].meshes));
+    BOOST_TEST(o.iterations[1].meshes["M"].parent == static_cast< Writable* >(&o.iterations[1].meshes));
+
+    MeshRecordComponent mrc = o.iterations[1].meshes["M"]["MRC"];
+    BOOST_TEST(mrc.IOHandler);
+    BOOST_TEST(o.iterations[1].meshes["M"]["MRC"].IOHandler);
+    BOOST_TEST(mrc.parent == static_cast< Writable* >(&o.iterations[1].meshes["M"]));
+    BOOST_TEST(o.iterations[1].meshes["M"]["MRC"].parent == static_cast< Writable* >(&o.iterations[1].meshes["M"]));
+    mrc = o.iterations[1].meshes["M"]["MRC"].makeConstant(1.0);
+    BOOST_TEST(mrc.IOHandler);
+    BOOST_TEST(o.iterations[1].meshes["M"]["MRC"].IOHandler);
+    BOOST_TEST(mrc.parent == static_cast< Writable* >(&o.iterations[1].meshes["M"]));
+    BOOST_TEST(o.iterations[1].meshes["M"]["MRC"].parent == static_cast< Writable* >(&o.iterations[1].meshes["M"]));
+
+    MeshRecordComponent scalar_mrc = o.iterations[1].meshes["M2"][MeshRecordComponent::SCALAR];
+    BOOST_TEST(scalar_mrc.IOHandler);
+    BOOST_TEST(o.iterations[1].meshes["M2"].IOHandler);
+    BOOST_TEST(o.iterations[1].meshes["M2"][MeshRecordComponent::SCALAR].IOHandler);
+    BOOST_TEST(scalar_mrc.parent == static_cast< Writable* >(&o.iterations[1].meshes));
+    BOOST_TEST(o.iterations[1].meshes["M2"].parent == static_cast< Writable* >(&o.iterations[1].meshes));
+    BOOST_TEST(o.iterations[1].meshes["M2"][MeshRecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[1].meshes));
+    scalar_mrc = o.iterations[1].meshes["M2"][MeshRecordComponent::SCALAR].makeConstant(1.0);
+    BOOST_TEST(scalar_mrc.IOHandler);
+    BOOST_TEST(o.iterations[1].meshes["M2"].IOHandler);
+    BOOST_TEST(o.iterations[1].meshes["M2"][MeshRecordComponent::SCALAR].IOHandler);
+    BOOST_TEST(scalar_mrc.parent == static_cast< Writable* >(&o.iterations[1].meshes));
+    BOOST_TEST(o.iterations[1].meshes["M2"].parent == static_cast< Writable* >(&o.iterations[1].meshes));
+    BOOST_TEST(o.iterations[1].meshes["M2"][MeshRecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[1].meshes));
+
+    ParticleSpecies ps = o.iterations[1].particles["P"];
+    BOOST_TEST(ps.IOHandler);
+    BOOST_TEST(o.iterations[1].particles["P"].IOHandler);
+    BOOST_TEST(ps.parent == static_cast< Writable* >(&o.iterations[1].particles));
+    BOOST_TEST(o.iterations[1].particles["P"].parent == static_cast< Writable* >(&o.iterations[1].particles));
+
+    Record r = o.iterations[1].particles["P"]["PR"];
+    BOOST_TEST(r.IOHandler);
+    BOOST_TEST(o.iterations[1].particles["P"]["PR"].IOHandler);
+    BOOST_TEST(r.parent == static_cast< Writable* >(&o.iterations[1].particles["P"]));
+    BOOST_TEST(o.iterations[1].particles["P"]["PR"].parent == static_cast< Writable* >(&o.iterations[1].particles["P"]));
+
+    RecordComponent rc = o.iterations[1].particles["P"]["PR"]["PRC"];
+    BOOST_TEST(rc.IOHandler);
+    BOOST_TEST(o.iterations[1].particles["P"]["PR"]["PRC"].IOHandler);
+    BOOST_TEST(rc.parent == static_cast< Writable* >(&o.iterations[1].particles["P"]["PR"]));
+    BOOST_TEST(o.iterations[1].particles["P"]["PR"]["PRC"].parent == static_cast< Writable* >(&o.iterations[1].particles["P"]["PR"]));
+    rc = o.iterations[1].particles["P"]["PR"]["PRC"].makeConstant(1.0);
+    BOOST_TEST(rc.IOHandler);
+    BOOST_TEST(o.iterations[1].particles["P"]["PR"]["PRC"].IOHandler);
+    BOOST_TEST(rc.parent == static_cast< Writable* >(&o.iterations[1].particles["P"]["PR"]));
+    BOOST_TEST(o.iterations[1].particles["P"]["PR"]["PRC"].parent == static_cast< Writable* >(&o.iterations[1].particles["P"]["PR"]));
+
+    RecordComponent scalar_rc = o.iterations[1].particles["P"]["PR2"][RecordComponent::SCALAR];
+    BOOST_TEST(scalar_rc.IOHandler);
+    BOOST_TEST(o.iterations[1].particles["P"]["PR2"][RecordComponent::SCALAR].IOHandler);
+    BOOST_TEST(scalar_rc.parent == static_cast< Writable* >(&o.iterations[1].particles["P"]));
+    BOOST_TEST(o.iterations[1].particles["P"]["PR2"][RecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[1].particles["P"]));
+    scalar_rc = o.iterations[1].particles["P"]["PR2"][RecordComponent::SCALAR].makeConstant(1.0);
+    BOOST_TEST(scalar_rc.IOHandler);
+    BOOST_TEST(o.iterations[1].particles["P"]["PR2"][RecordComponent::SCALAR].IOHandler);
+    BOOST_TEST(scalar_rc.parent == static_cast< Writable* >(&o.iterations[1].particles["P"]));
+    BOOST_TEST(o.iterations[1].particles["P"]["PR2"][RecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[1].particles["P"]));
 }

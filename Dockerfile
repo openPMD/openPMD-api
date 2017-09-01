@@ -10,11 +10,8 @@ RUN        apt-get update \
            && apt-get install -y --no-install-recommends \
               build-essential \
               ca-certificates \
-              clang-3.8 \
-              clang-3.9 \
               clang-4.0 \
               cmake \
-              gcc-4.9 \
               gcc-5 \
               git \
               libopenmpi-dev \
@@ -40,14 +37,14 @@ RUN        cd $HOME/src \
            && tar -xzf hdf5.tar.gz \
            && cd hdf5-1.10.1/ \
            && ./configure --enable-parallel --enable-shared --prefix /usr \
-           && make -j4 && make install -j4
+           && make -s -j4 && make install -s -j4
 
 # build ADIOS
 
 # build executables (proof-of-concept)
 RUN        mkdir -p build \
            && cd build \
-           && cmake $HOME/src/libopenPMD -DLIBOPENPMD_WITH_HDF5=ON \
+           && cmake $HOME/src/libopenPMD \
            && make poc_HDF5Writer -j4 \
            && make poc_HDF5Reader -j4
 
@@ -65,7 +62,7 @@ RUN        mkdir -p samples/git-sample/ \
            && rm -rf example-3d.tar.gz example-3d
 
 # run tests
-RUN        cd build \
+RUN        cd $HOME/src/libopenPMD/bin \
            && ./libopenpmdCoreTests \
            && ./libopenpmdAuxiliaryTests \
            && ./libopenpmdReadTests

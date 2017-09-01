@@ -110,6 +110,9 @@ Attributable::getAttribute(std::string const& key) const
 inline bool
 Attributable::deleteAttribute(std::string const& key)
 {
+    if( IOHandler && IOHandler->accessType == AccessType::READ_ONLY )
+        throw std::runtime_error("Can not delete from a read-only file.");
+
     auto it = m_attributes->find(key);
     if( it != m_attributes->end() )
     {
@@ -189,6 +192,10 @@ Attributable::readAttributes()
 
     for( auto const& att : attributes )
     {
+        /* skip internal attributes */
+        if( att[0] == '_' )
+            continue;
+
         attribute_parameter.name = att;
         IOHandler->enqueue(IOTask(this, attribute_parameter));
         IOHandler->flush();
@@ -257,4 +264,6 @@ Attributable::readAttributes()
                 throw std::runtime_error("Invalid Attribute datatype during read");
         }
     }
+
+    dirty = false;
 }

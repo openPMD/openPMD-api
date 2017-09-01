@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "../include/Auxiliary.hpp"
 #include "../include/Mesh.hpp"
 
 
@@ -23,20 +24,17 @@ Mesh::operator[](std::string key)
     else
     {
         bool scalar = (key == MeshRecordComponent::SCALAR);
-        if( (scalar && !empty() && !m_containsScalar)
-            || (m_containsScalar && !scalar) )
-        {
+        if( (scalar && !empty() && !m_containsScalar) || (m_containsScalar && !scalar) )
             throw std::runtime_error("A scalar component can not be contained at "
                                      "the same time as one or more regular components.");
-        }
-        else
+
+        MeshRecordComponent & ret = Container< MeshRecordComponent >::operator[](key);
+        if( scalar )
         {
-            if( scalar )
-                m_containsScalar = true;
-            MeshRecordComponent & ret = Container< MeshRecordComponent >::operator[](key);
-            ret.parent = this;
-            return ret;
+            m_containsScalar = true;
+            ret.parent = this->parent;
         }
+        return ret;
     }
 }
 
@@ -161,7 +159,7 @@ std::array< double, 7 >
 Mesh::unitDimension() const
 {
     return getAttribute("unitDimension").get< std::array< double, 7 > >();
-};
+}
 
 Mesh&
 Mesh::setUnitDimension(std::map< Mesh::UnitDimension, double > const& udim)
@@ -223,6 +221,9 @@ Mesh::flush(std::string const& name)
 void
 Mesh::read()
 {
+    /* allow all attributes to be set */
+    written = false;
+
     using DT = Datatype;
     Parameter< Operation::READ_ATT > attribute_parameter;
 
@@ -231,8 +232,7 @@ Mesh::read()
     IOHandler->flush();
     if( *attribute_parameter.dtype == DT::STRING )
     {
-        std::string const& geometry
-                = Attribute(*attribute_parameter.resource).get< std::string >();
+        std::string geometry = strip(Attribute(*attribute_parameter.resource).get< std::string >(), {'\0'});
         if( geometry == "cartesian" )
             setGeometry(Geometry::cartesian);
         else if( geometry == "thetaMode" )
@@ -254,7 +254,7 @@ Mesh::read()
         setDataOrder(static_cast<DataOrder>(Attribute(*attribute_parameter.resource).get< char >()));
     else if( *attribute_parameter.dtype == DT::STRING )
     {
-        std::string dataOrder = Attribute(*attribute_parameter.resource).get< std::string >();
+        std::string dataOrder = strip(Attribute(*attribute_parameter.resource).get< std::string >(), {'\0'});
         if( dataOrder.size() == 1 )
             setDataOrder(static_cast<DataOrder>(dataOrder[0]));
         else
@@ -343,6 +343,9 @@ Mesh::read()
     readBase();
 
     readAttributes();
+
+    /* this file need not be flushed */
+    written = true;
 }
 
 std::ostream&

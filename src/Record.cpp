@@ -11,20 +11,17 @@ RecordComponent&
 Record::operator[](std::string key)
 {
     bool scalar = (key == RecordComponent::SCALAR);
-    if( (scalar && !empty() && !m_containsScalar)
-        || (m_containsScalar && !scalar) )
-    {
+    if( (scalar && !empty() && !m_containsScalar) || (m_containsScalar && !scalar) )
         throw std::runtime_error("A scalar component can not be contained at "
                                  "the same time as one or more regular components.");
-    }
-    else
+
+    RecordComponent & ret = Container< RecordComponent >::operator[](key);
+    if( scalar )
     {
-        if( scalar )
-            m_containsScalar = true;
-        RecordComponent & ret = Container< RecordComponent >::operator[](key);
-        ret.parent = this;
-        return ret;
+        m_containsScalar = true;
+        ret.parent = this->parent;
     }
+    return ret;
 }
 
 Record::size_type
@@ -102,6 +99,9 @@ Record::flush(std::string const& name)
 void
 Record::read()
 {
+    /* allow all attributes to be set */
+    written = false;
+
     if( m_containsScalar )
     {
         /* using operator[] will falsely update parent */
@@ -142,4 +142,7 @@ Record::read()
     readBase();
 
     readAttributes();
+
+    /* this file need not be flushed */
+    written = true;
 }

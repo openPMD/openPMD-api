@@ -94,7 +94,13 @@ RecordComponent::flush(std::string const& name)
 void
 RecordComponent::read()
 {
+    /* allow all attributes to be set */
+    written = false;
+
     readBase();
+
+    /* this file need not be flushed */
+    written = true;
 }
 
 void
@@ -194,6 +200,9 @@ MeshRecordComponent::MeshRecordComponent()
 void
 MeshRecordComponent::read()
 {
+    /* allow all attributes to be set */
+    written = false;
+
     using DT = Datatype;
     Parameter< Operation::READ_ATT > attribute_parameter;
 
@@ -214,6 +223,9 @@ MeshRecordComponent::read()
         throw std::runtime_error("Unexpected Attribute datatype for 'position'");
 
     readBase();
+
+    /* this file need not be flushed */
+    written = true;
 }
 
 std::vector< float >
@@ -229,4 +241,3 @@ MeshRecordComponent::setPosition(std::vector< float > pos)
     dirty = true;
     return *this;
 }
-

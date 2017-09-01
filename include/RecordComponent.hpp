@@ -73,6 +73,9 @@ private:
 public:
     std::vector< float > position() const;
     MeshRecordComponent& setPosition(std::vector< float >);
+
+    template< typename T >
+    MeshRecordComponent& makeConstant(T);
 };
 
 
@@ -82,6 +85,7 @@ RecordComponent::makeConstant(T value)
 {
     if( written )
         throw std::runtime_error("A recordComponent can not (yet) be made constant after it has been written.");
+
     m_constantValue = Attribute(value);
     m_isConstant = true;
     return *this;
@@ -191,6 +195,8 @@ template< typename T >
 inline void
 RecordComponent::storeChunk(Offset o, Extent e, std::shared_ptr<T> data)
 {
+    if( m_isConstant )
+        throw std::runtime_error("Chunks can not be written for a constant RecordComponent.");
     Dataset d = Dataset(data.get(), e);
     if( d.dtype != getDatatype() )
         throw std::runtime_error("Datatypes of chunk and dataset do not match.");
@@ -213,3 +219,10 @@ RecordComponent::storeChunk(Offset o, Extent e, std::shared_ptr<T> data)
     m_chunks.push(IOTask(this, chunk_parameter));
 }
 
+template< typename T >
+inline MeshRecordComponent&
+MeshRecordComponent::makeConstant(T value)
+{
+    RecordComponent::makeConstant(value);
+    return *this;
+}

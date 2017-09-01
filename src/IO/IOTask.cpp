@@ -93,7 +93,7 @@ std::map< std::string, Argument > structToMap(Parameter< Operation::WRITE_DATASE
     ret.insert({"dtype", Argument(p.dtype)});
     ret.insert({"data", Argument(p.data)});
     return ret;
-};
+}
 
 template<>
 std::map< std::string, Argument > structToMap(Parameter< Operation::READ_DATASET > const& p)
@@ -104,7 +104,7 @@ std::map< std::string, Argument > structToMap(Parameter< Operation::READ_DATASET
     ret.insert({"dtype", Argument(p.dtype)});
     ret.insert({"data", Argument(p.data)});
     return ret;
-};
+}
 
 template<>
 std::map< std::string, Argument > structToMap(Parameter< Operation::LIST_DATASETS > const& p)

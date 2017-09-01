@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -79,4 +80,14 @@ split(std::string const &s,
     }
 
     return ret;
+}
+
+inline std::string
+strip(std::string input, std::vector< char > to_remove)
+{
+    for( auto const& c : to_remove )
+        input.erase(std::remove(input.begin(), input.end(), c), input.end());
+    input.shrink_to_fit();
+
+    return input;
 }
