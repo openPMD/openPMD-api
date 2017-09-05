@@ -187,7 +187,7 @@ RecordComponent::loadChunk(Offset o, Extent e, double targetUnitSI)
     }
 
     T* ptr = static_cast< T* >(data);
-    auto deleter = [](T* p){ delete[] p; };
+    auto deleter = [](T* p){ delete[] p; p = nullptr; };
     return std::unique_ptr< T, decltype(deleter) >(ptr, deleter);
 }
 
@@ -197,8 +197,8 @@ RecordComponent::storeChunk(Offset o, Extent e, std::shared_ptr<T> data)
 {
     if( m_isConstant )
         throw std::runtime_error("Chunks can not be written for a constant RecordComponent.");
-    Dataset d = Dataset(data.get(), e);
-    if( d.dtype != getDatatype() )
+    Datatype dtype = determineDatatype(data);
+    if( dtype != getDatatype() )
         throw std::runtime_error("Datatypes of chunk and dataset do not match.");
     uint8_t dim = getDimensionality();
     if( e.size() != dim || o.size() != dim )
@@ -214,7 +214,8 @@ RecordComponent::storeChunk(Offset o, Extent e, std::shared_ptr<T> data)
     Parameter< Operation::WRITE_DATASET > chunk_parameter;
     chunk_parameter.offset = o;
     chunk_parameter.extent = e;
-    chunk_parameter.dtype = d.dtype;
+    chunk_parameter.dtype = dtype;
+    /* std::static_pointer_cast correctly reference-counts the pointer */
     chunk_parameter.data = std::static_pointer_cast< void >(data);
     m_chunks.push(IOTask(this, chunk_parameter));
 }

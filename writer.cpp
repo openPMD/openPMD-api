@@ -3,7 +3,6 @@
 #include "include/Output.hpp"
 
 
-double *d;
 void
 write()
 {
@@ -17,8 +16,7 @@ write()
     auto& scalar = m[RecordComponent::SCALAR];
 
     std::shared_ptr< double > data(d);
-    Datatype dtype = DetermineType(data);
-    //TODO do not allow raw pointer decay
+    Datatype dtype = determineDatatype(data);
     Dataset dset = Dataset(dtype, {1000, 1000, 1000});
     m[RecordComponent::SCALAR].resetDataset(dset);
 
@@ -26,20 +24,6 @@ write()
 
     o.flush();
 }
-
-double x_data_lr[2][5] = {{1,  3,  5,  7,  9},
-                          {11, 13, 15, 17, 19}};
-double y_data_lr[2][5] = {{21, 23, 25, 27, 29},
-                          {31, 33, 35, 37, 39}};
-double z_data_lr[2][5] = {{41, 43, 45, 47, 49},
-                          {51, 53, 55, 57, 59}};
-
-double x_data[2][10] = {{0,  1,  2,  3,  4,  5,  6,  7,  8,  9},
-                        {10, 11, 12, 13, 14, 15, 16, 17, 18, 19}};
-double y_data[2][10] = {{20, 21, 22, 23, 24, 25, 26, 27, 28, 29},
-                        {30, 31, 32, 33, 34, 35, 36, 37, 38, 39}};
-double z_data[2][10] = {{40, 41, 42, 43, 44, 45, 46, 47, 48, 49},
-                        {50, 51, 52, 53, 54, 55, 56, 57, 58, 59}};
 
 void
 write2()
@@ -67,19 +51,21 @@ write2()
     {
         // setting attributes can be chained in JS-like syntax for compact code
         f.iterations[1].setTime(42).setDt(1.0).setTimeUnitSI(1.39e-16);
-        f.iterations[2].setTimeUnitSI(1.39e-16);
+        f.iterations[2].setComment("This iteration will not appear in any output");
         f.iterations.erase(2);
     }
 
     {
         // the wish to modify a sunk resource (rather than a copy) must be stated
         Iteration& reference = f.iterations[1];
+        reference.setComment("Modifications to a reference will always be visible in the output");
 
         // alternatively, a copy may be created and later re-assigned to f.iterations[1]
         Iteration copy = f.iterations[1];
-        /* copy.changeParameters(); */
+        copy.setComment("Modifications to copies will only take effect after you reassign the copy");
         f.iterations[1] = copy;
     }
+    f.iterations[1].deleteAttribute("comment");
 
     Iteration& cur_it = f.iterations[1];
 
@@ -118,39 +104,34 @@ write2()
     mesh.setAxisLabels({"x", "y"});
     f.flush();
 
+    // data is assumed to reside behind a pointer as a contiguous column-major array
+    // shared data ownership during IO is indicated with a smart pointer
+    std::shared_ptr< double > partial_dataset(new double[5], [](double *p){ delete[] p; });
+
     // before storing record data, you must specify the dataset once per component
     // this describes the datatype and shape of data as it should be written to disk
-    Dataset d = Dataset(Datatype::DOUBLE, Extent{2, 5});
+    Datatype dtype = determineDatatype(partial_dataset);
+    Dataset d = Dataset(dtype, Extent{2, 5});
     mesh["x"].resetDataset(d);
     // at any point in time you may decide to dump already created output to disk
     // note that this will make some operations impossible (e.g. renaming files)
     f.flush();
 
-    // writing only parts of the final dataset at a time is supported
-    // this shows how to write every row of a 2D dataset at a time
-    double x_data_lr[2][5] = {{1,  3,  5,  7,  9},
-                              {11, 13, 15, 17, 19}};
+    // chunked writing of the final dataset at a time is supported
+    // this loop writes one row at a time
+    double complete_dataset[2][5] = {{1,  3,  5,  7,  9},
+                                     {11, 13, 15, 17, 19}};
     for( int i = 0; i < 2; ++i )
     {
-        // your data is assumed to reside behind a pointer
-        // as a contiguous column-major array
-        double* simulation_data = new double[5];
-        for( int j = 0; j < 5; ++j )
-            simulation_data[j] = x_data_lr[i][j];
-
-        // indicate shared data ownership during IO with a smart pointer
-        auto no_deleter = [](double *p){ /* if YOU want to manage the lifetime of your pointer, do nothing */ };
-        auto my_deleter = [](double *p){ delete[] p; /* otherwise, let the API destroy your data when not needed any more */ };
-        std::shared_ptr< double > chunk = std::shared_ptr< double >(simulation_data, no_deleter);
+        for( int col = 0; col < 5; ++col )
+            partial_dataset.get()[col] = complete_dataset[i][col];
 
         Offset o = Offset{static_cast<unsigned long>(i), 0};
         Extent e = Extent{1, 5};
-        mesh["x"].storeChunk(o, e, chunk);
+        mesh["x"].storeChunk(o, e, partial_dataset);
         // operations between store and flush MUST NOT modify the pointed-to data
         f.flush();
-        // after the flush completes successfully, exclusive access to the shared resource is returned to the caller
-
-        delete[] simulation_data;
+        // after the flush completes successfully, access to the shared resource is returned to the caller
     }
 
     mesh["y"].resetDataset(d);

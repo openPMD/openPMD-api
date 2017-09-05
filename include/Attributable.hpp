@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include <iostream>
 #include <map>
 #include <set>
 #include <string>
@@ -192,13 +193,22 @@ Attributable::readAttributes()
 
     for( auto const& att : attributes )
     {
-        /* skip internal attributes */
-        if( att[0] == '_' )
-            continue;
-
         attribute_parameter.name = att;
         IOHandler->enqueue(IOTask(this, attribute_parameter));
-        IOHandler->flush();
+        try
+        {
+            IOHandler->flush();
+        } catch( std::runtime_error e )
+        {
+            /* skip internal attributes that are not included in the standard */
+            if( att[0] == '_' )
+            {
+                std::cerr << "Skipping non-standard internal attribute " << att << " because of unexpected datatype\n";
+                continue;
+            }
+            else
+                throw e;
+        }
         Attribute a(*attribute_parameter.resource);
         switch( *attribute_parameter.dtype )
         {
