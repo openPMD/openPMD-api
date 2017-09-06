@@ -194,7 +194,7 @@ RecordComponent::readBase()
 MeshRecordComponent::MeshRecordComponent()
         : RecordComponent()
 {
-    setPosition({0});
+    setPosition(std::vector< double >{0});
 }
 
 void
@@ -209,16 +209,11 @@ MeshRecordComponent::read()
     attribute_parameter.name = "position";
     IOHandler->enqueue(IOTask(this, attribute_parameter));
     IOHandler->flush();
+    Attribute a = Attribute(*attribute_parameter.resource);
     if( *attribute_parameter.dtype == DT::VEC_FLOAT )
-        setPosition(Attribute(*attribute_parameter.resource).get< std::vector< float > >());
+        setPosition(a.get< std::vector< float > >());
     else if( *attribute_parameter.dtype == DT::VEC_DOUBLE )
-    {
-        std::cerr << "Non-standard attribute datatype for 'position' (should be vector of float, is vector of double)\n";
-        std::vector< float > position;
-        for( auto const& val : Attribute(*attribute_parameter.resource).get< std::vector< double > >())
-            position.push_back(static_cast<float>(val));
-        setPosition(position);
-    }
+        setPosition(a.get< std::vector< double > >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'position'");
 
@@ -228,15 +223,12 @@ MeshRecordComponent::read()
     written = true;
 }
 
-std::vector< float >
-MeshRecordComponent::position() const
-{
-    return getAttribute("position").get< std::vector< float > >();
-}
-
+template< typename T >
 MeshRecordComponent&
-MeshRecordComponent::setPosition(std::vector< float > pos)
+MeshRecordComponent::setPosition(std::vector< T > pos)
 {
+    static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
+
     setAttribute("position", pos);
     dirty = true;
     return *this;

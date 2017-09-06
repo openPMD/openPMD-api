@@ -40,6 +40,18 @@ public:
     std::string particlesPath() const;
     Output& setParticlesPath(std::string const&);
 
+    std::string author() const;
+    Output& setAuthor(std::string const&);
+
+    std::string software() const;
+    Output& setSoftware(std::string const&);
+
+    std::string softwareVersion() const;
+    Output& setSoftwareVersion(std::string const&);
+
+    std::string date() const;
+    Output& setDate(std::string const&);
+
     IterationEncoding iterationEncoding() const;
     Output& setIterationEncoding(IterationEncoding);
 

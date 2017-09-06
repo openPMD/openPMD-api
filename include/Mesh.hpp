@@ -46,8 +46,10 @@ public:
     std::vector< std::string > axisLabels() const;
     Mesh& setAxisLabels(std::vector< std::string >);
 
-    std::vector< float > gridSpacing() const;
-    Mesh& setGridSpacing(std::vector< float >);
+    template< typename T >
+    std::vector< T > gridSpacing() const;
+    template< typename T >
+    Mesh& setGridSpacing(std::vector< T >);
 
     std::vector< double > gridGlobalOffset() const;
     Mesh& setGridGlobalOffset(std::vector< double >);
@@ -58,13 +60,25 @@ public:
     std::array< double, 7 > unitDimension() const override;
     Mesh& setUnitDimension(std::map< Mesh::UnitDimension, double > const&);
 
-    float timeOffset() const override;
-    Mesh& setTimeOffset(float const);
+    template< typename T >
+    T timeOffset() const;
+    template< typename T >
+    Mesh& setTimeOffset(T);
 
 private:
     void flush(std::string const&) override;
     void read() override;
 };  //Mesh
+
+template< typename T >
+inline std::vector< T >
+Mesh::gridSpacing() const
+{ return readVectorFloatingpoint< T >("gridSpacing"); }
+
+template< typename T >
+inline T
+Mesh::timeOffset() const
+{ return readFloatingpoint< T >("timeOffset"); }
 
 std::ostream&
 operator<<(std::ostream&, Mesh::Geometry);

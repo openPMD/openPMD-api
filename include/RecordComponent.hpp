@@ -71,8 +71,10 @@ private:
     void read() override;
 
 public:
-    std::vector< float > position() const;
-    MeshRecordComponent& setPosition(std::vector< float >);
+    template< typename T >
+    std::vector< T > position() const;
+    template< typename T >
+    MeshRecordComponent& setPosition(std::vector< T >);
 
     template< typename T >
     MeshRecordComponent& makeConstant(T);
@@ -219,6 +221,11 @@ RecordComponent::storeChunk(Offset o, Extent e, std::shared_ptr<T> data)
     chunk_parameter.data = std::static_pointer_cast< void >(data);
     m_chunks.push(IOTask(this, chunk_parameter));
 }
+
+template< typename T >
+std::vector< T >
+MeshRecordComponent::position() const
+{ return readVectorFloatingpoint< T >("position"); }
 
 template< typename T >
 inline MeshRecordComponent&

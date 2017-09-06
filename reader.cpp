@@ -109,7 +109,7 @@ int main()
 
                 std::string prefix = std::to_string(i.first) + '.' + m.first + '.' + rc.first;
                 std::string position = "";
-                for( auto const& val : rc.second.position() )
+                for( auto const& val : rc.second.position< double >() )
                     position += std::to_string(val) + ", ";
                 std::cout << prefix << ".unitSI - " << rc.second.unitSI() << '\n'
                           << prefix << ".position - " << position << '\n'

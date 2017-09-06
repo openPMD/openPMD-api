@@ -53,20 +53,6 @@ Record::setUnitDimension(std::map< Record::UnitDimension, double > const& udim)
     return *this;
 }
 
-float
-Record::timeOffset() const
-{
-    return getAttribute("timeOffset").get< float >();
-}
-
-Record&
-Record::setTimeOffset(float to)
-{
-    setAttribute("timeOffset", to);
-    dirty = true;
-    return *this;
-}
-
 void
 Record::flush(std::string const& name)
 {
@@ -108,6 +94,7 @@ Record::read()
         (*this).find(RecordComponent::SCALAR)->second.read();
     } else
     {
+        clear();
         Parameter< Operation::LIST_PATHS > plist_parameter;
         IOHandler->enqueue(IOTask(this, plist_parameter));
         IOHandler->flush();

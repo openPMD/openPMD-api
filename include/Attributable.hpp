@@ -41,6 +41,11 @@ protected:
     void flushAttributes();
     void readAttributes();
 
+    template< typename T >
+    T readFloatingpoint(std::string const& key) const;
+    template< typename T >
+    std::vector< T > readVectorFloatingpoint(std::string const& key) const;
+
 private:
     std::shared_ptr< A_MAP > m_attributes;
 };  //Attributable
@@ -276,4 +281,64 @@ Attributable::readAttributes()
     }
 
     dirty = false;
+}
+
+template< typename T >
+inline T
+Attributable::readFloatingpoint(std::string const& key) const
+{
+    static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
+
+    T t{0};
+    Attribute a = getAttribute(key);
+    Datatype target_dtype = determineDatatype(T());
+    if( a.dtype == target_dtype )
+        t = a.get< T >();
+    else
+    {
+        using DT = Datatype;
+        switch( a.dtype )
+        {
+            case DT::FLOAT:
+                t = static_cast< T >(a.get< float >());
+                break;
+            case DT::DOUBLE:
+                t = static_cast< T >(a.get< double >());
+                break;
+            default:
+                throw std::runtime_error("Unknown floating point datatype.");
+        }
+    }
+    return t;
+}
+
+template< typename T >
+inline std::vector< T >
+Attributable::readVectorFloatingpoint(std::string const& key) const
+{
+    static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
+
+    std::vector< T > vt{};
+    Attribute a = getAttribute(key);
+    Datatype target_dtype = determineDatatype(T());
+    if( a.dtype == target_dtype )
+        vt = a.get< std::vector< T > >();
+    else
+    {
+        using DT = Datatype;
+        switch( a.dtype )
+        {
+            case DT::VEC_FLOAT:
+                for( auto const& val : a.get< std::vector< float > >() )
+                    vt.push_back(static_cast< T >(val));
+                break;
+            case DT::VEC_DOUBLE:
+                for( auto const& val : a.get< std::vector< double > >() )
+                    vt.push_back(static_cast< T >(val));
+                break;
+            default:
+                throw std::runtime_error("Unknown floating point datatype.");
+        }
+    }
+    return vt;
 }

@@ -44,6 +44,7 @@ RUN        cd $HOME/src \
 # build executables (proof-of-concept)
 RUN        mkdir -p build \
            && cd build \
+           && rm -rf CMake* \
            && cmake $HOME/src/libopenPMD \
            && make poc_HDF5Writer -j4 \
            && make poc_HDF5Reader -j4

@@ -14,7 +14,7 @@ public:
     AbstractIOHandler(std::string const& path, AccessType);
     virtual ~AbstractIOHandler();
 
-    void enqueue(IOTask const);
+    virtual void enqueue(IOTask const);
     virtual std::future< void > flush() = 0;
 
     std::string const directory;
@@ -28,5 +28,6 @@ public:
     NONEIOHandler(std::string const&, AccessType);
     ~NONEIOHandler();
 
+    void enqueue(IOTask const) override;
     std::future< void > flush();
 };

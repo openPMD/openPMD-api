@@ -29,3 +29,21 @@ public:
     uint64_t numParticlesLocalOffset() const;
     ParticleSpecies& setNumParticlesLocalOffset(uint64_t);
 };
+
+template<>
+inline typename Container< ParticleSpecies >::mapped_type&
+Container< ParticleSpecies >::operator[](Container< ParticleSpecies >::key_type key)
+{
+    auto it = this->find(key);
+    if( it != this->end() )
+        return it->second;
+    else
+    {
+        ParticleSpecies ps = ParticleSpecies();
+        ps.IOHandler = IOHandler;
+        ps.parent = this;
+        ps["position"];
+        ps["positionOffset"];
+        return this->insert({key, std::move(ps)}).first->second;
+    }
+}

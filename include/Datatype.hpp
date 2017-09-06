@@ -43,7 +43,14 @@ struct decay_equiv :
 
 template< typename T >
 Datatype
-determineDatatype(std::shared_ptr< T > p)
+determineDatatype(T)
+{
+    return Datatype::UNDEFINED;
+}
+
+template< typename T >
+inline Datatype
+determineDatatype(std::shared_ptr< T >)
 {
     using DT = Datatype;
     if( decay_equiv< T, double >::value ) { return DT::DOUBLE; }

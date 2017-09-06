@@ -50,6 +50,7 @@ ParticleSpecies::setNumParticlesLocalOffset(uint64_t nplo)
 void
 ParticleSpecies::read()
 {
+    clear();
     /* obtain all non-scalar records */
     Parameter< Operation::LIST_PATHS > plist_parameter;
     IOHandler->enqueue(IOTask(this, plist_parameter));
@@ -59,7 +60,7 @@ ParticleSpecies::read()
     Parameter< Operation::LIST_ATTS > alist_parameter;
     for( auto const& record_name : *plist_parameter.paths )
     {
-        if( strip(record_name, {'\0'}) == "particlePatches")
+        if( strip(record_name, {'\0'}) == "particlePatches" )
             continue;
 
         Record& r = (*this)[record_name];

@@ -15,7 +15,7 @@ write()
     Mesh& m = o.iterations[1].meshes["mesh_name"];
     auto& scalar = m[RecordComponent::SCALAR];
 
-    std::shared_ptr< double > data(d);
+    std::shared_ptr< double > data;
     Datatype dtype = determineDatatype(data);
     Dataset dset = Dataset(dtype, {1000, 1000, 1000});
     m[RecordComponent::SCALAR].resetDataset(dset);
@@ -50,7 +50,7 @@ write2()
     // the objects sunk into these locations are deep copies
     {
         // setting attributes can be chained in JS-like syntax for compact code
-        f.iterations[1].setTime(42).setDt(1.0).setTimeUnitSI(1.39e-16);
+        f.iterations[1].setTime(42.0).setDt(1.0).setTimeUnitSI(1.39e-16);
         f.iterations[2].setComment("This iteration will not appear in any output");
         f.iterations.erase(2);
     }
@@ -77,10 +77,10 @@ write2()
     {
         // as this is a copy, it does not modify the sunk resource and can be modified independently
         Mesh lowRez = cur_it.meshes["generic_2D_field"];
-        lowRez.setGridSpacing({6, 1}).setGridGlobalOffset({0, 600});
+        lowRez.setGridSpacing(std::vector< double >{6, 1}).setGridGlobalOffset({0, 600});
 
         Mesh highRez = cur_it.meshes["generic_2D_field"];
-        highRez.setGridSpacing({6, 0.5}).setGridGlobalOffset({0, 1200});
+        highRez.setGridSpacing(std::vector< double >{6, 0.5}).setGridGlobalOffset({0, 1200});
 
         cur_it.meshes.erase("generic_2D_field");
         cur_it.meshes["lowRez_2D_field"] = lowRez;

@@ -22,16 +22,19 @@ class Iteration : public Attributable
 
 private:
     Iteration();
-    Iteration(float time, float dt, double timeUnitSI);
 
 public:
     Iteration(Iteration const &);
 
-    float time() const;
-    Iteration& setTime(float);
+    template< typename T >
+    T time() const;
+    template< typename T >
+    Iteration& setTime(T);
 
-    float dt() const;
-    Iteration& setDt(float);
+    template< typename T >
+    T dt() const;
+    template< typename T >
+    Iteration& setDt(T);
 
     double timeUnitSI() const;
     Iteration& setTimeUnitSI(double);
@@ -45,3 +48,13 @@ private:
     void flush();
     void read();
 };  //Iteration
+
+template< typename T >
+inline T
+Iteration::time() const
+{ return readFloatingpoint< T >("time"); }
+
+template< typename T >
+inline T
+Iteration::dt() const
+{ return readFloatingpoint< T >("dt"); }

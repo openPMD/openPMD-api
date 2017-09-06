@@ -42,10 +42,7 @@ protected:
         if( *attribute_parameter.dtype == DT::FLOAT )
             this->setAttribute("timeOffset", Attribute(*attribute_parameter.resource).get< float >());
         else if( *attribute_parameter.dtype == DT::DOUBLE )
-        {
-            std::cerr << "Non-standard attribute datatype for 'timeOffset' (should be float, is double)\n";
-            this->setAttribute("timeOffset", static_cast<float>(Attribute(*attribute_parameter.resource).get< double >()));
-        }
+            this->setAttribute("timeOffset", Attribute(*attribute_parameter.resource).get< double >());
         else
             throw std::runtime_error("Unexpected Attribute datatype for 'timeOffset'");
     }
@@ -64,8 +61,6 @@ public:
     virtual ~BaseRecord() { }
 
     virtual std::array< double, 7 > unitDimension() const = 0;
-
-    virtual float timeOffset() const = 0;
 
 private:
     virtual void flush(std::string const&) = 0;
@@ -89,13 +84,32 @@ public:
     RecordComponent& operator[](std::string key);
     size_type erase(std::string const& key);
 
-    std::array< double, 7 > unitDimension() const override;
+    std::array< double, 7 > unitDimension() const;
     Record& setUnitDimension(std::map< Record::UnitDimension, double > const&);
 
-    float timeOffset() const override;
-    Record& setTimeOffset(float const);
+    template< typename T >
+    T timeOffset() const;
+    template< typename T >
+    Record& setTimeOffset(T);
 
 private:
     void flush(std::string const&) override;
     void read() override;
 };  //Record
+
+template< typename T >
+inline T
+Record::timeOffset() const
+{ return readFloatingpoint< T >("timeOffset"); }
+
+template< typename T >
+inline Record&
+Record::setTimeOffset(T to)
+{
+    static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
+
+    setAttribute("timeOffset", to);
+    dirty = true;
+    return *this;
+}
+

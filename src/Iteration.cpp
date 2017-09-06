@@ -11,20 +11,9 @@ Iteration::Iteration()
         : meshes{Container< Mesh >()},
           particles{Container< ParticleSpecies >()}
 {
-    setTime(0);
-    setDt(1);
+    setTime(static_cast< double >(0));
+    setDt(static_cast< double >(1));
     setTimeUnitSI(1);
-}
-
-Iteration::Iteration(float time,
-                     float dt,
-                     double timeUnitSI)
-        : meshes{Container< Mesh >()},
-          particles{Container< ParticleSpecies >()}
-{
-    setTime(time);
-    setDt(dt);
-    setTimeUnitSI(timeUnitSI);
 }
 
 Iteration::Iteration(Iteration const& i)
@@ -40,29 +29,23 @@ Iteration::Iteration(Iteration const& i)
     particles.parent = this;
 }
 
-float
-Iteration::time() const
-{
-    return getAttribute("time").get< float >();
-}
-
+template< typename T >
 Iteration&
-Iteration::setTime(float time)
+Iteration::setTime(T time)
 {
+    static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
+
     setAttribute("time", time);
     dirty = true;
     return *this;
 }
 
-float
-Iteration::dt() const
-{
-    return getAttribute("dt").get< float >();
-}
-
+template< typename T >
 Iteration&
-Iteration::setDt(float dt)
+Iteration::setDt(T dt)
 {
+    static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
+
     setAttribute("dt", dt);
     dirty = true;
     return *this;
@@ -174,10 +157,7 @@ Iteration::read()
     if( *attribute_parameter.dtype == DT::FLOAT )
         setDt(Attribute(*attribute_parameter.resource).get< float >());
     else if( *attribute_parameter.dtype == DT::DOUBLE )
-    {
-        std::cerr << "Non-standard attribute datatype for 'dt' (should be float, is double)\n";
-        setDt(static_cast<float>(Attribute(*attribute_parameter.resource).get< double >()));
-    }
+        setDt(Attribute(*attribute_parameter.resource).get< double >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'dt'");
 
@@ -187,10 +167,7 @@ Iteration::read()
     if( *attribute_parameter.dtype == DT::FLOAT )
         setTime(Attribute(*attribute_parameter.resource).get< float >());
     else if( *attribute_parameter.dtype == DT::DOUBLE )
-    {
-        std::cerr << "Non-standard attribute datatype for 'time' (should be float, is double)\n";
-        setTime(static_cast<float>(Attribute(*attribute_parameter.resource).get< double >()));
-    }
+        setTime(Attribute(*attribute_parameter.resource).get< double >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'time'");
 
@@ -209,6 +186,7 @@ Iteration::read()
         w = w->parent;
     Output* o = dynamic_cast<Output *>(w);
 
+    meshes.clear();
     Parameter< Operation::OPEN_PATH > path_parameter;
     path_parameter.path = o->meshesPath();
     IOHandler->enqueue(IOTask(&meshes, path_parameter));
@@ -265,6 +243,7 @@ Iteration::read()
         m.read();
     }
 
+    particles.clear();
     path_parameter.path = o->particlesPath();
     IOHandler->enqueue(IOTask(&particles, path_parameter));
     IOHandler->flush();

@@ -173,6 +173,62 @@ Output::setParticlesPath(std::string const& pp)
     return *this;
 }
 
+std::string
+Output::author() const
+{
+    return getAttribute("author").get< std::string >();
+}
+
+Output&
+Output::setAuthor(std::string const& a)
+{
+    setAttribute("author", a);
+    dirty = true;
+    return *this;
+}
+
+std::string
+Output::software() const
+{
+    return getAttribute("software").get< std::string >();
+}
+
+Output&
+Output::setSoftware(std::string const& s)
+{
+    setAttribute("software", s);
+    dirty = true;
+    return *this;
+}
+
+std::string
+Output::softwareVersion() const
+{
+    return getAttribute("softwareVersion").get< std::string >();
+}
+
+Output&
+Output::setSoftwareVersion(std::string const& sv)
+{
+    setAttribute("softwareVersion", sv);
+    dirty = true;
+    return *this;
+}
+
+std::string
+Output::date() const
+{
+    return getAttribute("date").get< std::string >();
+}
+
+Output&
+Output::setDate(std::string const& d)
+{
+    setAttribute("date", d);
+    dirty = true;
+    return *this;
+}
+
 Output::IterationEncoding
 Output::iterationEncoding() const
 {
@@ -391,7 +447,7 @@ Output::read()
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
 
-
+    iterations.clear();
     Parameter< Operation::OPEN_PATH > path_parameter;
     std::string version = openPMD();
     if( version == "1.0.0" || version == "1.0.1" )

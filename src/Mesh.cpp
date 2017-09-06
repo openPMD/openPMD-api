@@ -10,7 +10,7 @@ Mesh::Mesh()
     setDataOrder(DataOrder::C);
 
     setAxisLabels({""});
-    setGridSpacing({1});
+    setGridSpacing(std::vector< double >{1});
     setGridGlobalOffset({0});
     setGridUnitSI(1);
 }
@@ -113,15 +113,12 @@ Mesh::setAxisLabels(std::vector< std::string > als)
     return *this;
 }
 
-std::vector< float >
-Mesh::gridSpacing() const
-{
-    return getAttribute("gridSpacing").get< std::vector< float > >();
-}
-
+template< typename T >
 Mesh&
-Mesh::setGridSpacing(std::vector< float > gs)
+Mesh::setGridSpacing(std::vector< T > gs)
 {
+    static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
+
     setAttribute("gridSpacing", gs);
     dirty = true;
     return *this;
@@ -175,15 +172,12 @@ Mesh::setUnitDimension(std::map< Mesh::UnitDimension, double > const& udim)
     return *this;
 }
 
-float
-Mesh::timeOffset() const
-{
-    return getAttribute("timeOffset").get< float >();
-}
-
+template< typename T >
 Mesh&
-Mesh::setTimeOffset(float const to)
+Mesh::setTimeOffset(T to)
 {
+    static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
+
     setAttribute("timeOffset", to);
     dirty = true;
     return *this;
@@ -274,16 +268,11 @@ Mesh::read()
     attribute_parameter.name = "gridSpacing";
     IOHandler->enqueue(IOTask(this, attribute_parameter));
     IOHandler->flush();
+    Attribute a = Attribute(*attribute_parameter.resource);
     if( *attribute_parameter.dtype == DT::VEC_FLOAT )
-        setGridSpacing(Attribute(*attribute_parameter.resource).get< std::vector< float > >());
+        setGridSpacing(a.get< std::vector< float > >());
     else if( *attribute_parameter.dtype == DT::VEC_DOUBLE )
-    {
-        std::cerr << "Non-standard attribute datatype for 'gridSpacing' (should be float, is double)\n";
-        std::vector< float > gridSpacing;
-        for( auto const& val : Attribute(*attribute_parameter.resource).get< std::vector< double > >() )
-            gridSpacing.push_back(static_cast<float>(val));
-        setGridSpacing(gridSpacing);
-    }
+        setGridSpacing(a.get< std::vector< double > >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'gridSpacing'");
 
@@ -309,6 +298,7 @@ Mesh::read()
         (*this).find(MeshRecordComponent::SCALAR)->second.read();
     } else
     {
+        clear();
         Parameter< Operation::LIST_PATHS > plist_parameter;
         IOHandler->enqueue(IOTask(this, plist_parameter));
         IOHandler->flush();

@@ -21,6 +21,9 @@ NONEIOHandler::NONEIOHandler(std::string const& path, AccessType at)
 NONEIOHandler::~NONEIOHandler()
 { }
 
+void NONEIOHandler::enqueue(IOTask const)
+{ }
+
 std::future< void >
 NONEIOHandler::flush()
 { return std::future< void >(); }
