@@ -14,8 +14,9 @@ class Writable
     >
     friend class Container;
     friend class Iteration;
-    friend class HDF5IOHandler;
     friend class HDF5IOHandlerImpl;
+    friend class ParallelHDF5IOHandlerImpl;
+    friend std::string concrete_h5_file_position(Writable*);
 
 public:
     Writable()

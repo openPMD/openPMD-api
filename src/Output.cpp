@@ -2,10 +2,10 @@
 #include <iostream>
 #include <set>
 
-#include "../include/Auxiliary.hpp"
-#include "../include/Output.hpp"
-#include "../include/IO/HDF5/HDF5IOHandler.hpp"
-#include "../include/IO/HDF5/ParallelHDF5IOHandler.hpp"
+#include "Auxiliary.hpp"
+#include "Output.hpp"
+#include "IO/HDF5/HDF5IOHandler.hpp"
+#include "IO/HDF5/ParallelHDF5IOHandler.hpp"
 
 
 char const * const Output::BASEPATH = "/data/%T/";
@@ -381,7 +381,7 @@ Output::read()
     IOHandler->enqueue(IOTask(this, attribute_parameter));
     IOHandler->flush();
     if( *attribute_parameter.dtype == DT::STRING )
-        setOpenPMD(strip(Attribute(*attribute_parameter.resource).get< std::string >(), {'\0'}));
+        setOpenPMD(Attribute(*attribute_parameter.resource).get< std::string >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'openPMD'");
 
@@ -397,7 +397,7 @@ Output::read()
     IOHandler->enqueue(IOTask(this, attribute_parameter));
     IOHandler->flush();
     if( *attribute_parameter.dtype == DT::STRING )
-        setAttribute("basePath", strip(Attribute(*attribute_parameter.resource).get< std::string >(), {'\0'}));
+        setAttribute("basePath", Attribute(*attribute_parameter.resource).get< std::string >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'basePath'");
 
@@ -405,7 +405,7 @@ Output::read()
     IOHandler->enqueue(IOTask(this, attribute_parameter));
     IOHandler->flush();
     if( *attribute_parameter.dtype == DT::STRING )
-        setMeshesPath(strip(Attribute(*attribute_parameter.resource).get< std::string >(), {'\0'}));
+        setMeshesPath(Attribute(*attribute_parameter.resource).get< std::string >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'meshesPath'");
 
@@ -413,7 +413,7 @@ Output::read()
     IOHandler->enqueue(IOTask(this, attribute_parameter));
     IOHandler->flush();
     if( *attribute_parameter.dtype == DT::STRING )
-        setParticlesPath(strip(Attribute(*attribute_parameter.resource).get< std::string >(), {'\0'}));
+        setParticlesPath(Attribute(*attribute_parameter.resource).get< std::string >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'particlesPath'");
 
@@ -422,7 +422,7 @@ Output::read()
     IOHandler->flush();
     if( *attribute_parameter.dtype == DT::STRING )
     {
-        std::string encoding = strip(Attribute(*attribute_parameter.resource).get< std::string >(), {'\0'});
+        std::string encoding = Attribute(*attribute_parameter.resource).get< std::string >();
         if( encoding == "fileBased" )
         {
             if( m_iterationEncoding != IterationEncoding::fileBased)
@@ -443,7 +443,7 @@ Output::read()
     IOHandler->enqueue(IOTask(this, attribute_parameter));
     IOHandler->flush();
     if( *attribute_parameter.dtype == DT::STRING )
-        setIterationFormat(strip(Attribute(*attribute_parameter.resource).get< std::string >(), {'\0'}));
+        setIterationFormat(Attribute(*attribute_parameter.resource).get< std::string >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
 

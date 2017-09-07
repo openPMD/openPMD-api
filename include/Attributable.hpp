@@ -7,6 +7,7 @@
 #include <string>
 
 #include "Attribute.hpp"
+#include "Auxiliary.hpp"
 #include "IO/AbstractIOHandler.hpp"
 #include "Writable.hpp"
 
@@ -196,23 +197,21 @@ Attributable::readAttributes()
     using DT = Datatype;
     Parameter< Operation::READ_ATT > attribute_parameter;
 
-    for( auto const& att : attributes )
+    for( auto const& att_name : attributes )
     {
-        attribute_parameter.name = att;
+        attribute_parameter.name = att_name;
+        std::string att = strip(att_name, {'\0'});
         IOHandler->enqueue(IOTask(this, attribute_parameter));
         try
         {
             IOHandler->flush();
-        } catch( std::runtime_error e )
+        } catch( unsupported_data_error e )
         {
-            /* skip internal attributes that are not included in the standard */
-            if( att[0] == '_' )
-            {
-                std::cerr << "Skipping non-standard internal attribute " << att << " because of unexpected datatype\n";
-                continue;
-            }
-            else
-                throw e;
+            std::cerr << "Skipping non-standard attribute "
+                      << att << " ("
+                      << e.what()
+                      << ")\n";
+            continue;
         }
         Attribute a(*attribute_parameter.resource);
         switch( *attribute_parameter.dtype )
@@ -280,6 +279,7 @@ Attributable::readAttributes()
         }
     }
 
+    IOHandler->flush();
     dirty = false;
 }
 

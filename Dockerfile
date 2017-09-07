@@ -37,8 +37,8 @@ RUN        cd $HOME/src \
            && tar -xzf hdf5.tar.gz \
            && cd hdf5-1.10.1/ \
            && ./configure --enable-parallel --enable-shared --prefix /usr \
-           && make -s -j4 &> /dev/null \
-           && make install -s -j4 &> /dev/null
+           && make -s -j4 \
+           && make install -s -j4
 
 # build ADIOS
 
@@ -55,7 +55,7 @@ RUN        cd $HOME/src/libopenPMD \
 RUN        cd $HOME/src/libopenPMD/build \
            && make libopenpmdCoreTests -j4 \
            && make libopenpmdAuxiliaryTests -j4 \
-           && make libopenpmdReadTests -j4 \
+           && make libopenpmdSerialIOTests -j4 \
            && rm -rf $HOME/src/libopenPMD/build
 
 # obtain sample data
@@ -70,6 +70,6 @@ RUN        mkdir -p $HOME/src/libopenPMD/samples/git-sample/ \
 RUN        cd $HOME/src/libopenPMD/bin \
            && ./libopenpmdCoreTests \
            && ./libopenpmdAuxiliaryTests \
-           && ./libopenpmdReadTests
+           && ./libopenpmdSerialIOTests
 
 

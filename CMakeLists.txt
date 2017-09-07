@@ -22,8 +22,15 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 #TODO remove in release version
 set(DEVELOPMENT "on")
 if ("${DEVELOPMENT}" STREQUAL "on")
-    add_definitions(-DLIBOPENPMD_WITH_HDF5=ON)
-    add_definitions(-DLIBOPENPMD_PARALLEL=ON)
+    set(LIBOPENPMD_WITH_HDF5 "on")
+    set(LIBOPENPMD_PARALLEL "on")
+else()
+    if(ENV{LIBOPENPMD_WITH_HDF5})
+        add_definitions(-DLIBOPENPMD_WITH_HDF5=ON)
+    endif()
+    if(ENV{LIBOPENPMD_PARALLEL})
+        add_definitions(-DLIBOPENPMD_PARALLEL=ON)
+    endif()
 endif ()
 
 find_package(Boost REQUIRED COMPONENTS system filesystem)
@@ -35,7 +42,7 @@ endif ()
 find_package(MPI)
 if (MPI_FOUND)
     if (LIBOPENPMD_PARALLEL)
-        add_definitions(-DLIBOPENPMD_WITH_MPI)
+        add_definitions(-DLIBOPENPMD_WITH_MPI=ON)
     endif ()
     include_directories(${MPI_INCLUDE_PATH})
     link_directories(${MPI_LIBRARIES})
@@ -44,11 +51,9 @@ endif ()
 find_package(HDF5 COMPONENTS C)
 if (HDF5_FOUND)
     if (LIBOPENPMD_WITH_HDF5)
-        add_definitions(-DLIBOPENPMD_WITH_HDF5)
-    endif ()
-    if (HDF5_IS_PARALLEL)
-        if (LIBOPENPMD_WITH_HDF5 AND LIBOPENPMD_PARALLEL)
-            add_definitions(-DLIBOPENPMD_WITH_PARALLEL_HDF5)
+        add_definitions(-DLIBOPENPMD_WITH_HDF5=ON)
+        if (HDF5_IS_PARALLEL AND LIBOPENPMD_PARALLEL)
+            add_definitions(-DLIBOPENPMD_WITH_PARALLEL_HDF5=ON)
         endif ()
     endif ()
     include_directories(${HDF5_INCLUDE_DIRS})
@@ -73,8 +78,8 @@ set(CORE_TESTS
         test/CoreTest.cpp)
 set(AUX_TESTS
         test/AuxiliaryTest.cpp)
-set(READ_TESTS
-        test/ReadTest.cpp)
+set(SERIAL_IO_TESTS
+        test/SerialIOTest.cpp)
 
 add_executable(libopenpmdCoreTests
         ${CORE_TESTS}
@@ -82,10 +87,10 @@ add_executable(libopenpmdCoreTests
         ${IO_SOURCE})
 add_executable(libopenpmdAuxiliaryTests
         ${AUX_TESTS})
-add_executable(libopenpmdReadTests
+add_executable(libopenpmdSerialIOTests
         ${CORE_SOURCE}
         ${IO_SOURCE}
-        ${READ_TESTS})
+        ${SERIAL_IO_TESTS})
 add_executable(poc_HDF5Writer
         writer.cpp
         ${CORE_SOURCE}
@@ -96,18 +101,18 @@ add_executable(poc_HDF5Reader
         ${IO_SOURCE})
 
 if (HDF5_FOUND)
-    target_link_libraries(libopenpmdReadTests ${HDF5_LIBRARIES})
+    target_link_libraries(libopenpmdSerialIOTests ${HDF5_LIBRARIES})
     target_link_libraries(poc_HDF5Writer ${HDF5_LIBRARIES})
     target_link_libraries(poc_HDF5Reader ${HDF5_LIBRARIES})
 endif ()
 if (Boost_FOUND)
     target_link_libraries(libopenpmdCoreTests ${Boost_LIBRARIES})
-    target_link_libraries(libopenpmdReadTests ${Boost_LIBRARIES})
+    target_link_libraries(libopenpmdSerialIOTests ${Boost_LIBRARIES})
     target_link_libraries(poc_HDF5Writer ${Boost_LIBRARIES})
     target_link_libraries(poc_HDF5Reader ${Boost_LIBRARIES})
 endif ()
 if (MPI_FOUND)
-    target_link_libraries(libopenpmdReadTests ${MPI_LIBRARIES})
+    target_link_libraries(libopenpmdSerialIOTests ${MPI_LIBRARIES})
     target_link_libraries(poc_HDF5Writer ${MPI_LIBRARIES})
     target_link_libraries(poc_HDF5Reader ${MPI_LIBRARIES})
 endif ()

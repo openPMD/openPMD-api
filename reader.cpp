@@ -5,8 +5,8 @@
 
 int main()
 {
-    Output o = Output("../samples/hzdr-sample/",
-                      "simData_1000.h5",
+    Output o = Output("../samples/git-sample/",
+                      "data00000100.h5",
                       Output::IterationEncoding::fileBased,
                       Format::HDF5,
                       AccessType::READ_ONLY);

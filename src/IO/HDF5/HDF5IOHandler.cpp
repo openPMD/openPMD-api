@@ -1,5 +1,4 @@
-#include "../../../include/IO/HDF5/HDF5IOHandler.hpp"
-
+#include "IO/HDF5/HDF5IOHandler.hpp"
 #ifdef LIBOPENPMD_WITH_HDF5
 #include <iostream>
 #include <unordered_map>
@@ -7,10 +6,11 @@
 
 #include <boost/filesystem.hpp>
 
-#include "../../../include/Auxiliary.hpp"
-#include "../../../include/Attribute.hpp"
-#include "../../../include/IO/IOTask.hpp"
-#include "../../../include/IO/HDF5/HDF5FilePosition.hpp"
+#include "Auxiliary.hpp"
+#include "Attribute.hpp"
+#include "IO/IOTask.hpp"
+#include "IO/HDF5/HDF5Auxiliary.hpp"
+#include "IO/HDF5/HDF5FilePosition.hpp"
 
 
 #define ASSERT(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error(std::string((TEXT))); }
@@ -24,7 +24,6 @@ public:
 
     std::future< void > flush();
 
-    std::string concrete_file_position(Writable *w);
     void createFile(Writable*,
                     std::map< std::string, Argument > const&);
     void createPath(Writable*,
@@ -92,207 +91,64 @@ HDF5IOHandlerImpl::flush()
     while( !(*m_handler).m_work.empty() )
     {
         IOTask& i =(*m_handler).m_work.front();
-        switch( i.operation )
+        try
         {
-            using O = Operation;
-            case O::CREATE_FILE:
-                createFile(i.writable, i.parameter);
-                break;
-            case O::CREATE_PATH:
-                createPath(i.writable, i.parameter);
-                break;
-            case O::CREATE_DATASET:
-                createDataset(i.writable, i.parameter);
-                break;
-            case O::OPEN_FILE:
-                openFile(i.writable, i.parameter);
-                break;
-            case O::OPEN_PATH:
-                openPath(i.writable, i.parameter);
-                break;
-            case O::OPEN_DATASET:
-                openDataset(i.writable, i.parameter);
-                break;
-            case O::DELETE_FILE:
-            case O::DELETE_PATH:
-            case O::DELETE_DATASET:
-            case O::DELETE_ATT:
-                break;
-            case O::WRITE_DATASET:
-                writeDataset(i.writable, i.parameter);
-                break;
-            case O::WRITE_ATT:
-                writeAttribute(i.writable, i.parameter);
-                break;
-            case O::READ_DATASET:
-                readDataset(i.writable, i.parameter);
-                break;
-            case O::READ_ATT:
-                readAttribute(i.writable, i.parameter);
-                break;
-            case O::LIST_PATHS:
-                listPaths(i.writable, i.parameter);
-                break;
-            case O::LIST_DATASETS:
-                listDatasets(i.writable, i.parameter);
-                break;
-            case O::LIST_ATTS:
-                listAttributes(i.writable, i.parameter);
-                break;
+            switch( i.operation )
+            {
+                using O = Operation;
+                case O::CREATE_FILE:
+                    createFile(i.writable, i.parameter);
+                    break;
+                case O::CREATE_PATH:
+                    createPath(i.writable, i.parameter);
+                    break;
+                case O::CREATE_DATASET:
+                    createDataset(i.writable, i.parameter);
+                    break;
+                case O::OPEN_FILE:
+                    openFile(i.writable, i.parameter);
+                    break;
+                case O::OPEN_PATH:
+                    openPath(i.writable, i.parameter);
+                    break;
+                case O::OPEN_DATASET:
+                    openDataset(i.writable, i.parameter);
+                    break;
+                case O::DELETE_FILE:
+                case O::DELETE_PATH:
+                case O::DELETE_DATASET:
+                case O::DELETE_ATT:
+                    break;
+                case O::WRITE_DATASET:
+                    writeDataset(i.writable, i.parameter);
+                    break;
+                case O::WRITE_ATT:
+                    writeAttribute(i.writable, i.parameter);
+                    break;
+                case O::READ_DATASET:
+                    readDataset(i.writable, i.parameter);
+                    break;
+                case O::READ_ATT:
+                    readAttribute(i.writable, i.parameter);
+                    break;
+                case O::LIST_PATHS:
+                    listPaths(i.writable, i.parameter);
+                    break;
+                case O::LIST_DATASETS:
+                    listDatasets(i.writable, i.parameter);
+                    break;
+                case O::LIST_ATTS:
+                    listAttributes(i.writable, i.parameter);
+                    break;
+            }
+        } catch (unsupported_data_error e)
+        {
+            (*m_handler).m_work.pop();
+            throw e;
         }
-       (*m_handler).m_work.pop();
+        (*m_handler).m_work.pop();
     }
     return std::future< void >();
-}
-
-hid_t
-getH5DataType(Attribute const& att)
-{
-    using DT = Datatype;
-    switch( att.dtype )
-    {
-        case DT::CHAR:
-        {
-            hid_t string_t_id = H5Tcopy(H5T_C_S1);
-            H5Tset_size(string_t_id, 1);
-            return string_t_id;
-        }
-        case DT::INT:
-        case DT::VEC_INT:
-            return H5T_NATIVE_INT;
-        case DT::FLOAT:
-        case DT::VEC_FLOAT:
-            return H5T_NATIVE_FLOAT;
-        case DT::DOUBLE:
-        case DT::ARR_DBL_7:
-        case DT::VEC_DOUBLE:
-            return H5T_NATIVE_DOUBLE;
-        case DT::UINT32:
-            return H5T_NATIVE_UINT32;
-        case DT::UINT64:
-        case DT::VEC_UINT64:
-            return H5T_NATIVE_UINT64;
-        case DT::STRING:
-        {
-            hid_t string_t_id = H5Tcopy(H5T_C_S1);
-            H5Tset_size(string_t_id, att.get< std::string >().size());
-            return string_t_id;
-        }
-        case DT::VEC_STRING:
-        {
-            hid_t string_t_id = H5Tcopy(H5T_C_S1);
-            H5Tset_size(string_t_id, H5T_VARIABLE);
-            return string_t_id;
-        }
-        case DT::DATATYPE:
-            throw std::runtime_error("Meta-Datatype leaked into IO");
-        case DT::INT16:
-            return H5T_NATIVE_INT16;
-        case DT::INT32:
-            return H5T_NATIVE_INT32;
-        case DT::INT64:
-            return H5T_NATIVE_INT64;
-        case DT::UINT16:
-            return H5T_NATIVE_UINT16;
-        case DT::UCHAR:
-            return H5T_NATIVE_UCHAR;
-        case DT::BOOL:
-            return H5T_NATIVE_HBOOL;
-        case DT::UNDEFINED:
-            throw std::runtime_error("Unknown Attribute datatype");
-    }
-    throw std::runtime_error("Unknown Attribute datatype");
-}
-
-//TODO The dataspaces returned form this should be H5Sclose()'d since they are global
-hid_t
-getH5DataSpace(Attribute const& att)
-{
-    using DT = Datatype;
-    switch( att.dtype )
-    {
-        case DT::DOUBLE:
-        case DT::FLOAT:
-        case DT::INT16:
-        case DT::INT32:
-        case DT::INT64:
-        case DT::UINT16:
-        case DT::UINT32:
-        case DT::UINT64:
-        case DT::CHAR:
-        case DT::UCHAR:
-        case DT::BOOL:
-        case DT::STRING:
-            return H5Screate(H5S_SCALAR);
-        case DT::ARR_DBL_7:
-        {
-            hid_t array_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {7};
-            H5Sset_extent_simple(array_t_id, 1, dims, NULL);
-            return array_t_id;
-        }
-        case DT::VEC_INT:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< int > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, NULL);
-            return vec_t_id;
-        }
-        case DT::VEC_FLOAT:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< float > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, NULL);
-            return vec_t_id;
-        }
-        case DT::VEC_DOUBLE:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< double > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, NULL);
-            return vec_t_id;
-        }
-        case DT::VEC_UINT64:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< uint64_t > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, NULL);
-            return vec_t_id;
-        }
-        case DT::VEC_STRING:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< std::string > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, NULL);
-            return vec_t_id;
-        }
-        case DT::UNDEFINED:
-            throw std::runtime_error("Unknown Attribute datatype");
-        default:
-            throw std::runtime_error("Datatype not implemented in HDF5 IO");
-    }
-}
-
-std::string
-HDF5IOHandlerImpl::concrete_file_position(Writable* w)
-{
-    std::stack< Writable* > hierarchy;
-    if( !w->abstractFilePosition )
-        w = w->parent;
-    while( w )
-    {
-        hierarchy.push(w);
-        w = w->parent;
-    }
-
-    std::string pos;
-    while( !hierarchy.empty() )
-    {
-        pos += std::dynamic_pointer_cast< HDF5FilePosition >(hierarchy.top()->abstractFilePosition)->location;
-        hierarchy.pop();
-    }
-
-    return replace_all(pos, "//", "/");
 }
 
 void
@@ -313,7 +169,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         if( res == m_fileIDs.end() )
             res = m_fileIDs.find(writable->parent);
         hid_t node_id = H5Oopen(res->second,
-                                concrete_file_position(writable).c_str(),
+                                concrete_h5_file_position(writable).c_str(),
                                 H5P_DEFAULT);
 
         Datatype d = parameters.at("dtype").get< Datatype >();
@@ -395,7 +251,7 @@ HDF5IOHandlerImpl::createPath(Writable* writable,
         if( res == m_fileIDs.end() )
             res = m_fileIDs.find(writable->parent);
         hid_t node_id = H5Oopen(res->second,
-                                concrete_file_position(writable).c_str(),
+                                concrete_h5_file_position(writable).c_str(),
                                 H5P_DEFAULT);
 
         /* Create the path in the file */
@@ -436,7 +292,7 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
         res = m_fileIDs.find(writable->parent);
     hid_t node_id, attribute_id;
     node_id = H5Oopen(res->second,
-                      concrete_file_position(writable).c_str(),
+                      concrete_h5_file_position(writable).c_str(),
                       H5P_DEFAULT);
     std::string name = parameters.at("name").get< std::string >();
     Attribute const att(parameters.at("attribute").get< Attribute::resource >());
@@ -573,12 +429,12 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
         case DT::DATATYPE:
             throw std::runtime_error("Unknown Attribute datatype");
     }
-    ASSERT(status == 0, "Internal error: Failed to write attribute " + name + " at " + concrete_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to write attribute " + name + " at " + concrete_h5_file_position(writable));
 
     status = H5Aclose(attribute_id);
-    ASSERT(status == 0, "Internal error: Failed to close attribute " + name + " at " + concrete_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to close attribute " + name + " at " + concrete_h5_file_position(writable));
     status = H5Oclose(node_id);
-    ASSERT(status == 0, "Internal error: Failed to close " + concrete_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to close " + concrete_h5_file_position(writable));
 
     m_fileIDs.insert({writable, res->second});
 }
@@ -594,7 +450,7 @@ HDF5IOHandlerImpl::writeDataset(Writable* writable,
     hid_t dataset_id, filespace, memspace;
     herr_t status;
     dataset_id = H5Dopen(res->second,
-                         concrete_file_position(writable).c_str(),
+                         concrete_h5_file_position(writable).c_str(),
                          H5P_DEFAULT);
 
     std::vector< hsize_t > start;
@@ -639,7 +495,7 @@ HDF5IOHandlerImpl::writeDataset(Writable* writable,
                               filespace,
                               H5P_DEFAULT,
                               data.get());
-            ASSERT(status == 0, "Internal error: Failed to write dataset " + concrete_file_position(writable));
+            ASSERT(status == 0, "Internal error: Failed to write dataset " + concrete_h5_file_position(writable));
             break;
         case DT::UNDEFINED:
             throw std::runtime_error("Unknown Attribute datatype");
@@ -649,7 +505,7 @@ HDF5IOHandlerImpl::writeDataset(Writable* writable,
             throw std::runtime_error("Datatype not implemented in HDF5 IO");
     }
     status = H5Dclose(dataset_id);
-    ASSERT(status == 0, "Internal error: Failed to close dataset " + concrete_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to close dataset " + concrete_h5_file_position(writable));
 
     m_fileIDs.insert({writable, res->second});
 }
@@ -701,7 +557,7 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
     hid_t obj_id, attr_id;
     herr_t status;
     obj_id = H5Oopen(res->second,
-                     concrete_file_position(writable).c_str(),
+                     concrete_h5_file_position(writable).c_str(),
                      H5P_DEFAULT);
     std::string const & attr_name = parameters.at("name").get< std::string >();
     attr_id = H5Aopen(obj_id,
@@ -774,7 +630,7 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
                 status = H5Aread(attr_id,
                                  attr_type,
                                  c);
-                a = Attribute(std::string(c));
+                a = Attribute(strip(std::string(c), {'\0'}));
                 status = H5Dvlen_reclaim(attr_type,
                                          attr_space,
                                          H5P_DEFAULT,
@@ -786,10 +642,10 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
                 status = H5Aread(attr_id,
                                  attr_type,
                                  vc.data());
-                a = Attribute(std::string(vc.data(), size));
+                a = Attribute(strip(std::string(vc.data(), size), {'\0'}));
             }
-        } else if( H5Tget_class(attr_type) == H5T_COMPOUND)
-            throw std::runtime_error("Compound attribute type not supported");
+        } else if( H5Tget_class(attr_type) == H5T_COMPOUND )
+            throw unsupported_data_error("Compound attribute type not supported");
         else
             throw std::runtime_error("Unsupported scalar attribute type");
     } else if( attr_class == H5S_SIMPLE )
@@ -848,7 +704,7 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
                                  attr_type,
                                  vc.data());
                 for( auto const& val : vc )
-                    vs.push_back(std::string(val));
+                    vs.push_back(strip(std::string(val), {'\0'}));
                 status = H5Dvlen_reclaim(attr_type,
                                          attr_space,
                                          H5P_DEFAULT,
@@ -861,14 +717,14 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
                                  attr_type,
                                  c.data());
                 for( hsize_t i = 0; i < dims[0]; ++i )
-                    vs.push_back(std::string(c.data() + i*length, length));
+                    vs.push_back(strip(std::string(c.data() + i*length, length), {'\0'}));
             }
             a = Attribute(vs);
         } else
             throw std::runtime_error("Unsupported simple attribute type");
     } else
         throw std::runtime_error("Unsupported attribute class");
-    ASSERT(status == 0, "Internal error: Failed to read attribute " + attr_name + " at " + concrete_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to read attribute " + attr_name + " at " + concrete_h5_file_position(writable));
 
     auto dtype = parameters.at("dtype").get< std::shared_ptr< Datatype > >();
     *dtype = a.dtype;
@@ -876,9 +732,9 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
     *resource = a.getResource();
 
     status = H5Aclose(attr_id);
-    ASSERT(status == 0, "Internal error: Failed to close attribute " + attr_name + " at " + concrete_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to close attribute " + attr_name + " at " + concrete_h5_file_position(writable));
     status = H5Oclose(obj_id);
-    ASSERT(status == 0, "Internal error: Failed to close " + concrete_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to close " + concrete_h5_file_position(writable));
 }
 
 void HDF5IOHandlerImpl::listAttributes(Writable* writable,
@@ -889,13 +745,13 @@ void HDF5IOHandlerImpl::listAttributes(Writable* writable,
         res = m_fileIDs.find(writable->parent);
     hid_t node_id;
     node_id = H5Oopen(res->second,
-                      concrete_file_position(writable).c_str(),
+                      concrete_h5_file_position(writable).c_str(),
                       H5P_DEFAULT);
 
     H5O_info_t object_info;
     herr_t status;
     status = H5Oget_info(node_id, &object_info);
-    ASSERT(status == 0, "Internal error: Failed to get info for object " + concrete_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to get info for object " + concrete_h5_file_position(writable));
 
     auto strings = parameters.at("attributes").get< std::shared_ptr< std::vector< std::string > > >();
     for( hsize_t i = 0; i < object_info.num_attrs; ++i )
@@ -932,7 +788,7 @@ HDF5IOHandlerImpl::openPath(Writable* writable,
         res = m_fileIDs.find(writable->parent);
     hid_t node_id, path_id;
     node_id = H5Gopen(res->second,
-                      concrete_file_position(writable).c_str(),
+                      concrete_h5_file_position(writable).c_str(),
                       H5P_DEFAULT);
 
     /* Sanitize path */
@@ -964,7 +820,7 @@ HDF5IOHandlerImpl::openDataset(Writable* writable,
         res = m_fileIDs.find(writable->parent);
     hid_t node_id, dataset_id;
     node_id = H5Gopen(res->second,
-                      concrete_file_position(writable).c_str(),
+                      concrete_h5_file_position(writable).c_str(),
                       H5P_DEFAULT);
 
     /* Sanitize name */
@@ -992,14 +848,14 @@ HDF5IOHandlerImpl::openDataset(Writable* writable,
             d = DT::CHAR;
         else if( H5Tequal(dataset_type, H5T_NATIVE_UCHAR) )
             d = DT::UCHAR;
-        else if( H5Tequal(dataset_type, H5T_NATIVE_INT) )
-            d = DT::INT;
         else if( H5Tequal(dataset_type, H5T_NATIVE_INT16) )
             d = DT::INT16;
         else if( H5Tequal(dataset_type, H5T_NATIVE_INT32) )
             d = DT::INT32;
         else if( H5Tequal(dataset_type, H5T_NATIVE_INT64) )
             d = DT::INT64;
+        else if( H5Tequal(dataset_type, H5T_NATIVE_INT) )
+            d = DT::INT;
         else if( H5Tequal(dataset_type, H5T_NATIVE_FLOAT) )
             d = DT::FLOAT;
         else if( H5Tequal(dataset_type, H5T_NATIVE_DOUBLE) )
@@ -1052,7 +908,7 @@ HDF5IOHandlerImpl::readDataset(Writable* writable,
     hid_t dataset_id, memspace, filespace;
     herr_t status;
     dataset_id = H5Dopen(res->second,
-                         concrete_file_position(writable).c_str(),
+                         concrete_h5_file_position(writable).c_str(),
                          H5P_DEFAULT);
 
     std::vector< hsize_t > start;
@@ -1117,12 +973,12 @@ HDF5IOHandlerImpl::listPaths(Writable* writable,
     if( res == m_fileIDs.end() )
         res = m_fileIDs.find(writable->parent);
     hid_t node_id = H5Gopen(res->second,
-                            concrete_file_position(writable).c_str(),
+                            concrete_h5_file_position(writable).c_str(),
                             H5P_DEFAULT);
 
     H5G_info_t group_info;
     herr_t status = H5Gget_info(node_id, &group_info);
-    ASSERT(status == 0, "Internal error: Failed to open HDF5 group " + concrete_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to open HDF5 group " + concrete_h5_file_position(writable));
 
     auto paths = parameters.at("paths").get< std::shared_ptr< std::vector< std::string > > >();
     for( hsize_t i = 0; i < group_info.nlinks; ++i )
@@ -1137,7 +993,7 @@ HDF5IOHandlerImpl::listPaths(Writable* writable,
     }
 
     status = H5Gclose(node_id);
-    ASSERT(status == 0, "Internal error: Failed to close HDF5 group " + concrete_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to close HDF5 group " + concrete_h5_file_position(writable));
 }
 
 void
@@ -1148,12 +1004,12 @@ HDF5IOHandlerImpl::listDatasets(Writable* writable,
     if( res == m_fileIDs.end() )
         res = m_fileIDs.find(writable->parent);
     hid_t node_id = H5Gopen(res->second,
-                            concrete_file_position(writable).c_str(),
+                            concrete_h5_file_position(writable).c_str(),
                             H5P_DEFAULT);
 
     H5G_info_t group_info;
     herr_t status = H5Gget_info(node_id, &group_info);
-    ASSERT(status == 0, "Internal error: Failed to open HDF5 group " + concrete_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to open HDF5 group " + concrete_h5_file_position(writable));
 
     auto datasets = parameters.at("datasets").get< std::shared_ptr< std::vector< std::string > > >();
     for( hsize_t i = 0; i < group_info.nlinks; ++i )
@@ -1168,7 +1024,7 @@ HDF5IOHandlerImpl::listDatasets(Writable* writable,
     }
 
     status = H5Gclose(node_id);
-    ASSERT(status == 0, "Internal error: Failed to close HDF5 group " + concrete_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to close HDF5 group " + concrete_h5_file_position(writable));
 }
 #else
 class HDF5IOHandlerImpl

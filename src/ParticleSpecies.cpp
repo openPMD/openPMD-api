@@ -60,7 +60,7 @@ ParticleSpecies::read()
     Parameter< Operation::LIST_ATTS > alist_parameter;
     for( auto const& record_name : *plist_parameter.paths )
     {
-        if( strip(record_name, {'\0'}) == "particlePatches" )
+        if( record_name == "particlePatches" )
             continue;
 
         Record& r = (*this)[record_name];

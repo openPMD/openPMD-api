@@ -226,7 +226,7 @@ Mesh::read()
     IOHandler->flush();
     if( *attribute_parameter.dtype == DT::STRING )
     {
-        std::string geometry = strip(Attribute(*attribute_parameter.resource).get< std::string >(), {'\0'});
+        std::string geometry = Attribute(*attribute_parameter.resource).get< std::string >();
         if( geometry == "cartesian" )
             setGeometry(Geometry::cartesian);
         else if( geometry == "thetaMode" )
@@ -248,7 +248,7 @@ Mesh::read()
         setDataOrder(static_cast<DataOrder>(Attribute(*attribute_parameter.resource).get< char >()));
     else if( *attribute_parameter.dtype == DT::STRING )
     {
-        std::string dataOrder = strip(Attribute(*attribute_parameter.resource).get< std::string >(), {'\0'});
+        std::string dataOrder = Attribute(*attribute_parameter.resource).get< std::string >();
         if( dataOrder.size() == 1 )
             setDataOrder(static_cast<DataOrder>(dataOrder[0]));
         else

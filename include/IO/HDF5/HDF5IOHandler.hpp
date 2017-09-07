@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include "../AbstractIOHandler.hpp"
+#include "IO/AbstractIOHandler.hpp"
 
 class HDF5IOHandlerImpl;
 
@@ -20,4 +20,4 @@ public:
 
 private:
     std::unique_ptr< HDF5IOHandlerImpl > m_impl;
-};
+};  //HDF5IOHandler
