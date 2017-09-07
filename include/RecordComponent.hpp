@@ -108,8 +108,8 @@ RecordComponent::loadChunk(Offset o, Extent e, double targetUnitSI)
 {
     if( targetUnitSI != 0. )
         throw std::runtime_error("unitSI scaling during chunk loading not yet implemented");
-    Dataset d = Dataset(T(), {});
-    if( d.dtype != getDatatype() )
+    Datatype dtype = determineDatatype(std::shared_ptr< T >());
+    if( dtype != getDatatype() )
         throw std::runtime_error("Type conversion during chunk loading not implemented yet");
     uint8_t dim = getDimensionality();
     if( e.size() != dim || o.size() != dim )

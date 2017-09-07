@@ -303,14 +303,48 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_attribute_test)
     BOOST_TEST(weighting_scalar.getExtent() == e);
 }
 
-BOOST_AUTO_TEST_CASE(hzdr_hdf5_sample_structure_test)
+BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
 {
-    /*
     Output o = Output("../samples/git-sample/",
                       "data00000100.h5",
                       Output::IterationEncoding::fileBased,
                       Format::HDF5,
                       AccessType::READ_ONLY);
-                      */
+
+    {
+        double actual[3][3][3] = {{{-1.9080703683727052e-09, -1.5632650729457964e-10, 1.1497536256399599e-09},
+                                   {-1.9979540244463578e-09, -2.5512036927466397e-10, 1.0402234629225404e-09},
+                                   {-1.7353589676361025e-09, -8.0899198451334087e-10, -1.6443779671249104e-10}},
+
+                                  {{-2.0029988778702545e-09, -1.9543477947081556e-10, 1.0916454407094989e-09},
+                                   {-2.3890367462087170e-09, -4.7158010829662089e-10, 9.0026075483251589e-10},
+                                   {-1.9033881137886510e-09, -7.5192119197708962e-10, 5.0038861942880430e-10}},
+
+                                  {{-1.3271805876513554e-09, -5.9243276950837753e-10, -2.2445734160214670e-10},
+                                   {-7.4578609954301101e-10, -1.1995737736469891e-10, 2.5611823772919706e-10},
+                                   {-9.4806251738077663e-10, -1.5472800818372434e-10, -3.6461900165818406e-10}}};
+        MeshRecordComponent& rho = o.iterations[100].meshes["rho"][MeshRecordComponent::SCALAR];
+        Offset offset{20, 20, 190};
+        Extent extent{3, 3, 3};
+        auto data = rho.loadChunk< double >(offset, extent);
+        double* raw_ptr = data.get();
+
+        for( int i = 0; i < 3; ++i )
+            for( int j = 0; j < 3; ++j )
+                for( int k = 0; k < 3; ++k )
+                    BOOST_TEST(raw_ptr[((i*3) + j)*3 + k] == actual[i][j][k]);
+    }
+
+    {
+        double constant_value = 9.1093829099999999e-31;
+        RecordComponent& electrons_mass = o.iterations[100].particles["electrons"]["mass"][RecordComponent::SCALAR];
+        Offset offset{15};
+        Extent extent{3};
+        auto data = electrons_mass.loadChunk< double >(offset, extent);
+        double* raw_ptr = data.get();
+
+        for( int i = 0; i < 3; ++i )
+            BOOST_TEST(raw_ptr[i] == constant_value);
+    }
 
 }

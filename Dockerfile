@@ -37,12 +37,14 @@ RUN        cd $HOME/src \
            && tar -xzf hdf5.tar.gz \
            && cd hdf5-1.10.1/ \
            && ./configure --enable-parallel --enable-shared --prefix /usr \
-           && make -s -j4 && make install -s -j4
+           && make -s -j4 &> /dev/null \
+           && make install -s -j4 &> /dev/null
 
 # build ADIOS
 
 # build executables (proof-of-concept)
-RUN        mkdir -p build \
+RUN        cd $HOME/src/libopenPMD \
+           && mkdir -p build \
            && cd build \
            && rm -rf CMake* \
            && cmake $HOME/src/libopenPMD \
@@ -50,17 +52,19 @@ RUN        mkdir -p build \
            && make poc_HDF5Reader -j4
 
 # build tests
-RUN        cd build \
+RUN        cd $HOME/src/libopenPMD/build \
            && make libopenpmdCoreTests -j4 \
            && make libopenpmdAuxiliaryTests -j4 \
-           && make libopenpmdReadTests -j4
+           && make libopenpmdReadTests -j4 \
+           && rm -rf $HOME/src/libopenPMD/build
 
 # obtain sample data
-RUN        mkdir -p samples/git-sample/ \
+RUN        mkdir -p $HOME/src/libopenPMD/samples/git-sample/ \
+           && cd $HOME/src/libopenPMD/samples/git-sample/ \
            && wget -nv https://github.com/openPMD/openPMD-example-datasets/raw/draft/example-3d.tar.gz \
            && tar -xf example-3d.tar.gz \
-           && cp example-3d/hdf5/* samples/git-sample/ \
-           && rm -rf example-3d.tar.gz example-3d
+           && cp example-3d/hdf5/* $HOME/src/libopenPMD/samples/git-sample/ \
+           && rm -rf example-3d.* example-3d
 
 # run tests
 RUN        cd $HOME/src/libopenPMD/bin \
