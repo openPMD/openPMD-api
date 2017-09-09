@@ -42,8 +42,10 @@ Container< ParticleSpecies >::operator[](Container< ParticleSpecies >::key_type 
         ParticleSpecies ps = ParticleSpecies();
         ps.IOHandler = IOHandler;
         ps.parent = this;
-        ps["position"];
-        ps["positionOffset"];
-        return this->insert({key, std::move(ps)}).first->second;
+        auto& ret = this->insert({key, std::move(ps)}).first->second;
+        /* enforce these two RecordComponents as required by the standard */
+        ret["position"].setUnitDimension({{Record::UnitDimension::L, 1}});
+        ret["positionOffset"].setUnitDimension({{Record::UnitDimension::L, 1}});
+        return ret;
     }
 }

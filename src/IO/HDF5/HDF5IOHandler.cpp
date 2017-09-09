@@ -141,7 +141,7 @@ HDF5IOHandlerImpl::flush()
                     listAttributes(i.writable, i.parameter);
                     break;
             }
-        } catch (unsupported_data_error e)
+        } catch (unsupported_data_error& e)
         {
             (*m_handler).m_work.pop();
             throw e;

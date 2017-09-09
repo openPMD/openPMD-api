@@ -58,17 +58,8 @@ public:
     std::unordered_map< Writable*, hid_t > m_fileIDs;
     std::unordered_set< hid_t > m_openFileIDs;
 
-    hid_t m_attributeCreationProperty;
-    hid_t m_datasetAccessProperty;
-    hid_t m_datasetCreationProperty;
     hid_t m_datasetTransferProperty;
-    hid_t m_datatypeAccessProperty;
-    hid_t m_datatypeCreationProperty;
     hid_t m_fileAccessProperty;
-    hid_t m_fileCreationProperty;
-    hid_t m_groupAccessProeprty;
-    hid_t m_groupCreationProperty;
-    hid_t m_stringCreationProperty;
 };  //ParallelHDF5IOHandlerImpl
 
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string const& path,
@@ -92,17 +83,19 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(ParallelHDF5IOHandler* hand
     MPI_Comm comm  = MPI_COMM_WORLD;
     MPI_Info info  = MPI_INFO_NULL;
 
-    m_attributeCreationProperty = H5Pcreate(H5P_ATTRIBUTE_CREATE);
-    m_datasetAccessProperty = H5Pcreate(H5P_DATASET_ACCESS);
-    m_datasetCreationProperty = H5Pcreate(H5P_DATASET_CREATE);
+    /*
+    int rank{-1};
+    int size{-1};
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+    if( rank == 0 )
+        std::cerr << "Parallel HDF5 initializing with "
+                  << size
+                  << " workers.\n";
+                  */
+
     m_datasetTransferProperty = H5Pcreate(H5P_DATASET_XFER);
-    m_datatypeAccessProperty = H5Pcreate(H5P_DATATYPE_ACCESS);
-    m_datatypeCreationProperty = H5Pcreate(H5P_DATATYPE_CREATE);
     m_fileAccessProperty = H5Pcreate(H5P_FILE_ACCESS);
-    m_fileCreationProperty = H5Pcreate(H5P_FILE_CREATE);
-    m_groupAccessProeprty = H5Pcreate(H5P_GROUP_ACCESS);
-    m_groupCreationProperty = H5Pcreate(H5P_GROUP_CREATE);
-    m_stringCreationProperty = H5Pcreate(H5P_STRING_CREATE);
     H5Pset_dxpl_mpio(m_datasetTransferProperty, H5FD_MPIO_COLLECTIVE);
     H5Pset_fapl_mpio(m_fileAccessProperty, comm, info);
 }
@@ -110,17 +103,14 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(ParallelHDF5IOHandler* hand
 ParallelHDF5IOHandlerImpl::~ParallelHDF5IOHandlerImpl()
 {
     herr_t status;
-    status = H5Pclose(m_attributeCreationProperty);
-    status = H5Pclose(m_datasetAccessProperty);
-    status = H5Pclose(m_datasetCreationProperty);
     status = H5Pclose(m_datasetTransferProperty);
-    status = H5Pclose(m_datatypeAccessProperty);
-    status = H5Pclose(m_datatypeCreationProperty);
     status = H5Pclose(m_fileAccessProperty);
-    status = H5Pclose(m_fileCreationProperty);
-    status = H5Pclose(m_groupAccessProeprty);
-    status = H5Pclose(m_groupCreationProperty);
-    status = H5Pclose(m_stringCreationProperty);
+    for( auto& file : m_openFileIDs )
+    {
+        status = H5Fclose(file);
+        if( status != 0 )
+            std::cerr << "Internal error: Unable to close HDF5 file\n";
+    }
 }
 
 std::future< void >
@@ -244,14 +234,14 @@ ParallelHDF5IOHandlerImpl::createFile(Writable* writable,
         if( !exists(dir) )
             create_directories(dir);
 
-        /* Create a new file using default properties. */
+        /* Create a new file using MPI properties. */
         std::string name = m_handler->directory + parameters.at("name").get< std::string >();
         if( !ends_with(name, ".h5") )
             name += ".h5";
         hid_t id = H5Fcreate(name.c_str(),
                              H5F_ACC_TRUNC,
                              H5P_DEFAULT,
-                             H5P_DEFAULT);
+                             m_fileAccessProperty);
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared< HDF5FilePosition >("/");
@@ -523,7 +513,7 @@ ParallelHDF5IOHandlerImpl::writeDataset(Writable* writable,
                               getH5DataType(a),
                               memspace,
                               filespace,
-                              H5P_DEFAULT,
+                              m_datasetTransferProperty,
                               data.get());
             ASSERT(status == 0, "Internal error: Failed to write dataset " + concrete_h5_file_position(writable));
             break;
@@ -565,7 +555,7 @@ ParallelHDF5IOHandlerImpl::openFile(Writable* writable,
     hid_t file_id;
     file_id = H5Fopen(name.c_str(),
                       flags,
-                      H5P_DEFAULT);
+                      m_fileAccessProperty);
 
     writable->written = true;
     writable->abstractFilePosition = std::make_shared< HDF5FilePosition >("/");
@@ -989,7 +979,7 @@ ParallelHDF5IOHandlerImpl::readDataset(Writable* writable,
                      getH5DataType(a),
                      memspace,
                      filespace,
-                     H5P_DEFAULT,
+                     m_datasetTransferProperty,
                      data);
 
     H5Dclose(dataset_id);

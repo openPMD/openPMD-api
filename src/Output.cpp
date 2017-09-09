@@ -35,18 +35,21 @@ Output::Output(std::string const& path,
           m_iterationEncoding{ie},
           m_name{name}
 {
+    std::string cleanPath = path;
+    if( !ends_with(cleanPath, "/") )
+        cleanPath += '/';
     switch( f )
     {
         case Format::HDF5:
-            IOHandler = std::make_shared<HDF5IOHandler>(path, at);
+            IOHandler = std::make_shared<HDF5IOHandler>(cleanPath, at);
             break;
         case Format::PARALLEL_HDF5:
-            IOHandler = std::make_shared<ParallelHDF5IOHandler>(path, at);
+            IOHandler = std::make_shared<ParallelHDF5IOHandler>(cleanPath, at);
             break;
         case Format::ADIOS:
             break;
         case Format::NONE:
-            IOHandler = std::make_shared<NONEIOHandler>(path, at);
+            IOHandler = std::make_shared<NONEIOHandler>(cleanPath, at);
             break;
     }
     iterations.IOHandler = IOHandler;

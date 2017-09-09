@@ -6,21 +6,39 @@
 void
 write()
 {
-    Output o("./working/directory/",
-             "const_test",
-             Output::IterationEncoding::fileBased,
-             Format::HDF5,
-             AccessType::CREAT);
+    Output o = Output("../samples",
+                      "serial_write.h5",
+                      Output::IterationEncoding::groupBased,
+                      Format::HDF5,
+                      AccessType::CREAT);
 
-    Mesh& m = o.iterations[1].meshes["mesh_name"];
-    auto& scalar = m[RecordComponent::SCALAR];
+    ParticleSpecies& e = o.iterations[1].particles["e"];
 
-    std::shared_ptr< double > data;
-    Datatype dtype = determineDatatype(data);
-    Dataset dset = Dataset(dtype, {1000, 1000, 1000});
-    m[RecordComponent::SCALAR].resetDataset(dset);
+    std::vector< double > position_global(4);
+    double pos{0.};
+    std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
+    std::shared_ptr< double > position_local(new double);
+    e["position"]["x"].resetDataset(Dataset(determineDatatype(position_local), {4}));
+    
+    for( int i = 0; i < 4; ++i )
+    {
+        *position_local = position_global[i];
+        e["position"]["x"].storeChunk({i}, {1}, position_local);
+        o.flush();
+    }
 
-    scalar.storeChunk({0, 0, 0}, {10, 10, 10}, data);
+    std::vector< uint64_t > positionOffset_global(4);
+    uint64_t posOff{0};
+    std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
+    std::shared_ptr< uint64_t > positionOffset_local(new uint64_t);
+    e["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local), {4}));
+
+    for( int i = 0; i < 4; ++i )
+    {
+        *positionOffset_local = positionOffset_global[i];
+        e["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local);
+        o.flush();
+    }
 
     o.flush();
 }
@@ -146,6 +164,6 @@ write2()
 int
 main()
 {
-    write2();
+    write();
     return 0;
 }
