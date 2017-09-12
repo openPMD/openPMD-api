@@ -17,6 +17,7 @@ RUN        apt-get update \
               libopenmpi-dev \
               make \
               pkg-config \
+              ssh \
               wget \
               zlib1g-dev \
            && rm -rf /var/lib/apt/lists/*
@@ -47,6 +48,7 @@ RUN        cd $HOME/src/libopenPMD \
            && mkdir -p build \
            && cd build \
            && rm -rf CMake* \
+           && rm -rf $HOME/src/libopenPMD/CMakeCache.txt \
            && cmake $HOME/src/libopenPMD \
            && make poc_HDF5Writer -j4 \
            && make poc_HDF5Reader -j4
@@ -70,6 +72,7 @@ RUN        mkdir -p $HOME/src/libopenPMD/samples/git-sample/ \
 RUN        cd $HOME/src/libopenPMD/bin \
            && ./libopenpmdCoreTests \
            && ./libopenpmdAuxiliaryTests \
-           && ./libopenpmdSerialIOTests
+           && ./libopenpmdSerialIOTests #\
+           #&& mpiexec --map-by ppr:1:core ./libopenpmdParallelIOTests
 
 

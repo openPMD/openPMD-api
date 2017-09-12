@@ -130,6 +130,10 @@ write2()
     // this describes the datatype and shape of data as it should be written to disk
     Datatype dtype = determineDatatype(partial_dataset);
     Dataset d = Dataset(dtype, Extent{2, 5});
+    /* TODO
+    dset.setCompression("zlib", level=9);
+    dset.setCustomTransform("blosc:compressor=zlib,shuffle=bit,lvl=1;nometa");
+     */
     mesh["x"].resetDataset(d);
     // at any point in time you may decide to dump already created output to disk
     // note that this will make some operations impossible (e.g. renaming files)

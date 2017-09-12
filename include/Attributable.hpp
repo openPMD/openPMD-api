@@ -117,12 +117,13 @@ Attributable::getAttribute(std::string const& key) const
 inline bool
 Attributable::deleteAttribute(std::string const& key)
 {
-    if( IOHandler && IOHandler->accessType == AccessType::READ_ONLY )
-        throw std::runtime_error("Can not delete from a read-only file.");
-
     auto it = m_attributes->find(key);
     if( it != m_attributes->end() )
     {
+        Parameter< Operation::DELETE_ATT > attribute_parameter;
+        attribute_parameter.name = key;
+        IOHandler->enqueue(IOTask(this, attribute_parameter));
+        IOHandler->flush();
         m_attributes->erase(it);
         return true;
     }

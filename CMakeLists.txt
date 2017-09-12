@@ -61,6 +61,7 @@ if (HDF5_FOUND)
 endif ()
 
 set(CORE_SOURCE
+        src/Writable.cpp
         src/Output.cpp
         src/Iteration.cpp
         src/Record.cpp
@@ -72,11 +73,15 @@ set(CORE_SOURCE
 set(IO_SOURCE
         src/IO/AbstractIOHandler.cpp
         src/IO/IOTask.cpp
+        src/IO/ADIOS/ADIOSIOHandler.cpp
         src/IO/HDF5/HDF5IOHandler.cpp
         src/IO/HDF5/ParallelHDF5IOHandler.cpp)
 set(CORE_TESTS
         test/CoreTest.cpp)
 set(AUX_TESTS
+        src/Writable.cpp
+        src/IO/IOTask.cpp
+        src/IO/AbstractIOHandler.cpp
         test/AuxiliaryTest.cpp)
 set(SERIAL_IO_TESTS
         test/SerialIOTest.cpp)

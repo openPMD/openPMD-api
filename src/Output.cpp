@@ -2,10 +2,11 @@
 #include <iostream>
 #include <set>
 
-#include "Auxiliary.hpp"
-#include "Output.hpp"
-#include "IO/HDF5/HDF5IOHandler.hpp"
-#include "IO/HDF5/ParallelHDF5IOHandler.hpp"
+#include <Auxiliary.hpp>
+#include <Output.hpp>
+#include <IO/ADIOS/ADIOSIOHandler.hpp>
+#include <IO/HDF5/HDF5IOHandler.hpp>
+#include <IO/HDF5/ParallelHDF5IOHandler.hpp>
 
 
 char const * const Output::BASEPATH = "/data/%T/";
@@ -87,6 +88,27 @@ Output::Output(std::string const& path,
             break;
         }
     }
+}
+
+Output::Output(std::string const& path,
+               std::string const& name,
+               bool parallel)
+    : iterations{Container< Iteration, uint64_t >()},
+      m_name{name}
+{
+    AccessType at = AccessType::READ_ONLY;
+    if( ends_with(m_name, ".h5") )
+    {
+        if( parallel )
+        { IOHandler = std::make_shared< ParallelHDF5IOHandler >(path, at); }
+        else
+        { IOHandler = std::make_shared< HDF5IOHandler >(path, at); }
+    } else if( ends_with(m_name, ".bp") )
+    { IOHandler = std::make_shared< ADIOSIOHandler >(path, at); }
+    else
+    { throw std::runtime_error("Can not determine file type from file name"); }
+
+    read();
 }
 
 Output::~Output()

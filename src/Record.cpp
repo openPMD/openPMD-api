@@ -27,9 +27,29 @@ Record::operator[](std::string key)
 Record::size_type
 Record::erase(std::string const& key)
 {
-    auto res = Container< RecordComponent >::erase(key);
-    if( key == RecordComponent::SCALAR || res == 0 )
+    bool scalar = (key == RecordComponent::SCALAR);
+    Record::size_type res;
+    if( !scalar || (scalar && this->at(key).m_isConstant) )
+        res = Container< RecordComponent >::erase(key);
+    else
+    {
+        RecordComponent& rc = this->find(RecordComponent::SCALAR)->second;
+        if( rc.written )
+        {
+            Parameter< Operation::DELETE_DATASET > dataset_parameter;
+            dataset_parameter.name = ".";
+            IOHandler->enqueue(IOTask(&rc, dataset_parameter));
+            IOHandler->flush();
+        }
+        res = Container< RecordComponent >::erase(key);
+    }
+
+    if( scalar )
+    {
+        written = false;
+        abstractFilePosition.reset();
         m_containsScalar = false;
+    }
     return res;
 }
 

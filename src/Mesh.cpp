@@ -38,6 +38,35 @@ Mesh::operator[](std::string key)
     }
 }
 
+typename Mesh::size_type
+Mesh::erase(std::string const& key)
+{
+    bool scalar = (key == MeshRecordComponent::SCALAR);
+    Mesh::size_type res;
+    if( !scalar || (scalar && this->at(key).m_isConstant) )
+        res = Container< MeshRecordComponent >::erase(key);
+    else
+    {
+        MeshRecordComponent& mrc = this->find(MeshRecordComponent::SCALAR)->second;
+        if( mrc.written )
+        {
+            Parameter< Operation::DELETE_DATASET > dataset_parameter;
+            dataset_parameter.name = ".";
+            IOHandler->enqueue(IOTask(&mrc, dataset_parameter));
+            IOHandler->flush();
+        }
+        res = Container< MeshRecordComponent >::erase(key);
+    }
+
+    if( scalar )
+    {
+        written = false;
+        abstractFilePosition.reset();
+        m_containsScalar = false;
+    }
+    return res;
+}
+
 Mesh::Geometry
 Mesh::geometry() const
 {

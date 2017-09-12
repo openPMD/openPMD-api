@@ -19,14 +19,8 @@ class Writable
     friend std::string concrete_h5_file_position(Writable*);
 
 public:
-    Writable()
-            : abstractFilePosition{nullptr},
-              parent{nullptr},
-              dirty{true},
-              written{false}
-    { }
-    virtual ~Writable()
-    { }
+    Writable();
+    virtual ~Writable();
 
 protected:
     std::shared_ptr< AbstractFilePosition > abstractFilePosition;

@@ -46,7 +46,8 @@ public:
     template< typename T >
     void loadChunkInto(Offset, Extent, std::shared_ptr< T >, double targetUnitSI = 0.0);
     template< typename T >
-    std::unique_ptr< T, std::function< void(T*) > > loadChunk(Offset, Extent, double targetUnitSI = 0.0);
+    std::unique_ptr< T, std::function< void(T*) > >
+    loadChunk(Offset, Extent, double targetUnitSI = 0.0);
     template< typename T >
     void storeChunk(Offset, Extent, std::shared_ptr< T >);
 

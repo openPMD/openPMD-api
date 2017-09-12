@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(record_constructor_test)
                       Format::NONE,
                       AccessType::CREAT);
 
-    Record& r = o.iterations[42].particles["e"]["position"];
+    Record& r = o.iterations[42].particles["species"]["record"];
 
     //std::vector< std::size_t > none{};
     BOOST_TEST(r["x"].unitSI() == 1);
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(record_modification_test)
                       Format::NONE,
                       AccessType::CREAT);
 
-    Record& r = o.iterations[42].particles["e"]["position"];
+    Record& r = o.iterations[42].particles["species"]["record"];
 
     using RUD = Record::UnitDimension;
     r.setUnitDimension({{RUD::L, 1.},
@@ -206,7 +206,7 @@ BOOST_AUTO_TEST_CASE(recordComponent_modification_test)
                       Format::NONE,
                       AccessType::CREAT);
 
-    Record& r = o.iterations[42].particles["e"]["position"];
+    Record& r = o.iterations[42].particles["species"]["record"];
 
     r["x"].setUnitSI(2.55999e-7);
     r["y"].setUnitSI(4.42999e-8);

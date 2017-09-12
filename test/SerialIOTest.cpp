@@ -710,4 +710,45 @@ BOOST_AUTO_TEST_CASE(hdf5_write_test)
 
     o.flush();
 }
+
+BOOST_AUTO_TEST_CASE(hdf5_deletion_test)
+{
+    Output o = Output("../samples",
+                      "serial_deletion.h5",
+                      Output::IterationEncoding::groupBased,
+                      Format::HDF5,
+                      AccessType::CREAT);
+
+
+    o.setAttribute("removed",
+                   "this attribute will be removed after being written to disk");
+    o.flush();
+
+    o.deleteAttribute("removed");
+    o.flush();
+
+    ParticleSpecies& e = o.iterations[1].particles["e"];
+    e.erase("deletion");
+    o.flush();
+
+    e["deletion_scalar"][RecordComponent::SCALAR].resetDataset(Dataset(Datatype::DOUBLE, {1}));
+    o.flush();
+
+    e["deletion_scalar"].erase(RecordComponent::SCALAR);
+    o.flush();
+
+    e.erase("deletion_scalar");
+    o.flush();
+
+    double value = 0.;
+    e["deletion_scalar_constant"][RecordComponent::SCALAR].resetDataset(Dataset(Datatype::DOUBLE, {1}));
+    e["deletion_scalar_constant"][RecordComponent::SCALAR].makeConstant(value);
+    o.flush();
+
+    e["deletion_scalar_constant"].erase(RecordComponent::SCALAR);
+    o.flush();
+
+    e.erase("deletion_scalar_constant");
+    o.flush();
+}
 #endif

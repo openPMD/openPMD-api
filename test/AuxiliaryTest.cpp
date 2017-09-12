@@ -44,7 +44,7 @@ BOOST_AUTO_TEST_CASE(string_test)
 
 BOOST_AUTO_TEST_CASE(container_default_test)
 {
-    struct S
+    struct S : public Writable
     {
         int val;
         bool written;

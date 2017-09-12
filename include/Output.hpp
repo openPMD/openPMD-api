@@ -23,6 +23,9 @@ public:
            IterationEncoding,
            Format,
            AccessType);
+    Output(std::string const& path,
+           std::string const& name,
+           bool parallel = false);
     ~Output();
 
     std::string openPMD() const;

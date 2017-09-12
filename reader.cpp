@@ -5,11 +5,8 @@
 
 int main()
 {
-    Output o = Output("../samples/git-sample/",
-                      "data00000100.h5",
-                      Output::IterationEncoding::fileBased,
-                      Format::HDF5,
-                      AccessType::READ_ONLY);
+    Output o = Output("./directory/",
+                      "data%T.h5");
 
     /*
     std::cout << "Read attributes in the root:\n";
@@ -30,7 +27,6 @@ int main()
     for( auto const& a : o.iterations.attributes() )
         std::cout << '\t' << a << '\n';
     std::cout << '\n';
-     */
 
     std::cout << "Read iterations in basePath:\n";
     for( auto const& i : o.iterations )
@@ -39,7 +35,6 @@ int main()
 
     for( auto const& i : o.iterations )
     {
-        /*
         std::cout << "Read attributes in iteration " << i.first << ":\n";
         for( auto const& val : i.second.attributes() )
             std::cout << '\t' << val << '\n';
@@ -54,7 +49,6 @@ int main()
         for( auto const& a : i.second.meshes.attributes() )
             std::cout << '\t' << a << '\n';
         std::cout << '\n';
-         */
 
         std::cout << "Read meshes in iteration " << i.first << ":\n";
         for( auto const& m : i.second.meshes )
@@ -63,7 +57,6 @@ int main()
 
         for( auto const& m : i.second.meshes )
         {
-            /*
             std::cout << "Read attributes for mesh " << m.first << " in iteration " << i.first << ":\n";
             for( auto const& val : m.second.attributes() )
                 std::cout << '\t' << val << '\n';
@@ -91,7 +84,6 @@ int main()
                       << prefix << ".unitDimension - " << unitDimension << '\n'
                       << prefix << ".timeOffset - " << m.second.timeOffset() << '\n'
                       << '\n';
-                      */
 
             std::cout << "Read recordComponents for mesh " << m.first << ":\n";
             for( auto const& rc : m.second )
@@ -100,12 +92,10 @@ int main()
 
             for( auto const& rc : m.second )
             {
-                /*
                 std::cout << "Read attributes for recordComponent " << rc.first << " for mesh " << m.first << '\n';
                 for( auto const& val : rc.second.attributes() )
                     std::cout << '\t' << val << '\n';
                 std::cout << '\n';
-                 */
 
                 std::string prefix = std::to_string(i.first) + '.' + m.first + '.' + rc.first;
                 std::string position = "";
@@ -156,6 +146,7 @@ int main()
             }
         }
     }
+     */
 
     return 0;
 }

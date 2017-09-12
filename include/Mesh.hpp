@@ -33,6 +33,7 @@ public:
     };  //DataOrder
 
     MeshRecordComponent& operator[](std::string);
+    size_type erase(std::string const& key);
 
     Geometry geometry() const;
     Mesh& setGeometry(Geometry);

@@ -16,6 +16,7 @@ class Container
         : public std::unordered_map< T_key, T >,
           public Attributable
 {
+    static_assert(std::is_base_of< Writable, T >::value, "Type of container element must be derived from Writable");
     friend class Iteration;
     friend class Output;
 
@@ -44,7 +45,10 @@ public:
         auto res = std::unordered_map< T_key, T >::find(key);
         if( res != std::unordered_map< T_key, T >::end() && res->second.written )
         {
-            // TODO delete element on disk
+            Parameter< Operation::DELETE_PATH > path_parameter;
+            path_parameter.path = ".";
+            IOHandler->enqueue(IOTask(&res->second, path_parameter));
+            IOHandler->flush();
         }
         return std::unordered_map< T_key, T >::erase(key);
     }
