@@ -23,6 +23,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 set(DEVELOPMENT "on")
 if ("${DEVELOPMENT}" STREQUAL "on")
     set(LIBOPENPMD_HDF5 "on")
+    set(LIBOPENPMD_ADIOS2 "on")
     set(LIBOPENPMD_PARALLEL "on")
 else()
     if(ENV{LIBOPENPMD_HDF5})
@@ -59,6 +60,15 @@ if (HDF5_FOUND)
     include_directories(${HDF5_INCLUDE_DIRS})
     link_directories(${HDF5_LIBRARY_DIRS})
 endif ()
+
+find_package(ADIOS2)
+if (ADIOS2_FOUND)
+    if (LIBOPENPMD_ADIOS2)
+        if (ADIOS2_HAVE_MPI AND LIBOPENPMD_PARALLEL)
+
+        endif()
+    endif()
+endif()
 
 set(CORE_SOURCE
         src/Writable.cpp

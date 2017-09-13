@@ -688,7 +688,7 @@ BOOST_AUTO_TEST_CASE(hdf5_write_test)
     std::shared_ptr< double > position_local(new double);
     e["position"]["x"].resetDataset(Dataset(determineDatatype(position_local), {4}));
 
-    for( int i = 0; i < 4; ++i )
+    for( uint64_t i = 0; i < 4; ++i )
     {
         *position_local = position_global[i];
         e["position"]["x"].storeChunk({i}, {1}, position_local);
@@ -701,7 +701,7 @@ BOOST_AUTO_TEST_CASE(hdf5_write_test)
     std::shared_ptr< uint64_t > positionOffset_local(new uint64_t);
     e["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local), {4}));
 
-    for( int i = 0; i < 4; ++i )
+    for( uint64_t i = 0; i < 4; ++i )
     {
         *positionOffset_local = positionOffset_global[i];
         e["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local);

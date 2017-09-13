@@ -24,7 +24,7 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
     int mpi_rank{-1};
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     /* only a 3x3x3 chunk of the actual data is hardcoded. every worker reads 1/3 */
-    mpi_rank %= 3;
+    uint64_t rank = mpi_rank % 3;
     Output o = Output("../samples/git-sample/",
                       "data00000100.h5",
                       Output::IterationEncoding::fileBased,
@@ -44,20 +44,20 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
                                    {-7.4578609954301101e-10, -1.1995737736469891e-10, 2.5611823772919706e-10},
                                    {-9.4806251738077663e-10, -1.5472800818372434e-10, -3.6461900165818406e-10}}};
         MeshRecordComponent& rho = o.iterations[100].meshes["rho"][MeshRecordComponent::SCALAR];
-        Offset offset{20 + mpi_rank, 20, 190};
+        Offset offset{20 + rank, 20, 190};
         Extent extent{1, 3, 3};
         auto data = rho.loadChunk< double >(offset, extent);
         double* raw_ptr = data.get();
 
         for( int j = 0; j < 3; ++j )
             for( int k = 0; k < 3; ++k )
-                BOOST_TEST(raw_ptr[j*3 + k] == actual[mpi_rank][j][k]);
+                BOOST_TEST(raw_ptr[j*3 + k] == actual[rank][j][k]);
     }
 
     {
         double constant_value = 9.1093829099999999e-31;
         RecordComponent& electrons_mass = o.iterations[100].particles["electrons"]["mass"][RecordComponent::SCALAR];
-        Offset offset{(mpi_rank+1) * 5};
+        Offset offset{(rank+1) * 5};
         Extent extent{3};
         auto data = electrons_mass.loadChunk< double >(offset, extent);
         double* raw_ptr = data.get();
@@ -69,10 +69,12 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
 
 BOOST_AUTO_TEST_CASE(hdf5_write_test)
 {
-    int mpi_size{-1};
-    int mpi_rank{-1};
-    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+    int mpi_s{-1};
+    int mpi_r{-1};
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_s);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_r);
+    uint64_t mpi_size = static_cast<uint64_t>(mpi_s);
+    uint64_t mpi_rank = static_cast<uint64_t>(mpi_r);
     Output o = Output("../samples",
                       "parallel_write.h5",
                       Output::IterationEncoding::groupBased,

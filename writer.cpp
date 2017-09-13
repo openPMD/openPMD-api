@@ -20,7 +20,7 @@ write()
     std::shared_ptr< double > position_local(new double);
     e["position"]["x"].resetDataset(Dataset(determineDatatype(position_local), {4}));
     
-    for( int i = 0; i < 4; ++i )
+    for( uint64_t i = 0; i < 4; ++i )
     {
         *position_local = position_global[i];
         e["position"]["x"].storeChunk({i}, {1}, position_local);
@@ -33,7 +33,7 @@ write()
     std::shared_ptr< uint64_t > positionOffset_local(new uint64_t);
     e["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local), {4}));
 
-    for( int i = 0; i < 4; ++i )
+    for( uint64_t i = 0; i < 4; ++i )
     {
         *positionOffset_local = positionOffset_global[i];
         e["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local);
@@ -143,12 +143,12 @@ write2()
     // this loop writes one row at a time
     double complete_dataset[2][5] = {{1,  3,  5,  7,  9},
                                      {11, 13, 15, 17, 19}};
-    for( int i = 0; i < 2; ++i )
+    for( uint64_t i = 0; i < 2; ++i )
     {
         for( int col = 0; col < 5; ++col )
             partial_dataset.get()[col] = complete_dataset[i][col];
 
-        Offset o = Offset{static_cast<unsigned long>(i), 0};
+        Offset o = Offset{i, 0};
         Extent e = Extent{1, 5};
         mesh["x"].storeChunk(o, e, partial_dataset);
         // operations between store and flush MUST NOT modify the pointed-to data

@@ -485,6 +485,7 @@ ParallelHDF5IOHandlerImpl::deleteFile(Writable* writable,
     {
         hid_t file_id = m_fileIDs[writable];
         herr_t status = H5Fclose(file_id);
+        ASSERT(status == 0, "Interal error: Failed to close HDF5 file");
 
         std::string name = m_handler->directory + parameters.at("name").get< std::string >();
         if( !ends_with(name, ".h5") )
