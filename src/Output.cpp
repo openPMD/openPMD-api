@@ -55,6 +55,8 @@ Output::Output(std::string const& path,
             if( ends_with(cleanName, ".bp") )
                 cleanName = replace_last(cleanName, ".bp", "");
             break;
+        default:
+            break;
     }
     switch( f )
     {
@@ -64,18 +66,11 @@ Output::Output(std::string const& path,
         case Format::PARALLEL_HDF5:
             IOHandler = std::make_shared<ParallelHDF5IOHandler>(cleanPath, at);
             break;
-        case Format::ADIOS:
-            IOHandler = std::make_shared<ADIOS1IOHandler>(cleanPath, at);
-            break;
-        case Format::PARALLEL_ADIOS:
-            IOHandler = std::make_shared<ParallelADIOS1IOHandler>(cleanPath, at);
-            break;
-        case Format::ADIOS2:
-            IOHandler = std::make_shared<ADIOS2IOHandler>(cleanPath, at);
-            break;
         case Format::NONE:
             IOHandler = std::make_shared<NONEIOHandler>(cleanPath, at);
             break;
+        default:
+            throw std::runtime_error("Backend not yet working");
     }
     m_name = cleanName;
     iterations.IOHandler = IOHandler;
@@ -93,8 +88,8 @@ Output::Output(std::string const& path,
             {
                 case IterationEncoding::fileBased:
                     if( !contains(m_name, "%T") )
-                        std::cerr << "Warning: fileBased Output does not have an iteration regex %T in it's name."
-                                  << " This will probably not yield the expected result.\n";
+                        std::cerr << "Warning: fileBased Output does not have an iteration regex %T in it's name ("
+                                  << m_name << "). This will probably not yield the expected result.\n";
                     setIterationFormat(m_name);
                     setAttribute("iterationEncoding", std::string("fileBased"));
                     break;

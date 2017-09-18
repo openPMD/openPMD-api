@@ -15,6 +15,9 @@ enum class IterationEncoding
     fileBased, groupBased
 };  //IterationEncoding
 
+/**
+ *
+ */
 class Output : public Attributable
 {
 public:

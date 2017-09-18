@@ -10,9 +10,9 @@
 
 BOOST_AUTO_TEST_CASE(output_default_test)
 {
-    using IE = Output::IterationEncoding;
+    using IE = IterationEncoding;
     Output o = Output("./",
-                      "new_openpmd_output",
+                      "new_openpmd_output_%T",
                       IE::fileBased,
                       Format::NONE,
                       AccessType::CREAT);
@@ -26,14 +26,16 @@ BOOST_AUTO_TEST_CASE(output_default_test)
     BOOST_TEST(o.iterationFormat() == "new_openpmd_output_%T");
     BOOST_TEST(o.iterations.size() == 0);
     BOOST_TEST(o.numAttributes() == 7); /* openPMD, openPMDextension, basePath, meshesPath, particlesPath, iterationEncoding, iterationFormat */
-    BOOST_TEST(o.name() == "new_openpmd_output");
+    BOOST_TEST(o.name() == "new_openpmd_output_%T");
+
+    o.iterations[0];
 }
 
 BOOST_AUTO_TEST_CASE(output_constructor_test)
 {
-    using IE = Output::IterationEncoding;
+    using IE = IterationEncoding;
     Output o1 = Output("./",
-                      "MyOutput",
+                      "MyOutput_%T",
                       IE::fileBased,
                       Format::NONE,
                       AccessType::CREAT);
@@ -47,7 +49,9 @@ BOOST_AUTO_TEST_CASE(output_constructor_test)
     BOOST_TEST(o1.iterationFormat() == "MyOutput_%T");
     BOOST_TEST(o1.iterations.size() == 0);
     BOOST_TEST(o1.numAttributes() == 7); /* openPMD, openPMDextension, basePath, meshesPath, particlesPath, iterationEncoding, iterationFormat */
-    BOOST_TEST(o1.name() == "MyOutput");
+    BOOST_TEST(o1.name() == "MyOutput_%T");
+
+    o1.iterations[0];
 
     Output o2 = Output("./",
                        "MyCustomOutput",
@@ -71,9 +75,9 @@ BOOST_AUTO_TEST_CASE(output_constructor_test)
 
 BOOST_AUTO_TEST_CASE(output_modification_test)
 {
-    using IE = Output::IterationEncoding;
+    using IE = IterationEncoding;
     Output o = Output("./",
-                      "MyOutput",
+                      "MyOutput_%T",
                       IE::fileBased,
                       Format::NONE,
                       AccessType::CREAT);
@@ -96,21 +100,22 @@ BOOST_AUTO_TEST_CASE(output_modification_test)
     o.setName("MyOutput");
     BOOST_TEST(o.name() == "MyOutput");
 
+    o.iterations[0];
 }
 
 BOOST_AUTO_TEST_CASE(iteration_default_test)
 {
-    using IE = Output::IterationEncoding;
+    using IE = IterationEncoding;
     Output o = Output("./",
-                      "MyOutput",
+                      "MyOutput_%T",
                       IE::fileBased,
                       Format::NONE,
                       AccessType::CREAT);
 
     Iteration& i = o.iterations[42];
 
-    BOOST_TEST(i.time< float >() == static_cast<float>(0));
-    BOOST_TEST(i.dt< float >() == static_cast<float>(1));
+    BOOST_TEST(i.time< double >() == static_cast<double>(0));
+    BOOST_TEST(i.dt< double >() == static_cast<double>(1));
     BOOST_TEST(i.timeUnitSI() == static_cast<double>(1));
     BOOST_TEST(i.numAttributes() == 3);
     BOOST_TEST(i.meshes.size() == 0);
@@ -119,9 +124,9 @@ BOOST_AUTO_TEST_CASE(iteration_default_test)
 
 BOOST_AUTO_TEST_CASE(iteration_modification_test)
 {
-    using IE = Output::IterationEncoding;
+    using IE = IterationEncoding;
     Output o = Output("./",
-                      "MyOutput",
+                      "MyOutput_%T",
                       IE::fileBased,
                       Format::NONE,
                       AccessType::CREAT);
@@ -143,9 +148,9 @@ BOOST_AUTO_TEST_CASE(iteration_modification_test)
 
 BOOST_AUTO_TEST_CASE(record_constructor_test)
 {
-    using IE = Output::IterationEncoding;
+    using IE = IterationEncoding;
     Output o = Output("./",
-                      "MyOutput",
+                      "MyOutput_%T",
                       IE::fileBased,
                       Format::NONE,
                       AccessType::CREAT);
@@ -170,9 +175,9 @@ BOOST_AUTO_TEST_CASE(record_constructor_test)
 
 BOOST_AUTO_TEST_CASE(record_modification_test)
 {
-    using IE = Output::IterationEncoding;
+    using IE = IterationEncoding;
     Output o = Output("./",
-                      "MyOutput",
+                      "MyOutput_%T",
                       IE::fileBased,
                       Format::NONE,
                       AccessType::CREAT);
@@ -199,9 +204,9 @@ BOOST_AUTO_TEST_CASE(record_modification_test)
 
 BOOST_AUTO_TEST_CASE(recordComponent_modification_test)
 {
-    using IE = Output::IterationEncoding;
+    using IE = IterationEncoding;
     Output o = Output("./",
-                      "MyOutput",
+                      "MyOutput_%T",
                       IE::fileBased,
                       Format::NONE,
                       AccessType::CREAT);
@@ -222,9 +227,9 @@ BOOST_AUTO_TEST_CASE(recordComponent_modification_test)
 
 BOOST_AUTO_TEST_CASE(mesh_constructor_test)
 {
-    using IE = Output::IterationEncoding;
+    using IE = IterationEncoding;
     Output o = Output("./",
-                      "MyOutput",
+                      "MyOutput_%T",
                       IE::fileBased,
                       Format::NONE,
                       AccessType::CREAT);
@@ -255,9 +260,9 @@ BOOST_AUTO_TEST_CASE(mesh_constructor_test)
 
 BOOST_AUTO_TEST_CASE(mesh_modification_test)
 {
-    using IE = Output::IterationEncoding;
+    using IE = IterationEncoding;
     Output o = Output("./",
-                      "MyOutput",
+                      "MyOutput_%T",
                       IE::fileBased,
                       Format::NONE,
                       AccessType::CREAT);
@@ -300,7 +305,7 @@ BOOST_AUTO_TEST_CASE(mesh_modification_test)
 BOOST_AUTO_TEST_CASE(structure_test)
 {
     Output o = Output("./",
-                      "new_openpmd_output",
+                      "new_openpmd_output_%T",
                       IterationEncoding::fileBased,
                       Format::NONE,
                       AccessType::CREAT);

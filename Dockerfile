@@ -44,15 +44,13 @@ RUN        cd $HOME/src \
            && make install -s -j4 2> /dev/null
 
 # build ADIOS
-RUN        cd $HOME/src \
-           && wget -nv -O adios.tar.gz http://users.nccs.gov/~pnorbert/adios-1.12.0.tar.gz \
-           && tar -xzf adios.tar.gz \
-           && cd adios-1.12.0 \
-           && mkdir -p build \
-           && cd build \
-           && CFLAGS="$CFLAGS -fPIC" ./configure --silent --enable-shared --prefix=/usr --with-mpi=/usr --disable-fortran
-           && make -j4 \
-           && make install -j4
+#RUN        cd $HOME/src \
+#           && wget -nv -O adios.tar.gz http://users.nccs.gov/~pnorbert/adios-1.12.0.tar.gz \
+#           && tar -xzf adios.tar.gz \
+#           && cd adios-1.12.0 \
+#           && CFLAGS="$CFLAGS -fPIC" ./configure --silent --enable-shared --prefix=/usr --with-mpi=/usr --disable-fortran \
+#           && make -j4 \
+#           && make install -j4
 
 # build ADIOS2
 #RUN        cd $HOME/src \
