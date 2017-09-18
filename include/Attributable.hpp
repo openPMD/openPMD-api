@@ -292,11 +292,15 @@ Attributable::readFloatingpoint(std::string const& key) const
 
     T t{0};
     Attribute a = getAttribute(key);
-    Datatype target_dtype = determineDatatype(T());
+    Datatype target_dtype = determineDatatype< T >();
     if( a.dtype == target_dtype )
         t = a.get< T >();
     else
     {
+        std::cerr << "Warning: Attribute '" << key
+                  << "' stored as " << a.dtype
+                  << ", requested as " << target_dtype
+                  << ". Casting unconditionally with possible loss of precision.\n";
         using DT = Datatype;
         switch( a.dtype )
         {
@@ -321,11 +325,15 @@ Attributable::readVectorFloatingpoint(std::string const& key) const
 
     std::vector< T > vt{};
     Attribute a = getAttribute(key);
-    Datatype target_dtype = determineDatatype(T());
+    Datatype target_dtype = determineDatatype< std::vector< T > >();
     if( a.dtype == target_dtype )
         vt = a.get< std::vector< T > >();
     else
     {
+        std::cerr << "Warning: Attribute '" << key
+                  << "' stored as " << a.dtype
+                  << ", requested as " << target_dtype
+                  << ". Casting unconditionally with possible loss of precision.\n";
         using DT = Datatype;
         switch( a.dtype )
         {

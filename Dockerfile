@@ -43,6 +43,17 @@ RUN        cd $HOME/src \
            && make -s -j4 2> /dev/null \
            && make install -s -j4 2> /dev/null
 
+# build ADIOS
+RUN        cd $HOME/src \
+           && wget -nv -O adios.tar.gz http://users.nccs.gov/~pnorbert/adios-1.12.0.tar.gz \
+           && tar -xzf adios.tar.gz \
+           && cd adios-1.12.0 \
+           && mkdir -p build \
+           && cd build \
+           && CFLAGS="$CFLAGS -fPIC" ./configure --silent --enable-shared --prefix=/usr --with-mpi=/usr --disable-fortran
+           && make -j4 \
+           && make install -j4
+
 # build ADIOS2
 #RUN        cd $HOME/src \
 #           && git clone https://github.com/ornladios/adios2.git \
@@ -51,7 +62,7 @@ RUN        cd $HOME/src \
 #           && cd build \
 #           && cmake .. -DCMAKE_INSTALL_PREFIX=/usr \
 #           && make -j4 \
-#           && make install -4
+#           && make install -j4
 
 # build executables (proof-of-concept)
 RUN        cd $HOME/src/libopenPMD \
@@ -84,6 +95,7 @@ RUN        cd $HOME/src/libopenPMD/bin \
            && ./libopenpmdCoreTests \
            && ./libopenpmdAuxiliaryTests \
            && ./libopenpmdSerialIOTests \
-           && runuser -l test -c 'cd $HOME/src/libopenPMD/bin && mpiexec --map-by ppr:1:core $HOME/src/libopenPMD/bin/libopenpmdParallelIOTests'
+           && chmod 777 $HOME/src/libopenPMD/samples/ \
+           && runuser -l test -c 'cd $HOME/src/libopenPMD/bin && mpiexec --map-by ppr:1:core ./libopenpmdParallelIOTests'
 
 

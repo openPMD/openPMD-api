@@ -301,7 +301,7 @@ BOOST_AUTO_TEST_CASE(structure_test)
 {
     Output o = Output("./",
                       "new_openpmd_output",
-                      Output::IterationEncoding::fileBased,
+                      IterationEncoding::fileBased,
                       Format::NONE,
                       AccessType::CREAT);
 

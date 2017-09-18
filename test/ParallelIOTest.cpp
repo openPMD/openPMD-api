@@ -5,7 +5,7 @@
 #define BOOST_TEST_MODULE libopenpmd_parallel_io_test
 
 #include <boost/test/included/unit_test.hpp>
-#ifdef LIBOPENPMD_WITH_PARALLEL_HDF5
+#if defined(LIBOPENPMD_WITH_PARALLEL_HDF5) ||defined(LIBOPENPMD_WITH_PARALLEL_ADIOS1)
 #include <mpi.h>
 
 #include "../include/Output.hpp"
@@ -18,7 +18,17 @@ int main(int argc, char *argv[])
     MPI::Finalize();
     return result;
 }
+#else
+int main(int argc, char *argv[])
+{
+    return boost::unit_test::unit_test_main(&init_unit_test_suite, argc, argv);
+}
 
+BOOST_AUTO_TEST_CASE(none)
+{ }
+#endif
+
+#ifdef LIBOPENPMD_WITH_PARALLEL_HDF5
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
 {
     int mpi_rank{-1};
@@ -26,8 +36,8 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
     /* only a 3x3x3 chunk of the actual data is hardcoded. every worker reads 1/3 */
     uint64_t rank = mpi_rank % 3;
     Output o = Output("../samples/git-sample/",
-                      "data00000100.h5",
-                      Output::IterationEncoding::fileBased,
+                      "data00000100",
+                      IterationEncoding::fileBased,
                       Format::PARALLEL_HDF5,
                       AccessType::READ_ONLY);
 
@@ -76,8 +86,8 @@ BOOST_AUTO_TEST_CASE(hdf5_write_test)
     uint64_t mpi_size = static_cast<uint64_t>(mpi_s);
     uint64_t mpi_rank = static_cast<uint64_t>(mpi_r);
     Output o = Output("../samples",
-                      "parallel_write.h5",
-                      Output::IterationEncoding::groupBased,
+                      "parallel_write",
+                      IterationEncoding::groupBased,
                       Format::PARALLEL_HDF5,
                       AccessType::CREAT);
 
@@ -104,12 +114,14 @@ BOOST_AUTO_TEST_CASE(hdf5_write_test)
 
     o.flush();
 }
-#else
-int main(int argc, char *argv[])
+#endif
+#ifdef LIBOPENPMD_WITH_PARALLEL_ADIOS1
+BOOST_AUTO_TEST_CASE(adios_wrtie_test)
 {
-    return boost::unit_test::unit_test_main(&init_unit_test_suite, argc, argv);
+    Output o = Output("../samples",
+                      "parallel_write",
+                      IterationEncoding::groupBased,
+                      Format::PARALLEL_ADIOS,
+                      AccessType::CREAT);
 }
-
-BOOST_AUTO_TEST_CASE(none)
-{ }
 #endif

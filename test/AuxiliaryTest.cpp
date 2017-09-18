@@ -31,14 +31,20 @@ BOOST_AUTO_TEST_CASE(string_test)
     BOOST_TEST("String" == replace_first("string", "s", "S"));
     BOOST_TEST("sTRING" == replace_first("string", "tring", "TRING"));
     BOOST_TEST("string" == replace_first("string", " ", "_"));
+    BOOST_TEST("strinGstringstring" == replace_first("stringstringstring", "g", "G"));
+    BOOST_TEST("#stringstring" == replace_first("stringstringstring", "string", "#"));
+
+    BOOST_TEST("stringstringstrinG" == replace_last("stringstringstring", "g", "G"));
+    BOOST_TEST("stringstring#" == replace_last("stringstringstring", "string", "#"));
 
     BOOST_TEST("/normal/path" == replace_all("////normal//////path", "//", "/"));
 
     std::vector< std::string > expected1{"0", "string", " ",  "1234", "te st"};
     std::vector< std::string > expected2{"0_DELIM_", "string_DELIM_", " _DELIM_",  "1234_DELIM_", "te st_DELIM_"};
     std::vector< std::string > expected3{"path", "to", "relevant", "data"};
-    BOOST_TEST(expected1 == split("_DELIM_0_DELIM_string_DELIM_ _DELIM_1234_DELIM_te st_DELIM_", "_DELIM_", false));
-    BOOST_TEST(expected2 == split("_DELIM_0_DELIM_string_DELIM_ _DELIM_1234_DELIM_te st_DELIM_", "_DELIM_", true));
+    std::string s2 = "_DELIM_0_DELIM_string_DELIM_ _DELIM_1234_DELIM_te st_DELIM_";
+    BOOST_TEST(expected1 == split(s2, "_DELIM_", false));
+    BOOST_TEST(expected2 == split(s2, "_DELIM_", true));
     BOOST_TEST(expected3 == split("/path/to/relevant/data/", "/"));
 }
 

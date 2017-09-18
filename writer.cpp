@@ -1,4 +1,5 @@
 #include <iostream>
+#include <boost/filesystem.hpp>
 
 #include "include/Output.hpp"
 
@@ -8,7 +9,7 @@ write()
 {
     Output o = Output("../samples",
                       "serial_write.h5",
-                      Output::IterationEncoding::groupBased,
+                      IterationEncoding::groupBased,
                       Format::HDF5,
                       AccessType::CREAT);
 
@@ -48,7 +49,7 @@ write2()
 {
     Output f("./working/directory/",
              "2D_simData",
-             Output::IterationEncoding::groupBased,
+             IterationEncoding::groupBased,
              Format::HDF5,
              AccessType::CREAT);
 
@@ -165,9 +166,19 @@ write2()
 }
 
 
+void
+w()
+{
+    Output o = Output("../samples",
+                      "serial_write%T",
+                      IterationEncoding::groupBased,
+                      Format::ADIOS,
+                      AccessType::CREAT);
+}
+
 int
 main()
 {
-    write();
+    w();
     return 0;
 }

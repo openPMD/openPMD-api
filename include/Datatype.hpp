@@ -2,6 +2,8 @@
 
 #include <iosfwd>
 #include <memory>
+#include <vector>
+
 
 enum class Datatype : int
 {
@@ -43,8 +45,22 @@ struct decay_equiv :
 
 template< typename T >
 Datatype
-determineDatatype(T)
+determineDatatype()
 {
+    using DT = Datatype;
+    if( decay_equiv< T, double >::value ) { return DT::DOUBLE; }
+    if( decay_equiv< T, std::vector< double > >::value ) { return DT::VEC_DOUBLE; }
+    if( decay_equiv< T, float >::value ) { return  DT::FLOAT; }
+    if( decay_equiv< T, std::vector< float > >::value ) { return  DT::VEC_FLOAT; }
+    if( decay_equiv< T, int16_t >::value ) { return  DT::INT16; }
+    if( decay_equiv< T, int32_t >::value ) { return  DT::INT32; }
+    if( decay_equiv< T, int64_t >::value ) { return  DT::INT64; }
+    if( decay_equiv< T, uint16_t >::value ) { return  DT::UINT16; }
+    if( decay_equiv< T, uint32_t >::value ) { return  DT::UINT32; }
+    if( decay_equiv< T, uint64_t >::value ) { return  DT::UINT64; }
+    if( decay_equiv< T, char >::value ) { return  DT::CHAR; }
+    if( decay_equiv< T, unsigned char >::value ) { return  DT::UCHAR; }
+    if( decay_equiv< T, bool >::value ) { return  DT::BOOL; }
     return Datatype::UNDEFINED;
 }
 

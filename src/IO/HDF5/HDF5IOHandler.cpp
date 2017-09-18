@@ -1,68 +1,18 @@
-#include "IO/HDF5/HDF5IOHandler.hpp"
+#include <IO/HDF5/HDF5IOHandler.hpp>
 #ifdef LIBOPENPMD_WITH_HDF5
 #include <iostream>
-#include <unordered_map>
-#include <unordered_set>
 
 #include <boost/filesystem.hpp>
 
-#include "Auxiliary.hpp"
-#include "Attribute.hpp"
-#include "IO/IOTask.hpp"
-#include "IO/HDF5/HDF5Auxiliary.hpp"
-#include "IO/HDF5/HDF5FilePosition.hpp"
+#include <Auxiliary.hpp>
+#include <Attribute.hpp>
+#include <IO/IOTask.hpp>
+#include <IO/HDF5/HDF5Auxiliary.hpp>
+#include <IO/HDF5/HDF5FilePosition.hpp>
 
 
 #define ASSERT(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error(std::string((TEXT))); }
 
-
-class HDF5IOHandlerImpl
-{
-public:
-    HDF5IOHandlerImpl(HDF5IOHandler*);
-    virtual ~HDF5IOHandlerImpl();
-
-    std::future< void > flush();
-
-    void createFile(Writable*,
-                    std::map< std::string, Argument > const&);
-    void createPath(Writable*,
-                    std::map< std::string, Argument > const&);
-    void createDataset(Writable *,
-                       std::map< std::string, Argument > const&);
-    void openFile(Writable*,
-                  std::map< std::string, Argument > const&);
-    void openPath(Writable*,
-                  std::map< std::string, Argument > const&);
-    void openDataset(Writable*,
-                     std::map< std::string, Argument > &);
-    void deleteFile(Writable*,
-                    std::map< std::string, Argument > const&);
-    void deletePath(Writable*,
-                    std::map< std::string, Argument > const&);
-    void deleteDataset(Writable*,
-                       std::map< std::string, Argument > const&);
-    void deleteAttribute(Writable*,
-                         std::map< std::string, Argument > const&);
-    void writeDataset(Writable*,
-                      std::map< std::string, Argument > const&);
-    void writeAttribute(Writable*,
-                        std::map< std::string, Argument > const&);
-    void readDataset(Writable*,
-                     std::map< std::string, Argument > &);
-    void readAttribute(Writable*,
-                       std::map< std::string, Argument > &);
-    void listPaths(Writable*,
-                   std::map< std::string, Argument > &);
-    void listDatasets(Writable*,
-                      std::map< std::string, Argument > &);
-    void listAttributes(Writable*,
-                        std::map< std::string, Argument > &);
-
-    HDF5IOHandler* m_handler;
-    std::unordered_map< Writable*, hid_t > m_fileIDs;
-    std::unordered_set< hid_t > m_openFileIDs;
-};  //HDF5IOHandlerImpl
 
 HDF5IOHandler::HDF5IOHandler(std::string const& path, AccessType at)
         : AbstractIOHandler(path, at),
@@ -78,18 +28,36 @@ HDF5IOHandler::flush()
     return m_impl->flush();
 }
 
-HDF5IOHandlerImpl::HDF5IOHandlerImpl(HDF5IOHandler* handler)
-        : m_handler{handler}
-{ }
+HDF5IOHandlerImpl::HDF5IOHandlerImpl(AbstractIOHandler* handler)
+        : m_datasetTransferProperty{H5P_DEFAULT},
+          m_fileAccessProperty{H5P_DEFAULT},
+          m_H5T_BOOL_ENUM{H5Tenum_create(H5T_NATIVE_INT8)},
+          m_handler{handler}
+{
+    std::string t{"TRUE"};
+    std::string f{"FALSE"};
+    int64_t tVal = 1;
+    int64_t fVal = 0;
+    herr_t status;
+    status = H5Tenum_insert(m_H5T_BOOL_ENUM, t.c_str(), &tVal);
+    ASSERT(status == 0, "Interal error: Failed to insert into HDF5 enum");
+    status = H5Tenum_insert(m_H5T_BOOL_ENUM, f.c_str(), &fVal);
+    ASSERT(status == 0, "Interal error: Failed to insert into HDF5 enum");
+}
 
 HDF5IOHandlerImpl::~HDF5IOHandlerImpl()
 {
     herr_t status;
-    for( auto& file : m_openFileIDs )
+    status = H5Tclose(m_H5T_BOOL_ENUM);
+    if( status != 0 )
+        std::cerr << "Internal error: Failed to close HDF5 enum\n";
+    while( !m_openFileIDs.empty() )
     {
-        status = H5Fclose(file);
+        auto file = m_openFileIDs.begin();
+        status = H5Fclose(*file);
         if( status != 0 )
-            std::cerr << "Internal error: Unable to close HDF5 file\n";
+            std::cerr << "Internal error: Failed to close HDF5 file\n";
+        m_openFileIDs.erase(file);
     }
 }
 
@@ -184,7 +152,7 @@ HDF5IOHandlerImpl::createFile(Writable* writable,
         hid_t id = H5Fcreate(name.c_str(),
                              H5F_ACC_TRUNC,
                              H5P_DEFAULT,
-                             H5P_DEFAULT);
+                             m_fileAccessProperty);
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared< HDF5FilePosition >("/");
@@ -213,7 +181,7 @@ HDF5IOHandlerImpl::createPath(Writable* writable,
         auto res = m_fileIDs.find(writable);
         if( res == m_fileIDs.end() )
             res = m_fileIDs.find(writable->parent);
-        hid_t node_id = H5Oopen(res->second,
+        hid_t node_id = H5Gopen(res->second,
                                 concrete_h5_file_position(writable).c_str(),
                                 H5P_DEFAULT);
 
@@ -263,7 +231,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         auto res = m_fileIDs.find(writable);
         if( res == m_fileIDs.end() )
             res = m_fileIDs.find(writable->parent);
-        hid_t node_id = H5Oopen(res->second,
+        hid_t node_id = H5Gopen(res->second,
                                 concrete_h5_file_position(writable).c_str(),
                                 H5P_DEFAULT);
 
@@ -288,8 +256,11 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
                                    H5P_DEFAULT,
                                    H5P_DEFAULT);
 
-        H5Dclose(group_id);
-        H5Oclose(node_id);
+        herr_t status;
+        status = H5Dclose(group_id);
+        ASSERT(status == 0, "Internal error: Failed to close HDF5 dataset during dataset creation");
+        status = H5Gclose(node_id);
+        ASSERT(status == 0, "Internal error: Failed to close HDF5 group during dataset creation");
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared< HDF5FilePosition >(name);
@@ -312,18 +283,17 @@ HDF5IOHandlerImpl::openFile(Writable* writable,
         name += ".h5";
 
     unsigned flags;
-    if( m_handler->accessType == AccessType::READ_ONLY )
+    AccessType at = m_handler->accessType;
+    if( at == AccessType::READ_ONLY )
         flags = H5F_ACC_RDONLY;
-    else if( m_handler->accessType == AccessType::READ_WRITE )
+    else if( at == AccessType::READ_WRITE )
         flags = H5F_ACC_RDWR;
-    else if( m_handler->accessType == AccessType::CREAT )
-        flags = H5F_ACC_CREAT;
     else
         throw std::runtime_error("Unknown file AccessType");
     hid_t file_id;
     file_id = H5Fopen(name.c_str(),
                       flags,
-                      H5P_DEFAULT);
+                      m_fileAccessProperty);
 
     writable->written = true;
     writable->abstractFilePosition = std::make_shared< HDF5FilePosition >("/");
@@ -357,8 +327,11 @@ HDF5IOHandlerImpl::openPath(Writable* writable,
                       path.c_str(),
                       H5P_DEFAULT);
 
-    H5Gclose(path_id);
-    H5Gclose(node_id);
+    herr_t status;
+    status = H5Gclose(path_id);
+    ASSERT(status == 0, "Internal error: Failed to close HDF5 group during path opening");
+    status = H5Gclose(node_id);
+    ASSERT(status == 0, "Internal error: Failed to close HDF5 group during path opening");
 
     writable->written = true;
     writable->abstractFilePosition = std::make_shared< HDF5FilePosition >(path);
@@ -444,8 +417,11 @@ HDF5IOHandlerImpl::openDataset(Writable* writable,
     auto extent = parameters.at("extent").get< std::shared_ptr< Extent > >();
     *extent = e;
 
-    H5Dclose(dataset_id);
-    H5Gclose(node_id);
+    herr_t status;
+    status = H5Dclose(dataset_id);
+    ASSERT(status == 0, "Internal error: Failed to close HDF5 dataset during dataset opening");
+    status = H5Gclose(node_id);
+    ASSERT(status == 0, "Internal error: Failed to close HDF5 group during dataset opening");
 
     writable->written = true;
     writable->abstractFilePosition = std::make_shared< HDF5FilePosition >(name);
@@ -464,7 +440,7 @@ HDF5IOHandlerImpl::deleteFile(Writable* writable,
     {
         hid_t file_id = m_fileIDs[writable];
         herr_t status = H5Fclose(file_id);
-        ASSERT(status == 0, "Interal error: Failed to close HDF5 file");
+        ASSERT(status == 0, "Interal error: Failed to close HDF5 file during file deletion");
 
         std::string name = m_handler->directory + parameters.at("name").get< std::string >();
         if( !ends_with(name, ".h5") )
@@ -501,7 +477,6 @@ HDF5IOHandlerImpl::deletePath(Writable* writable,
         if( !ends_with(path, "/") )
             path += '/';
 
-
         /* Open H5Object to delete in
          * Ugly hack: H5Ldelete can't delete "."
          *            Work around this by deleting from the parent
@@ -509,7 +484,7 @@ HDF5IOHandlerImpl::deletePath(Writable* writable,
         auto res = m_fileIDs.find(writable);
         if( res == m_fileIDs.end() )
             res = m_fileIDs.find(writable->parent);
-        hid_t node_id = H5Oopen(res->second,
+        hid_t node_id = H5Gopen(res->second,
                                 concrete_h5_file_position(writable->parent).c_str(),
                                 H5P_DEFAULT);
 
@@ -519,8 +494,8 @@ HDF5IOHandlerImpl::deletePath(Writable* writable,
                                   H5P_DEFAULT);
         ASSERT(status == 0, "Internal error: Failed to delete HDF5 group");
 
-        status = H5Oclose(node_id);
-        ASSERT(status == 0, "Internal error: Failed to close HDF5 object");
+        status = H5Gclose(node_id);
+        ASSERT(status == 0, "Internal error: Failed to close HDF5 group during path deletion");
 
         writable->written = false;
         writable->abstractFilePosition.reset();
@@ -552,7 +527,7 @@ HDF5IOHandlerImpl::deleteDataset(Writable* writable,
         auto res = m_fileIDs.find(writable);
         if( res == m_fileIDs.end() )
             res = m_fileIDs.find(writable->parent);
-        hid_t node_id = H5Oopen(res->second,
+        hid_t node_id = H5Gopen(res->second,
                                 concrete_h5_file_position(writable->parent).c_str(),
                                 H5P_DEFAULT);
 
@@ -562,8 +537,8 @@ HDF5IOHandlerImpl::deleteDataset(Writable* writable,
                                   H5P_DEFAULT);
         ASSERT(status == 0, "Internal error: Failed to delete HDF5 group");
 
-        status = H5Oclose(node_id);
-        ASSERT(status == 0, "Internal error: Failed to close HDF5 object");
+        status = H5Gclose(node_id);
+        ASSERT(status == 0, "Internal error: Failed to close HDF5 group during dataset deletion");
 
         writable->written = false;
         writable->abstractFilePosition.reset();
@@ -577,7 +552,7 @@ HDF5IOHandlerImpl::deleteAttribute(Writable* writable,
                                    std::map< std::string, Argument > const& parameters)
 {
     if( m_handler->accessType == AccessType::READ_ONLY )
-        throw std::runtime_error("Deleting a path in a file opened as read only is not possible.");
+        throw std::runtime_error("Deleting an attribute in a file opened as read only is not possible.");
 
     if( writable->written )
     {
@@ -596,7 +571,7 @@ HDF5IOHandlerImpl::deleteAttribute(Writable* writable,
         ASSERT(status == 0, "Internal error: Failed to delete HDF5 attribute");
 
         status = H5Oclose(node_id);
-        ASSERT(status == 0, "Internal error: Failed to close HDF5 object");
+        ASSERT(status == 0, "Internal error: Failed to close HDF5 group during attribute deletion");
     }
 }
 
@@ -630,7 +605,7 @@ HDF5IOHandlerImpl::writeDataset(Writable* writable,
                                  stride.data(),
                                  count.data(),
                                  block.data());
-    ASSERT(status == 0, "Internal error: Failed to select hyperslab");
+    ASSERT(status == 0, "Internal error: Failed to select hyperslab during dataset write");
 
     std::shared_ptr< void > data = parameters.at("data").get< std::shared_ptr< void > >();
 
@@ -654,7 +629,7 @@ HDF5IOHandlerImpl::writeDataset(Writable* writable,
                               getH5DataType(a),
                               memspace,
                               filespace,
-                              H5P_DEFAULT,
+                              m_datasetTransferProperty,
                               data.get());
             ASSERT(status == 0, "Internal error: Failed to write dataset " + concrete_h5_file_position(writable));
             break;
@@ -666,14 +641,14 @@ HDF5IOHandlerImpl::writeDataset(Writable* writable,
             throw std::runtime_error("Datatype not implemented in HDF5 IO");
     }
     status = H5Dclose(dataset_id);
-    ASSERT(status == 0, "Internal error: Failed to close dataset " + concrete_h5_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to close dataset " + concrete_h5_file_position(writable) + " during dataset write");
 
     m_fileIDs.insert({writable, res->second});
 }
 
 void
 HDF5IOHandlerImpl::writeAttribute(Writable* writable,
-                                  std::map< std::string, Argument > const& parameters)
+                                          std::map< std::string, Argument > const& parameters)
 {
     auto res = m_fileIDs.find(writable);
     if( res == m_fileIDs.end() )
@@ -684,11 +659,17 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
                       H5P_DEFAULT);
     std::string name = parameters.at("name").get< std::string >();
     Attribute const att(parameters.at("attribute").get< Attribute::resource >());
+    Datatype dtype = parameters.at("dtype").get< Datatype >();
     if( H5Aexists(node_id, name.c_str()) == 0 )
     {
+        hid_t dataType;
+        if( dtype == Datatype::BOOL )
+            dataType = m_H5T_BOOL_ENUM;
+        else
+            dataType = getH5DataType(att);
         attribute_id = H5Acreate(node_id,
                                  name.c_str(),
-                                 getH5DataType(att),
+                                 dataType,
                                  getH5DataSpace(att),
                                  H5P_DEFAULT,
                                  H5P_DEFAULT);
@@ -701,7 +682,7 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
 
     herr_t status;
     using DT = Datatype;
-    switch( parameters.at("dtype").get< Datatype >() )
+    switch( dtype )
     {
         case DT::CHAR:
         {
@@ -810,7 +791,7 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
         case DT::BOOL:
         {
             bool b = att.get< bool >();
-            status = H5Awrite(attribute_id, getH5DataType(att), &b);
+            status = H5Awrite(attribute_id, m_H5T_BOOL_ENUM, &b);
             break;
         }
         case DT::UNDEFINED:
@@ -820,9 +801,9 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
     ASSERT(status == 0, "Internal error: Failed to write attribute " + name + " at " + concrete_h5_file_position(writable));
 
     status = H5Aclose(attribute_id);
-    ASSERT(status == 0, "Internal error: Failed to close attribute " + name + " at " + concrete_h5_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to close attribute " + name + " at " + concrete_h5_file_position(writable) + " during attribute write");
     status = H5Oclose(node_id);
-    ASSERT(status == 0, "Internal error: Failed to close " + concrete_h5_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to close " + concrete_h5_file_position(writable) + " during attribute write");
 
     m_fileIDs.insert({writable, res->second});
 }
@@ -856,7 +837,7 @@ HDF5IOHandlerImpl::readDataset(Writable* writable,
                                  stride.data(),
                                  count.data(),
                                  block.data());
-    ASSERT(status == 0, "Internal error: Failed to select hyperslab");
+    ASSERT(status == 0, "Internal error: Failed to select hyperslab during dataset read");
 
     void* data = parameters.at("data").get< void* >();
 
@@ -888,10 +869,10 @@ HDF5IOHandlerImpl::readDataset(Writable* writable,
                      getH5DataType(a),
                      memspace,
                      filespace,
-                     H5P_DEFAULT,
+                     m_datasetTransferProperty,
                      data);
 
-    H5Dclose(dataset_id);
+    status = H5Dclose(dataset_id);
 }
 
 void
@@ -1080,9 +1061,9 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
     *resource = a.getResource();
 
     status = H5Aclose(attr_id);
-    ASSERT(status == 0, "Internal error: Failed to close attribute " + attr_name + " at " + concrete_h5_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to close attribute " + attr_name + " at " + concrete_h5_file_position(writable) + " during attribute read");
     status = H5Oclose(obj_id);
-    ASSERT(status == 0, "Internal error: Failed to close " + concrete_h5_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to close " + concrete_h5_file_position(writable) + " during attribute read");
 }
 
 void
@@ -1098,7 +1079,7 @@ HDF5IOHandlerImpl::listPaths(Writable* writable,
 
     H5G_info_t group_info;
     herr_t status = H5Gget_info(node_id, &group_info);
-    ASSERT(status == 0, "Internal error: Failed to open HDF5 group " + concrete_h5_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to get HDF5 group info for " + concrete_h5_file_position(writable) + " during path listing");
 
     auto paths = parameters.at("paths").get< std::shared_ptr< std::vector< std::string > > >();
     for( hsize_t i = 0; i < group_info.nlinks; ++i )
@@ -1113,7 +1094,7 @@ HDF5IOHandlerImpl::listPaths(Writable* writable,
     }
 
     status = H5Gclose(node_id);
-    ASSERT(status == 0, "Internal error: Failed to close HDF5 group " + concrete_h5_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to close HDF5 group " + concrete_h5_file_position(writable) + " during path listing");
 }
 
 void
@@ -1129,7 +1110,7 @@ HDF5IOHandlerImpl::listDatasets(Writable* writable,
 
     H5G_info_t group_info;
     herr_t status = H5Gget_info(node_id, &group_info);
-    ASSERT(status == 0, "Internal error: Failed to open HDF5 group " + concrete_h5_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to get HDF5 group info for " + concrete_h5_file_position(writable) + " during dataset listing");
 
     auto datasets = parameters.at("datasets").get< std::shared_ptr< std::vector< std::string > > >();
     for( hsize_t i = 0; i < group_info.nlinks; ++i )
@@ -1144,7 +1125,7 @@ HDF5IOHandlerImpl::listDatasets(Writable* writable,
     }
 
     status = H5Gclose(node_id);
-    ASSERT(status == 0, "Internal error: Failed to close HDF5 group " + concrete_h5_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to close HDF5 group " + concrete_h5_file_position(writable) + " during dataset listing");
 }
 
 void HDF5IOHandlerImpl::listAttributes(Writable* writable,
@@ -1161,7 +1142,7 @@ void HDF5IOHandlerImpl::listAttributes(Writable* writable,
     H5O_info_t object_info;
     herr_t status;
     status = H5Oget_info(node_id, &object_info);
-    ASSERT(status == 0, "Internal error: Failed to get info for object " + concrete_h5_file_position(writable));
+    ASSERT(status == 0, "Internal error: Failed to get HDF5 object info for " + concrete_h5_file_position(writable) + " during attribute listing");
 
     auto strings = parameters.at("attributes").get< std::shared_ptr< std::vector< std::string > > >();
     for( hsize_t i = 0; i < object_info.num_attrs; ++i )
@@ -1186,12 +1167,10 @@ void HDF5IOHandlerImpl::listAttributes(Writable* writable,
         strings->push_back(std::string(name.data(), name_length));
     }
 
-    H5Oclose(node_id);
+    status = H5Oclose(node_id);
+    ASSERT(status == 0, "Internal error: Failed to close HDF5 object during attribute listing");
 }
 #else
-class HDF5IOHandlerImpl
-{ };
-
 HDF5IOHandler::HDF5IOHandler(std::string const& path, AccessType at)
         : AbstractIOHandler(path, at)
 {

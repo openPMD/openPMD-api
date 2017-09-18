@@ -4,7 +4,9 @@
 
 #include <Auxiliary.hpp>
 #include <Output.hpp>
-#include <IO/ADIOS/ADIOSIOHandler.hpp>
+#include <IO/ADIOS/ADIOS1IOHandler.hpp>
+#include <IO/ADIOS/ParallelADIOS1IOHandler.hpp>
+#include <IO/ADIOS/ADIOS2IOHandler.hpp>
 #include <IO/HDF5/HDF5IOHandler.hpp>
 #include <IO/HDF5/ParallelHDF5IOHandler.hpp>
 
@@ -13,14 +15,14 @@ char const * const Output::BASEPATH = "/data/%T/";
 char const * const Output::OPENPMD = "1.0.1";
 
 std::ostream&
-operator<<(std::ostream& os, Output::IterationEncoding ie)
+operator<<(std::ostream& os, IterationEncoding ie)
 {
     switch( ie )
     {
-        case Output::IterationEncoding::fileBased:
+        case IterationEncoding::fileBased:
             os<<"fileBased";
             break;
-        case Output::IterationEncoding::groupBased:
+        case IterationEncoding::groupBased:
             os<<"groupBased";
             break;
     }
@@ -33,12 +35,27 @@ Output::Output(std::string const& path,
                Format f,
                AccessType at)
         : iterations{Container< Iteration, uint64_t >()},
-          m_iterationEncoding{ie},
-          m_name{name}
+          m_iterationEncoding{ie}
 {
-    std::string cleanPath = path;
+    std::string cleanPath{path};
     if( !ends_with(cleanPath, "/") )
         cleanPath += '/';
+    std::string cleanName{name};
+    switch( f )
+    {
+        case Format::HDF5:
+        case Format::PARALLEL_HDF5:
+            if( ends_with(cleanName, ".h5") )
+                cleanName = replace_last(cleanName, ".h5", "");
+            break;
+        case Format::ADIOS:
+        case Format::PARALLEL_ADIOS:
+        case Format::ADIOS2:
+        case Format::PARALLEL_ADIOS2:
+            if( ends_with(cleanName, ".bp") )
+                cleanName = replace_last(cleanName, ".bp", "");
+            break;
+    }
     switch( f )
     {
         case Format::HDF5:
@@ -48,11 +65,19 @@ Output::Output(std::string const& path,
             IOHandler = std::make_shared<ParallelHDF5IOHandler>(cleanPath, at);
             break;
         case Format::ADIOS:
+            IOHandler = std::make_shared<ADIOS1IOHandler>(cleanPath, at);
+            break;
+        case Format::PARALLEL_ADIOS:
+            IOHandler = std::make_shared<ParallelADIOS1IOHandler>(cleanPath, at);
+            break;
+        case Format::ADIOS2:
+            IOHandler = std::make_shared<ADIOS2IOHandler>(cleanPath, at);
             break;
         case Format::NONE:
             IOHandler = std::make_shared<NONEIOHandler>(cleanPath, at);
             break;
     }
+    m_name = cleanName;
     iterations.IOHandler = IOHandler;
     iterations.parent = this;
     switch( at )
@@ -66,11 +91,14 @@ Output::Output(std::string const& path,
             setParticlesPath("particles/");
             switch( ie )
             {
-                case Output::IterationEncoding::fileBased:
-                    setIterationFormat(m_name + "_%T");
+                case IterationEncoding::fileBased:
+                    if( !contains(m_name, "%T") )
+                        std::cerr << "Warning: fileBased Output does not have an iteration regex %T in it's name."
+                                  << " This will probably not yield the expected result.\n";
+                    setIterationFormat(m_name);
                     setAttribute("iterationEncoding", std::string("fileBased"));
                     break;
-                case Output::IterationEncoding::groupBased:
+                case IterationEncoding::groupBased:
                     setIterationFormat("/data/%T/");
                     setAttribute("iterationEncoding", std::string("groupBased"));
                     break;
@@ -104,7 +132,7 @@ Output::Output(std::string const& path,
         else
         { IOHandler = std::make_shared< HDF5IOHandler >(path, at); }
     } else if( ends_with(m_name, ".bp") )
-    { IOHandler = std::make_shared< ADIOSIOHandler >(path, at); }
+    { IOHandler = std::make_shared< ADIOS2IOHandler >(path, at); }
     else
     { throw std::runtime_error("Can not determine file type from file name"); }
 
@@ -113,8 +141,7 @@ Output::Output(std::string const& path,
 
 Output::~Output()
 {
-    if( IOHandler->accessType == AccessType::CREAT || IOHandler->accessType == AccessType::READ_WRITE )
-        flush();
+    flush();
     IOHandler->flush();
 }
 
@@ -254,7 +281,7 @@ Output::setDate(std::string const& d)
     return *this;
 }
 
-Output::IterationEncoding
+IterationEncoding
 Output::iterationEncoding() const
 {
     return m_iterationEncoding;
@@ -268,11 +295,11 @@ Output::setIterationEncoding(IterationEncoding ie)
 
     switch( ie )
     {
-        case Output::IterationEncoding::fileBased:
-            setIterationFormat(m_name + "_%T");
+        case IterationEncoding::fileBased:
+            setIterationFormat(m_name);
             setAttribute("iterationEncoding", std::string("fileBased"));
             break;
-        case Output::IterationEncoding::groupBased:
+        case IterationEncoding::groupBased:
             setIterationFormat("/data/%T/");
             setAttribute("iterationEncoding", std::string("groupBased"));
             break;
@@ -323,68 +350,78 @@ Output::setName(std::string const& n)
 void
 Output::flush()
 {
-    if( IOHandler->accessType == AccessType::READ_WRITE || IOHandler->accessType == AccessType::CREAT )
+    if( IOHandler->accessType == AccessType::READ_WRITE ||
+        IOHandler->accessType == AccessType::CREAT )
     {
         switch( m_iterationEncoding )
         {
             using IE = IterationEncoding;
-            case IE::fileBased:
-            {
-                for( auto& i : iterations )
-                {
-                    if( !i.second.written )
-                        i.second.parent = this;
-                    i.second.flushFileBased(i.first);
-
-                    // TODO same problem as below
-                    // [HDF5 backend: Container only corresponds to the ID written the earliest]
-                    iterations.flush(replace_first(basePath(), "%T/", ""));
-
-                    if( dirty )
-                    {
-                        Parameter< Operation::WRITE_ATT > attribute_parameter;
-                        for( std::string const & att_name : attributes() )
-                        {
-                            attribute_parameter.name = att_name;
-                            attribute_parameter.resource = getAttribute(att_name).getResource();
-                            attribute_parameter.dtype = getAttribute(att_name).dtype;
-                            // TODO "this" is too general for writing file-based root attributes
-                            // [HDF5 backend: only one fileID is saved per Writable,
-                            //  thus this Output only corresponds to the ID written the earliest]
-                            IOHandler->enqueue(IOTask(this, attribute_parameter));
-                        }
-                        IOHandler->flush();
-                        dirty = false;
-                    }
-                }
+            case IE::fileBased:flushFileBased();
                 break;
-            }
-            case IE::groupBased:
-            {
-                if( !written )
-                {
-                    Parameter< Operation::CREATE_FILE > file_parameter;
-                    file_parameter.name = m_name;
-                    IOHandler->enqueue(IOTask(this, file_parameter));
-                    IOHandler->flush();
-                }
-
-                if( !iterations.written )
-                    iterations.parent = this;
-                iterations.flush(replace_first(basePath(), "%T/", ""));
-
-                for( auto& i : iterations )
-                {
-                    if( !i.second.written )
-                        i.second.parent = &iterations;
-                    i.second.flushGroupBased(i.first);
-                }
-
-                flushAttributes();
-            }
+            case IE::groupBased:flushGroupBased();
                 break;
         }
     }
+}
+
+void
+Output::flushFileBased()
+{
+    if( iterations.empty() )
+        throw std::runtime_error("fileBased output can not be written with no iterations.");
+
+    for( auto& i : iterations )
+    {
+        if( !i.second.written )
+            i.second.parent = this;
+        i.second.flushFileBased(i.first);
+
+        // TODO same problem as below
+        // [HDF5 backend: Container only corresponds to the ID written the earliest]
+        iterations.flush(replace_first(basePath(), "%T/", ""));
+
+        if( dirty )
+        {
+            Parameter< Operation::WRITE_ATT > attribute_parameter;
+            for( std::string const & att_name : attributes() )
+            {
+                attribute_parameter.name = att_name;
+                attribute_parameter.resource = getAttribute(att_name).getResource();
+                attribute_parameter.dtype = getAttribute(att_name).dtype;
+                // TODO "this" is too general for writing file-based root attributes
+                // [HDF5 backend: only one fileID is saved per Writable,
+                //  thus this Output only corresponds to the ID written the earliest]
+                IOHandler->enqueue(IOTask(this, attribute_parameter));
+            }
+            IOHandler->flush();
+            dirty = false;
+        }
+    }
+}
+
+void
+Output::flushGroupBased()
+{
+    if( !written )
+    {
+        Parameter< Operation::CREATE_FILE > file_parameter;
+        file_parameter.name = m_name;
+        IOHandler->enqueue(IOTask(this, file_parameter));
+        IOHandler->flush();
+    }
+
+    if( !iterations.written )
+        iterations.parent = this;
+    iterations.flush(replace_first(basePath(), "%T/", ""));
+
+    for( auto& i : iterations )
+    {
+        if( !i.second.written )
+            i.second.parent = &iterations;
+        i.second.flushGroupBased(i.first);
+    }
+
+    flushAttributes();
 }
 
 void
@@ -497,6 +534,8 @@ Output::read()
         IOHandler->flush();
         i.read();
     }
+
+    readAttributes();
 
     /* this file need not be flushed */
     iterations.written = true;

@@ -10,13 +10,14 @@
 #include "Writable.hpp"
 
 
+enum class IterationEncoding
+{
+    fileBased, groupBased
+};  //IterationEncoding
+
 class Output : public Attributable
 {
 public:
-    enum class IterationEncoding
-    {
-        fileBased, groupBased
-    };  //IterationEncoding
 
     Output(std::string const& path,
            std::string const& name,
@@ -69,6 +70,8 @@ public:
     Container< Iteration, uint64_t > iterations;
 
 private:
+    void flushFileBased();
+    void flushGroupBased();
     void read();
 
     static char const * const BASEPATH;
@@ -78,4 +81,4 @@ private:
 };  //Output
 
 std::ostream&
-operator<<(std::ostream&, Output::IterationEncoding);
+operator<<(std::ostream&, IterationEncoding);

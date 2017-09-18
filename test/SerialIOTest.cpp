@@ -11,8 +11,8 @@
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_structure_test)
 {
     Output o = Output("../samples/git-sample/",
-                      "data00000100.h5",
-                      Output::IterationEncoding::fileBased,
+                      "data00000100",
+                      IterationEncoding::fileBased,
                       Format::HDF5,
                       AccessType::READ_ONLY);
 
@@ -52,8 +52,8 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_attribute_test)
 {
     //TODO check non-standard attributes
     Output o = Output("../samples/git-sample/",
-                      "data00000100.h5",
-                      Output::IterationEncoding::fileBased,
+                      "data00000100",
+                      IterationEncoding::fileBased,
                       Format::HDF5,
                       AccessType::READ_ONLY);
 
@@ -62,9 +62,9 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_attribute_test)
     BOOST_TEST(o.basePath() == "/data/%T/");
     BOOST_TEST(o.meshesPath() == "fields/");
     BOOST_TEST(o.particlesPath() == "particles/");
-    BOOST_TEST(o.iterationEncoding() == Output::IterationEncoding::fileBased);
+    BOOST_TEST(o.iterationEncoding() == IterationEncoding::fileBased);
     BOOST_TEST(o.iterationFormat() == "data%T.h5");
-    BOOST_TEST(o.name() == "data00000100.h5");
+    BOOST_TEST(o.name() == "data00000100");
 
     BOOST_TEST(o.iterations.size() == 1);
     BOOST_TEST(o.iterations.count(100) == 1);
@@ -298,8 +298,8 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_attribute_test)
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
 {
     Output o = Output("../samples/git-sample/",
-                      "data00000100.h5",
-                      Output::IterationEncoding::fileBased,
+                      "data00000100",
+                      IterationEncoding::fileBased,
                       Format::HDF5,
                       AccessType::READ_ONLY);
 
@@ -347,8 +347,8 @@ BOOST_AUTO_TEST_CASE(hzdr_hdf5_sample_content_test)
     {
         /* development/huebl/lwfa-openPMD-062-smallLWFA-h5 */
         Output o = Output("../samples/hzdr-sample/",
-                   "simData_0.h5",
-                   Output::IterationEncoding::fileBased,
+                   "simData_0",
+                   IterationEncoding::fileBased,
                    Format::HDF5,
                    AccessType::READ_ONLY);
 
@@ -357,13 +357,13 @@ BOOST_AUTO_TEST_CASE(hzdr_hdf5_sample_content_test)
         BOOST_TEST(o.basePath() == "/data/%T/");
         BOOST_TEST(o.meshesPath() == "fields/");
         BOOST_TEST(o.particlesPath() == "particles/");
-        //BOOST_TEST(o.author() == "Axel Huebl <a.huebl@hzdr.de>");
-        //BOOST_TEST(o.software() == "PIConGPU");
-        //BOOST_TEST(o.softwareVersion() == "0.2.0");
-        //BOOST_TEST(o.date() == "2016-11-04 00:59:14 +0100");
-        BOOST_TEST(o.iterationEncoding() == Output::IterationEncoding::fileBased);
+        BOOST_TEST(o.author() == "Axel Huebl <a.huebl@hzdr.de>");
+        BOOST_TEST(o.software() == "PIConGPU");
+        BOOST_TEST(o.softwareVersion() == "0.2.0");
+        BOOST_TEST(o.date() == "2016-11-04 00:59:14 +0100");
+        BOOST_TEST(o.iterationEncoding() == IterationEncoding::fileBased);
         BOOST_TEST(o.iterationFormat() == "h5/simData_%T.h5");
-        BOOST_TEST(o.name() == "simData_0.h5");
+        BOOST_TEST(o.name() == "simData_0");
 
         BOOST_TEST(o.iterations.size() == 1);
         BOOST_TEST(o.iterations.count(0) == 1);
@@ -674,8 +674,8 @@ BOOST_AUTO_TEST_CASE(hzdr_hdf5_sample_content_test)
 BOOST_AUTO_TEST_CASE(hdf5_write_test)
 {
     Output o = Output("../samples",
-                      "serial_write.h5",
-                      Output::IterationEncoding::groupBased,
+                      "serial_write",
+                      IterationEncoding::groupBased,
                       Format::HDF5,
                       AccessType::CREAT);
 
@@ -711,11 +711,22 @@ BOOST_AUTO_TEST_CASE(hdf5_write_test)
     o.flush();
 }
 
+BOOST_AUTO_TEST_CASE(hdf5_bool_test)
+{
+    Output o = Output("../samples",
+                      "serial_bool",
+                      IterationEncoding::groupBased,
+                      Format::HDF5,
+                      AccessType::CREAT);
+
+    o.setAttribute("Bool attribute", true);
+}
+
 BOOST_AUTO_TEST_CASE(hdf5_deletion_test)
 {
     Output o = Output("../samples",
-                      "serial_deletion.h5",
-                      Output::IterationEncoding::groupBased,
+                      "serial_deletion",
+                      IterationEncoding::groupBased,
                       Format::HDF5,
                       AccessType::CREAT);
 
@@ -750,5 +761,15 @@ BOOST_AUTO_TEST_CASE(hdf5_deletion_test)
 
     e.erase("deletion_scalar_constant");
     o.flush();
+}
+#endif
+#ifdef LIBOPENPMD_WITH_ADIOS1
+BOOST_AUTO_TEST_CASE(adios_write_test)
+{
+    Output o = Output("../samples",
+                      "serial_write",
+                      IterationEncoding::fileBased,
+                      Format::ADIOS,
+                      AccessType::CREAT);
 }
 #endif

@@ -1,11 +1,8 @@
 #pragma once
 
-
 #include <string>
 
-#include <hdf5.h>
-
-#include "IO/AbstractFilePosition.hpp"
+#include <IO/AbstractFilePosition.hpp>
 
 
 struct HDF5FilePosition : public AbstractFilePosition

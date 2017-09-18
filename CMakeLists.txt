@@ -1,7 +1,14 @@
 cmake_minimum_required(VERSION 2.6)
 project(libopenpmd)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g -std=c++11")
+
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+
+# Force C++11
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -23,15 +30,11 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 set(DEVELOPMENT "on")
 if ("${DEVELOPMENT}" STREQUAL "on")
     set(LIBOPENPMD_HDF5 "on")
-    set(LIBOPENPMD_ADIOS2 "on")
+    set(LIBOPENPMD_ADIOS "off")
+    set(LIBOPENPMD_ADIOS2 "off")
     set(LIBOPENPMD_PARALLEL "on")
 else()
-    if(ENV{LIBOPENPMD_HDF5})
-        set(LIBOPENPMD_HDF5 "on")
-    endif()
-    if(ENV{LIBOPENPMD_PARALLEL})
-        set(LIBOPENPMD_PARALLEL "on")
-    endif()
+    #TODO
 endif ()
 
 find_package(Boost REQUIRED COMPONENTS system filesystem)
@@ -49,7 +52,7 @@ if (MPI_FOUND)
     link_directories(${MPI_LIBRARIES})
 endif ()
 
-find_package(HDF5 COMPONENTS C)
+find_package(HDF5 QUIET COMPONENTS C)
 if (HDF5_FOUND)
     if (LIBOPENPMD_HDF5)
         add_definitions(-DLIBOPENPMD_WITH_HDF5=ON)
@@ -61,13 +64,33 @@ if (HDF5_FOUND)
     link_directories(${HDF5_LIBRARY_DIRS})
 endif ()
 
-find_package(ADIOS2)
+if (LIBOPENPMD_PARALLEL)
+    find_package(ADIOS QUIET)
+    if (ADIOS_FOUND AND LIBOPENPMD_ADIOS AND LIBOPENPMD_PARALLEL)
+        add_definitions(-DLIBOPENPMD_WITH_PARALLEL_ADIOS1=ON)
+    endif()
+else()
+    find_package(ADIOS QUIET COMPONENTS sequential)
+    if (ADIOS_FOUND AND LIBOPENPMD_ADIOS)
+        add_definitions(-DLIBOPENPMD_WITH_ADIOS1=ON)
+        add_definitions(-D_NOMPI=ON)
+    endif()
+endif()
+if (ADIOS_FOUND)
+    include_directories(${ADIOS_INCLUDE_DIRS})
+    link_directories(${ADIOS_LIBRARIES})
+endif()
+
+find_package(ADIOS2 QUIET)
 if (ADIOS2_FOUND)
     if (LIBOPENPMD_ADIOS2)
+        add_definitions(-DLIBOPENPMD_WITH_ADIOS2=ON)
         if (ADIOS2_HAVE_MPI AND LIBOPENPMD_PARALLEL)
-
+            add_definitions(-DLIBOPENPMD_WITH_PARALLEL_ADIOS2=ON)
         endif()
     endif()
+    include_directories(${ADIOS2_CXX_INCS})
+    link_directories(${ADIOS2_CXX_LIBS})
 endif()
 
 set(CORE_SOURCE
@@ -83,7 +106,9 @@ set(CORE_SOURCE
 set(IO_SOURCE
         src/IO/AbstractIOHandler.cpp
         src/IO/IOTask.cpp
-        src/IO/ADIOS/ADIOSIOHandler.cpp
+        src/IO/ADIOS/ADIOS1IOHandler.cpp
+        src/IO/ADIOS/ParallelADIOS1IOHandler.cpp
+        src/IO/ADIOS/ADIOS2IOHandler.cpp
         src/IO/HDF5/HDF5IOHandler.cpp
         src/IO/HDF5/ParallelHDF5IOHandler.cpp)
 set(CORE_TESTS
@@ -127,6 +152,13 @@ if (LIBOPENPMD_HDF5)
     target_link_libraries(libopenpmdParallelIOTests ${HDF5_LIBRARIES})
     target_link_libraries(poc_HDF5Writer ${HDF5_LIBRARIES})
     target_link_libraries(poc_HDF5Reader ${HDF5_LIBRARIES})
+endif ()
+if (LIBOPENPMD_ADIOS)
+    target_link_libraries(libopenpmdCoreTests ${ADIOS_LIBRARIES})
+    target_link_libraries(libopenpmdSerialIOTests ${ADIOS_LIBRARIES})
+    target_link_libraries(libopenpmdParallelIOTests ${ADIOS_LIBRARIES})
+    target_link_libraries(poc_HDF5Writer ${ADIOS_LIBRARIES})
+    target_link_libraries(poc_HDF5Reader ${ADIOS_LIBRARIES})
 endif ()
 if (Boost_FOUND)
     target_link_libraries(libopenpmdCoreTests ${Boost_LIBRARIES})
