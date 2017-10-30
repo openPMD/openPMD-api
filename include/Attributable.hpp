@@ -89,7 +89,6 @@ template< typename T >
 inline void
 Attributable::setAttribute(std::string const& key, T&& value)
 {
-    using std::make_shared;
     using std::make_pair;
     A_MAP::iterator it = m_attributes->lower_bound(key);
     if( it != m_attributes->end() && !m_attributes->key_comp()(key, it->first) )
@@ -173,6 +172,7 @@ Attributable::flushAttributes()
             attribute_parameter.dtype = getAttribute(att_name).dtype;
             IOHandler->enqueue(IOTask(this, attribute_parameter));
         }
+        IOHandler->flush();
 
         dirty = false;
     }

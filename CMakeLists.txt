@@ -9,10 +9,9 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
-set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR})
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-weak-vtables -Wno-padded -Wno-switch-enum -Wno-undefined-func-template")
@@ -27,15 +26,11 @@ endif ()
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 #TODO remove in release version
-set(DEVELOPMENT "on")
-if ("${DEVELOPMENT}" STREQUAL "on")
-    set(LIBOPENPMD_HDF5 "on")
-    set(LIBOPENPMD_ADIOS "off")
-    set(LIBOPENPMD_ADIOS2 "off")
-    set(LIBOPENPMD_PARALLEL "on")
-else()
-    #TODO
-endif ()
+option(DEVELOPMENT "" ON)
+option(LIBOPENPMD_HDF5 "" ON)
+option(LIBOPENPMD_ADIOS "" OFF)
+option(LIBOPENPMD_ADIOS2 "" OFF)
+option(LIBOPENPMD_PARALLEL "" ON)
 
 find_package(Boost REQUIRED COMPONENTS system filesystem)
 if (Boost_FOUND)
@@ -95,7 +90,7 @@ endif()
 
 set(CORE_SOURCE
         src/Writable.cpp
-        src/Output.cpp
+        src/Series.cpp
         src/Iteration.cpp
         src/Record.cpp
         src/RecordComponent.cpp

@@ -93,6 +93,7 @@ CTestTestfile.cmake
 ###########
 # Doxygen #
 ###########
+docs/html/
 docs/xml/
 docs/doxygen_sqlite3.db
 

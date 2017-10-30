@@ -1,18 +1,41 @@
+/* Copyright 2017 Fabian Koller
+ *
+ * This file is part of libopenPMD.
+ *
+ * libopenPMD is free software: you can redistribute it and/or modify
+ * it under the terms of of either the GNU General Public License or
+ * the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * libopenPMD is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License and the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * and the GNU Lesser General Public License along with libopenPMD.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
 #include <ios>
 #include <iostream>
+#include <regex>
 #include <set>
 
-#include <Auxiliary.hpp>
-#include <Output.hpp>
-#include <IO/ADIOS/ADIOS1IOHandler.hpp>
-#include <IO/ADIOS/ParallelADIOS1IOHandler.hpp>
-#include <IO/ADIOS/ADIOS2IOHandler.hpp>
-#include <IO/HDF5/HDF5IOHandler.hpp>
-#include <IO/HDF5/ParallelHDF5IOHandler.hpp>
+#include <boost/filesystem.hpp>
+
+#include "Auxiliary.hpp"
+#include "IO/ADIOS/ADIOS1IOHandler.hpp"
+#include "IO/ADIOS/ParallelADIOS1IOHandler.hpp"
+#include "IO/ADIOS/ADIOS2IOHandler.hpp"
+#include "IO/HDF5/HDF5IOHandler.hpp"
+#include "IO/HDF5/ParallelHDF5IOHandler.hpp"
+#include "Series.hpp"
 
 
-char const * const Output::BASEPATH = "/data/%T/";
-char const * const Output::OPENPMD = "1.0.1";
+char const * const Series::BASEPATH = "/data/%T/";
+char const * const Series::OPENPMD = "1.0.1";
 
 std::ostream&
 operator<<(std::ostream& os, IterationEncoding ie)
@@ -29,13 +52,12 @@ operator<<(std::ostream& os, IterationEncoding ie)
     return os;
 }
 
-Output::Output(std::string const& path,
+Series::Series(std::string const& path,
                std::string const& name,
                IterationEncoding ie,
                Format f,
                AccessType at)
-        : iterations{Container< Iteration, uint64_t >()},
-          m_iterationEncoding{ie}
+        : iterations{Container< Iteration, uint64_t >()}
 {
     std::string cleanPath{path};
     if( !ends_with(cleanPath, "/") )
@@ -58,6 +80,7 @@ Output::Output(std::string const& path,
         default:
             break;
     }
+    m_name = cleanName;
     switch( f )
     {
         case Format::HDF5:
@@ -72,7 +95,6 @@ Output::Output(std::string const& path,
         default:
             throw std::runtime_error("Backend not yet working");
     }
-    m_name = cleanName;
     iterations.IOHandler = IOHandler;
     iterations.parent = this;
     switch( at )
@@ -84,70 +106,70 @@ Output::Output(std::string const& path,
             setAttribute("basePath", std::string(BASEPATH));
             setMeshesPath("meshes/");
             setParticlesPath("particles/");
-            switch( ie )
-            {
-                case IterationEncoding::fileBased:
-                    if( !contains(m_name, "%T") )
-                        std::cerr << "Warning: fileBased Output does not have an iteration regex %T in it's name ("
-                                  << m_name << "). This will probably not yield the expected result.\n";
-                    setIterationFormat(m_name);
-                    setAttribute("iterationEncoding", std::string("fileBased"));
-                    break;
-                case IterationEncoding::groupBased:
-                    setIterationFormat("/data/%T/");
-                    setAttribute("iterationEncoding", std::string("groupBased"));
-                    break;
-            }
+            if( ie == IterationEncoding::fileBased && !contains(m_name, "%T") )
+                throw std::runtime_error("For fileBased formats the iteration regex %T must be included in the file name");
+            setIterationEncoding(ie);
             break;
         }
         case AccessType::READ_ONLY:
-        {
-            read();
-            break;
-        }
         case AccessType::READ_WRITE:
         {
-            read();
+            if( contains(m_name, "%T") )
+                readFileBased();
+            else
+                readGroupBased();
             break;
         }
     }
 }
 
-Output::Output(std::string const& path,
+Series::Series(std::string path,
                std::string const& name,
                bool parallel)
-    : iterations{Container< Iteration, uint64_t >()},
-      m_name{name}
+    : iterations{Container< Iteration, uint64_t >()}
 {
+    if( !ends_with(path, "/") )
+        path += '/';
     AccessType at = AccessType::READ_ONLY;
-    if( ends_with(m_name, ".h5") )
+    if( ends_with(name, ".h5") )
     {
         if( parallel )
         { IOHandler = std::make_shared< ParallelHDF5IOHandler >(path, at); }
         else
         { IOHandler = std::make_shared< HDF5IOHandler >(path, at); }
+        m_name = replace_last(name, ".h5", "");
     } else if( ends_with(m_name, ".bp") )
-    { IOHandler = std::make_shared< ADIOS2IOHandler >(path, at); }
+    {
+        throw std::runtime_error("Backend not yet working");
+    }
     else
-    { throw std::runtime_error("Can not determine file type from file name"); }
+    {
+        throw std::runtime_error("Can not determine file type from file name - " + name);
+    }
 
-    read();
+    iterations.IOHandler = IOHandler;
+    iterations.parent = this;
+
+    if( contains(m_name, "%T") )
+        readFileBased();
+    else
+        readGroupBased();
 }
 
-Output::~Output()
+Series::~Series()
 {
     flush();
     IOHandler->flush();
 }
 
 std::string
-Output::openPMD() const
+Series::openPMD() const
 {
     return getAttribute("openPMD").get< std::string >();
 }
 
-Output&
-Output::setOpenPMD(std::string const& o)
+Series&
+Series::setOpenPMD(std::string const& o)
 {
     setAttribute("openPMD", o);
     dirty = true;
@@ -155,13 +177,13 @@ Output::setOpenPMD(std::string const& o)
 }
 
 uint32_t
-Output::openPMDextension() const
+Series::openPMDextension() const
 {
     return getAttribute("openPMDextension").get< uint32_t >();
 }
 
-Output&
-Output::setOpenPMDextension(uint32_t oe)
+Series&
+Series::setOpenPMDextension(uint32_t oe)
 {
     setAttribute("openPMDextension", oe);
     dirty = true;
@@ -169,17 +191,17 @@ Output::setOpenPMDextension(uint32_t oe)
 }
 
 std::string
-Output::basePath() const
+Series::basePath() const
 {
     return getAttribute("basePath").get< std::string >();
 }
 
-Output&
-Output::setBasePath(std::string const& bp)
+Series&
+Series::setBasePath(std::string const& bp)
 {
     std::string version = openPMD();
     if( version == "1.0.0" || version == "1.0.1" )
-        throw std::runtime_error("Custom basePath not available in openPMD <=1.0.1");
+        throw std::runtime_error("Custom basePath not allowed in openPMD <=1.0.1");
 
     setAttribute("basePath", bp);
     dirty = true;
@@ -187,13 +209,13 @@ Output::setBasePath(std::string const& bp)
 }
 
 std::string
-Output::meshesPath() const
+Series::meshesPath() const
 {
     return getAttribute("meshesPath").get< std::string >();
 }
 
-Output&
-Output::setMeshesPath(std::string const& mp)
+Series&
+Series::setMeshesPath(std::string const& mp)
 {
     if( ends_with(mp, "/") )
         setAttribute("meshesPath", mp);
@@ -204,13 +226,13 @@ Output::setMeshesPath(std::string const& mp)
 }
 
 std::string
-Output::particlesPath() const
+Series::particlesPath() const
 {
     return getAttribute("particlesPath").get< std::string >();
 }
 
-Output&
-Output::setParticlesPath(std::string const& pp)
+Series&
+Series::setParticlesPath(std::string const& pp)
 {
     if( ends_with(pp, "/") )
         setAttribute("particlesPath", pp);
@@ -221,13 +243,13 @@ Output::setParticlesPath(std::string const& pp)
 }
 
 std::string
-Output::author() const
+Series::author() const
 {
     return getAttribute("author").get< std::string >();
 }
 
-Output&
-Output::setAuthor(std::string const& a)
+Series&
+Series::setAuthor(std::string const& a)
 {
     setAttribute("author", a);
     dirty = true;
@@ -235,13 +257,13 @@ Output::setAuthor(std::string const& a)
 }
 
 std::string
-Output::software() const
+Series::software() const
 {
     return getAttribute("software").get< std::string >();
 }
 
-Output&
-Output::setSoftware(std::string const& s)
+Series&
+Series::setSoftware(std::string const& s)
 {
     setAttribute("software", s);
     dirty = true;
@@ -249,13 +271,13 @@ Output::setSoftware(std::string const& s)
 }
 
 std::string
-Output::softwareVersion() const
+Series::softwareVersion() const
 {
     return getAttribute("softwareVersion").get< std::string >();
 }
 
-Output&
-Output::setSoftwareVersion(std::string const& sv)
+Series&
+Series::setSoftwareVersion(std::string const& sv)
 {
     setAttribute("softwareVersion", sv);
     dirty = true;
@@ -263,13 +285,13 @@ Output::setSoftwareVersion(std::string const& sv)
 }
 
 std::string
-Output::date() const
+Series::date() const
 {
     return getAttribute("date").get< std::string >();
 }
 
-Output&
-Output::setDate(std::string const& d)
+Series&
+Series::setDate(std::string const& d)
 {
     setAttribute("date", d);
     dirty = true;
@@ -277,13 +299,13 @@ Output::setDate(std::string const& d)
 }
 
 IterationEncoding
-Output::iterationEncoding() const
+Series::iterationEncoding() const
 {
     return m_iterationEncoding;
 }
 
-Output&
-Output::setIterationEncoding(IterationEncoding ie)
+Series&
+Series::setIterationEncoding(IterationEncoding ie)
 {
     if( written )
         throw std::runtime_error("A files iterationEncoding can not (yet) be changed after it has been written.");
@@ -295,22 +317,23 @@ Output::setIterationEncoding(IterationEncoding ie)
             setAttribute("iterationEncoding", std::string("fileBased"));
             break;
         case IterationEncoding::groupBased:
-            setIterationFormat("/data/%T/");
+            setIterationFormat(BASEPATH);
             setAttribute("iterationEncoding", std::string("groupBased"));
             break;
     }
+    m_iterationEncoding = ie;
     dirty = true;
     return *this;
 }
 
 std::string
-Output::iterationFormat() const
+Series::iterationFormat() const
 {
     return getAttribute("iterationFormat").get< std::string >();
 }
 
-Output&
-Output::setIterationFormat(std::string const& i)
+Series&
+Series::setIterationFormat(std::string const& i)
 {
     if( written )
         throw std::runtime_error("A files iterationFormat can not (yet) be changed after it has been written.");
@@ -318,7 +341,7 @@ Output::setIterationFormat(std::string const& i)
     if( m_iterationEncoding == IterationEncoding::groupBased )
     {
         if( basePath() != i && (openPMD() == "1.0.1" || openPMD() == "1.0.0") )
-            throw std::invalid_argument("iterationFormat must not differ from basePath " + basePath());
+            throw std::invalid_argument("iterationFormat must not differ from basePath " + basePath() + " for groupBased data");
     }
     setAttribute("iterationFormat", i);
     dirty = true;
@@ -326,16 +349,19 @@ Output::setIterationFormat(std::string const& i)
 }
 
 std::string
-Output::name() const
+Series::name() const
 {
     return m_name;
 }
 
-Output&
-Output::setName(std::string const& n)
+Series&
+Series::setName(std::string const& n)
 {
     if( written )
         throw std::runtime_error("A files name can not (yet) be changed after it has been written.");
+
+    if( m_iterationEncoding == IterationEncoding::fileBased && !contains(m_name, "%T") )
+            throw std::runtime_error("For fileBased formats the iteration regex %T must be included in the file name");
 
     m_name = n;
     dirty = true;
@@ -343,7 +369,7 @@ Output::setName(std::string const& n)
 }
 
 void
-Output::flush()
+Series::flush()
 {
     if( IOHandler->accessType == AccessType::READ_WRITE ||
         IOHandler->accessType == AccessType::CREAT )
@@ -351,51 +377,46 @@ Output::flush()
         switch( m_iterationEncoding )
         {
             using IE = IterationEncoding;
-            case IE::fileBased:flushFileBased();
+            case IE::fileBased:
+                flushFileBased();
                 break;
-            case IE::groupBased:flushGroupBased();
+            case IE::groupBased:
+                flushGroupBased();
                 break;
         }
     }
 }
 
 void
-Output::flushFileBased()
+Series::flushFileBased()
 {
     if( iterations.empty() )
         throw std::runtime_error("fileBased output can not be written with no iterations.");
 
     for( auto& i : iterations )
     {
-        if( !i.second.written )
-            i.second.parent = this;
+        /* as there is only one series,
+         * emulate the file belonging to each iteration as not yet written */
+        written = false;
+        iterations.written = false;
+
         i.second.flushFileBased(i.first);
 
-        // TODO same problem as below
-        // [HDF5 backend: Container only corresponds to the ID written the earliest]
         iterations.flush(replace_first(basePath(), "%T/", ""));
 
         if( dirty )
         {
-            Parameter< Operation::WRITE_ATT > attribute_parameter;
-            for( std::string const & att_name : attributes() )
-            {
-                attribute_parameter.name = att_name;
-                attribute_parameter.resource = getAttribute(att_name).getResource();
-                attribute_parameter.dtype = getAttribute(att_name).dtype;
-                // TODO "this" is too general for writing file-based root attributes
-                // [HDF5 backend: only one fileID is saved per Writable,
-                //  thus this Output only corresponds to the ID written the earliest]
-                IOHandler->enqueue(IOTask(this, attribute_parameter));
-            }
-            IOHandler->flush();
-            dirty = false;
+            flushAttributes();
+            /* manually flag the Series dirty
+             * until all iterations have been updated */
+            dirty = true;
         }
     }
+    dirty = false;
 }
 
 void
-Output::flushGroupBased()
+Series::flushGroupBased()
 {
     if( !written )
     {
@@ -420,17 +441,118 @@ Output::flushGroupBased()
 }
 
 void
-Output::read()
+Series::readFileBased()
 {
-    //TODO find solution for handling fileBased output
+    std::regex pattern(replace_first(m_name, "%T", "[[:digit:]]+"));
 
+    Parameter< Operation::OPEN_FILE > file_parameter;
+    Parameter< Operation::READ_ATT > attribute_parameter;
+
+    using namespace boost::filesystem;
+    path dir(IOHandler->directory);
+    for( path const& entry : directory_iterator(dir) )
+    {
+        if( std::regex_search(entry.filename().string(), pattern) )
+        {
+            file_parameter.name = entry.filename().string();
+            IOHandler->enqueue(IOTask(this, file_parameter));
+            IOHandler->flush();
+            iterations.parent = this;
+
+            /* allow all attributes to be set */
+            written = false;
+
+            using DT = Datatype;
+            attribute_parameter.name = "iterationEncoding";
+            IOHandler->enqueue(IOTask(this, attribute_parameter));
+            IOHandler->flush();
+            if( *attribute_parameter.dtype == DT::STRING )
+            {
+                std::string encoding = Attribute(*attribute_parameter.resource).get< std::string >();
+                if( encoding == "fileBased" )
+                    m_iterationEncoding = IterationEncoding::fileBased;
+                else if( encoding == "groupBased" )
+                {
+                    m_iterationEncoding = IterationEncoding::groupBased;
+                    std::cerr << "Series constructor called with iteration regex '%T' suggests loading a "
+                              << "time series with fileBased iteration encoding. Loaded file is groupBased.\n";
+                } else
+                    throw std::runtime_error("Unknown iterationEncoding: " + encoding);
+                setAttribute("iterationEncoding", encoding);
+            }
+            else
+                throw std::runtime_error("Unexpected Attribute datatype for 'iterationEncoding'");
+
+            attribute_parameter.name = "iterationFormat";
+            IOHandler->enqueue(IOTask(this, attribute_parameter));
+            IOHandler->flush();
+            if( *attribute_parameter.dtype == DT::STRING )
+                setIterationFormat(Attribute(*attribute_parameter.resource).get< std::string >());
+            else
+                throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
+
+            read();
+        }
+    }
+
+    /* this file need not be flushed */
+    iterations.written = true;
+    written = true;
+}
+
+void
+Series::readGroupBased()
+{
     Parameter< Operation::OPEN_FILE > file_parameter;
     file_parameter.name = m_name;
     IOHandler->enqueue(IOTask(this, file_parameter));
     IOHandler->flush();
+
     /* allow all attributes to be set */
     written = false;
 
+    using DT = Datatype;
+    Parameter< Operation::READ_ATT > attribute_parameter;
+    attribute_parameter.name = "iterationEncoding";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::STRING )
+    {
+        std::string encoding = Attribute(*attribute_parameter.resource).get< std::string >();
+        if( encoding == "groupBased" )
+            m_iterationEncoding = IterationEncoding::groupBased;
+        else if( encoding == "fileBased" )
+        {
+            m_iterationEncoding = IterationEncoding::fileBased;
+            std::cerr << "Series constructor called with explicit iteration suggests loading a "
+                      << "single file with groupBased iteration encoding. Loaded file is fileBased.\n";
+        } else
+            throw std::runtime_error("Unknown iterationEncoding: " + encoding);
+        setAttribute("iterationEncoding", encoding);
+    }
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'iterationEncoding'");
+
+    attribute_parameter.name = "iterationFormat";
+    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    IOHandler->flush();
+    if( *attribute_parameter.dtype == DT::STRING )
+        setIterationFormat(Attribute(*attribute_parameter.resource).get< std::string >());
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
+
+    iterations.clear();
+
+    read();
+
+    /* this file need not be flushed */
+    iterations.written = true;
+    written = true;
+}
+
+void
+Series::read()
+{
     using DT = Datatype;
     Parameter< Operation::READ_ATT > attribute_parameter;
 
@@ -474,37 +596,6 @@ Output::read()
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'particlesPath'");
 
-    attribute_parameter.name = "iterationEncoding";
-    IOHandler->enqueue(IOTask(this, attribute_parameter));
-    IOHandler->flush();
-    if( *attribute_parameter.dtype == DT::STRING )
-    {
-        std::string encoding = Attribute(*attribute_parameter.resource).get< std::string >();
-        if( encoding == "fileBased" )
-        {
-            if( m_iterationEncoding != IterationEncoding::fileBased)
-                throw std::runtime_error("Supplied and read iterationEncoding do not match");
-        }
-        else if( encoding == "groupBased" )
-        {
-            if( m_iterationEncoding != IterationEncoding::groupBased)
-                throw std::runtime_error("Supplied and read iterationEncoding do not match");
-        } else
-            throw std::runtime_error("Unknown iterationEncoding: " + encoding);
-        setAttribute("iterationEncoding", encoding);
-    }
-    else
-        throw std::runtime_error("Unexpected Attribute datatype for 'iterationEncoding'");
-
-    attribute_parameter.name = "iterationFormat";
-    IOHandler->enqueue(IOTask(this, attribute_parameter));
-    IOHandler->flush();
-    if( *attribute_parameter.dtype == DT::STRING )
-        setIterationFormat(Attribute(*attribute_parameter.resource).get< std::string >());
-    else
-        throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
-
-    iterations.clear();
     Parameter< Operation::OPEN_PATH > path_parameter;
     std::string version = openPMD();
     if( version == "1.0.0" || version == "1.0.1" )
@@ -531,8 +622,4 @@ Output::read()
     }
 
     readAttributes();
-
-    /* this file need not be flushed */
-    iterations.written = true;
-    written = true;
 }

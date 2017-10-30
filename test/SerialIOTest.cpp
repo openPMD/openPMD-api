@@ -5,16 +5,13 @@
 
 /* make Writable::parent visible for hierarchy check */
 #define protected public
-#include "../include/Output.hpp"
+#include "Series.hpp"
 
 #ifdef LIBOPENPMD_WITH_HDF5
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_structure_test)
 {
-    Output o = Output("../samples/git-sample/",
-                      "data00000100",
-                      IterationEncoding::fileBased,
-                      Format::HDF5,
-                      AccessType::READ_ONLY);
+    Series o = Series("../samples/git-sample/",
+                      "data00000100.h5");
 
     BOOST_TEST(o.parent == nullptr);
     BOOST_TEST(o.iterations.parent == static_cast< Writable* >(&o));
@@ -50,12 +47,8 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_structure_test)
 
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_attribute_test)
 {
-    //TODO check non-standard attributes
-    Output o = Output("../samples/git-sample/",
-                      "data00000100",
-                      IterationEncoding::fileBased,
-                      Format::HDF5,
-                      AccessType::READ_ONLY);
+    Series o = Series("../samples/git-sample/",
+                      "data00000100.h5");
 
     BOOST_TEST(o.openPMD() == "1.0.0");
     BOOST_TEST(o.openPMDextension() == 1);
@@ -297,11 +290,8 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_attribute_test)
 
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
 {
-    Output o = Output("../samples/git-sample/",
-                      "data00000100",
-                      IterationEncoding::fileBased,
-                      Format::HDF5,
-                      AccessType::READ_ONLY);
+    Series o = Series("../samples/git-sample/",
+                      "data00000100.h5");
 
     {
         double actual[3][3][3] = {{{-1.9080703683727052e-09, -1.5632650729457964e-10, 1.1497536256399599e-09},
@@ -340,13 +330,26 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
     }
 }
 
+BOOST_AUTO_TEST_CASE(git_hdf5_sample_fileBased_read_test)
+{
+    Series o = Series("../samples/git-sample/",
+                      "data%T.h5");
+
+    BOOST_TEST(o.iterations.size() == 5);
+    BOOST_TEST(o.iterations.count(100) == 1);
+    BOOST_TEST(o.iterations.count(200) == 1);
+    BOOST_TEST(o.iterations.count(300) == 1);
+    BOOST_TEST(o.iterations.count(400) == 1);
+    BOOST_TEST(o.iterations.count(500) == 1);
+}
+
 BOOST_AUTO_TEST_CASE(hzdr_hdf5_sample_content_test)
 {
     // since this file might not be publicly available, gracefully handle errors
     try
     {
         /* development/huebl/lwfa-openPMD-062-smallLWFA-h5 */
-        Output o = Output("../samples/hzdr-sample/",
+        Series o = Series("../samples/hzdr-sample/",
                    "simData_0",
                    IterationEncoding::fileBased,
                    Format::HDF5,
@@ -673,7 +676,7 @@ BOOST_AUTO_TEST_CASE(hzdr_hdf5_sample_content_test)
 
 BOOST_AUTO_TEST_CASE(hdf5_write_test)
 {
-    Output o = Output("../samples",
+    Series o = Series("../samples",
                       "serial_write",
                       IterationEncoding::groupBased,
                       Format::HDF5,
@@ -709,11 +712,104 @@ BOOST_AUTO_TEST_CASE(hdf5_write_test)
     }
 
     o.flush();
+
+    //TODO close file, read back, verify
+}
+
+BOOST_AUTO_TEST_CASE(hdf5_fileBased_write_test)
+{
+    Series o = Series("../samples",
+                      "serial_fileBased_write%T",
+                      IterationEncoding::fileBased,
+                      Format::HDF5,
+                      AccessType::CREAT);
+
+    ParticleSpecies& e_1 = o.iterations[1].particles["e"];
+
+    std::vector< double > position_global(4);
+    double pos{0.};
+    std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
+    std::shared_ptr< double > position_local_1(new double);
+    e_1["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_1), {4}));
+
+    for( uint64_t i = 0; i < 4; ++i )
+    {
+        *position_local_1 = position_global[i];
+        e_1["position"]["x"].storeChunk({i}, {1}, position_local_1);
+        o.flush();
+    }
+
+    std::vector< uint64_t > positionOffset_global(4);
+    uint64_t posOff{0};
+    std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
+    std::shared_ptr< uint64_t > positionOffset_local_1(new uint64_t);
+    e_1["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_1), {4}));
+
+    for( uint64_t i = 0; i < 4; ++i )
+    {
+        *positionOffset_local_1 = positionOffset_global[i];
+        e_1["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_1);
+        o.flush();
+    }
+
+    ParticleSpecies& e_2 = o.iterations[2].particles["e"];
+
+    std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
+    std::shared_ptr< double > position_local_2(new double);
+    e_2["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_2), {4}));
+
+    for( uint64_t i = 0; i < 4; ++i )
+    {
+        *position_local_2 = position_global[i];
+        e_2["position"]["x"].storeChunk({i}, {1}, position_local_2);
+        o.flush();
+    }
+
+    std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
+    std::shared_ptr< uint64_t > positionOffset_local_2(new uint64_t);
+    e_2["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_2), {4}));
+
+    for( uint64_t i = 0; i < 4; ++i )
+    {
+        *positionOffset_local_2 = positionOffset_global[i];
+        e_2["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_2);
+        o.flush();
+    }
+
+    o.flush();
+
+    ParticleSpecies& e_3 = o.iterations[3].particles["e"];
+
+    std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
+    std::shared_ptr< double > position_local_3(new double);
+    e_3["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_3), {4}));
+
+    for( uint64_t i = 0; i < 4; ++i )
+    {
+        *position_local_3 = position_global[i];
+        e_3["position"]["x"].storeChunk({i}, {1}, position_local_3);
+        o.flush();
+    }
+
+    std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
+    std::shared_ptr< uint64_t > positionOffset_local_3(new uint64_t);
+    e_3["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_3), {4}));
+
+    for( uint64_t i = 0; i < 4; ++i )
+    {
+        *positionOffset_local_3 = positionOffset_global[i];
+        e_3["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_3);
+        o.flush();
+    }
+
+    o.flush();
+
+    //TODO close file, read back, verify
 }
 
 BOOST_AUTO_TEST_CASE(hdf5_bool_test)
 {
-    Output o = Output("../samples",
+    Series o = Series("../samples",
                       "serial_bool",
                       IterationEncoding::groupBased,
                       Format::HDF5,
@@ -724,7 +820,7 @@ BOOST_AUTO_TEST_CASE(hdf5_bool_test)
 
 BOOST_AUTO_TEST_CASE(hdf5_deletion_test)
 {
-    Output o = Output("../samples",
+    Series o = Series("../samples",
                       "serial_deletion",
                       IterationEncoding::groupBased,
                       Format::HDF5,

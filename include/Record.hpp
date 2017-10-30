@@ -60,6 +60,11 @@ public:
     { }
     virtual ~BaseRecord() { }
 
+    // TODO
+    // references can be handles polymorphically
+    // making the overriding in subclasses unnecessarry
+    //virtual T_elem& operator[](std::string key);
+
     virtual std::array< double, 7 > unitDimension() const = 0;
 
 private:

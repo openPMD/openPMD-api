@@ -123,46 +123,46 @@ RecordComponent::loadChunk(Offset o, Extent e, double targetUnitSI)
                                      + " - Chunk: " + std::to_string(o[i] + e[i])
                                      + ")");
 
-    size_t points = 1;
-    for( auto const& val : e )
-        points *= val;
+    size_t numPoints = 1;
+    for( auto const& dimensionSize : e )
+        numPoints *= dimensionSize;
 
     void* data = nullptr;
     switch( getDatatype() )
     {
         using DT = Datatype;
         case DT::DOUBLE:
-            data = new double[points];
+            data = new double[numPoints];
             break;
         case DT::FLOAT:
-            data = new float[points];
+            data = new float[numPoints];
             break;
         case DT::INT16:
-            data = new int16_t[points];
+            data = new int16_t[numPoints];
             break;
         case DT::INT32:
-            data = new int32_t[points];
+            data = new int32_t[numPoints];
             break;
         case DT::INT64:
-            data = new int64_t[points];
+            data = new int64_t[numPoints];
             break;
         case DT::UINT16:
-            data = new uint16_t[points];
+            data = new uint16_t[numPoints];
             break;
         case DT::UINT32:
-            data = new uint32_t[points];
+            data = new uint32_t[numPoints];
             break;
         case DT::UINT64:
-            data = new uint64_t[points];
+            data = new uint64_t[numPoints];
             break;
         case DT::CHAR:
-            data = new char[points];
+            data = new char[numPoints];
             break;
         case DT::UCHAR:
-            data = new unsigned char[points];
+            data = new unsigned char[numPoints];
             break;
         case DT::BOOL:
-            data = new bool[points];
+            data = new bool[numPoints];
             break;
         case DT::UNDEFINED:
         default:
@@ -177,7 +177,7 @@ RecordComponent::loadChunk(Offset o, Extent e, double targetUnitSI)
         IOHandler->flush();
         T* ptr = static_cast< T* >(data);
         T value = Attribute(*attribute_parameter.resource).get< T >();
-        std::fill(ptr, ptr + points, value);
+        std::fill(ptr, ptr + numPoints, value);
     } else
     {
         Parameter< Operation::READ_DATASET > chunk_parameter;

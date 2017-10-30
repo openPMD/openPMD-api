@@ -8,7 +8,7 @@
 #if defined(LIBOPENPMD_WITH_PARALLEL_HDF5) ||defined(LIBOPENPMD_WITH_PARALLEL_ADIOS1)
 #include <mpi.h>
 
-#include "../include/Output.hpp"
+#include "Series.hpp"
 
 
 int main(int argc, char *argv[])
@@ -35,11 +35,10 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     /* only a 3x3x3 chunk of the actual data is hardcoded. every worker reads 1/3 */
     uint64_t rank = mpi_rank % 3;
-    Output o = Output("../samples/git-sample/",
-                      "data00000100",
-                      IterationEncoding::fileBased,
-                      Format::PARALLEL_HDF5,
-                      AccessType::READ_ONLY);
+    Series o = Series("../samples/git-sample/",
+                      "data00000%T.h5",
+                      true);
+
 
     {
         double actual[3][3][3] = {{{-1.9080703683727052e-09, -1.5632650729457964e-10, 1.1497536256399599e-09},
@@ -85,7 +84,7 @@ BOOST_AUTO_TEST_CASE(hdf5_write_test)
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_r);
     uint64_t mpi_size = static_cast<uint64_t>(mpi_s);
     uint64_t mpi_rank = static_cast<uint64_t>(mpi_r);
-    Output o = Output("../samples",
+    Series o = Series("../samples",
                       "parallel_write",
                       IterationEncoding::groupBased,
                       Format::PARALLEL_HDF5,

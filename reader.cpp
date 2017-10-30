@@ -1,13 +1,16 @@
 #include <iostream>
 #include <numeric>
 
-#include "include/Output.hpp"
+#include "Series.hpp"
 
 int main()
 {
-    Output o = Output("./directory/",
-                      "data%T.h5");
+    Series o = Series("../samples/git-sample/",
+                      "data00000400.h5");
 
+    std::cout << "Read iterations ";
+    for( auto const& val : o.iterations )
+        std::cout << '\t' << val.first;
     /*
     std::cout << "Read attributes in the root:\n";
     for( auto const& val : o.attributes() )

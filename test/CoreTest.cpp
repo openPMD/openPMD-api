@@ -5,13 +5,13 @@
 #define protected public
 #include <boost/test/included/unit_test.hpp>
 
-#include "../include/Output.hpp"
+#include "Series.hpp"
 
 
 BOOST_AUTO_TEST_CASE(output_default_test)
 {
     using IE = IterationEncoding;
-    Output o = Output("./",
+    Series o = Series("./",
                       "new_openpmd_output_%T",
                       IE::fileBased,
                       Format::NONE,
@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE(output_default_test)
 BOOST_AUTO_TEST_CASE(output_constructor_test)
 {
     using IE = IterationEncoding;
-    Output o1 = Output("./",
+    Series o1 = Series("./",
                       "MyOutput_%T",
                       IE::fileBased,
                       Format::NONE,
@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE(output_constructor_test)
 
     o1.iterations[0];
 
-    Output o2 = Output("./",
+    Series o2 = Series("./",
                        "MyCustomOutput",
                        IE::groupBased,
                        Format::NONE,
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(output_constructor_test)
 BOOST_AUTO_TEST_CASE(output_modification_test)
 {
     using IE = IterationEncoding;
-    Output o = Output("./",
+    Series o = Series("./",
                       "MyOutput_%T",
                       IE::fileBased,
                       Format::NONE,
@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(output_modification_test)
 BOOST_AUTO_TEST_CASE(iteration_default_test)
 {
     using IE = IterationEncoding;
-    Output o = Output("./",
+    Series o = Series("./",
                       "MyOutput_%T",
                       IE::fileBased,
                       Format::NONE,
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(iteration_default_test)
 BOOST_AUTO_TEST_CASE(iteration_modification_test)
 {
     using IE = IterationEncoding;
-    Output o = Output("./",
+    Series o = Series("./",
                       "MyOutput_%T",
                       IE::fileBased,
                       Format::NONE,
@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_CASE(iteration_modification_test)
 BOOST_AUTO_TEST_CASE(record_constructor_test)
 {
     using IE = IterationEncoding;
-    Output o = Output("./",
+    Series o = Series("./",
                       "MyOutput_%T",
                       IE::fileBased,
                       Format::NONE,
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(record_constructor_test)
 BOOST_AUTO_TEST_CASE(record_modification_test)
 {
     using IE = IterationEncoding;
-    Output o = Output("./",
+    Series o = Series("./",
                       "MyOutput_%T",
                       IE::fileBased,
                       Format::NONE,
@@ -205,7 +205,7 @@ BOOST_AUTO_TEST_CASE(record_modification_test)
 BOOST_AUTO_TEST_CASE(recordComponent_modification_test)
 {
     using IE = IterationEncoding;
-    Output o = Output("./",
+    Series o = Series("./",
                       "MyOutput_%T",
                       IE::fileBased,
                       Format::NONE,
@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_CASE(recordComponent_modification_test)
 BOOST_AUTO_TEST_CASE(mesh_constructor_test)
 {
     using IE = IterationEncoding;
-    Output o = Output("./",
+    Series o = Series("./",
                       "MyOutput_%T",
                       IE::fileBased,
                       Format::NONE,
@@ -261,7 +261,7 @@ BOOST_AUTO_TEST_CASE(mesh_constructor_test)
 BOOST_AUTO_TEST_CASE(mesh_modification_test)
 {
     using IE = IterationEncoding;
-    Output o = Output("./",
+    Series o = Series("./",
                       "MyOutput_%T",
                       IE::fileBased,
                       Format::NONE,
@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE(mesh_modification_test)
 
 BOOST_AUTO_TEST_CASE(structure_test)
 {
-    Output o = Output("./",
+    Series o = Series("./",
                       "new_openpmd_output_%T",
                       IterationEncoding::fileBased,
                       Format::NONE,
@@ -358,6 +358,12 @@ BOOST_AUTO_TEST_CASE(structure_test)
     BOOST_TEST(o.iterations[1].particles["P"].IOHandler);
     BOOST_TEST(ps.parent == static_cast< Writable* >(&o.iterations[1].particles));
     BOOST_TEST(o.iterations[1].particles["P"].parent == static_cast< Writable* >(&o.iterations[1].particles));
+
+    BOOST_TEST(o.iterations[1].particles["P"].particlePatches.IOHandler);
+    BOOST_TEST(o.iterations[1].particles["P"].particlePatches.parent == static_cast< Writable* >(&o.iterations[1].particles["P"]));
+
+    BOOST_TEST(1 == o.iterations[1].particles["P"].count("position"));
+    BOOST_TEST(1 == o.iterations[1].particles["P"].count("positionOffset"));
 
     Record r = o.iterations[1].particles["P"]["PR"];
     BOOST_TEST(r.IOHandler);

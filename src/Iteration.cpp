@@ -1,10 +1,30 @@
+/* Copyright 2017 Fabian Koller
+ *
+ * This file is part of libopenPMD.
+ *
+ * libopenPMD is free software: you can redistribute it and/or modify
+ * it under the terms of of either the GNU General Public License or
+ * the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * libopenPMD is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License and the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * and the GNU Lesser General Public License along with libopenPMD.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
 #include <memory>
 #include <iostream>
 
-#include "../include/Auxiliary.hpp"
-#include "../include/Dataset.hpp"
-#include "../include/Iteration.hpp"
-#include "../include/Output.hpp"
+#include "Auxiliary.hpp"
+#include "Dataset.hpp"
+#include "Iteration.hpp"
+#include "Series.hpp"
 
 
 Iteration::Iteration()
@@ -71,29 +91,40 @@ Iteration::flushFileBased(uint64_t i)
     if( !written )
     {
         /* create file */
-        Output* o = dynamic_cast<Output *>(parent);
+        Series* o = dynamic_cast<Series *>(parent->parent);
         Parameter< Operation::CREATE_FILE > file_parameter;
         file_parameter.name = replace_first(o->iterationFormat(), "%T", std::to_string(i));
-        IOHandler->enqueue(IOTask(this, file_parameter));
+        IOHandler->enqueue(IOTask(o, file_parameter));
         IOHandler->flush();
-        o->abstractFilePosition = abstractFilePosition;
-        o->written = true;
 
         /* create basePath */
-        Parameter< Operation::CREATE_PATH > iteration_parameter;
-        iteration_parameter.path = replace_first(o->basePath(), "%T/", "");
-        written = false;
-        IOHandler->enqueue(IOTask(this, iteration_parameter));
+        Parameter< Operation::CREATE_PATH > path_parameter;
+        path_parameter.path = replace_first(o->basePath(), "%T/", "");
+        IOHandler->enqueue(IOTask(&o->iterations, path_parameter));
         IOHandler->flush();
-        o->iterations.abstractFilePosition = abstractFilePosition;
-        o->iterations.written = true;
-        parent = &o->iterations;
 
         /* create iteration path */
-        iteration_parameter.path = std::to_string(i);
-        abstractFilePosition = std::shared_ptr< AbstractFilePosition >(nullptr);
-        written = false;
-        IOHandler->enqueue(IOTask(this, iteration_parameter));
+        path_parameter.path = std::to_string(i);
+        IOHandler->enqueue(IOTask(this, path_parameter));
+        IOHandler->flush();
+    } else
+    {
+        /* open file */
+        Series* o = dynamic_cast<Series *>(parent->parent);
+        Parameter< Operation::OPEN_FILE > file_parameter;
+        file_parameter.name = replace_last(o->iterationFormat(), "%T", std::to_string(i));
+        IOHandler->enqueue(IOTask(o, file_parameter));
+        IOHandler->flush();
+
+        /* open basePath */
+        Parameter< Operation::OPEN_PATH > path_parameter;
+        path_parameter.path = replace_first(o->basePath(), "%T/", "");
+        IOHandler->enqueue(IOTask(&o->iterations, path_parameter));
+        IOHandler->flush();
+
+        /* open iteration path */
+        path_parameter.path = std::to_string(i);
+        IOHandler->enqueue(IOTask(this, path_parameter));
         IOHandler->flush();
     }
 
@@ -118,12 +149,12 @@ Iteration::flushGroupBased(uint64_t i)
 void
 Iteration::flush()
 {
-    /* Find the root point [Output] of this file,
+    /* Find the root point [Series] of this file,
      * meshesPath and particlesPath are stored there */
     Writable *w = this;
     while( w->parent )
         w = w->parent;
-    Output* o = dynamic_cast<Output *>(w);
+    Series* o = dynamic_cast<Series *>(w);
 
     meshes.flush(o->meshesPath());
     for( auto& m : meshes )
@@ -179,12 +210,12 @@ Iteration::read()
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'timeUnitSI'");
 
-    /* Find the root point [Output] of this file,
+    /* Find the root point [Series] of this file,
      * meshesPath and particlesPath are stored there */
     Writable *w = this;
     while( w->parent )
         w = w->parent;
-    Output* o = dynamic_cast<Output *>(w);
+    Series* o = dynamic_cast<Series *>(w);
 
     meshes.clear();
     Parameter< Operation::OPEN_PATH > path_parameter;

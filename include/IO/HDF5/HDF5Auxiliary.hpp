@@ -92,42 +92,42 @@ getH5DataSpace(Attribute const& att)
         {
             hid_t array_t_id = H5Screate(H5S_SIMPLE);
             hsize_t dims[1] = {7};
-            H5Sset_extent_simple(array_t_id, 1, dims, NULL);
+            H5Sset_extent_simple(array_t_id, 1, dims, nullptr);
             return array_t_id;
         }
         case DT::VEC_INT:
         {
             hid_t vec_t_id = H5Screate(H5S_SIMPLE);
             hsize_t dims[1] = {att.get< std::vector< int > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, NULL);
+            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
             return vec_t_id;
         }
         case DT::VEC_FLOAT:
         {
             hid_t vec_t_id = H5Screate(H5S_SIMPLE);
             hsize_t dims[1] = {att.get< std::vector< float > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, NULL);
+            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
             return vec_t_id;
         }
         case DT::VEC_DOUBLE:
         {
             hid_t vec_t_id = H5Screate(H5S_SIMPLE);
             hsize_t dims[1] = {att.get< std::vector< double > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, NULL);
+            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
             return vec_t_id;
         }
         case DT::VEC_UINT64:
         {
             hid_t vec_t_id = H5Screate(H5S_SIMPLE);
             hsize_t dims[1] = {att.get< std::vector< uint64_t > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, NULL);
+            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
             return vec_t_id;
         }
         case DT::VEC_STRING:
         {
             hid_t vec_t_id = H5Screate(H5S_SIMPLE);
             hsize_t dims[1] = {att.get< std::vector< std::string > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, NULL);
+            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
             return vec_t_id;
         }
         case DT::UNDEFINED:
@@ -156,5 +156,6 @@ concrete_h5_file_position(Writable* w)
         hierarchy.pop();
     }
 
+    //std::cerr << "Concrete file position " << pos << std::endl;
     return replace_all(pos, "//", "/");
 }
