@@ -18,7 +18,6 @@ class Container : public Attributable
     using InternalContainer = std::unordered_map< T_key, T >;
 
     friend class Iteration;
-    friend class ParticleSpecies;
     friend class Series;
 
 public:
@@ -53,11 +52,8 @@ public:
     void clear()
     {
         if( AccessType::READ_ONLY != IOHandler->accessType )
-        {
-            if( written )
-                throw std::runtime_error("Clearing a written container not (yet) implemented.");
-            m_container.clear();
-        } else
+            clear_unchecked();
+        else
             throw std::runtime_error("Can not clear a container in a read-only Series.");
     }
 
@@ -123,6 +119,13 @@ public:
 
 protected:
     InternalContainer m_container;
+
+    void clear_unchecked()
+    {
+        if( written )
+            throw std::runtime_error("Clearing a written container not (yet) implemented.");
+        m_container.clear();
+    }
 
 private:
     void flush(std::string const path)

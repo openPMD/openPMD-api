@@ -39,11 +39,13 @@ enum class IterationEncoding
 /** @brief  Root level of the openPMD hierarchy.
  *
  * Entry point and common link between all iterations of particle and mesh data.
+ *
+ * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file
+ * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series
  */
 class Series : public Attributable
 {
 public:
-    // TODO replace with Series::create() factory method
     /** Detailed constructor for series of iterations.
      *
      * @param path  Directory of the data, relative(!) to the current working directory.
@@ -52,23 +54,21 @@ public:
      * @param f     File format and IO backend to use for this series.
      * @param at    Access permissions for every file in this series.
      */
-    Series(std::string const& path,
-           std::string const& name,
-           IterationEncoding ie,
-           Format f,
-           AccessType at);
-    // TODO replace with Series::read() factory method
+    static Series create(std::string const& path,
+                         std::string const& name,
+                         IterationEncoding ie,
+                         Format f,
+                         AccessType at = AccessType::CREAT);
     /** Convenience constructor for read-only data.
      *
      * @param path      Directory of the data, relative(!) to the current working directory.
      * @param name      Concrete name of one file in series (fileBased series will be loaded according to iterationFormat). Must include file extension.
      * @param parallel  Flag indicating whether this series should be read with an MPI-compatible backend. If <CODE>true</CODE>, <CODE>MPI_init()</CODE> must be called before.
      */
-    Series(std::string path,
-           std::string const& name,
-           bool parallel = false);
-    // TODO disallow copy semantics
-    // Series(Series const &) = delete;
+    static Series read(std::string const& path,
+                       std::string const& name,
+                       bool readonly = true,
+                       bool parallel = false);
     ~Series();
 
     /**
@@ -127,6 +127,7 @@ public:
     Series& setParticlesPath(std::string const& particlesPath);
 
     /**
+     * @throw   no_such_attribute_error If optional attribute is not present.
      * @return  String indicating author and contact for the information in the file.
      */
     std::string author() const;
@@ -138,6 +139,7 @@ public:
     Series& setAuthor(std::string const& author);
 
     /**
+     * @throw   no_such_attribute_error If optional attribute is not present.
      * @return  String indicating the software/code/simulation that created the file;
      */
     std::string software() const;
@@ -149,7 +151,8 @@ public:
     Series& setSoftware(std::string const& software);
 
     /**
-     * @return  String indicating the version of the software/code/simulation that created the file.String indicating the version of the software/code/simulation that created the file.
+     * @throw   no_such_attribute_error If optional attribute is not present.
+     * @return  String indicating the version of the software/code/simulation that created the file.
      */
     std::string softwareVersion() const;
     /** Indicate the version of the software/code/simulation that created the file.
@@ -160,6 +163,7 @@ public:
     Series& setSoftwareVersion(std::string const& softwareVersion);
 
     /**
+     * @throw   no_such_attribute_error If optional attribute is not present.
      * @return  String inidcating date of creation.
      */
     std::string date() const;
@@ -215,14 +219,30 @@ public:
     Container< Iteration, uint64_t > iterations;
 
 private:
+    // TODO replace entirely with factory
+    Series(std::string const& path,
+           std::string const& name,
+           IterationEncoding ie,
+           Format f,
+           AccessType at);
+
+    // TODO replace entirely with factory
+    Series(std::string path,
+           std::string const& name,
+           bool readonly,
+           bool parallel);
+
     void flushFileBased();
     void flushGroupBased();
     void readFileBased();
     void readGroupBased();
     void read();
 
-    static char const* const BASEPATH;
-    static char const* const OPENPMD;
+    static std::string cleanFilename(std::string, Format);
+
+    constexpr static char const * const BASEPATH = "/data/%T/";
+    constexpr static char const * const OPENPMD = "1.0.1";
+
     IterationEncoding m_iterationEncoding;
     std::string m_name;
 };  //Series

@@ -1,7 +1,27 @@
+/* Copyright 2017 Fabian Koller
+ *
+ * This file is part of libopenPMD.
+ *
+ * libopenPMD is free software: you can redistribute it and/or modify
+ * it under the terms of of either the GNU General Public License or
+ * the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * libopenPMD is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License and the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * and the GNU Lesser General Public License along with libopenPMD.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
 #include <iostream>
 
-#include "../include/Auxiliary.hpp"
-#include "../include/Mesh.hpp"
+#include "Auxiliary.hpp"
+#include "Mesh.hpp"
 
 
 Mesh::Mesh()
@@ -15,67 +35,15 @@ Mesh::Mesh()
     setGridUnitSI(1);
 }
 
-MeshRecordComponent&
-Mesh::operator[](std::string key)
-{
-    auto it = this->find(key);
-    if( it != this->end() )
-        return it->second;
-    else
-    {
-        bool scalar = (key == MeshRecordComponent::SCALAR);
-        if( (scalar && !empty() && !m_containsScalar) || (m_containsScalar && !scalar) )
-            throw std::runtime_error("A scalar component can not be contained at "
-                                     "the same time as one or more regular components.");
-
-        MeshRecordComponent & ret = Container< MeshRecordComponent >::operator[](key);
-        if( scalar )
-        {
-            m_containsScalar = true;
-            ret.parent = this->parent;
-        }
-        return ret;
-    }
-}
-
-typename Mesh::size_type
-Mesh::erase(std::string const& key)
-{
-    bool scalar = (key == MeshRecordComponent::SCALAR);
-    Mesh::size_type res;
-    if( !scalar || (scalar && this->at(key).m_isConstant) )
-        res = Container< MeshRecordComponent >::erase(key);
-    else
-    {
-        MeshRecordComponent& mrc = this->find(MeshRecordComponent::SCALAR)->second;
-        if( mrc.written )
-        {
-            Parameter< Operation::DELETE_DATASET > dataset_parameter;
-            dataset_parameter.name = ".";
-            IOHandler->enqueue(IOTask(&mrc, dataset_parameter));
-            IOHandler->flush();
-        }
-        res = Container< MeshRecordComponent >::erase(key);
-    }
-
-    if( scalar )
-    {
-        written = false;
-        abstractFilePosition.reset();
-        m_containsScalar = false;
-    }
-    return res;
-}
-
 Mesh::Geometry
 Mesh::geometry() const
 {
     std::string ret = getAttribute("geometry").get< std::string >();
-    if( ret == "cartesian" ) { return Geometry::cartesian; }
-    else if( ret == "thetaMode" ) { return Geometry::thetaMode; }
-    else if( ret == "cylindrical" ) { return Geometry::cylindrical; }
-    else if( ret == "spherical" ) { return Geometry::spherical; }
-    throw std::runtime_error("Unkonwn geometry " + ret);
+    if( "cartesian" == ret ) { return Geometry::cartesian; }
+    else if( "thetaMode" == ret ) { return Geometry::thetaMode; }
+    else if( "cylindrical" == ret ) { return Geometry::cylindrical; }
+    else if( "spherical" == ret ) { return Geometry::spherical; }
+    else { throw std::runtime_error("Unkonwn geometry " + ret); }
 }
 
 Mesh&
@@ -117,7 +85,7 @@ Mesh::setGeometryParameters(std::string const& gp)
 Mesh::DataOrder
 Mesh::dataOrder() const
 {
-    return Mesh::DataOrder(boost::get< char >(getAttribute("dataOrder").getResource()));
+    return Mesh::DataOrder(getAttribute("dataOrder").get< char >());
 }
 
 Mesh&
@@ -179,12 +147,6 @@ Mesh::setGridUnitSI(double gusi)
     setAttribute("gridUnitSI", gusi);
     dirty = true;
     return *this;
-}
-
-std::array< double, 7 >
-Mesh::unitDimension() const
-{
-    return getAttribute("unitDimension").get< std::array< double, 7 > >();
 }
 
 Mesh&
@@ -256,13 +218,13 @@ Mesh::read()
     if( *attribute_parameter.dtype == DT::STRING )
     {
         std::string geometry = Attribute(*attribute_parameter.resource).get< std::string >();
-        if( geometry == "cartesian" )
+        if( "cartesian" == geometry )
             setGeometry(Geometry::cartesian);
-        else if( geometry == "thetaMode" )
+        else if( "thetaMode" == geometry )
             setGeometry(Geometry::thetaMode);
-        else if( geometry == "cylindrical" )
+        else if( "cylindrical" == geometry )
             setGeometry(Geometry::cylindrical);
-        else if( geometry == "spherical" )
+        else if( "spherical" == geometry )
             setGeometry(Geometry::spherical);
         else
             throw std::runtime_error("Unkonwn geometry " + geometry);
@@ -323,11 +285,11 @@ Mesh::read()
 
     if( m_containsScalar )
     {
-        /* using operator[] will falsely update parent */
+        /* using operator[] will incorrectly update parent */
         (*this).find(MeshRecordComponent::SCALAR)->second.read();
     } else
     {
-        clear();
+        clear_unchecked();
         Parameter< Operation::LIST_PATHS > plist_parameter;
         IOHandler->enqueue(IOTask(this, plist_parameter));
         IOHandler->flush();

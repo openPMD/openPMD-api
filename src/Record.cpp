@@ -7,58 +7,6 @@ Record::Record() = default;
 Record::Record(Record const&) = default;
 Record::~Record() = default;
 
-RecordComponent&
-Record::operator[](std::string key)
-{
-    bool scalar = (key == RecordComponent::SCALAR);
-    if( (scalar && !empty() && !m_containsScalar) || (m_containsScalar && !scalar) )
-        throw std::runtime_error("A scalar component can not be contained at "
-                                 "the same time as one or more regular components.");
-
-    RecordComponent & ret = Container< RecordComponent >::operator[](key);
-    if( scalar )
-    {
-        m_containsScalar = true;
-        ret.parent = this->parent;
-    }
-    return ret;
-}
-
-Record::size_type
-Record::erase(std::string const& key)
-{
-    bool scalar = (key == RecordComponent::SCALAR);
-    Record::size_type res;
-    if( !scalar || (scalar && this->at(key).m_isConstant) )
-        res = Container< RecordComponent >::erase(key);
-    else
-    {
-        RecordComponent& rc = this->find(RecordComponent::SCALAR)->second;
-        if( rc.written )
-        {
-            Parameter< Operation::DELETE_DATASET > dataset_parameter;
-            dataset_parameter.name = ".";
-            IOHandler->enqueue(IOTask(&rc, dataset_parameter));
-            IOHandler->flush();
-        }
-        res = Container< RecordComponent >::erase(key);
-    }
-
-    if( scalar )
-    {
-        written = false;
-        abstractFilePosition.reset();
-        m_containsScalar = false;
-    }
-    return res;
-}
-
-std::array< double, 7 >
-Record::unitDimension() const
-{
-    return getAttribute("unitDimension").get< std::array< double, 7 > >();
-}
-
 Record&
 Record::setUnitDimension(std::map< Record::UnitDimension, double > const& udim)
 {
@@ -110,11 +58,11 @@ Record::read()
 
     if( m_containsScalar )
     {
-        /* using operator[] will falsely update parent */
+        /* using operator[] will incorrectly update parent */
         (*this).find(RecordComponent::SCALAR)->second.read();
     } else
     {
-        clear();
+        clear_unchecked();
         Parameter< Operation::LIST_PATHS > plist_parameter;
         IOHandler->enqueue(IOTask(this, plist_parameter));
         IOHandler->flush();

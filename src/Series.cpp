@@ -26,16 +26,9 @@
 #include <boost/filesystem.hpp>
 
 #include "Auxiliary.hpp"
-#include "IO/ADIOS/ADIOS1IOHandler.hpp"
-#include "IO/ADIOS/ParallelADIOS1IOHandler.hpp"
-#include "IO/ADIOS/ADIOS2IOHandler.hpp"
-#include "IO/HDF5/HDF5IOHandler.hpp"
-#include "IO/HDF5/ParallelHDF5IOHandler.hpp"
+#include "IO/AbstractIOHandler.hpp"
 #include "Series.hpp"
 
-
-char const * const Series::BASEPATH = "/data/%T/";
-char const * const Series::OPENPMD = "1.0.1";
 
 std::ostream&
 operator<<(std::ostream& os, IterationEncoding ie)
@@ -52,51 +45,31 @@ operator<<(std::ostream& os, IterationEncoding ie)
     return os;
 }
 
+Series Series::create(std::string const& path,
+                      std::string const& name,
+                      IterationEncoding ie,
+                      Format f,
+                      AccessType at)
+{
+    return Series(path, name, ie, f, at);
+}
+
 Series::Series(std::string const& path,
                std::string const& name,
                IterationEncoding ie,
                Format f,
                AccessType at)
-        : iterations{Container< Iteration, uint64_t >()}
+        : iterations{Container< Iteration, uint64_t >()},
+          m_name{cleanFilename(name, f)}
 {
     std::string cleanPath{path};
     if( !ends_with(cleanPath, "/") )
         cleanPath += '/';
-    std::string cleanName{name};
-    switch( f )
-    {
-        case Format::HDF5:
-        case Format::PARALLEL_HDF5:
-            if( ends_with(cleanName, ".h5") )
-                cleanName = replace_last(cleanName, ".h5", "");
-            break;
-        case Format::ADIOS:
-        case Format::PARALLEL_ADIOS:
-        case Format::ADIOS2:
-        case Format::PARALLEL_ADIOS2:
-            if( ends_with(cleanName, ".bp") )
-                cleanName = replace_last(cleanName, ".bp", "");
-            break;
-        default:
-            break;
-    }
-    m_name = cleanName;
-    switch( f )
-    {
-        case Format::HDF5:
-            IOHandler = std::make_shared<HDF5IOHandler>(cleanPath, at);
-            break;
-        case Format::PARALLEL_HDF5:
-            IOHandler = std::make_shared<ParallelHDF5IOHandler>(cleanPath, at);
-            break;
-        case Format::NONE:
-            IOHandler = std::make_shared<NONEIOHandler>(cleanPath, at);
-            break;
-        default:
-            throw std::runtime_error("Backend not yet working");
-    }
+
+    IOHandler = AbstractIOHandler::createIOHandler(cleanPath, at, f);
     iterations.IOHandler = IOHandler;
     iterations.parent = this;
+
     switch( at )
     {
         case AccessType::CREAT:
@@ -123,32 +96,34 @@ Series::Series(std::string const& path,
     }
 }
 
+Series Series::read(std::string const& path,
+                    std::string const& name,
+                    bool readonly,
+                    bool parallel)
+{
+    return Series(path, name, readonly, parallel);
+}
+
 Series::Series(std::string path,
                std::string const& name,
+               bool readonly,
                bool parallel)
     : iterations{Container< Iteration, uint64_t >()}
 {
     if( !ends_with(path, "/") )
         path += '/';
-    AccessType at = AccessType::READ_ONLY;
+    AccessType at = readonly ? AccessType::READ_ONLY : AccessType::READ_WRITE;
+    Format f = Format::NONE;
     if( ends_with(name, ".h5") )
-    {
-        if( parallel )
-        { IOHandler = std::make_shared< ParallelHDF5IOHandler >(path, at); }
-        else
-        { IOHandler = std::make_shared< HDF5IOHandler >(path, at); }
-        m_name = replace_last(name, ".h5", "");
-    } else if( ends_with(m_name, ".bp") )
-    {
-        throw std::runtime_error("Backend not yet working");
-    }
-    else
-    {
-        throw std::runtime_error("Can not determine file type from file name - " + name);
-    }
+        f = parallel ? Format::PARALLEL_HDF5 : Format::HDF5;
+    else if( ends_with(name, ".bp") )
+        f = parallel ? Format::PARALLEL_ADIOS : Format::ADIOS;
+    IOHandler = AbstractIOHandler::createIOHandler(path, at, f);
 
     iterations.IOHandler = IOHandler;
     iterations.parent = this;
+
+    m_name = cleanFilename(name, f);
 
     if( contains(m_name, "%T") )
         readFileBased();
@@ -541,7 +516,9 @@ Series::readGroupBased()
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
 
-    iterations.clear();
+    /* do not use the public checked version
+     * at this point we can guarantee clearing the container won't break anything */
+    iterations.clear_unchecked();
 
     read();
 
@@ -622,4 +599,28 @@ Series::read()
     }
 
     readAttributes();
+}
+
+std::string
+Series::cleanFilename(std::string s, Format f)
+{
+    switch( f )
+    {
+        case Format::HDF5:
+        case Format::PARALLEL_HDF5:
+            if( ends_with(s, ".h5") )
+                s = replace_last(s, ".h5", "");
+            break;
+        case Format::ADIOS:
+        case Format::ADIOS2:
+        case Format::PARALLEL_ADIOS:
+        case Format::PARALLEL_ADIOS2:
+            if( ends_with(s, ".bp") )
+                s = replace_last(s, ".bp", "");
+            break;
+        default:
+            break;
+    }
+
+    return s;
 }

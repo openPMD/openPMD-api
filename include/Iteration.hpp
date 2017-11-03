@@ -31,7 +31,9 @@
 #include "ParticleSpecies.hpp"
 
 
-/** @brief  Logical compilation of data from one timeframe (e.g. a simulation step).
+/** @brief  Logical compilation of data from one timeframe (e.g. a single simulation cycle).
+ *
+ * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#required-attributes-for-the-basepath
  */
 class Iteration : public Attributable
 {
@@ -76,16 +78,22 @@ public:
     Iteration& setDt(T dt);
 
     /**
-     * @return Conversion factor to convert time and dt to seconds
+     * @return Conversion factor to convert time and dt to seconds.
      */
     double timeUnitSI() const;
-    Iteration& setTimeUnitSI(double);
+    /** Set the conversion factor to convert time and dt to seconds.
+     *
+     * @param timeUnitSI
+     * @return  Reference to modified iteration.
+     */
+    Iteration& setTimeUnitSI(double timeUnitSI);
 
     Container< Mesh > meshes;
     Container< ParticleSpecies > particles; //particleSpecies?
 
 private:
     Iteration();
+
     void flushFileBased(uint64_t);
     void flushGroupBased(uint64_t);
     void flush();

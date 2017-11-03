@@ -158,9 +158,7 @@ Iteration::flush()
 
     meshes.flush(o->meshesPath());
     for( auto& m : meshes )
-    {
         m.second.flush(m.first);
-    }
 
     particles.flush(o->particlesPath());
     for( auto& species : particles )
@@ -217,7 +215,7 @@ Iteration::read()
         w = w->parent;
     Series* o = dynamic_cast<Series *>(w);
 
-    meshes.clear();
+    meshes.clear_unchecked();
     Parameter< Operation::OPEN_PATH > path_parameter;
     path_parameter.path = o->meshesPath();
     IOHandler->enqueue(IOTask(&meshes, path_parameter));
@@ -274,7 +272,7 @@ Iteration::read()
         m.read();
     }
 
-    particles.clear();
+    particles.clear_unchecked();
     path_parameter.path = o->particlesPath();
     IOHandler->enqueue(IOTask(&particles, path_parameter));
     IOHandler->flush();

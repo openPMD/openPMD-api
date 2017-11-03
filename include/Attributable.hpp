@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include <exception>
 #include <iostream>
 #include <map>
 #include <set>
@@ -10,6 +11,19 @@
 #include "Auxiliary.hpp"
 #include "IO/AbstractIOHandler.hpp"
 #include "Writable.hpp"
+
+
+class no_such_attribute_error : public std::runtime_error
+{
+public:
+    no_such_attribute_error(char const* what_arg)
+            : std::runtime_error(what_arg)
+    { }
+    no_such_attribute_error(std::string const& what_arg)
+            : std::runtime_error(what_arg)
+    { }
+    virtual ~no_such_attribute_error() { }
+};
 
 
 class Attributable : public Writable
@@ -110,7 +124,7 @@ Attributable::getAttribute(std::string const& key) const
     if( it != m_attributes->cend() )
         return it->second;
 
-    throw std::runtime_error("No such attribute: " + key);
+    throw no_such_attribute_error(key);
 }
 
 inline bool

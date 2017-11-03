@@ -10,8 +10,8 @@
 #ifdef LIBOPENPMD_WITH_HDF5
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_structure_test)
 {
-    Series o = Series("../samples/git-sample/",
-                      "data00000100.h5");
+    Series o = Series::read("../samples/git-sample/",
+                            "data00000100.h5");
 
     BOOST_TEST(o.parent == nullptr);
     BOOST_TEST(o.iterations.parent == static_cast< Writable* >(&o));
@@ -47,8 +47,8 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_structure_test)
 
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_attribute_test)
 {
-    Series o = Series("../samples/git-sample/",
-                      "data00000100.h5");
+    Series o = Series::read("../samples/git-sample/",
+                            "data00000100.h5");
 
     BOOST_TEST(o.openPMD() == "1.0.0");
     BOOST_TEST(o.openPMDextension() == 1);
@@ -290,8 +290,8 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_attribute_test)
 
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
 {
-    Series o = Series("../samples/git-sample/",
-                      "data00000100.h5");
+    Series o = Series::read("../samples/git-sample/",
+                            "data00000100.h5");
 
     {
         double actual[3][3][3] = {{{-1.9080703683727052e-09, -1.5632650729457964e-10, 1.1497536256399599e-09},
@@ -332,8 +332,8 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
 
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_fileBased_read_test)
 {
-    Series o = Series("../samples/git-sample/",
-                      "data%T.h5");
+    Series o = Series::read("../samples/git-sample/",
+                            "data%T.h5");
 
     BOOST_TEST(o.iterations.size() == 5);
     BOOST_TEST(o.iterations.count(100) == 1);
@@ -349,11 +349,8 @@ BOOST_AUTO_TEST_CASE(hzdr_hdf5_sample_content_test)
     try
     {
         /* development/huebl/lwfa-openPMD-062-smallLWFA-h5 */
-        Series o = Series("../samples/hzdr-sample/",
-                   "simData_0",
-                   IterationEncoding::fileBased,
-                   Format::HDF5,
-                   AccessType::READ_ONLY);
+        Series o = Series::read("../samples/hzdr-sample/",
+                                "simData_0.h5");
 
         BOOST_TEST(o.openPMD() == "1.0.0");
         BOOST_TEST(o.openPMDextension() == 1);
@@ -676,11 +673,11 @@ BOOST_AUTO_TEST_CASE(hzdr_hdf5_sample_content_test)
 
 BOOST_AUTO_TEST_CASE(hdf5_write_test)
 {
-    Series o = Series("../samples",
-                      "serial_write",
-                      IterationEncoding::groupBased,
-                      Format::HDF5,
-                      AccessType::CREAT);
+    Series o = Series::create("../samples",
+                              "serial_write",
+                              IterationEncoding::groupBased,
+                              Format::HDF5,
+                              AccessType::CREAT);
 
     o.setAuthor("Serial HDF5");
     ParticleSpecies& e = o.iterations[1].particles["e"];
@@ -718,11 +715,11 @@ BOOST_AUTO_TEST_CASE(hdf5_write_test)
 
 BOOST_AUTO_TEST_CASE(hdf5_fileBased_write_test)
 {
-    Series o = Series("../samples",
-                      "serial_fileBased_write%T",
-                      IterationEncoding::fileBased,
-                      Format::HDF5,
-                      AccessType::CREAT);
+    Series o = Series::create("../samples",
+                              "serial_fileBased_write%T",
+                              IterationEncoding::fileBased,
+                              Format::HDF5,
+                              AccessType::CREAT);
 
     ParticleSpecies& e_1 = o.iterations[1].particles["e"];
 
@@ -809,22 +806,22 @@ BOOST_AUTO_TEST_CASE(hdf5_fileBased_write_test)
 
 BOOST_AUTO_TEST_CASE(hdf5_bool_test)
 {
-    Series o = Series("../samples",
-                      "serial_bool",
-                      IterationEncoding::groupBased,
-                      Format::HDF5,
-                      AccessType::CREAT);
+    Series o = Series::create("../samples",
+                              "serial_bool",
+                              IterationEncoding::groupBased,
+                              Format::HDF5,
+                              AccessType::CREAT);
 
     o.setAttribute("Bool attribute", true);
 }
 
 BOOST_AUTO_TEST_CASE(hdf5_deletion_test)
 {
-    Series o = Series("../samples",
-                      "serial_deletion",
-                      IterationEncoding::groupBased,
-                      Format::HDF5,
-                      AccessType::CREAT);
+    Series o = Series::create("../samples",
+                              "serial_deletion",
+                              IterationEncoding::groupBased,
+                              Format::HDF5,
+                              AccessType::CREAT);
 
 
     o.setAttribute("removed",

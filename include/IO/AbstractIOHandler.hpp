@@ -6,6 +6,7 @@
 #include <queue>
 
 #include "AccessType.hpp"
+#include "Format.hpp"
 #include "IOTask.hpp"
 
 
@@ -15,6 +16,9 @@ public:
     unsupported_data_error(char const* what_arg)
             : std::runtime_error(what_arg)
     { }
+    unsupported_data_error(std::string const& what_arg)
+            : std::runtime_error(what_arg)
+    { }
     virtual ~unsupported_data_error() { }
 };
 
@@ -22,6 +26,8 @@ public:
 class AbstractIOHandler
 {
 public:
+    static std::shared_ptr< AbstractIOHandler > createIOHandler(std::string const& path, AccessType, Format);
+
     AbstractIOHandler(std::string const& path, AccessType);
     virtual ~AbstractIOHandler();
 

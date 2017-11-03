@@ -44,6 +44,9 @@ struct decay_equiv :
 { };
 
 template< typename T >
+#if __cplusplus >= 201402L
+constexpr
+#endif
 Datatype
 determineDatatype()
 {

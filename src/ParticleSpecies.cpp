@@ -50,7 +50,11 @@ ParticleSpecies::setNumParticlesLocalOffset(uint64_t nplo)
 void
 ParticleSpecies::read()
 {
-    clear();
+    /* allow all attributes to be set */
+    written = false;
+
+    clear_unchecked();
+
     /* obtain all non-scalar records */
     Parameter< Operation::LIST_PATHS > plist_parameter;
     IOHandler->enqueue(IOTask(this, plist_parameter));
@@ -105,4 +109,7 @@ ParticleSpecies::read()
     }
 
     readAttributes();
+
+    /* this file need not be flushed */
+    written = true;
 }
