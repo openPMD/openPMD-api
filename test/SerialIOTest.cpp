@@ -308,7 +308,8 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
         MeshRecordComponent& rho = o.iterations[100].meshes["rho"][MeshRecordComponent::SCALAR];
         Offset offset{20, 20, 190};
         Extent extent{3, 3, 3};
-        auto data = rho.loadChunk< double >(offset, extent);
+        std::unique_ptr< double[] > data;
+        rho.loadChunk(offset, extent, data, RecordComponent::Allocation::API);
         double* raw_ptr = data.get();
 
         for( int i = 0; i < 3; ++i )
@@ -322,7 +323,8 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
         RecordComponent& electrons_mass = o.iterations[100].particles["electrons"]["mass"][RecordComponent::SCALAR];
         Offset offset{15};
         Extent extent{3};
-        auto data = electrons_mass.loadChunk< double >(offset, extent);
+        std::unique_ptr< double[] > data;
+        electrons_mass.loadChunk(offset, extent, data, RecordComponent::Allocation::API);
         double* raw_ptr = data.get();
 
         for( int i = 0; i < 3; ++i )
@@ -536,6 +538,7 @@ BOOST_AUTO_TEST_CASE(hzdr_hdf5_sample_content_test)
         BOOST_TEST(species_e.count("position") == 1);
         BOOST_TEST(species_e.count("positionOffset") == 1);
         BOOST_TEST(species_e.count("weighting") == 1);
+        BOOST_TEST(species_e.particlePatches.size() == 2);
 
         ud = {{0.,  0.,  1.,  1.,  0.,  0.,  0.}};
         Record& e_charge = species_e["charge"];
@@ -671,13 +674,89 @@ BOOST_AUTO_TEST_CASE(hzdr_hdf5_sample_content_test)
     }
 }
 
+BOOST_AUTO_TEST_CASE(hdf5_dtype_test)
+{
+    {
+        Series s = Series::create("../samples",
+                                  "dtype_test",
+                                  IterationEncoding::groupBased,
+                                  Format::HDF5,
+                                  AccessType::CREATE);
+
+        char c = 'c';
+        s.setAttribute("char", c);
+        unsigned char uc = 'u';
+        s.setAttribute("uchar", uc);
+        int16_t i16 = 16;
+        s.setAttribute("int16", i16);
+        int32_t i32 = 32;
+        s.setAttribute("int32", i32);
+        int64_t i64 = 64;
+        s.setAttribute("int64", i64);
+        uint16_t u16 = 16;
+        s.setAttribute("uint16", u16);
+        uint32_t u32 = 32;
+        s.setAttribute("uint32", u32);
+        uint64_t u64 = 64;
+        s.setAttribute("uint64", u64);
+        float f = 1e32;
+        s.setAttribute("float", f);
+        double d = 1e64;
+        s.setAttribute("double", d);
+        long double l = 1e80;
+        s.setAttribute("longdouble", l);
+        std::string str = "string";
+        s.setAttribute("string", str);
+        s.setAttribute("vecChar", std::vector< char >({'c', 'h', 'a', 'r'}));
+        s.setAttribute("vecInt16", std::vector< int16_t >({32767}));
+        s.setAttribute("vecInt32", std::vector< int32_t >({2147483647}));
+        s.setAttribute("vecInt64", std::vector< int64_t >({9223372036854775807}));
+        s.setAttribute("vecUchar", std::vector< char >({'u', 'c', 'h', 'a', 'r'}));
+        s.setAttribute("vecUint16", std::vector< uint16_t >({65535}));
+        s.setAttribute("vecUint32", std::vector< uint32_t >({4294967295}));
+        s.setAttribute("vecUint64", std::vector< uint64_t >({18446744073709551615}));
+        s.setAttribute("vecFloat", std::vector< float >({3.40282e+38}));
+        s.setAttribute("vecDouble", std::vector< double >({1.79769e+308}));
+        s.setAttribute("vecLongdouble", std::vector< long double >({1.18973e+4932}));
+        s.setAttribute("vecString", std::vector< std::string >({"vector", "of", "strings"}));
+    }
+    
+    Series s = Series::read("../samples",
+                            "dtype_test.h5");
+    
+    BOOST_TEST(s.getAttribute("char").get< char >() == 'c');
+    BOOST_TEST(s.getAttribute("uchar").get< unsigned char >() == 'u');
+    BOOST_TEST(s.getAttribute("int16").get< int16_t >() == 16);
+    BOOST_TEST(s.getAttribute("int32").get< int32_t >() == 32);
+    BOOST_TEST(s.getAttribute("int64").get< int64_t >() == 64);
+    BOOST_TEST(s.getAttribute("uint16").get< uint16_t >() == 16);
+    BOOST_TEST(s.getAttribute("uint32").get< uint32_t >() == 32);
+    BOOST_TEST(s.getAttribute("uint64").get< uint64_t >() == 64);
+    BOOST_TEST(s.getAttribute("float").get< float >() == 1e32);
+    BOOST_TEST(s.getAttribute("double").get< double >() == 1e64);
+    BOOST_TEST(s.getAttribute("longdouble").get< long double >() == 1e80);
+    BOOST_TEST(s.getAttribute("string").get< std::string >() == "string");
+    BOOST_TEST(s.getAttribute("vecChar").get< std::vector< char > >() == std::vector< char >({'c', 'h', 'a', 'r'}));
+    BOOST_TEST(s.getAttribute("vecInt16").get< std::vector< int16_t > >() == std::vector< int16_t >({32767}));
+    BOOST_TEST(s.getAttribute("vecInt32").get< std::vector< int32_t > >() == std::vector< int32_t >({2147483647}));
+    BOOST_TEST(s.getAttribute("vecInt64").get< std::vector< int64_t > >() == std::vector< int64_t >({9223372036854775807}));
+    BOOST_TEST(s.getAttribute("vecUchar").get< std::vector< char > >() == std::vector< char >({'u', 'c', 'h', 'a', 'r'}));
+    BOOST_TEST(s.getAttribute("vecUint16").get< std::vector< uint16_t > >() == std::vector< uint16_t >({65535}));
+    BOOST_TEST(s.getAttribute("vecUint32").get< std::vector< uint32_t > >() == std::vector< uint32_t >({4294967295}));
+    BOOST_TEST(s.getAttribute("vecUint64").get< std::vector< uint64_t > >() == std::vector< uint64_t >({18446744073709551615}));
+    BOOST_TEST(s.getAttribute("vecFloat").get< std::vector< float > >() == std::vector< float >({3.40282e+38}));
+    BOOST_TEST(s.getAttribute("vecDouble").get< std::vector< double > >() == std::vector< double >({1.79769e+308}));
+    BOOST_TEST(s.getAttribute("vecLongdouble").get< std::vector< long double > >() == std::vector< long double >({1.18973e+4932}));
+    BOOST_TEST(s.getAttribute("vecString").get< std::vector< std::string > >() == std::vector< std::string >({"vector", "of", "strings"}));
+}
+
 BOOST_AUTO_TEST_CASE(hdf5_write_test)
 {
     Series o = Series::create("../samples",
                               "serial_write",
                               IterationEncoding::groupBased,
                               Format::HDF5,
-                              AccessType::CREAT);
+                              AccessType::CREATE);
 
     o.setAuthor("Serial HDF5");
     ParticleSpecies& e = o.iterations[1].particles["e"];
@@ -719,7 +798,7 @@ BOOST_AUTO_TEST_CASE(hdf5_fileBased_write_test)
                               "serial_fileBased_write%T",
                               IterationEncoding::fileBased,
                               Format::HDF5,
-                              AccessType::CREAT);
+                              AccessType::CREATE);
 
     ParticleSpecies& e_1 = o.iterations[1].particles["e"];
 
@@ -810,9 +889,20 @@ BOOST_AUTO_TEST_CASE(hdf5_bool_test)
                               "serial_bool",
                               IterationEncoding::groupBased,
                               Format::HDF5,
-                              AccessType::CREAT);
+                              AccessType::CREATE);
 
     o.setAttribute("Bool attribute", true);
+}
+
+BOOST_AUTO_TEST_CASE(hdf5_patch_test)
+{
+    Series o = Series::create("../samples",
+                              "serial_patch",
+                              IterationEncoding::groupBased,
+                              Format::HDF5,
+                              AccessType::CREATE);
+
+    o.iterations[1].particles["e"].particlePatches["offset"]["x"].setUnitSI(42);
 }
 
 BOOST_AUTO_TEST_CASE(hdf5_deletion_test)
@@ -821,7 +911,7 @@ BOOST_AUTO_TEST_CASE(hdf5_deletion_test)
                               "serial_deletion",
                               IterationEncoding::groupBased,
                               Format::HDF5,
-                              AccessType::CREAT);
+                              AccessType::CREATE);
 
 
     o.setAttribute("removed",
@@ -863,6 +953,6 @@ BOOST_AUTO_TEST_CASE(adios_write_test)
                       "serial_write",
                       IterationEncoding::fileBased,
                       Format::ADIOS,
-                      AccessType::CREAT);
+                      AccessType::CREATE);
 }
 #endif

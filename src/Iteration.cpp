@@ -18,10 +18,7 @@
  * and the GNU Lesser General Public License along with libopenPMD.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <memory>
-#include <iostream>
-
-#include "Auxiliary.hpp"
+#include "auxiliary/StringManip.hpp"
 #include "Dataset.hpp"
 #include "Iteration.hpp"
 #include "Series.hpp"
@@ -92,39 +89,39 @@ Iteration::flushFileBased(uint64_t i)
     {
         /* create file */
         Series* o = dynamic_cast<Series *>(parent->parent);
-        Parameter< Operation::CREATE_FILE > file_parameter;
-        file_parameter.name = replace_first(o->iterationFormat(), "%T", std::to_string(i));
-        IOHandler->enqueue(IOTask(o, file_parameter));
+        Parameter< Operation::CREATE_FILE > fCreate;
+        fCreate.name = replace_first(o->iterationFormat(), "%T", std::to_string(i));
+        IOHandler->enqueue(IOTask(o, fCreate));
         IOHandler->flush();
 
         /* create basePath */
-        Parameter< Operation::CREATE_PATH > path_parameter;
-        path_parameter.path = replace_first(o->basePath(), "%T/", "");
-        IOHandler->enqueue(IOTask(&o->iterations, path_parameter));
+        Parameter< Operation::CREATE_PATH > pCreate;
+        pCreate.path = replace_first(o->basePath(), "%T/", "");
+        IOHandler->enqueue(IOTask(&o->iterations, pCreate));
         IOHandler->flush();
 
         /* create iteration path */
-        path_parameter.path = std::to_string(i);
-        IOHandler->enqueue(IOTask(this, path_parameter));
+        pCreate.path = std::to_string(i);
+        IOHandler->enqueue(IOTask(this, pCreate));
         IOHandler->flush();
     } else
     {
         /* open file */
         Series* o = dynamic_cast<Series *>(parent->parent);
-        Parameter< Operation::OPEN_FILE > file_parameter;
-        file_parameter.name = replace_last(o->iterationFormat(), "%T", std::to_string(i));
-        IOHandler->enqueue(IOTask(o, file_parameter));
+        Parameter< Operation::OPEN_FILE > fOpen;
+        fOpen.name = replace_last(o->iterationFormat(), "%T", std::to_string(i));
+        IOHandler->enqueue(IOTask(o, fOpen));
         IOHandler->flush();
 
         /* open basePath */
-        Parameter< Operation::OPEN_PATH > path_parameter;
-        path_parameter.path = replace_first(o->basePath(), "%T/", "");
-        IOHandler->enqueue(IOTask(&o->iterations, path_parameter));
+        Parameter< Operation::OPEN_PATH > pOpen;
+        pOpen.path = replace_first(o->basePath(), "%T/", "");
+        IOHandler->enqueue(IOTask(&o->iterations, pOpen));
         IOHandler->flush();
 
         /* open iteration path */
-        path_parameter.path = std::to_string(i);
-        IOHandler->enqueue(IOTask(this, path_parameter));
+        pOpen.path = std::to_string(i);
+        IOHandler->enqueue(IOTask(this, pOpen));
         IOHandler->flush();
     }
 
@@ -137,9 +134,9 @@ Iteration::flushGroupBased(uint64_t i)
     if( !written )
     {
         /* create iteration path */
-        Parameter< Operation::CREATE_PATH > iteration_parameter;
-        iteration_parameter.path = std::to_string(i);
-        IOHandler->enqueue(IOTask(this, iteration_parameter));
+        Parameter< Operation::CREATE_PATH > pCreate;
+        pCreate.path = std::to_string(i);
+        IOHandler->enqueue(IOTask(this, pCreate));
         IOHandler->flush();
     }
 
@@ -178,33 +175,33 @@ Iteration::read()
     written = false;
 
     using DT = Datatype;
-    Parameter< Operation::READ_ATT > attribute_parameter;
+    Parameter< Operation::READ_ATT > aRead;
 
-    attribute_parameter.name = "dt";
-    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    aRead.name = "dt";
+    IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
-    if( *attribute_parameter.dtype == DT::FLOAT )
-        setDt(Attribute(*attribute_parameter.resource).get< float >());
-    else if( *attribute_parameter.dtype == DT::DOUBLE )
-        setDt(Attribute(*attribute_parameter.resource).get< double >());
+    if( *aRead.dtype == DT::FLOAT )
+        setDt(Attribute(*aRead.resource).get< float >());
+    else if( *aRead.dtype == DT::DOUBLE )
+        setDt(Attribute(*aRead.resource).get< double >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'dt'");
 
-    attribute_parameter.name = "time";
-    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    aRead.name = "time";
+    IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
-    if( *attribute_parameter.dtype == DT::FLOAT )
-        setTime(Attribute(*attribute_parameter.resource).get< float >());
-    else if( *attribute_parameter.dtype == DT::DOUBLE )
-        setTime(Attribute(*attribute_parameter.resource).get< double >());
+    if( *aRead.dtype == DT::FLOAT )
+        setTime(Attribute(*aRead.resource).get< float >());
+    else if( *aRead.dtype == DT::DOUBLE )
+        setTime(Attribute(*aRead.resource).get< double >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'time'");
 
-    attribute_parameter.name = "timeUnitSI";
-    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    aRead.name = "timeUnitSI";
+    IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
-    if( *attribute_parameter.dtype == DT::DOUBLE )
-        setTimeUnitSI(Attribute(*attribute_parameter.resource).get< double >());
+    if( *aRead.dtype == DT::DOUBLE )
+        setTimeUnitSI(Attribute(*aRead.resource).get< double >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'timeUnitSI'");
 
@@ -216,30 +213,30 @@ Iteration::read()
     Series* o = dynamic_cast<Series *>(w);
 
     meshes.clear_unchecked();
-    Parameter< Operation::OPEN_PATH > path_parameter;
-    path_parameter.path = o->meshesPath();
-    IOHandler->enqueue(IOTask(&meshes, path_parameter));
+    Parameter< Operation::OPEN_PATH > pOpen;
+    pOpen.path = o->meshesPath();
+    IOHandler->enqueue(IOTask(&meshes, pOpen));
     IOHandler->flush();
 
     meshes.readAttributes();
 
     /* obtain all non-scalar meshes */
-    Parameter< Operation::LIST_PATHS > plist_parameter;
-    IOHandler->enqueue(IOTask(&meshes, plist_parameter));
+    Parameter< Operation::LIST_PATHS > pList;
+    IOHandler->enqueue(IOTask(&meshes, pList));
     IOHandler->flush();
 
-    Parameter< Operation::LIST_ATTS > alist_parameter;
-    for( auto const& mesh_name : *plist_parameter.paths )
+    Parameter< Operation::LIST_ATTS > aList;
+    for( auto const& mesh_name : *pList.paths )
     {
         Mesh& m = meshes[mesh_name];
-        path_parameter.path = mesh_name;
-        alist_parameter.attributes->clear();
-        IOHandler->enqueue(IOTask(&m, path_parameter));
-        IOHandler->enqueue(IOTask(&m, alist_parameter));
+        pOpen.path = mesh_name;
+        aList.attributes->clear();
+        IOHandler->enqueue(IOTask(&m, pOpen));
+        IOHandler->enqueue(IOTask(&m, aList));
         IOHandler->flush();
 
-        auto begin = alist_parameter.attributes->begin();
-        auto end = alist_parameter.attributes->end();
+        auto begin = aList.attributes->begin();
+        auto end = aList.attributes->end();
         auto value = std::find(begin, end, "value");
         auto shape = std::find(begin, end, "shape");
         if( value != end && shape != end )
@@ -253,42 +250,43 @@ Iteration::read()
     }
 
     /* obtain all scalar meshes */
-    Parameter< Operation::LIST_DATASETS > dlist_parameter;
-    IOHandler->enqueue(IOTask(&meshes, dlist_parameter));
+    Parameter< Operation::LIST_DATASETS > dList;
+    IOHandler->enqueue(IOTask(&meshes, dList));
     IOHandler->flush();
 
-    Parameter< Operation::OPEN_DATASET > dataset_parameter;
-    for( auto const& mesh_name : *dlist_parameter.datasets )
+    Parameter< Operation::OPEN_DATASET > dOpen;
+    for( auto const& mesh_name : *dList.datasets )
     {
         Mesh& m = meshes[mesh_name];
-        dataset_parameter.name = mesh_name;
-        IOHandler->enqueue(IOTask(&m, dataset_parameter));
+        dOpen.name = mesh_name;
+        IOHandler->enqueue(IOTask(&m, dOpen));
         IOHandler->flush();
         MeshRecordComponent& mrc = m[MeshRecordComponent::SCALAR];
         mrc.abstractFilePosition = m.abstractFilePosition;
         mrc.parent = m.parent;
+        mrc.written = false;
+        mrc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
         mrc.written = true;
-        mrc.resetDataset(Dataset(*dataset_parameter.dtype, *dataset_parameter.extent));
         m.read();
     }
 
     particles.clear_unchecked();
-    path_parameter.path = o->particlesPath();
-    IOHandler->enqueue(IOTask(&particles, path_parameter));
+    pOpen.path = o->particlesPath();
+    IOHandler->enqueue(IOTask(&particles, pOpen));
     IOHandler->flush();
 
     particles.readAttributes();
 
     /* obtain all particle species */
-    plist_parameter.paths->clear();
-    IOHandler->enqueue(IOTask(&particles, plist_parameter));
+    pList.paths->clear();
+    IOHandler->enqueue(IOTask(&particles, pList));
     IOHandler->flush();
 
-    for( auto const& species_name : *plist_parameter.paths )
+    for( auto const& species_name : *pList.paths )
     {
         ParticleSpecies& p = particles[species_name];
-        path_parameter.path = species_name;
-        IOHandler->enqueue(IOTask(&p, path_parameter));
+        pOpen.path = species_name;
+        IOHandler->enqueue(IOTask(&p, pOpen));
         IOHandler->flush();
         p.read();
     }
@@ -302,3 +300,16 @@ Iteration::read()
 }
 
 
+template
+float Iteration::time< float >() const;
+template
+double Iteration::time< double >() const;
+template
+long double Iteration::time< long double >() const;
+
+template
+float Iteration::dt< float >() const;
+template
+double Iteration::dt< double >() const;
+template
+long double Iteration::dt< long double >() const;

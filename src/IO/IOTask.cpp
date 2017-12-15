@@ -63,6 +63,18 @@ std::map< std::string, Argument > structToMap(Parameter< Operation::CREATE_DATAS
     ret.insert({"name", Argument(p.name)});
     ret.insert({"extent", Argument(p.extent)});
     ret.insert({"dtype", Argument(p.dtype)});
+    ret.insert({"chunkSize", Argument(p.chunkSize)});
+    ret.insert({"compression", Argument(p.transform)});
+    ret.insert({"transform", Argument(p.transform)});
+    return ret;
+}
+
+template<>
+std::map< std::string, Argument > structToMap(Parameter< Operation::EXTEND_DATASET > const& p)
+{
+    std::map< std::string, Argument > ret;
+    ret.insert({"name", Argument(p.name)});
+    ret.insert({"extent", Argument(p.extent)});
     return ret;
 }
 

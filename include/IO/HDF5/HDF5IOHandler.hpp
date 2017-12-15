@@ -2,7 +2,6 @@
 
 
 #include <memory>
-#include <string>
 
 #include <IO/AbstractIOHandler.hpp>
 
@@ -25,7 +24,8 @@ public:
     using ArgumentMap = std::map< std::string, Argument >;
     virtual void createFile(Writable*, ArgumentMap const&);
     virtual void createPath(Writable*, ArgumentMap const&);
-    virtual void createDataset(Writable *, ArgumentMap const&);
+    virtual void createDataset(Writable*, ArgumentMap const&);
+    virtual void extendDataset(Writable*, ArgumentMap const&);
     virtual void openFile(Writable*, ArgumentMap const&);
     virtual void openPath(Writable*, ArgumentMap const&);
     virtual void openDataset(Writable*, ArgumentMap &);

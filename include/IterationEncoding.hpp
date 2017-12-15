@@ -21,15 +21,17 @@
 #pragma once
 
 
-/** File format to use during IO.
+#include <iosfwd>
+
+
+/** Encoding scheme of an Iterations Series'.
+ *
+ * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series
  */
-enum class Format
+enum class IterationEncoding
 {
-    HDF5,
-    PARALLEL_HDF5,
-    ADIOS,
-    PARALLEL_ADIOS,
-    ADIOS2,
-    PARALLEL_ADIOS2,
-    DUMMY
-};  //Format
+    fileBased, groupBased
+};  //IterationEncoding
+
+std::ostream&
+operator<<(std::ostream&, IterationEncoding);

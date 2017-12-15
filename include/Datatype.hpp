@@ -7,18 +7,25 @@
 
 enum class Datatype : int
 {
-    CHAR = 0, INT, FLOAT, DOUBLE,
-    UINT32, UINT64, STRING,
-    ARR_DBL_7,
-    VEC_INT,
+    CHAR = 0, UCHAR,
+    INT16, INT32, INT64,
+    UINT16, UINT32, UINT64,
+    FLOAT, DOUBLE, LONG_DOUBLE,
+    STRING,
+    VEC_CHAR,
+    VEC_INT16,
+    VEC_INT32,
+    VEC_INT64,
+    VEC_UCHAR,
+    VEC_UINT16,
+    VEC_UINT32,
+    VEC_UINT64,
     VEC_FLOAT,
     VEC_DOUBLE,
-    VEC_UINT64,
+    VEC_LONG_DOUBLE,
     VEC_STRING,
+    ARR_DBL_7,
 
-    INT16, INT32, INT64,
-    UINT16,
-    UCHAR,
     BOOL,
 
     DATATYPE = 1000,
@@ -51,6 +58,8 @@ Datatype
 determineDatatype()
 {
     using DT = Datatype;
+    if( decay_equiv< T, long double >::value ) { return DT::LONG_DOUBLE; }
+    if( decay_equiv< T, std::vector< long double > >::value ) { return DT::VEC_LONG_DOUBLE; }
     if( decay_equiv< T, double >::value ) { return DT::DOUBLE; }
     if( decay_equiv< T, std::vector< double > >::value ) { return DT::VEC_DOUBLE; }
     if( decay_equiv< T, float >::value ) { return  DT::FLOAT; }
@@ -68,6 +77,9 @@ determineDatatype()
 }
 
 template< typename T >
+#if __cplusplus >= 201402L
+constexpr
+#endif
 inline Datatype
 determineDatatype(std::shared_ptr< T >)
 {

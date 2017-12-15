@@ -1,8 +1,26 @@
+/* Copyright 2017 Fabian Koller
+ *
+ * This file is part of libopenPMD.
+ *
+ * libopenPMD is free software: you can redistribute it and/or modify
+ * it under the terms of of either the GNU General Public License or
+ * the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * libopenPMD is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License and the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * and the GNU Lesser General Public License along with libopenPMD.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
 #include <iostream>
 
-#include "Auxiliary.hpp"
 #include "IO/AbstractIOHandler.hpp"
-#include "IO/ADIOS/ADIOS1IOHandler.hpp"
 #include "IO/HDF5/HDF5IOHandler.hpp"
 #include "IO/HDF5/ParallelHDF5IOHandler.hpp"
 
@@ -27,7 +45,7 @@ AbstractIOHandler::createIOHandler(std::string const& path,
         case Format::PARALLEL_ADIOS2:
             std::cerr << "Backend not yet working. Your IO operations will be NOOPS!" << std::endl;
         default:
-            ret = std::make_shared< NONEIOHandler >(path, at);
+            ret = std::make_shared< DummyIOHandler >(path, at);
             break;
     }
 
@@ -44,21 +62,21 @@ AbstractIOHandler::~AbstractIOHandler()
 { }
 
 void
-AbstractIOHandler::enqueue(IOTask const i)
+AbstractIOHandler::enqueue(IOTask const& i)
 {
     m_work.push(i);
 }
 
-NONEIOHandler::NONEIOHandler(std::string const& path, AccessType at)
+DummyIOHandler::DummyIOHandler(std::string const& path, AccessType at)
         : AbstractIOHandler(path, at)
 { }
 
-NONEIOHandler::~NONEIOHandler()
+DummyIOHandler::~DummyIOHandler()
 { }
 
-void NONEIOHandler::enqueue(IOTask const)
+void DummyIOHandler::enqueue(IOTask const&)
 { }
 
 std::future< void >
-NONEIOHandler::flush()
+DummyIOHandler::flush()
 { return std::future< void >(); }

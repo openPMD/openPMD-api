@@ -2,11 +2,10 @@
 
 #include <algorithm>
 #include <string>
-#include <sstream>
 #include <vector>
 
 inline bool
-contains(std::string const & s,
+contains(std::string const &s,
          std::string const &infix)
 {
     return s.find(infix) != std::string::npos;

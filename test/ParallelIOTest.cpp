@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE(hdf5_write_test)
                       "parallel_write",
                       IterationEncoding::groupBased,
                       Format::PARALLEL_HDF5,
-                      AccessType::CREAT);
+                      AccessType::CREATE);
 
     o.setAuthor("Parallel HDF5");
     ParticleSpecies& e = o.iterations[1].particles["e"];
@@ -121,6 +121,6 @@ BOOST_AUTO_TEST_CASE(adios_wrtie_test)
                       "parallel_write",
                       IterationEncoding::groupBased,
                       Format::PARALLEL_ADIOS,
-                      AccessType::CREAT);
+                      AccessType::CREATE);
 }
 #endif

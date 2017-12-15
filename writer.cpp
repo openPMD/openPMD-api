@@ -7,11 +7,11 @@
 void
 write()
 {
-    Series o = Series("../samples",
-                      "serial_write.h5",
-                      IterationEncoding::groupBased,
-                      Format::HDF5,
-                      AccessType::CREAT);
+    Series o = Series::create("../samples",
+                              "serial_write.h5",
+                              IterationEncoding::groupBased,
+                              Format::HDF5,
+                              AccessType::CREATE);
 
     ParticleSpecies& e = o.iterations[1].particles["e"];
 
@@ -47,11 +47,11 @@ write()
 void
 write2()
 {
-    Series f("./working/directory/",
-             "2D_simData",
-             IterationEncoding::groupBased,
-             Format::HDF5,
-             AccessType::CREAT);
+    Series f = Series::create("./working/directory/",
+                              "2D_simData",
+                              IterationEncoding::groupBased,
+                              Format::HDF5,
+                              AccessType::CREATE);
 
     // all required openPMD attributes will be set to reasonable default values (all ones, all zeros, empty strings,...)
     // manually setting them enforces the openPMD standard
@@ -69,8 +69,11 @@ write2()
     // the objects sunk into these locations are deep copies
     {
         // setting attributes can be chained in JS-like syntax for compact code
-        f.iterations[1].setTime(42.0).setDt(1.0).setTimeUnitSI(1.39e-16);
-        f.iterations[2].setComment("This iteration will not appear in any output");
+        f.iterations[1]
+                .setTime(42.0)
+                .setDt(1.0)
+                .setTimeUnitSI(1.39e-16);
+        f.iterations[2] .setComment("This iteration will not appear in any output");
         f.iterations.erase(2);
     }
 
@@ -91,7 +94,7 @@ write2()
     // the underlying concept for numeric data is the openPMD Record
     // https://github.com/openPMD/openPMD-standard/blob/upcoming-1.0.1/STANDARD.md#scalar-vector-and-tensor-records
     // Meshes are specialized records
-    cur_it.meshes["generic_2D_field"].setGridUnitSI(4).setUnitDimension({{Mesh::UnitDimension::L, -3}});
+    cur_it.meshes["generic_2D_field"].setUnitDimension({{UnitDimension::L, -3}});
 
     {
         // as this is a copy, it does not modify the sunk resource and can be modified independently
@@ -109,52 +112,85 @@ write2()
 
     {
         // particles handle very similar
-        ParticleSpecies& electrons = cur_it.particles["electrons"];
-        electrons.setAttribute("NoteWorthyParticleSpeciesProperty",
+    ParticleSpecies& electrons = cur_it.particles["electrons"];
+    electrons.setAttribute("NoteWorthyParticleSpeciesProperty",
                                std::string("Observing this species was a blast."));
+        electrons["displacement"].setUnitDimension({{UnitDimension::M, 1}});
+        electrons["displacement"]["x"].setUnitSI(1e-6);
+        electrons.erase("displacement");
         electrons["weighting"][RecordComponent::SCALAR].setUnitSI(1e-5);
-        electrons["momentum"]["x"];
-        electrons["momentum"]["y"];
     }
-    cur_it.particles.erase("electrons");
 
     Mesh& mesh = cur_it.meshes["lowRez_2D_field"];
-    f.flush();
     mesh.setAxisLabels({"x", "y"});
-    f.flush();
 
     // data is assumed to reside behind a pointer as a contiguous column-major array
     // shared data ownership during IO is indicated with a smart pointer
-    std::shared_ptr< double > partial_dataset(new double[5], [](double *p){ delete[] p; });
+    std::shared_ptr< double > partial_mesh(new double[5], [](double *p){ delete[] p; p = nullptr; });
 
     // before storing record data, you must specify the dataset once per component
     // this describes the datatype and shape of data as it should be written to disk
-    Datatype dtype = determineDatatype(partial_dataset);
+    Datatype dtype = determineDatatype(partial_mesh);
     Dataset d = Dataset(dtype, Extent{2, 5});
-    /* TODO
-    dset.setCompression("zlib", level=9);
-    dset.setCustomTransform("blosc:compressor=zlib,shuffle=bit,lvl=1;nometa");
-     */
+    d.setCompression("zlib", 9);
+    d.setCustomTransform("blosc:compressor=zlib,shuffle=bit,lvl=1;nometa");
     mesh["x"].resetDataset(d);
+
+    ParticleSpecies& electrons = cur_it.particles["electrons"];
+
+    std::shared_ptr< float > partial_particlePos(new float[2], [](float *p){ delete[] p; p = nullptr; });
+    dtype = determineDatatype(partial_particlePos);
+    d = Dataset(dtype, Extent{2});
+    electrons["position"]["x"].resetDataset(d);
+
+    std::shared_ptr< uint64_t > partial_particleOff(new uint64_t[2], [](uint64_t *p){ delete[] p; p = nullptr; });
+    dtype = determineDatatype(partial_particleOff);
+    d = Dataset(dtype, Extent{2});
+    electrons["positionOffset"]["x"].resetDataset(d);
+
+    electrons.particlePatches["offset"].setUnitDimension({{UnitDimension::L, 1}});
+    electrons.particlePatches["offset"]["x"].resetDatatype(Datatype::UINT64);
+    electrons.particlePatches["extent"].setUnitDimension({{UnitDimension::L, 1}});
+    electrons.particlePatches["extent"]["x"].resetDatatype(Datatype::UINT64);
+
     // at any point in time you may decide to dump already created output to disk
     // note that this will make some operations impossible (e.g. renaming files)
     f.flush();
 
     // chunked writing of the final dataset at a time is supported
     // this loop writes one row at a time
-    double complete_dataset[2][5] = {{1,  3,  5,  7,  9},
-                                     {11, 13, 15, 17, 19}};
+    double mesh_x[2][5] = {{1,  3,  5,  7,  9},
+                           {11, 13, 15, 17, 19}};
+    float particle_position[4] = {0.1, 0.2, 0.3, 0.4};
+    uint64_t particle_positionOffset[4] = {0, 1, 2, 3};
     for( uint64_t i = 0; i < 2; ++i )
     {
         for( int col = 0; col < 5; ++col )
-            partial_dataset.get()[col] = complete_dataset[i][col];
+            partial_mesh.get()[col] = mesh_x[i][col];
 
         Offset o = Offset{i, 0};
         Extent e = Extent{1, 5};
-        mesh["x"].storeChunk(o, e, partial_dataset);
+        mesh["x"].storeChunk(o, e, partial_mesh);
         // operations between store and flush MUST NOT modify the pointed-to data
         f.flush();
         // after the flush completes successfully, access to the shared resource is returned to the caller
+
+        for( int idx = 0; idx < 2; ++idx )
+        {
+            partial_particlePos.get()[idx] = particle_position[idx + 2*i];
+            partial_particleOff.get()[idx] = particle_positionOffset[idx + 2*i];
+        }
+
+        uint64_t numParticlesOffset = 2*i;
+        uint64_t numParticles = 2;
+
+        o = Offset{numParticlesOffset};
+        e = Extent{numParticles};
+        electrons["position"]["x"].storeChunk(o, e, partial_particlePos);
+        electrons["positionOffset"]["x"].storeChunk(o, e, partial_particleOff);
+
+        electrons.particlePatches["offset"]["x"][{numParticlesOffset, numParticles}] = i;
+        electrons.particlePatches["extent"]["x"][{numParticlesOffset, numParticles}] = 1;
     }
 
     mesh["y"].resetDataset(d);
@@ -169,16 +205,16 @@ write2()
 void
 w()
 {
-    Series o = Series("../samples",
-                      "serial_write%T",
-                      IterationEncoding::groupBased,
-                      Format::ADIOS,
-                      AccessType::CREAT);
+    Series o = Series::create("../samples",
+                              "serial_write%T",
+                              IterationEncoding::groupBased,
+                              Format::ADIOS,
+                              AccessType::CREATE);
 }
 
 int
 main()
 {
-    w();
+    write2();
     return 0;
 }

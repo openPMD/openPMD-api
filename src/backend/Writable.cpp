@@ -1,10 +1,10 @@
 #include <IO/AbstractIOHandler.hpp>
-#include <Writable.hpp>
+#include <backend/Writable.hpp>
 
 Writable::Writable()
         : abstractFilePosition{nullptr},
           parent{nullptr},
-          IOHandler{new NONEIOHandler("", AccessType::READ_WRITE)},
+          IOHandler{nullptr},
           dirty{true},
           written{false}
 { }

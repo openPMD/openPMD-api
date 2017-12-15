@@ -18,18 +18,22 @@
  * and the GNU Lesser General Public License along with libopenPMD.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
+#include <ostream>
+
+#include "IterationEncoding.hpp"
 
 
-/** File format to use during IO.
- */
-enum class Format
+std::ostream&
+operator<<(std::ostream& os, IterationEncoding ie)
 {
-    HDF5,
-    PARALLEL_HDF5,
-    ADIOS,
-    PARALLEL_ADIOS,
-    ADIOS2,
-    PARALLEL_ADIOS2,
-    DUMMY
-};  //Format
+    switch( ie )
+    {
+        case IterationEncoding::fileBased:
+            os << "fileBased";
+            break;
+        case IterationEncoding::groupBased:
+            os << "groupBased";
+            break;
+    }
+    return os;
+}

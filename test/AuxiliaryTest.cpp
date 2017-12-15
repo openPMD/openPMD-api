@@ -3,11 +3,11 @@
 
 #include <boost/test/included/unit_test.hpp>
 
-#include "../include/Attributable.hpp"
-#include "../include/Auxiliary.hpp"
-#include "../include/Container.hpp"
+#include "backend/Attributable.hpp"
+#include "auxiliary/StringManip.hpp"
+#include "backend/Container.hpp"
 #include "../include/Dataset.hpp"
-#include "../include/Writable.hpp"
+#include "backend/Writable.hpp"
 
 
 BOOST_AUTO_TEST_CASE(string_test)

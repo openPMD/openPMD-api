@@ -18,32 +18,14 @@
  * and the GNU Lesser General Public License along with libopenPMD.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <ios>
 #include <iostream>
 #include <regex>
-#include <set>
 
 #include <boost/filesystem.hpp>
 
-#include "Auxiliary.hpp"
+#include "auxiliary/StringManip.hpp"
 #include "IO/AbstractIOHandler.hpp"
 #include "Series.hpp"
-
-
-std::ostream&
-operator<<(std::ostream& os, IterationEncoding ie)
-{
-    switch( ie )
-    {
-        case IterationEncoding::fileBased:
-            os<<"fileBased";
-            break;
-        case IterationEncoding::groupBased:
-            os<<"groupBased";
-            break;
-    }
-    return os;
-}
 
 Series Series::create(std::string const& path,
                       std::string const& name,
@@ -72,7 +54,7 @@ Series::Series(std::string const& path,
 
     switch( at )
     {
-        case AccessType::CREAT:
+        case AccessType::CREATE:
         {
             setOpenPMD(OPENPMD);
             setOpenPMDextension(0);
@@ -113,7 +95,7 @@ Series::Series(std::string path,
     if( !ends_with(path, "/") )
         path += '/';
     AccessType at = readonly ? AccessType::READ_ONLY : AccessType::READ_WRITE;
-    Format f = Format::NONE;
+    Format f = Format::DUMMY;
     if( ends_with(name, ".h5") )
         f = parallel ? Format::PARALLEL_HDF5 : Format::HDF5;
     else if( ends_with(name, ".bp") )
@@ -347,7 +329,7 @@ void
 Series::flush()
 {
     if( IOHandler->accessType == AccessType::READ_WRITE ||
-        IOHandler->accessType == AccessType::CREAT )
+        IOHandler->accessType == AccessType::CREATE )
     {
         switch( m_iterationEncoding )
         {
@@ -395,9 +377,9 @@ Series::flushGroupBased()
 {
     if( !written )
     {
-        Parameter< Operation::CREATE_FILE > file_parameter;
-        file_parameter.name = m_name;
-        IOHandler->enqueue(IOTask(this, file_parameter));
+        Parameter< Operation::CREATE_FILE > fCreate;
+        fCreate.name = m_name;
+        IOHandler->enqueue(IOTask(this, fCreate));
         IOHandler->flush();
     }
 
@@ -420,8 +402,8 @@ Series::readFileBased()
 {
     std::regex pattern(replace_first(m_name, "%T", "[[:digit:]]+"));
 
-    Parameter< Operation::OPEN_FILE > file_parameter;
-    Parameter< Operation::READ_ATT > attribute_parameter;
+    Parameter< Operation::OPEN_FILE > fOpen;
+    Parameter< Operation::READ_ATT > aRead;
 
     using namespace boost::filesystem;
     path dir(IOHandler->directory);
@@ -429,8 +411,8 @@ Series::readFileBased()
     {
         if( std::regex_search(entry.filename().string(), pattern) )
         {
-            file_parameter.name = entry.filename().string();
-            IOHandler->enqueue(IOTask(this, file_parameter));
+            fOpen.name = entry.filename().string();
+            IOHandler->enqueue(IOTask(this, fOpen));
             IOHandler->flush();
             iterations.parent = this;
 
@@ -438,12 +420,12 @@ Series::readFileBased()
             written = false;
 
             using DT = Datatype;
-            attribute_parameter.name = "iterationEncoding";
-            IOHandler->enqueue(IOTask(this, attribute_parameter));
+            aRead.name = "iterationEncoding";
+            IOHandler->enqueue(IOTask(this, aRead));
             IOHandler->flush();
-            if( *attribute_parameter.dtype == DT::STRING )
+            if( *aRead.dtype == DT::STRING )
             {
-                std::string encoding = Attribute(*attribute_parameter.resource).get< std::string >();
+                std::string encoding = Attribute(*aRead.resource).get< std::string >();
                 if( encoding == "fileBased" )
                     m_iterationEncoding = IterationEncoding::fileBased;
                 else if( encoding == "groupBased" )
@@ -458,11 +440,11 @@ Series::readFileBased()
             else
                 throw std::runtime_error("Unexpected Attribute datatype for 'iterationEncoding'");
 
-            attribute_parameter.name = "iterationFormat";
-            IOHandler->enqueue(IOTask(this, attribute_parameter));
+            aRead.name = "iterationFormat";
+            IOHandler->enqueue(IOTask(this, aRead));
             IOHandler->flush();
-            if( *attribute_parameter.dtype == DT::STRING )
-                setIterationFormat(Attribute(*attribute_parameter.resource).get< std::string >());
+            if( *aRead.dtype == DT::STRING )
+                setIterationFormat(Attribute(*aRead.resource).get< std::string >());
             else
                 throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
 
@@ -478,22 +460,22 @@ Series::readFileBased()
 void
 Series::readGroupBased()
 {
-    Parameter< Operation::OPEN_FILE > file_parameter;
-    file_parameter.name = m_name;
-    IOHandler->enqueue(IOTask(this, file_parameter));
+    Parameter< Operation::OPEN_FILE > fOpen;
+    fOpen.name = m_name;
+    IOHandler->enqueue(IOTask(this, fOpen));
     IOHandler->flush();
 
     /* allow all attributes to be set */
     written = false;
 
     using DT = Datatype;
-    Parameter< Operation::READ_ATT > attribute_parameter;
-    attribute_parameter.name = "iterationEncoding";
-    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    Parameter< Operation::READ_ATT > aRead;
+    aRead.name = "iterationEncoding";
+    IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
-    if( *attribute_parameter.dtype == DT::STRING )
+    if( *aRead.dtype == DT::STRING )
     {
-        std::string encoding = Attribute(*attribute_parameter.resource).get< std::string >();
+        std::string encoding = Attribute(*aRead.resource).get< std::string >();
         if( encoding == "groupBased" )
             m_iterationEncoding = IterationEncoding::groupBased;
         else if( encoding == "fileBased" )
@@ -508,11 +490,11 @@ Series::readGroupBased()
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'iterationEncoding'");
 
-    attribute_parameter.name = "iterationFormat";
-    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    aRead.name = "iterationFormat";
+    IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
-    if( *attribute_parameter.dtype == DT::STRING )
-        setIterationFormat(Attribute(*attribute_parameter.resource).get< std::string >());
+    if( *aRead.dtype == DT::STRING )
+        setIterationFormat(Attribute(*aRead.resource).get< std::string >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
 
@@ -531,69 +513,69 @@ void
 Series::read()
 {
     using DT = Datatype;
-    Parameter< Operation::READ_ATT > attribute_parameter;
+    Parameter< Operation::READ_ATT > aRead;
 
-    attribute_parameter.name = "openPMD";
-    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    aRead.name = "openPMD";
+    IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
-    if( *attribute_parameter.dtype == DT::STRING )
-        setOpenPMD(Attribute(*attribute_parameter.resource).get< std::string >());
+    if( *aRead.dtype == DT::STRING )
+        setOpenPMD(Attribute(*aRead.resource).get< std::string >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'openPMD'");
 
-    attribute_parameter.name = "openPMDextension";
-    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    aRead.name = "openPMDextension";
+    IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
-    if( *attribute_parameter.dtype == DT::UINT32 )
-        setOpenPMDextension(Attribute(*attribute_parameter.resource).get< uint32_t >());
+    if( *aRead.dtype == DT::UINT32 )
+        setOpenPMDextension(Attribute(*aRead.resource).get< uint32_t >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'openPMDextension'");
 
-    attribute_parameter.name = "basePath";
-    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    aRead.name = "basePath";
+    IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
-    if( *attribute_parameter.dtype == DT::STRING )
-        setAttribute("basePath", Attribute(*attribute_parameter.resource).get< std::string >());
+    if( *aRead.dtype == DT::STRING )
+        setAttribute("basePath", Attribute(*aRead.resource).get< std::string >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'basePath'");
 
-    attribute_parameter.name = "meshesPath";
-    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    aRead.name = "meshesPath";
+    IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
-    if( *attribute_parameter.dtype == DT::STRING )
-        setMeshesPath(Attribute(*attribute_parameter.resource).get< std::string >());
+    if( *aRead.dtype == DT::STRING )
+        setMeshesPath(Attribute(*aRead.resource).get< std::string >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'meshesPath'");
 
-    attribute_parameter.name = "particlesPath";
-    IOHandler->enqueue(IOTask(this, attribute_parameter));
+    aRead.name = "particlesPath";
+    IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
-    if( *attribute_parameter.dtype == DT::STRING )
-        setParticlesPath(Attribute(*attribute_parameter.resource).get< std::string >());
+    if( *aRead.dtype == DT::STRING )
+        setParticlesPath(Attribute(*aRead.resource).get< std::string >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'particlesPath'");
 
-    Parameter< Operation::OPEN_PATH > path_parameter;
+    Parameter< Operation::OPEN_PATH > pOpen;
     std::string version = openPMD();
     if( version == "1.0.0" || version == "1.0.1" )
-        path_parameter.path = replace_first(basePath(), "/%T/", "");
+        pOpen.path = replace_first(basePath(), "/%T/", "");
     else
         throw std::runtime_error("Unknown openPMD version - " + version);
-    IOHandler->enqueue(IOTask(&iterations, path_parameter));
+    IOHandler->enqueue(IOTask(&iterations, pOpen));
     IOHandler->flush();
 
     iterations.readAttributes();
 
     /* obtain all paths inside the basepath (i.e. all iterations) */
-    Parameter< Operation::LIST_PATHS > list_parameter;
-    IOHandler->enqueue(IOTask(&iterations, list_parameter));
+    Parameter< Operation::LIST_PATHS > pList;
+    IOHandler->enqueue(IOTask(&iterations, pList));
     IOHandler->flush();
 
-    for( auto const& it : *list_parameter.paths )
+    for( auto const& it : *pList.paths )
     {
         Iteration& i = iterations[std::stoull(it)];
-        path_parameter.path = it;
-        IOHandler->enqueue(IOTask(&i, path_parameter));
+        pOpen.path = it;
+        IOHandler->enqueue(IOTask(&i, pOpen));
         IOHandler->flush();
         i.read();
     }

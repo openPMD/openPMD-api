@@ -21,17 +21,13 @@
 #pragma once
 
 
-#include <map>
-#include <string>
-#include <vector>
-
-#include "Attributable.hpp"
-#include "Container.hpp"
+#include "backend/Attributable.hpp"
+#include "backend/Container.hpp"
 #include "Mesh.hpp"
 #include "ParticleSpecies.hpp"
 
 
-/** @brief  Logical compilation of data from one timeframe (e.g. a single simulation cycle).
+/** @brief  Logical compilation of data from one snapshot (e.g. a single simulation cycle).
  *
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#required-attributes-for-the-basepath
  */
@@ -39,7 +35,8 @@ class Iteration : public Attributable
 {
     template<
             typename T,
-            typename T_key
+            typename T_key,
+            typename T_container
     >
     friend class Container;
     friend class Series;
@@ -100,12 +97,37 @@ private:
     void read();
 };  //Iteration
 
+extern template
+float
+Iteration::time< float >() const;
+
+extern template
+double
+Iteration::time< double >() const;
+
+extern template
+long double
+Iteration::time< long double >() const;
+
 template< typename T >
 inline T
 Iteration::time() const
-{ return readFloatingpoint< T >("time"); }
+{ return Attributable::readFloatingpoint< T >("time"); }
+
+
+extern template
+float
+Iteration::dt< float >() const;
+
+extern template
+double
+Iteration::dt< double >() const;
+
+extern template
+long double
+Iteration::dt< long double >() const;
 
 template< typename T >
 inline T
 Iteration::dt() const
-{ return readFloatingpoint< T >("dt"); }
+{ return Attributable::readFloatingpoint< T >("dt"); }

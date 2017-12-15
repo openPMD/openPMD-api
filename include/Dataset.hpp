@@ -3,7 +3,6 @@
 
 #include <memory>
 #include <type_traits>
-#include <string>
 #include <vector>
 
 #include "Datatype.hpp"
@@ -19,8 +18,16 @@ class Dataset
 public:
     Dataset(Datatype, Extent);
 
-    Extent extents;
+    Dataset& extend(Extent newExtent);
+    Dataset& setChunkSize(std::vector< size_t > const&);
+    Dataset& setCompression(std::string const&, uint8_t const);
+    Dataset& setCustomTransform(std::string const&);
+
+    Extent extent;
     Datatype dtype;
     uint8_t rank;
+    Extent chunkSize;
+    std::string compression;
+    std::string transform;
 };
 

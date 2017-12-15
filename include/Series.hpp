@@ -21,19 +21,13 @@
 #pragma once
 
 
-#include "Attributable.hpp"
-#include "Container.hpp"
+#include "backend/Attributable.hpp"
+#include "backend/Container.hpp"
 #include "IO/AbstractIOHandler.hpp"
 #include "IO/AccessType.hpp"
 #include "IO/Format.hpp"
 #include "Iteration.hpp"
-#include "Writable.hpp"
-
-
-enum class IterationEncoding
-{
-    fileBased, groupBased
-};  //IterationEncoding
+#include "IterationEncoding.hpp"
 
 
 /** @brief  Root level of the openPMD hierarchy.
@@ -58,7 +52,7 @@ public:
                          std::string const& name,
                          IterationEncoding ie,
                          Format f,
-                         AccessType at = AccessType::CREAT);
+                         AccessType at = AccessType::CREATE);
     /** Convenience constructor for read-only data.
      *
      * @param path      Directory of the data, relative(!) to the current working directory.
@@ -157,14 +151,14 @@ public:
     std::string softwareVersion() const;
     /** Indicate the version of the software/code/simulation that created the file.
      *
-     * @param   softwareVersion String inidating the version of the software/code/simulation that created the file.
+     * @param   softwareVersion String indicating the version of the software/code/simulation that created the file.
      * @return  Reference to modified series.
      */
     Series& setSoftwareVersion(std::string const& softwareVersion);
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
-     * @return  String inidcating date of creation.
+     * @return  String indicating date of creation.
      */
     std::string date() const;
     /** Indicate the date of creation.
@@ -246,6 +240,3 @@ private:
     IterationEncoding m_iterationEncoding;
     std::string m_name;
 };  //Series
-
-std::ostream&
-operator<<(std::ostream&, IterationEncoding);

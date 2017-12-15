@@ -3,9 +3,9 @@
 
 #include <map>
 
-#include "../Attribute.hpp"
-#include "../Dataset.hpp"
-#include "../Writable.hpp"
+#include "backend/Attribute.hpp"
+#include "backend/Writable.hpp"
+#include "Dataset.hpp"
 
 
 enum class ArgumentDatatype : int
@@ -47,6 +47,7 @@ enum class Operation
     LIST_PATHS,
 
     CREATE_DATASET,
+    EXTEND_DATASET,
     OPEN_DATASET,
     DELETE_DATASET,
     WRITE_DATASET,
@@ -113,6 +114,16 @@ struct Parameter< Operation::CREATE_DATASET >
     std::string name;
     Extent extent;
     Datatype dtype;
+    Extent chunkSize;
+    std::string compression;
+    std::string transform;
+};
+
+template<>
+struct Parameter< Operation::EXTEND_DATASET >
+{
+    std::string name;
+    Extent extent;
 };
 
 template<>

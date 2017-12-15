@@ -8,11 +8,24 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
+SET(CMAKE_CONFIGURATION_TYPES "Release;Debug;MinSizeRel;RelWithDebInfo")
+
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Debug" CACHE STRING
+            "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel."
+            FORCE)
+endif(NOT CMAKE_BUILD_TYPE)
+
+if (CMAKE_BUILD_TYPE MATCHES Debug)
+    add_definitions(-DDEBUG)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
+endif()
+
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,memory,undefined")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-weak-vtables -Wno-padded -Wno-switch-enum -Wno-undefined-func-template")
     #Silence BOOST_TEST
@@ -89,15 +102,22 @@ if (ADIOS2_FOUND)
 endif()
 
 set(CORE_SOURCE
-        src/Writable.cpp
-        src/Series.cpp
+        src/Dataset.cpp
+        src/Datatype.cpp
         src/Iteration.cpp
+        src/IterationEncoding.cpp
+        src/Mesh.cpp
+        src/ParticlePatches.cpp
+        src/ParticleSpecies.cpp
         src/Record.cpp
         src/RecordComponent.cpp
-        src/Dataset.cpp
-        src/Mesh.cpp
-        src/ParticleSpecies.cpp
-        src/Datatype.cpp)
+        src/Series.cpp
+        src/backend/Attributable.cpp
+        src/backend/BaseRecordComponent.cpp
+        src/backend/MeshRecordComponent.cpp
+        src/backend/PatchRecord.cpp
+        src/backend/PatchRecordComponent.cpp
+        src/backend/Writable.cpp)
 set(IO_SOURCE
         src/IO/AbstractIOHandler.cpp
         src/IO/IOTask.cpp
@@ -109,38 +129,27 @@ set(IO_SOURCE
 set(CORE_TESTS
         test/CoreTest.cpp)
 set(AUX_TESTS
-        src/Writable.cpp
-        src/IO/IOTask.cpp
-        src/IO/AbstractIOHandler.cpp
         test/AuxiliaryTest.cpp)
 set(SERIAL_IO_TESTS
         test/SerialIOTest.cpp)
 set(PARALLEL_IO_TESTS
         test/ParallelIOTest.cpp)
 
-add_executable(libopenpmdCoreTests
-        ${CORE_TESTS}
-        ${CORE_SOURCE}
-        ${IO_SOURCE})
-add_executable(libopenpmdAuxiliaryTests
-        ${AUX_TESTS})
-add_executable(libopenpmdSerialIOTests
-        ${CORE_SOURCE}
-        ${IO_SOURCE}
-        ${SERIAL_IO_TESTS})
-add_executable(libopenpmdParallelIOTests
-        ${CORE_SOURCE}
-        ${IO_SOURCE}
-        ${PARALLEL_IO_TESTS})
-add_executable(poc_HDF5Writer
-        writer.cpp
-        ${CORE_SOURCE}
-        ${IO_SOURCE})
-add_executable(poc_HDF5Reader
-        reader.cpp
-        ${CORE_SOURCE}
-        ${IO_SOURCE})
+add_library(libopemPMD.core ${CORE_SOURCE})
+add_library(libopemPMD.io ${IO_SOURCE})
 
+add_executable(libopenpmdCoreTests ${CORE_TESTS})
+add_executable(libopenpmdAuxiliaryTests ${AUX_TESTS})
+add_executable(libopenpmdSerialIOTests ${SERIAL_IO_TESTS})
+add_executable(libopenpmdParallelIOTests ${PARALLEL_IO_TESTS})
+add_executable(poc_HDF5Writer writer.cpp)
+add_executable(poc_HDF5Reader reader.cpp)
+
+target_link_libraries(libopenpmdCoreTests libopemPMD.core libopemPMD.io)
+target_link_libraries(libopenpmdSerialIOTests libopemPMD.core libopemPMD.io)
+target_link_libraries(libopenpmdParallelIOTests libopemPMD.core libopemPMD.io)
+target_link_libraries(poc_HDF5Writer libopemPMD.core libopemPMD.io)
+target_link_libraries(poc_HDF5Reader libopemPMD.core libopemPMD.io)
 if (LIBOPENPMD_HDF5)
     target_link_libraries(libopenpmdCoreTests ${HDF5_LIBRARIES})
     target_link_libraries(libopenpmdSerialIOTests ${HDF5_LIBRARIES})

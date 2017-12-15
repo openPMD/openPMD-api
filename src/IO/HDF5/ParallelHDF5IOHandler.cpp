@@ -5,10 +5,14 @@
 #include <mpi.h>
 #include <boost/filesystem.hpp>
 
-#include <Auxiliary.hpp>
+#include <auxiliary/StringManip.hpp>
 
 
+#ifdef DEBUG
 #define ASSERT(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error(std::string((TEXT))); }
+#else
+#define ASSERT(CONDITION, TEXT) { }
+#endif
 
 
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string const& path,

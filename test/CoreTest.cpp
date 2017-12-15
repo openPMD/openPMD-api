@@ -8,14 +8,70 @@
 #include "Series.hpp"
 
 
+BOOST_AUTO_TEST_CASE(attribute_dtype_test)
+{
+    Attribute a = Attribute(static_cast< char >(' '));
+    BOOST_TEST(Datatype::CHAR == a.dtype);
+    a = Attribute(static_cast< unsigned char >(' '));
+    BOOST_TEST(Datatype::UCHAR == a.dtype);
+    a = Attribute(static_cast< int16_t >(0));
+    BOOST_TEST(Datatype::INT16 == a.dtype);
+    a = Attribute(static_cast< int32_t >(0));
+    BOOST_TEST(Datatype::INT32 == a.dtype);
+    a = Attribute(static_cast< int64_t >(0));
+    BOOST_TEST(Datatype::INT64 == a.dtype);
+    a = Attribute(static_cast< uint16_t >(0));
+    BOOST_TEST(Datatype::UINT16 == a.dtype);
+    a = Attribute(static_cast< uint32_t >(0));
+    BOOST_TEST(Datatype::UINT32 == a.dtype);
+    a = Attribute(static_cast< uint64_t >(0));
+    BOOST_TEST(Datatype::UINT64 == a.dtype);
+    a = Attribute(static_cast< float >(0.));
+    BOOST_TEST(Datatype::FLOAT == a.dtype);
+    a = Attribute(static_cast< double >(0.));
+    BOOST_TEST(Datatype::DOUBLE == a.dtype);
+    a = Attribute(static_cast< long double >(0.));
+    BOOST_TEST(Datatype::LONG_DOUBLE == a.dtype);
+    a = Attribute(std::string(""));
+    BOOST_TEST(Datatype::STRING == a.dtype);
+    a = Attribute(std::vector< char >());
+    BOOST_TEST(Datatype::VEC_CHAR == a.dtype);
+    a = Attribute(std::vector< int16_t >());
+    BOOST_TEST(Datatype::VEC_INT16 == a.dtype);
+    a = Attribute(std::vector< int32_t >());
+    BOOST_TEST(Datatype::VEC_INT32 == a.dtype);
+    a = Attribute(std::vector< int64_t >());
+    BOOST_TEST(Datatype::VEC_INT64 == a.dtype);
+    a = Attribute(std::vector< unsigned char >());
+    BOOST_TEST(Datatype::VEC_UCHAR == a.dtype);
+    a = Attribute(std::vector< uint16_t >());
+    BOOST_TEST(Datatype::VEC_UINT16 == a.dtype);
+    a = Attribute(std::vector< uint32_t >());
+    BOOST_TEST(Datatype::VEC_UINT32 == a.dtype);
+    a = Attribute(std::vector< uint64_t >());
+    BOOST_TEST(Datatype::VEC_UINT64 == a.dtype);
+    a = Attribute(std::vector< float >());
+    BOOST_TEST(Datatype::VEC_FLOAT == a.dtype);
+    a = Attribute(std::vector< double >());
+    BOOST_TEST(Datatype::VEC_DOUBLE == a.dtype);
+    a = Attribute(std::vector< long double >());
+    BOOST_TEST(Datatype::VEC_LONG_DOUBLE == a.dtype);
+    a = Attribute(std::vector< std::string >());
+    BOOST_TEST(Datatype::VEC_STRING == a.dtype);
+    a = Attribute(std::array< double, 7 >());
+    BOOST_TEST(Datatype::ARR_DBL_7 == a.dtype);
+    a = Attribute(static_cast< bool >(false));
+    BOOST_TEST(Datatype::BOOL == a.dtype);
+}
+
 BOOST_AUTO_TEST_CASE(output_default_test)
 {
     using IE = IterationEncoding;
     Series o = Series::create("./",
                               "new_openpmd_output_%T",
                               IE::fileBased,
-                              Format::NONE,
-                              AccessType::CREAT);
+                              Format::DUMMY,
+                              AccessType::CREATE);
 
     BOOST_TEST(o.openPMD() == "1.0.1");
     BOOST_TEST(o.openPMDextension() == static_cast<uint32_t>(0));
@@ -37,8 +93,8 @@ BOOST_AUTO_TEST_CASE(output_constructor_test)
     Series o1 = Series::create("./",
                                "MyOutput_%T",
                                IE::fileBased,
-                               Format::NONE,
-                               AccessType::CREAT);
+                               Format::DUMMY,
+                               AccessType::CREATE);
 
     BOOST_TEST(o1.openPMD() == "1.0.1");
     BOOST_TEST(o1.openPMDextension() == static_cast<uint32_t>(0));
@@ -56,8 +112,8 @@ BOOST_AUTO_TEST_CASE(output_constructor_test)
     Series o2 = Series::create("./",
                                "MyCustomOutput",
                                IE::groupBased,
-                               Format::NONE,
-                               AccessType::CREAT);
+                               Format::DUMMY,
+                               AccessType::CREATE);
 
     o2.setMeshesPath("customMeshesPath").setParticlesPath("customParticlesPath");
 
@@ -79,8 +135,8 @@ BOOST_AUTO_TEST_CASE(output_modification_test)
     Series o = Series::create("./",
                               "MyOutput_%T",
                               IE::fileBased,
-                              Format::NONE,
-                              AccessType::CREAT);
+                              Format::DUMMY,
+                              AccessType::CREATE);
 
     o.setOpenPMD("1.0.0");
     BOOST_TEST(o.openPMD() == "1.0.0");
@@ -109,8 +165,8 @@ BOOST_AUTO_TEST_CASE(iteration_default_test)
     Series o = Series::create("./",
                               "MyOutput_%T",
                               IE::fileBased,
-                              Format::NONE,
-                              AccessType::CREAT);
+                              Format::DUMMY,
+                              AccessType::CREATE);
 
     Iteration& i = o.iterations[42];
 
@@ -128,8 +184,8 @@ BOOST_AUTO_TEST_CASE(iteration_modification_test)
     Series o = Series::create("./",
                               "MyOutput_%T",
                               IE::fileBased,
-                              Format::NONE,
-                              AccessType::CREAT);
+                              Format::DUMMY,
+                              AccessType::CREATE);
 
     Iteration& i = o.iterations[42];
 
@@ -139,10 +195,52 @@ BOOST_AUTO_TEST_CASE(iteration_modification_test)
 
     double dt = 0.42;
     i.setDt(dt);
-    BOOST_TEST(i.dt< double >() == dt);
+    BOOST_TEST(i.dt< long double >() == static_cast< long double >(dt));
 
     i.setTimeUnitSI(0.000000000001);
     BOOST_TEST(i.timeUnitSI() == static_cast< double >(0.000000000001));
+}
+
+BOOST_AUTO_TEST_CASE(particleSpecies_modification_test)
+{
+    using IE = IterationEncoding;
+    Series o = Series::create("./",
+                              "MyOutput_%T",
+                              IE::fileBased,
+                              Format::DUMMY,
+                              AccessType::CREATE);
+
+    auto& particles = o.iterations[42].particles;
+    BOOST_TEST(0 == particles.numAttributes());
+    auto& species = particles["species"];
+    BOOST_TEST(1 == particles.size());
+    BOOST_TEST(1 == particles.count("species"));
+    BOOST_TEST(0 == species.numAttributes());
+    BOOST_TEST(2 == species.size());    //position, positionOffset
+    BOOST_TEST(1 == species.count("position"));
+    BOOST_TEST(1 == species.count("positionOffset"));
+    auto& patches = species.particlePatches;
+    BOOST_TEST(0 == patches.size());
+    BOOST_TEST(0 == patches.numAttributes());
+    auto& offset = patches["offset"];
+    BOOST_TEST(0 == offset.size());
+    BOOST_TEST(1 == offset.numAttributes());    //unitDimension
+    std::array< double, 7 > zeros{{0., 0., 0., 0., 0., 0., 0.}};
+    BOOST_TEST(zeros == offset.unitDimension());
+
+    auto& off_x = offset["x"];
+    BOOST_TEST(1 == off_x.unitSI());
+
+    PatchPosition pos;
+    pos.numParticles = 1;
+    pos.numParticlesOffset = 42;
+
+    double valIn, valOut;
+    valIn = 0.5;
+    off_x[pos] = valIn;
+    BOOST_TEST(Datatype::DOUBLE == off_x.getDatatype());
+    valOut = off_x[{1, 42}];
+    BOOST_TEST(valIn == valOut);
 }
 
 
@@ -152,20 +250,16 @@ BOOST_AUTO_TEST_CASE(record_constructor_test)
     Series o = Series::create("./",
                               "MyOutput_%T",
                               IE::fileBased,
-                              Format::NONE,
-                              AccessType::CREAT);
+                              Format::DUMMY,
+                              AccessType::CREATE);
 
     Record& r = o.iterations[42].particles["species"]["record"];
 
-    //std::vector< std::size_t > none{};
     BOOST_TEST(r["x"].unitSI() == 1);
-    //BOOST_TEST(r["x"].extents == none);
     BOOST_TEST(r["x"].numAttributes() == 1); /* unitSI */
     BOOST_TEST(r["y"].unitSI() == 1);
-    //BOOST_TEST(r["y"].extents == none);
     BOOST_TEST(r["y"].numAttributes() == 1); /* unitSI */
     BOOST_TEST(r["z"].unitSI() == 1);
-    //BOOST_TEST(r["z"].extents == none);
     BOOST_TEST(r["z"].numAttributes() == 1); /* unitSI */
     std::array< double, 7 > zeros{{0., 0., 0., 0., 0., 0., 0.}};
     BOOST_TEST(r.unitDimension() == zeros);
@@ -179,12 +273,12 @@ BOOST_AUTO_TEST_CASE(record_modification_test)
     Series o = Series::create("./",
                               "MyOutput_%T",
                               IE::fileBased,
-                              Format::NONE,
-                              AccessType::CREAT);
+                              Format::DUMMY,
+                              AccessType::CREATE);
 
     Record& r = o.iterations[42].particles["species"]["record"];
 
-    using RUD = Record::UnitDimension;
+    using RUD = UnitDimension;
     r.setUnitDimension({{RUD::L, 1.},
                         {RUD::M, 1.},
                         {RUD::T, -3.},
@@ -208,8 +302,8 @@ BOOST_AUTO_TEST_CASE(recordComponent_modification_test)
     Series o = Series::create("./",
                               "MyOutput_%T",
                               IE::fileBased,
-                              Format::NONE,
-                              AccessType::CREAT);
+                              Format::DUMMY,
+                              AccessType::CREATE);
 
     Record& r = o.iterations[42].particles["species"]["record"];
 
@@ -231,8 +325,8 @@ BOOST_AUTO_TEST_CASE(mesh_constructor_test)
     Series o = Series::create("./",
                               "MyOutput_%T",
                               IE::fileBased,
-                              Format::NONE,
-                              AccessType::CREAT);
+                              Format::DUMMY,
+                              AccessType::CREATE);
 
     Mesh &m = o.iterations[42].meshes["E"];
 
@@ -264,8 +358,8 @@ BOOST_AUTO_TEST_CASE(mesh_modification_test)
     Series o = Series::create("./",
                               "MyOutput_%T",
                               IE::fileBased,
-                              Format::NONE,
-                              AccessType::CREAT);
+                              Format::DUMMY,
+                              AccessType::CREATE);
 
     Mesh &m = o.iterations[42].meshes["E"];
     m["x"];
@@ -307,8 +401,8 @@ BOOST_AUTO_TEST_CASE(structure_test)
     Series o = Series::create("./",
                               "new_openpmd_output_%T",
                               IterationEncoding::fileBased,
-                              Format::NONE,
-                              AccessType::CREAT);
+                              Format::DUMMY,
+                              AccessType::CREATE);
 
     BOOST_TEST(o.IOHandler);
     BOOST_TEST(o.iterations.IOHandler);

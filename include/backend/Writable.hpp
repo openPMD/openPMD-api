@@ -21,15 +21,35 @@
 #pragma once
 
 
-/** File format to use during IO.
- */
-enum class Format
+#include <memory>
+
+class AbstractFilePosition;
+class AbstractIOHandler;
+
+class Writable
 {
-    HDF5,
-    PARALLEL_HDF5,
-    ADIOS,
-    PARALLEL_ADIOS,
-    ADIOS2,
-    PARALLEL_ADIOS2,
-    DUMMY
-};  //Format
+    template<
+            typename T,
+            typename T_key,
+            typename T_container
+    >
+    friend class Container;
+    friend class Iteration;
+    friend class ADIOS1IOHandlerImpl;
+    friend class ParallelADIOS1IOHandlerImpl;
+    friend class ADIOS2IOHandlerImpl;
+    friend class HDF5IOHandlerImpl;
+    friend class ParallelHDF5IOHandlerImpl;
+    friend std::string concrete_h5_file_position(Writable*);
+
+public:
+    Writable();
+    virtual ~Writable();
+
+protected:
+    std::shared_ptr< AbstractFilePosition > abstractFilePosition;
+    Writable* parent;
+    std::shared_ptr< AbstractIOHandler > IOHandler;
+    bool dirty;
+    bool written;
+};

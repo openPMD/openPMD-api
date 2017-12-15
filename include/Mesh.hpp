@@ -3,8 +3,9 @@
 
 #include <array>
 
-#include "Attributable.hpp"
-#include "Record.hpp"
+#include "backend/Attributable.hpp"
+#include "backend/BaseRecord.hpp"
+#include "backend/MeshRecordComponent.hpp"
 
 
 /** @brief Container for N-dimensional, homogenous Records.
@@ -129,10 +130,10 @@ public:
 
     /** Set the powers of the 7 base measures characterizing the record's unit in SI.
      *
-     * @param   unitDimension   map containing pairs of (Mesh::UnitDimension, dobule) that represent the power of the particular base.
+     * @param   unitDimension   map containing pairs of (UnitDimension, dobule) that represent the power of the particular base.
      * @return  Refence to modified mesh.
      */
-    Mesh& setUnitDimension(std::map< Mesh::UnitDimension, double > const& unitDimension);
+    Mesh& setUnitDimension(std::map< UnitDimension, double > const& unitDimension);
 
     /**
      * @tparam  T   Floating point type of user-selected precision (e.g. float, double).
