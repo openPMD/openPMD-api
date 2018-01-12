@@ -20,7 +20,7 @@
  */
 #pragma once
 
-/** Permissions to apply during IO.
+/** File access permissions to use during IO.
  */
 enum class AccessType
 {

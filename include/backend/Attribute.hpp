@@ -35,6 +35,9 @@
 //At the moment the dirty check is done at Attributable level,
 //resulting in all of an Attributables Attributes being written to disk even if only one changes
 /** Varidic datatype supporting at least all formats for attributes specified in the openPMD standard.
+ *
+ * @note Extending and/or modifying the available formats requires identical
+ *       modifications to Datatype.
  */
 using Attribute = Variadic< Datatype,
                             char, unsigned char,

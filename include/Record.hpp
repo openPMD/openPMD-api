@@ -45,7 +45,6 @@ Record::setTimeOffset(T to)
     static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
 
     setAttribute("timeOffset", to);
-    dirty = true;
     return *this;
 }
 

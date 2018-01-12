@@ -17,6 +17,5 @@ public:
 private:
     void read();
 
-    Container< PatchRecord > m_patchRecords;
     std::vector< PatchPosition > m_patchPositions;
 };  //ParticlePatches

@@ -21,7 +21,7 @@ public:
 
     std::future< void > flush();
 
-    using ArgumentMap = std::map< std::string, Argument >;
+    using ArgumentMap = std::map< std::string, ParameterArgument >;
     void createFile(Writable*, ArgumentMap const&);
 
     MPI_Comm m_mpiComm;

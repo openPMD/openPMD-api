@@ -1,164 +1,164 @@
 #include "../../include/IO/IOTask.hpp"
 
 template<>
-std::map< std::string, Argument > structToMap(Parameter< Operation::CREATE_FILE > const& p)
+std::map< std::string, ParameterArgument > structToMap(Parameter< Operation::CREATE_FILE > const& p)
 {
-    std::map< std::string, Argument > ret;
-    ret.insert({"name", Argument(p.name)});
+    std::map< std::string, ParameterArgument > ret;
+    ret.insert({"name", ParameterArgument(p.name)});
     return ret;
 }
 
 template<>
-std::map< std::string, Argument > structToMap(Parameter< Operation::OPEN_FILE > const& p)
+std::map< std::string, ParameterArgument > structToMap(Parameter< Operation::OPEN_FILE > const& p)
 {
-    std::map< std::string, Argument > ret;
-    ret.insert({"name", Argument(p.name)});
+    std::map< std::string, ParameterArgument > ret;
+    ret.insert({"name", ParameterArgument(p.name)});
     return ret;
 }
 
 template<>
-std::map< std::string, Argument > structToMap(Parameter< Operation::DELETE_FILE > const& p)
+std::map< std::string, ParameterArgument > structToMap(Parameter< Operation::DELETE_FILE > const& p)
 {
-    std::map< std::string, Argument > ret;
-    ret.insert({"name", Argument(p.name)});
+    std::map< std::string, ParameterArgument > ret;
+    ret.insert({"name", ParameterArgument(p.name)});
     return ret;
 }
 
 template<>
-std::map< std::string, Argument > structToMap(Parameter< Operation::CREATE_PATH > const& p)
+std::map< std::string, ParameterArgument > structToMap(Parameter< Operation::CREATE_PATH > const& p)
 {
-    std::map< std::string, Argument > ret;
-    ret.insert({"path", Argument(p.path)});
+    std::map< std::string, ParameterArgument > ret;
+    ret.insert({"path", ParameterArgument(p.path)});
     return ret;
 }
 
 template<>
-std::map< std::string, Argument > structToMap(Parameter< Operation::OPEN_PATH > const& p)
+std::map< std::string, ParameterArgument > structToMap(Parameter< Operation::OPEN_PATH > const& p)
 {
-    std::map< std::string, Argument > ret;
-    ret.insert({"path", Argument(p.path)});
+    std::map< std::string, ParameterArgument > ret;
+    ret.insert({"path", ParameterArgument(p.path)});
     return ret;
 }
 
 template<>
-std::map< std::string, Argument > structToMap(Parameter< Operation::DELETE_PATH > const& p)
+std::map< std::string, ParameterArgument > structToMap(Parameter< Operation::DELETE_PATH > const& p)
 {
-    std::map< std::string, Argument > ret;
-    ret.insert({"path", Argument(p.path)});
+    std::map< std::string, ParameterArgument > ret;
+    ret.insert({"path", ParameterArgument(p.path)});
     return ret;
 }
 
 template<>
-std::map< std::string, Argument > structToMap(Parameter< Operation::LIST_PATHS > const& p)
+std::map< std::string, ParameterArgument > structToMap(Parameter< Operation::LIST_PATHS > const& p)
 {
-    std::map< std::string, Argument > ret;
-    ret.insert({"paths", Argument(p.paths)});
+    std::map< std::string, ParameterArgument > ret;
+    ret.insert({"paths", ParameterArgument(p.paths)});
     return ret;
 }
 
 template<>
-std::map< std::string, Argument > structToMap(Parameter< Operation::CREATE_DATASET > const& p)
+std::map< std::string, ParameterArgument > structToMap(Parameter< Operation::CREATE_DATASET > const& p)
 {
-    std::map< std::string, Argument > ret;
-    ret.insert({"name", Argument(p.name)});
-    ret.insert({"extent", Argument(p.extent)});
-    ret.insert({"dtype", Argument(p.dtype)});
-    ret.insert({"chunkSize", Argument(p.chunkSize)});
-    ret.insert({"compression", Argument(p.transform)});
-    ret.insert({"transform", Argument(p.transform)});
+    std::map< std::string, ParameterArgument > ret;
+    ret.insert({"name", ParameterArgument(p.name)});
+    ret.insert({"extent", ParameterArgument(p.extent)});
+    ret.insert({"dtype", ParameterArgument(p.dtype)});
+    ret.insert({"chunkSize", ParameterArgument(p.chunkSize)});
+    ret.insert({"compression", ParameterArgument(p.transform)});
+    ret.insert({"transform", ParameterArgument(p.transform)});
     return ret;
 }
 
 template<>
-std::map< std::string, Argument > structToMap(Parameter< Operation::EXTEND_DATASET > const& p)
+std::map< std::string, ParameterArgument > structToMap(Parameter< Operation::EXTEND_DATASET > const& p)
 {
-    std::map< std::string, Argument > ret;
-    ret.insert({"name", Argument(p.name)});
-    ret.insert({"extent", Argument(p.extent)});
+    std::map< std::string, ParameterArgument > ret;
+    ret.insert({"name", ParameterArgument(p.name)});
+    ret.insert({"extent", ParameterArgument(p.extent)});
     return ret;
 }
 
 template<>
-std::map< std::string, Argument > structToMap(Parameter< Operation::OPEN_DATASET > const& p)
+std::map< std::string, ParameterArgument > structToMap(Parameter< Operation::OPEN_DATASET > const& p)
 {
-    std::map< std::string, Argument > ret;
-    ret.insert({"name", Argument(p.name)});
-    ret.insert({"dtype", Argument(p.dtype)});
-    ret.insert({"extent", Argument(p.extent)});
+    std::map< std::string, ParameterArgument > ret;
+    ret.insert({"name", ParameterArgument(p.name)});
+    ret.insert({"dtype", ParameterArgument(p.dtype)});
+    ret.insert({"extent", ParameterArgument(p.extent)});
     return ret;
 }
 
 template<>
-std::map< std::string, Argument > structToMap(Parameter< Operation::DELETE_DATASET > const& p)
+std::map< std::string, ParameterArgument > structToMap(Parameter< Operation::DELETE_DATASET > const& p)
 {
-    std::map< std::string, Argument > ret;
-    ret.insert({"name", Argument(p.name)});
+    std::map< std::string, ParameterArgument > ret;
+    ret.insert({"name", ParameterArgument(p.name)});
     return ret;
 }
 
 template<>
-std::map< std::string, Argument > structToMap(Parameter< Operation::WRITE_DATASET > const& p)
+std::map< std::string, ParameterArgument > structToMap(Parameter< Operation::WRITE_DATASET > const& p)
 {
-    std::map< std::string, Argument > ret;
-    ret.insert({"extent", Argument(p.extent)});
-    ret.insert({"offset", Argument(p.offset)});
-    ret.insert({"dtype", Argument(p.dtype)});
-    ret.insert({"data", Argument(p.data)});
+    std::map< std::string, ParameterArgument > ret;
+    ret.insert({"extent", ParameterArgument(p.extent)});
+    ret.insert({"offset", ParameterArgument(p.offset)});
+    ret.insert({"dtype", ParameterArgument(p.dtype)});
+    ret.insert({"data", ParameterArgument(p.data)});
     return ret;
 }
 
 template<>
-std::map< std::string, Argument > structToMap(Parameter< Operation::READ_DATASET > const& p)
+std::map< std::string, ParameterArgument > structToMap(Parameter< Operation::READ_DATASET > const& p)
 {
-    std::map< std::string, Argument > ret;
-    ret.insert({"extent", Argument(p.extent)});
-    ret.insert({"offset", Argument(p.offset)});
-    ret.insert({"dtype", Argument(p.dtype)});
-    ret.insert({"data", Argument(p.data)});
+    std::map< std::string, ParameterArgument > ret;
+    ret.insert({"extent", ParameterArgument(p.extent)});
+    ret.insert({"offset", ParameterArgument(p.offset)});
+    ret.insert({"dtype", ParameterArgument(p.dtype)});
+    ret.insert({"data", ParameterArgument(p.data)});
     return ret;
 }
 
 template<>
-std::map< std::string, Argument > structToMap(Parameter< Operation::LIST_DATASETS > const& p)
+std::map< std::string, ParameterArgument > structToMap(Parameter< Operation::LIST_DATASETS > const& p)
 {
-    std::map< std::string, Argument > ret;
-    ret.insert({"datasets", Argument(p.datasets)});
+    std::map< std::string, ParameterArgument > ret;
+    ret.insert({"datasets", ParameterArgument(p.datasets)});
     return ret;
 }
 
 template<>
-std::map< std::string, Argument > structToMap(Parameter< Operation::DELETE_ATT > const& p)
+std::map< std::string, ParameterArgument > structToMap(Parameter< Operation::DELETE_ATT > const& p)
 {
-    std::map< std::string, Argument > ret;
-    ret.insert({"name", Argument(p.name)});
+    std::map< std::string, ParameterArgument > ret;
+    ret.insert({"name", ParameterArgument(p.name)});
     return ret;
 }
 
 template<>
-std::map< std::string, Argument > structToMap(Parameter< Operation::WRITE_ATT > const& p)
+std::map< std::string, ParameterArgument > structToMap(Parameter< Operation::WRITE_ATT > const& p)
 {
-    std::map< std::string, Argument > ret;
-    ret.insert({"name", Argument(p.name)});
-    ret.insert({"dtype", Argument(p.dtype)});
-    ret.insert({"attribute", Argument(p.resource)});
+    std::map< std::string, ParameterArgument > ret;
+    ret.insert({"name", ParameterArgument(p.name)});
+    ret.insert({"dtype", ParameterArgument(p.dtype)});
+    ret.insert({"attribute", ParameterArgument(p.resource)});
     return ret;
 }
 
 template<>
-std::map< std::string, Argument > structToMap(Parameter< Operation::READ_ATT > const& p)
+std::map< std::string, ParameterArgument > structToMap(Parameter< Operation::READ_ATT > const& p)
 {
-    std::map< std::string, Argument > ret;
-    ret.insert({"name", Argument(p.name)});
-    ret.insert({"dtype", Argument(p.dtype)});
-    ret.insert({"resource", Argument(p.resource)});
+    std::map< std::string, ParameterArgument > ret;
+    ret.insert({"name", ParameterArgument(p.name)});
+    ret.insert({"dtype", ParameterArgument(p.dtype)});
+    ret.insert({"resource", ParameterArgument(p.resource)});
     return ret;
 }
 
 template<>
-std::map< std::string, Argument > structToMap(Parameter< Operation::LIST_ATTS > const& p)
+std::map< std::string, ParameterArgument > structToMap(Parameter< Operation::LIST_ATTS > const& p)
 {
-    std::map< std::string, Argument > ret;
-    ret.insert({"attributes", Argument(p.attributes)});
+    std::map< std::string, ParameterArgument > ret;
+    ret.insert({"attributes", ParameterArgument(p.attributes)});
     return ret;
 }
 

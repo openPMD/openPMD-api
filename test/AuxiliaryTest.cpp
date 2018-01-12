@@ -3,11 +3,12 @@
 
 #include <boost/test/included/unit_test.hpp>
 
-#include "backend/Attributable.hpp"
+#define protected public
 #include "auxiliary/StringManip.hpp"
 #include "backend/Container.hpp"
-#include "../include/Dataset.hpp"
 #include "backend/Writable.hpp"
+#include "IO/AbstractIOHandler.hpp"
+#include "Dataset.hpp"
 
 
 BOOST_AUTO_TEST_CASE(string_test)
@@ -56,6 +57,7 @@ BOOST_AUTO_TEST_CASE(container_default_test)
         bool written;
     };
     Container< S > c = Container< S >();
+    c.IOHandler = AbstractIOHandler::createIOHandler("", AccessType::CREATE, Format::DUMMY);
 
     BOOST_TEST(c.size() == 0);
     BOOST_TEST(c.erase("nonExistentKey") == false);
@@ -75,6 +77,7 @@ public:
 BOOST_AUTO_TEST_CASE(container_retrieve_test)
 {
     Container< structure > c = Container< structure >();
+    c.IOHandler = AbstractIOHandler::createIOHandler("", AccessType::CREATE, Format::DUMMY);
 
     structure s;
     std::string text = "The openPMD standard, short for open standard for particle-mesh data files is not a file format per se. It is a standard for meta data and naming schemes.";
@@ -135,6 +138,7 @@ struct Widget : public Writable
 BOOST_AUTO_TEST_CASE(container_access_test)
 {
     Container< Widget > c = Container< Widget >();
+    c.IOHandler = AbstractIOHandler::createIOHandler("", AccessType::CREATE, Format::DUMMY);
 
     c["firstWidget"] = Widget(0);
     BOOST_TEST(c.size() == 1);
@@ -162,6 +166,10 @@ BOOST_AUTO_TEST_CASE(attributable_default_test)
 class AttributedWidget : public Attributable
 {
 public:
+    AttributedWidget()
+    {
+        IOHandler = AbstractIOHandler::createIOHandler("", AccessType::CREATE, Format::DUMMY);
+    }
     Attribute::resource get(std::string key)
     {
         return getAttribute(key).getResource();

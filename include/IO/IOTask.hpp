@@ -8,6 +8,8 @@
 #include "Dataset.hpp"
 
 
+/** Concrete datatype of an object available at runtime.
+ */
 enum class ArgumentDatatype : int
 {
     STRING = 0,
@@ -23,18 +25,20 @@ enum class ArgumentDatatype : int
 
     UNDEFINED
 };
-using Argument = Variadic< ArgumentDatatype,
-                           std::string,
-                           std::vector< uint64_t >,
-                           void*,
-                           std::shared_ptr< void >,
-                           Datatype,
-                           Attribute::resource,
-                           std::shared_ptr< Extent >,
-                           std::shared_ptr< Datatype >,
-                           std::shared_ptr< Attribute::resource >,
-                           std::shared_ptr< std::vector< std::string > > >;
+using ParameterArgument = Variadic< ArgumentDatatype,
+                                    std::string,
+                                    std::vector< uint64_t >,
+                                    void*,
+                                    std::shared_ptr< void >,
+                                    Datatype,
+                                    Attribute::resource,
+                                    std::shared_ptr< Extent >,
+                                    std::shared_ptr< Datatype >,
+                                    std::shared_ptr< Attribute::resource >,
+                                    std::shared_ptr< std::vector< std::string > > >;
 
+/** Type of IO operation between logical and persistent data.
+ */
 enum class Operation
 {
     CREATE_FILE,
@@ -61,6 +65,14 @@ enum class Operation
 };  //Operation
 
 
+/** @brief Typesafe description of all required Arguments for a specified Operation.
+ *
+ * @note    Input operations (i.e. ones that transfer data from persistent files
+ *          to logical representations in libopenPMD) use shared pointers to
+ *          indicate shared ownership of the resource. The pointer will only be
+ *          valid after the Operation has completed.
+ * @tparam  Operation   Type of Operation to be executed.
+ */
 template< Operation >
 struct Parameter
 { };
@@ -200,12 +212,26 @@ struct Parameter< Operation::LIST_ATTS >
 
 
 template< Operation o >
-std::map< std::string, Argument >
+std::map< std::string, ParameterArgument >
 structToMap(Parameter< o > const&);
 
+/** @brief Self-contained description of a single IO operation.
+ *
+ * Contained are
+ * 1) the parameters to
+ * 2) a single atomic file Operation on the
+ * 3) concrete Writable object corresponding to both a local representation in
+ *    libopenPMD and a persistent object in a file on disk
+ */
 class IOTask
 {
 public:
+    /** Constructor for self-contained description of single IO operation.
+     *
+     * @tparam  op  Type of Operation to be executed.
+     * @param   w   Writable indicating the location of the object being operated on.
+     * @param   p   Parameter object supplying all required input and/or output parameters to the operation.
+     */
     template< Operation op >
     IOTask(Writable* w,
            Parameter< op > const& p)
@@ -216,5 +242,5 @@ public:
 
     Writable* writable;
     Operation operation;
-    std::map< std::string, Argument > parameter;
+    std::map< std::string, ParameterArgument > parameter;
 };  //IOTask

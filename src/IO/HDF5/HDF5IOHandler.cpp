@@ -264,7 +264,6 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
             maxdims.push_back(H5S_UNLIMITED);
         }
 
-        /* create dataspace with unlimited dimensions */
         hid_t space = H5Screate_simple(dims.size(), dims.data(), maxdims.data());
 
         std::vector< hsize_t > chunkDims;
@@ -391,7 +390,8 @@ HDF5IOHandlerImpl::openFile(Writable* writable,
     file_id = H5Fopen(name.c_str(),
                       flags,
                       m_fileAccessProperty);
-    ASSERT(file_id >= 0, "Internal error: Failed to open HDF5 file");
+    if( file_id < 0 )
+        throw no_such_file_error("Failed to open HDF5 file " + name);
 
     writable->written = true;
     writable->abstractFilePosition = std::make_shared< HDF5FilePosition >("/");
@@ -439,7 +439,7 @@ HDF5IOHandlerImpl::openPath(Writable* writable,
 
 void
 HDF5IOHandlerImpl::openDataset(Writable* writable,
-                               std::map< std::string, Argument > & parameters)
+                               std::map< std::string, ParameterArgument > & parameters)
 {
     auto res = m_fileIDs.find(writable->parent);
     hid_t node_id, dataset_id;
@@ -915,10 +915,14 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
             break;
         case DT::VEC_STRING:
         {
-            std::vector< char const* > c_str;
-            for( std::string const& s : att.get< std::vector< std::string > >() )
-                c_str.emplace_back(s.c_str());
-            status = H5Awrite(attribute_id, getH5DataType(att), c_str.data());
+            auto vs = att.get< std::vector< std::string > >();
+            size_t max_len = 0;
+            for( std::string const& s : vs )
+                max_len = std::max(max_len, s.size());
+            std::unique_ptr< char[] > c_str(new char[max_len * vs.size()]);
+            for( size_t i = 0; i < vs.size(); ++i )
+                strncpy(c_str.get() + i*max_len, vs[i].c_str(), max_len);
+            status = H5Awrite(attribute_id, getH5DataType(att), c_str.get());
             break;
         }
         case DT::ARR_DBL_7:
@@ -950,7 +954,7 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
 
 void
 HDF5IOHandlerImpl::readDataset(Writable* writable,
-                               std::map< std::string, Argument > & parameters)
+                               std::map< std::string, ParameterArgument > & parameters)
 {
     auto res = m_fileIDs.find(writable);
     if( res == m_fileIDs.end() )
@@ -1018,7 +1022,7 @@ HDF5IOHandlerImpl::readDataset(Writable* writable,
 
 void
 HDF5IOHandlerImpl::readAttribute(Writable* writable,
-                                 std::map< std::string, Argument >& parameters)
+                                 std::map< std::string, ParameterArgument >& parameters)
 {
     auto res = m_fileIDs.find(writable);
     if( res == m_fileIDs.end() )
@@ -1052,6 +1056,7 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
     Attribute a(0);
     if( attr_class == H5S_SCALAR || (attr_class == H5S_SIMPLE && ndims == 1 && dims[0] == 1) )
     {
+        //TODO bool
         if( H5Tequal(attr_type, H5T_NATIVE_CHAR) )
         {
             char c;
@@ -1160,13 +1165,63 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
         if( ndims != 1 )
             throw std::runtime_error("Unsupported attribute (array with ndims != 1)");
 
-        if( H5Tequal(attr_type, H5T_NATIVE_INT) )
+        //TODO bool
+        if( H5Tequal(attr_type, H5T_NATIVE_CHAR) )
         {
-            std::vector< int > vi(dims[0], 0);
+            std::vector< char > vc(dims[0], 0);
             status = H5Aread(attr_id,
                              attr_type,
-                             vi.data());
-            a = Attribute(vi);
+                             vc.data());
+            a = Attribute(vc);
+        } else if( H5Tequal(attr_type, H5T_NATIVE_UCHAR) )
+        {
+            std::vector< unsigned char > vu(dims[0], 0);
+            status = H5Aread(attr_id,
+                             attr_type,
+                             vu.data());
+            a = Attribute(vu);
+        } else if( H5Tequal(attr_type, H5T_NATIVE_INT16) )
+        {
+            std::vector< int16_t > vint16(dims[0], 0);
+            status = H5Aread(attr_id,
+                             attr_type,
+                             vint16.data());
+            a = Attribute(vint16);
+        } else if( H5Tequal(attr_type, H5T_NATIVE_INT32) )
+        {
+            std::vector< int32_t > vint32(dims[0], 0);
+            status = H5Aread(attr_id,
+                             attr_type,
+                             vint32.data());
+            a = Attribute(vint32);
+        } else if( H5Tequal(attr_type, H5T_NATIVE_INT64) )
+        {
+            std::vector< int64_t > vint64(dims[0], 0);
+            status = H5Aread(attr_id,
+                             attr_type,
+                             vint64.data());
+            a = Attribute(vint64);
+        } else if( H5Tequal(attr_type, H5T_NATIVE_UINT16) )
+        {
+            std::vector< uint16_t > vuint16(dims[0], 0);
+            status = H5Aread(attr_id,
+                             attr_type,
+                             vuint16.data());
+            a = Attribute(vuint16);
+        } else if( H5Tequal(attr_type, H5T_NATIVE_UINT32) )
+        {
+            std::vector< uint32_t > vuint32(dims[0], 0);
+            status = H5Aread(attr_id,
+                             attr_type,
+                             vuint32.data());
+            a = Attribute(vuint32);
+        } else if( H5Tequal(attr_type, H5T_NATIVE_UINT64) )
+        {
+            std::vector< uint64_t > vuint64(dims[0], 0);
+            status = H5Aread(attr_id,
+                             attr_type,
+                             vuint64.data());
+            a = Attribute(vuint64);
         } else if( H5Tequal(attr_type, H5T_NATIVE_FLOAT) )
         {
             std::vector< float > vf(dims[0], 0);
@@ -1191,16 +1246,13 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
                                  vd.data());
                 a = Attribute(vd);
             }
-        } else if( H5Tequal(attr_type, H5T_NATIVE_UINT32) )
+        } else if( H5Tequal(attr_type, H5T_NATIVE_LDOUBLE) )
         {
-            throw std::runtime_error("Unexpected attribute type (vector of uint32)");
-        } else if( H5Tequal(attr_type, H5T_NATIVE_UINT64) )
-        {
-            std::vector< uint64_t > vu(dims[0], 0);
+            std::vector< long double > vld(dims[0], 0);
             status = H5Aread(attr_id,
                              attr_type,
-                             vu.data());
-            a = Attribute(vu);
+                             vld.data());
+            a = Attribute(vld);
         } else if( H5Tget_class(attr_type) == H5T_STRING )
         {
             std::vector< std::string > vs;
@@ -1246,7 +1298,7 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
 
 void
 HDF5IOHandlerImpl::listPaths(Writable* writable,
-                             std::map< std::string, Argument > & parameters)
+                             std::map< std::string, ParameterArgument > & parameters)
 {
     auto res = m_fileIDs.find(writable);
     if( res == m_fileIDs.end() )
@@ -1278,7 +1330,7 @@ HDF5IOHandlerImpl::listPaths(Writable* writable,
 
 void
 HDF5IOHandlerImpl::listDatasets(Writable* writable,
-                                std::map< std::string, Argument >& parameters)
+                                std::map< std::string, ParameterArgument >& parameters)
 {
     auto res = m_fileIDs.find(writable);
     if( res == m_fileIDs.end() )
@@ -1309,7 +1361,7 @@ HDF5IOHandlerImpl::listDatasets(Writable* writable,
 }
 
 void HDF5IOHandlerImpl::listAttributes(Writable* writable,
-                                       std::map< std::string, Argument >& parameters)
+                                       std::map< std::string, ParameterArgument >& parameters)
 {
     auto res = m_fileIDs.find(writable);
     if( res == m_fileIDs.end() )

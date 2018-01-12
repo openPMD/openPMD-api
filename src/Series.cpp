@@ -129,7 +129,6 @@ Series&
 Series::setOpenPMD(std::string const& o)
 {
     setAttribute("openPMD", o);
-    dirty = true;
     return *this;
 }
 
@@ -143,7 +142,6 @@ Series&
 Series::setOpenPMDextension(uint32_t oe)
 {
     setAttribute("openPMDextension", oe);
-    dirty = true;
     return *this;
 }
 
@@ -161,7 +159,6 @@ Series::setBasePath(std::string const& bp)
         throw std::runtime_error("Custom basePath not allowed in openPMD <=1.0.1");
 
     setAttribute("basePath", bp);
-    dirty = true;
     return *this;
 }
 
@@ -195,7 +192,6 @@ Series::setParticlesPath(std::string const& pp)
         setAttribute("particlesPath", pp);
     else
         setAttribute("particlesPath", pp + "/");
-    dirty = true;
     return *this;
 }
 
@@ -209,7 +205,6 @@ Series&
 Series::setAuthor(std::string const& a)
 {
     setAttribute("author", a);
-    dirty = true;
     return *this;
 }
 
@@ -223,7 +218,6 @@ Series&
 Series::setSoftware(std::string const& s)
 {
     setAttribute("software", s);
-    dirty = true;
     return *this;
 }
 
@@ -237,7 +231,6 @@ Series&
 Series::setSoftwareVersion(std::string const& sv)
 {
     setAttribute("softwareVersion", sv);
-    dirty = true;
     return *this;
 }
 
@@ -251,7 +244,6 @@ Series&
 Series::setDate(std::string const& d)
 {
     setAttribute("date", d);
-    dirty = true;
     return *this;
 }
 
@@ -301,7 +293,6 @@ Series::setIterationFormat(std::string const& i)
             throw std::invalid_argument("iterationFormat must not differ from basePath " + basePath() + " for groupBased data");
     }
     setAttribute("iterationFormat", i);
-    dirty = true;
     return *this;
 }
 
@@ -419,6 +410,8 @@ Series::readFileBased()
             /* allow all attributes to be set */
             written = false;
 
+            readBase();
+
             using DT = Datatype;
             aRead.name = "iterationEncoding";
             IOHandler->enqueue(IOTask(this, aRead));
@@ -468,6 +461,8 @@ Series::readGroupBased()
     /* allow all attributes to be set */
     written = false;
 
+    readBase();
+
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
     aRead.name = "iterationEncoding";
@@ -510,7 +505,7 @@ Series::readGroupBased()
 }
 
 void
-Series::read()
+Series::readBase()
 {
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
@@ -554,7 +549,11 @@ Series::read()
         setParticlesPath(Attribute(*aRead.resource).get< std::string >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'particlesPath'");
+}
 
+void
+Series::read()
+{
     Parameter< Operation::OPEN_PATH > pOpen;
     std::string version = openPMD();
     if( version == "1.0.0" || version == "1.0.1" )

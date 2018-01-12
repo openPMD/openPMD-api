@@ -42,17 +42,34 @@ class Variadic
 
 public:
     using resource = boost::variant< T ... >;
+    /** Construct a lightweight wrapper around a generic object that indicates
+     * the concrete datatype of the specific object stored.
+     *
+     * @note    Gerneric objects can only generated implicitly if their datatype
+     *          is contained in T_DTYPES.
+     * @param   r   Generic object to be stored.
+     */
     Variadic(resource r)
             : dtype{static_cast<T_DTYPES>(r.which())},
               m_data{r}
     { }
 
+    /** Retrieve a stored specific object of known datatype with ensured type-safety.
+     *
+     * @throw   boost::bad_get if stored object is not of type U.
+     * @tparam  U   Type of the object to be retrieved.
+     * @return  Copy of the retrieved object of type U.
+     */
     template< typename U >
     U get() const
     {
         return boost::get< U >(m_data);
     }
 
+    /** Retrieve the stored generic object.
+     *
+     * @return  Copy of the stored generic object.
+     */
     resource getResource() const
     {
         return m_data;

@@ -78,8 +78,8 @@ public:
 
     /** Remove all objects from the container and (if written) from disk.
      *
-     * @note Calling this operation on any container in a <code>Series> with <code>AccessType::READ_ONLY</code> will throw an exception.
-     * @throws std::runtime_error
+     * @note    Calling this operation on any container in a Series with <code>AccessType::READ_ONLY</code> will throw an exception.
+     * @throws  std::runtime_error
      */
     void clear()
     {
@@ -104,9 +104,9 @@ public:
     mapped_type& at(key_type const& key) { return m_container.at(key); }
     mapped_type const& at(key_type const& key) const { return m_container.at(key); }
 
-    /** Returns a reference to the value that is mapped to a key equivalent to key, performing an insertion if such key does not already exist.
+    /** Access the value that is mapped to a key equivalent to key, creating it if such key does not exist already.
      *
-     * @param key   Key of the element to find (lvalue).
+     * @param   key Key of the element to find (lvalue).
      * @return  Reference to the mapped value of the new element if no element with key key existed. Otherwise a reference to the mapped value of the existing element whose key is equivalent to key.
      */
     virtual mapped_type& operator[](key_type const& key)
@@ -122,9 +122,9 @@ public:
             return m_container.insert({key, std::move(t)}).first->second;
         }
     }
-    /** Returns a reference to the value that is mapped to a key equivalent to key, performing an insertion if such key does not already exist.
+    /** Access the value that is mapped to a key equivalent to key, creating it if such key does not exist already.
      *
-     * @param key   Key of the element to find (rvalue).
+     * @param   key Key of the element to find (rvalue).
      * @return  Reference to the mapped value of the new element if no element with key key existed. Otherwise a reference to the mapped value of the existing element whose key is equivalent to key.
      */
     virtual mapped_type& operator[](key_type&& key)
@@ -148,10 +148,10 @@ public:
 
     /** Remove a single element from the container and (if written) from disk.
      *
-     * @note Calling this operation on any container in a <code>Series> with <code>AccessType::READ_ONLY</code> will throw an exception.
-     * @throws std::runtime_error
-     * @param key   Key of the element to remove.
-     * @return   Number of elements removed.
+     * @note    Calling this operation on any container in a Series with <code>AccessType::READ_ONLY</code> will throw an exception.
+     * @throws  std::runtime_error
+     * @param   key Key of the element to remove.
+     * @return  Number of elements removed (either 0 or 1).
      */
     virtual size_type erase(key_type const& key)
     {

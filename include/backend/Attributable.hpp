@@ -164,6 +164,7 @@ template< typename T >
 inline bool
 Attributable::setAttribute(std::string const& key, T&& value)
 {
+    dirty = true;
     auto it = m_attributes->lower_bound(key);
     if( it != m_attributes->end() && !m_attributes->key_comp()(key, it->first) )
     {

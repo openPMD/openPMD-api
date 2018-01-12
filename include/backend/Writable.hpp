@@ -26,6 +26,15 @@
 class AbstractFilePosition;
 class AbstractIOHandler;
 
+/** @brief Layer to mirror structure of data logiclly and in file.
+ *
+ * Hierarchy of objects (datasets, groups, attributes, ...) in openPMD is
+ * managed in this class.
+ * It also indicates the current synchronization state between logical
+ * and persistent data: - whether the object has been created in peristent form
+ *                      - whether the logical object has been modified compared
+ *                        to last persistent state
+ */
 class Writable
 {
     template<

@@ -66,7 +66,6 @@ Mesh::setGeometry(Mesh::Geometry g)
             setAttribute("geometry", std::string("spherical"));
             break;
     }
-    dirty = true;
     return *this;
 }
 
@@ -80,7 +79,6 @@ Mesh&
 Mesh::setGeometryParameters(std::string const& gp)
 {
     setAttribute("geometryParameters", gp);
-    dirty = true;
     return *this;
 }
 
@@ -94,7 +92,6 @@ Mesh&
 Mesh::setDataOrder(Mesh::DataOrder dor)
 {
     setAttribute("dataOrder", static_cast<char>(dor));
-    dirty = true;
     return *this;
 }
 
@@ -108,7 +105,6 @@ Mesh&
 Mesh::setAxisLabels(std::vector< std::string > als)
 {
     setAttribute("axisLabels", als);
-    dirty = true;
     return *this;
 }
 
@@ -119,7 +115,6 @@ Mesh::setGridSpacing(std::vector< T > gs)
     static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
 
     setAttribute("gridSpacing", gs);
-    dirty = true;
     return *this;
 }
 
@@ -133,7 +128,6 @@ Mesh&
 Mesh::setGridGlobalOffset(std::vector< double > ggo)
 {
     setAttribute("gridGlobalOffset", ggo);
-    dirty = true;
     return *this;
 }
 
@@ -147,7 +141,6 @@ Mesh&
 Mesh::setGridUnitSI(double gusi)
 {
     setAttribute("gridUnitSI", gusi);
-    dirty = true;
     return *this;
 }
 
@@ -160,7 +153,6 @@ Mesh::setUnitDimension(std::map< UnitDimension, double > const& udim)
         for( auto const& entry : udim )
             unitDimension[static_cast<uint8_t>(entry.first)] = entry.second;
         setAttribute("unitDimension", unitDimension);
-        dirty = true;
     }
     return *this;
 }
@@ -172,7 +164,6 @@ Mesh::setTimeOffset(T to)
     static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
 
     setAttribute("timeOffset", to);
-    dirty = true;
     return *this;
 }
 

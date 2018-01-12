@@ -17,7 +17,6 @@ PatchRecord::setUnitDimension(std::map< UnitDimension, double > const& udim)
         for( auto const& entry : udim )
             unitDimension[static_cast<uint8_t>(entry.first)] = entry.second;
         setAttribute("unitDimension", unitDimension);
-        dirty = true;
     }
     return *this;
 }

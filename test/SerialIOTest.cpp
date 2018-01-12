@@ -538,7 +538,11 @@ BOOST_AUTO_TEST_CASE(hzdr_hdf5_sample_content_test)
         BOOST_TEST(species_e.count("position") == 1);
         BOOST_TEST(species_e.count("positionOffset") == 1);
         BOOST_TEST(species_e.count("weighting") == 1);
-        BOOST_TEST(species_e.particlePatches.size() == 2);
+        BOOST_TEST(species_e.particlePatches.size() == 4);
+        BOOST_TEST(species_e.particlePatches.count("extent") == 1);
+        BOOST_TEST(species_e.particlePatches.count("numParticles") == 1);
+        BOOST_TEST(species_e.particlePatches.count("numParticlesOffset") == 1);
+        BOOST_TEST(species_e.particlePatches.count("offset") == 1);
 
         ud = {{0.,  0.,  1.,  1.,  0.,  0.,  0.}};
         Record& e_charge = species_e["charge"];
@@ -666,7 +670,7 @@ BOOST_AUTO_TEST_CASE(hzdr_hdf5_sample_content_test)
         BOOST_TEST(e_weighting_scalar.getDatatype() == Datatype::FLOAT);
         BOOST_TEST(e_weighting_scalar.getExtent() == e);
         BOOST_TEST(e_weighting_scalar.getDimensionality() == 1);
-    } catch (std::runtime_error& e)
+    } catch (no_such_file_error& e)
     {
         std::cerr << e.what() << '\n';
         std::cerr << "HZDR sample not accessible.\n";
@@ -699,7 +703,7 @@ BOOST_AUTO_TEST_CASE(hdf5_dtype_test)
         s.setAttribute("uint32", u32);
         uint64_t u64 = 64;
         s.setAttribute("uint64", u64);
-        float f = 1e32;
+        float f = 16e10;
         s.setAttribute("float", f);
         double d = 1e64;
         s.setAttribute("double", d);
@@ -708,22 +712,22 @@ BOOST_AUTO_TEST_CASE(hdf5_dtype_test)
         std::string str = "string";
         s.setAttribute("string", str);
         s.setAttribute("vecChar", std::vector< char >({'c', 'h', 'a', 'r'}));
-        s.setAttribute("vecInt16", std::vector< int16_t >({32767}));
-        s.setAttribute("vecInt32", std::vector< int32_t >({2147483647}));
-        s.setAttribute("vecInt64", std::vector< int64_t >({9223372036854775807}));
+        s.setAttribute("vecInt16", std::vector< int16_t >({32766, 32767}));
+        s.setAttribute("vecInt32", std::vector< int32_t >({2147483646, 2147483647}));
+        s.setAttribute("vecInt64", std::vector< int64_t >({9223372036854775806, 9223372036854775807}));
         s.setAttribute("vecUchar", std::vector< char >({'u', 'c', 'h', 'a', 'r'}));
-        s.setAttribute("vecUint16", std::vector< uint16_t >({65535}));
-        s.setAttribute("vecUint32", std::vector< uint32_t >({4294967295}));
-        s.setAttribute("vecUint64", std::vector< uint64_t >({18446744073709551615}));
-        s.setAttribute("vecFloat", std::vector< float >({3.40282e+38}));
-        s.setAttribute("vecDouble", std::vector< double >({1.79769e+308}));
-        s.setAttribute("vecLongdouble", std::vector< long double >({1.18973e+4932}));
+        s.setAttribute("vecUint16", std::vector< uint16_t >({65534, 65535}));
+        s.setAttribute("vecUint32", std::vector< uint32_t >({4294967294, 4294967295}));
+        s.setAttribute("vecUint64", std::vector< uint64_t >({18446744073709551614, 18446744073709551615}));
+        s.setAttribute("vecFloat", std::vector< float >({0, 3.40282e+38}));
+        s.setAttribute("vecDouble", std::vector< double >({0, 1.79769e+308}));
+        s.setAttribute("vecLongdouble", std::vector< long double >({0, 1.18973e+4932}));
         s.setAttribute("vecString", std::vector< std::string >({"vector", "of", "strings"}));
     }
     
     Series s = Series::read("../samples",
                             "dtype_test.h5");
-    
+
     BOOST_TEST(s.getAttribute("char").get< char >() == 'c');
     BOOST_TEST(s.getAttribute("uchar").get< unsigned char >() == 'u');
     BOOST_TEST(s.getAttribute("int16").get< int16_t >() == 16);
@@ -732,21 +736,21 @@ BOOST_AUTO_TEST_CASE(hdf5_dtype_test)
     BOOST_TEST(s.getAttribute("uint16").get< uint16_t >() == 16);
     BOOST_TEST(s.getAttribute("uint32").get< uint32_t >() == 32);
     BOOST_TEST(s.getAttribute("uint64").get< uint64_t >() == 64);
-    BOOST_TEST(s.getAttribute("float").get< float >() == 1e32);
+    BOOST_TEST(s.getAttribute("float").get< float >() == 16e10);
     BOOST_TEST(s.getAttribute("double").get< double >() == 1e64);
     BOOST_TEST(s.getAttribute("longdouble").get< long double >() == 1e80);
     BOOST_TEST(s.getAttribute("string").get< std::string >() == "string");
     BOOST_TEST(s.getAttribute("vecChar").get< std::vector< char > >() == std::vector< char >({'c', 'h', 'a', 'r'}));
-    BOOST_TEST(s.getAttribute("vecInt16").get< std::vector< int16_t > >() == std::vector< int16_t >({32767}));
-    BOOST_TEST(s.getAttribute("vecInt32").get< std::vector< int32_t > >() == std::vector< int32_t >({2147483647}));
-    BOOST_TEST(s.getAttribute("vecInt64").get< std::vector< int64_t > >() == std::vector< int64_t >({9223372036854775807}));
+    BOOST_TEST(s.getAttribute("vecInt16").get< std::vector< int16_t > >() == std::vector< int16_t >({32766, 32767}));
+    BOOST_TEST(s.getAttribute("vecInt32").get< std::vector< int32_t > >() == std::vector< int32_t >({2147483646, 2147483647}));
+    BOOST_TEST(s.getAttribute("vecInt64").get< std::vector< int64_t > >() == std::vector< int64_t >({9223372036854775806, 9223372036854775807}));
     BOOST_TEST(s.getAttribute("vecUchar").get< std::vector< char > >() == std::vector< char >({'u', 'c', 'h', 'a', 'r'}));
-    BOOST_TEST(s.getAttribute("vecUint16").get< std::vector< uint16_t > >() == std::vector< uint16_t >({65535}));
-    BOOST_TEST(s.getAttribute("vecUint32").get< std::vector< uint32_t > >() == std::vector< uint32_t >({4294967295}));
-    BOOST_TEST(s.getAttribute("vecUint64").get< std::vector< uint64_t > >() == std::vector< uint64_t >({18446744073709551615}));
-    BOOST_TEST(s.getAttribute("vecFloat").get< std::vector< float > >() == std::vector< float >({3.40282e+38}));
-    BOOST_TEST(s.getAttribute("vecDouble").get< std::vector< double > >() == std::vector< double >({1.79769e+308}));
-    BOOST_TEST(s.getAttribute("vecLongdouble").get< std::vector< long double > >() == std::vector< long double >({1.18973e+4932}));
+    BOOST_TEST(s.getAttribute("vecUint16").get< std::vector< uint16_t > >() == std::vector< uint16_t >({65534, 65535}));
+    BOOST_TEST(s.getAttribute("vecUint32").get< std::vector< uint32_t > >() == std::vector< uint32_t >({4294967294, 4294967295}));
+    BOOST_TEST(s.getAttribute("vecUint64").get< std::vector< uint64_t > >() == std::vector< uint64_t >({18446744073709551614, 18446744073709551615}));
+    BOOST_TEST(s.getAttribute("vecFloat").get< std::vector< float > >() == std::vector< float >({0, 3.40282e+38}));
+    BOOST_TEST(s.getAttribute("vecDouble").get< std::vector< double > >() == std::vector< double >({0, 1.79769e+308}));
+    BOOST_TEST(s.getAttribute("vecLongdouble").get< std::vector< long double > >() == std::vector< long double >({0, 1.18973e+4932}));
     BOOST_TEST(s.getAttribute("vecString").get< std::vector< std::string > >() == std::vector< std::string >({"vector", "of", "strings"}));
 }
 

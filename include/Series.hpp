@@ -230,6 +230,7 @@ private:
     void flushGroupBased();
     void readFileBased();
     void readGroupBased();
+    void readBase();
     void read();
 
     static std::string cleanFilename(std::string, Format);

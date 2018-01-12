@@ -21,7 +21,7 @@ public:
 
     virtual std::future< void > flush();
 
-    using ArgumentMap = std::map< std::string, Argument >;
+    using ArgumentMap = std::map< std::string, ParameterArgument >;
     virtual void createFile(Writable*, ArgumentMap const&);
     virtual void createPath(Writable*, ArgumentMap const&);
     virtual void createDataset(Writable*, ArgumentMap const&);

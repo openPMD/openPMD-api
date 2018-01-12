@@ -43,6 +43,5 @@ MeshRecordComponent::setPosition(std::vector< T > pos)
                   "Type of attribute must be floating point");
 
     setAttribute("position", pos);
-    dirty = true;
     return *this;
 }

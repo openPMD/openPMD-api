@@ -14,6 +14,9 @@ Dataset::extend(Extent newExtents)
 {
     if( newExtents.size() != rank )
         throw std::runtime_error("Dimensionality of extended Dataset must match the original dimensionality");
+    for( size_t i = 0; i < newExtents.size(); ++i )
+        if( newExtents[i] < extent[i] )
+            throw std::runtime_error("New Extent must be equal or greater than previous Extent");
 
     extent = newExtents;
     return *this;

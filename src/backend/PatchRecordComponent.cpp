@@ -10,7 +10,6 @@ PatchRecordComponent&
 PatchRecordComponent::setUnitSI(double usi)
 {
     setAttribute("unitSI", usi);
-    dirty = true;
     return *this;
 }
 
@@ -26,8 +25,11 @@ PatchRecordComponent::flush(std::string const& name)
     {
         Parameter< Operation::CREATE_DATASET > dCreate;
         dCreate.name = name;
-        dCreate.dtype = getDatatype();
         dCreate.extent = {1};
+        dCreate.dtype = getDatatype();
+        dCreate.chunkSize = {1};
+        dCreate.compression = m_dataset.compression;
+        dCreate.transform = m_dataset.transform;
         IOHandler->enqueue(IOTask(this, dCreate));
     }
     IOHandler->flush();

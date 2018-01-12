@@ -53,7 +53,6 @@ Iteration::setTime(T time)
     static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
 
     setAttribute("time", time);
-    dirty = true;
     return *this;
 }
 
@@ -64,7 +63,6 @@ Iteration::setDt(T dt)
     static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
 
     setAttribute("dt", dt);
-    dirty = true;
     return *this;
 }
 
@@ -78,7 +76,6 @@ Iteration&
 Iteration::setTimeUnitSI(double timeUnitSI)
 {
     setAttribute("timeUnitSI", timeUnitSI);
-    dirty = true;
     return *this;
 }
 
@@ -159,11 +156,7 @@ Iteration::flush()
 
     particles.flush(o->particlesPath());
     for( auto& species : particles )
-    {
         species.second.flush(species.first);
-        for( auto& record : species.second )
-            record.second.flush(record.first);
-    }
 
     flushAttributes();
 }

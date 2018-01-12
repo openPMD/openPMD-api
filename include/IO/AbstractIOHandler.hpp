@@ -30,6 +30,18 @@
 #include "IOTask.hpp"
 
 
+class no_such_file_error : public std::runtime_error
+{
+public:
+    no_such_file_error(char const* what_arg)
+            : std::runtime_error(what_arg)
+    { }
+    no_such_file_error(std::string const& what_arg)
+            : std::runtime_error(what_arg)
+    { }
+    virtual ~no_such_file_error() { }
+};
+
 class unsupported_data_error : public std::runtime_error
 {
 public:
@@ -46,7 +58,7 @@ public:
 /** Interface for communicating between logical and physically persistent data.
  *
  * Input and output operations are channeled through a task queue that is
- * contained in this handler.
+ * managed by the concrete class implementing this handler.
  * The queue of pending operations is only processed on demand. For certain
  * scenarios it is therefore necessary to manually execute all operations
  * by calling AbstractIOHanlder::flush().
@@ -85,7 +97,7 @@ public:
 };  //AbstractIOHandler
 
 
-/** Dummy handler without any real IO operations.
+/** Dummy handler without any IO operations.
  */
 class DummyIOHandler : public AbstractIOHandler
 {
@@ -93,6 +105,10 @@ public:
     DummyIOHandler(std::string const&, AccessType);
     ~DummyIOHandler();
 
+    /** No-op consistent with the IOHandler interface to enable library use without IO.
+     */
     void enqueue(IOTask const&) override;
+    /** No-op consistent with the IOHandler interface to enable library use without IO.
+     */
     std::future< void > flush();
 };  //DummyIOHandler

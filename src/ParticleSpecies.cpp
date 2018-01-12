@@ -83,6 +83,9 @@ ParticleSpecies::flush(std::string const& path)
 {
     Container< Record >::flush(path);
 
+    for( auto& record : *this )
+        record.second.flush(record.first);
+
     particlePatches.flush("particlePatches");
     for( auto& patch : particlePatches )
         patch.second.flush(patch.first);
@@ -100,7 +103,7 @@ Container< ParticleSpecies >::operator[](Container< ParticleSpecies >::key_type 
         ParticleSpecies ps = ParticleSpecies();
         ps.IOHandler = IOHandler;
         ps.parent = this;
-        auto& ret = this->insert({key, std::move(ps)}).first->second;
+        auto& ret = this->insert({key, ps}).first->second;
         /* enforce these two RecordComponents as required by the standard */
         ret["position"].setUnitDimension({{UnitDimension::L, 1}});
         ret["positionOffset"].setUnitDimension({{UnitDimension::L, 1}});
@@ -122,7 +125,7 @@ Container< ParticleSpecies >::operator[](Container< ParticleSpecies >::key_type 
         ParticleSpecies ps = ParticleSpecies();
         ps.IOHandler = IOHandler;
         ps.parent = this;
-        auto& ret = this->insert({std::move(key), std::move(ps)}).first->second;
+        auto& ret = this->insert({std::move(key), ps}).first->second;
         /* enforce these two RecordComponents as required by the standard */
         ret["position"].setUnitDimension({{UnitDimension::L, 1}});
         ret["positionOffset"].setUnitDimension({{UnitDimension::L, 1}});

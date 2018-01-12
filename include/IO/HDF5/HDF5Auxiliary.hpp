@@ -17,13 +17,10 @@ getH5DataType(Attribute const& att)
     {
         case DT::CHAR:
         case DT::VEC_CHAR:
+            return H5T_NATIVE_CHAR;
         case DT::UCHAR:
         case DT::VEC_UCHAR:
-        {
-            hid_t string_t_id = H5Tcopy(H5T_C_S1);
-            H5Tset_size(string_t_id, 1);
-            return string_t_id;
-        }
+            return H5T_NATIVE_UCHAR;
         case DT::INT16:
         case DT::VEC_INT16:
             return H5T_NATIVE_INT16;
@@ -61,7 +58,10 @@ getH5DataType(Attribute const& att)
         case DT::VEC_STRING:
         {
             hid_t string_t_id = H5Tcopy(H5T_C_S1);
-            H5Tset_size(string_t_id, H5T_VARIABLE);
+            size_t max_len = 0;
+            for( std::string const& s : att.get< std::vector< std::string > >() )
+                max_len = std::max(max_len, s.size());
+            H5Tset_size(string_t_id, max_len);
             return string_t_id;
         }
         case DT::BOOL:
