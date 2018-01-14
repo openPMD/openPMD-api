@@ -13,7 +13,6 @@ RUN        apt-get update \
               build-essential \
               ca-certificates \
               clang-4.0 \
-              cmake \
               gcc-5 \
               git \
               libopenmpi-dev \
@@ -24,6 +23,12 @@ RUN        apt-get update \
               wget \
               zlib1g-dev \
            && rm -rf /var/lib/apt/lists/*
+
+# download CMake 3.10.0
+RUN         cd $HOME/src \
+            && wget -nv https://cmake.org/files/v3.10/cmake-3.10.0-Linux-x86_64.sh \
+            && sh cmake-3.10.0-Linux-x86_64.sh --prefix=/usr --exclude-subdir \
+            && rm cmake-3.10.0-Linux-x86_64.sh
 
 # build Boost
 RUN         cd $HOME/src \
