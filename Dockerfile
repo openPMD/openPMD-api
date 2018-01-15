@@ -36,7 +36,7 @@ RUN         cd $HOME/src \
             && tar -xjf boost.tar.bz2 \
             && cd boost_1_64_0 \
             && ./bootstrap.sh --with-libraries=system,filesystem,test --prefix=/usr \
-            && ./b2 -d0 -j4 \
+            && ./b2 cxxflags="-std=c++11" -d0 -j4 \
             && ./b2 install -d0 -j4
 
 # build HDF5
