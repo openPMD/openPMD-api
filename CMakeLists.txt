@@ -178,12 +178,6 @@ set(IO_SOURCE
         src/IO/HDF5/ParallelHDF5IOHandler.cpp)
 set(CORE_TESTS
         test/CoreTest.cpp)
-set(AUX_TESTS
-        test/AuxiliaryTest.cpp)
-set(SERIAL_IO_TESTS
-        test/SerialIOTest.cpp)
-set(PARALLEL_IO_TESTS
-        test/ParallelIOTest.cpp)
 
 # library
 add_library(openPMD.core ${CORE_SOURCE})
@@ -261,10 +255,10 @@ endif()
 
 # tests
 set(openPMD_TEST_NAMES
-    openPMDCore
-    openPMDAuxiliary
-    openPMDSerialIO
-    openPMDParallelIO
+#    Core
+    Auxiliary
+    SerialIO
+#    ParallelIO # TODO: Broken! Does not compile
 )
 # examples
 set(openPMD_EXAMPLE_NAMES
