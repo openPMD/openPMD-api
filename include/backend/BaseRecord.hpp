@@ -145,7 +145,7 @@ template< typename T_elem >
 inline std::array< double, 7 >
 BaseRecord< T_elem >::unitDimension() const
 {
-    return Attributable::getAttribute("unitDimension").get< std::array< double, 7 > >();
+    return Attributable::getAttribute("unitDimension").template get< std::array< double, 7 > >();
 }
 
 template< typename T_elem >
@@ -159,7 +159,7 @@ BaseRecord< T_elem >::readBase()
     this->IOHandler->enqueue(IOTask(this, aRead));
     this->IOHandler->flush();
     if( *aRead.dtype == DT::ARR_DBL_7 )
-        this->setAttribute("unitDimension", Attribute(*aRead.resource).get< std::array< double, 7 > >());
+        this->setAttribute("unitDimension", Attribute(*aRead.resource).template get< std::array< double, 7 > >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'unitDimension'");
 
@@ -167,9 +167,9 @@ BaseRecord< T_elem >::readBase()
     this->IOHandler->enqueue(IOTask(this, aRead));
     this->IOHandler->flush();
     if( *aRead.dtype == DT::FLOAT )
-        this->setAttribute("timeOffset", Attribute(*aRead.resource).get< float >());
+        this->setAttribute("timeOffset", Attribute(*aRead.resource).template get< float >());
     else if( *aRead.dtype == DT::DOUBLE )
-        this->setAttribute("timeOffset", Attribute(*aRead.resource).get< double >());
+        this->setAttribute("timeOffset", Attribute(*aRead.resource).template get< double >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'timeOffset'");
 }
