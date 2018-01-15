@@ -67,23 +67,13 @@ RUN        cd $HOME/src \
 #           && make -j4 \
 #           && make install -j4
 
-# build executables (proof-of-concept)
+# build
 RUN        cd $HOME/src/libopenPMD \
            && mkdir -p build \
            && cd build \
-           && rm -rf CMake* \
-           && rm -rf $HOME/src/libopenPMD/CMakeCache.txt \
+           && rm -rf ../build/* \
            && cmake $HOME/src/libopenPMD \
-           && make poc_HDF5Writer -j4 \
-           && make poc_HDF5Reader -j4
-
-# build tests
-RUN        cd $HOME/src/libopenPMD/build \
-           && make libopenpmdCoreTests -j4 \
-           && make libopenpmdAuxiliaryTests -j4 \
-           && make libopenpmdSerialIOTests -j4 \
-           && make libopenpmdParallelIOTests -j4 \
-           && rm -rf $HOME/src/libopenPMD/build
+           && make -j4
 
 # obtain sample data
 RUN        mkdir -p $HOME/src/libopenPMD/samples/git-sample/ \
@@ -91,14 +81,11 @@ RUN        mkdir -p $HOME/src/libopenPMD/samples/git-sample/ \
            && wget -nv https://github.com/openPMD/openPMD-example-datasets/raw/draft/example-3d.tar.gz \
            && tar -xf example-3d.tar.gz \
            && cp example-3d/hdf5/* $HOME/src/libopenPMD/samples/git-sample/ \
+           && chmod 777 $HOME/src/libopenPMD/samples/ \
            && rm -rf example-3d.* example-3d
 
 # run tests
-RUN        cd $HOME/src/libopenPMD/bin \
-           && ./libopenpmdCoreTests \
-           && ./libopenpmdAuxiliaryTests \
-           && ./libopenpmdSerialIOTests \
-           && chmod 777 $HOME/src/libopenPMD/samples/ \
-           && runuser -l test -c 'cd $HOME/src/libopenPMD/bin && mpiexec --map-by ppr:1:core ./libopenpmdParallelIOTests'
+RUN        cd $HOME/src/libopenPMD/build \
+           && CTEST_OUTPUT_ON_FAILURE=1 make test
 
 
