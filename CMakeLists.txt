@@ -253,10 +253,10 @@ endif()
 
 # tests
 set(openPMD_TEST_NAMES
-#    Core
+    Core
     Auxiliary
     SerialIO
-#    ParallelIO # TODO: Broken! Does not compile
+    ParallelIO
 )
 # examples
 set(openPMD_EXAMPLE_NAMES

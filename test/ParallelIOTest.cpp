@@ -5,7 +5,7 @@
 #define BOOST_TEST_MODULE libopenpmd_parallel_io_test
 
 #include <boost/test/included/unit_test.hpp>
-#if defined(LIBOPENPMD_WITH_PARALLEL_HDF5) ||defined(LIBOPENPMD_WITH_PARALLEL_ADIOS1)
+#if defined(LIBOPENPMD_WITH_PARALLEL_HDF5) || defined(LIBOPENPMD_WITH_PARALLEL_ADIOS1)
 #include <mpi.h>
 
 #include "Series.hpp"
@@ -35,9 +35,9 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     /* only a 3x3x3 chunk of the actual data is hardcoded. every worker reads 1/3 */
     uint64_t rank = mpi_rank % 3;
-    Series o = Series("../samples/git-sample/",
-                      "data00000%T.h5",
-                      true);
+    Series o = Series::read("samples/git-sample/",
+                            "data00000%T.h5",
+                            true);
 
 
     {
@@ -55,7 +55,8 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
         MeshRecordComponent& rho = o.iterations[100].meshes["rho"][MeshRecordComponent::SCALAR];
         Offset offset{20 + rank, 20, 190};
         Extent extent{1, 3, 3};
-        auto data = rho.loadChunk< double >(offset, extent);
+        std::unique_ptr< double[] > data;
+        rho.loadChunk(offset, extent, data);
         double* raw_ptr = data.get();
 
         for( int j = 0; j < 3; ++j )
@@ -68,7 +69,8 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
         RecordComponent& electrons_mass = o.iterations[100].particles["electrons"]["mass"][RecordComponent::SCALAR];
         Offset offset{(rank+1) * 5};
         Extent extent{3};
-        auto data = electrons_mass.loadChunk< double >(offset, extent);
+        std::unique_ptr< double[] > data;
+        electrons_mass.loadChunk(offset, extent, data, RecordComponent::Allocation::API);
         double* raw_ptr = data.get();
 
         for( int i = 0; i < 3; ++i )
@@ -84,11 +86,11 @@ BOOST_AUTO_TEST_CASE(hdf5_write_test)
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_r);
     uint64_t mpi_size = static_cast<uint64_t>(mpi_s);
     uint64_t mpi_rank = static_cast<uint64_t>(mpi_r);
-    Series o = Series("../samples",
-                      "parallel_write",
-                      IterationEncoding::groupBased,
-                      Format::PARALLEL_HDF5,
-                      AccessType::CREATE);
+    Series o = Series::create("samples",
+                              "parallel_write",
+                              IterationEncoding::groupBased,
+                              Format::PARALLEL_HDF5,
+                              AccessType::CREATE);
 
     o.setAuthor("Parallel HDF5");
     ParticleSpecies& e = o.iterations[1].particles["e"];

@@ -26,8 +26,9 @@ class RecordComponent : public BaseRecordComponent
 public:
     enum class Allocation
     {
-        user,
-        API
+        USER,
+        API,
+        AUTO
     };  //Allocation
 
     RecordComponent& setUnitSI(double);
@@ -41,7 +42,11 @@ public:
     RecordComponent& makeConstant(T);
 
     template< typename T >
-    void loadChunk(Offset const&, Extent const&, std::unique_ptr< T[] >&, Allocation, double targetUnitSI = std::numeric_limits< double >::quiet_NaN() );
+    void loadChunk(Offset const&,
+                   Extent const&,
+                   std::unique_ptr< T[] >&,
+                   Allocation = Allocation::AUTO,
+                   double targetUnitSI = std::numeric_limits< double >::quiet_NaN() );
     template< typename T >
     void storeChunk(Offset, Extent, std::shared_ptr< T >);
 
@@ -95,14 +100,14 @@ RecordComponent::loadChunk(Offset const& o, Extent const& e, std::unique_ptr< T[
                                      + ")");
     if( Allocation::API == alloc && data )
         throw std::runtime_error("Preallocated pointer passed with signaled API-allocation during chunk loading.");
-    else if( Allocation::user == alloc && !data )
+    else if( Allocation::USER == alloc && !data )
         throw std::runtime_error("Unallocated pointer passed with signaled user-allocation during chunk loading.");
 
     size_t numPoints = 1;
     for( auto const& dimensionSize : e )
         numPoints *= dimensionSize;
 
-    if( Allocation::API == alloc )
+    if( (Allocation::AUTO == alloc && !data) || Allocation::API == alloc )
         data = std::unique_ptr< T[] >(new T[numPoints]);
     T* raw_ptr = data.get();
 

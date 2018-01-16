@@ -251,7 +251,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         if( d == Datatype::UNDEFINED )
         {
             // TODO handle unknown dtype
-            std::cerr << "Unknown datatype caught during writing (serial HDF5)" << std::endl;
+            std::cerr << "Datatype::UNDEFINED caught during dataset creation (serial HDF5)" << std::endl;
             d = Datatype::BOOL;
         }
         Attribute a(0);

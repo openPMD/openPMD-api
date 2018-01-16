@@ -10,7 +10,7 @@
 #ifdef LIBOPENPMD_WITH_HDF5
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_structure_test)
 {
-    Series o = Series::read("../samples/git-sample/",
+    Series o = Series::read("samples/git-sample/",
                             "data00000100.h5");
 
     BOOST_TEST(o.parent == nullptr);
@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_structure_test)
 
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_attribute_test)
 {
-    Series o = Series::read("../samples/git-sample/",
+    Series o = Series::read("samples/git-sample/",
                             "data00000100.h5");
 
     BOOST_TEST(o.openPMD() == "1.0.0");
@@ -290,7 +290,7 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_attribute_test)
 
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
 {
-    Series o = Series::read("../samples/git-sample/",
+    Series o = Series::read("samples/git-sample/",
                             "data00000100.h5");
 
     {
@@ -334,7 +334,7 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
 
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_fileBased_read_test)
 {
-    Series o = Series::read("../samples/git-sample/",
+    Series o = Series::read("samples/git-sample/",
                             "data%T.h5");
 
     BOOST_TEST(o.iterations.size() == 5);
@@ -351,7 +351,7 @@ BOOST_AUTO_TEST_CASE(hzdr_hdf5_sample_content_test)
     try
     {
         /* development/huebl/lwfa-openPMD-062-smallLWFA-h5 */
-        Series o = Series::read("../samples/hzdr-sample/",
+        Series o = Series::read("samples/hzdr-sample/",
                                 "simData_0.h5");
 
         BOOST_TEST(o.openPMD() == "1.0.0");
@@ -681,7 +681,7 @@ BOOST_AUTO_TEST_CASE(hzdr_hdf5_sample_content_test)
 BOOST_AUTO_TEST_CASE(hdf5_dtype_test)
 {
     {
-        Series s = Series::create("../samples",
+        Series s = Series::create("samples",
                                   "dtype_test",
                                   IterationEncoding::groupBased,
                                   Format::HDF5,
@@ -725,7 +725,7 @@ BOOST_AUTO_TEST_CASE(hdf5_dtype_test)
         s.setAttribute("vecString", std::vector< std::string >({"vector", "of", "strings"}));
     }
     
-    Series s = Series::read("../samples",
+    Series s = Series::read("samples",
                             "dtype_test.h5");
 
     BOOST_TEST(s.getAttribute("char").get< char >() == 'c');
@@ -756,7 +756,7 @@ BOOST_AUTO_TEST_CASE(hdf5_dtype_test)
 
 BOOST_AUTO_TEST_CASE(hdf5_write_test)
 {
-    Series o = Series::create("../samples",
+    Series o = Series::create("samples",
                               "serial_write",
                               IterationEncoding::groupBased,
                               Format::HDF5,
@@ -798,7 +798,7 @@ BOOST_AUTO_TEST_CASE(hdf5_write_test)
 
 BOOST_AUTO_TEST_CASE(hdf5_fileBased_write_test)
 {
-    Series o = Series::create("../samples",
+    Series o = Series::create("samples",
                               "serial_fileBased_write%T",
                               IterationEncoding::fileBased,
                               Format::HDF5,
@@ -889,7 +889,7 @@ BOOST_AUTO_TEST_CASE(hdf5_fileBased_write_test)
 
 BOOST_AUTO_TEST_CASE(hdf5_bool_test)
 {
-    Series o = Series::create("../samples",
+    Series o = Series::create("samples",
                               "serial_bool",
                               IterationEncoding::groupBased,
                               Format::HDF5,
@@ -900,7 +900,7 @@ BOOST_AUTO_TEST_CASE(hdf5_bool_test)
 
 BOOST_AUTO_TEST_CASE(hdf5_patch_test)
 {
-    Series o = Series::create("../samples",
+    Series o = Series::create("samples",
                               "serial_patch",
                               IterationEncoding::groupBased,
                               Format::HDF5,
@@ -911,7 +911,7 @@ BOOST_AUTO_TEST_CASE(hdf5_patch_test)
 
 BOOST_AUTO_TEST_CASE(hdf5_deletion_test)
 {
-    Series o = Series::create("../samples",
+    Series o = Series::create("samples",
                               "serial_deletion",
                               IterationEncoding::groupBased,
                               Format::HDF5,
@@ -953,7 +953,7 @@ BOOST_AUTO_TEST_CASE(hdf5_deletion_test)
 #ifdef LIBOPENPMD_WITH_ADIOS1
 BOOST_AUTO_TEST_CASE(adios_write_test)
 {
-    Output o = Output("../samples",
+    Output o = Output("samples",
                       "serial_write",
                       IterationEncoding::fileBased,
                       Format::ADIOS,
