@@ -69,6 +69,7 @@ RUN        cd $HOME/src \
 
 # build
 RUN        cd $HOME/src/libopenPMD \
+           && rm -rf CMakeCache.txt CMakeFiles/ cmake_install.cmake Makefile \
            && mkdir -p build \
            && cd build \
            && rm -rf ../build/* \
@@ -87,5 +88,3 @@ RUN        mkdir -p $HOME/src/libopenPMD/samples/git-sample/ \
 # run tests
 RUN        cd $HOME/src/libopenPMD/build \
            && CTEST_OUTPUT_ON_FAILURE=1 make test
-
-
