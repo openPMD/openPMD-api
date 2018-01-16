@@ -1,29 +1,55 @@
-cmake_minimum_required(VERSION 2.6)
-project(libopenpmd)
+# Preamble ####################################################################
+#
+cmake_minimum_required(VERSION 3.10.0)
 
+project(openPMD VERSION 0.1.0) # LANGUAGES CXX
 
-set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+# the openPMD "markup"/"schema" standard version
+set(openPMD_STANDARD_VERSION 1.1.0)
+
+set(CMAKE_MODULE_PATH "${openPMD_SOURCE_DIR}/cmake")
 
 # Force C++11
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-SET(CMAKE_CONFIGURATION_TYPES "Release;Debug;MinSizeRel;RelWithDebInfo")
 
+# Options and Variants ########################################################
+#
+function(openpmd_option name description default)
+    set(openPMD_USE_${name} ${default} CACHE STRING "${description}")
+    set_property(CACHE openPMD_USE_${name} PROPERTY
+        STRINGS "ON;TRUE;AUTO;OFF;FALSE"
+    )
+    if(openPMD_HAVE_${name})
+        set(openPMD_HAVE_${name} TRUE)
+    else()
+        set(openPMD_HAVE_${name})
+    endif()
+    set(openPMD_CONFIG_OPTIONS ${openPMD_CONFIG_OPTIONS} ${name} PARENT_SCOPE)
+endfunction()
+
+openpmd_option(MPI    "Enable MPI support"    AUTO)
+openpmd_option(HDF5   "Enable HDF5 support"   AUTO)
+openpmd_option(ADIOS1 "Enable ADIOS1 support" AUTO)
+openpmd_option(ADIOS2 "Enable ADIOS2 support" OFF)
+# openpmd_option(JSON "Enable JSON support" AUTO)
+# openpmd_option(PYTHON "Enable Python bindings" OFF)
+
+set(CMAKE_CONFIGURATION_TYPES "Release;Debug;MinSizeRel;RelWithDebInfo")
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug" CACHE STRING
-            "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel."
-            FORCE)
-endif(NOT CMAKE_BUILD_TYPE)
-
-if (CMAKE_BUILD_TYPE MATCHES Debug)
+        "Choose the build type, e.g. Debug." FORCE)
+endif()
+if (CMAKE_BUILD_TYPE STREQUAL Debug)
+    # TODO: add directly to targets
     add_definitions(-DDEBUG)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
 endif()
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+
+# Warnings ####################################################################
+#
+# TODO: LEGACY! Use CMake TOOLCHAINS instead!
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,memory,undefined")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
@@ -36,71 +62,95 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
 endif ()
 
-include_directories(${CMAKE_SOURCE_DIR}/include)
 
-#TODO remove in release version
-option(DEVELOPMENT "" ON)
-option(LIBOPENPMD_HDF5 "" ON)
-option(LIBOPENPMD_ADIOS "" OFF)
-option(LIBOPENPMD_ADIOS2 "" OFF)
-option(LIBOPENPMD_PARALLEL "" ON)
+# Dependencies ################################################################
+#
+# external library: Boost (mandatory)
+find_package(Boost 1.62.0 REQUIRED
+    COMPONENTS system filesystem unit_test_framework)
 
-find_package(Boost REQUIRED COMPONENTS system filesystem)
-if (Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIRS})
-    link_directories(${Boost_LIBRARIES})
-endif ()
+# external library: MPI (optional)
+if(openPMD_USE_MPI STREQUAL AUTO)
+    find_package(MPI)
+    if(MPI_FOUND)
+        set(openPMD_HAVE_MPI TRUE)
+    endif()
+elseif(openPMD_USE_MPI)
+    find_package(MPI REQUIRED)
+    set(openPMD_HAVE_MPI TRUE)
+else()
+    set(openPMD_HAVE_MPI FALSE)
+endif()
 
-find_package(MPI)
-if (MPI_FOUND)
-    if (LIBOPENPMD_PARALLEL)
-        add_definitions(-DLIBOPENPMD_WITH_MPI=ON)
-    endif ()
-    include_directories(${MPI_INCLUDE_PATH})
-    link_directories(${MPI_LIBRARIES})
-endif ()
-
-find_package(HDF5 QUIET COMPONENTS C)
-if (HDF5_FOUND)
-    if (LIBOPENPMD_HDF5)
-        add_definitions(-DLIBOPENPMD_WITH_HDF5=ON)
-        if (HDF5_IS_PARALLEL AND LIBOPENPMD_PARALLEL)
-            add_definitions(-DLIBOPENPMD_WITH_PARALLEL_HDF5=ON)
-        endif ()
-    endif ()
-    include_directories(${HDF5_INCLUDE_DIRS})
-    link_directories(${HDF5_LIBRARY_DIRS})
-endif ()
-
-if (LIBOPENPMD_PARALLEL)
-    find_package(ADIOS QUIET)
-    if (ADIOS_FOUND AND LIBOPENPMD_ADIOS AND LIBOPENPMD_PARALLEL)
-        add_definitions(-DLIBOPENPMD_WITH_PARALLEL_ADIOS1=ON)
+# external library: HDF5 (optional)
+if(openPMD_USE_HDF5 STREQUAL AUTO)
+    set(HDF5_PREFER_PARALLEL ${openPMD_HAVE_MPI})
+    find_package(HDF5 1.8.6 COMPONENTS C)
+    if(HDF5_FOUND)
+        set(openPMD_HAVE_HDF5 TRUE)
+    endif()
+elseif(openPMD_USE_HDF5)
+    set(HDF5_PREFER_PARALLEL ${openPMD_HAVE_MPI})
+    find_package(HDF5 1.8.6 REQUIRED COMPONENTS C)
+    if(HDF5_FOUND)
+        set(openPMD_HAVE_HDF5 TRUE)
     endif()
 else()
-    find_package(ADIOS QUIET COMPONENTS sequential)
-    if (ADIOS_FOUND AND LIBOPENPMD_ADIOS)
-        add_definitions(-DLIBOPENPMD_WITH_ADIOS1=ON)
-        add_definitions(-D_NOMPI=ON)
-    endif()
-endif()
-if (ADIOS_FOUND)
-    include_directories(${ADIOS_INCLUDE_DIRS})
-    link_directories(${ADIOS_LIBRARIES})
+    set(openPMD_HAVE_HDF5 FALSE)
 endif()
 
-find_package(ADIOS2 QUIET)
-if (ADIOS2_FOUND)
-    if (LIBOPENPMD_ADIOS2)
-        add_definitions(-DLIBOPENPMD_WITH_ADIOS2=ON)
-        if (ADIOS2_HAVE_MPI AND LIBOPENPMD_PARALLEL)
-            add_definitions(-DLIBOPENPMD_WITH_PARALLEL_ADIOS2=ON)
-        endif()
-    endif()
-    include_directories(${ADIOS2_CXX_INCS})
-    link_directories(${ADIOS2_CXX_LIBS})
+if(openPMD_HAVE_MPI AND openPMD_HAVE_HDF5 AND NOT HDF5_IS_PARALLEL)
+    message(FATAL_ERROR
+        "Found MPI but only serial version of HDF5. Either set "
+        "openPMD_USE_MPI=OFF to disable MPI or set openPMD_USE_HDF5=OFF "
+        "to disable HDF5 or provide a parallel install of HDF5.")
 endif()
 
+# external library: ADIOS1 (optional)
+set(ADIOS1_PREFER_COMPONENTS )
+if(openPMD_HAVE_MPI)
+    set(ADIOS1_PREFER_COMPONENTS sequential)
+endif()
+if(openPMD_USE_ADIOS1 STREQUAL AUTO)
+    find_package(ADIOS 1.10.0 COMPONENTS ${ADIOS1_PREFER_COMPONENTS})
+    if(ADIOS_FOUND)
+        set(openPMD_HAVE_ADIOS1 TRUE)
+    endif()
+elseif(openPMD_USE_ADIOS1)
+    find_package(ADIOS 1.10.0 REQUIRED COMPONENTS ${ADIOS1_PREFER_COMPONENTS})
+    if(ADIOS_FOUND)
+        set(openPMD_HAVE_ADIOS1 TRUE)
+    endif()
+else()
+    set(openPMD_HAVE_ADIOS1 FALSE)
+endif()
+
+# TODO: check!
+#if(openPMD_HAVE_MPI AND openPMD_HAVE_ADIOS AND ADIOS_HAVE_SEQUENTIAL)
+#    message(FATAL_ERROR "Found MPI but requested ADIOS1 is serial."
+#                        "Set openPMD_USE_MPI=OFF to disable MPI.")
+#endif()
+
+# external library: ADIOS2 (optional)
+if(openPMD_USE_ADIOS2 STREQUAL AUTO)
+    find_package(ADIOS2 2.0.0)
+    if(ADIOS2_FOUND)
+        set(openPMD_HAVE_ADIOS2 TRUE)
+    endif()
+elseif(openPMD_USE_ADIOS2)
+    find_package(ADIOS2 2.0.0 REQUIRED)
+    if(ADIOS2_FOUND)
+        set(openPMD_HAVE_ADIOS2 TRUE)
+    endif()
+else()
+    set(openPMD_HAVE_ADIOS2 FALSE)
+endif()
+
+# TODO: Check if ADIOS2 is parallel when openPMD_HAVE_MPI is ON
+
+
+# Targets #####################################################################
+#
 set(CORE_SOURCE
         src/Dataset.cpp
         src/Datatype.cpp
@@ -126,60 +176,204 @@ set(IO_SOURCE
         src/IO/ADIOS/ADIOS2IOHandler.cpp
         src/IO/HDF5/HDF5IOHandler.cpp
         src/IO/HDF5/ParallelHDF5IOHandler.cpp)
-set(CORE_TESTS
-        test/CoreTest.cpp)
-set(AUX_TESTS
-        test/AuxiliaryTest.cpp)
-set(SERIAL_IO_TESTS
-        test/SerialIOTest.cpp)
-set(PARALLEL_IO_TESTS
-        test/ParallelIOTest.cpp)
 
-add_library(libopemPMD.core ${CORE_SOURCE})
-add_library(libopemPMD.io ${IO_SOURCE})
+# library
+add_library(openPMD.core ${CORE_SOURCE})
+add_library(openPMD.io ${IO_SOURCE})
 
-add_executable(libopenpmdCoreTests ${CORE_TESTS})
-add_executable(libopenpmdAuxiliaryTests ${AUX_TESTS})
-add_executable(libopenpmdSerialIOTests ${SERIAL_IO_TESTS})
-add_executable(libopenpmdParallelIOTests ${PARALLEL_IO_TESTS})
-add_executable(poc_HDF5Writer writer.cpp)
-add_executable(poc_HDF5Reader reader.cpp)
+# own headers
+target_include_directories(openPMD.core PUBLIC
+    $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${openPMD_BINARY_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+target_include_directories(openPMD.io PUBLIC
+    $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${openPMD_BINARY_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
 
-target_link_libraries(libopenpmdAuxiliaryTests libopemPMD.core libopemPMD.io)
-target_link_libraries(libopenpmdCoreTests libopemPMD.core libopemPMD.io)
-target_link_libraries(libopenpmdSerialIOTests libopemPMD.core libopemPMD.io)
-target_link_libraries(libopenpmdParallelIOTests libopemPMD.core libopemPMD.io)
-target_link_libraries(poc_HDF5Writer libopemPMD.core libopemPMD.io)
-target_link_libraries(poc_HDF5Reader libopemPMD.core libopemPMD.io)
-if (LIBOPENPMD_HDF5)
-    target_link_libraries(libopenpmdAuxiliaryTests ${HDF5_LIBRARIES})
-    target_link_libraries(libopenpmdCoreTests ${HDF5_LIBRARIES})
-    target_link_libraries(libopenpmdSerialIOTests ${HDF5_LIBRARIES})
-    target_link_libraries(libopenpmdParallelIOTests ${HDF5_LIBRARIES})
-    target_link_libraries(poc_HDF5Writer ${HDF5_LIBRARIES})
-    target_link_libraries(poc_HDF5Reader ${HDF5_LIBRARIES})
-endif ()
-if (LIBOPENPMD_ADIOS)
-    target_link_libraries(libopenpmdAuxiliaryTests ${ADIOS_LIBRARIES})
-    target_link_libraries(libopenpmdCoreTests ${ADIOS_LIBRARIES})
-    target_link_libraries(libopenpmdSerialIOTests ${ADIOS_LIBRARIES})
-    target_link_libraries(libopenpmdParallelIOTests ${ADIOS_LIBRARIES})
-    target_link_libraries(poc_HDF5Writer ${ADIOS_LIBRARIES})
-    target_link_libraries(poc_HDF5Reader ${ADIOS_LIBRARIES})
-endif ()
-if (Boost_FOUND)
-    target_link_libraries(libopenpmdAuxiliaryTests ${Boost_LIBRARIES})
-    target_link_libraries(libopenpmdCoreTests ${Boost_LIBRARIES})
-    target_link_libraries(libopenpmdSerialIOTests ${Boost_LIBRARIES})
-    target_link_libraries(libopenpmdParallelIOTests ${Boost_LIBRARIES})
-    target_link_libraries(poc_HDF5Writer ${Boost_LIBRARIES})
-    target_link_libraries(poc_HDF5Reader ${Boost_LIBRARIES})
-endif ()
-if (LIBOPENPMD_PARALLEL)
-    target_link_libraries(libopenpmdAuxiliaryTests ${MPI_LIBRARIES})
-    target_link_libraries(libopenpmdCoreTests ${MPI_LIBRARIES})
-    target_link_libraries(libopenpmdSerialIOTests ${MPI_LIBRARIES})
-    target_link_libraries(libopenpmdParallelIOTests ${MPI_LIBRARIES})
-    target_link_libraries(poc_HDF5Writer ${MPI_LIBRARIES})
-    target_link_libraries(poc_HDF5Reader ${MPI_LIBRARIES})
-endif ()
+if(TARGET Boost::filesystem)
+    target_link_libraries(openPMD.core PUBLIC
+        Boost::boost Boost::system Boost::filesystem)
+    target_link_libraries(openPMD.io PUBLIC
+        Boost::boost Boost::system Boost::filesystem)
+else()
+    target_link_libraries(openPMD.core PUBLIC
+        ${Boost_LIBRARIES})
+    target_link_libraries(openPMD.io PUBLIC
+        ${Boost_LIBRARIES})
+    target_include_directories(openPMD.core SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+
+    target_include_directories(openPMD.io SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+endif()
+
+if(openPMD_HAVE_MPI)
+    # MPI targets: CMake 3.9+
+    # note: often the PUBLIC dependency to CXX is missing in C targets...
+    target_link_libraries(openPMD.core PUBLIC MPI::MPI_C MPI::MPI_CXX)
+    target_link_libraries(openPMD.io PUBLIC MPI::MPI_C MPI::MPI_CXX)
+
+    target_compile_definitions(openPMD.core PUBLIC "-DLIBOPENPMD_WITH_MPI=ON")
+    target_compile_definitions(openPMD.io PUBLIC "-DLIBOPENPMD_WITH_MPI=ON")
+else()
+    target_compile_definitions(openPMD.core PUBLIC "-D_NOMPI=ON")
+    target_compile_definitions(openPMD.io PUBLIC "-D_NOMPI=ON")
+endif()
+
+if(openPMD_HAVE_HDF5)
+    target_link_libraries(openPMD.io PUBLIC ${HDF5_LIBRARIES})
+    target_include_directories(openPMD.io SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
+    target_compile_definitions(openPMD.io PUBLIC ${HDF5_DEFINITIONS})
+    target_compile_definitions(openPMD.io PUBLIC "-DLIBOPENPMD_WITH_HDF5=ON")
+    if(openPMD_HAVE_MPI)
+        # TODO: remove and just rely on "WITH_MPI"
+        target_compile_definitions(openPMD.io PUBLIC "-DLIBOPENPMD_WITH_PARALLEL_HDF5=ON")
+    endif()
+endif()
+
+if(openPMD_HAVE_ADIOS1)
+    target_link_libraries(openPMD.io ${ADIOS_LIBRARIES})
+    target_include_directories(openPMD.io SYSTEM PUBLIC ${ADIOS_INCLUDE_DIRS})
+    target_compile_definitions(openPMD.io PUBLIC "-DLIBOPENPMD_WITH_ADIOS1=ON")
+    if(openPMD_HAVE_MPI)
+        # TODO: remove and just rely on "WITH_MPI"
+        target_compile_definitions(openPMD.io PUBLIC "-DLIBOPENPMD_WITH_PARALLEL_ADIOS1=ON")
+    endif()
+endif()
+
+if(openPMD_HAVE_ADIOS2)
+    target_link_libraries(openPMD.io PUBLIC ADIOS2::ADIOS2)
+    target_compile_definitions(openPMD.io PUBLIC "-DLIBOPENPMD_WITH_ADIOS2=ON")
+    if(openPMD_HAVE_MPI)
+        # TODO: remove and just rely on "WITH_MPI"
+        target_compile_definitions(openPMD.io PUBLIC "-DLIBOPENPMD_WITH_PARALLEL_ADIOS2=ON")
+    endif()
+endif()
+
+# tests
+set(openPMD_TEST_NAMES
+#    Core
+    Auxiliary
+    SerialIO
+#    ParallelIO # TODO: Broken! Does not compile
+)
+# examples
+set(openPMD_EXAMPLE_NAMES
+    writer
+    reader
+)
+foreach(testname ${openPMD_TEST_NAMES})
+    add_executable(${testname}Tests test/${testname}Test.cpp)
+    target_link_libraries(${testname}Tests PRIVATE
+        openPMD.core openPMD.io Boost::unit_test_framework)
+endforeach()
+foreach(examplename ${openPMD_EXAMPLE_NAMES})
+    add_executable(poc_HDF5${examplename} ${examplename}.cpp)
+    target_link_libraries(poc_HDF5${examplename} PRIVATE
+        openPMD.core openPMD.io Boost::unit_test_framework)
+endforeach()
+
+
+# Generate Files with Configuration Options ###################################
+#
+# TODO configure a version.hpp
+configure_file(
+    ${openPMD_SOURCE_DIR}/openPMDConfig.cmake.in
+    ${openPMD_BINARY_DIR}/openPMDConfig.cmake
+    @ONLY
+)
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file("openPMDConfigVersion.cmake"
+    VERSION ${openPMD_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+
+# Installs ####################################################################
+#
+# headers, libraries and exectuables
+install(TARGETS openPMD.io openPMD.core EXPORT openPMDTargets
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    RUNTIME DESTINATION bin
+    INCLUDES DESTINATION include
+)
+install(DIRECTORY "${openPMD_SOURCE_DIR}/include/."
+  DESTINATION include
+  PATTERN ".svn" EXCLUDE
+  PATTERN ".git" EXCLUDE
+)
+
+# CMake package file for find_package(openPMD::openPMD) in depending projects
+install(EXPORT openPMDTargets
+    FILE openPMDTargets.cmake
+    NAMESPACE openPMD::
+    DESTINATION lib/cmake/openPMD
+)
+install(
+    FILES
+        ${openPMD_BINARY_DIR}/openPMDConfig.cmake
+        ${openPMD_BINARY_DIR}/openPMDConfigVersion.cmake
+    DESTINATION lib/cmake/openPMD
+)
+
+
+# Tests #######################################################################
+#
+enable_testing()
+
+# OpenMPI root guard: https://github.com/open-mpi/ompi/issues/4451
+if("$ENV{USER}" STREQUAL "root")
+    set(MPI_ALLOW_ROOT --allow-run-as-root)
+endif()
+set(MPI_TEST_EXE
+    ${MPIEXEC_EXECUTABLE}
+    ${MPI_ALLOW_ROOT}
+    ${MPIEXEC_NUMPROC_FLAG} 4
+)
+
+foreach(testname ${openPMD_TEST_NAMES})
+    if(${testname} MATCHES "^Parallel.*$")
+        if(openPMD_HAVE_MPI)
+            add_test(NAME MPI.${testname}
+                COMMAND ${MPI_TEST_EXE} ${testname}Tests
+            )
+        endif()
+    else()
+        add_test(NAME Serial.${testname}
+            COMMAND ${testname}Tests
+        )
+    endif()
+endforeach()
+
+#foreach(examplename ${openPMD_EXAMPLE_NAMES})
+#    add_test(${examplename} ${examplename})
+#endforeach()
+
+
+# Status Message for Build Options ############################################
+#
+message("")
+message("openPMD build configuration:")
+message("  library Version: ${openPMD_VERSION}")
+message("  openPMD Standard: ${openPMD_STANDARD_VERSION}")
+message("  C++ Compiler : ${CMAKE_CXX_COMPILER_ID} "
+                         "${CMAKE_CXX_COMPILER_VERSION} "
+                         "${CMAKE_CXX_COMPILER_WRAPPER}")
+message("    ${CMAKE_CXX_COMPILER}")
+message("")
+message("  Installation prefix: ${CMAKE_INSTALL_PREFIX}")
+message("")
+message("  Build Type: ${CMAKE_BUILD_TYPE}")
+message("  Build Options:")
+
+foreach(opt IN LISTS openPMD_CONFIG_OPTIONS)
+  if(${openPMD_HAVE_${opt}})
+    message("    ${opt}: ON")
+  else()
+    message("    ${opt}: OFF")
+  endif()
+endforeach()
+message("")
