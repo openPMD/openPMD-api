@@ -176,8 +176,6 @@ set(IO_SOURCE
         src/IO/ADIOS/ADIOS2IOHandler.cpp
         src/IO/HDF5/HDF5IOHandler.cpp
         src/IO/HDF5/ParallelHDF5IOHandler.cpp)
-set(CORE_TESTS
-        test/CoreTest.cpp)
 
 # library
 add_library(openPMD.core ${CORE_SOURCE})
@@ -227,7 +225,7 @@ if(openPMD_HAVE_HDF5)
     target_link_libraries(openPMD.io PUBLIC ${HDF5_LIBRARIES})
     target_include_directories(openPMD.io SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
     target_compile_definitions(openPMD.io PUBLIC ${HDF5_DEFINITIONS})
-    target_compile_definitions(openPMD.io PRIVATE "-DLIBOPENPMD_WITH_HDF5=ON")
+    target_compile_definitions(openPMD.io PUBLIC "-DLIBOPENPMD_WITH_HDF5=ON")
     if(openPMD_HAVE_MPI)
         # TODO: remove and just rely on "WITH_MPI"
         target_compile_definitions(openPMD.io PUBLIC "-DLIBOPENPMD_WITH_PARALLEL_HDF5=ON")
@@ -237,7 +235,7 @@ endif()
 if(openPMD_HAVE_ADIOS1)
     target_link_libraries(openPMD.io ${ADIOS_LIBRARIES})
     target_include_directories(openPMD.io SYSTEM PUBLIC ${ADIOS_INCLUDE_DIRS})
-    target_compile_definitions(openPMD.io PRIVATE "-DLIBOPENPMD_WITH_ADIOS1=ON")
+    target_compile_definitions(openPMD.io PUBLIC "-DLIBOPENPMD_WITH_ADIOS1=ON")
     if(openPMD_HAVE_MPI)
         # TODO: remove and just rely on "WITH_MPI"
         target_compile_definitions(openPMD.io PUBLIC "-DLIBOPENPMD_WITH_PARALLEL_ADIOS1=ON")
@@ -246,7 +244,7 @@ endif()
 
 if(openPMD_HAVE_ADIOS2)
     target_link_libraries(openPMD.io PUBLIC ADIOS2::ADIOS2)
-    target_compile_definitions(openPMD.io PRIVATE "-DLIBOPENPMD_WITH_ADIOS2=ON")
+    target_compile_definitions(openPMD.io PUBLIC "-DLIBOPENPMD_WITH_ADIOS2=ON")
     if(openPMD_HAVE_MPI)
         # TODO: remove and just rely on "WITH_MPI"
         target_compile_definitions(openPMD.io PUBLIC "-DLIBOPENPMD_WITH_PARALLEL_ADIOS2=ON")
@@ -262,17 +260,17 @@ set(openPMD_TEST_NAMES
 )
 # examples
 set(openPMD_EXAMPLE_NAMES
-    poc_HDF5Writer
-    poc_HDF5Reader
+    writer
+    reader
 )
 foreach(testname ${openPMD_TEST_NAMES})
-    add_executable(${testname}Tests ${CORE_TESTS})
+    add_executable(${testname}Tests test/${testname}Test.cpp)
     target_link_libraries(${testname}Tests PRIVATE
         openPMD.core openPMD.io Boost::unit_test_framework)
 endforeach()
 foreach(examplename ${openPMD_EXAMPLE_NAMES})
-    add_executable(${examplename} ${CORE_TESTS})
-    target_link_libraries(${examplename} PRIVATE
+    add_executable(poc_HDF5${examplename} ${examplename}.cpp)
+    target_link_libraries(poc_HDF5${examplename} PRIVATE
         openPMD.core openPMD.io Boost::unit_test_framework)
 endforeach()
 
