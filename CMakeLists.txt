@@ -14,6 +14,13 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 
+# Project structure ###########################################################
+#
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+
 # Options and Variants ########################################################
 #
 function(openpmd_option name description default)
@@ -31,7 +38,7 @@ endfunction()
 
 openpmd_option(MPI    "Enable MPI support"    AUTO)
 openpmd_option(HDF5   "Enable HDF5 support"   AUTO)
-openpmd_option(ADIOS1 "Enable ADIOS1 support" AUTO)
+openpmd_option(ADIOS1 "Enable ADIOS1 support" OFF)
 openpmd_option(ADIOS2 "Enable ADIOS2 support" OFF)
 # openpmd_option(JSON "Enable JSON support" AUTO)
 # openpmd_option(PYTHON "Enable Python bindings" OFF)
@@ -233,7 +240,7 @@ if(openPMD_HAVE_HDF5)
 endif()
 
 if(openPMD_HAVE_ADIOS1)
-    target_link_libraries(openPMD.io ${ADIOS_LIBRARIES})
+    target_link_libraries(openPMD.io PUBLIC ${ADIOS_LIBRARIES})
     target_include_directories(openPMD.io SYSTEM PUBLIC ${ADIOS_INCLUDE_DIRS})
     target_compile_definitions(openPMD.io PUBLIC "-DLIBOPENPMD_WITH_ADIOS1=ON")
     if(openPMD_HAVE_MPI)

@@ -1,19 +1,207 @@
 language: cpp
 os: linux
-dist: xenial
+dist: trusty
 sudo: false
+cache:
+ directories:
+  - .cache
 
-services:
-  - docker
+#services:
+ #- docker
 
-compiler:
-  - gcc
-  - clang
+apt:
+ packages:
+  - autoconf
+  - build-essential
+  - ca-certificates
+  - git
+  - libopenmpi-dev
+  - make
+  - openmpi-bin
+  - pkg-config
+  - python
+  - ssh
+  - wget
+
+matrix:
+  include:
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-4.9
+      env:
+         - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
+      env:
+         - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-6
+      env:
+        - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+      env:
+        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.6
+          packages:
+            - clang-3.6
+      env:
+        - MATRIX_EVAL="CC=clang-3.6 && CXX=clang++-3.6"
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.7
+          packages:
+            - clang-3.7
+      env:
+        - MATRIX_EVAL="CC=clang-3.7 && CXX=clang++-3.7"
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.8
+          packages:
+            - clang-3.8
+      env:
+        - MATRIX_EVAL="CC=clang-3.8 && CXX=clang++-3.8"
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-3.9
+          packages:
+            - clang-3.9
+      env:
+        - MATRIX_EVAL="CC=clang-3.9 && CXX=clang++-3.9"
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-4.0
+          packages:
+            - clang-4.0
+      env:
+        - MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0"
+
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - clang-5.0
+      env:
+        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
 
 #env:
 #  matrix:
 #    - PARALLEL=ON
 #    - PARALLEL=OFF
 
+env:
+ global:
+  - CMAKE_VERSION=3.10
+  - CMAKE_PATCH=2
+  - BOOST_MINOR=64
+  - BOOST_PATCH=0
+  - HDF5_MINOR=10
+  - HDF5_PATCH=1
+  - ADIOS1_MINOR=13
+  - ADIOS1_PATCH=0
+  - ADIOS2_MINOR=1
+  - ADIOS2_PATCH=0
+
+before_install:
+ - eval "${MATRIX_EVAL}"
+
+ - sh scripts/travis/cache_ci_dependencies.sh
+
+ - cd .cache
+ - sh cmake-${CMAKE_VERSION}.${CMAKE_PATCH}-Linux-x86_64.sh --prefix=/usr --exclude-subdir
+
+ - cd boost_1_${BOOST_MINOR}_${BOOST_PATCH}
+ - ./b2 install -d0 -j4
+ - cd ..
+
+ - cd hdf5-1.${HDF5_MINOR}.${HDF5_PATCH}
+ - make install -j4
+ - cd ..
+
+ - cd adios-1.${ADIOS1_MINOR}.${ADIOS1_PATCH}
+ - make install -j4
+ - cd ..
+
+ - cd ADIOS2/v2.${ADIOS2_MINOR}.${ADIOS2_PATCH}
+ - make install -j4
+ - cd ..
+
+install:
+ - rm -rf CMakeCache.txt CMakeFiles/ cmake_install.cmake Makefile
+ - mkdir -p build
+ - cd build
+ - rm -rf ../build/*
+ - cmake ..
+ - make -j4
+
+before_script:
+ - if [ ! -d samples/git-sample/ ]; then \
+       mkdir -p samples/git-sample/; \
+       cd samples/git-sample/; \
+       wget -nv https://github.com/openPMD/openPMD-example-datasets/raw/draft/example-3d.tar.gz; \
+       tar -xf example-3d.tar.gz; \
+       cp example-3d/hdf5/* samples/git-sample/; \
+       chmod 777 samples/; \
+       rm -rf example-3d.* example-3d; \
+       cd ../..
+   fi
+
 script:
-  - docker build --build-arg CXX=$CXX .
+ - CTEST_OUTPUT_ON_FAILURE=1 make test
+ #- docker build \
+        #--build-arg CXX=$CXX \
+        #--build-arg CMAKE_VERSION=3.10 \
+        #--build-arg CMAKE_PATCH=2 \
+        #--build-arg BOOST_MINOR=64 \
+        #--build-arg BOOST_PATCH=0 \
+        #--build-arg HDF5_MINOR=10 \
+        #--build-arg HDF5_PATCH=1 \
+        #--build-arg ADIOS1_MINOR=13 \
+        #--build-arg ADIOS1_PATCH=0 \
+        #--build-arg ADIOS2_MINOR=1 \
+        #--build-arg ADIOS2_PATCH=0 \
+        #.
