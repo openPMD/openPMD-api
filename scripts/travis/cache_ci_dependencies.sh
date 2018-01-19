@@ -17,6 +17,7 @@ if [ ! -d ${CMAKE_TAG} ]; then
  cd ${CMAKE_TAG}
  ../bootstrap --prefix=/usr --parallel=4
  make -j4
+ make install -j4
  cd ..
 fi
 cd ..

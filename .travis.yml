@@ -1,7 +1,7 @@
 language: cpp
 os: linux
 dist: trusty
-sudo: false
+sudo: required
 cache:
  directories:
   - .cache
@@ -137,42 +137,44 @@ env:
  global:
   - CMAKE_VERSION=3.10
   - CMAKE_PATCH=2
+  - BOOST_MINOR=64
+  - BOOST_PATCH=0
   - HDF5_MINOR=10
   - HDF5_PATCH=1
   - ADIOS1_MINOR=13
   - ADIOS1_PATCH=0
   - ADIOS2_MINOR=1
   - ADIOS2_PATCH=0
- matrix:
-  - BOOST_MINOR=58 BOOST_PATCH=0
-  - BOOST_MINOR=64 BOOST_PATCH=0
-  - BOOST_MINOR=65 BOOST_PATCH=1
-  - BOOST_MINOR=66 BOOST_PATCH=0
+ #matrix:
+  #- BOOST_MINOR=58 BOOST_PATCH=0
+  #- BOOST_MINOR=64 BOOST_PATCH=0
+  #- BOOST_MINOR=65 BOOST_PATCH=1
+  #- BOOST_MINOR=66 BOOST_PATCH=0
 
 before_install:
  - eval "${MATRIX_EVAL}"
 
- - sh scripts/travis/cache_ci_dependencies.sh
+ - sudo sh scripts/travis/cache_ci_dependencies.sh
 
  - cd .cache
  - cd CMake/v${CMAKE_VERSION}.${CMAKE_PATCH}
- - make install -j4
+ - sudo make install -j4
  - cd ..
 
  - cd boost_1_${BOOST_MINOR}_${BOOST_PATCH}
- - ./b2 install -d0 -j4
+ - sudo ./b2 install -d0 -j4
  - cd ..
 
  - cd hdf5-1.${HDF5_MINOR}.${HDF5_PATCH}
- - make install -j4
+ - sudo make install -j4
  - cd ..
 
  - cd adios-1.${ADIOS1_MINOR}.${ADIOS1_PATCH}
- - make install -j4
+ - sudo make install -j4
  - cd ..
 
  - cd ADIOS2/v2.${ADIOS2_MINOR}.${ADIOS2_PATCH}
- - make install -j4
+ - sudo make install -j4
  - cd ..
 
 install:
