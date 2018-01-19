@@ -145,6 +145,11 @@ env:
   - ADIOS1_PATCH=0
   - ADIOS2_MINOR=1
   - ADIOS2_PATCH=0
+ matrix:
+  - BOOST_MINOR=58 BOOST_PATCH=0
+  - BOOST_MINOR=64 BOOST_PATCH=0
+  - BOOST_MINOR=65 BOOST_PATCH=1
+  - BOOST_MINOR=66 BOOST_PATCH=0
 
 before_install:
  - eval "${MATRIX_EVAL}"
@@ -152,7 +157,9 @@ before_install:
  - sh scripts/travis/cache_ci_dependencies.sh
 
  - cd .cache
- - sh cmake-${CMAKE_VERSION}.${CMAKE_PATCH}-Linux-x86_64.sh --prefix=/usr --exclude-subdir
+ - cd CMake/v${CMAKE_VERSION}.${CMAKE_PATCH}
+ - make install -j4
+ - cd ..
 
  - cd boost_1_${BOOST_MINOR}_${BOOST_PATCH}
  - ./b2 install -d0 -j4

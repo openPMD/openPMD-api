@@ -5,11 +5,21 @@ cd .cache
 
 CMAKE_VERSION=3.10
 CMAKE_PATCH=2
-CMAKE_INSTALLER=cmake-${CMAKE_VERSION}.${CMAKE_PATCH}-Linux-x86_64.sh
-if [ ! -f ${CMAKE_INSTALLER} ]; then
- wget -nv https://cmake.org/files/v${CMAKE_VERSION}/${CMAKE_INSTALLER}
+CMAKE_TAG=v${CMAKE_VERSION}.${CMAKE_PATCH}
+if [ ! -d CMake ]; then
+ git clone https://github.com/Kitware/CMake.git --branch ${CMAKE_TAG} --single-branch
 fi
-sh ${CMAKE_INSTALLER} --prefix=/usr --exclude-subdir
+cd CMake
+if [ ! -d ${CMAKE_TAG} ]; then
+ git fetch --all --tags --prune
+ git checkout tags/${CMAKE_TAG}
+ mkdir -p ${CMAKE_TAG}
+ cd ${CMAKE_TAG}
+ ./bootstrap --prefix=/usr
+ make -j4
+ cd ..
+fi
+cd ..
 
 BOOST_MINOR=64
 BOOST_PATCH=0
@@ -62,6 +72,7 @@ fi
 cd ADIOS2
 if [ ! -d ${ADIOS2_TAG} ]; then
  git fetch --all --tags --prune
+ git checkout tags/${ADIOS2_TAG}
  mkdir -p ${ADIOS2_TAG}
  cd ${ADIOS2_TAG}
  cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DADIOS2_BUILD_EXAMPLES=OFF -DADIOS2_BUILD_TESTING=OFF -DADIOS2_USE_HDF5=OFF -DADIOS2_USE_ADIOS1=OFF -DADIOS2_USE_Python=OFF
