@@ -15,7 +15,7 @@ if [ ! -d ${CMAKE_TAG} ]; then
  git checkout tags/${CMAKE_TAG}
  mkdir -p ${CMAKE_TAG}
  cd ${CMAKE_TAG}
- ./bootstrap --prefix=/usr
+ ../bootstrap --prefix=/usr --parallel=4
  make -j4
  cd ..
 fi
