@@ -272,13 +272,17 @@ set(openPMD_EXAMPLE_NAMES
 )
 foreach(testname ${openPMD_TEST_NAMES})
     add_executable(${testname}Tests test/${testname}Test.cpp)
-    target_link_libraries(${testname}Tests PRIVATE
-        openPMD.core openPMD.io Boost::unit_test_framework)
+    target_link_libraries(${testname}Tests PRIVATE openPMD.core openPMD.io)
+    if(TARGET Boost::unit_test_framework)
+        target_link_libraries(${testname}Tests PRIVATE Boost::unit_test_framework)
+    endif()
 endforeach()
 foreach(examplename ${openPMD_EXAMPLE_NAMES})
     add_executable(poc_HDF5${examplename} ${examplename}.cpp)
-    target_link_libraries(poc_HDF5${examplename} PRIVATE
-        openPMD.core openPMD.io Boost::unit_test_framework)
+    target_link_libraries(poc_HDF5${examplename} PRIVATE openPMD.core openPMD.io)
+    if(TARGET Boost::unit_test_framework)
+        target_link_libraries(poc_HDF5${examplename} PRIVATE Boost::unit_test_framework)
+    endif()
 endforeach()
 
 
