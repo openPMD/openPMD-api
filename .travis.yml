@@ -1,214 +1,118 @@
 language: cpp
-os: linux
-dist: trusty
 sudo: required
+dist: trusty
+
 cache:
- directories:
-  - .cache
+  apt: true
+  directories:
+    - $HOME/.cache/spack
+  pip: true
 
-#services:
- #- docker
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages: &common_deps
+      - gfortran
 
-apt:
- packages:
-  - autoconf
-  - build-essential
-  - ca-certificates
-  - git
-  - libopenmpi-dev
-  - make
-  - openmpi-bin
-  - pkg-config
-  - python
-  - ssh
-  - wget
+env:
+  global:
+    - BUILD: ~/buildTmp
+    - CXXFLAGS: "-Wall -Wextra -Woverloaded-virtual -Wshadow"
+    - SPACK_ROOT: $HOME/.cache/spack
+    - PATH: $PATH:$HOME/.cache/spack/bin
 
 matrix:
   include:
-    - os: linux
-      addons:
+    # Clang 5.0.0
+    - env:
+        - openPMD_USE_MPI=ON openPMD_USE_HDF5=ON openPMD_USE_ADIOS1=OFF openPMD_USE_ADIOS2=OFF
+      compiler: clang
+      addons: &mpi_deps
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
           packages:
-            - g++-4.9
-      env:
-         - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
-
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-5
-      env:
-         - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
-
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-6
-      env:
-        - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
-
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-7
-      env:
-        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
-
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.6
-          packages:
-            - clang-3.6
-      env:
-        - MATRIX_EVAL="CC=clang-3.6 && CXX=clang++-3.6"
-
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.7
-          packages:
-            - clang-3.7
-      env:
-        - MATRIX_EVAL="CC=clang-3.7 && CXX=clang++-3.7"
-
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.8
-          packages:
-            - clang-3.8
-      env:
-        - MATRIX_EVAL="CC=clang-3.8 && CXX=clang++-3.8"
-
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - llvm-toolchain-trusty-3.9
-          packages:
-            - clang-3.9
-      env:
-        - MATRIX_EVAL="CC=clang-3.9 && CXX=clang++-3.9"
-
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - llvm-toolchain-trusty-4.0
-          packages:
-            - clang-4.0
-      env:
-        - MATRIX_EVAL="CC=clang-4.0 && CXX=clang++-4.0"
-
-    - os: linux
-      addons:
-        apt:
-          sources:
-            - llvm-toolchain-trusty-5.0
-          packages:
-            - clang-5.0
-      env:
-        - MATRIX_EVAL="CC=clang-5.0 && CXX=clang++-5.0"
-
-#env:
-#  matrix:
-#    - PARALLEL=ON
-#    - PARALLEL=OFF
-
-env:
- global:
-  - CMAKE_VERSION=3.10
-  - CMAKE_PATCH=2
-  - BOOST_MINOR=64
-  - BOOST_PATCH=0
-  - HDF5_MINOR=10
-  - HDF5_PATCH=1
-  - ADIOS1_MINOR=13
-  - ADIOS1_PATCH=0
-  - ADIOS2_MINOR=1
-  - ADIOS2_PATCH=0
- #matrix:
-  #- BOOST_MINOR=58 BOOST_PATCH=0
-  #- BOOST_MINOR=64 BOOST_PATCH=0
-  #- BOOST_MINOR=65 BOOST_PATCH=1
-  #- BOOST_MINOR=66 BOOST_PATCH=0
-
-before_install:
- - eval "${MATRIX_EVAL}"
-
- - sudo sh scripts/travis/cache_ci_dependencies.sh
-
- - cd .cache
- - cd CMake/v${CMAKE_VERSION}.${CMAKE_PATCH}
- - sudo make install -j4
- - cd ..
-
- - cd boost_1_${BOOST_MINOR}_${BOOST_PATCH}
- - sudo ./b2 install -d0 -j4
- - cd ..
-
- - cd hdf5-1.${HDF5_MINOR}.${HDF5_PATCH}
- - sudo make install -j4
- - cd ..
-
- - cd adios-1.${ADIOS1_MINOR}.${ADIOS1_PATCH}
- - sudo make install -j4
- - cd ..
-
- - cd ADIOS2/v2.${ADIOS2_MINOR}.${ADIOS2_PATCH}
- - sudo make install -j4
- - cd ..
+            - *common_deps
+            - libopenmpi-dev
+            - openmpi-bin
+    - env:
+        - openPMD_USE_MPI=OFF openPMD_USE_HDF5=ON openPMD_USE_ADIOS1=OFF openPMD_USE_ADIOS2=OFF
+      compiler: clang
+    # GCC 4.8.5
+    - env:
+        - openPMD_USE_MPI=ON openPMD_USE_HDF5=ON openPMD_USE_ADIOS1=OFF openPMD_USE_ADIOS2=OFF
+      compiler: gcc
+      addons: *mpi_deps
+    - env:
+        - openPMD_USE_MPI=OFF openPMD_USE_HDF5=ON openPMD_USE_ADIOS1=OFF openPMD_USE_ADIOS2=OFF
+      compiler: gcc
 
 install:
- - rm -rf CMakeCache.txt CMakeFiles/ cmake_install.cmake Makefile
- - mkdir -p build
- - cd build
- - rm -rf ../build/*
- - cmake ..
- - make -j4
-
-before_script:
- - if [ ! -d samples/git-sample/ ]; then \
-       mkdir -p samples/git-sample/; \
-       cd samples/git-sample/; \
-       wget -nv https://github.com/openPMD/openPMD-example-datasets/raw/draft/example-3d.tar.gz; \
-       tar -xf example-3d.tar.gz; \
-       cp example-3d/hdf5/* samples/git-sample/; \
-       chmod 777 samples/; \
-       rm -rf example-3d.* example-3d; \
-       cd ../..
-   fi
+  - SPACK_FOUND=$(which spack >/dev/null && { echo 0; } || { echo 1; })
+  - if [ $SPACK_FOUND -ne 0 ]; then
+      mkdir -p $SPACK_ROOT &&
+      git clone --depth 50 https://github.com/spack/spack.git $SPACK_ROOT &&
+      cp $TRAVIS_BUILD_DIR/.travis/spack/*.yaml
+         $SPACK_ROOT/etc/spack/ &&
+      spack bootstrap;
+    fi
+  - source /etc/profile &&
+    source $SPACK_ROOT/share/spack/setup-env.sh
+  - COMPILERSPEC="%$CC"
+  - SPACK_VAR_MPI="~mpi";
+  # required dependencies - CMake 3.10.0 & Boost 1.62.0
+  - travis_wait spack install
+      cmake@3.10.0~openssl~ncurses
+      $COMPILERSPEC
+  - spack load cmake@3.10.0 $COMPILERSPEC
+  - travis_wait spack install
+      boost@1.62.0
+      $COMPILERSPEC
+  - spack load boost@1.62.0 $COMPILERSPEC
+  # optional dependencies - MPI, HDF5, ADIOS1, ADIOS2
+  - if [ $openPMD_USE_MPI == "ON" ]; then
+      travis_wait spack install
+        openmpi@1.6.5
+        $COMPILERSPEC &&
+      spack load openmpi@1.6.5 $COMPILERSPEC;
+      SPACK_VAR_MPI="+mpi";
+    fi
+  - if [ $openPMD_USE_HDF5 == "ON" ]; then
+      travis_wait spack install
+        hdf5
+        $SPACK_VAR_MPI
+        $COMPILERSPEC &&
+      spack load hdf5 $SPACK_VAR_MPI $COMPILERSPEC;
+    fi
+  - if [ $openPMD_USE_ADIOS1 == "ON" ]; then
+      travis_wait spack install
+        adios
+        $SPACK_VAR_MPI
+        $COMPILERSPEC &&
+      spack load adios $SPACK_VAR_MPI $COMPILERSPEC;
+    fi
+  - if [ $openPMD_USE_ADIOS2 == "ON" ]; then
+      travis_wait spack install
+        adios2
+        $SPACK_VAR_MPI
+        $COMPILERSPEC &&
+      spack load adios2 $SPACK_VAR_MPI $COMPILERSPEC;
+    fi
+  - spack clean -a
 
 script:
- - CTEST_OUTPUT_ON_FAILURE=1 make test
- #- docker build \
-        #--build-arg CXX=$CXX \
-        #--build-arg CMAKE_VERSION=3.10 \
-        #--build-arg CMAKE_PATCH=2 \
-        #--build-arg BOOST_MINOR=64 \
-        #--build-arg BOOST_PATCH=0 \
-        #--build-arg HDF5_MINOR=10 \
-        #--build-arg HDF5_PATCH=1 \
-        #--build-arg ADIOS1_MINOR=13 \
-        #--build-arg ADIOS1_PATCH=0 \
-        #--build-arg ADIOS2_MINOR=1 \
-        #--build-arg ADIOS2_PATCH=0 \
-        #.
+  - mkdir -p $HOME/build 
+  - cd $HOME/build
+  - CXXFLAGS=$CXXFLAGS CXX=$CXX CC=$CC
+    cmake
+      -DCMAKE_BUILD_TYPE=Debug
+      -DopenPMD_USE_MPI=$openPMD_USE_MPI
+      -DopenPMD_USE_HDF5=$openPMD_USE_HDF5
+      -DopenPMD_USE_ADIOS1=$openPMD_USE_ADIOS1
+      -DopenPMD_USE_ADIOS2=$openPMD_USE_ADIOS2
+      -DCMAKE_INSTALL_PREFIX=$HOME/openPMD-test-install
+      $TRAVIS_BUILD_DIR
+  - make -j 2
+  - CTEST_OUTPUT_ON_FAILURE=1 make test
+  - make install
+  # - make package
+  # - dpkg -i openPMD*.deb
