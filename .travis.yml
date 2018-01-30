@@ -18,7 +18,7 @@ addons:
 env:
   global:
     - BUILD: ~/buildTmp
-    - CXXFLAGS: "-Wall -Wextra -Woverloaded-virtual -Wshadow"
+    - CXXFLAGS: "-std=c++11 -Wall -Wextra -Woverloaded-virtual -Wshadow"
     - SPACK_ROOT: $HOME/.cache/spack
     - PATH: $PATH:$HOME/.cache/spack/bin
 
