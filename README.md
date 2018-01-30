@@ -16,6 +16,8 @@ Initial backends will include ADIOS and HDF5.
 
 ### C++
 
+*Syntax not yet implemented as shown below*
+
 ```C++
 #include <openPMD/openPMD-api.hpp>
 #include <iostream>
@@ -61,11 +63,12 @@ Extended [writer example](writer.cpp) and [reader example](reader.cpp).
 ## Dependencies
 
 Required:
+* CMake 3.10.0+
 * Boost 1.62.0+: `filesystem`, `system`, `unit_test_framework`
 
 Optional I/O backends:
 * HDF5 1.8.6+
-* ADIOS 1.10+
+* ADIOS 1.10+ (*not yet implemented*)
 * ADIOS 2.0+ (*not yet implemented*)
 
 while those can be build either with or without:
@@ -131,8 +134,8 @@ export CMAKE_PREFIX_PATH=$HOME/somepath:$CMAKE_PREFIX_PATH
 
 Use the following lines in your projects `CMakeLists.txt`:
 ```cmake
-# supports: COMPONENTS MPI HDF5 ADIOS1 ADIOS2
-find_package(openPMD 0.1.0)
+# supports:                       COMPONENTS MPI HDF5 ADIOS1 ADIOS2
+find_package(openPMD 0.1.0 CONFIG)
 
 if(openPMD_FOUND)
   target_link_libraries(YourTarget PRIVATE openPMD::openPMD)
