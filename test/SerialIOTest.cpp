@@ -13,7 +13,7 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_structure_test)
     Series o = Series::read("samples/git-sample/",
                             "data00000100.h5");
 
-    BOOST_TEST(o.parent == nullptr);
+    BOOST_TEST(!o.parent);
     BOOST_TEST(o.iterations.parent == static_cast< Writable* >(&o));
     BOOST_TEST(o.iterations[100].parent == static_cast< Writable* >(&o.iterations));
     BOOST_TEST(o.iterations[100].meshes.parent == static_cast< Writable* >(&o.iterations[100]));

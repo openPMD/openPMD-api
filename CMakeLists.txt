@@ -58,7 +58,7 @@ endif()
 #
 # TODO: LEGACY! Use CMake TOOLCHAINS instead!
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,memory,undefined")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,memory,undefined")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-weak-vtables -Wno-padded -Wno-switch-enum -Wno-undefined-func-template")
     #Silence BOOST_TEST

@@ -406,7 +406,7 @@ BOOST_AUTO_TEST_CASE(structure_test)
 
     BOOST_TEST(o.IOHandler);
     BOOST_TEST(o.iterations.IOHandler);
-    BOOST_TEST(o.parent == nullptr);
+    BOOST_TEST(!o.parent);
     BOOST_TEST(o.iterations.parent == static_cast< Writable* >(&o));
 
     Iteration i = o.iterations[1];
