@@ -27,30 +27,84 @@
 #include "IO/AbstractIOHandler.hpp"
 #include "Series.hpp"
 
-Series Series::create(std::string const& path,
-                      std::string const& name,
-                      IterationEncoding ie,
-                      Format f,
-                      AccessType at)
+void
+check_extension(std::string const& filepath)
 {
-    return Series(path, name, ie, f, at);
+    if( !ends_with(filepath, ".h5") &&
+        !ends_with(filepath, ".bp") &&
+        !ends_with(filepath, ".dummy") )
+        throw std::runtime_error("File format not recognized. "
+                                 "Did you append a correct filename extension?");
 }
 
-Series::Series(std::string const& path,
-               std::string const& name,
-               IterationEncoding ie,
-               Format f,
+Series
+Series::create(std::string const& filepath,
                AccessType at)
-        : iterations{Container< Iteration, uint64_t >()},
-          m_name{cleanFilename(name, f)}
 {
-    std::string cleanPath{path};
-    if( !ends_with(cleanPath, "/") )
-        cleanPath += '/';
+    if( AccessType::READ_ONLY == at )
+        throw std::runtime_error("Access type not supported in create-API.");
 
-    IOHandler = AbstractIOHandler::createIOHandler(cleanPath, at, f);
+    check_extension(filepath);
+
+    return Series(filepath, at);
+}
+
+Series
+Series::read(std::string const& filepath,
+             AccessType at)
+{
+    if( AccessType::CREATE == at )
+        throw std::runtime_error("Access type not supported in read-API.");
+
+    check_extension(filepath);
+
+    return Series(filepath, at);
+}
+
+
+Series::Series(std::string const& filepath,
+               AccessType at)
+        : iterations{Container< Iteration, uint64_t >()}
+{
+    std::string path;
+    std::string name;
+    auto const pos = filepath.find_last_of('/');
+    if( std::string::npos == pos )
+    {
+        path = "./";
+        name = filepath;
+    }
+    else
+    {
+        path = filepath.substr(0, pos + 1);
+        name = filepath.substr(pos + 1);
+    }
+
+    IterationEncoding ie;
+    if( std::string::npos != name.find("%T") )
+        ie = IterationEncoding::fileBased;
+    else
+        ie = IterationEncoding::groupBased;
+
+    Format f;
+    if( ends_with(name, ".h5") )
+        f = Format::HDF5;
+    else if( ends_with(name, ".bp") )
+        f = Format::ADIOS;
+    else
+    {
+        if( !ends_with(name, ".dummy") )
+            std::cerr << "Unknown filename extension. "
+                         "Falling back to DUMMY format."
+                      << std::endl;
+        f = Format::DUMMY;
+    }
+
+    IOHandler = AbstractIOHandler::createIOHandler(path, at, f);
     iterations.IOHandler = IOHandler;
     iterations.parent = this;
+
+    m_name = cleanFilename(name, f);
 
     switch( at )
     {
@@ -76,41 +130,6 @@ Series::Series(std::string const& path,
             break;
         }
     }
-}
-
-Series Series::read(std::string const& path,
-                    std::string const& name,
-                    bool readonly,
-                    bool parallel)
-{
-    return Series(path, name, readonly, parallel);
-}
-
-Series::Series(std::string path,
-               std::string const& name,
-               bool readonly,
-               bool parallel)
-    : iterations{Container< Iteration, uint64_t >()}
-{
-    if( !ends_with(path, "/") )
-        path += '/';
-    AccessType at = readonly ? AccessType::READ_ONLY : AccessType::READ_WRITE;
-    Format f = Format::DUMMY;
-    if( ends_with(name, ".h5") )
-        f = parallel ? Format::PARALLEL_HDF5 : Format::HDF5;
-    else if( ends_with(name, ".bp") )
-        f = parallel ? Format::PARALLEL_ADIOS : Format::ADIOS;
-    IOHandler = AbstractIOHandler::createIOHandler(path, at, f);
-
-    iterations.IOHandler = IOHandler;
-    iterations.parent = this;
-
-    m_name = cleanFilename(name, f);
-
-    if( contains(m_name, "%T") )
-        readFileBased();
-    else
-        readGroupBased();
 }
 
 Series::~Series()
@@ -599,6 +618,9 @@ Series::cleanFilename(std::string s, Format f)
             if( ends_with(s, ".bp") )
                 s = replace_last(s, ".bp", "");
             break;
+        case Format::DUMMY:
+            if( ends_with(s, ".dummy") )
+                s = replace_last(s, ".dummy", "");
         default:
             break;
     }

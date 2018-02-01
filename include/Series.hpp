@@ -40,29 +40,10 @@
 class Series : public Attributable
 {
 public:
-    /** Detailed constructor for series of iterations.
-     *
-     * @param path  Directory of the data, relative(!) to the current working directory.
-     * @param name  Pattern for file names. Should include iteration regex %T if iterationEncoding is filesBased.
-     * @param ie    <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series">iterationEncoding</A> of multiple iterations in this series.
-     * @param f     File format and IO backend to use for this series.
-     * @param at    Access permissions for every file in this series.
-     */
-    static Series create(std::string const& path,
-                         std::string const& name,
-                         IterationEncoding ie,
-                         Format f,
+    static Series create(std::string const& filepath,
                          AccessType at = AccessType::CREATE);
-    /** Convenience constructor for read-only data.
-     *
-     * @param path      Directory of the data, relative(!) to the current working directory.
-     * @param name      Concrete name of one file in series (fileBased series will be loaded according to iterationFormat). Must include file extension.
-     * @param parallel  Flag indicating whether this series should be read with an MPI-compatible backend. If <CODE>true</CODE>, <CODE>MPI_init()</CODE> must be called before.
-     */
-    static Series read(std::string const& path,
-                       std::string const& name,
-                       bool readonly = true,
-                       bool parallel = false);
+    static Series read(std::string const& filepath,
+                       AccessType at = AccessType::READ_ONLY);
     ~Series();
 
     /**
@@ -214,17 +195,8 @@ public:
 
 private:
     // TODO replace entirely with factory
-    Series(std::string const& path,
-           std::string const& name,
-           IterationEncoding ie,
-           Format f,
+    Series(std::string const& filepath,
            AccessType at);
-
-    // TODO replace entirely with factory
-    Series(std::string path,
-           std::string const& name,
-           bool readonly,
-           bool parallel);
 
     void flushFileBased();
     void flushGroupBased();
