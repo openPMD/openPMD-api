@@ -38,32 +38,58 @@ check_extension(std::string const& filepath)
 }
 
 Series
+#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+Series::create(std::string const& filepath,
+               MPI_Comm comm,
+               AccessType at)
+#else
 Series::create(std::string const& filepath,
                AccessType at)
+#endif
 {
     if( AccessType::READ_ONLY == at )
         throw std::runtime_error("Access type not supported in create-API.");
 
     check_extension(filepath);
 
+#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+    return Series(filepath, at, comm);
+#else
     return Series(filepath, at);
+#endif
 }
 
 Series
+#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+Series::read(std::string const& filepath,
+             MPI_Comm comm,
+             AccessType at)
+#else
 Series::read(std::string const& filepath,
              AccessType at)
+#endif
 {
     if( AccessType::CREATE == at )
         throw std::runtime_error("Access type not supported in read-API.");
 
     check_extension(filepath);
 
+#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+    return Series(filepath, at, comm);
+#else
     return Series(filepath, at);
+#endif
 }
 
 
+#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+Series::Series(std::string const& filepath,
+               AccessType at,
+               MPI_Comm comm)
+#else
 Series::Series(std::string const& filepath,
                AccessType at)
+#endif
         : iterations{Container< Iteration, uint64_t >()}
 {
     std::string path;
@@ -90,7 +116,7 @@ Series::Series(std::string const& filepath,
     if( ends_with(name, ".h5") )
         f = Format::HDF5;
     else if( ends_with(name, ".bp") )
-        f = Format::ADIOS;
+        f = Format::ADIOS1;
     else
     {
         if( !ends_with(name, ".dummy") )
@@ -100,7 +126,11 @@ Series::Series(std::string const& filepath,
         f = Format::DUMMY;
     }
 
+#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+    IOHandler = AbstractIOHandler::createIOHandler(path, at, f, comm);
+#else
     IOHandler = AbstractIOHandler::createIOHandler(path, at, f);
+#endif
     iterations.IOHandler = IOHandler;
     iterations.parent = this;
 
@@ -607,14 +637,10 @@ Series::cleanFilename(std::string s, Format f)
     switch( f )
     {
         case Format::HDF5:
-        case Format::PARALLEL_HDF5:
-            if( ends_with(s, ".h5") )
                 s = replace_last(s, ".h5", "");
             break;
-        case Format::ADIOS:
+        case Format::ADIOS1:
         case Format::ADIOS2:
-        case Format::PARALLEL_ADIOS:
-        case Format::PARALLEL_ADIOS2:
             if( ends_with(s, ".bp") )
                 s = replace_last(s, ".bp", "");
             break;

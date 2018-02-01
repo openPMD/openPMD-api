@@ -1,14 +1,36 @@
-#include <IO/HDF5/HDF5IOHandler.hpp>
-#ifdef LIBOPENPMD_WITH_HDF5
+/* Copyright 2017 Fabian Koller
+ *
+ * This file is part of libopenPMD.
+ *
+ * libopenPMD is free software: you can redistribute it and/or modify
+ * it under the terms of of either the GNU General Public License or
+ * the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * libopenPMD is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License and the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * and the GNU Lesser General Public License along with libopenPMD.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+#include "IO/HDF5/HDF5IOHandler.hpp"
+
+
+#if defined(openPMD_HAVE_HDF5)
 #include <iostream>
 
 #include <boost/filesystem.hpp>
 
-#include <auxiliary/StringManip.hpp>
-#include <backend/Attribute.hpp>
-#include <IO/IOTask.hpp>
-#include <IO/HDF5/HDF5Auxiliary.hpp>
-#include <IO/HDF5/HDF5FilePosition.hpp>
+#include "auxiliary/StringManip.hpp"
+#include "backend/Attribute.hpp"
+#include "IO/IOTask.hpp"
+#include "IO/HDF5/HDF5Auxiliary.hpp"
+#include "IO/HDF5/HDF5FilePosition.hpp"
 
 
 #ifdef DEBUG
@@ -17,20 +39,6 @@
 #define ASSERT(CONDITION, TEXT) { }
 #endif
 
-
-HDF5IOHandler::HDF5IOHandler(std::string const& path, AccessType at)
-        : AbstractIOHandler(path, at),
-          m_impl{new HDF5IOHandlerImpl(this)}
-{ }
-
-HDF5IOHandler::~HDF5IOHandler()
-{ }
-
-std::future< void >
-HDF5IOHandler::flush()
-{
-    return m_impl->flush();
-}
 
 HDF5IOHandlerImpl::HDF5IOHandlerImpl(AbstractIOHandler* handler)
         : m_datasetTransferProperty{H5P_DEFAULT},
@@ -372,7 +380,7 @@ HDF5IOHandlerImpl::openFile(Writable* writable,
     using namespace boost::filesystem;
     path dir(m_handler->directory);
     if( !exists(dir) )
-        throw no_such_file_error("Supplied directory is not valid");
+        throw std::runtime_error("Supplied directory is not valid");
 
     std::string name = m_handler->directory + parameters.at("name").get< std::string >();
     if( !ends_with(name, ".h5") )
@@ -1403,11 +1411,31 @@ void HDF5IOHandlerImpl::listAttributes(Writable* writable,
     status = H5Oclose(node_id);
     ASSERT(status == 0, "Internal error: Failed to close HDF5 object during attribute listing");
 }
+#endif
+
+#if defined(openPMD_HAVE_HDF5) && !defined(openPMD_HAVE_MPI) && defined(_NOMPI)
+HDF5IOHandler::HDF5IOHandler(std::string const& path, AccessType at)
+        : AbstractIOHandler(path, at),
+          m_impl{new HDF5IOHandlerImpl(this)}
+{ }
+
+HDF5IOHandler::~HDF5IOHandler()
+{ }
+
+std::future< void >
+HDF5IOHandler::flush()
+{
+    return m_impl->flush();
+}
 #else
 HDF5IOHandler::HDF5IOHandler(std::string const& path, AccessType at)
-        : AbstractIOHandler(path, at)
+#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+        : AbstractIOHandler(path, at, MPI_COMM_NULL)
+#else
+: AbstractIOHandler(path, at)
+#endif
 {
-    throw std::runtime_error("libopenPMD built without HDF5 support");
+    throw std::runtime_error("libopenPMD built without serial HDF5 support");
 }
 
 HDF5IOHandler::~HDF5IOHandler()

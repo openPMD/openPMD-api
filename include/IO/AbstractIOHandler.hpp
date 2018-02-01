@@ -25,6 +25,10 @@
 #include <future>
 #include <queue>
 
+#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+#include <mpi.h>
+#endif
+
 #include "AccessType.hpp"
 #include "Format.hpp"
 #include "IOTask.hpp"
@@ -66,6 +70,22 @@ public:
 class AbstractIOHandler
 {
 public:
+#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+    /** Construct an appropriate specific IOHandler for the desired IO mode.
+     *
+     * @param   path        Path to root folder for all operations associated with the desired handler.
+     * @param   accessType  AccessType describing desired operations and permissions of the desired handler.
+     * @param   format      Format describing the IO backend of the desired handler.
+     * @param   comm        MPI communicator used for IO.
+     * @return  Smart pointer to created IOHandler.
+     */
+    static std::shared_ptr< AbstractIOHandler > createIOHandler(std::string const& path,
+                                                                AccessType accessType,
+                                                                Format format,
+                                                                MPI_Comm comm = MPI_COMM_WORLD);
+
+    AbstractIOHandler(std::string const& path, AccessType, MPI_Comm);
+#else
     /** Construct an appropriate specific IOHandler for the desired IO mode.
      *
      * @param   path        Path to root folder for all operations associated with the desired handler.
@@ -78,6 +98,7 @@ public:
                                                                 Format format);
 
     AbstractIOHandler(std::string const& path, AccessType);
+#endif
     virtual ~AbstractIOHandler();
 
     /** Add provided task to queue according to FIFO.
