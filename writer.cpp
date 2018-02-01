@@ -7,11 +7,7 @@
 void
 write()
 {
-    Series o = Series::create("../samples",
-                              "serial_write.h5",
-                              IterationEncoding::groupBased,
-                              Format::HDF5,
-                              AccessType::CREATE);
+    Series o = Series::create("../samples/serial_write.h5");
 
     ParticleSpecies& e = o.iterations[1].particles["e"];
 
@@ -47,11 +43,7 @@ write()
 void
 write2()
 {
-    Series f = Series::create("./working/directory/",
-                              "2D_simData",
-                              IterationEncoding::groupBased,
-                              Format::HDF5,
-                              AccessType::CREATE);
+    Series f = Series::create("./working/directory/2D_simData.h5");
 
     // all required openPMD attributes will be set to reasonable default values (all ones, all zeros, empty strings,...)
     // manually setting them enforces the openPMD standard
@@ -205,11 +197,7 @@ write2()
 void
 w()
 {
-    Series o = Series::create("../samples",
-                              "serial_write%T",
-                              IterationEncoding::groupBased,
-                              Format::ADIOS,
-                              AccessType::CREATE);
+    Series o = Series::create("../samples/serial_write_%T.h5");
 }
 
 int

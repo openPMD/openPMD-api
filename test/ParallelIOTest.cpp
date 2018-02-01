@@ -35,9 +35,7 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     /* only a 3x3x3 chunk of the actual data is hardcoded. every worker reads 1/3 */
     uint64_t rank = mpi_rank % 3;
-    Series o = Series::read("samples/git-sample/",
-                            "data00000%T.h5",
-                            true);
+    Series o = Series::read("../samples/git-sample/data00000%T.h5");
 
 
     {
@@ -86,11 +84,7 @@ BOOST_AUTO_TEST_CASE(hdf5_write_test)
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_r);
     uint64_t mpi_size = static_cast<uint64_t>(mpi_s);
     uint64_t mpi_rank = static_cast<uint64_t>(mpi_r);
-    Series o = Series::create("samples",
-                              "parallel_write",
-                              IterationEncoding::groupBased,
-                              Format::PARALLEL_HDF5,
-                              AccessType::CREATE);
+    Series o = Series::create("../samples/parallel_write.h5");
 
     o.setAuthor("Parallel HDF5");
     ParticleSpecies& e = o.iterations[1].particles["e"];
@@ -119,10 +113,6 @@ BOOST_AUTO_TEST_CASE(hdf5_write_test)
 #ifdef LIBOPENPMD_WITH_PARALLEL_ADIOS1
 BOOST_AUTO_TEST_CASE(adios_wrtie_test)
 {
-    Output o = Output("../samples",
-                      "parallel_write",
-                      IterationEncoding::groupBased,
-                      Format::PARALLEL_ADIOS,
-                      AccessType::CREATE);
+    Output o = Output("../samples/"parallel_write.bp");
 }
 #endif

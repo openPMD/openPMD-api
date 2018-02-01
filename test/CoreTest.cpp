@@ -67,11 +67,7 @@ BOOST_AUTO_TEST_CASE(attribute_dtype_test)
 BOOST_AUTO_TEST_CASE(output_default_test)
 {
     using IE = IterationEncoding;
-    Series o = Series::create("./",
-                              "new_openpmd_output_%T",
-                              IE::fileBased,
-                              Format::DUMMY,
-                              AccessType::CREATE);
+    Series o = Series::create("./new_openpmd_output_%T.dummy");
 
     BOOST_TEST(o.openPMD() == "1.0.1");
     BOOST_TEST(o.openPMDextension() == static_cast<uint32_t>(0));
@@ -90,11 +86,7 @@ BOOST_AUTO_TEST_CASE(output_default_test)
 BOOST_AUTO_TEST_CASE(output_constructor_test)
 {
     using IE = IterationEncoding;
-    Series o1 = Series::create("./",
-                               "MyOutput_%T",
-                               IE::fileBased,
-                               Format::DUMMY,
-                               AccessType::CREATE);
+    Series o1 = Series::create("./MyOutput_%T.dummy");
 
     BOOST_TEST(o1.openPMD() == "1.0.1");
     BOOST_TEST(o1.openPMDextension() == static_cast<uint32_t>(0));
@@ -109,11 +101,7 @@ BOOST_AUTO_TEST_CASE(output_constructor_test)
 
     o1.iterations[0];
 
-    Series o2 = Series::create("./",
-                               "MyCustomOutput",
-                               IE::groupBased,
-                               Format::DUMMY,
-                               AccessType::CREATE);
+    Series o2 = Series::create("./MyCustomOutput.dummy");
 
     o2.setMeshesPath("customMeshesPath").setParticlesPath("customParticlesPath");
 
@@ -132,11 +120,7 @@ BOOST_AUTO_TEST_CASE(output_constructor_test)
 BOOST_AUTO_TEST_CASE(output_modification_test)
 {
     using IE = IterationEncoding;
-    Series o = Series::create("./",
-                              "MyOutput_%T",
-                              IE::fileBased,
-                              Format::DUMMY,
-                              AccessType::CREATE);
+    Series o = Series::create("./MyOutput_%T.dummy");
 
     o.setOpenPMD("1.0.0");
     BOOST_TEST(o.openPMD() == "1.0.0");
@@ -162,11 +146,7 @@ BOOST_AUTO_TEST_CASE(output_modification_test)
 BOOST_AUTO_TEST_CASE(iteration_default_test)
 {
     using IE = IterationEncoding;
-    Series o = Series::create("./",
-                              "MyOutput_%T",
-                              IE::fileBased,
-                              Format::DUMMY,
-                              AccessType::CREATE);
+    Series o = Series::create("./MyOutput_%T.dummy");
 
     Iteration& i = o.iterations[42];
 
@@ -181,11 +161,7 @@ BOOST_AUTO_TEST_CASE(iteration_default_test)
 BOOST_AUTO_TEST_CASE(iteration_modification_test)
 {
     using IE = IterationEncoding;
-    Series o = Series::create("./",
-                              "MyOutput_%T",
-                              IE::fileBased,
-                              Format::DUMMY,
-                              AccessType::CREATE);
+    Series o = Series::create("./MyOutput_%T.dummy");
 
     Iteration& i = o.iterations[42];
 
@@ -204,11 +180,7 @@ BOOST_AUTO_TEST_CASE(iteration_modification_test)
 BOOST_AUTO_TEST_CASE(particleSpecies_modification_test)
 {
     using IE = IterationEncoding;
-    Series o = Series::create("./",
-                              "MyOutput_%T",
-                              IE::fileBased,
-                              Format::DUMMY,
-                              AccessType::CREATE);
+    Series o = Series::create("./MyOutput_%T.dummy");
 
     auto& particles = o.iterations[42].particles;
     BOOST_TEST(0 == particles.numAttributes());
@@ -247,11 +219,7 @@ BOOST_AUTO_TEST_CASE(particleSpecies_modification_test)
 BOOST_AUTO_TEST_CASE(record_constructor_test)
 {
     using IE = IterationEncoding;
-    Series o = Series::create("./",
-                              "MyOutput_%T",
-                              IE::fileBased,
-                              Format::DUMMY,
-                              AccessType::CREATE);
+    Series o = Series::create("./MyOutput_%T.dummy");
 
     Record& r = o.iterations[42].particles["species"]["record"];
 
@@ -270,11 +238,7 @@ BOOST_AUTO_TEST_CASE(record_constructor_test)
 BOOST_AUTO_TEST_CASE(record_modification_test)
 {
     using IE = IterationEncoding;
-    Series o = Series::create("./",
-                              "MyOutput_%T",
-                              IE::fileBased,
-                              Format::DUMMY,
-                              AccessType::CREATE);
+    Series o = Series::create("./MyOutput_%T.dummy");
 
     Record& r = o.iterations[42].particles["species"]["record"];
 
@@ -299,11 +263,7 @@ BOOST_AUTO_TEST_CASE(record_modification_test)
 BOOST_AUTO_TEST_CASE(recordComponent_modification_test)
 {
     using IE = IterationEncoding;
-    Series o = Series::create("./",
-                              "MyOutput_%T",
-                              IE::fileBased,
-                              Format::DUMMY,
-                              AccessType::CREATE);
+    Series o = Series::create("./MyOutput_%T.dummy");
 
     Record& r = o.iterations[42].particles["species"]["record"];
 
@@ -322,11 +282,7 @@ BOOST_AUTO_TEST_CASE(recordComponent_modification_test)
 BOOST_AUTO_TEST_CASE(mesh_constructor_test)
 {
     using IE = IterationEncoding;
-    Series o = Series::create("./",
-                              "MyOutput_%T",
-                              IE::fileBased,
-                              Format::DUMMY,
-                              AccessType::CREATE);
+    Series o = Series::create("./MyOutput_%T.dummy");
 
     Mesh &m = o.iterations[42].meshes["E"];
 
@@ -355,11 +311,7 @@ BOOST_AUTO_TEST_CASE(mesh_constructor_test)
 BOOST_AUTO_TEST_CASE(mesh_modification_test)
 {
     using IE = IterationEncoding;
-    Series o = Series::create("./",
-                              "MyOutput_%T",
-                              IE::fileBased,
-                              Format::DUMMY,
-                              AccessType::CREATE);
+    Series o = Series::create("./MyOutput_%T.dummy");
 
     Mesh &m = o.iterations[42].meshes["E"];
     m["x"];
@@ -398,11 +350,7 @@ BOOST_AUTO_TEST_CASE(mesh_modification_test)
 
 BOOST_AUTO_TEST_CASE(structure_test)
 {
-    Series o = Series::create("./",
-                              "new_openpmd_output_%T",
-                              IterationEncoding::fileBased,
-                              Format::DUMMY,
-                              AccessType::CREATE);
+    Series o = Series::create("./new_openpmd_output_%T.dummy");
 
     BOOST_TEST(o.IOHandler);
     BOOST_TEST(o.iterations.IOHandler);
