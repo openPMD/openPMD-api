@@ -10,335 +10,363 @@
 #if defined(openPMD_HAVE_HDF5)
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_structure_test)
 {
-    Series o = Series::read("../samples/git-sample/data00000100.h5");
+    try
+    {
+        Series o = Series::read("../samples/git-sample/data00000100.h5");
 
-    BOOST_TEST(!o.parent);
-    BOOST_TEST(o.iterations.parent == static_cast< Writable* >(&o));
-    BOOST_TEST(o.iterations[100].parent == static_cast< Writable* >(&o.iterations));
-    BOOST_TEST(o.iterations[100].meshes.parent == static_cast< Writable* >(&o.iterations[100]));
-    BOOST_TEST(o.iterations[100].meshes["E"].parent == static_cast< Writable* >(&o.iterations[100].meshes));
-    BOOST_TEST(o.iterations[100].meshes["E"]["x"].parent == static_cast< Writable* >(&o.iterations[100].meshes["E"]));
-    BOOST_TEST(o.iterations[100].meshes["E"]["y"].parent == static_cast< Writable* >(&o.iterations[100].meshes["E"]));
-    BOOST_TEST(o.iterations[100].meshes["E"]["z"].parent == static_cast< Writable* >(&o.iterations[100].meshes["E"]));
-    BOOST_TEST(o.iterations[100].meshes["rho"].parent == static_cast< Writable* >(&o.iterations[100].meshes));
-    BOOST_TEST(o.iterations[100].meshes["rho"][MeshRecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[100].meshes));
-    BOOST_TEST(o.iterations[100].particles.parent == static_cast< Writable* >(&o.iterations[100]));
-    BOOST_TEST(o.iterations[100].particles["electrons"].parent == static_cast< Writable* >(&o.iterations[100].particles));
-    BOOST_TEST(o.iterations[100].particles["electrons"]["charge"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
-    BOOST_TEST(o.iterations[100].particles["electrons"]["charge"][RecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
-    BOOST_TEST(o.iterations[100].particles["electrons"]["mass"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
-    BOOST_TEST(o.iterations[100].particles["electrons"]["mass"][RecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
-    BOOST_TEST(o.iterations[100].particles["electrons"]["momentum"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
-    BOOST_TEST(o.iterations[100].particles["electrons"]["momentum"]["x"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["momentum"]));
-    BOOST_TEST(o.iterations[100].particles["electrons"]["momentum"]["y"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["momentum"]));
-    BOOST_TEST(o.iterations[100].particles["electrons"]["momentum"]["z"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["momentum"]));
-    BOOST_TEST(o.iterations[100].particles["electrons"]["position"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
-    BOOST_TEST(o.iterations[100].particles["electrons"]["position"]["x"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["position"]));
-    BOOST_TEST(o.iterations[100].particles["electrons"]["position"]["y"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["position"]));
-    BOOST_TEST(o.iterations[100].particles["electrons"]["position"]["z"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["position"]));
-    BOOST_TEST(o.iterations[100].particles["electrons"]["positionOffset"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
-    BOOST_TEST(o.iterations[100].particles["electrons"]["positionOffset"]["x"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["positionOffset"]));
-    BOOST_TEST(o.iterations[100].particles["electrons"]["positionOffset"]["y"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["positionOffset"]));
-    BOOST_TEST(o.iterations[100].particles["electrons"]["positionOffset"]["z"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["positionOffset"]));
-    BOOST_TEST(o.iterations[100].particles["electrons"]["weighting"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
-    BOOST_TEST(o.iterations[100].particles["electrons"]["weighting"][RecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
+        BOOST_TEST(!o.parent);
+        BOOST_TEST(o.iterations.parent == static_cast< Writable* >(&o));
+        BOOST_TEST(o.iterations[100].parent == static_cast< Writable* >(&o.iterations));
+        BOOST_TEST(o.iterations[100].meshes.parent == static_cast< Writable* >(&o.iterations[100]));
+        BOOST_TEST(o.iterations[100].meshes["E"].parent == static_cast< Writable* >(&o.iterations[100].meshes));
+        BOOST_TEST(o.iterations[100].meshes["E"]["x"].parent == static_cast< Writable* >(&o.iterations[100].meshes["E"]));
+        BOOST_TEST(o.iterations[100].meshes["E"]["y"].parent == static_cast< Writable* >(&o.iterations[100].meshes["E"]));
+        BOOST_TEST(o.iterations[100].meshes["E"]["z"].parent == static_cast< Writable* >(&o.iterations[100].meshes["E"]));
+        BOOST_TEST(o.iterations[100].meshes["rho"].parent == static_cast< Writable* >(&o.iterations[100].meshes));
+        BOOST_TEST(o.iterations[100].meshes["rho"][MeshRecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[100].meshes));
+        BOOST_TEST(o.iterations[100].particles.parent == static_cast< Writable* >(&o.iterations[100]));
+        BOOST_TEST(o.iterations[100].particles["electrons"].parent == static_cast< Writable* >(&o.iterations[100].particles));
+        BOOST_TEST(o.iterations[100].particles["electrons"]["charge"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
+        BOOST_TEST(o.iterations[100].particles["electrons"]["charge"][RecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
+        BOOST_TEST(o.iterations[100].particles["electrons"]["mass"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
+        BOOST_TEST(o.iterations[100].particles["electrons"]["mass"][RecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
+        BOOST_TEST(o.iterations[100].particles["electrons"]["momentum"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
+        BOOST_TEST(o.iterations[100].particles["electrons"]["momentum"]["x"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["momentum"]));
+        BOOST_TEST(o.iterations[100].particles["electrons"]["momentum"]["y"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["momentum"]));
+        BOOST_TEST(o.iterations[100].particles["electrons"]["momentum"]["z"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["momentum"]));
+        BOOST_TEST(o.iterations[100].particles["electrons"]["position"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
+        BOOST_TEST(o.iterations[100].particles["electrons"]["position"]["x"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["position"]));
+        BOOST_TEST(o.iterations[100].particles["electrons"]["position"]["y"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["position"]));
+        BOOST_TEST(o.iterations[100].particles["electrons"]["position"]["z"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["position"]));
+        BOOST_TEST(o.iterations[100].particles["electrons"]["positionOffset"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
+        BOOST_TEST(o.iterations[100].particles["electrons"]["positionOffset"]["x"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["positionOffset"]));
+        BOOST_TEST(o.iterations[100].particles["electrons"]["positionOffset"]["y"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["positionOffset"]));
+        BOOST_TEST(o.iterations[100].particles["electrons"]["positionOffset"]["z"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]["positionOffset"]));
+        BOOST_TEST(o.iterations[100].particles["electrons"]["weighting"].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
+        BOOST_TEST(o.iterations[100].particles["electrons"]["weighting"][RecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[100].particles["electrons"]));
+    } catch (no_such_file_error& e)
+    {
+        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+        return;
+    }
 }
 
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_attribute_test)
 {
-    Series o = Series::read("../samples/git-sample/data00000100.h5");
+    try
+    {
+        Series o = Series::read("../samples/git-sample/data00000100.h5");
 
-    BOOST_TEST(o.openPMD() == "1.0.0");
-    BOOST_TEST(o.openPMDextension() == 1);
-    BOOST_TEST(o.basePath() == "/data/%T/");
-    BOOST_TEST(o.meshesPath() == "fields/");
-    BOOST_TEST(o.particlesPath() == "particles/");
-    BOOST_TEST(o.iterationEncoding() == IterationEncoding::fileBased);
-    BOOST_TEST(o.iterationFormat() == "data%T.h5");
-    BOOST_TEST(o.name() == "data00000100");
+        BOOST_TEST(o.openPMD() == "1.0.0");
+        BOOST_TEST(o.openPMDextension() == 1);
+        BOOST_TEST(o.basePath() == "/data/%T/");
+        BOOST_TEST(o.meshesPath() == "fields/");
+        BOOST_TEST(o.particlesPath() == "particles/");
+        BOOST_TEST(o.iterationEncoding() == IterationEncoding::fileBased);
+        BOOST_TEST(o.iterationFormat() == "data%T.h5");
+        BOOST_TEST(o.name() == "data00000100");
 
-    BOOST_TEST(o.iterations.size() == 1);
-    BOOST_TEST(o.iterations.count(100) == 1);
+        BOOST_TEST(o.iterations.size() == 1);
+        BOOST_TEST(o.iterations.count(100) == 1);
 
-    Iteration& iteration_100 = o.iterations[100];
-    BOOST_TEST(iteration_100.time< double >() == 3.2847121452090077e-14);
-    BOOST_TEST(iteration_100.dt< double >() == 3.2847121452090093e-16);
-    BOOST_TEST(iteration_100.timeUnitSI() == 1.0);
+        Iteration& iteration_100 = o.iterations[100];
+        BOOST_TEST(iteration_100.time< double >() == 3.2847121452090077e-14);
+        BOOST_TEST(iteration_100.dt< double >() == 3.2847121452090093e-16);
+        BOOST_TEST(iteration_100.timeUnitSI() == 1.0);
 
-    BOOST_TEST(iteration_100.meshes.size() == 2);
-    BOOST_TEST(iteration_100.meshes.count("E") == 1);
-    BOOST_TEST(iteration_100.meshes.count("rho") == 1);
+        BOOST_TEST(iteration_100.meshes.size() == 2);
+        BOOST_TEST(iteration_100.meshes.count("E") == 1);
+        BOOST_TEST(iteration_100.meshes.count("rho") == 1);
 
-    std::vector< std::string > al{"x", "y", "z"};
-    std::vector< double > gs{8.0000000000000007e-07,
-                             8.0000000000000007e-07,
-                             1.0000000000000001e-07};
-    std::vector< double > ggo{-1.0000000000000001e-05,
-                              -1.0000000000000001e-05,
-                              -5.1999999999999993e-06};
-    std::array< double, 7 > ud{{1.,  1., -3., -1.,  0.,  0.,  0.}};
-    Mesh& E = iteration_100.meshes["E"];
-    BOOST_TEST(E.geometry() == Mesh::Geometry::cartesian);
-    BOOST_TEST(E.dataOrder() == Mesh::DataOrder::C);
-    BOOST_TEST(E.axisLabels() == al);
-    BOOST_TEST(E.gridSpacing< double >() == gs);
-    BOOST_TEST(E.gridGlobalOffset() == ggo);
-    BOOST_TEST(E.gridUnitSI() == 1.0);
-    BOOST_TEST(E.unitDimension() == ud);
-    BOOST_TEST(E.timeOffset< double >() == 0.0);
+        std::vector< std::string > al{"x", "y", "z"};
+        std::vector< double > gs{8.0000000000000007e-07,
+                                 8.0000000000000007e-07,
+                                 1.0000000000000001e-07};
+        std::vector< double > ggo{-1.0000000000000001e-05,
+                                  -1.0000000000000001e-05,
+                                  -5.1999999999999993e-06};
+        std::array< double, 7 > ud{{1.,  1., -3., -1.,  0.,  0.,  0.}};
+        Mesh& E = iteration_100.meshes["E"];
+        BOOST_TEST(E.geometry() == Mesh::Geometry::cartesian);
+        BOOST_TEST(E.dataOrder() == Mesh::DataOrder::C);
+        BOOST_TEST(E.axisLabels() == al);
+        BOOST_TEST(E.gridSpacing< double >() == gs);
+        BOOST_TEST(E.gridGlobalOffset() == ggo);
+        BOOST_TEST(E.gridUnitSI() == 1.0);
+        BOOST_TEST(E.unitDimension() == ud);
+        BOOST_TEST(E.timeOffset< double >() == 0.0);
 
-    BOOST_TEST(E.size() == 3);
-    BOOST_TEST(E.count("x") == 1);
-    BOOST_TEST(E.count("y") == 1);
-    BOOST_TEST(E.count("z") == 1);
+        BOOST_TEST(E.size() == 3);
+        BOOST_TEST(E.count("x") == 1);
+        BOOST_TEST(E.count("y") == 1);
+        BOOST_TEST(E.count("z") == 1);
 
-    std::vector< double > p{0.5, 0., 0.};
-    Extent e{26, 26, 201};
-    MeshRecordComponent& E_x = E["x"];
-    BOOST_TEST(E_x.unitSI() == 1.0);
-    BOOST_TEST(E_x.position< double >() == p);
-    BOOST_TEST(E_x.getDatatype() == Datatype::DOUBLE);
-    BOOST_TEST(E_x.getExtent() == e);
-    BOOST_TEST(E_x.getDimensionality() == 3);
+        std::vector< double > p{0.5, 0., 0.};
+        Extent e{26, 26, 201};
+        MeshRecordComponent& E_x = E["x"];
+        BOOST_TEST(E_x.unitSI() == 1.0);
+        BOOST_TEST(E_x.position< double >() == p);
+        BOOST_TEST(E_x.getDatatype() == Datatype::DOUBLE);
+        BOOST_TEST(E_x.getExtent() == e);
+        BOOST_TEST(E_x.getDimensionality() == 3);
 
-    p = {0., 0.5, 0.};
-    MeshRecordComponent& E_y = E["y"];
-    BOOST_TEST(E_y.unitSI() == 1.0);
-    BOOST_TEST(E_y.position< double >() == p);
-    BOOST_TEST(E_y.getDatatype() == Datatype::DOUBLE);
-    BOOST_TEST(E_y.getExtent() == e);
-    BOOST_TEST(E_y.getDimensionality() == 3);
+        p = {0., 0.5, 0.};
+        MeshRecordComponent& E_y = E["y"];
+        BOOST_TEST(E_y.unitSI() == 1.0);
+        BOOST_TEST(E_y.position< double >() == p);
+        BOOST_TEST(E_y.getDatatype() == Datatype::DOUBLE);
+        BOOST_TEST(E_y.getExtent() == e);
+        BOOST_TEST(E_y.getDimensionality() == 3);
 
-    p = {0., 0., 0.5};
-    MeshRecordComponent& E_z = E["z"];
-    BOOST_TEST(E_z.unitSI() == 1.0);
-    BOOST_TEST(E_z.position< double >() == p);
-    BOOST_TEST(E_z.getDatatype() == Datatype::DOUBLE);
-    BOOST_TEST(E_z.getExtent() == e);
-    BOOST_TEST(E_z.getDimensionality() == 3);
+        p = {0., 0., 0.5};
+        MeshRecordComponent& E_z = E["z"];
+        BOOST_TEST(E_z.unitSI() == 1.0);
+        BOOST_TEST(E_z.position< double >() == p);
+        BOOST_TEST(E_z.getDatatype() == Datatype::DOUBLE);
+        BOOST_TEST(E_z.getExtent() == e);
+        BOOST_TEST(E_z.getDimensionality() == 3);
 
-    gs = {8.0000000000000007e-07,
-          8.0000000000000007e-07,
-          1.0000000000000001e-07};
-    ggo = {-1.0000000000000001e-05,
-           -1.0000000000000001e-05,
-           -5.1999999999999993e-06};
-    ud = {{-3.,  0.,  1.,  1.,  0.,  0.,  0.}};
-    Mesh& rho = iteration_100.meshes["rho"];
-    BOOST_TEST(rho.geometry() == Mesh::Geometry::cartesian);
-    BOOST_TEST(rho.dataOrder() == Mesh::DataOrder::C);
-    BOOST_TEST(rho.axisLabels() == al);
-    BOOST_TEST(rho.gridSpacing< double >() == gs);
-    BOOST_TEST(rho.gridGlobalOffset() == ggo);
-    BOOST_TEST(rho.gridUnitSI() == 1.0);
-    BOOST_TEST(rho.unitDimension() == ud);
-    BOOST_TEST(rho.timeOffset< double >() == 0.0);
+        gs = {8.0000000000000007e-07,
+              8.0000000000000007e-07,
+              1.0000000000000001e-07};
+        ggo = {-1.0000000000000001e-05,
+               -1.0000000000000001e-05,
+               -5.1999999999999993e-06};
+        ud = {{-3.,  0.,  1.,  1.,  0.,  0.,  0.}};
+        Mesh& rho = iteration_100.meshes["rho"];
+        BOOST_TEST(rho.geometry() == Mesh::Geometry::cartesian);
+        BOOST_TEST(rho.dataOrder() == Mesh::DataOrder::C);
+        BOOST_TEST(rho.axisLabels() == al);
+        BOOST_TEST(rho.gridSpacing< double >() == gs);
+        BOOST_TEST(rho.gridGlobalOffset() == ggo);
+        BOOST_TEST(rho.gridUnitSI() == 1.0);
+        BOOST_TEST(rho.unitDimension() == ud);
+        BOOST_TEST(rho.timeOffset< double >() == 0.0);
 
-    BOOST_TEST(rho.size() == 1);
-    BOOST_TEST(rho.count(MeshRecordComponent::SCALAR) == 1);
+        BOOST_TEST(rho.size() == 1);
+        BOOST_TEST(rho.count(MeshRecordComponent::SCALAR) == 1);
 
-    p = {0., 0., 0.};
-    e = {26, 26, 201};
-    MeshRecordComponent& rho_scalar = rho[MeshRecordComponent::SCALAR];
-    BOOST_TEST(rho_scalar.unitSI() == 1.0);
-    BOOST_TEST(rho_scalar.position< double >() == p);
-    BOOST_TEST(rho_scalar.getDatatype() == Datatype::DOUBLE);
-    BOOST_TEST(rho_scalar.getExtent() == e);
-    BOOST_TEST(rho_scalar.getDimensionality() == 3);
+        p = {0., 0., 0.};
+        e = {26, 26, 201};
+        MeshRecordComponent& rho_scalar = rho[MeshRecordComponent::SCALAR];
+        BOOST_TEST(rho_scalar.unitSI() == 1.0);
+        BOOST_TEST(rho_scalar.position< double >() == p);
+        BOOST_TEST(rho_scalar.getDatatype() == Datatype::DOUBLE);
+        BOOST_TEST(rho_scalar.getExtent() == e);
+        BOOST_TEST(rho_scalar.getDimensionality() == 3);
 
-    BOOST_TEST(iteration_100.particles.size() == 1);
-    BOOST_TEST(iteration_100.particles.count("electrons") == 1);
+        BOOST_TEST(iteration_100.particles.size() == 1);
+        BOOST_TEST(iteration_100.particles.count("electrons") == 1);
 
-    ParticleSpecies& electrons = iteration_100.particles["electrons"];
+        ParticleSpecies& electrons = iteration_100.particles["electrons"];
 
-    BOOST_TEST(electrons.size() == 6);
-    BOOST_TEST(electrons.count("charge") == 1);
-    BOOST_TEST(electrons.count("mass") == 1);
-    BOOST_TEST(electrons.count("momentum") == 1);
-    BOOST_TEST(electrons.count("position") == 1);
-    BOOST_TEST(electrons.count("positionOffset") == 1);
-    BOOST_TEST(electrons.count("weighting") == 1);
+        BOOST_TEST(electrons.size() == 6);
+        BOOST_TEST(electrons.count("charge") == 1);
+        BOOST_TEST(electrons.count("mass") == 1);
+        BOOST_TEST(electrons.count("momentum") == 1);
+        BOOST_TEST(electrons.count("position") == 1);
+        BOOST_TEST(electrons.count("positionOffset") == 1);
+        BOOST_TEST(electrons.count("weighting") == 1);
 
-    ud = {{0.,  0.,  1.,  1.,  0.,  0.,  0.}};
-    Record& charge = electrons["charge"];
-    BOOST_TEST(charge.unitDimension() == ud);
-    BOOST_TEST(charge.timeOffset< double >() == 0.0);
+        ud = {{0.,  0.,  1.,  1.,  0.,  0.,  0.}};
+        Record& charge = electrons["charge"];
+        BOOST_TEST(charge.unitDimension() == ud);
+        BOOST_TEST(charge.timeOffset< double >() == 0.0);
 
-    BOOST_TEST(charge.size() == 1);
-    BOOST_TEST(charge.count(RecordComponent::SCALAR) == 1);
+        BOOST_TEST(charge.size() == 1);
+        BOOST_TEST(charge.count(RecordComponent::SCALAR) == 1);
 
-    e = {85000};
-    RecordComponent& charge_scalar = charge[RecordComponent::SCALAR];
-    BOOST_TEST(charge_scalar.unitSI() == 1.0);
-    BOOST_TEST(charge_scalar.getDatatype() == Datatype::DOUBLE);
-    BOOST_TEST(charge_scalar.getDimensionality() == 1);
-    BOOST_TEST(charge_scalar.getExtent() == e);
+        e = {85000};
+        RecordComponent& charge_scalar = charge[RecordComponent::SCALAR];
+        BOOST_TEST(charge_scalar.unitSI() == 1.0);
+        BOOST_TEST(charge_scalar.getDatatype() == Datatype::DOUBLE);
+        BOOST_TEST(charge_scalar.getDimensionality() == 1);
+        BOOST_TEST(charge_scalar.getExtent() == e);
 
-    ud = {{1.,  0.,  0.,  0.,  0.,  0.,  0.}};
-    Record& mass = electrons["mass"];
-    BOOST_TEST(mass.unitDimension() == ud);
-    BOOST_TEST(mass.timeOffset< double >() == 0.0);
+        ud = {{1.,  0.,  0.,  0.,  0.,  0.,  0.}};
+        Record& mass = electrons["mass"];
+        BOOST_TEST(mass.unitDimension() == ud);
+        BOOST_TEST(mass.timeOffset< double >() == 0.0);
 
-    BOOST_TEST(mass.size() == 1);
-    BOOST_TEST(mass.count(RecordComponent::SCALAR) == 1);
+        BOOST_TEST(mass.size() == 1);
+        BOOST_TEST(mass.count(RecordComponent::SCALAR) == 1);
 
-    RecordComponent& mass_scalar = mass[RecordComponent::SCALAR];
-    BOOST_TEST(mass_scalar.unitSI() == 1.0);
-    BOOST_TEST(mass_scalar.getDatatype() == Datatype::DOUBLE);
-    BOOST_TEST(mass_scalar.getDimensionality() == 1);
-    BOOST_TEST(mass_scalar.getExtent() == e);
+        RecordComponent& mass_scalar = mass[RecordComponent::SCALAR];
+        BOOST_TEST(mass_scalar.unitSI() == 1.0);
+        BOOST_TEST(mass_scalar.getDatatype() == Datatype::DOUBLE);
+        BOOST_TEST(mass_scalar.getDimensionality() == 1);
+        BOOST_TEST(mass_scalar.getExtent() == e);
 
-    ud = {{1.,  1., -1.,  0.,  0.,  0.,  0.}};
-    Record& momentum = electrons["momentum"];
-    BOOST_TEST(momentum.unitDimension() == ud);
-    BOOST_TEST(momentum.timeOffset< double >() == 0.0);
+        ud = {{1.,  1., -1.,  0.,  0.,  0.,  0.}};
+        Record& momentum = electrons["momentum"];
+        BOOST_TEST(momentum.unitDimension() == ud);
+        BOOST_TEST(momentum.timeOffset< double >() == 0.0);
 
-    BOOST_TEST(momentum.size() == 3);
-    BOOST_TEST(momentum.count("x") == 1);
-    BOOST_TEST(momentum.count("y") == 1);
-    BOOST_TEST(momentum.count("z") == 1);
+        BOOST_TEST(momentum.size() == 3);
+        BOOST_TEST(momentum.count("x") == 1);
+        BOOST_TEST(momentum.count("y") == 1);
+        BOOST_TEST(momentum.count("z") == 1);
 
-    RecordComponent& momentum_x = momentum["x"];
-    BOOST_TEST(momentum_x.unitSI() == 1.0);
-    BOOST_TEST(momentum_x.getDatatype() == Datatype::DOUBLE);
-    BOOST_TEST(momentum_x.getDimensionality() == 1);
-    BOOST_TEST(momentum_x.getExtent() == e);
+        RecordComponent& momentum_x = momentum["x"];
+        BOOST_TEST(momentum_x.unitSI() == 1.0);
+        BOOST_TEST(momentum_x.getDatatype() == Datatype::DOUBLE);
+        BOOST_TEST(momentum_x.getDimensionality() == 1);
+        BOOST_TEST(momentum_x.getExtent() == e);
 
-    RecordComponent& momentum_y = momentum["y"];
-    BOOST_TEST(momentum_y.unitSI() == 1.0);
-    BOOST_TEST(momentum_y.getDatatype() == Datatype::DOUBLE);
-    BOOST_TEST(momentum_y.getDimensionality() == 1);
-    BOOST_TEST(momentum_y.getExtent() == e);
+        RecordComponent& momentum_y = momentum["y"];
+        BOOST_TEST(momentum_y.unitSI() == 1.0);
+        BOOST_TEST(momentum_y.getDatatype() == Datatype::DOUBLE);
+        BOOST_TEST(momentum_y.getDimensionality() == 1);
+        BOOST_TEST(momentum_y.getExtent() == e);
 
-    RecordComponent& momentum_z = momentum["z"];
-    BOOST_TEST(momentum_z.unitSI() == 1.0);
-    BOOST_TEST(momentum_z.getDatatype() == Datatype::DOUBLE);
-    BOOST_TEST(momentum_z.getDimensionality() == 1);
-    BOOST_TEST(momentum_z.getExtent() == e);
+        RecordComponent& momentum_z = momentum["z"];
+        BOOST_TEST(momentum_z.unitSI() == 1.0);
+        BOOST_TEST(momentum_z.getDatatype() == Datatype::DOUBLE);
+        BOOST_TEST(momentum_z.getDimensionality() == 1);
+        BOOST_TEST(momentum_z.getExtent() == e);
 
-    ud = {{1.,  0.,  0.,  0.,  0.,  0.,  0.}};
-    Record& position = electrons["position"];
-    BOOST_TEST(position.unitDimension() == ud);
-    BOOST_TEST(position.timeOffset< double >() == 0.0);
+        ud = {{1.,  0.,  0.,  0.,  0.,  0.,  0.}};
+        Record& position = electrons["position"];
+        BOOST_TEST(position.unitDimension() == ud);
+        BOOST_TEST(position.timeOffset< double >() == 0.0);
 
-    BOOST_TEST(position.size() == 3);
-    BOOST_TEST(position.count("x") == 1);
-    BOOST_TEST(position.count("y") == 1);
-    BOOST_TEST(position.count("z") == 1);
+        BOOST_TEST(position.size() == 3);
+        BOOST_TEST(position.count("x") == 1);
+        BOOST_TEST(position.count("y") == 1);
+        BOOST_TEST(position.count("z") == 1);
 
-    RecordComponent& position_x = position["x"];
-    BOOST_TEST(position_x.unitSI() == 1.0);
-    BOOST_TEST(position_x.getDatatype() == Datatype::DOUBLE);
-    BOOST_TEST(position_x.getDimensionality() == 1);
-    BOOST_TEST(position_x.getExtent() == e);
+        RecordComponent& position_x = position["x"];
+        BOOST_TEST(position_x.unitSI() == 1.0);
+        BOOST_TEST(position_x.getDatatype() == Datatype::DOUBLE);
+        BOOST_TEST(position_x.getDimensionality() == 1);
+        BOOST_TEST(position_x.getExtent() == e);
 
-    RecordComponent& position_y = position["y"];
-    BOOST_TEST(position_y.unitSI() == 1.0);
-    BOOST_TEST(position_y.getDatatype() == Datatype::DOUBLE);
-    BOOST_TEST(position_y.getDimensionality() == 1);
-    BOOST_TEST(position_y.getExtent() == e);
+        RecordComponent& position_y = position["y"];
+        BOOST_TEST(position_y.unitSI() == 1.0);
+        BOOST_TEST(position_y.getDatatype() == Datatype::DOUBLE);
+        BOOST_TEST(position_y.getDimensionality() == 1);
+        BOOST_TEST(position_y.getExtent() == e);
 
-    RecordComponent& position_z = position["z"];
-    BOOST_TEST(position_z.unitSI() == 1.0);
-    BOOST_TEST(position_z.getDatatype() == Datatype::DOUBLE);
-    BOOST_TEST(position_z.getDimensionality() == 1);
-    BOOST_TEST(position_z.getExtent() == e);
+        RecordComponent& position_z = position["z"];
+        BOOST_TEST(position_z.unitSI() == 1.0);
+        BOOST_TEST(position_z.getDatatype() == Datatype::DOUBLE);
+        BOOST_TEST(position_z.getDimensionality() == 1);
+        BOOST_TEST(position_z.getExtent() == e);
 
-    Record& positionOffset = electrons["positionOffset"];
-    BOOST_TEST(positionOffset.unitDimension() == ud);
-    BOOST_TEST(positionOffset.timeOffset< double >() == 0.0);
+        Record& positionOffset = electrons["positionOffset"];
+        BOOST_TEST(positionOffset.unitDimension() == ud);
+        BOOST_TEST(positionOffset.timeOffset< double >() == 0.0);
 
-    BOOST_TEST(positionOffset.size() == 3);
-    BOOST_TEST(positionOffset.count("x") == 1);
-    BOOST_TEST(positionOffset.count("y") == 1);
-    BOOST_TEST(positionOffset.count("z") == 1);
+        BOOST_TEST(positionOffset.size() == 3);
+        BOOST_TEST(positionOffset.count("x") == 1);
+        BOOST_TEST(positionOffset.count("y") == 1);
+        BOOST_TEST(positionOffset.count("z") == 1);
 
-    RecordComponent& positionOffset_x = positionOffset["x"];
-    BOOST_TEST(positionOffset_x.unitSI() == 1.0);
-    BOOST_TEST(positionOffset_x.getDatatype() == Datatype::DOUBLE);
-    BOOST_TEST(positionOffset_x.getDimensionality() == 1);
-    BOOST_TEST(positionOffset_x.getExtent() == e);
+        RecordComponent& positionOffset_x = positionOffset["x"];
+        BOOST_TEST(positionOffset_x.unitSI() == 1.0);
+        BOOST_TEST(positionOffset_x.getDatatype() == Datatype::DOUBLE);
+        BOOST_TEST(positionOffset_x.getDimensionality() == 1);
+        BOOST_TEST(positionOffset_x.getExtent() == e);
 
-    RecordComponent& positionOffset_y = positionOffset["y"];
-    BOOST_TEST(positionOffset_y.unitSI() == 1.0);
-    BOOST_TEST(positionOffset_y.getDatatype() == Datatype::DOUBLE);
-    BOOST_TEST(positionOffset_y.getDimensionality() == 1);
-    BOOST_TEST(positionOffset_y.getExtent() == e);
+        RecordComponent& positionOffset_y = positionOffset["y"];
+        BOOST_TEST(positionOffset_y.unitSI() == 1.0);
+        BOOST_TEST(positionOffset_y.getDatatype() == Datatype::DOUBLE);
+        BOOST_TEST(positionOffset_y.getDimensionality() == 1);
+        BOOST_TEST(positionOffset_y.getExtent() == e);
 
-    RecordComponent& positionOffset_z = positionOffset["z"];
-    BOOST_TEST(positionOffset_z.unitSI() == 1.0);
-    BOOST_TEST(positionOffset_z.getDatatype() == Datatype::DOUBLE);
-    BOOST_TEST(positionOffset_z.getDimensionality() == 1);
-    BOOST_TEST(positionOffset_z.getExtent() == e);
+        RecordComponent& positionOffset_z = positionOffset["z"];
+        BOOST_TEST(positionOffset_z.unitSI() == 1.0);
+        BOOST_TEST(positionOffset_z.getDatatype() == Datatype::DOUBLE);
+        BOOST_TEST(positionOffset_z.getDimensionality() == 1);
+        BOOST_TEST(positionOffset_z.getExtent() == e);
 
-    ud = {{0.,  0.,  0.,  0.,  0.,  0.,  0.}};
-    Record& weighting = electrons["weighting"];
-    BOOST_TEST(weighting.unitDimension() == ud);
-    BOOST_TEST(weighting.timeOffset< double >() == 0.0);
+        ud = {{0.,  0.,  0.,  0.,  0.,  0.,  0.}};
+        Record& weighting = electrons["weighting"];
+        BOOST_TEST(weighting.unitDimension() == ud);
+        BOOST_TEST(weighting.timeOffset< double >() == 0.0);
 
-    BOOST_TEST(weighting.size() == 1);
-    BOOST_TEST(weighting.count(RecordComponent::SCALAR) == 1);
+        BOOST_TEST(weighting.size() == 1);
+        BOOST_TEST(weighting.count(RecordComponent::SCALAR) == 1);
 
-    RecordComponent& weighting_scalar = weighting[RecordComponent::SCALAR];
-    BOOST_TEST(weighting_scalar.unitSI() == 1.0);
-    BOOST_TEST(weighting_scalar.getDatatype() == Datatype::DOUBLE);
-    BOOST_TEST(weighting_scalar.getDimensionality() == 1);
-    BOOST_TEST(weighting_scalar.getExtent() == e);
+        RecordComponent& weighting_scalar = weighting[RecordComponent::SCALAR];
+        BOOST_TEST(weighting_scalar.unitSI() == 1.0);
+        BOOST_TEST(weighting_scalar.getDatatype() == Datatype::DOUBLE);
+        BOOST_TEST(weighting_scalar.getDimensionality() == 1);
+        BOOST_TEST(weighting_scalar.getExtent() == e);
+    } catch (no_such_file_error& e)
+    {
+        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+        return;
+    }
 }
 
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
 {
-    Series o = Series::read("../samples/git-sample/data00000100.h5");
-
+    try
     {
-        double actual[3][3][3] = {{{-1.9080703683727052e-09, -1.5632650729457964e-10, 1.1497536256399599e-09},
-                                   {-1.9979540244463578e-09, -2.5512036927466397e-10, 1.0402234629225404e-09},
-                                   {-1.7353589676361025e-09, -8.0899198451334087e-10, -1.6443779671249104e-10}},
+        Series o = Series::read("../samples/git-sample/data00000100.h5");
 
-                                  {{-2.0029988778702545e-09, -1.9543477947081556e-10, 1.0916454407094989e-09},
-                                   {-2.3890367462087170e-09, -4.7158010829662089e-10, 9.0026075483251589e-10},
-                                   {-1.9033881137886510e-09, -7.5192119197708962e-10, 5.0038861942880430e-10}},
+        {
+            double actual[3][3][3] = {{{-1.9080703683727052e-09, -1.5632650729457964e-10, 1.1497536256399599e-09},
+                                       {-1.9979540244463578e-09, -2.5512036927466397e-10, 1.0402234629225404e-09},
+                                       {-1.7353589676361025e-09, -8.0899198451334087e-10, -1.6443779671249104e-10}},
 
-                                  {{-1.3271805876513554e-09, -5.9243276950837753e-10, -2.2445734160214670e-10},
-                                   {-7.4578609954301101e-10, -1.1995737736469891e-10, 2.5611823772919706e-10},
-                                   {-9.4806251738077663e-10, -1.5472800818372434e-10, -3.6461900165818406e-10}}};
-        MeshRecordComponent& rho = o.iterations[100].meshes["rho"][MeshRecordComponent::SCALAR];
-        Offset offset{20, 20, 190};
-        Extent extent{3, 3, 3};
-        std::unique_ptr< double[] > data;
-        rho.loadChunk(offset, extent, data, RecordComponent::Allocation::API);
-        double* raw_ptr = data.get();
+                                      {{-2.0029988778702545e-09, -1.9543477947081556e-10, 1.0916454407094989e-09},
+                                       {-2.3890367462087170e-09, -4.7158010829662089e-10, 9.0026075483251589e-10},
+                                       {-1.9033881137886510e-09, -7.5192119197708962e-10, 5.0038861942880430e-10}},
 
-        for( int i = 0; i < 3; ++i )
-            for( int j = 0; j < 3; ++j )
-                for( int k = 0; k < 3; ++k )
-                    BOOST_TEST(raw_ptr[((i*3) + j)*3 + k] == actual[i][j][k]);
-    }
+                                      {{-1.3271805876513554e-09, -5.9243276950837753e-10, -2.2445734160214670e-10},
+                                       {-7.4578609954301101e-10, -1.1995737736469891e-10, 2.5611823772919706e-10},
+                                       {-9.4806251738077663e-10, -1.5472800818372434e-10, -3.6461900165818406e-10}}};
+            MeshRecordComponent& rho = o.iterations[100].meshes["rho"][MeshRecordComponent::SCALAR];
+            Offset offset{20, 20, 190};
+            Extent extent{3, 3, 3};
+            std::unique_ptr< double[] > data;
+            rho.loadChunk(offset, extent, data, RecordComponent::Allocation::API);
+            double* raw_ptr = data.get();
 
+            for( int i = 0; i < 3; ++i )
+                for( int j = 0; j < 3; ++j )
+                    for( int k = 0; k < 3; ++k )
+                        BOOST_TEST(raw_ptr[((i*3) + j)*3 + k] == actual[i][j][k]);
+        }
+
+        {
+            double constant_value = 9.1093829099999999e-31;
+            RecordComponent& electrons_mass = o.iterations[100].particles["electrons"]["mass"][RecordComponent::SCALAR];
+            Offset offset{15};
+            Extent extent{3};
+            std::unique_ptr< double[] > data;
+            electrons_mass.loadChunk(offset, extent, data, RecordComponent::Allocation::API);
+            double* raw_ptr = data.get();
+
+            for( int i = 0; i < 3; ++i )
+                BOOST_TEST(raw_ptr[i] == constant_value);
+        }
+    } catch (no_such_file_error& e)
     {
-        double constant_value = 9.1093829099999999e-31;
-        RecordComponent& electrons_mass = o.iterations[100].particles["electrons"]["mass"][RecordComponent::SCALAR];
-        Offset offset{15};
-        Extent extent{3};
-        std::unique_ptr< double[] > data;
-        electrons_mass.loadChunk(offset, extent, data, RecordComponent::Allocation::API);
-        double* raw_ptr = data.get();
-
-        for( int i = 0; i < 3; ++i )
-            BOOST_TEST(raw_ptr[i] == constant_value);
+        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+        return;
     }
 }
 
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_fileBased_read_test)
 {
-    Series o = Series::read("../samples/git-sample/data%T.h5");
+    try
+    {
+        Series o = Series::read("../samples/git-sample/data%T.h5");
 
-    BOOST_TEST(o.iterations.size() == 5);
-    BOOST_TEST(o.iterations.count(100) == 1);
-    BOOST_TEST(o.iterations.count(200) == 1);
-    BOOST_TEST(o.iterations.count(300) == 1);
-    BOOST_TEST(o.iterations.count(400) == 1);
-    BOOST_TEST(o.iterations.count(500) == 1);
+        BOOST_TEST(o.iterations.size() == 5);
+        BOOST_TEST(o.iterations.count(100) == 1);
+        BOOST_TEST(o.iterations.count(200) == 1);
+        BOOST_TEST(o.iterations.count(300) == 1);
+        BOOST_TEST(o.iterations.count(400) == 1);
+        BOOST_TEST(o.iterations.count(500) == 1);
+    } catch (no_such_file_error& e)
+    {
+        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+        return;
+    }
 }
 
 BOOST_AUTO_TEST_CASE(hzdr_hdf5_sample_content_test)

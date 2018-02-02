@@ -519,7 +519,9 @@ Series::readFileBased()
     Parameter< Operation::READ_ATT > aRead;
 
     using namespace boost::filesystem;
-    path dir(IOHandler->directory);
+    path dir = path(IOHandler->directory);
+    if( !exists(dir) )
+        throw no_such_file_error("Supplied directory is not valid: " + IOHandler->directory);
     for( path const& entry : directory_iterator(dir) )
     {
         if( std::regex_search(entry.filename().string(), pattern) )

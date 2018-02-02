@@ -386,7 +386,7 @@ HDF5IOHandlerImpl::openFile(Writable* writable,
     using namespace boost::filesystem;
     path dir(m_handler->directory);
     if( !exists(dir) )
-        throw no_such_file_error("Supplied directory is not valid");
+        throw no_such_file_error("Supplied directory is not valid: " + m_handler->directory);
 
     std::string name = m_handler->directory + parameters.at("name").get< std::string >();
     if( !ends_with(name, ".h5") )
