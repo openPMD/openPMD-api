@@ -5,7 +5,7 @@
 #define BOOST_TEST_MODULE libopenpmd_parallel_io_test
 
 #include <boost/test/included/unit_test.hpp>
-#if defined(LIBOPENPMD_WITH_PARALLEL_HDF5) || defined(LIBOPENPMD_WITH_PARALLEL_ADIOS1)
+#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
 #include <mpi.h>
 
 #include "Series.hpp"
@@ -28,14 +28,14 @@ BOOST_AUTO_TEST_CASE(none)
 { }
 #endif
 
-#ifdef LIBOPENPMD_WITH_PARALLEL_HDF5
+#if defined(openPMD_HAVE_HDF5) && defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
 {
     int mpi_rank{-1};
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     /* only a 3x3x3 chunk of the actual data is hardcoded. every worker reads 1/3 */
     uint64_t rank = mpi_rank % 3;
-    Series o = Series::read("../samples/git-sample/data00000%T.h5");
+    Series o = Series::read("../samples/git-sample/data00000%T.h5", MPI_COMM_WORLD);
 
 
     {
@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE(hdf5_write_test)
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_r);
     uint64_t mpi_size = static_cast<uint64_t>(mpi_s);
     uint64_t mpi_rank = static_cast<uint64_t>(mpi_r);
-    Series o = Series::create("../samples/parallel_write.h5");
+    Series o = Series::create("../samples/parallel_write.h5", MPI_COMM_WORLD);
 
     o.setAuthor("Parallel HDF5");
     ParticleSpecies& e = o.iterations[1].particles["e"];
@@ -109,10 +109,15 @@ BOOST_AUTO_TEST_CASE(hdf5_write_test)
 
     o.flush();
 }
+#else
+BOOST_AUTO_TEST_CASE(no_parallel_hdf5)
+{
+    BOOST_TEST(true);
+}
 #endif
-#ifdef LIBOPENPMD_WITH_PARALLEL_ADIOS1
+#if defined(openPMD_HAVE_ADIOS1) && defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
 BOOST_AUTO_TEST_CASE(adios_wrtie_test)
 {
-    Output o = Output("../samples/"parallel_write.bp");
+    Output o = Output("../samples/parallel_write.bp");
 }
 #endif

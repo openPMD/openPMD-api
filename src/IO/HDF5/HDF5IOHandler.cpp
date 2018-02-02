@@ -71,6 +71,12 @@ HDF5IOHandlerImpl::~HDF5IOHandlerImpl()
             std::cerr << "Internal error: Failed to close HDF5 file\n";
         m_openFileIDs.erase(file);
     }
+    status = H5Pclose(m_datasetTransferProperty);
+    if( status != 0 )
+        std::cerr <<  "Interal error: Failed to close HDF5 dataset transfer property\n";
+    status = H5Pclose(m_fileAccessProperty);
+    if( status != 0 )
+        std::cerr << "Interal error: Failed to close HDF5 file access property\n";
 }
 
 std::future< void >
@@ -380,7 +386,7 @@ HDF5IOHandlerImpl::openFile(Writable* writable,
     using namespace boost::filesystem;
     path dir(m_handler->directory);
     if( !exists(dir) )
-        throw std::runtime_error("Supplied directory is not valid");
+        throw no_such_file_error("Supplied directory is not valid");
 
     std::string name = m_handler->directory + parameters.at("name").get< std::string >();
     if( !ends_with(name, ".h5") )
@@ -1413,7 +1419,7 @@ void HDF5IOHandlerImpl::listAttributes(Writable* writable,
 }
 #endif
 
-#if defined(openPMD_HAVE_HDF5) && !defined(openPMD_HAVE_MPI) && defined(_NOMPI)
+#if defined(openPMD_HAVE_HDF5)
 HDF5IOHandler::HDF5IOHandler(std::string const& path, AccessType at)
         : AbstractIOHandler(path, at),
           m_impl{new HDF5IOHandlerImpl(this)}
@@ -1429,13 +1435,9 @@ HDF5IOHandler::flush()
 }
 #else
 HDF5IOHandler::HDF5IOHandler(std::string const& path, AccessType at)
-#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
-        : AbstractIOHandler(path, at, MPI_COMM_NULL)
-#else
-: AbstractIOHandler(path, at)
-#endif
+        : AbstractIOHandler(path, at)
 {
-    throw std::runtime_error("libopenPMD built without serial HDF5 support");
+    throw std::runtime_error("libopenPMD built without HDF5 support");
 }
 
 HDF5IOHandler::~HDF5IOHandler()

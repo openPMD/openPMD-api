@@ -48,19 +48,17 @@ public:
     static Series create(std::string const& filepath,
                          MPI_Comm comm,
                          AccessType at = AccessType::CREATE);
-#else
+#endif
     static Series create(std::string const& filepath,
                          AccessType at = AccessType::CREATE);
 
-#endif
 #if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
     static Series read(std::string const& filepath,
                        MPI_Comm comm,
                        AccessType at = AccessType::READ_ONLY);
-#else
+#endif
     static Series read(std::string const& filepath,
                        AccessType at = AccessType::READ_ONLY);
-#endif
     ~Series();
 
     /**
@@ -215,10 +213,9 @@ private:
     Series(std::string const& filepath,
            AccessType at,
            MPI_Comm comm);
-#else
+#endif
     Series(std::string const& filepath,
            AccessType at);
-#endif
 
     void flushFileBased();
     void flushGroupBased();

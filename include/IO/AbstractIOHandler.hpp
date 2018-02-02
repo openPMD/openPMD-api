@@ -82,10 +82,8 @@ public:
     static std::shared_ptr< AbstractIOHandler > createIOHandler(std::string const& path,
                                                                 AccessType accessType,
                                                                 Format format,
-                                                                MPI_Comm comm = MPI_COMM_WORLD);
-
-    AbstractIOHandler(std::string const& path, AccessType, MPI_Comm);
-#else
+                                                                MPI_Comm comm);
+#endif
     /** Construct an appropriate specific IOHandler for the desired IO mode.
      *
      * @param   path        Path to root folder for all operations associated with the desired handler.
@@ -97,8 +95,10 @@ public:
                                                                 AccessType accessType,
                                                                 Format format);
 
-    AbstractIOHandler(std::string const& path, AccessType);
+#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+    AbstractIOHandler(std::string const& path, AccessType, MPI_Comm);
 #endif
+    AbstractIOHandler(std::string const& path, AccessType);
     virtual ~AbstractIOHandler();
 
     /** Add provided task to queue according to FIFO.

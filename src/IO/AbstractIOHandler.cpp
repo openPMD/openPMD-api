@@ -57,7 +57,7 @@ AbstractIOHandler::AbstractIOHandler(std::string const& path,
         : directory{path},
           accessType{at}
 { }
-#else
+#endif
 std::shared_ptr< AbstractIOHandler >
 AbstractIOHandler::createIOHandler(std::string const& path,
                                    AccessType at,
@@ -87,7 +87,6 @@ AbstractIOHandler::AbstractIOHandler(std::string const& path,
         : directory{path},
           accessType{at}
 { }
-#endif
 
 AbstractIOHandler::~AbstractIOHandler()
 { }
@@ -99,11 +98,7 @@ AbstractIOHandler::enqueue(IOTask const& i)
 }
 
 DummyIOHandler::DummyIOHandler(std::string const& path, AccessType at)
-#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
-        : AbstractIOHandler(path, at, MPI_COMM_NULL)
-#else
         : AbstractIOHandler(path, at)
-#endif
 { }
 
 DummyIOHandler::~DummyIOHandler()

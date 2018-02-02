@@ -7,7 +7,7 @@
 #define protected public
 #include "Series.hpp"
 
-#ifdef LIBOPENPMD_WITH_HDF5
+#if defined(openPMD_HAVE_HDF5)
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_structure_test)
 {
     Series o = Series::read("../samples/git-sample/data00000100.h5");
@@ -918,14 +918,20 @@ BOOST_AUTO_TEST_CASE(hdf5_deletion_test)
     e.erase("deletion_scalar_constant");
     o.flush();
 }
+#else
+BOOST_AUTO_TEST_CASE(no_serial_hdf5)
+{
+    BOOST_TEST(true);
+}
 #endif
-#ifdef LIBOPENPMD_WITH_ADIOS1
+#if defined(openPMD_HAVE_ADIOS1)
 BOOST_AUTO_TEST_CASE(adios_write_test)
 {
-    Output o = Output("samples",
-                      "serial_write",
-                      IterationEncoding::fileBased,
-                      Format::ADIOS,
-                      AccessType::CREATE);
+    Output o = Output("../samples/serial_write.bp");
+}
+#else
+BOOST_AUTO_TEST_CASE(no_serial_adios1)
+{
+    BOOST_TEST(true);
 }
 #endif

@@ -80,23 +80,11 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(AbstractIOHandler* handler,
 }
 
 ParallelHDF5IOHandlerImpl::~ParallelHDF5IOHandlerImpl()
-{
-    herr_t status;
-    status = H5Pclose(m_datasetTransferProperty);
-    if( status != 0 )
-        std::cerr <<  "Interal error: Failed to close HDF5 dataset transfer property\n";
-    status = H5Pclose(m_fileAccessProperty);
-    if( status != 0 )
-        std::cerr << "Interal error: Failed to close HDF5 file access property\n";
-}
+{ }
 #else
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string const& path,
                                              AccessType at)
-#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
-        : AbstractIOHandler(path, at, MPI_COMM_NULL)
-#else
         : AbstractIOHandler(path, at)
-#endif
 {
     throw std::runtime_error("libopenPMD built without parallel HDF5 support");
 }

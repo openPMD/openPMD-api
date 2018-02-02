@@ -37,48 +37,58 @@ check_extension(std::string const& filepath)
                                  "Did you append a correct filename extension?");
 }
 
-Series
 #if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+Series
 Series::create(std::string const& filepath,
                MPI_Comm comm,
                AccessType at)
-#else
-Series::create(std::string const& filepath,
-               AccessType at)
-#endif
 {
     if( AccessType::READ_ONLY == at )
         throw std::runtime_error("Access type not supported in create-API.");
 
     check_extension(filepath);
 
-#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
     return Series(filepath, at, comm);
-#else
-    return Series(filepath, at);
-#endif
 }
+#endif
 
 Series
+Series::create(std::string const& filepath,
+               AccessType at)
+{
+    if( AccessType::READ_ONLY == at )
+        throw std::runtime_error("Access type not supported in create-API.");
+
+    check_extension(filepath);
+
+    return Series(filepath, at);
+}
+
 #if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+Series
 Series::read(std::string const& filepath,
              MPI_Comm comm,
              AccessType at)
-#else
-Series::read(std::string const& filepath,
-             AccessType at)
-#endif
 {
     if( AccessType::CREATE == at )
         throw std::runtime_error("Access type not supported in read-API.");
 
     check_extension(filepath);
 
-#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
     return Series(filepath, at, comm);
-#else
-    return Series(filepath, at);
+}
 #endif
+
+Series
+Series::read(std::string const& filepath,
+             AccessType at)
+{
+    if( AccessType::CREATE == at )
+        throw std::runtime_error("Access type not supported in read-API.");
+
+    check_extension(filepath);
+
+    return Series(filepath, at);
 }
 
 
@@ -86,10 +96,6 @@ Series::read(std::string const& filepath,
 Series::Series(std::string const& filepath,
                AccessType at,
                MPI_Comm comm)
-#else
-Series::Series(std::string const& filepath,
-               AccessType at)
-#endif
         : iterations{Container< Iteration, uint64_t >()}
 {
     std::string path;
@@ -126,11 +132,78 @@ Series::Series(std::string const& filepath,
         f = Format::DUMMY;
     }
 
-#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
     IOHandler = AbstractIOHandler::createIOHandler(path, at, f, comm);
-#else
-    IOHandler = AbstractIOHandler::createIOHandler(path, at, f);
+    iterations.IOHandler = IOHandler;
+    iterations.parent = this;
+
+    m_name = cleanFilename(name, f);
+
+    switch( at )
+    {
+        case AccessType::CREATE:
+        {
+            setOpenPMD(OPENPMD);
+            setOpenPMDextension(0);
+            setAttribute("basePath", std::string(BASEPATH));
+            setMeshesPath("meshes/");
+            setParticlesPath("particles/");
+            if( ie == IterationEncoding::fileBased && !contains(m_name, "%T") )
+                throw std::runtime_error("For fileBased formats the iteration regex %T must be included in the file name");
+            setIterationEncoding(ie);
+            break;
+        }
+        case AccessType::READ_ONLY:
+        case AccessType::READ_WRITE:
+        {
+            if( contains(m_name, "%T") )
+                readFileBased();
+            else
+                readGroupBased();
+            break;
+        }
+    }
+}
 #endif
+
+Series::Series(std::string const& filepath,
+               AccessType at)
+        : iterations{Container< Iteration, uint64_t >()}
+{
+    std::string path;
+    std::string name;
+    auto const pos = filepath.find_last_of('/');
+    if( std::string::npos == pos )
+    {
+        path = "./";
+        name = filepath;
+    }
+    else
+    {
+        path = filepath.substr(0, pos + 1);
+        name = filepath.substr(pos + 1);
+    }
+
+    IterationEncoding ie;
+    if( std::string::npos != name.find("%T") )
+        ie = IterationEncoding::fileBased;
+    else
+        ie = IterationEncoding::groupBased;
+
+    Format f;
+    if( ends_with(name, ".h5") )
+        f = Format::HDF5;
+    else if( ends_with(name, ".bp") )
+        f = Format::ADIOS1;
+    else
+    {
+        if( !ends_with(name, ".dummy") )
+            std::cerr << "Unknown filename extension. "
+                         "Falling back to DUMMY format."
+                      << std::endl;
+        f = Format::DUMMY;
+    }
+
+    IOHandler = AbstractIOHandler::createIOHandler(path, at, f);
     iterations.IOHandler = IOHandler;
     iterations.parent = this;
 
@@ -637,16 +710,15 @@ Series::cleanFilename(std::string s, Format f)
     switch( f )
     {
         case Format::HDF5:
-                s = replace_last(s, ".h5", "");
+            s = replace_last(s, ".h5", "");
             break;
         case Format::ADIOS1:
         case Format::ADIOS2:
-            if( ends_with(s, ".bp") )
-                s = replace_last(s, ".bp", "");
+            s = replace_last(s, ".bp", "");
             break;
         case Format::DUMMY:
-            if( ends_with(s, ".dummy") )
-                s = replace_last(s, ".dummy", "");
+            s = replace_last(s, ".dummy", "");
+            break;
         default:
             break;
     }
