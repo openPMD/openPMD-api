@@ -347,14 +347,14 @@ endif()
 set(MPI_TEST_EXE
     ${MPIEXEC_EXECUTABLE}
     ${MPI_ALLOW_ROOT}
-    ${MPIEXEC_NUMPROC_FLAG} 4 -oversubscribe
+    ${MPIEXEC_NUMPROC_FLAG} 4
 )
 
 foreach(testname ${openPMD_TEST_NAMES})
     if(${testname} MATCHES "^Parallel.*$")
         if(openPMD_HAVE_MPI)
             add_test(NAME MPI.${testname}
-                COMMAND ${MPI_TEST_EXE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${testname}Tests
+                COMMAND ${MPI_TEST_EXE} --oversubscribe ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${testname}Tests
                 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
             )
         endif()
