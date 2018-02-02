@@ -381,6 +381,7 @@ Series::setIterationEncoding(IterationEncoding ie)
     if( written )
         throw std::runtime_error("A files iterationEncoding can not (yet) be changed after it has been written.");
 
+    m_iterationEncoding = ie;
     switch( ie )
     {
         case IterationEncoding::fileBased:
@@ -392,7 +393,6 @@ Series::setIterationEncoding(IterationEncoding ie)
             setAttribute("iterationEncoding", std::string("groupBased"));
             break;
     }
-    m_iterationEncoding = ie;
     dirty = true;
     return *this;
 }
