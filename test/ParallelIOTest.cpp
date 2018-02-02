@@ -5,7 +5,7 @@
 #define BOOST_TEST_MODULE libopenpmd_parallel_io_test
 
 #include <boost/test/included/unit_test.hpp>
-#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+#if openPMD_HAVE_MPI
 #include <mpi.h>
 
 #include "Series.hpp"
@@ -28,7 +28,7 @@ BOOST_AUTO_TEST_CASE(none)
 { }
 #endif
 
-#if defined(openPMD_HAVE_HDF5) && defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+#if openPMD_HAVE_HDF5 && openPMD_HAVE_MPI
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
 {
     int mpi_rank{-1};
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(no_parallel_hdf5)
     BOOST_TEST(true);
 }
 #endif
-#if defined(openPMD_HAVE_ADIOS1) && defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+#if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
 BOOST_AUTO_TEST_CASE(adios_wrtie_test)
 {
     Output o = Output("../samples/parallel_write.bp");

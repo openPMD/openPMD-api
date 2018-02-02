@@ -21,7 +21,7 @@
 #include "IO/ADIOS/ParallelADIOS1IOHandler.hpp"
 
 
-#if defined(openPMD_HAVE_ADIOS1) && defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+#if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string const& path,
                                              AccessType at,
                                              MPI_Comm comm)
@@ -40,7 +40,7 @@ ParallelHDF5IOHandler::flush()
 #else
 ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string const& path,
                                                  AccessType at)
-#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+#if openPMD_HAVE_MPI
         : AbstractIOHandler(path, at, MPI_COMM_NULL)
 #else
 : AbstractIOHandler(path, at)

@@ -26,7 +26,7 @@
 #include "IO/AbstractIOHandler.hpp"
 
 
-#if defined(openPMD_HAVE_HDF5) && defined(openPMD_HAVE_MPI)
+#if openPMD_HAVE_HDF5 && openPMD_HAVE_MPI
 #include <mpi.h>
 
 #include "IO/HDF5/HDF5IOHandler.hpp"
@@ -51,7 +51,7 @@ class ParallelHDF5IOHandlerImpl
 class ParallelHDF5IOHandler : public AbstractIOHandler
 {
 public:
-#if defined(openPMD_HAVE_HDF5) && defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+#if openPMD_HAVE_HDF5 && openPMD_HAVE_MPI
     ParallelHDF5IOHandler(std::string const& path, AccessType, MPI_Comm);
 #else
     ParallelHDF5IOHandler(std::string const& path, AccessType);

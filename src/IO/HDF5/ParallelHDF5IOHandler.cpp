@@ -21,7 +21,7 @@
 #include "IO/HDF5/ParallelHDF5IOHandler.hpp"
 
 
-#if defined(openPMD_HAVE_HDF5) && defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+#if openPMD_HAVE_HDF5 && openPMD_HAVE_MPI
 #include <iostream>
 
 #include <mpi.h>

@@ -26,7 +26,7 @@
 #include "IO/AbstractIOHandler.hpp"
 
 
-#if defined(openPMD_HAVE_ADIOS1) && defined(openPMD_HAVE_MPI)
+#if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
 #include <mpi.h>
 
 #include "IO/ADIOS1/ADIOS1IOHandler.hpp"
@@ -51,7 +51,7 @@ class ParallelADIOS1IOHandlerImpl
 class ParallelADIOS1IOHandler : public AbstractIOHandler
 {
 public:
-#if defined(openPMD_HAVE_ADIOS1) && defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+#if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
     ParallelADIOS1IOHandler(std::string const& path, AccessType, MPI_Comm);
 #else
     ParallelADIOS1IOHandler(std::string const& path, AccessType);

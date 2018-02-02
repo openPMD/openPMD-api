@@ -37,7 +37,7 @@ check_extension(std::string const& filepath)
                                  "Did you append a correct filename extension?");
 }
 
-#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+#if openPMD_HAVE_MPI
 Series
 Series::create(std::string const& filepath,
                MPI_Comm comm,
@@ -64,7 +64,7 @@ Series::create(std::string const& filepath,
     return Series(filepath, at);
 }
 
-#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+#if openPMD_HAVE_MPI
 Series
 Series::read(std::string const& filepath,
              MPI_Comm comm,
@@ -92,7 +92,7 @@ Series::read(std::string const& filepath,
 }
 
 
-#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+#if openPMD_HAVE_MPI
 Series::Series(std::string const& filepath,
                AccessType at,
                MPI_Comm comm)

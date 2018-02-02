@@ -21,7 +21,7 @@
 #include "IO/ADIOS/ADIOS1IOHandler.hpp"
 
 
-#if defined(openPMD_HAVE_ADIOS1)
+#if openPMD_HAVE_ADIOS1
 ADIOS1IOHandler::ADIOS1IOHandler(std::string const& path, AccessType at)
         : AbstractIOHandler(path, at),
           m_impl{new ADIOS1IOHandlerImpl(this)}
@@ -37,7 +37,7 @@ ADIOS1IOHandler::flush()
 }
 #endif
 
-#if defined(openPMD_HAVE_ADIOS1) && !defined(openPMD_HAVE_MPI) && defined(_NOMPI)
+#if openPMD_HAVE_ADIOS1 && !openPMD_HAVE_MPI
 ADIOS1IOHandler::ADIOS1IOHandler(std::string const& path, AccessType at)
         : AbstractIOHandler(path, at),
           m_impl{new ADIOS1IOHandlerImpl(this)}
@@ -53,7 +53,7 @@ ADIOS1IOHandler::flush()
 }
 #else
 ADIOS1IOHandler::ADIOS1IOHandler(std::string const& path, AccessType at)
-#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+#if openPMD_HAVE_MPI
         : AbstractIOHandler(path, at, MPI_COMM_NULL)
 #else
 : AbstractIOHandler(path, at)

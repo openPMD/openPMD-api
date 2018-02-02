@@ -21,7 +21,7 @@
 #pragma once
 
 
-#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+#if openPMD_HAVE_MPI
 #include <mpi.h>
 #endif
 
@@ -44,7 +44,7 @@
 class Series : public Attributable
 {
 public:
-#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+#if openPMD_HAVE_MPI
     static Series create(std::string const& filepath,
                          MPI_Comm comm,
                          AccessType at = AccessType::CREATE);
@@ -52,7 +52,7 @@ public:
     static Series create(std::string const& filepath,
                          AccessType at = AccessType::CREATE);
 
-#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+#if openPMD_HAVE_MPI
     static Series read(std::string const& filepath,
                        MPI_Comm comm,
                        AccessType at = AccessType::READ_ONLY);
@@ -209,7 +209,7 @@ public:
     Container< Iteration, uint64_t > iterations;
 
 private:
-#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+#if openPMD_HAVE_MPI
     Series(std::string const& filepath,
            AccessType at,
            MPI_Comm comm);

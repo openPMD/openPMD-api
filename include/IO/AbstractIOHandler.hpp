@@ -25,7 +25,7 @@
 #include <future>
 #include <queue>
 
-#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+#if openPMD_HAVE_MPI
 #include <mpi.h>
 #endif
 
@@ -70,7 +70,7 @@ public:
 class AbstractIOHandler
 {
 public:
-#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+#if openPMD_HAVE_MPI
     /** Construct an appropriate specific IOHandler for the desired IO mode.
      *
      * @param   path        Path to root folder for all operations associated with the desired handler.
@@ -95,7 +95,7 @@ public:
                                                                 AccessType accessType,
                                                                 Format format);
 
-#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+#if openPMD_HAVE_MPI
     AbstractIOHandler(std::string const& path, AccessType, MPI_Comm);
 #endif
     AbstractIOHandler(std::string const& path, AccessType);

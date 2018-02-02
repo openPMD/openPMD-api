@@ -25,7 +25,7 @@
 #include "IO/HDF5/ParallelHDF5IOHandler.hpp"
 
 
-#if defined(openPMD_HAVE_MPI) && !defined(_NOMPI)
+#if openPMD_HAVE_MPI
 std::shared_ptr< AbstractIOHandler >
 AbstractIOHandler::createIOHandler(std::string const& path,
                                    AccessType at,
