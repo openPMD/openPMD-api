@@ -45,6 +45,8 @@ matrix:
     - env:
         - openPMD_USE_MPI=OFF openPMD_USE_HDF5=ON openPMD_USE_ADIOS1=OFF openPMD_USE_ADIOS2=OFF
       compiler: gcc
+  allow_failures:
+    - compiler: clang
 
 install:
   - SPACK_FOUND=$(which spack >/dev/null && { echo 0; } || { echo 1; })
