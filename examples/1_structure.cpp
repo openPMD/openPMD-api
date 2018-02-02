@@ -18,17 +18,12 @@
  * and the GNU Lesser General Public License along with libopenPMD.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
 
+#include "Series.hpp"
 
-#include "IO/AbstractFilePosition.hpp"
-
-
-struct HDF5FilePosition : public AbstractFilePosition
+int main(int argc, char *argv[])
 {
-    HDF5FilePosition(std::string const& s)
-            : location{s}
-    { }
+  auto f = Series::create("sample/1.h5");
 
-    std::string location;
-};  //HDF5FilePosition
+  return 0;
+}

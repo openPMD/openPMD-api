@@ -1,37 +1,27 @@
-#include <IO/ADIOS/ADIOS1IOHandler.hpp>
-#ifdef LIBOPENPMD_WITH_ADIOS1
-#include <iostream>
-#include <unordered_map>
-#include <unordered_set>
+/* Copyright 2017 Fabian Koller
+ *
+ * This file is part of libopenPMD.
+ *
+ * libopenPMD is free software: you can redistribute it and/or modify
+ * it under the terms of of either the GNU General Public License or
+ * the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * libopenPMD is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License and the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * and the GNU Lesser General Public License along with libopenPMD.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+#include "IO/ADIOS/ADIOS1IOHandler.hpp"
 
-#include <adios.h>
 
-#include <boost/filesystem.hpp>
-
-#include <Auxiliary.hpp>
-#include <IO/ADIOS/ADIOS1FilePosition.hpp>
-
-
-class ADIOS1IOHandlerImpl
-{
-public:
-    ADIOS1IOHandlerImpl(ADIOS1IOHandler*);
-    virtual ~ADIOS1IOHandlerImpl();
-
-    std::future< void > flush();
-
-    using ArgumentMap = std::map< std::string, ParameterArgument >;
-    void createFile(Writable*, ArgumentMap const&);
-
-    MPI_Comm m_mpiComm;
-    MPI_Info m_mpiInfo;
-
-    ADIOS1IOHandler* m_handler;
-    std::unordered_map< Writable*, int64_t > m_files;
-    std::unordered_set< int64_t > m_openFiles;
-    int64_t m_groupID;
-};  //ADIOS1IOHandlerImpl
-
+#if openPMD_HAVE_ADIOS1
 ADIOS1IOHandler::ADIOS1IOHandler(std::string const& path, AccessType at)
         : AbstractIOHandler(path, at),
           m_impl{new ADIOS1IOHandlerImpl(this)}
@@ -45,134 +35,31 @@ ADIOS1IOHandler::flush()
 {
     return m_impl->flush();
 }
+#endif
 
-ADIOS1IOHandlerImpl::ADIOS1IOHandlerImpl(ADIOS1IOHandler* handler)
-        : m_mpiComm{MPI_COMM_WORLD},
-          m_mpiInfo{MPI_INFO_NULL},
-          m_handler{handler}
-{
-    adios_init_noxml(m_mpiComm);
-    std::string groupName{""};
-    std::string timeIndex{""};
-    adios_declare_group(&m_groupID,
-                        groupName.c_str(),
-                        timeIndex.c_str(),
-                        ADIOS_STATISTICS_FLAG::adios_stat_default);
-}
+#if openPMD_HAVE_ADIOS1 && !openPMD_HAVE_MPI
+ADIOS1IOHandler::ADIOS1IOHandler(std::string const& path, AccessType at)
+        : AbstractIOHandler(path, at),
+          m_impl{new ADIOS1IOHandlerImpl(this)}
+{ }
 
-ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
-{
-    for( auto const& file : m_openFiles )
-        adios_close(file);
-
-    adios_free_group(m_groupID);
-
-    int mpiRank{-1};
-    MPI_Comm_rank(m_mpiComm, &mpiRank);
-    adios_finalize(mpiRank);
-}
+ADIOS1IOHandler::~ADIOS1IOHandler()
+{ }
 
 std::future< void >
-ADIOS1IOHandlerImpl::flush()
+ADIOS1IOHandler::flush()
 {
-    while( !(m_handler->m_work.empty()) )
-    {
-        IOTask& i = m_handler->m_work.front();
-        switch( i.operation )
-        {
-            using O = Operation;
-            case O::CREATE_FILE:
-                createFile(i.writable, i.parameter);
-                break;
-            case O::CREATE_PATH:
-                //createPath(i.writable, i.parameter);
-                //break;
-            case O::CREATE_DATASET:
-                //createDataset(i.writable, i.parameter);
-                //break;
-            case O::OPEN_FILE:
-                //openFile(i.writable, i.parameter);
-                //break;
-            case O::OPEN_PATH:
-                //openPath(i.writable, i.parameter);
-                //break;
-            case O::OPEN_DATASET:
-                //openDataset(i.writable, i.parameter);
-                //break;
-            case O::DELETE_FILE:
-                //deleteFile(i.writable, i.parameter);
-                //break;
-            case O::DELETE_PATH:
-                //deletePath(i.writable, i.parameter);
-                //break;
-            case O::DELETE_DATASET:
-                //deleteDataset(i.writable, i.parameter);
-                //break;
-            case O::DELETE_ATT:
-                //deleteAttribute(i.writable, i.parameter);
-                //break;
-            case O::WRITE_DATASET:
-                //writeDataset(i.writable, i.parameter);
-                //break;
-            case O::WRITE_ATT:
-                //writeAttribute(i.writable, i.parameter);
-                //break;
-            case O::READ_DATASET:
-                //readDataset(i.writable, i.parameter);
-                //break;
-            case O::READ_ATT:
-                //readAttribute(i.writable, i.parameter);
-                //break;
-            case O::LIST_PATHS:
-                //listPaths(i.writable, i.parameter);
-                //break;
-            case O::LIST_DATASETS:
-                //listDatasets(i.writable, i.parameter);
-                //break;
-            case O::LIST_ATTS:
-                //listAttributes(i.writable, i.parameter);
-                std::cerr << "Not implemented in ParallelADIOS1 backend yet\n";
-                break;
-        }
-        m_handler->m_work.pop();
-    }
-    return std::future< void >();
-}
-
-void ADIOS1IOHandlerImpl::createFile(Writable* writable,
-                                     ArgumentMap const& parameters)
-{
-    if( !writable->written )
-    {
-        using namespace boost::filesystem;
-        path dir(m_handler->directory);
-        if( !exists(dir) )
-            create_directories(dir);
-
-        /* Create a new file. */
-        std::string name = m_handler->directory + parameters.at("name").get< std::string >();
-        if( !ends_with(name, ".bp") )
-            name += ".bp";
-        int64_t file;
-        adios_open(&file, "", name.c_str(), "w", m_mpiComm);
-
-        writable->written = true;
-        writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >();
-
-        m_files.insert({writable, file});
-        m_openFiles.insert(file);
-        while( (writable = writable->parent) )
-            m_files.insert({writable, file});
-    }
+    return m_impl->flush();
 }
 #else
-class ADIOS1IOHandlerImpl
-{ };
-
 ADIOS1IOHandler::ADIOS1IOHandler(std::string const& path, AccessType at)
-        : AbstractIOHandler(path, at)
+#if openPMD_HAVE_MPI
+        : AbstractIOHandler(path, at, MPI_COMM_NULL)
+#else
+: AbstractIOHandler(path, at)
+#endif
 {
-    throw std::runtime_error("libopenPMD built without ADIOS support");
+    throw std::runtime_error("libopenPMD built without parallel ADIOS1 support");
 }
 
 ADIOS1IOHandler::~ADIOS1IOHandler()

@@ -65,8 +65,11 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-disabled-macro-expansion -Wno-c++98-compat-pedantic -Wno-global-constructors -Wno-conversion")
     #Silence HDF5
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-reserved-id-macro -Wno-deprecated -Wno-old-style-cast")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-cpp")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
+    #silence BOOST filesystem
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-cpp")
 endif ()
 
 
@@ -221,41 +224,26 @@ if(openPMD_HAVE_MPI)
     target_link_libraries(openPMD.core PUBLIC MPI::MPI_C MPI::MPI_CXX)
     target_link_libraries(openPMD.io PUBLIC MPI::MPI_C MPI::MPI_CXX)
 
-    target_compile_definitions(openPMD.core PUBLIC "-DLIBOPENPMD_WITH_MPI=ON")
-    target_compile_definitions(openPMD.io PUBLIC "-DLIBOPENPMD_WITH_MPI=ON")
-else()
-    target_compile_definitions(openPMD.core PUBLIC "-D_NOMPI=ON")
-    target_compile_definitions(openPMD.io PUBLIC "-D_NOMPI=ON")
+    target_compile_definitions(openPMD.core PUBLIC "-DopenPMD_HAVE_MPI=1")
+    target_compile_definitions(openPMD.io PUBLIC "-DopenPMD_HAVE_MPI=1")
 endif()
 
 if(openPMD_HAVE_HDF5)
     target_link_libraries(openPMD.io PUBLIC ${HDF5_LIBRARIES})
     target_include_directories(openPMD.io SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
     target_compile_definitions(openPMD.io PUBLIC ${HDF5_DEFINITIONS})
-    target_compile_definitions(openPMD.io PUBLIC "-DLIBOPENPMD_WITH_HDF5=ON")
-    if(openPMD_HAVE_MPI)
-        # TODO: remove and just rely on "WITH_MPI"
-        target_compile_definitions(openPMD.io PUBLIC "-DLIBOPENPMD_WITH_PARALLEL_HDF5=ON")
-    endif()
+    target_compile_definitions(openPMD.io PUBLIC "-DopenPMD_HAVE_HDF5=1")
 endif()
 
 if(openPMD_HAVE_ADIOS1)
     target_link_libraries(openPMD.io PUBLIC ${ADIOS_LIBRARIES})
     target_include_directories(openPMD.io SYSTEM PUBLIC ${ADIOS_INCLUDE_DIRS})
-    target_compile_definitions(openPMD.io PUBLIC "-DLIBOPENPMD_WITH_ADIOS1=ON")
-    if(openPMD_HAVE_MPI)
-        # TODO: remove and just rely on "WITH_MPI"
-        target_compile_definitions(openPMD.io PUBLIC "-DLIBOPENPMD_WITH_PARALLEL_ADIOS1=ON")
-    endif()
+    target_compile_definitions(openPMD.io PUBLIC "-DopenPMD_HAVE_ADIOS1=1")
 endif()
 
 if(openPMD_HAVE_ADIOS2)
     target_link_libraries(openPMD.io PUBLIC ADIOS2::ADIOS2)
-    target_compile_definitions(openPMD.io PUBLIC "-DLIBOPENPMD_WITH_ADIOS2=ON")
-    if(openPMD_HAVE_MPI)
-        # TODO: remove and just rely on "WITH_MPI"
-        target_compile_definitions(openPMD.io PUBLIC "-DLIBOPENPMD_WITH_PARALLEL_ADIOS2=ON")
-    endif()
+    target_compile_definitions(openPMD.io PUBLIC "-DopenPMD_HAVE_ADIOS2=1")
 endif()
 
 # tests
@@ -272,6 +260,23 @@ set(openPMD_EXAMPLE_NAMES
 )
 foreach(testname ${openPMD_TEST_NAMES})
     add_executable(${testname}Tests test/${testname}Test.cpp)
+    if(openPMD_HAVE_MPI)
+        target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_MPI=1")
+    else()
+        target_compile_definitions(${testname}Tests PUBLIC "-D_NOMPI=1")
+    endif()
+
+    if(openPMD_HAVE_HDF5)
+        target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_HDF5=1")
+    endif()
+
+    if(openPMD_HAVE_ADIOS1)
+        target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_ADIOS1=1")
+    endif()
+
+    if(openPMD_HAVE_ADIOS2)
+        target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_ADIOS2=1")
+    endif()
     target_link_libraries(${testname}Tests PRIVATE openPMD.core openPMD.io)
     if(TARGET Boost::unit_test_framework)
         target_link_libraries(${testname}Tests PRIVATE Boost::unit_test_framework)
@@ -342,19 +347,21 @@ endif()
 set(MPI_TEST_EXE
     ${MPIEXEC_EXECUTABLE}
     ${MPI_ALLOW_ROOT}
-    ${MPIEXEC_NUMPROC_FLAG} 4
+    ${MPIEXEC_NUMPROC_FLAG} 2
 )
 
 foreach(testname ${openPMD_TEST_NAMES})
     if(${testname} MATCHES "^Parallel.*$")
         if(openPMD_HAVE_MPI)
             add_test(NAME MPI.${testname}
-                COMMAND ${MPI_TEST_EXE} ${testname}Tests
+                COMMAND ${MPI_TEST_EXE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${testname}Tests
+                WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
             )
         endif()
     else()
         add_test(NAME Serial.${testname}
-            COMMAND ${testname}Tests
+            COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${testname}Tests
+            WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
         )
     endif()
 endforeach()

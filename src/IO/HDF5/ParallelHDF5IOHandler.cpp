@@ -1,11 +1,33 @@
+/* Copyright 2017 Fabian Koller
+ *
+ * This file is part of libopenPMD.
+ *
+ * libopenPMD is free software: you can redistribute it and/or modify
+ * it under the terms of of either the GNU General Public License or
+ * the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * libopenPMD is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License and the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * and the GNU Lesser General Public License along with libopenPMD.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "IO/HDF5/ParallelHDF5IOHandler.hpp"
-#ifdef LIBOPENPMD_WITH_PARALLEL_HDF5
+
+
+#if openPMD_HAVE_HDF5 && openPMD_HAVE_MPI
 #include <iostream>
 
 #include <mpi.h>
 #include <boost/filesystem.hpp>
 
-#include <auxiliary/StringManip.hpp>
+#include "auxiliary/StringManip.hpp"
 
 
 #ifdef DEBUG
@@ -16,9 +38,10 @@
 
 
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string const& path,
-                                             AccessType at)
-        : AbstractIOHandler(path, at),
-          m_impl{new ParallelHDF5IOHandlerImpl(this)}
+                                             AccessType at,
+                                             MPI_Comm comm)
+        : AbstractIOHandler(path, at, comm),
+          m_impl{new ParallelHDF5IOHandlerImpl(this, comm)}
 { }
 
 ParallelHDF5IOHandler::~ParallelHDF5IOHandler()
@@ -30,9 +53,10 @@ ParallelHDF5IOHandler::flush()
     return m_impl->flush();
 }
 
-ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(AbstractIOHandler* handler)
+ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(AbstractIOHandler* handler,
+                                                     MPI_Comm comm)
         : HDF5IOHandlerImpl{handler},
-          m_mpiComm{MPI_COMM_WORLD},
+          m_mpiComm{comm},
           m_mpiInfo{MPI_INFO_NULL}
 {
     /*
@@ -56,15 +80,7 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(AbstractIOHandler* handler)
 }
 
 ParallelHDF5IOHandlerImpl::~ParallelHDF5IOHandlerImpl()
-{
-    herr_t status;
-    status = H5Pclose(m_datasetTransferProperty);
-    if( status != 0 )
-        std::cerr <<  "Interal error: Failed to close HDF5 dataset transfer property\n";
-    status = H5Pclose(m_fileAccessProperty);
-    if( status != 0 )
-        std::cerr << "Interal error: Failed to close HDF5 file access property\n";
-}
+{ }
 #else
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string const& path,
                                              AccessType at)

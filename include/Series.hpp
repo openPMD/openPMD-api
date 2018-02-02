@@ -21,6 +21,10 @@
 #pragma once
 
 
+#if openPMD_HAVE_MPI
+#include <mpi.h>
+#endif
+
 #include "backend/Attributable.hpp"
 #include "backend/Container.hpp"
 #include "IO/AbstractIOHandler.hpp"
@@ -40,8 +44,19 @@
 class Series : public Attributable
 {
 public:
+#if openPMD_HAVE_MPI
+    static Series create(std::string const& filepath,
+                         MPI_Comm comm,
+                         AccessType at = AccessType::CREATE);
+#endif
     static Series create(std::string const& filepath,
                          AccessType at = AccessType::CREATE);
+
+#if openPMD_HAVE_MPI
+    static Series read(std::string const& filepath,
+                       MPI_Comm comm,
+                       AccessType at = AccessType::READ_ONLY);
+#endif
     static Series read(std::string const& filepath,
                        AccessType at = AccessType::READ_ONLY);
     ~Series();
@@ -194,7 +209,11 @@ public:
     Container< Iteration, uint64_t > iterations;
 
 private:
-    // TODO replace entirely with factory
+#if openPMD_HAVE_MPI
+    Series(std::string const& filepath,
+           AccessType at,
+           MPI_Comm comm);
+#endif
     Series(std::string const& filepath,
            AccessType at);
 

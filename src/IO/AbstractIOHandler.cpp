@@ -25,6 +25,39 @@
 #include "IO/HDF5/ParallelHDF5IOHandler.hpp"
 
 
+#if openPMD_HAVE_MPI
+std::shared_ptr< AbstractIOHandler >
+AbstractIOHandler::createIOHandler(std::string const& path,
+                                   AccessType at,
+                                   Format f,
+                                   MPI_Comm comm)
+{
+    std::shared_ptr< AbstractIOHandler > ret{nullptr};
+    switch( f )
+    {
+        case Format::HDF5:
+            ret = std::make_shared< ParallelHDF5IOHandler >(path, at, comm);
+            break;
+        case Format::ADIOS1:
+        case Format::ADIOS2:
+            std::cerr << "Backend not yet working. Your IO operations will be NOOPS!" << std::endl;
+            ret = std::make_shared< DummyIOHandler >(path, at);
+            break;
+        default:
+            ret = std::make_shared< DummyIOHandler >(path, at);
+            break;
+    }
+
+    return ret;
+}
+
+AbstractIOHandler::AbstractIOHandler(std::string const& path,
+                                     AccessType at,
+                                     MPI_Comm)
+        : directory{path},
+          accessType{at}
+{ }
+#endif
 std::shared_ptr< AbstractIOHandler >
 AbstractIOHandler::createIOHandler(std::string const& path,
                                    AccessType at,
@@ -36,14 +69,11 @@ AbstractIOHandler::createIOHandler(std::string const& path,
         case Format::HDF5:
             ret = std::make_shared< HDF5IOHandler >(path, at);
             break;
-        case Format::PARALLEL_HDF5:
-            ret = std::make_shared< ParallelHDF5IOHandler >(path, at);
-            break;
-        case Format::ADIOS:
-        case Format::PARALLEL_ADIOS:
+        case Format::ADIOS1:
         case Format::ADIOS2:
-        case Format::PARALLEL_ADIOS2:
             std::cerr << "Backend not yet working. Your IO operations will be NOOPS!" << std::endl;
+            ret = std::make_shared< DummyIOHandler >(path, at);
+            break;
         default:
             ret = std::make_shared< DummyIOHandler >(path, at);
             break;

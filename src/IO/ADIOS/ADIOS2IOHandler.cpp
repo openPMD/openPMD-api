@@ -1,34 +1,28 @@
-#include <IO/ADIOS/ADIOS2IOHandler.hpp>
-#ifdef LIBOPENPMD_WITH_ADIOS2
-#include <iostream>
-#include <unordered_map>
-#include <unordered_set>
+/* Copyright 2017 Fabian Koller
+ *
+ * This file is part of libopenPMD.
+ *
+ * libopenPMD is free software: you can redistribute it and/or modify
+ * it under the terms of of either the GNU General Public License or
+ * the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * libopenPMD is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License and the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * and the GNU Lesser General Public License along with libopenPMD.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+#include "IO/ADIOS/ADIOS2IOHandler.hpp"
 
-#include <adios2.h>
 
-#include <boost/filesystem.hpp>
+#if openPMD_HAVE_ADIOS2
 
-#include <Auxiliary.hpp>
-#include <IO/ADIOS/ADIOS2FilePosition.hpp>
-
-
-class ADIOS2IOHandlerImpl
-{
-public:
-    ADIOS2IOHandlerImpl(ADIOS2IOHandler*);
-    virtual ~ADIOS2IOHandlerImpl();
-
-    std::future< void > flush();
-
-    using ArgumentMap = std::map< std::string, ParameterArgument >;
-    void createFile(Writable*, ArgumentMap const&);
-
-    ADIOS2IOHandler* m_handler;
-    std::unordered_map< Writable*, std::shared_ptr< adios2::Engine > > m_files;
-    std::unordered_set< std::shared_ptr< adios2::Engine > > m_openFiles;
-
-    adios2::ADIOS m_adiosFactory;
-};  //ADIOS2IOHandlerImpl
 
 ADIOS2IOHandler::ADIOS2IOHandler(std::string const& path, AccessType at)
         : AbstractIOHandler(path, at),
@@ -44,123 +38,31 @@ ADIOS2IOHandler::flush()
     return m_impl->flush();
 }
 
-ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(ADIOS2IOHandler* handler)
-        : m_handler{handler},
-          m_adiosFactory(true)
+#endif
+
+#if openPMD_HAVE_ADIOS2 && !openPMD_HAVE_MPI
+ADIOS2IOHandler::ADIOS2IOHandler(std::string const& path, AccessType at)
+        : AbstractIOHandler(path, at),
+          m_impl{new ADIOS2IOHandlerImpl(this)}
 { }
 
-ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
-{
-    for( auto& file : m_openFiles )
-        if( file )
-            file->Close();
-}
+ADIOS2IOHandler::~ADIOS2IOHandler()
+{ }
 
 std::future< void >
-ADIOS2IOHandlerImpl::flush()
+ADIOS2IOHandler::flush()
 {
-    while( !(m_handler->m_work.empty()) )
-    {
-        IOTask& i = m_handler->m_work.front();
-        switch( i.operation )
-        {
-            using O = Operation;
-            case O::CREATE_FILE:
-                createFile(i.writable, i.parameter);
-                break;
-            case O::CREATE_PATH:
-                //createPath(i.writable, i.parameter);
-                //break;
-            case O::CREATE_DATASET:
-                //createDataset(i.writable, i.parameter);
-                //break;
-            case O::OPEN_FILE:
-                //openFile(i.writable, i.parameter);
-                //break;
-            case O::OPEN_PATH:
-                //openPath(i.writable, i.parameter);
-                //break;
-            case O::OPEN_DATASET:
-                //openDataset(i.writable, i.parameter);
-                //break;
-            case O::DELETE_FILE:
-                //deleteFile(i.writable, i.parameter);
-                //break;
-            case O::DELETE_PATH:
-                //deletePath(i.writable, i.parameter);
-                //break;
-            case O::DELETE_DATASET:
-                //deleteDataset(i.writable, i.parameter);
-                //break;
-            case O::DELETE_ATT:
-                //deleteAttribute(i.writable, i.parameter);
-                //break;
-            case O::WRITE_DATASET:
-                //writeDataset(i.writable, i.parameter);
-                //break;
-            case O::WRITE_ATT:
-                //writeAttribute(i.writable, i.parameter);
-                //break;
-            case O::READ_DATASET:
-                //readDataset(i.writable, i.parameter);
-                //break;
-            case O::READ_ATT:
-                //readAttribute(i.writable, i.parameter);
-                //break;
-            case O::LIST_PATHS:
-                //listPaths(i.writable, i.parameter);
-                //break;
-            case O::LIST_DATASETS:
-                //listDatasets(i.writable, i.parameter);
-                //break;
-            case O::LIST_ATTS:
-                //listAttributes(i.writable, i.parameter);
-                std::cerr << "Not implemented in ADIOS2 backend yet\n";
-                break;
-        }
-        m_handler->m_work.pop();
-    }
-    return std::future< void >();
-}
-
-void ADIOS2IOHandlerImpl::createFile(Writable* writable,
-                                     ArgumentMap const& parameters)
-{
-    if( !writable->written )
-    {
-        using namespace boost::filesystem;
-        path dir(m_handler->directory);
-        if( !exists(dir) )
-            create_directories(dir);
-
-        /* Create a new file using MPI properties. */
-        std::string name = m_handler->directory + parameters.at("name").get< std::string >();
-        if( !ends_with(name, ".bp") )
-            name += ".bp";
-        adios2::IO &bpIO = m_adiosFactory.DeclareIO("BPFile_N2N");
-        bpIO.SetEngine("BPFileWriter");
-        auto bpWriter = bpIO.Open(name, adios2::OpenMode::Write);
-
-        if (!bpWriter)
-            throw std::runtime_error("Interal error: Failed to write ADIOS2 file");
-
-        writable->written = true;
-        writable->abstractFilePosition = std::make_shared< ADIOS2FilePosition >();
-
-        m_files.insert({writable, bpWriter});
-        m_openFiles.insert(bpWriter);
-        while( (writable = writable->parent) )
-            m_files.insert({writable, bpWriter});
-    }
+    return m_impl->flush();
 }
 #else
-class ADIOS2IOHandlerImpl
-{ };
-
 ADIOS2IOHandler::ADIOS2IOHandler(std::string const& path, AccessType at)
-        : AbstractIOHandler(path, at)
+#if openPMD_HAVE_MPI
+        : AbstractIOHandler(path, at, MPI_COMM_NULL)
+#else
+: AbstractIOHandler(path, at)
+#endif
 {
-    throw std::runtime_error("libopenPMD built without ADIOS2 support");
+    throw std::runtime_error("libopenPMD built without parallel ADIOS2 support");
 }
 
 ADIOS2IOHandler::~ADIOS2IOHandler()
