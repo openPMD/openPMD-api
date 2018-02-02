@@ -4,9 +4,10 @@ packages:
   openmpi:
     version: [1.6.5]
     paths:
-      openmpi@1.6.5%gcc@4.8.5 arch=linux-ubuntu14-x86_64: /usr
+      openmpi@1.6.5%gcc@4.9.4 arch=linux-ubuntu14-x86_64: /usr
       openmpi@1.6.5%clang@5.0.0 arch=linux-ubuntu14-x86_64: /usr
     buildable: False
   all:
     providers:
       mpi: [openmpi]
+    compiler: [clang@5.0.0, gcc@4.9.4]
