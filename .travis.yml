@@ -8,13 +8,6 @@ cache:
     - $HOME/.cache/spack
   pip: true
 
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages: &common_deps
-      - gfortran
-
 env:
   global:
     - BUILD: ~/buildTmp
@@ -26,40 +19,69 @@ matrix:
   include:
     # Clang 5.0.0
     - env:
+        - openPMD_USE_MPI=OFF openPMD_USE_HDF5=ON openPMD_USE_ADIOS1=OFF openPMD_USE_ADIOS2=OFF
+      compiler: clang
+      addons:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages: &clang50_deps
+            - gfortran-4.9
+      before_install: &clang50_init
+         - COMPILERSPEC="%clang@5.0.0"
+    - env:
         - openPMD_USE_MPI=ON openPMD_USE_HDF5=ON openPMD_USE_ADIOS1=OFF openPMD_USE_ADIOS2=OFF
       compiler: clang
-      addons: &mpi_deps
+      addons:
         apt:
+          sources:
+            - ubuntu-toolchain-r-test
           packages:
-            - *common_deps
+            - *clang50_deps
             - libopenmpi-dev
             - openmpi-bin
+      before_install: *clang50_init
+    # GCC 4.9.4
     - env:
         - openPMD_USE_MPI=OFF openPMD_USE_HDF5=ON openPMD_USE_ADIOS1=OFF openPMD_USE_ADIOS2=OFF
-      compiler: clang
-    # GCC 4.8.5
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages: &gcc49_deps
+            - gfortran-4.9
+            - gcc-4.9
+            - g++-4.9
+      before_install: &gcc49_init
+         - CXX=g++-4.9 && CC=gcc-4.9 && COMPILERSPEC="%gcc@4.9.4"
     - env:
         - openPMD_USE_MPI=ON openPMD_USE_HDF5=ON openPMD_USE_ADIOS1=OFF openPMD_USE_ADIOS2=OFF
       compiler: gcc
-      addons: *mpi_deps
-    - env:
-        - openPMD_USE_MPI=OFF openPMD_USE_HDF5=ON openPMD_USE_ADIOS1=OFF openPMD_USE_ADIOS2=OFF
-      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - *gcc49_deps
+            - libopenmpi-dev
+            - openmpi-bin
+      before_install: *gcc49_init
   allow_failures:
     - compiler: clang
 
 install:
+  # spack install
   - SPACK_FOUND=$(which spack >/dev/null && { echo 0; } || { echo 1; })
   - if [ $SPACK_FOUND -ne 0 ]; then
       mkdir -p $SPACK_ROOT &&
-      git clone --depth 50 https://github.com/spack/spack.git $SPACK_ROOT &&
-      cp $TRAVIS_BUILD_DIR/.travis/spack/*.yaml
-         $SPACK_ROOT/etc/spack/ &&
-      spack bootstrap;
+      git clone --depth 50 https://github.com/spack/spack.git $SPACK_ROOT;
     fi
+  # spack setup
+  - cp $TRAVIS_BUILD_DIR/.travis/spack/*.yaml
+       $SPACK_ROOT/etc/spack/
+  - spack bootstrap
   - source /etc/profile &&
     source $SPACK_ROOT/share/spack/setup-env.sh
-  - COMPILERSPEC="%$CC"
   - SPACK_VAR_MPI="~mpi";
   # required dependencies - CMake 3.10.0 & Boost 1.62.0
   - travis_wait spack install
