@@ -352,7 +352,7 @@ set(openPMD_TEST_NAMES
     Core
     Auxiliary
     SerialIO
-    #ParallelIO
+    ParallelIO
 )
 # examples
 set(openPMD_EXAMPLE_NAMES
