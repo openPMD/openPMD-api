@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
 {
     try
     {
-        Series o = Series::read("../samples/git-sample/data00000100.h5");
+        Series o = Series::read("../samples/git-sample/data00000%T.h5");
 
         {
             double actual[3][3][3] = {{{-1.9080703683727052e-09, -1.5632650729457964e-10, 1.1497536256399599e-09},

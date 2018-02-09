@@ -5,6 +5,11 @@
 
 int main()
 {
+  MPI::Init();
+  {
+    Series o = Series::read("../samples/git-sample/data00000%T.h5", MPI_COMM_WORLD);
+  }
+  MPI::Finalize();
     /*
     Series o = Series("../samples/git-sample/",
                       "data00000400.h5");

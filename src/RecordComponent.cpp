@@ -6,6 +6,7 @@ RecordComponent::RecordComponent()
         : m_constantValue{-1}
 {
     setUnitSI(1);
+    resetDataset(Dataset(Datatype::CHAR, {1}));
 }
 
 RecordComponent&

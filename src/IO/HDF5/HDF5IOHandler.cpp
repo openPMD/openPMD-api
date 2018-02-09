@@ -46,6 +46,7 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(AbstractIOHandler* handler)
           m_H5T_BOOL_ENUM{H5Tenum_create(H5T_NATIVE_INT8)},
           m_handler{handler}
 {
+    ASSERT(m_H5T_BOOL_ENUM >= 0, "Interal error: Failed to create HDF5 enum");
     std::string t{"TRUE"};
     std::string f{"FALSE"};
     int64_t tVal = 1;
@@ -61,22 +62,28 @@ HDF5IOHandlerImpl::~HDF5IOHandlerImpl()
 {
     herr_t status;
     status = H5Tclose(m_H5T_BOOL_ENUM);
-    if( status != 0 )
+    if( status < 0 )
         std::cerr << "Internal error: Failed to close HDF5 enum\n";
     while( !m_openFileIDs.empty() )
     {
         auto file = m_openFileIDs.begin();
         status = H5Fclose(*file);
-        if( status != 0 )
-            std::cerr << "Internal error: Failed to close HDF5 file\n";
+        if( status < 0 )
+            std::cerr << "Internal error: Failed to close HDF5 file (serial)\n";
         m_openFileIDs.erase(file);
     }
-    status = H5Pclose(m_datasetTransferProperty);
-    if( status != 0 )
-        std::cerr <<  "Interal error: Failed to close HDF5 dataset transfer property\n";
-    status = H5Pclose(m_fileAccessProperty);
-    if( status != 0 )
-        std::cerr << "Interal error: Failed to close HDF5 file access property\n";
+    if( m_datasetTransferProperty != H5P_DEFAULT )
+    {
+        status = H5Pclose(m_datasetTransferProperty);
+        if( status < 0 )
+            std::cerr <<  "Interal error: Failed to close HDF5 dataset transfer property\n";
+    }
+    if( m_fileAccessProperty != H5P_DEFAULT )
+    {
+        status = H5Pclose(m_fileAccessProperty);
+        if( status < 0 )
+            std::cerr << "Interal error: Failed to close HDF5 file access property\n";
+    }
 }
 
 std::future< void >
@@ -315,9 +322,11 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
             std::cerr << "Custom transform not yet implemented in HDF5 backend."
                       << std::endl;
 
+        hid_t datatype = getH5DataType(a);
+        ASSERT(datatype >= 0, "Internal error: Failed to get HDF5 datatype during dataset creation");
         hid_t group_id = H5Dcreate(node_id,
                                    name.c_str(),
-                                   getH5DataType(a),
+                                   datatype,
                                    space,
                                    H5P_DEFAULT,
                                    datasetCreationProperty,
@@ -326,6 +335,12 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
 
         status = H5Dclose(group_id);
         ASSERT(status == 0, "Internal error: Failed to close HDF5 dataset during dataset creation");
+        status = H5Tclose(datatype);
+        ASSERT(status == 0, "Internal error: Failed to close HDF5 datatype during dataset creation");
+        status = H5Pclose(datasetCreationProperty);
+        ASSERT(status == 0, "Internal error: Failed to close HDF5 dataset creation property during dataset creation");
+        status = H5Sclose(space);
+        ASSERT(status == 0, "Internal error: Failed to close HDF5 dataset space during dataset creation");
         status = H5Gclose(node_id);
         ASSERT(status == 0, "Internal error: Failed to close HDF5 group during dataset creation");
 
@@ -528,6 +543,10 @@ HDF5IOHandlerImpl::openDataset(Writable* writable,
     *extent = e;
 
     herr_t status;
+    status = H5Sclose(dataset_space);
+    ASSERT(status == 0, "Internal error: Failed to close HDF5 dataset space during dataset opening");
+    status = H5Tclose(dataset_type);
+    ASSERT(status == 0, "Internal error: Failed to close HDF5 dataset type during dataset opening");
     status = H5Dclose(dataset_id);
     ASSERT(status == 0, "Internal error: Failed to close HDF5 dataset during dataset opening");
     status = H5Gclose(node_id);
@@ -725,6 +744,8 @@ HDF5IOHandlerImpl::writeDataset(Writable* writable,
 
     Attribute a(0);
     a.dtype = parameters.at("dtype").get< Datatype >();
+    hid_t dataType = getH5DataType(a);
+    ASSERT(dataType >= 0, "Internal error: Failed to get HDF5 datatype during dataset write");
     switch( a.dtype )
     {
         using DT = Datatype;
@@ -740,7 +761,7 @@ HDF5IOHandlerImpl::writeDataset(Writable* writable,
         case DT::UCHAR:
         case DT::BOOL:
             status = H5Dwrite(dataset_id,
-                              getH5DataType(a),
+                              dataType,
                               memspace,
                               filespace,
                               m_datasetTransferProperty,
@@ -754,6 +775,12 @@ HDF5IOHandlerImpl::writeDataset(Writable* writable,
         default:
             throw std::runtime_error("Datatype not implemented in HDF5 IO");
     }
+    status = H5Tclose(dataType);
+    ASSERT(status == 0, "Internal error: Failed to close dataset datatype during dataset write");
+    status = H5Sclose(filespace);
+    ASSERT(status == 0, "Internal error: Failed to close dataset file space during dataset write");
+    status = H5Sclose(memspace);
+    ASSERT(status == 0, "Internal error: Failed to close dataset memory space during dataset write");
     status = H5Dclose(dataset_id);
     ASSERT(status == 0, "Internal error: Failed to close dataset " + concrete_h5_file_position(writable) + " during dataset write");
 
@@ -775,20 +802,26 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
     std::string name = parameters.at("name").get< std::string >();
     Attribute const att(parameters.at("attribute").get< Attribute::resource >());
     Datatype dtype = parameters.at("dtype").get< Datatype >();
+    herr_t status;
+    hid_t dataType;
+    if( dtype == Datatype::BOOL )
+        dataType = m_H5T_BOOL_ENUM;
+    else
+        dataType = getH5DataType(att);
+    ASSERT(dataType >= 0, "Internal error: Failed to get HDF5 datatype during attribute write");
     if( H5Aexists(node_id, name.c_str()) == 0 )
     {
-        hid_t dataType;
-        if( dtype == Datatype::BOOL )
-            dataType = m_H5T_BOOL_ENUM;
-        else
-            dataType = getH5DataType(att);
+        hid_t dataspace = getH5DataSpace(att);
+        ASSERT(dataspace >= 0, "Internal error: Failed to get HDF5 dataspace during attribute write");
         attribute_id = H5Acreate(node_id,
                                  name.c_str(),
                                  dataType,
-                                 getH5DataSpace(att),
+                                 dataspace,
                                  H5P_DEFAULT,
                                  H5P_DEFAULT);
         ASSERT(node_id >= 0, "Internal error: Failed to create HDF5 attribute during attribute write");
+        status = H5Sclose(dataspace);
+        ASSERT(status == 0, "Internal error: Failed to close HDF5 dataspace during attribute write");
     } else
     {
         attribute_id = H5Aopen(node_id,
@@ -797,134 +830,133 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
         ASSERT(node_id >= 0, "Internal error: Failed to open HDF5 attribute during attribute write");
     }
 
-    herr_t status;
     using DT = Datatype;
     switch( dtype )
     {
         case DT::CHAR:
         {
             char c = att.get< char >();
-            status = H5Awrite(attribute_id, getH5DataType(att), &c);
+            status = H5Awrite(attribute_id, dataType, &c);
             break;
         }
         case DT::UCHAR:
         {
             unsigned char u = att.get< unsigned char >();
-            status = H5Awrite(attribute_id, getH5DataType(att), &u);
+            status = H5Awrite(attribute_id, dataType, &u);
             break;
         }
         case DT::INT16:
         {
             int16_t i = att.get< int16_t >();
-            status = H5Awrite(attribute_id, getH5DataType(att), &i);
+            status = H5Awrite(attribute_id, dataType, &i);
             break;
         }
         case DT::INT32:
         {
             int32_t i = att.get< int32_t >();
-            status = H5Awrite(attribute_id, getH5DataType(att), &i);
+            status = H5Awrite(attribute_id, dataType, &i);
             break;
         }
         case DT::INT64:
         {
             int64_t i = att.get< int64_t >();
-            status = H5Awrite(attribute_id, getH5DataType(att), &i);
+            status = H5Awrite(attribute_id, dataType, &i);
             break;
         }
         case DT::UINT16:
         {
             uint16_t u = att.get< uint16_t >();
-            status = H5Awrite(attribute_id, getH5DataType(att), &u);
+            status = H5Awrite(attribute_id, dataType, &u);
             break;
         }
         case DT::UINT32:
         {
             uint32_t u = att.get< uint32_t >();
-            status = H5Awrite(attribute_id, getH5DataType(att), &u);
+            status = H5Awrite(attribute_id, dataType, &u);
             break;
         }
         case DT::UINT64:
         {
             uint64_t u = att.get< uint64_t >();
-            status = H5Awrite(attribute_id, getH5DataType(att), &u);
+            status = H5Awrite(attribute_id, dataType, &u);
             break;
         }
         case DT::FLOAT:
         {
             float f = att.get< float >();
-            status = H5Awrite(attribute_id, getH5DataType(att), &f);
+            status = H5Awrite(attribute_id, dataType, &f);
             break;
         }
         case DT::DOUBLE:
         {
             double d = att.get< double >();
-            status = H5Awrite(attribute_id, getH5DataType(att), &d);
+            status = H5Awrite(attribute_id, dataType, &d);
             break;
         }
         case DT::LONG_DOUBLE:
         {
             long double d = att.get< long double >();
-            status = H5Awrite(attribute_id, getH5DataType(att), &d);
+            status = H5Awrite(attribute_id, dataType, &d);
             break;
         }
         case DT::STRING:
             status = H5Awrite(attribute_id,
-                              getH5DataType(att),
+                              dataType,
                               att.get< std::string >().c_str());
             break;
         case DT::VEC_CHAR:
             status = H5Awrite(attribute_id,
-                              getH5DataType(att),
+                              dataType,
                               att.get< std::vector< char > >().data());
             break;
         case DT::VEC_INT16:
             status = H5Awrite(attribute_id,
-                              getH5DataType(att),
+                              dataType,
                               att.get< std::vector< int16_t > >().data());
             break;
         case DT::VEC_INT32:
             status = H5Awrite(attribute_id,
-                              getH5DataType(att),
+                              dataType,
                               att.get< std::vector< int32_t > >().data());
             break;
         case DT::VEC_INT64:
             status = H5Awrite(attribute_id,
-                              getH5DataType(att),
+                              dataType,
                               att.get< std::vector< int64_t > >().data());
             break;
         case DT::VEC_UCHAR:
             status = H5Awrite(attribute_id,
-                              getH5DataType(att),
+                              dataType,
                               att.get< std::vector< unsigned char > >().data());
             break;
         case DT::VEC_UINT16:
             status = H5Awrite(attribute_id,
-                              getH5DataType(att),
+                              dataType,
                               att.get< std::vector< uint16_t > >().data());
             break;
         case DT::VEC_UINT32:
             status = H5Awrite(attribute_id,
-                              getH5DataType(att),
+                              dataType,
                               att.get< std::vector< uint32_t > >().data());
             break;
         case DT::VEC_UINT64:
             status = H5Awrite(attribute_id,
-                              getH5DataType(att),
+                              dataType,
                               att.get< std::vector< uint64_t > >().data());
             break;
         case DT::VEC_FLOAT:
             status = H5Awrite(attribute_id,
-                              getH5DataType(att),
+                              dataType,
                               att.get< std::vector< float > >().data());
             break;
         case DT::VEC_DOUBLE:
             status = H5Awrite(attribute_id,
-                              getH5DataType(att),
+                              dataType,
                               att.get< std::vector< double > >().data());
             break;
         case DT::VEC_LONG_DOUBLE:
             status = H5Awrite(attribute_id,
-                              getH5DataType(att),
+                              dataType,
                               att.get< std::vector< long double > >().data());
             break;
         case DT::VEC_STRING:
@@ -936,18 +968,18 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
             std::unique_ptr< char[] > c_str(new char[max_len * vs.size()]);
             for( size_t i = 0; i < vs.size(); ++i )
                 strncpy(c_str.get() + i*max_len, vs[i].c_str(), max_len);
-            status = H5Awrite(attribute_id, getH5DataType(att), c_str.get());
+            status = H5Awrite(attribute_id, dataType, c_str.get());
             break;
         }
         case DT::ARR_DBL_7:
             status = H5Awrite(attribute_id,
-                              getH5DataType(att),
+                              dataType,
                               att.get< std::array< double, 7 > >().data());
             break;
         case DT::BOOL:
         {
             bool b = att.get< bool >();
-            status = H5Awrite(attribute_id, m_H5T_BOOL_ENUM, &b);
+            status = H5Awrite(attribute_id, dataType, &b);
             break;
         }
         case DT::UNDEFINED:
@@ -957,6 +989,12 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
             throw std::runtime_error("Datatype not implemented in HDF5 IO");
     }
     ASSERT(status == 0, "Internal error: Failed to write attribute " + name + " at " + concrete_h5_file_position(writable));
+
+    if( dataType != m_H5T_BOOL_ENUM )
+    {
+        status = H5Tclose(dataType);
+        ASSERT(status == 0, "Internal error: Failed to close HDF5 datatype during Attribute write");
+    }
 
     status = H5Aclose(attribute_id);
     ASSERT(status == 0, "Internal error: Failed to close attribute " + name + " at " + concrete_h5_file_position(writable) + " during attribute write");
@@ -1024,14 +1062,24 @@ HDF5IOHandlerImpl::readDataset(Writable* writable,
         default:
             throw std::runtime_error("Datatype not implemented in HDF5 IO");
     }
+    hid_t dataType = getH5DataType(a);
+    ASSERT(dataType >= 0, "Internal error: Failed to get HDF5 datatype during dataset read");
     status = H5Dread(dataset_id,
-                     getH5DataType(a),
+                     dataType,
                      memspace,
                      filespace,
                      m_datasetTransferProperty,
                      data);
+    ASSERT(status == 0, "Internal error: Failed to read dataset");
 
+    status = H5Tclose(dataType);
+    ASSERT(status == 0, "Internal error: Failed to close dataset datatype during dataset read");
+    status = H5Sclose(filespace);
+    ASSERT(status == 0, "Internal error: Failed to close dataset file space during dataset read");
+    status = H5Sclose(memspace);
+    ASSERT(status == 0, "Internal error: Failed to close dataset memory space during dataset read");
     status = H5Dclose(dataset_id);
+    ASSERT(status == 0, "Internal error: Failed to close dataset during dataset read");
 }
 
 void
@@ -1062,9 +1110,10 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
     std::vector< hsize_t > dims(ndims, 0);
     std::vector< hsize_t > maxdims(ndims, 0);
 
-    H5Sget_simple_extent_dims(attr_space,
-                              dims.data(),
-                              maxdims.data());
+    status = H5Sget_simple_extent_dims(attr_space,
+                                       dims.data(),
+                                       maxdims.data());
+    ASSERT(status == ndims, "Internal error: Failed to get dimensions during attribute read");
 
     H5S_class_t attr_class = H5Sget_simple_extent_type(attr_space);
     Attribute a(0);
@@ -1298,6 +1347,11 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
     } else
         throw std::runtime_error("Unsupported attribute class");
     ASSERT(status == 0, "Internal error: Failed to read attribute " + attr_name + " at " + concrete_h5_file_position(writable));
+
+    status = H5Tclose(attr_type);
+    ASSERT(status == 0, "Internal error: Failed to close attribute datatype during attribute read");
+    status = H5Sclose(attr_space);
+    ASSERT(status == 0, "Internal error: Failed to close attribute file space during attribute read");
 
     auto dtype = parameters.at("dtype").get< std::shared_ptr< Datatype > >();
     *dtype = a.dtype;
