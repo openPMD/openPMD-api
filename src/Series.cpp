@@ -681,7 +681,7 @@ Series::read()
 {
     Parameter< Operation::OPEN_PATH > pOpen;
     std::string version = openPMD();
-    if( version == "1.0.0" || version == "1.0.1" )
+    if( version == "1.0.0" || version == "1.0.1" || version == "1.1.0" )
         pOpen.path = replace_first(basePath(), "/%T/", "");
     else
         throw std::runtime_error("Unknown openPMD version - " + version);
