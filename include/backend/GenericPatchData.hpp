@@ -43,7 +43,7 @@ GenericPatchData&
 GenericPatchData::operator=(T t)
 {
     static_assert(std::is_arithmetic< T >::value, "Only arithmetic types may be saved as patch data.\n");
-    Datatype d = determineDatatype< T >();
+    // Datatype d = determineDatatype< T >();
     m_data = variadic_t(t);
     return *this;
 }
