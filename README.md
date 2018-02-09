@@ -28,7 +28,7 @@ Initial backends will include ADIOS and HDF5.
 auto s = openPMD::Series("output_files/");
 
 std::cout << "Read iterations...";
-for( auto const& i : o.iterations )
+for( auto const& i : s.iterations )
 {
     // mesh records
     for( auto const& m : i.second.meshes )
@@ -79,6 +79,8 @@ while those can be build either with or without:
 [![Spack Package](https://img.shields.io/badge/spack.io-notyet-yellow.svg)](https://spack.io)
 [![Conda Package](https://img.shields.io/badge/conda.io-notyet-yellow.svg)](https://conda.io)
 
+Choose *one* of the install methods below to get started:
+
 ### Spack
 
 *not yet implemented*
@@ -123,7 +125,20 @@ The following options can be added to the `cmake` call to control features:
 | openPMD_USE_ADIOS1 | **AUTO**/ON/OFF  | Enable support for ADIOS1 |
 | openPMD_USE_ADIOS2 | AUTO/ON/**OFF**  | Enable support for ADIOS2 |
 
+By default, this will build as a static library (`libopenPMD.a`) and installs also its headers.
+In order to build a static library, append `-DBUILD_SHARED_LIBS=ON` to the `cmake` command.
+You can only build a static or a shared library at a time.
+
+By default, the `Release` version is built.
+In order to build with debug symbols, pass `-DCMAKE_BUILD_TYPE=Debug` to your `cmake` command.
+
 ## Linking to your project
+
+The install will contain header files and libraries in the path set with `-DCMAKE_INSTALL_PREFIX`.
+
+### CMake
+
+If your project is using CMake for its build, one can conveniently use our provided `Config.cmake` package which is installed alongside the library.
 
 First set the following environment hint if openPMD-api was *not* installed in a system path:
 
@@ -138,6 +153,6 @@ Use the following lines in your projects `CMakeLists.txt`:
 find_package(openPMD 0.1.0 CONFIG)
 
 if(openPMD_FOUND)
-  target_link_libraries(YourTarget PRIVATE openPMD::openPMD)
-endif(openPMD_FOUND)
+    target_link_libraries(YourTarget PRIVATE openPMD::openPMD)
+endif()
 ```

@@ -45,8 +45,8 @@ openpmd_option(ADIOS2 "Enable ADIOS2 support" OFF)
 
 set(CMAKE_CONFIGURATION_TYPES "Release;Debug;MinSizeRel;RelWithDebInfo")
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Debug" CACHE STRING
-        "Choose the build type, e.g. Debug." FORCE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+        "Choose the build type, e.g. Release or Debug." FORCE)
 endif()
 if (CMAKE_BUILD_TYPE STREQUAL Debug)
     # TODO: add directly to targets
