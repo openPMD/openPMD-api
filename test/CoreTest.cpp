@@ -119,7 +119,6 @@ BOOST_AUTO_TEST_CASE(output_constructor_test)
 
 BOOST_AUTO_TEST_CASE(output_modification_test)
 {
-    using IE = IterationEncoding;
     Series o = Series::create("./MyOutput_%T.dummy");
 
     o.setOpenPMD("1.0.0");
@@ -145,7 +144,6 @@ BOOST_AUTO_TEST_CASE(output_modification_test)
 
 BOOST_AUTO_TEST_CASE(iteration_default_test)
 {
-    using IE = IterationEncoding;
     Series o = Series::create("./MyOutput_%T.dummy");
 
     Iteration& i = o.iterations[42];
@@ -160,7 +158,6 @@ BOOST_AUTO_TEST_CASE(iteration_default_test)
 
 BOOST_AUTO_TEST_CASE(iteration_modification_test)
 {
-    using IE = IterationEncoding;
     Series o = Series::create("./MyOutput_%T.dummy");
 
     Iteration& i = o.iterations[42];
@@ -179,7 +176,6 @@ BOOST_AUTO_TEST_CASE(iteration_modification_test)
 
 BOOST_AUTO_TEST_CASE(particleSpecies_modification_test)
 {
-    using IE = IterationEncoding;
     Series o = Series::create("./MyOutput_%T.dummy");
 
     auto& particles = o.iterations[42].particles;
@@ -218,7 +214,6 @@ BOOST_AUTO_TEST_CASE(particleSpecies_modification_test)
 
 BOOST_AUTO_TEST_CASE(record_constructor_test)
 {
-    using IE = IterationEncoding;
     Series o = Series::create("./MyOutput_%T.dummy");
 
     Record& r = o.iterations[42].particles["species"]["record"];
@@ -237,7 +232,6 @@ BOOST_AUTO_TEST_CASE(record_constructor_test)
 
 BOOST_AUTO_TEST_CASE(record_modification_test)
 {
-    using IE = IterationEncoding;
     Series o = Series::create("./MyOutput_%T.dummy");
 
     Record& r = o.iterations[42].particles["species"]["record"];
@@ -262,7 +256,6 @@ BOOST_AUTO_TEST_CASE(record_modification_test)
 
 BOOST_AUTO_TEST_CASE(recordComponent_modification_test)
 {
-    using IE = IterationEncoding;
     Series o = Series::create("./MyOutput_%T.dummy");
 
     Record& r = o.iterations[42].particles["species"]["record"];
@@ -281,7 +274,6 @@ BOOST_AUTO_TEST_CASE(recordComponent_modification_test)
 
 BOOST_AUTO_TEST_CASE(mesh_constructor_test)
 {
-    using IE = IterationEncoding;
     Series o = Series::create("./MyOutput_%T.dummy");
 
     Mesh &m = o.iterations[42].meshes["E"];
@@ -310,7 +302,6 @@ BOOST_AUTO_TEST_CASE(mesh_constructor_test)
 
 BOOST_AUTO_TEST_CASE(mesh_modification_test)
 {
-    using IE = IterationEncoding;
     Series o = Series::create("./MyOutput_%T.dummy");
 
     Mesh &m = o.iterations[42].meshes["E"];
