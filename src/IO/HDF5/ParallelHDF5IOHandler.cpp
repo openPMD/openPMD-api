@@ -57,7 +57,7 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(AbstractIOHandler* handler,
                                                      MPI_Comm comm)
         : HDF5IOHandlerImpl{handler},
           m_mpiComm{comm},
-          m_mpiInfo{MPI_INFO_ENV}
+          m_mpiInfo{MPI_INFO_NULL} /* MPI 3.0+: MPI_INFO_ENV */
 {
     m_datasetTransferProperty = H5Pcreate(H5P_DATASET_XFER);
     m_fileAccessProperty = H5Pcreate(H5P_FILE_ACCESS);
