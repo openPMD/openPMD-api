@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_attribute_test)
         BOOST_TEST(charge.size() == 1);
         BOOST_TEST(charge.count(RecordComponent::SCALAR) == 1);
 
-        e = {85000};
+        e = {85625};
         RecordComponent& charge_scalar = charge[RecordComponent::SCALAR];
         BOOST_TEST(charge_scalar.unitSI() == 1.0);
         BOOST_TEST(charge_scalar.getDatatype() == Datatype::DOUBLE);
