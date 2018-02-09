@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_attribute_test)
     {
         Series o = Series::read("../samples/git-sample/data00000100.h5");
 
-        BOOST_TEST(o.openPMD() == "1.0.0");
+        BOOST_TEST(o.openPMD() == "1.1.0");
         BOOST_TEST(o.openPMDextension() == 1);
         BOOST_TEST(o.basePath() == "/data/%T/");
         BOOST_TEST(o.meshesPath() == "fields/");
