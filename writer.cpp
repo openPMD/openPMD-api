@@ -130,14 +130,15 @@ write2()
 
     ParticleSpecies& electrons = cur_it.particles["electrons"];
 
+    Extent mpiDims{4};
     std::shared_ptr< float > partial_particlePos(new float[2], [](float *p){ delete[] p; p = nullptr; });
     dtype = determineDatatype(partial_particlePos);
-    d = Dataset(dtype, Extent{2});
+    d = Dataset(dtype, mpiDims);
     electrons["position"]["x"].resetDataset(d);
 
     std::shared_ptr< uint64_t > partial_particleOff(new uint64_t[2], [](uint64_t *p){ delete[] p; p = nullptr; });
     dtype = determineDatatype(partial_particleOff);
-    d = Dataset(dtype, Extent{2});
+    d = Dataset(dtype, mpiDims);
     electrons["positionOffset"]["x"].resetDataset(d);
 
     electrons.particlePatches["offset"].setUnitDimension({{UnitDimension::L, 1}});

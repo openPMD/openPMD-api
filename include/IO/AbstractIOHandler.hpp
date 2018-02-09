@@ -124,7 +124,7 @@ class DummyIOHandler : public AbstractIOHandler
 {
 public:
     DummyIOHandler(std::string const&, AccessType);
-    ~DummyIOHandler();
+    virtual ~DummyIOHandler();
 
     /** No-op consistent with the IOHandler interface to enable library use without IO.
      */
