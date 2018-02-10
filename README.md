@@ -1,11 +1,12 @@
 openPMD - API for Developers
 ============================
 
+[![Supported openPMD Standard](https://img.shields.io/badge/openPMD-1.0.0--1.1.0-blue.svg)](https://github.com/openPMD/openPMD-standard/releases)
 [![Code Status dev](https://img.shields.io/travis/ComputationalRadiationPhysics/libopenPMD/dev.svg?label=dev)](https://travis-ci.org/ComputationalRadiationPhysics/libopenPMD/branches)
 [![Language](https://img.shields.io/badge/language-C%2B%2B11-orange.svg)](https://isocpp.org/)
 [![Language](https://img.shields.io/badge/language-Python3-orange.svg)](https://www.python.org/)
 ![Development Phase](https://img.shields.io/badge/phase-unstable-yellow.svg)
-[![License](https://img.shields.io/badge/license-LGPLv3-blue.svg?label=openPMD-api)](https://www.gnu.org/licenses/lgpl-3.0.html)
+[![License](https://img.shields.io/badge/license-LGPLv3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0.html)
 
 This is project is in development.
 
