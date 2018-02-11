@@ -306,3 +306,17 @@ template
 double Iteration::dt< double >() const;
 template
 long double Iteration::dt< long double >() const;
+
+template
+Iteration& Iteration::setTime< float >(float time);
+template
+Iteration& Iteration::setTime< double >(double time);
+template
+Iteration& Iteration::setTime< long double >(long double time);
+
+template
+Iteration& Iteration::setDt< float >(float dt);
+template
+Iteration& Iteration::setDt< double >(double dt);
+template
+Iteration& Iteration::setDt< long double >(long double dt);
