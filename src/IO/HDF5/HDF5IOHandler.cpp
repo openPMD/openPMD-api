@@ -62,7 +62,6 @@ HDF5IOHandlerImpl::~HDF5IOHandlerImpl()
 {
     herr_t status;
     status = H5Tclose(m_H5T_BOOL_ENUM);
-    ASSERT(status == 0, "Internal error: Failed to insert close HDF5 enum");
     if( status < 0 )
         std::cerr << "Internal error: Failed to close HDF5 enum\n";
     while( !m_openFileIDs.empty() )
