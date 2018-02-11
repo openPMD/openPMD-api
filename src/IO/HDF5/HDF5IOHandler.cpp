@@ -46,23 +46,23 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(AbstractIOHandler* handler)
           m_H5T_BOOL_ENUM{H5Tenum_create(H5T_NATIVE_INT8)},
           m_handler{handler}
 {
-    ASSERT(m_H5T_BOOL_ENUM >= 0, "Interal error: Failed to create HDF5 enum");
+    ASSERT(m_H5T_BOOL_ENUM >= 0, "Internal error: Failed to create HDF5 enum");
     std::string t{"TRUE"};
     std::string f{"FALSE"};
     int64_t tVal = 1;
     int64_t fVal = 0;
     herr_t status;
     status = H5Tenum_insert(m_H5T_BOOL_ENUM, t.c_str(), &tVal);
-    ASSERT(status == 0, "Interal error: Failed to insert into HDF5 enum");
+    ASSERT(status == 0, "Internal error: Failed to insert into HDF5 enum");
     status = H5Tenum_insert(m_H5T_BOOL_ENUM, f.c_str(), &fVal);
-    ASSERT(status == 0, "Interal error: Failed to insert into HDF5 enum");
+    ASSERT(status == 0, "Internal error: Failed to insert into HDF5 enum");
 }
 
 HDF5IOHandlerImpl::~HDF5IOHandlerImpl()
 {
     herr_t status;
     status = H5Tclose(m_H5T_BOOL_ENUM);
-    ASSERT(status == 0, "Interal error: Failed to insert close HDF5 enum");
+    ASSERT(status == 0, "Internal error: Failed to insert close HDF5 enum");
     if( status < 0 )
         std::cerr << "Internal error: Failed to close HDF5 enum\n";
     while( !m_openFileIDs.empty() )
@@ -77,13 +77,13 @@ HDF5IOHandlerImpl::~HDF5IOHandlerImpl()
     {
         status = H5Pclose(m_datasetTransferProperty);
         if( status < 0 )
-            std::cerr <<  "Interal error: Failed to close HDF5 dataset transfer property\n";
+            std::cerr <<  "Internal error: Failed to close HDF5 dataset transfer property\n";
     }
     if( m_fileAccessProperty != H5P_DEFAULT )
     {
         status = H5Pclose(m_fileAccessProperty);
         if( status < 0 )
-            std::cerr << "Interal error: Failed to close HDF5 file access property\n";
+            std::cerr << "Internal error: Failed to close HDF5 file access property\n";
     }
 }
 
@@ -570,7 +570,7 @@ HDF5IOHandlerImpl::deleteFile(Writable* writable,
     {
         hid_t file_id = m_fileIDs[writable];
         herr_t status = H5Fclose(file_id);
-        ASSERT(status == 0, "Interal error: Failed to close HDF5 file during file deletion");
+        ASSERT(status == 0, "Internal error: Failed to close HDF5 file during file deletion");
 
         std::string name = m_handler->directory + parameters.at("name").get< std::string >();
         if( !ends_with(name, ".h5") )

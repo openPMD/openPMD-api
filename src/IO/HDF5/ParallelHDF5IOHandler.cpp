@@ -63,9 +63,9 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(AbstractIOHandler* handler,
     m_fileAccessProperty = H5Pcreate(H5P_FILE_ACCESS);
     herr_t status;
     status = H5Pset_dxpl_mpio(m_datasetTransferProperty, H5FD_MPIO_COLLECTIVE);
-    ASSERT(status >= 0, "Interal error: Failed to set HDF5 dataset transfer property");
+    ASSERT(status >= 0, "Internal error: Failed to set HDF5 dataset transfer property");
     status = H5Pset_fapl_mpio(m_fileAccessProperty, m_mpiComm, m_mpiInfo);
-    ASSERT(status >= 0, "Interal error: Failed to set HDF5 file access property");
+    ASSERT(status >= 0, "Internal error: Failed to set HDF5 file access property");
 }
 
 ParallelHDF5IOHandlerImpl::~ParallelHDF5IOHandlerImpl()
