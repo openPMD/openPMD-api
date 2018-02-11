@@ -36,7 +36,7 @@
 #ifdef DEBUG
 #define ASSERT(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error(std::string((TEXT))); }
 #else
-#define ASSERT(CONDITION, TEXT) { }
+#define ASSERT(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
 #endif
 
 
@@ -62,6 +62,7 @@ HDF5IOHandlerImpl::~HDF5IOHandlerImpl()
 {
     herr_t status;
     status = H5Tclose(m_H5T_BOOL_ENUM);
+    ASSERT(status == 0, "Interal error: Failed to insert close HDF5 enum");
     if( status < 0 )
         std::cerr << "Internal error: Failed to close HDF5 enum\n";
     while( !m_openFileIDs.empty() )
