@@ -68,7 +68,7 @@ enum class Operation
 /** @brief Typesafe description of all required Arguments for a specified Operation.
  *
  * @note    Input operations (i.e. ones that transfer data from persistent files
- *          to logical representations in libopenPMD) use shared pointers to
+ *          to logical representations in openPMD-api) use shared pointers to
  *          indicate shared ownership of the resource. The pointer will only be
  *          valid after the Operation has completed.
  * @tparam  Operation   Type of Operation to be executed.
@@ -221,7 +221,7 @@ structToMap(Parameter< o > const&);
  * 1) the parameters to
  * 2) a single atomic file Operation on the
  * 3) concrete Writable object corresponding to both a local representation in
- *    libopenPMD and a persistent object in a file on disk
+ *    openPMD-api and a persistent object in a file on disk
  */
 class IOTask
 {

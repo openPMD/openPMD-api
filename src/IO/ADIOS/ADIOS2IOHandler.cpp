@@ -1,21 +1,21 @@
 /* Copyright 2017 Fabian Koller
  *
- * This file is part of libopenPMD.
+ * This file is part of openPMD-api.
  *
- * libopenPMD is free software: you can redistribute it and/or modify
+ * openPMD-api is free software: you can redistribute it and/or modify
  * it under the terms of of either the GNU General Public License or
  * the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * libopenPMD is distributed in the hope that it will be useful,
+ * openPMD-api is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License and the GNU Lesser General Public License
  * for more details.
  *
  * You should have received a copy of the GNU General Public License
- * and the GNU Lesser General Public License along with libopenPMD.
+ * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "IO/ADIOS/ADIOS2IOHandler.hpp"
@@ -62,7 +62,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(std::string const& path, AccessType at)
 : AbstractIOHandler(path, at)
 #endif
 {
-    throw std::runtime_error("libopenPMD built without parallel ADIOS2 support");
+    throw std::runtime_error("openPMD-api built without parallel ADIOS2 support");
 }
 
 ADIOS2IOHandler::~ADIOS2IOHandler()

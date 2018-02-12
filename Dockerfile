@@ -4,8 +4,8 @@ MAINTAINER Fabian Koller <f.koller@hzdr.de>
 RUN        useradd test
 
 ENV        HOME /home/test
-ADD        . $HOME/src/libopenPMD
-ENV        CACHE $HOME/src/libopenPMD/.cache
+ADD        . $HOME/src/openPMD-api
+ENV        CACHE $HOME/src/openPMD-api/.cache
 ENV        DEBIAN_FRONTEND noninteractive
 
 
@@ -27,18 +27,18 @@ RUN        apt-get -qq update \
               wget \
            && rm -rf /var/lib/apt/lists/*
 
-RUN         cd $HOME/src/libopenPMD/ \
+RUN         cd $HOME/src/openPMD-api/ \
             && chmod +x scripts/travis/cache_ci_dependencies.sh \
             && scripts/travis/cache_ci_dependencies.sh
 
 # obtain sample data
-RUN        if [ ! -d $HOME/src/libopenPMD/samples/git-sample/ ]; then \
-               mkdir -p $HOME/src/libopenPMD/samples/git-sample/; \
-               cd $HOME/src/libopenPMD/samples/git-sample/; \
+RUN        if [ ! -d $HOME/src/openPMD-api/samples/git-sample/ ]; then \
+               mkdir -p $HOME/src/openPMD-api/samples/git-sample/; \
+               cd $HOME/src/openPMD-api/samples/git-sample/; \
                wget -nv https://github.com/openPMD/openPMD-example-datasets/raw/draft/example-3d.tar.gz; \
                tar -xf example-3d.tar.gz; \
-               cp example-3d/hdf5/* $HOME/src/libopenPMD/samples/git-sample/; \
-               chmod 777 $HOME/src/libopenPMD/samples/; \
+               cp example-3d/hdf5/* $HOME/src/openPMD-api/samples/git-sample/; \
+               chmod 777 $HOME/src/openPMD-api/samples/; \
                rm -rf example-3d.* example-3d; \
            fi
 
@@ -73,14 +73,14 @@ RUN        cd $CACHE/ADIOS2/v2.${ADIOS2_MINOR}.${ADIOS2_PATCH} \
            && make install -j4
 
 # build
-RUN        cd $HOME/src/libopenPMD \
+RUN        cd $HOME/src/openPMD-api \
            && rm -rf CMakeCache.txt CMakeFiles/ cmake_install.cmake Makefile \
            && mkdir -p build \
            && cd build \
            && rm -rf ../build/* \
-           && cmake $HOME/src/libopenPMD \
+           && cmake $HOME/src/openPMD-api \
            && make -j4
 
 # run tests
-RUN        chown test -R $HOME/src/libopenPMD/build \
-           && runuser -l test -c 'cd $HOME/src/libopenPMD/build && CTEST_OUTPUT_ON_FAILURE=1 make test'
+RUN        chown test -R $HOME/src/openPMD-api/build \
+           && runuser -l test -c 'cd $HOME/src/openPMD-api/build && CTEST_OUTPUT_ON_FAILURE=1 make test'

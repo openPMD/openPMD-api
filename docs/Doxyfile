@@ -1,4 +1,4 @@
-PROJECT_NAME      = "libopenPMD"
+PROJECT_NAME      = "openPMD-api"
 XML_OUTPUT        = xml
 INPUT             = ../
 GENERATE_LATEX    = NO
