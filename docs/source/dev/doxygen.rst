@@ -5,8 +5,23 @@ Doxygen
 
 .. sectionauthor:: Axel Huebl
 
-Although our main documentation is integrated via :ref:`Sphinx <development-sphinx>`, some developers might still want to read the plain HTML build of Doxygen.
-If you need these docs, this section explains how to build it locally.
+An online version of our Doxygen build can be found at
+
+http://www.openPMD.org/openPMD-api/
+
+We usually update it via
+
+.. code-block:: bash
+
+   git checkout gh-pages
+
+   # optional argument: branch or tag name
+   ./update.sh
+
+   git commit
+   git push
+
+This section explains what is done when this script is run to build it manually.
 
 Requirements
 ------------
