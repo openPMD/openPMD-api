@@ -3,12 +3,14 @@
 First Steps
 ===========
 
+For brevity, all following examples assume the following includes/imports:
+
 C++11
 -----
 
 .. code-block:: cpp
 
-   #include <libopenPMD/openPMD.hpp>
+   #include <openPMD/openPMD.hpp>
 
    // ...
 
