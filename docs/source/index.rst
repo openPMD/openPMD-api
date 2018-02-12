@@ -10,7 +10,7 @@ Implemented (and planned) backends include HDF5 and ADIOS.
 .. attention::
 
    This library is just getting started.
-   Please stay tuned for updates and contact us on GitHub if you want to try it.
+   Please stay tuned for updates and contact us on `GitHub <https://github.com/openPMD/openPMD-api/issues>`_ if you want to try it.
 
 .. raw:: html
 
