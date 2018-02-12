@@ -110,7 +110,10 @@ git clone https://github.com/ComputationalRadiationPhysics/libopenPMD.git
 mkdir -p openPMD-api-build
 cd openPMD-api-build
 
-# for own install prefix append: -DCMAKE_INSTALL_PREFIX=$HOME/somepath
+# for own install prefix append:
+#   -DCMAKE_INSTALL_PREFIX=$HOME/somepath
+# for options append:
+#   -DopenPMD_USE_...=...
 cmake ../libopenPMD
 
 make -j
@@ -122,7 +125,8 @@ make test
 sudo make install
 ```
 
-The following options can be added to the `cmake` call to control features:
+The following options can be added to the `cmake` call to control features.
+CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 
 | CMake Option       | Values           | Description                            |
 |--------------------|------------------|----------------------------------------|
