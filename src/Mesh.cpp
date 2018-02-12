@@ -31,9 +31,9 @@ Mesh::Mesh()
     setGeometry(Geometry::cartesian);
     setDataOrder(DataOrder::C);
 
-    setAxisLabels({""});
-    setGridSpacing(std::vector< double >{1});
-    setGridGlobalOffset({0});
+    setAxisLabels({"x", "y", "z"});
+    setGridSpacing(std::vector< double >{1, 1, 1});
+    setGridGlobalOffset({0, 0, 0});
     setGridUnitSI(1);
 }
 

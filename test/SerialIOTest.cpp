@@ -12,7 +12,7 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_structure_test)
 {
     try
     {
-        Series o = Series::read("../samples/git-sample/data00000100.h5");
+        Series o = Series::read("../samples/git-sample/data%T.h5");
 
         BOOST_TEST(!o.parent);
         BOOST_TEST(o.iterations.parent == static_cast< Writable* >(&o));
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_attribute_test)
 {
     try
     {
-        Series o = Series::read("../samples/git-sample/data00000100.h5");
+        Series o = Series::read("../samples/git-sample/data%T.h5");
 
         BOOST_TEST(o.openPMD() == "1.1.0");
         BOOST_TEST(o.openPMDextension() == 1);
@@ -64,9 +64,9 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_attribute_test)
         BOOST_TEST(o.particlesPath() == "particles/");
         BOOST_TEST(o.iterationEncoding() == IterationEncoding::fileBased);
         BOOST_TEST(o.iterationFormat() == "data%T.h5");
-        BOOST_TEST(o.name() == "data00000100");
+        BOOST_TEST(o.name() == "data%T");
 
-        BOOST_TEST(o.iterations.size() == 1);
+        BOOST_TEST(o.iterations.size() == 5);
         BOOST_TEST(o.iterations.count(100) == 1);
 
         Iteration& iteration_100 = o.iterations[100];
@@ -945,6 +945,61 @@ BOOST_AUTO_TEST_CASE(hdf5_deletion_test)
 
     e.erase("deletion_scalar_constant");
     o.flush();
+}
+
+BOOST_AUTO_TEST_CASE(hdf5_110_optional_paths)
+{
+    try
+    {
+        {
+            Series s = Series::read("../samples/issue-sample/no_fields/data%T.h5");
+            auto attrs = s.attributes();
+            BOOST_TEST(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
+            BOOST_TEST(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
+            BOOST_TEST(s.iterations[400].meshes.size() == 0);
+            BOOST_TEST(s.iterations[400].particles.size() == 1);
+        }
+
+        {
+            Series s = Series::read("../samples/issue-sample/no_particles/data%T.h5");
+            auto attrs = s.attributes();
+            BOOST_TEST(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
+            BOOST_TEST(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
+            BOOST_TEST(s.iterations[400].meshes.size() == 2);
+            BOOST_TEST(s.iterations[400].particles.size() == 0);
+        }
+    } catch (no_such_file_error& e)
+    {
+        std::cerr << "issue sample not accessible. (" << e.what() << ")\n";
+    }
+
+    {
+        Series s = Series::create("../samples/no_meshes_1.1.0_compliant.h5");
+        s.iterations[1].particles["foo"];
+    }
+
+    {
+        Series s = Series::create("../samples/no_particles_1.1.0_compliant.h5");
+        s.iterations[1].meshes["foo"];
+    }
+
+    {
+        Series s = Series::read("../samples/no_meshes_1.1.0_compliant.h5");
+        auto attrs = s.attributes();
+        BOOST_TEST(std::count(attrs.begin(), attrs.end(), "meshesPath") == 0);
+        BOOST_TEST(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
+        BOOST_TEST(s.iterations[1].meshes.size() == 0);
+        BOOST_TEST(s.iterations[1].particles.size() == 1);
+    }
+
+    {
+        Series s = Series::read("../samples/no_particles_1.1.0_compliant.h5");
+        auto attrs = s.attributes();
+        BOOST_TEST(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
+        BOOST_TEST(std::count(attrs.begin(), attrs.end(), "particlesPath") == 0);
+        BOOST_TEST(s.iterations[1].meshes.size() == 1);
+        BOOST_TEST(s.iterations[1].particles.size() == 0);
+    }
 }
 #else
 BOOST_AUTO_TEST_CASE(no_serial_hdf5)

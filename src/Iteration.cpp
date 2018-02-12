@@ -85,16 +85,16 @@ Iteration::flushFileBased(uint64_t i)
     if( !written )
     {
         /* create file */
-        Series* o = dynamic_cast<Series *>(parent->parent);
+        Series* s = dynamic_cast<Series *>(parent->parent);
         Parameter< Operation::CREATE_FILE > fCreate;
-        fCreate.name = replace_first(o->iterationFormat(), "%T", std::to_string(i));
-        IOHandler->enqueue(IOTask(o, fCreate));
+        fCreate.name = replace_first(s->iterationFormat(), "%T", std::to_string(i));
+        IOHandler->enqueue(IOTask(s, fCreate));
         IOHandler->flush();
 
         /* create basePath */
         Parameter< Operation::CREATE_PATH > pCreate;
-        pCreate.path = replace_first(o->basePath(), "%T/", "");
-        IOHandler->enqueue(IOTask(&o->iterations, pCreate));
+        pCreate.path = replace_first(s->basePath(), "%T/", "");
+        IOHandler->enqueue(IOTask(&s->iterations, pCreate));
         IOHandler->flush();
 
         /* create iteration path */
@@ -104,16 +104,16 @@ Iteration::flushFileBased(uint64_t i)
     } else
     {
         /* open file */
-        Series* o = dynamic_cast<Series *>(parent->parent);
+        Series* s = dynamic_cast<Series *>(parent->parent);
         Parameter< Operation::OPEN_FILE > fOpen;
-        fOpen.name = replace_last(o->iterationFormat(), "%T", std::to_string(i));
-        IOHandler->enqueue(IOTask(o, fOpen));
+        fOpen.name = replace_last(s->iterationFormat(), "%T", std::to_string(i));
+        IOHandler->enqueue(IOTask(s, fOpen));
         IOHandler->flush();
 
         /* open basePath */
         Parameter< Operation::OPEN_PATH > pOpen;
-        pOpen.path = replace_first(o->basePath(), "%T/", "");
-        IOHandler->enqueue(IOTask(&o->iterations, pOpen));
+        pOpen.path = replace_first(s->basePath(), "%T/", "");
+        IOHandler->enqueue(IOTask(&s->iterations, pOpen));
         IOHandler->flush();
 
         /* open iteration path */
@@ -148,15 +148,25 @@ Iteration::flush()
     Writable *w = this;
     while( w->parent )
         w = w->parent;
-    Series* o = dynamic_cast<Series *>(w);
+    Series* s = dynamic_cast<Series *>(w);
 
-    meshes.flush(o->meshesPath());
-    for( auto& m : meshes )
-        m.second.flush(m.first);
+    if( !meshes.empty() )
+    {
+        s->m_hasMeshes = true;
+        s->flushMeshesPath();
+        meshes.flush(s->meshesPath());
+        for( auto& m : meshes )
+            m.second.flush(m.first);
+    }
 
-    particles.flush(o->particlesPath());
-    for( auto& species : particles )
-        species.second.flush(species.first);
+    if( !particles.empty() )
+    {
+        s->m_hasParticles = true;
+        s->flushParticlesPath();
+        particles.flush(s->particlesPath());
+        for( auto& species : particles )
+            species.second.flush(species.first);
+    }
 
     flushAttributes();
 }
@@ -203,85 +213,113 @@ Iteration::read()
     Writable *w = this;
     while( w->parent )
         w = w->parent;
-    Series* o = dynamic_cast<Series *>(w);
+    Series* s = dynamic_cast<Series *>(w);
 
-    meshes.clear_unchecked();
-    Parameter< Operation::OPEN_PATH > pOpen;
-    pOpen.path = o->meshesPath();
-    IOHandler->enqueue(IOTask(&meshes, pOpen));
-    IOHandler->flush();
-
-    meshes.readAttributes();
-
-    /* obtain all non-scalar meshes */
     Parameter< Operation::LIST_PATHS > pList;
-    IOHandler->enqueue(IOTask(&meshes, pList));
-    IOHandler->flush();
-
-    Parameter< Operation::LIST_ATTS > aList;
-    for( auto const& mesh_name : *pList.paths )
+    std::string version = s->openPMD();
+    bool hasMeshes = false;
+    bool hasParticles = false;
+    if( version == "1.0.0" || version == "1.0.1" )
     {
-        Mesh& m = meshes[mesh_name];
-        pOpen.path = mesh_name;
-        aList.attributes->clear();
-        IOHandler->enqueue(IOTask(&m, pOpen));
-        IOHandler->enqueue(IOTask(&m, aList));
+        IOHandler->enqueue(IOTask(&meshes, pList));
+        IOHandler->flush();
+        hasMeshes = (std::count(pList.paths->begin(),
+                                pList.paths->end(),
+                                replace_last(s->meshesPath(), "/", "")) == 1);
+        hasParticles = (std::count(pList.paths->begin(),
+                                   pList.paths->end(),
+                                   replace_last(s->particlesPath(), "/", "")) == 1);
+        pList.paths->clear();
+    } else
+    {
+        auto attrs = s->attributes();
+        hasMeshes = s->m_hasMeshes;
+        hasParticles = s->m_hasParticles;
+    }
+
+    if( hasMeshes )
+    {
+        meshes.clear_unchecked();
+        Parameter< Operation::OPEN_PATH > pOpen;
+        pOpen.path = s->meshesPath();
+        IOHandler->enqueue(IOTask(&meshes, pOpen));
         IOHandler->flush();
 
-        auto begin = aList.attributes->begin();
-        auto end = aList.attributes->end();
-        auto value = std::find(begin, end, "value");
-        auto shape = std::find(begin, end, "shape");
-        if( value != end && shape != end )
+        meshes.readAttributes();
+
+        /* obtain all non-scalar meshes */
+        IOHandler->enqueue(IOTask(&meshes, pList));
+        IOHandler->flush();
+
+        Parameter< Operation::LIST_ATTS > aList;
+        for( auto const& mesh_name : *pList.paths )
         {
-            MeshRecordComponent& mrc = m[MeshRecordComponent::SCALAR];
-            mrc.m_isConstant = true;
-            mrc.parent = m.parent;
-            mrc.abstractFilePosition = m.abstractFilePosition;
+            Mesh& m = meshes[mesh_name];
+            pOpen.path = mesh_name;
+            aList.attributes->clear();
+            IOHandler->enqueue(IOTask(&m, pOpen));
+            IOHandler->enqueue(IOTask(&m, aList));
+            IOHandler->flush();
+
+            auto begin = aList.attributes->begin();
+            auto end = aList.attributes->end();
+            auto value = std::find(begin, end, "value");
+            auto shape = std::find(begin, end, "shape");
+            if( value != end && shape != end )
+            {
+                MeshRecordComponent& mrc = m[MeshRecordComponent::SCALAR];
+                mrc.m_isConstant = true;
+                mrc.parent = m.parent;
+                mrc.abstractFilePosition = m.abstractFilePosition;
+            }
+            m.read();
         }
-        m.read();
+
+        /* obtain all scalar meshes */
+        Parameter< Operation::LIST_DATASETS > dList;
+        IOHandler->enqueue(IOTask(&meshes, dList));
+        IOHandler->flush();
+
+        Parameter< Operation::OPEN_DATASET > dOpen;
+        for( auto const& mesh_name : *dList.datasets )
+        {
+            Mesh& m = meshes[mesh_name];
+            dOpen.name = mesh_name;
+            IOHandler->enqueue(IOTask(&m, dOpen));
+            IOHandler->flush();
+            MeshRecordComponent& mrc = m[MeshRecordComponent::SCALAR];
+            mrc.abstractFilePosition = m.abstractFilePosition;
+            mrc.parent = m.parent;
+            mrc.written = false;
+            mrc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
+            mrc.written = true;
+            m.read();
+        }
     }
 
-    /* obtain all scalar meshes */
-    Parameter< Operation::LIST_DATASETS > dList;
-    IOHandler->enqueue(IOTask(&meshes, dList));
-    IOHandler->flush();
-
-    Parameter< Operation::OPEN_DATASET > dOpen;
-    for( auto const& mesh_name : *dList.datasets )
+    if( hasParticles )
     {
-        Mesh& m = meshes[mesh_name];
-        dOpen.name = mesh_name;
-        IOHandler->enqueue(IOTask(&m, dOpen));
+        particles.clear_unchecked();
+        Parameter< Operation::OPEN_PATH > pOpen;
+        pOpen.path = s->particlesPath();
+        IOHandler->enqueue(IOTask(&particles, pOpen));
         IOHandler->flush();
-        MeshRecordComponent& mrc = m[MeshRecordComponent::SCALAR];
-        mrc.abstractFilePosition = m.abstractFilePosition;
-        mrc.parent = m.parent;
-        mrc.written = false;
-        mrc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
-        mrc.written = true;
-        m.read();
-    }
 
-    particles.clear_unchecked();
-    pOpen.path = o->particlesPath();
-    IOHandler->enqueue(IOTask(&particles, pOpen));
-    IOHandler->flush();
+        particles.readAttributes();
 
-    particles.readAttributes();
-
-    /* obtain all particle species */
-    pList.paths->clear();
-    IOHandler->enqueue(IOTask(&particles, pList));
-    IOHandler->flush();
-
-    for( auto const& species_name : *pList.paths )
-    {
-        ParticleSpecies& p = particles[species_name];
-        pOpen.path = species_name;
-        IOHandler->enqueue(IOTask(&p, pOpen));
+        /* obtain all particle species */
+        pList.paths->clear();
+        IOHandler->enqueue(IOTask(&particles, pList));
         IOHandler->flush();
-        p.read();
+
+        for( auto const& species_name : *pList.paths )
+        {
+            ParticleSpecies& p = particles[species_name];
+            pOpen.path = species_name;
+            IOHandler->enqueue(IOTask(&p, pOpen));
+            IOHandler->flush();
+            p.read();
+        }
     }
 
     readAttributes();

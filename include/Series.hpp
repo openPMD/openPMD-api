@@ -43,6 +43,8 @@
  */
 class Series : public Attributable
 {
+    friend class Iteration;
+
 public:
 #if openPMD_HAVE_MPI
     static Series create(std::string const& filepath,
@@ -219,6 +221,8 @@ private:
 
     void flushFileBased();
     void flushGroupBased();
+    void flushMeshesPath();
+    void flushParticlesPath();
     void readFileBased();
     void readGroupBased();
     void readBase();
@@ -226,8 +230,12 @@ private:
 
     static std::string cleanFilename(std::string, Format);
 
+    constexpr static char const * const OPENPMD = "1.1.0";
     constexpr static char const * const BASEPATH = "/data/%T/";
-    constexpr static char const * const OPENPMD = "1.0.1";
+    Attribute m_meshesPath = Attribute(std::string("meshes/"));
+    bool m_hasMeshes;
+    Attribute m_particlesPath = Attribute(std::string("particles/"));
+    bool m_hasParticles;
 
     IterationEncoding m_iterationEncoding;
     std::string m_name;

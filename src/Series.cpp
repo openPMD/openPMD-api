@@ -97,7 +97,9 @@ Series::read(std::string const& filepath,
 Series::Series(std::string const& filepath,
                AccessType at,
                MPI_Comm comm)
-        : iterations{Container< Iteration, uint64_t >()}
+        : iterations{Container< Iteration, uint64_t >()},
+          m_hasMeshes{false},
+          m_hasParticles{false}
 {
     std::string path;
     std::string name;
@@ -146,8 +148,6 @@ Series::Series(std::string const& filepath,
             setOpenPMD(OPENPMD);
             setOpenPMDextension(0);
             setAttribute("basePath", std::string(BASEPATH));
-            setMeshesPath("meshes/");
-            setParticlesPath("particles/");
             if( ie == IterationEncoding::fileBased && !contains(m_name, "%T") )
                 throw std::runtime_error("For fileBased formats the iteration regex %T must be included in the file name");
             setIterationEncoding(ie);
@@ -168,7 +168,9 @@ Series::Series(std::string const& filepath,
 
 Series::Series(std::string const& filepath,
                AccessType at)
-        : iterations{Container< Iteration, uint64_t >()}
+        : iterations{Container< Iteration, uint64_t >()},
+          m_hasMeshes{false},
+          m_hasParticles{false}
 {
     std::string path;
     std::string name;
@@ -278,8 +280,8 @@ Series&
 Series::setBasePath(std::string const& bp)
 {
     std::string version = openPMD();
-    if( version == "1.0.0" || version == "1.0.1" )
-        throw std::runtime_error("Custom basePath not allowed in openPMD <=1.0.1");
+    if( version == "1.0.0" || version == "1.0.1" || version == "1.1.0" )
+        throw std::runtime_error("Custom basePath not allowed in openPMD <=1.1.0");
 
     setAttribute("basePath", bp);
     return *this;
@@ -288,16 +290,20 @@ Series::setBasePath(std::string const& bp)
 std::string
 Series::meshesPath() const
 {
-    return getAttribute("meshesPath").get< std::string >();
+    return m_meshesPath.get< std::string >();
 }
 
 Series&
 Series::setMeshesPath(std::string const& mp)
 {
+    if( written )
+        throw std::runtime_error("A files meshesPath can not (yet) be changed after it has been written.");
+
     if( ends_with(mp, "/") )
-        setAttribute("meshesPath", mp);
+        m_meshesPath = Attribute(mp);
     else
-        setAttribute("meshesPath", mp + "/");
+        m_meshesPath = Attribute(mp + "/");
+    m_hasMeshes = true;
     dirty = true;
     return *this;
 }
@@ -305,16 +311,21 @@ Series::setMeshesPath(std::string const& mp)
 std::string
 Series::particlesPath() const
 {
-    return getAttribute("particlesPath").get< std::string >();
+    return m_particlesPath.get< std::string >();
 }
 
 Series&
 Series::setParticlesPath(std::string const& pp)
 {
+    if( written )
+        throw std::runtime_error("A files particlesPath can not (yet) be changed after it has been written.");
+
     if( ends_with(pp, "/") )
-        setAttribute("particlesPath", pp);
+        m_particlesPath = Attribute(pp);
     else
-        setAttribute("particlesPath", pp + "/");
+        m_particlesPath = Attribute(pp + "/");
+    m_hasParticles = true;
+    dirty = true;
     return *this;
 }
 
@@ -512,6 +523,28 @@ Series::flushGroupBased()
 }
 
 void
+Series::flushMeshesPath()
+{
+    Parameter< Operation::WRITE_ATT > aWrite;
+    aWrite.name = "meshesPath";
+    aWrite.resource = m_meshesPath.getResource();
+    aWrite.dtype = m_meshesPath.dtype;
+    IOHandler->enqueue(IOTask(this, aWrite));
+    IOHandler->flush();
+}
+
+void
+Series::flushParticlesPath()
+{
+    Parameter< Operation::WRITE_ATT > aWrite;
+    aWrite.name = "particlesPath";
+    aWrite.resource = m_particlesPath.getResource();
+    aWrite.dtype = m_particlesPath.dtype;
+    IOHandler->enqueue(IOTask(this, aWrite));
+    IOHandler->flush();
+}
+
+void
 Series::readFileBased()
 {
     std::regex pattern(replace_first(m_name, "%T", "[[:digit:]]+"));
@@ -659,21 +692,32 @@ Series::readBase()
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'basePath'");
 
-    aRead.name = "meshesPath";
-    IOHandler->enqueue(IOTask(this, aRead));
+    Parameter< Operation::LIST_ATTS > aList;
+    IOHandler->enqueue(IOTask(this, aList));
     IOHandler->flush();
-    if( *aRead.dtype == DT::STRING )
-        setMeshesPath(Attribute(*aRead.resource).get< std::string >());
-    else
-        throw std::runtime_error("Unexpected Attribute datatype for 'meshesPath'");
+    if( std::count(aList.attributes->begin(), aList.attributes->end(), "meshesPath") == 1 )
+    {
+        aRead.name = "meshesPath";
+        IOHandler->enqueue(IOTask(this, aRead));
+        IOHandler->flush();
+        if( *aRead.dtype == DT::STRING )
+            setMeshesPath(Attribute(*aRead.resource).get< std::string >());
+        else
+            throw std::runtime_error("Unexpected Attribute datatype for 'meshesPath'");
+        m_hasMeshes = true;
+    }
 
-    aRead.name = "particlesPath";
-    IOHandler->enqueue(IOTask(this, aRead));
-    IOHandler->flush();
-    if( *aRead.dtype == DT::STRING )
-        setParticlesPath(Attribute(*aRead.resource).get< std::string >());
-    else
-        throw std::runtime_error("Unexpected Attribute datatype for 'particlesPath'");
+    if( std::count(aList.attributes->begin(), aList.attributes->end(), "particlesPath") == 1 )
+    {
+        aRead.name = "particlesPath";
+        IOHandler->enqueue(IOTask(this, aRead));
+        IOHandler->flush();
+        if( *aRead.dtype == DT::STRING )
+            setParticlesPath(Attribute(*aRead.resource).get< std::string >());
+        else
+            throw std::runtime_error("Unexpected Attribute datatype for 'particlesPath'");
+        m_hasParticles = true;
+    }
 }
 
 void
