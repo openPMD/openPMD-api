@@ -9,7 +9,7 @@ An online version of our Doxygen build can be found at
 
 http://www.openPMD.org/openPMD-api/
 
-We usually update it via
+We regularly update it via
 
 .. code-block:: bash
 
