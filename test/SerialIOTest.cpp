@@ -12,7 +12,7 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_structure_test)
 {
     try
     {
-        Series o = Series::read("../samples/git-sample/data00000100.h5");
+        Series o = Series::read("../samples/git-sample/data%T.h5");
 
         BOOST_TEST(!o.parent);
         BOOST_TEST(o.iterations.parent == static_cast< Writable* >(&o));
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_attribute_test)
 {
     try
     {
-        Series o = Series::read("../samples/git-sample/data00000100.h5");
+        Series o = Series::read("../samples/git-sample/data%T.h5");
 
         BOOST_TEST(o.openPMD() == "1.1.0");
         BOOST_TEST(o.openPMDextension() == 1);
@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
 {
     try
     {
-        Series o = Series::read("../samples/git-sample/data00000%T.h5");
+        Series o = Series::read("../samples/git-sample/data%T.h5");
 
         {
             double actual[3][3][3] = {{{-1.9080703683727052e-09, -1.5632650729457964e-10, 1.1497536256399599e-09},
@@ -375,7 +375,7 @@ BOOST_AUTO_TEST_CASE(hzdr_hdf5_sample_content_test)
     try
     {
         /* development/huebl/lwfa-openPMD-062-smallLWFA-h5 */
-        Series o = Series::read("../samples/hzdr-sample/simData_0.h5");
+        Series o = Series::read("../samples/hzdr-sample/simData_%T.h5");
 
         BOOST_TEST(o.openPMD() == "1.0.0");
         BOOST_TEST(o.openPMDextension() == 1);
@@ -898,9 +898,21 @@ BOOST_AUTO_TEST_CASE(hdf5_fileBased_write_test)
 
 BOOST_AUTO_TEST_CASE(hdf5_bool_test)
 {
-    Series o = Series::create("../samples/serial_bool.h5");
+    {
+        Series o = Series::create("../samples/serial_bool.h5");
 
-    o.setAttribute("Bool attribute", true);
+        o.setAttribute("Bool attribute (true)", true);
+        o.setAttribute("Bool attribute (false)", false);
+    }
+    {
+        Series o = Series::read("../samples/serial_bool.h5");
+
+        auto attrs = o.attributes();
+        BOOST_TEST(std::count(attrs.begin(), attrs.end(), "Bool attribute (true)") == 1);
+        BOOST_TEST(std::count(attrs.begin(), attrs.end(), "Bool attribute (false)") == 1);
+        BOOST_TEST(o.getAttribute("Bool attribute (true)").get< bool >() == true);
+        BOOST_TEST(o.getAttribute("Bool attribute (false)").get< bool >() == false);
+    }
 }
 
 BOOST_AUTO_TEST_CASE(hdf5_patch_test)

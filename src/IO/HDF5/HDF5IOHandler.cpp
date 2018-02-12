@@ -1119,7 +1119,6 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
     Attribute a(0);
     if( attr_class == H5S_SCALAR || (attr_class == H5S_SIMPLE && ndims == 1 && dims[0] == 1) )
     {
-        //TODO bool
         if( H5Tequal(attr_type, H5T_NATIVE_CHAR) )
         {
             char c;
@@ -1219,6 +1218,28 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
                                  vc.data());
                 a = Attribute(strip(std::string(vc.data(), size), {'\0'}));
             }
+        } else if( H5Tget_class(attr_type) == H5T_ENUM )
+        {
+            bool attrIsBool = false;
+            if( H5Tget_nmembers(attr_type) == 2 )
+            {
+                char* m0 = H5Tget_member_name(attr_type, 0);
+                char* m1 = H5Tget_member_name(attr_type, 1);
+                if( (strcmp("TRUE" , m0) == 0) && (strcmp("FALSE", m1) == 0) )
+                    attrIsBool = true;
+                H5free_memory(m1);
+                H5free_memory(m0);
+            }
+
+            if( attrIsBool )
+            {
+                int8_t enumVal;
+                status = H5Aread(attr_id,
+                                 attr_type,
+                                 &enumVal);
+                a = Attribute(static_cast< bool >(enumVal));
+            } else
+                throw unsupported_data_error("Unsupported attribute enumeration");
         } else if( H5Tget_class(attr_type) == H5T_COMPOUND )
             throw unsupported_data_error("Compound attribute type not supported");
         else
@@ -1228,7 +1249,6 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
         if( ndims != 1 )
             throw std::runtime_error("Unsupported attribute (array with ndims != 1)");
 
-        //TODO bool
         if( H5Tequal(attr_type, H5T_NATIVE_CHAR) )
         {
             std::vector< char > vc(dims[0], 0);
