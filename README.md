@@ -20,7 +20,7 @@ Initial backends will include ADIOS and HDF5.
 *Syntax not yet implemented as shown below*
 
 ```C++
-#include <openPMD/openPMD-api.hpp>
+#include <openPMD/openPMD.hpp>
 #include <iostream>
 
 
@@ -105,7 +105,7 @@ spack load openPMD-api
 openPMD can then be installed using [CMake](http://cmake.org/):
 
 ```bash
-git clone https://github.com/ComputationalRadiationPhysics/libopenPMD.git
+git clone https://github.com/openPMD/openPMD-api.git
 
 mkdir -p openPMD-api-build
 cd openPMD-api-build
@@ -114,7 +114,7 @@ cd openPMD-api-build
 #   -DCMAKE_INSTALL_PREFIX=$HOME/somepath
 # for options append:
 #   -DopenPMD_USE_...=...
-cmake ../libopenPMD
+cmake ../openPMD-api
 
 make -j
 
