@@ -93,8 +93,8 @@ Choose *one* of the install methods below to get started:
 *not yet implemented*
 
 ```bash
-spack install openPMD-api
-spack load openPMD-api
+spack install openpmd-api
+spack load openpmd-api
 ```
 
 ### Conda
