@@ -118,6 +118,16 @@ Mesh::setGridSpacing(std::vector< T > gs)
     return *this;
 }
 
+template
+Mesh&
+Mesh::setGridSpacing(std::vector< float > gs);
+template
+Mesh&
+Mesh::setGridSpacing(std::vector< double > gs);
+template
+Mesh&
+Mesh::setGridSpacing(std::vector< long double > gs);
+
 std::vector< double >
 Mesh::gridGlobalOffset() const
 {

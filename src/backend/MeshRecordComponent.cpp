@@ -45,3 +45,13 @@ MeshRecordComponent::setPosition(std::vector< T > pos)
     setAttribute("position", pos);
     return *this;
 }
+
+template
+MeshRecordComponent&
+MeshRecordComponent::setPosition(std::vector< float > pos);
+template
+MeshRecordComponent&
+MeshRecordComponent::setPosition(std::vector< double > pos);
+template
+MeshRecordComponent&
+MeshRecordComponent::setPosition(std::vector< long double > pos);
