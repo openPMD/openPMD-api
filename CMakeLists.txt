@@ -16,9 +16,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Project structure ###########################################################
 #
+# temporary build directories
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+# install directories
+set(CMAKE_INSTALL_BINDIR bin)
+set(CMAKE_INSTALL_LIBDIR lib)
+set(CMAKE_INSTALL_INCLUDEDIR include)
+set(CMAKE_INSTALL_CMAKEDIR lib/cmake/openPMD)
 
 
 # Options and Variants ########################################################
@@ -400,6 +406,10 @@ message("  C++ Compiler : ${CMAKE_CXX_COMPILER_ID} "
 message("    ${CMAKE_CXX_COMPILER}")
 message("")
 message("  Installation prefix: ${CMAKE_INSTALL_PREFIX}")
+message("        bin: ${CMAKE_INSTALL_BINDIR}")
+message("        lib: ${CMAKE_INSTALL_LIBDIR}")
+message("    include: ${CMAKE_INSTALL_INCLUDEDIR}")
+message("      cmake: ${CMAKE_INSTALL_CMAKEDIR}")
 message("")
 message("  Build Type: ${CMAKE_BUILD_TYPE}")
 message("  Build Options:")
