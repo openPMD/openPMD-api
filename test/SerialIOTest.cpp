@@ -958,6 +958,61 @@ BOOST_AUTO_TEST_CASE(hdf5_deletion_test)
     e.erase("deletion_scalar_constant");
     o.flush();
 }
+
+BOOST_AUTO_TEST_CASE(hdf5_110_optional_paths)
+{
+    try
+    {
+        {
+            Series s = Series::read("../samples/issue-sample/no_fields/data%T.h5");
+            auto attrs = s.attributes();
+            BOOST_TEST(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
+            BOOST_TEST(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
+            BOOST_TEST(s.iterations[400].meshes.size() == 0);
+            BOOST_TEST(s.iterations[400].particles.size() == 1);
+        }
+
+        {
+            Series s = Series::read("../samples/issue-sample/no_particles/data%T.h5");
+            auto attrs = s.attributes();
+            BOOST_TEST(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
+            BOOST_TEST(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
+            BOOST_TEST(s.iterations[400].meshes.size() == 2);
+            BOOST_TEST(s.iterations[400].particles.size() == 0);
+        }
+    } catch (no_such_file_error& e)
+    {
+        std::cerr << "issue sample not accessible. (" << e.what() << ")\n";
+    }
+
+    {
+        Series s = Series::create("../samples/no_meshes_1.1.0_compliant.h5");
+        s.iterations[1].particles["foo"];
+    }
+
+    {
+        Series s = Series::create("../samples/no_particles_1.1.0_compliant.h5");
+        s.iterations[1].meshes["foo"];
+    }
+
+    {
+        Series s = Series::read("../samples/no_meshes_1.1.0_compliant.h5");
+        auto attrs = s.attributes();
+        BOOST_TEST(std::count(attrs.begin(), attrs.end(), "meshesPath") == 0);
+        BOOST_TEST(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
+        BOOST_TEST(s.iterations[1].meshes.size() == 0);
+        BOOST_TEST(s.iterations[1].particles.size() == 1);
+    }
+
+    {
+        Series s = Series::read("../samples/no_particles_1.1.0_compliant.h5");
+        auto attrs = s.attributes();
+        BOOST_TEST(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
+        BOOST_TEST(std::count(attrs.begin(), attrs.end(), "particlesPath") == 0);
+        BOOST_TEST(s.iterations[1].meshes.size() == 1);
+        BOOST_TEST(s.iterations[1].particles.size() == 0);
+    }
+}
 #else
 BOOST_AUTO_TEST_CASE(no_serial_hdf5)
 {

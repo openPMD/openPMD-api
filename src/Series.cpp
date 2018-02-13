@@ -146,8 +146,6 @@ Series::Series(std::string const& filepath,
             setOpenPMD(OPENPMD);
             setOpenPMDextension(0);
             setAttribute("basePath", std::string(BASEPATH));
-            setMeshesPath("meshes/");
-            setParticlesPath("particles/");
             if( ie == IterationEncoding::fileBased && !contains(m_name, "%T") )
                 throw std::runtime_error("For fileBased formats the iteration regex %T must be included in the file name");
             setIterationEncoding(ie);
@@ -217,8 +215,6 @@ Series::Series(std::string const& filepath,
             setOpenPMD(OPENPMD);
             setOpenPMDextension(0);
             setAttribute("basePath", std::string(BASEPATH));
-            setMeshesPath("meshes/");
-            setParticlesPath("particles/");
             if( ie == IterationEncoding::fileBased && !contains(m_name, "%T") )
                 throw std::runtime_error("For fileBased formats the iteration regex %T must be included in the file name");
             setIterationEncoding(ie);
@@ -278,8 +274,8 @@ Series&
 Series::setBasePath(std::string const& bp)
 {
     std::string version = openPMD();
-    if( version == "1.0.0" || version == "1.0.1" )
-        throw std::runtime_error("Custom basePath not allowed in openPMD <=1.0.1");
+    if( version == "1.0.0" || version == "1.0.1" || version == "1.1.0" )
+        throw std::runtime_error("Custom basePath not allowed in openPMD <=1.1.0");
 
     setAttribute("basePath", bp);
     return *this;
@@ -294,6 +290,10 @@ Series::meshesPath() const
 Series&
 Series::setMeshesPath(std::string const& mp)
 {
+    if( std::any_of(iterations.begin(), iterations.end(),
+                    [](Container< Iteration, uint64_t >::value_type const& i){ return i.second.meshes.written; }) )
+        throw std::runtime_error("A files meshesPath can not (yet) be changed after it has been written.");
+
     if( ends_with(mp, "/") )
         setAttribute("meshesPath", mp);
     else
@@ -311,10 +311,15 @@ Series::particlesPath() const
 Series&
 Series::setParticlesPath(std::string const& pp)
 {
+    if( std::any_of(iterations.begin(), iterations.end(),
+                    [](Container< Iteration, uint64_t >::value_type const& i){ return i.second.particles.written; }) )
+        throw std::runtime_error("A files particlesPath can not (yet) be changed after it has been written.");
+
     if( ends_with(pp, "/") )
         setAttribute("particlesPath", pp);
     else
         setAttribute("particlesPath", pp + "/");
+    dirty = true;
     return *this;
 }
 
@@ -367,6 +372,32 @@ Series&
 Series::setDate(std::string const& d)
 {
     setAttribute("date", d);
+    return *this;
+}
+
+std::string
+Series::softwareDependencies() const
+{
+    return getAttribute("softwareDependencies").get< std::string >();
+}
+
+Series&
+Series::setSoftwareDependencies(std::string const &softwareDependencies)
+{
+    setAttribute("softwareDependencies", softwareDependencies);
+    return *this;
+}
+
+std::string
+Series::machine() const
+{
+    return getAttribute("machine").get< std::string >();
+}
+
+Series&
+Series::setMachine(std::string const &machine)
+{
+    setAttribute("machine", machine);
     return *this;
 }
 
@@ -509,6 +540,32 @@ Series::flushGroupBased()
     }
 
     flushAttributes();
+}
+
+void
+Series::flushMeshesPath()
+{
+    //TODO fileBased
+    Parameter< Operation::WRITE_ATT > aWrite;
+    aWrite.name = "meshesPath";
+    Attribute a = getAttribute("meshesPath");
+    aWrite.resource = a.getResource();
+    aWrite.dtype = a.dtype;
+    IOHandler->enqueue(IOTask(this, aWrite));
+    IOHandler->flush();
+}
+
+void
+Series::flushParticlesPath()
+{
+    //TODO fileBased
+    Parameter< Operation::WRITE_ATT > aWrite;
+    aWrite.name = "particlesPath";
+    Attribute a = getAttribute("particlesPath");
+    aWrite.resource = a.getResource();
+    aWrite.dtype = a.dtype;
+    IOHandler->enqueue(IOTask(this, aWrite));
+    IOHandler->flush();
 }
 
 void
@@ -659,21 +716,44 @@ Series::readBase()
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'basePath'");
 
-    aRead.name = "meshesPath";
-    IOHandler->enqueue(IOTask(this, aRead));
+    Parameter< Operation::LIST_ATTS > aList;
+    IOHandler->enqueue(IOTask(this, aList));
     IOHandler->flush();
-    if( *aRead.dtype == DT::STRING )
-        setMeshesPath(Attribute(*aRead.resource).get< std::string >());
-    else
-        throw std::runtime_error("Unexpected Attribute datatype for 'meshesPath'");
+    if( std::count(aList.attributes->begin(), aList.attributes->end(), "meshesPath") == 1 )
+    {
+        /* allow setting the meshes path after completed IO */
+        for( auto& it : iterations )
+            it.second.meshes.written = false;
 
-    aRead.name = "particlesPath";
-    IOHandler->enqueue(IOTask(this, aRead));
-    IOHandler->flush();
-    if( *aRead.dtype == DT::STRING )
-        setParticlesPath(Attribute(*aRead.resource).get< std::string >());
-    else
-        throw std::runtime_error("Unexpected Attribute datatype for 'particlesPath'");
+        aRead.name = "meshesPath";
+        IOHandler->enqueue(IOTask(this, aRead));
+        IOHandler->flush();
+        if( *aRead.dtype == DT::STRING )
+            setMeshesPath(Attribute(*aRead.resource).get< std::string >());
+        else
+            throw std::runtime_error("Unexpected Attribute datatype for 'meshesPath'");
+
+        for( auto& it : iterations )
+            it.second.meshes.written = true;
+    }
+
+    if( std::count(aList.attributes->begin(), aList.attributes->end(), "particlesPath") == 1 )
+    {
+        /* allow setting the meshes path after completed IO */
+        for( auto& it : iterations )
+            it.second.particles.written = false;
+
+        aRead.name = "particlesPath";
+        IOHandler->enqueue(IOTask(this, aRead));
+        IOHandler->flush();
+        if( *aRead.dtype == DT::STRING )
+            setParticlesPath(Attribute(*aRead.resource).get< std::string >());
+        else
+            throw std::runtime_error("Unexpected Attribute datatype for 'particlesPath'");
+
+        for( auto& it : iterations )
+            it.second.particles.written = true;
+    }
 }
 
 void

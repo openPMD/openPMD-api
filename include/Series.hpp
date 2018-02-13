@@ -43,6 +43,8 @@
  */
 class Series : public Attributable
 {
+    friend class Iteration;
+
 public:
 #if openPMD_HAVE_MPI
     static Series create(std::string const& filepath,
@@ -95,6 +97,7 @@ public:
     Series& setBasePath(std::string const& basePath);
 
     /**
+     * @throw   no_such_attribute_error If optional attribute is not present.
      * @return  String representing the path to mesh records, relative(!) to <CODE>basePath</CODE>.
      */
     std::string meshesPath() const;
@@ -106,6 +109,7 @@ public:
     Series& setMeshesPath(std::string const& meshesPath);
 
     /**
+     * @throw   no_such_attribute_error If optional attribute is not present.
      * @return  String representing the path to particle species, relative(!) to <CODE>basePath</CODE>.
      */
     std::string particlesPath() const;
@@ -159,10 +163,34 @@ public:
     std::string date() const;
     /** Indicate the date of creation.
      *
-     * @param   date    String indication the date of creation.
+     * @param   date    String indicating the date of creation.
      * @return  Reference to modified series.
      */
     Series& setDate(std::string const& date);
+
+    /**
+     * @throw   no_such_attribute_error If optional attribute is not present.
+     * @return  String indicating dependencies of software that were used to create the file.
+     */
+    std::string softwareDependencies() const;
+    /** Indicate dependencies of software that were used to create the file.
+     *
+     * @param   softwareDependencies    String indicating dependencies of software that were used to create the file (semicolon-separated list if needed).
+     * @return  Reference to modified series.
+     */
+    Series& setSoftwareDependencies(std::string const& softwareDependencies);
+
+    /**
+     * @throw   no_such_attribute_error If optional attribute is not present.
+     * @return  String indicating the machine or relevant hardware that created the file.
+     */
+    std::string machine() const;
+    /** Indicate the machine or relevant hardware that created the file.
+     *
+     * @param   machine String indicating the machine or relevant hardware that created the file (semicolon-separated list if needed)..
+     * @return  Reference to modified series.
+     */
+    Series& setMachine(std::string const& machine);
 
     /**
      * @return  Current encoding style for multiple iterations in this series.
@@ -219,6 +247,8 @@ private:
 
     void flushFileBased();
     void flushGroupBased();
+    void flushMeshesPath();
+    void flushParticlesPath();
     void readFileBased();
     void readGroupBased();
     void readBase();
@@ -226,8 +256,8 @@ private:
 
     static std::string cleanFilename(std::string, Format);
 
+    constexpr static char const * const OPENPMD = "1.1.0";
     constexpr static char const * const BASEPATH = "/data/%T/";
-    constexpr static char const * const OPENPMD = "1.0.1";
 
     IterationEncoding m_iterationEncoding;
     std::string m_name;

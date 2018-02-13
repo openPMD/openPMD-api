@@ -69,15 +69,13 @@ BOOST_AUTO_TEST_CASE(output_default_test)
     using IE = IterationEncoding;
     Series o = Series::create("./new_openpmd_output_%T.dummy");
 
-    BOOST_TEST(o.openPMD() == "1.0.1");
+    BOOST_TEST(o.openPMD() == "1.1.0");
     BOOST_TEST(o.openPMDextension() == static_cast<uint32_t>(0));
     BOOST_TEST(o.basePath() == "/data/%T/");
-    BOOST_TEST(o.meshesPath() == "meshes/");
-    BOOST_TEST(o.particlesPath() == "particles/");
     BOOST_TEST(o.iterationEncoding() == IE::fileBased);
     BOOST_TEST(o.iterationFormat() == "new_openpmd_output_%T");
     BOOST_TEST(o.iterations.size() == 0);
-    BOOST_TEST(o.numAttributes() == 7); /* openPMD, openPMDextension, basePath, meshesPath, particlesPath, iterationEncoding, iterationFormat */
+    BOOST_TEST(o.numAttributes() == 5); /* openPMD, openPMDextension, basePath, iterationEncoding, iterationFormat */
     BOOST_TEST(o.name() == "new_openpmd_output_%T");
 
     o.iterations[0];
@@ -86,35 +84,23 @@ BOOST_AUTO_TEST_CASE(output_default_test)
 BOOST_AUTO_TEST_CASE(output_constructor_test)
 {
     using IE = IterationEncoding;
-    Series o1 = Series::create("./MyOutput_%T.dummy");
+    Series o = Series::create("./MyCustomOutput.dummy");
 
-    BOOST_TEST(o1.openPMD() == "1.0.1");
-    BOOST_TEST(o1.openPMDextension() == static_cast<uint32_t>(0));
-    BOOST_TEST(o1.basePath() == "/data/%T/");
-    BOOST_TEST(o1.meshesPath() == "meshes/");
-    BOOST_TEST(o1.particlesPath() == "particles/");
-    BOOST_TEST(o1.iterationEncoding() == IE::fileBased);
-    BOOST_TEST(o1.iterationFormat() == "MyOutput_%T");
-    BOOST_TEST(o1.iterations.size() == 0);
-    BOOST_TEST(o1.numAttributes() == 7); /* openPMD, openPMDextension, basePath, meshesPath, particlesPath, iterationEncoding, iterationFormat */
-    BOOST_TEST(o1.name() == "MyOutput_%T");
+    o.setMeshesPath("customMeshesPath").setParticlesPath("customParticlesPath");
 
-    o1.iterations[0];
+    o.iterations[1].meshes["foo"];
+    o.iterations[1].particles["bar"];
 
-    Series o2 = Series::create("./MyCustomOutput.dummy");
-
-    o2.setMeshesPath("customMeshesPath").setParticlesPath("customParticlesPath");
-
-    BOOST_TEST(o2.openPMD() == "1.0.1");
-    BOOST_TEST(o2.openPMDextension() == static_cast<uint32_t>(0));
-    BOOST_TEST(o2.basePath() == "/data/%T/");
-    BOOST_TEST(o2.meshesPath() == "customMeshesPath/");
-    BOOST_TEST(o2.particlesPath() == "customParticlesPath/");
-    BOOST_TEST(o2.iterationEncoding() == IE::groupBased);
-    BOOST_TEST(o2.iterationFormat() == "/data/%T/");
-    BOOST_TEST(o2.iterations.size() == 0);
-    BOOST_TEST(o2.numAttributes() == 7); /* openPMD, openPMDextension, basePath, meshesPath, particlesPath, iterationEncoding, iterationFormat */
-    BOOST_TEST(o2.name() == "MyCustomOutput");
+    BOOST_TEST(o.openPMD() == "1.1.0");
+    BOOST_TEST(o.openPMDextension() == static_cast<uint32_t>(0));
+    BOOST_TEST(o.basePath() == "/data/%T/");
+    BOOST_TEST(o.meshesPath() == "customMeshesPath/");
+    BOOST_TEST(o.particlesPath() == "customParticlesPath/");
+    BOOST_TEST(o.iterationEncoding() == IE::groupBased);
+    BOOST_TEST(o.iterationFormat() == "/data/%T/");
+    BOOST_TEST(o.iterations.size() == 1);
+    BOOST_TEST(o.numAttributes() == 7); /* openPMD, openPMDextension, basePath, meshesPath, particlesPath, iterationEncoding, iterationFormat */
+    BOOST_TEST(o.name() == "MyCustomOutput");
 }
 
 BOOST_AUTO_TEST_CASE(output_modification_test)
@@ -290,7 +276,7 @@ BOOST_AUTO_TEST_CASE(mesh_constructor_test)
     BOOST_TEST(m["z"].position< double >() == pos);
     BOOST_TEST(m.geometry() == Mesh::Geometry::cartesian);
     BOOST_TEST(m.dataOrder() == Mesh::DataOrder::C);
-    std::vector< std::string > al{""};
+    std::vector< std::string > al{"x"};
     BOOST_TEST(m.axisLabels() == al);
     std::vector< double > gs{1};
     BOOST_TEST(m.gridSpacing< double >() == gs);
