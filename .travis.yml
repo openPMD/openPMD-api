@@ -1,4 +1,3 @@
-language: cpp
 sudo: required
 dist: trusty
 
@@ -15,57 +14,149 @@ env:
     - SPACK_ROOT: $HOME/.cache/spack
     - PATH: $PATH:$HOME/.cache/spack/bin
 
-matrix:
+addons:
+  apt:
+    &apt_common_sources
+    sources:
+      - ubuntu-toolchain-r-test
+
+jobs:
+  fast_finish: true
   include:
+    ###########################################################################
+    # Stage: Style                                                            #
+    ###########################################################################
+    - &style_python
+      stage: 'Style'
+      language: python
+      python: "2.7"
+      install: pip install -U flake8
+      script:
+        # Test Python Files for PEP8 conformance
+        - flake8 --exclude=thirdParty .
+    - <<: *style_python
+      python: "3.6"
+    # TODO: C++ clang-format checks
+    ###########################################################################
+    # Stage: Static Code Analysis                                             #
+    ###########################################################################
+    - &static_code_python
+      stage: 'Static Code Analysis'
+      language: python
+      python: "2.7"
+      install: pip install -U pyflakes
+      script:
+        # Warnings, unused code, etc.
+        - pyflakes .
+    - <<: *static_code_python
+      python: "3.6"
+    ###########################################################################
+    # Stage: C++ Unit Tests                                                   #
+    ###########################################################################
     # Clang 5.0.0
-    - env:
-        - openPMD_USE_MPI=OFF openPMD_USE_HDF5=ON openPMD_USE_ADIOS1=OFF openPMD_USE_ADIOS2=OFF
-      compiler: clang
-      addons:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages: &clang50_deps
-            - gfortran-4.9
-      before_install: &clang50_init
-         - COMPILERSPEC="%clang@5.0.0"
-    - env:
-        - openPMD_USE_MPI=ON openPMD_USE_HDF5=ON openPMD_USE_ADIOS1=OFF openPMD_USE_ADIOS2=OFF
+    - &test-cpp-unit
+      stage: 'C++ Unit Tests'
+      language: cpp
+      env:
+        - USE_MPI=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
       compiler: clang
       addons:
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
+          <<: *apt_common_sources
+          packages: &clang50_deps
+            - gfortran-4.9
+            - g++-4.9  # CMake build
+      before_install: &clang50_init
+         - COMPILERSPEC="%clang@5.0.0"
+      script: &script-cpp-unit
+        - mkdir -p $HOME/build 
+        - cd $HOME/build
+        - if [ ! -d samples/git-sample/ ]; then
+             $TRAVIS_BUILD_DIR/.travis/download_samples.sh;
+          fi
+        - CXXFLAGS=$CXXFLAGS CXX=$CXX CC=$CC
+          cmake
+            -DCMAKE_BUILD_TYPE=Debug
+            -DopenPMD_USE_MPI=$USE_MPI
+            -DopenPMD_USE_HDF5=$USE_HDF5
+            -DopenPMD_USE_ADIOS1=$USE_ADIOS1
+            -DopenPMD_USE_ADIOS2=$USE_ADIOS2
+            -DCMAKE_INSTALL_PREFIX=$HOME/openPMD-test-install
+            $TRAVIS_BUILD_DIR
+        - make -j 2
+        - CTEST_OUTPUT_ON_FAILURE=1 make test
+        - make install
+        # - make package
+        # - dpkg -i openPMD*.deb
+    - <<: *test-cpp-unit
+      env:
+        - USE_MPI=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+      compiler: clang
+      addons:
+        apt:
+          <<: *apt_common_sources
           packages:
             - *clang50_deps
             - libopenmpi-dev
             - openmpi-bin
       before_install: *clang50_init
+      script: *script-cpp-unit
     # GCC 4.9.4
-    - env:
-        - openPMD_USE_MPI=OFF openPMD_USE_HDF5=ON openPMD_USE_ADIOS1=OFF openPMD_USE_ADIOS2=OFF
+    - <<: *test-cpp-unit
+      env:
+        - USE_MPI=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
       compiler: gcc
       addons:
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
+          <<: *apt_common_sources
           packages: &gcc49_deps
             - gfortran-4.9
             - gcc-4.9
             - g++-4.9
       before_install: &gcc49_init
          - CXX=g++-4.9 && CC=gcc-4.9 && COMPILERSPEC="%gcc@4.9.4"
-    - env:
-        - openPMD_USE_MPI=ON openPMD_USE_HDF5=ON openPMD_USE_ADIOS1=OFF openPMD_USE_ADIOS2=OFF
+      script: *script-cpp-unit
+    - <<: *test-cpp-unit
+      env:
+        - USE_MPI=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
       compiler: gcc
       addons:
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
+          <<: *apt_common_sources
           packages:
             - *gcc49_deps
             - libopenmpi-dev
             - openmpi-bin
       before_install: *gcc49_init
+      script: *script-cpp-unit
+    # GCC 6.3.0
+    - <<: *test-cpp-unit
+      env:
+        - USE_MPI=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+      compiler: gcc
+      addons:
+        apt:
+          <<: *apt_common_sources
+          packages: &gcc63_deps
+            - gfortran-6
+            - gcc-6
+            - g++-6
+      before_install: &gcc63_init
+         - CXX=g++-6 && CC=gcc-6 && COMPILERSPEC="%gcc@6.3.0"
+      script: *script-cpp-unit
+    - <<: *test-cpp-unit
+      env:
+        - USE_MPI=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+      compiler: gcc
+      addons:
+        apt:
+          <<: *apt_common_sources
+          packages:
+            - *gcc63_deps
+            - libopenmpi-dev
+            - openmpi-bin
+      before_install: *gcc63_init
+      script: *script-cpp-unit
   allow_failures:
     - compiler: clang
 
@@ -93,28 +184,28 @@ install:
       $COMPILERSPEC
   - spack load boost@1.62.0 $COMPILERSPEC
   # optional dependencies - MPI, HDF5, ADIOS1, ADIOS2
-  - if [ $openPMD_USE_MPI == "ON" ]; then
+  - if [ $USE_MPI == "ON" ]; then
       travis_wait spack install
         openmpi@1.6.5
         $COMPILERSPEC &&
       spack load openmpi@1.6.5 $COMPILERSPEC;
       SPACK_VAR_MPI="+mpi";
     fi
-  - if [ $openPMD_USE_HDF5 == "ON" ]; then
+  - if [ $USE_HDF5 == "ON" ]; then
       travis_wait spack install
         hdf5
         $SPACK_VAR_MPI
         $COMPILERSPEC &&
       spack load hdf5 $SPACK_VAR_MPI $COMPILERSPEC;
     fi
-  - if [ $openPMD_USE_ADIOS1 == "ON" ]; then
+  - if [ $USE_ADIOS1 == "ON" ]; then
       travis_wait spack install
         adios
         $SPACK_VAR_MPI
         $COMPILERSPEC &&
       spack load adios $SPACK_VAR_MPI $COMPILERSPEC;
     fi
-  - if [ $openPMD_USE_ADIOS2 == "ON" ]; then
+  - if [ $USE_ADIOS2 == "ON" ]; then
       travis_wait spack install
         adios2
         $SPACK_VAR_MPI
@@ -122,24 +213,3 @@ install:
       spack load adios2 $SPACK_VAR_MPI $COMPILERSPEC;
     fi
   - spack clean -a
-
-script:
-  - mkdir -p $HOME/build 
-  - cd $HOME/build
-  - if [ ! -d samples/git-sample/ ]; then
-       $TRAVIS_BUILD_DIR/.travis/download_samples.sh;
-    fi
-  - CXXFLAGS=$CXXFLAGS CXX=$CXX CC=$CC
-    cmake
-      -DCMAKE_BUILD_TYPE=Debug
-      -DopenPMD_USE_MPI=$openPMD_USE_MPI
-      -DopenPMD_USE_HDF5=$openPMD_USE_HDF5
-      -DopenPMD_USE_ADIOS1=$openPMD_USE_ADIOS1
-      -DopenPMD_USE_ADIOS2=$openPMD_USE_ADIOS2
-      -DCMAKE_INSTALL_PREFIX=$HOME/openPMD-test-install
-      $TRAVIS_BUILD_DIR
-  - make -j 2
-  - CTEST_OUTPUT_ON_FAILURE=1 make test
-  - make install
-  # - make package
-  # - dpkg -i openPMD*.deb
