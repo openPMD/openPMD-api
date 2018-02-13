@@ -43,7 +43,7 @@ if not on_rtd:
     extensions.append('sphinx.ext.githubpages')
 
 # breathe config
-breathe_projects = { 'openPMD-api': '../xml' }
+breathe_projects = {'openPMD-api': '../xml'}
 breathe_default_project = 'openPMD-api'
 
 if on_rtd:
@@ -108,7 +108,7 @@ html_logo = 'openPMD.png'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-#html_theme = 'alabaster'
+# html_theme = 'alabaster'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -178,11 +178,13 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'openPMD-api', u'openPMD-api Documentation',
-     author, 'openPMD-api', 'C++ and Python APIs for the openPMD meta-standard',
+     author, 'openPMD-api',
+             'C++ and Python APIs for the openPMD meta-standard',
      """
-     The openPMD standard, short for open standard for particle-mesh data files is not a file format per se.
-     It is a standard for meta data and naming schemes.
-     openPMD provides naming and attribute conventions that allow to exchange particle and mesh based data from scientific simulations and experiments.
+     The openPMD standard, short for open standard for particle-mesh data files
+     is not a file format per se. It is a standard for meta data and naming
+     schemes.
+     openPMD provides naming and attribute conventions that allow to exchange
+     particle and mesh based data from scientific simulations and experiments.
      """),
 ]
-
