@@ -36,10 +36,10 @@ function(openpmd_option name description default)
     set(openPMD_CONFIG_OPTIONS ${openPMD_CONFIG_OPTIONS} ${name} PARENT_SCOPE)
 endfunction()
 
-openpmd_option(MPI    "Enable MPI support"    AUTO)
-openpmd_option(HDF5   "Enable HDF5 support"   AUTO)
-openpmd_option(ADIOS1 "Enable ADIOS1 support" OFF)
-openpmd_option(ADIOS2 "Enable ADIOS2 support" OFF)
+openpmd_option(MPI    "Enable MPI support"     AUTO)
+openpmd_option(HDF5   "Enable HDF5 support"    AUTO)
+openpmd_option(ADIOS1 "Enable ADIOS1 support"  OFF)
+openpmd_option(ADIOS2 "Enable ADIOS2 support"  OFF)
 # openpmd_option(JSON "Enable JSON support" AUTO)
 # openpmd_option(PYTHON "Enable Python bindings" OFF)
 
@@ -84,6 +84,8 @@ if(openPMD_USE_MPI STREQUAL AUTO)
     find_package(MPI)
     if(MPI_FOUND)
         set(openPMD_HAVE_MPI TRUE)
+    else()
+        set(openPMD_HAVE_MPI FALSE)
     endif()
 elseif(openPMD_USE_MPI)
     find_package(MPI REQUIRED)
@@ -98,22 +100,30 @@ if(openPMD_USE_HDF5 STREQUAL AUTO)
     find_package(HDF5 1.8.6 COMPONENTS C)
     if(HDF5_FOUND)
         set(openPMD_HAVE_HDF5 TRUE)
+    else()
+        set(openPMD_HAVE_HDF5 FALSE)
     endif()
 elseif(openPMD_USE_HDF5)
     set(HDF5_PREFER_PARALLEL ${openPMD_HAVE_MPI})
     find_package(HDF5 1.8.6 REQUIRED COMPONENTS C)
-    if(HDF5_FOUND)
-        set(openPMD_HAVE_HDF5 TRUE)
-    endif()
+    set(openPMD_HAVE_HDF5 TRUE)
 else()
     set(openPMD_HAVE_HDF5 FALSE)
 endif()
 
+# we imply support for parallel I/O if MPI variant is ON
 if(openPMD_HAVE_MPI AND openPMD_HAVE_HDF5 AND NOT HDF5_IS_PARALLEL)
     message(FATAL_ERROR
         "Found MPI but only serial version of HDF5. Either set "
         "openPMD_USE_MPI=OFF to disable MPI or set openPMD_USE_HDF5=OFF "
         "to disable HDF5 or provide a parallel install of HDF5.")
+endif()
+# HDF5 includes mpi.h in the public header H5public.h if HDF5_IS_PARALLEL
+if(HDF5_IS_PARALLEL AND NOT openPMD_HAVE_MPI)
+    message(FATAL_ERROR
+        "Found only parallel version of HDF5 but no MPI. Either set "
+        "openPMD_USE_MPI=ON to force using MPI or set openPMD_USE_HDF5=OFF "
+        "to disable HDF5 or provide a serial install of HDF5.")
 endif()
 
 # external library: ADIOS1 (optional)
@@ -125,12 +135,12 @@ if(openPMD_USE_ADIOS1 STREQUAL AUTO)
     find_package(ADIOS 1.10.0 COMPONENTS ${ADIOS1_PREFER_COMPONENTS})
     if(ADIOS_FOUND)
         set(openPMD_HAVE_ADIOS1 TRUE)
+    else()
+        set(openPMD_HAVE_ADIOS1 FALSE)
     endif()
 elseif(openPMD_USE_ADIOS1)
     find_package(ADIOS 1.10.0 REQUIRED COMPONENTS ${ADIOS1_PREFER_COMPONENTS})
-    if(ADIOS_FOUND)
-        set(openPMD_HAVE_ADIOS1 TRUE)
-    endif()
+    set(openPMD_HAVE_ADIOS1 TRUE)
 else()
     set(openPMD_HAVE_ADIOS1 FALSE)
 endif()
@@ -146,12 +156,12 @@ if(openPMD_USE_ADIOS2 STREQUAL AUTO)
     find_package(ADIOS2 2.0.0)
     if(ADIOS2_FOUND)
         set(openPMD_HAVE_ADIOS2 TRUE)
+    else()
+        set(openPMD_HAVE_ADIOS2 FALSE)
     endif()
 elseif(openPMD_USE_ADIOS2)
     find_package(ADIOS2 2.0.0 REQUIRED)
-    if(ADIOS2_FOUND)
-        set(openPMD_HAVE_ADIOS2 TRUE)
-    endif()
+    set(openPMD_HAVE_ADIOS2 TRUE)
 else()
     set(openPMD_HAVE_ADIOS2 FALSE)
 endif()
@@ -190,6 +200,11 @@ set(IO_SOURCE
 # library
 add_library(openPMD.core ${CORE_SOURCE})
 add_library(openPMD.io ${IO_SOURCE})
+
+# properties
+set_target_properties(openPMD.core openPMD.io PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+)
 
 # own headers
 target_include_directories(openPMD.core PUBLIC
@@ -310,7 +325,9 @@ write_basic_package_version_file("openPMDConfigVersion.cmake"
 # Installs ####################################################################
 #
 # headers, libraries and exectuables
-install(TARGETS openPMD.io openPMD.core EXPORT openPMDTargets
+set(openPMD_INSTALL_TARGETS openPMD.core openPMD.io)
+
+install(TARGETS ${openPMD_INSTALL_TARGETS} EXPORT openPMDTargets
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin
