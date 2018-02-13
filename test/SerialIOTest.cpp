@@ -64,9 +64,9 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_attribute_test)
         BOOST_TEST(o.particlesPath() == "particles/");
         BOOST_TEST(o.iterationEncoding() == IterationEncoding::fileBased);
         BOOST_TEST(o.iterationFormat() == "data%T.h5");
-        BOOST_TEST(o.name() == "data00000100");
+        BOOST_TEST(o.name() == "data%T");
 
-        BOOST_TEST(o.iterations.size() == 1);
+        BOOST_TEST(o.iterations.size() == 5);
         BOOST_TEST(o.iterations.count(100) == 1);
 
         Iteration& iteration_100 = o.iterations[100];
