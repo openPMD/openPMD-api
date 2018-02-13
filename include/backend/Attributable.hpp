@@ -100,6 +100,12 @@ public:
      * @return  Number of currently stored Attributes.
      */
     size_t numAttributes() const;
+    /** Check whether am Attribute with a given key exists.
+     *
+     * @param   key Key (i.e. name) of the Attribute to find.
+     * @return  true if provided key was present, false otherwise.
+     */
+    bool containsAttribute(std::string const& key) const;
 
     /** Retrieve a user-supplied comment associated with the object.
      *

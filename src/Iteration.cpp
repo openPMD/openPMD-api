@@ -150,18 +150,22 @@ Iteration::flush()
         w = w->parent;
     Series* s = dynamic_cast<Series *>(w);
 
+    //TODO warn if openPMD >= 1.1.0, mp is set and no meshes
     if( !meshes.empty() )
     {
-        s->m_hasMeshes = true;
+        if( !s->containsAttribute("meshesPath") )
+            s->setMeshesPath("meshes/");
         s->flushMeshesPath();
         meshes.flush(s->meshesPath());
         for( auto& m : meshes )
             m.second.flush(m.first);
     }
 
+    //TODO warn if openPMD >= 1.1.0, pp is set and no particles
     if( !particles.empty() )
     {
-        s->m_hasParticles = true;
+        if( !s->containsAttribute("particlesPath") )
+            s->setParticlesPath("particles/");
         s->flushParticlesPath();
         particles.flush(s->particlesPath());
         for( auto& species : particles )
@@ -233,8 +237,8 @@ Iteration::read()
     } else
     {
         auto attrs = s->attributes();
-        hasMeshes = s->m_hasMeshes;
-        hasParticles = s->m_hasParticles;
+        hasMeshes = s->containsAttribute("meshesPath");
+        hasParticles = s->containsAttribute("particlesPath");
     }
 
     if( hasMeshes )

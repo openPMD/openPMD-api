@@ -97,9 +97,7 @@ Series::read(std::string const& filepath,
 Series::Series(std::string const& filepath,
                AccessType at,
                MPI_Comm comm)
-        : iterations{Container< Iteration, uint64_t >()},
-          m_hasMeshes{false},
-          m_hasParticles{false}
+        : iterations{Container< Iteration, uint64_t >()}
 {
     std::string path;
     std::string name;
@@ -168,9 +166,7 @@ Series::Series(std::string const& filepath,
 
 Series::Series(std::string const& filepath,
                AccessType at)
-        : iterations{Container< Iteration, uint64_t >()},
-          m_hasMeshes{false},
-          m_hasParticles{false}
+        : iterations{Container< Iteration, uint64_t >()}
 {
     std::string path;
     std::string name;
@@ -219,8 +215,6 @@ Series::Series(std::string const& filepath,
             setOpenPMD(OPENPMD);
             setOpenPMDextension(0);
             setAttribute("basePath", std::string(BASEPATH));
-            setMeshesPath("meshes/");
-            setParticlesPath("particles/");
             if( ie == IterationEncoding::fileBased && !contains(m_name, "%T") )
                 throw std::runtime_error("For fileBased formats the iteration regex %T must be included in the file name");
             setIterationEncoding(ie);
@@ -290,20 +284,20 @@ Series::setBasePath(std::string const& bp)
 std::string
 Series::meshesPath() const
 {
-    return m_meshesPath.get< std::string >();
+    return getAttribute("meshesPath").get< std::string >();
 }
 
 Series&
 Series::setMeshesPath(std::string const& mp)
 {
-    if( written )
+    if( std::any_of(iterations.begin(), iterations.end(),
+                    [](Container< Iteration, uint64_t >::value_type const& i){ return i.second.meshes.written; }) )
         throw std::runtime_error("A files meshesPath can not (yet) be changed after it has been written.");
 
     if( ends_with(mp, "/") )
-        m_meshesPath = Attribute(mp);
+        setAttribute("meshesPath", mp);
     else
-        m_meshesPath = Attribute(mp + "/");
-    m_hasMeshes = true;
+        setAttribute("meshesPath", mp + "/");
     dirty = true;
     return *this;
 }
@@ -311,20 +305,20 @@ Series::setMeshesPath(std::string const& mp)
 std::string
 Series::particlesPath() const
 {
-    return m_particlesPath.get< std::string >();
+    return getAttribute("particlesPath").get< std::string >();
 }
 
 Series&
 Series::setParticlesPath(std::string const& pp)
 {
-    if( written )
+    if( std::any_of(iterations.begin(), iterations.end(),
+                    [](Container< Iteration, uint64_t >::value_type const& i){ return i.second.particles.written; }) )
         throw std::runtime_error("A files particlesPath can not (yet) be changed after it has been written.");
 
     if( ends_with(pp, "/") )
-        m_particlesPath = Attribute(pp);
+        setAttribute("particlesPath", pp);
     else
-        m_particlesPath = Attribute(pp + "/");
-    m_hasParticles = true;
+        setAttribute("particlesPath", pp + "/");
     dirty = true;
     return *this;
 }
@@ -378,6 +372,32 @@ Series&
 Series::setDate(std::string const& d)
 {
     setAttribute("date", d);
+    return *this;
+}
+
+std::string
+Series::softwareDependencies() const
+{
+    return getAttribute("softwareDependencies").get< std::string >();
+}
+
+Series&
+Series::setSoftwareDependencies(std::string const &softwareDependencies)
+{
+    setAttribute("softwareDependencies", softwareDependencies);
+    return *this;
+}
+
+std::string
+Series::machine() const
+{
+    return getAttribute("machine").get< std::string >();
+}
+
+Series&
+Series::setMachine(std::string const &machine)
+{
+    setAttribute("machine", machine);
     return *this;
 }
 
@@ -525,10 +545,12 @@ Series::flushGroupBased()
 void
 Series::flushMeshesPath()
 {
+    //TODO fileBased
     Parameter< Operation::WRITE_ATT > aWrite;
     aWrite.name = "meshesPath";
-    aWrite.resource = m_meshesPath.getResource();
-    aWrite.dtype = m_meshesPath.dtype;
+    Attribute a = getAttribute("meshesPath");
+    aWrite.resource = a.getResource();
+    aWrite.dtype = a.dtype;
     IOHandler->enqueue(IOTask(this, aWrite));
     IOHandler->flush();
 }
@@ -536,10 +558,12 @@ Series::flushMeshesPath()
 void
 Series::flushParticlesPath()
 {
+    //TODO fileBased
     Parameter< Operation::WRITE_ATT > aWrite;
     aWrite.name = "particlesPath";
-    aWrite.resource = m_particlesPath.getResource();
-    aWrite.dtype = m_particlesPath.dtype;
+    Attribute a = getAttribute("particlesPath");
+    aWrite.resource = a.getResource();
+    aWrite.dtype = a.dtype;
     IOHandler->enqueue(IOTask(this, aWrite));
     IOHandler->flush();
 }
@@ -697,6 +721,10 @@ Series::readBase()
     IOHandler->flush();
     if( std::count(aList.attributes->begin(), aList.attributes->end(), "meshesPath") == 1 )
     {
+        /* allow setting the meshes path after completed IO */
+        for( auto& it : iterations )
+            it.second.meshes.written = false;
+
         aRead.name = "meshesPath";
         IOHandler->enqueue(IOTask(this, aRead));
         IOHandler->flush();
@@ -704,11 +732,17 @@ Series::readBase()
             setMeshesPath(Attribute(*aRead.resource).get< std::string >());
         else
             throw std::runtime_error("Unexpected Attribute datatype for 'meshesPath'");
-        m_hasMeshes = true;
+
+        for( auto& it : iterations )
+            it.second.meshes.written = true;
     }
 
     if( std::count(aList.attributes->begin(), aList.attributes->end(), "particlesPath") == 1 )
     {
+        /* allow setting the meshes path after completed IO */
+        for( auto& it : iterations )
+            it.second.particles.written = false;
+
         aRead.name = "particlesPath";
         IOHandler->enqueue(IOTask(this, aRead));
         IOHandler->flush();
@@ -716,7 +750,9 @@ Series::readBase()
             setParticlesPath(Attribute(*aRead.resource).get< std::string >());
         else
             throw std::runtime_error("Unexpected Attribute datatype for 'particlesPath'");
-        m_hasParticles = true;
+
+        for( auto& it : iterations )
+            it.second.particles.written = true;
     }
 }
 

@@ -104,6 +104,12 @@ Attributable::numAttributes() const
     return m_attributes->size();
 }
 
+bool
+Attributable::containsAttribute(std::string const &key) const
+{
+    return m_attributes->find(key) != m_attributes->end();
+}
+
 std::string
 Attributable::comment() const
 {

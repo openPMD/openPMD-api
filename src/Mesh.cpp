@@ -31,9 +31,9 @@ Mesh::Mesh()
     setGeometry(Geometry::cartesian);
     setDataOrder(DataOrder::C);
 
-    setAxisLabels({"x", "y", "z"});
-    setGridSpacing(std::vector< double >{1, 1, 1});
-    setGridGlobalOffset({0, 0, 0});
+    setAxisLabels({"x"});   //empty strings are not allowed in HDF5
+    setGridSpacing(std::vector< double >{1});
+    setGridGlobalOffset({0});
     setGridUnitSI(1);
 }
 
@@ -246,6 +246,8 @@ Mesh::read()
     IOHandler->flush();
     if( *aRead.dtype == DT::VEC_STRING )
         setAxisLabels(Attribute(*aRead.resource).get< std::vector< std::string > >());
+    else if( *aRead.dtype == DT::STRING )
+        setAxisLabels({Attribute(*aRead.resource).get< std::string >()});
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'axisLabels'");
 
@@ -255,8 +257,12 @@ Mesh::read()
     Attribute a = Attribute(*aRead.resource);
     if( *aRead.dtype == DT::VEC_FLOAT )
         setGridSpacing(a.get< std::vector< float > >());
+    else if( *aRead.dtype == DT::FLOAT )
+        setGridSpacing(std::vector< float >({a.get< float >()}));
     else if( *aRead.dtype == DT::VEC_DOUBLE )
         setGridSpacing(a.get< std::vector< double > >());
+    else if( *aRead.dtype == DT::DOUBLE )
+        setGridSpacing(std::vector< double >({a.get< double >()}));
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'gridSpacing'");
 
@@ -265,6 +271,8 @@ Mesh::read()
     IOHandler->flush();
     if( *aRead.dtype == DT::VEC_DOUBLE )
         setGridGlobalOffset(Attribute(*aRead.resource).get< std::vector< double > >());
+    else if( *aRead.dtype == DT::DOUBLE )
+        setGridGlobalOffset({Attribute(*aRead.resource).get< double >()});
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'gridGlobalOffset'");
 
