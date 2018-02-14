@@ -71,7 +71,7 @@ Required:
 Optional I/O backends:
 * HDF5 1.8.6+
 * ADIOS 1.10+ (*not yet implemented*)
-* ADIOS 2.0+ (*not yet implemented*)
+* ADIOS 2.1+ (*not yet implemented*)
 
 while those can be build either with or without:
 * MPI 2.3+, e.g. OpenMPI or MPICH2
