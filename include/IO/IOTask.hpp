@@ -1,11 +1,13 @@
 #pragma once
 
-
-#include <map>
-
 #include "backend/Attribute.hpp"
 #include "backend/Writable.hpp"
 #include "Dataset.hpp"
+
+#include <memory>
+#include <map>
+#include <vector>
+#include <string>
 
 
 /** Concrete datatype of an object available at runtime.

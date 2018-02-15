@@ -1,8 +1,12 @@
 #pragma once
 
-
 #include "backend/Container.hpp"
 #include "RecordComponent.hpp"
+
+#include <array>
+#include <string>
+#include <stdexcept>
+
 
 enum class UnitDimension : uint8_t
 {

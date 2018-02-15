@@ -1,11 +1,14 @@
 #pragma once
 
+#include "backend/BaseRecordComponent.hpp"
+#include "Dataset.hpp"
 
 #include <cmath>
 #include <memory>
-
-#include "backend/BaseRecordComponent.hpp"
-#include "Dataset.hpp"
+#include <limits>
+#include <queue>
+#include <string>
+#include <stdexcept>
 
 
 class RecordComponent : public BaseRecordComponent

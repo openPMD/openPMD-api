@@ -20,8 +20,8 @@
  */
 #pragma once
 
-
 #include <memory>
+
 
 class AbstractFilePosition;
 class AbstractIOHandler;

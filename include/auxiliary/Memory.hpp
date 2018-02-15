@@ -1,9 +1,11 @@
 #pragma once
 
+#include "Datatype.hpp"
+
 #include <functional>
 #include <memory>
+#include <utility>
 
-#include "Datatype.hpp"
 
 std::unique_ptr< void, std::function< void(void*) > >
 allocatePtr(Datatype dtype, size_t numPoints)
