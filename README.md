@@ -83,8 +83,11 @@ while those can be build either with or without:
 * MPI 2.3+, e.g. OpenMPI or MPICH2
 
 Optional language bindings:
-* Python: (*not yet implemented*)
+* Python:
+  * Python 3.X+
   * pybind11 2.3.0+
+  * mpi4py?
+  * numpy-dev?
   * xtensor-python 0.17.0+
 
 ## Installation
@@ -141,7 +144,8 @@ CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 | `openPMD_USE_HDF5`   | **AUTO**/ON/OFF  | Enable support for HDF5                |
 | `openPMD_USE_ADIOS1` | **AUTO**/ON/OFF  | Enable support for ADIOS1 <sup>1</sup> |
 | `openPMD_USE_ADIOS2` | AUTO/ON/**OFF**  | Enable support for ADIOS2 <sup>1</sup> |
-| `openPMD_USE_PYTHON` | AUTO/ON/**OFF**  | Enable Python bindings <sup>1</sup>    |
+| `openPMD_USE_PYTHON` | **AUTO**/ON/OFF  | Enable Python bindings                 |
+| `PYTHON_EXECUTABLE`  | (first found)    | Path to Python executable              |
 
 <sup>1</sup> *not yet implemented*
 

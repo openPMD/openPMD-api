@@ -47,7 +47,7 @@ openpmd_option(HDF5   "Enable HDF5 support"    AUTO)
 openpmd_option(ADIOS1 "Enable ADIOS1 support"  OFF)
 openpmd_option(ADIOS2 "Enable ADIOS2 support"  OFF)
 # openpmd_option(JSON "Enable JSON support" AUTO)
-# openpmd_option(PYTHON "Enable Python bindings" OFF)
+openpmd_option(PYTHON "Enable Python bindings" AUTO)
 
 option(openPMD_USE_INTERNAL_VARIANT "Use internally shipped MPark.Variant" ON)
 
@@ -176,6 +176,21 @@ endif()
 
 # TODO: Check if ADIOS2 is parallel when openPMD_HAVE_MPI is ON
 
+# external library: pybind11 (optional)
+if(openPMD_USE_PYTHON STREQUAL AUTO)
+    find_package(pybind11 2.2.1 CONFIG)  # 2.3.0
+    if(pybind11_FOUND)
+        set(openPMD_HAVE_PYTHON TRUE)
+    else()
+        set(openPMD_HAVE_PYTHON FALSE)
+    endif()
+elseif(openPMD_USE_PYTHON)
+    find_package(pybind11 2.2.1 CONFIG REQUIRED)  # 2.3.0
+    set(openPMD_HAVE_PYTHON TRUE)
+else()
+    set(openPMD_HAVE_PYTHON FALSE)
+endif()
+
 
 # Targets #####################################################################
 #
@@ -264,6 +279,35 @@ if(openPMD_HAVE_ADIOS2)
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS2=1")
 endif()
 
+# python bindings
+if(openPMD_HAVE_PYTHON)
+    pybind11_add_module(openPMD.py MODULE
+        src/binding/python/openPMD.cpp
+        src/binding/python/Dataset.cpp
+        src/binding/python/Datatype.cpp
+        src/binding/python/Iteration.cpp
+        src/binding/python/IterationEncoding.cpp
+        src/binding/python/Series.cpp
+    )
+    target_link_libraries(openPMD.py PRIVATE openPMD)
+
+    set(CMAKE_INSTALL_PYTHONDIR
+        "${CMAKE_INSTALL_LIBDIR}/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages"
+    )
+    set(CMAKE_INSTALL_PYTHONDIR "${CMAKE_INSTALL_PYTHONDIR}"
+        CACHE INTERNAL "" FORCE
+    )
+    set_target_properties(openPMD.py PROPERTIES
+        OUTPUT_NAME openPMD
+        LIBRARY_OUTPUT_DIRECTORY ${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}
+        RUNTIME_OUTPUT_DIRECTORY ${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}
+    )
+
+    #if(openPMD_HAVE_MPI)
+    #    target_link_libraries(openPMD.py PRIVATE PythonModule::mpi4py)
+    #endif()
+endif()
+
 # tests
 set(openPMD_TEST_NAMES
     Core
@@ -343,6 +387,11 @@ install(TARGETS openPMD EXPORT openPMDTargets
     RUNTIME DESTINATION bin
     INCLUDES DESTINATION include
 )
+if(openPMD_HAVE_PYTHON)
+    install(TARGETS openPMD.py
+        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}
+    )
+endif()
 install(DIRECTORY "${openPMD_SOURCE_DIR}/include/."
   DESTINATION include
   PATTERN ".svn" EXCLUDE
@@ -414,6 +463,9 @@ message("        bin: ${CMAKE_INSTALL_BINDIR}")
 message("        lib: ${CMAKE_INSTALL_LIBDIR}")
 message("    include: ${CMAKE_INSTALL_INCLUDEDIR}")
 message("      cmake: ${CMAKE_INSTALL_CMAKEDIR}")
+if(openPMD_HAVE_PYTHON)
+    message("     python: ${CMAKE_INSTALL_PYTHONDIR}")
+endif()
 message("")
 message("  Build Type: ${CMAKE_BUILD_TYPE}")
 message("  Build Options:")

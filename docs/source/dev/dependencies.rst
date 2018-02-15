@@ -35,8 +35,11 @@ while those can be build either with or without:
 Optional: language bindings
 ---------------------------
 
-* Python: (*not yet implemented*)
+* Python:
 
+  * Python 3.X+
   * pybind11 2.3.0+
+  * mpi4py?
+  * numpy-dev?
   * xtensor-python 0.17.0+
 
