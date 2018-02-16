@@ -41,7 +41,6 @@ int main(int argc, char *argv[])
   Record          &mass        = electrons["mass"];
   RecordComponent &mass_scalar = electrons["mass"][RecordComponent::SCALAR];
 
-  double value = 42.;
   Dataset dataset = Dataset(Datatype::DOUBLE, Extent{1});
   mass_scalar.resetDataset(dataset);
 
