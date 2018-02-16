@@ -28,7 +28,7 @@ private:
     using variadic_t = Variadic< Dtype,
                                  float, double,
                                  uint8_t, uint16_t, uint32_t, uint64_t,
-                                 uint8_t, int16_t, int32_t, int64_t,
+                                 int8_t, int16_t, int32_t, int64_t,
                                  bool >;
     variadic_t m_data;
 };  //GenericPatchData

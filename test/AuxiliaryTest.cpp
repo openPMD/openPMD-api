@@ -5,6 +5,7 @@
 
 #define protected public
 #include "auxiliary/StringManip.hpp"
+#include "auxiliary/Variadic.hpp"
 #include "backend/Container.hpp"
 #include "backend/Writable.hpp"
 #include "IO/AbstractIOHandler.hpp"
@@ -70,7 +71,7 @@ public:
     int int_ = 42;
     float float_ = 3.14f;
 
-    std::string text() const { return boost::get< std::string >(getAttribute("text").getResource()); }
+    std::string text() const { return variadicSrc::get< std::string >(getAttribute("text").getResource()); }
     structure& setText(std::string text) { setAttribute("text", text); return *this; }
 };
 
@@ -182,17 +183,17 @@ BOOST_AUTO_TEST_CASE(attributable_access_test)
 
     a.setAttribute("key", std::string("value"));
     BOOST_TEST(a.numAttributes() == 1);
-    BOOST_TEST(boost::get< std::string >(a.get("key")) == "value");
+    BOOST_TEST(variadicSrc::get< std::string >(a.get("key")) == "value");
 
     a.setAttribute("key", std::string("newValue"));
     BOOST_TEST(a.numAttributes() == 1);
-    BOOST_TEST(boost::get< std::string >(a.get("key")) == "newValue");
+    BOOST_TEST(variadicSrc::get< std::string >(a.get("key")) == "newValue");
 
     using array_t = std::array< double, 7 >;
     array_t arr{{1, 2, 3, 4, 5, 6, 7}};
     a.setAttribute("array", arr);
     BOOST_TEST(a.numAttributes() == 2);
-    BOOST_TEST(boost::get< array_t >(a.get("array")) == arr);
+    BOOST_TEST(variadicSrc::get< array_t >(a.get("array")) == arr);
     BOOST_TEST(a.deleteAttribute("nonExistentKey") == false);
     BOOST_TEST(a.numAttributes() == 2);
     BOOST_TEST(a.deleteAttribute("key") == true);
@@ -215,9 +216,9 @@ public:
         setAtt3("3");
     }
 
-    int att1() const { return boost::get< int >(getAttribute("att1").getResource()); }
-    double att2() const { return boost::get< double >(getAttribute("att2").getResource()); }
-    std::string att3() const { return boost::get< std::string >(getAttribute("att3").getResource()); }
+    int att1() const { return variadicSrc::get< int >(getAttribute("att1").getResource()); }
+    double att2() const { return variadicSrc::get< double >(getAttribute("att2").getResource()); }
+    std::string att3() const { return variadicSrc::get< std::string >(getAttribute("att3").getResource()); }
     Dotty& setAtt1(int i) { setAttribute("att1", i); return *this; }
     Dotty& setAtt2(double d) { setAttribute("att2", d); return *this; }
     Dotty& setAtt3(std::string s) { setAttribute("att3", s); return *this; }

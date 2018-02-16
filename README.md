@@ -68,6 +68,9 @@ Required:
 * CMake 3.10.0+
 * Boost 1.62.0+: `filesystem`, `system`, `unit_test_framework`
 
+Shipped internally:
+* [MPark.Variant](https://github.com/mpark/variant) 1.3.0+
+
 Optional I/O backends:
 * HDF5 1.8.6+
 * ADIOS 1.10+ (*not yet implemented*)
@@ -129,15 +132,22 @@ sudo make install
 The following options can be added to the `cmake` call to control features.
 CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 
-| CMake Option       | Values           | Description                            |
-|--------------------|------------------|----------------------------------------|
-| openPMD_USE_MPI    | **AUTO**/ON/OFF  | Enable MPI support                     |
-| openPMD_USE_HDF5   | **AUTO**/ON/OFF  | Enable support for HDF5                |
-| openPMD_USE_ADIOS1 | **AUTO**/ON/OFF  | Enable support for ADIOS1 <sup>1</sup> |
-| openPMD_USE_ADIOS2 | AUTO/ON/**OFF**  | Enable support for ADIOS2 <sup>1</sup> |
-| openPMD_USE_PYTHON | AUTO/ON/**OFF**  | Enable Python bindings <sup>1</sup>    |
+| CMake Option         | Values           | Description                            |
+|----------------------|------------------|----------------------------------------|
+| `openPMD_USE_MPI`    | **AUTO**/ON/OFF  | Enable MPI support                     |
+| `openPMD_USE_HDF5`   | **AUTO**/ON/OFF  | Enable support for HDF5                |
+| `openPMD_USE_ADIOS1` | **AUTO**/ON/OFF  | Enable support for ADIOS1 <sup>1</sup> |
+| `openPMD_USE_ADIOS2` | AUTO/ON/**OFF**  | Enable support for ADIOS2 <sup>1</sup> |
+| `openPMD_USE_PYTHON` | AUTO/ON/**OFF**  | Enable Python bindings <sup>1</sup>    |
 
 <sup>1</sup> *not yet implemented*
+
+Additionally, the following libraries are shipped internally.
+The following options allow to switch to external installs:
+
+| CMake Option                   | Values     | Library       | Version |
+|--------------------------------|------------|---------------|---------|
+| `openPMD_USE_INTERNAL_VARIANT` | **ON**/OFF | MPark.Variant | 1.13.0+ |
 
 By default, this will build as a static library (`libopenPMD.a`) and installs also its headers.
 In order to build a static library, append `-DBUILD_SHARED_LIBS=ON` to the `cmake` command.
@@ -170,3 +180,4 @@ if(openPMD_FOUND)
     target_link_libraries(YourTarget PRIVATE openPMD::openPMD)
 endif()
 ```
+

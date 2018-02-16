@@ -14,6 +14,13 @@ Required
 * CMake 3.10.0+
 * Boost 1.62.0+: ``filesystem``, ``system``, ``unit_test_framework``
 
+Shipped internally
+------------------
+
+The following libraries shipped internally:
+
+* `MPark.Variant <https://github.com/mpark/variant>`_ 1.3.0+
+
 Optional: I/O backends
 ----------------------
 
@@ -32,3 +39,4 @@ Optional: language bindings
 
   * pybind11 2.3.0+
   * xtensor-python 0.17.0+
+
