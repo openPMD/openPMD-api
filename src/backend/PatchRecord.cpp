@@ -2,12 +2,6 @@
 #include "backend/PatchRecord.hpp"
 
 
-GenericPatchData::GenericPatchData()
-        : m_data(0)
-{
-    m_data.dtype = Dtype::UNDEFINED;
-}
-
 PatchRecord&
 PatchRecord::setUnitDimension(std::map< UnitDimension, double > const& udim)
 {

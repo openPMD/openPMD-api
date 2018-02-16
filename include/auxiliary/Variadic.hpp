@@ -20,14 +20,13 @@
  */
 #pragma once
 
-// boost::variant uses boost::mpl::list to store template types
-// the default length of the list is limited to 20 items,
-// there are more dtypes handled in openPMD-api
-// BOOST_MPL_LIMIT_LIST_SIZE has to be a multiple of 10
-#define BOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
-#define BOOST_MPL_LIMIT_LIST_SIZE 30
-
-#include <boost/variant.hpp>
+#if __cplusplus >= 201703L
+#   include <variant>
+namespace variadicSrc = std;
+#else
+#   include <mpark_variant/variant.hpp>
+namespace variadicSrc = mpark;
+#endif
 
 #include <type_traits>
 
@@ -43,7 +42,7 @@ class Variadic
     static_assert(std::is_enum< T_DTYPES >::value, "Datatypes to Variadic must be supplied as enum.");
 
 public:
-    using resource = boost::variant< T ... >;
+    using resource = variadicSrc::variant< T ... >;
     /** Construct a lightweight wrapper around a generic object that indicates
      * the concrete datatype of the specific object stored.
      *
@@ -52,20 +51,20 @@ public:
      * @param   r   Generic object to be stored.
      */
     Variadic(resource r)
-            : dtype{static_cast<T_DTYPES>(r.which())},
+            : dtype{static_cast<T_DTYPES>(r.index())},
               m_data{r}
     { }
 
     /** Retrieve a stored specific object of known datatype with ensured type-safety.
      *
-     * @throw   boost::bad_get if stored object is not of type U.
+     * @throw   std::bad_variant_access if stored object is not of type U.
      * @tparam  U   Type of the object to be retrieved.
      * @return  Copy of the retrieved object of type U.
      */
     template< typename U >
     U get() const
     {
-        return boost::get< U >(m_data);
+        return variadicSrc::get< U >(m_data);
     }
 
     /** Retrieve the stored generic object.

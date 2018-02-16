@@ -1,5 +1,6 @@
 #pragma once
 
+#include "auxiliary/Variadic.hpp"
 #include "backend/Attribute.hpp"
 #include "backend/Writable.hpp"
 #include "Dataset.hpp"
