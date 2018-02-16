@@ -262,8 +262,10 @@ set(openPMD_TEST_NAMES
 )
 # examples
 set(openPMD_EXAMPLE_NAMES
-    writer
-    reader
+    1_structure
+    2_read_serial
+    #writer
+    #reader
 )
 foreach(testname ${openPMD_TEST_NAMES})
     add_executable(${testname}Tests test/${testname}Test.cpp)
@@ -295,6 +297,8 @@ foreach(examplename ${openPMD_EXAMPLE_NAMES})
     if(TARGET Boost::unit_test_framework)
         target_link_libraries(poc_HDF5${examplename} PRIVATE Boost::unit_test_framework)
     endif()
+    add_executable(${examplename} examples/${examplename}.cpp)
+    target_link_libraries(${examplename} PRIVATE openPMD.core openPMD.io)
 endforeach()
 
 

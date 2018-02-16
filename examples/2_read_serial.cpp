@@ -1,0 +1,68 @@
+/* Copyright 2017-2018 Fabian Koller
+ *
+ * This file is part of openPMD-api.
+ *
+ * openPMD-api is free software: you can redistribute it and/or modify
+ * it under the terms of of either the GNU General Public License or
+ * the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * openPMD-api is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License and the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * and the GNU Lesser General Public License along with openPMD-api.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+#include "openPMD.hpp"
+
+int main(int argc, char *argv[])
+{
+  Series series = Series::read("../samples/git-sample/data%T.h5",
+                               AccessType::READ_ONLY);
+  std::cout << "Read a Series with openPMD standard version "
+            << series.openPMD() << '\n';
+
+  std::cout << "The Series contains " << series.iterations.size() << " iterations:";
+  for( auto const& i : series.iterations )
+    std::cout << "\n\t" << i.first;
+  std::cout << '\n';
+
+  Iteration &i = series.iterations[100];
+  std::cout << "Iteration 100 contains " << i.meshes.size() << " meshes:";
+  for( auto const& m : i.meshes )
+    std::cout << "\n\t" << m.first;
+  std::cout << '\n';
+  std::cout << "Iteration 100 contains " << i.particles.size() << " particle species:";
+  for( auto const& ps : i.particles )
+    std::cout << "\n\t" << ps.first;
+  std::cout << '\n';
+
+  MeshRecordComponent &E_x = i.meshes["E"]["x"];
+  Extent extent = E_x.getExtent();
+  std::cout << "Field E/x has shape (";
+  for( auto const& dim : extent )
+    std::cout << dim << ',';
+  std::cout << ") and has datatype " << E_x.getDatatype() << '\n';
+
+  Offset chunk_offset = {1, 1, 1};
+  Extent chunk_extent = {2, 2, 1};
+  std::unique_ptr< double[] > chunk_data;
+  E_x.loadChunk(chunk_offset, chunk_extent, chunk_data);
+  series.flush();
+  std::cout << "Read chunk contains:\n";
+  for( size_t row = 0; row < chunk_extent[0]; ++row )
+  {
+    for( size_t col = 0; col < chunk_extent[1]; ++col )
+      std::cout << "\t"
+                << '(' << row + chunk_offset[0] << '|' << col + chunk_offset[1] << '|' << 1 << ")\t"
+                << chunk_data[row*chunk_extent[1]+col];
+    std::cout << '\n';
+  }
+
+  return 0;
+}
