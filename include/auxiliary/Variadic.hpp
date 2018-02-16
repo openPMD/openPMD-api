@@ -20,7 +20,13 @@
  */
 #pragma once
 
-#include <mpark_variant/variant.hpp>
+#if __cplusplus >= 201703L
+#   include <variant>
+namespace variadicSrc = std;
+#else
+#   include <mpark_variant/variant.hpp>
+namespace variadicSrc = mpark;
+#endif
 
 #include <type_traits>
 
@@ -36,7 +42,7 @@ class Variadic
     static_assert(std::is_enum< T_DTYPES >::value, "Datatypes to Variadic must be supplied as enum.");
 
 public:
-    using resource = mpark::variant< T ... >;
+    using resource = variadicSrc::variant< T ... >;
     /** Construct a lightweight wrapper around a generic object that indicates
      * the concrete datatype of the specific object stored.
      *
@@ -51,14 +57,14 @@ public:
 
     /** Retrieve a stored specific object of known datatype with ensured type-safety.
      *
-     * @throw   mpark::bad_variant_access if stored object is not of type U.
+     * @throw   std::bad_variant_access if stored object is not of type U.
      * @tparam  U   Type of the object to be retrieved.
      * @return  Copy of the retrieved object of type U.
      */
     template< typename U >
     U get() const
     {
-        return mpark::get< U >(m_data);
+        return variadicSrc::get< U >(m_data);
     }
 
     /** Retrieve the stored generic object.
