@@ -204,67 +204,53 @@ set(IO_SOURCE
         src/IO/HDF5/ParallelHDF5IOHandler.cpp)
 
 # library
-add_library(openPMD.core ${CORE_SOURCE})
-add_library(openPMD.io ${IO_SOURCE})
+add_Library(openPMD ${CORE_SOURCE} ${IO_SOURCE})
 
 # properties
-set_target_properties(openPMD.core openPMD.io PROPERTIES
+set_target_properties(openPMD PROPERTIES
     POSITION_INDEPENDENT_CODE ON
 )
 
 # own headers
-target_include_directories(openPMD.core PUBLIC
-    $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/include>
-    $<BUILD_INTERFACE:${openPMD_BINARY_DIR}/include>
-    $<INSTALL_INTERFACE:include>
-)
-target_include_directories(openPMD.io PUBLIC
+target_include_directories(openPMD PUBLIC
     $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${openPMD_BINARY_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
 
 if(TARGET Boost::filesystem)
-    target_link_libraries(openPMD.core PUBLIC
-        Boost::boost Boost::system Boost::filesystem)
-    target_link_libraries(openPMD.io PUBLIC
+    target_link_libraries(openPMD PUBLIC
         Boost::boost Boost::system Boost::filesystem)
 else()
-    target_link_libraries(openPMD.core PUBLIC
+    target_link_libraries(openPMD PUBLIC
         ${Boost_LIBRARIES})
-    target_link_libraries(openPMD.io PUBLIC
-        ${Boost_LIBRARIES})
-    target_include_directories(openPMD.core SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
-
-    target_include_directories(openPMD.io SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
+    target_include_directories(openPMD SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 endif()
 
 if(openPMD_HAVE_MPI)
     # MPI targets: CMake 3.9+
     # note: often the PUBLIC dependency to CXX is missing in C targets...
-    target_link_libraries(openPMD.core PUBLIC MPI::MPI_C MPI::MPI_CXX)
-    target_link_libraries(openPMD.io PUBLIC MPI::MPI_C MPI::MPI_CXX)
+    target_link_libraries(openPMD PUBLIC MPI::MPI_C MPI::MPI_CXX)
 
-    target_compile_definitions(openPMD.core PUBLIC "-DopenPMD_HAVE_MPI=1")
-    target_compile_definitions(openPMD.io PUBLIC "-DopenPMD_HAVE_MPI=1")
+    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_MPI=1")
 endif()
 
 if(openPMD_HAVE_HDF5)
-    target_link_libraries(openPMD.io PUBLIC ${HDF5_LIBRARIES})
-    target_include_directories(openPMD.io SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
-    target_compile_definitions(openPMD.io PUBLIC ${HDF5_DEFINITIONS})
-    target_compile_definitions(openPMD.io PUBLIC "-DopenPMD_HAVE_HDF5=1")
+    target_link_libraries(openPMD PUBLIC ${HDF5_LIBRARIES})
+    target_include_directories(openPMD SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
+    target_compile_definitions(openPMD PUBLIC ${HDF5_DEFINITIONS})
+    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_HDF5=1")
 endif()
 
 if(openPMD_HAVE_ADIOS1)
-    target_link_libraries(openPMD.io PUBLIC ${ADIOS_LIBRARIES})
-    target_include_directories(openPMD.io SYSTEM PUBLIC ${ADIOS_INCLUDE_DIRS})
-    target_compile_definitions(openPMD.io PUBLIC "-DopenPMD_HAVE_ADIOS1=1")
+    target_link_libraries(openPMD PUBLIC ${ADIOS_LIBRARIES})
+    target_include_directories(openPMD SYSTEM PUBLIC ${ADIOS_INCLUDE_DIRS})
+    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS1=1")
 endif()
 
 if(openPMD_HAVE_ADIOS2)
-    target_link_libraries(openPMD.io PUBLIC ADIOS2::ADIOS2)
-    target_compile_definitions(openPMD.io PUBLIC "-DopenPMD_HAVE_ADIOS2=1")
+    target_link_libraries(openPMD PUBLIC ADIOS2::ADIOS2)
+    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS2=1")
 endif()
 
 # tests
@@ -298,14 +284,14 @@ foreach(testname ${openPMD_TEST_NAMES})
     if(openPMD_HAVE_ADIOS2)
         target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_ADIOS2=1")
     endif()
-    target_link_libraries(${testname}Tests PRIVATE openPMD.core openPMD.io)
+    target_link_libraries(${testname}Tests PRIVATE openPMD)
     if(TARGET Boost::unit_test_framework)
         target_link_libraries(${testname}Tests PRIVATE Boost::unit_test_framework)
     endif()
 endforeach()
 foreach(examplename ${openPMD_EXAMPLE_NAMES})
     add_executable(poc_HDF5${examplename} ${examplename}.cpp)
-    target_link_libraries(poc_HDF5${examplename} PRIVATE openPMD.core openPMD.io)
+    target_link_libraries(poc_HDF5${examplename} PRIVATE openPMD)
     if(TARGET Boost::unit_test_framework)
         target_link_libraries(poc_HDF5${examplename} PRIVATE Boost::unit_test_framework)
     endif()
@@ -331,9 +317,7 @@ write_basic_package_version_file("openPMDConfigVersion.cmake"
 # Installs ####################################################################
 #
 # headers, libraries and exectuables
-set(openPMD_INSTALL_TARGETS openPMD.core openPMD.io)
-
-install(TARGETS ${openPMD_INSTALL_TARGETS} EXPORT openPMDTargets
+install(TARGETS openPMD EXPORT openPMDTargets
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin
