@@ -56,7 +56,7 @@ for( auto const& i : s.iterations )
 // ...
 ```
 
-Extended [writer example](writer.cpp) and [reader example](reader.cpp).
+Extended [writer example](examples/7_extended_write_serial.cpp) and [reader example](examples/6_dump_filebased_series.cpp).
 
 ### Python
 
