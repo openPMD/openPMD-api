@@ -49,6 +49,8 @@ openpmd_option(ADIOS2 "Enable ADIOS2 support"  OFF)
 # openpmd_option(JSON "Enable JSON support" AUTO)
 # openpmd_option(PYTHON "Enable Python bindings" OFF)
 
+option(openPMD_USE_INTERNAL_VARIANT "Use internally shipped MPark.Variant" ON)
+
 set(CMAKE_CONFIGURATION_TYPES "Release;Debug;MinSizeRel;RelWithDebInfo")
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING
@@ -217,6 +219,14 @@ target_include_directories(openPMD PUBLIC
     $<BUILD_INTERFACE:${openPMD_BINARY_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
+
+# C++11 std::variant (C++17 stdlib preview)
+if(openPMD_USE_INTERNAL_VARIANT)
+    message(STATUS "MPark.Variant: Using INTERNAL version 1.3.0")
+else()
+    find_package(mpark_variant 1.3.0 REQUIRED)
+    target_link_libraries(openPMD PUBLIC mpark_variant)
+endif()
 
 if(TARGET Boost::filesystem)
     target_link_libraries(openPMD PUBLIC
