@@ -265,6 +265,8 @@ set(openPMD_EXAMPLE_NAMES
     1_structure
     2_read_serial
     3_write_serial
+    4_read_parallel
+    5_write_parallel
     #writer
     #reader
 )
