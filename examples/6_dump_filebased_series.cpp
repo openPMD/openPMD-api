@@ -1,7 +1,8 @@
+#include <openPMD.hpp>
+
 #include <iostream>
 #include <numeric>
 
-#include "Series.hpp"
 
 int main()
 {

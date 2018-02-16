@@ -1,7 +1,7 @@
+#include <openPMD.hpp>
+
 #include <iostream>
 #include <boost/filesystem.hpp>
-
-#include "Series.hpp"
 
 
 void

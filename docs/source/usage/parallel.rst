@@ -10,11 +10,11 @@ Reading
 
 .. literalinclude:: 4_read_parallel.cpp
    :language: cpp
-   :linenos:
+   :lines: 21-
 
 Writing
 -------
 
 .. literalinclude:: 5_write_parallel.cpp
    :language: cpp
-   :linenos:
+   :lines: 21-

@@ -11,11 +11,11 @@ CMake controls options with prefixed ``-D``, e.g. ``-DopenPMD_USE_MPI=OFF``:
 ====================== =============== ==================================
 CMake Option           Values          Description
 ====================== =============== ==================================
-``openPMD_USE_MPI``     **AUTO**/ON/OFF Enable MPI support
-``openPMD_USE_HDF5``    **AUTO**/ON/OFF Enable support for HDF5
-``openPMD_USE_ADIOS1``  **AUTO**/ON/OFF Enable support for ADIOS1 :sup:`1`
-``openPMD_USE_ADIOS2``  AUTO/ON/**OFF** Enable support for ADIOS2 :sup:`1`
-``openPMD_USE_PYTHON``  AUTO/ON/**OFF** Enable Python bindings :sup:`1`
+``openPMD_USE_MPI``    **AUTO**/ON/OFF Enable MPI support
+``openPMD_USE_HDF5``   **AUTO**/ON/OFF Enable support for HDF5
+``openPMD_USE_ADIOS1`` **AUTO**/ON/OFF Enable support for ADIOS1 :sup:`1`
+``openPMD_USE_ADIOS2`` AUTO/ON/**OFF** Enable support for ADIOS2 :sup:`1`
+``openPMD_USE_PYTHON`` AUTO/ON/**OFF** Enable Python bindings :sup:`1`
 ====================== =============== ==================================
 
 :sup:`1` *not yet implemented*
@@ -26,7 +26,7 @@ The following options allow to switch to external installs:
 ================================ =========== ============= ========
 CMake Option                     Values      Library       Version
 ================================ =========== ============= ========
-``openPMD_USE_INTERNAL_VARIANT`` **ON**/OFF  MPark.Variant 1.13.0+
+``openPMD_USE_INTERNAL_VARIANT`` **ON**/OFF  MPark.Variant   1.3.0+
 ================================ =========== ============= ========
 
 By default, this will build as a static library (``libopenPMD.a``) and installs also its headers.

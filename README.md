@@ -56,11 +56,14 @@ for( auto const& i : s.iterations )
 // ...
 ```
 
-Extended [writer example](examples/7_extended_write_serial.cpp) and [reader example](examples/6_dump_filebased_series.cpp).
-
 ### Python
 
 *not yet implemented*
+
+### More!
+
+Curious?
+Our manual shows full [read & write examples](https://openpmd-api.readthedocs.io/en/latest/usage/firststeps.html), both serial an MPI-parallel!
 
 ## Dependencies
 
@@ -147,7 +150,7 @@ The following options allow to switch to external installs:
 
 | CMake Option                   | Values     | Library       | Version |
 |--------------------------------|------------|---------------|---------|
-| `openPMD_USE_INTERNAL_VARIANT` | **ON**/OFF | MPark.Variant | 1.13.0+ |
+| `openPMD_USE_INTERNAL_VARIANT` | **ON**/OFF | MPark.Variant |  1.3.0+ |
 
 By default, this will build as a static library (`libopenPMD.a`) and installs also its headers.
 In order to build a static library, append `-DBUILD_SHARED_LIBS=ON` to the `cmake` command.
