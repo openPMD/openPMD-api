@@ -20,7 +20,7 @@ Initial backends will include ADIOS and HDF5.
 
 *Syntax not yet implemented as shown below*
 
-```C++
+```cpp
 #include <openPMD/openPMD.hpp>
 #include <iostream>
 
