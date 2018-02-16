@@ -20,18 +20,19 @@
  */
 #pragma once
 
-
-#include <exception>
-#include <future>
-#include <queue>
-
-#if openPMD_HAVE_MPI
-#include <mpi.h>
-#endif
-
 #include "AccessType.hpp"
 #include "Format.hpp"
 #include "IOTask.hpp"
+
+#if openPMD_HAVE_MPI
+#   include <mpi.h>
+#endif
+
+#include <stdexcept>
+#include <memory>
+#include <future>
+#include <queue>
+#include <string>
 
 
 class no_such_file_error : public std::runtime_error

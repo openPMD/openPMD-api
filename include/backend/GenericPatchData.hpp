@@ -1,11 +1,11 @@
 #pragma once
 
+#include "auxiliary/Variadic.hpp"
+#include "Datatype.hpp"
 
 #include <cstdint>
 #include <type_traits>
 
-#include "auxiliary/Variadic.hpp"
-#include "Datatype.hpp"
 
 class GenericPatchData
 {

@@ -1,11 +1,11 @@
 #pragma once
 
+#include "backend/BaseRecord.hpp"
+#include "RecordComponent.hpp"
 
 #include <map>
 #include <type_traits>
-
-#include "backend/BaseRecord.hpp"
-#include "RecordComponent.hpp"
+#include <string>
 
 
 class Record : public BaseRecord< RecordComponent >

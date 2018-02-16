@@ -1,10 +1,11 @@
 #pragma once
 
-
 #include "backend/Attributable.hpp"
 #include "backend/Container.hpp"
 #include "ParticlePatches.hpp"
 #include "Record.hpp"
+
+#include <string>
 
 
 class ParticleSpecies : public Container< Record >

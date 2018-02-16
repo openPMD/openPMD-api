@@ -1,7 +1,8 @@
 #pragma once
 
-
 #include "RecordComponent.hpp"
+
+#include <vector>
 
 
 class MeshRecordComponent : public RecordComponent

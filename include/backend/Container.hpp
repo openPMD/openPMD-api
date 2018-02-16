@@ -20,10 +20,13 @@
  */
 #pragma once
 
-
-#include <map>
-
 #include "Attributable.hpp"
+
+#include <initializer_list>
+#include <type_traits>
+#include <stdexcept>
+#include <map>
+#include <string>
 
 
 /** @brief Map-like container that enforces openPMD requirements and handles IO.

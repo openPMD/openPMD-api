@@ -20,11 +20,6 @@
  */
 #pragma once
 
-
-#if openPMD_HAVE_MPI
-#include <mpi.h>
-#endif
-
 #include "backend/Attributable.hpp"
 #include "backend/Container.hpp"
 #include "IO/AbstractIOHandler.hpp"
@@ -32,6 +27,12 @@
 #include "IO/Format.hpp"
 #include "Iteration.hpp"
 #include "IterationEncoding.hpp"
+
+#if openPMD_HAVE_MPI
+#   include <mpi.h>
+#endif
+
+#include <string>
 
 
 /** @brief  Root level of the openPMD hierarchy.

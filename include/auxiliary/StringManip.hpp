@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+
 inline bool
 contains(std::string const &s,
          std::string const &infix)

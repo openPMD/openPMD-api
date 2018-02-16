@@ -1,9 +1,10 @@
 #pragma once
 
-
 #include "backend/Attributable.hpp"
 #include "backend/Container.hpp"
 #include "backend/PatchRecord.hpp"
+
+#include <vector>
 
 
 class ParticlePatches : public Container< PatchRecord >

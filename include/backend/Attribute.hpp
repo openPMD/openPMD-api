@@ -20,13 +20,13 @@
  */
 #pragma once
 
+#include "auxiliary/Variadic.hpp"
+#include "Datatype.hpp"
 
 #include <array>
 #include <cstdint>
 #include <vector>
-
-#include "auxiliary/Variadic.hpp"
-#include "Datatype.hpp"
+#include <string>
 
 
 //TODO This might have to be a Writable

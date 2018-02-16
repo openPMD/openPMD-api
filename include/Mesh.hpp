@@ -1,11 +1,12 @@
 #pragma once
 
-
-#include <array>
-
 #include "backend/Attributable.hpp"
 #include "backend/BaseRecord.hpp"
 #include "backend/MeshRecordComponent.hpp"
+
+#include <array>
+#include <vector>
+#include <string>
 
 
 /** @brief Container for N-dimensional, homogenous Records.

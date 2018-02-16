@@ -20,15 +20,15 @@
  */
 #pragma once
 
+#include "IO/AbstractIOHandler.hpp"
+#include "Attribute.hpp"
+#include "Writable.hpp"
 
 #include <exception>
 #include <map>
 #include <memory>
 #include <vector>
-
-#include "IO/AbstractIOHandler.hpp"
-#include "Attribute.hpp"
-#include "Writable.hpp"
+#include <string>
 
 
 class no_such_attribute_error : public std::runtime_error
