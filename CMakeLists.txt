@@ -192,6 +192,7 @@ set(CORE_SOURCE
         src/Series.cpp
         src/backend/Attributable.cpp
         src/backend/BaseRecordComponent.cpp
+        src/backend/GenericPatchData.cpp
         src/backend/MeshRecordComponent.cpp
         src/backend/PatchRecord.cpp
         src/backend/PatchRecordComponent.cpp
