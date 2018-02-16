@@ -21,6 +21,7 @@
 #include "openPMD.hpp"
 
 #include <iostream>
+#include <memory>
 
 using std::cout;
 
@@ -32,9 +33,9 @@ int main(int argc, char *argv[])
   for( size_t i = 0; i < size*size; ++i )
     *(global_data.get() + i) = static_cast< double >(i);
   cout << "Set up a 2D square array (" << size << 'x' << size
-       << ") that will be written to disk.\n";
+       << ") that will be written to disk\n";
 
-  Series series = Series::create("../samples/2_serial_write.h5",
+  Series series = Series::create("../samples/3_write_serial.h5",
                                  AccessType::CREATE);
   cout << "Created an empty " << series.iterationEncoding() << " Series\n";
 
@@ -57,7 +58,7 @@ int main(int argc, char *argv[])
   Offset offset = {0, 0};
   E.storeChunk(offset, extent, global_data);
   cout << "Stored the whole Dataset contents as a single chunk, "
-          "ready to write content to disk.\n";
+          "ready to write content to disk\n";
 
   series.flush();
   cout << "Dataset content has been fully written to disk\n";
