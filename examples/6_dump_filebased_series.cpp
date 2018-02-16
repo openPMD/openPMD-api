@@ -5,9 +5,7 @@
 
 int main()
 {
-    /*
-    Series o = Series("../samples/git-sample/",
-                      "data00000400.h5");
+    Series o = Series::read("../samples/git-sample/data%T.h5");
 
     std::cout << "Read iterations ";
     for( auto const& val : o.iterations )
@@ -43,8 +41,8 @@ int main()
             std::cout << '\t' << val << '\n';
         std::cout << '\n';
 
-        std::cout << i.first << ".time - " << i.second.time() << '\n'
-                  << i.first << ".dt - " << i.second.dt() << '\n'
+        std::cout << i.first << ".time - " << i.second.time< float >() << '\n'
+                  << i.first << ".dt - " << i.second.dt< float >() << '\n'
                   << i.first << ".timeUnitSI - " << i.second.timeUnitSI() << '\n'
                   << '\n';
 
@@ -70,7 +68,7 @@ int main()
             for( auto const& val : m.second.axisLabels() )
                 axisLabels += val + ", ";
             std::string gridSpacing = "";
-            for( auto const& val : m.second.gridSpacing() )
+            for( auto const& val : m.second.gridSpacing< float >() )
                 gridSpacing += std::to_string(val) + ", ";
             std::string gridGlobalOffset = "";
             for( auto const& val : m.second.gridGlobalOffset() )
@@ -85,7 +83,7 @@ int main()
                       << prefix << ".gridGlobalOffset - " << gridGlobalOffset << '\n'
                       << prefix << ".gridUnitSI - " << m.second.gridUnitSI() << '\n'
                       << prefix << ".unitDimension - " << unitDimension << '\n'
-                      << prefix << ".timeOffset - " << m.second.timeOffset() << '\n'
+                      << prefix << ".timeOffset - " << m.second.timeOffset< float >() << '\n'
                       << '\n';
 
             std::cout << "Read recordComponents for mesh " << m.first << ":\n";
@@ -149,7 +147,6 @@ int main()
             }
         }
     }
-     */
 
     return 0;
 }

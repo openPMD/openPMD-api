@@ -19,16 +19,13 @@ public:
     operator T();
 
 private:
-    enum Dtype { UCHAR, CHAR,
-        UINT, INT,
+    enum Dtype {
         FLOAT, DOUBLE,
         UINT8, UINT16, UINT32, UINT64,
         INT8, INT16, INT32, INT64,
         BOOL,
         UNDEFINED };
     using variadic_t = Variadic< Dtype,
-                                 unsigned char, char,
-                                 unsigned int, int,
                                  float, double,
                                  uint8_t, uint16_t, uint32_t, uint64_t,
                                  uint8_t, int16_t, int32_t, int64_t,

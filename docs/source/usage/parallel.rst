@@ -8,13 +8,13 @@ The following examples show parallel reading and writing of domain-decomposed da
 Reading
 -------
 
-.. code-block:: cpp
-
-   // ...
+.. literalinclude:: 4_read_parallel.cpp
+   :language: cpp
+   :linenos:
 
 Writing
 -------
 
-.. code-block:: cpp
-
-   // ...
+.. literalinclude:: 5_write_parallel.cpp
+   :language: cpp
+   :linenos:

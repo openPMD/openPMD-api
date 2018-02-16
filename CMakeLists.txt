@@ -267,6 +267,8 @@ set(openPMD_EXAMPLE_NAMES
     3_write_serial
     4_read_parallel
     5_write_parallel
+    6_dump_filebased_series
+    7_extended_write_serial
     #writer
     #reader
 )
@@ -299,16 +301,10 @@ foreach(examplename ${openPMD_EXAMPLE_NAMES})
         if(openPMD_HAVE_MPI)
             add_executable(${examplename} examples/${examplename}.cpp)
             target_link_libraries(${examplename} PRIVATE openPMD)
-            if(TARGET Boost::unit_test_framework)
-                target_link_libraries(${examplename} PRIVATE Boost::unit_test_framework)
-            endif()
         endif()
     else()
         add_executable(${examplename} examples/${examplename}.cpp)
         target_link_libraries(${examplename} PRIVATE openPMD)
-        if(TARGET Boost::unit_test_framework)
-            target_link_libraries(${examplename} PRIVATE Boost::unit_test_framework)
-        endif()
     endif()
 endforeach()
 
