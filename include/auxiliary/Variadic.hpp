@@ -24,7 +24,7 @@
 #   include <variant>
 namespace variadicSrc = std;
 #else
-#   include <mpark_variant/variant.hpp>
+#   include <mpark/variant.hpp>
 namespace variadicSrc = mpark;
 #endif
 
