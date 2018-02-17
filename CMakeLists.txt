@@ -280,8 +280,6 @@ set(openPMD_EXAMPLE_NAMES
     5_write_parallel
     6_dump_filebased_series
     7_extended_write_serial
-    #writer
-    #reader
 )
 foreach(testname ${openPMD_TEST_NAMES})
     add_executable(${testname}Tests test/${testname}Test.cpp)
