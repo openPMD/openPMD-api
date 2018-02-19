@@ -13,9 +13,7 @@ void init_Datatype(py::module &);
 void init_Iteration(py::module &);
 void init_IterationEncoding(py::module &);
 void init_Mesh(py::module &);
-/*
 void init_ParticlePatches(py::module &);
-*/
 void init_ParticleSpecies(py::module &);
 void init_Record(py::module &);
 void init_RecordComponent(py::module &);
@@ -30,9 +28,7 @@ PYBIND11_MODULE(openPMD, m) {
     init_Iteration(m);
     init_IterationEncoding(m);
     init_Mesh(m);
-    /*
     init_ParticlePatches(m);    
-    */
     init_ParticleSpecies(m);
     init_Record(m);
     init_RecordComponent(m);
