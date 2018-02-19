@@ -50,7 +50,7 @@ PatchRecord::read()
         dRead.offset = {0};
 
         size_t numPoints = dRead.extent[0];
-        auto data = allocatePtr(dRead.dtype, numPoints);
+        auto data = auxiliary::allocatePtr(dRead.dtype, numPoints);
         dRead.data = data.get();
         IOHandler->enqueue(IOTask(&prc, dRead));
         IOHandler->flush();

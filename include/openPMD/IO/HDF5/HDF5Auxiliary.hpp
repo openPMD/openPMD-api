@@ -235,6 +235,6 @@ concrete_h5_file_position(Writable* w)
         hierarchy.pop();
     }
 
-    return replace_all(pos, "//", "/");
+    return auxiliary::replace_all(pos, "//", "/");
 }
 } // openPMD

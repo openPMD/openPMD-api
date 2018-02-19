@@ -16,16 +16,18 @@ using namespace openPMD;
 
 BOOST_AUTO_TEST_CASE(string_test)
 {
+    using namespace auxiliary;
+
     std::string s = "Man muss noch Chaos in sich haben, "
-                    "um einen tanzenden Stern gebären zu können.";
+                    "um einen tanzenden Stern gebaeren zu koennen.";
     BOOST_TEST(starts_with(s, "M"));
     BOOST_TEST(starts_with(s, "Man"));
     BOOST_TEST(starts_with(s, "Man muss noch"));
     BOOST_TEST(!starts_with(s, " "));
 
     BOOST_TEST(ends_with(s, "."));
-    BOOST_TEST(ends_with(s, "können."));
-    BOOST_TEST(ends_with(s, "gebären zu können."));
+    BOOST_TEST(ends_with(s, "koennen."));
+    BOOST_TEST(ends_with(s, "gebaeren zu koennen."));
 
     BOOST_TEST(contains(s, "M"));
     BOOST_TEST(contains(s, "."));

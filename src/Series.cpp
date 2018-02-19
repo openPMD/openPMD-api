@@ -33,9 +33,9 @@ namespace openPMD
 void
 check_extension(std::string const& filepath)
 {
-    if( !ends_with(filepath, ".h5") &&
-        !ends_with(filepath, ".bp") &&
-        !ends_with(filepath, ".dummy") )
+    if( !auxiliary::ends_with(filepath, ".h5") &&
+        !auxiliary::ends_with(filepath, ".bp") &&
+        !auxiliary::ends_with(filepath, ".dummy") )
         throw std::runtime_error("File format not recognized. "
                                  "Did you append a correct filename extension?");
 }
@@ -122,13 +122,13 @@ Series::Series(std::string const& filepath,
         ie = IterationEncoding::groupBased;
 
     Format f;
-    if( ends_with(name, ".h5") )
+    if( auxiliary::ends_with(name, ".h5") )
         f = Format::HDF5;
-    else if( ends_with(name, ".bp") )
+    else if( auxiliary::ends_with(name, ".bp") )
         f = Format::ADIOS1;
     else
     {
-        if( !ends_with(name, ".dummy") )
+        if( !auxiliary::ends_with(name, ".dummy") )
             std::cerr << "Unknown filename extension. "
                          "Falling back to DUMMY format."
                       << std::endl;
@@ -148,7 +148,7 @@ Series::Series(std::string const& filepath,
             setOpenPMD(OPENPMD);
             setOpenPMDextension(0);
             setAttribute("basePath", std::string(BASEPATH));
-            if( ie == IterationEncoding::fileBased && !contains(m_name, "%T") )
+            if( ie == IterationEncoding::fileBased && !auxiliary::contains(m_name, "%T") )
                 throw std::runtime_error("For fileBased formats the iteration regex %T must be included in the file name");
             setIterationEncoding(ie);
             break;
@@ -156,7 +156,7 @@ Series::Series(std::string const& filepath,
         case AccessType::READ_ONLY:
         case AccessType::READ_WRITE:
         {
-            if( contains(m_name, "%T") )
+            if( auxiliary::contains(m_name, "%T") )
                 readFileBased();
             else
                 readGroupBased();
@@ -191,13 +191,13 @@ Series::Series(std::string const& filepath,
         ie = IterationEncoding::groupBased;
 
     Format f;
-    if( ends_with(name, ".h5") )
+    if( auxiliary::ends_with(name, ".h5") )
         f = Format::HDF5;
-    else if( ends_with(name, ".bp") )
+    else if( auxiliary::ends_with(name, ".bp") )
         f = Format::ADIOS1;
     else
     {
-        if( !ends_with(name, ".dummy") )
+        if( !auxiliary::ends_with(name, ".dummy") )
             std::cerr << "Unknown filename extension. "
                          "Falling back to DUMMY format."
                       << std::endl;
@@ -217,7 +217,7 @@ Series::Series(std::string const& filepath,
             setOpenPMD(OPENPMD);
             setOpenPMDextension(0);
             setAttribute("basePath", std::string(BASEPATH));
-            if( ie == IterationEncoding::fileBased && !contains(m_name, "%T") )
+            if( ie == IterationEncoding::fileBased && !auxiliary::contains(m_name, "%T") )
                 throw std::runtime_error("For fileBased formats the iteration regex %T must be included in the file name");
             setIterationEncoding(ie);
             break;
@@ -225,7 +225,7 @@ Series::Series(std::string const& filepath,
         case AccessType::READ_ONLY:
         case AccessType::READ_WRITE:
         {
-            if( contains(m_name, "%T") )
+            if( auxiliary::contains(m_name, "%T") )
                 readFileBased();
             else
                 readGroupBased();
@@ -296,7 +296,7 @@ Series::setMeshesPath(std::string const& mp)
                     [](Container< Iteration, uint64_t >::value_type const& i){ return i.second.meshes.written; }) )
         throw std::runtime_error("A files meshesPath can not (yet) be changed after it has been written.");
 
-    if( ends_with(mp, "/") )
+    if( auxiliary::ends_with(mp, "/") )
         setAttribute("meshesPath", mp);
     else
         setAttribute("meshesPath", mp + "/");
@@ -317,7 +317,7 @@ Series::setParticlesPath(std::string const& pp)
                     [](Container< Iteration, uint64_t >::value_type const& i){ return i.second.particles.written; }) )
         throw std::runtime_error("A files particlesPath can not (yet) be changed after it has been written.");
 
-    if( ends_with(pp, "/") )
+    if( auxiliary::ends_with(pp, "/") )
         setAttribute("particlesPath", pp);
     else
         setAttribute("particlesPath", pp + "/");
@@ -464,7 +464,7 @@ Series::setName(std::string const& n)
     if( written )
         throw std::runtime_error("A files name can not (yet) be changed after it has been written.");
 
-    if( m_iterationEncoding == IterationEncoding::fileBased && !contains(m_name, "%T") )
+    if( m_iterationEncoding == IterationEncoding::fileBased && !auxiliary::contains(m_name, "%T") )
             throw std::runtime_error("For fileBased formats the iteration regex %T must be included in the file name");
 
     m_name = n;
@@ -506,7 +506,7 @@ Series::flushFileBased()
 
         i.second.flushFileBased(i.first);
 
-        iterations.flush(replace_first(basePath(), "%T/", ""));
+        iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
 
         if( dirty )
         {
@@ -532,7 +532,7 @@ Series::flushGroupBased()
 
     if( !iterations.written )
         iterations.parent = this;
-    iterations.flush(replace_first(basePath(), "%T/", ""));
+    iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
 
     for( auto& i : iterations )
     {
@@ -573,7 +573,7 @@ Series::flushParticlesPath()
 void
 Series::readFileBased()
 {
-    std::regex pattern(replace_first(m_name, "%T", "[[:digit:]]+"));
+    std::regex pattern(auxiliary::replace_first(m_name, "%T", "[[:digit:]]+"));
 
     Parameter< Operation::OPEN_FILE > fOpen;
     Parameter< Operation::READ_ATT > aRead;
@@ -764,7 +764,7 @@ Series::read()
     Parameter< Operation::OPEN_PATH > pOpen;
     std::string version = openPMD();
     if( version == "1.0.0" || version == "1.0.1" || version == "1.1.0" )
-        pOpen.path = replace_first(basePath(), "/%T/", "");
+        pOpen.path = auxiliary::replace_first(basePath(), "/%T/", "");
     else
         throw std::runtime_error("Unknown openPMD version - " + version);
     IOHandler->enqueue(IOTask(&iterations, pOpen));
@@ -795,14 +795,14 @@ Series::cleanFilename(std::string s, Format f)
     switch( f )
     {
         case Format::HDF5:
-            s = replace_last(s, ".h5", "");
+            s = auxiliary::replace_last(s, ".h5", "");
             break;
         case Format::ADIOS1:
         case Format::ADIOS2:
-            s = replace_last(s, ".bp", "");
+            s = auxiliary::replace_last(s, ".bp", "");
             break;
         case Format::DUMMY:
-            s = replace_last(s, ".dummy", "");
+            s = auxiliary::replace_last(s, ".dummy", "");
             break;
         default:
             break;

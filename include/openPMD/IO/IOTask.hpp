@@ -30,7 +30,7 @@ enum class ArgumentDatatype : int
 
     UNDEFINED
 };
-using ParameterArgument = Variadic< ArgumentDatatype,
+using ParameterArgument = auxiliary::Variadic< ArgumentDatatype,
                                     std::string,
                                     std::vector< uint64_t >,
                                     void*,

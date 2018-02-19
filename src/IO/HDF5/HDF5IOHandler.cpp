@@ -180,7 +180,7 @@ HDF5IOHandlerImpl::createFile(Writable* writable,
 
         /* Create a new file using current properties. */
         std::string name = m_handler->directory + parameters.at("name").get< std::string >();
-        if( !ends_with(name, ".h5") )
+        if( !auxiliary::ends_with(name, ".h5") )
             name += ".h5";
         hid_t id = H5Fcreate(name.c_str(),
                              H5F_ACC_TRUNC,
@@ -204,9 +204,9 @@ HDF5IOHandlerImpl::createPath(Writable* writable,
     {
         /* Sanitize path */
         std::string path = parameters.at("path").get< std::string >();
-        if( starts_with(path, "/") )
-            path = replace_first(path, "/", "");
-        if( !ends_with(path, "/") )
+        if( auxiliary::starts_with(path, "/") )
+            path = auxiliary::replace_first(path, "/", "");
+        if( !auxiliary::ends_with(path, "/") )
             path += '/';
 
         /* Open H5Object to write into */
@@ -224,7 +224,7 @@ HDF5IOHandlerImpl::createPath(Writable* writable,
         /* Create the path in the file */
         std::stack< hid_t > groups;
         groups.push(node_id);
-        for( std::string const& folder : split(path, "/", false) )
+        for( std::string const& folder : auxiliary::split(path, "/", false) )
         {
             hid_t group_id = H5Gcreate(groups.top(),
                                        folder.c_str(),
@@ -258,10 +258,10 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
     if( !writable->written )
     {
         std::string name = parameters.at("name").get< std::string >();
-        if( starts_with(name, "/") )
-            name = replace_first(name, "/", "");
-        if( ends_with(name, "/") )
-            name = replace_first(name, "/", "");
+        if( auxiliary::starts_with(name, "/") )
+            name = auxiliary::replace_first(name, "/", "");
+        if( auxiliary::ends_with(name, "/") )
+            name = auxiliary::replace_first(name, "/", "");
 
 
         /* Open H5Object to write into */
@@ -305,7 +305,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         std::string const& compression = parameters.at("compression").get< std::string >();
         if( !compression.empty() )
         {
-            std::vector< std::string > args = split(compression, ":");
+            std::vector< std::string > args = auxiliary::split(compression, ":");
             std::string const& format = args[0];
             if( (format == "zlib" || format == "gzip" || format == "deflate")
                 && args.size() == 2 )
@@ -372,9 +372,9 @@ HDF5IOHandlerImpl::extendDataset(Writable* writable,
 
     /* Sanitize name */
     std::string name = parameters.at("name").get< std::string >();
-    if( starts_with(name, "/") )
-        name = replace_first(name, "/", "");
-    if( !ends_with(name, "/") )
+    if( auxiliary::starts_with(name, "/") )
+        name = auxiliary::replace_first(name, "/", "");
+    if( !auxiliary::ends_with(name, "/") )
         name += '/';
 
     dataset_id = H5Dopen(node_id,
@@ -409,7 +409,7 @@ HDF5IOHandlerImpl::openFile(Writable* writable,
         throw no_such_file_error("Supplied directory is not valid: " + m_handler->directory);
 
     std::string name = m_handler->directory + parameters.at("name").get< std::string >();
-    if( !ends_with(name, ".h5") )
+    if( !auxiliary::ends_with(name, ".h5") )
         name += ".h5";
 
     unsigned flags;
@@ -448,9 +448,9 @@ HDF5IOHandlerImpl::openPath(Writable* writable,
 
     /* Sanitize path */
     std::string path = parameters.at("path").get< std::string >();
-    if( starts_with(path, "/") )
-        path = replace_first(path, "/", "");
-    if( !ends_with(path, "/") )
+    if( auxiliary::starts_with(path, "/") )
+        path = auxiliary::replace_first(path, "/", "");
+    if( !auxiliary::ends_with(path, "/") )
         path += '/';
 
     path_id = H5Gopen(node_id,
@@ -484,9 +484,9 @@ HDF5IOHandlerImpl::openDataset(Writable* writable,
 
     /* Sanitize name */
     std::string name = parameters.at("name").get< std::string >();
-    if( starts_with(name, "/") )
-        name = replace_first(name, "/", "");
-    if( !ends_with(name, "/") )
+    if( auxiliary::starts_with(name, "/") )
+        name = auxiliary::replace_first(name, "/", "");
+    if( !auxiliary::ends_with(name, "/") )
         name += '/';
 
     dataset_id = H5Dopen(node_id,
@@ -577,7 +577,7 @@ HDF5IOHandlerImpl::deleteFile(Writable* writable,
         ASSERT(status == 0, "Internal error: Failed to close HDF5 file during file deletion");
 
         std::string name = m_handler->directory + parameters.at("name").get< std::string >();
-        if( !ends_with(name, ".h5") )
+        if( !auxiliary::ends_with(name, ".h5") )
             name += ".h5";
 
         using namespace boost::filesystem;
@@ -606,9 +606,9 @@ HDF5IOHandlerImpl::deletePath(Writable* writable,
     {
         /* Sanitize path */
         std::string path = parameters.at("path").get< std::string >();
-        if( starts_with(path, "/") )
-            path = replace_first(path, "/", "");
-        if( !ends_with(path, "/") )
+        if( auxiliary::starts_with(path, "/") )
+            path = auxiliary::replace_first(path, "/", "");
+        if( !auxiliary::ends_with(path, "/") )
             path += '/';
 
         /* Open H5Object to delete in
@@ -650,9 +650,9 @@ HDF5IOHandlerImpl::deleteDataset(Writable* writable,
     {
         /* Sanitize name */
         std::string name = parameters.at("name").get< std::string >();
-        if( starts_with(name, "/") )
-            name = replace_first(name, "/", "");
-        if( !ends_with(name, "/") )
+        if( auxiliary::starts_with(name, "/") )
+            name = auxiliary::replace_first(name, "/", "");
+        if( !auxiliary::ends_with(name, "/") )
             name += '/';
 
         /* Open H5Object to delete in
@@ -1209,7 +1209,7 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
                 status = H5Aread(attr_id,
                                  attr_type,
                                  c);
-                a = Attribute(strip(std::string(c), {'\0'}));
+                a = Attribute(auxiliary::strip(std::string(c), {'\0'}));
                 status = H5Dvlen_reclaim(attr_type,
                                          attr_space,
                                          H5P_DEFAULT,
@@ -1221,7 +1221,7 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
                 status = H5Aread(attr_id,
                                  attr_type,
                                  vc.data());
-                a = Attribute(strip(std::string(vc.data(), size), {'\0'}));
+                a = Attribute(auxiliary::strip(std::string(vc.data(), size), {'\0'}));
             }
         } else if( H5Tget_class(attr_type) == H5T_ENUM )
         {
@@ -1351,7 +1351,7 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
                                  attr_type,
                                  vc.data());
                 for( auto const& val : vc )
-                    vs.push_back(strip(std::string(val), {'\0'}));
+                    vs.push_back(auxiliary::strip(std::string(val), {'\0'}));
                 status = H5Dvlen_reclaim(attr_type,
                                          attr_space,
                                          H5P_DEFAULT,
@@ -1364,7 +1364,7 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
                                  attr_type,
                                  c.data());
                 for( hsize_t i = 0; i < dims[0]; ++i )
-                    vs.push_back(strip(std::string(c.data() + i*length, length), {'\0'}));
+                    vs.push_back(auxiliary::strip(std::string(c.data() + i*length, length), {'\0'}));
             }
             a = Attribute(vs);
         } else

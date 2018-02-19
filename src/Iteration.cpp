@@ -89,13 +89,13 @@ Iteration::flushFileBased(uint64_t i)
         /* create file */
         Series* s = dynamic_cast<Series *>(parent->parent);
         Parameter< Operation::CREATE_FILE > fCreate;
-        fCreate.name = replace_first(s->iterationFormat(), "%T", std::to_string(i));
+        fCreate.name = auxiliary::replace_first(s->iterationFormat(), "%T", std::to_string(i));
         IOHandler->enqueue(IOTask(s, fCreate));
         IOHandler->flush();
 
         /* create basePath */
         Parameter< Operation::CREATE_PATH > pCreate;
-        pCreate.path = replace_first(s->basePath(), "%T/", "");
+        pCreate.path = auxiliary::replace_first(s->basePath(), "%T/", "");
         IOHandler->enqueue(IOTask(&s->iterations, pCreate));
         IOHandler->flush();
 
@@ -108,13 +108,13 @@ Iteration::flushFileBased(uint64_t i)
         /* open file */
         Series* s = dynamic_cast<Series *>(parent->parent);
         Parameter< Operation::OPEN_FILE > fOpen;
-        fOpen.name = replace_last(s->iterationFormat(), "%T", std::to_string(i));
+        fOpen.name = auxiliary::replace_last(s->iterationFormat(), "%T", std::to_string(i));
         IOHandler->enqueue(IOTask(s, fOpen));
         IOHandler->flush();
 
         /* open basePath */
         Parameter< Operation::OPEN_PATH > pOpen;
-        pOpen.path = replace_first(s->basePath(), "%T/", "");
+        pOpen.path = auxiliary::replace_first(s->basePath(), "%T/", "");
         IOHandler->enqueue(IOTask(&s->iterations, pOpen));
         IOHandler->flush();
 
@@ -229,12 +229,16 @@ Iteration::read()
     {
         IOHandler->enqueue(IOTask(&meshes, pList));
         IOHandler->flush();
-        hasMeshes = (std::count(pList.paths->begin(),
-                                pList.paths->end(),
-                                replace_last(s->meshesPath(), "/", "")) == 1);
-        hasParticles = (std::count(pList.paths->begin(),
-                                   pList.paths->end(),
-                                   replace_last(s->particlesPath(), "/", "")) == 1);
+        hasMeshes = std::count(
+            pList.paths->begin(),
+            pList.paths->end(),
+            auxiliary::replace_last(s->meshesPath(), "/", "")
+        ) == 1;
+        hasParticles = std::count(
+            pList.paths->begin(),
+            pList.paths->end(),
+            auxiliary::replace_last(s->particlesPath(), "/", "")
+        ) == 1;
         pList.paths->clear();
     } else
     {
