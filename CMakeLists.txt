@@ -288,6 +288,7 @@ if(openPMD_HAVE_PYTHON)
         src/binding/python/Iteration.cpp
         src/binding/python/IterationEncoding.cpp
         src/binding/python/Mesh.cpp
+        src/binding/python/Record.cpp
         src/binding/python/RecordComponent.cpp
         src/binding/python/Series.cpp
     )
