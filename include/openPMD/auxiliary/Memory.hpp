@@ -10,6 +10,8 @@
 
 namespace openPMD
 {
+namespace auxiliary
+{
 std::unique_ptr< void, std::function< void(void*) > >
 allocatePtr(Datatype dtype, Extent const& e);
 
@@ -88,4 +90,5 @@ allocatePtr(Datatype dtype, size_t numPoints)
 
     return std::move(std::unique_ptr< void, std::function< void(void*) > >(data, del));
 }
+} // auxiliary
 } // openPMD

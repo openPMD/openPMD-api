@@ -168,7 +168,7 @@ Attributable::readAttributes()
     for( auto const& att_name : attributes )
     {
         aRead.name = att_name;
-        std::string att = strip(att_name, {'\0'});
+        std::string att = auxiliary::strip(att_name, {'\0'});
         IOHandler->enqueue(IOTask(this, aRead));
         try
         {

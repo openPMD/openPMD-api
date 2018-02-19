@@ -7,6 +7,8 @@
 
 namespace openPMD
 {
+namespace auxiliary
+{
 inline bool
 contains(std::string const &s,
          std::string const &infix)
@@ -109,4 +111,5 @@ strip(std::string s, std::vector< char > to_remove)
 
     return s;
 }
+} // auxiliary
 } // openPMD
