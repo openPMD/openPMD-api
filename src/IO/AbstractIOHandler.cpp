@@ -18,11 +18,11 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <iostream>
+#include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
+#include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
 
-#include "IO/AbstractIOHandler.hpp"
-#include "IO/HDF5/HDF5IOHandler.hpp"
-#include "IO/HDF5/ParallelHDF5IOHandler.hpp"
+#include <iostream>
 
 
 #if openPMD_HAVE_MPI

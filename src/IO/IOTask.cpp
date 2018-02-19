@@ -1,4 +1,5 @@
-#include "../../include/IO/IOTask.hpp"
+#include "openPMD/IO/IOTask.hpp"
+
 
 template<>
 std::map< std::string, ParameterArgument > structToMap(Parameter< Operation::CREATE_FILE > const& p)

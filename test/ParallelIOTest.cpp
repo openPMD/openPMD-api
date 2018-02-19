@@ -4,11 +4,11 @@
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_MODULE libopenpmd_parallel_io_test
 
+#include "openPMD/openPMD.hpp"
+
 #include <boost/test/included/unit_test.hpp>
 #if openPMD_HAVE_MPI
-#include <mpi.h>
-
-#include "Series.hpp"
+#   include <mpi.h>
 
 
 int main(int argc, char *argv[])

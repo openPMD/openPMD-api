@@ -18,7 +18,7 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include "IO/ADIOS/ParallelADIOS1IOHandler.hpp"
+#include "openPMD/IO/ADIOS/ParallelADIOS1IOHandler.hpp"
 
 
 #if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI

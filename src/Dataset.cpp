@@ -1,6 +1,7 @@
+#include "openPMD/Dataset.hpp"
+
 #include <iostream>
 
-#include "Dataset.hpp"
 
 Dataset::Dataset(Datatype d, Extent e)
         : extent{e},

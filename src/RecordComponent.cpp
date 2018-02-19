@@ -1,5 +1,6 @@
+#include "openPMD/RecordComponent.hpp"
+
 #include <iostream>
-#include "../include/RecordComponent.hpp"
 
 
 RecordComponent::RecordComponent()

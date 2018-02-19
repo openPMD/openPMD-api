@@ -1,5 +1,5 @@
-#include "auxiliary/Memory.hpp"
-#include "backend/PatchRecord.hpp"
+#include "openPMD/auxiliary/Memory.hpp"
+#include "openPMD/backend/PatchRecord.hpp"
 
 
 PatchRecord&

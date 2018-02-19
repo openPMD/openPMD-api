@@ -1,15 +1,16 @@
 #define BOOST_TEST_MODULE libopenpmd_aux_test
 
+/* make Writable::parent visible for hierarchy check */
+#define protected public
+#include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/auxiliary/Variadic.hpp"
+#include "openPMD/backend/Container.hpp"
+#include "openPMD/backend/Writable.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/Dataset.hpp"
+#undef protected
 
 #include <boost/test/included/unit_test.hpp>
-
-#define protected public
-#include "auxiliary/StringManip.hpp"
-#include "auxiliary/Variadic.hpp"
-#include "backend/Container.hpp"
-#include "backend/Writable.hpp"
-#include "IO/AbstractIOHandler.hpp"
-#include "Dataset.hpp"
 
 
 BOOST_AUTO_TEST_CASE(string_test)

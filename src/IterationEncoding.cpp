@@ -18,9 +18,9 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <ostream>
+#include "openPMD/IterationEncoding.hpp"
 
-#include "IterationEncoding.hpp"
+#include <ostream>
 
 
 std::ostream&

@@ -18,11 +18,12 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
+#include "openPMD/backend/Attributable.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
+
 #include <iostream>
 #include <set>
 
-#include "backend/Attributable.hpp"
-#include "auxiliary/StringManip.hpp"
 
 Attributable::Attributable()
         : m_attributes{std::make_shared< A_MAP >()}
