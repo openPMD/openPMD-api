@@ -287,6 +287,7 @@ if(openPMD_HAVE_PYTHON)
         src/binding/python/Datatype.cpp
         src/binding/python/Iteration.cpp
         src/binding/python/IterationEncoding.cpp
+        src/binding/python/RecordComponent.cpp
         src/binding/python/Series.cpp
     )
     target_link_libraries(openPMD.py PRIVATE openPMD)

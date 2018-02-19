@@ -40,8 +40,8 @@ public:
 
     RecordComponent& resetDataset(Dataset);
 
-    uint8_t getDimensionality();
-    Extent getExtent();
+    uint8_t getDimensionality() const;
+    Extent getExtent() const;
 
     template< typename T >
     RecordComponent& makeConstant(T);
