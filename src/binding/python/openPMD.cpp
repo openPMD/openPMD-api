@@ -1,5 +1,9 @@
 #include <pybind11/pybind11.h>
 
+#include "openPMD/version.hpp"
+
+#include <sstream>
+
 namespace py = pybind11;
 
 
@@ -34,6 +38,13 @@ PYBIND11_MODULE(openPMD, m) {
     init_RecordComponent(m);
     init_Series(m);
 
-    // m.attr("__version__") = "1.2.3-dev";
+    // build version
+    std::stringstream openPMDapi;
+    openPMDapi << OPENPMDAPI_VERSION_MAJOR << "."
+               << OPENPMDAPI_VERSION_MINOR << "."
+               << OPENPMDAPI_VERSION_PATCH;
+    if( std::string( OPENPMDAPI_VERSION_LABEL ).size() > 0 )
+        openPMDapi << "-" << OPENPMDAPI_VERSION_LABEL;
+    m.attr("__version__") = openPMDapi.str();
 }
 
