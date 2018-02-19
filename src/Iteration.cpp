@@ -24,6 +24,8 @@
 #include "openPMD/Series.hpp"
 
 
+namespace openPMD
+{
 Iteration::Iteration()
         : meshes{Container< Mesh >()},
           particles{Container< ParticleSpecies >()}
@@ -362,3 +364,4 @@ template
 Iteration& Iteration::setDt< double >(double dt);
 template
 Iteration& Iteration::setDt< long double >(long double dt);
+} // openPMD

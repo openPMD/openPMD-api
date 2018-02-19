@@ -4,9 +4,9 @@
 
 
 std::ostream&
-operator<<(std::ostream& os, Datatype d)
+std::operator<<(std::ostream& os, openPMD::Datatype d)
 {
-    using DT = Datatype;
+    using DT = openPMD::Datatype;
     switch( d )
     {
         case DT::CHAR:

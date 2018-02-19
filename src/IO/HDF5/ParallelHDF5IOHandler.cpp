@@ -29,6 +29,8 @@
 #include <iostream>
 
 
+namespace openPMD
+{
 #if openPMD_HAVE_HDF5 && openPMD_HAVE_MPI
 #   include "openPMD/auxiliary/StringManip.hpp"
 #   ifdef DEBUG
@@ -36,7 +38,6 @@
 #   else
 #       define ASSERT(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
 #   endif
-
 
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string const& path,
                                              AccessType at,
@@ -98,3 +99,4 @@ ParallelHDF5IOHandler::flush()
     return std::future< void >();
 }
 #endif
+} // openPMD

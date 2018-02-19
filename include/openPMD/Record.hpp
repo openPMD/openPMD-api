@@ -8,6 +8,8 @@
 #include <string>
 
 
+namespace openPMD
+{
 class Record : public BaseRecord< RecordComponent >
 {
     friend class Container< Record >;
@@ -47,4 +49,4 @@ Record::setTimeOffset(T to)
     setAttribute("timeOffset", to);
     return *this;
 }
-
+} // openPMD

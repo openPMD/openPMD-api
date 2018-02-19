@@ -7,6 +7,8 @@
 #include <type_traits>
 
 
+namespace openPMD
+{
 class GenericPatchData
 {
 public:
@@ -51,3 +53,4 @@ GenericPatchData::operator T()
 {
     return m_data.get< T >();
 }
+} // openPMD

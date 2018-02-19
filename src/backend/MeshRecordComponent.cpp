@@ -1,6 +1,8 @@
 #include "openPMD/backend/MeshRecordComponent.hpp"
 
 
+namespace openPMD
+{
 MeshRecordComponent::MeshRecordComponent()
         : RecordComponent()
 {
@@ -55,3 +57,4 @@ MeshRecordComponent::setPosition(std::vector< double > pos);
 template
 MeshRecordComponent&
 MeshRecordComponent::setPosition(std::vector< long double > pos);
+} // openPMD

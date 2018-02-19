@@ -3,6 +3,8 @@
 #include <iostream>
 
 
+namespace openPMD
+{
 RecordComponent::RecordComponent()
         : m_constantValue{-1}
 {
@@ -186,4 +188,5 @@ RecordComponent::readBase()
 
     readAttributes();
 }
+} // openPMD
 

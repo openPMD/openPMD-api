@@ -25,6 +25,8 @@
 #include <set>
 
 
+namespace openPMD
+{
 Attributable::Attributable()
         : m_attributes{std::make_shared< A_MAP >()}
 { }
@@ -303,3 +305,4 @@ Attributable::readVectorFloatingpoint(std::string const& key) const;
 template
 std::vector< long double >
 Attributable::readVectorFloatingpoint(std::string const& key) const;
+} // openPMD

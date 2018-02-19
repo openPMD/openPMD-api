@@ -28,6 +28,8 @@
 #include <regex>
 
 
+namespace openPMD
+{
 void
 check_extension(std::string const& filepath)
 {
@@ -808,3 +810,4 @@ Series::cleanFilename(std::string s, Format f)
 
     return s;
 }
+} // openPMD

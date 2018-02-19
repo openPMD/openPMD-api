@@ -25,6 +25,8 @@
 #include <iostream>
 
 
+namespace openPMD
+{
 #if openPMD_HAVE_MPI
 std::shared_ptr< AbstractIOHandler >
 AbstractIOHandler::createIOHandler(std::string const& path,
@@ -110,3 +112,4 @@ void DummyIOHandler::enqueue(IOTask const&)
 std::future< void >
 DummyIOHandler::flush()
 { return std::future< void >(); }
+} // openPMD

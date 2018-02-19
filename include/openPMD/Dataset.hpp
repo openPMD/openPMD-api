@@ -8,6 +8,8 @@
 #include <string>
 
 
+namespace openPMD
+{
 using Extent = std::vector< std::uint64_t >;
 using Offset = std::vector< std::uint64_t >;
 
@@ -30,4 +32,4 @@ public:
     std::string compression;
     std::string transform;
 };
-
+} // openPMD

@@ -20,13 +20,14 @@
  */
 #pragma once
 
-
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
 
 
+namespace openPMD
+{
 /** @brief  Logical compilation of data from one snapshot (e.g. a single simulation cycle).
  *
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#required-attributes-for-the-basepath
@@ -131,3 +132,4 @@ template< typename T >
 inline T
 Iteration::dt() const
 { return Attributable::readFloatingpoint< T >("dt"); }
+} // openPMD

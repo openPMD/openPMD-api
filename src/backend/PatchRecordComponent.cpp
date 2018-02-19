@@ -1,6 +1,8 @@
 #include "openPMD/backend/PatchRecordComponent.hpp"
 
 
+namespace openPMD
+{
 GenericPatchData&
 PatchRecordComponent::operator[](PatchPosition const& pos)
 {
@@ -35,3 +37,4 @@ PatchRecordComponent::flush(std::string const& name)
     }
     IOHandler->flush();
 }
+} // openPMD

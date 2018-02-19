@@ -21,8 +21,9 @@
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 
 
+namespace openPMD
+{
 #if openPMD_HAVE_ADIOS2
-
 ADIOS2IOHandler::ADIOS2IOHandler(std::string const& path, AccessType at)
         : AbstractIOHandler(path, at),
           m_impl{new ADIOS2IOHandlerImpl(this)}
@@ -73,3 +74,4 @@ ADIOS2IOHandler::flush()
     return std::future< void >();
 }
 #endif
+} // openPMD

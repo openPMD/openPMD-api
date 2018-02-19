@@ -2,6 +2,8 @@
 #include "openPMD/ParticleSpecies.hpp"
 
 
+namespace openPMD
+{
 ParticleSpecies::ParticleSpecies() = default;
 
 void
@@ -134,3 +136,4 @@ Container< ParticleSpecies >::operator[](Container< ParticleSpecies >::key_type 
         return ret;
     }
 }
+} // openPMD

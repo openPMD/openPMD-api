@@ -20,10 +20,11 @@
  */
 #pragma once
 
-
 #include <iosfwd>
 
 
+namespace openPMD
+{
 /** Encoding scheme of an Iterations Series'.
  *
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series
@@ -31,7 +32,11 @@
 enum class IterationEncoding
 {
     fileBased, groupBased
-};  //IterationEncoding
+};
+} // openPMD
 
-std::ostream&
-operator<<(std::ostream&, IterationEncoding);
+namespace std
+{
+    ostream&
+    operator<<(ostream&, openPMD::IterationEncoding);
+} // std

@@ -11,6 +11,8 @@
 #include <string>
 
 
+namespace openPMD
+{
 /** Concrete datatype of an object available at runtime.
  */
 enum class ArgumentDatatype : int
@@ -247,3 +249,4 @@ public:
     Operation operation;
     std::map< std::string, ParameterArgument > parameter;
 };  //IOTask
+} // openPMD

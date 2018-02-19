@@ -3,6 +3,8 @@
 #include <iostream>
 
 
+namespace openPMD
+{
 Record::Record()
 {
     setTimeOffset(0.f);
@@ -106,3 +108,4 @@ Record::read()
     /* this file need not be flushed */
     written = true;
 }
+} // openPMD

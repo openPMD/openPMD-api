@@ -35,6 +35,8 @@
 #include <string>
 
 
+namespace openPMD
+{
 class no_such_file_error : public std::runtime_error
 {
 public:
@@ -134,3 +136,4 @@ public:
      */
     std::future< void > flush();
 };  //DummyIOHandler
+} // openPMD

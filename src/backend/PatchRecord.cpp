@@ -2,6 +2,8 @@
 #include "openPMD/backend/PatchRecord.hpp"
 
 
+namespace openPMD
+{
 PatchRecord&
 PatchRecord::setUnitDimension(std::map< UnitDimension, double > const& udim)
 {
@@ -54,3 +56,4 @@ PatchRecord::read()
         IOHandler->flush();
     }
 }
+} // openPMD

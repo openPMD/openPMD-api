@@ -21,9 +21,12 @@
 #pragma once
 
 
+namespace openPMD
+{
 class AbstractFilePosition
 {
 public:
     virtual ~AbstractFilePosition() { }
 
 };  //AbstractFilePosition
+} // openPMD

@@ -33,8 +33,9 @@
 #include <string>
 
 
+namespace openPMD
+{
 #if defined(openPMD_HAVE_HDF5)
-
 class HDF5IOHandler;
 
 class HDF5IOHandlerImpl
@@ -91,3 +92,4 @@ public:
 private:
     std::unique_ptr< HDF5IOHandlerImpl > m_impl;
 };  //HDF5IOHandler
+} // openPMD

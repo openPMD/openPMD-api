@@ -25,6 +25,7 @@
 
 
 using std::cout;
+using namespace openPMD;
 
 int main()
 {

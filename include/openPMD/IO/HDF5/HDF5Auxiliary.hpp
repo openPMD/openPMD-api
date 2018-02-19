@@ -30,6 +30,8 @@
 #include <stack>
 
 
+namespace openPMD
+{
 inline hid_t
 getH5DataType(Attribute const& att)
 {
@@ -235,3 +237,4 @@ concrete_h5_file_position(Writable* w)
 
     return replace_all(pos, "//", "/");
 }
+} // openPMD

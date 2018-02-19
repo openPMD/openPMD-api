@@ -5,6 +5,8 @@
 #include <vector>
 
 
+namespace openPMD
+{
 class MeshRecordComponent : public RecordComponent
 {
     template<
@@ -44,3 +46,4 @@ MeshRecordComponent::makeConstant(T value)
     RecordComponent::makeConstant(value);
     return *this;
 }
+} // openPMD

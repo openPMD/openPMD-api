@@ -29,6 +29,8 @@
 #include <string>
 
 
+namespace openPMD
+{
 //TODO This might have to be a Writable
 //Reasoning - Flushes are expeted to be done often.
 //Attributes should not be written unless dirty.
@@ -59,3 +61,4 @@ using Attribute = Variadic< Datatype,
                             std::vector< std::string >,
                             std::array< double, 7 >,
                             bool >;
+} // openPMD

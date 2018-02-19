@@ -1,6 +1,8 @@
 #include "openPMD/IO/IOTask.hpp"
 
 
+namespace openPMD
+{
 template<>
 std::map< std::string, ParameterArgument > structToMap(Parameter< Operation::CREATE_FILE > const& p)
 {
@@ -162,4 +164,5 @@ std::map< std::string, ParameterArgument > structToMap(Parameter< Operation::LIS
     ret.insert({"attributes", ParameterArgument(p.attributes)});
     return ret;
 }
+} // openPMD
 

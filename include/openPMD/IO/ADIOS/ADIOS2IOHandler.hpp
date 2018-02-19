@@ -27,9 +27,9 @@
 #include <string>
 
 
+namespace openPMD
+{
 #if defined(openPMD_HAVE_ADIOS2)
-
-
 class ADIOS2IOHandler;
 
 class ADIOS2IOHandlerImpl
@@ -80,3 +80,4 @@ public:
 private:
     std::unique_ptr< ADIOS2IOHandlerImpl > m_impl;
 };  //ADIOS2IOHandler
+} // openPMD

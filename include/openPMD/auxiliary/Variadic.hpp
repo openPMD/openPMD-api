@@ -31,6 +31,8 @@ namespace variadicSrc = mpark;
 #include <type_traits>
 
 
+namespace openPMD
+{
 /** Generic object to store a set of datatypes in without losing type safety.
  *
  * @tparam T_DTYPES Enumeration of datatypes to be stored and identified.
@@ -81,3 +83,4 @@ public:
 private:
     resource m_data;
 };
+} // openPMD

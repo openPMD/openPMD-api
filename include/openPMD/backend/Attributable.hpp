@@ -31,6 +31,8 @@
 #include <string>
 
 
+namespace openPMD
+{
 class no_such_attribute_error : public std::runtime_error
 {
 public:
@@ -278,3 +280,4 @@ Attributable::readVectorFloatingpoint(std::string const& key) const
     }
     return vt;
 }
+} // openPMD

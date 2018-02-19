@@ -7,6 +7,8 @@
 #include <string>
 
 
+namespace openPMD
+{
 class PatchRecord : public BaseRecord< PatchRecordComponent >
 {
     friend class Container< PatchRecord >;
@@ -22,3 +24,4 @@ private:
     void flush(std::string const&) override;
     void read() override;
 };  //PatchRecord
+} // openPMD
