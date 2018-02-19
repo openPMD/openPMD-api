@@ -1,11 +1,11 @@
 #define BOOST_TEST_MODULE libopenpmd_core_test
 
-
 /* make Writable::parent, Writable::IOHandler visible for structure_test */
 #define protected public
-#include <boost/test/included/unit_test.hpp>
+#include "openPMD/openPMD.hpp"
+#undef protected
 
-#include "Series.hpp"
+#include <boost/test/included/unit_test.hpp>
 
 
 BOOST_AUTO_TEST_CASE(attribute_dtype_test)

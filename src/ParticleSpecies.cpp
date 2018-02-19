@@ -1,5 +1,5 @@
-#include "auxiliary/StringManip.hpp"
-#include "../include/ParticleSpecies.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/ParticleSpecies.hpp"
 
 
 ParticleSpecies::ParticleSpecies() = default;

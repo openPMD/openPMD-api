@@ -18,10 +18,10 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <iostream>
+#include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/Mesh.hpp"
 
-#include "auxiliary/StringManip.hpp"
-#include "Mesh.hpp"
+#include <iostream>
 
 
 Mesh::Mesh()

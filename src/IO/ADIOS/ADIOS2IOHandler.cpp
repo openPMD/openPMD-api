@@ -18,11 +18,10 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include "IO/ADIOS/ADIOS2IOHandler.hpp"
+#include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 
 
 #if openPMD_HAVE_ADIOS2
-
 
 ADIOS2IOHandler::ADIOS2IOHandler(std::string const& path, AccessType at)
         : AbstractIOHandler(path, at),

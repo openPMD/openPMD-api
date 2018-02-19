@@ -18,23 +18,24 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include "IO/HDF5/ParallelHDF5IOHandler.hpp"
+#include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
+
+#if openPMD_HAVE_HDF5 && openPMD_HAVE_MPI
+#   include "openPMD/auxiliary/StringManip.hpp"
+#   include <mpi.h>
+#   include <boost/filesystem.hpp>
+#endif
+
+#include <iostream>
 
 
 #if openPMD_HAVE_HDF5 && openPMD_HAVE_MPI
-#include <iostream>
-
-#include <mpi.h>
-#include <boost/filesystem.hpp>
-
-#include "auxiliary/StringManip.hpp"
-
-
-#ifdef DEBUG
-#define ASSERT(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error(std::string((TEXT))); }
-#else
-#define ASSERT(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
-#endif
+#   include "openPMD/auxiliary/StringManip.hpp"
+#   ifdef DEBUG
+#       define ASSERT(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error(std::string((TEXT))); }
+#   else
+#       define ASSERT(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
+#   endif
 
 
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string const& path,

@@ -1,6 +1,6 @@
-#include <iostream>
+#include "openPMD/Record.hpp"
 
-#include "../include/Record.hpp"
+#include <iostream>
 
 
 Record::Record()

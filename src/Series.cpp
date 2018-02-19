@@ -18,14 +18,14 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <iostream>
-#include <regex>
+#include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/Series.hpp"
 
 #include <boost/filesystem.hpp>
 
-#include "auxiliary/StringManip.hpp"
-#include "IO/AbstractIOHandler.hpp"
-#include "Series.hpp"
+#include <iostream>
+#include <regex>
 
 
 void

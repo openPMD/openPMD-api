@@ -18,26 +18,28 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include "IO/HDF5/HDF5IOHandler.hpp"
+#include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
 
 
 #if defined(openPMD_HAVE_HDF5)
-#include <iostream>
+#   include "openPMD/auxiliary/StringManip.hpp"
+#   include "openPMD/backend/Attribute.hpp"
+#   include "openPMD/IO/IOTask.hpp"
+#   include "openPMD/IO/HDF5/HDF5Auxiliary.hpp"
+#   include "openPMD/IO/HDF5/HDF5FilePosition.hpp"
 
-#include <boost/filesystem.hpp>
+#   include <boost/filesystem.hpp>
 
-#include "auxiliary/StringManip.hpp"
-#include "backend/Attribute.hpp"
-#include "IO/IOTask.hpp"
-#include "IO/HDF5/HDF5Auxiliary.hpp"
-#include "IO/HDF5/HDF5FilePosition.hpp"
+#   include <future>
+#   include <iostream>
+#   include <string>
+#   include <vector>
 
-
-#ifdef DEBUG
-#define ASSERT(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error(std::string((TEXT))); }
-#else
-#define ASSERT(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
-#endif
+#   ifdef DEBUG
+#       define ASSERT(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error(std::string((TEXT))); }
+#   else
+#       define ASSERT(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
+#   endif
 
 
 HDF5IOHandlerImpl::HDF5IOHandlerImpl(AbstractIOHandler* handler)

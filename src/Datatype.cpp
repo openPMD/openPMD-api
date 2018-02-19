@@ -1,6 +1,7 @@
+#include "openPMD/Datatype.hpp"
+
 #include <iostream>
 
-#include "Datatype.hpp"
 
 std::ostream&
 operator<<(std::ostream& os, Datatype d)

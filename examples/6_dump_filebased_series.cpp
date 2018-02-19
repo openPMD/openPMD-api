@@ -1,4 +1,4 @@
-#include <openPMD.hpp>
+#include <openPMD/openPMD.hpp>
 
 #include <iostream>
 #include <numeric>

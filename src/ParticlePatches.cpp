@@ -1,4 +1,4 @@
-#include "ParticlePatches.hpp"
+#include "openPMD/ParticlePatches.hpp"
 
 
 ParticlePatches::mapped_type&

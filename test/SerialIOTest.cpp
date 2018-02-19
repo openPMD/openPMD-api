@@ -1,11 +1,11 @@
 #define BOOST_TEST_MODULE libopenpmd_serial_io_test
 
-
-#include <boost/test/included/unit_test.hpp>
-
 /* make Writable::parent visible for hierarchy check */
 #define protected public
-#include "Series.hpp"
+#include "openPMD/openPMD.hpp"
+#undef protected
+
+#include <boost/test/included/unit_test.hpp>
 
 #if defined(openPMD_HAVE_HDF5)
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_structure_test)
