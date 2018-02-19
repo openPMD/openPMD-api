@@ -21,6 +21,8 @@
 #include "openPMD/IO/ADIOS/ADIOS1IOHandler.hpp"
 
 
+namespace openPMD
+{
 #if openPMD_HAVE_ADIOS1
 ADIOS1IOHandler::ADIOS1IOHandler(std::string const& path, AccessType at)
         : AbstractIOHandler(path, at),
@@ -71,3 +73,4 @@ ADIOS1IOHandler::flush()
     return std::future< void >();
 }
 #endif
+} // openPMD

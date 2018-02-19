@@ -4,6 +4,8 @@
 #include "openPMD/Dataset.hpp"
 
 
+namespace openPMD
+{
 class BaseRecordComponent : public Attributable
 {
     template< typename T_elem >
@@ -26,3 +28,4 @@ protected:
     Dataset m_dataset;
     bool m_isConstant;
 };  //BaseRecordComponent
+} // openPMD

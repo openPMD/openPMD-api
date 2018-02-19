@@ -21,6 +21,8 @@
 #include "openPMD/IO/ADIOS/ParallelADIOS1IOHandler.hpp"
 
 
+namespace openPMD
+{
 #if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string const& path,
                                              AccessType at,
@@ -58,3 +60,4 @@ ParallelADIOS1IOHandler::flush()
     return std::future< void >();
 }
 #endif
+} // openPMD

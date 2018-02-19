@@ -1,6 +1,8 @@
 #include "openPMD/backend/BaseRecordComponent.hpp"
 
 
+namespace openPMD
+{
 double
 BaseRecordComponent::unitSI() const
 {
@@ -27,3 +29,4 @@ BaseRecordComponent::getDatatype()
 {
     return m_dataset.dtype;
 }
+} // openPMD

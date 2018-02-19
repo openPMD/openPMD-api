@@ -23,6 +23,8 @@
 #include <memory>
 
 
+namespace openPMD
+{
 class AbstractFilePosition;
 class AbstractIOHandler;
 
@@ -62,3 +64,4 @@ protected:
     bool dirty;
     bool written;
 };
+} // openPMD

@@ -7,6 +7,8 @@
 #include <vector>
 
 
+namespace openPMD
+{
 class ParticlePatches : public Container< PatchRecord >
 {
     friend class ParticleSpecies;
@@ -20,3 +22,4 @@ private:
 
     std::vector< PatchPosition > m_patchPositions;
 };  //ParticlePatches
+} // openPMD

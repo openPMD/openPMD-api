@@ -27,6 +27,7 @@
 
 
 using std::cout;
+using namespace openPMD;
 
 int main(int argc, char *argv[])
 {

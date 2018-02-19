@@ -29,6 +29,8 @@
 #include <string>
 
 
+namespace openPMD
+{
 /** @brief Map-like container that enforces openPMD requirements and handles IO.
  *
  * @see http://en.cppreference.com/w/cpp/container/map
@@ -196,3 +198,4 @@ protected:
         flushAttributes();
     }
 };
+} // openPMD

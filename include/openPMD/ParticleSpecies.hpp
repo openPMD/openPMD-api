@@ -8,6 +8,8 @@
 #include <string>
 
 
+namespace openPMD
+{
 class ParticleSpecies : public Container< Record >
 {
     friend class Container< ParticleSpecies >;
@@ -31,3 +33,4 @@ Container< ParticleSpecies >::operator[](Container< ParticleSpecies >::key_type 
 template<>
 Container< ParticleSpecies >::mapped_type&
 Container< ParticleSpecies >::operator[](Container< ParticleSpecies >::key_type && key);
+} // openPMD

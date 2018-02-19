@@ -3,6 +3,8 @@
 #include <iostream>
 
 
+namespace openPMD
+{
 Dataset::Dataset(Datatype d, Extent e)
         : extent{e},
           dtype{d},
@@ -57,3 +59,4 @@ Dataset::setCustomTransform(std::string const& parameter)
     transform = parameter;
     return *this;
 }
+} // openPMD

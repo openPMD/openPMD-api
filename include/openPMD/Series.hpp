@@ -35,6 +35,8 @@
 #include <string>
 
 
+namespace openPMD
+{
 /** @brief  Root level of the openPMD hierarchy.
  *
  * Entry point and common link between all iterations of particle and mesh data.
@@ -263,3 +265,4 @@ private:
     IterationEncoding m_iterationEncoding;
     std::string m_name;
 };  //Series
+} // openPMD

@@ -21,6 +21,8 @@
 #include <openPMD/openPMD.hpp>
 
 
+using namespace openPMD;
+
 int main(int argc, char *argv[])
 {
     /* The root of any openPMD output spans across all data for all iterations is a 'Series'.

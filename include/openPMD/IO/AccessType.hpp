@@ -21,6 +21,8 @@
 #pragma once
 
 
+namespace openPMD
+{
 /** File access permissions to use during IO.
  */
 enum class AccessType
@@ -29,3 +31,4 @@ enum class AccessType
     READ_WRITE,
     CREATE
 };  //AccessType
+} // openPMD

@@ -9,6 +9,8 @@
 #include <string>
 
 
+namespace openPMD
+{
 /** @brief Container for N-dimensional, homogenous Records.
  *
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#mesh-based-records
@@ -157,7 +159,7 @@ private:
 
     void flush(std::string const&) override;
     void read() override;
-};  //Mesh
+}; // Mesh
 
 template< typename T >
 inline std::vector< T >
@@ -168,9 +170,13 @@ template< typename T >
 inline T
 Mesh::timeOffset() const
 { return readFloatingpoint< T >("timeOffset"); }
+} // openPMD
 
-std::ostream&
-operator<<(std::ostream&, Mesh::Geometry);
+namespace std
+{
+    ostream&
+    operator<<(ostream&, openPMD::Mesh::Geometry);
 
-std::ostream&
-operator<<(std::ostream&, Mesh::DataOrder);
+    std::ostream&
+    operator<<(ostream&, openPMD::Mesh::DataOrder);
+} // std

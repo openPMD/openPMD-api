@@ -32,8 +32,9 @@
 #include <string>
 
 
+namespace openPMD
+{
 #if openPMD_HAVE_HDF5 && openPMD_HAVE_MPI
-
 class ParallelHDF5IOHandler;
 
 class ParallelHDF5IOHandlerImpl : public HDF5IOHandlerImpl
@@ -65,3 +66,4 @@ public:
 private:
     std::unique_ptr< ParallelHDF5IOHandlerImpl > m_impl;
 };  //ParallelHDF5IOHandler
+} // openPMD

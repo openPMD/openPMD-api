@@ -5,6 +5,7 @@
 #define BOOST_TEST_MODULE libopenpmd_parallel_io_test
 
 #include "openPMD/openPMD.hpp"
+using namespace openPMD;
 
 #include <boost/test/included/unit_test.hpp>
 #if openPMD_HAVE_MPI

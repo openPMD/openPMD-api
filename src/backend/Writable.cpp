@@ -2,6 +2,8 @@
 #include <openPMD/backend/Writable.hpp>
 
 
+namespace openPMD
+{
 Writable::Writable()
         : abstractFilePosition{nullptr},
           parent{nullptr},
@@ -12,4 +14,4 @@ Writable::Writable()
 
 Writable::~Writable()
 { }
-
+} // openPMD

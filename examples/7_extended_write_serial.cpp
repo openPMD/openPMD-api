@@ -4,6 +4,8 @@
 #include <boost/filesystem.hpp>
 
 
+using namespace openPMD;
+
 void
 write()
 {

@@ -31,8 +31,9 @@
 #include <memory>
 
 
+namespace openPMD
+{
 #if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
-
 class ParallelADIOS1IOHandler;
 
 class ParallelADIOS1IOHandlerImpl : public ADIOS1IOHandlerImpl
@@ -64,3 +65,4 @@ public:
 private:
     std::unique_ptr< ParallelADIOS1IOHandlerImpl > m_impl;
 };  //ParallelADIOS1IOHandler
+} // openPMD

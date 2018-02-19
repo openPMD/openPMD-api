@@ -1,6 +1,8 @@
 #include "openPMD/ParticlePatches.hpp"
 
 
+namespace openPMD
+{
 ParticlePatches::mapped_type&
 ParticlePatches::operator[](ParticlePatches::key_type const& key)
 {
@@ -90,3 +92,4 @@ ParticlePatches::read()
     for( size_t i = 0; i < numParticles.size(); ++i )
         m_patchPositions.emplace_back(PatchPosition(numParticles[i], numParticlesOffset[i]));
 }
+} // openPMD

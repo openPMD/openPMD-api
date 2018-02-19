@@ -24,6 +24,8 @@
 #include <iostream>
 
 
+namespace openPMD
+{
 Mesh::Mesh()
 {
     setTimeOffset(0.f);
@@ -341,22 +343,23 @@ Mesh::read()
     /* this file need not be flushed */
     written = true;
 }
+} // openPMD
 
 std::ostream&
-operator<<(std::ostream& os, Mesh::Geometry go)
+std::operator<<(std::ostream& os, openPMD::Mesh::Geometry go)
 {
     switch( go )
     {
-        case Mesh::Geometry::cartesian:
+        case openPMD::Mesh::Geometry::cartesian:
             os<<"cartesian";
             break;
-        case Mesh::Geometry::thetaMode:
+        case openPMD::Mesh::Geometry::thetaMode:
             os<<"thetaMode";
             break;
-        case Mesh::Geometry::cylindrical:
+        case openPMD::Mesh::Geometry::cylindrical:
             os<<"cylindrical";
             break;
-        case Mesh::Geometry::spherical:
+        case openPMD::Mesh::Geometry::spherical:
             os<<"spherical";
             break;
     }
@@ -364,14 +367,14 @@ operator<<(std::ostream& os, Mesh::Geometry go)
 }
 
 std::ostream&
-operator<<(std::ostream& os, Mesh::DataOrder dor)
+std::operator<<(std::ostream& os, openPMD::Mesh::DataOrder dor)
 {
     switch( dor )
     {
-        case Mesh::DataOrder::C:
+        case openPMD::Mesh::DataOrder::C:
             os<<'C';
             break;
-        case Mesh::DataOrder::F:
+        case openPMD::Mesh::DataOrder::F:
             os<<'F';
             break;
     }

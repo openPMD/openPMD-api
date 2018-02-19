@@ -21,6 +21,8 @@
 #pragma once
 
 
+namespace openPMD
+{
 /** File format to use during IO.
  */
 enum class Format
@@ -30,3 +32,4 @@ enum class Format
     ADIOS2,
     DUMMY
 };  //Format
+} // openPMD

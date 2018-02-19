@@ -11,6 +11,8 @@
 #include <stdexcept>
 
 
+namespace openPMD
+{
 class RecordComponent : public BaseRecordComponent
 {
     template<
@@ -214,3 +216,4 @@ RecordComponent::storeChunk(Offset o, Extent e, std::shared_ptr<T> data)
     dWrite.data = std::static_pointer_cast< void >(data);
     m_chunks.push(IOTask(this, dWrite));
 }
+} // openPMD

@@ -9,6 +9,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Dataset.hpp"
 #undef protected
+using namespace openPMD;
 
 #include <boost/test/included/unit_test.hpp>
 

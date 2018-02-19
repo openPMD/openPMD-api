@@ -27,20 +27,23 @@
 #   include "openPMD/IO/IOTask.hpp"
 #   include "openPMD/IO/HDF5/HDF5Auxiliary.hpp"
 #   include "openPMD/IO/HDF5/HDF5FilePosition.hpp"
+#endif
 
-#   include <boost/filesystem.hpp>
+#include <boost/filesystem.hpp>
 
-#   include <future>
-#   include <iostream>
-#   include <string>
-#   include <vector>
+#include <future>
+#include <iostream>
+#include <string>
+#include <vector>
 
+namespace openPMD
+{
+#if defined(openPMD_HAVE_HDF5)
 #   ifdef DEBUG
 #       define ASSERT(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error(std::string((TEXT))); }
 #   else
 #       define ASSERT(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
 #   endif
-
 
 HDF5IOHandlerImpl::HDF5IOHandlerImpl(AbstractIOHandler* handler)
         : m_datasetTransferProperty{H5P_DEFAULT},
@@ -1525,3 +1528,4 @@ HDF5IOHandler::flush()
     return std::future< void >();
 }
 #endif
+} // openPMD

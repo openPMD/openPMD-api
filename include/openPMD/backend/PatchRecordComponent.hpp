@@ -8,6 +8,8 @@
 #include <string>
 
 
+namespace openPMD
+{
 class PatchRecordComponent : public BaseRecordComponent
 {
     template<
@@ -33,3 +35,4 @@ private:
 
     std::unordered_map< PatchPosition, GenericPatchData > m_data;
 };  //PatchRecordComponent
+} // openPMD

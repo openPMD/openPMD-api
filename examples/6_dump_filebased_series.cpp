@@ -4,6 +4,8 @@
 #include <numeric>
 
 
+using namespace openPMD;
+
 int main()
 {
     Series o = Series::read("../samples/git-sample/data%T.h5");

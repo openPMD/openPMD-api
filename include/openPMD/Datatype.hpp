@@ -8,6 +8,8 @@
 #include <vector>
 
 
+namespace openPMD
+{
 /** Concrete datatype of an object available at runtime.
  */
 enum class Datatype : int
@@ -36,7 +38,7 @@ enum class Datatype : int
     DATATYPE = 1000,
 
     UNDEFINED
-};  //Datatype
+}; // Datatype
 
 /** @brief Fundamental equivalence check for two given types T and U.
  *
@@ -155,6 +157,10 @@ determineDatatype(std::shared_ptr< T >)
 
     return DT::UNDEFINED;
 }
+} // openPMD
 
-std::ostream&
-operator<<(std::ostream&, Datatype);
+namespace std
+{
+    ostream&
+    operator<<(ostream&, openPMD::Datatype);
+} // std

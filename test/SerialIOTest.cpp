@@ -4,6 +4,7 @@
 #define protected public
 #include "openPMD/openPMD.hpp"
 #undef protected
+using namespace openPMD;
 
 #include <boost/test/included/unit_test.hpp>
 

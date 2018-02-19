@@ -24,14 +24,14 @@
 
 
 std::ostream&
-operator<<(std::ostream& os, IterationEncoding ie)
+std::operator<<(std::ostream& os, openPMD::IterationEncoding ie)
 {
     switch( ie )
     {
-        case IterationEncoding::fileBased:
+        case openPMD::IterationEncoding::fileBased:
             os << "fileBased";
             break;
-        case IterationEncoding::groupBased:
+        case openPMD::IterationEncoding::groupBased:
             os << "groupBased";
             break;
     }

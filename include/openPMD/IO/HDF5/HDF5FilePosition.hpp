@@ -23,6 +23,8 @@
 #include "openPMD/IO/AbstractFilePosition.hpp"
 
 
+namespace openPMD
+{
 struct HDF5FilePosition : public AbstractFilePosition
 {
     HDF5FilePosition(std::string const& s)
@@ -31,3 +33,4 @@ struct HDF5FilePosition : public AbstractFilePosition
 
     std::string location;
 };  //HDF5FilePosition
+} // openPMD

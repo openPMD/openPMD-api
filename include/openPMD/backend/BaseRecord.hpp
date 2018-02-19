@@ -8,6 +8,8 @@
 #include <stdexcept>
 
 
+namespace openPMD
+{
 enum class UnitDimension : uint8_t
 {
     L = 0, M, T, I, theta, N, J
@@ -177,3 +179,4 @@ BaseRecord< T_elem >::readBase()
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'timeOffset'");
 }
+} // openPMD
