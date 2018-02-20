@@ -12,7 +12,7 @@ C++11
 
    #include <openPMD/openPMD.hpp>
 
-   // ...
+   using namespace openPMD;
 
 Python
 ------
@@ -20,5 +20,3 @@ Python
 .. code-block:: python
 
    import openPMD
-
-   # f = openPMD.File(...)
