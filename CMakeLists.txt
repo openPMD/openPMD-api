@@ -331,6 +331,9 @@ set(openPMD_EXAMPLE_NAMES
     6_dump_filebased_series
     7_extended_write_serial
 )
+set(openPMD_PYTHON_EXAMPLE_NAMES
+    2_read_serial
+)
 foreach(testname ${openPMD_TEST_NAMES})
     add_executable(${testname}Tests test/${testname}Test.cpp)
     if(openPMD_HAVE_MPI)
@@ -432,6 +435,7 @@ set(MPI_TEST_EXE
     ${MPIEXEC_NUMPROC_FLAG} 2
 )
 
+# C++ Unit tests
 foreach(testname ${openPMD_TEST_NAMES})
     if(${testname} MATCHES "^Parallel.*$")
         if(openPMD_HAVE_MPI)
@@ -448,9 +452,55 @@ foreach(testname ${openPMD_TEST_NAMES})
     endif()
 endforeach()
 
-#foreach(examplename ${openPMD_EXAMPLE_NAMES})
-#    add_test(${examplename} ${examplename})
-#endforeach()
+# TODO: C++ Examples
+#if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
+#    foreach(examplename ${openPMD_EXAMPLE_NAMES})
+#        add_test(NAME Example.py.${examplename}
+#            COMMAND ${examplename}
+#            WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+#        )
+#    endforeach()
+#else()
+#    message(STATUS "Missing samples/git-sample/ directory! "
+#                   "Skipping C++ example test!\n\n"
+#                   "Note: run\n"
+#                   "    . ${openPMD_SOURCE_DIR}/.travis/download_samples.sh\n"
+#                   "to add example files!")
+#endif()
+
+# TODO: Python Unit tests
+#if(openPMD_HAVE_PYTHON)
+#    # ...
+#endif()
+
+# Python Examples
+if(openPMD_HAVE_PYTHON)
+    if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
+        foreach(examplename ${openPMD_PYTHON_EXAMPLE_NAMES})
+            add_custom_command(TARGET openPMD.py POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy
+                        ${openPMD_SOURCE_DIR}/examples/${examplename}.py
+                        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
+            )
+            add_test(NAME Example.py.${examplename}
+                COMMAND ${PYTHON_EXECUTABLE}
+                    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
+                WORKING_DIRECTORY
+                    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+            )
+            set_tests_properties(Example.py.${examplename}
+                PROPERTIES ENVIRONMENT
+                    "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
+            )
+        endforeach()
+    else()
+        message(STATUS "Missing samples/git-sample/ directory! "
+                       "Skipping Python example test!\n\n"
+                       "Note: run\n"
+                       "    . ${openPMD_SOURCE_DIR}/.travis/download_samples.sh\n"
+                       "to add example files!")
+    endif()
+endif()
 
 
 # Status Message for Build Options ############################################
