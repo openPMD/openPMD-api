@@ -283,6 +283,7 @@ endif()
 if(openPMD_HAVE_PYTHON)
     pybind11_add_module(openPMD.py MODULE
         src/binding/python/openPMD.cpp
+        src/binding/python/AccessType.cpp
         src/binding/python/Dataset.cpp
         src/binding/python/Datatype.cpp
         src/binding/python/Iteration.cpp
