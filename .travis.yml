@@ -5,6 +5,7 @@ cache:
   apt: true
   directories:
     - $HOME/.cache/spack
+    - $HOME/.cache/cmake-3.10.0
   pip: true
 
 env:
@@ -175,8 +176,13 @@ install:
     source $SPACK_ROOT/share/spack/setup-env.sh
   - SPACK_VAR_MPI="~mpi";
   # required dependencies - CMake 3.10.0 & Boost 1.62.0
+  - if [ ! -f $HOME/.cache/cmake-3.10.0/bin/cmake ]; then
+      wget -O cmake.sh https://cmake.org/files/v3.10/cmake-3.10.0-Linux-x86_64.sh &&
+      sh cmake.sh --skip-license --exclude-subdir --prefix=$HOME/.cache/cmake-3.10.0 &&
+      rm cmake.sh;
+    fi
   - travis_wait spack install
-      cmake@3.10.0~openssl~ncurses
+      cmake@3.10.0
       $COMPILERSPEC
   - spack load cmake@3.10.0 $COMPILERSPEC
   - travis_wait spack install

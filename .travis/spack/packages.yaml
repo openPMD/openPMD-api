@@ -1,6 +1,11 @@
 packages:
   cmake:
     version: [3.10.0]
+    paths:
+      cmake@3.10.0%gcc@4.9.4 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.10.0
+      cmake@3.10.0%gcc@6.3.0 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.10.0
+      cmake@3.10.0%clang@5.0.0 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.10.0
+    buildable: False
   openmpi:
     version: [1.6.5]
     paths:
