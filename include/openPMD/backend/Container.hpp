@@ -174,6 +174,31 @@ public:
         return m_container.erase(key);
     }
 
+    //! @todo why does const_iterator not work compile with pybind11?
+    virtual iterator erase(iterator res)
+    {
+        if( AccessType::READ_ONLY == IOHandler->accessType )
+            throw std::runtime_error("Can not erase from a container in a read-only Series.");
+
+        if( res != m_container.end() && res->second.written )
+        {
+            Parameter< Operation::DELETE_PATH > pDelete;
+            pDelete.path = ".";
+            IOHandler->enqueue(IOTask(&res->second, pDelete));
+            IOHandler->flush();
+        }
+        return m_container.erase(res);
+    }
+    //! @todo add also:
+    // virtual iterator erase(const_iterator first, const_iterator last)
+
+    template <class... Args>
+    auto emplace(Args&&... args)
+    -> decltype(InternalContainer().emplace(std::forward<Args>(args)...))
+    {
+        return m_container.emplace(std::forward<Args>(args)...);
+    }
+
 protected:
     InternalContainer m_container;
 
