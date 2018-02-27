@@ -58,7 +58,29 @@ for( auto const& i : s.iterations )
 
 ### Python
 
-*not yet implemented*
+```python
+from openPMD import Series
+
+
+# ...
+
+series = Series.read("output_files/data%T.h5")
+
+print("Read iterations...")
+for k, i in series.iterations.items():
+    # mesh records
+    print("Iteration {0} contains {1} meshes:".format(k, len(i.meshes)))
+    for m in i.meshes:
+        print("\t {0}".format(m))
+
+    # particle records
+    print("Iteration {0} contains {1} particle species:".format(
+        k, len(i.particles)))
+    for ps in i.particles:
+        print("\t {0}".format(ps))
+
+# ...
+```
 
 ### More!
 
@@ -119,6 +141,9 @@ git clone https://github.com/openPMD/openPMD-api.git
 
 mkdir -p openPMD-api-build
 cd openPMD-api-build
+
+# optional for some tests
+.travis/download_samples.sh
 
 # for own install prefix append:
 #   -DCMAKE_INSTALL_PREFIX=$HOME/somepath

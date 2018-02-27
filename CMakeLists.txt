@@ -497,7 +497,7 @@ if(openPMD_HAVE_PYTHON)
         message(STATUS "Missing samples/git-sample/ directory! "
                        "Skipping Python example test!\n\n"
                        "Note: run\n"
-                       "    . ${openPMD_SOURCE_DIR}/.travis/download_samples.sh\n"
+                       "    ${openPMD_SOURCE_DIR}/.travis/download_samples.sh\n"
                        "to add example files!")
     endif()
 endif()
