@@ -160,8 +160,25 @@ jobs:
             - openmpi-bin
       before_install: *gcc63_init
       script: *script-cpp-unit
-    # GCC 6.3.0 + Python 2/3
+    # GCC 6.3.0 + Python 2.7
     - <<: *test-cpp-unit
+      language: python
+      python: "2.7"
+      env:
+        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+      compiler: gcc
+      addons:
+        apt:
+          <<: *apt_common_sources
+          packages:
+            - *gcc63_deps
+      before_install: *gcc63_init
+      script: *script-cpp-unit
+    # GCC 6.3.0 + Python 3.6
+    # GCC 6.3.0 + Python 2.7
+    - <<: *test-cpp-unit
+      language: python
+      python: "3.6"
       env:
         - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
       compiler: gcc
@@ -214,9 +231,9 @@ install:
     fi
   - if [ $USE_PYTHON == "ON" ]; then
       travis_wait spack install
-        py-pybind11@2.2.1
+        py-pybind11@2.2.1 ^python@$TRAVIS_PYTHON_VERSION
         $COMPILERSPEC &&
-      spack load --dependencies py-pybind11@2.2.1 $COMPILERSPEC;
+      spack load --dependencies py-pybind11@2.2.1 ^python@$TRAVIS_PYTHON_VERSION $COMPILERSPEC;
     fi
   - if [ $USE_HDF5 == "ON" ]; then
       travis_wait spack install
