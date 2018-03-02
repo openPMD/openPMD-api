@@ -202,6 +202,12 @@ install:
   # spack setup
   - cp $TRAVIS_BUILD_DIR/.travis/spack/*.yaml
        $SPACK_ROOT/etc/spack/
+  # manually fix SF via mirrors
+  - SPACK_CACHE=$SPACK_ROOT/var/spack/cache/
+  - curl https://sourceforge.mirrorservice.org/t/tc/tcl/Tcl/8.6.6/tcl8.6.6-src.tar.gz --create-dirs -o $SPACK_CACHE/tcl/tcl-8.6.6.tar.gz
+  - curl https://sourceforge.mirrorservice.org/m/mo/modules/Modules/modules-3.2.10/modules-3.2.10.tar.gz --create-dirs -o $SPACK_CACHE/environment-modules/environment-modules-3.2.10.tar.gz
+  - curl https://sourceforge.mirrorservice.org/b/bo/boost/boost/1.62.0/boost_1_62_0.tar.bz2 --create-dirs -o $SPACK_CACHE/boost/boost-1.62.0.tar.bz2
+  # manually fix SF mirrors end
   - spack bootstrap
   - source /etc/profile &&
     source $SPACK_ROOT/share/spack/setup-env.sh
