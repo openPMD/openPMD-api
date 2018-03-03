@@ -204,10 +204,6 @@ install:
   # spack setup
   - cp $TRAVIS_BUILD_DIR/.travis/spack/*.yaml
        $SPACK_ROOT/etc/spack/
-  # manually fix SF via mirrors
-  - SPACK_CACHE=$SPACK_ROOT/var/spack/cache/
-  - curl http://ftp.pbone.net/mirror/ftp.sourceforge.net/pub/sourceforge/b/bo/boost/boost/1.62.0/boost_1_62_0.tar.bz2 --create-dirs -o $SPACK_CACHE/boost/boost-1.62.0.tar.bz2
-  # manually fix SF mirrors end
   - source /etc/profile &&
     source $SPACK_ROOT/share/spack/setup-env.sh
   - SPACK_VAR_MPI="~mpi";
