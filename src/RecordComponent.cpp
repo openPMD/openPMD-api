@@ -31,13 +31,13 @@ RecordComponent::resetDataset(Dataset d)
 }
 
 uint8_t
-RecordComponent::getDimensionality()
+RecordComponent::getDimensionality() const
 {
     return m_dataset.rank;
 }
 
 Extent
-RecordComponent::getExtent()
+RecordComponent::getExtent() const
 {
     return m_dataset.extent;
 }

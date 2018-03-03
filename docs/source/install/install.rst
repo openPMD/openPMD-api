@@ -68,6 +68,9 @@ On Linux platforms:
    mkdir -p openPMD-api-build
    cd openPMD-api-build
 
+   # optional for some tests
+   .travis/download_samples.sh
+
    # for own install prefix append:
    #   -DCMAKE_INSTALL_PREFIX=$HOME/somepath
    # for options append:

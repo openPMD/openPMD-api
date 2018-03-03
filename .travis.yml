@@ -59,7 +59,7 @@ jobs:
       stage: 'C++ Unit Tests'
       language: cpp
       env:
-        - USE_MPI=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+        - USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
       compiler: clang
       addons:
         apt:
@@ -82,6 +82,8 @@ jobs:
             -DopenPMD_USE_HDF5=$USE_HDF5
             -DopenPMD_USE_ADIOS1=$USE_ADIOS1
             -DopenPMD_USE_ADIOS2=$USE_ADIOS2
+            -DopenPMD_USE_PYTHON=$USE_PYTHON
+            -DPYTHON_EXECUTABLE:FILEPATH=$(which python)
             -DCMAKE_INSTALL_PREFIX=$HOME/openPMD-test-install
             $TRAVIS_BUILD_DIR
         - make -j 2
@@ -91,7 +93,7 @@ jobs:
         # - dpkg -i openPMD*.deb
     - <<: *test-cpp-unit
       env:
-        - USE_MPI=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+        - USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
       compiler: clang
       addons:
         apt:
@@ -105,7 +107,7 @@ jobs:
     # GCC 4.9.4
     - <<: *test-cpp-unit
       env:
-        - USE_MPI=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+        - USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
       compiler: gcc
       addons:
         apt:
@@ -119,7 +121,7 @@ jobs:
       script: *script-cpp-unit
     - <<: *test-cpp-unit
       env:
-        - USE_MPI=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+        - USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
       compiler: gcc
       addons:
         apt:
@@ -133,7 +135,7 @@ jobs:
     # GCC 6.3.0
     - <<: *test-cpp-unit
       env:
-        - USE_MPI=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+        - USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
       compiler: gcc
       addons:
         apt:
@@ -147,7 +149,7 @@ jobs:
       script: *script-cpp-unit
     - <<: *test-cpp-unit
       env:
-        - USE_MPI=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+        - USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
       compiler: gcc
       addons:
         apt:
@@ -156,6 +158,35 @@ jobs:
             - *gcc63_deps
             - libopenmpi-dev
             - openmpi-bin
+      before_install: *gcc63_init
+      script: *script-cpp-unit
+    # GCC 6.3.0 + Python 2.7
+    - <<: *test-cpp-unit
+      language: python
+      python: "2.7"
+      env:
+        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+      compiler: gcc
+      addons:
+        apt:
+          <<: *apt_common_sources
+          packages:
+            - *gcc63_deps
+      before_install: *gcc63_init
+      script: *script-cpp-unit
+    # GCC 6.3.0 + Python 3.6
+    # GCC 6.3.0 + Python 2.7
+    - <<: *test-cpp-unit
+      language: python
+      python: "3.6"
+      env:
+        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+      compiler: gcc
+      addons:
+        apt:
+          <<: *apt_common_sources
+          packages:
+            - *gcc63_deps
       before_install: *gcc63_init
       script: *script-cpp-unit
   allow_failures:
@@ -171,6 +202,12 @@ install:
   # spack setup
   - cp $TRAVIS_BUILD_DIR/.travis/spack/*.yaml
        $SPACK_ROOT/etc/spack/
+  # manually fix SF via mirrors
+  - SPACK_CACHE=$SPACK_ROOT/var/spack/cache/
+  - curl https://sourceforge.mirrorservice.org/t/tc/tcl/Tcl/8.6.6/tcl8.6.6-src.tar.gz --create-dirs -o $SPACK_CACHE/tcl/tcl-8.6.6.tar.gz
+  - curl https://sourceforge.mirrorservice.org/m/mo/modules/Modules/modules-3.2.10/modules-3.2.10.tar.gz --create-dirs -o $SPACK_CACHE/environment-modules/environment-modules-3.2.10.tar.gz
+  - curl https://sourceforge.mirrorservice.org/b/bo/boost/boost/1.62.0/boost_1_62_0.tar.bz2 --create-dirs -o $SPACK_CACHE/boost/boost-1.62.0.tar.bz2
+  # manually fix SF mirrors end
   - spack bootstrap
   - source /etc/profile &&
     source $SPACK_ROOT/share/spack/setup-env.sh
@@ -185,10 +222,11 @@ install:
       cmake@3.10.0
       $COMPILERSPEC
   - spack load cmake@3.10.0 $COMPILERSPEC
+  - SPACK_BOOST_VAR="~atomic~chrono~date_time~graph~iostreams~locale~math~program_options~random~regex~serialization~signals+filesystem+system+test~timer~wave"
   - travis_wait spack install
-      boost@1.62.0
+      boost@1.62.0$SPACK_BOOST_VAR
       $COMPILERSPEC
-  - spack load boost@1.62.0 $COMPILERSPEC
+  - spack load boost@1.62.0$SPACK_BOOST_VAR $COMPILERSPEC
   # optional dependencies - MPI, HDF5, ADIOS1, ADIOS2
   - if [ $USE_MPI == "ON" ]; then
       travis_wait spack install
@@ -196,6 +234,12 @@ install:
         $COMPILERSPEC &&
       spack load openmpi@1.6.5 $COMPILERSPEC;
       SPACK_VAR_MPI="+mpi";
+    fi
+  - if [ $USE_PYTHON == "ON" ]; then
+      travis_wait spack install
+        py-pybind11@2.2.1 ^python@$TRAVIS_PYTHON_VERSION
+        $COMPILERSPEC &&
+      spack load --dependencies py-pybind11@2.2.1 ^python@$TRAVIS_PYTHON_VERSION $COMPILERSPEC;
     fi
   - if [ $USE_HDF5 == "ON" ]; then
       travis_wait spack install

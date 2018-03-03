@@ -17,6 +17,12 @@ public:
     mapped_type& operator[](key_type const&) override;
     mapped_type& operator[](key_type&&) override;
 
+    size_t
+    numPatches() const
+    {
+        return m_patchPositions.size();
+    }
+
 private:
     void read();
 

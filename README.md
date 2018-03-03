@@ -58,7 +58,29 @@ for( auto const& i : s.iterations )
 
 ### Python
 
-*not yet implemented*
+```python
+from openPMD import Series
+
+
+# ...
+
+series = Series.read("output_files/data%T.h5")
+
+print("Read iterations...")
+for k, i in series.iterations.items():
+    # mesh records
+    print("Iteration {0} contains {1} meshes:".format(k, len(i.meshes)))
+    for m in i.meshes:
+        print("\t {0}".format(m))
+
+    # particle records
+    print("Iteration {0} contains {1} particle species:".format(
+        k, len(i.particles)))
+    for ps in i.particles:
+        print("\t {0}".format(ps))
+
+# ...
+```
 
 ### More!
 
@@ -83,8 +105,11 @@ while those can be build either with or without:
 * MPI 2.3+, e.g. OpenMPI or MPICH2
 
 Optional language bindings:
-* Python: (*not yet implemented*)
+* Python:
+  * Python 3.X+
   * pybind11 2.3.0+
+  * mpi4py?
+  * numpy-dev?
   * xtensor-python 0.17.0+
 
 ## Installation
@@ -117,6 +142,9 @@ git clone https://github.com/openPMD/openPMD-api.git
 mkdir -p openPMD-api-build
 cd openPMD-api-build
 
+# optional for some tests
+.travis/download_samples.sh
+
 # for own install prefix append:
 #   -DCMAKE_INSTALL_PREFIX=$HOME/somepath
 # for options append:
@@ -141,7 +169,8 @@ CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 | `openPMD_USE_HDF5`   | **AUTO**/ON/OFF  | Enable support for HDF5                |
 | `openPMD_USE_ADIOS1` | **AUTO**/ON/OFF  | Enable support for ADIOS1 <sup>1</sup> |
 | `openPMD_USE_ADIOS2` | AUTO/ON/**OFF**  | Enable support for ADIOS2 <sup>1</sup> |
-| `openPMD_USE_PYTHON` | AUTO/ON/**OFF**  | Enable Python bindings <sup>1</sup>    |
+| `openPMD_USE_PYTHON` | **AUTO**/ON/OFF  | Enable Python bindings                 |
+| `PYTHON_EXECUTABLE`  | (first found)    | Path to Python executable              |
 
 <sup>1</sup> *not yet implemented*
 
