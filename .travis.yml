@@ -204,10 +204,6 @@ install:
   # spack setup
   - cp $TRAVIS_BUILD_DIR/.travis/spack/*.yaml
        $SPACK_ROOT/etc/spack/
-  # manually fix SF via mirrors
-  - SPACK_CACHE=$SPACK_ROOT/var/spack/cache/
-  - curl http://ftp.pbone.net/mirror/ftp.sourceforge.net/pub/sourceforge/b/bo/boost/boost/1.62.0/boost_1_62_0.tar.bz2 --create-dirs -o $SPACK_CACHE/boost/boost-1.62.0.tar.bz2
-  # manually fix SF mirrors end
   - source /etc/profile &&
     source $SPACK_ROOT/share/spack/setup-env.sh
   - SPACK_VAR_MPI="~mpi";
@@ -223,9 +219,9 @@ install:
   - spack load cmake@3.10.0 $COMPILERSPEC
   - SPACK_BOOST_VAR="~atomic~chrono~date_time~graph~iostreams~locale~math~program_options~random~regex~serialization~signals+filesystem+system+test~timer~wave"
   - travis_wait spack install
-      boost@1.62.0$SPACK_BOOST_VAR
+      boost@1.65.0$SPACK_BOOST_VAR
       $COMPILERSPEC
-  - spack load boost@1.62.0$SPACK_BOOST_VAR $COMPILERSPEC
+  - spack load boost@1.65.0$SPACK_BOOST_VAR $COMPILERSPEC
   # optional dependencies - MPI, HDF5, ADIOS1, ADIOS2
   - if [ $USE_MPI == "ON" ]; then
       travis_wait spack install
