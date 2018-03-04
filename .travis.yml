@@ -219,9 +219,9 @@ install:
   - spack load cmake@3.10.0 $COMPILERSPEC
   - SPACK_BOOST_VAR="~atomic~chrono~date_time~graph~iostreams~locale~math~program_options~random~regex~serialization~signals+filesystem+system+test~timer~wave"
   - travis_wait spack install
-      boost@1.62.0$SPACK_BOOST_VAR
+      boost@1.65.0$SPACK_BOOST_VAR
       $COMPILERSPEC
-  - spack load boost@1.62.0$SPACK_BOOST_VAR $COMPILERSPEC
+  - spack load boost@1.65.0$SPACK_BOOST_VAR $COMPILERSPEC
   # optional dependencies - MPI, HDF5, ADIOS1, ADIOS2
   - if [ $USE_MPI == "ON" ]; then
       travis_wait spack install
