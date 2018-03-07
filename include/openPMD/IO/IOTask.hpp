@@ -13,35 +13,6 @@
 
 namespace openPMD
 {
-/** Concrete datatype of an object available at runtime.
- */
-enum class ArgumentDatatype : int
-{
-    STRING = 0,
-    VEC_UINT64,
-    PTR_VOID,
-    SHARED_PTR_VOID,
-    DATATYPE,
-    ATT_RESOURCE,
-    SHARED_PTR_EXTENT,
-    SHARED_PTR_DATATYPE,
-    SHARED_PTR_ATT_RESOURCE,
-    SHARED_PTR_VEC_STRING,
-
-    UNDEFINED
-};
-using ParameterArgument = auxiliary::Variadic< ArgumentDatatype,
-                                    std::string,
-                                    std::vector< uint64_t >,
-                                    void*,
-                                    std::shared_ptr< void >,
-                                    Datatype,
-                                    Attribute::resource,
-                                    std::shared_ptr< Extent >,
-                                    std::shared_ptr< Datatype >,
-                                    std::shared_ptr< Attribute::resource >,
-                                    std::shared_ptr< std::vector< std::string > > >;
-
 /** Type of IO operation between logical and persistent data.
  */
 enum class Operation
@@ -69,6 +40,10 @@ enum class Operation
     LIST_ATTS
 };  //Operation
 
+struct AbstractParameter
+{
+    virtual ~AbstractParameter() = default;
+};
 
 /** @brief Typesafe description of all required Arguments for a specified Operation.
  *
@@ -79,54 +54,54 @@ enum class Operation
  * @tparam  Operation   Type of Operation to be executed.
  */
 template< Operation >
-struct Parameter
+struct Parameter : public AbstractParameter
 { };
 
 template<>
-struct Parameter< Operation::CREATE_FILE >
+struct Parameter< Operation::CREATE_FILE > : public AbstractParameter
 {
     std::string name;
 };
 
 template<>
-struct Parameter< Operation::OPEN_FILE >
+struct Parameter< Operation::OPEN_FILE > : public AbstractParameter
 {
     std::string name;
 };
 
 template<>
-struct Parameter< Operation::DELETE_FILE >
+struct Parameter< Operation::DELETE_FILE > : public AbstractParameter
 {
     std::string name;
 };
 
 template<>
-struct Parameter< Operation::CREATE_PATH >
+struct Parameter< Operation::CREATE_PATH > : public AbstractParameter
 {
     std::string path;
 };
 
 template<>
-struct Parameter< Operation::OPEN_PATH >
+struct Parameter< Operation::OPEN_PATH > : public AbstractParameter
 {
     std::string path;
 };
 
 template<>
-struct Parameter< Operation::DELETE_PATH >
+struct Parameter< Operation::DELETE_PATH > : public AbstractParameter
 {
     std::string path;
 };
 
 template<>
-struct Parameter< Operation::LIST_PATHS >
+struct Parameter< Operation::LIST_PATHS > : public AbstractParameter
 {
     std::shared_ptr< std::vector< std::string > > paths
             = std::make_shared< std::vector< std::string > >();
 };
 
 template<>
-struct Parameter< Operation::CREATE_DATASET >
+struct Parameter< Operation::CREATE_DATASET > : public AbstractParameter
 {
     std::string name;
     Extent extent;
@@ -137,14 +112,14 @@ struct Parameter< Operation::CREATE_DATASET >
 };
 
 template<>
-struct Parameter< Operation::EXTEND_DATASET >
+struct Parameter< Operation::EXTEND_DATASET > : public AbstractParameter
 {
     std::string name;
     Extent extent;
 };
 
 template<>
-struct Parameter< Operation::OPEN_DATASET >
+struct Parameter< Operation::OPEN_DATASET > : public AbstractParameter
 {
     std::string name;
     std::shared_ptr< Datatype > dtype
@@ -154,13 +129,13 @@ struct Parameter< Operation::OPEN_DATASET >
 };
 
 template<>
-struct Parameter< Operation::DELETE_DATASET >
+struct Parameter< Operation::DELETE_DATASET > : public AbstractParameter
 {
     std::string name;
 };
 
 template<>
-struct Parameter< Operation::WRITE_DATASET >
+struct Parameter< Operation::WRITE_DATASET > : public AbstractParameter
 {
     Extent extent;
     Offset offset;
@@ -169,7 +144,7 @@ struct Parameter< Operation::WRITE_DATASET >
 };
 
 template<>
-struct Parameter< Operation::READ_DATASET >
+struct Parameter< Operation::READ_DATASET > : public AbstractParameter
 {
     Extent extent;
     Offset offset;
@@ -178,20 +153,20 @@ struct Parameter< Operation::READ_DATASET >
 };
 
 template<>
-struct Parameter< Operation::LIST_DATASETS >
+struct Parameter< Operation::LIST_DATASETS > : public AbstractParameter
 {
     std::shared_ptr< std::vector< std::string > > datasets
             = std::make_shared< std::vector< std::string > >();
 };
 
 template<>
-struct Parameter< Operation::DELETE_ATT >
+struct Parameter< Operation::DELETE_ATT > : public AbstractParameter
 {
     std::string name;
 };
 
 template<>
-struct Parameter< Operation::WRITE_ATT >
+struct Parameter< Operation::WRITE_ATT > : public AbstractParameter
 {
     Attribute::resource resource;
     std::string name;
@@ -199,7 +174,7 @@ struct Parameter< Operation::WRITE_ATT >
 };
 
 template<>
-struct Parameter< Operation::READ_ATT >
+struct Parameter< Operation::READ_ATT > : public AbstractParameter
 {
     std::string name;
     std::shared_ptr< Datatype > dtype
@@ -209,16 +184,12 @@ struct Parameter< Operation::READ_ATT >
 };
 
 template<>
-struct Parameter< Operation::LIST_ATTS >
+struct Parameter< Operation::LIST_ATTS > : public AbstractParameter
 {
     std::shared_ptr< std::vector< std::string > > attributes
             = std::make_shared< std::vector< std::string > >();
 };
 
-
-template< Operation o >
-std::map< std::string, ParameterArgument >
-structToMap(Parameter< o > const&);
 
 /** @brief Self-contained description of a single IO operation.
  *
@@ -242,11 +213,11 @@ public:
            Parameter< op > const& p)
             : writable{w},
               operation{op},
-              parameter{structToMap(p)}
+              parameter{new Parameter< op >(p)}
     { }
 
     Writable* writable;
     Operation operation;
-    std::map< std::string, ParameterArgument > parameter;
+    std::shared_ptr< AbstractParameter > parameter;
 };  //IOTask
 } // openPMD
