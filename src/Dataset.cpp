@@ -26,7 +26,7 @@ Dataset::extend(Extent newExtents)
 }
 
 Dataset&
-Dataset::setChunkSize(std::vector< size_t > const& cs)
+Dataset::setChunkSize(Extent const& cs)
 {
     if( extent.size() != rank )
         throw std::runtime_error("Dimensionality of extended Dataset must match the original dimensionality");
