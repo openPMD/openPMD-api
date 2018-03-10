@@ -191,8 +191,6 @@ jobs:
             - *gcc63_deps
       before_install: *gcc63_init
       script: *script-cpp-unit
-  allow_failures:
-    - compiler: clang
 
 install:
   # spack install
