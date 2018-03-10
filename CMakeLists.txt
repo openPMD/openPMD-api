@@ -242,6 +242,7 @@ if(openPMD_USE_INTERNAL_VARIANT)
 else()
     find_package(mpark_variant 1.3.0 REQUIRED)
     target_link_libraries(openPMD PUBLIC mpark_variant)
+    message(STATUS "MPark.Variant: Found version ${mpark_variant_VERSION}")
 endif()
 
 if(TARGET Boost::filesystem)
