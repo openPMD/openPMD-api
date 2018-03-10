@@ -4,6 +4,7 @@ packages:
     paths:
       cmake@3.10.0%gcc@4.9.4 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.10.0
       cmake@3.10.0%gcc@6.3.0 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.10.0
+      cmake@3.10.0%gcc@7.2.0 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.10.0
       cmake@3.10.0%clang@5.0.0 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.10.0
     buildable: False
   openmpi:
@@ -11,6 +12,7 @@ packages:
     paths:
       openmpi@1.6.5%gcc@4.9.4 arch=linux-ubuntu14-x86_64: /usr
       openmpi@1.6.5%gcc@6.3.0 arch=linux-ubuntu14-x86_64: /usr
+      openmpi@1.6.5%gcc@7.2.0 arch=linux-ubuntu14-x86_64: /usr
       openmpi@1.6.5%clang@5.0.0 arch=linux-ubuntu14-x86_64: /usr
     buildable: False
   python:
@@ -22,4 +24,4 @@ packages:
   all:
     providers:
       mpi: [openmpi]
-    compiler: [clang@5.0.0, gcc@4.9.4, gcc@6.3.0]
+    compiler: [clang@5.0.0, gcc@4.9.4, gcc@6.3.0, gcc@7.2.0]

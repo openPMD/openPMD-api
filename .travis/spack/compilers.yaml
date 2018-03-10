@@ -38,3 +38,16 @@ compilers:
       fc: /usr/bin/gfortran-6
     spec: gcc@6.3.0
     target: x86_64
+- compiler:
+    environment: {}
+    extra_rpaths: []
+    flags: {}
+    modules: []
+    operating_system: ubuntu14.04
+    paths:
+      cc: /usr/bin/gcc-7
+      cxx: /usr/bin/g++-7
+      f77: /usr/bin/gfortran-7
+      fc: /usr/bin/gfortran-7
+    spec: gcc@7.2.0
+    target: x86_64
