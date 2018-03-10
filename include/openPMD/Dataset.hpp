@@ -21,7 +21,7 @@ public:
     Dataset(Datatype, Extent);
 
     Dataset& extend(Extent newExtent);
-    Dataset& setChunkSize(std::vector< size_t > const&);
+    Dataset& setChunkSize(Extent const&);
     Dataset& setCompression(std::string const&, uint8_t const);
     Dataset& setCustomTransform(std::string const&);
 
