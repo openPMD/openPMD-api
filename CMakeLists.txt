@@ -510,9 +510,9 @@ message("")
 message("openPMD build configuration:")
 message("  library Version: ${openPMD_VERSION}")
 message("  openPMD Standard: ${openPMD_STANDARD_VERSION}")
-message("  C++ Compiler : ${CMAKE_CXX_COMPILER_ID} "
-                         "${CMAKE_CXX_COMPILER_VERSION} "
-                         "${CMAKE_CXX_COMPILER_WRAPPER}")
+message("  C++ Compiler: ${CMAKE_CXX_COMPILER_ID} "
+                        "${CMAKE_CXX_COMPILER_VERSION} "
+                        "${CMAKE_CXX_COMPILER_WRAPPER}")
 message("    ${CMAKE_CXX_COMPILER}")
 message("")
 message("  Installation prefix: ${CMAKE_INSTALL_PREFIX}")
