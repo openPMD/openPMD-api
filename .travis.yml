@@ -6,6 +6,7 @@ cache:
   directories:
     - $HOME/.cache/spack
     - $HOME/.cache/cmake-3.10.0
+    - $HOME/Library/Caches/Homebrew
   pip: true
 
 env:
@@ -104,6 +105,16 @@ jobs:
             - libopenmpi-dev
             - openmpi-bin
       before_install: *clang50_init
+      script: *script-cpp-unit
+    # Clang 8.1.0-apple + Python 2.7.10 @ OSX
+    - <<: *test-cpp-unit
+      os: osx
+      language: generic
+      env:
+        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+      compiler: clang
+      before_install:
+         - COMPILERSPEC="%clang@8.1.0"
       script: *script-cpp-unit
     # GCC 4.9.4
     - <<: *test-cpp-unit
@@ -204,16 +215,33 @@ install:
       git clone --depth 50 https://github.com/spack/spack.git $SPACK_ROOT;
     fi
   # spack setup
+  - source /etc/profile
   - cp $TRAVIS_BUILD_DIR/.travis/spack/*.yaml
        $SPACK_ROOT/etc/spack/
-  - source /etc/profile &&
-    source $SPACK_ROOT/share/spack/setup-env.sh
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      travis_wait brew install modules &&
+      brew info modules &&
+      ls /usr/local/Cellar/modules/4.1.1/ &&
+      source /usr/local/opt/modules/init/bash &&
+      export TRAVIS_PYTHON_VERSION=2.7.10;
+    fi
+  - source $SPACK_ROOT/share/spack/setup-env.sh
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      export MODULEPATH=$SPACK_ROOT/share/spack/modules/$(spack arch):$MODULEPATH;
+    fi
   - SPACK_VAR_MPI="~mpi";
   # required dependencies - CMake 3.10.0 & Boost 1.62.0
   - if [ ! -f $HOME/.cache/cmake-3.10.0/bin/cmake ]; then
-      wget -O cmake.sh https://cmake.org/files/v3.10/cmake-3.10.0-Linux-x86_64.sh &&
-      sh cmake.sh --skip-license --exclude-subdir --prefix=$HOME/.cache/cmake-3.10.0 &&
-      rm cmake.sh;
+      if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+        wget -O cmake.sh https://cmake.org/files/v3.10/cmake-3.10.0-Linux-x86_64.sh &&
+        sh cmake.sh --skip-license --exclude-subdir --prefix=$HOME/.cache/cmake-3.10.0 &&
+        rm cmake.sh;
+      else
+        curl -L -s -o cmake.dmg https://cmake.org/files/v3.10/cmake-3.10.0-Darwin-x86_64.dmg &&
+        yes | hdiutil mount cmake.dmg &&
+        sudo cp -R "/Volumes/cmake-3.10.0-Darwin-x86_64/CMake.app" /Applications &&
+        rm cmake.dmg;
+      fi;
     fi
   - travis_wait spack install
       cmake@3.10.0
