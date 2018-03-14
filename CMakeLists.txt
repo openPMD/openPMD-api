@@ -260,6 +260,8 @@ if(openPMD_HAVE_MPI)
     target_link_libraries(openPMD PUBLIC MPI::MPI_C MPI::MPI_CXX)
 
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_MPI=1")
+else()
+    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_MPI=0")
 endif()
 
 if(openPMD_HAVE_HDF5)
@@ -267,17 +269,23 @@ if(openPMD_HAVE_HDF5)
     target_include_directories(openPMD SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
     target_compile_definitions(openPMD PUBLIC ${HDF5_DEFINITIONS})
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_HDF5=1")
+else()
+    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_HDF5=0")
 endif()
 
 if(openPMD_HAVE_ADIOS1)
     target_link_libraries(openPMD PUBLIC ${ADIOS_LIBRARIES})
     target_include_directories(openPMD SYSTEM PUBLIC ${ADIOS_INCLUDE_DIRS})
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS1=1")
+else()
+    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS1=0")
 endif()
 
 if(openPMD_HAVE_ADIOS2)
     target_link_libraries(openPMD PUBLIC ADIOS2::ADIOS2)
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS2=1")
+else()
+    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS2=0")
 endif()
 
 # python bindings
