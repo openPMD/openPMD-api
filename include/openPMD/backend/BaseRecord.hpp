@@ -49,7 +49,7 @@ protected:
     bool m_containsScalar;
 
 private:
-    virtual void flush(std::string const&) = 0;
+    virtual void flush(std::string const&) override = 0;
     virtual void read() = 0;
 };  //BaseRecord
 
