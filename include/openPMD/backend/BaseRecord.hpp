@@ -33,7 +33,7 @@ public:
     using const_iterator = typename Container< T_elem >::const_iterator;
 
     BaseRecord(BaseRecord const& b);
-    virtual ~BaseRecord() { }
+    virtual ~BaseRecord() override { }
 
     mapped_type& operator[](key_type const& key) override;
     mapped_type& operator[](key_type&& key) override;
