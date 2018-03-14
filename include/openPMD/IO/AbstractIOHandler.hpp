@@ -127,13 +127,13 @@ class DummyIOHandler : public AbstractIOHandler
 {
 public:
     DummyIOHandler(std::string const&, AccessType);
-    virtual ~DummyIOHandler();
+    virtual ~DummyIOHandler() override;
 
     /** No-op consistent with the IOHandler interface to enable library use without IO.
      */
     void enqueue(IOTask const&) override;
     /** No-op consistent with the IOHandler interface to enable library use without IO.
      */
-    std::future< void > flush();
+    std::future< void > flush() override;
 };  //DummyIOHandler
 } // openPMD
