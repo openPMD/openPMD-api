@@ -432,34 +432,50 @@ install(
 
 # Tests #######################################################################
 #
-enable_testing()
+include(CTest)
+# automatically defines: BUILD_TESTING
 
-# OpenMPI root guard: https://github.com/open-mpi/ompi/issues/4451
-if("$ENV{USER}" STREQUAL "root")
-    set(MPI_ALLOW_ROOT --allow-run-as-root)
-endif()
-set(MPI_TEST_EXE
-    ${MPIEXEC_EXECUTABLE}
-    ${MPI_ALLOW_ROOT}
-    ${MPIEXEC_NUMPROC_FLAG} 2
-)
+if(BUILD_TESTING)
+    enable_testing()
 
-# C++ Unit tests
-foreach(testname ${openPMD_TEST_NAMES})
-    if(${testname} MATCHES "^Parallel.*$")
-        if(openPMD_HAVE_MPI)
-            add_test(NAME MPI.${testname}
-                COMMAND ${MPI_TEST_EXE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${testname}Tests
+    # OpenMPI root guard: https://github.com/open-mpi/ompi/issues/4451
+    if("$ENV{USER}" STREQUAL "root")
+        set(MPI_ALLOW_ROOT --allow-run-as-root)
+    endif()
+    set(MPI_TEST_EXE
+        ${MPIEXEC_EXECUTABLE}
+        ${MPI_ALLOW_ROOT}
+        ${MPIEXEC_NUMPROC_FLAG} 2
+    )
+
+    # C++ Unit tests
+    foreach(testname ${openPMD_TEST_NAMES})
+        if(${testname} MATCHES "^Parallel.*$")
+            if(openPMD_HAVE_MPI)
+                add_test(NAME MPI.${testname}
+                    COMMAND ${MPI_TEST_EXE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${testname}Tests
+                    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                )
+            endif()
+        else()
+            add_test(NAME Serial.${testname}
+                COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${testname}Tests
                 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
             )
         endif()
-    else()
-        add_test(NAME Serial.${testname}
-            COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${testname}Tests
-            WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-        )
-    endif()
-endforeach()
+    endforeach()
+endif()
+
+# TODO: Python Unit tests
+#if(BUILD_TESTING)
+#    if(openPMD_HAVE_PYTHON)
+#        ...
+#    endif()
+#endif()
+
+
+# Examples ####################################################################
+#
 
 # TODO: C++ Examples
 #if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
@@ -477,11 +493,6 @@ endforeach()
 #                   "to add example files!")
 #endif()
 
-# TODO: Python Unit tests
-#if(openPMD_HAVE_PYTHON)
-#    # ...
-#endif()
-
 # Python Examples
 if(openPMD_HAVE_PYTHON)
     if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
@@ -491,16 +502,18 @@ if(openPMD_HAVE_PYTHON)
                         ${openPMD_SOURCE_DIR}/examples/${examplename}.py
                         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
             )
-            add_test(NAME Example.py.${examplename}
-                COMMAND ${PYTHON_EXECUTABLE}
-                    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
-                WORKING_DIRECTORY
-                    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-            )
-            set_tests_properties(Example.py.${examplename}
-                PROPERTIES ENVIRONMENT
-                    "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
-            )
+            if(BUILD_TESTING)
+                add_test(NAME Example.py.${examplename}
+                    COMMAND ${PYTHON_EXECUTABLE}
+                        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
+                    WORKING_DIRECTORY
+                        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                )
+                set_tests_properties(Example.py.${examplename}
+                    PROPERTIES ENVIRONMENT
+                        "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
+                )
+            endif()
         endforeach()
     else()
         message(STATUS "Missing samples/git-sample/ directory! "
@@ -533,6 +546,7 @@ if(openPMD_HAVE_PYTHON)
 endif()
 message("")
 message("  Build Type: ${CMAKE_BUILD_TYPE}")
+message("  Testing: ${BUILD_TESTING}")
 message("  Build Options:")
 
 foreach(opt IN LISTS openPMD_CONFIG_OPTIONS)

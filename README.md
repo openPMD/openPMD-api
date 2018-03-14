@@ -188,6 +188,9 @@ You can only build a static or a shared library at a time.
 By default, the `Release` version is built.
 In order to build with debug symbols, pass `-DCMAKE_BUILD_TYPE=Debug` to your `cmake` command.
 
+By default, tests are built.
+In order to skip building tests, pass `-DBUILD_TESTING=OFF` to your `cmake` command.
+
 ## Linking to your project
 
 The install will contain header files and libraries in the path set with `-DCMAKE_INSTALL_PREFIX`.
