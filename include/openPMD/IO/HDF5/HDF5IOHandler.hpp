@@ -22,7 +22,7 @@
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
-#if defined(openPMD_HAVE_HDF5)
+#if openPMD_HAVE_HDF5
 #   include <hdf5.h>
 #endif
 
@@ -35,7 +35,7 @@
 
 namespace openPMD
 {
-#if defined(openPMD_HAVE_HDF5)
+#if openPMD_HAVE_HDF5
 class HDF5IOHandler;
 
 class HDF5IOHandlerImpl

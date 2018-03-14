@@ -8,7 +8,7 @@ using namespace openPMD;
 
 #include <boost/test/included/unit_test.hpp>
 
-#if defined(openPMD_HAVE_HDF5)
+#if openPMD_HAVE_HDF5
 BOOST_AUTO_TEST_CASE(git_hdf5_sample_structure_test)
 {
     try
@@ -1020,7 +1020,7 @@ BOOST_AUTO_TEST_CASE(no_serial_hdf5)
     BOOST_TEST(true);
 }
 #endif
-#if defined(openPMD_HAVE_ADIOS1)
+#if openPMD_HAVE_ADIOS1
 BOOST_AUTO_TEST_CASE(adios_write_test)
 {
     Output o = Output("../samples/serial_write.bp");

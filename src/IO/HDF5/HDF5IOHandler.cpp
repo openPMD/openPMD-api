@@ -21,7 +21,7 @@
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
 
 
-#if defined(openPMD_HAVE_HDF5)
+#if openPMD_HAVE_HDF5
 #   include "openPMD/auxiliary/StringManip.hpp"
 #   include "openPMD/backend/Attribute.hpp"
 #   include "openPMD/IO/IOTask.hpp"
@@ -38,7 +38,7 @@
 
 namespace openPMD
 {
-#if defined(openPMD_HAVE_HDF5)
+#if openPMD_HAVE_HDF5
 #   ifdef DEBUG
 #       define ASSERT(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error(std::string((TEXT))); }
 #   else
@@ -1498,7 +1498,7 @@ void HDF5IOHandlerImpl::listAttributes(Writable* writable,
 }
 #endif
 
-#if defined(openPMD_HAVE_HDF5)
+#if openPMD_HAVE_HDF5
 HDF5IOHandler::HDF5IOHandler(std::string const& path, AccessType at)
         : AbstractIOHandler(path, at),
           m_impl{new HDF5IOHandlerImpl(this)}

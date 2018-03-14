@@ -29,7 +29,7 @@
 
 namespace openPMD
 {
-#if defined(openPMD_HAVE_ADIOS1)
+#if openPMD_HAVE_ADIOS1
 class ADIOS1IOHandler;
 
 class ADIOS1IOHandlerImpl
