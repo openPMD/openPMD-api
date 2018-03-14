@@ -59,7 +59,7 @@ public:
 #else
     ParallelHDF5IOHandler(std::string const& path, AccessType);
 #endif
-    virtual ~ParallelHDF5IOHandler();
+    virtual ~ParallelHDF5IOHandler() override;
 
     std::future< void > flush() override;
 
