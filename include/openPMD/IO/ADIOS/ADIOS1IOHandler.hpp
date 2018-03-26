@@ -75,7 +75,7 @@ public:
     ADIOS1IOHandler(std::string const& path, AccessType);
     virtual ~ADIOS1IOHandler() override;
 
-    std::future< void > flush();
+    std::future< void > flush() override;
 
 private:
     std::unique_ptr< ADIOS1IOHandlerImpl > m_impl;
