@@ -208,6 +208,11 @@ install:
        $SPACK_ROOT/etc/spack/
   - source /etc/profile &&
     source $SPACK_ROOT/share/spack/setup-env.sh
+  # fresh (cache-cleaned) runs seem to not properly init environment-modules
+  - echo $MODULEPATH
+  - if [[ ! $MODULEPATH = *"spack"* ]]; then
+      export MODULEPATH=$SPACK_ROOT/share/spack/modules/linux-ubuntu14.04-x86_64:$MODULEPATH;
+    fi
   - SPACK_VAR_MPI="~mpi";
   # required dependencies - CMake 3.10.0 & Boost 1.62.0
   - if [ ! -f $HOME/.cache/cmake-3.10.0/bin/cmake ]; then
@@ -215,10 +220,13 @@ install:
       sh cmake.sh --skip-license --exclude-subdir --prefix=$HOME/.cache/cmake-3.10.0 &&
       rm cmake.sh;
     fi
-  - travis_wait spack install
+  - spack install
       cmake@3.10.0
       $COMPILERSPEC
   - spack load cmake@3.10.0 $COMPILERSPEC
+  # diagnostics: modules created and visible?
+  - module av
+  - module li
   - SPACK_BOOST_VAR="~atomic~chrono~date_time~graph~iostreams~locale~math~program_options~random~regex~serialization~signals+filesystem+system+test~timer~wave"
   - travis_wait spack install
       boost@1.65.0$SPACK_BOOST_VAR
