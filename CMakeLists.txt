@@ -63,6 +63,9 @@ if (CMAKE_BUILD_TYPE STREQUAL Debug)
     add_definitions(-DDEBUG)
 endif()
 
+include(CTest)
+# automatically defines: BUILD_TESTING, default is ON
+
 
 # Warnings ####################################################################
 #
@@ -248,14 +251,16 @@ else()
 endif()
 
 # Catch2 for unit tests
-if(openPMD_USE_INTERNAL_CATCH)
-    target_include_directories(openPMD SYSTEM PUBLIC
-        $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/catch2/include>
-    )
-    message(STATUS "Catch2: Using INTERNAL version 2.2.1")
-else()
-    find_package(Catch2 2.2.1 REQUIRED)
-    message(STATUS "Catch2: Found version ${Catch2_VERSION}")
+if(BUILD_TESTING)
+    if(openPMD_USE_INTERNAL_CATCH)
+        target_include_directories(openPMD SYSTEM PUBLIC
+            $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/catch2/include>
+        )
+        message(STATUS "Catch2: Using INTERNAL version 2.2.1")
+    else()
+        find_package(Catch2 2.2.1 CONFIG REQUIRED)
+        message(STATUS "Catch2: Found version ${Catch2_VERSION}")
+    endif()
 endif()
 
 if(TARGET Boost::filesystem)
@@ -356,30 +361,34 @@ set(openPMD_EXAMPLE_NAMES
 set(openPMD_PYTHON_EXAMPLE_NAMES
     2_read_serial
 )
-foreach(testname ${openPMD_TEST_NAMES})
-    add_executable(${testname}Tests test/${testname}Test.cpp)
-    if(openPMD_HAVE_MPI)
-        target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_MPI=1")
-    else()
-        target_compile_definitions(${testname}Tests PUBLIC "-D_NOMPI=1")
-    endif()
 
-    if(openPMD_HAVE_HDF5)
-        target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_HDF5=1")
-    endif()
+if(BUILD_TESTING)
+    foreach(testname ${openPMD_TEST_NAMES})
+        add_executable(${testname}Tests test/${testname}Test.cpp)
+        if(openPMD_HAVE_MPI)
+            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_MPI=1")
+        else()
+            target_compile_definitions(${testname}Tests PUBLIC "-D_NOMPI=1")
+        endif()
 
-    if(openPMD_HAVE_ADIOS1)
-        target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_ADIOS1=1")
-    endif()
+        if(openPMD_HAVE_HDF5)
+            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_HDF5=1")
+        endif()
 
-    if(openPMD_HAVE_ADIOS2)
-        target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_ADIOS2=1")
-    endif()
-    target_link_libraries(${testname}Tests PRIVATE openPMD)
-    if(TARGET Catch2)
-        target_link_libraries(${testname}Tests PRIVATE Catch2)
-    endif()
-endforeach()
+        if(openPMD_HAVE_ADIOS1)
+            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_ADIOS1=1")
+        endif()
+
+        if(openPMD_HAVE_ADIOS2)
+            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_ADIOS2=1")
+        endif()
+        target_link_libraries(${testname}Tests PRIVATE openPMD)
+        if(TARGET Catch2::Catch)
+            target_link_libraries(${testname}Tests PRIVATE Catch2::Catch)
+        endif()
+    endforeach()
+endif()
+
 foreach(examplename ${openPMD_EXAMPLE_NAMES})
     if(${examplename} MATCHES ".+parallel$")
         if(openPMD_HAVE_MPI)
@@ -449,9 +458,6 @@ install(
 
 # Tests #######################################################################
 #
-include(CTest)
-# automatically defines: BUILD_TESTING
-
 if(BUILD_TESTING)
     enable_testing()
 
