@@ -110,7 +110,7 @@ Optional language bindings:
   * pybind11 2.3.0+
   * mpi4py?
   * numpy-dev?
-  * xtensor-python 0.17.0+
+  * xtensor-python 0.17.0+?
 
 ## Installation
 

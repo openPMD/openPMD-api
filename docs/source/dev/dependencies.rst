@@ -17,7 +17,7 @@ Required
 Shipped internally
 ------------------
 
-The following libraries shipped internally:
+The following libraries are shipped internally for convenience:
 
 * `MPark.Variant <https://github.com/mpark/variant>`_ 1.3.0+
 
@@ -41,5 +41,5 @@ Optional: language bindings
   * pybind11 2.3.0+
   * mpi4py?
   * numpy-dev?
-  * xtensor-python 0.17.0+
+  * xtensor-python 0.17.0+?
 
