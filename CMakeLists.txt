@@ -51,6 +51,7 @@ openpmd_option(ADIOS2 "Enable ADIOS2 support"  OFF)
 openpmd_option(PYTHON "Enable Python bindings" AUTO)
 
 option(openPMD_USE_INTERNAL_VARIANT "Use internally shipped MPark.Variant" ON)
+option(openPMD_USE_INTERNAL_CATCH   "Use internally shipped Catch2" ON)
 
 set(CMAKE_CONFIGURATION_TYPES "Release;Debug;MinSizeRel;RelWithDebInfo")
 if(NOT CMAKE_BUILD_TYPE)
@@ -70,14 +71,12 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,memory,undefined")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-weak-vtables -Wno-padded -Wno-switch-enum -Wno-undefined-func-template")
-    #Silence BOOST_TEST
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-disabled-macro-expansion -Wno-c++98-compat-pedantic -Wno-global-constructors -Wno-conversion")
-    #Silence HDF5
+    # silence HDF5
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-reserved-id-macro -Wno-deprecated -Wno-old-style-cast")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-cpp")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
-    #silence BOOST filesystem
+    # silence BOOST filesystem
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-cpp")
 endif ()
 
@@ -86,7 +85,7 @@ endif ()
 #
 # external library: Boost (mandatory)
 find_package(Boost 1.62.0 REQUIRED
-    COMPONENTS system filesystem unit_test_framework)
+    COMPONENTS system filesystem)
 
 # external library: MPI (optional)
 if(openPMD_USE_MPI STREQUAL AUTO)
@@ -248,6 +247,17 @@ else()
     message(STATUS "MPark.Variant: Found version ${mpark_variant_VERSION}")
 endif()
 
+# Catch2 for unit tests
+if(openPMD_USE_INTERNAL_CATCH)
+    target_include_directories(openPMD SYSTEM PUBLIC
+        $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/catch2/include>
+    )
+    message(STATUS "Catch2: Using INTERNAL version 2.2.1")
+else()
+    find_package(Catch2 2.2.1 REQUIRED)
+    message(STATUS "Catch2: Found version ${Catch2_VERSION}")
+endif()
+
 if(TARGET Boost::filesystem)
     target_link_libraries(openPMD PUBLIC
         Boost::boost Boost::system Boost::filesystem)
@@ -366,8 +376,8 @@ foreach(testname ${openPMD_TEST_NAMES})
         target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_ADIOS2=1")
     endif()
     target_link_libraries(${testname}Tests PRIVATE openPMD)
-    if(TARGET Boost::unit_test_framework)
-        target_link_libraries(${testname}Tests PRIVATE Boost::unit_test_framework)
+    if(TARGET Catch2)
+        target_link_libraries(${testname}Tests PRIVATE Catch2)
     endif()
 endforeach()
 foreach(examplename ${openPMD_EXAMPLE_NAMES})
@@ -563,6 +573,7 @@ message("")
 message("  Additionally installed third party libraries:")
 invertBoolean(openPMD_USE_INTERNAL_VARIANT openPMD_HAVE_EXTERNAL_VARIANT)
 message("    MPark.Variant: ${openPMD_HAVE_EXTERNAL_VARIANT}")
+message("           Catch2: OFF")
 message("")
 message("  Build Type: ${CMAKE_BUILD_TYPE}")
 message("  Testing: ${BUILD_TESTING}")
