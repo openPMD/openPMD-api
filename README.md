@@ -95,6 +95,7 @@ Required:
 
 Shipped internally:
 * [MPark.Variant](https://github.com/mpark/variant) 1.3.0+
+* [Catch2](https://github.com/catchorg/Catch2) 2.2.1+
 
 Optional I/O backends:
 * HDF5 1.8.6+
