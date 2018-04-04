@@ -227,7 +227,7 @@ install:
   # diagnostics: modules created and visible?
   - module av
   - module li
-  - SPACK_BOOST_VAR="~atomic~chrono~date_time~graph~iostreams~locale~math~program_options~random~regex~serialization~signals+filesystem+system+test~timer~wave"
+  - SPACK_BOOST_VAR="~atomic~chrono~date_time~graph~iostreams~locale~math~program_options~random~regex~serialization~signals+filesystem+system~test~timer~wave"
   - travis_wait spack install
       boost@1.65.0$SPACK_BOOST_VAR
       $COMPILERSPEC
