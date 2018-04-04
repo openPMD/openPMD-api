@@ -6,6 +6,7 @@ packages:
       cmake@3.10.0%gcc@6.3.0 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.10.0
       cmake@3.10.0%gcc@7.2.0 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.10.0
       cmake@3.10.0%clang@5.0.0 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.10.0
+      cmake@3.10.0%clang@8.1.0 arch=darwin-sierra-x86_64: /Applications/CMake.app/Contents/
     buildable: False
   openmpi:
     version: [1.6.5]
@@ -16,10 +17,11 @@ packages:
       openmpi@1.6.5%clang@5.0.0 arch=linux-ubuntu14-x86_64: /usr
     buildable: False
   python:
-    version: [2.7.14, 3.6.3]
+    version: [2.7.14, 2.7.10, 3.6.3]
     paths:
       python@2.7.14%gcc@6.3.0 arch=linux-ubuntu14-x86_64: /home/travis/virtualenv/python2.7
       python@3.6.3%gcc@6.3.0 arch=linux-ubuntu14-x86_64: /home/travis/virtualenv/python3.6
+      python@2.7.10%clang@8.1.0 arch=darwin-sierra-x86_64: /usr
     buildable: False
   all:
     providers:
