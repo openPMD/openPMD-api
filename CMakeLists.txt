@@ -39,6 +39,7 @@ function(openpmd_option name description default)
     else()
         set(openPMD_HAVE_${name})
     endif()
+    # list of all possible options
     set(openPMD_CONFIG_OPTIONS ${openPMD_CONFIG_OPTIONS} ${name} PARENT_SCOPE)
 endfunction()
 
@@ -232,12 +233,14 @@ set_target_properties(openPMD PROPERTIES
 # own headers
 target_include_directories(openPMD PUBLIC
     $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/include>
-    $<BUILD_INTERFACE:${openPMD_BINARY_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
 
 # C++11 std::variant (C++17 stdlib preview)
 if(openPMD_USE_INTERNAL_VARIANT)
+    target_include_directories(openPMD PUBLIC
+        $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include>
+    )
     message(STATUS "MPark.Variant: Using INTERNAL version 1.3.0")
 else()
     find_package(mpark_variant 1.3.0 REQUIRED)
@@ -410,11 +413,15 @@ if(openPMD_HAVE_PYTHON)
         DESTINATION ${CMAKE_INSTALL_PYTHONDIR}
     )
 endif()
-install(DIRECTORY "${openPMD_SOURCE_DIR}/include/."
-  DESTINATION include
-  PATTERN ".svn" EXCLUDE
-  PATTERN ".git" EXCLUDE
+install(DIRECTORY "${openPMD_SOURCE_DIR}/include"
+    DESTINATION include
 )
+# install third-party libraries
+if(openPMD_USE_INTERNAL_VARIANT)
+    install(DIRECTORY "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include/mpark"
+        DESTINATION include
+    )
+endif()
 
 # CMake package file for find_package(openPMD::openPMD) in depending projects
 install(EXPORT openPMDTargets
@@ -527,6 +534,14 @@ endif()
 
 # Status Message for Build Options ############################################
 #
+function(invertBoolean inputVar outputVar)
+  if(${inputVar})
+    set(${outputVar} OFF PARENT_SCOPE)
+  else()
+    set(${outputVar} ON PARENT_SCOPE)
+  endif()
+endfunction()
+
 message("")
 message("openPMD build configuration:")
 message("  library Version: ${openPMD_VERSION}")
@@ -544,6 +559,10 @@ message("      cmake: ${CMAKE_INSTALL_CMAKEDIR}")
 if(openPMD_HAVE_PYTHON)
     message("     python: ${CMAKE_INSTALL_PYTHONDIR}")
 endif()
+message("")
+message("  Additionally installed third party libraries:")
+invertBoolean(openPMD_USE_INTERNAL_VARIANT openPMD_HAVE_EXTERNAL_VARIANT)
+message("    MPark.Variant: ${openPMD_HAVE_EXTERNAL_VARIANT}")
 message("")
 message("  Build Type: ${CMAKE_BUILD_TYPE}")
 message("  Testing: ${BUILD_TESTING}")
