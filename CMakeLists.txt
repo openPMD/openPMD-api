@@ -72,11 +72,17 @@ include(CTest)
 # TODO: LEGACY! Use CMake TOOLCHAINS instead!
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,memory,undefined")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-weak-vtables -Wno-padded -Wno-switch-enum -Wno-undefined-func-template")
-    # silence HDF5
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-reserved-id-macro -Wno-deprecated -Wno-old-style-cast")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-cpp")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
+    string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} "
+                  "-Wno-weak-vtables -Wno-padded -Wno-switch-enum "
+                  "-Wno-undefined-func-template -Wno-c++98-compat-pedantic")
+    # silence HDF5 (FIXME: -isystem should be enough)
+    string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} "
+                  "-Wno-reserved-id-macro -Wno-deprecated -Wno-old-style-cast "
+                  "-Wno-cpp")
+    # older clangs: silence unknown warnings
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-warning-option")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
     # silence BOOST filesystem
