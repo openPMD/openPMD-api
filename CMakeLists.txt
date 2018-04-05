@@ -238,7 +238,7 @@ target_include_directories(openPMD PUBLIC
 
 # C++11 std::variant (C++17 stdlib preview)
 if(openPMD_USE_INTERNAL_VARIANT)
-    target_include_directories(openPMD PUBLIC
+    target_include_directories(openPMD SYSTEM PUBLIC
         $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include>
     )
     message(STATUS "MPark.Variant: Using INTERNAL version 1.3.0")
