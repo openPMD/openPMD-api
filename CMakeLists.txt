@@ -51,6 +51,7 @@ openpmd_option(ADIOS2 "Enable ADIOS2 support"  OFF)
 openpmd_option(PYTHON "Enable Python bindings" AUTO)
 
 option(openPMD_USE_INTERNAL_VARIANT "Use internally shipped MPark.Variant" ON)
+option(openPMD_USE_INTERNAL_CATCH   "Use internally shipped Catch2" ON)
 
 set(CMAKE_CONFIGURATION_TYPES "Release;Debug;MinSizeRel;RelWithDebInfo")
 if(NOT CMAKE_BUILD_TYPE)
@@ -62,22 +63,29 @@ if (CMAKE_BUILD_TYPE STREQUAL Debug)
     add_definitions(-DDEBUG)
 endif()
 
+include(CTest)
+# automatically defines: BUILD_TESTING, default is ON
+
 
 # Warnings ####################################################################
 #
 # TODO: LEGACY! Use CMake TOOLCHAINS instead!
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,memory,undefined")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-weak-vtables -Wno-padded -Wno-switch-enum -Wno-undefined-func-template")
-    #Silence BOOST_TEST
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-disabled-macro-expansion -Wno-c++98-compat-pedantic -Wno-global-constructors -Wno-conversion")
-    #Silence HDF5
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-reserved-id-macro -Wno-deprecated -Wno-old-style-cast")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-cpp")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
+    string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} "
+                  "-Wno-weak-vtables -Wno-padded -Wno-switch-enum "
+                  "-Wno-undefined-func-template -Wno-c++98-compat-pedantic")
+    # silence HDF5 (FIXME: -isystem should be enough)
+    string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} "
+                  "-Wno-reserved-id-macro -Wno-deprecated -Wno-old-style-cast "
+                  "-Wno-cpp")
+    # older clangs: silence unknown warnings
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-warning-option")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
-    #silence BOOST filesystem
+    # silence BOOST filesystem
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-cpp")
 endif ()
 
@@ -86,7 +94,7 @@ endif ()
 #
 # external library: Boost (mandatory)
 find_package(Boost 1.62.0 REQUIRED
-    COMPONENTS system filesystem unit_test_framework)
+    COMPONENTS system filesystem)
 
 # external library: MPI (optional)
 if(openPMD_USE_MPI STREQUAL AUTO)
@@ -248,6 +256,19 @@ else()
     message(STATUS "MPark.Variant: Found version ${mpark_variant_VERSION}")
 endif()
 
+# Catch2 for unit tests
+if(BUILD_TESTING)
+    if(openPMD_USE_INTERNAL_CATCH)
+        target_include_directories(openPMD SYSTEM PUBLIC
+            $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/catch2/include>
+        )
+        message(STATUS "Catch2: Using INTERNAL version 2.2.1")
+    else()
+        find_package(Catch2 2.2.1 CONFIG REQUIRED)
+        message(STATUS "Catch2: Found version ${Catch2_VERSION}")
+    endif()
+endif()
+
 if(TARGET Boost::filesystem)
     target_link_libraries(openPMD PUBLIC
         Boost::boost Boost::system Boost::filesystem)
@@ -346,30 +367,34 @@ set(openPMD_EXAMPLE_NAMES
 set(openPMD_PYTHON_EXAMPLE_NAMES
     2_read_serial
 )
-foreach(testname ${openPMD_TEST_NAMES})
-    add_executable(${testname}Tests test/${testname}Test.cpp)
-    if(openPMD_HAVE_MPI)
-        target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_MPI=1")
-    else()
-        target_compile_definitions(${testname}Tests PUBLIC "-D_NOMPI=1")
-    endif()
 
-    if(openPMD_HAVE_HDF5)
-        target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_HDF5=1")
-    endif()
+if(BUILD_TESTING)
+    foreach(testname ${openPMD_TEST_NAMES})
+        add_executable(${testname}Tests test/${testname}Test.cpp)
+        if(openPMD_HAVE_MPI)
+            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_MPI=1")
+        else()
+            target_compile_definitions(${testname}Tests PUBLIC "-D_NOMPI=1")
+        endif()
 
-    if(openPMD_HAVE_ADIOS1)
-        target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_ADIOS1=1")
-    endif()
+        if(openPMD_HAVE_HDF5)
+            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_HDF5=1")
+        endif()
 
-    if(openPMD_HAVE_ADIOS2)
-        target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_ADIOS2=1")
-    endif()
-    target_link_libraries(${testname}Tests PRIVATE openPMD)
-    if(TARGET Boost::unit_test_framework)
-        target_link_libraries(${testname}Tests PRIVATE Boost::unit_test_framework)
-    endif()
-endforeach()
+        if(openPMD_HAVE_ADIOS1)
+            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_ADIOS1=1")
+        endif()
+
+        if(openPMD_HAVE_ADIOS2)
+            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_ADIOS2=1")
+        endif()
+        target_link_libraries(${testname}Tests PRIVATE openPMD)
+        if(TARGET Catch2::Catch)
+            target_link_libraries(${testname}Tests PRIVATE Catch2::Catch)
+        endif()
+    endforeach()
+endif()
+
 foreach(examplename ${openPMD_EXAMPLE_NAMES})
     if(${examplename} MATCHES ".+parallel$")
         if(openPMD_HAVE_MPI)
@@ -439,9 +464,6 @@ install(
 
 # Tests #######################################################################
 #
-include(CTest)
-# automatically defines: BUILD_TESTING
-
 if(BUILD_TESTING)
     enable_testing()
 
@@ -563,6 +585,7 @@ message("")
 message("  Additionally installed third party libraries:")
 invertBoolean(openPMD_USE_INTERNAL_VARIANT openPMD_HAVE_EXTERNAL_VARIANT)
 message("    MPark.Variant: ${openPMD_HAVE_EXTERNAL_VARIANT}")
+message("           Catch2: OFF")
 message("")
 message("  Build Type: ${CMAKE_BUILD_TYPE}")
 message("  Testing: ${BUILD_TESTING}")

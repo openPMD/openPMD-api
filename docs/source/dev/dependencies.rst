@@ -12,7 +12,7 @@ Required
 --------
 
 * CMake 3.10.0+
-* Boost 1.62.0+: ``filesystem``, ``system``, ``unit_test_framework``
+* Boost 1.62.0+: ``filesystem``, ``system``
 
 Shipped internally
 ------------------
@@ -20,6 +20,7 @@ Shipped internally
 The following libraries are shipped internally for convenience:
 
 * `MPark.Variant <https://github.com/mpark/variant>`_ 1.3.0+
+* `Catch2 <https://github.com/catchorg/Catch2>`_ 2.2.1+
 
 Optional: I/O backends
 ----------------------
