@@ -34,23 +34,17 @@ AbstractIOHandler::createIOHandler(std::string const& path,
                                    Format f,
                                    MPI_Comm comm)
 {
-    std::shared_ptr< AbstractIOHandler > ret{nullptr};
     switch( f )
     {
         case Format::HDF5:
-            ret = std::make_shared< ParallelHDF5IOHandler >(path, at, comm);
-            break;
+            return std::make_shared< ParallelHDF5IOHandler >(path, at, comm);
         case Format::ADIOS1:
         case Format::ADIOS2:
             std::cerr << "Backend not yet working. Your IO operations will be NOOPS!" << std::endl;
-            ret = std::make_shared< DummyIOHandler >(path, at);
-            break;
+            return std::make_shared< DummyIOHandler >(path, at);
         default:
-            ret = std::make_shared< DummyIOHandler >(path, at);
-            break;
+            return std::make_shared< DummyIOHandler >(path, at);
     }
-
-    return ret;
 }
 
 AbstractIOHandler::AbstractIOHandler(std::string const& path,
@@ -65,23 +59,17 @@ AbstractIOHandler::createIOHandler(std::string const& path,
                                    AccessType at,
                                    Format f)
 {
-    std::shared_ptr< AbstractIOHandler > ret{nullptr};
     switch( f )
     {
         case Format::HDF5:
-            ret = std::make_shared< HDF5IOHandler >(path, at);
-            break;
+            return std::make_shared< HDF5IOHandler >(path, at);
         case Format::ADIOS1:
         case Format::ADIOS2:
             std::cerr << "Backend not yet working. Your IO operations will be NOOPS!" << std::endl;
-            ret = std::make_shared< DummyIOHandler >(path, at);
-            break;
+            return std::make_shared< DummyIOHandler >(path, at);
         default:
-            ret = std::make_shared< DummyIOHandler >(path, at);
-            break;
+            return std::make_shared< DummyIOHandler >(path, at);
     }
-
-    return ret;
 }
 
 AbstractIOHandler::AbstractIOHandler(std::string const& path,

@@ -30,16 +30,6 @@
 
 namespace openPMD
 {
-void
-check_extension(std::string const& filepath)
-{
-    if( !auxiliary::ends_with(filepath, ".h5") &&
-        !auxiliary::ends_with(filepath, ".bp") &&
-        !auxiliary::ends_with(filepath, ".dummy") )
-        throw std::runtime_error("File format not recognized. "
-                                 "Did you append a correct filename extension?");
-}
-
 #if openPMD_HAVE_MPI
 Series
 Series::create(std::string const& filepath,
@@ -48,8 +38,6 @@ Series::create(std::string const& filepath,
 {
     if( AccessType::READ_ONLY == at )
         throw std::runtime_error("Access type not supported in create-API.");
-
-    check_extension(filepath);
 
     return Series(filepath, at, comm);
 }
@@ -61,8 +49,6 @@ Series::create(std::string const& filepath,
 {
     if( AccessType::READ_ONLY == at )
         throw std::runtime_error("Access type not supported in create-API.");
-
-    check_extension(filepath);
 
     return Series(filepath, at);
 }
@@ -76,8 +62,6 @@ Series::read(std::string const& filepath,
     if( AccessType::CREATE == at )
         throw std::runtime_error("Access type not supported in read-API.");
 
-    check_extension(filepath);
-
     return Series(filepath, at, comm);
 }
 #endif
@@ -88,8 +72,6 @@ Series::read(std::string const& filepath,
 {
     if( AccessType::CREATE == at )
         throw std::runtime_error("Access type not supported in read-API.");
-
-    check_extension(filepath);
 
     return Series(filepath, at);
 }
@@ -121,19 +103,8 @@ Series::Series(std::string const& filepath,
     else
         ie = IterationEncoding::groupBased;
 
-    Format f;
-    if( auxiliary::ends_with(name, ".h5") )
-        f = Format::HDF5;
-    else if( auxiliary::ends_with(name, ".bp") )
-        f = Format::ADIOS1;
-    else
-    {
-        if( !auxiliary::ends_with(name, ".dummy") )
-            std::cerr << "Unknown filename extension. "
-                         "Falling back to DUMMY format."
-                      << std::endl;
-        f = Format::DUMMY;
-    }
+
+    Format f = determineFormat(name);
 
     IOHandler = AbstractIOHandler::createIOHandler(path, at, f, comm);
     iterations.IOHandler = IOHandler;
@@ -190,19 +161,7 @@ Series::Series(std::string const& filepath,
     else
         ie = IterationEncoding::groupBased;
 
-    Format f;
-    if( auxiliary::ends_with(name, ".h5") )
-        f = Format::HDF5;
-    else if( auxiliary::ends_with(name, ".bp") )
-        f = Format::ADIOS1;
-    else
-    {
-        if( !auxiliary::ends_with(name, ".dummy") )
-            std::cerr << "Unknown filename extension. "
-                         "Falling back to DUMMY format."
-                      << std::endl;
-        f = Format::DUMMY;
-    }
+    Format f = determineFormat(name);
 
     IOHandler = AbstractIOHandler::createIOHandler(path, at, f);
     iterations.IOHandler = IOHandler;
@@ -789,25 +748,32 @@ Series::read()
     readAttributes();
 }
 
+Format
+determineFormat(std::string const& filename)
+{
+    if( auxiliary::ends_with(filename, ".h5") )
+        return Format::HDF5;
+    if( auxiliary::ends_with(filename, ".bp") )
+        return Format::ADIOS1;
+
+    std::cerr << "Unknown filename extension. "
+                 "Did you append a correct filename extension? "
+                 "Your IO operations will be NOOPS!" << std::endl;
+    return Format::DUMMY;
+}
+
 std::string
-Series::cleanFilename(std::string s, Format f)
+cleanFilename(std::string const& filename, Format f)
 {
     switch( f )
     {
         case Format::HDF5:
-            s = auxiliary::replace_last(s, ".h5", "");
-            break;
+            return auxiliary::replace_last(filename, ".h5", "");
         case Format::ADIOS1:
         case Format::ADIOS2:
-            s = auxiliary::replace_last(s, ".bp", "");
-            break;
-        case Format::DUMMY:
-            s = auxiliary::replace_last(s, ".dummy", "");
-            break;
+            return auxiliary::replace_last(filename, ".bp", "");
         default:
-            break;
+            return filename;
     }
-
-    return s;
 }
 } // openPMD

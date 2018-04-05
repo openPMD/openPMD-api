@@ -257,7 +257,6 @@ private:
     void readBase();
     void read();
 
-    static std::string cleanFilename(std::string, Format);
 
     constexpr static char const * const OPENPMD = "1.1.0";
     constexpr static char const * const BASEPATH = "/data/%T/";
@@ -265,4 +264,19 @@ private:
     IterationEncoding m_iterationEncoding;
     std::string m_name;
 };  //Series
+
+/** Determine the storage format of a Series from the used filename extension.
+ *
+ * @param   filename    tring containing the filename.
+ * @return  Format that best fits the filename extension.
+ */
+Format determineFormat(std::string const& filename);
+
+/** Remove the filename extension of a given storage format.
+ *
+ * @param   filename    String containing the filename, possibly with filename extension.
+ * @param   f           File format to remove filename extension for.
+ * @return  String containing the filename without filename extension.
+ */
+std::string cleanFilename(std::string const& filename, Format f);
 } // openPMD
