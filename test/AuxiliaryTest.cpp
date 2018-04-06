@@ -79,7 +79,7 @@ public:
     structure& setText(std::string text) { setAttribute("text", text); return *this; }
 };
 
-TEST_CASE("container_retrieve_test", "[auxiliary]")
+TEST_CASE( "container_retrieve_test", "[auxiliary]" )
 {
     Container< structure > c = Container< structure >();
     c.IOHandler = AbstractIOHandler::createIOHandler("", AccessType::CREATE, Format::DUMMY);
@@ -140,7 +140,7 @@ struct Widget : public Writable
     { }
 };
 
-TEST_CASE("container_access_test", "[auxiliary]")
+TEST_CASE( "container_access_test", "[auxiliary]" )
 {
     Container< Widget > c = Container< Widget >();
     c.IOHandler = AbstractIOHandler::createIOHandler("", AccessType::CREATE, Format::DUMMY);
@@ -161,7 +161,7 @@ TEST_CASE("container_access_test", "[auxiliary]")
     REQUIRE(c.size() == 0);
 }
 
-TEST_CASE("attributable_default_test", "[auxiliary]")
+TEST_CASE( "attributable_default_test", "[auxiliary]" )
 {
     Attributable a = Attributable();
 
@@ -181,7 +181,7 @@ public:
     }
 };
 
-TEST_CASE("attributable_access_test", "[auxiliary]")
+TEST_CASE( "attributable_access_test", "[auxiliary]" )
 {
     AttributedWidget a = AttributedWidget();
 
@@ -228,7 +228,7 @@ public:
     Dotty& setAtt3(std::string s) { setAttribute("att3", s); return *this; }
 };
 
-TEST_CASE("dot_test", "[auxiliary]")
+TEST_CASE( "dot_test", "[auxiliary]" )
 {
     Dotty d;
     REQUIRE(d.att1() == 1);
