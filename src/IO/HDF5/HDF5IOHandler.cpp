@@ -95,6 +95,9 @@ void
 HDF5IOHandlerImpl::createFile(Writable* writable,
                               Parameter< Operation::CREATE_FILE > const& parameters)
 {
+    if( m_handler->accessType == AccessType::READ_ONLY )
+        throw std::runtime_error("Creating a file in read-only mode is not possible.");
+
     if( !writable->written )
     {
         using namespace boost::filesystem;
@@ -106,8 +109,13 @@ HDF5IOHandlerImpl::createFile(Writable* writable,
         std::string name = m_handler->directory + parameters.name;
         if( !auxiliary::ends_with(name, ".h5") )
             name += ".h5";
+        unsigned flags;
+        if( m_handler->accessType == AccessType::CREATE )
+            flags = H5F_ACC_TRUNC;
+        else
+            flags = H5F_ACC_EXCL;
         hid_t id = H5Fcreate(name.c_str(),
-                             H5F_ACC_TRUNC,
+                             flags,
                              H5P_DEFAULT,
                              m_fileAccessProperty);
         ASSERT(id >= 0, "Internal error: Failed to create HDF5 file");
@@ -124,6 +132,9 @@ void
 HDF5IOHandlerImpl::createPath(Writable* writable,
                               Parameter< Operation::CREATE_PATH > const& parameters)
 {
+    if( m_handler->accessType == AccessType::READ_ONLY )
+        throw std::runtime_error("Creating a path in a file opened as read only is not possible.");
+
     if( !writable->written )
     {
         /* Sanitize path */
@@ -179,6 +190,9 @@ void
 HDF5IOHandlerImpl::createDataset(Writable* writable,
                                  Parameter< Operation::CREATE_DATASET > const& parameters)
 {
+    if( m_handler->accessType == AccessType::READ_ONLY )
+        throw std::runtime_error("Creating a dataset in a file opened as read only is not possible.");
+
     if( !writable->written )
     {
         std::string name = parameters.name;
@@ -215,6 +229,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         }
 
         hid_t space = H5Screate_simple(dims.size(), dims.data(), maxdims.data());
+        ASSERT(space >= 0, "Internal error: Failed to create dataspace during dataset creation");
 
         std::vector< hsize_t > chunkDims;
         for( auto const& val : parameters.chunkSize )
@@ -284,6 +299,9 @@ void
 HDF5IOHandlerImpl::extendDataset(Writable* writable,
                                  Parameter< Operation::EXTEND_DATASET > const& parameters)
 {
+    if( m_handler->accessType == AccessType::READ_ONLY )
+        throw std::runtime_error("Extending a dataset in a file opened as read only is not possible.");
+
     if( !writable->written )
         throw std::runtime_error("Extending an unwritten Dataset is not possible.");
 
@@ -640,6 +658,9 @@ void
 HDF5IOHandlerImpl::writeDataset(Writable* writable,
                                 Parameter< Operation::WRITE_DATASET > const& parameters)
 {
+    if( m_handler->accessType == AccessType::READ_ONLY )
+        throw std::runtime_error("Writing into a dataset in a file opened as read only is not possible.");
+
     auto res = m_fileIDs.find(writable);
     if( res == m_fileIDs.end() )
         res = m_fileIDs.find(writable->parent);
@@ -671,6 +692,7 @@ HDF5IOHandlerImpl::writeDataset(Writable* writable,
 
     std::shared_ptr< void > data = parameters.data;
 
+    //TODO Check if parameter dtype and dataset dtype match
     Attribute a(0);
     a.dtype = parameters.dtype;
     hid_t dataType = getH5DataType(a);
@@ -698,7 +720,7 @@ HDF5IOHandlerImpl::writeDataset(Writable* writable,
             ASSERT(status == 0, "Internal error: Failed to write dataset " + concrete_h5_file_position(writable));
             break;
         case DT::UNDEFINED:
-            throw std::runtime_error("Unknown Attribute datatype");
+            throw std::runtime_error("Undefined Attribute datatype");
         case DT::DATATYPE:
             throw std::runtime_error("Meta-Datatype leaked into IO");
         default:
@@ -720,6 +742,9 @@ void
 HDF5IOHandlerImpl::writeAttribute(Writable* writable,
                                   Parameter< Operation::WRITE_ATT > const& parameters)
 {
+    if( m_handler->accessType == AccessType::READ_ONLY )
+        throw std::runtime_error("Writing an attribute in a file opened as read only is not possible.");
+
     auto res = m_fileIDs.find(writable);
     if( res == m_fileIDs.end() )
         res = m_fileIDs.find(writable->parent);
@@ -728,7 +753,6 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
                       concrete_h5_file_position(writable).c_str(),
                       H5P_DEFAULT);
     ASSERT(node_id >= 0, "Internal error: Failed to open HDF5 object during attribute write");
-    std::string name = parameters.name;
     Attribute const att(parameters.resource);
     Datatype dtype = parameters.dtype;
     herr_t status;
@@ -738,6 +762,7 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
     else
         dataType = getH5DataType(att);
     ASSERT(dataType >= 0, "Internal error: Failed to get HDF5 datatype during attribute write");
+    std::string name = parameters.name;
     if( H5Aexists(node_id, name.c_str()) == 0 )
     {
         hid_t dataspace = getH5DataSpace(att);
