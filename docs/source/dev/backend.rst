@@ -1,6 +1,6 @@
 .. _development-backend:
 
-How to write a Backend
+How to Write a Backend
 ======================
 
 Adding support for additional types of file storage or data transportation is possible by creating a backend.
@@ -10,8 +10,8 @@ This should allow easy introduction of new file formats with only little knowled
 
 File Formats
 ------------
-To get started, you should introduce a new file format in ``include/openPMD/IO/Format.hpp`` representing the new backend. Note
-that this enumeration value will never be seen by users of openPMD-api, but you should keep it short and concise to
+To get started, you should create a new file format in ``include/openPMD/IO/Format.hpp`` representing the new backend.
+Note that this enumeration value will never be seen by users of openPMD-api, but should be kept short and concise to
 improve readability.
 
 .. code-block:: cpp
@@ -50,7 +50,7 @@ frontend section of the API.
 
 IO Handler
 ----------
-Now that the user can specify that your new backend is to be used, a concrete mechanism for handling IO interactions is
+Now that the user can specify that the new backend is to be used, a concrete mechanism for handling IO interactions is
 required. We call this an ``IOHandler``. It is not concerned with any logic or constraints enforced by openPMD, but
 merely offers a small set of elementary IO operations.
 
@@ -130,3 +130,142 @@ In this state, the backend will do no IO operations and just act as a dummy that
 
 IO Task Queue
 -------------
+Operations between the logical representation in this API and physical storage are  funneled through a queue ``m_work``
+that is contained in the newly created IOHandler. Contained in this queue are ``IOTask`` s that have to be processed in
+FIFO order (unless you can prove sequential execution guarantees for out-of-order execution) when
+``AbstractIOHandler::flush()`` is called. A **recommended** skeleton is provided in ``AbstractIOHandlerImpl``. Note
+that emptying the queue this way is not required and might not fit your IO scheme.
+
+Using the provided skeleton involves
+ - deriving an IOHandlerImpl for your IOHandler and
+ - delegating all flush calls to the IOHandlerImpl:
+
+.. code-block:: cpp
+
+    /* file: include/openPMD/IO/JSON/JSONIOHandlerImpl.hpp */
+    #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
+
+    namespace openPMD
+    {
+    class JSONIOHandlerImpl : public AbstractIOHandlerImpl
+    {
+    public:
+        JSONIOHandlerImpl(AbstractIOHandler*);
+        virtual ~JSONIOHandlerImpl();
+
+        virtual void createFile(Writable*, Parameter< Operation::CREATE_FILE > const&) override;
+        virtual void createPath(Writable*, Parameter< Operation::CREATE_PATH > const&) override;
+        virtual void createDataset(Writable*, Parameter< Operation::CREATE_DATASET > const&) override;
+        virtual void extendDataset(Writable*, Parameter< Operation::EXTEND_DATASET > const&) override;
+        virtual void openFile(Writable*, Parameter< Operation::OPEN_FILE > const&) override;
+        virtual void openPath(Writable*, Parameter< Operation::OPEN_PATH > const&) override;
+        virtual void openDataset(Writable*, Parameter< Operation::OPEN_DATASET > &) override;
+        virtual void deleteFile(Writable*, Parameter< Operation::DELETE_FILE > const&) override;
+        virtual void deletePath(Writable*, Parameter< Operation::DELETE_PATH > const&) override;
+        virtual void deleteDataset(Writable*, Parameter< Operation::DELETE_DATASET > const&) override;
+        virtual void deleteAttribute(Writable*, Parameter< Operation::DELETE_ATT > const&) override;
+        virtual void writeDataset(Writable*, Parameter< Operation::WRITE_DATASET > const&) override;
+        virtual void writeAttribute(Writable*, Parameter< Operation::WRITE_ATT > const&) override;
+        virtual void readDataset(Writable*, Parameter< Operation::READ_DATASET > &) override;
+        virtual void readAttribute(Writable*, Parameter< Operation::READ_ATT > &) override;
+        virtual void listPaths(Writable*, Parameter< Operation::LIST_PATHS > &) override;
+        virtual void listDatasets(Writable*, Parameter< Operation::LIST_DATASETS > &) override;
+        virtual void listAttributes(Writable*, Parameter< Operation::LIST_ATTS > &) override;
+    }
+    } // openPMD
+
+.. code-block:: cpp
+
+    /* file: include/openPMD/IO/JSON/JSONIOHandler.hpp */
+    #include "openPMD/IO/AbstractIOHandler.hpp"
+    #include "openPMD/IO/JSON/JSONIOHandlerImpl.hpp"
+
+    namespace openPMD
+    {
+    class JSONIOHandler : public AbstractIOHandler
+    {
+    public:
+        /* ... */
+    private:
+        JSONIOHandlerImpl m_impl;
+    }
+    } // openPMD
+
+.. code-block:: cpp
+
+    /* file: src/IO/JSON/JSONIOHandler.cpp */
+    #include "openPMD/IO/JSON/JSONIOHandler.hpp"
+
+    namespace openPMD
+    {
+    /*...*/
+    std::future< void >
+    JSONIOHandler::flush()
+    {
+        return m_impl->flush();
+    }
+    } // openPMD
+
+Each IOTask contains a pointer to a ``Writable`` that corresponds to one object in the openPMD hierarchy. This object
+may be a group or a dataset. When processing certain types of IOTasks in the queue, you will have to assign unique
+FilePositions to these objects to identify the logical object in your physical storage. For this, you need to derive
+a concrete FilePosition for your backend from ``AbstractFilePosition``. There is no requirement on how to identify your
+objects, but ids from your IO library and positional strings are good candidates.
+
+.. code-block:: cpp
+
+    /* file: include/openPMD/IO/JSON/JSONFilePosition.hpp */
+    #include "openPMD/IO/AbstractFilePosition.hpp"
+
+    namespace openPMD
+    {
+    struct JSONFilePosition : public AbstractFilePosition
+    {
+        JSONFilePosition(uint64_t id)
+            : id{id}
+        { }
+
+        uint64_t id;
+    };
+    } // openPMD
+
+From this point, all that is left to do is implement the elementary IO operations provided in the IOHandlerImpl. The
+``Parameter`` structs contain both input parameters (from storage to API) and output parameters (from API to storage).
+The easy way to distinguish between the two parameter sets is their C++ type: Input parameters are
+``std::shared_ptr`` s that allow you to pass the requested data to their destination. Output parameters are all objects
+that are *not* ``std::shared_ptr`` s. The contract of each function call is outlined in
+``include/openPMD/IO/AbstractIOHandlerImpl``.
+
+.. code-block:: cpp
+
+    /* file: src/IO/JSON/JSONIOHandlerImpl.cpp */
+    #include "openPMD/IO/JSONIOHandlerImpl.hpp"
+
+    namespace openPMD
+    {
+    void
+    JSONIOHandlerImpl::createFile(Writable* writable,
+                                  Parameter< Operation::CREATE_FILE > const& parameters)
+    {
+        if( !writable->written )
+        {
+            path dir(m_handler->directory);
+            if( !exists(dir) )
+                create_directories(dir);
+
+            std::string name = m_handler->directory + parameters.name;
+            if( !auxiliary::ends_with(name, ".json") )
+                name += ".json";
+
+            uint64_t id = /*...*/
+            ASSERT(id >= 0, "Internal error: Failed to create JSON file");
+
+            writable->written = true;
+            writable->abstractFilePosition = std::make_shared< JSONFilePosition >(id);
+        }
+    }
+    /*...*/
+    } // openPMD
+
+Note that you might have to keep track of open file handles if they have to be closed explicitly during destruction of
+the IOHandlerImpl (prominent in C-style frameworks).
