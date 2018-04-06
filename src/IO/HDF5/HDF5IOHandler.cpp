@@ -283,14 +283,11 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         Attribute a(0);
         a.dtype = d;
         std::vector< hsize_t > dims;
-        std::vector< hsize_t > maxdims;
         for( auto const& val : parameters.at("extent").get< Extent >() )
-        {
             dims.push_back(static_cast< hsize_t >(val));
-            maxdims.push_back(H5S_UNLIMITED);
-        }
 
-        hid_t space = H5Screate_simple(dims.size(), dims.data(), maxdims.data());
+        hid_t space = H5Screate_simple(dims.size(), dims.data(), dims.data());
+        ASSERT(space >= 0, "Internal error: Failed to create dataspace during dataset creation");
 
         std::vector< hsize_t > chunkDims;
         for( auto const& val : parameters.at("chunkSize").get< Extent >() )
