@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
     return result;
 }
 
-TEST_CASE(none)
+TEST_CASE( "none", "[parallel]" )
 { }
 #endif
 
