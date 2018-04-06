@@ -296,8 +296,8 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         /* enable chunking on the created dataspace */
         hid_t datasetCreationProperty = H5Pcreate(H5P_DATASET_CREATE);
         herr_t status;
-        status = H5Pset_chunk(datasetCreationProperty, chunkDims.size(), chunkDims.data());
-        ASSERT(status == 0, "Internal error: Failed to set chunk size during dataset creation");
+        //status = H5Pset_chunk(datasetCreationProperty, chunkDims.size(), chunkDims.data());
+        //ASSERT(status == 0, "Internal error: Failed to set chunk size during dataset creation");
 
         std::string const& compression = parameters.at("compression").get< std::string >();
         if( !compression.empty() )
