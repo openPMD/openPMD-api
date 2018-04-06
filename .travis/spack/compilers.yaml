@@ -4,6 +4,19 @@ compilers:
     extra_rpaths: []
     flags: {}
     modules: []
+    operating_system: sierra
+    paths:
+      cc: /usr/bin/clang
+      cxx: /usr/bin/clang++
+      f77: null
+      fc: null
+    spec: clang@8.1.0
+    target: x86_64
+- compiler:
+    environment: {}
+    extra_rpaths: []
+    flags: {}
+    modules: []
     operating_system: ubuntu14.04
     paths:
       cc: /usr/local/clang-5.0.0/bin/clang
