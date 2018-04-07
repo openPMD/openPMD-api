@@ -9,10 +9,6 @@ set(openPMD_STANDARD_VERSION 1.1.0)
 
 set(CMAKE_MODULE_PATH "${openPMD_SOURCE_DIR}/cmake")
 
-# Force C++11
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
-
 
 # Project structure ###########################################################
 #
@@ -234,6 +230,9 @@ set(IO_SOURCE
 add_Library(openPMD ${CORE_SOURCE} ${IO_SOURCE})
 
 # properties
+target_compile_features(openPMD
+    PUBLIC cxx_std_11
+)
 set_target_properties(openPMD PROPERTIES
     POSITION_INDEPENDENT_CODE ON
 )
