@@ -166,7 +166,8 @@ public:
    * The attribute should have the name parameters.name. This name should not contain a slash ("/").
    * The attribute should be of datatype parameters.dtype.
    * Any existing attribute with the same name should be overwritten. If possible, only the value should be changed if the datatype stays the same.
-   * The attribute should be written to physical storage after the operation completes successully.
+   * The attribute should be written to physical storage after the operation completes successfully.
+   * All datatypes of Datatype should be supported in a type-safe way.
    */
   virtual void writeAttribute(Writable*, Parameter< Operation::WRITE_ATT > const&) = 0;
   /** Read a chunk of data from an existing dataset.
@@ -177,12 +178,39 @@ public:
    * The operation should fail if chunk positions parameters.offset+parameters.extent do not reside inside the dataset.
    * The dataset should match the dataype parameters.dtype.
    * The data parameters.data should be a cast-to-void pointer to a flattened version of the chunk data. The chunk should be stored row-major.
-   * The region of the chunk should be written to the location indicated by the pointer after the operation completes successully.
+   * The region of the chunk should be written to the location indicated by the pointer after the operation completes successfully.
    */
   virtual void readDataset(Writable*, Parameter< Operation::READ_DATASET > &) = 0;
+  /** Read the value of an existing attribute.
+   *
+   * The operation should fail if the Writable was not marked written.
+   * The operation should fail if the attribute does not exist.
+   * The attribute should be associated with the Writable and have the name parameters.name. This name should not contain a slash ("/").
+   * The attribute datatype should be stored in the location indicated by the pointer parameters.dtype.
+   * The attribute value should be stored as a generic Variant::resource in the location indicated by the pointer parameters.resource.
+   * All datatypes of Datatype should be supported in a type-safe way.
+   */
   virtual void readAttribute(Writable*, Parameter< Operation::READ_ATT > &) = 0;
+  /** List all paths/sub-groups inside a group, non-recursively.
+   *
+   * The operation should fail if the Writable was not marked written.
+   * The operation should fail if the Writable is not a group.
+   * The list of group names should be stored in the location indicated by the pointer parameters.paths.
+   */
   virtual void listPaths(Writable*, Parameter< Operation::LIST_PATHS > &) = 0;
+  /** List all datasets inside a group, non-recursively.
+   *
+   * The operation should fail if the Writable was not marked written.
+   * The operation should fail if the Writable is not a group.
+   * The list of dataset names should be stored in the location indicated by the pointer parameters.datasets.
+   */
   virtual void listDatasets(Writable*, Parameter< Operation::LIST_DATASETS > &) = 0;
+  /** List all attributes associated with an object.
+   *
+   * The operation should fail if the Writable was not marked written.
+   * The attribute should be associated with the Writable.
+   * The list of attribute names should be stored in the location indicated by the pointer parameters.attributes.
+   */
   virtual void listAttributes(Writable*, Parameter< Operation::LIST_ATTS > &) = 0;
 
   AbstractIOHandler* m_handler;

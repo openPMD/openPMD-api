@@ -1,4 +1,4 @@
-/* Copyright 2017 Fabian Koller
+/* Copyright 2017-2018 Fabian Koller
  *
  * This file is part of openPMD-api.
  *
@@ -1419,7 +1419,7 @@ void HDF5IOHandlerImpl::listAttributes(Writable* writable,
     status = H5Oget_info(node_id, &object_info);
     ASSERT(status == 0, "Internal error: Failed to get HDF5 object info for " + concrete_h5_file_position(writable) + " during attribute listing");
 
-    auto strings = parameters.attributes;
+    auto attributes = parameters.attributes;
     for( hsize_t i = 0; i < object_info.num_attrs; ++i )
     {
         ssize_t name_length = H5Aget_name_by_idx(node_id,
@@ -1439,7 +1439,7 @@ void HDF5IOHandlerImpl::listAttributes(Writable* writable,
                            name.data(),
                            name_length+1,
                            H5P_DEFAULT);
-        strings->push_back(std::string(name.data(), name_length));
+        attributes->push_back(std::string(name.data(), name_length));
     }
 
     status = H5Oclose(node_id);
