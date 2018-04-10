@@ -5,7 +5,7 @@ Build Dependencies
 
 .. sectionauthor:: Axel Huebl
 
-``openPMD-api`` depends on a series of third-party libraries.
+``openPMD-api`` depends on a series of third-party projects.
 These are currently:
 
 Required
@@ -13,6 +13,7 @@ Required
 
 * CMake 3.10.0+
 * Boost 1.62.0+: ``filesystem``, ``system``
+* C++11 capable compiler, e.g. g++ 4.9+, clang 3.9+
 
 Shipped internally
 ------------------
@@ -25,9 +26,9 @@ The following libraries are shipped internally for convenience:
 Optional: I/O backends
 ----------------------
 
-* HDF5 1.8.6+
-* ADIOS 1.10+ (*not yet implemented*)
-* ADIOS 2.1+ (*not yet implemented*)
+* `HDF5 <https://support.hdfgroup.org/HDF5>`_ 1.8.6+
+* `ADIOS <https://www.olcf.ornl.gov/center-projects/adios>`_ 1.10+ (*not yet implemented*)
+* `ADIOS <https://github.com/ornladios/ADIOS2>`_ 2.1+ (*not yet implemented*)
 
 while those can be build either with or without:
 
@@ -39,7 +40,10 @@ Optional: language bindings
 * Python:
 
   * Python 3.X+
-  * pybind11 2.3.0+
+  * pybind11 2.2.1+
+
+* Python (*not yet implemented*):
+
   * mpi4py?
   * numpy-dev?
   * xtensor-python 0.17.0+?
