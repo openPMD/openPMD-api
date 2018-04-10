@@ -234,6 +234,8 @@ target_compile_features(openPMD
     PUBLIC cxx_std_11
 )
 set_target_properties(openPMD PROPERTIES
+    CXX_EXTENSIONS OFF
+    CXX_STANDARD_REQUIRED ON
     POSITION_INDEPENDENT_CODE ON
 )
 
