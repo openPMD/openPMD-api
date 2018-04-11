@@ -756,9 +756,10 @@ determineFormat(std::string const& filename)
     if( auxiliary::ends_with(filename, ".bp") )
         return Format::ADIOS1;
 
-    std::cerr << "Unknown filename extension. "
-                 "Did you append a correct filename extension? "
-                 "Your IO operations will be NOOPS!" << std::endl;
+    if( std::string::npos != filename.find('.') /* extension is provided */ )
+      std::cerr << "Unknown storage format. "
+                   "Did you append a correct filename extension? "
+                   "Your IO operations will be NOOPS!" << std::endl;
     return Format::DUMMY;
 }
 
