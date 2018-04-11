@@ -1,6 +1,6 @@
 #pragma once
 
-#include "openPMD/auxiliary/Variadic.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/Datatype.hpp"
 
 #include <cstdint>
@@ -27,12 +27,12 @@ private:
         INT8, INT16, INT32, INT64,
         BOOL,
         UNDEFINED };
-    using variadic_t = auxiliary::Variadic< Dtype,
+    using variant_t = auxiliary::Variant< Dtype,
                                  float, double,
                                  uint8_t, uint16_t, uint32_t, uint64_t,
                                  int8_t, int16_t, int32_t, int64_t,
                                  bool >;
-    variadic_t m_data;
+    variant_t m_data;
 }; // GenericPatchData
 
 
@@ -43,7 +43,7 @@ GenericPatchData::operator=(T t)
 {
     static_assert(std::is_arithmetic< T >::value, "Only arithmetic types may be saved as patch data.\n");
     // Datatype d = determineDatatype< T >();
-    m_data = variadic_t(t);
+    m_data = variant_t(t);
     return *this;
 }
 

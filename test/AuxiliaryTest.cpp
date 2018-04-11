@@ -3,7 +3,7 @@
 /* make Writable::parent visible for hierarchy check */
 #define protected public
 #include "openPMD/auxiliary/StringManip.hpp"
-#include "openPMD/auxiliary/Variadic.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
@@ -75,7 +75,7 @@ public:
     int int_ = 42;
     float float_ = 3.14f;
 
-    std::string text() const { return variadicSrc::get< std::string >(getAttribute("text").getResource()); }
+    std::string text() const { return variantSrc::get< std::string >(getAttribute("text").getResource()); }
     structure& setText(std::string text) { setAttribute("text", text); return *this; }
 };
 
@@ -187,17 +187,17 @@ TEST_CASE( "attributable_access_test", "[auxiliary]" )
 
     a.setAttribute("key", std::string("value"));
     REQUIRE(a.numAttributes() == 1);
-    REQUIRE(variadicSrc::get< std::string >(a.get("key")) == "value");
+    REQUIRE(variantSrc::get< std::string >(a.get("key")) == "value");
 
     a.setAttribute("key", std::string("newValue"));
     REQUIRE(a.numAttributes() == 1);
-    REQUIRE(variadicSrc::get< std::string >(a.get("key")) == "newValue");
+    REQUIRE(variantSrc::get< std::string >(a.get("key")) == "newValue");
 
     using array_t = std::array< double, 7 >;
     array_t arr{{1, 2, 3, 4, 5, 6, 7}};
     a.setAttribute("array", arr);
     REQUIRE(a.numAttributes() == 2);
-    REQUIRE(variadicSrc::get< array_t >(a.get("array")) == arr);
+    REQUIRE(variantSrc::get< array_t >(a.get("array")) == arr);
     REQUIRE(a.deleteAttribute("nonExistentKey") == false);
     REQUIRE(a.numAttributes() == 2);
     REQUIRE(a.deleteAttribute("key") == true);
@@ -220,9 +220,9 @@ public:
         setAtt3("3");
     }
 
-    int att1() const { return variadicSrc::get< int >(getAttribute("att1").getResource()); }
-    double att2() const { return variadicSrc::get< double >(getAttribute("att2").getResource()); }
-    std::string att3() const { return variadicSrc::get< std::string >(getAttribute("att3").getResource()); }
+    int att1() const { return variantSrc::get< int >(getAttribute("att1").getResource()); }
+    double att2() const { return variantSrc::get< double >(getAttribute("att2").getResource()); }
+    std::string att3() const { return variantSrc::get< std::string >(getAttribute("att3").getResource()); }
     Dotty& setAtt1(int i) { setAttribute("att1", i); return *this; }
     Dotty& setAtt2(double d) { setAttribute("att2", d); return *this; }
     Dotty& setAtt3(std::string s) { setAttribute("att3", s); return *this; }

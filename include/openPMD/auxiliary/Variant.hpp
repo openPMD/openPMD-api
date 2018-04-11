@@ -1,4 +1,4 @@
-/* Copyright 2017 Fabian Koller
+/* Copyright 2017-2018 Fabian Koller
  *
  * This file is part of openPMD-api.
  *
@@ -22,10 +22,10 @@
 
 #if __cplusplus >= 201703L
 #   include <variant>
-namespace variadicSrc = std;
+namespace variantSrc = std;
 #else
 #   include <mpark/variant.hpp>
-namespace variadicSrc = mpark;
+namespace variantSrc = mpark;
 #endif
 
 #include <type_traits>
@@ -41,12 +41,12 @@ namespace auxiliary
  * @tparam T        Varaidic template argument list of datatypes to be stored.
  */
 template< class T_DTYPES, typename ... T >
-class Variadic
+class Variant
 {
-    static_assert(std::is_enum< T_DTYPES >::value, "Datatypes to Variadic must be supplied as enum.");
+    static_assert(std::is_enum< T_DTYPES >::value, "Datatypes to Variant must be supplied as enum.");
 
 public:
-    using resource = variadicSrc::variant< T ... >;
+    using resource = variantSrc::variant< T ... >;
     /** Construct a lightweight wrapper around a generic object that indicates
      * the concrete datatype of the specific object stored.
      *
@@ -54,7 +54,7 @@ public:
      *          is contained in T_DTYPES.
      * @param   r   Generic object to be stored.
      */
-    Variadic(resource r)
+    Variant(resource r)
             : dtype{static_cast<T_DTYPES>(r.index())},
               m_data{r}
     { }
@@ -68,7 +68,7 @@ public:
     template< typename U >
     U get() const
     {
-        return variadicSrc::get< U >(m_data);
+        return variantSrc::get< U >(m_data);
     }
 
     /** Retrieve the stored generic object.
