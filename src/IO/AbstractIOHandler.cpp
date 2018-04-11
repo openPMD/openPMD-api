@@ -37,17 +37,10 @@ AbstractIOHandler::createIOHandler(std::string const& path,
     switch( f )
     {
         case Format::HDF5:
-#   if openPMD_HAVE_HDF5
             return std::make_shared< ParallelHDF5IOHandler >(path, at, comm);
-#   else
-            std::cerr << "Parallel HDF5 backend not found. "
-                      << "Your IO operations will be NOOPS!" << std::endl;
-            return std::make_shared< DummyIOHandler >(path, at);
-#   endif
         case Format::ADIOS1:
         case Format::ADIOS2:
-            std::cerr << "Parallel ADIOS2 backend not yet working. "
-                      << "Your IO operations will be NOOPS!" << std::endl;
+            std::cerr << "Backend not yet working. Your IO operations will be NOOPS!" << std::endl;
             return std::make_shared< DummyIOHandler >(path, at);
         default:
             return std::make_shared< DummyIOHandler >(path, at);
