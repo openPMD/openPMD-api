@@ -219,7 +219,7 @@ set(CORE_SOURCE
         src/backend/Writable.cpp)
 set(IO_SOURCE
         src/IO/AbstractIOHandler.cpp
-        src/IO/IOTask.cpp
+        src/IO/AbstractIOHandlerImpl.cpp
         src/IO/ADIOS/ADIOS1IOHandler.cpp
         src/IO/ADIOS/ParallelADIOS1IOHandler.cpp
         src/IO/ADIOS/ADIOS2IOHandler.cpp
@@ -507,21 +507,30 @@ endif()
 # Examples ####################################################################
 #
 
-# TODO: C++ Examples
-#if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
-#    foreach(examplename ${openPMD_EXAMPLE_NAMES})
-#        add_test(NAME Example.py.${examplename}
-#            COMMAND ${examplename}
-#            WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-#        )
-#    endforeach()
-#else()
-#    message(STATUS "Missing samples/git-sample/ directory! "
-#                   "Skipping C++ example test!\n\n"
-#                   "Note: run\n"
-#                   "    . ${openPMD_SOURCE_DIR}/.travis/download_samples.sh\n"
-#                   "to add example files!")
-#endif()
+# C++ Examples
+if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
+    foreach(examplename ${openPMD_EXAMPLE_NAMES})
+        if(${examplename} MATCHES "^.*_parallel$")
+            if(openPMD_HAVE_MPI)
+                add_test(NAME MPI.${examplename}
+                        COMMAND ${MPI_TEST_EXE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}
+                        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                        )
+            endif()
+        else()
+            add_test(NAME Serial.${examplename}
+                    COMMAND ${examplename}
+                    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                    )
+        endif()
+    endforeach()
+else()
+    message(STATUS "Missing samples/git-sample/ directory! "
+                   "Skipping C++ example test!\n\n"
+                   "Note: run\n"
+                   "    . ${openPMD_SOURCE_DIR}/.travis/download_samples.sh\n"
+                   "to add example files!")
+endif()
 
 # Python Examples
 if(openPMD_HAVE_PYTHON)

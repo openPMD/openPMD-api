@@ -74,7 +74,7 @@ class AbstractIOHandler
 {
 public:
 #if openPMD_HAVE_MPI
-    /** Construct an appropriate specific IOHandler for the desired IO mode.
+    /** Construct an appropriate specific IOHandler for the desired IO mode that may be MPI-aware.
      *
      * @param   path        Path to root folder for all operations associated with the desired handler.
      * @param   accessType  AccessType describing desired operations and permissions of the desired handler.

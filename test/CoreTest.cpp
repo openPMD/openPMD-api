@@ -68,7 +68,7 @@ TEST_CASE( "attribute_dtype_test", "[core]" )
 TEST_CASE( "output_default_test", "[core]" )
 {
     using IE = IterationEncoding;
-    Series o = Series::create("./new_openpmd_output_%T.dummy");
+    Series o = Series::create("./new_openpmd_output_%T");
 
     REQUIRE(o.openPMD() == "1.1.0");
     REQUIRE(o.openPMDextension() == static_cast<uint32_t>(0));
@@ -85,7 +85,7 @@ TEST_CASE( "output_default_test", "[core]" )
 TEST_CASE( "output_constructor_test", "[core]" )
 {
     using IE = IterationEncoding;
-    Series o = Series::create("./MyCustomOutput.dummy");
+    Series o = Series::create("./MyCustomOutput");
 
     o.setMeshesPath("customMeshesPath").setParticlesPath("customParticlesPath");
 
@@ -106,7 +106,7 @@ TEST_CASE( "output_constructor_test", "[core]" )
 
 TEST_CASE( "output_modification_test", "[core]" )
 {
-    Series o = Series::create("./MyOutput_%T.dummy");
+    Series o = Series::create("./MyOutput_%T");
 
     o.setOpenPMD("1.0.0");
     REQUIRE(o.openPMD() == "1.0.0");
@@ -131,7 +131,7 @@ TEST_CASE( "output_modification_test", "[core]" )
 
 TEST_CASE( "iteration_default_test", "[core]" )
 {
-    Series o = Series::create("./MyOutput_%T.dummy");
+    Series o = Series::create("./MyOutput_%T");
 
     Iteration& i = o.iterations[42];
 
@@ -145,7 +145,7 @@ TEST_CASE( "iteration_default_test", "[core]" )
 
 TEST_CASE( "iteration_modification_test", "[core]" )
 {
-    Series o = Series::create("./MyOutput_%T.dummy");
+    Series o = Series::create("./MyOutput_%T");
 
     Iteration& i = o.iterations[42];
 
@@ -163,7 +163,7 @@ TEST_CASE( "iteration_modification_test", "[core]" )
 
 TEST_CASE( "particleSpecies_modification_test", "[core]" )
 {
-    Series o = Series::create("./MyOutput_%T.dummy");
+    Series o = Series::create("./MyOutput_%T");
 
     auto& particles = o.iterations[42].particles;
     REQUIRE(0 == particles.numAttributes());
@@ -201,7 +201,7 @@ TEST_CASE( "particleSpecies_modification_test", "[core]" )
 
 TEST_CASE( "record_constructor_test", "[core]" )
 {
-    Series o = Series::create("./MyOutput_%T.dummy");
+    Series o = Series::create("./MyOutput_%T");
 
     Record& r = o.iterations[42].particles["species"]["record"];
 
@@ -219,7 +219,7 @@ TEST_CASE( "record_constructor_test", "[core]" )
 
 TEST_CASE( "record_modification_test", "[core]" )
 {
-    Series o = Series::create("./MyOutput_%T.dummy");
+    Series o = Series::create("./MyOutput_%T");
 
     Record& r = o.iterations[42].particles["species"]["record"];
 
@@ -243,7 +243,7 @@ TEST_CASE( "record_modification_test", "[core]" )
 
 TEST_CASE( "recordComponent_modification_test", "[core]" )
 {
-    Series o = Series::create("./MyOutput_%T.dummy");
+    Series o = Series::create("./MyOutput_%T");
 
     Record& r = o.iterations[42].particles["species"]["record"];
 
@@ -261,7 +261,7 @@ TEST_CASE( "recordComponent_modification_test", "[core]" )
 
 TEST_CASE( "mesh_constructor_test", "[core]" )
 {
-    Series o = Series::create("./MyOutput_%T.dummy");
+    Series o = Series::create("./MyOutput_%T");
 
     Mesh &m = o.iterations[42].meshes["E"];
 
@@ -289,7 +289,7 @@ TEST_CASE( "mesh_constructor_test", "[core]" )
 
 TEST_CASE( "mesh_modification_test", "[core]" )
 {
-    Series o = Series::create("./MyOutput_%T.dummy");
+    Series o = Series::create("./MyOutput_%T");
 
     Mesh &m = o.iterations[42].meshes["E"];
     m["x"];
@@ -328,7 +328,7 @@ TEST_CASE( "mesh_modification_test", "[core]" )
 
 TEST_CASE( "structure_test", "[core]" )
 {
-    Series o = Series::create("./new_openpmd_output_%T.dummy");
+    Series o = Series::create("./new_openpmd_output_%T");
 
     REQUIRE(o.IOHandler);
     REQUIRE(o.iterations.IOHandler);
