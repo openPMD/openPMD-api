@@ -239,6 +239,9 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
 
         std::string const& compression = parameters.compression;
         if( !compression.empty() )
+          std::cerr << "Compression not yet implemented in HDF5 backend."
+                    << std::endl;
+        /*
         {
             std::vector< std::string > args = auxiliary::split(compression, ":");
             std::string const& format = args[0];
@@ -256,6 +259,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
                           << " unknown. Data will not be compressed!"
                           << std::endl;
         }
+         */
 
         std::string const& transform = parameters.transform;
         if( !transform.empty() )
