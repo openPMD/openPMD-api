@@ -10,6 +10,7 @@ Implemented (and planned) backends include HDF5 and ADIOS.
 .. note::
 
    Are you looking for our latest Doxygen docs for the API?
+
    See http://www.openpmd.org/openPMD-api
 
 .. attention::

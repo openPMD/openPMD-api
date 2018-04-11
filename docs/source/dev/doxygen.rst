@@ -51,4 +51,4 @@ Now run the following commands to build the Doxygen HTML documentation locally.
     doxygen
 
     # open the generated HTML pages, e.g. with firefox
-    x-www-browser html/index.html
+    firefox html/index.html
