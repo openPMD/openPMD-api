@@ -82,7 +82,7 @@ public:
      *
      * @throw   no_such_attribute_error If no Attribute is currently stored with the provided key.
      * @param   key Key (i.e. name) of the Attribute to retrieve value for.
-     * @return  Stored Attribute in Variadic form.
+     * @return  Stored Attribute in Variant form.
      */
     Attribute getAttribute(std::string const& key) const;
     /** Remove Attribute of provided value both logically and physically.

@@ -20,7 +20,7 @@
  */
 #pragma once
 
-#include "openPMD/auxiliary/Variadic.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/Datatype.hpp"
 
 #include <array>
@@ -41,7 +41,7 @@ namespace openPMD
  * @note Extending and/or modifying the available formats requires identical
  *       modifications to Datatype.
  */
-using Attribute = auxiliary::Variadic< Datatype,
+using Attribute = auxiliary::Variant< Datatype,
                             char, unsigned char,
                             int16_t, int32_t, int64_t,
                             uint16_t, uint32_t, uint64_t,

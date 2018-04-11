@@ -20,7 +20,7 @@
  */
 #pragma once
 
-#include "openPMD/auxiliary/Variadic.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/Dataset.hpp"
