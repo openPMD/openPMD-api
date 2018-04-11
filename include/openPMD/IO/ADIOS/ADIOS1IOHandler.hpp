@@ -1,4 +1,4 @@
-/* Copyright 2017 Fabian Koller
+/* Copyright 2017-2018 Fabian Koller
  *
  * This file is part of openPMD-api.
  *
@@ -22,9 +22,18 @@
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
+#if openPMD_HAVE_ADIOS1
+#   include "openPMD/IO/AbstractIOHandlerImpl.hpp"
+#   include <adios.h>
+#endif
+
 #include <future>
 #include <memory>
 #include <string>
+#if openPMD_HAVE_ADIOS1
+#   include <unordered_map>
+#   include <unordered_set>
+#endif
 
 
 namespace openPMD
@@ -32,35 +41,34 @@ namespace openPMD
 #if openPMD_HAVE_ADIOS1
 class ADIOS1IOHandler;
 
-class ADIOS1IOHandlerImpl
+class ADIOS1IOHandlerImpl : public AbstractIOHandlerImpl
 {
 public:
     ADIOS1IOHandlerImpl(AbstractIOHandler*);
     virtual ~ADIOS1IOHandlerImpl();
 
-    virtual std::future< void > flush();
+    virtual void createFile(Writable*, Parameter< Operation::CREATE_FILE > const&) override;
+    virtual void createPath(Writable*, Parameter< Operation::CREATE_PATH > const&) override;
+    virtual void createDataset(Writable*, Parameter< Operation::CREATE_DATASET > const&) override;
+    virtual void extendDataset(Writable*, Parameter< Operation::EXTEND_DATASET > const&) override;
+    virtual void openFile(Writable*, Parameter< Operation::OPEN_FILE > const&) override;
+    virtual void openPath(Writable*, Parameter< Operation::OPEN_PATH > const&) override;
+    virtual void openDataset(Writable*, Parameter< Operation::OPEN_DATASET > &) override;
+    virtual void deleteFile(Writable*, Parameter< Operation::DELETE_FILE > const&) override;
+    virtual void deletePath(Writable*, Parameter< Operation::DELETE_PATH > const&) override;
+    virtual void deleteDataset(Writable*, Parameter< Operation::DELETE_DATASET > const&) override;
+    virtual void deleteAttribute(Writable*, Parameter< Operation::DELETE_ATT > const&) override;
+    virtual void writeDataset(Writable*, Parameter< Operation::WRITE_DATASET > const&) override;
+    virtual void writeAttribute(Writable*, Parameter< Operation::WRITE_ATT > const&) override;
+    virtual void readDataset(Writable*, Parameter< Operation::READ_DATASET > &) override;
+    virtual void readAttribute(Writable*, Parameter< Operation::READ_ATT > &) override;
+    virtual void listPaths(Writable*, Parameter< Operation::LIST_PATHS > &) override;
+    virtual void listDatasets(Writable*, Parameter< Operation::LIST_DATASETS > &) override;
+    virtual void listAttributes(Writable*, Parameter< Operation::LIST_ATTS > &) override;
 
-    using ArgumentMap = std::map< std::string, ParameterArgument >;
-    virtual void createFile(Writable*, ArgumentMap const&);
-    virtual void createPath(Writable*, ArgumentMap const&);
-    virtual void createDataset(Writable*, ArgumentMap const&);
-    virtual void extendDataset(Writable*, ArgumentMap const&);
-    virtual void openFile(Writable*, ArgumentMap const&);
-    virtual void openPath(Writable*, ArgumentMap const&);
-    virtual void openDataset(Writable*, ArgumentMap &);
-    virtual void deleteFile(Writable*, ArgumentMap const&);
-    virtual void deletePath(Writable*, ArgumentMap const&);
-    virtual void deleteDataset(Writable*, ArgumentMap const&);
-    virtual void deleteAttribute(Writable*, ArgumentMap const&);
-    virtual void writeDataset(Writable*, ArgumentMap const&);
-    virtual void writeAttribute(Writable*, ArgumentMap const&);
-    virtual void readDataset(Writable*, ArgumentMap &);
-    virtual void readAttribute(Writable*, ArgumentMap &);
-    virtual void listPaths(Writable*, ArgumentMap &);
-    virtual void listDatasets(Writable*, ArgumentMap &);
-    virtual void listAttributes(Writable*, ArgumentMap &);
-
-    AbstractIOHandler* m_handler;
+protected:
+    std::unordered_map< Writable*, int64_t > m_fileDescriptors;
+    std::unordered_set< int64_t > m_openFileDescriptors;
 };  //ADIOS1IOHandlerImpl
 #else
 class ADIOS1IOHandlerImpl

@@ -1,14 +1,16 @@
 #pragma once
 
-#include <IO/AbstractFilePosition.hpp>
+#include "openPMD/IO/AbstractFilePosition.hpp"
 
 
 namespace openPMD
 {
 struct ADIOS1FilePosition : public AbstractFilePosition
 {
-    ADIOS1FilePosition()
+    ADIOS1FilePosition(std::string const& s)
+        : location{s}
     { }
 
-};  //ADIOS2FilePosition
+    std::string location;
+};  //ADIOS1FilePosition
 } // openPMD

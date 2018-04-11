@@ -21,17 +21,19 @@
 #pragma once
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
-#include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 
 #if openPMD_HAVE_HDF5
+#   include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #   include <hdf5.h>
 #endif
 
 #include <future>
-#include <unordered_map>
-#include <unordered_set>
 #include <memory>
 #include <string>
+#if openPMD_HAVE_HDF5
+#   include <unordered_map>
+#   include <unordered_set>
+#endif
 
 
 namespace openPMD
@@ -74,7 +76,7 @@ public:
 };  //HDF5IOHandlerImpl
 #else
 class HDF5IOHandlerImpl
-{ };
+{ };    //HDF5IOHandlerImpl
 #endif
 
 class HDF5IOHandler : public AbstractIOHandler

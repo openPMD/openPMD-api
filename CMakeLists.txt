@@ -41,7 +41,7 @@ endfunction()
 
 openpmd_option(MPI    "Enable MPI support"     AUTO)
 openpmd_option(HDF5   "Enable HDF5 support"    AUTO)
-openpmd_option(ADIOS1 "Enable ADIOS1 support"  OFF)
+openpmd_option(ADIOS1 "Enable ADIOS1 support"  AUTO)
 openpmd_option(ADIOS2 "Enable ADIOS2 support"  OFF)
 # openpmd_option(JSON "Enable JSON support" AUTO)
 openpmd_option(PYTHON "Enable Python bindings" AUTO)

@@ -1,4 +1,4 @@
-/* Copyright 2017 Fabian Koller
+/* Copyright 2017-2018 Fabian Koller
  *
  * This file is part of openPMD-api.
  *
@@ -22,13 +22,16 @@
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
-#if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
+#if openPMD_HAVE_MPI
 #   include <mpi.h>
+#   if openPMD_HAVE_ADIOS1
+#       include "openPMD/IO/ADIOS/ADIOS1IOHandler.hpp"
+#   endif
 #endif
 
-#include "openPMD/IO/ADIOS/ADIOS1IOHandler.hpp"
-
+#include <future>
 #include <memory>
+#include <string>
 
 
 namespace openPMD
@@ -42,6 +45,8 @@ public:
     ParallelADIOS1IOHandlerImpl(AbstractIOHandler*, MPI_Comm);
     virtual ~ParallelADIOS1IOHandlerImpl();
 
+    virtual void createFile(Writable*, Parameter< Operation::CREATE_FILE > const&) override;
+
     MPI_Comm m_mpiComm;
     MPI_Info m_mpiInfo;
 };  //ParallelADIOS1IOHandlerImpl
@@ -52,8 +57,10 @@ class ParallelADIOS1IOHandlerImpl
 
 class ParallelADIOS1IOHandler : public AbstractIOHandler
 {
+    friend class ParallelADIOS1IOHandlerImpl;
+
 public:
-#if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
+#if openPMD_HAVE_MPI
     ParallelADIOS1IOHandler(std::string const& path, AccessType, MPI_Comm);
 #else
     ParallelADIOS1IOHandler(std::string const& path, AccessType);

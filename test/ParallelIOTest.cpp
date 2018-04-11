@@ -142,8 +142,8 @@ TEST_CASE( "no_parallel_hdf5", "[parallel][hdf5]" )
 }
 #endif
 #if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
-TEST_CASE( "adios_wrtie_test", "[parallel][adios]" )
+TEST_CASE( "adios_write_test", "[parallel][adios]" )
 {
-    Output o = Output("../samples/parallel_write.bp");
+    Series o = Series::create("../samples/parallel_write.bp", MPI_COMM_WORLD);
 }
 #endif
