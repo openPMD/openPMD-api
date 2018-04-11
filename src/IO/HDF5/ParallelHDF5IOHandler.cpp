@@ -20,10 +20,12 @@
  */
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
 
-#if openPMD_HAVE_HDF5 && openPMD_HAVE_MPI
-#   include "openPMD/auxiliary/StringManip.hpp"
+#if openPMD_HAVE_MPI
 #   include <mpi.h>
-#   include <boost/filesystem.hpp>
+#   if openPMD_HAVE_HDF5
+#       include "openPMD/auxiliary/StringManip.hpp"
+#       include <boost/filesystem.hpp>
+#   endif
 #endif
 
 #include <iostream>
@@ -83,12 +85,22 @@ ParallelHDF5IOHandlerImpl::~ParallelHDF5IOHandlerImpl()
     }
 }
 #else
+#   if openPMD_HAVE_MPI
+ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string const& path,
+                                             AccessType at,
+                                             MPI_Comm comm)
+        : AbstractIOHandler(path, at, comm)
+{
+    throw std::runtime_error("openPMD-api built without HDF5 support");
+}
+#   else
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string const& path,
                                              AccessType at)
         : AbstractIOHandler(path, at)
 {
-    throw std::runtime_error("openPMD-api built without parallel HDF5 support");
+    throw std::runtime_error("openPMD-api built without parallel support and without HDF5 support");
 }
+#   endif
 
 ParallelHDF5IOHandler::~ParallelHDF5IOHandler()
 { }

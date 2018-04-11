@@ -22,9 +22,11 @@
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
-#if openPMD_HAVE_HDF5 && openPMD_HAVE_MPI
-#   include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
+#if openPMD_HAVE_MPI
 #   include <mpi.h>
+#   if openPMD_HAVE_HDF5
+#       include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
+#   endif
 #endif
 
 #include <future>
@@ -54,7 +56,7 @@ class ParallelHDF5IOHandlerImpl
 class ParallelHDF5IOHandler : public AbstractIOHandler
 {
 public:
-#if openPMD_HAVE_HDF5 && openPMD_HAVE_MPI
+#if openPMD_HAVE_MPI
     ParallelHDF5IOHandler(std::string const& path, AccessType, MPI_Comm);
 #else
     ParallelHDF5IOHandler(std::string const& path, AccessType);
