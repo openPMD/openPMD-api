@@ -101,8 +101,8 @@ Shipped internally:
 
 Optional I/O backends:
 * [HDF5](https://support.hdfgroup.org/HDF5) 1.8.6+
-* [ADIOS](https://www.olcf.ornl.gov/center-projects/adios) 1.10+ (*not yet implemented*)
-* [ADIOS](https://github.com/ornladios/ADIOS2) 2.1+ (*not yet implemented*)
+* [ADIOS1](https://www.olcf.ornl.gov/center-projects/adios) 1.10+ (*not yet implemented*)
+* [ADIOS2](https://github.com/ornladios/ADIOS2) 2.1+ (*not yet implemented*)
 
 while those can be build either with or without:
 * MPI 2.3+, e.g. OpenMPI or MPICH2
