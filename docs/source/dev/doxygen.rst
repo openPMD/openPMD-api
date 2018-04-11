@@ -18,7 +18,7 @@ We regularly update it via
    # optional argument: branch or tag name
    ./update.sh
 
-   git commit
+   git commit -a
    git push
 
 This section explains what is done when this script is run to build it manually.
@@ -51,4 +51,4 @@ Now run the following commands to build the Doxygen HTML documentation locally.
     doxygen
 
     # open the generated HTML pages, e.g. with firefox
-    firefox html/index.html
+    x-www-browser html/index.html
