@@ -24,7 +24,7 @@ allocatePtr(Datatype dtype, Extent const& e)
   size_t numPoints = 1;
   for( auto const& dimensionSize : e )
     numPoints *= dimensionSize;
-  return std::move(allocatePtr(dtype, numPoints));
+  return allocatePtr(dtype, numPoints);
 }
 
 inline std::unique_ptr< void, std::function< void(void*) > >
@@ -88,7 +88,7 @@ allocatePtr(Datatype dtype, size_t numPoints)
             throw std::runtime_error("Unknown Attribute datatype");
     }
 
-    return std::move(std::unique_ptr< void, std::function< void(void*) > >(data, del));
+    return std::unique_ptr< void, std::function< void(void*) > >(data, del);
 }
 } // auxiliary
 } // openPMD

@@ -21,7 +21,7 @@
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
 
 
-#if defined(openPMD_HAVE_HDF5)
+#if openPMD_HAVE_HDF5
 #   include "openPMD/auxiliary/StringManip.hpp"
 #   include "openPMD/backend/Attribute.hpp"
 #   include "openPMD/IO/IOTask.hpp"
@@ -38,7 +38,7 @@
 
 namespace openPMD
 {
-#if defined(openPMD_HAVE_HDF5)
+#if openPMD_HAVE_HDF5
 #   ifdef DEBUG
 #       define ASSERT(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error(std::string((TEXT))); }
 #   else
@@ -221,14 +221,10 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         Attribute a(0);
         a.dtype = d;
         std::vector< hsize_t > dims;
-        std::vector< hsize_t > maxdims;
         for( auto const& val : parameters.extent )
-        {
             dims.push_back(static_cast< hsize_t >(val));
-            maxdims.push_back(H5S_UNLIMITED);
-        }
 
-        hid_t space = H5Screate_simple(dims.size(), dims.data(), maxdims.data());
+        hid_t space = H5Screate_simple(dims.size(), dims.data(), dims.data());
         ASSERT(space >= 0, "Internal error: Failed to create dataspace during dataset creation");
 
         std::vector< hsize_t > chunkDims;
@@ -238,8 +234,8 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         /* enable chunking on the created dataspace */
         hid_t datasetCreationProperty = H5Pcreate(H5P_DATASET_CREATE);
         herr_t status;
-        status = H5Pset_chunk(datasetCreationProperty, chunkDims.size(), chunkDims.data());
-        ASSERT(status == 0, "Internal error: Failed to set chunk size during dataset creation");
+        //status = H5Pset_chunk(datasetCreationProperty, chunkDims.size(), chunkDims.data());
+        //ASSERT(status == 0, "Internal error: Failed to set chunk size during dataset creation");
 
         std::string const& compression = parameters.compression;
         if( !compression.empty() )
@@ -1447,7 +1443,7 @@ void HDF5IOHandlerImpl::listAttributes(Writable* writable,
 }
 #endif
 
-#if defined(openPMD_HAVE_HDF5)
+#if openPMD_HAVE_HDF5
 HDF5IOHandler::HDF5IOHandler(std::string const& path, AccessType at)
         : AbstractIOHandler(path, at),
           m_impl{new HDF5IOHandlerImpl(this)}

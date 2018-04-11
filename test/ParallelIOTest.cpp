@@ -1,13 +1,12 @@
 /* Running this test in parallel with MPI requires MPI::Init.
- * To guarantee a correct call to Init, launch the tests
- *  (i.e. boost::unit_test::unit_test_main) manually. */
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_MODULE libopenpmd_parallel_io_test
+ * To guarantee a correct call to Init, launch the tests manually.
+ */
+#define CATCH_CONFIG_RUNNER
 
 #include "openPMD/openPMD.hpp"
 using namespace openPMD;
 
-#include <boost/test/included/unit_test.hpp>
+#include <catch/catch.hpp>
 #if openPMD_HAVE_MPI
 #   include <mpi.h>
 
@@ -15,9 +14,15 @@ using namespace openPMD;
 int main(int argc, char *argv[])
 {
     MPI::Init();
+
+    Catch::Session session;
     int result = 0;
     {
-        result = boost::unit_test::unit_test_main(&init_unit_test_suite, argc, argv);
+        // Indicates a command line parsing
+        result = session.applyCommandLine( argc, argv );
+        // RT tests
+        if( result == 0 )
+            result = session.run();
     }
     MPI::Finalize();
     return result;
@@ -25,15 +30,24 @@ int main(int argc, char *argv[])
 #else
 int main(int argc, char *argv[])
 {
-    return boost::unit_test::unit_test_main(&init_unit_test_suite, argc, argv);
+    Catch::Session session;
+    int result = 0;
+    {
+        // Indicates a command line parsing
+        result = session.applyCommandLine( argc, argv );
+        // RT tests
+        if( result == 0 )
+            result = session.run();
+    }
+    return result;
 }
 
-BOOST_AUTO_TEST_CASE(none)
+TEST_CASE( "none", "[parallel]" )
 { }
 #endif
 
 #if openPMD_HAVE_HDF5 && openPMD_HAVE_MPI
-BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
+TEST_CASE( "git_hdf5_sample_content_test", "[parallel][hdf5]" )
 {
     int mpi_rank{-1};
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
@@ -65,7 +79,7 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
 
             for( int j = 0; j < 3; ++j )
                 for( int k = 0; k < 3; ++k )
-                    BOOST_TEST(raw_ptr[j*3 + k] == actual[rank][j][k]);
+                    REQUIRE(raw_ptr[j*3 + k] == actual[rank][j][k]);
         }
 
         {
@@ -78,7 +92,7 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
             double* raw_ptr = data.get();
 
             for( int i = 0; i < 3; ++i )
-                BOOST_TEST(raw_ptr[i] == constant_value);
+                REQUIRE(raw_ptr[i] == constant_value);
         }
     }
     } catch (no_such_file_error& e)
@@ -88,7 +102,7 @@ BOOST_AUTO_TEST_CASE(git_hdf5_sample_content_test)
     }
 }
 
-BOOST_AUTO_TEST_CASE(hdf5_write_test)
+TEST_CASE( "hdf5_write_test", "[parallel][hdf5]" )
 {
     int mpi_s{-1};
     int mpi_r{-1};
@@ -122,13 +136,13 @@ BOOST_AUTO_TEST_CASE(hdf5_write_test)
     o.flush();
 }
 #else
-BOOST_AUTO_TEST_CASE(no_parallel_hdf5)
+TEST_CASE( "no_parallel_hdf5", "[parallel][hdf5]" )
 {
-    BOOST_TEST(true);
+    REQUIRE(true);
 }
 #endif
 #if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
-BOOST_AUTO_TEST_CASE(adios_wrtie_test)
+TEST_CASE( "adios_wrtie_test", "[parallel][adios]" )
 {
     Output o = Output("../samples/parallel_write.bp");
 }

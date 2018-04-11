@@ -23,7 +23,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 
-#if defined(openPMD_HAVE_HDF5)
+#if openPMD_HAVE_HDF5
 #   include <hdf5.h>
 #endif
 
@@ -36,7 +36,7 @@
 
 namespace openPMD
 {
-#if defined(openPMD_HAVE_HDF5)
+#if openPMD_HAVE_HDF5
 class HDF5IOHandler;
 
 class HDF5IOHandlerImpl : public AbstractIOHandlerImpl
@@ -81,7 +81,7 @@ class HDF5IOHandler : public AbstractIOHandler
 {
 public:
     HDF5IOHandler(std::string const& path, AccessType);
-    virtual ~HDF5IOHandler();
+    virtual ~HDF5IOHandler() override;
 
     std::future< void > flush() override;
 

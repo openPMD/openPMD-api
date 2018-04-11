@@ -58,7 +58,7 @@ public:
 #else
     ParallelADIOS1IOHandler(std::string const& path, AccessType);
 #endif
-    virtual ~ParallelADIOS1IOHandler();
+    virtual ~ParallelADIOS1IOHandler() override;
 
     std::future< void > flush() override;
 

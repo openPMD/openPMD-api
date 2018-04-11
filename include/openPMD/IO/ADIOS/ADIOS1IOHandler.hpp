@@ -29,7 +29,7 @@
 
 namespace openPMD
 {
-#if defined(openPMD_HAVE_ADIOS1)
+#if openPMD_HAVE_ADIOS1
 class ADIOS1IOHandler;
 
 class ADIOS1IOHandlerImpl
@@ -73,9 +73,9 @@ class ADIOS1IOHandler : public AbstractIOHandler
 
 public:
     ADIOS1IOHandler(std::string const& path, AccessType);
-    virtual ~ADIOS1IOHandler();
+    virtual ~ADIOS1IOHandler() override;
 
-    std::future< void > flush();
+    std::future< void > flush() override;
 
 private:
     std::unique_ptr< ADIOS1IOHandlerImpl > m_impl;

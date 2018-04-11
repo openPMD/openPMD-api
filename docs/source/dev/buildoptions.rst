@@ -21,14 +21,17 @@ CMake Option           Values          Description
 
 :sup:`1` *not yet implemented*
 
-Additionally, the following libraries are shipped internally. 
-The following options allow to switch to external installs:
+Additionally, the following libraries are shipped internally for convenience.
+These might get installed in your :ref:`CMAKE_INSTALL_PREFIX <install-cmake>` if the option is ``ON``.
 
-================================ =========== ============= ========
-CMake Option                     Values      Library       Version
-================================ =========== ============= ========
-``openPMD_USE_INTERNAL_VARIANT`` **ON**/OFF  MPark.Variant   1.3.0+
-================================ =========== ============= ========
+The following options allow to switch to external installs of dependencies:
+
+================================ =========== ======== ============= ========
+CMake Option                     Values      Installs Library       Version
+================================ =========== ======== ============= ========
+``openPMD_USE_INTERNAL_VARIANT`` **ON**/OFF  Yes      MPark.Variant   1.3.0+
+``openPMD_USE_INTERNAL_CATCH``   **ON**/OFF  No       Catch2          2.2.1+
+================================ =========== ======== ============= ========
 
 By default, this will build as a static library (``libopenPMD.a``) and installs also its headers.
 In order to build a static library, append ``-DBUILD_SHARED_LIBS=ON`` to the ``cmake`` command.
@@ -37,3 +40,5 @@ You can only build a static or a shared library at a time.
 By default, the ``Release`` version is built.
 In order to build with debug symbols, pass ``-DCMAKE_BUILD_TYPE=Debug`` to your ``cmake`` command.
 
+By default, tests are built.
+In order to skip building tests, pass ``-DBUILD_TESTING=OFF`` to your ``cmake`` command.

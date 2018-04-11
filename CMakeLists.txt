@@ -9,10 +9,6 @@ set(openPMD_STANDARD_VERSION 1.1.0)
 
 set(CMAKE_MODULE_PATH "${openPMD_SOURCE_DIR}/cmake")
 
-# Force C++11
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
-
 
 # Project structure ###########################################################
 #
@@ -39,6 +35,7 @@ function(openpmd_option name description default)
     else()
         set(openPMD_HAVE_${name})
     endif()
+    # list of all possible options
     set(openPMD_CONFIG_OPTIONS ${openPMD_CONFIG_OPTIONS} ${name} PARENT_SCOPE)
 endfunction()
 
@@ -50,6 +47,7 @@ openpmd_option(ADIOS2 "Enable ADIOS2 support"  OFF)
 openpmd_option(PYTHON "Enable Python bindings" AUTO)
 
 option(openPMD_USE_INTERNAL_VARIANT "Use internally shipped MPark.Variant" ON)
+option(openPMD_USE_INTERNAL_CATCH   "Use internally shipped Catch2" ON)
 
 set(CMAKE_CONFIGURATION_TYPES "Release;Debug;MinSizeRel;RelWithDebInfo")
 if(NOT CMAKE_BUILD_TYPE)
@@ -61,22 +59,29 @@ if (CMAKE_BUILD_TYPE STREQUAL Debug)
     add_definitions(-DDEBUG)
 endif()
 
+include(CTest)
+# automatically defines: BUILD_TESTING, default is ON
+
 
 # Warnings ####################################################################
 #
 # TODO: LEGACY! Use CMake TOOLCHAINS instead!
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,memory,undefined")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-weak-vtables -Wno-padded -Wno-switch-enum -Wno-undefined-func-template")
-    #Silence BOOST_TEST
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-disabled-macro-expansion -Wno-c++98-compat-pedantic -Wno-global-constructors -Wno-conversion")
-    #Silence HDF5
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-reserved-id-macro -Wno-deprecated -Wno-old-style-cast")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-cpp")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
+    string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} "
+                  "-Wno-weak-vtables -Wno-padded -Wno-switch-enum "
+                  "-Wno-undefined-func-template -Wno-c++98-compat-pedantic")
+    # silence HDF5 (FIXME: -isystem should be enough)
+    string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} "
+                  "-Wno-reserved-id-macro -Wno-deprecated -Wno-old-style-cast "
+                  "-Wno-cpp")
+    # older clangs: silence unknown warnings
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-warning-option")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
-    #silence BOOST filesystem
+    # silence BOOST filesystem
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-cpp")
 endif ()
 
@@ -85,7 +90,7 @@ endif ()
 #
 # external library: Boost (mandatory)
 find_package(Boost 1.62.0 REQUIRED
-    COMPONENTS system filesystem unit_test_framework)
+    COMPONENTS system filesystem)
 
 # external library: MPI (optional)
 if(openPMD_USE_MPI STREQUAL AUTO)
@@ -225,23 +230,44 @@ set(IO_SOURCE
 add_Library(openPMD ${CORE_SOURCE} ${IO_SOURCE})
 
 # properties
+target_compile_features(openPMD
+    PUBLIC cxx_std_11
+)
 set_target_properties(openPMD PROPERTIES
+    CXX_EXTENSIONS OFF
+    CXX_STANDARD_REQUIRED ON
     POSITION_INDEPENDENT_CODE ON
 )
 
 # own headers
 target_include_directories(openPMD PUBLIC
     $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/include>
-    $<BUILD_INTERFACE:${openPMD_BINARY_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
 
 # C++11 std::variant (C++17 stdlib preview)
 if(openPMD_USE_INTERNAL_VARIANT)
+    target_include_directories(openPMD SYSTEM PUBLIC
+        $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include>
+    )
     message(STATUS "MPark.Variant: Using INTERNAL version 1.3.0")
 else()
     find_package(mpark_variant 1.3.0 REQUIRED)
     target_link_libraries(openPMD PUBLIC mpark_variant)
+    message(STATUS "MPark.Variant: Found version ${mpark_variant_VERSION}")
+endif()
+
+# Catch2 for unit tests
+if(BUILD_TESTING)
+    if(openPMD_USE_INTERNAL_CATCH)
+        target_include_directories(openPMD SYSTEM PUBLIC
+            $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/catch2/include>
+        )
+        message(STATUS "Catch2: Using INTERNAL version 2.2.1")
+    else()
+        find_package(Catch2 2.2.1 CONFIG REQUIRED)
+        message(STATUS "Catch2: Found version ${Catch2_VERSION}")
+    endif()
 endif()
 
 if(TARGET Boost::filesystem)
@@ -259,6 +285,8 @@ if(openPMD_HAVE_MPI)
     target_link_libraries(openPMD PUBLIC MPI::MPI_C MPI::MPI_CXX)
 
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_MPI=1")
+else()
+    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_MPI=0")
 endif()
 
 if(openPMD_HAVE_HDF5)
@@ -266,17 +294,23 @@ if(openPMD_HAVE_HDF5)
     target_include_directories(openPMD SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
     target_compile_definitions(openPMD PUBLIC ${HDF5_DEFINITIONS})
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_HDF5=1")
+else()
+    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_HDF5=0")
 endif()
 
 if(openPMD_HAVE_ADIOS1)
     target_link_libraries(openPMD PUBLIC ${ADIOS_LIBRARIES})
     target_include_directories(openPMD SYSTEM PUBLIC ${ADIOS_INCLUDE_DIRS})
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS1=1")
+else()
+    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS1=0")
 endif()
 
 if(openPMD_HAVE_ADIOS2)
     target_link_libraries(openPMD PUBLIC ADIOS2::ADIOS2)
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS2=1")
+else()
+    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS2=0")
 endif()
 
 # python bindings
@@ -319,7 +353,7 @@ set(openPMD_TEST_NAMES
     Core
     Auxiliary
     SerialIO
-    #ParallelIO
+    ParallelIO
 )
 # examples
 set(openPMD_EXAMPLE_NAMES
@@ -334,30 +368,34 @@ set(openPMD_EXAMPLE_NAMES
 set(openPMD_PYTHON_EXAMPLE_NAMES
     2_read_serial
 )
-foreach(testname ${openPMD_TEST_NAMES})
-    add_executable(${testname}Tests test/${testname}Test.cpp)
-    if(openPMD_HAVE_MPI)
-        target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_MPI=1")
-    else()
-        target_compile_definitions(${testname}Tests PUBLIC "-D_NOMPI=1")
-    endif()
 
-    if(openPMD_HAVE_HDF5)
-        target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_HDF5=1")
-    endif()
+if(BUILD_TESTING)
+    foreach(testname ${openPMD_TEST_NAMES})
+        add_executable(${testname}Tests test/${testname}Test.cpp)
+        if(openPMD_HAVE_MPI)
+            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_MPI=1")
+        else()
+            target_compile_definitions(${testname}Tests PUBLIC "-D_NOMPI=1")
+        endif()
 
-    if(openPMD_HAVE_ADIOS1)
-        target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_ADIOS1=1")
-    endif()
+        if(openPMD_HAVE_HDF5)
+            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_HDF5=1")
+        endif()
 
-    if(openPMD_HAVE_ADIOS2)
-        target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_ADIOS2=1")
-    endif()
-    target_link_libraries(${testname}Tests PRIVATE openPMD)
-    if(TARGET Boost::unit_test_framework)
-        target_link_libraries(${testname}Tests PRIVATE Boost::unit_test_framework)
-    endif()
-endforeach()
+        if(openPMD_HAVE_ADIOS1)
+            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_ADIOS1=1")
+        endif()
+
+        if(openPMD_HAVE_ADIOS2)
+            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_ADIOS2=1")
+        endif()
+        target_link_libraries(${testname}Tests PRIVATE openPMD)
+        if(TARGET Catch2::Catch)
+            target_link_libraries(${testname}Tests PRIVATE Catch2::Catch)
+        endif()
+    endforeach()
+endif()
+
 foreach(examplename ${openPMD_EXAMPLE_NAMES})
     if(${examplename} MATCHES ".+parallel$")
         if(openPMD_HAVE_MPI)
@@ -401,11 +439,15 @@ if(openPMD_HAVE_PYTHON)
         DESTINATION ${CMAKE_INSTALL_PYTHONDIR}
     )
 endif()
-install(DIRECTORY "${openPMD_SOURCE_DIR}/include/."
-  DESTINATION include
-  PATTERN ".svn" EXCLUDE
-  PATTERN ".git" EXCLUDE
+install(DIRECTORY "${openPMD_SOURCE_DIR}/include"
+    DESTINATION include
 )
+# install third-party libraries
+if(openPMD_USE_INTERNAL_VARIANT)
+    install(DIRECTORY "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include/mpark"
+        DESTINATION include
+    )
+endif()
 
 # CMake package file for find_package(openPMD::openPMD) in depending projects
 install(EXPORT openPMDTargets
@@ -423,34 +465,47 @@ install(
 
 # Tests #######################################################################
 #
-enable_testing()
+if(BUILD_TESTING)
+    enable_testing()
 
-# OpenMPI root guard: https://github.com/open-mpi/ompi/issues/4451
-if("$ENV{USER}" STREQUAL "root")
-    set(MPI_ALLOW_ROOT --allow-run-as-root)
-endif()
-set(MPI_TEST_EXE
-    ${MPIEXEC_EXECUTABLE}
-    ${MPI_ALLOW_ROOT}
-    ${MPIEXEC_NUMPROC_FLAG} 2
-)
+    # OpenMPI root guard: https://github.com/open-mpi/ompi/issues/4451
+    if("$ENV{USER}" STREQUAL "root")
+        set(MPI_ALLOW_ROOT --allow-run-as-root)
+    endif()
+    set(MPI_TEST_EXE
+        ${MPIEXEC_EXECUTABLE}
+        ${MPI_ALLOW_ROOT}
+        ${MPIEXEC_NUMPROC_FLAG} 2
+    )
 
-# C++ Unit tests
-foreach(testname ${openPMD_TEST_NAMES})
-    if(${testname} MATCHES "^Parallel.*$")
-        if(openPMD_HAVE_MPI)
-            add_test(NAME MPI.${testname}
-                COMMAND ${MPI_TEST_EXE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${testname}Tests
+    # C++ Unit tests
+    foreach(testname ${openPMD_TEST_NAMES})
+        if(${testname} MATCHES "^Parallel.*$")
+            if(openPMD_HAVE_MPI)
+                add_test(NAME MPI.${testname}
+                    COMMAND ${MPI_TEST_EXE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${testname}Tests
+                    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                )
+            endif()
+        else()
+            add_test(NAME Serial.${testname}
+                COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${testname}Tests
                 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
             )
         endif()
-    else()
-        add_test(NAME Serial.${testname}
-            COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${testname}Tests
-            WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-        )
-    endif()
-endforeach()
+    endforeach()
+endif()
+
+# TODO: Python Unit tests
+#if(BUILD_TESTING)
+#    if(openPMD_HAVE_PYTHON)
+#        ...
+#    endif()
+#endif()
+
+
+# Examples ####################################################################
+#
 
 # C++ Examples
 if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
@@ -477,11 +532,6 @@ else()
                    "to add example files!")
 endif()
 
-# TODO: Python Unit tests
-#if(openPMD_HAVE_PYTHON)
-#    # ...
-#endif()
-
 # Python Examples
 if(openPMD_HAVE_PYTHON)
     if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
@@ -491,16 +541,18 @@ if(openPMD_HAVE_PYTHON)
                         ${openPMD_SOURCE_DIR}/examples/${examplename}.py
                         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
             )
-            add_test(NAME Example.py.${examplename}
-                COMMAND ${PYTHON_EXECUTABLE}
-                    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
-                WORKING_DIRECTORY
-                    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-            )
-            set_tests_properties(Example.py.${examplename}
-                PROPERTIES ENVIRONMENT
-                    "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
-            )
+            if(BUILD_TESTING)
+                add_test(NAME Example.py.${examplename}
+                    COMMAND ${PYTHON_EXECUTABLE}
+                        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
+                    WORKING_DIRECTORY
+                        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                )
+                set_tests_properties(Example.py.${examplename}
+                    PROPERTIES ENVIRONMENT
+                        "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
+                )
+            endif()
         endforeach()
     else()
         message(STATUS "Missing samples/git-sample/ directory! "
@@ -514,13 +566,21 @@ endif()
 
 # Status Message for Build Options ############################################
 #
+function(invertBoolean inputVar outputVar)
+  if(${inputVar})
+    set(${outputVar} OFF PARENT_SCOPE)
+  else()
+    set(${outputVar} ON PARENT_SCOPE)
+  endif()
+endfunction()
+
 message("")
 message("openPMD build configuration:")
 message("  library Version: ${openPMD_VERSION}")
 message("  openPMD Standard: ${openPMD_STANDARD_VERSION}")
-message("  C++ Compiler : ${CMAKE_CXX_COMPILER_ID} "
-                         "${CMAKE_CXX_COMPILER_VERSION} "
-                         "${CMAKE_CXX_COMPILER_WRAPPER}")
+message("  C++ Compiler: ${CMAKE_CXX_COMPILER_ID} "
+                        "${CMAKE_CXX_COMPILER_VERSION} "
+                        "${CMAKE_CXX_COMPILER_WRAPPER}")
 message("    ${CMAKE_CXX_COMPILER}")
 message("")
 message("  Installation prefix: ${CMAKE_INSTALL_PREFIX}")
@@ -532,7 +592,13 @@ if(openPMD_HAVE_PYTHON)
     message("     python: ${CMAKE_INSTALL_PYTHONDIR}")
 endif()
 message("")
+message("  Additionally installed third party libraries:")
+invertBoolean(openPMD_USE_INTERNAL_VARIANT openPMD_HAVE_EXTERNAL_VARIANT)
+message("    MPark.Variant: ${openPMD_HAVE_EXTERNAL_VARIANT}")
+message("           Catch2: OFF")
+message("")
 message("  Build Type: ${CMAKE_BUILD_TYPE}")
+message("  Testing: ${BUILD_TESTING}")
 message("  Build Options:")
 
 foreach(opt IN LISTS openPMD_CONFIG_OPTIONS)

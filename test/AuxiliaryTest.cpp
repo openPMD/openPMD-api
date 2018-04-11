@@ -1,4 +1,4 @@
-#define BOOST_TEST_MODULE libopenpmd_aux_test
+#define CATCH_CONFIG_MAIN
 
 /* make Writable::parent visible for hierarchy check */
 #define protected public
@@ -11,50 +11,50 @@
 #undef protected
 using namespace openPMD;
 
-#include <boost/test/included/unit_test.hpp>
+#include <catch/catch.hpp>
 
 
-BOOST_AUTO_TEST_CASE(string_test)
+TEST_CASE( "string_test", "[auxiliary]" )
 {
     using namespace auxiliary;
 
     std::string s = "Man muss noch Chaos in sich haben, "
                     "um einen tanzenden Stern gebaeren zu koennen.";
-    BOOST_TEST(starts_with(s, "M"));
-    BOOST_TEST(starts_with(s, "Man"));
-    BOOST_TEST(starts_with(s, "Man muss noch"));
-    BOOST_TEST(!starts_with(s, " "));
+    REQUIRE(starts_with(s, "M"));
+    REQUIRE(starts_with(s, "Man"));
+    REQUIRE(starts_with(s, "Man muss noch"));
+    REQUIRE(!starts_with(s, " "));
 
-    BOOST_TEST(ends_with(s, "."));
-    BOOST_TEST(ends_with(s, "koennen."));
-    BOOST_TEST(ends_with(s, "gebaeren zu koennen."));
+    REQUIRE(ends_with(s, "."));
+    REQUIRE(ends_with(s, "koennen."));
+    REQUIRE(ends_with(s, "gebaeren zu koennen."));
 
-    BOOST_TEST(contains(s, "M"));
-    BOOST_TEST(contains(s, "."));
-    BOOST_TEST(contains(s, "noch Chaos"));
-    BOOST_TEST(!contains(s, "foo"));
+    REQUIRE(contains(s, "M"));
+    REQUIRE(contains(s, "."));
+    REQUIRE(contains(s, "noch Chaos"));
+    REQUIRE(!contains(s, "foo"));
 
-    BOOST_TEST("String" == replace_first("string", "s", "S"));
-    BOOST_TEST("sTRING" == replace_first("string", "tring", "TRING"));
-    BOOST_TEST("string" == replace_first("string", " ", "_"));
-    BOOST_TEST("strinGstringstring" == replace_first("stringstringstring", "g", "G"));
-    BOOST_TEST("#stringstring" == replace_first("stringstringstring", "string", "#"));
+    REQUIRE("String" == replace_first("string", "s", "S"));
+    REQUIRE("sTRING" == replace_first("string", "tring", "TRING"));
+    REQUIRE("string" == replace_first("string", " ", "_"));
+    REQUIRE("strinGstringstring" == replace_first("stringstringstring", "g", "G"));
+    REQUIRE("#stringstring" == replace_first("stringstringstring", "string", "#"));
 
-    BOOST_TEST("stringstringstrinG" == replace_last("stringstringstring", "g", "G"));
-    BOOST_TEST("stringstring#" == replace_last("stringstringstring", "string", "#"));
+    REQUIRE("stringstringstrinG" == replace_last("stringstringstring", "g", "G"));
+    REQUIRE("stringstring#" == replace_last("stringstringstring", "string", "#"));
 
-    BOOST_TEST("/normal/path" == replace_all("////normal//////path", "//", "/"));
+    REQUIRE("/normal/path" == replace_all("////normal//////path", "//", "/"));
 
     std::vector< std::string > expected1{"0", "string", " ",  "1234", "te st"};
     std::vector< std::string > expected2{"0_DELIM_", "string_DELIM_", " _DELIM_",  "1234_DELIM_", "te st_DELIM_"};
     std::vector< std::string > expected3{"path", "to", "relevant", "data"};
     std::string s2 = "_DELIM_0_DELIM_string_DELIM_ _DELIM_1234_DELIM_te st_DELIM_";
-    BOOST_TEST(expected1 == split(s2, "_DELIM_", false));
-    BOOST_TEST(expected2 == split(s2, "_DELIM_", true));
-    BOOST_TEST(expected3 == split("/path/to/relevant/data/", "/"));
+    REQUIRE(expected1 == split(s2, "_DELIM_", false));
+    REQUIRE(expected2 == split(s2, "_DELIM_", true));
+    REQUIRE(expected3 == split("/path/to/relevant/data/", "/"));
 }
 
-BOOST_AUTO_TEST_CASE(container_default_test)
+TEST_CASE( "container_default_test", "[auxiliary]")
 {
     struct S : public Writable
     {
@@ -64,8 +64,8 @@ BOOST_AUTO_TEST_CASE(container_default_test)
     Container< S > c = Container< S >();
     c.IOHandler = AbstractIOHandler::createIOHandler("", AccessType::CREATE, Format::DUMMY);
 
-    BOOST_TEST(c.size() == 0);
-    BOOST_TEST(c.erase("nonExistentKey") == false);
+    REQUIRE(c.size() == 0);
+    REQUIRE(c.erase("nonExistentKey") == false);
 }
 
 class structure : public Attributable
@@ -79,7 +79,7 @@ public:
     structure& setText(std::string text) { setAttribute("text", text); return *this; }
 };
 
-BOOST_AUTO_TEST_CASE(container_retrieve_test)
+TEST_CASE( "container_retrieve_test", "[auxiliary]" )
 {
     Container< structure > c = Container< structure >();
     c.IOHandler = AbstractIOHandler::createIOHandler("", AccessType::CREATE, Format::DUMMY);
@@ -88,19 +88,19 @@ BOOST_AUTO_TEST_CASE(container_retrieve_test)
     std::string text = "The openPMD standard, short for open standard for particle-mesh data files is not a file format per se. It is a standard for meta data and naming schemes.";
     s.setText(text);
     c["entry"] = s;
-    BOOST_TEST(c["entry"].string_ == "Hello, world!");
-    BOOST_TEST(c["entry"].int_ == 42);
-    BOOST_TEST(c["entry"].float_ == 3.14f);
-    BOOST_TEST(c["entry"].text() == text);
-    BOOST_TEST(s.text() == text);
+    REQUIRE(c["entry"].string_ == "Hello, world!");
+    REQUIRE(c["entry"].int_ == 42);
+    REQUIRE(c["entry"].float_ == 3.14f);
+    REQUIRE(c["entry"].text() == text);
+    REQUIRE(s.text() == text);
 
 
     structure s2 = c["entry"];
-    BOOST_TEST(s2.string_ == "Hello, world!");
-    BOOST_TEST(s2.int_ == 42);
-    BOOST_TEST(s2.float_ == 3.14f);
-    BOOST_TEST(s2.text() == text);
-    BOOST_TEST(c["entry"].text() == text);
+    REQUIRE(s2.string_ == "Hello, world!");
+    REQUIRE(s2.int_ == 42);
+    REQUIRE(s2.float_ == 3.14f);
+    REQUIRE(s2.text() == text);
+    REQUIRE(c["entry"].text() == text);
 
 
     s2.string_ = "New string";
@@ -109,26 +109,26 @@ BOOST_AUTO_TEST_CASE(container_retrieve_test)
     text = "New text";
     s2.setText(text);
     c["entry"] = s2;
-    BOOST_TEST(c["entry"].string_ == "New string");
-    BOOST_TEST(c["entry"].int_ == -1);
-    BOOST_TEST(c["entry"].float_ == 0.0f);
-    BOOST_TEST(c["entry"].text() == text);
-    BOOST_TEST(s2.text() == text);
+    REQUIRE(c["entry"].string_ == "New string");
+    REQUIRE(c["entry"].int_ == -1);
+    REQUIRE(c["entry"].float_ == 0.0f);
+    REQUIRE(c["entry"].text() == text);
+    REQUIRE(s2.text() == text);
 
     s = c["entry"];
-    BOOST_TEST(s.string_ == "New string");
-    BOOST_TEST(s.int_ == -1);
-    BOOST_TEST(s.float_ == 0.0f);
-    BOOST_TEST(s.text() == text);
-    BOOST_TEST(c["entry"].text() == text);
+    REQUIRE(s.string_ == "New string");
+    REQUIRE(s.int_ == -1);
+    REQUIRE(s.float_ == 0.0f);
+    REQUIRE(s.text() == text);
+    REQUIRE(c["entry"].text() == text);
 
     c["entry"].setText("Different text");
-    BOOST_TEST(s.text() == text);
-    BOOST_TEST(c["entry"].text() != text);
+    REQUIRE(s.text() == text);
+    REQUIRE(c["entry"].text() != text);
 
     s.setText("Also different text");
-    BOOST_TEST(s.text() == "Also different text");
-    BOOST_TEST(c["entry"].text() == "Different text");
+    REQUIRE(s.text() == "Also different text");
+    REQUIRE(c["entry"].text() == "Different text");
 }
 
 struct Widget : public Writable
@@ -140,32 +140,32 @@ struct Widget : public Writable
     { }
 };
 
-BOOST_AUTO_TEST_CASE(container_access_test)
+TEST_CASE( "container_access_test", "[auxiliary]" )
 {
     Container< Widget > c = Container< Widget >();
     c.IOHandler = AbstractIOHandler::createIOHandler("", AccessType::CREATE, Format::DUMMY);
 
     c["firstWidget"] = Widget(0);
-    BOOST_TEST(c.size() == 1);
+    REQUIRE(c.size() == 1);
 
     c["firstWidget"] = Widget(1);
-    BOOST_TEST(c.size() == 1);
+    REQUIRE(c.size() == 1);
 
     c["secondWidget"] = Widget(2);
-    BOOST_TEST(c.size() == 2);
-    BOOST_TEST(c.erase("firstWidget") == true);
-    BOOST_TEST(c.size() == 1);
-    BOOST_TEST(c.erase("nonExistentWidget") == false);
-    BOOST_TEST(c.size() == 1);
-    BOOST_TEST(c.erase("secondWidget") == true);
-    BOOST_TEST(c.size() == 0);
+    REQUIRE(c.size() == 2);
+    REQUIRE(c.erase("firstWidget") == true);
+    REQUIRE(c.size() == 1);
+    REQUIRE(c.erase("nonExistentWidget") == false);
+    REQUIRE(c.size() == 1);
+    REQUIRE(c.erase("secondWidget") == true);
+    REQUIRE(c.size() == 0);
 }
 
-BOOST_AUTO_TEST_CASE(attributable_default_test)
+TEST_CASE( "attributable_default_test", "[auxiliary]" )
 {
     Attributable a = Attributable();
 
-    BOOST_TEST(a.numAttributes() == 0);
+    REQUIRE(a.numAttributes() == 0);
 }
 
 class AttributedWidget : public Attributable
@@ -181,33 +181,33 @@ public:
     }
 };
 
-BOOST_AUTO_TEST_CASE(attributable_access_test)
+TEST_CASE( "attributable_access_test", "[auxiliary]" )
 {
     AttributedWidget a = AttributedWidget();
 
     a.setAttribute("key", std::string("value"));
-    BOOST_TEST(a.numAttributes() == 1);
-    BOOST_TEST(variadicSrc::get< std::string >(a.get("key")) == "value");
+    REQUIRE(a.numAttributes() == 1);
+    REQUIRE(variadicSrc::get< std::string >(a.get("key")) == "value");
 
     a.setAttribute("key", std::string("newValue"));
-    BOOST_TEST(a.numAttributes() == 1);
-    BOOST_TEST(variadicSrc::get< std::string >(a.get("key")) == "newValue");
+    REQUIRE(a.numAttributes() == 1);
+    REQUIRE(variadicSrc::get< std::string >(a.get("key")) == "newValue");
 
     using array_t = std::array< double, 7 >;
     array_t arr{{1, 2, 3, 4, 5, 6, 7}};
     a.setAttribute("array", arr);
-    BOOST_TEST(a.numAttributes() == 2);
-    BOOST_TEST(variadicSrc::get< array_t >(a.get("array")) == arr);
-    BOOST_TEST(a.deleteAttribute("nonExistentKey") == false);
-    BOOST_TEST(a.numAttributes() == 2);
-    BOOST_TEST(a.deleteAttribute("key") == true);
-    BOOST_TEST(a.numAttributes() == 1);
-    BOOST_TEST(a.deleteAttribute("array") == true);
-    BOOST_TEST(a.numAttributes() == 0);
+    REQUIRE(a.numAttributes() == 2);
+    REQUIRE(variadicSrc::get< array_t >(a.get("array")) == arr);
+    REQUIRE(a.deleteAttribute("nonExistentKey") == false);
+    REQUIRE(a.numAttributes() == 2);
+    REQUIRE(a.deleteAttribute("key") == true);
+    REQUIRE(a.numAttributes() == 1);
+    REQUIRE(a.deleteAttribute("array") == true);
+    REQUIRE(a.numAttributes() == 0);
 
     a.setComment("This is a comment");
-    BOOST_TEST(a.comment() == "This is a comment");
-    BOOST_TEST(a.numAttributes() == 1);
+    REQUIRE(a.comment() == "This is a comment");
+    REQUIRE(a.numAttributes() == 1);
 }
 
 class Dotty : public Attributable
@@ -228,16 +228,16 @@ public:
     Dotty& setAtt3(std::string s) { setAttribute("att3", s); return *this; }
 };
 
-BOOST_AUTO_TEST_CASE(dot_test)
+TEST_CASE( "dot_test", "[auxiliary]" )
 {
     Dotty d;
-    BOOST_TEST(d.att1() == 1);
-    BOOST_TEST(d.att2() == static_cast<double>(2));
-    BOOST_TEST(d.att3() == "3");
+    REQUIRE(d.att1() == 1);
+    REQUIRE(d.att2() == static_cast<double>(2));
+    REQUIRE(d.att3() == "3");
 
     d.setAtt1(10).setAtt2(20).setAtt3("30");
-    BOOST_TEST(d.att1() == 10);
-    BOOST_TEST(d.att2() == static_cast<double>(20));
-    BOOST_TEST(d.att3() == "30");
+    REQUIRE(d.att1() == 10);
+    REQUIRE(d.att2() == static_cast<double>(20));
+    REQUIRE(d.att3() == "30");
 
 }

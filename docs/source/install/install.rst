@@ -18,6 +18,8 @@ Installation
 
 Choose *one* of the install methods below to get started:
 
+.. _install-spack:
+
 .. only:: html
 
    .. image:: spack.svg
@@ -36,6 +38,8 @@ A package for openPMD-api is available on the Spack package manager.
 
    Not yet published.
 
+.. _install-conda:
+
 .. only:: html
 
    .. image:: conda.svg
@@ -47,6 +51,8 @@ Using the conda Package
 
    Not yet implemented.
    Will be shipped via conda-forge.
+
+.. _install-cmake:
 
 .. only:: html
 
