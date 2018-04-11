@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['basepath',['basePath',['../class_series.html#a7678125f5d44385bb55fa0ea4195acf0',1,'Series']]]
+  ['basepath',['basePath',['../classopen_p_m_d_1_1_series.html#a422273507ae9975bc243a055e853bb1a',1,'openPMD::Series']]]
 ];

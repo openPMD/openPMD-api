@@ -1,6 +1,0 @@
-<map id="Iteration" name="Iteration">
-<area shape="rect" id="node2" href="$class_attributable.html" title="Layer to manage storage of attributes associated with file objects. " alt="" coords="45,81,133,108"/>
-<area shape="rect" id="node4" href="$class_container.html" title="Container\&lt; Mesh \&gt;" alt="" coords="22,157,156,184"/>
-<area shape="rect" id="node5" href="$class_container.html" title="Container\&lt; ParticleSpecies \&gt;" alt="" coords="180,157,374,184"/>
-<area shape="rect" id="node3" href="$class_writable.html" title="Layer to mirror structure of data logiclly and in file. " alt="" coords="54,5,124,32"/>
-</map>

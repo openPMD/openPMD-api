@@ -1,5 +1,0 @@
-<map id="Series" name="Series">
-<area shape="rect" id="node2" href="$class_attributable.html" title="Layer to manage storage of attributes associated with file objects. " alt="" coords="5,81,93,108"/>
-<area shape="rect" id="node4" href="$class_container.html" title="Container\&lt; Iteration,\l uint64_t \&gt;" alt="" coords="71,157,212,199"/>
-<area shape="rect" id="node3" href="$class_writable.html" title="Layer to mirror structure of data logiclly and in file. " alt="" coords="14,5,85,32"/>
-</map>

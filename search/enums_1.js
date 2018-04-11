@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['geometry',['Geometry',['../class_mesh.html#af1723482cf171b4dd86ec1f0d399f3f1',1,'Mesh']]]
+  ['geometry',['Geometry',['../classopen_p_m_d_1_1_mesh.html#acee3512164b9df9b3549bac0aa782383',1,'openPMD::Mesh']]]
 ];

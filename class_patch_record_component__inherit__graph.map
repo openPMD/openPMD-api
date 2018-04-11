@@ -1,5 +1,0 @@
-<map id="PatchRecordComponent" name="PatchRecordComponent">
-<area shape="rect" id="node2" href="$class_base_record_component.html" title="BaseRecordComponent" alt="" coords="7,155,169,181"/>
-<area shape="rect" id="node3" href="$class_attributable.html" title="Layer to manage storage of attributes associated with file objects. " alt="" coords="44,80,132,107"/>
-<area shape="rect" id="node4" href="$class_writable.html" title="Layer to mirror structure of data logiclly and in file. " alt="" coords="53,5,123,32"/>
-</map>

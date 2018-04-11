@@ -1,8 +1,0 @@
-<map id="MeshRecordComponent" name="MeshRecordComponent">
-<area shape="rect" id="node2" href="$class_record_component.html" title="RecordComponent" alt="" coords="732,181,863,208"/>
-<area shape="rect" id="node3" href="$class_base_record_component.html" title="BaseRecordComponent" alt="" coords="372,69,533,96"/>
-<area shape="rect" id="node4" href="$class_attributable.html" title="Layer to manage storage of attributes associated with file objects. " alt="" coords="125,44,213,71"/>
-<area shape="rect" id="node5" href="$class_writable.html" title="Layer to mirror structure of data logiclly and in file. " alt="" coords="5,44,76,71"/>
-<area shape="rect" id="node6" href="$class_dataset.html" title="Dataset" alt="" coords="135,95,203,121"/>
-<area shape="rect" id="node7" href="$class_variadic.html" title="Variadic\&lt; Datatype,\l char, unsigned char,\l int16_t, int32_t, int64\l_t, uint16_t, uint32_t,\l uint64_t, float, double,\l long double, std::string,\l std::vector\&lt; char \&gt;, std::\lvector\&lt; int16_t \&gt;, std::vector\l\&lt; int32_t \&gt;, std::vector\&lt; int64\l_t \&gt;, std::vector\&lt; unsigned char\l \&gt;, std::vector\&lt; uint16_t \&gt;, std\l::vector\&lt; uint32_t \&gt;, std::vector\l\&lt; uint64_t \&gt;, std::vector\&lt; float \&gt;,\l std::vector\&lt; double \&gt;, std::vector\l\&lt; long double \&gt;, std::vector\&lt; std::string\l \&gt;, std::array\&lt; double, 7 \&gt;, bool \&gt;" alt="" coords="327,119,579,366"/>
-</map>

@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['attributes',['attributes',['../class_attributable.html#ab202e87c2b6b3223481299bcaa0d62f8',1,'Attributable']]],
-  ['author',['author',['../class_series.html#a1b64ce67b7977a99293893f3de6b0cdc',1,'Series']]],
-  ['axislabels',['axisLabels',['../class_mesh.html#a4839ddb258a8a7900e8ab5d3c4172641',1,'Mesh']]]
+  ['attributes',['attributes',['../classopen_p_m_d_1_1_attributable.html#a383542cbec8377724818c6205c99a497',1,'openPMD::Attributable']]],
+  ['author',['author',['../classopen_p_m_d_1_1_series.html#a8b24202eb309e5472a0c943fd30cd04d',1,'openPMD::Series']]],
+  ['axislabels',['axisLabels',['../classopen_p_m_d_1_1_mesh.html#a2110593f508bed04469b05a4f35e5c28',1,'openPMD::Mesh']]]
 ];

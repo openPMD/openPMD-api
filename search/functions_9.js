@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['name',['name',['../class_series.html#aa0e4d0e01ca28fd8e9fb401d96b4dc59',1,'Series']]],
-  ['numattributes',['numAttributes',['../class_attributable.html#a7982f9e53713ab9945ac104eecdd817f',1,'Attributable']]]
+  ['machine',['machine',['../classopen_p_m_d_1_1_series.html#a597548567575d6fbc6dbd96006a53320',1,'openPMD::Series']]],
+  ['meshespath',['meshesPath',['../classopen_p_m_d_1_1_series.html#a91780a57a1efe1ede0a321f7a2363702',1,'openPMD::Series']]]
 ];

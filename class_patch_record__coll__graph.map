@@ -1,6 +1,0 @@
-<map id="PatchRecord" name="PatchRecord">
-<area shape="rect" id="node2" href="$class_base_record.html" title="BaseRecord\&lt; PatchRecordComponent \&gt;" alt="" coords="5,233,267,260"/>
-<area shape="rect" id="node3" href="$class_container.html" title="Container\&lt; PatchRecordComponent \&gt;" alt="" coords="13,157,259,184"/>
-<area shape="rect" id="node4" href="$class_attributable.html" title="Layer to manage storage of attributes associated with file objects. " alt="" coords="92,81,180,108"/>
-<area shape="rect" id="node5" href="$class_writable.html" title="Layer to mirror structure of data logiclly and in file. " alt="" coords="101,5,171,32"/>
-</map>

@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['series',['Series',['../class_series.html',1,'']]],
-  ['structure',['structure',['../classstructure.html',1,'']]]
+  ['record',['Record',['../classopen_p_m_d_1_1_record.html',1,'openPMD']]],
+  ['recordcomponent',['RecordComponent',['../classopen_p_m_d_1_1_record_component.html',1,'openPMD']]]
 ];

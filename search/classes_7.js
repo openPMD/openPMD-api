@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['mesh',['Mesh',['../class_mesh.html',1,'']]],
-  ['meshrecordcomponent',['MeshRecordComponent',['../class_mesh_record_component.html',1,'']]]
+  ['mesh',['Mesh',['../classopen_p_m_d_1_1_mesh.html',1,'openPMD']]],
+  ['meshrecordcomponent',['MeshRecordComponent',['../classopen_p_m_d_1_1_mesh_record_component.html',1,'openPMD']]]
 ];

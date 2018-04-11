@@ -1,6 +1,0 @@
-<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$class_abstract_file_position.html" title="AbstractFilePosition" alt="" coords="5,56,144,83"/>
-<area shape="rect" id="node2" href="$struct_a_d_i_o_s1_file_position.html" title="ADIOS1FilePosition" alt="" coords="192,5,331,32"/>
-<area shape="rect" id="node3" href="$struct_a_d_i_o_s2_file_position.html" title="ADIOS2FilePosition" alt="" coords="192,56,331,83"/>
-<area shape="rect" id="node4" href="$struct_h_d_f5_file_position.html" title="HDF5FilePosition" alt="" coords="199,107,324,133"/>
-</map>

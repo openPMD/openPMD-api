@@ -1,5 +1,0 @@
-<map id="ParticleSpecies" name="ParticleSpecies">
-<area shape="rect" id="node2" href="$class_container.html" title="Container\&lt; Record \&gt;" alt="" coords="5,155,149,181"/>
-<area shape="rect" id="node3" href="$class_attributable.html" title="Layer to manage storage of attributes associated with file objects. " alt="" coords="33,80,121,107"/>
-<area shape="rect" id="node4" href="$class_writable.html" title="Layer to mirror structure of data logiclly and in file. " alt="" coords="42,5,113,32"/>
-</map>

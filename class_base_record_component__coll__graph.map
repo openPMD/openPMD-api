@@ -1,5 +1,0 @@
-<map id="BaseRecordComponent" name="BaseRecordComponent">
-<area shape="rect" id="node2" href="$class_attributable.html" title="Layer to manage storage of attributes associated with file objects. " alt="" coords="5,81,93,108"/>
-<area shape="rect" id="node3" href="$class_writable.html" title="Layer to mirror structure of data logiclly and in file. " alt="" coords="14,5,85,32"/>
-<area shape="rect" id="node4" href="$class_dataset.html" title="Dataset" alt="" coords="118,81,186,108"/>
-</map>
