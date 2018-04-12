@@ -26,6 +26,7 @@
 #       include "openPMD/auxiliary/StringManip.hpp"
 #       include "openPMD/IO/ADIOS/ADIOS1FilePosition.hpp"
 #       include <boost/filesystem.hpp>
+#       include <adios_read.h>
 #   endif
 #endif
 
@@ -58,12 +59,15 @@ ParallelADIOS1IOHandler::flush()
 ParallelADIOS1IOHandlerImpl::ParallelADIOS1IOHandlerImpl(AbstractIOHandler* handler,
                                                          MPI_Comm comm)
         : ADIOS1IOHandlerImpl{handler},
-          m_mpiComm{comm},
           m_mpiInfo{MPI_INFO_NULL}
 {
     int status;
+    status = MPI_Comm_dup(comm, &m_mpiComm);
+    ASSERT(status == MPI_SUCCESS, "Internal error: Failed to duplicate MPI communicator");
     status = adios_init_noxml(m_mpiComm);
-    ASSERT(status, "Internal error: Failed to initialize ADIOS");
+    ASSERT(status == err_no_error, "Internal error: Failed to initialize ADIOS");
+    status = adios_read_init_method(ADIOS_READ_METHOD_BP, m_mpiComm, "verbose=3");
+    ASSERT(status == err_no_error, "Internal error: Failed to initialize ADIOS reading method");
 }
 
 ParallelADIOS1IOHandlerImpl::~ParallelADIOS1IOHandlerImpl()
@@ -73,18 +77,24 @@ ParallelADIOS1IOHandlerImpl::~ParallelADIOS1IOHandlerImpl()
     {
         auto fd = m_openFileDescriptors.begin();
         status = adios_close(*fd);
-        if( status )
+        if( status != err_no_error )
             std::cerr << "Internal error: Failed to close ADIOS file (parallel)\n";
         m_openFileDescriptors.erase(fd);
     }
 
     MPI_Barrier(m_mpiComm);
+    status = adios_read_finalize_method(ADIOS_READ_METHOD_BP);
+    if( status != err_no_error )
+        std::cerr << "Internal error: Failed to finalize ADIOS reading method (parallel)\n";
 
+    MPI_Barrier(m_mpiComm);
     int rank;
     MPI_Comm_rank(m_mpiComm, &rank);
     status = adios_finalize(rank);
-    if( status )
+    if( status != err_no_error )
         std::cerr << "Internal error: Failed to finalize ADIOS (parallel)\n";
+
+    MPI_Comm_free(&m_mpiComm);
 }
 
 void
@@ -106,12 +116,22 @@ ParallelADIOS1IOHandlerImpl::createFile(Writable* writable,
         std::string name = m_handler->directory + parameters.name;
         if( !auxiliary::ends_with(name, ".bp") )
             name += ".bp";
-        //TODO mode for AccessType::READ_WRITE might have to be append instead of update
-        char mode = m_handler->accessType == AccessType::CREATE ? 'w' : 'u';
+        //TODO mode for AccessType::READ_WRITE might have to be write or append instead of update
+        std::string mode = m_handler->accessType == AccessType::CREATE ? "w" : "u";
+
+        int64_t m_adios_group;
+
+#if ( ( ADIOS_VERSION_MAJOR * 100 + ADIOS_VERSION_MINOR ) >= 111 )
+        ADIOS_STATISTICS_FLAG noStatistics = adios_stat_no;
+#else
+        ADIOS_FLAG noStatistics = adios_flag_no;
+#endif
+        adios_declare_group(&m_adios_group, group.c_str(), "", noStatistics);
+        adios_select_method(m_adios_group, "MPI", "", "");
 
         int status;
-        status = adios_open(&fd, group.c_str(), name.c_str(), &mode, m_mpiComm);
-        ASSERT(status, "Internal error: Failed to open ADIOS file");
+        status = adios_open(&fd, group.c_str(), name.c_str(), "w", m_mpiComm);
+        ASSERT(status == err_no_error, "Internal error: Failed to open ADIOS file");
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >("/");
@@ -120,6 +140,11 @@ ParallelADIOS1IOHandlerImpl::createFile(Writable* writable,
         m_openFileDescriptors.insert(fd);
     }
 }
+
+void
+ParallelADIOS1IOHandlerImpl::openFile(Writable* writable,
+                                      Parameter< Operation::OPEN_FILE > const& parameters)
+{ }
 #else
 #   if openPMD_HAVE_MPI
 ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string const& path,

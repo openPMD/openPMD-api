@@ -31,6 +31,7 @@
 #   ADIOS_LIBRARIES       - ADIOS libraries.
 #   ADIOS_FOUND           - TRUE if FindADIOS found a working install
 #   ADIOS_VERSION         - Version in format Major.Minor.Patch
+#   ADIOS_HAVE_SEQUENTIAL - TRUE if found library links as sequential only
 #
 # Not used for now:
 #   ADIOS_DEFINITIONS     - Compiler definitions you should add with
@@ -178,6 +179,9 @@ if(ADIOS_FOUND)
     endforeach()
     # we could append ${CMAKE_PREFIX_PATH} now but that is not really necessary
 
+    # determine whether found library is serial only
+    set(ADIOS_HAVE_SEQUENTIAL FALSE)
+
     message(STATUS "ADIOS DIRS to look for libs: ${ADIOS_LIBRARY_DIRS}")
 
     # parse all -lname libraries and find an absolute path for them
@@ -187,6 +191,10 @@ if(ADIOS_FOUND)
 
         # find static lib: absolute path in -L then default
         find_library(_LIB_DIR NAMES ${_LIB} PATHS ${ADIOS_LIBRARY_DIRS} CMAKE_FIND_ROOT_PATH_BOTH)
+
+        if(_LIB MATCHES "^.*nompi.*$")
+            set(ADIOS_HAVE_SEQUENTIAL TRUE)
+        endif()
 
         # found?
         if(_LIB_DIR)

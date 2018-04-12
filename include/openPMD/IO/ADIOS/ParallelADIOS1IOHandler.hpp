@@ -46,6 +46,7 @@ public:
     virtual ~ParallelADIOS1IOHandlerImpl();
 
     virtual void createFile(Writable*, Parameter< Operation::CREATE_FILE > const&) override;
+    virtual void openFile(Writable*, Parameter< Operation::OPEN_FILE > const&) override;
 
     MPI_Comm m_mpiComm;
     MPI_Info m_mpiInfo;

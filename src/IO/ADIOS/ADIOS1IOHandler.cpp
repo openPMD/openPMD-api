@@ -22,6 +22,7 @@
 
 #if openPMD_HAVE_ADIOS1
 #   include "openPMD/auxiliary/StringManip.hpp"
+#   include <adios_mpi.h>
 #   include <boost/filesystem.hpp>
 #endif
 

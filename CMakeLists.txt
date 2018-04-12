@@ -141,7 +141,7 @@ endif()
 
 # external library: ADIOS1 (optional)
 set(ADIOS1_PREFER_COMPONENTS )
-if(openPMD_HAVE_MPI)
+if(NOT openPMD_HAVE_MPI)
     set(ADIOS1_PREFER_COMPONENTS sequential)
 endif()
 if(openPMD_USE_ADIOS1 STREQUAL AUTO)
@@ -158,11 +158,15 @@ else()
     set(openPMD_HAVE_ADIOS1 FALSE)
 endif()
 
-# TODO: check!
-#if(openPMD_HAVE_MPI AND openPMD_HAVE_ADIOS AND ADIOS_HAVE_SEQUENTIAL)
-#    message(FATAL_ERROR "Found MPI but requested ADIOS1 is serial."
-#                        "Set openPMD_USE_MPI=OFF to disable MPI.")
-#endif()
+# TODO we could support more combinations than MPI+pADIOS and noMPI+sADIOS
+if(openPMD_HAVE_MPI AND openPMD_HAVE_ADIOS1 AND ADIOS_HAVE_SEQUENTIAL)
+    message(FATAL_ERROR "Found MPI but requested ADIOS1 is serial. "
+                        "Set openPMD_USE_MPI=OFF to disable MPI.")
+endif()
+if(NOT openPMD_HAVE_MPI AND openPMD_HAVE_ADIOS1 AND NOT ADIOS_HAVE_SEQUENTIAL)
+    message(FATAL_ERROR "Did not find MPI but requested ADIOS1 is parallel. "
+                        "Set openPMD_USE_ADIOS1=OFF to disable ADIOS1.")
+endif()
 
 # external library: ADIOS2 (optional)
 if(openPMD_USE_ADIOS2 STREQUAL AUTO)
