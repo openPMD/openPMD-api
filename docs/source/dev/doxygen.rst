@@ -18,7 +18,7 @@ We regularly update it via
    # optional argument: branch or tag name
    ./update.sh
 
-   git commit
+   git commit -a
    git push
 
 This section explains what is done when this script is run to build it manually.

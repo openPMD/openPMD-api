@@ -3,6 +3,7 @@ openPMD - API for Developers
 
 [![Supported openPMD Standard](https://img.shields.io/badge/openPMD-1.0.0--1.1.0-blue.svg)](https://github.com/openPMD/openPMD-standard/releases)
 [![Documentation Status](https://readthedocs.org/projects/openpmd-api/badge/?version=latest)](http://openpmd-api.readthedocs.io/en/latest/?badge=latest)
+[![Doxygen](https://img.shields.io/badge/API-Doxygen-blue.svg)](http://www.openpmd.org/openPMD-api)
 [![Code Status dev](https://img.shields.io/travis/openPMD/openPMD-api/dev.svg?label=dev)](https://travis-ci.org/openPMD/openPMD-api/branches)
 [![Language](https://img.shields.io/badge/language-C%2B%2B11-orange.svg)](https://isocpp.org/)
 [![Language](https://img.shields.io/badge/language-Python3-orange.svg)](https://www.python.org/)
@@ -100,8 +101,8 @@ Shipped internally:
 
 Optional I/O backends:
 * [HDF5](https://support.hdfgroup.org/HDF5) 1.8.6+
-* [ADIOS](https://www.olcf.ornl.gov/center-projects/adios) 1.10+ (*not yet implemented*)
-* [ADIOS](https://github.com/ornladios/ADIOS2) 2.1+ (*not yet implemented*)
+* [ADIOS1](https://www.olcf.ornl.gov/center-projects/adios) 1.10+ (*not yet implemented*)
+* [ADIOS2](https://github.com/ornladios/ADIOS2) 2.1+ (*not yet implemented*)
 
 while those can be build either with or without:
 * MPI 2.3+, e.g. OpenMPI or MPICH2
