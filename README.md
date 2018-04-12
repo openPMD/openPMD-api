@@ -59,7 +59,7 @@ for( auto const& i : s.iterations )
 
 ### Python
 
-```python
+```py
 from openPMD import Series
 
 
