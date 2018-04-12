@@ -60,7 +60,7 @@ jobs:
       stage: 'C++ Unit Tests'
       language: cpp
       env:
-        - USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+        - USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF
       compiler: clang
       addons:
         apt:
@@ -95,7 +95,7 @@ jobs:
         # - dpkg -i openPMD*.deb
     - <<: *test-cpp-unit
       env:
-        - USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+        - USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF
       compiler: clang
       addons:
         apt:
@@ -111,7 +111,7 @@ jobs:
       os: osx
       language: generic
       env:
-        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF
       compiler: clang
       before_install:
          - COMPILERSPEC="%clang@8.1.0"
@@ -119,7 +119,7 @@ jobs:
     # GCC 4.9.4
     - <<: *test-cpp-unit
       env:
-        - USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+        - USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF
       compiler: gcc
       addons:
         apt:
@@ -134,7 +134,7 @@ jobs:
       script: *script-cpp-unit
     - <<: *test-cpp-unit
       env:
-        - USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+        - USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF
       compiler: gcc
       addons:
         apt:
@@ -148,7 +148,7 @@ jobs:
     # GCC 7.2.0
     - <<: *test-cpp-unit
       env:
-        - USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+        - USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF
       compiler: gcc
       addons:
         apt:
@@ -163,7 +163,7 @@ jobs:
       script: *script-cpp-unit
     - <<: *test-cpp-unit
       env:
-        - USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+        - USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF
       compiler: gcc
       addons:
         apt:
@@ -179,7 +179,7 @@ jobs:
       language: python
       python: "2.7"
       env:
-        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF
       compiler: gcc
       addons:
         apt:
@@ -197,7 +197,7 @@ jobs:
       language: python
       python: "3.6"
       env:
-        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF
       compiler: gcc
       addons:
         apt:
