@@ -25,6 +25,7 @@
 #if openPMD_HAVE_ADIOS1
 #   include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #   include <adios.h>
+#   include <adios_mpi.h> /* includes a dummy version of mpi if -D_NOMPI */
 #endif
 
 #include <future>
@@ -67,6 +68,9 @@ public:
     virtual void listAttributes(Writable*, Parameter< Operation::LIST_ATTS > &) override;
 
 protected:
+    int64_t m_group;
+    std::string m_groupName;
+    std::unordered_map< Writable*, int64_t > m_variableIDs;
     std::unordered_map< Writable*, int64_t > m_fileDescriptors;
     std::unordered_set< int64_t > m_openFileDescriptors;
 };  //ADIOS1IOHandlerImpl

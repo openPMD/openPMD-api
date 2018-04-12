@@ -22,11 +22,8 @@
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
-#if openPMD_HAVE_MPI
-#   include <mpi.h>
-#   if openPMD_HAVE_ADIOS1
-#       include "openPMD/IO/ADIOS/ADIOS1IOHandler.hpp"
-#   endif
+#if openPMD_HAVE_MPI && openPMD_HAVE_ADIOS1
+#   include "openPMD/IO/ADIOS/ADIOS1IOHandler.hpp"
 #endif
 
 #include <future>
@@ -46,7 +43,8 @@ public:
     virtual ~ParallelADIOS1IOHandlerImpl();
 
     virtual void createFile(Writable*, Parameter< Operation::CREATE_FILE > const&) override;
-    virtual void openFile(Writable*, Parameter< Operation::OPEN_FILE > const&) override;
+    virtual void createPath(Writable*, Parameter< Operation::CREATE_PATH > const&) override;
+    virtual void createDataset(Writable*, Parameter< Operation::CREATE_DATASET > const&) override;
 
     MPI_Comm m_mpiComm;
     MPI_Info m_mpiInfo;

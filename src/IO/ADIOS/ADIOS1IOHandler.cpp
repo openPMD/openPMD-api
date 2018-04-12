@@ -37,7 +37,8 @@ namespace openPMD
 #   endif
 
 ADIOS1IOHandlerImpl::ADIOS1IOHandlerImpl(AbstractIOHandler* handler)
-        : AbstractIOHandlerImpl(handler)
+        : AbstractIOHandlerImpl(handler),
+          m_groupName{"data"}
 { }
 
 ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()

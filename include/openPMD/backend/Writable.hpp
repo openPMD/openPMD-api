@@ -52,6 +52,7 @@ class Writable
     friend class HDF5IOHandlerImpl;
     friend class ParallelHDF5IOHandlerImpl;
     friend std::string concrete_h5_file_position(Writable*);
+    friend std::string concrete_bp1_file_position(Writable*);
 
 public:
     Writable();

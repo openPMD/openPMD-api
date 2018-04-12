@@ -1,4 +1,4 @@
-/* Copyright 2017 Fabian Koller
+/* Copyright 2017-2018 Fabian Koller
  *
  * This file is part of openPMD-api.
  *
@@ -20,14 +20,14 @@
  */
 #include "openPMD/IO/ADIOS/ParallelADIOS1IOHandler.hpp"
 
-#if openPMD_HAVE_MPI
-#   include <mpi.h>
-#   if openPMD_HAVE_ADIOS1
-#       include "openPMD/auxiliary/StringManip.hpp"
-#       include "openPMD/IO/ADIOS/ADIOS1FilePosition.hpp"
-#       include <boost/filesystem.hpp>
-#       include <adios_read.h>
-#   endif
+#if openPMD_HAVE_MPI && openPMD_HAVE_ADIOS1
+#   include "openPMD/auxiliary/StringManip.hpp"
+#   include "openPMD/IO/ADIOS/ADIOS1Auxiliary.hpp"
+#   include "openPMD/IO/ADIOS/ADIOS1FilePosition.hpp"
+#   include <boost/filesystem.hpp>
+#   include <adios_read.h>
+
+
 #endif
 
 namespace openPMD
@@ -68,6 +68,16 @@ ParallelADIOS1IOHandlerImpl::ParallelADIOS1IOHandlerImpl(AbstractIOHandler* hand
     ASSERT(status == err_no_error, "Internal error: Failed to initialize ADIOS");
     status = adios_read_init_method(ADIOS_READ_METHOD_BP, m_mpiComm, "verbose=3");
     ASSERT(status == err_no_error, "Internal error: Failed to initialize ADIOS reading method");
+
+#if ( ( ADIOS_VERSION_MAJOR * 100 + ADIOS_VERSION_MINOR ) >= 111 )
+    ADIOS_STATISTICS_FLAG noStatistics = adios_stat_no;
+#else
+    ADIOS_FLAG noStatistics = adios_flag_no;
+#endif
+    status = adios_declare_group(&m_group, m_groupName.c_str(), "", noStatistics);
+    ASSERT(status == err_no_error, "Internal error: Failed to declare ADIOS group");
+    status = adios_select_method(m_group, "MPI", "", "");
+    ASSERT(status == err_no_error, "Internal error: Failed to select ADIOS method");
 }
 
 ParallelADIOS1IOHandlerImpl::~ParallelADIOS1IOHandlerImpl()
@@ -112,26 +122,17 @@ ParallelADIOS1IOHandlerImpl::createFile(Writable* writable,
             create_directories(dir);
 
         int64_t fd;
-        std::string group = "data";
         std::string name = m_handler->directory + parameters.name;
         if( !auxiliary::ends_with(name, ".bp") )
             name += ".bp";
         //TODO mode for AccessType::READ_WRITE might have to be write or append instead of update
         std::string mode = m_handler->accessType == AccessType::CREATE ? "w" : "u";
 
-        int64_t m_adios_group;
-
-#if ( ( ADIOS_VERSION_MAJOR * 100 + ADIOS_VERSION_MINOR ) >= 111 )
-        ADIOS_STATISTICS_FLAG noStatistics = adios_stat_no;
-#else
-        ADIOS_FLAG noStatistics = adios_flag_no;
-#endif
-        adios_declare_group(&m_adios_group, group.c_str(), "", noStatistics);
-        adios_select_method(m_adios_group, "MPI", "", "");
-
         int status;
-        status = adios_open(&fd, group.c_str(), name.c_str(), "w", m_mpiComm);
+        status = adios_open(&fd, m_groupName.c_str(), name.c_str(), "w", m_mpiComm);
         ASSERT(status == err_no_error, "Internal error: Failed to open ADIOS file");
+        //TODO the file might have to be closed before new datasets & attributes can be created
+        //     Doing so will require splitting the queue s.t. all defines are done *before* a create and all writes/reads *after* a create
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >("/");
@@ -142,9 +143,83 @@ ParallelADIOS1IOHandlerImpl::createFile(Writable* writable,
 }
 
 void
-ParallelADIOS1IOHandlerImpl::openFile(Writable* writable,
-                                      Parameter< Operation::OPEN_FILE > const& parameters)
-{ }
+ParallelADIOS1IOHandlerImpl::createPath(Writable* writable,
+                                        Parameter< Operation::CREATE_PATH > const& parameters)
+{
+    if( m_handler->accessType == AccessType::READ_ONLY )
+        throw std::runtime_error("Creating a file in read-only mode is not possible.");
+
+    if( !writable->written )
+    {
+        /* Sanitize path */
+        std::string path = parameters.path;
+        if( auxiliary::starts_with(path, "/") )
+            path = auxiliary::replace_first(path, "/", "");
+        if( !auxiliary::ends_with(path, "/") )
+            path += '/';
+
+        /* ADIOS has no concept for explicitly creating paths.
+         * They are implicitly created with the paths of variables/attributes. */
+
+        writable->written = true;
+        writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >(path);
+
+        Writable* position;
+        if( writable->parent )
+            position = writable->parent;
+        else
+            position = writable; /* root does not have a parent but might still have to be written */
+        auto res = m_fileDescriptors.find(position);
+
+        m_fileDescriptors[writable] = res->second;
+    }
+}
+
+void
+ParallelADIOS1IOHandlerImpl::createDataset(Writable* writable,
+                                           Parameter< Operation::CREATE_DATASET > const& parameters)
+{
+    if( m_handler->accessType == AccessType::READ_ONLY )
+        throw std::runtime_error("Creating a file in read-only mode is not possible.");
+
+    if( !writable->written )
+    {
+        /* Sanitize name */
+        std::string name = parameters.name;
+        if( auxiliary::starts_with(name, "/") )
+            name = auxiliary::replace_first(name, "/", "");
+        if( auxiliary::ends_with(name, "/") )
+            name = auxiliary::replace_first(name, "/", "");
+
+        std::string path = concrete_bp1_file_position(writable) + name;
+
+        ADIOS_DATATYPES datatype = getBP1DataType(parameters.dtype);
+
+        std::string dims = getBP1Extent(parameters.extent);
+        std::string global_dims = dims;
+        std::string local_offsets = getZerosLikeBP1Extent(parameters.extent);
+
+        int64_t id;
+        id = adios_define_var(m_group,
+                              path.c_str(),
+                              "",
+                              datatype,
+                              dims.c_str(),
+                              global_dims.c_str(),
+                              local_offsets.c_str());
+
+        m_variableIDs[writable] = id;
+
+        writable->written = true;
+        writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >(name);
+
+        auto res = m_fileDescriptors.find(writable);
+        if( res == m_fileDescriptors.end() )
+            res = m_fileDescriptors.find(writable->parent);
+
+        m_fileDescriptors[writable] = res->second;
+    }
+}
 #else
 #   if openPMD_HAVE_MPI
 ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string const& path,
