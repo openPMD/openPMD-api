@@ -179,7 +179,7 @@ if(ADIOS_FOUND)
     endforeach()
     # we could append ${CMAKE_PREFIX_PATH} now but that is not really necessary
 
-    # determine whether found library is serial only
+    # determine whether found library links as serial only
     set(ADIOS_HAVE_SEQUENTIAL FALSE)
 
     message(STATUS "ADIOS DIRS to look for libs: ${ADIOS_LIBRARY_DIRS}")

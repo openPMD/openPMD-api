@@ -41,10 +41,6 @@ class ParallelADIOS1IOHandlerImpl : public ADIOS1IOHandlerImpl
 public:
     ParallelADIOS1IOHandlerImpl(AbstractIOHandler*, MPI_Comm);
     virtual ~ParallelADIOS1IOHandlerImpl();
-
-    virtual void createFile(Writable*, Parameter< Operation::CREATE_FILE > const&) override;
-    virtual void createPath(Writable*, Parameter< Operation::CREATE_PATH > const&) override;
-    virtual void createDataset(Writable*, Parameter< Operation::CREATE_DATASET > const&) override;
 };  //ParallelADIOS1IOHandlerImpl
 #else
 class ParallelADIOS1IOHandlerImpl

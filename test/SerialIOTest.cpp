@@ -1024,6 +1024,8 @@ TEST_CASE( "no_serial_hdf5", "[serial][hdf5]" )
 TEST_CASE( "adios_write_test", "[serial][adios]")
 {
     Series o = Series::create("../samples/serial_write.bp");
+    Dataset d = Dataset(Datatype::DOUBLE, {2,3,4});
+    o.iterations[1].meshes["E"]["x"].resetDataset(d);
 }
 #else
 TEST_CASE( "no_serial_adios1", "[serial][adios]")

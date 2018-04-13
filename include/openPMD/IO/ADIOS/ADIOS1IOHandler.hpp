@@ -45,7 +45,7 @@ class ADIOS1IOHandler;
 class ADIOS1IOHandlerImpl : public AbstractIOHandlerImpl
 {
 public:
-    ADIOS1IOHandlerImpl(AbstractIOHandler*);
+    ADIOS1IOHandlerImpl(AbstractIOHandler*, MPI_Comm = MPI_COMM_SELF);
     virtual ~ADIOS1IOHandlerImpl();
 
     virtual void createFile(Writable*, Parameter< Operation::CREATE_FILE > const&) override;
@@ -67,14 +67,15 @@ public:
     virtual void listDatasets(Writable*, Parameter< Operation::LIST_DATASETS > &) override;
     virtual void listAttributes(Writable*, Parameter< Operation::LIST_ATTS > &) override;
 
+    std::shared_ptr< std::string > open_close_flush(Writable*);
+
 protected:
     MPI_Comm m_mpiComm; /* dummy provided by ADIOS if -D_NOMPI */
     MPI_Info m_mpiInfo; /* dummy provided by ADIOS if -D_NOMPI */
     int64_t m_group;
     std::string m_groupName;
     std::unordered_map< Writable*, int64_t > m_variableIDs;
-    std::unordered_map< Writable*, int64_t > m_fileDescriptors;
-    std::unordered_set< int64_t > m_openFileDescriptors;
+    std::unordered_map< Writable*, std::shared_ptr< std::string > > m_filePaths;
 };  //ADIOS1IOHandlerImpl
 #else
 class ADIOS1IOHandlerImpl
@@ -89,7 +90,7 @@ public:
     ADIOS1IOHandler(std::string const& path, AccessType);
     virtual ~ADIOS1IOHandler() override;
 
-    std::future< void > flush() override;
+    virtual std::future< void > flush() override;
 
 private:
     std::unique_ptr< ADIOS1IOHandlerImpl > m_impl;
