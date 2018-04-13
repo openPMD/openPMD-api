@@ -45,9 +45,6 @@ public:
     virtual void createFile(Writable*, Parameter< Operation::CREATE_FILE > const&) override;
     virtual void createPath(Writable*, Parameter< Operation::CREATE_PATH > const&) override;
     virtual void createDataset(Writable*, Parameter< Operation::CREATE_DATASET > const&) override;
-
-    MPI_Comm m_mpiComm;
-    MPI_Info m_mpiInfo;
 };  //ParallelADIOS1IOHandlerImpl
 #else
 class ParallelADIOS1IOHandlerImpl

@@ -22,7 +22,6 @@
 
 #if openPMD_HAVE_ADIOS1
 #   include "openPMD/auxiliary/StringManip.hpp"
-#   include <adios_mpi.h>
 #   include <boost/filesystem.hpp>
 #endif
 
@@ -38,6 +37,8 @@ namespace openPMD
 
 ADIOS1IOHandlerImpl::ADIOS1IOHandlerImpl(AbstractIOHandler* handler)
         : AbstractIOHandlerImpl(handler),
+          m_mpiComm{MPI_COMM_NULL},
+          m_mpiInfo{MPI_INFO_NULL},
           m_groupName{"data"}
 { }
 

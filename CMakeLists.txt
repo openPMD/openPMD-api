@@ -144,15 +144,16 @@ set(ADIOS1_PREFER_COMPONENTS )
 if(NOT openPMD_HAVE_MPI)
     set(ADIOS1_PREFER_COMPONENTS sequential)
 endif()
+# TODO 1.13.1 when released
 if(openPMD_USE_ADIOS1 STREQUAL AUTO)
-    find_package(ADIOS 1.10.0 COMPONENTS ${ADIOS1_PREFER_COMPONENTS})
+    find_package(ADIOS 1.13.0 COMPONENTS ${ADIOS1_PREFER_COMPONENTS})
     if(ADIOS_FOUND)
         set(openPMD_HAVE_ADIOS1 TRUE)
     else()
         set(openPMD_HAVE_ADIOS1 FALSE)
     endif()
 elseif(openPMD_USE_ADIOS1)
-    find_package(ADIOS 1.10.0 REQUIRED COMPONENTS ${ADIOS1_PREFER_COMPONENTS})
+    find_package(ADIOS 1.13.0 REQUIRED COMPONENTS ${ADIOS1_PREFER_COMPONENTS})
     set(openPMD_HAVE_ADIOS1 TRUE)
 else()
     set(openPMD_HAVE_ADIOS1 FALSE)
@@ -306,6 +307,10 @@ if(openPMD_HAVE_ADIOS1)
     target_link_libraries(openPMD PUBLIC ${ADIOS_LIBRARIES})
     target_include_directories(openPMD SYSTEM PUBLIC ${ADIOS_INCLUDE_DIRS})
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS1=1")
+    if(ADIOS_HAVE_SEQUENTIAL)
+        # TODO might be smarter to get ALL definitions from adios-config -s & parse it
+        target_compile_definitions(openPMD PRIVATE "-D_NOMPI")
+    endif()
 else()
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS1=0")
 endif()
@@ -400,17 +405,20 @@ if(BUILD_TESTING)
     endforeach()
 endif()
 
-foreach(examplename ${openPMD_EXAMPLE_NAMES})
-    if(${examplename} MATCHES ".+parallel$")
-        if(openPMD_HAVE_MPI)
+# Current examples all use HDF5, elaborate if other backends are used
+if(openPMD_HAVE_HDF5)
+    foreach(examplename ${openPMD_EXAMPLE_NAMES})
+        if(${examplename} MATCHES ".+parallel$")
+            if(openPMD_HAVE_MPI)
+                add_executable(${examplename} examples/${examplename}.cpp)
+                target_link_libraries(${examplename} PRIVATE openPMD)
+            endif()
+        else()
             add_executable(${examplename} examples/${examplename}.cpp)
             target_link_libraries(${examplename} PRIVATE openPMD)
         endif()
-    else()
-        add_executable(${examplename} examples/${examplename}.cpp)
-        target_link_libraries(${examplename} PRIVATE openPMD)
-    endif()
-endforeach()
+    endforeach()
+endif()
 
 
 # Generate Files with Configuration Options ###################################
@@ -512,28 +520,31 @@ endif()
 #
 
 # C++ Examples
-if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
-    foreach(examplename ${openPMD_EXAMPLE_NAMES})
-        if(${examplename} MATCHES "^.*_parallel$")
-            if(openPMD_HAVE_MPI)
-                add_test(NAME MPI.${examplename}
-                        COMMAND ${MPI_TEST_EXE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}
+# Current examples all use HDF5, elaborate if other backends are used
+if(openPMD_HAVE_HDF5)
+    if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
+        foreach(examplename ${openPMD_EXAMPLE_NAMES})
+            if(${examplename} MATCHES "^.*_parallel$")
+                if(openPMD_HAVE_MPI)
+                    add_test(NAME MPI.${examplename}
+                            COMMAND ${MPI_TEST_EXE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}
+                            WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                            )
+                endif()
+            else()
+                add_test(NAME Serial.${examplename}
+                        COMMAND ${examplename}
                         WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
                         )
             endif()
-        else()
-            add_test(NAME Serial.${examplename}
-                    COMMAND ${examplename}
-                    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-                    )
-        endif()
-    endforeach()
-else()
-    message(STATUS "Missing samples/git-sample/ directory! "
-                   "Skipping C++ example test!\n\n"
-                   "Note: run\n"
-                   "    . ${openPMD_SOURCE_DIR}/.travis/download_samples.sh\n"
-                   "to add example files!")
+        endforeach()
+    else()
+        message(STATUS "Missing samples/git-sample/ directory! "
+                       "Skipping C++ example test!\n\n"
+                       "Note: run\n"
+                       "    . ${openPMD_SOURCE_DIR}/.travis/download_samples.sh\n"
+                       "to add example files!")
+    endif()
 endif()
 
 # Python Examples

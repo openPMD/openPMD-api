@@ -1023,7 +1023,7 @@ TEST_CASE( "no_serial_hdf5", "[serial][hdf5]" )
 #if openPMD_HAVE_ADIOS1
 TEST_CASE( "adios_write_test", "[serial][adios]")
 {
-    Output o = Output("../samples/serial_write.bp");
+    Series o = Series::create("../samples/serial_write.bp");
 }
 #else
 TEST_CASE( "no_serial_adios1", "[serial][adios]")

@@ -68,6 +68,8 @@ public:
     virtual void listAttributes(Writable*, Parameter< Operation::LIST_ATTS > &) override;
 
 protected:
+    MPI_Comm m_mpiComm; /* dummy provided by ADIOS if -D_NOMPI */
+    MPI_Info m_mpiInfo; /* dummy provided by ADIOS if -D_NOMPI */
     int64_t m_group;
     std::string m_groupName;
     std::unordered_map< Writable*, int64_t > m_variableIDs;
