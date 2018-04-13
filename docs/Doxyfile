@@ -1,6 +1,7 @@
 PROJECT_NAME      = "openPMD-api"
 XML_OUTPUT        = xml
 INPUT             = ../
+EXCLUDE_PATTERNS  = */share/openPMD/thirdParty/*
 GENERATE_LATEX    = NO
 GENERATE_MAN      = NO
 GENERATE_RTF      = NO
