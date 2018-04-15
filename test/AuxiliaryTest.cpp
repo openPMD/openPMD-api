@@ -54,20 +54,31 @@ TEST_CASE( "string_test", "[auxiliary]" )
     REQUIRE(expected3 == split("/path/to/relevant/data/", "/"));
 }
 
+namespace openPMD
+{
+namespace Test
+{
+struct S : public Writable
+{
+    int val;
+    bool written;
+};
+} // Test
+} // openPMD
+
 TEST_CASE( "container_default_test", "[auxiliary]")
 {
-    struct S : public Writable
-    {
-        int val;
-        bool written;
-    };
-    Container< S > c = Container< S >();
+    Container< openPMD::Test::S > c = Container< openPMD::Test::S >();
     c.IOHandler = AbstractIOHandler::createIOHandler("", AccessType::CREATE, Format::DUMMY);
 
     REQUIRE(c.size() == 0);
     REQUIRE(c.erase("nonExistentKey") == false);
 }
 
+namespace openPMD
+{
+namespace Test
+{
 class structure : public Attributable
 {
 public:
@@ -78,9 +89,12 @@ public:
     std::string text() const { return variantSrc::get< std::string >(getAttribute("text").getResource()); }
     structure& setText(std::string text) { setAttribute("text", text); return *this; }
 };
+} // Test
+} // openPMD
 
 TEST_CASE( "container_retrieve_test", "[auxiliary]" )
 {
+    using structure = openPMD::Test::structure;
     Container< structure > c = Container< structure >();
     c.IOHandler = AbstractIOHandler::createIOHandler("", AccessType::CREATE, Format::DUMMY);
 
@@ -131,6 +145,10 @@ TEST_CASE( "container_retrieve_test", "[auxiliary]" )
     REQUIRE(c["entry"].text() == "Different text");
 }
 
+namespace openPMD
+{
+namespace Test
+{
 struct Widget : public Writable
 {
     Widget()
@@ -139,9 +157,12 @@ struct Widget : public Writable
     Widget(int)
     { }
 };
+} // Test
+} // openPMD
 
 TEST_CASE( "container_access_test", "[auxiliary]" )
 {
+    using Widget = openPMD::Test::Widget;
     Container< Widget > c = Container< Widget >();
     c.IOHandler = AbstractIOHandler::createIOHandler("", AccessType::CREATE, Format::DUMMY);
 
@@ -168,6 +189,10 @@ TEST_CASE( "attributable_default_test", "[auxiliary]" )
     REQUIRE(a.numAttributes() == 0);
 }
 
+namespace openPMD
+{
+namespace Test
+{
 class AttributedWidget : public Attributable
 {
 public:
@@ -180,9 +205,12 @@ public:
         return getAttribute(key).getResource();
     }
 };
+} // Test
+} // openPMD
 
 TEST_CASE( "attributable_access_test", "[auxiliary]" )
 {
+    using AttributedWidget = openPMD::Test::AttributedWidget;
     AttributedWidget a = AttributedWidget();
 
     a.setAttribute("key", std::string("value"));
@@ -210,6 +238,10 @@ TEST_CASE( "attributable_access_test", "[auxiliary]" )
     REQUIRE(a.numAttributes() == 1);
 }
 
+namespace openPMD
+{
+namespace Test
+{
 class Dotty : public Attributable
 {
 public:
@@ -227,10 +259,12 @@ public:
     Dotty& setAtt2(double d) { setAttribute("att2", d); return *this; }
     Dotty& setAtt3(std::string s) { setAttribute("att3", s); return *this; }
 };
+} // Test
+} // openPMD
 
 TEST_CASE( "dot_test", "[auxiliary]" )
 {
-    Dotty d;
+    openPMD::Test::Dotty d;
     REQUIRE(d.att1() == 1);
     REQUIRE(d.att2() == static_cast<double>(2));
     REQUIRE(d.att3() == "3");
