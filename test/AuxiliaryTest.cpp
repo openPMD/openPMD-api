@@ -56,7 +56,7 @@ TEST_CASE( "string_test", "[auxiliary]" )
 
 namespace openPMD
 {
-namespace Test
+namespace test
 {
 struct S : public Writable
 {
@@ -77,7 +77,7 @@ TEST_CASE( "container_default_test", "[auxiliary]")
 
 namespace openPMD
 {
-namespace Test
+namespace test
 {
 class structure : public Attributable
 {
@@ -147,7 +147,7 @@ TEST_CASE( "container_retrieve_test", "[auxiliary]" )
 
 namespace openPMD
 {
-namespace Test
+namespace test
 {
 struct Widget : public Writable
 {
@@ -191,7 +191,7 @@ TEST_CASE( "attributable_default_test", "[auxiliary]" )
 
 namespace openPMD
 {
-namespace Test
+namespace test
 {
 class AttributedWidget : public Attributable
 {
@@ -240,7 +240,7 @@ TEST_CASE( "attributable_access_test", "[auxiliary]" )
 
 namespace openPMD
 {
-namespace Test
+namespace test
 {
 class Dotty : public Attributable
 {
