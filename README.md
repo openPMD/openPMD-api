@@ -124,13 +124,12 @@ Optional language bindings:
 
 Choose *one* of the install methods below to get started:
 
-### Spack
-
-*not yet implemented*
+### [Spack](http://spack.io)
 
 ```bash
+# optional: append +python
 spack install openpmd-api
-spack load openpmd-api
+spack load --dependencies openpmd-api
 ```
 
 ### Conda
