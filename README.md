@@ -19,8 +19,6 @@ Initial backends will include ADIOS and HDF5.
 
 ### C++
 
-*Syntax not yet implemented as shown below*
-
 ```cpp
 #include <openPMD/openPMD.hpp>
 #include <iostream>
@@ -185,6 +183,7 @@ The following options allow to switch to external installs:
 | CMake Option                   | Values     | Library       | Version |
 |--------------------------------|------------|---------------|---------|
 | `openPMD_USE_INTERNAL_VARIANT` | **ON**/OFF | MPark.Variant |  1.3.0+ |
+| `openPMD_USE_INTERNAL_CATCH`   | **ON**/OFF | Catch2        |  2.2.1+ |
 
 By default, this will build as a static library (`libopenPMD.a`) and installs also its headers.
 In order to build a static library, append `-DBUILD_SHARED_LIBS=ON` to the `cmake` command.
