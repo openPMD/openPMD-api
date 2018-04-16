@@ -99,19 +99,39 @@ ADIOS1IOHandler::flush()
 std::shared_ptr< std::string >
 ADIOS1IOHandlerImpl::open_close_flush(Writable* writable)
 {
-    auto res = m_filePaths.find(writable);
-    if( res == m_filePaths.end() )
-        res = m_filePaths.find(writable->parent);
+    auto res = m_filePath.find(writable);
+    if( res == m_filePath.end() )
+        res = m_filePath.find(writable->parent);
+
+    int64_t fd;
+    fd = open(writable);
+
+    close(fd);
+
+    return res->second;
+}
+
+int64_t
+ADIOS1IOHandlerImpl::open(Writable* writable)
+{
+    auto res = m_filePath.find(writable);
+    if( res == m_filePath.end() )
+        res = m_filePath.find(writable->parent);
 
     int64_t fd;
     int status;
     status = adios_open(&fd, m_groupName.c_str(), res->second->c_str(), "u", m_mpiComm);
     ASSERT(status == err_no_error, "Internal error: Failed to open ADIOS file");
 
+    return fd;
+}
+
+void
+ADIOS1IOHandlerImpl::close(int64_t fd)
+{
+    int status;
     status = adios_close(fd);
     ASSERT(status == err_no_error, "Internal error: Failed to open close ADIOS file during creation");
-
-    return res->second;
 }
 
 void
@@ -145,7 +165,7 @@ ADIOS1IOHandlerImpl::createFile(Writable* writable,
         writable->written = true;
         writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >("/");
 
-        m_filePaths[writable] = std::make_shared< std::string >(name);
+        m_filePath[writable] = std::make_shared< std::string >(name);
     }
 }
 
@@ -176,9 +196,9 @@ ADIOS1IOHandlerImpl::createPath(Writable* writable,
             position = writable->parent;
         else
             position = writable; /* root does not have a parent but might still have to be written */
-        auto res = m_filePaths.find(position);
+        auto res = m_filePath.find(position);
 
-        m_filePaths[writable] = res->second;
+        m_filePath[writable] = res->second;
     }
 }
 
@@ -198,26 +218,10 @@ ADIOS1IOHandlerImpl::createDataset(Writable* writable,
         if( auxiliary::ends_with(name, "/") )
             name = auxiliary::replace_first(name, "/", "");
 
-        std::string path = concrete_bp1_file_position(writable) + name;
+        /* Every write in ADIOS noxml style requires an individual ID.
+         * Creating a dataset explicitly at this point is not necessary. */
 
-        ADIOS_DATATYPES datatype = getBP1DataType(parameters.dtype);
-
-        std::string dims = getBP1Extent(parameters.extent);
-        std::string global_dims = dims;
-        std::string local_offsets = getZerosLikeBP1Extent(parameters.extent);
-
-        int64_t id;
-        id = adios_define_var(m_group,
-                              path.c_str(),
-                              "",
-                              datatype,
-                              dims.c_str(),
-                              global_dims.c_str(),
-                              local_offsets.c_str());
-
-        m_variableIDs[writable] = id;
-
-        m_filePaths[writable] = open_close_flush(writable);
+        m_datasetSize[writable] = getBP1Extent(parameters.extent);
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >(name);
@@ -267,7 +271,39 @@ ADIOS1IOHandlerImpl::deleteAttribute(Writable* writable,
 void
 ADIOS1IOHandlerImpl::writeDataset(Writable* writable,
                                   Parameter< Operation::WRITE_DATASET > const& parameters)
-{ }
+{
+    if( m_handler->accessType == AccessType::READ_ONLY )
+        throw std::runtime_error("Creating a file in read-only mode is not possible.");
+
+    std::string name = concrete_bp1_file_position(writable);
+
+    ADIOS_DATATYPES datatype = getBP1DataType(parameters.dtype);
+
+    std::string dims = getBP1Extent(parameters.extent);
+    std::string const& global_dims = m_datasetSize.at(writable);
+    std::string local_offsets = getBP1Extent(parameters.offset);
+
+    int64_t id;
+    id = adios_define_var(m_group,
+                          name.c_str(),
+                          "",
+                          datatype,
+                          dims.c_str(),
+                          global_dims.c_str(),
+                          local_offsets.c_str());
+    ASSERT(id >= 0 /* ??? */, "Internal error: Failed to define ADIOS variable during Dataset writing");
+
+    int64_t fd;
+    fd = open(writable);
+
+    int64_t status;
+    status = adios_write_byid(fd,
+                              id,
+                              parameters.data.get());
+    ASSERT(status == err_no_error, "Internal error: Failed to write ADIOS variable during Dataset writing");
+
+    close(fd);
+}
 
 void
 ADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
@@ -544,7 +580,7 @@ ADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
             delete[] ptr[i];
     }
 
-    m_filePaths[writable] = open_close_flush(writable);
+    m_filePath[writable] = open_close_flush(writable);
 }
 
 void

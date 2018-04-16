@@ -68,14 +68,16 @@ public:
     virtual void listAttributes(Writable*, Parameter< Operation::LIST_ATTS > &) override;
 
     std::shared_ptr< std::string > open_close_flush(Writable*);
+    int64_t open(Writable*);
+    void close(int64_t);
 
 protected:
     MPI_Comm m_mpiComm; /* dummy provided by ADIOS if -D_NOMPI */
     MPI_Info m_mpiInfo; /* dummy provided by ADIOS if -D_NOMPI */
     int64_t m_group;
     std::string m_groupName;
-    std::unordered_map< Writable*, int64_t > m_variableIDs;
-    std::unordered_map< Writable*, std::shared_ptr< std::string > > m_filePaths;
+    std::unordered_map< Writable*, std::string > m_datasetSize;
+    std::unordered_map< Writable*, std::shared_ptr< std::string > > m_filePath;
 };  //ADIOS1IOHandlerImpl
 #else
 class ADIOS1IOHandlerImpl
