@@ -27,12 +27,12 @@ import unittest
 import os, sys
 
 # Import suites to run.
-from IO.IOTest import IOTest
+from API.APITest import APITest
 
 # Define the test suite.
 def suite():
     suites = [
-               unittest.makeSuite(IOTest),
+               unittest.makeSuite(APITest),
              ]
 
     return unittest.TestSuite(suites)
