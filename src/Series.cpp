@@ -104,13 +104,13 @@ Series::Series(std::string const& filepath,
         ie = IterationEncoding::groupBased;
 
 
-    Format f = determineFormat(name);
+    m_format = determineFormat(name);
 
-    IOHandler = AbstractIOHandler::createIOHandler(path, at, f, comm);
+    IOHandler = AbstractIOHandler::createIOHandler(path, at, m_format, comm);
     iterations.IOHandler = IOHandler;
     iterations.parent = this;
 
-    m_name = cleanFilename(name, f);
+    m_name = cleanFilename(name, m_format);
 
     switch( at )
     {
@@ -161,13 +161,13 @@ Series::Series(std::string const& filepath,
     else
         ie = IterationEncoding::groupBased;
 
-    Format f = determineFormat(name);
+    m_format = determineFormat(name);
 
-    IOHandler = AbstractIOHandler::createIOHandler(path, at, f);
+    IOHandler = AbstractIOHandler::createIOHandler(path, at, m_format);
     iterations.IOHandler = IOHandler;
     iterations.parent = this;
 
-    m_name = cleanFilename(name, f);
+    m_name = cleanFilename(name, m_format);
 
     switch( at )
     {
@@ -532,8 +532,6 @@ Series::flushParticlesPath()
 void
 Series::readFileBased()
 {
-    std::regex pattern(auxiliary::replace_first(m_name, "%T", "[[:digit:]]+"));
-
     Parameter< Operation::OPEN_FILE > fOpen;
     Parameter< Operation::READ_ATT > aRead;
 
@@ -541,9 +539,10 @@ Series::readFileBased()
     path dir = path(IOHandler->directory);
     if( !exists(dir) )
         throw no_such_file_error("Supplied directory is not valid: " + IOHandler->directory);
+    auto isPartOfSeries = matcher(m_name, m_format);
     for( path const& entry : directory_iterator(dir) )
     {
-        if( std::regex_search(entry.filename().string(), pattern) )
+        if( isPartOfSeries(entry.filename().string()) )
         {
             fOpen.name = entry.filename().string();
             IOHandler->enqueue(IOTask(this, fOpen));
@@ -775,6 +774,27 @@ cleanFilename(std::string const& filename, Format f)
             return auxiliary::replace_last(filename, ".bp", "");
         default:
             return filename;
+    }
+}
+
+std::function< bool(std::string const&) >
+matcher(std::string const& name, Format f)
+{
+    switch( f )
+    {
+        case Format::HDF5:
+        {
+            std::regex pattern(auxiliary::replace_last(name + ".h5$", "%T", "[[:digit:]]+"));
+            return [pattern](std::string const& filename) -> bool { return std::regex_search(filename, pattern); };
+        }
+        case Format::ADIOS1:
+        case Format::ADIOS2:
+        {
+            std::regex pattern(auxiliary::replace_last(name + ".bp$", "%T", "[[:digit:]]+"));
+            return [pattern](std::string const& filename) -> bool { return std::regex_search(filename, pattern); };
+        }
+        default:
+            return [](std::string const&) -> bool { return false; };
     }
 }
 } // openPMD

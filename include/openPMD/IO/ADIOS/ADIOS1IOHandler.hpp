@@ -26,6 +26,7 @@
 #   include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #   include <adios.h>
 #   include <adios_mpi.h> /* includes a dummy version of mpi if -D_NOMPI */
+#   include <adios_read.h>
 #endif
 
 #include <future>
@@ -68,16 +69,18 @@ public:
     virtual void listAttributes(Writable*, Parameter< Operation::LIST_ATTS > &) override;
 
     std::shared_ptr< std::string > open_close_flush(Writable*);
-    int64_t open(Writable*);
+    int64_t open_write(Writable *);
+    ADIOS_FILE* open_read(Writable*);
     void close(int64_t);
+    void close(ADIOS_FILE*);
 
 protected:
     MPI_Comm m_mpiComm; /* dummy provided by ADIOS if -D_NOMPI */
     MPI_Info m_mpiInfo; /* dummy provided by ADIOS if -D_NOMPI */
     int64_t m_group;
     std::string m_groupName;
-    std::unordered_map< Writable*, std::string > m_datasetSize;
-    std::unordered_map< Writable*, std::shared_ptr< std::string > > m_filePath;
+    std::unordered_map< Writable*, std::string > m_datasetSizes;
+    std::unordered_map< Writable*, std::shared_ptr< std::string > > m_filePaths;
 };  //ADIOS1IOHandlerImpl
 #else
 class ADIOS1IOHandlerImpl

@@ -25,7 +25,6 @@
 #   include "openPMD/auxiliary/StringManip.hpp"
 #   include "openPMD/IO/ADIOS/ADIOS1Auxiliary.hpp"
 #   include "openPMD/IO/ADIOS/ADIOS1FilePosition.hpp"
-#   include <adios_read.h>
 #   include <boost/filesystem.hpp>
 #   include <iostream>
 #   include <memory>
@@ -99,12 +98,12 @@ ADIOS1IOHandler::flush()
 std::shared_ptr< std::string >
 ADIOS1IOHandlerImpl::open_close_flush(Writable* writable)
 {
-    auto res = m_filePath.find(writable);
-    if( res == m_filePath.end() )
-        res = m_filePath.find(writable->parent);
+    auto res = m_filePaths.find(writable);
+    if( res == m_filePaths.end() )
+        res = m_filePaths.find(writable->parent);
 
     int64_t fd;
-    fd = open(writable);
+    fd = open_write(writable);
 
     close(fd);
 
@@ -112,18 +111,33 @@ ADIOS1IOHandlerImpl::open_close_flush(Writable* writable)
 }
 
 int64_t
-ADIOS1IOHandlerImpl::open(Writable* writable)
+ADIOS1IOHandlerImpl::open_write(Writable* writable)
 {
-    auto res = m_filePath.find(writable);
-    if( res == m_filePath.end() )
-        res = m_filePath.find(writable->parent);
+    auto res = m_filePaths.find(writable);
+    if( res == m_filePaths.end() )
+        res = m_filePaths.find(writable->parent);
 
     int64_t fd;
     int status;
     status = adios_open(&fd, m_groupName.c_str(), res->second->c_str(), "u", m_mpiComm);
-    ASSERT(status == err_no_error, "Internal error: Failed to open ADIOS file");
+    ASSERT(status == err_no_error, "Internal error: Failed to open_write ADIOS file");
 
     return fd;
+}
+
+ADIOS_FILE*
+ADIOS1IOHandlerImpl::open_read(Writable* writable)
+{
+    auto name = m_filePaths[writable];
+
+    ADIOS_FILE *f;
+    f = adios_read_open_file((*name).c_str(),
+                             ADIOS_READ_METHOD_BP,
+                             m_mpiComm);
+    ASSERT(adios_errno != err_file_not_found, "Internal error: ADIOS file not found");
+    ASSERT(f != nullptr, "Internal error: Failed to open_write ADIOS file");
+
+    return f;
 }
 
 void
@@ -131,7 +145,15 @@ ADIOS1IOHandlerImpl::close(int64_t fd)
 {
     int status;
     status = adios_close(fd);
-    ASSERT(status == err_no_error, "Internal error: Failed to open close ADIOS file during creation");
+    ASSERT(status == err_no_error, "Internal error: Failed to open_write close ADIOS file during creation");
+}
+
+void
+ADIOS1IOHandlerImpl::close(ADIOS_FILE* f)
+{
+    int status;
+    status = adios_read_close(f);
+    ASSERT(status == err_no_error, "Internal error: Failed to close ADIOS file");
 }
 
 void
@@ -159,12 +181,12 @@ ADIOS1IOHandlerImpl::createFile(Writable* writable,
         ASSERT(status == err_no_error, "Internal error: Failed to create ADIOS file");
 
         status = adios_close(fd);
-        ASSERT(status == err_no_error, "Internal error: Failed to open close ADIOS file during creation");
+        ASSERT(status == err_no_error, "Internal error: Failed to open_write close ADIOS file during creation");
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >("/");
 
-        m_filePath[writable] = std::make_shared< std::string >(name);
+        m_filePaths[writable] = std::make_shared< std::string >(name);
     }
 }
 
@@ -195,9 +217,9 @@ ADIOS1IOHandlerImpl::createPath(Writable* writable,
             position = writable->parent;
         else
             position = writable; /* root does not have a parent but might still have to be written */
-        auto res = m_filePath.find(position);
+        auto res = m_filePaths.find(position);
 
-        m_filePath[writable] = res->second;
+        m_filePaths[writable] = res->second;
     }
 }
 
@@ -220,16 +242,16 @@ ADIOS1IOHandlerImpl::createDataset(Writable* writable,
         /* Every variable (i.e. dataset for our purposes) write in ADIOS noxml style requires an individual ID.
          * Creating a dataset explicitly at this point is not necessary. */
 
-        m_datasetSize[writable] = getBP1Extent(parameters.extent);
+        m_datasetSizes[writable] = getBP1Extent(parameters.extent);
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >(name);
 
-        auto res = m_filePath.find(writable);
-        if( res == m_filePath.end() )
-            res = m_filePath.find(writable->parent);
+        auto res = m_filePaths.find(writable);
+        if( res == m_filePaths.end() )
+            res = m_filePaths.find(writable->parent);
 
-        m_filePath[writable] = res->second;
+        m_filePaths[writable] = res->second;
     }
 }
 
@@ -241,7 +263,32 @@ ADIOS1IOHandlerImpl::extendDataset(Writable* writable,
 void
 ADIOS1IOHandlerImpl::openFile(Writable* writable,
                               Parameter< Operation::OPEN_FILE > const& parameters)
-{ }
+{
+    using namespace boost::filesystem;
+    path dir(m_handler->directory);
+    if( !exists(dir) )
+        throw no_such_file_error("Supplied directory is not valid: " + m_handler->directory);
+
+    std::string name = m_handler->directory + parameters.name;
+    if( !auxiliary::ends_with(name, ".bp") )
+        name += ".bp";
+
+    ADIOS_FILE *f;
+    f = adios_read_open_file(name.c_str(),
+                             ADIOS_READ_METHOD_BP,
+                             m_mpiComm);
+    ASSERT(adios_errno != err_file_not_found, "Internal error: ADIOS file not found");
+    ASSERT(f != nullptr, "Internal error: Failed to open_write ADIOS file");
+
+    writable->written = true;
+    writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >("/");
+
+    auto handle = std::make_shared< std::string >(name);
+    m_filePaths.erase(writable);
+    m_filePaths.insert({writable, handle});
+
+    close(f);
+}
 
 void
 ADIOS1IOHandlerImpl::openPath(Writable* writable,
@@ -285,7 +332,7 @@ ADIOS1IOHandlerImpl::writeDataset(Writable* writable,
     ADIOS_DATATYPES datatype = getBP1DataType(parameters.dtype);
 
     std::string dims = getBP1Extent(parameters.extent);
-    std::string const& global_dims = m_datasetSize.at(writable);
+    std::string const& global_dims = m_datasetSizes.at(writable);
     std::string local_offsets = getBP1Extent(parameters.offset);
 
     int64_t id;
@@ -299,7 +346,7 @@ ADIOS1IOHandlerImpl::writeDataset(Writable* writable,
     ASSERT(id >= 0 /* ??? */, "Internal error: Failed to define ADIOS variable during Dataset writing");
 
     int64_t fd;
-    fd = open(writable);
+    fd = open_write(writable);
 
     int64_t status;
     status = adios_write_byid(fd,
@@ -584,7 +631,7 @@ ADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
             delete[] ptr[i];
     }
 
-    m_filePath[writable] = open_close_flush(writable);
+    m_filePaths[writable] = open_close_flush(writable);
 }
 
 void
@@ -595,7 +642,299 @@ ADIOS1IOHandlerImpl::readDataset(Writable* writable,
 void
 ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                                    Parameter< Operation::READ_ATT >& parameters)
-{ }
+{
+    ADIOS_FILE* f;
+    f = open_read(writable);
+
+    std::string attrname = concrete_bp1_file_position(writable);
+    if( !auxiliary::ends_with(attrname, "/") )
+        attrname += "/";
+    attrname += parameters.name;
+
+    ADIOS_DATATYPES datatype;
+    int size;
+    void* data;
+
+    int status;
+    status = adios_get_attr(f,
+                            attrname.c_str(),
+                            &datatype,
+                            &size,
+                            &data);
+    ASSERT(status == 0, "Internal error: Failed to get ADIOS attribute during attribute read");
+    ASSERT(datatype != adios_unknown, "Internal error: Read unknown adios datatype during attribute read");
+    ASSERT(size != 0, "Internal error: Read 0-size attribute");
+
+    /* size is returned in number of allocated bytes */
+    switch( datatype )
+    {
+        case adios_byte:
+            break;
+        case adios_short:
+            size /= 2;
+            break;
+        case adios_integer:
+            size /= 4;
+            break;
+        case adios_long:
+            size /= 8;
+            break;
+        case adios_unsigned_byte:
+            break;
+        case adios_unsigned_short:
+            size /= 2;
+            break;
+        case adios_unsigned_integer:
+            size /= 4;
+            break;
+        case adios_unsigned_long:
+            size /= 8;
+            break;
+        case adios_real:
+            size /= 4;
+            break;
+        case adios_double:
+            size /= 8;
+            break;
+        case adios_long_double:
+            size /= sizeof(long double);
+            break;
+        case adios_string:
+            break;
+        case adios_string_array:
+            break;
+
+        case adios_complex:
+        case adios_double_complex:
+            throw std::runtime_error("Unsupported attribute datatype");
+    }
+
+    Datatype dtype;
+    Attribute a(0);
+    if( size == 1 )
+    {
+        switch( datatype )
+        {
+            using DT = Datatype;
+            case adios_byte:
+                dtype = DT::CHAR;
+                a = Attribute(*reinterpret_cast< char* >(data));
+                break;
+            case adios_short:
+                dtype = DT::INT16;
+                a = Attribute(*reinterpret_cast< int16_t* >(data));
+                break;
+            case adios_integer:
+                dtype = DT::INT32;
+                a = Attribute(*reinterpret_cast< int32_t* >(data));
+                break;
+            case adios_long:
+                dtype = DT::INT64;
+                a = Attribute(*reinterpret_cast< int64_t* >(data));
+                break;
+            case adios_unsigned_byte:
+                dtype = DT::UCHAR;
+                a = Attribute(*reinterpret_cast< unsigned char* >(data));
+                break;
+            case adios_unsigned_short:
+                dtype = DT::UINT16;
+                a = Attribute(*reinterpret_cast< uint16_t* >(data));
+                break;
+            case adios_unsigned_integer:
+                dtype = DT::UINT32;
+                a = Attribute(*reinterpret_cast< uint32_t* >(data));
+                break;
+            case adios_unsigned_long:
+                dtype = DT::UINT64;
+                a = Attribute(*reinterpret_cast< uint64_t* >(data));
+                break;
+            case adios_real:
+                dtype = DT::FLOAT;
+                a = Attribute(*reinterpret_cast< float* >(data));
+                break;
+            case adios_double:
+                dtype = DT::DOUBLE;
+                a = Attribute(*reinterpret_cast< double* >(data));
+                break;
+            case adios_long_double:
+                dtype = DT::LONG_DOUBLE;
+                a = Attribute(*reinterpret_cast< long double* >(data));
+                break;
+            case adios_string:
+            {
+                dtype = DT::STRING;
+                auto c = reinterpret_cast< char* >(data);
+                a = Attribute(auxiliary::strip(std::string(c, std::strlen(c)), {'\0'}));
+                break;
+            }
+
+
+            case adios_string_array:
+            case adios_complex:
+            case adios_double_complex:
+                throw std::runtime_error("Unsupported attribute datatype");
+        }
+    }
+    else
+    {
+        switch( datatype )
+        {
+            using DT = Datatype;
+            case adios_byte:
+            {
+                dtype = DT::VEC_CHAR;
+                auto c = reinterpret_cast< char* >(data);
+                std::vector< char > vc;
+                vc.resize(size);
+                for( size_t i = 0; i < size; ++i )
+                    vc[i] = c[i];
+                a = Attribute(vc);
+                break;
+            }
+            case adios_short:
+            {
+                dtype = DT::VEC_INT16;
+                auto i16 = reinterpret_cast< int16_t* >(data);
+                std::vector< int16_t > vi;
+                vi.resize(size);
+                for( size_t i = 0; i < size; ++i )
+                    vi[i] = i16[i];
+                a = Attribute(vi);
+                break;
+            }
+            case adios_integer:
+            {
+                dtype = DT::VEC_INT32;
+                auto i32 = reinterpret_cast< int32_t* >(data);
+                std::vector< int32_t > vi;
+                vi.resize(size);
+                for( size_t i = 0; i < size; ++i )
+                    vi[i] = i32[i];
+                a = Attribute(vi);
+                break;
+            }
+            case adios_long:
+            {
+                dtype = DT::VEC_INT64;
+                auto i64 = reinterpret_cast< int64_t* >(data);
+                std::vector< int64_t > vi;
+                vi.resize(size);
+                for( size_t i = 0; i < size; ++i )
+                    vi[i] = i64[i];
+                a = Attribute(vi);
+                break;
+            }
+            case adios_unsigned_byte:
+            {
+                dtype = DT::VEC_UCHAR;
+                auto uc = reinterpret_cast< unsigned char* >(data);
+                std::vector< unsigned char > vuc;
+                vuc.resize(size);
+                for( size_t i = 0; i < size; ++i )
+                    vuc[i] = uc[i];
+                a = Attribute(vuc);
+                break;
+            }
+            case adios_unsigned_short:
+            {
+                dtype = DT::VEC_UINT16;
+                auto ui16 = reinterpret_cast< uint16_t* >(data);
+                std::vector< uint16_t > vi;
+                vi.resize(size);
+                for( size_t i = 0; i < size; ++i )
+                    vi[i] = ui16[i];
+                a = Attribute(vi);
+                break;
+            }
+            case adios_unsigned_integer:
+            {
+                dtype = DT::VEC_UINT32;
+                auto ui32 = reinterpret_cast< uint32_t* >(data);
+                std::vector< uint32_t > vi;
+                vi.resize(size);
+                for( size_t i = 0; i < size; ++i )
+                    vi[i] = ui32[i];
+                a = Attribute(vi);
+                break;
+            }
+            case adios_unsigned_long:
+            {
+                dtype = DT::VEC_UINT64;
+                auto ui64 = reinterpret_cast< uint64_t* >(data);
+                std::vector< uint64_t > vi;
+                vi.resize(size);
+                for( size_t i = 0; i < size; ++i )
+                    vi[i] = ui64[i];
+                a = Attribute(vi);
+                break;
+            }
+            case adios_real:
+            {
+                dtype = DT::VEC_FLOAT;
+                auto f = reinterpret_cast< float* >(data);
+                std::vector< float > vf;
+                vf.resize(size);
+                for( size_t i = 0; i < size; ++i )
+                    vf[i] = f[i];
+                a = Attribute(vf);
+                break;
+            }
+            case adios_double:
+            {
+                dtype = DT::VEC_DOUBLE;
+                auto d = reinterpret_cast< double* >(data);
+                std::vector< double > vd;
+                vd.resize(size);
+                for( size_t i = 0; i < size; ++i )
+                    vd[i] = d[i];
+                a = Attribute(vd);
+                break;
+            }
+            case adios_long_double:
+            {
+                dtype = DT::VEC_LONG_DOUBLE;
+                auto ld = reinterpret_cast< long double* >(data);
+                std::vector< long double > vld;
+                vld.resize(size);
+                for( size_t i = 0; i < size; ++i )
+                    vld[i] = ld[i];
+                a = Attribute(vld);
+                break;
+            }
+            case adios_string:
+            {
+                dtype = DT::STRING;
+                a = Attribute(auxiliary::strip(std::string(reinterpret_cast< char* >(data), size), {'\0'}));
+                break;
+            }
+            case adios_string_array:
+            {
+                dtype = DT::VEC_STRING;
+                auto c = reinterpret_cast< char** >(data);
+                std::vector< std::string > vs;
+                vs.resize(size);
+                for( size_t i = 0; i < size; ++i )
+                {
+                    vs[i] = auxiliary::strip(std::string(c[i], std::strlen(c[i])), {'\0'});
+                    free(c[i]);
+                }
+                a = Attribute(vs);
+                break;
+            }
+
+            case adios_complex:
+            case adios_double_complex:
+                throw std::runtime_error("Unsupported attribute datatype");
+        }
+    }
+
+    free(data);
+
+    *parameters.dtype = dtype;
+    *parameters.resource = a.getResource();
+
+    close(f);
+}
 
 void
 ADIOS1IOHandlerImpl::listPaths(Writable* writable,

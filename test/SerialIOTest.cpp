@@ -1105,6 +1105,337 @@ TEST_CASE( "adios_write_test", "[serial][adios]")
 
     o.flush();
 }
+
+TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
+{
+    // since this file might not be publicly available, gracefully handle errors
+    try
+    {
+        /* development/huebl/lwfa-openPMD-061-smallLWFA-2D-ad */
+        Series o = Series::read("../samples/hzdr-sample/simData_%T.bp");
+
+        REQUIRE(o.openPMD() == "1.0.0");
+        REQUIRE(o.openPMDextension() == 1);
+        REQUIRE(o.basePath() == "/data/%T/");
+        REQUIRE(o.meshesPath() == "fields/");
+        REQUIRE(o.particlesPath() == "particles/");
+        REQUIRE(o.author() == "Axel Huebl <a.huebl@hzdr.de>");
+        REQUIRE(o.software() == "PIConGPU");
+        REQUIRE(o.softwareVersion() == "0.2.0");
+        REQUIRE(o.date() == "2016-11-04 00:59:14 +0100");
+        REQUIRE(o.iterationEncoding() == IterationEncoding::fileBased);
+        REQUIRE(o.iterationFormat() == "h5/simData_%T.h5");
+        REQUIRE(o.name() == "simData_0");
+
+        REQUIRE(o.iterations.size() == 1);
+        REQUIRE(o.iterations.count(0) == 1);
+
+        Iteration& i = o.iterations[0];
+        REQUIRE(i.time< float >() == static_cast< float >(0.0f));
+        REQUIRE(i.dt< float >() == static_cast< float >(1.0f));
+        REQUIRE(i.timeUnitSI() == 1.3899999999999999e-16);
+
+        REQUIRE(i.meshes.size() == 4);
+        REQUIRE(i.meshes.count("B") == 1);
+        REQUIRE(i.meshes.count("E") == 1);
+        REQUIRE(i.meshes.count("e_chargeDensity") == 1);
+        REQUIRE(i.meshes.count("e_energyDensity") == 1);
+
+        std::vector< std::string > al{"z", "y", "x"};
+        std::vector< float > gs{static_cast< float >(6.2393283843994141f),
+                                static_cast< float >(1.0630855560302734f),
+                                static_cast< float >(6.2393283843994141f)};
+        std::vector< double > ggo{0., 0., 0.};
+        std::array< double, 7 > ud{{0.,  1., -2., -1.,  0.,  0.,  0.}};
+        Mesh& B = i.meshes["B"];
+        REQUIRE(B.geometry() == Mesh::Geometry::cartesian);
+        REQUIRE(B.dataOrder() == Mesh::DataOrder::C);
+        REQUIRE(B.axisLabels() == al);
+        REQUIRE(B.gridSpacing< float >() == gs);
+        REQUIRE(B.gridGlobalOffset() == ggo);
+        REQUIRE(B.gridUnitSI() == 4.1671151661999998e-08);
+        REQUIRE(B.unitDimension() == ud);
+        REQUIRE(B.timeOffset< float >() == static_cast< float >(0.0f));
+
+        REQUIRE(B.size() == 3);
+        REQUIRE(B.count("x") == 1);
+        REQUIRE(B.count("y") == 1);
+        REQUIRE(B.count("z") == 1);
+
+        std::vector< float > p{static_cast< float >(0.0f),
+                               static_cast< float >(0.5f),
+                               static_cast< float >(0.5f)};
+        Extent e{80, 384, 80};
+        MeshRecordComponent& B_x = B["x"];
+        REQUIRE(B_x.unitSI() == 40903.822240601701);
+        REQUIRE(B_x.position< float >() == p);
+        REQUIRE(B_x.getDatatype() == Datatype::FLOAT);
+        REQUIRE(B_x.getExtent() == e);
+        REQUIRE(B_x.getDimensionality() == 3);
+
+        p = {static_cast< float >(0.5f),
+             static_cast< float >(0.0f),
+             static_cast< float >(0.5f)};
+        MeshRecordComponent& B_y = B["y"];
+        REQUIRE(B_y.unitSI() == 40903.822240601701);
+        REQUIRE(B_y.position< float >() == p);
+        REQUIRE(B_y.getDatatype() == Datatype::FLOAT);
+        REQUIRE(B_y.getExtent() == e);
+        REQUIRE(B_y.getDimensionality() == 3);
+
+        p = {static_cast< float >(0.5f),
+             static_cast< float >(0.5f),
+             static_cast< float >(0.0f)};
+        MeshRecordComponent& B_z = B["z"];
+        REQUIRE(B_z.unitSI() == 40903.822240601701);
+        REQUIRE(B_z.position< float >() == p);
+        REQUIRE(B_z.getDatatype() == Datatype::FLOAT);
+        REQUIRE(B_z.getExtent() == e);
+        REQUIRE(B_z.getDimensionality() == 3);
+
+        ud = {{1.,  1., -3., -1.,  0.,  0.,  0.}};
+        Mesh& E = i.meshes["E"];
+        REQUIRE(E.geometry() == Mesh::Geometry::cartesian);
+        REQUIRE(E.dataOrder() == Mesh::DataOrder::C);
+        REQUIRE(E.axisLabels() == al);
+        REQUIRE(E.gridSpacing< float >() == gs);
+        REQUIRE(E.gridGlobalOffset() == ggo);
+        REQUIRE(E.gridUnitSI() == 4.1671151661999998e-08);
+        REQUIRE(E.unitDimension() == ud);
+        REQUIRE(E.timeOffset< float >() == static_cast< float >(0.0f));
+
+        REQUIRE(E.size() == 3);
+        REQUIRE(E.count("x") == 1);
+        REQUIRE(E.count("y") == 1);
+        REQUIRE(E.count("z") == 1);
+
+        p = {static_cast< float >(0.5f),
+             static_cast< float >(0.0f),
+             static_cast< float >(0.0f)};
+        e = {80, 384, 80};
+        MeshRecordComponent& E_x = E["x"];
+        REQUIRE(E_x.unitSI() == 12262657411105.049);
+        REQUIRE(E_x.position< float >() == p);
+        REQUIRE(E_x.getDatatype() == Datatype::FLOAT);
+        REQUIRE(E_x.getExtent() == e);
+        REQUIRE(E_x.getDimensionality() == 3);
+
+        p = {static_cast< float >(0.0f),
+             static_cast< float >(0.5f),
+             static_cast< float >(0.0f)};
+        MeshRecordComponent& E_y = E["y"];
+        REQUIRE(E_y.unitSI() == 12262657411105.049);
+        REQUIRE(E_y.position< float >() == p);
+        REQUIRE(E_y.getDatatype() == Datatype::FLOAT);
+        REQUIRE(E_y.getExtent() == e);
+        REQUIRE(E_y.getDimensionality() == 3);
+
+        p = {static_cast< float >(0.0f),
+             static_cast< float >(0.0f),
+             static_cast< float >(0.5f)};
+        MeshRecordComponent& E_z = E["z"];
+        REQUIRE(E_z.unitSI() == 12262657411105.049);
+        REQUIRE(E_z.position< float >() == p);
+        REQUIRE(E_z.getDatatype() == Datatype::FLOAT);
+        REQUIRE(E_z.getExtent() == e);
+        REQUIRE(E_z.getDimensionality() == 3);
+
+        ud = {{-3.,  0.,  1.,  1.,  0.,  0.,  0.}};
+        Mesh& e_chargeDensity = i.meshes["e_chargeDensity"];
+        REQUIRE(e_chargeDensity.geometry() == Mesh::Geometry::cartesian);
+        REQUIRE(e_chargeDensity.dataOrder() == Mesh::DataOrder::C);
+        REQUIRE(e_chargeDensity.axisLabels() == al);
+        REQUIRE(e_chargeDensity.gridSpacing< float >() == gs);
+        REQUIRE(e_chargeDensity.gridGlobalOffset() == ggo);
+        REQUIRE(e_chargeDensity.gridUnitSI() == 4.1671151661999998e-08);
+        REQUIRE(e_chargeDensity.unitDimension() == ud);
+        REQUIRE(e_chargeDensity.timeOffset< float >() == static_cast< float >(0.0f));
+
+        REQUIRE(e_chargeDensity.size() == 1);
+        REQUIRE(e_chargeDensity.count(MeshRecordComponent::SCALAR) == 1);
+
+        p = {static_cast< float >(0.f),
+             static_cast< float >(0.f),
+             static_cast< float >(0.f)};
+        MeshRecordComponent& e_chargeDensity_scalar = e_chargeDensity[MeshRecordComponent::SCALAR];
+        REQUIRE(e_chargeDensity_scalar.unitSI() == 66306201.002331272);
+        REQUIRE(e_chargeDensity_scalar.position< float >() == p);
+        REQUIRE(e_chargeDensity_scalar.getDatatype() == Datatype::FLOAT);
+        REQUIRE(e_chargeDensity_scalar.getExtent() == e);
+        REQUIRE(e_chargeDensity_scalar.getDimensionality() == 3);
+
+        ud = {{-1.,  1., -2.,  0.,  0.,  0.,  0.}};
+        Mesh& e_energyDensity = i.meshes["e_energyDensity"];
+        REQUIRE(e_energyDensity.geometry() == Mesh::Geometry::cartesian);
+        REQUIRE(e_energyDensity.dataOrder() == Mesh::DataOrder::C);
+        REQUIRE(e_energyDensity.axisLabels() == al);
+        REQUIRE(e_energyDensity.gridSpacing< float >() == gs);
+        REQUIRE(e_energyDensity.gridGlobalOffset() == ggo);
+        REQUIRE(e_energyDensity.gridUnitSI() == 4.1671151661999998e-08);
+        REQUIRE(e_energyDensity.unitDimension() == ud);
+        REQUIRE(e_energyDensity.timeOffset< float >() == static_cast< float >(0.0f));
+
+        REQUIRE(e_energyDensity.size() == 1);
+        REQUIRE(e_energyDensity.count(MeshRecordComponent::SCALAR) == 1);
+
+        MeshRecordComponent& e_energyDensity_scalar = e_energyDensity[MeshRecordComponent::SCALAR];
+        REQUIRE(e_energyDensity_scalar.unitSI() == 1.0146696675429705e+18);
+        REQUIRE(e_energyDensity_scalar.position< float >() == p);
+        REQUIRE(e_energyDensity_scalar.getDatatype() == Datatype::FLOAT);
+        REQUIRE(e_energyDensity_scalar.getExtent() == e);
+        REQUIRE(e_energyDensity_scalar.getDimensionality() == 3);
+
+        REQUIRE(i.particles.size() == 1);
+        REQUIRE(i.particles.count("e") == 1);
+
+        ParticleSpecies& species_e = i.particles["e"];
+
+        REQUIRE(species_e.size() == 6);
+        REQUIRE(species_e.count("charge") == 1);
+        REQUIRE(species_e.count("mass") == 1);
+        REQUIRE(species_e.count("momentum") == 1);
+        REQUIRE(species_e.count("particlePatches") == 0);
+        REQUIRE(species_e.count("position") == 1);
+        REQUIRE(species_e.count("positionOffset") == 1);
+        REQUIRE(species_e.count("weighting") == 1);
+        REQUIRE(species_e.particlePatches.size() == 4);
+        REQUIRE(species_e.particlePatches.count("extent") == 1);
+        REQUIRE(species_e.particlePatches.count("numParticles") == 1);
+        REQUIRE(species_e.particlePatches.count("numParticlesOffset") == 1);
+        REQUIRE(species_e.particlePatches.count("offset") == 1);
+
+        ud = {{0.,  0.,  1.,  1.,  0.,  0.,  0.}};
+        Record& e_charge = species_e["charge"];
+        REQUIRE(e_charge.unitDimension() == ud);
+        REQUIRE(e_charge.timeOffset< float >() == static_cast< float >(0.0f));
+
+        REQUIRE(e_charge.size() == 1);
+        REQUIRE(e_charge.count(RecordComponent::SCALAR) == 1);
+
+        e = {2150400};
+        RecordComponent& e_charge_scalar = e_charge[RecordComponent::SCALAR];
+        REQUIRE(e_charge_scalar.unitSI() == 4.7980045488500004e-15);
+        REQUIRE(e_charge_scalar.getDatatype() == Datatype::DOUBLE);
+        REQUIRE(e_charge_scalar.getExtent() == e);
+        REQUIRE(e_charge_scalar.getDimensionality() == 1);
+
+        ud = {{0.,  1.,  0.,  0.,  0.,  0.,  0.}};
+        Record& e_mass = species_e["mass"];
+        REQUIRE(e_mass.unitDimension() == ud);
+        REQUIRE(e_mass.timeOffset< float >() == static_cast< float >(0.0f));
+
+        REQUIRE(e_mass.size() == 1);
+        REQUIRE(e_mass.count(RecordComponent::SCALAR) == 1);
+
+        RecordComponent& e_mass_scalar = e_mass[RecordComponent::SCALAR];
+        REQUIRE(e_mass_scalar.unitSI() == 2.7279684799430467e-26);
+        REQUIRE(e_mass_scalar.getDatatype() == Datatype::DOUBLE);
+        REQUIRE(e_mass_scalar.getExtent() == e);
+        REQUIRE(e_mass_scalar.getDimensionality() == 1);
+
+        ud = {{1.,  1., -1.,  0.,  0.,  0.,  0.}};
+        Record& e_momentum = species_e["momentum"];
+        REQUIRE(e_momentum.unitDimension() == ud);
+        REQUIRE(e_momentum.timeOffset< float >() == static_cast< float >(0.0f));
+
+        REQUIRE(e_momentum.size() == 3);
+        REQUIRE(e_momentum.count("x") == 1);
+        REQUIRE(e_momentum.count("y") == 1);
+        REQUIRE(e_momentum.count("z") == 1);
+
+        RecordComponent& e_momentum_x = e_momentum["x"];
+        REQUIRE(e_momentum_x.unitSI() == 8.1782437594864961e-18);
+        REQUIRE(e_momentum_x.getDatatype() == Datatype::FLOAT);
+        REQUIRE(e_momentum_x.getExtent() == e);
+        REQUIRE(e_momentum_x.getDimensionality() == 1);
+
+        RecordComponent& e_momentum_y = e_momentum["y"];
+        REQUIRE(e_momentum_y.unitSI() == 8.1782437594864961e-18);
+        REQUIRE(e_momentum_y.getDatatype() == Datatype::FLOAT);
+        REQUIRE(e_momentum_y.getExtent() == e);
+        REQUIRE(e_momentum_y.getDimensionality() == 1);
+
+        RecordComponent& e_momentum_z = e_momentum["z"];
+        REQUIRE(e_momentum_z.unitSI() == 8.1782437594864961e-18);
+        REQUIRE(e_momentum_z.getDatatype() == Datatype::FLOAT);
+        REQUIRE(e_momentum_z.getExtent() == e);
+        REQUIRE(e_momentum_z.getDimensionality() == 1);
+
+        ud = {{1.,  0.,  0.,  0.,  0.,  0.,  0.}};
+        Record& e_position = species_e["position"];
+        REQUIRE(e_position.unitDimension() == ud);
+        REQUIRE(e_position.timeOffset< float >() == static_cast< float >(0.0f));
+
+        REQUIRE(e_position.size() == 3);
+        REQUIRE(e_position.count("x") == 1);
+        REQUIRE(e_position.count("y") == 1);
+        REQUIRE(e_position.count("z") == 1);
+
+        RecordComponent& e_position_x = e_position["x"];
+        REQUIRE(e_position_x.unitSI() == 2.599999993753294e-07);
+        REQUIRE(e_position_x.getDatatype() == Datatype::FLOAT);
+        REQUIRE(e_position_x.getExtent() == e);
+        REQUIRE(e_position_x.getDimensionality() == 1);
+
+        RecordComponent& e_position_y = e_position["y"];
+        REQUIRE(e_position_y.unitSI() == 4.4299999435019118e-08);
+        REQUIRE(e_position_y.getDatatype() == Datatype::FLOAT);
+        REQUIRE(e_position_y.getExtent() == e);
+        REQUIRE(e_position_y.getDimensionality() == 1);
+
+        RecordComponent& e_position_z = e_position["z"];
+        REQUIRE(e_position_z.unitSI() == 2.599999993753294e-07);
+        REQUIRE(e_position_z.getDatatype() == Datatype::FLOAT);
+        REQUIRE(e_position_z.getExtent() == e);
+        REQUIRE(e_position_z.getDimensionality() == 1);
+
+        ud = {{1.,  0.,  0.,  0.,  0.,  0.,  0.}};
+        Record& e_positionOffset = species_e["positionOffset"];
+        REQUIRE(e_positionOffset.unitDimension() == ud);
+        REQUIRE(e_positionOffset.timeOffset< float >() == static_cast< float >(0.0f));
+
+        REQUIRE(e_positionOffset.size() == 3);
+        REQUIRE(e_positionOffset.count("x") == 1);
+        REQUIRE(e_positionOffset.count("y") == 1);
+        REQUIRE(e_positionOffset.count("z") == 1);
+
+        RecordComponent& e_positionOffset_x = e_positionOffset["x"];
+        REQUIRE(e_positionOffset_x.unitSI() == 2.599999993753294e-07);
+        REQUIRE(e_positionOffset_x.getDatatype() == Datatype::INT32);
+        REQUIRE(e_positionOffset_x.getExtent() == e);
+        REQUIRE(e_positionOffset_x.getDimensionality() == 1);
+
+        RecordComponent& e_positionOffset_y = e_positionOffset["y"];
+        REQUIRE(e_positionOffset_y.unitSI() == 4.4299999435019118e-08);
+        REQUIRE(e_positionOffset_y.getDatatype() == Datatype::INT32);
+        REQUIRE(e_positionOffset_y.getExtent() == e);
+        REQUIRE(e_positionOffset_y.getDimensionality() == 1);
+
+        RecordComponent& e_positionOffset_z = e_positionOffset["z"];
+        REQUIRE(e_positionOffset_z.unitSI() == 2.599999993753294e-07);
+        REQUIRE(e_positionOffset_z.getDatatype() == Datatype::INT32);
+        REQUIRE(e_positionOffset_z.getExtent() == e);
+        REQUIRE(e_positionOffset_z.getDimensionality() == 1);
+
+        ud = {{0.,  0.,  0.,  0.,  0.,  0.,  0.}};
+        Record& e_weighting = species_e["weighting"];
+        REQUIRE(e_weighting.unitDimension() == ud);
+        REQUIRE(e_weighting.timeOffset< float >() == static_cast< float >(0.0f));
+
+        REQUIRE(e_weighting.size() == 1);
+        REQUIRE(e_weighting.count(RecordComponent::SCALAR) == 1);
+
+        RecordComponent& e_weighting_scalar = e_weighting[RecordComponent::SCALAR];
+        REQUIRE(e_weighting_scalar.unitSI() == 1.0);
+        REQUIRE(e_weighting_scalar.getDatatype() == Datatype::FLOAT);
+        REQUIRE(e_weighting_scalar.getExtent() == e);
+        REQUIRE(e_weighting_scalar.getDimensionality() == 1);
+    } catch (no_such_file_error& e)
+    {
+        std::cerr << "HZDR sample not accessible. (" << e.what() << ")\n";
+        return;
+    }
+}
 #else
 TEST_CASE( "no_serial_adios1", "[serial][adios]")
 {

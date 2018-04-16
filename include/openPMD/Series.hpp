@@ -263,6 +263,7 @@ private:
 
     IterationEncoding m_iterationEncoding;
     std::string m_name;
+    Format m_format;
 };  //Series
 
 /** Determine the storage format of a Series from the used filename extension.
@@ -279,4 +280,12 @@ Format determineFormat(std::string const& filename);
  * @return  String containing the filename without filename extension.
  */
 std::string cleanFilename(std::string const& filename, Format f);
+
+/** Create a functor to determine if a file can be of a format given the filename on disk.
+ *
+ * @param   name        String containing desired filename without filename extension.
+ * @param   f           File format to check plausibility for.
+ * @return  Functor returning true if file could be of type f. False otherwise.
+ */
+std::function< bool(std::string const&) > matcher(std::string const& name, Format f);
 } // openPMD
