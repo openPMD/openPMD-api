@@ -63,7 +63,7 @@ struct S : public Writable
     int val;
     bool written;
 };
-} // Test
+} // test
 } // openPMD
 
 TEST_CASE( "container_default_test", "[auxiliary]")
@@ -89,7 +89,7 @@ public:
     std::string text() const { return variantSrc::get< std::string >(getAttribute("text").getResource()); }
     structure& setText(std::string text) { setAttribute("text", text); return *this; }
 };
-} // Test
+} // test
 } // openPMD
 
 TEST_CASE( "container_retrieve_test", "[auxiliary]" )
@@ -157,7 +157,7 @@ struct Widget : public Writable
     Widget(int)
     { }
 };
-} // Test
+} // test
 } // openPMD
 
 TEST_CASE( "container_access_test", "[auxiliary]" )
@@ -205,7 +205,7 @@ public:
         return getAttribute(key).getResource();
     }
 };
-} // Test
+} // test
 } // openPMD
 
 TEST_CASE( "attributable_access_test", "[auxiliary]" )
@@ -259,7 +259,7 @@ public:
     Dotty& setAtt2(double d) { setAttribute("att2", d); return *this; }
     Dotty& setAtt3(std::string s) { setAttribute("att3", s); return *this; }
 };
-} // Test
+} // test
 } // openPMD
 
 TEST_CASE( "dot_test", "[auxiliary]" )
