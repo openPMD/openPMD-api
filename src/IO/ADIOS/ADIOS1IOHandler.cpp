@@ -129,6 +129,7 @@ ADIOS_FILE*
 ADIOS1IOHandlerImpl::open_read(Writable* writable)
 {
     auto name = m_filePaths[writable];
+    ASSERT(name != nullptr, "Internal error: Writables filePath queried before it was available");
 
     ADIOS_FILE *f;
     f = adios_read_open_file((*name).c_str(),
@@ -293,7 +294,23 @@ ADIOS1IOHandlerImpl::openFile(Writable* writable,
 void
 ADIOS1IOHandlerImpl::openPath(Writable* writable,
                               Parameter< Operation::OPEN_PATH > const& parameters)
-{ }
+{
+    /* Sanitize path */
+    std::string path = parameters.path;
+    if( auxiliary::starts_with(path, "/") )
+        path = auxiliary::replace_first(path, "/", "");
+    if( !auxiliary::ends_with(path, "/") )
+        path += '/';
+
+    writable->written = true;
+    writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >(path);
+
+    auto res = m_filePaths.find(writable);
+    if( res == m_filePaths.end() )
+        res = m_filePaths.find(writable->parent);
+
+    m_filePaths[writable] = res->second;
+}
 
 void
 ADIOS1IOHandlerImpl::openDataset(Writable* writable,
@@ -949,7 +966,50 @@ ADIOS1IOHandlerImpl::listDatasets(Writable* writable,
 void
 ADIOS1IOHandlerImpl::listAttributes(Writable* writable,
                                     Parameter< Operation::LIST_ATTS >& parameters)
-{ }
+{
+    ADIOS_FILE* fp;
+    fp = open_read(writable);
+
+    std::string name = concrete_bp1_file_position(writable);
+
+    if( !auxiliary::ends_with(name, "/") )
+    {
+        /* writable is a dataset and corresponds to an ADIOS variable */
+        ADIOS_VARINFO* info;
+        info = adios_inq_var(fp,
+                             name.c_str());
+        ASSERT(adios_errno == err_no_error, "Internal error: Failed to inquire ADIOS variable during attribute listing");
+        ASSERT(info != nullptr, "Internal error: Failed to inquire ADIOS variable during attribute listing");
+
+        parameters.attributes->reserve(info->nattrs);
+        for( int i = 0; i < info->nattrs; ++i )
+        {
+            char* c = fp->attr_namelist[info->attr_ids[i]];
+            parameters.attributes->emplace_back(c, std::strlen(c));
+        }
+
+        adios_free_varinfo(info);
+    } else
+    {
+        /* there is no ADIOS variable associated with the writable */
+        for( int i = 0; i < fp->nattrs; ++i )
+        {
+            char* c = fp->attr_namelist[i];
+            std::string s(c, std::strlen(c));
+            /* remove the writable's path from the name */
+            s = auxiliary::replace_first(s, name, "");
+            if( std::none_of(s.begin(), s.end(), [](char c) { return c == '/'; }) )
+            {
+                /* this is an attribute of the writable */
+                parameters.attributes->emplace_back(s);
+            }
+        }
+    }
+
+
+
+    close(fp);
+}
 #else
 ADIOS1IOHandler::ADIOS1IOHandler(std::string const& path, AccessType at)
         : AbstractIOHandler(path, at)

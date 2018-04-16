@@ -389,7 +389,7 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
         REQUIRE(o.date() == "2016-11-04 00:59:14 +0100");
         REQUIRE(o.iterationEncoding() == IterationEncoding::fileBased);
         REQUIRE(o.iterationFormat() == "h5/simData_%T.h5");
-        REQUIRE(o.name() == "simData_0");
+        REQUIRE(o.name() == "simData_%T");
 
         REQUIRE(o.iterations.size() == 1);
         REQUIRE(o.iterations.count(0) == 1);
@@ -1122,10 +1122,9 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
         REQUIRE(o.author() == "Axel Huebl <a.huebl@hzdr.de>");
         REQUIRE(o.software() == "PIConGPU");
         REQUIRE(o.softwareVersion() == "0.2.0");
-        REQUIRE(o.date() == "2016-11-04 00:59:14 +0100");
+        REQUIRE(o.date() == "2016-09-07 18:19:09 +0200");
         REQUIRE(o.iterationEncoding() == IterationEncoding::fileBased);
-        REQUIRE(o.iterationFormat() == "h5/simData_%T.h5");
-        REQUIRE(o.name() == "simData_0");
+        REQUIRE(o.iterationFormat() == "bp/simData_%T.h5");
 
         REQUIRE(o.iterations.size() == 1);
         REQUIRE(o.iterations.count(0) == 1);
