@@ -152,7 +152,6 @@ ADIOS1IOHandlerImpl::createFile(Writable* writable,
         std::string name = m_handler->directory + parameters.name;
         if( !auxiliary::ends_with(name, ".bp") )
             name += ".bp";
-        //TODO mode for AccessType::READ_WRITE might have to be write or append instead of update
         std::string mode = m_handler->accessType == AccessType::CREATE ? "w" : "u";
 
         int status;
@@ -174,7 +173,7 @@ ADIOS1IOHandlerImpl::createPath(Writable* writable,
                                 Parameter< Operation::CREATE_PATH > const& parameters)
 {
     if( m_handler->accessType == AccessType::READ_ONLY )
-        throw std::runtime_error("Creating a file in read-only mode is not possible.");
+        throw std::runtime_error("Creating a path in a file opened as read only is not possible.");
 
     if( !writable->written )
     {
@@ -207,7 +206,7 @@ ADIOS1IOHandlerImpl::createDataset(Writable* writable,
                                    Parameter< Operation::CREATE_DATASET > const& parameters)
 {
     if( m_handler->accessType == AccessType::READ_ONLY )
-        throw std::runtime_error("Creating a file in read-only mode is not possible.");
+        throw std::runtime_error("Creating a dataset in a file opened as read only is not possible.");
 
     if( !writable->written )
     {
@@ -218,13 +217,19 @@ ADIOS1IOHandlerImpl::createDataset(Writable* writable,
         if( auxiliary::ends_with(name, "/") )
             name = auxiliary::replace_first(name, "/", "");
 
-        /* Every write in ADIOS noxml style requires an individual ID.
+        /* Every variable (i.e. dataset for our purposes) write in ADIOS noxml style requires an individual ID.
          * Creating a dataset explicitly at this point is not necessary. */
 
         m_datasetSize[writable] = getBP1Extent(parameters.extent);
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >(name);
+
+        auto res = m_filePath.find(writable);
+        if( res == m_filePath.end() )
+            res = m_filePath.find(writable->parent);
+
+        m_filePath[writable] = res->second;
     }
 }
 
@@ -273,7 +278,7 @@ ADIOS1IOHandlerImpl::writeDataset(Writable* writable,
                                   Parameter< Operation::WRITE_DATASET > const& parameters)
 {
     if( m_handler->accessType == AccessType::READ_ONLY )
-        throw std::runtime_error("Creating a file in read-only mode is not possible.");
+        throw std::runtime_error("Writing into a dataset in a file opened as read only is not possible.");
 
     std::string name = concrete_bp1_file_position(writable);
 
@@ -575,8 +580,7 @@ ADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
     if( parameters.dtype == Datatype::VEC_STRING )
     {
         auto ptr = reinterpret_cast< char** >(values.get());
-        auto const& vec = att.get< std::vector< std::string > >();
-        for( size_t i = 0; i < vec.size(); ++i )
+        for( size_t i = 0; i < nelems; ++i )
             delete[] ptr[i];
     }
 

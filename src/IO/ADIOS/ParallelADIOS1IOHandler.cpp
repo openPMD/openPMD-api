@@ -42,6 +42,7 @@ ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string const& path,
         : AbstractIOHandler(path, at, comm),
           m_impl{new ParallelADIOS1IOHandlerImpl(this, comm)}
 {
+    /* TODO MPI_AGGREGATE, get aggregators from environment with default */
     status = adios_select_method(m_group, "MPI", "", "");
     ASSERT(status == err_no_error, "Internal error: Failed to select ADIOS method");
 }
@@ -76,7 +77,7 @@ ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string const& path,
                                                  AccessType at)
         : AbstractIOHandler(path, at)
 {
-    throw std::runtime_error("openPMD-api built without parallel support and without ADIOS1 support");
+    throw std::runtime_error("openPMD-api built without parallel ADIOS1 support");
 }
 #   endif
 
