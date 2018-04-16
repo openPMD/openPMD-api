@@ -68,7 +68,7 @@ struct S : public Writable
 
 TEST_CASE( "container_default_test", "[auxiliary]")
 {
-    Container< openPMD::Test::S > c = Container< openPMD::Test::S >();
+    Container< openPMD::test::S > c = Container< openPMD::test::S >();
     c.IOHandler = AbstractIOHandler::createIOHandler("", AccessType::CREATE, Format::DUMMY);
 
     REQUIRE(c.size() == 0);
@@ -94,7 +94,7 @@ public:
 
 TEST_CASE( "container_retrieve_test", "[auxiliary]" )
 {
-    using structure = openPMD::Test::structure;
+    using structure = openPMD::test::structure;
     Container< structure > c = Container< structure >();
     c.IOHandler = AbstractIOHandler::createIOHandler("", AccessType::CREATE, Format::DUMMY);
 
@@ -162,7 +162,7 @@ struct Widget : public Writable
 
 TEST_CASE( "container_access_test", "[auxiliary]" )
 {
-    using Widget = openPMD::Test::Widget;
+    using Widget = openPMD::test::Widget;
     Container< Widget > c = Container< Widget >();
     c.IOHandler = AbstractIOHandler::createIOHandler("", AccessType::CREATE, Format::DUMMY);
 
@@ -210,7 +210,7 @@ public:
 
 TEST_CASE( "attributable_access_test", "[auxiliary]" )
 {
-    using AttributedWidget = openPMD::Test::AttributedWidget;
+    using AttributedWidget = openPMD::test::AttributedWidget;
     AttributedWidget a = AttributedWidget();
 
     a.setAttribute("key", std::string("value"));
@@ -264,7 +264,7 @@ public:
 
 TEST_CASE( "dot_test", "[auxiliary]" )
 {
-    openPMD::Test::Dotty d;
+    openPMD::test::Dotty d;
     REQUIRE(d.att1() == 1);
     REQUIRE(d.att2() == static_cast<double>(2));
     REQUIRE(d.att3() == "3");
