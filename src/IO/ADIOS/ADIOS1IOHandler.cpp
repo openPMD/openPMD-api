@@ -315,7 +315,91 @@ ADIOS1IOHandlerImpl::openPath(Writable* writable,
 void
 ADIOS1IOHandlerImpl::openDataset(Writable* writable,
                                  Parameter< Operation::OPEN_DATASET >& parameters)
-{ }
+{
+    auto res = m_filePaths.find(writable);
+    if( res == m_filePaths.end() )
+        res = m_filePaths.find(writable->parent);
+
+    ADIOS_FILE *f;
+    f = adios_read_open_file(res->second->c_str(),
+                             ADIOS_READ_METHOD_BP,
+                             m_mpiComm);
+    ASSERT(adios_errno != err_file_not_found, "Internal error: ADIOS file not found");
+    ASSERT(f != nullptr, "Internal error: Failed to open_write ADIOS file");
+
+    /* Sanitize name */
+    std::string name = parameters.name;
+    if( auxiliary::starts_with(name, "/") )
+        name = auxiliary::replace_first(name, "/", "");
+
+    std::string datasetname = concrete_bp1_file_position(writable) + name;
+
+    ADIOS_VARINFO* vi;
+    vi = adios_inq_var(f,
+                       datasetname.c_str());
+    ASSERT(adios_errno == err_no_error, "Internal error: Failed to inquire about ADIOS variable during dataset opening");
+    ASSERT(vi != nullptr, "Internal error: Failed to inquire about ADIOS variable during dataset opening");
+
+    Datatype dtype;
+    switch( vi->type )
+    {
+        using DT = Datatype;
+        case adios_byte:
+            dtype = DT::CHAR;
+            break;
+        case adios_short:
+            dtype = DT::INT16;
+            break;
+        case adios_integer:
+            dtype = DT::INT32;
+            break;
+        case adios_long:
+            dtype = DT::INT64;
+            break;
+        case adios_unsigned_byte:
+            dtype = DT::UCHAR;
+            break;
+        case adios_unsigned_short:
+            dtype = DT::UINT16;
+            break;
+        case adios_unsigned_integer:
+            dtype = DT::UINT32;
+            break;
+        case adios_unsigned_long:
+            dtype = DT::UINT64;
+            break;
+        case adios_real:
+            dtype = DT::FLOAT;
+            break;
+        case adios_double:
+            dtype = DT::DOUBLE;
+            break;
+        case adios_long_double:
+            dtype = DT::LONG_DOUBLE;
+            break;
+
+        case adios_string:
+        case adios_string_array:
+        case adios_complex:
+        case adios_double_complex:
+        default:
+            throw unsupported_data_error("Datatype not implemented for ADIOS dataset writing");
+    }
+    *parameters.dtype = dtype;
+
+    Extent e;
+    e.resize(vi->ndim);
+    for( size_t i = 0; i < vi->ndim; ++i )
+        e[i] = vi->dims[i];
+    *parameters.extent = e;
+
+    writable->written = true;
+    writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >(name);
+
+    m_filePaths[writable] = res->second;
+
+    close(f);
+}
 
 void
 ADIOS1IOHandlerImpl::deleteFile(Writable* writable,
@@ -719,11 +803,12 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
         case adios_string:
             break;
         case adios_string_array:
+            size /= sizeof(char*);
             break;
 
         case adios_complex:
         case adios_double_complex:
-            throw std::runtime_error("Unsupported attribute datatype");
+            throw unsupported_data_error("Unsupported attribute datatype");
     }
 
     Datatype dtype;
@@ -789,7 +874,7 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
             case adios_string_array:
             case adios_complex:
             case adios_double_complex:
-                throw std::runtime_error("Unsupported attribute datatype");
+                throw unsupported_data_error("Unsupported attribute datatype");
         }
     }
     else
@@ -933,7 +1018,8 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 for( size_t i = 0; i < size; ++i )
                 {
                     vs[i] = auxiliary::strip(std::string(c[i], std::strlen(c[i])), {'\0'});
-                    free(c[i]);
+                    /* TODO pointer should be freed, but this causes memory curruption */
+                    //free(c[i]);
                 }
                 a = Attribute(vs);
                 break;
@@ -941,7 +1027,8 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
 
             case adios_complex:
             case adios_double_complex:
-                throw std::runtime_error("Unsupported attribute datatype");
+            default:
+                throw unsupported_data_error("Unsupported attribute datatype");
         }
     }
 
@@ -956,12 +1043,83 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
 void
 ADIOS1IOHandlerImpl::listPaths(Writable* writable,
                                Parameter< Operation::LIST_PATHS >& parameters)
-{ }
+{
+    ADIOS_FILE* fp;
+    fp = open_read(writable);
+
+    std::string name = concrete_bp1_file_position(writable);
+
+    std::unordered_set< std::string > paths;
+    for( int i = 0; i < fp->nvars; ++i )
+    {
+        char* c = fp->var_namelist[i];
+        std::string s(c, std::strlen(c));
+        if( auxiliary::starts_with(s, name) )
+        {
+            /* remove the writable's path from the name */
+            s = auxiliary::replace_first(s, name, "");
+            if( std::any_of(s.begin(), s.end(), [](char c) { return c == '/'; }) )
+            {
+                /* there are more path levels after the current writable */
+                s = s.substr(0, s.find_first_of('/'));
+                paths.emplace(s);
+            }
+        }
+    }
+    for( int i = 0; i < fp->nattrs; ++i )
+    {
+        char* c = fp->attr_namelist[i];
+        std::string s(c, std::strlen(c));
+        if( auxiliary::starts_with(s, name) )
+        {
+            /* remove the writable's path from the name */
+            s = auxiliary::replace_first(s, name, "");
+            /* remove the attribute name */
+            s = s.substr(0, s.find_last_of('/'));
+            if( std::any_of(s.begin(), s.end(), [](char c) { return c == '/'; }) )
+            {
+                /* this is an attribute of the writable */
+                s = s.substr(0, s.find_first_of('/'));
+                paths.emplace(s);
+            }
+        }
+    }
+
+    *parameters.paths = std::vector< std::string >(paths.begin(), paths.end());
+
+    close(fp);
+}
 
 void
 ADIOS1IOHandlerImpl::listDatasets(Writable* writable,
                                   Parameter< Operation::LIST_DATASETS >& parameters)
-{ }
+{
+    ADIOS_FILE* fp;
+    fp = open_read(writable);
+
+    std::string name = concrete_bp1_file_position(writable);
+
+    std::unordered_set< std::string > paths;
+    for( int i = 0; i < fp->nvars; ++i )
+    {
+        char* c = fp->var_namelist[i];
+        std::string s(c, std::strlen(c));
+        if( auxiliary::starts_with(s, name) )
+        {
+            /* remove the writable's path from the name */
+            s = auxiliary::replace_first(s, name, "");
+            if( std::none_of(s.begin(), s.end(), [](char c) { return c == '/'; }) )
+            {
+                /* this is a dataset of the writable */
+                paths.emplace(s);
+            }
+        }
+    }
+
+    *parameters.datasets = std::vector< std::string >(paths.begin(), paths.end());
+
+    close(fp);
+}
 
 void
 ADIOS1IOHandlerImpl::listAttributes(Writable* writable,
@@ -981,29 +1139,35 @@ ADIOS1IOHandlerImpl::listAttributes(Writable* writable,
         ASSERT(adios_errno == err_no_error, "Internal error: Failed to inquire ADIOS variable during attribute listing");
         ASSERT(info != nullptr, "Internal error: Failed to inquire ADIOS variable during attribute listing");
 
+        name += '/';
         parameters.attributes->reserve(info->nattrs);
         for( int i = 0; i < info->nattrs; ++i )
         {
             char* c = fp->attr_namelist[info->attr_ids[i]];
-            parameters.attributes->emplace_back(c, std::strlen(c));
+            parameters.attributes->push_back(auxiliary::replace_first(std::string(c, std::strlen(c)), name, ""));
         }
 
         adios_free_varinfo(info);
     } else
     {
         /* there is no ADIOS variable associated with the writable */
+        std::unordered_set< std::string > attributes;
         for( int i = 0; i < fp->nattrs; ++i )
         {
             char* c = fp->attr_namelist[i];
             std::string s(c, std::strlen(c));
-            /* remove the writable's path from the name */
-            s = auxiliary::replace_first(s, name, "");
-            if( std::none_of(s.begin(), s.end(), [](char c) { return c == '/'; }) )
+            if( auxiliary::starts_with(s, name) )
             {
-                /* this is an attribute of the writable */
-                parameters.attributes->emplace_back(s);
+                /* remove the writable's path from the name */
+                s = auxiliary::replace_first(s, name, "");
+                if( std::none_of(s.begin(), s.end(), [](char c) { return c == '/'; }) )
+                {
+                    /* this is an attribute of the writable */
+                    attributes.insert(s);
+                }
             }
         }
+        *parameters.attributes = std::vector< std::string >(attributes.begin(), attributes.end());
     }
 
 

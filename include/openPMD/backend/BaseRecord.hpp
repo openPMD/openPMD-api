@@ -1,3 +1,23 @@
+/* Copyright 2017-2018 Fabian Koller
+ *
+ * This file is part of openPMD-api.
+ *
+ * openPMD-api is free software: you can redistribute it and/or modify
+ * it under the terms of of either the GNU General Public License or
+ * the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * openPMD-api is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License and the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * and the GNU Lesser General Public License along with openPMD-api.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
 #pragma once
 
 #include "openPMD/backend/Container.hpp"
@@ -166,6 +186,19 @@ BaseRecord< T_elem >::readBase()
     this->IOHandler->flush();
     if( *aRead.dtype == DT::ARR_DBL_7 )
         this->setAttribute("unitDimension", Attribute(*aRead.resource).template get< std::array< double, 7 > >());
+    else if( *aRead.dtype == DT::VEC_DOUBLE )
+    {
+        auto vec = Attribute(*aRead.resource).template get< std::vector< double > >();
+        if( vec.size() == 7 )
+        {
+            std::array< double, 7 > arr;
+            std::copy(vec.begin(),
+                      vec.end(),
+                      arr.begin());
+            this->setAttribute("unitDimension", arr);
+        } else
+            throw std::runtime_error("Unexpected Attribute datatype for 'unitDimension'");
+    }
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'unitDimension'");
 

@@ -587,6 +587,9 @@ Series::readFileBased()
         }
     }
 
+    if( iterations.empty() )
+        throw no_such_file_error("No matching iterations found: " + name());
+
     /* this file need not be flushed */
     iterations.written = true;
     written = true;

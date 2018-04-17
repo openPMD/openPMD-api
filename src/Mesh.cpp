@@ -299,7 +299,7 @@ Mesh::read()
     if( m_containsScalar )
     {
         /* using operator[] will incorrectly update parent */
-        (*this).find(MeshRecordComponent::SCALAR)->second.read();
+        this->at(MeshRecordComponent::SCALAR).read();
     } else
     {
         clear_unchecked();

@@ -1,4 +1,4 @@
-/* Copyright 2017 Fabian Koller
+/* Copyright 2017-2018 Fabian Koller
  *
  * This file is part of openPMD-api.
  *
@@ -227,7 +227,7 @@ Iteration::read()
     bool hasParticles = false;
     if( version == "1.0.0" || version == "1.0.1" )
     {
-        IOHandler->enqueue(IOTask(&meshes, pList));
+        IOHandler->enqueue(IOTask(this, pList));
         IOHandler->flush();
         hasMeshes = std::count(
             pList.paths->begin(),
@@ -298,8 +298,9 @@ Iteration::read()
             IOHandler->enqueue(IOTask(&m, dOpen));
             IOHandler->flush();
             MeshRecordComponent& mrc = m[MeshRecordComponent::SCALAR];
-            mrc.abstractFilePosition = m.abstractFilePosition;
             mrc.parent = m.parent;
+            IOHandler->enqueue(IOTask(&mrc, dOpen));
+            IOHandler->flush();
             mrc.written = false;
             mrc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
             mrc.written = true;

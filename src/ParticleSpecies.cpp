@@ -66,8 +66,9 @@ ParticleSpecies::read()
         IOHandler->enqueue(IOTask(&r, dOpen));
         IOHandler->flush();
         RecordComponent& rc = r[RecordComponent::SCALAR];
-        rc.abstractFilePosition = r.abstractFilePosition;
         rc.parent = r.parent;
+        IOHandler->enqueue(IOTask(&rc, dOpen));
+        IOHandler->flush();
         rc.written = false;
         rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
         rc.written = true;
