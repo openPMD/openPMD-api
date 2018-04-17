@@ -738,7 +738,62 @@ ADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
 void
 ADIOS1IOHandlerImpl::readDataset(Writable* writable,
                                  Parameter< Operation::READ_DATASET >& parameters)
-{ }
+{
+    switch( parameters.dtype )
+    {
+        using DT = Datatype;
+        case DT::DOUBLE:
+        case DT::FLOAT:
+        case DT::INT16:
+        case DT::INT32:
+        case DT::INT64:
+        case DT::UINT16:
+        case DT::UINT32:
+        case DT::UINT64:
+        case DT::CHAR:
+        case DT::UCHAR:
+            break;
+        case DT::BOOL:
+            throw std::runtime_error("No workaround for ADIOS1 bool implemented");
+        case DT::UNDEFINED:
+            throw std::runtime_error("Unknown Attribute datatype");
+        case DT::DATATYPE:
+            throw std::runtime_error("Meta-Datatype leaked into IO");
+        default:
+            throw std::runtime_error("Datatype not implemented in HDF5 IO");
+    }
+
+    ADIOS_FILE* f;
+    f = open_read(writable);
+
+    ADIOS_SELECTION* sel;
+    sel = adios_selection_boundingbox(parameters.extent.size(),
+                                      parameters.offset.data(),
+                                      parameters.extent.data());
+    ASSERT(sel != nullptr, "Internal error: Failed to select ADIOS bounding box during dataset reading");
+    ASSERT(adios_errno == err_no_error, "Internal error: Failed to select ADIOS bounding box during dataset reading");
+
+    std::string varname = concrete_bp1_file_position(writable);
+    void* data = parameters.data;
+
+    int status;
+    status = adios_schedule_read(f,
+                                 sel,
+                                 varname.c_str(),
+                                 0,
+                                 1,
+                                 data);
+    ASSERT(status == err_no_error, "Internal error: Failed to schedule ADIOS read during dataset reading");
+    ASSERT(adios_errno == err_no_error, "Internal error: Failed to schedule ADIOS read during dataset reading");
+
+    status = adios_perform_reads(f,
+                                 1);
+    ASSERT(status == err_no_error, "Internal error: Failed to perform ADIOS reads during dataset reading");
+
+    adios_selection_delete(sel);
+
+    close(f);
+}
 
 void
 ADIOS1IOHandlerImpl::readAttribute(Writable* writable,

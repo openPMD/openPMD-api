@@ -1021,7 +1021,78 @@ TEST_CASE( "no_serial_hdf5", "[serial][hdf5]" )
 }
 #endif
 #if openPMD_HAVE_ADIOS1
-TEST_CASE( "adios_write_test", "[serial][adios]")
+TEST_CASE( "adios_dtype_test", "[serial][adios1]" )
+{
+    {
+        Series s = Series::create("../samples/dtype_test.bp");
+
+        char c = 'c';
+        s.setAttribute("char", c);
+        unsigned char uc = 'u';
+        s.setAttribute("uchar", uc);
+        int16_t i16 = 16;
+        s.setAttribute("int16", i16);
+        int32_t i32 = 32;
+        s.setAttribute("int32", i32);
+        int64_t i64 = 64;
+        s.setAttribute("int64", i64);
+        uint16_t u16 = 16u;
+        s.setAttribute("uint16", u16);
+        uint32_t u32 = 32u;
+        s.setAttribute("uint32", u32);
+        uint64_t u64 = 64u;
+        s.setAttribute("uint64", u64);
+        float f = 16.e10f;
+        s.setAttribute("float", f);
+        double d = 1.e64;
+        s.setAttribute("double", d);
+        long double l = 1.e80L;
+        s.setAttribute("longdouble", l);
+        std::string str = "string";
+        s.setAttribute("string", str);
+        s.setAttribute("vecChar", std::vector< char >({'c', 'h', 'a', 'r'}));
+        s.setAttribute("vecInt16", std::vector< int16_t >({32766, 32767}));
+        s.setAttribute("vecInt32", std::vector< int32_t >({2147483646, 2147483647}));
+        s.setAttribute("vecInt64", std::vector< int64_t >({9223372036854775806, 9223372036854775807}));
+        s.setAttribute("vecUchar", std::vector< char >({'u', 'c', 'h', 'a', 'r'}));
+        s.setAttribute("vecUint16", std::vector< uint16_t >({65534u, 65535u}));
+        s.setAttribute("vecUint32", std::vector< uint32_t >({4294967294u, 4294967295u}));
+        s.setAttribute("vecUint64", std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
+        s.setAttribute("vecFloat", std::vector< float >({0.f, 3.40282e+38f}));
+        s.setAttribute("vecDouble", std::vector< double >({0., 1.79769e+308}));
+        s.setAttribute("vecLongdouble", std::vector< long double >({0.L, 1.18973e+4932L}));
+        s.setAttribute("vecString", std::vector< std::string >({"vector", "of", "strings"}));
+    }
+
+    Series s = Series::read("../samples/dtype_test.bp");
+
+    REQUIRE(s.getAttribute("char").get< char >() == 'c');
+    REQUIRE(s.getAttribute("uchar").get< unsigned char >() == 'u');
+    REQUIRE(s.getAttribute("int16").get< int16_t >() == 16);
+    REQUIRE(s.getAttribute("int32").get< int32_t >() == 32);
+    REQUIRE(s.getAttribute("int64").get< int64_t >() == 64);
+    REQUIRE(s.getAttribute("uint16").get< uint16_t >() == 16u);
+    REQUIRE(s.getAttribute("uint32").get< uint32_t >() == 32u);
+    REQUIRE(s.getAttribute("uint64").get< uint64_t >() == 64u);
+    REQUIRE(s.getAttribute("float").get< float >() == 16.e10f);
+    REQUIRE(s.getAttribute("double").get< double >() == 1.e64);
+    REQUIRE(s.getAttribute("longdouble").get< long double >() == 1.e80L);
+    REQUIRE(s.getAttribute("string").get< std::string >() == "string");
+    REQUIRE(s.getAttribute("vecChar").get< std::vector< char > >() == std::vector< char >({'c', 'h', 'a', 'r'}));
+    REQUIRE(s.getAttribute("vecInt16").get< std::vector< int16_t > >() == std::vector< int16_t >({32766, 32767}));
+    REQUIRE(s.getAttribute("vecInt32").get< std::vector< int32_t > >() == std::vector< int32_t >({2147483646, 2147483647}));
+    REQUIRE(s.getAttribute("vecInt64").get< std::vector< int64_t > >() == std::vector< int64_t >({9223372036854775806, 9223372036854775807}));
+    REQUIRE(s.getAttribute("vecUchar").get< std::vector< char > >() == std::vector< char >({'u', 'c', 'h', 'a', 'r'}));
+    REQUIRE(s.getAttribute("vecUint16").get< std::vector< uint16_t > >() == std::vector< uint16_t >({65534u, 65535u}));
+    REQUIRE(s.getAttribute("vecUint32").get< std::vector< uint32_t > >() == std::vector< uint32_t >({4294967294u, 4294967295u}));
+    REQUIRE(s.getAttribute("vecUint64").get< std::vector< uint64_t > >() == std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
+    REQUIRE(s.getAttribute("vecFloat").get< std::vector< float > >() == std::vector< float >({0.f, 3.40282e+38f}));
+    REQUIRE(s.getAttribute("vecDouble").get< std::vector< double > >() == std::vector< double >({0., 1.79769e+308}));
+    REQUIRE(s.getAttribute("vecLongdouble").get< std::vector< long double > >() == std::vector< long double >({0.L, 1.18973e+4932L}));
+    REQUIRE(s.getAttribute("vecString").get< std::vector< std::string > >() == std::vector< std::string >({"vector", "of", "strings"}));
+}
+
+TEST_CASE( "adios_write_test", "[serial][adios1]")
 {
     Series o = Series::create("../samples/serial_write.bp");
 
@@ -1106,7 +1177,7 @@ TEST_CASE( "adios_write_test", "[serial][adios]")
     o.flush();
 }
 
-TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
+TEST_CASE( "hzdr_adios1_sample_content_test", "[serial][adios1]" )
 {
     // since this file might not be publicly available, gracefully handle errors
     try
@@ -1238,6 +1309,26 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
         REQUIRE(E_z.getDimensionality() == 3);
 
         REQUIRE(i.particles.size() == 0);
+
+        float actual[3][3][3] = {{{6.7173387e-06f, 6.7173387e-06f, 6.7173387e-06f},
+                                     {7.0438218e-06f, 7.0438218e-06f, 7.0438218e-06f},
+                                     {7.3689453e-06f, 7.3689453e-06f, 7.3689453e-06f}},
+                                 {{6.7173387e-06f, 6.7173387e-06f, 6.7173387e-06f},
+                                     {7.0438218e-06f, 7.0438218e-06f, 7.0438218e-06f},
+                                     {7.3689453e-06f, 7.3689453e-06f, 7.3689453e-06f}},
+                                 {{6.7173387e-06f, 6.7173387e-06f, 6.7173387e-06f},
+                                     {7.0438218e-06f, 7.0438218e-06f, 7.0438218e-06f},
+                                     {7.3689453e-06f, 7.3689453e-06f, 7.3689453e-06f}}};
+        Offset offset{20, 20, 150};
+        Extent extent{3, 3, 3};
+        std::unique_ptr< float[] > data;
+        B_z.loadChunk(offset, extent, data, RecordComponent::Allocation::API);
+        float* raw_ptr = data.get();
+
+        for( int i = 0; i < 3; ++i )
+            for( int j = 0; j < 3; ++j )
+                for( int k = 0; k < 3; ++k )
+                    REQUIRE(raw_ptr[((i*3) + j)*3 + k] == actual[i][j][k]);
     } catch (no_such_file_error& e)
     {
         std::cerr << "HZDR sample not accessible. (" << e.what() << ")\n";
