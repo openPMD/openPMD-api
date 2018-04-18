@@ -49,6 +49,8 @@ public:
     ADIOS1IOHandlerImpl(AbstractIOHandler*, MPI_Comm = MPI_COMM_SELF);
     virtual ~ADIOS1IOHandlerImpl();
 
+    virtual void init();
+
     virtual void createFile(Writable*, Parameter< Operation::CREATE_FILE > const&) override;
     virtual void createPath(Writable*, Parameter< Operation::CREATE_PATH > const&) override;
     virtual void createDataset(Writable*, Parameter< Operation::CREATE_DATASET > const&) override;
@@ -70,7 +72,7 @@ public:
 
     std::shared_ptr< std::string > open_close_flush(Writable*);
     int64_t open_write(Writable *);
-    ADIOS_FILE* open_read(Writable*);
+    virtual ADIOS_FILE* open_read(Writable*);
     void close(int64_t);
     void close(ADIOS_FILE*);
 
@@ -79,6 +81,7 @@ protected:
     MPI_Info m_mpiInfo; /* dummy provided by ADIOS if -D_NOMPI */
     int64_t m_group;
     std::string m_groupName;
+    ADIOS_READ_METHOD m_readMethod;
     std::unordered_map< Writable*, std::string > m_datasetSizes;
     std::unordered_map< Writable*, std::shared_ptr< std::string > > m_filePaths;
 };  //ADIOS1IOHandlerImpl

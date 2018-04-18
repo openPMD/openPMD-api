@@ -51,21 +51,13 @@ ADIOS1IOHandlerImpl::ADIOS1IOHandlerImpl(AbstractIOHandler* handler, MPI_Comm co
     ASSERT(status == MPI_SUCCESS, "Internal error: Failed to duplicate MPI communicator");
     status = adios_init_noxml(m_mpiComm);
     ASSERT(status == err_no_error, "Internal error: Failed to initialize ADIOS");
-    status = adios_read_init_method(ADIOS_READ_METHOD_BP, m_mpiComm, "verbose=3");
-    ASSERT(status == err_no_error, "Internal error: Failed to initialize ADIOS reading method");
-
-    ADIOS_STATISTICS_FLAG noStatistics = adios_stat_no;
-    status = adios_declare_group(&m_group, m_groupName.c_str(), "", noStatistics);
-    ASSERT(status == err_no_error, "Internal error: Failed to declare ADIOS group");
-    status = adios_select_method(m_group, "POSIX", "", "");
-    ASSERT(status == err_no_error, "Internal error: Failed to select ADIOS method");
 }
 
 ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
 {
     int status;
     MPI_Barrier(m_mpiComm);
-    status = adios_read_finalize_method(ADIOS_READ_METHOD_BP);
+    status = adios_read_finalize_method(m_readMethod);
     if( status != err_no_error )
         std::cerr << "Internal error: Failed to finalize ADIOS reading method (parallel)\n";
 
@@ -78,13 +70,30 @@ ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
 
     MPI_Comm_free(&m_mpiComm);
 }
+
+void
+ADIOS1IOHandlerImpl::init()
+{
+    int status;
+    m_readMethod = ADIOS_READ_METHOD_BP;
+    status = adios_read_init_method(m_readMethod, m_mpiComm, "");
+    ASSERT(status == err_no_error, "Internal error: Failed to initialize ADIOS reading method");
+
+    ADIOS_STATISTICS_FLAG noStatistics = adios_stat_no;
+    status = adios_declare_group(&m_group, m_groupName.c_str(), "", noStatistics);
+    ASSERT(status == err_no_error, "Internal error: Failed to declare ADIOS group");
+    status = adios_select_method(m_group, "POSIX", "", "");
+    ASSERT(status == err_no_error, "Internal error: Failed to select ADIOS method");
+}
 #endif
 
 #if openPMD_HAVE_ADIOS1
 ADIOS1IOHandler::ADIOS1IOHandler(std::string const& path, AccessType at)
         : AbstractIOHandler(path, at),
           m_impl{new ADIOS1IOHandlerImpl(this)}
-{ }
+{
+    m_impl->init();
+}
 
 ADIOS1IOHandler::~ADIOS1IOHandler()
 { }
@@ -133,7 +142,7 @@ ADIOS1IOHandlerImpl::open_read(Writable* writable)
 
     ADIOS_FILE *f;
     f = adios_read_open_file((*name).c_str(),
-                             ADIOS_READ_METHOD_BP,
+                             m_readMethod,
                              m_mpiComm);
     ASSERT(adios_errno != err_file_not_found, "Internal error: ADIOS file not found");
     ASSERT(f != nullptr, "Internal error: Failed to open_write ADIOS file");
@@ -276,7 +285,7 @@ ADIOS1IOHandlerImpl::openFile(Writable* writable,
 
     ADIOS_FILE *f;
     f = adios_read_open_file(name.c_str(),
-                             ADIOS_READ_METHOD_BP,
+                             m_readMethod,
                              m_mpiComm);
     ASSERT(adios_errno != err_file_not_found, "Internal error: ADIOS file not found");
     ASSERT(f != nullptr, "Internal error: Failed to open_write ADIOS file");
@@ -322,7 +331,7 @@ ADIOS1IOHandlerImpl::openDataset(Writable* writable,
 
     ADIOS_FILE *f;
     f = adios_read_open_file(res->second->c_str(),
-                             ADIOS_READ_METHOD_BP,
+                             m_readMethod,
                              m_mpiComm);
     ASSERT(adios_errno != err_file_not_found, "Internal error: ADIOS file not found");
     ASSERT(f != nullptr, "Internal error: Failed to open_write ADIOS file");
@@ -760,7 +769,7 @@ ADIOS1IOHandlerImpl::readDataset(Writable* writable,
         case DT::DATATYPE:
             throw std::runtime_error("Meta-Datatype leaked into IO");
         default:
-            throw std::runtime_error("Datatype not implemented in HDF5 IO");
+            throw std::runtime_error("Datatype not implemented in ADIOS1 IO");
     }
 
     ADIOS_FILE* f;

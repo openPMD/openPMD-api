@@ -41,6 +41,8 @@ class ParallelADIOS1IOHandlerImpl : public ADIOS1IOHandlerImpl
 public:
     ParallelADIOS1IOHandlerImpl(AbstractIOHandler*, MPI_Comm);
     virtual ~ParallelADIOS1IOHandlerImpl();
+
+    virtual void init() override;
 };  //ParallelADIOS1IOHandlerImpl
 #else
 class ParallelADIOS1IOHandlerImpl

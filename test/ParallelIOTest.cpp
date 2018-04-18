@@ -53,8 +53,7 @@ TEST_CASE( "git_hdf5_sample_content_test", "[parallel][hdf5]" )
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     /* only a 3x3x3 chunk of the actual data is hardcoded. every worker reads 1/3 */
     uint64_t rank = mpi_rank % 3;
-  try
-  {
+    try
     {
         Series o = Series::read("../samples/git-sample/data00000%T.h5", MPI_COMM_WORLD);
 
@@ -94,7 +93,6 @@ TEST_CASE( "git_hdf5_sample_content_test", "[parallel][hdf5]" )
             for( int i = 0; i < 3; ++i )
                 REQUIRE(raw_ptr[i] == constant_value);
         }
-    }
     } catch (no_such_file_error& e)
     {
         std::cerr << "git sample not accessible. (" << e.what() << ")\n";
@@ -145,5 +143,47 @@ TEST_CASE( "no_parallel_hdf5", "[parallel][hdf5]" )
 TEST_CASE( "adios_write_test", "[parallel][adios]" )
 {
     Series o = Series::create("../samples/parallel_write.bp", MPI_COMM_WORLD);
+}
+
+TEST_CASE( "hzdr_adios_sample_content_test", "[parallel][adios1]" )
+{
+    int mpi_rank{-1};
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+    /* only a 3x3x3 chunk of the actual data is hardcoded. every worker reads 1/3 */
+    uint64_t rank = mpi_rank % 3;
+    try
+    {
+        /* development/huebl/lwfa-bgfield-001 */
+        Series o = Series::read("../samples/hzdr-sample/bp/checkpoint_%T.bp", MPI_COMM_WORLD);
+
+        {
+            float actual[3][3][3] = {{{6.7173387e-06f, 6.7173387e-06f, 6.7173387e-06f},
+                                         {7.0438218e-06f, 7.0438218e-06f, 7.0438218e-06f},
+                                         {7.3689453e-06f, 7.3689453e-06f, 7.3689453e-06f}},
+                                     {{6.7173387e-06f, 6.7173387e-06f, 6.7173387e-06f},
+                                         {7.0438218e-06f, 7.0438218e-06f, 7.0438218e-06f},
+                                         {7.3689453e-06f, 7.3689453e-06f, 7.3689453e-06f}},
+                                     {{6.7173387e-06f, 6.7173387e-06f, 6.7173387e-06f},
+                                         {7.0438218e-06f, 7.0438218e-06f, 7.0438218e-06f},
+                                         {7.3689453e-06f, 7.3689453e-06f, 7.3689453e-06f}}};
+
+            MeshRecordComponent& B_z = o.iterations[0].meshes["B"]["z"];
+
+            Offset offset{20 + rank, 20, 150};
+            Extent extent{1, 3, 3};
+            std::unique_ptr< float[] > data;
+            B_z.loadChunk(offset, extent, data, RecordComponent::Allocation::API);
+            float* raw_ptr = data.get();
+
+            for( int j = 0; j < 3; ++j )
+                for( int k = 0; k < 3; ++k )
+                    REQUIRE(raw_ptr[j*3 + k] == actual[rank][j][k]);
+        }
+    } catch (no_such_file_error& e)
+    {
+        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+        return;
+    }
+
 }
 #endif

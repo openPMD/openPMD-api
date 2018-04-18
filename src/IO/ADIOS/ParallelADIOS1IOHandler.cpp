@@ -25,6 +25,7 @@
 #   include "openPMD/IO/ADIOS/ADIOS1Auxiliary.hpp"
 #   include "openPMD/IO/ADIOS/ADIOS1FilePosition.hpp"
 #   include <boost/filesystem.hpp>
+#   include <cstdlib>
 #endif
 
 namespace openPMD
@@ -42,9 +43,7 @@ ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string const& path,
         : AbstractIOHandler(path, at, comm),
           m_impl{new ParallelADIOS1IOHandlerImpl(this, comm)}
 {
-    /* TODO MPI_AGGREGATE, get aggregators from environment with default */
-    status = adios_select_method(m_group, "MPI", "", "");
-    ASSERT(status == err_no_error, "Internal error: Failed to select ADIOS method");
+    m_impl->init();
 }
 
 ParallelADIOS1IOHandler::~ParallelADIOS1IOHandler()
@@ -56,6 +55,31 @@ ParallelADIOS1IOHandler::flush()
     return m_impl->flush();
 }
 
+std::string
+getEnvNum(std::string const& key, std::string const& defaultValue)
+{
+    char const* env = std::getenv(key.c_str());
+    if( env != nullptr )
+    {
+        char const* tmp = env;
+        while( tmp )
+        {
+            if( isdigit(*tmp) )
+                ++tmp;
+            else
+            {
+                std::cerr << key << " is invalid" << std::endl;
+                break;
+            }
+        }
+        if( !tmp )
+            return std::string(env, std::strlen(env));
+        else
+            return defaultValue;
+    } else
+        return defaultValue;
+}
+
 ParallelADIOS1IOHandlerImpl::ParallelADIOS1IOHandlerImpl(AbstractIOHandler* handler,
                                                          MPI_Comm comm)
         : ADIOS1IOHandlerImpl{handler, comm}
@@ -63,6 +87,30 @@ ParallelADIOS1IOHandlerImpl::ParallelADIOS1IOHandlerImpl(AbstractIOHandler* hand
 
 ParallelADIOS1IOHandlerImpl::~ParallelADIOS1IOHandlerImpl()
 { }
+
+void
+ParallelADIOS1IOHandlerImpl::init()
+{
+    std::stringstream params;
+    params << "num_aggregators=" << getEnvNum("OPENPMD_ADIOS_NUM_AGGREGATORS", "1")
+           << ";num_ost=" << getEnvNum("OPENPMD_ADIOS_NUM_OST", "1")
+           << ";have_metadata_file=" << getEnvNum("OPENPMD_ADIOS_HAVE_METADATA_FILE", "1")
+           << ";verbose=2";
+    char const* c = params.str().c_str();
+
+    int status;
+    /* TODO ADIOS_READ_METHOD_BP_AGGREGATE */
+    m_readMethod = ADIOS_READ_METHOD_BP;
+    status = adios_read_init_method(m_readMethod, m_mpiComm, "");
+    ASSERT(status == err_no_error, "Internal error: Failed to initialize ADIOS reading method");
+
+    ADIOS_STATISTICS_FLAG noStatistics = adios_stat_no;
+    status = adios_declare_group(&m_group, m_groupName.c_str(), "", noStatistics);
+    ASSERT(status == err_no_error, "Internal error: Failed to declare ADIOS group");
+    /* TODO MPI_AGGREGATE */
+    status = adios_select_method(m_group, "MPI", c, "");
+    ASSERT(status == err_no_error, "Internal error: Failed to select ADIOS method");
+}
 #else
 #   if openPMD_HAVE_MPI
 ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string const& path,
