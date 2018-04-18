@@ -143,6 +143,36 @@ TEST_CASE( "no_parallel_hdf5", "[parallel][hdf5]" )
 TEST_CASE( "adios_write_test", "[parallel][adios]" )
 {
     Series o = Series::create("../samples/parallel_write.bp", MPI_COMM_WORLD);
+
+    int size{-1};
+    int rank{-1};
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    uint64_t mpi_size = static_cast<uint64_t>(size);
+    uint64_t mpi_rank = static_cast<uint64_t>(rank);
+
+    o.setAuthor("Parallel ADIOS1");
+    ParticleSpecies& e = o.iterations[1].particles["e"];
+
+    std::vector< double > position_global(mpi_size);
+    double pos{0.};
+    std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
+    std::shared_ptr< double > position_local(new double);
+    *position_local = position_global[mpi_rank];
+
+    e["position"]["x"].resetDataset(Dataset(determineDatatype(position_local), {mpi_size}));
+    e["position"]["x"].storeChunk({mpi_rank}, {1}, position_local);
+
+    std::vector< uint64_t > positionOffset_global(mpi_size);
+    uint64_t posOff{0};
+    std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
+    std::shared_ptr< uint64_t > positionOffset_local(new uint64_t);
+    *positionOffset_local = positionOffset_global[mpi_rank];
+
+    e["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local), {mpi_size}));
+    e["positionOffset"]["x"].storeChunk({mpi_rank}, {1}, positionOffset_local);
+
+    o.flush();
 }
 
 TEST_CASE( "hzdr_adios_sample_content_test", "[parallel][adios1]" )
@@ -156,6 +186,7 @@ TEST_CASE( "hzdr_adios_sample_content_test", "[parallel][adios1]" )
         /* development/huebl/lwfa-bgfield-001 */
         Series o = Series::read("../samples/hzdr-sample/bp/checkpoint_%T.bp", MPI_COMM_WORLD);
 
+        if( o.iterations.count(0) == 1)
         {
             float actual[3][3][3] = {{{6.7173387e-06f, 6.7173387e-06f, 6.7173387e-06f},
                                          {7.0438218e-06f, 7.0438218e-06f, 7.0438218e-06f},
