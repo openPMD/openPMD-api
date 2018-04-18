@@ -82,7 +82,6 @@ protected:
     int64_t m_group;
     std::string m_groupName;
     ADIOS_READ_METHOD m_readMethod;
-    std::unordered_map< Writable*, std::string > m_datasetSizes;
     std::unordered_map< Writable*, std::shared_ptr< std::string > > m_filePaths;
 };  //ADIOS1IOHandlerImpl
 #else

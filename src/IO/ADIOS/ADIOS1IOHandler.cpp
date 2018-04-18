@@ -249,10 +249,34 @@ ADIOS1IOHandlerImpl::createDataset(Writable* writable,
         if( auxiliary::ends_with(name, "/") )
             name = auxiliary::replace_first(name, "/", "");
 
-        /* Every variable (i.e. dataset for our purposes) write in ADIOS noxml style requires an individual ID.
-         * Creating a dataset explicitly at this point is not necessary. */
+        std::string path = concrete_bp1_file_position(writable) + name;
 
-        m_datasetSizes[writable] = getBP1Extent(parameters.extent);
+        size_t ndims = parameters.extent.size();
+
+        std::vector< std::string > chunkSize(ndims, "");
+        std::vector< std::string > chunkOffset(ndims, "");
+        int64_t id;
+        for( size_t i = 0; i < ndims; ++i )
+        {
+            chunkSize[i] = path + "_chunkSize" + std::to_string(i);
+            id = adios_define_var(m_group, chunkSize[i].c_str(), "", adios_unsigned_long, "", "", "");
+            ASSERT(id != 0, "Internal error: Failed to define ADIOS variable during Dataset creation");
+            chunkOffset[i] = path + "_chunkOffset" + std::to_string(i);
+            id = adios_define_var(m_group, chunkOffset[i].c_str(), "", adios_unsigned_long, "", "", "");
+            ASSERT(id != 0, "Internal error: Failed to define ADIOS variable during Dataset creation");
+        }
+
+        std::string chunkSizeParam = auxiliary::join(chunkSize, ",");
+        std::string globalSize = getBP1Extent(parameters.extent);
+        std::string chunkOffsetParam = auxiliary::join(chunkOffset, ",");
+        id = adios_define_var(m_group,
+                              path.c_str(),
+                              "",
+                              getBP1DataType(parameters.dtype),
+                              chunkSizeParam.c_str(),
+                              globalSize.c_str(),
+                              chunkOffsetParam.c_str());
+        ASSERT(id != 0, "Internal error: Failed to define ADIOS variable during Dataset creation");
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >(name);
@@ -439,29 +463,27 @@ ADIOS1IOHandlerImpl::writeDataset(Writable* writable,
 
     std::string name = concrete_bp1_file_position(writable);
 
-    ADIOS_DATATYPES datatype = getBP1DataType(parameters.dtype);
-
-    std::string dims = getBP1Extent(parameters.extent);
-    std::string const& global_dims = m_datasetSizes.at(writable);
-    std::string local_offsets = getBP1Extent(parameters.offset);
-
-    int64_t id;
-    id = adios_define_var(m_group,
-                          name.c_str(),
-                          "",
-                          datatype,
-                          dims.c_str(),
-                          global_dims.c_str(),
-                          local_offsets.c_str());
-    ASSERT(id >= 0 /* ??? */, "Internal error: Failed to define ADIOS variable during Dataset writing");
-
     int64_t fd;
     fd = open_write(writable);
 
-    int64_t status;
-    status = adios_write_byid(fd,
-                              id,
-                              parameters.data.get());
+    size_t ndims = parameters.extent.size();
+
+    std::string chunkSize;
+    std::string chunkOffset;
+    int status;
+    for( size_t i = 0; i < ndims; ++i )
+    {
+        chunkSize = name + "_chunkSize" + std::to_string(i);
+        status = adios_write(fd, chunkSize.c_str(), &parameters.extent[i]);
+        ASSERT(status == err_no_error, "Internal error: Failed to write ADIOS variable during Dataset writing");
+        chunkOffset = name + "_chunkOffset" + std::to_string(i);
+        status = adios_write(fd, chunkOffset.c_str(), &parameters.offset[i]);
+        ASSERT(status == err_no_error, "Internal error: Failed to write ADIOS variable during Dataset writing");
+    }
+
+    status = adios_write(fd,
+                         name.c_str(),
+                         parameters.data.get());
     ASSERT(status == err_no_error, "Internal error: Failed to write ADIOS variable during Dataset writing");
 
     close(fd);
