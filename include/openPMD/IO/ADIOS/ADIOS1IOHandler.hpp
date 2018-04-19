@@ -51,6 +51,8 @@ public:
 
     virtual void init();
 
+    virtual std::future< void > flush() override;
+
     virtual void createFile(Writable*, Parameter< Operation::CREATE_FILE > const&) override;
     virtual void createPath(Writable*, Parameter< Operation::CREATE_PATH > const&) override;
     virtual void createDataset(Writable*, Parameter< Operation::CREATE_DATASET > const&) override;
@@ -70,9 +72,7 @@ public:
     virtual void listDatasets(Writable*, Parameter< Operation::LIST_DATASETS > &) override;
     virtual void listAttributes(Writable*, Parameter< Operation::LIST_ATTS > &) override;
 
-    std::shared_ptr< std::string > open_close_flush(Writable*);
     int64_t open_write(Writable *);
-    virtual ADIOS_FILE* open_read(Writable*);
     void close(int64_t);
     void close(ADIOS_FILE*);
 
@@ -83,6 +83,9 @@ protected:
     std::string m_groupName;
     ADIOS_READ_METHOD m_readMethod;
     std::unordered_map< Writable*, std::shared_ptr< std::string > > m_filePaths;
+    std::unordered_map< std::shared_ptr< std::string >, int64_t > m_openWriteFileHandles;
+    std::unordered_map< std::shared_ptr< std::string >, ADIOS_FILE* > m_openReadFileHandles;
+    std::unordered_map< ADIOS_FILE*, std::vector< ADIOS_SELECTION* > > m_scheduledReads;
 };  //ADIOS1IOHandlerImpl
 #else
 class ADIOS1IOHandlerImpl
@@ -99,7 +102,10 @@ public:
 
     virtual std::future< void > flush() override;
 
+    virtual void enqueue(IOTask const&) override;
+
 private:
+    std::queue< IOTask > m_setup;
     std::unique_ptr< ADIOS1IOHandlerImpl > m_impl;
 };  //ADIOS1IOHandler
 } // openPMD

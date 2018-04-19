@@ -55,6 +55,12 @@ ADIOS1IOHandlerImpl::ADIOS1IOHandlerImpl(AbstractIOHandler* handler, MPI_Comm co
 
 ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
 {
+    for( auto& f : m_openReadFileHandles )
+        close(f.second);
+
+    for( auto& f : m_openWriteFileHandles )
+        close(f.second);
+
     int status;
     MPI_Barrier(m_mpiComm);
     status = adios_read_finalize_method(m_readMethod);
@@ -69,6 +75,118 @@ ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
         std::cerr << "Internal error: Failed to finalize ADIOS (parallel)\n";
 
     MPI_Comm_free(&m_mpiComm);
+}
+
+std::future< void >
+ADIOS1IOHandlerImpl::flush()
+{
+    auto handler = dynamic_cast< ADIOS1IOHandler* >(m_handler);
+    while( !handler->m_setup.empty() )
+    {
+        IOTask& i = handler->m_setup.front();
+        try
+        {
+            switch( i.operation )
+            {
+                using O = Operation;
+                case O::CREATE_FILE:
+                    createFile(i.writable, *dynamic_cast< Parameter< Operation::CREATE_FILE >* >(i.parameter.get()));
+                    break;
+                case O::CREATE_PATH:
+                    createPath(i.writable, *dynamic_cast< Parameter< O::CREATE_PATH >* >(i.parameter.get()));
+                    break;
+                case O::CREATE_DATASET:
+                    createDataset(i.writable, *dynamic_cast< Parameter< O::CREATE_DATASET >* >(i.parameter.get()));
+                    break;
+                case O::WRITE_ATT:
+                    writeAttribute(i.writable, *dynamic_cast< Parameter< O::WRITE_ATT >* >(i.parameter.get()));
+                    break;
+                case O::OPEN_FILE:
+                    openFile(i.writable, *dynamic_cast< Parameter< O::OPEN_FILE >* >(i.parameter.get()));
+                    break;
+                default:
+                    ASSERT(false, "Internal error: Wrong operation in ADIOS setup queue");
+            }
+        } catch (unsupported_data_error& e)
+        {
+            handler->m_setup.pop();
+            throw;
+        }
+        handler->m_setup.pop();
+    }
+
+
+    while( !handler->m_work.empty() )
+    {
+        IOTask& i = handler->m_work.front();
+        try
+        {
+            switch( i.operation )
+            {
+                using O = Operation;
+                case O::EXTEND_DATASET:
+                    extendDataset(i.writable, *dynamic_cast< Parameter< O::EXTEND_DATASET >* >(i.parameter.get()));
+                    break;
+                case O::OPEN_PATH:
+                    openPath(i.writable, *dynamic_cast< Parameter< O::OPEN_PATH >* >(i.parameter.get()));
+                    break;
+                case O::OPEN_DATASET:
+                    openDataset(i.writable, *dynamic_cast< Parameter< O::OPEN_DATASET >* >(i.parameter.get()));
+                    break;
+                case O::DELETE_FILE:
+                    deleteFile(i.writable, *dynamic_cast< Parameter< O::DELETE_FILE >* >(i.parameter.get()));
+                    break;
+                case O::DELETE_PATH:
+                    deletePath(i.writable, *dynamic_cast< Parameter< O::DELETE_PATH >* >(i.parameter.get()));
+                    break;
+                case O::DELETE_DATASET:
+                    deleteDataset(i.writable, *dynamic_cast< Parameter< O::DELETE_DATASET >* >(i.parameter.get()));
+                    break;
+                case O::DELETE_ATT:
+                    deleteAttribute(i.writable, *dynamic_cast< Parameter< O::DELETE_ATT >* >(i.parameter.get()));
+                    break;
+                case O::WRITE_DATASET:
+                    writeDataset(i.writable, *dynamic_cast< Parameter< O::WRITE_DATASET >* >(i.parameter.get()));
+                    break;
+                case O::READ_DATASET:
+                    readDataset(i.writable, *dynamic_cast< Parameter< O::READ_DATASET >* >(i.parameter.get()));
+                    break;
+                case O::READ_ATT:
+                    readAttribute(i.writable, *dynamic_cast< Parameter< O::READ_ATT >* >(i.parameter.get()));
+                    break;
+                case O::LIST_PATHS:
+                    listPaths(i.writable, *dynamic_cast< Parameter< O::LIST_PATHS >* >(i.parameter.get()));
+                    break;
+                case O::LIST_DATASETS:
+                    listDatasets(i.writable, *dynamic_cast< Parameter< O::LIST_DATASETS >* >(i.parameter.get()));
+                    break;
+                case O::LIST_ATTS:
+                    listAttributes(i.writable, *dynamic_cast< Parameter< O::LIST_ATTS >* >(i.parameter.get()));
+                    break;
+                default:
+                    ASSERT(false, "Internal error: Wrong operation in ADIOS work queue");
+            }
+        } catch (unsupported_data_error& e)
+        {
+            handler->m_work.pop();
+            throw;
+        }
+        handler->m_work.pop();
+    }
+
+    int status;
+    for( auto& file : m_scheduledReads )
+    {
+        status = adios_perform_reads(file.first,
+                                     1);
+        ASSERT(status == err_no_error, "Internal error: Failed to perform ADIOS reads during dataset reading");
+
+        for( auto& sel : file.second )
+            adios_selection_delete(sel);
+    }
+    m_scheduledReads.clear();
+
+    return std::future< void >();
 }
 
 void
@@ -104,19 +222,22 @@ ADIOS1IOHandler::flush()
     return m_impl->flush();
 }
 
-std::shared_ptr< std::string >
-ADIOS1IOHandlerImpl::open_close_flush(Writable* writable)
+void
+ADIOS1IOHandler::enqueue(IOTask const& i)
 {
-    auto res = m_filePaths.find(writable);
-    if( res == m_filePaths.end() )
-        res = m_filePaths.find(writable->parent);
-
-    int64_t fd;
-    fd = open_write(writable);
-
-    close(fd);
-
-    return res->second;
+    switch( i.operation )
+    {
+        case Operation::CREATE_FILE:
+        case Operation::CREATE_PATH:
+        case Operation::CREATE_DATASET:
+        case Operation::OPEN_FILE:
+        case Operation::WRITE_ATT:
+            m_setup.push(i);
+            return;
+        default:
+            m_work.push(i);
+            return;
+    }
 }
 
 int64_t
@@ -132,22 +253,6 @@ ADIOS1IOHandlerImpl::open_write(Writable* writable)
     ASSERT(status == err_no_error, "Internal error: Failed to open_write ADIOS file");
 
     return fd;
-}
-
-ADIOS_FILE*
-ADIOS1IOHandlerImpl::open_read(Writable* writable)
-{
-    auto name = m_filePaths[writable];
-    ASSERT(name != nullptr, "Internal error: Writables filePath queried before it was available");
-
-    ADIOS_FILE *f;
-    f = adios_read_open_file((*name).c_str(),
-                             m_readMethod,
-                             m_mpiComm);
-    ASSERT(adios_errno != err_file_not_found, "Internal error: ADIOS file not found");
-    ASSERT(f != nullptr, "Internal error: Failed to open_write ADIOS file");
-
-    return f;
 }
 
 void
@@ -180,18 +285,11 @@ ADIOS1IOHandlerImpl::createFile(Writable* writable,
         if( !exists(dir) )
             create_directories(dir);
 
-        int64_t fd;
         std::string name = m_handler->directory + parameters.name;
         if( !auxiliary::ends_with(name, ".bp") )
             name += ".bp";
-        std::string mode = m_handler->accessType == AccessType::CREATE ? "w" : "u";
 
-        int status;
-        status = adios_open(&fd, m_groupName.c_str(), name.c_str(), mode.c_str(), m_mpiComm);
-        ASSERT(status == err_no_error, "Internal error: Failed to create ADIOS file");
-
-        status = adios_close(fd);
-        ASSERT(status == err_no_error, "Internal error: Failed to open_write close ADIOS file during creation");
+        /* defer actually opening the file handle until the first Operation::WRITE_DATASET occurs */
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >("/");
@@ -242,6 +340,17 @@ ADIOS1IOHandlerImpl::createDataset(Writable* writable,
 
     if( !writable->written )
     {
+        /* ADIOS variable definitions require the file to be (re-) opened to take effect/not cause errors */
+        auto res = m_filePaths.find(writable);
+        if( res == m_filePaths.end() )
+            res = m_filePaths.find(writable->parent);
+        auto it = m_openWriteFileHandles.find(res->second);
+        if( it != m_openWriteFileHandles.end() )
+        {
+            close(m_openWriteFileHandles.at(res->second));
+            m_openWriteFileHandles.erase(it);
+        }
+
         /* Sanitize name */
         std::string name = parameters.name;
         if( auxiliary::starts_with(name, "/") )
@@ -258,10 +367,10 @@ ADIOS1IOHandlerImpl::createDataset(Writable* writable,
         int64_t id;
         for( size_t i = 0; i < ndims; ++i )
         {
-            chunkSize[i] = path + "_chunkSize" + std::to_string(i);
+            chunkSize[i] = "/tmp" + path + "_chunkSize" + std::to_string(i);
             id = adios_define_var(m_group, chunkSize[i].c_str(), "", adios_unsigned_long, "", "", "");
             ASSERT(id != 0, "Internal error: Failed to define ADIOS variable during Dataset creation");
-            chunkOffset[i] = path + "_chunkOffset" + std::to_string(i);
+            chunkOffset[i] = "/tmp" + path + "_chunkOffset" + std::to_string(i);
             id = adios_define_var(m_group, chunkOffset[i].c_str(), "", adios_unsigned_long, "", "", "");
             ASSERT(id != 0, "Internal error: Failed to define ADIOS variable during Dataset creation");
         }
@@ -280,10 +389,6 @@ ADIOS1IOHandlerImpl::createDataset(Writable* writable,
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >(name);
-
-        auto res = m_filePaths.find(writable);
-        if( res == m_filePaths.end() )
-            res = m_filePaths.find(writable->parent);
 
         m_filePaths[writable] = res->second;
     }
@@ -318,10 +423,9 @@ ADIOS1IOHandlerImpl::openFile(Writable* writable,
     writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >("/");
 
     auto handle = std::make_shared< std::string >(name);
-    m_filePaths.erase(writable);
-    m_filePaths.insert({writable, handle});
 
-    close(f);
+    m_openReadFileHandles[handle] = f;
+    m_filePaths[writable] = handle;
 }
 
 void
@@ -349,16 +453,11 @@ void
 ADIOS1IOHandlerImpl::openDataset(Writable* writable,
                                  Parameter< Operation::OPEN_DATASET >& parameters)
 {
+    ADIOS_FILE *f;
     auto res = m_filePaths.find(writable);
     if( res == m_filePaths.end() )
         res = m_filePaths.find(writable->parent);
-
-    ADIOS_FILE *f;
-    f = adios_read_open_file(res->second->c_str(),
-                             m_readMethod,
-                             m_mpiComm);
-    ASSERT(adios_errno != err_file_not_found, "Internal error: ADIOS file not found");
-    ASSERT(f != nullptr, "Internal error: Failed to open_write ADIOS file");
+    f = m_openReadFileHandles.at(res->second);
 
     /* Sanitize name */
     std::string name = parameters.name;
@@ -429,9 +528,8 @@ ADIOS1IOHandlerImpl::openDataset(Writable* writable,
     writable->written = true;
     writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >(name);
 
+    m_openReadFileHandles[res->second] = f;
     m_filePaths[writable] = res->second;
-
-    close(f);
 }
 
 void
@@ -461,10 +559,19 @@ ADIOS1IOHandlerImpl::writeDataset(Writable* writable,
     if( m_handler->accessType == AccessType::READ_ONLY )
         throw std::runtime_error("Writing into a dataset in a file opened as read only is not possible.");
 
-    std::string name = concrete_bp1_file_position(writable);
-
+    /* file opening is deferred until the first dataset write to a file occurs */
+    auto res = m_filePaths.find(writable);
+    if( res == m_filePaths.end() )
+        res = m_filePaths.find(writable->parent);
     int64_t fd;
-    fd = open_write(writable);
+    if( m_openWriteFileHandles.find(res->second) == m_openWriteFileHandles.end() )
+    {
+        fd = open_write(writable);
+        m_openWriteFileHandles[res->second] = fd;
+    } else
+        fd = m_openWriteFileHandles.at(res->second);
+
+    std::string name = concrete_bp1_file_position(writable);
 
     size_t ndims = parameters.extent.size();
 
@@ -473,10 +580,10 @@ ADIOS1IOHandlerImpl::writeDataset(Writable* writable,
     int status;
     for( size_t i = 0; i < ndims; ++i )
     {
-        chunkSize = name + "_chunkSize" + std::to_string(i);
+        chunkSize = "/tmp" + name + "_chunkSize" + std::to_string(i);
         status = adios_write(fd, chunkSize.c_str(), &parameters.extent[i]);
         ASSERT(status == err_no_error, "Internal error: Failed to write ADIOS variable during Dataset writing");
-        chunkOffset = name + "_chunkOffset" + std::to_string(i);
+        chunkOffset = "/tmp" + name + "_chunkOffset" + std::to_string(i);
         status = adios_write(fd, chunkOffset.c_str(), &parameters.offset[i]);
         ASSERT(status == err_no_error, "Internal error: Failed to write ADIOS variable during Dataset writing");
     }
@@ -485,8 +592,6 @@ ADIOS1IOHandlerImpl::writeDataset(Writable* writable,
                          name.c_str(),
                          parameters.data.get());
     ASSERT(status == err_no_error, "Internal error: Failed to write ADIOS variable during Dataset writing");
-
-    close(fd);
 }
 
 void
@@ -762,8 +867,6 @@ ADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
         for( size_t i = 0; i < nelems; ++i )
             delete[] ptr[i];
     }
-
-    m_filePaths[writable] = open_close_flush(writable);
 }
 
 void
@@ -795,7 +898,7 @@ ADIOS1IOHandlerImpl::readDataset(Writable* writable,
     }
 
     ADIOS_FILE* f;
-    f = open_read(writable);
+    f = m_openReadFileHandles.at(m_filePaths.at(writable));
 
     ADIOS_SELECTION* sel;
     sel = adios_selection_boundingbox(parameters.extent.size(),
@@ -817,13 +920,7 @@ ADIOS1IOHandlerImpl::readDataset(Writable* writable,
     ASSERT(status == err_no_error, "Internal error: Failed to schedule ADIOS read during dataset reading");
     ASSERT(adios_errno == err_no_error, "Internal error: Failed to schedule ADIOS read during dataset reading");
 
-    status = adios_perform_reads(f,
-                                 1);
-    ASSERT(status == err_no_error, "Internal error: Failed to perform ADIOS reads during dataset reading");
-
-    adios_selection_delete(sel);
-
-    close(f);
+    m_scheduledReads[f].push_back(sel);
 }
 
 void
@@ -831,7 +928,7 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                                    Parameter< Operation::READ_ATT >& parameters)
 {
     ADIOS_FILE* f;
-    f = open_read(writable);
+    f = m_openReadFileHandles.at(m_filePaths.at(writable));
 
     std::string attrname = concrete_bp1_file_position(writable);
     if( !auxiliary::ends_with(attrname, "/") )
@@ -1122,23 +1219,21 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
 
     *parameters.dtype = dtype;
     *parameters.resource = a.getResource();
-
-    close(f);
 }
 
 void
 ADIOS1IOHandlerImpl::listPaths(Writable* writable,
                                Parameter< Operation::LIST_PATHS >& parameters)
 {
-    ADIOS_FILE* fp;
-    fp = open_read(writable);
+    ADIOS_FILE* f;
+    f = m_openReadFileHandles.at(m_filePaths.at(writable));
 
     std::string name = concrete_bp1_file_position(writable);
 
     std::unordered_set< std::string > paths;
-    for( int i = 0; i < fp->nvars; ++i )
+    for( int i = 0; i < f->nvars; ++i )
     {
-        char* c = fp->var_namelist[i];
+        char* c = f->var_namelist[i];
         std::string s(c, std::strlen(c));
         if( auxiliary::starts_with(s, name) )
         {
@@ -1152,9 +1247,9 @@ ADIOS1IOHandlerImpl::listPaths(Writable* writable,
             }
         }
     }
-    for( int i = 0; i < fp->nattrs; ++i )
+    for( int i = 0; i < f->nattrs; ++i )
     {
-        char* c = fp->attr_namelist[i];
+        char* c = f->attr_namelist[i];
         std::string s(c, std::strlen(c));
         if( auxiliary::starts_with(s, name) )
         {
@@ -1172,23 +1267,21 @@ ADIOS1IOHandlerImpl::listPaths(Writable* writable,
     }
 
     *parameters.paths = std::vector< std::string >(paths.begin(), paths.end());
-
-    close(fp);
 }
 
 void
 ADIOS1IOHandlerImpl::listDatasets(Writable* writable,
                                   Parameter< Operation::LIST_DATASETS >& parameters)
 {
-    ADIOS_FILE* fp;
-    fp = open_read(writable);
+    ADIOS_FILE* f;
+    f = m_openReadFileHandles.at(m_filePaths.at(writable));
 
     std::string name = concrete_bp1_file_position(writable);
 
     std::unordered_set< std::string > paths;
-    for( int i = 0; i < fp->nvars; ++i )
+    for( int i = 0; i < f->nvars; ++i )
     {
-        char* c = fp->var_namelist[i];
+        char* c = f->var_namelist[i];
         std::string s(c, std::strlen(c));
         if( auxiliary::starts_with(s, name) )
         {
@@ -1203,16 +1296,14 @@ ADIOS1IOHandlerImpl::listDatasets(Writable* writable,
     }
 
     *parameters.datasets = std::vector< std::string >(paths.begin(), paths.end());
-
-    close(fp);
 }
 
 void
 ADIOS1IOHandlerImpl::listAttributes(Writable* writable,
                                     Parameter< Operation::LIST_ATTS >& parameters)
 {
-    ADIOS_FILE* fp;
-    fp = open_read(writable);
+    ADIOS_FILE* f;
+    f = m_openReadFileHandles.at(m_filePaths.at(writable));
 
     std::string name = concrete_bp1_file_position(writable);
 
@@ -1220,7 +1311,7 @@ ADIOS1IOHandlerImpl::listAttributes(Writable* writable,
     {
         /* writable is a dataset and corresponds to an ADIOS variable */
         ADIOS_VARINFO* info;
-        info = adios_inq_var(fp,
+        info = adios_inq_var(f,
                              name.c_str());
         ASSERT(adios_errno == err_no_error, "Internal error: Failed to inquire ADIOS variable during attribute listing");
         ASSERT(info != nullptr, "Internal error: Failed to inquire ADIOS variable during attribute listing");
@@ -1229,7 +1320,7 @@ ADIOS1IOHandlerImpl::listAttributes(Writable* writable,
         parameters.attributes->reserve(info->nattrs);
         for( int i = 0; i < info->nattrs; ++i )
         {
-            char* c = fp->attr_namelist[info->attr_ids[i]];
+            char* c = f->attr_namelist[info->attr_ids[i]];
             parameters.attributes->push_back(auxiliary::replace_first(std::string(c, std::strlen(c)), name, ""));
         }
 
@@ -1238,9 +1329,9 @@ ADIOS1IOHandlerImpl::listAttributes(Writable* writable,
     {
         /* there is no ADIOS variable associated with the writable */
         std::unordered_set< std::string > attributes;
-        for( int i = 0; i < fp->nattrs; ++i )
+        for( int i = 0; i < f->nattrs; ++i )
         {
-            char* c = fp->attr_namelist[i];
+            char* c = f->attr_namelist[i];
             std::string s(c, std::strlen(c));
             if( auxiliary::starts_with(s, name) )
             {
@@ -1255,10 +1346,6 @@ ADIOS1IOHandlerImpl::listAttributes(Writable* writable,
         }
         *parameters.attributes = std::vector< std::string >(attributes.begin(), attributes.end());
     }
-
-
-
-    close(fp);
 }
 #else
 ADIOS1IOHandler::ADIOS1IOHandler(std::string const& path, AccessType at)
