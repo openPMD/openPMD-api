@@ -27,7 +27,7 @@ Optional: I/O backends
 ----------------------
 
 * `HDF5 <https://support.hdfgroup.org/HDF5>`_ 1.8.6+
-* `ADIOS1 <https://www.olcf.ornl.gov/center-projects/adios>`_ 1.13.0+
+* `ADIOS1 <https://www.olcf.ornl.gov/center-projects/adios>`_ 1.13.1+
 * `ADIOS2 <https://github.com/ornladios/ADIOS2>`_ 2.1+ (*not yet implemented*)
 
 while those can be build either with or without:
