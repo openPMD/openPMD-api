@@ -246,9 +246,22 @@ ADIOS1IOHandlerImpl::open_write(Writable* writable)
     if( res == m_filePaths.end() )
         res = m_filePaths.find(writable->parent);
 
+    std::string mode;
+    if( m_existsOnDisk[res->second] )
+        mode = "u";
+    else
+    {
+        mode = "w";
+        m_existsOnDisk[res->second] = true;
+    }
+
     int64_t fd;
     int status;
-    status = adios_open(&fd, m_groupName.c_str(), res->second->c_str(), "u", m_mpiComm);
+    status = adios_open(&fd,
+                        m_groupName.c_str(),
+                        res->second->c_str(),
+                        mode.c_str(),
+                        m_mpiComm);
     ASSERT(status == err_no_error, "Internal error: Failed to open_write ADIOS file");
 
     return fd;
@@ -339,7 +352,7 @@ ADIOS1IOHandlerImpl::createDataset(Writable* writable,
 
     if( !writable->written )
     {
-        /* ADIOS variable definitions require the file to be (re-) opened to take effect/not cause errors */
+        /* ADIOS variable definitions require the file to be (re-)opened to take effect/not cause errors */
         auto res = m_filePaths.find(writable);
         if( res == m_filePaths.end() )
             res = m_filePaths.find(writable->parent);

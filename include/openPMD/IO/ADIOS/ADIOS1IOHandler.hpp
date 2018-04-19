@@ -83,6 +83,7 @@ protected:
     std::string m_groupName;
     ADIOS_READ_METHOD m_readMethod;
     std::unordered_map< Writable*, std::shared_ptr< std::string > > m_filePaths;
+    std::unordered_map< std::shared_ptr< std::string >, bool > m_existsOnDisk;
     std::unordered_map< std::shared_ptr< std::string >, int64_t > m_openWriteFileHandles;
     std::unordered_map< std::shared_ptr< std::string >, ADIOS_FILE* > m_openReadFileHandles;
     std::unordered_map< ADIOS_FILE*, std::vector< ADIOS_SELECTION* > > m_scheduledReads;

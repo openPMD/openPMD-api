@@ -134,7 +134,7 @@ ParallelADIOS1IOHandlerImpl::flush()
                     openFile(i.writable, *dynamic_cast< Parameter< O::OPEN_FILE >* >(i.parameter.get()));
                     break;
                 default:
-                ASSERT(false, "Internal error: Wrong operation in ADIOS setup queue");
+                    ASSERT(false, "Internal error: Wrong operation in ADIOS setup queue");
             }
         } catch (unsupported_data_error& e)
         {
@@ -193,7 +193,7 @@ ParallelADIOS1IOHandlerImpl::flush()
                     listAttributes(i.writable, *dynamic_cast< Parameter< O::LIST_ATTS >* >(i.parameter.get()));
                     break;
                 default:
-                ASSERT(false, "Internal error: Wrong operation in ADIOS work queue");
+                    ASSERT(false, "Internal error: Wrong operation in ADIOS work queue");
             }
         } catch (unsupported_data_error& e)
         {
@@ -223,8 +223,8 @@ ParallelADIOS1IOHandlerImpl::init()
 {
     std::stringstream params;
     params << "num_aggregators=" << getEnvNum("OPENPMD_ADIOS_NUM_AGGREGATORS", "1")
-           << ";num_ost=" << getEnvNum("OPENPMD_ADIOS_NUM_OST", "1")
-           << ";have_metadata_file=" << getEnvNum("OPENPMD_ADIOS_HAVE_METADATA_FILE", "1")
+           << ";num_ost=" << getEnvNum("OPENPMD_ADIOS_NUM_OST", "0")
+           << ";have_metadata_file=" << getEnvNum("OPENPMD_ADIOS_HAVE_METADATA_FILE", "0")
            << ";verbose=2";
     char const* c = params.str().c_str();
 
@@ -237,8 +237,7 @@ ParallelADIOS1IOHandlerImpl::init()
     ADIOS_STATISTICS_FLAG noStatistics = adios_stat_no;
     status = adios_declare_group(&m_group, m_groupName.c_str(), "", noStatistics);
     ASSERT(status == err_no_error, "Internal error: Failed to declare ADIOS group");
-    /* TODO MPI_AGGREGATE */
-    status = adios_select_method(m_group, "MPI", c, "");
+    status = adios_select_method(m_group, "MPI_AGGREGATE", c, "");
     ASSERT(status == err_no_error, "Internal error: Failed to select ADIOS method");
 }
 #else
