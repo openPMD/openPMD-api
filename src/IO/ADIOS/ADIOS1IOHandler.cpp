@@ -54,6 +54,8 @@ ADIOS1IOHandlerImpl::ADIOS1IOHandlerImpl(AbstractIOHandler* handler, MPI_Comm co
 
 ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
 {
+    // TODO open file if it was never opened (m_existsOnDisk is false)
+
     for( auto& f : m_openReadFileHandles )
         close(f.second);
 

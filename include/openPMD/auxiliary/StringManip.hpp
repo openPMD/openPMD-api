@@ -126,8 +126,9 @@ join(std::vector< std::string > const& vs, std::string const& delimiter)
         default:
             std::ostringstream ss;
             std::copy(vs.begin(),
-                      vs.end(),
+                      vs.end() - 1,
                       std::ostream_iterator< std::string >(ss, delimiter.c_str()));
+            ss << *(vs.end() - 1);
             return ss.str();
     }
 }

@@ -1021,7 +1021,7 @@ TEST_CASE( "no_serial_hdf5", "[serial][hdf5]" )
 }
 #endif
 #if !openPMD_HAVE_MPI && openPMD_HAVE_ADIOS1
-TEST_CASE( "adios_dtype_test", "[serial][adios1]" )
+TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
 {
     {
         Series s = Series::create("../samples/dtype_test.bp");
@@ -1092,7 +1092,7 @@ TEST_CASE( "adios_dtype_test", "[serial][adios1]" )
     REQUIRE(s.getAttribute("vecString").get< std::vector< std::string > >() == std::vector< std::string >({"vector", "of", "strings"}));
 }
 
-TEST_CASE( "adios_write_test", "[serial][adios1]")
+TEST_CASE( "adios1_write_test", "[serial][adios1]")
 {
     Series o = Series::create("../samples/serial_write.bp");
 
@@ -1176,6 +1176,93 @@ TEST_CASE( "adios_write_test", "[serial][adios1]")
 
     o.flush();
 }
+
+/*
+TEST_CASE( "adios1_fileBased_write_test", "[serial][adios1]" )
+{
+    Series o = Series::create("../samples/serial_fileBased_write%T.bp");
+
+    ParticleSpecies& e_1 = o.iterations[1].particles["e"];
+
+    std::vector< double > position_global(4);
+    double pos{0.};
+    std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
+    std::shared_ptr< double > position_local_1(new double);
+    e_1["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_1), {4}));
+
+    for( uint64_t i = 0; i < 4; ++i )
+    {
+        *position_local_1 = position_global[i];
+        e_1["position"]["x"].storeChunk({i}, {1}, position_local_1);
+        o.flush();
+    }
+
+    std::vector< uint64_t > positionOffset_global(4);
+    uint64_t posOff{0};
+    std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
+    std::shared_ptr< uint64_t > positionOffset_local_1(new uint64_t);
+    e_1["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_1), {4}));
+
+    for( uint64_t i = 0; i < 4; ++i )
+    {
+        *positionOffset_local_1 = positionOffset_global[i];
+        e_1["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_1);
+        o.flush();
+    }
+
+    ParticleSpecies& e_2 = o.iterations[2].particles["e"];
+
+    std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
+    std::shared_ptr< double > position_local_2(new double);
+    e_2["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_2), {4}));
+
+    for( uint64_t i = 0; i < 4; ++i )
+    {
+        *position_local_2 = position_global[i];
+        e_2["position"]["x"].storeChunk({i}, {1}, position_local_2);
+        o.flush();
+    }
+
+    std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
+    std::shared_ptr< uint64_t > positionOffset_local_2(new uint64_t);
+    e_2["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_2), {4}));
+
+    for( uint64_t i = 0; i < 4; ++i )
+    {
+        *positionOffset_local_2 = positionOffset_global[i];
+        e_2["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_2);
+        o.flush();
+    }
+
+    o.flush();
+
+    ParticleSpecies& e_3 = o.iterations[3].particles["e"];
+
+    std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
+    std::shared_ptr< double > position_local_3(new double);
+    e_3["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_3), {4}));
+
+    for( uint64_t i = 0; i < 4; ++i )
+    {
+        *position_local_3 = position_global[i];
+        e_3["position"]["x"].storeChunk({i}, {1}, position_local_3);
+        o.flush();
+    }
+
+    std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
+    std::shared_ptr< uint64_t > positionOffset_local_3(new uint64_t);
+    e_3["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_3), {4}));
+
+    for( uint64_t i = 0; i < 4; ++i )
+    {
+        *positionOffset_local_3 = positionOffset_global[i];
+        e_3["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_3);
+        o.flush();
+    }
+
+    o.flush();
+}
+ */
 
 TEST_CASE( "hzdr_adios1_sample_content_test", "[serial][adios1]" )
 {
