@@ -87,10 +87,6 @@ protected:
     std::unordered_map< std::shared_ptr< std::string >, ADIOS_FILE* > m_openReadFileHandles;
     std::unordered_map< ADIOS_FILE*, std::vector< ADIOS_SELECTION* > > m_scheduledReads;
 };  //ADIOS1IOHandlerImpl
-#else
-class ADIOS1IOHandlerImpl
-{ };
-#endif
 
 class ADIOS1IOHandler : public AbstractIOHandler
 {
@@ -108,4 +104,22 @@ private:
     std::queue< IOTask > m_setup;
     std::unique_ptr< ADIOS1IOHandlerImpl > m_impl;
 };  //ADIOS1IOHandler
+#else
+class ADIOS1IOHandlerImpl
+{ };
+
+class ADIOS1IOHandler : public AbstractIOHandler
+{
+    friend class ADIOS1IOHandlerImpl;
+
+public:
+    ADIOS1IOHandler(std::string const& path, AccessType);
+    virtual ~ADIOS1IOHandler() override;
+
+    virtual std::future< void > flush() override;
+
+private:
+    std::unique_ptr< ADIOS1IOHandlerImpl > m_impl;
+};  //ADIOS1IOHandler
+#endif
 } // openPMD

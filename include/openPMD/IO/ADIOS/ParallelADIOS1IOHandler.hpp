@@ -46,10 +46,6 @@ public:
 
     virtual std::future< void > flush() override;
 };  //ParallelADIOS1IOHandlerImpl
-#else
-class ParallelADIOS1IOHandlerImpl
-{ };
-#endif
 
 class ParallelADIOS1IOHandler : public AbstractIOHandler
 {
@@ -71,4 +67,27 @@ private:
     std::queue< IOTask > m_setup;
     std::unique_ptr< ParallelADIOS1IOHandlerImpl > m_impl;
 };  //ParallelADIOS1IOHandler
+#else
+class ParallelADIOS1IOHandlerImpl
+{ };
+
+class ParallelADIOS1IOHandler : public AbstractIOHandler
+{
+    friend class ParallelADIOS1IOHandlerImpl;
+
+public:
+#if openPMD_HAVE_MPI
+    ParallelADIOS1IOHandler(std::string const& path, AccessType, MPI_Comm);
+#else
+    ParallelADIOS1IOHandler(std::string const& path, AccessType);
+#endif
+    virtual ~ParallelADIOS1IOHandler() override;
+
+    virtual std::future< void > flush() override;
+
+private:
+    std::unique_ptr< ParallelADIOS1IOHandlerImpl > m_impl;
+};  //ParallelADIOS1IOHandler
+#endif
+
 } // openPMD
