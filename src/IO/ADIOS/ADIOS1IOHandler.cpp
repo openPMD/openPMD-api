@@ -42,7 +42,6 @@ namespace openPMD
 
 ADIOS1IOHandlerImpl::ADIOS1IOHandlerImpl(AbstractIOHandler* handler, MPI_Comm comm)
         : AbstractIOHandlerImpl(handler),
-          m_mpiComm{MPI_COMM_SELF},
           m_mpiInfo{MPI_INFO_NULL},
           m_groupName{"data"}
 {
@@ -521,7 +520,7 @@ ADIOS1IOHandlerImpl::openDataset(Writable* writable,
 
     Extent e;
     e.resize(vi->ndim);
-    for( size_t i = 0; i < vi->ndim; ++i )
+    for( int i = 0; i < vi->ndim; ++i )
         e[i] = vi->dims[i];
     *parameters.extent = e;
 
@@ -864,7 +863,7 @@ ADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
     if( parameters.dtype == Datatype::VEC_STRING )
     {
         auto ptr = reinterpret_cast< char** >(values.get());
-        for( size_t i = 0; i < nelems; ++i )
+        for( int i = 0; i < nelems; ++i )
             delete[] ptr[i];
     }
 }
@@ -991,6 +990,7 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
 
         case adios_complex:
         case adios_double_complex:
+        default:
             throw unsupported_data_error("Unsupported attribute datatype");
     }
 
@@ -1057,6 +1057,7 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
             case adios_string_array:
             case adios_complex:
             case adios_double_complex:
+            default:
                 throw unsupported_data_error("Unsupported attribute datatype");
         }
     }
@@ -1071,7 +1072,7 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 auto c = reinterpret_cast< char* >(data);
                 std::vector< char > vc;
                 vc.resize(size);
-                for( size_t i = 0; i < size; ++i )
+                for( int i = 0; i < size; ++i )
                     vc[i] = c[i];
                 a = Attribute(vc);
                 break;
@@ -1082,7 +1083,7 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 auto i16 = reinterpret_cast< int16_t* >(data);
                 std::vector< int16_t > vi;
                 vi.resize(size);
-                for( size_t i = 0; i < size; ++i )
+                for( int i = 0; i < size; ++i )
                     vi[i] = i16[i];
                 a = Attribute(vi);
                 break;
@@ -1093,7 +1094,7 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 auto i32 = reinterpret_cast< int32_t* >(data);
                 std::vector< int32_t > vi;
                 vi.resize(size);
-                for( size_t i = 0; i < size; ++i )
+                for( int i = 0; i < size; ++i )
                     vi[i] = i32[i];
                 a = Attribute(vi);
                 break;
@@ -1104,7 +1105,7 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 auto i64 = reinterpret_cast< int64_t* >(data);
                 std::vector< int64_t > vi;
                 vi.resize(size);
-                for( size_t i = 0; i < size; ++i )
+                for( int i = 0; i < size; ++i )
                     vi[i] = i64[i];
                 a = Attribute(vi);
                 break;
@@ -1115,7 +1116,7 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 auto uc = reinterpret_cast< unsigned char* >(data);
                 std::vector< unsigned char > vuc;
                 vuc.resize(size);
-                for( size_t i = 0; i < size; ++i )
+                for( int i = 0; i < size; ++i )
                     vuc[i] = uc[i];
                 a = Attribute(vuc);
                 break;
@@ -1126,7 +1127,7 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 auto ui16 = reinterpret_cast< uint16_t* >(data);
                 std::vector< uint16_t > vi;
                 vi.resize(size);
-                for( size_t i = 0; i < size; ++i )
+                for( int i = 0; i < size; ++i )
                     vi[i] = ui16[i];
                 a = Attribute(vi);
                 break;
@@ -1137,7 +1138,7 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 auto ui32 = reinterpret_cast< uint32_t* >(data);
                 std::vector< uint32_t > vi;
                 vi.resize(size);
-                for( size_t i = 0; i < size; ++i )
+                for( int i = 0; i < size; ++i )
                     vi[i] = ui32[i];
                 a = Attribute(vi);
                 break;
@@ -1148,7 +1149,7 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 auto ui64 = reinterpret_cast< uint64_t* >(data);
                 std::vector< uint64_t > vi;
                 vi.resize(size);
-                for( size_t i = 0; i < size; ++i )
+                for( int i = 0; i < size; ++i )
                     vi[i] = ui64[i];
                 a = Attribute(vi);
                 break;
@@ -1159,7 +1160,7 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 auto f = reinterpret_cast< float* >(data);
                 std::vector< float > vf;
                 vf.resize(size);
-                for( size_t i = 0; i < size; ++i )
+                for( int i = 0; i < size; ++i )
                     vf[i] = f[i];
                 a = Attribute(vf);
                 break;
@@ -1170,7 +1171,7 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 auto d = reinterpret_cast< double* >(data);
                 std::vector< double > vd;
                 vd.resize(size);
-                for( size_t i = 0; i < size; ++i )
+                for( int i = 0; i < size; ++i )
                     vd[i] = d[i];
                 a = Attribute(vd);
                 break;
@@ -1181,7 +1182,7 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 auto ld = reinterpret_cast< long double* >(data);
                 std::vector< long double > vld;
                 vld.resize(size);
-                for( size_t i = 0; i < size; ++i )
+                for( int i = 0; i < size; ++i )
                     vld[i] = ld[i];
                 a = Attribute(vld);
                 break;
@@ -1198,7 +1199,7 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 auto c = reinterpret_cast< char** >(data);
                 std::vector< std::string > vs;
                 vs.resize(size);
-                for( size_t i = 0; i < size; ++i )
+                for( int i = 0; i < size; ++i )
                 {
                     vs[i] = auxiliary::strip(std::string(c[i], std::strlen(c[i])), {'\0'});
                     /* TODO pointer should be freed, but this causes memory curruption */

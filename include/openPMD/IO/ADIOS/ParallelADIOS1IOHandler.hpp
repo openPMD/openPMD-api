@@ -43,6 +43,8 @@ public:
     virtual ~ParallelADIOS1IOHandlerImpl();
 
     virtual void init() override;
+
+    virtual std::future< void > flush() override;
 };  //ParallelADIOS1IOHandlerImpl
 #else
 class ParallelADIOS1IOHandlerImpl
@@ -61,9 +63,12 @@ public:
 #endif
     virtual ~ParallelADIOS1IOHandler() override;
 
-    std::future< void > flush() override;
+    virtual std::future< void > flush() override;
+
+    virtual void enqueue(IOTask const&) override;
 
 private:
+    std::queue< IOTask > m_setup;
     std::unique_ptr< ParallelADIOS1IOHandlerImpl > m_impl;
 };  //ParallelADIOS1IOHandler
 } // openPMD
