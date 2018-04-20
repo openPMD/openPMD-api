@@ -10,6 +10,7 @@ namespace py = pybind11;
 
 // forward declarations of exposed classes
 void init_BaseRecord(py::module &);
+void init_BaseRecordComponent(py::module &);
 void init_Container(py::module &);
 void init_Dataset(py::module &);
 void init_Datatype(py::module &);
@@ -35,6 +36,7 @@ PYBIND11_MODULE(openPMD, m) {
     init_Iteration(m);
     init_IterationEncoding(m);
     init_Mesh(m);
+    init_BaseRecordComponent(m);
     init_RecordComponent(m);
     init_MeshRecordComponent(m);
     init_ParticlePatches(m);    

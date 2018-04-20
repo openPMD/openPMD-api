@@ -319,6 +319,7 @@ if(openPMD_HAVE_PYTHON)
         src/binding/python/openPMD.cpp
         src/binding/python/AccessType.cpp
         src/binding/python/BaseRecord.cpp
+        src/binding/python/BaseRecordComponent.cpp
         src/binding/python/Container.cpp
         src/binding/python/Dataset.cpp
         src/binding/python/Datatype.cpp

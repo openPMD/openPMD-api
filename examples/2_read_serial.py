@@ -31,11 +31,10 @@ if __name__ == "__main__":
     print("")
 
     E_x = i.meshes["E"]["x"]
+    shape = E_x.shape
 
-    # TODO: add extent and dtype property to record components
-    # Extent extent = E_x.get_extent  # or as property: E_x.extent
-    # print("Field E.x has shape ({0}) and has datatype {1}".format(
-    #     extent, E_x.dtype));
+    print("Field E.x has shape {0} and datatype {1}".format(
+          shape, E_x.dtype))
 
     # TODO buffer protocol / numpy bindings
     # chunk_data = E_x[1:3, 1:3, 1:2]
