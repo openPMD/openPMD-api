@@ -25,7 +25,7 @@ BaseRecordComponent::BaseRecordComponent()
 { }
 
 Datatype
-BaseRecordComponent::getDatatype()
+BaseRecordComponent::getDatatype() const
 {
     return m_dataset.dtype;
 }
