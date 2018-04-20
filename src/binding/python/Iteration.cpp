@@ -1,6 +1,4 @@
 #include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include <pybind11/stl_bind.h>
 
 #include "openPMD/Iteration.hpp"
 
@@ -9,15 +7,8 @@
 namespace py = pybind11;
 using namespace openPMD;
 
-using PyMeshContainer = Container< Mesh >;
-using PyPartContainer = Container< ParticleSpecies >;
-PYBIND11_MAKE_OPAQUE(PyMeshContainer)
-PYBIND11_MAKE_OPAQUE(PyPartContainer)
 
 void init_Iteration(py::module &m) {
-    py::bind_map< PyMeshContainer >(m, "Mesh_Container");
-    py::bind_map< PyPartContainer >(m, "Particle_Container");
-
     py::class_<Iteration>(m, "Iteration")
         .def(py::init<Iteration const &>())
 

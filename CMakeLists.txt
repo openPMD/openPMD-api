@@ -318,6 +318,8 @@ if(openPMD_HAVE_PYTHON)
     pybind11_add_module(openPMD.py MODULE
         src/binding/python/openPMD.cpp
         src/binding/python/AccessType.cpp
+        src/binding/python/BaseRecord.cpp
+        src/binding/python/Container.cpp
         src/binding/python/Dataset.cpp
         src/binding/python/Datatype.cpp
         src/binding/python/Iteration.cpp
@@ -327,6 +329,7 @@ if(openPMD_HAVE_PYTHON)
         src/binding/python/ParticleSpecies.cpp
         src/binding/python/Record.cpp
         src/binding/python/RecordComponent.cpp
+        src/binding/python/MeshRecordComponent.cpp
         src/binding/python/Series.cpp
     )
     target_link_libraries(openPMD.py PRIVATE openPMD)
