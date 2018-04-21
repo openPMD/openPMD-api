@@ -20,7 +20,7 @@ public:
 
     BaseRecordComponent& resetDatatype(Datatype);
 
-    Datatype getDatatype();
+    Datatype getDatatype() const;
 
 protected:
     BaseRecordComponent();
