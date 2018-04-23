@@ -1177,7 +1177,6 @@ TEST_CASE( "adios1_write_test", "[serial][adios1]")
     o.flush();
 }
 
-/*
 TEST_CASE( "adios1_fileBased_write_test", "[serial][adios1]" )
 {
     Series o = Series::create("../samples/serial_fileBased_write%T.bp");
@@ -1262,7 +1261,6 @@ TEST_CASE( "adios1_fileBased_write_test", "[serial][adios1]" )
 
     o.flush();
 }
- */
 
 TEST_CASE( "hzdr_adios1_sample_content_test", "[serial][adios1]" )
 {

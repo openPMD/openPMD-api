@@ -54,7 +54,25 @@ ADIOS1IOHandlerImpl::ADIOS1IOHandlerImpl(AbstractIOHandler* handler, MPI_Comm co
 
 ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
 {
-    // TODO open file if it was never opened (m_existsOnDisk is false)
+    /* create all files where ADIOS file creation has been deferred, but this has never been triggered
+     * this happens when no Operation::WRITE_DATASET is performed */
+    for( auto& f : m_existsOnDisk )
+    {
+        if( !f.second )
+        {
+            int64_t fd;
+            int status;
+            status = adios_open(&fd,
+                                m_groupName.c_str(),
+                                f.first->c_str(),
+                                "w",
+                                m_mpiComm);
+            if( status != err_no_error )
+                std::cerr << "Internal error: Failed to open_flush ADIOS file\n";
+
+            m_openWriteFileHandles[f.first] = fd;
+        }
+    }
 
     for( auto& f : m_openReadFileHandles )
         close(f.second);
@@ -250,7 +268,15 @@ ADIOS1IOHandlerImpl::open_write(Writable* writable)
 
     std::string mode;
     if( m_existsOnDisk[res->second] )
+    {
         mode = "u";
+        /* close the handle that corresponds to the file we want to append to */
+        if( m_openReadFileHandles.find(res->second) != m_openReadFileHandles.end() )
+        {
+            close(m_openReadFileHandles[res->second]);
+            m_openReadFileHandles.erase(res->second);
+        }
+    }
     else
     {
         mode = "w";
@@ -303,12 +329,13 @@ ADIOS1IOHandlerImpl::createFile(Writable* writable,
         if( !auxiliary::ends_with(name, ".bp") )
             name += ".bp";
 
-        /* defer actually opening the file handle until the first Operation::WRITE_DATASET occurs */
-
         writable->written = true;
         writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >("/");
 
         m_filePaths[writable] = std::make_shared< std::string >(name);
+
+        /* defer actually opening the file handle until the first Operation::WRITE_DATASET occurs */
+        m_existsOnDisk[m_filePaths[writable]] = false;
     }
 }
 
@@ -426,20 +453,31 @@ ADIOS1IOHandlerImpl::openFile(Writable* writable,
     if( !auxiliary::ends_with(name, ".bp") )
         name += ".bp";
 
+    std::shared_ptr< std::string > filePath;
+    if( m_filePaths.find(writable) == m_filePaths.end() )
+        filePath = std::make_shared< std::string >(name);
+    else
+        filePath = m_filePaths[writable];
+
+    /* close the handle that corresponds to the file we want to open */
+    if( m_openWriteFileHandles.find(filePath) != m_openWriteFileHandles.end() )
+    {
+        close(m_openWriteFileHandles[filePath]);
+        m_openWriteFileHandles.erase(filePath);
+    }
+
     ADIOS_FILE *f;
     f = adios_read_open_file(name.c_str(),
                              m_readMethod,
                              m_mpiComm);
     ASSERT(adios_errno != err_file_not_found, "Internal error: ADIOS file not found");
-    ASSERT(f != nullptr, "Internal error: Failed to open_write ADIOS file");
+    ASSERT(f != nullptr, "Internal error: Failed to open_read ADIOS file");
 
     writable->written = true;
     writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >("/");
 
-    auto handle = std::make_shared< std::string >(name);
-
-    m_openReadFileHandles[handle] = f;
-    m_filePaths[writable] = handle;
+    m_openReadFileHandles[filePath] = f;
+    m_filePaths[writable] = filePath;
 }
 
 void
