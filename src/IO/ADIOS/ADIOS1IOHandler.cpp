@@ -891,7 +891,11 @@ ADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
             break;
         }
         case DT::BOOL:
-            throw std::runtime_error("No workaround for ADIOS1 bool implemented");
+        {
+            auto ptr = reinterpret_cast< unsigned char* >(values.get());
+            *ptr = static_cast< unsigned char >(att.get< bool >());
+            break;
+        }
         case DT::UNDEFINED:
         case DT::DATATYPE:
             throw std::runtime_error("Unknown Attribute datatype");
@@ -938,9 +942,8 @@ ADIOS1IOHandlerImpl::readDataset(Writable* writable,
         case DT::UINT64:
         case DT::CHAR:
         case DT::UCHAR:
-            break;
         case DT::BOOL:
-            throw std::runtime_error("No workaround for ADIOS1 bool implemented");
+            break;
         case DT::UNDEFINED:
             throw std::runtime_error("Unknown Attribute datatype");
         case DT::DATATYPE:

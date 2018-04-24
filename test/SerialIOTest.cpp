@@ -742,6 +742,7 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
         s.setAttribute("vecDouble", std::vector< double >({0., 1.79769e+308}));
         s.setAttribute("vecLongdouble", std::vector< long double >({0.L, 1.18973e+4932L}));
         s.setAttribute("vecString", std::vector< std::string >({"vector", "of", "strings"}));
+        s.setAttribute("bool", true);
     }
     
     Series s = Series::read("../samples/dtype_test.h5");
@@ -770,6 +771,7 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
     REQUIRE(s.getAttribute("vecDouble").get< std::vector< double > >() == std::vector< double >({0., 1.79769e+308}));
     REQUIRE(s.getAttribute("vecLongdouble").get< std::vector< long double > >() == std::vector< long double >({0.L, 1.18973e+4932L}));
     REQUIRE(s.getAttribute("vecString").get< std::vector< std::string > >() == std::vector< std::string >({"vector", "of", "strings"}));
+    REQUIRE(s.getAttribute("bool").get< bool >() == true);
 }
 
 TEST_CASE( "hdf5_write_test", "[serial][hdf5]" )
@@ -1062,6 +1064,7 @@ TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
         s.setAttribute("vecDouble", std::vector< double >({0., 1.79769e+308}));
         s.setAttribute("vecLongdouble", std::vector< long double >({0.L, 1.18973e+4932L}));
         s.setAttribute("vecString", std::vector< std::string >({"vector", "of", "strings"}));
+        s.setAttribute("bool", true);
     }
 
     Series s = Series::read("../samples/dtype_test.bp");
@@ -1090,6 +1093,7 @@ TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
     REQUIRE(s.getAttribute("vecDouble").get< std::vector< double > >() == std::vector< double >({0., 1.79769e+308}));
     REQUIRE(s.getAttribute("vecLongdouble").get< std::vector< long double > >() == std::vector< long double >({0.L, 1.18973e+4932L}));
     REQUIRE(s.getAttribute("vecString").get< std::vector< std::string > >() == std::vector< std::string >({"vector", "of", "strings"}));
+    REQUIRE(s.getAttribute("bool").get< uint8_t >() == static_cast< uint8_t >(true));
 }
 
 TEST_CASE( "adios1_write_test", "[serial][adios1]")

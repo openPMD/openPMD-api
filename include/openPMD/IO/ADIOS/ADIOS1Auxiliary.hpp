@@ -83,6 +83,7 @@ getBP1DataType(Datatype dtype)
             return adios_byte;
         case DT::UCHAR:
         case DT::VEC_UCHAR:
+        case DT::BOOL:
             return adios_unsigned_byte;
         case DT::INT16:
         case DT::VEC_INT16:
@@ -116,8 +117,6 @@ getBP1DataType(Datatype dtype)
             return adios_string;
         case DT::VEC_STRING:
             return adios_string_array;
-        case DT::BOOL:
-            throw std::runtime_error("No workaround for ADIOS1 bool implemented");
         case DT::DATATYPE:
             throw std::runtime_error("Meta-Datatype leaked into IO");
         case DT::UNDEFINED:
