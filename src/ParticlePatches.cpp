@@ -1,25 +1,29 @@
+/* Copyright 2017-2018 Fabian Koller
+ *
+ * This file is part of openPMD-api.
+ *
+ * openPMD-api is free software: you can redistribute it and/or modify
+ * it under the terms of of either the GNU General Public License or
+ * the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * openPMD-api is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License and the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * and the GNU Lesser General Public License along with openPMD-api.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "openPMD/ParticlePatches.hpp"
 
 
 namespace openPMD
 {
-ParticlePatches::mapped_type&
-ParticlePatches::operator[](ParticlePatches::key_type const& key)
-{
-    if( "numParticles" == key || "numParticlesOffset" ==  key )
-        throw std::runtime_error("numParticles and numParticlesOffest are handled by the API.");
-
-    return Container< PatchRecord >::operator[](key);
-}
-
-ParticlePatches::mapped_type&
-ParticlePatches::operator[](ParticlePatches::key_type&& key)
-{
-    if( "numParticles" == key || "numParticlesOffset" ==  key )
-        throw std::runtime_error("numParticles and numParticlesOffest are handled by the API.");
-
-    return Container< PatchRecord >::operator[](key);
-}
+ParticlePatches::ParticlePatches() = default;
 
 void
 ParticlePatches::read()
@@ -42,9 +46,7 @@ ParticlePatches::read()
     IOHandler->enqueue(IOTask(this, dList));
     IOHandler->flush();
 
-    std::vector< uint64_t > numParticles, numParticlesOffset;
     Parameter< Operation::OPEN_DATASET > dOpen;
-    Parameter< Operation::READ_DATASET > dRead;
     for( auto const& component_name : *dList.datasets )
     {
         if( !("numParticles" == component_name || "numParticlesOffset" == component_name) )
@@ -61,35 +63,7 @@ ParticlePatches::read()
         if( DT::UINT64 != *dOpen.dtype )
             throw std::runtime_error("Unexpected datatype for " + component_name);
 
-        dRead.dtype = Datatype::UINT64;
-        dRead.extent = *dOpen.extent;
-        dRead.offset = {0};
-
-        size_t numPoints = dRead.extent[0];
-        std::unique_ptr< uint64_t > data(new uint64_t[numPoints]);
-        dRead.data = data.get();
-        IOHandler->enqueue(IOTask(&pr, dRead));
-        IOHandler->flush();
-
-        uint64_t *raw_ptr = static_cast< uint64_t* >(data.get());
-        if( "numParticles" == component_name )
-        {
-            numParticles.reserve(numPoints);
-            for( size_t i = 0; i < numPoints; ++i )
-                numParticles.emplace_back(*(raw_ptr + i));
-        } else if( "numParticlesOffset" == component_name )
-        {
-            numParticlesOffset.reserve(numPoints);
-            for( size_t i = 0; i < numPoints; ++i )
-                numParticlesOffset.emplace_back(*(raw_ptr + i));
-        }
+        prc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
     }
-
-    if( numParticles.size() != numParticlesOffset.size() )
-        throw std::runtime_error("Number of entries in numParticles and numParticlesOffset are different.");
-
-    m_patchPositions.reserve(numParticles.size());
-    for( size_t i = 0; i < numParticles.size(); ++i )
-        m_patchPositions.emplace_back(PatchPosition(numParticles[i], numParticlesOffset[i]));
 }
 } // openPMD

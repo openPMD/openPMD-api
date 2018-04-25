@@ -1,3 +1,23 @@
+/* Copyright 2017 Fabian Koller
+ *
+ * This file is part of openPMD-api.
+ *
+ * openPMD-api is free software: you can redistribute it and/or modify
+ * it under the terms of of either the GNU General Public License or
+ * the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * openPMD-api is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License and the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * and the GNU Lesser General Public License along with openPMD-api.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
 #pragma once
 
 #include "openPMD/backend/Container.hpp"
@@ -81,7 +101,7 @@ BaseRecord< T_elem >::operator[](key_type const& key)
         bool scalar = (key == RecordComponent::SCALAR);
         if( (scalar && !Container< T_elem >::empty() && !m_containsScalar) || (m_containsScalar && !scalar) )
             throw std::runtime_error("A scalar component can not be contained at "
-                                             "the same time as one or more regular components.");
+                                     "the same time as one or more regular components.");
 
         mapped_type & ret = Container< T_elem >::operator[](key);
         if( scalar )
@@ -105,7 +125,7 @@ BaseRecord< T_elem >::operator[](key_type&& key)
         bool scalar = (key == RecordComponent::SCALAR);
         if( (scalar && !Container< T_elem >::empty() && !m_containsScalar) || (m_containsScalar && !scalar) )
             throw std::runtime_error("A scalar component can not be contained at "
-                                             "the same time as one or more regular components.");
+                                     "the same time as one or more regular components.");
 
         mapped_type& ret = Container< T_elem >::operator[](std::move(key));
         if( scalar )
