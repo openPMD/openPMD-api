@@ -20,6 +20,8 @@
  */
 #include "openPMD/ParticleSpecies.hpp"
 
+#include <algorithm>
+
 
 namespace openPMD
 {
