@@ -691,11 +691,12 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
         REQUIRE(e_weighting_scalar.getDimensionality() == 1);
 
         ParticlePatches& e_patches = species_e.particlePatches;
-        REQUIRE(e_patches.size() == 4);
+        REQUIRE(e_patches.size() == 4); /* extent, numParticles, numParticlesOffset, offset */
         REQUIRE(e_patches.count("extent") == 1);
         REQUIRE(e_patches.count("numParticles") == 1);
         REQUIRE(e_patches.count("numParticlesOffset") == 1);
         REQUIRE(e_patches.count("offset") == 1);
+        REQUIRE(e_patches.numPatches() == 4);
 
         ud = {{1., 0.,  0.,  0.,  0.,  0.,  0.}};
         PatchRecord& e_extent = e_patches["extent"];
@@ -718,12 +719,21 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
         REQUIRE(e_extent_z.unitSI() == 2.599999993753294e-07);
         REQUIRE(e_extent_z.getDatatype() == Datatype::UINT64);
 
+        std::unique_ptr< uint64_t > data;
+        e_extent_z.load(0, data);
+        o.flush();
+        REQUIRE(*data == static_cast< uint64_t >(80));
+
         PatchRecord& e_numParticles = e_patches["numParticles"];
         REQUIRE(e_numParticles.size() == 1);
         REQUIRE(e_numParticles.count(RecordComponent::SCALAR) == 1);
         
         PatchRecordComponent& e_numParticles_scalar = e_numParticles[RecordComponent::SCALAR];
         REQUIRE(e_numParticles_scalar.getDatatype() == Datatype::UINT64);
+
+        e_numParticles_scalar.load(0, data);
+        o.flush();
+        REQUIRE(*data == static_cast< uint64_t >(512000));
 
         PatchRecord& e_numParticlesOffset = e_patches["numParticlesOffset"];
         REQUIRE(e_numParticlesOffset.size() == 1);

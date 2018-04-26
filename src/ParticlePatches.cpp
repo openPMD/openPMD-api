@@ -25,6 +25,15 @@ namespace openPMD
 {
 ParticlePatches::ParticlePatches() = default;
 
+size_t
+ParticlePatches::numPatches() const
+{
+    if( this->empty() )
+        return 0;
+
+    return this->at("numParticles").at(RecordComponent::SCALAR).getExtent()[0];
+}
+
 void
 ParticlePatches::read()
 {
@@ -57,13 +66,17 @@ ParticlePatches::read()
         prc.parent = pr.parent;
         dOpen.name = component_name;
         IOHandler->enqueue(IOTask(&pr, dOpen));
+        IOHandler->enqueue(IOTask(&prc, dOpen));
         IOHandler->flush();
 
         using DT = Datatype;
         if( DT::UINT64 != *dOpen.dtype )
             throw std::runtime_error("Unexpected datatype for " + component_name);
 
+        /* allow all attributes to be set */
+        prc.written = false;
         prc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
+        prc.written = true;
     }
 }
 } // openPMD
