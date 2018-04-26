@@ -428,6 +428,17 @@ ADIOS1IOHandlerImpl::createDataset(Writable* writable,
                               chunkOffsetParam.c_str());
         ASSERT(id != 0, "Internal error: Failed to define ADIOS variable during Dataset creation");
 
+        if( !parameters.compression.empty() )
+            std::cerr << "Custom transform not compatible with ADIOS1 backend. Use transform instead."
+                      << std::endl;
+
+        if( !parameters.transform.empty() )
+        {
+            int status;
+            status = adios_set_transform(id, parameters.transform.c_str());
+            ASSERT(status == err_no_error, "Internal error: Failed to set ADIOS transform during Dataset cretaion");
+        }
+
         writable->written = true;
         writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >(name);
 
