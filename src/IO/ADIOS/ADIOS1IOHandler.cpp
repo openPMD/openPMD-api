@@ -429,7 +429,7 @@ ADIOS1IOHandlerImpl::createDataset(Writable* writable,
         ASSERT(id != 0, "Internal error: Failed to define ADIOS variable during Dataset creation");
 
         if( !parameters.compression.empty() )
-            std::cerr << "Custom transform not compatible with ADIOS1 backend. Use transform instead."
+            std::cerr << "Custom compression not compatible with ADIOS1 backend. Use transform instead."
                       << std::endl;
 
         if( !parameters.transform.empty() )
