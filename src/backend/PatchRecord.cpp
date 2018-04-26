@@ -1,3 +1,23 @@
+/* Copyright 2017-2018 Fabian Koller
+ *
+ * This file is part of openPMD-api.
+ *
+ * openPMD-api is free software: you can redistribute it and/or modify
+ * it under the terms of of either the GNU General Public License or
+ * the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * openPMD-api is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License and the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * and the GNU Lesser General Public License along with openPMD-api.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/backend/PatchRecord.hpp"
 
@@ -23,37 +43,57 @@ PatchRecord::PatchRecord()
 void
 PatchRecord::flush(std::string const& path)
 {
-    Container< PatchRecordComponent >::flush(path);
-
-    for( auto& comp : *this )
-        comp.second.flush(comp.first);
+    if( this->find(RecordComponent::SCALAR) == this->end() )
+    {
+        Container< PatchRecordComponent >::flush(path);
+        for( auto& comp : *this )
+            comp.second.flush(comp.first);
+    } else
+        this->operator[](RecordComponent::SCALAR).flush(path);
 }
 
 void
 PatchRecord::read()
 {
+    Parameter< Operation::READ_ATT > aRead;
+    aRead.name = "unitDimension";
+    IOHandler->enqueue(IOTask(this, aRead));
+    IOHandler->flush();
+
+    if( *aRead.dtype == Datatype::ARR_DBL_7 )
+        this->setAttribute("unitDimension", Attribute(*aRead.resource).template get< std::array< double, 7 > >());
+    else if( *aRead.dtype == Datatype::VEC_DOUBLE )
+    {
+        auto vec = Attribute(*aRead.resource).template get< std::vector< double > >();
+        if( vec.size() == 7 )
+        {
+            std::array< double, 7 > arr;
+            std::copy(vec.begin(),
+                      vec.end(),
+                      arr.begin());
+            this->setAttribute("unitDimension", arr);
+        } else
+            throw std::runtime_error("Unexpected Attribute datatype for 'unitDimension'");
+    }
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'unitDimension'");
+
     Parameter< Operation::LIST_DATASETS > dList;
     IOHandler->enqueue(IOTask(this, dList));
     IOHandler->flush();
 
     Parameter< Operation::OPEN_DATASET > dOpen;
-    Parameter< Operation::READ_DATASET > dRead;
     for( auto const& component_name : *dList.datasets )
     {
         PatchRecordComponent& prc = (*this)[component_name];
         dOpen.name = component_name;
         IOHandler->enqueue(IOTask(&prc, dOpen));
         IOHandler->flush();
-
-        dRead.dtype = *dOpen.dtype;
-        dRead.extent = *dOpen.extent;
-        dRead.offset = {0};
-
-        size_t numPoints = dRead.extent[0];
-        auto data = auxiliary::allocatePtr(dRead.dtype, numPoints);
-        dRead.data = data.get();
-        IOHandler->enqueue(IOTask(&prc, dRead));
-        IOHandler->flush();
+        /* allow all attributes to be set */
+        prc.written = false;
+        prc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
+        prc.written = true;
+        prc.read();
     }
 }
 } // openPMD

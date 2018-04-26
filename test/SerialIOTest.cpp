@@ -562,11 +562,6 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
         REQUIRE(species_e.count("position") == 1);
         REQUIRE(species_e.count("positionOffset") == 1);
         REQUIRE(species_e.count("weighting") == 1);
-        REQUIRE(species_e.particlePatches.size() == 4);
-        REQUIRE(species_e.particlePatches.count("extent") == 1);
-        REQUIRE(species_e.particlePatches.count("numParticles") == 1);
-        REQUIRE(species_e.particlePatches.count("numParticlesOffset") == 1);
-        REQUIRE(species_e.particlePatches.count("offset") == 1);
 
         ud = {{0.,  0.,  1.,  1.,  0.,  0.,  0.}};
         Record& e_charge = species_e["charge"];
@@ -694,6 +689,78 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
         REQUIRE(e_weighting_scalar.getDatatype() == Datatype::FLOAT);
         REQUIRE(e_weighting_scalar.getExtent() == e);
         REQUIRE(e_weighting_scalar.getDimensionality() == 1);
+
+        ParticlePatches& e_patches = species_e.particlePatches;
+        REQUIRE(e_patches.size() == 4); /* extent, numParticles, numParticlesOffset, offset */
+        REQUIRE(e_patches.count("extent") == 1);
+        REQUIRE(e_patches.count("numParticles") == 1);
+        REQUIRE(e_patches.count("numParticlesOffset") == 1);
+        REQUIRE(e_patches.count("offset") == 1);
+        REQUIRE(e_patches.numPatches() == 4);
+
+        ud = {{1., 0.,  0.,  0.,  0.,  0.,  0.}};
+        PatchRecord& e_extent = e_patches["extent"];
+        REQUIRE(e_extent.unitDimension() == ud);
+
+        REQUIRE(e_extent.size() == 3);
+        REQUIRE(e_extent.count("x") == 1);
+        REQUIRE(e_extent.count("y") == 1);
+        REQUIRE(e_extent.count("z") == 1);
+
+        PatchRecordComponent& e_extent_x = e_extent["x"];
+        REQUIRE(e_extent_x.unitSI() == 2.599999993753294e-07);
+        REQUIRE(e_extent_x.getDatatype() == Datatype::UINT64);
+
+        PatchRecordComponent& e_extent_y = e_extent["y"];
+        REQUIRE(e_extent_y.unitSI() == 4.429999943501912e-08);
+        REQUIRE(e_extent_y.getDatatype() == Datatype::UINT64);
+
+        PatchRecordComponent& e_extent_z = e_extent["z"];
+        REQUIRE(e_extent_z.unitSI() == 2.599999993753294e-07);
+        REQUIRE(e_extent_z.getDatatype() == Datatype::UINT64);
+
+        std::unique_ptr< uint64_t > data;
+        e_extent_z.load(0, data);
+        o.flush();
+        REQUIRE(*data == static_cast< uint64_t >(80));
+
+        PatchRecord& e_numParticles = e_patches["numParticles"];
+        REQUIRE(e_numParticles.size() == 1);
+        REQUIRE(e_numParticles.count(RecordComponent::SCALAR) == 1);
+        
+        PatchRecordComponent& e_numParticles_scalar = e_numParticles[RecordComponent::SCALAR];
+        REQUIRE(e_numParticles_scalar.getDatatype() == Datatype::UINT64);
+
+        e_numParticles_scalar.load(0, data);
+        o.flush();
+        REQUIRE(*data == static_cast< uint64_t >(512000));
+
+        PatchRecord& e_numParticlesOffset = e_patches["numParticlesOffset"];
+        REQUIRE(e_numParticlesOffset.size() == 1);
+        REQUIRE(e_numParticlesOffset.count(RecordComponent::SCALAR) == 1);
+
+        PatchRecordComponent& e_numParticlesOffset_scalar = e_numParticlesOffset[RecordComponent::SCALAR];
+        REQUIRE(e_numParticlesOffset_scalar.getDatatype() == Datatype::UINT64);
+
+        PatchRecord& e_offset = e_patches["offset"];
+        REQUIRE(e_offset.unitDimension() == ud);
+
+        REQUIRE(e_offset.size() == 3);
+        REQUIRE(e_offset.count("x") == 1);
+        REQUIRE(e_offset.count("y") == 1);
+        REQUIRE(e_offset.count("z") == 1);
+
+        PatchRecordComponent& e_offset_x = e_offset["x"];
+        REQUIRE(e_offset_x.unitSI() == 2.599999993753294e-07);
+        REQUIRE(e_offset_x.getDatatype() == Datatype::UINT64);
+
+        PatchRecordComponent& e_offset_y = e_offset["y"];
+        REQUIRE(e_offset_y.unitSI() == 4.429999943501912e-08);
+        REQUIRE(e_offset_y.getDatatype() == Datatype::UINT64);
+
+        PatchRecordComponent& e_offset_z = e_offset["z"];
+        REQUIRE(e_offset_z.unitSI() == 2.599999993753294e-07);
+        REQUIRE(e_offset_z.getDatatype() == Datatype::UINT64);
     } catch (no_such_file_error& e)
     {
         std::cerr << "HZDR sample not accessible. (" << e.what() << ")\n";
