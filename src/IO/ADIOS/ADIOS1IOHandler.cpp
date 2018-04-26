@@ -449,7 +449,9 @@ ADIOS1IOHandlerImpl::createDataset(Writable* writable,
 void
 ADIOS1IOHandlerImpl::extendDataset(Writable* writable,
                                    Parameter< Operation::EXTEND_DATASET > const& parameters)
-{ }
+{
+    throw std::runtime_error("Dataset extension not implemented in ADIOS backend");
+}
 
 void
 ADIOS1IOHandlerImpl::openFile(Writable* writable,
@@ -598,22 +600,62 @@ ADIOS1IOHandlerImpl::openDataset(Writable* writable,
 void
 ADIOS1IOHandlerImpl::deleteFile(Writable* writable,
                                 Parameter< Operation::DELETE_FILE > const& parameters)
-{ }
+{
+    if( m_handler->accessType == AccessType::READ_ONLY )
+        throw std::runtime_error("Deleting a file opened as read only is not possible.");
+
+    if( writable->written )
+    {
+        auto path = m_filePaths.at(writable);
+        if( m_openReadFileHandles.find(path) != m_openReadFileHandles.end() )
+        {
+            close(m_openReadFileHandles.at(path));
+            m_openReadFileHandles.erase(path);
+        }
+        if( m_openWriteFileHandles.find(path) != m_openWriteFileHandles.end() )
+        {
+            close(m_openWriteFileHandles.at(path));
+            m_openWriteFileHandles.erase(path);
+        }
+
+        std::string name = m_handler->directory + parameters.name;
+        if( !auxiliary::ends_with(name, ".bp") )
+            name += ".bp";
+
+        using namespace boost::filesystem;
+        path file(name);
+        if( !exists(file) )
+            throw std::runtime_error("File does not exist: " + name);
+
+        remove(file);
+
+        writable->written = false;
+        writable->abstractFilePosition.reset();
+
+        m_filePaths.erase(writable);
+    }
+}
 
 void
 ADIOS1IOHandlerImpl::deletePath(Writable* writable,
                                 Parameter< Operation::DELETE_PATH > const& parameters)
-{ }
+{
+    throw std::runtime_error("Path deletion not implemented in ADIOS backend");
+}
 
 void
 ADIOS1IOHandlerImpl::deleteDataset(Writable* writable,
                                    Parameter< Operation::DELETE_DATASET > const& parameters)
-{ }
+{
+    throw std::runtime_error("Dataset deletion not implemented in ADIOS backend");
+}
 
 void
 ADIOS1IOHandlerImpl::deleteAttribute(Writable* writable,
                                      Parameter< Operation::DELETE_ATT > const& parameters)
-{ }
+{
+    throw std::runtime_error("Attribute deletion not implemented in ADIOS backend");
+}
 
 void
 ADIOS1IOHandlerImpl::writeDataset(Writable* writable,
