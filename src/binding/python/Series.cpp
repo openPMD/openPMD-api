@@ -1,20 +1,12 @@
 #include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include <pybind11/stl_bind.h>
 
 #include "openPMD/Series.hpp"
-#include "openPMD/Iteration.hpp"
-#include "openPMD/backend/Container.hpp"
 
 namespace py = pybind11;
 using namespace openPMD;
 
-using PyIterationContainer = Container< Iteration, uint64_t >;
-PYBIND11_MAKE_OPAQUE(PyIterationContainer)
 
 void init_Series(py::module &m) {
-    py::bind_map< PyIterationContainer >(m, "Iteration_Container");
-
     py::class_<Series>(m, "Series")
 
         // private

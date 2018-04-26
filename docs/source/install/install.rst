@@ -34,10 +34,6 @@ A package for openPMD-api is available on the Spack package manager.
    spack install openpmd-api  # optional: +python
    spack load --dependencies openpmd-api
 
-.. attention::
-
-   Not yet published.
-
 .. _install-conda:
 
 .. only:: html
