@@ -399,20 +399,17 @@ if(BUILD_TESTING)
     endforeach()
 endif()
 
-# Current examples all use HDF5, elaborate if other backends are used
-if(openPMD_HAVE_HDF5)
-    foreach(examplename ${openPMD_EXAMPLE_NAMES})
-        if(${examplename} MATCHES ".+parallel$")
-            if(openPMD_HAVE_MPI)
-                add_executable(${examplename} examples/${examplename}.cpp)
-                target_link_libraries(${examplename} PRIVATE openPMD)
-            endif()
-        else()
+foreach(examplename ${openPMD_EXAMPLE_NAMES})
+    if(${examplename} MATCHES ".+parallel$")
+        if(openPMD_HAVE_MPI)
             add_executable(${examplename} examples/${examplename}.cpp)
             target_link_libraries(${examplename} PRIVATE openPMD)
         endif()
-    endforeach()
-endif()
+    else()
+        add_executable(${examplename} examples/${examplename}.cpp)
+        target_link_libraries(${examplename} PRIVATE openPMD)
+    endif()
+endforeach()
 
 
 # Generate Files with Configuration Options ###################################

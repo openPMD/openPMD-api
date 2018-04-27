@@ -1269,6 +1269,7 @@ TEST_CASE( "adios1_fileBased_write_test", "[serial][adios1]" )
 TEST_CASE( "hzdr_adios1_sample_content_test", "[serial][adios1]" )
 {
     // since this file might not be publicly available, gracefully handle errors
+    /** @todo add bp example files to https://github.com/openPMD/openPMD-example-datasets */
     try
     {
         /* development/huebl/lwfa-bgfield-001 */

@@ -122,7 +122,7 @@ getBP1DataType(Datatype dtype)
         case DT::UNDEFINED:
             throw std::runtime_error("Unknown Attribute datatype");
         default:
-            throw std::runtime_error("Datatype not implemented in HDF5 IO");
+            throw std::runtime_error("Datatype not implemented in ADIOS IO");
     }
 }
 

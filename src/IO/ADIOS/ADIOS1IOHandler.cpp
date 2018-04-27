@@ -1311,7 +1311,7 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 for( int i = 0; i < size; ++i )
                 {
                     vs[i] = auxiliary::strip(std::string(c[i], std::strlen(c[i])), {'\0'});
-                    /* TODO pointer should be freed, but this causes memory curruption */
+                    /** @todo pointer should be freed, but this causes memory curruption */
                     //free(c[i]);
                 }
                 a = Attribute(vs);

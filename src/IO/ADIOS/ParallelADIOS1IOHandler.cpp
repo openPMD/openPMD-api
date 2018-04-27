@@ -229,7 +229,7 @@ ParallelADIOS1IOHandlerImpl::init()
     char const* c = params.str().c_str();
 
     int status;
-    /* TODO ADIOS_READ_METHOD_BP_AGGREGATE */
+    /** @todo ADIOS_READ_METHOD_BP_AGGREGATE */
     m_readMethod = ADIOS_READ_METHOD_BP;
     status = adios_read_init_method(m_readMethod, m_mpiComm, "");
     ASSERT(status == err_no_error, "Internal error: Failed to initialize ADIOS reading method");
