@@ -175,7 +175,7 @@ TEST_CASE( "particleSpecies_modification_test", "[core]" )
     REQUIRE(1 == species.count("position"));
     REQUIRE(1 == species.count("positionOffset"));
     auto& patches = species.particlePatches;
-    REQUIRE(0 == patches.size());
+    REQUIRE(2 == patches.size());
     REQUIRE(0 == patches.numAttributes());
     auto& offset = patches["offset"];
     REQUIRE(0 == offset.size());
@@ -185,17 +185,6 @@ TEST_CASE( "particleSpecies_modification_test", "[core]" )
 
     auto& off_x = offset["x"];
     REQUIRE(1 == off_x.unitSI());
-
-    PatchPosition pos;
-    pos.numParticles = 1;
-    pos.numParticlesOffset = 42;
-
-    double valIn, valOut;
-    valIn = 0.5;
-    off_x[pos] = valIn;
-    //REQUIRE(Datatype::DOUBLE == off_x.getDatatype());
-    valOut = off_x[{1, 42}];
-    REQUIRE(valIn == valOut);
 }
 
 
@@ -412,4 +401,36 @@ TEST_CASE( "structure_test", "[core]" )
     REQUIRE(o.iterations[1].particles["P"]["PR2"][RecordComponent::SCALAR].IOHandler);
     REQUIRE(scalar_rc.parent == static_cast< Writable* >(&o.iterations[1].particles["P"]));
     REQUIRE(o.iterations[1].particles["P"]["PR2"][RecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[1].particles["P"]));
+
+    REQUIRE(1 == o.iterations[1].particles["P"].particlePatches.count("numParticles"));
+    REQUIRE(1 == o.iterations[1].particles["P"].particlePatches.count("numParticlesOffset"));
+
+    ParticlePatches pp = o.iterations[1].particles["P"].particlePatches;
+    REQUIRE(pp.IOHandler);
+    REQUIRE(o.iterations[1].particles["P"].particlePatches.IOHandler);
+    REQUIRE(pp.parent == static_cast< Writable* >(&o.iterations[1].particles["P"]));
+    REQUIRE(o.iterations[1].particles["P"].particlePatches.parent == static_cast< Writable* >(&o.iterations[1].particles["P"]));
+
+    PatchRecord pr = o.iterations[1].particles["P"].particlePatches["numParticles"];
+    REQUIRE(pr.IOHandler);
+    REQUIRE(o.iterations[1].particles["P"].particlePatches["numParticles"].IOHandler);
+    REQUIRE(pr.parent == static_cast< Writable* >(&o.iterations[1].particles["P"].particlePatches));
+    REQUIRE(o.iterations[1].particles["P"].particlePatches["numParticles"].parent == static_cast< Writable* >(&o.iterations[1].particles["P"].particlePatches));
+    pr = o.iterations[1].particles["P"].particlePatches["extent"];
+    REQUIRE(pr.IOHandler);
+    REQUIRE(o.iterations[1].particles["P"].particlePatches["extent"].IOHandler);
+    REQUIRE(pr.parent == static_cast< Writable* >(&o.iterations[1].particles["P"].particlePatches));
+    REQUIRE(o.iterations[1].particles["P"].particlePatches["extent"].parent == static_cast< Writable* >(&o.iterations[1].particles["P"].particlePatches));
+
+    PatchRecordComponent scalar_prc = o.iterations[1].particles["P"].particlePatches["numParticles"][RecordComponent::SCALAR];
+    REQUIRE(scalar_prc.IOHandler);
+    REQUIRE(o.iterations[1].particles["P"].particlePatches["numParticles"][RecordComponent::SCALAR].IOHandler);
+    REQUIRE(scalar_prc.parent == static_cast< Writable* >(&o.iterations[1].particles["P"].particlePatches));
+    REQUIRE(o.iterations[1].particles["P"].particlePatches["numParticles"][RecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[1].particles["P"].particlePatches));
+
+    PatchRecordComponent prc = o.iterations[1].particles["P"].particlePatches["extent"]["x"];
+    REQUIRE(prc.IOHandler);
+    REQUIRE(o.iterations[1].particles["P"].particlePatches["extent"]["x"].IOHandler);
+    REQUIRE(prc.parent == static_cast< Writable* >(&o.iterations[1].particles["P"].particlePatches["extent"]));
+    REQUIRE(o.iterations[1].particles["P"].particlePatches["extent"]["x"].parent == static_cast< Writable* >(&o.iterations[1].particles["P"].particlePatches["extent"]));
 }

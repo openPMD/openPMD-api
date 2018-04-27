@@ -1,7 +1,7 @@
 #include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
 
 #include "openPMD/RecordComponent.hpp"
+#include "openPMD/backend/BaseRecordComponent.hpp"
 
 #include <string>
 
@@ -10,7 +10,7 @@ using namespace openPMD;
 
 
 void init_RecordComponent(py::module &m) {
-    py::class_<RecordComponent>(m, "Record_Component")
+    py::class_<RecordComponent, BaseRecordComponent>(m, "Record_Component")
         .def("__repr__",
             [](RecordComponent const & rc) {
                 return "<openPMD.Record_Component of dimensionality '" + std::to_string(rc.getDimensionality()) + "'>";
@@ -20,8 +20,8 @@ void init_RecordComponent(py::module &m) {
         .def("set_unit_SI", &RecordComponent::setUnitSI)
         .def("reset_dataset", &RecordComponent::resetDataset)
 
-        .def("get_dimensionality", &RecordComponent::getDimensionality)
-        .def("get_extent", &RecordComponent::getExtent)
+        .def_property_readonly("ndim", &RecordComponent::getDimensionality)
+        .def_property_readonly("shape", &RecordComponent::getExtent)
 
         .def("make_constant", &RecordComponent::makeConstant<float>)
         .def("make_constant", &RecordComponent::makeConstant<double>)

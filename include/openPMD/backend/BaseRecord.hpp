@@ -101,7 +101,7 @@ BaseRecord< T_elem >::operator[](key_type const& key)
         bool scalar = (key == RecordComponent::SCALAR);
         if( (scalar && !Container< T_elem >::empty() && !m_containsScalar) || (m_containsScalar && !scalar) )
             throw std::runtime_error("A scalar component can not be contained at "
-                                             "the same time as one or more regular components.");
+                                     "the same time as one or more regular components.");
 
         mapped_type & ret = Container< T_elem >::operator[](key);
         if( scalar )
@@ -125,7 +125,7 @@ BaseRecord< T_elem >::operator[](key_type&& key)
         bool scalar = (key == RecordComponent::SCALAR);
         if( (scalar && !Container< T_elem >::empty() && !m_containsScalar) || (m_containsScalar && !scalar) )
             throw std::runtime_error("A scalar component can not be contained at "
-                                             "the same time as one or more regular components.");
+                                     "the same time as one or more regular components.");
 
         mapped_type& ret = Container< T_elem >::operator[](std::move(key));
         if( scalar )
