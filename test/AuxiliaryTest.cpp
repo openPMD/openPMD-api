@@ -52,6 +52,16 @@ TEST_CASE( "string_test", "[auxiliary]" )
     REQUIRE(expected1 == split(s2, "_DELIM_", false));
     REQUIRE(expected2 == split(s2, "_DELIM_", true));
     REQUIRE(expected3 == split("/path/to/relevant/data/", "/"));
+
+    REQUIRE("stringstringstring" == strip("\t string\tstring string\0", { '\0', '\t', ' '}));
+    REQUIRE("stringstringstring" == strip("stringstringstring", { }));
+
+    REQUIRE("1,2,3,4" == join({"1", "2", "3", "4"}, ","));
+    REQUIRE("1234" == join({"1", "2", "3", "4"}, ""));
+    REQUIRE("" == join({}, ","));
+    REQUIRE("1" == join({"1"}, ","));
+    REQUIRE("1" == join({"1"}, ""));
+    REQUIRE("1,2" == join({"1", "2"}, ","));
 }
 
 namespace openPMD

@@ -41,7 +41,7 @@ endfunction()
 
 openpmd_option(MPI    "Enable MPI support"     AUTO)
 openpmd_option(HDF5   "Enable HDF5 support"    AUTO)
-openpmd_option(ADIOS1 "Enable ADIOS1 support"  OFF)
+openpmd_option(ADIOS1 "Enable ADIOS1 support"  AUTO)
 openpmd_option(ADIOS2 "Enable ADIOS2 support"  OFF)
 # openpmd_option(JSON "Enable JSON support" AUTO)
 openpmd_option(PYTHON "Enable Python bindings" AUTO)
@@ -141,28 +141,31 @@ endif()
 
 # external library: ADIOS1 (optional)
 set(ADIOS1_PREFER_COMPONENTS )
-if(openPMD_HAVE_MPI)
+if(NOT openPMD_HAVE_MPI)
     set(ADIOS1_PREFER_COMPONENTS sequential)
 endif()
 if(openPMD_USE_ADIOS1 STREQUAL AUTO)
-    find_package(ADIOS 1.10.0 COMPONENTS ${ADIOS1_PREFER_COMPONENTS})
+    find_package(ADIOS 1.13.1 COMPONENTS ${ADIOS1_PREFER_COMPONENTS})
     if(ADIOS_FOUND)
         set(openPMD_HAVE_ADIOS1 TRUE)
     else()
         set(openPMD_HAVE_ADIOS1 FALSE)
     endif()
 elseif(openPMD_USE_ADIOS1)
-    find_package(ADIOS 1.10.0 REQUIRED COMPONENTS ${ADIOS1_PREFER_COMPONENTS})
+    find_package(ADIOS 1.13.1 REQUIRED COMPONENTS ${ADIOS1_PREFER_COMPONENTS})
     set(openPMD_HAVE_ADIOS1 TRUE)
 else()
     set(openPMD_HAVE_ADIOS1 FALSE)
 endif()
 
-# TODO: check!
-#if(openPMD_HAVE_MPI AND openPMD_HAVE_ADIOS AND ADIOS_HAVE_SEQUENTIAL)
-#    message(FATAL_ERROR "Found MPI but requested ADIOS1 is serial."
-#                        "Set openPMD_USE_MPI=OFF to disable MPI.")
-#endif()
+if(openPMD_HAVE_MPI AND openPMD_HAVE_ADIOS1 AND ADIOS_HAVE_SEQUENTIAL)
+    message(FATAL_ERROR "Found MPI but requested ADIOS1 is serial. "
+                        "Set openPMD_USE_MPI=OFF to disable MPI.")
+endif()
+if(NOT openPMD_HAVE_MPI AND openPMD_HAVE_ADIOS1 AND NOT ADIOS_HAVE_SEQUENTIAL)
+    message(FATAL_ERROR "Did not find MPI but requested ADIOS1 is parallel. "
+                        "Set openPMD_USE_ADIOS1=OFF to disable ADIOS1.")
+endif()
 
 # external library: ADIOS2 (optional)
 if(openPMD_USE_ADIOS2 STREQUAL AUTO)
@@ -221,7 +224,6 @@ set(IO_SOURCE
         src/IO/AbstractIOHandlerImpl.cpp
         src/IO/ADIOS/ADIOS1IOHandler.cpp
         src/IO/ADIOS/ParallelADIOS1IOHandler.cpp
-        src/IO/ADIOS/ADIOS2IOHandler.cpp
         src/IO/HDF5/HDF5IOHandler.cpp
         src/IO/HDF5/ParallelHDF5IOHandler.cpp)
 
@@ -301,6 +303,7 @@ if(openPMD_HAVE_ADIOS1)
     target_link_libraries(openPMD PUBLIC ${ADIOS_LIBRARIES})
     target_include_directories(openPMD SYSTEM PUBLIC ${ADIOS_INCLUDE_DIRS})
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS1=1")
+    target_compile_definitions(openPMD PRIVATE "${ADIOS_DEFINITIONS}")
 else()
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS1=0")
 endif()
@@ -511,28 +514,31 @@ endif()
 #
 
 # C++ Examples
-if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
-    foreach(examplename ${openPMD_EXAMPLE_NAMES})
-        if(${examplename} MATCHES "^.*_parallel$")
-            if(openPMD_HAVE_MPI)
-                add_test(NAME MPI.${examplename}
-                        COMMAND ${MPI_TEST_EXE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}
+# Current examples all use HDF5, elaborate if other backends are used
+if(openPMD_HAVE_HDF5)
+    if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
+        foreach(examplename ${openPMD_EXAMPLE_NAMES})
+            if(${examplename} MATCHES "^.*_parallel$")
+                if(openPMD_HAVE_MPI)
+                    add_test(NAME MPI.${examplename}
+                            COMMAND ${MPI_TEST_EXE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}
+                            WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                            )
+                endif()
+            else()
+                add_test(NAME Serial.${examplename}
+                        COMMAND ${examplename}
                         WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
                         )
             endif()
-        else()
-            add_test(NAME Serial.${examplename}
-                    COMMAND ${examplename}
-                    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-                    )
-        endif()
-    endforeach()
-else()
-    message(STATUS "Missing samples/git-sample/ directory! "
-                   "Skipping C++ example test!\n\n"
-                   "Note: run\n"
-                   "    . ${openPMD_SOURCE_DIR}/.travis/download_samples.sh\n"
-                   "to add example files!")
+        endforeach()
+    else()
+        message(STATUS "Missing samples/git-sample/ directory! "
+                       "Skipping C++ example test!\n\n"
+                       "Note: run\n"
+                       "    . ${openPMD_SOURCE_DIR}/.travis/download_samples.sh\n"
+                       "to add example files!")
+    endif()
 endif()
 
 # Python Examples

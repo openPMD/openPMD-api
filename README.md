@@ -99,7 +99,7 @@ Shipped internally:
 
 Optional I/O backends:
 * [HDF5](https://support.hdfgroup.org/HDF5) 1.8.6+
-* [ADIOS1](https://www.olcf.ornl.gov/center-projects/adios) 1.10+ (*not yet implemented*)
+* [ADIOS1](https://www.olcf.ornl.gov/center-projects/adios) 1.13.1+
 * [ADIOS2](https://github.com/ornladios/ADIOS2) 2.1+ (*not yet implemented*)
 
 while those can be build either with or without:
@@ -169,7 +169,7 @@ CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 |----------------------|------------------|----------------------------------------|
 | `openPMD_USE_MPI`    | **AUTO**/ON/OFF  | Enable MPI support                     |
 | `openPMD_USE_HDF5`   | **AUTO**/ON/OFF  | Enable support for HDF5                |
-| `openPMD_USE_ADIOS1` | **AUTO**/ON/OFF  | Enable support for ADIOS1 <sup>1</sup> |
+| `openPMD_USE_ADIOS1` | **AUTO**/ON/OFF  | Enable support for ADIOS1              |
 | `openPMD_USE_ADIOS2` | AUTO/ON/**OFF**  | Enable support for ADIOS2 <sup>1</sup> |
 | `openPMD_USE_PYTHON` | **AUTO**/ON/OFF  | Enable Python bindings                 |
 | `PYTHON_EXECUTABLE`  | (first found)    | Path to Python executable              |

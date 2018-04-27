@@ -1,4 +1,4 @@
-/* Copyright 2017 Fabian Koller
+/* Copyright 2017-2018 Fabian Koller
  *
  * This file is part of openPMD-api.
  *
@@ -22,13 +22,13 @@
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
-#if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
-#   include <mpi.h>
+#if openPMD_HAVE_MPI && openPMD_HAVE_ADIOS1
+#   include "openPMD/IO/ADIOS/ADIOS1IOHandler.hpp"
 #endif
 
-#include "openPMD/IO/ADIOS/ADIOS1IOHandler.hpp"
-
+#include <future>
 #include <memory>
+#include <string>
 
 
 namespace openPMD
@@ -42,27 +42,52 @@ public:
     ParallelADIOS1IOHandlerImpl(AbstractIOHandler*, MPI_Comm);
     virtual ~ParallelADIOS1IOHandlerImpl();
 
-    MPI_Comm m_mpiComm;
-    MPI_Info m_mpiInfo;
+    virtual void init() override;
+
+    virtual std::future< void > flush() override;
 };  //ParallelADIOS1IOHandlerImpl
-#else
-class ParallelADIOS1IOHandlerImpl
-{ };
-#endif
 
 class ParallelADIOS1IOHandler : public AbstractIOHandler
 {
+    friend class ParallelADIOS1IOHandlerImpl;
+
 public:
-#if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
+#if openPMD_HAVE_MPI
     ParallelADIOS1IOHandler(std::string const& path, AccessType, MPI_Comm);
 #else
     ParallelADIOS1IOHandler(std::string const& path, AccessType);
 #endif
     virtual ~ParallelADIOS1IOHandler() override;
 
-    std::future< void > flush() override;
+    virtual std::future< void > flush() override;
+
+    virtual void enqueue(IOTask const&) override;
+
+private:
+    std::queue< IOTask > m_setup;
+    std::unique_ptr< ParallelADIOS1IOHandlerImpl > m_impl;
+};  //ParallelADIOS1IOHandler
+#else
+class ParallelADIOS1IOHandlerImpl
+{ };
+
+class ParallelADIOS1IOHandler : public AbstractIOHandler
+{
+    friend class ParallelADIOS1IOHandlerImpl;
+
+public:
+#if openPMD_HAVE_MPI
+    ParallelADIOS1IOHandler(std::string const& path, AccessType, MPI_Comm);
+#else
+    ParallelADIOS1IOHandler(std::string const& path, AccessType);
+#endif
+    virtual ~ParallelADIOS1IOHandler() override;
+
+    virtual std::future< void > flush() override;
 
 private:
     std::unique_ptr< ParallelADIOS1IOHandlerImpl > m_impl;
 };  //ParallelADIOS1IOHandler
+#endif
+
 } // openPMD

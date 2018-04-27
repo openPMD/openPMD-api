@@ -1,4 +1,4 @@
-/* Copyright 2017 Fabian Koller
+/* Copyright 2017-2018 Fabian Koller
  *
  * This file is part of openPMD-api.
  *
@@ -186,6 +186,19 @@ BaseRecord< T_elem >::readBase()
     this->IOHandler->flush();
     if( *aRead.dtype == DT::ARR_DBL_7 )
         this->setAttribute("unitDimension", Attribute(*aRead.resource).template get< std::array< double, 7 > >());
+    else if( *aRead.dtype == DT::VEC_DOUBLE )
+    {
+        auto vec = Attribute(*aRead.resource).template get< std::vector< double > >();
+        if( vec.size() == 7 )
+        {
+            std::array< double, 7 > arr;
+            std::copy(vec.begin(),
+                      vec.end(),
+                      arr.begin());
+            this->setAttribute("unitDimension", arr);
+        } else
+            throw std::runtime_error("Unexpected Attribute datatype for 'unitDimension'");
+    }
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'unitDimension'");
 

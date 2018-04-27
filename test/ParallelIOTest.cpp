@@ -53,8 +53,7 @@ TEST_CASE( "git_hdf5_sample_content_test", "[parallel][hdf5]" )
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     /* only a 3x3x3 chunk of the actual data is hardcoded. every worker reads 1/3 */
     uint64_t rank = mpi_rank % 3;
-  try
-  {
+    try
     {
         Series o = Series::read("../samples/git-sample/data00000%T.h5", MPI_COMM_WORLD);
 
@@ -94,7 +93,6 @@ TEST_CASE( "git_hdf5_sample_content_test", "[parallel][hdf5]" )
             for( int i = 0; i < 3; ++i )
                 REQUIRE(raw_ptr[i] == constant_value);
         }
-    }
     } catch (no_such_file_error& e)
     {
         std::cerr << "git sample not accessible. (" << e.what() << ")\n";
@@ -142,8 +140,81 @@ TEST_CASE( "no_parallel_hdf5", "[parallel][hdf5]" )
 }
 #endif
 #if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
-TEST_CASE( "adios_wrtie_test", "[parallel][adios]" )
+TEST_CASE( "adios_write_test", "[parallel][adios]" )
 {
-    Output o = Output("../samples/parallel_write.bp");
+    Series o = Series::create("../samples/parallel_write.bp", MPI_COMM_WORLD);
+
+    int size{-1};
+    int rank{-1};
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    uint64_t mpi_size = static_cast<uint64_t>(size);
+    uint64_t mpi_rank = static_cast<uint64_t>(rank);
+
+    o.setAuthor("Parallel ADIOS1");
+    ParticleSpecies& e = o.iterations[1].particles["e"];
+
+    std::vector< double > position_global(mpi_size);
+    double pos{0.};
+    std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
+    std::shared_ptr< double > position_local(new double);
+    *position_local = position_global[mpi_rank];
+
+    e["position"]["x"].resetDataset(Dataset(determineDatatype(position_local), {mpi_size}));
+    e["position"]["x"].storeChunk({mpi_rank}, {1}, position_local);
+
+    std::vector< uint64_t > positionOffset_global(mpi_size);
+    uint64_t posOff{0};
+    std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
+    std::shared_ptr< uint64_t > positionOffset_local(new uint64_t);
+    *positionOffset_local = positionOffset_global[mpi_rank];
+
+    e["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local), {mpi_size}));
+    e["positionOffset"]["x"].storeChunk({mpi_rank}, {1}, positionOffset_local);
+
+    o.flush();
+}
+
+TEST_CASE( "hzdr_adios_sample_content_test", "[parallel][adios1]" )
+{
+    int mpi_rank{-1};
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+    /* only a 3x3x3 chunk of the actual data is hardcoded. every worker reads 1/3 */
+    uint64_t rank = mpi_rank % 3;
+    try
+    {
+        /* development/huebl/lwfa-bgfield-001 */
+        Series o = Series::read("../samples/hzdr-sample/bp/checkpoint_%T.bp", MPI_COMM_WORLD);
+
+        if( o.iterations.count(0) == 1)
+        {
+            float actual[3][3][3] = {{{6.7173387e-06f, 6.7173387e-06f, 6.7173387e-06f},
+                                         {7.0438218e-06f, 7.0438218e-06f, 7.0438218e-06f},
+                                         {7.3689453e-06f, 7.3689453e-06f, 7.3689453e-06f}},
+                                     {{6.7173387e-06f, 6.7173387e-06f, 6.7173387e-06f},
+                                         {7.0438218e-06f, 7.0438218e-06f, 7.0438218e-06f},
+                                         {7.3689453e-06f, 7.3689453e-06f, 7.3689453e-06f}},
+                                     {{6.7173387e-06f, 6.7173387e-06f, 6.7173387e-06f},
+                                         {7.0438218e-06f, 7.0438218e-06f, 7.0438218e-06f},
+                                         {7.3689453e-06f, 7.3689453e-06f, 7.3689453e-06f}}};
+
+            MeshRecordComponent& B_z = o.iterations[0].meshes["B"]["z"];
+
+            Offset offset{20 + rank, 20, 150};
+            Extent extent{1, 3, 3};
+            std::unique_ptr< float[] > data;
+            B_z.loadChunk(offset, extent, data, RecordComponent::Allocation::API);
+            float* raw_ptr = data.get();
+
+            for( int j = 0; j < 3; ++j )
+                for( int k = 0; k < 3; ++k )
+                    REQUIRE(raw_ptr[j*3 + k] == actual[rank][j][k]);
+        }
+    } catch (no_such_file_error& e)
+    {
+        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+        return;
+    }
+
 }
 #endif

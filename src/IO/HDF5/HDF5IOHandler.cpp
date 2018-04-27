@@ -27,9 +27,8 @@
 #   include "openPMD/IO/IOTask.hpp"
 #   include "openPMD/IO/HDF5/HDF5Auxiliary.hpp"
 #   include "openPMD/IO/HDF5/HDF5FilePosition.hpp"
+#   include <boost/filesystem.hpp>
 #endif
-
-#include <boost/filesystem.hpp>
 
 #include <future>
 #include <iostream>
@@ -105,7 +104,6 @@ HDF5IOHandlerImpl::createFile(Writable* writable,
         if( !exists(dir) )
             create_directories(dir);
 
-        /* Create a new file using current properties. */
         std::string name = m_handler->directory + parameters.name;
         if( !auxiliary::ends_with(name, ".h5") )
             name += ".h5";
@@ -195,12 +193,12 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
 
     if( !writable->written )
     {
+        /* Sanitize name */
         std::string name = parameters.name;
         if( auxiliary::starts_with(name, "/") )
             name = auxiliary::replace_first(name, "/", "");
         if( auxiliary::ends_with(name, "/") )
             name = auxiliary::replace_first(name, "/", "");
-
 
         /* Open H5Object to write into */
         auto res = m_fileIDs.find(writable);

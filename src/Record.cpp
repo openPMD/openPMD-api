@@ -64,7 +64,7 @@ Record::read()
     if( m_containsScalar )
     {
         /* using operator[] will incorrectly update parent */
-        (*this).find(RecordComponent::SCALAR)->second.read();
+        this->at(RecordComponent::SCALAR).read();
     } else
     {
         clear_unchecked();

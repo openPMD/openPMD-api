@@ -19,6 +19,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/ADIOS/ADIOS1IOHandler.hpp"
+#include "openPMD/IO/ADIOS/ParallelADIOS1IOHandler.hpp"
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
 
@@ -39,6 +41,7 @@ AbstractIOHandler::createIOHandler(std::string const& path,
         case Format::HDF5:
             return std::make_shared< ParallelHDF5IOHandler >(path, at, comm);
         case Format::ADIOS1:
+            return std::make_shared< ParallelADIOS1IOHandler >(path, at, comm);
         case Format::ADIOS2:
             std::cerr << "Backend not yet working. Your IO operations will be NOOPS!" << std::endl;
             return std::make_shared< DummyIOHandler >(path, at);
@@ -64,6 +67,7 @@ AbstractIOHandler::createIOHandler(std::string const& path,
         case Format::HDF5:
             return std::make_shared< HDF5IOHandler >(path, at);
         case Format::ADIOS1:
+            return std::make_shared< ADIOS1IOHandler >(path, at);
         case Format::ADIOS2:
             std::cerr << "Backend not yet working. Your IO operations will be NOOPS!" << std::endl;
             return std::make_shared< DummyIOHandler >(path, at);

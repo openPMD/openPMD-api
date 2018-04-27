@@ -45,6 +45,21 @@ are associated with it. This happens in ``src/Series.cpp``:
         }
     }
 
+.. code-block:: cpp
+
+    std::function< bool(std::string const&) >
+    matcher(std::string const& name, Format f)
+    {
+        switch( f )
+        {
+            case Format::JSON:
+            {
+                std::regex pattern(auxiliary::replace_last(name + ".json$", "%T", "[[:digit:]]+"));
+                return [pattern](std::string const& filename) -> bool { return std::regex_search(filename, pattern); };
+            }
+        }
+    }
+
 Unless your file format imposes additional restrictions to the openPMD constraints, this is all you have to do in the
 frontend section of the API.
 

@@ -29,8 +29,10 @@
 # This module will define the following variables:
 #   ADIOS_INCLUDE_DIRS    - Include directories for the ADIOS headers.
 #   ADIOS_LIBRARIES       - ADIOS libraries.
+#   ADIOS_DEFINITIONS     - ADIOS compile definitions.
 #   ADIOS_FOUND           - TRUE if FindADIOS found a working install
 #   ADIOS_VERSION         - Version in format Major.Minor.Patch
+#   ADIOS_HAVE_SEQUENTIAL - TRUE if found library links as sequential only
 #
 # Not used for now:
 #   ADIOS_DEFINITIONS     - Compiler definitions you should add with
@@ -94,7 +96,7 @@ cmake_minimum_required(VERSION 2.8.5)
 ###############################################################################
 # get flags for adios_config, -l is the default
 #-f for fortran, -r for readonly, -s for sequential (nompi)
-set(OPTLIST "-l")
+set(OPTLIST "")
 if(ADIOS_FIND_COMPONENTS)
     foreach(COMP ${ADIOS_FIND_COMPONENTS})
         string(TOLOWER ${COMP} comp)
@@ -109,6 +111,8 @@ if(ADIOS_FIND_COMPONENTS)
         endif()
     endforeach()
 endif()
+set(LINKOPTLIST "-l${OPTLIST}")
+set(COMPILEOPTLIST "-c${OPTLIST}")
 
 # we start by assuming we found ADIOS and falsify it if some
 # dependencies are missing (or if we did not find ADIOS at all)
@@ -130,8 +134,17 @@ endif(ADIOS_CONFIG)
 
 # check `adios_config` program ################################################
 if(ADIOS_FOUND)
-    execute_process(COMMAND ${ADIOS_CONFIG} ${OPTLIST}
+    execute_process(COMMAND ${ADIOS_CONFIG} ${LINKOPTLIST}
                     OUTPUT_VARIABLE ADIOS_LINKFLAGS
+                    RESULT_VARIABLE ADIOS_CONFIG_RETURN
+                    OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(NOT ADIOS_CONFIG_RETURN EQUAL 0)
+        set(ADIOS_FOUND FALSE)
+        message(STATUS "Can NOT execute 'adios_config' - check file permissions")
+    endif()
+
+    execute_process(COMMAND ${ADIOS_CONFIG} ${COMPILEOPTLIST}
+                    OUTPUT_VARIABLE ADIOS_COMPILEFLAGS
                     RESULT_VARIABLE ADIOS_CONFIG_RETURN
                     OUTPUT_STRIP_TRAILING_WHITESPACE)
     if(NOT ADIOS_CONFIG_RETURN EQUAL 0)
@@ -165,6 +178,8 @@ if(ADIOS_FOUND)
     # check for compiled in dependencies, recomve ";" in ADIOS_LINKFLAGS (from cmake build)
     string(REGEX REPLACE ";" " " ADIOS_LINKFLAGS "${ADIOS_LINKFLAGS}")
     message(STATUS "ADIOS linker flags (unparsed): ${ADIOS_LINKFLAGS}")
+    string(REGEX REPLACE ";" " " ADIOS_COMPILEFLAGS "${ADIOS_COMPILEFLAGS}")
+    message(STATUS "ADIOS compiler flags (unparsed): ${ADIOS_COMPILEFLAGS}")
 
     # find all library paths -L
     #   note: this can cause trouble if some libs are specified twice from
@@ -178,6 +193,9 @@ if(ADIOS_FOUND)
     endforeach()
     # we could append ${CMAKE_PREFIX_PATH} now but that is not really necessary
 
+    # determine whether found library links as serial only
+    set(ADIOS_HAVE_SEQUENTIAL FALSE)
+
     message(STATUS "ADIOS DIRS to look for libs: ${ADIOS_LIBRARY_DIRS}")
 
     # parse all -lname libraries and find an absolute path for them
@@ -187,6 +205,10 @@ if(ADIOS_FOUND)
 
         # find static lib: absolute path in -L then default
         find_library(_LIB_DIR NAMES ${_LIB} PATHS ${ADIOS_LIBRARY_DIRS} CMAKE_FIND_ROOT_PATH_BOTH)
+
+        if(_LIB MATCHES "^.*nompi.*$")
+            set(ADIOS_HAVE_SEQUENTIAL TRUE)
+        endif()
 
         # found?
         if(_LIB_DIR)
@@ -210,6 +232,13 @@ if(ADIOS_FOUND)
         list(APPEND ADIOS_LIBRARIES "${foo}")
     endif()
     endforeach(foo)
+
+    # find all compiler definitions _D
+    set(ADIOS_DEFINITIONS "")
+    string(REGEX MATCHALL "(-D[A-Za-z_0-9/\\.-]+)" _ADIOS_DEFINES " ${ADIOS_COMPILEFLAGS}")
+    string(REGEX REPLACE ";" " " ADIOS_DEFINITIONS "${_ADIOS_DEFINES}")
+
+    message(STATUS "ADIOS compile definitions: ${ADIOS_DEFINITIONS}")
 
     # add the version string
     execute_process(COMMAND ${ADIOS_CONFIG} -v

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <algorithm>
+#include <iterator>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -110,6 +112,25 @@ strip(std::string s, std::vector< char > to_remove)
     s.shrink_to_fit();
 
     return s;
+}
+
+inline std::string
+join(std::vector< std::string > const& vs, std::string const& delimiter)
+{
+    switch( vs.size() )
+    {
+        case 0:
+            return "";
+        case 1:
+            return vs[0];
+        default:
+            std::ostringstream ss;
+            std::copy(vs.begin(),
+                      vs.end() - 1,
+                      std::ostream_iterator< std::string >(ss, delimiter.c_str()));
+            ss << *(vs.end() - 1);
+            return ss.str();
+    }
 }
 } // auxiliary
 } // openPMD
