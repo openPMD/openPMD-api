@@ -50,20 +50,12 @@ class Series : public Attributable
 
 public:
 #if openPMD_HAVE_MPI
-    static Series create(std::string const& filepath,
-                         MPI_Comm comm,
-                         AccessType at = AccessType::CREATE);
+    Series(std::string const& filepath,
+           AccessType at,
+           MPI_Comm comm);
 #endif
-    static Series create(std::string const& filepath,
-                         AccessType at = AccessType::CREATE);
-
-#if openPMD_HAVE_MPI
-    static Series read(std::string const& filepath,
-                       MPI_Comm comm,
-                       AccessType at = AccessType::READ_ONLY);
-#endif
-    static Series read(std::string const& filepath,
-                       AccessType at = AccessType::READ_ONLY);
+    Series(std::string const& filepath,
+           AccessType at);
     ~Series();
 
     /**
@@ -240,14 +232,6 @@ public:
     Container< Iteration, uint64_t > iterations;
 
 private:
-#if openPMD_HAVE_MPI
-    Series(std::string const& filepath,
-           AccessType at,
-           MPI_Comm comm);
-#endif
-    Series(std::string const& filepath,
-           AccessType at);
-
     void flushFileBased();
     void flushGroupBased();
     void flushMeshesPath();
@@ -257,7 +241,6 @@ private:
     void readBase();
     void read();
 
-
     constexpr static char const * const OPENPMD = "1.1.0";
     constexpr static char const * const BASEPATH = "/data/%T/";
 
@@ -265,27 +248,4 @@ private:
     std::string m_name;
     Format m_format;
 };  //Series
-
-/** Determine the storage format of a Series from the used filename extension.
- *
- * @param   filename    tring containing the filename.
- * @return  Format that best fits the filename extension.
- */
-Format determineFormat(std::string const& filename);
-
-/** Remove the filename extension of a given storage format.
- *
- * @param   filename    String containing the filename, possibly with filename extension.
- * @param   f           File format to remove filename extension for.
- * @return  String containing the filename without filename extension.
- */
-std::string cleanFilename(std::string const& filename, Format f);
-
-/** Create a functor to determine if a file can be of a format given the filename on disk.
- *
- * @param   name        String containing desired filename without filename extension.
- * @param   f           File format to check backend applicability for.
- * @return  Functor returning true if file could be of type f. False otherwise.
- */
-std::function< bool(std::string const&) > matcher(std::string const& name, Format f);
 } // openPMD

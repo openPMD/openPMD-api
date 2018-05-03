@@ -30,52 +30,28 @@
 
 namespace openPMD
 {
-#if openPMD_HAVE_MPI
-Series
-Series::create(std::string const& filepath,
-               MPI_Comm comm,
-               AccessType at)
-{
-    if( AccessType::READ_ONLY == at )
-        throw std::runtime_error("Access type not supported in create-API.");
+/** Determine the storage format of a Series from the used filename extension.
+ *
+ * @param   filename    tring containing the filename.
+ * @return  Format that best fits the filename extension.
+ */
+Format determineFormat(std::string const& filename);
 
-    return Series(filepath, at, comm);
-}
-#endif
+/** Remove the filename extension of a given storage format.
+ *
+ * @param   filename    String containing the filename, possibly with filename extension.
+ * @param   f           File format to remove filename extension for.
+ * @return  String containing the filename without filename extension.
+ */
+std::string cleanFilename(std::string const& filename, Format f);
 
-Series
-Series::create(std::string const& filepath,
-               AccessType at)
-{
-    if( AccessType::READ_ONLY == at )
-        throw std::runtime_error("Access type not supported in create-API.");
-
-    return Series(filepath, at);
-}
-
-#if openPMD_HAVE_MPI
-Series
-Series::read(std::string const& filepath,
-             MPI_Comm comm,
-             AccessType at)
-{
-    if( AccessType::CREATE == at )
-        throw std::runtime_error("Access type not supported in read-API.");
-
-    return Series(filepath, at, comm);
-}
-#endif
-
-Series
-Series::read(std::string const& filepath,
-             AccessType at)
-{
-    if( AccessType::CREATE == at )
-        throw std::runtime_error("Access type not supported in read-API.");
-
-    return Series(filepath, at);
-}
-
+/** Create a functor to determine if a file can be of a format given the filename on disk.
+ *
+ * @param   name        String containing desired filename without filename extension.
+ * @param   f           File format to check backend applicability for.
+ * @return  Functor returning true if file could be of type f. False otherwise.
+ */
+std::function< bool(std::string const&) > matcher(std::string const& name, Format f);
 
 #if openPMD_HAVE_MPI
 Series::Series(std::string const& filepath,

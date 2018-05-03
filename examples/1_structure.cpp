@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 {
     /* The root of any openPMD output spans across all data for all iterations is a 'Series'.
     * Data is either in a single file or spread across multiple files. */
-    Series series = Series::create("sample/1_structure.h5");
+    Series series = Series("sample/1_structure.h5", AccessType::CREATE);
 
     /* Every element that structures your file (groups and datasets for example) can be annotated with attributes. */
     series.setComment("This string will show up at the root ('/') of the output with key 'comment'.");

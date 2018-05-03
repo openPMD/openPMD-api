@@ -13,7 +13,7 @@ TEST_CASE( "git_hdf5_sample_structure_test", "[serial][hdf5]" )
 {
     try
     {
-        Series o = Series::read("../samples/git-sample/data%T.h5");
+        Series o = Series("../samples/git-sample/data%T.h5", AccessType::READ_ONLY);
 
         REQUIRE(!o.parent);
         REQUIRE(o.iterations.parent == static_cast< Writable* >(&o));
@@ -56,7 +56,7 @@ TEST_CASE( "git_hdf5_sample_attribute_test", "[serial][hdf5]" )
 {
     try
     {
-        Series o = Series::read("../samples/git-sample/data%T.h5");
+        Series o = Series("../samples/git-sample/data%T.h5", AccessType::READ_ONLY);
 
         REQUIRE(o.openPMD() == "1.1.0");
         REQUIRE(o.openPMDextension() == 1);
@@ -305,7 +305,7 @@ TEST_CASE( "git_hdf5_sample_content_test", "[serial][hdf5]" )
 {
     try
     {
-        Series o = Series::read("../samples/git-sample/data%T.h5");
+        Series o = Series("../samples/git-sample/data%T.h5", AccessType::READ_ONLY);
 
         {
             double actual[3][3][3] = {{{-1.9080703683727052e-09, -1.5632650729457964e-10, 1.1497536256399599e-09},
@@ -355,7 +355,7 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
 {
     try
     {
-        Series o = Series::read("../samples/git-sample/data%T.h5");
+        Series o = Series("../samples/git-sample/data%T.h5", AccessType::READ_ONLY);
 
         REQUIRE(o.iterations.size() == 5);
         REQUIRE(o.iterations.count(100) == 1);
@@ -376,7 +376,7 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
     try
     {
         /* development/huebl/lwfa-openPMD-062-smallLWFA-h5 */
-        Series o = Series::read("../samples/hzdr-sample/h5/simData_%T.h5");
+        Series o = Series("../samples/hzdr-sample/h5/simData_%T.h5", AccessType::READ_ONLY);
 
         REQUIRE(o.openPMD() == "1.0.0");
         REQUIRE(o.openPMDextension() == 1);
@@ -771,7 +771,7 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
 TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
 {
     {
-        Series s = Series::create("../samples/dtype_test.h5");
+        Series s = Series("../samples/dtype_test.h5", AccessType::CREATE);
 
         char c = 'c';
         s.setAttribute("char", c);
@@ -812,7 +812,7 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
         s.setAttribute("bool", true);
     }
     
-    Series s = Series::read("../samples/dtype_test.h5");
+    Series s = Series("../samples/dtype_test.h5", AccessType::READ_ONLY);
 
     REQUIRE(s.getAttribute("char").get< char >() == 'c');
     REQUIRE(s.getAttribute("uchar").get< unsigned char >() == 'u');
@@ -843,7 +843,7 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
 
 TEST_CASE( "hdf5_write_test", "[serial][hdf5]" )
 {
-    Series o = Series::create("../samples/serial_write.h5");
+    Series o = Series("../samples/serial_write.h5", AccessType::CREATE);
 
     o.setAuthor("Serial HDF5");
     ParticleSpecies& e = o.iterations[1].particles["e"];
@@ -881,7 +881,7 @@ TEST_CASE( "hdf5_write_test", "[serial][hdf5]" )
 
 TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
 {
-    Series o = Series::create("../samples/serial_fileBased_write%T.h5");
+    Series o = Series("../samples/serial_fileBased_write%T.h5", AccessType::CREATE);
 
     ParticleSpecies& e_1 = o.iterations[1].particles["e"];
 
@@ -969,13 +969,13 @@ TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
 TEST_CASE( "hdf5_bool_test", "[serial][hdf5]" )
 {
     {
-        Series o = Series::create("../samples/serial_bool.h5");
+        Series o = Series("../samples/serial_bool.h5", AccessType::CREATE);
 
         o.setAttribute("Bool attribute (true)", true);
         o.setAttribute("Bool attribute (false)", false);
     }
     {
-        Series o = Series::read("../samples/serial_bool.h5");
+        Series o = Series("../samples/serial_bool.h5", AccessType::READ_ONLY);
 
         auto attrs = o.attributes();
         REQUIRE(std::count(attrs.begin(), attrs.end(), "Bool attribute (true)") == 1);
@@ -987,14 +987,14 @@ TEST_CASE( "hdf5_bool_test", "[serial][hdf5]" )
 
 TEST_CASE( "hdf5_patch_test", "[serial][hdf5]" )
 {
-    Series o = Series::create("../samples/serial_patch.h5");
+    Series o = Series("../samples/serial_patch.h5", AccessType::CREATE);
 
     o.iterations[1].particles["e"].particlePatches["offset"]["x"].setUnitSI(42);
 }
 
 TEST_CASE( "hdf5_deletion_test", "[serial][hdf5]" )
 {
-    Series o = Series::create("../samples/serial_deletion.h5");
+    Series o = Series("../samples/serial_deletion.h5", AccessType::CREATE);
 
 
     o.setAttribute("removed",
@@ -1034,7 +1034,7 @@ TEST_CASE( "hdf5_110_optional_paths", "[serial][hdf5]" )
     try
     {
         {
-            Series s = Series::read("../samples/issue-sample/no_fields/data%T.h5");
+            Series s = Series("../samples/issue-sample/no_fields/data%T.h5", AccessType::READ_ONLY);
             auto attrs = s.attributes();
             REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
             REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
@@ -1043,7 +1043,7 @@ TEST_CASE( "hdf5_110_optional_paths", "[serial][hdf5]" )
         }
 
         {
-            Series s = Series::read("../samples/issue-sample/no_particles/data%T.h5");
+            Series s = Series("../samples/issue-sample/no_particles/data%T.h5", AccessType::READ_ONLY);
             auto attrs = s.attributes();
             REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
             REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
@@ -1056,17 +1056,17 @@ TEST_CASE( "hdf5_110_optional_paths", "[serial][hdf5]" )
     }
 
     {
-        Series s = Series::create("../samples/no_meshes_1.1.0_compliant.h5");
+        Series s = Series("../samples/no_meshes_1.1.0_compliant.h5", AccessType::CREATE);
         s.iterations[1].particles["foo"];
     }
 
     {
-        Series s = Series::create("../samples/no_particles_1.1.0_compliant.h5");
+        Series s = Series("../samples/no_particles_1.1.0_compliant.h5", AccessType::CREATE);
         s.iterations[1].meshes["foo"];
     }
 
     {
-        Series s = Series::read("../samples/no_meshes_1.1.0_compliant.h5");
+        Series s = Series("../samples/no_meshes_1.1.0_compliant.h5", AccessType::READ_ONLY);
         auto attrs = s.attributes();
         REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 0);
         REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
@@ -1075,7 +1075,7 @@ TEST_CASE( "hdf5_110_optional_paths", "[serial][hdf5]" )
     }
 
     {
-        Series s = Series::read("../samples/no_particles_1.1.0_compliant.h5");
+        Series s = Series("../samples/no_particles_1.1.0_compliant.h5", AccessType::READ_ONLY);
         auto attrs = s.attributes();
         REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
         REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 0);
@@ -1093,7 +1093,7 @@ TEST_CASE( "no_serial_hdf5", "[serial][hdf5]" )
 TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
 {
     {
-        Series s = Series::create("../samples/dtype_test.bp");
+        Series s = Series("../samples/dtype_test.bp", AccessType::CREATE);
 
         char c = 'c';
         s.setAttribute("char", c);
@@ -1134,7 +1134,7 @@ TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
         s.setAttribute("bool", true);
     }
 
-    Series s = Series::read("../samples/dtype_test.bp");
+    Series s = Series("../samples/dtype_test.bp", AccessType::READ_ONLY);
 
     REQUIRE(s.getAttribute("char").get< char >() == 'c');
     REQUIRE(s.getAttribute("uchar").get< unsigned char >() == 'u');
@@ -1165,7 +1165,7 @@ TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
 
 TEST_CASE( "adios1_write_test", "[serial][adios1]")
 {
-    Series o = Series::create("../samples/serial_write.bp");
+    Series o = Series("../samples/serial_write.bp", AccessType::CREATE);
 
     ParticleSpecies& e_1 = o.iterations[1].particles["e"];
 
@@ -1250,7 +1250,7 @@ TEST_CASE( "adios1_write_test", "[serial][adios1]")
 
 TEST_CASE( "adios1_fileBased_write_test", "[serial][adios1]" )
 {
-    Series o = Series::create("../samples/serial_fileBased_write%T.bp");
+    Series o = Series("../samples/serial_fileBased_write%T.bp", AccessType::CREATE);
 
     ParticleSpecies& e_1 = o.iterations[1].particles["e"];
 
@@ -1340,7 +1340,7 @@ TEST_CASE( "hzdr_adios1_sample_content_test", "[serial][adios1]" )
     try
     {
         /* development/huebl/lwfa-bgfield-001 */
-        Series o = Series::read("../samples/hzdr-sample/bp/checkpoint_%T.bp");
+        Series o = Series("../samples/hzdr-sample/bp/checkpoint_%T.bp", AccessType::READ_ONLY);
 
         REQUIRE(o.openPMD() == "1.0.0");
         REQUIRE(o.openPMDextension() == 1);

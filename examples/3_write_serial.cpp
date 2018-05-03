@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
          << ") that will be written\n";
 
     // open file for writing
-    Series series = Series::create(
+    Series series = Series(
         "../samples/3_write_serial.h5",
         AccessType::CREATE
     );

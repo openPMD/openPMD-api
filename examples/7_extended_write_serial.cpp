@@ -9,8 +9,7 @@ using namespace openPMD;
 void
 write()
 {
-    Series o = Series::create("../samples/serial_write.h5");
-
+    Series o = Series("../samples/serial_write.h5", AccessType::CREATE);
     ParticleSpecies& e = o.iterations[1].particles["e"];
 
     std::vector< double > position_global(4);
@@ -45,7 +44,7 @@ write()
 void
 write2()
 {
-    Series f = Series::create("./working/directory/2D_simData.h5");
+    Series f = Series("./working/directory/2D_simData.h5", AccessType::CREATE);
 
     // all required openPMD attributes will be set to reasonable default values (all ones, all zeros, empty strings,...)
     // manually setting them enforces the openPMD standard
@@ -208,7 +207,7 @@ write2()
 void
 w()
 {
-    Series o = Series::create("../samples/serial_write_%T.h5");
+    Series o = Series("../samples/serial_write_%T.h5", AccessType::CREATE);
 }
 
 int

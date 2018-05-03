@@ -29,7 +29,7 @@ using namespace openPMD;
 
 int main()
 {
-    Series series = Series::read(
+    Series series = Series(
         "../samples/git-sample/data%T.h5",
         AccessType::READ_ONLY
     );
