@@ -10,7 +10,7 @@ from openPMD import Series
 
 
 if __name__ == "__main__":
-    series = Series.read("../samples/git-sample/data%T.h5")
+    series = Series("../samples/git-sample/data%T.h5", Access_Type.read_only)
     print("Read a Series with openPMD standard version %s" %
           series.openPMD)
 

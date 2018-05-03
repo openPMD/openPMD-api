@@ -63,7 +63,7 @@ from openPMD import Series
 
 # ...
 
-series = Series.read("output_files/data%T.h5")
+series = Series("output_files/data%T.h5", AccessType.read_onyl)
 
 print("Read iterations...")
 for k, i in series.iterations.items():
