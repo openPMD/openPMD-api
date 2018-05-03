@@ -17,6 +17,6 @@ C++11
 Python
 ------
 
-.. code-block:: python
+.. code-block:: python3
 
    import openPMD
