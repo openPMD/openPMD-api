@@ -21,7 +21,7 @@ Python
 ^^^^^^
 
 .. literalinclude:: 2_read_serial.py
-   :language: py
+   :language: python3
    :lines: 9-
 
 Writing
