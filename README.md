@@ -58,12 +58,12 @@ for( auto const& i : s.iterations )
 ### Python
 
 ```py
-from openPMD import Series
+import openPMD
 
 
 # ...
 
-series = Series("output_files/data%T.h5", AccessType.read_onyl)
+series = openPMD.Series("output_files/data%T.h5", openPMD.Access_Type.read_only)
 
 print("Read iterations...")
 for k, i in series.iterations.items():
