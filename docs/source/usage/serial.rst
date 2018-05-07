@@ -39,4 +39,6 @@ An extended example can be found in ``examples/7_extended_write_serial.cpp``.
 Python
 ^^^^^^
 
-*TBD*
+.. literalinclude:: 3_write_serial.py
+   :language: python3
+   :lines: 9-
