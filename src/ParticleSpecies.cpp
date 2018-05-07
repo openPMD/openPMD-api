@@ -131,12 +131,12 @@ Container< ParticleSpecies >::operator[](Container< ParticleSpecies >::key_type 
     {
         ParticleSpecies ps = ParticleSpecies();
         ps.IOHandler = IOHandler;
-        ps.parent = this;
+        ps.parent = getWritable(this);
         auto& ret = this->insert({key, ps}).first->second;
         /* enforce these two RecordComponents as required by the standard */
         ret["position"].setUnitDimension({{UnitDimension::L, 1}});
         ret["positionOffset"].setUnitDimension({{UnitDimension::L, 1}});
-        ret.particlePatches.parent = &ret;
+        ret.particlePatches.parent = getWritable(&ret);
         ret.particlePatches.IOHandler = ret.IOHandler;
 
         auto& np = ret.particlePatches["numParticles"];
@@ -163,12 +163,12 @@ Container< ParticleSpecies >::operator[](Container< ParticleSpecies >::key_type 
     {
         ParticleSpecies ps = ParticleSpecies();
         ps.IOHandler = IOHandler;
-        ps.parent = this;
+        ps.parent = getWritable(this);
         auto& ret = this->insert({std::move(key), ps}).first->second;
         /* enforce these two RecordComponents as required by the standard */
         ret["position"].setUnitDimension({{UnitDimension::L, 1}});
         ret["positionOffset"].setUnitDimension({{UnitDimension::L, 1}});
-        ret.particlePatches.parent = &ret;
+        ret.particlePatches.parent = getWritable(&ret);
         ret.particlePatches.IOHandler = ret.IOHandler;
 
         auto& np = ret.particlePatches["numParticles"];

@@ -161,7 +161,7 @@ BaseRecord< T_elem >::erase(key_type const& key)
     if( scalar )
     {
         this->written = false;
-        this->abstractFilePosition.reset();
+        this->m_writable->abstractFilePosition.reset();
         this->m_containsScalar = false;
     }
     return res;

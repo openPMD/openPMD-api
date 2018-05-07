@@ -46,7 +46,7 @@ template<
 >
 class Container : public Attributable
 {
-    static_assert(std::is_base_of< Writable, T >::value, "Type of container element must be derived from Writable");
+    static_assert(std::is_base_of< Attributable, T >::value, "Type of container element must be derived from Writable");
     using InternalContainer = T_container;
 
     friend class Iteration;
@@ -122,8 +122,10 @@ public:
         else
         {
             T t = T();
-            t.IOHandler = IOHandler;
-            t.parent = this;
+            t.m_writable->IOHandler = m_writable->IOHandler;
+            t.IOHandler = t.m_writable->IOHandler.get();
+            t.m_writable->parent = getWritable(this);
+            t.parent = t.m_writable->parent;
             return m_container.insert({key, std::move(t)}).first->second;
         }
     }
@@ -140,8 +142,10 @@ public:
         else
         {
             T t = T();
-            t.IOHandler = IOHandler;
-            t.parent = this;
+            t.m_writable->IOHandler = m_writable->IOHandler;
+            t.IOHandler = t.m_writable->IOHandler.get();
+            t.m_writable->parent = getWritable(this);
+            t.parent = t.m_writable->parent;
             return m_container.insert({std::move(key), std::move(t)}).first->second;
         }
     }

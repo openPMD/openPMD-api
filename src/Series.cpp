@@ -82,9 +82,12 @@ Series::Series(std::string const& filepath,
 
     m_format = determineFormat(name);
 
-    IOHandler = AbstractIOHandler::createIOHandler(path, at, m_format, comm);
-    iterations.IOHandler = IOHandler;
-    iterations.parent = this;
+    m_writable->IOHandler = AbstractIOHandler::createIOHandler(path, at, m_format, comm);
+    IOHandler = m_writable->IOHandler.get();
+    iterations.m_writable->IOHandler = m_writable->IOHandler;
+    iterations.IOHandler = iterations.m_writable->IOHandler.get();
+    iterations.m_writable->parent = getWritable(this);
+    iterations.parent = iterations.m_writable->parent;
 
     m_name = cleanFilename(name, m_format);
 
@@ -139,9 +142,12 @@ Series::Series(std::string const& filepath,
 
     m_format = determineFormat(name);
 
-    IOHandler = AbstractIOHandler::createIOHandler(path, at, m_format);
-    iterations.IOHandler = IOHandler;
-    iterations.parent = this;
+    m_writable->IOHandler = AbstractIOHandler::createIOHandler(path, at, m_format);
+    IOHandler = m_writable->IOHandler.get();
+    iterations.m_writable->IOHandler = m_writable->IOHandler;
+    iterations.IOHandler = iterations.m_writable->IOHandler.get();
+    iterations.m_writable->parent = getWritable(this);
+    iterations.parent = iterations.m_writable->parent;
 
     m_name = cleanFilename(name, m_format);
 
@@ -466,13 +472,19 @@ Series::flushGroupBased()
     }
 
     if( !iterations.written )
-        iterations.parent = this;
+    {
+        iterations.m_writable->parent = getWritable(this);
+        iterations.parent = getWritable(this);
+    }
     iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
 
     for( auto& i : iterations )
     {
         if( !i.second.written )
-            i.second.parent = &iterations;
+        {
+            i.second.m_writable->parent = getWritable(&iterations);
+            i.second.parent = getWritable(&iterations);
+        }
         i.second.flushGroupBased(i.first);
     }
 
@@ -523,7 +535,7 @@ Series::readFileBased()
             fOpen.name = entry.filename().string();
             IOHandler->enqueue(IOTask(this, fOpen));
             IOHandler->flush();
-            iterations.parent = this;
+            iterations.parent = getWritable(this);
 
             /* allow all attributes to be set */
             written = false;

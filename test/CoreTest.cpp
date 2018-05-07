@@ -322,54 +322,54 @@ TEST_CASE( "structure_test", "[core]" )
     REQUIRE(o.IOHandler);
     REQUIRE(o.iterations.IOHandler);
     REQUIRE(!o.parent);
-    REQUIRE(o.iterations.parent == static_cast< Writable* >(&o));
+    REQUIRE(o.iterations.parent == getWritable(&o));
 
     Iteration i = o.iterations[1];
     REQUIRE(i.IOHandler);
     REQUIRE(o.iterations[1].IOHandler);
-    REQUIRE(i.parent == static_cast< Writable* >(&o.iterations));
-    REQUIRE(o.iterations[1].parent == static_cast< Writable* >(&o.iterations));
+    REQUIRE(i.parent == getWritable(&o.iterations));
+    REQUIRE(o.iterations[1].parent == getWritable(&o.iterations));
 
     Mesh m = o.iterations[1].meshes["M"];
     REQUIRE(m.IOHandler);
     REQUIRE(o.iterations[1].meshes["M"].IOHandler);
-    REQUIRE(m.parent == static_cast< Writable* >(&o.iterations[1].meshes));
-    REQUIRE(o.iterations[1].meshes["M"].parent == static_cast< Writable* >(&o.iterations[1].meshes));
+    REQUIRE(m.parent == getWritable(&o.iterations[1].meshes));
+    REQUIRE(o.iterations[1].meshes["M"].parent == getWritable(&o.iterations[1].meshes));
 
     MeshRecordComponent mrc = o.iterations[1].meshes["M"]["MRC"];
     REQUIRE(mrc.IOHandler);
     REQUIRE(o.iterations[1].meshes["M"]["MRC"].IOHandler);
-    REQUIRE(mrc.parent == static_cast< Writable* >(&o.iterations[1].meshes["M"]));
-    REQUIRE(o.iterations[1].meshes["M"]["MRC"].parent == static_cast< Writable* >(&o.iterations[1].meshes["M"]));
+    REQUIRE(mrc.parent == getWritable(&o.iterations[1].meshes["M"]));
+    REQUIRE(o.iterations[1].meshes["M"]["MRC"].parent == getWritable(&o.iterations[1].meshes["M"]));
     mrc = o.iterations[1].meshes["M"]["MRC"].makeConstant(1.0);
     REQUIRE(mrc.IOHandler);
     REQUIRE(o.iterations[1].meshes["M"]["MRC"].IOHandler);
-    REQUIRE(mrc.parent == static_cast< Writable* >(&o.iterations[1].meshes["M"]));
-    REQUIRE(o.iterations[1].meshes["M"]["MRC"].parent == static_cast< Writable* >(&o.iterations[1].meshes["M"]));
+    REQUIRE(mrc.parent == getWritable(&o.iterations[1].meshes["M"]));
+    REQUIRE(o.iterations[1].meshes["M"]["MRC"].parent == getWritable(&o.iterations[1].meshes["M"]));
 
     MeshRecordComponent scalar_mrc = o.iterations[1].meshes["M2"][MeshRecordComponent::SCALAR];
     REQUIRE(scalar_mrc.IOHandler);
     REQUIRE(o.iterations[1].meshes["M2"].IOHandler);
     REQUIRE(o.iterations[1].meshes["M2"][MeshRecordComponent::SCALAR].IOHandler);
-    REQUIRE(scalar_mrc.parent == static_cast< Writable* >(&o.iterations[1].meshes));
-    REQUIRE(o.iterations[1].meshes["M2"].parent == static_cast< Writable* >(&o.iterations[1].meshes));
-    REQUIRE(o.iterations[1].meshes["M2"][MeshRecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[1].meshes));
+    REQUIRE(scalar_mrc.parent == getWritable(&o.iterations[1].meshes));
+    REQUIRE(o.iterations[1].meshes["M2"].parent == getWritable(&o.iterations[1].meshes));
+    REQUIRE(o.iterations[1].meshes["M2"][MeshRecordComponent::SCALAR].parent == getWritable(&o.iterations[1].meshes));
     scalar_mrc = o.iterations[1].meshes["M2"][MeshRecordComponent::SCALAR].makeConstant(1.0);
     REQUIRE(scalar_mrc.IOHandler);
     REQUIRE(o.iterations[1].meshes["M2"].IOHandler);
     REQUIRE(o.iterations[1].meshes["M2"][MeshRecordComponent::SCALAR].IOHandler);
-    REQUIRE(scalar_mrc.parent == static_cast< Writable* >(&o.iterations[1].meshes));
-    REQUIRE(o.iterations[1].meshes["M2"].parent == static_cast< Writable* >(&o.iterations[1].meshes));
-    REQUIRE(o.iterations[1].meshes["M2"][MeshRecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[1].meshes));
+    REQUIRE(scalar_mrc.parent == getWritable(&o.iterations[1].meshes));
+    REQUIRE(o.iterations[1].meshes["M2"].parent == getWritable(&o.iterations[1].meshes));
+    REQUIRE(o.iterations[1].meshes["M2"][MeshRecordComponent::SCALAR].parent == getWritable(&o.iterations[1].meshes));
 
     ParticleSpecies ps = o.iterations[1].particles["P"];
     REQUIRE(ps.IOHandler);
     REQUIRE(o.iterations[1].particles["P"].IOHandler);
-    REQUIRE(ps.parent == static_cast< Writable* >(&o.iterations[1].particles));
-    REQUIRE(o.iterations[1].particles["P"].parent == static_cast< Writable* >(&o.iterations[1].particles));
+    REQUIRE(ps.parent == getWritable(&o.iterations[1].particles));
+    REQUIRE(o.iterations[1].particles["P"].parent == getWritable(&o.iterations[1].particles));
 
     REQUIRE(o.iterations[1].particles["P"].particlePatches.IOHandler);
-    REQUIRE(o.iterations[1].particles["P"].particlePatches.parent == static_cast< Writable* >(&o.iterations[1].particles["P"]));
+    REQUIRE(o.iterations[1].particles["P"].particlePatches.parent == getWritable(&o.iterations[1].particles["P"]));
 
     REQUIRE(1 == o.iterations[1].particles["P"].count("position"));
     REQUIRE(1 == o.iterations[1].particles["P"].count("positionOffset"));
@@ -377,30 +377,30 @@ TEST_CASE( "structure_test", "[core]" )
     Record r = o.iterations[1].particles["P"]["PR"];
     REQUIRE(r.IOHandler);
     REQUIRE(o.iterations[1].particles["P"]["PR"].IOHandler);
-    REQUIRE(r.parent == static_cast< Writable* >(&o.iterations[1].particles["P"]));
-    REQUIRE(o.iterations[1].particles["P"]["PR"].parent == static_cast< Writable* >(&o.iterations[1].particles["P"]));
+    REQUIRE(r.parent == getWritable(&o.iterations[1].particles["P"]));
+    REQUIRE(o.iterations[1].particles["P"]["PR"].parent == getWritable(&o.iterations[1].particles["P"]));
 
     RecordComponent rc = o.iterations[1].particles["P"]["PR"]["PRC"];
     REQUIRE(rc.IOHandler);
     REQUIRE(o.iterations[1].particles["P"]["PR"]["PRC"].IOHandler);
-    REQUIRE(rc.parent == static_cast< Writable* >(&o.iterations[1].particles["P"]["PR"]));
-    REQUIRE(o.iterations[1].particles["P"]["PR"]["PRC"].parent == static_cast< Writable* >(&o.iterations[1].particles["P"]["PR"]));
+    REQUIRE(rc.parent == getWritable(&o.iterations[1].particles["P"]["PR"]));
+    REQUIRE(o.iterations[1].particles["P"]["PR"]["PRC"].parent == getWritable(&o.iterations[1].particles["P"]["PR"]));
     rc = o.iterations[1].particles["P"]["PR"]["PRC"].makeConstant(1.0);
     REQUIRE(rc.IOHandler);
     REQUIRE(o.iterations[1].particles["P"]["PR"]["PRC"].IOHandler);
-    REQUIRE(rc.parent == static_cast< Writable* >(&o.iterations[1].particles["P"]["PR"]));
-    REQUIRE(o.iterations[1].particles["P"]["PR"]["PRC"].parent == static_cast< Writable* >(&o.iterations[1].particles["P"]["PR"]));
+    REQUIRE(rc.parent == getWritable(&o.iterations[1].particles["P"]["PR"]));
+    REQUIRE(o.iterations[1].particles["P"]["PR"]["PRC"].parent == getWritable(&o.iterations[1].particles["P"]["PR"]));
 
     RecordComponent scalar_rc = o.iterations[1].particles["P"]["PR2"][RecordComponent::SCALAR];
     REQUIRE(scalar_rc.IOHandler);
     REQUIRE(o.iterations[1].particles["P"]["PR2"][RecordComponent::SCALAR].IOHandler);
-    REQUIRE(scalar_rc.parent == static_cast< Writable* >(&o.iterations[1].particles["P"]));
-    REQUIRE(o.iterations[1].particles["P"]["PR2"][RecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[1].particles["P"]));
+    REQUIRE(scalar_rc.parent == getWritable(&o.iterations[1].particles["P"]));
+    REQUIRE(o.iterations[1].particles["P"]["PR2"][RecordComponent::SCALAR].parent == getWritable(&o.iterations[1].particles["P"]));
     scalar_rc = o.iterations[1].particles["P"]["PR2"][RecordComponent::SCALAR].makeConstant(1.0);
     REQUIRE(scalar_rc.IOHandler);
     REQUIRE(o.iterations[1].particles["P"]["PR2"][RecordComponent::SCALAR].IOHandler);
-    REQUIRE(scalar_rc.parent == static_cast< Writable* >(&o.iterations[1].particles["P"]));
-    REQUIRE(o.iterations[1].particles["P"]["PR2"][RecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[1].particles["P"]));
+    REQUIRE(scalar_rc.parent == getWritable(&o.iterations[1].particles["P"]));
+    REQUIRE(o.iterations[1].particles["P"]["PR2"][RecordComponent::SCALAR].parent == getWritable(&o.iterations[1].particles["P"]));
 
     REQUIRE(1 == o.iterations[1].particles["P"].particlePatches.count("numParticles"));
     REQUIRE(1 == o.iterations[1].particles["P"].particlePatches.count("numParticlesOffset"));
@@ -408,29 +408,29 @@ TEST_CASE( "structure_test", "[core]" )
     ParticlePatches pp = o.iterations[1].particles["P"].particlePatches;
     REQUIRE(pp.IOHandler);
     REQUIRE(o.iterations[1].particles["P"].particlePatches.IOHandler);
-    REQUIRE(pp.parent == static_cast< Writable* >(&o.iterations[1].particles["P"]));
-    REQUIRE(o.iterations[1].particles["P"].particlePatches.parent == static_cast< Writable* >(&o.iterations[1].particles["P"]));
+    REQUIRE(pp.parent == getWritable(&o.iterations[1].particles["P"]));
+    REQUIRE(o.iterations[1].particles["P"].particlePatches.parent == getWritable(&o.iterations[1].particles["P"]));
 
     PatchRecord pr = o.iterations[1].particles["P"].particlePatches["numParticles"];
     REQUIRE(pr.IOHandler);
     REQUIRE(o.iterations[1].particles["P"].particlePatches["numParticles"].IOHandler);
-    REQUIRE(pr.parent == static_cast< Writable* >(&o.iterations[1].particles["P"].particlePatches));
-    REQUIRE(o.iterations[1].particles["P"].particlePatches["numParticles"].parent == static_cast< Writable* >(&o.iterations[1].particles["P"].particlePatches));
+    REQUIRE(pr.parent == getWritable(&o.iterations[1].particles["P"].particlePatches));
+    REQUIRE(o.iterations[1].particles["P"].particlePatches["numParticles"].parent == getWritable(&o.iterations[1].particles["P"].particlePatches));
     pr = o.iterations[1].particles["P"].particlePatches["extent"];
     REQUIRE(pr.IOHandler);
     REQUIRE(o.iterations[1].particles["P"].particlePatches["extent"].IOHandler);
-    REQUIRE(pr.parent == static_cast< Writable* >(&o.iterations[1].particles["P"].particlePatches));
-    REQUIRE(o.iterations[1].particles["P"].particlePatches["extent"].parent == static_cast< Writable* >(&o.iterations[1].particles["P"].particlePatches));
+    REQUIRE(pr.parent == getWritable(&o.iterations[1].particles["P"].particlePatches));
+    REQUIRE(o.iterations[1].particles["P"].particlePatches["extent"].parent == getWritable(&o.iterations[1].particles["P"].particlePatches));
 
     PatchRecordComponent scalar_prc = o.iterations[1].particles["P"].particlePatches["numParticles"][RecordComponent::SCALAR];
     REQUIRE(scalar_prc.IOHandler);
     REQUIRE(o.iterations[1].particles["P"].particlePatches["numParticles"][RecordComponent::SCALAR].IOHandler);
-    REQUIRE(scalar_prc.parent == static_cast< Writable* >(&o.iterations[1].particles["P"].particlePatches));
-    REQUIRE(o.iterations[1].particles["P"].particlePatches["numParticles"][RecordComponent::SCALAR].parent == static_cast< Writable* >(&o.iterations[1].particles["P"].particlePatches));
+    REQUIRE(scalar_prc.parent == getWritable(&o.iterations[1].particles["P"].particlePatches));
+    REQUIRE(o.iterations[1].particles["P"].particlePatches["numParticles"][RecordComponent::SCALAR].parent == getWritable(&o.iterations[1].particles["P"].particlePatches));
 
     PatchRecordComponent prc = o.iterations[1].particles["P"].particlePatches["extent"]["x"];
     REQUIRE(prc.IOHandler);
     REQUIRE(o.iterations[1].particles["P"].particlePatches["extent"]["x"].IOHandler);
-    REQUIRE(prc.parent == static_cast< Writable* >(&o.iterations[1].particles["P"].particlePatches["extent"]));
-    REQUIRE(o.iterations[1].particles["P"].particlePatches["extent"]["x"].parent == static_cast< Writable* >(&o.iterations[1].particles["P"].particlePatches["extent"]));
+    REQUIRE(prc.parent == getWritable(&o.iterations[1].particles["P"].particlePatches["extent"]));
+    REQUIRE(o.iterations[1].particles["P"].particlePatches["extent"]["x"].parent == getWritable(&o.iterations[1].particles["P"].particlePatches["extent"]));
 }

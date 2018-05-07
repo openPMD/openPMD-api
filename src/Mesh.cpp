@@ -198,7 +198,7 @@ Mesh::flush(std::string const& name)
             IOHandler->enqueue(IOTask(this, pCreate));
             IOHandler->flush();
             for( auto& comp : *this )
-                comp.second.parent = this;
+                comp.second.parent = this->m_writable.get();
         }
     }
 
