@@ -133,7 +133,7 @@ public:
 
     /** Set the powers of the 7 base measures characterizing the record's unit in SI.
      *
-     * @param   unitDimension   map containing pairs of (UnitDimension, dobule) that represent the power of the particular base.
+     * @param   unitDimension   map containing pairs of (UnitDimension, double) that represent the power of the particular base.
      * @return  Refence to modified mesh.
      */
     Mesh& setUnitDimension(std::map< UnitDimension, double > const& unitDimension);
