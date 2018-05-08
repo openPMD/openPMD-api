@@ -27,6 +27,7 @@
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/IterationEncoding.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 #if openPMD_HAVE_MPI
 #   include <mpi.h>
@@ -44,7 +45,7 @@ namespace openPMD
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series
  */
-class Series : public Attributable
+class OPENPMD_PUBLIC Series : public Attributable
 {
     friend class Iteration;
 
@@ -271,6 +272,7 @@ private:
  * @param   filename    tring containing the filename.
  * @return  Format that best fits the filename extension.
  */
+OPENPMD_PUBLIC
 Format determineFormat(std::string const& filename);
 
 /** Remove the filename extension of a given storage format.
@@ -279,6 +281,7 @@ Format determineFormat(std::string const& filename);
  * @param   f           File format to remove filename extension for.
  * @return  String containing the filename without filename extension.
  */
+OPENPMD_PUBLIC
 std::string cleanFilename(std::string const& filename, Format f);
 
 /** Create a functor to determine if a file can be of a format given the filename on disk.
@@ -287,5 +290,6 @@ std::string cleanFilename(std::string const& filename, Format f);
  * @param   f           File format to check backend applicability for.
  * @return  Functor returning true if file could be of type f. False otherwise.
  */
+OPENPMD_PUBLIC
 std::function< bool(std::string const&) > matcher(std::string const& name, Format f);
 } // openPMD

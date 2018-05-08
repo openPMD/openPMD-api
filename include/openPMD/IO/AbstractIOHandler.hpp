@@ -23,6 +23,7 @@
 #include "openPMD/IO/AccessType.hpp"
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/IO/IOTask.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 #if openPMD_HAVE_MPI
 #   include <mpi.h>
@@ -37,7 +38,7 @@
 
 namespace openPMD
 {
-class no_such_file_error : public std::runtime_error
+class OPENPMD_PUBLIC no_such_file_error : public std::runtime_error
 {
 public:
     no_such_file_error(char const* what_arg)
@@ -49,7 +50,7 @@ public:
     virtual ~no_such_file_error() { }
 };
 
-class unsupported_data_error : public std::runtime_error
+class OPENPMD_PUBLIC unsupported_data_error : public std::runtime_error
 {
 public:
     unsupported_data_error(char const* what_arg)
@@ -70,7 +71,7 @@ public:
  * scenarios it is therefore necessary to manually execute all operations
  * by calling AbstractIOHanlder::flush().
  */
-class AbstractIOHandler
+class OPENPMD_PUBLIC AbstractIOHandler
 {
 public:
 #if openPMD_HAVE_MPI

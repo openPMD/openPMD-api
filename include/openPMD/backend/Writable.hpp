@@ -20,6 +20,8 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Visibility.hpp"
+
 #include <memory>
 
 
@@ -37,7 +39,7 @@ class AbstractIOHandler;
  *                      - whether the logical object has been modified compared
  *                        to last persistent state
  */
-class Writable
+class OPENPMD_PUBLIC Writable
 {
     template<
             typename T,

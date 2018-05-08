@@ -23,6 +23,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Writable.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 #include <exception>
 #include <map>
@@ -33,7 +34,7 @@
 
 namespace openPMD
 {
-class no_such_attribute_error : public std::runtime_error
+class OPENPMD_PUBLIC no_such_attribute_error : public std::runtime_error
 {
 public:
     no_such_attribute_error(char const* what_arg)
@@ -51,7 +52,7 @@ public:
  * Mandatory and user-defined Attributes and their data for every object in the
  * openPMD hierarchy are stored and managed through this class.
  */
-class Attributable : public Writable
+class OPENPMD_PUBLIC Attributable : public Writable
 {
     using A_MAP = std::map< std::string, Attribute >;
 

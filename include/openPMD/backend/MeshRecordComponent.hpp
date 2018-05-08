@@ -1,13 +1,14 @@
 #pragma once
 
 #include "openPMD/RecordComponent.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 #include <vector>
 
 
 namespace openPMD
 {
-class MeshRecordComponent : public RecordComponent
+class OPENPMD_PUBLIC MeshRecordComponent : public RecordComponent
 {
     template<
             typename T,

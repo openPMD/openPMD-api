@@ -22,6 +22,7 @@
 
 #include "openPMD/backend/PatchRecordComponent.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 #include <unordered_map>
 #include <string>
@@ -29,7 +30,7 @@
 
 namespace openPMD
 {
-class PatchRecord : public BaseRecord< PatchRecordComponent >
+class OPENPMD_PUBLIC PatchRecord : public BaseRecord< PatchRecordComponent >
 {
     friend class Container< PatchRecord >;
     friend class ParticleSpecies;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "openPMD/auxiliary/Visibility.hpp"
+
 #include <array>
 #include <cstdint>
 #include <iosfwd>
@@ -81,6 +83,7 @@ constexpr bool decay_equiv_v = decay_equiv< T, U >::value;
 #endif
 
 template< typename T >
+OPENPMD_PUBLIC
 inline
 #if __cplusplus >= 201402L
 constexpr
@@ -120,6 +123,7 @@ determineDatatype()
 }
 
 template< typename T >
+OPENPMD_PUBLIC
 inline
 #if __cplusplus >= 201402L
 constexpr
@@ -161,6 +165,7 @@ determineDatatype(std::shared_ptr< T >)
 
 namespace std
 {
+    OPENPMD_PUBLIC
     ostream&
     operator<<(ostream&, openPMD::Datatype);
 } // std

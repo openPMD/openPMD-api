@@ -2,6 +2,7 @@
 
 #include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/Dataset.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 #include <cmath>
 #include <memory>
@@ -13,7 +14,7 @@
 
 namespace openPMD
 {
-class RecordComponent : public BaseRecordComponent
+class OPENPMD_PUBLIC RecordComponent : public BaseRecordComponent
 {
     template<
             typename T,

@@ -22,13 +22,14 @@
 
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/PatchRecord.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 #include <vector>
 
 
 namespace openPMD
 {
-class ParticlePatches : public Container< PatchRecord >
+class OPENPMD_PUBLIC ParticlePatches : public Container< PatchRecord >
 {
     friend class ParticleSpecies;
 
