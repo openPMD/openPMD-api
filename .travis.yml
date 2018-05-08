@@ -13,6 +13,7 @@ env:
   global:
     - BUILD: ~/buildTmp
     - CXXFLAGS: "-std=c++11 -Wall -Wextra -Woverloaded-virtual -Wshadow"
+    - USE_SHARED=OFF
     - SPACK_ROOT: $HOME/.cache/spack
     - PATH: $PATH:$HOME/.cache/spack/bin
 
@@ -80,6 +81,7 @@ jobs:
         - CXXFLAGS=$CXXFLAGS CXX=$CXX CC=$CC
           cmake
             -DCMAKE_BUILD_TYPE=Debug
+            -DBUILD_SHARED_LIBS=$USE_SHARED
             -DopenPMD_USE_MPI=$USE_MPI
             -DopenPMD_USE_HDF5=$USE_HDF5
             -DopenPMD_USE_ADIOS1=$USE_ADIOS1
@@ -134,7 +136,7 @@ jobs:
       script: *script-cpp-unit
     - <<: *test-cpp-unit
       env:
-        - USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+        - USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF USE_SHARED=ON
       compiler: gcc
       addons:
         apt:
@@ -179,7 +181,7 @@ jobs:
       language: python
       python: "2.7"
       env:
-        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF USE_SHARED=ON
       compiler: gcc
       addons:
         apt:
