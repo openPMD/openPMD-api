@@ -222,7 +222,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         for( auto const& val : parameters.extent )
             dims.push_back(static_cast< hsize_t >(val));
 
-        hid_t space = H5Screate_simple(dims.size(), dims.data(), dims.data());
+        hid_t space = H5Screate_simple(static_cast< int >(dims.size()), dims.data(), dims.data());
         ASSERT(space >= 0, "Internal error: Failed to create dataspace during dataset creation");
 
         std::vector< hsize_t > chunkDims;
@@ -678,7 +678,7 @@ HDF5IOHandlerImpl::writeDataset(Writable* writable,
     std::vector< hsize_t > block;
     for( auto const& val : parameters.extent )
         block.push_back(static_cast< hsize_t >(val));
-    memspace = H5Screate_simple(block.size(), block.data(), nullptr);
+    memspace = H5Screate_simple(static_cast< int >(block.size()), block.data(), nullptr);
     filespace = H5Dget_space(dataset_id);
     status = H5Sselect_hyperslab(filespace,
                                  H5S_SELECT_SET,
@@ -978,7 +978,7 @@ HDF5IOHandlerImpl::readDataset(Writable* writable,
     std::vector< hsize_t > block;
     for( auto const& val : parameters.extent )
         block.push_back(static_cast< hsize_t >(val));
-    memspace = H5Screate_simple(block.size(), block.data(), nullptr);
+    memspace = H5Screate_simple(static_cast< int >(block.size()), block.data(), nullptr);
     filespace = H5Dget_space(dataset_id);
     status = H5Sselect_hyperslab(filespace,
                                  H5S_SELECT_SET,

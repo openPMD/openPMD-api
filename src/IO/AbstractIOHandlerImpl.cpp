@@ -97,7 +97,7 @@ AbstractIOHandlerImpl::flush()
           listAttributes(i.writable, *dynamic_cast< Parameter< O::LIST_ATTS >* >(i.parameter.get()));
           break;
       }
-    } catch (unsupported_data_error& e)
+    } catch (unsupported_data_error&)
     {
       (*m_handler).m_work.pop();
       throw;
