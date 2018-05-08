@@ -18,9 +18,14 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # install directories
 set(CMAKE_INSTALL_BINDIR bin)
-set(CMAKE_INSTALL_LIBDIR lib)
 set(CMAKE_INSTALL_INCLUDEDIR include)
-set(CMAKE_INSTALL_CMAKEDIR lib/cmake/openPMD)
+if(WIN32)
+    set(CMAKE_INSTALL_LIBDIR Lib)
+    set(CMAKE_INSTALL_CMAKEDIR cmake)
+else()
+    set(CMAKE_INSTALL_LIBDIR lib)
+    set(CMAKE_INSTALL_CMAKEDIR ${CMAKE_INSTALL_LIBDIR}/cmake/openPMD)
+endif()
 
 
 # Options and Variants ########################################################
@@ -84,6 +89,10 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
     # silence BOOST filesystem
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-cpp")
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    # Warning C4503: "decorated name length exceeded, name was truncated"
+    # Symbols longer than 4096 chars are truncated
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4503")
 endif ()
 
 
@@ -230,7 +239,7 @@ set(IO_SOURCE
         src/IO/HDF5/ParallelHDF5IOHandler.cpp)
 
 # library
-add_Library(openPMD ${CORE_SOURCE} ${IO_SOURCE})
+add_library(openPMD ${CORE_SOURCE} ${IO_SOURCE})
 
 # properties
 target_compile_features(openPMD
@@ -240,7 +249,11 @@ set_target_properties(openPMD PROPERTIES
     CXX_EXTENSIONS OFF
     CXX_STANDARD_REQUIRED ON
     POSITION_INDEPENDENT_CODE ON
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    target_compile_options(openPMD PUBLIC "/bigobj")
+endif()
 
 # own headers
 target_include_directories(openPMD PUBLIC
@@ -339,9 +352,15 @@ if(openPMD_HAVE_PYTHON)
     )
     target_link_libraries(openPMD.py PRIVATE openPMD)
 
-    set(CMAKE_INSTALL_PYTHONDIR
-        "${CMAKE_INSTALL_LIBDIR}/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages"
-    )
+    if(WIN32)
+        set(CMAKE_INSTALL_PYTHONDIR
+            "${CMAKE_INSTALL_LIBDIR}\\site-packages"
+        )
+    else()
+        set(CMAKE_INSTALL_PYTHONDIR
+            "${CMAKE_INSTALL_LIBDIR}/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages"
+        )
+    endif()
     set(CMAKE_INSTALL_PYTHONDIR "${CMAKE_INSTALL_PYTHONDIR}"
         CACHE INTERNAL "" FORCE
     )
@@ -400,7 +419,6 @@ if(BUILD_TESTING)
         if(openPMD_HAVE_INVASIVE_TESTS)
             target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_INVASIVE_TESTS=1")
         endif()
-
         if(openPMD_HAVE_MPI)
             target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_MPI=1")
         else()
@@ -556,11 +574,7 @@ if(openPMD_HAVE_HDF5)
             endif()
         endforeach()
     else()
-        message(STATUS "Missing samples/git-sample/ directory! "
-                       "Skipping C++ example test!\n\n"
-                       "Note: run\n"
-                       "    . ${openPMD_SOURCE_DIR}/.travis/download_samples.sh\n"
-                       "to add example files!")
+        message(STATUS "Note: Skipping C++ example tests (missing example files)")
     endif()
 endif()
 
@@ -580,18 +594,38 @@ if(openPMD_HAVE_PYTHON)
                     WORKING_DIRECTORY
                         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
                 )
-                set_tests_properties(Example.py.${examplename}
-                    PROPERTIES ENVIRONMENT
-                        "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
-                )
+                if(WIN32)
+                    string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BASEDIR ${openPMD_BINARY_DIR})
+                    string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+                    string(REPLACE ";" "\\;" WIN_PATH "$ENV{PATH}")
+                    string(REPLACE ";" "\\;" WIN_PYTHONPATH "$ENV{PYTHONPATH}")
+                    set_property(TEST Example.py.${examplename}
+                        PROPERTY ENVIRONMENT
+                            "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
+                            "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${CMAKE_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
+                    )
+                else()
+                    set_tests_properties(Example.py.${examplename}
+                        PROPERTIES ENVIRONMENT
+                            "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
+                    )
+                endif()
             endif()
         endforeach()
     else()
-        message(STATUS "Missing samples/git-sample/ directory! "
-                       "Skipping Python example test!\n\n"
-                       "Note: run\n"
-                       "    ${openPMD_SOURCE_DIR}/.travis/download_samples.sh\n"
-                       "to add example files!")
+        message(STATUS "Note: Skipping Python example tests (missing example files)")
+    endif()
+endif()
+
+if(NOT EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
+    if(WIN32)
+        message(STATUS "Note: run\n"
+                       "    Powershell.exe -File ${openPMD_SOURCE_DIR}/.travis/download_samples.ps1\n"
+                       "to add example files to samples/git-sample/ directory!")
+    else()
+        message(STATUS "Note: run\n"
+                       "    . ${openPMD_SOURCE_DIR}/.travis/download_samples.sh\n"
+                       "to add example files to samples/git-sample/ directory!")
     endif()
 endif()
 
