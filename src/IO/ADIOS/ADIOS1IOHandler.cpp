@@ -622,12 +622,12 @@ ADIOS1IOHandlerImpl::deleteFile(Writable* writable,
         if( !auxiliary::ends_with(name, ".bp") )
             name += ".bp";
 
-        using namespace boost::filesystem;
-        path file(name);
-        if( !exists(file) )
+        namespace bf = boost::filesystem;
+        bf::path file(name);
+        if( !bf::exists(file) )
             throw std::runtime_error("File does not exist: " + name);
 
-        remove(file);
+        bf::remove(file);
 
         writable->written = false;
         writable->abstractFilePosition.reset();
