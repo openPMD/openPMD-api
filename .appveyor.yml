@@ -1,0 +1,140 @@
+environment:
+  matrix:
+# Only VS2008 [vc9] (no C++11) available for Python 2.7
+#    - TARGET_ARCH: x86
+#      CONDA_PY: 27
+#      CONDA_INSTALL_LOCN: C:\\Miniconda
+#      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2008
+
+#    - TARGET_ARCH: x64
+#      CONDA_PY: 27
+#      CONDA_INSTALL_LOCN: C:\\Miniconda-x64
+#      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2008
+
+    - TARGET_ARCH: x86
+      CONDA_PY: 35
+      CONDA_INSTALL_LOCN: C:\\Miniconda35
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+      platform: x86
+      SHARED: ON
+
+    - TARGET_ARCH: x64
+      CONDA_PY: 35
+      CONDA_INSTALL_LOCN: C:\\Miniconda35-x64
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+      platform: x64
+      SHARED: ON
+
+    - TARGET_ARCH: x86
+      CONDA_PY: 36
+      CONDA_INSTALL_LOCN: C:\\Miniconda36
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+      platform: x86
+      SHARED: OFF
+
+    - TARGET_ARCH: x64
+      CONDA_PY: 36
+      CONDA_INSTALL_LOCN: C:\\Miniconda36-x64
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+      platform: x64
+      SHARED: OFF
+
+configuration:
+#  - Debug
+  - Release
+
+# Clone directory.
+clone_folder: c:\projects\openpmd-api
+
+# Fetch repository as zip archive.
+shallow_clone: false
+
+# Set the clone depth.
+clone_depth: 1
+
+# Build tags (GitHub only)
+skip_tags: false
+
+branches:
+  except:
+    - gh-pages
+
+init:
+  # Print AppVeyor environment variables
+  - cmd: echo "%APPVEYOR%"
+  - cmd: echo "%CI%"
+  - cmd: echo "%APPVEYOR_API_URL%"
+  - cmd: echo "%APPVEYOR_ACCOUNT_NAME%"
+  - cmd: echo "%APPVEYOR_BUILD_WORKER_IMAGE%"
+  - cmd: echo "%APPVEYOR_PROJECT_ID%"
+  - cmd: echo "%APPVEYOR_PROJECT_NAME%"
+  - cmd: echo "%APPVEYOR_PROJECT_SLUG%"
+  - cmd: echo "%APPVEYOR_BUILD_FOLDER%"
+  - cmd: echo "%APPVEYOR_BUILD_ID%"
+  - cmd: echo "%APPVEYOR_BUILD_NUMBER%"
+  - cmd: echo "%APPVEYOR_BUILD_VERSION%"
+  - cmd: echo "%APPVEYOR_PULL_REQUEST_NUMBER%"
+  - cmd: echo "%APPVEYOR_PULL_REQUEST_TITLE%"
+  - cmd: echo "%APPVEYOR_JOB_ID%"
+  - cmd: echo "%APPVEYOR_REPO_PROVIDER%"
+  - cmd: echo "%APPVEYOR_REPO_SCM%"
+  - cmd: echo "%APPVEYOR_REPO_NAME%"
+  - cmd: echo "%APPVEYOR_REPO_BRANCH%"
+  - cmd: echo "%APPVEYOR_REPO_TAG%"
+  - cmd: echo "%APPVEYOR_REPO_TAG_NAME%"
+  - cmd: echo "%APPVEYOR_REPO_COMMIT%"
+  - cmd: echo "%APPVEYOR_REPO_COMMIT_TIMESTAMP%"
+  - cmd: echo "%APPVEYOR_REPO_COMMIT_MESSAGE%"
+  - cmd: echo "%APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED%"
+  - cmd: echo "%APPVEYOR_SCHEDULED_BUILD%"
+  - cmd: echo "%APPVEYOR_FORCED_BUILD%"
+  - cmd: echo "%APPVEYOR_RE_BUILD%"
+  - cmd: echo "%PLATFORM%"
+  - cmd: echo "%TARGET_ARCH%"
+  - cmd: echo "%CONFIGURATION%"
+  - cmd: echo "%SHARED%"
+
+install:
+  # Cywin's git breaks conda-build. (see https://github.com/conda-forge/conda-smithy-feedstock/pull/2)
+  - cmd: rmdir C:\cygwin /s /q
+
+  # Add path, activate `conda` and update conda.
+  - cmd: call %CONDA_INSTALL_LOCN%\Scripts\activate.bat
+  - cmd: conda update --yes --quiet conda
+
+  - cmd: set PYTHONUNBUFFERED=1
+
+  # Add our channels.
+  - cmd: conda config --set show_channel_urls true
+  - cmd: conda config --remove channels defaults
+  - cmd: conda config --add channels defaults
+  - cmd: conda config --add channels conda-forge
+
+  # Configure the VM.
+  - cmd: conda install -n root --quiet --yes cmake boost-cpp pybind11 hdf5
+
+before_build:
+  - cmd: cd C:\projects\openpmd-api
+  - cmd: mkdir build
+  - cmd: cd build
+
+  # Download example files
+  - ps: ..\.travis\download_samples.ps1
+
+  # Compiler & Generator Selection
+  - cmd: if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2015" set OPENPMD_CMAKE_GENERATOR=Visual Studio 14 2015
+  - cmd: if "%TARGET_ARCH%"=="x64" set OPENPMD_CMAKE_GENERATOR=%OPENPMD_CMAKE_GENERATOR% Win64
+#  - cmd: if "%TARGET_ARCH%"=="x86" "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64_x86
+  - cmd: if "%TARGET_ARCH%"=="x86" "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
+  - cmd: if "%TARGET_ARCH%"=="x64" "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
+
+  # CMake configure
+  - cmd: cmake -G "%OPENPMD_CMAKE_GENERATOR%" -DCMAKE_BUILD_TYPE=%CONFIGURATION% -DBUILD_SHARED_LIBS=%SHARED% -DBUILD_TESTING=ON ".."
+
+build_script:
+  - cmd: cmake --build . --config %CONFIGURATION%
+  - cmd: cmake --build . --config %CONFIGURATION% --target install
+
+test_script:
+  - cmd: ctest -V -C %CONFIGURATION%
+
