@@ -447,8 +447,8 @@ ADIOS1IOHandlerImpl::createDataset(Writable* writable,
 }
 
 void
-ADIOS1IOHandlerImpl::extendDataset(Writable* writable,
-                                   Parameter< Operation::EXTEND_DATASET > const& parameters)
+ADIOS1IOHandlerImpl::extendDataset(Writable*,
+                                   Parameter< Operation::EXTEND_DATASET > const&)
 {
     throw std::runtime_error("Dataset extension not implemented in ADIOS backend");
 }
@@ -637,22 +637,22 @@ ADIOS1IOHandlerImpl::deleteFile(Writable* writable,
 }
 
 void
-ADIOS1IOHandlerImpl::deletePath(Writable* writable,
-                                Parameter< Operation::DELETE_PATH > const& parameters)
+ADIOS1IOHandlerImpl::deletePath(Writable*,
+                                Parameter< Operation::DELETE_PATH > const&)
 {
     throw std::runtime_error("Path deletion not implemented in ADIOS backend");
 }
 
 void
-ADIOS1IOHandlerImpl::deleteDataset(Writable* writable,
-                                   Parameter< Operation::DELETE_DATASET > const& parameters)
+ADIOS1IOHandlerImpl::deleteDataset(Writable*,
+                                   Parameter< Operation::DELETE_DATASET > const&)
 {
     throw std::runtime_error("Dataset deletion not implemented in ADIOS backend");
 }
 
 void
-ADIOS1IOHandlerImpl::deleteAttribute(Writable* writable,
-                                     Parameter< Operation::DELETE_ATT > const& parameters)
+ADIOS1IOHandlerImpl::deleteAttribute(Writable*,
+                                     Parameter< Operation::DELETE_ATT > const&)
 {
     throw std::runtime_error("Attribute deletion not implemented in ADIOS backend");
 }
