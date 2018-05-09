@@ -84,10 +84,7 @@ Series::Series(std::string const& filepath,
 
     m_writable->IOHandler = AbstractIOHandler::createIOHandler(path, at, m_format, comm);
     IOHandler = m_writable->IOHandler.get();
-    iterations.m_writable->IOHandler = m_writable->IOHandler;
-    iterations.IOHandler = iterations.m_writable->IOHandler.get();
-    iterations.m_writable->parent = getWritable(this);
-    iterations.parent = iterations.m_writable->parent;
+    iterations.linkHierarchy(m_writable);
 
     m_name = cleanFilename(name, m_format);
 
@@ -144,10 +141,7 @@ Series::Series(std::string const& filepath,
 
     m_writable->IOHandler = AbstractIOHandler::createIOHandler(path, at, m_format);
     IOHandler = m_writable->IOHandler.get();
-    iterations.m_writable->IOHandler = m_writable->IOHandler;
-    iterations.IOHandler = iterations.m_writable->IOHandler.get();
-    iterations.m_writable->parent = getWritable(this);
-    iterations.parent = iterations.m_writable->parent;
+    iterations.linkHierarchy(m_writable);
 
     m_name = cleanFilename(name, m_format);
 

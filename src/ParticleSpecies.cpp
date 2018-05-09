@@ -67,7 +67,9 @@ ParticleSpecies::read()
             {
                 RecordComponent& rc = r[RecordComponent::SCALAR];
                 rc.m_isConstant = true;
+                rc.m_writable->parent = r.m_writable->parent;
                 rc.parent = r.parent;
+                rc.m_writable->abstractFilePosition = r.m_writable->abstractFilePosition;
                 rc.abstractFilePosition = r.abstractFilePosition;
             }
             r.read();
@@ -130,14 +132,12 @@ Container< ParticleSpecies >::operator[](Container< ParticleSpecies >::key_type 
     else
     {
         ParticleSpecies ps = ParticleSpecies();
-        ps.IOHandler = IOHandler;
-        ps.parent = getWritable(this);
+        ps.linkHierarchy(m_writable);
         auto& ret = this->insert({key, ps}).first->second;
         /* enforce these two RecordComponents as required by the standard */
         ret["position"].setUnitDimension({{UnitDimension::L, 1}});
         ret["positionOffset"].setUnitDimension({{UnitDimension::L, 1}});
-        ret.particlePatches.parent = getWritable(&ret);
-        ret.particlePatches.IOHandler = ret.IOHandler;
+        ret.particlePatches.linkHierarchy(ret.m_writable);
 
         auto& np = ret.particlePatches["numParticles"];
         auto& npc = np[RecordComponent::SCALAR];
@@ -162,14 +162,11 @@ Container< ParticleSpecies >::operator[](Container< ParticleSpecies >::key_type 
     else
     {
         ParticleSpecies ps = ParticleSpecies();
-        ps.IOHandler = IOHandler;
-        ps.parent = getWritable(this);
+        ps.linkHierarchy(m_writable);
         auto& ret = this->insert({std::move(key), ps}).first->second;
-        /* enforce these two RecordComponents as required by the standard */
         ret["position"].setUnitDimension({{UnitDimension::L, 1}});
         ret["positionOffset"].setUnitDimension({{UnitDimension::L, 1}});
-        ret.particlePatches.parent = getWritable(&ret);
-        ret.particlePatches.IOHandler = ret.IOHandler;
+        ret.particlePatches.linkHierarchy(ret.m_writable);
 
         auto& np = ret.particlePatches["numParticles"];
         auto& npc = np[RecordComponent::SCALAR];

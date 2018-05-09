@@ -57,6 +57,8 @@ class Attributable
 {
     using A_MAP = std::map< std::string, Attribute >;
     friend Writable* getWritable(Attributable*);
+    template< typename T_elem >
+    friend class BaseRecord;
     template<
         typename T,
         typename T_key,
@@ -64,6 +66,7 @@ class Attributable
     >
     friend class Container;
     friend class Iteration;
+    friend class Series;
 
 public:
     Attributable();
@@ -179,7 +182,7 @@ protected:
     bool& written;
 
 private:
-    virtual void linkHierarchy(std::shared_ptr< AbstractIOHandler > const& iohandler, Writable* parent);
+    virtual void linkHierarchy(std::shared_ptr< Writable > const& w);
 
     std::shared_ptr< A_MAP > m_attributes;
 };  //Attributable

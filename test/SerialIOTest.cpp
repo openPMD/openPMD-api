@@ -1038,7 +1038,7 @@ TEST_CASE( "hdf5_110_optional_paths", "[serial][hdf5]" )
             auto attrs = s.attributes();
             REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
             REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
-            REQUIRE(s.iterations[400].meshes.size() == 0);
+            REQUIRE(s.iterations[400].meshes.empty());
             REQUIRE(s.iterations[400].particles.size() == 1);
         }
 
@@ -1048,7 +1048,7 @@ TEST_CASE( "hdf5_110_optional_paths", "[serial][hdf5]" )
             REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
             REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
             REQUIRE(s.iterations[400].meshes.size() == 2);
-            REQUIRE(s.iterations[400].particles.size() == 0);
+            REQUIRE(s.iterations[400].particles.empty());
         }
     } catch (no_such_file_error& e)
     {
@@ -1070,7 +1070,7 @@ TEST_CASE( "hdf5_110_optional_paths", "[serial][hdf5]" )
         auto attrs = s.attributes();
         REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 0);
         REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
-        REQUIRE(s.iterations[1].meshes.size() == 0);
+        REQUIRE(s.iterations[1].meshes.empty());
         REQUIRE(s.iterations[1].particles.size() == 1);
     }
 
@@ -1080,7 +1080,7 @@ TEST_CASE( "hdf5_110_optional_paths", "[serial][hdf5]" )
         REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
         REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 0);
         REQUIRE(s.iterations[1].meshes.size() == 1);
-        REQUIRE(s.iterations[1].particles.size() == 0);
+        REQUIRE(s.iterations[1].particles.empty());
     }
 }
 #else
@@ -1465,7 +1465,7 @@ TEST_CASE( "hzdr_adios1_sample_content_test", "[serial][adios1]" )
         REQUIRE(E_z.getExtent() == e);
         REQUIRE(E_z.getDimensionality() == 3);
 
-        REQUIRE(i.particles.size() == 0);
+        REQUIRE(i.particles.empty());
 
         float actual[3][3][3] = {{{6.7173387e-06f, 6.7173387e-06f, 6.7173387e-06f},
                                      {7.0438218e-06f, 7.0438218e-06f, 7.0438218e-06f},

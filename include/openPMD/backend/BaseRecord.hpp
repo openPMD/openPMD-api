@@ -82,7 +82,8 @@ BaseRecord< T_elem >::BaseRecord(BaseRecord const& b)
 
 template< typename T_elem >
 BaseRecord< T_elem >::BaseRecord()
-        : m_containsScalar{false}
+        : Container< T_elem >(),
+          m_containsScalar{false}
 {
     this->setAttribute("unitDimension",
                        std::array< double, 7 >{{0., 0., 0., 0., 0., 0., 0.}});
@@ -103,10 +104,11 @@ BaseRecord< T_elem >::operator[](key_type const& key)
             throw std::runtime_error("A scalar component can not be contained at "
                                      "the same time as one or more regular components.");
 
-        mapped_type & ret = Container< T_elem >::operator[](key);
+        mapped_type& ret = Container< T_elem >::operator[](key);
         if( scalar )
         {
             m_containsScalar = true;
+            ret.m_writable->parent = this->m_writable->parent;
             ret.parent = this->parent;
         }
         return ret;
@@ -131,6 +133,7 @@ BaseRecord< T_elem >::operator[](key_type&& key)
         if( scalar )
         {
             m_containsScalar = true;
+            ret.m_writable->parent = this->m_writable->parent;
             ret.parent = this->parent;
         }
         return ret;

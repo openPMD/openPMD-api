@@ -122,10 +122,7 @@ public:
         else
         {
             T t = T();
-            t.m_writable->IOHandler = m_writable->IOHandler;
-            t.IOHandler = t.m_writable->IOHandler.get();
-            t.m_writable->parent = getWritable(this);
-            t.parent = t.m_writable->parent;
+            t.linkHierarchy(m_writable);
             return m_container.insert({key, std::move(t)}).first->second;
         }
     }
@@ -142,10 +139,7 @@ public:
         else
         {
             T t = T();
-            t.m_writable->IOHandler = m_writable->IOHandler;
-            t.IOHandler = t.m_writable->IOHandler.get();
-            t.m_writable->parent = getWritable(this);
-            t.parent = t.m_writable->parent;
+            t.linkHierarchy(m_writable);
             return m_container.insert({std::move(key), std::move(t)}).first->second;
         }
     }

@@ -96,6 +96,8 @@ private:
     void flushGroupBased(uint64_t);
     void flush();
     void read();
+
+    virtual void linkHierarchy(std::shared_ptr< Writable > const& parent);
 };  //Iteration
 
 extern template

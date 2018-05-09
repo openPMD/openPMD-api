@@ -340,6 +340,14 @@ Iteration::read()
     written = true;
 }
 
+void
+Iteration::linkHierarchy(std::shared_ptr< Writable > const& parent)
+{
+    Attributable::linkHierarchy(parent);
+    meshes.linkHierarchy(m_writable);
+    particles.linkHierarchy(m_writable);
+}
+
 
 template
 float Iteration::time< float >() const;

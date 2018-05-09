@@ -75,7 +75,7 @@ TEST_CASE( "output_default_test", "[core]" )
     REQUIRE(o.basePath() == "/data/%T/");
     REQUIRE(o.iterationEncoding() == IE::fileBased);
     REQUIRE(o.iterationFormat() == "new_openpmd_output_%T");
-    REQUIRE(o.iterations.size() == 0);
+    REQUIRE(o.iterations.empty());
     REQUIRE(o.numAttributes() == 5); /* openPMD, openPMDextension, basePath, iterationEncoding, iterationFormat */
     REQUIRE(o.name() == "new_openpmd_output_%T");
 
@@ -139,8 +139,8 @@ TEST_CASE( "iteration_default_test", "[core]" )
     REQUIRE(i.dt< double >() == static_cast<double>(1));
     REQUIRE(i.timeUnitSI() == static_cast<double>(1));
     REQUIRE(i.numAttributes() == 3);
-    REQUIRE(i.meshes.size() == 0);
-    REQUIRE(i.particles.size() == 0);
+    REQUIRE(i.meshes.empty());
+    REQUIRE(i.particles.empty());
 }
 
 TEST_CASE( "iteration_modification_test", "[core]" )

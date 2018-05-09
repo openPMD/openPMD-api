@@ -2,13 +2,16 @@
 
 /* make Writable::parent visible for hierarchy check */
 #define protected public
+#define private public
+#include "openPMD/backend/Writable.hpp"
+#include "openPMD/backend/Attributable.hpp"
+#undef private
+#undef protected
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Container.hpp"
-#include "openPMD/backend/Writable.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Dataset.hpp"
-#undef protected
 using namespace openPMD;
 
 #include <catch/catch.hpp>
@@ -69,15 +72,23 @@ namespace openPMD
 namespace test
 {
 struct S : public Attributable
-{ };
+{
+    S()
+    {
+        m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+        IOHandler = m_writable->IOHandler.get();
+    }
+};
 } // test
 } // openPMD
 
 TEST_CASE( "container_default_test", "[auxiliary]")
 {
     Container< openPMD::test::S > c = Container< openPMD::test::S >();
+    c.m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+    c.IOHandler = c.m_writable->IOHandler.get();
 
-    REQUIRE(c.size() == 0);
+    REQUIRE(c.empty());
     REQUIRE(c.erase("nonExistentKey") == false);
 }
 
@@ -88,6 +99,12 @@ namespace test
 class structure : public Attributable
 {
 public:
+    structure()
+    {
+        m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+        IOHandler = m_writable->IOHandler.get();
+    }
+
     std::string string_ = "Hello, world!";
     int int_ = 42;
     float float_ = 3.14f;
@@ -102,6 +119,8 @@ TEST_CASE( "container_retrieve_test", "[auxiliary]" )
 {
     using structure = openPMD::test::structure;
     Container< structure > c = Container< structure >();
+    c.m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+    c.IOHandler = c.m_writable->IOHandler.get();
 
     structure s;
     std::string text = "The openPMD standard, short for open standard for particle-mesh data files is not a file format per se. It is a standard for meta data and naming schemes.";
@@ -159,10 +178,16 @@ namespace test
 struct Widget : public Attributable
 {
     Widget()
-    { }
+    {
+        m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+        IOHandler = m_writable->IOHandler.get();
+    }
 
     Widget(int)
-    { }
+    {
+        m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+        IOHandler = m_writable->IOHandler.get();
+    }
 };
 } // test
 } // openPMD
@@ -171,6 +196,8 @@ TEST_CASE( "container_access_test", "[auxiliary]" )
 {
     using Widget = openPMD::test::Widget;
     Container< Widget > c = Container< Widget >();
+    c.m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+    c.IOHandler = c.m_writable->IOHandler.get();
 
     c["firstWidget"] = Widget(0);
     REQUIRE(c.size() == 1);
@@ -185,7 +212,7 @@ TEST_CASE( "container_access_test", "[auxiliary]" )
     REQUIRE(c.erase("nonExistentWidget") == false);
     REQUIRE(c.size() == 1);
     REQUIRE(c.erase("secondWidget") == true);
-    REQUIRE(c.size() == 0);
+    REQUIRE(c.empty());
 }
 
 TEST_CASE( "attributable_default_test", "[auxiliary]" )
@@ -202,6 +229,12 @@ namespace test
 class AttributedWidget : public Attributable
 {
 public:
+    AttributedWidget()
+    {
+        m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+        IOHandler = m_writable->IOHandler.get();
+    }
+
     Attribute::resource get(std::string key)
     {
         return getAttribute(key).getResource();
@@ -249,6 +282,8 @@ class Dotty : public Attributable
 public:
     Dotty()
     {
+        m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+        IOHandler = m_writable->IOHandler.get();
         setAtt1(1);
         setAtt2(2);
         setAtt3("3");

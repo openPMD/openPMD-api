@@ -269,6 +269,17 @@ Attributable::readAttributes()
     dirty = false;
 }
 
+void
+Attributable::linkHierarchy(std::shared_ptr< Writable > const& w)
+{
+    auto handler = w->IOHandler;
+    m_writable->IOHandler = handler;
+    this->IOHandler = handler.get();
+    auto parent = w.get();
+    m_writable->parent = parent;
+    this->parent = parent;
+}
+
 
 void warnWrongDtype(std::string const& key,
                     Datatype store,
