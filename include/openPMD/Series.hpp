@@ -244,8 +244,8 @@ private:
     constexpr static char const * const OPENPMD = "1.1.0";
     constexpr static char const * const BASEPATH = "/data/%T/";
 
-    IterationEncoding m_iterationEncoding;
-    std::string m_name;
-    Format m_format;
+    std::shared_ptr< IterationEncoding > m_iterationEncoding;
+    std::shared_ptr< std::string > m_name;
+    std::shared_ptr< Format > m_format;
 };  //Series
 } // openPMD

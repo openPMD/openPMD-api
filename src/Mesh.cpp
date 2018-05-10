@@ -184,7 +184,7 @@ Mesh::flush(std::string const& name)
 {
     if( !written )
     {
-        if( m_containsScalar )
+        if( *m_containsScalar )
         {
             MeshRecordComponent& r = at(RecordComponent::SCALAR);
             r.parent = parent;
@@ -296,7 +296,7 @@ Mesh::read()
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'gridUnitSI'");
 
-    if( m_containsScalar )
+    if( *m_containsScalar )
     {
         /* using operator[] will incorrectly update parent */
         this->at(MeshRecordComponent::SCALAR).read();
@@ -314,7 +314,7 @@ Mesh::read()
             pOpen.path = component;
             IOHandler->enqueue(IOTask(&rc, pOpen));
             IOHandler->flush();
-            rc.m_isConstant = true;
+            *rc.m_isConstant = true;
             rc.read();
         }
 

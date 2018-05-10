@@ -66,7 +66,7 @@ ParticleSpecies::read()
             if( value != end && shape != end )
             {
                 RecordComponent& rc = r[RecordComponent::SCALAR];
-                rc.m_isConstant = true;
+                *rc.m_isConstant = true;
                 rc.m_writable->parent = r.m_writable->parent;
                 rc.parent = r.parent;
                 rc.m_writable->abstractFilePosition = r.m_writable->abstractFilePosition;
@@ -164,6 +164,7 @@ Container< ParticleSpecies >::operator[](Container< ParticleSpecies >::key_type 
         ParticleSpecies ps = ParticleSpecies();
         ps.linkHierarchy(m_writable);
         auto& ret = this->insert({std::move(key), ps}).first->second;
+        /* enforce these two RecordComponents as required by the standard */
         ret["position"].setUnitDimension({{UnitDimension::L, 1}});
         ret["positionOffset"].setUnitDimension({{UnitDimension::L, 1}});
         ret.particlePatches.linkHierarchy(ret.m_writable);

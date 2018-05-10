@@ -80,13 +80,13 @@ Series::Series(std::string const& filepath,
         ie = IterationEncoding::groupBased;
 
 
-    m_format = determineFormat(name);
+    *m_format = determineFormat(name);
 
-    m_writable->IOHandler = AbstractIOHandler::createIOHandler(path, at, m_format, comm);
+    m_writable->IOHandler = AbstractIOHandler::createIOHandler(path, at, *m_format, comm);
     IOHandler = m_writable->IOHandler.get();
     iterations.linkHierarchy(m_writable);
 
-    m_name = cleanFilename(name, m_format);
+    *m_name = cleanFilename(name, *m_format);
 
     switch( at )
     {
@@ -95,7 +95,7 @@ Series::Series(std::string const& filepath,
             setOpenPMD(OPENPMD);
             setOpenPMDextension(0);
             setAttribute("basePath", std::string(BASEPATH));
-            if( ie == IterationEncoding::fileBased && !auxiliary::contains(m_name, "%T") )
+            if( ie == IterationEncoding::fileBased && !auxiliary::contains(*m_name, "%T") )
                 throw std::runtime_error("For fileBased formats the iteration regex %T must be included in the file name");
             setIterationEncoding(ie);
             break;
@@ -103,7 +103,7 @@ Series::Series(std::string const& filepath,
         case AccessType::READ_ONLY:
         case AccessType::READ_WRITE:
         {
-            if( auxiliary::contains(m_name, "%T") )
+            if( auxiliary::contains(*m_name, "%T") )
                 readFileBased();
             else
                 readGroupBased();
@@ -115,7 +115,8 @@ Series::Series(std::string const& filepath,
 
 Series::Series(std::string const& filepath,
                AccessType at)
-        : iterations{Container< Iteration, uint64_t >()}
+        : iterations{Container< Iteration, uint64_t >()},
+          m_iterationEncoding{std::make_shared< IterationEncoding >()}
 {
     std::string path;
     std::string name;
@@ -137,13 +138,13 @@ Series::Series(std::string const& filepath,
     else
         ie = IterationEncoding::groupBased;
 
-    m_format = determineFormat(name);
+    m_format = std::make_shared< Format >(determineFormat(name));
 
-    m_writable->IOHandler = AbstractIOHandler::createIOHandler(path, at, m_format);
+    m_writable->IOHandler = AbstractIOHandler::createIOHandler(path, at, *m_format);
     IOHandler = m_writable->IOHandler.get();
     iterations.linkHierarchy(m_writable);
 
-    m_name = cleanFilename(name, m_format);
+    m_name = std::make_shared< std::string >(cleanFilename(name, *m_format));
 
     switch( at )
     {
@@ -152,7 +153,7 @@ Series::Series(std::string const& filepath,
             setOpenPMD(OPENPMD);
             setOpenPMDextension(0);
             setAttribute("basePath", std::string(BASEPATH));
-            if( ie == IterationEncoding::fileBased && !auxiliary::contains(m_name, "%T") )
+            if( ie == IterationEncoding::fileBased && !auxiliary::contains(*m_name, "%T") )
                 throw std::runtime_error("For fileBased formats the iteration regex %T must be included in the file name");
             setIterationEncoding(ie);
             break;
@@ -160,7 +161,7 @@ Series::Series(std::string const& filepath,
         case AccessType::READ_ONLY:
         case AccessType::READ_WRITE:
         {
-            if( auxiliary::contains(m_name, "%T") )
+            if( auxiliary::contains(*m_name, "%T") )
                 readFileBased();
             else
                 readGroupBased();
@@ -341,7 +342,7 @@ Series::setMachine(std::string const &machine)
 IterationEncoding
 Series::iterationEncoding() const
 {
-    return m_iterationEncoding;
+    return *m_iterationEncoding;
 }
 
 Series&
@@ -350,11 +351,11 @@ Series::setIterationEncoding(IterationEncoding ie)
     if( written )
         throw std::runtime_error("A files iterationEncoding can not (yet) be changed after it has been written.");
 
-    m_iterationEncoding = ie;
+    *m_iterationEncoding = ie;
     switch( ie )
     {
         case IterationEncoding::fileBased:
-            setIterationFormat(m_name);
+            setIterationFormat(*m_name);
             setAttribute("iterationEncoding", std::string("fileBased"));
             break;
         case IterationEncoding::groupBased:
@@ -378,7 +379,7 @@ Series::setIterationFormat(std::string const& i)
     if( written )
         throw std::runtime_error("A files iterationFormat can not (yet) be changed after it has been written.");
 
-    if( m_iterationEncoding == IterationEncoding::groupBased )
+    if( *m_iterationEncoding == IterationEncoding::groupBased )
     {
         if( basePath() != i && (openPMD() == "1.0.1" || openPMD() == "1.0.0") )
             throw std::invalid_argument("iterationFormat must not differ from basePath " + basePath() + " for groupBased data");
@@ -390,7 +391,7 @@ Series::setIterationFormat(std::string const& i)
 std::string
 Series::name() const
 {
-    return m_name;
+    return *m_name;
 }
 
 Series&
@@ -399,10 +400,10 @@ Series::setName(std::string const& n)
     if( written )
         throw std::runtime_error("A files name can not (yet) be changed after it has been written.");
 
-    if( m_iterationEncoding == IterationEncoding::fileBased && !auxiliary::contains(m_name, "%T") )
+    if( *m_iterationEncoding == IterationEncoding::fileBased && !auxiliary::contains(*m_name, "%T") )
             throw std::runtime_error("For fileBased formats the iteration regex %T must be included in the file name");
 
-    m_name = n;
+    *m_name = n;
     dirty = true;
     return *this;
 }
@@ -413,7 +414,7 @@ Series::flush()
     if( IOHandler->accessType == AccessType::READ_WRITE ||
         IOHandler->accessType == AccessType::CREATE )
     {
-        switch( m_iterationEncoding )
+        switch( *m_iterationEncoding )
         {
             using IE = IterationEncoding;
             case IE::fileBased:
@@ -460,16 +461,11 @@ Series::flushGroupBased()
     if( !written )
     {
         Parameter< Operation::CREATE_FILE > fCreate;
-        fCreate.name = m_name;
+        fCreate.name = *m_name;
         IOHandler->enqueue(IOTask(this, fCreate));
         IOHandler->flush();
     }
 
-    if( !iterations.written )
-    {
-        iterations.m_writable->parent = getWritable(this);
-        iterations.parent = getWritable(this);
-    }
     iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
 
     for( auto& i : iterations )
@@ -521,7 +517,7 @@ Series::readFileBased()
     path dir = path(IOHandler->directory);
     if( !exists(dir) )
         throw no_such_file_error("Supplied directory is not valid: " + IOHandler->directory);
-    auto isPartOfSeries = matcher(m_name, m_format);
+    auto isPartOfSeries = matcher(*m_name, *m_format);
     for( path const& entry : directory_iterator(dir) )
     {
         if( isPartOfSeries(entry.filename().string()) )
@@ -544,10 +540,10 @@ Series::readFileBased()
             {
                 std::string encoding = Attribute(*aRead.resource).get< std::string >();
                 if( encoding == "fileBased" )
-                    m_iterationEncoding = IterationEncoding::fileBased;
+                    *m_iterationEncoding = IterationEncoding::fileBased;
                 else if( encoding == "groupBased" )
                 {
-                    m_iterationEncoding = IterationEncoding::groupBased;
+                    *m_iterationEncoding = IterationEncoding::groupBased;
                     std::cerr << "Series constructor called with iteration regex '%T' suggests loading a "
                               << "time series with fileBased iteration encoding. Loaded file is groupBased.\n";
                 } else
@@ -581,7 +577,7 @@ void
 Series::readGroupBased()
 {
     Parameter< Operation::OPEN_FILE > fOpen;
-    fOpen.name = m_name;
+    fOpen.name = *m_name;
     IOHandler->enqueue(IOTask(this, fOpen));
     IOHandler->flush();
 
@@ -599,10 +595,10 @@ Series::readGroupBased()
     {
         std::string encoding = Attribute(*aRead.resource).get< std::string >();
         if( encoding == "groupBased" )
-            m_iterationEncoding = IterationEncoding::groupBased;
+            *m_iterationEncoding = IterationEncoding::groupBased;
         else if( encoding == "fileBased" )
         {
-            m_iterationEncoding = IterationEncoding::fileBased;
+            *m_iterationEncoding = IterationEncoding::fileBased;
             std::cerr << "Series constructor called with explicit iteration suggests loading a "
                       << "single file with groupBased iteration encoding. Loaded file is fileBased.\n";
         } else

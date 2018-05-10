@@ -277,7 +277,7 @@ Iteration::read()
             if( value != end && shape != end )
             {
                 MeshRecordComponent& mrc = m[MeshRecordComponent::SCALAR];
-                mrc.m_isConstant = true;
+                *mrc.m_isConstant = true;
                 mrc.parent = m.parent;
                 mrc.abstractFilePosition = m.abstractFilePosition;
             }

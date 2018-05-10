@@ -434,3 +434,63 @@ TEST_CASE( "structure_test", "[core]" )
     REQUIRE(prc.parent == getWritable(&o.iterations[1].particles["P"].particlePatches["extent"]));
     REQUIRE(o.iterations[1].particles["P"].particlePatches["extent"]["x"].parent == getWritable(&o.iterations[1].particles["P"].particlePatches["extent"]));
 }
+
+TEST_CASE( "wrapper_test", "[core]" )
+{
+    Series o = Series("./new_openpmd_output", AccessType::CREATE);
+
+    o.setOpenPMDextension(42);
+    o.setIterationEncoding(IterationEncoding::fileBased);
+    Series copy = o;
+    REQUIRE(copy.openPMDextension() == 42);
+    REQUIRE(copy.iterationEncoding() == IterationEncoding::fileBased);
+    REQUIRE(copy.name() == "new_openpmd_output");
+    copy.setOpenPMD("1.2.0");
+    copy.setIterationEncoding(IterationEncoding::groupBased);
+    copy.setName("other_name");
+    REQUIRE(o.openPMD() == "1.2.0");
+    REQUIRE(o.iterationEncoding() == IterationEncoding::groupBased);
+    REQUIRE(o.name() == "other_name");
+
+    o.iterations[1].meshes["E"]["x"].resetDataset(Dataset(Datatype::UINT16, {42}));
+    MeshRecordComponent mrc = o.iterations[1].meshes["E"]["x"];
+    REQUIRE(mrc.getDatatype() == Datatype::UINT16);
+    REQUIRE(mrc.getExtent() == Extent{42});
+    mrc.resetDataset(Dataset(Datatype::LONG_DOUBLE, {7}));
+    REQUIRE(o.iterations[1].meshes["E"]["x"].getDatatype() == Datatype::LONG_DOUBLE);
+    REQUIRE(o.iterations[1].meshes["E"]["x"].getExtent() == Extent{7});
+
+    Container< Iteration, uint64_t > its = o.iterations;
+    its[1].meshes["E"]["y"].resetDataset(Dataset(Datatype::CHAR, {2}));
+    REQUIRE(o.iterations[1].meshes["E"].count("y") == 1);
+    REQUIRE(o.iterations[1].meshes["E"]["y"].getDatatype() == Datatype::CHAR);
+    REQUIRE(o.iterations[1].meshes["E"]["y"].getExtent() == Extent{2});
+    o.iterations[1].meshes["E"]["z"].resetDataset(Dataset(Datatype::FLOAT, {1234}));
+    REQUIRE(its[1].meshes["E"].count("z") == 1);
+    REQUIRE(its[1].meshes["E"]["z"].getDatatype() == Datatype::FLOAT);
+    REQUIRE(its[1].meshes["E"]["z"].getExtent() == Extent{1234});
+
+    o.iterations[2];
+    REQUIRE(its.count(2) == 1);
+    its[3];
+    REQUIRE(o.iterations.count(3) == 1);
+
+    double value = 42.;
+    o.iterations[4].meshes["E"]["y"].resetDataset(Dataset(Datatype::DOUBLE, {1}));
+    o.iterations[4].meshes["E"]["y"].makeConstant(value);
+    MeshRecordComponent mrc2 = o.iterations[4].meshes["E"]["y"];
+    REQUIRE(*mrc2.m_isConstant);
+    std::unique_ptr< double[] > data = std::unique_ptr< double[] >(new double[1]);
+    mrc2.loadChunk({0}, {1}, data);
+    o.flush();
+    REQUIRE(data[0] == value);
+    value = 43;
+    mrc2.makeConstant(value);
+    o.iterations[4].meshes["E"]["y"].loadChunk({0}, {1}, data);
+    o.flush();
+    REQUIRE(data[0] == value);
+
+    /* TODO
+     *  - chunk queue in RecordComponents and PatchRecordComponents
+     *  - particlePatches */
+}
