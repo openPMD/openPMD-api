@@ -2,7 +2,9 @@
 
 /* make Writable::parent, Writable::IOHandler visible for structure_test */
 #define protected public
+#define private public
 #include "openPMD/openPMD.hpp"
+#undef private
 #undef protected
 using namespace openPMD;
 
@@ -480,17 +482,46 @@ TEST_CASE( "wrapper_test", "[core]" )
     o.iterations[4].meshes["E"]["y"].makeConstant(value);
     MeshRecordComponent mrc2 = o.iterations[4].meshes["E"]["y"];
     REQUIRE(*mrc2.m_isConstant);
-    std::unique_ptr< double[] > data = std::unique_ptr< double[] >(new double[1]);
-    mrc2.loadChunk({0}, {1}, data);
+    std::unique_ptr< double[] > loadData = std::unique_ptr< double[] >(new double[1]);
+    mrc2.loadChunk({0}, {1}, loadData);
     o.flush();
-    REQUIRE(data[0] == value);
+    REQUIRE(loadData[0] == value);
     value = 43;
     mrc2.makeConstant(value);
-    o.iterations[4].meshes["E"]["y"].loadChunk({0}, {1}, data);
+    o.iterations[4].meshes["E"]["y"].loadChunk({0}, {1}, loadData);
     o.flush();
-    REQUIRE(data[0] == value);
+    REQUIRE(loadData[0] == value);
+    REQUIRE(o.iterations[4].meshes["E"]["y"].m_chunks->empty());
+    REQUIRE(mrc2.m_chunks->empty());
 
-    /* TODO
-     *  - chunk queue in RecordComponents and PatchRecordComponents
-     *  - particlePatches */
+    MeshRecordComponent mrc3 = o.iterations[5].meshes["E"]["y"];
+    o.iterations[5].meshes["E"]["y"].resetDataset(Dataset(Datatype::DOUBLE, {1}));
+    std::shared_ptr< double > storeData = std::make_shared< double >(44);
+    o.iterations[5].meshes["E"]["y"].storeChunk({0}, {1}, storeData);
+    REQUIRE(o.iterations[5].meshes["E"]["y"].m_chunks->size() == 1);
+    REQUIRE(mrc3.m_chunks->size() == 1);
+    o.flush();
+    REQUIRE(o.iterations[5].meshes["E"]["y"].m_chunks->empty());
+    REQUIRE(mrc3.m_chunks->empty());
+
+    o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].resetDataset(Dataset(Datatype::UINT64, {4}));
+    ParticlePatches pp = o.iterations[6].particles["electrons"].particlePatches;
+    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].getDatatype() == Datatype::UINT64);
+    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].getExtent() == Extent{4});
+    pp["prop"]["x"].resetDataset(Dataset(Datatype::DOUBLE, {7}));
+    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["prop"]["x"].getDatatype() == Datatype::DOUBLE);
+    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["prop"]["x"].getExtent() == Extent{7});
+    size_t idx = 0;
+    uint64_t val = 10;
+    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].m_chunks->empty());
+    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].m_chunks->empty());
+    pp["numParticles"][RecordComponent::SCALAR].store(idx, val);
+    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 1);
+    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 1);
+    o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].store(idx+1, val+1);
+    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 2);
+    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 2);
+    o.flush();
+    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].m_chunks->empty());
+    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].m_chunks->empty());
 }

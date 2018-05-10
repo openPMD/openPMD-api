@@ -54,6 +54,7 @@ PatchRecordComponent::getExtent() const
 }
 
 PatchRecordComponent::PatchRecordComponent()
+    : m_chunks{std::make_shared< std::queue< IOTask > >()}
 {
     setUnitSI(1);
 }
@@ -74,10 +75,10 @@ PatchRecordComponent::flush(std::string const& name)
         IOHandler->flush();
     }
 
-    while( !m_chunks.empty() )
+    while( !m_chunks->empty() )
     {
-        IOHandler->enqueue(m_chunks.front());
-        m_chunks.pop();
+        IOHandler->enqueue(m_chunks->front());
+        m_chunks->pop();
         IOHandler->flush();
     }
 
