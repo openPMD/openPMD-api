@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
           cout << "Created an empty series in parallel with "
                << mpi_size << " MPI ranks\n";
 
-        MeshRecordComponent &id =
+        MeshRecordComponent id =
             series
                 .iterations[1]
                 .meshes["id"][MeshRecordComponent::SCALAR];

@@ -57,7 +57,8 @@ std::function< bool(std::string const&) > matcher(std::string const& name, Forma
 Series::Series(std::string const& filepath,
                AccessType at,
                MPI_Comm comm)
-        : iterations{Container< Iteration, uint64_t >()}
+        : iterations{Container< Iteration, uint64_t >()},
+          m_iterationEncoding{std::make_shared< IterationEncoding >()}
 {
     std::string path;
     std::string name;
@@ -79,14 +80,13 @@ Series::Series(std::string const& filepath,
     else
         ie = IterationEncoding::groupBased;
 
-
-    *m_format = determineFormat(name);
+    m_format = std::make_shared< Format >(determineFormat(name));
 
     m_writable->IOHandler = AbstractIOHandler::createIOHandler(path, at, *m_format, comm);
     IOHandler = m_writable->IOHandler.get();
     iterations.linkHierarchy(m_writable);
 
-    *m_name = cleanFilename(name, *m_format);
+    m_name = std::make_shared< std::string >(cleanFilename(name, *m_format));
 
     switch( at )
     {
