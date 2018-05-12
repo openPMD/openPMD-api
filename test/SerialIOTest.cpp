@@ -19,6 +19,7 @@ using namespace openPMD;
 #include <vector>
 #include <array>
 #include <memory>
+#include <limits>
 
 
 #if openPMD_HAVE_HDF5
@@ -832,7 +833,7 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
         s.setAttribute("vecUint64", std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
         s.setAttribute("vecFloat", std::vector< float >({0.f, 3.40282e+38f}));
         s.setAttribute("vecDouble", std::vector< double >({0., 1.79769e+308}));
-        s.setAttribute("vecLongdouble", std::vector< long double >({0.L, 1.18973e+4932L}));
+        s.setAttribute("vecLongdouble", std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
         s.setAttribute("vecString", std::vector< std::string >({"vector", "of", "strings"}));
         s.setAttribute("bool", true);
     }
@@ -849,7 +850,9 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
     REQUIRE(s.getAttribute("uint64").get< uint64_t >() == 64u);
     REQUIRE(s.getAttribute("float").get< float >() == 16.e10f);
     REQUIRE(s.getAttribute("double").get< double >() == 1.e64);
+#if !defined(_MSC_VER)
     REQUIRE(s.getAttribute("longdouble").get< long double >() == 1.e80L);
+#endif
     REQUIRE(s.getAttribute("string").get< std::string >() == "string");
     REQUIRE(s.getAttribute("vecChar").get< std::vector< char > >() == std::vector< char >({'c', 'h', 'a', 'r'}));
     REQUIRE(s.getAttribute("vecInt16").get< std::vector< int16_t > >() == std::vector< int16_t >({32766, 32767}));
@@ -861,7 +864,9 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
     REQUIRE(s.getAttribute("vecUint64").get< std::vector< uint64_t > >() == std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
     REQUIRE(s.getAttribute("vecFloat").get< std::vector< float > >() == std::vector< float >({0.f, 3.40282e+38f}));
     REQUIRE(s.getAttribute("vecDouble").get< std::vector< double > >() == std::vector< double >({0., 1.79769e+308}));
-    REQUIRE(s.getAttribute("vecLongdouble").get< std::vector< long double > >() == std::vector< long double >({0.L, 1.18973e+4932L}));
+#if !defined(_MSC_VER)
+    REQUIRE(s.getAttribute("vecLongdouble").get< std::vector< long double > >() == std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
+#endif
     REQUIRE(s.getAttribute("vecString").get< std::vector< std::string > >() == std::vector< std::string >({"vector", "of", "strings"}));
     REQUIRE(s.getAttribute("bool").get< bool >() == true);
 }
@@ -1154,7 +1159,7 @@ TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
         s.setAttribute("vecUint64", std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
         s.setAttribute("vecFloat", std::vector< float >({0.f, 3.40282e+38f}));
         s.setAttribute("vecDouble", std::vector< double >({0., 1.79769e+308}));
-        s.setAttribute("vecLongdouble", std::vector< long double >({0.L, 1.18973e+4932L}));
+        s.setAttribute("vecLongdouble", std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
         s.setAttribute("vecString", std::vector< std::string >({"vector", "of", "strings"}));
         s.setAttribute("bool", true);
     }
@@ -1171,7 +1176,9 @@ TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
     REQUIRE(s.getAttribute("uint64").get< uint64_t >() == 64u);
     REQUIRE(s.getAttribute("float").get< float >() == 16.e10f);
     REQUIRE(s.getAttribute("double").get< double >() == 1.e64);
+#if !defined(_MSC_VER)
     REQUIRE(s.getAttribute("longdouble").get< long double >() == 1.e80L);
+#endif
     REQUIRE(s.getAttribute("string").get< std::string >() == "string");
     REQUIRE(s.getAttribute("vecChar").get< std::vector< char > >() == std::vector< char >({'c', 'h', 'a', 'r'}));
     REQUIRE(s.getAttribute("vecInt16").get< std::vector< int16_t > >() == std::vector< int16_t >({32766, 32767}));
@@ -1183,7 +1190,9 @@ TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
     REQUIRE(s.getAttribute("vecUint64").get< std::vector< uint64_t > >() == std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
     REQUIRE(s.getAttribute("vecFloat").get< std::vector< float > >() == std::vector< float >({0.f, 3.40282e+38f}));
     REQUIRE(s.getAttribute("vecDouble").get< std::vector< double > >() == std::vector< double >({0., 1.79769e+308}));
-    REQUIRE(s.getAttribute("vecLongdouble").get< std::vector< long double > >() == std::vector< long double >({0.L, 1.18973e+4932L}));
+#if !defined(_MSC_VER)
+    REQUIRE(s.getAttribute("vecLongdouble").get< std::vector< long double > >() == std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
+#endif
     REQUIRE(s.getAttribute("vecString").get< std::vector< std::string > >() == std::vector< std::string >({"vector", "of", "strings"}));
     REQUIRE(s.getAttribute("bool").get< uint8_t >() == static_cast< uint8_t >(true));
 }
