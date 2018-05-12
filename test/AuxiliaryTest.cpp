@@ -13,6 +13,10 @@ using namespace openPMD;
 
 #include <catch/catch.hpp>
 
+#include <string>
+#include <vector>
+#include <array>
+
 
 TEST_CASE( "string_test", "[auxiliary]" )
 {
