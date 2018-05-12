@@ -31,6 +31,24 @@
 
 namespace openPMD
 {
+namespace traits
+{
+    /** Container Element Creation Policy
+     *
+     * The operator() of this policy is called after the container
+     * ::insert of a new element. The passed parameter is an iterator to the
+     * newly added element.
+     */
+    template< typename U >
+    struct GenerationPolicy
+    {
+        template< typename T >
+        void operator()(T &)
+        {
+        }
+    };
+} // traits
+
 /** @brief Map-like container that enforces openPMD requirements and handles IO.
  *
  * @see http://en.cppreference.com/w/cpp/container/map
@@ -126,7 +144,10 @@ public:
         {
             T t = T();
             t.linkHierarchy(m_writable);
-            return m_container->insert({key, std::move(t)}).first->second;
+            auto& ret = m_container->insert({key, std::move(t)}).first->second;
+            traits::GenerationPolicy< T > gen;
+            gen(ret);
+            return ret;
         }
     }
     /** Access the value that is mapped to a key equivalent to key, creating it if such key does not exist already.
@@ -143,7 +164,10 @@ public:
         {
             T t = T();
             t.linkHierarchy(m_writable);
-            return m_container->insert({std::move(key), std::move(t)}).first->second;
+            auto& ret = m_container->insert({std::move(key), std::move(t)}).first->second;
+            traits::GenerationPolicy< T > gen;
+            gen(ret);
+            return ret;
         }
     }
 
@@ -224,4 +248,5 @@ protected:
         flushAttributes();
     }
 };
+
 } // openPMD

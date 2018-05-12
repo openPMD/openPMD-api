@@ -33,6 +33,11 @@
 
 namespace openPMD
 {
+namespace traits
+{
+    template< typename T >
+    struct GenerationPolicy;
+} // traits
 class AbstractFilePosition;
 
 class no_such_attribute_error : public std::runtime_error
@@ -65,6 +70,8 @@ class Attributable
         typename T_container
     >
     friend class Container;
+    template< typename T >
+    friend struct traits::GenerationPolicy;
     friend class Iteration;
     friend class Series;
 
