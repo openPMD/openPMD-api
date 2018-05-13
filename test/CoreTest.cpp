@@ -149,7 +149,7 @@ TEST_CASE( "iteration_modification_test", "[core]" )
 
     Iteration& i = o.iterations[42];
 
-    float time = 0.314;
+    float time = 0.314f;
     i.setTime(time);
     REQUIRE(i.time< float >() == time);
 
@@ -225,7 +225,7 @@ TEST_CASE( "record_modification_test", "[core]" )
     std::array< double, 7 > b_field_unitDimension{{0., 1., -2., -1., 0., 0., 0.}};
     REQUIRE(r.unitDimension() == b_field_unitDimension);
 
-    float timeOffset = 0.314;
+    float timeOffset = 0.314f;
     r.setTimeOffset(timeOffset);
     REQUIRE(r.timeOffset< float >() == timeOffset);
 }
