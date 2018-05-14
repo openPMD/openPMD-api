@@ -8,6 +8,14 @@ using namespace openPMD;
 
 #include <catch/catch.hpp>
 
+#include <iostream>
+#include <algorithm>
+#include <string>
+#include <vector>
+#include <array>
+#include <memory>
+
+
 #if openPMD_HAVE_HDF5
 TEST_CASE( "git_hdf5_sample_structure_test", "[serial][hdf5]" )
 {

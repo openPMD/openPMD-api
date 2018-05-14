@@ -8,6 +8,10 @@ using namespace openPMD;
 
 #include <catch/catch.hpp>
 
+#include <string>
+#include <vector>
+#include <array>
+
 
 TEST_CASE( "attribute_dtype_test", "[core]" )
 {
