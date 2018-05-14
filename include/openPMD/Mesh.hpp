@@ -3,6 +3,7 @@
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 #include <array>
 #include <vector>
@@ -15,7 +16,7 @@ namespace openPMD
  *
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#mesh-based-records
  */
-class Mesh : public BaseRecord< MeshRecordComponent >
+class OPENPMD_PUBLIC Mesh : public BaseRecord< MeshRecordComponent >
 {
     friend class Container< Mesh >;
     friend class Iteration;
@@ -174,9 +175,11 @@ Mesh::timeOffset() const
 
 namespace std
 {
+    OPENPMD_PUBLIC
     ostream&
     operator<<(ostream&, openPMD::Mesh::Geometry);
 
+    OPENPMD_PUBLIC
     std::ostream&
     operator<<(ostream&, openPMD::Mesh::DataOrder);
 } // std

@@ -4,6 +4,8 @@ include(CMakeFindDependencyMacro)
 
 find_dependency(Boost)
 
+set(openPMD_HAVE_SYMBOLHIDING @openPMD_HAVE_SYMBOLHIDING@)
+
 set(openPMD_HAVE_MPI @openPMD_HAVE_MPI@)
 if(openPMD_HAVE_MPI)
     find_dependency(MPI)

@@ -4,13 +4,14 @@
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/ParticlePatches.hpp"
 #include "openPMD/Record.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 #include <string>
 
 
 namespace openPMD
 {
-class ParticleSpecies : public Container< Record >
+class OPENPMD_PUBLIC ParticleSpecies : public Container< Record >
 {
     friend class Container< ParticleSpecies >;
     friend class Container< Record >;

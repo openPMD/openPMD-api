@@ -24,6 +24,7 @@
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 
 namespace openPMD
@@ -32,7 +33,7 @@ namespace openPMD
  *
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#required-attributes-for-the-basepath
  */
-class Iteration : public Attributable
+class OPENPMD_PUBLIC Iteration : public Attributable
 {
     template<
             typename T,

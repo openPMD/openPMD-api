@@ -45,6 +45,7 @@ openpmd_option(ADIOS1 "Enable ADIOS1 support"  AUTO)
 openpmd_option(ADIOS2 "Enable ADIOS2 support"  OFF)
 # openpmd_option(JSON "Enable JSON support" AUTO)
 openpmd_option(PYTHON "Enable Python bindings" AUTO)
+openpmd_option(SYMBOLHIDING "Enable symbol hiding in libraries" AUTO)
 
 option(openPMD_USE_INTERNAL_VARIANT "Use internally shipped MPark.Variant" ON)
 option(openPMD_USE_INTERNAL_CATCH   "Use internally shipped Catch2" ON)
@@ -84,6 +85,34 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     # silence BOOST filesystem
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-cpp")
 endif ()
+
+
+# Compiler Features ###########################################################
+#
+include(CheckCXXSourceCompiles)
+
+check_cxx_source_compiles(
+    "
+        #include <cstdlib>
+        __attribute__((visibility(\"default\"))) static void f(void);
+        int main(void){ return 0; }
+    "
+    HAVE_ATTRIBUTE_VISIBILITY_DEFAULT
+)
+if(HAVE_ATTRIBUTE_VISIBILITY_DEFAULT OR
+   "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    if(openPMD_USE_SYMBOLHIDING STREQUAL "AUTO" OR
+       openPMD_USE_SYMBOLHIDING)
+        set(openPMD_HAVE_SYMBOLHIDING ON)
+    else()
+        set(openPMD_HAVE_SYMBOLHIDING OFF)
+    endif()
+else()
+    set(openPMD_HAVE_SYMBOLHIDING OFF)
+    if(openPMD_USE_SYMBOLHIDING)
+        message(FATAL_ERROR "Compiler does not support symbol hiding.")
+    endif()
+endif()
 
 
 # Dependencies ################################################################
@@ -228,7 +257,7 @@ set(IO_SOURCE
         src/IO/HDF5/ParallelHDF5IOHandler.cpp)
 
 # library
-add_Library(openPMD ${CORE_SOURCE} ${IO_SOURCE})
+add_library(openPMD ${CORE_SOURCE} ${IO_SOURCE})
 
 # properties
 target_compile_features(openPMD
@@ -239,6 +268,17 @@ set_target_properties(openPMD PROPERTIES
     CXX_STANDARD_REQUIRED ON
     POSITION_INDEPENDENT_CODE ON
 )
+target_compile_definitions(openPMD PUBLIC
+    $<BUILD_INTERFACE:OPENPMD_BUILDPHASE=1>)
+
+# symbol hiding
+if(openPMD_HAVE_SYMBOLHIDING)
+    set_target_properties(openPMD PROPERTIES
+        CXX_VISIBILITY_PRESET hidden
+        VISIBILITY_INLINES_HIDDEN ON
+    )
+    target_compile_definitions(openPMD PUBLIC openPMD_HAVE_SYMBOLHIDING=1)
+endif()
 
 # own headers
 target_include_directories(openPMD PUBLIC

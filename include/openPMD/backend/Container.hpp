@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 #include <initializer_list>
 #include <type_traits>
@@ -44,7 +45,7 @@ template<
         typename T_key = std::string,
         typename T_container = std::map< T_key, T >
 >
-class Container : public Attributable
+class OPENPMD_PUBLIC Container : public Attributable
 {
     static_assert(std::is_base_of< Writable, T >::value, "Type of container element must be derived from Writable");
     using InternalContainer = T_container;

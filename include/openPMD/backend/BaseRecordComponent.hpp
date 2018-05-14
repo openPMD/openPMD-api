@@ -2,11 +2,12 @@
 
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/Dataset.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 
 namespace openPMD
 {
-class BaseRecordComponent : public Attributable
+class OPENPMD_PUBLIC BaseRecordComponent : public Attributable
 {
     template< typename T_elem >
     friend

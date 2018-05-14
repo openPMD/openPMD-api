@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/backend/BaseRecordComponent.hpp"
+#include "openPMD/auxiliary/Visibility.hpp"
 
 #include <unordered_map>
 #include <string>
@@ -28,7 +29,7 @@
 
 namespace openPMD
 {
-class PatchRecordComponent : public BaseRecordComponent
+class OPENPMD_PUBLIC PatchRecordComponent : public BaseRecordComponent
 {
     template<
         typename T,
