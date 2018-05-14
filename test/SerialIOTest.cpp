@@ -25,6 +25,7 @@ TEST_CASE( "git_hdf5_sample_structure_test", "[serial][hdf5]" )
 
         REQUIRE(!o.parent);
         REQUIRE(o.iterations.parent == getWritable(&o));
+        REQUIRE_THROWS_AS(o.iterations[42], std::out_of_range);
         REQUIRE(o.iterations[100].parent == getWritable(&o.iterations));
         REQUIRE(o.iterations[100].meshes.parent == getWritable(&o.iterations[100]));
         REQUIRE(o.iterations[100].meshes["E"].parent == getWritable(&o.iterations[100].meshes));
@@ -735,7 +736,7 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
         PatchRecord& e_numParticles = e_patches["numParticles"];
         REQUIRE(e_numParticles.size() == 1);
         REQUIRE(e_numParticles.count(RecordComponent::SCALAR) == 1);
-        
+
         PatchRecordComponent& e_numParticles_scalar = e_numParticles[RecordComponent::SCALAR];
         REQUIRE(e_numParticles_scalar.getDatatype() == Datatype::UINT64);
 
@@ -819,7 +820,7 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
         s.setAttribute("vecString", std::vector< std::string >({"vector", "of", "strings"}));
         s.setAttribute("bool", true);
     }
-    
+
     Series s = Series("../samples/dtype_test.h5", AccessType::READ_ONLY);
 
     REQUIRE(s.getAttribute("char").get< char >() == 'c');
