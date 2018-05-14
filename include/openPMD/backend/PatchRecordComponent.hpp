@@ -60,7 +60,7 @@ private:
     void flush(std::string const&);
     void read();
 
-    std::queue< IOTask > m_chunks;
+    std::shared_ptr< std::queue< IOTask > > m_chunks;
 };  //PatchRecordComponent
 
 
@@ -108,6 +108,6 @@ PatchRecordComponent::store(size_t idx, T data)
     dWrite.extent = {1};
     dWrite.dtype = dtype;
     dWrite.data = std::make_shared< T >(data);
-    m_chunks.push(IOTask(this, dWrite));
+    m_chunks->push(IOTask(this, dWrite));
 }
 } // openPMD

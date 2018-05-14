@@ -62,8 +62,8 @@ protected:
 
     void readBase();
 
-    std::queue< IOTask > m_chunks;
-    Attribute m_constantValue;
+    std::shared_ptr< std::queue< IOTask > > m_chunks;
+    std::shared_ptr< Attribute > m_constantValue;
 
 private:
     void flush(std::string const&);
@@ -78,8 +78,8 @@ RecordComponent::makeConstant(T value)
     if( written )
         throw std::runtime_error("A recordComponent can not (yet) be made constant after it has been written.");
 
-    m_constantValue = Attribute(value);
-    m_isConstant = true;
+    *m_constantValue = Attribute(value);
+    *m_isConstant = true;
     return *this;
 }
 
@@ -116,13 +116,16 @@ RecordComponent::loadChunk(Offset const& o, Extent const& e, std::unique_ptr< T[
         data = std::unique_ptr< T[] >(new T[numPoints]);
     T* raw_ptr = data.get();
 
-    if( m_isConstant )
+    if( *m_isConstant )
     {
+        /*
         Parameter< Operation::READ_ATT > aRead;
         aRead.name = "value";
         IOHandler->enqueue(IOTask(this, aRead));
         IOHandler->flush();
         T value = Attribute(*aRead.resource).get< T >();
+         */
+        T value = m_constantValue->get< T >();
         std::fill(raw_ptr, raw_ptr + numPoints, value);
     } else
     {
@@ -163,7 +166,7 @@ RecordComponent::loadChunk(Offset const& o, Extent const& e, std::unique_ptr< T[
 //    auto data = std::move(allocatePtr(getDatatype(), numPoints));
 //    void *ptr = data.get();
 //
-//    if( m_isConstant )
+//    if( *m_isConstant )
 //    {
 //        Parameter< Operation::READ_ATT > attribute_parameter;
 //        attribute_parameter.name = "value";
@@ -192,7 +195,7 @@ template< typename T >
 inline void
 RecordComponent::storeChunk(Offset o, Extent e, std::shared_ptr<T> data)
 {
-    if( m_isConstant )
+    if( *m_isConstant )
         throw std::runtime_error("Chunks can not be written for a constant RecordComponent.");
     Datatype dtype = determineDatatype(data);
     if( dtype != getDatatype() )
@@ -214,6 +217,6 @@ RecordComponent::storeChunk(Offset o, Extent e, std::shared_ptr<T> data)
     dWrite.dtype = dtype;
     /* std::static_pointer_cast correctly reference-counts the pointer */
     dWrite.data = std::static_pointer_cast< void >(data);
-    m_chunks.push(IOTask(this, dWrite));
+    m_chunks->push(IOTask(this, dWrite));
 }
 } // openPMD

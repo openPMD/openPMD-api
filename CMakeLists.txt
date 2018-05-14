@@ -222,6 +222,7 @@ set(CORE_SOURCE
 set(IO_SOURCE
         src/IO/AbstractIOHandler.cpp
         src/IO/AbstractIOHandlerImpl.cpp
+        src/IO/IOTask.cpp
         src/IO/ADIOS/ADIOS1IOHandler.cpp
         src/IO/ADIOS/ParallelADIOS1IOHandler.cpp
         src/IO/HDF5/HDF5IOHandler.cpp

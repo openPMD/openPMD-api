@@ -23,11 +23,11 @@
 
 using namespace openPMD;
 
-int main(int argc, char *argv[])
+int main()
 {
     /* The root of any openPMD output spans across all data for all iterations is a 'Series'.
     * Data is either in a single file or spread across multiple files. */
-    Series series = Series::create("sample/1_structure.h5");
+    Series series = Series("../samples/1_structure.h5", AccessType::CREATE);
 
     /* Every element that structures your file (groups and datasets for example) can be annotated with attributes. */
     series.setComment("This string will show up at the root ('/') of the output with key 'comment'.");
@@ -35,14 +35,14 @@ int main(int argc, char *argv[])
     /* Access to individual positions inside happens hierarchically, according to the openPMD standard.
     * Creation of new elements happens on access inside the tree-like structure.
     * Required attributes are initialized to reasonable defaults for every object. */
-    ParticleSpecies &electrons = series.iterations[1].particles["electrons"];
+    ParticleSpecies electrons = series.iterations[1].particles["electrons"];
 
     /* Data to be moved from memory to persistent storage is structured into Records,
     * each holding an unbounded number of RecordComponents.
-    * If a Record only contains a single (scalar) component, it is treated slightly different.
+    * If a Record only contains a single (scalar) component, it is treated slightly differently.
     * https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#scalar-vector-and-tensor-records*/
-    Record          &mass        = electrons["mass"];
-    RecordComponent &mass_scalar = electrons["mass"][RecordComponent::SCALAR];
+    Record          mass        = electrons["mass"];
+    RecordComponent mass_scalar = mass[RecordComponent::SCALAR];
 
     Dataset dataset = Dataset(Datatype::DOUBLE, Extent{1});
     mass_scalar.resetDataset(dataset);

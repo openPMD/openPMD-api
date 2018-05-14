@@ -22,7 +22,6 @@
 
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attribute.hpp"
-#include "openPMD/backend/Writable.hpp"
 #include "openPMD/Dataset.hpp"
 
 #include <memory>
@@ -33,6 +32,12 @@
 
 namespace openPMD
 {
+class Attributable;
+class Writable;
+
+Writable*
+getWritable(Attributable*);
+
 /** Type of IO operation between logical and persistent data.
  */
 enum class Operation
@@ -232,6 +237,14 @@ public:
     IOTask(Writable* w,
            Parameter< op > const& p)
             : writable{w},
+              operation{op},
+              parameter{new Parameter< op >(p)}
+    { }
+
+    template< Operation op >
+    IOTask(Attributable* a,
+           Parameter< op > const& p)
+            : writable{getWritable(a)},
               operation{op},
               parameter{new Parameter< op >(p)}
     { }

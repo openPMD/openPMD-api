@@ -36,7 +36,7 @@ PatchRecordComponent::resetDataset(Dataset d)
     if( written )
         throw std::runtime_error("A Records Dataset can not (yet) be changed after it has been written.");
 
-    m_dataset = d;
+    *m_dataset = d;
     dirty = true;
     return *this;
 }
@@ -50,10 +50,11 @@ PatchRecordComponent::getDimensionality() const
 Extent
 PatchRecordComponent::getExtent() const
 {
-    return m_dataset.extent;
+    return m_dataset->extent;
 }
 
 PatchRecordComponent::PatchRecordComponent()
+    : m_chunks{std::make_shared< std::queue< IOTask > >()}
 {
     setUnitSI(1);
 }
@@ -68,16 +69,16 @@ PatchRecordComponent::flush(std::string const& name)
         dCreate.extent = getExtent();
         dCreate.dtype = getDatatype();
         dCreate.chunkSize = getExtent();
-        dCreate.compression = m_dataset.compression;
-        dCreate.transform = m_dataset.transform;
+        dCreate.compression = m_dataset->compression;
+        dCreate.transform = m_dataset->transform;
         IOHandler->enqueue(IOTask(this, dCreate));
         IOHandler->flush();
     }
 
-    while( !m_chunks.empty() )
+    while( !m_chunks->empty() )
     {
-        IOHandler->enqueue(m_chunks.front());
-        m_chunks.pop();
+        IOHandler->enqueue(m_chunks->front());
+        m_chunks->pop();
         IOHandler->flush();
     }
 

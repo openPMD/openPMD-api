@@ -44,21 +44,21 @@ int main(int argc, char *argv[])
          << ") that will be written\n";
 
     // open file for writing
-    Series series = Series::create(
+    Series series = Series(
         "../samples/3_write_serial.h5",
         AccessType::CREATE
     );
     cout << "Created an empty " << series.iterationEncoding() << " Series\n";
 
-    MeshRecordComponent &E =
+    MeshRecordComponent E =
       series
           .iterations[1]
           .meshes["E"][MeshRecordComponent::SCALAR];
+    cout << "Created a scalar mesh Record with all required openPMD attributes\n";
 
     Datatype datatype = determineDatatype(global_data);
     Extent extent = {size, size};
     Dataset dataset = Dataset(datatype, extent);
-
     cout << "Created a Dataset of size " << dataset.extent[0] << 'x' << dataset.extent[1]
          << " and Datatype " << dataset.dtype << '\n';
 
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
     cout << "Set the dataset properties for the scalar field E in iteration 1\n";
 
     series.flush();
-    cout << "File structure has been written\n";
+    cout << "File structure and required attributes have been written\n";
 
     Offset offset = {0, 0};
     E.storeChunk(offset, extent, global_data);

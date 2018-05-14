@@ -28,19 +28,23 @@
 namespace openPMD
 {
 Attributable::Attributable()
-        : m_attributes{std::make_shared< A_MAP >()}
+        : m_writable{std::make_shared< Writable >(this)},
+          abstractFilePosition{m_writable->abstractFilePosition.get()},
+          IOHandler{m_writable->IOHandler.get()},
+          parent{m_writable->parent},
+          dirty{m_writable->dirty},
+          written{m_writable->written},
+          m_attributes{std::make_shared< A_MAP >()}
 { }
 
 Attributable::Attributable(Attributable const& rhs)
-// Deep-copy the entries in the Attribute map since the lifetime of the rhs does not end
-        : Writable{rhs},
-          m_attributes{std::make_shared< A_MAP >(*rhs.m_attributes)}
-{ }
-
-Attributable::Attributable(Attributable&& rhs)
-// Take ownership of the Attribute map pointer since the lifetime of the rhs does end
-        : Writable{rhs},
-          m_attributes{std::move(rhs.m_attributes)}
+        : m_writable{rhs.m_writable},
+          abstractFilePosition{rhs.m_writable->abstractFilePosition.get()},
+          IOHandler{rhs.m_writable->IOHandler.get()},
+          parent{rhs.m_writable->parent},
+          dirty{rhs.m_writable->dirty},
+          written{rhs.m_writable->written},
+          m_attributes{rhs.m_attributes}
 { }
 
 Attributable&
@@ -51,13 +55,6 @@ Attributable::operator=(Attributable const& a)
         Attributable tmp(a);
         std::swap(m_attributes, tmp.m_attributes);
     }
-    return *this;
-}
-
-Attributable&
-Attributable::operator=(Attributable&& a)
-{
-    m_attributes = std::move(a.m_attributes);
     return *this;
 }
 
@@ -271,6 +268,18 @@ Attributable::readAttributes()
     IOHandler->flush();
     dirty = false;
 }
+
+void
+Attributable::linkHierarchy(std::shared_ptr< Writable > const& w)
+{
+    auto handler = w->IOHandler;
+    m_writable->IOHandler = handler;
+    this->IOHandler = handler.get();
+    auto parent = w.get();
+    m_writable->parent = parent;
+    this->parent = parent;
+}
+
 
 void warnWrongDtype(std::string const& key,
                     Datatype store,

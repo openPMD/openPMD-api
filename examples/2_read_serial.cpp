@@ -29,7 +29,7 @@ using namespace openPMD;
 
 int main()
 {
-    Series series = Series::read(
+    Series series = Series(
         "../samples/git-sample/data%T.h5",
         AccessType::READ_ONLY
     );
@@ -41,7 +41,7 @@ int main()
         cout << "\n\t" << i.first;
     cout << '\n';
 
-    Iteration &i = series.iterations[100];
+    Iteration i = series.iterations[100];
     cout << "Iteration 100 contains " << i.meshes.size() << " meshes:";
     for( auto const& m : i.meshes )
         cout << "\n\t" << m.first;
@@ -51,7 +51,7 @@ int main()
         cout << "\n\t" << ps.first;
     cout << '\n';
 
-    MeshRecordComponent &E_x = i.meshes["E"]["x"];
+    MeshRecordComponent E_x = i.meshes["E"]["x"];
     Extent extent = E_x.getExtent();
     cout << "Field E/x has shape (";
     for( auto const& dim : extent )

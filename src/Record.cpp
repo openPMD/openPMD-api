@@ -31,7 +31,7 @@ Record::flush(std::string const& name)
 {
     if( !written )
     {
-        if( m_containsScalar )
+        if( *m_containsScalar )
         {
             RecordComponent& r = at(RecordComponent::SCALAR);
             r.parent = parent;
@@ -45,7 +45,7 @@ Record::flush(std::string const& name)
             IOHandler->enqueue(IOTask(this, pCreate));
             IOHandler->flush();
             for( auto& comp : *this )
-                comp.second.parent = this;
+                comp.second.parent = getWritable(this);
         }
     }
 
@@ -61,7 +61,7 @@ Record::read()
     /* allow all attributes to be set */
     written = false;
 
-    if( m_containsScalar )
+    if( *m_containsScalar )
     {
         /* using operator[] will incorrectly update parent */
         this->at(RecordComponent::SCALAR).read();
@@ -79,7 +79,7 @@ Record::read()
             pOpen.path = component;
             IOHandler->enqueue(IOTask(&rc, pOpen));
             IOHandler->flush();
-            rc.m_isConstant = true;
+            *rc.m_isConstant = true;
             rc.read();
         }
 

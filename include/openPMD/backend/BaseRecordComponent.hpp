@@ -25,7 +25,7 @@ public:
 protected:
     BaseRecordComponent();
 
-    Dataset m_dataset;
-    bool m_isConstant;
+    std::shared_ptr< Dataset > m_dataset;
+    std::shared_ptr< bool > m_isConstant;
 };  //BaseRecordComponent
 } // openPMD

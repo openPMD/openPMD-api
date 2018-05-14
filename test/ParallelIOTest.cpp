@@ -65,7 +65,7 @@ TEST_CASE( "git_hdf5_sample_content_test", "[parallel][hdf5]" )
     uint64_t rank = mpi_rank % 3;
     try
     {
-        Series o = Series::read("../samples/git-sample/data00000%T.h5", MPI_COMM_WORLD);
+        Series o = Series("../samples/git-sample/data00000%T.h5", AccessType::READ_ONLY, MPI_COMM_WORLD);
 
         {
             double actual[3][3][3] = {{{-1.9080703683727052e-09, -1.5632650729457964e-10, 1.1497536256399599e-09},
@@ -118,7 +118,7 @@ TEST_CASE( "hdf5_write_test", "[parallel][hdf5]" )
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_r);
     uint64_t mpi_size = static_cast<uint64_t>(mpi_s);
     uint64_t mpi_rank = static_cast<uint64_t>(mpi_r);
-    Series o = Series::create("../samples/parallel_write.h5", MPI_COMM_WORLD);
+    Series o = Series("../samples/parallel_write.h5", AccessType::CREATE, MPI_COMM_WORLD);
 
     o.setAuthor("Parallel HDF5");
     ParticleSpecies& e = o.iterations[1].particles["e"];
@@ -152,7 +152,7 @@ TEST_CASE( "no_parallel_hdf5", "[parallel][hdf5]" )
 #if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
 TEST_CASE( "adios_write_test", "[parallel][adios]" )
 {
-    Series o = Series::create("../samples/parallel_write.bp", MPI_COMM_WORLD);
+    Series o = Series("../samples/parallel_write.bp", AccessType::CREATE, MPI_COMM_WORLD);
 
     int size{-1};
     int rank{-1};
@@ -194,7 +194,7 @@ TEST_CASE( "hzdr_adios_sample_content_test", "[parallel][adios1]" )
     try
     {
         /* development/huebl/lwfa-bgfield-001 */
-        Series o = Series::read("../samples/hzdr-sample/bp/checkpoint_%T.bp", MPI_COMM_WORLD);
+        Series o = Series("../samples/hzdr-sample/bp/checkpoint_%T.bp", AccessType::READ_ONLY, MPI_COMM_WORLD);
 
         if( o.iterations.count(0) == 1)
         {

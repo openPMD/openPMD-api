@@ -4,10 +4,11 @@
 
 namespace openPMD
 {
-Writable::Writable()
+Writable::Writable(Attributable* a)
         : abstractFilePosition{nullptr},
-          parent{nullptr},
           IOHandler{nullptr},
+          attributable{a},
+          parent{nullptr},
           dirty{true},
           written{false}
 { }

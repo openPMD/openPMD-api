@@ -33,6 +33,8 @@
 
 namespace openPMD
 {
+class AbstractFilePosition;
+
 class no_such_attribute_error : public std::runtime_error
 {
 public:
@@ -51,20 +53,31 @@ public:
  * Mandatory and user-defined Attributes and their data for every object in the
  * openPMD hierarchy are stored and managed through this class.
  */
-class Attributable : public Writable
+class Attributable
 {
     using A_MAP = std::map< std::string, Attribute >;
+    friend Writable* getWritable(Attributable*);
+    template< typename T_elem >
+    friend class BaseRecord;
+    template<
+        typename T,
+        typename T_key,
+        typename T_container
+    >
+    friend class Container;
+    friend class Iteration;
+    friend class Series;
 
 public:
     Attributable();
     Attributable(Attributable const&);
-    Attributable(Attributable&&);
+    Attributable(Attributable&&) = delete;
 
     virtual ~Attributable()
     { }
 
     Attributable& operator=(Attributable const&);
-    Attributable& operator=(Attributable&&);
+    Attributable& operator=(Attributable&&) = delete;
 
     /** Populate Attribute of provided name with provided value.
      *
@@ -159,13 +172,26 @@ protected:
     template< typename T >
     std::vector< T > readVectorFloatingpoint(std::string const& key) const;
 
+    std::shared_ptr< Writable > m_writable;
+    /* views into the resources held by m_writable
+     * purely for convenience so code that uses these does not have to go through m_wriable-> */
+    AbstractFilePosition* abstractFilePosition;
+    AbstractIOHandler* IOHandler;
+    Writable* parent;
+    bool& dirty;
+    bool& written;
+
 private:
+    virtual void linkHierarchy(std::shared_ptr< Writable > const& w);
+
     std::shared_ptr< A_MAP > m_attributes;
 };  //Attributable
 
-void warnWrongDtype(std::string const& key,
-                    Datatype store,
-                    Datatype request);
+
+void
+warnWrongDtype(std::string const& key,
+               Datatype store,
+               Datatype request);
 
 //TODO explicitly instanciate Attributable::setAttribute for all T in Datatype
 template< typename T >

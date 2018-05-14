@@ -9,11 +9,7 @@ using namespace openPMD;
 void init_Series(py::module &m) {
     py::class_<Series>(m, "Series")
 
-        // private
-        //.def(py::init<std::string const &, AccessType>())
-
-        .def_static("create", [](std::string const & filepath){ return Series::create(filepath); })
-        .def_static("read", [](std::string const & filepath){ return Series::read(filepath); })
+        .def(py::init<std::string const&, AccessType>())
 
         .def_property_readonly("openPMD", &Series::openPMD)
         .def("set_openPMD", &Series::setOpenPMD)

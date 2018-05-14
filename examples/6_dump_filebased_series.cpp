@@ -8,7 +8,7 @@ using namespace openPMD;
 
 int main()
 {
-    Series o = Series::read("../samples/git-sample/data%T.h5");
+    Series o = Series("../samples/git-sample/data%T.h5", AccessType::READ_ONLY);
 
     std::cout << "Read iterations ";
     for( auto const& val : o.iterations )

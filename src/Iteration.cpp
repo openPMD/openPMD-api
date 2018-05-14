@@ -18,6 +18,7 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
+#include <openPMD/backend/Writable.hpp>
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Iteration.hpp"
@@ -43,9 +44,9 @@ Iteration::Iteration(Iteration const& i)
     IOHandler = i.IOHandler;
     parent = i.parent;
     meshes.IOHandler = IOHandler;
-    meshes.parent = this;
+    meshes.parent = this->m_writable.get();
     particles.IOHandler = IOHandler;
-    particles.parent = this;
+    particles.parent = this->m_writable.get();
 }
 
 template< typename T >
@@ -87,7 +88,7 @@ Iteration::flushFileBased(uint64_t i)
     if( !written )
     {
         /* create file */
-        Series* s = dynamic_cast<Series *>(parent->parent);
+        Series* s = dynamic_cast<Series *>(parent->attributable->parent->attributable);
         Parameter< Operation::CREATE_FILE > fCreate;
         fCreate.name = auxiliary::replace_first(s->iterationFormat(), "%T", std::to_string(i));
         IOHandler->enqueue(IOTask(s, fCreate));
@@ -106,7 +107,7 @@ Iteration::flushFileBased(uint64_t i)
     } else
     {
         /* open file */
-        Series* s = dynamic_cast<Series *>(parent->parent);
+        Series* s = dynamic_cast<Series *>(parent->attributable->parent->attributable);
         Parameter< Operation::OPEN_FILE > fOpen;
         fOpen.name = auxiliary::replace_last(s->iterationFormat(), "%T", std::to_string(i));
         IOHandler->enqueue(IOTask(s, fOpen));
@@ -147,12 +148,11 @@ Iteration::flush()
 {
     /* Find the root point [Series] of this file,
      * meshesPath and particlesPath are stored there */
-    Writable *w = this;
+    Writable *w = this->parent;
     while( w->parent )
         w = w->parent;
-    Series* s = dynamic_cast<Series *>(w);
+    Series* s = dynamic_cast<Series *>(w->attributable);
 
-    //TODO warn if openPMD >= 1.1.0, mp is set and no meshes
     if( !meshes.empty() )
     {
         if( !s->containsAttribute("meshesPath") )
@@ -163,7 +163,6 @@ Iteration::flush()
             m.second.flush(m.first);
     }
 
-    //TODO warn if openPMD >= 1.1.0, pp is set and no particles
     if( !particles.empty() )
     {
         if( !s->containsAttribute("particlesPath") )
@@ -216,10 +215,10 @@ Iteration::read()
 
     /* Find the root point [Series] of this file,
      * meshesPath and particlesPath are stored there */
-    Writable *w = this;
+    Writable *w = getWritable(this);
     while( w->parent )
         w = w->parent;
-    Series* s = dynamic_cast<Series *>(w);
+    Series* s = dynamic_cast<Series *>(w->attributable);
 
     Parameter< Operation::LIST_PATHS > pList;
     std::string version = s->openPMD();
@@ -278,7 +277,7 @@ Iteration::read()
             if( value != end && shape != end )
             {
                 MeshRecordComponent& mrc = m[MeshRecordComponent::SCALAR];
-                mrc.m_isConstant = true;
+                *mrc.m_isConstant = true;
                 mrc.parent = m.parent;
                 mrc.abstractFilePosition = m.abstractFilePosition;
             }
@@ -339,6 +338,14 @@ Iteration::read()
     meshes.written = true;
     particles.written = true;
     written = true;
+}
+
+void
+Iteration::linkHierarchy(std::shared_ptr< Writable > const& parent)
+{
+    Attributable::linkHierarchy(parent);
+    meshes.linkHierarchy(m_writable);
+    particles.linkHierarchy(m_writable);
 }
 
 

@@ -2,13 +2,16 @@
 
 /* make Writable::parent visible for hierarchy check */
 #define protected public
+#define private public
+#include "openPMD/backend/Writable.hpp"
+#include "openPMD/backend/Attributable.hpp"
+#undef private
+#undef protected
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Container.hpp"
-#include "openPMD/backend/Writable.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Dataset.hpp"
-#undef protected
 using namespace openPMD;
 
 #include <catch/catch.hpp>
@@ -72,10 +75,13 @@ namespace openPMD
 {
 namespace test
 {
-struct S : public Writable
+struct S : public Attributable
 {
-    int val;
-    bool written;
+    S()
+    {
+        m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+        IOHandler = m_writable->IOHandler.get();
+    }
 };
 } // test
 } // openPMD
@@ -83,9 +89,10 @@ struct S : public Writable
 TEST_CASE( "container_default_test", "[auxiliary]")
 {
     Container< openPMD::test::S > c = Container< openPMD::test::S >();
-    c.IOHandler = AbstractIOHandler::createIOHandler("", AccessType::CREATE, Format::DUMMY);
+    c.m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+    c.IOHandler = c.m_writable->IOHandler.get();
 
-    REQUIRE(c.size() == 0);
+    REQUIRE(c.empty());
     REQUIRE(c.erase("nonExistentKey") == false);
 }
 
@@ -96,6 +103,12 @@ namespace test
 class structure : public Attributable
 {
 public:
+    structure()
+    {
+        m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+        IOHandler = m_writable->IOHandler.get();
+    }
+
     std::string string_ = "Hello, world!";
     int int_ = 42;
     float float_ = 3.14f;
@@ -110,7 +123,8 @@ TEST_CASE( "container_retrieve_test", "[auxiliary]" )
 {
     using structure = openPMD::test::structure;
     Container< structure > c = Container< structure >();
-    c.IOHandler = AbstractIOHandler::createIOHandler("", AccessType::CREATE, Format::DUMMY);
+    c.m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+    c.IOHandler = c.m_writable->IOHandler.get();
 
     structure s;
     std::string text = "The openPMD standard, short for open standard for particle-mesh data files is not a file format per se. It is a standard for meta data and naming schemes.";
@@ -150,26 +164,34 @@ TEST_CASE( "container_retrieve_test", "[auxiliary]" )
     REQUIRE(s.text() == text);
     REQUIRE(c["entry"].text() == text);
 
-    c["entry"].setText("Different text");
+    text = "Different text";
+    c["entry"].setText(text);
     REQUIRE(s.text() == text);
-    REQUIRE(c["entry"].text() != text);
+    REQUIRE(c["entry"].text() == text);
 
-    s.setText("Also different text");
-    REQUIRE(s.text() == "Also different text");
-    REQUIRE(c["entry"].text() == "Different text");
+    text = "Also different text";
+    s.setText(text);
+    REQUIRE(s.text() == text);
+    REQUIRE(c["entry"].text() == text);
 }
 
 namespace openPMD
 {
 namespace test
 {
-struct Widget : public Writable
+struct Widget : public Attributable
 {
     Widget()
-    { }
+    {
+        m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+        IOHandler = m_writable->IOHandler.get();
+    }
 
     Widget(int)
-    { }
+    {
+        m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+        IOHandler = m_writable->IOHandler.get();
+    }
 };
 } // test
 } // openPMD
@@ -178,7 +200,8 @@ TEST_CASE( "container_access_test", "[auxiliary]" )
 {
     using Widget = openPMD::test::Widget;
     Container< Widget > c = Container< Widget >();
-    c.IOHandler = AbstractIOHandler::createIOHandler("", AccessType::CREATE, Format::DUMMY);
+    c.m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+    c.IOHandler = c.m_writable->IOHandler.get();
 
     c["firstWidget"] = Widget(0);
     REQUIRE(c.size() == 1);
@@ -193,12 +216,12 @@ TEST_CASE( "container_access_test", "[auxiliary]" )
     REQUIRE(c.erase("nonExistentWidget") == false);
     REQUIRE(c.size() == 1);
     REQUIRE(c.erase("secondWidget") == true);
-    REQUIRE(c.size() == 0);
+    REQUIRE(c.empty());
 }
 
 TEST_CASE( "attributable_default_test", "[auxiliary]" )
 {
-    Attributable a = Attributable();
+    Attributable a;
 
     REQUIRE(a.numAttributes() == 0);
 }
@@ -212,8 +235,10 @@ class AttributedWidget : public Attributable
 public:
     AttributedWidget()
     {
-        IOHandler = AbstractIOHandler::createIOHandler("", AccessType::CREATE, Format::DUMMY);
+        m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+        IOHandler = m_writable->IOHandler.get();
     }
+
     Attribute::resource get(std::string key)
     {
         return getAttribute(key).getResource();
@@ -261,6 +286,8 @@ class Dotty : public Attributable
 public:
     Dotty()
     {
+        m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+        IOHandler = m_writable->IOHandler.get();
         setAtt1(1);
         setAtt2(2);
         setAtt3("3");

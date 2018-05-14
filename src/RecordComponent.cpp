@@ -27,7 +27,8 @@
 namespace openPMD
 {
 RecordComponent::RecordComponent()
-        : m_constantValue{-1}
+        : m_chunks{std::make_shared< std::queue< IOTask > >()},
+          m_constantValue{std::make_shared< Attribute >(-1)}
 {
     setUnitSI(1);
     resetDataset(Dataset(Datatype::CHAR, {1}));
@@ -46,7 +47,7 @@ RecordComponent::resetDataset(Dataset d)
     if( written )
         throw std::runtime_error("A Records Dataset can not (yet) be changed after it has been written.");
 
-    m_dataset = d;
+    *m_dataset = d;
     dirty = true;
     return *this;
 }
@@ -54,13 +55,13 @@ RecordComponent::resetDataset(Dataset d)
 uint8_t
 RecordComponent::getDimensionality() const
 {
-    return m_dataset.rank;
+    return m_dataset->rank;
 }
 
 Extent
 RecordComponent::getExtent() const
 {
-    return m_dataset.extent;
+    return m_dataset->extent;
 }
 
 void
@@ -68,15 +69,15 @@ RecordComponent::flush(std::string const& name)
 {
     if( !written )
     {
-        if( m_isConstant )
+        if( *m_isConstant )
         {
             Parameter< Operation::CREATE_PATH > pCreate;
             pCreate.path = name;
             IOHandler->enqueue(IOTask(this, pCreate));
             Parameter< Operation::WRITE_ATT > aWrite;
             aWrite.name = "value";
-            aWrite.dtype = m_constantValue.dtype;
-            aWrite.resource = m_constantValue.getResource();
+            aWrite.dtype = m_constantValue->dtype;
+            aWrite.resource = m_constantValue->getResource();
             IOHandler->enqueue(IOTask(this, aWrite));
             aWrite.name = "shape";
             Attribute a(getExtent());
@@ -89,18 +90,18 @@ RecordComponent::flush(std::string const& name)
             dCreate.name = name;
             dCreate.extent = getExtent();
             dCreate.dtype = getDatatype();
-            dCreate.chunkSize = m_dataset.chunkSize;
-            dCreate.compression = m_dataset.compression;
-            dCreate.transform = m_dataset.transform;
+            dCreate.chunkSize = m_dataset->chunkSize;
+            dCreate.compression = m_dataset->compression;
+            dCreate.transform = m_dataset->transform;
             IOHandler->enqueue(IOTask(this, dCreate));
         }
         IOHandler->flush();
     }
 
-    while( !m_chunks.empty() )
+    while( !m_chunks->empty() )
     {
-        IOHandler->enqueue(m_chunks.front());
-        m_chunks.pop();
+        IOHandler->enqueue(m_chunks->front());
+        m_chunks->pop();
         IOHandler->flush();
     }
 
@@ -125,7 +126,7 @@ RecordComponent::readBase()
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
 
-    if( m_isConstant )
+    if( *m_isConstant )
     {
         aRead.name = "value";
         IOHandler->enqueue(IOTask(this, aRead));

@@ -26,7 +26,7 @@ Initial backends will include ADIOS and HDF5.
 
 // ...
 
-auto s = openPMD::Series::read("output_files/data%T.h5");
+auto s = openPMD::Series("output_files/data%T.h5", AccessType::READ_ONLY);
 
 std::cout << "Read iterations...";
 for( auto const& i : s.iterations )
@@ -58,12 +58,12 @@ for( auto const& i : s.iterations )
 ### Python
 
 ```py
-from openPMD import Series
+import openPMD
 
 
 # ...
 
-series = Series.read("output_files/data%T.h5")
+series = openPMD.Series("output_files/data%T.h5", openPMD.Access_Type.read_only)
 
 print("Read iterations...")
 for k, i in series.iterations.items():

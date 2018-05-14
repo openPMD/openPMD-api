@@ -44,15 +44,15 @@ int main(int argc, char *argv[])
      *       prior to MPI_Finalize();
      */
     {
-        Series series = Series::read(
+        Series series = Series(
             "../samples/git-sample/data%T.h5",
-            MPI_COMM_WORLD,
-            AccessType::READ_ONLY
+            AccessType::READ_ONLY,
+            MPI_COMM_WORLD
         );
         if( 0 == mpi_rank )
             cout << "Read a series in parallel with " << mpi_size << " MPI ranks\n";
 
-        MeshRecordComponent &E_x = series.iterations[100].meshes["E"]["x"];
+        MeshRecordComponent E_x = series.iterations[100].meshes["E"]["x"];
 
         Offset chunk_offset = {
             static_cast< long unsigned int >(mpi_rank) + 1,

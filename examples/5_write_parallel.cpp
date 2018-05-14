@@ -57,16 +57,16 @@ int main(int argc, char *argv[])
             cout << "Set up a 1D array with one element, representing the view of the MPI rank\n";
 
         // open file for writing
-        Series series = Series::create(
+        Series series = Series(
             "../samples/5_parallel_write.h5",
-            MPI_COMM_WORLD,
-            AccessType::CREATE
+            AccessType::CREATE,
+            MPI_COMM_WORLD
         );
         if( 0 == mpi_rank )
           cout << "Created an empty series in parallel with "
                << mpi_size << " MPI ranks\n";
 
-        MeshRecordComponent &id =
+        MeshRecordComponent id =
             series
                 .iterations[1]
                 .meshes["id"][MeshRecordComponent::SCALAR];
