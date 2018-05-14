@@ -71,6 +71,21 @@ class Container : public Attributable
     friend class ParticleSpecies;
     friend class Series;
 
+    template< typename T_Key >
+    auto out_of_range_msg(T_Key const& key) -> decltype(std::to_string(key))
+    {
+        return std::string("Key '") + std::to_string(key) + std::string("' does not exist (read-only).");
+    }
+    template< typename T_Key >
+    auto out_of_range_msg(T_Key const& key) -> decltype(std::string(key))
+    {
+        return std::string("Key '") + std::string(key) + std::string("' does not exist (read-only).");
+    }
+    std::string out_of_range_msg(...)
+    {
+        return std::string("Key does not exist (read-only).");
+    }
+
 public:
     using key_type = typename InternalContainer::key_type;
     using mapped_type = typename InternalContainer::mapped_type;
@@ -130,10 +145,12 @@ public:
     mapped_type& at(key_type const& key) { return m_container->at(key); }
     mapped_type const& at(key_type const& key) const { return m_container->at(key); }
 
+public:
     /** Access the value that is mapped to a key equivalent to key, creating it if such key does not exist already.
      *
      * @param   key Key of the element to find (lvalue).
      * @return  Reference to the mapped value of the new element if no element with key key existed. Otherwise a reference to the mapped value of the existing element whose key is equivalent to key.
+     * @throws  std::out_of_range error if in READ_ONLY mode and key does not exist, otherwise key will be created
      */
     virtual mapped_type& operator[](key_type const& key)
     {
@@ -142,6 +159,9 @@ public:
             return it->second;
         else
         {
+            if( AccessType::READ_ONLY == IOHandler->accessType )
+                throw std::out_of_range(out_of_range_msg(key));
+
             T t = T();
             t.linkHierarchy(m_writable);
             auto& ret = m_container->insert({key, std::move(t)}).first->second;
@@ -154,6 +174,7 @@ public:
      *
      * @param   key Key of the element to find (rvalue).
      * @return  Reference to the mapped value of the new element if no element with key key existed. Otherwise a reference to the mapped value of the existing element whose key is equivalent to key.
+     * @throws  std::out_of_range error if in READ_ONLY mode and key does not exist, otherwise key will be created
      */
     virtual mapped_type& operator[](key_type&& key)
     {
@@ -162,6 +183,9 @@ public:
             return it->second;
         else
         {
+            if( AccessType::READ_ONLY == IOHandler->accessType )
+                throw std::out_of_range(out_of_range_msg(key));
+
             T t = T();
             t.linkHierarchy(m_writable);
             auto& ret = m_container->insert({std::move(key), std::move(t)}).first->second;
