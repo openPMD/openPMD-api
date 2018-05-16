@@ -75,6 +75,21 @@ class Attributable
     friend class Iteration;
     friend class Series;
 
+    template< typename T_Key >
+    auto out_of_range_msg(T_Key const& key) -> decltype(std::to_string(key))
+    {
+        return std::string("Attribute '") + std::to_string(key) + std::string("' does not exist (read-only).");
+    }
+    template< typename T_Key >
+    auto out_of_range_msg(T_Key const& key) -> decltype(std::string(key))
+    {
+        return std::string("Attribute '") + std::string(key) + std::string("' does not exist (read-only).");
+    }
+    std::string out_of_range_msg(...)
+    {
+        return std::string("Attribute does not exist (read-only).");
+    }
+
 public:
     Attributable();
     Attributable(Attributable const&);
@@ -205,6 +220,9 @@ template< typename T >
 inline bool
 Attributable::setAttribute(std::string const& key, T&& value)
 {
+    if( IOHandler && AccessType::READ_ONLY == IOHandler->accessType )
+        throw no_such_attribute_error(out_of_range_msg(key));
+
     dirty = true;
     auto it = m_attributes->lower_bound(key);
     if( it != m_attributes->end() && !m_attributes->key_comp()(key, it->first) )
