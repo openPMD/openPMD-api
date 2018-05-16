@@ -103,10 +103,17 @@ Series::Series(std::string const& filepath,
         case AccessType::READ_ONLY:
         case AccessType::READ_WRITE:
         {
+            /* Allow creation of values in Containers and setting of Attributes
+             * Would throw for AccessType::READ_ONLY */
+            auto newType = const_cast< AccessType* >(&m_writable->IOHandler->accessType);
+            *newType = AccessType::READ_WRITE;
+
             if( auxiliary::contains(*m_name, "%T") )
                 readFileBased();
             else
                 readGroupBased();
+
+            *newType = at;
             break;
         }
     }
@@ -161,10 +168,17 @@ Series::Series(std::string const& filepath,
         case AccessType::READ_ONLY:
         case AccessType::READ_WRITE:
         {
+            /* Allow creation of values in Containers and setting of Attributes
+             * Would throw for AccessType::READ_ONLY */
+            auto newType = const_cast< AccessType* >(&m_writable->IOHandler->accessType);
+            *newType = AccessType::READ_WRITE;
+
             if( auxiliary::contains(*m_name, "%T") )
                 readFileBased();
             else
                 readGroupBased();
+
+            *newType = at;
             break;
         }
     }
