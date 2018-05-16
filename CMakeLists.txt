@@ -49,6 +49,8 @@ openpmd_option(PYTHON "Enable Python bindings" AUTO)
 option(openPMD_USE_INTERNAL_VARIANT "Use internally shipped MPark.Variant" ON)
 option(openPMD_USE_INTERNAL_CATCH   "Use internally shipped Catch2" ON)
 
+option(openPMD_ENABLE_INVASIVE_TESTS "Enable unit tests that modify source code (e.g. C++ keywords)" OFF)
+
 set(CMAKE_CONFIGURATION_TYPES "Release;Debug;MinSizeRel;RelWithDebInfo")
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING
@@ -381,9 +383,25 @@ set(openPMD_PYTHON_EXAMPLE_NAMES
     3_write_serial
 )
 
+if(openPMD_ENABLE_INVASIVE_TESTS STREQUAL AUTO)
+    if(WIN32)
+        set(openPMD_BUILD_INVASIVE_TEST FALSE)
+    else()
+        set(openPMD_BUILD_INVASIVE_TEST TRUE)
+    endif()
+elseif(openPMD_ENABLE_INVASIVE_TESTS)
+    set(openPMD_BUILD_INVASIVE_TEST TRUE)
+else()
+    set(openPMD_BUILD_INVASIVE_TEST FALSE)
+endif()
+
 if(BUILD_TESTING)
     foreach(testname ${openPMD_TEST_NAMES})
         add_executable(${testname}Tests test/${testname}Test.cpp)
+        if(openPMD_BUILD_INVASIVE_TEST)
+            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_BUILD_INVASIVE_TESTS=1")
+        endif()
+
         if(openPMD_HAVE_MPI)
             target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_MPI=1")
         else()
@@ -614,6 +632,11 @@ message("           Catch2: OFF")
 message("")
 message("  Build Type: ${CMAKE_BUILD_TYPE}")
 message("  Testing: ${BUILD_TESTING}")
+if(${openPMD_BUILD_INVASIVE_TEST})
+    message("  Invasive Tests: ON")
+else()
+    message("  Invasive Tests: OFF")
+endif()
 message("  Build Options:")
 
 foreach(opt IN LISTS openPMD_CONFIG_OPTIONS)

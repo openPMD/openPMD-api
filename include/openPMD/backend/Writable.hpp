@@ -26,6 +26,10 @@
 
 namespace openPMD
 {
+namespace test
+{
+class TestHelper;
+} // test
 class AbstractFilePosition;
 class AbstractIOHandler;
 class Attributable;
@@ -58,6 +62,7 @@ class Writable
     friend class ADIOS2IOHandlerImpl;
     friend class HDF5IOHandlerImpl;
     friend class ParallelHDF5IOHandlerImpl;
+    friend class test::TestHelper;
     friend std::string concrete_h5_file_position(Writable*);
     friend std::string concrete_bp1_file_position(Writable*);
 
