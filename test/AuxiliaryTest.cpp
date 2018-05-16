@@ -1,12 +1,16 @@
 #define CATCH_CONFIG_MAIN
 
+#if openPMD_HAVE_INVASIVE_TESTS
 /* make Writable::parent visible for hierarchy check */
-#define protected public
-#define private public
+#   define protected public
+#   define private public
+#endif
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/backend/Attributable.hpp"
-#undef private
-#undef protected
+#if openPMD_HAVE_INVASIVE_TESTS
+#   undef private
+#   undef protected
+#endif
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Container.hpp"
@@ -19,6 +23,22 @@ using namespace openPMD;
 #include <string>
 #include <vector>
 #include <array>
+
+
+namespace openPMD
+{
+namespace test
+{
+struct TestHelper : public Attributable
+{
+    TestHelper()
+    {
+        m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+        IOHandler = m_writable->IOHandler.get();
+    }
+};
+} // test
+} // openPMD
 
 
 TEST_CASE( "string_test", "[auxiliary]" )
@@ -75,39 +95,39 @@ namespace openPMD
 {
 namespace test
 {
-struct S : public Attributable
+struct S : public TestHelper
 {
     S()
-    {
-        m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
-        IOHandler = m_writable->IOHandler.get();
-    }
+        : TestHelper()
+    { }
 };
 } // test
 } // openPMD
 
 TEST_CASE( "container_default_test", "[auxiliary]")
 {
+#if openPMD_HAVE_INVASIVE_TESTS
     Container< openPMD::test::S > c = Container< openPMD::test::S >();
     c.m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
     c.IOHandler = c.m_writable->IOHandler.get();
 
     REQUIRE(c.empty());
     REQUIRE(c.erase("nonExistentKey") == false);
+#else
+    std::cerr << "Invasive tests not enabled. Hierarchy is not visible.\n";
+#endif
 }
 
 namespace openPMD
 {
 namespace test
 {
-class structure : public Attributable
+class structure : public TestHelper
 {
 public:
     structure()
-    {
-        m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
-        IOHandler = m_writable->IOHandler.get();
-    }
+        : TestHelper()
+    { }
 
     std::string string_ = "Hello, world!";
     int int_ = 42;
@@ -121,6 +141,7 @@ public:
 
 TEST_CASE( "container_retrieve_test", "[auxiliary]" )
 {
+#if openPMD_HAVE_INVASIVE_TESTS
     using structure = openPMD::test::structure;
     Container< structure > c = Container< structure >();
     c.m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
@@ -173,31 +194,31 @@ TEST_CASE( "container_retrieve_test", "[auxiliary]" )
     s.setText(text);
     REQUIRE(s.text() == text);
     REQUIRE(c["entry"].text() == text);
+#else
+    std::cerr << "Invasive tests not enabled. Hierarchy is not visible.\n";
+#endif
 }
 
 namespace openPMD
 {
 namespace test
 {
-struct Widget : public Attributable
+struct Widget : public TestHelper
 {
     Widget()
-    {
-        m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
-        IOHandler = m_writable->IOHandler.get();
-    }
+        : TestHelper()
+    { }
 
     Widget(int)
-    {
-        m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
-        IOHandler = m_writable->IOHandler.get();
-    }
+        : TestHelper()
+    { }
 };
 } // test
 } // openPMD
 
 TEST_CASE( "container_access_test", "[auxiliary]" )
 {
+#if openPMD_HAVE_INVASIVE_TESTS
     using Widget = openPMD::test::Widget;
     Container< Widget > c = Container< Widget >();
     c.m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
@@ -217,6 +238,9 @@ TEST_CASE( "container_access_test", "[auxiliary]" )
     REQUIRE(c.size() == 1);
     REQUIRE(c.erase("secondWidget") == true);
     REQUIRE(c.empty());
+#else
+    std::cerr << "Invasive tests not enabled. Hierarchy is not visible.\n";
+#endif
 }
 
 TEST_CASE( "attributable_default_test", "[auxiliary]" )
@@ -230,14 +254,12 @@ namespace openPMD
 {
 namespace test
 {
-class AttributedWidget : public Attributable
+class AttributedWidget : public TestHelper
 {
 public:
     AttributedWidget()
-    {
-        m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
-        IOHandler = m_writable->IOHandler.get();
-    }
+        : TestHelper()
+    { }
 
     Attribute::resource get(std::string key)
     {
@@ -281,13 +303,12 @@ namespace openPMD
 {
 namespace test
 {
-class Dotty : public Attributable
+class Dotty : public TestHelper
 {
 public:
     Dotty()
+        : TestHelper()
     {
-        m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
-        IOHandler = m_writable->IOHandler.get();
         setAtt1(1);
         setAtt2(2);
         setAtt3("3");

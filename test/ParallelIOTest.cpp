@@ -9,17 +9,14 @@ using namespace openPMD;
 #include <catch/catch.hpp>
 #if openPMD_HAVE_MPI
 #   include <mpi.h>
-#endif
 
-#include <iostream>
-#include <algorithm>
-#include <string>
-#include <vector>
-#include <array>
-#include <memory>
+#   include <iostream>
+#   include <algorithm>
+#   include <string>
+#   include <vector>
+#   include <array>
+#   include <memory>
 
-
-#if openPMD_HAVE_MPI
 
 int main(int argc, char *argv[])
 {
