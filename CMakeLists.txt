@@ -399,7 +399,7 @@ if(BUILD_TESTING)
     foreach(testname ${openPMD_TEST_NAMES})
         add_executable(${testname}Tests test/${testname}Test.cpp)
         if(openPMD_HAVE_INVASIVE_TESTS)
-            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_INVASIVE_TESTSS=1")
+            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_INVASIVE_TESTS=1")
         endif()
 
         if(openPMD_HAVE_MPI)
