@@ -44,7 +44,7 @@ openpmd_option(HDF5             "Enable HDF5 support"                       AUTO
 openpmd_option(ADIOS1           "Enable ADIOS1 support"                     AUTO)
 openpmd_option(ADIOS2           "Enable ADIOS2 support"                     OFF)
 #openpmd_option(JSON             "Enable JSON support"                      AUTO)
-openpmd_option(INVASIVE_TESTS   "Enable unit tests that modify source code" OFF)
+openpmd_option(INVASIVE_TESTS   "Enable unit tests that modify source code" AUTO)
 openpmd_option(PYTHON           "Enable Python bindings"                    AUTO)
 
 option(openPMD_USE_INTERNAL_VARIANT "Use internally shipped MPark.Variant" ON)
