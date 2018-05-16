@@ -8,20 +8,20 @@ Build Options
 The following options can be added to the ``cmake`` call to control features.
 CMake controls options with prefixed ``-D``, e.g. ``-DopenPMD_USE_MPI=OFF``:
 
-============================== =============== ======================================================================
+============================== =============== ==================================================
 CMake Option                   Values          Description
-============================== =============== ======================================================================
+============================== =============== ==================================================
 ``openPMD_USE_MPI``            **AUTO**/ON/OFF Enable MPI support
 ``openPMD_USE_HDF5``           **AUTO**/ON/OFF Enable support for HDF5
 ``openPMD_USE_ADIOS1``         **AUTO**/ON/OFF Enable support for ADIOS1
 ``openPMD_USE_ADIOS2``         AUTO/ON/**OFF** Enable support for ADIOS2 :sup:`1`
 ``openPMD_USE_PYTHON``         **AUTO**/ON/OFF Enable Python bindings
-``openPMD_USE_INVASIVE_TESTS`` **AUTO**/ON/OFF Enable unit tests that modify source code (e.g. C++ keywords) :sup:`2`
+``openPMD_USE_INVASIVE_TESTS`` **AUTO**/ON/OFF Enable unit tests that modify source code :sup:`2`
 ``PYTHON_EXECUTABLE``          (first found)   Path to Python executable
-============================== =============== ======================================================================
+============================== =============== ==================================================
 
 :sup:`1` *not yet implemented*
-:sup:`2` *currently disabled only for MSVC*
+:sup:`2` e.g. C++ keywords, currently disabled only for MSVC*
 
 Additionally, the following libraries are shipped internally for convenience.
 These might get installed in your :ref:`CMAKE_INSTALL_PREFIX <install-cmake>` if the option is ``ON``.
