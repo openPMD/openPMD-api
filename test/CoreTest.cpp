@@ -1,12 +1,12 @@
 #define CATCH_CONFIG_MAIN
 
-#if openPMD_BUILD_INVASIVE_TESTS
+#if openPMD_HAVE_INVASIVE_TESTS
 /* make Writable::parent, Writable::IOHandler visible for structure_test */
 #   define protected public
 #   define private public
 #endif
 #include "openPMD/openPMD.hpp"
-#if openPMD_BUILD_INVASIVE_TESTS
+#if openPMD_HAVE_INVASIVE_TESTS
 #   undef private
 #   undef protected
 #endif
@@ -327,7 +327,7 @@ TEST_CASE( "mesh_modification_test", "[core]" )
 
 TEST_CASE( "structure_test", "[core]" )
 {
-#if openPMD_BUILD_INVASIVE_TESTS
+#if openPMD_HAVE_INVASIVE_TESTS
     Series o = Series("./new_openpmd_output_%T", AccessType::CREATE);
 
     REQUIRE(o.IOHandler);
@@ -493,7 +493,7 @@ TEST_CASE( "wrapper_test", "[core]" )
     o.iterations[4].meshes["E"]["y"].resetDataset(Dataset(Datatype::DOUBLE, {1}));
     o.iterations[4].meshes["E"]["y"].makeConstant(value);
     MeshRecordComponent mrc2 = o.iterations[4].meshes["E"]["y"];
-#if openPMD_BUILD_INVASIVE_TESTS
+#if openPMD_HAVE_INVASIVE_TESTS
     REQUIRE(*mrc2.m_isConstant);
 #endif
     std::unique_ptr< double[] > loadData = std::unique_ptr< double[] >(new double[1]);
@@ -505,7 +505,7 @@ TEST_CASE( "wrapper_test", "[core]" )
     o.iterations[4].meshes["E"]["y"].loadChunk({0}, {1}, loadData);
     o.flush();
     REQUIRE(loadData[0] == value);
-#if openPMD_BUILD_INVASIVE_TESTS
+#if openPMD_HAVE_INVASIVE_TESTS
     REQUIRE(o.iterations[4].meshes["E"]["y"].m_chunks->empty());
     REQUIRE(mrc2.m_chunks->empty());
 #endif
@@ -514,12 +514,12 @@ TEST_CASE( "wrapper_test", "[core]" )
     o.iterations[5].meshes["E"]["y"].resetDataset(Dataset(Datatype::DOUBLE, {1}));
     std::shared_ptr< double > storeData = std::make_shared< double >(44);
     o.iterations[5].meshes["E"]["y"].storeChunk({0}, {1}, storeData);
-#if openPMD_BUILD_INVASIVE_TESTS
+#if openPMD_HAVE_INVASIVE_TESTS
     REQUIRE(o.iterations[5].meshes["E"]["y"].m_chunks->size() == 1);
     REQUIRE(mrc3.m_chunks->size() == 1);
 #endif
     o.flush();
-#if openPMD_BUILD_INVASIVE_TESTS
+#if openPMD_HAVE_INVASIVE_TESTS
     REQUIRE(o.iterations[5].meshes["E"]["y"].m_chunks->empty());
     REQUIRE(mrc3.m_chunks->empty());
 #endif
@@ -533,22 +533,22 @@ TEST_CASE( "wrapper_test", "[core]" )
     REQUIRE(o.iterations[6].particles["electrons"].particlePatches["prop"]["x"].getExtent() == Extent{7});
     size_t idx = 0;
     uint64_t val = 10;
-#if openPMD_BUILD_INVASIVE_TESTS
+#if openPMD_HAVE_INVASIVE_TESTS
     REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].m_chunks->empty());
     REQUIRE(pp["numParticles"][RecordComponent::SCALAR].m_chunks->empty());
 #endif
     pp["numParticles"][RecordComponent::SCALAR].store(idx, val);
-#if openPMD_BUILD_INVASIVE_TESTS
+#if openPMD_HAVE_INVASIVE_TESTS
     REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 1);
     REQUIRE(pp["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 1);
 #endif
     o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].store(idx+1, val+1);
-#if openPMD_BUILD_INVASIVE_TESTS
+#if openPMD_HAVE_INVASIVE_TESTS
     REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 2);
     REQUIRE(pp["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 2);
 #endif
     o.flush();
-#if openPMD_BUILD_INVASIVE_TESTS
+#if openPMD_HAVE_INVASIVE_TESTS
     REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].m_chunks->empty());
     REQUIRE(pp["numParticles"][RecordComponent::SCALAR].m_chunks->empty());
 #endif

@@ -1,12 +1,12 @@
 #define CATCH_CONFIG_MAIN
 
 
-#if openPMD_BUILD_INVASIVE_TESTS
+#if openPMD_HAVE_INVASIVE_TESTS
 /* make Writable::parent visible for hierarchy check */
 #   define protected public
 #endif
 #include "openPMD/openPMD.hpp"
-#if openPMD_BUILD_INVASIVE_TESTS
+#if openPMD_HAVE_INVASIVE_TESTS
 #   undef protected
 #endif
 using namespace openPMD;
@@ -24,7 +24,7 @@ using namespace openPMD;
 #if openPMD_HAVE_HDF5
 TEST_CASE( "git_hdf5_sample_structure_test", "[serial][hdf5]" )
 {
-#if openPMD_BUILD_INVASIVE_TESTS
+#if openPMD_HAVE_INVASIVE_TESTS
     try
     {
         Series o = Series("../samples/git-sample/data%T.h5", AccessType::READ_ONLY);
