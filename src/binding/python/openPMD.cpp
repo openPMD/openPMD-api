@@ -41,7 +41,7 @@ PYBIND11_MODULE(openPMD, m) {
     init_BaseRecordComponent(m);
     init_RecordComponent(m);
     init_MeshRecordComponent(m);
-    init_ParticlePatches(m);    
+    init_ParticlePatches(m);
     init_ParticleSpecies(m);
     init_Record(m);
     init_Series(m);
@@ -54,5 +54,12 @@ PYBIND11_MODULE(openPMD, m) {
     if( std::string( OPENPMDAPI_VERSION_LABEL ).size() > 0 )
         openPMDapi << "-" << OPENPMDAPI_VERSION_LABEL;
     m.attr("__version__") = openPMDapi.str();
+
+    // variants
+    m.attr("have_mpi") = bool(openPMD_HAVE_MPI);
+    m.attr("have_hdf5") = bool(openPMD_HAVE_HDF5);
+    m.attr("have_adios1") = bool(openPMD_HAVE_ADIOS1);
+    m.attr("have_adios2") = bool(openPMD_HAVE_ADIOS2);
+    // m.attr("have_json") = bool(openPMD_HAVE_JSON);
 }
 
