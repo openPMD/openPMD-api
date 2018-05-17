@@ -50,7 +50,6 @@ openpmd_option(PYTHON           "Enable Python bindings"                    AUTO
 option(openPMD_USE_INTERNAL_VARIANT "Use internally shipped MPark.Variant" ON)
 option(openPMD_USE_INTERNAL_CATCH   "Use internally shipped Catch2" ON)
 
-
 set(CMAKE_CONFIGURATION_TYPES "Release;Debug;MinSizeRel;RelWithDebInfo")
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING
