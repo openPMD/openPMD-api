@@ -122,9 +122,8 @@ namespace openPMD
 {
 namespace test
 {
-class structure : public TestHelper
+struct structure : public TestHelper
 {
-public:
     structure()
         : TestHelper()
     { }
@@ -254,9 +253,8 @@ namespace openPMD
 {
 namespace test
 {
-class AttributedWidget : public TestHelper
+struct AttributedWidget : public TestHelper
 {
-public:
     AttributedWidget()
         : TestHelper()
     { }
@@ -303,9 +301,8 @@ namespace openPMD
 {
 namespace test
 {
-class Dotty : public TestHelper
+struct Dotty : public TestHelper
 {
-public:
     Dotty()
         : TestHelper()
     {
