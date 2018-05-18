@@ -31,6 +31,7 @@ TEST_CASE( "git_hdf5_sample_structure_test", "[serial][hdf5]" )
 
         REQUIRE(!o.parent);
         REQUIRE(o.iterations.parent == getWritable(&o));
+        REQUIRE_THROWS_AS(o.iterations[42], std::out_of_range);
         REQUIRE(o.iterations[100].parent == getWritable(&o.iterations));
         REQUIRE(o.iterations[100].meshes.parent == getWritable(&o.iterations[100]));
         REQUIRE(o.iterations[100].meshes["E"].parent == getWritable(&o.iterations[100].meshes));
@@ -39,6 +40,7 @@ TEST_CASE( "git_hdf5_sample_structure_test", "[serial][hdf5]" )
         REQUIRE(o.iterations[100].meshes["E"]["z"].parent == getWritable(&o.iterations[100].meshes["E"]));
         REQUIRE(o.iterations[100].meshes["rho"].parent == getWritable(&o.iterations[100].meshes));
         REQUIRE(o.iterations[100].meshes["rho"][MeshRecordComponent::SCALAR].parent == getWritable(&o.iterations[100].meshes));
+        REQUIRE_THROWS_AS(o.iterations[100].meshes["cherries"], std::out_of_range);
         REQUIRE(o.iterations[100].particles.parent == getWritable(&o.iterations[100]));
         REQUIRE(o.iterations[100].particles["electrons"].parent == getWritable(&o.iterations[100].particles));
         REQUIRE(o.iterations[100].particles["electrons"]["charge"].parent == getWritable(&o.iterations[100].particles["electrons"]));
@@ -59,6 +61,12 @@ TEST_CASE( "git_hdf5_sample_structure_test", "[serial][hdf5]" )
         REQUIRE(o.iterations[100].particles["electrons"]["positionOffset"]["z"].parent == getWritable(&o.iterations[100].particles["electrons"]["positionOffset"]));
         REQUIRE(o.iterations[100].particles["electrons"]["weighting"].parent == getWritable(&o.iterations[100].particles["electrons"]));
         REQUIRE(o.iterations[100].particles["electrons"]["weighting"][RecordComponent::SCALAR].parent == getWritable(&o.iterations[100].particles["electrons"]));
+        REQUIRE_THROWS_AS(o.iterations[100].particles["electrons"]["numberOfLegs"], std::out_of_range);
+        REQUIRE_THROWS_AS(o.iterations[100].particles["apples"], std::out_of_range);
+
+        int32_t i32 = 32;
+        REQUIRE_THROWS(o.setAttribute("setAttributeFail", i32));
+
     } catch (no_such_file_error& e)
     {
         std::cerr << "git sample not accessible. (" << e.what() << ")\n";
@@ -744,7 +752,7 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
         PatchRecord& e_numParticles = e_patches["numParticles"];
         REQUIRE(e_numParticles.size() == 1);
         REQUIRE(e_numParticles.count(RecordComponent::SCALAR) == 1);
-        
+
         PatchRecordComponent& e_numParticles_scalar = e_numParticles[RecordComponent::SCALAR];
         REQUIRE(e_numParticles_scalar.getDatatype() == Datatype::UINT64);
 
@@ -828,7 +836,7 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
         s.setAttribute("vecString", std::vector< std::string >({"vector", "of", "strings"}));
         s.setAttribute("bool", true);
     }
-    
+
     Series s = Series("../samples/dtype_test.h5", AccessType::READ_ONLY);
 
     REQUIRE(s.getAttribute("char").get< char >() == 'c');
