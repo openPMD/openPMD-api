@@ -21,7 +21,6 @@
 #pragma once
 
 #include "openPMD/backend/Attributable.hpp"
-#include "openPMD/auxiliary/HasToString.hpp"
 
 #include <initializer_list>
 #include <type_traits>
@@ -72,12 +71,14 @@ class Container : public Attributable
     friend class ParticleSpecies;
     friend class Series;
 
+#if !defined(_MSC_VER)
     template< typename T_Key >
     auto out_of_range_msg(T_Key const& key) ->
-        typename std::enable_if< auxiliary::HasToString_t<T_Key>::value, std::string >::type
+        decltype(std::to_string(key))
     {
         return std::string("Key '") + std::to_string(key) + std::string("' does not exist (read-only).");
     }
+#endif
     template< typename T_Key >
     auto out_of_range_msg(T_Key const& key) ->
         decltype(std::string(key))
