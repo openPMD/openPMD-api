@@ -1,8 +1,10 @@
 #include <pybind11/pybind11.h>
-//include <pybind11/stl.h>
+#include <pybind11/stl.h>
 
 #include "openPMD/version.hpp"
 
+#include <string>
+#include <map>
 #include <sstream>
 
 namespace py = pybind11;
@@ -55,11 +57,12 @@ PYBIND11_MODULE(openPMD, m) {
         openPMDapi << "-" << OPENPMDAPI_VERSION_LABEL;
     m.attr("__version__") = openPMDapi.str();
 
-    // variants
-    m.attr("have_mpi") = bool(openPMD_HAVE_MPI);
-    m.attr("have_hdf5") = bool(openPMD_HAVE_HDF5);
-    m.attr("have_adios1") = bool(openPMD_HAVE_ADIOS1);
-    m.attr("have_adios2") = bool(openPMD_HAVE_ADIOS2);
-    // m.attr("have_json") = bool(openPMD_HAVE_JSON);
+    // feature variants
+    m.attr("variants") = std::map<std::string, bool>{
+        {"mpi", bool(openPMD_HAVE_MPI)},
+        {"hdf5", bool(openPMD_HAVE_HDF5)},
+        {"adios1", bool(openPMD_HAVE_ADIOS1)},
+        {"adios2", bool(openPMD_HAVE_ADIOS2)}
+    };
 }
 
