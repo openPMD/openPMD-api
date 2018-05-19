@@ -17,10 +17,18 @@ namespace auxiliary
     class OutOfRangeMsg
     {
         std::string m_name;
+        std::string m_description;
 
     public:
-        OutOfRangeMsg() : m_name("Key") {}
-        OutOfRangeMsg( std::string const name ) : m_name(name) {}
+        OutOfRangeMsg() :
+            m_name( "Key" ),
+            m_description( "does not exist (read-only)." )
+        {}
+        OutOfRangeMsg(
+            std::string const name,
+            std::string const description
+        ) :
+            m_name(name), m_description( description ) {}
 
         template<
             typename T_Key,
@@ -32,18 +40,18 @@ namespace auxiliary
         std::string operator()( T_Key const key ) const
         {
             return m_name + std::string(" '") + std::to_string( key ) +
-                   std::string( "' does not exist (read-only)." );
+                   std::string( "' " ) + m_description;
         }
 
         std::string operator()( std::string const key ) const
         {
             return m_name + std::string(" '") + std::string( key ) +
-                   std::string( "' does not exist (read-only)." );
+                   std::string( "' " ) + m_description;
         }
 
         std::string operator()( ... ) const
         {
-            return m_name + std::string( " does not exist (read-only)." );
+            return m_name + std::string( " " ) + m_description;
         }
     };
 

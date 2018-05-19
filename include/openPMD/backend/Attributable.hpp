@@ -208,7 +208,10 @@ Attributable::setAttribute(std::string const& key, T&& value)
 {
     if( IOHandler && AccessType::READ_ONLY == IOHandler->accessType )
     {
-        auxiliary::OutOfRangeMsg const out_of_range_msg("Attribute");
+        auxiliary::OutOfRangeMsg const out_of_range_msg(
+            "Attribute",
+            "can not be set (read-only)."
+        );
         throw no_such_attribute_error(out_of_range_msg(key));
     }
 
