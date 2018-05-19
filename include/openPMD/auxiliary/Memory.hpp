@@ -16,19 +16,19 @@ std::unique_ptr< void, std::function< void(void*) > >
 allocatePtr(Datatype dtype, Extent const& e);
 
 std::unique_ptr< void, std::function< void(void*) > >
-allocatePtr(Datatype dtype, size_t numPoints);
+allocatePtr(Datatype dtype, uint64_t numPoints);
 
 inline std::unique_ptr< void, std::function< void(void*) > >
 allocatePtr(Datatype dtype, Extent const& e)
 {
-  size_t numPoints = 1;
+  uint64_t numPoints = 1u;
   for( auto const& dimensionSize : e )
     numPoints *= dimensionSize;
   return allocatePtr(dtype, numPoints);
 }
 
 inline std::unique_ptr< void, std::function< void(void*) > >
-allocatePtr(Datatype dtype, size_t numPoints)
+allocatePtr(Datatype dtype, uint64_t numPoints)
 {
     void* data = nullptr;
     std::function< void(void*) > del = [](void*){};

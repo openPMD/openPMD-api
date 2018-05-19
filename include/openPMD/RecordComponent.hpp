@@ -108,7 +108,7 @@ RecordComponent::loadChunk(Offset const& o, Extent const& e, std::unique_ptr< T[
     else if( Allocation::USER == alloc && !data )
         throw std::runtime_error("Unallocated pointer passed with signaled user-allocation during chunk loading.");
 
-    size_t numPoints = 1;
+    uint64_t numPoints = 1u;
     for( auto const& dimensionSize : e )
         numPoints *= dimensionSize;
 
@@ -159,7 +159,7 @@ RecordComponent::loadChunk(Offset const& o, Extent const& e, std::unique_ptr< T[
 //                                     + " - Chunk: " + std::to_string(o[i] + e[i])
 //                                     + ")");
 //
-//    size_t numPoints = 1;
+//    uint64_t numPoints = 1u;
 //    for( auto const& dimensionSize : e )
 //        numPoints *= dimensionSize;
 //
