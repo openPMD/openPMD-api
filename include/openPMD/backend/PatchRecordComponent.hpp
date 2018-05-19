@@ -50,9 +50,9 @@ public:
     Extent getExtent() const;
 
     template< typename T >
-    void load(size_t idx, std::unique_ptr< T >&);
+    void load(uint64_t idx, std::unique_ptr< T >&);
     template< typename T >
-    void store(size_t idx, T);
+    void store(uint64_t idx, T);
 
 private:
     PatchRecordComponent();
@@ -66,7 +66,7 @@ private:
 
 template< typename T >
 inline void
-PatchRecordComponent::load(size_t idx, std::unique_ptr< T >& data)
+PatchRecordComponent::load(uint64_t idx, std::unique_ptr< T >& data)
 {
     Datatype dtype = determineDatatype< T >();
     if( dtype != getDatatype() )
@@ -92,7 +92,7 @@ PatchRecordComponent::load(size_t idx, std::unique_ptr< T >& data)
 
 template< typename T >
 inline void
-PatchRecordComponent::store(size_t idx, T data)
+PatchRecordComponent::store(uint64_t idx, T data)
 {
     Datatype dtype = determineDatatype< T >();
     if( dtype != getDatatype() )
