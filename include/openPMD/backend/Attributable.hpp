@@ -23,6 +23,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Writable.hpp"
+#include "openPMD/auxiliary/OutOfRangeMsg.hpp"
 
 #include <exception>
 #include <map>
@@ -74,25 +75,6 @@ class Attributable
     friend struct traits::GenerationPolicy;
     friend class Iteration;
     friend class Series;
-
-#if !defined(_MSC_VER)
-    template< typename T_Key >
-    auto out_of_range_msg(T_Key const& key) ->
-        decltype(std::to_string(key))
-    {
-        return std::string("Attribute '") + std::to_string(key) + std::string("' does not exist (read-only).");
-    }
-#endif
-    template< typename T_Key >
-    auto out_of_range_msg(T_Key const& key) ->
-        decltype(std::string(key))
-    {
-        return std::string("Attribute '") + std::string(key) + std::string("' does not exist (read-only).");
-    }
-    std::string out_of_range_msg(...)
-    {
-        return std::string("Attribute does not exist (read-only).");
-    }
 
 public:
     Attributable();
@@ -225,7 +207,10 @@ inline bool
 Attributable::setAttribute(std::string const& key, T&& value)
 {
     if( IOHandler && AccessType::READ_ONLY == IOHandler->accessType )
+    {
+        auxiliary::OutOfRangeMsg const out_of_range_msg("Attribute");
         throw no_such_attribute_error(out_of_range_msg(key));
+    }
 
     dirty = true;
     auto it = m_attributes->lower_bound(key);
