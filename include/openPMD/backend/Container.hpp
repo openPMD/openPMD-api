@@ -71,25 +71,6 @@ class Container : public Attributable
     friend class ParticleSpecies;
     friend class Series;
 
-#if !defined(_MSC_VER)
-    template< typename T_Key >
-    auto out_of_range_msg(T_Key const& key) ->
-        decltype(std::to_string(key))
-    {
-        return std::string("Key '") + std::to_string(key) + std::string("' does not exist (read-only).");
-    }
-#endif
-    template< typename T_Key >
-    auto out_of_range_msg(T_Key const& key) ->
-        decltype(std::string(key))
-    {
-        return std::string("Key '") + std::string(key) + std::string("' does not exist (read-only).");
-    }
-    std::string out_of_range_msg(...)
-    {
-        return std::string("Key does not exist (read-only).");
-    }
-
 public:
     using key_type = typename InternalContainer::key_type;
     using mapped_type = typename InternalContainer::mapped_type;
@@ -164,7 +145,10 @@ public:
         else
         {
             if( AccessType::READ_ONLY == IOHandler->accessType )
+            {
+                auxiliary::OutOfRangeMsg const out_of_range_msg;
                 throw std::out_of_range(out_of_range_msg(key));
+            }
 
             T t = T();
             t.linkHierarchy(m_writable);
@@ -188,7 +172,10 @@ public:
         else
         {
             if( AccessType::READ_ONLY == IOHandler->accessType )
+            {
+                auxiliary::OutOfRangeMsg out_of_range_msg;
                 throw std::out_of_range(out_of_range_msg(key));
+            }
 
             T t = T();
             t.linkHierarchy(m_writable);
