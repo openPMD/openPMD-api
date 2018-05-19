@@ -23,10 +23,8 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Writable.hpp"
-#include "openPMD/auxiliary/HasToString.hpp"
 
 #include <exception>
-#include <type_traits>
 #include <map>
 #include <memory>
 #include <vector>
@@ -77,12 +75,14 @@ class Attributable
     friend class Iteration;
     friend class Series;
 
+#if !defined(_MSC_VER)
     template< typename T_Key >
     auto out_of_range_msg(T_Key const& key) ->
-        typename std::enable_if< auxiliary::HasToString_t<T_Key>::value, std::string >::type
+        decltype(std::to_string(key))
     {
         return std::string("Attribute '") + std::to_string(key) + std::string("' does not exist (read-only).");
     }
+#endif
     template< typename T_Key >
     auto out_of_range_msg(T_Key const& key) ->
         decltype(std::string(key))
