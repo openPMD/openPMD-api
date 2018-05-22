@@ -170,7 +170,7 @@ Attributable::readAttributes()
         try
         {
             IOHandler->flush();
-        } catch( unsupported_data_error e )
+        } catch( unsupported_data_error const& e )
         {
             std::cerr << "Skipping non-standard attribute "
                       << att << " ("
@@ -275,9 +275,9 @@ Attributable::linkHierarchy(std::shared_ptr< Writable > const& w)
     auto handler = w->IOHandler;
     m_writable->IOHandler = handler;
     this->IOHandler = handler.get();
-    auto parent = w.get();
-    m_writable->parent = parent;
-    this->parent = parent;
+    auto writable = w.get();
+    m_writable->parent = writable;
+    this->parent = writable;
 }
 
 

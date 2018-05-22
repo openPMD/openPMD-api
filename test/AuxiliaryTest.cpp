@@ -2,8 +2,11 @@
 
 #if openPMD_HAVE_INVASIVE_TESTS
 /* make Writable::parent visible for hierarchy check */
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wkeyword-macro"
 #   define protected public
 #   define private public
+#   pragma clang diagnostic pop
 #endif
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/backend/Attributable.hpp"

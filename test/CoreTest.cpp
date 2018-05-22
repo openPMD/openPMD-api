@@ -2,8 +2,11 @@
 
 #if openPMD_HAVE_INVASIVE_TESTS
 /* make Writable::parent, Writable::IOHandler visible for structure_test */
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wkeyword-macro"
 #   define protected public
 #   define private public
+#   pragma clang diagnostic pop
 #endif
 #include "openPMD/openPMD.hpp"
 #if openPMD_HAVE_INVASIVE_TESTS

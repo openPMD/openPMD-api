@@ -207,8 +207,8 @@ public:
      * @param   iterationFormat String with the iteration regex <CODE>\%T</CODE> defining either
      *                          the series of files (fileBased)
      *                          or the series of groups within a single file (groupBased)
-     *                          that allows to extract the iteration from it.\n
-     *                          For fileBased formats the iteration must be included in the file name.\n
+     *                          that allows to extract the iteration from it.
+     *                          For fileBased formats the iteration must be included in the file name.
      *                          The format depends on the selected iterationEncoding method.
      * @return  Reference to modified series.
      */

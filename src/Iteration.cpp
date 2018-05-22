@@ -341,9 +341,9 @@ Iteration::read()
 }
 
 void
-Iteration::linkHierarchy(std::shared_ptr< Writable > const& parent)
+Iteration::linkHierarchy(std::shared_ptr< Writable > const& w)
 {
-    Attributable::linkHierarchy(parent);
+    Attributable::linkHierarchy(w);
     meshes.linkHierarchy(m_writable);
     particles.linkHierarchy(m_writable);
 }
