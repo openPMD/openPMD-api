@@ -55,8 +55,9 @@ class Writable
     >
     friend class Container;
     friend class Iteration;
-    friend class Series;
     friend class ParticleSpecies;
+    friend class Series;
+    friend class Record;
     friend class ADIOS1IOHandlerImpl;
     friend class ParallelADIOS1IOHandlerImpl;
     friend class ADIOS2IOHandlerImpl;

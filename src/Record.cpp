@@ -54,8 +54,10 @@ Record::flush(std::string const& name)
         if( *m_containsScalar )
         {
             RecordComponent& r = at(RecordComponent::SCALAR);
+            r.m_writable->parent = parent;
             r.parent = parent;
             r.flush(name);
+            m_writable->abstractFilePosition = r.m_writable->abstractFilePosition;
             abstractFilePosition = r.abstractFilePosition;
             written = true;
         } else
