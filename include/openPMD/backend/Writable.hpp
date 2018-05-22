@@ -55,6 +55,7 @@ class Writable
     >
     friend class Container;
     friend class Iteration;
+    friend class Mesh;
     friend class ParticleSpecies;
     friend class Series;
     friend class Record;
