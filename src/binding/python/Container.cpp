@@ -178,6 +178,16 @@ namespace detail
             &Map::size
         );
 
+        cl.def(
+            "_ipython_key_completions_",
+            []( Map & m ) {
+                auto l = py::list();
+                for( const auto &myPair : m )
+                    l.append( myPair.first );
+                return l;
+            }
+        );
+
         return cl;
     }
 } // namespace detail
