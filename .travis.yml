@@ -93,6 +93,7 @@ jobs:
         - make install
         # - make package
         # - dpkg -i openPMD*.deb
+        - ls -R $HOME/openPMD-test-install | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'
     - <<: *test-cpp-unit
       env:
         - USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
