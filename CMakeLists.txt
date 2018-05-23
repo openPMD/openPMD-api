@@ -486,7 +486,7 @@ if(openPMD_HAVE_PYTHON)
         DESTINATION ${CMAKE_INSTALL_PYTHONDIR}
     )
 endif()
-install(DIRECTORY "${openPMD_SOURCE_DIR}/include"
+install(DIRECTORY "${openPMD_SOURCE_DIR}/include/openPMD"
     DESTINATION include
 )
 # install third-party libraries
