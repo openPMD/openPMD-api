@@ -487,12 +487,12 @@ if(openPMD_HAVE_PYTHON)
     )
 endif()
 install(DIRECTORY "${openPMD_SOURCE_DIR}/include"
-    DESTINATION include
+    DESTINATION .
 )
 # install third-party libraries
 if(openPMD_USE_INTERNAL_VARIANT)
     install(DIRECTORY "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include/mpark"
-        DESTINATION include
+        DESTINATION .
     )
 endif()
 
