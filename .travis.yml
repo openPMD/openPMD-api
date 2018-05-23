@@ -12,7 +12,7 @@ cache:
 env:
   global:
     - BUILD: ~/buildTmp
-    - CXXFLAGS: "-std=c++11 -Wall -Wextra -Woverloaded-virtual -Wshadow"
+    - CXXFLAGS: "-std=c++11"
     - SPACK_ROOT: $HOME/.cache/spack
     - PATH: $PATH:$HOME/.cache/spack/bin
 
@@ -77,7 +77,7 @@ jobs:
         - if [ ! -d samples/git-sample/ ]; then
              $TRAVIS_BUILD_DIR/.travis/download_samples.sh;
           fi
-        - CXXFLAGS=$CXXFLAGS CXX=$CXX CC=$CC
+        - CXXFLAGS="-Werror" CXX=$CXX CC=$CC
           cmake
             -DCMAKE_BUILD_TYPE=Debug
             -DopenPMD_USE_MPI=$USE_MPI
