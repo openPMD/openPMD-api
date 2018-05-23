@@ -59,11 +59,11 @@ ParticleSpecies::read()
             IOHandler->enqueue(IOTask(&r, aList));
             IOHandler->flush();
 
-            auto begin = aList.attributes->begin();
-            auto end = aList.attributes->end();
-            auto value = std::find(begin, end, "value");
-            auto shape = std::find(begin, end, "shape");
-            if( value != end && shape != end )
+            auto attrBegin = aList.attributes->begin();
+            auto attrEnd = aList.attributes->end();
+            auto value = std::find(attrBegin, attrEnd, "value");
+            auto shape = std::find(attrBegin, attrEnd, "shape");
+            if( value != attrEnd && shape != attrEnd )
             {
                 RecordComponent& rc = r[RecordComponent::SCALAR];
                 *rc.m_isConstant = true;

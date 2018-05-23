@@ -136,7 +136,7 @@ struct structure : public TestHelper
     float float_ = 3.14f;
 
     std::string text() const { return variantSrc::get< std::string >(getAttribute("text").getResource()); }
-    structure& setText(std::string text) { setAttribute("text", text); return *this; }
+    structure& setText(std::string newText) { setAttribute("text", newText); return *this; }
 };
 } // test
 } // openPMD

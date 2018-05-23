@@ -51,21 +51,21 @@ Iteration::Iteration(Iteration const& i)
 
 template< typename T >
 Iteration&
-Iteration::setTime(T time)
+Iteration::setTime(T newTime)
 {
     static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
 
-    setAttribute("time", time);
+    setAttribute("time", newTime);
     return *this;
 }
 
 template< typename T >
 Iteration&
-Iteration::setDt(T dt)
+Iteration::setDt(T newDt)
 {
     static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
 
-    setAttribute("dt", dt);
+    setAttribute("dt", newDt);
     return *this;
 }
 
@@ -76,9 +76,9 @@ Iteration::timeUnitSI() const
 }
 
 Iteration&
-Iteration::setTimeUnitSI(double timeUnitSI)
+Iteration::setTimeUnitSI(double newTimeUnitSI)
 {
-    setAttribute("timeUnitSI", timeUnitSI);
+    setAttribute("timeUnitSI", newTimeUnitSI);
     return *this;
 }
 

@@ -154,15 +154,15 @@ Attributable::readAttributes()
     std::sort(aList.attributes->begin(), aList.attributes->end());
     std::sort(written_attributes.begin(), written_attributes.end());
 
-    std::set< std::string > attributes;
+    std::set< std::string > tmpAttributes;
     std::set_difference(aList.attributes->begin(), aList.attributes->end(),
                         written_attributes.begin(), written_attributes.end(),
-                        std::inserter(attributes, attributes.begin()));
+                        std::inserter(tmpAttributes, tmpAttributes.begin()));
 
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
 
-    for( auto const& att_name : attributes )
+    for( auto const& att_name : tmpAttributes )
     {
         aRead.name = att_name;
         std::string att = auxiliary::strip(att_name, {'\0'});
