@@ -1266,22 +1266,22 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
             case adios_real:
             {
                 dtype = DT::VEC_FLOAT;
-                auto f = reinterpret_cast< float* >(data);
+                auto f4 = reinterpret_cast< float* >(data);
                 std::vector< float > vf;
                 vf.resize(size);
                 for( int i = 0; i < size; ++i )
-                    vf[i] = f[i];
+                    vf[i] = f4[i];
                 a = Attribute(vf);
                 break;
             }
             case adios_double:
             {
                 dtype = DT::VEC_DOUBLE;
-                auto d = reinterpret_cast< double* >(data);
+                auto d8 = reinterpret_cast< double* >(data);
                 std::vector< double > vd;
                 vd.resize(size);
                 for( int i = 0; i < size; ++i )
-                    vd[i] = d[i];
+                    vd[i] = d8[i];
                 a = Attribute(vd);
                 break;
             }
@@ -1343,8 +1343,8 @@ ADIOS1IOHandlerImpl::listPaths(Writable* writable,
     std::unordered_set< std::string > paths;
     for( int i = 0; i < f->nvars; ++i )
     {
-        char* c = f->var_namelist[i];
-        std::string s(c, std::strlen(c));
+        char* str = f->var_namelist[i];
+        std::string s(str, std::strlen(str));
         if( auxiliary::starts_with(s, name) )
         {
             /* remove the writable's path from the name */
@@ -1359,8 +1359,8 @@ ADIOS1IOHandlerImpl::listPaths(Writable* writable,
     }
     for( int i = 0; i < f->nattrs; ++i )
     {
-        char* c = f->attr_namelist[i];
-        std::string s(c, std::strlen(c));
+        char* str = f->attr_namelist[i];
+        std::string s(str, std::strlen(str));
         if( auxiliary::starts_with(s, name) )
         {
             /* remove the writable's path from the name */
@@ -1391,8 +1391,8 @@ ADIOS1IOHandlerImpl::listDatasets(Writable* writable,
     std::unordered_set< std::string > paths;
     for( int i = 0; i < f->nvars; ++i )
     {
-        char* c = f->var_namelist[i];
-        std::string s(c, std::strlen(c));
+        char* str = f->var_namelist[i];
+        std::string s(str, std::strlen(str));
         if( auxiliary::starts_with(s, name) )
         {
             /* remove the writable's path from the name */
@@ -1441,8 +1441,8 @@ ADIOS1IOHandlerImpl::listAttributes(Writable* writable,
         std::unordered_set< std::string > attributes;
         for( int i = 0; i < f->nattrs; ++i )
         {
-            char* c = f->attr_namelist[i];
-            std::string s(c, std::strlen(c));
+            char* str = f->attr_namelist[i];
+            std::string s(str, std::strlen(str));
             if( auxiliary::starts_with(s, name) )
             {
                 /* remove the writable's path from the name */

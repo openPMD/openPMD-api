@@ -66,7 +66,7 @@ int main()
                 std::cout << '\t' << val << '\n';
             std::cout << '\n';
 
-            std::string prefix = std::to_string(i.first) + '.' + m.first;
+            std::string meshPrefix = std::to_string(i.first) + '.' + m.first;
             std::string axisLabels = "";
             for( auto const& val : m.second.axisLabels() )
                 axisLabels += val + ", ";
@@ -79,14 +79,14 @@ int main()
             std::string unitDimension = "";
             for( auto const& val : m.second.unitDimension() )
                 unitDimension += std::to_string(val) + ", ";
-            std::cout << prefix << ".geometry - " << m.second.geometry() << '\n'
-                      << prefix << ".dataOrder - " << m.second.dataOrder() << '\n'
-                      << prefix << ".axisLabels - " << axisLabels << '\n'
-                      << prefix << ".gridSpacing - " << gridSpacing << '\n'
-                      << prefix << ".gridGlobalOffset - " << gridGlobalOffset << '\n'
-                      << prefix << ".gridUnitSI - " << m.second.gridUnitSI() << '\n'
-                      << prefix << ".unitDimension - " << unitDimension << '\n'
-                      << prefix << ".timeOffset - " << m.second.timeOffset< float >() << '\n'
+            std::cout << meshPrefix << ".geometry - " << m.second.geometry() << '\n'
+                      << meshPrefix << ".dataOrder - " << m.second.dataOrder() << '\n'
+                      << meshPrefix << ".axisLabels - " << axisLabels << '\n'
+                      << meshPrefix << ".gridSpacing - " << gridSpacing << '\n'
+                      << meshPrefix << ".gridGlobalOffset - " << gridGlobalOffset << '\n'
+                      << meshPrefix << ".gridUnitSI - " << m.second.gridUnitSI() << '\n'
+                      << meshPrefix << ".unitDimension - " << unitDimension << '\n'
+                      << meshPrefix << ".timeOffset - " << m.second.timeOffset< float >() << '\n'
                       << '\n';
 
             std::cout << "Read recordComponents for mesh " << m.first << ":\n";
@@ -101,12 +101,12 @@ int main()
                     std::cout << '\t' << val << '\n';
                 std::cout << '\n';
 
-                std::string prefix = std::to_string(i.first) + '.' + m.first + '.' + rc.first;
+                std::string componentPrefix = std::to_string(i.first) + '.' + m.first + '.' + rc.first;
                 std::string position = "";
                 for( auto const& val : rc.second.position< double >() )
                     position += std::to_string(val) + ", ";
-                std::cout << prefix << ".unitSI - " << rc.second.unitSI() << '\n'
-                          << prefix << ".position - " << position << '\n'
+                std::cout << componentPrefix << ".unitSI - " << rc.second.unitSI() << '\n'
+                          << componentPrefix << ".position - " << position << '\n'
                           << '\n';
             }
         }

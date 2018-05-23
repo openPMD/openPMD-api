@@ -161,10 +161,10 @@ Mesh::setUnitDimension(std::map< UnitDimension, double > const& udim)
 {
     if( !udim.empty() )
     {
-        std::array< double, 7 > unitDimension = this->unitDimension();
+        std::array< double, 7 > tmpUnitDimension = this->unitDimension();
         for( auto const& entry : udim )
-            unitDimension[static_cast<uint8_t>(entry.first)] = entry.second;
-        setAttribute("unitDimension", unitDimension);
+            tmpUnitDimension[static_cast<uint8_t>(entry.first)] = entry.second;
+        setAttribute("unitDimension", tmpUnitDimension);
     }
     return *this;
 }
@@ -224,17 +224,17 @@ Mesh::read()
     IOHandler->flush();
     if( *aRead.dtype == DT::STRING )
     {
-        std::string geometry = Attribute(*aRead.resource).get< std::string >();
-        if( "cartesian" == geometry )
+        std::string tmpGeometry = Attribute(*aRead.resource).get< std::string >();
+        if( "cartesian" == tmpGeometry )
             setGeometry(Geometry::cartesian);
-        else if( "thetaMode" == geometry )
+        else if( "thetaMode" == tmpGeometry )
             setGeometry(Geometry::thetaMode);
-        else if( "cylindrical" == geometry )
+        else if( "cylindrical" == tmpGeometry )
             setGeometry(Geometry::cylindrical);
-        else if( "spherical" == geometry )
+        else if( "spherical" == tmpGeometry )
             setGeometry(Geometry::spherical);
         else
-            throw std::runtime_error("Unkonwn geometry " + geometry);
+            throw std::runtime_error("Unkonwn geometry " + tmpGeometry);
     }
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'geometry'");
@@ -246,11 +246,11 @@ Mesh::read()
         setDataOrder(static_cast<DataOrder>(Attribute(*aRead.resource).get< char >()));
     else if( *aRead.dtype == DT::STRING )
     {
-        std::string dataOrder = Attribute(*aRead.resource).get< std::string >();
-        if( dataOrder.size() == 1 )
-            setDataOrder(static_cast<DataOrder>(dataOrder[0]));
+        std::string tmpDataOrder = Attribute(*aRead.resource).get< std::string >();
+        if( tmpDataOrder.size() == 1 )
+            setDataOrder(static_cast<DataOrder>(tmpDataOrder[0]));
         else
-            throw std::runtime_error("Unexpected Attribute value for 'dataOrder': " + dataOrder);
+            throw std::runtime_error("Unexpected Attribute value for 'dataOrder': " + tmpDataOrder);
     }
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'dataOrder'");

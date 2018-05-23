@@ -69,33 +69,6 @@ include(CTest)
 # automatically defines: BUILD_TESTING, default is ON
 
 
-# Warnings ####################################################################
-#
-# TODO: LEGACY! Use CMake TOOLCHAINS instead!
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,memory,undefined")
-    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
-    string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} "
-                  "-Wno-weak-vtables -Wno-padded -Wno-switch-enum "
-                  "-Wno-undefined-func-template -Wno-c++98-compat-pedantic")
-    # silence HDF5 (FIXME: -isystem should be enough)
-    string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} "
-                  "-Wno-reserved-id-macro -Wno-deprecated -Wno-old-style-cast "
-                  "-Wno-cpp")
-    # older clangs: silence unknown warnings
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-warning-option")
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
-    # silence BOOST filesystem
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-cpp")
-elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-    # Warning C4503: "decorated name length exceeded, name was truncated"
-    # Symbols longer than 4096 chars are truncated
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4503")
-endif ()
-
-
 # Dependencies ################################################################
 #
 # external library: Boost (mandatory)
@@ -142,7 +115,7 @@ if(openPMD_HAVE_MPI AND openPMD_HAVE_HDF5 AND NOT HDF5_IS_PARALLEL)
         "to disable HDF5 or provide a parallel install of HDF5.")
 endif()
 # HDF5 includes mpi.h in the public header H5public.h if HDF5_IS_PARALLEL
-if(HDF5_IS_PARALLEL AND NOT openPMD_HAVE_MPI)
+if(openPMD_HAVE_HDF5 AND HDF5_IS_PARALLEL AND NOT openPMD_HAVE_MPI)
     message(FATAL_ERROR
         "Found only parallel version of HDF5 but no MPI. Either set "
         "openPMD_USE_MPI=ON to force using MPI or set openPMD_USE_HDF5=OFF "
@@ -454,6 +427,42 @@ foreach(examplename ${openPMD_EXAMPLE_NAMES})
         target_link_libraries(${examplename} PRIVATE openPMD)
     endif()
 endforeach()
+
+
+# Warnings ####################################################################
+#
+# TODO: LEGACY! Use CMake TOOLCHAINS instead!
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,memory,undefined")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
+    # pybind11 does not fix -Wshadow https://github.com/pybind/pybind11/issues/1267
+    if(NOT openPMD_HAVE_PYTHON)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wshadow")
+    endif()
+    string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} "
+            "-Wno-unknown-pragmas")
+    # silence HDF5 (FIXME: -isystem should be enough)
+    string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} "
+                  "-Wno-reserved-id-macro -Wno-deprecated -Wno-old-style-cast "
+                  "-Wno-cpp")
+    # older clangs: silence unknown warnings
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-warning-option")
+elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
+    # pybind11 does not fix -Wshadow https://github.com/pybind/pybind11/issues/1267
+    if(NOT openPMD_HAVE_PYTHON)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wshadow")
+    endif()
+    string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} "
+            "-Wno-unknown-pragmas")
+    # silence BOOST filesystem
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-cpp")
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    # Warning C4503: "decorated name length exceeded, name was truncated"
+    # Symbols longer than 4096 chars are truncated
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4503")
+endif ()
 
 
 # Generate Files with Configuration Options ###################################

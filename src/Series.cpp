@@ -60,33 +60,33 @@ Series::Series(std::string const& filepath,
         : iterations{Container< Iteration, uint64_t >()},
           m_iterationEncoding{std::make_shared< IterationEncoding >()}
 {
-    std::string path;
-    std::string name;
+    std::string newPath;
+    std::string newName;
     auto const pos = filepath.find_last_of('/');
     if( std::string::npos == pos )
     {
-        path = "./";
-        name = filepath;
+        newPath = "./";
+        newName = filepath;
     }
     else
     {
-        path = filepath.substr(0, pos + 1);
-        name = filepath.substr(pos + 1);
+        newPath = filepath.substr(0, pos + 1);
+        newName = filepath.substr(pos + 1);
     }
 
     IterationEncoding ie;
-    if( std::string::npos != name.find("%T") )
+    if( std::string::npos != newName.find("%T") )
         ie = IterationEncoding::fileBased;
     else
         ie = IterationEncoding::groupBased;
 
-    m_format = std::make_shared< Format >(determineFormat(name));
+    m_format = std::make_shared< Format >(determineFormat(newName));
 
-    m_writable->IOHandler = AbstractIOHandler::createIOHandler(path, at, *m_format, comm);
+    m_writable->IOHandler = AbstractIOHandler::createIOHandler(newPath, at, *m_format, comm);
     IOHandler = m_writable->IOHandler.get();
     iterations.linkHierarchy(m_writable);
 
-    m_name = std::make_shared< std::string >(cleanFilename(name, *m_format));
+    m_name = std::make_shared< std::string >(cleanFilename(newName, *m_format));
 
     switch( at )
     {
@@ -125,33 +125,33 @@ Series::Series(std::string const& filepath,
         : iterations{Container< Iteration, uint64_t >()},
           m_iterationEncoding{std::make_shared< IterationEncoding >()}
 {
-    std::string path;
-    std::string name;
+    std::string newPath;
+    std::string newName;
     auto const pos = filepath.find_last_of('/');
     if( std::string::npos == pos )
     {
-        path = "./";
-        name = filepath;
+        newPath = "./";
+        newName = filepath;
     }
     else
     {
-        path = filepath.substr(0, pos + 1);
-        name = filepath.substr(pos + 1);
+        newPath = filepath.substr(0, pos + 1);
+        newName = filepath.substr(pos + 1);
     }
 
     IterationEncoding ie;
-    if( std::string::npos != name.find("%T") )
+    if( std::string::npos != newName.find("%T") )
         ie = IterationEncoding::fileBased;
     else
         ie = IterationEncoding::groupBased;
 
-    m_format = std::make_shared< Format >(determineFormat(name));
+    m_format = std::make_shared< Format >(determineFormat(newName));
 
-    m_writable->IOHandler = AbstractIOHandler::createIOHandler(path, at, *m_format);
+    m_writable->IOHandler = AbstractIOHandler::createIOHandler(newPath, at, *m_format);
     IOHandler = m_writable->IOHandler.get();
     iterations.linkHierarchy(m_writable);
 
-    m_name = std::make_shared< std::string >(cleanFilename(name, *m_format));
+    m_name = std::make_shared< std::string >(cleanFilename(newName, *m_format));
 
     switch( at )
     {
@@ -334,9 +334,9 @@ Series::softwareDependencies() const
 }
 
 Series&
-Series::setSoftwareDependencies(std::string const &softwareDependencies)
+Series::setSoftwareDependencies(std::string const &newSoftwareDependencies)
 {
-    setAttribute("softwareDependencies", softwareDependencies);
+    setAttribute("softwareDependencies", newSoftwareDependencies);
     return *this;
 }
 
@@ -347,9 +347,9 @@ Series::machine() const
 }
 
 Series&
-Series::setMachine(std::string const &machine)
+Series::setMachine(std::string const &newMachine)
 {
-    setAttribute("machine", machine);
+    setAttribute("machine", newMachine);
     return *this;
 }
 

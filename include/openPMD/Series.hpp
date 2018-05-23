@@ -170,10 +170,10 @@ public:
     std::string softwareDependencies() const;
     /** Indicate dependencies of software that were used to create the file.
      *
-     * @param   softwareDependencies    String indicating dependencies of software that were used to create the file (semicolon-separated list if needed).
+     * @param   newSoftwareDependencies String indicating dependencies of software that were used to create the file (semicolon-separated list if needed).
      * @return  Reference to modified series.
      */
-    Series& setSoftwareDependencies(std::string const& softwareDependencies);
+    Series& setSoftwareDependencies(std::string const& newSoftwareDependencies);
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
@@ -182,10 +182,10 @@ public:
     std::string machine() const;
     /** Indicate the machine or relevant hardware that created the file.
      *
-     * @param   machine String indicating the machine or relevant hardware that created the file (semicolon-separated list if needed)..
+     * @param   newMachine String indicating the machine or relevant hardware that created the file (semicolon-separated list if needed)..
      * @return  Reference to modified series.
      */
-    Series& setMachine(std::string const& machine);
+    Series& setMachine(std::string const& newMachine);
 
     /**
      * @return  Current encoding style for multiple iterations in this series.
@@ -207,8 +207,8 @@ public:
      * @param   iterationFormat String with the iteration regex <CODE>\%T</CODE> defining either
      *                          the series of files (fileBased)
      *                          or the series of groups within a single file (groupBased)
-     *                          that allows to extract the iteration from it.\n
-     *                          For fileBased formats the iteration must be included in the file name.\n
+     *                          that allows to extract the iteration from it.
+     *                          For fileBased formats the iteration must be included in the file name.
      *                          The format depends on the selected iterationEncoding method.
      * @return  Reference to modified series.
      */

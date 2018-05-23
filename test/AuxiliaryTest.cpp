@@ -2,8 +2,11 @@
 
 #if openPMD_HAVE_INVASIVE_TESTS
 /* make Writable::parent visible for hierarchy check */
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wkeyword-macro"
 #   define protected public
 #   define private public
+#   pragma clang diagnostic pop
 #endif
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/backend/Attributable.hpp"
@@ -133,7 +136,7 @@ struct structure : public TestHelper
     float float_ = 3.14f;
 
     std::string text() const { return variantSrc::get< std::string >(getAttribute("text").getResource()); }
-    structure& setText(std::string text) { setAttribute("text", text); return *this; }
+    structure& setText(std::string newText) { setAttribute("text", newText); return *this; }
 };
 } // test
 } // openPMD
