@@ -69,36 +69,6 @@ include(CTest)
 # automatically defines: BUILD_TESTING, default is ON
 
 
-# Warnings ####################################################################
-#
-# TODO: LEGACY! Use CMake TOOLCHAINS instead!
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,memory,undefined")
-    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Wshadow")
-    string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} "
-            "-Wno-unknown-pragmas")
-    # silence HDF5 (FIXME: -isystem should be enough)
-    string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} "
-                  "-Wno-reserved-id-macro -Wno-deprecated -Wno-old-style-cast "
-                  "-Wno-cpp")
-    # older clangs: silence unknown warnings
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-warning-option")
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Wshadow")
-    string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} "
-            "-Wno-unknown-pragmas")
-    # silence BOOST filesystem
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-cpp")
-elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-    # Warning C4503: "decorated name length exceeded, name was truncated"
-    # Symbols longer than 4096 chars are truncated
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4503")
-else ()
-    message(WARNING "Your compiler is not tested! If you run into issues, we'd welcome any patches.")
-endif ()
-
-
 # Dependencies ################################################################
 #
 # external library: Boost (mandatory)
@@ -457,6 +427,42 @@ foreach(examplename ${openPMD_EXAMPLE_NAMES})
         target_link_libraries(${examplename} PRIVATE openPMD)
     endif()
 endforeach()
+
+
+# Warnings ####################################################################
+#
+# TODO: LEGACY! Use CMake TOOLCHAINS instead!
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address,memory,undefined")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
+    # pybind11 does not fix -Wshadow https://github.com/pybind/pybind11/issues/1267
+    if(NOT openPMD_HAVE_PYTHON)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wshadow")
+    endif()
+    string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} "
+            "-Wno-unknown-pragmas")
+    # silence HDF5 (FIXME: -isystem should be enough)
+    string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} "
+                  "-Wno-reserved-id-macro -Wno-deprecated -Wno-old-style-cast "
+                  "-Wno-cpp")
+    # older clangs: silence unknown warnings
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-warning-option")
+elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
+    # pybind11 does not fix -Wshadow https://github.com/pybind/pybind11/issues/1267
+    if(NOT openPMD_HAVE_PYTHON)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wshadow")
+    endif()
+    string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} "
+            "-Wno-unknown-pragmas")
+    # silence BOOST filesystem
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-cpp")
+elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    # Warning C4503: "decorated name length exceeded, name was truncated"
+    # Symbols longer than 4096 chars are truncated
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4503")
+endif ()
 
 
 # Generate Files with Configuration Options ###################################
