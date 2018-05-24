@@ -7,7 +7,7 @@ Authors: Axel Huebl
 License: LGPLv3+
 """
 import openPMD
-# import numpy as np
+import numpy as np
 
 
 if __name__ == "__main__":
@@ -15,14 +15,14 @@ if __name__ == "__main__":
     size = 3
 
     # matrix dataset to write with values 0...size*size-1
-    # global_data = np.range(size*size, dtype=np.double)
+    global_data = np.arange(size*size, dtype=np.double)
 
     print("Set up a 2D square array ({0}x{1}) that will be written".format(
         size, size))
 
     # open file for writing
     series = openPMD.Series(
-        "../samples/3_write_serial.h5",
+        "../samples/3_write_serial_py.h5",
         openPMD.Access_Type.create
     )
 
@@ -48,8 +48,9 @@ if __name__ == "__main__":
 
     # offset = openPMD.Offset([0, 0])
     offset = openPMD.Extent([0, 0])
-    # TODO implement binding
-    # E.storeChunk(offset, extent, global_data)
+    # TODO implement slicing protocol
+    # E[offset[0]:extent[0], offset[1]:extent[1]] = global_data
+    E.store_chunk(offset, extent, global_data)
     print("Stored the whole Dataset contents as a single chunk, " +
           "ready to write content")
 

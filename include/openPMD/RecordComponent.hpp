@@ -171,6 +171,7 @@ RecordComponent::storeChunk(Offset o, Extent e, std::shared_ptr<T> data)
     if( *m_isConstant )
         throw std::runtime_error("Chunks can not be written for a constant RecordComponent.");
     Datatype dtype = determineDatatype(data);
+    std::cout << dtype << " " << getDatatype() << std::endl;
     if( dtype != getDatatype() )
         throw std::runtime_error("Datatypes of chunk and dataset do not match.");
     uint8_t dim = getDimensionality();

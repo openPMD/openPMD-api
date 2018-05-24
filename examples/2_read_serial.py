@@ -41,9 +41,10 @@ if __name__ == "__main__":
     # chunk_data = E_x[1:3, 1:3, 1:2]
     # print("Queued the loading of a single chunk from disk, "
     #       "ready to execute")
-    # series.flush()
+    series.flush()
     # print("Chunk has been read from disk\n"
     #       "Read chunk contains:")
+    # print(chunk_data)
     # for row in range(2):
     #     for col in range(2):
     #         print("\t({0}|{1}|{2})\t{3}".format(
