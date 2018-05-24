@@ -27,7 +27,7 @@ Initial backends will include ADIOS and HDF5.
 
 // ...
 
-auto s = openPMD::Series("output_files/data%T.h5", AccessType::READ_ONLY);
+auto s = openPMD::Series("output_files/data%T.h5", openPMD::AccessType::READ_ONLY);
 
 std::cout << "Read iterations...";
 for( auto const& i : s.iterations )
