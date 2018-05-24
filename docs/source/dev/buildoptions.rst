@@ -36,7 +36,7 @@ CMake Option                     Values      Installs Library       Version
 ================================ =========== ======== ============= ========
 
 By default, this will build as a static library (``libopenPMD.a``) and installs also its headers.
-In order to build a static library, append ``-DBUILD_SHARED_LIBS=ON`` to the ``cmake`` command.
+In order to build a shared library, append ``-DBUILD_SHARED_LIBS=ON`` to the ``cmake`` command.
 You can only build a static or a shared library at a time.
 
 By default, the ``Release`` version is built.
