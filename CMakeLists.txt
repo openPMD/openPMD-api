@@ -17,14 +17,12 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 # install directories
-set(CMAKE_INSTALL_BINDIR bin)
-set(CMAKE_INSTALL_INCLUDEDIR include)
+include(GNUInstallDirs)
+set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/openPMD"
+    CACHE PATH "CMake config package location for installed targets")
 if(WIN32)
     set(CMAKE_INSTALL_LIBDIR Lib)
-    set(CMAKE_INSTALL_CMAKEDIR cmake)
-else()
-    set(CMAKE_INSTALL_LIBDIR lib)
-    set(CMAKE_INSTALL_CMAKEDIR ${CMAKE_INSTALL_LIBDIR}/cmake/openPMD)
+    set(CMAKE_INSTALL_CMAKEDIR "cmake")
 endif()
 
 
@@ -487,8 +485,8 @@ write_basic_package_version_file("openPMDConfigVersion.cmake"
 install(TARGETS openPMD EXPORT openPMDTargets
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 if(openPMD_HAVE_PYTHON)
     install(TARGETS openPMD.py
@@ -496,12 +494,12 @@ if(openPMD_HAVE_PYTHON)
     )
 endif()
 install(DIRECTORY "${openPMD_SOURCE_DIR}/include/openPMD"
-    DESTINATION include
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 # install third-party libraries
 if(openPMD_USE_INTERNAL_VARIANT)
     install(DIRECTORY "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include/mpark"
-        DESTINATION include
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 endif()
 
@@ -509,13 +507,13 @@ endif()
 install(EXPORT openPMDTargets
     FILE openPMDTargets.cmake
     NAMESPACE openPMD::
-    DESTINATION lib/cmake/openPMD
+    DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
 )
 install(
     FILES
         ${openPMD_BINARY_DIR}/openPMDConfig.cmake
         ${openPMD_BINARY_DIR}/openPMDConfigVersion.cmake
-    DESTINATION lib/cmake/openPMD
+    DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
 )
 
 
