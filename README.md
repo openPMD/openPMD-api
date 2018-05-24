@@ -118,7 +118,7 @@ Optional language bindings:
 
 ## Installation
 
-[![Spack Package](https://img.shields.io/badge/spack.io-notyet-yellow.svg)](https://spack.io)
+[![Spack Package](https://img.shields.io/badge/spack.io-openpmd--api-brightgreen.svg)](https://spack.io)
 [![Conda Package](https://img.shields.io/badge/conda.io-notyet-yellow.svg)](https://conda.io)
 
 Choose *one* of the install methods below to get started:
