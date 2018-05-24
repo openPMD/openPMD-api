@@ -503,7 +503,7 @@ TEST_CASE( "wrapper_test", "[core]" )
     mrc2.loadChunk({0}, {1}, loadData);
     o.flush();
     REQUIRE(loadData[0] == value);
-    value = 43;
+    value = 43.;
     mrc2.makeConstant(value);
     o.iterations[4].meshes["E"]["y"].loadChunk({0}, {1}, loadData);
     o.flush();

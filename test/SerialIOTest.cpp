@@ -884,26 +884,26 @@ TEST_CASE( "hdf5_write_test", "[serial][hdf5]" )
     std::vector< double > position_global(4);
     double pos{0.};
     std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
-    std::shared_ptr< double > position_local(new double);
-    e["position"]["x"].resetDataset(Dataset(determineDatatype(position_local), {4}));
+    std::vector< double > position_local = {0.};
+    e["position"]["x"].resetDataset(Dataset(determineDatatype<double>(), {4}));
 
     for( uint64_t i = 0; i < 4; ++i )
     {
-        *position_local = position_global[i];
-        e["position"]["x"].storeChunk({i}, {1}, position_local);
+        position_local.at(0) = position_global[i];
+        e["position"]["x"].storeChunk({i}, {1}, storeRaw(position_local));
         o.flush();
     }
 
     std::vector< uint64_t > positionOffset_global(4);
     uint64_t posOff{0};
     std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
-    std::shared_ptr< uint64_t > positionOffset_local(new uint64_t);
-    e["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local), {4}));
+    std::array< uint64_t, 1 > positionOffset_local = {{ 0u }};
+    e["positionOffset"]["x"].resetDataset(Dataset(determineDatatype<uint64_t>(), {4}));
 
     for( uint64_t i = 0; i < 4; ++i )
     {
-        *positionOffset_local = positionOffset_global[i];
-        e["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local);
+        positionOffset_local[0] = positionOffset_global[i];
+        e["positionOffset"]["x"].storeChunk({i}, {1}, storeRaw(positionOffset_local));
         o.flush();
     }
 
