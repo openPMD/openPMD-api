@@ -164,9 +164,9 @@ endif(ADIOS_FOUND)
 
 # option: use only static libs ################################################
 if(ADIOS_USE_STATIC_LIBS)
-    # carfully: we have to restore the original path in the end
+    # careful, we have to restore the original path in the end
     set(_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
-    set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
 endif()
 
 
