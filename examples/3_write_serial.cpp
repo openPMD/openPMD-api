@@ -34,11 +34,9 @@ int main(int argc, char *argv[])
     size_t size = (argc == 2 ? atoi(argv[1]) : 3);
 
     // matrix dataset to write with values 0...size*size-1
-    std::shared_ptr< double > global_data{
-        new double[size*size],
-        std::default_delete< double[] >()
-    };
-    std::iota(global_data.get(), global_data.get() + size*size, 0.);
+    std::vector<double> global_data;
+    global_data.reserve(size*size);
+    std::iota(global_data.begin(), global_data.end(), 0.);
 
     cout << "Set up a 2D square array (" << size << 'x' << size
          << ") that will be written\n";
@@ -56,7 +54,7 @@ int main(int argc, char *argv[])
           .meshes["E"][MeshRecordComponent::SCALAR];
     cout << "Created a scalar mesh Record with all required openPMD attributes\n";
 
-    Datatype datatype = determineDatatype(global_data);
+    Datatype datatype = determineDatatype(storeRaw(global_data));
     Extent extent = {size, size};
     Dataset dataset = Dataset(datatype, extent);
     cout << "Created a Dataset of size " << dataset.extent[0] << 'x' << dataset.extent[1]
@@ -69,7 +67,7 @@ int main(int argc, char *argv[])
     cout << "File structure and required attributes have been written\n";
 
     Offset offset = {0, 0};
-    E.storeChunk(offset, extent, global_data);
+    E.storeChunk(offset, extent, storeRaw(global_data));
     cout << "Stored the whole Dataset contents as a single chunk, "
             "ready to write content\n";
 
