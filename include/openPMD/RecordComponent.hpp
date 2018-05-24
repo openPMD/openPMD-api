@@ -103,10 +103,10 @@ public:
     template< typename T >
     RecordComponent& makeConstant(T);
 
-    template< typename T >
+    template< typename T, typename D >
     void loadChunk(Offset const&,
                    Extent const&,
-                   std::unique_ptr< T[] >&,
+                   std::unique_ptr< T[], D >&,
                    Allocation = Allocation::AUTO,
                    double targetUnitSI = std::numeric_limits< double >::quiet_NaN() );
     template< typename T >
@@ -140,9 +140,9 @@ RecordComponent::makeConstant(T value)
     return *this;
 }
 
-template< typename T >
+template< typename T, typename D >
 inline void
-RecordComponent::loadChunk(Offset const& o, Extent const& e, std::unique_ptr< T[] >& data, Allocation alloc, double targetUnitSI)
+RecordComponent::loadChunk(Offset const& o, Extent const& e, std::unique_ptr< T[], D >& data, Allocation alloc, double targetUnitSI)
 {
     if( !std::isnan(targetUnitSI) )
         throw std::runtime_error("unitSI scaling during chunk loading not yet implemented");
@@ -170,7 +170,7 @@ RecordComponent::loadChunk(Offset const& o, Extent const& e, std::unique_ptr< T[
         numPoints *= dimensionSize;
 
     if( (Allocation::AUTO == alloc && !data) || Allocation::API == alloc )
-        data = std::unique_ptr< T[] >(new T[numPoints]);
+        data = std::unique_ptr< T[], D >(new T[numPoints]);
     T* raw_ptr = data.get();
 
     if( *m_isConstant )
