@@ -452,22 +452,6 @@ TEST_CASE( "structure_test", "[core]" )
 #endif
 }
 
-struct nop
-{
-    template <typename T>
-    void operator() (T const &) const noexcept { }
-};
-
-template< typename T, std::size_t T_size >
-std::unique_ptr< T[], nop >
-loadRaw( std::array< T, T_size > & a )
-{
-    //auto deleter = [&](T*){};
-    //return std::unique_ptr< T[], decltype(deleter) >( a.data(), deleter );
-    return std::unique_ptr< T[], nop >( a.data() );
-    //return std::unique_ptr< T[] >( a.data() );
-}
-
 TEST_CASE( "wrapper_test", "[core]" )
 {
     Series o = Series("./new_openpmd_output", AccessType::CREATE);
@@ -515,15 +499,14 @@ TEST_CASE( "wrapper_test", "[core]" )
 #if openPMD_HAVE_INVASIVE_TESTS
     REQUIRE(*mrc2.m_isConstant);
 #endif
-    std::unique_ptr< double[] > loadData = std::unique_ptr< double[] >(new double[1]);
+    auto loadData = std::shared_ptr< double >(new double[1]);
     mrc2.loadChunk({0}, {1}, loadData);
     o.flush();
-    REQUIRE(loadData[0] == value);
+    REQUIRE(loadData.get()[0] == value);
     value = 43.;
     mrc2.makeConstant(value);
     std::array< double, 1 > moreData = {{ 112233. }};
-    auto pppp = loadRaw(moreData);
-    o.iterations[4].meshes["E"]["y"].loadChunk({0}, {1}, pppp);
+    o.iterations[4].meshes["E"]["y"].loadChunk({0}, {1}, shareRaw(moreData));
     o.flush();
     REQUIRE(moreData[0] == value);
 #if openPMD_HAVE_INVASIVE_TESTS

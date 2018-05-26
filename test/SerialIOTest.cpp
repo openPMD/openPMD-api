@@ -351,7 +351,7 @@ TEST_CASE( "git_hdf5_sample_content_test", "[serial][hdf5]" )
             MeshRecordComponent& rho = o.iterations[100].meshes["rho"][MeshRecordComponent::SCALAR];
             Offset offset{20, 20, 190};
             Extent extent{3, 3, 3};
-            std::unique_ptr< double[] > data;
+            std::shared_ptr< double > data;
             rho.loadChunk(offset, extent, data, RecordComponent::Allocation::API);
             double* raw_ptr = data.get();
 
@@ -366,7 +366,7 @@ TEST_CASE( "git_hdf5_sample_content_test", "[serial][hdf5]" )
             RecordComponent& electrons_mass = o.iterations[100].particles["electrons"]["mass"][RecordComponent::SCALAR];
             Offset offset{15};
             Extent extent{3};
-            std::unique_ptr< double[] > data;
+            std::shared_ptr< double > data;
             electrons_mass.loadChunk(offset, extent, data, RecordComponent::Allocation::API);
             double* raw_ptr = data.get();
 
@@ -890,7 +890,7 @@ TEST_CASE( "hdf5_write_test", "[serial][hdf5]" )
     for( uint64_t i = 0; i < 4; ++i )
     {
         position_local.at(0) = position_global[i];
-        e["position"]["x"].storeChunk({i}, {1}, storeRaw(position_local));
+        e["position"]["x"].storeChunk({i}, {1}, shareRaw(position_local));
         o.flush();
     }
 
@@ -903,7 +903,7 @@ TEST_CASE( "hdf5_write_test", "[serial][hdf5]" )
     for( uint64_t i = 0; i < 4; ++i )
     {
         positionOffset_local[0] = positionOffset_global[i];
-        e["positionOffset"]["x"].storeChunk({i}, {1}, storeRaw(positionOffset_local));
+        e["positionOffset"]["x"].storeChunk({i}, {1}, shareRaw(positionOffset_local));
         o.flush();
     }
 

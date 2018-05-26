@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/backend/BaseRecordComponent.hpp"
+#include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/Dataset.hpp"
 
 #include <cmath>
@@ -29,47 +30,10 @@
 #include <queue>
 #include <string>
 #include <stdexcept>
-#include <vector>
-#include <array>
 
 
 namespace openPMD
 {
-//! @{
-/** Share ownership with a raw pointer
- *
- * Helper function to share write ownership
- * unprotected and without reference counting with a
- * raw pointer or stdlib container.
- *
- * @warning this is a helper function to bypass the shared-pointer
- *          API for storing data behind raw pointers. Using it puts
- *          the resposibility of buffer-consistency between stores
- *          and flushes to the users side without an indication via
- *          reference counting.
- */
-template< typename T >
-std::shared_ptr< T >
-storeRaw( T* x )
-{
-    return std::shared_ptr< T >( x, [](T*){} );
-}
-
-template< typename T >
-std::shared_ptr< T >
-storeRaw( std::vector< T > & v )
-{
-    return std::shared_ptr< T >( v.data(), [](T*){} );
-}
-
-template< typename T, std::size_t T_size >
-std::shared_ptr< T >
-storeRaw( std::array< T, T_size > & a )
-{
-    return std::shared_ptr< T >( a.data(), [](T*){} );
-}
-//! @}
-
 class RecordComponent : public BaseRecordComponent
 {
     template<
@@ -103,10 +67,10 @@ public:
     template< typename T >
     RecordComponent& makeConstant(T);
 
-    template< typename T, typename D >
+    template< typename T >
     void loadChunk(Offset const&,
                    Extent const&,
-                   std::unique_ptr< T[], D >&,
+                   std::shared_ptr< T >,
                    Allocation = Allocation::AUTO,
                    double targetUnitSI = std::numeric_limits< double >::quiet_NaN() );
     template< typename T >
@@ -140,13 +104,13 @@ RecordComponent::makeConstant(T value)
     return *this;
 }
 
-template< typename T, typename D >
+template< typename T >
 inline void
-RecordComponent::loadChunk(Offset const& o, Extent const& e, std::unique_ptr< T[], D >& data, Allocation alloc, double targetUnitSI)
+RecordComponent::loadChunk(Offset const& o, Extent const& e, std::shared_ptr< T > data, Allocation alloc, double targetUnitSI)
 {
     if( !std::isnan(targetUnitSI) )
         throw std::runtime_error("unitSI scaling during chunk loading not yet implemented");
-    Datatype dtype = determineDatatype(std::shared_ptr< T >());
+    Datatype dtype = determineDatatype(data);
     if( dtype != getDatatype() )
         throw std::runtime_error("Type conversion during chunk loading not yet implemented");
 
@@ -170,7 +134,10 @@ RecordComponent::loadChunk(Offset const& o, Extent const& e, std::unique_ptr< T[
         numPoints *= dimensionSize;
 
     if( (Allocation::AUTO == alloc && !data) || Allocation::API == alloc )
-        data = std::unique_ptr< T[], D >(new T[numPoints]);
+    {
+        auto newData = std::shared_ptr<T>( new T[numPoints], []( T *p ){ delete [] p; } );
+        data.swap(newData);
+    }
     T* raw_ptr = data.get();
 
     if( *m_isConstant )

@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
         };
         Extent chunk_extent = {2, 2, 1};
 
-        std::unique_ptr< double[] > chunk_data;
+        std::shared_ptr< double > chunk_data;
         E_x.loadChunk(chunk_offset, chunk_extent, chunk_data);
 
         if( 0 == mpi_rank )
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
                     for( size_t col = 0; col < chunk_extent[1]; ++col )
                         cout << "\t"
                              << '(' << row + chunk_offset[0] << '|' << col + chunk_offset[1] << '|' << 1 << ")\t"
-                             << chunk_data[row*chunk_extent[1]+col];
+                             << chunk_data.get()[row*chunk_extent[1]+col];
                     cout << std::endl;
                 }
             }

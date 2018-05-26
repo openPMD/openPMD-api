@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
           .meshes["E"][MeshRecordComponent::SCALAR];
     cout << "Created a scalar mesh Record with all required openPMD attributes\n";
 
-    Datatype datatype = determineDatatype(storeRaw(global_data));
+    Datatype datatype = determineDatatype(shareRaw(global_data));
     Extent extent = {size, size};
     Dataset dataset = Dataset(datatype, extent);
     cout << "Created a Dataset of size " << dataset.extent[0] << 'x' << dataset.extent[1]
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
     cout << "File structure and required attributes have been written\n";
 
     Offset offset = {0, 0};
-    E.storeChunk(offset, extent, storeRaw(global_data));
+    E.storeChunk(offset, extent, shareRaw(global_data));
     cout << "Stored the whole Dataset contents as a single chunk, "
             "ready to write content\n";
 
