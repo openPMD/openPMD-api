@@ -18,11 +18,10 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
+#include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Series.hpp"
-
-#include <boost/filesystem.hpp>
 
 #include <iostream>
 #include <regex>
@@ -527,16 +526,14 @@ Series::readFileBased()
     Parameter< Operation::OPEN_FILE > fOpen;
     Parameter< Operation::READ_ATT > aRead;
 
-    using namespace boost::filesystem;
-    path dir = path(IOHandler->directory);
-    if( !exists(dir) )
+    if( !auxiliary::path_exists(IOHandler->directory) )
         throw no_such_file_error("Supplied directory is not valid: " + IOHandler->directory);
     auto isPartOfSeries = matcher(*m_name, *m_format);
-    for( path const& entry : directory_iterator(dir) )
+    for( auto const& entry : auxiliary::list_directory(IOHandler->directory) )
     {
-        if( isPartOfSeries(entry.filename().string()) )
+        if( isPartOfSeries(entry) )
         {
-            fOpen.name = entry.filename().string();
+            fOpen.name = entry;
             IOHandler->enqueue(IOTask(this, fOpen));
             IOHandler->flush();
             iterations.parent = getWritable(this);

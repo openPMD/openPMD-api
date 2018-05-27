@@ -22,12 +22,12 @@
 
 
 #if openPMD_HAVE_HDF5
+#   include "openPMD/auxiliary/Filesystem.hpp"
 #   include "openPMD/auxiliary/StringManip.hpp"
 #   include "openPMD/backend/Attribute.hpp"
 #   include "openPMD/IO/IOTask.hpp"
 #   include "openPMD/IO/HDF5/HDF5Auxiliary.hpp"
 #   include "openPMD/IO/HDF5/HDF5FilePosition.hpp"
-#   include <boost/filesystem.hpp>
 #endif
 
 #include <future>
@@ -99,10 +99,8 @@ HDF5IOHandlerImpl::createFile(Writable* writable,
 
     if( !writable->written )
     {
-        using namespace boost::filesystem;
-        path dir(m_handler->directory);
-        if( !exists(dir) )
-            create_directories(dir);
+        if( !auxiliary::path_exists(m_handler->directory) )
+            auxiliary::create_directories(m_handler->directory);
 
         std::string name = m_handler->directory + parameters.name;
         if( !auxiliary::ends_with(name, ".h5") )
@@ -343,9 +341,7 @@ HDF5IOHandlerImpl::openFile(Writable* writable,
     //TODO check if file already open
     //not possible with current implementation
     //quick idea - map with filenames as key
-    using namespace boost::filesystem;
-    path dir(m_handler->directory);
-    if( !exists(dir) )
+    if( !auxiliary::path_exists(m_handler->directory) )
         throw no_such_file_error("Supplied directory is not valid: " + m_handler->directory);
 
     std::string name = m_handler->directory + parameters.name;
@@ -520,12 +516,10 @@ HDF5IOHandlerImpl::deleteFile(Writable* writable,
         if( !auxiliary::ends_with(name, ".h5") )
             name += ".h5";
 
-        using namespace boost::filesystem;
-        path file(name);
-        if( !exists(file) )
+        if( !auxiliary::file_exists(name) )
             throw std::runtime_error("File does not exist: " + name);
 
-        remove(file);
+        auxiliary::remove_file(name);
 
         writable->written = false;
         writable->abstractFilePosition.reset();

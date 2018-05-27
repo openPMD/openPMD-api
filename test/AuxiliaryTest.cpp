@@ -14,6 +14,7 @@
 #   undef private
 #   undef protected
 #endif
+#include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Container.hpp"
@@ -336,4 +337,35 @@ TEST_CASE( "dot_test", "[auxiliary]" )
     REQUIRE(d.att2() == static_cast<double>(20));
     REQUIRE(d.att3() == "30");
 
+}
+
+TEST_CASE( "filesystem_test", "[auxiliary]" )
+{
+    using auxiliary::list_directory;
+    using auxiliary::path_exists;
+
+    auto contains =
+        [](std::vector< std::string > const & entries, std::string const & path) -> bool
+        { return std::find(entries.cbegin(), entries.cend(), path) != entries.cend(); };
+
+#if WIN32
+    REQUIRE(path_exists("C:\\"));
+    REQUIRE(path_exists("C:\\Program Files"));
+    REQUIRE(path_exists("C:\\Windows"));
+    REQUIRE(path_exists("C:\\nonexistent_folder_in_C_drive"));
+#elif UNIX
+    auto dir_entries = list_directory("/");
+    REQUIRE(!dir_entries.empty());
+    REQUIRE(contains(dir_entries, "boot"));
+    REQUIRE(contains(dir_entries, "etc"));
+    REQUIRE(contains(dir_entries, "home"));
+    REQUIRE(contains(dir_entries, "root"));
+    REQUIRE(!contains(dir_entries, "nonexistent_folder_in_root_directory"));
+
+    REQUIRE(path_exists("/"));
+    REQUIRE(path_exists("/boot"));
+    REQUIRE(path_exists("/etc"));
+    REQUIRE(path_exists("/home"));
+    REQUIRE(!path_exists("/nonexistent_folder_in_root_directory"));
+#endif
 }
