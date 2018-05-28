@@ -99,7 +99,7 @@ HDF5IOHandlerImpl::createFile(Writable* writable,
 
     if( !writable->written )
     {
-        if( !auxiliary::path_exists(m_handler->directory) )
+        if( !auxiliary::directory_exists(m_handler->directory) )
             auxiliary::create_directories(m_handler->directory);
 
         std::string name = m_handler->directory + parameters.name;
@@ -341,7 +341,7 @@ HDF5IOHandlerImpl::openFile(Writable* writable,
     //TODO check if file already open
     //not possible with current implementation
     //quick idea - map with filenames as key
-    if( !auxiliary::path_exists(m_handler->directory) )
+    if( !auxiliary::directory_exists(m_handler->directory) )
         throw no_such_file_error("Supplied directory is not valid: " + m_handler->directory);
 
     std::string name = m_handler->directory + parameters.name;

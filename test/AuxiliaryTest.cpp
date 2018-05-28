@@ -341,19 +341,51 @@ TEST_CASE( "dot_test", "[auxiliary]" )
 
 TEST_CASE( "filesystem_test", "[auxiliary]" )
 {
+    using auxiliary::create_directories;
+    using auxiliary::file_exists;
+    using auxiliary::directory_exists;
     using auxiliary::list_directory;
-    using auxiliary::path_exists;
+    using auxiliary::remove_directory;
+    using auxiliary::remove_file;
 
     auto contains =
         [](std::vector< std::string > const & entries, std::string const & path) -> bool
         { return std::find(entries.cbegin(), entries.cend(), path) != entries.cend(); };
 
+    auto random_string =
+        [](std::string::size_type length) -> std::string
+        {
+            auto randchar =
+                []() -> char
+                {
+                    char const charset[] =
+                        "0123456789"
+                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                        "abcdefghijklmnopqrstuvwxyz";
+                    size_t const max_index = (sizeof(charset) - 1);
+                    return charset[rand() % max_index];
+                };
+            std::string str(length, 0);
+            std::generate_n(str.begin(), length, randchar);
+            return str;
+        };
+
 #if WIN32
     REQUIRE(path_exists("C:\\"));
     REQUIRE(path_exists("C:\\Program Files"));
     REQUIRE(path_exists("C:\\Windows"));
-    REQUIRE(path_exists("C:\\nonexistent_folder_in_C_drive"));
+    REQUIRE(!path_exists("C:\\nonexistent_folder_in_C_drive"));
 #elif UNIX
+    REQUIRE(directory_exists("/"));
+    REQUIRE(directory_exists("/boot"));
+    REQUIRE(directory_exists("/etc"));
+    REQUIRE(directory_exists("/home"));
+    REQUIRE(!directory_exists("/nonexistent_folder_in_root_directory"));
+    REQUIRE(directory_exists("../bin"));
+
+    REQUIRE(file_exists("./AuxiliaryTests"));
+    REQUIRE(!file_exists("./nonexistent_file_in_cmake_bin_directory"));
+
     auto dir_entries = list_directory("/");
     REQUIRE(!dir_entries.empty());
     REQUIRE(contains(dir_entries, "boot"));
@@ -362,10 +394,32 @@ TEST_CASE( "filesystem_test", "[auxiliary]" )
     REQUIRE(contains(dir_entries, "root"));
     REQUIRE(!contains(dir_entries, "nonexistent_folder_in_root_directory"));
 
-    REQUIRE(path_exists("/"));
-    REQUIRE(path_exists("/boot"));
-    REQUIRE(path_exists("/etc"));
-    REQUIRE(path_exists("/home"));
-    REQUIRE(!path_exists("/nonexistent_folder_in_root_directory"));
+    std::string new_directory = random_string(10);
+    while( directory_exists(new_directory) )
+        new_directory = random_string(10);
+    REQUIRE(create_directories(new_directory));
+    REQUIRE(create_directories(new_directory));
+    REQUIRE(directory_exists(new_directory));
+
+    REQUIRE(remove_directory(new_directory));
+    REQUIRE(!directory_exists(new_directory));
+    REQUIRE(!remove_directory(new_directory));
+
+    REQUIRE(!remove_file("./nonexistent_file_in_cmake_bin_directory"));
+    dir_entries = list_directory("../CMakeFiles");
+    if( !dir_entries.empty() )
+    {
+        std::string del = "../CMakeFiles/" + *dir_entries.begin();
+        while( !file_exists(del) && directory_exists(del) )
+        {
+            dir_entries = list_directory(del);
+            del += "/" + *dir_entries.begin();
+        }
+        if( file_exists(del) )
+        {
+            REQUIRE(remove_file(del));
+            REQUIRE(!file_exists(del));
+        }
+    }
 #endif
 }

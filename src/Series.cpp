@@ -526,7 +526,7 @@ Series::readFileBased()
     Parameter< Operation::OPEN_FILE > fOpen;
     Parameter< Operation::READ_ATT > aRead;
 
-    if( !auxiliary::path_exists(IOHandler->directory) )
+    if( !auxiliary::directory_exists(IOHandler->directory) )
         throw no_such_file_error("Supplied directory is not valid: " + IOHandler->directory);
     auto isPartOfSeries = matcher(*m_name, *m_format);
     for( auto const& entry : auxiliary::list_directory(IOHandler->directory) )

@@ -21,11 +21,12 @@
 #include "openPMD/IO/ADIOS/ADIOS1IOHandler.hpp"
 
 #if openPMD_HAVE_ADIOS1
+#   include "openPMD/auxiliary/Filesystem.hpp"
 #   include "openPMD/auxiliary/Memory.hpp"
 #   include "openPMD/auxiliary/StringManip.hpp"
 #   include "openPMD/IO/ADIOS/ADIOS1Auxiliary.hpp"
 #   include "openPMD/IO/ADIOS/ADIOS1FilePosition.hpp"
-#   include <boost/filesystem.hpp>
+#   include <cstring>
 #   include <iostream>
 #   include <memory>
 #endif
@@ -320,10 +321,8 @@ ADIOS1IOHandlerImpl::createFile(Writable* writable,
 
     if( !writable->written )
     {
-        using namespace boost::filesystem;
-        path dir(m_handler->directory);
-        if( !exists(dir) )
-            create_directories(dir);
+        if( !auxiliary::directory_exists(m_handler->directory) )
+            auxiliary::create_directories(m_handler->directory);
 
         std::string name = m_handler->directory + parameters.name;
         if( !auxiliary::ends_with(name, ".bp") )
@@ -457,9 +456,7 @@ void
 ADIOS1IOHandlerImpl::openFile(Writable* writable,
                               Parameter< Operation::OPEN_FILE > const& parameters)
 {
-    using namespace boost::filesystem;
-    path dir(m_handler->directory);
-    if( !exists(dir) )
+    if( !auxiliary::directory_exists(m_handler->directory) )
         throw no_such_file_error("Supplied directory is not valid: " + m_handler->directory);
 
     std::string name = m_handler->directory + parameters.name;
@@ -622,12 +619,10 @@ ADIOS1IOHandlerImpl::deleteFile(Writable* writable,
         if( !auxiliary::ends_with(name, ".bp") )
             name += ".bp";
 
-        namespace bf = boost::filesystem;
-        bf::path file(name);
-        if( !bf::exists(file) )
+        if( !auxiliary::file_exists(name) )
             throw std::runtime_error("File does not exist: " + name);
 
-        bf::remove(file);
+        auxiliary::remove_file(name);
 
         writable->written = false;
         writable->abstractFilePosition.reset();

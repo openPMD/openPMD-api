@@ -30,13 +30,15 @@
 #endif
 
 #include <stdexcept>
+#include <system_error>
+
 
 namespace openPMD
 {
 namespace auxiliary
 {
 bool
-path_exists( std::string const& path )
+directory_exists(std::string const& path)
 {
     bool exists = false;
 #if WIN32
@@ -86,6 +88,8 @@ list_directory(std::string const& path )
     }
 #elif UNIX
     auto directory = opendir(path.c_str());
+    if( !directory )
+        throw std::system_error(std::error_code(errno, std::system_category()));
     dirent* entry;
     while ((entry = readdir(directory)) != nullptr)
         if( strncmp(entry->d_name, ".", 1) && strncmp(entry->d_name, "..", 2) )
@@ -95,16 +99,49 @@ list_directory(std::string const& path )
     return ret;
 }
 
-void
+bool
 create_directories( std::string const& path )
 {
-    throw std::runtime_error("Not yet implemented");
+    if( directory_exists(path) )
+        return true;
+
+    bool success = false;
+#if WIN32
+    success = CreateDirectory(path.c_str(), NULL);
+#elif UNIX
+    success = (mkdir(path.c_str(), 0777) == 0);
+#endif
+    return success;
 }
 
-void
+bool
+remove_directory( std::string const& path )
+{
+    if( !directory_exists(path) )
+        return false;
+
+    bool success = false;
+#if WIN32
+    success = RemoveDirectory(path.c_str());
+#elif UNIX
+    success = (remove(path.c_str()) == 0);
+#endif
+    return success;
+}
+
+bool
 remove_file( std::string const& path )
 {
-    throw std::runtime_error("Not yet implemented");
+  if( !file_exists(path) )
+      return false;
+
+    bool success = false;
+#if WIN32
+    success = DeleteFile(path.c_str());
+#elif UNIX
+    success = (remove(path.c_str()) == 0);
+#endif
+    return success;
 }
 } // auxiliary
 } // openPMD
