@@ -375,6 +375,43 @@ TEST_CASE( "filesystem_test", "[auxiliary]" )
     REQUIRE(path_exists("C:\\Program Files"));
     REQUIRE(path_exists("C:\\Windows"));
     REQUIRE(!path_exists("C:\\nonexistent_folder_in_C_drive"));
+
+    REQUIRE(file_exists(".\\AuxiliaryTests.exe"));
+    REQUIRE(!file_exists(".\\nonexistent_file_in_cmake_bin_directory.exe"));
+
+    auto dir_entries = list_directory("C:\\");
+    REQUIRE(!dir_entries.empty());
+    REQUIRE(contains(dir_entries, "Program Files"));
+    REQUIRE(contains(dir_entries, "Windows"));
+    REQUIRE(!contains(dir_entries, "nonexistent_folder_in_C_drive"));
+
+    std::string new_directory = random_string(10);
+    while( directory_exists(new_directory) )
+        new_directory = random_string(10);
+    REQUIRE(create_directories(new_directory));
+    REQUIRE(create_directories(new_directory));
+    REQUIRE(directory_exists(new_directory));
+
+    REQUIRE(remove_directory(new_directory));
+    REQUIRE(!directory_exists(new_directory));
+    REQUIRE(!remove_directory(new_directory));
+
+    REQUIRE(!remove_file(".\\nonexistent_file_in_cmake_bin_directory"));
+    dir_entries = list_directory("..\\CMakeFiles");
+    if( !dir_entries.empty() )
+    {
+        std::string del = "..\\CMakeFiles\\" + *dir_entries.begin();
+        while( !file_exists(del) && directory_exists(del) )
+        {
+            dir_entries = list_directory(del);
+            del += "\\" + *dir_entries.begin();
+        }
+        if( file_exists(del) )
+        {
+            REQUIRE(remove_file(del));
+            REQUIRE(!file_exists(del));
+        }
+    }
 #elif UNIX
     REQUIRE(directory_exists("/"));
     REQUIRE(directory_exists("/boot"));
