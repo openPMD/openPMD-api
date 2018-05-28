@@ -42,7 +42,7 @@ CMake Option                   Values          Description
 ``BUILD_SHARED_LIBS``          ON/**OFF**      Build the C++ API as shared library
 ``Boost_USE_STATIC_LIBS``      ON/**OFF**      Require static Boost library
 ``HDF5_USE_STATIC_LIBRARIES``  ON/**OFF**      Require static HDF5 library
-``ADIOS_USE_STATIC_LIBRARIES`` ON/**OFF**      Require static ADIOS1 library
+``ADIOS_USE_STATIC_LIBS``      ON/**OFF**      Require static ADIOS1 library
 ============================== =============== ==================================================
 
 Note that python modules (``openPMD.cpython.[...].so`` or ``openPMD.pyd``) are always dynamic libraries.
