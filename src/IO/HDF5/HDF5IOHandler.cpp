@@ -30,6 +30,7 @@
 #   include "openPMD/IO/HDF5/HDF5FilePosition.hpp"
 #endif
 
+#include <cstring>
 #include <future>
 #include <iostream>
 #include <string>
@@ -1171,7 +1172,7 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
             {
                 char* m0 = H5Tget_member_name(attr_type, 0);
                 char* m1 = H5Tget_member_name(attr_type, 1);
-                if( (strcmp("TRUE" , m0) == 0) && (strcmp("FALSE", m1) == 0) )
+                if( (strncmp("TRUE" , m0, 4) == 0) && (strncmp("FALSE", m1, 5) == 0) )
                     attrIsBool = true;
                 H5free_memory(m1);
                 H5free_memory(m0);
