@@ -448,10 +448,11 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     # older clangs: silence unknown warnings
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-warning-option")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
     # pybind11 does not fix -Wshadow https://github.com/pybind/pybind11/issues/1267
+    # pybind11 does not fix -Wpedantic https://github.com/pybind/pybind11/issues/1417
     if(NOT openPMD_HAVE_PYTHON)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wshadow")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wshadow -Wpedantic")
     endif()
     string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} "
             "-Wno-unknown-pragmas")
