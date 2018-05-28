@@ -1016,7 +1016,7 @@ ADIOS1IOHandlerImpl::readDataset(Writable* writable,
     ASSERT(adios_errno == err_no_error, "Internal error: Failed to select ADIOS bounding box during dataset reading");
 
     std::string varname = concrete_bp1_file_position(writable);
-    void* data = parameters.data;
+    void* data = parameters.data.get();
 
     int status;
     status = adios_schedule_read(f,

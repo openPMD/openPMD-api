@@ -50,7 +50,9 @@ public:
     Extent getExtent() const;
 
     template< typename T >
-    void load(uint64_t idx, std::unique_ptr< T >&);
+    std::shared_ptr< T > load(uint64_t idx);
+    template< typename T >
+    void load(uint64_t idx, std::shared_ptr< T >);
     template< typename T >
     void store(uint64_t idx, T);
 
@@ -63,10 +65,18 @@ private:
     std::shared_ptr< std::queue< IOTask > > m_chunks;
 };  //PatchRecordComponent
 
+template< typename T >
+inline std::shared_ptr< T >
+PatchRecordComponent::load(uint64_t idx)
+{
+    auto newData = std::make_shared< T >();
+    loadChunk(idx, newData);
+    return newData;
+}
 
 template< typename T >
 inline void
-PatchRecordComponent::load(uint64_t idx, std::unique_ptr< T >& data)
+PatchRecordComponent::load(uint64_t idx, std::shared_ptr< T > data)
 {
     Datatype dtype = determineDatatype< T >();
     if( dtype != getDatatype() )
@@ -78,14 +88,13 @@ PatchRecordComponent::load(uint64_t idx, std::unique_ptr< T >& data)
                                  + " - index: " + std::to_string(idx) + ")");
 
     if( !data )
-        data = std::unique_ptr< T >(new T);
-    T* raw_ptr = data.get();
+        throw std::runtime_error("Unallocated pointer passed during ParticlePatch loading.");
 
     Parameter< Operation::READ_DATASET > dRead;
     dRead.offset = {idx};
     dRead.extent = {1};
     dRead.dtype = getDatatype();
-    dRead.data = raw_ptr;
+    dRead.data = std::static_pointer_cast< void >(data);
     IOHandler->enqueue(IOTask(this, dRead));
     IOHandler->flush();
 }

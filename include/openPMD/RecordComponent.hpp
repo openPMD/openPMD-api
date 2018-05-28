@@ -143,8 +143,6 @@ RecordComponent::loadChunk(Offset const& o, Extent const& e, std::shared_ptr< T 
     if( !data )
         throw std::runtime_error("Unallocated pointer passed during chunk loading.");
 
-    T* raw_ptr = data.get();
-
     if( *m_isConstant )
     {
         uint64_t numPoints = 1u;
@@ -152,6 +150,8 @@ RecordComponent::loadChunk(Offset const& o, Extent const& e, std::shared_ptr< T 
             numPoints *= dimensionSize;
 
         T value = m_constantValue->get< T >();
+
+        T* raw_ptr = data.get();
         std::fill(raw_ptr, raw_ptr + numPoints, value);
     } else
     {
@@ -159,7 +159,7 @@ RecordComponent::loadChunk(Offset const& o, Extent const& e, std::shared_ptr< T 
         dRead.offset = o;
         dRead.extent = e;
         dRead.dtype = getDatatype();
-        dRead.data = raw_ptr;
+        dRead.data = std::static_pointer_cast< void >(data);
         IOHandler->enqueue(IOTask(this, dRead));
         IOHandler->flush();
     }

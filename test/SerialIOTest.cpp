@@ -746,7 +746,7 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
         REQUIRE(e_extent_z.unitSI() == 2.599999993753294e-07);
         REQUIRE(e_extent_z.getDatatype() == Datatype::UINT64);
 
-        std::unique_ptr< uint64_t > data;
+        std::shared_ptr< uint64_t > data;
         e_extent_z.load(0, data);
         o.flush();
         REQUIRE(*data == static_cast< uint64_t >(80));
