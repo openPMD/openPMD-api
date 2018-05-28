@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
      */
     {
         // allocate a data set to write
-        std::shared_ptr< double > global_data{new double[mpi_size]};
+        std::shared_ptr< double > global_data(new double[mpi_size], [](double *p) { delete[] p; });
         for( int i = 0; i < mpi_size; ++i )
             global_data.get()[i] = i;
         if( 0 == mpi_rank )

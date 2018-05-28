@@ -34,8 +34,7 @@ int main(int argc, char *argv[])
     size_t size = (argc == 2 ? atoi(argv[1]) : 3);
 
     // matrix dataset to write with values 0...size*size-1
-    std::vector<double> global_data;
-    global_data.reserve(size*size);
+    std::vector<double> global_data(size*size);
     std::iota(global_data.begin(), global_data.end(), 0.);
 
     cout << "Set up a 2D square array (" << size << 'x' << size

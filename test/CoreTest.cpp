@@ -499,10 +499,10 @@ TEST_CASE( "wrapper_test", "[core]" )
 #if openPMD_HAVE_INVASIVE_TESTS
     REQUIRE(*mrc2.m_isConstant);
 #endif
-    auto loadData = std::shared_ptr< double >(new double[1]);
-    mrc2.loadChunk({0}, {1}, loadData);
+    double loadData;
+    mrc2.loadChunk({0}, {1}, shareRaw(&loadData));
     o.flush();
-    REQUIRE(loadData.get()[0] == value);
+    REQUIRE(loadData == value);
     value = 43.;
     mrc2.makeConstant(value);
     std::array< double, 1 > moreData = {{ 112233. }};

@@ -23,6 +23,7 @@
 #include <memory>
 #include <vector>
 #include <array>
+#include <type_traits>
 
 
 namespace openPMD
@@ -43,23 +44,32 @@ namespace openPMD
      */
     template< typename T >
     std::shared_ptr< T >
-    shareRaw( T* x )
+    shareRaw( T * x )
     {
-        return std::shared_ptr< T >( x, [](T*){} );
+        return std::shared_ptr< T >( x, [](T *){} );
     }
 
     template< typename T >
-    std::shared_ptr< T >
-    shareRaw( std::vector< T > & v )
+    std::shared_ptr< T const >
+    shareRaw( T const * x )
     {
-        return std::shared_ptr< T >( v.data(), [](T*){} );
+        return std::shared_ptr< T const >( x, [](T const *){} );
     }
 
-    template< typename T, std::size_t T_size >
-    std::shared_ptr< T >
-    shareRaw( std::array< T, T_size > & a )
+    template< typename T >
+    auto
+    shareRaw( T & c ) -> std::shared_ptr< typename std::remove_pointer< decltype( c.data() ) >::type >
     {
-        return std::shared_ptr< T >( a.data(), [](T*){} );
+        using value_type = typename std::remove_pointer< decltype( c.data() ) >::type;
+        return std::shared_ptr< value_type >( c.data(), [](value_type *){} );
+    }
+
+    template< typename T >
+    auto
+    shareRaw( T const & c ) -> std::shared_ptr< typename std::remove_pointer< decltype( c.data() ) >::type >
+    {
+        using value_type = typename std::remove_pointer< decltype( c.data() ) >::type;
+        return std::shared_ptr< value_type >( c.data(), [](value_type *){} );
     }
     //! @}
 } // openPMD

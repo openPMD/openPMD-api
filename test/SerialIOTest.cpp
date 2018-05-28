@@ -351,8 +351,7 @@ TEST_CASE( "git_hdf5_sample_content_test", "[serial][hdf5]" )
             MeshRecordComponent& rho = o.iterations[100].meshes["rho"][MeshRecordComponent::SCALAR];
             Offset offset{20, 20, 190};
             Extent extent{3, 3, 3};
-            std::shared_ptr< double > data;
-            rho.loadChunk(offset, extent, data, RecordComponent::Allocation::API);
+            auto data = rho.loadChunk<double>(offset, extent);
             double* raw_ptr = data.get();
 
             for( int i = 0; i < 3; ++i )
@@ -366,8 +365,7 @@ TEST_CASE( "git_hdf5_sample_content_test", "[serial][hdf5]" )
             RecordComponent& electrons_mass = o.iterations[100].particles["electrons"]["mass"][RecordComponent::SCALAR];
             Offset offset{15};
             Extent extent{3};
-            std::shared_ptr< double > data;
-            electrons_mass.loadChunk(offset, extent, data, RecordComponent::Allocation::API);
+            auto data = electrons_mass.loadChunk<double>(offset, extent);
             double* raw_ptr = data.get();
 
             for( int i = 0; i < 3; ++i )
@@ -947,13 +945,12 @@ TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
     ParticleSpecies& e_2 = o.iterations[2].particles["e"];
 
     std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
-    std::shared_ptr< double > position_local_2(new double);
-    e_2["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_2), {4}));
+    e_2["position"]["x"].resetDataset(Dataset(determineDatatype<double>(), {4}));
 
     for( uint64_t i = 0; i < 4; ++i )
     {
-        *position_local_2 = position_global[i];
-        e_2["position"]["x"].storeChunk({i}, {1}, position_local_2);
+        double const position_local_2 = position_global.at(i);
+        e_2["position"]["x"].storeChunk({i}, {1}, shareRaw(&position_local_2));
         o.flush();
     }
 
@@ -1515,8 +1512,7 @@ TEST_CASE( "hzdr_adios1_sample_content_test", "[serial][adios1]" )
                                      {7.3689453e-06f, 7.3689453e-06f, 7.3689453e-06f}}};
         Offset offset{20, 20, 150};
         Extent extent{3, 3, 3};
-        std::unique_ptr< float[] > data;
-        B_z.loadChunk(offset, extent, data, RecordComponent::Allocation::API);
+        auto data = B_z.loadChunk(offset, extent);
         float* raw_ptr = data.get();
 
         for( int i = 0; i < 3; ++i )

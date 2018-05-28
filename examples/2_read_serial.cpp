@@ -60,8 +60,7 @@ int main()
 
     Offset chunk_offset = {1, 1, 1};
     Extent chunk_extent = {2, 2, 1};
-    std::shared_ptr< double > chunk_data;
-    E_x.loadChunk(chunk_offset, chunk_extent, chunk_data);
+    auto chunk_data = E_x.loadChunk<double>(chunk_offset, chunk_extent);
     cout << "Queued the loading of a single chunk from disk, "
             "ready to execute\n";
     series.flush();
