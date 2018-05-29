@@ -44,15 +44,15 @@ int main(int argc, char *argv[])
      */
     {
         // allocate a data set to write
-        std::unique_ptr< double[] > global_data{new double[mpi_size]};
+        std::shared_ptr< double > global_data(new double[mpi_size], [](double *p) { delete[] p; });
         for( int i = 0; i < mpi_size; ++i )
-            global_data[i] = i;
+            global_data.get()[i] = i;
         if( 0 == mpi_rank )
             cout << "Set up a 1D array with one element per MPI rank (" << mpi_size
                  << ") that will be written to disk\n";
 
         std::shared_ptr< double > local_data{new double};
-        *local_data = global_data[mpi_rank];
+        *local_data = global_data.get()[mpi_rank];
         if( 0 == mpi_rank )
             cout << "Set up a 1D array with one element, representing the view of the MPI rank\n";
 

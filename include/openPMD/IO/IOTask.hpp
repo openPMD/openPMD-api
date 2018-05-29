@@ -165,7 +165,7 @@ struct Parameter< Operation::WRITE_DATASET > : public AbstractParameter
     Extent extent;
     Offset offset;
     Datatype dtype;
-    std::shared_ptr< void > data;
+    std::shared_ptr< void const > data;
 };
 
 template<>
@@ -174,7 +174,7 @@ struct Parameter< Operation::READ_DATASET > : public AbstractParameter
     Extent extent;
     Offset offset;
     Datatype dtype;
-    void* data = nullptr;
+    std::shared_ptr< void > data;
 };
 
 template<>

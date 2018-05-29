@@ -21,4 +21,5 @@
 #pragma once
 
 #include "openPMD/Series.hpp"
+#include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/version.hpp"

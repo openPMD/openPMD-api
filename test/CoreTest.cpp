@@ -499,15 +499,16 @@ TEST_CASE( "wrapper_test", "[core]" )
 #if openPMD_HAVE_INVASIVE_TESTS
     REQUIRE(*mrc2.m_isConstant);
 #endif
-    std::unique_ptr< double[] > loadData = std::unique_ptr< double[] >(new double[1]);
-    mrc2.loadChunk({0}, {1}, loadData);
+    double loadData;
+    mrc2.loadChunk({0}, {1}, shareRaw(&loadData));
     o.flush();
-    REQUIRE(loadData[0] == value);
-    value = 43;
+    REQUIRE(loadData == value);
+    value = 43.;
     mrc2.makeConstant(value);
-    o.iterations[4].meshes["E"]["y"].loadChunk({0}, {1}, loadData);
+    std::array< double, 1 > moreData = {{ 112233. }};
+    o.iterations[4].meshes["E"]["y"].loadChunk({0}, {1}, shareRaw(moreData));
     o.flush();
-    REQUIRE(loadData[0] == value);
+    REQUIRE(moreData[0] == value);
 #if openPMD_HAVE_INVASIVE_TESTS
     REQUIRE(o.iterations[4].meshes["E"]["y"].m_chunks->empty());
     REQUIRE(mrc2.m_chunks->empty());

@@ -688,7 +688,7 @@ HDF5IOHandlerImpl::writeDataset(Writable* writable,
                                  block.data());
     ASSERT(status == 0, "Internal error: Failed to select hyperslab during dataset write");
 
-    std::shared_ptr< void > data = parameters.data;
+    std::shared_ptr< void const > data = parameters.data;
 
     //TODO Check if parameter dtype and dataset dtype match
     Attribute a(0);
@@ -988,7 +988,7 @@ HDF5IOHandlerImpl::readDataset(Writable* writable,
                                  block.data());
     ASSERT(status == 0, "Internal error: Failed to select hyperslab during dataset read");
 
-    void* data = parameters.data;
+    void* data = parameters.data.get();
 
     Attribute a(0);
     a.dtype = parameters.dtype;

@@ -60,8 +60,7 @@ int main()
 
     Offset chunk_offset = {1, 1, 1};
     Extent chunk_extent = {2, 2, 1};
-    std::unique_ptr< double[] > chunk_data;
-    E_x.loadChunk(chunk_offset, chunk_extent, chunk_data);
+    auto chunk_data = E_x.loadChunk<double>(chunk_offset, chunk_extent);
     cout << "Queued the loading of a single chunk from disk, "
             "ready to execute\n";
     series.flush();
@@ -72,7 +71,7 @@ int main()
         for( size_t col = 0; col < chunk_extent[1]; ++col )
             cout << "\t"
                  << '(' << row + chunk_offset[0] << '|' << col + chunk_offset[1] << '|' << 1 << ")\t"
-                 << chunk_data[row*chunk_extent[1]+col];
+                 << chunk_data.get()[row*chunk_extent[1]+col];
         cout << '\n';
     }
 
