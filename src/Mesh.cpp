@@ -182,32 +182,39 @@ Mesh::setTimeOffset(T to)
 void
 Mesh::flush(std::string const& name)
 {
-    if( !written )
+    if( IOHandler->accessType == AccessType::READ_ONLY )
     {
-        if( *m_containsScalar )
+        for( auto& comp : *this )
+            comp.second.flush(comp.first);
+    } else
+    {
+        if( !written )
         {
-            MeshRecordComponent& r = at(RecordComponent::SCALAR);
-            r.m_writable->parent = parent;
-            r.parent = parent;
-            r.flush(name);
-            m_writable->abstractFilePosition = r.m_writable->abstractFilePosition;
-            abstractFilePosition = r.abstractFilePosition;
-            written = true;
-        } else
-        {
-            Parameter< Operation::CREATE_PATH > pCreate;
-            pCreate.path = name;
-            IOHandler->enqueue(IOTask(this, pCreate));
-            IOHandler->flush();
-            for( auto& comp : *this )
-                comp.second.parent = this->m_writable.get();
+            if( *m_containsScalar )
+            {
+                MeshRecordComponent& r = at(RecordComponent::SCALAR);
+                r.m_writable->parent = parent;
+                r.parent = parent;
+                r.flush(name);
+                m_writable->abstractFilePosition = r.m_writable->abstractFilePosition;
+                abstractFilePosition = r.abstractFilePosition;
+                written = true;
+            } else
+            {
+                Parameter< Operation::CREATE_PATH > pCreate;
+                pCreate.path = name;
+                IOHandler->enqueue(IOTask(this, pCreate));
+                IOHandler->flush();
+                for( auto& comp : *this )
+                    comp.second.parent = this->m_writable.get();
+            }
         }
+
+        for( auto& comp : *this )
+            comp.second.flush(comp.first);
+
+        flushAttributes();
     }
-
-    for( auto& comp : *this )
-        comp.second.flush(comp.first);
-
-    flushAttributes();
 }
 
 void

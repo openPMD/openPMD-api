@@ -80,6 +80,7 @@ TEST_CASE( "git_hdf5_sample_content_test", "[parallel][hdf5]" )
             Offset offset{20 + rank, 20, 190};
             Extent extent{1, 3, 3};
             auto data = rho.loadChunk<double>(offset, extent);
+            o.flush();
             double* raw_ptr = data.get();
 
             for( int j = 0; j < 3; ++j )
@@ -93,6 +94,7 @@ TEST_CASE( "git_hdf5_sample_content_test", "[parallel][hdf5]" )
             Offset offset{(rank+1) * 5};
             Extent extent{3};
             auto data = electrons_mass.loadChunk<double>(offset, extent);
+            o.flush();
             double* raw_ptr = data.get();
 
             for( int i = 0; i < 3; ++i )
@@ -208,6 +210,7 @@ TEST_CASE( "hzdr_adios_sample_content_test", "[parallel][adios1]" )
             Offset offset{20 + rank, 20, 150};
             Extent extent{1, 3, 3};
             auto data = B_z.loadChunk<float>(offset, extent);
+            o.flush();
             float* raw_ptr = data.get();
 
             for( int j = 0; j < 3; ++j )

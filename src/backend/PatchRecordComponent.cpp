@@ -62,27 +62,39 @@ PatchRecordComponent::PatchRecordComponent()
 void
 PatchRecordComponent::flush(std::string const& name)
 {
-    if( !written )
+    if( IOHandler->accessType == AccessType::READ_ONLY )
     {
-        Parameter< Operation::CREATE_DATASET > dCreate;
-        dCreate.name = name;
-        dCreate.extent = getExtent();
-        dCreate.dtype = getDatatype();
-        dCreate.chunkSize = getExtent();
-        dCreate.compression = m_dataset->compression;
-        dCreate.transform = m_dataset->transform;
-        IOHandler->enqueue(IOTask(this, dCreate));
-        IOHandler->flush();
-    }
+        while( !m_chunks->empty() )
+        {
+            IOHandler->enqueue(m_chunks->front());
+            m_chunks->pop();
+        }
 
-    while( !m_chunks->empty() )
+        IOHandler->flush();
+    } else
     {
-        IOHandler->enqueue(m_chunks->front());
-        m_chunks->pop();
-        IOHandler->flush();
-    }
+        if( !written )
+        {
+            Parameter< Operation::CREATE_DATASET > dCreate;
+            dCreate.name = name;
+            dCreate.extent = getExtent();
+            dCreate.dtype = getDatatype();
+            dCreate.chunkSize = getExtent();
+            dCreate.compression = m_dataset->compression;
+            dCreate.transform = m_dataset->transform;
+            IOHandler->enqueue(IOTask(this, dCreate));
+        }
 
-    flushAttributes();
+        while( !m_chunks->empty() )
+        {
+            IOHandler->enqueue(m_chunks->front());
+            m_chunks->pop();
+        }
+
+        IOHandler->flush();
+
+        flushAttributes();
+    }
 }
 
 void

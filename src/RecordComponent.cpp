@@ -67,45 +67,57 @@ RecordComponent::getExtent() const
 void
 RecordComponent::flush(std::string const& name)
 {
-    if( !written )
+    if( IOHandler->accessType == AccessType::READ_ONLY )
     {
-        if( *m_isConstant )
+        while( !m_chunks->empty() )
         {
-            Parameter< Operation::CREATE_PATH > pCreate;
-            pCreate.path = name;
-            IOHandler->enqueue(IOTask(this, pCreate));
-            Parameter< Operation::WRITE_ATT > aWrite;
-            aWrite.name = "value";
-            aWrite.dtype = m_constantValue->dtype;
-            aWrite.resource = m_constantValue->getResource();
-            IOHandler->enqueue(IOTask(this, aWrite));
-            aWrite.name = "shape";
-            Attribute a(getExtent());
-            aWrite.dtype = a.dtype;
-            aWrite.resource = a.getResource();
-            IOHandler->enqueue(IOTask(this, aWrite));
-        } else
-        {
-            Parameter< Operation::CREATE_DATASET > dCreate;
-            dCreate.name = name;
-            dCreate.extent = getExtent();
-            dCreate.dtype = getDatatype();
-            dCreate.chunkSize = m_dataset->chunkSize;
-            dCreate.compression = m_dataset->compression;
-            dCreate.transform = m_dataset->transform;
-            IOHandler->enqueue(IOTask(this, dCreate));
+            IOHandler->enqueue(m_chunks->front());
+            m_chunks->pop();
         }
-        IOHandler->flush();
-    }
 
-    while( !m_chunks->empty() )
+        IOHandler->flush();
+    } else
     {
-        IOHandler->enqueue(m_chunks->front());
-        m_chunks->pop();
-        IOHandler->flush();
-    }
+        if( !written )
+        {
+            if( *m_isConstant )
+            {
+                Parameter< Operation::CREATE_PATH > pCreate;
+                pCreate.path = name;
+                IOHandler->enqueue(IOTask(this, pCreate));
+                Parameter< Operation::WRITE_ATT > aWrite;
+                aWrite.name = "value";
+                aWrite.dtype = m_constantValue->dtype;
+                aWrite.resource = m_constantValue->getResource();
+                IOHandler->enqueue(IOTask(this, aWrite));
+                aWrite.name = "shape";
+                Attribute a(getExtent());
+                aWrite.dtype = a.dtype;
+                aWrite.resource = a.getResource();
+                IOHandler->enqueue(IOTask(this, aWrite));
+            } else
+            {
+                Parameter< Operation::CREATE_DATASET > dCreate;
+                dCreate.name = name;
+                dCreate.extent = getExtent();
+                dCreate.dtype = getDatatype();
+                dCreate.chunkSize = m_dataset->chunkSize;
+                dCreate.compression = m_dataset->compression;
+                dCreate.transform = m_dataset->transform;
+                IOHandler->enqueue(IOTask(this, dCreate));
+            }
+        }
 
-    flushAttributes();
+        while( !m_chunks->empty() )
+        {
+            IOHandler->enqueue(m_chunks->front());
+            m_chunks->pop();
+        }
+
+        IOHandler->flush();
+
+        flushAttributes();
+    }
 }
 
 void

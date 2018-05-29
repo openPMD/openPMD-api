@@ -425,19 +425,15 @@ Series::setName(std::string const& n)
 void
 Series::flush()
 {
-    if( IOHandler->accessType == AccessType::READ_WRITE ||
-        IOHandler->accessType == AccessType::CREATE )
+    switch( *m_iterationEncoding )
     {
-        switch( *m_iterationEncoding )
-        {
-            using IE = IterationEncoding;
-            case IE::fileBased:
-                flushFileBased();
-                break;
-            case IE::groupBased:
-                flushGroupBased();
-                break;
-        }
+        using IE = IterationEncoding;
+        case IE::fileBased:
+            flushFileBased();
+            break;
+        case IE::groupBased:
+            flushGroupBased();
+            break;
     }
 }
 
@@ -447,52 +443,64 @@ Series::flushFileBased()
     if( iterations.empty() )
         throw std::runtime_error("fileBased output can not be written with no iterations.");
 
-    for( auto& i : iterations )
+    if( IOHandler->accessType == AccessType::READ_ONLY )
+        for( auto& i : iterations )
+            i.second.flush();
+    else
     {
-        /* as there is only one series,
-         * emulate the file belonging to each iteration as not yet written */
-        written = false;
-        iterations.written = false;
-
-        i.second.flushFileBased(i.first);
-
-        iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
-
-        if( dirty )
+        for( auto& i : iterations )
         {
-            flushAttributes();
-            /* manually flag the Series dirty
-             * until all iterations have been updated */
-            dirty = true;
+            /* as there is only one series,
+             * emulate the file belonging to each iteration as not yet written */
+            written = false;
+            iterations.written = false;
+
+            i.second.flushFileBased(i.first);
+
+            iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
+
+            if( dirty )
+            {
+                flushAttributes();
+                /* manually flag the Series dirty
+                 * until all iterations have been updated */
+                dirty = true;
+            }
         }
+        dirty = false;
     }
-    dirty = false;
 }
 
 void
 Series::flushGroupBased()
 {
-    if( !written )
+    if( IOHandler->accessType == AccessType::READ_ONLY )
+        for( auto& i : iterations )
+            i.second.flush();
+    else
     {
-        Parameter< Operation::CREATE_FILE > fCreate;
-        fCreate.name = *m_name;
-        IOHandler->enqueue(IOTask(this, fCreate));
-        IOHandler->flush();
-    }
-
-    iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
-
-    for( auto& i : iterations )
-    {
-        if( !i.second.written )
+        if( !written )
         {
-            i.second.m_writable->parent = getWritable(&iterations);
-            i.second.parent = getWritable(&iterations);
+            Parameter< Operation::CREATE_FILE > fCreate;
+            fCreate.name = *m_name;
+            IOHandler->enqueue(IOTask(this, fCreate));
+            IOHandler->flush();
         }
-        i.second.flushGroupBased(i.first);
-    }
 
-    flushAttributes();
+        iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
+
+        for( auto& i : iterations )
+        {
+            if( !i.second.written )
+            {
+                i.second.m_writable->parent = getWritable(&iterations);
+                i.second.parent = getWritable(&iterations);
+            }
+            i.second.flushGroupBased(i.first);
+        }
+
+        flushAttributes();
+    }
 }
 
 void

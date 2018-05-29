@@ -146,34 +146,43 @@ Iteration::flushGroupBased(uint64_t i)
 void
 Iteration::flush()
 {
-    /* Find the root point [Series] of this file,
-     * meshesPath and particlesPath are stored there */
-    Writable *w = this->parent;
-    while( w->parent )
-        w = w->parent;
-    Series* s = dynamic_cast<Series *>(w->attributable);
-
-    if( !meshes.empty() )
+    if( IOHandler->accessType == AccessType::READ_ONLY )
     {
-        if( !s->containsAttribute("meshesPath") )
-            s->setMeshesPath("meshes/");
-        s->flushMeshesPath();
-        meshes.flush(s->meshesPath());
         for( auto& m : meshes )
             m.second.flush(m.first);
-    }
-
-    if( !particles.empty() )
-    {
-        if( !s->containsAttribute("particlesPath") )
-            s->setParticlesPath("particles/");
-        s->flushParticlesPath();
-        particles.flush(s->particlesPath());
         for( auto& species : particles )
             species.second.flush(species.first);
-    }
+    } else
+    {
+        /* Find the root point [Series] of this file,
+         * meshesPath and particlesPath are stored there */
+        Writable *w = this->parent;
+        while( w->parent )
+            w = w->parent;
+        Series* s = dynamic_cast<Series *>(w->attributable);
 
-    flushAttributes();
+        if( !meshes.empty() )
+        {
+            if( !s->containsAttribute("meshesPath") )
+                s->setMeshesPath("meshes/");
+            s->flushMeshesPath();
+            meshes.flush(s->meshesPath());
+            for( auto& m : meshes )
+                m.second.flush(m.first);
+        }
+
+        if( !particles.empty() )
+        {
+            if( !s->containsAttribute("particlesPath") )
+                s->setParticlesPath("particles/");
+            s->flushParticlesPath();
+            particles.flush(s->particlesPath());
+            for( auto& species : particles )
+                species.second.flush(species.first);
+        }
+
+        flushAttributes();
+    }
 }
 
 void

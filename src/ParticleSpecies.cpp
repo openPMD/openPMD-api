@@ -107,18 +107,27 @@ ParticleSpecies::read()
 void
 ParticleSpecies::flush(std::string const& path)
 {
-    Container< Record >::flush(path);
-
-    for( auto& record : *this )
-        record.second.flush(record.first);
-
-    if( particlePatches.find("numParticles") != particlePatches.end()
-        && particlePatches.find("numParticlesOffset") != particlePatches.end()
-        && particlePatches.size() >= 3 )
+    if( IOHandler->accessType == AccessType::READ_ONLY )
     {
-        particlePatches.flush("particlePatches");
+        for( auto& record : *this )
+            record.second.flush(record.first);
         for( auto& patch : particlePatches )
             patch.second.flush(patch.first);
+    } else
+    {
+        Container< Record >::flush(path);
+
+        for( auto& record : *this )
+            record.second.flush(record.first);
+
+        if( particlePatches.find("numParticles") != particlePatches.end()
+            && particlePatches.find("numParticlesOffset") != particlePatches.end()
+            && particlePatches.size() >= 3 )
+        {
+            particlePatches.flush("particlePatches");
+            for( auto& patch : particlePatches )
+                patch.second.flush(patch.first);
+        }
     }
 }
 } // openPMD
