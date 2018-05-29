@@ -349,9 +349,9 @@ ADIOS1IOHandlerImpl::createPath(Writable* writable,
     {
         /* Sanitize path */
         std::string path = parameters.path;
-        if( auxiliary::starts_with(path, "/") )
+        if( auxiliary::starts_with(path, '/') )
             path = auxiliary::replace_first(path, "/", "");
-        if( !auxiliary::ends_with(path, "/") )
+        if( !auxiliary::ends_with(path, '/') )
             path += '/';
 
         /* ADIOS has no concept for explicitly creating paths.
@@ -393,9 +393,9 @@ ADIOS1IOHandlerImpl::createDataset(Writable* writable,
 
         /* Sanitize name */
         std::string name = parameters.name;
-        if( auxiliary::starts_with(name, "/") )
+        if( auxiliary::starts_with(name, '/') )
             name = auxiliary::replace_first(name, "/", "");
-        if( auxiliary::ends_with(name, "/") )
+        if( auxiliary::ends_with(name, '/') )
             name = auxiliary::replace_first(name, "/", "");
 
         std::string path = concrete_bp1_file_position(writable) + name;
@@ -496,9 +496,9 @@ ADIOS1IOHandlerImpl::openPath(Writable* writable,
 {
     /* Sanitize path */
     std::string path = parameters.path;
-    if( auxiliary::starts_with(path, "/") )
+    if( auxiliary::starts_with(path, '/') )
         path = auxiliary::replace_first(path, "/", "");
-    if( !auxiliary::ends_with(path, "/") )
+    if( !auxiliary::ends_with(path, '/') )
         path += '/';
 
     writable->written = true;
@@ -523,7 +523,7 @@ ADIOS1IOHandlerImpl::openDataset(Writable* writable,
 
     /* Sanitize name */
     std::string name = parameters.name;
-    if( auxiliary::starts_with(name, "/") )
+    if( auxiliary::starts_with(name, '/') )
         name = auxiliary::replace_first(name, "/", "");
 
     std::string datasetname = concrete_bp1_file_position(writable) + name;
@@ -952,7 +952,7 @@ ADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
     }
 
     std::string name = concrete_bp1_file_position(writable);
-    if( !auxiliary::ends_with(name, "/") )
+    if( !auxiliary::ends_with(name, '/') )
         name += '/';
     name += parameters.name;
 
@@ -1034,7 +1034,7 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
     f = m_openReadFileHandles.at(m_filePaths.at(writable));
 
     std::string attrname = concrete_bp1_file_position(writable);
-    if( !auxiliary::ends_with(attrname, "/") )
+    if( !auxiliary::ends_with(attrname, '/') )
         attrname += "/";
     attrname += parameters.name;
 
@@ -1412,7 +1412,7 @@ ADIOS1IOHandlerImpl::listAttributes(Writable* writable,
 
     std::string name = concrete_bp1_file_position(writable);
 
-    if( !auxiliary::ends_with(name, "/") )
+    if( !auxiliary::ends_with(name, '/') )
     {
         /* writable is a dataset and corresponds to an ADIOS variable */
         ADIOS_VARINFO* info;

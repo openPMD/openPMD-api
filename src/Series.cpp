@@ -245,7 +245,7 @@ Series::setMeshesPath(std::string const& mp)
                     [](Container< Iteration, uint64_t >::value_type const& i){ return i.second.meshes.written; }) )
         throw std::runtime_error("A files meshesPath can not (yet) be changed after it has been written.");
 
-    if( auxiliary::ends_with(mp, "/") )
+    if( auxiliary::ends_with(mp, '/') )
         setAttribute("meshesPath", mp);
     else
         setAttribute("meshesPath", mp + "/");
@@ -266,7 +266,7 @@ Series::setParticlesPath(std::string const& pp)
                     [](Container< Iteration, uint64_t >::value_type const& i){ return i.second.particles.written; }) )
         throw std::runtime_error("A files particlesPath can not (yet) be changed after it has been written.");
 
-    if( auxiliary::ends_with(pp, "/") )
+    if( auxiliary::ends_with(pp, '/') )
         setAttribute("particlesPath", pp);
     else
         setAttribute("particlesPath", pp + "/");

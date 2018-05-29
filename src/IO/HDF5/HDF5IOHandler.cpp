@@ -136,9 +136,9 @@ HDF5IOHandlerImpl::createPath(Writable* writable,
     {
         /* Sanitize path */
         std::string path = parameters.path;
-        if( auxiliary::starts_with(path, "/") )
+        if( auxiliary::starts_with(path, '/') )
             path = auxiliary::replace_first(path, "/", "");
-        if( !auxiliary::ends_with(path, "/") )
+        if( !auxiliary::ends_with(path, '/') )
             path += '/';
 
         /* Open H5Object to write into */
@@ -194,9 +194,9 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
     {
         /* Sanitize name */
         std::string name = parameters.name;
-        if( auxiliary::starts_with(name, "/") )
+        if( auxiliary::starts_with(name, '/') )
             name = auxiliary::replace_first(name, "/", "");
-        if( auxiliary::ends_with(name, "/") )
+        if( auxiliary::ends_with(name, '/') )
             name = auxiliary::replace_first(name, "/", "");
 
         /* Open H5Object to write into */
@@ -311,9 +311,9 @@ HDF5IOHandlerImpl::extendDataset(Writable* writable,
 
     /* Sanitize name */
     std::string name = parameters.name;
-    if( auxiliary::starts_with(name, "/") )
+    if( auxiliary::starts_with(name, '/') )
         name = auxiliary::replace_first(name, "/", "");
-    if( !auxiliary::ends_with(name, "/") )
+    if( !auxiliary::ends_with(name, '/') )
         name += '/';
 
     dataset_id = H5Dopen(node_id,
@@ -385,9 +385,9 @@ HDF5IOHandlerImpl::openPath(Writable* writable,
 
     /* Sanitize path */
     std::string path = parameters.path;
-    if( auxiliary::starts_with(path, "/") )
+    if( auxiliary::starts_with(path, '/') )
         path = auxiliary::replace_first(path, "/", "");
-    if( !auxiliary::ends_with(path, "/") )
+    if( !auxiliary::ends_with(path, '/') )
         path += '/';
 
     path_id = H5Gopen(node_id,
@@ -421,9 +421,9 @@ HDF5IOHandlerImpl::openDataset(Writable* writable,
 
     /* Sanitize name */
     std::string name = parameters.name;
-    if( auxiliary::starts_with(name, "/") )
+    if( auxiliary::starts_with(name, '/') )
         name = auxiliary::replace_first(name, "/", "");
-    if( !auxiliary::ends_with(name, "/") )
+    if( !auxiliary::ends_with(name, '/') )
         name += '/';
 
     dataset_id = H5Dopen(node_id,
@@ -541,9 +541,9 @@ HDF5IOHandlerImpl::deletePath(Writable* writable,
     {
         /* Sanitize path */
         std::string path = parameters.path;
-        if( auxiliary::starts_with(path, "/") )
+        if( auxiliary::starts_with(path, '/') )
             path = auxiliary::replace_first(path, "/", "");
-        if( !auxiliary::ends_with(path, "/") )
+        if( !auxiliary::ends_with(path, '/') )
             path += '/';
 
         /* Open H5Object to delete in
@@ -585,9 +585,9 @@ HDF5IOHandlerImpl::deleteDataset(Writable* writable,
     {
         /* Sanitize name */
         std::string name = parameters.name;
-        if( auxiliary::starts_with(name, "/") )
+        if( auxiliary::starts_with(name, '/') )
             name = auxiliary::replace_first(name, "/", "");
-        if( !auxiliary::ends_with(name, "/") )
+        if( !auxiliary::ends_with(name, '/') )
             name += '/';
 
         /* Open H5Object to delete in

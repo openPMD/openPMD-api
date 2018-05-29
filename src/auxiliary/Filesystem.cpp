@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
 
 #ifdef _WIN32
 #   include <windows.h>
@@ -105,11 +106,22 @@ create_directories( std::string const& path )
     if( directory_exists(path) )
         return true;
 
-    bool success = false;
+    bool success = true;
 #ifdef _WIN32
     success = CreateDirectory(path.c_str(), NULL);
 #else
-    success = (mkdir(path.c_str(), 0777) == 0);
+    std::istringstream ss(path);
+    std::string token;
+
+    std::string partialPath;
+    if( auxiliary::starts_with(path, '/') )
+        partialPath += "/";
+    while( std::getline( ss, token, '/' ) )
+    {
+        if( !token.empty() )
+            partialPath += token + '/';
+        success &= (mkdir(partialPath.c_str(), 0777) == 0);
+    }
 #endif
     return success;
 }
@@ -120,11 +132,19 @@ remove_directory( std::string const& path )
     if( !directory_exists(path) )
         return false;
 
-    bool success = false;
+    bool success = true;
 #ifdef _WIN32
     success = RemoveDirectory(path.c_str());
 #else
-    success = (remove(path.c_str()) == 0);
+    for( auto const& entry : list_directory(path) )
+    {
+        std::string partialPath = path + '/' + entry;
+        if( directory_exists(partialPath) )
+            success &= remove_directory(partialPath);
+        else if( file_exists(partialPath) )
+            success &= remove_file(partialPath);
+    }
+    success &= (remove(path.c_str()) == 0);
 #endif
     return success;
 }
