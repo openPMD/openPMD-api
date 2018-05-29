@@ -210,24 +210,6 @@ set(IO_SOURCE
         src/IO/HDF5/HDF5IOHandler.cpp
         src/IO/HDF5/ParallelHDF5IOHandler.cpp)
 
-if(WIN32)
-    set(TARGET_PLATFORM "WIN32")
-    set_property(
-            SOURCE src/auxiliary/Filesystem.cpp
-            APPEND
-            PROPERTY COMPILE_DEFINITIONS
-            WIN32=1
-    )
-else()
-    set(TARGET_PLATFORM "UNIX")
-    set_property(
-            SOURCE src/auxiliary/Filesystem.cpp
-            APPEND
-            PROPERTY COMPILE_DEFINITIONS
-            UNIX=1
-    )
-endif()
-
 # library
 add_library(openPMD ${CORE_SOURCE} ${IO_SOURCE})
 
@@ -406,8 +388,6 @@ endif()
 if(BUILD_TESTING)
     foreach(testname ${openPMD_TEST_NAMES})
         add_executable(${testname}Tests test/${testname}Test.cpp)
-
-        target_compile_definitions(${testname}Tests PUBLIC "-D${TARGET_PLATFORM}=1")
 
         if(openPMD_HAVE_INVASIVE_TESTS)
             target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_INVASIVE_TESTS=1")

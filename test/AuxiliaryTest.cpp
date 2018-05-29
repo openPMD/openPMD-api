@@ -370,7 +370,7 @@ TEST_CASE( "filesystem_test", "[auxiliary]" )
             return str;
         };
 
-#if WIN32
+#ifdef _WIN32
     REQUIRE(path_exists("C:\\"));
     REQUIRE(path_exists("C:\\Program Files"));
     REQUIRE(path_exists("C:\\Windows"));
@@ -412,7 +412,7 @@ TEST_CASE( "filesystem_test", "[auxiliary]" )
             REQUIRE(!file_exists(del));
         }
     }
-#elif UNIX
+#else
     REQUIRE(directory_exists("/"));
     REQUIRE(directory_exists("/boot"));
     REQUIRE(directory_exists("/etc"));
