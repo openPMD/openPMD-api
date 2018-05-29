@@ -111,7 +111,7 @@ install:
   - cmd: conda config --add channels conda-forge
 
   # Configure the VM.
-  - cmd: conda install -n root --quiet --yes cmake boost-cpp pybind11 hdf5
+  - cmd: conda install -n root --quiet --yes cmake pybind11 hdf5
 
 before_build:
   - cmd: cd C:\projects\openpmd-api

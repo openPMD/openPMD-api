@@ -12,7 +12,6 @@ Required
 --------
 
 * CMake 3.10.0+
-* Boost 1.62.0+: ``filesystem``, ``system``
 * C++11 capable compiler, e.g. g++ 4.9+, clang 3.9+
 
 Shipped internally
