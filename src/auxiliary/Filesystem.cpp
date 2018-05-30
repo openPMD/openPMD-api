@@ -80,20 +80,21 @@ list_directory(std::string const& path )
     std::string pattern(path);
     pattern.append("\\*");
     WIN32_FIND_DATA data;
-    HANDLE hFind;
-    if ((hFind = FindFirstFile(pattern.c_str(), &data)) != INVALID_HANDLE_VALUE) {
-        do {
-            ret.push_back(data.cFileName);
-        } while (FindNextFile(hFind, &data) != 0);
-        FindClose(hFind);
-    }
+    HANDLE hFind = FindFirstFile(pattern.c_str(), &data);
+    if( hFind == INVALID_HANDLE_VALUE )
+        throw std::system_error(std::error_code(errno, std::system_category()));
+    do {
+        if( strcmp(data.cFileName, ".") && strcmp(data.cFileName, "..") )
+            ret.emplace_back(entry->d_name);
+    } while (FindNextFile(hFind, &data) != 0);
+    FindClose(hFind);
 #else
     auto directory = opendir(path.c_str());
     if( !directory )
         throw std::system_error(std::error_code(errno, std::system_category()));
     dirent* entry;
     while ((entry = readdir(directory)) != nullptr)
-        if( strncmp(entry->d_name, ".", 1) && strncmp(entry->d_name, "..", 2) )
+        if( strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..") )
             ret.emplace_back(entry->d_name);
     closedir(directory);
 #endif
@@ -108,7 +109,7 @@ create_directories( std::string const& path )
 
     bool success = true;
 #ifdef _WIN32
-    success = CreateDirectory(path.c_str(), NULL);
+    success = SHCreateDirectory(path.c_str());
 #else
     std::istringstream ss(path);
     std::string token;
@@ -134,18 +135,21 @@ remove_directory( std::string const& path )
 
     bool success = true;
 #ifdef _WIN32
-    success = RemoveDirectory(path.c_str());
+    char seperator = '\\';
+    auto del = [](std::string const& path) -> bool { return RemoveDirectory(path.c_str()); };
 #else
+    char seperator = '/';
+    auto del = [](std::string const& path) -> bool { return (0 == remove(path.c_str()));};
+#endif
     for( auto const& entry : list_directory(path) )
     {
-        std::string partialPath = path + '/' + entry;
+        std::string partialPath = path + seperator + entry;
         if( directory_exists(partialPath) )
             success &= remove_directory(partialPath);
         else if( file_exists(partialPath) )
             success &= remove_file(partialPath);
     }
-    success &= (remove(path.c_str()) == 0);
-#endif
+    success &= del(path);
     return success;
 }
 

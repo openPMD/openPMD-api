@@ -377,8 +377,8 @@ TEST_CASE( "filesystem_test", "[auxiliary]" )
     REQUIRE(directory_exists("C:\\Windows"));
     REQUIRE(!directory_exists("C:\\nonexistent_folder_in_C_drive"));
 
-    REQUIRE(file_exists(".\\AuxiliaryTests.exe"));
-    REQUIRE(!file_exists(".\\nonexistent_file_in_cmake_bin_directory.exe"));
+    REQUIRE(file_exists("AuxiliaryTests.exe"));
+    REQUIRE(!file_exists("nonexistent_file_in_cmake_bin_directory.exe"));
 
     auto dir_entries = list_directory("C:\\");
     REQUIRE(!dir_entries.empty());
