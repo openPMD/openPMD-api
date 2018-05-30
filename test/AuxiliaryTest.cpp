@@ -397,10 +397,10 @@ TEST_CASE( "filesystem_test", "[auxiliary]" )
     REQUIRE(!remove_directory(new_directory));
 
     REQUIRE(!remove_file(".\\nonexistent_file_in_cmake_bin_directory"));
-    dir_entries = list_directory("..\\CMakeFiles");
+    dir_entries = list_directory("..\\..\\.travis");
     if( !dir_entries.empty() )
     {
-        std::string del = "..\\CMakeFiles\\" + *dir_entries.begin();
+        std::string del = "..\\..\\.travis\\" + *dir_entries.begin();
         while( !file_exists(del) && directory_exists(del) )
         {
             dir_entries = list_directory(del);
@@ -447,10 +447,10 @@ TEST_CASE( "filesystem_test", "[auxiliary]" )
     REQUIRE(!remove_directory(new_sub_directory));
 
     REQUIRE(!remove_file("./nonexistent_file_in_cmake_bin_directory"));
-    dir_entries = list_directory("../CMakeFiles");
+    dir_entries = list_directory("../../.travis");
     if( !dir_entries.empty() )
     {
-        std::string del = "../CMakeFiles/" + *dir_entries.begin();
+        std::string del = "../../.travis/" + *dir_entries.begin();
         while( !file_exists(del) && directory_exists(del) )
         {
             dir_entries = list_directory(del);
