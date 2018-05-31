@@ -41,41 +41,35 @@ namespace auxiliary
 bool
 directory_exists(std::string const& path)
 {
-    bool exists = false;
 #ifdef _WIN32
     DWORD attributes = GetFileAttributes(path.c_str());
 
-    exists = (attributes != INVALID_FILE_ATTRIBUTES &&
-             (attributes & FILE_ATTRIBUTE_DIRECTORY));
+    return (attributes != INVALID_FILE_ATTRIBUTES &&
+            (attributes & FILE_ATTRIBUTE_DIRECTORY));
 #else
     struct stat s;
-    bool success = (stat(path.c_str(), &s) == 0);
-    exists = success && S_ISDIR(s.st_mode);
+    return (0 == stat(path.c_str(), &s)) && S_ISDIR(s.st_mode);
 #endif
-    return exists;
 }
 
 bool
 file_exists( std::string const& path )
 {
-    bool exists = false;
 #ifdef _WIN32
     DWORD attributes = GetFileAttributes(path.c_str());
 
-    exists = (attributes != INVALID_FILE_ATTRIBUTES &&
-             !(attributes & FILE_ATTRIBUTE_DIRECTORY));
+    return (attributes != INVALID_FILE_ATTRIBUTES &&
+            !(attributes & FILE_ATTRIBUTE_DIRECTORY));
 #else
     struct stat s;
-    bool success = (stat(path.c_str(), &s) == 0);
-    exists = success && S_ISREG(s.st_mode);
+    return (0 == stat(path.c_str(), &s)) && S_ISREG(s.st_mode);
 #endif
-    return exists;
 }
 
 std::vector< std::string >
 list_directory(std::string const& path )
 {
-  std::vector< std::string > ret;
+    std::vector< std::string > ret;
 #ifdef _WIN32
     std::string pattern(path);
     pattern.append("\\*");
@@ -85,7 +79,7 @@ list_directory(std::string const& path )
         throw std::system_error(std::error_code(errno, std::system_category()));
     do {
         if( strcmp(data.cFileName, ".") && strcmp(data.cFileName, "..") )
-            ret.emplace_back(entry->d_name);
+            ret.emplace_back(data.cFileName);
     } while (FindNextFile(hFind, &data) != 0);
     FindClose(hFind);
 #else
@@ -107,23 +101,26 @@ create_directories( std::string const& path )
     if( directory_exists(path) )
         return true;
 
-    bool success = true;
 #ifdef _WIN32
-    success = SHCreateDirectory(path.c_str());
+    char seperator = '\\';
+    auto mk = [](std::string const& p) -> bool { return CreateDirectory(p.c_str(), nullptr); };
 #else
+    char seperator = '/';
+    auto mk = [](std::string const& p) -> bool { return (0 == mkdir(p.c_str(), 0777));};
+#endif
     std::istringstream ss(path);
     std::string token;
 
     std::string partialPath;
-    if( auxiliary::starts_with(path, '/') )
-        partialPath += "/";
-    while( std::getline( ss, token, '/' ) )
+    if( auxiliary::starts_with(path, seperator) )
+        partialPath += seperator;
+    bool success = true;
+    while( std::getline( ss, token, seperator ) )
     {
         if( !token.empty() )
-            partialPath += token + '/';
-        success &= (mkdir(partialPath.c_str(), 0777) == 0);
+            partialPath += token + seperator;
+        success &= mk(partialPath);
     }
-#endif
     return success;
 }
 
@@ -136,10 +133,10 @@ remove_directory( std::string const& path )
     bool success = true;
 #ifdef _WIN32
     char seperator = '\\';
-    auto del = [](std::string const& path) -> bool { return RemoveDirectory(path.c_str()); };
+    auto del = [](std::string const& p) -> bool { return RemoveDirectory(p.c_str()); };
 #else
     char seperator = '/';
-    auto del = [](std::string const& path) -> bool { return (0 == remove(path.c_str()));};
+    auto del = [](std::string const& p) -> bool { return (0 == remove(p.c_str()));};
 #endif
     for( auto const& entry : list_directory(path) )
     {
@@ -159,13 +156,11 @@ remove_file( std::string const& path )
   if( !file_exists(path) )
       return false;
 
-    bool success = false;
 #ifdef _WIN32
-    success = DeleteFile(path.c_str());
+    return DeleteFile(path.c_str());
 #else
-    success = (remove(path.c_str()) == 0);
+    return (0 == remove(path.c_str()));
 #endif
-    return success;
 }
 } // auxiliary
 } // openPMD
