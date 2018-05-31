@@ -71,7 +71,6 @@ Record::flush(std::string const& name)
                 Parameter< Operation::CREATE_PATH > pCreate;
                 pCreate.path = name;
                 IOHandler->enqueue(IOTask(this, pCreate));
-                IOHandler->flush();
                 for( auto& comp : *this )
                     comp.second.parent = getWritable(this);
             }
@@ -107,7 +106,6 @@ Record::read()
             RecordComponent& rc = (*this)[component];
             pOpen.path = component;
             IOHandler->enqueue(IOTask(&rc, pOpen));
-            IOHandler->flush();
             *rc.m_isConstant = true;
             rc.read();
         }

@@ -204,7 +204,6 @@ Mesh::flush(std::string const& name)
                 Parameter< Operation::CREATE_PATH > pCreate;
                 pCreate.path = name;
                 IOHandler->enqueue(IOTask(this, pCreate));
-                IOHandler->flush();
                 for( auto& comp : *this )
                     comp.second.parent = this->m_writable.get();
             }
@@ -322,7 +321,6 @@ Mesh::read()
             MeshRecordComponent& rc = (*this)[component];
             pOpen.path = component;
             IOHandler->enqueue(IOTask(&rc, pOpen));
-            IOHandler->flush();
             *rc.m_isConstant = true;
             rc.read();
         }

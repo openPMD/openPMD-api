@@ -69,8 +69,6 @@ PatchRecordComponent::flush(std::string const& name)
             IOHandler->enqueue(m_chunks->front());
             m_chunks->pop();
         }
-
-        IOHandler->flush();
     } else
     {
         if( !written )
@@ -90,8 +88,6 @@ PatchRecordComponent::flush(std::string const& name)
             IOHandler->enqueue(m_chunks->front());
             m_chunks->pop();
         }
-
-        IOHandler->flush();
 
         flushAttributes();
     }

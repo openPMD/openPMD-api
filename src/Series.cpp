@@ -187,7 +187,6 @@ Series::Series(std::string const& filepath,
 Series::~Series()
 {
     flush();
-    IOHandler->flush();
 }
 
 std::string
@@ -435,6 +434,8 @@ Series::flush()
             flushGroupBased();
             break;
     }
+
+    IOHandler->flush();
 }
 
 void
@@ -484,7 +485,6 @@ Series::flushGroupBased()
             Parameter< Operation::CREATE_FILE > fCreate;
             fCreate.name = *m_name;
             IOHandler->enqueue(IOTask(this, fCreate));
-            IOHandler->flush();
         }
 
         iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
@@ -513,7 +513,6 @@ Series::flushMeshesPath()
     aWrite.resource = a.getResource();
     aWrite.dtype = a.dtype;
     IOHandler->enqueue(IOTask(this, aWrite));
-    IOHandler->flush();
 }
 
 void
@@ -526,7 +525,6 @@ Series::flushParticlesPath()
     aWrite.resource = a.getResource();
     aWrite.dtype = a.dtype;
     IOHandler->enqueue(IOTask(this, aWrite));
-    IOHandler->flush();
 }
 
 void
@@ -729,7 +727,6 @@ Series::read()
     else
         throw std::runtime_error("Unknown openPMD version - " + version);
     IOHandler->enqueue(IOTask(&iterations, pOpen));
-    IOHandler->flush();
 
     iterations.readAttributes();
 
@@ -743,7 +740,6 @@ Series::read()
         Iteration& i = iterations[std::stoull(it)];
         pOpen.path = it;
         IOHandler->enqueue(IOTask(&i, pOpen));
-        IOHandler->flush();
         i.read();
     }
 

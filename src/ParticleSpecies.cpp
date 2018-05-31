@@ -48,7 +48,6 @@ ParticleSpecies::read()
         {
             pOpen.path = "particlePatches";
             IOHandler->enqueue(IOTask(&particlePatches, pOpen));
-            IOHandler->flush();
             particlePatches.read();
         } else
         {

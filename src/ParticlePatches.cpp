@@ -47,7 +47,6 @@ ParticlePatches::read()
         PatchRecord& pr = (*this)[record_name];
         pOpen.path = record_name;
         IOHandler->enqueue(IOTask(&pr, pOpen));
-        IOHandler->flush();
         pr.read();
     }
 

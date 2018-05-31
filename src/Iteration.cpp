@@ -92,18 +92,15 @@ Iteration::flushFileBased(uint64_t i)
         Parameter< Operation::CREATE_FILE > fCreate;
         fCreate.name = auxiliary::replace_first(s->iterationFormat(), "%T", std::to_string(i));
         IOHandler->enqueue(IOTask(s, fCreate));
-        IOHandler->flush();
 
         /* create basePath */
         Parameter< Operation::CREATE_PATH > pCreate;
         pCreate.path = auxiliary::replace_first(s->basePath(), "%T/", "");
         IOHandler->enqueue(IOTask(&s->iterations, pCreate));
-        IOHandler->flush();
 
         /* create iteration path */
         pCreate.path = std::to_string(i);
         IOHandler->enqueue(IOTask(this, pCreate));
-        IOHandler->flush();
     } else
     {
         /* open file */
@@ -111,18 +108,15 @@ Iteration::flushFileBased(uint64_t i)
         Parameter< Operation::OPEN_FILE > fOpen;
         fOpen.name = auxiliary::replace_last(s->iterationFormat(), "%T", std::to_string(i));
         IOHandler->enqueue(IOTask(s, fOpen));
-        IOHandler->flush();
 
         /* open basePath */
         Parameter< Operation::OPEN_PATH > pOpen;
         pOpen.path = auxiliary::replace_first(s->basePath(), "%T/", "");
         IOHandler->enqueue(IOTask(&s->iterations, pOpen));
-        IOHandler->flush();
 
         /* open iteration path */
         pOpen.path = std::to_string(i);
         IOHandler->enqueue(IOTask(this, pOpen));
-        IOHandler->flush();
     }
 
     flush();
@@ -137,7 +131,6 @@ Iteration::flushGroupBased(uint64_t i)
         Parameter< Operation::CREATE_PATH > pCreate;
         pCreate.path = std::to_string(i);
         IOHandler->enqueue(IOTask(this, pCreate));
-        IOHandler->flush();
     }
 
     flush();
@@ -261,7 +254,6 @@ Iteration::read()
         Parameter< Operation::OPEN_PATH > pOpen;
         pOpen.path = s->meshesPath();
         IOHandler->enqueue(IOTask(&meshes, pOpen));
-        IOHandler->flush();
 
         meshes.readAttributes();
 
@@ -322,7 +314,6 @@ Iteration::read()
         Parameter< Operation::OPEN_PATH > pOpen;
         pOpen.path = s->particlesPath();
         IOHandler->enqueue(IOTask(&particles, pOpen));
-        IOHandler->flush();
 
         particles.readAttributes();
 
