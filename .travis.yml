@@ -198,7 +198,7 @@ jobs:
       language: python
       python: "3.6"
       env:
-        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON HDF5_VERSION=@1.8.13 USE_ADIOS1=OFF USE_ADIOS2=OFF
       compiler: gcc
       addons:
         apt:
@@ -276,10 +276,10 @@ install:
     fi
   - if [ $USE_HDF5 == "ON" ]; then
       travis_wait spack install
-        hdf5
+        hdf5$HDF5_VERSION
         $SPACK_VAR_MPI
         $COMPILERSPEC &&
-      spack load hdf5 $SPACK_VAR_MPI $COMPILERSPEC;
+      spack load hdf5$HDF5_VERSION $SPACK_VAR_MPI $COMPILERSPEC;
     fi
   - if [ $USE_ADIOS1 == "ON" ]; then
       travis_wait spack install
