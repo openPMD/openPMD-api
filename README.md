@@ -99,7 +99,7 @@ Shipped internally:
 * [Catch2](https://github.com/catchorg/Catch2) 2.2.1+
 
 Optional I/O backends:
-* [HDF5](https://support.hdfgroup.org/HDF5) 1.8.6+
+* [HDF5](https://support.hdfgroup.org/HDF5) 1.8.13+
 * [ADIOS1](https://www.olcf.ornl.gov/center-projects/adios) 1.13.1+
 * [ADIOS2](https://github.com/ornladios/ADIOS2) 2.1+ (*not yet implemented*)
 
