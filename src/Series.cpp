@@ -24,7 +24,6 @@
 #include "openPMD/Series.hpp"
 
 #include <iostream>
-#include <regex>
 
 
 namespace openPMD
@@ -770,20 +769,28 @@ cleanFilename(std::string const& filename, Format f)
 }
 
 std::function< bool(std::string const&) >
-matcher(std::string const& name, Format f)
+matcher(std::string const& seriesName, Format f)
 {
     switch( f )
     {
         case Format::HDF5:
         {
-            std::regex pattern(auxiliary::replace_last(name + ".h5$", "%T", "[[:digit:]]+"));
-            return [pattern](std::string const& filename) -> bool { return std::regex_search(filename, pattern); };
+            return [seriesName](std::string const& filename) -> bool
+            {
+                bool const matchEnd( filename.rfind(".h5") == filename.size() - 3u );
+                bool const matchStart( filename.find(seriesName) == 0u );
+                return matchStart && matchEnd;
+            };
         }
         case Format::ADIOS1:
         case Format::ADIOS2:
         {
-            std::regex pattern(auxiliary::replace_last(name + ".bp$", "%T", "[[:digit:]]+"));
-            return [pattern](std::string const& filename) -> bool { return std::regex_search(filename, pattern); };
+            return [seriesName](std::string const& filename) -> bool
+            {
+                bool const matchEnd( filename.rfind(".bp") == filename.size() - 3u );
+                bool const matchStart( filename.find(seriesName) == 0u );
+                return matchStart && matchEnd;
+            };
         }
         default:
             return [](std::string const&) -> bool { return false; };
