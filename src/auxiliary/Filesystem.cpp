@@ -106,7 +106,9 @@ create_directories( std::string const& path )
     auto mk = [](std::string const& p) -> bool { return CreateDirectory(p.c_str(), nullptr); };
 #else
     char seperator = '/';
-    auto mk = [](std::string const& p) -> bool { return (0 == mkdir(p.c_str(), 0777));};
+    mode_t mask = umask(0);
+    umask(mask);
+    auto mk = [mask](std::string const& p) -> bool { return (0 == mkdir(p.c_str(), 0777 & ~mask));};
 #endif
     std::istringstream ss(path);
     std::string token;
