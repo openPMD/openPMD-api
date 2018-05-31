@@ -1,7 +1,7 @@
 #include <openPMD/openPMD.hpp>
 
+#include <algorithm>
 #include <iostream>
-#include <boost/filesystem.hpp>
 
 
 using namespace openPMD;

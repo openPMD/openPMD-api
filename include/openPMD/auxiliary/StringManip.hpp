@@ -39,23 +39,41 @@ contains(std::string const &s,
 }
 
 inline bool
+contains(std::string const &s,
+         char const infix)
+{
+    return s.find(infix) != std::string::npos;
+}
+
+inline bool
 starts_with(std::string const &s,
             std::string const &prefix)
 {
-    if( s.size() >= prefix.size() )
-        return (0 == s.compare(0, prefix.size(), prefix));
-    else
-        return false;
+    return (s.size() >= prefix.size()) &&
+           (0 == s.compare(0, prefix.size(), prefix));
+}
+
+inline bool
+starts_with(std::string const &s,
+            char const prefix)
+{
+    return !s.empty() &&
+           s[0] == prefix;
 }
 
 inline bool
 ends_with(std::string const &s,
           std::string const &suffix)
 {
-    if( s.size() >= suffix.size() )
-        return (0 == s.compare(s.size() - suffix.size(), suffix.size(), suffix));
-    else
-        return false;
+    return (s.size() >= suffix.size()) &&
+           (0 == s.compare(s.size() - suffix.size(), suffix.size(), suffix));
+}
+
+inline bool
+ends_with(std::string const &s,
+          char const suffix)
+{
+    return !s.empty() && s.back() == suffix;
 }
 
 inline std::string

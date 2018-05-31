@@ -40,7 +40,6 @@ The following options can be tried to switch between static and shared builds an
 CMake Option                   Values          Description
 ============================== =============== ==================================================
 ``BUILD_SHARED_LIBS``          ON/**OFF**      Build the C++ API as shared library
-``Boost_USE_STATIC_LIBS``      ON/**OFF**      Require static Boost library
 ``HDF5_USE_STATIC_LIBRARIES``  ON/**OFF**      Require static HDF5 library
 ``ADIOS_USE_STATIC_LIBS``      ON/**OFF**      Require static ADIOS1 library
 ============================== =============== ==================================================

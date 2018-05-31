@@ -69,10 +69,6 @@ include(CTest)
 
 # Dependencies ################################################################
 #
-# external library: Boost (mandatory)
-find_package(Boost 1.62.0 REQUIRED
-    COMPONENTS system filesystem)
-
 # external library: MPI (optional)
 if(openPMD_USE_MPI STREQUAL AUTO)
     find_package(MPI)
@@ -194,6 +190,7 @@ set(CORE_SOURCE
         src/Record.cpp
         src/RecordComponent.cpp
         src/Series.cpp
+        src/auxiliary/Filesystem.cpp
         src/backend/Attributable.cpp
         src/backend/BaseRecordComponent.cpp
         src/backend/MeshRecordComponent.cpp
@@ -255,15 +252,6 @@ if(BUILD_TESTING)
         find_package(Catch2 2.2.1 CONFIG REQUIRED)
         message(STATUS "Catch2: Found version ${Catch2_VERSION}")
     endif()
-endif()
-
-if(TARGET Boost::filesystem)
-    target_link_libraries(openPMD PUBLIC
-        Boost::boost Boost::system Boost::filesystem)
-else()
-    target_link_libraries(openPMD PUBLIC
-        ${Boost_LIBRARIES})
-    target_include_directories(openPMD SYSTEM PUBLIC ${Boost_INCLUDE_DIRS})
 endif()
 
 if(openPMD_HAVE_MPI)
@@ -387,9 +375,11 @@ endif()
 if(BUILD_TESTING)
     foreach(testname ${openPMD_TEST_NAMES})
         add_executable(${testname}Tests test/${testname}Test.cpp)
+
         if(openPMD_HAVE_INVASIVE_TESTS)
             target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_INVASIVE_TESTS=1")
         endif()
+
         if(openPMD_HAVE_MPI)
             target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_MPI=1")
         else()
@@ -454,8 +444,6 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     endif()
     string(CONCAT CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} "
             "-Wno-unknown-pragmas")
-    # silence BOOST filesystem
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-cpp")
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # Warning C4503: "decorated name length exceeded, name was truncated"
     # Symbols longer than 4096 chars are truncated

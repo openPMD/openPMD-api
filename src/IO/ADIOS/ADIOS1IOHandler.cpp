@@ -21,11 +21,12 @@
 #include "openPMD/IO/ADIOS/ADIOS1IOHandler.hpp"
 
 #if openPMD_HAVE_ADIOS1
+#   include "openPMD/auxiliary/Filesystem.hpp"
 #   include "openPMD/auxiliary/Memory.hpp"
 #   include "openPMD/auxiliary/StringManip.hpp"
 #   include "openPMD/IO/ADIOS/ADIOS1Auxiliary.hpp"
 #   include "openPMD/IO/ADIOS/ADIOS1FilePosition.hpp"
-#   include <boost/filesystem.hpp>
+#   include <cstring>
 #   include <iostream>
 #   include <memory>
 #endif
@@ -320,10 +321,8 @@ ADIOS1IOHandlerImpl::createFile(Writable* writable,
 
     if( !writable->written )
     {
-        using namespace boost::filesystem;
-        path dir(m_handler->directory);
-        if( !exists(dir) )
-            create_directories(dir);
+        if( !auxiliary::directory_exists(m_handler->directory) )
+            auxiliary::create_directories(m_handler->directory);
 
         std::string name = m_handler->directory + parameters.name;
         if( !auxiliary::ends_with(name, ".bp") )
@@ -350,9 +349,9 @@ ADIOS1IOHandlerImpl::createPath(Writable* writable,
     {
         /* Sanitize path */
         std::string path = parameters.path;
-        if( auxiliary::starts_with(path, "/") )
+        if( auxiliary::starts_with(path, '/') )
             path = auxiliary::replace_first(path, "/", "");
-        if( !auxiliary::ends_with(path, "/") )
+        if( !auxiliary::ends_with(path, '/') )
             path += '/';
 
         /* ADIOS has no concept for explicitly creating paths.
@@ -394,9 +393,9 @@ ADIOS1IOHandlerImpl::createDataset(Writable* writable,
 
         /* Sanitize name */
         std::string name = parameters.name;
-        if( auxiliary::starts_with(name, "/") )
+        if( auxiliary::starts_with(name, '/') )
             name = auxiliary::replace_first(name, "/", "");
-        if( auxiliary::ends_with(name, "/") )
+        if( auxiliary::ends_with(name, '/') )
             name = auxiliary::replace_first(name, "/", "");
 
         std::string path = concrete_bp1_file_position(writable) + name;
@@ -457,9 +456,7 @@ void
 ADIOS1IOHandlerImpl::openFile(Writable* writable,
                               Parameter< Operation::OPEN_FILE > const& parameters)
 {
-    using namespace boost::filesystem;
-    path dir(m_handler->directory);
-    if( !exists(dir) )
+    if( !auxiliary::directory_exists(m_handler->directory) )
         throw no_such_file_error("Supplied directory is not valid: " + m_handler->directory);
 
     std::string name = m_handler->directory + parameters.name;
@@ -499,9 +496,9 @@ ADIOS1IOHandlerImpl::openPath(Writable* writable,
 {
     /* Sanitize path */
     std::string path = parameters.path;
-    if( auxiliary::starts_with(path, "/") )
+    if( auxiliary::starts_with(path, '/') )
         path = auxiliary::replace_first(path, "/", "");
-    if( !auxiliary::ends_with(path, "/") )
+    if( !auxiliary::ends_with(path, '/') )
         path += '/';
 
     writable->written = true;
@@ -526,7 +523,7 @@ ADIOS1IOHandlerImpl::openDataset(Writable* writable,
 
     /* Sanitize name */
     std::string name = parameters.name;
-    if( auxiliary::starts_with(name, "/") )
+    if( auxiliary::starts_with(name, '/') )
         name = auxiliary::replace_first(name, "/", "");
 
     std::string datasetname = concrete_bp1_file_position(writable) + name;
@@ -622,12 +619,10 @@ ADIOS1IOHandlerImpl::deleteFile(Writable* writable,
         if( !auxiliary::ends_with(name, ".bp") )
             name += ".bp";
 
-        namespace bf = boost::filesystem;
-        bf::path file(name);
-        if( !bf::exists(file) )
+        if( !auxiliary::file_exists(name) )
             throw std::runtime_error("File does not exist: " + name);
 
-        bf::remove(file);
+        auxiliary::remove_file(name);
 
         writable->written = false;
         writable->abstractFilePosition.reset();
@@ -957,7 +952,7 @@ ADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
     }
 
     std::string name = concrete_bp1_file_position(writable);
-    if( !auxiliary::ends_with(name, "/") )
+    if( !auxiliary::ends_with(name, '/') )
         name += '/';
     name += parameters.name;
 
@@ -1039,7 +1034,7 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
     f = m_openReadFileHandles.at(m_filePaths.at(writable));
 
     std::string attrname = concrete_bp1_file_position(writable);
-    if( !auxiliary::ends_with(attrname, "/") )
+    if( !auxiliary::ends_with(attrname, '/') )
         attrname += "/";
     attrname += parameters.name;
 
@@ -1417,7 +1412,7 @@ ADIOS1IOHandlerImpl::listAttributes(Writable* writable,
 
     std::string name = concrete_bp1_file_position(writable);
 
-    if( !auxiliary::ends_with(name, "/") )
+    if( !auxiliary::ends_with(name, '/') )
     {
         /* writable is a dataset and corresponds to an ADIOS variable */
         ADIOS_VARINFO* info;

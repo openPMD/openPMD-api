@@ -18,11 +18,10 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
+#include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Series.hpp"
-
-#include <boost/filesystem.hpp>
 
 #include <iostream>
 #include <regex>
@@ -246,7 +245,7 @@ Series::setMeshesPath(std::string const& mp)
                     [](Container< Iteration, uint64_t >::value_type const& i){ return i.second.meshes.written; }) )
         throw std::runtime_error("A files meshesPath can not (yet) be changed after it has been written.");
 
-    if( auxiliary::ends_with(mp, "/") )
+    if( auxiliary::ends_with(mp, '/') )
         setAttribute("meshesPath", mp);
     else
         setAttribute("meshesPath", mp + "/");
@@ -267,7 +266,7 @@ Series::setParticlesPath(std::string const& pp)
                     [](Container< Iteration, uint64_t >::value_type const& i){ return i.second.particles.written; }) )
         throw std::runtime_error("A files particlesPath can not (yet) be changed after it has been written.");
 
-    if( auxiliary::ends_with(pp, "/") )
+    if( auxiliary::ends_with(pp, '/') )
         setAttribute("particlesPath", pp);
     else
         setAttribute("particlesPath", pp + "/");
@@ -527,16 +526,14 @@ Series::readFileBased()
     Parameter< Operation::OPEN_FILE > fOpen;
     Parameter< Operation::READ_ATT > aRead;
 
-    using namespace boost::filesystem;
-    path dir = path(IOHandler->directory);
-    if( !exists(dir) )
+    if( !auxiliary::directory_exists(IOHandler->directory) )
         throw no_such_file_error("Supplied directory is not valid: " + IOHandler->directory);
     auto isPartOfSeries = matcher(*m_name, *m_format);
-    for( path const& entry : directory_iterator(dir) )
+    for( auto const& entry : auxiliary::list_directory(IOHandler->directory) )
     {
-        if( isPartOfSeries(entry.filename().string()) )
+        if( isPartOfSeries(entry) )
         {
-            fOpen.name = entry.filename().string();
+            fOpen.name = entry;
             IOHandler->enqueue(IOTask(this, fOpen));
             IOHandler->flush();
             iterations.parent = getWritable(this);
