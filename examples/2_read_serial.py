@@ -37,14 +37,17 @@ if __name__ == "__main__":
     print("Field E.x has shape {0} and datatype {1}".format(
           shape, E_x.dtype))
 
+    offset = openPMD.Extent([1, 1, 1])
+    extent = openPMD.Extent([2, 2, 1])
     # TODO buffer protocol / numpy bindings
     # chunk_data = E_x[1:3, 1:3, 1:2]
+    chunk_data = E_x.load_chunk(offset, extent)
     # print("Queued the loading of a single chunk from disk, "
     #       "ready to execute")
     series.flush()
-    # print("Chunk has been read from disk\n"
-    #       "Read chunk contains:")
-    # print(chunk_data)
+    print("Chunk has been read from disk\n"
+          "Read chunk contains:")
+    print(chunk_data)
     # for row in range(2):
     #     for col in range(2):
     #         print("\t({0}|{1}|{2})\t{3}".format(

@@ -106,9 +106,11 @@ void init_RecordComponent(py::module &m) {
         }) */
 
         // deprecated: pass-through C++ API
-        //.def("load_chunk", [](RecordComponent & r, Offset const & offset, Extent const & extent, py::array & a) {
-        //    r.loadChunk(offset, extent, shareRaw(a.mutable_data()));
-        //})
+        .def("load_chunk", [](RecordComponent & r, Offset const & offset, Extent const & extent) {
+            std::vector<ptrdiff_t> c(extent.size());
+            std::copy(std::begin(extent), std::end(extent), std::begin(c));
+            return py::array( c, r.loadChunk<double>(offset, extent).get() );
+        })
 
         // deprecated: pass-through C++ API
         .def("store_chunk", [](RecordComponent & r, Offset const & offset, Extent const & extent, py::array & a) {
