@@ -5,6 +5,10 @@ include(CMakeFindDependencyMacro)
 set(openPMD_HAVE_MPI @openPMD_HAVE_MPI@)
 if(openPMD_HAVE_MPI)
     find_dependency(MPI)
+    # deselect parallel installs if explicitly a serial install is requested
+    set(openPMD_NOMPI_FOUND FALSE)
+else()
+    set(openPMD_NOMPI_FOUND TRUE)
 endif()
 set(openPMD_MPI_FOUND ${openPMD_HAVE_MPI})
 
