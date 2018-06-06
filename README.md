@@ -6,15 +6,19 @@ openPMD - API for Developers
 [![Doxygen](https://img.shields.io/badge/API-Doxygen-blue.svg)](http://www.openpmd.org/openPMD-api)
 [![Linux/OSX Build Status dev](https://img.shields.io/travis/openPMD/openPMD-api/dev.svg?label=dev)](https://travis-ci.org/openPMD/openPMD-api/branches)
 [![Windows Build Status dev](https://ci.appveyor.com/api/projects/status/x95q4n620pqk0e0t/branch/dev?svg=true)](https://ci.appveyor.com/project/ax3l/openpmd-api/branch/dev)
-[![Language](https://img.shields.io/badge/language-C%2B%2B11-orange.svg)](https://isocpp.org/)
-[![Language](https://img.shields.io/badge/language-Python3-orange.svg)](https://www.python.org/)
-![Development Phase](https://img.shields.io/badge/phase-unstable-yellow.svg)
 [![License](https://img.shields.io/badge/license-LGPLv3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0.html)
 
-This is project is in development.
+[![C++11][api-cpp]](https://isocpp.org/) ![C++11 API: Alpha][dev-alpha]
+[![Python3][api-py3]](https://www.python.org/) ![Python3 API: Unstable][dev-unstable]
 
-It will provide a C++ and Python API for openPMD writing and reading, both in serial and parallel (MPI).
-Initial backends will include ADIOS and HDF5.
+This library provides a common high-level API for openPMD writing and reading.
+It provides a common interface to I/O libraries and file formats such as HDF5 and ADIOS.
+Where supported, openPMD-api implements both serial and MPI parallel I/O capabilities.
+
+[api-cpp]: https://img.shields.io/badge/language-C%2B%2B11-orange.svg "C++11 API"
+[api-py3]: https://img.shields.io/badge/language-Python3-orange.svg "Python3 API"
+[dev-alpha]: https://img.shields.io/badge/phase-alpha-yellowgreen.svg "Status: Alpha"
+[dev-unstable]: https://img.shields.io/badge/phase-unstable-yellow.svg "Status: Unstable"
 
 ## Usage
 
@@ -91,15 +95,14 @@ Our manual shows full [read & write examples](https://openpmd-api.readthedocs.io
 
 Required:
 * CMake 3.10.0+
-* Boost 1.62.0+: `filesystem`, `system`
-* C++11 capable compiler, e.g. g++ 4.9+, clang 3.9+
+* C++11 capable compiler, e.g. g++ 4.9+, clang 3.9+, VS 2015+
 
 Shipped internally:
 * [MPark.Variant](https://github.com/mpark/variant) 1.3.0+
 * [Catch2](https://github.com/catchorg/Catch2) 2.2.1+
 
 Optional I/O backends:
-* [HDF5](https://support.hdfgroup.org/HDF5) 1.8.6+
+* [HDF5](https://support.hdfgroup.org/HDF5) 1.8.13+
 * [ADIOS1](https://www.olcf.ornl.gov/center-projects/adios) 1.13.1+
 * [ADIOS2](https://github.com/ornladios/ADIOS2) 2.1+ (*not yet implemented*)
 
@@ -214,7 +217,7 @@ export CMAKE_PREFIX_PATH=$HOME/somepath:$CMAKE_PREFIX_PATH
 
 Use the following lines in your projects `CMakeLists.txt`:
 ```cmake
-# supports:                       COMPONENTS MPI HDF5 ADIOS1 ADIOS2
+# supports:                       COMPONENTS MPI NOMPI HDF5 ADIOS1 ADIOS2
 find_package(openPMD 0.1.0 CONFIG)
 
 if(openPMD_FOUND)

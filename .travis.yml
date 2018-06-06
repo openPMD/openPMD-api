@@ -198,7 +198,7 @@ jobs:
       language: python
       python: "3.6"
       env:
-        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON HDF5_VERSION=@1.8.13 USE_ADIOS1=OFF USE_ADIOS2=OFF
       compiler: gcc
       addons:
         apt:
@@ -232,7 +232,7 @@ install:
       export MODULEPATH=$SPACK_ROOT/share/spack/modules/$(spack arch):$MODULEPATH;
     fi
   - SPACK_VAR_MPI="~mpi";
-  # required dependencies - CMake 3.10.0 & Boost 1.62.0
+  # required dependencies - CMake 3.10.0
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       if [ ! -f $HOME/.cache/cmake-3.10.0/bin/cmake ]; then
         wget -O cmake.sh https://cmake.org/files/v3.10/cmake-3.10.0-Linux-x86_64.sh &&
@@ -255,11 +255,6 @@ install:
   # diagnostics: modules created and visible?
   - module av
   - module li
-  - SPACK_BOOST_VAR="~atomic~chrono~date_time~graph~iostreams~locale~math~program_options~random~regex~serialization~signals+filesystem+system~test~timer~wave"
-  - travis_wait spack install
-      boost@1.65.0$SPACK_BOOST_VAR
-      $COMPILERSPEC
-  - spack load boost@1.65.0$SPACK_BOOST_VAR $COMPILERSPEC
   # optional dependencies - MPI, HDF5, ADIOS1, ADIOS2
   - if [ $USE_MPI == "ON" ]; then
       travis_wait spack install
@@ -276,10 +271,10 @@ install:
     fi
   - if [ $USE_HDF5 == "ON" ]; then
       travis_wait spack install
-        hdf5
+        hdf5$HDF5_VERSION
         $SPACK_VAR_MPI
         $COMPILERSPEC &&
-      spack load hdf5 $SPACK_VAR_MPI $COMPILERSPEC;
+      spack load hdf5$HDF5_VERSION $SPACK_VAR_MPI $COMPILERSPEC;
     fi
   - if [ $USE_ADIOS1 == "ON" ]; then
       travis_wait spack install

@@ -22,10 +22,6 @@
 
 #if openPMD_HAVE_MPI
 #   include <mpi.h>
-#   if openPMD_HAVE_HDF5
-#       include "openPMD/auxiliary/StringManip.hpp"
-#       include <boost/filesystem.hpp>
-#   endif
 #endif
 
 #include <iostream>
@@ -34,7 +30,6 @@
 namespace openPMD
 {
 #if openPMD_HAVE_HDF5 && openPMD_HAVE_MPI
-#   include "openPMD/auxiliary/StringManip.hpp"
 #   ifdef DEBUG
 #       define ASSERT(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error(std::string((TEXT))); }
 #   else

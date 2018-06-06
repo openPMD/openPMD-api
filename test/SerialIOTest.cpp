@@ -1514,7 +1514,7 @@ TEST_CASE( "hzdr_adios1_sample_content_test", "[serial][adios1]" )
                                      {7.3689453e-06f, 7.3689453e-06f, 7.3689453e-06f}}};
         Offset offset{20, 20, 150};
         Extent extent{3, 3, 3};
-        auto data = B_z.loadChunk(offset, extent);
+        auto data = B_z.loadChunk<float>(offset, extent);
         o.flush();
         float* raw_ptr = data.get();
 

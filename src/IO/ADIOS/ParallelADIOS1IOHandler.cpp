@@ -24,8 +24,7 @@
 #   include "openPMD/auxiliary/StringManip.hpp"
 #   include "openPMD/IO/ADIOS/ADIOS1Auxiliary.hpp"
 #   include "openPMD/IO/ADIOS/ADIOS1FilePosition.hpp"
-#   include <boost/filesystem.hpp>
-#   include <cstdlib>
+#   include <cstring>
 #endif
 
 namespace openPMD

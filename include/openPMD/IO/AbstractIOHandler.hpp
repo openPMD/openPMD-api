@@ -28,10 +28,10 @@
 #   include <mpi.h>
 #endif
 
-#include <stdexcept>
-#include <memory>
 #include <future>
+#include <memory>
 #include <queue>
+#include <stdexcept>
 #include <string>
 
 

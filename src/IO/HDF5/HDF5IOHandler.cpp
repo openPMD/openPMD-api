@@ -22,14 +22,15 @@
 
 
 #if openPMD_HAVE_HDF5
+#   include "openPMD/auxiliary/Filesystem.hpp"
 #   include "openPMD/auxiliary/StringManip.hpp"
 #   include "openPMD/backend/Attribute.hpp"
 #   include "openPMD/IO/IOTask.hpp"
 #   include "openPMD/IO/HDF5/HDF5Auxiliary.hpp"
 #   include "openPMD/IO/HDF5/HDF5FilePosition.hpp"
-#   include <boost/filesystem.hpp>
 #endif
 
+#include <cstring>
 #include <future>
 #include <iostream>
 #include <string>
@@ -99,10 +100,8 @@ HDF5IOHandlerImpl::createFile(Writable* writable,
 
     if( !writable->written )
     {
-        using namespace boost::filesystem;
-        path dir(m_handler->directory);
-        if( !exists(dir) )
-            create_directories(dir);
+        if( !auxiliary::directory_exists(m_handler->directory) )
+            auxiliary::create_directories(m_handler->directory);
 
         std::string name = m_handler->directory + parameters.name;
         if( !auxiliary::ends_with(name, ".h5") )
@@ -137,9 +136,9 @@ HDF5IOHandlerImpl::createPath(Writable* writable,
     {
         /* Sanitize path */
         std::string path = parameters.path;
-        if( auxiliary::starts_with(path, "/") )
+        if( auxiliary::starts_with(path, '/') )
             path = auxiliary::replace_first(path, "/", "");
-        if( !auxiliary::ends_with(path, "/") )
+        if( !auxiliary::ends_with(path, '/') )
             path += '/';
 
         /* Open H5Object to write into */
@@ -195,9 +194,9 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
     {
         /* Sanitize name */
         std::string name = parameters.name;
-        if( auxiliary::starts_with(name, "/") )
+        if( auxiliary::starts_with(name, '/') )
             name = auxiliary::replace_first(name, "/", "");
-        if( auxiliary::ends_with(name, "/") )
+        if( auxiliary::ends_with(name, '/') )
             name = auxiliary::replace_first(name, "/", "");
 
         /* Open H5Object to write into */
@@ -312,9 +311,9 @@ HDF5IOHandlerImpl::extendDataset(Writable* writable,
 
     /* Sanitize name */
     std::string name = parameters.name;
-    if( auxiliary::starts_with(name, "/") )
+    if( auxiliary::starts_with(name, '/') )
         name = auxiliary::replace_first(name, "/", "");
-    if( !auxiliary::ends_with(name, "/") )
+    if( !auxiliary::ends_with(name, '/') )
         name += '/';
 
     dataset_id = H5Dopen(node_id,
@@ -343,9 +342,7 @@ HDF5IOHandlerImpl::openFile(Writable* writable,
     //TODO check if file already open
     //not possible with current implementation
     //quick idea - map with filenames as key
-    using namespace boost::filesystem;
-    path dir(m_handler->directory);
-    if( !exists(dir) )
+    if( !auxiliary::directory_exists(m_handler->directory) )
         throw no_such_file_error("Supplied directory is not valid: " + m_handler->directory);
 
     std::string name = m_handler->directory + parameters.name;
@@ -388,9 +385,9 @@ HDF5IOHandlerImpl::openPath(Writable* writable,
 
     /* Sanitize path */
     std::string path = parameters.path;
-    if( auxiliary::starts_with(path, "/") )
+    if( auxiliary::starts_with(path, '/') )
         path = auxiliary::replace_first(path, "/", "");
-    if( !auxiliary::ends_with(path, "/") )
+    if( !auxiliary::ends_with(path, '/') )
         path += '/';
 
     path_id = H5Gopen(node_id,
@@ -424,9 +421,9 @@ HDF5IOHandlerImpl::openDataset(Writable* writable,
 
     /* Sanitize name */
     std::string name = parameters.name;
-    if( auxiliary::starts_with(name, "/") )
+    if( auxiliary::starts_with(name, '/') )
         name = auxiliary::replace_first(name, "/", "");
-    if( !auxiliary::ends_with(name, "/") )
+    if( !auxiliary::ends_with(name, '/') )
         name += '/';
 
     dataset_id = H5Dopen(node_id,
@@ -520,12 +517,10 @@ HDF5IOHandlerImpl::deleteFile(Writable* writable,
         if( !auxiliary::ends_with(name, ".h5") )
             name += ".h5";
 
-        using namespace boost::filesystem;
-        path file(name);
-        if( !exists(file) )
+        if( !auxiliary::file_exists(name) )
             throw std::runtime_error("File does not exist: " + name);
 
-        remove(file);
+        auxiliary::remove_file(name);
 
         writable->written = false;
         writable->abstractFilePosition.reset();
@@ -546,9 +541,9 @@ HDF5IOHandlerImpl::deletePath(Writable* writable,
     {
         /* Sanitize path */
         std::string path = parameters.path;
-        if( auxiliary::starts_with(path, "/") )
+        if( auxiliary::starts_with(path, '/') )
             path = auxiliary::replace_first(path, "/", "");
-        if( !auxiliary::ends_with(path, "/") )
+        if( !auxiliary::ends_with(path, '/') )
             path += '/';
 
         /* Open H5Object to delete in
@@ -590,9 +585,9 @@ HDF5IOHandlerImpl::deleteDataset(Writable* writable,
     {
         /* Sanitize name */
         std::string name = parameters.name;
-        if( auxiliary::starts_with(name, "/") )
+        if( auxiliary::starts_with(name, '/') )
             name = auxiliary::replace_first(name, "/", "");
-        if( !auxiliary::ends_with(name, "/") )
+        if( !auxiliary::ends_with(name, '/') )
             name += '/';
 
         /* Open H5Object to delete in
@@ -1177,7 +1172,7 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
             {
                 char* m0 = H5Tget_member_name(attr_type, 0);
                 char* m1 = H5Tget_member_name(attr_type, 1);
-                if( (strcmp("TRUE" , m0) == 0) && (strcmp("FALSE", m1) == 0) )
+                if( (strncmp("TRUE" , m0, 4) == 0) && (strncmp("FALSE", m1, 5) == 0) )
                     attrIsBool = true;
                 H5free_memory(m1);
                 H5free_memory(m0);

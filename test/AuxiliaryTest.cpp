@@ -14,6 +14,7 @@
 #   undef private
 #   undef protected
 #endif
+#include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Container.hpp"
@@ -23,9 +24,10 @@ using namespace openPMD;
 
 #include <catch/catch.hpp>
 
+#include <array>
+#include <fstream>
 #include <string>
 #include <vector>
-#include <array>
 
 
 namespace openPMD
@@ -50,17 +52,17 @@ TEST_CASE( "string_test", "[auxiliary]" )
 
     std::string s = "Man muss noch Chaos in sich haben, "
                     "um einen tanzenden Stern gebaeren zu koennen.";
-    REQUIRE(starts_with(s, "M"));
+    REQUIRE(starts_with(s, 'M'));
     REQUIRE(starts_with(s, "Man"));
     REQUIRE(starts_with(s, "Man muss noch"));
-    REQUIRE(!starts_with(s, " "));
+    REQUIRE(!starts_with(s, ' '));
 
-    REQUIRE(ends_with(s, "."));
+    REQUIRE(ends_with(s, '.'));
     REQUIRE(ends_with(s, "koennen."));
     REQUIRE(ends_with(s, "gebaeren zu koennen."));
 
-    REQUIRE(contains(s, "M"));
-    REQUIRE(contains(s, "."));
+    REQUIRE(contains(s, 'M'));
+    REQUIRE(contains(s, '.'));
     REQUIRE(contains(s, "noch Chaos"));
     REQUIRE(!contains(s, "foo"));
 
@@ -336,4 +338,115 @@ TEST_CASE( "dot_test", "[auxiliary]" )
     REQUIRE(d.att2() == static_cast<double>(20));
     REQUIRE(d.att3() == "30");
 
+}
+
+TEST_CASE( "filesystem_test", "[auxiliary]" )
+{
+    using auxiliary::create_directories;
+    using auxiliary::file_exists;
+    using auxiliary::directory_exists;
+    using auxiliary::list_directory;
+    using auxiliary::remove_directory;
+    using auxiliary::remove_file;
+
+    auto contains =
+        [](std::vector< std::string > const & entries, std::string const & path) -> bool
+        { return std::find(entries.cbegin(), entries.cend(), path) != entries.cend(); };
+
+    auto random_string =
+        [](std::string::size_type length) -> std::string
+        {
+            auto randchar =
+                []() -> char
+                {
+                    char const charset[] =
+                        "0123456789"
+                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                        "abcdefghijklmnopqrstuvwxyz";
+                    size_t const max_index = (sizeof(charset) - 1);
+                    return charset[rand() % max_index];
+                };
+            std::string str(length, 0);
+            std::generate_n(str.begin(), length, randchar);
+            return str;
+        };
+
+#ifdef _WIN32
+    REQUIRE(directory_exists("C:\\"));
+    REQUIRE(directory_exists("C:\\Program Files"));
+    REQUIRE(directory_exists("C:\\Windows"));
+    REQUIRE(!directory_exists("C:\\nonexistent_folder_in_C_drive"));
+
+    auto dir_entries = list_directory("C:\\");
+    REQUIRE(!dir_entries.empty());
+    REQUIRE(contains(dir_entries, "Program Files"));
+    REQUIRE(contains(dir_entries, "Windows"));
+    REQUIRE(!contains(dir_entries, "nonexistent_folder_in_C_drive"));
+
+    std::string new_directory = random_string(10);
+    while( directory_exists(new_directory) )
+        new_directory = random_string(10);
+    REQUIRE(create_directories(new_directory));
+    REQUIRE(create_directories(new_directory));
+    REQUIRE(directory_exists(new_directory));
+
+    std::string new_file = new_directory + "\\abc.txt";
+    std::fstream fs;
+    fs.open(new_file, std::ios::out);
+    fs.close();
+
+    REQUIRE(file_exists(new_file));
+    REQUIRE(remove_file(new_file));
+    REQUIRE(!file_exists(new_file));
+
+    REQUIRE(remove_directory(new_directory));
+    REQUIRE(!directory_exists(new_directory));
+    REQUIRE(!remove_directory(new_directory));
+
+    REQUIRE(!remove_file(".\\nonexistent_file_in_cmake_bin_directory"));
+#else
+    REQUIRE(directory_exists("/"));
+    //REQUIRE(directory_exists("/boot"));
+    //REQUIRE(directory_exists("/etc"));
+    //REQUIRE(directory_exists("/home"));
+    REQUIRE(!directory_exists("/nonexistent_folder_in_root_directory"));
+    REQUIRE(directory_exists("../bin"));
+
+    REQUIRE(file_exists("./AuxiliaryTests"));
+    REQUIRE(!file_exists("./nonexistent_file_in_cmake_bin_directory"));
+
+    auto dir_entries = list_directory("/");
+    REQUIRE(!dir_entries.empty());
+    //REQUIRE(contains(dir_entries, "boot"));
+    //REQUIRE(contains(dir_entries, "etc"));
+    //REQUIRE(contains(dir_entries, "home"));
+    //REQUIRE(contains(dir_entries, "root"));
+    REQUIRE(!contains(dir_entries, "nonexistent_folder_in_root_directory"));
+
+    std::string new_directory = random_string(10);
+    while( directory_exists(new_directory) )
+        new_directory = random_string(10);
+    std::string new_sub_directory = new_directory + "/" + random_string(10);
+    REQUIRE(create_directories(new_sub_directory));
+    REQUIRE(create_directories(new_directory));
+    REQUIRE(directory_exists(new_sub_directory));
+    REQUIRE(directory_exists(new_directory));
+
+    std::string new_file = new_directory + "/abc.txt";
+    std::fstream fs;
+    fs.open(new_file, std::ios::out);
+    fs.close();
+
+    REQUIRE(file_exists(new_file));
+    REQUIRE(remove_file(new_file));
+    REQUIRE(!file_exists(new_file));
+
+    REQUIRE(remove_directory(new_directory));
+    REQUIRE(!directory_exists(new_directory));
+    REQUIRE(!directory_exists(new_sub_directory));
+    REQUIRE(!remove_directory(new_directory));
+    REQUIRE(!remove_directory(new_sub_directory));
+
+    REQUIRE(!remove_file("./nonexistent_file_in_cmake_bin_directory"));
+#endif
 }
