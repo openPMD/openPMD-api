@@ -35,7 +35,7 @@
 namespace openPMD
 {
 #if openPMD_HAVE_ADIOS1
-#   ifdef DEBUG
+#   if openPMD_ENABLE_VERIFY
 #       define VERIFY(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error(std::string((TEXT))); }
 #   else
 #       define VERIFY(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )

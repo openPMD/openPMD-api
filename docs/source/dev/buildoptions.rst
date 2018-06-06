@@ -20,12 +20,15 @@ CMake Option                   Values          Description
 ``openPMD_USE_ADIOS2``         AUTO/ON/**OFF** Enable support for ADIOS2 :sup:`1`
 ``openPMD_USE_PYTHON``         **AUTO**/ON/OFF Enable Python bindings
 ``openPMD_USE_INVASIVE_TESTS`` **AUTO**/ON/OFF Enable unit tests that modify source code :sup:`2`
+``openPMD_ENABLE_VERIFY``      **ON**/OFF      Enable internally used VERIFY macro :sup:`3`
 ``PYTHON_EXECUTABLE``          (first found)   Path to Python executable
 ============================== =============== ==================================================
 
 :sup:`1` *not yet implemented*
 
 :sup:`2` e.g. C++ keywords, currently disabled only for MSVC
+
+:sup:`3` this includes most pre-/post-condition checks, disabling without specific cause is highly discouraged
 
 
 Shared or Static

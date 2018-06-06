@@ -182,10 +182,12 @@ CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 | `openPMD_USE_ADIOS2`         | AUTO/ON/**OFF**  | Enable support for ADIOS2 <sup>1</sup>                 |
 | `openPMD_USE_PYTHON`         | **AUTO**/ON/OFF  | Enable Python bindings                                 |
 | `openPMD_USE_INVASIVE_TESTS` | **AUTO**/ON/OFF  | Enable unit tests that modify source code <sup>2</sup> |
+| `openPMD_ENABLE_VERIFY`      | **ON**/OFF       | Enable internally used VERIFY macro <sup>3</sup>       |
 | `PYTHON_EXECUTABLE`          | (first found)    | Path to Python executable                              |
 
 <sup>1</sup> *not yet implemented*
 <sup>2</sup> *e.g. C++ keywords, currently disabled only for MSVC*
+<sup>3</sup> *this includes most pre-/post-condition checks, disabling without specific cause is highly discouraged*
 
 Additionally, the following libraries are shipped internally.
 The following options allow to switch to external installs:
