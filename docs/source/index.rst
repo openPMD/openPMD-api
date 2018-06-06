@@ -31,6 +31,22 @@ Implemented backends include HDF5 and ADIOS.
    }
    </style>
 
+Supported openPMD Standard Versions
+-----------------------------------
+
+openPMD-api is a library using `semantic versioning <https://semver.org/>`_, starting with version 1.0.0.
+
+The supported version of the `openPMD standard <https://github.com/openPMD/openPMD-standard>`_ are reflected as follows:
+``standardMAJOR.apiMAJOR.apiMINOR``.
+
+=================== ===================================
+openPMD-api version supported openPMD standard versions
+=================== ===================================
+``0.1.0+`` (alpha)  ``1.0.0-1.1.0``
+``1.0.0+``          ``1.X`` (not released yet)
+``2.0.0+``          ``2.X`` (not released yet)
+=================== ===================================
+
 ************
 Installation
 ************
