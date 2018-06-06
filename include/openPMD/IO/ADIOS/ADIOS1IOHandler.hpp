@@ -46,7 +46,7 @@ class ADIOS1IOHandler;
 class ADIOS1IOHandlerImpl : public AbstractIOHandlerImpl
 {
 public:
-    ADIOS1IOHandlerImpl(AbstractIOHandler*, MPI_Comm = MPI_COMM_SELF);
+    ADIOS1IOHandlerImpl(AbstractIOHandler*, MPI_Comm = MPI_COMM_NULL);
     virtual ~ADIOS1IOHandlerImpl();
 
     virtual void init();
