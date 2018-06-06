@@ -3,8 +3,8 @@
 Changelog
 =========
 
-0.1.0-alpha1
-------------
+0.1.0-alpha
+-----------
 **Date:** 2018-06-06
 
 This is the first developer release of openPMD-api.
