@@ -273,7 +273,7 @@ that are *not* ``std::shared_ptr`` s. The contract of each function call is outl
                 name += ".json";
 
             uint64_t id = /*...*/
-            ASSERT(id >= 0, "Internal error: Failed to create JSON file");
+            VERIFY(id >= 0, "Internal error: Failed to create JSON file");
 
             writable->written = true;
             writable->abstractFilePosition = std::make_shared< JSONFilePosition >(id);

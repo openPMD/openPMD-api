@@ -31,9 +31,9 @@ namespace openPMD
 {
 #if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
 #   ifdef DEBUG
-#       define ASSERT(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error(std::string((TEXT))); }
+#       define VERIFY(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error(std::string((TEXT))); }
 #   else
-#       define ASSERT(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
+#       define VERIFY(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
 #   endif
 
 ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string const& path,
@@ -133,7 +133,7 @@ ParallelADIOS1IOHandlerImpl::flush()
                     openFile(i.writable, *dynamic_cast< Parameter< O::OPEN_FILE >* >(i.parameter.get()));
                     break;
                 default:
-                    ASSERT(false, "Internal error: Wrong operation in ADIOS setup queue");
+                    VERIFY(false, "Internal error: Wrong operation in ADIOS setup queue");
             }
         } catch (unsupported_data_error& e)
         {
@@ -192,7 +192,7 @@ ParallelADIOS1IOHandlerImpl::flush()
                     listAttributes(i.writable, *dynamic_cast< Parameter< O::LIST_ATTS >* >(i.parameter.get()));
                     break;
                 default:
-                    ASSERT(false, "Internal error: Wrong operation in ADIOS work queue");
+                    VERIFY(false, "Internal error: Wrong operation in ADIOS work queue");
             }
         } catch (unsupported_data_error& e)
         {
@@ -207,7 +207,7 @@ ParallelADIOS1IOHandlerImpl::flush()
     {
         status = adios_perform_reads(file.first,
                                      1);
-        ASSERT(status == err_no_error, "Internal error: Failed to perform ADIOS reads during dataset reading");
+        VERIFY(status == err_no_error, "Internal error: Failed to perform ADIOS reads during dataset reading");
 
         for( auto& sel : file.second )
             adios_selection_delete(sel);
@@ -231,13 +231,13 @@ ParallelADIOS1IOHandlerImpl::init()
     /** @todo ADIOS_READ_METHOD_BP_AGGREGATE */
     m_readMethod = ADIOS_READ_METHOD_BP;
     status = adios_read_init_method(m_readMethod, m_mpiComm, "");
-    ASSERT(status == err_no_error, "Internal error: Failed to initialize ADIOS reading method");
+    VERIFY(status == err_no_error, "Internal error: Failed to initialize ADIOS reading method");
 
     ADIOS_STATISTICS_FLAG noStatistics = adios_stat_no;
     status = adios_declare_group(&m_group, m_groupName.c_str(), "", noStatistics);
-    ASSERT(status == err_no_error, "Internal error: Failed to declare ADIOS group");
+    VERIFY(status == err_no_error, "Internal error: Failed to declare ADIOS group");
     status = adios_select_method(m_group, "MPI_AGGREGATE", c, "");
-    ASSERT(status == err_no_error, "Internal error: Failed to select ADIOS method");
+    VERIFY(status == err_no_error, "Internal error: Failed to select ADIOS method");
 }
 #else
 #   if openPMD_HAVE_MPI

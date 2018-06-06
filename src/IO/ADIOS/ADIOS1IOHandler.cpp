@@ -36,9 +36,9 @@ namespace openPMD
 {
 #if openPMD_HAVE_ADIOS1
 #   ifdef DEBUG
-#       define ASSERT(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error(std::string((TEXT))); }
+#       define VERIFY(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error(std::string((TEXT))); }
 #   else
-#       define ASSERT(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
+#       define VERIFY(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
 #   endif
 
 ADIOS1IOHandlerImpl::ADIOS1IOHandlerImpl(AbstractIOHandler* handler, MPI_Comm comm)
@@ -51,9 +51,9 @@ ADIOS1IOHandlerImpl::ADIOS1IOHandlerImpl(AbstractIOHandler* handler, MPI_Comm co
         m_mpiComm = MPI_COMM_NULL;
     else
         status = MPI_Comm_dup(comm, &m_mpiComm);
-    ASSERT(status == MPI_SUCCESS, "Internal error: Failed to duplicate MPI communicator");
+    VERIFY(status == MPI_SUCCESS, "Internal error: Failed to duplicate MPI communicator");
     status = adios_init_noxml(m_mpiComm);
-    ASSERT(status == err_no_error, "Internal error: Failed to initialize ADIOS");
+    VERIFY(status == err_no_error, "Internal error: Failed to initialize ADIOS");
 }
 
 ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
@@ -132,7 +132,7 @@ ADIOS1IOHandlerImpl::flush()
                     openFile(i.writable, *dynamic_cast< Parameter< O::OPEN_FILE >* >(i.parameter.get()));
                     break;
                 default:
-                    ASSERT(false, "Internal error: Wrong operation in ADIOS setup queue");
+                    VERIFY(false, "Internal error: Wrong operation in ADIOS setup queue");
             }
         } catch (unsupported_data_error& e)
         {
@@ -191,7 +191,7 @@ ADIOS1IOHandlerImpl::flush()
                     listAttributes(i.writable, *dynamic_cast< Parameter< O::LIST_ATTS >* >(i.parameter.get()));
                     break;
                 default:
-                    ASSERT(false, "Internal error: Wrong operation in ADIOS work queue");
+                    VERIFY(false, "Internal error: Wrong operation in ADIOS work queue");
             }
         } catch (unsupported_data_error& e)
         {
@@ -206,7 +206,7 @@ ADIOS1IOHandlerImpl::flush()
     {
         status = adios_perform_reads(file.first,
                                      1);
-        ASSERT(status == err_no_error, "Internal error: Failed to perform ADIOS reads during dataset reading");
+        VERIFY(status == err_no_error, "Internal error: Failed to perform ADIOS reads during dataset reading");
 
         for( auto& sel : file.second )
             adios_selection_delete(sel);
@@ -222,13 +222,13 @@ ADIOS1IOHandlerImpl::init()
     int status;
     m_readMethod = ADIOS_READ_METHOD_BP;
     status = adios_read_init_method(m_readMethod, m_mpiComm, "");
-    ASSERT(status == err_no_error, "Internal error: Failed to initialize ADIOS reading method");
+    VERIFY(status == err_no_error, "Internal error: Failed to initialize ADIOS reading method");
 
     ADIOS_STATISTICS_FLAG noStatistics = adios_stat_no;
     status = adios_declare_group(&m_group, m_groupName.c_str(), "", noStatistics);
-    ASSERT(status == err_no_error, "Internal error: Failed to declare ADIOS group");
+    VERIFY(status == err_no_error, "Internal error: Failed to declare ADIOS group");
     status = adios_select_method(m_group, "POSIX", "", "");
-    ASSERT(status == err_no_error, "Internal error: Failed to select ADIOS method");
+    VERIFY(status == err_no_error, "Internal error: Failed to select ADIOS method");
 }
 #endif
 
@@ -298,7 +298,7 @@ ADIOS1IOHandlerImpl::open_write(Writable* writable)
                         res->second->c_str(),
                         mode.c_str(),
                         m_mpiComm);
-    ASSERT(status == err_no_error, "Internal error: Failed to open_write ADIOS file");
+    VERIFY(status == err_no_error, "Internal error: Failed to open_write ADIOS file");
 
     return fd;
 }
@@ -308,7 +308,7 @@ ADIOS1IOHandlerImpl::close(int64_t fd)
 {
     int status;
     status = adios_close(fd);
-    ASSERT(status == err_no_error, "Internal error: Failed to open_write close ADIOS file during creation");
+    VERIFY(status == err_no_error, "Internal error: Failed to open_write close ADIOS file during creation");
 }
 
 void
@@ -316,7 +316,7 @@ ADIOS1IOHandlerImpl::close(ADIOS_FILE* f)
 {
     int status;
     status = adios_read_close(f);
-    ASSERT(status == err_no_error, "Internal error: Failed to close ADIOS file");
+    VERIFY(status == err_no_error, "Internal error: Failed to close ADIOS file");
 }
 
 void
@@ -416,10 +416,10 @@ ADIOS1IOHandlerImpl::createDataset(Writable* writable,
         {
             chunkSize[i] = "/tmp" + path + "_chunkSize" + std::to_string(i);
             id = adios_define_var(m_group, chunkSize[i].c_str(), "", adios_unsigned_long, "", "", "");
-            ASSERT(id != 0, "Internal error: Failed to define ADIOS variable during Dataset creation");
+            VERIFY(id != 0, "Internal error: Failed to define ADIOS variable during Dataset creation");
             chunkOffset[i] = "/tmp" + path + "_chunkOffset" + std::to_string(i);
             id = adios_define_var(m_group, chunkOffset[i].c_str(), "", adios_unsigned_long, "", "", "");
-            ASSERT(id != 0, "Internal error: Failed to define ADIOS variable during Dataset creation");
+            VERIFY(id != 0, "Internal error: Failed to define ADIOS variable during Dataset creation");
         }
 
         std::string chunkSizeParam = auxiliary::join(chunkSize, ",");
@@ -432,7 +432,7 @@ ADIOS1IOHandlerImpl::createDataset(Writable* writable,
                               chunkSizeParam.c_str(),
                               globalSize.c_str(),
                               chunkOffsetParam.c_str());
-        ASSERT(id != 0, "Internal error: Failed to define ADIOS variable during Dataset creation");
+        VERIFY(id != 0, "Internal error: Failed to define ADIOS variable during Dataset creation");
 
         if( !parameters.compression.empty() )
             std::cerr << "Custom compression not compatible with ADIOS1 backend. Use transform instead."
@@ -442,7 +442,7 @@ ADIOS1IOHandlerImpl::createDataset(Writable* writable,
         {
             int status;
             status = adios_set_transform(id, parameters.transform.c_str());
-            ASSERT(status == err_no_error, "Internal error: Failed to set ADIOS transform during Dataset cretaion");
+            VERIFY(status == err_no_error, "Internal error: Failed to set ADIOS transform during Dataset cretaion");
         }
 
         writable->written = true;
@@ -487,8 +487,8 @@ ADIOS1IOHandlerImpl::openFile(Writable* writable,
     f = adios_read_open_file(name.c_str(),
                              m_readMethod,
                              m_mpiComm);
-    ASSERT(adios_errno != err_file_not_found, "Internal error: ADIOS file not found");
-    ASSERT(f != nullptr, "Internal error: Failed to open_read ADIOS file");
+    VERIFY(adios_errno != err_file_not_found, "Internal error: ADIOS file not found");
+    VERIFY(f != nullptr, "Internal error: Failed to open_read ADIOS file");
 
     writable->written = true;
     writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >("/");
@@ -538,8 +538,8 @@ ADIOS1IOHandlerImpl::openDataset(Writable* writable,
     ADIOS_VARINFO* vi;
     vi = adios_inq_var(f,
                        datasetname.c_str());
-    ASSERT(adios_errno == err_no_error, "Internal error: Failed to inquire about ADIOS variable during dataset opening");
-    ASSERT(vi != nullptr, "Internal error: Failed to inquire about ADIOS variable during dataset opening");
+    VERIFY(adios_errno == err_no_error, "Internal error: Failed to inquire about ADIOS variable during dataset opening");
+    VERIFY(vi != nullptr, "Internal error: Failed to inquire about ADIOS variable during dataset opening");
 
     Datatype dtype;
     switch( vi->type )
@@ -689,16 +689,16 @@ ADIOS1IOHandlerImpl::writeDataset(Writable* writable,
     {
         chunkSize = "/tmp" + name + "_chunkSize" + std::to_string(i);
         status = adios_write(fd, chunkSize.c_str(), &parameters.extent[i]);
-        ASSERT(status == err_no_error, "Internal error: Failed to write ADIOS variable during Dataset writing");
+        VERIFY(status == err_no_error, "Internal error: Failed to write ADIOS variable during Dataset writing");
         chunkOffset = "/tmp" + name + "_chunkOffset" + std::to_string(i);
         status = adios_write(fd, chunkOffset.c_str(), &parameters.offset[i]);
-        ASSERT(status == err_no_error, "Internal error: Failed to write ADIOS variable during Dataset writing");
+        VERIFY(status == err_no_error, "Internal error: Failed to write ADIOS variable during Dataset writing");
     }
 
     status = adios_write(fd,
                          name.c_str(),
                          parameters.data.get());
-    ASSERT(status == err_no_error, "Internal error: Failed to write ADIOS variable during Dataset writing");
+    VERIFY(status == err_no_error, "Internal error: Failed to write ADIOS variable during Dataset writing");
 }
 
 void
@@ -970,7 +970,7 @@ ADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
                                             getBP1DataType(parameters.dtype),
                                             nelems,
                                             values.get());
-    ASSERT(status == err_no_error, "Internal error: Failed to define ADIOS attribute by value");
+    VERIFY(status == err_no_error, "Internal error: Failed to define ADIOS attribute by value");
 
     if( parameters.dtype == Datatype::VEC_STRING )
     {
@@ -1014,8 +1014,8 @@ ADIOS1IOHandlerImpl::readDataset(Writable* writable,
     sel = adios_selection_boundingbox(parameters.extent.size(),
                                       parameters.offset.data(),
                                       parameters.extent.data());
-    ASSERT(sel != nullptr, "Internal error: Failed to select ADIOS bounding box during dataset reading");
-    ASSERT(adios_errno == err_no_error, "Internal error: Failed to select ADIOS bounding box during dataset reading");
+    VERIFY(sel != nullptr, "Internal error: Failed to select ADIOS bounding box during dataset reading");
+    VERIFY(adios_errno == err_no_error, "Internal error: Failed to select ADIOS bounding box during dataset reading");
 
     std::string varname = concrete_bp1_file_position(writable);
     void* data = parameters.data.get();
@@ -1027,8 +1027,8 @@ ADIOS1IOHandlerImpl::readDataset(Writable* writable,
                                  0,
                                  1,
                                  data);
-    ASSERT(status == err_no_error, "Internal error: Failed to schedule ADIOS read during dataset reading");
-    ASSERT(adios_errno == err_no_error, "Internal error: Failed to schedule ADIOS read during dataset reading");
+    VERIFY(status == err_no_error, "Internal error: Failed to schedule ADIOS read during dataset reading");
+    VERIFY(adios_errno == err_no_error, "Internal error: Failed to schedule ADIOS read during dataset reading");
 
     m_scheduledReads[f].push_back(sel);
 }
@@ -1055,9 +1055,9 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                             &datatype,
                             &size,
                             &data);
-    ASSERT(status == 0, "Internal error: Failed to get ADIOS attribute during attribute read");
-    ASSERT(datatype != adios_unknown, "Internal error: Read unknown adios datatype during attribute read");
-    ASSERT(size != 0, "Internal error: Read 0-size attribute");
+    VERIFY(status == 0, "Internal error: Failed to get ADIOS attribute during attribute read");
+    VERIFY(datatype != adios_unknown, "Internal error: Read unknown adios datatype during attribute read");
+    VERIFY(size != 0, "Internal error: Read 0-size attribute");
 
     /* size is returned in number of allocated bytes */
     switch( datatype )
@@ -1425,8 +1425,8 @@ ADIOS1IOHandlerImpl::listAttributes(Writable* writable,
         ADIOS_VARINFO* info;
         info = adios_inq_var(f,
                              name.c_str());
-        ASSERT(adios_errno == err_no_error, "Internal error: Failed to inquire ADIOS variable during attribute listing");
-        ASSERT(info != nullptr, "Internal error: Failed to inquire ADIOS variable during attribute listing");
+        VERIFY(adios_errno == err_no_error, "Internal error: Failed to inquire ADIOS variable during attribute listing");
+        VERIFY(info != nullptr, "Internal error: Failed to inquire ADIOS variable during attribute listing");
 
         name += '/';
         parameters.attributes->reserve(info->nattrs);
