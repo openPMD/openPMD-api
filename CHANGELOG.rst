@@ -3,6 +3,23 @@
 Changelog
 =========
 
+0.1.1-alpha
+-----------
+**Date:** TBD
+
+[Title TBA]
+
+[Short Summary]
+
+Changes to "0.1.0-alpha"
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- SerialIOTest: ``loadChunk`` template missing for ADIOS1 #227
+
+
 0.1.0-alpha
 -----------
 **Date:** 2018-06-06
