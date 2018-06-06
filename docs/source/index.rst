@@ -5,7 +5,7 @@
 
 This library provides an abstract API for openPMD file handling.
 It provides both support for writing & reading into various formats and works both serial and parallel (MPI).
-Implemented (and planned) backends include HDF5 and ADIOS.
+Implemented backends include HDF5 and ADIOS.
 
 .. note::
 
