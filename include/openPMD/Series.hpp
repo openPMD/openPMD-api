@@ -56,7 +56,7 @@ public:
 #endif
     Series(std::string const& filepath,
            AccessType at);
-    ~Series() noexcept(false);
+    ~Series();
 
     /**
      * @return  String representing the current enforced version of the <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file">openPMD standard</A>.
