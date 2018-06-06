@@ -467,6 +467,7 @@ Series::flushFileBased()
                  * until all iterations have been updated */
                 dirty = true;
             }
+            IOHandler->flush();
         }
         dirty = false;
     }
