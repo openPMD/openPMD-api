@@ -43,8 +43,7 @@ AbstractIOHandler::createIOHandler(std::string const& path,
         case Format::ADIOS1:
             return std::make_shared< ParallelADIOS1IOHandler >(path, at, comm);
         case Format::ADIOS2:
-            std::cerr << "Backend not yet working. Your IO operations will be NOOPS!" << std::endl;
-            return std::make_shared< DummyIOHandler >(path, at);
+            throw std::runtime_error("ADIOS2 backend not yet implemented");
         default:
             return std::make_shared< DummyIOHandler >(path, at);
     }
@@ -69,8 +68,7 @@ AbstractIOHandler::createIOHandler(std::string const& path,
         case Format::ADIOS1:
             return std::make_shared< ADIOS1IOHandler >(path, at);
         case Format::ADIOS2:
-            std::cerr << "Backend not yet working. Your IO operations will be NOOPS!" << std::endl;
-            return std::make_shared< DummyIOHandler >(path, at);
+            throw std::runtime_error("ADIOS2 backend not yet implemented");
         default:
             return std::make_shared< DummyIOHandler >(path, at);
     }

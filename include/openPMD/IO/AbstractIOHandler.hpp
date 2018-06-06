@@ -102,7 +102,7 @@ public:
     AbstractIOHandler(std::string const& path, AccessType, MPI_Comm);
 #endif
     AbstractIOHandler(std::string const& path, AccessType);
-    virtual ~AbstractIOHandler();
+    virtual ~AbstractIOHandler() noexcept(false);
 
     /** Add provided task to queue according to FIFO.
      *

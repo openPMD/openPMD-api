@@ -764,9 +764,8 @@ determineFormat(std::string const& filename)
         return Format::ADIOS1;
 
     if( std::string::npos != filename.find('.') /* extension is provided */ )
-      std::cerr << "Unknown storage format. "
-                   "Did you append a correct filename extension? "
-                   "Your IO operations will be NOOPS!" << std::endl;
+        throw std::runtime_error("Unknown file format. Did you append a valid filename extension?");
+
     return Format::DUMMY;
 }
 
