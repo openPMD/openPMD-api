@@ -24,7 +24,18 @@
 #include "openPMD/Series.hpp"
 
 #include <iostream>
-#include <regex>
+
+#if defined(__GNUC__)
+#   if (__GNUC__ == 4 && __GNUC_MINOR__ < 9)
+#       define IS_GCC_48 1
+#   endif
+#endif
+
+#if defined(IS_GCC_48)
+#   include <regex.h>
+#else
+#   include <regex>
+#endif
 
 
 namespace openPMD
@@ -769,6 +780,21 @@ cleanFilename(std::string const& filename, Format f)
     }
 }
 
+bool
+nameMatch(std::string const& filename, std::string const& nameReg)
+{
+#if defined(IS_GCC_48)
+    regex_t pattern;
+    int reti = regcomp(&pattern, nameReg.c_str(), REG_EXTENDED);
+    if( reti )
+        throw std::runtime_error(std::string("Regex for name '") + nameReg + std::string("' can not be compiled!"));
+    return !regexec(&pattern, filename.c_str(), 0, NULL, 0);
+#else
+    std::regex pattern(nameReg);
+    return std::regex_search(filename, pattern);
+#endif
+}
+
 std::function< bool(std::string const&) >
 matcher(std::string const& name, Format f)
 {
@@ -776,14 +802,14 @@ matcher(std::string const& name, Format f)
     {
         case Format::HDF5:
         {
-            std::regex pattern(auxiliary::replace_last(name + ".h5$", "%T", "[[:digit:]]+"));
-            return [pattern](std::string const& filename) -> bool { return std::regex_search(filename, pattern); };
+            std::string nameReg = auxiliary::replace_last(name + ".h5$", "%T", "[[:digit:]]+");
+            return [nameReg](std::string const& filename) -> bool { return nameMatch(filename, nameReg); };
         }
         case Format::ADIOS1:
         case Format::ADIOS2:
         {
-            std::regex pattern(auxiliary::replace_last(name + ".bp$", "%T", "[[:digit:]]+"));
-            return [pattern](std::string const& filename) -> bool { return std::regex_search(filename, pattern); };
+            std::string nameReg = auxiliary::replace_last(name + ".bp$", "%T", "[[:digit:]]+");
+            return [nameReg](std::string const& filename) -> bool { return nameMatch(filename, nameReg); };
         }
         default:
             return [](std::string const&) -> bool { return false; };
