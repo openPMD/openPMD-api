@@ -217,7 +217,7 @@ export CMAKE_PREFIX_PATH=$HOME/somepath:$CMAKE_PREFIX_PATH
 
 Use the following lines in your projects `CMakeLists.txt`:
 ```cmake
-# supports:                       COMPONENTS MPI HDF5 ADIOS1 ADIOS2
+# supports:                       COMPONENTS MPI NOMPI HDF5 ADIOS1 ADIOS2
 find_package(openPMD 0.1.0 CONFIG)
 
 if(openPMD_FOUND)
