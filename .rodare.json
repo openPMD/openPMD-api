@@ -11,7 +11,7 @@
             "orcid": "0000-0003-1943-7141"
         }
     ],
-    "title": "openPMD-api - C++ & Python API Scientific I/O with openPMD",
+    "title": "openPMD-api - C++ & Python API for Scientific I/O with openPMD",
     "access_right": "open",
     "upload_type": "software",
     "license": "LGPL-3.0",
