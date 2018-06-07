@@ -95,8 +95,7 @@ PatchRecordComponent::load(uint64_t idx, std::shared_ptr< T > data)
     dRead.extent = {1};
     dRead.dtype = getDatatype();
     dRead.data = std::static_pointer_cast< void >(data);
-    IOHandler->enqueue(IOTask(this, dRead));
-    IOHandler->flush();
+    m_chunks->push(IOTask(this, dRead));
 }
 
 template< typename T >

@@ -352,6 +352,7 @@ TEST_CASE( "git_hdf5_sample_content_test", "[serial][hdf5]" )
             Offset offset{20, 20, 190};
             Extent extent{3, 3, 3};
             auto data = rho.loadChunk<double>(offset, extent);
+            o.flush();
             double* raw_ptr = data.get();
 
             for( int i = 0; i < 3; ++i )
@@ -366,6 +367,7 @@ TEST_CASE( "git_hdf5_sample_content_test", "[serial][hdf5]" )
             Offset offset{15};
             Extent extent{3};
             auto data = electrons_mass.loadChunk<double>(offset, extent);
+            o.flush();
             double* raw_ptr = data.get();
 
             for( int i = 0; i < 3; ++i )
@@ -1513,6 +1515,7 @@ TEST_CASE( "hzdr_adios1_sample_content_test", "[serial][adios1]" )
         Offset offset{20, 20, 150};
         Extent extent{3, 3, 3};
         auto data = B_z.loadChunk<float>(offset, extent);
+        o.flush();
         float* raw_ptr = data.get();
 
         for( int i = 0; i < 3; ++i )

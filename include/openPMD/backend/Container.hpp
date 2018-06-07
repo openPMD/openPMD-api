@@ -257,7 +257,6 @@ protected:
             Parameter< Operation::CREATE_PATH > pCreate;
             pCreate.path = path;
             IOHandler->enqueue(IOTask(this, pCreate));
-            IOHandler->flush();
         }
 
         flushAttributes();

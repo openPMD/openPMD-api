@@ -160,8 +160,7 @@ RecordComponent::loadChunk(Offset const& o, Extent const& e, std::shared_ptr< T 
         dRead.extent = e;
         dRead.dtype = getDatatype();
         dRead.data = std::static_pointer_cast< void >(data);
-        IOHandler->enqueue(IOTask(this, dRead));
-        IOHandler->flush();
+        m_chunks->push(IOTask(this, dRead));
     }
 }
 

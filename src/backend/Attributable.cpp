@@ -135,7 +135,6 @@ Attributable::flushAttributes()
             aWrite.resource = getAttribute(att_name).getResource();
             aWrite.dtype = getAttribute(att_name).dtype;
             IOHandler->enqueue(IOTask(this, aWrite));
-            IOHandler->flush();
         }
 
         dirty = false;
@@ -265,7 +264,6 @@ Attributable::readAttributes()
         }
     }
 
-    IOHandler->flush();
     dirty = false;
 }
 

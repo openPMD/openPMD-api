@@ -49,32 +49,38 @@ Record::setUnitDimension(std::map< UnitDimension, double > const& udim)
 void
 Record::flush(std::string const& name)
 {
-    if( !written )
+    if( IOHandler->accessType == AccessType::READ_ONLY )
     {
-        if( *m_containsScalar )
+        for( auto& comp : *this )
+            comp.second.flush(comp.first);
+    } else
+    {
+        if( !written )
         {
-            RecordComponent& r = at(RecordComponent::SCALAR);
-            r.m_writable->parent = parent;
-            r.parent = parent;
-            r.flush(name);
-            m_writable->abstractFilePosition = r.m_writable->abstractFilePosition;
-            abstractFilePosition = r.abstractFilePosition;
-            written = true;
-        } else
-        {
-            Parameter< Operation::CREATE_PATH > pCreate;
-            pCreate.path = name;
-            IOHandler->enqueue(IOTask(this, pCreate));
-            IOHandler->flush();
-            for( auto& comp : *this )
-                comp.second.parent = getWritable(this);
+            if( *m_containsScalar )
+            {
+                RecordComponent& r = at(RecordComponent::SCALAR);
+                r.m_writable->parent = parent;
+                r.parent = parent;
+                r.flush(name);
+                m_writable->abstractFilePosition = r.m_writable->abstractFilePosition;
+                abstractFilePosition = r.abstractFilePosition;
+                written = true;
+            } else
+            {
+                Parameter< Operation::CREATE_PATH > pCreate;
+                pCreate.path = name;
+                IOHandler->enqueue(IOTask(this, pCreate));
+                for( auto& comp : *this )
+                    comp.second.parent = getWritable(this);
+            }
         }
+
+        for( auto& comp : *this )
+            comp.second.flush(comp.first);
+
+        flushAttributes();
     }
-
-    for( auto& comp : *this )
-        comp.second.flush(comp.first);
-
-    flushAttributes();
 }
 
 void
@@ -100,7 +106,6 @@ Record::read()
             RecordComponent& rc = (*this)[component];
             pOpen.path = component;
             IOHandler->enqueue(IOTask(&rc, pOpen));
-            IOHandler->flush();
             *rc.m_isConstant = true;
             rc.read();
         }
