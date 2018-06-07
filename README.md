@@ -11,15 +11,17 @@ openPMD - API for Developers
 
 [![C++11][api-cpp]](https://isocpp.org/) ![C++11 API: Alpha][dev-alpha]
 [![Python3][api-py3]](https://www.python.org/) ![Python3 API: Unstable][dev-unstable]
+![Supported Platforms][api-platforms]
 
 This library provides a common high-level API for openPMD writing and reading.
 It provides a common interface to I/O libraries and file formats such as HDF5 and ADIOS.
 Where supported, openPMD-api implements both serial and MPI parallel I/O capabilities.
 
-[api-cpp]: https://img.shields.io/badge/language-C%2B%2B11-orange.svg "C++11 API"
-[api-py3]: https://img.shields.io/badge/language-Python3-orange.svg "Python3 API"
+[api-cpp]: https://img.shields.io/badge/language-C%2B%2B11-yellowgreen.svg "C++11 API"
+[api-py3]: https://img.shields.io/badge/language-Python3-yellow.svg "Python3 API"
 [dev-alpha]: https://img.shields.io/badge/phase-alpha-yellowgreen.svg "Status: Alpha"
 [dev-unstable]: https://img.shields.io/badge/phase-unstable-yellow.svg "Status: Unstable"
+[api-platforms]: https://img.shields.io/conda/pn/conda-forge/openpmd-api.svg "Supported Platforms"
 
 ## Usage
 
@@ -123,7 +125,7 @@ Optional language bindings:
 ## Installation
 
 [![Spack Package](https://img.shields.io/badge/spack.io-openpmd--api-brightgreen.svg)](https://spack.io)
-[![Conda Package](https://img.shields.io/badge/conda.io-notyet-yellow.svg)](https://conda.io)
+[![Conda Package](https://img.shields.io/badge/conda.io-openpmd--api-brightgreen.svg)](https://anaconda.org/conda-forge/openpmd-api)
 
 Choose *one* of the install methods below to get started:
 
@@ -135,9 +137,15 @@ spack install openpmd-api
 spack load --dependencies openpmd-api
 ```
 
-### Conda
+### [Conda](https://conda.io)
 
-*not yet implemented*
+[![Conda Version](https://img.shields.io/conda/vn/conda-forge/openpmd-api.svg)](https://anaconda.org/conda-forge/openpmd-api)
+[![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/openpmd-api.svg)](https://anaconda.org/conda-forge/openpmd-api)
+
+```bash
+# serial version only
+conda install -c conda-forge openpmd-api
+```
 
 ### From Source
 
@@ -225,4 +233,3 @@ if(openPMD_FOUND)
     target_link_libraries(YourTarget PRIVATE openPMD::openPMD)
 endif()
 ```
-
