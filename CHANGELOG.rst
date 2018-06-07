@@ -19,6 +19,11 @@ Bug Fixes
 
 - SerialIOTest: ``loadChunk`` template missing for ADIOS1 #227
 
+Other
+"""""
+
+- minimize number of flushes in backend #212
+
 
 0.1.0-alpha
 -----------
