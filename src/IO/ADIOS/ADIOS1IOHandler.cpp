@@ -46,8 +46,11 @@ ADIOS1IOHandlerImpl::ADIOS1IOHandlerImpl(AbstractIOHandler* handler, MPI_Comm co
           m_mpiInfo{MPI_INFO_NULL},
           m_groupName{"data"}
 {
-    int status;
-    status = MPI_Comm_dup(comm, &m_mpiComm);
+    int status = MPI_SUCCESS;
+    if( comm == MPI_COMM_NULL )
+        m_mpiComm = MPI_COMM_NULL;
+    else
+        status = MPI_Comm_dup(comm, &m_mpiComm);
     ASSERT(status == MPI_SUCCESS, "Internal error: Failed to duplicate MPI communicator");
     status = adios_init_noxml(m_mpiComm);
     ASSERT(status == err_no_error, "Internal error: Failed to initialize ADIOS");
@@ -82,19 +85,23 @@ ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
         close(f.second);
 
     int status;
-    MPI_Barrier(m_mpiComm);
+    if( m_mpiComm != MPI_COMM_NULL )
+        MPI_Barrier(m_mpiComm);
     status = adios_read_finalize_method(m_readMethod);
     if( status != err_no_error )
         std::cerr << "Internal error: Failed to finalize ADIOS reading method (parallel)\n";
 
-    MPI_Barrier(m_mpiComm);
-    int rank;
-    MPI_Comm_rank(m_mpiComm, &rank);
+    if( m_mpiComm != MPI_COMM_NULL )
+        MPI_Barrier(m_mpiComm);
+    int rank = 0;
+    if( m_mpiComm != MPI_COMM_NULL )
+        MPI_Comm_rank(m_mpiComm, &rank);
     status = adios_finalize(rank);
     if( status != err_no_error )
         std::cerr << "Internal error: Failed to finalize ADIOS (parallel)\n";
 
-    MPI_Comm_free(&m_mpiComm);
+    if( m_mpiComm != MPI_COMM_NULL )
+        MPI_Comm_free(&m_mpiComm);
 }
 
 std::future< void >

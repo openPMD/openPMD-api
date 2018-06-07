@@ -1119,7 +1119,7 @@ TEST_CASE( "no_serial_hdf5", "[serial][hdf5]" )
     REQUIRE(true);
 }
 #endif
-#if !openPMD_HAVE_MPI && openPMD_HAVE_ADIOS1
+#if openPMD_HAVE_ADIOS1
 TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
 {
     {
