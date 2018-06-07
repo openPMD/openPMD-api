@@ -1,5 +1,5 @@
-openPMD - API for Developers
-============================
+openPMD-api - C++ & Python API for Scientific I/O with openPMD
+==============================================================
 
 [![Supported openPMD Standard](https://img.shields.io/badge/openPMD-1.0.0--1.1.0-blue.svg)](https://github.com/openPMD/openPMD-standard/releases)
 [![Documentation Status](https://readthedocs.org/projects/openpmd-api/badge/?version=latest)](http://openpmd-api.readthedocs.io/en/latest/?badge=latest)
@@ -21,7 +21,7 @@ Where supported, openPMD-api implements both serial and MPI parallel I/O capabil
 [api-py3]: https://img.shields.io/badge/language-Python3-yellow.svg "Python3 API"
 [dev-alpha]: https://img.shields.io/badge/phase-alpha-yellowgreen.svg "Status: Alpha"
 [dev-unstable]: https://img.shields.io/badge/phase-unstable-yellow.svg "Status: Unstable"
-[api-platforms]: https://img.shields.io/conda/pn/conda-forge/openpmd-api.svg "Supported Platforms"
+[api-platforms]: https://img.shields.io/badge/platforms-linux%20|%20osx%20|%20win-blue.svg "Supported Platforms"
 
 ## Usage
 
@@ -227,7 +227,7 @@ export CMAKE_PREFIX_PATH=$HOME/somepath:$CMAKE_PREFIX_PATH
 Use the following lines in your projects `CMakeLists.txt`:
 ```cmake
 # supports:                       COMPONENTS MPI NOMPI HDF5 ADIOS1 ADIOS2
-find_package(openPMD 0.1.1 CONFIG)
+find_package(openPMD 0.1.0 CONFIG)
 
 if(openPMD_FOUND)
     target_link_libraries(YourTarget PRIVATE openPMD::openPMD)

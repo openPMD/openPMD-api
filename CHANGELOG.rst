@@ -3,6 +3,23 @@
 Changelog
 =========
 
+0.1.2-alpha
+-----------
+**Date:** TBD
+
+[Title]
+
+[Short Summary]
+
+Changes to "0.1.1-alpha"
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- forgot to bump ``version.hpp``/``__version__`` in last release
+
+
 0.1.1-alpha
 -----------
 **Date:** 2018-06-07
