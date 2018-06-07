@@ -5,11 +5,12 @@ Changelog
 
 0.1.1-alpha
 -----------
-**Date:** TBD
+**Date:** 2018-06-07
 
-[Title TBA]
+ADIOS1 Build Fixes & Less Flushes
 
-[Short Summary]
+We fixed build issues with the ADIOS1 backend.
+The number of performed flushes in backends was generally minimized.
 
 Changes to "0.1.0-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^
