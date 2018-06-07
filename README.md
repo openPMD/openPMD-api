@@ -21,7 +21,7 @@ Where supported, openPMD-api implements both serial and MPI parallel I/O capabil
 [api-py3]: https://img.shields.io/badge/language-Python3-yellow.svg "Python3 API"
 [dev-alpha]: https://img.shields.io/badge/phase-alpha-yellowgreen.svg "Status: Alpha"
 [dev-unstable]: https://img.shields.io/badge/phase-unstable-yellow.svg "Status: Unstable"
-[api-platforms]: https://img.shields.io/conda/pn/conda-forge/openpmd-api.svg "Supported Platforms"
+[api-platforms]: https://img.shields.io/badge/platforms-linux%20|%20osx%20|%20win-blue.svg "Supported Platforms"
 
 ## Usage
 
