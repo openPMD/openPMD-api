@@ -1,5 +1,5 @@
-openPMD-api - C++ & Python API for Scientific I/O with openPMD
-==============================================================
+C++ & Python API for Scientific I/O with openPMD
+================================================
 
 [![Supported openPMD Standard](https://img.shields.io/badge/openPMD-1.0.0--1.1.0-blue.svg)](https://github.com/openPMD/openPMD-standard/releases)
 [![Documentation Status](https://readthedocs.org/projects/openpmd-api/badge/?version=latest)](http://openpmd-api.readthedocs.io/en/latest/?badge=latest)
