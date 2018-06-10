@@ -204,7 +204,11 @@ if(ADIOS_FOUND)
         string(REPLACE " -l" "" _LIB ${_LIB})
 
         # find static lib: absolute path in -L then default
-        find_library(_LIB_DIR NAMES ${_LIB} PATHS ${ADIOS_LIBRARY_DIRS} CMAKE_FIND_ROOT_PATH_BOTH)
+        if(_LIB MATCHES "^glib")
+            find_library(_LIB_DIR NAMES ${_LIB} PATHS ${ADIOS_LIBRARY_DIRS} NAMES glib-2.0 CMAKE_FIND_ROOT_PATH_BOTH)
+        else()
+            find_library(_LIB_DIR NAMES ${_LIB} PATHS ${ADIOS_LIBRARY_DIRS} CMAKE_FIND_ROOT_PATH_BOTH)
+        endif()
 
         if(_LIB MATCHES "^.*nompi.*$")
             set(ADIOS_HAVE_SEQUENTIAL TRUE)
