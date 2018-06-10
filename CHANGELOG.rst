@@ -18,6 +18,7 @@ Bug Fixes
 """""""""
 
 - forgot to bump ``version.hpp``/``__version__`` in last release
+- CMake: Overwritable Install Paths #237
 
 
 0.1.1-alpha
