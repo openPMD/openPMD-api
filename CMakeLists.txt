@@ -312,16 +312,16 @@ if(openPMD_HAVE_PYTHON)
     target_link_libraries(openPMD.py PRIVATE openPMD)
 
     if(WIN32)
-        set(CMAKE_INSTALL_PYTHONDIR
+        set(CMAKE_INSTALL_PYTHONDIR_DEFAULT
             "${CMAKE_INSTALL_LIBDIR}\\site-packages"
         )
     else()
-        set(CMAKE_INSTALL_PYTHONDIR
+        set(CMAKE_INSTALL_PYTHONDIR_DEFAULT
             "${CMAKE_INSTALL_LIBDIR}/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages"
         )
     endif()
-    set(CMAKE_INSTALL_PYTHONDIR "${CMAKE_INSTALL_PYTHONDIR}"
-        CACHE INTERNAL "" FORCE
+    set(CMAKE_INSTALL_PYTHONDIR "${CMAKE_INSTALL_PYTHONDIR_DEFAULT}"
+        CACHE STRING "Location for installed python package"
     )
     set_target_properties(openPMD.py PROPERTIES
         ARCHIVE_OUTPUT_NAME openPMD
@@ -471,8 +471,8 @@ write_basic_package_version_file("openPMDConfigVersion.cmake"
 #
 # headers, libraries and exectuables
 install(TARGETS openPMD EXPORT openPMDTargets
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
@@ -632,14 +632,6 @@ endif()
 
 # Status Message for Build Options ############################################
 #
-function(invertBoolean inputVar outputVar)
-  if(${inputVar})
-    set(${outputVar} OFF PARENT_SCOPE)
-  else()
-    set(${outputVar} ON PARENT_SCOPE)
-  endif()
-endfunction()
-
 message("")
 message("openPMD build configuration:")
 message("  library Version: ${openPMD_VERSION}")
@@ -658,10 +650,8 @@ if(openPMD_HAVE_PYTHON)
     message("     python: ${CMAKE_INSTALL_PYTHONDIR}")
 endif()
 message("")
-message("  Additionally installed third party libraries:")
-invertBoolean(openPMD_USE_INTERNAL_VARIANT openPMD_HAVE_EXTERNAL_VARIANT)
-message("    MPark.Variant: ${openPMD_HAVE_EXTERNAL_VARIANT}")
-message("           Catch2: OFF")
+message("  Additionally, install following third party libraries:")
+message("    MPark.Variant: ${openPMD_USE_INTERNAL_VARIANT}")
 message("")
 message("  Build Type: ${CMAKE_BUILD_TYPE}")
 message("  Testing: ${BUILD_TESTING}")
