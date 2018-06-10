@@ -7,7 +7,7 @@ project(openPMD VERSION 0.1.2) # LANGUAGES CXX
 # the openPMD "markup"/"schema" standard version
 set(openPMD_STANDARD_VERSION 1.1.0)
 
-list(APPEND CMAKE_MODULE_PATH "${openPMD_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${openPMD_SOURCE_DIR}/share/openPMD/cmake")
 
 
 # Project structure ###########################################################
@@ -509,7 +509,7 @@ install(
 )
 install(
     FILES
-        ${openPMD_SOURCE_DIR}/cmake/FindADIOS.cmake
+        ${openPMD_SOURCE_DIR}/share/openPMD/cmake/FindADIOS.cmake
     DESTINATION ${CMAKE_INSTALL_CMAKEDIR}/Modules
 )
 
