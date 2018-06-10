@@ -66,6 +66,8 @@ endif()
 include(CTest)
 # automatically defines: BUILD_TESTING, default is ON
 
+option(BUILD_EXAMPLES "Build the examples" ON)
+
 
 # Dependencies ################################################################
 #
@@ -404,17 +406,19 @@ if(BUILD_TESTING)
     endforeach()
 endif()
 
-foreach(examplename ${openPMD_EXAMPLE_NAMES})
-    if(${examplename} MATCHES ".+parallel$")
-        if(openPMD_HAVE_MPI)
+if(BUILD_EXAMPLES)
+    foreach(examplename ${openPMD_EXAMPLE_NAMES})
+        if(${examplename} MATCHES ".+parallel$")
+            if(openPMD_HAVE_MPI)
+                add_executable(${examplename} examples/${examplename}.cpp)
+                target_link_libraries(${examplename} PRIVATE openPMD)
+            endif()
+        else()
             add_executable(${examplename} examples/${examplename}.cpp)
             target_link_libraries(${examplename} PRIVATE openPMD)
         endif()
-    else()
-        add_executable(${examplename} examples/${examplename}.cpp)
-        target_link_libraries(${examplename} PRIVATE openPMD)
-    endif()
-endforeach()
+    endforeach()
+endif()
 
 
 # Warnings ####################################################################
@@ -553,28 +557,29 @@ endif()
 
 # Examples ####################################################################
 #
-
-# C++ Examples
-# Current examples all use HDF5, elaborate if other backends are used
-if(openPMD_HAVE_HDF5)
-    if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
-        foreach(examplename ${openPMD_EXAMPLE_NAMES})
-            if(${examplename} MATCHES "^.*_parallel$")
-                if(openPMD_HAVE_MPI)
-                    add_test(NAME MPI.${examplename}
-                            COMMAND ${MPI_TEST_EXE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}
+if(BUILD_EXAMPLES)
+    # C++ Examples
+    # Current examples all use HDF5, elaborate if other backends are used
+    if(openPMD_HAVE_HDF5)
+        if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
+            foreach(examplename ${openPMD_EXAMPLE_NAMES})
+                if(${examplename} MATCHES "^.*_parallel$")
+                    if(openPMD_HAVE_MPI)
+                        add_test(NAME MPI.${examplename}
+                                COMMAND ${MPI_TEST_EXE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}
+                                WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                                )
+                    endif()
+                else()
+                    add_test(NAME Serial.${examplename}
+                            COMMAND ${examplename}
                             WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
                             )
                 endif()
-            else()
-                add_test(NAME Serial.${examplename}
-                        COMMAND ${examplename}
-                        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-                        )
-            endif()
-        endforeach()
-    else()
-        message(STATUS "Note: Skipping C++ example tests (missing example files)")
+            endforeach()
+        else()
+            message(STATUS "Note: Skipping C++ example tests (missing example files)")
+        endif()
     endif()
 endif()
 

@@ -14,6 +14,11 @@ Changelog
 Changes to "0.1.1-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
+Features
+""""""""
+
+- CMake: add new ``BUILD_EXAMPLES`` option #238
+
 Bug Fixes
 """""""""
 
