@@ -11,12 +11,10 @@
             "orcid": "0000-0003-1943-7141"
         }
     ],
-    "title": "C++ & Python API for Scientific I/O with openPMD",
     "access_right": "open",
     "upload_type": "software",
     "license": "LGPL-3.0",
     "pub_id": "27579",
-    "description": "openPMD is an open metadata format for open data workflows in open science. This library provides a common high-level API for openPMD writing and reading. It provides a common interface to I/O libraries and file formats such as HDF5 and ADIOS. Where supported, openPMD-api implements both serial and MPI parallel I/O capabilities.",
     "keywords": [
         "openPMD",
         "Open Science",
