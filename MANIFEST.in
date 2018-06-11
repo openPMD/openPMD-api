@@ -1,0 +1,8 @@
+include README.md COPYING COPYING.LESSER
+include requirements.txt
+global-include CMakeLists.txt *.cmake *.cmake.in
+recursive-include include *
+recursive-include src *
+recursive-include share *
+recursive-include test *
+recursive-include examples *

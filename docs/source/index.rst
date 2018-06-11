@@ -81,3 +81,4 @@ Development
    dev/buildoptions
    dev/sphinx
    dev/doxygen
+   dev/release
