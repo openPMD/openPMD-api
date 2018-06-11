@@ -17,6 +17,7 @@ Changes to "0.1.1-alpha"
 Features
 """"""""
 
+- Python: first NumPy bindings for record component chunk store/load #219
 - CMake: add new ``BUILD_EXAMPLES`` option #238
 
 Bug Fixes
