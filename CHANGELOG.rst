@@ -3,13 +3,14 @@
 Changelog
 =========
 
-0.1.2-alpha
+0.2.0-alpha
 -----------
-**Date:** TBD
+**Date:** 2018-06-11
 
-[Title]
+Initial Numpy Bindings
 
-[Short Summary]
+Adds first bindings for record component reading and writing.
+Fixes some minor CMake issues.
 
 Changes to "0.1.1-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^
