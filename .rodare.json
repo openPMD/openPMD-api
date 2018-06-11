@@ -16,5 +16,37 @@
     "upload_type": "software",
     "license": "LGPL-3.0",
     "pub_id": "27579",
-    "description": "openPMD is an open metadata format for open data workflows in open science. This library provides a common high-level API for openPMD writing and reading. It provides a common interface to I/O libraries and file formats such as HDF5 and ADIOS. Where supported, openPMD-api implements both serial and MPI parallel I/O capabilities."
+    "description": "openPMD is an open metadata format for open data workflows in open science. This library provides a common high-level API for openPMD writing and reading. It provides a common interface to I/O libraries and file formats such as HDF5 and ADIOS. Where supported, openPMD-api implements both serial and MPI parallel I/O capabilities.",
+    "keywords": [
+        "openPMD",
+        "Open Science",
+        "Open Data",
+        "HDF5",
+        "ADIOS",
+        "data",
+        "MPI",
+        "HPC",
+        "research",
+        "file-format",
+        "file-handling"
+    ],
+    "grants": [
+        {
+            "id": "654220"
+        }
+    ],
+    "related_identifiers": [
+        {
+            "identifier": "DOI:10.5281/zenodo.1167843",
+            "relation": "isCitedBy"
+        },
+        {
+            "identifier": "DOI:10.5281/zenodo.1069534",
+            "relation": "isCitedBy"
+        },
+        {
+            "identifier": "DOI:10.5281/zenodo.33624",
+            "relation": "isCitedBy"
+        }
+    ]
 }
