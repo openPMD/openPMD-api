@@ -19,6 +19,7 @@ Features
 
 - Python: first NumPy bindings for record component chunk store/load #219
 - CMake: add new ``BUILD_EXAMPLES`` option #238
+- CMake: build directories controllable #241
 
 Bug Fixes
 """""""""
