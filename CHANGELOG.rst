@@ -18,6 +18,7 @@ Features
 """"""""
 
 - CMake: add new ``BUILD_EXAMPLES`` option #238
+- CMake: build directories controllable #241
 
 Bug Fixes
 """""""""
