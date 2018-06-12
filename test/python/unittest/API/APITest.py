@@ -8,12 +8,12 @@ License: LGPLv3+
 
 import openPMD
 
-import numpy
 import os
 import shutil
 import unittest
 
 from TestUtilities.TestUtilities import generateTestFilePath
+
 
 class APITest(unittest.TestCase):
     """ Test class testing the openPMD python API (plus some IO). """
@@ -33,8 +33,10 @@ class APITest(unittest.TestCase):
         self.__files_to_remove = []
         self.__dirs_to_remove = []
 
-        path_to_field_data = generateTestFilePath("issue-sample/no_particles/data00000400.h5")
-        path_to_particle_data = generateTestFilePath("issue-sample/no_fields/data00000400.h5")
+        path_to_field_data = generateTestFilePath(
+                "issue-sample/no_particles/data00000400.h5")
+        path_to_particle_data = generateTestFilePath(
+                "issue-sample/no_fields/data00000400.h5")
         path_to_data = generateTestFilePath("git-sample/data00000100.h5")
         mode = openPMD.Access_Type.read_only
         self.__field_series = openPMD.Series(path_to_field_data, mode)
@@ -63,7 +65,8 @@ class APITest(unittest.TestCase):
         print("Read a Series with openPMD standard version %s" %
               series.openPMD)
 
-        print("The Series contains {0} iterations:".format(len(series.iterations)))
+        print("The Series contains {0} iterations:".format(
+            len(series.iterations)))
         for i in series.iterations:
             print("\t {0}".format(i))
         print("")
@@ -86,8 +89,12 @@ class APITest(unittest.TestCase):
         # Get reference to series stored on test case.
         series = self.__field_series
 
-        print("Read a Series with openPMD standard version %s" % series.openPMD)
-        print("The Series contains {0} iterations:".format(len(series.iterations)))
+        print(
+                "Read a Series with openPMD \
+                        standard version %s" % series.openPMD
+             )
+        print("The Series contains {0} iterations:".format(
+            len(series.iterations)))
         for i in series.iterations:
             print("\t {0}".format(i))
         print("")
@@ -114,7 +121,8 @@ class APITest(unittest.TestCase):
               series.openPMD)
 
         # Loop over iterations.
-        print("The Series contains {0} iterations:".format(len(series.iterations)))
+        print("The Series contains {0} iterations:".format(
+            len(series.iterations)))
         for i in series.iterations:
             print("\t {0}".format(i))
         print("")
@@ -141,7 +149,6 @@ class APITest(unittest.TestCase):
         # Get a mesh.
         electrons = i.particles["electrons"]
         self.assertIsInstance(electrons, openPMD.ParticleSpecies)
-
 
     def testLoadSeries(self):
         """ Test loading a pmd series from hdf5."""
@@ -202,28 +209,34 @@ class APITest(unittest.TestCase):
     def testAllocation(self):
         """ Test openPMD.Allocation. """
         obj = openPMD.Allocation(1)
+        del obj
 
     def testData_Order(self):
         """ Test openPMD.Data_Order. """
         obj = openPMD.Data_Order('C')
+        del obj
 
     def testDatatype(self):
         """ Test openPMD.Datatype. """
         data_type = openPMD.Datatype(1)
+        del data_type
 
     def testDataset(self):
         """ Test openPMD.Dataset. """
         data_type = openPMD.Datatype(1)
         extent = openPMD.Extent()
         obj = openPMD.Dataset(data_type, extent)
+        del obj
 
     def testExtent(self):
         """ Test openPMD.Extent. """
         obj = openPMD.Extent()
+        del obj
 
     def testGeometry(self):
         """ Test openPMD.Geometry. """
         obj = openPMD.Geometry(0)
+        del obj
 
     def testIteration(self):
         """ Test openPMD.Iteration. """
@@ -238,10 +251,12 @@ class APITest(unittest.TestCase):
     def testIteration_Container(self):
         """ Test openPMD.Iteration_Container. """
         obj = openPMD.Iteration_Container()
+        del obj
 
     def testIteration_Encoding(self):
         """ Test openPMD.Iteration_Encoding. """
         obj = openPMD.Iteration_Encoding(1)
+        del obj
 
     def testMesh(self):
         """ Test openPMD.Mesh. """
@@ -254,6 +269,7 @@ class APITest(unittest.TestCase):
     def testMesh_Container(self):
         """ Test openPMD.Mesh_Container. """
         obj = openPMD.Mesh_Container()
+        del obj
 
     def testParticlePatches(self):
         """ Test openPMD.ParticlePatches. """
@@ -266,26 +282,26 @@ class APITest(unittest.TestCase):
     def testParticle_Container(self):
         """ Test openPMD.Particle_Container. """
         obj = openPMD.Particle_Container()
+        del obj
 
     def testRecord(self):
         """ Test openPMD.Record. """
         # Has only copy constructor.
         self.assertRaises(TypeError, openPMD.Record)
-
-        ### FIXME
-        ## Get a record (fails)
-        #record = self.__series.iterations[100].particles['electrons'].properties['positions'].components['x']
-
-        # Copy.
-        #copy_record = openPMD.Record(record)
-
-        # Check.
-        #self.assertIsInstance(copy_record, openPMD.Record)
+#        ### FIXME
+#        ## Get a record (fails)
+#        #record = self.__series.iterations[100].particles[
+#            'electrons'].properties['positions'].components['x']
+#
+#        # Copy.
+#        #copy_record = openPMD.Record(record)
+#
+#        # Check.
+#        #self.assertIsInstance(copy_record, openPMD.Record)
 
     def testRecord_Component(self):
         """ Test openPMD.Record_Component. """
-        self.assertRaises( TypeError, openPMD.Record_Component)
-
+        self.assertRaises(TypeError, openPMD.Record_Component)
 
     def testFieldRecord(self):
         """ Test querying for a non-scalar field record. """
@@ -293,10 +309,8 @@ class APITest(unittest.TestCase):
         E = self.__series.iterations[100].meshes["E"]
         Ex = E["x"]
 
-        print (type(Ex))
+        print(type(Ex))
         self.assertIsInstance(Ex, openPMD.Mesh_Record_Component)
-
-
 
 # TODO: add __getitem__ to openPMD.Mesh and openPMD.Particle object for
 #       non-scalar records: return a record component
@@ -323,4 +337,3 @@ class APITest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
