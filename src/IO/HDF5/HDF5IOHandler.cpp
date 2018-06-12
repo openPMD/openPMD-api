@@ -101,7 +101,10 @@ HDF5IOHandlerImpl::createFile(Writable* writable,
     if( !writable->written )
     {
         if( !auxiliary::directory_exists(m_handler->directory) )
-            auxiliary::create_directories(m_handler->directory);
+        {
+            bool success = auxiliary::create_directories(m_handler->directory);
+            VERIFY(success, "Internal error: Failed to create directories during HDF5 file creation");
+        }
 
         std::string name = m_handler->directory + parameters.name;
         if( !auxiliary::ends_with(name, ".h5") )

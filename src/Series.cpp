@@ -75,7 +75,11 @@ Series::Series(std::string const& filepath,
     auto const pos = filepath.find_last_of('/');
     if( std::string::npos == pos )
     {
+#ifdef _WIN32
+        newPath = ".\\";
+#else
         newPath = "./";
+#endif
         newName = filepath;
     }
     else
@@ -83,6 +87,21 @@ Series::Series(std::string const& filepath,
         newPath = filepath.substr(0, pos + 1);
         newName = filepath.substr(pos + 1);
     }
+#ifdef _WIN32
+    if( auxiliary::contains(newPath, '/') )
+    {
+        std::cerr << "Filepaths on WINDOWS platforms may not contain slashes '/'! "
+                  << "Replacing with backslashes '\\' unconditionally!" << std::endl;
+        newPath = auxiliary::replace_all(newPath, "\\", "/");
+    }
+#else
+    if( auxiliary::contains(newPath, '\\') )
+    {
+        std::cerr << "Filepaths on UNIX platforms may not include backslashes '\\'! "
+                  << "Replacing with slashes '/' unconditionally!" << std::endl;
+        newPath = auxiliary::replace_all(newPath, "\\", "/");
+    }
+#endif
 
     IterationEncoding ie;
     if( std::string::npos != newName.find("%T") )
@@ -140,7 +159,11 @@ Series::Series(std::string const& filepath,
     auto const pos = filepath.find_last_of('/');
     if( std::string::npos == pos )
     {
+#ifdef _WIN32
+        newPath = ".\\";
+#else
         newPath = "./";
+#endif
         newName = filepath;
     }
     else
@@ -148,6 +171,21 @@ Series::Series(std::string const& filepath,
         newPath = filepath.substr(0, pos + 1);
         newName = filepath.substr(pos + 1);
     }
+#ifdef _WIN32
+    if( auxiliary::contains(newPath, '/') )
+    {
+        std::cerr << "Filepaths on WINDOWS platforms may not contain slashes '/'! "
+                  << "Replacing with backslashes '\\' unconditionally!" << std::endl;
+        newPath = auxiliary::replace_all(newPath, "\\", "/");
+    }
+#else
+    if( auxiliary::contains(newPath, '\\') )
+    {
+        std::cerr << "Filepaths on UNIX platforms may not include backslashes '\\'! "
+                  << "Replacing with slashes '/' unconditionally!" << std::endl;
+        newPath = auxiliary::replace_all(newPath, "\\", "/");
+    }
+#endif
 
     IterationEncoding ie;
     if( std::string::npos != newName.find("%T") )
