@@ -49,7 +49,7 @@ compilers:
       cxx: /usr/bin/g++-6
       f77: /usr/bin/gfortran-6
       fc: /usr/bin/gfortran-6
-    spec: gcc@6.3.0
+    spec: gcc@6.4.0
     target: x86_64
 - compiler:
     environment: {}
@@ -62,5 +62,5 @@ compilers:
       cxx: /usr/bin/g++-7
       f77: /usr/bin/gfortran-7
       fc: /usr/bin/gfortran-7
-    spec: gcc@7.2.0
+    spec: gcc@7.3.0
     target: x86_64
