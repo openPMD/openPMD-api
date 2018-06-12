@@ -98,7 +98,7 @@ Our manual shows full [read & write examples](https://openpmd-api.readthedocs.io
 
 Required:
 * CMake 3.10.0+
-* C++11 capable compiler, e.g. g++ 4.9+, clang 3.9+, VS 2015+
+* C++11 capable compiler, e.g. g++ 4.8+, clang 3.9+, VS 2015+
 
 Shipped internally:
 * [MPark.Variant](https://github.com/mpark/variant) 1.3.0+
@@ -116,11 +116,7 @@ Optional language bindings:
 * Python:
   * Python 3.X+
   * pybind11 2.2.1+
-
-* Python (*not yet implemented*):
-  * mpi4py?
-  * numpy-dev?
-  * xtensor-python 0.17.0+?
+  * numpy
 
 ## Installation
 
