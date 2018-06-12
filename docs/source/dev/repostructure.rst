@@ -27,7 +27,7 @@ Directory Structure
 
     * ``python/``
 
-      * modules, e.g. for RT interfaces, pre* & post-processing
+      * modules, e.g. additional python interfaces and helpers
       * set ``PYTHONPATH`` here
 
 * ``examples/``
@@ -39,18 +39,24 @@ Directory Structure
   * example files; need to be added manually with:
     ``.travis/download_samples.sh``
 
+* ``share/openPMD/``
+
+  * ``cmake/``
+
+    * cmake scripts
+
+  * ``thirdParty/``
+
+    * included third party software
+
 * ``test/``
 
-  * unit tests which are run on ``make test``
+  * unit tests which are run with ``ctest`` (``make test``)
 
 * ``.travis/``
 
-  * setup scripts for our continuous integration system
+  * setup scripts for our continuous integration systems
 
 * ``docs/``
 
   * documentation files
-
-* ``cmake/``
-
-  * CMake scripts

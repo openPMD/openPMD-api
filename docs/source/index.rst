@@ -1,22 +1,18 @@
 :orphan:
 
-
-*openPMD C++ & Python API*
+openPMD C++ & Python API
+------------------------
 
 This library provides an abstract API for openPMD file handling.
 It provides both support for writing & reading into various formats and works both serial and parallel (MPI).
-Implemented backends include HDF5 and ADIOS.
+Implemented backends include HDF5 and ADIOS1.
 
-.. note::
+Doxygen
+-------
 
-   Are you looking for our latest Doxygen docs for the API?
+The lastest Doxygen docs for the C++ API are published at:
 
-   See http://www.openpmd.org/openPMD-api
-
-.. attention::
-
-   This library is just getting started.
-   Please stay tuned for updates and contact us on `GitHub <https://github.com/openPMD/openPMD-api/issues>`_ if you want to try it.
+http://www.openpmd.org/openPMD-api
 
 .. raw:: html
 

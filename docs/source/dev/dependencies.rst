@@ -12,7 +12,7 @@ Required
 --------
 
 * CMake 3.10.0+
-* C++11 capable compiler, e.g. g++ 4.9+, clang 3.9+, VS 2015+
+* C++11 capable compiler, e.g. g++ 4.8+, clang 3.9+, VS 2015+
 
 Shipped internally
 ------------------
@@ -40,10 +40,4 @@ Optional: language bindings
 
   * Python 3.X+
   * pybind11 2.2.1+
-
-* Python (*not yet implemented*):
-
-  * mpi4py?
-  * numpy-dev?
-  * xtensor-python 0.17.0+?
-
+  * numpy
