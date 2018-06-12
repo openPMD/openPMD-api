@@ -557,3 +557,24 @@ TEST_CASE( "wrapper_test", "[core]" )
     REQUIRE(pp["numParticles"][RecordComponent::SCALAR].m_chunks->empty());
 #endif
 }
+
+TEST_CASE( "use_count_test", "[core]" )
+{
+    Series o = Series("./new_openpmd_output", AccessType::CREATE);
+
+    MeshRecordComponent mrc = o.iterations[1].meshes["E"]["x"];
+    mrc.resetDataset(Dataset(Datatype::UINT16, {42}));
+    std::shared_ptr< uint16_t > storeData = std::make_shared< uint16_t >(44);
+    REQUIRE(storeData.use_count() == 1);
+    mrc.storeChunk({0}, {1}, storeData);
+    REQUIRE(storeData.use_count() == 2);
+    o.flush();
+    REQUIRE(storeData.use_count() == 1);
+
+#if openPMD_HAVE_INVASIVE_TESTS
+    PatchRecordComponent pprc = o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR];
+    pprc.resetDataset(Dataset(Datatype::UINT64, {4}));
+    pprc.store(0, static_cast< uint64_t >(1));
+    REQUIRE(static_cast< Parameter< Operation::WRITE_DATASET >* >(pprc.m_chunks->front().parameter.get())->data.use_count() == 1);
+#endif
+}

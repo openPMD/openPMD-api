@@ -170,6 +170,8 @@ RecordComponent::storeChunk(Offset o, Extent e, std::shared_ptr<T> data)
 {
     if( *m_isConstant )
         throw std::runtime_error("Chunks can not be written for a constant RecordComponent.");
+    if( !data )
+        throw std::runtime_error("Unallocated pointer passed during chunk store.");
     Datatype dtype = determineDatatype(data);
     if( dtype != getDatatype() )
         throw std::runtime_error("Datatypes of chunk and dataset do not match.");
