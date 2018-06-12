@@ -146,7 +146,7 @@ jobs:
             - openmpi-bin
       before_install: *gcc49_init
       script: *script-cpp-unit
-    # GCC 7.2.0
+    # GCC 7.3.0
     - <<: *test-cpp-unit
       env:
         - USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
@@ -154,13 +154,13 @@ jobs:
       addons:
         apt:
           <<: *apt_common_sources
-          packages: &gcc72_deps
+          packages: &gcc73_deps
             - environment-modules
             - gfortran-7
             - gcc-7
             - g++-7
-      before_install: &gcc72_init
-         - CXX=g++-7 && CC=gcc-7 && COMPILERSPEC="%gcc@7.2.0"
+      before_install: &gcc73_init
+         - CXX=g++-7 && CC=gcc-7 && COMPILERSPEC="%gcc@7.3.0"
       script: *script-cpp-unit
     - <<: *test-cpp-unit
       env:
@@ -170,12 +170,12 @@ jobs:
         apt:
           <<: *apt_common_sources
           packages:
-            - *gcc72_deps
+            - *gcc73_deps
             - libopenmpi-dev
             - openmpi-bin
-      before_install: *gcc72_init
+      before_install: *gcc73_init
       script: *script-cpp-unit
-    # GCC 6.3.0 + Python 2.7
+    # GCC 6.4.0 + Python 2.7
     - <<: *test-cpp-unit
       language: python
       python: "2.7"
@@ -185,15 +185,15 @@ jobs:
       addons:
         apt:
           <<: *apt_common_sources
-          packages: &gcc63_deps
+          packages: &gcc64_deps
             - environment-modules
             - gfortran-6
             - gcc-6
             - g++-6
-      before_install: &gcc63_init
-         - CXX=g++-6 && CC=gcc-6 && COMPILERSPEC="%gcc@6.3.0"
+      before_install: &gcc64_init
+         - CXX=g++-6 && CC=gcc-6 && COMPILERSPEC="%gcc@6.4.0"
       script: *script-cpp-unit
-    # GCC 6.3.0 + Python 3.6
+    # GCC 6.4.0 + Python 3.6
     - <<: *test-cpp-unit
       language: python
       python: "3.6"
@@ -204,8 +204,8 @@ jobs:
         apt:
           <<: *apt_common_sources
           packages:
-            - *gcc63_deps
-      before_install: *gcc63_init
+            - *gcc64_deps
+      before_install: *gcc64_init
       script: *script-cpp-unit
 
 install:
