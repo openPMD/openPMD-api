@@ -15,8 +15,8 @@ import unittest
 
 from TestUtilities.TestUtilities import generateTestFilePath
 
-class IOTest(unittest.TestCase):
-    """ Test class hosting all tests on IO functionality. """
+class APITest(unittest.TestCase):
+    """ Test class testing the openPMD python API (plus some IO). """
 
     @classmethod
     def setUpClass(cls):
@@ -36,9 +36,10 @@ class IOTest(unittest.TestCase):
         path_to_field_data = generateTestFilePath("issue-sample/no_particles/data00000400.h5")
         path_to_particle_data = generateTestFilePath("issue-sample/no_fields/data00000400.h5")
         path_to_data = generateTestFilePath("git-sample/data00000100.h5")
-        self.__field_series = openPMD.Series.read(path_to_field_data)
-        self.__particle_series = openPMD.Series.read(path_to_particle_data)
-        self.__series = openPMD.Series.read(path_to_data)
+        mode = openPMD.Access_Type.read_only
+        self.__field_series = openPMD.Series(path_to_field_data, mode)
+        self.__particle_series = openPMD.Series(path_to_particle_data, mode)
+        self.__series = openPMD.Series(path_to_data, mode)
 
     def tearDown(self):
         """ Tearing down a test. """
@@ -212,7 +213,9 @@ class IOTest(unittest.TestCase):
 
     def testDataset(self):
         """ Test openPMD.Dataset. """
-        obj = openPMD.Dataset(data_type, [1,2,3])
+        data_type = openPMD.Datatype(1)
+        extent = openPMD.Extent()
+        obj = openPMD.Dataset(data_type, extent)
 
     def testExtent(self):
         """ Test openPMD.Extent. """
@@ -224,7 +227,13 @@ class IOTest(unittest.TestCase):
 
     def testIteration(self):
         """ Test openPMD.Iteration. """
-        obj = openPMD.Iteration()
+        self.assertRaises(TypeError, openPMD.Iteration)
+
+        iteration = self.__particle_series.iterations[400]
+
+        copy_iteration = openPMD.Iteration(iteration)
+
+        self.assertIsInstance(copy_iteration, openPMD.Iteration)
 
     def testIteration_Container(self):
         """ Test openPMD.Iteration_Container. """
@@ -236,7 +245,11 @@ class IOTest(unittest.TestCase):
 
     def testMesh(self):
         """ Test openPMD.Mesh. """
-        obj = openPMD.Mesh()
+        self.assertRaises(TypeError, openPMD.Mesh)
+        mesh = self.__series.iterations[100].meshes['E']
+        copy_mesh = openPMD.Mesh(mesh)
+
+        self.assertIsInstance(copy_mesh, openPMD.Mesh)
 
     def testMesh_Container(self):
         """ Test openPMD.Mesh_Container. """
@@ -244,11 +257,11 @@ class IOTest(unittest.TestCase):
 
     def testParticlePatches(self):
         """ Test openPMD.ParticlePatches. """
-        obj = openPMD.ParticlePatches()
+        self.assertRaises(TypeError, openPMD.ParticlePatches)
 
     def testParticleSpecies(self):
         """ Test openPMD.ParticleSpecies. """
-        obj = openPMD.ParticleSpecies()
+        self.assertRaises(TypeError, openPMD.ParticleSpecies)
 
     def testParticle_Container(self):
         """ Test openPMD.Particle_Container. """
@@ -256,25 +269,32 @@ class IOTest(unittest.TestCase):
 
     def testRecord(self):
         """ Test openPMD.Record. """
-        obj = openPMD.Record()
+        # Has only copy constructor.
+        self.assertRaises(TypeError, openPMD.Record)
+
+        ### FIXME
+        ## Get a record (fails)
+        #record = self.__series.iterations[100].particles['electrons'].properties['positions'].components['x']
+
+        # Copy.
+        #copy_record = openPMD.Record(record)
+
+        # Check.
+        #self.assertIsInstance(copy_record, openPMD.Record)
 
     def testRecord_Component(self):
         """ Test openPMD.Record_Component. """
-        obj = openPMD.Record_Component()
+        self.assertRaises( TypeError, openPMD.Record_Component)
 
-    def testSeries(self):
-        """ Test openPMD.Series. """
-        obj = openPMD.Series()
 
     def testFieldRecord(self):
         """ Test querying for a non-scalar field record. """
 
         E = self.__series.iterations[100].meshes["E"]
-        self.assertTrue(hasattr(E, '__getitem __'))
-
         Ex = E["x"]
 
-        self.assertIsInstance(Ex, numpy.ndarray)
+        print (type(Ex))
+        self.assertIsInstance(Ex, openPMD.Mesh_Record_Component)
 
 
 
