@@ -64,22 +64,34 @@ std::string cleanFilename(std::string const& filename, Format f);
 std::function< bool(std::string const&) > matcher(std::string const& name, Format f);
 
 #if openPMD_HAVE_MPI
-Series::Series(std::string const& filepath,
+Series::Series(std::string filepath,
                AccessType at,
                MPI_Comm comm)
         : iterations{Container< Iteration, uint64_t >()},
           m_iterationEncoding{std::make_shared< IterationEncoding >()}
 {
+#ifdef _WIN32
+    if( auxiliary::contains(filepath, '/') )
+    {
+        std::cerr << "Filepaths on WINDOWS platforms may not contain slashes '/'! "
+                  << "Replacing with backslashes '\\' unconditionally!" << std::endl;
+        filepath = auxiliary::replace_all(filepath, "/", "\\");
+    }
+#else
+    if( auxiliary::contains(filepath, '\\') )
+    {
+        std::cerr << "Filepaths on UNIX platforms may not include backslashes '\\'! "
+                  << "Replacing with slashes '/' unconditionally!" << std::endl;
+        filepath = auxiliary::replace_all(filepath, "\\", "/");
+    }
+#endif
     std::string newPath;
     std::string newName;
-    auto const pos = filepath.find_last_of('/');
+    auto const pos = filepath.find_last_of(auxiliary::directory_separator);
     if( std::string::npos == pos )
     {
-#ifdef _WIN32
-        newPath = ".\\";
-#else
-        newPath = "./";
-#endif
+        newPath = ".";
+        newPath.append(1, auxiliary::directory_separator);
         newName = filepath;
     }
     else
@@ -87,21 +99,6 @@ Series::Series(std::string const& filepath,
         newPath = filepath.substr(0, pos + 1);
         newName = filepath.substr(pos + 1);
     }
-#ifdef _WIN32
-    if( auxiliary::contains(newPath, '/') )
-    {
-        std::cerr << "Filepaths on WINDOWS platforms may not contain slashes '/'! "
-                  << "Replacing with backslashes '\\' unconditionally!" << std::endl;
-        newPath = auxiliary::replace_all(newPath, "\\", "/");
-    }
-#else
-    if( auxiliary::contains(newPath, '\\') )
-    {
-        std::cerr << "Filepaths on UNIX platforms may not include backslashes '\\'! "
-                  << "Replacing with slashes '/' unconditionally!" << std::endl;
-        newPath = auxiliary::replace_all(newPath, "\\", "/");
-    }
-#endif
 
     IterationEncoding ie;
     if( std::string::npos != newName.find("%T") )
@@ -149,21 +146,33 @@ Series::Series(std::string const& filepath,
 }
 #endif
 
-Series::Series(std::string const& filepath,
+Series::Series(std::string filepath,
                AccessType at)
         : iterations{Container< Iteration, uint64_t >()},
           m_iterationEncoding{std::make_shared< IterationEncoding >()}
 {
+#ifdef _WIN32
+    if( auxiliary::contains(filepath, '/') )
+    {
+        std::cerr << "Filepaths on WINDOWS platforms may not contain slashes '/'! "
+                  << "Replacing with backslashes '\\' unconditionally!" << std::endl;
+        filepath = auxiliary::replace_all(filepath, "/", "\\");
+    }
+#else
+    if( auxiliary::contains(filepath, '\\') )
+    {
+        std::cerr << "Filepaths on UNIX platforms may not include backslashes '\\'! "
+                  << "Replacing with slashes '/' unconditionally!" << std::endl;
+        filepath = auxiliary::replace_all(filepath, "\\", "/");
+    }
+#endif
     std::string newPath;
     std::string newName;
-    auto const pos = filepath.find_last_of('/');
+    auto const pos = filepath.find_last_of(auxiliary::directory_separator);
     if( std::string::npos == pos )
     {
-#ifdef _WIN32
-        newPath = ".\\";
-#else
-        newPath = "./";
-#endif
+        newPath = ".";
+        newPath.append(1, auxiliary::directory_separator);
         newName = filepath;
     }
     else
@@ -171,21 +180,6 @@ Series::Series(std::string const& filepath,
         newPath = filepath.substr(0, pos + 1);
         newName = filepath.substr(pos + 1);
     }
-#ifdef _WIN32
-    if( auxiliary::contains(newPath, '/') )
-    {
-        std::cerr << "Filepaths on WINDOWS platforms may not contain slashes '/'! "
-                  << "Replacing with backslashes '\\' unconditionally!" << std::endl;
-        newPath = auxiliary::replace_all(newPath, "\\", "/");
-    }
-#else
-    if( auxiliary::contains(newPath, '\\') )
-    {
-        std::cerr << "Filepaths on UNIX platforms may not include backslashes '\\'! "
-                  << "Replacing with slashes '/' unconditionally!" << std::endl;
-        newPath = auxiliary::replace_all(newPath, "\\", "/");
-    }
-#endif
 
     IterationEncoding ie;
     if( std::string::npos != newName.find("%T") )

@@ -50,11 +50,11 @@ class Series : public Attributable
 
 public:
 #if openPMD_HAVE_MPI
-    Series(std::string const& filepath,
+    Series(std::string filepath,
            AccessType at,
            MPI_Comm comm);
 #endif
-    Series(std::string const& filepath,
+    Series(std::string filepath,
            AccessType at);
     ~Series();
 
