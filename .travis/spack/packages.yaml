@@ -16,6 +16,8 @@ packages:
       openmpi@1.6.5%gcc@7.2.0 arch=linux-ubuntu14-x86_64: /usr
       openmpi@1.6.5%clang@5.0.0 arch=linux-ubuntu14-x86_64: /usr
     buildable: False
+  hdf5:
+    version: [1.10.1, 1.8.13]
   python:
     version: [2.7.14, 2.7.10, 3.6.3]
     paths:
