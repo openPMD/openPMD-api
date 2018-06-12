@@ -110,7 +110,7 @@ Optional I/O backends:
 * [ADIOS2](https://github.com/ornladios/ADIOS2) 2.1+ (*not yet implemented*)
 
 while those can be build either with or without:
-* MPI 2.3+, e.g. OpenMPI or MPICH2
+* MPI 2.1+, e.g. OpenMPI 1.6.5+ or MPICH2
 
 Optional language bindings:
 * Python:
