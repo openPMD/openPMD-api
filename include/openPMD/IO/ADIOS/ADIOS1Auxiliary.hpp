@@ -27,7 +27,9 @@
 
 #include <adios_types.h>
 
+#include <cstring>
 #include <iterator>
+#include <iostream>
 #include <sstream>
 #include <stack>
 
@@ -146,5 +148,30 @@ concrete_bp1_file_position(Writable* w)
     }
 
     return auxiliary::replace_all(pos, "//", "/");
+}
+
+inline std::string
+getEnvNum(std::string const& key, std::string const& defaultValue)
+{
+    char const* env = std::getenv(key.c_str());
+    if( env != nullptr )
+    {
+        char const* tmp = env;
+        while( tmp )
+        {
+            if( isdigit(*tmp) )
+                ++tmp;
+            else
+            {
+                std::cerr << key << " is invalid" << std::endl;
+                break;
+            }
+        }
+        if( !tmp )
+            return std::string(env, std::strlen(env));
+        else
+            return defaultValue;
+    } else
+        return defaultValue;
 }
 } // openPMD

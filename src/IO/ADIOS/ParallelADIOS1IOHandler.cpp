@@ -24,6 +24,7 @@
 #   include "openPMD/auxiliary/StringManip.hpp"
 #   include "openPMD/IO/ADIOS/ADIOS1Auxiliary.hpp"
 #   include "openPMD/IO/ADIOS/ADIOS1FilePosition.hpp"
+#   include <mpi.h>
 #   include <cstring>
 #endif
 
@@ -36,74 +37,59 @@ namespace openPMD
 #       define VERIFY(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
 #   endif
 
-ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string const& path,
-                                                 AccessType at,
-                                                 MPI_Comm comm)
-        : AbstractIOHandler(path, at, comm),
-          m_impl{new ParallelADIOS1IOHandlerImpl(this, comm)}
-{
-    m_impl->init();
-}
-
-ParallelADIOS1IOHandler::~ParallelADIOS1IOHandler()
-{ }
-
-std::future< void >
-ParallelADIOS1IOHandler::flush()
-{
-    return m_impl->flush();
-}
-
-void
-ParallelADIOS1IOHandler::enqueue(IOTask const& i)
-{
-    switch( i.operation )
-    {
-        case Operation::CREATE_FILE:
-        case Operation::CREATE_PATH:
-        case Operation::CREATE_DATASET:
-        case Operation::OPEN_FILE:
-        case Operation::WRITE_ATT:
-            m_setup.push(i);
-            return;
-        default:
-            m_work.push(i);
-            return;
-    }
-}
-
-std::string
-getEnvNum(std::string const& key, std::string const& defaultValue)
-{
-    char const* env = std::getenv(key.c_str());
-    if( env != nullptr )
-    {
-        char const* tmp = env;
-        while( tmp )
-        {
-            if( isdigit(*tmp) )
-                ++tmp;
-            else
-            {
-                std::cerr << key << " is invalid" << std::endl;
-                break;
-            }
-        }
-        if( !tmp )
-            return std::string(env, std::strlen(env));
-        else
-            return defaultValue;
-    } else
-        return defaultValue;
-}
-
 ParallelADIOS1IOHandlerImpl::ParallelADIOS1IOHandlerImpl(AbstractIOHandler* handler,
                                                          MPI_Comm comm)
-        : ADIOS1IOHandlerImpl{handler, comm}
-{ }
+        : ADIOS1IOHandlerImpl{handler},
+          m_mpiInfo{MPI_INFO_NULL}
+{
+    int status = MPI_SUCCESS;
+    status = MPI_Comm_dup(comm, &m_mpiComm);
+    ASSERT(status == MPI_SUCCESS, "Internal error: Failed to duplicate MPI communicator");
+}
 
 ParallelADIOS1IOHandlerImpl::~ParallelADIOS1IOHandlerImpl()
-{ }
+{
+    /* create all files where ADIOS file creation has been deferred, but this has never been triggered
+     * this happens when no Operation::WRITE_DATASET is performed */
+    for( auto& f : m_existsOnDisk )
+    {
+        if( !f.second )
+        {
+            int64_t fd;
+            int status;
+            status = adios_open(&fd,
+                                m_groupName.c_str(),
+                                f.first->c_str(),
+                                "w",
+                                m_mpiComm);
+            if( status != err_no_error )
+                std::cerr << "Internal error: Failed to open_flush ADIOS file\n";
+
+            m_openWriteFileHandles[f.first] = fd;
+        }
+    }
+
+    for( auto& f : m_openReadFileHandles )
+        close(f.second);
+
+    for( auto& f : m_openWriteFileHandles )
+        close(f.second);
+
+    int status;
+    MPI_Barrier(m_mpiComm);
+    status = adios_read_finalize_method(m_readMethod);
+    if( status != err_no_error )
+        std::cerr << "Internal error: Failed to finalize ADIOS reading method (parallel)\n";
+
+    MPI_Barrier(m_mpiComm);
+    int rank = 0;
+    MPI_Comm_rank(m_mpiComm, &rank);
+    status = adios_finalize(rank);
+    if( status != err_no_error )
+        std::cerr << "Internal error: Failed to finalize ADIOS (parallel)\n";
+
+    MPI_Comm_free(&m_mpiComm);
+}
 
 std::future< void >
 ParallelADIOS1IOHandlerImpl::flush()
@@ -220,6 +206,10 @@ ParallelADIOS1IOHandlerImpl::flush()
 void
 ParallelADIOS1IOHandlerImpl::init()
 {
+    int status;
+    status = adios_init_noxml(m_mpiComm);
+    ASSERT(status == err_no_error, "Internal error: Failed to initialize ADIOS");
+
     std::stringstream params;
     params << "num_aggregators=" << getEnvNum("OPENPMD_ADIOS_NUM_AGGREGATORS", "1")
            << ";num_ost=" << getEnvNum("OPENPMD_ADIOS_NUM_OST", "0")
@@ -227,7 +217,6 @@ ParallelADIOS1IOHandlerImpl::init()
            << ";verbose=2";
     char const* c = params.str().c_str();
 
-    int status;
     /** @todo ADIOS_READ_METHOD_BP_AGGREGATE */
     m_readMethod = ADIOS_READ_METHOD_BP;
     status = adios_read_init_method(m_readMethod, m_mpiComm, "");
@@ -238,6 +227,91 @@ ParallelADIOS1IOHandlerImpl::init()
     VERIFY(status == err_no_error, "Internal error: Failed to declare ADIOS group");
     status = adios_select_method(m_group, "MPI_AGGREGATE", c, "");
     VERIFY(status == err_no_error, "Internal error: Failed to select ADIOS method");
+}
+
+ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string const& path,
+                                                 AccessType at,
+                                                 MPI_Comm comm)
+        : AbstractIOHandler(path, at, comm),
+          m_impl{new ParallelADIOS1IOHandlerImpl(this, comm)}
+{
+    m_impl->init();
+}
+
+ParallelADIOS1IOHandler::~ParallelADIOS1IOHandler()
+{ }
+
+std::future< void >
+ParallelADIOS1IOHandler::flush()
+{
+    return m_impl->flush();
+}
+
+void
+ParallelADIOS1IOHandler::enqueue(IOTask const& i)
+{
+    switch( i.operation )
+    {
+        case Operation::CREATE_FILE:
+        case Operation::CREATE_PATH:
+        case Operation::CREATE_DATASET:
+        case Operation::OPEN_FILE:
+        case Operation::WRITE_ATT:
+            m_setup.push(i);
+            return;
+        default:
+            m_work.push(i);
+            return;
+    }
+}
+
+int64_t
+ParallelADIOS1IOHandlerImpl::open_write(Writable* writable)
+{
+    auto res = m_filePaths.find(writable);
+    if( res == m_filePaths.end() )
+        res = m_filePaths.find(writable->parent);
+
+    std::string mode;
+    if( m_existsOnDisk[res->second] )
+    {
+        mode = "u";
+        /* close the handle that corresponds to the file we want to append to */
+        if( m_openReadFileHandles.find(res->second) != m_openReadFileHandles.end() )
+        {
+            close(m_openReadFileHandles[res->second]);
+            m_openReadFileHandles.erase(res->second);
+        }
+    }
+    else
+    {
+        mode = "w";
+        m_existsOnDisk[res->second] = true;
+    }
+
+    int64_t fd;
+    int status;
+    status = adios_open(&fd,
+                        m_groupName.c_str(),
+                        res->second->c_str(),
+                        mode.c_str(),
+                        m_mpiComm);
+    ASSERT(status == err_no_error, "Internal error: Failed to open_write ADIOS file");
+
+    return fd;
+}
+
+ADIOS_FILE*
+ParallelADIOS1IOHandlerImpl::open_read(std::string const& name)
+{
+    ADIOS_FILE *f;
+    f = adios_read_open_file(name.c_str(),
+                             m_readMethod,
+                             m_mpiComm);
+    ASSERT(adios_errno != err_file_not_found, "Internal error: ADIOS file not found");
+    ASSERT(f != nullptr, "Internal error: Failed to open_read ADIOS file");
+
+    return f;
 }
 #else
 #   if openPMD_HAVE_MPI

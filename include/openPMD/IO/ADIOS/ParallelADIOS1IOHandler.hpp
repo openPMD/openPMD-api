@@ -45,6 +45,13 @@ public:
     virtual void init() override;
 
     virtual std::future< void > flush() override;
+
+    virtual int64_t open_write(Writable *) override;
+    virtual ADIOS_FILE* open_read(std::string const& name) override;
+
+private:
+    MPI_Comm m_mpiComm;
+    MPI_Info m_mpiInfo;
 };  //ParallelADIOS1IOHandlerImpl
 
 class ParallelADIOS1IOHandler : public AbstractIOHandler
