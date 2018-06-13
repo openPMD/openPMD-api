@@ -31,36 +31,25 @@ Where supported, openPMD-api implements both serial and MPI parallel I/O capabil
 #include <openPMD/openPMD.hpp>
 #include <iostream>
 
-
 // ...
 
 auto s = openPMD::Series("output_files/data%T.h5", openPMD::AccessType::READ_ONLY);
 
-std::cout << "Read iterations...";
-for( auto const& i : s.iterations )
-{
-    // mesh records
-    for( auto const& m : i.second.meshes )
-    {
-        std::cout << "Read attributes for mesh " << m.first
-                  << " in iteration " << i.first << ":\n";
+for( auto const& i : s.iterations ) {
+    std::cout << "Iteration: " << i.first << "\n";
+
+    for( auto const& m : i.second.meshes ) {
+        std::cout << "  Mesh '" << m.first << "' attributes:\n";
         for( auto const& val : m.second.attributes() )
-            std::cout << '\t' << val << '\n';
-        std::cout << '\n';
+            std::cout << "    " << val << '\n';
     }
 
-    // particle records
-    for( auto const& p : i.second.particles )
-    {
-        std::cout << "Read attributes for particle species " << p.first
-                  << " in iteration " << i.first << ":\n";
+    for( auto const& p : i.second.particles ) {
+        std::cout << "  Particle species '" << p.first << "' attributes:\n";
         for( auto const& val : p.second.attributes() )
-            std::cout << '\t' << val << '\n';
-        std::cout << '\n';
+            std::cout << "    " << val << '\n';
     }
 }
-
-// ...
 ```
 
 ### Python
@@ -68,25 +57,22 @@ for( auto const& i : s.iterations )
 ```py
 import openPMD
 
-
 # ...
 
 series = openPMD.Series("output_files/data%T.h5", openPMD.Access_Type.read_only)
 
-print("Read iterations...")
-for k, i in series.iterations.items():
-    # mesh records
-    print("Iteration {0} contains {1} meshes:".format(k, len(i.meshes)))
-    for m in i.meshes:
-        print("\t {0}".format(m))
+for k_i, i in series.iterations.items():
+    print("Iteration: {0}".format(k_i))
 
-    # particle records
-    print("Iteration {0} contains {1} particle species:".format(
-        k, len(i.particles)))
-    for ps in i.particles:
-        print("\t {0}".format(ps))
+    for k_m, m in i.meshes.items():
+        print("  Mesh '{0}' attributes:".format(k_m))
+        for a in m.attributes:
+            print("    {0}".format(a))
 
-# ...
+    for k_p, p in i.particles.items():
+        print("  Particle species '{0}' attributes:".format(k_p))
+        for a in p.attributes:
+            print("    {0}".format(a))
 ```
 
 ### More!

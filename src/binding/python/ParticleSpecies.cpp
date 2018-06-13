@@ -21,13 +21,15 @@
 #include <pybind11/pybind11.h>
 
 #include "openPMD/ParticleSpecies.hpp"
+#include "openPMD/Record.hpp"
+#include "openPMD/backend/Container.hpp"
 
 namespace py = pybind11;
 using namespace openPMD;
 
 
 void init_ParticleSpecies(py::module &m) {
-    py::class_<ParticleSpecies>(m, "ParticleSpecies")
+    py::class_<ParticleSpecies, Container< Record > >(m, "ParticleSpecies")
         .def("__repr__",
             [](ParticleSpecies const &) {
                 return "<openPMD.ParticleSpecies>";
