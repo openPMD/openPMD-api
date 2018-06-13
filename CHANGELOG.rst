@@ -9,7 +9,8 @@ Changelog
 
 [Title]
 
-[Short Summary]
+Introduces new independent mechanism for verifying internal conditions.
+Fixes too broad filesystem logic.
 
 Changes to "0.2.0-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -17,11 +18,18 @@ Changes to "0.2.0-alpha"
 Features
 """"""""
 
+- CMake: add new ``openPMD_ENABLE_VERIFY`` option #229
+- introduce ``VERIFY`` macro for pre-/post-conditions that replaces ``ASSERT`` #229
+
 Bug Fixes
 """""""""
 
+- handle directory separators platform-dependent #229
+
 Other
 """""
+
+- enforce platform-specific directory separators on user input #229
 
 
 0.2.0-alpha
