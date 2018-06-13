@@ -56,7 +56,7 @@ openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
 option(openPMD_USE_INTERNAL_VARIANT "Use internally shipped MPark.Variant" ON)
 option(openPMD_USE_INTERNAL_CATCH   "Use internally shipped Catch2"        ON)
 
-option(openPMD_ENABLE_VERIFY "Enable internal VERFIY macro" ON)
+option(openPMD_USE_VERIFY "Enable internal VERIFY (assert) macro independent of build type" ON)
 
 set(CMAKE_CONFIGURATION_TYPES "Release;Debug;MinSizeRel;RelWithDebInfo")
 if(NOT CMAKE_BUILD_TYPE)
@@ -292,10 +292,10 @@ else()
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS2=0")
 endif()
 
-if(openPMD_ENABLE_VERIFY)
-    target_compile_definitions(openPMD PRIVATE "-DopenPMD_ENABLE_VERIFY=1")
+if(openPMD_USE_VERIFY)
+    target_compile_definitions(openPMD PRIVATE "-DopenPMD_USE_VERIFY=1")
 else()
-    target_compile_definitions(openPMD PRIVATE "-DopenPMD_ENABLE_VERIFY=0")
+    target_compile_definitions(openPMD PRIVATE "-DopenPMD_USE_VERIFY=0")
 endif()
 
 # python bindings
@@ -671,7 +671,7 @@ message("    MPark.Variant: ${openPMD_USE_INTERNAL_VARIANT}")
 message("")
 message("  Build Type: ${CMAKE_BUILD_TYPE}")
 message("  Testing: ${BUILD_TESTING}")
-message("  Internal VERIFY: ${openPMD_ENABLE_VERIFY}")
+message("  Internal VERIFY: ${openPMD_USE_VERIFY}")
 message("  Build Options:")
 
 foreach(opt IN LISTS openPMD_CONFIG_OPTIONS)

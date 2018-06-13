@@ -18,7 +18,7 @@ Changes to "0.2.0-alpha"
 Features
 """"""""
 
-- CMake: add new ``openPMD_ENABLE_VERIFY`` option #229
+- CMake: add new ``openPMD_USE_VERIFY`` option #229
 - introduce ``VERIFY`` macro for pre-/post-conditions that replaces ``ASSERT`` #229
 
 Bug Fixes
