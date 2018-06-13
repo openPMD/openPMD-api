@@ -207,6 +207,25 @@ jobs:
             - *gcc64_deps
       before_install: *gcc64_init
       script: *script-cpp-unit
+    # GCC 4.8.5 + Python 3.5.5
+    - <<: *test-cpp-unit
+      language: python
+      python: "3.5"
+      env:
+        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF
+      compiler: gcc
+      addons:
+        apt:
+          <<: *apt_common_sources
+          packages:
+            - environment-modules
+            - gfortran
+            - g++
+            - libopenmpi-dev
+            - openmpi-bin
+      before_install: &gcc48_init
+         - CXX=g++-4.8 && CC=gcc-4.8 && COMPILERSPEC="%gcc@4.8.5"
+      script: *script-cpp-unit
 
 install:
   # spack install

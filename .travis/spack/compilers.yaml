@@ -32,6 +32,19 @@ compilers:
     modules: []
     operating_system: ubuntu14.04
     paths:
+      cc: /usr/bin/gcc-4.8
+      cxx: /usr/bin/g++-4.8
+      f77: /usr/bin/gfortran-4.8
+      fc: /usr/bin/gfortran-4.8
+    spec: gcc@4.8.5
+    target: x86_64
+- compiler:
+    environment: {}
+    extra_rpaths: []
+    flags: {}
+    modules: []
+    operating_system: ubuntu14.04
+    paths:
       cc: /usr/bin/gcc-4.9
       cxx: /usr/bin/g++-4.9
       f77: /usr/bin/gfortran-4.9
