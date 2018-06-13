@@ -31,7 +31,7 @@ Optional: I/O backends
 
 while those can be build either with or without:
 
-* MPI 2.3+, e.g. OpenMPI or MPICH2
+* MPI 2.1+, e.g. OpenMPI 1.6.5+ or MPICH2
 
 Optional: language bindings
 ---------------------------
