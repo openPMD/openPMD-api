@@ -29,7 +29,8 @@ if __name__ == "__main__":
     print("Created an empty {0} Series".format(series.iteration_encoding))
 
     print(len(series.iterations))
-    E = series.iterations[1].meshes["E"][openPMD.Mesh_Record_Component.SCALAR]
+    rho = series.iterations[1]. \
+        meshes["rho"][openPMD.Mesh_Record_Component.SCALAR]
 
     datatype = openPMD.Datatype.DOUBLE
     # datatype = openPMD.determineDatatype(global_data)
@@ -39,8 +40,8 @@ if __name__ == "__main__":
     print("Created a Dataset of size {0}x{1} and Datatype {2}".format(
         dataset.extent[0], dataset.extent[1], dataset.dtype))
 
-    E.reset_dataset(dataset)
-    print("Set the dataset properties for the scalar field E in iteration 1")
+    rho.reset_dataset(dataset)
+    print("Set the dataset properties for the scalar field rho in iteration 1")
 
     # writing fails on already open file error
     series.flush()
@@ -50,7 +51,7 @@ if __name__ == "__main__":
     offset = openPMD.Extent([0, 0])
     # TODO implement slicing protocol
     # E[offset[0]:extent[0], offset[1]:extent[1]] = global_data
-    E.store_chunk(offset, extent, global_data)
+    rho.store_chunk(offset, extent, global_data)
     print("Stored the whole Dataset contents as a single chunk, " +
           "ready to write content")
 

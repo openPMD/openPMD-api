@@ -47,10 +47,10 @@ int main(int argc, char *argv[])
     );
     cout << "Created an empty " << series.iterationEncoding() << " Series\n";
 
-    MeshRecordComponent E =
+    MeshRecordComponent rho =
       series
           .iterations[1]
-          .meshes["E"][MeshRecordComponent::SCALAR];
+          .meshes["rho"][MeshRecordComponent::SCALAR];
     cout << "Created a scalar mesh Record with all required openPMD attributes\n";
 
     Datatype datatype = determineDatatype(shareRaw(global_data));
@@ -59,14 +59,14 @@ int main(int argc, char *argv[])
     cout << "Created a Dataset of size " << dataset.extent[0] << 'x' << dataset.extent[1]
          << " and Datatype " << dataset.dtype << '\n';
 
-    E.resetDataset(dataset);
-    cout << "Set the dataset properties for the scalar field E in iteration 1\n";
+    rho.resetDataset(dataset);
+    cout << "Set the dataset properties for the scalar field rho in iteration 1\n";
 
     series.flush();
     cout << "File structure and required attributes have been written\n";
 
     Offset offset = {0, 0};
-    E.storeChunk(offset, extent, shareRaw(global_data));
+    rho.storeChunk(offset, extent, shareRaw(global_data));
     cout << "Stored the whole Dataset contents as a single chunk, "
             "ready to write content\n";
 
