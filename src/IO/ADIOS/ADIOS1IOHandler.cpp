@@ -48,7 +48,6 @@ ADIOS1IOHandlerImpl::ADIOS1IOHandlerImpl(AbstractIOHandler* handler)
 
 ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
 {
-#if !openPMD_HAVE_MPI
   /* create all files where ADIOS file creation has been deferred,
    * but execution of the deferred operation has never been triggered
    * (happens when no Operation::WRITE_DATASET is performed) */
@@ -79,12 +78,11 @@ ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
     int status;
     status = adios_read_finalize_method(m_readMethod);
     if( status != err_no_error )
-        std::cerr << "Internal error: Failed to finalize ADIOS reading method (parallel)\n";
+        std::cerr << "Internal error: Failed to finalize ADIOS reading method (serial)\n";
 
     status = adios_finalize(0);
     if( status != err_no_error )
-        std::cerr << "Internal error: Failed to finalize ADIOS (parallel)\n";
-#endif
+        std::cerr << "Internal error: Failed to finalize ADIOS (serial)\n";
 }
 
 std::future< void >
@@ -202,7 +200,6 @@ ADIOS1IOHandlerImpl::flush()
 void
 ADIOS1IOHandlerImpl::init()
 {
-#if !openPMD_HAVE_MPI
     int status;
     status = adios_init_noxml(MPI_COMM_NULL);
     VERIFY(status == err_no_error, "Internal error: Failed to initialize ADIOS");
@@ -216,7 +213,6 @@ ADIOS1IOHandlerImpl::init()
     VERIFY(status == err_no_error, "Internal error: Failed to declare ADIOS group");
     status = adios_select_method(m_group, "POSIX", "", "");
     VERIFY(status == err_no_error, "Internal error: Failed to select ADIOS method");
-#endif
 }
 #endif
 
@@ -280,7 +276,6 @@ ADIOS1IOHandlerImpl::open_write(Writable* writable)
     }
 
     int64_t fd = -1;
-#if !openPMD_HAVE_MPI
     int status;
     status = adios_open(&fd,
                         m_groupName.c_str(),
@@ -288,27 +283,19 @@ ADIOS1IOHandlerImpl::open_write(Writable* writable)
                         mode.c_str(),
                         MPI_COMM_NULL);
     VERIFY(status == err_no_error, "Internal error: Failed to open_write ADIOS file");
-#endif
 
     return fd;
 }
 
 ADIOS_FILE*
-ADIOS1IOHandlerImpl::open_read(
-    std::string const&
-#if !openPMD_HAVE_MPI
-    name
-#endif
-)
+ADIOS1IOHandlerImpl::open_read( std::string const& name )
 {
     ADIOS_FILE *f = nullptr;
-#if !openPMD_HAVE_MPI
     f = adios_read_open_file(name.c_str(),
                              m_readMethod,
                              MPI_COMM_NULL);
     VERIFY(adios_errno != err_file_not_found, "Internal error: ADIOS file not found");
     VERIFY(f != nullptr, "Internal error: Failed to open_read ADIOS file");
-#endif
 
     return f;
 }

@@ -30,13 +30,19 @@
 #include <memory>
 #include <string>
 
+#if _MSC_VER
+#   define EXPORT __declspec( dllexport )
+#else
+#   define EXPORT __attribute__((visibility("default")))
+#endif
+
 
 namespace openPMD
 {
 #if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
-class ParallelADIOS1IOHandler;
+class EXPORT ParallelADIOS1IOHandler;
 
-class ParallelADIOS1IOHandlerImpl : public ADIOS1IOHandlerImpl
+class EXPORT ParallelADIOS1IOHandlerImpl : public ADIOS1IOHandlerImpl
 {
 public:
     ParallelADIOS1IOHandlerImpl(AbstractIOHandler*, MPI_Comm);
@@ -54,7 +60,7 @@ private:
     MPI_Info m_mpiInfo;
 };  //ParallelADIOS1IOHandlerImpl
 
-class ParallelADIOS1IOHandler : public AbstractIOHandler
+class EXPORT ParallelADIOS1IOHandler : public AbstractIOHandler
 {
     friend class ParallelADIOS1IOHandlerImpl;
 
@@ -75,10 +81,10 @@ private:
     std::unique_ptr< ParallelADIOS1IOHandlerImpl > m_impl;
 };  //ParallelADIOS1IOHandler
 #else
-class ParallelADIOS1IOHandlerImpl
+class EXPORT ParallelADIOS1IOHandlerImpl
 { };
 
-class ParallelADIOS1IOHandler : public AbstractIOHandler
+class EXPORT ParallelADIOS1IOHandler : public AbstractIOHandler
 {
     friend class ParallelADIOS1IOHandlerImpl;
 

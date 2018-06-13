@@ -35,13 +35,19 @@
 #   include <unordered_set>
 #endif
 
+#if _MSC_VER
+#   define EXPORT __declspec( dllexport )
+#else
+#   define EXPORT __attribute__((visibility("default")))
+#endif
+
 
 namespace openPMD
 {
 #if openPMD_HAVE_ADIOS1
-class ADIOS1IOHandler;
+class EXPORT ADIOS1IOHandler;
 
-class ADIOS1IOHandlerImpl : public AbstractIOHandlerImpl
+class EXPORT ADIOS1IOHandlerImpl : public AbstractIOHandlerImpl
 {
 public:
     ADIOS1IOHandlerImpl(AbstractIOHandler*);
@@ -86,7 +92,7 @@ protected:
     std::unordered_map< ADIOS_FILE*, std::vector< ADIOS_SELECTION* > > m_scheduledReads;
 };  //ADIOS1IOHandlerImpl
 
-class ADIOS1IOHandler : public AbstractIOHandler
+class EXPORT ADIOS1IOHandler : public AbstractIOHandler
 {
     friend class ADIOS1IOHandlerImpl;
 
@@ -103,10 +109,10 @@ private:
     std::unique_ptr< ADIOS1IOHandlerImpl > m_impl;
 };  //ADIOS1IOHandler
 #else
-class ADIOS1IOHandlerImpl
+class EXPORT ADIOS1IOHandlerImpl
 { };
 
-class ADIOS1IOHandler : public AbstractIOHandler
+class EXPORT ADIOS1IOHandler : public AbstractIOHandler
 {
     friend class ADIOS1IOHandlerImpl;
 
