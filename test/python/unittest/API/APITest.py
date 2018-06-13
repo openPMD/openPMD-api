@@ -150,6 +150,22 @@ class APITest(unittest.TestCase):
         electrons = i.particles["electrons"]
         self.assertIsInstance(electrons, openPMD.ParticleSpecies)
 
+        E_x = i.meshes["E"]["x"]
+        shape = E_x.shape
+
+        print("Field E.x has shape {0} and datatype {1}".format(
+              shape, E_x.dtype))
+
+        offset = openPMD.Extent([1, 1, 1])
+        extent = openPMD.Extent([2, 2, 1])
+
+        chunk_data = E_x.load_chunk(offset, extent)
+        series.flush()
+
+        print("Chunk has been read from disk\n"
+              "Read chunk contains:")
+        print(chunk_data)
+
     def testLoadSeries(self):
         """ Test loading a pmd series from hdf5."""
 
@@ -288,16 +304,15 @@ class APITest(unittest.TestCase):
         """ Test openPMD.Record. """
         # Has only copy constructor.
         self.assertRaises(TypeError, openPMD.Record)
-#        ### FIXME
-#        ## Get a record (fails)
-#        #record = self.__series.iterations[100].particles[
-#            'electrons'].properties['positions'].components['x']
-#
-#        # Copy.
-#        #copy_record = openPMD.Record(record)
-#
-#        # Check.
-#        #self.assertIsInstance(copy_record, openPMD.Record)
+
+        # Get a record.
+        record = self.__series.iterations[100].particles['electrons']['positions']['x']
+
+        # Copy.
+        copy_record = openPMD.Record(record)
+
+        # Check.
+        self.assertIsInstance(copy_record, openPMD.Record)
 
     def testRecord_Component(self):
         """ Test openPMD.Record_Component. """
@@ -311,28 +326,6 @@ class APITest(unittest.TestCase):
 
         print(type(Ex))
         self.assertIsInstance(Ex, openPMD.Mesh_Record_Component)
-
-# TODO: add __getitem__ to openPMD.Mesh and openPMD.Particle object for
-#       non-scalar records: return a record component
-# E_x = i.meshes["E"]["x"]
-# TODO: add extent and dtype property to record components
-# Extent extent = E_x.get_extent  # or as property: E_x.extent
-# print("Field E.x has shape ({0}) and has datatype {1}".format(
-#     extent, E_x.dtype));
-
-# TODO buffer protocol / numpy bindings
-# chunk_data = E_x[1:3, 1:3, 1:2]
-# print("Queued the loading of a single chunk from disk, "
-#       "ready to execute")
-# series.flush()
-# print("Chunk has been read from disk\n"
-#       "Read chunk contains:")
-# for row in range(2):
-#     for col in range(2):
-#         print("\t({0}|{1}|{2})\t{3}".format(
-#            row + 1, col + 1, 1, chunk_data[row*chunk_extent[1]+col])
-#         )
-#     print("")
 
 
 if __name__ == '__main__':
