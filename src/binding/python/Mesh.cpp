@@ -35,8 +35,8 @@ void init_Mesh(py::module &m) {
         .def(py::init<Mesh const &>())
 
         .def("__repr__",
-            [](Mesh const &) {
-                return "<openPMD.Mesh>";
+            [](Mesh const & m) {
+                return "<openPMD.Mesh record with '" + std::to_string(m.size()) + "' record components>";
             }
         )
 

@@ -32,11 +32,13 @@
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
+#include "openPMD/Record.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
 
 #include <string>
 #include <memory>
 #include <utility>
+#include <vector>
 
 namespace py = pybind11;
 using namespace openPMD;
@@ -132,13 +134,23 @@ namespace detail
                 return py::make_iterator(
                     m.begin(),
                     m.end()
-                    );
+                );
             },
             // keep container alive while iterator exists
             py::keep_alive<
                 0,
                 1
             >()
+        );
+
+        cl.def_property_readonly(
+            "attributes",
+            []( Map & m )
+            {
+                return m.attributes();
+            },
+            // ref + keepalive
+            py::return_value_policy::reference_internal
         );
 
         // keep same policy as Container class: missing keys are created
@@ -199,11 +211,15 @@ using PyIterationContainer = Container<
 >;
 using PyMeshContainer = Container< Mesh >;
 using PyPartContainer = Container< ParticleSpecies >;
+using PyRecordContainer = Container< Record >;
 using PyMeshRecordComponentContainer = Container< MeshRecordComponent >;
+using PyAttributeKeys = std::vector< std::string >;
 PYBIND11_MAKE_OPAQUE(PyIterationContainer)
 PYBIND11_MAKE_OPAQUE(PyMeshContainer)
 PYBIND11_MAKE_OPAQUE(PyPartContainer)
+PYBIND11_MAKE_OPAQUE(PyRecordContainer)
 PYBIND11_MAKE_OPAQUE(PyMeshRecordComponentContainer)
+PYBIND11_MAKE_OPAQUE(PyAttributeKeys)
 
 
 void init_Container( py::module & m ) {
@@ -219,8 +235,16 @@ void init_Container( py::module & m ) {
         m,
         "Particle_Container"
     );
+    detail::bind_container< PyRecordContainer >(
+        m,
+        "Record_Container"
+    );
     detail::bind_container< PyMeshRecordComponentContainer >(
         m,
         "Mesh_Record_Component_Container"
+    );
+    py::bind_vector< PyAttributeKeys >(
+        m,
+        "Attribute_Keys"
     );
 }
