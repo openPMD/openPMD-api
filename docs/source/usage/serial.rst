@@ -3,7 +3,8 @@
 Serial API
 ==========
 
-...
+The serial API provides sequential, one-process read and write access.
+Most users will use this for exploration and processing of their data.
 
 Reading
 -------
