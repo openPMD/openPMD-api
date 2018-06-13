@@ -1,4 +1,11 @@
-""" :module: Top level test suite  """
+"""
+This file is part of the openPMD-api.
+
+Copyright 2018 openPMD contributors
+Authors: Axel Huebl, Carsten Fortmann-Grote
+License: LGPLv3+
+"""
+
 import unittest
 import sys
 

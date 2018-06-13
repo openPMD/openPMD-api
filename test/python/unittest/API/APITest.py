@@ -224,8 +224,8 @@ class APITest(unittest.TestCase):
 
     def testAllocation(self):
         """ Test openPMD.Allocation. """
-        obj = openPMD.Allocation(1)
-        del obj
+        # Should raise, see https://github.com/openPMD/openPMD-api/pull/249#discussion_r194979737
+        self.assertRaises(AttributeError, openPMD.Allocation)
 
     def testData_Order(self):
         """ Test openPMD.Data_Order. """
