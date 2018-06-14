@@ -10,7 +10,8 @@ Changelog
 [Title]
 
 Introduces new independent mechanism for verifying internal conditions.
-Fixes too broad filesystem logic.
+Fixes several filesystem and CMake bugs.
+Exposes more interfaces to Python.
 
 Changes to "0.2.0-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -19,17 +20,34 @@ Features
 """"""""
 
 - CMake: add new ``openPMD_USE_VERIFY`` option #229
-- introduce ``VERIFY`` macro for pre-/post-conditions that replaces ``ASSERT`` #229
+- introduce ``VERIFY`` macro for pre-/post-conditions that replaces ``ASSERT`` #229 #260
+- serial Singularity container #236
+- Python:
+
+  - unit tests #249
+  - expose attribute keys #256
 
 Bug Fixes
 """""""""
 
 - handle directory separators platform-dependent #229
+- recursive directory creation with existing base #261
+- ``FindADIOS.cmake``: reset on multiple calls #263
+- ``SerialIOTest``: remove variable shadowing #262
 
 Other
 """""
 
 - enforce platform-specific directory separators on user input #229
+- docs:
+
+  - link updates to https #259
+  - minimum MPI version #251
+  - title updated #235
+- remove MPI from serial ADIOS interface #258
+- better name for scalar record in examples #257
+- check validity of internally used pointers #247
+- various CI updates #246 #250 #261
 
 
 0.2.0-alpha
