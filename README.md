@@ -2,8 +2,8 @@ C++ & Python API for Scientific I/O with openPMD
 ================================================
 
 [![Supported openPMD Standard](https://img.shields.io/badge/openPMD-1.0.0--1.1.0-blue.svg)](https://github.com/openPMD/openPMD-standard/releases)
-[![Documentation Status](https://readthedocs.org/projects/openpmd-api/badge/?version=latest)](http://openpmd-api.readthedocs.io/en/latest/?badge=latest)
-[![Doxygen](https://img.shields.io/badge/API-Doxygen-blue.svg)](http://www.openpmd.org/openPMD-api)
+[![Documentation Status](https://readthedocs.org/projects/openpmd-api/badge/?version=latest)](https://openpmd-api.readthedocs.io/en/latest/?badge=latest)
+[![Doxygen](https://img.shields.io/badge/API-Doxygen-blue.svg)](https://www.openpmd.org/openPMD-api)
 [![Linux/OSX Build Status dev](https://img.shields.io/travis/openPMD/openPMD-api/dev.svg?label=dev)](https://travis-ci.org/openPMD/openPMD-api/branches)
 [![Windows Build Status dev](https://ci.appveyor.com/api/projects/status/x95q4n620pqk0e0t/branch/dev?svg=true)](https://ci.appveyor.com/project/ax3l/openpmd-api/branch/dev)
 [![License](https://img.shields.io/badge/license-LGPLv3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0.html)
@@ -111,7 +111,7 @@ Optional language bindings:
 
 Choose *one* of the install methods below to get started:
 
-### [Spack](http://spack.io)
+### [Spack](https://spack.io)
 
 ```bash
 # optional: append +python
@@ -131,7 +131,7 @@ conda install -c conda-forge openpmd-api
 
 ### From Source
 
-openPMD can then be installed using [CMake](http://cmake.org/):
+openPMD can then be installed using [CMake](https://cmake.org/):
 
 ```bash
 git clone https://github.com/openPMD/openPMD-api.git
