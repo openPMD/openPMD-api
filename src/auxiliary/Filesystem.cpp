@@ -102,10 +102,8 @@ create_directories( std::string const& path )
         return true;
 
 #ifdef _WIN32
-    char seperator = '\\';
     auto mk = [](std::string const& p) -> bool { return CreateDirectory(p.c_str(), nullptr); };
 #else
-    char seperator = '/';
     mode_t mask = umask(0);
     umask(mask);
     auto mk = [mask](std::string const& p) -> bool { return (0 == mkdir(p.c_str(), 0777 & ~mask));};
@@ -114,13 +112,13 @@ create_directories( std::string const& path )
     std::string token;
 
     std::string partialPath;
-    if( auxiliary::starts_with(path, seperator) )
-        partialPath += seperator;
+    if( auxiliary::starts_with(path, directory_separator) )
+        partialPath += directory_separator;
     bool success = true;
-    while( std::getline( ss, token, seperator ) )
+    while( std::getline( ss, token, directory_separator ) )
     {
         if( !token.empty() )
-            partialPath += token + seperator;
+            partialPath += token + directory_separator;
         success &= mk(partialPath);
     }
     return success;
@@ -134,15 +132,13 @@ remove_directory( std::string const& path )
 
     bool success = true;
 #ifdef _WIN32
-    char seperator = '\\';
     auto del = [](std::string const& p) -> bool { return RemoveDirectory(p.c_str()); };
 #else
-    char seperator = '/';
     auto del = [](std::string const& p) -> bool { return (0 == remove(p.c_str()));};
 #endif
     for( auto const& entry : list_directory(path) )
     {
-        std::string partialPath = path + seperator + entry;
+        std::string partialPath = path + directory_separator + entry;
         if( directory_exists(partialPath) )
             success &= remove_directory(partialPath);
         else if( file_exists(partialPath) )

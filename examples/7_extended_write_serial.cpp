@@ -44,7 +44,7 @@ write()
 void
 write2()
 {
-    Series f = Series("./working/directory/2D_simData.h5", AccessType::CREATE);
+    Series f = Series("working/directory/2D_simData.h5", AccessType::CREATE);
 
     // all required openPMD attributes will be set to reasonable default values (all ones, all zeros, empty strings,...)
     // manually setting them enforces the openPMD standard
@@ -66,7 +66,7 @@ write2()
                 .setTime(42.0)
                 .setDt(1.0)
                 .setTimeUnitSI(1.39e-16);
-        f.iterations[2] .setComment("This iteration will not appear in any output");
+        f.iterations[2].setComment("This iteration will not appear in any output");
         f.iterations.erase(2);
     }
 

@@ -27,6 +27,12 @@ namespace openPMD
 {
 namespace auxiliary
 {
+#ifdef _WIN32
+constexpr static char const directory_separator = '\\';
+#else
+constexpr static char const directory_separator = '/';
+#endif
+
 /** Check if a directory exists at a give absolute or relative path.
  *
  * @param   path    Absolute or relative path to examine.
