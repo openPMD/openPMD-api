@@ -25,7 +25,7 @@ Features
 - Python:
 
   - unit tests #249
-  - expose attribute keys #256
+  - expose attributes #256 #266
 - C++:
 
   - ``setAttribute`` signature changed to const ref #268
