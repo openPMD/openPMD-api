@@ -7,8 +7,8 @@
 #     [REQUIRED]            # Fail with an error if ADIOS or a required
 #                           #   component is not found
 #     [QUIET]               # ...
-#     [COMPONENTS <...>]    # Compiled in components: fortran, readonly, 
-                            # sequential (all are case insentative) 
+#     [COMPONENTS <...>]    # Compiled in components: fortran, readonly,
+#                           # sequential (all are case insentative)
 #   )
 #
 # Module that finds the includes and libraries for a working ADIOS install.
@@ -171,6 +171,9 @@ endif()
 
 
 # we found something in ADIOS_ROOT_DIR and adios_config works #################
+set(ADIOS_INCLUDE_DIRS)
+set(ADIOS_DEFINITIONS)
+set(ADIOS_LIBRARIES)
 if(ADIOS_FOUND)
     # ADIOS headers
     list(APPEND ADIOS_INCLUDE_DIRS ${ADIOS_ROOT_DIR}/include)
@@ -185,7 +188,7 @@ if(ADIOS_FOUND)
     #   note: this can cause trouble if some libs are specified twice from
     #         different sources (quite unlikely)
     #         http://www.cmake.org/pipermail/cmake/2008-November/025128.html
-    set(ADIOS_LIBRARY_DIRS "")
+    set(ADIOS_LIBRARY_DIRS)
     string(REGEX MATCHALL " -L([A-Za-z_0-9/\\.-]+)" _ADIOS_LIBDIRS " ${ADIOS_LINKFLAGS}")
     foreach(_LIBDIR ${_ADIOS_LIBDIRS})
         string(REPLACE " -L" "" _LIBDIR ${_LIBDIR})
@@ -238,7 +241,6 @@ if(ADIOS_FOUND)
     endforeach(foo)
 
     # find all compiler definitions _D
-    set(ADIOS_DEFINITIONS "")
     string(REGEX MATCHALL "(-D[A-Za-z_0-9/\\.-]+)" _ADIOS_DEFINES " ${ADIOS_COMPILEFLAGS}")
     string(REGEX REPLACE ";" " " ADIOS_DEFINITIONS "${_ADIOS_DEFINES}")
 
@@ -248,7 +250,6 @@ if(ADIOS_FOUND)
     execute_process(COMMAND ${ADIOS_CONFIG} -v
                     OUTPUT_VARIABLE ADIOS_VERSION
                     OUTPUT_STRIP_TRAILING_WHITESPACE)
-    
 endif(ADIOS_FOUND)
 
 # unset checked variables if not found
