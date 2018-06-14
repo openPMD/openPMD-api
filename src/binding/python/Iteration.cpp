@@ -30,7 +30,7 @@ using namespace openPMD;
 
 
 void init_Iteration(py::module &m) {
-    py::class_<Iteration>(m, "Iteration")
+    py::class_<Iteration, Attributable>(m, "Iteration")
         .def(py::init<Iteration const &>())
 
         .def("__repr__",

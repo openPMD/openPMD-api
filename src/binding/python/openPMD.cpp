@@ -32,6 +32,7 @@ namespace py = pybind11;
 
 // forward declarations of exposed classes
 void init_AccessType(py::module &);
+void init_Attributable(py::module &);
 void init_BaseRecord(py::module &);
 void init_BaseRecordComponent(py::module &);
 void init_Container(py::module &);
@@ -53,6 +54,7 @@ PYBIND11_MODULE(openPMD, m) {
 
     // note: order from parent to child classes
     init_AccessType(m);
+    init_Attributable(m);
     init_Container(m);
     init_BaseRecord(m);
     init_Dataset(m);
