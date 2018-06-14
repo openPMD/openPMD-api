@@ -33,7 +33,7 @@ Where supported, openPMD-api implements both serial and MPI parallel I/O capabil
 
 // ...
 
-auto s = openPMD::Series("output_files/data%T.h5", openPMD::AccessType::READ_ONLY);
+auto s = openPMD::Series("samples/git-sample/data%T.h5", openPMD::AccessType::READ_ONLY);
 
 for( auto const& i : s.iterations ) {
     std::cout << "Iteration: " << i.first << "\n";
@@ -59,7 +59,7 @@ import openPMD
 
 # ...
 
-series = openPMD.Series("output_files/data%T.h5", openPMD.Access_Type.read_only)
+series = openPMD.Series("samples/git-sample/data%T.h5", openPMD.Access_Type.read_only)
 
 for k_i, i in series.iterations.items():
     print("Iteration: {0}".format(k_i))
