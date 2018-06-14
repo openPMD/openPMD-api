@@ -26,7 +26,7 @@
 #   include "openPMD/auxiliary/StringManip.hpp"
 #   include "openPMD/IO/ADIOS/ADIOS1Auxiliary.hpp"
 #   include "openPMD/IO/ADIOS/ADIOS1FilePosition.hpp"
-#   include <cstring>
+#   include <adios.h>
 #   include <iostream>
 #   include <memory>
 #endif
@@ -41,25 +41,17 @@ namespace openPMD
 #       define VERIFY(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
 #   endif
 
-ADIOS1IOHandlerImpl::ADIOS1IOHandlerImpl(AbstractIOHandler* handler, MPI_Comm comm)
+ADIOS1IOHandlerImpl::ADIOS1IOHandlerImpl(AbstractIOHandler* handler)
         : AbstractIOHandlerImpl(handler),
-          m_mpiInfo{MPI_INFO_NULL},
           m_groupName{"data"}
-{
-    int status = MPI_SUCCESS;
-    if( comm == MPI_COMM_NULL )
-        m_mpiComm = MPI_COMM_NULL;
-    else
-        status = MPI_Comm_dup(comm, &m_mpiComm);
-    VERIFY(status == MPI_SUCCESS, "Internal error: Failed to duplicate MPI communicator");
-    status = adios_init_noxml(m_mpiComm);
-    VERIFY(status == err_no_error, "Internal error: Failed to initialize ADIOS");
-}
+{ }
 
 ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
 {
-    /* create all files where ADIOS file creation has been deferred, but this has never been triggered
-     * this happens when no Operation::WRITE_DATASET is performed */
+#if !openPMD_HAVE_MPI
+  /* create all files where ADIOS file creation has been deferred,
+   * but execution of the deferred operation has never been triggered
+   * (happens when no Operation::WRITE_DATASET is performed) */
     for( auto& f : m_existsOnDisk )
     {
         if( !f.second )
@@ -70,7 +62,7 @@ ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
                                 m_groupName.c_str(),
                                 f.first->c_str(),
                                 "w",
-                                m_mpiComm);
+                                MPI_COMM_NULL);
             if( status != err_no_error )
                 std::cerr << "Internal error: Failed to open_flush ADIOS file\n";
 
@@ -85,23 +77,14 @@ ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
         close(f.second);
 
     int status;
-    if( m_mpiComm != MPI_COMM_NULL )
-        MPI_Barrier(m_mpiComm);
     status = adios_read_finalize_method(m_readMethod);
     if( status != err_no_error )
         std::cerr << "Internal error: Failed to finalize ADIOS reading method (parallel)\n";
 
-    if( m_mpiComm != MPI_COMM_NULL )
-        MPI_Barrier(m_mpiComm);
-    int rank = 0;
-    if( m_mpiComm != MPI_COMM_NULL )
-        MPI_Comm_rank(m_mpiComm, &rank);
-    status = adios_finalize(rank);
+    status = adios_finalize(0);
     if( status != err_no_error )
         std::cerr << "Internal error: Failed to finalize ADIOS (parallel)\n";
-
-    if( m_mpiComm != MPI_COMM_NULL )
-        MPI_Comm_free(&m_mpiComm);
+#endif
 }
 
 std::future< void >
@@ -219,9 +202,13 @@ ADIOS1IOHandlerImpl::flush()
 void
 ADIOS1IOHandlerImpl::init()
 {
+#if !openPMD_HAVE_MPI
     int status;
+    status = adios_init_noxml(MPI_COMM_NULL);
+    VERIFY(status == err_no_error, "Internal error: Failed to initialize ADIOS");
+
     m_readMethod = ADIOS_READ_METHOD_BP;
-    status = adios_read_init_method(m_readMethod, m_mpiComm, "");
+    status = adios_read_init_method(m_readMethod, MPI_COMM_NULL, "");
     VERIFY(status == err_no_error, "Internal error: Failed to initialize ADIOS reading method");
 
     ADIOS_STATISTICS_FLAG noStatistics = adios_stat_no;
@@ -229,6 +216,7 @@ ADIOS1IOHandlerImpl::init()
     VERIFY(status == err_no_error, "Internal error: Failed to declare ADIOS group");
     status = adios_select_method(m_group, "POSIX", "", "");
     VERIFY(status == err_no_error, "Internal error: Failed to select ADIOS method");
+#endif
 }
 #endif
 
@@ -292,15 +280,32 @@ ADIOS1IOHandlerImpl::open_write(Writable* writable)
     }
 
     int64_t fd;
+#if !openPMD_HAVE_MPI
     int status;
     status = adios_open(&fd,
                         m_groupName.c_str(),
                         res->second->c_str(),
                         mode.c_str(),
-                        m_mpiComm);
+                        MPI_COMM_NULL);
     VERIFY(status == err_no_error, "Internal error: Failed to open_write ADIOS file");
+#endif
 
     return fd;
+}
+
+ADIOS_FILE*
+ADIOS1IOHandlerImpl::open_read(std::string const& name)
+{
+    ADIOS_FILE *f;
+#if !openPMD_HAVE_MPI
+    f = adios_read_open_file(name.c_str(),
+                             m_readMethod,
+                             MPI_COMM_NULL);
+    VERIFY(adios_errno != err_file_not_found, "Internal error: ADIOS file not found");
+    VERIFY(f != nullptr, "Internal error: Failed to open_read ADIOS file");
+#endif
+
+    return f;
 }
 
 void
@@ -486,12 +491,7 @@ ADIOS1IOHandlerImpl::openFile(Writable* writable,
         m_openWriteFileHandles.erase(filePath);
     }
 
-    ADIOS_FILE *f;
-    f = adios_read_open_file(name.c_str(),
-                             m_readMethod,
-                             m_mpiComm);
-    VERIFY(adios_errno != err_file_not_found, "Internal error: ADIOS file not found");
-    VERIFY(f != nullptr, "Internal error: Failed to open_read ADIOS file");
+    ADIOS_FILE* f = open_read(name);
 
     writable->written = true;
     writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >("/");
@@ -1316,7 +1316,7 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 for( int i = 0; i < size; ++i )
                 {
                     vs[i] = auxiliary::strip(std::string(c[i], std::strlen(c[i])), {'\0'});
-                    /** @todo pointer should be freed, but this causes memory curruption */
+                    /** @todo pointer should be freed, but this causes memory corruption */
                     //free(c[i]);
                 }
                 a = Attribute(vs);

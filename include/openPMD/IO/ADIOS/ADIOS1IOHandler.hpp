@@ -24,8 +24,6 @@
 
 #if openPMD_HAVE_ADIOS1
 #   include "openPMD/IO/AbstractIOHandlerImpl.hpp"
-#   include <adios.h>
-#   include <adios_mpi.h> /* includes a dummy version of mpi if -D_NOMPI */
 #   include <adios_read.h>
 #endif
 
@@ -46,7 +44,7 @@ class ADIOS1IOHandler;
 class ADIOS1IOHandlerImpl : public AbstractIOHandlerImpl
 {
 public:
-    ADIOS1IOHandlerImpl(AbstractIOHandler*, MPI_Comm = MPI_COMM_NULL);
+    ADIOS1IOHandlerImpl(AbstractIOHandler*);
     virtual ~ADIOS1IOHandlerImpl();
 
     virtual void init();
@@ -72,13 +70,12 @@ public:
     virtual void listDatasets(Writable*, Parameter< Operation::LIST_DATASETS > &) override;
     virtual void listAttributes(Writable*, Parameter< Operation::LIST_ATTS > &) override;
 
-    int64_t open_write(Writable *);
+    virtual int64_t open_write(Writable *);
+    virtual ADIOS_FILE* open_read(std::string const& name);
     void close(int64_t);
     void close(ADIOS_FILE*);
 
 protected:
-    MPI_Comm m_mpiComm; /* dummy provided by ADIOS if -D_NOMPI */
-    MPI_Info m_mpiInfo; /* dummy provided by ADIOS if -D_NOMPI */
     int64_t m_group;
     std::string m_groupName;
     ADIOS_READ_METHOD m_readMethod;
