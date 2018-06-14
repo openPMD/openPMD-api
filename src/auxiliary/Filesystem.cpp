@@ -119,7 +119,8 @@ create_directories( std::string const& path )
     {
         if( !token.empty() )
             partialPath += token + directory_separator;
-        success &= mk(partialPath);
+        if( !directory_exists( partialPath ) )
+            success = success && mk(partialPath);
     }
     return success;
 }
