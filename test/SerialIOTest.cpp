@@ -1518,10 +1518,10 @@ TEST_CASE( "hzdr_adios1_sample_content_test", "[serial][adios1]" )
         o.flush();
         float* raw_ptr = data.get();
 
-        for( int i = 0; i < 3; ++i )
-            for( int j = 0; j < 3; ++j )
-                for( int k = 0; k < 3; ++k )
-                    REQUIRE(raw_ptr[((i*3) + j)*3 + k] == actual[i][j][k]);
+        for( int a = 0; a < 3; ++a )
+            for( int b = 0; b < 3; ++b )
+                for( int c = 0; c < 3; ++c )
+                    REQUIRE(raw_ptr[((a*3) + b)*3 + c] == actual[a][b][c]);
     } catch (no_such_file_error& e)
     {
         std::cerr << "HZDR sample not accessible. (" << e.what() << ")\n";
