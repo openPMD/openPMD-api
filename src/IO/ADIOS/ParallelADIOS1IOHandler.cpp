@@ -44,7 +44,7 @@ ParallelADIOS1IOHandlerImpl::ParallelADIOS1IOHandlerImpl(AbstractIOHandler* hand
 {
     int status = MPI_SUCCESS;
     status = MPI_Comm_dup(comm, &m_mpiComm);
-    ASSERT(status == MPI_SUCCESS, "Internal error: Failed to duplicate MPI communicator");
+    VERIFY(status == MPI_SUCCESS, "Internal error: Failed to duplicate MPI communicator");
 }
 
 ParallelADIOS1IOHandlerImpl::~ParallelADIOS1IOHandlerImpl()
@@ -209,7 +209,7 @@ ParallelADIOS1IOHandlerImpl::init()
 {
     int status;
     status = adios_init_noxml(m_mpiComm);
-    ASSERT(status == err_no_error, "Internal error: Failed to initialize ADIOS");
+    VERIFY(status == err_no_error, "Internal error: Failed to initialize ADIOS");
 
     std::stringstream params;
     params << "num_aggregators=" << getEnvNum("OPENPMD_ADIOS_NUM_AGGREGATORS", "1")
@@ -297,7 +297,7 @@ ParallelADIOS1IOHandlerImpl::open_write(Writable* writable)
                         res->second->c_str(),
                         mode.c_str(),
                         m_mpiComm);
-    ASSERT(status == err_no_error, "Internal error: Failed to open_write ADIOS file");
+    VERIFY(status == err_no_error, "Internal error: Failed to open_write ADIOS file");
 
     return fd;
 }
@@ -309,8 +309,8 @@ ParallelADIOS1IOHandlerImpl::open_read(std::string const& name)
     f = adios_read_open_file(name.c_str(),
                              m_readMethod,
                              m_mpiComm);
-    ASSERT(adios_errno != err_file_not_found, "Internal error: ADIOS file not found");
-    ASSERT(f != nullptr, "Internal error: Failed to open_read ADIOS file");
+    VERIFY(adios_errno != err_file_not_found, "Internal error: ADIOS file not found");
+    VERIFY(f != nullptr, "Internal error: Failed to open_read ADIOS file");
 
     return f;
 }
