@@ -24,7 +24,6 @@
 
 #if openPMD_HAVE_ADIOS1
 #   include "openPMD/IO/AbstractIOHandlerImpl.hpp"
-#   include <adios.h>
 #   include <adios_read.h>
 #endif
 

@@ -26,9 +26,7 @@
 #   include "openPMD/auxiliary/StringManip.hpp"
 #   include "openPMD/IO/ADIOS/ADIOS1Auxiliary.hpp"
 #   include "openPMD/IO/ADIOS/ADIOS1FilePosition.hpp"
-#   if  !openPMD_HAVE_MPI
-#       include <mpidummy.h>
-#   endif
+#   include <adios.h>
 #   include <iostream>
 #   include <memory>
 #endif
@@ -51,8 +49,9 @@ ADIOS1IOHandlerImpl::ADIOS1IOHandlerImpl(AbstractIOHandler* handler)
 ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
 {
 #if !openPMD_HAVE_MPI
-    /* create all files where ADIOS file creation has been deferred, but this has never been triggered
-     * this happens when no Operation::WRITE_DATASET is performed */
+  /* create all files where ADIOS file creation has been deferred,
+   * but execution of the deferred operation has never been triggered
+   * (happens when no Operation::WRITE_DATASET is performed) */
     for( auto& f : m_existsOnDisk )
     {
         if( !f.second )

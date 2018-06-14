@@ -24,7 +24,7 @@
 #   include "openPMD/auxiliary/StringManip.hpp"
 #   include "openPMD/IO/ADIOS/ADIOS1Auxiliary.hpp"
 #   include "openPMD/IO/ADIOS/ADIOS1FilePosition.hpp"
-#   include <mpi.h>
+#   include <adios.h>
 #   include <cstring>
 #endif
 
@@ -49,8 +49,9 @@ ParallelADIOS1IOHandlerImpl::ParallelADIOS1IOHandlerImpl(AbstractIOHandler* hand
 
 ParallelADIOS1IOHandlerImpl::~ParallelADIOS1IOHandlerImpl()
 {
-    /* create all files where ADIOS file creation has been deferred, but this has never been triggered
-     * this happens when no Operation::WRITE_DATASET is performed */
+    /* create all files where ADIOS file creation has been deferred,
+     * but execution of the deferred operation has never been triggered
+     * (happens when no Operation::WRITE_DATASET is performed) */
     for( auto& f : m_existsOnDisk )
     {
         if( !f.second )
