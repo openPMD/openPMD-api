@@ -26,6 +26,9 @@ Features
 
   - unit tests #249
   - expose attribute keys #256
+- C++:
+
+  - ``setAttribute`` signature changed to const ref #268
 
 Bug Fixes
 """""""""
