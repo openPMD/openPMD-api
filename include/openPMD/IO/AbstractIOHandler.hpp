@@ -68,7 +68,7 @@ public:
  * managed by the concrete class implementing this handler.
  * The queue of pending operations is only processed on demand. For certain
  * scenarios it is therefore necessary to manually execute all operations
- * by calling AbstractIOHanlder::flush().
+ * by calling AbstractIOHandler::flush().
  */
 class AbstractIOHandler
 {

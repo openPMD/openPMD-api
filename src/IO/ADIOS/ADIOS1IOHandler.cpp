@@ -279,7 +279,7 @@ ADIOS1IOHandlerImpl::open_write(Writable* writable)
         m_existsOnDisk[res->second] = true;
     }
 
-    int64_t fd;
+    int64_t fd = -1;
 #if !openPMD_HAVE_MPI
     int status;
     status = adios_open(&fd,
@@ -294,9 +294,14 @@ ADIOS1IOHandlerImpl::open_write(Writable* writable)
 }
 
 ADIOS_FILE*
-ADIOS1IOHandlerImpl::open_read(std::string const& name)
+ADIOS1IOHandlerImpl::open_read(
+    std::string const&
+#if !openPMD_HAVE_MPI
+    name
+#endif
+)
 {
-    ADIOS_FILE *f;
+    ADIOS_FILE *f = nullptr;
 #if !openPMD_HAVE_MPI
     f = adios_read_open_file(name.c_str(),
                              m_readMethod,
