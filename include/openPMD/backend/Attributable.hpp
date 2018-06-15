@@ -95,7 +95,7 @@ public:
      * @return  true if key was already present, false otherwise
      */
     template< typename T >
-    bool setAttribute(std::string const& key, T&& value);
+    bool setAttribute(std::string const& key, T const& value);
     /** Retrieve value of Attribute stored with provided key.
      *
      * @throw   no_such_attribute_error If no Attribute is currently stored with the provided key.
@@ -201,7 +201,7 @@ warnWrongDtype(std::string const& key,
 //TODO explicitly instanciate Attributable::setAttribute for all T in Datatype
 template< typename T >
 inline bool
-Attributable::setAttribute(std::string const& key, T&& value)
+Attributable::setAttribute(std::string const& key, T const& value)
 {
     if( IOHandler && AccessType::READ_ONLY == IOHandler->accessType )
     {
