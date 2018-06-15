@@ -107,17 +107,29 @@ endif()
 
 # we imply support for parallel I/O if MPI variant is ON
 if(openPMD_HAVE_MPI AND openPMD_HAVE_HDF5 AND NOT HDF5_IS_PARALLEL)
-    message(FATAL_ERROR
+    string(CONCAT openPMD_HDF5_STATUS
         "Found MPI but only serial version of HDF5. Either set "
         "openPMD_USE_MPI=OFF to disable MPI or set openPMD_USE_HDF5=OFF "
         "to disable HDF5 or provide a parallel install of HDF5.")
+    if(openPMD_USE_HDF5 STREQUAL AUTO)
+        message(WARNING "${openPMD_HDF5_STATUS}")
+        set(openPMD_HAVE_HDF5 FALSE)
+    elseif(openPMD_USE_HDF5)
+        message(FATAL_ERROR "${openPMD_HDF5_STATUS}")
+    endif()
 endif()
 # HDF5 includes mpi.h in the public header H5public.h if HDF5_IS_PARALLEL
 if(openPMD_HAVE_HDF5 AND HDF5_IS_PARALLEL AND NOT openPMD_HAVE_MPI)
-    message(FATAL_ERROR
+    string(CONCAT openPMD_HDF5_STATUS
         "Found only parallel version of HDF5 but no MPI. Either set "
         "openPMD_USE_MPI=ON to force using MPI or set openPMD_USE_HDF5=OFF "
         "to disable HDF5 or provide a serial install of HDF5.")
+    if(openPMD_USE_HDF5 STREQUAL AUTO)
+        message(WARNING "${openPMD_HDF5_STATUS}")
+        set(openPMD_HAVE_HDF5 FALSE)
+    elseif(openPMD_USE_HDF5)
+        message(FATAL_ERROR "${openPMD_HDF5_STATUS}")
+    endif()
 endif()
 
 #   always search for a sequential lib first, so we can mock MPI
@@ -148,12 +160,26 @@ else()
 endif()
 
 if(openPMD_HAVE_MPI AND openPMD_HAVE_ADIOS1 AND ADIOS_HAVE_SEQUENTIAL)
-    message(FATAL_ERROR "Found MPI but requested ADIOS1 is serial. "
-                        "Set openPMD_USE_MPI=OFF to disable MPI.")
+    string(CONCAT openPMD_ADIOS1_STATUS
+        "Found MPI but requested ADIOS1 is serial. "
+        "Set openPMD_USE_MPI=OFF to disable MPI.")
+    if(openPMD_USE_ADIOS1 STREQUAL AUTO)
+        message(WARNING "${openPMD_ADIOS1_STATUS}")
+        set(openPMD_HAVE_ADIOS1 FALSE)
+    elseif(openPMD_USE_ADIOS1)
+        message(FATAL_ERROR "${openPMD_ADIOS1_STATUS}")
+    endif()
 endif()
 if(NOT openPMD_HAVE_MPI AND openPMD_HAVE_ADIOS1 AND NOT ADIOS_HAVE_SEQUENTIAL)
-    message(FATAL_ERROR "Did not find MPI but requested ADIOS1 is parallel. "
-                        "Set openPMD_USE_ADIOS1=OFF to disable ADIOS1.")
+    string(CONCAT openPMD_ADIOS1_STATUS
+        "Did not find MPI but requested ADIOS1 is parallel. "
+        "Set openPMD_USE_ADIOS1=OFF to disable ADIOS1.")
+    if(openPMD_USE_ADIOS1 STREQUAL AUTO)
+        message(WARNING "${openPMD_ADIOS1_STATUS}")
+        set(openPMD_HAVE_ADIOS1 FALSE)
+    elseif(openPMD_USE_ADIOS1)
+        message(FATAL_ERROR "${openPMD_ADIOS1_STATUS}")
+    endif()
 endif()
 
 message(STATUS "++++ ADIOS SEQ: ${ADIOS_LIBRARIES_SEQUENTIAL}")
@@ -229,17 +255,20 @@ set(CORE_SOURCE
 set(IO_SOURCE
         src/IO/AbstractIOHandler.cpp
         src/IO/AbstractIOHandlerImpl.cpp
+        src/IO/AbstractIOHandlerHelper.cpp
         src/IO/IOTask.cpp
         src/IO/HDF5/HDF5IOHandler.cpp
         src/IO/HDF5/ParallelHDF5IOHandler.cpp)
 set(IO_ADIOS1_SEQUENTIAL_SOURCE
-#        src/IO/AbstractIOHandler.cpp
-#        src/IO/AbstractIOHandlerImpl.cpp
+        src/IO/AbstractIOHandler.cpp
+        src/IO/AbstractIOHandlerImpl.cpp
+        src/auxiliary/Filesystem.cpp
 #        src/IO/IOTask.cpp
         src/IO/ADIOS/ADIOS1IOHandler.cpp)
 set(IO_ADIOS1_SOURCE
-#        src/IO/AbstractIOHandler.cpp
-#        src/IO/AbstractIOHandlerImpl.cpp
+        src/IO/AbstractIOHandler.cpp
+        src/IO/AbstractIOHandlerImpl.cpp
+        src/auxiliary/Filesystem.cpp
 #        src/IO/IOTask.cpp
         src/IO/ADIOS/ParallelADIOS1IOHandler.cpp)
 
@@ -302,6 +331,7 @@ else()
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_MPI=0")
 endif()
 
+# HDF5 Backend
 if(openPMD_HAVE_HDF5)
     target_link_libraries(openPMD PUBLIC ${HDF5_LIBRARIES})
     target_include_directories(openPMD SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
@@ -311,6 +341,7 @@ else()
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_HDF5=0")
 endif()
 
+# ADIOS1 Backend
 add_library(openPMD.ADIOS1.Serial SHARED ${IO_ADIOS1_SEQUENTIAL_SOURCE})
 add_library(openPMD.ADIOS1.Parallel SHARED ${IO_ADIOS1_SOURCE})
 target_compile_features(openPMD.ADIOS1.Serial
@@ -321,20 +352,15 @@ target_compile_features(openPMD.ADIOS1.Parallel
 )
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     target_compile_options(openPMD.ADIOS1.Serial PUBLIC "/bigobj")
-endif()
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     target_compile_options(openPMD.ADIOS1.Parallel PUBLIC "/bigobj")
 endif()
 if(openPMD_USE_INTERNAL_VARIANT)
     target_include_directories(openPMD.ADIOS1.Serial SYSTEM PUBLIC
         $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include>)
-else()
-    target_link_libraries(openPMD.ADIOS1.Serial PUBLIC mpark_variant)
-endif()
-if(openPMD_USE_INTERNAL_VARIANT)
     target_include_directories(openPMD.ADIOS1.Parallel SYSTEM PUBLIC
         $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include>)
 else()
+    target_link_libraries(openPMD.ADIOS1.Serial PUBLIC mpark_variant)
     target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC mpark_variant)
 endif()
 
@@ -344,6 +370,7 @@ target_include_directories(openPMD.ADIOS1.Parallel SYSTEM PRIVATE
     ${openPMD_SOURCE_DIR}/include)
 
 if(openPMD_HAVE_MPI)
+    target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC MPI::MPI_C MPI::MPI_CXX)
     target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "-DopenPMD_HAVE_MPI=1")
 else()
     target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "-DopenPMD_HAVE_MPI=0")
@@ -355,11 +382,17 @@ if(openPMD_HAVE_ADIOS1)
         POSITION_INDEPENDENT_CODE ON
         CXX_VISIBILITY_PRESET hidden
         VISIBILITY_INLINES_HIDDEN ON
-        LINK_FLAGS "-Wl,--exclude-libs,ALL"
-        #XCODE_ATTRIBUTE_STRIP_STYLE "non-global"
-        #XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING "YES"
-        #XCODE_ATTRIBUTE_SEPARATE_STRIP "YES"
     )
+    if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+        set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
+            LINK_FLAGS "-Wl,--exclude-libs,ALL")
+    elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
+        set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
+            XCODE_ATTRIBUTE_STRIP_STYLE "non-global"
+            XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING "YES"
+            XCODE_ATTRIBUTE_SEPARATE_STRIP "YES"
+        )
+    endif()
     foreach(adlib ${ADIOS_LIBRARIES_SEQUENTIAL})
         message(STATUS "--- SEQ: ${adlib}")
         target_link_libraries(openPMD.ADIOS1.Serial PRIVATE ${adlib})
@@ -367,12 +400,8 @@ if(openPMD_HAVE_ADIOS1)
     target_include_directories(openPMD.ADIOS1.Serial SYSTEM PRIVATE ${ADIOS_INCLUDE_DIRS_SEQUENTIAL})
     target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "${ADIOS_DEFINITIONS_SEQUENTIAL}")
     target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "-DopenPMD_HAVE_ADIOS1=1")
-    #if(openPMD_HAVE_MPI)
-    #    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "-DopenPMD_HAVE_MPI=1")
-    #else()
-        target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "-DopenPMD_HAVE_MPI=0")
-        target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "-D_NOMPI=1")
-    #endif()
+    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "-DopenPMD_HAVE_MPI=0")
+    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "-D_NOMPI=1")
 
     if(openPMD_HAVE_MPI)
         set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES
@@ -381,11 +410,17 @@ if(openPMD_HAVE_ADIOS1)
             POSITION_INDEPENDENT_CODE ON
             CXX_VISIBILITY_PRESET "hidden"
             VISIBILITY_INLINES_HIDDEN 1
-            LINK_FLAGS "-Wl,--exclude-libs,ALL"
-            #XCODE_ATTRIBUTE_STRIP_STYLE "non-global"
-            #XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING "YES"
-            #XCODE_ATTRIBUTE_SEPARATE_STRIP "YES"
         )
+        if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+            set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES
+                LINK_FLAGS "-Wl,--exclude-libs,ALL")
+        elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
+            set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES
+                XCODE_ATTRIBUTE_STRIP_STYLE "non-global"
+                XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING "YES"
+                XCODE_ATTRIBUTE_SEPARATE_STRIP "YES"
+            )
+        endif()
         foreach(adlib ${ADIOS_LIBRARIES})
             message(STATUS "--- PAR: ${adlib}")
             target_link_libraries(openPMD.ADIOS1.Parallel PRIVATE ${adlib})
@@ -406,6 +441,7 @@ endif()
 target_link_libraries(openPMD PUBLIC openPMD.ADIOS1.Serial)
 target_link_libraries(openPMD PUBLIC openPMD.ADIOS1.Parallel)
 
+# ADIOS2 Backend
 if(openPMD_HAVE_ADIOS2)
     target_link_libraries(openPMD PUBLIC ADIOS2::ADIOS2)
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS2=1")
@@ -413,6 +449,7 @@ else()
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS2=0")
 endif()
 
+# Runtime parameter and API status checks ("asserts")
 if(openPMD_USE_VERIFY)
     target_compile_definitions(openPMD PRIVATE "-DopenPMD_USE_VERIFY=1")
 else()
@@ -517,8 +554,6 @@ if(BUILD_TESTING)
 
         if(openPMD_HAVE_MPI)
             target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_MPI=1")
-        else()
-            target_compile_definitions(${testname}Tests PUBLIC "-D_NOMPI=1")
         endif()
 
         if(openPMD_HAVE_HDF5)

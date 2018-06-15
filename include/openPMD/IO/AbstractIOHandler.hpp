@@ -74,31 +74,6 @@ class AbstractIOHandler
 {
 public:
 #if openPMD_HAVE_MPI
-    /** Construct an appropriate specific IOHandler for the desired IO mode that may be MPI-aware.
-     *
-     * @param   path        Path to root folder for all operations associated with the desired handler.
-     * @param   accessType  AccessType describing desired operations and permissions of the desired handler.
-     * @param   format      Format describing the IO backend of the desired handler.
-     * @param   comm        MPI communicator used for IO.
-     * @return  Smart pointer to created IOHandler.
-     */
-    static std::shared_ptr< AbstractIOHandler > createIOHandler(std::string const& path,
-                                                                AccessType accessType,
-                                                                Format format,
-                                                                MPI_Comm comm);
-#endif
-    /** Construct an appropriate specific IOHandler for the desired IO mode.
-     *
-     * @param   path        Path to root folder for all operations associated with the desired handler.
-     * @param   accessType  AccessType describing desired operations and permissions of the desired handler.
-     * @param   format      Format describing the IO backend of the desired handler.
-     * @return  Smart pointer to created IOHandler.
-     */
-    static std::shared_ptr< AbstractIOHandler > createIOHandler(std::string const& path,
-                                                                AccessType accessType,
-                                                                Format format);
-
-#if openPMD_HAVE_MPI
     AbstractIOHandler(std::string const& path, AccessType, MPI_Comm);
 #endif
     AbstractIOHandler(std::string const& path, AccessType);

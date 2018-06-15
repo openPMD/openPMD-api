@@ -107,16 +107,18 @@ On the very basic level, you will need to derive a class from ``AbstractIOHandle
     { return std::future< void >(); }
     } // openPMD
 
-Familiarizing your backend with the rest of the API happens in just one place in ``src/IO/AbstractIOHandler.cpp``:
+Familiarizing your backend with the rest of the API happens in just one place in ``src/IO/AbstractIOHandlerHelper.cpp``:
 
 .. code-block:: cpp
 
     #if openPMD_HAVE_MPI
     std::shared_ptr< AbstractIOHandler >
-    AbstractIOHandler::createIOHandler(std::string const& path,
-                                       AccessType at,
-                                       Format f,
-                                       MPI_Comm comm)
+    createIOHandler(
+        std::string const& path,
+        AccessType at,
+        Format f,
+        MPI_Comm comm
+    )
     {
         switch( f )
         {
@@ -130,9 +132,11 @@ Familiarizing your backend with the rest of the API happens in just one place in
     #endif
 
     std::shared_ptr< AbstractIOHandler >
-    AbstractIOHandler::createIOHandler(std::string const& path,
-                                       AccessType at,
-                                       Format f)
+    createIOHandler(
+        std::string const& path,
+        AccessType at,
+        Format f
+    )
     {
         switch( f )
         {

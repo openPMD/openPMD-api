@@ -22,13 +22,12 @@
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
-#if openPMD_HAVE_MPI && openPMD_HAVE_ADIOS1
-#   include "openPMD/IO/ADIOS/ADIOS1IOHandler.hpp"
-#endif
-
 #include <future>
 #include <memory>
 #include <string>
+#if openPMD_HAVE_ADIOS1
+#   include <queue>
+#endif
 
 #if _MSC_VER
 #   define EXPORT __declspec( dllexport )
@@ -39,68 +38,32 @@
 
 namespace openPMD
 {
-#if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
-class EXPORT ParallelADIOS1IOHandler;
+    class EXPORT ParallelADIOS1IOHandlerImpl;
 
-class EXPORT ParallelADIOS1IOHandlerImpl : public ADIOS1IOHandlerImpl
-{
-public:
-    ParallelADIOS1IOHandlerImpl(AbstractIOHandler*, MPI_Comm);
-    virtual ~ParallelADIOS1IOHandlerImpl();
+    class EXPORT ParallelADIOS1IOHandler : public AbstractIOHandler
+    {
+        friend class ParallelADIOS1IOHandlerImpl;
 
-    virtual void init() override;
+    public:
+#   if openPMD_HAVE_MPI
+        ParallelADIOS1IOHandler(std::string const& path, AccessType, MPI_Comm);
+#   else
+        ParallelADIOS1IOHandler(std::string const& path, AccessType);
+#   endif
+        virtual ~ParallelADIOS1IOHandler() override;
 
-    virtual std::future< void > flush() override;
-
-    virtual int64_t open_write(Writable *) override;
-    virtual ADIOS_FILE* open_read(std::string const& name) override;
-
-private:
-    MPI_Comm m_mpiComm;
-    MPI_Info m_mpiInfo;
-};  //ParallelADIOS1IOHandlerImpl
-
-class EXPORT ParallelADIOS1IOHandler : public AbstractIOHandler
-{
-    friend class ParallelADIOS1IOHandlerImpl;
-
-public:
-#if openPMD_HAVE_MPI
-    ParallelADIOS1IOHandler(std::string const& path, AccessType, MPI_Comm);
-#else
-    ParallelADIOS1IOHandler(std::string const& path, AccessType);
+        virtual std::future< void > flush() override;
+#if openPMD_HAVE_ADIOS1
+        virtual void enqueue(IOTask const&) override;
 #endif
-    virtual ~ParallelADIOS1IOHandler() override;
 
-    virtual std::future< void > flush() override;
-
-    virtual void enqueue(IOTask const&) override;
-
-private:
-    std::queue< IOTask > m_setup;
-    std::unique_ptr< ParallelADIOS1IOHandlerImpl > m_impl;
-};  //ParallelADIOS1IOHandler
-#else
-class EXPORT ParallelADIOS1IOHandlerImpl
-{ };
-
-class EXPORT ParallelADIOS1IOHandler : public AbstractIOHandler
-{
-    friend class ParallelADIOS1IOHandlerImpl;
-
-public:
-#if openPMD_HAVE_MPI
-    ParallelADIOS1IOHandler(std::string const& path, AccessType, MPI_Comm);
-#else
-    ParallelADIOS1IOHandler(std::string const& path, AccessType);
+    private:
+#if openPMD_HAVE_ADIOS1
+        std::queue< IOTask > m_setup;
 #endif
-    virtual ~ParallelADIOS1IOHandler() override;
-
-    virtual std::future< void > flush() override;
-
-private:
-    std::unique_ptr< ParallelADIOS1IOHandlerImpl > m_impl;
-};  //ParallelADIOS1IOHandler
-#endif
+        std::unique_ptr< ParallelADIOS1IOHandlerImpl > m_impl;
+    }; // ParallelADIOS1IOHandler
 
 } // openPMD
+
+#undef EXPORT

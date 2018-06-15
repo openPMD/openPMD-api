@@ -19,6 +19,7 @@
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 #include "openPMD/Dataset.hpp"
 using namespace openPMD;
 
@@ -38,7 +39,7 @@ struct TestHelper : public Attributable
 {
     TestHelper()
     {
-        m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+        m_writable->IOHandler = createIOHandler(".", AccessType::CREATE, Format::DUMMY);
         IOHandler = m_writable->IOHandler.get();
     }
 };
@@ -113,7 +114,7 @@ TEST_CASE( "container_default_test", "[auxiliary]")
 {
 #if openPMD_HAVE_INVASIVE_TESTS
     Container< openPMD::test::S > c = Container< openPMD::test::S >();
-    c.m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+    c.m_writable->IOHandler = createIOHandler(".", AccessType::CREATE, Format::DUMMY);
     c.IOHandler = c.m_writable->IOHandler.get();
 
     REQUIRE(c.empty());
@@ -148,7 +149,7 @@ TEST_CASE( "container_retrieve_test", "[auxiliary]" )
 #if openPMD_HAVE_INVASIVE_TESTS
     using structure = openPMD::test::structure;
     Container< structure > c = Container< structure >();
-    c.m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+    c.m_writable->IOHandler = createIOHandler(".", AccessType::CREATE, Format::DUMMY);
     c.IOHandler = c.m_writable->IOHandler.get();
 
     structure s;
@@ -225,7 +226,7 @@ TEST_CASE( "container_access_test", "[auxiliary]" )
 #if openPMD_HAVE_INVASIVE_TESTS
     using Widget = openPMD::test::Widget;
     Container< Widget > c = Container< Widget >();
-    c.m_writable->IOHandler = AbstractIOHandler::createIOHandler(".", AccessType::CREATE, Format::DUMMY);
+    c.m_writable->IOHandler = createIOHandler(".", AccessType::CREATE, Format::DUMMY);
     c.IOHandler = c.m_writable->IOHandler.get();
 
     c["firstWidget"] = Widget(0);
