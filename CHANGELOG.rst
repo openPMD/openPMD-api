@@ -26,6 +26,7 @@ Features
 
   - unit tests #249
   - expose attributes #256 #266
+  - use lists for offsets & extents #266
 - C++:
 
   - ``setAttribute`` signature changed to const ref #268

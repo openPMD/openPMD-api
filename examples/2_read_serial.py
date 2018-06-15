@@ -37,8 +37,8 @@ if __name__ == "__main__":
     print("Field E.x has shape {0} and datatype {1}".format(
           shape, E_x.dtype))
 
-    offset = openPMD.Extent([1, 1, 1])
-    extent = openPMD.Extent([2, 2, 1])
+    offset = [1, 1, 1]
+    extent = [2, 2, 1]
     # TODO buffer protocol / numpy bindings
     # chunk_data = E_x[1:3, 1:3, 1:2]
     chunk_data = E_x.load_chunk(offset, extent)
