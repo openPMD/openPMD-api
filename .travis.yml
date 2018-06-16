@@ -97,8 +97,10 @@ jobs:
         # - dpkg -i openPMD*.deb
         - ls -R $HOME/openPMD-test-install | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'
     - <<: *test-cpp-unit
+      language: python
+      python: "2.7"
       env:
-        - USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF USE_SAMPLES=ON
+        - USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: clang
       addons:
         apt:
@@ -121,8 +123,10 @@ jobs:
       script: *script-cpp-unit
     # GCC 4.9.4
     - <<: *test-cpp-unit
+      language: python
+      python: "2.7"
       env:
-        - USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF USE_SAMPLES=OFF
+        - USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=OFF
       compiler: gcc
       addons:
         apt:
@@ -136,8 +140,10 @@ jobs:
          - CXX=g++-4.9 && CC=gcc-4.9 && COMPILERSPEC="%gcc@4.9.4"
       script: *script-cpp-unit
     - <<: *test-cpp-unit
+      language: python
+      python: "2.7"
       env:
-        - USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF USE_SAMPLES=ON
+        - USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: gcc
       addons:
         apt:
@@ -150,8 +156,10 @@ jobs:
       script: *script-cpp-unit
     # GCC 7.3.0
     - <<: *test-cpp-unit
+      language: python
+      python: "2.7"
       env:
-        - USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF USE_SAMPLES=ON
+        - USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: gcc
       addons:
         apt:
@@ -165,8 +173,10 @@ jobs:
          - CXX=g++-7 && CC=gcc-7 && COMPILERSPEC="%gcc@7.3.0"
       script: *script-cpp-unit
     - <<: *test-cpp-unit
+      language: python
+      python: "2.7"
       env:
-        - USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF USE_SAMPLES=ON
+        - USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: gcc
       addons:
         apt:
@@ -182,7 +192,7 @@ jobs:
       language: python
       python: "2.7"
       env:
-        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF USE_SAMPLES=ON
+        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON ADIOS1_VERSION=@1.13.1 USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: gcc
       addons:
         apt:
@@ -246,6 +256,11 @@ install:
       source /usr/local/opt/modules/init/bash &&
       export TRAVIS_PYTHON_VERSION=2.7.10;
     fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      if [ "$TRAVIS_PYTHON_VERSION" == "2.7" ]; then
+        export TRAVIS_PYTHON_VERSION=2.7.14;
+      fi;
+    fi
   - source $SPACK_ROOT/share/spack/setup-env.sh
   # fresh (cache-cleaned) travis runs seem to not properly init environment-modules
   - echo $MODULEPATH
@@ -299,10 +314,10 @@ install:
     fi
   - if [ $USE_ADIOS1 == "ON" ]; then
       travis_wait spack install
-        adios
-        $SPACK_VAR_MPI
+        adios$ADIOS1_VERSION
+        $SPACK_VAR_MPI ^python@$TRAVIS_PYTHON_VERSION
         $COMPILERSPEC &&
-      spack load adios $SPACK_VAR_MPI $COMPILERSPEC;
+      spack load adios$ADIOS1_VERSION $SPACK_VAR_MPI ^python@$TRAVIS_PYTHON_VERSION $COMPILERSPEC;
     fi
   - if [ $USE_ADIOS2 == "ON" ]; then
       travis_wait spack install
