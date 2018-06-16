@@ -116,7 +116,7 @@ jobs:
       os: osx
       language: generic
       env:
-        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF USE_SAMPLES=ON
+        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: clang
       before_install:
          - COMPILERSPEC="%clang@8.1.0"
