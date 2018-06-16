@@ -37,6 +37,7 @@ Bug Fixes
 - recursive directory creation with existing base #261
 - ``FindADIOS.cmake``: reset on multiple calls #263
 - ``SerialIOTest``: remove variable shadowing #262
+- ADIOS1: memory violation in string attribute writes #269
 
 Other
 """""

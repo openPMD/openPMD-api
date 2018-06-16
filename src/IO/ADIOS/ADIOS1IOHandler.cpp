@@ -718,7 +718,7 @@ ADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
 
     Attribute att = Attribute(parameters.resource);
 
-    int nelems;
+    int nelems = 0;
     switch( parameters.dtype )
     {
         using DT = Datatype;
@@ -840,9 +840,9 @@ ADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
         }
         case DT::STRING:
         {
-            using uptr = std::unique_ptr< void, std::function< void(void*) > >;
-            values = uptr(const_cast< char* >(att.get< std::string >().c_str()),
-                          [](void*){ });
+            auto const & v = att.get< std::string >();
+            values = auxiliary::allocatePtr(Datatype::CHAR, v.length() + 1u);
+            strcpy((char*)values.get(), v.c_str());
             break;
         }
         case DT::VEC_CHAR:
@@ -977,7 +977,7 @@ ADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
                                             "",
                                             getBP1DataType(parameters.dtype),
                                             nelems,
-                                            values.get());
+                                            values.get()); // Invalid read of size 1 (could be in ADIOS itself?)
     VERIFY(status == err_no_error, "Internal error: Failed to define ADIOS attribute by value");
 
     if( parameters.dtype == Datatype::VEC_STRING )
@@ -1053,9 +1053,9 @@ ADIOS1IOHandlerImpl::readAttribute(Writable* writable,
         attrname += "/";
     attrname += parameters.name;
 
-    ADIOS_DATATYPES datatype;
-    int size;
-    void* data;
+    ADIOS_DATATYPES datatype = adios_unknown;
+    int size = 0;
+    void* data = nullptr;
 
     int status;
     status = adios_get_attr(f,
