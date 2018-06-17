@@ -28,8 +28,6 @@
 #include <sstream>
 #include <string>
 
-#define IS_GCC_48
-
 #if defined(__GNUC__)
 #   if (__GNUC__ == 4 && __GNUC_MINOR__ < 9)
 #       define IS_GCC_48 1
@@ -68,13 +66,22 @@ std::string cleanFilename(std::string const& filename, Format f);
  */
 std::function< bool(std::string const&) > matcher(std::string const& name, Format f);
 
-#if openPMD_HAVE_MPI
-Series::Series(std::string filepath,
-               AccessType at,
-               MPI_Comm comm)
-        : iterations{Container< Iteration, uint64_t >()},
-          m_iterationEncoding{std::make_shared< IterationEncoding >()}
+struct Series::ParsedInput
 {
+    std::string path;
+    std::string name;
+    Format format;
+    IterationEncoding iterationEncoding;
+    std::string filenamePrefix;
+    std::string filenamePostfix;
+    int filenamePadding;
+};  //ParsedInput
+
+std::unique_ptr< Series::ParsedInput >
+Series::parseInput(std::string filepath)
+{
+    std::unique_ptr< Series::ParsedInput > input{new Series::ParsedInput};
+
 #ifdef _WIN32
     if( auxiliary::contains(filepath, '/') )
     {
@@ -90,105 +97,21 @@ Series::Series(std::string filepath,
         filepath = auxiliary::replace_all(filepath, "\\", "/");
     }
 #endif
-    std::string newPath;
-    std::string newName;
     auto const pos = filepath.find_last_of(auxiliary::directory_separator);
     if( std::string::npos == pos )
     {
-        newPath = ".";
-        newPath.append(1, auxiliary::directory_separator);
-        newName = filepath;
+        input->path = ".";
+        input->path.append(1, auxiliary::directory_separator);
+        input->name = filepath;
     }
     else
     {
-        newPath = filepath.substr(0, pos + 1);
-        newName = filepath.substr(pos + 1);
+        input->path = filepath.substr(0, pos + 1);
+        input->name = filepath.substr(pos + 1);
     }
 
-    IterationEncoding ie;
-    if( std::string::npos != newName.find("%T") )
-        ie = IterationEncoding::fileBased;
-    else
-        ie = IterationEncoding::groupBased;
+    input->format = determineFormat(input->name);
 
-    m_format = std::make_shared< Format >(determineFormat(newName));
-
-    m_writable->IOHandler = AbstractIOHandler::createIOHandler(newPath, at, *m_format, comm);
-    IOHandler = m_writable->IOHandler.get();
-    iterations.linkHierarchy(m_writable);
-
-    m_name = std::make_shared< std::string >(cleanFilename(newName, *m_format));
-
-    switch( at )
-    {
-        case AccessType::CREATE:
-        {
-            setOpenPMD(OPENPMD);
-            setOpenPMDextension(0);
-            setAttribute("basePath", std::string(BASEPATH));
-            if( ie == IterationEncoding::fileBased && !auxiliary::contains(*m_name, "%T") )
-                throw std::runtime_error("For fileBased formats the iteration regex %T must be included in the file name");
-            setIterationEncoding(ie);
-            break;
-        }
-        case AccessType::READ_ONLY:
-        case AccessType::READ_WRITE:
-        {
-            /* Allow creation of values in Containers and setting of Attributes
-             * Would throw for AccessType::READ_ONLY */
-            auto newType = const_cast< AccessType* >(&m_writable->IOHandler->accessType);
-            *newType = AccessType::READ_WRITE;
-
-            if( auxiliary::contains(*m_name, "%T") )
-                readFileBased();
-            else
-                readGroupBased();
-
-            *newType = at;
-            break;
-        }
-    }
-}
-#endif
-
-Series::Series(std::string filepath,
-               AccessType at)
-        : iterations{Container< Iteration, uint64_t >()},
-          m_iterationEncoding{std::make_shared< IterationEncoding >()}
-{
-#ifdef _WIN32
-    if( auxiliary::contains(filepath, '/') )
-    {
-        std::cerr << "Filepaths on WINDOWS platforms may not contain slashes '/'! "
-                  << "Replacing with backslashes '\\' unconditionally!" << std::endl;
-        filepath = auxiliary::replace_all(filepath, "/", "\\");
-    }
-#else
-    if( auxiliary::contains(filepath, '\\') )
-    {
-        std::cerr << "Filepaths on UNIX platforms may not include backslashes '\\'! "
-                  << "Replacing with slashes '/' unconditionally!" << std::endl;
-        filepath = auxiliary::replace_all(filepath, "\\", "/");
-    }
-#endif
-    std::string newPath;
-    std::string newName;
-    auto const pos = filepath.find_last_of(auxiliary::directory_separator);
-    if( std::string::npos == pos )
-    {
-        newPath = ".";
-        newPath.append(1, auxiliary::directory_separator);
-        newName = filepath;
-    }
-    else
-    {
-        newPath = filepath.substr(0, pos + 1);
-        newName = filepath.substr(pos + 1);
-    }
-
-    m_format = std::make_shared< Format >(determineFormat(newName));
-
-    IterationEncoding ie;
 #if defined(IS_GCC_48)
     regex_t pattern;
     if( regcomp(&pattern, "(.*)%(0\\d+)?T(.*)", REG_EXTENDED) )
@@ -197,87 +120,82 @@ Series::Series(std::string filepath,
     uint8_t maxGroups = 4;
     regmatch_t regexMatch[maxGroups];
 
-    if( regexec(&pattern, newName.c_str(), maxGroups, regexMatch, 0) )
-        ie = IterationEncoding::fileBased;
+    if( regexec(&pattern, input->name.c_str(), maxGroups, regexMatch, 0) )
+        input->iterationEncoding = IterationEncoding::groupBased;
     else
     {
+        input->iterationEncoding = IterationEncoding::fileBased;
+
         if( regexMatch[0].rm_so == -1 || regexMatch[0].rm_eo == -1 )
-            throw std::runtime_error("Can not determine iterationFormat from filename " + newName);
+            throw std::runtime_error("Can not determine iterationFormat from filename " + input->name);
 
         if( regexMatch[1].rm_so == -1 || regexMatch[1].rm_eo == -1 )
-            throw std::runtime_error("Can not determine iterationFormat (prefix) from filename " + newName);
+            throw std::runtime_error("Can not determine iterationFormat (prefix) from filename " + input->name);
         else
-            m_filenamePrefix = std::string(&newName[regexMatch[1].rm_so], regexMatch[1].rm_eo);
+            input->filenamePrefix = std::string(&input->name[regexMatch[1].rm_so], regexMatch[1].rm_eo);
 
         if( regexMatch[2].rm_so == -1 || regexMatch[2].rm_eo == -1 )
-            m_filenamePadding = 0;
+            input->filenamePadding = 0;
         else
-            m_filenamePadding = std::stoi(std::string(&newName[regexMatch[2].rm_so], regexMatch[2].rm_eo));
+            input->filenamePadding = std::stoi(std::string(&input->name[regexMatch[2].rm_so], regexMatch[2].rm_eo));
 
         if( regexMatch[3].rm_so == -1 || regexMatch[3].rm_eo == -1 )
-            throw std::runtime_error("Can not determine iterationFormat (postfix) from filename " + newName);
+            throw std::runtime_error("Can not determine iterationFormat (postfix) from filename " + input->name);
         else
-            m_filenamePrefix = std::string(&newName[regexMatch[3].rm_so], regexMatch[3].rm_eo);
+            input->filenamePrefix = std::string(&input->name[regexMatch[3].rm_so], regexMatch[3].rm_eo);
     }
 
     regfree(&pattern);
 #else
     std::regex pattern("(.*)%(0\\d+)?T(.*)");
     std::smatch regexMatch;
-    std::regex_match(newName, regexMatch, pattern);
+    std::regex_match(input->name, regexMatch, pattern);
     if( regexMatch.empty() )
-        ie = IterationEncoding::groupBased;
+        input->iterationEncoding = IterationEncoding::groupBased;
     else if( regexMatch.size() == 4 )
     {
-        ie = IterationEncoding::fileBased;
-        m_filenamePrefix = regexMatch[1].str();
+        input->iterationEncoding = IterationEncoding::fileBased;
+        input->filenamePrefix = regexMatch[1].str();
         std::string const& pad = regexMatch[2];
         if( pad.empty() )
-            m_filenamePadding = 0;
+            input->filenamePadding = 0;
         else
         {
             if( pad.front() != '0' )
-                throw std::runtime_error("Invalid iterationEncoding " + newName);
-            m_filenamePadding = std::stoi(pad);
+                throw std::runtime_error("Invalid iterationEncoding " + input->name);
+            input->filenamePadding = std::stoi(pad);
         }
-        m_filenamePostfix = regexMatch[3].str();
+        input->filenamePostfix = regexMatch[3].str();
     } else
-        throw std::runtime_error("Can not determine iterationFormat from filename " + newName);
+        throw std::runtime_error("Can not determine iterationFormat from filename " + input->name);
 #endif
 
-    m_writable->IOHandler = AbstractIOHandler::createIOHandler(newPath, at, *m_format);
-    IOHandler = m_writable->IOHandler.get();
-    iterations.linkHierarchy(m_writable);
+    input->name = cleanFilename(input->name, input->format);
 
-    m_name = std::make_shared< std::string >(cleanFilename(newName, *m_format));
+    return input;
+}
 
-    switch( at )
-    {
-        case AccessType::CREATE:
-        {
-            setOpenPMD(OPENPMD);
-            setOpenPMDextension(0);
-            setAttribute("basePath", std::string(BASEPATH));
-            setIterationEncoding(ie);
-            break;
-        }
-        case AccessType::READ_ONLY:
-        case AccessType::READ_WRITE:
-        {
-            /* Allow creation of values in Containers and setting of Attributes
-             * Would throw for AccessType::READ_ONLY */
-            auto newType = const_cast< AccessType* >(&m_writable->IOHandler->accessType);
-            *newType = AccessType::READ_WRITE;
+#if openPMD_HAVE_MPI
+Series::Series(std::string const& filepath,
+               AccessType at,
+               MPI_Comm comm)
+        : iterations{Container< Iteration, uint64_t >()},
+          m_iterationEncoding{std::make_shared< IterationEncoding >()}
+{
+    auto input = parseInput(filepath);
+    auto handler = AbstractIOHandler::createIOHandler(input->path, at, input->format, comm);
+    init(handler, std::move(input));
+}
+#endif
 
-            if( ie == IterationEncoding::fileBased )
-                readFileBased();
-            else
-                readGroupBased();
-
-            *newType = at;
-            break;
-        }
-    }
+Series::Series(std::string const& filepath,
+               AccessType at)
+        : iterations{Container< Iteration, uint64_t >()},
+          m_iterationEncoding{std::make_shared< IterationEncoding >()}
+{
+    auto input = parseInput(filepath);
+    auto handler = AbstractIOHandler::createIOHandler(input->path, at, input->format);
+    init(handler, std::move(input));
 }
 
 Series::~Series()
@@ -532,6 +450,48 @@ Series::flush()
     }
 
     IOHandler->flush();
+}
+
+void
+Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
+             std::unique_ptr< Series::ParsedInput > input)
+{
+    m_writable->IOHandler = ioHandler;
+    IOHandler = m_writable->IOHandler.get();
+    iterations.linkHierarchy(m_writable);
+
+    m_name = std::make_shared< std::string >(input->name);
+
+    m_format = std::make_shared< Format >(input->format);
+
+    switch( IOHandler->accessType )
+    {
+        case AccessType::CREATE:
+        {
+            setOpenPMD(OPENPMD);
+            setOpenPMDextension(0);
+            setAttribute("basePath", std::string(BASEPATH));
+            setIterationEncoding(input->iterationEncoding);
+            break;
+        }
+        case AccessType::READ_ONLY:
+        case AccessType::READ_WRITE:
+        {
+            /* Allow creation of values in Containers and setting of Attributes
+             * Would throw for AccessType::READ_ONLY */
+            auto oldType = IOHandler->accessType;
+            auto newType = const_cast< AccessType* >(&m_writable->IOHandler->accessType);
+            *newType = AccessType::READ_WRITE;
+
+            if( input->iterationEncoding == IterationEncoding::fileBased )
+                readFileBased();
+            else
+                readGroupBased();
+
+            *newType = oldType;
+            break;
+        }
+    }
 }
 
 void
