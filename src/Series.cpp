@@ -23,7 +23,12 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Series.hpp"
 
+#include <iomanip>
 #include <iostream>
+#include <sstream>
+#include <string>
+
+#define IS_GCC_48
 
 #if defined(__GNUC__)
 #   if (__GNUC__ == 4 && __GNUC_MINOR__ < 9)
@@ -181,13 +186,64 @@ Series::Series(std::string filepath,
         newName = filepath.substr(pos + 1);
     }
 
+    m_format = std::make_shared< Format >(determineFormat(newName));
+
     IterationEncoding ie;
-    if( std::string::npos != newName.find("%T") )
+#if defined(IS_GCC_48)
+    regex_t pattern;
+    if( regcomp(&pattern, "(.*)%(0\\d+)?T(.*)", REG_EXTENDED) )
+        throw std::runtime_error(std::string("Regex for iterationFormat '(.*)%(0\\d+)?T(.*)' can not be compiled!"));
+
+    uint8_t maxGroups = 4;
+    regmatch_t regexMatch[maxGroups];
+
+    if( regexec(&pattern, newName.c_str(), maxGroups, regexMatch, 0) )
         ie = IterationEncoding::fileBased;
     else
-        ie = IterationEncoding::groupBased;
+    {
+        if( regexMatch[0].rm_so == -1 || regexMatch[0].rm_eo == -1 )
+            throw std::runtime_error("Can not determine iterationFormat from filename " + newName);
 
-    m_format = std::make_shared< Format >(determineFormat(newName));
+        if( regexMatch[1].rm_so == -1 || regexMatch[1].rm_eo == -1 )
+            throw std::runtime_error("Can not determine iterationFormat (prefix) from filename " + newName);
+        else
+            m_filenamePrefix = std::string(&newName[regexMatch[1].rm_so], regexMatch[1].rm_eo);
+
+        if( regexMatch[2].rm_so == -1 || regexMatch[2].rm_eo == -1 )
+            m_filenamePadding = 0;
+        else
+            m_filenamePadding = std::stoi(std::string(&newName[regexMatch[2].rm_so], regexMatch[2].rm_eo));
+
+        if( regexMatch[3].rm_so == -1 || regexMatch[3].rm_eo == -1 )
+            throw std::runtime_error("Can not determine iterationFormat (postfix) from filename " + newName);
+        else
+            m_filenamePrefix = std::string(&newName[regexMatch[3].rm_so], regexMatch[3].rm_eo);
+    }
+
+    regfree(&pattern);
+#else
+    std::regex pattern("(.*)%(0\\d+)?T(.*)");
+    std::smatch regexMatch;
+    std::regex_match(newName, regexMatch, pattern);
+    if( regexMatch.empty() )
+        ie = IterationEncoding::groupBased;
+    else if( regexMatch.size() == 4 )
+    {
+        ie = IterationEncoding::fileBased;
+        m_filenamePrefix = regexMatch[1].str();
+        std::string const& pad = regexMatch[2];
+        if( pad.empty() )
+            m_filenamePadding = 0;
+        else
+        {
+            if( pad.front() != '0' )
+                throw std::runtime_error("Invalid iterationEncoding " + newName);
+            m_filenamePadding = std::stoi(pad);
+        }
+        m_filenamePostfix = regexMatch[3].str();
+    } else
+        throw std::runtime_error("Can not determine iterationFormat from filename " + newName);
+#endif
 
     m_writable->IOHandler = AbstractIOHandler::createIOHandler(newPath, at, *m_format);
     IOHandler = m_writable->IOHandler.get();
@@ -202,8 +258,6 @@ Series::Series(std::string filepath,
             setOpenPMD(OPENPMD);
             setOpenPMDextension(0);
             setAttribute("basePath", std::string(BASEPATH));
-            if( ie == IterationEncoding::fileBased && !auxiliary::contains(*m_name, "%T") )
-                throw std::runtime_error("For fileBased formats the iteration regex %T must be included in the file name");
             setIterationEncoding(ie);
             break;
         }
@@ -215,7 +269,7 @@ Series::Series(std::string filepath,
             auto newType = const_cast< AccessType* >(&m_writable->IOHandler->accessType);
             *newType = AccessType::READ_WRITE;
 
-            if( auxiliary::contains(*m_name, "%T") )
+            if( ie == IterationEncoding::fileBased )
                 readFileBased();
             else
                 readGroupBased();
@@ -498,7 +552,10 @@ Series::flushFileBased()
             written = false;
             iterations.written = false;
 
-            i.second.flushFileBased(i.first);
+            std::stringstream filename(m_filenamePrefix);
+            filename << std::setw(m_filenamePadding) << std::setfill('0') << i.first << m_filenamePostfix;
+
+            i.second.flushFileBased(filename.str(), i.first);
 
             iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
 
@@ -626,7 +683,7 @@ Series::readFileBased()
         }
     }
 
-    if( iterations.empty() )
+    if( iterations.empty() && IOHandler->accessType == AccessType::READ_ONLY )
         throw no_such_file_error("No matching iterations found: " + name());
 
     /* this file need not be flushed */
@@ -824,7 +881,9 @@ nameMatch(std::string const& filename, std::string const& nameReg)
     int reti = regcomp(&pattern, nameReg.c_str(), REG_EXTENDED);
     if( reti )
         throw std::runtime_error(std::string("Regex for name '") + nameReg + std::string("' can not be compiled!"));
-    return !regexec(&pattern, filename.c_str(), 0, NULL, 0);
+    bool res = !regexec(&pattern, filename.c_str(), 0, NULL, 0);
+    regfree(&pattern);
+    return res;
 #else
     std::regex pattern(nameReg);
     return std::regex_search(filename, pattern);

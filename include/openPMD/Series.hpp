@@ -247,5 +247,9 @@ private:
     std::shared_ptr< IterationEncoding > m_iterationEncoding;
     std::shared_ptr< std::string > m_name;
     std::shared_ptr< Format > m_format;
+
+    std::string m_filenamePrefix;
+    std::string m_filenamePostfix;
+    int m_filenamePadding;
 };  //Series
 } // openPMD
