@@ -6,12 +6,15 @@
 #   pragma clang diagnostic push
 #   pragma clang diagnostic ignored "-Wkeyword-macro"
 #   define protected public
+#   define private public
 #   pragma clang diagnostic pop
 #endif
 #include "openPMD/openPMD.hpp"
 #if openPMD_HAVE_INVASIVE_TESTS
 #   undef protected
+#   undef private
 #endif
+#include "openPMD/auxiliary/Filesystem.hpp"
 using namespace openPMD;
 
 #include <catch/catch.hpp>
@@ -392,6 +395,71 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
         REQUIRE(o.iterations.count(300) == 1);
         REQUIRE(o.iterations.count(400) == 1);
         REQUIRE(o.iterations.count(500) == 1);
+
+#if openPMD_HAVE_INVASIVE_TESTS
+        REQUIRE(*o.m_filenamePadding == 8);
+#endif
+    } catch (no_such_file_error& e)
+    {
+        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+        return;
+    }
+
+    try
+    {
+        Series o = Series("../samples/git-sample/data%08T.h5", AccessType::READ_ONLY);
+
+        REQUIRE(o.iterations.size() == 5);
+        REQUIRE(o.iterations.count(100) == 1);
+        REQUIRE(o.iterations.count(200) == 1);
+        REQUIRE(o.iterations.count(300) == 1);
+        REQUIRE(o.iterations.count(400) == 1);
+        REQUIRE(o.iterations.count(500) == 1);
+
+#if openPMD_HAVE_INVASIVE_TESTS
+        REQUIRE(*o.m_filenamePadding == 8);
+#endif
+    } catch (no_such_file_error& e)
+    {
+        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+        return;
+    }
+
+    REQUIRE_THROWS_WITH(Series("../samples/git-sample/data%07T.h5", AccessType::READ_ONLY),
+                        Catch::Equals("No matching iterations found: data%07T"));
+
+    try
+    {
+        std::vector< std::string > newFiles{"../samples/git-sample/data00000001.h5",
+                                            "../samples/git-sample/data00000010.h5",
+                                            "../samples/git-sample/data00001000.h5",
+                                            "../samples/git-sample/data00010000.h5",
+                                            "../samples/git-sample/data00100000.h5"};
+
+        for( auto const& file : newFiles )
+            if( auxiliary::file_exists(file) )
+                auxiliary::remove_file(file);
+
+        {
+            Series o = Series("../samples/git-sample/data%T.h5", AccessType::READ_WRITE);
+
+#if openPMD_HAVE_INVASIVE_TESTS
+            REQUIRE(*o.m_filenamePadding == 8);
+#endif
+
+            o.iterations[1];
+            o.iterations[10];
+            o.iterations[1000];
+            o.iterations[10000];
+            o.iterations[100000];
+            o.flush();
+        }
+
+        for( auto const& file : newFiles )
+        {
+            REQUIRE(auxiliary::file_exists(file));
+            auxiliary::remove_file(file);
+        }
     } catch (no_such_file_error& e)
     {
         std::cerr << "git sample not accessible. (" << e.what() << ")\n";
@@ -914,88 +982,162 @@ TEST_CASE( "hdf5_write_test", "[serial][hdf5]" )
 
 TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
 {
-    Series o = Series("../samples/serial_fileBased_write%T.h5", AccessType::CREATE);
+    if( auxiliary::directory_exists("../samples/subdir") )
+        auxiliary::remove_directory("../samples/subdir");
 
-    ParticleSpecies& e_1 = o.iterations[1].particles["e"];
-
-    std::vector< double > position_global(4);
-    double pos{0.};
-    std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
-    std::shared_ptr< double > position_local_1(new double);
-    e_1["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_1), {4}));
-
-    for( uint64_t i = 0; i < 4; ++i )
     {
-        *position_local_1 = position_global[i];
-        e_1["position"]["x"].storeChunk({i}, {1}, position_local_1);
+        Series o = Series("../samples/subdir/serial_fileBased_write%08T.h5", AccessType::CREATE);
+
+        ParticleSpecies& e_1 = o.iterations[1].particles["e"];
+
+        std::vector< double > position_global(4);
+        double pos{0.};
+        std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
+        std::shared_ptr< double > position_local_1(new double);
+        e_1["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_1), {4}));
+
+        for( uint64_t i = 0; i < 4; ++i )
+        {
+            *position_local_1 = position_global[i];
+            e_1["position"]["x"].storeChunk({i}, {1}, position_local_1);
+            o.flush();
+        }
+
+        std::vector< uint64_t > positionOffset_global(4);
+        uint64_t posOff{0};
+        std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
+        std::shared_ptr< uint64_t > positionOffset_local_1(new uint64_t);
+        e_1["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_1), {4}));
+
+        for( uint64_t i = 0; i < 4; ++i )
+        {
+            *positionOffset_local_1 = positionOffset_global[i];
+            e_1["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_1);
+            o.flush();
+        }
+
+        ParticleSpecies& e_2 = o.iterations[2].particles["e"];
+
+        std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
+        e_2["position"]["x"].resetDataset(Dataset(determineDatatype<double>(), {4}));
+
+        for( uint64_t i = 0; i < 4; ++i )
+        {
+            double const position_local_2 = position_global.at(i);
+            e_2["position"]["x"].storeChunk({i}, {1}, shareRaw(&position_local_2));
+            o.flush();
+        }
+
+        std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
+        std::shared_ptr< uint64_t > positionOffset_local_2(new uint64_t);
+        e_2["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_2), {4}));
+
+        for( uint64_t i = 0; i < 4; ++i )
+        {
+            *positionOffset_local_2 = positionOffset_global[i];
+            e_2["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_2);
+            o.flush();
+        }
+
+        o.flush();
+
+        ParticleSpecies& e_3 = o.iterations[3].particles["e"];
+
+        std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
+        std::shared_ptr< double > position_local_3(new double);
+        e_3["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_3), {4}));
+
+        for( uint64_t i = 0; i < 4; ++i )
+        {
+            *position_local_3 = position_global[i];
+            e_3["position"]["x"].storeChunk({i}, {1}, position_local_3);
+            o.flush();
+        }
+
+        std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
+        std::shared_ptr< uint64_t > positionOffset_local_3(new uint64_t);
+        e_3["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_3), {4}));
+
+        for( uint64_t i = 0; i < 4; ++i )
+        {
+            *positionOffset_local_3 = positionOffset_global[i];
+            e_3["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_3);
+            o.flush();
+        }
+
+        o.setOpenPMDextension(1);
         o.flush();
     }
+    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000001.h5"));
+    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000002.h5"));
+    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000003.h5"));
 
-    std::vector< uint64_t > positionOffset_global(4);
-    uint64_t posOff{0};
-    std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
-    std::shared_ptr< uint64_t > positionOffset_local_1(new uint64_t);
-    e_1["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_1), {4}));
-
-    for( uint64_t i = 0; i < 4; ++i )
     {
-        *positionOffset_local_1 = positionOffset_global[i];
-        e_1["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_1);
-        o.flush();
+        Series o = Series("../samples/subdir/serial_fileBased_write%T.h5", AccessType::READ_WRITE);
+
+        REQUIRE(o.iterations.size() == 3);
+        REQUIRE(o.iterations.count(1) == 1);
+        REQUIRE(o.iterations.count(2) == 1);
+        REQUIRE(o.iterations.count(3) == 1);
+
+#if openPMD_HAVE_INVASIVE_TESTS
+        REQUIRE(*o.m_filenamePadding == 8);
+#endif
+
+        REQUIRE(o.basePath() == "/data/%T/");
+        REQUIRE(o.iterationEncoding() == IterationEncoding::fileBased);
+        REQUIRE(o.iterationFormat() == "serial_fileBased_write%08T");
+        REQUIRE(o.openPMD() == "1.1.0");
+        REQUIRE(o.openPMDextension() == 1u);
+        REQUIRE(o.particlesPath() == "particles/");
+        REQUIRE_FALSE(o.containsAttribute("meshesPath"));
+        REQUIRE_THROWS_AS(o.meshesPath(), no_such_attribute_error);
+        std::array< double, 7 > udim{{1, 0, 0, 0, 0, 0, 0}};
+        Extent ext{4};
+        for( auto const& entry : o.iterations )
+        {
+            auto const& it = entry.second;
+            REQUIRE(it.dt< double >() == 1.);
+            REQUIRE(it.time< double >() == static_cast< double >(entry.first));
+            REQUIRE(it.timeUnitSI() == 1.);
+            auto const& pos = it.particles.at("e").at("position");
+            REQUIRE(pos.timeOffset< float >() == 0.f);
+            REQUIRE(pos.unitDimension() == udim);
+            auto const& pos_x = pos.at("x");
+            REQUIRE(pos_x.unitSI() == 1.);
+            REQUIRE(pos_x.getExtent() == ext);
+            REQUIRE(pos_x.getDatatype() == Datatype::DOUBLE);
+            auto const& posOff = it.particles.at("e").at("positionOffset");
+            REQUIRE(posOff.timeOffset< float >() == 0.f);
+            REQUIRE(posOff.unitDimension() == udim);
+            auto const& posOff_x = posOff.at("x");
+            REQUIRE(posOff_x.unitSI() == 1.);
+            REQUIRE(posOff_x.getExtent() == ext);
+            REQUIRE(posOff_x.getDatatype() == Datatype::UINT64);
+        }
+
+        o.iterations[4];
     }
+    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000004.h5"));
 
-    ParticleSpecies& e_2 = o.iterations[2].particles["e"];
-
-    std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
-    e_2["position"]["x"].resetDataset(Dataset(determineDatatype<double>(), {4}));
-
-    for( uint64_t i = 0; i < 4; ++i )
+    // TODO not working yet
     {
-        double const position_local_2 = position_global.at(i);
-        e_2["position"]["x"].storeChunk({i}, {1}, shareRaw(&position_local_2));
-        o.flush();
+        Series o = Series("../samples/serial_fileBased_write%04T.h5", AccessType::READ_WRITE);
+
+        REQUIRE(o.iterations.empty());
+
+        o.iterations[1];
     }
+    REQUIRE(auxiliary::file_exists("../samples/serial_fileBased_write0001.h5"));
 
-    std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
-    std::shared_ptr< uint64_t > positionOffset_local_2(new uint64_t);
-    e_2["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_2), {4}));
-
-    for( uint64_t i = 0; i < 4; ++i )
+    try
     {
-        *positionOffset_local_2 = positionOffset_global[i];
-        e_2["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_2);
-        o.flush();
-    }
-
-    o.flush();
-
-    ParticleSpecies& e_3 = o.iterations[3].particles["e"];
-
-    std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
-    std::shared_ptr< double > position_local_3(new double);
-    e_3["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_3), {4}));
-
-    for( uint64_t i = 0; i < 4; ++i )
+        Series o = Series("../samples/serial_fileBased_write%T.h5", AccessType::READ_WRITE);
+        REQUIRE(false);
+    } catch( std::runtime_error& e )
     {
-        *position_local_3 = position_global[i];
-        e_3["position"]["x"].storeChunk({i}, {1}, position_local_3);
-        o.flush();
+        REQUIRE(std::strcmp(e.what(), "Can not determine iteration padding from existing filenames. Please specify '%0<N>T'.") == 0);
     }
-
-    std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
-    std::shared_ptr< uint64_t > positionOffset_local_3(new uint64_t);
-    e_3["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_3), {4}));
-
-    for( uint64_t i = 0; i < 4; ++i )
-    {
-        *positionOffset_local_3 = positionOffset_global[i];
-        e_3["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_3);
-        o.flush();
-    }
-
-    o.flush();
-
-    //TODO close file, read back, verify
 }
 
 TEST_CASE( "hdf5_bool_test", "[serial][hdf5]" )

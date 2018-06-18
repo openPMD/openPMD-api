@@ -239,7 +239,7 @@ private:
     void flushGroupBased();
     void flushMeshesPath();
     void flushParticlesPath();
-    void readFileBased();
+    void readFileBased(AccessType);
     void readGroupBased();
     void readBase();
     void read();

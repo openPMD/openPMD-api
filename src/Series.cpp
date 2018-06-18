@@ -30,8 +30,6 @@
 #include <string>
 #include <tuple>
 
-#define IS_GCC_48
-
 #if defined(__GNUC__)
 #   if (__GNUC__ == 4 && __GNUC_MINOR__ < 9)
 #       define IS_GCC_48 1
@@ -398,8 +396,8 @@ Series::parseInput(std::string filepath)
 
 #if defined(IS_GCC_48)
     regex_t pattern;
-    if( regcomp(&pattern, "(.*)%(0\\d+)?T(.*)", REG_EXTENDED) )
-        throw std::runtime_error(std::string("Regex for iterationFormat '(.*)%(0\\d+)?T(.*)' can not be compiled!"));
+    if( regcomp(&pattern, "(.*)%(0[[:digit:]]+)?T(.*)", REG_EXTENDED) )
+        throw std::runtime_error(std::string("Regex for iterationFormat '(.*)%(0[[:digit:]]+)?T(.*)' can not be compiled!"));
 
     constexpr uint8_t regexGroups = 4u;
     std::array< regmatch_t, regexGroups > regexMatch;
@@ -430,7 +428,7 @@ Series::parseInput(std::string filepath)
 
     regfree(&pattern);
 #else
-    std::regex pattern("(.*)%(0\\d+)?T(.*)");
+    std::regex pattern("(.*)%(0[[:digit:]]+)?T(.*)");
     std::smatch regexMatch;
     std::regex_match(input->name, regexMatch, pattern);
     if( regexMatch.empty() )
@@ -496,7 +494,7 @@ Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
             *newType = AccessType::READ_WRITE;
 
             if( input->iterationEncoding == IterationEncoding::fileBased )
-                readFileBased();
+                readFileBased(oldType);
             else
                 readGroupBased();
 
@@ -517,6 +515,7 @@ Series::flushFileBased()
             i.second.flush();
     else
     {
+        bool allDirty = dirty;
         for( auto& i : iterations )
         {
             /* as there is only one series,
@@ -524,21 +523,23 @@ Series::flushFileBased()
             written = false;
             iterations.written = false;
 
-            std::stringstream filename(*m_filenamePrefix);
-            filename << std::setw(*m_filenamePadding) << std::setfill('0') << i.first << *m_filenamePostfix;
+            std::stringstream iteration("");
+            iteration << std::setw(*m_filenamePadding) << std::setfill('0') << i.first;
+            std::string filename = *m_filenamePrefix + iteration.str() + *m_filenamePostfix;
 
-            i.second.flushFileBased(filename.str(), i.first);
+            /* flush attributes to newly created iterations */
+            dirty |= i.second.dirty;
+            i.second.flushFileBased(filename, i.first);
 
             iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
 
-            if( dirty )
-            {
-                flushAttributes();
-                /* manually flag the Series dirty
-                 * until all iterations have been updated */
-                dirty = true;
-            }
+            flushAttributes();
+
             IOHandler->flush();
+
+            /* reset the dirty bit for every iteration (i.e. file)
+             * otherwise only the first iteration will have updates attributes */
+            dirty = allDirty;
         }
         dirty = false;
     }
@@ -600,7 +601,7 @@ Series::flushParticlesPath()
 }
 
 void
-Series::readFileBased()
+Series::readFileBased(AccessType actualAccessType)
 {
     Parameter< Operation::OPEN_FILE > fOpen;
     Parameter< Operation::READ_ATT > aRead;
@@ -664,8 +665,8 @@ Series::readFileBased()
 
     if( iterations.empty() )
     {
-        if( IOHandler->accessType == AccessType::READ_ONLY  )
-            throw no_such_file_error("No matching iterations found: " + name());
+        if( actualAccessType == AccessType::READ_ONLY  )
+            throw std::runtime_error("No matching iterations found: " + name());
         else
             std::cerr << "No matching iterations found: " << name() << std::endl;
     }
@@ -876,7 +877,7 @@ buildMatcher(std::string const& regexPattern)
             std::array< regmatch_t, 2 > regexMatches;
             bool match = !regexec(pattern.get(), filename.c_str(), regexMatches.size(), regexMatches.data(), 0);
             int padding = match ? regexMatches[1].rm_eo - regexMatches[1].rm_so : 0;
-            return {match, padding};
+            return std::tuple< bool, int >{match, padding};
         };
 #else
     std::regex pattern(regexPattern);
@@ -886,7 +887,7 @@ buildMatcher(std::string const& regexPattern)
             std::smatch regexMatches;
             bool match = std::regex_match(filename, regexMatches, pattern);
             int padding = match ? regexMatches[1].length() : 0;
-            return {match, padding};
+            return std::tuple< bool, int >{match, padding};
         };
 #endif
 }
@@ -918,7 +919,7 @@ matcher(std::string const& prefix, int padding, std::string const& postfix, Form
             return buildMatcher(nameReg);
         }
         default:
-            return [](std::string const&) -> std::tuple< bool, int > { return {false, 0}; };
+            return [](std::string const&) -> std::tuple< bool, int > { return std::tuple< bool, int >{false, 0}; };
     }
 }
 } // openPMD
