@@ -71,85 +71,32 @@ void init_Attributable(py::module &m) {
         )
 
         // C++ pass-through API
-        //   note: since the value is expected as T&& we have to write a lambda here
-        .def("set_attribute", []( Attributable & attr, std::string const& key, char const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, unsigned char const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, int16_t const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, int32_t const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, int64_t const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, uint16_t const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, uint32_t const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, int64_t const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, float const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, double const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, long double const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, std::string const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, std::vector<char> const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, std::vector<unsigned char> const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, std::vector<int16_t> const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, std::vector<int32_t> const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, std::vector<int64_t> const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, std::vector<uint16_t> const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, std::vector<uint32_t> const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, std::vector<int64_t> const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, std::vector<float> const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, std::vector<double> const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, std::vector<long double> const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, std::vector<std::string> const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, std::array< double, 7 > const& v ) {
-            attr.setAttribute(key, v);
-        })
-        .def("set_attribute", []( Attributable & attr, std::string const& key, bool const& v ) {
-            attr.setAttribute(key, v);
-        })
+        .def("set_attribute", &Attributable::setAttribute< char >)
+        .def("set_attribute", &Attributable::setAttribute< unsigned char >)
+        .def("set_attribute", &Attributable::setAttribute< int16_t >)
+        .def("set_attribute", &Attributable::setAttribute< int32_t >)
+        .def("set_attribute", &Attributable::setAttribute< int64_t >)
+        .def("set_attribute", &Attributable::setAttribute< uint16_t >)
+        .def("set_attribute", &Attributable::setAttribute< uint32_t >)
+        .def("set_attribute", &Attributable::setAttribute< uint64_t >)
+        .def("set_attribute", &Attributable::setAttribute< float >)
+        .def("set_attribute", &Attributable::setAttribute< double >)
+        .def("set_attribute", &Attributable::setAttribute< long double >)
+        .def("set_attribute", &Attributable::setAttribute< std::string >)
+        .def("set_attribute", &Attributable::setAttribute< std::vector< char > >)
+        .def("set_attribute", &Attributable::setAttribute< std::vector< unsigned char > >)
+        .def("set_attribute", &Attributable::setAttribute< std::vector< int16_t > >)
+        .def("set_attribute", &Attributable::setAttribute< std::vector< int32_t > >)
+        .def("set_attribute", &Attributable::setAttribute< std::vector< int64_t > >)
+        .def("set_attribute", &Attributable::setAttribute< std::vector< uint16_t > >)
+        .def("set_attribute", &Attributable::setAttribute< std::vector< uint32_t > >)
+        .def("set_attribute", &Attributable::setAttribute< std::vector< uint64_t > >)
+        .def("set_attribute", &Attributable::setAttribute< std::vector< float > >)
+        .def("set_attribute", &Attributable::setAttribute< std::vector< double > >)
+        .def("set_attribute", &Attributable::setAttribute< std::vector< long double > >)
+        .def("set_attribute", &Attributable::setAttribute< std::vector< std::string > >)
+        .def("set_attribute", &Attributable::setAttribute< std::array< double, 7 > >)
+        .def("set_attribute", &Attributable::setAttribute< bool >)
 
         .def("get_attribute", []( Attributable & attr, std::string const& key ) {
             auto v = attr.getAttribute(key);
