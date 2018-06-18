@@ -38,7 +38,7 @@ The supported version of the `openPMD standard <https://github.com/openPMD/openP
 ======================= ===================================
 openPMD-api version     supported openPMD standard versions
 ======================= ===================================
-``0.1.0-0.2.0`` (alpha) ``1.0.0-1.1.0``
+``0.1.0-0.3.0`` (alpha) ``1.0.0-1.1.0``
 ``1.0.0+``              ``1.0.1-1.1.0`` (not released yet)
 ``2.0.0+``              ``2.0.0+``      (not released yet)
 ======================= ===================================

@@ -3,15 +3,15 @@
 Changelog
 =========
 
-0.2.1-alpha
+0.3.0-alpha
 -----------
-**Date:** TBD
+**Date:** 2018-06-18
 
-[Title]
+Python Attributes, Better FS Handling and Runtime Checks
 
-Introduces new independent mechanism for verifying internal conditions.
-Fixes several filesystem and CMake bugs.
-Exposes more interfaces to Python.
+This release exposes openPMD attributes to Python.
+A new independent mechanism for verifying internal conditions is now in place.
+Filesystem support is now more robust on varying directory separators.
 
 Changes to "0.2.0-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -24,7 +24,6 @@ Features
 - serial Singularity container #236
 - Python:
 
-  - unit tests #249
   - expose attributes #256 #266
   - use lists for offsets & extents #266
 - C++:
