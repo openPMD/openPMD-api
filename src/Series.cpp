@@ -25,8 +25,12 @@
 
 #include <iomanip>
 #include <iostream>
+#include <set>
 #include <sstream>
 #include <string>
+#include <tuple>
+
+#define IS_GCC_48
 
 #if defined(__GNUC__)
 #   if (__GNUC__ == 4 && __GNUC_MINOR__ < 9)
@@ -58,13 +62,18 @@ Format determineFormat(std::string const& filename);
  */
 std::string cleanFilename(std::string const& filename, Format f);
 
-/** Create a functor to determine if a file can be of a format given the filename on disk.
+/** Create a functor to determine if a file can be of a format and matches an iterationEncoding, given the filename on disk.
  *
- * @param   name        String containing desired filename without filename extension.
+ * @param   prefix      String containing head (i.e. before %T) of desired filename without filename extension.
+ * @param   padding     Amount of padding allowed in iteration number %T. If zero, any amount of padding is matched.
+ * @param   postfix     String containing tail (i.e. after %T) of desired filename without filename extension.
  * @param   f           File format to check backend applicability for.
- * @return  Functor returning true if file could be of type f. False otherwise.
+ * @return  Functor returning tuple of bool and int.
+ *          bool is True if file could be of type f and matches the iterationEncoding. False otherwise.
+ *          int is the amount of padding present in the iteration number %T. Is 0 if bool is False.
  */
-std::function< bool(std::string const&) > matcher(std::string const& name, Format f);
+std::function< std::tuple< bool, int >(std::string const&) >
+matcher(std::string const& prefix, int padding, std::string const& postfix, Format f);
 
 struct Series::ParsedInput
 {
@@ -76,104 +85,6 @@ struct Series::ParsedInput
     std::string filenamePostfix;
     int filenamePadding;
 };  //ParsedInput
-
-std::unique_ptr< Series::ParsedInput >
-Series::parseInput(std::string filepath)
-{
-    std::unique_ptr< Series::ParsedInput > input{new Series::ParsedInput};
-
-#ifdef _WIN32
-    if( auxiliary::contains(filepath, '/') )
-    {
-        std::cerr << "Filepaths on WINDOWS platforms may not contain slashes '/'! "
-                  << "Replacing with backslashes '\\' unconditionally!" << std::endl;
-        filepath = auxiliary::replace_all(filepath, "/", "\\");
-    }
-#else
-    if( auxiliary::contains(filepath, '\\') )
-    {
-        std::cerr << "Filepaths on UNIX platforms may not include backslashes '\\'! "
-                  << "Replacing with slashes '/' unconditionally!" << std::endl;
-        filepath = auxiliary::replace_all(filepath, "\\", "/");
-    }
-#endif
-    auto const pos = filepath.find_last_of(auxiliary::directory_separator);
-    if( std::string::npos == pos )
-    {
-        input->path = ".";
-        input->path.append(1, auxiliary::directory_separator);
-        input->name = filepath;
-    }
-    else
-    {
-        input->path = filepath.substr(0, pos + 1);
-        input->name = filepath.substr(pos + 1);
-    }
-
-    input->format = determineFormat(input->name);
-
-#if defined(IS_GCC_48)
-    regex_t pattern;
-    if( regcomp(&pattern, "(.*)%(0\\d+)?T(.*)", REG_EXTENDED) )
-        throw std::runtime_error(std::string("Regex for iterationFormat '(.*)%(0\\d+)?T(.*)' can not be compiled!"));
-
-    uint8_t maxGroups = 4;
-    regmatch_t regexMatch[maxGroups];
-
-    if( regexec(&pattern, input->name.c_str(), maxGroups, regexMatch, 0) )
-        input->iterationEncoding = IterationEncoding::groupBased;
-    else
-    {
-        input->iterationEncoding = IterationEncoding::fileBased;
-
-        if( regexMatch[0].rm_so == -1 || regexMatch[0].rm_eo == -1 )
-            throw std::runtime_error("Can not determine iterationFormat from filename " + input->name);
-
-        if( regexMatch[1].rm_so == -1 || regexMatch[1].rm_eo == -1 )
-            throw std::runtime_error("Can not determine iterationFormat (prefix) from filename " + input->name);
-        else
-            input->filenamePrefix = std::string(&input->name[regexMatch[1].rm_so], regexMatch[1].rm_eo);
-
-        if( regexMatch[2].rm_so == -1 || regexMatch[2].rm_eo == -1 )
-            input->filenamePadding = 0;
-        else
-            input->filenamePadding = std::stoi(std::string(&input->name[regexMatch[2].rm_so], regexMatch[2].rm_eo));
-
-        if( regexMatch[3].rm_so == -1 || regexMatch[3].rm_eo == -1 )
-            throw std::runtime_error("Can not determine iterationFormat (postfix) from filename " + input->name);
-        else
-            input->filenamePrefix = std::string(&input->name[regexMatch[3].rm_so], regexMatch[3].rm_eo);
-    }
-
-    regfree(&pattern);
-#else
-    std::regex pattern("(.*)%(0\\d+)?T(.*)");
-    std::smatch regexMatch;
-    std::regex_match(input->name, regexMatch, pattern);
-    if( regexMatch.empty() )
-        input->iterationEncoding = IterationEncoding::groupBased;
-    else if( regexMatch.size() == 4 )
-    {
-        input->iterationEncoding = IterationEncoding::fileBased;
-        input->filenamePrefix = regexMatch[1].str();
-        std::string const& pad = regexMatch[2];
-        if( pad.empty() )
-            input->filenamePadding = 0;
-        else
-        {
-            if( pad.front() != '0' )
-                throw std::runtime_error("Invalid iterationEncoding " + input->name);
-            input->filenamePadding = std::stoi(pad);
-        }
-        input->filenamePostfix = regexMatch[3].str();
-    } else
-        throw std::runtime_error("Can not determine iterationFormat from filename " + input->name);
-#endif
-
-    input->name = cleanFilename(input->name, input->format);
-
-    return input;
-}
 
 #if openPMD_HAVE_MPI
 Series::Series(std::string const& filepath,
@@ -390,7 +301,6 @@ Series::setIterationEncoding(IterationEncoding ie)
             setAttribute("iterationEncoding", std::string("groupBased"));
             break;
     }
-    dirty = true;
     return *this;
 }
 
@@ -407,10 +317,9 @@ Series::setIterationFormat(std::string const& i)
         throw std::runtime_error("A files iterationFormat can not (yet) be changed after it has been written.");
 
     if( *m_iterationEncoding == IterationEncoding::groupBased )
-    {
         if( basePath() != i && (openPMD() == "1.0.1" || openPMD() == "1.0.0") )
             throw std::invalid_argument("iterationFormat must not differ from basePath " + basePath() + " for groupBased data");
-    }
+
     setAttribute("iterationFormat", i);
     return *this;
 }
@@ -452,6 +361,105 @@ Series::flush()
     IOHandler->flush();
 }
 
+std::unique_ptr< Series::ParsedInput >
+Series::parseInput(std::string filepath)
+{
+    std::unique_ptr< Series::ParsedInput > input{new Series::ParsedInput};
+
+#ifdef _WIN32
+    if( auxiliary::contains(filepath, '/') )
+    {
+        std::cerr << "Filepaths on WINDOWS platforms may not contain slashes '/'! "
+                  << "Replacing with backslashes '\\' unconditionally!" << std::endl;
+        filepath = auxiliary::replace_all(filepath, "/", "\\");
+    }
+#else
+    if( auxiliary::contains(filepath, '\\') )
+    {
+        std::cerr << "Filepaths on UNIX platforms may not include backslashes '\\'! "
+                  << "Replacing with slashes '/' unconditionally!" << std::endl;
+        filepath = auxiliary::replace_all(filepath, "\\", "/");
+    }
+#endif
+    auto const pos = filepath.find_last_of(auxiliary::directory_separator);
+    if( std::string::npos == pos )
+    {
+        input->path = ".";
+        input->path.append(1, auxiliary::directory_separator);
+        input->name = filepath;
+    }
+    else
+    {
+        input->path = filepath.substr(0, pos + 1);
+        input->name = filepath.substr(pos + 1);
+    }
+
+    input->format = determineFormat(input->name);
+
+#if defined(IS_GCC_48)
+    regex_t pattern;
+    if( regcomp(&pattern, "(.*)%(0\\d+)?T(.*)", REG_EXTENDED) )
+        throw std::runtime_error(std::string("Regex for iterationFormat '(.*)%(0\\d+)?T(.*)' can not be compiled!"));
+
+    constexpr uint8_t regexGroups = 4u;
+    std::array< regmatch_t, regexGroups > regexMatch;
+    if( regexec(&pattern, input->name.c_str(), regexGroups, regexMatch.data(), 0) )
+        input->iterationEncoding = IterationEncoding::groupBased;
+    else
+    {
+        input->iterationEncoding = IterationEncoding::fileBased;
+
+        if( regexMatch[0].rm_so == -1 || regexMatch[0].rm_eo == -1 )
+            throw std::runtime_error("Can not determine iterationFormat from filename " + input->name);
+
+        if( regexMatch[1].rm_so == -1 || regexMatch[1].rm_eo == -1 )
+            throw std::runtime_error("Can not determine iterationFormat (prefix) from filename " + input->name);
+        else
+            input->filenamePrefix = std::string(&input->name[regexMatch[1].rm_so], regexMatch[1].rm_eo - regexMatch[1].rm_so);
+
+        if( regexMatch[2].rm_so == -1 || regexMatch[2].rm_eo == -1 )
+            input->filenamePadding = 0;
+        else
+            input->filenamePadding = std::stoi(std::string(&input->name[regexMatch[2].rm_so], regexMatch[2].rm_eo - regexMatch[2].rm_so));
+
+        if( regexMatch[3].rm_so == -1 || regexMatch[3].rm_eo == -1 )
+            throw std::runtime_error("Can not determine iterationFormat (postfix) from filename " + input->name);
+        else
+            input->filenamePostfix = std::string(&input->name[regexMatch[3].rm_so], regexMatch[3].rm_eo - regexMatch[3].rm_so);
+    }
+
+    regfree(&pattern);
+#else
+    std::regex pattern("(.*)%(0\\d+)?T(.*)");
+    std::smatch regexMatch;
+    std::regex_match(input->name, regexMatch, pattern);
+    if( regexMatch.empty() )
+        input->iterationEncoding = IterationEncoding::groupBased;
+    else if( regexMatch.size() == 4 )
+    {
+        input->iterationEncoding = IterationEncoding::fileBased;
+        input->filenamePrefix = regexMatch[1].str();
+        std::string const& pad = regexMatch[2];
+        if( pad.empty() )
+            input->filenamePadding = 0;
+        else
+        {
+            if( pad.front() != '0' )
+                throw std::runtime_error("Invalid iterationEncoding " + input->name);
+            input->filenamePadding = std::stoi(pad);
+        }
+        input->filenamePostfix = regexMatch[3].str();
+    } else
+        throw std::runtime_error("Can not determine iterationFormat from filename " + input->name);
+#endif
+
+    input->filenamePostfix = cleanFilename(input->filenamePostfix, input->format);
+
+    input->name = cleanFilename(input->name, input->format);
+
+    return input;
+}
+
 void
 Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
              std::unique_ptr< Series::ParsedInput > input)
@@ -463,6 +471,10 @@ Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
     m_name = std::make_shared< std::string >(input->name);
 
     m_format = std::make_shared< Format >(input->format);
+
+    m_filenamePrefix = std::make_shared< std::string >(input->filenamePrefix);
+    m_filenamePostfix = std::make_shared< std::string >(input->filenamePostfix);
+    m_filenamePadding = std::make_shared< int >(input->filenamePadding);
 
     switch( IOHandler->accessType )
     {
@@ -512,8 +524,8 @@ Series::flushFileBased()
             written = false;
             iterations.written = false;
 
-            std::stringstream filename(m_filenamePrefix);
-            filename << std::setw(m_filenamePadding) << std::setfill('0') << i.first << m_filenamePostfix;
+            std::stringstream filename(*m_filenamePrefix);
+            filename << std::setw(*m_filenamePadding) << std::setfill('0') << i.first << *m_filenamePostfix;
 
             i.second.flushFileBased(filename.str(), i.first);
 
@@ -595,11 +607,18 @@ Series::readFileBased()
 
     if( !auxiliary::directory_exists(IOHandler->directory) )
         throw no_such_file_error("Supplied directory is not valid: " + IOHandler->directory);
-    auto isPartOfSeries = matcher(*m_name, *m_format);
+
+    auto isPartOfSeries = matcher(*m_filenamePrefix, *m_filenamePadding, *m_filenamePostfix, *m_format);
+    bool isContained;
+    int padding;
+    std::set< int > paddings;
     for( auto const& entry : auxiliary::list_directory(IOHandler->directory) )
     {
-        if( isPartOfSeries(entry) )
+        std::tie(isContained, padding) = isPartOfSeries(entry);
+        if( isContained )
         {
+            paddings.insert(padding);
+
             fOpen.name = entry;
             IOHandler->enqueue(IOTask(this, fOpen));
             IOHandler->flush();
@@ -643,8 +662,19 @@ Series::readFileBased()
         }
     }
 
-    if( iterations.empty() && IOHandler->accessType == AccessType::READ_ONLY )
-        throw no_such_file_error("No matching iterations found: " + name());
+    if( iterations.empty() )
+    {
+        if( IOHandler->accessType == AccessType::READ_ONLY  )
+            throw no_such_file_error("No matching iterations found: " + name());
+        else
+            std::cerr << "No matching iterations found: " << name() << std::endl;
+    }
+
+    if( paddings.size() > 1 )
+        throw std::runtime_error("Can not determine iteration padding from existing filenames. "
+                                 "Please specify '%0<N>T'.");
+    else
+        *m_filenamePadding = *paddings.begin();
 
     /* this file need not be flushed */
     iterations.written = true;
@@ -833,41 +863,62 @@ cleanFilename(std::string const& filename, Format f)
     }
 }
 
-bool
-nameMatch(std::string const& filename, std::string const& nameReg)
+std::function< std::tuple< bool, int >(std::string const&) >
+buildMatcher(std::string const& regexPattern)
 {
 #if defined(IS_GCC_48)
-    regex_t pattern;
-    int reti = regcomp(&pattern, nameReg.c_str(), REG_EXTENDED);
-    if( reti )
-        throw std::runtime_error(std::string("Regex for name '") + nameReg + std::string("' can not be compiled!"));
-    bool res = !regexec(&pattern, filename.c_str(), 0, NULL, 0);
-    regfree(&pattern);
-    return res;
+    auto pattern = std::shared_ptr< regex_t >(new regex_t, [](regex_t* p){ regfree(p); delete p; });
+    if( regcomp(pattern.get(), regexPattern.c_str(), REG_EXTENDED) )
+        throw std::runtime_error(std::string("Regex for name '") + regexPattern + std::string("' can not be compiled!"));
+
+    return [pattern](std::string const& filename) -> std::tuple< bool, int >
+        {
+            std::array< regmatch_t, 2 > regexMatches;
+            bool match = !regexec(pattern.get(), filename.c_str(), regexMatches.size(), regexMatches.data(), 0);
+            int padding = match ? regexMatches[1].rm_eo - regexMatches[1].rm_so : 0;
+            return {match, padding};
+        };
 #else
-    std::regex pattern(nameReg);
-    return std::regex_search(filename, pattern);
+    std::regex pattern(regexPattern);
+
+    return [pattern](std::string const& filename) -> std::tuple< bool, int >
+        {
+            std::smatch regexMatches;
+            bool match = std::regex_match(filename, regexMatches, pattern);
+            int padding = match ? regexMatches[1].length() : 0;
+            return {match, padding};
+        };
 #endif
 }
 
-std::function< bool(std::string const&) >
-matcher(std::string const& name, Format f)
+std::function< std::tuple< bool, int >(std::string const&) >
+matcher(std::string const& prefix, int padding, std::string const& postfix, Format f)
 {
     switch( f )
     {
         case Format::HDF5:
         {
-            std::string nameReg = auxiliary::replace_last(name + ".h5$", "%T", "[[:digit:]]+");
-            return [nameReg](std::string const& filename) -> bool { return nameMatch(filename, nameReg); };
+            std::string nameReg = "^" + prefix + "([[:digit:]]";
+            if( padding != 0 )
+                nameReg += "{" + std::to_string(padding) + "}";
+            else
+                nameReg += "+";
+            nameReg += + ")" + postfix + ".h5$";
+            return buildMatcher(nameReg);
         }
         case Format::ADIOS1:
         case Format::ADIOS2:
         {
-            std::string nameReg = auxiliary::replace_last(name + ".bp$", "%T", "[[:digit:]]+");
-            return [nameReg](std::string const& filename) -> bool { return nameMatch(filename, nameReg); };
+            std::string nameReg = "^" + prefix + "([[:digit:]]";
+            if( padding != 0 )
+                nameReg += "{" + std::to_string(padding) + "}";
+            else
+                nameReg += "+";
+            nameReg += + ")" + postfix + ".bp$";
+            return buildMatcher(nameReg);
         }
         default:
-            return [](std::string const&) -> bool { return false; };
+            return [](std::string const&) -> std::tuple< bool, int > { return {false, 0}; };
     }
 }
 } // openPMD

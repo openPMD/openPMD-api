@@ -251,8 +251,8 @@ private:
     std::shared_ptr< std::string > m_name;
     std::shared_ptr< Format > m_format;
 
-    std::string m_filenamePrefix;
-    std::string m_filenamePostfix;
-    int m_filenamePadding;
+    std::shared_ptr< std::string > m_filenamePrefix;
+    std::shared_ptr< std::string > m_filenamePostfix;
+    std::shared_ptr< int > m_filenamePadding;
 };  //Series
 } // openPMD
