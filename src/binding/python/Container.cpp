@@ -26,9 +26,9 @@
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl_bind.h>
+#include <pybind11/stl.h>
 
 #include "openPMD/backend/Container.hpp"
-//include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
@@ -38,7 +38,6 @@
 #include <string>
 #include <memory>
 #include <utility>
-#include <vector>
 
 namespace py = pybind11;
 using namespace openPMD;
@@ -70,7 +69,8 @@ namespace detail
         using MappedType = typename Map::mapped_type;
         using Class_ = py::class_<
             Map,
-            holder_type
+            holder_type,
+            Attributable
         >;
 
         // If either type is a non-module-local bound type then make the map
@@ -143,16 +143,6 @@ namespace detail
             >()
         );
 
-        cl.def_property_readonly(
-            "attributes",
-            []( Map & m )
-            {
-                return m.attributes();
-            },
-            // ref + keepalive
-            py::return_value_policy::reference_internal
-        );
-
         // keep same policy as Container class: missing keys are created
         cl.def(
             "__getitem__",
@@ -213,14 +203,11 @@ using PyMeshContainer = Container< Mesh >;
 using PyPartContainer = Container< ParticleSpecies >;
 using PyRecordContainer = Container< Record >;
 using PyMeshRecordComponentContainer = Container< MeshRecordComponent >;
-using PyAttributeKeys = std::vector< std::string >;
 PYBIND11_MAKE_OPAQUE(PyIterationContainer)
 PYBIND11_MAKE_OPAQUE(PyMeshContainer)
 PYBIND11_MAKE_OPAQUE(PyPartContainer)
 PYBIND11_MAKE_OPAQUE(PyRecordContainer)
 PYBIND11_MAKE_OPAQUE(PyMeshRecordComponentContainer)
-PYBIND11_MAKE_OPAQUE(PyAttributeKeys)
-
 
 void init_Container( py::module & m ) {
     detail::bind_container< PyIterationContainer >(
@@ -242,9 +229,5 @@ void init_Container( py::module & m ) {
     detail::bind_container< PyMeshRecordComponentContainer >(
         m,
         "Mesh_Record_Component_Container"
-    );
-    py::bind_vector< PyAttributeKeys >(
-        m,
-        "Attribute_Keys"
     );
 }

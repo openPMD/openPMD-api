@@ -20,6 +20,7 @@
  */
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
+#include <pybind11/stl.h>
 
 #include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/Datatype.hpp"
@@ -31,7 +32,7 @@ using namespace openPMD;
 
 
 void init_BaseRecordComponent(py::module &m) {
-    py::class_<BaseRecordComponent>(m, "Base_Record_Component")
+    py::class_<BaseRecordComponent, Attributable>(m, "Base_Record_Component")
         .def("__repr__",
             [](BaseRecordComponent const & brc) {
                 std::stringstream ss;

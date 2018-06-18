@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 #include "openPMD/Series.hpp"
 
@@ -27,7 +28,7 @@ using namespace openPMD;
 
 
 void init_Series(py::module &m) {
-    py::class_<Series>(m, "Series")
+    py::class_<Series, Attributable>(m, "Series")
 
         .def(py::init<std::string const&, AccessType>())
 
@@ -35,7 +36,7 @@ void init_Series(py::module &m) {
         .def("set_openPMD", &Series::setOpenPMD)
         .def_property_readonly("openPMD_extension", &Series::openPMDextension)
         .def("set_openPMD_extension", &Series::setOpenPMDextension)
-        .def_property_readonly("base_ath", &Series::basePath)
+        .def_property_readonly("base_path", &Series::basePath)
         .def("set_base_path", &Series::setBasePath)
         .def_property_readonly("meshes_path", &Series::meshesPath)
         .def("set_meshes_path", &Series::setMeshesPath)

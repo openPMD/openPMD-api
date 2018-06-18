@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     datatype = openPMD.Datatype.DOUBLE
     # datatype = openPMD.determineDatatype(global_data)
-    extent = openPMD.Extent([size, size])
+    extent = [size, size]
     dataset = openPMD.Dataset(datatype, extent)
 
     print("Created a Dataset of size {0}x{1} and Datatype {2}".format(
@@ -47,8 +47,7 @@ if __name__ == "__main__":
     series.flush()
     print("File structure has been written")
 
-    # offset = openPMD.Offset([0, 0])
-    offset = openPMD.Extent([0, 0])
+    offset = [0, 0]
     # TODO implement slicing protocol
     # E[offset[0]:extent[0], offset[1]:extent[1]] = global_data
     rho.store_chunk(offset, extent, global_data)

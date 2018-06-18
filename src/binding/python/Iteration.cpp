@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 #include "openPMD/Iteration.hpp"
 
@@ -29,7 +30,7 @@ using namespace openPMD;
 
 
 void init_Iteration(py::module &m) {
-    py::class_<Iteration>(m, "Iteration")
+    py::class_<Iteration, Attributable>(m, "Iteration")
         .def(py::init<Iteration const &>())
 
         .def("__repr__",

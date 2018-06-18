@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/Record.hpp"

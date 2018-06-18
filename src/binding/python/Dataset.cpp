@@ -19,7 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include <pybind11/pybind11.h>
-#include <pybind11/stl_bind.h>
+#include <pybind11/stl.h>
 
 #include "openPMD/Dataset.hpp"
 
@@ -29,17 +29,10 @@ namespace py = pybind11;
 using namespace openPMD;
 
 
-// Extent & Offset are of std::vector< std::uint64_t >
-// those are already specialized in <pybind11/stl.h>
-// PYBIND11_MAKE_OPAQUE(Extent)
-
 void init_Dataset(py::module &m) {
-    py::bind_vector< Extent >(m, "Extent");
-    // TODO expose "Offset" as own type as well?
-
     py::class_<Dataset>(m, "Dataset")
 
-        .def(py::init<Datatype, Offset>())
+        .def(py::init<Datatype, Extent>())
 
         .def("__repr__",
             [](const Dataset &d) {
