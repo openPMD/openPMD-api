@@ -114,7 +114,7 @@ Choose *one* of the install methods below to get started:
 ### [Spack](https://spack.io)
 
 ```bash
-# optional:               +python
+# optional:               +python ^python@3:
 spack install openpmd-api
 spack load --dependencies openpmd-api
 ```

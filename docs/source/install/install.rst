@@ -31,7 +31,7 @@ A package for openPMD-api is available on the Spack package manager.
 
 .. code-block:: bash
 
-   # optional:               +python
+   # optional:               +python ^python@3:
    spack install openpmd-api
    spack load --dependencies openpmd-api
 
