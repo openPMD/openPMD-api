@@ -19,7 +19,7 @@ Features
 
 - CMake:
 
-  - add ``openPMD::openPMD`` alias for full-source inclusion #...
+  - add ``openPMD::openPMD`` alias for full-source inclusion #277
 
 Bug Fixes
 """""""""
@@ -30,6 +30,7 @@ Other
 - docs:
 
   - improve "Install from source" section #274
+  - Spack python 3 install command #278
 
 
 0.3.0-alpha
