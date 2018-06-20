@@ -219,3 +219,10 @@ if(openPMD_FOUND)
     target_link_libraries(YourTarget PRIVATE openPMD::openPMD)
 endif()
 ```
+
+*Alternatively*, add the openPMD-api repository directly to your project and add it via:
+```cmake
+add_subdirectory("path/to/source/of/openPMD-api")
+
+target_link_libraries(YourTarget PRIVATE openPMD::openPMD)
+```

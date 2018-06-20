@@ -211,6 +211,7 @@ set(IO_SOURCE
 
 # library
 add_library(openPMD ${CORE_SOURCE} ${IO_SOURCE})
+add_library(openPMD::openPMD ALIAS openPMD)
 
 # properties
 target_compile_features(openPMD
