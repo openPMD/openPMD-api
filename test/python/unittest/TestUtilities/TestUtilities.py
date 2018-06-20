@@ -6,8 +6,7 @@ Authors: Axel Huebl, Carsten Fortmann-Grote
 License: LGPLv3+
 """
 
-import os
-import os.path
+from os import path
 
 
 def generateTestFilePath(file_name):
@@ -18,13 +17,15 @@ def generateTestFilePath(file_name):
     @return : The absolute path to ../TestFiles/<file_name> .
     """
 
-    test_files_dir = 'TestFiles'
-    this_path = os.path.abspath(os.path.dirname(__file__))
-    parent_dir = os.path.pardir
-    test_files_path = os.path.abspath(
-            os.path.join(
-                this_path, parent_dir, test_files_dir
-                )
-            )
+    test_files_dir = path.join('../samples/', file_name)
+    return test_files_dir
 
-    return os.path.join(test_files_path, file_name)
+    # this_path = path.abspath(path.dirname(__file__))
+    # parent_dir = path.pardir
+    # test_files_path = path.abspath(
+    #         path.join(
+    #             this_path, parent_dir, test_files_dir
+    #             )
+    #         )
+
+    # return path.join(test_files_path, file_name)
