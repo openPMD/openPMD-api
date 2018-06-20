@@ -85,9 +85,7 @@ public:
     using iterator = typename InternalContainer::iterator;
     using const_iterator = typename InternalContainer::const_iterator;
 
-    Container()
-        : m_container{std::make_shared< InternalContainer >()}
-    { }
+    Container(Container const&) = default;
     virtual ~Container() { }
 
     iterator begin() noexcept { return m_container->begin(); }
@@ -130,7 +128,6 @@ public:
     mapped_type& at(key_type const& key) { return m_container->at(key); }
     mapped_type const& at(key_type const& key) const { return m_container->at(key); }
 
-public:
     /** Access the value that is mapped to a key equivalent to key, creating it if such key does not exist already.
      *
      * @param   key Key of the element to find (lvalue).
@@ -240,7 +237,9 @@ public:
     }
 
 protected:
-    std::shared_ptr< InternalContainer > m_container;
+    Container()
+        : m_container{std::make_shared< InternalContainer >()}
+    { }
 
     void clear_unchecked()
     {
@@ -261,6 +260,8 @@ protected:
 
         flushAttributes();
     }
+
+    std::shared_ptr< InternalContainer > m_container;
 };
 
 } // openPMD

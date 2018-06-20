@@ -90,7 +90,7 @@ namespace detail
             std::forward< Args >( args ) ...
         );
 
-        cl.def( py::init<>() );
+        cl.def( py::init<Map const &>() );
 
         // Register stream insertion operator (if possible)
         py::detail::map_if_insertion_operator<
