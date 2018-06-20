@@ -301,9 +301,9 @@ install:
     fi
   - if [ $USE_PYTHON == "ON" ]; then
       travis_wait spack install
-        py-pybind11@2.2.1 ^python@$TRAVIS_PYTHON_VERSION
+        python@$TRAVIS_PYTHON_VERSION
         $COMPILERSPEC &&
-      spack load --dependencies py-pybind11@2.2.1 ^python@$TRAVIS_PYTHON_VERSION $COMPILERSPEC;
+      spack load python@$TRAVIS_PYTHON_VERSION $COMPILERSPEC;
     fi
   - if [ $USE_HDF5 == "ON" ]; then
       travis_wait spack install
