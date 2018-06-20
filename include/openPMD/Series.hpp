@@ -235,6 +235,7 @@ private:
     struct ParsedInput;
     std::unique_ptr< ParsedInput > parseInput(std::string);
     void init(std::shared_ptr< AbstractIOHandler >, std::unique_ptr< ParsedInput >);
+    void initDefaults();
     void flushFileBased();
     void flushGroupBased();
     void flushMeshesPath();

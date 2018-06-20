@@ -1016,6 +1016,8 @@ TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
             o.flush();
         }
 
+        o.iterations[1].setTime(static_cast< double >(1));
+
         ParticleSpecies& e_2 = o.iterations[2].particles["e"];
 
         std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
@@ -1039,6 +1041,7 @@ TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
             o.flush();
         }
 
+        o.iterations[2].setTime(static_cast< double >(2));
         o.flush();
 
         ParticleSpecies& e_3 = o.iterations[3].particles["e"];
@@ -1066,6 +1069,7 @@ TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
         }
 
         o.setOpenPMDextension(1);
+        o.iterations[3].setTime(static_cast< double >(3));
         o.flush();
     }
     REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000001.h5"));
@@ -1120,24 +1124,17 @@ TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
     }
     REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000004.h5"));
 
-    // TODO not working yet
     {
-        Series o = Series("../samples/serial_fileBased_write%04T.h5", AccessType::READ_WRITE);
+        Series o = Series("../samples/subdir/serial_fileBased_write%04T.h5", AccessType::READ_WRITE);
 
         REQUIRE(o.iterations.empty());
 
         o.iterations[1];
     }
-    REQUIRE(auxiliary::file_exists("../samples/serial_fileBased_write0001.h5"));
+    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write0001.h5"));
 
-    try
-    {
-        Series o = Series("../samples/serial_fileBased_write%T.h5", AccessType::READ_WRITE);
-        REQUIRE(false);
-    } catch( std::runtime_error& e )
-    {
-        REQUIRE(std::strcmp(e.what(), "Can not determine iteration padding from existing filenames. Please specify '%0<N>T'.") == 0);
-    }
+    REQUIRE_THROWS_WITH(Series("../samples/subdir/serial_fileBased_write%T.h5", AccessType::READ_WRITE),
+                        Catch::Equals("Can not determine iteration padding from existing filenames. Please specify '%0<N>T'."));
 }
 
 TEST_CASE( "hdf5_bool_test", "[serial][hdf5]" )

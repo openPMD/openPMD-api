@@ -474,34 +474,43 @@ Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
     m_filenamePostfix = std::make_shared< std::string >(input->filenamePostfix);
     m_filenamePadding = std::make_shared< int >(input->filenamePadding);
 
-    switch( IOHandler->accessType )
+    if( IOHandler->accessType == AccessType::READ_ONLY || IOHandler->accessType == AccessType::READ_WRITE )
     {
-        case AccessType::CREATE:
+        /* Allow creation of values in Containers and setting of Attributes
+         * Would throw for AccessType::READ_ONLY */
+        auto oldType = IOHandler->accessType;
+        auto newType = const_cast< AccessType* >(&m_writable->IOHandler->accessType);
+        *newType = AccessType::READ_WRITE;
+
+        if( input->iterationEncoding == IterationEncoding::fileBased )
+            readFileBased(oldType);
+        else
+            readGroupBased();
+
+        if( iterations.empty() )
         {
-            setOpenPMD(OPENPMD);
-            setOpenPMDextension(0);
-            setAttribute("basePath", std::string(BASEPATH));
+            /* AccessType::READ_WRITE can be used to create a new Series
+             * allow setting attributes in that case */
+            written = false;
+
+            initDefaults();
             setIterationEncoding(input->iterationEncoding);
-            break;
         }
-        case AccessType::READ_ONLY:
-        case AccessType::READ_WRITE:
-        {
-            /* Allow creation of values in Containers and setting of Attributes
-             * Would throw for AccessType::READ_ONLY */
-            auto oldType = IOHandler->accessType;
-            auto newType = const_cast< AccessType* >(&m_writable->IOHandler->accessType);
-            *newType = AccessType::READ_WRITE;
 
-            if( input->iterationEncoding == IterationEncoding::fileBased )
-                readFileBased(oldType);
-            else
-                readGroupBased();
-
-            *newType = oldType;
-            break;
-        }
+        *newType = oldType;
+    } else
+    {
+        initDefaults();
+        setIterationEncoding(input->iterationEncoding);
     }
+}
+
+void
+Series::initDefaults()
+{
+    setOpenPMD(OPENPMD);
+    setOpenPMDextension(0);
+    setAttribute("basePath", std::string(BASEPATH));
 }
 
 void
@@ -579,7 +588,6 @@ Series::flushGroupBased()
 void
 Series::flushMeshesPath()
 {
-    //TODO fileBased
     Parameter< Operation::WRITE_ATT > aWrite;
     aWrite.name = "meshesPath";
     Attribute a = getAttribute("meshesPath");
@@ -591,7 +599,6 @@ Series::flushMeshesPath()
 void
 Series::flushParticlesPath()
 {
-    //TODO fileBased
     Parameter< Operation::WRITE_ATT > aWrite;
     aWrite.name = "particlesPath";
     Attribute a = getAttribute("particlesPath");
@@ -619,6 +626,9 @@ Series::readFileBased(AccessType actualAccessType)
         if( isContained )
         {
             paddings.insert(padding);
+            if( paddings.size() > 1 )
+                throw std::runtime_error("Can not determine iteration padding from existing filenames. "
+                                         "Please specify '%0<N>T'.");
 
             fOpen.name = entry;
             IOHandler->enqueue(IOTask(this, fOpen));
@@ -671,10 +681,7 @@ Series::readFileBased(AccessType actualAccessType)
             std::cerr << "No matching iterations found: " << name() << std::endl;
     }
 
-    if( paddings.size() > 1 )
-        throw std::runtime_error("Can not determine iteration padding from existing filenames. "
-                                 "Please specify '%0<N>T'.");
-    else
+    if( !paddings.empty() )
         *m_filenamePadding = *paddings.begin();
 
     /* this file need not be flushed */
