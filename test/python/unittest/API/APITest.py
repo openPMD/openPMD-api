@@ -224,7 +224,8 @@ class APITest(unittest.TestCase):
 
     def testAllocation(self):
         """ Test openPMD.Allocation. """
-        # Should raise, see https://github.com/openPMD/openPMD-api/pull/249#discussion_r194979737
+        # Should raise, see
+        # https://github.com/openPMD/openPMD-api/pull/249#discussion_r194979737
         self.assertRaises(AttributeError, openPMD.Allocation)
 
     def testData_Order(self):
@@ -306,13 +307,15 @@ class APITest(unittest.TestCase):
         self.assertRaises(TypeError, openPMD.Record)
 
         # Get a record.
-        record = self.__series.iterations[100].particles['electrons']['positions']['x']
+        electrons = self.__series.iterations[100].particles['electrons']
+        position = electrons['position']  # ['x']
+        self.assertIsInstance(position, openPMD.Record)
 
         # Copy.
-        copy_record = openPMD.Record(record)
+        # copy_record = openPMD.Record(record)
 
         # Check.
-        self.assertIsInstance(copy_record, openPMD.Record)
+        # self.assertIsInstance(copy_record, openPMD.Record)
 
     def testRecord_Component(self):
         """ Test openPMD.Record_Component. """
