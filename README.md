@@ -114,7 +114,7 @@ Choose *one* of the install methods below to get started:
 ### [Spack](https://spack.io)
 
 ```bash
-# optional: append +python
+# optional:               +python
 spack install openpmd-api
 spack load --dependencies openpmd-api
 ```
@@ -139,22 +139,24 @@ git clone https://github.com/openPMD/openPMD-api.git
 mkdir -p openPMD-api-build
 cd openPMD-api-build
 
-# optional for some tests
-.travis/download_samples.sh
+# optional: for full tests
+../.travis/download_samples.sh
 
 # for own install prefix append:
 #   -DCMAKE_INSTALL_PREFIX=$HOME/somepath
 # for options append:
 #   -DopenPMD_USE_...=...
+# e.g. for python support add:
+#   -DopenPMD_USE_PYTHON=ON -DPYTHON_EXECUTABLE=$(which python)
 cmake ../openPMD-api
 
-make -j
+cmake --build .
 
 # optional
-make test
+ctest
 
-# sudo is only required for system paths
-sudo make install
+# sudo might be required required for system paths
+cmake --build . --target install
 ```
 
 The following options can be added to the `cmake` call to control features.

@@ -23,6 +23,10 @@ Bug Fixes
 Other
 """""
 
+- docs:
+
+  - improve "Install from source" section #274
+
 
 0.3.0-alpha
 -----------
