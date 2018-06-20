@@ -50,11 +50,11 @@ class Series : public Attributable
 
 public:
 #if openPMD_HAVE_MPI
-    Series(std::string filepath,
+    Series(std::string const& filepath,
            AccessType at,
            MPI_Comm comm);
 #endif
-    Series(std::string filepath,
+    Series(std::string const& filepath,
            AccessType at);
     ~Series();
 
@@ -232,11 +232,15 @@ public:
     Container< Iteration, uint64_t > iterations;
 
 private:
+    struct ParsedInput;
+    std::unique_ptr< ParsedInput > parseInput(std::string);
+    void init(std::shared_ptr< AbstractIOHandler >, std::unique_ptr< ParsedInput >);
+    void initDefaults();
     void flushFileBased();
     void flushGroupBased();
     void flushMeshesPath();
     void flushParticlesPath();
-    void readFileBased();
+    void readFileBased(AccessType);
     void readGroupBased();
     void readBase();
     void read();
@@ -247,5 +251,9 @@ private:
     std::shared_ptr< IterationEncoding > m_iterationEncoding;
     std::shared_ptr< std::string > m_name;
     std::shared_ptr< Format > m_format;
+
+    std::shared_ptr< std::string > m_filenamePrefix;
+    std::shared_ptr< std::string > m_filenamePostfix;
+    std::shared_ptr< int > m_filenamePadding;
 };  //Series
 } // openPMD

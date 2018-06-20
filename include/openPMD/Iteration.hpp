@@ -92,7 +92,7 @@ public:
 private:
     Iteration();
 
-    void flushFileBased(uint64_t);
+    void flushFileBased(std::string const&, uint64_t);
     void flushGroupBased(uint64_t);
     void flush();
     void read();

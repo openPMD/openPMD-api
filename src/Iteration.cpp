@@ -83,14 +83,14 @@ Iteration::setTimeUnitSI(double newTimeUnitSI)
 }
 
 void
-Iteration::flushFileBased(uint64_t i)
+Iteration::flushFileBased(std::string const& filename, uint64_t i)
 {
     if( !written )
     {
         /* create file */
         Series* s = dynamic_cast<Series *>(parent->attributable->parent->attributable);
         Parameter< Operation::CREATE_FILE > fCreate;
-        fCreate.name = auxiliary::replace_first(s->iterationFormat(), "%T", std::to_string(i));
+        fCreate.name = filename;
         IOHandler->enqueue(IOTask(s, fCreate));
 
         /* create basePath */
@@ -106,7 +106,7 @@ Iteration::flushFileBased(uint64_t i)
         /* open file */
         Series* s = dynamic_cast<Series *>(parent->attributable->parent->attributable);
         Parameter< Operation::OPEN_FILE > fOpen;
-        fOpen.name = auxiliary::replace_last(s->iterationFormat(), "%T", std::to_string(i));
+        fOpen.name = filename;
         IOHandler->enqueue(IOTask(s, fOpen));
 
         /* open basePath */
@@ -154,7 +154,7 @@ Iteration::flush()
             w = w->parent;
         Series* s = dynamic_cast<Series *>(w->attributable);
 
-        if( !meshes.empty() )
+        if( !meshes.empty() || s->containsAttribute("meshesPath") )
         {
             if( !s->containsAttribute("meshesPath") )
                 s->setMeshesPath("meshes/");
@@ -164,7 +164,7 @@ Iteration::flush()
                 m.second.flush(m.first);
         }
 
-        if( !particles.empty() )
+        if( !particles.empty() || s->containsAttribute("particlesPath") )
         {
             if( !s->containsAttribute("particlesPath") )
                 s->setParticlesPath("particles/");
@@ -243,14 +243,12 @@ Iteration::read()
         pList.paths->clear();
     } else
     {
-        auto attrs = s->attributes();
         hasMeshes = s->containsAttribute("meshesPath");
         hasParticles = s->containsAttribute("particlesPath");
     }
 
     if( hasMeshes )
     {
-        meshes.clear_unchecked();
         Parameter< Operation::OPEN_PATH > pOpen;
         pOpen.path = s->meshesPath();
         IOHandler->enqueue(IOTask(&meshes, pOpen));
@@ -310,7 +308,6 @@ Iteration::read()
 
     if( hasParticles )
     {
-        particles.clear_unchecked();
         Parameter< Operation::OPEN_PATH > pOpen;
         pOpen.path = s->particlesPath();
         IOHandler->enqueue(IOTask(&particles, pOpen));

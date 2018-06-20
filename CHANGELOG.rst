@@ -7,9 +7,10 @@ Changelog
 -----------
 **Date:** TBA
 
-[Title]
+Refined fileBased Series
 
-[Summary]
+A specification for Iteration padding in filenames for fileBased Series is introduced.
+Padding present in read Iterations is detected and honored in any further Iterations.
 
 Changes to "0.3.0-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -20,9 +21,12 @@ Features
 - CMake:
 
   - add ``openPMD::openPMD`` alias for full-source inclusion #277
+- introduce detection and specification ``%0\d+T`` of iteration padding #270
 
 Bug Fixes
 """""""""
+
+- improved handling of ``fileBased`` Series and ``READ_WRITE`` access
 
 Other
 """""
