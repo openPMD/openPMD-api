@@ -156,8 +156,8 @@ class APITest(unittest.TestCase):
         print("Field E.x has shape {0} and datatype {1}".format(
               shape, E_x.dtype))
 
-        offset = openPMD.Extent([1, 1, 1])
-        extent = openPMD.Extent([2, 2, 1])
+        offset = [1, 1, 1]
+        extent = [2, 2, 1]
 
         chunk_data = E_x.load_chunk(offset, extent)
         series.flush()
@@ -186,7 +186,7 @@ class APITest(unittest.TestCase):
         self.assertIsInstance(series.iterations, openPMD.Iteration_Container)
         self.assertTrue(hasattr(series.iterations, "__getitem__"))
         for i in series.iterations:
-            self.assertIsInstance(i, int)
+            # self.assertIsInstance(i, int)
             self.assertIsInstance(series.iterations[i], openPMD.Iteration)
 
         # Check type.
@@ -205,7 +205,7 @@ class APITest(unittest.TestCase):
         # Check meshes are iterable.
         self.assertTrue(hasattr(i.meshes, "__getitem__"))
         for m in i.meshes:
-            self.assertIsInstance(m, str)
+            # self.assertIsInstance(m, str)
             self.assertIsInstance(i.meshes[m], openPMD.Mesh)
 
     def testParticles(self):
@@ -219,14 +219,8 @@ class APITest(unittest.TestCase):
 
         self.assertTrue(hasattr(i.particles, "__getitem__"))
         for ps in i.particles:
-            self.assertIsInstance(ps, str)
+            # self.assertIsInstance(ps, str)
             self.assertIsInstance(i.particles[ps], openPMD.ParticleSpecies)
-
-    def testAllocation(self):
-        """ Test openPMD.Allocation. """
-        # Should raise, see
-        # https://github.com/openPMD/openPMD-api/pull/249#discussion_r194979737
-        self.assertRaises(AttributeError, openPMD.Allocation)
 
     def testData_Order(self):
         """ Test openPMD.Data_Order. """
@@ -241,13 +235,8 @@ class APITest(unittest.TestCase):
     def testDataset(self):
         """ Test openPMD.Dataset. """
         data_type = openPMD.Datatype(1)
-        extent = openPMD.Extent()
+        extent = [1, 1, 1]
         obj = openPMD.Dataset(data_type, extent)
-        del obj
-
-    def testExtent(self):
-        """ Test openPMD.Extent. """
-        obj = openPMD.Extent()
         del obj
 
     def testGeometry(self):
