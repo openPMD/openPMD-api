@@ -53,8 +53,9 @@ openpmd_option(ADIOS2         "Enable ADIOS2 support"                     OFF)
 openpmd_option(INVASIVE_TESTS "Enable unit tests that modify source code" AUTO)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
 
-option(openPMD_USE_INTERNAL_VARIANT "Use internally shipped MPark.Variant" ON)
-option(openPMD_USE_INTERNAL_CATCH   "Use internally shipped Catch2"        ON)
+option(openPMD_USE_INTERNAL_VARIANT  "Use internally shipped MPark.Variant" ON)
+option(openPMD_USE_INTERNAL_CATCH    "Use internally shipped Catch2"        ON)
+option(openPMD_USE_INTERNAL_PYBIND11 "Use internally shipped pybind11"      ON)
 
 option(openPMD_USE_VERIFY "Enable internal VERIFY (assert) macro independent of build type" ON)
 
@@ -166,15 +167,25 @@ endif()
 
 # external library: pybind11 (optional)
 if(openPMD_USE_PYTHON STREQUAL AUTO)
-    find_package(pybind11 2.2.1 CONFIG)  # 2.3.0
-    if(pybind11_FOUND)
+    if(openPMD_USE_INTERNAL_PYBIND11)
+        add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11")
         set(openPMD_HAVE_PYTHON TRUE)
     else()
-        set(openPMD_HAVE_PYTHON FALSE)
+        find_package(pybind11 2.2.3 CONFIG)  # 2.3.0
+        if(pybind11_FOUND)
+            set(openPMD_HAVE_PYTHON TRUE)
+        else()
+            set(openPMD_HAVE_PYTHON FALSE)
+        endif()
     endif()
 elseif(openPMD_USE_PYTHON)
-    find_package(pybind11 2.2.1 CONFIG REQUIRED)  # 2.3.0
-    set(openPMD_HAVE_PYTHON TRUE)
+    if(openPMD_USE_INTERNAL_PYBIND11)
+        add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11")
+        set(openPMD_HAVE_PYTHON TRUE)
+    else()
+        find_package(pybind11 2.2.3 CONFIG REQUIRED)  # 2.3.0
+        set(openPMD_HAVE_PYTHON TRUE)
+    endif()
 else()
     set(openPMD_HAVE_PYTHON FALSE)
 endif()
