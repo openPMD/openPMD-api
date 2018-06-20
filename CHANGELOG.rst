@@ -17,6 +17,10 @@ Changes to "0.3.0-alpha"
 Features
 """"""""
 
+- CMake:
+
+  - add ``openPMD::openPMD`` alias for full-source inclusion #...
+
 Bug Fixes
 """""""""
 
