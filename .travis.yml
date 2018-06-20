@@ -49,7 +49,7 @@ jobs:
       install: pip install -U pyflakes
       script:
         # Warnings, unused code, etc.
-        - pyflakes .
+        - pyflakes docs/ examples/ test/
     - <<: *static_code_python
       python: "3.6"
     ###########################################################################
