@@ -107,7 +107,9 @@ if(ADIOS_FIND_COMPONENTS)
         elseif(comp STREQUAL "sequential")
             set(OPTLIST "${OPTLIST}s")
         else()
-            message("ADIOS component ${COMP} is not supported. Please use fortran, readonly, or sequential")
+            if(NOT ADIOS_FIND_QUIETLY)
+                message("ADIOS component ${COMP} is not supported. Please use fortran, readonly, or sequential")
+            endif()
         endif()
     endforeach()
 endif()
@@ -126,10 +128,14 @@ find_file(ADIOS_CONFIG
     PATHS $ENV{ADIOS_ROOT}/bin $ENV{ADIOS_DIR}/bin $ENV{INSTALL_PREFIX}/bin $ENV{PATH})
 
 if(ADIOS_CONFIG)
-    message(STATUS "Found 'adios_config': ${ADIOS_CONFIG}")
+    if(NOT ADIOS_FIND_QUIETLY)
+        message(STATUS "Found 'adios_config': ${ADIOS_CONFIG}")
+    endif()
 else(ADIOS_CONFIG)
     set(ADIOS_FOUND FALSE)
-    message(STATUS "Can NOT find 'adios_config' - set ADIOS_ROOT, ADIOS_DIR or INSTALL_PREFIX, or check your PATH")
+    if(NOT ADIOS_FIND_QUIETLY)
+        message(STATUS "Can NOT find 'adios_config' - set ADIOS_ROOT, ADIOS_DIR or INSTALL_PREFIX, or check your PATH")
+    endif()
 endif(ADIOS_CONFIG)
 
 # check `adios_config` program ################################################
@@ -140,7 +146,9 @@ if(ADIOS_FOUND)
                     OUTPUT_STRIP_TRAILING_WHITESPACE)
     if(NOT ADIOS_CONFIG_RETURN EQUAL 0)
         set(ADIOS_FOUND FALSE)
-        message(STATUS "Can NOT execute 'adios_config' - check file permissions")
+        if(NOT ADIOS_FIND_QUIETLY)
+            message(STATUS "Can NOT execute 'adios_config' - check file permissions")
+        endif()
     endif()
 
     execute_process(COMMAND ${ADIOS_CONFIG} ${COMPILEOPTLIST}
@@ -149,7 +157,9 @@ if(ADIOS_FOUND)
                     OUTPUT_STRIP_TRAILING_WHITESPACE)
     if(NOT ADIOS_CONFIG_RETURN EQUAL 0)
         set(ADIOS_FOUND FALSE)
-        message(STATUS "Can NOT execute 'adios_config' - check file permissions")
+        if(NOT ADIOS_FIND_QUIETLY)
+            message(STATUS "Can NOT execute 'adios_config' - check file permissions")
+        endif()
     endif()
 
     # find ADIOS_ROOT_DIR
@@ -158,7 +168,9 @@ if(ADIOS_FOUND)
                     OUTPUT_STRIP_TRAILING_WHITESPACE)
     if(NOT IS_DIRECTORY "${ADIOS_ROOT_DIR}")
         set(ADIOS_FOUND FALSE)
-        message(STATUS "The directory provided by 'adios_config -d' does not exist: ${ADIOS_ROOT_DIR}")
+        if(NOT ADIOS_FIND_QUIETLY)
+            message(STATUS "The directory provided by 'adios_config -d' does not exist: ${ADIOS_ROOT_DIR}")
+        endif()
     endif()
 endif(ADIOS_FOUND)
 
@@ -180,9 +192,11 @@ if(ADIOS_FOUND)
 
     # check for compiled in dependencies, recomve ";" in ADIOS_LINKFLAGS (from cmake build)
     string(REGEX REPLACE ";" " " ADIOS_LINKFLAGS "${ADIOS_LINKFLAGS}")
-    message(STATUS "ADIOS linker flags (unparsed): ${ADIOS_LINKFLAGS}")
     string(REGEX REPLACE ";" " " ADIOS_COMPILEFLAGS "${ADIOS_COMPILEFLAGS}")
-    message(STATUS "ADIOS compiler flags (unparsed): ${ADIOS_COMPILEFLAGS}")
+    if(NOT ADIOS_FIND_QUIETLY)
+        message(STATUS "ADIOS linker flags (unparsed): ${ADIOS_LINKFLAGS}")
+        message(STATUS "ADIOS compiler flags (unparsed): ${ADIOS_COMPILEFLAGS}")
+    endif()
 
     # find all library paths -L
     #   note: this can cause trouble if some libs are specified twice from
@@ -199,7 +213,9 @@ if(ADIOS_FOUND)
     # determine whether found library links as serial only
     set(ADIOS_HAVE_SEQUENTIAL FALSE)
 
-    message(STATUS "ADIOS DIRS to look for libs: ${ADIOS_LIBRARY_DIRS}")
+    if(NOT ADIOS_FIND_QUIETLY)
+        message(STATUS "ADIOS DIRS to look for libs: ${ADIOS_LIBRARY_DIRS}")
+    endif()
 
     # parse all -lname libraries and find an absolute path for them
     string(REGEX MATCHALL " -l([A-Za-z_0-9\\.\\-\\+]+)" _ADIOS_LIBS " ${ADIOS_LINKFLAGS}")
@@ -219,11 +235,15 @@ if(ADIOS_FOUND)
 
         # found?
         if(_LIB_DIR)
-            message(STATUS "Found ${_LIB} in ${_LIB_DIR}")
+            if(NOT ADIOS_FIND_QUIETLY)
+                message(STATUS "Found ${_LIB} in ${_LIB_DIR}")
+            endif()
             list(APPEND ADIOS_LIBRARIES "${_LIB_DIR}")
         else(_LIB_DIR)
             set(ADIOS_FOUND FALSE)
-            message(STATUS "ADIOS: Could NOT find library '${_LIB}'")
+            if(NOT ADIOS_FIND_QUIETLY)
+                message(STATUS "ADIOS: Could NOT find library '${_LIB}'")
+            endif()
         endif(_LIB_DIR)
 
         # clean cached var
@@ -235,7 +255,9 @@ if(ADIOS_FOUND)
     string(REGEX MATCHALL "/([A-Za-z_0-9/\\.\\-\\+]+)\\.([a|so]+)" _ADIOS_LIBS_SUB "${ADIOS_LINKFLAGS}")
     foreach(foo ${_ADIOS_LIBS_SUB})
     if (EXISTS ${foo})
-        message("Appending: ${foo}")
+        if(NOT ADIOS_FIND_QUIETLY)
+            message("Appending: ${foo}")
+        endif()
         list(APPEND ADIOS_LIBRARIES "${foo}")
     endif()
     endforeach(foo)
@@ -244,7 +266,9 @@ if(ADIOS_FOUND)
     string(REGEX MATCHALL "(-D[A-Za-z_0-9/\\.-]+)" _ADIOS_DEFINES " ${ADIOS_COMPILEFLAGS}")
     string(REGEX REPLACE ";" " " ADIOS_DEFINITIONS "${_ADIOS_DEFINES}")
 
-    message(STATUS "ADIOS compile definitions: ${ADIOS_DEFINITIONS}")
+    if(NOT ADIOS_FIND_QUIETLY)
+        message(STATUS "ADIOS compile definitions: ${ADIOS_DEFINITIONS}")
+    endif()
 
     # add the version string
     execute_process(COMMAND ${ADIOS_CONFIG} -v

@@ -182,9 +182,6 @@ if(NOT openPMD_HAVE_MPI AND openPMD_HAVE_ADIOS1 AND NOT ADIOS_HAVE_SEQUENTIAL)
     endif()
 endif()
 
-message(STATUS "++++ ADIOS SEQ: ${ADIOS_LIBRARIES_SEQUENTIAL}")
-message(STATUS "++++ ADIOS PAR: ${ADIOS_LIBRARIES}")
-
 # external library: ADIOS2 (optional)
 if(openPMD_USE_ADIOS2 STREQUAL AUTO)
     find_package(ADIOS2 2.1.0)
@@ -263,13 +260,11 @@ set(IO_ADIOS1_SEQUENTIAL_SOURCE
         src/IO/AbstractIOHandler.cpp
         src/IO/AbstractIOHandlerImpl.cpp
         src/auxiliary/Filesystem.cpp
-#        src/IO/IOTask.cpp
         src/IO/ADIOS/ADIOS1IOHandler.cpp)
 set(IO_ADIOS1_SOURCE
         src/IO/AbstractIOHandler.cpp
         src/IO/AbstractIOHandlerImpl.cpp
         src/auxiliary/Filesystem.cpp
-#        src/IO/IOTask.cpp
         src/IO/ADIOS/ParallelADIOS1IOHandler.cpp)
 
 # library
@@ -394,7 +389,6 @@ if(openPMD_HAVE_ADIOS1)
         )
     endif()
     foreach(adlib ${ADIOS_LIBRARIES_SEQUENTIAL})
-        message(STATUS "--- SEQ: ${adlib}")
         target_link_libraries(openPMD.ADIOS1.Serial PRIVATE ${adlib})
     endforeach()
     target_include_directories(openPMD.ADIOS1.Serial SYSTEM PRIVATE ${ADIOS_INCLUDE_DIRS_SEQUENTIAL})
@@ -408,7 +402,7 @@ if(openPMD_HAVE_ADIOS1)
             CXX_EXTENSIONS OFF
             CXX_STANDARD_REQUIRED ON
             POSITION_INDEPENDENT_CODE ON
-            CXX_VISIBILITY_PRESET "hidden"
+            CXX_VISIBILITY_PRESET hidden
             VISIBILITY_INLINES_HIDDEN 1
         )
         if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
@@ -422,7 +416,6 @@ if(openPMD_HAVE_ADIOS1)
             )
         endif()
         foreach(adlib ${ADIOS_LIBRARIES})
-            message(STATUS "--- PAR: ${adlib}")
             target_link_libraries(openPMD.ADIOS1.Parallel PRIVATE ${adlib})
         endforeach()
 
