@@ -21,6 +21,7 @@ Features
 - CMake:
 
   - add ``openPMD::openPMD`` alias for full-source inclusion #277
+  - include internally shipped pybind11 v2.2.3 #281
 - introduce detection and specification ``%0\d+T`` of iteration padding #270
 
 Bug Fixes

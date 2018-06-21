@@ -49,7 +49,7 @@ jobs:
       install: pip install -U pyflakes
       script:
         # Warnings, unused code, etc.
-        - pyflakes .
+        - pyflakes docs/ examples/ test/
     - <<: *static_code_python
       python: "3.6"
     ###########################################################################
@@ -79,6 +79,12 @@ jobs:
               $TRAVIS_BUILD_DIR/.travis/download_samples.sh;
             fi
           fi
+        - if [ "$USE_PYTHON" == "ON" ]; then
+            export EXTRA_CMAKE_FLAGS="-DPYTHON_EXECUTABLE:FILEPATH=$(which python)";
+            if [ "$USE_INTERNAL_PYBIND11" == "OFF" ]; then
+              export EXTRA_CMAKE_FLAGS="$EXTRA_CMAKE_FLAGS -DopenPMD_USE_INTERNAL_PYBIND11=OFF";
+            fi;
+          fi
         - CXXFLAGS="-Werror" CXX=$CXX CC=$CC
           cmake
             -DCMAKE_BUILD_TYPE=Debug
@@ -87,7 +93,7 @@ jobs:
             -DopenPMD_USE_ADIOS1=$USE_ADIOS1
             -DopenPMD_USE_ADIOS2=$USE_ADIOS2
             -DopenPMD_USE_PYTHON=$USE_PYTHON
-            -DPYTHON_EXECUTABLE:FILEPATH=$(which python)
+            $EXTRA_CMAKE_FLAGS
             -DCMAKE_INSTALL_PREFIX=$HOME/openPMD-test-install
             $TRAVIS_BUILD_DIR
         - make -j 2
@@ -210,7 +216,7 @@ jobs:
       language: python
       python: "3.6"
       env:
-        - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON HDF5_VERSION=@1.8.13 USE_ADIOS1=OFF USE_ADIOS2=OFF USE_SAMPLES=ON
+        - USE_MPI=OFF USE_PYTHON=ON USE_INTERNAL_PYBIND11=OFF USE_HDF5=ON HDF5_VERSION=@1.8.13 USE_ADIOS1=OFF USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: gcc
       addons:
         apt:
@@ -301,9 +307,15 @@ install:
     fi
   - if [ $USE_PYTHON == "ON" ]; then
       travis_wait spack install
-        py-pybind11@2.2.1 ^python@$TRAVIS_PYTHON_VERSION
+        python@$TRAVIS_PYTHON_VERSION
         $COMPILERSPEC &&
-      spack load --dependencies py-pybind11@2.2.1 ^python@$TRAVIS_PYTHON_VERSION $COMPILERSPEC;
+      spack load python@$TRAVIS_PYTHON_VERSION $COMPILERSPEC;
+      if [ "$USE_INTERNAL_PYBIND11" == "OFF" ]; then
+        travis_wait spack install
+          py-pybind11@2.2.3 ^python@$TRAVIS_PYTHON_VERSION
+          $COMPILERSPEC &&
+        spack load py-pybind11@2.2.3 ^python@$TRAVIS_PYTHON_VERSION $COMPILERSPEC;
+      fi;
     fi
   - if [ $USE_HDF5 == "ON" ]; then
       travis_wait spack install

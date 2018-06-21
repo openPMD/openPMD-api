@@ -86,9 +86,10 @@ Required:
 * CMake 3.10.0+
 * C++11 capable compiler, e.g. g++ 4.8+, clang 3.9+, VS 2015+
 
-Shipped internally:
-* [MPark.Variant](https://github.com/mpark/variant) 1.3.0+
-* [Catch2](https://github.com/catchorg/Catch2) 2.2.1+
+Shipped internally in `share/openPMD/thirdParty/`:
+* [MPark.Variant](https://github.com/mpark/variant) 1.3.0+ ([BSL-1.0](https://github.com/mpark/variant/blob/master/LICENSE.md))
+* [Catch2](https://github.com/catchorg/Catch2) 2.2.1+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
+* [pybind11](https://github.com/pybind/pybind11) 2.2.3+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
 
 Optional I/O backends:
 * [HDF5](https://support.hdfgroup.org/HDF5) 1.8.13+
@@ -101,7 +102,7 @@ while those can be build either with or without:
 Optional language bindings:
 * Python:
   * Python 3.X+
-  * pybind11 2.2.1+
+  * pybind 2.2.3+
   * numpy
 
 ## Installation
@@ -180,10 +181,11 @@ CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 Additionally, the following libraries are shipped internally.
 The following options allow to switch to external installs:
 
-| CMake Option                   | Values     | Library       | Version |
-|--------------------------------|------------|---------------|---------|
-| `openPMD_USE_INTERNAL_VARIANT` | **ON**/OFF | MPark.Variant |  1.3.0+ |
-| `openPMD_USE_INTERNAL_CATCH`   | **ON**/OFF | Catch2        |  2.2.1+ |
+| CMake Option                    | Values     | Library       | Version |
+|---------------------------------|------------|---------------|---------|
+| `openPMD_USE_INTERNAL_VARIANT`  | **ON**/OFF | MPark.Variant |  1.3.0+ |
+| `openPMD_USE_INTERNAL_CATCH`    | **ON**/OFF | Catch2        |  2.2.1+ |
+| `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.2.3+ |
 
 By default, this will build as a static library (`libopenPMD.a`) and installs also its headers.
 In order to build a static library, append `-DBUILD_SHARED_LIBS=ON` to the `cmake` command.
