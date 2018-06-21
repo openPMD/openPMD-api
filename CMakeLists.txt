@@ -560,7 +560,7 @@ if(BUILD_TESTING)
     endforeach()
 endif()
 
-# TODO: Python Unit tests
+# Python Unit tests
 if(BUILD_TESTING)
     if(openPMD_HAVE_PYTHON)
         if(openPMD_HAVE_HDF5)
