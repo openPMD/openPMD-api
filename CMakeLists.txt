@@ -576,12 +576,38 @@ if(BUILD_TESTING)
     endforeach()
 endif()
 
-# TODO: Python Unit tests
-#if(BUILD_TESTING)
-#    if(openPMD_HAVE_PYTHON)
-#        ...
-#    endif()
-#endif()
+# Python Unit tests
+if(BUILD_TESTING)
+    if(openPMD_HAVE_PYTHON)
+        if(openPMD_HAVE_HDF5)
+            if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
+
+                add_test(NAME Unittest.py
+                    COMMAND ${PYTHON_EXECUTABLE}
+                        ${openPMD_SOURCE_DIR}/test/python/unittest/Test.py -v
+                    WORKING_DIRECTORY
+                        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                )
+                if(WIN32)
+                    string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BASEDIR ${openPMD_BINARY_DIR})
+                    string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+                    string(REPLACE ";" "\\;" WIN_PATH "$ENV{PATH}")
+                    string(REPLACE ";" "\\;" WIN_PYTHONPATH "$ENV{PYTHONPATH}")
+                    set_property(TEST Unittest.py
+                        PROPERTY ENVIRONMENT
+                            "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
+                            "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${CMAKE_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
+                    )
+                else()
+                    set_tests_properties(Unittest.py
+                        PROPERTIES ENVIRONMENT
+                            "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
+                    )
+                endif()
+            endif()
+        endif()
+    endif()
+endif()
 
 
 # Examples ####################################################################
