@@ -140,8 +140,8 @@ git clone https://github.com/openPMD/openPMD-api.git
 mkdir -p openPMD-api-build
 cd openPMD-api-build
 
-# optional: for full tests
-../.travis/download_samples.sh
+# optional: for full tests, with unzip
+../openPMD-api/.travis/download_samples.sh
 
 # for own install prefix append:
 #   -DCMAKE_INSTALL_PREFIX=$HOME/somepath
