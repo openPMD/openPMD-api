@@ -24,6 +24,10 @@ Features
   - include internally shipped pybind11 v2.2.3 #281
   - ADIOS1: enable serial API usage even if MPI is present #252 #254
 - introduce detection and specification ``%0\d+T`` of iteration padding #270
+- Python:
+
+  - add unit tests #249
+  - expose record components for particles #284
 
 Bug Fixes
 """""""""
@@ -39,7 +43,7 @@ Other
 
 - docs:
 
-  - improve "Install from source" section #274
+  - improve "Install from source" section #274 #285
   - Spack python 3 install command #278
 
 
