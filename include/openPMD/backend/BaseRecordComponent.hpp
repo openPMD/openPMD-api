@@ -32,6 +32,14 @@ class BaseRecordComponent : public Attributable
     friend
     class BaseRecord;
 
+    template<
+            typename T,
+            typename T_key,
+            typename T_container
+    >
+    friend
+    class Container;
+
 public:
     virtual ~BaseRecordComponent()
     { }

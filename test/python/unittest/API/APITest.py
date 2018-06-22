@@ -119,8 +119,8 @@ class APITest(unittest.TestCase):
             self.assertTrue(i in [100, 200, 300, 400, 500])
 
         # Check type.
-        self.assertTrue(100 in series.iterations)
-        i = series.iterations[100]
+        self.assertTrue(400 in series.iterations)
+        i = series.iterations[400]
         self.assertIsInstance(i, openPMD.Iteration)
         with self.assertRaises(TypeError):
             series.iterations[-1]
@@ -146,12 +146,31 @@ class APITest(unittest.TestCase):
         # Get a particle species.
         electrons = i.particles["electrons"]
         self.assertIsInstance(electrons, openPMD.ParticleSpecies)
+        pos_y = electrons["position"]["y"]
+        w = electrons["weighting"][openPMD.Record_Component.SCALAR]
 
-        E_x = i.meshes["E"]["x"]
+        self.assertSequenceEqual(pos_y.shape, [270625, ])
+        self.assertSequenceEqual(w.shape, [270625, ])
+        if found_numpy:
+            self.assertEqual(pos_y.dtype, np.float64)
+            self.assertEqual(w.dtype, np.float64)
+        y_data = pos_y.load_chunk([200000, ], [10, ])
+        w_data = w.load_chunk([200000, ], [10, ])
+        series.flush()
+        self.assertSequenceEqual(y_data.shape, [10, ])
+        self.assertSequenceEqual(w_data.shape, [10, ])
+        if found_numpy:
+            self.assertEqual(y_data.dtype, np.float64)
+            self.assertEqual(w_data.dtype, np.float64)
+        # TODO data test
+        # pytest.approx(value)
+        # self.assertSequenceEqual(y_data,
+        #     [-9.60001131e-06, -8.80004967e-06, -8.00007455e-06, ...])
+        # self.assertSequenceEqual(w_data, [1600000., 1600000., ...])
+
+        E_x = E["x"]
         shape = E_x.shape
 
-        print("Field E.x has shape {0} and datatype {1}".format(
-              shape, E_x.dtype))
         self.assertSequenceEqual(shape, [26, 26, 201])
         if found_numpy:
             self.assertEqual(E_x.dtype, np.float64)
@@ -164,16 +183,16 @@ class APITest(unittest.TestCase):
         self.assertSequenceEqual(chunk_data.shape, extent)
         if found_numpy:
             self.assertEqual(chunk_data.dtype, np.float64)
-            np.testing.assert_almost_equal(
+            np.testing.assert_allclose(
                 chunk_data,
                 [
                     [
-                        [-75874183.04159331],
-                        [-75956606.50847568]
+                        [6.26273197e7],
+                        [2.70402498e8]
                     ],
                     [
-                        [-84234548.15893488],
-                        [-48105850.2088511]
+                        [-1.89238617e8],
+                        [-1.66413019e8]
                     ]
                 ]
             )
@@ -306,15 +325,20 @@ class APITest(unittest.TestCase):
         self.assertRaises(TypeError, openPMD.Record)
 
         # Get a record.
-        electrons = self.__series.iterations[100].particles['electrons']
-        position = electrons['position']  # ['x']
+        electrons = self.__series.iterations[400].particles['electrons']
+        position = electrons['position']
         self.assertIsInstance(position, openPMD.Record)
+        x = position['x']
+        self.assertIsInstance(x, openPMD.Record_Component)
 
         # Copy.
-        # copy_record = openPMD.Record(record)
+        # copy_record = openPMD.Record(position)
+        # copy_record_component = openPMD.Record(x)
 
         # Check.
         # self.assertIsInstance(copy_record, openPMD.Record)
+        # self.assertIsInstance(copy_record_component,
+        #                       openPMD.Record_Component)
 
     def testRecord_Component(self):
         """ Test openPMD.Record_Component. """
