@@ -28,6 +28,7 @@ Bug Fixes
 """""""""
 
 - improved handling of ``fileBased`` Series and ``READ_WRITE`` access
+- expose ``Container`` constructor as ``protected`` rather than ``public`` #282
 
 Other
 """""

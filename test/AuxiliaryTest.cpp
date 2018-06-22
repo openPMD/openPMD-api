@@ -10,6 +10,7 @@
 #endif
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/Container.hpp"
 #if openPMD_HAVE_INVASIVE_TESTS
 #   undef private
 #   undef protected
@@ -17,7 +18,6 @@
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
-#include "openPMD/backend/Container.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Dataset.hpp"
 using namespace openPMD;

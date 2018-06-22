@@ -39,10 +39,11 @@ class APITest(unittest.TestCase):
         self.__dirs_to_remove = []
 
         path_to_field_data = generateTestFilePath(
-                "issue-sample/no_particles/data%T.h5")
+                os.path.join("issue-sample", "no_particles", "data%T.h5"))
         path_to_particle_data = generateTestFilePath(
-                "issue-sample/no_fields/data%T.h5")
-        path_to_data = generateTestFilePath("git-sample/data%T.h5")
+                os.path.join("issue-sample", "no_fields", "data%T.h5"))
+        path_to_data = generateTestFilePath(
+                os.path.join("git-sample", "data%T.h5"))
         mode = openPMD.Access_Type.read_only
         self.__field_series = openPMD.Series(path_to_field_data, mode)
         self.__particle_series = openPMD.Series(path_to_particle_data, mode)
@@ -273,8 +274,7 @@ class APITest(unittest.TestCase):
 
     def testMesh_Container(self):
         """ Test openPMD.Mesh_Container. """
-        obj = openPMD.Mesh_Container()
-        del obj
+        self.assertRaises(TypeError, openPMD.Mesh_Container)
 
     def testParticlePatches(self):
         """ Test openPMD.ParticlePatches. """
@@ -286,8 +286,7 @@ class APITest(unittest.TestCase):
 
     def testParticle_Container(self):
         """ Test openPMD.Particle_Container. """
-        obj = openPMD.Particle_Container()
-        del obj
+        self.assertRaises(TypeError, openPMD.Particle_Container)
 
     def testRecord(self):
         """ Test openPMD.Record. """
