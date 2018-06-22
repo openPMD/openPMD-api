@@ -20,26 +20,31 @@
  */
 #pragma once
 
-#include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 
-#include <future>
-#include <memory>
-#include <string>
+#if openPMD_HAVE_MPI
+#   include <mpi.h>
+#   if openPMD_HAVE_HDF5
+#       include "openPMD/IO/HDF5/HDF5IOHandlerImpl.hpp"
+#   endif
+#endif
 
 
 namespace openPMD
 {
-class HDF5IOHandlerImpl;
+#if openPMD_HAVE_HDF5 && openPMD_HAVE_MPI
+    class ParallelHDF5IOHandlerImpl : public HDF5IOHandlerImpl
+    {
+    public:
+        ParallelHDF5IOHandlerImpl(AbstractIOHandler*, MPI_Comm);
+        virtual ~ParallelHDF5IOHandlerImpl();
 
-class HDF5IOHandler : public AbstractIOHandler
-{
-public:
-    HDF5IOHandler(std::string const& path, AccessType);
-    virtual ~HDF5IOHandler() override;
-
-    std::future< void > flush() override;
-
-private:
-    std::unique_ptr< HDF5IOHandlerImpl > m_impl;
-}; // HDF5IOHandler
+        MPI_Comm m_mpiComm;
+        MPI_Info m_mpiInfo;
+    }; // ParallelHDF5IOHandlerImpl
+#else
+    class ParallelHDF5IOHandlerImpl
+    {
+    }; // ParallelHDF5IOHandlerImpl
+#endif
 } // openPMD

@@ -21,6 +21,7 @@
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 #include "openPMD/Series.hpp"
 
 #include <iomanip>
@@ -92,7 +93,7 @@ Series::Series(std::string const& filepath,
           m_iterationEncoding{std::make_shared< IterationEncoding >()}
 {
     auto input = parseInput(filepath);
-    auto handler = AbstractIOHandler::createIOHandler(input->path, at, input->format, comm);
+    auto handler = createIOHandler(input->path, at, input->format, comm);
     init(handler, std::move(input));
 }
 #endif
@@ -103,7 +104,7 @@ Series::Series(std::string const& filepath,
           m_iterationEncoding{std::make_shared< IterationEncoding >()}
 {
     auto input = parseInput(filepath);
-    auto handler = AbstractIOHandler::createIOHandler(input->path, at, input->format);
+    auto handler = createIOHandler(input->path, at, input->format);
     init(handler, std::move(input));
 }
 

@@ -22,13 +22,6 @@
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
-#if openPMD_HAVE_MPI
-#   include <mpi.h>
-#   if openPMD_HAVE_HDF5
-#       include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
-#   endif
-#endif
-
 #include <future>
 #include <memory>
 #include <string>
@@ -36,36 +29,21 @@
 
 namespace openPMD
 {
-#if openPMD_HAVE_HDF5 && openPMD_HAVE_MPI
-class ParallelHDF5IOHandler;
+    class ParallelHDF5IOHandlerImpl;
 
-class ParallelHDF5IOHandlerImpl : public HDF5IOHandlerImpl
-{
-public:
-    ParallelHDF5IOHandlerImpl(AbstractIOHandler*, MPI_Comm);
-    virtual ~ParallelHDF5IOHandlerImpl();
+    class ParallelHDF5IOHandler : public AbstractIOHandler
+    {
+    public:
+    #if openPMD_HAVE_MPI
+        ParallelHDF5IOHandler(std::string const& path, AccessType, MPI_Comm);
+    #else
+        ParallelHDF5IOHandler(std::string const& path, AccessType);
+    #endif
+        virtual ~ParallelHDF5IOHandler() override;
 
-    MPI_Comm m_mpiComm;
-    MPI_Info m_mpiInfo;
-};  //ParallelHDF5IOHandlerImpl
-#else
-class ParallelHDF5IOHandlerImpl
-{ };
-#endif
+        std::future< void > flush() override;
 
-class ParallelHDF5IOHandler : public AbstractIOHandler
-{
-public:
-#if openPMD_HAVE_MPI
-    ParallelHDF5IOHandler(std::string const& path, AccessType, MPI_Comm);
-#else
-    ParallelHDF5IOHandler(std::string const& path, AccessType);
-#endif
-    virtual ~ParallelHDF5IOHandler() override;
-
-    std::future< void > flush() override;
-
-private:
-    std::unique_ptr< ParallelHDF5IOHandlerImpl > m_impl;
-};  //ParallelHDF5IOHandler
+    private:
+        std::unique_ptr< ParallelHDF5IOHandlerImpl > m_impl;
+    }; // ParallelHDF5IOHandler
 } // openPMD

@@ -19,7 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
-
+#include "openPMD/IO/HDF5/HDF5IOHandlerImpl.hpp"
 
 #if openPMD_HAVE_HDF5
 #   include "openPMD/auxiliary/Filesystem.hpp"

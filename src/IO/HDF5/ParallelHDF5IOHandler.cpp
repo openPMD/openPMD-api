@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
+#include "openPMD/IO/HDF5/ParallelHDF5IOHandlerImpl.hpp"
 
 #if openPMD_HAVE_MPI
 #   include <mpi.h>

@@ -30,25 +30,6 @@
 namespace openPMD
 {
 #if openPMD_HAVE_MPI
-std::shared_ptr< AbstractIOHandler >
-AbstractIOHandler::createIOHandler(std::string const& path,
-                                   AccessType at,
-                                   Format f,
-                                   MPI_Comm comm)
-{
-    switch( f )
-    {
-        case Format::HDF5:
-            return std::make_shared< ParallelHDF5IOHandler >(path, at, comm);
-        case Format::ADIOS1:
-            return std::make_shared< ParallelADIOS1IOHandler >(path, at, comm);
-        case Format::ADIOS2:
-            throw std::runtime_error("ADIOS2 backend not yet implemented");
-        default:
-            return std::make_shared< DummyIOHandler >(path, at);
-    }
-}
-
 AbstractIOHandler::AbstractIOHandler(std::string const& path,
                                      AccessType at,
                                      MPI_Comm)
@@ -56,23 +37,6 @@ AbstractIOHandler::AbstractIOHandler(std::string const& path,
           accessType{at}
 { }
 #endif
-std::shared_ptr< AbstractIOHandler >
-AbstractIOHandler::createIOHandler(std::string const& path,
-                                   AccessType at,
-                                   Format f)
-{
-    switch( f )
-    {
-        case Format::HDF5:
-            return std::make_shared< HDF5IOHandler >(path, at);
-        case Format::ADIOS1:
-            return std::make_shared< ADIOS1IOHandler >(path, at);
-        case Format::ADIOS2:
-            throw std::runtime_error("ADIOS2 backend not yet implemented");
-        default:
-            return std::make_shared< DummyIOHandler >(path, at);
-    }
-}
 
 AbstractIOHandler::AbstractIOHandler(std::string const& path,
                                      AccessType at)
