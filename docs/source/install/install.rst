@@ -74,7 +74,7 @@ Linux & OSX
    cd openPMD-api-build
 
    # optional: for full tests
-   ../.travis/download_samples.sh
+   ../openPMD-api/.travis/download_samples.sh
 
    # for own install prefix append:
    #   -DCMAKE_INSTALL_PREFIX=$HOME/somepath
