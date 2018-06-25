@@ -108,9 +108,92 @@ void init_RecordComponent(py::module &m) {
 
         // deprecated: pass-through C++ API
         .def("load_chunk", [](RecordComponent & r, Offset const & offset, Extent const & extent) {
-            std::vector<ptrdiff_t> c(extent.size());
-            std::copy(std::begin(extent), std::end(extent), std::begin(c));
-            return py::array( c, r.loadChunk<double>(offset, extent).get() );
+            std::vector<ptrdiff_t> shape(extent.size());
+            std::copy(std::begin(extent), std::end(extent), std::begin(shape));
+
+            auto dtype = py::dtype("void");
+
+            if( r.getDatatype() == Datatype::CHAR ) dtype = py::dtype("b");
+            else if( r.getDatatype() == Datatype::UCHAR ) dtype = py::dtype("B");
+            else if( r.getDatatype() == Datatype::INT16 ) dtype = py::dtype("int16");
+            else if( r.getDatatype() == Datatype::INT32 ) dtype = py::dtype("int32");
+            else if( r.getDatatype() == Datatype::INT64 ) dtype = py::dtype("int64");
+            else if( r.getDatatype() == Datatype::UINT16 ) dtype = py::dtype("uint16");
+            else if( r.getDatatype() == Datatype::UINT32 ) dtype = py::dtype("uint32");
+            else if( r.getDatatype() == Datatype::UINT64 ) dtype = py::dtype("uint64");
+            else if( r.getDatatype() == Datatype::LONG_DOUBLE ) dtype = py::dtype("longdouble");
+            else if( r.getDatatype() == Datatype::DOUBLE ) dtype = py::dtype("double");
+            else if( r.getDatatype() == Datatype::FLOAT ) dtype = py::dtype("float");
+
+            /* @todo
+            .value("STRING", Datatype::STRING)
+            .value("VEC_CHAR", Datatype::VEC_CHAR)
+            .value("VEC_INT16", Datatype::VEC_INT16)
+            .value("VEC_INT32", Datatype::VEC_INT32)
+            .value("VEC_INT64", Datatype::VEC_INT64)
+            .value("VEC_UCHAR", Datatype::VEC_UCHAR)
+            .value("VEC_UINT16", Datatype::VEC_UINT16)
+            .value("VEC_UINT32", Datatype::VEC_UINT32)
+            .value("VEC_UINT64", Datatype::VEC_UINT64)
+            .value("VEC_FLOAT", Datatype::VEC_FLOAT)
+            .value("VEC_DOUBLE", Datatype::VEC_DOUBLE)
+            .value("VEC_LONG_DOUBLE", Datatype::VEC_LONG_DOUBLE)
+            .value("VEC_STRING", Datatype::VEC_STRING)
+            .value("ARR_DBL_7", Datatype::ARR_DBL_7)
+            */
+
+            else if( r.getDatatype() == Datatype::BOOL ) dtype = py::dtype("bool");
+            else
+                throw std::runtime_error(std::string("Datatype not known in 'load_chunk'!"));
+
+            auto a = py::array( dtype, shape );
+
+            if( r.getDatatype() == Datatype::CHAR )
+                r.loadChunk<char>(offset, extent, shareRaw((char*) a.mutable_data()));
+            else if( r.getDatatype() == Datatype::UCHAR )
+                r.loadChunk<unsigned char>(offset, extent, shareRaw((unsigned char*) a.mutable_data()));
+            else if( r.getDatatype() == Datatype::INT16 )
+                r.loadChunk<int16_t>(offset, extent, shareRaw((int16_t*) a.mutable_data()));
+            else if( r.getDatatype() == Datatype::INT32 )
+                r.loadChunk<int32_t>(offset, extent, shareRaw((int32_t*) a.mutable_data()));
+            else if( r.getDatatype() == Datatype::INT64 )
+                r.loadChunk<int64_t>(offset, extent, shareRaw((int64_t*) a.mutable_data()));
+            else if( r.getDatatype() == Datatype::UINT16 )
+                r.loadChunk<uint16_t>(offset, extent, shareRaw((uint16_t*) a.mutable_data()));
+            else if( r.getDatatype() == Datatype::UINT32 )
+                r.loadChunk<uint32_t>(offset, extent, shareRaw((uint32_t*) a.mutable_data()));
+            else if( r.getDatatype() == Datatype::UINT64 )
+                r.loadChunk<uint64_t>(offset, extent, shareRaw((uint64_t*) a.mutable_data()));
+            else if( r.getDatatype() == Datatype::LONG_DOUBLE )
+                r.loadChunk<long double>(offset, extent, shareRaw((long double*) a.mutable_data()));
+            else if( r.getDatatype() == Datatype::DOUBLE )
+                r.loadChunk<double>(offset, extent, shareRaw((double*) a.mutable_data()));
+            else if( r.getDatatype() == Datatype::FLOAT )
+                r.loadChunk<float>(offset, extent, shareRaw((float*) a.mutable_data()));
+
+            /* @todo
+            .value("STRING", Datatype::STRING)
+            .value("VEC_CHAR", Datatype::VEC_CHAR)
+            .value("VEC_INT16", Datatype::VEC_INT16)
+            .value("VEC_INT32", Datatype::VEC_INT32)
+            .value("VEC_INT64", Datatype::VEC_INT64)
+            .value("VEC_UCHAR", Datatype::VEC_UCHAR)
+            .value("VEC_UINT16", Datatype::VEC_UINT16)
+            .value("VEC_UINT32", Datatype::VEC_UINT32)
+            .value("VEC_UINT64", Datatype::VEC_UINT64)
+            .value("VEC_FLOAT", Datatype::VEC_FLOAT)
+            .value("VEC_DOUBLE", Datatype::VEC_DOUBLE)
+            .value("VEC_LONG_DOUBLE", Datatype::VEC_LONG_DOUBLE)
+            .value("VEC_STRING", Datatype::VEC_STRING)
+            .value("ARR_DBL_7", Datatype::ARR_DBL_7)
+            */
+
+            else if( r.getDatatype() == Datatype::BOOL )
+                r.loadChunk<bool>(offset, extent, shareRaw((bool*) a.mutable_data()));
+            else
+                throw std::runtime_error(std::string("Datatype not known in 'load_chunk'!"));
+
+            return a;
         })
 
         // deprecated: pass-through C++ API
@@ -126,7 +209,7 @@ void init_RecordComponent(py::module &m) {
             // @todo keep locked until flush() is performed
             // a.flags.writable = false;
             // a.flags.owndata = false;
-            py::print( py::str(a.dtype()) );
+            // py::print( py::str(a.dtype()) );
             // py::print( py::str(buf.dtype()) );
 
             if( a.dtype().is(py::dtype("b")) )
