@@ -161,10 +161,22 @@ class APITest(unittest.TestCase):
 
         chunk_data = E_x.load_chunk(offset, extent)
         series.flush()
-
-        print("Chunk has been read from disk\n"
-              "Read chunk contains:")
-        print(chunk_data)
+        self.assertSequenceEqual(chunk_data.shape, extent)
+        if found_numpy:
+            self.assertEqual(chunk_data.dtype, np.float64)
+            np.testing.assert_almost_equal(
+                chunk_data,
+                [
+                    [
+                        [-75874183.04159331],
+                        [-75956606.50847568]
+                    ],
+                    [
+                        [-84234548.15893488],
+                        [-48105850.2088511]
+                    ]
+                ]
+            )
 
     def testLoadSeries(self):
         """ Test loading a pmd series from hdf5."""
