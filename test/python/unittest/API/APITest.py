@@ -162,11 +162,18 @@ class APITest(unittest.TestCase):
         if found_numpy:
             self.assertEqual(y_data.dtype, np.float64)
             self.assertEqual(w_data.dtype, np.float64)
-        # TODO data test
-        # pytest.approx(value)
-        # self.assertSequenceEqual(y_data,
-        #     [-9.60001131e-06, -8.80004967e-06, -8.00007455e-06, ...])
-        # self.assertSequenceEqual(w_data, [1600000., 1600000., ...])
+
+            np.testing.assert_allclose(
+                y_data,
+                [-9.60001131e-06, -8.80004967e-06, -8.00007455e-06,
+                 -7.20008487e-06, -6.40007232e-06, -5.60002710e-06,
+                 -4.79993871e-06, -3.99980648e-06, -3.19964406e-06,
+                 -2.39947455e-06]
+            )
+            np.testing.assert_allclose(
+                w_data,
+                np.ones((10,)) * 1600000.
+            )
 
         E_x = E["x"]
         shape = E_x.shape
