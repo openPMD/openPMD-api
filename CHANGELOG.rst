@@ -3,6 +3,27 @@
 Changelog
 =========
 
+0.3.2-alpha
+-----------
+**Date:** TBA
+
+[Title]
+
+[Summary]
+
+Changes to "0.3.1-alpha"
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Features
+""""""""
+
+Bug Fixes
+"""""""""
+
+Other
+"""""
+
+
 0.3.1-alpha
 -----------
 **Date:** 2018-07-07
