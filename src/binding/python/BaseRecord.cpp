@@ -24,6 +24,7 @@
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
+#include "openPMD/backend/BaseRecordComponent.hpp"
 
 #include <string>
 
@@ -33,6 +34,8 @@ using namespace openPMD;
 
 void init_BaseRecord(py::module &m) {
     py::class_<BaseRecord< MeshRecordComponent >, Container< MeshRecordComponent > >(m, "Mesh_Base_Record");
+    py::class_<BaseRecord< BaseRecordComponent >, Container< BaseRecordComponent > >(m, "Particle_Base_Record");
+    py::class_<BaseRecord< RecordComponent >, Container< RecordComponent > >(m, "Base_Record");
 
     py::enum_<UnitDimension>(m, "Unit_Dimension")
         .value("L", UnitDimension::L)

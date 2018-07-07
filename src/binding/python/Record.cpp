@@ -22,13 +22,15 @@
 #include <pybind11/stl.h>
 
 #include "openPMD/Record.hpp"
+#include "openPMD/backend/BaseRecord.hpp"
+#include "openPMD/RecordComponent.hpp"
 
 namespace py = pybind11;
 using namespace openPMD;
 
 
 void init_Record(py::module &m) {
-    py::class_<Record>(m, "Record")
+    py::class_<Record, BaseRecord< RecordComponent > >(m, "Record")
         .def(py::init<Record const &>())
 
         .def("__repr__",

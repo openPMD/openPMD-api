@@ -29,11 +29,12 @@
 #include <pybind11/stl.h>
 
 #include "openPMD/backend/Container.hpp"
+#include "openPMD/backend/BaseRecord.hpp"
+#include "openPMD/backend/MeshRecordComponent.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/Record.hpp"
-#include "openPMD/backend/MeshRecordComponent.hpp"
 
 #include <string>
 #include <memory>
@@ -202,12 +203,16 @@ using PyIterationContainer = Container<
 using PyMeshContainer = Container< Mesh >;
 using PyPartContainer = Container< ParticleSpecies >;
 using PyRecordContainer = Container< Record >;
+using PyRecordComponentContainer = Container< RecordComponent >;
 using PyMeshRecordComponentContainer = Container< MeshRecordComponent >;
+using PyBaseRecordComponentContainer = Container< BaseRecordComponent >;
 PYBIND11_MAKE_OPAQUE(PyIterationContainer)
 PYBIND11_MAKE_OPAQUE(PyMeshContainer)
 PYBIND11_MAKE_OPAQUE(PyPartContainer)
 PYBIND11_MAKE_OPAQUE(PyRecordContainer)
+PYBIND11_MAKE_OPAQUE(PyRecordComponentContainer)
 PYBIND11_MAKE_OPAQUE(PyMeshRecordComponentContainer)
+PYBIND11_MAKE_OPAQUE(PyBaseRecordComponentContainer)
 
 void init_Container( py::module & m ) {
     detail::bind_container< PyIterationContainer >(
@@ -226,8 +231,16 @@ void init_Container( py::module & m ) {
         m,
         "Record_Container"
     );
+    detail::bind_container< PyRecordComponentContainer >(
+        m,
+        "Record_Component_Container"
+    );
     detail::bind_container< PyMeshRecordComponentContainer >(
         m,
         "Mesh_Record_Component_Container"
+    );
+    detail::bind_container< PyBaseRecordComponentContainer >(
+        m,
+        "Base_Record_Component_Container"
     );
 }
