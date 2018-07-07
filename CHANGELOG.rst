@@ -5,12 +5,13 @@ Changelog
 
 0.3.1-alpha
 -----------
-**Date:** TBA
+**Date:** 2018-07-07
 
-Refined fileBased Series
+Refined fileBased Series & Python Data Load
 
-A specification for Iteration padding in filenames for fileBased Series is introduced.
-Padding present in read Iterations is detected and honored in any further Iterations.
+A specification for iteration padding in filenames for ``fileBased`` series is introduced.
+Padding present in read iterations is detected and conserved in processing.
+Python builds have been simplified and python data loads now work for both meshes and particles.
 
 Changes to "0.3.0-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^
