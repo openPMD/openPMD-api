@@ -4,28 +4,30 @@ C++ & Python API for Scientific I/O with openPMD
 [![Supported openPMD Standard](https://img.shields.io/badge/openPMD-1.0.0--1.1.0-blue.svg)](https://github.com/openPMD/openPMD-standard/releases)
 [![Documentation Status](https://readthedocs.org/projects/openpmd-api/badge/?version=latest)](https://openpmd-api.readthedocs.io/en/latest/?badge=latest)
 [![Doxygen](https://img.shields.io/badge/API-Doxygen-blue.svg)](https://www.openpmd.org/openPMD-api)
-[![Linux/OSX Build Status dev](https://img.shields.io/travis/openPMD/openPMD-api/dev.svg?label=dev)](https://travis-ci.org/openPMD/openPMD-api/branches)
-[![Windows Build Status dev](https://ci.appveyor.com/api/projects/status/x95q4n620pqk0e0t/branch/dev?svg=true)](https://ci.appveyor.com/project/ax3l/openpmd-api/branch/dev)
+[![Gitter chat](https://img.shields.io/gitter/room/openPMD/API.svg)](https://gitter.im/openPMD/API)
+![Supported Platforms][api-platforms]
 [![License](https://img.shields.io/badge/license-LGPLv3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0.html)
 [![DOI](https://rodare.hzdr.de/badge/DOI/10.14278/rodare.27.svg)](https://doi.org/10.14278/rodare.27)
 
-[![C++11][api-cpp]](https://isocpp.org/) ![C++11 API: Alpha][dev-alpha]
-[![Python3][api-py3]](https://www.python.org/) ![Python3 API: Unstable][dev-unstable]
-![Supported Platforms][api-platforms]
+[![Linux/OSX Build Status dev](https://img.shields.io/travis/openPMD/openPMD-api/dev.svg?label=dev)](https://travis-ci.org/openPMD/openPMD-api/branches)
+[![Windows Build Status dev](https://ci.appveyor.com/api/projects/status/x95q4n620pqk0e0t/branch/dev?svg=true)](https://ci.appveyor.com/project/ax3l/openpmd-api/branch/dev)
+[![Coverage Status](https://coveralls.io/repos/github/openPMD/openPMD-api/badge.svg)](https://coveralls.io/github/openPMD/openPMD-api)
+[![CodeFactor](https://www.codefactor.io/repository/github/openpmd/openpmd-api/badge)](https://www.codefactor.io/repository/github/openpmd/openpmd-api)
 
-This library provides a common high-level API for openPMD writing and reading.
-It provides a common interface to I/O libraries and file formats such as HDF5 and ADIOS.
-Where supported, openPMD-api implements both serial and MPI parallel I/O capabilities.
-
-[api-cpp]: https://img.shields.io/badge/language-C%2B%2B11-yellowgreen.svg "C++11 API"
-[api-py3]: https://img.shields.io/badge/language-Python3-yellow.svg "Python3 API"
-[dev-alpha]: https://img.shields.io/badge/phase-alpha-yellowgreen.svg "Status: Alpha"
-[dev-unstable]: https://img.shields.io/badge/phase-unstable-yellow.svg "Status: Unstable"
 [api-platforms]: https://img.shields.io/badge/platforms-linux%20|%20osx%20|%20win-blue.svg "Supported Platforms"
+
+This library provides a high-level API for writing and reading structured numerical data according to [openPMD](https://www.openpmd.org/).
+It allows to build logical file structures which drive scientific I/O libraries such as HDF5 and ADIOS through a common, intuitive interface.
+Where supported, openPMD-api implements both serial and MPI parallel I/O capabilities.
 
 ## Usage
 
 ### C++
+
+[![C++11][api-cpp]](https://isocpp.org/) ![C++11 API: Alpha][dev-alpha]
+
+[api-cpp]: https://img.shields.io/badge/language-C%2B%2B11-yellowgreen.svg "C++11 API"
+[dev-alpha]: https://img.shields.io/badge/phase-alpha-yellowgreen.svg "Status: Alpha"
 
 ```cpp
 #include <openPMD/openPMD.hpp>
@@ -53,6 +55,11 @@ for( auto const& i : s.iterations ) {
 ```
 
 ### Python
+
+[![Python3][api-py3]](https://www.python.org/) ![Python3 API: Unstable][dev-unstable]
+
+[api-py3]: https://img.shields.io/badge/language-Python3-yellow.svg "Python3 API"
+[dev-unstable]: https://img.shields.io/badge/phase-unstable-yellow.svg "Status: Unstable"
 
 ```py
 import openPMD
@@ -95,7 +102,7 @@ Optional I/O backends:
 * [ADIOS1](https://www.olcf.ornl.gov/center-projects/adios) 1.13.1+
 * [ADIOS2](https://github.com/ornladios/ADIOS2) 2.1+ (*not yet implemented*)
 
-while those can be build either with or without:
+while those can be built either with or without:
 * MPI 2.1+, e.g. OpenMPI 1.6.5+ or MPICH2
 
 Optional language bindings:
@@ -210,7 +217,7 @@ First set the following environment hint if openPMD-api was *not* installed in a
 export CMAKE_PREFIX_PATH=$HOME/somepath:$CMAKE_PREFIX_PATH
 ```
 
-Use the following lines in your projects `CMakeLists.txt`:
+Use the following lines in your project's `CMakeLists.txt`:
 ```cmake
 # supports:                       COMPONENTS MPI NOMPI HDF5 ADIOS1 ADIOS2
 find_package(openPMD 0.1.0 CONFIG)
@@ -220,7 +227,7 @@ if(openPMD_FOUND)
 endif()
 ```
 
-*Alternatively*, add the openPMD-api repository directly to your project and add it via:
+*Alternatively*, add the openPMD-api repository source directly to your project and use it via:
 ```cmake
 add_subdirectory("path/to/source/of/openPMD-api")
 
