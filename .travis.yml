@@ -25,6 +25,8 @@ addons:
 
 jobs:
   fast_finish: true
+  allow_failures:
+    - after_script: exit $?
   include:
     ###########################################################################
     # Stage: Style                                                            #
@@ -33,13 +35,31 @@ jobs:
       stage: 'Style'
       language: python
       python: "2.7"
+      env:
+        - NAME="PEP8"
       install: pip install -U flake8
       script:
         # Test Python Files for PEP8 conformance
         - flake8 --exclude=thirdParty .
     - <<: *style_python
       python: "3.6"
-    # TODO: C++ clang-format checks
+    - &style_cpp
+      stage: 'Style'
+      language: python
+      python: "2.7"
+      env:
+        - NAME="clang-format"
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - clang-format-5.0
+      install:
+        - curl -sOL https://raw.githubusercontent.com/Sarcasm/run-clang-format/master/run-clang-format.py
+      script:
+        - python run-clang-format.py --clang-format-executable=$(which clang-format-5.0) --extensions cpp,hpp -j 2 -e *share/openPMD* -r $TRAVIS_BUILD_DIR || exit 1
+      after_script: exit $?
     ###########################################################################
     # Stage: Static Code Analysis                                             #
     ###########################################################################
@@ -97,7 +117,12 @@ jobs:
             $TRAVIS_BUILD_DIR
       script:
         - cd $HOME/build
-        - python $BIN_PATH/iwyu_tool.py -v -j 2 -p .
+        - python $BIN_PATH/iwyu_tool.py -v -j 2 -p . > iwyu.log
+        - cat iwyu.log
+        - if [[ $(wc -l <iwyu.log) -ge 1 ]]; then
+            exit 1;
+          fi
+      after_script: exit $?
     - <<: *static_code_cpp
       sudo: false
       env:
@@ -130,8 +155,12 @@ jobs:
             $TRAVIS_BUILD_DIR
       script:
         - cd $HOME/build
-        - make -j 2 2> clang-tidy.out
-        - cat clang-tidy.out
+        - make -j 2 2> clang-tidy.log
+        - cat clang-tidy.log
+        - if [[ $(wc -l <clang-tidy.log) -ge 1 ]]; then
+            exit 1;
+          fi
+      after_script: exit $?
     - &static_code_python
       stage: 'Static Code Analysis'
       language: python
