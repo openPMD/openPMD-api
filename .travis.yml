@@ -43,13 +43,14 @@ jobs:
     ###########################################################################
     # Stage: Static Code Analysis                                             #
     ###########################################################################
-    - &include_what_you_use
+    - &static_code_cpp
       stage: 'Static Code Analysis'
       sudo: true
       language: python
       python: "2.7"
       compiler: clang
       env:
+        - NAME="include_what_you_use"
         - USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF
       addons:
         apt:
@@ -97,6 +98,40 @@ jobs:
       script:
         - cd $HOME/build
         - python $BIN_PATH/iwyu_tool.py -v -j 2 -p .
+    - <<: *static_code_cpp
+      sudo: false
+      env:
+        - NAME="clang-tidy"
+        - USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - clang-5.0
+            - clang-tidy-5.0
+            - libopenmpi-dev
+            - openmpi-bin
+            - environment-modules
+      before_install:
+        - CC=clang CXX=clang++ COMPILERSPEC="%clang@5.0.0"
+      before_script:
+        - mkdir -p $HOME/build
+        - cd $HOME/build
+        - cmake
+            "-DCMAKE_CXX_CLANG_TIDY=$(which clang-tidy-5.0);-system-headers=0"
+            -DCMAKE_BUILD_TYPE=Debug
+            -DopenPMD_USE_MPI=$USE_MPI
+            -DopenPMD_USE_HDF5=$USE_HDF5
+            -DopenPMD_USE_ADIOS1=$USE_ADIOS1
+            -DopenPMD_USE_ADIOS2=$USE_ADIOS2
+            -DopenPMD_USE_PYTHON=OFF
+            $TRAVIS_BUILD_DIR
+      script:
+        - cd $HOME/build
+        - make -j 2 2> clang-tidy.out
+        - cat clang-tidy.out
     - &static_code_python
       stage: 'Static Code Analysis'
       language: python
