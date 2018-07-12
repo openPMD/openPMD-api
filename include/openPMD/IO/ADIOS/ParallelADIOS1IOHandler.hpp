@@ -50,11 +50,11 @@ namespace openPMD
 #   else
         ParallelADIOS1IOHandler(std::string const& path, AccessType);
 #   endif
-        virtual ~ParallelADIOS1IOHandler() override;
+        ~ParallelADIOS1IOHandler() override;
 
-        virtual std::future< void > flush() override;
+        std::future< void > flush() override;
 #if openPMD_HAVE_ADIOS1
-        virtual void enqueue(IOTask const&) override;
+        void enqueue(IOTask const&) override;
 #endif
 
     private:

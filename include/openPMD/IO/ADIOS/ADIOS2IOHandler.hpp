@@ -73,7 +73,7 @@ class ADIOS2IOHandler : public AbstractIOHandler
 
 public:
     ADIOS2IOHandler(std::string const& path, AccessType);
-    virtual ~ADIOS2IOHandler() override;
+    ~ADIOS2IOHandler() override;
 
     std::future< void > flush() override;
 

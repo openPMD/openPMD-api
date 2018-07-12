@@ -53,7 +53,7 @@ public:
     using const_iterator = typename Container< T_elem >::const_iterator;
 
     BaseRecord(BaseRecord const& b);
-    virtual ~BaseRecord() override { }
+    ~BaseRecord() override { }
 
     mapped_type& operator[](key_type const& key) override;
     mapped_type& operator[](key_type&& key) override;
@@ -69,7 +69,7 @@ protected:
     std::shared_ptr< bool > m_containsScalar;
 
 private:
-    virtual void flush(std::string const&) override = 0;
+    void flush(std::string const&) override = 0;
     virtual void read() = 0;
 };  //BaseRecord
 
