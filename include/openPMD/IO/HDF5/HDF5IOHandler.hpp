@@ -35,7 +35,7 @@ class HDF5IOHandler : public AbstractIOHandler
 {
 public:
     HDF5IOHandler(std::string const& path, AccessType);
-    virtual ~HDF5IOHandler() override;
+    ~HDF5IOHandler() override;
 
     std::future< void > flush() override;
 

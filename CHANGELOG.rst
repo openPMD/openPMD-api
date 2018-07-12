@@ -30,6 +30,8 @@ Other
   - clang-tidy support
   - include-what-you-use support #291
 - remove superfluous whitespaces #292
+- readme: openPMD is for scientific data #294
+- override implies virtual #293
 
 
 0.3.1-alpha

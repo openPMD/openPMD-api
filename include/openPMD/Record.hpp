@@ -38,7 +38,7 @@ class Record : public BaseRecord< RecordComponent >
 
 public:
     Record(Record const&);
-    virtual ~Record() override;
+    ~Record() override;
 
     Record& setUnitDimension(std::map< UnitDimension, double > const&);
 

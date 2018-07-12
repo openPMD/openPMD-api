@@ -54,26 +54,26 @@ namespace openPMD
 
         virtual void init();
 
-        virtual std::future< void > flush() override;
+        std::future< void > flush() override;
 
-        virtual void createFile(Writable*, Parameter< Operation::CREATE_FILE > const&) override;
-        virtual void createPath(Writable*, Parameter< Operation::CREATE_PATH > const&) override;
-        virtual void createDataset(Writable*, Parameter< Operation::CREATE_DATASET > const&) override;
-        virtual void extendDataset(Writable*, Parameter< Operation::EXTEND_DATASET > const&) override;
-        virtual void openFile(Writable*, Parameter< Operation::OPEN_FILE > const&) override;
-        virtual void openPath(Writable*, Parameter< Operation::OPEN_PATH > const&) override;
-        virtual void openDataset(Writable*, Parameter< Operation::OPEN_DATASET > &) override;
-        virtual void deleteFile(Writable*, Parameter< Operation::DELETE_FILE > const&) override;
-        virtual void deletePath(Writable*, Parameter< Operation::DELETE_PATH > const&) override;
-        virtual void deleteDataset(Writable*, Parameter< Operation::DELETE_DATASET > const&) override;
-        virtual void deleteAttribute(Writable*, Parameter< Operation::DELETE_ATT > const&) override;
-        virtual void writeDataset(Writable*, Parameter< Operation::WRITE_DATASET > const&) override;
-        virtual void writeAttribute(Writable*, Parameter< Operation::WRITE_ATT > const&) override;
-        virtual void readDataset(Writable*, Parameter< Operation::READ_DATASET > &) override;
-        virtual void readAttribute(Writable*, Parameter< Operation::READ_ATT > &) override;
-        virtual void listPaths(Writable*, Parameter< Operation::LIST_PATHS > &) override;
-        virtual void listDatasets(Writable*, Parameter< Operation::LIST_DATASETS > &) override;
-        virtual void listAttributes(Writable*, Parameter< Operation::LIST_ATTS > &) override;
+        void createFile(Writable*, Parameter< Operation::CREATE_FILE > const&) override;
+        void createPath(Writable*, Parameter< Operation::CREATE_PATH > const&) override;
+        void createDataset(Writable*, Parameter< Operation::CREATE_DATASET > const&) override;
+        void extendDataset(Writable*, Parameter< Operation::EXTEND_DATASET > const&) override;
+        void openFile(Writable*, Parameter< Operation::OPEN_FILE > const&) override;
+        void openPath(Writable*, Parameter< Operation::OPEN_PATH > const&) override;
+        void openDataset(Writable*, Parameter< Operation::OPEN_DATASET > &) override;
+        void deleteFile(Writable*, Parameter< Operation::DELETE_FILE > const&) override;
+        void deletePath(Writable*, Parameter< Operation::DELETE_PATH > const&) override;
+        void deleteDataset(Writable*, Parameter< Operation::DELETE_DATASET > const&) override;
+        void deleteAttribute(Writable*, Parameter< Operation::DELETE_ATT > const&) override;
+        void writeDataset(Writable*, Parameter< Operation::WRITE_DATASET > const&) override;
+        void writeAttribute(Writable*, Parameter< Operation::WRITE_ATT > const&) override;
+        void readDataset(Writable*, Parameter< Operation::READ_DATASET > &) override;
+        void readAttribute(Writable*, Parameter< Operation::READ_ATT > &) override;
+        void listPaths(Writable*, Parameter< Operation::LIST_PATHS > &) override;
+        void listDatasets(Writable*, Parameter< Operation::LIST_DATASETS > &) override;
+        void listAttributes(Writable*, Parameter< Operation::LIST_ATTS > &) override;
 
         virtual int64_t open_write(Writable *);
         virtual ADIOS_FILE* open_read(std::string const& name);
