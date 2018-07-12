@@ -27,6 +27,5 @@ class AbstractFilePosition
 {
 public:
     virtual ~AbstractFilePosition() { }
-
-};  //AbstractFilePosition
+}; // AbstractFilePosition
 } // openPMD

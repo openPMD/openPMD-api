@@ -338,7 +338,6 @@ TEST_CASE( "dot_test", "[auxiliary]" )
     REQUIRE(d.att1() == 10);
     REQUIRE(d.att2() == static_cast<double>(20));
     REQUIRE(d.att3() == "30");
-
 }
 
 TEST_CASE( "filesystem_test", "[auxiliary]" )

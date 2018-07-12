@@ -29,6 +29,5 @@ struct ADIOS2FilePosition : public AbstractFilePosition
 {
     ADIOS2FilePosition()
     { }
-
-};  //ADIOS2FilePosition
+}; // ADIOS2FilePosition
 } // openPMD

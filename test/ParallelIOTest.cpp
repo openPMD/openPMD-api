@@ -222,6 +222,5 @@ TEST_CASE( "hzdr_adios_sample_content_test", "[parallel][adios1]" )
         std::cerr << "git sample not accessible. (" << e.what() << ")\n";
         return;
     }
-
 }
 #endif
