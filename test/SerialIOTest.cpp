@@ -73,7 +73,6 @@ TEST_CASE( "git_hdf5_sample_structure_test", "[serial][hdf5]" )
 
         int32_t i32 = 32;
         REQUIRE_THROWS(o.setAttribute("setAttributeFail", i32));
-
     } catch (no_such_file_error& e)
     {
         std::cerr << "git sample not accessible. (" << e.what() << ")\n";

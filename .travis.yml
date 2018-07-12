@@ -85,7 +85,7 @@ jobs:
             - openmpi-bin
             - environment-modules
       before_install:
-        - export CC=clang 
+        - export CC=clang
         - export CXX=clang++
         - ROOT_PATH=`llvm-config-5.0 --prefix`
         - BIN_PATH=`llvm-config-5.0 --bindir`
