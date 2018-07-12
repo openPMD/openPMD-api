@@ -1,4 +1,4 @@
-sudo: required
+sudo: false
 dist: trusty
 
 cache:
@@ -6,6 +6,7 @@ cache:
   directories:
     - $HOME/.cache/spack
     - $HOME/.cache/cmake-3.10.0
+    - $HOME/.cache/kcov-35
     - $HOME/Library/Caches/Homebrew
   pip: true
 
@@ -24,6 +25,8 @@ addons:
 
 jobs:
   fast_finish: true
+  allow_failures:
+    - after_script: exit $?
   include:
     ###########################################################################
     # Stage: Style                                                            #
@@ -32,16 +35,132 @@ jobs:
       stage: 'Style'
       language: python
       python: "2.7"
+      env:
+        - NAME="PEP8"
       install: pip install -U flake8
       script:
         # Test Python Files for PEP8 conformance
         - flake8 --exclude=thirdParty .
     - <<: *style_python
       python: "3.6"
-    # TODO: C++ clang-format checks
+    - &style_cpp
+      stage: 'Style'
+      language: python
+      python: "2.7"
+      env:
+        - NAME="clang-format"
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - clang-format-5.0
+      install:
+        - curl -sOL https://raw.githubusercontent.com/Sarcasm/run-clang-format/master/run-clang-format.py
+      script:
+        - python run-clang-format.py --clang-format-executable=$(which clang-format-5.0) --extensions cpp,hpp -j 2 -e *share/openPMD* -r $TRAVIS_BUILD_DIR || exit 1
+      after_script: exit $?
     ###########################################################################
     # Stage: Static Code Analysis                                             #
     ###########################################################################
+    - &static_code_cpp
+      stage: 'Static Code Analysis'
+      sudo: true
+      language: python
+      python: "2.7"
+      compiler: clang
+      env:
+        - NAME="include_what_you_use"
+        - USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - llvm-5.0-dev
+            - libclang-5.0-dev
+            - clang-5.0
+            - libopenmpi-dev
+            - openmpi-bin
+            - environment-modules
+      before_install:
+        - export CC=clang 
+        - export CXX=clang++
+        - ROOT_PATH=`llvm-config-5.0 --prefix`
+        - BIN_PATH=`llvm-config-5.0 --bindir`
+        - if [ ! -f $BIN_PATH/iwyu_tool.py ]; then
+            git clone https://github.com/include-what-you-use/include-what-you-use.git &&
+            cd include-what-you-use &&
+            git checkout clang_5.0 &&
+            mkdir build &&
+            cd build &&
+            cmake -DIWYU_LLVM_ROOT_PATH=$ROOT_PATH -DCMAKE_C_COMPILER=$BIN_PATH/clang -DCMAKE_CXX_COMPILER=$BIN_PATH/clang++ -DCMAKE_INSTALL_PREFIX=$ROOT_PATH .. &&
+            make -j2 &&
+            sudo make install &&
+            cd ../.. &&
+            rm -rf include-what-you-use;
+          fi
+        - COMPILERSPEC="%clang@5.0.0"
+        - export PATH=$ROOT_PATH/bin:$PATH
+      before_script:
+        - mkdir -p $HOME/build
+        - cd $HOME/build
+        - cmake
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+            -DCMAKE_BUILD_TYPE=Debug
+            -DopenPMD_USE_MPI=$USE_MPI
+            -DopenPMD_USE_HDF5=$USE_HDF5
+            -DopenPMD_USE_ADIOS1=$USE_ADIOS1
+            -DopenPMD_USE_ADIOS2=$USE_ADIOS2
+            -DopenPMD_USE_PYTHON=OFF
+            $TRAVIS_BUILD_DIR
+      script:
+        - cd $HOME/build
+        - python $BIN_PATH/iwyu_tool.py -v -j 2 -p . > iwyu.log
+        - cat iwyu.log
+        - if [[ $(wc -l <iwyu.log) -ge 1 ]]; then
+            exit 1;
+          fi
+      after_script: exit $?
+    - <<: *static_code_cpp
+      sudo: false
+      env:
+        - NAME="clang-tidy"
+        - USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - clang-5.0
+            - clang-tidy-5.0
+            - libopenmpi-dev
+            - openmpi-bin
+            - environment-modules
+      before_install:
+        - CC=clang CXX=clang++ COMPILERSPEC="%clang@5.0.0"
+      before_script:
+        - mkdir -p $HOME/build
+        - cd $HOME/build
+        - cmake
+            "-DCMAKE_CXX_CLANG_TIDY=$(which clang-tidy-5.0);-system-headers=0"
+            -DCMAKE_BUILD_TYPE=Debug
+            -DopenPMD_USE_MPI=$USE_MPI
+            -DopenPMD_USE_HDF5=$USE_HDF5
+            -DopenPMD_USE_ADIOS1=$USE_ADIOS1
+            -DopenPMD_USE_ADIOS2=$USE_ADIOS2
+            -DopenPMD_USE_PYTHON=OFF
+            $TRAVIS_BUILD_DIR
+      script:
+        - cd $HOME/build
+        - make -j 2 2> clang-tidy.log
+        - cat clang-tidy.log
+        - if [[ $(wc -l <clang-tidy.log) -ge 1 ]]; then
+            exit 1;
+          fi
+      after_script: exit $?
     - &static_code_python
       stage: 'Static Code Analysis'
       language: python
@@ -70,9 +189,9 @@ jobs:
             - gfortran-4.9
             - g++-4.9  # CMake build
       before_install: &clang50_init
-         - COMPILERSPEC="%clang@5.0.0"
+        - COMPILERSPEC="%clang@5.0.0"
       script: &script-cpp-unit
-        - mkdir -p $HOME/build 
+        - mkdir -p $HOME/build
         - cd $HOME/build
         - if [ ! -d samples/git-sample/ ]; then
             if [ "$USE_SAMPLES" = "ON" ]; then
@@ -120,12 +239,13 @@ jobs:
     # Clang 8.1.0-apple + Python 2.7.10 @ OSX
     - <<: *test-cpp-unit
       os: osx
+      sudo: required
       language: generic
       env:
         - USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: clang
       before_install:
-         - COMPILERSPEC="%clang@8.1.0"
+        - COMPILERSPEC="%clang@8.1.0"
       script: *script-cpp-unit
     # GCC 4.9.4
     - <<: *test-cpp-unit
@@ -143,7 +263,7 @@ jobs:
             - gcc-4.9
             - g++-4.9
       before_install: &gcc49_init
-         - CXX=g++-4.9 && CC=gcc-4.9 && COMPILERSPEC="%gcc@4.9.4"
+        - CXX=g++-4.9 && CC=gcc-4.9 && COMPILERSPEC="%gcc@4.9.4"
       script: *script-cpp-unit
     - <<: *test-cpp-unit
       language: python
@@ -176,7 +296,7 @@ jobs:
             - gcc-7
             - g++-7
       before_install: &gcc73_init
-         - CXX=g++-7 && CC=gcc-7 && COMPILERSPEC="%gcc@7.3.0"
+        - CXX=g++-7 && CC=gcc-7 && COMPILERSPEC="%gcc@7.3.0"
       script: *script-cpp-unit
     - <<: *test-cpp-unit
       language: python
@@ -209,7 +329,7 @@ jobs:
             - gcc-6
             - g++-6
       before_install: &gcc64_init
-         - CXX=g++-6 && CC=gcc-6 && COMPILERSPEC="%gcc@6.4.0"
+        - CXX=g++-6 && CC=gcc-6 && COMPILERSPEC="%gcc@6.4.0"
       script: *script-cpp-unit
     # GCC 6.4.0 + Python 3.6
     - <<: *test-cpp-unit
@@ -242,8 +362,75 @@ jobs:
             - libopenmpi-dev
             - openmpi-bin
       before_install: &gcc48_init
-         - CXX=g++-4.8 && CC=gcc-4.8 && COMPILERSPEC="%gcc@4.8.5"
+        - CXX=g++-4.8 && CC=gcc-4.8 && COMPILERSPEC="%gcc@4.8.5"
       script: *script-cpp-unit
+    ###########################################################################
+    # Stage: Code Coverage                                                    #
+    ###########################################################################
+    - &code_coverage
+      stage: 'Code Coverage'
+      language: python
+      python: "2.7"
+      compiler: gcc
+      env:
+        - USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF
+      addons:
+        apt:
+          <<: *apt_common_sources
+          packages:
+            - binutils-dev
+            - libcurl4-openssl-dev
+            - zlib1g-dev
+            - libdw-dev
+            - libiberty-dev
+            - environment-modules
+            - gfortran-7
+            - gcc-7
+            - g++-7
+            - libopenmpi-dev
+            - openmpi-bin
+      before_install:
+        - CXX=g++-7 && CC=gcc-7 && COMPILERSPEC="%gcc@7.3.0"
+        - if [ ! -f $HOME/.cache/kcov-35/bin/kcov ]; then
+            wget -O kcov-35.tar.gz https://github.com/SimonKagstrom/kcov/archive/v35.tar.gz &&
+            tar -xf kcov-35.tar.gz &&
+            cd kcov-35 &&
+            mkdir build &&
+            cd build &&
+            cmake -DCMAKE_INSTALL_PREFIX=$HOME/.cache/kcov-35 .. &&
+            make -j2 &&
+            make install &&
+            cd ../.. &&
+            rm -rf kcov-35 kcov-35.tar.gz;
+          fi;
+        - export PATH=$HOME/.cache/kcov-35/bin:$PATH
+      before_script:
+        - mkdir -p $HOME/build
+        - cd $HOME/build
+        - if [ ! -d samples/git-sample/ ]; then
+            $TRAVIS_BUILD_DIR/.travis/download_samples.sh;
+          fi
+        - CXXFLAGS="-g -O0 -fprofile-arcs -ftest-coverage" CXX=$CXX CC=$CC
+          cmake
+            -DCMAKE_BUILD_TYPE=Debug
+            -DopenPMD_USE_MPI=$USE_MPI
+            -DopenPMD_USE_HDF5=$USE_HDF5
+            -DopenPMD_USE_ADIOS1=$USE_ADIOS1
+            -DopenPMD_USE_ADIOS2=$USE_ADIOS2
+            -DopenPMD_USE_PYTHON=OFF
+            $TRAVIS_BUILD_DIR
+        - make -j 2
+      script:
+        - mkdir -p coverage
+        - cd bin
+        # TODO code coverage with mpirun
+        - for binary in *; do
+            if [ -f $binary ]; then
+              kcov --exclude-pattern=/usr/,share/openPMD/thirdParty,/test/ ../coverage/$binary $binary;
+            fi;
+          done
+      after_script:
+        - kcov --merge --coveralls-id=$TRAVIS_JOB_ID ../coverage/merged ../coverage/*
 
 install:
   # spack install

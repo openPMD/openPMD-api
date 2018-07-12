@@ -1,0 +1,2 @@
+Checks: -*,bugprone-*,cert-*,cppcoreguidelines-*,clang-analyzer-*,google-*,hicpp-*,llvm-*,misc-*,modernize-*,mpi-*,performance-*,readability-*,-clang-diagnostic-unused-command-line-argument,-*-namespace-comment*,-*-braces-around-statements,-google-readability-todo,-readability-inconsistent-declaration-parameter-name,-readability-named-parameter
+HeaderFilterRegex: '((^(?!\/share\/openPMD\/).*)*include\/openPMD\/.+\.hpp|src\/^(?!binding).+\.cpp$)'
