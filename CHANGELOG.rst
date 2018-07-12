@@ -23,6 +23,14 @@ Bug Fixes
 Other
 """""
 
+- CI updates: #291
+
+  - measure C++ unit test coverage with coveralls
+  - clang-format support
+  - clang-tidy support
+  - include-what-you-use support #291
+- remove superfluous whitespaces #292
+
 
 0.3.1-alpha
 -----------
