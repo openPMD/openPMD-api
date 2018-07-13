@@ -47,11 +47,11 @@ namespace openPMD
 
     public:
         ADIOS1IOHandler(std::string const& path, AccessType);
-        virtual ~ADIOS1IOHandler() override;
+        ~ADIOS1IOHandler() override;
 
-        virtual std::future< void > flush() override;
+        std::future< void > flush() override;
 
-        virtual void enqueue(IOTask const&) override;
+        void enqueue(IOTask const&) override;
 
     private:
         std::queue< IOTask > m_setup;
@@ -64,9 +64,9 @@ namespace openPMD
 
     public:
         ADIOS1IOHandler(std::string const& path, AccessType);
-        virtual ~ADIOS1IOHandler() override;
+        ~ADIOS1IOHandler() override;
 
-        virtual std::future< void > flush() override;
+        std::future< void > flush() override;
 
     private:
         std::unique_ptr< ADIOS1IOHandlerImpl > m_impl;
