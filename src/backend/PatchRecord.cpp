@@ -41,7 +41,7 @@ PatchRecord::PatchRecord()
 { }
 
 void
-PatchRecord::flush(std::string const& path)
+PatchRecord::flush_impl(std::string const& path)
 {
     if( this->find(RecordComponent::SCALAR) == this->end() )
     {

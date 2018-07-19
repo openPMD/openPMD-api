@@ -38,6 +38,9 @@ enum class UnitDimension : uint8_t
 template< typename T_elem >
 class BaseRecord : public Container< T_elem >
 {
+    friend class Iteration;
+    friend class ParticleSpecies;
+
 public:
     using key_type = typename Container< T_elem >::key_type;
     using mapped_type = typename Container< T_elem >::mapped_type;
@@ -69,7 +72,8 @@ protected:
     std::shared_ptr< bool > m_containsScalar;
 
 private:
-    void flush(std::string const&) override = 0;
+    virtual void flush(std::string const&) final;
+    virtual void flush_impl(std::string const&) = 0;
     virtual void read() = 0;
 };  //BaseRecord
 
@@ -214,5 +218,15 @@ BaseRecord< T_elem >::readBase()
         this->setAttribute("timeOffset", Attribute(*aRead.resource).template get< double >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'timeOffset'");
+}
+
+template< typename T_elem >
+inline void
+BaseRecord< T_elem >::flush(std::string const& name)
+{
+    if( this->empty() )
+        throw std::runtime_error("A Record can not be written without any contained RecordComponents");
+
+    this->flush_impl(name);
 }
 } // openPMD

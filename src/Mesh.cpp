@@ -180,7 +180,7 @@ Mesh::setTimeOffset(T to)
 }
 
 void
-Mesh::flush(std::string const& name)
+Mesh::flush_impl(std::string const& name)
 {
     if( IOHandler->accessType == AccessType::READ_ONLY )
     {

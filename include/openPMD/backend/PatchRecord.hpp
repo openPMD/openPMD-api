@@ -41,7 +41,7 @@ public:
 private:
     PatchRecord();
 
-    void flush(std::string const&) override;
+    void flush_impl(std::string const&) override;
     void read() override;
 };  //PatchRecord
 } // openPMD

@@ -47,7 +47,7 @@ Record::setUnitDimension(std::map< UnitDimension, double > const& udim)
 }
 
 void
-Record::flush(std::string const& name)
+Record::flush_impl(std::string const& name)
 {
     if( IOHandler->accessType == AccessType::READ_ONLY )
     {
