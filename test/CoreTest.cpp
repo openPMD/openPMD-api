@@ -102,8 +102,11 @@ TEST_CASE( "output_constructor_test", "[core]" )
 
     o.setMeshesPath("customMeshesPath").setParticlesPath("customParticlesPath");
 
-    o.iterations[1].meshes["foo"];
-    o.iterations[1].particles["bar"];
+    o.iterations[1].meshes["foo"]["baz"].resetDataset(Dataset(Datatype::DOUBLE, {1}));
+    auto species = o.iterations[1].particles["bar"];
+    auto dset = Dataset(Datatype::DOUBLE, {1});
+    species["position"][RecordComponent::SCALAR].resetDataset(dset);
+    species["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
 
     REQUIRE(o.openPMD() == "1.1.0");
     REQUIRE(o.openPMDextension() == static_cast<uint32_t>(0));
@@ -186,6 +189,9 @@ TEST_CASE( "particleSpecies_modification_test", "[core]" )
     REQUIRE(0 == species.numAttributes());
     REQUIRE(2 == species.size());    //position, positionOffset
     REQUIRE(1 == species.count("position"));
+    auto dset = Dataset(Datatype::DOUBLE, {1});
+    species["position"][RecordComponent::SCALAR].resetDataset(dset);
+    species["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
     REQUIRE(1 == species.count("positionOffset"));
     auto& patches = species.particlePatches;
     REQUIRE(2 == patches.size());
@@ -205,7 +211,11 @@ TEST_CASE( "record_constructor_test", "[core]" )
 {
     Series o = Series("./MyOutput_%T", AccessType::CREATE);
 
-    Record& r = o.iterations[42].particles["species"]["record"];
+    ParticleSpecies ps = o.iterations[42].particles["species"];
+    Record& r = ps["record"];
+    auto dset = Dataset(Datatype::DOUBLE, {1});
+    ps["position"][RecordComponent::SCALAR].resetDataset(dset);
+    ps["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
 
     REQUIRE(r["x"].unitSI() == 1);
     REQUIRE(r["x"].numAttributes() == 1); /* unitSI */
@@ -223,7 +233,11 @@ TEST_CASE( "record_modification_test", "[core]" )
 {
     Series o = Series("./MyOutput_%T", AccessType::CREATE);
 
-    Record& r = o.iterations[42].particles["species"]["record"];
+    auto species = o.iterations[42].particles["species"];
+    Record& r = species["position"];
+    auto dset = Dataset(Datatype::DOUBLE, {1});
+    species["position"][RecordComponent::SCALAR].resetDataset(dset);
+    species["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
 
     using RUD = UnitDimension;
     r.setUnitDimension({{RUD::L, 1.},
@@ -247,7 +261,11 @@ TEST_CASE( "recordComponent_modification_test", "[core]" )
 {
     Series o = Series("./MyOutput_%T", AccessType::CREATE);
 
-    Record& r = o.iterations[42].particles["species"]["record"];
+    ParticleSpecies ps = o.iterations[42].particles["species"];
+    Record& r = ps["record"];
+    auto dset = Dataset(Datatype::DOUBLE, {1});
+    ps["position"][RecordComponent::SCALAR].resetDataset(dset);
+    ps["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
 
     r["x"].setUnitSI(2.55999e-7);
     r["y"].setUnitSI(4.42999e-8);
@@ -387,6 +405,9 @@ TEST_CASE( "structure_test", "[core]" )
 
     REQUIRE(1 == o.iterations[1].particles["P"].count("position"));
     REQUIRE(1 == o.iterations[1].particles["P"].count("positionOffset"));
+    auto dset = Dataset(Datatype::DOUBLE, {1});
+    o.iterations[1].particles["P"]["position"][RecordComponent::SCALAR].resetDataset(dset);
+    o.iterations[1].particles["P"]["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
 
     Record r = o.iterations[1].particles["P"]["PR"];
     REQUIRE(r.IOHandler);
@@ -529,6 +550,9 @@ TEST_CASE( "wrapper_test", "[core]" )
 #endif
 
     o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].resetDataset(Dataset(Datatype::UINT64, {4}));
+    auto dset = Dataset(Datatype::DOUBLE, {1});
+    o.iterations[6].particles["electrons"]["position"][RecordComponent::SCALAR].resetDataset(dset);
+    o.iterations[6].particles["electrons"]["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
     ParticlePatches pp = o.iterations[6].particles["electrons"].particlePatches;
     REQUIRE(pp["numParticles"][RecordComponent::SCALAR].getDatatype() == Datatype::UINT64);
     REQUIRE(pp["numParticles"][RecordComponent::SCALAR].getExtent() == Extent{4});
@@ -573,6 +597,9 @@ TEST_CASE( "use_count_test", "[core]" )
 
 #if openPMD_HAVE_INVASIVE_TESTS
     PatchRecordComponent pprc = o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR];
+    auto dset = Dataset(Datatype::DOUBLE, {1});
+    o.iterations[6].particles["electrons"]["position"][RecordComponent::SCALAR].resetDataset(dset);
+    o.iterations[6].particles["electrons"]["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
     pprc.resetDataset(Dataset(Datatype::UINT64, {4}));
     pprc.store(0, static_cast< uint64_t >(1));
     REQUIRE(static_cast< Parameter< Operation::WRITE_DATASET >* >(pprc.m_chunks->front().parameter.get())->data.use_count() == 1);

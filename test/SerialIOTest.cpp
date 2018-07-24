@@ -958,7 +958,6 @@ TEST_CASE( "hdf5_write_test", "[serial][hdf5]" )
     {
         position_local.at(0) = position_global[i];
         e["position"]["x"].storeChunk({i}, {1}, shareRaw(position_local));
-        o.flush();
     }
 
     std::vector< uint64_t > positionOffset_global(4);
@@ -971,7 +970,6 @@ TEST_CASE( "hdf5_write_test", "[serial][hdf5]" )
     {
         positionOffset_local[0] = positionOffset_global[i];
         e["positionOffset"]["x"].storeChunk({i}, {1}, shareRaw(positionOffset_local));
-        o.flush();
     }
 
     o.flush();
@@ -999,7 +997,6 @@ TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
         {
             *position_local_1 = position_global[i];
             e_1["position"]["x"].storeChunk({i}, {1}, position_local_1);
-            o.flush();
         }
 
         std::vector< uint64_t > positionOffset_global(4);
@@ -1012,7 +1009,6 @@ TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
         {
             *positionOffset_local_1 = positionOffset_global[i];
             e_1["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_1);
-            o.flush();
         }
 
         o.iterations[1].setTime(static_cast< double >(1));
@@ -1026,7 +1022,6 @@ TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
         {
             double const position_local_2 = position_global.at(i);
             e_2["position"]["x"].storeChunk({i}, {1}, shareRaw(&position_local_2));
-            o.flush();
         }
 
         std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
@@ -1037,7 +1032,6 @@ TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
         {
             *positionOffset_local_2 = positionOffset_global[i];
             e_2["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_2);
-            o.flush();
         }
 
         o.iterations[2].setTime(static_cast< double >(2));
@@ -1053,7 +1047,6 @@ TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
         {
             *position_local_3 = position_global[i];
             e_3["position"]["x"].storeChunk({i}, {1}, position_local_3);
-            o.flush();
         }
 
         std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
@@ -1064,7 +1057,6 @@ TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
         {
             *positionOffset_local_3 = positionOffset_global[i];
             e_3["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_3);
-            o.flush();
         }
 
         o.setOpenPMDextension(1);
@@ -1160,6 +1152,9 @@ TEST_CASE( "hdf5_patch_test", "[serial][hdf5]" )
     Series o = Series("../samples/serial_patch.h5", AccessType::CREATE);
 
     o.iterations[1].particles["e"].particlePatches["offset"]["x"].setUnitSI(42);
+    auto dset = Dataset(Datatype::DOUBLE, {1});
+    o.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].resetDataset(dset);
+    o.iterations[1].particles["e"]["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
 }
 
 TEST_CASE( "hdf5_deletion_test", "[serial][hdf5]" )
@@ -1175,26 +1170,25 @@ TEST_CASE( "hdf5_deletion_test", "[serial][hdf5]" )
     o.flush();
 
     ParticleSpecies& e = o.iterations[1].particles["e"];
+    auto dset = Dataset(Datatype::DOUBLE, {1});
+    e["position"][RecordComponent::SCALAR].resetDataset(dset);
+    e["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
     e.erase("deletion");
     o.flush();
 
-    e["deletion_scalar"][RecordComponent::SCALAR].resetDataset(Dataset(Datatype::DOUBLE, {1}));
+    e["deletion_scalar"][RecordComponent::SCALAR].resetDataset(dset);
     o.flush();
 
     e["deletion_scalar"].erase(RecordComponent::SCALAR);
-    o.flush();
-
     e.erase("deletion_scalar");
     o.flush();
 
     double value = 0.;
-    e["deletion_scalar_constant"][RecordComponent::SCALAR].resetDataset(Dataset(Datatype::DOUBLE, {1}));
+    e["deletion_scalar_constant"][RecordComponent::SCALAR].resetDataset(dset);
     e["deletion_scalar_constant"][RecordComponent::SCALAR].makeConstant(value);
     o.flush();
 
     e["deletion_scalar_constant"].erase(RecordComponent::SCALAR);
-    o.flush();
-
     e.erase("deletion_scalar_constant");
     o.flush();
 }
@@ -1227,12 +1221,17 @@ TEST_CASE( "hdf5_110_optional_paths", "[serial][hdf5]" )
 
     {
         Series s = Series("../samples/no_meshes_1.1.0_compliant.h5", AccessType::CREATE);
-        s.iterations[1].particles["foo"];
+        auto foo = s.iterations[1].particles["foo"];
+        Dataset dset = Dataset(Datatype::DOUBLE, {1});
+        foo["position"][RecordComponent::SCALAR].resetDataset(dset);
+        foo["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
     }
 
     {
         Series s = Series("../samples/no_particles_1.1.0_compliant.h5", AccessType::CREATE);
-        s.iterations[1].meshes["foo"];
+        auto foo = s.iterations[1].meshes["foo"];
+        Dataset dset = Dataset(Datatype::DOUBLE, {1});
+        foo[RecordComponent::SCALAR].resetDataset(dset);
     }
 
     {
@@ -1353,7 +1352,6 @@ TEST_CASE( "adios1_write_test", "[serial][adios1]")
     {
         *position_local_1 = position_global[i];
         e_1["position"]["x"].storeChunk({i}, {1}, position_local_1);
-        o.flush();
     }
 
     std::vector< uint64_t > positionOffset_global(4);
@@ -1366,7 +1364,6 @@ TEST_CASE( "adios1_write_test", "[serial][adios1]")
     {
         *positionOffset_local_1 = positionOffset_global[i];
         e_1["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_1);
-        o.flush();
     }
 
     ParticleSpecies& e_2 = o.iterations[2].particles["e"];
@@ -1379,7 +1376,6 @@ TEST_CASE( "adios1_write_test", "[serial][adios1]")
     {
         *position_local_2 = position_global[i];
         e_2["position"]["x"].storeChunk({i}, {1}, position_local_2);
-        o.flush();
     }
 
     std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
@@ -1390,7 +1386,6 @@ TEST_CASE( "adios1_write_test", "[serial][adios1]")
     {
         *positionOffset_local_2 = positionOffset_global[i];
         e_2["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_2);
-        o.flush();
     }
 
     o.flush();
@@ -1405,7 +1400,6 @@ TEST_CASE( "adios1_write_test", "[serial][adios1]")
     {
         *position_local_3 = position_global[i];
         e_3["position"]["x"].storeChunk({i}, {1}, position_local_3);
-        o.flush();
     }
 
     std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
@@ -1416,7 +1410,6 @@ TEST_CASE( "adios1_write_test", "[serial][adios1]")
     {
         *positionOffset_local_3 = positionOffset_global[i];
         e_3["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_3);
-        o.flush();
     }
 
     o.flush();
@@ -1438,7 +1431,6 @@ TEST_CASE( "adios1_fileBased_write_test", "[serial][adios1]" )
     {
         *position_local_1 = position_global[i];
         e_1["position"]["x"].storeChunk({i}, {1}, position_local_1);
-        o.flush();
     }
 
     std::vector< uint64_t > positionOffset_global(4);
@@ -1451,8 +1443,10 @@ TEST_CASE( "adios1_fileBased_write_test", "[serial][adios1]" )
     {
         *positionOffset_local_1 = positionOffset_global[i];
         e_1["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_1);
-        o.flush();
     }
+
+    //TODO breaks openWriteFile logic when removed
+    //o.flush();
 
     ParticleSpecies& e_2 = o.iterations[2].particles["e"];
 
@@ -1464,7 +1458,6 @@ TEST_CASE( "adios1_fileBased_write_test", "[serial][adios1]" )
     {
         *position_local_2 = position_global[i];
         e_2["position"]["x"].storeChunk({i}, {1}, position_local_2);
-        o.flush();
     }
 
     std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
@@ -1475,7 +1468,6 @@ TEST_CASE( "adios1_fileBased_write_test", "[serial][adios1]" )
     {
         *positionOffset_local_2 = positionOffset_global[i];
         e_2["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_2);
-        o.flush();
     }
 
     o.flush();
@@ -1490,7 +1482,6 @@ TEST_CASE( "adios1_fileBased_write_test", "[serial][adios1]" )
     {
         *position_local_3 = position_global[i];
         e_3["position"]["x"].storeChunk({i}, {1}, position_local_3);
-        o.flush();
     }
 
     std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
@@ -1501,7 +1492,6 @@ TEST_CASE( "adios1_fileBased_write_test", "[serial][adios1]" )
     {
         *positionOffset_local_3 = positionOffset_global[i];
         e_3["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_3);
-        o.flush();
     }
 
     o.flush();

@@ -224,8 +224,8 @@ template< typename T_elem >
 inline void
 BaseRecord< T_elem >::flush(std::string const& name)
 {
-    if( this->empty() )
-        throw std::runtime_error("A Record can not be written without any contained RecordComponents");
+    if( !this->written && this->empty() )
+        throw std::runtime_error("A Record can not be written without any contained RecordComponents: " + name);
 
     this->flush_impl(name);
 }
