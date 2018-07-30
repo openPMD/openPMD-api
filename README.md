@@ -124,7 +124,7 @@ Choose *one* of the install methods below to get started:
 ```bash
 # optional:               +python ^python@3:
 spack install openpmd-api
-spack load --dependencies openpmd-api
+spack load -r openpmd-api
 ```
 
 ### [Conda](https://conda.io)

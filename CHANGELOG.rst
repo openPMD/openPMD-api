@@ -32,6 +32,7 @@ Other
 - remove superfluous whitespaces #292
 - readme: openPMD is for scientific data #294
 - override implies virtual #293
+- spack load: ``-r`` #298
 
 
 0.3.1-alpha

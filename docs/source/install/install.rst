@@ -33,7 +33,7 @@ A package for openPMD-api is available on the Spack package manager.
 
    # optional:               +python ^python@3:
    spack install openpmd-api
-   spack load --dependencies openpmd-api
+   spack load -r openpmd-api
 
 .. _install-conda:
 
