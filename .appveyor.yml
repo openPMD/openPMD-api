@@ -106,12 +106,11 @@ install:
 
   # Add our channels.
   - cmd: conda config --set show_channel_urls true
-  - cmd: conda config --remove channels defaults
   - cmd: conda config --add channels defaults
-  - cmd: conda config --add channels conda-forge
+  - cmd: conda config --append channels conda-forge
 
   # Configure the VM.
-  - cmd: conda install -n root --quiet --yes cmake hdf5 numpy
+  - cmd: conda install -n root --quiet --yes numpy cmake hdf5
 
 before_build:
   - cmd: cd C:\projects\openpmd-api
