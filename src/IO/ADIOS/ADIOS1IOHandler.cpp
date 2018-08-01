@@ -43,15 +43,14 @@ namespace openPMD
 #   endif
 
 ADIOS1IOHandlerImpl::ADIOS1IOHandlerImpl(AbstractIOHandler* handler)
-        : AbstractIOHandlerImpl(handler),
-          m_groupName{"data"}
+        : AbstractIOHandlerImpl(handler)
 { }
 
 ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
 {
-  /* create all files where ADIOS file creation has been deferred,
-   * but execution of the deferred operation has never been triggered
-   * (happens when no Operation::WRITE_DATASET is performed) */
+    /* create all files where ADIOS file creation has been deferred,
+     * but execution of the deferred operation has never been triggered
+     * (happens when no Operation::WRITE_DATASET is performed) */
     for( auto& f : m_existsOnDisk )
     {
         if( !f.second )
@@ -59,7 +58,7 @@ ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
             int64_t fd;
             int status;
             status = adios_open(&fd,
-                                m_groupName.c_str(),
+                                f.first->c_str(),
                                 f.first->c_str(),
                                 "w",
                                 MPI_COMM_NULL);
@@ -209,11 +208,6 @@ ADIOS1IOHandlerImpl::init()
     status = adios_read_init_method(m_readMethod, MPI_COMM_NULL, "");
     VERIFY(status == err_no_error, "Internal error: Failed to initialize ADIOS reading method");
 
-    ADIOS_STATISTICS_FLAG noStatistics = adios_stat_no;
-    status = adios_declare_group(&m_group, m_groupName.c_str(), "", noStatistics);
-    VERIFY(status == err_no_error, "Internal error: Failed to declare ADIOS group");
-    status = adios_select_method(m_group, "POSIX", "", "");
-    VERIFY(status == err_no_error, "Internal error: Failed to select ADIOS method");
 }
 #endif
 
@@ -279,7 +273,7 @@ ADIOS1IOHandlerImpl::open_write(Writable* writable)
     int64_t fd = -1;
     int status;
     status = adios_open(&fd,
-                        m_groupName.c_str(),
+                        res->second->c_str(),
                         res->second->c_str(),
                         mode.c_str(),
                         MPI_COMM_NULL);
@@ -299,6 +293,19 @@ ADIOS1IOHandlerImpl::open_read( std::string const& name )
     VERIFY(f != nullptr, "Internal error: Failed to open_read ADIOS file");
 
     return f;
+}
+
+int64_t
+ADIOS1IOHandlerImpl::initialize_group(std::string const &name)
+{
+    int status;
+    int64_t group;
+    ADIOS_STATISTICS_FLAG noStatistics = adios_stat_no;
+    status = adios_declare_group(&group, name.c_str(), "", noStatistics);
+    VERIFY(status == err_no_error, "Internal error: Failed to declare ADIOS group");
+    status = adios_select_method(group, "POSIX", "", "");
+    VERIFY(status == err_no_error, "Internal error: Failed to select ADIOS method");
+    return group;
 }
 
 #define CommonADIOS1IOHandlerImpl ADIOS1IOHandlerImpl

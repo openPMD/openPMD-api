@@ -1034,6 +1034,7 @@ TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
             e_2["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_2);
         }
 
+        // TODO not yet written
         o.iterations[2].setTime(static_cast< double >(2));
         o.flush();
 
@@ -1445,8 +1446,7 @@ TEST_CASE( "adios1_fileBased_write_test", "[serial][adios1]" )
         e_1["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local_1);
     }
 
-    //TODO breaks openWriteFile logic when removed
-    //o.flush();
+    o.iterations[1].setTime(static_cast< double >(1));
 
     ParticleSpecies& e_2 = o.iterations[2].particles["e"];
 
@@ -1471,6 +1471,8 @@ TEST_CASE( "adios1_fileBased_write_test", "[serial][adios1]" )
     }
 
     o.flush();
+
+    o.iterations[2].setTime(static_cast< double >(2));
 
     ParticleSpecies& e_3 = o.iterations[3].particles["e"];
 

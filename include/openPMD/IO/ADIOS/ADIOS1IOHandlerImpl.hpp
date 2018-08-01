@@ -78,12 +78,12 @@ namespace openPMD
         virtual ADIOS_FILE* open_read(std::string const& name);
         void close(int64_t);
         void close(ADIOS_FILE*);
+        int64_t initialize_group(std::string const& name);
 
     protected:
-        int64_t m_group;
-        std::string m_groupName;
         ADIOS_READ_METHOD m_readMethod;
         std::unordered_map< Writable*, std::shared_ptr< std::string > > m_filePaths;
+        std::unordered_map< std::shared_ptr< std::string >, int64_t > m_groups;
         std::unordered_map< std::shared_ptr< std::string >, bool > m_existsOnDisk;
         std::unordered_map< std::shared_ptr< std::string >, int64_t > m_openWriteFileHandles;
         std::unordered_map< std::shared_ptr< std::string >, ADIOS_FILE* > m_openReadFileHandles;

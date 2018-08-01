@@ -537,7 +537,6 @@ Series::flushFileBased()
             iteration << std::setw(*m_filenamePadding) << std::setfill('0') << i.first;
             std::string filename = *m_filenamePrefix + iteration.str() + *m_filenamePostfix;
 
-            /* flush attributes to newly created iterations */
             dirty |= i.second.dirty;
             i.second.flushFileBased(filename, i.first);
 

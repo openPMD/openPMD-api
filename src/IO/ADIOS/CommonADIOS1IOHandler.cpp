@@ -24,7 +24,7 @@ CommonADIOS1IOHandlerImpl::close(int64_t fd)
 {
     int status;
     status = adios_close(fd);
-    VERIFY(status == err_no_error, "Internal error: Failed to open_write close ADIOS file during creation");
+    VERIFY(status == err_no_error, "Internal error: Failed to close ADIOS file (open_write)");
 }
 
 void
@@ -32,7 +32,7 @@ CommonADIOS1IOHandlerImpl::close(ADIOS_FILE* f)
 {
     int status;
     status = adios_read_close(f);
-    VERIFY(status == err_no_error, "Internal error: Failed to close ADIOS file");
+    VERIFY(status == err_no_error, "Internal error: Failed to close ADIOS file (open_read)");
 }
 
 void
@@ -59,6 +59,9 @@ CommonADIOS1IOHandlerImpl::createFile(Writable* writable,
 
         m_filePaths[writable] = std::make_shared< std::string >(name);
 
+        /* our control flow allows for more than one open file handle
+         * if multiple files are opened with the same group, data might be lost */
+        m_groups[m_filePaths[writable]] = initialize_group(name);
         /* defer actually opening the file handle until the first Operation::WRITE_DATASET occurs */
         m_existsOnDisk[m_filePaths[writable]] = false;
     }
@@ -116,6 +119,7 @@ CommonADIOS1IOHandlerImpl::createDataset(Writable* writable,
             close(m_openWriteFileHandles.at(res->second));
             m_openWriteFileHandles.erase(it);
         }
+        int64_t group = m_groups[res->second];
 
         /* Sanitize name */
         std::string name = parameters.name;
@@ -134,17 +138,17 @@ CommonADIOS1IOHandlerImpl::createDataset(Writable* writable,
         for( size_t i = 0; i < ndims; ++i )
         {
             chunkSize[i] = "/tmp" + path + "_chunkSize" + std::to_string(i);
-            id = adios_define_var(m_group, chunkSize[i].c_str(), "", adios_unsigned_long, "", "", "");
+            id = adios_define_var(group, chunkSize[i].c_str(), "", adios_unsigned_long, "", "", "");
             VERIFY(id != 0, "Internal error: Failed to define ADIOS variable during Dataset creation");
             chunkOffset[i] = "/tmp" + path + "_chunkOffset" + std::to_string(i);
-            id = adios_define_var(m_group, chunkOffset[i].c_str(), "", adios_unsigned_long, "", "", "");
+            id = adios_define_var(group, chunkOffset[i].c_str(), "", adios_unsigned_long, "", "", "");
             VERIFY(id != 0, "Internal error: Failed to define ADIOS variable during Dataset creation");
         }
 
         std::string chunkSizeParam = auxiliary::join(chunkSize, ",");
         std::string globalSize = getBP1Extent(parameters.extent);
         std::string chunkOffsetParam = auxiliary::join(chunkOffset, ",");
-        id = adios_define_var(m_group,
+        id = adios_define_var(group,
                               path.c_str(),
                               "",
                               getBP1DataType(parameters.dtype),
@@ -201,6 +205,9 @@ CommonADIOS1IOHandlerImpl::openFile(Writable* writable,
         close(m_openWriteFileHandles[filePath]);
         m_openWriteFileHandles.erase(filePath);
     }
+
+    if( m_groups.find(filePath) == m_groups.end() )
+        m_groups[filePath] = initialize_group(name);
 
     ADIOS_FILE* f = open_read(name);
 
@@ -677,8 +684,13 @@ CommonADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
         name += '/';
     name += parameters.name;
 
+    auto res = m_filePaths.find(writable);
+    if( res == m_filePaths.end() )
+        res = m_filePaths.find(writable->parent);
+    int64_t group = m_groups[res->second];
+
     int status;
-    status = adios_define_attribute_byvalue(m_group,
+    status = adios_define_attribute_byvalue(group,
                                             name.c_str(),
                                             "",
                                             getBP1DataType(parameters.dtype),
