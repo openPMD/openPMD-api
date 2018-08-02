@@ -62,11 +62,11 @@ namespace traits
 
             auto& np = ret.particlePatches["numParticles"];
             auto& npc = np[RecordComponent::SCALAR];
-            npc.resetDataset(Dataset(Datatype::UINT64, {0}));
+            npc.resetDataset(Dataset(Datatype::UINT64, {1}));
             npc.parent = np.parent;
             auto& npo = ret.particlePatches["numParticlesOffset"];
             auto& npoc = npo[RecordComponent::SCALAR];
-            npoc.resetDataset(Dataset(Datatype::UINT64, {0}));
+            npoc.resetDataset(Dataset(Datatype::UINT64, {1}));
             npoc.parent = npo.parent;
         }
     };

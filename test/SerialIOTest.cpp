@@ -1152,8 +1152,9 @@ TEST_CASE( "hdf5_patch_test", "[serial][hdf5]" )
 {
     Series o = Series("../samples/serial_patch.h5", AccessType::CREATE);
 
-    o.iterations[1].particles["e"].particlePatches["offset"]["x"].setUnitSI(42);
     auto dset = Dataset(Datatype::DOUBLE, {1});
+    o.iterations[1].particles["e"].particlePatches["offset"]["x"].resetDataset(dset);
+    o.iterations[1].particles["e"].particlePatches["offset"]["x"].setUnitSI(42);
     o.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].resetDataset(dset);
     o.iterations[1].particles["e"]["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
 }
