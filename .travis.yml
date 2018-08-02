@@ -239,6 +239,7 @@ jobs:
     # Clang 8.1.0-apple + Python 2.7.10 @ OSX
     - <<: *test-cpp-unit
       os: osx
+      # osx_image: xcode8.3
       sudo: required
       language: generic
       env:
