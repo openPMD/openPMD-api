@@ -239,7 +239,7 @@ jobs:
     # Clang 8.1.0-apple + Python 2.7.10 @ OSX
     - <<: *test-cpp-unit
       os: osx
-      # osx_image: xcode8.3
+      osx_image: xcode8.3
       sudo: required
       language: generic
       env:
@@ -514,7 +514,7 @@ install:
       spack load hdf5$HDF5_VERSION $SPACK_VAR_MPI $COMPILERSPEC;
     fi
   - if [ $USE_ADIOS1 == "ON" ]; then
-      travis_wait spack install
+      travis_wait 30 spack install
         adios$ADIOS1_VERSION
         $SPACK_VAR_MPI ^python@$TRAVIS_PYTHON_VERSION
         $COMPILERSPEC &&
