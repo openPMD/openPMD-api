@@ -4,13 +4,13 @@ compilers:
     extra_rpaths: []
     flags: {}
     modules: []
-    operating_system: sierra
+    operating_system: highsierra
     paths:
       cc: /usr/bin/clang
       cxx: /usr/bin/clang++
       f77: null
       fc: null
-    spec: clang@8.1.0
+    spec: clang@9.1.0
     target: x86_64
 - compiler:
     environment: {}
