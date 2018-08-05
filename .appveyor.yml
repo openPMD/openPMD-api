@@ -11,33 +11,39 @@ environment:
 #      CONDA_INSTALL_LOCN: C:\\Miniconda-x64
 #      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2008
 
-    - TARGET_ARCH: x86
-      CONDA_PY: 35
-      CONDA_INSTALL_LOCN: C:\\Miniconda35
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-      platform: x86
-      SHARED: ON
+#    - TARGET_ARCH: x86
+#      CONDA_PY: 35
+#      CONDA_INSTALL_LOCN: C:\\Miniconda35
+#      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+#      platform: x86
+#      SHARED: ON
 
-    - TARGET_ARCH: x64
-      CONDA_PY: 35
-      CONDA_INSTALL_LOCN: C:\\Miniconda35-x64
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-      platform: x64
-      SHARED: ON
+#    - TARGET_ARCH: x64
+#      CONDA_PY: 35
+#      CONDA_INSTALL_LOCN: C:\\Miniconda35-x64
+#      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+#      platform: x64
+#      SHARED: ON
 
-    - TARGET_ARCH: x86
-      CONDA_PY: 36
-      CONDA_INSTALL_LOCN: C:\\Miniconda36
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-      platform: x86
-      SHARED: OFF
+#    - TARGET_ARCH: x86
+#      CONDA_PY: 36
+#      CONDA_INSTALL_LOCN: C:\\Miniconda36
+#      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+#      platform: x86
+#      SHARED: OFF
 
-    - TARGET_ARCH: x64
-      CONDA_PY: 36
+#    - TARGET_ARCH: x64
+#      CONDA_PY: 36
+#      CONDA_INSTALL_LOCN: C:\\Miniconda36-x64
+#      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+#      platform: x64
+#      SHARED: OFF
+
+    - CONDA_PY: 36
       CONDA_INSTALL_LOCN: C:\\Miniconda36-x64
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
       platform: x64
-      SHARED: OFF
+      CYGWIN: ON
+      SHARED: ON
 
 configuration:
 #  - Debug
@@ -126,15 +132,21 @@ before_build:
 #  - cmd: if "%TARGET_ARCH%"=="x86" "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64_x86
   - cmd: if "%TARGET_ARCH%"=="x86" "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
   - cmd: if "%TARGET_ARCH%"=="x64" "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
+#  - cmd: if "%CYGWIN%"=="ON" set "CC=C:\\cygwin64\bin\cc" | set "CXX=C:\\cygwin64\bin\c++.exe"
+  - cmd: if "%CYGWIN%"=="ON" set "PATH=%PATH%;C:\\cygwin64\bin;C:\\cygwin64\usr\bin"
 
   # CMake configure
-  - cmd: cmake -G "%OPENPMD_CMAKE_GENERATOR%" -DCMAKE_BUILD_TYPE=%CONFIGURATION% -DBUILD_SHARED_LIBS=%SHARED% -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX="%CONDA_INSTALL_LOCN%" -DCMAKE_INSTALL_BINDIR="Library\bin" ".."
+  - cmd: if "%CYGWIN%"=="" cmake -G "%OPENPMD_CMAKE_GENERATOR%" -DCMAKE_BUILD_TYPE=%CONFIGURATION% -DBUILD_SHARED_LIBS=%SHARED% -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX="%CONDA_INSTALL_LOCN%" -DCMAKE_INSTALL_BINDIR="Library\bin" ".."
+  - cmd: if "%CYGWIN%"=="ON" cmake -G "NMake Makefiles" -DBUILD_SHARED_LIBS=%SHARED% -DBUILD_TESTING=ON -DPYTHON_EXECUTABLE:FILEPATH=%CONDA_INSTALL_LOCN%\\python.exe -DCMAKE_INSTALL_PREFIX="%CONDA_INSTALL_LOCN%" -DCMAKE_INSTALL_BINDIR="Library\bin" ".."
+
 
 build_script:
-  - cmd: cmake --build . --config %CONFIGURATION%
-  - cmd: cmake --build . --config %CONFIGURATION% --target install
+  - cmd: if "%CYGWIN%"=="" set VS_CONFIG "--config %CONFIGURATION%"
+  - cmd: cmake --build . %VS_CONFIG%
+  - cmd: cmake --build . %VS_CONFIG% --target install
 #  - cmd: tree "%CONDA_INSTALL_LOCN%"
 
 test_script:
-  - cmd: ctest -V -C %CONFIGURATION%
+  - cmd: if "%CYGWIN%"=="" set VS_TEST_CONFIG "-C %CONFIGURATION%"
+  - cmd: ctest -V %VS_TEST_CONFIG%
   - cmd: python -c "import openPMD; print(openPMD.__version__)"
