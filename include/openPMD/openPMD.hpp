@@ -20,6 +20,33 @@
  */
 #pragma once
 
+// IWYU pragma: begin_exports
+#include "openPMD/Dataset.hpp"
+#include "openPMD/Datatype.hpp"
+#include "openPMD/IterationEncoding.hpp"
+#include "openPMD/Iteration.hpp"
+#include "openPMD/Mesh.hpp"
+#include "openPMD/ParticlePatches.hpp"
+#include "openPMD/ParticleSpecies.hpp"
+#include "openPMD/RecordComponent.hpp"
+#include "openPMD/Record.hpp"
 #include "openPMD/Series.hpp"
+
+#include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/Attribute.hpp"
+#include "openPMD/backend/BaseRecordComponent.hpp"
+#include "openPMD/backend/BaseRecord.hpp"
+#include "openPMD/backend/Container.hpp"
+#include "openPMD/backend/MeshRecordComponent.hpp"
+#include "openPMD/backend/PatchRecord.hpp"
+#include "openPMD/backend/PatchRecordComponent.hpp"
+#include "openPMD/backend/Writable.hpp"
+
+#include "openPMD/IO/AccessType.hpp"
+
+#include "openPMD/auxiliary/OutOfRangeMsg.hpp"
 #include "openPMD/auxiliary/ShareRaw.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
+
 #include "openPMD/version.hpp"
+// IWYU pragma: end_exports
