@@ -23,6 +23,7 @@
 #include <iostream>
 #include <memory>
 #include <numeric>
+#include <cstdlib>
 
 
 using std::cout;

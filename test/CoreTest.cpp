@@ -20,6 +20,7 @@ using namespace openPMD;
 #include <string>
 #include <vector>
 #include <array>
+#include <cstddef>
 
 
 TEST_CASE( "attribute_dtype_test", "[core]" )

@@ -24,6 +24,7 @@
 #include "openPMD/backend/PatchRecord.hpp"
 
 #include <vector>
+#include <cstddef>
 
 
 namespace openPMD

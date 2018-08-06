@@ -21,6 +21,7 @@
 #include "openPMD/Dataset.hpp"
 
 #include <iostream>
+#include <cstddef>
 
 
 namespace openPMD
