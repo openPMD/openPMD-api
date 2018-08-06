@@ -20,7 +20,7 @@
  */
 #pragma once
 
-#include "openPMDIO/AbstractFilePosition.hpp"
+#include "openPMD/IO/AbstractFilePosition.hpp"
 
 
 namespace openPMD
