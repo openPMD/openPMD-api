@@ -46,7 +46,7 @@ namespace openPMD
         friend class ADIOS1IOHandlerImpl;
 
     public:
-        ADIOS1IOHandler(std::string const& path, AccessType);
+        ADIOS1IOHandler(std::string path, AccessType);
         ~ADIOS1IOHandler() override;
 
         std::future< void > flush() override;
@@ -63,7 +63,7 @@ namespace openPMD
         friend class ADIOS1IOHandlerImpl;
 
     public:
-        ADIOS1IOHandler(std::string const& path, AccessType);
+        ADIOS1IOHandler(std::string path, AccessType);
         ~ADIOS1IOHandler() override;
 
         std::future< void > flush() override;

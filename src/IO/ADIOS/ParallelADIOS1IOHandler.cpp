@@ -233,10 +233,10 @@ ParallelADIOS1IOHandlerImpl::init()
     VERIFY(status == err_no_error, "Internal error: Failed to select ADIOS method");
 }
 
-ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string const& path,
+ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string path,
                                                  AccessType at,
                                                  MPI_Comm comm)
-        : AbstractIOHandler(path, at, comm),
+        : AbstractIOHandler(std::move(path), at, comm),
           m_impl{new ParallelADIOS1IOHandlerImpl(this, comm)}
 {
     m_impl->init();
@@ -306,7 +306,7 @@ ParallelADIOS1IOHandlerImpl::open_write(Writable* writable)
 }
 
 ADIOS_FILE*
-ParallelADIOS1IOHandlerImpl::open_read(std::string const& name)
+ParallelADIOS1IOHandlerImpl::open_read(std::string const & name)
 {
     ADIOS_FILE *f;
     f = adios_read_open_file(name.c_str(),
@@ -324,17 +324,17 @@ ParallelADIOS1IOHandlerImpl::open_read(std::string const& name)
 
 #else
 #   if openPMD_HAVE_MPI
-ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string const& path,
+ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string path,
                                                  AccessType at,
                                                  MPI_Comm comm)
-        : AbstractIOHandler(path, at, comm)
+        : AbstractIOHandler(std::move(path), at, comm)
 {
     throw std::runtime_error("openPMD-api built without ADIOS1 support");
 }
 #   else
-ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string const& path,
+ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string path,
                                                  AccessType at)
-        : AbstractIOHandler(path, at)
+        : AbstractIOHandler(std::move(path), at)
 {
     throw std::runtime_error("openPMD-api built without parallel ADIOS1 support");
 }

@@ -74,9 +74,9 @@ class AbstractIOHandler
 {
 public:
 #if openPMD_HAVE_MPI
-    AbstractIOHandler(std::string const& path, AccessType, MPI_Comm);
+    AbstractIOHandler(std::string path, AccessType, MPI_Comm);
 #endif
-    AbstractIOHandler(std::string const& path, AccessType);
+    AbstractIOHandler(std::string path, AccessType);
     virtual ~AbstractIOHandler();
 
     /** Add provided task to queue according to FIFO.
@@ -101,7 +101,7 @@ public:
 class DummyIOHandler : public AbstractIOHandler
 {
 public:
-    DummyIOHandler(std::string const&, AccessType);
+    DummyIOHandler(std::string, AccessType);
     ~DummyIOHandler() override;
 
     /** No-op consistent with the IOHandler interface to enable library use without IO.

@@ -46,9 +46,9 @@ namespace openPMD
 
     public:
 #   if openPMD_HAVE_MPI
-        ParallelADIOS1IOHandler(std::string const& path, AccessType, MPI_Comm);
+        ParallelADIOS1IOHandler(std::string path, AccessType, MPI_Comm);
 #   else
-        ParallelADIOS1IOHandler(std::string const& path, AccessType);
+        ParallelADIOS1IOHandler(std::string path, AccessType);
 #   endif
         ~ParallelADIOS1IOHandler() override;
 

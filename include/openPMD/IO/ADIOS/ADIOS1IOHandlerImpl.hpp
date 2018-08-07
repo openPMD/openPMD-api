@@ -75,7 +75,7 @@ namespace openPMD
         void listAttributes(Writable*, Parameter< Operation::LIST_ATTS > &) override;
 
         virtual int64_t open_write(Writable *);
-        virtual ADIOS_FILE* open_read(std::string const& name);
+        virtual ADIOS_FILE* open_read(std::string const & name);
         void close(int64_t);
         void close(ADIOS_FILE*);
 

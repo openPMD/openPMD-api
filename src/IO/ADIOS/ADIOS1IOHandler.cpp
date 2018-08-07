@@ -31,6 +31,7 @@
 #   include <iostream>
 #   include <memory>
 #endif
+#include <utility>
 
 
 namespace openPMD
@@ -218,8 +219,8 @@ ADIOS1IOHandlerImpl::init()
 #endif
 
 #if openPMD_HAVE_ADIOS1
-ADIOS1IOHandler::ADIOS1IOHandler(std::string const& path, AccessType at)
-        : AbstractIOHandler(path, at),
+ADIOS1IOHandler::ADIOS1IOHandler(std::string path, AccessType at)
+        : AbstractIOHandler(std::move(path), at),
           m_impl{new ADIOS1IOHandlerImpl(this)}
 {
     m_impl->init();
@@ -289,7 +290,7 @@ ADIOS1IOHandlerImpl::open_write(Writable* writable)
 }
 
 ADIOS_FILE*
-ADIOS1IOHandlerImpl::open_read( std::string const& name )
+ADIOS1IOHandlerImpl::open_read(std::string const & name)
 {
     ADIOS_FILE *f = nullptr;
     f = adios_read_open_file(name.c_str(),
@@ -306,8 +307,8 @@ ADIOS1IOHandlerImpl::open_read( std::string const& name )
 #undef CommonADIOS1IOHandlerImpl
 
 #else
-ADIOS1IOHandler::ADIOS1IOHandler(std::string const& path, AccessType at)
-        : AbstractIOHandler(path, at)
+ADIOS1IOHandler::ADIOS1IOHandler(std::string path, AccessType at)
+        : AbstractIOHandler(std::move(path), at)
 {
     throw std::runtime_error("openPMD-api built without ADIOS1 support");
 }
