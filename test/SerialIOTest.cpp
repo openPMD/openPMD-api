@@ -1702,48 +1702,51 @@ TEST_CASE( "adios1_fileBased_write_test", "[serial][adios1]" )
     {
         Series o = Series("../samples/serial_fileBased_write%T.bp", AccessType::READ_ONLY);
 
-        REQUIRE(o.openPMDextension() == 1);
+        //REQUIRE(o.openPMDextension() == 1);
 
         REQUIRE(o.iterations.size() == 3);
         REQUIRE(o.iterations.count(1) == 1);
         REQUIRE(o.iterations.count(2) == 1);
         REQUIRE(o.iterations.count(3) == 1);
 
-        REQUIRE(o.iterations[1].time< float >() == 1.f);
-        REQUIRE(o.iterations[2].time< float >() == 2.f);
-        REQUIRE(o.iterations[3].time< float >() == 3.f);
+        REQUIRE(o.iterations.at(1).time< float >() == 1.f);
+        REQUIRE(o.iterations.at(2).time< float >() == 2.f);
+        REQUIRE(o.iterations.at(3).time< float >() == 3.f);
 
         for( uint64_t i = 1; i <= 3; ++i )
         {
-            Iteration iteration = o.iterations[i];
+            Iteration iteration = o.iterations.at(i);
 
             REQUIRE(iteration.particles.size() == 1);
             REQUIRE(iteration.particles.count("e") == 1);
 
-            ParticleSpecies& species = iteration.particles["e"];
+            ParticleSpecies& species = iteration.particles.at("e");
 
             REQUIRE(species.size() == 2);
             REQUIRE(species.count("position") == 1);
             REQUIRE(species.count("positionOffset") == 1);
 
-            REQUIRE(species["position"].size() == 1);
-            REQUIRE(species["position"].count("x") == 1);
-            REQUIRE(species["position"]["x"].getDatatype() == Datatype::DOUBLE);
-            REQUIRE(species["position"]["x"].getDimensionality() == 1);
-            REQUIRE(species["position"]["x"].getExtent() == Extent{4});
-            REQUIRE(species["positionOffset"].size() == 1);
-            REQUIRE(species["positionOffset"].count("x") == 1);
-            REQUIRE(species["positionOffset"]["x"].getDatatype() == Datatype::UINT64);
-            REQUIRE(species["positionOffset"]["x"].getDimensionality() == 1);
-            REQUIRE(species["positionOffset"]["x"].getExtent() == Extent{4});
+            REQUIRE(species.at("position").size() == 1);
+            REQUIRE(species.at("position").count("x") == 1);
+            REQUIRE(species.at("position").at("x").getDatatype() == Datatype::DOUBLE);
+            REQUIRE(species.at("position").at("x").getDimensionality() == 1);
+            REQUIRE(species.at("position").at("x").getExtent() == Extent{4});
+            REQUIRE(species.at("positionOffset").size() == 1);
+            REQUIRE(species.at("positionOffset").count("x") == 1);
+            REQUIRE(species.at("positionOffset").at("x").getDatatype() == Datatype::UINT64);
+            REQUIRE(species.at("positionOffset").at("x").getDimensionality() == 1);
+            REQUIRE(species.at("positionOffset").at("x").getExtent() == Extent{4});
 
-            auto position = species["position"]["x"].loadChunk< double >({0}, {4}).get();
+            auto position = species.at("position").at("x").loadChunk< double >({0}, {4});
+            auto position_raw = position.get();
+            auto positionOffset = species.at("positionOffset").at("x").loadChunk< uint64_t >({0}, {4});
+            auto positionOffset_raw = positionOffset.get();
+            o.flush();
             for( uint64_t j = 0; j < 4; ++j )
-                REQUIRE(position[j] == static_cast< double >(j));
-
-            auto positionOffset = species["positionOffset"]["x"].loadChunk< uint64_t >({0}, {4}).get();
-            for( uint64_t j = 0; j < 4; ++j )
-                REQUIRE(positionOffset[j] == j);
+            {
+                REQUIRE(position_raw[j] == static_cast< double >(j));
+                REQUIRE(positionOffset_raw[j] == j);
+            }
         }
     }
 }

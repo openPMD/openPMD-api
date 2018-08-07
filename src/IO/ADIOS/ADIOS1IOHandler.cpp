@@ -48,32 +48,30 @@ ADIOS1IOHandlerImpl::ADIOS1IOHandlerImpl(AbstractIOHandler* handler)
 
 ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
 {
-    /* create all files where ADIOS file creation has been deferred,
-     * but execution of the deferred operation has never been triggered
-     * (happens when no Operation::WRITE_DATASET is performed) */
-    for( auto& f : m_existsOnDisk )
-    {
-        if( !f.second )
-        {
-            int64_t fd;
-            int status;
-            status = adios_open(&fd,
-                                f.first->c_str(),
-                                f.first->c_str(),
-                                "w",
-                                MPI_COMM_NULL);
-            if( status != err_no_error )
-                std::cerr << "Internal error: Failed to open_flush ADIOS file\n";
-
-            m_openWriteFileHandles[f.first] = fd;
-        }
-    }
-
     for( auto& f : m_openReadFileHandles )
         close(f.second);
+    m_openReadFileHandles.clear();
 
-    for( auto& f : m_openWriteFileHandles )
-        close(f.second);
+    if( this->m_handler->accessType != AccessType::READ_ONLY )
+    {
+        for( auto& f : m_openWriteFileHandles )
+            close(f.second);
+        m_openWriteFileHandles.clear();
+
+        for( auto& group : m_attributeWrites )
+            for( auto& att : group.second )
+                flush_attribute(group.first, att.first, att.second);
+
+        /* create all files, even if ADIOS file creation has been deferred,
+         * but execution of the deferred operation has never been triggered
+         * (happens when no Operation::WRITE_DATASET is performed) */
+        for( auto& f : m_filePaths )
+            if( m_openWriteFileHandles.find(f.second) == m_openWriteFileHandles.end() )
+                m_openWriteFileHandles[f.second] = open_write(f.first);
+
+        for( auto& f : m_openWriteFileHandles )
+            close(f.second);
+    }
 
     int status;
     status = adios_read_finalize_method(m_readMethod);
