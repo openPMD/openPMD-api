@@ -37,8 +37,7 @@ PatchRecord::setUnitDimension(std::map< UnitDimension, double > const& udim)
     return *this;
 }
 
-PatchRecord::PatchRecord()
-{ }
+PatchRecord::PatchRecord() = default;
 
 void
 PatchRecord::flush(std::string const& path)

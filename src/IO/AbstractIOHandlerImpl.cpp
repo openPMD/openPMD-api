@@ -28,8 +28,7 @@ AbstractIOHandlerImpl::AbstractIOHandlerImpl(AbstractIOHandler *handler)
     : m_handler{handler}
 { }
 
-AbstractIOHandlerImpl::~AbstractIOHandlerImpl()
-{ }
+AbstractIOHandlerImpl::~AbstractIOHandlerImpl() = default;
 
 std::future< void >
 AbstractIOHandlerImpl::flush()

@@ -242,8 +242,7 @@ ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string const& path,
     m_impl->init();
 }
 
-ParallelADIOS1IOHandler::~ParallelADIOS1IOHandler()
-{ }
+ParallelADIOS1IOHandler::~ParallelADIOS1IOHandler() = default;
 
 std::future< void >
 ParallelADIOS1IOHandler::flush()
@@ -340,8 +339,7 @@ ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string const& path,
 }
 #   endif
 
-ParallelADIOS1IOHandler::~ParallelADIOS1IOHandler()
-{ }
+ParallelADIOS1IOHandler::~ParallelADIOS1IOHandler() = default;
 
 std::future< void >
 ParallelADIOS1IOHandler::flush()
