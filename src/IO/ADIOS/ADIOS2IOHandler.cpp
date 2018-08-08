@@ -20,12 +20,14 @@
  */
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 
+#include <utility>
+
 
 namespace openPMD
 {
 #if openPMD_HAVE_ADIOS2
-ADIOS2IOHandler::ADIOS2IOHandler(std::string const& path, AccessType at)
-        : AbstractIOHandler(path, at),
+ADIOS2IOHandler::ADIOS2IOHandler(std::string path, AccessType at)
+        : AbstractIOHandler(std::move(path), at),
           m_impl{new ADIOS2IOHandlerImpl(this)}
 { }
 
@@ -41,8 +43,8 @@ ADIOS2IOHandler::flush()
 #endif
 
 #if openPMD_HAVE_ADIOS2 && !openPMD_HAVE_MPI
-ADIOS2IOHandler::ADIOS2IOHandler(std::string const& path, AccessType at)
-        : AbstractIOHandler(path, at),
+ADIOS2IOHandler::ADIOS2IOHandler(std::string path, AccessType at)
+        : AbstractIOHandler(std::move(path), at),
           m_impl{new ADIOS2IOHandlerImpl(this)}
 { }
 
@@ -55,11 +57,11 @@ ADIOS2IOHandler::flush()
     return m_impl->flush();
 }
 #else
-ADIOS2IOHandler::ADIOS2IOHandler(std::string const& path, AccessType at)
+ADIOS2IOHandler::ADIOS2IOHandler(std::string path, AccessType at)
 #if openPMD_HAVE_MPI
-        : AbstractIOHandler(path, at, MPI_COMM_NULL)
+        : AbstractIOHandler(std::move(path), at, MPI_COMM_NULL)
 #else
-: AbstractIOHandler(path, at)
+: AbstractIOHandler(std::move(path), at)
 #endif
 {
     throw std::runtime_error("openPMD-api built without parallel ADIOS2 support");

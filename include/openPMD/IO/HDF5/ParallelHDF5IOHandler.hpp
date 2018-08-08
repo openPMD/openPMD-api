@@ -35,9 +35,9 @@ namespace openPMD
     {
     public:
     #if openPMD_HAVE_MPI
-        ParallelHDF5IOHandler(std::string const& path, AccessType, MPI_Comm);
+        ParallelHDF5IOHandler(std::string path, AccessType, MPI_Comm);
     #else
-        ParallelHDF5IOHandler(std::string const& path, AccessType);
+        ParallelHDF5IOHandler(std::string path, AccessType);
     #endif
         ~ParallelHDF5IOHandler() override;
 

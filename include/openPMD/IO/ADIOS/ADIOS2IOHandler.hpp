@@ -72,7 +72,7 @@ class ADIOS2IOHandler : public AbstractIOHandler
     friend class ADIOS2IOHandlerImpl;
 
 public:
-    ADIOS2IOHandler(std::string const& path, AccessType);
+    ADIOS2IOHandler(std::string path, AccessType);
     ~ADIOS2IOHandler() override;
 
     std::future< void > flush() override;

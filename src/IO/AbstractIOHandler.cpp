@@ -25,22 +25,23 @@
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
 
 #include <iostream>
+#include <utility>
 
 
 namespace openPMD
 {
 #if openPMD_HAVE_MPI
-AbstractIOHandler::AbstractIOHandler(std::string const& path,
+AbstractIOHandler::AbstractIOHandler(std::string path,
                                      AccessType at,
                                      MPI_Comm)
-        : directory{path},
+        : directory{std::move(path)},
           accessType{at}
 { }
 #endif
 
-AbstractIOHandler::AbstractIOHandler(std::string const& path,
+AbstractIOHandler::AbstractIOHandler(std::string path,
                                      AccessType at)
-        : directory{path},
+        : directory{std::move(path)},
           accessType{at}
 { }
 
@@ -53,8 +54,8 @@ AbstractIOHandler::enqueue(IOTask const& i)
     m_work.push(i);
 }
 
-DummyIOHandler::DummyIOHandler(std::string const& path, AccessType at)
-        : AbstractIOHandler(path, at)
+DummyIOHandler::DummyIOHandler(std::string path, AccessType at)
+        : AbstractIOHandler(std::move(path), at)
 { }
 
 DummyIOHandler::~DummyIOHandler()

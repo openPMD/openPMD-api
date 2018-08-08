@@ -37,7 +37,7 @@ namespace openPMD
      */
     std::shared_ptr< AbstractIOHandler >
     createIOHandler(
-        std::string const& path,
+        std::string path,
         AccessType accessType,
         Format format,
         MPI_Comm comm
@@ -53,7 +53,7 @@ namespace openPMD
      */
     std::shared_ptr< AbstractIOHandler >
     createIOHandler(
-        std::string const& path,
+        std::string path,
         AccessType accessType,
         Format format
     );

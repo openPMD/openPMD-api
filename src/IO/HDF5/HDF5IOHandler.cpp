@@ -1444,8 +1444,8 @@ void HDF5IOHandlerImpl::listAttributes(Writable* writable,
 #endif
 
 #if openPMD_HAVE_HDF5
-HDF5IOHandler::HDF5IOHandler(std::string const& path, AccessType at)
-        : AbstractIOHandler(path, at),
+HDF5IOHandler::HDF5IOHandler(std::string path, AccessType at)
+        : AbstractIOHandler(std::move(path), at),
           m_impl{new HDF5IOHandlerImpl(this)}
 { }
 
@@ -1458,8 +1458,8 @@ HDF5IOHandler::flush()
     return m_impl->flush();
 }
 #else
-HDF5IOHandler::HDF5IOHandler(std::string const& path, AccessType at)
-        : AbstractIOHandler(path, at)
+HDF5IOHandler::HDF5IOHandler(std::string path, AccessType at)
+        : AbstractIOHandler(std::move(path), at)
 {
     throw std::runtime_error("openPMD-api built without HDF5 support");
 }
