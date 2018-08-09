@@ -48,8 +48,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(std::string path, AccessType at)
           m_impl{new ADIOS2IOHandlerImpl(this)}
 { }
 
-ADIOS2IOHandler::~ADIOS2IOHandler()
-{ }
+ADIOS2IOHandler::~ADIOS2IOHandler() = default;
 
 std::future< void >
 ADIOS2IOHandler::flush()
@@ -67,8 +66,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(std::string path, AccessType at)
     throw std::runtime_error("openPMD-api built without parallel ADIOS2 support");
 }
 
-ADIOS2IOHandler::~ADIOS2IOHandler()
-{ }
+ADIOS2IOHandler::~ADIOS2IOHandler() = default;
 
 std::future< void >
 ADIOS2IOHandler::flush()

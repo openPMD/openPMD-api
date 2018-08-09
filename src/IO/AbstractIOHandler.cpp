@@ -45,8 +45,7 @@ AbstractIOHandler::AbstractIOHandler(std::string path,
           accessType{at}
 { }
 
-AbstractIOHandler::~AbstractIOHandler()
-{ }
+AbstractIOHandler::~AbstractIOHandler() = default;
 
 void
 AbstractIOHandler::enqueue(IOTask const& i)
@@ -58,8 +57,7 @@ DummyIOHandler::DummyIOHandler(std::string path, AccessType at)
         : AbstractIOHandler(std::move(path), at)
 { }
 
-DummyIOHandler::~DummyIOHandler()
-{ }
+DummyIOHandler::~DummyIOHandler() = default;
 
 void DummyIOHandler::enqueue(IOTask const&)
 { }

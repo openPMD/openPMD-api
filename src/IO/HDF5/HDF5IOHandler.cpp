@@ -1449,8 +1449,7 @@ HDF5IOHandler::HDF5IOHandler(std::string path, AccessType at)
           m_impl{new HDF5IOHandlerImpl(this)}
 { }
 
-HDF5IOHandler::~HDF5IOHandler()
-{ }
+HDF5IOHandler::~HDF5IOHandler() = default;
 
 std::future< void >
 HDF5IOHandler::flush()
@@ -1464,8 +1463,7 @@ HDF5IOHandler::HDF5IOHandler(std::string path, AccessType at)
     throw std::runtime_error("openPMD-api built without HDF5 support");
 }
 
-HDF5IOHandler::~HDF5IOHandler()
-{ }
+HDF5IOHandler::~HDF5IOHandler() = default;
 
 std::future< void >
 HDF5IOHandler::flush()

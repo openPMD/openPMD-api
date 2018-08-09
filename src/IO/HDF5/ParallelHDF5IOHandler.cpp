@@ -44,8 +44,7 @@ ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string path,
           m_impl{new ParallelHDF5IOHandlerImpl(this, comm)}
 { }
 
-ParallelHDF5IOHandler::~ParallelHDF5IOHandler()
-{ }
+ParallelHDF5IOHandler::~ParallelHDF5IOHandler() = default;
 
 std::future< void >
 ParallelHDF5IOHandler::flush()
@@ -98,8 +97,7 @@ ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string path,
 }
 #   endif
 
-ParallelHDF5IOHandler::~ParallelHDF5IOHandler()
-{ }
+ParallelHDF5IOHandler::~ParallelHDF5IOHandler() = default;
 
 std::future< void >
 ParallelHDF5IOHandler::flush()

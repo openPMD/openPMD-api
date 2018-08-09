@@ -226,8 +226,7 @@ ADIOS1IOHandler::ADIOS1IOHandler(std::string path, AccessType at)
     m_impl->init();
 }
 
-ADIOS1IOHandler::~ADIOS1IOHandler()
-{ }
+ADIOS1IOHandler::~ADIOS1IOHandler() = default;
 
 std::future< void >
 ADIOS1IOHandler::flush()
@@ -313,8 +312,7 @@ ADIOS1IOHandler::ADIOS1IOHandler(std::string path, AccessType at)
     throw std::runtime_error("openPMD-api built without ADIOS1 support");
 }
 
-ADIOS1IOHandler::~ADIOS1IOHandler()
-{ }
+ADIOS1IOHandler::~ADIOS1IOHandler() = default;
 
 std::future< void >
 ADIOS1IOHandler::flush()
