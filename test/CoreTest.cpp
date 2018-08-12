@@ -203,6 +203,7 @@ TEST_CASE( "particleSpecies_modification_test", "[core]" )
     REQUIRE(zeros == offset.unitDimension());
 
     auto& off_x = offset["x"];
+    off_x.resetDataset(dset);
     REQUIRE(1 == off_x.unitSI());
 }
 
@@ -468,6 +469,7 @@ TEST_CASE( "structure_test", "[core]" )
     REQUIRE(o.iterations[1].particles["P"].particlePatches["extent"]["x"].IOHandler);
     REQUIRE(prc.parent == getWritable(&o.iterations[1].particles["P"].particlePatches["extent"]));
     REQUIRE(o.iterations[1].particles["P"].particlePatches["extent"]["x"].parent == getWritable(&o.iterations[1].particles["P"].particlePatches["extent"]));
+    prc.resetDataset(dset);
 #else
     std::cerr << "Invasive tests not enabled. Hierarchy is not visible.\n";
 #endif

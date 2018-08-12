@@ -1161,14 +1161,13 @@ TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
 
         o.setOpenPMDextension(1);
         o.iterations[3].setTime(static_cast< double >(3));
-        o.flush();
     }
     REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000001.h5"));
     REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000002.h5"));
     REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000003.h5"));
 
     {
-        Series o = Series("../samples/subdir/serial_fileBased_write%T.h5", AccessType::READ_WRITE);
+        Series o = Series("../samples/subdir/serial_fileBased_write%T.h5", AccessType::READ_ONLY);
 
         REQUIRE(o.iterations.size() == 3);
         REQUIRE(o.iterations.count(1) == 1);
@@ -1189,28 +1188,42 @@ TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
         REQUIRE_THROWS_AS(o.meshesPath(), no_such_attribute_error);
         std::array< double, 7 > udim{{1, 0, 0, 0, 0, 0, 0}};
         Extent ext{4};
-        for( auto const& entry : o.iterations )
+        for( auto& entry : o.iterations )
         {
-            auto const& it = entry.second;
+            auto& it = entry.second;
             REQUIRE(it.dt< double >() == 1.);
             REQUIRE(it.time< double >() == static_cast< double >(entry.first));
             REQUIRE(it.timeUnitSI() == 1.);
-            auto const& pos = it.particles.at("e").at("position");
+            auto& pos = it.particles.at("e").at("position");
             REQUIRE(pos.timeOffset< float >() == 0.f);
             REQUIRE(pos.unitDimension() == udim);
-            auto const& pos_x = pos.at("x");
+            auto& pos_x = pos.at("x");
             REQUIRE(pos_x.unitSI() == 1.);
             REQUIRE(pos_x.getExtent() == ext);
             REQUIRE(pos_x.getDatatype() == Datatype::DOUBLE);
-            auto const& posOff = it.particles.at("e").at("positionOffset");
+            auto& posOff = it.particles.at("e").at("positionOffset");
             REQUIRE(posOff.timeOffset< float >() == 0.f);
             REQUIRE(posOff.unitDimension() == udim);
-            auto const& posOff_x = posOff.at("x");
+            auto& posOff_x = posOff.at("x");
             REQUIRE(posOff_x.unitSI() == 1.);
             REQUIRE(posOff_x.getExtent() == ext);
             REQUIRE(posOff_x.getDatatype() == Datatype::UINT64);
-        }
 
+            auto position = pos_x.loadChunk< double >({0}, {4});
+            auto position_raw = position.get();
+            auto positionOffset = posOff_x.loadChunk< uint64_t >({0}, {4});
+            auto positionOffset_raw = positionOffset.get();
+            o.flush();
+            for( uint64_t j = 0; j < 4; ++j )
+            {
+              REQUIRE(position_raw[j] == static_cast< double >(j + (entry.first-1)*4));
+              REQUIRE(positionOffset_raw[j] == j + (entry.first-1)*4);
+            }
+        }
+    }
+
+    {
+        Series o = Series("../samples/subdir/serial_fileBased_write%T.h5", AccessType::READ_WRITE);
         o.iterations[4];
     }
     REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000004.h5"));
@@ -1698,11 +1711,12 @@ TEST_CASE( "adios1_fileBased_write_test", "[serial][adios1]" )
         o.setOpenPMDextension(1);
         o.iterations[3].setTime(3.f);
     }
+    REQUIRE(auxiliary::file_exists("../samples/serial_fileBased_write1.bp"));
+    REQUIRE(auxiliary::file_exists("../samples/serial_fileBased_write2.bp"));
+    REQUIRE(auxiliary::file_exists("../samples/serial_fileBased_write3.bp"));
 
     {
         Series o = Series("../samples/serial_fileBased_write%T.bp", AccessType::READ_ONLY);
-
-        //REQUIRE(o.openPMDextension() == 1);
 
         REQUIRE(o.iterations.size() == 3);
         REQUIRE(o.iterations.count(1) == 1);
@@ -1712,6 +1726,15 @@ TEST_CASE( "adios1_fileBased_write_test", "[serial][adios1]" )
         REQUIRE(o.iterations.at(1).time< float >() == 1.f);
         REQUIRE(o.iterations.at(2).time< float >() == 2.f);
         REQUIRE(o.iterations.at(3).time< float >() == 3.f);
+
+        REQUIRE(o.basePath() == "/data/%T/");
+        REQUIRE(o.iterationEncoding() == IterationEncoding::fileBased);
+        REQUIRE(o.iterationFormat() == "serial_fileBased_write%T");
+        REQUIRE(o.openPMD() == "1.1.0");
+        REQUIRE(o.openPMDextension() == 1u);
+        REQUIRE(o.particlesPath() == "particles/");
+        REQUIRE_FALSE(o.containsAttribute("meshesPath"));
+        REQUIRE_THROWS_AS(o.meshesPath(), no_such_attribute_error);
 
         for( uint64_t i = 1; i <= 3; ++i )
         {
@@ -1744,8 +1767,8 @@ TEST_CASE( "adios1_fileBased_write_test", "[serial][adios1]" )
             o.flush();
             for( uint64_t j = 0; j < 4; ++j )
             {
-                REQUIRE(position_raw[j] == static_cast< double >(j));
-                REQUIRE(positionOffset_raw[j] == j);
+                REQUIRE(position_raw[j] == static_cast< double >(j + (i-1)*4));
+                REQUIRE(positionOffset_raw[j] == j + (i-1)*4);
             }
         }
     }

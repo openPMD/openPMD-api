@@ -91,6 +91,8 @@ PatchRecordComponent::flush(std::string const& name)
                 std::shared_ptr< void > data{std::move(uptr)};
                 dWrite.data = data;
                 dWrite.dtype = dCreate.dtype;
+                if( dWrite.dtype == Datatype::UNDEFINED )
+                    throw std::runtime_error("Dataset has not been defined for ParticlePatch RecordComponent " + name);
                 dWrite.extent = Extent(getDimensionality(), 1);
                 dWrite.offset = Offset(getDimensionality(), 0);
                 m_chunks->push(IOTask(this, dWrite));

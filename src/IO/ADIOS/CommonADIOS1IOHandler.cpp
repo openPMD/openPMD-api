@@ -18,6 +18,7 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
+#include <algorithm>
 
 void
 CommonADIOS1IOHandlerImpl::close(int64_t fd)
@@ -83,7 +84,7 @@ CommonADIOS1IOHandlerImpl::flush_attribute(int64_t group, std::string const& nam
         break;
         case DT::UNDEFINED:
         case DT::DATATYPE:
-            throw std::runtime_error("Unknown Attribute datatype");
+            throw std::runtime_error("Unknown Attribute datatype (ADIOS1 Attribute flush)");
         default:
             nelems = 1;
     }
@@ -281,7 +282,7 @@ CommonADIOS1IOHandlerImpl::flush_attribute(int64_t group, std::string const& nam
         }
         case DT::UNDEFINED:
         case DT::DATATYPE:
-            throw std::runtime_error("Unknown Attribute datatype");
+            throw std::runtime_error("Unknown Attribute datatype (ADIOS1 Attribute flush)");
         default:
             throw std::runtime_error("Datatype not implemented in ADIOS IO");
     }
@@ -462,10 +463,12 @@ CommonADIOS1IOHandlerImpl::openFile(Writable* writable,
         name += ".bp";
 
     std::shared_ptr< std::string > filePath;
-    if( m_filePaths.find(writable) == m_filePaths.end() )
+    auto it = std::find_if(m_filePaths.begin(), m_filePaths.end(),
+                           [name](std::unordered_map< Writable*, std::shared_ptr< std::string > >::value_type const& entry){ return *entry.second == name; });
+    if( it == m_filePaths.end() )
         filePath = std::make_shared< std::string >(name);
     else
-        filePath = m_filePaths[writable];
+        filePath = it->second;
 
     /* close the handle that corresponds to the file we want to open */
     if( m_openWriteFileHandles.find(filePath) != m_openWriteFileHandles.end() )
@@ -484,6 +487,7 @@ CommonADIOS1IOHandlerImpl::openFile(Writable* writable,
 
     m_openReadFileHandles[filePath] = f;
     m_filePaths[writable] = filePath;
+    m_existsOnDisk[filePath] = true;
 }
 
 void
@@ -500,9 +504,7 @@ CommonADIOS1IOHandlerImpl::openPath(Writable* writable,
     writable->written = true;
     writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >(path);
 
-    auto res = m_filePaths.find(writable);
-    if( res == m_filePaths.end() )
-        res = m_filePaths.find(writable->parent);
+    auto res = writable->parent ? m_filePaths.find(writable->parent) : m_filePaths.find(writable);
 
     m_filePaths[writable] = res->second;
 }
@@ -732,7 +734,7 @@ CommonADIOS1IOHandlerImpl::readDataset(Writable* writable,
         case DT::BOOL:
             break;
         case DT::UNDEFINED:
-            throw std::runtime_error("Unknown Attribute datatype");
+            throw std::runtime_error("Unknown Attribute datatype (ADIOS1 Dataset read)");
         case DT::DATATYPE:
             throw std::runtime_error("Meta-Datatype leaked into IO");
         default:

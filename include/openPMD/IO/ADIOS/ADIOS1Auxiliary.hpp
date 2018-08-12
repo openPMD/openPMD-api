@@ -122,7 +122,7 @@ getBP1DataType(Datatype dtype)
         case DT::DATATYPE:
             throw std::runtime_error("Meta-Datatype leaked into IO");
         case DT::UNDEFINED:
-            throw std::runtime_error("Unknown Attribute datatype");
+            throw std::runtime_error("Unknown Attribute datatype (ADIOS datatype)");
         default:
             throw std::runtime_error("Datatype not implemented in ADIOS IO");
     }
