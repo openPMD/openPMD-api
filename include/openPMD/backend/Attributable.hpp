@@ -30,6 +30,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <cstddef>
 
 
 namespace openPMD

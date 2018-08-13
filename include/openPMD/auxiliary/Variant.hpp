@@ -21,10 +21,10 @@
 #pragma once
 
 #if __cplusplus >= 201703L
-#   include <variant>
+#   include <variant> // IWYU pragma: export
 namespace variantSrc = std;
 #else
-#   include <mpark/variant.hpp>
+#   include <mpark/variant.hpp> // IWYU pragma: export
 namespace variantSrc = mpark;
 #endif
 
