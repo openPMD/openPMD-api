@@ -953,13 +953,6 @@ TEST_CASE( "hdf5_write_test", "[serial][hdf5]" )
     std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
     std::vector< double > position_local = {0.};
     e["position"]["x"].resetDataset(Dataset(determineDatatype<double>(), {4}));
-
-    for( uint64_t i = 0; i < 4; ++i )
-    {
-        position_local.at(0) = position_global[i];
-        e["position"]["x"].storeChunk({i}, {1}, shareRaw(position_local));
-    }
-
     std::vector< uint64_t > positionOffset_global(4);
     uint64_t posOff{0};
     std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
@@ -968,11 +961,12 @@ TEST_CASE( "hdf5_write_test", "[serial][hdf5]" )
 
     for( uint64_t i = 0; i < 4; ++i )
     {
+        position_local.at(0) = position_global[i];
+        e["position"]["x"].storeChunk({i}, {1}, shareRaw(position_local));
         positionOffset_local[0] = positionOffset_global[i];
         e["positionOffset"]["x"].storeChunk({i}, {1}, shareRaw(positionOffset_local));
+        o.flush();
     }
-
-    o.flush();
 
     //TODO close file, read back, verify
 }

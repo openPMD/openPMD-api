@@ -607,3 +607,14 @@ TEST_CASE( "use_count_test", "[core]" )
     REQUIRE(static_cast< Parameter< Operation::WRITE_DATASET >* >(pprc.m_chunks->front().parameter.get())->data.use_count() == 1);
 #endif
 }
+
+TEST_CASE( "empty_record_test", "[core]" )
+{
+    Series o = Series("./new_openpmd_output", AccessType::CREATE);
+
+    o.iterations[1].meshes["E"].setComment("No assumption about contained RecordComponents will be made");
+    REQUIRE_THROWS_WITH(o.flush(),
+                        Catch::Equals("A Record can not be written without any contained RecordComponents: E"));
+    o.iterations[1].meshes["E"][RecordComponent::SCALAR].resetDataset(Dataset(Datatype::DOUBLE, {1}));
+    o.flush();
+}

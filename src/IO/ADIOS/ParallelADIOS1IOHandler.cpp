@@ -35,7 +35,7 @@ namespace openPMD
 {
 #if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
 #   if openPMD_USE_VERIFY
-#       define VERIFY(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error(std::string((TEXT))); }
+#       define VERIFY(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error((TEXT)); }
 #   else
 #       define VERIFY(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
 #   endif
@@ -52,32 +52,30 @@ ParallelADIOS1IOHandlerImpl::ParallelADIOS1IOHandlerImpl(AbstractIOHandler* hand
 
 ParallelADIOS1IOHandlerImpl::~ParallelADIOS1IOHandlerImpl()
 {
-    /* create all files where ADIOS file creation has been deferred,
-     * but execution of the deferred operation has never been triggered
-     * (happens when no Operation::WRITE_DATASET is performed) */
-    for( auto& f : m_existsOnDisk )
-    {
-        if( !f.second )
-        {
-            int64_t fd;
-            int status;
-            status = adios_open(&fd,
-                                f.first->c_str(),
-                                f.first->c_str(),
-                                "w",
-                                m_mpiComm);
-            if( status != err_no_error )
-                std::cerr << "Internal error: Failed to open_flush ADIOS file\n";
-
-            m_openWriteFileHandles[f.first] = fd;
-        }
-    }
-
     for( auto& f : m_openReadFileHandles )
         close(f.second);
+    m_openReadFileHandles.clear();
 
-    for( auto& f : m_openWriteFileHandles )
-        close(f.second);
+    if( this->m_handler->accessType != AccessType::READ_ONLY )
+    {
+        for( auto& f : m_openWriteFileHandles )
+            close(f.second);
+        m_openWriteFileHandles.clear();
+
+        for( auto& group : m_attributeWrites )
+            for( auto& att : group.second )
+                flush_attribute(group.first, att.first, att.second);
+
+        /* create all files, even if ADIOS file creation has been deferred,
+         * but execution of the deferred operation has never been triggered
+         * (happens when no Operation::WRITE_DATASET is performed) */
+        for( auto& f : m_filePaths )
+            if( m_openWriteFileHandles.find(f.second) == m_openWriteFileHandles.end() )
+                m_openWriteFileHandles[f.second] = open_write(f.first);
+
+        for( auto& f : m_openWriteFileHandles )
+            close(f.second);
+    }
 
     int status;
     MPI_Barrier(m_mpiComm);
