@@ -21,6 +21,8 @@
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
 
+#include <algorithm>
+
 
 namespace openPMD
 {
@@ -36,6 +38,9 @@ PatchRecordComponent::resetDataset(Dataset d)
 {
     if( written )
         throw std::runtime_error("A Records Dataset can not (yet) be changed after it has been written.");
+    if( std::any_of(d.extent.begin(), d.extent.end(),
+                    [](Extent::value_type const& i) { return i == 0u; }) )
+        throw std::runtime_error("Dataset extent must not be zero in any dimension.");
 
     *m_dataset = d;
     dirty = true;
