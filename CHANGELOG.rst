@@ -17,8 +17,13 @@ Changes to "0.3.1-alpha"
 Features
 """"""""
 
+- Do not assume Record structure prematurely #297
+
 Bug Fixes
 """""""""
+
+- ADIOS1 fileBased IO #297
+- ADIOS2 stub header #302
 
 Other
 """""
@@ -28,11 +33,16 @@ Other
   - measure C++ unit test coverage with coveralls
   - clang-format support
   - clang-tidy support
-  - include-what-you-use support #291
+  - include-what-you-use support #291 export headers #300
+  - OSX High Sierra support #301
+  - Individual cache per build # 303
+  - Readable build names # 308
 - remove superfluous whitespaces #292
 - readme: openPMD is for scientific data #294
 - override implies virtual #293
 - spack load: ``-r`` #298
+- default constructors and destructors #304
+- string pass-by-value #305
 
 
 0.3.1-alpha

@@ -92,7 +92,7 @@ getH5DataType(Attribute const& att)
         case DT::DATATYPE:
             throw std::runtime_error("Meta-Datatype leaked into IO");
         case DT::UNDEFINED:
-            throw std::runtime_error("Unknown Attribute datatype");
+            throw std::runtime_error("Unknown Attribute datatype (HDF5 datatype)");
         default:
             throw std::runtime_error("Datatype not implemented in HDF5 IO");
     }
@@ -210,7 +210,7 @@ getH5DataSpace(Attribute const& att)
             return array_t_id;
         }
         case DT::UNDEFINED:
-            throw std::runtime_error("Unknown Attribute datatype");
+            throw std::runtime_error("Unknown Attribute datatype (HDF5 dataspace)");
         default:
             throw std::runtime_error("Datatype not implemented in HDF5 IO");
     }

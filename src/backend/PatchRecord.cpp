@@ -40,7 +40,7 @@ PatchRecord::setUnitDimension(std::map< UnitDimension, double > const& udim)
 PatchRecord::PatchRecord() = default;
 
 void
-PatchRecord::flush(std::string const& path)
+PatchRecord::flush_impl(std::string const& path)
 {
     if( this->find(RecordComponent::SCALAR) == this->end() )
     {

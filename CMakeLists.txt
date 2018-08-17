@@ -444,8 +444,12 @@ endif()
 
 # Runtime parameter and API status checks ("asserts")
 if(openPMD_USE_VERIFY)
+    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "-DopenPMD_USE_VERIFY=1")
+    target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "-DopenPMD_USE_VERIFY=1")
     target_compile_definitions(openPMD PRIVATE "-DopenPMD_USE_VERIFY=1")
 else()
+    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "-DopenPMD_USE_VERIFY=0")
+    target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "-DopenPMD_USE_VERIFY=0")
     target_compile_definitions(openPMD PRIVATE "-DopenPMD_USE_VERIFY=0")
 endif()
 

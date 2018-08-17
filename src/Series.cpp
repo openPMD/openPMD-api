@@ -53,6 +53,13 @@ namespace openPMD
  */
 Format determineFormat(std::string const& filename);
 
+/** Determine the default filename suffix for a given storage format.
+ *
+ * @param   f   File format to determine suffix for.
+ * @return  String containing the default filename suffix
+ */
+std::string suffix(Format f);
+
 /** Remove the filename extension of a given storage format.
  *
  * @param   filename    String containing the filename, possibly with filename extension.
@@ -537,7 +544,6 @@ Series::flushFileBased()
             iteration << std::setw(*m_filenamePadding) << std::setfill('0') << i.first;
             std::string filename = *m_filenamePrefix + iteration.str() + *m_filenamePostfix;
 
-            /* flush attributes to newly created iterations */
             dirty |= i.second.dirty;
             i.second.flushFileBased(filename, i.first);
 
@@ -634,6 +640,7 @@ Series::readFileBased(AccessType actualAccessType)
             fOpen.name = entry;
             IOHandler->enqueue(IOTask(this, fOpen));
             IOHandler->flush();
+            iterations.m_writable->parent = getWritable(this);
             iterations.parent = getWritable(this);
 
             /* allow all attributes to be set */
@@ -858,15 +865,29 @@ determineFormat(std::string const& filename)
 }
 
 std::string
+suffix(Format f)
+{
+    switch( f )
+    {
+        case Format::HDF5:
+            return ".h5";
+        case Format::ADIOS1:
+        case Format::ADIOS2:
+            return ".bp";
+        default:
+            return "";
+    }
+}
+
+std::string
 cleanFilename(std::string const& filename, Format f)
 {
     switch( f )
     {
         case Format::HDF5:
-            return auxiliary::replace_last(filename, ".h5", "");
         case Format::ADIOS1:
         case Format::ADIOS2:
-            return auxiliary::replace_last(filename, ".bp", "");
+            return auxiliary::replace_last(filename, suffix(f), "");
         default:
             return filename;
     }

@@ -180,7 +180,7 @@ Mesh::setTimeOffset(T to)
 }
 
 void
-Mesh::flush(std::string const& name)
+Mesh::flush_impl(std::string const& name)
 {
     if( IOHandler->accessType == AccessType::READ_ONLY )
     {
@@ -192,12 +192,14 @@ Mesh::flush(std::string const& name)
         {
             if( *m_containsScalar )
             {
-                MeshRecordComponent& r = at(RecordComponent::SCALAR);
-                r.m_writable->parent = parent;
-                r.parent = parent;
-                r.flush(name);
-                m_writable->abstractFilePosition = r.m_writable->abstractFilePosition;
-                abstractFilePosition = r.abstractFilePosition;
+                MeshRecordComponent& mrc = at(RecordComponent::SCALAR);
+                mrc.m_writable->parent = parent;
+                mrc.parent = parent;
+                mrc.flush(name);
+                IOHandler->flush();
+                m_writable->abstractFilePosition = mrc.m_writable->abstractFilePosition;
+                mrc.abstractFilePosition = m_writable->abstractFilePosition.get();
+                abstractFilePosition = mrc.abstractFilePosition;
                 written = true;
             } else
             {

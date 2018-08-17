@@ -35,7 +35,7 @@ namespace openPMD
 {
 #if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
 #   if openPMD_USE_VERIFY
-#       define VERIFY(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error(std::string((TEXT))); }
+#       define VERIFY(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error((TEXT)); }
 #   else
 #       define VERIFY(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
 #   endif
@@ -52,32 +52,30 @@ ParallelADIOS1IOHandlerImpl::ParallelADIOS1IOHandlerImpl(AbstractIOHandler* hand
 
 ParallelADIOS1IOHandlerImpl::~ParallelADIOS1IOHandlerImpl()
 {
-    /* create all files where ADIOS file creation has been deferred,
-     * but execution of the deferred operation has never been triggered
-     * (happens when no Operation::WRITE_DATASET is performed) */
-    for( auto& f : m_existsOnDisk )
-    {
-        if( !f.second )
-        {
-            int64_t fd;
-            int status;
-            status = adios_open(&fd,
-                                m_groupName.c_str(),
-                                f.first->c_str(),
-                                "w",
-                                m_mpiComm);
-            if( status != err_no_error )
-                std::cerr << "Internal error: Failed to open_flush ADIOS file\n";
-
-            m_openWriteFileHandles[f.first] = fd;
-        }
-    }
-
     for( auto& f : m_openReadFileHandles )
         close(f.second);
+    m_openReadFileHandles.clear();
 
-    for( auto& f : m_openWriteFileHandles )
-        close(f.second);
+    if( this->m_handler->accessType != AccessType::READ_ONLY )
+    {
+        for( auto& f : m_openWriteFileHandles )
+            close(f.second);
+        m_openWriteFileHandles.clear();
+
+        for( auto& group : m_attributeWrites )
+            for( auto& att : group.second )
+                flush_attribute(group.first, att.first, att.second);
+
+        /* create all files, even if ADIOS file creation has been deferred,
+         * but execution of the deferred operation has never been triggered
+         * (happens when no Operation::WRITE_DATASET is performed) */
+        for( auto& f : m_filePaths )
+            if( m_openWriteFileHandles.find(f.second) == m_openWriteFileHandles.end() )
+                m_openWriteFileHandles[f.second] = open_write(f.first);
+
+        for( auto& f : m_openWriteFileHandles )
+            close(f.second);
+    }
 
     int status;
     MPI_Barrier(m_mpiComm);
@@ -214,23 +212,10 @@ ParallelADIOS1IOHandlerImpl::init()
     status = adios_init_noxml(m_mpiComm);
     VERIFY(status == err_no_error, "Internal error: Failed to initialize ADIOS");
 
-    std::stringstream params;
-    params << "num_aggregators=" << getEnvNum("OPENPMD_ADIOS_NUM_AGGREGATORS", "1")
-           << ";num_ost=" << getEnvNum("OPENPMD_ADIOS_NUM_OST", "0")
-           << ";have_metadata_file=" << getEnvNum("OPENPMD_ADIOS_HAVE_METADATA_FILE", "0")
-           << ";verbose=2";
-    char const* c = params.str().c_str();
-
     /** @todo ADIOS_READ_METHOD_BP_AGGREGATE */
     m_readMethod = ADIOS_READ_METHOD_BP;
     status = adios_read_init_method(m_readMethod, m_mpiComm, "");
     VERIFY(status == err_no_error, "Internal error: Failed to initialize ADIOS reading method");
-
-    ADIOS_STATISTICS_FLAG noStatistics = adios_stat_no;
-    status = adios_declare_group(&m_group, m_groupName.c_str(), "", noStatistics);
-    VERIFY(status == err_no_error, "Internal error: Failed to declare ADIOS group");
-    status = adios_select_method(m_group, "MPI_AGGREGATE", c, "");
-    VERIFY(status == err_no_error, "Internal error: Failed to select ADIOS method");
 }
 
 ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string path,
@@ -295,7 +280,7 @@ ParallelADIOS1IOHandlerImpl::open_write(Writable* writable)
     int64_t fd;
     int status;
     status = adios_open(&fd,
-                        m_groupName.c_str(),
+                        res->second->c_str(),
                         res->second->c_str(),
                         mode.c_str(),
                         m_mpiComm);
@@ -315,6 +300,26 @@ ParallelADIOS1IOHandlerImpl::open_read(std::string const & name)
     VERIFY(f != nullptr, "Internal error: Failed to open_read ADIOS file");
 
     return f;
+}
+
+int64_t
+ParallelADIOS1IOHandlerImpl::initialize_group(std::string const &name)
+{
+    std::stringstream params;
+    params << "num_aggregators=" << getEnvNum("OPENPMD_ADIOS_NUM_AGGREGATORS", "1")
+           << ";num_ost=" << getEnvNum("OPENPMD_ADIOS_NUM_OST", "0")
+           << ";have_metadata_file=" << getEnvNum("OPENPMD_ADIOS_HAVE_METADATA_FILE", "0")
+           << ";verbose=2";
+    char const* c = params.str().c_str();
+
+    int status;
+    int64_t group;
+    ADIOS_STATISTICS_FLAG noStatistics = adios_stat_no;
+    status = adios_declare_group(&group, name.c_str(), "", noStatistics);
+    VERIFY(status == err_no_error, "Internal error: Failed to declare ADIOS group");
+    status = adios_select_method(group, "MPI_AGGREGATE", c, "");
+    VERIFY(status == err_no_error, "Internal error: Failed to select ADIOS method");
+    return group;
 }
 
 #define CommonADIOS1IOHandlerImpl ParallelADIOS1IOHandlerImpl

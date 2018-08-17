@@ -47,5 +47,10 @@ int main()
     Dataset dataset = Dataset(Datatype::DOUBLE, Extent{1});
     mass_scalar.resetDataset(dataset);
 
+    /* Required Records and RecordComponents are created automatically.
+     * Initialization has to be done explicitly by the user. */
+    electrons["position"][RecordComponent::SCALAR].resetDataset(dataset);
+    electrons["positionOffset"][RecordComponent::SCALAR].resetDataset(dataset);
+
     return 0;
 }

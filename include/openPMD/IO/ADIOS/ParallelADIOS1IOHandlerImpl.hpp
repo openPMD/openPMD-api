@@ -79,16 +79,18 @@ namespace openPMD
         virtual ADIOS_FILE* open_read(std::string const & name);
         void close(int64_t);
         void close(ADIOS_FILE*);
+        int64_t initialize_group(std::string const& name);
+        void flush_attribute(int64_t group, std::string const& name, Attribute const&);
 
     protected:
-        int64_t m_group;
-        std::string m_groupName;
         ADIOS_READ_METHOD m_readMethod;
         std::unordered_map< Writable*, std::shared_ptr< std::string > > m_filePaths;
+        std::unordered_map< std::shared_ptr< std::string >, int64_t > m_groups;
         std::unordered_map< std::shared_ptr< std::string >, bool > m_existsOnDisk;
         std::unordered_map< std::shared_ptr< std::string >, int64_t > m_openWriteFileHandles;
         std::unordered_map< std::shared_ptr< std::string >, ADIOS_FILE* > m_openReadFileHandles;
         std::unordered_map< ADIOS_FILE*, std::vector< ADIOS_SELECTION* > > m_scheduledReads;
+        std::unordered_map< int64_t, std::unordered_map< std::string, Attribute > > m_attributeWrites;
         MPI_Comm m_mpiComm;
         MPI_Info m_mpiInfo;
     }; // ParallelADIOS1IOHandlerImpl

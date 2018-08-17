@@ -38,44 +38,41 @@ namespace openPMD
 {
 #if openPMD_HAVE_ADIOS1
 #   if openPMD_USE_VERIFY
-#       define VERIFY(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error(std::string((TEXT))); }
+#       define VERIFY(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error((TEXT)); }
 #   else
 #       define VERIFY(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
 #   endif
 
 ADIOS1IOHandlerImpl::ADIOS1IOHandlerImpl(AbstractIOHandler* handler)
-        : AbstractIOHandlerImpl(handler),
-          m_groupName{"data"}
+        : AbstractIOHandlerImpl(handler)
 { }
 
 ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
 {
-  /* create all files where ADIOS file creation has been deferred,
-   * but execution of the deferred operation has never been triggered
-   * (happens when no Operation::WRITE_DATASET is performed) */
-    for( auto& f : m_existsOnDisk )
-    {
-        if( !f.second )
-        {
-            int64_t fd;
-            int status;
-            status = adios_open(&fd,
-                                m_groupName.c_str(),
-                                f.first->c_str(),
-                                "w",
-                                MPI_COMM_NULL);
-            if( status != err_no_error )
-                std::cerr << "Internal error: Failed to open_flush ADIOS file\n";
-
-            m_openWriteFileHandles[f.first] = fd;
-        }
-    }
-
     for( auto& f : m_openReadFileHandles )
         close(f.second);
+    m_openReadFileHandles.clear();
 
-    for( auto& f : m_openWriteFileHandles )
-        close(f.second);
+    if( this->m_handler->accessType != AccessType::READ_ONLY )
+    {
+        for( auto& f : m_openWriteFileHandles )
+            close(f.second);
+        m_openWriteFileHandles.clear();
+
+        for( auto& group : m_attributeWrites )
+            for( auto& att : group.second )
+                flush_attribute(group.first, att.first, att.second);
+
+        /* create all files, even if ADIOS file creation has been deferred,
+         * but execution of the deferred operation has never been triggered
+         * (happens when no Operation::WRITE_DATASET is performed) */
+        for( auto& f : m_filePaths )
+            if( m_openWriteFileHandles.find(f.second) == m_openWriteFileHandles.end() )
+                m_openWriteFileHandles[f.second] = open_write(f.first);
+
+        for( auto& f : m_openWriteFileHandles )
+            close(f.second);
+    }
 
     int status;
     status = adios_read_finalize_method(m_readMethod);
@@ -210,11 +207,6 @@ ADIOS1IOHandlerImpl::init()
     status = adios_read_init_method(m_readMethod, MPI_COMM_NULL, "");
     VERIFY(status == err_no_error, "Internal error: Failed to initialize ADIOS reading method");
 
-    ADIOS_STATISTICS_FLAG noStatistics = adios_stat_no;
-    status = adios_declare_group(&m_group, m_groupName.c_str(), "", noStatistics);
-    VERIFY(status == err_no_error, "Internal error: Failed to declare ADIOS group");
-    status = adios_select_method(m_group, "POSIX", "", "");
-    VERIFY(status == err_no_error, "Internal error: Failed to select ADIOS method");
 }
 #endif
 
@@ -279,7 +271,7 @@ ADIOS1IOHandlerImpl::open_write(Writable* writable)
     int64_t fd = -1;
     int status;
     status = adios_open(&fd,
-                        m_groupName.c_str(),
+                        res->second->c_str(),
                         res->second->c_str(),
                         mode.c_str(),
                         MPI_COMM_NULL);
@@ -299,6 +291,19 @@ ADIOS1IOHandlerImpl::open_read(std::string const & name)
     VERIFY(f != nullptr, "Internal error: Failed to open_read ADIOS file");
 
     return f;
+}
+
+int64_t
+ADIOS1IOHandlerImpl::initialize_group(std::string const &name)
+{
+    int status;
+    int64_t group;
+    ADIOS_STATISTICS_FLAG noStatistics = adios_stat_no;
+    status = adios_declare_group(&group, name.c_str(), "", noStatistics);
+    VERIFY(status == err_no_error, "Internal error: Failed to declare ADIOS group");
+    status = adios_select_method(group, "POSIX", "", "");
+    VERIFY(status == err_no_error, "Internal error: Failed to select ADIOS method");
+    return group;
 }
 
 #define CommonADIOS1IOHandlerImpl ADIOS1IOHandlerImpl

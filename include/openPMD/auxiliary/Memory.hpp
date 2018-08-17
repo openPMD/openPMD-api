@@ -124,7 +124,7 @@ allocatePtr(Datatype dtype, uint64_t numPoints)
             break;
         case DT::UNDEFINED:
         default:
-            throw std::runtime_error("Unknown Attribute datatype");
+            throw std::runtime_error("Unknown Attribute datatype (Pointer allocation)");
     }
 
     return std::unique_ptr< void, std::function< void(void*) > >(data, del);

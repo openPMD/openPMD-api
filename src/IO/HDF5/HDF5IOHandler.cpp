@@ -40,7 +40,7 @@ namespace openPMD
 {
 #if openPMD_HAVE_HDF5
 #   if openPMD_USE_VERIFY
-#       define VERIFY(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error(std::string((TEXT))); }
+#       define VERIFY(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error((TEXT)); }
 #   else
 #       define VERIFY(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
 #   endif
@@ -934,7 +934,7 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
         }
         case DT::UNDEFINED:
         case DT::DATATYPE:
-            throw std::runtime_error("Unknown Attribute datatype");
+            throw std::runtime_error("Unknown Attribute datatype (HDF5 Attribute write)");
         default:
             throw std::runtime_error("Datatype not implemented in HDF5 IO");
     }
@@ -1006,7 +1006,7 @@ HDF5IOHandlerImpl::readDataset(Writable* writable,
         case DT::BOOL:
             break;
         case DT::UNDEFINED:
-            throw std::runtime_error("Unknown Attribute datatype");
+            throw std::runtime_error("Unknown Attribute datatype (HDF5 Dataset read)");
         case DT::DATATYPE:
             throw std::runtime_error("Meta-Datatype leaked into IO");
         default:
