@@ -1,4 +1,4 @@
-.. usage-firststeps:
+.. _usage-firststeps:
 
 First Steps
 ===========

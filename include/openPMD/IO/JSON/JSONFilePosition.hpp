@@ -1,4 +1,4 @@
-/* Copyright 2017-2018 Fabian Koller
+/* Copyright 2017-2018 Franz Pöschel
  *
  * This file is part of openPMD-api.
  *
@@ -18,19 +18,32 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
+
 #pragma once
 
 
+#include "openPMD/IO/AbstractFilePosition.hpp"
+
+
+#if openPMD_HAVE_JSON
+#include <nlohmann/json.hpp>
+#endif
+
 namespace openPMD
 {
-/** File format to use during IO.
- */
-enum class Format
-{
-    HDF5,
-    ADIOS1,
-    ADIOS2,
-    JSON,
-    DUMMY
-};  //Format
+
+
+    struct JSONFilePosition :
+        public AbstractFilePosition
+#if openPMD_HAVE_JSON
+    {
+        using json = nlohmann::json;
+        json::json_pointer id;
+
+        JSONFilePosition( json::json_pointer ptr = json::json_pointer( ) );
+    };
+#else
+    {};
+#endif
+
 } // openPMD

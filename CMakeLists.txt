@@ -304,7 +304,10 @@ set(IO_SOURCE
         src/IO/AbstractIOHandlerHelper.cpp
         src/IO/IOTask.cpp
         src/IO/HDF5/HDF5IOHandler.cpp
-        src/IO/HDF5/ParallelHDF5IOHandler.cpp)
+        src/IO/HDF5/ParallelHDF5IOHandler.cpp
+        src/IO/JSON/JSONIOHandler.cpp
+        src/IO/JSON/JSONIOHandlerImpl.cpp
+        src/IO/JSON/JSONFilePosition.cpp)
 set(IO_ADIOS1_SEQUENTIAL_SOURCE
         src/IO/AbstractIOHandler.cpp
         src/IO/AbstractIOHandlerImpl.cpp

@@ -519,6 +519,11 @@ isSame( openPMD::Datatype const d, openPMD::Datatype const e )
     return false;
 }
 
+#if _MSC_VER && !__INTEL_COMPILER
+#define OPENPMD_TEMPLATE_OPERATOR operator
+#else
+#define OPENPMD_TEMPLATE_OPERATOR template operator
+#endif
 /**
  * Generalizes switching over an openPMD datatype.
  *
@@ -536,12 +541,6 @@ isSame( openPMD::Datatype const d, openPMD::Datatype const e )
  * the passed arguments and the template parameter type corresponding to the
  * openPMD type.
  */
-
-#if _MSC_VER && !__INTEL_COMPILER
-#define OPENPMD_TEMPLATE_OPERATOR operator
-#else
-#define OPENPMD_TEMPLATE_OPERATOR template operator
-#endif
 template<
     typename ReturnType = void,
     typename Action,

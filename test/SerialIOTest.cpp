@@ -19,6 +19,23 @@
 
 using namespace openPMD;
 
+std::vector<std::tuple<std::string, bool>> getBackends() {
+    // first component: backend file ending
+    // second component: whether to test 128 bit values
+    std::vector<std::tuple<std::string, bool>> res;
+#if openPMD_HAVE_ADIOS1
+    res.emplace_back("bp", true);
+#endif
+#if openPMD_HAVE_HDF5
+    res.emplace_back("h5", true);
+#endif
+#if openPMD_HAVE_JSON
+    res.emplace_back("json", false);
+#endif
+    return res;
+}
+
+auto const backends = getBackends();
 
 inline
 void constant_scalar(std::string file_ending)
@@ -110,6 +127,15 @@ void constant_scalar(std::string file_ending)
     }
 }
 
+TEST_CASE( "constant_scalar", "[serial]" )
+{
+    for (auto const & t: backends)
+    {
+        constant_scalar(std::get<0>(t));
+    }
+}
+
+
 inline
 void particle_patches( std::string file_ending )
 {
@@ -192,7 +218,774 @@ void particle_patches( std::string file_ending )
     }
 }
 
+TEST_CASE( "particle_patches", "[serial]" )
+{
+    for (auto const & t: backends)
+    {
+        particle_patches(std::get<0>(t));
+    }
+}
+
+inline
+void dtype_test(const std::string & backend, bool test_128_bit = true)
+{
+    bool test_long_double = test_128_bit || sizeof (long double) <= 8;
+    bool test_long_long = test_128_bit || sizeof (long long) <= 8;
+    {
+        Series s = Series("../samples/dtype_test." + backend, AccessType::CREATE);
+
+        char c = 'c';
+        s.setAttribute("char", c);
+        unsigned char uc = 'u';
+        s.setAttribute("uchar", uc);
+        int16_t i16 = 16;
+        s.setAttribute("int16", i16);
+        int32_t i32 = 32;
+        s.setAttribute("int32", i32);
+        int64_t i64 = 64;
+        s.setAttribute("int64", i64);
+        uint16_t u16 = 16u;
+        s.setAttribute("uint16", u16);
+        uint32_t u32 = 32u;
+        s.setAttribute("uint32", u32);
+        uint64_t u64 = 64u;
+        s.setAttribute("uint64", u64);
+        float f = 16.e10f;
+        s.setAttribute("float", f);
+        double d = 1.e64;
+        s.setAttribute("double", d);
+        if (test_long_double)
+        {
+            long double ld = 1.e80L;
+            s.setAttribute("longdouble", ld);
+        }
+        std::string str = "string";
+        s.setAttribute("string", str);
+        s.setAttribute("vecChar", std::vector< char >({'c', 'h', 'a', 'r'}));
+        s.setAttribute("vecInt16", std::vector< int16_t >({32766, 32767}));
+        s.setAttribute("vecInt32", std::vector< int32_t >({2147483646, 2147483647}));
+        s.setAttribute("vecInt64", std::vector< int64_t >({9223372036854775806, 9223372036854775807}));
+        s.setAttribute("vecUchar", std::vector< char >({'u', 'c', 'h', 'a', 'r'}));
+        s.setAttribute("vecUint16", std::vector< uint16_t >({65534u, 65535u}));
+        s.setAttribute("vecUint32", std::vector< uint32_t >({4294967294u, 4294967295u}));
+        s.setAttribute("vecUint64", std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
+        s.setAttribute("vecFloat", std::vector< float >({0.f, 3.40282e+38f}));
+        s.setAttribute("vecDouble", std::vector< double >({0., 1.79769e+308}));
+        if (test_long_double)
+        {
+            s.setAttribute("vecLongdouble", std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
+        }
+        s.setAttribute("vecString", std::vector< std::string >({"vector", "of", "strings"}));
+        s.setAttribute("bool", true);
+        s.setAttribute("boolF", false);
+
+        // non-fixed size integer types
+        short ss = 16;
+        s.setAttribute("short", ss);
+        int si = 32;
+        s.setAttribute("int", si);
+        long sl = 64;
+        s.setAttribute("long", sl);
+        if (test_long_long)
+        {
+            long long sll = 128;
+            s.setAttribute("longlong", sll);
+        }
+        unsigned short us = 16u;
+        s.setAttribute("ushort", us);
+        unsigned int ui = 32u;
+        s.setAttribute("uint", ui);
+        unsigned long ul = 64u;
+        s.setAttribute("ulong", ul);
+        if (test_long_long)
+        {
+            unsigned long long ull = 128u;
+            s.setAttribute("ulonglong", ull);
+        }
+        s.setAttribute("vecShort", std::vector< short >({32766, 32767}));
+        s.setAttribute("vecInt", std::vector< int >({32766, 32767}));
+        s.setAttribute("vecLong", std::vector< long >({2147483646, 2147483647}));
+        if (test_long_long)
+        {
+            s.setAttribute("vecLongLong", std::vector< long long >({2147483644, 2147483643}));
+        }
+        s.setAttribute("vecUShort", std::vector< unsigned short >({65534u, 65535u}));
+        s.setAttribute("vecUInt", std::vector< unsigned int >({65533u, 65531u}));
+        s.setAttribute("vecULong", std::vector< unsigned long >({65532u, 65530u}));
+        if (test_long_long)
+        {
+            s.setAttribute("vecULongLong", std::vector< unsigned long long >({65531u, 65529u}));
+        }
+    }
+
+    Series s = Series("../samples/dtype_test." + backend, AccessType::READ_ONLY);
+
+    REQUIRE(s.getAttribute("char").get< char >() == 'c');
+    REQUIRE(s.getAttribute("uchar").get< unsigned char >() == 'u');
+    REQUIRE(s.getAttribute("int16").get< int16_t >() == 16);
+    REQUIRE(s.getAttribute("int32").get< int32_t >() == 32);
+    REQUIRE(s.getAttribute("int64").get< int64_t >() == 64);
+    REQUIRE(s.getAttribute("uint16").get< uint16_t >() == 16u);
+    REQUIRE(s.getAttribute("uint32").get< uint32_t >() == 32u);
+    REQUIRE(s.getAttribute("uint64").get< uint64_t >() == 64u);
+    REQUIRE(s.getAttribute("float").get< float >() == 16.e10f);
+    REQUIRE(s.getAttribute("double").get< double >() == 1.e64);
+    if (test_long_double)
+    {
+        REQUIRE(s.getAttribute("longdouble").get< long double >() == 1.e80L);
+    }
+    REQUIRE(s.getAttribute("string").get< std::string >() == "string");
+    REQUIRE(s.getAttribute("vecChar").get< std::vector< char > >() == std::vector< char >({'c', 'h', 'a', 'r'}));
+    REQUIRE(s.getAttribute("vecInt16").get< std::vector< int16_t > >() == std::vector< int16_t >({32766, 32767}));
+    REQUIRE(s.getAttribute("vecInt32").get< std::vector< int32_t > >() == std::vector< int32_t >({2147483646, 2147483647}));
+    REQUIRE(s.getAttribute("vecInt64").get< std::vector< int64_t > >() == std::vector< int64_t >({9223372036854775806, 9223372036854775807}));
+    REQUIRE(s.getAttribute("vecUchar").get< std::vector< char > >() == std::vector< char >({'u', 'c', 'h', 'a', 'r'}));
+    REQUIRE(s.getAttribute("vecUint16").get< std::vector< uint16_t > >() == std::vector< uint16_t >({65534u, 65535u}));
+    REQUIRE(s.getAttribute("vecUint32").get< std::vector< uint32_t > >() == std::vector< uint32_t >({4294967294u, 4294967295u}));
+    REQUIRE(s.getAttribute("vecUint64").get< std::vector< uint64_t > >() == std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
+    REQUIRE(s.getAttribute("vecFloat").get< std::vector< float > >() == std::vector< float >({0.f, 3.40282e+38f}));
+    REQUIRE(s.getAttribute("vecDouble").get< std::vector< double > >() == std::vector< double >({0., 1.79769e+308}));
+    if (test_long_double)
+    {
+        REQUIRE(s.getAttribute("vecLongdouble").get< std::vector< long double > >() == std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
+    }
+    REQUIRE(s.getAttribute("vecString").get< std::vector< std::string > >() == std::vector< std::string >({"vector", "of", "strings"}));
+    REQUIRE(s.getAttribute("bool").get< bool >() == true);
+    REQUIRE(s.getAttribute("boolF").get< bool >() == false);
+
+    // same implementation types (not necessary aliases) detection
+#if !defined(_MSC_VER)
+    REQUIRE(s.getAttribute("short").dtype == Datatype::SHORT);
+    REQUIRE(s.getAttribute("int").dtype == Datatype::INT);
+    REQUIRE(s.getAttribute("long").dtype == Datatype::LONG);
+    REQUIRE(s.getAttribute("longlong").dtype == Datatype::LONGLONG);
+    REQUIRE(s.getAttribute("ushort").dtype == Datatype::USHORT);
+    REQUIRE(s.getAttribute("uint").dtype == Datatype::UINT);
+    REQUIRE(s.getAttribute("ulong").dtype == Datatype::ULONG);
+    if (test_long_long)
+    {
+        REQUIRE(s.getAttribute("ulonglong").dtype == Datatype::ULONGLONG);
+    }
+
+    REQUIRE(s.getAttribute("vecShort").dtype == Datatype::VEC_SHORT);
+    REQUIRE(s.getAttribute("vecInt").dtype == Datatype::VEC_INT);
+    REQUIRE(s.getAttribute("vecLong").dtype == Datatype::VEC_LONG);
+    REQUIRE(s.getAttribute("vecLongLong").dtype == Datatype::VEC_LONGLONG);
+    REQUIRE(s.getAttribute("vecUShort").dtype == Datatype::VEC_USHORT);
+    REQUIRE(s.getAttribute("vecUInt").dtype == Datatype::VEC_UINT);
+    REQUIRE(s.getAttribute("vecULong").dtype == Datatype::VEC_ULONG);
+    if (test_long_long)
+    {
+        REQUIRE(s.getAttribute("vecULongLong").dtype == Datatype::VEC_ULONGLONG);
+    }
+#endif
+    REQUIRE(isSame(s.getAttribute("short").dtype, Datatype::SHORT));
+    REQUIRE(isSame(s.getAttribute("int").dtype, Datatype::INT));
+    REQUIRE(isSame(s.getAttribute("long").dtype, Datatype::LONG));
+    if (test_long_long)
+    {
+        REQUIRE(isSame(s.getAttribute("longlong").dtype, Datatype::LONGLONG));
+    }
+    REQUIRE(isSame(s.getAttribute("ushort").dtype, Datatype::USHORT));
+    REQUIRE(isSame(s.getAttribute("uint").dtype, Datatype::UINT));
+    REQUIRE(isSame(s.getAttribute("ulong").dtype, Datatype::ULONG));
+    if (test_long_long)
+    {
+        REQUIRE(isSame(s.getAttribute("ulonglong").dtype, Datatype::ULONGLONG));
+    }
+
+    REQUIRE(isSame(s.getAttribute("vecShort").dtype, Datatype::VEC_SHORT));
+    REQUIRE(isSame(s.getAttribute("vecInt").dtype, Datatype::VEC_INT));
+    REQUIRE(isSame(s.getAttribute("vecLong").dtype, Datatype::VEC_LONG));
+    if (test_long_long)
+    {
+        REQUIRE(isSame(s.getAttribute("vecLongLong").dtype, Datatype::VEC_LONGLONG));
+    }
+    REQUIRE(isSame(s.getAttribute("vecUShort").dtype, Datatype::VEC_USHORT));
+    REQUIRE(isSame(s.getAttribute("vecUInt").dtype, Datatype::VEC_UINT));
+    REQUIRE(isSame(s.getAttribute("vecULong").dtype, Datatype::VEC_ULONG));
+    if (test_long_long)
+    {
+        REQUIRE(isSame(s.getAttribute("vecULongLong").dtype, Datatype::VEC_ULONGLONG));
+    }
+}
+
+TEST_CASE( "dtype_test", "[serial]" )
+{
+    std::string backend;
+    bool test_128_bit;
+    for (auto const & t: backends)
+    {
+        std::tie(backend, test_128_bit) = t;
+        dtype_test(backend, test_128_bit);
+    }
+}
+
+inline
+void write_test(const std::string & backend)
+{
+    Series o = Series("../samples/serial_write." + backend, AccessType::CREATE);
+
+    ParticleSpecies& e_1 = o.iterations[1].particles["e"];
+
+    std::vector< double > position_global(4);
+    double pos{0.};
+    std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
+    std::shared_ptr< double > position_local_1(new double);
+    e_1["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_1), {4}));
+
+    for( uint64_t i = 0; i < 4; ++i )
+    {
+        *position_local_1 = position_global[i];
+        e_1["position"]["x"].storeChunk(position_local_1, {i}, {1});
+    }
+
+    std::vector< uint64_t > positionOffset_global(4);
+    uint64_t posOff{0};
+    std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
+    std::shared_ptr< uint64_t > positionOffset_local_1(new uint64_t);
+    e_1["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_1), {4}));
+
+    for( uint64_t i = 0; i < 4; ++i )
+    {
+        *positionOffset_local_1 = positionOffset_global[i];
+        e_1["positionOffset"]["x"].storeChunk(positionOffset_local_1, {i}, {1});
+    }
+
+    ParticleSpecies& e_2 = o.iterations[2].particles["e"];
+
+    std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
+    std::shared_ptr< double > position_local_2(new double);
+    e_2["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_2), {4}));
+
+    for( uint64_t i = 0; i < 4; ++i )
+    {
+        *position_local_2 = position_global[i];
+        e_2["position"]["x"].storeChunk(position_local_2, {i}, {1});
+    }
+
+    std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
+    std::shared_ptr< uint64_t > positionOffset_local_2(new uint64_t);
+    e_2["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_2), {4}));
+
+    for( uint64_t i = 0; i < 4; ++i )
+    {
+        *positionOffset_local_2 = positionOffset_global[i];
+        e_2["positionOffset"]["x"].storeChunk(positionOffset_local_2, {i}, {1});
+    }
+
+    o.flush();
+
+    ParticleSpecies& e_3 = o.iterations[3].particles["e"];
+
+    std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
+    std::shared_ptr< double > position_local_3(new double);
+    e_3["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_3), {4}));
+
+    for( uint64_t i = 0; i < 4; ++i )
+    {
+        *position_local_3 = position_global[i];
+        e_3["position"]["x"].storeChunk(position_local_3, {i}, {1});
+    }
+
+    std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
+    std::shared_ptr< uint64_t > positionOffset_local_3(new uint64_t);
+    e_3["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_3), {4}));
+
+    for( uint64_t i = 0; i < 4; ++i )
+    {
+        *positionOffset_local_3 = positionOffset_global[i];
+        e_3["positionOffset"]["x"].storeChunk(positionOffset_local_3, {i}, {1});
+    }
+
+    o.flush();
+}
+
+TEST_CASE( "write_test", "[serial]" )
+{
+    for (auto const & t: backends)
+    {
+        write_test(std::get<0>(t));
+    }
+}
+
+inline
+void fileBased_write_empty_test(const std::string & backend)
+{
+    if( auxiliary::directory_exists("../samples/subdir") )
+        auxiliary::remove_directory("../samples/subdir");
+
+    Dataset dset = Dataset(Datatype::DOUBLE, {2});
+    {
+        Series o = Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::CREATE);
+
+        ParticleSpecies& e_1 = o.iterations[1].particles["e"];
+        e_1["position"][RecordComponent::SCALAR].resetDataset(dset);
+        e_1["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
+        o.iterations[1].setTime(1.f);
+        ParticleSpecies& e_2 = o.iterations[2].particles["e"];
+        e_2["position"][RecordComponent::SCALAR].resetDataset(dset);
+        e_2["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
+        o.iterations[2].setTime(2.f);
+        ParticleSpecies& e_3 = o.iterations[3].particles["e"];
+        e_3["position"][RecordComponent::SCALAR].resetDataset(dset);
+        e_3["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
+        o.iterations[3].setTime(3.f);
+    }
+
+    REQUIRE(auxiliary::directory_exists("../samples/subdir"));
+    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write1." + backend));
+    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write2." + backend));
+    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write3." + backend));
+
+    {
+        Series o = Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::READ_ONLY);
+
+        REQUIRE(o.iterations.size() == 3);
+        REQUIRE(o.iterations.count(1) == 1);
+        REQUIRE(o.iterations.count(2) == 1);
+        REQUIRE(o.iterations.count(3) == 1);
+
+        REQUIRE(o.iterations[1].time< float >() == 1.f);
+        REQUIRE(o.iterations[2].time< float >() == 2.f);
+        REQUIRE(o.iterations[3].time< float >() == 3.f);
+
+        REQUIRE(o.iterations[1].particles.size() == 1);
+        REQUIRE(o.iterations[1].particles.count("e") == 1);
+        REQUIRE(o.iterations[2].particles.size() == 1);
+        REQUIRE(o.iterations[2].particles.count("e") == 1);
+        REQUIRE(o.iterations[3].particles.size() == 1);
+        REQUIRE(o.iterations[3].particles.count("e") == 1);
+
+        REQUIRE(o.iterations[1].particles["e"].size() == 2);
+        REQUIRE(o.iterations[1].particles["e"].count("position") == 1);
+        REQUIRE(o.iterations[1].particles["e"].count("positionOffset") == 1);
+        REQUIRE(o.iterations[2].particles["e"].size() == 2);
+        REQUIRE(o.iterations[2].particles["e"].count("position") == 1);
+        REQUIRE(o.iterations[2].particles["e"].count("positionOffset") == 1);
+        REQUIRE(o.iterations[3].particles["e"].size() == 2);
+        REQUIRE(o.iterations[3].particles["e"].count("position") == 1);
+        REQUIRE(o.iterations[3].particles["e"].count("positionOffset") == 1);
+
+        REQUIRE(o.iterations[1].particles["e"]["position"].size() == 1);
+        REQUIRE(o.iterations[1].particles["e"]["position"].count(RecordComponent::SCALAR) == 1);
+        REQUIRE(o.iterations[1].particles["e"]["positionOffset"].size() == 1);
+        REQUIRE(o.iterations[1].particles["e"]["positionOffset"].count(RecordComponent::SCALAR) == 1);
+        REQUIRE(o.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].getDatatype() == Datatype::DOUBLE);
+        REQUIRE(o.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].getDimensionality() == 1);
+        REQUIRE(o.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].getExtent() == Extent{2});
+        REQUIRE(o.iterations[2].particles["e"]["position"].size() == 1);
+        REQUIRE(o.iterations[2].particles["e"]["position"].count(RecordComponent::SCALAR) == 1);
+        REQUIRE(o.iterations[2].particles["e"]["positionOffset"].size() == 1);
+        REQUIRE(o.iterations[2].particles["e"]["positionOffset"].count(RecordComponent::SCALAR) == 1);
+        REQUIRE(o.iterations[2].particles["e"]["position"][RecordComponent::SCALAR].getDatatype() == Datatype::DOUBLE);
+        REQUIRE(o.iterations[2].particles["e"]["position"][RecordComponent::SCALAR].getDimensionality() == 1);
+        REQUIRE(o.iterations[2].particles["e"]["position"][RecordComponent::SCALAR].getExtent() == Extent{2});
+        REQUIRE(o.iterations[3].particles["e"]["position"].size() == 1);
+        REQUIRE(o.iterations[3].particles["e"]["position"].count(RecordComponent::SCALAR) == 1);
+        REQUIRE(o.iterations[3].particles["e"]["positionOffset"].size() == 1);
+        REQUIRE(o.iterations[3].particles["e"]["positionOffset"].count(RecordComponent::SCALAR) == 1);
+        REQUIRE(o.iterations[3].particles["e"]["position"][RecordComponent::SCALAR].getDatatype() == Datatype::DOUBLE);
+        REQUIRE(o.iterations[3].particles["e"]["position"][RecordComponent::SCALAR].getDimensionality() == 1);
+        REQUIRE(o.iterations[3].particles["e"]["position"][RecordComponent::SCALAR].getExtent() == Extent{2});
+    }
+
+    {
+        Series o = Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::READ_WRITE);
+        ParticleSpecies& e_4 = o.iterations[4].particles["e"];
+        e_4["position"][RecordComponent::SCALAR].resetDataset(dset);
+        e_4["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
+        o.iterations[4].setTime(4.f);
+    }
+
+    {
+        Series o = Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::READ_ONLY);
+
+        REQUIRE(o.iterations.size() == 4);
+        REQUIRE(o.iterations.count(4) == 1);
+
+        REQUIRE(o.iterations[4].time< float >() == 4.f);
+
+        REQUIRE(o.iterations[4].particles.size() == 1);
+        REQUIRE(o.iterations[4].particles.count("e") == 1);
+
+        REQUIRE(o.iterations[4].particles["e"].size() == 2);
+        REQUIRE(o.iterations[4].particles["e"].count("position") == 1);
+        REQUIRE(o.iterations[4].particles["e"].count("positionOffset") == 1);
+
+        REQUIRE(o.iterations[4].particles["e"]["position"].size() == 1);
+        REQUIRE(o.iterations[4].particles["e"]["position"].count(RecordComponent::SCALAR) == 1);
+        REQUIRE(o.iterations[4].particles["e"]["positionOffset"].size() == 1);
+        REQUIRE(o.iterations[4].particles["e"]["positionOffset"].count(RecordComponent::SCALAR) == 1);
+        REQUIRE(o.iterations[4].particles["e"]["position"][RecordComponent::SCALAR].getDatatype() == Datatype::DOUBLE);
+        REQUIRE(o.iterations[4].particles["e"]["position"][RecordComponent::SCALAR].getDimensionality() == 1);
+        REQUIRE(o.iterations[4].particles["e"]["position"][RecordComponent::SCALAR].getExtent() == Extent{2});
+    }
+}
+
+TEST_CASE( "fileBased_write_empty_test", "[serial]" )
+{
+    for (auto const & t: backends)
+    {
+        fileBased_write_empty_test(std::get<0>(t));
+    }
+}
+
+inline
+void fileBased_write_test(const std::string & backend)
+{
+    if( auxiliary::directory_exists("../samples/subdir") )
+        auxiliary::remove_directory("../samples/subdir");
+
+    {
+        Series o = Series("../samples/subdir/serial_fileBased_write%08T." + backend, AccessType::CREATE);
+
+        ParticleSpecies& e_1 = o.iterations[1].particles["e"];
+
+        std::vector< double > position_global(4);
+        double pos{0.};
+        std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
+        std::shared_ptr< double > position_local_1(new double);
+        e_1["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_1), {4}));
+        std::vector< uint64_t > positionOffset_global(4);
+        uint64_t posOff{0};
+        std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
+        std::shared_ptr< uint64_t > positionOffset_local_1(new uint64_t);
+        e_1["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_1), {4}));
+
+        for( uint64_t i = 0; i < 4; ++i )
+        {
+            *position_local_1 = position_global[i];
+            e_1["position"]["x"].storeChunk(position_local_1, {i}, {1});
+            *positionOffset_local_1 = positionOffset_global[i];
+            e_1["positionOffset"]["x"].storeChunk(positionOffset_local_1, {i}, {1});
+            o.flush();
+        }
+
+        o.iterations[1].setTime(static_cast< double >(1));
+
+        ParticleSpecies& e_2 = o.iterations[2].particles["e"];
+
+        std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
+        e_2["position"]["x"].resetDataset(Dataset(determineDatatype<double>(), {4}));
+        std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
+        std::shared_ptr< uint64_t > positionOffset_local_2(new uint64_t);
+        e_2["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_2), {4}));
+
+        for( uint64_t i = 0; i < 4; ++i )
+        {
+            double const position_local_2 = position_global.at(i);
+            e_2["position"]["x"].storeChunk(shareRaw(&position_local_2), {i}, {1});
+            *positionOffset_local_2 = positionOffset_global[i];
+            e_2["positionOffset"]["x"].storeChunk(positionOffset_local_2, {i}, {1});
+            o.flush();
+        }
+
+        o.iterations[2].setTime(static_cast< double >(2));
+
+        ParticleSpecies& e_3 = o.iterations[3].particles["e"];
+
+        std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
+        std::shared_ptr< double > position_local_3(new double);
+        e_3["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_3), {4}));
+        std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
+        std::shared_ptr< uint64_t > positionOffset_local_3(new uint64_t);
+        e_3["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_3), {4}));
+
+        for( uint64_t i = 0; i < 4; ++i )
+        {
+            *position_local_3 = position_global[i];
+            e_3["position"]["x"].storeChunk(position_local_3, {i}, {1});
+            *positionOffset_local_3 = positionOffset_global[i];
+            e_3["positionOffset"]["x"].storeChunk(positionOffset_local_3, {i}, {1});
+            o.flush();
+        }
+
+        o.setOpenPMDextension(1);
+        o.iterations[3].setTime(static_cast< double >(3));
+    }
+    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000001." + backend));
+    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000002." + backend));
+    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000003." + backend));
+
+    {
+        Series o = Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::READ_ONLY);
+
+        REQUIRE(o.iterations.size() == 3);
+        REQUIRE(o.iterations.count(1) == 1);
+        REQUIRE(o.iterations.count(2) == 1);
+        REQUIRE(o.iterations.count(3) == 1);
+
+#if openPMD_USE_INVASIVE_TESTS
+        REQUIRE(*o.m_filenamePadding == 8);
+#endif
+
+        REQUIRE(o.basePath() == "/data/%T/");
+        REQUIRE(o.iterationEncoding() == IterationEncoding::fileBased);
+        REQUIRE(o.iterationFormat() == "serial_fileBased_write%08T");
+        REQUIRE(o.openPMD() == "1.1.0");
+        REQUIRE(o.openPMDextension() == 1u);
+        REQUIRE(o.particlesPath() == "particles/");
+        REQUIRE_FALSE(o.containsAttribute("meshesPath"));
+        REQUIRE_THROWS_AS(o.meshesPath(), no_such_attribute_error);
+        std::array< double, 7 > udim{{1, 0, 0, 0, 0, 0, 0}};
+        Extent ext{4};
+        for( auto& entry : o.iterations )
+        {
+            auto& it = entry.second;
+            REQUIRE(it.dt< double >() == 1.);
+            REQUIRE(it.time< double >() == static_cast< double >(entry.first));
+            REQUIRE(it.timeUnitSI() == 1.);
+            auto& pos = it.particles.at("e").at("position");
+            REQUIRE(pos.timeOffset< float >() == 0.f);
+            REQUIRE(pos.unitDimension() == udim);
+            auto& pos_x = pos.at("x");
+            REQUIRE(pos_x.unitSI() == 1.);
+            REQUIRE(pos_x.getExtent() == ext);
+            REQUIRE(pos_x.getDatatype() == Datatype::DOUBLE);
+            auto& posOff = it.particles.at("e").at("positionOffset");
+            REQUIRE(posOff.timeOffset< float >() == 0.f);
+            REQUIRE(posOff.unitDimension() == udim);
+            auto& posOff_x = posOff.at("x");
+            REQUIRE(posOff_x.unitSI() == 1.);
+            REQUIRE(posOff_x.getExtent() == ext);
+#if !defined(_MSC_VER)
+            REQUIRE(posOff_x.getDatatype() == determineDatatype< uint64_t >());
+#endif
+            REQUIRE(isSame(posOff_x.getDatatype(), determineDatatype< uint64_t >()));
+
+            auto position = pos_x.loadChunk< double >({0}, {4});
+            auto position_raw = position.get();
+            auto positionOffset = posOff_x.loadChunk< uint64_t >({0}, {4});
+            auto positionOffset_raw = positionOffset.get();
+            o.flush();
+            for( uint64_t j = 0; j < 4; ++j )
+            {
+              REQUIRE(position_raw[j] == static_cast< double >(j + (entry.first-1)*4));
+              REQUIRE(positionOffset_raw[j] == j + (entry.first-1)*4);
+            }
+        }
+    }
+
+    // extend existing series with new step and auto-detection of iteration padding
+    {
+        Series o = Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::READ_WRITE);
+
+        REQUIRE(o.iterations.size() == 3);
+        o.iterations[4];
+        REQUIRE(o.iterations.size() == 4);
+    }
+    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000004." + backend));
+
+    // additional iteration with different iteration padding but similar content
+    {
+        Series o = Series("../samples/subdir/serial_fileBased_write%01T." + backend, AccessType::READ_WRITE);
+
+        REQUIRE(o.iterations.empty());
+
+        auto& it = o.iterations[10];
+        ParticleSpecies& e = it.particles["e"];
+        e["position"]["x"].resetDataset(Dataset(Datatype::DOUBLE, {42}));
+        e["positionOffset"]["x"].resetDataset(Dataset(Datatype::DOUBLE, {42}));
+        e["position"]["x"].makeConstant(1.23);
+        e["positionOffset"]["x"].makeConstant(1.23);
+
+        REQUIRE(o.iterations.size() == 1);
+    }
+    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write10." + backend));
+
+    // read back with auto-detection and non-fixed padding
+    {
+        Series s = Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::READ_ONLY);
+        REQUIRE(s.iterations.size() == 5);
+    }
+
+    // write with auto-detection and in-consistent padding
+    {
+        REQUIRE_THROWS_WITH(Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::READ_WRITE),
+            Catch::Equals("Cannot write to a series with inconsistent iteration padding. Please specify '%0<N>T' or open as read-only."));
+    }
+
+    // read back with auto-detection and fixed padding
+    {
+        Series s = Series("../samples/subdir/serial_fileBased_write%08T." + backend, AccessType::READ_ONLY);
+        REQUIRE(s.iterations.size() == 4);
+    }
+}
+
+TEST_CASE( "fileBased_write_test", "[serial]" )
+{
+    for (auto const & t: backends)
+    {
+        fileBased_write_test(std::get<0>(t));
+    }
+}
+
+inline
+void bool_test(const std::string & backend)
+{
+    {
+        Series o = Series("../samples/serial_bool." + backend, AccessType::CREATE);
+
+        o.setAttribute("Bool attribute (true)", true);
+        o.setAttribute("Bool attribute (false)", false);
+    }
+    {
+        Series o = Series("../samples/serial_bool." + backend, AccessType::READ_ONLY);
+
+        auto attrs = o.attributes();
+        REQUIRE(std::count(attrs.begin(), attrs.end(), "Bool attribute (true)") == 1);
+        REQUIRE(std::count(attrs.begin(), attrs.end(), "Bool attribute (false)") == 1);
+        REQUIRE(o.getAttribute("Bool attribute (true)").get< bool >() == true);
+        REQUIRE(o.getAttribute("Bool attribute (false)").get< bool >() == false);
+    }
+}
+
+TEST_CASE( "bool_test", "[serial]" )
+{
+    for (auto const & t: backends)
+    {
+        bool_test(std::get<0>(t));
+    }
+}
+
+inline
+void patch_test(const std::string & backend)
+{
+    Series o = Series("../samples/serial_patch." + backend, AccessType::CREATE);
+
+    auto dset = Dataset(Datatype::DOUBLE, {1});
+    o.iterations[1].particles["e"].particlePatches["offset"]["x"].resetDataset(dset);
+    o.iterations[1].particles["e"].particlePatches["offset"]["x"].setUnitSI(42);
+    o.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].resetDataset(dset);
+    o.iterations[1].particles["e"]["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
+}
+
+TEST_CASE( "patch_test", "[serial]" )
+{
+    for (auto const & t: backends)
+    {
+        patch_test(std::get<0>(t));
+    }
+}
+
+inline
+void deletion_test(const std::string & backend)
+{
+    Series o = Series("../samples/serial_deletion." + backend, AccessType::CREATE);
+
+
+    o.setAttribute("removed",
+                   "this attribute will be removed after being written to disk");
+    o.flush();
+
+    o.deleteAttribute("removed");
+    o.flush();
+
+    ParticleSpecies& e = o.iterations[1].particles["e"];
+    auto dset = Dataset(Datatype::DOUBLE, {1});
+    e["position"][RecordComponent::SCALAR].resetDataset(dset);
+    e["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
+    e.erase("deletion");
+    o.flush();
+
+    e["deletion_scalar"][RecordComponent::SCALAR].resetDataset(dset);
+    o.flush();
+
+    e["deletion_scalar"].erase(RecordComponent::SCALAR);
+    e.erase("deletion_scalar");
+    o.flush();
+
+    double value = 0.;
+    e["deletion_scalar_constant"][RecordComponent::SCALAR].resetDataset(dset);
+    e["deletion_scalar_constant"][RecordComponent::SCALAR].makeConstant(value);
+    o.flush();
+
+    e["deletion_scalar_constant"].erase(RecordComponent::SCALAR);
+    e.erase("deletion_scalar_constant");
+    o.flush();
+}
+
+TEST_CASE( "deletion_test", "[serial]" )
+{
+    for (auto const & t: backends)
+    {
+        if (std::get<0>(t) == "bp")
+        {
+            continue; // deletion not implemented in ADIOS1 backend
+        }
+        deletion_test(std::get<0>(t));
+    }
+}
+
+inline
+void optional_paths_110_test(const std::string & backend)
+{
+    try
+    {
+        {
+            Series s = Series("../samples/issue-sample/no_fields/data%T." + backend, AccessType::READ_ONLY);
+            auto attrs = s.attributes();
+            REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
+            REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
+            REQUIRE(s.iterations[400].meshes.empty());
+            REQUIRE(s.iterations[400].particles.size() == 1);
+        }
+
+        {
+            Series s = Series("../samples/issue-sample/no_particles/data%T." + backend, AccessType::READ_ONLY);
+            auto attrs = s.attributes();
+            REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
+            REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
+            REQUIRE(s.iterations[400].meshes.size() == 2);
+            REQUIRE(s.iterations[400].particles.empty());
+        }
+    } catch (no_such_file_error& e)
+    {
+        std::cerr << "issue sample not accessible. (" << e.what() << ")\n";
+    }
+
+    {
+        Series s = Series("../samples/no_meshes_1.1.0_compliant." + backend, AccessType::CREATE);
+        auto foo = s.iterations[1].particles["foo"];
+        Dataset dset = Dataset(Datatype::DOUBLE, {1});
+        foo["position"][RecordComponent::SCALAR].resetDataset(dset);
+        foo["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
+    }
+
+    {
+        Series s = Series("../samples/no_particles_1.1.0_compliant." + backend, AccessType::CREATE);
+        auto foo = s.iterations[1].meshes["foo"];
+        Dataset dset = Dataset(Datatype::DOUBLE, {1});
+        foo[RecordComponent::SCALAR].resetDataset(dset);
+    }
+
+    {
+        Series s = Series("../samples/no_meshes_1.1.0_compliant." + backend, AccessType::READ_ONLY);
+        auto attrs = s.attributes();
+        REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 0);
+        REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
+        REQUIRE(s.iterations[1].meshes.empty());
+        REQUIRE(s.iterations[1].particles.size() == 1);
+    }
+
+    {
+        Series s = Series("../samples/no_particles_1.1.0_compliant." + backend, AccessType::READ_ONLY);
+        auto attrs = s.attributes();
+        REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
+        REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 0);
+        REQUIRE(s.iterations[1].meshes.size() == 1);
+        REQUIRE(s.iterations[1].particles.empty());
+    }
+}
+
+
 #if openPMD_HAVE_HDF5
+TEST_CASE( "optional_paths_110_test", "[serial]" )
+{
+    optional_paths_110_test("h5"); // samples only present for hdf5
+}
+
 TEST_CASE( "git_hdf5_sample_structure_test", "[serial][hdf5]" )
 {
 #if openPMD_USE_INVASIVE_TESTS
@@ -1068,594 +1861,42 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
 
 TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
 {
-    {
-        Series s = Series("../samples/dtype_test.h5", AccessType::CREATE);
-
-        char c = 'c';
-        s.setAttribute("char", c);
-        unsigned char uc = 'u';
-        s.setAttribute("uchar", uc);
-        int16_t i16 = 16;
-        s.setAttribute("int16", i16);
-        int32_t i32 = 32;
-        s.setAttribute("int32", i32);
-        int64_t i64 = 64;
-        s.setAttribute("int64", i64);
-        uint16_t u16 = 16u;
-        s.setAttribute("uint16", u16);
-        uint32_t u32 = 32u;
-        s.setAttribute("uint32", u32);
-        uint64_t u64 = 64u;
-        s.setAttribute("uint64", u64);
-        float f = 16.e10f;
-        s.setAttribute("float", f);
-        double d = 1.e64;
-        s.setAttribute("double", d);
-        long double ld = 1.e80L;
-        s.setAttribute("longdouble", ld);
-        std::string str = "string";
-        s.setAttribute("string", str);
-        s.setAttribute("vecChar", std::vector< char >({'c', 'h', 'a', 'r'}));
-        s.setAttribute("vecInt16", std::vector< int16_t >({32766, 32767}));
-        s.setAttribute("vecInt32", std::vector< int32_t >({2147483646, 2147483647}));
-        s.setAttribute("vecInt64", std::vector< int64_t >({9223372036854775806, 9223372036854775807}));
-        s.setAttribute("vecUchar", std::vector< char >({'u', 'c', 'h', 'a', 'r'}));
-        s.setAttribute("vecUint16", std::vector< uint16_t >({65534u, 65535u}));
-        s.setAttribute("vecUint32", std::vector< uint32_t >({4294967294u, 4294967295u}));
-        s.setAttribute("vecUint64", std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
-        s.setAttribute("vecFloat", std::vector< float >({0.f, 3.40282e+38f}));
-        s.setAttribute("vecDouble", std::vector< double >({0., 1.79769e+308}));
-        s.setAttribute("vecLongdouble", std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
-        s.setAttribute("vecString", std::vector< std::string >({"vector", "of", "strings"}));
-        s.setAttribute("bool", true);
-        s.setAttribute("boolF", false);
-
-        // non-fixed size integer types
-        short ss = 16;
-        s.setAttribute("short", ss);
-        int si = 32;
-        s.setAttribute("int", si);
-        long sl = 64;
-        s.setAttribute("long", sl);
-        long long sll = 128;
-        s.setAttribute("longlong", sll);
-        unsigned short us = 16u;
-        s.setAttribute("ushort", us);
-        unsigned int ui = 32u;
-        s.setAttribute("uint", ui);
-        unsigned long ul = 64u;
-        s.setAttribute("ulong", ul);
-        unsigned long long ull = 128u;
-        s.setAttribute("ulonglong", ull);
-        s.setAttribute("vecShort", std::vector< short >({32766, 32767}));
-        s.setAttribute("vecInt", std::vector< int >({32766, 32767}));
-        s.setAttribute("vecLong", std::vector< long >({2147483646, 2147483647}));
-        s.setAttribute("vecLongLong", std::vector< long long >({2147483644, 2147483643}));
-        s.setAttribute("vecUShort", std::vector< unsigned short >({65534u, 65535u}));
-        s.setAttribute("vecUInt", std::vector< unsigned int >({65533u, 65531u}));
-        s.setAttribute("vecULong", std::vector< unsigned long >({65532u, 65530u}));
-        s.setAttribute("vecULongLong", std::vector< unsigned long long >({65531u, 65529u}));
-    }
-
-    Series s = Series("../samples/dtype_test.h5", AccessType::READ_ONLY);
-
-    REQUIRE(s.getAttribute("char").get< char >() == 'c');
-    REQUIRE(s.getAttribute("uchar").get< unsigned char >() == 'u');
-    REQUIRE(s.getAttribute("int16").get< int16_t >() == 16);
-    REQUIRE(s.getAttribute("int32").get< int32_t >() == 32);
-    REQUIRE(s.getAttribute("int64").get< int64_t >() == 64);
-    REQUIRE(s.getAttribute("uint16").get< uint16_t >() == 16u);
-    REQUIRE(s.getAttribute("uint32").get< uint32_t >() == 32u);
-    REQUIRE(s.getAttribute("uint64").get< uint64_t >() == 64u);
-    REQUIRE(s.getAttribute("float").get< float >() == 16.e10f);
-    REQUIRE(s.getAttribute("double").get< double >() == 1.e64);
-    REQUIRE(s.getAttribute("longdouble").get< long double >() == 1.e80L);
-    REQUIRE(s.getAttribute("string").get< std::string >() == "string");
-    REQUIRE(s.getAttribute("vecChar").get< std::vector< char > >() == std::vector< char >({'c', 'h', 'a', 'r'}));
-    REQUIRE(s.getAttribute("vecInt16").get< std::vector< int16_t > >() == std::vector< int16_t >({32766, 32767}));
-    REQUIRE(s.getAttribute("vecInt32").get< std::vector< int32_t > >() == std::vector< int32_t >({2147483646, 2147483647}));
-    REQUIRE(s.getAttribute("vecInt64").get< std::vector< int64_t > >() == std::vector< int64_t >({9223372036854775806, 9223372036854775807}));
-    REQUIRE(s.getAttribute("vecUchar").get< std::vector< char > >() == std::vector< char >({'u', 'c', 'h', 'a', 'r'}));
-    REQUIRE(s.getAttribute("vecUint16").get< std::vector< uint16_t > >() == std::vector< uint16_t >({65534u, 65535u}));
-    REQUIRE(s.getAttribute("vecUint32").get< std::vector< uint32_t > >() == std::vector< uint32_t >({4294967294u, 4294967295u}));
-    REQUIRE(s.getAttribute("vecUint64").get< std::vector< uint64_t > >() == std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
-    REQUIRE(s.getAttribute("vecFloat").get< std::vector< float > >() == std::vector< float >({0.f, 3.40282e+38f}));
-    REQUIRE(s.getAttribute("vecDouble").get< std::vector< double > >() == std::vector< double >({0., 1.79769e+308}));
-    REQUIRE(s.getAttribute("vecLongdouble").get< std::vector< long double > >() == std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
-    REQUIRE(s.getAttribute("vecString").get< std::vector< std::string > >() == std::vector< std::string >({"vector", "of", "strings"}));
-    REQUIRE(s.getAttribute("bool").get< bool >() == true);
-    REQUIRE(s.getAttribute("boolF").get< bool >() == false);
-
-    // same implementation types (not necessary aliases) detection
-#if !defined(_MSC_VER)
-    REQUIRE(s.getAttribute("short").dtype == Datatype::SHORT);
-    REQUIRE(s.getAttribute("int").dtype == Datatype::INT);
-    REQUIRE(s.getAttribute("long").dtype == Datatype::LONG);
-    REQUIRE(s.getAttribute("longlong").dtype == Datatype::LONGLONG);
-    REQUIRE(s.getAttribute("ushort").dtype == Datatype::USHORT);
-    REQUIRE(s.getAttribute("uint").dtype == Datatype::UINT);
-    REQUIRE(s.getAttribute("ulong").dtype == Datatype::ULONG);
-    REQUIRE(s.getAttribute("ulonglong").dtype == Datatype::ULONGLONG);
-
-    REQUIRE(s.getAttribute("vecShort").dtype == Datatype::VEC_SHORT);
-    REQUIRE(s.getAttribute("vecInt").dtype == Datatype::VEC_INT);
-    REQUIRE(s.getAttribute("vecLong").dtype == Datatype::VEC_LONG);
-    REQUIRE(s.getAttribute("vecLongLong").dtype == Datatype::VEC_LONGLONG);
-    REQUIRE(s.getAttribute("vecUShort").dtype == Datatype::VEC_USHORT);
-    REQUIRE(s.getAttribute("vecUInt").dtype == Datatype::VEC_UINT);
-    REQUIRE(s.getAttribute("vecULong").dtype == Datatype::VEC_ULONG);
-    REQUIRE(s.getAttribute("vecULongLong").dtype == Datatype::VEC_ULONGLONG);
-#endif
-    REQUIRE(isSame(s.getAttribute("short").dtype, Datatype::SHORT));
-    REQUIRE(isSame(s.getAttribute("int").dtype, Datatype::INT));
-    REQUIRE(isSame(s.getAttribute("long").dtype, Datatype::LONG));
-    REQUIRE(isSame(s.getAttribute("longlong").dtype, Datatype::LONGLONG));
-    REQUIRE(isSame(s.getAttribute("ushort").dtype, Datatype::USHORT));
-    REQUIRE(isSame(s.getAttribute("uint").dtype, Datatype::UINT));
-    REQUIRE(isSame(s.getAttribute("ulong").dtype, Datatype::ULONG));
-    REQUIRE(isSame(s.getAttribute("ulonglong").dtype, Datatype::ULONGLONG));
-
-    REQUIRE(isSame(s.getAttribute("vecShort").dtype, Datatype::VEC_SHORT));
-    REQUIRE(isSame(s.getAttribute("vecInt").dtype, Datatype::VEC_INT));
-    REQUIRE(isSame(s.getAttribute("vecLong").dtype, Datatype::VEC_LONG));
-    REQUIRE(isSame(s.getAttribute("vecLongLong").dtype, Datatype::VEC_LONGLONG));
-    REQUIRE(isSame(s.getAttribute("vecUShort").dtype, Datatype::VEC_USHORT));
-    REQUIRE(isSame(s.getAttribute("vecUInt").dtype, Datatype::VEC_UINT));
-    REQUIRE(isSame(s.getAttribute("vecULong").dtype, Datatype::VEC_ULONG));
-    REQUIRE(isSame(s.getAttribute("vecULongLong").dtype, Datatype::VEC_ULONGLONG));
+    dtype_test("h5");
 }
 
 TEST_CASE( "hdf5_write_test", "[serial][hdf5]" )
 {
-    Series o = Series("../samples/serial_write.h5", AccessType::CREATE);
-
-    o.setAuthor("Serial HDF5");
-    ParticleSpecies& e = o.iterations[1].particles["e"];
-
-    std::vector< double > position_global(4);
-    double pos{0.};
-    std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
-    std::vector< double > position_local = {0.};
-    e["position"]["x"].resetDataset(Dataset(determineDatatype<double>(), {4}));
-    std::vector< uint64_t > positionOffset_global(4);
-    uint64_t posOff{0};
-    std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
-    std::array< uint64_t, 1 > positionOffset_local = {{ 0u }};
-    auto dataset = Dataset(determineDatatype<uint64_t>(), {4});
-    REQUIRE_THROWS_AS(dataset.setCompression("zlib", 10), std::runtime_error);
-    dataset.setCompression("zlib", 9);
-    e["positionOffset"]["x"].resetDataset(dataset);
-
-    for( uint64_t i = 0; i < 4; ++i )
-    {
-        position_local.at(0) = position_global[i];
-        e["position"]["x"].storeChunk(shareRaw(position_local), {i}, {1});
-        positionOffset_local[0] = positionOffset_global[i];
-        e["positionOffset"]["x"].storeChunk(shareRaw(positionOffset_local), {i}, {1});
-        o.flush();
-    }
-
-    //TODO close file, read back, verify
+    write_test("h5");
 }
 
 TEST_CASE( "hdf5_fileBased_write_empty_test", "[serial][hdf5]" )
 {
-    if( auxiliary::directory_exists("../samples/subdir") )
-        auxiliary::remove_directory("../samples/subdir");
-
-    Dataset dset = Dataset(Datatype::DOUBLE, {2});
-    {
-        Series o = Series("../samples/subdir/serial_fileBased_write%T.h5", AccessType::CREATE);
-
-        ParticleSpecies& e_1 = o.iterations[1].particles["e"];
-        e_1["position"][RecordComponent::SCALAR].resetDataset(dset);
-        e_1["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
-        o.iterations[1].setTime(1.f);
-        ParticleSpecies& e_2 = o.iterations[2].particles["e"];
-        e_2["position"][RecordComponent::SCALAR].resetDataset(dset);
-        e_2["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
-        o.iterations[2].setTime(2.f);
-        ParticleSpecies& e_3 = o.iterations[3].particles["e"];
-        e_3["position"][RecordComponent::SCALAR].resetDataset(dset);
-        e_3["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
-        o.iterations[3].setTime(3.f);
-    }
-
-    REQUIRE(auxiliary::directory_exists("../samples/subdir"));
-    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write1.h5"));
-    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write2.h5"));
-    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write3.h5"));
-
-    {
-        Series o = Series("../samples/subdir/serial_fileBased_write%T.h5", AccessType::READ_ONLY);
-
-        REQUIRE(o.iterations.size() == 3);
-        REQUIRE(o.iterations.count(1) == 1);
-        REQUIRE(o.iterations.count(2) == 1);
-        REQUIRE(o.iterations.count(3) == 1);
-
-        REQUIRE(o.iterations[1].time< float >() == 1.f);
-        REQUIRE(o.iterations[2].time< float >() == 2.f);
-        REQUIRE(o.iterations[3].time< float >() == 3.f);
-
-        REQUIRE(o.iterations[1].particles.size() == 1);
-        REQUIRE(o.iterations[1].particles.count("e") == 1);
-        REQUIRE(o.iterations[2].particles.size() == 1);
-        REQUIRE(o.iterations[2].particles.count("e") == 1);
-        REQUIRE(o.iterations[3].particles.size() == 1);
-        REQUIRE(o.iterations[3].particles.count("e") == 1);
-
-        REQUIRE(o.iterations[1].particles["e"].size() == 2);
-        REQUIRE(o.iterations[1].particles["e"].count("position") == 1);
-        REQUIRE(o.iterations[1].particles["e"].count("positionOffset") == 1);
-        REQUIRE(o.iterations[2].particles["e"].size() == 2);
-        REQUIRE(o.iterations[2].particles["e"].count("position") == 1);
-        REQUIRE(o.iterations[2].particles["e"].count("positionOffset") == 1);
-        REQUIRE(o.iterations[3].particles["e"].size() == 2);
-        REQUIRE(o.iterations[3].particles["e"].count("position") == 1);
-        REQUIRE(o.iterations[3].particles["e"].count("positionOffset") == 1);
-
-        REQUIRE(o.iterations[1].particles["e"]["position"].size() == 1);
-        REQUIRE(o.iterations[1].particles["e"]["position"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[1].particles["e"]["positionOffset"].size() == 1);
-        REQUIRE(o.iterations[1].particles["e"]["positionOffset"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].getDatatype() == Datatype::DOUBLE);
-        REQUIRE(o.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].getDimensionality() == 1);
-        REQUIRE(o.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].getExtent() == Extent{2});
-        REQUIRE(o.iterations[2].particles["e"]["position"].size() == 1);
-        REQUIRE(o.iterations[2].particles["e"]["position"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[2].particles["e"]["positionOffset"].size() == 1);
-        REQUIRE(o.iterations[2].particles["e"]["positionOffset"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[2].particles["e"]["position"][RecordComponent::SCALAR].getDatatype() == Datatype::DOUBLE);
-        REQUIRE(o.iterations[2].particles["e"]["position"][RecordComponent::SCALAR].getDimensionality() == 1);
-        REQUIRE(o.iterations[2].particles["e"]["position"][RecordComponent::SCALAR].getExtent() == Extent{2});
-        REQUIRE(o.iterations[3].particles["e"]["position"].size() == 1);
-        REQUIRE(o.iterations[3].particles["e"]["position"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[3].particles["e"]["positionOffset"].size() == 1);
-        REQUIRE(o.iterations[3].particles["e"]["positionOffset"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[3].particles["e"]["position"][RecordComponent::SCALAR].getDatatype() == Datatype::DOUBLE);
-        REQUIRE(o.iterations[3].particles["e"]["position"][RecordComponent::SCALAR].getDimensionality() == 1);
-        REQUIRE(o.iterations[3].particles["e"]["position"][RecordComponent::SCALAR].getExtent() == Extent{2});
-    }
-
-    {
-        Series o = Series("../samples/subdir/serial_fileBased_write%T.h5", AccessType::READ_WRITE);
-        ParticleSpecies& e_4 = o.iterations[4].particles["e"];
-        e_4["position"][RecordComponent::SCALAR].resetDataset(dset);
-        e_4["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
-        o.iterations[4].setTime(4.f);
-    }
-
-    {
-        Series o = Series("../samples/subdir/serial_fileBased_write%T.h5", AccessType::READ_ONLY);
-
-        REQUIRE(o.iterations.size() == 4);
-        REQUIRE(o.iterations.count(4) == 1);
-
-        REQUIRE(o.iterations[4].time< float >() == 4.f);
-
-        REQUIRE(o.iterations[4].particles.size() == 1);
-        REQUIRE(o.iterations[4].particles.count("e") == 1);
-
-        REQUIRE(o.iterations[4].particles["e"].size() == 2);
-        REQUIRE(o.iterations[4].particles["e"].count("position") == 1);
-        REQUIRE(o.iterations[4].particles["e"].count("positionOffset") == 1);
-
-        REQUIRE(o.iterations[4].particles["e"]["position"].size() == 1);
-        REQUIRE(o.iterations[4].particles["e"]["position"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[4].particles["e"]["positionOffset"].size() == 1);
-        REQUIRE(o.iterations[4].particles["e"]["positionOffset"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[4].particles["e"]["position"][RecordComponent::SCALAR].getDatatype() == Datatype::DOUBLE);
-        REQUIRE(o.iterations[4].particles["e"]["position"][RecordComponent::SCALAR].getDimensionality() == 1);
-        REQUIRE(o.iterations[4].particles["e"]["position"][RecordComponent::SCALAR].getExtent() == Extent{2});
-    }
+    fileBased_write_empty_test("h5");
 }
 
 TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
 {
-    if( auxiliary::directory_exists("../samples/subdir") )
-        auxiliary::remove_directory("../samples/subdir");
-
-    {
-        Series o = Series("../samples/subdir/serial_fileBased_write%08T.h5", AccessType::CREATE);
-
-        ParticleSpecies& e_1 = o.iterations[1].particles["e"];
-
-        std::vector< double > position_global(4);
-        double pos{0.};
-        std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
-        std::shared_ptr< double > position_local_1(new double);
-        e_1["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_1), {4}));
-        std::vector< uint64_t > positionOffset_global(4);
-        uint64_t posOff{0};
-        std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
-        std::shared_ptr< uint64_t > positionOffset_local_1(new uint64_t);
-        e_1["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_1), {4}));
-
-        for( uint64_t i = 0; i < 4; ++i )
-        {
-            *position_local_1 = position_global[i];
-            e_1["position"]["x"].storeChunk(position_local_1, {i}, {1});
-            *positionOffset_local_1 = positionOffset_global[i];
-            e_1["positionOffset"]["x"].storeChunk(positionOffset_local_1, {i}, {1});
-            o.flush();
-        }
-
-        o.iterations[1].setTime(static_cast< double >(1));
-
-        ParticleSpecies& e_2 = o.iterations[2].particles["e"];
-
-        std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
-        e_2["position"]["x"].resetDataset(Dataset(determineDatatype<double>(), {4}));
-        std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
-        std::shared_ptr< uint64_t > positionOffset_local_2(new uint64_t);
-        e_2["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_2), {4}));
-
-        for( uint64_t i = 0; i < 4; ++i )
-        {
-            double const position_local_2 = position_global.at(i);
-            e_2["position"]["x"].storeChunk(shareRaw(&position_local_2), {i}, {1});
-            *positionOffset_local_2 = positionOffset_global[i];
-            e_2["positionOffset"]["x"].storeChunk(positionOffset_local_2, {i}, {1});
-            o.flush();
-        }
-
-        o.iterations[2].setTime(static_cast< double >(2));
-
-        ParticleSpecies& e_3 = o.iterations[3].particles["e"];
-
-        std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
-        std::shared_ptr< double > position_local_3(new double);
-        e_3["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_3), {4}));
-        std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
-        std::shared_ptr< uint64_t > positionOffset_local_3(new uint64_t);
-        e_3["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_3), {4}));
-
-        for( uint64_t i = 0; i < 4; ++i )
-        {
-            *position_local_3 = position_global[i];
-            e_3["position"]["x"].storeChunk(position_local_3, {i}, {1});
-            *positionOffset_local_3 = positionOffset_global[i];
-            e_3["positionOffset"]["x"].storeChunk(positionOffset_local_3, {i}, {1});
-            o.flush();
-        }
-
-        o.setOpenPMDextension(1);
-        o.iterations[3].setTime(static_cast< double >(3));
-    }
-    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000001.h5"));
-    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000002.h5"));
-    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000003.h5"));
-
-    {
-        Series o = Series("../samples/subdir/serial_fileBased_write%T.h5", AccessType::READ_ONLY);
-
-        REQUIRE(o.iterations.size() == 3);
-        REQUIRE(o.iterations.count(1) == 1);
-        REQUIRE(o.iterations.count(2) == 1);
-        REQUIRE(o.iterations.count(3) == 1);
-
-#if openPMD_USE_INVASIVE_TESTS
-        REQUIRE(*o.m_filenamePadding == 8);
-#endif
-
-        REQUIRE(o.basePath() == "/data/%T/");
-        REQUIRE(o.iterationEncoding() == IterationEncoding::fileBased);
-        REQUIRE(o.iterationFormat() == "serial_fileBased_write%08T");
-        REQUIRE(o.openPMD() == "1.1.0");
-        REQUIRE(o.openPMDextension() == 1u);
-        REQUIRE(o.particlesPath() == "particles/");
-        REQUIRE_FALSE(o.containsAttribute("meshesPath"));
-        REQUIRE_THROWS_AS(o.meshesPath(), no_such_attribute_error);
-        std::array< double, 7 > udim{{1, 0, 0, 0, 0, 0, 0}};
-        Extent ext{4};
-        for( auto& entry : o.iterations )
-        {
-            auto& it = entry.second;
-            REQUIRE(it.dt< double >() == 1.);
-            REQUIRE(it.time< double >() == static_cast< double >(entry.first));
-            REQUIRE(it.timeUnitSI() == 1.);
-            auto& pos = it.particles.at("e").at("position");
-            REQUIRE(pos.timeOffset< float >() == 0.f);
-            REQUIRE(pos.unitDimension() == udim);
-            auto& pos_x = pos.at("x");
-            REQUIRE(pos_x.unitSI() == 1.);
-            REQUIRE(pos_x.getExtent() == ext);
-            REQUIRE(pos_x.getDatatype() == Datatype::DOUBLE);
-            auto& posOff = it.particles.at("e").at("positionOffset");
-            REQUIRE(posOff.timeOffset< float >() == 0.f);
-            REQUIRE(posOff.unitDimension() == udim);
-            auto& posOff_x = posOff.at("x");
-            REQUIRE(posOff_x.unitSI() == 1.);
-            REQUIRE(posOff_x.getExtent() == ext);
-#if !defined(_MSC_VER)
-            REQUIRE(posOff_x.getDatatype() == determineDatatype< uint64_t >());
-#endif
-            REQUIRE(isSame(posOff_x.getDatatype(), determineDatatype< uint64_t >()));
-
-            auto position = pos_x.loadChunk< double >({0}, {4});
-            auto position_raw = position.get();
-            auto positionOffset = posOff_x.loadChunk< uint64_t >({0}, {4});
-            auto positionOffset_raw = positionOffset.get();
-            o.flush();
-            for( uint64_t j = 0; j < 4; ++j )
-            {
-              REQUIRE(position_raw[j] == static_cast< double >(j + (entry.first-1)*4));
-              REQUIRE(positionOffset_raw[j] == j + (entry.first-1)*4);
-            }
-        }
-    }
-
-    // extend existing series with new step and auto-detection of iteration padding
-    {
-        Series o = Series("../samples/subdir/serial_fileBased_write%T.h5", AccessType::READ_WRITE);
-
-        REQUIRE(o.iterations.size() == 3);
-        o.iterations[4];
-        REQUIRE(o.iterations.size() == 4);
-    }
-    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000004.h5"));
-
-    // additional iteration with different iteration padding but similar content
-    {
-        Series o = Series("../samples/subdir/serial_fileBased_write%01T.h5", AccessType::READ_WRITE);
-
-        REQUIRE(o.iterations.empty());
-
-        auto& it = o.iterations[10];
-        ParticleSpecies& e = it.particles["e"];
-        e["position"]["x"].resetDataset(Dataset(Datatype::DOUBLE, {42}));
-        e["positionOffset"]["x"].resetDataset(Dataset(Datatype::DOUBLE, {42}));
-        e["position"]["x"].makeConstant(1.23);
-        e["positionOffset"]["x"].makeConstant(1.23);
-
-        REQUIRE(o.iterations.size() == 1);
-    }
-    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write10.h5"));
-
-    // read back with auto-detection and non-fixed padding
-    {
-        Series s = Series("../samples/subdir/serial_fileBased_write%T.h5", AccessType::READ_ONLY);
-        REQUIRE(s.iterations.size() == 5);
-    }
-
-    // write with auto-detection and in-consistent padding
-    {
-        REQUIRE_THROWS_WITH(Series("../samples/subdir/serial_fileBased_write%T.h5", AccessType::READ_WRITE),
-            Catch::Equals("Cannot write to a series with inconsistent iteration padding. Please specify '%0<N>T' or open as read-only."));
-    }
-
-    // read back with auto-detection and fixed padding
-    {
-        Series s = Series("../samples/subdir/serial_fileBased_write%08T.h5", AccessType::READ_ONLY);
-        REQUIRE(s.iterations.size() == 4);
-    }
+    fileBased_write_test("h5");
 }
 
 TEST_CASE( "hdf5_bool_test", "[serial][hdf5]" )
 {
-    {
-        Series o = Series("../samples/serial_bool.h5", AccessType::CREATE);
-
-        o.setAttribute("Bool attribute (true)", true);
-        o.setAttribute("Bool attribute (false)", false);
-    }
-    {
-        Series o = Series("../samples/serial_bool.h5", AccessType::READ_ONLY);
-
-        auto attrs = o.attributes();
-        REQUIRE(std::count(attrs.begin(), attrs.end(), "Bool attribute (true)") == 1);
-        REQUIRE(std::count(attrs.begin(), attrs.end(), "Bool attribute (false)") == 1);
-        REQUIRE(o.getAttribute("Bool attribute (true)").get< bool >() == true);
-        REQUIRE(o.getAttribute("Bool attribute (false)").get< bool >() == false);
-    }
+    bool_test("h5");
 }
 
 TEST_CASE( "hdf5_patch_test", "[serial][hdf5]" )
 {
-    Series o = Series("../samples/serial_patch.h5", AccessType::CREATE);
-
-    auto dset = Dataset(Datatype::DOUBLE, {1});
-    o.iterations[1].particles["e"].particlePatches["offset"]["x"].resetDataset(dset);
-    o.iterations[1].particles["e"].particlePatches["offset"]["x"].setUnitSI(42);
-    o.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].resetDataset(dset);
-    o.iterations[1].particles["e"]["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
+    patch_test("h5");
 }
 
 TEST_CASE( "hdf5_deletion_test", "[serial][hdf5]" )
 {
-    Series o = Series("../samples/serial_deletion.h5", AccessType::CREATE);
-
-
-    o.setAttribute("removed",
-                   "this attribute will be removed after being written to disk");
-    o.flush();
-
-    o.deleteAttribute("removed");
-    o.flush();
-
-    ParticleSpecies& e = o.iterations[1].particles["e"];
-    auto dset = Dataset(Datatype::DOUBLE, {1});
-    e["position"][RecordComponent::SCALAR].resetDataset(dset);
-    e["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
-    e.erase("deletion");
-    o.flush();
-
-    e["deletion_scalar"][RecordComponent::SCALAR].resetDataset(dset);
-    o.flush();
-
-    e["deletion_scalar"].erase(RecordComponent::SCALAR);
-    e.erase("deletion_scalar");
-    o.flush();
-
-    double value = 0.;
-    e["deletion_scalar_constant"][RecordComponent::SCALAR].resetDataset(dset);
-    e["deletion_scalar_constant"][RecordComponent::SCALAR].makeConstant(value);
-    o.flush();
-
-    e["deletion_scalar_constant"].erase(RecordComponent::SCALAR);
-    e.erase("deletion_scalar_constant");
-    o.flush();
+    deletion_test("h5");
 }
 
 TEST_CASE( "hdf5_110_optional_paths", "[serial][hdf5]" )
 {
-    try
-    {
-        {
-            Series s = Series("../samples/issue-sample/no_fields/data%T.h5", AccessType::READ_ONLY);
-            auto attrs = s.attributes();
-            REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
-            REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
-            REQUIRE(s.iterations[400].meshes.empty());
-            REQUIRE(s.iterations[400].particles.size() == 1);
-        }
-
-        {
-            Series s = Series("../samples/issue-sample/no_particles/data%T.h5", AccessType::READ_ONLY);
-            auto attrs = s.attributes();
-            REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
-            REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
-            REQUIRE(s.iterations[400].meshes.size() == 2);
-            REQUIRE(s.iterations[400].particles.empty());
-        }
-    } catch (no_such_file_error& e)
-    {
-        std::cerr << "issue sample not accessible. (" << e.what() << ")\n";
-    }
-
-    {
-        Series s = Series("../samples/no_meshes_1.1.0_compliant.h5", AccessType::CREATE);
-        auto foo = s.iterations[1].particles["foo"];
-        Dataset dset = Dataset(Datatype::DOUBLE, {1});
-        foo["position"][RecordComponent::SCALAR].resetDataset(dset);
-        foo["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
-    }
-
-    {
-        Series s = Series("../samples/no_particles_1.1.0_compliant.h5", AccessType::CREATE);
-        auto foo = s.iterations[1].meshes["foo"];
-        Dataset dset = Dataset(Datatype::DOUBLE, {1});
-        foo[RecordComponent::SCALAR].resetDataset(dset);
-    }
-
-    {
-        Series s = Series("../samples/no_meshes_1.1.0_compliant.h5", AccessType::READ_ONLY);
-        auto attrs = s.attributes();
-        REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 0);
-        REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
-        REQUIRE(s.iterations[1].meshes.empty());
-        REQUIRE(s.iterations[1].particles.size() == 1);
-    }
-
-    {
-        Series s = Series("../samples/no_particles_1.1.0_compliant.h5", AccessType::READ_ONLY);
-        auto attrs = s.attributes();
-        REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
-        REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 0);
-        REQUIRE(s.iterations[1].meshes.size() == 1);
-        REQUIRE(s.iterations[1].particles.empty());
-    }
+    optional_paths_110_test("h5");
 }
 
 TEST_CASE( "hdf5_constant_scalar", "[serial][hdf5]" )
@@ -1676,448 +1917,22 @@ TEST_CASE( "no_serial_hdf5", "[serial][hdf5]" )
 #if openPMD_HAVE_ADIOS1
 TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
 {
-    {
-        Series s = Series("../samples/dtype_test.bp", AccessType::CREATE);
-
-        char c = 'c';
-        s.setAttribute("char", c);
-        unsigned char uc = 'u';
-        s.setAttribute("uchar", uc);
-        int16_t i16 = 16;
-        s.setAttribute("int16", i16);
-        int32_t i32 = 32;
-        s.setAttribute("int32", i32);
-        int64_t i64 = 64;
-        s.setAttribute("int64", i64);
-        uint16_t u16 = 16u;
-        s.setAttribute("uint16", u16);
-        uint32_t u32 = 32u;
-        s.setAttribute("uint32", u32);
-        uint64_t u64 = 64u;
-        s.setAttribute("uint64", u64);
-        float f = 16.e10f;
-        s.setAttribute("float", f);
-        double d = 1.e64;
-        s.setAttribute("double", d);
-        long double ld = 1.e80L;
-        s.setAttribute("longdouble", ld);
-        std::string str = "string";
-        s.setAttribute("string", str);
-        s.setAttribute("vecChar", std::vector< char >({'c', 'h', 'a', 'r'}));
-        s.setAttribute("vecInt16", std::vector< int16_t >({32766, 32767}));
-        s.setAttribute("vecInt32", std::vector< int32_t >({2147483646, 2147483647}));
-        s.setAttribute("vecInt64", std::vector< int64_t >({9223372036854775806, 9223372036854775807}));
-        s.setAttribute("vecUchar", std::vector< char >({'u', 'c', 'h', 'a', 'r'}));
-        s.setAttribute("vecUint16", std::vector< uint16_t >({65534u, 65535u}));
-        s.setAttribute("vecUint32", std::vector< uint32_t >({4294967294u, 4294967295u}));
-        s.setAttribute("vecUint64", std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
-        s.setAttribute("vecFloat", std::vector< float >({0.f, 3.40282e+38f}));
-        s.setAttribute("vecDouble", std::vector< double >({0., 1.79769e+308}));
-        s.setAttribute("vecLongdouble", std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
-        s.setAttribute("vecString", std::vector< std::string >({"vector", "of", "strings"}));
-        s.setAttribute("bool", true);
-        s.setAttribute("boolF", false);
-
-        // translation from non-fixed size integer types
-        short rs = 8;
-        s.setAttribute("short", rs);
-        int i = 16;
-        s.setAttribute("int", i);
-        long l = 32;
-        s.setAttribute("long", l);
-        long long ll = 64;
-        s.setAttribute("longlong", ll);
-        unsigned short us = 8u;
-        s.setAttribute("ushort", us);
-        unsigned int ui = 16u;
-        s.setAttribute("uint", ui);
-        unsigned long ul = 32u;
-        s.setAttribute("ulong", ul);
-        unsigned long long ull = 64u;
-        s.setAttribute("ulonglong", ull);
-        s.setAttribute("vecShort", std::vector< short >({32766, 32767}));
-        s.setAttribute("vecInt", std::vector< int >({32766, 32767}));
-        s.setAttribute("vecLong", std::vector< long >({2147483646, 2147483647}));
-        s.setAttribute("vecLongLong", std::vector< long long >({2147483644, 2147483643}));
-        s.setAttribute("vecUShort", std::vector< unsigned short >({65534u, 65535u}));
-        s.setAttribute("vecUInt", std::vector< unsigned int >({65533u, 65531u}));
-        s.setAttribute("vecULong", std::vector< unsigned long >({65532u, 65530u}));
-        s.setAttribute("vecULongLong", std::vector< unsigned long long >({65529u, 65528u}));
-    }
-
-    Series s = Series("../samples/dtype_test.bp", AccessType::READ_ONLY);
-
-    REQUIRE(s.getAttribute("char").get< char >() == 'c');
-    REQUIRE(s.getAttribute("uchar").get< unsigned char >() == 'u');
-    REQUIRE(s.getAttribute("int16").get< int16_t >() == 16);
-    REQUIRE(s.getAttribute("int32").get< int32_t >() == 32);
-    REQUIRE(s.getAttribute("int64").get<int64_t>() == 64);
-    REQUIRE(s.getAttribute("uint16").get< uint16_t >() == 16u);
-    REQUIRE(s.getAttribute("uint32").get< uint32_t >() == 32u);
-    REQUIRE(s.getAttribute("uint64").get< uint64_t >() == 64u);
-    REQUIRE(s.getAttribute("float").get< float >() == 16.e10f);
-    REQUIRE(s.getAttribute("double").get< double >() == 1.e64);
-    REQUIRE(s.getAttribute("longdouble").get< long double >() == 1.e80L);
-    REQUIRE(s.getAttribute("string").get< std::string >() == "string");
-    REQUIRE(s.getAttribute("vecChar").get< std::vector< char > >() == std::vector< char >({'c', 'h', 'a', 'r'}));
-    REQUIRE(s.getAttribute("vecInt16").get< std::vector< int16_t > >() == std::vector< int16_t >({32766, 32767}));
-    REQUIRE(s.getAttribute("vecInt32").get< std::vector< int32_t > >() == std::vector< int32_t >({2147483646, 2147483647}));
-    REQUIRE(s.getAttribute("vecInt64").get< std::vector< int64_t > >() == std::vector< int64_t >({9223372036854775806, 9223372036854775807}));
-    REQUIRE(s.getAttribute("vecUchar").get< std::vector< char > >() == std::vector< char >({'u', 'c', 'h', 'a', 'r'}));
-    REQUIRE(s.getAttribute("vecUint16").get< std::vector< uint16_t > >() == std::vector< uint16_t >({65534u, 65535u}));
-    REQUIRE(s.getAttribute("vecUint32").get< std::vector< uint32_t > >() == std::vector< uint32_t >({4294967294u, 4294967295u}));
-    REQUIRE(s.getAttribute("vecUint64").get< std::vector< uint64_t > >() == std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
-    REQUIRE(s.getAttribute("vecFloat").get< std::vector< float > >() == std::vector< float >({0.f, 3.40282e+38f}));
-    REQUIRE(s.getAttribute("vecDouble").get< std::vector< double > >() == std::vector< double >({0., 1.79769e+308}));
-    REQUIRE(s.getAttribute("vecLongdouble").get< std::vector< long double > >() == std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
-    REQUIRE(s.getAttribute("vecString").get< std::vector< std::string > >() == std::vector< std::string >({"vector", "of", "strings"}));
-    REQUIRE(s.getAttribute("bool").get< bool >() == true);
-    REQUIRE(s.getAttribute("boolF").get< bool >() == false);
-
-    // translation from non-fixed size integer types
-    REQUIRE(s.getAttribute("short").get< short >() == 8);
-    REQUIRE(s.getAttribute("int").get< int >() == 16);
-    REQUIRE(s.getAttribute("long").get< long >() == 32);
-    REQUIRE(s.getAttribute("longlong").get< long long >() == 64);
-    REQUIRE(s.getAttribute("ushort").get< unsigned short >() == 8u);
-    REQUIRE(s.getAttribute("uint").get< unsigned int >() == 16u);
-    REQUIRE(s.getAttribute("ulong").get< unsigned long >() == 32u);
-    REQUIRE(s.getAttribute("ulonglong").get< unsigned long long >() == 64u);
-    REQUIRE(s.getAttribute("vecShort").get< std::vector< short > >() == std::vector< short >({32766, 32767}));
-    REQUIRE(s.getAttribute("vecInt").get< std::vector< int > >() == std::vector< int >({32766, 32767}));
-    REQUIRE(s.getAttribute("vecLong").get< std::vector< long > >() == std::vector< long >({2147483646, 2147483647}));
-    REQUIRE(s.getAttribute("vecLongLong").get< std::vector< long long > >() == std::vector< long long >({2147483644, 2147483643}));
-    REQUIRE(s.getAttribute("vecUShort").get< std::vector< unsigned short > >() == std::vector< unsigned short >({65534u, 65535u}));
-    REQUIRE(s.getAttribute("vecUInt").get< std::vector< unsigned int > >() == std::vector< unsigned int >({65533u, 65531u}));
-    REQUIRE(s.getAttribute("vecULong").get< std::vector< unsigned long > >() == std::vector< unsigned long >({65532u, 65530u}));
-    REQUIRE(s.getAttribute("vecULongLong").get< std::vector< unsigned long long > >() == std::vector< unsigned long long >({65529u, 65528u}));
+    dtype_test(".bp");
 }
 
 TEST_CASE( "adios1_write_test", "[serial][adios1]")
 {
-    Series o = Series("../samples/serial_write.bp", AccessType::CREATE);
-
-    ParticleSpecies& e_1 = o.iterations[1].particles["e"];
-
-    std::vector< double > position_global(4);
-    double pos{0.};
-    std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
-    std::shared_ptr< double > position_local_1(new double);
-    e_1["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_1), {4}));
-
-    for( uint64_t i = 0; i < 4; ++i )
-    {
-        *position_local_1 = position_global[i];
-        e_1["position"]["x"].storeChunk(position_local_1, {i}, {1});
-    }
-
-    std::vector< uint64_t > positionOffset_global(4);
-    uint64_t posOff{0};
-    std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
-    std::shared_ptr< uint64_t > positionOffset_local_1(new uint64_t);
-    e_1["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_1), {4}));
-
-    for( uint64_t i = 0; i < 4; ++i )
-    {
-        *positionOffset_local_1 = positionOffset_global[i];
-        e_1["positionOffset"]["x"].storeChunk(positionOffset_local_1, {i}, {1});
-    }
-
-    ParticleSpecies& e_2 = o.iterations[2].particles["e"];
-
-    std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
-    std::shared_ptr< double > position_local_2(new double);
-    e_2["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_2), {4}));
-
-    for( uint64_t i = 0; i < 4; ++i )
-    {
-        *position_local_2 = position_global[i];
-        e_2["position"]["x"].storeChunk(position_local_2, {i}, {1});
-    }
-
-    std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
-    std::shared_ptr< uint64_t > positionOffset_local_2(new uint64_t);
-    e_2["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_2), {4}));
-
-    for( uint64_t i = 0; i < 4; ++i )
-    {
-        *positionOffset_local_2 = positionOffset_global[i];
-        e_2["positionOffset"]["x"].storeChunk(positionOffset_local_2, {i}, {1});
-    }
-
-    o.flush();
-
-    ParticleSpecies& e_3 = o.iterations[3].particles["e"];
-
-    std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
-    std::shared_ptr< double > position_local_3(new double);
-    e_3["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_3), {4}));
-
-    for( uint64_t i = 0; i < 4; ++i )
-    {
-        *position_local_3 = position_global[i];
-        e_3["position"]["x"].storeChunk(position_local_3, {i}, {1});
-    }
-
-    std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
-    std::shared_ptr< uint64_t > positionOffset_local_3(new uint64_t);
-    e_3["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_3), {4}));
-
-    for( uint64_t i = 0; i < 4; ++i )
-    {
-        *positionOffset_local_3 = positionOffset_global[i];
-        e_3["positionOffset"]["x"].storeChunk(positionOffset_local_3, {i}, {1});
-    }
-
-    o.flush();
+    write_test("bp");
 }
 
 TEST_CASE( "adios1_fileBased_write_empty_test", "[serial][adios1]" )
 {
-    if( auxiliary::directory_exists("../samples/subdir") )
-        auxiliary::remove_directory("../samples/subdir");
-
-    Dataset dset = Dataset(Datatype::DOUBLE, {2});
-    {
-        Series o = Series("../samples/subdir/serial_fileBased_write%T.bp", AccessType::CREATE);
-
-        ParticleSpecies& e_1 = o.iterations[1].particles["e"];
-        e_1["position"][RecordComponent::SCALAR].resetDataset(dset);
-        e_1["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
-        o.iterations[1].setTime(1.f);
-        ParticleSpecies& e_2 = o.iterations[2].particles["e"];
-        e_2["position"][RecordComponent::SCALAR].resetDataset(dset);
-        e_2["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
-        o.iterations[2].setTime(2.f);
-        ParticleSpecies& e_3 = o.iterations[3].particles["e"];
-        e_3["position"][RecordComponent::SCALAR].resetDataset(dset);
-        e_3["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
-        o.iterations[3].setTime(3.f);
-    }
-
-    REQUIRE(auxiliary::directory_exists("../samples/subdir"));
-    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write1.bp"));
-    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write2.bp"));
-    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write3.bp"));
-
-    {
-        Series o = Series("../samples/subdir/serial_fileBased_write%T.bp", AccessType::READ_ONLY);
-
-        REQUIRE(o.iterations.size() == 3);
-        REQUIRE(o.iterations.count(1) == 1);
-        REQUIRE(o.iterations.count(2) == 1);
-        REQUIRE(o.iterations.count(3) == 1);
-
-        REQUIRE(o.iterations[1].time< float >() == 1.f);
-        REQUIRE(o.iterations[2].time< float >() == 2.f);
-        REQUIRE(o.iterations[3].time< float >() == 3.f);
-
-        REQUIRE(o.iterations[1].particles.size() == 1);
-        REQUIRE(o.iterations[1].particles.count("e") == 1);
-        REQUIRE(o.iterations[2].particles.size() == 1);
-        REQUIRE(o.iterations[2].particles.count("e") == 1);
-        REQUIRE(o.iterations[3].particles.size() == 1);
-        REQUIRE(o.iterations[3].particles.count("e") == 1);
-
-        REQUIRE(o.iterations[1].particles["e"].size() == 2);
-        REQUIRE(o.iterations[1].particles["e"].count("position") == 1);
-        REQUIRE(o.iterations[1].particles["e"].count("positionOffset") == 1);
-        REQUIRE(o.iterations[2].particles["e"].size() == 2);
-        REQUIRE(o.iterations[2].particles["e"].count("position") == 1);
-        REQUIRE(o.iterations[2].particles["e"].count("positionOffset") == 1);
-        REQUIRE(o.iterations[3].particles["e"].size() == 2);
-        REQUIRE(o.iterations[3].particles["e"].count("position") == 1);
-        REQUIRE(o.iterations[3].particles["e"].count("positionOffset") == 1);
-
-        REQUIRE(o.iterations[1].particles["e"]["position"].size() == 1);
-        REQUIRE(o.iterations[1].particles["e"]["position"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[1].particles["e"]["positionOffset"].size() == 1);
-        REQUIRE(o.iterations[1].particles["e"]["positionOffset"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].getDatatype() == Datatype::DOUBLE);
-        REQUIRE(o.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].getDimensionality() == 1);
-        REQUIRE(o.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].getExtent() == Extent{2});
-        REQUIRE(o.iterations[2].particles["e"]["position"].size() == 1);
-        REQUIRE(o.iterations[2].particles["e"]["position"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[2].particles["e"]["positionOffset"].size() == 1);
-        REQUIRE(o.iterations[2].particles["e"]["positionOffset"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[2].particles["e"]["position"][RecordComponent::SCALAR].getDatatype() == Datatype::DOUBLE);
-        REQUIRE(o.iterations[2].particles["e"]["position"][RecordComponent::SCALAR].getDimensionality() == 1);
-        REQUIRE(o.iterations[2].particles["e"]["position"][RecordComponent::SCALAR].getExtent() == Extent{2});
-        REQUIRE(o.iterations[3].particles["e"]["position"].size() == 1);
-        REQUIRE(o.iterations[3].particles["e"]["position"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[3].particles["e"]["positionOffset"].size() == 1);
-        REQUIRE(o.iterations[3].particles["e"]["positionOffset"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[3].particles["e"]["position"][RecordComponent::SCALAR].getDatatype() == Datatype::DOUBLE);
-        REQUIRE(o.iterations[3].particles["e"]["position"][RecordComponent::SCALAR].getDimensionality() == 1);
-        REQUIRE(o.iterations[3].particles["e"]["position"][RecordComponent::SCALAR].getExtent() == Extent{2});
-    }
-
-    {
-        Series o = Series("../samples/subdir/serial_fileBased_write%T.bp", AccessType::READ_WRITE);
-        ParticleSpecies& e_4 = o.iterations[4].particles["e"];
-        e_4["position"][RecordComponent::SCALAR].resetDataset(dset);
-        e_4["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
-        o.iterations[4].setTime(4.f);
-    }
-
-    {
-        Series o = Series("../samples/subdir/serial_fileBased_write%T.bp", AccessType::READ_ONLY);
-
-        REQUIRE(o.iterations.size() == 4);
-        REQUIRE(o.iterations.count(4) == 1);
-
-        REQUIRE(o.iterations[4].time< float >() == 4.f);
-
-        REQUIRE(o.iterations[4].particles.size() == 1);
-        REQUIRE(o.iterations[4].particles.count("e") == 1);
-
-        REQUIRE(o.iterations[4].particles["e"].size() == 2);
-        REQUIRE(o.iterations[4].particles["e"].count("position") == 1);
-        REQUIRE(o.iterations[4].particles["e"].count("positionOffset") == 1);
-
-        REQUIRE(o.iterations[4].particles["e"]["position"].size() == 1);
-        REQUIRE(o.iterations[4].particles["e"]["position"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[4].particles["e"]["positionOffset"].size() == 1);
-        REQUIRE(o.iterations[4].particles["e"]["positionOffset"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[4].particles["e"]["position"][RecordComponent::SCALAR].getDatatype() == Datatype::DOUBLE);
-        REQUIRE(o.iterations[4].particles["e"]["position"][RecordComponent::SCALAR].getDimensionality() == 1);
-        REQUIRE(o.iterations[4].particles["e"]["position"][RecordComponent::SCALAR].getExtent() == Extent{2});
-    }
+    fileBased_write_empty_test("bp");
 }
 
 TEST_CASE( "adios1_fileBased_write_test", "[serial][adios1]" )
 {
-    {
-        Series o = Series("../samples/serial_fileBased_write%T.bp", AccessType::CREATE);
-
-        ParticleSpecies& e_1 = o.iterations[1].particles["e"];
-
-        std::vector< double > position_global(4);
-        double pos{0.};
-        std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
-        std::shared_ptr< double > position_local_1(new double);
-        e_1["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_1), {4}));
-        std::vector< uint64_t > positionOffset_global(4);
-        uint64_t posOff{0};
-        std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
-        std::shared_ptr< uint64_t > positionOffset_local_1(new uint64_t);
-        e_1["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_1), {4}));
-
-        for( uint64_t i = 0; i < 4; ++i )
-        {
-            *position_local_1 = position_global[i];
-            e_1["position"]["x"].storeChunk(position_local_1, {i}, {1});
-            *positionOffset_local_1 = positionOffset_global[i];
-            e_1["positionOffset"]["x"].storeChunk(positionOffset_local_1, {i}, {1});
-            o.flush();
-        }
-
-        o.iterations[1].setTime(1.f);
-
-        ParticleSpecies& e_2 = o.iterations[2].particles["e"];
-
-        std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
-        e_2["position"]["x"].resetDataset(Dataset(determineDatatype<double>(), {4}));
-        std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
-        std::shared_ptr< uint64_t > positionOffset_local_2(new uint64_t);
-        e_2["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_2), {4}));
-
-        for( uint64_t i = 0; i < 4; ++i )
-        {
-            double const position_local_2 = position_global.at(i);
-            e_2["position"]["x"].storeChunk(shareRaw(&position_local_2), {i}, {1});
-            *positionOffset_local_2 = positionOffset_global[i];
-            e_2["positionOffset"]["x"].storeChunk(positionOffset_local_2, {i}, {1});
-            o.flush();
-        }
-
-        o.iterations[2].setTime(2.f);
-
-        ParticleSpecies& e_3 = o.iterations[3].particles["e"];
-
-        std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
-        std::shared_ptr< double > position_local_3(new double);
-        e_3["position"]["x"].resetDataset(Dataset(determineDatatype(position_local_3), {4}));
-        std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
-        std::shared_ptr< uint64_t > positionOffset_local_3(new uint64_t);
-        e_3["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_3), {4}));
-
-        for( uint64_t i = 0; i < 4; ++i )
-        {
-            *position_local_3 = position_global[i];
-            e_3["position"]["x"].storeChunk(position_local_3, {i}, {1});
-            *positionOffset_local_3 = positionOffset_global[i];
-            e_3["positionOffset"]["x"].storeChunk(positionOffset_local_3, {i}, {1});
-            o.flush();
-        }
-
-        o.setOpenPMDextension(1);
-        o.iterations[3].setTime(3.f);
-    }
-    REQUIRE(auxiliary::file_exists("../samples/serial_fileBased_write1.bp"));
-    REQUIRE(auxiliary::file_exists("../samples/serial_fileBased_write2.bp"));
-    REQUIRE(auxiliary::file_exists("../samples/serial_fileBased_write3.bp"));
-
-    {
-        Series o = Series("../samples/serial_fileBased_write%T.bp", AccessType::READ_ONLY);
-
-        REQUIRE(o.iterations.size() == 3);
-        REQUIRE(o.iterations.count(1) == 1);
-        REQUIRE(o.iterations.count(2) == 1);
-        REQUIRE(o.iterations.count(3) == 1);
-
-        REQUIRE(o.iterations.at(1).time< float >() == 1.f);
-        REQUIRE(o.iterations.at(2).time< float >() == 2.f);
-        REQUIRE(o.iterations.at(3).time< float >() == 3.f);
-
-        REQUIRE(o.basePath() == "/data/%T/");
-        REQUIRE(o.iterationEncoding() == IterationEncoding::fileBased);
-        REQUIRE(o.iterationFormat() == "serial_fileBased_write%T");
-        REQUIRE(o.openPMD() == "1.1.0");
-        REQUIRE(o.openPMDextension() == 1u);
-        REQUIRE(o.particlesPath() == "particles/");
-        REQUIRE_FALSE(o.containsAttribute("meshesPath"));
-        REQUIRE_THROWS_AS(o.meshesPath(), no_such_attribute_error);
-
-        for( uint64_t i = 1; i <= 3; ++i )
-        {
-            Iteration iteration = o.iterations.at(i);
-
-            REQUIRE(iteration.particles.size() == 1);
-            REQUIRE(iteration.particles.count("e") == 1);
-
-            ParticleSpecies& species = iteration.particles.at("e");
-
-            REQUIRE(species.size() == 2);
-            REQUIRE(species.count("position") == 1);
-            REQUIRE(species.count("positionOffset") == 1);
-
-            REQUIRE(species.at("position").size() == 1);
-            REQUIRE(species.at("position").count("x") == 1);
-            REQUIRE(species.at("position").at("x").getDatatype() == Datatype::DOUBLE);
-            REQUIRE(species.at("position").at("x").getDimensionality() == 1);
-            REQUIRE(species.at("position").at("x").getExtent() == Extent{4});
-            REQUIRE(species.at("positionOffset").size() == 1);
-            REQUIRE(species.at("positionOffset").count("x") == 1);
-#if !defined(_MSC_VER)
-            REQUIRE(species.at("positionOffset").at("x").getDatatype() == determineDatatype< uint64_t >());
-#endif
-            REQUIRE(isSame(species.at("positionOffset").at("x").getDatatype(), determineDatatype< uint64_t >()));
-            REQUIRE(species.at("positionOffset").at("x").getDimensionality() == 1);
-            REQUIRE(species.at("positionOffset").at("x").getExtent() == Extent{4});
-
-            auto position = species.at("position").at("x").loadChunk< double >({0}, {4});
-            auto position_raw = position.get();
-            auto positionOffset = species.at("positionOffset").at("x").loadChunk< uint64_t >({0}, {4});
-            auto positionOffset_raw = positionOffset.get();
-            o.flush();
-            for( uint64_t j = 0; j < 4; ++j )
-            {
-                REQUIRE(position_raw[j] == static_cast< double >(j + (i-1)*4));
-                REQUIRE(positionOffset_raw[j] == j + (i-1)*4);
-            }
-        }
-    }
+    fileBased_write_test("bp");
 }
 
 TEST_CASE( "hzdr_adios1_sample_content_test", "[serial][adios1]" )
@@ -2294,3 +2109,4 @@ TEST_CASE( "no_serial_adios1", "[serial][adios]")
     REQUIRE(true);
 }
 #endif
+

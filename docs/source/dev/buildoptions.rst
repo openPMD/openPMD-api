@@ -15,7 +15,7 @@ CMake controls options with prefixed ``-D``, e.g. ``-DopenPMD_USE_MPI=OFF``:
 CMake Option                   Values          Description
 ============================== =============== ========================================================================
 ``openPMD_USE_MPI``            **AUTO**/ON/OFF Enable MPI support
-``openPMD_USE_JSON``           **AUTO**/ON/OFF Enable support for JSON :sup:`1`
+``openPMD_USE_JSON``           **AUTO**/ON/OFF Enable support for JSON
 ``openPMD_USE_HDF5``           **AUTO**/ON/OFF Enable support for HDF5
 ``openPMD_USE_ADIOS1``         **AUTO**/ON/OFF Enable support for ADIOS1
 ``openPMD_USE_ADIOS2``         AUTO/ON/**OFF** Enable support for ADIOS2 :sup:`1`
