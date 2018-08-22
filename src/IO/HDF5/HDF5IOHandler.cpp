@@ -200,7 +200,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         if( auxiliary::starts_with(name, '/') )
             name = auxiliary::replace_first(name, "/", "");
         if( auxiliary::ends_with(name, '/') )
-            name = auxiliary::replace_first(name, "/", "");
+            name = auxiliary::replace_last(name, "/", "");
 
         /* Open H5Object to write into */
         auto res = m_fileIDs.find(writable);

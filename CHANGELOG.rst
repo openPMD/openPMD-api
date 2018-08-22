@@ -24,6 +24,7 @@ Bug Fixes
 
 - ADIOS1 fileBased IO #297
 - ADIOS2 stub header #302
+- Name sanitization in ADIOS1 and HDF5 backends #310
 
 Other
 """""
