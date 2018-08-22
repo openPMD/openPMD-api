@@ -14,9 +14,9 @@ Backend
 -------
 One of the main goals of this library is to provide a high-level common interface to synchronize persistent data with a
 volatile representation in memory. This includes handling data in any number of supported file formats transparently.
-To enable the user to handle hierarchical, self-describing file formats while disregarding the actual nitty-gritty
-details of just those file formats, the possible operations have been reduced to a common set of
-`IOTasks <https://github.com/openPMD/openPMD-api/blob/dev/include/openPMD/IO/IOTask.hpp>`:
+Therefore, enabling users to handle hierarchical, self-describing file formats while disregarding the actual
+nitty-gritty details of just those file formats, required the reduction of possible operations reduced to a common set
+of `IOTasks <https://github.com/openPMD/openPMD-api/blob/dev/include/openPMD/IO/IOTask.hpp>`:
 
 .. literalinclude:: IOTask.hpp
    :lines: 41-66
@@ -26,8 +26,8 @@ minimal step of work (without any side-effect), these operations are the foundat
 across suitable file formats.
 The actual low-level exchange of data is implemented in IOHandlers, one per file format (possibly two if handling
 MPI-parallel work is possible and requires different behaviour).
-The only task of these IOHandlers is to execute one atomic IOTask at a time. Ideally, additional logic is contained to
-improve performance by keeping track of open file handles, deferring and coalescing parts of work, avoiding redundant
+The only task of these IOHandlers is to execute one atomic ``IOTask`` at a time. Ideally, additional logic is contained
+to improve performance by keeping track of open file handles, deferring and coalescing parts of work, avoiding redundant
 operations. It should be noted that while this is desirable, sequential consistency must be guaranteed (see
 :ref:`_queue_label`.)
 
@@ -56,26 +56,26 @@ is currently used in all backends, but is not mandatory as long as consistency w
 
 A typical sequence of tasks that are scheduled during the read of an existing file *could* look something like this:
 
-``
-1.  OPEN_FILE
-2.  READ_ATT     // 'openPMD'
-3.  READ_ATT     // 'openPMDextension'
-4.  READ_ATT     // 'basePath'
-### PROCESS ELEMENTS ###
-5.  LIST_ATTS    // in '/'
-### PROCESS ELEMENTS ###
-5.1 READ_ATT     // 'meshesPath', if in 5.
-5.2 READ_ATT     // 'particlesPath', if in 5.
-### PROCESS ELEMENTS ###
-6.  OPEN_PATH    // 'basePath'
-7.  LIST_ATTS    // in 'basePath'
-### PROCESS ELEMENTS ###
-7.X READ_ATT     // every 'att' in 7.
-8.  LIST_PATHS   // in 'basePath'
-### PROCESS ELEMENTS ###
-9.X OPEN_PATH    // every 'path' in 8.
-...
-``
+::
+
+    1.  OPEN_FILE
+    2.  READ_ATT     // 'openPMD'
+    3.  READ_ATT     // 'openPMDextension'
+    4.  READ_ATT     // 'basePath'
+    ### PROCESS ELEMENTS ###
+    5.  LIST_ATTS    // in '/'
+    ### PROCESS ELEMENTS ###
+    5.1 READ_ATT     // 'meshesPath', if in 5.
+    5.2 READ_ATT     // 'particlesPath', if in 5.
+    ### PROCESS ELEMENTS ###
+    6.  OPEN_PATH    // 'basePath'
+    7.  LIST_ATTS    // in 'basePath'
+    ### PROCESS ELEMENTS ###
+    7.X READ_ATT     // every 'att' in 7.
+    8.  LIST_PATHS   // in 'basePath'
+    ### PROCESS ELEMENTS ###
+    9.X OPEN_PATH    // every 'path' in 8.
+    ...
 
 Note that (especially for reading), pending tasks might have to be processed between any two steps to guarantee data
 consistency. That is because action might have to be taken conditionally on read or written values, openPMD conformity
@@ -96,4 +96,29 @@ Atomic operations contained in this queue are
 
 Frontend
 --------
-...
+While the other two components are primarily concerned with actual I/O, this one is the glue and constraint logic that
+lets a user build the in-memory view of the hierarchical file structure. Public interfaces should be limited to this
+part (exceptions may arise, e.g. format-dependent dataset parameters).
+Where the other parts contain virtually zero knowledge about openPMD, this one contains all of it and none of the
+low-level I/O.
+
+``Writable`` (mixin) base class of every front-end class, used to tree structure used in backend
+
+``Attributable`` (mixin) class that allows attaching meta-data to tree nodes (openPMD attributes)
+
+``Attribute`` a variadic datastore for attributes supported across backends
+
+``Container`` serves two purposes
+  - python-esque access inside hierarchy groups (foo["bar"]["baz"])
+  - only way for user to construct objects (private constructors),
+    forces them into the correct hierarchy (no dangling objects)
+
+all meta-data access stores in the ``Attributable`` part of an object and follows the syntax
+::
+
+    Object& setFoo(Foo foo);
+    Foo foo() const;
+
+(future work: use `CRTP <https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern>`
+
+``Series`` as root of every hierarchy, supporting ``groupBased`` and ``fileBased`` transparently
