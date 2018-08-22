@@ -395,7 +395,7 @@ CommonADIOS1IOHandlerImpl::createDataset(Writable* writable,
         if( auxiliary::starts_with(name, '/') )
             name = auxiliary::replace_first(name, "/", "");
         if( auxiliary::ends_with(name, '/') )
-            name = auxiliary::replace_first(name, "/", "");
+            name = auxiliary::replace_last(name, "/", "");
 
         std::string path = concrete_bp1_file_position(writable) + name;
 
