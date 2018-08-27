@@ -619,3 +619,21 @@ TEST_CASE( "empty_record_test", "[core]" )
     o.iterations[1].meshes["E"][RecordComponent::SCALAR].resetDataset(Dataset(Datatype::DOUBLE, {1}));
     o.flush();
 }
+
+TEST_CASE( "zero_extent_component", "[core]" )
+{
+    Series o = Series("./new_openpmd_output", AccessType::CREATE);
+
+    auto E_x = o.iterations[1].meshes["E"]["x"];
+    E_x.setComment("Datasets with zero extent in any dimension are not allowed.");
+    REQUIRE_THROWS_WITH(E_x.resetDataset(Dataset(Datatype::INT64, {0})),
+                        Catch::Equals("Dataset extent must not be zero in any dimension."));
+    REQUIRE_THROWS_WITH(E_x.resetDataset(Dataset(Datatype::INT64, {1, 0})),
+                        Catch::Equals("Dataset extent must not be zero in any dimension."));
+    REQUIRE_THROWS_WITH(E_x.resetDataset(Dataset(Datatype::INT64, {0, 1})),
+                        Catch::Equals("Dataset extent must not be zero in any dimension."));
+    E_x.setComment("Datasets must contain dimensions.");
+    REQUIRE_THROWS_WITH(E_x.resetDataset(Dataset(Datatype::INT64, {})),
+                        Catch::Equals("Dataset extent must be at least 1D."));
+    E_x.resetDataset(Dataset(Datatype::DOUBLE, {1}));
+}
