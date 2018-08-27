@@ -158,7 +158,7 @@ TEST_CASE( "hdf5_write_test_zero_extent", "[parallel][hdf5]" )
      * two ranks will result in {1}
      * three ranks will result in {1, 2, 3}
      * four ranks will result in {1, 2, 3, 4, 5, 6} */
-    uint64_t num_cells = ((size-1)*(size-1) + (size-1))/2; /* (n² + n) / 2 */
+    uint64_t num_cells = ((size-1)*(size-1) + (size-1))/2; /* (n^2 + n) / 2 */
     if( num_cells == 0u )
     {
         std::cerr << "Test can only be run with at least two ranks" << std::endl;
@@ -253,7 +253,7 @@ TEST_CASE( "adios_write_test_zero_extent", "[parallel][adios]" )
      * two ranks will result in {1}
      * three ranks will result in {1, 2, 3}
      * four ranks will result in {1, 2, 3, 4, 5, 6} */
-    uint64_t num_cells = ((size-1)*(size-1) + (size-1))/2; /* (n² + n) / 2 */
+    uint64_t num_cells = ((size-1)*(size-1) + (size-1))/2; /* (n^2 + n) / 2 */
     if( num_cells == 0u )
     {
         std::cerr << "Test can only be run with at least two ranks" << std::endl;
