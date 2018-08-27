@@ -3,13 +3,15 @@
 Changelog
 =========
 
-0.3.2-alpha
+0.4.0-alpha
 -----------
-**Date:** TBA
+**Date:** 2018-08-27
 
-[Title]
+Improved output handling
 
-[Summary]
+Refactored and hardened for ``fileBased`` output.
+Records are not flushed before the ambiguity between scalar and vector records are resolved.
+Trying to write globally zero-extent records will throw gracefully instead of leading to undefined behavior in backends.
 
 Changes to "0.3.1-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -17,14 +19,15 @@ Changes to "0.3.1-alpha"
 Features
 """"""""
 
-- Do not assume Record structure prematurely #297
+- do not assume record structure prematurely #297
+- throw in (global) zero-extent dataset creation and write #309
 
 Bug Fixes
 """""""""
 
-- ADIOS1 fileBased IO #297
+- ADIOS1 ``fileBased`` IO #297
 - ADIOS2 stub header #302
-- Name sanitization in ADIOS1 and HDF5 backends #310
+- name sanitization in ADIOS1 and HDF5 backends #310
 
 Other
 """""
@@ -36,14 +39,15 @@ Other
   - clang-tidy support
   - include-what-you-use support #291 export headers #300
   - OSX High Sierra support #301
-  - Individual cache per build # 303
-  - Readable build names # 308
+  - individual cache per build # 303
+  - readable build names #308
 - remove superfluous whitespaces #292
 - readme: openPMD is for scientific data #294
-- override implies virtual #293
+- ``override`` implies ``virtual`` #293
 - spack load: ``-r`` #298
 - default constructors and destructors #304
 - string pass-by-value #305
+- test cases with 0-sized reads & writes #135
 
 
 0.3.1-alpha
