@@ -22,7 +22,7 @@ Bug Fixes
 
 - Python
 
-  - single precision support: ``numpy.float`` is an alias for ``float64`` #318
+  - single precision support: ``numpy.float`` is an alias for ``float64`` #318 #320
   - ``Dataset`` method namings to underscores #319
 
 Other

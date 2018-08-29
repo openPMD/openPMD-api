@@ -70,7 +70,7 @@ void init_BaseRecordComponent(py::module &m) {
             else if( brc.getDatatype() == DT::DOUBLE )
                 return py::dtype("double");
             else if( brc.getDatatype() == DT::FLOAT )
-                return py::dtype("float32"); // note: np.float is an alias for float64
+                return py::dtype("single"); // note: np.float is an alias for float64
             /*
             else if( brc.getDatatype() == DT::STRING )
                 return py::dtype("string_");
