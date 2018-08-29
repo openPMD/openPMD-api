@@ -212,6 +212,7 @@ void init_RecordComponent(py::module &m) {
             // py::print( py::str(a.dtype()) );
             // py::print( py::str(buf.dtype()) );
 
+            // ref: https://docs.scipy.org/doc/numpy/user/basics.types.html
             if( a.dtype().is(py::dtype("b")) )
                 r.storeChunk( offset, extent, shareRaw( (char*)a.mutable_data() ) );
             else if( a.dtype().is(py::dtype("B")) )
@@ -232,7 +233,7 @@ void init_RecordComponent(py::module &m) {
                 r.storeChunk( offset, extent, shareRaw( (long double*)a.mutable_data() ) );
             else if( a.dtype().is(py::dtype("double")) )
                 r.storeChunk( offset, extent, shareRaw( (double*)a.mutable_data() ) );
-            else if( a.dtype().is(py::dtype("float")) )
+            else if( a.dtype().is(py::dtype("float32")) ) // note: np.float is an alias for float64
                 r.storeChunk( offset, extent, shareRaw( (float*)a.mutable_data() ) );
 /* @todo
         .value("STRING", Datatype::STRING)

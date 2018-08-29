@@ -20,6 +20,10 @@ Features
 Bug Fixes
 """""""""
 
+- Python
+
+  - single precision support: ``numpy.float`` is an alias for ``float64`` #318
+
 Other
 """""
 
