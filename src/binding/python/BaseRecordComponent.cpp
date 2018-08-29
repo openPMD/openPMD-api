@@ -48,6 +48,7 @@ void init_BaseRecordComponent(py::module &m) {
         .def_property_readonly("dtype", [](BaseRecordComponent & brc) {
             using DT = Datatype;
 
+            // ref: https://docs.scipy.org/doc/numpy/user/basics.types.html
             if( brc.getDatatype() == DT::CHAR )
                 return py::dtype("b");
             else if( brc.getDatatype() == DT::UCHAR )
@@ -69,7 +70,7 @@ void init_BaseRecordComponent(py::module &m) {
             else if( brc.getDatatype() == DT::DOUBLE )
                 return py::dtype("double");
             else if( brc.getDatatype() == DT::FLOAT )
-                return py::dtype("float");
+                return py::dtype("float32"); // note: np.float is an alias for float64
             /*
             else if( brc.getDatatype() == DT::STRING )
                 return py::dtype("string_");
