@@ -643,9 +643,102 @@ class APITest(unittest.TestCase):
         """ Test openPMD.Mesh_Container. """
         self.assertRaises(TypeError, openPMD.Mesh_Container)
 
+    def backend_particle_patches(self, file_ending):
+        DS = openPMD.Dataset
+        SCALAR = openPMD.Record_Component.SCALAR
+        extent = [123, ]
+        num_patches = 2
+
+        series = openPMD.Series(
+            "unittest_py_particle_patches." + file_ending,
+            openPMD.Access_Type.create
+        )
+        e = series.iterations[42].particles["electrons"]
+
+        for r in ["x", "y"]:
+            x = e["position"][r]
+            x.reset_dataset(DS(np.dtype("single"), extent))
+            x.store_chunk([0, ], extent, np.arange(10, dtype=np.single))
+            o = e["positionOffset"][r]
+            o.reset_dataset(DS(np.dtype("uint64"), extent))
+            o.store_chunk([0, ], extent, np.arange(extent[0], dtype=np.uint64))
+
+        dset = DS(np.dtype("uint64"), [num_patches, ])
+        e.particle_patches["numParticles"][SCALAR].reset_dataset(dset)
+        e.particle_patches["numParticlesOffset"][SCALAR].reset_dataset(dset)
+
+        dset = DS(np.dtype("single"), [num_patches, ])
+        e.particle_patches["offset"]["x"].reset_dataset(dset)
+        e.particle_patches["offset"]["y"].reset_dataset(dset)
+        e.particle_patches["extent"]["x"].reset_dataset(dset)
+        e.particle_patches["extent"]["y"].reset_dataset(dset)
+
+        # patch 0 (decomposed in x)
+        e.particle_patches["numParticles"][SCALAR].store(0, np.uint64(10))
+        e.particle_patches["numParticlesOffset"][SCALAR].store(0, np.uint64(0))
+        e.particle_patches["offset"]["x"].store(0, np.single(0.))
+        e.particle_patches["offset"]["y"].store(0, np.single(0.))
+        e.particle_patches["extent"]["x"].store(0, np.single(10.))
+        e.particle_patches["extent"]["y"].store(0, np.single(123.))
+        # patch 1 (decomposed in x)
+        e.particle_patches["numParticles"][SCALAR].store(
+            1, np.uint64(113))
+        e.particle_patches["numParticlesOffset"][SCALAR].store(
+            1, np.uint64(10))
+        e.particle_patches["offset"]["x"].store(1, np.single(10.))
+        e.particle_patches["offset"]["y"].store(1, np.single(0.))
+        e.particle_patches["extent"]["x"].store(1, np.single(113.))
+        e.particle_patches["extent"]["y"].store(1, np.single(123.))
+
+        # read back
+        del series
+
+        series = openPMD.Series(
+            "unittest_py_particle_patches." + file_ending,
+            openPMD.Access_Type.read_only
+        )
+        e = series.iterations[42].particles["electrons"]
+
+        numParticles = e.particle_patches["numParticles"][SCALAR].load()
+        numParticlesOffset = e.particle_patches["numParticlesOffset"][SCALAR].\
+            load()
+        extent_x = e.particle_patches["extent"]["x"].load()
+        extent_y = e.particle_patches["extent"]["y"].load()
+        offset_x = e.particle_patches["offset"]["x"].load()
+        offset_y = e.particle_patches["offset"]["y"].load()
+
+        series.flush()
+
+        np.testing.assert_almost_equal(
+            numParticles, np.array([10, 113], np.uint64))
+        np.testing.assert_almost_equal(
+            numParticlesOffset, np.array([0, 10], np.uint64))
+        if sys.version_info >= (3, 0):
+            np.testing.assert_almost_equal(
+                extent_x, [10., 113.])
+            np.testing.assert_almost_equal(
+                extent_y, [123., 123.])
+            np.testing.assert_almost_equal(
+                offset_x, [0., 10.])
+            np.testing.assert_almost_equal(
+                offset_y, [0., 0.])
+
     def testParticlePatches(self):
-        """ Test openPMD.ParticlePatches. """
-        self.assertRaises(TypeError, openPMD.ParticlePatches)
+        self.assertRaises(TypeError, openPMD.Particle_Patches)
+
+        # skip test in Python 2:
+        #   scalar numpy arrays do not overload to py::buffer type
+        #   and are casted to Python instrinsic int
+        if sys.version_info < (3, 0):
+            return
+
+        backend_filesupport = {
+            'hdf5': 'h5',
+            'adios1': 'bp'
+        }
+        for b in openPMD.variants:
+            if openPMD.variants[b] is True and b in backend_filesupport:
+                self.backend_particle_patches(backend_filesupport[b])
 
     def testParticleSpecies(self):
         """ Test openPMD.ParticleSpecies. """

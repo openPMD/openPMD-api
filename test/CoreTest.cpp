@@ -626,7 +626,7 @@ TEST_CASE( "wrapper_test", "[core]" )
     std::stringstream u64str;
     u64str << determineDatatype<uint64_t>();
     REQUIRE_THROWS_WITH(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].store(idx+1, 42.),
-                        Catch::Equals("Datatypes of chunk data (DOUBLE) and dataset (" + u64str.str() + ") do not match."));
+                        Catch::Equals("Datatypes of patch data (DOUBLE) and dataset (" + u64str.str() + ") do not match."));
     o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].store(idx+1, val+1);
 #if openPMD_USE_INVASIVE_TESTS
     REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 2);

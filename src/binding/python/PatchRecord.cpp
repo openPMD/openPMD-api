@@ -1,4 +1,4 @@
-/* Copyright 2017-2018 Fabian Koller, Axel Huebl
+/* Copyright 2018 Axel Huebl
  *
  * This file is part of openPMD-api.
  *
@@ -18,29 +18,19 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
-#include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/PatchRecord.hpp"
+#include "openPMD/backend/PatchRecordComponent.hpp"
+#include "openPMD/backend/BaseRecord.hpp"
 
-#include <vector>
-#include <cstddef>
+namespace py = pybind11;
+using namespace openPMD;
 
 
-namespace openPMD
-{
-    class ParticlePatches : public Container< PatchRecord >
-    {
-        friend class ParticleSpecies;
-        friend class Container< ParticlePatches >;
-        friend class Container< PatchRecord >;
-
-    public:
-        size_t numPatches() const;
-
-    private:
-        ParticlePatches();
-        void read();
-    }; // ParticlePatches
-
-} // namespace openPMD
+void init_PatchRecord(py::module &m) {
+    py::class_<PatchRecord, BaseRecord< PatchRecordComponent > >(m, "Patch_Record")
+        .def("set_unit_dimension", &PatchRecord::setUnitDimension)
+    ;
+}
