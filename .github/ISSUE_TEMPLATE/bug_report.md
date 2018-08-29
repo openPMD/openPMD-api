@@ -37,7 +37,7 @@ cmake ..
 A clear and concise description of what you expected to happen.
 
 **Software Environment:**
- - version of openPMD-api: [ X.Y.Z-abc]
+ - version of openPMD-api: [X.Y.Z-abc]
  - installed openPMD-api via: [conda-forge, spack, from source, module system, ...]
  - operating system: [name and version]
  - machine: [Are you running on a public cluster? It's likely we compute on it as well!]
