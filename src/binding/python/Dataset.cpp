@@ -32,7 +32,9 @@ using namespace openPMD;
 void init_Dataset(py::module &m) {
     py::class_<Dataset>(m, "Dataset")
 
-        .def(py::init<Datatype, Extent>())
+        .def(py::init<Datatype, Extent>(),
+            py::arg("dtype"), py::arg("extent")
+        )
 
         .def("__repr__",
             [](const Dataset &d) {
@@ -42,12 +44,12 @@ void init_Dataset(py::module &m) {
 
         .def_readonly("extent", &Dataset::extent)
         .def("extend", &Dataset::extend)
-        .def_readonly("chunkSize", &Dataset::chunkSize)
+        .def_readonly("chunk_size", &Dataset::chunkSize)
         .def("set_chunk_size", &Dataset::setChunkSize)
         .def_readonly("compression", &Dataset::compression)
         .def("set_compression", &Dataset::setCompression)
         .def_readonly("transform", &Dataset::transform)
-        .def("setCustomTransform", &Dataset::setCustomTransform)
+        .def("set_custom_transform", &Dataset::setCustomTransform)
         .def_readonly("rank", &Dataset::rank)
         .def_readonly("dtype", &Dataset::dtype)
     ;
