@@ -24,6 +24,8 @@
 
 #include <unordered_map>
 #include <string>
+#include <sstream>
+#include <stdexcept>
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_private
@@ -109,7 +111,15 @@ PatchRecordComponent::store(uint64_t idx, T data)
 {
     Datatype dtype = determineDatatype< T >();
     if( dtype != getDatatype() )
-        throw std::runtime_error("Datatypes of chunk and dataset do not match.");
+    {
+        std::ostringstream oss;
+        oss << "Datatypes of chunk data ("
+            << dtype
+            << ") and dataset ("
+            << getDatatype()
+            << ") do not match.";
+        throw std::runtime_error(oss.str());
+    }
 
     Extent dse = getExtent();
     if( dse[0] < idx )
