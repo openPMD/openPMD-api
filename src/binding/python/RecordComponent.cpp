@@ -233,7 +233,7 @@ void init_RecordComponent(py::module &m) {
                 r.storeChunk( offset, extent, shareRaw( (long double*)a.mutable_data() ) );
             else if( a.dtype().is(py::dtype("double")) )
                 r.storeChunk( offset, extent, shareRaw( (double*)a.mutable_data() ) );
-            else if( a.dtype().is(py::dtype("float32")) ) // note: np.float is an alias for float64
+            else if( a.dtype().is(py::dtype("single")) ) // note: np.float is an alias for float64
                 r.storeChunk( offset, extent, shareRaw( (float*)a.mutable_data() ) );
 /* @todo
         .value("STRING", Datatype::STRING)
