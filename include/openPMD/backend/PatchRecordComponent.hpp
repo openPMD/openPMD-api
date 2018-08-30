@@ -25,6 +25,11 @@
 #include <unordered_map>
 #include <string>
 
+// expose private and protected members for invasive testing
+#ifndef OPENPMD_private
+#   define OPENPMD_private private
+#endif
+
 
 namespace openPMD
 {
@@ -56,14 +61,14 @@ public:
     template< typename T >
     void store(uint64_t idx, T);
 
-private:
+OPENPMD_private:
     PatchRecordComponent();
 
     void flush(std::string const&);
     void read();
 
     std::shared_ptr< std::queue< IOTask > > m_chunks;
-};  //PatchRecordComponent
+}; // PatchRecordComponent
 
 template< typename T >
 inline std::shared_ptr< T >
@@ -118,4 +123,4 @@ PatchRecordComponent::store(uint64_t idx, T data)
     dWrite.data = std::make_shared< T >(data);
     m_chunks->push(IOTask(this, dWrite));
 }
-} // openPMD
+} // namespace openPMD

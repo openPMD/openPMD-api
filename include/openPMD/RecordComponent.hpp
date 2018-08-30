@@ -30,6 +30,11 @@
 #include <string>
 #include <stdexcept>
 
+// expose private and protected members for invasive testing
+#ifndef OPENPMD_protected
+#   define OPENPMD_protected protected
+#endif
+
 
 namespace openPMD
 {
@@ -54,7 +59,7 @@ public:
         USER,
         API,
         AUTO
-    };  //Allocation
+    }; // Allocation
 
     RecordComponent& setUnitSI(double);
 
@@ -81,7 +86,7 @@ public:
 
     constexpr static char const * const SCALAR = "\vScalar";
 
-protected:
+OPENPMD_protected:
     RecordComponent();
 
     void readBase();
@@ -92,7 +97,7 @@ protected:
 private:
     void flush(std::string const&);
     virtual void read();
-};  //RecordComponent
+}; // RecordComponent
 
 
 template< typename T >
@@ -194,4 +199,4 @@ RecordComponent::storeChunk(Offset o, Extent e, std::shared_ptr<T> data)
     dWrite.data = std::static_pointer_cast< void const >(data);
     m_chunks->push(IOTask(this, dWrite));
 }
-} // openPMD
+} // namespace openPMD

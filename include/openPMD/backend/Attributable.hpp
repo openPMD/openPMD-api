@@ -32,6 +32,11 @@
 #include <string>
 #include <cstddef>
 
+// expose private and protected members for invasive testing
+#ifndef OPENPMD_protected
+#   define OPENPMD_protected protected
+#endif
+
 
 namespace openPMD
 {
@@ -141,7 +146,7 @@ public:
      */
     Attributable& setComment(std::string const& comment);
 
-protected:
+OPENPMD_protected:
     void flushAttributes();
     void readAttributes();
 
@@ -191,7 +196,7 @@ private:
     virtual void linkHierarchy(std::shared_ptr< Writable > const& w);
 
     std::shared_ptr< A_MAP > m_attributes;
-};  //Attributable
+}; // Attributable
 
 
 void
@@ -321,4 +326,4 @@ Attributable::readVectorFloatingpoint(std::string const& key) const
     }
     return vt;
 }
-} // openPMD
+} // namespace openPMD

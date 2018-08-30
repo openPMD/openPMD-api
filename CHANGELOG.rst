@@ -20,6 +20,7 @@ Features
 Bug Fixes
 """""""""
 
+- avoid impact on unrelated classes in invasive tests #324
 - Python
 
   - single precision support: ``numpy.float`` is an alias for ``float64`` #318 #320

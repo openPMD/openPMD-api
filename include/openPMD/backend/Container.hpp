@@ -28,6 +28,11 @@
 #include <map>
 #include <string>
 
+// expose private and protected members for invasive testing
+#ifndef OPENPMD_protected
+#   define OPENPMD_protected protected
+#endif
+
 
 namespace openPMD
 {
@@ -236,7 +241,7 @@ public:
         return m_container->emplace(std::forward<Args>(args)...);
     }
 
-protected:
+OPENPMD_protected:
     Container()
         : m_container{std::make_shared< InternalContainer >()}
     { }

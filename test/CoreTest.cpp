@@ -1,19 +1,11 @@
 #define CATCH_CONFIG_MAIN
 
+// expose private and protected members for invasive testing
 #if openPMD_USE_INVASIVE_TESTS
-/* make Writable::parent, Writable::IOHandler visible for structure_test */
-#   pragma clang diagnostic push
-#   pragma clang diagnostic ignored "-Wkeyword-macro"
-#   define protected public
-#   define private public
-#   pragma clang diagnostic pop
+#   define OPENPMD_private public
+#   define OPENPMD_protected public
 #endif
 #include "openPMD/openPMD.hpp"
-#if openPMD_USE_INVASIVE_TESTS
-#   undef private
-#   undef protected
-#endif
-using namespace openPMD;
 
 #include <catch/catch.hpp>
 
@@ -21,6 +13,8 @@ using namespace openPMD;
 #include <vector>
 #include <array>
 #include <cstddef>
+
+using namespace openPMD;
 
 
 TEST_CASE( "attribute_dtype_test", "[core]" )

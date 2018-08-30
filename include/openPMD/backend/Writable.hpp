@@ -23,13 +23,18 @@
 #include <string>
 #include <memory>
 
+// expose private and protected members for invasive testing
+#ifndef OPENPMD_private
+#   define OPENPMD_private private
+#endif
+
 
 namespace openPMD
 {
 namespace test
 {
 struct TestHelper;
-} // test
+} // namespace test
 class AbstractFilePosition;
 class AbstractIOHandler;
 class Attributable;
@@ -72,7 +77,7 @@ public:
     Writable(Attributable* = nullptr);
     virtual ~Writable();
 
-private:
+OPENPMD_private:
     std::shared_ptr< AbstractFilePosition > abstractFilePosition;
     std::shared_ptr< AbstractIOHandler > IOHandler;
     Attributable* attributable;
@@ -80,4 +85,4 @@ private:
     bool dirty;
     bool written;
 };
-} // openPMD
+} // namespace openPMD
