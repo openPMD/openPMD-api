@@ -950,7 +950,10 @@ TEST_CASE( "hdf5_write_test", "[serial][hdf5]" )
     uint64_t posOff{0};
     std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
     std::array< uint64_t, 1 > positionOffset_local = {{ 0u }};
-    e["positionOffset"]["x"].resetDataset(Dataset(determineDatatype<uint64_t>(), {4}));
+    auto dataset = Dataset(determineDatatype<uint64_t>(), {4});
+    REQUIRE_THROWS_AS(dataset.setCompression("zlib", 10), std::runtime_error);
+    dataset.setCompression("zlib", 9);
+    e["positionOffset"]["x"].resetDataset(dataset);
 
     for( uint64_t i = 0; i < 4; ++i )
     {
