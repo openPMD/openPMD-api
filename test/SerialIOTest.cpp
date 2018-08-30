@@ -1,7 +1,7 @@
 #define CATCH_CONFIG_MAIN
 
 
-#if openPMD_HAVE_INVASIVE_TESTS
+#if openPMD_USE_INVASIVE_TESTS
 /* make Writable::parent visible for hierarchy check */
 #   pragma clang diagnostic push
 #   pragma clang diagnostic ignored "-Wkeyword-macro"
@@ -10,7 +10,7 @@
 #   pragma clang diagnostic pop
 #endif
 #include "openPMD/openPMD.hpp"
-#if openPMD_HAVE_INVASIVE_TESTS
+#if openPMD_USE_INVASIVE_TESTS
 #   undef protected
 #   undef private
 #endif
@@ -31,7 +31,7 @@ using namespace openPMD;
 #if openPMD_HAVE_HDF5
 TEST_CASE( "git_hdf5_sample_structure_test", "[serial][hdf5]" )
 {
-#if openPMD_HAVE_INVASIVE_TESTS
+#if openPMD_USE_INVASIVE_TESTS
     try
     {
         Series o = Series("../samples/git-sample/data%T.h5", AccessType::READ_ONLY);
@@ -395,7 +395,7 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
         REQUIRE(o.iterations.count(400) == 1);
         REQUIRE(o.iterations.count(500) == 1);
 
-#if openPMD_HAVE_INVASIVE_TESTS
+#if openPMD_USE_INVASIVE_TESTS
         REQUIRE(*o.m_filenamePadding == 8);
 #endif
     } catch (no_such_file_error& e)
@@ -415,7 +415,7 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
         REQUIRE(o.iterations.count(400) == 1);
         REQUIRE(o.iterations.count(500) == 1);
 
-#if openPMD_HAVE_INVASIVE_TESTS
+#if openPMD_USE_INVASIVE_TESTS
         REQUIRE(*o.m_filenamePadding == 8);
 #endif
     } catch (no_such_file_error& e)
@@ -442,7 +442,7 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
         {
             Series o = Series("../samples/git-sample/data%T.h5", AccessType::READ_WRITE);
 
-#if openPMD_HAVE_INVASIVE_TESTS
+#if openPMD_USE_INVASIVE_TESTS
             REQUIRE(*o.m_filenamePadding == 8);
 #endif
 
@@ -1168,7 +1168,7 @@ TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
         REQUIRE(o.iterations.count(2) == 1);
         REQUIRE(o.iterations.count(3) == 1);
 
-#if openPMD_HAVE_INVASIVE_TESTS
+#if openPMD_USE_INVASIVE_TESTS
         REQUIRE(*o.m_filenamePadding == 8);
 #endif
 
