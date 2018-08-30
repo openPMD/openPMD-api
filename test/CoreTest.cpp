@@ -534,6 +534,9 @@ TEST_CASE( "wrapper_test", "[core]" )
 
     MeshRecordComponent mrc3 = o.iterations[5].meshes["E"]["y"];
     o.iterations[5].meshes["E"]["y"].resetDataset(Dataset(Datatype::DOUBLE, {1}));
+    int wrongData = 42;
+    REQUIRE_THROWS_WITH(o.iterations[5].meshes["E"]["y"].storeChunk({0}, {1}, shareRaw(&wrongData)),
+                        Catch::Equals("Datatypes of chunk data (INT32) and dataset (DOUBLE) do not match."));
     std::shared_ptr< double > storeData = std::make_shared< double >(44);
     o.iterations[5].meshes["E"]["y"].storeChunk({0}, {1}, storeData);
 #if openPMD_USE_INVASIVE_TESTS
@@ -567,6 +570,8 @@ TEST_CASE( "wrapper_test", "[core]" )
     REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 1);
     REQUIRE(pp["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 1);
 #endif
+    REQUIRE_THROWS_WITH(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].store(idx+1, 42.),
+                        Catch::Equals("Datatypes of chunk data (DOUBLE) and dataset (UINT64) do not match."));
     o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].store(idx+1, val+1);
 #if openPMD_USE_INVASIVE_TESTS
     REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 2);

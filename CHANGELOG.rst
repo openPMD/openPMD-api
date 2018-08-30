@@ -23,13 +23,14 @@ Bug Fixes
 - avoid impact on unrelated classes in invasive tests #324
 - Python
 
-  - single precision support: ``numpy.float`` is an alias for ``float64`` #318 #320
+  - single precision support: ``numpy.float`` is an alias for ``builtins.float`` #318 #320
   - ``Dataset`` method namings to underscores #319
 
 Other
 """""
 
 - CMake: invasive tests not enabled by default #323
+- ``store_chunk``: more detailed type mismatch error #322
 
 
 0.4.0-alpha

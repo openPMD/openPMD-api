@@ -28,6 +28,7 @@
 #include <limits>
 #include <queue>
 #include <string>
+#include <sstream>
 #include <stdexcept>
 
 // expose private and protected members for invasive testing
@@ -179,7 +180,15 @@ RecordComponent::storeChunk(Offset o, Extent e, std::shared_ptr<T> data)
         throw std::runtime_error("Unallocated pointer passed during chunk store.");
     Datatype dtype = determineDatatype(data);
     if( dtype != getDatatype() )
-        throw std::runtime_error("Datatypes of chunk and dataset do not match.");
+    {
+        std::ostringstream oss;
+        oss << "Datatypes of chunk data ("
+            << dtype
+            << ") and dataset ("
+            << getDatatype()
+            << ") do not match.";
+        throw std::runtime_error(oss.str());
+    }
     uint8_t dim = getDimensionality();
     if( e.size() != dim || o.size() != dim )
         throw std::runtime_error("Dimensionality of chunk and dataset do not match.");
