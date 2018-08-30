@@ -1,27 +1,19 @@
 #define CATCH_CONFIG_MAIN
 
+// expose private and protected members for invasive testing
 #if openPMD_USE_INVASIVE_TESTS
-/* make Writable::parent visible for hierarchy check */
-#   pragma clang diagnostic push
-#   pragma clang diagnostic ignored "-Wkeyword-macro"
-#   define protected public
-#   define private public
-#   pragma clang diagnostic pop
+#   define OPENPMD_private public
+#   define OPENPMD_protected public
 #endif
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
-#if openPMD_USE_INVASIVE_TESTS
-#   undef private
-#   undef protected
-#endif
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 #include "openPMD/Dataset.hpp"
-using namespace openPMD;
 
 #include <catch/catch.hpp>
 
@@ -29,6 +21,8 @@ using namespace openPMD;
 #include <fstream>
 #include <string>
 #include <vector>
+
+using namespace openPMD;
 
 
 namespace openPMD

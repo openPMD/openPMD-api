@@ -23,6 +23,11 @@
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/Dataset.hpp"
 
+// expose private and protected members for invasive testing
+#ifndef OPENPMD_protected
+#   define OPENPMD_protected protected
+#endif
+
 
 namespace openPMD
 {
@@ -33,9 +38,9 @@ class BaseRecordComponent : public Attributable
     class BaseRecord;
 
     template<
-            typename T,
-            typename T_key,
-            typename T_container
+        typename T,
+        typename T_key,
+        typename T_container
     >
     friend
     class Container;
@@ -50,10 +55,10 @@ public:
 
     Datatype getDatatype() const;
 
-protected:
+OPENPMD_protected:
     BaseRecordComponent();
 
     std::shared_ptr< Dataset > m_dataset;
     std::shared_ptr< bool > m_isConstant;
-};  //BaseRecordComponent
-} // openPMD
+}; // BaseRecordComponent
+} // namespace openPMD

@@ -34,6 +34,11 @@
 
 #include <string>
 
+// expose private and protected members for invasive testing
+#ifndef OPENPMD_private
+#   define OPENPMD_private private
+#endif
+
 
 namespace openPMD
 {
@@ -231,7 +236,7 @@ public:
 
     Container< Iteration, uint64_t > iterations;
 
-private:
+OPENPMD_private:
     struct ParsedInput;
     std::unique_ptr< ParsedInput > parseInput(std::string);
     void init(std::shared_ptr< AbstractIOHandler >, std::unique_ptr< ParsedInput >);
@@ -255,5 +260,5 @@ private:
     std::shared_ptr< std::string > m_filenamePrefix;
     std::shared_ptr< std::string > m_filenamePostfix;
     std::shared_ptr< int > m_filenamePadding;
-};  //Series
-} // openPMD
+}; // Series
+} // namespace openPMD

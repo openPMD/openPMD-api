@@ -4,9 +4,9 @@
 #define CATCH_CONFIG_RUNNER
 
 #include "openPMD/openPMD.hpp"
-using namespace openPMD;
 
 #include <catch/catch.hpp>
+
 #if openPMD_HAVE_MPI
 #   include <mpi.h>
 
@@ -16,6 +16,8 @@ using namespace openPMD;
 #   include <vector>
 #   include <array>
 #   include <memory>
+
+using namespace openPMD;
 
 
 int main(int argc, char *argv[])
