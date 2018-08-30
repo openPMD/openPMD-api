@@ -112,6 +112,7 @@ jobs:
             -DopenPMD_USE_ADIOS1=$USE_ADIOS1
             -DopenPMD_USE_ADIOS2=$USE_ADIOS2
             -DopenPMD_USE_PYTHON=OFF
+            -DopenPMD_USE_INVASIVE_TESTS=ON
             $TRAVIS_BUILD_DIR
       script:
         - cd $HOME/build
@@ -150,6 +151,7 @@ jobs:
             -DopenPMD_USE_ADIOS1=$USE_ADIOS1
             -DopenPMD_USE_ADIOS2=$USE_ADIOS2
             -DopenPMD_USE_PYTHON=OFF
+            -DopenPMD_USE_INVASIVE_TESTS=ON
             $TRAVIS_BUILD_DIR
       script:
         - cd $HOME/build
@@ -211,6 +213,7 @@ jobs:
             -DopenPMD_USE_ADIOS1=$USE_ADIOS1
             -DopenPMD_USE_ADIOS2=$USE_ADIOS2
             -DopenPMD_USE_PYTHON=$USE_PYTHON
+            -DopenPMD_USE_INVASIVE_TESTS=ON
             $EXTRA_CMAKE_FLAGS
             -DCMAKE_INSTALL_PREFIX=$HOME/openPMD-test-install
             $TRAVIS_BUILD_DIR
@@ -425,6 +428,7 @@ jobs:
             -DopenPMD_USE_ADIOS1=$USE_ADIOS1
             -DopenPMD_USE_ADIOS2=$USE_ADIOS2
             -DopenPMD_USE_PYTHON=OFF
+            -DopenPMD_USE_INVASIVE_TESTS=ON
             $TRAVIS_BUILD_DIR
         - make -j 2
       script:

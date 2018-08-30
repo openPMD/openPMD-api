@@ -1,6 +1,6 @@
 #define CATCH_CONFIG_MAIN
 
-#if openPMD_HAVE_INVASIVE_TESTS
+#if openPMD_USE_INVASIVE_TESTS
 /* make Writable::parent visible for hierarchy check */
 #   pragma clang diagnostic push
 #   pragma clang diagnostic ignored "-Wkeyword-macro"
@@ -11,7 +11,7 @@
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
-#if openPMD_HAVE_INVASIVE_TESTS
+#if openPMD_USE_INVASIVE_TESTS
 #   undef private
 #   undef protected
 #endif
@@ -112,7 +112,7 @@ struct S : public TestHelper
 
 TEST_CASE( "container_default_test", "[auxiliary]")
 {
-#if openPMD_HAVE_INVASIVE_TESTS
+#if openPMD_USE_INVASIVE_TESTS
     Container< openPMD::test::S > c = Container< openPMD::test::S >();
     c.m_writable->IOHandler = createIOHandler(".", AccessType::CREATE, Format::DUMMY);
     c.IOHandler = c.m_writable->IOHandler.get();
@@ -146,7 +146,7 @@ struct structure : public TestHelper
 
 TEST_CASE( "container_retrieve_test", "[auxiliary]" )
 {
-#if openPMD_HAVE_INVASIVE_TESTS
+#if openPMD_USE_INVASIVE_TESTS
     using structure = openPMD::test::structure;
     Container< structure > c = Container< structure >();
     c.m_writable->IOHandler = createIOHandler(".", AccessType::CREATE, Format::DUMMY);
@@ -223,7 +223,7 @@ struct Widget : public TestHelper
 
 TEST_CASE( "container_access_test", "[auxiliary]" )
 {
-#if openPMD_HAVE_INVASIVE_TESTS
+#if openPMD_USE_INVASIVE_TESTS
     using Widget = openPMD::test::Widget;
     Container< Widget > c = Container< Widget >();
     c.m_writable->IOHandler = createIOHandler(".", AccessType::CREATE, Format::DUMMY);

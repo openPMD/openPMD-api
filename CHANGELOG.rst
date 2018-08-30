@@ -28,6 +28,8 @@ Bug Fixes
 Other
 """""
 
+- CMake: invasive tests not enabled by default #323
+
 
 0.4.0-alpha
 -----------

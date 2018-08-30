@@ -50,13 +50,13 @@ openpmd_option(HDF5           "Enable HDF5 support"                       AUTO)
 openpmd_option(ADIOS1         "Enable ADIOS1 support"                     AUTO)
 openpmd_option(ADIOS2         "Enable ADIOS2 support"                     OFF)
 #openpmd_option(JSON           "Enable JSON support"                      AUTO)
-openpmd_option(INVASIVE_TESTS "Enable unit tests that modify source code" AUTO)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
 
 option(openPMD_USE_INTERNAL_VARIANT  "Use internally shipped MPark.Variant" ON)
 option(openPMD_USE_INTERNAL_CATCH    "Use internally shipped Catch2"        ON)
 option(openPMD_USE_INTERNAL_PYBIND11 "Use internally shipped pybind11"      ON)
 
+option(openPMD_USE_INVASIVE_TESTS "Enable unit tests that modify source code" OFF)
 option(openPMD_USE_VERIFY "Enable internal VERIFY (assert) macro independent of build type" ON)
 
 set(CMAKE_CONFIGURATION_TYPES "Release;Debug;MinSizeRel;RelWithDebInfo")
@@ -529,24 +529,19 @@ set(openPMD_PYTHON_EXAMPLE_NAMES
     3_write_serial
 )
 
-if(openPMD_USE_INVASIVE_TESTS STREQUAL AUTO)
+if(openPMD_USE_INVASIVE_TESTS)
     if(WIN32)
-        set(openPMD_HAVE_INVASIVE_TESTS FALSE)
-    else()
-        set(openPMD_HAVE_INVASIVE_TESTS TRUE)
+        message(WARNING "Invasive tests that redefine class signatures are "
+                        "known to fail on Windows!")
     endif()
-elseif(openPMD_USE_INVASIVE_TESTS)
-    set(openPMD_HAVE_INVASIVE_TESTS TRUE)
-else()
-    set(openPMD_HAVE_INVASIVE_TESTS FALSE)
 endif()
 
 if(BUILD_TESTING)
     foreach(testname ${openPMD_TEST_NAMES})
         add_executable(${testname}Tests test/${testname}Test.cpp)
 
-        if(openPMD_HAVE_INVASIVE_TESTS)
-            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_INVASIVE_TESTS=1")
+        if(openPMD_USE_INVASIVE_TESTS)
+            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_USE_INVASIVE_TESTS=1")
         endif()
 
         if(openPMD_HAVE_MPI)
@@ -853,6 +848,7 @@ message("    MPark.Variant: ${openPMD_USE_INTERNAL_VARIANT}")
 message("")
 message("  Build Type: ${CMAKE_BUILD_TYPE}")
 message("  Testing: ${BUILD_TESTING}")
+message("  Invasive Tests: ${openPMD_USE_INVASIVE_TESTS}")
 message("  Internal VERIFY: ${openPMD_USE_VERIFY}")
 message("  Build Options:")
 
