@@ -62,9 +62,11 @@ Dataset::setChunkSize(Extent const& cs)
 Dataset&
 Dataset::setCompression(std::string const& format, uint8_t const level)
 {
-    if( (format == "zlib" || format == "gzip" || format == "deflate")
-        && level > 9 )
-        throw std::runtime_error("Compression level out of range for " + format);
+    if(format == "zlib" || format == "gzip" || format == "deflate")
+    {
+        if(level > 9)
+            throw std::runtime_error("Compression level out of range for " + format);
+    }
     else
         std::cerr << "Unknown compression format " << format
                   << ". This might mean that compression will not be enabled."
