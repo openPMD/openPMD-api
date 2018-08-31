@@ -1,4 +1,4 @@
-/* Copyright 2017-2018 Fabian Koller
+/* Copyright 2017-2018 Fabian Koller, Axel Huebl
  *
  * This file is part of openPMD-api.
  *
@@ -40,9 +40,6 @@ namespace openPMD
 class no_such_file_error : public std::runtime_error
 {
 public:
-    no_such_file_error(char const* what_arg)
-            : std::runtime_error(what_arg)
-    { }
     no_such_file_error(std::string const& what_arg)
             : std::runtime_error(what_arg)
     { }
@@ -52,9 +49,6 @@ public:
 class unsupported_data_error : public std::runtime_error
 {
 public:
-    unsupported_data_error(char const* what_arg)
-            : std::runtime_error(what_arg)
-    { }
     unsupported_data_error(std::string const& what_arg)
             : std::runtime_error(what_arg)
     { }
@@ -93,7 +87,7 @@ public:
     std::string const directory;
     AccessType const accessType;
     std::queue< IOTask > m_work;
-};  //AbstractIOHandler
+}; // AbstractIOHandler
 
 
 /** Dummy handler without any IO operations.
@@ -110,5 +104,5 @@ public:
     /** No-op consistent with the IOHandler interface to enable library use without IO.
      */
     std::future< void > flush() override;
-};  //DummyIOHandler
-} // openPMD
+}; // DummyIOHandler
+} // namespace openPMD
