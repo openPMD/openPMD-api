@@ -50,9 +50,6 @@ class AbstractFilePosition;
 class no_such_attribute_error : public std::runtime_error
 {
 public:
-    no_such_attribute_error(char const* what_arg)
-            : std::runtime_error(what_arg)
-    { }
     no_such_attribute_error(std::string const& what_arg)
             : std::runtime_error(what_arg)
     { }
