@@ -41,4 +41,4 @@ Optional: language bindings
 
   * Python 3.X+
   * pybind11 2.2.3+
-  * numpy
+  * numpy 1.15+

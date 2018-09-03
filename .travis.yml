@@ -514,6 +514,10 @@ install:
           $CXXSPEC &&
         spack load py-pybind11@2.2.3 ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
       fi;
+      travis_wait spack install
+        py-numpy ~blas ~lapack ^python@$TRAVIS_PYTHON_VERSION
+        $CXXSPEC &&
+      spack load py-numpy ~blas ~lapack ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
     fi
   - if [ $USE_HDF5 == "ON" ]; then
       travis_wait spack install
