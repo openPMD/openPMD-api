@@ -33,6 +33,7 @@ Other
 - CMake: invasive tests not enabled by default #323
 - ``store_chunk``: more detailed type mismatch error #322
 - ``no_such_file_error`` & ``no_such_attribute_error``: remove c-string constructor #325 #327
+- add virtual destructor to ``Attributable`` #332
 
 
 0.4.0-alpha
