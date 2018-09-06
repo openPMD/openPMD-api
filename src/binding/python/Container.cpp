@@ -215,31 +215,31 @@ PYBIND11_MAKE_OPAQUE(PyMeshRecordComponentContainer)
 PYBIND11_MAKE_OPAQUE(PyBaseRecordComponentContainer)
 
 void init_Container( py::module & m ) {
-    detail::bind_container< PyIterationContainer >(
+    ::detail::bind_container< PyIterationContainer >(
         m,
         "Iteration_Container"
     );
-    detail::bind_container< PyMeshContainer >(
+    ::detail::bind_container< PyMeshContainer >(
         m,
         "Mesh_Container"
     );
-    detail::bind_container< PyPartContainer >(
+    ::detail::bind_container< PyPartContainer >(
         m,
         "Particle_Container"
     );
-    detail::bind_container< PyRecordContainer >(
+    ::detail::bind_container< PyRecordContainer >(
         m,
         "Record_Container"
     );
-    detail::bind_container< PyRecordComponentContainer >(
+    ::detail::bind_container< PyRecordComponentContainer >(
         m,
         "Record_Component_Container"
     );
-    detail::bind_container< PyMeshRecordComponentContainer >(
+    ::detail::bind_container< PyMeshRecordComponentContainer >(
         m,
         "Mesh_Record_Component_Container"
     );
-    detail::bind_container< PyBaseRecordComponentContainer >(
+    ::detail::bind_container< PyBaseRecordComponentContainer >(
         m,
         "Base_Record_Component_Container"
     );

@@ -27,6 +27,7 @@ Bug Fixes
 
   - single precision support: ``numpy.float`` is an alias for ``builtins.float`` #318 #320
   - ``Dataset`` method namings to underscores #319
+  - container namespace ambiguity #343
 
 Other
 """""
