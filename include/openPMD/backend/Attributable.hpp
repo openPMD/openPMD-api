@@ -97,9 +97,15 @@ public:
      * @param   key     Key (i.e. name) to identify and store an Attributes value by.
      * @param   value   Value of Attribute stored with the provided key.
      * @return  true if key was already present, false otherwise
+     *
+     * @{
      */
     template< typename T >
     bool setAttribute(std::string const& key, T const& value);
+    bool setAttribute(std::string const& key, char const value[]);
+    /** @}
+     */
+
     /** Retrieve value of Attribute stored with provided key.
      *
      * @throw   no_such_attribute_error If no Attribute is currently stored with the provided key.
@@ -107,6 +113,7 @@ public:
      * @return  Stored Attribute in Variant form.
      */
     Attribute getAttribute(std::string const& key) const;
+
     /** Remove Attribute of provided value both logically and physically.
      *
      * @param   key Key (i.e. name) of the Attribute to remove.
@@ -230,6 +237,11 @@ Attributable::setAttribute(std::string const& key, T const& value)
                                    std::make_pair(key, Attribute(value)));
         return false;
     }
+}
+inline bool
+Attributable::setAttribute(std::string const& key, char const value[])
+{
+    return this->setAttribute(key, std::string(value));
 }
 
 extern template
