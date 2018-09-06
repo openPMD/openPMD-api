@@ -906,8 +906,8 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
         s.setAttribute("float", f);
         double d = 1.e64;
         s.setAttribute("double", d);
-        long double l = 1.e80L;
-        s.setAttribute("longdouble", l);
+        long double ld = 1.e80L;
+        s.setAttribute("longdouble", ld);
         std::string str = "string";
         s.setAttribute("string", str);
         s.setAttribute("vecChar", std::vector< char >({'c', 'h', 'a', 'r'}));
@@ -923,6 +923,8 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
         s.setAttribute("vecLongdouble", std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
         s.setAttribute("vecString", std::vector< std::string >({"vector", "of", "strings"}));
         s.setAttribute("bool", true);
+
+        // non-fixed size integer types
         short ss = 16;
         s.setAttribute("short", ss);
         int si = 32;
@@ -939,6 +941,14 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
         s.setAttribute("ulong", ul);
         unsigned long long ull = 128u;
         s.setAttribute("ulonglong", ull);
+        s.setAttribute("vecShort", std::vector< short >({32766, 32767}));
+        s.setAttribute("vecInt", std::vector< int >({32766, 32767}));
+        s.setAttribute("vecLong", std::vector< long >({2147483646, 2147483647}));
+        s.setAttribute("vecLongLong", std::vector< long long >({2147483644, 2147483643}));
+        s.setAttribute("vecUShort", std::vector< unsigned short >({65534u, 65535u}));
+        s.setAttribute("vecUInt", std::vector< unsigned int >({65533u, 65531u}));
+        s.setAttribute("vecULong", std::vector< unsigned long >({65532u, 65530u}));
+        s.setAttribute("vecULongLong", std::vector< unsigned long long >({65531u, 65529u}));
     }
 
     Series s = Series("../samples/dtype_test.h5", AccessType::READ_ONLY);
@@ -983,6 +993,15 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
     REQUIRE(s.getAttribute("uint").dtype == Datatype::UINT);
     REQUIRE(s.getAttribute("ulong").dtype == Datatype::ULONG);
     REQUIRE(s.getAttribute("ulonglong").dtype == Datatype::ULONGLONG);
+
+    REQUIRE(s.getAttribute("vecShort").dtype == Datatype::VEC_SHORT);
+    REQUIRE(s.getAttribute("vecInt").dtype == Datatype::VEC_INT);
+    REQUIRE(s.getAttribute("vecLong").dtype == Datatype::VEC_LONG);
+    REQUIRE(s.getAttribute("vecLongLong").dtype == Datatype::VEC_LONGLONG);
+    REQUIRE(s.getAttribute("vecUShort").dtype == Datatype::VEC_USHORT);
+    REQUIRE(s.getAttribute("vecUInt").dtype == Datatype::VEC_UINT);
+    REQUIRE(s.getAttribute("vecULong").dtype == Datatype::VEC_ULONG);
+    REQUIRE(s.getAttribute("vecULongLong").dtype == Datatype::VEC_ULONGLONG);
 #endif
     REQUIRE(isSame(s.getAttribute("short").dtype, Datatype::SHORT));
     REQUIRE(isSame(s.getAttribute("int").dtype, Datatype::INT));
@@ -992,6 +1011,15 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
     REQUIRE(isSame(s.getAttribute("uint").dtype, Datatype::UINT));
     REQUIRE(isSame(s.getAttribute("ulong").dtype, Datatype::ULONG));
     REQUIRE(isSame(s.getAttribute("ulonglong").dtype, Datatype::ULONGLONG));
+
+    REQUIRE(isSame(s.getAttribute("vecShort").dtype, Datatype::VEC_SHORT));
+    REQUIRE(isSame(s.getAttribute("vecInt").dtype, Datatype::VEC_INT));
+    REQUIRE(isSame(s.getAttribute("vecLong").dtype, Datatype::VEC_LONG));
+    REQUIRE(isSame(s.getAttribute("vecLongLong").dtype, Datatype::VEC_LONGLONG));
+    REQUIRE(isSame(s.getAttribute("vecUShort").dtype, Datatype::VEC_USHORT));
+    REQUIRE(isSame(s.getAttribute("vecUInt").dtype, Datatype::VEC_UINT));
+    REQUIRE(isSame(s.getAttribute("vecULong").dtype, Datatype::VEC_ULONG));
+    REQUIRE(isSame(s.getAttribute("vecULongLong").dtype, Datatype::VEC_ULONGLONG));
 }
 
 TEST_CASE( "hdf5_write_test", "[serial][hdf5]" )
@@ -1451,8 +1479,8 @@ TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
         s.setAttribute("float", f);
         double d = 1.e64;
         s.setAttribute("double", d);
-        long double l = 1.e80L;
-        s.setAttribute("longdouble", l);
+        long double ld = 1.e80L;
+        s.setAttribute("longdouble", ld);
         std::string str = "string";
         s.setAttribute("string", str);
         s.setAttribute("vecChar", std::vector< char >({'c', 'h', 'a', 'r'}));
@@ -1467,7 +1495,33 @@ TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
         s.setAttribute("vecDouble", std::vector< double >({0., 1.79769e+308}));
         s.setAttribute("vecLongdouble", std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
         s.setAttribute("vecString", std::vector< std::string >({"vector", "of", "strings"}));
-        s.setAttribute("bool", static_cast< unsigned char >(true));
+        // s.setAttribute("bool", true);
+
+        // translation from non-fixed size integer types
+        short rs = 8;
+        s.setAttribute("short", rs);
+        int i = 16;
+        s.setAttribute("int", i);
+        long l = 32;
+        s.setAttribute("long", l);
+        long long ll = 64;
+        s.setAttribute("longlong", ll);
+        unsigned short us = 8u;
+        s.setAttribute("ushort", us);
+        unsigned int ui = 16u;
+        s.setAttribute("uint", ui);
+        unsigned long ul = 32u;
+        s.setAttribute("ulong", ul);
+        unsigned long long ull = 64u;
+        s.setAttribute("ulonglong", ull);
+        s.setAttribute("vecShort", std::vector< short >({32766, 32767}));
+        s.setAttribute("vecInt", std::vector< int >({32766, 32767}));
+        s.setAttribute("vecLong", std::vector< long >({2147483646, 2147483647}));
+        s.setAttribute("vecLongLong", std::vector< long long >({2147483644, 2147483643}));
+        s.setAttribute("vecUShort", std::vector< unsigned short >({65534u, 65535u}));
+        s.setAttribute("vecUInt", std::vector< unsigned int >({65533u, 65531u}));
+        s.setAttribute("vecULong", std::vector< unsigned long >({65532u, 65530u}));
+        s.setAttribute("vecULongLong", std::vector< unsigned long long >({65529u, 65528u}));
     }
 
     Series s = Series("../samples/dtype_test.bp", AccessType::READ_ONLY);
@@ -1500,7 +1554,25 @@ TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
     REQUIRE(s.getAttribute("vecLongdouble").get< std::vector< long double > >() == std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
 #endif
     REQUIRE(s.getAttribute("vecString").get< std::vector< std::string > >() == std::vector< std::string >({"vector", "of", "strings"}));
-    REQUIRE(s.getAttribute("bool").get< unsigned char >() == static_cast< unsigned char >(true));
+    // REQUIRE(s.getAttribute("bool").get< bool >() == true);
+
+    // translation from non-fixed size integer types
+    REQUIRE(s.getAttribute("short").get< short >() == 8);
+    REQUIRE(s.getAttribute("int").get< int >() == 16);
+    REQUIRE(s.getAttribute("long").get< long >() == 32);
+    REQUIRE(getCast< long long >(s.getAttribute("longlong")) == 64);
+    REQUIRE(s.getAttribute("ushort").get< unsigned short >() == 8u);
+    REQUIRE(s.getAttribute("uint").get< unsigned int >() == 16u);
+    REQUIRE(s.getAttribute("ulong").get< unsigned long >() == 32u);
+    REQUIRE(getCast< unsigned long long >(s.getAttribute("ulonglong")) == 64u);
+    REQUIRE(s.getAttribute("vecShort").get< std::vector< short > >() == std::vector< short >({32766, 32767}));
+    REQUIRE(s.getAttribute("vecInt").get< std::vector< int > >() == std::vector< int >({32766, 32767}));
+    REQUIRE(s.getAttribute("vecLong").get< std::vector< long > >() == std::vector< long >({2147483646, 2147483647}));
+    REQUIRE(getCast< std::vector< long long > >(s.getAttribute("vecLongLong")) == std::vector< long long >({2147483644, 2147483643}));
+    REQUIRE(s.getAttribute("vecUShort").get< std::vector< unsigned short > >() == std::vector< unsigned short >({65534u, 65535u}));
+    REQUIRE(s.getAttribute("vecUInt").get< std::vector< unsigned int > >() == std::vector< unsigned int >({65533u, 65531u}));
+    REQUIRE(s.getAttribute("vecULong").get< std::vector< unsigned long > >() == std::vector< unsigned long >({65532u, 65530u}));
+    REQUIRE(getCast< std::vector< unsigned long long > >(s.getAttribute("vecULongLong")) == std::vector< unsigned long long >({65529u, 65528u}));
 }
 
 TEST_CASE( "adios1_write_test", "[serial][adios1]")
