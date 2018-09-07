@@ -13,6 +13,8 @@
 #include <vector>
 #include <array>
 #include <cstddef>
+#include <cstdint>
+#include <sstream>
 
 using namespace openPMD;
 
@@ -23,18 +25,22 @@ TEST_CASE( "attribute_dtype_test", "[core]" )
     REQUIRE(Datatype::CHAR == a.dtype);
     a = Attribute(static_cast< unsigned char >(' '));
     REQUIRE(Datatype::UCHAR == a.dtype);
-    a = Attribute(static_cast< int16_t >(0));
-    REQUIRE(Datatype::INT16 == a.dtype);
-    a = Attribute(static_cast< int32_t >(0));
-    REQUIRE(Datatype::INT32 == a.dtype);
-    a = Attribute(static_cast< int64_t >(0));
-    REQUIRE(Datatype::INT64 == a.dtype);
-    a = Attribute(static_cast< uint16_t >(0));
-    REQUIRE(Datatype::UINT16 == a.dtype);
-    a = Attribute(static_cast< uint32_t >(0));
-    REQUIRE(Datatype::UINT32 == a.dtype);
-    a = Attribute(static_cast< uint64_t >(0));
-    REQUIRE(Datatype::UINT64 == a.dtype);
+    a = Attribute(static_cast< short >(0));
+    REQUIRE(Datatype::SHORT == a.dtype);
+    a = Attribute(static_cast< int >(0));
+    REQUIRE(Datatype::INT == a.dtype);
+    a = Attribute(static_cast< long >(0));
+    REQUIRE(Datatype::LONG == a.dtype);
+    a = Attribute(static_cast< long long >(0));
+    REQUIRE(Datatype::LONGLONG == a.dtype);
+    a = Attribute(static_cast< unsigned short >(0));
+    REQUIRE(Datatype::USHORT == a.dtype);
+    a = Attribute(static_cast< unsigned int >(0));
+    REQUIRE(Datatype::UINT == a.dtype);
+    a = Attribute(static_cast< unsigned long >(0));
+    REQUIRE(Datatype::ULONG == a.dtype);
+    a = Attribute(static_cast< unsigned long long >(0));
+    REQUIRE(Datatype::ULONGLONG == a.dtype);
     a = Attribute(static_cast< float >(0.));
     REQUIRE(Datatype::FLOAT == a.dtype);
     a = Attribute(static_cast< double >(0.));
@@ -45,20 +51,24 @@ TEST_CASE( "attribute_dtype_test", "[core]" )
     REQUIRE(Datatype::STRING == a.dtype);
     a = Attribute(std::vector< char >());
     REQUIRE(Datatype::VEC_CHAR == a.dtype);
-    a = Attribute(std::vector< int16_t >());
-    REQUIRE(Datatype::VEC_INT16 == a.dtype);
-    a = Attribute(std::vector< int32_t >());
-    REQUIRE(Datatype::VEC_INT32 == a.dtype);
-    a = Attribute(std::vector< int64_t >());
-    REQUIRE(Datatype::VEC_INT64 == a.dtype);
+    a = Attribute(std::vector< short >());
+    REQUIRE(Datatype::VEC_SHORT == a.dtype);
+    a = Attribute(std::vector< int >());
+    REQUIRE(Datatype::VEC_INT == a.dtype);
+    a = Attribute(std::vector< long >());
+    REQUIRE(Datatype::VEC_LONG == a.dtype);
+    a = Attribute(std::vector< long long >());
+    REQUIRE(Datatype::VEC_LONGLONG == a.dtype);
     a = Attribute(std::vector< unsigned char >());
     REQUIRE(Datatype::VEC_UCHAR == a.dtype);
-    a = Attribute(std::vector< uint16_t >());
-    REQUIRE(Datatype::VEC_UINT16 == a.dtype);
-    a = Attribute(std::vector< uint32_t >());
-    REQUIRE(Datatype::VEC_UINT32 == a.dtype);
-    a = Attribute(std::vector< uint64_t >());
-    REQUIRE(Datatype::VEC_UINT64 == a.dtype);
+    a = Attribute(std::vector< unsigned short >());
+    REQUIRE(Datatype::VEC_USHORT == a.dtype);
+    a = Attribute(std::vector< unsigned int >());
+    REQUIRE(Datatype::VEC_UINT == a.dtype);
+    a = Attribute(std::vector< unsigned long >());
+    REQUIRE(Datatype::VEC_ULONG == a.dtype);
+    a = Attribute(std::vector< unsigned long long >());
+    REQUIRE(Datatype::VEC_ULONGLONG == a.dtype);
     a = Attribute(std::vector< float >());
     REQUIRE(Datatype::VEC_FLOAT == a.dtype);
     a = Attribute(std::vector< double >());
@@ -71,6 +81,21 @@ TEST_CASE( "attribute_dtype_test", "[core]" )
     REQUIRE(Datatype::ARR_DBL_7 == a.dtype);
     a = Attribute(static_cast< bool >(false));
     REQUIRE(Datatype::BOOL == a.dtype);
+    
+    // fixed size integers
+    a = Attribute(static_cast< int16_t >(0));
+    REQUIRE(determineDatatype< int16_t >() == a.dtype);
+    a = Attribute(static_cast< int32_t >(0));
+    REQUIRE(determineDatatype< int32_t >() == a.dtype);
+    a = Attribute(static_cast< int64_t >(0));
+    REQUIRE(determineDatatype< int64_t >() == a.dtype);
+    a = Attribute(static_cast< uint16_t >(0));
+    REQUIRE(determineDatatype< uint16_t >() == a.dtype);
+    a = Attribute(static_cast< uint32_t >(0));
+    REQUIRE(determineDatatype< uint32_t >() == a.dtype);
+    a = Attribute(static_cast< uint64_t >(0));
+    REQUIRE(determineDatatype< uint64_t >() == a.dtype);
+    // TODO fixed size floats
 }
 
 TEST_CASE( "output_default_test", "[core]" )
@@ -487,9 +512,9 @@ TEST_CASE( "wrapper_test", "[core]" )
     REQUIRE(o.iterationEncoding() == IterationEncoding::groupBased);
     REQUIRE(o.name() == "other_name");
 
-    o.iterations[1].meshes["E"]["x"].resetDataset(Dataset(Datatype::UINT16, {42}));
+    o.iterations[1].meshes["E"]["x"].resetDataset(Dataset(Datatype::USHORT, {42}));
     MeshRecordComponent mrc = o.iterations[1].meshes["E"]["x"];
-    REQUIRE(mrc.getDatatype() == Datatype::UINT16);
+    REQUIRE(mrc.getDatatype() == Datatype::USHORT);
     REQUIRE(mrc.getExtent() == Extent{42});
     mrc.resetDataset(Dataset(Datatype::LONG_DOUBLE, {7}));
     REQUIRE(o.iterations[1].meshes["E"]["x"].getDatatype() == Datatype::LONG_DOUBLE);
@@ -536,7 +561,7 @@ TEST_CASE( "wrapper_test", "[core]" )
     o.iterations[5].meshes["E"]["y"].resetDataset(Dataset(Datatype::DOUBLE, {1}));
     int wrongData = 42;
     REQUIRE_THROWS_WITH(o.iterations[5].meshes["E"]["y"].storeChunk({0}, {1}, shareRaw(&wrongData)),
-                        Catch::Equals("Datatypes of chunk data (INT32) and dataset (DOUBLE) do not match."));
+                        Catch::Equals("Datatypes of chunk data (INT) and dataset (DOUBLE) do not match."));
     std::shared_ptr< double > storeData = std::make_shared< double >(44);
     o.iterations[5].meshes["E"]["y"].storeChunk({0}, {1}, storeData);
 #if openPMD_USE_INVASIVE_TESTS
@@ -549,12 +574,12 @@ TEST_CASE( "wrapper_test", "[core]" )
     REQUIRE(mrc3.m_chunks->empty());
 #endif
 
-    o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].resetDataset(Dataset(Datatype::UINT64, {4}));
+    o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].resetDataset(Dataset(determineDatatype< uint64_t >(), {4}));
     auto dset = Dataset(Datatype::DOUBLE, {1});
     o.iterations[6].particles["electrons"]["position"][RecordComponent::SCALAR].resetDataset(dset);
     o.iterations[6].particles["electrons"]["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
     ParticlePatches pp = o.iterations[6].particles["electrons"].particlePatches;
-    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].getDatatype() == Datatype::UINT64);
+    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].getDatatype() == determineDatatype< uint64_t >());
     REQUIRE(pp["numParticles"][RecordComponent::SCALAR].getExtent() == Extent{4});
     pp["prop"]["x"].resetDataset(Dataset(Datatype::DOUBLE, {7}));
     REQUIRE(o.iterations[6].particles["electrons"].particlePatches["prop"]["x"].getDatatype() == Datatype::DOUBLE);
@@ -570,8 +595,10 @@ TEST_CASE( "wrapper_test", "[core]" )
     REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 1);
     REQUIRE(pp["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 1);
 #endif
+    std::stringstream u64str;
+    u64str << determineDatatype<uint64_t>();
     REQUIRE_THROWS_WITH(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].store(idx+1, 42.),
-                        Catch::Equals("Datatypes of chunk data (DOUBLE) and dataset (UINT64) do not match."));
+                        Catch::Equals("Datatypes of chunk data (DOUBLE) and dataset (" + u64str.str() + ") do not match."));
     o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].store(idx+1, val+1);
 #if openPMD_USE_INVASIVE_TESTS
     REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 2);
@@ -589,7 +616,7 @@ TEST_CASE( "use_count_test", "[core]" )
     Series o = Series("./new_openpmd_output", AccessType::CREATE);
 
     MeshRecordComponent mrc = o.iterations[1].meshes["E"]["x"];
-    mrc.resetDataset(Dataset(Datatype::UINT16, {42}));
+    mrc.resetDataset(Dataset(determineDatatype<uint16_t>(), {42}));
     std::shared_ptr< uint16_t > storeData = std::make_shared< uint16_t >(44);
     REQUIRE(storeData.use_count() == 1);
     mrc.storeChunk({0}, {1}, storeData);
@@ -602,7 +629,7 @@ TEST_CASE( "use_count_test", "[core]" )
     auto dset = Dataset(Datatype::DOUBLE, {1});
     o.iterations[6].particles["electrons"]["position"][RecordComponent::SCALAR].resetDataset(dset);
     o.iterations[6].particles["electrons"]["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
-    pprc.resetDataset(Dataset(Datatype::UINT64, {4}));
+    pprc.resetDataset(Dataset(determineDatatype<uint64_t>(), {4}));
     pprc.store(0, static_cast< uint64_t >(1));
     REQUIRE(static_cast< Parameter< Operation::WRITE_DATASET >* >(pprc.m_chunks->front().parameter.get())->data.use_count() == 1);
 #endif
@@ -625,14 +652,14 @@ TEST_CASE( "zero_extent_component", "[core]" )
 
     auto E_x = o.iterations[1].meshes["E"]["x"];
     E_x.setComment("Datasets with zero extent in any dimension are not allowed.");
-    REQUIRE_THROWS_WITH(E_x.resetDataset(Dataset(Datatype::INT64, {0})),
+    REQUIRE_THROWS_WITH(E_x.resetDataset(Dataset(Datatype::LONG, {0})),
                         Catch::Equals("Dataset extent must not be zero in any dimension."));
-    REQUIRE_THROWS_WITH(E_x.resetDataset(Dataset(Datatype::INT64, {1, 0})),
+    REQUIRE_THROWS_WITH(E_x.resetDataset(Dataset(Datatype::LONG, {1, 0})),
                         Catch::Equals("Dataset extent must not be zero in any dimension."));
-    REQUIRE_THROWS_WITH(E_x.resetDataset(Dataset(Datatype::INT64, {0, 1})),
+    REQUIRE_THROWS_WITH(E_x.resetDataset(Dataset(Datatype::LONG, {0, 1})),
                         Catch::Equals("Dataset extent must not be zero in any dimension."));
     E_x.setComment("Datasets must contain dimensions.");
-    REQUIRE_THROWS_WITH(E_x.resetDataset(Dataset(Datatype::INT64, {})),
+    REQUIRE_THROWS_WITH(E_x.resetDataset(Dataset(Datatype::LONG, {})),
                         Catch::Equals("Dataset extent must be at least 1D."));
     E_x.resetDataset(Dataset(Datatype::DOUBLE, {1}));
 }

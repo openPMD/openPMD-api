@@ -448,22 +448,26 @@ HDF5IOHandlerImpl::openDataset(Writable* writable,
             d = DT::CHAR;
         else if( H5Tequal(dataset_type, H5T_NATIVE_UCHAR) )
             d = DT::UCHAR;
-        else if( H5Tequal(dataset_type, H5T_NATIVE_INT16) )
-            d = DT::INT16;
-        else if( H5Tequal(dataset_type, H5T_NATIVE_INT32) )
-            d = DT::INT32;
-        else if( H5Tequal(dataset_type, H5T_NATIVE_INT64) )
-            d = DT::INT64;
+        else if( H5Tequal(dataset_type, H5T_NATIVE_SHORT) )
+            d = DT::SHORT;
+        else if( H5Tequal(dataset_type, H5T_NATIVE_INT) )
+            d = DT::INT;
+        else if( H5Tequal(dataset_type, H5T_NATIVE_LONG) )
+            d = DT::LONG;
+        else if( H5Tequal(dataset_type, H5T_NATIVE_LLONG) )
+            d = DT::LONGLONG;
         else if( H5Tequal(dataset_type, H5T_NATIVE_FLOAT) )
             d = DT::FLOAT;
         else if( H5Tequal(dataset_type, H5T_NATIVE_DOUBLE) )
             d = DT::DOUBLE;
-        else if( H5Tequal(dataset_type, H5T_NATIVE_UINT16) )
-            d = DT::UINT16;
-        else if( H5Tequal(dataset_type, H5T_NATIVE_UINT32) )
-            d = DT::UINT32;
-        else if( H5Tequal(dataset_type, H5T_NATIVE_UINT64) )
-            d = DT::UINT64;
+        else if( H5Tequal(dataset_type, H5T_NATIVE_USHORT) )
+            d = DT::USHORT;
+        else if( H5Tequal(dataset_type, H5T_NATIVE_UINT) )
+            d = DT::UINT;
+        else if( H5Tequal(dataset_type, H5T_NATIVE_ULONG) )
+            d = DT::ULONG;
+        else if( H5Tequal(dataset_type, H5T_NATIVE_ULLONG) )
+            d = DT::ULONGLONG;
         else if( H5Tget_class(dataset_type) == H5T_STRING )
             d = DT::STRING;
         else
@@ -698,12 +702,14 @@ HDF5IOHandlerImpl::writeDataset(Writable* writable,
         using DT = Datatype;
         case DT::DOUBLE:
         case DT::FLOAT:
-        case DT::INT16:
-        case DT::INT32:
-        case DT::INT64:
-        case DT::UINT16:
-        case DT::UINT32:
-        case DT::UINT64:
+        case DT::SHORT:
+        case DT::INT:
+        case DT::LONG:
+        case DT::LONGLONG:
+        case DT::USHORT:
+        case DT::UINT:
+        case DT::ULONG:
+        case DT::ULONGLONG:
         case DT::CHAR:
         case DT::UCHAR:
         case DT::BOOL:
@@ -795,39 +801,51 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
             status = H5Awrite(attribute_id, dataType, &u);
             break;
         }
-        case DT::INT16:
+        case DT::SHORT:
         {
-            int16_t i = att.get< int16_t >();
+            short i = att.get< short >();
             status = H5Awrite(attribute_id, dataType, &i);
             break;
         }
-        case DT::INT32:
+        case DT::INT:
         {
-            int32_t i = att.get< int32_t >();
+            int i = att.get< int >();
             status = H5Awrite(attribute_id, dataType, &i);
             break;
         }
-        case DT::INT64:
+        case DT::LONG:
         {
-            int64_t i = att.get< int64_t >();
+            long i = att.get< long >();
             status = H5Awrite(attribute_id, dataType, &i);
             break;
         }
-        case DT::UINT16:
+        case DT::LONGLONG:
         {
-            uint16_t u = att.get< uint16_t >();
+            long long i = att.get< long long >();
+            status = H5Awrite(attribute_id, dataType, &i);
+            break;
+        }
+        case DT::USHORT:
+        {
+            unsigned short u = att.get< unsigned short >();
             status = H5Awrite(attribute_id, dataType, &u);
             break;
         }
-        case DT::UINT32:
+        case DT::UINT:
         {
-            uint32_t u = att.get< uint32_t >();
+            unsigned int u = att.get< unsigned int >();
             status = H5Awrite(attribute_id, dataType, &u);
             break;
         }
-        case DT::UINT64:
+        case DT::ULONG:
         {
-            uint64_t u = att.get< uint64_t >();
+            unsigned long u = att.get< unsigned long >();
+            status = H5Awrite(attribute_id, dataType, &u);
+            break;
+        }
+        case DT::ULONGLONG:
+        {
+            unsigned long long u = att.get< unsigned long long >();
             status = H5Awrite(attribute_id, dataType, &u);
             break;
         }
@@ -859,40 +877,50 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
                               dataType,
                               att.get< std::vector< char > >().data());
             break;
-        case DT::VEC_INT16:
+        case DT::VEC_SHORT:
             status = H5Awrite(attribute_id,
                               dataType,
-                              att.get< std::vector< int16_t > >().data());
+                              att.get< std::vector< short > >().data());
             break;
-        case DT::VEC_INT32:
+        case DT::VEC_INT:
             status = H5Awrite(attribute_id,
                               dataType,
-                              att.get< std::vector< int32_t > >().data());
+                              att.get< std::vector< int > >().data());
             break;
-        case DT::VEC_INT64:
+        case DT::VEC_LONG:
             status = H5Awrite(attribute_id,
                               dataType,
-                              att.get< std::vector< int64_t > >().data());
+                              att.get< std::vector< long > >().data());
+            break;
+        case DT::VEC_LONGLONG:
+            status = H5Awrite(attribute_id,
+                              dataType,
+                              att.get< std::vector< long long > >().data());
             break;
         case DT::VEC_UCHAR:
             status = H5Awrite(attribute_id,
                               dataType,
                               att.get< std::vector< unsigned char > >().data());
             break;
-        case DT::VEC_UINT16:
+        case DT::VEC_USHORT:
             status = H5Awrite(attribute_id,
                               dataType,
-                              att.get< std::vector< uint16_t > >().data());
+                              att.get< std::vector< unsigned short > >().data());
             break;
-        case DT::VEC_UINT32:
+        case DT::VEC_UINT:
             status = H5Awrite(attribute_id,
                               dataType,
-                              att.get< std::vector< uint32_t > >().data());
+                              att.get< std::vector< unsigned int > >().data());
             break;
-        case DT::VEC_UINT64:
+        case DT::VEC_ULONG:
             status = H5Awrite(attribute_id,
                               dataType,
-                              att.get< std::vector< uint64_t > >().data());
+                              att.get< std::vector< unsigned long > >().data());
+            break;
+        case DT::VEC_ULONGLONG:
+            status = H5Awrite(attribute_id,
+                              dataType,
+                              att.get< std::vector< unsigned long long > >().data());
             break;
         case DT::VEC_FLOAT:
             status = H5Awrite(attribute_id,
@@ -995,12 +1023,14 @@ HDF5IOHandlerImpl::readDataset(Writable* writable,
         using DT = Datatype;
         case DT::DOUBLE:
         case DT::FLOAT:
-        case DT::INT16:
-        case DT::INT32:
-        case DT::INT64:
-        case DT::UINT16:
-        case DT::UINT32:
-        case DT::UINT64:
+        case DT::SHORT:
+        case DT::INT:
+        case DT::LONG:
+        case DT::LONGLONG:
+        case DT::USHORT:
+        case DT::UINT:
+        case DT::ULONG:
+        case DT::ULONGLONG:
         case DT::CHAR:
         case DT::UCHAR:
         case DT::BOOL:
@@ -1083,44 +1113,58 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
                              attr_type,
                              &u);
             a = Attribute(u);
-        } else if( H5Tequal(attr_type, H5T_NATIVE_INT16) )
+        } else if( H5Tequal(attr_type, H5T_NATIVE_SHORT) )
         {
-            int16_t i;
+            short i;
             status = H5Aread(attr_id,
                              attr_type,
                              &i);
             a = Attribute(i);
-        } else if( H5Tequal(attr_type, H5T_NATIVE_INT32) )
+        } else if( H5Tequal(attr_type, H5T_NATIVE_INT) )
         {
-            int32_t i;
+            int i;
             status = H5Aread(attr_id,
                              attr_type,
                              &i);
             a = Attribute(i);
-        } else if( H5Tequal(attr_type, H5T_NATIVE_INT64) )
+        } else if( H5Tequal(attr_type, H5T_NATIVE_LONG) )
         {
-            int64_t i;
+            long i;
             status = H5Aread(attr_id,
                              attr_type,
                              &i);
             a = Attribute(i);
-        } else if( H5Tequal(attr_type, H5T_NATIVE_UINT16) )
+        } else if( H5Tequal(attr_type, H5T_NATIVE_LLONG) )
         {
-            uint16_t u;
+            long long i;
+            status = H5Aread(attr_id,
+                             attr_type,
+                             &i);
+            a = Attribute(i);
+        } else if( H5Tequal(attr_type, H5T_NATIVE_USHORT) )
+        {
+            unsigned short u;
             status = H5Aread(attr_id,
                              attr_type,
                              &u);
             a = Attribute(u);
-        } else if( H5Tequal(attr_type, H5T_NATIVE_UINT32) )
+        } else if( H5Tequal(attr_type, H5T_NATIVE_UINT) )
         {
-            uint32_t u;
+            unsigned int u;
             status = H5Aread(attr_id,
                              attr_type,
                              &u);
             a = Attribute(u);
-        } else if( H5Tequal(attr_type, H5T_NATIVE_UINT64) )
+        } else if( H5Tequal(attr_type, H5T_NATIVE_ULONG) )
         {
-            uint64_t u;
+            unsigned long u;
+            status = H5Aread(attr_id,
+                             attr_type,
+                             &u);
+            a = Attribute(u);
+        } else if( H5Tequal(attr_type, H5T_NATIVE_ULLONG) )
+        {
+            unsigned long long u;
             status = H5Aread(attr_id,
                              attr_type,
                              &u);
@@ -1213,44 +1257,58 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
                              attr_type,
                              vu.data());
             a = Attribute(vu);
-        } else if( H5Tequal(attr_type, H5T_NATIVE_INT16) )
+        } else if( H5Tequal(attr_type, H5T_NATIVE_SHORT) )
         {
-            std::vector< int16_t > vint16(dims[0], 0);
+            std::vector< short > vint16(dims[0], 0);
             status = H5Aread(attr_id,
                              attr_type,
                              vint16.data());
             a = Attribute(vint16);
-        } else if( H5Tequal(attr_type, H5T_NATIVE_INT32) )
+        } else if( H5Tequal(attr_type, H5T_NATIVE_INT) )
         {
-            std::vector< int32_t > vint32(dims[0], 0);
+            std::vector< int > vint32(dims[0], 0);
             status = H5Aread(attr_id,
                              attr_type,
                              vint32.data());
             a = Attribute(vint32);
-        } else if( H5Tequal(attr_type, H5T_NATIVE_INT64) )
+        } else if( H5Tequal(attr_type, H5T_NATIVE_LONG) )
         {
-            std::vector< int64_t > vint64(dims[0], 0);
+            std::vector< long > vint64(dims[0], 0);
             status = H5Aread(attr_id,
                              attr_type,
                              vint64.data());
             a = Attribute(vint64);
-        } else if( H5Tequal(attr_type, H5T_NATIVE_UINT16) )
+        } else if( H5Tequal(attr_type, H5T_NATIVE_LLONG) )
         {
-            std::vector< uint16_t > vuint16(dims[0], 0);
+            std::vector< long long > vint64(dims[0], 0);
+            status = H5Aread(attr_id,
+                             attr_type,
+                             vint64.data());
+            a = Attribute(vint64);
+        } else if( H5Tequal(attr_type, H5T_NATIVE_USHORT) )
+        {
+            std::vector< unsigned short > vuint16(dims[0], 0);
             status = H5Aread(attr_id,
                              attr_type,
                              vuint16.data());
             a = Attribute(vuint16);
-        } else if( H5Tequal(attr_type, H5T_NATIVE_UINT32) )
+        } else if( H5Tequal(attr_type, H5T_NATIVE_UINT) )
         {
-            std::vector< uint32_t > vuint32(dims[0], 0);
+            std::vector< unsigned int > vuint32(dims[0], 0);
             status = H5Aread(attr_id,
                              attr_type,
                              vuint32.data());
             a = Attribute(vuint32);
-        } else if( H5Tequal(attr_type, H5T_NATIVE_UINT64) )
+        } else if( H5Tequal(attr_type, H5T_NATIVE_ULONG) )
         {
-            std::vector< uint64_t > vuint64(dims[0], 0);
+            std::vector< unsigned long > vuint64(dims[0], 0);
+            status = H5Aread(attr_id,
+                             attr_type,
+                             vuint64.data());
+            a = Attribute(vuint64);
+        } else if( H5Tequal(attr_type, H5T_NATIVE_ULLONG) )
+        {
+            std::vector< unsigned long long > vuint64(dims[0], 0);
             status = H5Aread(attr_id,
                              attr_type,
                              vuint64.data());

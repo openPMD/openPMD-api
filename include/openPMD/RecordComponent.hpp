@@ -134,7 +134,8 @@ RecordComponent::loadChunk(Offset const& o, Extent const& e, std::shared_ptr< T 
         throw std::runtime_error("unitSI scaling during chunk loading not yet implemented");
     Datatype dtype = determineDatatype(data);
     if( dtype != getDatatype() )
-        throw std::runtime_error("Type conversion during chunk loading not yet implemented");
+        if( !isSameInteger< T >( dtype ) && !isSameFloatingPoint< T >( dtype ) )
+            throw std::runtime_error("Type conversion during chunk loading not yet implemented");
 
     uint8_t dim = getDimensionality();
     if( e.size() != dim || o.size() != dim )
@@ -155,7 +156,7 @@ RecordComponent::loadChunk(Offset const& o, Extent const& e, std::shared_ptr< T 
         for( auto const& dimensionSize : e )
             numPoints *= dimensionSize;
 
-        T value = m_constantValue->get< T >();
+        T value = getCast< T >(*m_constantValue);
 
         T* raw_ptr = data.get();
         std::fill(raw_ptr, raw_ptr + numPoints, value);

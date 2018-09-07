@@ -75,35 +75,45 @@ allocatePtr(Datatype dtype, uint64_t numPoints)
             data = new float[numPoints];
             del = [](void* p){ delete[] static_cast< float* >(p); };
             break;
-        case DT::VEC_INT16:
-        case DT::INT16:
-            data = new int16_t[numPoints];
-            del = [](void* p){ delete[] static_cast< int16_t* >(p); };
+        case DT::VEC_SHORT:
+        case DT::SHORT:
+            data = new short[numPoints];
+            del = [](void* p){ delete[] static_cast< short* >(p); };
             break;
-        case DT::VEC_INT32:
-        case DT::INT32:
-            data = new int32_t[numPoints];
-            del = [](void* p){ delete[] static_cast< int32_t* >(p); };
+        case DT::VEC_INT:
+        case DT::INT:
+            data = new int[numPoints];
+            del = [](void* p){ delete[] static_cast< int* >(p); };
             break;
-        case DT::VEC_INT64:
-        case DT::INT64:
-            data = new int64_t[numPoints];
-            del = [](void* p){ delete[] static_cast< int64_t* >(p); };
+        case DT::VEC_LONG:
+        case DT::LONG:
+            data = new long[numPoints];
+            del = [](void* p){ delete[] static_cast< long* >(p); };
             break;
-        case DT::VEC_UINT16:
-        case DT::UINT16:
-            data = new uint16_t[numPoints];
-            del = [](void* p){ delete[] static_cast< uint16_t* >(p); };
+        case DT::VEC_LONGLONG:
+        case DT::LONGLONG:
+            data = new long long[numPoints];
+            del = [](void* p){ delete[] static_cast< long long* >(p); };
             break;
-        case DT::VEC_UINT32:
-        case DT::UINT32:
-            data = new uint32_t[numPoints];
-            del = [](void* p){ delete[] static_cast< uint32_t* >(p); };
+        case DT::VEC_USHORT:
+        case DT::USHORT:
+            data = new unsigned short[numPoints];
+            del = [](void* p){ delete[] static_cast< unsigned short* >(p); };
             break;
-        case DT::VEC_UINT64:
-        case DT::UINT64:
-            data = new uint64_t[numPoints];
-            del = [](void* p){ delete[] static_cast< uint64_t* >(p); };
+        case DT::VEC_UINT:
+        case DT::UINT:
+            data = new unsigned int[numPoints];
+            del = [](void* p){ delete[] static_cast< unsigned int* >(p); };
+            break;
+        case DT::VEC_ULONG:
+        case DT::ULONG:
+            data = new unsigned long[numPoints];
+            del = [](void* p){ delete[] static_cast< unsigned long* >(p); };
+            break;
+        case DT::VEC_ULONGLONG:
+        case DT::ULONGLONG:
+            data = new unsigned long long[numPoints];
+            del = [](void* p){ delete[] static_cast< unsigned long long* >(p); };
             break;
         case DT::VEC_CHAR:
         case DT::CHAR:

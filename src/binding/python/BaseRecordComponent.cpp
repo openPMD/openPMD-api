@@ -49,22 +49,29 @@ void init_BaseRecordComponent(py::module &m) {
             using DT = Datatype;
 
             // ref: https://docs.scipy.org/doc/numpy/user/basics.types.html
-            if( brc.getDatatype() == DT::CHAR )
+            // ref: https://github.com/numpy/numpy/issues/10678#issuecomment-369363551
+            if( brc.getDatatype() == DT::BOOL )
+                return py::dtype("?");
+            else if( brc.getDatatype() == DT::CHAR )
                 return py::dtype("b");
             else if( brc.getDatatype() == DT::UCHAR )
                 return py::dtype("B");
-            else if( brc.getDatatype() == DT::INT16 )
-                return py::dtype("int16");
-            else if( brc.getDatatype() == DT::INT32 )
-                return py::dtype("int32");
-            else if( brc.getDatatype() == DT::INT64 )
-                return py::dtype("int64");
-            else if( brc.getDatatype() == DT::UINT16 )
-                return py::dtype("uint16");
-            else if( brc.getDatatype() == DT::UINT32 )
-                return py::dtype("uint32");
-            else if( brc.getDatatype() == DT::UINT64 )
-                return py::dtype("uint64");
+            else if( brc.getDatatype() == DT::SHORT )
+                return py::dtype("short");
+            else if( brc.getDatatype() == DT::INT )
+                return py::dtype("intc");
+            else if( brc.getDatatype() == DT::LONG )
+                return py::dtype("int_");
+            else if( brc.getDatatype() == DT::LONGLONG )
+                return py::dtype("longlong");
+            else if( brc.getDatatype() == DT::USHORT )
+                return py::dtype("ushort");
+            else if( brc.getDatatype() == DT::UINT )
+                return py::dtype("uintc");
+            else if( brc.getDatatype() == DT::ULONG )
+                return py::dtype("uint");
+            else if( brc.getDatatype() == DT::ULONGLONG )
+                return py::dtype("ulonglong");
             else if( brc.getDatatype() == DT::LONG_DOUBLE )
                 return py::dtype("longdouble");
             else if( brc.getDatatype() == DT::DOUBLE )
@@ -76,19 +83,23 @@ void init_BaseRecordComponent(py::module &m) {
                 return py::dtype("string_");
             else if( brc.getDatatype() == DT::VEC_CHAR )
                 return py::dtype("");
-            else if( brc.getDatatype() == DT::VEC_INT16 )
+            else if( brc.getDatatype() == DT::VEC_SHORT )
                 return py::dtype("");
-            else if( brc.getDatatype() == DT::VEC_INT32 )
+            else if( brc.getDatatype() == DT::VEC_INT )
                 return py::dtype("");
-            else if( brc.getDatatype() == DT::VEC_INT64 )
+            else if( brc.getDatatype() == DT::VEC_LONG )
+                return py::dtype("");
+            else if( brc.getDatatype() == DT::VEC_LONGLONG )
                 return py::dtype("");
             else if( brc.getDatatype() == DT::VEC_UCHAR )
                 return py::dtype("");
-            else if( brc.getDatatype() == DT::VEC_UINT16 )
+            else if( brc.getDatatype() == DT::VEC_USHORT )
                 return py::dtype("");
-            else if( brc.getDatatype() == DT::VEC_UINT32 )
+            else if( brc.getDatatype() == DT::VEC_UINT )
                 return py::dtype("");
-            else if( brc.getDatatype() == DT::VEC_UINT64 )
+            else if( brc.getDatatype() == DT::VEC_ULONG )
+                return py::dtype("");
+            else if( brc.getDatatype() == DT::VEC_ULONGLONG )
                 return py::dtype("");
             else if( brc.getDatatype() == DT::ARR_DBL_7 )
                 return py::dtype("");

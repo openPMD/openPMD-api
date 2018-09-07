@@ -35,23 +35,29 @@ std::operator<<(std::ostream& os, openPMD::Datatype d)
         case DT::UCHAR:
             os << "UCHAR";
             break;
-        case DT::INT16:
-            os << "INT16";
+        case DT::SHORT:
+            os << "SHORT";
             break;
-        case DT::INT32:
-            os << "INT32";
+        case DT::INT:
+            os << "INT";
             break;
-        case DT::INT64:
-            os << "INT64";
+        case DT::LONG:
+            os << "LONG";
             break;
-        case DT::UINT16:
-            os << "UINT16";
+        case DT::LONGLONG:
+            os << "LONGLONG";
             break;
-        case DT::UINT32:
-            os << "UINT32";
+        case DT::USHORT:
+            os << "USHORT";
             break;
-        case DT::UINT64:
-            os << "UINT64";
+        case DT::UINT:
+            os << "UINT";
+            break;
+        case DT::ULONG:
+            os << "ULONG";
+            break;
+        case DT::ULONGLONG:
+            os << "ULONGLONG";
             break;
         case DT::FLOAT:
             os << "FLOAT";
@@ -68,26 +74,32 @@ std::operator<<(std::ostream& os, openPMD::Datatype d)
         case DT::VEC_CHAR:
             os << "VEC_CHAR";
             break;
-        case DT::VEC_INT16:
-            os << "VEC_INT16";
+        case DT::VEC_SHORT:
+            os << "VEC_SHORT";
             break;
-        case DT::VEC_INT32:
-            os << "VEC_INT32";
+        case DT::VEC_INT:
+            os << "VEC_INT";
             break;
-        case DT::VEC_INT64:
-            os << "VEC_INT64";
+        case DT::VEC_LONG:
+            os << "VEC_LONG";
+            break;
+        case DT::VEC_LONGLONG:
+            os << "VEC_LONGLONG";
             break;
         case DT::VEC_UCHAR:
             os << "VEC_UCHAR";
             break;
-        case DT::VEC_UINT16:
-            os << "VEC_UINT16";
+        case DT::VEC_USHORT:
+            os << "VEC_USHORT";
             break;
-        case DT::VEC_UINT32:
-            os << "VEC_UINT32";
+        case DT::VEC_UINT:
+            os << "VEC_UINT";
             break;
-        case DT::VEC_UINT64:
-            os << "VEC_UINT64";
+        case DT::VEC_ULONG:
+            os << "VEC_ULONG";
+            break;
+        case DT::VEC_ULONGLONG:
+            os << "VEC_ULONGLONG";
             break;
         case DT::VEC_FLOAT:
             os << "VEC_FLOAT";

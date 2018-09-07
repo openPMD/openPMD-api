@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include <algorithm>
+#include <tuple>
 
 void
 CommonADIOS1IOHandlerImpl::close(int64_t fd)
@@ -45,43 +46,49 @@ CommonADIOS1IOHandlerImpl::flush_attribute(int64_t group, std::string const& nam
         using DT = Datatype;
         case DT::VEC_CHAR:
             nelems = att.get< std::vector< char > >().size();
-        break;
-        case DT::VEC_INT16:
-            nelems = att.get< std::vector< int16_t > >().size();
-        break;
-        case DT::VEC_INT32:
-            nelems = att.get< std::vector< int32_t > >().size();
-        break;
-        case DT::VEC_INT64:
-            nelems = att.get< std::vector< int64_t > >().size();
-        break;
+            break;
+        case DT::VEC_SHORT:
+            nelems = att.get< std::vector< short > >().size();
+            break;
+        case DT::VEC_INT:
+            nelems = att.get< std::vector< int > >().size();
+            break;
+        case DT::VEC_LONG:
+            nelems = att.get< std::vector< long > >().size();
+            break;
+        case DT::VEC_LONGLONG:
+            nelems = att.get< std::vector< long long > >().size();
+            break;
         case DT::VEC_UCHAR:
             nelems = att.get< std::vector< unsigned char > >().size();
-        break;
-        case DT::VEC_UINT16:
-            nelems = att.get< std::vector< uint16_t > >().size();
-        break;
-        case DT::VEC_UINT32:
-            nelems = att.get< std::vector< uint32_t > >().size();
-        break;
-        case DT::VEC_UINT64:
-            nelems = att.get< std::vector< uint64_t > >().size();
-        break;
+            break;
+        case DT::VEC_USHORT:
+            nelems = att.get< std::vector< unsigned short > >().size();
+            break;
+        case DT::VEC_UINT:
+            nelems = att.get< std::vector< unsigned int > >().size();
+            break;
+        case DT::VEC_ULONG:
+            nelems = att.get< std::vector< unsigned long > >().size();
+            break;
+        case DT::VEC_ULONGLONG:
+            nelems = att.get< std::vector< unsigned long long > >().size();
+            break;
         case DT::VEC_FLOAT:
             nelems = att.get< std::vector< float > >().size();
-        break;
+            break;
         case DT::VEC_DOUBLE:
             nelems = att.get< std::vector< double > >().size();
-        break;
+            break;
         case DT::VEC_LONG_DOUBLE:
             nelems = att.get< std::vector< long double > >().size();
-        break;
+            break;
         case DT::VEC_STRING:
             nelems = att.get< std::vector< std::string > >().size();
-        break;
+            break;
         case DT::ARR_DBL_7:
             nelems = 7;
-        break;
+            break;
         case DT::UNDEFINED:
         case DT::DATATYPE:
             throw std::runtime_error("Unknown Attribute datatype (ADIOS1 Attribute flush)");
@@ -105,40 +112,52 @@ CommonADIOS1IOHandlerImpl::flush_attribute(int64_t group, std::string const& nam
             *ptr = att.get< unsigned char >();
             break;
         }
-        case DT::INT16:
+        case DT::SHORT:
         {
-            auto ptr = reinterpret_cast< int16_t* >(values.get());
-            *ptr = att.get< int16_t >();
+            auto ptr = reinterpret_cast< short* >(values.get());
+            *ptr = att.get< short >();
             break;
         }
-        case DT::INT32:
+        case DT::INT:
         {
-            auto ptr = reinterpret_cast< int32_t* >(values.get());
-            *ptr = att.get< int32_t >();
+            auto ptr = reinterpret_cast< int* >(values.get());
+            *ptr = att.get< int >();
             break;
         }
-        case DT::INT64:
+        case DT::LONG:
         {
-            auto ptr = reinterpret_cast< int64_t* >(values.get());
-            *ptr = att.get< int64_t >();
+            auto ptr = reinterpret_cast< long* >(values.get());
+            *ptr = att.get< long >();
             break;
         }
-        case DT::UINT16:
+        case DT::LONGLONG:
         {
-            auto ptr = reinterpret_cast< uint16_t* >(values.get());
-            *ptr = att.get< uint16_t >();
+            auto ptr = reinterpret_cast< long long* >(values.get());
+            *ptr = att.get< long long >();
             break;
         }
-        case DT::UINT32:
+        case DT::USHORT:
         {
-            auto ptr = reinterpret_cast< uint32_t* >(values.get());
-            *ptr = att.get< uint32_t >();
+            auto ptr = reinterpret_cast< unsigned short* >(values.get());
+            *ptr = att.get< unsigned short >();
             break;
         }
-        case DT::UINT64:
+        case DT::UINT:
         {
-            auto ptr = reinterpret_cast< uint64_t* >(values.get());
-            *ptr = att.get< uint64_t >();
+            auto ptr = reinterpret_cast< unsigned int* >(values.get());
+            *ptr = att.get< unsigned int >();
+            break;
+        }
+        case DT::ULONG:
+        {
+            auto ptr = reinterpret_cast< unsigned long* >(values.get());
+            *ptr = att.get< unsigned long >();
+            break;
+        }
+        case DT::ULONGLONG:
+        {
+            auto ptr = reinterpret_cast< unsigned long long* >(values.get());
+            *ptr = att.get< unsigned long long >();
             break;
         }
         case DT::FLOAT:
@@ -174,26 +193,34 @@ CommonADIOS1IOHandlerImpl::flush_attribute(int64_t group, std::string const& nam
                 ptr[i] = vec[i];
             break;
         }
-        case DT::VEC_INT16:
+        case DT::VEC_SHORT:
         {
-            auto ptr = reinterpret_cast< int16_t* >(values.get());
-            auto const& vec = att.get< std::vector< int16_t > >();
+            auto ptr = reinterpret_cast< short* >(values.get());
+            auto const& vec = att.get< std::vector< short > >();
             for( size_t i = 0; i < vec.size(); ++i )
                 ptr[i] = vec[i];
             break;
         }
-        case DT::VEC_INT32:
+        case DT::VEC_INT:
         {
-            auto ptr = reinterpret_cast< int32_t* >(values.get());
-            auto const& vec = att.get< std::vector< int32_t > >();
+            auto ptr = reinterpret_cast< int* >(values.get());
+            auto const& vec = att.get< std::vector< int > >();
             for( size_t i = 0; i < vec.size(); ++i )
                 ptr[i] = vec[i];
             break;
         }
-        case DT::VEC_INT64:
+        case DT::VEC_LONG:
         {
-            auto ptr = reinterpret_cast< int64_t* >(values.get());
-            auto const& vec = att.get< std::vector< int64_t > >();
+            auto ptr = reinterpret_cast< long* >(values.get());
+            auto const& vec = att.get< std::vector< long > >();
+            for( size_t i = 0; i < vec.size(); ++i )
+                ptr[i] = vec[i];
+            break;
+        }
+        case DT::VEC_LONGLONG:
+        {
+            auto ptr = reinterpret_cast< long long* >(values.get());
+            auto const& vec = att.get< std::vector< long long > >();
             for( size_t i = 0; i < vec.size(); ++i )
                 ptr[i] = vec[i];
             break;
@@ -206,26 +233,34 @@ CommonADIOS1IOHandlerImpl::flush_attribute(int64_t group, std::string const& nam
                 ptr[i] = vec[i];
             break;
         }
-        case DT::VEC_UINT16:
+        case DT::VEC_USHORT:
         {
-            auto ptr = reinterpret_cast< uint16_t* >(values.get());
-            auto const& vec = att.get< std::vector< uint16_t > >();
+            auto ptr = reinterpret_cast< unsigned short* >(values.get());
+            auto const& vec = att.get< std::vector< unsigned short > >();
             for( size_t i = 0; i < vec.size(); ++i )
                 ptr[i] = vec[i];
             break;
         }
-        case DT::VEC_UINT32:
+        case DT::VEC_UINT:
         {
-            auto ptr = reinterpret_cast< uint32_t* >(values.get());
-            auto const& vec = att.get< std::vector< uint32_t > >();
+            auto ptr = reinterpret_cast< unsigned int* >(values.get());
+            auto const& vec = att.get< std::vector< unsigned int > >();
             for( size_t i = 0; i < vec.size(); ++i )
                 ptr[i] = vec[i];
             break;
         }
-        case DT::VEC_UINT64:
+        case DT::VEC_ULONG:
         {
-            auto ptr = reinterpret_cast< uint64_t* >(values.get());
-            auto const& vec = att.get< std::vector< uint64_t > >();
+            auto ptr = reinterpret_cast< unsigned long* >(values.get());
+            auto const& vec = att.get< std::vector< unsigned long > >();
+            for( size_t i = 0; i < vec.size(); ++i )
+                ptr[i] = vec[i];
+            break;
+        }
+        case DT::VEC_ULONGLONG:
+        {
+            auto ptr = reinterpret_cast< unsigned long long* >(values.get());
+            auto const& vec = att.get< std::vector< unsigned long long > >();
             for( size_t i = 0; i < vec.size(); ++i )
                 ptr[i] = vec[i];
             break;
@@ -277,7 +312,7 @@ CommonADIOS1IOHandlerImpl::flush_attribute(int64_t group, std::string const& nam
         case DT::BOOL:
         {
             auto ptr = reinterpret_cast< unsigned char* >(values.get());
-            *ptr = static_cast< unsigned char >(att.get< bool >());
+            *ptr = static_cast< unsigned char >(att.get< unsigned char >());
             break;
         }
         case DT::UNDEFINED:
@@ -533,6 +568,9 @@ CommonADIOS1IOHandlerImpl::openDataset(Writable* writable,
     VERIFY(vi != nullptr, "Internal error: Failed to inquire about ADIOS variable during dataset opening");
 
     Datatype dtype;
+
+    // note the ill-named fixed-byte adios_... types
+    // https://github.com/ornladios/ADIOS/issues/187
     switch( vi->type )
     {
         using DT = Datatype;
@@ -540,25 +578,79 @@ CommonADIOS1IOHandlerImpl::openDataset(Writable* writable,
             dtype = DT::CHAR;
             break;
         case adios_short:
-            dtype = DT::INT16;
+            if( sizeof(short) == 2u )
+                dtype = DT::SHORT;
+            else if( sizeof(int) == 2u )
+                dtype = DT::INT;
+            else if( sizeof(long) == 2u )
+                dtype = DT::LONG;
+            else if( sizeof(long long) == 2u )
+                dtype = DT::LONGLONG;
+            else
+                throw unsupported_data_error("No native equivalent for Datatype adios_short found.");
             break;
         case adios_integer:
-            dtype = DT::INT32;
+            if( sizeof(short) == 4u )
+                dtype = DT::SHORT;
+            else if( sizeof(int) == 4u )
+                dtype = DT::INT;
+            else if( sizeof(long) == 4u )
+                dtype = DT::LONG;
+            else if( sizeof(long long) == 4u )
+                dtype = DT::LONGLONG;                
+            else
+                throw unsupported_data_error("No native equivalent for Datatype adios_integer found.");
             break;
         case adios_long:
-            dtype = DT::INT64;
+            if( sizeof(short) == 8u )
+                dtype = DT::SHORT;
+            else if( sizeof(int) == 8u )
+                dtype = DT::INT;
+            else if( sizeof(long) == 8u )
+                dtype = DT::LONG;
+            else if( sizeof(long long) == 8u )
+                dtype = DT::LONGLONG;
+            else
+                throw unsupported_data_error("No native equivalent for Datatype adios_long found.");
             break;
         case adios_unsigned_byte:
             dtype = DT::UCHAR;
             break;
         case adios_unsigned_short:
-            dtype = DT::UINT16;
+            if( sizeof(unsigned short) == 2u )
+                dtype = DT::USHORT;
+            else if( sizeof(unsigned int) == 2u )
+                dtype = DT::UINT;
+            else if( sizeof(unsigned long) == 2u )
+                dtype = DT::ULONG;
+            else if( sizeof(unsigned long long) == 2u )
+                dtype = DT::ULONGLONG;
+            else
+                throw unsupported_data_error("No native equivalent for Datatype adios_unsigned_short found.");
             break;
         case adios_unsigned_integer:
-            dtype = DT::UINT32;
+            if( sizeof(unsigned short) == 4u )
+                dtype = DT::USHORT;
+            else if( sizeof(unsigned int) == 4u )
+                dtype = DT::UINT;
+            else if( sizeof(unsigned long) == 4u )
+                dtype = DT::ULONG;
+            else if( sizeof(unsigned long long) == 4u )
+                dtype = DT::ULONGLONG;                
+            else
+                throw unsupported_data_error("No native equivalent for Datatype adios_unsigned_integer found.");
             break;
         case adios_unsigned_long:
-            dtype = DT::UINT64;
+            if( sizeof(unsigned short) == 8u )
+                dtype = DT::USHORT;
+            else if( sizeof(unsigned int) == 8u )
+                dtype = DT::UINT;
+            else if( sizeof(unsigned long) == 8u )
+                dtype = DT::ULONG;
+            else if( sizeof(unsigned long long) == 8u )
+                dtype = DT::ULONGLONG;
+            else
+                throw unsupported_data_error("No native equivalent for Datatype adios_unsigned_long found.");
             break;
         case adios_real:
             dtype = DT::FLOAT;
@@ -723,12 +815,14 @@ CommonADIOS1IOHandlerImpl::readDataset(Writable* writable,
         using DT = Datatype;
         case DT::DOUBLE:
         case DT::FLOAT:
-        case DT::INT16:
-        case DT::INT32:
-        case DT::INT64:
-        case DT::UINT16:
-        case DT::UINT32:
-        case DT::UINT64:
+        case DT::SHORT:
+        case DT::INT:
+        case DT::LONG:
+        case DT::LONGLONG:
+        case DT::USHORT:
+        case DT::UINT:
+        case DT::ULONG:
+        case DT::ULONGLONG:
         case DT::CHAR:
         case DT::UCHAR:
         case DT::BOOL:
@@ -794,7 +888,9 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
     VERIFY(datatype != adios_unknown, "Internal error: Read unknown adios datatype during attribute read");
     VERIFY(size != 0, "Internal error: Read 0-size attribute");
 
-    /* size is returned in number of allocated bytes */
+    // size is returned in number of allocated bytes
+    // note the ill-named fixed-byte adios_... types
+    // https://github.com/ornladios/ADIOS/issues/187
     switch( datatype )
     {
         case adios_byte:
@@ -852,32 +948,152 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 a = Attribute(*reinterpret_cast< char* >(data));
                 break;
             case adios_short:
-                dtype = DT::INT16;
-                a = Attribute(*reinterpret_cast< int16_t* >(data));
+                if( sizeof(short) == 2u )
+                {
+                    dtype = DT::SHORT;
+                    a = Attribute(*reinterpret_cast< short* >(data));
+                }
+                else if( sizeof(int) == 2u )
+                {
+                    dtype = DT::INT;
+                    a = Attribute(*reinterpret_cast< int* >(data));
+                }
+                else if( sizeof(long) == 2u )
+                {
+                    dtype = DT::LONG;
+                    a = Attribute(*reinterpret_cast< long* >(data));
+                }
+                else if( sizeof(long long) == 2u )
+                {
+                    dtype = DT::LONGLONG;
+                    a = Attribute(*reinterpret_cast< long long* >(data));
+                }
+                else
+                    throw unsupported_data_error("No native equivalent for Datatype adios_short found.");
                 break;
             case adios_integer:
-                dtype = DT::INT32;
-                a = Attribute(*reinterpret_cast< int32_t* >(data));
+                if( sizeof(short) == 4u )
+                {
+                    dtype = DT::SHORT;
+                    a = Attribute(*reinterpret_cast< short* >(data));
+                }
+                else if( sizeof(int) == 4u )
+                {
+                    dtype = DT::INT;
+                    a = Attribute(*reinterpret_cast< int* >(data));
+                }
+                else if( sizeof(long) == 4u )
+                {
+                    dtype = DT::LONG;
+                    a = Attribute(*reinterpret_cast< long* >(data));
+                }
+                else if( sizeof(long long) == 4u )
+                {
+                    dtype = DT::LONGLONG;
+                    a = Attribute(*reinterpret_cast< long long* >(data));
+                }
+                else
+                    throw unsupported_data_error("No native equivalent for Datatype adios_integer found.");
                 break;
             case adios_long:
-                dtype = DT::INT64;
-                a = Attribute(*reinterpret_cast< int64_t* >(data));
+                if( sizeof(short) == 8u )
+                {
+                    dtype = DT::SHORT;
+                    a = Attribute(*reinterpret_cast< short* >(data));
+                }
+                else if( sizeof(int) == 8u )
+                {
+                    dtype = DT::INT;
+                    a = Attribute(*reinterpret_cast< int* >(data));
+                }
+                else if( sizeof(long) == 8u )
+                {
+                    dtype = DT::LONG;
+                    a = Attribute(*reinterpret_cast< long* >(data));
+                }
+                else if( sizeof(long long) == 8u )
+                {
+                    dtype = DT::LONGLONG;
+                    a = Attribute(*reinterpret_cast< long long* >(data));
+                }
+                else
+                    throw unsupported_data_error("No native equivalent for Datatype adios_long found.");
                 break;
             case adios_unsigned_byte:
                 dtype = DT::UCHAR;
                 a = Attribute(*reinterpret_cast< unsigned char* >(data));
                 break;
             case adios_unsigned_short:
-                dtype = DT::UINT16;
-                a = Attribute(*reinterpret_cast< uint16_t* >(data));
+                if( sizeof(unsigned short) == 2u )
+                {
+                    dtype = DT::USHORT;
+                    a = Attribute(*reinterpret_cast< unsigned short* >(data));
+                }
+                else if( sizeof(unsigned int) == 2u )
+                {
+                    dtype = DT::UINT;
+                    a = Attribute(*reinterpret_cast< unsigned int* >(data));
+                }
+                else if( sizeof(unsigned long) == 2u )
+                {
+                    dtype = DT::ULONG;
+                    a = Attribute(*reinterpret_cast< unsigned long* >(data));
+                }
+                else if( sizeof(unsigned long long) == 2u )
+                {
+                    dtype = DT::ULONGLONG;
+                    a = Attribute(*reinterpret_cast< unsigned long long* >(data));
+                }
+                else
+                    throw unsupported_data_error("No native equivalent for Datatype adios_unsigned_short found.");
                 break;
             case adios_unsigned_integer:
-                dtype = DT::UINT32;
-                a = Attribute(*reinterpret_cast< uint32_t* >(data));
+                if( sizeof(unsigned short) == 4u )
+                {
+                    dtype = DT::USHORT;
+                    a = Attribute(*reinterpret_cast< unsigned short* >(data));
+                }
+                else if( sizeof(unsigned int) == 4u )
+                {
+                    dtype = DT::UINT;
+                    a = Attribute(*reinterpret_cast< unsigned int* >(data));
+                }
+                else if( sizeof(unsigned long) == 4u )
+                {
+                    dtype = DT::ULONG;
+                    a = Attribute(*reinterpret_cast< unsigned long* >(data));
+                }
+                else if( sizeof(unsigned long long) == 4u )
+                {
+                    dtype = DT::ULONGLONG;
+                    a = Attribute(*reinterpret_cast< unsigned long long* >(data));
+                }
+                else
+                    throw unsupported_data_error("No native equivalent for Datatype adios_unsigned_integer found.");
                 break;
             case adios_unsigned_long:
-                dtype = DT::UINT64;
-                a = Attribute(*reinterpret_cast< uint64_t* >(data));
+                if( sizeof(unsigned short) == 8u )
+                {
+                    dtype = DT::USHORT;
+                    a = Attribute(*reinterpret_cast< unsigned short* >(data));
+                }
+                else if( sizeof(unsigned int) == 8u )
+                {
+                    dtype = DT::UINT;
+                    a = Attribute(*reinterpret_cast< unsigned int* >(data));
+                }
+                else if( sizeof(unsigned long) == 8u )
+                {
+                    dtype = DT::ULONG;
+                    a = Attribute(*reinterpret_cast< unsigned long* >(data));
+                }
+                else if( sizeof(unsigned long long) == 8u )
+                {
+                    dtype = DT::ULONGLONG;
+                    a = Attribute(*reinterpret_cast< unsigned long long* >(data));
+                }
+                else
+                    throw unsupported_data_error("No native equivalent for Datatype adios_unsigned_long found.");
                 break;
             case adios_real:
                 dtype = DT::FLOAT;
@@ -925,35 +1141,44 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
             }
             case adios_short:
             {
-                dtype = DT::VEC_INT16;
-                auto i16 = reinterpret_cast< int16_t* >(data);
-                std::vector< int16_t > vi;
-                vi.resize(size);
-                for( int i = 0; i < size; ++i )
-                    vi[i] = i16[i];
-                a = Attribute(vi);
+                if( sizeof(short) == 2u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< short >(data, size), DT::VEC_SHORT);
+                else if( sizeof(int) == 2u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< int >(data, size), DT::VEC_INT);
+                else if( sizeof(long) == 2u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< long >(data, size), DT::VEC_LONG);
+                else if( sizeof(long long) == 2u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< long long >(data, size), DT::VEC_LONGLONG);
+                else
+                    throw unsupported_data_error("No native equivalent for Datatype adios_short found.");
                 break;
             }
             case adios_integer:
             {
-                dtype = DT::VEC_INT32;
-                auto i32 = reinterpret_cast< int32_t* >(data);
-                std::vector< int32_t > vi;
-                vi.resize(size);
-                for( int i = 0; i < size; ++i )
-                    vi[i] = i32[i];
-                a = Attribute(vi);
+                if( sizeof(short) == 4u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< short >(data, size), DT::VEC_SHORT);
+                else if( sizeof(int) == 4u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< int >(data, size), DT::VEC_INT);
+                else if( sizeof(long) == 4u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< long >(data, size), DT::VEC_LONG);
+                else if( sizeof(long long) == 4u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< long long >(data, size), DT::VEC_LONGLONG);
+                else
+                    throw unsupported_data_error("No native equivalent for Datatype adios_integer found.");
                 break;
             }
             case adios_long:
             {
-                dtype = DT::VEC_INT64;
-                auto i64 = reinterpret_cast< int64_t* >(data);
-                std::vector< int64_t > vi;
-                vi.resize(size);
-                for( int i = 0; i < size; ++i )
-                    vi[i] = i64[i];
-                a = Attribute(vi);
+                if( sizeof(short) == 8u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< short >(data, size), DT::VEC_SHORT);
+                else if( sizeof(int) == 8u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< int >(data, size), DT::VEC_INT);
+                else if( sizeof(long) == 8u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< long >(data, size), DT::VEC_LONG);
+                else if( sizeof(long long) == 8u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< long long >(data, size), DT::VEC_LONGLONG);
+                else
+                    throw unsupported_data_error("No native equivalent for Datatype adios_long found.");
                 break;
             }
             case adios_unsigned_byte:
@@ -969,35 +1194,44 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
             }
             case adios_unsigned_short:
             {
-                dtype = DT::VEC_UINT16;
-                auto ui16 = reinterpret_cast< uint16_t* >(data);
-                std::vector< uint16_t > vi;
-                vi.resize(size);
-                for( int i = 0; i < size; ++i )
-                    vi[i] = ui16[i];
-                a = Attribute(vi);
+                if( sizeof(unsigned short) == 2u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< unsigned short >(data, size), DT::VEC_USHORT);
+                else if( sizeof(unsigned int) == 2u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< unsigned int >(data, size), DT::VEC_UINT);
+                else if( sizeof(unsigned long) == 2u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< unsigned long >(data, size), DT::VEC_ULONG);
+                else if( sizeof(unsigned long long) == 2u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< unsigned long long >(data, size), DT::VEC_ULONGLONG);
+                else
+                    throw unsupported_data_error("No native equivalent for Datatype adios_unsigned_short found.");
                 break;
             }
             case adios_unsigned_integer:
             {
-                dtype = DT::VEC_UINT32;
-                auto ui32 = reinterpret_cast< uint32_t* >(data);
-                std::vector< uint32_t > vi;
-                vi.resize(size);
-                for( int i = 0; i < size; ++i )
-                    vi[i] = ui32[i];
-                a = Attribute(vi);
+                if( sizeof(unsigned short) == 4u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< unsigned short >(data, size), DT::VEC_USHORT);
+                else if( sizeof(unsigned int) == 4u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< unsigned int >(data, size), DT::VEC_UINT);
+                else if( sizeof(unsigned long) == 4u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< unsigned long >(data, size), DT::VEC_ULONG);
+                else if( sizeof(unsigned long long) == 4u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< unsigned long long >(data, size), DT::VEC_ULONGLONG);
+                else
+                    throw unsupported_data_error("No native equivalent for Datatype adios_unsigned_integer found.");
                 break;
             }
             case adios_unsigned_long:
             {
-                dtype = DT::VEC_UINT64;
-                auto ui64 = reinterpret_cast< uint64_t* >(data);
-                std::vector< uint64_t > vi;
-                vi.resize(size);
-                for( int i = 0; i < size; ++i )
-                    vi[i] = ui64[i];
-                a = Attribute(vi);
+                if( sizeof(unsigned short) == 8u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< unsigned short >(data, size), DT::VEC_USHORT);
+                else if( sizeof(unsigned int) == 8u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< unsigned int >(data, size), DT::VEC_UINT);
+                else if( sizeof(unsigned long) == 8u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< unsigned long >(data, size), DT::VEC_ULONG);
+                else if( sizeof(unsigned long long) == 8u )
+                    std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< unsigned long long >(data, size), DT::VEC_ULONGLONG);
+                else
+                    throw unsupported_data_error("No native equivalent for Datatype adios_unsigned_long found.");
                 break;
             }
             case adios_real:

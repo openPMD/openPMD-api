@@ -78,6 +78,9 @@ inline ADIOS_DATATYPES
 getBP1DataType(Datatype dtype)
 {
     using DT = Datatype;
+
+    // note the ill-named fixed-byte adios_... types
+    // https://github.com/ornladios/ADIOS/issues/187
     switch( dtype )
     {
         case DT::CHAR:
@@ -87,24 +90,86 @@ getBP1DataType(Datatype dtype)
         case DT::VEC_UCHAR:
         case DT::BOOL:
             return adios_unsigned_byte;
-        case DT::INT16:
-        case DT::VEC_INT16:
-            return adios_short;
-        case DT::INT32:
-        case DT::VEC_INT32:
-            return adios_integer;
-        case DT::INT64:
-        case DT::VEC_INT64:
-            return adios_long;
-        case DT::UINT16:
-        case DT::VEC_UINT16:
-            return adios_unsigned_short;
-        case DT::UINT32:
-        case DT::VEC_UINT32:
-            return adios_unsigned_integer;
-        case DT::UINT64:
-        case DT::VEC_UINT64:
-            return adios_unsigned_long;
+        case DT::SHORT:
+        case DT::VEC_SHORT:
+            if( sizeof(short) == 2u )
+                return adios_short;
+            else if( sizeof(short) == 4u )
+                return adios_integer;
+            else if( sizeof(long) == 8u )
+                return adios_long;
+            else
+                throw unsupported_data_error("No native equivalent for Datatype::SHORT found.");
+        case DT::INT:
+        case DT::VEC_INT:
+            if( sizeof(int) == 2u )
+                return adios_short;
+            else if( sizeof(int) == 4u )
+                return adios_integer;
+            else if( sizeof(int) == 8u )
+                return adios_long;
+            else
+                throw unsupported_data_error("No native equivalent for Datatype::INT found.");
+        case DT::LONG:
+        case DT::VEC_LONG:
+            if( sizeof(long) == 2u )
+                return adios_short;
+            else if( sizeof(long) == 4u )
+                return adios_integer;
+            else if( sizeof(long) == 8u )
+                return adios_long;
+            else
+                throw unsupported_data_error("No native equivalent for Datatype::LONG found.");
+        case DT::LONGLONG:
+        case DT::VEC_LONGLONG:
+            if( sizeof(long long) == 2u )
+                return adios_short;
+            else if( sizeof(long long) == 4u )
+                return adios_integer;
+            else if( sizeof(long long) == 8u )
+                return adios_long;
+            else
+                throw unsupported_data_error("No native equivalent for Datatype::LONGLONG found.");
+        case DT::USHORT:
+        case DT::VEC_USHORT:
+            if( sizeof(unsigned short) == 2u )
+                return adios_unsigned_short;
+            else if( sizeof(unsigned short) == 4u )
+                return adios_unsigned_integer;
+            else if( sizeof(unsigned long) == 8u )
+                return adios_unsigned_long;
+            else
+                throw unsupported_data_error("No native equivalent for Datatype::USHORT found.");
+        case DT::UINT:
+        case DT::VEC_UINT:
+            if( sizeof(unsigned int) == 2u )
+                return adios_unsigned_short;
+            else if( sizeof(unsigned int) == 4u )
+                return adios_unsigned_integer;
+            else if( sizeof(unsigned int) == 8u )
+                return adios_unsigned_long;
+            else
+                throw unsupported_data_error("No native equivalent for Datatype::UINT found.");
+        case DT::ULONG:
+        case DT::VEC_ULONG:
+            if( sizeof(unsigned long) == 2u )
+                return adios_unsigned_short;
+            else if( sizeof(unsigned long) == 4u )
+                return adios_unsigned_integer;
+            else if( sizeof(unsigned long) == 8u )
+                return adios_unsigned_long;
+            else
+                throw unsupported_data_error("No native equivalent for Datatype::ULONG found.");
+        case DT::ULONGLONG:
+        case DT::VEC_ULONGLONG:
+            if( sizeof(unsigned long long) == 2u )
+                return adios_unsigned_short;
+            else if( sizeof(unsigned long long) == 4u )
+                return adios_unsigned_integer;
+            else if( sizeof(unsigned long long) == 8u )
+                return adios_unsigned_long;
+            else
+                throw unsupported_data_error("No native equivalent for Datatype::ULONGLONG found.");
         case DT::FLOAT:
         case DT::VEC_FLOAT:
             return adios_real;
@@ -173,5 +238,17 @@ getEnvNum(std::string const& key, std::string const& defaultValue)
             return defaultValue;
     } else
         return defaultValue;
+}
+
+template<typename T>
+inline Attribute
+readVectorAttributeInternal( void* data, int size )
+{
+    auto d = reinterpret_cast< T* >(data);
+    std::vector< T > v;
+    v.resize(size);
+    for( int i = 0; i < size; ++i )
+        v[i] = d[i];
+    return Attribute(v);
 }
 } // openPMD

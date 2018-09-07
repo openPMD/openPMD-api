@@ -749,19 +749,19 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
 
         RecordComponent& e_positionOffset_x = e_positionOffset["x"];
         REQUIRE(e_positionOffset_x.unitSI() == 2.599999993753294e-07);
-        REQUIRE(e_positionOffset_x.getDatatype() == Datatype::INT32);
+        REQUIRE(e_positionOffset_x.getDatatype() == determineDatatype< int32_t >());
         REQUIRE(e_positionOffset_x.getExtent() == e);
         REQUIRE(e_positionOffset_x.getDimensionality() == 1);
 
         RecordComponent& e_positionOffset_y = e_positionOffset["y"];
         REQUIRE(e_positionOffset_y.unitSI() == 4.4299999435019118e-08);
-        REQUIRE(e_positionOffset_y.getDatatype() == Datatype::INT32);
+        REQUIRE(e_positionOffset_y.getDatatype() == determineDatatype< int32_t >());
         REQUIRE(e_positionOffset_y.getExtent() == e);
         REQUIRE(e_positionOffset_y.getDimensionality() == 1);
 
         RecordComponent& e_positionOffset_z = e_positionOffset["z"];
         REQUIRE(e_positionOffset_z.unitSI() == 2.599999993753294e-07);
-        REQUIRE(e_positionOffset_z.getDatatype() == Datatype::INT32);
+        REQUIRE(e_positionOffset_z.getDatatype() == determineDatatype< int32_t >());
         REQUIRE(e_positionOffset_z.getExtent() == e);
         REQUIRE(e_positionOffset_z.getDimensionality() == 1);
 
@@ -798,15 +798,15 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
 
         PatchRecordComponent& e_extent_x = e_extent["x"];
         REQUIRE(e_extent_x.unitSI() == 2.599999993753294e-07);
-        REQUIRE(e_extent_x.getDatatype() == Datatype::UINT64);
+        REQUIRE(isSameInteger< uint64_t >( e_extent_x.getDatatype() ));
 
         PatchRecordComponent& e_extent_y = e_extent["y"];
         REQUIRE(e_extent_y.unitSI() == 4.429999943501912e-08);
-        REQUIRE(e_extent_y.getDatatype() == Datatype::UINT64);
+        REQUIRE(isSameInteger< uint64_t >( e_extent_y.getDatatype() ));
 
         PatchRecordComponent& e_extent_z = e_extent["z"];
         REQUIRE(e_extent_z.unitSI() == 2.599999993753294e-07);
-        REQUIRE(e_extent_z.getDatatype() == Datatype::UINT64);
+        REQUIRE(isSameInteger< uint64_t >( e_extent_z.getDatatype() ));
 
         std::shared_ptr< uint64_t > data;
         e_extent_z.load(0, data);
@@ -818,7 +818,7 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
         REQUIRE(e_numParticles.count(RecordComponent::SCALAR) == 1);
 
         PatchRecordComponent& e_numParticles_scalar = e_numParticles[RecordComponent::SCALAR];
-        REQUIRE(e_numParticles_scalar.getDatatype() == Datatype::UINT64);
+        REQUIRE(isSameInteger< uint64_t >( e_numParticles_scalar.getDatatype() ));
 
         e_numParticles_scalar.load(0, data);
         o.flush();
@@ -829,7 +829,7 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
         REQUIRE(e_numParticlesOffset.count(RecordComponent::SCALAR) == 1);
 
         PatchRecordComponent& e_numParticlesOffset_scalar = e_numParticlesOffset[RecordComponent::SCALAR];
-        REQUIRE(e_numParticlesOffset_scalar.getDatatype() == Datatype::UINT64);
+        REQUIRE(isSameInteger< uint64_t >( e_numParticlesOffset_scalar.getDatatype() ));
 
         PatchRecord& e_offset = e_patches["offset"];
         REQUIRE(e_offset.unitDimension() == ud);
@@ -841,15 +841,15 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
 
         PatchRecordComponent& e_offset_x = e_offset["x"];
         REQUIRE(e_offset_x.unitSI() == 2.599999993753294e-07);
-        REQUIRE(e_offset_x.getDatatype() == Datatype::UINT64);
+        REQUIRE(isSameInteger< uint64_t >( e_offset_x.getDatatype() ));
 
         PatchRecordComponent& e_offset_y = e_offset["y"];
         REQUIRE(e_offset_y.unitSI() == 4.429999943501912e-08);
-        REQUIRE(e_offset_y.getDatatype() == Datatype::UINT64);
+        REQUIRE(isSameInteger< uint64_t >( e_offset_y.getDatatype() ));
 
         PatchRecordComponent& e_offset_z = e_offset["z"];
         REQUIRE(e_offset_z.unitSI() == 2.599999993753294e-07);
-        REQUIRE(e_offset_z.getDatatype() == Datatype::UINT64);
+        REQUIRE(isSameInteger< uint64_t >( e_offset_z.getDatatype() ));
     } catch (no_such_file_error& e)
     {
         std::cerr << "HZDR sample not accessible. (" << e.what() << ")\n";
@@ -907,10 +907,10 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
     REQUIRE(s.getAttribute("uchar").get< unsigned char >() == 'u');
     REQUIRE(s.getAttribute("int16").get< int16_t >() == 16);
     REQUIRE(s.getAttribute("int32").get< int32_t >() == 32);
-    REQUIRE(s.getAttribute("int64").get< int64_t >() == 64);
+    REQUIRE(getCast< int64_t >(s.getAttribute("int64")) == 64);
     REQUIRE(s.getAttribute("uint16").get< uint16_t >() == 16u);
     REQUIRE(s.getAttribute("uint32").get< uint32_t >() == 32u);
-    REQUIRE(s.getAttribute("uint64").get< uint64_t >() == 64u);
+    REQUIRE(getCast< uint64_t >(s.getAttribute("uint64")) == 64u);
     REQUIRE(s.getAttribute("float").get< float >() == 16.e10f);
     REQUIRE(s.getAttribute("double").get< double >() == 1.e64);
 #if !defined(_MSC_VER)
@@ -920,11 +920,11 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
     REQUIRE(s.getAttribute("vecChar").get< std::vector< char > >() == std::vector< char >({'c', 'h', 'a', 'r'}));
     REQUIRE(s.getAttribute("vecInt16").get< std::vector< int16_t > >() == std::vector< int16_t >({32766, 32767}));
     REQUIRE(s.getAttribute("vecInt32").get< std::vector< int32_t > >() == std::vector< int32_t >({2147483646, 2147483647}));
-    REQUIRE(s.getAttribute("vecInt64").get< std::vector< int64_t > >() == std::vector< int64_t >({9223372036854775806, 9223372036854775807}));
+    REQUIRE(getCast< std::vector< int64_t > >(s.getAttribute("vecInt64")) == std::vector< int64_t >({9223372036854775806, 9223372036854775807}));
     REQUIRE(s.getAttribute("vecUchar").get< std::vector< char > >() == std::vector< char >({'u', 'c', 'h', 'a', 'r'}));
     REQUIRE(s.getAttribute("vecUint16").get< std::vector< uint16_t > >() == std::vector< uint16_t >({65534u, 65535u}));
     REQUIRE(s.getAttribute("vecUint32").get< std::vector< uint32_t > >() == std::vector< uint32_t >({4294967294u, 4294967295u}));
-    REQUIRE(s.getAttribute("vecUint64").get< std::vector< uint64_t > >() == std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
+    REQUIRE(getCast< std::vector< uint64_t > >(s.getAttribute("vecUint64")) == std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
     REQUIRE(s.getAttribute("vecFloat").get< std::vector< float > >() == std::vector< float >({0.f, 3.40282e+38f}));
     REQUIRE(s.getAttribute("vecDouble").get< std::vector< double > >() == std::vector< double >({0., 1.79769e+308}));
 #if !defined(_MSC_VER)
@@ -1197,7 +1197,7 @@ TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
             auto& posOff_x = posOff.at("x");
             REQUIRE(posOff_x.unitSI() == 1.);
             REQUIRE(posOff_x.getExtent() == ext);
-            REQUIRE(posOff_x.getDatatype() == Datatype::UINT64);
+            REQUIRE(isSameInteger< uint64_t >( posOff_x.getDatatype()));
 
             auto position = pos_x.loadChunk< double >({0}, {4});
             auto position_raw = position.get();
@@ -1404,7 +1404,7 @@ TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
         s.setAttribute("vecDouble", std::vector< double >({0., 1.79769e+308}));
         s.setAttribute("vecLongdouble", std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
         s.setAttribute("vecString", std::vector< std::string >({"vector", "of", "strings"}));
-        s.setAttribute("bool", true);
+        s.setAttribute("bool", static_cast< unsigned char >(true));
     }
 
     Series s = Series("../samples/dtype_test.bp", AccessType::READ_ONLY);
@@ -1413,10 +1413,10 @@ TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
     REQUIRE(s.getAttribute("uchar").get< unsigned char >() == 'u');
     REQUIRE(s.getAttribute("int16").get< int16_t >() == 16);
     REQUIRE(s.getAttribute("int32").get< int32_t >() == 32);
-    REQUIRE(s.getAttribute("int64").get< int64_t >() == 64);
+    REQUIRE(getCast<int64_t>(s.getAttribute("int64")) == 64);
     REQUIRE(s.getAttribute("uint16").get< uint16_t >() == 16u);
     REQUIRE(s.getAttribute("uint32").get< uint32_t >() == 32u);
-    REQUIRE(s.getAttribute("uint64").get< uint64_t >() == 64u);
+    REQUIRE(getCast<uint64_t>(s.getAttribute("uint64")) == 64u);
     REQUIRE(s.getAttribute("float").get< float >() == 16.e10f);
     REQUIRE(s.getAttribute("double").get< double >() == 1.e64);
 #if !defined(_MSC_VER)
@@ -1426,18 +1426,18 @@ TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
     REQUIRE(s.getAttribute("vecChar").get< std::vector< char > >() == std::vector< char >({'c', 'h', 'a', 'r'}));
     REQUIRE(s.getAttribute("vecInt16").get< std::vector< int16_t > >() == std::vector< int16_t >({32766, 32767}));
     REQUIRE(s.getAttribute("vecInt32").get< std::vector< int32_t > >() == std::vector< int32_t >({2147483646, 2147483647}));
-    REQUIRE(s.getAttribute("vecInt64").get< std::vector< int64_t > >() == std::vector< int64_t >({9223372036854775806, 9223372036854775807}));
+    REQUIRE(getCast< std::vector< int64_t > >(s.getAttribute("vecInt64")) == std::vector< int64_t >({9223372036854775806, 9223372036854775807}));
     REQUIRE(s.getAttribute("vecUchar").get< std::vector< char > >() == std::vector< char >({'u', 'c', 'h', 'a', 'r'}));
     REQUIRE(s.getAttribute("vecUint16").get< std::vector< uint16_t > >() == std::vector< uint16_t >({65534u, 65535u}));
     REQUIRE(s.getAttribute("vecUint32").get< std::vector< uint32_t > >() == std::vector< uint32_t >({4294967294u, 4294967295u}));
-    REQUIRE(s.getAttribute("vecUint64").get< std::vector< uint64_t > >() == std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
+    REQUIRE(getCast< std::vector< uint64_t > >(s.getAttribute("vecUint64")) == std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
     REQUIRE(s.getAttribute("vecFloat").get< std::vector< float > >() == std::vector< float >({0.f, 3.40282e+38f}));
     REQUIRE(s.getAttribute("vecDouble").get< std::vector< double > >() == std::vector< double >({0., 1.79769e+308}));
 #if !defined(_MSC_VER)
     REQUIRE(s.getAttribute("vecLongdouble").get< std::vector< long double > >() == std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
 #endif
     REQUIRE(s.getAttribute("vecString").get< std::vector< std::string > >() == std::vector< std::string >({"vector", "of", "strings"}));
-    REQUIRE(s.getAttribute("bool").get< uint8_t >() == static_cast< uint8_t >(true));
+    REQUIRE(s.getAttribute("bool").get< unsigned char >() == static_cast< unsigned char >(true));
 }
 
 TEST_CASE( "adios1_write_test", "[serial][adios1]")
@@ -1746,7 +1746,7 @@ TEST_CASE( "adios1_fileBased_write_test", "[serial][adios1]" )
             REQUIRE(species.at("position").at("x").getExtent() == Extent{4});
             REQUIRE(species.at("positionOffset").size() == 1);
             REQUIRE(species.at("positionOffset").count("x") == 1);
-            REQUIRE(species.at("positionOffset").at("x").getDatatype() == Datatype::UINT64);
+            REQUIRE(isSameInteger< uint64_t >( species.at("positionOffset").at("x").getDatatype() ));
             REQUIRE(species.at("positionOffset").at("x").getDimensionality() == 1);
             REQUIRE(species.at("positionOffset").at("x").getExtent() == Extent{4});
 

@@ -44,24 +44,30 @@ getH5DataType(Attribute const& att)
         case DT::UCHAR:
         case DT::VEC_UCHAR:
             return H5Tcopy(H5T_NATIVE_UCHAR);
-        case DT::INT16:
-        case DT::VEC_INT16:
-            return H5Tcopy(H5T_NATIVE_INT16);
-        case DT::INT32:
-        case DT::VEC_INT32:
-            return H5Tcopy(H5T_NATIVE_INT32);
-        case DT::INT64:
-        case DT::VEC_INT64:
-            return H5Tcopy(H5T_NATIVE_INT64);
-        case DT::UINT16:
-        case DT::VEC_UINT16:
-            return H5Tcopy(H5T_NATIVE_UINT16);
-        case DT::UINT32:
-        case DT::VEC_UINT32:
-            return H5Tcopy(H5T_NATIVE_UINT32);
-        case DT::UINT64:
-        case DT::VEC_UINT64:
-            return H5Tcopy(H5T_NATIVE_UINT64);
+        case DT::SHORT:
+        case DT::VEC_SHORT:
+            return H5Tcopy(H5T_NATIVE_SHORT);
+        case DT::INT:
+        case DT::VEC_INT:
+            return H5Tcopy(H5T_NATIVE_INT);
+        case DT::LONG:
+        case DT::VEC_LONG:
+            return H5Tcopy(H5T_NATIVE_LONG);
+        case DT::LONGLONG:
+        case DT::VEC_LONGLONG:
+            return H5Tcopy(H5T_NATIVE_LLONG);
+        case DT::USHORT:
+        case DT::VEC_USHORT:
+            return H5Tcopy(H5T_NATIVE_USHORT);
+        case DT::UINT:
+        case DT::VEC_UINT:
+            return H5Tcopy(H5T_NATIVE_UINT);
+        case DT::ULONG:
+        case DT::VEC_ULONG:
+            return H5Tcopy(H5T_NATIVE_ULONG);
+        case DT::ULONGLONG:
+        case DT::VEC_ULONGLONG:
+            return H5Tcopy(H5T_NATIVE_ULLONG);
         case DT::FLOAT:
         case DT::VEC_FLOAT:
             return H5Tcopy(H5T_NATIVE_FLOAT);
@@ -106,12 +112,14 @@ getH5DataSpace(Attribute const& att)
     {
         case DT::CHAR:
         case DT::UCHAR:
-        case DT::INT16:
-        case DT::INT32:
-        case DT::INT64:
-        case DT::UINT16:
-        case DT::UINT32:
-        case DT::UINT64:
+        case DT::SHORT:
+        case DT::INT:
+        case DT::LONG:
+        case DT::LONGLONG:
+        case DT::USHORT:
+        case DT::UINT:
+        case DT::ULONG:
+        case DT::ULONGLONG:
         case DT::FLOAT:
         case DT::DOUBLE:
         case DT::LONG_DOUBLE:
@@ -125,24 +133,31 @@ getH5DataSpace(Attribute const& att)
             H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
             return vec_t_id;
         }
-        case DT::VEC_INT16:
+        case DT::VEC_SHORT:
         {
             hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< int16_t > >().size()};
+            hsize_t dims[1] = {att.get< std::vector< short > >().size()};
             H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
             return vec_t_id;
         }
-        case DT::VEC_INT32:
+        case DT::VEC_INT:
         {
             hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< int32_t > >().size()};
+            hsize_t dims[1] = {att.get< std::vector< int > >().size()};
             H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
             return vec_t_id;
         }
-        case DT::VEC_INT64:
+        case DT::VEC_LONG:
         {
             hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< int64_t > >().size()};
+            hsize_t dims[1] = {att.get< std::vector< long > >().size()};
+            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
+            return vec_t_id;
+        }
+        case DT::VEC_LONGLONG:
+        {
+            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
+            hsize_t dims[1] = {att.get< std::vector< long long > >().size()};
             H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
             return vec_t_id;
         }
@@ -153,24 +168,31 @@ getH5DataSpace(Attribute const& att)
             H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
             return vec_t_id;
         }
-        case DT::VEC_UINT16:
+        case DT::VEC_USHORT:
         {
             hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< uint16_t > >().size()};
+            hsize_t dims[1] = {att.get< std::vector< unsigned short > >().size()};
             H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
             return vec_t_id;
         }
-        case DT::VEC_UINT32:
+        case DT::VEC_UINT:
         {
             hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< uint32_t > >().size()};
+            hsize_t dims[1] = {att.get< std::vector< unsigned int > >().size()};
             H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
             return vec_t_id;
         }
-        case DT::VEC_UINT64:
+        case DT::VEC_ULONG:
         {
             hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< uint64_t > >().size()};
+            hsize_t dims[1] = {att.get< std::vector< unsigned long > >().size()};
+            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
+            return vec_t_id;
+        }
+        case DT::VEC_ULONGLONG:
+        {
+            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
+            hsize_t dims[1] = {att.get< std::vector< unsigned long long > >().size()};
             H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
             return vec_t_id;
         }
