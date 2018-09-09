@@ -224,13 +224,12 @@ RecordComponent::readBase()
         Extent e;
 
         // uint64_t check
-        Datatype attrDtype = *aRead.dtype;
-        if( isSameInteger< uint64_t >( attrDtype ) )
-            if( isVector( attrDtype ) )
-                for( auto const& val : getCast< std::vector< uint64_t > >( a ) )
-                    e.push_back( val );
-            else
-                e.push_back( getCast< uint64_t >( a ) );
+        Datatype const attrDtype = *aRead.dtype;
+        if( isSame( attrDtype, determineDatatype< uint64_t >() ) )
+            e.push_back( getCast< uint64_t >( a ) );
+        else if( isSame( attrDtype, determineDatatype< std::vector< uint64_t > >() ) )
+            for( auto const& val : getCast< std::vector< uint64_t > >( a ) )
+                e.push_back( val );
         else
         {
             std::ostringstream oss;

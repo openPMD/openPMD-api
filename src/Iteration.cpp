@@ -21,6 +21,7 @@
 #include <openPMD/backend/Writable.hpp>
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/Dataset.hpp"
+#include "openPMD/Datatype.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Series.hpp"
 

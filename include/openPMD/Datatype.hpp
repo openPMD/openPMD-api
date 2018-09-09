@@ -472,7 +472,70 @@ isSameInteger( Datatype d )
     else
         return false;
 }
+
+/** Comparison for two Datatypes
+ *
+ * Besides returning true for the same types, identical implementations on
+ * some platforms, e.g. if long and long long are the same or double and
+ * long double will also return true.
+ */
+inline bool
+isSame( openPMD::Datatype const d, openPMD::Datatype const e )
+{
+    // exact same type
+    if( static_cast<int>(d) == static_cast<int>(e) )
+        return true;
+
+    bool d_is_vec = isVector( d );
+    bool e_is_vec = isVector( e );
+
+    // same int
+    bool d_is_int, d_is_sig;
+    std::tie(d_is_int, d_is_sig) = isInteger( d );
+    bool e_is_int, e_is_sig;
+    std::tie(e_is_int, e_is_sig) = isInteger( e );
+    if(
+        d_is_int &&
+        e_is_int &&
+        d_is_vec == e_is_vec &&
+        d_is_sig == e_is_sig &&
+        toBits( d ) == toBits( e )
+    )
+        return true;
+
+    // same float
+    bool d_is_fp = isFloatingPoint( d );
+    bool e_is_fp = isFloatingPoint( e );
+
+    if(
+        d_is_fp &&
+        e_is_fp &&
+        d_is_vec == e_is_vec &&
+        toBits( d ) == toBits( e )
+    )
+        return true;
+
+    return false;
+}
 } // namespace openPMD
+
+#if !defined(_MSC_VER)
+/** Comparison Operator for Datatype
+ *
+ * Overwrite the builtin default comparison which would only match exact same
+ * Datatype.
+ *
+ * Broken in MSVC < 19.11 (before Visual Studio 2017.3)
+ *   https://stackoverflow.com/questions/44515148/why-is-operator-overload-of-enum-ambiguous-in-msvc
+ *
+ * @see openPMD::isSame
+ */
+inline bool
+operator==( openPMD::Datatype d, openPMD::Datatype e )
+{
+    return openPMD::isSame(d, e);
+}
+#endif
 
 namespace std
 {

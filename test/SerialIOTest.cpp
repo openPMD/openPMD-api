@@ -798,15 +798,24 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
 
         PatchRecordComponent& e_extent_x = e_extent["x"];
         REQUIRE(e_extent_x.unitSI() == 2.599999993753294e-07);
-        REQUIRE(isSameInteger< uint64_t >( e_extent_x.getDatatype() ));
+#if !defined(_MSC_VER)
+        REQUIRE(e_extent_x.getDatatype() == determineDatatype< uint64_t >());
+#endif
+        REQUIRE(isSame(e_extent_x.getDatatype(), determineDatatype< uint64_t >()));
 
         PatchRecordComponent& e_extent_y = e_extent["y"];
         REQUIRE(e_extent_y.unitSI() == 4.429999943501912e-08);
-        REQUIRE(isSameInteger< uint64_t >( e_extent_y.getDatatype() ));
+#if !defined(_MSC_VER)
+        REQUIRE(e_extent_y.getDatatype() == determineDatatype< uint64_t >());
+#endif
+        REQUIRE(isSame(e_extent_y.getDatatype(), determineDatatype< uint64_t >()));
 
         PatchRecordComponent& e_extent_z = e_extent["z"];
         REQUIRE(e_extent_z.unitSI() == 2.599999993753294e-07);
-        REQUIRE(isSameInteger< uint64_t >( e_extent_z.getDatatype() ));
+#if !defined(_MSC_VER)
+        REQUIRE(e_extent_z.getDatatype() == determineDatatype< uint64_t >());
+#endif
+        REQUIRE(isSame(e_extent_z.getDatatype(), determineDatatype< uint64_t >()));
 
         std::shared_ptr< uint64_t > data;
         e_extent_z.load(0, data);
@@ -818,7 +827,10 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
         REQUIRE(e_numParticles.count(RecordComponent::SCALAR) == 1);
 
         PatchRecordComponent& e_numParticles_scalar = e_numParticles[RecordComponent::SCALAR];
-        REQUIRE(isSameInteger< uint64_t >( e_numParticles_scalar.getDatatype() ));
+#if !defined(_MSC_VER)
+        REQUIRE(e_numParticles_scalar.getDatatype() == determineDatatype< uint64_t >());
+#endif
+        REQUIRE(isSame(e_numParticles_scalar.getDatatype(), determineDatatype< uint64_t >()));
 
         e_numParticles_scalar.load(0, data);
         o.flush();
@@ -829,7 +841,10 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
         REQUIRE(e_numParticlesOffset.count(RecordComponent::SCALAR) == 1);
 
         PatchRecordComponent& e_numParticlesOffset_scalar = e_numParticlesOffset[RecordComponent::SCALAR];
-        REQUIRE(isSameInteger< uint64_t >( e_numParticlesOffset_scalar.getDatatype() ));
+#if !defined(_MSC_VER)
+        REQUIRE(e_numParticlesOffset_scalar.getDatatype() == determineDatatype< uint64_t >());
+#endif
+        REQUIRE(isSame(e_numParticlesOffset_scalar.getDatatype(), determineDatatype< uint64_t >()));
 
         PatchRecord& e_offset = e_patches["offset"];
         REQUIRE(e_offset.unitDimension() == ud);
@@ -841,15 +856,24 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
 
         PatchRecordComponent& e_offset_x = e_offset["x"];
         REQUIRE(e_offset_x.unitSI() == 2.599999993753294e-07);
-        REQUIRE(isSameInteger< uint64_t >( e_offset_x.getDatatype() ));
+#if !defined(_MSC_VER)
+        REQUIRE(e_offset_x.getDatatype() == determineDatatype< uint64_t >());
+#endif
+        REQUIRE(isSame(e_offset_x.getDatatype(), determineDatatype< uint64_t >()));
 
         PatchRecordComponent& e_offset_y = e_offset["y"];
         REQUIRE(e_offset_y.unitSI() == 4.429999943501912e-08);
-        REQUIRE(isSameInteger< uint64_t >( e_offset_y.getDatatype() ));
+#if !defined(_MSC_VER)
+        REQUIRE(e_offset_y.getDatatype() == determineDatatype< uint64_t >());
+#endif
+        REQUIRE(isSame(e_offset_y.getDatatype(), determineDatatype< uint64_t >()));
 
         PatchRecordComponent& e_offset_z = e_offset["z"];
         REQUIRE(e_offset_z.unitSI() == 2.599999993753294e-07);
-        REQUIRE(isSameInteger< uint64_t >( e_offset_z.getDatatype() ));
+#if !defined(_MSC_VER)
+        REQUIRE(e_offset_z.getDatatype() == determineDatatype< uint64_t >());
+#endif
+        REQUIRE(isSame(e_offset_z.getDatatype(), determineDatatype< uint64_t >()));
     } catch (no_such_file_error& e)
     {
         std::cerr << "HZDR sample not accessible. (" << e.what() << ")\n";
@@ -899,6 +923,22 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
         s.setAttribute("vecLongdouble", std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
         s.setAttribute("vecString", std::vector< std::string >({"vector", "of", "strings"}));
         s.setAttribute("bool", true);
+        short ss = 16;
+        s.setAttribute("short", ss);
+        int si = 32;
+        s.setAttribute("int", si);
+        long sl = 64;
+        s.setAttribute("long", sl);
+        long long sll = 128;
+        s.setAttribute("longlong", sll);
+        unsigned short us = 16u;
+        s.setAttribute("ushort", us);
+        unsigned int ui = 32u;
+        s.setAttribute("uint", ui);
+        unsigned long ul = 64u;
+        s.setAttribute("ulong", ul);
+        unsigned long long ull = 128u;
+        s.setAttribute("ulonglong", ull);
     }
 
     Series s = Series("../samples/dtype_test.h5", AccessType::READ_ONLY);
@@ -932,6 +972,26 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
 #endif
     REQUIRE(s.getAttribute("vecString").get< std::vector< std::string > >() == std::vector< std::string >({"vector", "of", "strings"}));
     REQUIRE(s.getAttribute("bool").get< bool >() == true);
+
+    // same implementation types (not necessary aliases) detection
+#if !defined(_MSC_VER)
+    REQUIRE(s.getAttribute("short").dtype == Datatype::SHORT);
+    REQUIRE(s.getAttribute("int").dtype == Datatype::INT);
+    REQUIRE(s.getAttribute("long").dtype == Datatype::LONG);
+    REQUIRE(s.getAttribute("longlong").dtype == Datatype::LONGLONG);
+    REQUIRE(s.getAttribute("ushort").dtype == Datatype::USHORT);
+    REQUIRE(s.getAttribute("uint").dtype == Datatype::UINT);
+    REQUIRE(s.getAttribute("ulong").dtype == Datatype::ULONG);
+    REQUIRE(s.getAttribute("ulonglong").dtype == Datatype::ULONGLONG);
+#endif
+    REQUIRE(isSame(s.getAttribute("short").dtype, Datatype::SHORT));
+    REQUIRE(isSame(s.getAttribute("int").dtype, Datatype::INT));
+    REQUIRE(isSame(s.getAttribute("long").dtype, Datatype::LONG));
+    REQUIRE(isSame(s.getAttribute("longlong").dtype, Datatype::LONGLONG));
+    REQUIRE(isSame(s.getAttribute("ushort").dtype, Datatype::USHORT));
+    REQUIRE(isSame(s.getAttribute("uint").dtype, Datatype::UINT));
+    REQUIRE(isSame(s.getAttribute("ulong").dtype, Datatype::ULONG));
+    REQUIRE(isSame(s.getAttribute("ulonglong").dtype, Datatype::ULONGLONG));
 }
 
 TEST_CASE( "hdf5_write_test", "[serial][hdf5]" )
@@ -1197,7 +1257,10 @@ TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
             auto& posOff_x = posOff.at("x");
             REQUIRE(posOff_x.unitSI() == 1.);
             REQUIRE(posOff_x.getExtent() == ext);
-            REQUIRE(isSameInteger< uint64_t >( posOff_x.getDatatype()));
+#if !defined(_MSC_VER)
+            REQUIRE(posOff_x.getDatatype() == determineDatatype< uint64_t >());
+#endif
+            REQUIRE(isSame(posOff_x.getDatatype(), determineDatatype< uint64_t >()));
 
             auto position = pos_x.loadChunk< double >({0}, {4});
             auto position_raw = position.get();
@@ -1746,7 +1809,10 @@ TEST_CASE( "adios1_fileBased_write_test", "[serial][adios1]" )
             REQUIRE(species.at("position").at("x").getExtent() == Extent{4});
             REQUIRE(species.at("positionOffset").size() == 1);
             REQUIRE(species.at("positionOffset").count("x") == 1);
-            REQUIRE(isSameInteger< uint64_t >( species.at("positionOffset").at("x").getDatatype() ));
+#if !defined(_MSC_VER)
+            REQUIRE(species.at("positionOffset").at("x").getDatatype() == determineDatatype< uint64_t >());
+#endif
+            REQUIRE(isSame(species.at("positionOffset").at("x").getDatatype(), determineDatatype< uint64_t >()));
             REQUIRE(species.at("positionOffset").at("x").getDimensionality() == 1);
             REQUIRE(species.at("positionOffset").at("x").getExtent() == Extent{4});
 

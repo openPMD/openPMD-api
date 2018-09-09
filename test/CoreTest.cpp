@@ -96,6 +96,34 @@ TEST_CASE( "attribute_dtype_test", "[core]" )
     a = Attribute(static_cast< uint64_t >(0));
     REQUIRE(determineDatatype< uint64_t >() == a.dtype);
     // TODO fixed size floats
+
+    // same implementation types (not necessary aliases) detection
+    if( sizeof(long) == sizeof(long long) )
+    {
+        a = Attribute(static_cast< long >(0));
+        REQUIRE(isSame(Datatype::LONGLONG, a.dtype));
+#if !defined(_MSC_VER)
+        REQUIRE(Datatype::LONGLONG == a.dtype);
+#endif
+        a = Attribute(static_cast< long long >(0));
+        REQUIRE(isSame(Datatype::LONG, a.dtype));
+#if !defined(_MSC_VER)
+        REQUIRE(Datatype::LONG == a.dtype);
+#endif
+    }
+    if( sizeof(int) == sizeof(long) )
+    {
+        a = Attribute(static_cast< long >(0));
+        REQUIRE(isSame(Datatype::INT, a.dtype));
+#if !defined(_MSC_VER)
+        REQUIRE(Datatype::INT == a.dtype);
+#endif
+        a = Attribute(static_cast< int >(0));
+        REQUIRE(isSame(Datatype::LONG, a.dtype));
+#if !defined(_MSC_VER)
+        REQUIRE(Datatype::LONG == a.dtype);
+#endif
+    }
 }
 
 TEST_CASE( "output_default_test", "[core]" )
