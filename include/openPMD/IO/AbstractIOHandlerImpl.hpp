@@ -94,7 +94,7 @@ public:
   /** Open all contained groups in a path, possibly recursively.
    *
    * The operation should overwrite existing file positions, even when the Writable was already marked written.
-   * The path parameters.path may contain multiple levels (e.g. first/second/third/). This path should be relative (i.e. it should not start with a slash "/").
+   * The path parameters.path may contain multiple levels (e.g. first/second/third/). This path may be relative or absolute (indicated by a leading slash "/").
    * The Writables file position should correspond to the complete opened path (i.e. first/second/third/ should be assigned to the Writables file position).
    * The Writable should be marked written when the operation completes successfully.
    */
@@ -183,7 +183,6 @@ public:
   virtual void readDataset(Writable*, Parameter< Operation::READ_DATASET > &) = 0;
   /** Read the value of an existing attribute.
    *
-   * The operation should fail if the Writable was not marked written.
    * The operation should fail if the attribute does not exist.
    * The attribute should be associated with the Writable and have the name parameters.name. This name should not contain a slash ("/").
    * The attribute datatype should be stored in the location indicated by the pointer parameters.dtype.
@@ -193,14 +192,12 @@ public:
   virtual void readAttribute(Writable*, Parameter< Operation::READ_ATT > &) = 0;
   /** List all paths/sub-groups inside a group, non-recursively.
    *
-   * The operation should fail if the Writable was not marked written.
    * The operation should fail if the Writable is not a group.
    * The list of group names should be stored in the location indicated by the pointer parameters.paths.
    */
   virtual void listPaths(Writable*, Parameter< Operation::LIST_PATHS > &) = 0;
   /** List all datasets inside a group, non-recursively.
    *
-   * The operation should fail if the Writable was not marked written.
    * The operation should fail if the Writable is not a group.
    * The list of dataset names should be stored in the location indicated by the pointer parameters.datasets.
    */
