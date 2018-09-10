@@ -204,7 +204,6 @@ public:
   virtual void listDatasets(Writable*, Parameter< Operation::LIST_DATASETS > &) = 0;
   /** List all attributes associated with an object.
    *
-   * The operation should fail if the Writable was not marked written.
    * The attribute should be associated with the Writable.
    * The list of attribute names should be stored in the location indicated by the pointer parameters.attributes.
    */
