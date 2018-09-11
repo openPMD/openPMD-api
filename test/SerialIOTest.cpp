@@ -953,7 +953,7 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
     REQUIRE(getCast< uint64_t >(s.getAttribute("uint64")) == 64u);
     REQUIRE(s.getAttribute("float").get< float >() == 16.e10f);
     REQUIRE(s.getAttribute("double").get< double >() == 1.e64);
-    REQUIRE(s.getAttribute("longdouble").get< long double >() == 1.e80L);
+    REQUIRE(getCast< long double >(s.getAttribute("longdouble")) == 1.e80L);
     REQUIRE(s.getAttribute("string").get< std::string >() == "string");
     REQUIRE(s.getAttribute("vecChar").get< std::vector< char > >() == std::vector< char >({'c', 'h', 'a', 'r'}));
     REQUIRE(s.getAttribute("vecInt16").get< std::vector< int16_t > >() == std::vector< int16_t >({32766, 32767}));
@@ -965,7 +965,7 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
     REQUIRE(getCast< std::vector< uint64_t > >(s.getAttribute("vecUint64")) == std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
     REQUIRE(s.getAttribute("vecFloat").get< std::vector< float > >() == std::vector< float >({0.f, 3.40282e+38f}));
     REQUIRE(s.getAttribute("vecDouble").get< std::vector< double > >() == std::vector< double >({0., 1.79769e+308}));
-    REQUIRE(s.getAttribute("vecLongdouble").get< std::vector< long double > >() == std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
+    REQUIRE(getCast< std::vector< long double > >(s.getAttribute("vecLongdouble")) == std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
     REQUIRE(s.getAttribute("vecString").get< std::vector< std::string > >() == std::vector< std::string >({"vector", "of", "strings"}));
     REQUIRE(s.getAttribute("bool").get< bool >() == true);
 
@@ -1478,7 +1478,7 @@ TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
     REQUIRE(getCast<uint64_t>(s.getAttribute("uint64")) == 64u);
     REQUIRE(s.getAttribute("float").get< float >() == 16.e10f);
     REQUIRE(s.getAttribute("double").get< double >() == 1.e64);
-    REQUIRE(s.getAttribute("longdouble").get< long double >() == 1.e80L);
+    REQUIRE(getCast< long double >(s.getAttribute("longdouble")) == 1.e80L);
     REQUIRE(s.getAttribute("string").get< std::string >() == "string");
     REQUIRE(s.getAttribute("vecChar").get< std::vector< char > >() == std::vector< char >({'c', 'h', 'a', 'r'}));
     REQUIRE(s.getAttribute("vecInt16").get< std::vector< int16_t > >() == std::vector< int16_t >({32766, 32767}));
@@ -1490,7 +1490,7 @@ TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
     REQUIRE(getCast< std::vector< uint64_t > >(s.getAttribute("vecUint64")) == std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
     REQUIRE(s.getAttribute("vecFloat").get< std::vector< float > >() == std::vector< float >({0.f, 3.40282e+38f}));
     REQUIRE(s.getAttribute("vecDouble").get< std::vector< double > >() == std::vector< double >({0., 1.79769e+308}));
-    REQUIRE(s.getAttribute("vecLongdouble").get< std::vector< long double > >() == std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
+    REQUIRE(getCast< std::vector< long double > >(s.getAttribute("vecLongdouble")) == std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
     REQUIRE(s.getAttribute("vecString").get< std::vector< std::string > >() == std::vector< std::string >({"vector", "of", "strings"}));
     REQUIRE(s.getAttribute("bool").get< unsigned char >() == static_cast< unsigned char >(true));
 }
