@@ -79,6 +79,15 @@ public:
     {
         return m_data;
     }
+    
+    /** Retrieve the index of the alternative that is currently been held
+     *
+     * @return  zero-based index
+     */
+    constexpr size_t index() const noexcept
+    {
+        return m_data.index();
+    }
 
     T_DTYPES dtype;
 

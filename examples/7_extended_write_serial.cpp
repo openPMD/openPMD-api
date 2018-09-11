@@ -142,7 +142,7 @@ write2()
     d = Dataset(dtype, mpiDims);
     electrons["positionOffset"]["x"].resetDataset(d);
 
-    Dataset dset = Dataset(Datatype::UINT64, {2});
+    Dataset dset = Dataset(determineDatatype<uint64_t>(), {2});
     electrons.particlePatches["numParticles"][RecordComponent::SCALAR].resetDataset(dset);
     electrons.particlePatches["numParticlesOffset"][RecordComponent::SCALAR].resetDataset(dset);
 

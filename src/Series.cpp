@@ -768,7 +768,7 @@ Series::readBase()
     aRead.name = "openPMDextension";
     IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
-    if( *aRead.dtype == DT::UINT32 )
+    if( *aRead.dtype == determineDatatype< uint32_t >() )
         setOpenPMDextension(Attribute(*aRead.resource).get< uint32_t >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'openPMDextension'");

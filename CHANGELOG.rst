@@ -20,6 +20,7 @@ Features
 Bug Fixes
 """""""""
 
+- Refactor integer type system  #337
 - ``Dataset``: ``setCompression`` warning and error logic #326
 - avoid impact on unrelated classes in invasive tests #324
 - Python

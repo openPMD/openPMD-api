@@ -24,6 +24,9 @@
 
 #include <algorithm>
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <climits>
 
 
 namespace openPMD
@@ -176,23 +179,29 @@ RecordComponent::readBase()
             case DT::FLOAT:
                 makeConstant(a.get< float >());
                 break;
-            case DT::INT16:
-                makeConstant(a.get< int16_t >());
+            case DT::SHORT:
+                makeConstant(a.get< short >());
                 break;
-            case DT::INT32:
-                makeConstant(a.get< int32_t >());
+            case DT::INT:
+                makeConstant(a.get< int >());
                 break;
-            case DT::INT64:
-                makeConstant(a.get< int64_t >());
+            case DT::LONG:
+                makeConstant(a.get< long >());
                 break;
-            case DT::UINT16:
-                makeConstant(a.get< uint16_t >());
+            case DT::LONGLONG:
+                makeConstant(a.get< long long >());
                 break;
-            case DT::UINT32:
-                makeConstant(a.get< uint32_t >());
+            case DT::USHORT:
+                makeConstant(a.get< unsigned short >());
                 break;
-            case DT::UINT64:
-                makeConstant(a.get< uint64_t >());
+            case DT::UINT:
+                makeConstant(a.get< unsigned int >());
+                break;
+            case DT::ULONG:
+                makeConstant(a.get< unsigned long >());
+                break;
+            case DT::ULONGLONG:
+                makeConstant(a.get< unsigned long long >());
                 break;
             case DT::CHAR:
                 makeConstant(a.get< char >());
@@ -213,18 +222,25 @@ RecordComponent::readBase()
         IOHandler->flush();
         a = Attribute(*aRead.resource);
         Extent e;
-        switch( *aRead.dtype )
+
+        // uint64_t check
+        Datatype const attrDtype = *aRead.dtype;
+        if( isSame( attrDtype, determineDatatype< uint64_t >() ) )
+            e.push_back( getCast< uint64_t >( a ) );
+        else if( isSame( attrDtype, determineDatatype< std::vector< uint64_t > >() ) )
+            for( auto const& val : getCast< std::vector< uint64_t > >( a ) )
+                e.push_back( val );
+        else
         {
-            case DT::UINT64:
-                e.push_back(a.get< uint64_t >());
-                break;
-            case DT::VEC_UINT64:
-                for( auto const& val : a.get< std::vector< uint64_t > >() )
-                    e.push_back(val);
-                break;
-            default:
-                throw std::runtime_error("Unexpected Attribute datatype for 'shape'");
+            std::ostringstream oss;
+            oss << "Unexpected datatype ("
+                << *aRead.dtype
+                << ") for attribute 'shape' ("
+                << determineDatatype< uint64_t >()
+                << " aka uint64_t)";
+            throw std::runtime_error(oss.str());
         }
+
         written = false;
         resetDataset(Dataset(dtype, e));
         written = true;

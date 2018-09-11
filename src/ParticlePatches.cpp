@@ -68,8 +68,7 @@ ParticlePatches::read()
         IOHandler->enqueue(IOTask(&prc, dOpen));
         IOHandler->flush();
 
-        using DT = Datatype;
-        if( DT::UINT64 != *dOpen.dtype )
+        if( determineDatatype< uint64_t >() != *dOpen.dtype )
             throw std::runtime_error("Unexpected datatype for " + component_name);
 
         /* allow all attributes to be set */

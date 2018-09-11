@@ -52,12 +52,14 @@ void init_RecordComponent(py::module &m) {
         .def("make_constant", &RecordComponent::makeConstant<float>)
         .def("make_constant", &RecordComponent::makeConstant<double>)
         .def("make_constant", &RecordComponent::makeConstant<long double>)
-        .def("make_constant", &RecordComponent::makeConstant<int16_t>)
-        .def("make_constant", &RecordComponent::makeConstant<int32_t>)
-        .def("make_constant", &RecordComponent::makeConstant<int64_t>)
-        .def("make_constant", &RecordComponent::makeConstant<uint16_t>)
-        .def("make_constant", &RecordComponent::makeConstant<uint32_t>)
-        .def("make_constant", &RecordComponent::makeConstant<uint64_t>)
+        .def("make_constant", &RecordComponent::makeConstant<short>)
+        .def("make_constant", &RecordComponent::makeConstant<int>)
+        .def("make_constant", &RecordComponent::makeConstant<long>)
+        .def("make_constant", &RecordComponent::makeConstant<long long>)
+        .def("make_constant", &RecordComponent::makeConstant<unsigned short>)
+        .def("make_constant", &RecordComponent::makeConstant<unsigned int>)
+        .def("make_constant", &RecordComponent::makeConstant<unsigned long>)
+        .def("make_constant", &RecordComponent::makeConstant<unsigned long long>)
         .def("make_constant", &RecordComponent::makeConstant<char>)
         .def("make_constant", &RecordComponent::makeConstant<unsigned char>)
         .def("make_constant", &RecordComponent::makeConstant<bool>)
@@ -115,12 +117,14 @@ void init_RecordComponent(py::module &m) {
 
             if( r.getDatatype() == Datatype::CHAR ) dtype = py::dtype("b");
             else if( r.getDatatype() == Datatype::UCHAR ) dtype = py::dtype("B");
-            else if( r.getDatatype() == Datatype::INT16 ) dtype = py::dtype("int16");
-            else if( r.getDatatype() == Datatype::INT32 ) dtype = py::dtype("int32");
-            else if( r.getDatatype() == Datatype::INT64 ) dtype = py::dtype("int64");
-            else if( r.getDatatype() == Datatype::UINT16 ) dtype = py::dtype("uint16");
-            else if( r.getDatatype() == Datatype::UINT32 ) dtype = py::dtype("uint32");
-            else if( r.getDatatype() == Datatype::UINT64 ) dtype = py::dtype("uint64");
+            else if( r.getDatatype() == Datatype::SHORT ) dtype = py::dtype("short");
+            else if( r.getDatatype() == Datatype::INT ) dtype = py::dtype("intc");
+            else if( r.getDatatype() == Datatype::LONG ) dtype = py::dtype("int_");
+            else if( r.getDatatype() == Datatype::LONGLONG ) dtype = py::dtype("longlong");
+            else if( r.getDatatype() == Datatype::USHORT ) dtype = py::dtype("ushort");
+            else if( r.getDatatype() == Datatype::UINT ) dtype = py::dtype("uintc");
+            else if( r.getDatatype() == Datatype::ULONG ) dtype = py::dtype("uint");
+            else if( r.getDatatype() == Datatype::ULONGLONG ) dtype = py::dtype("ulonglong");
             else if( r.getDatatype() == Datatype::LONG_DOUBLE ) dtype = py::dtype("longdouble");
             else if( r.getDatatype() == Datatype::DOUBLE ) dtype = py::dtype("double");
             else if( r.getDatatype() == Datatype::FLOAT ) dtype = py::dtype("float");
@@ -128,13 +132,15 @@ void init_RecordComponent(py::module &m) {
             /* @todo
             .value("STRING", Datatype::STRING)
             .value("VEC_CHAR", Datatype::VEC_CHAR)
-            .value("VEC_INT16", Datatype::VEC_INT16)
-            .value("VEC_INT32", Datatype::VEC_INT32)
-            .value("VEC_INT64", Datatype::VEC_INT64)
+            .value("VEC_SHORT", Datatype::VEC_SHORT)
+            .value("VEC_INT", Datatype::VEC_INT)
+            .value("VEC_LONG", Datatype::VEC_LONG)
+            .value("VEC_LONGLONG", Datatype::VEC_LONGLONG)
             .value("VEC_UCHAR", Datatype::VEC_UCHAR)
-            .value("VEC_UINT16", Datatype::VEC_UINT16)
-            .value("VEC_UINT32", Datatype::VEC_UINT32)
-            .value("VEC_UINT64", Datatype::VEC_UINT64)
+            .value("VEC_USHORT", Datatype::VEC_USHORT)
+            .value("VEC_UINT", Datatype::VEC_UINT)
+            .value("VEC_ULONG", Datatype::VEC_ULONG)
+            .value("VEC_ULONGLONG", Datatype::VEC_ULONGLONG)
             .value("VEC_FLOAT", Datatype::VEC_FLOAT)
             .value("VEC_DOUBLE", Datatype::VEC_DOUBLE)
             .value("VEC_LONG_DOUBLE", Datatype::VEC_LONG_DOUBLE)
@@ -152,18 +158,22 @@ void init_RecordComponent(py::module &m) {
                 r.loadChunk<char>(offset, extent, shareRaw((char*) a.mutable_data()));
             else if( r.getDatatype() == Datatype::UCHAR )
                 r.loadChunk<unsigned char>(offset, extent, shareRaw((unsigned char*) a.mutable_data()));
-            else if( r.getDatatype() == Datatype::INT16 )
-                r.loadChunk<int16_t>(offset, extent, shareRaw((int16_t*) a.mutable_data()));
-            else if( r.getDatatype() == Datatype::INT32 )
-                r.loadChunk<int32_t>(offset, extent, shareRaw((int32_t*) a.mutable_data()));
-            else if( r.getDatatype() == Datatype::INT64 )
-                r.loadChunk<int64_t>(offset, extent, shareRaw((int64_t*) a.mutable_data()));
-            else if( r.getDatatype() == Datatype::UINT16 )
-                r.loadChunk<uint16_t>(offset, extent, shareRaw((uint16_t*) a.mutable_data()));
-            else if( r.getDatatype() == Datatype::UINT32 )
-                r.loadChunk<uint32_t>(offset, extent, shareRaw((uint32_t*) a.mutable_data()));
-            else if( r.getDatatype() == Datatype::UINT64 )
-                r.loadChunk<uint64_t>(offset, extent, shareRaw((uint64_t*) a.mutable_data()));
+            else if( r.getDatatype() == Datatype::SHORT )
+                r.loadChunk<short>(offset, extent, shareRaw((short*) a.mutable_data()));
+            else if( r.getDatatype() == Datatype::INT )
+                r.loadChunk<int>(offset, extent, shareRaw((int*) a.mutable_data()));
+            else if( r.getDatatype() == Datatype::LONG )
+                r.loadChunk<long>(offset, extent, shareRaw((long*) a.mutable_data()));
+            else if( r.getDatatype() == Datatype::LONGLONG )
+                r.loadChunk<long long>(offset, extent, shareRaw((long long*) a.mutable_data()));
+            else if( r.getDatatype() == Datatype::USHORT )
+                r.loadChunk<unsigned short>(offset, extent, shareRaw((unsigned short*) a.mutable_data()));
+            else if( r.getDatatype() == Datatype::UINT )
+                r.loadChunk<unsigned int>(offset, extent, shareRaw((unsigned int*) a.mutable_data()));
+            else if( r.getDatatype() == Datatype::ULONG )
+                r.loadChunk<unsigned long>(offset, extent, shareRaw((unsigned long*) a.mutable_data()));
+            else if( r.getDatatype() == Datatype::ULONGLONG )
+                r.loadChunk<unsigned long long>(offset, extent, shareRaw((unsigned long long*) a.mutable_data()));
             else if( r.getDatatype() == Datatype::LONG_DOUBLE )
                 r.loadChunk<long double>(offset, extent, shareRaw((long double*) a.mutable_data()));
             else if( r.getDatatype() == Datatype::DOUBLE )
@@ -174,13 +184,15 @@ void init_RecordComponent(py::module &m) {
             /* @todo
             .value("STRING", Datatype::STRING)
             .value("VEC_CHAR", Datatype::VEC_CHAR)
-            .value("VEC_INT16", Datatype::VEC_INT16)
-            .value("VEC_INT32", Datatype::VEC_INT32)
-            .value("VEC_INT64", Datatype::VEC_INT64)
+            .value("VEC_SHORT", Datatype::VEC_SHORT)
+            .value("VEC_INT", Datatype::VEC_INT)
+            .value("VEC_LONG", Datatype::VEC_LONG)
+            .value("VEC_LONGLONG", Datatype::VEC_LONGLONG)
             .value("VEC_UCHAR", Datatype::VEC_UCHAR)
-            .value("VEC_UINT16", Datatype::VEC_UINT16)
-            .value("VEC_UINT32", Datatype::VEC_UINT32)
-            .value("VEC_UINT64", Datatype::VEC_UINT64)
+            .value("VEC_USHORT", Datatype::VEC_USHORT)
+            .value("VEC_UINT", Datatype::VEC_UINT)
+            .value("VEC_ULONG", Datatype::VEC_ULONG)
+            .value("VEC_ULONGLONG", Datatype::VEC_ULONGLONG)
             .value("VEC_FLOAT", Datatype::VEC_FLOAT)
             .value("VEC_DOUBLE", Datatype::VEC_DOUBLE)
             .value("VEC_LONG_DOUBLE", Datatype::VEC_LONG_DOUBLE)
@@ -213,22 +225,27 @@ void init_RecordComponent(py::module &m) {
             // py::print( py::str(buf.dtype()) );
 
             // ref: https://docs.scipy.org/doc/numpy/user/basics.types.html
+            // ref: https://github.com/numpy/numpy/issues/10678#issuecomment-369363551
             if( a.dtype().is(py::dtype("b")) )
                 r.storeChunk( offset, extent, shareRaw( (char*)a.mutable_data() ) );
             else if( a.dtype().is(py::dtype("B")) )
                 r.storeChunk( offset, extent, shareRaw( (unsigned char*)a.mutable_data() ) );
-            else if( a.dtype().is(py::dtype("int16")) )
-                r.storeChunk( offset, extent, shareRaw( (int16_t*)a.mutable_data() ) );
-            else if( a.dtype().is(py::dtype("int32")) )
-                r.storeChunk( offset, extent, shareRaw( (int32_t*)a.mutable_data() ) );
-            else if( a.dtype().is(py::dtype("int64")) )
-                r.storeChunk( offset, extent, shareRaw( (int64_t*)a.mutable_data() ) );
-            else if( a.dtype().is(py::dtype("uint16")) )
-                r.storeChunk( offset, extent, shareRaw( (uint16_t*)a.mutable_data() ) );
-            else if( a.dtype().is(py::dtype("uint32")) )
-                r.storeChunk( offset, extent, shareRaw( (uint32_t*)a.mutable_data() ) );
-            else if( a.dtype().is(py::dtype("uint64")) )
-                r.storeChunk( offset, extent, shareRaw( (uint64_t*)a.mutable_data() ) );
+            else if( a.dtype().is(py::dtype("short")) )
+                r.storeChunk( offset, extent, shareRaw( (short*)a.mutable_data() ) );
+            else if( a.dtype().is(py::dtype("intc")) )
+                r.storeChunk( offset, extent, shareRaw( (int*)a.mutable_data() ) );
+            else if( a.dtype().is(py::dtype("int_")) )
+               r.storeChunk( offset, extent, shareRaw( (long*)a.mutable_data() ) );
+            else if( a.dtype().is(py::dtype("longlong")) )
+                r.storeChunk( offset, extent, shareRaw( (long long*)a.mutable_data() ) );
+            else if( a.dtype().is(py::dtype("ushort")) )
+                r.storeChunk( offset, extent, shareRaw( (unsigned short*)a.mutable_data() ) );
+            else if( a.dtype().is(py::dtype("uintc")) )
+                r.storeChunk( offset, extent, shareRaw( (unsigned int*)a.mutable_data() ) );
+            else if( a.dtype().is(py::dtype("uint")) )
+                r.storeChunk( offset, extent, shareRaw( (unsigned long*)a.mutable_data() ) );
+            else if( a.dtype().is(py::dtype("ulonglong")) )
+                r.storeChunk( offset, extent, shareRaw( (unsigned long long*)a.mutable_data() ) );
             else if( a.dtype().is(py::dtype("longdouble")) )
                 r.storeChunk( offset, extent, shareRaw( (long double*)a.mutable_data() ) );
             else if( a.dtype().is(py::dtype("double")) )
@@ -238,13 +255,15 @@ void init_RecordComponent(py::module &m) {
 /* @todo
         .value("STRING", Datatype::STRING)
         .value("VEC_CHAR", Datatype::VEC_CHAR)
-        .value("VEC_INT16", Datatype::VEC_INT16)
-        .value("VEC_INT32", Datatype::VEC_INT32)
-        .value("VEC_INT64", Datatype::VEC_INT64)
+        .value("VEC_SHORT", Datatype::VEC_SHORT)
+        .value("VEC_INT", Datatype::VEC_INT)
+        .value("VEC_LONG", Datatype::VEC_LONG)
+        .value("VEC_LONGLONG", Datatype::VEC_LONGLONG)
         .value("VEC_UCHAR", Datatype::VEC_UCHAR)
-        .value("VEC_UINT16", Datatype::VEC_UINT16)
-        .value("VEC_UINT32", Datatype::VEC_UINT32)
-        .value("VEC_UINT64", Datatype::VEC_UINT64)
+        .value("VEC_USHORT", Datatype::VEC_USHORT)
+        .value("VEC_UINT", Datatype::VEC_UINT)
+        .value("VEC_ULONG", Datatype::VEC_ULONG)
+        .value("VEC_ULONGLONG", Datatype::VEC_ULONGLONG)
         .value("VEC_FLOAT", Datatype::VEC_FLOAT)
         .value("VEC_DOUBLE", Datatype::VEC_DOUBLE)
         .value("VEC_LONG_DOUBLE", Datatype::VEC_LONG_DOUBLE)
