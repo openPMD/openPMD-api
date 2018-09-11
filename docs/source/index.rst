@@ -83,3 +83,13 @@ Development
    dev/sphinx
    dev/doxygen
    dev/release
+
+*********
+Utilities
+*********
+.. toctree::
+   :caption: UTILITIES
+   :maxdepth: 1
+   :hidden:
+
+   /utilities/benchmark.rst

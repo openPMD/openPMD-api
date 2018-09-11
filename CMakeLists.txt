@@ -286,7 +286,8 @@ set(CORE_SOURCE
         src/backend/MeshRecordComponent.cpp
         src/backend/PatchRecord.cpp
         src/backend/PatchRecordComponent.cpp
-        src/backend/Writable.cpp)
+        src/backend/Writable.cpp
+        src/benchmark/mpi/OneDimensionalBlockSlicer.cpp)
 set(IO_SOURCE
         src/IO/AbstractIOHandler.cpp
         src/IO/AbstractIOHandlerImpl.cpp

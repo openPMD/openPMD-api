@@ -22,6 +22,8 @@
 
 #include <string>
 #include <iostream>
+#include <unordered_map>
+#include <sstream>
 
 
 namespace openPMD
@@ -143,4 +145,162 @@ std::operator<<(std::ostream& os, openPMD::Datatype d)
     }
 
     return os;
+}
+
+namespace openPMD
+{
+    Datatype stringToDatatype( std::string s )
+    {
+        static std::unordered_map<
+            std::string,
+            Datatype
+        > m {
+            {
+                "CHAR",
+                Datatype::CHAR
+            },
+            {
+                "UCHAR",
+                Datatype::UCHAR
+            },
+            {
+                "SHORT",
+                Datatype::SHORT
+            },
+            {
+                "INT",
+                Datatype::INT
+            },
+            {
+                "LONG",
+                Datatype::LONG
+            },
+            {
+                "LONGLONG",
+                Datatype::LONGLONG
+            },
+            {
+                "USHORT",
+                Datatype::USHORT
+            },
+            {
+                "UINT",
+                Datatype::UINT
+            },
+            {
+                "ULONG",
+                Datatype::ULONG
+            },
+            {
+                "ULONGLONG",
+                Datatype::ULONGLONG
+            },
+            {
+                "FLOAT",
+                Datatype::FLOAT
+            },
+            {
+                "DOUBLE",
+                Datatype::DOUBLE
+            },
+            {
+                "LONG_DOUBLE",
+                Datatype::LONG_DOUBLE
+            },
+            {
+                "STRING",
+                Datatype::STRING
+            },
+            {
+                "VEC_CHAR",
+                Datatype::VEC_CHAR
+            },
+            {
+                "VEC_SHORT",
+                Datatype::VEC_SHORT
+            },
+            {
+                "VEC_INT",
+                Datatype::VEC_INT
+            },
+            {
+                "VEC_LONG",
+                Datatype::VEC_LONG
+            },
+            {
+                "VEC_LONGLONG",
+                Datatype::VEC_LONGLONG
+            },
+            {
+                "VEC_UCHAR",
+                Datatype::VEC_UCHAR
+            },
+            {
+                "VEC_USHORT",
+                Datatype::VEC_USHORT
+            },
+            {
+                "VEC_UINT",
+                Datatype::VEC_UINT
+            },
+            {
+                "VEC_ULONG",
+                Datatype::VEC_ULONG
+            },
+            {
+                "VEC_ULONGLONG",
+                Datatype::VEC_ULONGLONG
+            },
+            {
+                "VEC_FLOAT",
+                Datatype::VEC_FLOAT
+            },
+            {
+                "VEC_DOUBLE",
+                Datatype::VEC_DOUBLE
+            },
+            {
+                "VEC_LONG_DOUBLE",
+                Datatype::VEC_LONG_DOUBLE
+            },
+            {
+                "VEC_STRING",
+                Datatype::VEC_STRING
+            },
+            {
+                "ARR_DBL_7",
+                Datatype::ARR_DBL_7
+            },
+            {
+                "BOOL",
+                Datatype::BOOL
+            },
+            {
+                "DATATYPE",
+                Datatype::DATATYPE
+            },
+            {
+                "UNDEFINED",
+                Datatype::UNDEFINED
+            }
+        };
+        auto it = m.find( s );
+        if( it != m.end( ) )
+        {
+            return it->second;
+        }
+        else
+        {
+            throw std::runtime_error( "Unknown datatype in string deserialization." );
+        }
+    }
+
+
+    std::string datatypeToString( openPMD::Datatype dt )
+    {
+        std::stringbuf buf;
+        std::ostream os(&buf);
+        os << dt;
+        return buf.str();
+    }
 }
