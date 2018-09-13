@@ -96,7 +96,6 @@ struct DoConvert<T, U, false>
     U operator()( PV )
     {
         throw std::runtime_error("getCast: no cast possible.");
-        return U{};
     }
 };
 
@@ -210,8 +209,6 @@ getCast( Attribute const a )
         return DoConvert<bool, U>{}(pvalue_b);
     else
         throw std::runtime_error("getCast: unknown Datatype.");
-
-    return U{};
 }
 
 template< typename U >
