@@ -45,7 +45,8 @@ namespace openPMD
  * @note Extending and/or modifying the available formats requires identical
  *       modifications to Datatype.
  */
-using Attribute = auxiliary::Variant< Datatype,
+class Attribute :
+    public auxiliary::Variant< Datatype,
                             char, unsigned char, // signed char,
                             short, int, long, long long,
                             unsigned short, unsigned int, unsigned long, unsigned long long,
@@ -66,7 +67,24 @@ using Attribute = auxiliary::Variant< Datatype,
                             std::vector< long double >,
                             std::vector< std::string >,
                             std::array< double, 7 >,
-                            bool >;
+                            bool >
+{
+public:
+    Attribute(resource r) : Variant(r)
+    { }
+
+    /** Retrieve a stored specific Attribute and cast if convertible.
+     *
+     * @note This performs a static_cast and might introduce precision loss if
+     *       requested. Check dtype explicitly beforehand if needed.
+     *
+     * @throw   std::runtime_error if stored object is not static castable to U.
+     * @tparam  U   Type of the object to be casted to.
+     * @return  Copy of the retrieved object, casted to type U.
+     */
+    template< typename U >
+    U get() const;
+};
 
 template< typename T, typename U, bool isConvertible = std::is_convertible<T, U>::value >
 struct DoConvert;
@@ -116,7 +134,7 @@ struct DoConvert<std::vector< T >, std::vector< U >, false>
     }
 };
 
-/** Retrieve a stored specific Attribute and cast if possible.
+/** Retrieve a stored specific Attribute and cast if convertible.
  *
  * @throw   std::runtime_error if stored object is not static castable to U.
  * @tparam  U   Type of the object to be casted to.
@@ -194,6 +212,12 @@ getCast( Attribute const a )
         throw std::runtime_error("getCast: unknown Datatype.");
 
     return U{};
+}
+
+template< typename U >
+U Attribute::get() const
+{
+    return getCast< U >( Variant::getResource() );
 }
 
 } // namespace openPMD
