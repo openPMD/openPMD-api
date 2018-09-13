@@ -1547,8 +1547,8 @@ TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
     REQUIRE(s.getAttribute("vecDouble").get< std::vector< double > >() == std::vector< double >({0., 1.79769e+308}));
     REQUIRE(getCast< std::vector< long double > >(s.getAttribute("vecLongdouble")) == std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
     REQUIRE(s.getAttribute("vecString").get< std::vector< std::string > >() == std::vector< std::string >({"vector", "of", "strings"}));
-    REQUIRE(s.getAttribute("bool").get< bool >() == true);
-    REQUIRE(s.getAttribute("boolF").get< bool >() == false);
+    REQUIRE(s.getAttribute("bool").get< unsigned char >() == true);
+    REQUIRE(s.getAttribute("boolF").get< unsigned char >() == false);
 
     // translation from non-fixed size integer types
     REQUIRE(s.getAttribute("short").get< short >() == 8);
