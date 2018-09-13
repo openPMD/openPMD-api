@@ -311,8 +311,8 @@ CommonADIOS1IOHandlerImpl::flush_attribute(int64_t group, std::string const& nam
         }
         case DT::BOOL:
         {
-            auto ptr = reinterpret_cast< unsigned char* >(values.get());
-            *ptr = static_cast< unsigned char >(att.get< unsigned char >());
+            auto ptr = reinterpret_cast< bool* >(values.get());
+            *ptr = static_cast< bool >(att.get< bool >());
             break;
         }
         case DT::UNDEFINED:
