@@ -23,6 +23,7 @@ Bug Fixes
 - Refactor integer type system  #337
 - ``Dataset``: ``setCompression`` warning and error logic #326
 - avoid impact on unrelated classes in invasive tests #324
+- ``setAttribute`` with non-fixed size types such as ``int`` or ``long`` #333
 - Python
 
   - single precision support: ``numpy.float`` is an alias for ``builtins.float`` #318 #320
