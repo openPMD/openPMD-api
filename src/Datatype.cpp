@@ -20,7 +20,22 @@
  */
 #include "openPMD/Datatype.hpp"
 
+#include <string>
 #include <iostream>
+
+
+namespace openPMD
+{
+void warnWrongDtype(std::string const& key,
+                    Datatype store,
+                    Datatype request)
+{
+    std::cerr << "Warning: Attribute '" << key
+              << "' stored as " << store
+              << ", requested as " << request
+              << ". Casting unconditionally with possible loss of precision.\n";
+}
+} // openPMD
 
 
 std::ostream&

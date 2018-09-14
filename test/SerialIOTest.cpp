@@ -923,6 +923,7 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
         s.setAttribute("vecLongdouble", std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
         s.setAttribute("vecString", std::vector< std::string >({"vector", "of", "strings"}));
         s.setAttribute("bool", true);
+        s.setAttribute("boolF", false);
 
         // non-fixed size integer types
         short ss = 16;
@@ -978,6 +979,7 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
     REQUIRE(s.getAttribute("vecLongdouble").get< std::vector< long double > >() == std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
     REQUIRE(s.getAttribute("vecString").get< std::vector< std::string > >() == std::vector< std::string >({"vector", "of", "strings"}));
     REQUIRE(s.getAttribute("bool").get< bool >() == true);
+    REQUIRE(s.getAttribute("boolF").get< bool >() == false);
 
     // same implementation types (not necessary aliases) detection
 #if !defined(_MSC_VER)
@@ -1547,8 +1549,8 @@ TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
     REQUIRE(s.getAttribute("vecDouble").get< std::vector< double > >() == std::vector< double >({0., 1.79769e+308}));
     REQUIRE(s.getAttribute("vecLongdouble").get< std::vector< long double > >() == std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
     REQUIRE(s.getAttribute("vecString").get< std::vector< std::string > >() == std::vector< std::string >({"vector", "of", "strings"}));
-    REQUIRE(s.getAttribute("bool").get< unsigned char >() == true);
-    REQUIRE(s.getAttribute("boolF").get< unsigned char >() == false);
+    REQUIRE(s.getAttribute("bool").get< bool >() == true);
+    REQUIRE(s.getAttribute("boolF").get< bool >() == false);
 
     // translation from non-fixed size integer types
     REQUIRE(s.getAttribute("short").get< short >() == 8);

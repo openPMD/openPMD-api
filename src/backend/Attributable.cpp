@@ -289,39 +289,4 @@ Attributable::linkHierarchy(std::shared_ptr< Writable > const& w)
     m_writable->parent = writable;
     this->parent = writable;
 }
-
-
-void warnWrongDtype(std::string const& key,
-                    Datatype store,
-                    Datatype request)
-{
-    std::cerr << "Warning: Attribute '" << key
-              << "' stored as " << store
-              << ", requested as " << request
-              << ". Casting unconditionally with possible loss of precision.\n";
-}
-
-template
-float
-Attributable::readFloatingpoint(std::string const& key) const;
-
-template
-double
-Attributable::readFloatingpoint(std::string const& key) const;
-
-template
-long double
-Attributable::readFloatingpoint(std::string const& key) const;
-
-template
-std::vector< float >
-Attributable::readVectorFloatingpoint(std::string const& key) const;
-
-template
-std::vector< double >
-Attributable::readVectorFloatingpoint(std::string const& key) const;
-
-template
-std::vector< long double >
-Attributable::readVectorFloatingpoint(std::string const& key) const;
 } // openPMD

@@ -203,12 +203,6 @@ private:
     std::shared_ptr< A_MAP > m_attributes;
 }; // Attributable
 
-
-void
-warnWrongDtype(std::string const& key,
-               Datatype store,
-               Datatype request);
-
 //TODO explicitly instanciate Attributable::setAttribute for all T in Datatype
 template< typename T >
 inline bool
@@ -244,62 +238,14 @@ Attributable::setAttribute(std::string const& key, char const value[])
     return this->setAttribute(key, std::string(value));
 }
 
-extern template
-float
-Attributable::readFloatingpoint(std::string const& key) const;
-
-extern template
-double
-Attributable::readFloatingpoint(std::string const& key) const;
-
-extern template
-long double
-Attributable::readFloatingpoint(std::string const& key) const;
-
 template< typename T >
 inline T
 Attributable::readFloatingpoint(std::string const& key) const
 {
     static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
 
-    T t{0};
-    Attribute a = getAttribute(key);
-    Datatype target_dtype = determineDatatype< T >();
-    if( a.dtype == target_dtype )
-        t = a.get< T >();
-    else
-    {
-        warnWrongDtype(key, a.dtype, target_dtype);
-        using DT = Datatype;
-        switch( a.dtype )
-        {
-            case DT::FLOAT:
-                t = static_cast< T >(a.get< float >());
-                break;
-            case DT::DOUBLE:
-                t = static_cast< T >(a.get< double >());
-                break;
-            case DT::LONG_DOUBLE:
-                t = static_cast< T >(a.get< long double >());
-                break;
-            default:
-                throw std::runtime_error("Unknown floating point datatype.");
-        }
-    }
-    return t;
+    return getAttribute(key).get< T >();
 }
-
-extern template
-std::vector< float >
-Attributable::readVectorFloatingpoint(std::string const& key) const;
-
-extern template
-std::vector< double >
-Attributable::readVectorFloatingpoint(std::string const& key) const;
-
-extern template
-std::vector< long double >
-Attributable::readVectorFloatingpoint(std::string const& key) const;
 
 template< typename T >
 inline std::vector< T >
@@ -307,33 +253,6 @@ Attributable::readVectorFloatingpoint(std::string const& key) const
 {
     static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
 
-    std::vector< T > vt{};
-    Attribute a = getAttribute(key);
-    Datatype target_dtype = determineDatatype< std::vector< T > >();
-    if( a.dtype == target_dtype )
-        vt = a.get< std::vector< T > >();
-    else
-    {
-        warnWrongDtype(key, a.dtype, target_dtype);
-        using DT = Datatype;
-        switch( a.dtype )
-        {
-            case DT::VEC_FLOAT:
-                for( auto const& val : a.get< std::vector< float > >() )
-                    vt.push_back(static_cast< T >(val));
-                break;
-            case DT::VEC_DOUBLE:
-                for( auto const& val : a.get< std::vector< double > >() )
-                    vt.push_back(static_cast< T >(val));
-                break;
-            case DT::VEC_LONG_DOUBLE:
-                for( auto const& val : a.get< std::vector< long double > >() )
-                    vt.push_back(static_cast< T >(val));
-                break;
-            default:
-                throw std::runtime_error("Unknown floating point datatype.");
-        }
-    }
-    return vt;
+    return getAttribute(key).get< std::vector< T > >();
 }
 } // namespace openPMD
