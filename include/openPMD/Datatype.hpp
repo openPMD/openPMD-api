@@ -517,6 +517,11 @@ isSame( openPMD::Datatype const d, openPMD::Datatype const e )
 
     return false;
 }
+
+void
+warnWrongDtype(std::string const& key,
+               Datatype store,
+               Datatype request);
 } // namespace openPMD
 
 #if !defined(_MSC_VER)
@@ -529,12 +534,22 @@ isSame( openPMD::Datatype const d, openPMD::Datatype const e )
  *   https://stackoverflow.com/questions/44515148/why-is-operator-overload-of-enum-ambiguous-in-msvc
  *
  * @see openPMD::isSame
+ *
+ * @{
  */
 inline bool
 operator==( openPMD::Datatype d, openPMD::Datatype e )
 {
     return openPMD::isSame(d, e);
 }
+
+inline bool
+operator!=( openPMD::Datatype d, openPMD::Datatype e )
+{
+    return !(d == e);
+}
+/** @}
+ */
 #endif
 
 namespace std

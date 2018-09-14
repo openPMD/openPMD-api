@@ -156,7 +156,7 @@ RecordComponent::loadChunk(Offset const& o, Extent const& e, std::shared_ptr< T 
         for( auto const& dimensionSize : e )
             numPoints *= dimensionSize;
 
-        T value = getCast< T >(*m_constantValue);
+        T value = m_constantValue->get< T >();
 
         T* raw_ptr = data.get();
         std::fill(raw_ptr, raw_ptr + numPoints, value);

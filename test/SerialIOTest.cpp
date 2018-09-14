@@ -923,6 +923,7 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
         s.setAttribute("vecLongdouble", std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
         s.setAttribute("vecString", std::vector< std::string >({"vector", "of", "strings"}));
         s.setAttribute("bool", true);
+        s.setAttribute("boolF", false);
 
         // non-fixed size integer types
         short ss = 16;
@@ -957,27 +958,28 @@ TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
     REQUIRE(s.getAttribute("uchar").get< unsigned char >() == 'u');
     REQUIRE(s.getAttribute("int16").get< int16_t >() == 16);
     REQUIRE(s.getAttribute("int32").get< int32_t >() == 32);
-    REQUIRE(getCast< int64_t >(s.getAttribute("int64")) == 64);
+    REQUIRE(s.getAttribute("int64").get< int64_t >() == 64);
     REQUIRE(s.getAttribute("uint16").get< uint16_t >() == 16u);
     REQUIRE(s.getAttribute("uint32").get< uint32_t >() == 32u);
-    REQUIRE(getCast< uint64_t >(s.getAttribute("uint64")) == 64u);
+    REQUIRE(s.getAttribute("uint64").get< uint64_t >() == 64u);
     REQUIRE(s.getAttribute("float").get< float >() == 16.e10f);
     REQUIRE(s.getAttribute("double").get< double >() == 1.e64);
-    REQUIRE(getCast< long double >(s.getAttribute("longdouble")) == 1.e80L);
+    REQUIRE(s.getAttribute("longdouble").get< long double >() == 1.e80L);
     REQUIRE(s.getAttribute("string").get< std::string >() == "string");
     REQUIRE(s.getAttribute("vecChar").get< std::vector< char > >() == std::vector< char >({'c', 'h', 'a', 'r'}));
     REQUIRE(s.getAttribute("vecInt16").get< std::vector< int16_t > >() == std::vector< int16_t >({32766, 32767}));
     REQUIRE(s.getAttribute("vecInt32").get< std::vector< int32_t > >() == std::vector< int32_t >({2147483646, 2147483647}));
-    REQUIRE(getCast< std::vector< int64_t > >(s.getAttribute("vecInt64")) == std::vector< int64_t >({9223372036854775806, 9223372036854775807}));
+    REQUIRE(s.getAttribute("vecInt64").get< std::vector< int64_t > >() == std::vector< int64_t >({9223372036854775806, 9223372036854775807}));
     REQUIRE(s.getAttribute("vecUchar").get< std::vector< char > >() == std::vector< char >({'u', 'c', 'h', 'a', 'r'}));
     REQUIRE(s.getAttribute("vecUint16").get< std::vector< uint16_t > >() == std::vector< uint16_t >({65534u, 65535u}));
     REQUIRE(s.getAttribute("vecUint32").get< std::vector< uint32_t > >() == std::vector< uint32_t >({4294967294u, 4294967295u}));
-    REQUIRE(getCast< std::vector< uint64_t > >(s.getAttribute("vecUint64")) == std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
+    REQUIRE(s.getAttribute("vecUint64").get< std::vector< uint64_t > >() == std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
     REQUIRE(s.getAttribute("vecFloat").get< std::vector< float > >() == std::vector< float >({0.f, 3.40282e+38f}));
     REQUIRE(s.getAttribute("vecDouble").get< std::vector< double > >() == std::vector< double >({0., 1.79769e+308}));
-    REQUIRE(getCast< std::vector< long double > >(s.getAttribute("vecLongdouble")) == std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
+    REQUIRE(s.getAttribute("vecLongdouble").get< std::vector< long double > >() == std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
     REQUIRE(s.getAttribute("vecString").get< std::vector< std::string > >() == std::vector< std::string >({"vector", "of", "strings"}));
     REQUIRE(s.getAttribute("bool").get< bool >() == true);
+    REQUIRE(s.getAttribute("boolF").get< bool >() == false);
 
     // same implementation types (not necessary aliases) detection
 #if !defined(_MSC_VER)
@@ -1527,46 +1529,46 @@ TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
     REQUIRE(s.getAttribute("uchar").get< unsigned char >() == 'u');
     REQUIRE(s.getAttribute("int16").get< int16_t >() == 16);
     REQUIRE(s.getAttribute("int32").get< int32_t >() == 32);
-    REQUIRE(getCast<int64_t>(s.getAttribute("int64")) == 64);
+    REQUIRE(s.getAttribute("int64").get<int64_t>() == 64);
     REQUIRE(s.getAttribute("uint16").get< uint16_t >() == 16u);
     REQUIRE(s.getAttribute("uint32").get< uint32_t >() == 32u);
-    REQUIRE(getCast<uint64_t>(s.getAttribute("uint64")) == 64u);
+    REQUIRE(s.getAttribute("uint64").get< uint64_t >() == 64u);
     REQUIRE(s.getAttribute("float").get< float >() == 16.e10f);
     REQUIRE(s.getAttribute("double").get< double >() == 1.e64);
-    REQUIRE(getCast< long double >(s.getAttribute("longdouble")) == 1.e80L);
+    REQUIRE(s.getAttribute("longdouble").get< long double >() == 1.e80L);
     REQUIRE(s.getAttribute("string").get< std::string >() == "string");
     REQUIRE(s.getAttribute("vecChar").get< std::vector< char > >() == std::vector< char >({'c', 'h', 'a', 'r'}));
     REQUIRE(s.getAttribute("vecInt16").get< std::vector< int16_t > >() == std::vector< int16_t >({32766, 32767}));
     REQUIRE(s.getAttribute("vecInt32").get< std::vector< int32_t > >() == std::vector< int32_t >({2147483646, 2147483647}));
-    REQUIRE(getCast< std::vector< int64_t > >(s.getAttribute("vecInt64")) == std::vector< int64_t >({9223372036854775806, 9223372036854775807}));
+    REQUIRE(s.getAttribute("vecInt64").get< std::vector< int64_t > >() == std::vector< int64_t >({9223372036854775806, 9223372036854775807}));
     REQUIRE(s.getAttribute("vecUchar").get< std::vector< char > >() == std::vector< char >({'u', 'c', 'h', 'a', 'r'}));
     REQUIRE(s.getAttribute("vecUint16").get< std::vector< uint16_t > >() == std::vector< uint16_t >({65534u, 65535u}));
     REQUIRE(s.getAttribute("vecUint32").get< std::vector< uint32_t > >() == std::vector< uint32_t >({4294967294u, 4294967295u}));
-    REQUIRE(getCast< std::vector< uint64_t > >(s.getAttribute("vecUint64")) == std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
+    REQUIRE(s.getAttribute("vecUint64").get< std::vector< uint64_t > >() == std::vector< uint64_t >({18446744073709551614u, 18446744073709551615u}));
     REQUIRE(s.getAttribute("vecFloat").get< std::vector< float > >() == std::vector< float >({0.f, 3.40282e+38f}));
     REQUIRE(s.getAttribute("vecDouble").get< std::vector< double > >() == std::vector< double >({0., 1.79769e+308}));
-    REQUIRE(getCast< std::vector< long double > >(s.getAttribute("vecLongdouble")) == std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
+    REQUIRE(s.getAttribute("vecLongdouble").get< std::vector< long double > >() == std::vector< long double >({0.L, std::numeric_limits<long double>::max()}));
     REQUIRE(s.getAttribute("vecString").get< std::vector< std::string > >() == std::vector< std::string >({"vector", "of", "strings"}));
-    REQUIRE(s.getAttribute("bool").get< unsigned char >() == true);
-    REQUIRE(s.getAttribute("boolF").get< unsigned char >() == false);
+    REQUIRE(s.getAttribute("bool").get< bool >() == true);
+    REQUIRE(s.getAttribute("boolF").get< bool >() == false);
 
     // translation from non-fixed size integer types
     REQUIRE(s.getAttribute("short").get< short >() == 8);
     REQUIRE(s.getAttribute("int").get< int >() == 16);
     REQUIRE(s.getAttribute("long").get< long >() == 32);
-    REQUIRE(getCast< long long >(s.getAttribute("longlong")) == 64);
+    REQUIRE(s.getAttribute("longlong").get< long long >() == 64);
     REQUIRE(s.getAttribute("ushort").get< unsigned short >() == 8u);
     REQUIRE(s.getAttribute("uint").get< unsigned int >() == 16u);
     REQUIRE(s.getAttribute("ulong").get< unsigned long >() == 32u);
-    REQUIRE(getCast< unsigned long long >(s.getAttribute("ulonglong")) == 64u);
+    REQUIRE(s.getAttribute("ulonglong").get< unsigned long long >() == 64u);
     REQUIRE(s.getAttribute("vecShort").get< std::vector< short > >() == std::vector< short >({32766, 32767}));
     REQUIRE(s.getAttribute("vecInt").get< std::vector< int > >() == std::vector< int >({32766, 32767}));
     REQUIRE(s.getAttribute("vecLong").get< std::vector< long > >() == std::vector< long >({2147483646, 2147483647}));
-    REQUIRE(getCast< std::vector< long long > >(s.getAttribute("vecLongLong")) == std::vector< long long >({2147483644, 2147483643}));
+    REQUIRE(s.getAttribute("vecLongLong").get< std::vector< long long > >() == std::vector< long long >({2147483644, 2147483643}));
     REQUIRE(s.getAttribute("vecUShort").get< std::vector< unsigned short > >() == std::vector< unsigned short >({65534u, 65535u}));
     REQUIRE(s.getAttribute("vecUInt").get< std::vector< unsigned int > >() == std::vector< unsigned int >({65533u, 65531u}));
     REQUIRE(s.getAttribute("vecULong").get< std::vector< unsigned long > >() == std::vector< unsigned long >({65532u, 65530u}));
-    REQUIRE(getCast< std::vector< unsigned long long > >(s.getAttribute("vecULongLong")) == std::vector< unsigned long long >({65529u, 65528u}));
+    REQUIRE(s.getAttribute("vecULongLong").get< std::vector< unsigned long long > >() == std::vector< unsigned long long >({65529u, 65528u}));
 }
 
 TEST_CASE( "adios1_write_test", "[serial][adios1]")

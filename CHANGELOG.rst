@@ -23,6 +23,7 @@ Bug Fixes
 - Refactor type system and ``Attribute`` set/get
   - integers #337
   - support ``long double`` reads on MSVC #184
+  - make ``::get`` cast if convertible #345
 - ``setAttribute``: explicit C-string handling #341
 - ``Dataset``: ``setCompression`` warning and error logic #326
 - avoid impact on unrelated classes in invasive tests #324
