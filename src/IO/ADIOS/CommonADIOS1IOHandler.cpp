@@ -40,8 +40,13 @@ CommonADIOS1IOHandlerImpl::close(ADIOS_FILE* f)
 void
 CommonADIOS1IOHandlerImpl::flush_attribute(int64_t group, std::string const& name, Attribute const& att)
 {
+    auto dtype = att.dtype;
+    // https://github.com/ComputationalRadiationPhysics/picongpu/pull/1756
+    if( dtype == Datatype::BOOL )
+        dtype = Datatype::UCHAR;
+
     int nelems = 0;
-    switch( att.dtype )
+    switch( dtype )
     {
         using DT = Datatype;
         case DT::VEC_CHAR:
@@ -96,7 +101,7 @@ CommonADIOS1IOHandlerImpl::flush_attribute(int64_t group, std::string const& nam
             nelems = 1;
     }
 
-    std::unique_ptr< void, std::function< void(void*) > > values = auxiliary::allocatePtr(att.dtype, nelems);
+    auto values = auxiliary::allocatePtr(dtype, nelems);
     switch( att.dtype )
     {
         using DT = Datatype;
@@ -312,7 +317,7 @@ CommonADIOS1IOHandlerImpl::flush_attribute(int64_t group, std::string const& nam
         case DT::BOOL:
         {
             auto ptr = reinterpret_cast< unsigned char* >(values.get());
-            *ptr = static_cast< unsigned char >(att.get< unsigned char >());
+            *ptr = static_cast< unsigned char >(att.get< bool >());
             break;
         }
         case DT::UNDEFINED:
