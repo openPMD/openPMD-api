@@ -3,13 +3,15 @@
 Changelog
 =========
 
-0.4.1-alpha
+0.5.0-alpha
 -----------
-**Date:** TBA
+**Date:** 2018-09-17
 
-[Title]
+Refactored Type System
 
-[Summary]
+The type system for ``Datatype::``s was refactored.
+Integer types are now represented by ``SHORT``, ``INT``, ``LONG`` and ``LONGLONG`` as fundamental C/C++ types.
+Python support enters "alpha" stage with fixed floating point storage and ``Attribute`` handling.
 
 Changes to "0.4.0-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -17,13 +19,15 @@ Changes to "0.4.0-alpha"
 Features
 """"""""
 
+- Removed ``Datatype::INT32`` types with ``::SHORT``, ``::INT`` equivalents #337
+- ``Attribute::get<...>()`` performs a ``static_cast`` now #345
+
 Bug Fixes
 """""""""
 
 - Refactor type system and ``Attribute`` set/get
   - integers #337
   - support ``long double`` reads on MSVC #184
-  - make ``::get`` cast if convertible #345
 - ``setAttribute``: explicit C-string handling #341
 - ``Dataset``: ``setCompression`` warning and error logic #326
 - avoid impact on unrelated classes in invasive tests #324

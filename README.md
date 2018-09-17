@@ -56,10 +56,9 @@ for( auto const& i : s.iterations ) {
 
 ### Python
 
-[![Python3][api-py3]](https://www.python.org/) ![Python3 API: Unstable][dev-unstable]
+[![Python3][api-py3]](https://www.python.org/) ![Python3 API: Alpha][dev-alpha]
 
 [api-py3]: https://img.shields.io/badge/language-Python3-yellow.svg "Python3 API"
-[dev-unstable]: https://img.shields.io/badge/phase-unstable-yellow.svg "Status: Unstable"
 
 ```py
 import openPMD
