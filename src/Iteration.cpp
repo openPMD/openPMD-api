@@ -182,9 +182,6 @@ Iteration::flush()
 void
 Iteration::read()
 {
-    /* allow all attributes to be set */
-    written = false;
-
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
 
@@ -278,8 +275,12 @@ Iteration::read()
             {
                 MeshRecordComponent& mrc = m[MeshRecordComponent::SCALAR];
                 *mrc.m_isConstant = true;
+                mrc.m_writable->parent = m.m_writable->parent;
                 mrc.parent = m.parent;
+                mrc.m_writable->abstractFilePosition = m.m_writable->abstractFilePosition;
                 mrc.abstractFilePosition = m.abstractFilePosition;
+                mrc.m_writable->written = true;
+                mrc.written = true;
             }
             m.read();
         }
@@ -331,11 +332,6 @@ Iteration::read()
     }
 
     readAttributes();
-
-    /* this file need not be flushed */
-    meshes.written = true;
-    particles.written = true;
-    written = true;
 }
 
 void

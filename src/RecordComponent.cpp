@@ -144,13 +144,7 @@ RecordComponent::flush(std::string const& name)
 void
 RecordComponent::read()
 {
-    /* allow all attributes to be set */
-    written = false;
-
     readBase();
-
-    /* this file need not be flushed */
-    written = true;
 }
 
 void

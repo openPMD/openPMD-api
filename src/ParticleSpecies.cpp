@@ -30,10 +30,9 @@ ParticleSpecies::ParticleSpecies() = default;
 void
 ParticleSpecies::read()
 {
-    /* allow all attributes to be set */
     written = false;
-
     clear_unchecked();
+    written = true;
 
     /* obtain all non-scalar records */
     Parameter< Operation::LIST_PATHS > pList;
@@ -70,6 +69,8 @@ ParticleSpecies::read()
                 rc.parent = r.parent;
                 rc.m_writable->abstractFilePosition = r.m_writable->abstractFilePosition;
                 rc.abstractFilePosition = r.abstractFilePosition;
+                rc.m_writable->written = true;
+                rc.written = true;
             }
             r.read();
         }
@@ -98,9 +99,6 @@ ParticleSpecies::read()
     }
 
     readAttributes();
-
-    /* this file need not be flushed */
-    written = true;
 }
 
 void

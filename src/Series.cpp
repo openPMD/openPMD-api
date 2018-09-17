@@ -503,6 +503,8 @@ Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
 
             initDefaults();
             setIterationEncoding(input->iterationEncoding);
+
+            written = true;
         }
 
         *newType = oldType;
@@ -643,9 +645,6 @@ Series::readFileBased(AccessType actualAccessType)
             iterations.m_writable->parent = getWritable(this);
             iterations.parent = getWritable(this);
 
-            /* allow all attributes to be set */
-            written = false;
-
             readBase();
 
             using DT = Datatype;
@@ -673,7 +672,11 @@ Series::readFileBased(AccessType actualAccessType)
             IOHandler->enqueue(IOTask(this, aRead));
             IOHandler->flush();
             if( *aRead.dtype == DT::STRING )
+            {
+                written = false;
                 setIterationFormat(Attribute(*aRead.resource).get< std::string >());
+                written = true;
+            }
             else
                 throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
 
@@ -691,10 +694,6 @@ Series::readFileBased(AccessType actualAccessType)
 
     if( !paddings.empty() )
         *m_filenamePadding = *paddings.begin();
-
-    /* this file need not be flushed */
-    iterations.written = true;
-    written = true;
 }
 
 void
@@ -704,9 +703,6 @@ Series::readGroupBased()
     fOpen.name = *m_name;
     IOHandler->enqueue(IOTask(this, fOpen));
     IOHandler->flush();
-
-    /* allow all attributes to be set */
-    written = false;
 
     readBase();
 
@@ -736,19 +732,21 @@ Series::readGroupBased()
     IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
     if( *aRead.dtype == DT::STRING )
+    {
+        written = false;
         setIterationFormat(Attribute(*aRead.resource).get< std::string >());
+        written = true;
+    }
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
 
     /* do not use the public checked version
      * at this point we can guarantee clearing the container won't break anything */
+    written = false;
     iterations.clear_unchecked();
+    written = true;
 
     read();
-
-    /* this file need not be flushed */
-    iterations.written = true;
-    written = true;
 }
 
 void
@@ -786,38 +784,43 @@ Series::readBase()
     IOHandler->flush();
     if( std::count(aList.attributes->begin(), aList.attributes->end(), "meshesPath") == 1 )
     {
-        /* allow setting the meshes path after completed IO */
-        for( auto& it : iterations )
-            it.second.meshes.written = false;
-
         aRead.name = "meshesPath";
         IOHandler->enqueue(IOTask(this, aRead));
         IOHandler->flush();
         if( *aRead.dtype == DT::STRING )
+        {
+            /* allow setting the meshes path after completed IO */
+            for( auto& it : iterations )
+                it.second.meshes.written = false;
+
             setMeshesPath(Attribute(*aRead.resource).get< std::string >());
+
+            for( auto& it : iterations )
+                it.second.meshes.written = true;
+        }
         else
             throw std::runtime_error("Unexpected Attribute datatype for 'meshesPath'");
-
-        for( auto& it : iterations )
-            it.second.meshes.written = true;
     }
 
     if( std::count(aList.attributes->begin(), aList.attributes->end(), "particlesPath") == 1 )
     {
-        /* allow setting the meshes path after completed IO */
-        for( auto& it : iterations )
-            it.second.particles.written = false;
-
         aRead.name = "particlesPath";
         IOHandler->enqueue(IOTask(this, aRead));
         IOHandler->flush();
         if( *aRead.dtype == DT::STRING )
+        {
+            /* allow setting the meshes path after completed IO */
+            for( auto& it : iterations )
+                it.second.particles.written = false;
+
             setParticlesPath(Attribute(*aRead.resource).get< std::string >());
+
+
+            for( auto& it : iterations )
+                it.second.particles.written = true;
+        }
         else
             throw std::runtime_error("Unexpected Attribute datatype for 'particlesPath'");
-
-        for( auto& it : iterations )
-            it.second.particles.written = true;
     }
 }
 

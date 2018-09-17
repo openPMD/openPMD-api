@@ -223,9 +223,6 @@ Mesh::flush_impl(std::string const& name)
 void
 Mesh::read()
 {
-    /* allow all attributes to be set */
-    written = false;
-
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
 
@@ -314,7 +311,9 @@ Mesh::read()
         this->at(MeshRecordComponent::SCALAR).read();
     } else
     {
+        written = false;
         clear_unchecked();
+        written = true;
         Parameter< Operation::LIST_PATHS > pList;
         IOHandler->enqueue(IOTask(this, pList));
         IOHandler->flush();
@@ -350,9 +349,6 @@ Mesh::read()
     readBase();
 
     readAttributes();
-
-    /* this file need not be flushed */
-    written = true;
 }
 } // openPMD
 
