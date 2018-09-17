@@ -25,6 +25,7 @@
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
+#include "openPMD/binding/python/Numpy.hpp"
 
 #include <string>
 #include <vector>
@@ -54,6 +55,8 @@ bool setAttributeFromBufferInfo(
     std::string const& key,
     py::buffer_info const& buf
 ) {
+    using DT = Datatype;
+
     // Numpy: Handling of arrays and scalars
     // work-around for https://github.com/pybind/pybind11/issues/1224
     // -> passing numpy scalars as buffers needs numpy 1.15+
@@ -67,35 +70,49 @@ bool setAttributeFromBufferInfo(
         //   https://docs.python.org/3/library/struct.html#format-characters
         // std::cout << "  scalar type '" << buf.format << "'" << std::endl;
         // typestring: encoding + type + number of bytes
-        if( buf.format.find("?") != std::string::npos )
-            return attr.setAttribute( key, *static_cast<bool*>(buf.ptr) );
-        else if( buf.format.find("h") != std::string::npos )
-            return attr.setAttribute( key, *static_cast<short*>(buf.ptr) );
-        else if( buf.format.find("i") != std::string::npos )
-            return attr.setAttribute( key, *static_cast<int*>(buf.ptr) );
-        else if( buf.format.find("l") != std::string::npos )
-            return attr.setAttribute( key, *static_cast<long*>(buf.ptr) );
-        else if( buf.format.find("q") != std::string::npos )
-            return attr.setAttribute( key, *static_cast<long long*>(buf.ptr) );
-        else if( buf.format.find("H") != std::string::npos )
-            return attr.setAttribute( key, *static_cast<unsigned short*>(buf.ptr) );
-        else if( buf.format.find("I") != std::string::npos )
-            return attr.setAttribute( key, *static_cast<unsigned int*>(buf.ptr) );
-        else if( buf.format.find("L") != std::string::npos )
-            return attr.setAttribute( key, *static_cast<unsigned long*>(buf.ptr) );
-        else if( buf.format.find("Q") != std::string::npos )
-            return attr.setAttribute( key, *static_cast<unsigned long long*>(buf.ptr) );
-        else if( buf.format.find("f") != std::string::npos )
-            return attr.setAttribute( key, *static_cast<float*>(buf.ptr) );
-        else if( buf.format.find("d") != std::string::npos )
-            return attr.setAttribute( key, *static_cast<double*>(buf.ptr) );
-        else if( buf.format.find("g") != std::string::npos )
-            return attr.setAttribute( key, *static_cast<long double*>(buf.ptr) );
-        else
-            throw std::runtime_error("set_attribute: Unknown "
-                "Python type '" + buf.format +
-                "' for attribute '" + key + "'");
-
+        switch( dtype_from_bufferformat( buf.format ) )
+        {
+            case DT::BOOL:
+                return attr.setAttribute( key, *static_cast<bool*>(buf.ptr) );
+                break;
+            case DT::SHORT:
+                return attr.setAttribute( key, *static_cast<short*>(buf.ptr) );
+                break;
+            case DT::INT:
+                return attr.setAttribute( key, *static_cast<int*>(buf.ptr) );
+                break;
+            case DT::LONG:
+                return attr.setAttribute( key, *static_cast<long*>(buf.ptr) );
+                break;
+            case DT::LONGLONG:
+                return attr.setAttribute( key, *static_cast<long long*>(buf.ptr) );
+                break;
+            case DT::USHORT:
+                return attr.setAttribute( key, *static_cast<unsigned short*>(buf.ptr) );
+                break;
+            case DT::UINT:
+                return attr.setAttribute( key, *static_cast<unsigned int*>(buf.ptr) );
+                break;
+            case DT::ULONG:
+                return attr.setAttribute( key, *static_cast<unsigned long*>(buf.ptr) );
+                break;
+            case DT::ULONGLONG:
+                return attr.setAttribute( key, *static_cast<unsigned long long*>(buf.ptr) );
+                break;
+            case DT::FLOAT:
+                return attr.setAttribute( key, *static_cast<float*>(buf.ptr) );
+                break;
+            case DT::DOUBLE:
+                return attr.setAttribute( key, *static_cast<double*>(buf.ptr) );
+                break;
+            case DT::LONG_DOUBLE:
+                return attr.setAttribute( key, *static_cast<long double*>(buf.ptr) );
+                break;
+            default:
+                throw std::runtime_error("set_attribute: Unknown "
+                    "Python type '" + buf.format +
+                    "' for attribute '" + key + "'");
+        }
         return false;
     }
     // lists & ndarrays: all will be flattended to 1D lists

@@ -26,6 +26,7 @@
 
 #include "openPMD/Datatype.hpp"
 
+#include <string>
 #include <exception>
 
 
@@ -66,6 +67,51 @@ namespace openPMD
             return Datatype::BOOL;
         else
             throw std::runtime_error("Datatype '...' not known in 'dtype_from_numpy'!"); // _s.format(dt)
+    }
+
+    /** Return openPMD::Datatype from py::buffer_info::format
+     */
+    inline Datatype
+    dtype_from_bufferformat( std::string const & fmt )
+    {
+        using DT = Datatype;
+
+        // refs:
+        //   https://docs.scipy.org/doc/numpy-1.15.0/reference/arrays.interface.html
+        //   https://docs.python.org/3/library/struct.html#format-characters
+        // std::cout << "  scalar type '" << buf.format << "'" << std::endl;
+        // typestring: encoding + type + number of bytes
+        if( fmt.find("?") != std::string::npos )
+            return DT::BOOL;
+        else if( fmt.find("b") != std::string::npos )
+            return DT::CHAR;
+        else if( fmt.find("h") != std::string::npos )
+            return DT::SHORT;
+        else if( fmt.find("i") != std::string::npos )
+            return DT::INT;
+        else if( fmt.find("l") != std::string::npos )
+            return DT::LONG;
+        else if( fmt.find("q") != std::string::npos )
+            return DT::LONGLONG;
+        else if( fmt.find("B") != std::string::npos )
+            return DT::UCHAR;
+        else if( fmt.find("H") != std::string::npos )
+            return DT::USHORT;
+        else if( fmt.find("I") != std::string::npos )
+            return DT::UINT;
+        else if( fmt.find("L") != std::string::npos )
+            return DT::ULONG;
+        else if( fmt.find("Q") != std::string::npos )
+            return DT::ULONGLONG;
+        else if( fmt.find("f") != std::string::npos )
+            return DT::FLOAT;
+        else if( fmt.find("d") != std::string::npos )
+            return DT::DOUBLE;
+        else if( fmt.find("g") != std::string::npos )
+            return DT::LONG_DOUBLE;
+        else
+            throw std::runtime_error("dtype_from_bufferformat: Unknown "
+                "Python type '" + fmt + "'");
     }
 
     inline pybind11::dtype

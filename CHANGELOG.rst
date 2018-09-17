@@ -21,6 +21,7 @@ Features
 
   - accept & return ``numpy.dtype`` for ``Datatype`` #351
   - better check for (unsupported) numpy array strides #353
+  - implement ``Record_Component.make_constant`` #354
 - comply with runtime constraints w.r.t. ``written`` status #352
 
 Bug Fixes

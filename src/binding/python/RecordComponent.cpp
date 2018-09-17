@@ -51,20 +51,92 @@ void init_RecordComponent(py::module &m) {
         .def_property_readonly("ndim", &RecordComponent::getDimensionality)
         .def_property_readonly("shape", &RecordComponent::getExtent)
 
-        .def("make_constant", &RecordComponent::makeConstant<float>)
-        .def("make_constant", &RecordComponent::makeConstant<double>)
-        .def("make_constant", &RecordComponent::makeConstant<long double>)
-        .def("make_constant", &RecordComponent::makeConstant<short>)
-        .def("make_constant", &RecordComponent::makeConstant<int>)
-        .def("make_constant", &RecordComponent::makeConstant<long>)
-        .def("make_constant", &RecordComponent::makeConstant<long long>)
-        .def("make_constant", &RecordComponent::makeConstant<unsigned short>)
-        .def("make_constant", &RecordComponent::makeConstant<unsigned int>)
-        .def("make_constant", &RecordComponent::makeConstant<unsigned long>)
-        .def("make_constant", &RecordComponent::makeConstant<unsigned long long>)
-        .def("make_constant", &RecordComponent::makeConstant<char>)
-        .def("make_constant", &RecordComponent::makeConstant<unsigned char>)
-        .def("make_constant", &RecordComponent::makeConstant<bool>)
+        // buffer types
+        .def("make_constant", [](RecordComponent & rc, py::buffer & a) {
+            py::buffer_info buf = a.request();
+            auto const dtype = dtype_from_bufferformat( buf.format );
+
+            using DT = Datatype;
+
+            // Numpy: Handling of arrays and scalars
+            // work-around for https://github.com/pybind/pybind11/issues/1224
+            // -> passing numpy scalars as buffers needs numpy 1.15+
+            //    https://github.com/numpy/numpy/issues/10265
+            //    https://github.com/pybind/pybind11/issues/1224#issuecomment-354357392
+            // scalars, see PEP 3118
+            // requires Numpy 1.15+
+            if( buf.ndim == 0 ) {
+                // refs:
+                //   https://docs.scipy.org/doc/numpy-1.15.0/reference/arrays.interface.html
+                //   https://docs.python.org/3/library/struct.html#format-characters
+                // std::cout << "  scalar type '" << buf.format << "'" << std::endl;
+                // typestring: encoding + type + number of bytes
+                switch( dtype )
+                {
+                    case DT::BOOL:
+                        return rc.makeConstant( *static_cast<bool*>(buf.ptr) );
+                        break;
+                    case DT::CHAR:
+                        return rc.makeConstant( *static_cast<char*>(buf.ptr) );
+                        break;
+                    case DT::SHORT:
+                        return rc.makeConstant( *static_cast<short*>(buf.ptr) );
+                        break;
+                    case DT::INT:
+                        return rc.makeConstant( *static_cast<int*>(buf.ptr) );
+                        break;
+                    case DT::LONG:
+                        return rc.makeConstant( *static_cast<long*>(buf.ptr) );
+                        break;
+                    case DT::LONGLONG:
+                        return rc.makeConstant( *static_cast<long long*>(buf.ptr) );
+                        break;
+                    case DT::UCHAR:
+                        return rc.makeConstant( *static_cast<unsigned char*>(buf.ptr) );
+                        break;
+                    case DT::USHORT:
+                        return rc.makeConstant( *static_cast<unsigned short*>(buf.ptr) );
+                        break;
+                    case DT::UINT:
+                        return rc.makeConstant( *static_cast<unsigned int*>(buf.ptr) );
+                        break;
+                    case DT::ULONG:
+                        return rc.makeConstant( *static_cast<unsigned long*>(buf.ptr) );
+                        break;
+                    case DT::ULONGLONG:
+                        return rc.makeConstant( *static_cast<unsigned long long*>(buf.ptr) );
+                        break;
+                    case DT::FLOAT:
+                        return rc.makeConstant( *static_cast<float*>(buf.ptr) );
+                        break;
+                    case DT::DOUBLE:
+                        return rc.makeConstant( *static_cast<double*>(buf.ptr) );
+                        break;
+                    case DT::LONG_DOUBLE:
+                        return rc.makeConstant( *static_cast<long double*>(buf.ptr) );
+                        break;
+                    default:
+                        throw std::runtime_error("make_constant: "
+                            "Unknown Datatype!");
+                }
+            }
+            else
+            {
+                throw std::runtime_error("make_constant: "
+                    "Only scalar values supported!");
+            }
+
+        }, py::arg("value")
+        )
+        // allowed python intrinsics, after (!) buffer matching
+        .def("make_constant", &RecordComponent::makeConstant<char>,
+            py::arg("value"))
+        .def("make_constant", &RecordComponent::makeConstant<long>,
+            py::arg("value"))
+        .def("make_constant", &RecordComponent::makeConstant<double>,
+            py::arg("value"))
+        .def("make_constant", &RecordComponent::makeConstant<bool>,
+            py::arg("value"))
 
         /* draft of the slicing protocol
         .def("__getitem__", [](RecordComponent const & r, py::slice s) {
