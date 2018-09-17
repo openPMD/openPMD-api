@@ -871,6 +871,9 @@ void
 CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                                    Parameter< Operation::READ_ATT >& parameters)
 {
+    if( !writable->written )
+        throw std::runtime_error("Internal error: Writable not marked written during attribute reading");
+
     ADIOS_FILE* f;
     f = m_openReadFileHandles.at(m_filePaths.at(writable));
 
@@ -1311,6 +1314,9 @@ void
 CommonADIOS1IOHandlerImpl::listPaths(Writable* writable,
                                Parameter< Operation::LIST_PATHS >& parameters)
 {
+    if( !writable->written )
+        throw std::runtime_error("Internal error: Writable not marked written during path listing");
+
     ADIOS_FILE* f;
     f = m_openReadFileHandles.at(m_filePaths.at(writable));
 
@@ -1359,6 +1365,9 @@ void
 CommonADIOS1IOHandlerImpl::listDatasets(Writable* writable,
                                   Parameter< Operation::LIST_DATASETS >& parameters)
 {
+    if( !writable->written )
+        throw std::runtime_error("Internal error: Writable not marked written during dataset listing");
+
     ADIOS_FILE* f;
     f = m_openReadFileHandles.at(m_filePaths.at(writable));
 
@@ -1388,6 +1397,9 @@ void
 CommonADIOS1IOHandlerImpl::listAttributes(Writable* writable,
                                     Parameter< Operation::LIST_ATTS >& parameters)
 {
+    if( !writable->written )
+        throw std::runtime_error("Internal error: Writable not marked written during attribute listing");
+
     ADIOS_FILE* f;
     f = m_openReadFileHandles.at(m_filePaths.at(writable));
 
