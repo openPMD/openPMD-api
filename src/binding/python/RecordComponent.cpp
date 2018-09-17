@@ -25,6 +25,7 @@
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/auxiliary/ShareRaw.hpp"
+#include "openPMD/binding/python/Numpy.hpp"
 
 #include <string>
 #include <algorithm>
@@ -113,44 +114,7 @@ void init_RecordComponent(py::module &m) {
             std::vector<ptrdiff_t> shape(extent.size());
             std::copy(std::begin(extent), std::end(extent), std::begin(shape));
 
-            auto dtype = py::dtype("void");
-
-            if( r.getDatatype() == Datatype::CHAR ) dtype = py::dtype("b");
-            else if( r.getDatatype() == Datatype::UCHAR ) dtype = py::dtype("B");
-            else if( r.getDatatype() == Datatype::SHORT ) dtype = py::dtype("short");
-            else if( r.getDatatype() == Datatype::INT ) dtype = py::dtype("intc");
-            else if( r.getDatatype() == Datatype::LONG ) dtype = py::dtype("int_");
-            else if( r.getDatatype() == Datatype::LONGLONG ) dtype = py::dtype("longlong");
-            else if( r.getDatatype() == Datatype::USHORT ) dtype = py::dtype("ushort");
-            else if( r.getDatatype() == Datatype::UINT ) dtype = py::dtype("uintc");
-            else if( r.getDatatype() == Datatype::ULONG ) dtype = py::dtype("uint");
-            else if( r.getDatatype() == Datatype::ULONGLONG ) dtype = py::dtype("ulonglong");
-            else if( r.getDatatype() == Datatype::LONG_DOUBLE ) dtype = py::dtype("longdouble");
-            else if( r.getDatatype() == Datatype::DOUBLE ) dtype = py::dtype("double");
-            else if( r.getDatatype() == Datatype::FLOAT ) dtype = py::dtype("float");
-
-            /* @todo
-            .value("STRING", Datatype::STRING)
-            .value("VEC_CHAR", Datatype::VEC_CHAR)
-            .value("VEC_SHORT", Datatype::VEC_SHORT)
-            .value("VEC_INT", Datatype::VEC_INT)
-            .value("VEC_LONG", Datatype::VEC_LONG)
-            .value("VEC_LONGLONG", Datatype::VEC_LONGLONG)
-            .value("VEC_UCHAR", Datatype::VEC_UCHAR)
-            .value("VEC_USHORT", Datatype::VEC_USHORT)
-            .value("VEC_UINT", Datatype::VEC_UINT)
-            .value("VEC_ULONG", Datatype::VEC_ULONG)
-            .value("VEC_ULONGLONG", Datatype::VEC_ULONGLONG)
-            .value("VEC_FLOAT", Datatype::VEC_FLOAT)
-            .value("VEC_DOUBLE", Datatype::VEC_DOUBLE)
-            .value("VEC_LONG_DOUBLE", Datatype::VEC_LONG_DOUBLE)
-            .value("VEC_STRING", Datatype::VEC_STRING)
-            .value("ARR_DBL_7", Datatype::ARR_DBL_7)
-            */
-
-            else if( r.getDatatype() == Datatype::BOOL ) dtype = py::dtype("bool");
-            else
-                throw std::runtime_error(std::string("Datatype not known in 'load_chunk'!"));
+            auto const dtype = dtype_to_numpy( r.getDatatype() );
 
             auto a = py::array( dtype, shape );
 
@@ -180,26 +144,6 @@ void init_RecordComponent(py::module &m) {
                 r.loadChunk<double>(offset, extent, shareRaw((double*) a.mutable_data()));
             else if( r.getDatatype() == Datatype::FLOAT )
                 r.loadChunk<float>(offset, extent, shareRaw((float*) a.mutable_data()));
-
-            /* @todo
-            .value("STRING", Datatype::STRING)
-            .value("VEC_CHAR", Datatype::VEC_CHAR)
-            .value("VEC_SHORT", Datatype::VEC_SHORT)
-            .value("VEC_INT", Datatype::VEC_INT)
-            .value("VEC_LONG", Datatype::VEC_LONG)
-            .value("VEC_LONGLONG", Datatype::VEC_LONGLONG)
-            .value("VEC_UCHAR", Datatype::VEC_UCHAR)
-            .value("VEC_USHORT", Datatype::VEC_USHORT)
-            .value("VEC_UINT", Datatype::VEC_UINT)
-            .value("VEC_ULONG", Datatype::VEC_ULONG)
-            .value("VEC_ULONGLONG", Datatype::VEC_ULONGLONG)
-            .value("VEC_FLOAT", Datatype::VEC_FLOAT)
-            .value("VEC_DOUBLE", Datatype::VEC_DOUBLE)
-            .value("VEC_LONG_DOUBLE", Datatype::VEC_LONG_DOUBLE)
-            .value("VEC_STRING", Datatype::VEC_STRING)
-            .value("ARR_DBL_7", Datatype::ARR_DBL_7)
-            */
-
             else if( r.getDatatype() == Datatype::BOOL )
                 r.loadChunk<bool>(offset, extent, shareRaw((bool*) a.mutable_data()));
             else
@@ -224,53 +168,39 @@ void init_RecordComponent(py::module &m) {
             // py::print( py::str(a.dtype()) );
             // py::print( py::str(buf.dtype()) );
 
-            // ref: https://docs.scipy.org/doc/numpy/user/basics.types.html
-            // ref: https://github.com/numpy/numpy/issues/10678#issuecomment-369363551
-            if( a.dtype().is(py::dtype("b")) )
+            auto const dtype = dtype_from_numpy( a.dtype() );
+            if( dtype == Datatype::CHAR )
                 r.storeChunk( offset, extent, shareRaw( (char*)a.mutable_data() ) );
-            else if( a.dtype().is(py::dtype("B")) )
+            else if( dtype == Datatype::UCHAR )
                 r.storeChunk( offset, extent, shareRaw( (unsigned char*)a.mutable_data() ) );
-            else if( a.dtype().is(py::dtype("short")) )
+            else if( dtype == Datatype::SHORT )
                 r.storeChunk( offset, extent, shareRaw( (short*)a.mutable_data() ) );
-            else if( a.dtype().is(py::dtype("intc")) )
+            else if( dtype == Datatype::INT )
                 r.storeChunk( offset, extent, shareRaw( (int*)a.mutable_data() ) );
-            else if( a.dtype().is(py::dtype("int_")) )
+            else if( dtype == Datatype::LONG )
                r.storeChunk( offset, extent, shareRaw( (long*)a.mutable_data() ) );
-            else if( a.dtype().is(py::dtype("longlong")) )
+            else if( dtype == Datatype::LONGLONG )
                 r.storeChunk( offset, extent, shareRaw( (long long*)a.mutable_data() ) );
-            else if( a.dtype().is(py::dtype("ushort")) )
+            else if( dtype == Datatype::USHORT )
                 r.storeChunk( offset, extent, shareRaw( (unsigned short*)a.mutable_data() ) );
-            else if( a.dtype().is(py::dtype("uintc")) )
+            else if( dtype == Datatype::UINT )
                 r.storeChunk( offset, extent, shareRaw( (unsigned int*)a.mutable_data() ) );
-            else if( a.dtype().is(py::dtype("uint")) )
+            else if( dtype == Datatype::ULONG )
                 r.storeChunk( offset, extent, shareRaw( (unsigned long*)a.mutable_data() ) );
-            else if( a.dtype().is(py::dtype("ulonglong")) )
+            else if( dtype == Datatype::ULONGLONG )
                 r.storeChunk( offset, extent, shareRaw( (unsigned long long*)a.mutable_data() ) );
-            else if( a.dtype().is(py::dtype("longdouble")) )
+            else if( dtype == Datatype::LONG_DOUBLE )
                 r.storeChunk( offset, extent, shareRaw( (long double*)a.mutable_data() ) );
-            else if( a.dtype().is(py::dtype("double")) )
+            else if( dtype == Datatype::DOUBLE )
                 r.storeChunk( offset, extent, shareRaw( (double*)a.mutable_data() ) );
-            else if( a.dtype().is(py::dtype("single")) ) // note: np.float is an alias for float64
+            else if( dtype == Datatype::FLOAT )
                 r.storeChunk( offset, extent, shareRaw( (float*)a.mutable_data() ) );
 /* @todo
         .value("STRING", Datatype::STRING)
-        .value("VEC_CHAR", Datatype::VEC_CHAR)
-        .value("VEC_SHORT", Datatype::VEC_SHORT)
-        .value("VEC_INT", Datatype::VEC_INT)
-        .value("VEC_LONG", Datatype::VEC_LONG)
-        .value("VEC_LONGLONG", Datatype::VEC_LONGLONG)
-        .value("VEC_UCHAR", Datatype::VEC_UCHAR)
-        .value("VEC_USHORT", Datatype::VEC_USHORT)
-        .value("VEC_UINT", Datatype::VEC_UINT)
-        .value("VEC_ULONG", Datatype::VEC_ULONG)
-        .value("VEC_ULONGLONG", Datatype::VEC_ULONGLONG)
-        .value("VEC_FLOAT", Datatype::VEC_FLOAT)
-        .value("VEC_DOUBLE", Datatype::VEC_DOUBLE)
-        .value("VEC_LONG_DOUBLE", Datatype::VEC_LONG_DOUBLE)
         .value("VEC_STRING", Datatype::VEC_STRING)
         .value("ARR_DBL_7", Datatype::ARR_DBL_7)
 */
-            else if( a.dtype().is(py::dtype("bool")) )
+            else if( dtype == Datatype::BOOL )
                 r.storeChunk( offset, extent, shareRaw( (bool*)a.mutable_data() ) );
             else
                 throw std::runtime_error(std::string("Datatype '") + std::string(py::str(a.dtype())) + std::string("' not known in 'store_chunk'!"));

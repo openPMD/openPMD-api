@@ -24,6 +24,7 @@
 
 #include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/Datatype.hpp"
+#include "openPMD/binding/python/Numpy.hpp"
 
 #include <sstream>
 
@@ -46,74 +47,7 @@ void init_BaseRecordComponent(py::module &m) {
 
         .def_property_readonly("unit_SI", &BaseRecordComponent::unitSI)
         .def_property_readonly("dtype", [](BaseRecordComponent & brc) {
-            using DT = Datatype;
-
-            // ref: https://docs.scipy.org/doc/numpy/user/basics.types.html
-            // ref: https://github.com/numpy/numpy/issues/10678#issuecomment-369363551
-            if( brc.getDatatype() == DT::BOOL )
-                return py::dtype("?");
-            else if( brc.getDatatype() == DT::CHAR )
-                return py::dtype("b");
-            else if( brc.getDatatype() == DT::UCHAR )
-                return py::dtype("B");
-            else if( brc.getDatatype() == DT::SHORT )
-                return py::dtype("short");
-            else if( brc.getDatatype() == DT::INT )
-                return py::dtype("intc");
-            else if( brc.getDatatype() == DT::LONG )
-                return py::dtype("int_");
-            else if( brc.getDatatype() == DT::LONGLONG )
-                return py::dtype("longlong");
-            else if( brc.getDatatype() == DT::USHORT )
-                return py::dtype("ushort");
-            else if( brc.getDatatype() == DT::UINT )
-                return py::dtype("uintc");
-            else if( brc.getDatatype() == DT::ULONG )
-                return py::dtype("uint");
-            else if( brc.getDatatype() == DT::ULONGLONG )
-                return py::dtype("ulonglong");
-            else if( brc.getDatatype() == DT::LONG_DOUBLE )
-                return py::dtype("longdouble");
-            else if( brc.getDatatype() == DT::DOUBLE )
-                return py::dtype("double");
-            else if( brc.getDatatype() == DT::FLOAT )
-                return py::dtype("single"); // note: np.float is an alias for float64
-            /*
-            else if( brc.getDatatype() == DT::STRING )
-                return py::dtype("string_");
-            else if( brc.getDatatype() == DT::VEC_CHAR )
-                return py::dtype("");
-            else if( brc.getDatatype() == DT::VEC_SHORT )
-                return py::dtype("");
-            else if( brc.getDatatype() == DT::VEC_INT )
-                return py::dtype("");
-            else if( brc.getDatatype() == DT::VEC_LONG )
-                return py::dtype("");
-            else if( brc.getDatatype() == DT::VEC_LONGLONG )
-                return py::dtype("");
-            else if( brc.getDatatype() == DT::VEC_UCHAR )
-                return py::dtype("");
-            else if( brc.getDatatype() == DT::VEC_USHORT )
-                return py::dtype("");
-            else if( brc.getDatatype() == DT::VEC_UINT )
-                return py::dtype("");
-            else if( brc.getDatatype() == DT::VEC_ULONG )
-                return py::dtype("");
-            else if( brc.getDatatype() == DT::VEC_ULONGLONG )
-                return py::dtype("");
-            else if( brc.getDatatype() == DT::ARR_DBL_7 )
-                return py::dtype("");
-            else if( brc.getDatatype() == DT::VEC_LONG_DOUBLE )
-                return py::dtype("");
-            else if( brc.getDatatype() == DT::VEC_DOUBLE )
-                return py::dtype("");
-            else if( brc.getDatatype() == DT::VEC_FLOAT )
-                return py::dtype("");
-            else if( brc.getDatatype() == DT::VEC_STRING )
-                return py::dtype("");
-            */
-            else
-                return py::dtype("void");
+            return dtype_to_numpy( brc.getDatatype() );
         })
     ;
 }
