@@ -22,6 +22,7 @@
 #include <pybind11/stl.h>
 
 #include "openPMD/Datatype.hpp"
+#include "openPMD/binding/python/Numpy.hpp"
 
 namespace py = pybind11;
 using namespace openPMD;
@@ -63,7 +64,10 @@ void init_Datatype(py::module &m) {
         .value("UNDEFINED", Datatype::UNDEFINED)
     ;
 
-    // 2x: determineDatatype
-    // equivalence check: decay_equiv
-    // m.def("add", [](int a, int b) { return a + b; });
+    m.def("determine_datatype", [](py::dtype const dt) {
+        return dtype_from_numpy( dt );
+    });
+    m.def("determine_datatype", [](py::array const & a) {
+        return dtype_from_numpy( a.dtype() );
+    });
 }

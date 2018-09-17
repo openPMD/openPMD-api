@@ -352,6 +352,8 @@ class APITest(unittest.TestCase):
         self.assertIsInstance(electrons, openPMD.ParticleSpecies)
         pos_y = electrons["position"]["y"]
         w = electrons["weighting"][openPMD.Record_Component.SCALAR]
+        assert pos_y.dtype == np.double
+        assert w.dtype == np.double
 
         self.assertSequenceEqual(pos_y.shape, [270625, ])
         self.assertSequenceEqual(w.shape, [270625, ])
@@ -476,9 +478,15 @@ class APITest(unittest.TestCase):
 
     def testDataset(self):
         """ Test openPMD.Dataset. """
-        data_type = openPMD.Datatype(1)
+        data_type = openPMD.Datatype.LONG
         extent = [1, 1, 1]
         obj = openPMD.Dataset(data_type, extent)
+        if found_numpy:
+            d = np.array((1, 1, 1, ), dtype=np.int_)
+            obj2 = openPMD.Dataset(d.dtype, d.shape)
+            assert data_type == openPMD.determine_datatype(d.dtype)
+            assert obj2.dtype == obj.dtype
+            assert obj2.dtype == obj.dtype
         del obj
 
     def testGeometry(self):

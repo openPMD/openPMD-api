@@ -17,6 +17,10 @@ Changes to "0.5.0-alpha"
 Features
 """"""""
 
+- Python:
+
+  - accept & return ``numpy.dtype`` for ``Datatype`` #351
+
 Bug Fixes
 """""""""
 
@@ -47,6 +51,7 @@ Bug Fixes
 """""""""
 
 - Refactor type system and ``Attribute`` set/get
+
   - integers #337
   - support ``long double`` reads on MSVC #184
 - ``setAttribute``: explicit C-string handling #341

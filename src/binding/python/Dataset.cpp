@@ -22,6 +22,7 @@
 #include <pybind11/stl.h>
 
 #include "openPMD/Dataset.hpp"
+#include "openPMD/binding/python/Numpy.hpp"
 
 #include <string>
 
@@ -33,6 +34,12 @@ void init_Dataset(py::module &m) {
     py::class_<Dataset>(m, "Dataset")
 
         .def(py::init<Datatype, Extent>(),
+            py::arg("dtype"), py::arg("extent")
+        )
+        .def(py::init( [](py::dtype dt, Extent e) {
+            auto const d = dtype_from_numpy( dt );
+            return new Dataset{d, e};
+        }),
             py::arg("dtype"), py::arg("extent")
         )
 
@@ -51,7 +58,9 @@ void init_Dataset(py::module &m) {
         .def_readonly("transform", &Dataset::transform)
         .def("set_custom_transform", &Dataset::setCustomTransform)
         .def_readonly("rank", &Dataset::rank)
-        .def_readonly("dtype", &Dataset::dtype)
+        .def_property_readonly("dtype", [](const Dataset &d) {
+            return dtype_to_numpy( d.dtype );
+        })
     ;
 }
 
