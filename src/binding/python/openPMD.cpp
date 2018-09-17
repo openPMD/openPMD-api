@@ -86,5 +86,13 @@ PYBIND11_MODULE(openPMD, m) {
         {"adios1", bool(openPMD_HAVE_ADIOS1)},
         {"adios2", bool(openPMD_HAVE_ADIOS2)}
     };
+
+    // TODO broken numpy if not at least v1.15.0: raise warning
+    // auto numpy = py::module::import("numpy");
+    // auto npversion = numpy.attr("__version__");
+    // std::cout << "numpy version: " << py::str(npversion) << std::endl;
+
+    // TODO allow to query runtime versions of all dependencies
+    //      (also needed in C++ frontend)
 }
 

@@ -49,6 +49,166 @@ using namespace openPMD;
 using PyAttributeKeys = std::vector< std::string >;
 //PYBIND11_MAKE_OPAQUE(PyAttributeKeys)
 
+bool setAttributeFromBufferInfo(
+    Attributable & attr,
+    std::string const& key,
+    py::buffer_info const& buf
+) {
+    // Numpy: Handling of arrays and scalars
+    // work-around for https://github.com/pybind/pybind11/issues/1224
+    // -> passing numpy scalars as buffers needs numpy 1.15+
+    //    https://github.com/numpy/numpy/issues/10265
+    //    https://github.com/pybind/pybind11/issues/1224#issuecomment-354357392
+    // scalars, see PEP 3118
+    // requires Numpy 1.15+
+    if( buf.ndim == 0 ) {
+        // refs:
+        //   https://docs.scipy.org/doc/numpy-1.15.0/reference/arrays.interface.html
+        //   https://docs.python.org/3/library/struct.html#format-characters
+        // std::cout << "  scalar type '" << buf.format << "'" << std::endl;
+        // typestring: encoding + type + number of bytes
+        if( buf.format.find("?") != std::string::npos )
+            return attr.setAttribute( key, *static_cast<bool*>(buf.ptr) );
+        else if( buf.format.find("h") != std::string::npos )
+            return attr.setAttribute( key, *static_cast<short*>(buf.ptr) );
+        else if( buf.format.find("i") != std::string::npos )
+            return attr.setAttribute( key, *static_cast<int*>(buf.ptr) );
+        else if( buf.format.find("l") != std::string::npos )
+            return attr.setAttribute( key, *static_cast<long*>(buf.ptr) );
+        else if( buf.format.find("q") != std::string::npos )
+            return attr.setAttribute( key, *static_cast<long long*>(buf.ptr) );
+        else if( buf.format.find("H") != std::string::npos )
+            return attr.setAttribute( key, *static_cast<unsigned short*>(buf.ptr) );
+        else if( buf.format.find("I") != std::string::npos )
+            return attr.setAttribute( key, *static_cast<unsigned int*>(buf.ptr) );
+        else if( buf.format.find("L") != std::string::npos )
+            return attr.setAttribute( key, *static_cast<unsigned long*>(buf.ptr) );
+        else if( buf.format.find("Q") != std::string::npos )
+            return attr.setAttribute( key, *static_cast<unsigned long long*>(buf.ptr) );
+        else if( buf.format.find("f") != std::string::npos )
+            return attr.setAttribute( key, *static_cast<float*>(buf.ptr) );
+        else if( buf.format.find("d") != std::string::npos )
+            return attr.setAttribute( key, *static_cast<double*>(buf.ptr) );
+        else if( buf.format.find("g") != std::string::npos )
+            return attr.setAttribute( key, *static_cast<long double*>(buf.ptr) );
+        else
+            throw std::runtime_error("set_attribute: Unknown "
+                "Python type '" + buf.format +
+                "' for attribute '" + key + "'");
+
+        return false;
+    }
+    // lists & ndarrays: all will be flattended to 1D lists
+    else {
+        // std::cout << "  array type '" << buf.format << "'" << std::endl;
+        // stride handling
+        for( auto d = 0; d < buf.ndim; ++d )
+        {
+            // std::cout << "    stride '" << d << "': " << buf.strides[d] << " - " << buf.shape[d] << std::endl;
+            if( buf.strides[d] != buf.shape[d] ) // general criterial
+                if( d > 0 && buf.strides[d] != 1 ) // ok for byte strings
+                    throw std::runtime_error("set_attribute: "
+                        "stride handling not implemented! (key='" +
+                        key + "')");
+        }
+        // @todo in order to implement stride handling, one needs to
+        //       loop over the input data strides during write below
+
+        // dtype handling
+        /*if( buf.format.find("?") != std::string::npos )
+            return attr.setAttribute( key,
+                std::vector<bool>(
+                    static_cast<bool*>(buf.ptr),
+                    static_cast<bool*>(buf.ptr) + buf.size
+                ) );
+        else */
+        if( buf.format.find("b") != std::string::npos )
+            return attr.setAttribute( key,
+                std::vector<char>(
+                    static_cast<char*>(buf.ptr),
+                    static_cast<char*>(buf.ptr) + buf.size
+                ) );
+        else if( buf.format.find("h") != std::string::npos )
+            return attr.setAttribute( key,
+                std::vector<short>(
+                    static_cast<short*>(buf.ptr),
+                    static_cast<short*>(buf.ptr) + buf.size
+                ) );
+        else if( buf.format.find("i") != std::string::npos )
+            return attr.setAttribute( key,
+                std::vector<int>(
+                    static_cast<int*>(buf.ptr),
+                    static_cast<int*>(buf.ptr) + buf.size
+                ) );
+        else if( buf.format.find("l") != std::string::npos )
+            return attr.setAttribute( key,
+                std::vector<long>(
+                    static_cast<long*>(buf.ptr),
+                    static_cast<long*>(buf.ptr) + buf.size
+                ) );
+        else if( buf.format.find("q") != std::string::npos )
+            return attr.setAttribute( key,
+                std::vector<long long>(
+                    static_cast<long long*>(buf.ptr),
+                    static_cast<long long*>(buf.ptr) + buf.size
+                ) );
+        else if( buf.format.find("B") != std::string::npos )
+            return attr.setAttribute( key,
+                std::vector<unsigned char>(
+                    static_cast<unsigned char*>(buf.ptr),
+                    static_cast<unsigned char*>(buf.ptr) + buf.size
+                ) );
+        else if( buf.format.find("H") != std::string::npos )
+            return attr.setAttribute( key,
+                std::vector<unsigned short>(
+                    static_cast<unsigned short*>(buf.ptr),
+                    static_cast<unsigned short*>(buf.ptr) + buf.size
+                ) );
+        else if( buf.format.find("I") != std::string::npos )
+            return attr.setAttribute( key,
+                std::vector<unsigned int>(
+                    static_cast<unsigned int*>(buf.ptr),
+                    static_cast<unsigned int*>(buf.ptr) + buf.size
+                ) );
+        else if( buf.format.find("L") != std::string::npos )
+            return attr.setAttribute( key,
+                std::vector<unsigned long>(
+                    static_cast<unsigned long*>(buf.ptr),
+                    static_cast<unsigned long*>(buf.ptr) + buf.size
+                ) );
+        else if( buf.format.find("Q") != std::string::npos )
+            return attr.setAttribute( key,
+                std::vector<unsigned long long>(
+                    static_cast<unsigned long long*>(buf.ptr),
+                    static_cast<unsigned long long*>(buf.ptr) + buf.size
+                ) );
+        else if( buf.format.find("f") != std::string::npos )
+            return attr.setAttribute( key,
+                std::vector<float>(
+                    static_cast<float*>(buf.ptr),
+                    static_cast<float*>(buf.ptr) + buf.size
+                ) );
+        else if( buf.format.find("d") != std::string::npos )
+            return attr.setAttribute( key,
+                std::vector<double>(
+                    static_cast<double*>(buf.ptr),
+                    static_cast<double*>(buf.ptr) + buf.size
+                ) );
+        else if( buf.format.find("g") != std::string::npos )
+            return attr.setAttribute( key,
+                std::vector<long double>(
+                    static_cast<long double*>(buf.ptr),
+                    static_cast<long double*>(buf.ptr) + buf.size
+                ) );
+        else
+            throw std::runtime_error("set_attribute: Unknown "
+                "Python type '" + buf.format +
+                "' for attribute '" + key + "'");
+
+        return false;
+    }
+}
+
 void init_Attributable(py::module &m) {
     py::class_<Attributable>(m, "Attributable")
         .def(py::init<>())
@@ -56,7 +216,7 @@ void init_Attributable(py::module &m) {
 
         .def("__repr__",
             [](Attributable const & attr) {
-                return "<openPMD.Attributable with'" + std::to_string(attr.numAttributes()) + "' attributes>";
+                return "<openPMD.Attributable with '" + std::to_string(attr.numAttributes()) + "' attributes>";
             }
         )
 
@@ -70,41 +230,63 @@ void init_Attributable(py::module &m) {
             py::return_value_policy::reference_internal
         )
 
-        // C++ pass-through API
-        .def("set_attribute", &Attributable::setAttribute< char >)
-        .def("set_attribute", &Attributable::setAttribute< unsigned char >)
-        .def("set_attribute", &Attributable::setAttribute< short >)
-        .def("set_attribute", &Attributable::setAttribute< int >)
-        .def("set_attribute", &Attributable::setAttribute< long >)
-        .def("set_attribute", &Attributable::setAttribute< long long >)
-        .def("set_attribute", &Attributable::setAttribute< unsigned short >)
-        .def("set_attribute", &Attributable::setAttribute< unsigned int >)
-        .def("set_attribute", &Attributable::setAttribute< unsigned long >)
-        .def("set_attribute", &Attributable::setAttribute< unsigned long long >)
-        .def("set_attribute", &Attributable::setAttribute< float >)
-        .def("set_attribute", &Attributable::setAttribute< double >)
-        .def("set_attribute", &Attributable::setAttribute< long double >)
-        .def("set_attribute", &Attributable::setAttribute< std::string >)
-        .def("set_attribute", &Attributable::setAttribute< std::vector< char > >)
-        .def("set_attribute", &Attributable::setAttribute< std::vector< unsigned char > >)
-        .def("set_attribute", &Attributable::setAttribute< std::vector< short > >)
-        .def("set_attribute", &Attributable::setAttribute< std::vector< int > >)
-        .def("set_attribute", &Attributable::setAttribute< std::vector< long > >)
-        .def("set_attribute", &Attributable::setAttribute< std::vector< long long > >)
-        .def("set_attribute", &Attributable::setAttribute< std::vector< unsigned short > >)
-        .def("set_attribute", &Attributable::setAttribute< std::vector< unsigned int > >)
-        .def("set_attribute", &Attributable::setAttribute< std::vector< unsigned long > >)
-        .def("set_attribute", &Attributable::setAttribute< std::vector< unsigned long long > >)
-        .def("set_attribute", &Attributable::setAttribute< std::vector< float > >)
-        .def("set_attribute", &Attributable::setAttribute< std::vector< double > >)
-        .def("set_attribute", &Attributable::setAttribute< std::vector< long double > >)
-        .def("set_attribute", &Attributable::setAttribute< std::vector< std::string > >)
-        .def("set_attribute", &Attributable::setAttribute< std::array< double, 7 > >)
-        .def("set_attribute", &Attributable::setAttribute< bool >)
+        // C++ pass-through API: Setter
+        // note that the order of overloads is important!
+        // all buffer protocol compatible objects, including numpy arrays if not specialized specifically...
+        .def("set_attribute", []( Attributable & attr, std::string const& key, py::buffer a ) {
+            // std::cout << "set attr via py::buffer: " << key << std::endl;
+            py::buffer_info buf = a.request();
+            return setAttributeFromBufferInfo(
+                attr,
+                key,
+                buf
+            );
+        })
 
+        // fundamental Python types
+        .def("set_attribute", &Attributable::setAttribute< bool >)
+        .def("set_attribute", &Attributable::setAttribute< unsigned char >)
+        // -> handle all native python integers as long
+        // .def("set_attribute", &Attributable::setAttribute< short >)
+        // .def("set_attribute", &Attributable::setAttribute< int >)
+        // .def("set_attribute", &Attributable::setAttribute< long >)
+        // .def("set_attribute", &Attributable::setAttribute< long long >)
+        // .def("set_attribute", &Attributable::setAttribute< unsigned short >)
+        // .def("set_attribute", &Attributable::setAttribute< unsigned int >)
+        // .def("set_attribute", &Attributable::setAttribute< unsigned long >)
+        // .def("set_attribute", &Attributable::setAttribute< unsigned long long >)
+        .def("set_attribute", &Attributable::setAttribute< long >)
+        // work-around for https://github.com/pybind/pybind11/issues/1512
+        // -> handle all native python floats as double
+        // .def("set_attribute", &Attributable::setAttribute< float >)
+        // .def("set_attribute", &Attributable::setAttribute< long double >)
+        .def("set_attribute", &Attributable::setAttribute< double >)
+        // work-around for https://github.com/pybind/pybind11/issues/1509
+        // -> since there is only str in Python, chars are strings
+        // .def("set_attribute", &Attributable::setAttribute< char >)
+        .def("set_attribute", []( Attributable & attr, std::string const& key, std::string const& value ) {
+            return attr.setAttribute( key, value );
+        })
+
+        // Plain Python arrays and plain python lists of homogenous, fundamental Python types
+        // not specialized in C++ API
+        // .def("set_attribute", &Attributable::setAttribute< std::vector< bool > >)
+        // there is only str in Python, chars are strings
+        // .def("set_attribute", &Attributable::setAttribute< std::vector< char > >)
+        .def("set_attribute", &Attributable::setAttribute< std::vector< unsigned char > >)
+        .def("set_attribute", &Attributable::setAttribute< std::vector< long > >)
+        .def("set_attribute", &Attributable::setAttribute< std::vector< double > >)
+        // probably affected by bug https://github.com/pybind/pybind11/issues/1258
+        .def("set_attribute", []( Attributable & attr, std::string const& key, std::vector< std::string > const& value ) {
+            return attr.setAttribute( key, value );
+        })
+        // .def("set_attribute", &Attributable::setAttribute< std::array< double, 7 > >)
+
+        // C++ pass-through API: Getter
         .def("get_attribute", []( Attributable & attr, std::string const& key ) {
             auto v = attr.getAttribute(key);
             return v.getResource();
+            // TODO instead of returning lists, return all arrays (ndim > 0) as numpy arrays?
         })
         .def("delete_attribute", &Attributable::deleteAttribute)
         .def("contains_attribute", &Attributable::containsAttribute)

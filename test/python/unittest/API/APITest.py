@@ -9,11 +9,14 @@ License: LGPLv3+
 import openPMD
 
 import os
+import sys
 import shutil
 import unittest
+import ctypes
 try:
     import numpy as np
     found_numpy = True
+    print("numpy version: ", np.__version__)
 except ImportError:
     found_numpy = False
 
@@ -103,6 +106,207 @@ class APITest(unittest.TestCase):
         # Check entries.
         self.assertEqual(len(i.meshes), 2)
         self.assertEqual(len(i.particles), 0)
+
+    def attributeRoundTrip(self, file_ending):
+        # write
+        series = openPMD.Series(
+            "unittest_py_API." + file_ending,
+            openPMD.Access_Type.create
+        )
+
+        # write one of each supported types
+        series.set_attribute("char", 'c')  # string
+        series.set_attribute("pyint", 13)
+        series.set_attribute("pyfloat", 3.1416)
+        series.set_attribute("pystring", "howdy!")
+        series.set_attribute("pystring2", str("howdy, too!"))
+        series.set_attribute("pystring3", b"howdy, again!")
+        series.set_attribute("pybool", False)
+
+        # array of ...
+        series.set_attribute("arr_pyint", (13, 26, 39, 52, ))
+        series.set_attribute("arr_pyfloat", (1.2, 3.4, 4.5, 5.6, ))
+        series.set_attribute("arr_pystring", ("x", "y", "z", "www", ))
+        series.set_attribute("arr_pybool", (False, True, True, False, ))
+        # list of ...
+        series.set_attribute("l_pyint", [13, 26, 39, 52])
+        series.set_attribute("l_pyfloat", [1.2, 3.4, 4.5, 5.6])
+        series.set_attribute("l_pystring", ["x", "y", "z", "www"])
+        series.set_attribute("l_pybool", [False, True, True, False])
+
+        if found_numpy:
+            series.set_attribute("int16", np.int16(234))
+            series.set_attribute("int32", np.int32(43))
+            series.set_attribute("int64", np.int64(987654321))
+            series.set_attribute("uint16", np.uint16(134))
+            series.set_attribute("uint32", np.uint32(32))
+            series.set_attribute("uint64", np.int64(9876543210))
+            series.set_attribute("single", np.single(1.234))
+            series.set_attribute("double", np.double(1.234567))
+            series.set_attribute("longdouble", np.longdouble(1.23456789))
+            # array of ...
+            series.set_attribute("arr_int16", (np.int16(23), np.int16(26), ))
+            series.set_attribute("arr_int32", (np.int32(34), np.int32(37), ))
+            series.set_attribute("arr_int64", (np.int64(45), np.int64(48), ))
+            series.set_attribute("arr_uint16",
+                                 (np.uint16(23), np.uint16(26), ))
+            series.set_attribute("arr_uint32",
+                                 (np.uint32(34), np.uint32(37), ))
+            series.set_attribute("arr_uint64",
+                                 (np.uint64(45), np.uint64(48), ))
+            series.set_attribute("arr_single",
+                                 (np.single(5.6), np.single(5.9), ))
+            series.set_attribute("arr_double",
+                                 (np.double(6.7), np.double(7.1), ))
+            # list of ...
+            series.set_attribute("l_int16", [np.int16(23), np.int16(26)])
+            series.set_attribute("l_int32", [np.int32(34), np.int32(37)])
+            series.set_attribute("l_int64", [np.int64(45), np.int64(48)])
+            series.set_attribute("l_uint16", [np.uint16(23), np.uint16(26)])
+            series.set_attribute("l_uint32", [np.uint32(34), np.uint32(37)])
+            series.set_attribute("l_uint64", [np.uint64(45), np.uint64(48)])
+            series.set_attribute("l_single", [np.single(5.6), np.single(5.9)])
+            series.set_attribute("l_double", [np.double(6.7), np.double(7.1)])
+            series.set_attribute("l_longdouble",
+                                 [np.longdouble(7.8e9), np.longdouble(8.2e3)])
+            # numpy.array of ...
+            series.set_attribute("nparr_int16",
+                                 np.array([234, 567], dtype=np.int16))
+            series.set_attribute("nparr_int32",
+                                 np.array([456, 789], dtype=np.int32))
+            series.set_attribute("nparr_int64",
+                                 np.array([678, 901], dtype=np.int64))
+            series.set_attribute("nparr_single",
+                                 np.array([1.2, 2.3], dtype=np.single))
+            series.set_attribute("nparr_double",
+                                 np.array([4.5, 6.7], dtype=np.double))
+            series.set_attribute("nparr_longdouble",
+                                 np.array([8.9, 7.6], dtype=np.longdouble))
+
+        # c_types
+        # TODO remove the .value and handle types directly?
+        series.set_attribute("byte_c", ctypes.c_byte(30).value)
+        series.set_attribute("ubyte_c", ctypes.c_ubyte(50).value)
+        if sys.version_info >= (3, 0):
+            series.set_attribute("char_c", ctypes.c_char(100).value)  # 'd'
+        series.set_attribute("int16_c", ctypes.c_int16(2).value)
+        series.set_attribute("int32_c", ctypes.c_int32(3).value)
+        series.set_attribute("int64_c", ctypes.c_int64(4).value)
+        series.set_attribute("uint16_c", ctypes.c_uint16(5).value)
+        series.set_attribute("uint32_c", ctypes.c_uint32(6).value)
+        series.set_attribute("uint64_c", ctypes.c_uint64(7).value)
+        series.set_attribute("float_c", ctypes.c_float(8.e9).value)
+        series.set_attribute("double_c", ctypes.c_double(7.e289).value)
+        # TODO init of > e304 ?
+        series.set_attribute("longdouble_c", ctypes.c_longdouble(6.e200).value)
+
+        del series
+
+        # read back
+        series = openPMD.Series(
+            "unittest_py_API." + file_ending,
+            openPMD.Access_Type.read_only
+        )
+
+        if sys.version_info >= (3, 0):
+            self.assertEqual(series.get_attribute("char"), "c")
+            self.assertEqual(series.get_attribute("pystring"), "howdy!")
+            self.assertEqual(series.get_attribute("pystring2"), "howdy, too!")
+            self.assertEqual(bytes(series.get_attribute("pystring3")),
+                             b"howdy, again!")
+        else:
+            self.assertEqual(chr(series.get_attribute("char")), "c")
+            # we don't officially support Python 2, so it's fine if
+            # strings are returned as weird list of int (of ascii codes)
+        self.assertEqual(series.get_attribute("pyint"), 13)
+        self.assertAlmostEqual(series.get_attribute("pyfloat"), 3.1416)
+        self.assertEqual(series.get_attribute("pybool"), False)
+
+        if found_numpy:
+            if sys.version_info >= (3, 0):
+                # scalar numpy types are broken in Python 2
+                self.assertEqual(series.get_attribute("int16"), 234)
+                self.assertEqual(series.get_attribute("int32"), 43)
+                self.assertEqual(series.get_attribute("int64"), 987654321)
+                self.assertAlmostEqual(series.get_attribute("single"), 1.234)
+                self.assertAlmostEqual(series.get_attribute("double"),
+                                       1.234567)
+                self.assertAlmostEqual(series.get_attribute("longdouble"),
+                                       1.23456789)
+            # array of ... (will be returned as list)
+            self.assertListEqual(series.get_attribute("arr_int16"),
+                                 [np.int16(23), np.int16(26), ])
+            # list of ...
+            self.assertListEqual(series.get_attribute("l_int16"),
+                                 [np.int16(23), np.int16(26)])
+            self.assertListEqual(series.get_attribute("l_int32"),
+                                 [np.int32(34), np.int32(37)])
+            self.assertListEqual(series.get_attribute("l_int64"),
+                                 [np.int64(45), np.int64(48)])
+            self.assertListEqual(series.get_attribute("l_uint16"),
+                                 [np.uint16(23), np.uint16(26)])
+            self.assertListEqual(series.get_attribute("l_uint32"),
+                                 [np.uint32(34), np.uint32(37)])
+            self.assertListEqual(series.get_attribute("l_uint64"),
+                                 [np.uint64(45), np.uint64(48)])
+            # self.assertListEqual(series.get_attribute("l_single"),
+            #     [np.single(5.6), np.single(5.9)])
+            self.assertListEqual(series.get_attribute("l_double"),
+                                 [np.double(6.7), np.double(7.1)])
+            self.assertListEqual(series.get_attribute("l_longdouble"),
+                                 [np.longdouble(7.8e9), np.longdouble(8.2e3)])
+
+            # numpy.array of ...
+            self.assertListEqual(series.get_attribute("nparr_int16"),
+                                 [234, 567])
+            self.assertListEqual(series.get_attribute("nparr_int32"),
+                                 [456, 789])
+            self.assertListEqual(series.get_attribute("nparr_int64"),
+                                 [678, 901])
+            np.testing.assert_almost_equal(
+                series.get_attribute("nparr_single"), [1.2, 2.3])
+            np.testing.assert_almost_equal(
+                series.get_attribute("nparr_double"), [4.5, 6.7])
+            np.testing.assert_almost_equal(
+                series.get_attribute("nparr_longdouble"), [8.9, 7.6])
+            # TODO instead of returning lists, return all arrays as np.array?
+            # self.assertEqual(
+            #     series.get_attribute("nparr_int16").dtype, np.int16)
+            # self.assertEqual(
+            #     series.get_attribute("nparr_int32").dtype, np.int32)
+            # self.assertEqual(
+            #     series.get_attribute("nparr_int64").dtype, np.int64)
+            # self.assertEqual(
+            #     series.get_attribute("nparr_single").dtype, np.single)
+            # self.assertEqual(
+            #     series.get_attribute("nparr_double").dtype, np.double)
+            # self.assertEqual(
+            #    series.get_attribute("nparr_longdouble").dtype, np.longdouble)
+
+        # c_types
+        self.assertEqual(series.get_attribute("byte_c"), 30)
+        self.assertEqual(series.get_attribute("ubyte_c"), 50)
+        if sys.version_info >= (3, 0):
+            self.assertEqual(chr(series.get_attribute("char_c")), 'd')
+        self.assertEqual(series.get_attribute("int16_c"), 2)
+        self.assertEqual(series.get_attribute("int32_c"), 3)
+        self.assertEqual(series.get_attribute("int64_c"), 4)
+        self.assertEqual(series.get_attribute("uint16_c"), 5)
+        self.assertEqual(series.get_attribute("uint32_c"), 6)
+        self.assertEqual(series.get_attribute("uint64_c"), 7)
+        self.assertAlmostEqual(series.get_attribute("float_c"), 8.e9)
+        self.assertAlmostEqual(series.get_attribute("double_c"), 7.e289)
+        self.assertAlmostEqual(series.get_attribute("longdouble_c"),
+                               ctypes.c_longdouble(6.e200).value)
+
+    def testAttributes(self):
+        backend_filesupport = {
+            'hdf5': 'h5',
+            'adios1': 'bp'
+        }
+        for b in openPMD.variants:
+            if openPMD.variants[b] is True and b in backend_filesupport:
+                self.attributeRoundTrip(backend_filesupport[b])
 
     def testData(self):
         """ Test IO on data containing particles and meshes."""

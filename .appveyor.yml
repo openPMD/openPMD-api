@@ -110,7 +110,7 @@ install:
   - cmd: conda config --append channels conda-forge
 
   # Configure the VM.
-  - cmd: conda install -n root --quiet --yes numpy cmake hdf5
+  - cmd: conda install -n root --quiet --yes numpy>=1.15 cmake hdf5
 
 before_build:
   - cmd: cd C:\projects\openpmd-api

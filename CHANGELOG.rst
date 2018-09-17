@@ -32,6 +32,7 @@ Bug Fixes
   - single precision support: ``numpy.float`` is an alias for ``builtins.float`` #318 #320
   - ``Dataset`` method namings to underscores #319
   - container namespace ambiguity #343
+  - ``set_attribute``: broken numpy, list and string support #330
 
 Other
 """""
@@ -40,6 +41,7 @@ Other
 - ``store_chunk``: more detailed type mismatch error #322
 - ``no_such_file_error`` & ``no_such_attribute_error``: remove c-string constructor #325 #327
 - add virtual destructor to ``Attributable`` #332
+- Python: Numpy 1.15+ required #330
 
 
 0.4.0-alpha
