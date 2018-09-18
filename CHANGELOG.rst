@@ -20,6 +20,7 @@ Features
 - Python:
 
   - accept & return ``numpy.dtype`` for ``Datatype`` #351
+  - better check for (unsupported) numpy array strides #353
 
 Bug Fixes
 """""""""

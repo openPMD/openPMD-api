@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <iostream>
 #include <cstdint>
+#include <exception>
 
 namespace py = pybind11;
 using namespace openPMD;
@@ -154,19 +155,29 @@ void init_RecordComponent(py::module &m) {
 
         // deprecated: pass-through C++ API
         .def("store_chunk", [](RecordComponent & r, Offset const & offset, Extent const & extent, py::array & a) {
-            // cast py::array to proper Datatype
-            // auto buf = py::array::ensure( py::dtype("double") ) ; //r.getDatatype() );
-            //if( !buf ) return false;
+            for( auto d = 0; d < a.ndim(); ++d )
+            {
+                // std::cout << "    stride '" << d << "': "
+                //           << a.strides()[d] / a.itemsize()
+                //           << " - " << a.shape()[d] << std::endl;
+                if( a.strides()[d] / a.itemsize() != a.shape()[d] ) // general criteria
+                {
+                    if( a.ndim() == 1u && a.strides()[0] / a.itemsize() > a.shape()[0] )
+                        ; // ok in 1D
+                    else if( a.ndim() == 1u && a.strides()[0] / a.itemsize() == 1u )
+                        ; // ok and occurs for byte strings
+                    else
+                        throw std::runtime_error("store_chunk: "
+                            "stride handling not implemented!");
+                }
+            }
+            // @todo in order to implement stride handling, one needs to
+            //       loop over the input data strides during write below
 
             // @todo verify offset + extend fit in dataset extend
-            // @todo verify array is contigous
-            // @todo enforce or transform C/F order
-
             // @todo keep locked until flush() is performed
             // a.flags.writable = false;
             // a.flags.owndata = false;
-            // py::print( py::str(a.dtype()) );
-            // py::print( py::str(buf.dtype()) );
 
             auto const dtype = dtype_from_numpy( a.dtype() );
             if( dtype == Datatype::CHAR )

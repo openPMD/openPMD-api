@@ -104,12 +104,20 @@ bool setAttributeFromBufferInfo(
         // stride handling
         for( auto d = 0; d < buf.ndim; ++d )
         {
-            // std::cout << "    stride '" << d << "': " << buf.strides[d] << " - " << buf.shape[d] << std::endl;
-            if( buf.strides[d] != buf.shape[d] ) // general criterial
-                if( d > 0 && buf.strides[d] != 1 ) // ok for byte strings
+            // std::cout << "    stride '" << d << "': "
+            //           << buf.strides[d] / buf.itemsize
+            //           << " - " << buf.shape[d] << std::endl;
+            if( buf.strides[d] / buf.itemsize != buf.shape[d] ) // general criteria
+            {
+                if( buf.ndim == 1u && buf.strides[0] / buf.itemsize > buf.shape[0] )
+                    ; // ok in 1D
+                else if( buf.ndim == 1u && buf.strides[0] / buf.itemsize == 1u )
+                    ; // ok and occurs for byte strings
+                else
                     throw std::runtime_error("set_attribute: "
                         "stride handling not implemented! (key='" +
                         key + "')");
+            }
         }
         // @todo in order to implement stride handling, one needs to
         //       loop over the input data strides during write below
