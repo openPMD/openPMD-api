@@ -1445,6 +1445,40 @@ TEST_CASE( "hdf5_110_optional_paths", "[serial][hdf5]" )
         REQUIRE(s.iterations[1].particles.empty());
     }
 }
+
+TEST_CASE( "hdf5_constant_scalar", "[serial][hdf5]" )
+{
+    {
+        Series s = Series("../samples/constant_scalar.h5", AccessType::CREATE);
+        auto rho = s.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR];
+        rho.resetDataset(Dataset(Datatype::CHAR, {1, 2, 3}));
+        rho.makeConstant(static_cast< char >('a'));
+
+        auto pos_x = s.iterations[1].particles["e"]["position"][RecordComponent::SCALAR];
+        pos_x.resetDataset(Dataset(Datatype::DOUBLE, {3, 2, 1}));
+        pos_x.makeConstant(static_cast< double >(42.));
+        auto posOff_x = s.iterations[1].particles["e"]["positionOffset"][RecordComponent::SCALAR];
+        posOff_x.resetDataset(Dataset(Datatype::INT, {3, 2, 1}));
+        posOff_x.makeConstant(static_cast< int >(-42));
+    }
+
+    {
+        Series s = Series("../samples/constant_scalar.h5", AccessType::READ_ONLY);
+        REQUIRE(s.iterations[1].meshes.count("rho") == 1);
+        REQUIRE(s.iterations[1].meshes["rho"].count(MeshRecordComponent::SCALAR) == 1);
+        REQUIRE(s.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR].containsAttribute("shape"));
+        REQUIRE(s.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR].containsAttribute("value"));
+        REQUIRE(s.iterations[1].particles.count("e") == 1);
+        REQUIRE(s.iterations[1].particles["e"].count("position") == 1);
+        REQUIRE(s.iterations[1].particles["e"]["position"].count(RecordComponent::SCALAR) == 1);
+        REQUIRE(s.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].containsAttribute("shape"));
+        REQUIRE(s.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].containsAttribute("value"));
+        REQUIRE(s.iterations[1].particles["e"].count("positionOffset") == 1);
+        REQUIRE(s.iterations[1].particles["e"]["positionOffset"].count(RecordComponent::SCALAR) == 1);
+        REQUIRE(s.iterations[1].particles["e"]["positionOffset"][RecordComponent::SCALAR].containsAttribute("shape"));
+        REQUIRE(s.iterations[1].particles["e"]["positionOffset"][RecordComponent::SCALAR].containsAttribute("value"));
+    }
+}
 #else
 TEST_CASE( "no_serial_hdf5", "[serial][hdf5]" )
 {
