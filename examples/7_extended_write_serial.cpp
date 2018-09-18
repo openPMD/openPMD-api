@@ -38,7 +38,10 @@ write()
         o.flush();
     }
 
-    o.flush();
+    /* The files in 'o' are still open until the object is destroyed, on
+     * which it cleanly flushes and closes all open file handles.
+     * When running out of scope on return, the 'Series' destructor is called.
+     */
 }
 
 void
@@ -200,7 +203,11 @@ write2()
     double constant_value = 0.3183098861837907;
     // for datasets that only contain one unique value, openPMD offers constant records
     mesh["y"].makeConstant(constant_value);
-    f.flush();
+
+    /* The files in 'f' are still open until the object is destroyed, on
+     * which it cleanly flushes and closes all open file handles.
+     * When running out of scope on return, the 'Series' destructor is called.
+     */
 }
 
 
@@ -208,6 +215,11 @@ void
 w()
 {
     Series o = Series("../samples/serial_write_%T.h5", AccessType::CREATE);
+
+    /* The files in 'o' are still open until the object is destroyed, on
+     * which it cleanly flushes and closes all open file handles.
+     * When running out of scope on return, the 'Series' destructor is called.
+     */
 }
 
 int

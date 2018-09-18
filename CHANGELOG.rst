@@ -30,6 +30,8 @@ Bug Fixes
 Other
 """""
 
+- examples: close handles explicitly #359
+
 
 0.5.0-alpha
 -----------
