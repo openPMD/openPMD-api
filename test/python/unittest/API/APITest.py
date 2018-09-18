@@ -308,6 +308,123 @@ class APITest(unittest.TestCase):
             if openPMD.variants[b] is True and b in backend_filesupport:
                 self.attributeRoundTrip(backend_filesupport[b])
 
+    def makeConstantRoundTrip(self, file_ending):
+        # write
+        series = openPMD.Series(
+            "unittest_py_constant_API." + file_ending,
+            openPMD.Access_Type.create
+        )
+
+        ms = series.iterations[0].meshes
+        SCALAR = openPMD.Mesh_Record_Component.SCALAR
+        DS = openPMD.Dataset
+        DT = openPMD.Datatype
+
+        extent = [42, 24, 11]
+
+        # write one of each supported types
+        if sys.version_info >= (3, 0):
+            ms["char"][SCALAR].reset_dataset(DS(DT.CHAR, extent))
+            ms["char"][SCALAR].make_constant("c")
+        ms["pyint"][SCALAR].reset_dataset(DS(DT.INT, extent))
+        ms["pyint"][SCALAR].make_constant(13)
+        ms["pyfloat"][SCALAR].reset_dataset(DS(DT.DOUBLE, extent))
+        ms["pyfloat"][SCALAR].make_constant(3.1416)
+        ms["pybool"][SCALAR].reset_dataset(DS(DT.BOOL, extent))
+        ms["pybool"][SCALAR].make_constant(False)
+
+        if found_numpy:
+            ms["int16"][SCALAR].reset_dataset(DS(np.dtype("int16"), extent))
+            ms["int16"][SCALAR].make_constant(np.int16(234))
+            ms["int32"][SCALAR].reset_dataset(DS(np.dtype("int32"), extent))
+            ms["int32"][SCALAR].make_constant(np.int32(43))
+            ms["int64"][SCALAR].reset_dataset(DS(np.dtype("int64"), extent))
+            ms["int64"][SCALAR].make_constant(np.int64(987654321))
+
+            ms["uint16"][SCALAR].reset_dataset(DS(np.dtype("uint16"), extent))
+            ms["uint16"][SCALAR].make_constant(np.uint16(134))
+            ms["uint32"][SCALAR].reset_dataset(DS(np.dtype("uint32"), extent))
+            ms["uint32"][SCALAR].make_constant(np.uint32(32))
+            ms["uint64"][SCALAR].reset_dataset(DS(np.dtype("uint64"), extent))
+            ms["uint64"][SCALAR].make_constant(np.uint64(9876543210))
+
+            ms["single"][SCALAR].reset_dataset(DS(np.dtype("single"), extent))
+            ms["single"][SCALAR].make_constant(np.single(1.234))
+            ms["double"][SCALAR].reset_dataset(DS(np.dtype("double"), extent))
+            ms["double"][SCALAR].make_constant(np.double(1.234567))
+            ms["longdouble"][SCALAR].reset_dataset(DS(np.dtype("longdouble"),
+                                                      extent))
+            ms["longdouble"][SCALAR].make_constant(np.longdouble(1.23456789))
+
+        # flush and close file
+        del series
+
+        # read back
+        series = openPMD.Series(
+            "unittest_py_constant_API." + file_ending,
+            openPMD.Access_Type.read_only
+        )
+
+        ms = series.iterations[0].meshes
+        o = [1, 2, 3]
+        e = [1, 1, 1]
+
+        if sys.version_info >= (3, 0):
+            self.assertEqual(ms["char"][SCALAR].load_chunk(o, e), ord('c'))
+        self.assertEqual(ms["pyint"][SCALAR].load_chunk(o, e), 13)
+        self.assertEqual(ms["pyfloat"][SCALAR].load_chunk(o, e), 3.1416)
+        self.assertEqual(ms["pybool"][SCALAR].load_chunk(o, e), False)
+
+        if found_numpy:
+            if sys.version_info >= (3, 0):
+                self.assertTrue(ms["int16"][SCALAR].load_chunk(o, e).dtype ==
+                                np.dtype('int16'))
+                self.assertTrue(ms["int32"][SCALAR].load_chunk(o, e).dtype ==
+                                np.dtype('int32'))
+                self.assertTrue(ms["int64"][SCALAR].load_chunk(o, e).dtype ==
+                                np.dtype('int64'))
+                self.assertTrue(ms["uint16"][SCALAR].load_chunk(o, e).dtype ==
+                                np.dtype('uint16'))
+                self.assertTrue(ms["uint32"][SCALAR].load_chunk(o, e).dtype ==
+                                np.dtype('uint32'))
+                self.assertTrue(ms["uint64"][SCALAR].load_chunk(o, e).dtype ==
+                                np.dtype('uint64'))
+                self.assertTrue(ms["single"][SCALAR].load_chunk(o, e).dtype ==
+                                np.dtype('single'))
+                self.assertTrue(ms["double"][SCALAR].load_chunk(o, e).dtype ==
+                                np.dtype('double'))
+                self.assertTrue(ms["longdouble"][SCALAR].load_chunk(o, e).dtype
+                                == np.dtype('longdouble'))
+
+            self.assertEqual(ms["int16"][SCALAR].load_chunk(o, e),
+                             np.int16(234))
+            self.assertEqual(ms["int32"][SCALAR].load_chunk(o, e),
+                             np.int32(43))
+            self.assertEqual(ms["int64"][SCALAR].load_chunk(o, e),
+                             np.int64(987654321))
+            self.assertEqual(ms["uint16"][SCALAR].load_chunk(o, e),
+                             np.uint16(134))
+            self.assertEqual(ms["uint32"][SCALAR].load_chunk(o, e),
+                             np.uint32(32))
+            self.assertEqual(ms["uint64"][SCALAR].load_chunk(o, e),
+                             np.uint64(9876543210))
+            if sys.version_info >= (3, 0):
+                self.assertEqual(ms["single"][SCALAR].load_chunk(o, e),
+                                 np.single(1.234))
+                self.assertEqual(ms["longdouble"][SCALAR].load_chunk(o, e),
+                                 np.longdouble(1.23456789))
+            self.assertEqual(ms["double"][SCALAR].load_chunk(o, e),
+                             np.double(1.234567))
+
+    def testConstantRecords(self):
+        backend_filesupport = {
+            'hdf5': 'h5',
+            'adios1': 'bp'
+        }
+        for b in openPMD.variants:
+            if openPMD.variants[b] is True and b in backend_filesupport:
+                self.makeConstantRoundTrip(backend_filesupport[b])
+
     def testData(self):
         """ Test IO on data containing particles and meshes."""
 
