@@ -1449,17 +1449,41 @@ TEST_CASE( "hdf5_110_optional_paths", "[serial][hdf5]" )
 TEST_CASE( "hdf5_constant_scalar", "[serial][hdf5]" )
 {
     {
+        //constant scalar
         Series s = Series("../samples/constant_scalar.h5", AccessType::CREATE);
         auto rho = s.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR];
         rho.resetDataset(Dataset(Datatype::CHAR, {1, 2, 3}));
         rho.makeConstant(static_cast< char >('a'));
 
-        auto pos_x = s.iterations[1].particles["e"]["position"][RecordComponent::SCALAR];
-        pos_x.resetDataset(Dataset(Datatype::DOUBLE, {3, 2, 1}));
-        pos_x.makeConstant(static_cast< double >(42.));
-        auto posOff_x = s.iterations[1].particles["e"]["positionOffset"][RecordComponent::SCALAR];
-        posOff_x.resetDataset(Dataset(Datatype::INT, {3, 2, 1}));
-        posOff_x.makeConstant(static_cast< int >(-42));
+        //mixed constant/non-constant
+        auto E_x = s.iterations[1].meshes["E"]["x"];
+        E_x.resetDataset(Dataset(Datatype::FLOAT, {1, 2, 3}));
+        E_x.makeConstant(static_cast< float >(13.37));
+        auto E_y = s.iterations[1].meshes["E"]["y"];
+        E_y.resetDataset(Dataset(Datatype::UINT, {1, 2, 3}));
+        std::shared_ptr< unsigned int > E(new unsigned int[6], [](unsigned int *p){ delete[] p; });
+        unsigned int e{0};
+        std::generate(E.get(), E.get() + 6, [&e]{ return e++; });
+        E_y.storeChunk({0, 0, 0}, {1, 2, 3}, E);
+
+        //constant scalar
+        auto pos = s.iterations[1].particles["e"]["position"][RecordComponent::SCALAR];
+        pos.resetDataset(Dataset(Datatype::DOUBLE, {3, 2, 1}));
+        pos.makeConstant(static_cast< double >(42.));
+        auto posOff = s.iterations[1].particles["e"]["positionOffset"][RecordComponent::SCALAR];
+        posOff.resetDataset(Dataset(Datatype::INT, {3, 2, 1}));
+        posOff.makeConstant(static_cast< int >(-42));
+
+        //mixed constant/non-constant
+        auto vel_x = s.iterations[1].particles["e"]["velocity"]["x"];
+        vel_x.resetDataset(Dataset(Datatype::SHORT, {3, 2, 1}));
+        vel_x.makeConstant(static_cast< short >(-1));
+        auto vel_y = s.iterations[1].particles["e"]["velocity"]["y"];
+        vel_y.resetDataset(Dataset(Datatype::ULONGLONG, {3, 2, 1}));
+        std::shared_ptr< unsigned long long > vel(new unsigned long long[6], [](unsigned long long *p){ delete[] p; });
+        unsigned long long v{0};
+        std::generate(vel.get(), vel.get() + 6, [&v]{ return v++; });
+        vel_y.storeChunk({0, 0, 0}, {3, 2, 1}, vel);
     }
 
     {
@@ -1467,16 +1491,47 @@ TEST_CASE( "hdf5_constant_scalar", "[serial][hdf5]" )
         REQUIRE(s.iterations[1].meshes.count("rho") == 1);
         REQUIRE(s.iterations[1].meshes["rho"].count(MeshRecordComponent::SCALAR) == 1);
         REQUIRE(s.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR].containsAttribute("shape"));
+        REQUIRE(s.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR].getAttribute("shape").get< std::vector< uint64_t > >() == Extent{1, 2, 3});
         REQUIRE(s.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR].containsAttribute("value"));
+        REQUIRE(s.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR].getAttribute("value").get< char >() == 'a');
+        REQUIRE(s.iterations[1].meshes.count("E") == 1);
+        REQUIRE(s.iterations[1].meshes["E"].count("x") == 1);
+        REQUIRE(s.iterations[1].meshes["E"]["x"].containsAttribute("shape"));
+        REQUIRE(s.iterations[1].meshes["E"]["x"].getAttribute("shape").get< std::vector< uint64_t > >() == Extent{1, 2, 3});
+        REQUIRE(s.iterations[1].meshes["E"]["x"].containsAttribute("value"));
+        REQUIRE(s.iterations[1].meshes["E"]["x"].getAttribute("value").get< float >() == static_cast< float >(13.37));
+        REQUIRE(s.iterations[1].meshes["E"]["y"].getExtent() == Extent{1, 2, 3});
+        REQUIRE(s.iterations[1].meshes["E"].count("y") == 1);
+        REQUIRE(!s.iterations[1].meshes["E"]["y"].containsAttribute("shape"));
+        REQUIRE(!s.iterations[1].meshes["E"]["y"].containsAttribute("value"));
+        REQUIRE(s.iterations[1].meshes["E"]["y"].getExtent() == Extent{1, 2, 3});
+
         REQUIRE(s.iterations[1].particles.count("e") == 1);
         REQUIRE(s.iterations[1].particles["e"].count("position") == 1);
         REQUIRE(s.iterations[1].particles["e"]["position"].count(RecordComponent::SCALAR) == 1);
         REQUIRE(s.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].containsAttribute("shape"));
+        REQUIRE(s.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].getAttribute("shape").get< std::vector< uint64_t > >() == Extent{3, 2, 1});
         REQUIRE(s.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].containsAttribute("value"));
+        REQUIRE(s.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].getAttribute("value").get< double >() == 42.);
+        REQUIRE(s.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].getExtent() == Extent{3, 2, 1});
         REQUIRE(s.iterations[1].particles["e"].count("positionOffset") == 1);
         REQUIRE(s.iterations[1].particles["e"]["positionOffset"].count(RecordComponent::SCALAR) == 1);
         REQUIRE(s.iterations[1].particles["e"]["positionOffset"][RecordComponent::SCALAR].containsAttribute("shape"));
+        REQUIRE(s.iterations[1].particles["e"]["positionOffset"][RecordComponent::SCALAR].getAttribute("shape").get< std::vector< uint64_t > >() == Extent{3, 2, 1});
         REQUIRE(s.iterations[1].particles["e"]["positionOffset"][RecordComponent::SCALAR].containsAttribute("value"));
+        REQUIRE(s.iterations[1].particles["e"]["positionOffset"][RecordComponent::SCALAR].getAttribute("value").get< int >() == -42);
+        REQUIRE(s.iterations[1].particles["e"]["positionOffset"][RecordComponent::SCALAR].getExtent() == Extent{3, 2, 1});
+        REQUIRE(s.iterations[1].particles["e"].count("velocity") == 1);
+        REQUIRE(s.iterations[1].particles["e"]["velocity"].count("x") == 1);
+        REQUIRE(s.iterations[1].particles["e"]["velocity"]["x"].containsAttribute("shape"));
+        REQUIRE(s.iterations[1].particles["e"]["velocity"]["x"].getAttribute("shape").get< std::vector< uint64_t > >() == Extent{3, 2, 1});
+        REQUIRE(s.iterations[1].particles["e"]["velocity"]["x"].containsAttribute("value"));
+        REQUIRE(s.iterations[1].particles["e"]["velocity"]["x"].getAttribute("value").get< short >() == -1);
+        REQUIRE(s.iterations[1].particles["e"]["velocity"]["x"].getExtent() == Extent{3, 2, 1});
+        REQUIRE(s.iterations[1].particles["e"]["velocity"].count("y") == 1);
+        REQUIRE(!s.iterations[1].particles["e"]["velocity"]["y"].containsAttribute("shape"));
+        REQUIRE(!s.iterations[1].particles["e"]["velocity"]["y"].containsAttribute("value"));
+        REQUIRE(s.iterations[1].particles["e"]["velocity"]["y"].getExtent() == Extent{3, 2, 1});
     }
 }
 #else
