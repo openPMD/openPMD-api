@@ -54,3 +54,9 @@ if __name__ == "__main__":
     #            row + 1, col + 1, 1, chunk_data[row*chunk_extent[1]+col])
     #         )
     #     print("")
+
+    # The files in 'series' are still open until the object is destroyed, on
+    # which it cleanly flushes and closes all open file handles.
+    # One can delete the object explicitly (or let it run out of scope) to
+    # trigger this.
+    del series
