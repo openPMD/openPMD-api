@@ -218,11 +218,18 @@ jobs:
             -DCMAKE_INSTALL_PREFIX=$HOME/openPMD-test-install
             $TRAVIS_BUILD_DIR
         - make -j 2
+        # unit tests
         - CTEST_OUTPUT_ON_FAILURE=1 make test
+        # install library
         - make install
-        # - make package
-        # - dpkg -i openPMD*.deb
         - ls -R $HOME/openPMD-test-install | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'
+        # verify generated files
+        - if [ "$USE_HDF5" == "ON" ]; then
+            h5ls -r ../samples/3_write_serial.h5 || exit 1;
+            if [ "$USE_PYTHON" == "ON" ]; then
+              h5ls -r ../samples/3_write_serial_py.h5 || exit 2;
+            fi;
+          fi
     - <<: *test-cpp-unit
       name: clang@5.0.0 +MPI -PY +H5 +ADIOS1
       language: python
