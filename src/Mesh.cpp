@@ -87,13 +87,15 @@ Mesh::setGeometryParameters(std::string const& gp)
 Mesh::DataOrder
 Mesh::dataOrder() const
 {
-    return Mesh::DataOrder(getAttribute("dataOrder").get< char >());
+    return Mesh::DataOrder(getAttribute("dataOrder").get< std::string >().c_str()[0]);
 }
 
 Mesh&
 Mesh::setDataOrder(Mesh::DataOrder dor)
 {
-    setAttribute("dataOrder", static_cast<char>(dor));
+    setAttribute(
+        "dataOrder",
+        std::string(1u, static_cast<char>(dor)));
     return *this;
 }
 

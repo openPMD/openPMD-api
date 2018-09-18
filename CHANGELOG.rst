@@ -25,6 +25,8 @@ Features
 Bug Fixes
 """""""""
 
+- dataOrder: mesh attribute is a string #355
+
 Other
 """""
 
