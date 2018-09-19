@@ -29,6 +29,9 @@ Bug Fixes
 
 - dataOrder: mesh attribute is a string #355
 - constant scalar MeshRecords: reading corrected #358
+- Python:
+
+  - lifetime of ``Iteration.meshes/particles`` and ``Series.iterations`` members #354
 
 Other
 """""

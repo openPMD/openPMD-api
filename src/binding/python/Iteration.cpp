@@ -54,7 +54,13 @@ void init_Iteration(py::module &m) {
         .def("time_unit_SI", &Iteration::timeUnitSI)
         .def("set_time_unit_SI", &Iteration::setTimeUnitSI)
 
-        .def_readwrite("meshes", &Iteration::meshes)
-        .def_readwrite("particles", &Iteration::particles)
+        .def_readwrite("meshes", &Iteration::meshes,
+            py::return_value_policy::reference,
+            // garbage collection: return value must be freed before Iteration
+            py::keep_alive<1, 0>())
+        .def_readwrite("particles", &Iteration::particles,
+            py::return_value_policy::reference,
+            // garbage collection: return value must be freed before Iteration
+            py::keep_alive<1, 0>())
     ;
 }
