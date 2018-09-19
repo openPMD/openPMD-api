@@ -58,7 +58,8 @@ for( auto const& i : s.iterations ) {
 
 [![Python3][api-py3]](https://www.python.org/) ![Python3 API: Alpha][dev-alpha]
 
-[api-py3]: https://img.shields.io/badge/language-Python3-yellow.svg "Python3 API"
+[api-py3]: https://img.shields.io/badge/language-Python3-yellowgreen.svg "Python3 API"
+
 
 ```py
 import openPMD
