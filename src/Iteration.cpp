@@ -267,20 +267,17 @@ Iteration::read()
             IOHandler->enqueue(IOTask(&m, aList));
             IOHandler->flush();
 
-            auto begin = aList.attributes->begin();
-            auto end = aList.attributes->end();
-            auto value = std::find(begin, end, "value");
-            auto shape = std::find(begin, end, "shape");
-            if( value != end && shape != end )
+            auto att_begin = aList.attributes->begin();
+            auto att_end = aList.attributes->end();
+            auto value = std::find(att_begin, att_end, "value");
+            auto shape = std::find(att_begin, att_end, "shape");
+            if( value != att_end && shape != att_end )
             {
                 MeshRecordComponent& mrc = m[MeshRecordComponent::SCALAR];
-                *mrc.m_isConstant = true;
-                mrc.m_writable->parent = m.m_writable->parent;
                 mrc.parent = m.parent;
-                mrc.m_writable->abstractFilePosition = m.m_writable->abstractFilePosition;
-                mrc.abstractFilePosition = m.abstractFilePosition;
-                mrc.m_writable->written = true;
-                mrc.written = true;
+                IOHandler->enqueue(IOTask(&mrc, pOpen));
+                IOHandler->flush();
+                *mrc.m_isConstant = true;
             }
             m.read();
         }

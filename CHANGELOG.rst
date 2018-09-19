@@ -27,12 +27,13 @@ Bug Fixes
 """""""""
 
 - dataOrder: mesh attribute is a string #355
+- constant scalar MeshRecords: reading corrected #358
 
 Other
 """""
 
+- test cases for mixed constant/non-constant Records #358
 - examples: close handles explicitly #359
-
 
 0.5.0-alpha
 -----------

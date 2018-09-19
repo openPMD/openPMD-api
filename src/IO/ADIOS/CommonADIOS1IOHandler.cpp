@@ -20,6 +20,8 @@
  */
 #include <algorithm>
 #include <tuple>
+#include <string>
+
 
 void
 CommonADIOS1IOHandlerImpl::close(int64_t fd)
@@ -892,9 +894,9 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                             &datatype,
                             &size,
                             &data);
-    VERIFY(status == 0, "Internal error: Failed to get ADIOS attribute during attribute read");
-    VERIFY(datatype != adios_unknown, "Internal error: Read unknown adios datatype during attribute read");
-    VERIFY(size != 0, "Internal error: Read 0-size attribute");
+    VERIFY(status == 0, "Internal error: Failed to get ADIOS1 attribute during attribute read");
+    VERIFY(datatype != adios_unknown, "Internal error: Read unknown ADIOS1 datatype during attribute read");
+    VERIFY(size != 0, "Internal error: ADIOS1 read 0-size attribute");
 
     // size is returned in number of allocated bytes
     // note the ill-named fixed-byte adios_... types
@@ -941,7 +943,9 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
         case adios_complex:
         case adios_double_complex:
         default:
-            throw unsupported_data_error("Unsupported attribute datatype");
+            throw unsupported_data_error(
+                    "readAttribute: Unsupported ADIOS1 attribute datatype '" +
+                    std::to_string(datatype) + "' in size check");
     }
 
     Datatype dtype;
@@ -1122,13 +1126,27 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 a = Attribute(auxiliary::strip(std::string(c, std::strlen(c)), {'\0'}));
                 break;
             }
-
-
             case adios_string_array:
+            {
+                dtype = DT::VEC_STRING;
+                auto c = reinterpret_cast< char** >(data);
+                std::vector< std::string > vs;
+                vs.resize(size);
+                for( int i = 0; i < size; ++i )
+                {
+                    vs[i] = auxiliary::strip(std::string(c[i], std::strlen(c[i])), {'\0'});
+                    /** @todo pointer should be freed, but this causes memory corruption */
+                    //free(c[i]);
+                }
+                a = Attribute(vs);
+                break;
+            }
             case adios_complex:
             case adios_double_complex:
             default:
-                throw unsupported_data_error("Unsupported attribute datatype");
+                throw unsupported_data_error(
+                    "readAttribute: Unsupported ADIOS1 attribute datatype '" +
+                    std::to_string(datatype) + "' in scalar branch");
         }
     }
     else
@@ -1300,7 +1318,9 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
             case adios_complex:
             case adios_double_complex:
             default:
-                throw unsupported_data_error("Unsupported attribute datatype");
+                throw unsupported_data_error(
+                    "readAttribute: Unsupported ADIOS1 attribute datatype '" +
+                    std::to_string(datatype) + "' in vector branch");
         }
     }
 
@@ -1323,6 +1343,7 @@ CommonADIOS1IOHandlerImpl::listPaths(Writable* writable,
     std::string name = concrete_bp1_file_position(writable);
 
     std::unordered_set< std::string > paths;
+    std::unordered_set< std::string > variables;
     for( int i = 0; i < f->nvars; ++i )
     {
         char* str = f->var_namelist[i];
@@ -1331,6 +1352,7 @@ CommonADIOS1IOHandlerImpl::listPaths(Writable* writable,
         {
             /* remove the writable's path from the name */
             s = auxiliary::replace_first(s, name, "");
+            variables.emplace(s);
             if( std::any_of(s.begin(), s.end(), [](char c) { return c == '/'; }) )
             {
                 /* there are more path levels after the current writable */
@@ -1347,13 +1369,18 @@ CommonADIOS1IOHandlerImpl::listPaths(Writable* writable,
         {
             /* remove the writable's path from the name */
             s = auxiliary::replace_first(s, name, "");
-            /* remove the attribute name */
-            s = s.substr(0, s.find_last_of('/'));
             if( std::any_of(s.begin(), s.end(), [](char c) { return c == '/'; }) )
             {
-                /* this is an attribute of the writable */
-                s = s.substr(0, s.find_first_of('/'));
-                paths.emplace(s);
+                /* remove the attribute name */
+                s = s.substr(0, s.find_last_of('/'));
+                if( !std::any_of(variables.begin(),
+                                 variables.end(),
+                                 [&s](std::string const& var){ return auxiliary::starts_with(var, s); }))
+                {
+                    /* this is either a group or a constant scalar */
+                    s = s.substr(0, s.find_first_of('/'));
+                    paths.emplace(s);
+                }
             }
         }
     }
