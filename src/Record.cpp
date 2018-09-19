@@ -88,16 +88,15 @@ Record::flush_impl(std::string const& name)
 void
 Record::read()
 {
-    /* allow all attributes to be set */
-    written = false;
-
     if( *m_containsScalar )
     {
         /* using operator[] will incorrectly update parent */
         this->at(RecordComponent::SCALAR).read();
     } else
     {
+        written = false;
         clear_unchecked();
+        written = true;
         Parameter< Operation::LIST_PATHS > pList;
         IOHandler->enqueue(IOTask(this, pList));
         IOHandler->flush();
@@ -133,8 +132,5 @@ Record::read()
     readBase();
 
     readAttributes();
-
-    /* this file need not be flushed */
-    written = true;
 }
 } // openPMD

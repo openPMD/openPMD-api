@@ -32,9 +32,6 @@ MeshRecordComponent::MeshRecordComponent()
 void
 MeshRecordComponent::read()
 {
-    /* allow all attributes to be set */
-    written = false;
-
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
 
@@ -58,9 +55,6 @@ MeshRecordComponent::read()
         throw std::runtime_error( "Unexpected Attribute datatype for 'position'");
 
     readBase();
-
-    /* this file need not be flushed */
-    written = true;
 }
 
 template< typename T >

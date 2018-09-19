@@ -1066,6 +1066,9 @@ void
 HDF5IOHandlerImpl::readAttribute(Writable* writable,
                                  Parameter< Operation::READ_ATT >& parameters)
 {
+    if( !writable->written )
+        throw std::runtime_error("Internal error: Writable not marked written during attribute read");
+
     auto res = m_fileIDs.find(writable);
     if( res == m_fileIDs.end() )
         res = m_fileIDs.find(writable->parent);
@@ -1396,6 +1399,9 @@ void
 HDF5IOHandlerImpl::listPaths(Writable* writable,
                              Parameter< Operation::LIST_PATHS > & parameters)
 {
+    if( !writable->written )
+        throw std::runtime_error("Internal error: Writable not marked written during path listing");
+
     auto res = m_fileIDs.find(writable);
     if( res == m_fileIDs.end() )
         res = m_fileIDs.find(writable->parent);
@@ -1428,6 +1434,9 @@ void
 HDF5IOHandlerImpl::listDatasets(Writable* writable,
                                 Parameter< Operation::LIST_DATASETS >& parameters)
 {
+    if( !writable->written )
+        throw std::runtime_error("Internal error: Writable not marked written during dataset listing");
+
     auto res = m_fileIDs.find(writable);
     if( res == m_fileIDs.end() )
         res = m_fileIDs.find(writable->parent);
@@ -1459,6 +1468,9 @@ HDF5IOHandlerImpl::listDatasets(Writable* writable,
 void HDF5IOHandlerImpl::listAttributes(Writable* writable,
                                        Parameter< Operation::LIST_ATTS >& parameters)
 {
+    if( !writable->written )
+        throw std::runtime_error("Internal error: Writable not marked written during attribute listing");
+
     auto res = m_fileIDs.find(writable);
     if( res == m_fileIDs.end() )
         res = m_fileIDs.find(writable->parent);
