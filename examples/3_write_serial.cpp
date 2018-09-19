@@ -74,5 +74,9 @@ int main(int argc, char *argv[])
     series.flush();
     cout << "Dataset content has been fully written\n";
 
+    /* The files in 'series' are still open until the object is destroyed, on
+     * which it cleanly flushes and closes all open file handles.
+     * When running out of scope on return, the 'Series' destructor is called.
+     */
     return 0;
 }
