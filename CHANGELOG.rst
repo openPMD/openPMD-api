@@ -33,7 +33,7 @@ Other
 """""
 
 - test cases for mixed constant/non-constant Records #358
-- examples: close handles explicitly #359
+- examples: close handles explicitly #359 #360
 
 0.5.0-alpha
 -----------
