@@ -60,6 +60,9 @@ void init_Series(py::module &m) {
         .def("set_name", &Series::setName)
         .def("flush", &Series::flush)
 
-        .def_readwrite("iterations", &Series::iterations)
+        .def_readwrite("iterations", &Series::iterations,
+            py::return_value_policy::reference,
+            // garbage collection: return value must be freed before Series
+            py::keep_alive<1, 0>())
     ;
 }
