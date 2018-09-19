@@ -907,10 +907,13 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
 #endif
         REQUIRE(isSame(e_extent_z.getDatatype(), determineDatatype< uint64_t >()));
 
-        std::shared_ptr< uint64_t > data;
-        e_extent_z.load(0, data);
+        std::vector< uint64_t > data( e_patches.size() );
+        e_extent_z.load(shareRaw(data.data()));
         o.flush();
-        REQUIRE(*data == static_cast< uint64_t >(80));
+        REQUIRE(data.at(0) == static_cast< uint64_t >(80));
+        REQUIRE(data.at(1) == static_cast< uint64_t >(80));
+        REQUIRE(data.at(2) == static_cast< uint64_t >(80));
+        REQUIRE(data.at(3) == static_cast< uint64_t >(80));
 
         PatchRecord& e_numParticles = e_patches["numParticles"];
         REQUIRE(e_numParticles.size() == 1);
@@ -922,9 +925,12 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
 #endif
         REQUIRE(isSame(e_numParticles_scalar.getDatatype(), determineDatatype< uint64_t >()));
 
-        e_numParticles_scalar.load(0, data);
+        e_numParticles_scalar.load(shareRaw(data.data()));
         o.flush();
-        REQUIRE(*data == static_cast< uint64_t >(512000));
+        REQUIRE(data.at(0) == static_cast< uint64_t >(512000));
+        REQUIRE(data.at(1) == static_cast< uint64_t >(819200));
+        REQUIRE(data.at(2) == static_cast< uint64_t >(819200));
+        REQUIRE(data.at(3) == static_cast< uint64_t >(0));
 
         PatchRecord& e_numParticlesOffset = e_patches["numParticlesOffset"];
         REQUIRE(e_numParticlesOffset.size() == 1);
@@ -957,6 +963,13 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
         REQUIRE(e_offset_y.getDatatype() == determineDatatype< uint64_t >());
 #endif
         REQUIRE(isSame(e_offset_y.getDatatype(), determineDatatype< uint64_t >()));
+
+        e_offset_y.load(shareRaw(data.data()));
+        o.flush();
+        REQUIRE(data.at(0) == static_cast< uint64_t >(0));
+        REQUIRE(data.at(1) == static_cast< uint64_t >(128));
+        REQUIRE(data.at(2) == static_cast< uint64_t >(256));
+        REQUIRE(data.at(3) == static_cast< uint64_t >(384));
 
         PatchRecordComponent& e_offset_z = e_offset["z"];
         REQUIRE(e_offset_z.unitSI() == 2.599999993753294e-07);

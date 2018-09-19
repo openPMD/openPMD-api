@@ -23,6 +23,7 @@ Features
   - better check for (unsupported) numpy array strides #353
   - implement ``Record_Component.make_constant`` #354
 - comply with runtime constraints w.r.t. ``written`` status #352
+- load at once ``ParticlePatches.load()`` #364
 
 Bug Fixes
 """""""""
