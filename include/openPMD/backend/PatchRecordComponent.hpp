@@ -62,6 +62,7 @@ public:
     void load(uint64_t idx, std::shared_ptr< T >);
     template< typename T >
     void store(uint64_t idx, T);
+    //! @todo add support for constant patch record components
 
 OPENPMD_private:
     PatchRecordComponent();
@@ -90,12 +91,14 @@ PatchRecordComponent::load(uint64_t idx, std::shared_ptr< T > data)
         throw std::runtime_error("Type conversion during particle patch loading not yet implemented");
 
     Extent dse = getExtent();
-    if( dse[0] < idx )
-        throw std::runtime_error("Index does not reside inside patch (patch: " + std::to_string(dse[0])
+    if( dse[0] - 1u < idx )
+        throw std::runtime_error("Index does not reside inside patch (no. patches: " + std::to_string(dse[0])
                                  + " - index: " + std::to_string(idx) + ")");
 
     if( !data )
         throw std::runtime_error("Unallocated pointer passed during ParticlePatch loading.");
+
+    //! @todo add support for constant patch record components
 
     Parameter< Operation::READ_DATASET > dRead;
     dRead.offset = {idx};
@@ -122,8 +125,8 @@ PatchRecordComponent::store(uint64_t idx, T data)
     }
 
     Extent dse = getExtent();
-    if( dse[0] < idx )
-        throw std::runtime_error("Index does not reside inside patch (patch: " + std::to_string(dse[0])
+    if( dse[0] - 1u < idx )
+        throw std::runtime_error("Index does not reside inside patch (no. patches: " + std::to_string(dse[0])
                                  + " - index: " + std::to_string(idx) + ")");
 
     Parameter< Operation::WRITE_DATASET > dWrite;
