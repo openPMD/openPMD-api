@@ -1343,6 +1343,7 @@ CommonADIOS1IOHandlerImpl::listPaths(Writable* writable,
     std::string name = concrete_bp1_file_position(writable);
 
     std::unordered_set< std::string > paths;
+    std::unordered_set< std::string > variables;
     for( int i = 0; i < f->nvars; ++i )
     {
         char* str = f->var_namelist[i];
@@ -1351,6 +1352,7 @@ CommonADIOS1IOHandlerImpl::listPaths(Writable* writable,
         {
             /* remove the writable's path from the name */
             s = auxiliary::replace_first(s, name, "");
+            variables.emplace(s);
             if( std::any_of(s.begin(), s.end(), [](char c) { return c == '/'; }) )
             {
                 /* there are more path levels after the current writable */
@@ -1367,13 +1369,18 @@ CommonADIOS1IOHandlerImpl::listPaths(Writable* writable,
         {
             /* remove the writable's path from the name */
             s = auxiliary::replace_first(s, name, "");
-            /* remove the attribute name */
-            s = s.substr(0, s.find_last_of('/'));
             if( std::any_of(s.begin(), s.end(), [](char c) { return c == '/'; }) )
             {
-                /* this is an attribute of the writable */
-                s = s.substr(0, s.find_first_of('/'));
-                paths.emplace(s);
+                /* remove the attribute name */
+                s = s.substr(0, s.find_last_of('/'));
+                if( !std::any_of(variables.begin(),
+                                 variables.end(),
+                                 [&s](std::string const& var){ return auxiliary::starts_with(var, s); }))
+                {
+                    /* this is either a group or a constant scalar */
+                    s = s.substr(0, s.find_first_of('/'));
+                    paths.emplace(s);
+                }
             }
         }
     }
