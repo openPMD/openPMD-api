@@ -57,9 +57,9 @@ public:
     Extent getExtent() const;
 
     template< typename T >
-    std::shared_ptr< T > load(uint64_t idx);
+    std::shared_ptr< T > load();
     template< typename T >
-    void load(uint64_t idx, std::shared_ptr< T >);
+    void load(std::shared_ptr< T >);
     template< typename T >
     void store(uint64_t idx, T);
     //! @todo add support for constant patch record components
@@ -75,34 +75,32 @@ OPENPMD_private:
 
 template< typename T >
 inline std::shared_ptr< T >
-PatchRecordComponent::load(uint64_t idx)
+PatchRecordComponent::load()
 {
-    auto newData = std::make_shared< T >();
-    loadChunk(idx, newData);
+    uint64_t numPoints = getExtent()[0];
+    auto newData = std::shared_ptr< T >(new T[numPoints], []( T *p ){ delete [] p; });
+    load(newData);
     return newData;
 }
 
 template< typename T >
 inline void
-PatchRecordComponent::load(uint64_t idx, std::shared_ptr< T > data)
+PatchRecordComponent::load(std::shared_ptr< T > data)
 {
     Datatype dtype = determineDatatype< T >();
     if( dtype != getDatatype() )
         throw std::runtime_error("Type conversion during particle patch loading not yet implemented");
 
-    Extent dse = getExtent();
-    if( dse[0] - 1u < idx )
-        throw std::runtime_error("Index does not reside inside patch (no. patches: " + std::to_string(dse[0])
-                                 + " - index: " + std::to_string(idx) + ")");
-
     if( !data )
         throw std::runtime_error("Unallocated pointer passed during ParticlePatch loading.");
+
+    uint64_t numPoints = getExtent()[0];
 
     //! @todo add support for constant patch record components
 
     Parameter< Operation::READ_DATASET > dRead;
-    dRead.offset = {idx};
-    dRead.extent = {1};
+    dRead.offset = {0};
+    dRead.extent = {numPoints};
     dRead.dtype = getDatatype();
     dRead.data = std::static_pointer_cast< void >(data);
     m_chunks->push(IOTask(this, dRead));

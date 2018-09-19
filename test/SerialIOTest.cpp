@@ -17,6 +17,7 @@
 #include <array>
 #include <memory>
 #include <limits>
+#include <numeric>
 
 using namespace openPMD;
 
@@ -108,6 +109,88 @@ void constant_scalar(std::string file_ending)
         REQUIRE(!s.iterations[1].particles["e"]["velocity"]["y"].containsAttribute("shape"));
         REQUIRE(!s.iterations[1].particles["e"]["velocity"]["y"].containsAttribute("value"));
         REQUIRE(s.iterations[1].particles["e"]["velocity"]["y"].getExtent() == Extent{3, 2, 1});
+    }
+}
+
+inline
+void particle_patches( std::string file_ending )
+{
+    constexpr auto SCALAR = openPMD::RecordComponent::SCALAR;
+
+    uint64_t const extent = 123u;
+    uint64_t const num_patches = 2u;
+    {
+        // constant scalar
+        Series s = Series("../samples/particle_patches." + file_ending, AccessType::CREATE);
+
+        auto e = s.iterations[42].particles["electrons"];
+
+        for( auto r : {"x", "y"} )
+        {
+            auto x = e["position"][r];
+            x.resetDataset(Dataset(determineDatatype<float>(), {extent}));
+            std::vector<float> xd( extent );
+            std::iota(xd.begin(), xd.end(), 0);
+            x.storeChunk({0}, {extent}, shareRaw(xd.data()));
+            auto  o = e["positionOffset"][r];
+            o.resetDataset(Dataset(determineDatatype<uint64_t>(), {extent}));
+            std::vector<uint64_t> od( extent );
+            std::iota(od.begin(), od.end(), 0);
+            o.storeChunk({0}, {extent}, shareRaw(od.data()));
+        }
+
+        auto const dset_n = Dataset(determineDatatype<uint64_t>(), {num_patches, });
+        e.particlePatches["numParticles"][SCALAR].resetDataset(dset_n);
+        e.particlePatches["numParticlesOffset"][SCALAR].resetDataset(dset_n);
+
+        auto const dset_f = Dataset(determineDatatype<float>(), {num_patches, });
+        e.particlePatches["offset"]["x"].resetDataset(dset_f);
+        e.particlePatches["offset"]["y"].resetDataset(dset_f);
+        e.particlePatches["extent"]["x"].resetDataset(dset_f);
+        e.particlePatches["extent"]["y"].resetDataset(dset_f);
+
+        // patch 0 (decomposed in x)
+        e.particlePatches["numParticles"][SCALAR].store(0, uint64_t(10u));
+        e.particlePatches["numParticlesOffset"][SCALAR].store(0, uint64_t(0u));
+        e.particlePatches["offset"]["x"].store(0, float(0.));
+        e.particlePatches["offset"]["y"].store(0, float(0.));
+        e.particlePatches["extent"]["x"].store(0, float(10.));
+        e.particlePatches["extent"]["y"].store(0, float(123.));
+
+        // patch 1 (decomposed in x)
+        e.particlePatches["numParticles"][SCALAR].store(1, uint64_t(113u));
+        e.particlePatches["numParticlesOffset"][SCALAR].store(1, uint64_t(10u));
+        e.particlePatches["offset"]["x"].store(1, float(10.));
+        e.particlePatches["offset"]["y"].store(1, float(0.));
+        e.particlePatches["extent"]["x"].store(1, float(113));
+        e.particlePatches["extent"]["y"].store(1, float(123.));
+    }
+    {
+        Series s = Series("../samples/particle_patches." + file_ending, AccessType::READ_ONLY);
+
+        auto e = s.iterations[42].particles["electrons"];
+
+        auto numParticles = e.particlePatches["numParticles"][SCALAR].template load< uint64_t >();
+        auto numParticlesOffset = e.particlePatches["numParticlesOffset"][SCALAR].template load< uint64_t >();
+        auto extent_x = e.particlePatches["extent"]["x"].template load< float >();
+        auto extent_y = e.particlePatches["extent"]["y"].template load< float >();
+        auto offset_x = e.particlePatches["offset"]["x"].template load< float >();
+        auto offset_y = e.particlePatches["offset"]["y"].template load< float >();
+
+        s.flush();
+
+        REQUIRE(numParticles.get()[0] == 10);
+        REQUIRE(numParticles.get()[1] == 113);
+        REQUIRE(numParticlesOffset.get()[0] == 0);
+        REQUIRE(numParticlesOffset.get()[1] == 10);
+        REQUIRE(extent_x.get()[0] == 10.);
+        REQUIRE(extent_x.get()[1] == 113.);
+        REQUIRE(extent_y.get()[0] == 123.);
+        REQUIRE(extent_y.get()[1] == 123.);
+        REQUIRE(offset_x.get()[0] == 0.);
+        REQUIRE(offset_x.get()[1] == 10.);
+        REQUIRE(offset_y.get()[0] == 0.);
+        REQUIRE(offset_y.get()[1] == 0.);
     }
 }
 
@@ -554,7 +637,8 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
     // since this file might not be publicly available, gracefully handle errors
     try
     {
-        /* development/huebl/lwfa-openPMD-062-smallLWFA-h5 */
+        /* HZDR: /bigdata/hplsim/development/huebl/lwfa-openPMD-062-smallLWFA-h5
+         * DOI:10.14278/rodare.57 */
         Series o = Series("../samples/hzdr-sample/h5/simData_%T.h5", AccessType::READ_ONLY);
 
         REQUIRE(o.openPMD() == "1.0.0");
@@ -907,10 +991,13 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
 #endif
         REQUIRE(isSame(e_extent_z.getDatatype(), determineDatatype< uint64_t >()));
 
-        std::shared_ptr< uint64_t > data;
-        e_extent_z.load(0, data);
+        std::vector< uint64_t > data( e_patches.size() );
+        e_extent_z.load(shareRaw(data.data()));
         o.flush();
-        REQUIRE(*data == static_cast< uint64_t >(80));
+        REQUIRE(data.at(0) == static_cast< uint64_t >(80));
+        REQUIRE(data.at(1) == static_cast< uint64_t >(80));
+        REQUIRE(data.at(2) == static_cast< uint64_t >(80));
+        REQUIRE(data.at(3) == static_cast< uint64_t >(80));
 
         PatchRecord& e_numParticles = e_patches["numParticles"];
         REQUIRE(e_numParticles.size() == 1);
@@ -922,9 +1009,12 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
 #endif
         REQUIRE(isSame(e_numParticles_scalar.getDatatype(), determineDatatype< uint64_t >()));
 
-        e_numParticles_scalar.load(0, data);
+        e_numParticles_scalar.load(shareRaw(data.data()));
         o.flush();
-        REQUIRE(*data == static_cast< uint64_t >(512000));
+        REQUIRE(data.at(0) == static_cast< uint64_t >(512000));
+        REQUIRE(data.at(1) == static_cast< uint64_t >(819200));
+        REQUIRE(data.at(2) == static_cast< uint64_t >(819200));
+        REQUIRE(data.at(3) == static_cast< uint64_t >(0));
 
         PatchRecord& e_numParticlesOffset = e_patches["numParticlesOffset"];
         REQUIRE(e_numParticlesOffset.size() == 1);
@@ -957,6 +1047,13 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
         REQUIRE(e_offset_y.getDatatype() == determineDatatype< uint64_t >());
 #endif
         REQUIRE(isSame(e_offset_y.getDatatype(), determineDatatype< uint64_t >()));
+
+        e_offset_y.load(shareRaw(data.data()));
+        o.flush();
+        REQUIRE(data.at(0) == static_cast< uint64_t >(0));
+        REQUIRE(data.at(1) == static_cast< uint64_t >(128));
+        REQUIRE(data.at(2) == static_cast< uint64_t >(256));
+        REQUIRE(data.at(3) == static_cast< uint64_t >(384));
 
         PatchRecordComponent& e_offset_z = e_offset["z"];
         REQUIRE(e_offset_z.unitSI() == 2.599999993753294e-07);
@@ -1540,6 +1637,11 @@ TEST_CASE( "hdf5_constant_scalar", "[serial][hdf5]" )
 {
     constant_scalar("h5");
 }
+
+TEST_CASE( "hdf5_particle_patches", "[serial][hdf5]" )
+{
+    particle_patches("h5");
+}
 #else
 TEST_CASE( "no_serial_hdf5", "[serial][hdf5]" )
 {
@@ -1999,7 +2101,8 @@ TEST_CASE( "hzdr_adios1_sample_content_test", "[serial][adios1]" )
     /** @todo add bp example files to https://github.com/openPMD/openPMD-example-datasets */
     try
     {
-        /* development/huebl/lwfa-bgfield-001 */
+        /* HZDR: /bigdata/hplsim/development/huebl/lwfa-bgfield-001
+         * DOI:10.14278/rodare.57 */
         Series o = Series("../samples/hzdr-sample/bp/checkpoint_%T.bp", AccessType::READ_ONLY);
 
         REQUIRE(o.openPMD() == "1.0.0");
@@ -2155,6 +2258,10 @@ TEST_CASE( "hzdr_adios1_sample_content_test", "[serial][adios1]" )
 TEST_CASE( "adios1_constant_scalar", "[serial][adios1]" )
 {
     constant_scalar("bp");
+}
+TEST_CASE( "adios1_particle_patches", "[serial][adios1]" )
+{
+    particle_patches("bp");
 }
 #else
 TEST_CASE( "no_serial_adios1", "[serial][adios]")
