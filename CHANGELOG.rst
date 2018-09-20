@@ -23,6 +23,8 @@ Bug Fixes
 Other
 """""
 
+- dependency change: Catch2 2.3.0+
+
 
 0.6.0-alpha
 -----------

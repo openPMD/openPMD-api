@@ -8,7 +8,7 @@
 #include "openPMD/openPMD.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 
-#include <catch/catch.hpp>
+#include <catch2/catch.hpp>
 
 #include <iostream>
 #include <algorithm>

@@ -7,7 +7,7 @@
 #endif
 #include "openPMD/openPMD.hpp"
 
-#include <catch/catch.hpp>
+#include <catch2/catch.hpp>
 
 #include <string>
 #include <vector>

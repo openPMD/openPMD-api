@@ -15,7 +15,7 @@
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 #include "openPMD/Dataset.hpp"
 
-#include <catch/catch.hpp>
+#include <catch2/catch.hpp>
 
 #include <array>
 #include <fstream>

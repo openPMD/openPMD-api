@@ -5,7 +5,7 @@
 
 #include "openPMD/openPMD.hpp"
 
-#include <catch/catch.hpp>
+#include <catch2/catch.hpp>
 
 #if openPMD_HAVE_MPI
 #   include <mpi.h>
