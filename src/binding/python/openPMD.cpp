@@ -44,6 +44,8 @@ void init_Mesh(py::module &);
 void init_MeshRecordComponent(py::module &);
 void init_ParticlePatches(py::module &);
 void init_ParticleSpecies(py::module &);
+void init_PatchRecord(py::module &);
+void init_PatchRecordComponent(py::module &);
 void init_Record(py::module &);
 void init_RecordComponent(py::module &);
 void init_Series(py::module &);
@@ -66,6 +68,8 @@ PYBIND11_MODULE(openPMD, m) {
     init_RecordComponent(m);
     init_MeshRecordComponent(m);
     init_ParticlePatches(m);
+    init_PatchRecord(m);
+    init_PatchRecordComponent(m);
     init_ParticleSpecies(m);
     init_Record(m);
     init_Series(m);

@@ -114,7 +114,7 @@ PatchRecordComponent::store(uint64_t idx, T data)
     if( dtype != getDatatype() )
     {
         std::ostringstream oss;
-        oss << "Datatypes of chunk data ("
+        oss << "Datatypes of patch data ("
             << dtype
             << ") and dataset ("
             << getDatatype()

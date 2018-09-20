@@ -31,9 +31,13 @@
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
+#include "openPMD/backend/PatchRecordComponent.hpp"
+#include "openPMD/backend/BaseRecordComponent.hpp"
+#include "openPMD/backend/PatchRecord.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
+#include "openPMD/ParticlePatches.hpp"
 #include "openPMD/Record.hpp"
 
 #include <string>
@@ -202,16 +206,22 @@ using PyIterationContainer = Container<
 >;
 using PyMeshContainer = Container< Mesh >;
 using PyPartContainer = Container< ParticleSpecies >;
+using PyPatchContainer = Container< ParticlePatches >;
 using PyRecordContainer = Container< Record >;
+using PyPatchRecordContainer = Container< PatchRecord >;
 using PyRecordComponentContainer = Container< RecordComponent >;
 using PyMeshRecordComponentContainer = Container< MeshRecordComponent >;
+using PyPatchRecordComponentContainer = Container< PatchRecordComponent >;
 using PyBaseRecordComponentContainer = Container< BaseRecordComponent >;
 PYBIND11_MAKE_OPAQUE(PyIterationContainer)
 PYBIND11_MAKE_OPAQUE(PyMeshContainer)
 PYBIND11_MAKE_OPAQUE(PyPartContainer)
+PYBIND11_MAKE_OPAQUE(PyPatchContainer)
 PYBIND11_MAKE_OPAQUE(PyRecordContainer)
+PYBIND11_MAKE_OPAQUE(PyPatchRecordContainer)
 PYBIND11_MAKE_OPAQUE(PyRecordComponentContainer)
 PYBIND11_MAKE_OPAQUE(PyMeshRecordComponentContainer)
+PYBIND11_MAKE_OPAQUE(PyPatchRecordComponentContainer)
 PYBIND11_MAKE_OPAQUE(PyBaseRecordComponentContainer)
 
 void init_Container( py::module & m ) {
@@ -227,9 +237,17 @@ void init_Container( py::module & m ) {
         m,
         "Particle_Container"
     );
+    ::detail::bind_container< PyPatchContainer >(
+        m,
+        "Particle_Patches_Container"
+    );
     ::detail::bind_container< PyRecordContainer >(
         m,
         "Record_Container"
+    );
+    ::detail::bind_container< PyPatchRecordContainer >(
+        m,
+        "Patch_Record_Container"
     );
     ::detail::bind_container< PyRecordComponentContainer >(
         m,
@@ -238,6 +256,10 @@ void init_Container( py::module & m ) {
     ::detail::bind_container< PyMeshRecordComponentContainer >(
         m,
         "Mesh_Record_Component_Container"
+    );
+    ::detail::bind_container< PyPatchRecordComponentContainer >(
+        m,
+        "Patch_Record_Component_Container"
     );
     ::detail::bind_container< PyBaseRecordComponentContainer >(
         m,
