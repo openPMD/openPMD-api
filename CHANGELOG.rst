@@ -3,13 +3,16 @@
 Changelog
 =========
 
-0.5.1-alpha
+0.6.0-alpha
 -----------
-**Date:** TBA
+**Date:** 2018-09-20
 
-[Title]
+Particle Patches Improved, Constant Scalars and Python Containers Fixed
 
-[Summary]
+Scalar records properly support const-ness.
+The Particle Patch load interface was changed, loading now all patches at once, and Python bindings are available.
+Numpy ``dtype`` is now a first-class citizen for Python ``Datatype`` control, being accepted and returned instead of enums.
+Python lifetime in garbage collection for containers such as ``meshes``, ``particles`` and ``iterations`` is now properly implemented.
 
 Changes to "0.5.0-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -30,11 +33,9 @@ Bug Fixes
 """""""""
 
 - dataOrder: mesh attribute is a string #355
-- constant scalar MeshRecords: reading corrected #358
-- particle patches: stricter ``load( idx )`` range check #363
-- Python:
-
-  - lifetime of ``Iteration.meshes/particles`` and ``Series.iterations`` members #354
+- constant scalar Mesh Records: reading corrected #358
+- particle patches: stricter ``load( idx )`` range check #363, then removed in #364
+- Python: lifetime of ``Iteration.meshes/particles`` and ``Series.iterations`` members #354
 
 Other
 """""
