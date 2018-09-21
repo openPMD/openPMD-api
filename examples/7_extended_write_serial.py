@@ -169,16 +169,20 @@ if __name__ == "__main__":
         electrons["positionOffset"]["x"].store_chunk(o, e, partial_particleOff)
 
         electrons.particle_patches["numParticles"][SCALAR].store(
-            i, np.uint64(numParticles))
+            i, np.array([numParticles], dtype=np.uint64))
         electrons.particle_patches["numParticlesOffset"][SCALAR].store(
-            i, np.uint64(numParticlesOffset))
+            i, np.array([numParticlesOffset], dtype=np.uint64))
 
         electrons.particle_patches["offset"]["x"].store(
-            i, particle_position[numParticlesOffset])
+            i,
+            np.array([particle_position[numParticlesOffset]],
+                     dtype=np.float32))
         electrons.particle_patches["extent"]["x"].store(
             i,
-            particle_position[numParticlesOffset + numParticles - 1] -
-            particle_position[numParticlesOffset])
+            np.array([
+                particle_position[numParticlesOffset + numParticles - 1] -
+                particle_position[numParticlesOffset]
+            ], dtype=np.float32))
 
     mesh["y"].reset_dataset(d)
     mesh["y"].set_unit_SI(4)
