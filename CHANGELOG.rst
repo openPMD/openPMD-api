@@ -20,6 +20,8 @@ Features
 Bug Fixes
 """""""""
 
+- Python: stride check too strict #369
+
 Other
 """""
 
