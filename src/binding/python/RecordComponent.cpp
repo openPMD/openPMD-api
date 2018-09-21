@@ -232,12 +232,12 @@ void init_RecordComponent(py::module &m) {
                 // std::cout << "    stride '" << d << "': "
                 //           << a.strides()[d] / a.itemsize()
                 //           << " - " << a.shape()[d] << std::endl;
-                if( a.strides()[d] / a.itemsize() != a.shape()[d] ) // general criteria
+                if( a.strides()[d] != a.shape()[d] * a.itemsize() ) // general criteria
                 {
-                    if( a.ndim() == 1u && a.strides()[0] / a.itemsize() > a.shape()[0] )
+                    if( a.ndim() == 1u && a.strides()[0] > a.shape()[0] * a.itemsize() )
                         ; // ok in 1D
-                    else if( a.ndim() == 1u && a.strides()[0] / a.itemsize() == 1u )
-                        ; // ok and occurs for byte strings
+                    else if( a.strides()[0] == a.itemsize() )
+                        ; // ok to stride on an element level
                     else
                         throw std::runtime_error("store_chunk: "
                             "stride handling not implemented!");

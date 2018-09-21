@@ -124,12 +124,12 @@ bool setAttributeFromBufferInfo(
             // std::cout << "    stride '" << d << "': "
             //           << buf.strides[d] / buf.itemsize
             //           << " - " << buf.shape[d] << std::endl;
-            if( buf.strides[d] / buf.itemsize != buf.shape[d] ) // general criteria
+            if( buf.strides[d] != buf.shape[d] * buf.itemsize ) // general criteria
             {
-                if( buf.ndim == 1u && buf.strides[0] / buf.itemsize > buf.shape[0] )
+                if( buf.ndim == 1u && buf.strides[0] > buf.shape[0] * buf.itemsize )
                     ; // ok in 1D
-                else if( buf.ndim == 1u && buf.strides[0] / buf.itemsize == 1u )
-                    ; // ok and occurs for byte strings
+                else if( buf.strides[0] == buf.itemsize )
+                    ; // ok to stride on an element level
                 else
                     throw std::runtime_error("set_attribute: "
                         "stride handling not implemented! (key='" +
