@@ -20,12 +20,16 @@ Features
 Bug Fixes
 """""""""
 
-- Python: stride check too strict #369
+- Python:
+
+  - stride check too strict #369
+  - allow one-element n-d arrays for scalars in ``store``, ``make_constant`` #314
 
 Other
 """""
 
 - dependency change: Catch2 2.3.0+
+- Python: add extended write example #314
 
 
 0.6.0-alpha

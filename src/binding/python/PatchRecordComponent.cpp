@@ -83,6 +83,13 @@ void init_PatchRecordComponent(py::module &m) {
 
             using DT = Datatype;
 
+            // allow one-element n-dimensional buffers as well
+            py::ssize_t numElements = 1;
+            if( buf.ndim > 0 ) {
+                for( auto d = 0; d < buf.ndim; ++d )
+                    numElements *= buf.shape.at(d);
+            }
+
             // Numpy: Handling of arrays and scalars
             // work-around for https://github.com/pybind/pybind11/issues/1224
             // -> passing numpy scalars as buffers needs numpy 1.15+
@@ -90,7 +97,7 @@ void init_PatchRecordComponent(py::module &m) {
             //    https://github.com/pybind/pybind11/issues/1224#issuecomment-354357392
             // scalars, see PEP 3118
             // requires Numpy 1.15+
-            if( buf.ndim == 0 ) {
+            if( numElements == 1 ) {
                 // refs:
                 //   https://docs.scipy.org/doc/numpy-1.15.0/reference/arrays.interface.html
                 //   https://docs.python.org/3/library/struct.html#format-characters

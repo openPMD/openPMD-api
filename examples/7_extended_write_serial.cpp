@@ -17,7 +17,7 @@ write()
     std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
     std::shared_ptr< double > position_local(new double);
     e["position"]["x"].resetDataset(Dataset(determineDatatype(position_local), {4}));
-    
+
     for( uint64_t i = 0; i < 4; ++i )
     {
         *position_local = position_global[i];
@@ -54,11 +54,13 @@ write2()
     f.setMeshesPath("custom_meshes_path");
     f.setParticlesPath("long_and_very_custom_particles_path");
 
-    // while it is possible to add and remove attributes, it is discouraged
-    // removing attributes required by the standard typically makes the file unusable for post-processing
+    // it is possible to add and remove attributes
     f.setComment("This is fine and actually encouraged by the standard");
-    f.setAttribute("custom_attribute_name",
-                   std::string("This attribute is manually added and can contain about any datatype you would want"));
+    f.setAttribute(
+        "custom_attribute_name",
+        std::string("This attribute is manually added and can contain about any datatype you would want")
+    );
+    // note that removing attributes required by the standard typically makes the file unusable for post-processing
     f.deleteAttribute("custom_attribute_name");
 
     // everything that is accessed with [] should be interpreted as permanent storage
@@ -79,7 +81,7 @@ write2()
         reference.setComment("Modifications to a reference will always be visible in the output");
 
         // alternatively, a copy may be created and later re-assigned to f.iterations[1]
-        Iteration copy = f.iterations[1];
+        Iteration copy = f.iterations[1];  // TODO .copy()
         copy.setComment("Modifications to copies will only take effect after you reassign the copy");
         f.iterations[1] = copy;
     }
@@ -90,9 +92,10 @@ write2()
     // the underlying concept for numeric data is the openPMD Record
     // https://github.com/openPMD/openPMD-standard/blob/upcoming-1.0.1/STANDARD.md#scalar-vector-and-tensor-records
     // Meshes are specialized records
-    cur_it.meshes["generic_2D_field"].setUnitDimension({{UnitDimension::L, -3}});
+    cur_it.meshes["generic_2D_field"].setUnitDimension({{UnitDimension::L, -3}, {UnitDimension::M, 1}});
 
     {
+        // TODO outdated!
         // as this is a copy, it does not modify the sunk resource and can be modified independently
         Mesh lowRez = cur_it.meshes["generic_2D_field"];
         lowRez.setGridSpacing(std::vector< double >{6, 1}).setGridGlobalOffset({0, 600});
@@ -107,9 +110,9 @@ write2()
     cur_it.meshes.erase("highRez_2D_field");
 
     {
-        // particles handle very similar
-    ParticleSpecies& electrons = cur_it.particles["electrons"];
-    electrons.setAttribute("NoteWorthyParticleSpeciesProperty",
+        // particles are handled very similar
+        ParticleSpecies& electrons = cur_it.particles["electrons"];
+        electrons.setAttribute("NoteWorthyParticleSpeciesProperty",
                                std::string("Observing this species was a blast."));
         electrons["displacement"].setUnitDimension({{UnitDimension::M, 1}});
         electrons["displacement"]["x"].setUnitSI(1e-6);
@@ -201,7 +204,8 @@ write2()
     mesh["y"].resetDataset(d);
     mesh["y"].setUnitSI(4);
     double constant_value = 0.3183098861837907;
-    // for datasets that only contain one unique value, openPMD offers constant records
+    // for datasets that contain a single unique value, openPMD offers
+    // constant records
     mesh["y"].makeConstant(constant_value);
 
     /* The files in 'f' are still open until the object is destroyed, on
