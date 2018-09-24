@@ -5,17 +5,14 @@ Changelog
 
 0.6.1-alpha
 -----------
-**Date:** TBA
+**Date:** 2018-09-24
 
-[Title]
+Relaxed Python Stride Checks
 
-[Summary]
+Python stride checks have been relaxed and one-element n-d arrays are allowed for scalars.
 
 Changes to "0.6.0-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^
-
-Features
-""""""""
 
 Bug Fixes
 """""""""
