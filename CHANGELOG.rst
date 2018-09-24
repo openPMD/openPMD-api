@@ -5,23 +5,19 @@ Changelog
 
 0.6.2-alpha
 -----------
-**Date:** TBA
+**Date:** 2018-09-25
 
-[Title]
+Python Stride: Regression
 
-[Summary]
+A regression in the last fix for python strides made the relaxation not efficient for 2-D and higher.
 
 Changes to "0.6.1-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Features
-""""""""
-
 Bug Fixes
 """""""""
 
-Other
-"""""
+- Python: relax strides further
 
 
 0.6.1-alpha

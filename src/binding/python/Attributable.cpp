@@ -128,7 +128,7 @@ bool setAttributeFromBufferInfo(
             {
                 if( buf.ndim == 1u && buf.strides[0] > buf.shape[0] * buf.itemsize )
                     ; // ok in 1D
-                else if( buf.strides[0] == buf.itemsize )
+                else if( buf.strides[d] == buf.itemsize )
                     ; // ok to stride on an element level
                 else
                     throw std::runtime_error("set_attribute: "
