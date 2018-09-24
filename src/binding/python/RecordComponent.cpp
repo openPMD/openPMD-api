@@ -243,7 +243,7 @@ void init_RecordComponent(py::module &m) {
                 {
                     if( a.ndim() == 1u && a.strides()[0] > a.shape()[0] * a.itemsize() )
                         ; // ok in 1D
-                    else if( a.strides()[0] == a.itemsize() )
+                    else if( a.strides()[d] == a.itemsize() )
                         ; // ok to stride on an element level
                     else
                         throw std::runtime_error("store_chunk: "
