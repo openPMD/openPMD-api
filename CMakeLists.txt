@@ -39,6 +39,12 @@ if(WIN32)
 endif()
 
 
+# Release channel #############################################################
+#
+set(openPMD_RELEASE_CHANNEL "source"
+    CACHE STRING "Describes the method openPMD-api was installed with.")
+
+
 # Options and Variants ########################################################
 #
 function(openpmd_option name description default)
@@ -352,6 +358,9 @@ set(IO_ADIOS1_SOURCE
 # library
 add_library(openPMD ${CORE_SOURCE} ${IO_SOURCE})
 add_library(openPMD::openPMD ALIAS openPMD)
+
+# release channel
+target_compile_definitions(openPMD PUBLIC "-DOPENPMD_RELEASE_CHANNEL=${openPMD_RELEASE_CHANNEL}")
 
 # properties
 target_compile_features(openPMD
@@ -1021,9 +1030,10 @@ endif()
 #
 message("")
 message("openPMD build configuration:")
-message("  library Version: ${openPMD_VERSION}")
-message("  openPMD Standard: ${openPMD_STANDARD_VERSION}")
-message("  C++ Compiler: ${CMAKE_CXX_COMPILER_ID} "
+message("  library version: ${openPMD_VERSION}")
+message("  openPMD standard: ${openPMD_STANDARD_VERSION}")
+message("  release channel: ${openPMD_RELEASE_CHANNEL}")
+message("  C++ compiler: ${CMAKE_CXX_COMPILER_ID} "
                         "${CMAKE_CXX_COMPILER_VERSION} "
                         "${CMAKE_CXX_COMPILER_WRAPPER}")
 message("    ${CMAKE_CXX_COMPILER}")

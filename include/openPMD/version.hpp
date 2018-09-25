@@ -35,3 +35,8 @@
 #define OPENPMD_STANDARD_MIN_MAJOR 1
 #define OPENPMD_STANDARD_MIN_MINOR 0
 #define OPENPMD_STANDARD_MIN_PATCH 0
+
+// release channel
+#if !defined(OPENPMD_RELEASE_CHANNEL)
+#   define OPENPMD_RELEASE_CHANNEL source
+#endif
