@@ -17,7 +17,8 @@
  * You should have received a copy of the GNU General Public License
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
- */ 
+ */
+#include <openPMD/IO/ADIOS/ADIOS2IOHandler.hpp>
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 #include "openPMD/IO/DummyIOHandler.hpp"
 #include "openPMD/IO/ADIOS/ADIOS1IOHandler.hpp"
@@ -50,7 +51,7 @@ namespace openPMD
                 return std::make_shared< DummyIOHandler >(path, accessTypeBackend);
 #   endif
             case Format::ADIOS2:
-                throw std::runtime_error("ADIOS2 backend not yet implemented");
+                return std::make_shared<ADIOS2IOHandler>(path, accessTypeBackend, comm);
             default:
                 return std::make_shared< DummyIOHandler >(path, accessTypeBackend);
         }
@@ -74,8 +75,10 @@ namespace openPMD
                 throw std::runtime_error("openPMD-api built without ADIOS1 support");
                 return std::make_shared< DummyIOHandler >(path, accessType);
 #   endif
+#if openPMD_HAVE_ADIOS2
             case Format::ADIOS2:
-                throw std::runtime_error("ADIOS2 backend not yet implemented");
+                return std::make_shared<ADIOS2IOHandler>(path, accessType);
+#endif
             case Format::JSON:
                 return std::make_shared< JSONIOHandler >(path, accessType);
             default:

@@ -23,14 +23,14 @@ std::vector<std::tuple<std::string, bool>> getBackends() {
     // first component: backend file ending
     // second component: whether to test 128 bit values
     std::vector<std::tuple<std::string, bool>> res;
-#if openPMD_HAVE_ADIOS1
+#if openPMD_HAVE_JSON
+    res.emplace_back("json", false);
+#endif
+#if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
     res.emplace_back("bp", true);
 #endif
 #if openPMD_HAVE_HDF5
     res.emplace_back("h5", true);
-#endif
-#if openPMD_HAVE_JSON
-    res.emplace_back("json", false);
 #endif
     return res;
 }

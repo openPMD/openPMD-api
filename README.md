@@ -105,7 +105,7 @@ Optional I/O backends:
 * [JSON](https://en.wikipedia.org/wiki/JSON)
 * [HDF5](https://support.hdfgroup.org/HDF5) 1.8.13+
 * [ADIOS1](https://www.olcf.ornl.gov/center-projects/adios) 1.13.1+
-* [ADIOS2](https://github.com/ornladios/ADIOS2) 2.4.0+ (*not yet implemented*)
+* [ADIOS2](https://github.com/ornladios/ADIOS2) 2.4.0+
 
 while those can be built either with or without:
 * MPI 2.1+, e.g. OpenMPI 1.6.5+ or MPICH2
@@ -212,15 +212,14 @@ CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 | `openPMD_USE_JSON`           | **AUTO**/ON/OFF  | JSON backend (`.json` files)                                                 |
 | `openPMD_USE_HDF5`           | **AUTO**/ON/OFF  | HDF5 backend (`.h5` files)                                                   |
 | `openPMD_USE_ADIOS1`         | **AUTO**/ON/OFF  | ADIOS1 backend (`.bp` files)                                                 |
-| `openPMD_USE_ADIOS2`         | AUTO/ON/**OFF**  | ADIOS2 backend (`.bp` files) <sup>1</sup>                                    |
+| `openPMD_USE_ADIOS2`         | **AUTO**/ON/OFF  | ADIOS2 backend (`.bp` files)                                                 |
 | `openPMD_USE_PYTHON`         | **AUTO**/ON/OFF  | Enable Python bindings                                                       |
-| `openPMD_USE_INVASIVE_TESTS` | ON/**OFF**       | Enable unit tests that modify source code <sup>2</sup>                       |
-| `openPMD_USE_VERIFY`         | **ON**/OFF       | Enable internal VERIFY (assert) macro independent of build type <sup>3</sup> |
+| `openPMD_USE_INVASIVE_TESTS` | ON/**OFF**       | Enable unit tests that modify source code <sup>1</sup>                       |
+| `openPMD_USE_VERIFY`         | **ON**/OFF       | Enable internal VERIFY (assert) macro independent of build type <sup>2</sup> |
 | `PYTHON_EXECUTABLE`          | (first found)    | Path to Python executable                                                    |
 
-<sup>1</sup> *not yet implemented*
-<sup>2</sup> *e.g. changes C++ visibility keywords, breaks MSVC*
-<sup>3</sup> *this includes most pre-/post-condition checks, disabling without specific cause is highly discouraged*
+<sup>1</sup> *e.g. changes C++ visibility keywords, breaks MSVC*
+<sup>2</sup> *this includes most pre-/post-condition checks, disabling without specific cause is highly discouraged*
 
 Additionally, the following libraries are shipped internally.
 The following options allow to switch to external installs:

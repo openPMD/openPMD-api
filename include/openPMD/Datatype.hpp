@@ -1,4 +1,4 @@
-/* Copyright 2017-2019 Fabian Koller
+/* Copyright 2017-2019 Fabian Koller and Franz Pöschel
  *
  * This file is part of openPMD-api.
  *
@@ -524,6 +524,7 @@ isSame( openPMD::Datatype const d, openPMD::Datatype const e )
 #else
 #define OPENPMD_TEMPLATE_OPERATOR template operator
 #endif
+
 /**
  * Generalizes switching over an openPMD datatype.
  *
@@ -541,150 +542,162 @@ isSame( openPMD::Datatype const d, openPMD::Datatype const e )
  * the passed arguments and the template parameter type corresponding to the
  * openPMD type.
  */
-template<
-    typename ReturnType = void,
-    typename Action,
-    typename ...Args
->
-ReturnType switchType(
-    Datatype dt,
-    Action action,
-    Args && ...args
-) {
-#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
-    auto f = &Action::OPENPMD_TEMPLATE_OPERATOR() < int >;
-    using fun = decltype(f);
-#else
-    using fun = decltype( &Action::OPENPMD_TEMPLATE_OPERATOR() < int > );
-#endif
-    static std::map<
-        Datatype,
-        fun
-    > funs {
-        {
-            Datatype::CHAR ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < char > },
-        {
-            Datatype::UCHAR ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < unsigned char > },
-        {
-            Datatype::SHORT ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < short > },
-        {
-            Datatype::INT ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < int > },
-        {
-            Datatype::LONG ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < long > },
-        {
-            Datatype::LONGLONG ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < long long > },
-        {
-            Datatype::USHORT ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < unsigned short > },
-        {
-            Datatype::UINT ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < unsigned int > },
-        {
-            Datatype::ULONG ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < unsigned long > },
-        {
-            Datatype::ULONGLONG ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < unsigned long long > },
-        {
-            Datatype::FLOAT ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < float > },
-        {
-            Datatype::DOUBLE ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < double > },
-        {
-            Datatype::LONG_DOUBLE ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < long double > },
-        {
-            Datatype::STRING ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < std::string > },
-        {
-            Datatype::VEC_CHAR ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < std::vector< char>>
-        },
-        {
-            Datatype::VEC_SHORT ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < std::vector< short>>
-        },
-        {
-            Datatype::VEC_INT ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < std::vector< int>>
-        },
-        {
-            Datatype::VEC_LONG ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < std::vector< long>>
-        },
-        {
-            Datatype::VEC_LONGLONG ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < std::vector< long long>>
-        },
-        {
-            Datatype::VEC_UCHAR ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < std::vector< unsigned char>>
-        },
-        {
-            Datatype::VEC_USHORT ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < std::vector< unsigned short>>
-        },
-        {
-            Datatype::VEC_UINT ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < std::vector< unsigned int>>
-        },
-        {
-            Datatype::VEC_ULONG ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < std::vector< unsigned long>>
-        },
-        {
-            Datatype::VEC_ULONGLONG ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < std::vector< unsigned long long>>
-        },
-        {
-            Datatype::VEC_FLOAT ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < std::vector< float>>
-        },
-        {
-            Datatype::VEC_DOUBLE ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < std::vector< double>>
-        },
-        {
-            Datatype::VEC_LONG_DOUBLE ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < std::vector< long double>>
-        },
-        {
-            Datatype::VEC_STRING ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < std::vector< std::string>>
-        },
-        {
-            Datatype::ARR_DBL_7 ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < std::array<
-                double,
-                7>>
-        },
-        {
-            Datatype::BOOL ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < bool > }
-    };
-    auto it = funs.find( dt );
-    if( it != funs.end( ) )
+template < typename ReturnType = void, typename Action, typename... Args >
+ReturnType switchType( Datatype dt, Action action, Args &&... args )
+{
+    switch ( dt )
     {
-        return ( ( action ).*
-                 ( it->second ) )( std::forward< Args >( args )... );
-    }
-    else
-    {
+    case Datatype::CHAR:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< char >(
+            std::forward< Args >( args )... );
+    case Datatype::UCHAR:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< unsigned char >(
+            std::forward< Args >( args )... );
+    case Datatype::SHORT:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< short >(
+            std::forward< Args >( args )... );
+    case Datatype::INT:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< int >(
+            std::forward< Args >( args )... );
+    case Datatype::LONG:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< long >(
+            std::forward< Args >( args )... );
+    case Datatype::LONGLONG:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< long long >(
+            std::forward< Args >( args )... );
+    case Datatype::USHORT:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< unsigned short >(
+            std::forward< Args >( args )... );
+    case Datatype::UINT:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< unsigned int >(
+            std::forward< Args >( args )... );
+    case Datatype::ULONG:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< unsigned long >(
+            std::forward< Args >( args )... );
+    case Datatype::ULONGLONG:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< unsigned long long >(
+            std::forward< Args >( args )... );
+    case Datatype::FLOAT:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< float >(
+            std::forward< Args >( args )... );
+    case Datatype::DOUBLE:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< double >(
+            std::forward< Args >( args )... );
+    case Datatype::LONG_DOUBLE:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< long double >(
+            std::forward< Args >( args )... );
+    case Datatype::STRING:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< std::string >(
+            std::forward< Args >( args )... );
+    case Datatype::VEC_CHAR:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< std::vector< char > >(
+            std::forward< Args >( args )... );
+    case Datatype::VEC_SHORT:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< std::vector< short > >(
+            std::forward< Args >( args )... );
+    case Datatype::VEC_INT:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< std::vector< int > >(
+            std::forward< Args >( args )... );
+    case Datatype::VEC_LONG:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< std::vector< long > >(
+            std::forward< Args >( args )... );
+    case Datatype::VEC_LONGLONG:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< std::vector< long long > >(
+            std::forward< Args >( args )... );
+    case Datatype::VEC_UCHAR:
+        return action
+            .OPENPMD_TEMPLATE_OPERATOR( )< std::vector< unsigned char > >(
+                std::forward< Args >( args )... );
+    case Datatype::VEC_USHORT:
+        return action
+            .OPENPMD_TEMPLATE_OPERATOR( )< std::vector< unsigned short > >(
+                std::forward< Args >( args )... );
+    case Datatype::VEC_UINT:
+        return action
+            .OPENPMD_TEMPLATE_OPERATOR( )< std::vector< unsigned int > >(
+                std::forward< Args >( args )... );
+    case Datatype::VEC_ULONG:
+        return action
+            .OPENPMD_TEMPLATE_OPERATOR( )< std::vector< unsigned long > >(
+                std::forward< Args >( args )... );
+    case Datatype::VEC_ULONGLONG:
+        return action
+            .OPENPMD_TEMPLATE_OPERATOR( )< std::vector< unsigned long long > >(
+                std::forward< Args >( args )... );
+    case Datatype::VEC_FLOAT:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< std::vector< float > >(
+            std::forward< Args >( args )... );
+    case Datatype::VEC_DOUBLE:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< std::vector< double > >(
+            std::forward< Args >( args )... );
+    case Datatype::VEC_LONG_DOUBLE:
+        return action
+            .OPENPMD_TEMPLATE_OPERATOR( )< std::vector< long double > >(
+                std::forward< Args >( args )... );
+    case Datatype::VEC_STRING:
+        return action
+            .OPENPMD_TEMPLATE_OPERATOR( )< std::vector< std::string > >(
+                std::forward< Args >( args )... );
+    case Datatype::ARR_DBL_7:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< std::array< double, 7 > >(
+            std::forward< Args >( args )... );
+    case Datatype::BOOL:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< bool >(
+            std::forward< Args >( args )... );
+    case Datatype::DATATYPE:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< 1000 >(
+            std::forward< Args >( args )... );
+    case Datatype::UNDEFINED:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< 0 >(
+            std::forward< Args >( args )... );
+    default:
         throw std::runtime_error(
             "Internal error: Encountered unknown datatype (switchType) ->" +
-            std::to_string( static_cast<int>(dt) )
-        );
+            std::to_string( static_cast< int >( dt ) ) );
     }
 }
 
 #undef OPENPMD_TEMPLATE_OPERATOR
+
+namespace detail {
+    template<typename T>
+    struct BasicDatatypeHelper {
+        Datatype m_dt = determineDatatype<T>();
+    };
+
+    template<typename T>
+    struct BasicDatatypeHelper<std::vector<T>> {
+        Datatype m_dt = BasicDatatypeHelper<T>{}.m_dt;
+    };
+
+    template<typename T, long n>
+    struct BasicDatatypeHelper<std::array<T, n>> {
+        Datatype m_dt = BasicDatatypeHelper<T>{}.m_dt;
+    };
+
+    struct BasicDatatype {
+        template <typename T>
+        Datatype operator()();
+
+        template <int n>
+        Datatype operator()();
+    };
+}
+
+/**
+ * @brief basicDatatype Strip openPMD Datatype of std::vector, std::array et. al.
+ * @param dt The "full" Datatype.
+ * @return The "inner" Datatype.
+ */
+Datatype basicDatatype(Datatype dt);
+
+Datatype toVectorType(Datatype dt);
+
+std::string datatypeToString( Datatype dt );
+
+Datatype stringToDatatype( std::string s );
+
+extern std::vector< Datatype > openPMD_Datatypes;
 
 std::string datatypeToString( Datatype dt );
 

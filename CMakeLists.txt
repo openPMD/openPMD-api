@@ -59,7 +59,7 @@ openpmd_option(MPI            "Parallel, Multi-Node I/O for clusters"     AUTO)
 openpmd_option(JSON           "JSON backend (.json files)"                AUTO)
 openpmd_option(HDF5           "HDF5 backend (.h5 files)"                  AUTO)
 openpmd_option(ADIOS1         "ADIOS1 backend (.bp files)"                AUTO)
-openpmd_option(ADIOS2         "ADIOS2 backend (.bp files)"                 OFF)
+openpmd_option(ADIOS2         "ADIOS2 backend (.bp files)"                AUTO)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
 
 option(openPMD_HAVE_PKGCONFIG        "Generate a .pc file for pkg-config"   ON)
@@ -341,7 +341,10 @@ set(IO_SOURCE
         src/IO/HDF5/ParallelHDF5IOHandler.cpp
         src/IO/JSON/JSONIOHandler.cpp
         src/IO/JSON/JSONIOHandlerImpl.cpp
-        src/IO/JSON/JSONFilePosition.cpp)
+        src/IO/JSON/JSONFilePosition.cpp
+        src/IO/ADIOS/ADIOS2IOHandler.cpp
+        src/IO/ADIOS/ADIOS2Auxiliary.cpp
+        src/IO/InvalidatableFile.cpp)
 set(IO_ADIOS1_SEQUENTIAL_SOURCE
         src/auxiliary/Filesystem.cpp
         src/IO/ADIOS/ADIOS1IOHandler.cpp)

@@ -38,6 +38,10 @@ struct TestHelper;
 class AbstractFilePosition;
 class AbstractIOHandler;
 class Attributable;
+struct ADIOS2FilePosition;
+template <typename FilePositionType>
+class AbstractIOHandlerImplCommon;
+
 
 /** @brief Layer to mirror structure of logical data and persistent data in file.
  *
@@ -69,6 +73,7 @@ class Writable
     friend class ADIOS2IOHandlerImpl;
     friend class HDF5IOHandlerImpl;
     friend class ParallelHDF5IOHandlerImpl;
+    friend class AbstractIOHandlerImplCommon<ADIOS2FilePosition>;
     friend class JSONIOHandlerImpl;
     friend struct test::TestHelper;
     friend std::string concrete_h5_file_position(Writable*);
