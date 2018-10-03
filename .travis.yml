@@ -16,6 +16,7 @@ env:
     - CXXFLAGS: "-std=c++11"
     - SPACK_ROOT: $HOME/.cache/spack
     - PATH: $PATH:$HOME/.cache/spack/bin
+    - PYBIND11_VERSION=@2.2.3
 
 addons:
   apt:
@@ -345,7 +346,7 @@ jobs:
       sudo: required
       dist: xenial
       env:
-        - CXXSPEC="%gcc@8.1.0" USE_MPI=OFF USE_PYTHON=ON USE_INTERNAL_PYBIND11=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
+        - CXXSPEC="%gcc@8.1.0" USE_MPI=OFF USE_PYTHON=ON USE_INTERNAL_PYBIND11=OFF PYBIND11_VERSION=@2.2.4 USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: gcc
       addons:
         apt:
@@ -531,9 +532,9 @@ install:
       spack load python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
       if [ "$USE_INTERNAL_PYBIND11" == "OFF" ]; then
         travis_wait spack install
-          py-pybind11@2.2.3 ^python@$TRAVIS_PYTHON_VERSION
+          py-pybind11$PYBIND11_VERSION ^python@$TRAVIS_PYTHON_VERSION
           $CXXSPEC &&
-        spack load py-pybind11@2.2.3 ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
+        spack load py-pybind11$PYBIND11_VERSION ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
       fi;
       travis_wait spack install
         py-numpy ~blas ~lapack ^python@$TRAVIS_PYTHON_VERSION
