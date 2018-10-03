@@ -337,6 +337,27 @@ jobs:
       before_install: &gcc64_init
         - CXX=g++-6 && CC=gcc-6
       script: *script-cpp-unit
+    # GCC 8.1.0 + Python 3.7
+    - <<: *test-cpp-unit
+      name: gcc@8.1.0 -MPI +PY@3.7 +H5 +ADIOS
+      language: python
+      python: "3.7"
+      sudo: required
+      dist: xenial
+      env:
+        - CXXSPEC="%gcc@8.1.0" USE_MPI=OFF USE_PYTHON=ON USE_INTERNAL_PYBIND11=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
+      compiler: gcc
+      addons:
+        apt:
+          <<: *apt_common_sources
+          packages: &gcc81_deps
+            - environment-modules
+            - gfortran-8
+            - gcc-8
+            - g++-8
+      before_install: &gcc81_init
+        - CXX=g++-8 && CC=gcc-8
+      script: *script-cpp-unit
     # GCC 6.4.0 + Python 3.6
     - <<: *test-cpp-unit
       name: gcc@6.4.0 -MPI +PY@3.6 +H5@1.8.13 -ADIOS
