@@ -11,6 +11,25 @@
             "orcid": "0000-0003-1943-7141"
         }
     ],
+    "contributors": [
+        {
+            "affiliation": "EU XFEL GmbH",
+            "name": "Fortmann-Grote, Carsten",
+            "orcid": "0000-0002-2579-5546",
+            "type": "Other"
+        },
+        {
+            "affiliation": "Warsaw University of Technology",
+            "name": "Stańczak, Dominik",
+            "orcid": "0000-0001-6291-8843",
+            "type": "Other"
+        },
+        {
+            "affiliation": "Helmholtz-Zentrum Dresden-Rossendorf",
+            "name": "Poeschel, Franz",
+            "type": "Other"
+        }
+    ],
     "title": "C++ & Python API for Scientific I/O with openPMD",
     "access_right": "open",
     "upload_type": "software",
