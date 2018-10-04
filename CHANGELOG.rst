@@ -17,11 +17,18 @@ Changes to "0.6.2-alpha"
 Features
 """"""""
 
+- Python:
+
+  - works with Python 3.7 #376
+  - setup.py for sdist #240
+
 Bug Fixes
 """""""""
 
 Other
 """""
+
+- CI: GCC 8.1.0 & Python 3.7.0 #376
 
 
 0.6.2-alpha

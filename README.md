@@ -95,7 +95,7 @@ Required:
 
 Shipped internally in `share/openPMD/thirdParty/`:
 * [MPark.Variant](https://github.com/mpark/variant) 1.3.0+ ([BSL-1.0](https://github.com/mpark/variant/blob/master/LICENSE.md))
-* [Catch2](https://github.com/catchorg/Catch2) 2.2.1+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
+* [Catch2](https://github.com/catchorg/Catch2) 2.3.0+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
 * [pybind11](https://github.com/pybind/pybind11) 2.2.3+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
 
 Optional I/O backends:
@@ -108,9 +108,9 @@ while those can be built either with or without:
 
 Optional language bindings:
 * Python:
-  * Python 3.X+
+  * Python 3.5 - 3.7
   * pybind 2.2.3+
-  * numpy
+  * numpy 1.15+
 
 ## Installation
 
