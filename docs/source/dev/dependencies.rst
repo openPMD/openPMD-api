@@ -39,6 +39,6 @@ Optional: language bindings
 
 * Python:
 
-  * Python 3.X+
+  * Python 3.5 - 3.7
   * pybind11 2.2.3+
   * numpy 1.15+
