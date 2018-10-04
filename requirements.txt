@@ -1,0 +1,4 @@
+cmake>=3.10.0
+pybind11>=2.2.3
+numpy>=1.15.0
+setuptools>=38.6
