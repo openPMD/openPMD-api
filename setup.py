@@ -112,9 +112,9 @@ setup(
     description='C++ & Python API for Scientific I/O with openPMD',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    keywords=('openpmd openscience hdf5 adios mpi hpc research '
+    keywords=('openPMD openscience hdf5 adios mpi hpc research '
               'file-format file-handling'),
-    url='https://www.openpmd.org',
+    url='https://www.openPMD.org',
     project_urls={
         'Documentation': 'https://openpmd-api.readthedocs.io',
         'Doxygen': 'https://www.openpmd.org/openPMD-api',
@@ -122,7 +122,7 @@ setup(
         'Source': 'https://github.com/openPMD/openPMD-api',
         'Tracker': 'https://github.com/openPMD/openPMD-api/issues',
     },
-    ext_modules=[CMakeExtension('openPMD')],
+    ext_modules=[CMakeExtension('openpmd_api')],
     cmdclass=dict(build_ext=CMakeBuild),
     zip_safe=False,
     python_requires='>=3.5, <3.8',

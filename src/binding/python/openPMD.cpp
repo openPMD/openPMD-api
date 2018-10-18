@@ -51,7 +51,7 @@ void init_RecordComponent(py::module &);
 void init_Series(py::module &);
 
 
-PYBIND11_MODULE(openPMD, m) {
+PYBIND11_MODULE(openpmd_api, m) {
     // m.doc() = ...;
 
     // note: order from parent to child classes
