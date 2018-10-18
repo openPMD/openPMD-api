@@ -6,7 +6,7 @@ Copyright 2018 openPMD contributors
 Authors: Axel Huebl, Fabian Koller
 License: LGPLv3+
 """
-from openPMD import Series, Access_Type, Dataset, Mesh_Record_Component, \
+from openpmd_api import Series, Access_Type, Dataset, Mesh_Record_Component, \
     Unit_Dimension
 import numpy as np
 

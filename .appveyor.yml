@@ -137,4 +137,4 @@ build_script:
 
 test_script:
   - cmd: ctest -V -C %CONFIGURATION%
-  - cmd: python -c "import openPMD; print(openPMD.__version__)"
+  - cmd: python -c "import openpmd_api; print(openpmd_api.__version__)"

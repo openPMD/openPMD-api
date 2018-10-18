@@ -12,7 +12,7 @@ Compile-able/executable code example to reproduce the problem:
 
 Python:
 ```python
-import openPMD
+import openpmd_api
 
 # ...
 ```

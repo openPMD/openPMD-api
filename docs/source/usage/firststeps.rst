@@ -19,4 +19,4 @@ Python
 
 .. code-block:: python3
 
-   import openPMD
+   import openpmd_api

@@ -3,7 +3,7 @@
 Changelog
 =========
 
-0.6.3-alpha
+0.7.0-alpha
 -----------
 **Date:** TBA
 
@@ -19,6 +19,7 @@ Features
 
 - Python:
 
+  - ``import openPMD`` renamed to ``import openpmd_api`` #380
   - works with Python 3.7 #376
   - setup.py for sdist #240
 
