@@ -6,12 +6,12 @@ Copyright 2018 openPMD contributors
 Authors: Axel Huebl
 License: LGPLv3+
 """
-import openPMD
+import openpmd_api
 
 
 if __name__ == "__main__":
-    series = openPMD.Series("../samples/git-sample/data%T.h5",
-                            openPMD.Access_Type.read_only)
+    series = openpmd_api.Series("../samples/git-sample/data%T.h5",
+                                openpmd_api.Access_Type.read_only)
     print("Read a Series with openPMD standard version %s" %
           series.openPMD)
 

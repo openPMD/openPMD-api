@@ -62,11 +62,11 @@ for( auto const& i : s.iterations ) {
 
 
 ```py
-import openPMD
+import openpmd_api
 
 # ...
 
-series = openPMD.Series("samples/git-sample/data%T.h5", openPMD.Access_Type.read_only)
+series = openpmd_api.Series("samples/git-sample/data%T.h5", openPMD.Access_Type.read_only)
 
 for k_i, i in series.iterations.items():
     print("Iteration: {0}".format(k_i))

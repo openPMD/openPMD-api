@@ -9,7 +9,7 @@ about: Anything unclear or not well documented
 Don't be afraid to add code examples!
 Python:
 ```python
-import openPMD
+import openpmd_api
 
 # ...
 ```

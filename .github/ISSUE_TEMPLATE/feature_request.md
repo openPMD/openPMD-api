@@ -11,7 +11,7 @@ Example: I always do the following workflow [...]
 Don't be afraid to add code examples!
 Python:
 ```python
-import openPMD
+import openpmd_api
 
 # ...
 ```
