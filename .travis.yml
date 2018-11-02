@@ -286,11 +286,11 @@ jobs:
       script: *script-cpp-unit
     # GCC 7.3.0
     - <<: *test-cpp-unit
-      name: gcc@7.3.0 -MPI -PY +H5 +ADIOS1
+      name: gcc@7.3.0 -MPI -PY +H5 +ADIOS1 -JSON
       language: python
       python: "2.7"
       env:
-        - CXXSPEC="%gcc@7.3.0" USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
+        - CXXSPEC="%gcc@7.3.0" USE_MPI=OFF USE_PYTHON=OFF USE_JSON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: gcc
       addons:
         apt:
