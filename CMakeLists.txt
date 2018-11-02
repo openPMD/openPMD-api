@@ -46,15 +46,16 @@ function(openpmd_option name description default)
 endfunction()
 
 openpmd_option(MPI            "Enable MPI support"                        AUTO)
+openpmd_option(JSON           "Enable JSON support"                       AUTO)
 openpmd_option(HDF5           "Enable HDF5 support"                       AUTO)
 openpmd_option(ADIOS1         "Enable ADIOS1 support"                     AUTO)
 openpmd_option(ADIOS2         "Enable ADIOS2 support"                     OFF)
-#openpmd_option(JSON           "Enable JSON support"                      AUTO)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
 
 option(openPMD_USE_INTERNAL_VARIANT  "Use internally shipped MPark.Variant" ON)
 option(openPMD_USE_INTERNAL_CATCH    "Use internally shipped Catch2"        ON)
 option(openPMD_USE_INTERNAL_PYBIND11 "Use internally shipped pybind11"      ON)
+option(openPMD_USE_INTERNAL_JSON     "Use internally shipped nlohmann-json" ON)
 
 option(openPMD_USE_INVASIVE_TESTS "Enable unit tests that modify source code" OFF)
 option(openPMD_USE_VERIFY "Enable internal VERIFY (assert) macro independent of build type" ON)
@@ -86,6 +87,43 @@ elseif(openPMD_USE_MPI)
     set(openPMD_HAVE_MPI TRUE)
 else()
     set(openPMD_HAVE_MPI FALSE)
+endif()
+
+# external library: nlohmann-json (optional)
+if(openPMD_USE_JSON STREQUAL AUTO)
+    if(openPMD_USE_INTERNAL_JSON)
+        # see https://github.com/nlohmann/json/pull/1330
+        set(JSON_BuildTests OFF CACHE INTERNAL "")
+        add_subdirectory(
+            "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/json"
+            EXCLUDE_FROM_ALL)  # does not need to be publicly installed
+        set(openPMD_HAVE_JSON TRUE)
+        message(STATUS "nlohmann-json: Using INTERNAL version 3.4.0")
+    else()
+        find_package(nlohmann_json 3.4.0 CONFIG)
+        if(nlohmann_json_FOUND)
+            set(openPMD_HAVE_JSON TRUE)
+            message(STATUS "nlohmann-json: Found version ${nlohmann_json_VERSION}")
+        else()
+            set(openPMD_HAVE_JSON FALSE)
+        endif()
+    endif()
+elseif(openPMD_USE_JSON)
+    if(openPMD_USE_INTERNAL_JSON)
+        # see https://github.com/nlohmann/json/pull/1330
+        set(JSON_BuildTests OFF CACHE INTERNAL "")
+        add_subdirectory(
+            "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/json"
+            EXCLUDE_FROM_ALL)  # does not need to be publicly installed
+        set(openPMD_HAVE_JSON TRUE)
+        message(STATUS "nlohmann-json: Using INTERNAL version 3.4.0")
+    else()
+        find_package(nlohmann_json 3.4.0 CONFIG REQUIRED)
+        set(openPMD_HAVE_JSON TRUE)
+        message(STATUS "nlohmann-json: Found version ${nlohmann_json_VERSION}")
+    endif()
+else()
+    set(openPMD_HAVE_JSON FALSE)
 endif()
 
 # external library: HDF5 (optional)
@@ -326,6 +364,14 @@ else()
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_MPI=0")
 endif()
 
+# JSON Backend
+if(openPMD_HAVE_JSON)
+    target_link_libraries(openPMD PRIVATE nlohmann_json::nlohmann_json)
+    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_JSON=1")
+else()
+    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_JSON=0")
+endif()
+
 # HDF5 Backend
 if(openPMD_HAVE_HDF5)
     target_link_libraries(openPMD PUBLIC ${HDF5_LIBRARIES})
@@ -549,6 +595,10 @@ if(BUILD_TESTING)
 
         if(openPMD_HAVE_MPI)
             target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_MPI=1")
+        endif()
+
+        if(openPMD_HAVE_JSON)
+            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_JSON=1")
         endif()
 
         if(openPMD_HAVE_HDF5)
