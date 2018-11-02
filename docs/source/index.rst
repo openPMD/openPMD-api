@@ -53,6 +53,7 @@ Installation
 
    install/install
    install/changelog
+   install/upgrade
 
 *****
 Usage
