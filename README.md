@@ -97,8 +97,10 @@ Shipped internally in `share/openPMD/thirdParty/`:
 * [MPark.Variant](https://github.com/mpark/variant) 1.3.0+ ([BSL-1.0](https://github.com/mpark/variant/blob/master/LICENSE.md))
 * [Catch2](https://github.com/catchorg/Catch2) 2.3.0+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
 * [pybind11](https://github.com/pybind/pybind11) 2.2.3+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
+* [NLohmann-JSON](https://github.com/nlohmann/json) 3.4.0+ ([MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT))
 
 Optional I/O backends:
+* [JSON](https://en.wikipedia.org/wiki/JSON) (*not yet implemented*)
 * [HDF5](https://support.hdfgroup.org/HDF5) 1.8.13+
 * [ADIOS1](https://www.olcf.ornl.gov/center-projects/adios) 1.13.1+
 * [ADIOS2](https://github.com/ornladios/ADIOS2) 2.1+ (*not yet implemented*)
@@ -173,6 +175,7 @@ CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 | CMake Option                 | Values           | Description                                                                  |
 |------------------------------|------------------|------------------------------------------------------------------------------|
 | `openPMD_USE_MPI`            | **AUTO**/ON/OFF  | Enable MPI support                                                           |
+| `openPMD_USE_JSON`           | **AUTO**/ON/OFF  | Enable support for JSON <sup>1</sup>                                         |
 | `openPMD_USE_HDF5`           | **AUTO**/ON/OFF  | Enable support for HDF5                                                      |
 | `openPMD_USE_ADIOS1`         | **AUTO**/ON/OFF  | Enable support for ADIOS1                                                    |
 | `openPMD_USE_ADIOS2`         | AUTO/ON/**OFF**  | Enable support for ADIOS2 <sup>1</sup>                                       |
@@ -193,6 +196,7 @@ The following options allow to switch to external installs:
 | `openPMD_USE_INTERNAL_VARIANT`  | **ON**/OFF | MPark.Variant |  1.3.0+ |
 | `openPMD_USE_INTERNAL_CATCH`    | **ON**/OFF | Catch2        |  2.3.0+ |
 | `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.2.3+ |
+| `openPMD_USE_INTERNAL_JSON`     | **ON**/OFF | NLohmann-JSON |  3.4.0+ |
 
 By default, this will build as a static library (`libopenPMD.a`) and installs also its headers.
 In order to build a static library, append `-DBUILD_SHARED_LIBS=ON` to the `cmake` command.
