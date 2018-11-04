@@ -22,10 +22,11 @@ namespace openPMD
     {
         MPI_Comm communicator;
 
+        MPIBenchmarkReport(MPI_Comm);
+
         /**
          * Time needed for writing and reading per compression strategy and level.
          */
-        std::string filename;
         std::map<
             std::tuple<
                 int, // rank
@@ -254,11 +255,6 @@ namespace openPMD
         if( rank == rootThread )
         {
             recv = new rep[2 * threadSize];
-            memset(
-                recv,
-                0,
-                sizeof( rep ) * 2 * threadSize
-            ); // no idea why but this call is necessary but it is
         }
 
         if( restricted != MPI_COMM_NULL )
@@ -307,6 +303,10 @@ namespace openPMD
         }
     }
 
+    template< typename Duration >
+    MPIBenchmarkReport< Duration >::MPIBenchmarkReport( MPI_Comm comm ):
+        communicator {comm}
+    {}
 
     template< typename Duration >
     std::pair<

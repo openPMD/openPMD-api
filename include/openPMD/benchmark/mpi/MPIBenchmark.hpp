@@ -1,5 +1,6 @@
 #pragma once
 
+#define openPMD_HAVE_MPI 1
 #if openPMD_HAVE_MPI
 
 
@@ -222,8 +223,7 @@ namespace openPMD
         int rootThread
     )
     {
-        MPIBenchmarkReport< typename Clock::duration > res;
-        res.communicator = this->communicator;
+        MPIBenchmarkReport< typename Clock::duration > res{this->communicator};
         BenchmarkExecution< Clock > exec { this };
 
         std::set< Datatype > datatypes;
@@ -449,9 +449,9 @@ namespace openPMD
                 offset,
                 extent
             );
+            series.flush( );
         }
 
-        series.flush( );
         MPI_Barrier( m_benchmark->communicator );
         auto end = Clock::now( );
         return end - start;
