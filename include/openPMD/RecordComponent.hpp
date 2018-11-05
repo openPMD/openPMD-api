@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/backend/BaseRecordComponent.hpp"
+#include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/Dataset.hpp"
 
 #include <cmath>
@@ -30,6 +31,9 @@
 #include <string>
 #include <sstream>
 #include <stdexcept>
+#include <type_traits>
+#include <vector>
+#include <array>
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_protected
@@ -39,6 +43,38 @@
 
 namespace openPMD
 {
+namespace traits
+{
+/** Emulate in the C++17 concept ContiguousContainer
+ *
+ * Users can implement this trait for a type to signal it can be used as
+ * contiguous container.
+ *
+ * See:
+ *   https://en.cppreference.com/w/cpp/named_req/ContiguousContainer
+ */
+template< typename T >
+struct IsContiguousContainer
+{
+    static constexpr bool value = false;
+};
+
+template< typename T_Value >
+struct IsContiguousContainer< std::vector< T_Value > >
+{
+    static constexpr bool value = true;
+};
+
+template<
+    typename T_Value,
+    std::size_t N
+>
+struct IsContiguousContainer< std::array< T_Value, N > >
+{
+    static constexpr bool value = true;
+};
+} // namespace traits
+
 class RecordComponent : public BaseRecordComponent
 {
     template<
@@ -82,8 +118,15 @@ public:
                    Extent const&,
                    std::shared_ptr< T >,
                    double targetUnitSI = std::numeric_limits< double >::quiet_NaN() );
+
     template< typename T >
     void storeChunk(std::shared_ptr< T >, Offset, Extent);
+
+    template< typename T_ContiguousContainer >
+    typename std::enable_if<
+        traits::IsContiguousContainer< T_ContiguousContainer >::value
+    >::type
+    storeChunk(T_ContiguousContainer, Offset = {0u}, Extent = {-1u});
 
     constexpr static char const * const SCALAR = "\vScalar";
 
@@ -139,7 +182,16 @@ RecordComponent::loadChunk(Offset const& o, Extent const& e, std::shared_ptr< T 
 
     uint8_t dim = getDimensionality();
     if( e.size() != dim || o.size() != dim )
-        throw std::runtime_error("Dimensionality of chunk and dataset do not match.");
+    {
+        std::ostringstream oss;
+        oss << "Dimensionality of chunk ("
+            << "offset=" << o.size() << "D, "
+            << "extent=" << e.size() << "D) "
+            << "and record component ("
+            << int(dim) << "D) "
+            << "do not match.";
+        throw std::runtime_error(oss.str());
+    }
     Extent dse = getExtent();
     for( uint8_t i = 0; i < dim; ++i )
         if( dse[i] < o[i] + e[i] )
@@ -185,14 +237,23 @@ RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
         std::ostringstream oss;
         oss << "Datatypes of chunk data ("
             << dtype
-            << ") and dataset ("
+            << ") and record component ("
             << getDatatype()
             << ") do not match.";
         throw std::runtime_error(oss.str());
     }
     uint8_t dim = getDimensionality();
     if( e.size() != dim || o.size() != dim )
-        throw std::runtime_error("Dimensionality of chunk and dataset do not match.");
+    {
+        std::ostringstream oss;
+        oss << "Dimensionality of chunk ("
+            << "offset=" << o.size() << "D, "
+            << "extent=" << e.size() << "D) "
+            << "and record component ("
+            << int(dim) << "D) "
+            << "do not match.";
+        throw std::runtime_error(oss.str());
+    }
     Extent dse = getExtent();
     for( uint8_t i = 0; i < dim; ++i )
         if( dse[i] < o[i] + e[i] )
@@ -208,5 +269,31 @@ RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
     /* std::static_pointer_cast correctly reference-counts the pointer */
     dWrite.data = std::static_pointer_cast< void const >(data);
     m_chunks->push(IOTask(this, dWrite));
+}
+
+template< typename T_ContiguousContainer >
+inline typename std::enable_if<
+    traits::IsContiguousContainer< T_ContiguousContainer >::value
+>::type
+RecordComponent::storeChunk(T_ContiguousContainer data, Offset o, Extent e)
+{
+    uint8_t dim = getDimensionality();
+
+    // default arguments
+    //   offset = {0u}: expand to right dim {0u, 0u, ...}
+    Offset offset = o;
+    if( o.size() == 1u && o.at(0) == 0u && dim > 1u )
+        offset = Offset(dim, 0u);
+
+    //   extent = {-1u}: take full size
+    Extent extent(dim, 1u);
+    //   avoid outsmarting the user:
+    //   - stdlib data container implement 1D -> 1D chunk to write
+    if( e.size() == 1u && e.at(0) == -1u && dim == 1u )
+        extent.at(0) = data.size();
+    else
+        extent = e;
+
+    storeChunk(shareRaw(data), offset, extent);
 }
 } // namespace openPMD

@@ -131,12 +131,12 @@ void particle_patches( std::string file_ending )
             x.resetDataset(Dataset(determineDatatype<float>(), {extent}));
             std::vector<float> xd( extent );
             std::iota(xd.begin(), xd.end(), 0);
-            x.storeChunk(shareRaw(xd.data()), {0}, {extent});
+            x.storeChunk(xd);
             auto  o = e["positionOffset"][r];
             o.resetDataset(Dataset(determineDatatype<uint64_t>(), {extent}));
             std::vector<uint64_t> od( extent );
             std::iota(od.begin(), od.end(), 0);
-            o.storeChunk(shareRaw(od.data()), {0}, {extent});
+            o.storeChunk(od);
         }
 
         auto const dset_n = Dataset(determineDatatype<uint64_t>(), {num_patches, });
