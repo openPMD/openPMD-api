@@ -15,7 +15,7 @@ if __name__ == "__main__":
     size = 3
 
     # matrix dataset to write with values 0...size*size-1
-    global_data = np.arange(size*size, dtype=np.double)
+    global_data = np.arange(size*size, dtype=np.double).reshape(3, 3)
 
     print("Set up a 2D square array ({0}x{1}) that will be written".format(
         size, size))
@@ -43,14 +43,18 @@ if __name__ == "__main__":
     rho.reset_dataset(dataset)
     print("Set the dataset properties for the scalar field rho in iteration 1")
 
-    # writing fails on already open file error
     series.flush()
     print("File structure has been written")
 
-    offset = [0, 0]
     # TODO implement slicing protocol
     # E[offset[0]:extent[0], offset[1]:extent[1]] = global_data
-    rho.store_chunk(offset, extent, global_data)
+
+    # individual chunks from input or to output record component
+    #   offset = [0, 0]
+    #   rho.store_chunk(global_data, offset, extent)
+    # whole input to zero-offset in output record component
+    rho.store_chunk(global_data)
+
     print("Stored the whole Dataset contents as a single chunk, " +
           "ready to write content")
 

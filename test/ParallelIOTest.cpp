@@ -129,7 +129,7 @@ TEST_CASE( "hdf5_write_test", "[parallel][hdf5]" )
     *position_local = position_global[mpi_rank];
 
     e["position"]["x"].resetDataset(Dataset(determineDatatype(position_local), {mpi_size}));
-    e["position"]["x"].storeChunk({mpi_rank}, {1}, position_local);
+    e["position"]["x"].storeChunk(position_local, {mpi_rank}, {1});
 
     std::vector< uint64_t > positionOffset_global(mpi_size);
     uint64_t posOff{0};
@@ -138,7 +138,7 @@ TEST_CASE( "hdf5_write_test", "[parallel][hdf5]" )
     *positionOffset_local = positionOffset_global[mpi_rank];
 
     e["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local), {mpi_size}));
-    e["positionOffset"]["x"].storeChunk({mpi_rank}, {1}, positionOffset_local);
+    e["positionOffset"]["x"].storeChunk(positionOffset_local, {mpi_rank}, {1});
 
     o.flush();
 }
@@ -191,8 +191,8 @@ TEST_CASE( "hdf5_write_test_zero_extent", "[parallel][hdf5]" )
         position_local.get()[i] = position_global[offset + i];
         positionOffset_local.get()[i] = positionOffset_global[offset + i];
     }
-    e["position"]["x"].storeChunk({offset}, {rank}, position_local);
-    e["positionOffset"]["x"].storeChunk({offset}, {rank}, positionOffset_local);
+    e["position"]["x"].storeChunk(position_local, {offset}, {rank});
+    e["positionOffset"]["x"].storeChunk(positionOffset_local, {offset}, {rank});
 
     //TODO read back, verify
 }
@@ -224,7 +224,7 @@ TEST_CASE( "adios_write_test", "[parallel][adios]" )
     *position_local = position_global[mpi_rank];
 
     e["position"]["x"].resetDataset(Dataset(determineDatatype(position_local), {mpi_size}));
-    e["position"]["x"].storeChunk({mpi_rank}, {1}, position_local);
+    e["position"]["x"].storeChunk(position_local, {mpi_rank}, {1});
 
     std::vector< uint64_t > positionOffset_global(mpi_size);
     uint64_t posOff{0};
@@ -233,7 +233,7 @@ TEST_CASE( "adios_write_test", "[parallel][adios]" )
     *positionOffset_local = positionOffset_global[mpi_rank];
 
     e["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local), {mpi_size}));
-    e["positionOffset"]["x"].storeChunk({mpi_rank}, {1}, positionOffset_local);
+    e["positionOffset"]["x"].storeChunk(positionOffset_local, {mpi_rank}, {1});
 
     o.flush();
 }
@@ -286,8 +286,8 @@ TEST_CASE( "adios_write_test_zero_extent", "[parallel][adios]" )
         position_local.get()[i] = position_global[offset + i];
         positionOffset_local.get()[i] = positionOffset_global[offset + i];
     }
-    e["position"]["x"].storeChunk({offset}, {rank}, position_local);
-    e["positionOffset"]["x"].storeChunk({offset}, {rank}, positionOffset_local);
+    e["position"]["x"].storeChunk(position_local, {offset}, {rank});
+    e["positionOffset"]["x"].storeChunk(positionOffset_local, {offset}, {rank});
 
     //TODO read back, verify
 }
