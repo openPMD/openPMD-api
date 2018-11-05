@@ -83,7 +83,7 @@ public:
                    std::shared_ptr< T >,
                    double targetUnitSI = std::numeric_limits< double >::quiet_NaN() );
     template< typename T >
-    void storeChunk(Offset, Extent, std::shared_ptr< T >);
+    void storeChunk(std::shared_ptr< T >, Offset, Extent);
 
     constexpr static char const * const SCALAR = "\vScalar";
 
@@ -173,7 +173,7 @@ RecordComponent::loadChunk(Offset const& o, Extent const& e, std::shared_ptr< T 
 
 template< typename T >
 inline void
-RecordComponent::storeChunk(Offset o, Extent e, std::shared_ptr<T> data)
+RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
     if( *m_isConstant )
         throw std::runtime_error("Chunks can not be written for a constant RecordComponent.");

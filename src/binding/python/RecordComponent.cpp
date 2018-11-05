@@ -233,7 +233,21 @@ void init_RecordComponent(py::module &m) {
         })
 
         // deprecated: pass-through C++ API
-        .def("store_chunk", [](RecordComponent & r, Offset const & offset, Extent const & extent, py::array & a) {
+        .def("store_chunk", [](RecordComponent & r, py::array & a, Offset const & offset_in, Extent const & extent_in) {
+            // default arguments
+            //   offset = {0u}: expand to right dim {0u, 0u, ...}
+            Offset offset = offset_in;
+            if( offset_in.size() == 1u && offset_in.at(0) == 0u && a.ndim() > 1u )
+                offset = Offset(a.ndim(), 0u);
+
+            //   extent = {-1u}: take full size
+            Extent extent(a.ndim(), 1u);
+            if( extent_in.size() == 1u && extent_in.at(0) == -1u )
+                for( auto d = 0; d < a.ndim(); ++d )
+                    extent.at(d) = a.shape()[d];
+            else
+                extent = extent_in;
+
             for( auto d = 0; d < a.ndim(); ++d )
             {
                 // std::cout << "    stride '" << d << "': "
@@ -260,41 +274,45 @@ void init_RecordComponent(py::module &m) {
 
             auto const dtype = dtype_from_numpy( a.dtype() );
             if( dtype == Datatype::CHAR )
-                r.storeChunk( offset, extent, shareRaw( (char*)a.mutable_data() ) );
+                r.storeChunk( shareRaw( (char*)a.mutable_data() ), offset, extent );
             else if( dtype == Datatype::UCHAR )
-                r.storeChunk( offset, extent, shareRaw( (unsigned char*)a.mutable_data() ) );
+                r.storeChunk( shareRaw( (unsigned char*)a.mutable_data() ), offset, extent );
             else if( dtype == Datatype::SHORT )
-                r.storeChunk( offset, extent, shareRaw( (short*)a.mutable_data() ) );
+                r.storeChunk( shareRaw( (short*)a.mutable_data() ), offset, extent );
             else if( dtype == Datatype::INT )
-                r.storeChunk( offset, extent, shareRaw( (int*)a.mutable_data() ) );
+                r.storeChunk( shareRaw( (int*)a.mutable_data() ), offset, extent );
             else if( dtype == Datatype::LONG )
-               r.storeChunk( offset, extent, shareRaw( (long*)a.mutable_data() ) );
+               r.storeChunk( shareRaw( (long*)a.mutable_data() ), offset, extent );
             else if( dtype == Datatype::LONGLONG )
-                r.storeChunk( offset, extent, shareRaw( (long long*)a.mutable_data() ) );
+                r.storeChunk( shareRaw( (long long*)a.mutable_data() ), offset, extent );
             else if( dtype == Datatype::USHORT )
-                r.storeChunk( offset, extent, shareRaw( (unsigned short*)a.mutable_data() ) );
+                r.storeChunk( shareRaw( (unsigned short*)a.mutable_data() ), offset, extent );
             else if( dtype == Datatype::UINT )
-                r.storeChunk( offset, extent, shareRaw( (unsigned int*)a.mutable_data() ) );
+                r.storeChunk( shareRaw( (unsigned int*)a.mutable_data() ), offset, extent );
             else if( dtype == Datatype::ULONG )
-                r.storeChunk( offset, extent, shareRaw( (unsigned long*)a.mutable_data() ) );
+                r.storeChunk( shareRaw( (unsigned long*)a.mutable_data() ), offset, extent );
             else if( dtype == Datatype::ULONGLONG )
-                r.storeChunk( offset, extent, shareRaw( (unsigned long long*)a.mutable_data() ) );
+                r.storeChunk( shareRaw( (unsigned long long*)a.mutable_data() ), offset, extent );
             else if( dtype == Datatype::LONG_DOUBLE )
-                r.storeChunk( offset, extent, shareRaw( (long double*)a.mutable_data() ) );
+                r.storeChunk( shareRaw( (long double*)a.mutable_data() ), offset, extent );
             else if( dtype == Datatype::DOUBLE )
-                r.storeChunk( offset, extent, shareRaw( (double*)a.mutable_data() ) );
+                r.storeChunk( shareRaw( (double*)a.mutable_data() ), offset, extent );
             else if( dtype == Datatype::FLOAT )
-                r.storeChunk( offset, extent, shareRaw( (float*)a.mutable_data() ) );
+                r.storeChunk( shareRaw( (float*)a.mutable_data() ), offset, extent );
 /* @todo
         .value("STRING", Datatype::STRING)
         .value("VEC_STRING", Datatype::VEC_STRING)
         .value("ARR_DBL_7", Datatype::ARR_DBL_7)
 */
             else if( dtype == Datatype::BOOL )
-                r.storeChunk( offset, extent, shareRaw( (bool*)a.mutable_data() ) );
+                r.storeChunk( shareRaw( (bool*)a.mutable_data() ), offset, extent );
             else
                 throw std::runtime_error(std::string("Datatype '") + std::string(py::str(a.dtype())) + std::string("' not known in 'store_chunk'!"));
-        })
+        },
+            py::arg("array"),
+            py::arg_v("offset", Offset(1,  0u), "np.zeroes_like(array)"),
+            py::arg_v("extent", Extent(1, -1u), "array.shape")
+        )
 
         .def_property_readonly_static("SCALAR", [](py::object){ return RecordComponent::SCALAR; })
     ;
