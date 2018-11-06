@@ -17,18 +17,26 @@ Changes to "0.6.2-alpha"
 Features
 """"""""
 
+- C++:
+
+  - ``storeChunk`` argument order changed, defaults added #386
 - Python:
 
   - ``import openPMD`` renamed to ``import openpmd_api`` #380
+  - ``store_chunk`` argument order changed, defaults added #386
   - works with Python 3.7 #376
   - setup.py for sdist #240
+- Backends: JSON support added #384 #338
 
 Bug Fixes
 """""""""
 
+- support reading series with varying or no iteration padding in filename #388
+
 Other
 """""
 
+- Docs: upgrade guide added #385
 - CI: GCC 8.1.0 & Python 3.7.0 #376
 
 
