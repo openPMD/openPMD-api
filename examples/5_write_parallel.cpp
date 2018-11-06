@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
 
         Offset chunk_offset = {static_cast< long unsigned int >(mpi_rank)};
         Extent chunk_extent = {1};
-        id.storeChunk(chunk_offset, chunk_extent, local_data);
+        id.storeChunk(local_data, chunk_offset, chunk_extent);
         if( 0 == mpi_rank )
             cout << "Stored a single chunk per MPI rank containing its contribution, "
                     "ready to write content to disk\n";

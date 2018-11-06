@@ -21,7 +21,7 @@ write()
     for( uint64_t i = 0; i < 4; ++i )
     {
         *position_local = position_global[i];
-        e["position"]["x"].storeChunk({i}, {1}, position_local);
+        e["position"]["x"].storeChunk(position_local, {i}, {1});
         o.flush();
     }
 
@@ -34,7 +34,7 @@ write()
     for( uint64_t i = 0; i < 4; ++i )
     {
         *positionOffset_local = positionOffset_global[i];
-        e["positionOffset"]["x"].storeChunk({i}, {1}, positionOffset_local);
+        e["positionOffset"]["x"].storeChunk(positionOffset_local, {i}, {1});
         o.flush();
     }
 
@@ -175,7 +175,7 @@ write2()
 
         Offset o = Offset{i, 0};
         Extent e = Extent{1, 5};
-        mesh["x"].storeChunk(o, e, partial_mesh);
+        mesh["x"].storeChunk(partial_mesh, o, e);
         // operations between store and flush MUST NOT modify the pointed-to data
         f.flush();
         // after the flush completes successfully, access to the shared resource is returned to the caller
@@ -191,8 +191,8 @@ write2()
 
         o = Offset{numParticlesOffset};
         e = Extent{numParticles};
-        electrons["position"]["x"].storeChunk(o, e, partial_particlePos);
-        electrons["positionOffset"]["x"].storeChunk(o, e, partial_particleOff);
+        electrons["position"]["x"].storeChunk(partial_particlePos, o, e);
+        electrons["positionOffset"]["x"].storeChunk(partial_particleOff, o, e);
 
         electrons.particlePatches["numParticles"][RecordComponent::SCALAR].store(i, numParticles);
         electrons.particlePatches["numParticlesOffset"][RecordComponent::SCALAR].store(i, numParticlesOffset);

@@ -38,7 +38,7 @@ namespace openPMD
      *
      * @warning this is a helper function to bypass the shared-pointer
      *          API for storing data behind raw pointers. Using it puts
-     *          the resposibility of buffer-consistency between stores
+     *          the responsibility of buffer-consistency between stores
      *          and flushes to the users side without an indication via
      *          reference counting.
      */

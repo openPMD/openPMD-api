@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
     cout << "File structure and required attributes have been written\n";
 
     Offset offset = {0, 0};
-    rho.storeChunk(offset, extent, shareRaw(global_data));
+    rho.storeChunk(shareRaw(global_data), offset, extent);
     cout << "Stored the whole Dataset contents as a single chunk, "
             "ready to write content\n";
 

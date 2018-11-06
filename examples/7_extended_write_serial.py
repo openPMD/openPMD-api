@@ -149,7 +149,7 @@ if __name__ == "__main__":
 
         o = [i, 0]
         e = [1, 5]
-        mesh["x"].store_chunk(o, e, partial_mesh)
+        mesh["x"].store_chunk(partial_mesh, o, e)
         # operations between store and flush MUST NOT modify the pointed-to
         # data
         f.flush()
@@ -165,8 +165,8 @@ if __name__ == "__main__":
 
         o = [numParticlesOffset]
         e = [numParticles]
-        electrons["position"]["x"].store_chunk(o, e, partial_particlePos)
-        electrons["positionOffset"]["x"].store_chunk(o, e, partial_particleOff)
+        electrons["position"]["x"].store_chunk(partial_particlePos, o, e)
+        electrons["positionOffset"]["x"].store_chunk(partial_particleOff, o, e)
 
         electrons.particle_patches["numParticles"][SCALAR].store(
             i, np.array([numParticles], dtype=np.uint64))

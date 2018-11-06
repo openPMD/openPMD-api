@@ -588,10 +588,10 @@ TEST_CASE( "wrapper_test", "[core]" )
     MeshRecordComponent mrc3 = o.iterations[5].meshes["E"]["y"];
     o.iterations[5].meshes["E"]["y"].resetDataset(Dataset(Datatype::DOUBLE, {1}));
     int wrongData = 42;
-    REQUIRE_THROWS_WITH(o.iterations[5].meshes["E"]["y"].storeChunk({0}, {1}, shareRaw(&wrongData)),
-                        Catch::Equals("Datatypes of chunk data (INT) and dataset (DOUBLE) do not match."));
+    REQUIRE_THROWS_WITH(o.iterations[5].meshes["E"]["y"].storeChunk(shareRaw(&wrongData), {0}, {1}),
+                        Catch::Equals("Datatypes of chunk data (INT) and record component (DOUBLE) do not match."));
     std::shared_ptr< double > storeData = std::make_shared< double >(44);
-    o.iterations[5].meshes["E"]["y"].storeChunk({0}, {1}, storeData);
+    o.iterations[5].meshes["E"]["y"].storeChunk(storeData, {0}, {1});
 #if openPMD_USE_INVASIVE_TESTS
     REQUIRE(o.iterations[5].meshes["E"]["y"].m_chunks->size() == 1);
     REQUIRE(mrc3.m_chunks->size() == 1);
@@ -647,7 +647,7 @@ TEST_CASE( "use_count_test", "[core]" )
     mrc.resetDataset(Dataset(determineDatatype<uint16_t>(), {42}));
     std::shared_ptr< uint16_t > storeData = std::make_shared< uint16_t >(44);
     REQUIRE(storeData.use_count() == 1);
-    mrc.storeChunk({0}, {1}, storeData);
+    mrc.storeChunk(storeData, {0}, {1});
     REQUIRE(storeData.use_count() == 2);
     o.flush();
     REQUIRE(storeData.use_count() == 1);

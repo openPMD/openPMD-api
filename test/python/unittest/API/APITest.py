@@ -658,10 +658,11 @@ class APITest(unittest.TestCase):
         for r in ["x", "y"]:
             x = e["position"][r]
             x.reset_dataset(DS(np.dtype("single"), extent))
-            x.store_chunk([0, ], extent, np.arange(10, dtype=np.single))
+            # implicit:                                        , [0, ], extent
+            x.store_chunk(np.arange(extent[0], dtype=np.single))
             o = e["positionOffset"][r]
             o.reset_dataset(DS(np.dtype("uint64"), extent))
-            o.store_chunk([0, ], extent, np.arange(extent[0], dtype=np.uint64))
+            o.store_chunk(np.arange(extent[0], dtype=np.uint64), [0, ], extent)
 
         dset = DS(np.dtype("uint64"), [num_patches, ])
         e.particle_patches["numParticles"][SCALAR].reset_dataset(dset)
