@@ -3,6 +3,23 @@
 Changelog
 =========
 
+0.6.3-alpha
+-----------
+**Date:** 2018-11-12
+
+Reading Varying Iteration Padding Reading
+
+Support reading series with varying iteration padding (or no padding at all) as currently used in PIConGPU.
+
+Changes to "0.6.2-alpha"
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- support reading series with varying or no iteration padding in filename #388
+
+
 0.6.2-alpha
 -----------
 **Date:** 2018-09-25
