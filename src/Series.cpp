@@ -634,10 +634,8 @@ Series::readFileBased(AccessType actualAccessType)
         std::tie(isContained, padding) = isPartOfSeries(entry);
         if( isContained )
         {
+            //! @todo skip if the padding is exact the number of chars in an iteration?
             paddings.insert(padding);
-            if( paddings.size() > 1 )
-                throw std::runtime_error("Can not determine iteration padding from existing filenames. "
-                                         "Please specify '%0<N>T'.");
 
             fOpen.name = entry;
             IOHandler->enqueue(IOTask(this, fOpen));
@@ -692,8 +690,12 @@ Series::readFileBased(AccessType actualAccessType)
             std::cerr << "No matching iterations found: " << name() << std::endl;
     }
 
-    if( !paddings.empty() )
+    if( paddings.size() == 1u )
         *m_filenamePadding = *paddings.begin();
+
+    if( paddings.size() > 1u && actualAccessType == AccessType::READ_WRITE )
+        throw std::runtime_error("Cannot write to a series with inconsistent iteration padding. "
+                                 "Please specify '%0<N>T' or open as read-only.");
 }
 
 void
