@@ -1488,23 +1488,50 @@ TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
         }
     }
 
+    // extend existing series with new step and auto-detection of iteration padding
     {
         Series o = Series("../samples/subdir/serial_fileBased_write%T.h5", AccessType::READ_WRITE);
+
+        REQUIRE(o.iterations.size() == 3);
         o.iterations[4];
+        REQUIRE(o.iterations.size() == 4);
     }
     REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000004.h5"));
 
+    // additional iteration with different iteration padding but similar content
     {
-        Series o = Series("../samples/subdir/serial_fileBased_write%04T.h5", AccessType::READ_WRITE);
+        Series o = Series("../samples/subdir/serial_fileBased_write%01T.h5", AccessType::READ_WRITE);
 
         REQUIRE(o.iterations.empty());
 
-        o.iterations[1];
-    }
-    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write0001.h5"));
+        auto& it = o.iterations[10];
+        ParticleSpecies& e = it.particles["e"];
+        e["position"]["x"].resetDataset(Dataset(Datatype::DOUBLE, {42}));
+        e["positionOffset"]["x"].resetDataset(Dataset(Datatype::DOUBLE, {42}));
+        e["position"]["x"].makeConstant(1.23);
+        e["positionOffset"]["x"].makeConstant(1.23);
 
-    REQUIRE_THROWS_WITH(Series("../samples/subdir/serial_fileBased_write%T.h5", AccessType::READ_WRITE),
-                        Catch::Equals("Can not determine iteration padding from existing filenames. Please specify '%0<N>T'."));
+        REQUIRE(o.iterations.size() == 1);
+    }
+    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write10.h5"));
+
+    // read back with auto-detection and non-fixed padding
+    {
+        Series s = Series("../samples/subdir/serial_fileBased_write%T.h5", AccessType::READ_ONLY);
+        REQUIRE(s.iterations.size() == 5);
+    }
+
+    // write with auto-detection and in-consistent padding
+    {
+        REQUIRE_THROWS_WITH(Series("../samples/subdir/serial_fileBased_write%T.h5", AccessType::READ_WRITE),
+            Catch::Equals("Cannot write to a series with inconsistent iteration padding. Please specify '%0<N>T' or open as read-only."));
+    }
+
+    // read back with auto-detection and fixed padding
+    {
+        Series s = Series("../samples/subdir/serial_fileBased_write%08T.h5", AccessType::READ_ONLY);
+        REQUIRE(s.iterations.size() == 4);
+    }
 }
 
 TEST_CASE( "hdf5_bool_test", "[serial][hdf5]" )
