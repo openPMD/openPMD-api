@@ -92,4 +92,4 @@ Utilities
    :maxdepth: 1
    :hidden:
 
-   /utilities/benchmark.rst
+   utilities/benchmark.rst

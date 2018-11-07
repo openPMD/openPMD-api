@@ -21,12 +21,14 @@ specified by:
  * The number *n* of iterations. The benchmark will effectively be repeated *n* times.
   
 The benchmark object is globally (i.e. by its constructor) specified by:
+
  * The base path to use. This will be extended with the chosen backend's filename extension.
    Benchmarks might overwrite each others' files.
  * The total extent of the dataset across all MPI ranks. 
  * The ``BlockSlicer``, i.e. an object telling each rank which portion of the dataset to write to and read from.
    Most users will be content with the implementation provided by ``OneDimensionalBlockSlicer`` that will simply divide
-   the dataset into hyperslabs along one dimension, default = 0.
+   the dataset into hyperslabs along one dimension, default = 0. This implementation can also deal with odd dimensions that
+   are not divisible by the MPI size.
  * A ``DatasetFillerProvider``. ``DatasetFiller<T>`` is an abstract class template whose job is to create the write data
    of type ``T`` for one run of the benchmark. Since one Benchmark object allows to use several datatypes, a ``DatasetFillerProvider``
    is needed to create such objects. ``DatasetFillerProvider`` is a template parameter of the benchmark class template and should be a templated 
@@ -48,5 +50,4 @@ root rank will be populated with data, i.e. all ranks' data will be collected in
 
 Example usage
 
-.. literalinclude:: mpi_benchmark.cpp
-
+.. literalinclude:: 8_mpi_benchmark.cpp

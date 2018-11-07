@@ -572,6 +572,7 @@ set(openPMD_EXAMPLE_NAMES
     5_write_parallel
     6_dump_filebased_series
     7_extended_write_serial
+    8_mpi_benchmark
 )
 set(openPMD_PYTHON_EXAMPLE_NAMES
     2_read_serial

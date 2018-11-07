@@ -1,13 +1,17 @@
 #include <openPMD/openPMD.hpp>
 #include <openPMD/Series.hpp>
-#include "openPMD/benchmark/mpi/MPIBenchmark.hpp"
-#include "openPMD/benchmark/mpi/RandomDatasetFiller.hpp"
-#include "openPMD/benchmark/mpi/OneDimensionalBlockSlicer.hpp"
+#include <openPMD/benchmark/mpi/MPIBenchmark.hpp>
+#include <openPMD/benchmark/mpi/RandomDatasetFiller.hpp>
+#include <openPMD/benchmark/mpi/OneDimensionalBlockSlicer.hpp>
+
+#if openPMD_HAVE_MPI
 #include <mpi.h>
+#endif
 
 #include <iostream>
 
 
+#if openPMD_HAVE_MPI
 int main(
     int argc,
     char *argv[]
@@ -24,8 +28,9 @@ int main(
 
     openPMD::Extent total{
         100,
-        20,
-        20
+        100,
+        100,
+        10
     };
     auto blockSlicer = std::make_shared<openPMD::OneDimensionalBlockSlicer>(0);
     std::uniform_int_distribution<type> distr(
@@ -36,9 +41,9 @@ int main(
     openPMD::RandomDatasetFiller<decltype(distr)> df{distr};
     openPMD::SimpleDatasetFillerProvider<decltype(df)> dfp{df};
 
-    // since we use a SimpleDatasetFillerProvider, we may only configure
-    // benchmarks runs of the type fitting decltype(df)::resultType
-    // this will otherwise result in a runtime error
+    // Since we use a SimpleDatasetFillerProvider, we may only configure
+    // benchmark runs of the type fitting decltype(df)::resultType.
+    // Otherwise, the DatasetFillerProvider will throw a runtime error.
 
     openPMD::MPIBenchmark<decltype(dfp)> benchmark{
         "../benchmarks/benchmark",
@@ -47,8 +52,12 @@ int main(
         dfp,
     };
 
+#if openPMD_HAVE_ADIOS1
     benchmark.addConfiguration("", 0, "bp", dt, 10);
+#endif
+#if openPMD_HAVE_HDF5
     benchmark.addConfiguration("", 0, "h5", dt, 10);
+#endif
 
     auto
         res =
@@ -86,3 +95,9 @@ int main(
 
     MPI_Finalize();
 }
+#else
+int main(void)
+{
+    return 0;
+}
+#endif
