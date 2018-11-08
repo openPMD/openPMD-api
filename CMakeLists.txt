@@ -125,6 +125,11 @@ elseif(openPMD_USE_JSON)
 else()
     set(openPMD_HAVE_JSON FALSE)
 endif()
+if(openPMD_HAVE_JSON)
+    add_library(openPMD::thirdparty::nlohmann_json INTERFACE IMPORTED)
+    target_link_libraries(openPMD::thirdparty::nlohmann_json
+        INTERFACE nlohmann_json::nlohmann_json)
+endif()
 
 # external library: HDF5 (optional)
 if(openPMD_USE_HDF5 STREQUAL AUTO)
@@ -265,6 +270,11 @@ elseif(openPMD_USE_PYTHON)
 else()
     set(openPMD_HAVE_PYTHON FALSE)
 endif()
+if(openPMD_HAVE_PYTHON)
+    add_library(openPMD::thirdparty::pybind11 INTERFACE IMPORTED)
+    target_link_libraries(openPMD::thirdparty::pybind11
+        INTERFACE pybind11::pybind11)
+endif()
 
 
 # Targets #####################################################################
@@ -331,26 +341,31 @@ target_include_directories(openPMD PUBLIC
 )
 
 # C++11 std::variant (C++17 stdlib preview)
+add_library(openPMD::thirdparty::mpark_variant INTERFACE IMPORTED)
 if(openPMD_USE_INTERNAL_VARIANT)
-    target_include_directories(openPMD SYSTEM PUBLIC
+    target_include_directories(openPMD::thirdparty::mpark_variant SYSTEM INTERFACE
         $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include>
     )
     message(STATUS "MPark.Variant: Using INTERNAL version 1.3.0")
 else()
     find_package(mpark_variant 1.3.0 REQUIRED)
-    target_link_libraries(openPMD PUBLIC mpark_variant)
+    target_link_libraries(openPMD::thirdparty::mpark_variant
+        INTERFACE mpark_variant)
     message(STATUS "MPark.Variant: Found version ${mpark_variant_VERSION}")
 endif()
 
 # Catch2 for unit tests
 if(BUILD_TESTING)
+    add_library(openPMD::thirdparty::Catch2 INTERFACE IMPORTED)
     if(openPMD_USE_INTERNAL_CATCH)
-        target_include_directories(openPMD SYSTEM PUBLIC
+        target_include_directories(openPMD::thirdparty::Catch2 SYSTEM INTERFACE
             $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/catch2/include>
         )
         message(STATUS "Catch2: Using INTERNAL version 2.3.0")
     else()
         find_package(Catch2 2.3.0 CONFIG REQUIRED)
+        target_link_libraries(openPMD::thirdparty::Catch2
+            INTERFACE Catch2::Catch2)
         message(STATUS "Catch2: Found version ${Catch2_VERSION}")
     endif()
 endif()
@@ -367,7 +382,7 @@ endif()
 
 # JSON Backend
 if(openPMD_HAVE_JSON)
-    target_link_libraries(openPMD SYSTEM PRIVATE nlohmann_json::nlohmann_json)
+    target_link_libraries(openPMD PRIVATE openPMD::thirdparty::nlohmann_json)
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_JSON=1")
 else()
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_JSON=0")
@@ -396,15 +411,8 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     target_compile_options(openPMD.ADIOS1.Serial PUBLIC "/bigobj")
     target_compile_options(openPMD.ADIOS1.Parallel PUBLIC "/bigobj")
 endif()
-if(openPMD_USE_INTERNAL_VARIANT)
-    target_include_directories(openPMD.ADIOS1.Serial SYSTEM PUBLIC
-        $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include>)
-    target_include_directories(openPMD.ADIOS1.Parallel SYSTEM PUBLIC
-        $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include>)
-else()
-    target_link_libraries(openPMD.ADIOS1.Serial PUBLIC mpark_variant)
-    target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC mpark_variant)
-endif()
+target_link_libraries(openPMD.ADIOS1.Serial PUBLIC openPMD::thirdparty::mpark_variant)
+target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC openPMD::thirdparty::mpark_variant)
 
 target_include_directories(openPMD.ADIOS1.Serial SYSTEM PRIVATE
     ${openPMD_SOURCE_DIR}/include)
@@ -615,9 +623,7 @@ if(BUILD_TESTING)
             target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_ADIOS2=1")
         endif()
         target_link_libraries(${testname}Tests PRIVATE openPMD)
-        if(TARGET Catch2::Catch2)
-            target_link_libraries(${testname}Tests PRIVATE Catch2::Catch2)
-        endif()
+        target_link_libraries(${testname}Tests PRIVATE openPMD::thirdparty::Catch2)
     endforeach()
 endif()
 
