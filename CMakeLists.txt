@@ -367,7 +367,7 @@ endif()
 
 # JSON Backend
 if(openPMD_HAVE_JSON)
-    target_link_libraries(openPMD PRIVATE nlohmann_json::nlohmann_json)
+    target_link_libraries(openPMD SYSTEM PRIVATE nlohmann_json::nlohmann_json)
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_JSON=1")
 else()
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_JSON=0")
