@@ -22,7 +22,7 @@ Features
   - ``storeChunk`` argument order changed, defaults added #386
 - Python:
 
-  - ``import openPMD`` renamed to ``import openpmd_api`` #380
+  - ``import openPMD`` renamed to ``import openpmd_api`` #380 #392
   - ``store_chunk`` argument order changed, defaults added #386
   - works with Python 3.7 #376
   - setup.py for sdist #240

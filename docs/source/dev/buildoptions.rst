@@ -48,7 +48,7 @@ CMake Option                   Values          Description
 ``ADIOS_USE_STATIC_LIBS``      ON/**OFF**      Require static ADIOS1 library
 ============================== =============== ==================================================
 
-Note that python modules (``openPMD.cpython.[...].so`` or ``openPMD.pyd``) are always dynamic libraries.
+Note that python modules (``openpmd_api.cpython.[...].so`` or ``openpmd_api.pyd``) are always dynamic libraries.
 Therefore, if you want to build the python module and prefer static dependencies, make sure to provide all of dependencies build with position independent code (``-fPIC``).
 The same requirement is true if you want to build a *shared* C++ API library with *static* dependencies.
 
