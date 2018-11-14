@@ -195,6 +195,7 @@ jobs:
         - if [ ! -d samples/git-sample/ ]; then
             if [ "$USE_SAMPLES" = "ON" ]; then
               $TRAVIS_BUILD_DIR/.travis/download_samples.sh;
+              chmod u-w samples/git-sample/*.h5;
             fi
           fi
         - if [ "$USE_PYTHON" == "ON" ]; then
@@ -503,6 +504,7 @@ jobs:
         - cd $HOME/build
         - if [ ! -d samples/git-sample/ ]; then
             $TRAVIS_BUILD_DIR/.travis/download_samples.sh;
+            chmod u-w samples/git-sample/*.h5;
           fi
         - CXXFLAGS="-g -O0 -fprofile-arcs -ftest-coverage" CXX=$CXX CC=$CC
           cmake
