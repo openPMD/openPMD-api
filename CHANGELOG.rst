@@ -26,7 +26,7 @@ Features
   - ``store_chunk`` argument order changed, defaults added #386
   - works with Python 3.7 #376
   - setup.py for sdist #240
-- Backends: JSON support added #384 #338
+- Backends: JSON support added #384 #393 #338
 
 Bug Fixes
 """""""""
