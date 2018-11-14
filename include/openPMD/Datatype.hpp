@@ -552,7 +552,12 @@ ReturnType switchType(
     Action action,
     Args && ...args
 ) {
-    using fun = decltype(&Action::OPENPMD_TEMPLATE_OPERATOR() < int >);
+#if _MSC_VER && !__INTEL_COMPILER
+    auto f = &Action::OPENPMD_TEMPLATE_OPERATOR() < int >;
+    using fun = decltype(f);
+#else
+    using fun = decltype( &Action::OPENPMD_TEMPLATE_OPERATOR() < int > );
+#endif
     static std::map<
         Datatype,
         fun
