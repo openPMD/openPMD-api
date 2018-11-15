@@ -22,7 +22,7 @@ using namespace openPMD;
 
 int main(int argc, char *argv[])
 {
-    MPI::Init();
+    MPI_Init(&argc, &argv);
 
     Catch::Session session;
     int result = 0;
@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
         if( result == 0 )
             result = session.run();
     }
-    MPI::Finalize();
+    MPI_Finalize();
     return result;
 }
 #else
