@@ -32,9 +32,12 @@ Iteration::Iteration()
         : meshes{Container< Mesh >()},
           particles{Container< ParticleSpecies >()}
 {
-    setTime(static_cast< double >(0));
-    setDt(static_cast< double >(1));
-    setTimeUnitSI(1);
+    if( IOHandler && IOHandler->accessType != AccessType::READ_ONLY )
+    {
+        setTime(static_cast< double >(0));
+        setDt(static_cast< double >(1));
+        setTimeUnitSI(1);
+    }
 }
 
 Iteration::Iteration(Iteration const& i)
@@ -189,9 +192,9 @@ Iteration::read()
     IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
     if( *aRead.dtype == DT::FLOAT )
-        setDt(Attribute(*aRead.resource).get< float >());
+        initAttribute("dt", Attribute(*aRead.resource).get< float >());
     else if( *aRead.dtype == DT::DOUBLE )
-        setDt(Attribute(*aRead.resource).get< double >());
+        initAttribute("dt", Attribute(*aRead.resource).get< double >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'dt'");
 
@@ -199,9 +202,9 @@ Iteration::read()
     IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
     if( *aRead.dtype == DT::FLOAT )
-        setTime(Attribute(*aRead.resource).get< float >());
+        initAttribute("time", Attribute(*aRead.resource).get< float >());
     else if( *aRead.dtype == DT::DOUBLE )
-        setTime(Attribute(*aRead.resource).get< double >());
+        initAttribute("time", Attribute(*aRead.resource).get< double >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'time'");
 
@@ -209,7 +212,7 @@ Iteration::read()
     IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
     if( *aRead.dtype == DT::DOUBLE )
-        setTimeUnitSI(Attribute(*aRead.resource).get< double >());
+        initAttribute("timeUnitSI", Attribute(*aRead.resource).get< double >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'timeUnitSI'");
 
@@ -260,7 +263,7 @@ Iteration::read()
         Parameter< Operation::LIST_ATTS > aList;
         for( auto const& mesh_name : *pList.paths )
         {
-            Mesh& m = meshes[mesh_name];
+            Mesh& m = meshes.init(mesh_name);
             pOpen.path = mesh_name;
             aList.attributes->clear();
             IOHandler->enqueue(IOTask(&m, pOpen));
@@ -273,7 +276,7 @@ Iteration::read()
             auto shape = std::find(att_begin, att_end, "shape");
             if( value != att_end && shape != att_end )
             {
-                MeshRecordComponent& mrc = m[MeshRecordComponent::SCALAR];
+                MeshRecordComponent& mrc = m.init(MeshRecordComponent::SCALAR);
                 mrc.parent = m.parent;
                 IOHandler->enqueue(IOTask(&mrc, pOpen));
                 IOHandler->flush();
@@ -290,11 +293,11 @@ Iteration::read()
         Parameter< Operation::OPEN_DATASET > dOpen;
         for( auto const& mesh_name : *dList.datasets )
         {
-            Mesh& m = meshes[mesh_name];
+            Mesh& m = meshes.init(mesh_name);
             dOpen.name = mesh_name;
             IOHandler->enqueue(IOTask(&m, dOpen));
             IOHandler->flush();
-            MeshRecordComponent& mrc = m[MeshRecordComponent::SCALAR];
+            MeshRecordComponent& mrc = m.init(MeshRecordComponent::SCALAR);
             mrc.parent = m.parent;
             IOHandler->enqueue(IOTask(&mrc, dOpen));
             IOHandler->flush();
@@ -320,7 +323,7 @@ Iteration::read()
 
         for( auto const& species_name : *pList.paths )
         {
-            ParticleSpecies& p = particles[species_name];
+            ParticleSpecies& p = particles.init(species_name);
             pOpen.path = species_name;
             IOHandler->enqueue(IOTask(&p, pOpen));
             IOHandler->flush();
