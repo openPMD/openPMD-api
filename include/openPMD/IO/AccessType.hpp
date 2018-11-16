@@ -27,8 +27,8 @@ namespace openPMD
  */
 enum class AccessType
 {
-    READ_ONLY,
-    READ_WRITE,
-    CREATE
+    READ_ONLY = 0,
+    READ_WRITE = 1,
+    CREATE = 2
 };  //AccessType
 } // openPMD
