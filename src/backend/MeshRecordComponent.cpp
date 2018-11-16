@@ -26,7 +26,8 @@ namespace openPMD
 MeshRecordComponent::MeshRecordComponent()
         : RecordComponent()
 {
-    setPosition(std::vector< double >{0});
+    if( IOHandler && IOHandler->accessType != AccessType::READ_ONLY )
+        setPosition(std::vector< double >{0});
 }
 
 void
@@ -40,17 +41,17 @@ MeshRecordComponent::read()
     IOHandler->flush();
     Attribute a = Attribute(*aRead.resource);
     if( *aRead.dtype == DT::VEC_FLOAT )
-        setPosition(a.get< std::vector< float > >());
+        initAttribute("position", a.get< std::vector< float > >());
     else if( *aRead.dtype == DT::FLOAT )
-        setPosition(std::vector< float >({a.get< float >()}));
+        initAttribute("position", std::vector< float >({a.get< float >()}));
     else if( *aRead.dtype == DT::VEC_DOUBLE )
-        setPosition(a.get< std::vector< double > >());
+        initAttribute("position", a.get< std::vector< double > >());
     else if( *aRead.dtype == DT::DOUBLE )
-        setPosition(std::vector< double >({a.get< double >()}));
+        initAttribute("position", std::vector< double >({a.get< double >()}));
     else if( *aRead.dtype == DT::VEC_LONG_DOUBLE )
-        setPosition(a.get< std::vector< long double > >());
+        initAttribute("position", a.get< std::vector< long double > >());
     else if( *aRead.dtype == DT::LONG_DOUBLE )
-        setPosition(std::vector< long double >({a.get< long double >()}));
+        initAttribute("position", std::vector< long double >({a.get< long double >()}));
     else
         throw std::runtime_error( "Unexpected Attribute datatype for 'position'");
 

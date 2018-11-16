@@ -35,7 +35,8 @@ RecordComponent::RecordComponent()
         : m_chunks{std::make_shared< std::queue< IOTask > >()},
           m_constantValue{std::make_shared< Attribute >(-1)}
 {
-    setUnitSI(1);
+    if( IOHandler && IOHandler->accessType != AccessType::READ_ONLY )
+        setUnitSI(1);
     resetDataset(Dataset(Datatype::CHAR, {1}));
 }
 
@@ -244,7 +245,7 @@ RecordComponent::readBase()
     IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
     if( *aRead.dtype == DT::DOUBLE )
-        setUnitSI(Attribute(*aRead.resource).get< double >());
+        initAttribute("unitSI", Attribute(*aRead.resource).get< double >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'unitSI'");
 

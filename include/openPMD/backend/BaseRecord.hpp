@@ -89,8 +89,9 @@ BaseRecord< T_elem >::BaseRecord()
         : Container< T_elem >(),
           m_containsScalar{std::make_shared< bool >(false)}
 {
-    this->setAttribute("unitDimension",
-                       std::array< double, 7 >{{0., 0., 0., 0., 0., 0., 0.}});
+//    if( IOHandler && IOHandler->accessType != AccessType::READ_ONLY )
+//        this->setAttribute("unitDimension",
+//                           std::array< double, 7 >{{0., 0., 0., 0., 0., 0., 0.}});
 }
 
 
@@ -192,7 +193,7 @@ BaseRecord< T_elem >::readBase()
     this->IOHandler->enqueue(IOTask(this, aRead));
     this->IOHandler->flush();
     if( *aRead.dtype == DT::ARR_DBL_7 )
-        this->setAttribute("unitDimension", Attribute(*aRead.resource).template get< std::array< double, 7 > >());
+        this->initAttribute("unitDimension", Attribute(*aRead.resource).template get< std::array< double, 7 > >());
     else if( *aRead.dtype == DT::VEC_DOUBLE )
     {
         auto vec = Attribute(*aRead.resource).template get< std::vector< double > >();
@@ -202,7 +203,7 @@ BaseRecord< T_elem >::readBase()
             std::copy(vec.begin(),
                       vec.end(),
                       arr.begin());
-            this->setAttribute("unitDimension", arr);
+            this->initAttribute("unitDimension", arr);
         } else
             throw std::runtime_error("Unexpected Attribute datatype for 'unitDimension'");
     }
@@ -213,9 +214,9 @@ BaseRecord< T_elem >::readBase()
     this->IOHandler->enqueue(IOTask(this, aRead));
     this->IOHandler->flush();
     if( *aRead.dtype == DT::FLOAT )
-        this->setAttribute("timeOffset", Attribute(*aRead.resource).template get< float >());
+        this->initAttribute("timeOffset", Attribute(*aRead.resource).template get< float >());
     else if( *aRead.dtype == DT::DOUBLE )
-        this->setAttribute("timeOffset", Attribute(*aRead.resource).template get< double >());
+        this->initAttribute("timeOffset", Attribute(*aRead.resource).template get< double >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'timeOffset'");
 }

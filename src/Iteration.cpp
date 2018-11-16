@@ -276,11 +276,12 @@ Iteration::read()
             auto shape = std::find(att_begin, att_end, "shape");
             if( value != att_end && shape != att_end )
             {
+                *m.m_containsScalar = true;
                 MeshRecordComponent& mrc = m.init(MeshRecordComponent::SCALAR);
                 mrc.parent = m.parent;
-                IOHandler->enqueue(IOTask(&mrc, pOpen));
-                IOHandler->flush();
                 *mrc.m_isConstant = true;
+                //IOHandler->enqueue(IOTask(&mrc, pOpen));
+                IOHandler->flush();
             }
             m.read();
         }
@@ -293,19 +294,29 @@ Iteration::read()
         Parameter< Operation::OPEN_DATASET > dOpen;
         for( auto const& mesh_name : *dList.datasets )
         {
+            std::cout << "open scalar mesh: " << mesh_name << std::endl;
             Mesh& m = meshes.init(mesh_name);
+            *m.m_containsScalar = true;
             dOpen.name = mesh_name;
             IOHandler->enqueue(IOTask(&m, dOpen));
             IOHandler->flush();
             MeshRecordComponent& mrc = m.init(MeshRecordComponent::SCALAR);
+            std::cout << "Mesh " << mesh_name << ": parent " << m.parent << std::endl;
+            std::cout << "is scalar? " << *(m.m_containsScalar) << std::endl;
             mrc.parent = m.parent;
+            mrc.m_writable->parent = m.parent;
             IOHandler->enqueue(IOTask(&mrc, dOpen));
+            //IOHandler->enqueue(IOTask(&m, dOpen));
             IOHandler->flush();
+            std::cout << "init flush done!" << std::endl;
             mrc.written = false;
             mrc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
+            std::cout << "reset done!" << std::endl;
             mrc.written = true;
             m.read();
+            std::cout << "read done!" << std::endl;
         }
+        std::cout << "finished scalar meshes!" << std::endl;
     }
 
     if( hasParticles )

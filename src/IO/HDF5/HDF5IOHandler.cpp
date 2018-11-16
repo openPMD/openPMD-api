@@ -451,6 +451,8 @@ HDF5IOHandlerImpl::openDataset(Writable* writable,
                                Parameter< Operation::OPEN_DATASET > & parameters)
 {
     auto res = m_fileIDs.find(writable->parent);
+    std::cout << "openDataset: " << parameters.name
+              << " (parent " << concrete_h5_file_position(writable->parent).c_str() << ")" << std::endl;
     hid_t node_id, dataset_id;
     node_id = H5Gopen(res->second,
                       concrete_h5_file_position(writable->parent).c_str(),
