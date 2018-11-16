@@ -133,6 +133,27 @@ public:
     mapped_type& at(key_type const& key) { return m_container->at(key); }
     mapped_type const& at(key_type const& key) const { return m_container->at(key); }
 
+    // @todo protect me
+    virtual mapped_type& init(key_type const key)
+    {
+        auto it = m_container->find(key);
+        if( it != m_container->end() )
+        {
+            // must not exist already!
+            auxiliary::OutOfRangeMsg const out_of_range_msg;
+            throw std::out_of_range(out_of_range_msg(key));
+        }
+        else
+        {
+            T t = T();
+            t.linkHierarchy(m_writable);
+            auto& ret = m_container->insert({key, std::move(t)}).first->second;
+            traits::GenerationPolicy< T > gen;
+            gen(ret);
+            return ret;
+        }
+    }
+
     /** Access the value that is mapped to a key equivalent to key, creating it if such key does not exist already.
      *
      * @param   key Key of the element to find (lvalue).
