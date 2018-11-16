@@ -155,6 +155,10 @@ OPENPMD_protected:
     void flushAttributes();
     void readAttributes();
 
+    template< typename T >
+    void initAttribute(std::string const& key, T const& value);
+    void initAttribute(std::string const& key, char const value[]);
+
     /** Retrieve the value of a floating point Attribute of user-defined precision with ensured type-safety.
      *
      * @note    Since the precision of certain Attributes is intentionally left
@@ -205,6 +209,26 @@ private:
 
 //TODO explicitly instanciate Attributable::setAttribute for all T in Datatype
 template< typename T >
+inline void
+Attributable::initAttribute(std::string const& key, T const& value)
+{
+    auto it = m_attributes->lower_bound(key);
+    if( it != m_attributes->end() && !m_attributes->key_comp()(key, it->first) )
+    {
+        // key already exists in map, this should not happen during init
+        auxiliary::OutOfRangeMsg const out_of_range_msg(
+            "Attribute",
+            "can not be initialized (already exists)."
+        );
+        throw no_such_attribute_error(out_of_range_msg(key));
+    } else
+    {
+        // emplace a new map element for an unknown key
+        m_attributes->emplace_hint(it,
+                                   std::make_pair(key, Attribute(value)));
+    }
+}
+template< typename T >
 inline bool
 Attributable::setAttribute(std::string const& key, T const& value)
 {
@@ -231,6 +255,11 @@ Attributable::setAttribute(std::string const& key, T const& value)
                                    std::make_pair(key, Attribute(value)));
         return false;
     }
+}
+inline void
+Attributable::initAttribute(std::string const& key, char const value[])
+{
+    this->initAttribute(key, std::string(value));
 }
 inline bool
 Attributable::setAttribute(std::string const& key, char const value[])

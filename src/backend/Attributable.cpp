@@ -181,94 +181,94 @@ Attributable::readAttributes()
         switch( *aRead.dtype )
         {
             case DT::CHAR:
-                setAttribute(att, a.get< char >());
+                initAttribute(att, a.get< char >());
                 break;
             case DT::UCHAR:
-                setAttribute(att, a.get< unsigned char >());
+                initAttribute(att, a.get< unsigned char >());
                 break;
             case DT::SHORT:
-                setAttribute(att, a.get< short >());
+                initAttribute(att, a.get< short >());
                 break;
             case DT::INT:
-                setAttribute(att, a.get< int >());
+                initAttribute(att, a.get< int >());
                 break;
             case DT::LONG:
-                setAttribute(att, a.get< long >());
+                initAttribute(att, a.get< long >());
                 break;
             case DT::LONGLONG:
-                setAttribute(att, a.get< long long >());
+                initAttribute(att, a.get< long long >());
                 break;
             case DT::USHORT:
-                setAttribute(att, a.get< unsigned short >());
+                initAttribute(att, a.get< unsigned short >());
                 break;
             case DT::UINT:
-                setAttribute(att, a.get< unsigned int >());
+                initAttribute(att, a.get< unsigned int >());
                 break;
             case DT::ULONG:
-                setAttribute(att, a.get< unsigned long >());
+                initAttribute(att, a.get< unsigned long >());
                 break;
             case DT::ULONGLONG:
-                setAttribute(att, a.get< unsigned long long >());
+                initAttribute(att, a.get< unsigned long long >());
                 break;
             case DT::FLOAT:
-                setAttribute(att, a.get< float >());
+                initAttribute(att, a.get< float >());
                 break;
             case DT::DOUBLE:
-                setAttribute(att, a.get< double >());
+                initAttribute(att, a.get< double >());
                 break;
             case DT::LONG_DOUBLE:
-                setAttribute(att, a.get< long double >());
+                initAttribute(att, a.get< long double >());
                 break;
             case DT::STRING:
-                setAttribute(att, a.get< std::string >());
+                initAttribute(att, a.get< std::string >());
                 break;
             case DT::VEC_CHAR:
-                setAttribute(att, a.get< std::vector< char > >());
+                initAttribute(att, a.get< std::vector< char > >());
                 break;
             case DT::VEC_SHORT:
-                setAttribute(att, a.get< std::vector< short > >());
+                initAttribute(att, a.get< std::vector< short > >());
                 break;
             case DT::VEC_INT:
-                setAttribute(att, a.get< std::vector< int > >());
+                initAttribute(att, a.get< std::vector< int > >());
                 break;
             case DT::VEC_LONG:
-                setAttribute(att, a.get< std::vector< long > >());
+                initAttribute(att, a.get< std::vector< long > >());
                 break;
             case DT::VEC_LONGLONG:
-                setAttribute(att, a.get< std::vector< long long > >());
+                initAttribute(att, a.get< std::vector< long long > >());
                 break;
             case DT::VEC_UCHAR:
-                setAttribute(att, a.get< std::vector< unsigned char > >());
+                initAttribute(att, a.get< std::vector< unsigned char > >());
                 break;
             case DT::VEC_USHORT:
-                setAttribute(att, a.get< std::vector< unsigned short > >());
+                initAttribute(att, a.get< std::vector< unsigned short > >());
                 break;
             case DT::VEC_UINT:
-                setAttribute(att, a.get< std::vector< unsigned int > >());
+                initAttribute(att, a.get< std::vector< unsigned int > >());
                 break;
             case DT::VEC_ULONG:
-                setAttribute(att, a.get< std::vector< unsigned long > >());
+                initAttribute(att, a.get< std::vector< unsigned long > >());
                 break;
             case DT::VEC_ULONGLONG:
-                setAttribute(att, a.get< std::vector< unsigned long long > >());
+                initAttribute(att, a.get< std::vector< unsigned long long > >());
                 break;
             case DT::VEC_FLOAT:
-                setAttribute(att, a.get< std::vector< float > >());
+                initAttribute(att, a.get< std::vector< float > >());
                 break;
             case DT::VEC_DOUBLE:
-                setAttribute(att, a.get< std::vector< double > >());
+                initAttribute(att, a.get< std::vector< double > >());
                 break;
             case DT::VEC_LONG_DOUBLE:
-                setAttribute(att, a.get< std::vector< long double > >());
+                initAttribute(att, a.get< std::vector< long double > >());
                 break;
             case DT::VEC_STRING:
-                setAttribute(att, a.get< std::vector< std::string > >());
+                initAttribute(att, a.get< std::vector< std::string > >());
                 break;
             case DT::ARR_DBL_7:
-                setAttribute(att, a.get< std::array< double, 7 > >());
+                initAttribute(att, a.get< std::array< double, 7 > >());
                 break;
             case DT::BOOL:
-                setAttribute(att, a.get< bool >());
+                initAttribute(att, a.get< bool >());
                 break;
             case DT::DATATYPE:
             case DT::UNDEFINED:
