@@ -488,7 +488,7 @@ Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
          * Would throw for AccessType::READ_ONLY */
         auto oldType = IOHandler->accessType;
         auto newType = const_cast< AccessType* >(&m_writable->IOHandler->accessType);
-        *newType = AccessType::READ_WRITE;
+        // *newType = AccessType::READ_WRITE;
 
         if( input->iterationEncoding == IterationEncoding::fileBased )
             readFileBased(oldType);
@@ -661,7 +661,7 @@ Series::readFileBased(AccessType actualAccessType)
                               << "time series with fileBased iteration encoding. Loaded file is groupBased.\n";
                 } else
                     throw std::runtime_error("Unknown iterationEncoding: " + encoding);
-                setAttribute("iterationEncoding", encoding);
+                initAttribute("iterationEncoding", encoding);
             }
             else
                 throw std::runtime_error("Unexpected Attribute datatype for 'iterationEncoding'");
@@ -671,9 +671,10 @@ Series::readFileBased(AccessType actualAccessType)
             IOHandler->flush();
             if( *aRead.dtype == DT::STRING )
             {
-                written = false;
-                setIterationFormat(Attribute(*aRead.resource).get< std::string >());
-                written = true;
+                // written = false;
+                initAttribute("iterationFormat", Attribute(*aRead.resource).get< std::string >());
+                // setIterationFormat(Attribute(*aRead.resource).get< std::string >());
+                // written = true;
             }
             else
                 throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
@@ -725,7 +726,7 @@ Series::readGroupBased()
                       << "single file with groupBased iteration encoding. Loaded file is fileBased.\n";
         } else
             throw std::runtime_error("Unknown iterationEncoding: " + encoding);
-        setAttribute("iterationEncoding", encoding);
+        initAttribute("iterationEncoding", encoding);
     }
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'iterationEncoding'");
@@ -761,7 +762,8 @@ Series::readBase()
     IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
     if( *aRead.dtype == DT::STRING )
-        setOpenPMD(Attribute(*aRead.resource).get< std::string >());
+        initAttribute("openPMD", Attribute(*aRead.resource).get< std::string >());
+        // setOpenPMD(Attribute(*aRead.resource).get< std::string >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'openPMD'");
 
@@ -769,7 +771,8 @@ Series::readBase()
     IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
     if( *aRead.dtype == determineDatatype< uint32_t >() )
-        setOpenPMDextension(Attribute(*aRead.resource).get< uint32_t >());
+        initAttribute("openPMDextension", Attribute(*aRead.resource).get< uint32_t >());
+        // setOpenPMDextension(Attribute(*aRead.resource).get< uint32_t >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'openPMDextension'");
 
@@ -777,7 +780,7 @@ Series::readBase()
     IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
     if( *aRead.dtype == DT::STRING )
-        setAttribute("basePath", Attribute(*aRead.resource).get< std::string >());
+        initAttribute("basePath", Attribute(*aRead.resource).get< std::string >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'basePath'");
 
@@ -795,7 +798,12 @@ Series::readBase()
             for( auto& it : iterations )
                 it.second.meshes.written = false;
 
-            setMeshesPath(Attribute(*aRead.resource).get< std::string >());
+            // setMeshesPath(Attribute(*aRead.resource).get< std::string >());
+            std::string mp = Attribute(*aRead.resource).get< std::string >();
+            if( auxiliary::ends_with(mp, '/') )
+                initAttribute("meshesPath", mp);
+            else
+                initAttribute("meshesPath", mp + "/");
 
             for( auto& it : iterations )
                 it.second.meshes.written = true;
@@ -815,8 +823,12 @@ Series::readBase()
             for( auto& it : iterations )
                 it.second.particles.written = false;
 
-            setParticlesPath(Attribute(*aRead.resource).get< std::string >());
-
+            // setParticlesPath(Attribute(*aRead.resource).get< std::string >());
+            std::string pp = Attribute(*aRead.resource).get< std::string >();
+            if( auxiliary::ends_with(pp, '/') )
+                initAttribute("particlesPath", pp);
+            else
+                initAttribute("particlesPath", pp + "/");
 
             for( auto& it : iterations )
                 it.second.particles.written = true;
@@ -846,7 +858,8 @@ Series::read()
 
     for( auto const& it : *pList.paths )
     {
-        Iteration& i = iterations[std::stoull(it)];
+        Iteration& i = iterations.init(std::stoull(it));
+        // [std::stoull(it)];
         pOpen.path = it;
         IOHandler->enqueue(IOTask(&i, pOpen));
         i.read();
