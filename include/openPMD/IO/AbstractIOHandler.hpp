@@ -33,6 +33,7 @@
 #include <queue>
 #include <stdexcept>
 #include <string>
+#include <iostream>
 
 
 namespace openPMD

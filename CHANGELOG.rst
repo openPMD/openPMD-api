@@ -101,6 +101,7 @@ Bug Fixes
 - fix ODR issue in ADIOS1 backend corrupting the ``AbstractIOHandler`` vtable #415
 - fix race condition in MPI-parallel directory creation #419
 - ADIOS1: fix use-after-free in parallel I/O method options #421
+- do not require write permissions to open ``Series`` read-only #395
 
 Other
 """""

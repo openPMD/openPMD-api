@@ -51,6 +51,10 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(AbstractIOHandler* handler)
           m_fileAccessProperty{H5P_DEFAULT},
           m_H5T_BOOL_ENUM{H5Tenum_create(H5T_NATIVE_INT8)}
 {
+    std::cout << "++++ " << int(handler->accessType) << std::endl;
+    std::cout << "++m+ " << int(m_handler->accessType) << std::endl;
+
+
     VERIFY(m_H5T_BOOL_ENUM >= 0, "Internal error: Failed to create HDF5 enum");
     std::string t{"TRUE"};
     std::string f{"FALSE"};
@@ -80,12 +84,14 @@ HDF5IOHandlerImpl::~HDF5IOHandlerImpl()
     if( m_datasetTransferProperty != H5P_DEFAULT )
     {
         status = H5Pclose(m_datasetTransferProperty);
+        m_datasetTransferProperty = H5P_DEFAULT;
         if( status < 0 )
             std::cerr <<  "Internal error: Failed to close HDF5 dataset transfer property\n";
     }
     if( m_fileAccessProperty != H5P_DEFAULT )
     {
         status = H5Pclose(m_fileAccessProperty);
+        m_fileAccessProperty = H5P_DEFAULT;
         if( status < 0 )
             std::cerr << "Internal error: Failed to close HDF5 file access property\n";
     }
@@ -109,15 +115,27 @@ HDF5IOHandlerImpl::createFile(Writable* writable,
         std::string name = m_handler->directory + parameters.name;
         if( !auxiliary::ends_with(name, ".h5") )
             name += ".h5";
-        unsigned flags;
+
+        std::cout << "++++ Create +++ " << int(m_handler->accessType) << std::endl;
+
+        if( m_fileAccessProperty == H5P_DEFAULT )
+            m_fileAccessProperty = H5Pcreate(H5P_FILE_ACCESS);
+            // SEC2 driver
+            // herr_t status = H5Pset_fapl_sec2(m_fileAccessProperty);
+            // VERIFY(status >= 0, "Internal error: Failed to set HDF5 file create property");
+
+        hid_t id;
         if( m_handler->accessType == AccessType::CREATE )
-            flags = H5F_ACC_TRUNC;
+            id = H5Fcreate(name.c_str(),
+                     H5F_ACC_TRUNC,
+                     H5P_DEFAULT,
+                     m_fileAccessProperty);
         else
-            flags = H5F_ACC_EXCL;
-        hid_t id = H5Fcreate(name.c_str(),
-                             flags,
-                             H5P_DEFAULT,
-                             m_fileAccessProperty);
+            id = H5Fcreate(name.c_str(),
+                     H5F_ACC_EXCL,
+                     H5P_DEFAULT,
+                     m_fileAccessProperty);
+
         VERIFY(id >= 0, "Internal error: Failed to create HDF5 file");
 
         writable->written = true;
@@ -352,18 +370,35 @@ HDF5IOHandlerImpl::openFile(Writable* writable,
     if( !auxiliary::ends_with(name, ".h5") )
         name += ".h5";
 
-    unsigned flags;
+    std::cout << "++++ Open +++ " << int(m_handler->accessType) << std::endl;
+
+    if( m_fileAccessProperty == H5P_DEFAULT )
+        m_fileAccessProperty = H5Pcreate(H5P_FILE_ACCESS);
+        // SEC2 driver
+        // herr_t status = H5Pset_fapl_sec2(m_fileAccessProperty);
+        // VERIFY(status >= 0, "Internal error: Failed to set HDF5 file access property");
+
     AccessType at = m_handler->accessType;
+    hid_t file_id;
+
     if( at == AccessType::READ_ONLY )
-        flags = H5F_ACC_RDONLY;
+    {
+        std::cout << "READ ONLY!!!!!" << std::endl;
+        file_id = H5Fopen(name.c_str(),
+                      H5F_ACC_RDONLY,
+                      m_fileAccessProperty);
+    }
+    // TODO Docs Quote: "Note that H5Fopen does not create a file if it does not already exist"
     else if( at == AccessType::READ_WRITE || at == AccessType::CREATE )
-        flags = H5F_ACC_RDWR;
+    {
+        std::cout << "READ WRITE ----" << std::endl;
+        file_id = H5Fopen(name.c_str(),
+                      H5F_ACC_RDWR,
+                      m_fileAccessProperty);
+    }
     else
         throw std::runtime_error("Unknown file AccessType");
-    hid_t file_id;
-    file_id = H5Fopen(name.c_str(),
-                      flags,
-                      m_fileAccessProperty);
+
     if( file_id < 0 )
         throw no_such_file_error("Failed to open HDF5 file " + name);
 
@@ -1517,7 +1552,9 @@ void HDF5IOHandlerImpl::listAttributes(Writable* writable,
 HDF5IOHandler::HDF5IOHandler(std::string path, AccessType at)
         : AbstractIOHandler(std::move(path), at),
           m_impl{new HDF5IOHandlerImpl(this)}
-{ }
+{
+    std::cout << "++++ " << int(at) << std::endl;
+}
 
 HDF5IOHandler::~HDF5IOHandler() = default;
 

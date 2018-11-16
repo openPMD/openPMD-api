@@ -78,6 +78,21 @@ ParallelHDF5IOHandlerImpl::~ParallelHDF5IOHandlerImpl()
             std::cerr << "Internal error: Failed to close HDF5 file (parallel)\n";
         m_openFileIDs.erase(file);
     }
+
+    if( m_datasetTransferProperty != H5P_DEFAULT )
+    {
+        status = H5Pclose(m_datasetTransferProperty);
+        m_datasetTransferProperty = H5P_DEFAULT;
+        if( status < 0 )
+            std::cerr <<  "Internal error: Failed to close HDF5 dataset transfer property (parallel)\n";
+    }
+    if( m_fileAccessProperty != H5P_DEFAULT )
+    {
+        status = H5Pclose(m_fileAccessProperty);
+        m_fileAccessProperty = H5P_DEFAULT;
+        if( status < 0 )
+            std::cerr << "Internal error: Failed to close HDF5 file access property (parallel)\n";
+    }
 }
 #else
 #   if openPMD_HAVE_MPI
