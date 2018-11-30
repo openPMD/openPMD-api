@@ -61,7 +61,7 @@ PatchRecord::read()
     IOHandler->flush();
 
     if( *aRead.dtype == Datatype::ARR_DBL_7 )
-        this->setAttribute("unitDimension", Attribute(*aRead.resource).template get< std::array< double, 7 > >());
+        this->initAttribute("unitDimension", Attribute(*aRead.resource).template get< std::array< double, 7 > >());
     else if( *aRead.dtype == Datatype::VEC_DOUBLE )
     {
         auto vec = Attribute(*aRead.resource).template get< std::vector< double > >();
@@ -71,7 +71,7 @@ PatchRecord::read()
             std::copy(vec.begin(),
                       vec.end(),
                       arr.begin());
-            this->setAttribute("unitDimension", arr);
+            this->initAttribute("unitDimension", arr);
         } else
             throw std::runtime_error("Unexpected Attribute datatype for 'unitDimension'");
     }

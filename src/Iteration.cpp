@@ -334,6 +334,7 @@ Iteration::read()
 
         for( auto const& species_name : *pList.paths )
         {
+            std::cout << "reading species: " << species_name << std::endl;
             ParticleSpecies& p = particles.init(species_name);
             pOpen.path = species_name;
             IOHandler->enqueue(IOTask(&p, pOpen));

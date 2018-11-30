@@ -415,6 +415,9 @@ HDF5IOHandlerImpl::openPath(Writable* writable,
                             Parameter< Operation::OPEN_PATH > const& parameters)
 {
     auto res = m_fileIDs.find(writable->parent);
+
+    std::cout << "openPath 1: " << concrete_h5_file_position(writable->parent) << std::endl;
+
     hid_t node_id, path_id;
     node_id = H5Gopen(res->second,
                       concrete_h5_file_position(writable->parent).c_str(),
@@ -423,10 +426,13 @@ HDF5IOHandlerImpl::openPath(Writable* writable,
 
     /* Sanitize path */
     std::string path = parameters.path;
+    std::cout << "openPath parameters.path: " << path << std::endl;
     if( auxiliary::starts_with(path, '/') )
         path = auxiliary::replace_first(path, "/", "");
     if( !auxiliary::ends_with(path, '/') )
         path += '/';
+
+    std::cout << "openPath 2: " << path << std::endl;
 
     path_id = H5Gopen(node_id,
                       path.c_str(),

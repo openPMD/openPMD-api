@@ -27,7 +27,7 @@ namespace openPMD
 {
 Record::Record()
 {
-    setTimeOffset(0.f);
+    // setTimeOffset(0.f);
 }
 
 Record::Record(Record const&) = default;
@@ -90,10 +90,28 @@ Record::read()
 {
     if( *m_containsScalar )
     {
+        std::cout << "record contains scalar!" << std::endl;
+        //written = false;
+        //clear_unchecked();
+        //written = true;
         /* using operator[] will incorrectly update parent */
-        this->at(RecordComponent::SCALAR).read();
+        //this->at(RecordComponent::SCALAR).read();
+        auto& rc = (*this)[RecordComponent::SCALAR];
+/*
+        auto& rc = this->init(RecordComponent::SCALAR);
+        rc.parent = parent;
+        rc.m_writable->parent = parent;
+        Parameter< Operation::OPEN_DATASET > dOpen;
+        IOHandler->enqueue(IOTask(&rc, dOpen));
+        IOHandler->flush();
+        rc.written = false;
+        rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
+        rc.written = true;
+*/
+        rc.read();
     } else
     {
+        std::cout << "record contains vector!" << std::endl;
         written = false;
         clear_unchecked();
         written = true;
@@ -104,7 +122,7 @@ Record::read()
         Parameter< Operation::OPEN_PATH > pOpen;
         for( auto const& component : *pList.paths )
         {
-            RecordComponent& rc = (*this)[component];
+            RecordComponent& rc = this->init(component);
             pOpen.path = component;
             IOHandler->enqueue(IOTask(&rc, pOpen));
             *rc.m_isConstant = true;
@@ -118,7 +136,7 @@ Record::read()
         Parameter< Operation::OPEN_DATASET > dOpen;
         for( auto const& component : *dList.datasets )
         {
-            RecordComponent& rc = (*this)[component];
+            RecordComponent& rc = this->init(component);
             dOpen.name = component;
             IOHandler->enqueue(IOTask(&rc, dOpen));
             IOHandler->flush();

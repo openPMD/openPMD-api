@@ -56,16 +56,19 @@ namespace traits
         void operator()(T & ret)
         {
             /* enforce these two RecordComponents as required by the standard */
-            ret["position"].setUnitDimension({{UnitDimension::L, 1}});
-            ret["positionOffset"].setUnitDimension({{UnitDimension::L, 1}});
+            auto udl = std::array< double, 7 >({1., 0., 0., 0., 0., 0., 0.});
+            auto& po = ret.init("position"); // .setUnitDimension({{UnitDimension::L, 1}});
+            po.initAttribute("unitDimension", udl);
+            auto& pp = ret.init("positionOffset"); //.setUnitDimension({{UnitDimension::L, 1}});
+            pp.initAttribute("unitDimension", udl);
             ret.particlePatches.linkHierarchy(ret.m_writable);
 
-            auto& np = ret.particlePatches["numParticles"];
-            auto& npc = np[RecordComponent::SCALAR];
+            auto& np = ret.particlePatches.init("numParticles");
+            auto& npc = np.init(RecordComponent::SCALAR);
             npc.resetDataset(Dataset(determineDatatype<uint64_t>(), {1}));
             npc.parent = np.parent;
-            auto& npo = ret.particlePatches["numParticlesOffset"];
-            auto& npoc = npo[RecordComponent::SCALAR];
+            auto& npo = ret.particlePatches.init("numParticlesOffset");
+            auto& npoc = npo.init(RecordComponent::SCALAR);
             npoc.resetDataset(Dataset(determineDatatype<uint64_t>(), {1}));
             npoc.parent = npo.parent;
         }

@@ -43,6 +43,7 @@ ParticleSpecies::read()
     Parameter< Operation::LIST_ATTS > aList;
     for( auto const& record_name : *pList.paths )
     {
+        std::cout << "reading particle record: " << record_name << std::endl;
         if( record_name == "particlePatches" )
         {
             pOpen.path = "particlePatches";
@@ -50,7 +51,7 @@ ParticleSpecies::read()
             particlePatches.read();
         } else
         {
-            Record& r = (*this)[record_name];
+            Record& r = this->init(record_name);
             pOpen.path = record_name;
             aList.attributes->clear();
             IOHandler->enqueue(IOTask(&r, pOpen));
@@ -63,12 +64,16 @@ ParticleSpecies::read()
             auto shape = std::find(att_begin, att_end, "shape");
             if( value != att_end && shape != att_end )
             {
-                RecordComponent& rc = r[RecordComponent::SCALAR];
+                std::cout << "constant scalar record!" << std::endl;
+                *r.m_containsScalar = true;
+                RecordComponent& rc = r.init(RecordComponent::SCALAR);
                 rc.parent = r.parent;
+                rc.m_writable->parent = r.parent;
                 IOHandler->enqueue(IOTask(&rc, pOpen));
                 IOHandler->flush();
                 *rc.m_isConstant = true;
             }
+            std::cout << "before record read" << std::endl;
             r.read();
         }
     }
@@ -81,12 +86,15 @@ ParticleSpecies::read()
     Parameter< Operation::OPEN_DATASET > dOpen;
     for( auto const& record_name : *dList.datasets )
     {
-        Record& r = (*this)[record_name];
+        std::cout << "reading scalar particle record: " << record_name << std::endl;
+        Record& r = this->init(record_name);
+        *r.m_containsScalar = true;
         dOpen.name = record_name;
         IOHandler->enqueue(IOTask(&r, dOpen));
         IOHandler->flush();
-        RecordComponent& rc = r[RecordComponent::SCALAR];
+        RecordComponent& rc = r.init(RecordComponent::SCALAR);
         rc.parent = r.parent;
+        rc.m_writable->parent = r.parent;
         IOHandler->enqueue(IOTask(&rc, dOpen));
         IOHandler->flush();
         rc.written = false;
