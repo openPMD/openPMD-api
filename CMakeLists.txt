@@ -286,7 +286,8 @@ set(CORE_SOURCE
         src/backend/MeshRecordComponent.cpp
         src/backend/PatchRecord.cpp
         src/backend/PatchRecordComponent.cpp
-        src/backend/Writable.cpp)
+        src/backend/Writable.cpp
+        src/benchmark/mpi/OneDimensionalBlockSlicer.cpp)
 set(IO_SOURCE
         src/IO/AbstractIOHandler.cpp
         src/IO/AbstractIOHandlerImpl.cpp
@@ -571,6 +572,7 @@ set(openPMD_EXAMPLE_NAMES
     5_write_parallel
     6_dump_filebased_series
     7_extended_write_serial
+    8_mpi_benchmark
 )
 set(openPMD_PYTHON_EXAMPLE_NAMES
     2_read_serial

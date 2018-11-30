@@ -1,0 +1,1 @@
+../../../examples/8_mpi_benchmark.cpp
