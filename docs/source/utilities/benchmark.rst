@@ -50,4 +50,4 @@ root rank will be populated with data, i.e. all ranks' data will be collected in
 
 Example usage
 
-.. literalinclude:: 8_mpi_benchmark.cpp
+.. literalinclude:: 8_benchmark_parallel.cpp

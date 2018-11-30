@@ -292,6 +292,11 @@ namespace openPMD
             this->communicator,
             &actualSize
         );
+        int rank;
+        MPI_Comm_rank(
+            this->communicator,
+            &rank
+        );
         size = std::min(
             size,
             actualSize
@@ -299,7 +304,7 @@ namespace openPMD
         return m_blockSlicer->sliceBlock(
             totalExtent,
             size,
-            communicator
+            rank
         );
     }
 

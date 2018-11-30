@@ -11,7 +11,7 @@ Changelog
 
 [Summary]
 
-Changes to "0.6.2-alpha"
+Changes to "0.6.3-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 Features
@@ -27,11 +27,12 @@ Features
   - works with Python 3.7 #376
   - setup.py for sdist #240
 - Backends: JSON support added #384 #393 #338
+- Parallel benchmark added #346 #398
 
 Bug Fixes
 """""""""
 
-- support reading series with varying or no iteration padding in filename #388
+- spurious MPI C++11 API usage in ParallelIOTest removed #396
 
 Other
 """""
@@ -39,6 +40,23 @@ Other
 - Docs: upgrade guide added #385
 - CI: GCC 8.1.0 & Python 3.7.0 #376
 - CMake: treat third party libraries properly as ``IMPORTED`` #389
+
+
+0.6.3-alpha
+-----------
+**Date:** 2018-11-12
+
+Reading Varying Iteration Padding Reading
+
+Support reading series with varying iteration padding (or no padding at all) as currently used in PIConGPU.
+
+Changes to "0.6.2-alpha"
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- support reading series with varying or no iteration padding in filename #388
 
 
 0.6.2-alpha

@@ -26,9 +26,6 @@
 
 namespace openPMD
 {
-#if openPMD_HAVE_MPI
-
-
     OneDimensionalBlockSlicer::OneDimensionalBlockSlicer( Extent::value_type dim ) :
         m_dim { dim }
     {}
@@ -40,15 +37,9 @@ namespace openPMD
     > OneDimensionalBlockSlicer::sliceBlock(
         Extent & totalExtent,
         int size,
-        MPI_Comm comm
+        int rank
     )
     {
-        int rank;
-        MPI_Comm_rank(
-            comm,
-            &rank
-        );
-
         Offset offs(
             totalExtent.size( ),
             0
@@ -102,7 +93,4 @@ namespace openPMD
             std::move( localExtent )
         );
     }
-
-
-#endif
 }
