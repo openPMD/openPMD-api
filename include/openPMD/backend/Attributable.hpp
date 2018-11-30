@@ -212,6 +212,7 @@ template< typename T >
 inline void
 Attributable::initAttribute(std::string const& key, T const& value)
 {
+    std::cout << "initAttribute " << key << std::endl;
     auto it = m_attributes->lower_bound(key);
     if( it != m_attributes->end() && !m_attributes->key_comp()(key, it->first) )
     {

@@ -518,9 +518,17 @@ Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
 void
 Series::initDefaults()
 {
-    setOpenPMD(OPENPMD);
-    setOpenPMDextension(0);
-    setAttribute("basePath", std::string(BASEPATH));
+    if( this->IOHandler->accessType != AccessType::READ_ONLY )
+    {
+        setOpenPMD(OPENPMD);
+        setOpenPMDextension(0);
+        setAttribute("basePath", std::string(BASEPATH));
+    } else
+    {
+        initAttribute("openPMD", OPENPMD);
+        initAttribute("openPMDextension", 0);
+        initAttribute("basePath", std::string(BASEPATH));
+    }
 }
 
 void
@@ -661,7 +669,11 @@ Series::readFileBased(AccessType actualAccessType)
                               << "time series with fileBased iteration encoding. Loaded file is groupBased.\n";
                 } else
                     throw std::runtime_error("Unknown iterationEncoding: " + encoding);
-                initAttribute("iterationEncoding", encoding);
+
+                if( ! containsAttribute("iterationEncoding") )
+                    initAttribute("iterationEncoding", encoding);
+                //else
+                //    VERIFY(encoding == getAttribute("iterationEncoding"), "iterationEncoding must not change!");
             }
             else
                 throw std::runtime_error("Unexpected Attribute datatype for 'iterationEncoding'");
@@ -672,7 +684,8 @@ Series::readFileBased(AccessType actualAccessType)
             if( *aRead.dtype == DT::STRING )
             {
                 // written = false;
-                initAttribute("iterationFormat", Attribute(*aRead.resource).get< std::string >());
+                if( ! containsAttribute("iterationFormat") )
+                    initAttribute("iterationFormat", Attribute(*aRead.resource).get< std::string >());
                 // setIterationFormat(Attribute(*aRead.resource).get< std::string >());
                 // written = true;
             }
@@ -737,7 +750,8 @@ Series::readGroupBased()
     if( *aRead.dtype == DT::STRING )
     {
         written = false;
-        setIterationFormat(Attribute(*aRead.resource).get< std::string >());
+        initAttribute("iterationFormat", Attribute(*aRead.resource).get< std::string >());
+        // setIterationFormat(Attribute(*aRead.resource).get< std::string >());
         written = true;
     }
     else
@@ -755,6 +769,10 @@ Series::readGroupBased()
 void
 Series::readBase()
 {
+    // only initialize once per series, expect consistency
+    if( containsAttribute("openPMD") )
+        return;
+
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
 
