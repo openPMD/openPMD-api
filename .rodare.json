@@ -6,6 +6,11 @@
             "orcid": "0000-0001-8704-1769"
         },
         {
+            "affiliation": "Helmholtz-Zentrum Dresden-Rossendorf",
+            "name": "Poeschel, Franz",
+            "orcid": "0000-0001-7042-5088"
+        },
+        {
             "name": "Huebl, Axel",
             "affiliation": "Helmholtz-Zentrum Dresden-Rossendorf, TU Dresden",
             "orcid": "0000-0003-1943-7141"
@@ -22,11 +27,6 @@
             "affiliation": "Warsaw University of Technology",
             "name": "Stańczak, Dominik",
             "orcid": "0000-0001-6291-8843",
-            "type": "Other"
-        },
-        {
-            "affiliation": "Helmholtz-Zentrum Dresden-Rossendorf",
-            "name": "Poeschel, Franz",
             "type": "Other"
         }
     ],
