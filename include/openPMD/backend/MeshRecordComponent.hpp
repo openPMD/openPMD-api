@@ -40,7 +40,7 @@ class MeshRecordComponent : public RecordComponent
     friend class Mesh;
 
 private:
-    MeshRecordComponent();
+    MeshRecordComponent(std::shared_ptr< Writable > const& w);
     void read() override;
 
 public:

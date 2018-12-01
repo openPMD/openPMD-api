@@ -149,7 +149,7 @@ public:
     constexpr static char const * const SCALAR = "\vScalar";
 
 OPENPMD_protected:
-    RecordComponent();
+    RecordComponent(std::shared_ptr< Writable > const& w);
 
     void readBase();
 

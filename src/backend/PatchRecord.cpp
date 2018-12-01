@@ -37,7 +37,10 @@ PatchRecord::setUnitDimension(std::map< UnitDimension, double > const& udim)
     return *this;
 }
 
-PatchRecord::PatchRecord() = default;
+PatchRecord::PatchRecord(std::shared_ptr< Writable > const& w) :
+    BaseRecord< PatchRecordComponent >(w)
+{
+}
 
 void
 PatchRecord::flush_impl(std::string const& path)

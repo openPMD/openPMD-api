@@ -65,7 +65,7 @@ public:
     virtual std::array< double, 7 > unitDimension() const;
 
 protected:
-    BaseRecord();
+    BaseRecord(std::shared_ptr< Writable > const& w);
 
     void readBase();
 
@@ -85,13 +85,19 @@ BaseRecord< T_elem >::BaseRecord(BaseRecord const& b)
 { }
 
 template< typename T_elem >
-BaseRecord< T_elem >::BaseRecord()
+BaseRecord< T_elem >::BaseRecord(
+    std::shared_ptr< Writable > const& w
+)
         : Container< T_elem >(),
           m_containsScalar{std::make_shared< bool >(false)}
 {
-//    if( IOHandler && IOHandler->accessType != AccessType::READ_ONLY )
-//        this->setAttribute("unitDimension",
-//                           std::array< double, 7 >{{0., 0., 0., 0., 0., 0., 0.}});
+    if( w )
+        this->linkHierarchy( w );
+    std::cout << "BaseRecord constructor" << std::endl;
+    std::cout << this->IOHandler << std::endl;
+    if( this->IOHandler && this->IOHandler->accessType != AccessType::READ_ONLY )
+        this->setAttribute("unitDimension",
+                           std::array< double, 7 >{{0., 0., 0., 0., 0., 0., 0.}});
 }
 
 

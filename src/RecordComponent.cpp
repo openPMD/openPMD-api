@@ -31,11 +31,12 @@
 
 namespace openPMD
 {
-RecordComponent::RecordComponent()
-        : m_chunks{std::make_shared< std::queue< IOTask > >()},
+RecordComponent::RecordComponent(std::shared_ptr< Writable > const& w)
+        : BaseRecordComponent(w),
+          m_chunks{std::make_shared< std::queue< IOTask > >()},
           m_constantValue{std::make_shared< Attribute >(-1)}
 {
-    if( IOHandler && IOHandler->accessType != AccessType::READ_ONLY )
+    if( this->IOHandler && this->IOHandler->accessType != AccessType::READ_ONLY )
         setUnitSI(1);
     resetDataset(Dataset(Datatype::CHAR, {1}));
 }

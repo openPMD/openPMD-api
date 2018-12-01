@@ -28,11 +28,14 @@
 
 namespace openPMD
 {
-Iteration::Iteration()
+Iteration::Iteration(std::shared_ptr< Writable > const& w)
         : meshes{Container< Mesh >()},
           particles{Container< ParticleSpecies >()}
 {
-    if( IOHandler && IOHandler->accessType != AccessType::READ_ONLY )
+    if( w )
+        this->linkHierarchy(w);
+
+    if( this->IOHandler && this->IOHandler->accessType != AccessType::READ_ONLY )
     {
         setTime(static_cast< double >(0));
         setDt(static_cast< double >(1));

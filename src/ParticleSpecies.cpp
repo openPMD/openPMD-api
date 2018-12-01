@@ -25,7 +25,13 @@
 
 namespace openPMD
 {
-ParticleSpecies::ParticleSpecies() = default;
+ParticleSpecies::ParticleSpecies(std::shared_ptr< Writable > const& w) :
+    Container< Record >(),
+    particlePatches(w)
+{
+    if( w )
+        this->linkHierarchy(w);
+}
 
 void
 ParticleSpecies::read()

@@ -42,7 +42,7 @@ namespace openPMD
 {
 namespace traits
 {
-    template< typename T >
+    template< typename T, bool Init >
     struct GenerationPolicy;
 } // traits
 class AbstractFilePosition;
@@ -68,13 +68,16 @@ class Attributable
     friend Writable* getWritable(Attributable*);
     template< typename T_elem >
     friend class BaseRecord;
+    friend class BaseRecordComponent;
+    friend class ParticleSpecies;
+    friend class ParticlePatches;
     template<
         typename T,
         typename T_key,
         typename T_container
     >
     friend class Container;
-    template< typename T >
+    template< typename T, bool Init >
     friend struct traits::GenerationPolicy;
     friend class Iteration;
     friend class Series;

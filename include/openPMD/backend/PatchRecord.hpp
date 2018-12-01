@@ -39,9 +39,9 @@ public:
     PatchRecord& setUnitDimension(std::map< UnitDimension, double > const&);
 
 private:
-    PatchRecord();
+    PatchRecord(std::shared_ptr< Writable > const& w);
 
     void flush_impl(std::string const&) override;
     void read() override;
-};  //PatchRecord
+}; // PatchRecord
 } // openPMD

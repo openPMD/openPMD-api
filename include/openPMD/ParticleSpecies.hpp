@@ -41,7 +41,7 @@ public:
     ParticlePatches particlePatches;
 
 private:
-    ParticleSpecies();
+    ParticleSpecies(std::shared_ptr< Writable > const& w);
 
     void read();
     void flush(std::string const &) override;
@@ -50,7 +50,7 @@ private:
 namespace traits
 {
     template<>
-    struct GenerationPolicy< ParticleSpecies >
+    struct GenerationPolicy< ParticleSpecies, true >
     {
         template< typename T >
         void operator()(T & ret)
@@ -69,6 +69,28 @@ namespace traits
             npc.parent = np.parent;
             auto& npo = ret.particlePatches.init("numParticlesOffset");
             auto& npoc = npo.init(RecordComponent::SCALAR);
+            npoc.resetDataset(Dataset(determineDatatype<uint64_t>(), {1}));
+            npoc.parent = npo.parent;
+        }
+    };
+
+    template<>
+    struct GenerationPolicy< ParticleSpecies, false >
+    {
+        template< typename T >
+        void operator()(T & ret)
+        {
+            /* enforce these two RecordComponents as required by the standard */
+            ret["position"].setUnitDimension({{UnitDimension::L, 1}});
+            ret["positionOffset"].setUnitDimension({{UnitDimension::L, 1}});
+            ret.particlePatches.linkHierarchy(ret.m_writable);
+
+            auto& np = ret.particlePatches["numParticles"];
+            auto& npc = np[RecordComponent::SCALAR];
+            npc.resetDataset(Dataset(determineDatatype<uint64_t>(), {1}));
+            npc.parent = np.parent;
+            auto& npo = ret.particlePatches["numParticlesOffset"];
+            auto& npoc = npo[RecordComponent::SCALAR];
             npoc.resetDataset(Dataset(determineDatatype<uint64_t>(), {1}));
             npoc.parent = npo.parent;
         }

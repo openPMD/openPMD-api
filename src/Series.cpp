@@ -482,7 +482,7 @@ Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
     m_filenamePostfix = std::make_shared< std::string >(input->filenamePostfix);
     m_filenamePadding = std::make_shared< int >(input->filenamePadding);
 
-    if( IOHandler->accessType == AccessType::READ_ONLY || IOHandler->accessType == AccessType::READ_WRITE )
+    if( this->IOHandler->accessType == AccessType::READ_ONLY || this->IOHandler->accessType == AccessType::READ_WRITE )
     {
         /* Allow creation of values in Containers and setting of Attributes
          * Would throw for AccessType::READ_ONLY */

@@ -26,11 +26,13 @@
 
 namespace openPMD
 {
-Mesh::Mesh()
+Mesh::Mesh(std::shared_ptr< Writable > const& w) :
+    BaseRecord(w)
 {
-    if( IOHandler && IOHandler->accessType != AccessType::READ_ONLY )
+    std::cout << "mesh constructor!" << std::endl;
+    std::cout << this->IOHandler << std::endl;
+    if( this->IOHandler && this->IOHandler->accessType != AccessType::READ_ONLY )
     {
-
         setTimeOffset(0.f);
 
         setGeometry(Geometry::cartesian);
@@ -40,6 +42,10 @@ Mesh::Mesh()
         setGridSpacing(std::vector< double >{1});
         setGridGlobalOffset({0});
         setGridUnitSI(1);
+
+        std::cout << "set unit dimen!" << std::endl;
+        setAttribute("unitDimension",
+                     std::array< double, 7 >{{0., 0., 0., 0., 0., 0., 0.}});
     }
 }
 

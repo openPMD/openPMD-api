@@ -39,10 +39,13 @@ BaseRecordComponent::resetDatatype(Datatype d)
     return *this;
 }
 
-BaseRecordComponent::BaseRecordComponent()
+BaseRecordComponent::BaseRecordComponent(std::shared_ptr< Writable > const& w)
         : m_dataset{std::make_shared< Dataset >(Dataset(Datatype::UNDEFINED, {}))},
           m_isConstant{std::make_shared< bool >(false)}
-{ }
+{
+    if( w )
+        this->linkHierarchy(w);
+}
 
 Datatype
 BaseRecordComponent::getDatatype() const

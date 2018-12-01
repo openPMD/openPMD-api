@@ -23,7 +23,11 @@
 
 namespace openPMD
 {
-ParticlePatches::ParticlePatches() = default;
+ParticlePatches::ParticlePatches(std::shared_ptr< Writable > const& w)
+{
+    if( w )
+        this->linkHierarchy(w);
+}
 
 size_t
 ParticlePatches::numPatches() const

@@ -25,9 +25,11 @@
 
 namespace openPMD
 {
-Record::Record()
+Record::Record(std::shared_ptr< Writable > const& w) :
+    BaseRecord(w)
 {
-    // setTimeOffset(0.f);
+    if( this->IOHandler && this->IOHandler->accessType != AccessType::READ_ONLY )
+        setTimeOffset(0.f);
 }
 
 Record::Record(Record const&) = default;

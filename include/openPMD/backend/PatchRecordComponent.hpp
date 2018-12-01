@@ -65,7 +65,7 @@ public:
     //! @todo add support for constant patch record components
 
 OPENPMD_private:
-    PatchRecordComponent();
+    PatchRecordComponent(std::shared_ptr< Writable > const& w);
 
     void flush(std::string const&);
     void read();

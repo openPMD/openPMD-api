@@ -44,7 +44,7 @@ namespace traits
      * ::insert of a new element. The passed parameter is an iterator to the
      * newly added element.
      */
-    template< typename U >
+    template< typename U, bool Init = false >
     struct GenerationPolicy
     {
         template< typename T >
@@ -145,10 +145,10 @@ public:
         }
         else
         {
-            T t = T();
-            t.linkHierarchy(m_writable);
+            T t = T(m_writable);
+            // t.linkHierarchy(m_writable);
             auto& ret = m_container->insert({key, std::move(t)}).first->second;
-            traits::GenerationPolicy< T > gen;
+            traits::GenerationPolicy< T, true > gen;
             gen(ret);
             return ret;
         }
@@ -173,8 +173,8 @@ public:
                 throw std::out_of_range(out_of_range_msg(key));
             }
 
-            T t = T();
-            t.linkHierarchy(m_writable);
+            T t = T(m_writable);
+            // t.linkHierarchy(m_writable);
             auto& ret = m_container->insert({key, std::move(t)}).first->second;
             traits::GenerationPolicy< T > gen;
             gen(ret);
@@ -200,8 +200,8 @@ public:
                 throw std::out_of_range(out_of_range_msg(key));
             }
 
-            T t = T();
-            t.linkHierarchy(m_writable);
+            T t = T(m_writable);
+            // t.linkHierarchy(m_writable);
             auto& ret = m_container->insert({std::move(key), std::move(t)}).first->second;
             traits::GenerationPolicy< T > gen;
             gen(ret);

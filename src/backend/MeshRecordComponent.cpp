@@ -23,10 +23,10 @@
 
 namespace openPMD
 {
-MeshRecordComponent::MeshRecordComponent()
-        : RecordComponent()
+MeshRecordComponent::MeshRecordComponent(std::shared_ptr< Writable > const& w)
+        : RecordComponent(w)
 {
-    if( IOHandler && IOHandler->accessType != AccessType::READ_ONLY )
+    if( this->IOHandler && this->IOHandler->accessType != AccessType::READ_ONLY )
         setPosition(std::vector< double >{0});
 }
 

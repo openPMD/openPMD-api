@@ -29,7 +29,8 @@ namespace openPMD
 PatchRecordComponent&
 PatchRecordComponent::setUnitSI(double usi)
 {
-    setAttribute("unitSI", usi);
+    if( this->IOHandler && this->IOHandler->accessType != AccessType::READ_ONLY )
+        setAttribute("unitSI", usi);
     return *this;
 }
 
@@ -61,8 +62,9 @@ PatchRecordComponent::getExtent() const
     return m_dataset->extent;
 }
 
-PatchRecordComponent::PatchRecordComponent()
-    : m_chunks{std::make_shared< std::queue< IOTask > >()}
+PatchRecordComponent::PatchRecordComponent(std::shared_ptr< Writable > const& w)
+    : BaseRecordComponent{w},
+      m_chunks{std::make_shared< std::queue< IOTask > >()}
 {
     setUnitSI(1);
 }

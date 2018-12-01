@@ -39,7 +39,7 @@ namespace openPMD
         size_t numPatches() const;
 
     private:
-        ParticlePatches();
+        ParticlePatches(std::shared_ptr< Writable > const& w);
         void read();
     }; // ParticlePatches
 

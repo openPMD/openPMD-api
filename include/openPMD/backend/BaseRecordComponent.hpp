@@ -56,7 +56,7 @@ public:
     Datatype getDatatype() const;
 
 OPENPMD_protected:
-    BaseRecordComponent();
+    BaseRecordComponent(std::shared_ptr< Writable > const& w);
 
     std::shared_ptr< Dataset > m_dataset;
     std::shared_ptr< bool > m_isConstant;

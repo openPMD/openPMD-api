@@ -90,7 +90,7 @@ public:
     Container< ParticleSpecies > particles; //particleSpecies?
 
 private:
-    Iteration();
+    Iteration(std::shared_ptr< Writable > const& w);
 
     void flushFileBased(std::string const&, uint64_t);
     void flushGroupBased(uint64_t);

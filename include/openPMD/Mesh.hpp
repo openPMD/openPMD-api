@@ -175,7 +175,7 @@ public:
     Mesh& setTimeOffset(T timeOffset);
 
 private:
-    Mesh();
+    Mesh(std::shared_ptr< Writable > const& w);
 
     void flush_impl(std::string const&) override;
     void read() override;
