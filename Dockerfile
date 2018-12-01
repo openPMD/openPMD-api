@@ -44,7 +44,7 @@ RUN        if [ ! -d $HOME/src/openPMD-api/samples/git-sample/ ]; then \
 
 ARG CMAKE_VERSION
 ARG CMAKE_PATCH
-# install CMake (can be deprecated when CMake >=3.10 is default in 16.04)
+# install CMake (can be deprecated when CMake >=3.11 is default)
 RUN         cd $CACHE \
             && sh cmake-${CMAKE_VERSION}.${CMAKE_PATCH}-Linux-x86_64.sh --prefix=/usr --exclude-subdir
 

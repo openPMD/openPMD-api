@@ -1,14 +1,14 @@
 packages:
   cmake:
-    version: [3.10.0]
+    version: [3.11.0]
     paths:
-      cmake@3.10.0%gcc@4.8.5 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.10.0
-      cmake@3.10.0%gcc@4.9.4 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.10.0
-      cmake@3.10.0%gcc@6.4.0 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.10.0
-      cmake@3.10.0%gcc@7.3.0 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.10.0
-      cmake@3.10.0%gcc@8.1.0 arch=linux-ubuntu16-x86_64: /home/travis/.cache/cmake-3.10.0
-      cmake@3.10.0%clang@5.0.0 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.10.0
-      cmake@3.10.0%clang@9.1.0 arch=darwin-highsierra-x86_64: /Applications/CMake.app/Contents/
+      cmake@3.11.0%gcc@4.8.5 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.11.0
+      cmake@3.11.0%gcc@4.9.4 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.11.0
+      cmake@3.11.0%gcc@6.4.0 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.11.0
+      cmake@3.11.0%gcc@7.3.0 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.11.0
+      cmake@3.11.0%gcc@8.1.0 arch=linux-ubuntu16-x86_64: /home/travis/.cache/cmake-3.11.0
+      cmake@3.11.0%clang@5.0.0 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.11.0
+      cmake@3.11.0%clang@9.1.0 arch=darwin-highsierra-x86_64: /Applications/CMake.app/Contents/
     buildable: False
   openmpi:
     version: [1.6.5]
