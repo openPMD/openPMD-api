@@ -1,8 +1,6 @@
 /* Running this test in parallel with MPI requires MPI::Init.
  * To guarantee a correct call to Init, launch the tests manually.
  */
-#define CATCH_CONFIG_RUNNER
-
 #include "openPMD/openPMD.hpp"
 
 #include <catch2/catch.hpp>
@@ -19,37 +17,7 @@
 
 using namespace openPMD;
 
-
-int main(int argc, char *argv[])
-{
-    MPI_Init(&argc, &argv);
-
-    Catch::Session session;
-    int result = 0;
-    {
-        // Indicates a command line parsing
-        result = session.applyCommandLine( argc, argv );
-        // RT tests
-        if( result == 0 )
-            result = session.run();
-    }
-    MPI_Finalize();
-    return result;
-}
 #else
-int main(int argc, char *argv[])
-{
-    Catch::Session session;
-    int result = 0;
-    {
-        // Indicates a command line parsing
-        result = session.applyCommandLine( argc, argv );
-        // RT tests
-        if( result == 0 )
-            result = session.run();
-    }
-    return result;
-}
 
 TEST_CASE( "none", "[parallel]" )
 { }

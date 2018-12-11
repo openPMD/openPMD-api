@@ -1,5 +1,3 @@
-#define CATCH_CONFIG_MAIN
-
 // expose private and protected members for invasive testing
 #if openPMD_USE_INVASIVE_TESTS
 #   define OPENPMD_private public
@@ -15,6 +13,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <sstream>
+#include <iostream>
 
 using namespace openPMD;
 

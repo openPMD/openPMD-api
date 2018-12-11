@@ -596,6 +596,28 @@ if(openPMD_USE_INVASIVE_TESTS)
 endif()
 
 if(BUILD_TESTING)
+    # compile Catch2 implementation part separately
+    add_library(CatchRunner test/CatchRunner.cpp)  # Always MPI_Init with Serial Fallback
+    add_library(CatchMain   test/CatchMain.cpp)    # Serial only
+    target_compile_features(CatchRunner PUBLIC cxx_std_11)
+    target_compile_features(CatchMain   PUBLIC cxx_std_11)
+    set_target_properties(CatchRunner CatchMain PROPERTIES
+        CXX_EXTENSIONS OFF
+        CXX_STANDARD_REQUIRED ON
+        POSITION_INDEPENDENT_CODE ON
+        WINDOWS_EXPORT_ALL_SYMBOLS ON
+    )
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+        target_compile_options(CatchRunner PUBLIC "/bigobj")
+        target_compile_options(CatchMain   PUBLIC "/bigobj")
+    endif()
+    target_link_libraries(CatchRunner PRIVATE openPMD::thirdparty::Catch2)
+    target_link_libraries(CatchMain   PRIVATE openPMD::thirdparty::Catch2)
+    if(openPMD_HAVE_MPI)
+        target_link_libraries(CatchRunner PUBLIC MPI::MPI_C MPI::MPI_CXX)
+        target_compile_definitions(CatchRunner PUBLIC "-DopenPMD_HAVE_MPI=1")
+    endif()
+
     foreach(testname ${openPMD_TEST_NAMES})
         add_executable(${testname}Tests test/${testname}Test.cpp)
 
@@ -624,6 +646,11 @@ if(BUILD_TESTING)
         endif()
         target_link_libraries(${testname}Tests PRIVATE openPMD)
         target_link_libraries(${testname}Tests PRIVATE openPMD::thirdparty::Catch2)
+        if(${testname} MATCHES "Parallel.+$")
+            target_link_libraries(${testname}Tests PRIVATE CatchRunner)
+        else()
+            target_link_libraries(${testname}Tests PRIVATE CatchMain)
+        endif()
     endforeach()
 endif()
 
