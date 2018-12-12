@@ -21,12 +21,8 @@
 
 #pragma once
 
-#if openPMD_HAVE_MPI
-
-
 #include "openPMD/Dataset.hpp"
 #include "openPMD/benchmark/mpi/BlockSlicer.hpp"
-#include <mpi.h>
 
 
 namespace openPMD
@@ -45,8 +41,7 @@ namespace openPMD
         > sliceBlock(
             Extent & totalExtent,
             int size,
-            MPI_Comm comm
+            int rank
         ) override;
     };
 }
-#endif

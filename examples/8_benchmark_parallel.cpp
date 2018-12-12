@@ -1,11 +1,10 @@
 #include <openPMD/openPMD.hpp>
-#include <openPMD/Series.hpp>
 #include <openPMD/benchmark/mpi/MPIBenchmark.hpp>
 #include <openPMD/benchmark/mpi/RandomDatasetFiller.hpp>
 #include <openPMD/benchmark/mpi/OneDimensionalBlockSlicer.hpp>
 
 #if openPMD_HAVE_MPI
-#include <mpi.h>
+#   include <mpi.h>
 #endif
 
 #include <iostream>
@@ -100,8 +99,7 @@ int main(
     // Take notice that results will be collected into the root rank's report object, the other
     // ranks' reports will be empty. The root rank is specified by the first parameter of runBenchmark,
     // the default being 0.
-    auto
-        res =
+    auto res =
         benchmark.runBenchmark<std::chrono::high_resolution_clock>();
 
     int rank;
@@ -109,16 +107,11 @@ int main(
         MPI_COMM_WORLD,
         &rank
     );
-    if (rank == 0)
+    if( rank == 0 )
     {
-        for (auto
-                 it =
-                 res.durations
-                     .begin();
-             it !=
-             res.durations
-                 .end();
-             it++)
+        for( auto it = res.durations.begin();
+             it != res.durations.end();
+             it++ )
         {
             auto time = it->second;
             std::cout << "on rank " << std::get<res.RANK>(it->first)
