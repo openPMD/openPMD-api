@@ -38,7 +38,10 @@ Other
 
 - Docs: upgrade guide added #385
 - CI: GCC 8.1.0 & Python 3.7.0 #376
-- CMake: treat third party libraries properly as ``IMPORTED`` #389
+- CMake:
+
+  - treat third party libraries properly as ``IMPORTED`` #389
+  - Catch2: separate implementation and tests #399 #400
 
 
 0.6.2-alpha
