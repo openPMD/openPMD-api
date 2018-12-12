@@ -1,0 +1,142 @@
+{
+  "attributes": {
+    "basePath": {
+      "datatype": "STRING",
+      "value": "/data/%T/"
+    },
+    "iterationEncoding": {
+      "datatype": "STRING",
+      "value": "groupBased"
+    },
+    "iterationFormat": {
+      "datatype": "STRING",
+      "value": "/data/%T/"
+    },
+    "meshesPath": {
+      "datatype": "STRING",
+      "value": "meshes/"
+    },
+    "openPMD": {
+      "datatype": "STRING",
+      "value": "1.1.0"
+    },
+    "openPMDextension": {
+      "datatype": "UINT",
+      "value": 0
+    }
+  },
+  "data": {
+    "1": {
+      "attributes": {
+        "dt": {
+          "datatype": "DOUBLE",
+          "value": 1
+        },
+        "time": {
+          "datatype": "DOUBLE",
+          "value": 0
+        },
+        "timeUnitSI": {
+          "datatype": "DOUBLE",
+          "value": 1
+        }
+      },
+      "meshes": {
+        "rho": {
+          "attributes": {
+            "axisLabels": {
+              "datatype": "VEC_STRING",
+              "value": [
+                "x"
+              ]
+            },
+            "dataOrder": {
+              "datatype": "STRING",
+              "value": "C"
+            },
+            "geometry": {
+              "datatype": "STRING",
+              "value": "cartesian"
+            },
+            "gridGlobalOffset": {
+              "datatype": "VEC_DOUBLE",
+              "value": [
+                0
+              ]
+            },
+            "gridSpacing": {
+              "datatype": "VEC_DOUBLE",
+              "value": [
+                1
+              ]
+            },
+            "gridUnitSI": {
+              "datatype": "DOUBLE",
+              "value": 1
+            },
+            "position": {
+              "datatype": "VEC_DOUBLE",
+              "value": [
+                0
+              ]
+            },
+            "timeOffset": {
+              "datatype": "FLOAT",
+              "value": 0
+            },
+            "unitDimension": {
+              "datatype": "ARR_DBL_7",
+              "value": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "unitSI": {
+              "datatype": "DOUBLE",
+              "value": 1
+            }
+          },
+          "data": [
+            [
+              0,
+              1,
+              2
+            ],
+            [
+              3,
+              4,
+              5
+            ],
+            [
+              6,
+              7,
+              8
+            ]
+          ],
+          "datatype": "DOUBLE"
+        }
+      }
+    }
+  },
+  "platform_byte_widths": {
+    "BOOL": 1,
+    "CHAR": 1,
+    "DOUBLE": 8,
+    "FLOAT": 4,
+    "INT": 4,
+    "LONG": 8,
+    "LONGLONG": 8,
+    "LONG_DOUBLE": 16,
+    "SHORT": 2,
+    "UCHAR": 1,
+    "UINT": 4,
+    "ULONG": 8,
+    "ULONGLONG": 8,
+    "USHORT": 2
+  }
+}

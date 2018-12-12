@@ -862,6 +862,8 @@ determineFormat(std::string const& filename)
         return Format::HDF5;
     if( auxiliary::ends_with(filename, ".bp") )
         return Format::ADIOS1;
+    if( auxiliary::ends_with(filename, ".json") )
+        return Format::JSON;
 
     if( std::string::npos != filename.find('.') /* extension is provided */ )
         throw std::runtime_error("Unknown file format. Did you append a valid filename extension?");
@@ -879,6 +881,8 @@ suffix(Format f)
         case Format::ADIOS1:
         case Format::ADIOS2:
             return ".bp";
+        case Format::JSON:
+            return ".json";
         default:
             return "";
     }
@@ -892,6 +896,7 @@ cleanFilename(std::string const& filename, Format f)
         case Format::HDF5:
         case Format::ADIOS1:
         case Format::ADIOS2:
+        case Format::JSON:
             return auxiliary::replace_last(filename, suffix(f), "");
         default:
             return filename;
@@ -950,6 +955,16 @@ matcher(std::string const& prefix, int padding, std::string const& postfix, Form
             else
                 nameReg += "+";
             nameReg += + ")" + postfix + ".bp$";
+            return buildMatcher(nameReg);
+        }
+        case Format::JSON:
+        {
+            std::string nameReg = "^" + prefix + "([[:digit:]]";
+            if( padding != 0 )
+                nameReg += "{" + std::to_string(padding) + "}";
+            else
+                nameReg += "+";
+            nameReg += + ")" + postfix + ".json$";
             return buildMatcher(nameReg);
         }
         default:

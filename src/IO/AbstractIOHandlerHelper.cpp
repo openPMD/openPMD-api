@@ -24,6 +24,7 @@
 #include "openPMD/IO/ADIOS/ParallelADIOS1IOHandler.hpp"
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
+#include "openPMD/IO/JSON/JSONIOHandler.hpp"
 
 
 namespace openPMD
@@ -65,6 +66,8 @@ namespace openPMD
                 return std::make_shared< ADIOS1IOHandler >(path, accessType);
             case Format::ADIOS2:
                 throw std::runtime_error("ADIOS2 backend not yet implemented");
+            case Format::JSON:
+                return std::make_shared< JSONIOHandler >(path, accessType);
             default:
                 return std::make_shared< DummyIOHandler >(path, accessType);
         }

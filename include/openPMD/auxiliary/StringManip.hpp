@@ -25,6 +25,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <cassert>
 
 
 namespace openPMD
@@ -109,11 +110,23 @@ replace_all(std::string s,
             std::string const& target,
             std::string const& replacement)
 {
-    std::string::size_type pos;
-    while( (pos = s.find(target)) != std::string::npos )
-        s.replace(pos, target.size(), replacement);
+    std::string::size_type pos = 0;
+    auto tsize = target.size();
+    assert(tsize > 0);
+    auto rsize = replacement.size();
+    while (true)
+    {
+        pos = s.find(target, pos);
+        if (pos == std::string::npos)
+            break;
+        s.replace(pos, tsize, replacement);
+        // Allow replacing recursively, but only if
+        // the next replaced substring overlaps with
+        // some parts of the original word.
+        // This avoids loops.
+        pos += rsize - std::min(tsize - 1, rsize);
+    }
     s.shrink_to_fit();
-
     return s;
 }
 

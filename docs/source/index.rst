@@ -84,6 +84,17 @@ Development
    dev/doxygen
    dev/release
 
+********
+Backends
+********
+.. toctree::
+   :caption: BACKENDS
+   :maxdepth: 1
+   :hidden:
+
+   backends/json
+
+
 *********
 Utilities
 *********
@@ -93,3 +104,4 @@ Utilities
    :hidden:
 
    utilities/benchmark.rst
+

@@ -1,4 +1,4 @@
-.. usage-serial:
+.. _usage-serial:
 
 Serial API
 ==========

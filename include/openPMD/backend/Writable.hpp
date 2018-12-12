@@ -69,6 +69,7 @@ class Writable
     friend class ADIOS2IOHandlerImpl;
     friend class HDF5IOHandlerImpl;
     friend class ParallelHDF5IOHandlerImpl;
+    friend class JSONIOHandlerImpl;
     friend struct test::TestHelper;
     friend std::string concrete_h5_file_position(Writable*);
     friend std::string concrete_bp1_file_position(Writable*);

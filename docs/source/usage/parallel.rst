@@ -1,4 +1,4 @@
-.. usage-parallel:
+.. _usage-parallel:
 
 Parallel API
 ============

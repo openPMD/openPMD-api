@@ -1,4 +1,4 @@
-/* Copyright 2017-2018 Fabian Koller
+/* Copyright 2017-2018 Franz Pöschel
  *
  * This file is part of openPMD-api.
  *
@@ -18,19 +18,30 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
+
 #pragma once
+
+
+#include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/JSON/JSONIOHandlerImpl.hpp"
 
 
 namespace openPMD
 {
-/** File format to use during IO.
- */
-enum class Format
-{
-    HDF5,
-    ADIOS1,
-    ADIOS2,
-    JSON,
-    DUMMY
-};  //Format
+    class JSONIOHandler :
+        public AbstractIOHandler
+    {
+    public:
+        JSONIOHandler(
+            std::string path,
+            AccessType at
+        );
+
+        virtual ~JSONIOHandler( );
+
+        std::future< void > flush( ) override;
+
+    private:
+        JSONIOHandlerImpl m_impl;
+    };
 } // openPMD
