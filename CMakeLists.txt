@@ -127,8 +127,10 @@ else()
 endif()
 if(openPMD_HAVE_JSON)
     add_library(openPMD::thirdparty::nlohmann_json INTERFACE IMPORTED)
-    target_link_libraries(openPMD::thirdparty::nlohmann_json
-        INTERFACE nlohmann_json::nlohmann_json)
+    #target_link_libraries(openPMD::thirdparty::nlohmann_json
+    #    INTERFACE nlohmann_json::nlohmann_json)
+    get_target_property(lib_include_dirs nlohmann_json::nlohmann_json INTERFACE_INCLUDE_DIRECTORIES)
+    target_include_directories(openPMD::thirdparty::nlohmann_json SYSTEM INTERFACE ${lib_include_dirs})
 endif()
 
 # external library: HDF5 (optional)
