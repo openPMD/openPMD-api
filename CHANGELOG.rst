@@ -27,7 +27,7 @@ Features
   - works with Python 3.7 #376
   - setup.py for sdist #240
 - Backends: JSON support added #384 #393 #338
-- Parallel benchmark added #346 #398
+- Parallel benchmark added #346 #398 #402
 
 Bug Fixes
 """""""""
@@ -43,6 +43,7 @@ Other
 
   - treat third party libraries properly as ``IMPORTED`` #389
   - Catch2: separate implementation and tests #399 #400
+  - enable check for more warnings #401
 
 
 0.6.3-alpha
