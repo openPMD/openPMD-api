@@ -127,10 +127,8 @@ else()
 endif()
 if(openPMD_HAVE_JSON)
     add_library(openPMD::thirdparty::nlohmann_json INTERFACE IMPORTED)
-    #target_link_libraries(openPMD::thirdparty::nlohmann_json
-    #    INTERFACE nlohmann_json::nlohmann_json)
-    get_target_property(lib_include_dirs nlohmann_json::nlohmann_json INTERFACE_INCLUDE_DIRECTORIES)
-    target_include_directories(openPMD::thirdparty::nlohmann_json SYSTEM INTERFACE ${lib_include_dirs})
+    target_link_libraries(openPMD::thirdparty::nlohmann_json
+        INTERFACE nlohmann_json::nlohmann_json)
 endif()
 
 # external library: HDF5 (optional)
@@ -387,7 +385,9 @@ endif()
 
 # JSON Backend
 if(openPMD_HAVE_JSON)
-    target_link_libraries(openPMD PRIVATE openPMD::thirdparty::nlohmann_json)
+    #target_link_libraries(openPMD PRIVATE openPMD::thirdparty::nlohmann_json)
+    target_include_directories(openPMD SYSTEM PRIVATE
+        $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_JSON=1")
 else()
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_JSON=0")
