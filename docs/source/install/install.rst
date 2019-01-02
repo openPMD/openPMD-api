@@ -70,7 +70,7 @@ Linux & OSX
 
    git clone https://github.com/openPMD/openPMD-api.git
 
-   mkdir -p openPMD-api-build
+   mkdir openPMD-api-build
    cd openPMD-api-build
 
    # optional: for full tests
@@ -89,20 +89,24 @@ Linux & OSX
    # optional
    ctest
 
-   # sudo might be required required for system paths
+   # sudo might be required for system paths
    cmake --build . --target install
 
 Windows
 ^^^^^^^
 
-Replace the last commands with:
+The process is basically similar to Linux & OSX, with just a couple of minor tweaks.
+Use ``ps ..\openPMD-api\.travis\download_samples.ps1`` to download sample files for tests (optional).
+Replace the last three commands with
 
 .. code-block:: cmd
 
    cmake --build . --config Release
 
+   # optional
    ctest -C Release
 
+   # administrative privileges might be required for system paths
    cmake --build . --config Release --target install
 
 Post "From Source" Install
