@@ -1,4 +1,4 @@
-/* Copyright 2017-2018 Fabian Koller, Axel Huebl
+/* Copyright 2017-2019 Fabian Koller, Axel Huebl
  *
  * This file is part of openPMD-api.
  *
