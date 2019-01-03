@@ -38,7 +38,7 @@ PatchRecordComponent&
 PatchRecordComponent::resetDataset(Dataset d)
 {
     if( written )
-        throw std::runtime_error("A Records Dataset can not (yet) be changed after it has been written.");
+        throw std::runtime_error("A PatchRecords Dataset can not (yet) be changed after it has been written.");
     if( d.extent.empty() )
       throw std::runtime_error("Dataset extent must be at least 1D.");
     if( std::any_of(d.extent.begin(), d.extent.end(),
@@ -66,7 +66,13 @@ PatchRecordComponent::PatchRecordComponent(std::shared_ptr< Writable > const& w)
     : BaseRecordComponent{w},
       m_chunks{std::make_shared< std::queue< IOTask > >()}
 {
-    setUnitSI(1);
+    if( this->IOHandler && this->IOHandler->accessType != AccessType::READ_ONLY )
+        setUnitSI(1);
+    //else
+    //{
+    //    written = true;
+    //    dirty = false;
+    //}
 }
 
 void

@@ -88,7 +88,8 @@ PatchRecord::read()
     Parameter< Operation::OPEN_DATASET > dOpen;
     for( auto const& component_name : *dList.datasets )
     {
-        PatchRecordComponent& prc = (*this)[component_name];
+        //PatchRecordComponent& prc = (*this)[component_name];
+        PatchRecordComponent& prc = this->init(component_name);
         dOpen.name = component_name;
         IOHandler->enqueue(IOTask(&prc, dOpen));
         IOHandler->flush();

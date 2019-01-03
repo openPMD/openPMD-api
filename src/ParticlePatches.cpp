@@ -41,6 +41,7 @@ ParticlePatches::numPatches() const
 void
 ParticlePatches::read()
 {
+    std::cout << "ParticlePatches::read()" << std::endl;
     Parameter< Operation::LIST_PATHS > pList;
     IOHandler->enqueue(IOTask(this, pList));
     IOHandler->flush();
@@ -48,7 +49,9 @@ ParticlePatches::read()
     Parameter< Operation::OPEN_PATH > pOpen;
     for( auto const& record_name : *pList.paths )
     {
-        PatchRecord& pr = (*this)[record_name];
+        std::cout << "ParticlePatches::read() record_name: " << record_name << std::endl;
+        //PatchRecord& pr = (*this)[record_name];
+        PatchRecord& pr = this->init(record_name);
         pOpen.path = record_name;
         IOHandler->enqueue(IOTask(&pr, pOpen));
         pr.read();
@@ -61,13 +64,18 @@ ParticlePatches::read()
     Parameter< Operation::OPEN_DATASET > dOpen;
     for( auto const& component_name : *dList.datasets )
     {
+        std::cout << "ParticlePatches::read() component_name: " << component_name << std::endl;
         if( !("numParticles" == component_name || "numParticlesOffset" == component_name) )
             throw std::runtime_error("Unexpected record component" + component_name + "in particlePatch");
 
-        PatchRecord& pr = Container< PatchRecord >::operator[](component_name);
-        PatchRecordComponent& prc = pr[RecordComponent::SCALAR];
+        std::cout << "init PatchRecord" << std::endl;
+        // PatchRecord& pr = Container< PatchRecord >::init(component_name);
+        PatchRecord& pr = this->init(component_name);
+        std::cout << "init PatchRecordComponent" << std::endl;
+        PatchRecordComponent& prc = pr.init(RecordComponent::SCALAR);
         prc.parent = pr.parent;
         dOpen.name = component_name;
+        std::cout << "iohandler" << std::endl;
         IOHandler->enqueue(IOTask(&pr, dOpen));
         IOHandler->enqueue(IOTask(&prc, dOpen));
         IOHandler->flush();
