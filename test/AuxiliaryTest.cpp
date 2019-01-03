@@ -30,8 +30,10 @@ namespace test
 {
 struct TestHelper : public Attributable
 {
-    TestHelper()
+    TestHelper(std::shared_ptr< Writable > const& /*w*/)
     {
+        //if( w )
+        //    this->linkHierarchy( w );
         m_writable->IOHandler = createIOHandler(".", AccessType::CREATE, Format::DUMMY);
         IOHandler = m_writable->IOHandler.get();
     }
@@ -96,8 +98,8 @@ namespace test
 {
 struct S : public TestHelper
 {
-    S()
-        : TestHelper()
+    S(std::shared_ptr< Writable > const& w)
+        : TestHelper(w)
     { }
 };
 } // test
@@ -123,8 +125,8 @@ namespace test
 {
 struct structure : public TestHelper
 {
-    structure()
-        : TestHelper()
+    structure(std::shared_ptr< Writable > const& w)
+        : TestHelper(w)
     { }
 
     std::string string_ = "Hello, world!";
@@ -145,7 +147,7 @@ TEST_CASE( "container_retrieve_test", "[auxiliary]" )
     c.m_writable->IOHandler = createIOHandler(".", AccessType::CREATE, Format::DUMMY);
     c.IOHandler = c.m_writable->IOHandler.get();
 
-    structure s;
+    structure s(c.m_writable);
     std::string text = "The openPMD standard, short for open standard for particle-mesh data files is not a file format per se. It is a standard for meta data and naming schemes.";
     s.setText(text);
     c["entry"] = s;
@@ -203,12 +205,12 @@ namespace test
 {
 struct Widget : public TestHelper
 {
-    Widget()
-        : TestHelper()
+    Widget(std::shared_ptr< Writable > const& w)
+        : TestHelper(w)
     { }
 
-    Widget(int)
-        : TestHelper()
+    Widget(std::shared_ptr< Writable > const& w, int)
+        : TestHelper(w)
     { }
 };
 } // test
@@ -222,13 +224,13 @@ TEST_CASE( "container_access_test", "[auxiliary]" )
     c.m_writable->IOHandler = createIOHandler(".", AccessType::CREATE, Format::DUMMY);
     c.IOHandler = c.m_writable->IOHandler.get();
 
-    c["firstWidget"] = Widget(0);
+    c["firstWidget"] = Widget(c.m_writable, 0);
     REQUIRE(c.size() == 1);
 
-    c["firstWidget"] = Widget(1);
+    c["firstWidget"] = Widget(c.m_writable, 1);
     REQUIRE(c.size() == 1);
 
-    c["secondWidget"] = Widget(2);
+    c["secondWidget"] = Widget(c.m_writable, 2);
     REQUIRE(c.size() == 2);
     REQUIRE(c.erase("firstWidget") == true);
     REQUIRE(c.size() == 1);
@@ -254,8 +256,8 @@ namespace test
 {
 struct AttributedWidget : public TestHelper
 {
-    AttributedWidget()
-        : TestHelper()
+    AttributedWidget(std::shared_ptr< Writable > const& w)
+        : TestHelper(w)
     { }
 
     Attribute::resource get(std::string key)
@@ -269,7 +271,7 @@ struct AttributedWidget : public TestHelper
 TEST_CASE( "attributable_access_test", "[auxiliary]" )
 {
     using AttributedWidget = openPMD::test::AttributedWidget;
-    AttributedWidget a = AttributedWidget();
+    AttributedWidget a = AttributedWidget(nullptr);
 
     a.setAttribute("key", std::string("value"));
     REQUIRE(a.numAttributes() == 1);
@@ -302,8 +304,8 @@ namespace test
 {
 struct Dotty : public TestHelper
 {
-    Dotty()
-        : TestHelper()
+    Dotty(std::shared_ptr< Writable > const& w)
+        : TestHelper(w)
     {
         setAtt1(1);
         setAtt2(2);
@@ -322,7 +324,7 @@ struct Dotty : public TestHelper
 
 TEST_CASE( "dot_test", "[auxiliary]" )
 {
-    openPMD::test::Dotty d;
+    openPMD::test::Dotty d(nullptr);
     REQUIRE(d.att1() == 1);
     REQUIRE(d.att2() == static_cast<double>(2));
     REQUIRE(d.att3() == "3");
