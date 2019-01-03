@@ -192,6 +192,7 @@ template< typename T_elem >
 inline void
 BaseRecord< T_elem >::readBase()
 {
+    std::cout << "BaseRecord::readBase()" << std::endl;
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
 

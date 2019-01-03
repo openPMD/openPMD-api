@@ -194,6 +194,7 @@ Mesh::setTimeOffset(T to)
 void
 Mesh::flush_impl(std::string const& name)
 {
+    std::cout << "Mesh::flush_impl" << std::endl;
     if( IOHandler->accessType == AccessType::READ_ONLY )
     {
         for( auto& comp : *this )
@@ -364,6 +365,7 @@ Mesh::read()
         Parameter< Operation::OPEN_PATH > pOpen;
         for( auto const& component : *pList.paths )
         {
+            std::cout << "Mesh OPEN_PATH component: " << component << std::endl;
             MeshRecordComponent& rc = this->init(component);
             pOpen.path = component;
             IOHandler->enqueue(IOTask(&rc, pOpen));

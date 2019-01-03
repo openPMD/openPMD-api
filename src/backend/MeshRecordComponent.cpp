@@ -26,6 +26,7 @@ namespace openPMD
 MeshRecordComponent::MeshRecordComponent(std::shared_ptr< Writable > const& w)
         : RecordComponent(w)
 {
+    std::cout << "MeshRecordComponent constructor" << std::endl;
     if( this->IOHandler && this->IOHandler->accessType != AccessType::READ_ONLY )
         setPosition(std::vector< double >{0});
 }
@@ -33,6 +34,7 @@ MeshRecordComponent::MeshRecordComponent(std::shared_ptr< Writable > const& w)
 void
 MeshRecordComponent::read()
 {
+    std::cout << "MeshRecordComponent::read()" << std::endl;
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
 

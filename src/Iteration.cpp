@@ -255,8 +255,10 @@ Iteration::read()
     {
         Parameter< Operation::OPEN_PATH > pOpen;
         pOpen.path = s->meshesPath();
+        std::cout << "iteration: open meshes path..." << std::endl;
         IOHandler->enqueue(IOTask(&meshes, pOpen));
 
+        std::cout << "iteration: meshes read attributes..." << std::endl;
         meshes.readAttributes();
 
         /* obtain all non-scalar meshes */
@@ -266,6 +268,7 @@ Iteration::read()
         Parameter< Operation::LIST_ATTS > aList;
         for( auto const& mesh_name : *pList.paths )
         {
+            std::cout << "iteration: mesh.init(" << mesh_name << ")" << std::endl;
             Mesh& m = meshes.init(mesh_name);
             pOpen.path = mesh_name;
             aList.attributes->clear();
@@ -279,6 +282,7 @@ Iteration::read()
             auto shape = std::find(att_begin, att_end, "shape");
             if( value != att_end && shape != att_end )
             {
+                std::cout << "iteration: mesh contains constant scalar" << std::endl;
                 *m.m_containsScalar = true;
                 MeshRecordComponent& mrc = m.init(MeshRecordComponent::SCALAR);
                 mrc.parent = m.parent;

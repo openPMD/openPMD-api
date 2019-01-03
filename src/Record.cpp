@@ -28,6 +28,7 @@ namespace openPMD
 Record::Record(std::shared_ptr< Writable > const& w) :
     BaseRecord(w)
 {
+    std::cout << "Record constructor!" << std::endl;
     if( this->IOHandler && this->IOHandler->accessType != AccessType::READ_ONLY )
         setTimeOffset(0.f);
 }
@@ -51,6 +52,7 @@ Record::setUnitDimension(std::map< UnitDimension, double > const& udim)
 void
 Record::flush_impl(std::string const& name)
 {
+    std::cout << "Record::flush_impl" << std::endl;
     if( IOHandler->accessType == AccessType::READ_ONLY )
     {
         for( auto& comp : *this )
@@ -90,6 +92,7 @@ Record::flush_impl(std::string const& name)
 void
 Record::read()
 {
+    std::cout << "Record::read()" << std::endl;
     if( *m_containsScalar )
     {
         std::cout << "record contains scalar!" << std::endl;
@@ -124,6 +127,7 @@ Record::read()
         Parameter< Operation::OPEN_PATH > pOpen;
         for( auto const& component : *pList.paths )
         {
+            std::cout << "Record OPEN_PATH component: " << component << std::endl;
             RecordComponent& rc = this->init(component);
             pOpen.path = component;
             IOHandler->enqueue(IOTask(&rc, pOpen));

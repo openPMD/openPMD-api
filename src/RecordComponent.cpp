@@ -36,9 +36,17 @@ RecordComponent::RecordComponent(std::shared_ptr< Writable > const& w)
           m_chunks{std::make_shared< std::queue< IOTask > >()},
           m_constantValue{std::make_shared< Attribute >(-1)}
 {
+    std::cout << "RecordComponent constructor!" << std::endl;
     if( this->IOHandler && this->IOHandler->accessType != AccessType::READ_ONLY )
+    {
         setUnitSI(1);
-    resetDataset(Dataset(Datatype::CHAR, {1}));
+        resetDataset(Dataset(Datatype::CHAR, {1}));
+    }
+    else
+    {
+        written = true;
+        dirty = false;
+    }
 }
 
 RecordComponent&
@@ -51,6 +59,7 @@ RecordComponent::setUnitSI(double usi)
 RecordComponent&
 RecordComponent::resetDataset(Dataset d)
 {
+    std::cout << "RecordComponent::resetDataset!" << std::endl;
     if( written )
         throw std::runtime_error("A Records Dataset can not (yet) be changed after it has been written.");
     if( d.extent.empty() )
@@ -79,6 +88,7 @@ RecordComponent::getExtent() const
 void
 RecordComponent::flush(std::string const& name)
 {
+    std::cout << "RecordComponent::flush" << std::endl;
     if( IOHandler->accessType == AccessType::READ_ONLY )
     {
         while( !m_chunks->empty() )
@@ -152,11 +162,13 @@ RecordComponent::read()
 void
 RecordComponent::readBase()
 {
+    std::cout << "RecordComponent::readBase()" << std::endl;
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
 
     if( *m_isConstant )
     {
+        std::cout << "RecordComponent::readBase() isConstant" << std::endl;
         aRead.name = "value";
         IOHandler->enqueue(IOTask(this, aRead));
         IOHandler->flush();
