@@ -162,7 +162,7 @@ void init_RecordComponent(py::module &m) {
             Offset chunk_offset = {1, 1, 1};
             Extent chunk_extent = {2, 2, 1};
             std::unique_ptr< double[] > chunk_data;
-            E_x.loadChunk(chunk_offset, chunk_extent, chunk_data);
+            E_x.loadChunk(chunk_data, chunk_offset, chunk_extent);
 
             return a;
         })
@@ -190,7 +190,26 @@ void init_RecordComponent(py::module &m) {
         }) */
 
         // deprecated: pass-through C++ API
-        .def("load_chunk", [](RecordComponent & r, Offset const & offset, Extent const & extent) {
+        .def("load_chunk", [](RecordComponent & r, Offset const & offset_in, Extent const & extent_in) {
+            uint8_t ndim = r.getDimensionality();
+
+            // default arguments
+            //   offset = {0u}: expand to right dim {0u, 0u, ...}
+            Offset offset = offset_in;
+            if( offset_in.size() == 1u && offset_in.at(0) == 0u )
+                offset = Offset(ndim, 0u);
+
+            //   extent = {-1u}: take full size
+            Extent extent(ndim, 1u);
+            if( extent_in.size() == 1u && extent_in.at(0) == -1u )
+            {
+                extent = r.getExtent();
+                for( uint8_t i = 0u; i < ndim; ++i )
+                    extent[i] -= offset[i];
+            }
+            else
+                extent = extent_in;
+
             std::vector<ptrdiff_t> shape(extent.size());
             std::copy(std::begin(extent), std::end(extent), std::begin(shape));
 
@@ -199,38 +218,41 @@ void init_RecordComponent(py::module &m) {
             auto a = py::array( dtype, shape );
 
             if( r.getDatatype() == Datatype::CHAR )
-                r.loadChunk<char>(offset, extent, shareRaw((char*) a.mutable_data()));
+                r.loadChunk<char>(shareRaw((char*) a.mutable_data()), offset, extent);
             else if( r.getDatatype() == Datatype::UCHAR )
-                r.loadChunk<unsigned char>(offset, extent, shareRaw((unsigned char*) a.mutable_data()));
+                r.loadChunk<unsigned char>(shareRaw((unsigned char*) a.mutable_data()), offset, extent);
             else if( r.getDatatype() == Datatype::SHORT )
-                r.loadChunk<short>(offset, extent, shareRaw((short*) a.mutable_data()));
+                r.loadChunk<short>(shareRaw((short*) a.mutable_data()), offset, extent);
             else if( r.getDatatype() == Datatype::INT )
-                r.loadChunk<int>(offset, extent, shareRaw((int*) a.mutable_data()));
+                r.loadChunk<int>(shareRaw((int*) a.mutable_data()), offset, extent);
             else if( r.getDatatype() == Datatype::LONG )
-                r.loadChunk<long>(offset, extent, shareRaw((long*) a.mutable_data()));
+                r.loadChunk<long>(shareRaw((long*) a.mutable_data()), offset, extent);
             else if( r.getDatatype() == Datatype::LONGLONG )
-                r.loadChunk<long long>(offset, extent, shareRaw((long long*) a.mutable_data()));
+                r.loadChunk<long long>(shareRaw((long long*) a.mutable_data()), offset, extent);
             else if( r.getDatatype() == Datatype::USHORT )
-                r.loadChunk<unsigned short>(offset, extent, shareRaw((unsigned short*) a.mutable_data()));
+                r.loadChunk<unsigned short>(shareRaw((unsigned short*) a.mutable_data()), offset, extent);
             else if( r.getDatatype() == Datatype::UINT )
-                r.loadChunk<unsigned int>(offset, extent, shareRaw((unsigned int*) a.mutable_data()));
+                r.loadChunk<unsigned int>(shareRaw((unsigned int*) a.mutable_data()), offset, extent);
             else if( r.getDatatype() == Datatype::ULONG )
-                r.loadChunk<unsigned long>(offset, extent, shareRaw((unsigned long*) a.mutable_data()));
+                r.loadChunk<unsigned long>(shareRaw((unsigned long*) a.mutable_data()), offset, extent);
             else if( r.getDatatype() == Datatype::ULONGLONG )
-                r.loadChunk<unsigned long long>(offset, extent, shareRaw((unsigned long long*) a.mutable_data()));
+                r.loadChunk<unsigned long long>(shareRaw((unsigned long long*) a.mutable_data()), offset, extent);
             else if( r.getDatatype() == Datatype::LONG_DOUBLE )
-                r.loadChunk<long double>(offset, extent, shareRaw((long double*) a.mutable_data()));
+                r.loadChunk<long double>(shareRaw((long double*) a.mutable_data()), offset, extent);
             else if( r.getDatatype() == Datatype::DOUBLE )
-                r.loadChunk<double>(offset, extent, shareRaw((double*) a.mutable_data()));
+                r.loadChunk<double>(shareRaw((double*) a.mutable_data()), offset, extent);
             else if( r.getDatatype() == Datatype::FLOAT )
-                r.loadChunk<float>(offset, extent, shareRaw((float*) a.mutable_data()));
+                r.loadChunk<float>(shareRaw((float*) a.mutable_data()), offset, extent);
             else if( r.getDatatype() == Datatype::BOOL )
-                r.loadChunk<bool>(offset, extent, shareRaw((bool*) a.mutable_data()));
+                r.loadChunk<bool>(shareRaw((bool*) a.mutable_data()), offset, extent);
             else
                 throw std::runtime_error(std::string("Datatype not known in 'load_chunk'!"));
 
             return a;
-        })
+        },
+            py::arg_v("offset", Offset(1,  0u), "np.zeros(Record_Component.shape)"),
+            py::arg_v("extent", Extent(1, -1u), "Record_Component.shape")
+        )
 
         // deprecated: pass-through C++ API
         .def("store_chunk", [](RecordComponent & r, py::array & a, Offset const & offset_in, Extent const & extent_in) {
@@ -310,7 +332,7 @@ void init_RecordComponent(py::module &m) {
                 throw std::runtime_error(std::string("Datatype '") + std::string(py::str(a.dtype())) + std::string("' not known in 'store_chunk'!"));
         },
             py::arg("array"),
-            py::arg_v("offset", Offset(1,  0u), "np.zeroes_like(array)"),
+            py::arg_v("offset", Offset(1,  0u), "np.zeros_like(array)"),
             py::arg_v("extent", Extent(1, -1u), "array.shape")
         )
 

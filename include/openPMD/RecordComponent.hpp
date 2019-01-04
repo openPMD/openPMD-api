@@ -108,16 +108,34 @@ public:
     template< typename T >
     RecordComponent& makeConstant(T);
 
+    /** Load and allocate a chunk of data
+     *
+     * Set offset to {0u} and extent to {-1u} for full selection.
+     *
+     * If offset is non-zero and extent is {-1u} the leftover extent in the
+     * record component will be selected.
+     */
     template< typename T >
-    std::shared_ptr< T > loadChunk(Offset const&,
-                   Extent const&,
-                   double targetUnitSI = std::numeric_limits< double >::quiet_NaN() );
+    std::shared_ptr< T > loadChunk(
+        Offset = {0u},
+        Extent = {-1u},
+        double targetUnitSI = std::numeric_limits< double >::quiet_NaN() );
 
+    /** Load a chunk of data into pre-allocated memory
+     *
+     * shared_ptr for data must be pre-allocated, contiguous and large enough for extent
+     *
+     * Set offset to {0u} and extent to {-1u} for full selection.
+     *
+     * If offset is non-zero and extent is {-1u} the leftover extent in the
+     * record component will be selected.
+     */
     template< typename T >
-    void loadChunk(Offset const&,
-                   Extent const&,
-                   std::shared_ptr< T >,
-                   double targetUnitSI = std::numeric_limits< double >::quiet_NaN() );
+    void loadChunk(
+        std::shared_ptr< T >,
+        Offset,
+        Extent,
+        double targetUnitSI = std::numeric_limits< double >::quiet_NaN() );
 
     template< typename T >
     void storeChunk(std::shared_ptr< T >, Offset, Extent);
@@ -158,20 +176,39 @@ RecordComponent::makeConstant(T value)
 
 template< typename T >
 inline std::shared_ptr< T >
-RecordComponent::loadChunk(Offset const& o, Extent const& e, double targetUnitSI)
+RecordComponent::loadChunk(Offset o, Extent e, double targetUnitSI)
 {
+    uint8_t dim = getDimensionality();
+
+    // default arguments
+    //   offset = {0u}: expand to right dim {0u, 0u, ...}
+    Offset offset = o;
+    if( o.size() == 1u && o.at(0) == 0u && dim > 1u )
+        offset = Offset(dim, 0u);
+
+    //   extent = {-1u}: take full size
+    Extent extent(dim, 1u);
+    if( e.size() == 1u && e.at(0) == -1u )
+    {
+        extent = getExtent();
+        for( uint8_t i = 0u; i < dim; ++i )
+            extent[i] -= offset[i];
+    }
+    else
+        extent = e;
+
     uint64_t numPoints = 1u;
-    for( auto const& dimensionSize : e )
+    for( auto const& dimensionSize : extent )
         numPoints *= dimensionSize;
 
     auto newData = std::shared_ptr<T>(new T[numPoints], []( T *p ){ delete [] p; });
-    loadChunk(o, e, newData, targetUnitSI);
+    loadChunk(newData, offset, extent, targetUnitSI);
     return newData;
 }
 
 template< typename T >
 inline void
-RecordComponent::loadChunk(Offset const& o, Extent const& e, std::shared_ptr< T > data, double targetUnitSI)
+RecordComponent::loadChunk(std::shared_ptr< T > data, Offset o, Extent e, double targetUnitSI)
 {
     if( !std::isnan(targetUnitSI) )
         throw std::runtime_error("unitSI scaling during chunk loading not yet implemented");
@@ -181,6 +218,24 @@ RecordComponent::loadChunk(Offset const& o, Extent const& e, std::shared_ptr< T 
             throw std::runtime_error("Type conversion during chunk loading not yet implemented");
 
     uint8_t dim = getDimensionality();
+
+    // default arguments
+    //   offset = {0u}: expand to right dim {0u, 0u, ...}
+    Offset offset = o;
+    if( o.size() == 1u && o.at(0) == 0u && dim > 1u )
+        offset = Offset(dim, 0u);
+
+    //   extent = {-1u}: take full size
+    Extent extent(dim, 1u);
+    if( e.size() == 1u && e.at(0) == -1u )
+    {
+        extent = getExtent();
+        for( uint8_t i = 0u; i < dim; ++i )
+            extent[i] -= offset[i];
+    }
+    else
+        extent = e;
+
     if( e.size() != dim || o.size() != dim )
     {
         std::ostringstream oss;
