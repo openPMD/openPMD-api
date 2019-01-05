@@ -30,6 +30,19 @@ compilers:
     extra_rpaths: []
     flags: {}
     modules: []
+    operating_system: ubuntu16.04
+    paths:
+      cc: /usr/local/clang-7.0.0/bin/clang
+      cxx: /usr/local/clang-7.0.0/bin/clang++
+      f77: /usr/bin/gfortran-4.9
+      fc: /usr/bin/gfortran-4.9
+    spec: clang@7.0.0
+    target: x86_64
+- compiler:
+    environment: {}
+    extra_rpaths: []
+    flags: {}
+    modules: []
     operating_system: ubuntu14.04
     paths:
       cc: /usr/bin/gcc-4.8

@@ -13,10 +13,11 @@ cache:
 env:
   global:
     - BUILD: ~/buildTmp
-    - CXXFLAGS: "-std=c++11"
+    - CXXFLAGS: "-Werror"
     - SPACK_ROOT: $HOME/.cache/spack
     - PATH: $PATH:$HOME/.cache/spack/bin
     - PYBIND11_VERSION=@2.2.3
+    - USE_JSON: ON
 
 addons:
   apt:
@@ -206,10 +207,11 @@ jobs:
               export EXTRA_CMAKE_FLAGS="$EXTRA_CMAKE_FLAGS -DopenPMD_USE_INTERNAL_PYBIND11=OFF";
             fi;
           fi
-        - CXXFLAGS="-Werror" CXX=$CXX CC=$CC
+        - CXXFLAGS=${CXXFLAGS} CXX=${CXX} CC=${CC}
           cmake
             -DCMAKE_BUILD_TYPE=Debug
             -DopenPMD_USE_MPI=$USE_MPI
+            -DopenPMD_USE_JSON=$USE_JSON
             -DopenPMD_USE_HDF5=$USE_HDF5
             -DopenPMD_USE_ADIOS1=$USE_ADIOS1
             -DopenPMD_USE_ADIOS2=$USE_ADIOS2
@@ -239,10 +241,44 @@ jobs:
             - libopenmpi-dev
             - openmpi-bin
       script: *script-cpp-unit
+    # Clang 7.0.0 + Python 3.7.1 @ Xenial
+    - <<: *test-cpp-unit
+      name: clang@7.0.0 +MPI +PY@3.7 +H5 +ADIOS1
+      dist: xenial
+      language: python
+      python: "3.7"
+      env:
+        - CXXSPEC="%clang@7.0.0" USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
+      compiler: clang
+      addons:
+        apt:
+          <<: *apt_common_sources
+          packages:
+            - *clang50_deps
+            - libopenmpi-dev
+            - openmpi-bin
+      script: *script-cpp-unit
+      before_install: &clang_init
+        - CXX=clang++ && CC=clang && CXXFLAGS="-Werror -Wno-deprecated"
+    # Clang 7.0.0 + Address Sanitizer @ Xenial
+    - <<: *test-cpp-unit
+      name: clang@7.0.0 -MPI -PY -H5 -ADIOS1 -JSON +AddressSanitize
+      dist: xenial
+      language: python
+      python: "3.7"
+      env:
+        # FIXME: #414 then enable JSON again
+        - CXXSPEC="%clang@7.0.0" USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=OFF USE_ADIOS1=OFF USE_ADIOS2=OFF USE_JSON=OFF USE_SAMPLES=ON
+      compiler: clang
+      script: *script-cpp-unit
+      before_install:
+        - CXX=clang++ && CC=clang && CXXFLAGS="-fsanitize=address"
+        - export ASAN_OPTIONS=detect_odr_violation=0  # this must be fixed: #413
     # Clang 9.1.0-apple + Python 2.7.15 @ OSX
     - <<: *test-cpp-unit
       name: AppleClang@9.1.0 -MPI +PY@2.7 +H5 +ADIOS1
       os: osx
+      osx_image: xcode9.4
       sudo: required
       language: generic
       env:
