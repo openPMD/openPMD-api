@@ -28,7 +28,9 @@ int main(
     // given that you provide it with an appropriate DatasetFillerProvider
     // (template parameter of the Benchmark class).
     using type = long int;
+#if openPMD_HAVE_ADIOS1 || openPMD_HAVE_HDF5
     openPMD::Datatype dt = openPMD::determineDatatype<type>();
+#endif
 
     // Total (in this case 4D) dataset across all MPI ranks.
     // Will be the same for all configured benchmarks.
