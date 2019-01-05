@@ -29,7 +29,7 @@ Features
   - works with Python 3.7 #376
   - setup.py for sdist #240
 - Backends: JSON support added #384 #393 #338
-- Parallel benchmark added #346 #398 #402
+- Parallel benchmark added #346 #398 #402 #411
 
 Bug Fixes
 """""""""

@@ -43,6 +43,10 @@ namespace openPMD
 
         explicit DatasetFiller( Extent::value_type numberOfItems = 0 );
 
+        /** This class will be derived from
+         */
+        virtual ~DatasetFiller() = default;
+
         /**
          * Create a shared pointer of m_numberOfItems items of type T.
          * Should take roughly the same amount of time per call as long as
