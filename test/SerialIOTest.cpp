@@ -161,6 +161,7 @@ void particle_patches( std::string file_ending )
             std::vector<uint64_t> od( extent );
             std::iota(od.begin(), od.end(), 0);
             o.storeChunk(od);
+            s.flush();
         }
 
         auto const dset_n = Dataset(determineDatatype<uint64_t>(), {num_patches, });

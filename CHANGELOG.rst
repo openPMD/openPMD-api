@@ -33,6 +33,7 @@ Bug Fixes
 """""""""
 
 - spurious MPI C++11 API usage in ParallelIOTest removed #396
+- use-after-free in SerialIOTest #409
 
 Other
 """""
