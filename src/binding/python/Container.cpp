@@ -195,7 +195,7 @@ namespace detail
             }
         );
 
-        return cl;
+        return std::move(cl);
     }
 } // namespace detail
 
