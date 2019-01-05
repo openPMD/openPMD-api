@@ -299,9 +299,8 @@ set(CORE_SOURCE
         src/backend/Writable.cpp
         src/benchmark/mpi/OneDimensionalBlockSlicer.cpp)
 set(IO_SOURCE
-        src/IO/AbstractIOHandler.cpp
-        src/IO/AbstractIOHandlerImpl.cpp
         src/IO/AbstractIOHandlerHelper.cpp
+        src/IO/DummyIOHandler.cpp
         src/IO/IOTask.cpp
         src/IO/HDF5/HDF5IOHandler.cpp
         src/IO/HDF5/ParallelHDF5IOHandler.cpp
@@ -309,13 +308,9 @@ set(IO_SOURCE
         src/IO/JSON/JSONIOHandlerImpl.cpp
         src/IO/JSON/JSONFilePosition.cpp)
 set(IO_ADIOS1_SEQUENTIAL_SOURCE
-        src/IO/AbstractIOHandler.cpp
-        src/IO/AbstractIOHandlerImpl.cpp
         src/auxiliary/Filesystem.cpp
         src/IO/ADIOS/ADIOS1IOHandler.cpp)
 set(IO_ADIOS1_SOURCE
-        src/IO/AbstractIOHandler.cpp
-        src/IO/AbstractIOHandlerImpl.cpp
         src/auxiliary/Filesystem.cpp
         src/IO/ADIOS/ParallelADIOS1IOHandler.cpp)
 

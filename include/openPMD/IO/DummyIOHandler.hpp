@@ -1,4 +1,4 @@
-/* Copyright 2017-2019 Franz Pöschel
+/* Copyright 2017-2019 Fabian Koller, Axel Huebl
  *
  * This file is part of openPMD-api.
  *
@@ -18,30 +18,31 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-
 #pragma once
 
-
 #include "openPMD/IO/AbstractIOHandler.hpp"
-#include "openPMD/IO/JSON/JSONIOHandlerImpl.hpp"
+#include "openPMD/IO/AccessType.hpp"
+#include "openPMD/IO/IOTask.hpp"
+
+#include <string>
+#include <future>
 
 
 namespace openPMD
 {
-    class JSONIOHandler :
-        public AbstractIOHandler
+    /** Dummy handler without any IO operations.
+    */
+    class DummyIOHandler : public AbstractIOHandler
     {
     public:
-        JSONIOHandler(
-            std::string path,
-            AccessType at
-        );
+        DummyIOHandler(std::string, AccessType);
+        ~DummyIOHandler();
 
-        ~JSONIOHandler( ) override;
-
-        std::future< void > flush( ) override;
-
-    private:
-        JSONIOHandlerImpl m_impl;
-    };
-} // openPMD
+        /** No-op consistent with the IOHandler interface to enable library use without IO.
+        */
+        void enqueue(IOTask const&) override;
+        /** No-op consistent with the IOHandler interface to enable library use without IO.
+        */
+        std::future< void > flush() override;
+    }; // DummyIOHandler
+} // namespace openPMD
