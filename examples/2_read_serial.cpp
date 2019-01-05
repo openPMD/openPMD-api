@@ -76,6 +76,13 @@ int main()
         cout << '\n';
     }
 
+    auto all_data = E_x.loadChunk<double>();
+    series.flush();
+    cout << "Full E/x starts with:\n\t{";
+    for( size_t col = 0; col < extent[1] && col < 5; ++col )
+        cout << all_data.get()[col] << ", ";
+    cout << "...}\n";
+
     /* The files in 'series' are still open until the object is destroyed, on
      * which it cleanly flushes and closes all open file handles.
      * When running out of scope on return, the 'Series' destructor is called.

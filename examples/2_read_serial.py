@@ -55,6 +55,11 @@ if __name__ == "__main__":
     #         )
     #     print("")
 
+    all_data = E_x.load_chunk()
+    series.flush()
+    print("Full E/x is of shape {0} and starts with:".format(all_data.shape))
+    print(all_data[0, 0, :5])
+
     # The files in 'series' are still open until the object is destroyed, on
     # which it cleanly flushes and closes all open file handles.
     # One can delete the object explicitly (or let it run out of scope) to

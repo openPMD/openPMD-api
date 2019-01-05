@@ -45,6 +45,24 @@ The new order allows to make use of defaults in many cases in order reduce compl
    #                                      offset=[0, ],
    #                                      extent=particlePos_x.shape)
 
+``load_chunk`` Method
+"""""""""""""""""""""
+
+The ``loadChunk<T>`` method with on-the-fly allocation has default arguments for offset and extent now.
+Called without arguments, it will read the whole record component.
+
+.. code-block:: python3
+
+   E_x = series.iterations[100].meshes["E"]["x"]
+
+   # old code
+   all_data = E_x.load_chunk(np.zeros(E_x.shape), E_x.shape)
+
+   # new code
+   all_data = E_x.load_chunk()
+
+   series.flush()
+
 C++
 ^^^
 
@@ -72,3 +90,36 @@ The new order allows to make use of defaults in many cases in order reduce compl
     *                        .storeChunk(shareRaw(particlePos_x),
     *                                    {0},
     *                                    {particlePos_x.size()})  */
+
+``loadChunk`` Method
+""""""""""""""""""""
+
+The order of arguments in the pre-allocated data overload of the ``loadChunk`` method for record components has changed.
+The new order allows was introduced for consistency with ``storeChunk``.
+
+.. code-block:: cpp
+
+   float loadOnePos;
+
+   // old code
+   electrons["position"]["x"].loadChunk({0}, {1}, shareRaw(&loadOnePos));
+
+   // new code
+   electrons["position"]["x"].loadChunk(shareRaw(&loadOnePos), {0}, {1});
+
+   series.flush();
+
+The ``loadChunk<T>`` method with on-the-fly allocation got default arguments for offset and extent.
+Called without arguments, it will read the whole record component.
+
+.. code-block:: cpp
+
+   MeshRecordComponent E_x = series.iterations[100].meshes["E"]["x"];
+
+   // old code
+   auto all_data = E_x.loadChunk<double>({0, 0, 0}, E_x.getExtent());
+
+   // new code
+   auto all_data = E_x.loadChunk<double>();
+
+   series.flush();
