@@ -48,5 +48,9 @@ namespace openPMD
             int size,
             int rank
         ) = 0;
+
+        /** This class will be derived from
+         */
+        virtual ~BlockSlicer() = default;
     };
 }
