@@ -19,7 +19,7 @@ Features
 
 - C++:
 
-  - ``storeChunk`` argument order changed, defaults added #386
+  - ``storeChunk`` argument order changed, defaults added #386 #416
   - ``loadChunk`` argument order changed, defaults added #408
 - Python:
 

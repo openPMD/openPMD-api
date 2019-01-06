@@ -144,7 +144,7 @@ public:
     typename std::enable_if<
         traits::IsContiguousContainer< T_ContiguousContainer >::value
     >::type
-    storeChunk(T_ContiguousContainer, Offset = {0u}, Extent = {-1u});
+    storeChunk(T_ContiguousContainer &, Offset = {0u}, Extent = {-1u});
 
     constexpr static char const * const SCALAR = "\vScalar";
 
@@ -330,7 +330,7 @@ template< typename T_ContiguousContainer >
 inline typename std::enable_if<
     traits::IsContiguousContainer< T_ContiguousContainer >::value
 >::type
-RecordComponent::storeChunk(T_ContiguousContainer data, Offset o, Extent e)
+RecordComponent::storeChunk(T_ContiguousContainer & data, Offset o, Extent e)
 {
     uint8_t dim = getDimensionality();
 
