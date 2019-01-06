@@ -263,13 +263,12 @@ jobs:
         - CXX=clang++ && CC=clang && CXXFLAGS="-Werror -Wno-deprecated"
     # Clang 7.0.0 + Address Sanitizer @ Xenial
     - <<: *test-cpp-unit
-      name: clang@7.0.0 -MPI -PY -H5 -ADIOS1 -JSON +AddressSanitize
+      name: clang@7.0.0 -MPI -PY -H5 -ADIOS1 +JSON +AddressSanitize
       dist: xenial
       language: python
       python: "3.7"
       env:
-        # FIXME: #414 then enable JSON again
-        - CXXSPEC="%clang@7.0.0" USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=OFF USE_ADIOS1=OFF USE_ADIOS2=OFF USE_JSON=OFF USE_SAMPLES=ON
+        - CXXSPEC="%clang@7.0.0" USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=OFF USE_ADIOS1=OFF USE_ADIOS2=OFF USE_JSON=ON USE_SAMPLES=ON
       compiler: clang
       script: *script-cpp-unit
       before_install:
