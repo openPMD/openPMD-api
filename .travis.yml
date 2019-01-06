@@ -259,6 +259,7 @@ jobs:
             - openmpi-bin
       script: *script-cpp-unit
       before_install: &clang_init
+        # FIXME: with pybind11 v2.3.0+ we can remove the -Wno-deprecated
         - CXX=clang++ && CC=clang && CXXFLAGS="-Werror -Wno-deprecated"
     # Clang 7.0.0 + Address Sanitizer @ Xenial
     - <<: *test-cpp-unit
@@ -272,8 +273,7 @@ jobs:
       compiler: clang
       script: *script-cpp-unit
       before_install:
-        - CXX=clang++ && CC=clang && CXXFLAGS="-fsanitize=address"
-        - export ASAN_OPTIONS=detect_odr_violation=0  # this must be fixed: #413
+        - CXX=clang++ && CC=clang && CXXFLAGS="-Werror -fsanitize=address"
     # Clang 9.1.0-apple + Python 2.7.15 @ OSX
     - <<: *test-cpp-unit
       name: AppleClang@9.1.0 -MPI +PY@2.7 +H5 +ADIOS1

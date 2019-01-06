@@ -39,7 +39,6 @@ namespace openPMD
         m_impl { JSONIOHandlerImpl { this } }
     {}
 
-
     std::future< void > JSONIOHandler::flush( )
     {
         return m_impl.flush( );

@@ -68,16 +68,26 @@ class AbstractIOHandler
 {
 public:
 #if openPMD_HAVE_MPI
-    AbstractIOHandler(std::string path, AccessType, MPI_Comm);
+    AbstractIOHandler(std::string path, AccessType at, MPI_Comm)
+        : directory{std::move(path)},
+          accessType{at}
+    { }
 #endif
-    AbstractIOHandler(std::string path, AccessType);
-    virtual ~AbstractIOHandler();
+    AbstractIOHandler(std::string path, AccessType at)
+        : directory{std::move(path)},
+          accessType{at}
+    { }
+    virtual ~AbstractIOHandler() = default;
 
     /** Add provided task to queue according to FIFO.
      *
      * @param   iotask  Task to be executed after all previously enqueued IOTasks complete.
      */
-    virtual void enqueue(IOTask const& iotask);
+    virtual void enqueue(IOTask const& iotask)
+    {
+        m_work.push(iotask);
+    }
+
     /** Process operations in queue according to FIFO.
      *
      * @return  Future indicating the completion state of the operation for backends that decide to implement this operation asynchronously.
@@ -89,20 +99,4 @@ public:
     std::queue< IOTask > m_work;
 }; // AbstractIOHandler
 
-
-/** Dummy handler without any IO operations.
- */
-class DummyIOHandler : public AbstractIOHandler
-{
-public:
-    DummyIOHandler(std::string, AccessType);
-    ~DummyIOHandler() override;
-
-    /** No-op consistent with the IOHandler interface to enable library use without IO.
-     */
-    void enqueue(IOTask const&) override;
-    /** No-op consistent with the IOHandler interface to enable library use without IO.
-     */
-    std::future< void > flush() override;
-}; // DummyIOHandler
 } // namespace openPMD

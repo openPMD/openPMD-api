@@ -19,7 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */ 
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
-
+#include "openPMD/IO/DummyIOHandler.hpp"
 #include "openPMD/IO/ADIOS/ADIOS1IOHandler.hpp"
 #include "openPMD/IO/ADIOS/ParallelADIOS1IOHandler.hpp"
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
