@@ -877,6 +877,7 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
         throw std::runtime_error("Internal error: Writable not marked written during attribute reading");
 
     ADIOS_FILE* f;
+    m_filePaths.at(writable);
     f = m_openReadFileHandles.at(m_filePaths.at(writable));
 
     std::string attrname = concrete_bp1_file_position(writable);

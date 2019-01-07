@@ -200,7 +200,10 @@ BaseRecord< T_elem >::readBase()
     this->IOHandler->enqueue(IOTask(this, aRead));
     this->IOHandler->flush();
     if( *aRead.dtype == DT::ARR_DBL_7 )
-        this->initAttribute("unitDimension", Attribute(*aRead.resource).template get< std::array< double, 7 > >());
+        if( this->IOHandler->accessType == AccessType::READ_ONLY )
+            this->initAttribute("unitDimension", Attribute(*aRead.resource).template get< std::array< double, 7 > >());
+        else
+            this->setAttribute("unitDimension", Attribute(*aRead.resource).template get< std::array< double, 7 > >());
     else if( *aRead.dtype == DT::VEC_DOUBLE )
     {
         auto vec = Attribute(*aRead.resource).template get< std::vector< double > >();
@@ -210,7 +213,10 @@ BaseRecord< T_elem >::readBase()
             std::copy(vec.begin(),
                       vec.end(),
                       arr.begin());
-            this->initAttribute("unitDimension", arr);
+            if( this->IOHandler->accessType == AccessType::READ_ONLY )
+                this->initAttribute("unitDimension", arr);
+            else
+                this->setAttribute("unitDimension", arr);
         } else
             throw std::runtime_error("Unexpected Attribute datatype for 'unitDimension'");
     }
@@ -221,9 +227,15 @@ BaseRecord< T_elem >::readBase()
     this->IOHandler->enqueue(IOTask(this, aRead));
     this->IOHandler->flush();
     if( *aRead.dtype == DT::FLOAT )
-        this->initAttribute("timeOffset", Attribute(*aRead.resource).template get< float >());
+        if( this->IOHandler->accessType == AccessType::READ_ONLY )
+            this->initAttribute("timeOffset", Attribute(*aRead.resource).template get< float >());
+        else
+            this->setAttribute("timeOffset", Attribute(*aRead.resource).template get< float >());
     else if( *aRead.dtype == DT::DOUBLE )
-        this->initAttribute("timeOffset", Attribute(*aRead.resource).template get< double >());
+        if( this->IOHandler->accessType == AccessType::READ_ONLY )
+            this->initAttribute("timeOffset", Attribute(*aRead.resource).template get< double >());
+        else
+            this->setAttribute("timeOffset", Attribute(*aRead.resource).template get< double >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'timeOffset'");
 }

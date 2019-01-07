@@ -243,7 +243,10 @@ Mesh::read()
     if( *aRead.dtype == DT::STRING )
     {
         std::string tmpGeometry = Attribute(*aRead.resource).get< std::string >();
-        initAttribute("geometry", tmpGeometry);
+        if( this->IOHandler->accessType == AccessType::READ_ONLY )
+            initAttribute("geometry", tmpGeometry);
+        else
+            setAttribute("geometry", tmpGeometry);
         /*
         if( "cartesian" == tmpGeometry )
             initAttribute("geometry", Geometry::cartesian);
@@ -264,13 +267,22 @@ Mesh::read()
     IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
     if( *aRead.dtype == DT::CHAR )
-        //setDataOrder(static_cast<DataOrder>(Attribute(*aRead.resource).get< char >()));
-        initAttribute(aRead.name, Attribute(*aRead.resource).get< std::string >());
+    {
+        if( this->IOHandler->accessType == AccessType::READ_ONLY )
+            initAttribute(aRead.name, Attribute(*aRead.resource).get< std::string >());
+        else
+            setDataOrder(static_cast<DataOrder>(Attribute(*aRead.resource).get< char >()));
+    }
     else if( *aRead.dtype == DT::STRING )
     {
         std::string tmpDataOrder = Attribute(*aRead.resource).get< std::string >();
         if( tmpDataOrder.size() == 1 )
-            initAttribute(aRead.name, tmpDataOrder);
+        {
+            if( this->IOHandler->accessType == AccessType::READ_ONLY )
+                initAttribute(aRead.name, tmpDataOrder);
+            else
+                setAttribute(aRead.name, tmpDataOrder);
+        }
         else
             throw std::runtime_error("Unexpected Attribute value for 'dataOrder': " + tmpDataOrder);
     }
@@ -281,24 +293,52 @@ Mesh::read()
     IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
     if( *aRead.dtype == DT::VEC_STRING )
-        initAttribute(aRead.name, Attribute(*aRead.resource).get< std::vector< std::string > >());
-    //else if( *aRead.dtype == DT::STRING )
-    //    initAttribute(aRead.name, {Attribute(*aRead.resource).get< std::string >()});
-    //else
-    //    throw std::runtime_error("Unexpected Attribute datatype for 'axisLabels'");
+        if( this->IOHandler->accessType == AccessType::READ_ONLY )
+            initAttribute(aRead.name, Attribute(*aRead.resource).get< std::vector< std::string > >());
+        else
+            setAttribute(aRead.name, Attribute(*aRead.resource).get< std::vector< std::string > >());
+    else if( *aRead.dtype == DT::STRING )
+    {
+        if( this->IOHandler->accessType == AccessType::READ_ONLY )
+            initAttribute(aRead.name, std::vector< std::string >{Attribute(*aRead.resource).get< std::string >()});
+        else
+            setAttribute(aRead.name, std::vector< std::string >{Attribute(*aRead.resource).get< std::string >()});
+    }
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'axisLabels'");
 
     aRead.name = "gridSpacing";
     IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
     Attribute a = Attribute(*aRead.resource);
     if( *aRead.dtype == DT::VEC_FLOAT )
-        initAttribute(aRead.name, a.get< std::vector< float > >());
+    {
+        if( this->IOHandler->accessType == AccessType::READ_ONLY )
+            initAttribute(aRead.name, a.get< std::vector< float > >());
+        else
+            setAttribute(aRead.name, a.get< std::vector< float > >());
+    }
     else if( *aRead.dtype == DT::FLOAT )
-        initAttribute(aRead.name, std::vector< float >({a.get< float >()}));
+    {
+        if( this->IOHandler->accessType == AccessType::READ_ONLY )
+            initAttribute(aRead.name, std::vector< float >({a.get< float >()}));
+        else
+            setAttribute(aRead.name, std::vector< float >({a.get< float >()}));
+    }
     else if( *aRead.dtype == DT::VEC_DOUBLE )
-        initAttribute(aRead.name, a.get< std::vector< double > >());
+    {
+        if( this->IOHandler->accessType == AccessType::READ_ONLY )
+            initAttribute(aRead.name, a.get< std::vector< double > >());
+        else
+            setAttribute(aRead.name, a.get< std::vector< double > >());
+    }
     else if( *aRead.dtype == DT::DOUBLE )
-        initAttribute(aRead.name, std::vector< double >({a.get< double >()}));
+    {
+        if( this->IOHandler->accessType == AccessType::READ_ONLY )
+            initAttribute(aRead.name, std::vector< double >({a.get< double >()}));
+        else
+            setAttribute(aRead.name, std::vector< double >({a.get< double >()}));
+    }
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'gridSpacing'");
 
@@ -306,17 +346,32 @@ Mesh::read()
     IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
     if( *aRead.dtype == DT::VEC_DOUBLE )
-        initAttribute(aRead.name, Attribute(*aRead.resource).get< std::vector< double > >());
-    //else if( *aRead.dtype == DT::DOUBLE )
-    //    initAttribute(aRead.name, {Attribute(*aRead.resource).get< double >()});
-    //else
-    //    throw std::runtime_error("Unexpected Attribute datatype for 'gridGlobalOffset'");
+    {
+        if( this->IOHandler->accessType == AccessType::READ_ONLY )
+            initAttribute(aRead.name, Attribute(*aRead.resource).get< std::vector< double > >());
+        else
+            setAttribute(aRead.name, Attribute(*aRead.resource).get< std::vector< double > >());
+    }
+    else if( *aRead.dtype == DT::DOUBLE )
+    {
+        if( this->IOHandler->accessType == AccessType::READ_ONLY )
+            initAttribute(aRead.name, std::vector< double >{Attribute(*aRead.resource).get< double >()});
+        else
+            setAttribute(aRead.name, std::vector< double >{Attribute(*aRead.resource).get< double >()});
+    }
+    else
+        throw std::runtime_error("Unexpected Attribute datatype for 'gridGlobalOffset'");
 
     aRead.name = "gridUnitSI";
     IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
     if( *aRead.dtype == DT::DOUBLE )
-        initAttribute(aRead.name, Attribute(*aRead.resource).get< double >());
+    {
+        if( this->IOHandler->accessType == AccessType::READ_ONLY )
+            initAttribute(aRead.name, Attribute(*aRead.resource).get< double >());
+        else
+            setAttribute(aRead.name, Attribute(*aRead.resource).get< double >());
+    }
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'gridUnitSI'");
 

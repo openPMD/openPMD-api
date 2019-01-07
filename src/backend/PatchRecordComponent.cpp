@@ -66,6 +66,9 @@ PatchRecordComponent::PatchRecordComponent(std::shared_ptr< Writable > const& w)
     : BaseRecordComponent{w},
       m_chunks{std::make_shared< std::queue< IOTask > >()}
 {
+    //if( w )
+    //    this->linkHierarchy(w);
+
     if( this->IOHandler && this->IOHandler->accessType != AccessType::READ_ONLY )
         setUnitSI(1);
     //else

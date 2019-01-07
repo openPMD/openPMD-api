@@ -258,7 +258,10 @@ RecordComponent::readBase()
     IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
     if( *aRead.dtype == DT::DOUBLE )
-        initAttribute("unitSI", Attribute(*aRead.resource).get< double >());
+        if( this->IOHandler->accessType == AccessType::READ_ONLY )
+            initAttribute("unitSI", Attribute(*aRead.resource).get< double >());
+        else
+            setAttribute("unitSI", Attribute(*aRead.resource).get< double >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'unitSI'");
 

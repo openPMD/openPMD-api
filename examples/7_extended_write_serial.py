@@ -81,7 +81,7 @@ if __name__ == "__main__":
     cur_it.meshes["lowRez_2D_field"] = lowRez
     del lowRez
     del cur_it.meshes["generic_2D_field"]  # TODO not WORKING
-    cur_it.meshes.erase("generic_2D_field")
+    # cur_it.meshes.erase("generic_2D_field")
     # del lowRez
 
     # particles are handled very similar

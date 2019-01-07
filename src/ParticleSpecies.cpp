@@ -36,6 +36,7 @@ ParticleSpecies::ParticleSpecies(std::shared_ptr< Writable > const& w) :
 void
 ParticleSpecies::read()
 {
+    std::cout << "ParticleSpecies::read()" << std::endl;
     written = false;
     clear_unchecked();
     written = true;

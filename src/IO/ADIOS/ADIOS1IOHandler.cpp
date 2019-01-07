@@ -159,6 +159,8 @@ ADIOS1IOHandlerImpl::flush()
                     readDataset(i.writable, *dynamic_cast< Parameter< O::READ_DATASET >* >(i.parameter.get()));
                     break;
                 case O::READ_ATT:
+                    std::cout << "Read Attribute: " << dynamic_cast< Parameter< O::READ_ATT >* >(i.parameter.get())->name
+                              << std::endl;
                     readAttribute(i.writable, *dynamic_cast< Parameter< O::READ_ATT >* >(i.parameter.get()));
                     break;
                 case O::LIST_PATHS:

@@ -24,6 +24,7 @@
 #include "openPMD/IO/IOTask.hpp"
 
 #include <future>
+#include <iostream>
 
 
 namespace openPMD
@@ -66,9 +67,13 @@ public:
                         openFile(i.writable, *dynamic_cast< Parameter< O::OPEN_FILE >* >(i.parameter.get()));
                         break;
                     case O::OPEN_PATH:
+                        std::cout << "Open Path: " << dynamic_cast< Parameter< O::OPEN_PATH >* >(i.parameter.get())->path
+                                  << std::endl;
                         openPath(i.writable, *dynamic_cast< Parameter< O::OPEN_PATH >* >(i.parameter.get()));
                         break;
                     case O::OPEN_DATASET:
+                        std::cout << "Open Dataset: " << dynamic_cast< Parameter< O::OPEN_DATASET >* >(i.parameter.get())->name
+                                  << std::endl;
                         openDataset(i.writable, *dynamic_cast< Parameter< O::OPEN_DATASET >* >(i.parameter.get()));
                         break;
                     case O::DELETE_FILE:
@@ -90,9 +95,13 @@ public:
                         writeAttribute(i.writable, *dynamic_cast< Parameter< O::WRITE_ATT >* >(i.parameter.get()));
                         break;
                     case O::READ_DATASET:
+                        std::cout << "Read Dataset: " << dynamic_cast< Parameter< O::READ_DATASET >* >(i.parameter.get())->extent[0]
+                                  << std::endl;
                         readDataset(i.writable, *dynamic_cast< Parameter< O::READ_DATASET >* >(i.parameter.get()));
                         break;
                     case O::READ_ATT:
+                        std::cout << "Read Attribute: " << dynamic_cast< Parameter< O::READ_ATT >* >(i.parameter.get())->name
+                                  << std::endl;
                         readAttribute(i.writable, *dynamic_cast< Parameter< O::READ_ATT >* >(i.parameter.get()));
                         break;
                     case O::LIST_PATHS:

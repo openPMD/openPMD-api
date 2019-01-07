@@ -43,17 +43,47 @@ MeshRecordComponent::read()
     IOHandler->flush();
     Attribute a = Attribute(*aRead.resource);
     if( *aRead.dtype == DT::VEC_FLOAT )
-        initAttribute("position", a.get< std::vector< float > >());
+    {
+        if( this->IOHandler->accessType == AccessType::READ_ONLY )
+            initAttribute("position", a.get< std::vector< float > >());
+        else
+            setAttribute("position", a.get< std::vector< float > >());
+    }
     else if( *aRead.dtype == DT::FLOAT )
-        initAttribute("position", std::vector< float >({a.get< float >()}));
+    {
+        if( this->IOHandler->accessType == AccessType::READ_ONLY )
+            initAttribute("position", std::vector< float >({a.get< float >()}));
+        else
+            setAttribute("position", std::vector< float >({a.get< float >()}));
+    }
     else if( *aRead.dtype == DT::VEC_DOUBLE )
-        initAttribute("position", a.get< std::vector< double > >());
+    {
+        if( this->IOHandler->accessType == AccessType::READ_ONLY )
+            initAttribute("position", a.get< std::vector< double > >());
+        else
+            setAttribute("position", a.get< std::vector< double > >());
+    }
     else if( *aRead.dtype == DT::DOUBLE )
-        initAttribute("position", std::vector< double >({a.get< double >()}));
+    {
+        if( this->IOHandler->accessType == AccessType::READ_ONLY )
+            initAttribute("position", std::vector< double >({a.get< double >()}));
+        else
+            setAttribute("position", std::vector< double >({a.get< double >()}));
+    }
     else if( *aRead.dtype == DT::VEC_LONG_DOUBLE )
-        initAttribute("position", a.get< std::vector< long double > >());
+    {
+        if( this->IOHandler->accessType == AccessType::READ_ONLY )
+            initAttribute("position", a.get< std::vector< long double > >());
+        else
+            setAttribute("position", a.get< std::vector< long double > >());
+    }
     else if( *aRead.dtype == DT::LONG_DOUBLE )
-        initAttribute("position", std::vector< long double >({a.get< long double >()}));
+    {
+        if( this->IOHandler->accessType == AccessType::READ_ONLY )
+            initAttribute("position", std::vector< long double >({a.get< long double >()}));
+        else
+            setAttribute("position", std::vector< long double >({a.get< long double >()}));
+    }
     else
         throw std::runtime_error( "Unexpected Attribute datatype for 'position'");
 

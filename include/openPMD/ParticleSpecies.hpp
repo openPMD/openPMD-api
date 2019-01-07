@@ -56,11 +56,13 @@ namespace traits
         void operator()(T & ret)
         {
             /* enforce these two RecordComponents as required by the standard */
-            auto udl = std::array< double, 7 >({1., 0., 0., 0., 0., 0., 0.});
-            auto& po = ret.init("position"); // .setUnitDimension({{UnitDimension::L, 1}});
-            po.initAttribute("unitDimension", udl);
-            auto& pp = ret.init("positionOffset"); //.setUnitDimension({{UnitDimension::L, 1}});
-            pp.initAttribute("unitDimension", udl);
+            //auto udl = std::array< double, 7 >({1., 0., 0., 0., 0., 0., 0.});
+            //auto& po = 
+            ret.init("position"); // .setUnitDimension({{UnitDimension::L, 1}});
+            //po.initAttribute("unitDimension", udl);
+            //auto& pp = 
+            ret.init("positionOffset"); //.setUnitDimension({{UnitDimension::L, 1}});
+            //pp.initAttribute("unitDimension", udl);
             ret.particlePatches.linkHierarchy(ret.m_writable);
 
             auto& np = ret.particlePatches.init("numParticles");

@@ -194,30 +194,42 @@ Iteration::read()
     aRead.name = "dt";
     IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
-    if( *aRead.dtype == DT::FLOAT )
-        initAttribute("dt", Attribute(*aRead.resource).get< float >());
-    else if( *aRead.dtype == DT::DOUBLE )
-        initAttribute("dt", Attribute(*aRead.resource).get< double >());
-    else
-        throw std::runtime_error("Unexpected Attribute datatype for 'dt'");
+    // FIXME if is likely a hack: dt and time change per iteration
+    if( !containsAttribute("dt") )
+    {
+        if( *aRead.dtype == DT::FLOAT )
+            initAttribute("dt", Attribute(*aRead.resource).get< float >());
+        else if( *aRead.dtype == DT::DOUBLE )
+            initAttribute("dt", Attribute(*aRead.resource).get< double >());
+        else
+            throw std::runtime_error("Unexpected Attribute datatype for 'dt'");
+    }
 
     aRead.name = "time";
     IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
-    if( *aRead.dtype == DT::FLOAT )
-        initAttribute("time", Attribute(*aRead.resource).get< float >());
-    else if( *aRead.dtype == DT::DOUBLE )
-        initAttribute("time", Attribute(*aRead.resource).get< double >());
-    else
-        throw std::runtime_error("Unexpected Attribute datatype for 'time'");
+    // FIXME if is likely a hack: dt and time change per iteration
+    if( !containsAttribute("time") )
+    {
+        if( *aRead.dtype == DT::FLOAT )
+            initAttribute("time", Attribute(*aRead.resource).get< float >());
+        else if( *aRead.dtype == DT::DOUBLE )
+            initAttribute("time", Attribute(*aRead.resource).get< double >());
+        else
+            throw std::runtime_error("Unexpected Attribute datatype for 'time'");
+    }
 
     aRead.name = "timeUnitSI";
     IOHandler->enqueue(IOTask(this, aRead));
     IOHandler->flush();
-    if( *aRead.dtype == DT::DOUBLE )
-        initAttribute("timeUnitSI", Attribute(*aRead.resource).get< double >());
-    else
-        throw std::runtime_error("Unexpected Attribute datatype for 'timeUnitSI'");
+    // FIXME if is likely a hack: dt and time and timeUnitSI change per iteration
+    if( !containsAttribute("timeUnitSI") )
+    {
+        if( *aRead.dtype == DT::DOUBLE )
+            initAttribute("timeUnitSI", Attribute(*aRead.resource).get< double >());
+        else
+            throw std::runtime_error("Unexpected Attribute datatype for 'timeUnitSI'");
+    }
 
     /* Find the root point [Series] of this file,
      * meshesPath and particlesPath are stored there */

@@ -71,6 +71,7 @@ class Attributable
     friend class BaseRecordComponent;
     friend class ParticleSpecies;
     friend class ParticlePatches;
+    friend class PatchRecordComponent;
     template<
         typename T,
         typename T_key,
