@@ -85,37 +85,37 @@ struct Parameter : public AbstractParameter
 template<>
 struct Parameter< Operation::CREATE_FILE > : public AbstractParameter
 {
-    std::string name;
+    std::string name = "";
 };
 
 template<>
 struct Parameter< Operation::OPEN_FILE > : public AbstractParameter
 {
-    std::string name;
+    std::string name = "";
 };
 
 template<>
 struct Parameter< Operation::DELETE_FILE > : public AbstractParameter
 {
-    std::string name;
+    std::string name = "";
 };
 
 template<>
 struct Parameter< Operation::CREATE_PATH > : public AbstractParameter
 {
-    std::string path;
+    std::string path = "";
 };
 
 template<>
 struct Parameter< Operation::OPEN_PATH > : public AbstractParameter
 {
-    std::string path;
+    std::string path = "";
 };
 
 template<>
 struct Parameter< Operation::DELETE_PATH > : public AbstractParameter
 {
-    std::string path;
+    std::string path = "";
 };
 
 template<>
@@ -128,25 +128,25 @@ struct Parameter< Operation::LIST_PATHS > : public AbstractParameter
 template<>
 struct Parameter< Operation::CREATE_DATASET > : public AbstractParameter
 {
-    std::string name;
-    Extent extent;
-    Datatype dtype;
-    Extent chunkSize;
-    std::string compression;
-    std::string transform;
+    std::string name = "";
+    Extent extent = {};
+    Datatype dtype = Datatype::UNDEFINED;
+    Extent chunkSize = {};
+    std::string compression = "";
+    std::string transform = "";
 };
 
 template<>
 struct Parameter< Operation::EXTEND_DATASET > : public AbstractParameter
 {
-    std::string name;
-    Extent extent;
+    std::string name = "";
+    Extent extent = {};
 };
 
 template<>
 struct Parameter< Operation::OPEN_DATASET > : public AbstractParameter
 {
-    std::string name;
+    std::string name = "";
     std::shared_ptr< Datatype > dtype
             = std::make_shared< Datatype >();
     std::shared_ptr< Extent > extent
@@ -156,25 +156,25 @@ struct Parameter< Operation::OPEN_DATASET > : public AbstractParameter
 template<>
 struct Parameter< Operation::DELETE_DATASET > : public AbstractParameter
 {
-    std::string name;
+    std::string name = "";
 };
 
 template<>
 struct Parameter< Operation::WRITE_DATASET > : public AbstractParameter
 {
-    Extent extent;
-    Offset offset;
-    Datatype dtype;
-    std::shared_ptr< void const > data;
+    Extent extent = {};
+    Offset offset = {};
+    Datatype dtype = Datatype::UNDEFINED;
+    std::shared_ptr< void const > data = nullptr;
 };
 
 template<>
 struct Parameter< Operation::READ_DATASET > : public AbstractParameter
 {
-    Extent extent;
-    Offset offset;
-    Datatype dtype;
-    std::shared_ptr< void > data;
+    Extent extent = {};
+    Offset offset = {};
+    Datatype dtype = Datatype::UNDEFINED;
+    std::shared_ptr< void > data = nullptr;
 };
 
 template<>
@@ -187,21 +187,21 @@ struct Parameter< Operation::LIST_DATASETS > : public AbstractParameter
 template<>
 struct Parameter< Operation::DELETE_ATT > : public AbstractParameter
 {
-    std::string name;
+    std::string name = "";
 };
 
 template<>
 struct Parameter< Operation::WRITE_ATT > : public AbstractParameter
 {
     Attribute::resource resource;
-    std::string name;
-    Datatype dtype;
+    std::string name = "";
+    Datatype dtype = Datatype::UNDEFINED;
 };
 
 template<>
 struct Parameter< Operation::READ_ATT > : public AbstractParameter
 {
-    std::string name;
+    std::string name = "";
     std::shared_ptr< Datatype > dtype
             = std::make_shared< Datatype >();
     std::shared_ptr< Attribute::resource > resource
