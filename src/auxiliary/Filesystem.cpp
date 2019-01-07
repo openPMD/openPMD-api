@@ -120,7 +120,13 @@ create_directories( std::string const& path )
         if( !token.empty() )
             partialPath += token + directory_separator;
         if( !directory_exists( partialPath ) )
-            success = success && mk(partialPath);
+        {
+            bool partial_success = mk(partialPath);
+            if( !partial_success )
+                // did someone else just race us to create this dir?
+                if( !directory_exists( partialPath ) )
+                    success = success && partial_success;
+        }
     }
     return success;
 }
