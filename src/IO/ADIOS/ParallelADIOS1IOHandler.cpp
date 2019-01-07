@@ -308,16 +308,16 @@ ParallelADIOS1IOHandlerImpl::initialize_group(std::string const &name)
     std::stringstream params;
     params << "num_aggregators=" << getEnvNum("OPENPMD_ADIOS_NUM_AGGREGATORS", "1")
            << ";num_ost=" << getEnvNum("OPENPMD_ADIOS_NUM_OST", "0")
-           << ";have_metadata_file=" << getEnvNum("OPENPMD_ADIOS_HAVE_METADATA_FILE", "0")
+           << ";have_metadata_file=" << getEnvNum("OPENPMD_ADIOS_HAVE_METADATA_FILE", "1")
            << ";verbose=2";
-    char const* c = params.str().c_str();
+    std::string params_str = params.str(); // important: copy out of temporary!
 
     int status;
     int64_t group;
     ADIOS_STATISTICS_FLAG noStatistics = adios_stat_no;
     status = adios_declare_group(&group, name.c_str(), "", noStatistics);
     VERIFY(status == err_no_error, "Internal error: Failed to declare ADIOS group");
-    status = adios_select_method(group, "MPI_AGGREGATE", c, "");
+    status = adios_select_method(group, "MPI_AGGREGATE", params_str.c_str(), "");
     VERIFY(status == err_no_error, "Internal error: Failed to select ADIOS method");
     return group;
 }
