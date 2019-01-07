@@ -499,6 +499,40 @@ jobs:
           done
       after_script:
         - kcov --merge --coveralls-id=$TRAVIS_JOB_ID ../coverage/merged ../coverage/*
+    - stage: 'Code Coverage'
+      name: Coverity
+      if: branch = coverity_scan
+      sudo: required
+      dist: xenial
+      language: python
+      python: "3.6"
+      compiler: gcc
+      before_install:
+        - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-certificates.crt
+      install:
+        - export CXXFLAGS="-Wall -Wextra"
+        # adios.pc file has typo: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=900811
+        # ... but xenial only ships 1.9.0
+        # - sed -i 's/find_package(ADIOS 1\.13\.1/find_package(ADIOS/g' CMakeLists.txt
+      script:
+        # nothing to do but required by Travis
+        - echo "Coverity scan! (script)"
+      addons:
+        apt:
+          packages:
+            - libopenmpi-dev
+            - openmpi-bin
+            - libhdf5-openmpi-dev
+            - libadios-dev
+            - libadios-bin
+        coverity_scan:
+          project:
+            name: "openPMD/openPMD-api"
+            description: "C++ & Python API for Scientific I/O with openPMD"
+          notification_email: axel.huebl@plasma.ninja
+          build_command_prepend: "mkdir coverity_build; cd coverity_build; . ../.travis/download_samples.sh; cmake .. -DPYTHON_EXECUTABLE:FILEPATH=$(which python); cd .."
+          build_command: "make -C coverity_build -j 2"
+          branch_pattern: coverity_scan
 
 install:
   # spack install
