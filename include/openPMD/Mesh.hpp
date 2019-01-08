@@ -110,7 +110,7 @@ public:
      * @param   axisLabels  vector containing N (string) elements, where N is the number of dimensions in the simulation.
      * @return  Reference to modified mesh.
      */
-    Mesh& setAxisLabels(std::vector< std::string > axisLabels);
+    Mesh& setAxisLabels(std::vector< std::string > const & axisLabels);
 
     /**
      * @tparam  T   Floating point type of user-selected precision (e.g. float, double).
@@ -126,7 +126,7 @@ public:
      * @return  Reference to modified mesh.
      */
     template< typename T >
-    Mesh& setGridSpacing(std::vector< T > gridSpacing);
+    Mesh& setGridSpacing(std::vector< T > const & gridSpacing);
 
     /**
      * @return  Vector of (double) representing the start of the current domain of the simulation (position of the beginning of the first cell) in simulation units.
@@ -138,7 +138,7 @@ public:
      * @param   gridGlobalOffset    vector containing N (double) elements, where N is the number of dimensions in the simulation.
      * @return  Reference to modified mesh.
      */
-    Mesh& setGridGlobalOffset(std::vector< double > gridGlobalOffset);
+    Mesh& setGridGlobalOffset(std::vector< double > const & gridGlobalOffset);
 
     /**
      * @return  Unit-conversion factor to multiply each value in Mesh::gridSpacing and Mesh::gridGlobalOffset, in order to convert from simulation units to SI units.

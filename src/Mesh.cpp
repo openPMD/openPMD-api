@@ -106,7 +106,7 @@ Mesh::axisLabels() const
 }
 
 Mesh&
-Mesh::setAxisLabels(std::vector< std::string > als)
+Mesh::setAxisLabels(std::vector< std::string > const & als)
 {
     setAttribute("axisLabels", als);
     return *this;
@@ -114,7 +114,7 @@ Mesh::setAxisLabels(std::vector< std::string > als)
 
 template< typename T >
 Mesh&
-Mesh::setGridSpacing(std::vector< T > gs)
+Mesh::setGridSpacing(std::vector< T > const & gs)
 {
     static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
 
@@ -124,13 +124,13 @@ Mesh::setGridSpacing(std::vector< T > gs)
 
 template
 Mesh&
-Mesh::setGridSpacing(std::vector< float > gs);
+Mesh::setGridSpacing(std::vector< float > const & gs);
 template
 Mesh&
-Mesh::setGridSpacing(std::vector< double > gs);
+Mesh::setGridSpacing(std::vector< double > const & gs);
 template
 Mesh&
-Mesh::setGridSpacing(std::vector< long double > gs);
+Mesh::setGridSpacing(std::vector< long double > const & gs);
 
 std::vector< double >
 Mesh::gridGlobalOffset() const
@@ -139,7 +139,7 @@ Mesh::gridGlobalOffset() const
 }
 
 Mesh&
-Mesh::setGridGlobalOffset(std::vector< double > ggo)
+Mesh::setGridGlobalOffset(std::vector< double > const & ggo)
 {
     setAttribute("gridGlobalOffset", ggo);
     return *this;
