@@ -48,6 +48,7 @@ Other
 - Docs: upgrade guide added #385
 - CI: GCC 8.1.0 & Python 3.7.0 #376
 - IOTask: init all parameters' members #420
+- KDevelop project files to `.gitignore` #424
 - CMake:
 
   - treat third party libraries properly as ``IMPORTED`` #389 #403
