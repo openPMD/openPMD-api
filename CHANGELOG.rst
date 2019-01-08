@@ -47,6 +47,7 @@ Other
 - modernize ``IOTask``'s ``AbstractParameter`` for slice safety #410
 - Docs: upgrade guide added #385
 - CI: GCC 8.1.0 & Python 3.7.0 #376
+- CI: (re-)activate Clang-Tidy #423
 - IOTask: init all parameters' members #420
 - CMake:
 
