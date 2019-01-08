@@ -49,7 +49,10 @@ Other
 - CI: GCC 8.1.0 & Python 3.7.0 #376
 - CI: (re-)activate Clang-Tidy #423
 - IOTask: init all parameters' members #420
-- KDevelop project files to `.gitignore` #424
+- KDevelop project files to ``.gitignore`` #424
+- C++:
+
+  - ``Mesh``'s ``setAxisLabels|GridSpacing|GridGlobalOffset`` passed as ``const &`` #425
 - CMake:
 
   - treat third party libraries properly as ``IMPORTED`` #389 #403
