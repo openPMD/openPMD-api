@@ -28,6 +28,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <utility>
 
 
 namespace openPMD
@@ -68,9 +69,16 @@ enum class Operation
 struct AbstractParameter
 {
     virtual ~AbstractParameter() = default;
+    AbstractParameter() = default;
+    //AbstractParameter(AbstractParameter&&) = default;
+
+    // avoid object slicing
+    AbstractParameter(const AbstractParameter&) = delete;
+    AbstractParameter& operator=(const AbstractParameter&) = delete;
+    virtual std::unique_ptr< AbstractParameter > clone() const = 0;
 };
 
-/** @brief Typesafe description of all required Arguments for a specified Operation.
+/** @brief Typesafe description of all required arguments for a specified Operation.
  *
  * @note    Input operations (i.e. ones that transfer data from persistent files
  *          to logical representations in openPMD-api) use shared pointers to
@@ -80,47 +88,121 @@ struct AbstractParameter
  */
 template< Operation >
 struct Parameter : public AbstractParameter
-{ };
+{
+    Parameter() = delete;
+    Parameter(Parameter const &) = delete;
+    Parameter(Parameter &&) = delete;
+};
 
 template<>
 struct Parameter< Operation::CREATE_FILE > : public AbstractParameter
 {
+    Parameter() = default;
+    Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {};
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::CREATE_FILE >(*this));
+    }
+
     std::string name = "";
 };
 
 template<>
 struct Parameter< Operation::OPEN_FILE > : public AbstractParameter
 {
+    Parameter() = default;
+    Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {};
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::OPEN_FILE >(*this));
+    }
+
     std::string name = "";
 };
 
 template<>
 struct Parameter< Operation::DELETE_FILE > : public AbstractParameter
 {
+    Parameter() = default;
+    Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {};
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::DELETE_FILE >(*this));
+    }
+
     std::string name = "";
 };
 
 template<>
 struct Parameter< Operation::CREATE_PATH > : public AbstractParameter
 {
+    Parameter() = default;
+    Parameter(Parameter const & p) : AbstractParameter(), path(p.path) {};
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::CREATE_PATH >(*this));
+    }
+
     std::string path = "";
 };
 
 template<>
 struct Parameter< Operation::OPEN_PATH > : public AbstractParameter
 {
+    Parameter() = default;
+    Parameter(Parameter const & p) : AbstractParameter(), path(p.path) {};
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::OPEN_PATH >(*this));
+    }
+
     std::string path = "";
 };
 
 template<>
 struct Parameter< Operation::DELETE_PATH > : public AbstractParameter
 {
+    Parameter() = default;
+    Parameter(Parameter const & p) : AbstractParameter(), path(p.path) {};
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::DELETE_PATH >(*this));
+    }
+
     std::string path = "";
 };
 
 template<>
 struct Parameter< Operation::LIST_PATHS > : public AbstractParameter
 {
+    Parameter() = default;
+    Parameter(Parameter const & p) : AbstractParameter(), paths(p.paths) {};
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::LIST_PATHS >(*this));
+    }
+
     std::shared_ptr< std::vector< std::string > > paths
             = std::make_shared< std::vector< std::string > >();
 };
@@ -128,6 +210,19 @@ struct Parameter< Operation::LIST_PATHS > : public AbstractParameter
 template<>
 struct Parameter< Operation::CREATE_DATASET > : public AbstractParameter
 {
+    Parameter() = default;
+    Parameter(Parameter const & p) : AbstractParameter(),
+        name(p.name), extent(p.extent), dtype(p.dtype),
+        chunkSize(p.chunkSize), compression(p.compression),
+        transform(p.transform) {};
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::CREATE_DATASET >(*this));
+    }
+
     std::string name = "";
     Extent extent = {};
     Datatype dtype = Datatype::UNDEFINED;
@@ -139,6 +234,17 @@ struct Parameter< Operation::CREATE_DATASET > : public AbstractParameter
 template<>
 struct Parameter< Operation::EXTEND_DATASET > : public AbstractParameter
 {
+    Parameter() = default;
+    Parameter(Parameter const & p) : AbstractParameter(),
+        name(p.name), extent(p.extent) {};
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::EXTEND_DATASET >(*this));
+    }
+
     std::string name = "";
     Extent extent = {};
 };
@@ -146,6 +252,17 @@ struct Parameter< Operation::EXTEND_DATASET > : public AbstractParameter
 template<>
 struct Parameter< Operation::OPEN_DATASET > : public AbstractParameter
 {
+    Parameter() = default;
+    Parameter(Parameter const & p) : AbstractParameter(),
+        name(p.name), dtype(p.dtype), extent(p.extent) {};
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::OPEN_DATASET >(*this));
+    }
+
     std::string name = "";
     std::shared_ptr< Datatype > dtype
             = std::make_shared< Datatype >();
@@ -156,12 +273,34 @@ struct Parameter< Operation::OPEN_DATASET > : public AbstractParameter
 template<>
 struct Parameter< Operation::DELETE_DATASET > : public AbstractParameter
 {
+    Parameter() = default;
+    Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {};
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::DELETE_DATASET >(*this));
+    }
+
     std::string name = "";
 };
 
 template<>
 struct Parameter< Operation::WRITE_DATASET > : public AbstractParameter
 {
+    Parameter() = default;
+    Parameter(Parameter const & p) : AbstractParameter(),
+        extent(p.extent), offset(p.offset), dtype(p.dtype),
+        data(p.data) {};
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::WRITE_DATASET >(*this));
+    }
+
     Extent extent = {};
     Offset offset = {};
     Datatype dtype = Datatype::UNDEFINED;
@@ -171,6 +310,18 @@ struct Parameter< Operation::WRITE_DATASET > : public AbstractParameter
 template<>
 struct Parameter< Operation::READ_DATASET > : public AbstractParameter
 {
+    Parameter() = default;
+    Parameter(Parameter const & p) : AbstractParameter(),
+        extent(p.extent), offset(p.offset), dtype(p.dtype),
+        data(p.data) {};
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::READ_DATASET >(*this));
+    }
+
     Extent extent = {};
     Offset offset = {};
     Datatype dtype = Datatype::UNDEFINED;
@@ -180,6 +331,17 @@ struct Parameter< Operation::READ_DATASET > : public AbstractParameter
 template<>
 struct Parameter< Operation::LIST_DATASETS > : public AbstractParameter
 {
+    Parameter() = default;
+    Parameter(Parameter const & p) : AbstractParameter(),
+        datasets(p.datasets) {};
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::LIST_DATASETS >(*this));
+    }
+
     std::shared_ptr< std::vector< std::string > > datasets
             = std::make_shared< std::vector< std::string > >();
 };
@@ -187,20 +349,52 @@ struct Parameter< Operation::LIST_DATASETS > : public AbstractParameter
 template<>
 struct Parameter< Operation::DELETE_ATT > : public AbstractParameter
 {
+    Parameter() = default;
+    Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {};
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::DELETE_ATT >(*this));
+    }
+
     std::string name = "";
 };
 
 template<>
 struct Parameter< Operation::WRITE_ATT > : public AbstractParameter
 {
-    Attribute::resource resource;
+    Parameter() = default;
+    Parameter(Parameter const & p) : AbstractParameter(),
+        name(p.name), dtype(p.dtype), resource(p.resource) {};
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::WRITE_ATT >(*this));
+    }
+
     std::string name = "";
     Datatype dtype = Datatype::UNDEFINED;
+    Attribute::resource resource;
 };
 
 template<>
 struct Parameter< Operation::READ_ATT > : public AbstractParameter
 {
+    Parameter() = default;
+    Parameter(Parameter const & p) : AbstractParameter(),
+        name(p.name), dtype(p.dtype), resource(p.resource) {};
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::READ_ATT >(*this));
+    }
+
     std::string name = "";
     std::shared_ptr< Datatype > dtype
             = std::make_shared< Datatype >();
@@ -211,6 +405,17 @@ struct Parameter< Operation::READ_ATT > : public AbstractParameter
 template<>
 struct Parameter< Operation::LIST_ATTS > : public AbstractParameter
 {
+    Parameter() = default;
+    Parameter(Parameter const & p) : AbstractParameter(),
+        attributes(p.attributes) {};
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::LIST_ATTS >(*this));
+    }
+
     std::shared_ptr< std::vector< std::string > > attributes
             = std::make_shared< std::vector< std::string > >();
 };
@@ -234,23 +439,29 @@ public:
      * @param   p   Parameter object supplying all required input and/or output parameters to the operation.
      */
     template< Operation op >
-    IOTask(Writable* w,
-           Parameter< op > const& p)
+    explicit IOTask(Writable* w,
+           Parameter< op > const & p)
             : writable{w},
               operation{op},
-              parameter{new Parameter< op >(p)}
+              parameter{p.clone()}
     { }
 
     template< Operation op >
-    IOTask(Attributable* a,
-           Parameter< op > const& p)
+    explicit IOTask(Attributable* a,
+           Parameter< op > const & p)
             : writable{getWritable(a)},
               operation{op},
-              parameter{new Parameter< op >(p)}
+              parameter{p.clone()}
     { }
+
+    explicit IOTask(IOTask const & other) :
+        writable{other.writable},
+        operation{other.operation},
+        parameter{other.parameter}
+    {}
 
     Writable* writable;
     Operation operation;
     std::shared_ptr< AbstractParameter > parameter;
-};  //IOTask
-} // openPMD
+};  // IOTask
+} // namespace openPMD
