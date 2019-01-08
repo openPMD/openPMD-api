@@ -46,6 +46,8 @@ __pycache__
 .idea/
 cmake-build-debug/
 cmake-build-release/
+.kdev?/
+*.kdev?
 
 # File-based project format:
 *.iws
