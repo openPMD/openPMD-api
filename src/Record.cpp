@@ -133,4 +133,8 @@ Record::read()
 
     readAttributes();
 }
+
+template
+BaseRecord<RecordComponent>::mapped_type&
+BaseRecord<RecordComponent>::operator[](std::string&& key);
 } // openPMD
