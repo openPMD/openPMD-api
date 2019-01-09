@@ -35,6 +35,7 @@ Bug Fixes
 """""""""
 
 - spurious MPI C++11 API usage in ParallelIOTest removed #396
+- spurious symbol issues on OSX #427
 - `new []`/`delete` mismatch in ParallelIOTest #422
 - use-after-free in SerialIOTest #409
 - fix ODR issue in ADIOS1 backend corrupting the ``AbstractIOHandler`` vtable #415
