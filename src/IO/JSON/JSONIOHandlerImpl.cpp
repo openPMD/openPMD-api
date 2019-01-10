@@ -1453,7 +1453,7 @@ namespace openPMD
         CppToJSON< T > ctj;
         for( auto const & a: v )
         {
-            j.push_back( ctj( a ) );
+            j.emplace_back( ctj( a ) );
         }
         return j;
     }
@@ -1476,7 +1476,7 @@ namespace openPMD
         CppToJSON< T > ctj;
         for( auto const & a: v )
         {
-            j.push_back( ctj( a ) );
+            j.emplace_back( ctj( a ) );
         }
         return j;
     }
@@ -1499,9 +1499,9 @@ namespace openPMD
     {
         std::vector< T > v;
         JsonToCpp< T > jtp;
-        for( auto & j: json )
+        for( auto const & j: json )
         {
-            v.push_back( jtp( j ) );
+            v.emplace_back( jtp( j ) );
         }
         return v;
     }
@@ -1524,7 +1524,7 @@ namespace openPMD
         > a;
         JsonToCpp< T > jtp;
         size_t i = 0;
-        for( auto & j: json )
+        for( auto const & j: json )
         {
             a[i] = jtp( j );
             i++;
