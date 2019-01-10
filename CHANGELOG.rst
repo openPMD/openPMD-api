@@ -28,7 +28,7 @@ Features
   - ``load_chunk`` defaults added #408
   - works with Python 3.7 #376
   - setup.py for sdist #240
-- Backends: JSON support added #384 #393 #338
+- Backends: JSON support added #384 #393 #338 #429
 - Parallel benchmark added #346 #398 #402 #411
 
 Bug Fixes

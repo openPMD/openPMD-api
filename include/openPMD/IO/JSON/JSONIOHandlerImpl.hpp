@@ -293,7 +293,7 @@ namespace openPMD
         // full operating system path of the given file
         std::string fullPath( File );
 
-        std::string fullPath( std::string );
+        std::string fullPath( std::string const & );
 
         // from a path specification /a/b/c, remove the last
         // "folder" (i.e. modify the string to equal /a/b)
