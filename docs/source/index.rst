@@ -66,6 +66,7 @@ Usage
    usage/firststeps
    usage/serial
    usage/parallel
+   usage/examples
 
 ***********
 Development
