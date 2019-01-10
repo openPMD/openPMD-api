@@ -542,6 +542,8 @@ install:
   - cp $TRAVIS_BUILD_DIR/.travis/spack/*.yaml
        $SPACK_ROOT/etc/spack/
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      travis_wait brew upgrade --cleanup;
+      travis_wait brew upgrade --cleanup &&
       travis_wait brew install modules &&
       brew info modules &&
       source /usr/local/opt/modules/init/bash &&
