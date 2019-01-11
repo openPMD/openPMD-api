@@ -5,11 +5,15 @@ Changelog
 
 0.7.0-alpha
 -----------
-**Date:** TBA
+**Date:** 2019-01-11
 
-[Title]
+JSON Support, Interface Simplification and Stability
 
-[Summary]
+This release introduces serial JSON (``.json``) support.
+Our API has been unified with slight breaking changes such as a new Python module name (``import openpmd_api`` from now on) as well as re-ordered ``store/loadChunk`` argument orders.
+Please see our new "upgrade guide" section in the manual how to update existing scripts.
+Additionally, many little bugs have been fixed.
+Official Python 3.7 support and a parallel benchmark example have been added.
 
 Changes to "0.6.3-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -36,7 +40,7 @@ Bug Fixes
 
 - spurious MPI C++11 API usage in ParallelIOTest removed #396
 - spurious symbol issues on OSX #427
-- `new []`/`delete` mismatch in ParallelIOTest #422
+- ``new []``/``delete`` mismatch in ParallelIOTest #422
 - use-after-free in SerialIOTest #409
 - fix ODR issue in ADIOS1 backend corrupting the ``AbstractIOHandler`` vtable #415
 - fix race condition in MPI-parallel directory creation #419
