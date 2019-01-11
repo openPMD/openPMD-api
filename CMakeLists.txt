@@ -2,7 +2,7 @@
 #
 cmake_minimum_required(VERSION 3.11.0)
 
-project(openPMD VERSION 0.6.2) # LANGUAGES CXX
+project(openPMD VERSION 0.7.0) # LANGUAGES CXX
 
 # the openPMD "markup"/"schema" standard version
 set(openPMD_STANDARD_VERSION 1.1.0)
