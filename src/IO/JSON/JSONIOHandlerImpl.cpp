@@ -53,7 +53,6 @@ namespace openPMD
 
     std::future< void > JSONIOHandlerImpl::flush( )
     {
-
         AbstractIOHandlerImpl::flush( );
         for( auto const & file: m_dirty )
         {
@@ -463,7 +462,7 @@ namespace openPMD
         );
         // be careful not to create the group by accident
         // the loop will execute at least once
-        for( auto folder: splitPath )
+        for( auto const & folder: splitPath )
         {
             auto it = j->find( folder );
             if( it == j->end( ) )
@@ -806,7 +805,7 @@ namespace openPMD
     }
 
 
-    std::string JSONIOHandlerImpl::fullPath( std::string fileName )
+    std::string JSONIOHandlerImpl::fullPath( std::string const & fileName )
     {
         if( auxiliary::ends_with(
             m_handler->directory,
@@ -1452,9 +1451,9 @@ namespace openPMD
     {
         nlohmann::json j;
         CppToJSON< T > ctj;
-        for( auto a: v )
+        for( auto const & a: v )
         {
-            j.push_back( ctj( a ) );
+            j.emplace_back( ctj( a ) );
         }
         return j;
     }
@@ -1475,9 +1474,9 @@ namespace openPMD
     {
         nlohmann::json j;
         CppToJSON< T > ctj;
-        for( auto a: v )
+        for( auto const & a: v )
         {
-            j.push_back( ctj( a ) );
+            j.emplace_back( ctj( a ) );
         }
         return j;
     }
@@ -1500,9 +1499,9 @@ namespace openPMD
     {
         std::vector< T > v;
         JsonToCpp< T > jtp;
-        for( auto & j: json )
+        for( auto const & j: json )
         {
-            v.push_back( jtp( j ) );
+            v.emplace_back( jtp( j ) );
         }
         return v;
     }
@@ -1525,7 +1524,7 @@ namespace openPMD
         > a;
         JsonToCpp< T > jtp;
         size_t i = 0;
-        for( auto & j: json )
+        for( auto const & j: json )
         {
             a[i] = jtp( j );
             i++;
@@ -1555,8 +1554,6 @@ namespace openPMD
         }
     }
 
-
 #endif
 
-
-} // openPMD
+} // namespace openPMD
