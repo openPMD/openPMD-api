@@ -28,6 +28,11 @@
             "name": "Stańczak, Dominik",
             "orcid": "0000-0001-6291-8843",
             "type": "Other"
+        },
+        {
+            "affiliation": "Anaconda, Inc.",
+            "name": "Donnelly, Ray",
+            "type": "Other"
         }
     ],
     "title": "C++ & Python API for Scientific I/O with openPMD",
