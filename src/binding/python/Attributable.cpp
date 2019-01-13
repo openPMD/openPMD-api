@@ -34,6 +34,8 @@
 
 // std::variant
 //   https://pybind11.readthedocs.io/en/stable/advanced/cast/stl.html
+// in C++17 mode already defined in <pybind11/stl.h>
+#if __cplusplus < 201703L
 namespace pybind11 {
 namespace detail {
     template< typename... Ts >
@@ -43,6 +45,7 @@ namespace detail {
 
 } // namespace detail
 } // namespace pybind11
+#endif
 
 namespace py = pybind11;
 using namespace openPMD;
