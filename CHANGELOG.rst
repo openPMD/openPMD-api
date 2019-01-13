@@ -20,6 +20,8 @@ Features
 Bug Fixes
 """""""""
 
+- fix compilation with C++17 for python bindings #438
+
 Other
 """""
 
