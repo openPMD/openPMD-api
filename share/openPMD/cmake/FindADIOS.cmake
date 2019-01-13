@@ -224,9 +224,9 @@ if(ADIOS_FOUND)
 
         # find static lib: absolute path in -L then default
         if(_LIB MATCHES "^glib")
-            find_library(_LIB_DIR NAMES ${_LIB} PATHS ${ADIOS_LIBRARY_DIRS} NAMES glib-2.0 CMAKE_FIND_ROOT_PATH_BOTH)
+            find_library(_LIB_DIR NAMES ${_LIB} PATHS ${ADIOS_LIBRARY_DIRS} NAMES glib-2.0)
         else()
-            find_library(_LIB_DIR NAMES ${_LIB} PATHS ${ADIOS_LIBRARY_DIRS} CMAKE_FIND_ROOT_PATH_BOTH)
+            find_library(_LIB_DIR NAMES ${_LIB} PATHS ${ADIOS_LIBRARY_DIRS})
         endif()
 
         if(_LIB MATCHES "^.*nompi.*$")
