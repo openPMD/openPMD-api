@@ -69,7 +69,7 @@ $(function() {
 <object type="image/svg+xml" data="https://img.shields.io/badge/platforms-linux%20|%20osx%20|%20win-blue.svg" alt="Supported Platforms" title="Supported Platforms"></object>
 </div>
 <p> <a href="https://www.gnu.org/licenses/lgpl-3.0.html"></a> <a href="https://doi.org/10.14278/rodare.27"></a></p>
-<p class=""><a href="https://travis-ci.org/openPMD/openPMD-api/branches"></a> <a href="https://ci.appveyor.com/project/ax3l/openpmd-api/branch/dev"></a> <a href="https://coveralls.io/github/openPMD/openPMD-api"></a> <a href="https://www.codefactor.io/repository/github/openpmd/openpmd-api"></a></p>
+<p class=""><a href="https://travis-ci.org/openPMD/openPMD-api/branches"></a> <a href="https://ci.appveyor.com/project/ax3l/openpmd-api/branch/dev"></a> <a href="https://scan.coverity.com/projects/openpmd-openpmd-api"></a> <a href="https://coveralls.io/github/openPMD/openPMD-api"></a> <a href="https://www.codefactor.io/repository/github/openpmd/openpmd-api"></a></p>
 <p class="">This library provides a high-level API for writing and reading scientific data according to <a href="https://www.openpmd.org/">openPMD</a>. It allows to build logical file structures which drive scientific I/O libraries such as HDF5 and ADIOS through a common, intuitive interface. Where supported, openPMD-api implements both serial and MPI parallel I/O capabilities.</p>
 <h2>Usage</h2>
 <h3>C++</h3>
@@ -80,19 +80,21 @@ $(function() {
 <p class=""><a href="https://www.python.org/"></a> </p><div class="image">
 <object type="image/svg+xml" data="https://img.shields.io/badge/phase-alpha-yellowgreen.svg" alt="Python3 API: Alpha" title="Status: Alpha"></object>
 </div>
-<div class="fragment"><div class="line">import openPMD</div><div class="line"></div><div class="line"><span class="comment"># ...</span></div><div class="line"></div><div class="line">series = <a class="code" href="classopen_p_m_d_1_1_series.html">openPMD.Series</a>(<span class="stringliteral">&quot;samples/git-sample/data%T.h5&quot;</span>, openPMD.Access_Type.read_only)</div><div class="line"></div><div class="line"><span class="keywordflow">for</span> k_i, i <span class="keywordflow">in</span> series.iterations.items():</div><div class="line">    print(<span class="stringliteral">&quot;Iteration: {0}&quot;</span>.format(k_i))</div><div class="line"></div><div class="line">    <span class="keywordflow">for</span> k_m, m <span class="keywordflow">in</span> i.meshes.items():</div><div class="line">        print(<span class="stringliteral">&quot;  Mesh &#39;{0}&#39; attributes:&quot;</span>.format(k_m))</div><div class="line">        <span class="keywordflow">for</span> a <span class="keywordflow">in</span> m.attributes:</div><div class="line">            print(<span class="stringliteral">&quot;    {0}&quot;</span>.format(a))</div><div class="line"></div><div class="line">    <span class="keywordflow">for</span> k_p, p <span class="keywordflow">in</span> i.particles.items():</div><div class="line">        print(<span class="stringliteral">&quot;  Particle species &#39;{0}&#39; attributes:&quot;</span>.format(k_p))</div><div class="line">        <span class="keywordflow">for</span> a <span class="keywordflow">in</span> p.attributes:</div><div class="line">            print(<span class="stringliteral">&quot;    {0}&quot;</span>.format(a))</div></div><!-- fragment --><h3>More!</h3>
+<div class="fragment"><div class="line">import openpmd_api</div><div class="line"></div><div class="line"><span class="comment"># ...</span></div><div class="line"></div><div class="line">series = openpmd_api.Series(<span class="stringliteral">&quot;samples/git-sample/data%T.h5&quot;</span>, openPMD.Access_Type.read_only)</div><div class="line"></div><div class="line"><span class="keywordflow">for</span> k_i, i <span class="keywordflow">in</span> series.iterations.items():</div><div class="line">    print(<span class="stringliteral">&quot;Iteration: {0}&quot;</span>.format(k_i))</div><div class="line"></div><div class="line">    <span class="keywordflow">for</span> k_m, m <span class="keywordflow">in</span> i.meshes.items():</div><div class="line">        print(<span class="stringliteral">&quot;  Mesh &#39;{0}&#39; attributes:&quot;</span>.format(k_m))</div><div class="line">        <span class="keywordflow">for</span> a <span class="keywordflow">in</span> m.attributes:</div><div class="line">            print(<span class="stringliteral">&quot;    {0}&quot;</span>.format(a))</div><div class="line"></div><div class="line">    <span class="keywordflow">for</span> k_p, p <span class="keywordflow">in</span> i.particles.items():</div><div class="line">        print(<span class="stringliteral">&quot;  Particle species &#39;{0}&#39; attributes:&quot;</span>.format(k_p))</div><div class="line">        <span class="keywordflow">for</span> a <span class="keywordflow">in</span> p.attributes:</div><div class="line">            print(<span class="stringliteral">&quot;    {0}&quot;</span>.format(a))</div></div><!-- fragment --><h3>More!</h3>
 <p class="">Curious? Our manual shows full <a href="https://openpmd-api.readthedocs.io/en/latest/usage/firststeps.html">read &amp; write examples</a>, both serial and MPI-parallel!</p>
 <h2>Dependencies</h2>
 <p class="">Required:</p><ul>
-<li>CMake 3.10.0+</li>
+<li>CMake 3.11.0+</li>
 <li>C++11 capable compiler, e.g. g++ 4.8+, clang 3.9+, VS 2015+</li>
 </ul>
 <p class="">Shipped internally in <code>share/openPMD/thirdParty/</code>:</p><ul>
 <li><a href="https://github.com/mpark/variant">MPark.Variant</a> 1.3.0+ (https://github.com/mpark/variant/blob/master/LICENSE.md "BSL-1.0")</li>
-<li><a href="https://github.com/catchorg/Catch2">Catch2</a> 2.2.1+ (<a href="https://github.com/catchorg/Catch2/blob/master/LICENSE.txt">BSL-1.0</a>)</li>
+<li><a href="https://github.com/catchorg/Catch2">Catch2</a> 2.3.0+ (<a href="https://github.com/catchorg/Catch2/blob/master/LICENSE.txt">BSL-1.0</a>)</li>
 <li><a href="https://github.com/pybind/pybind11">pybind11</a> 2.2.3+ (<a href="https://github.com/pybind/pybind11/blob/master/LICENSE">new BSD</a>)</li>
+<li><a href="https://github.com/nlohmann/json">NLohmann-JSON</a> 3.4.0+ (<a href="https://github.com/nlohmann/json/blob/develop/LICENSE.MIT">MIT</a>)</li>
 </ul>
 <p class="">Optional I/O backends:</p><ul>
+<li><a href="https://en.wikipedia.org/wiki/JSON">JSON</a></li>
 <li><a href="https://support.hdfgroup.org/HDF5">HDF5</a> 1.8.13+</li>
 <li><a href="https://www.olcf.ornl.gov/center-projects/adios">ADIOS1</a> 1.13.1+</li>
 <li><a href="https://github.com/ornladios/ADIOS2">ADIOS2</a> 2.1+ (<em>not yet implemented</em>)</li>
@@ -102,9 +104,9 @@ $(function() {
 </ul>
 <p class="">Optional language bindings:</p><ul>
 <li>Python:<ul>
-<li>Python 3.X+</li>
+<li>Python 3.5 - 3.7</li>
 <li>pybind 2.2.3+</li>
-<li>numpy</li>
+<li>numpy 1.15+</li>
 </ul>
 </li>
 </ul>
@@ -123,18 +125,20 @@ $(function() {
 <tr class="markdownTableBody" class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code>openPMD_USE_MPI</code>  </td><td class="markdownTableBodyNone"><b>AUTO</b>/ON/OFF  </td><td class="markdownTableBodyNone">Enable MPI support   </td></tr>
 <tr class="markdownTableBody" class="markdownTableRowEven">
+<td class="markdownTableBodyNone"><code>openPMD_USE_JSON</code>  </td><td class="markdownTableBodyNone"><b>AUTO</b>/ON/OFF  </td><td class="markdownTableBodyNone">Enable support for JSON   </td></tr>
+<tr class="markdownTableBody" class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code>openPMD_USE_HDF5</code>  </td><td class="markdownTableBodyNone"><b>AUTO</b>/ON/OFF  </td><td class="markdownTableBodyNone">Enable support for HDF5   </td></tr>
-<tr class="markdownTableBody" class="markdownTableRowOdd">
+<tr class="markdownTableBody" class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code>openPMD_USE_ADIOS1</code>  </td><td class="markdownTableBodyNone"><b>AUTO</b>/ON/OFF  </td><td class="markdownTableBodyNone">Enable support for ADIOS1   </td></tr>
-<tr class="markdownTableBody" class="markdownTableRowEven">
+<tr class="markdownTableBody" class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code>openPMD_USE_ADIOS2</code>  </td><td class="markdownTableBodyNone">AUTO/ON/**OFF**  </td><td class="markdownTableBodyNone">Enable support for ADIOS2 <sup>1</sup>   </td></tr>
-<tr class="markdownTableBody" class="markdownTableRowOdd">
+<tr class="markdownTableBody" class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code>openPMD_USE_PYTHON</code>  </td><td class="markdownTableBodyNone"><b>AUTO</b>/ON/OFF  </td><td class="markdownTableBodyNone">Enable Python bindings   </td></tr>
-<tr class="markdownTableBody" class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>openPMD_USE_INVASIVE_TESTS</code>  </td><td class="markdownTableBodyNone"><b>AUTO</b>/ON/OFF  </td><td class="markdownTableBodyNone">Enable unit tests that modify source code <sup>2</sup>   </td></tr>
 <tr class="markdownTableBody" class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>openPMD_USE_VERIFY</code>  </td><td class="markdownTableBodyNone"><b>ON</b>/OFF  </td><td class="markdownTableBodyNone">Enable internal VERIFY (assert) macro independent of build type <sup>3</sup>   </td></tr>
+<td class="markdownTableBodyNone"><code>openPMD_USE_INVASIVE_TESTS</code>  </td><td class="markdownTableBodyNone"><b>AUTO</b>/ON/OFF  </td><td class="markdownTableBodyNone">Enable unit tests that modify source code <sup>2</sup>   </td></tr>
 <tr class="markdownTableBody" class="markdownTableRowEven">
+<td class="markdownTableBodyNone"><code>openPMD_USE_VERIFY</code>  </td><td class="markdownTableBodyNone"><b>ON</b>/OFF  </td><td class="markdownTableBodyNone">Enable internal VERIFY (assert) macro independent of build type <sup>3</sup>   </td></tr>
+<tr class="markdownTableBody" class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code>PYTHON_EXECUTABLE</code>  </td><td class="markdownTableBodyNone">(first found)  </td><td class="markdownTableBodyNone">Path to Python executable   </td></tr>
 </table>
 <p class=""><sup>1</sup> <em>not yet implemented</em> <sup>2</sup> <em>e.g. C++ keywords, currently disabled only for MSVC</em> <sup>3</sup> <em>this includes most pre-/post-condition checks, disabling without specific cause is highly discouraged</em></p>
@@ -145,11 +149,13 @@ $(function() {
 <tr class="markdownTableBody" class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_VARIANT</code>  </td><td class="markdownTableBodyNone"><b>ON</b>/OFF  </td><td class="markdownTableBodyNone">MPark.Variant  </td><td class="markdownTableBodyNone">1.3.0+   </td></tr>
 <tr class="markdownTableBody" class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_CATCH</code>  </td><td class="markdownTableBodyNone"><b>ON</b>/OFF  </td><td class="markdownTableBodyNone">Catch2  </td><td class="markdownTableBodyNone">2.2.1+   </td></tr>
+<td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_CATCH</code>  </td><td class="markdownTableBodyNone"><b>ON</b>/OFF  </td><td class="markdownTableBodyNone">Catch2  </td><td class="markdownTableBodyNone">2.3.0+   </td></tr>
 <tr class="markdownTableBody" class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_PYBIND11</code>  </td><td class="markdownTableBodyNone"><b>ON</b>/OFF  </td><td class="markdownTableBodyNone">pybind11  </td><td class="markdownTableBodyNone">2.2.3+   </td></tr>
+<tr class="markdownTableBody" class="markdownTableRowEven">
+<td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_JSON</code>  </td><td class="markdownTableBodyNone"><b>ON</b>/OFF  </td><td class="markdownTableBodyNone">NLohmann-JSON  </td><td class="markdownTableBodyNone">3.4.0+   </td></tr>
 </table>
-<p class="">By default, this will build as a static library (<code>libopenPMD.a</code>) and installs also its headers. In order to build a static library, append <code>-DBUILD_SHARED_LIBS=ON</code> to the <code>cmake</code> command. You can only build a static or a shared library at a time.</p>
+<p class="">By default, this will build as a static library (<code>libopenPMD.a</code>) and installs also its headers. In order to build a shared library, append <code>-DBUILD_SHARED_LIBS=ON</code> to the <code>cmake</code> command. You can only build a static or a shared library at a time.</p>
 <p class="">By default, the <code>Release</code> version is built. In order to build with debug symbols, pass <code>-DCMAKE_BUILD_TYPE=Debug</code> to your <code>cmake</code> command.</p>
 <p class="">By default, tests and examples are built. In order to skip building those, pass <code>-DBUILD_TESTING=OFF</code> or <code>-DBUILD_EXAMPLES</code> to your <code>cmake</code> command.</p>
 <h2>Linking to your project</h2>
@@ -157,7 +163,7 @@ $(function() {
 <h3>CMake</h3>
 <p class="">If your project is using CMake for its build, one can conveniently use our provided <code>Config.cmake</code> package which is installed alongside the library.</p>
 <p class="">First set the following environment hint if openPMD-api was <em>not</em> installed in a system path:</p>
-<div class="fragment"><div class="line"># optional: only needed if installed outside of system paths</div><div class="line">export CMAKE_PREFIX_PATH=$HOME/somepath:$CMAKE_PREFIX_PATH</div></div><!-- fragment --><p class="">Use the following lines in your project's <code>CMakeLists.txt</code>: </p><div class="fragment"><div class="line"># supports:                       COMPONENTS MPI NOMPI HDF5 ADIOS1 ADIOS2</div><div class="line">find_package(openPMD 0.1.0 CONFIG)</div><div class="line"></div><div class="line">if(openPMD_FOUND)</div><div class="line">    target_link_libraries(YourTarget PRIVATE openPMD::openPMD)</div><div class="line">endif()</div></div><!-- fragment --><p class=""><em>Alternatively</em>, add the openPMD-api repository source directly to your project and use it via: </p><div class="fragment"><div class="line">add_subdirectory(&quot;path/to/source/of/openPMD-api&quot;)</div><div class="line"></div><div class="line">target_link_libraries(YourTarget PRIVATE openPMD::openPMD)</div></div><!-- fragment --> </div></div><!-- PageDoc -->
+<div class="fragment"><div class="line"># optional: only needed if installed outside of system paths</div><div class="line">export CMAKE_PREFIX_PATH=$HOME/somepath:$CMAKE_PREFIX_PATH</div></div><!-- fragment --><p class="">Use the following lines in your project's <code>CMakeLists.txt</code>: </p><div class="fragment"><div class="line"># supports:                       COMPONENTS MPI NOMPI JSON HDF5 ADIOS1 ADIOS2</div><div class="line">find_package(openPMD 0.1.0 CONFIG)</div><div class="line"></div><div class="line">if(openPMD_FOUND)</div><div class="line">    target_link_libraries(YourTarget PRIVATE openPMD::openPMD)</div><div class="line">endif()</div></div><!-- fragment --><p class=""><em>Alternatively</em>, add the openPMD-api repository source directly to your project and use it via: </p><div class="fragment"><div class="line">add_subdirectory(&quot;path/to/source/of/openPMD-api&quot;)</div><div class="line"></div><div class="line">target_link_libraries(YourTarget PRIVATE openPMD::openPMD)</div></div><!-- fragment --> </div></div><!-- PageDoc -->
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

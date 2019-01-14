@@ -88,19 +88,20 @@ Inheritance diagram for openPMD::AbstractIOHandler:</div>
 <area href="classopen_p_m_d_1_1_a_d_i_o_s2_i_o_handler.html" alt="openPMD::ADIOS2IOHandler" shape="rect" coords="231,56,452,80"/>
 <area href="classopen_p_m_d_1_1_dummy_i_o_handler.html" title="Dummy handler without any IO operations. " alt="openPMD::DummyIOHandler" shape="rect" coords="462,56,683,80"/>
 <area href="classopen_p_m_d_1_1_h_d_f5_i_o_handler.html" alt="openPMD::HDF5IOHandler" shape="rect" coords="693,56,914,80"/>
-<area href="classopen_p_m_d_1_1_parallel_a_d_i_o_s1_i_o_handler.html" alt="openPMD::ParallelADIOS1IOHandler" shape="rect" coords="924,56,1145,80"/>
-<area href="classopen_p_m_d_1_1_parallel_h_d_f5_i_o_handler.html" alt="openPMD::ParallelHDF5IOHandler" shape="rect" coords="1155,56,1376,80"/>
+<area href="classopen_p_m_d_1_1_j_s_o_n_i_o_handler.html" alt="openPMD::JSONIOHandler" shape="rect" coords="924,56,1145,80"/>
+<area href="classopen_p_m_d_1_1_parallel_a_d_i_o_s1_i_o_handler.html" alt="openPMD::ParallelADIOS1IOHandler" shape="rect" coords="1155,56,1376,80"/>
+<area href="classopen_p_m_d_1_1_parallel_h_d_f5_i_o_handler.html" alt="openPMD::ParallelHDF5IOHandler" shape="rect" coords="1386,56,1607,80"/>
 </map>
  </div></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:af5ba4724b80f1e1b715c28bf36498ef7"><td class="memItemLeft" align="right" valign="top"><a id="af5ba4724b80f1e1b715c28bf36498ef7"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>AbstractIOHandler</b> (std::string path, AccessType)</td></tr>
-<tr class="separator:af5ba4724b80f1e1b715c28bf36498ef7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aec02ca731a2b06d7c22be324f2cc3f50"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler.html#aec02ca731a2b06d7c22be324f2cc3f50">enqueue</a> (<a class="el" href="classopen_p_m_d_1_1_i_o_task.html">IOTask</a> const &amp;iotask)</td></tr>
-<tr class="memdesc:aec02ca731a2b06d7c22be324f2cc3f50"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add provided task to queue according to FIFO.  <a href="#aec02ca731a2b06d7c22be324f2cc3f50">More...</a><br /></td></tr>
-<tr class="separator:aec02ca731a2b06d7c22be324f2cc3f50"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aed2ac20939821e711c24031d932624c4"><td class="memItemLeft" align="right" valign="top"><a id="aed2ac20939821e711c24031d932624c4"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>AbstractIOHandler</b> (std::string path, AccessType at)</td></tr>
+<tr class="separator:aed2ac20939821e711c24031d932624c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af0b10be5de462efba3e4b22e43a48dc8"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler.html#af0b10be5de462efba3e4b22e43a48dc8">enqueue</a> (<a class="el" href="classopen_p_m_d_1_1_i_o_task.html">IOTask</a> const &amp;iotask)</td></tr>
+<tr class="memdesc:af0b10be5de462efba3e4b22e43a48dc8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add provided task to queue according to FIFO.  <a href="#af0b10be5de462efba3e4b22e43a48dc8">More...</a><br /></td></tr>
+<tr class="separator:af0b10be5de462efba3e4b22e43a48dc8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a01a69dc408cc40dab0af0ab3bb0a75d8"><td class="memItemLeft" align="right" valign="top">virtual std::future&lt; void &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler.html#a01a69dc408cc40dab0af0ab3bb0a75d8">flush</a> ()=0</td></tr>
 <tr class="memdesc:a01a69dc408cc40dab0af0ab3bb0a75d8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Process operations in queue according to FIFO.  <a href="#a01a69dc408cc40dab0af0ab3bb0a75d8">More...</a><br /></td></tr>
 <tr class="separator:a01a69dc408cc40dab0af0ab3bb0a75d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -121,8 +122,8 @@ std::queue&lt; <a class="el" href="classopen_p_m_d_1_1_i_o_task.html">IOTask</a>
 <div class="textblock"><p class="">Interface for communicating between logical and physically persistent data. </p>
 <p class="">Input and output operations are channeled through a task queue that is managed by the concrete class implementing this handler. The queue of pending operations is only processed on demand. For certain scenarios it is therefore necessary to manually execute all operations by calling <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler.html#a01a69dc408cc40dab0af0ab3bb0a75d8" title="Process operations in queue according to FIFO. ">AbstractIOHandler::flush()</a>. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
-<a id="aec02ca731a2b06d7c22be324f2cc3f50"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aec02ca731a2b06d7c22be324f2cc3f50">&#9670;&nbsp;</a></span>enqueue()</h2>
+<a id="af0b10be5de462efba3e4b22e43a48dc8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af0b10be5de462efba3e4b22e43a48dc8">&#9670;&nbsp;</a></span>enqueue()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -131,7 +132,7 @@ std::queue&lt; <a class="el" href="classopen_p_m_d_1_1_i_o_task.html">IOTask</a>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void openPMD::AbstractIOHandler::enqueue </td>
+          <td class="memname">virtual void openPMD::AbstractIOHandler::enqueue </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classopen_p_m_d_1_1_i_o_task.html">IOTask</a> const &amp;&#160;</td>
           <td class="paramname"><em>iotask</em></td><td>)</td>
@@ -140,7 +141,7 @@ std::queue&lt; <a class="el" href="classopen_p_m_d_1_1_i_o_task.html">IOTask</a>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -183,13 +184,12 @@ std::queue&lt; <a class="el" href="classopen_p_m_d_1_1_i_o_task.html">IOTask</a>
 <p>Process operations in queue according to FIFO. </p>
 <dl class="section return"><dt>Returns</dt><dd>Future indicating the completion state of the operation for backends that decide to implement this operation asynchronously. </dd></dl>
 
-<p>Implemented in <a class="el" href="classopen_p_m_d_1_1_dummy_i_o_handler.html#a541f7013332d4c8bafdbd89844667a53">openPMD::DummyIOHandler</a>, <a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s2_i_o_handler.html#a1c9a411b7c8a2e084692893dfe4af153">openPMD::ADIOS2IOHandler</a>, <a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler.html#a3e4b1a81dba2ef4fcdd78bfc38fb9da0">openPMD::ADIOS1IOHandler</a>, <a class="el" href="classopen_p_m_d_1_1_parallel_a_d_i_o_s1_i_o_handler.html#a65e4573fde4ce024d62fb4710dd55078">openPMD::ParallelADIOS1IOHandler</a>, <a class="el" href="classopen_p_m_d_1_1_parallel_h_d_f5_i_o_handler.html#ad2303306cc984664e3e42fa9396a167e">openPMD::ParallelHDF5IOHandler</a>, and <a class="el" href="classopen_p_m_d_1_1_h_d_f5_i_o_handler.html#a8cb4f6b094c58b8909c0a74d56558c40">openPMD::HDF5IOHandler</a>.</p>
+<p>Implemented in <a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s2_i_o_handler.html#a1c9a411b7c8a2e084692893dfe4af153">openPMD::ADIOS2IOHandler</a>, <a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler.html#a3e4b1a81dba2ef4fcdd78bfc38fb9da0">openPMD::ADIOS1IOHandler</a>, <a class="el" href="classopen_p_m_d_1_1_parallel_a_d_i_o_s1_i_o_handler.html#a65e4573fde4ce024d62fb4710dd55078">openPMD::ParallelADIOS1IOHandler</a>, <a class="el" href="classopen_p_m_d_1_1_dummy_i_o_handler.html#a541f7013332d4c8bafdbd89844667a53">openPMD::DummyIOHandler</a>, <a class="el" href="classopen_p_m_d_1_1_parallel_h_d_f5_i_o_handler.html#ad2303306cc984664e3e42fa9396a167e">openPMD::ParallelHDF5IOHandler</a>, <a class="el" href="classopen_p_m_d_1_1_j_s_o_n_i_o_handler.html#a42174de612515a81a23d26e89c579cdb">openPMD::JSONIOHandler</a>, and <a class="el" href="classopen_p_m_d_1_1_h_d_f5_i_o_handler.html#a8cb4f6b094c58b8909c0a74d56558c40">openPMD::HDF5IOHandler</a>.</p>
 
 </div>
 </div>
-<hr/>The documentation for this class was generated from the following files:<ul>
-<li>/tmp/tmp.pqF3lVcW0y/openPMD-api/include/openPMD/IO/<a class="el" href="_abstract_i_o_handler_8hpp_source.html">AbstractIOHandler.hpp</a></li>
-<li>/tmp/tmp.pqF3lVcW0y/openPMD-api/src/IO/AbstractIOHandler.cpp</li>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>/tmp/tmp.JS4EpXsVjC/openPMD-api/include/openPMD/IO/<a class="el" href="_abstract_i_o_handler_8hpp_source.html">AbstractIOHandler.hpp</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
