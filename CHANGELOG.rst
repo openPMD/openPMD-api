@@ -26,6 +26,8 @@ Bug Fixes
 Other
 """""
 
+- Docs: additional release workflows for maintainers #439
+
 
 0.7.0-alpha
 -----------
