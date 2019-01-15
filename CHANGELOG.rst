@@ -26,7 +26,10 @@ Bug Fixes
 Other
 """""
 
-- Docs: additional release workflows for maintainers #439
+- Docs:
+
+  - additional release workflows for maintainers #439
+  - ADIOS1 backend options in manual #440
 
 
 0.7.0-alpha

@@ -12,6 +12,7 @@ For further information, check out the :ref:`installation guide <install>`,
 
 JSON File Format
 ----------------
+
 A JSON file uses the file ending ``.json``. The JSON backend is chosen by creating
 a ``Series`` object with a filename that has this file ending.
 
@@ -45,8 +46,10 @@ Every such attribute is itself a JSON object with two keys:
  * ``datatype``: A string describing the type of the value.
  * ``value``: The actual value of type ``datatype``.
 
+
 Restrictions
 ------------
+
 For creation of JSON serializations (i.e. writing), the restrictions of the JSON backend are
 equivalent to those of the `JSON library by Niels Lohmann <https://github.com/nlohmann/json>`_
 used by the openPMD backend.
@@ -72,10 +75,14 @@ may have originally been +/-Infinity or beyond the supported value range.
 Upon reading ``null`` when expecting any other datatype, the JSON backend will
 propagate the exception thrown by Niels Lohmann's library.
 
+The (keys) names ``"attributes"``, ``"data"`` and ``"datatype"`` are reserved and must not be used for base/mesh/particles path, records and their components.
+
 A parallel (i.e. MPI) implementation is *not* available.
+
 
 Example
 -------
+
 The example code in the :ref:`usage section <usage-serial>` will produce the following JSON serialization
 when picking the JSON backend:
 
