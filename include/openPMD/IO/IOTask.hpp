@@ -30,6 +30,12 @@
 #include <string>
 #include <utility>
 
+#if _MSC_VER
+#   define EXPORT __declspec( dllexport )
+#else
+#   define EXPORT __attribute__((visibility("default")))
+#endif
+
 
 namespace openPMD
 {
@@ -41,7 +47,12 @@ getWritable(Attributable*);
 
 /** Type of IO operation between logical and persistent data.
  */
-enum class Operation
+#if defined(__GNUC__) && (__GNUC__ < 6) && !defined(__clang__)
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=43407
+enum class Operation : EXPORT unsigned int
+#else
+enum class EXPORT Operation
+#endif
 {
     CREATE_FILE,
     OPEN_FILE,
@@ -66,7 +77,7 @@ enum class Operation
     LIST_ATTS
 };  //Operation
 
-struct AbstractParameter
+struct EXPORT AbstractParameter
 {
     virtual ~AbstractParameter() = default;
     AbstractParameter() = default;
@@ -87,7 +98,7 @@ struct AbstractParameter
  * @tparam  Operation   Type of Operation to be executed.
  */
 template< Operation >
-struct Parameter : public AbstractParameter
+struct EXPORT Parameter : public AbstractParameter
 {
     Parameter() = delete;
     Parameter(Parameter const &) = delete;
@@ -95,7 +106,7 @@ struct Parameter : public AbstractParameter
 };
 
 template<>
-struct Parameter< Operation::CREATE_FILE > : public AbstractParameter
+struct EXPORT Parameter< Operation::CREATE_FILE > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {};
@@ -111,7 +122,7 @@ struct Parameter< Operation::CREATE_FILE > : public AbstractParameter
 };
 
 template<>
-struct Parameter< Operation::OPEN_FILE > : public AbstractParameter
+struct EXPORT Parameter< Operation::OPEN_FILE > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {};
@@ -127,7 +138,7 @@ struct Parameter< Operation::OPEN_FILE > : public AbstractParameter
 };
 
 template<>
-struct Parameter< Operation::DELETE_FILE > : public AbstractParameter
+struct EXPORT Parameter< Operation::DELETE_FILE > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {};
@@ -143,7 +154,7 @@ struct Parameter< Operation::DELETE_FILE > : public AbstractParameter
 };
 
 template<>
-struct Parameter< Operation::CREATE_PATH > : public AbstractParameter
+struct EXPORT Parameter< Operation::CREATE_PATH > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(), path(p.path) {};
@@ -159,7 +170,7 @@ struct Parameter< Operation::CREATE_PATH > : public AbstractParameter
 };
 
 template<>
-struct Parameter< Operation::OPEN_PATH > : public AbstractParameter
+struct EXPORT Parameter< Operation::OPEN_PATH > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(), path(p.path) {};
@@ -175,7 +186,7 @@ struct Parameter< Operation::OPEN_PATH > : public AbstractParameter
 };
 
 template<>
-struct Parameter< Operation::DELETE_PATH > : public AbstractParameter
+struct EXPORT Parameter< Operation::DELETE_PATH > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(), path(p.path) {};
@@ -191,7 +202,7 @@ struct Parameter< Operation::DELETE_PATH > : public AbstractParameter
 };
 
 template<>
-struct Parameter< Operation::LIST_PATHS > : public AbstractParameter
+struct EXPORT Parameter< Operation::LIST_PATHS > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(), paths(p.paths) {};
@@ -208,7 +219,7 @@ struct Parameter< Operation::LIST_PATHS > : public AbstractParameter
 };
 
 template<>
-struct Parameter< Operation::CREATE_DATASET > : public AbstractParameter
+struct EXPORT Parameter< Operation::CREATE_DATASET > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(),
@@ -232,7 +243,7 @@ struct Parameter< Operation::CREATE_DATASET > : public AbstractParameter
 };
 
 template<>
-struct Parameter< Operation::EXTEND_DATASET > : public AbstractParameter
+struct EXPORT Parameter< Operation::EXTEND_DATASET > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(),
@@ -250,7 +261,7 @@ struct Parameter< Operation::EXTEND_DATASET > : public AbstractParameter
 };
 
 template<>
-struct Parameter< Operation::OPEN_DATASET > : public AbstractParameter
+struct EXPORT Parameter< Operation::OPEN_DATASET > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(),
@@ -271,7 +282,7 @@ struct Parameter< Operation::OPEN_DATASET > : public AbstractParameter
 };
 
 template<>
-struct Parameter< Operation::DELETE_DATASET > : public AbstractParameter
+struct EXPORT Parameter< Operation::DELETE_DATASET > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {};
@@ -287,7 +298,7 @@ struct Parameter< Operation::DELETE_DATASET > : public AbstractParameter
 };
 
 template<>
-struct Parameter< Operation::WRITE_DATASET > : public AbstractParameter
+struct EXPORT Parameter< Operation::WRITE_DATASET > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(),
@@ -308,7 +319,7 @@ struct Parameter< Operation::WRITE_DATASET > : public AbstractParameter
 };
 
 template<>
-struct Parameter< Operation::READ_DATASET > : public AbstractParameter
+struct EXPORT Parameter< Operation::READ_DATASET > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(),
@@ -329,7 +340,7 @@ struct Parameter< Operation::READ_DATASET > : public AbstractParameter
 };
 
 template<>
-struct Parameter< Operation::LIST_DATASETS > : public AbstractParameter
+struct EXPORT Parameter< Operation::LIST_DATASETS > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(),
@@ -347,7 +358,7 @@ struct Parameter< Operation::LIST_DATASETS > : public AbstractParameter
 };
 
 template<>
-struct Parameter< Operation::DELETE_ATT > : public AbstractParameter
+struct EXPORT Parameter< Operation::DELETE_ATT > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {};
@@ -363,7 +374,7 @@ struct Parameter< Operation::DELETE_ATT > : public AbstractParameter
 };
 
 template<>
-struct Parameter< Operation::WRITE_ATT > : public AbstractParameter
+struct EXPORT Parameter< Operation::WRITE_ATT > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(),
@@ -382,7 +393,7 @@ struct Parameter< Operation::WRITE_ATT > : public AbstractParameter
 };
 
 template<>
-struct Parameter< Operation::READ_ATT > : public AbstractParameter
+struct EXPORT Parameter< Operation::READ_ATT > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(),
@@ -403,7 +414,7 @@ struct Parameter< Operation::READ_ATT > : public AbstractParameter
 };
 
 template<>
-struct Parameter< Operation::LIST_ATTS > : public AbstractParameter
+struct EXPORT Parameter< Operation::LIST_ATTS > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(),
@@ -429,7 +440,7 @@ struct Parameter< Operation::LIST_ATTS > : public AbstractParameter
  * 3) concrete Writable object corresponding to both a local representation in
  *    openPMD-api and a persistent object in a file on disk
  */
-class IOTask
+class EXPORT IOTask
 {
 public:
     /** Constructor for self-contained description of single IO operation.
@@ -465,3 +476,5 @@ public:
     std::shared_ptr< AbstractParameter > parameter;
 };  // IOTask
 } // namespace openPMD
+
+#undef EXPORT
