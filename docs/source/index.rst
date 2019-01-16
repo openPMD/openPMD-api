@@ -22,7 +22,9 @@ http://www.openpmd.org/openPMD-api
     */
    div#installation.section,
    div#usage.section,
-   div#development.section {
+   div#development.section,
+   div#backends.section,
+   div#utilities.section {
        display:none;
    }
    </style>
@@ -94,7 +96,7 @@ Backends
    :hidden:
 
    backends/json
-
+   backends/adios1
 
 *********
 Utilities
