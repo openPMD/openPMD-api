@@ -269,7 +269,7 @@ jobs:
       script: *script-cpp-unit
       before_install:
         - CXX=clang++ && CC=clang && CXXFLAGS="-Werror -fsanitize=address"
-    # Clang 9.1.0-apple + Python 2.7.15 @ OSX
+    # Clang 9.1.0-apple + Python 2.7.15 @ OSX "highsierra"
     - <<: *test-cpp-unit
       name: AppleClang@9.1.0 -MPI +PY@2.7 +H5 +ADIOS1
       os: osx
@@ -278,6 +278,18 @@ jobs:
       language: generic
       env:
         - CXXSPEC="%clang@9.1.0" USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
+      compiler: clang
+      script: *script-cpp-unit
+    # Clang 10.0.0-apple + Python 2.7.15 @ OSX "mojave" with libc++
+    - <<: *test-cpp-unit
+      name: AppleClang@10.0.0 -MPI +PY@2.7 +H5 +ADIOS1 libc++
+      os: osx
+      osx_image: xcode10.1
+      sudo: required
+      language: generic
+      env:
+        # FIXME: with python 3+ we can remove the -Wno-deprecated-register
+        - CXXFLAGS="${CXXFLAGS} -stdlib=libc++ -Wno-deprecated-register" CXXSPEC="%clang@10.0.0" USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: clang
       script: *script-cpp-unit
     # GCC 4.9.4

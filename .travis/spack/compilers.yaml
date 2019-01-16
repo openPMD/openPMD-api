@@ -15,6 +15,21 @@ compilers:
 - compiler:
     environment: {}
     extra_rpaths: []
+    flags: {
+      cxxflags: "-stdlib=libc++"
+    }
+    modules: []
+    operating_system: highsierra
+    paths:
+      cc: /usr/bin/clang
+      cxx: /usr/bin/clang++
+      f77: null
+      fc: null
+    spec: clang@10.0.0
+    target: x86_64
+- compiler:
+    environment: {}
+    extra_rpaths: []
     flags: {}
     modules: []
     operating_system: ubuntu14.04
