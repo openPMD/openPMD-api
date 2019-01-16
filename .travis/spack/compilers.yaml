@@ -43,6 +43,21 @@ compilers:
 - compiler:
     environment: {}
     extra_rpaths: []
+    flags: {
+      cxxflags: "-stdlib=libc++"
+    }
+    modules: []
+    operating_system: ubuntu16.04
+    paths:
+      cc: /usr/bin/clang-6.0
+      cxx: /usr/bin/clang++-6.0
+      f77: null
+      fc: null
+    spec: clang@6.0.0
+    target: x86_64
+- compiler:
+    environment: {}
+    extra_rpaths: []
     flags: {}
     modules: []
     operating_system: ubuntu16.04

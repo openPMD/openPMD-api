@@ -143,7 +143,7 @@ jobs:
         - cd $HOME/build
         - $TRAVIS_BUILD_DIR/.travis/download_samples.sh
         - cmake
-            "-DCMAKE_CXX_CLANG_TIDY=$(which clang-tidy-5.0);-system-headers=0"
+            -DCMAKE_CXX_CLANG_TIDY="$(which clang-tidy-5.0);-system-headers=0"
             -DCMAKE_BUILD_TYPE=Release
             -DopenPMD_USE_MPI=$USE_MPI
             -DopenPMD_USE_HDF5=$USE_HDF5
@@ -237,6 +237,28 @@ jobs:
             - libopenmpi-dev
             - openmpi-bin
       script: *script-cpp-unit
+    # Clang 6.0.0 + Python 3.6.3 @ Xenial
+    - <<: *test-cpp-unit
+      name: clang@6.0.0 -MPI +PY@3.6 +H5 +ADIOS1 libc++
+      dist: xenial
+      language: python
+      python: "3.6"
+      env:
+        - CXXSPEC="%clang@6.0.0" USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
+      compiler: clang
+      addons:
+        apt:
+          <<: *apt_common_sources
+          packages: &clang60_deps
+            - environment-modules
+            - clang-6.0
+            - libc++-dev
+            - libc++abi-dev
+      script: *script-cpp-unit
+      before_install: &clang_init
+        # FIXME: with pybind11 v2.3.0+ we can remove the -Wno-deprecated
+        # FIXME: extra include needed https://bugs.launchpad.net/ubuntu/+source/libc++/+bug/1812133
+        - CXX=clang++-6.0 && CC=clang-6.0 && CXXFLAGS="-Werror -Wno-deprecated -stdlib=libc++ -I/usr/include/libcxxabi/"
     # Clang 7.0.0 + Python 3.7.1 @ Xenial
     - <<: *test-cpp-unit
       name: clang@7.0.0 +MPI +PY@3.7 +H5 +ADIOS1
