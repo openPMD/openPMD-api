@@ -27,10 +27,12 @@ Bug Fixes
 Other
 """""
 
+- CI: clang libc++ coverage #441 #444
 - Docs:
 
   - additional release workflows for maintainers #439
   - ADIOS1 backend options in manual #440
+  - updated Spack variants #445
 
 
 0.7.0-alpha
