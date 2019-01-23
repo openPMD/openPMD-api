@@ -5,17 +5,14 @@ Changelog
 
 0.7.1-alpha
 -----------
-**Date:** TBA
+**Date:** 2018-01-23
 
-[Title]
+Bug Fixes in Multi-Platform Builds
 
-[Summary]
+This release fixes several issues on OSX, during cross-compile and with modern compilers.
 
 Changes to "0.7.0-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^
-
-Features
-""""""""
 
 Bug Fixes
 """""""""
