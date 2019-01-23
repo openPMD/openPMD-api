@@ -24,7 +24,7 @@
 #define OPENPMDAPI_VERSION_MAJOR 0
 #define OPENPMDAPI_VERSION_MINOR 7
 #define OPENPMDAPI_VERSION_PATCH 1
-#define OPENPMDAPI_VERSION_LABEL "alpha"
+#define OPENPMDAPI_VERSION_LABEL "dev"
 
 // maximum supported version of the openPMD standard (read & write)
 #define OPENPMD_STANDARD_MAJOR 1
