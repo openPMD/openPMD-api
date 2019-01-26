@@ -27,7 +27,7 @@ Choose *one* of the install methods below to get started:
 Using the Spack Package
 -----------------------
 
-A package for openPMD-api is available on the Spack package manager.
+A package for openPMD-api is available on the `Spack <https://spack.io>`_ package manager.
 
 .. code-block:: bash
 
@@ -41,14 +41,34 @@ A package for openPMD-api is available on the Spack package manager.
 
    .. image:: conda.svg
 
-Using the conda Package
+Using the Conda Package
 -----------------------
 
-A package for serial openPMD-api is available on the Conda package manager.
+A package for serial openPMD-api is available on the `Conda <https://conda.io>`_ package manager.
 
 .. code-block:: bash
 
    conda install -c conda-forge openpmd-api
+
+.. _install-pypi:
+
+.. only:: html
+
+   .. image:: pypi.svg
+
+Using the PyPI Package
+----------------------
+
+A package for openPMD-api is available on the Python Package Index (`PyPI <https://pypi.org>`_).
+
+Behind the scenes, this install method *compiles from source* against the found installations of HDF5, ADIOS and/or MPI (in system paths, from other package managers, or loaded via a module system, ...).
+The current status for this install method is *experimental*.
+Please feel free to `report <https://github.com/openPMD/openPMD-api/issues/new/choose>`_ how this works for you.
+
+.. code-block:: bash
+
+   # optional:             --user
+   pip install openPMD-api
 
 .. _install-cmake:
 
@@ -59,7 +79,7 @@ A package for serial openPMD-api is available on the Conda package manager.
 From Source with CMake
 ----------------------
 
-You can also install ``openPMD-api`` from source with CMake.
+You can also install ``openPMD-api`` from source with `CMake <https://cmake.org/>`_.
 This requires that you have all :ref:`dependencies <development-dependencies>` installed on your system.
 The developer section on :ref:`build options <development-buildoptions>` provides further details on variants of the build.
 

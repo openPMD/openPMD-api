@@ -140,6 +140,18 @@ spack load -r openpmd-api
 conda install -c conda-forge openpmd-api
 ```
 
+### [PyPI](https://pypi.org)
+
+[![PyPI Version](https://img.shields.io/pypi/v/openPMD-api.svg)](https://pypi.org/project/openPMD-api)
+[![PyPI Format](https://img.shields.io/pypi/format/openPMD-api.svg)](https://pypi.org/project/openPMD-api)
+[![PyPI Status](https://img.shields.io/badge/status-experimental-yellow.svg)](https://pypi.org/project/openPMD-api)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/openPMD-api.svg)](https://pypi.org/project/openPMD-api)
+
+```bash
+# optional:             --user
+pip install openPMD-api
+```
+
 ### From Source
 
 openPMD can then be installed using [CMake](https://cmake.org/):
