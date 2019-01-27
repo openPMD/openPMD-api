@@ -187,11 +187,11 @@ CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 
 | CMake Option                 | Values           | Description                                                                  |
 |------------------------------|------------------|------------------------------------------------------------------------------|
-| `openPMD_USE_MPI`            | **AUTO**/ON/OFF  | Enable MPI support                                                           |
-| `openPMD_USE_JSON`           | **AUTO**/ON/OFF  | Enable support for JSON                                                      |
-| `openPMD_USE_HDF5`           | **AUTO**/ON/OFF  | Enable support for HDF5                                                      |
-| `openPMD_USE_ADIOS1`         | **AUTO**/ON/OFF  | Enable support for ADIOS1                                                    |
-| `openPMD_USE_ADIOS2`         | AUTO/ON/**OFF**  | Enable support for ADIOS2 <sup>1</sup>                                       |
+| `openPMD_USE_MPI`            | **AUTO**/ON/OFF  | Parallel, Multi-Node I/O for clusters                                        |
+| `openPMD_USE_JSON`           | **AUTO**/ON/OFF  | JSON backend (`.json` files)                                                 |
+| `openPMD_USE_HDF5`           | **AUTO**/ON/OFF  | HDF5 backend (`.h5` files)                                                   |
+| `openPMD_USE_ADIOS1`         | **AUTO**/ON/OFF  | ADIOS1 backend (`.bp` files)                                                 |
+| `openPMD_USE_ADIOS2`         | AUTO/ON/**OFF**  | ADIOS2 backend (`.bp` files) <sup>1</sup>                                    |
 | `openPMD_USE_PYTHON`         | **AUTO**/ON/OFF  | Enable Python bindings                                                       |
 | `openPMD_USE_INVASIVE_TESTS` | **AUTO**/ON/OFF  | Enable unit tests that modify source code <sup>2</sup>                       |
 | `openPMD_USE_VERIFY`         | **ON**/OFF       | Enable internal VERIFY (assert) macro independent of build type <sup>3</sup> |
