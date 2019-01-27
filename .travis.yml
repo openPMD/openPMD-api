@@ -289,9 +289,9 @@ jobs:
       script: *script-cpp-unit
       before_install:
         - CXX=clang++ && CC=clang && CXXFLAGS="-Werror -fsanitize=address"
-    # Clang 9.1.0-apple + Python 2.7.15 @ OSX "highsierra"
+    # Clang 9.1.0-apple + Python 3.7.2 @ OSX "highsierra"
     - <<: *test-cpp-unit
-      name: AppleClang@9.1.0 -MPI +PY@2.7 +H5 +ADIOS1
+      name: AppleClang@9.1.0 -MPI +PY@3.7 +H5 +ADIOS1
       os: osx
       osx_image: xcode9.4
       sudo: required
@@ -300,16 +300,15 @@ jobs:
         - CXXSPEC="%clang@9.1.0" USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: clang
       script: *script-cpp-unit
-    # Clang 10.0.0-apple + Python 2.7.15 @ OSX "mojave" with libc++
+    # Clang 10.0.0-apple + Python 3.7.2 @ OSX "mojave" with libc++
     - <<: *test-cpp-unit
-      name: AppleClang@10.0.0 -MPI +PY@2.7 +H5 +ADIOS1 libc++
+      name: AppleClang@10.0.0 -MPI +PY@3.7 +H5 +ADIOS1 libc++
       os: osx
       osx_image: xcode10.1
       sudo: required
       language: generic
       env:
-        # FIXME: with python 3+ we can remove the -Wno-deprecated-register
-        - CXXFLAGS="${CXXFLAGS} -stdlib=libc++ -Wno-deprecated-register" CXXSPEC="%clang@10.0.0" USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
+        - CXXFLAGS="${CXXFLAGS} -stdlib=libc++" CXXSPEC="%clang@10.0.0" USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: clang
       script: *script-cpp-unit
     # GCC 4.9.4
@@ -576,10 +575,12 @@ install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       travis_wait brew upgrade --cleanup;
       travis_wait brew upgrade --cleanup &&
+      travis_wait brew install python3 &&
       travis_wait brew install modules &&
       brew info modules &&
       source /usr/local/opt/modules/init/bash &&
-      export TRAVIS_PYTHON_VERSION=2.7.15;
+      export PATH=/usr/local/opt/python/libexec/bin:$PATH;
+      export TRAVIS_PYTHON_VERSION=3.7.2;
     fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       if [ "$TRAVIS_PYTHON_VERSION" == "2.7" ]; then
