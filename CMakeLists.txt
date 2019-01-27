@@ -807,7 +807,13 @@ if(BUILD_TESTING)
 
     # OpenMPI root guard: https://github.com/open-mpi/ompi/issues/4451
     if("$ENV{USER}" STREQUAL "root")
-        set(MPI_ALLOW_ROOT --allow-run-as-root)
+        # calling even --help as root will abort and warn on stderr
+        execute_process(COMMAND ${MPIEXEC_EXECUTABLE} --help
+            ERROR_VARIABLE MPIEXEC_HELP_TEXT
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+            if(${MPIEXEC_HELP_TEXT} MATCHES "^.*allow-run-as-root.*$")
+                set(MPI_ALLOW_ROOT --allow-run-as-root)
+            endif()
     endif()
     set(MPI_TEST_EXE
         ${MPIEXEC_EXECUTABLE}
