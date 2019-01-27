@@ -119,6 +119,7 @@ Optional language bindings:
 
 [![Spack Package](https://img.shields.io/badge/spack.io-openpmd--api-brightgreen.svg)](https://spack.io)
 [![Conda Package](https://img.shields.io/badge/conda.io-openpmd--api-brightgreen.svg)](https://anaconda.org/conda-forge/openpmd-api)
+[![PyPI Package](https://img.shields.io/badge/pypi.org-openPMD--api-yellow.svg)](https://pypi.org/project/openPMD-api)
 
 Choose *one* of the install methods below to get started:
 
