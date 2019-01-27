@@ -33,9 +33,9 @@ jobs:
     ###########################################################################
     - &style_python
       stage: 'Style'
-      name: PY@2.7 +PEP8
+      name: PY@3.5 +PEP8
       language: python
-      python: "2.7"
+      python: "3.5"
       install: pip install -U flake8
       script:
         # Test Python Files for PEP8 conformance
@@ -66,7 +66,7 @@ jobs:
     #   name: clang@5.0.0 +IncludeWhatYouUse
     #   sudo: true
       language: python
-      python: "2.7"
+      python: "3.6"
       compiler: clang
     #   env:
     #     - CXXSPEC="%clang@5.0.0" USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF
@@ -161,9 +161,9 @@ jobs:
           fi
     - &static_code_python
       stage: 'Static Code Analysis'
-      name: pyflakes 2.7
+      name: pyflakes 3.5
       language: python
-      python: "2.7"
+      python: "3.5"
       install: pip install -U pyflakes
       script:
         # Warnings, unused code, etc.
@@ -225,7 +225,7 @@ jobs:
     - <<: *test-cpp-unit
       name: clang@5.0.0 +MPI -PY +H5 +ADIOS1
       language: python
-      python: "2.7"
+      python: "3.6"
       env:
         - CXXSPEC="%clang@5.0.0" USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: clang
@@ -382,11 +382,11 @@ jobs:
             - openmpi-bin
       before_install: *gcc73_init
       script: *script-cpp-unit
-    # GCC 6.4.0 + Python 2.7
+    # GCC 6.4.0 + Python 3.5
     - <<: *test-cpp-unit
-      name: gcc@6.4.0 -MPI +PY@2.7 +H5 +ADIOS@1.13.1
+      name: gcc@6.4.0 -MPI +PY@3.5 +H5 +ADIOS@1.13.1
       language: python
-      python: "2.7"
+      python: "3.5"
       env:
         - CXXSPEC="%gcc@6.4.0" USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON ADIOS1_VERSION=@1.13.1 USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: gcc

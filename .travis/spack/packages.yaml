@@ -33,9 +33,9 @@ packages:
     paths:
       python@3.7.1%clang@7.0.0 arch=linux-ubuntu16-x86_64: /home/travis/virtualenv/python3.7
       python@3.6.3%clang@6.0.0 arch=linux-ubuntu16-x86_64: /home/travis/virtualenv/python3.6
-      python@2.7.14%clang@5.0.0 arch=linux-ubuntu14-x86_64: /home/travis/virtualenv/python2.7
+      python@3.6.3%clang@5.0.0 arch=linux-ubuntu14-x86_64: /home/travis/virtualenv/python3.6
       python@2.7.14%gcc@7.3.0 arch=linux-ubuntu14-x86_64: /home/travis/virtualenv/python2.7
-      python@2.7.14%gcc@6.4.0 arch=linux-ubuntu14-x86_64: /home/travis/virtualenv/python2.7
+      python@3.5.5%gcc@6.4.0 arch=linux-ubuntu14-x86_64: /home/travis/virtualenv/python3.5
       python@2.7.14%gcc@4.9.4 arch=linux-ubuntu14-x86_64: /home/travis/virtualenv/python2.7
       python@3.5.5%gcc@4.8.5 arch=linux-ubuntu14-x86_64: /home/travis/virtualenv/python3.5
       python@3.6.3%gcc@6.4.0 arch=linux-ubuntu14-x86_64: /home/travis/virtualenv/python3.6
