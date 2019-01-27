@@ -247,9 +247,9 @@ if(openPMD_USE_PYTHON STREQUAL AUTO)
     if(openPMD_USE_INTERNAL_PYBIND11)
         add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11")
         set(openPMD_HAVE_PYTHON TRUE)
-        message(STATUS "pybind11: Using INTERNAL version 2.2.3")
+        message(STATUS "pybind11: Using INTERNAL version 2.2.4")
     else()
-        find_package(pybind11 2.2.3 CONFIG)  # 2.3.0
+        find_package(pybind11 2.2.4 CONFIG)  # 2.3.0
         if(pybind11_FOUND)
             set(openPMD_HAVE_PYTHON TRUE)
             message(STATUS "pybind11: Found version ${pybind11_VERSION}")
@@ -261,9 +261,9 @@ elseif(openPMD_USE_PYTHON)
     if(openPMD_USE_INTERNAL_PYBIND11)
         add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11")
         set(openPMD_HAVE_PYTHON TRUE)
-        message(STATUS "pybind11: Using INTERNAL version 2.2.3")
+        message(STATUS "pybind11: Using INTERNAL version 2.2.4")
     else()
-        find_package(pybind11 2.2.3 CONFIG REQUIRED)  # 2.3.0
+        find_package(pybind11 2.2.4 CONFIG REQUIRED)  # 2.3.0
         set(openPMD_HAVE_PYTHON TRUE)
         message(STATUS "pybind11: Found version ${pybind11_VERSION}")
     endif()

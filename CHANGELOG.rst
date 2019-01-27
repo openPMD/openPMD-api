@@ -23,6 +23,12 @@ Bug Fixes
 Other
 """""
 
+- increase pybind11 dependency to 2.2.4+ #455
+- Docs:
+
+  - PyPI install method #450 #451
+  - more info on MPI #449
+
 
 0.7.1-alpha
 -----------

@@ -16,7 +16,7 @@ env:
     - CXXFLAGS: "-Werror"
     - SPACK_ROOT: $HOME/.cache/spack
     - PATH: $PATH:$HOME/.cache/spack/bin
-    - PYBIND11_VERSION=@2.2.3
+    - PYBIND11_VERSION=@2.2.4
     - USE_JSON: ON
 
 addons:
@@ -256,9 +256,8 @@ jobs:
             - libc++abi-dev
       script: *script-cpp-unit
       before_install: &clang_init
-        # FIXME: with pybind11 v2.3.0+ we can remove the -Wno-deprecated
         # FIXME: extra include needed https://bugs.launchpad.net/ubuntu/+source/libc++/+bug/1812133
-        - CXX=clang++-6.0 && CC=clang-6.0 && CXXFLAGS="-Werror -Wno-deprecated -stdlib=libc++ -I/usr/include/libcxxabi/"
+        - CXX=clang++-6.0 && CC=clang-6.0 && CXXFLAGS="-Werror -stdlib=libc++ -I/usr/include/libcxxabi/"
     # Clang 7.0.0 + Python 3.7.1 @ Xenial
     - <<: *test-cpp-unit
       name: clang@7.0.0 +MPI +PY@3.7 +H5 +ADIOS1
@@ -277,8 +276,7 @@ jobs:
             - openmpi-bin
       script: *script-cpp-unit
       before_install: &clang_init
-        # FIXME: with pybind11 v2.3.0+ we can remove the -Wno-deprecated
-        - CXX=clang++ && CC=clang && CXXFLAGS="-Werror -Wno-deprecated"
+        - CXX=clang++ && CC=clang
     # Clang 7.0.0 + Address Sanitizer @ Xenial
     - <<: *test-cpp-unit
       name: clang@7.0.0 -MPI -PY -H5 -ADIOS1 +JSON +AddressSanitize
