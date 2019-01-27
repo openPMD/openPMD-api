@@ -97,7 +97,7 @@ Required:
 Shipped internally in `share/openPMD/thirdParty/`:
 * [MPark.Variant](https://github.com/mpark/variant) 1.3.0+ ([BSL-1.0](https://github.com/mpark/variant/blob/master/LICENSE.md))
 * [Catch2](https://github.com/catchorg/Catch2) 2.3.0+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
-* [pybind11](https://github.com/pybind/pybind11) 2.2.3+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
+* [pybind11](https://github.com/pybind/pybind11) 2.2.4+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
 * [NLohmann-JSON](https://github.com/nlohmann/json) 3.4.0+ ([MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT))
 
 Optional I/O backends:
@@ -112,7 +112,7 @@ while those can be built either with or without:
 Optional language bindings:
 * Python:
   * Python 3.5 - 3.7
-  * pybind 2.2.3+
+  * pybind 2.2.4+
   * numpy 1.15+
 
 ## Installation
@@ -209,7 +209,7 @@ The following options allow to switch to external installs:
 |---------------------------------|------------|---------------|---------|
 | `openPMD_USE_INTERNAL_VARIANT`  | **ON**/OFF | MPark.Variant |  1.3.0+ |
 | `openPMD_USE_INTERNAL_CATCH`    | **ON**/OFF | Catch2        |  2.3.0+ |
-| `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.2.3+ |
+| `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.2.4+ |
 | `openPMD_USE_INTERNAL_JSON`     | **ON**/OFF | NLohmann-JSON |  3.4.0+ |
 
 By default, this will build as a static library (`libopenPMD.a`) and installs also its headers.
