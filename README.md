@@ -114,6 +114,7 @@ Optional language bindings:
   * Python 3.5 - 3.7
   * pybind 2.2.4+
   * numpy 1.15+
+  * mpi4py 2.1+
 
 ## Installation
 
