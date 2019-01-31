@@ -597,6 +597,8 @@ set(openPMD_EXAMPLE_NAMES
 set(openPMD_PYTHON_EXAMPLE_NAMES
     2_read_serial
     3_write_serial
+    4_read_parallel
+    5_write_parallel
     7_extended_write_serial
     9_particle_write_serial
 )
