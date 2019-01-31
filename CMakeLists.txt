@@ -574,10 +574,6 @@ if(openPMD_HAVE_PYTHON)
         PDB_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}
         COMPILE_PDB_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}
     )
-
-    #if(openPMD_HAVE_MPI)
-    #    target_link_libraries(openPMD.py PRIVATE PythonModule::mpi4py)
-    #endif()
 endif()
 
 # tests
@@ -868,6 +864,16 @@ endif()
 # Python Examples
 if(openPMD_HAVE_PYTHON)
     if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
+        execute_process(COMMAND ${PYTHON_EXECUTABLE}
+            -m mpi4py
+            -c "import mpi4py.MPI"
+            RESULT_VARIABLE MPI4PY_RETURN)
+
+        if(NOT MPI4PY_RETURN EQUAL 0)
+            message(STATUS "Note: mpi4py not found. "
+                           "Skipping MPI-parallel Python examples.")
+        endif()
+
         foreach(examplename ${openPMD_PYTHON_EXAMPLE_NAMES})
             add_custom_command(TARGET openPMD.py POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy
@@ -875,12 +881,25 @@ if(openPMD_HAVE_PYTHON)
                         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
             )
             if(BUILD_TESTING)
-                add_test(NAME Example.py.${examplename}
-                    COMMAND ${PYTHON_EXECUTABLE}
-                        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
-                    WORKING_DIRECTORY
-                        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-                )
+                if(${examplename} MATCHES "^.*_parallel$")
+                    if(openPMD_HAVE_MPI AND MPI4PY_RETURN EQUAL 0)
+                        # see https://mpi4py.readthedocs.io/en/stable/mpi4py.run.html
+                        add_test(NAME Example.py.${examplename}
+                            COMMAND ${MPI_TEST_EXE} ${PYTHON_EXECUTABLE} -m mpi4py
+                                ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
+                            WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                        )
+                    else()
+                        continue()
+                    endif()
+                else()
+                    add_test(NAME Example.py.${examplename}
+                        COMMAND ${PYTHON_EXECUTABLE}
+                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
+                        WORKING_DIRECTORY
+                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                    )
+                endif()
                 if(WIN32)
                     string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BASEDIR ${openPMD_BINARY_DIR})
                     string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
