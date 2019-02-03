@@ -33,9 +33,9 @@ jobs:
     ###########################################################################
     - &style_python
       stage: 'Style'
-      name: PY@2.7 +PEP8
+      name: PY@3.5 +PEP8
       language: python
-      python: "2.7"
+      python: "3.5"
       install: pip install -U flake8
       script:
         # Test Python Files for PEP8 conformance
@@ -66,7 +66,7 @@ jobs:
     #   name: clang@5.0.0 +IncludeWhatYouUse
     #   sudo: true
       language: python
-      python: "2.7"
+      python: "3.6"
       compiler: clang
     #   env:
     #     - CXXSPEC="%clang@5.0.0" USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF
@@ -161,9 +161,9 @@ jobs:
           fi
     - &static_code_python
       stage: 'Static Code Analysis'
-      name: pyflakes 2.7
+      name: pyflakes 3.5
       language: python
-      python: "2.7"
+      python: "3.5"
       install: pip install -U pyflakes
       script:
         # Warnings, unused code, etc.
@@ -225,7 +225,7 @@ jobs:
     - <<: *test-cpp-unit
       name: clang@5.0.0 +MPI -PY +H5 +ADIOS1
       language: python
-      python: "2.7"
+      python: "3.6"
       env:
         - CXXSPEC="%clang@5.0.0" USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: clang
@@ -289,9 +289,9 @@ jobs:
       script: *script-cpp-unit
       before_install:
         - CXX=clang++ && CC=clang && CXXFLAGS="-Werror -fsanitize=address"
-    # Clang 9.1.0-apple + Python 2.7.15 @ OSX "highsierra"
+    # Clang 9.1.0-apple + Python 3.7.2 @ OSX "highsierra"
     - <<: *test-cpp-unit
-      name: AppleClang@9.1.0 -MPI +PY@2.7 +H5 +ADIOS1
+      name: AppleClang@9.1.0 -MPI +PY@3.7 +H5 +ADIOS1
       os: osx
       osx_image: xcode9.4
       sudo: required
@@ -300,16 +300,15 @@ jobs:
         - CXXSPEC="%clang@9.1.0" USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: clang
       script: *script-cpp-unit
-    # Clang 10.0.0-apple + Python 2.7.15 @ OSX "mojave" with libc++
+    # Clang 10.0.0-apple + Python 3.7.2 @ OSX "mojave" with libc++
     - <<: *test-cpp-unit
-      name: AppleClang@10.0.0 -MPI +PY@2.7 +H5 +ADIOS1 libc++
+      name: AppleClang@10.0.0 -MPI +PY@3.7 +H5 +ADIOS1 libc++
       os: osx
       osx_image: xcode10.1
       sudo: required
       language: generic
       env:
-        # FIXME: with python 3+ we can remove the -Wno-deprecated-register
-        - CXXFLAGS="${CXXFLAGS} -stdlib=libc++ -Wno-deprecated-register" CXXSPEC="%clang@10.0.0" USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
+        - CXXFLAGS="${CXXFLAGS} -stdlib=libc++" CXXSPEC="%clang@10.0.0" USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: clang
       script: *script-cpp-unit
     # GCC 4.9.4
@@ -382,11 +381,11 @@ jobs:
             - openmpi-bin
       before_install: *gcc73_init
       script: *script-cpp-unit
-    # GCC 6.4.0 + Python 2.7
+    # GCC 6.4.0 + Python 3.5
     - <<: *test-cpp-unit
-      name: gcc@6.4.0 -MPI +PY@2.7 +H5 +ADIOS@1.13.1
+      name: gcc@6.4.0 -MPI +PY@3.5 +H5 +ADIOS@1.13.1
       language: python
-      python: "2.7"
+      python: "3.5"
       env:
         - CXXSPEC="%gcc@6.4.0" USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON ADIOS1_VERSION=@1.13.1 USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: gcc
@@ -576,10 +575,12 @@ install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       travis_wait brew upgrade --cleanup;
       travis_wait brew upgrade --cleanup &&
+      travis_wait brew install python3 &&
       travis_wait brew install modules &&
       brew info modules &&
       source /usr/local/opt/modules/init/bash &&
-      export TRAVIS_PYTHON_VERSION=2.7.15;
+      export PATH=/usr/local/opt/python/libexec/bin:$PATH;
+      export TRAVIS_PYTHON_VERSION=3.7.2;
     fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       if [ "$TRAVIS_PYTHON_VERSION" == "2.7" ]; then

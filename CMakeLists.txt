@@ -257,6 +257,15 @@ if(openPMD_USE_PYTHON STREQUAL AUTO)
             set(openPMD_HAVE_PYTHON FALSE)
         endif()
     endif()
+    if(openPMD_HAVE_PYTHON AND
+       PYTHON_VERSION_MAJOR LESS 3)
+        set(openPMD_HAVE_PYTHON FALSE)
+        message(STATUS "python: Found version "
+                       "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR} "
+                       "is NOT supported. Set for example "
+                       "-DPYTHON_EXECUTABLE=$(which python3) "
+                       "to use 3.5+.")
+    endif()
 elseif(openPMD_USE_PYTHON)
     if(openPMD_USE_INTERNAL_PYBIND11)
         add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11")
@@ -266,6 +275,13 @@ elseif(openPMD_USE_PYTHON)
         find_package(pybind11 2.2.4 CONFIG REQUIRED)  # 2.3.0
         set(openPMD_HAVE_PYTHON TRUE)
         message(STATUS "pybind11: Found version ${pybind11_VERSION}")
+    endif()
+    if(PYTHON_VERSION_MAJOR LESS 3)
+        message(FATAL_ERROR "python: Found version "
+                            "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR} "
+                            "is NOT supported. Set for example "
+                            "-DPYTHON_EXECUTABLE=$(which python3) "
+                            "to use 3.5+.")
     endif()
 else()
     set(openPMD_HAVE_PYTHON FALSE)

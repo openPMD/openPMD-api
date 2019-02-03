@@ -9,7 +9,6 @@ License: LGPLv3+
 import openpmd_api as api
 
 import os
-import sys
 import shutil
 import unittest
 import ctypes
@@ -187,8 +186,7 @@ class APITest(unittest.TestCase):
         # TODO remove the .value and handle types directly?
         series.set_attribute("byte_c", ctypes.c_byte(30).value)
         series.set_attribute("ubyte_c", ctypes.c_ubyte(50).value)
-        if sys.version_info >= (3, 0):
-            series.set_attribute("char_c", ctypes.c_char(100).value)  # 'd'
+        series.set_attribute("char_c", ctypes.c_char(100).value)  # 'd'
         series.set_attribute("int16_c", ctypes.c_int16(2).value)
         series.set_attribute("int32_c", ctypes.c_int32(3).value)
         series.set_attribute("int64_c", ctypes.c_int64(4).value)
@@ -208,31 +206,24 @@ class APITest(unittest.TestCase):
             api.Access_Type.read_only
         )
 
-        if sys.version_info >= (3, 0):
-            self.assertEqual(series.get_attribute("char"), "c")
-            self.assertEqual(series.get_attribute("pystring"), "howdy!")
-            self.assertEqual(series.get_attribute("pystring2"), "howdy, too!")
-            self.assertEqual(bytes(series.get_attribute("pystring3")),
-                             b"howdy, again!")
-        else:
-            self.assertEqual(chr(series.get_attribute("char")), "c")
-            # we don't officially support Python 2, so it's fine if
-            # strings are returned as weird list of int (of ascii codes)
+        self.assertEqual(series.get_attribute("char"), "c")
+        self.assertEqual(series.get_attribute("pystring"), "howdy!")
+        self.assertEqual(series.get_attribute("pystring2"), "howdy, too!")
+        self.assertEqual(bytes(series.get_attribute("pystring3")),
+                         b"howdy, again!")
         self.assertEqual(series.get_attribute("pyint"), 13)
         self.assertAlmostEqual(series.get_attribute("pyfloat"), 3.1416)
         self.assertEqual(series.get_attribute("pybool"), False)
 
         if found_numpy:
-            if sys.version_info >= (3, 0):
-                # scalar numpy types are broken in Python 2
-                self.assertEqual(series.get_attribute("int16"), 234)
-                self.assertEqual(series.get_attribute("int32"), 43)
-                self.assertEqual(series.get_attribute("int64"), 987654321)
-                self.assertAlmostEqual(series.get_attribute("single"), 1.234)
-                self.assertAlmostEqual(series.get_attribute("double"),
-                                       1.234567)
-                self.assertAlmostEqual(series.get_attribute("longdouble"),
-                                       1.23456789)
+            self.assertEqual(series.get_attribute("int16"), 234)
+            self.assertEqual(series.get_attribute("int32"), 43)
+            self.assertEqual(series.get_attribute("int64"), 987654321)
+            self.assertAlmostEqual(series.get_attribute("single"), 1.234)
+            self.assertAlmostEqual(series.get_attribute("double"),
+                                   1.234567)
+            self.assertAlmostEqual(series.get_attribute("longdouble"),
+                                   1.23456789)
             # array of ... (will be returned as list)
             self.assertListEqual(series.get_attribute("arr_int16"),
                                  [np.int16(23), np.int16(26), ])
@@ -286,8 +277,7 @@ class APITest(unittest.TestCase):
         # c_types
         self.assertEqual(series.get_attribute("byte_c"), 30)
         self.assertEqual(series.get_attribute("ubyte_c"), 50)
-        if sys.version_info >= (3, 0):
-            self.assertEqual(chr(series.get_attribute("char_c")), 'd')
+        self.assertEqual(chr(series.get_attribute("char_c")), 'd')
         self.assertEqual(series.get_attribute("int16_c"), 2)
         self.assertEqual(series.get_attribute("int32_c"), 3)
         self.assertEqual(series.get_attribute("int64_c"), 4)
@@ -323,9 +313,8 @@ class APITest(unittest.TestCase):
         extent = [42, 24, 11]
 
         # write one of each supported types
-        if sys.version_info >= (3, 0):
-            ms["char"][SCALAR].reset_dataset(DS(DT.CHAR, extent))
-            ms["char"][SCALAR].make_constant("c")
+        ms["char"][SCALAR].reset_dataset(DS(DT.CHAR, extent))
+        ms["char"][SCALAR].make_constant("c")
         ms["pyint"][SCALAR].reset_dataset(DS(DT.INT, extent))
         ms["pyint"][SCALAR].make_constant(13)
         ms["pyfloat"][SCALAR].reset_dataset(DS(DT.DOUBLE, extent))
@@ -369,32 +358,30 @@ class APITest(unittest.TestCase):
         o = [1, 2, 3]
         e = [1, 1, 1]
 
-        if sys.version_info >= (3, 0):
-            self.assertEqual(ms["char"][SCALAR].load_chunk(o, e), ord('c'))
+        self.assertEqual(ms["char"][SCALAR].load_chunk(o, e), ord('c'))
         self.assertEqual(ms["pyint"][SCALAR].load_chunk(o, e), 13)
         self.assertEqual(ms["pyfloat"][SCALAR].load_chunk(o, e), 3.1416)
         self.assertEqual(ms["pybool"][SCALAR].load_chunk(o, e), False)
 
         if found_numpy:
-            if sys.version_info >= (3, 0):
-                self.assertTrue(ms["int16"][SCALAR].load_chunk(o, e).dtype ==
-                                np.dtype('int16'))
-                self.assertTrue(ms["int32"][SCALAR].load_chunk(o, e).dtype ==
-                                np.dtype('int32'))
-                self.assertTrue(ms["int64"][SCALAR].load_chunk(o, e).dtype ==
-                                np.dtype('int64'))
-                self.assertTrue(ms["uint16"][SCALAR].load_chunk(o, e).dtype ==
-                                np.dtype('uint16'))
-                self.assertTrue(ms["uint32"][SCALAR].load_chunk(o, e).dtype ==
-                                np.dtype('uint32'))
-                self.assertTrue(ms["uint64"][SCALAR].load_chunk(o, e).dtype ==
-                                np.dtype('uint64'))
-                self.assertTrue(ms["single"][SCALAR].load_chunk(o, e).dtype ==
-                                np.dtype('single'))
-                self.assertTrue(ms["double"][SCALAR].load_chunk(o, e).dtype ==
-                                np.dtype('double'))
-                self.assertTrue(ms["longdouble"][SCALAR].load_chunk(o, e).dtype
-                                == np.dtype('longdouble'))
+            self.assertTrue(ms["int16"][SCALAR].load_chunk(o, e).dtype ==
+                            np.dtype('int16'))
+            self.assertTrue(ms["int32"][SCALAR].load_chunk(o, e).dtype ==
+                            np.dtype('int32'))
+            self.assertTrue(ms["int64"][SCALAR].load_chunk(o, e).dtype ==
+                            np.dtype('int64'))
+            self.assertTrue(ms["uint16"][SCALAR].load_chunk(o, e).dtype ==
+                            np.dtype('uint16'))
+            self.assertTrue(ms["uint32"][SCALAR].load_chunk(o, e).dtype ==
+                            np.dtype('uint32'))
+            self.assertTrue(ms["uint64"][SCALAR].load_chunk(o, e).dtype ==
+                            np.dtype('uint64'))
+            self.assertTrue(ms["single"][SCALAR].load_chunk(o, e).dtype ==
+                            np.dtype('single'))
+            self.assertTrue(ms["double"][SCALAR].load_chunk(o, e).dtype ==
+                            np.dtype('double'))
+            self.assertTrue(ms["longdouble"][SCALAR].load_chunk(o, e).dtype
+                            == np.dtype('longdouble'))
 
             self.assertEqual(ms["int16"][SCALAR].load_chunk(o, e),
                              np.int16(234))
@@ -408,11 +395,10 @@ class APITest(unittest.TestCase):
                              np.uint32(32))
             self.assertEqual(ms["uint64"][SCALAR].load_chunk(o, e),
                              np.uint64(9876543210))
-            if sys.version_info >= (3, 0):
-                self.assertEqual(ms["single"][SCALAR].load_chunk(o, e),
-                                 np.single(1.234))
-                self.assertEqual(ms["longdouble"][SCALAR].load_chunk(o, e),
-                                 np.longdouble(1.23456789))
+            self.assertEqual(ms["single"][SCALAR].load_chunk(o, e),
+                             np.single(1.234))
+            self.assertEqual(ms["longdouble"][SCALAR].load_chunk(o, e),
+                             np.longdouble(1.23456789))
             self.assertEqual(ms["double"][SCALAR].load_chunk(o, e),
                              np.double(1.234567))
 
@@ -714,24 +700,17 @@ class APITest(unittest.TestCase):
             numParticles, np.array([10, 113], np.uint64))
         np.testing.assert_almost_equal(
             numParticlesOffset, np.array([0, 10], np.uint64))
-        if sys.version_info >= (3, 0):
-            np.testing.assert_almost_equal(
-                extent_x, [10., 113.])
-            np.testing.assert_almost_equal(
-                extent_y, [123., 123.])
-            np.testing.assert_almost_equal(
-                offset_x, [0., 10.])
-            np.testing.assert_almost_equal(
-                offset_y, [0., 0.])
+        np.testing.assert_almost_equal(
+            extent_x, [10., 113.])
+        np.testing.assert_almost_equal(
+            extent_y, [123., 123.])
+        np.testing.assert_almost_equal(
+            offset_x, [0., 10.])
+        np.testing.assert_almost_equal(
+            offset_y, [0., 0.])
 
     def testParticlePatches(self):
         self.assertRaises(TypeError, api.Particle_Patches)
-
-        # skip test in Python 2:
-        #   scalar numpy arrays do not overload to py::buffer type
-        #   and are casted to Python instrinsic int
-        if sys.version_info < (3, 0):
-            return
 
         backend_filesupport = {
             'hdf5': 'h5',
