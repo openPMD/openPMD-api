@@ -17,7 +17,10 @@ Changes to "0.7.1-alpha"
 Features
 """"""""
 
-- Python: mpi4py support added #454
+- Python:
+
+  - mpi4py support added #454
+  - slice protocol for record component #458
 
 Bug Fixes
 """""""""

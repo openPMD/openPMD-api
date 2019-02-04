@@ -29,6 +29,7 @@
 
 #include <string>
 #include <algorithm>
+#include <tuple>
 #include <iostream>
 #include <cstdint>
 #include <exception>
@@ -36,6 +37,399 @@
 namespace py = pybind11;
 using namespace openPMD;
 
+
+/** Convert a py::typle of py::slices to Offset & Extent
+ *
+ * https://docs.scipy.org/doc/numpy-1.15.0/reference/arrays.indexing.html
+ * https://github.com/numpy/numpy/blob/v1.16.1/numpy/core/src/multiarray/mapping.c#L348-L375
+ */
+inline std::tuple< Offset, Extent, std::vector<bool> >
+parseTupleSlices(uint8_t const ndim, Extent const & full_extent, py::tuple const & slices) {
+    uint8_t const numSlices = py::len(slices);
+
+    Offset offset(ndim, 0u);
+    Extent extent(ndim, 1u);
+    std::vector<bool> flatten(ndim, false);
+    int16_t curAxis = -1;
+
+    int16_t posEllipsis = -1;
+    for( uint8_t i = 0u; i < numSlices; ++i )
+    {
+        ++curAxis;
+
+        if(
+            i >= ndim &&
+            posEllipsis == -1 &&
+            slices[i].ptr() != Py_Ellipsis
+        )
+            throw py::index_error(
+                "too many indices for dimension of record component!");
+
+        if( slices[i].ptr() == Py_Ellipsis )
+        {
+            // only allowed once
+            if( posEllipsis != -1 )
+                throw py::index_error("an index can only have a single ellipsis ('...')");
+            posEllipsis = curAxis;
+
+            // might be omitted if all other indices are given as well
+            if( numSlices == ndim + 1 )
+            {
+                --curAxis;
+                continue;
+            }
+
+            // how many slices were given after the ellipsis
+            uint8_t const numSlicesAfterEllipsis =
+                numSlices -
+                uint8_t(posEllipsis) -
+                1u;
+            // how many slices does the ellipsis represent
+            uint8_t const numSlicesEllipsis =
+                numSlices
+                - uint8_t(posEllipsis)     // slices before
+                - numSlicesAfterEllipsis;  // slices after
+
+            // fill ellipsis indices
+            // note: if enough further indices are given, the ellipsis
+            //       might stand for no axis: valid and ignored
+            for( ; curAxis < posEllipsis + int16_t(numSlicesEllipsis); ++curAxis )
+            {
+                offset.at(curAxis) = 0;
+                extent.at(curAxis) = full_extent.at(curAxis);
+            }
+            --curAxis;
+
+            continue;
+        }
+
+        if( PySlice_Check( slices[i].ptr() ) )
+        {
+            py::slice slice = py::cast< py::slice >( slices[i] );
+
+            size_t start, stop, step, slicelength;
+            if( !slice.compute( full_extent.at(curAxis), &start, &stop, &step, &slicelength ) )
+                throw py::error_already_set();
+
+            // TODO PySlice_AdjustIndices: Python 3.6.1+
+            //      Adjust start/end slice indices assuming a sequence of the specified length.
+            //      Out of bounds indices are clipped in a manner consistent with the handling of normal slices.
+            // slicelength = PySlice_AdjustIndices(full_extent[curAxis], (ssize_t*)&start, (ssize_t*)&stop, step);
+
+            if( step != 1u )
+                throw py::index_error("strides in selection are inefficient, not implemented!");
+
+            // verified for size later in C++ API
+            offset.at(curAxis) = start;
+            extent.at(curAxis) = slicelength; // stop - start;
+
+            continue;
+        }
+
+        try
+        {
+            auto const index = py::cast< std::int64_t >( slices[i] );
+
+            if( index < 0 )
+                offset.at(curAxis) = full_extent.at(curAxis) + index;
+            else
+                offset.at(curAxis) = index;
+
+            extent.at(curAxis) = 1;
+            flatten.at(curAxis) = true; // indices flatten the dimension
+
+            if( offset.at(curAxis) >= full_extent.at(curAxis) )
+                throw py::index_error(
+                    std::string("index ") +
+                    std::to_string( offset.at(curAxis) ) +
+                    std::string(" is out of bounds for axis ") +
+                    std::to_string(i) +
+                    std::string(" with size ") +
+                    std::to_string(full_extent.at(curAxis))
+                );
+
+            continue;
+        }
+        catch (const py::cast_error& e) {
+            // not an index
+        }
+
+        if( slices[i].ptr() == Py_None )
+        {
+            py::none newaxis = py::cast< py::none >( slices[i] );;
+            throw py::index_error("None (newaxis) not implemented!");
+
+            continue;
+        }
+
+        // if we get here, the last slice type was not successfully processed
+        --curAxis;
+        throw py::index_error(
+            std::string("unknown index type passed: ") +
+            py::str(slices[i]).cast<std::string>());
+    }
+
+    // fill omitted higher indices with "select all"
+    for( ++curAxis; curAxis < int16_t(ndim); ++curAxis )
+    {
+        extent.at(curAxis) = full_extent.at(curAxis);
+    }
+
+    return std::make_tuple(offset, extent, flatten);
+}
+
+/** Store Chunk
+ *
+ * Called with offset and extent that are already in the record component's
+ * dimension.
+ *
+ * Size checks of the requested chunk (spanned data is in valid bounds)
+ * will be performed at C++ API part in RecordComponent::storeChunk .
+ */
+inline void
+store_chunk(RecordComponent & r, py::array & a, Offset const & offset, Extent const & extent, std::vector<bool> const & flatten) {
+    // @todo keep locked until flush() is performed
+    // a.flags.writable = false;
+    // a.flags.owndata = false;
+
+    // verify offset + extend fit in dataset extent
+
+    //   some one-size dimensions might be flattended in our r due to selections by index
+    size_t const numFlattenDims = std::count(flatten.begin(), flatten.end(), true);
+    auto const r_extent = r.getExtent();
+    auto const s_extent(extent);  // selected extent in r
+    std::vector< std::uint64_t > r_shape(r_extent.size() - numFlattenDims);
+    std::vector< std::uint64_t > s_shape(s_extent.size() - numFlattenDims);
+    auto maskIt = flatten.begin();
+    std::copy_if(
+        std::begin(r_extent),
+        std::end(r_extent),
+        std::begin(r_shape),
+        [&maskIt](std::uint64_t){
+            return !*(maskIt++);
+        }
+    );
+    maskIt = flatten.begin();
+    std::copy_if(
+        std::begin(s_extent),
+        std::end(s_extent),
+        std::begin(s_shape),
+        [&maskIt](std::uint64_t){
+            return !*(maskIt++);
+        }
+    );
+
+    //   verify shape and extent
+    if( size_t(a.ndim()) != r_shape.size() )
+        throw py::index_error(
+            std::string("dimension of chunk (") +
+            std::to_string(a.ndim()) +
+            std::string("D) does not fit dimension of selection "
+                        "in record component (") +
+            std::to_string(r_shape.size()) +
+            std::string("D)")
+        );
+
+    for( auto d = 0; d < a.ndim(); ++d )
+    {
+        // selection causes overflow of r
+        if( offset.at(d) + extent.at(d) > r_shape.at(d) )
+            throw py::index_error(
+                std::string("slice ") +
+                std::to_string( offset.at(d) ) +
+                std::string(":") +
+                std::to_string( extent.at(d) ) +
+                std::string(" is out of bounds for axis ") +
+                std::to_string(d) +
+                std::string(" with size ") +
+                std::to_string(r_shape.at(d))
+            );
+        // underflow of selection in r for given a
+        if( s_shape.at(d) != std::uint64_t(a.shape()[d]) )
+            throw py::index_error(
+                std::string("size of chunk (") +
+                std::to_string( a.shape()[d] ) +
+                std::string(") for axis ") +
+                std::to_string(d) +
+                std::string(" does not match selection ") +
+                std::string("size in record component (") +
+                std::to_string( s_extent.at(d) ) +
+                std::string(")")
+            );
+    }
+
+    // verify input array is not strided (aka contiguous)
+    // a pseudo stride in one dimension is ok as long as all other
+    // dimensions stride exactly by itemsize
+    bool strideFound = false;
+    // all strides but one are element strides?
+    bool allOthersOne = true;
+    for( auto d = 0; d < a.ndim(); ++d )
+    {
+        // std::cout << "    stride '" << d << "': "
+        //           << a.strides()[d] / a.itemsize()
+        //           << " - " << a.shape()[d] << std::endl;
+
+        if( a.strides()[d] == a.itemsize() )
+            continue; // ok to stride on element level
+        else
+        {
+            if( a.strides()[d] == a.shape()[d] * a.itemsize() )
+                allOthersOne = false;
+            else                         // padded stride
+                if( strideFound )        // more than one stride found
+                    throw py::index_error(
+                        "strides in chunk are inefficient, not implemented!");
+                else
+                    strideFound = true;  // first found stride, ok with allOthersOne
+        }
+    }
+    if( strideFound && !allOthersOne )   // one padded stride and others not element strides
+        throw py::index_error(
+            "strides in chunk are inefficient, not implemented!");
+
+    // @todo in order to implement stride handling, one needs to
+    //       loop over the input data strides during write below
+
+    // store
+    auto const dtype = dtype_from_numpy( a.dtype() );
+    if( dtype == Datatype::CHAR )
+        r.storeChunk( shareRaw( (char*)a.mutable_data() ), offset, extent );
+    else if( dtype == Datatype::UCHAR )
+        r.storeChunk( shareRaw( (unsigned char*)a.mutable_data() ), offset, extent );
+    else if( dtype == Datatype::SHORT )
+        r.storeChunk( shareRaw( (short*)a.mutable_data() ), offset, extent );
+    else if( dtype == Datatype::INT )
+        r.storeChunk( shareRaw( (int*)a.mutable_data() ), offset, extent );
+    else if( dtype == Datatype::LONG )
+       r.storeChunk( shareRaw( (long*)a.mutable_data() ), offset, extent );
+    else if( dtype == Datatype::LONGLONG )
+        r.storeChunk( shareRaw( (long long*)a.mutable_data() ), offset, extent );
+    else if( dtype == Datatype::USHORT )
+        r.storeChunk( shareRaw( (unsigned short*)a.mutable_data() ), offset, extent );
+    else if( dtype == Datatype::UINT )
+        r.storeChunk( shareRaw( (unsigned int*)a.mutable_data() ), offset, extent );
+    else if( dtype == Datatype::ULONG )
+        r.storeChunk( shareRaw( (unsigned long*)a.mutable_data() ), offset, extent );
+    else if( dtype == Datatype::ULONGLONG )
+        r.storeChunk( shareRaw( (unsigned long long*)a.mutable_data() ), offset, extent );
+    else if( dtype == Datatype::LONG_DOUBLE )
+        r.storeChunk( shareRaw( (long double*)a.mutable_data() ), offset, extent );
+    else if( dtype == Datatype::DOUBLE )
+        r.storeChunk( shareRaw( (double*)a.mutable_data() ), offset, extent );
+    else if( dtype == Datatype::FLOAT )
+        r.storeChunk( shareRaw( (float*)a.mutable_data() ), offset, extent );
+/* @todo
+.value("STRING", Datatype::STRING)
+.value("VEC_STRING", Datatype::VEC_STRING)
+.value("ARR_DBL_7", Datatype::ARR_DBL_7)
+*/
+    else if( dtype == Datatype::BOOL )
+        r.storeChunk( shareRaw( (bool*)a.mutable_data() ), offset, extent );
+    else
+        throw std::runtime_error(
+            std::string("Datatype '") +
+            std::string(py::str(a.dtype())) +
+            std::string("' not known in 'storeChunk'!"));
+}
+
+/** Store Chunk
+ *
+ * Called with a py::tuple of slices and a py::array
+ */
+inline void
+store_chunk(RecordComponent & r, py::array & a, py::tuple const & slices)
+{
+    uint8_t ndim = r.getDimensionality();
+    auto const full_extent = r.getExtent();
+
+    Offset offset;
+    Extent extent;
+    std::vector<bool> flatten;
+    std::tie(offset, extent, flatten) = parseTupleSlices(ndim, full_extent, slices);
+
+    store_chunk(r, a, offset, extent, flatten);
+}
+
+/** Load Chunk
+ *
+ * Called with offset and extent that are already in the record component's
+ * dimension.
+ *
+ * Size checks of the requested chunk (spanned data is in valid bounds)
+ * will be performed at C++ API part in RecordComponent::loadChunk .
+ */
+inline py::array
+load_chunk(RecordComponent & r, Offset const & offset, Extent const & extent, std::vector<bool> const & flatten)
+{
+    // some one-size dimensions might be flattended in our output due to selections by index
+    size_t const numFlattenDims = std::count(flatten.begin(), flatten.end(), true);
+    std::vector< ptrdiff_t > shape(extent.size() - numFlattenDims);
+    auto maskIt = flatten.begin();
+    std::copy_if(
+        std::begin(extent),
+        std::end(extent),
+        std::begin(shape),
+        [&maskIt](std::uint64_t){
+            return !*(maskIt++);
+        }
+    );
+
+    auto const dtype = dtype_to_numpy( r.getDatatype() );
+
+    auto a = py::array( dtype, shape );
+
+    if( r.getDatatype() == Datatype::CHAR )
+        r.loadChunk<char>(shareRaw((char*) a.mutable_data()), offset, extent);
+    else if( r.getDatatype() == Datatype::UCHAR )
+        r.loadChunk<unsigned char>(shareRaw((unsigned char*) a.mutable_data()), offset, extent);
+    else if( r.getDatatype() == Datatype::SHORT )
+        r.loadChunk<short>(shareRaw((short*) a.mutable_data()), offset, extent);
+    else if( r.getDatatype() == Datatype::INT )
+        r.loadChunk<int>(shareRaw((int*) a.mutable_data()), offset, extent);
+    else if( r.getDatatype() == Datatype::LONG )
+        r.loadChunk<long>(shareRaw((long*) a.mutable_data()), offset, extent);
+    else if( r.getDatatype() == Datatype::LONGLONG )
+        r.loadChunk<long long>(shareRaw((long long*) a.mutable_data()), offset, extent);
+    else if( r.getDatatype() == Datatype::USHORT )
+        r.loadChunk<unsigned short>(shareRaw((unsigned short*) a.mutable_data()), offset, extent);
+    else if( r.getDatatype() == Datatype::UINT )
+        r.loadChunk<unsigned int>(shareRaw((unsigned int*) a.mutable_data()), offset, extent);
+    else if( r.getDatatype() == Datatype::ULONG )
+        r.loadChunk<unsigned long>(shareRaw((unsigned long*) a.mutable_data()), offset, extent);
+    else if( r.getDatatype() == Datatype::ULONGLONG )
+        r.loadChunk<unsigned long long>(shareRaw((unsigned long long*) a.mutable_data()), offset, extent);
+    else if( r.getDatatype() == Datatype::LONG_DOUBLE )
+        r.loadChunk<long double>(shareRaw((long double*) a.mutable_data()), offset, extent);
+    else if( r.getDatatype() == Datatype::DOUBLE )
+        r.loadChunk<double>(shareRaw((double*) a.mutable_data()), offset, extent);
+    else if( r.getDatatype() == Datatype::FLOAT )
+        r.loadChunk<float>(shareRaw((float*) a.mutable_data()), offset, extent);
+    else if( r.getDatatype() == Datatype::BOOL )
+        r.loadChunk<bool>(shareRaw((bool*) a.mutable_data()), offset, extent);
+    else
+        throw std::runtime_error(std::string("Datatype not known in 'loadChunk'!"));
+
+    return a;
+}
+
+/** Load Chunk
+ *
+ * Called with a py::tuple of slices.
+ */
+inline py::array
+load_chunk(RecordComponent & r, py::tuple const & slices)
+{
+    uint8_t ndim = r.getDimensionality();
+    auto const full_extent = r.getExtent();
+
+    Offset offset;
+    Extent extent;
+    std::vector<bool> flatten;
+    std::tie(offset, extent, flatten) = parseTupleSlices(ndim, full_extent, slices);
+
+    return load_chunk(r, offset, extent, flatten);
+}
 
 void init_RecordComponent(py::module &m) {
     py::class_<RecordComponent, BaseRecordComponent>(m, "Record_Component")
@@ -145,49 +539,49 @@ void init_RecordComponent(py::module &m) {
         .def("make_constant", &RecordComponent::makeConstant<bool>,
             py::arg("value"))
 
-        /* draft of the slicing protocol
-        .def("__getitem__", [](RecordComponent const & r, py::slice s) {
-            size_t start, stop, step, slicelength;
-            if( !slice.compute( r.getExtent().size(), &start, &stop, &step, &slicelength ) )
-                throw py::error_already_set();
+        // TODO if we also want to support scalar arrays, we have to switch
+        //      py::array for py::buffer as in Attributable
+        //      https://github.com/pybind/pybind11/pull/1537
 
-            py::array a;
-            a.resize( s.getExtent() );
-            std::fill( a.mutable_data(), a.mutable_data() + a.size(), 0. );
+        // slicing protocol
+        .def("__getitem__", [](RecordComponent & r, py::tuple const & slices) {
+            return load_chunk(r, slices);
+        },
+            py::arg("tuple of index slices")
+        )
+        .def("__getitem__", [](RecordComponent & r, py::slice const & slice_obj) {
+            auto const slices = py::make_tuple(slice_obj);
+            return load_chunk(r, slices);
+        },
+            py::arg("slice")
+        )
+        .def("__getitem__", [](RecordComponent & r, py::int_ const & slice_obj) {
+            auto const slices = py::make_tuple(slice_obj);
+            return load_chunk(r, slices);
+        },
+            py::arg("axis index")
+        )
 
-            // @todo keep locked until flush() is performed
-            // a.flags.writable = false;
-            // a.flags.owndata = false;
-
-            Offset chunk_offset = {1, 1, 1};
-            Extent chunk_extent = {2, 2, 1};
-            std::unique_ptr< double[] > chunk_data;
-            E_x.loadChunk(chunk_data, chunk_offset, chunk_extent);
-
-            return a;
-        })
-        .def("__setitem__", [](RecordComponent const & r, py::slice s, py::array & a ) {
-            size_t start, stop, step, slicelength;
-            if( !slice.compute( r.getExtent().size(), &start, &stop, &step, &slicelength ) )
-                throw py::error_already_set();
-            if( slicelength != value.size() )
-                throw std::runtime_error("Left and right hand size of assignment have different sizes!");
-
-            Extent extent;
-            Offset offset;
-            for( size_t i = 0; i < slicelength; ++i ) {
-                std::cout << start << " " << stop << " " << step << " " << slicelength << std::endl;
-                offset[i] = start;
-                extent[i] = stop - start;
-                start += step;
-            }
-
-            // @todo keep locked until flush() is performed
-            // a.flags.writable = false;
-            // a.flags.owndata = false;
-
-            // r.storeChunk();
-        }) */
+        .def("__setitem__", [](RecordComponent & r, py::tuple const & slices, py::array & a ) {
+            store_chunk(r, a, slices);
+        },
+            py::arg("tuple of index slices"),
+            py::arg("array with values to assign")
+        )
+        .def("__setitem__", [](RecordComponent & r, py::slice const & slice_obj, py::array & a ) {
+            auto const slices = py::make_tuple(slice_obj);
+            store_chunk(r, a, slices);
+        },
+            py::arg("slice"),
+            py::arg("array with values to assign")
+        )
+        .def("__setitem__", [](RecordComponent & r, py::int_ const & slice_obj, py::array & a ) {
+            auto const slices = py::make_tuple(slice_obj);
+            store_chunk(r, a, slices);
+        },
+            py::arg("axis index"),
+            py::arg("array with values to assign")
+        )
 
         // deprecated: pass-through C++ API
         .def("load_chunk", [](RecordComponent & r, Offset const & offset_in, Extent const & extent_in) {
@@ -210,45 +604,8 @@ void init_RecordComponent(py::module &m) {
             else
                 extent = extent_in;
 
-            std::vector<ptrdiff_t> shape(extent.size());
-            std::copy(std::begin(extent), std::end(extent), std::begin(shape));
-
-            auto const dtype = dtype_to_numpy( r.getDatatype() );
-
-            auto a = py::array( dtype, shape );
-
-            if( r.getDatatype() == Datatype::CHAR )
-                r.loadChunk<char>(shareRaw((char*) a.mutable_data()), offset, extent);
-            else if( r.getDatatype() == Datatype::UCHAR )
-                r.loadChunk<unsigned char>(shareRaw((unsigned char*) a.mutable_data()), offset, extent);
-            else if( r.getDatatype() == Datatype::SHORT )
-                r.loadChunk<short>(shareRaw((short*) a.mutable_data()), offset, extent);
-            else if( r.getDatatype() == Datatype::INT )
-                r.loadChunk<int>(shareRaw((int*) a.mutable_data()), offset, extent);
-            else if( r.getDatatype() == Datatype::LONG )
-                r.loadChunk<long>(shareRaw((long*) a.mutable_data()), offset, extent);
-            else if( r.getDatatype() == Datatype::LONGLONG )
-                r.loadChunk<long long>(shareRaw((long long*) a.mutable_data()), offset, extent);
-            else if( r.getDatatype() == Datatype::USHORT )
-                r.loadChunk<unsigned short>(shareRaw((unsigned short*) a.mutable_data()), offset, extent);
-            else if( r.getDatatype() == Datatype::UINT )
-                r.loadChunk<unsigned int>(shareRaw((unsigned int*) a.mutable_data()), offset, extent);
-            else if( r.getDatatype() == Datatype::ULONG )
-                r.loadChunk<unsigned long>(shareRaw((unsigned long*) a.mutable_data()), offset, extent);
-            else if( r.getDatatype() == Datatype::ULONGLONG )
-                r.loadChunk<unsigned long long>(shareRaw((unsigned long long*) a.mutable_data()), offset, extent);
-            else if( r.getDatatype() == Datatype::LONG_DOUBLE )
-                r.loadChunk<long double>(shareRaw((long double*) a.mutable_data()), offset, extent);
-            else if( r.getDatatype() == Datatype::DOUBLE )
-                r.loadChunk<double>(shareRaw((double*) a.mutable_data()), offset, extent);
-            else if( r.getDatatype() == Datatype::FLOAT )
-                r.loadChunk<float>(shareRaw((float*) a.mutable_data()), offset, extent);
-            else if( r.getDatatype() == Datatype::BOOL )
-                r.loadChunk<bool>(shareRaw((bool*) a.mutable_data()), offset, extent);
-            else
-                throw std::runtime_error(std::string("Datatype not known in 'load_chunk'!"));
-
-            return a;
+            std::vector<bool> flatten(ndim, false);
+            return load_chunk(r, offset, extent, flatten);
         },
             py::arg_v("offset", Offset(1,  0u), "np.zeros(Record_Component.shape)"),
             py::arg_v("extent", Extent(1, -1u), "Record_Component.shape")
@@ -270,66 +627,8 @@ void init_RecordComponent(py::module &m) {
             else
                 extent = extent_in;
 
-            for( auto d = 0; d < a.ndim(); ++d )
-            {
-                // std::cout << "    stride '" << d << "': "
-                //           << a.strides()[d] / a.itemsize()
-                //           << " - " << a.shape()[d] << std::endl;
-                if( a.strides()[d] != a.shape()[d] * a.itemsize() ) // general criteria
-                {
-                    if( a.ndim() == 1u && a.strides()[0] > a.shape()[0] * a.itemsize() )
-                        ; // ok in 1D
-                    else if( a.strides()[d] == a.itemsize() )
-                        ; // ok to stride on an element level
-                    else
-                        throw std::runtime_error("store_chunk: "
-                            "stride handling not implemented!");
-                }
-            }
-            // @todo in order to implement stride handling, one needs to
-            //       loop over the input data strides during write below
-
-            // @todo verify offset + extend fit in dataset extend
-            // @todo keep locked until flush() is performed
-            // a.flags.writable = false;
-            // a.flags.owndata = false;
-
-            auto const dtype = dtype_from_numpy( a.dtype() );
-            if( dtype == Datatype::CHAR )
-                r.storeChunk( shareRaw( (char*)a.mutable_data() ), offset, extent );
-            else if( dtype == Datatype::UCHAR )
-                r.storeChunk( shareRaw( (unsigned char*)a.mutable_data() ), offset, extent );
-            else if( dtype == Datatype::SHORT )
-                r.storeChunk( shareRaw( (short*)a.mutable_data() ), offset, extent );
-            else if( dtype == Datatype::INT )
-                r.storeChunk( shareRaw( (int*)a.mutable_data() ), offset, extent );
-            else if( dtype == Datatype::LONG )
-               r.storeChunk( shareRaw( (long*)a.mutable_data() ), offset, extent );
-            else if( dtype == Datatype::LONGLONG )
-                r.storeChunk( shareRaw( (long long*)a.mutable_data() ), offset, extent );
-            else if( dtype == Datatype::USHORT )
-                r.storeChunk( shareRaw( (unsigned short*)a.mutable_data() ), offset, extent );
-            else if( dtype == Datatype::UINT )
-                r.storeChunk( shareRaw( (unsigned int*)a.mutable_data() ), offset, extent );
-            else if( dtype == Datatype::ULONG )
-                r.storeChunk( shareRaw( (unsigned long*)a.mutable_data() ), offset, extent );
-            else if( dtype == Datatype::ULONGLONG )
-                r.storeChunk( shareRaw( (unsigned long long*)a.mutable_data() ), offset, extent );
-            else if( dtype == Datatype::LONG_DOUBLE )
-                r.storeChunk( shareRaw( (long double*)a.mutable_data() ), offset, extent );
-            else if( dtype == Datatype::DOUBLE )
-                r.storeChunk( shareRaw( (double*)a.mutable_data() ), offset, extent );
-            else if( dtype == Datatype::FLOAT )
-                r.storeChunk( shareRaw( (float*)a.mutable_data() ), offset, extent );
-/* @todo
-        .value("STRING", Datatype::STRING)
-        .value("VEC_STRING", Datatype::VEC_STRING)
-        .value("ARR_DBL_7", Datatype::ARR_DBL_7)
-*/
-            else if( dtype == Datatype::BOOL )
-                r.storeChunk( shareRaw( (bool*)a.mutable_data() ), offset, extent );
-            else
-                throw std::runtime_error(std::string("Datatype '") + std::string(py::str(a.dtype())) + std::string("' not known in 'store_chunk'!"));
+            std::vector<bool> flatten(r.getDimensionality(), false);
+            store_chunk(r, a, offset, extent, flatten);
         },
             py::arg("array"),
             py::arg_v("offset", Offset(1,  0u), "np.zeros_like(array)"),
