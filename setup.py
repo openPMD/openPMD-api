@@ -128,11 +128,9 @@ setup(
     python_requires='>=3.5, <3.8',
     # tests_require=['pytest'],
     install_requires=install_requires,
-    # extras_require = {
-    #    'GUI':  ["ipywidgets", "matplotlib", "cython"],
-    #    'plot': ["matplotlib", "cython"],
-    #    'tutorials': ["ipywidgets", "matplotlib", "wget", "cython"]
-    # },
+    extras_require={
+        'mpi': ['mpi4py'],
+    },
     # cmdclass={'test': PyTest},
     # platforms='any',
     classifiers=[

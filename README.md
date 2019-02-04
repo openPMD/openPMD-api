@@ -150,7 +150,7 @@ conda install -c conda-forge openpmd-api
 [![PyPI Downloads](https://img.shields.io/pypi/dm/openPMD-api.svg)](https://pypi.org/project/openPMD-api)
 
 ```bash
-# optional:             --user
+# optional:            [mpi] --user
 pip install openPMD-api
 ```
 
