@@ -62,9 +62,7 @@ if __name__ == "__main__":
     if 0 == comm.rank:
         print("File structure has been written to disk")
 
-    chunk_offset = [comm.rank, ]
-    chunk_extent = [1, ]
-    id.store_chunk(local_data, chunk_offset, chunk_extent)
+    id[comm.rank:comm.rank+1] = local_data
     if 0 == comm.rank:
         print("Stored a single chunk per MPI rank containing its contribution,"
               " ready to write content to disk")
