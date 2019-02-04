@@ -3,8 +3,8 @@
 Changelog
 =========
 
-0.7.2-alpha
------------
+0.8.0-beta
+----------
 **Date:** TBA
 
 [Title]
@@ -17,6 +17,8 @@ Changes to "0.7.1-alpha"
 Features
 """"""""
 
+- Python: mpi4py support added #454
+
 Bug Fixes
 """""""""
 
@@ -24,6 +26,7 @@ Other
 """""
 
 - increase pybind11 dependency to 2.2.4+ #455
+- Python: remove (inofficial) bindings for 2.7 #435
 - Docs:
 
   - PyPI install method #450 #451

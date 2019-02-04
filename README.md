@@ -114,6 +114,7 @@ Optional language bindings:
   * Python 3.5 - 3.7
   * pybind 2.2.4+
   * numpy 1.15+
+  * mpi4py 2.1+
 
 ## Installation
 
@@ -149,7 +150,7 @@ conda install -c conda-forge openpmd-api
 [![PyPI Downloads](https://img.shields.io/pypi/dm/openPMD-api.svg)](https://pypi.org/project/openPMD-api)
 
 ```bash
-# optional:             --user
+# optional:            [mpi] --user
 pip install openPMD-api
 ```
 

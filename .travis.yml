@@ -640,6 +640,12 @@ install:
         py-numpy ~blas ~lapack ^python@$TRAVIS_PYTHON_VERSION
         $CXXSPEC &&
       spack load py-numpy ~blas ~lapack ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
+      if [ $USE_MPI == "ON" ]; then
+        travis_wait spack install
+          py-mpi4py ^python@$TRAVIS_PYTHON_VERSION
+          $CXXSPEC &&
+        spack load py-mpi4py ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
+      fi;
     fi
   - if [ $USE_HDF5 == "ON" ]; then
       travis_wait spack install
