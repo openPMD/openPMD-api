@@ -71,7 +71,7 @@ namespace openPMD
         Parameter< Operation::CREATE_FILE > const & parameters
     )
     {
-        VERIFY_ALWAYS( m_handler->accessType != AccessType::READ_ONLY,
+        VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
             "Creating a file in read-only mode is not possible." );
 
         if( !writable->written )
@@ -87,7 +87,7 @@ namespace openPMD
 
             auto res_pair = getPossiblyExisting( name );
             File shared_name = File( name );
-            VERIFY_ALWAYS( !( m_handler->accessType == AccessType::READ_WRITE &&
+            VERIFY_ALWAYS( !( m_handler->accessTypeBackend == AccessType::READ_WRITE &&
                               ( !std::get< 2 >( res_pair ) ||
                                 auxiliary::file_exists( fullPath( std::get< 0 >( res_pair ) ) ) ) ),
                 "Can only overwrite existing file in CREATE mode." );
@@ -190,7 +190,7 @@ namespace openPMD
         Parameter< Operation::CREATE_DATASET > const & parameter
     )
     {
-        if( m_handler->accessType == AccessType::READ_ONLY )
+        if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
         {
             throw std::runtime_error( "Creating a dataset in a file opened as read only is not possible." );
         }
@@ -225,7 +225,7 @@ namespace openPMD
         Parameter< Operation::EXTEND_DATASET > const & parameters
     )
     {
-        VERIFY_ALWAYS( m_handler->accessType != AccessType::READ_ONLY,
+        VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
             "Cannot extend a dataset in read-only mode." )
         refreshFileFromParent( writable );
         setAndGetFilePosition( writable );
@@ -355,7 +355,7 @@ namespace openPMD
         Parameter< Operation::DELETE_FILE > const & parameters
     )
     {
-        VERIFY_ALWAYS( m_handler->accessType != AccessType::READ_ONLY,
+        VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
             "Cannot delete files in read-only mode" )
 
         if( !writable->written )
@@ -389,7 +389,7 @@ namespace openPMD
         Parameter< Operation::DELETE_PATH > const & parameters
     )
     {
-        VERIFY_ALWAYS( m_handler->accessType != AccessType::READ_ONLY,
+        VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
             "Cannot delete paths in read-only mode" )
 
         if( !writable->written )
@@ -495,7 +495,7 @@ namespace openPMD
         Parameter< Operation::DELETE_DATASET > const & parameters
     )
     {
-        VERIFY_ALWAYS( m_handler->accessType != AccessType::READ_ONLY,
+        VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
             "Cannot delete datasets in read-only mode" )
 
         if( !writable->written )
@@ -550,7 +550,7 @@ namespace openPMD
         Parameter< Operation::DELETE_ATT > const & parameters
     )
     {
-        VERIFY_ALWAYS( m_handler->accessType != AccessType::READ_ONLY,
+        VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
             "Cannot delete attributes in read-only mode" )
         if( !writable->written )
         {
@@ -569,7 +569,7 @@ namespace openPMD
         Parameter< Operation::WRITE_DATASET > const & parameters
     )
     {
-        VERIFY_ALWAYS( m_handler->accessType != AccessType::READ_ONLY,
+        VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
             "Cannot write data in read-only mode." );
 
         auto pos = setAndGetFilePosition( writable );
@@ -600,7 +600,7 @@ namespace openPMD
         Parameter< Operation::WRITE_ATT > const & parameter
     )
     {
-        if( m_handler->accessType == AccessType::READ_ONLY )
+        if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
         {
             throw std::runtime_error( "Creating a dataset in a file opened as read only is not possible." );
         }

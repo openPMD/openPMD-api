@@ -482,16 +482,16 @@ Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
     m_filenamePostfix = std::make_shared< std::string >(input->filenamePostfix);
     m_filenamePadding = std::make_shared< int >(input->filenamePadding);
 
-    if( IOHandler->accessType == AccessType::READ_ONLY || IOHandler->accessType == AccessType::READ_WRITE )
+    if( IOHandler->accessTypeFrontend == AccessType::READ_ONLY || IOHandler->accessTypeFrontend == AccessType::READ_WRITE )
     {
         /* Allow creation of values in Containers and setting of Attributes
          * Would throw for AccessType::READ_ONLY */
-        auto oldType = IOHandler->accessType;
-        auto newType = const_cast< AccessType* >(&m_writable->IOHandler->accessType);
+        auto oldType = IOHandler->accessTypeFrontend;
+        auto newType = const_cast< AccessType* >(&m_writable->IOHandler->accessTypeFrontend);
         *newType = AccessType::READ_WRITE;
 
         if( input->iterationEncoding == IterationEncoding::fileBased )
-            readFileBased(oldType);
+            readFileBased();
         else
             readGroupBased();
 
@@ -529,7 +529,7 @@ Series::flushFileBased()
     if( iterations.empty() )
         throw std::runtime_error("fileBased output can not be written with no iterations.");
 
-    if( IOHandler->accessType == AccessType::READ_ONLY )
+    if( IOHandler->accessTypeFrontend == AccessType::READ_ONLY )
         for( auto& i : iterations )
             i.second.flush();
     else
@@ -566,7 +566,7 @@ Series::flushFileBased()
 void
 Series::flushGroupBased()
 {
-    if( IOHandler->accessType == AccessType::READ_ONLY )
+    if( IOHandler->accessTypeFrontend == AccessType::READ_ONLY )
         for( auto& i : iterations )
             i.second.flush();
     else
@@ -617,7 +617,7 @@ Series::flushParticlesPath()
 }
 
 void
-Series::readFileBased(AccessType actualAccessType)
+Series::readFileBased()
 {
     Parameter< Operation::OPEN_FILE > fOpen;
     Parameter< Operation::READ_ATT > aRead;
@@ -684,7 +684,9 @@ Series::readFileBased(AccessType actualAccessType)
 
     if( iterations.empty() )
     {
-        if( actualAccessType == AccessType::READ_ONLY  )
+        /* Frontend access type might change during Series::read() to allow parameter modification.
+         * Backend access type stays unchanged for the lifetime of a Series. */
+        if( IOHandler->accessTypeBackend == AccessType::READ_ONLY  )
             throw std::runtime_error("No matching iterations found: " + name());
         else
             std::cerr << "No matching iterations found: " << name() << std::endl;
@@ -693,7 +695,9 @@ Series::readFileBased(AccessType actualAccessType)
     if( paddings.size() == 1u )
         *m_filenamePadding = *paddings.begin();
 
-    if( paddings.size() > 1u && actualAccessType == AccessType::READ_WRITE )
+    /* Frontend access type might change during Series::read() to allow parameter modification.
+     * Backend access type stays unchanged for the lifetime of a Series. */
+    if( paddings.size() > 1u && IOHandler->accessTypeBackend == AccessType::READ_WRITE )
         throw std::runtime_error("Cannot write to a series with inconsistent iteration padding. "
                                  "Please specify '%0<N>T' or open as read-only.");
 }

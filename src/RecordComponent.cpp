@@ -77,7 +77,7 @@ RecordComponent::getExtent() const
 void
 RecordComponent::flush(std::string const& name)
 {
-    if( IOHandler->accessType == AccessType::READ_ONLY )
+    if( IOHandler->accessTypeFrontend == AccessType::READ_ONLY )
     {
         while( !m_chunks->empty() )
         {

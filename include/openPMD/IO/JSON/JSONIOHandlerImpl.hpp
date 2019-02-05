@@ -288,7 +288,7 @@ namespace openPMD
         std::shared_ptr< FILEHANDLE > getFilehandle(
             File,
             AccessType accessType
-        ); //, AccessType accessType=this->m_handler->accessType);
+        ); //, AccessType accessTypeFrontend=this->m_handler->accessTypeFrontend);
 
         // full operating system path of the given file
         std::string fullPath( File );

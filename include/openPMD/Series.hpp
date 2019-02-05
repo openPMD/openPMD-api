@@ -245,7 +245,7 @@ OPENPMD_private:
     void flushGroupBased();
     void flushMeshesPath();
     void flushParticlesPath();
-    void readFileBased(AccessType);
+    void readFileBased();
     void readGroupBased();
     void readBase();
     void read();
