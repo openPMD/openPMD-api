@@ -99,6 +99,7 @@ Shipped internally in `share/openPMD/thirdParty/`:
 * [Catch2](https://github.com/catchorg/Catch2) 2.6.1+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
 * [pybind11](https://github.com/pybind/pybind11) 2.2.4+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
 * [NLohmann-JSON](https://github.com/nlohmann/json) 3.5.0+ ([MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT))
+* [spdlog](https://github.com/gabime/spdlog) 1.3.1+ ([MIT](https://github.com/gabime/spdlog/blob/master/LICENSE))
 
 Optional I/O backends:
 * [JSON](https://en.wikipedia.org/wiki/JSON)
@@ -194,7 +195,8 @@ CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 | `openPMD_USE_HDF5`           | **AUTO**/ON/OFF  | HDF5 backend (`.h5` files)                                                   |
 | `openPMD_USE_ADIOS1`         | **AUTO**/ON/OFF  | ADIOS1 backend (`.bp` files)                                                 |
 | `openPMD_USE_ADIOS2`         | AUTO/ON/**OFF**  | ADIOS2 backend (`.bp` files) <sup>1</sup>                                    |
-| `openPMD_USE_PYTHON`         | **AUTO**/ON/OFF  | Enable Python bindings                                                       |
+| `openPMD_USE_PYTHON`         | **AUTO**/ON/OFF  | Python bindings                                                              |
+| `openPMD_USE_LOGGING`        | **AUTO**/ON/OFF  | Multi-level, multi-target log mechanism                                      |
 | `openPMD_USE_INVASIVE_TESTS` | ON/**OFF**       | Enable unit tests that modify source code <sup>2</sup>                       |
 | `openPMD_USE_VERIFY`         | **ON**/OFF       | Enable internal VERIFY (assert) macro independent of build type <sup>3</sup> |
 | `PYTHON_EXECUTABLE`          | (first found)    | Path to Python executable                                                    |
@@ -212,6 +214,7 @@ The following options allow to switch to external installs:
 | `openPMD_USE_INTERNAL_CATCH`    | **ON**/OFF | Catch2        |  2.6.1+ |
 | `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.2.4+ |
 | `openPMD_USE_INTERNAL_JSON`     | **ON**/OFF | NLohmann-JSON |  3.5.0+ |
+| `openPMD_USE_INTERNAL_SPDLOG`   | **ON**/OFF | spdlog        |  1.3.1+ |
 
 By default, this will build as a static library (`libopenPMD.a`) and installs also its headers.
 In order to build a shared library, append `-DBUILD_SHARED_LIBS=ON` to the `cmake` command.
@@ -222,6 +225,9 @@ In order to build with debug symbols, pass `-DCMAKE_BUILD_TYPE=Debug` to your `c
 
 By default, tests and examples are built.
 In order to skip building those, pass `-DBUILD_TESTING=OFF` or `-DBUILD_EXAMPLES` to your `cmake` command.
+
+By default, logging is only enabled in `Debug` builds.
+In order to enable this feature unconditionally, pass `-DopenPMD_USE_LOGGING=ON` or `-DopenPMD_USE_LOGGING=OFF` to disable it.
 
 ## Linking to your project
 

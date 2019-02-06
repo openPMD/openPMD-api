@@ -19,7 +19,8 @@ CMake Option                   Values          Description
 ``openPMD_USE_HDF5``           **AUTO**/ON/OFF HDF5 backend (``.h5`` files)
 ``openPMD_USE_ADIOS1``         **AUTO**/ON/OFF ADIOS1 backend (``.bp`` files)
 ``openPMD_USE_ADIOS2``         AUTO/ON/**OFF** ADIOS2 backend (``.bp`` files) :sup:`1`
-``openPMD_USE_PYTHON``         **AUTO**/ON/OFF Enable Python bindings
+``openPMD_USE_PYTHON``         **AUTO**/ON/OFF Python bindings
+``openPMD_USE_LOGGING``        **AUTO**/ON/OFF Multi-level, multi-target log mechanism
 ``openPMD_USE_INVASIVE_TESTS`` ON/**OFF**      Enable unit tests that modify source code :sup:`2`
 ``openPMD_USE_VERIFY``         **ON**/OFF      Enable internal VERIFY (assert) macro independent of build type :sup:`3`
 ``PYTHON_EXECUTABLE``          (first found)   Path to Python executable
@@ -75,6 +76,7 @@ CMake Option                      Values      Installs Library       Version
 ``openPMD_USE_INTERNAL_CATCH``    **ON**/OFF  No       Catch2          2.6.1+
 ``openPMD_USE_INTERNAL_PYBIND11`` **ON**/OFF  No       pybind11        2.2.4+
 ``openPMD_USE_INTERNAL_JSON``     **ON**/OFF  No       NLohmann-JSON   3.5.0+
+``openPMD_USE_INTERNAL_SPDLOG``   **ON**/OFF  No       spdlog          1.3.1+
 ================================= =========== ======== ============= ========
 
 
@@ -83,3 +85,10 @@ Tests
 
 By default, tests and examples are built.
 In order to skip building those, pass ``-DBUILD_TESTING=OFF`` or ``-DBUILD_EXAMPLES=OFF`` to your ``cmake`` command.
+
+
+Logging
+-------
+
+By default, logging is only enabled in ``Debug`` builds.
+In order to enable this feature unconditionally, pass ``-DopenPMD_USE_LOGGING=ON`` or ``-DopenPMD_USE_LOGGING=OFF`` to disable it unconditinoally.
