@@ -140,7 +140,7 @@ Iteration::flushGroupBased(uint64_t i)
 void
 Iteration::flush()
 {
-    if( IOHandler->accessType == AccessType::READ_ONLY )
+    if( IOHandler->accessTypeFrontend == AccessType::READ_ONLY )
     {
         for( auto& m : meshes )
             m.second.flush(m.first);

@@ -70,12 +70,14 @@ public:
 #if openPMD_HAVE_MPI
     AbstractIOHandler(std::string path, AccessType at, MPI_Comm)
         : directory{std::move(path)},
-          accessType{at}
+          accessTypeBackend{at},
+          accessTypeFrontend{at}
     { }
 #endif
     AbstractIOHandler(std::string path, AccessType at)
         : directory{std::move(path)},
-          accessType{at}
+          accessTypeBackend{at},
+          accessTypeFrontend{at}
     { }
     virtual ~AbstractIOHandler() = default;
 
@@ -95,7 +97,8 @@ public:
     virtual std::future< void > flush() = 0;
 
     std::string const directory;
-    AccessType const accessType;
+    AccessType const accessTypeBackend;
+    AccessType const accessTypeFrontend;
     std::queue< IOTask > m_work;
 }; // AbstractIOHandler
 

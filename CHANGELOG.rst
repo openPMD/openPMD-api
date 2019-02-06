@@ -22,6 +22,8 @@ Features
 Bug Fixes
 """""""""
 
+- do not require write permissions to open ``Series`` read-only #395
+
 Other
 """""
 

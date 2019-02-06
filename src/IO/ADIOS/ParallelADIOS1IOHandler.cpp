@@ -56,7 +56,7 @@ ParallelADIOS1IOHandlerImpl::~ParallelADIOS1IOHandlerImpl()
         close(f.second);
     m_openReadFileHandles.clear();
 
-    if( this->m_handler->accessType != AccessType::READ_ONLY )
+    if( this->m_handler->accessTypeBackend != AccessType::READ_ONLY )
     {
         for( auto& f : m_openWriteFileHandles )
             close(f.second);
