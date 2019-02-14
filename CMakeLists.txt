@@ -10,6 +10,15 @@ set(openPMD_STANDARD_VERSION 1.1.0)
 list(APPEND CMAKE_MODULE_PATH "${openPMD_SOURCE_DIR}/share/openPMD/cmake")
 
 
+# CMake policies ##############################################################
+#
+# Search in <PackageName>_ROOT:
+#   https://cmake.org/cmake/help/v3.12/policy/CMP0074.html
+if(POLICY CMP0074)
+    cmake_policy(SET CMP0074 NEW)
+endif()
+
+
 # Project structure ###########################################################
 #
 # temporary build directories
