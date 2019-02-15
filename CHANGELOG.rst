@@ -23,6 +23,7 @@ Bug Fixes
 """""""""
 
 - do not require write permissions to open ``Series`` read-only #395
+- loadChunk: re-enable range/extent checks for adjusted ranges #469
 
 Other
 """""
