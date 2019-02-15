@@ -291,6 +291,7 @@ class APITest(unittest.TestCase):
 
     def testAttributes(self):
         backend_filesupport = {
+            # 'json': 'json',
             'hdf5': 'h5',
             'adios1': 'bp'
         }
@@ -404,6 +405,7 @@ class APITest(unittest.TestCase):
 
     def testConstantRecords(self):
         backend_filesupport = {
+            'json': 'json',
             'hdf5': 'h5',
             'adios1': 'bp'
         }
@@ -521,6 +523,372 @@ class APITest(unittest.TestCase):
         self.assertIsInstance(series, api.Series)
 
         self.assertEqual(series.openPMD, "1.1.0")
+
+    def testSliceRead(self):
+        """ Testing sliced read on record components. """
+
+        # Get series.
+        series = self.__series
+        i = series.iterations[400]
+
+        # Get a mesh record and a particle species.
+        E = i.meshes["E"]
+        electrons = i.particles["electrons"]
+
+        # Get some record components
+        E_x = E["x"]
+        pos_y = electrons["position"]["y"]
+        w = electrons["weighting"][api.Record_Component.SCALAR]
+
+        offset = [4, 5, 9]
+        extent = [4, 2, 3]
+        E_x_data = E_x.load_chunk(offset, extent)
+        E_x_data_slice = E_x[4:8, 5:7, 9:12]
+
+        y_data = pos_y.load_chunk([200000, ], [10, ])
+        w_data = w.load_chunk([200000, ], [10, ])
+        y_data_slice = pos_y[200000:200010]
+        w_data_slice = w[200000:200010]
+        series.flush()
+
+        self.assertEqual(E_x_data.dtype, E_x.dtype)
+        self.assertEqual(E_x_data.dtype, E_x_data_slice.dtype)
+        self.assertEqual(y_data.dtype, pos_y.dtype)
+        self.assertEqual(w_data.dtype, w.dtype)
+        self.assertEqual(y_data.dtype, y_data_slice.dtype)
+        self.assertEqual(w_data.dtype, w_data_slice.dtype)
+
+        np.testing.assert_allclose(
+            E_x_data,
+            E_x_data_slice
+        )
+        np.testing.assert_allclose(
+            y_data,
+            y_data_slice
+        )
+        np.testing.assert_allclose(
+            w_data,
+            w_data_slice
+        )
+
+        # more exotic syntax
+        # https://docs.scipy.org/doc/numpy-1.15.0/reference/arrays.indexing.html
+
+        # - [x]: [M, L:LARGE, K:LARGE] over-select upper range
+        #                              (is numpy-allowed: crop to max range)
+        d1 = pos_y[0:pos_y.shape[0]+10]
+        d2 = pos_y[0:pos_y.shape[0]]
+        series.flush()
+        np.testing.assert_array_equal(d1.shape, d2.shape)
+        np.testing.assert_allclose(d1, d2)
+
+        # - [x]: [M, L, -K]            negative indexes
+        d1 = E_x[4:8, 2:3, E_x.shape[2]-5]
+        d2 = E_x[4:8, 2:3, -4]
+        series.flush()
+        np.testing.assert_allclose(d1, d2)
+
+        d1 = E_x[4:8, 2:3, E_x.shape[2]-4:]
+        d2 = E_x[4:8, 2:3, -4:]
+        series.flush()
+        np.testing.assert_allclose(d1, d2)
+
+        d1 = E_x[4:8, E_x.shape[1]-3:E_x.shape[1], E_x.shape[2]-4:]
+        d2 = E_x[4:8, -3:, -4:]
+        series.flush()
+        np.testing.assert_allclose(d1, d2)
+
+        d1 = pos_y[0:pos_y.shape[0]-1]
+        d2 = pos_y[0:-1]
+        series.flush()
+        np.testing.assert_allclose(d1, d2)
+
+        d1 = w[0:w.shape[0]-2]
+        d2 = w[0:-2]
+        series.flush()
+        np.testing.assert_allclose(d1, d2)
+
+        # - [x]: [M, :, K]             select whole dimension L
+        d1 = E_x[5, 6, :]
+        d2 = E_x[5, :, 4]
+        d3 = E_x[:, 6, 4]
+        series.flush()
+        self.assertEqual(d1.ndim, 1)
+        self.assertEqual(d2.ndim, 1)
+        self.assertEqual(d3.ndim, 1)
+        np.testing.assert_array_equal(d1.shape, [E_x.shape[2]])
+        np.testing.assert_array_equal(d2.shape, [E_x.shape[1]])
+        np.testing.assert_array_equal(d3.shape, [E_x.shape[0]])
+
+        d1 = E_x[:, 6, :]
+        d2 = E_x[5, :, :]
+        d3 = E_x[:, :, 4]
+        series.flush()
+        self.assertEqual(d1.ndim, 2)
+        self.assertEqual(d2.ndim, 2)
+        self.assertEqual(d3.ndim, 2)
+        np.testing.assert_array_equal(d1.shape, [E_x.shape[0], E_x.shape[2]])
+        np.testing.assert_array_equal(d2.shape, [E_x.shape[1], E_x.shape[2]])
+        np.testing.assert_array_equal(d3.shape, [E_x.shape[0], E_x.shape[1]])
+
+        d1 = E_x[5:6, 6:7, :]
+        d2 = E_x[5:6, :, 4:5]
+        d3 = E_x[:, 6:7, 4:5]
+        series.flush()
+        self.assertEqual(d1.ndim, 3)
+        self.assertEqual(d2.ndim, 3)
+        self.assertEqual(d3.ndim, 3)
+        np.testing.assert_array_equal(d1.shape, [1, 1, E_x.shape[2]])
+        np.testing.assert_array_equal(d2.shape, [1, E_x.shape[1], 1])
+        np.testing.assert_array_equal(d3.shape, [E_x.shape[0], 1, 1])
+
+        d1 = E_x[5, 6, :]
+        d2 = E_x[5, 6, 0:E_x.shape[2]]
+        series.flush()
+        np.testing.assert_allclose(d1, d2)
+
+        d1 = pos_y[:]
+        d2 = pos_y[0:pos_y.shape[0]]
+        series.flush()
+        np.testing.assert_allclose(d1, d2)
+
+        d1 = w[:]
+        d2 = w[0:w.shape[0]]
+        series.flush()
+        np.testing.assert_allclose(d1, d2)
+
+        # - [x]: [M]                   axis omission (== [M, :, :])
+        d1 = E_x[5, :, :]
+        d2 = E_x[5]
+        series.flush()
+        np.testing.assert_allclose(d1, d2)
+
+        d1 = E_x[5, 7, :]
+        d2 = E_x[5, 7]
+        series.flush()
+        np.testing.assert_allclose(d1, d2)
+
+        d1 = E_x[4:8, :, :]
+        d2 = E_x[4:8]
+        series.flush()
+        np.testing.assert_allclose(d1, d2)
+
+        d1 = E_x[4:8, :, :]
+        d2 = E_x[4:8, :]
+        series.flush()
+        np.testing.assert_allclose(d1, d2)
+
+        d1 = E_x[4:8, 2:7, :]
+        d2 = E_x[4:8, 2:7]
+        series.flush()
+        np.testing.assert_allclose(d1, d2)
+
+        # - [x]: [M::SM, L::SL, K::SK] strides
+        #        (not implemented due to performance reasons)
+        with self.assertRaises(IndexError):
+            d1 = E_x[4:8:2, 0, 0]
+        with self.assertRaises(IndexError):
+            d1 = E_x[4:8, 0::2, 0]
+        with self.assertRaises(IndexError):
+            d1 = E_x[4:8, 0, 0::2]
+        with self.assertRaises(IndexError):
+            d1 = E_x[4:8:3, 0::4, 0::5]
+        with self.assertRaises(IndexError):
+            d1 = pos_y[::2]
+        with self.assertRaises(IndexError):
+            d1 = pos_y[::5]
+
+        # - [x]: [()]                  all from all dimensions
+        d1 = pos_y[()]
+        d2 = pos_y[0:pos_y.shape[0]]
+        series.flush()
+        np.testing.assert_allclose(d1, d2)
+
+        d1 = pos_y[()]
+        d2 = pos_y[:]
+        series.flush()
+        np.testing.assert_allclose(d1, d2)
+
+        d1 = E_x[()]
+        d2 = E_x[:, :, :]
+        series.flush()
+        np.testing.assert_allclose(d1, d2)
+
+        # - [x]: [..., K]              ellipsis
+        #        more tests:
+        # https://github.com/numpy/numpy/blob/v1.16.1/numpy/core/tests/test_indexing.py#L136-L158
+        d1 = E_x[2:4, ..., 4:6]
+        d2 = E_x[2:4, :, 4:6]
+        series.flush()
+        np.testing.assert_allclose(d1, d2)
+
+        #   ellipsis omitted: all indices given
+        d1 = E_x[2, ..., 4, 5]
+        d2 = E_x[..., 2, 4, 5]
+        d3 = E_x[2, 4, 5, ...]
+        d1 = E_x[2:4, ..., 4:6, 5:7]
+        d2 = E_x[..., 2:4, 4, 5:7]
+        d3 = E_x[2, 4, 5:7, ...]
+        with self.assertRaises(IndexError):
+            d1 = E_x[2, ..., 4, 5, 6]  # but now it's too many indices
+
+        # - [ ]: [M, L, K]    array dimension reduction
+        #        (not implemented)
+        if found_numpy:
+            d1 = np.zeros(E_x.shape)[2, :, 4]
+            d2 = E_x[2, :, 4]
+            np.testing.assert_array_equal(d1.shape, d2.shape)
+
+        # - [ ]: [:, np.newaxis, :]    axis shuffle
+        #        (not implemented)
+        with self.assertRaises(IndexError):
+            d1 = E_x[2, None, 4]
+        if found_numpy:
+            with self.assertRaises(IndexError):
+                d1 = E_x[2, np.newaxis, 4]
+
+        # - [x] out-of-range exception
+        with self.assertRaises(IndexError):
+            d1 = E_x[E_x.shape[0], 0, 0]
+        with self.assertRaises(IndexError):
+            d1 = E_x[0, E_x.shape[1], 0]
+        with self.assertRaises(IndexError):
+            d1 = E_x[0, 0, E_x.shape[2]]
+
+        with self.assertRaises(IndexError):
+            d1 = pos_y[pos_y.shape[0]]
+        with self.assertRaises(IndexError):
+            d1 = w[w.shape[0]]
+
+        # cropped to upper range
+        d1 = E_x[10:E_x.shape[0]+2, 0, 0]
+        d2 = pos_y[10:pos_y.shape[0]+3]
+        self.assertEqual(d1.ndim, 1)
+        self.assertEqual(d2.ndim, 1)
+        self.assertEqual(d1.shape[0], E_x.shape[0]-10)
+        self.assertEqual(d2.shape[0], pos_y.shape[0]-10)
+
+        # meta-data should have been accessible already
+        series.flush()
+
+        # negative index out-of-range checks
+        with self.assertRaises(IndexError):
+            d1 = E_x[-E_x.shape[0]-1, 0, 0]
+        with self.assertRaises(IndexError):
+            d1 = E_x[0, -E_x.shape[1]-1, 0]
+        with self.assertRaises(IndexError):
+            d1 = E_x[0, 0, -E_x.shape[2]-1]
+
+        # - [x] too many indices passed for axes
+        with self.assertRaises(IndexError):
+            d1 = E_x[1, 2, 3, 4]
+        with self.assertRaises(IndexError):
+            d1 = E_x[5, 6, 7, 8, 9]
+        with self.assertRaises(IndexError):
+            d1 = E_x[1:2, 3:4, 5:6, 7:8]
+        with self.assertRaises(IndexError):
+            d1 = pos_y[1, 2]
+        with self.assertRaises(IndexError):
+            d1 = pos_y[1, 2, 3]
+        with self.assertRaises(IndexError):
+            d1 = pos_y[1:2, 2:3]
+        with self.assertRaises(IndexError):
+            d1 = w[1, 2]
+        with self.assertRaises(IndexError):
+            d1 = w[3, 4, 5]
+        with self.assertRaises(IndexError):
+            d1 = w[1:2, 3:4]
+
+        # last riddle, which is inconvienient for users:
+        # w[42]           # segfaults because returned array is gone at flush()
+        # w.load_chunk([0, ], [42, ])             # does (weirdly) not segfault
+        # probably a garbage collection detail
+        # can we try to omit reading on destroyed py::arrays with invalid
+        # data pointers?
+
+        # series not destructed at this point
+        # flush for reads to local vars
+        series.flush()
+
+    def testSliceWrite(self):
+        backend_filesupport = {
+            'json': 'json',
+            'hdf5': 'h5',
+            'adios1': 'bp'
+        }
+        for b in api.variants:
+            if api.variants[b] is True and b in backend_filesupport:
+                self.backend_write_slices(backend_filesupport[b])
+
+    def backend_write_slices(self, file_ending):
+        """ Testing sliced write on record components. """
+
+        if not found_numpy:
+            return
+
+        # get series
+        series = api.Series(
+            "unittest_py_slice_API." + file_ending,
+            api.Access_Type.create
+        )
+        i = series.iterations[0]
+
+        # create data to write
+        data = np.ones((43, 13))
+        half_data = np.ones((22, 13))
+        strided_data = np.ones((43, 26))
+        strided_data = strided_data[:, ::2]
+        smaller_data1 = np.ones((43, 12))
+        smaller_data2 = np.ones((42, 12))
+        larger_data = np.ones((43, 14))
+        more_axes = np.ones((43, 13, 4))
+
+        data = np.ascontiguousarray(data)
+        half_data = np.ascontiguousarray(half_data)
+        smaller_data1 = np.ascontiguousarray(smaller_data1)
+        smaller_data2 = np.ascontiguousarray(smaller_data2)
+        larger_data = np.ascontiguousarray(larger_data)
+        more_axes = np.ascontiguousarray(more_axes)
+
+        # get a mesh record component
+        rho = i.meshes["rho"][api.Record_Component.SCALAR]
+
+        rho.reset_dataset(api.Dataset(data.dtype, data.shape))
+
+        # normal write
+        rho[()] = data
+
+        # more data or axes for selection
+        with self.assertRaises(IndexError):
+            rho[()] = more_axes
+
+        # strides forbidden in chunk and selection
+        with self.assertRaises(IndexError):
+            rho[()] = strided_data
+        with self.assertRaises(IndexError):
+            rho[::2, :] = half_data
+
+        # selection-matched partial write
+        rho[:, :12] = smaller_data1
+        rho[:42, :12] = smaller_data2
+
+        # underful data for selection
+        with self.assertRaises(IndexError):
+            rho[()] = smaller_data1
+        with self.assertRaises(IndexError):
+            rho[()] = smaller_data2
+
+        # dimension flattening
+        rho[2, :] = data[2, :]
+
+        #   that's a padded stride in chunk as well!
+        #   (chunk view into non-owned data)
+        with self.assertRaises(IndexError):
+            rho[:, 5] = data[:, 5]
+        with self.assertRaises(IndexError):
+            rho[:, 5:6] = data[:, 5:6]
+
+        series.flush()
 
     def testIterations(self):
         """ Test querying a series' iterations and loop over them. """
@@ -713,6 +1081,7 @@ class APITest(unittest.TestCase):
         self.assertRaises(TypeError, api.Particle_Patches)
 
         backend_filesupport = {
+            'json': 'json',
             'hdf5': 'h5',
             'adios1': 'bp'
         }
