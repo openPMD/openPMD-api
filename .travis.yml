@@ -595,7 +595,6 @@ install:
   - if [[ ! $MODULEPATH = *"spack"* ]]; then
       export MODULEPATH=$SPACK_ROOT/share/spack/modules/$(spack arch):$MODULEPATH;
     fi
-  - SPACK_VAR_MPI="~mpi";
   # required dependencies - CMake 3.11.0
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       if [ ! -f $HOME/.cache/cmake-3.11.0/bin/cmake ]; then
@@ -611,15 +610,16 @@ install:
         hdiutil detach /dev/disk1s1 &&
         rm cmake.dmg;
       fi;
+      spack install
+        cmake@3.11.0
+        $CXXSPEC;
     fi
-  - spack install
-      cmake@3.11.0
-      $CXXSPEC
   - spack load cmake@3.11.0 $CXXSPEC
   # diagnostics: modules created and visible?
   - module av
   - module li
   # optional dependencies - MPI, HDF5, ADIOS1, ADIOS2
+  - SPACK_VAR_MPI="~mpi";
   - if [ $USE_MPI == "ON" ]; then
       travis_wait spack install
         openmpi@1.6.5
