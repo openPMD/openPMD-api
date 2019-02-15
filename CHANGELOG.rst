@@ -32,6 +32,7 @@ Other
 - CMake 3.12+: apply policy ``CMP0074`` for ``<Package>_ROOT`` vars #391 #464
 - MPark.Variant: updated to 1.4.0+ #465
 - Catch2: updated to 2.6.1+ #466
+- NLohmann-JSON: updated to 3.5.0+ #467
 - Docs:
 
   - PyPI install method #450 #451

@@ -13,4 +13,3 @@ if(NOT TARGET @PROJECT_NAME@::@NLOHMANN_JSON_TARGET_NAME@)
         )
     endif()
 endif()
-
