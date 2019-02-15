@@ -31,6 +31,7 @@ Other
 - Python: remove (inofficial) bindings for 2.7 #435
 - CMake 3.12+: apply policy ``CMP0074`` for ``<Package>_ROOT`` vars #391 #464
 - MPark.Variant: updated to 1.4.0+ #465
+- Catch2: updated to 2.6.1+ #466
 - Docs:
 
   - PyPI install method #450 #451

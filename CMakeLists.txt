@@ -384,9 +384,9 @@ if(BUILD_TESTING)
         target_include_directories(openPMD::thirdparty::Catch2 SYSTEM INTERFACE
             $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/catch2/include>
         )
-        message(STATUS "Catch2: Using INTERNAL version 2.3.0")
+        message(STATUS "Catch2: Using INTERNAL version 2.6.1")
     else()
-        find_package(Catch2 2.3.0 CONFIG REQUIRED)
+        find_package(Catch2 2.6.1 CONFIG REQUIRED)
         target_link_libraries(openPMD::thirdparty::Catch2
             INTERFACE Catch2::Catch2)
         message(STATUS "Catch2: Found version ${Catch2_VERSION}")
