@@ -107,9 +107,9 @@ if(openPMD_USE_JSON STREQUAL AUTO)
             "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/json"
             EXCLUDE_FROM_ALL)  # does not need to be publicly installed
         set(openPMD_HAVE_JSON TRUE)
-        message(STATUS "nlohmann-json: Using INTERNAL version 3.4.0")
+        message(STATUS "nlohmann-json: Using INTERNAL version 3.5.0")
     else()
-        find_package(nlohmann_json 3.4.0 CONFIG)
+        find_package(nlohmann_json 3.5.0 CONFIG)
         if(nlohmann_json_FOUND)
             set(openPMD_HAVE_JSON TRUE)
             message(STATUS "nlohmann-json: Found version ${nlohmann_json_VERSION}")
@@ -125,9 +125,9 @@ elseif(openPMD_USE_JSON)
             "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/json"
             EXCLUDE_FROM_ALL)  # does not need to be publicly installed
         set(openPMD_HAVE_JSON TRUE)
-        message(STATUS "nlohmann-json: Using INTERNAL version 3.4.0")
+        message(STATUS "nlohmann-json: Using INTERNAL version 3.5.0")
     else()
-        find_package(nlohmann_json 3.4.0 CONFIG REQUIRED)
+        find_package(nlohmann_json 3.5.0 CONFIG REQUIRED)
         set(openPMD_HAVE_JSON TRUE)
         message(STATUS "nlohmann-json: Found version ${nlohmann_json_VERSION}")
     endif()
