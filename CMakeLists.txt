@@ -369,9 +369,9 @@ if(openPMD_USE_INTERNAL_VARIANT)
     target_include_directories(openPMD::thirdparty::mpark_variant SYSTEM INTERFACE
         $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include>
     )
-    message(STATUS "MPark.Variant: Using INTERNAL version 1.3.0")
+    message(STATUS "MPark.Variant: Using INTERNAL version 1.4.0")
 else()
-    find_package(mpark_variant 1.3.0 REQUIRED)
+    find_package(mpark_variant 1.4.0 REQUIRED)
     target_link_libraries(openPMD::thirdparty::mpark_variant
         INTERFACE mpark_variant)
     message(STATUS "MPark.Variant: Found version ${mpark_variant_VERSION}")
