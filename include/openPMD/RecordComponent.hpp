@@ -236,12 +236,12 @@ RecordComponent::loadChunk(std::shared_ptr< T > data, Offset o, Extent e, double
     else
         extent = e;
 
-    if( e.size() != dim || o.size() != dim )
+    if( extent.size() != dim || offset.size() != dim )
     {
         std::ostringstream oss;
         oss << "Dimensionality of chunk ("
-            << "offset=" << o.size() << "D, "
-            << "extent=" << e.size() << "D) "
+            << "offset=" << offset.size() << "D, "
+            << "extent=" << extent.size() << "D) "
             << "and record component ("
             << int(dim) << "D) "
             << "do not match.";
@@ -249,10 +249,10 @@ RecordComponent::loadChunk(std::shared_ptr< T > data, Offset o, Extent e, double
     }
     Extent dse = getExtent();
     for( uint8_t i = 0; i < dim; ++i )
-        if( dse[i] < o[i] + e[i] )
+        if( dse[i] < offset[i] + extent[i] )
             throw std::runtime_error("Chunk does not reside inside dataset (Dimension on index " + std::to_string(i)
                                      + " - DS: " + std::to_string(dse[i])
-                                     + " - Chunk: " + std::to_string(o[i] + e[i])
+                                     + " - Chunk: " + std::to_string(offset[i] + extent[i])
                                      + ")");
     if( !data )
         throw std::runtime_error("Unallocated pointer passed during chunk loading.");
@@ -260,7 +260,7 @@ RecordComponent::loadChunk(std::shared_ptr< T > data, Offset o, Extent e, double
     if( *m_isConstant )
     {
         uint64_t numPoints = 1u;
-        for( auto const& dimensionSize : e )
+        for( auto const& dimensionSize : extent )
             numPoints *= dimensionSize;
 
         T value = m_constantValue->get< T >();
@@ -270,8 +270,8 @@ RecordComponent::loadChunk(std::shared_ptr< T > data, Offset o, Extent e, double
     } else
     {
         Parameter< Operation::READ_DATASET > dRead;
-        dRead.offset = o;
-        dRead.extent = e;
+        dRead.offset = offset;
+        dRead.extent = extent;
         dRead.dtype = getDatatype();
         dRead.data = std::static_pointer_cast< void >(data);
         m_chunks->push(IOTask(this, dRead));
