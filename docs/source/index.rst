@@ -65,7 +65,8 @@ Usage
    :maxdepth: 1
    :hidden:
 
-   usage/firststeps
+   usage/firstwrite
+   usage/firstread
    usage/serial
    usage/parallel
    usage/examples
