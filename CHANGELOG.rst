@@ -31,6 +31,7 @@ Other
 - increase pybind11 dependency to 2.2.4+ #455
 - Python: remove (inofficial) bindings for 2.7 #435
 - CMake 3.12+: apply policy ``CMP0074`` for ``<Package>_ROOT`` vars #391 #464
+- CMake: Optional ADIOS1 Wrapper Libs #472
 - MPark.Variant: updated to 1.4.0+ #465
 - Catch2: updated to 2.6.1+ #466
 - NLohmann-JSON: updated to 3.5.0+ #467

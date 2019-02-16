@@ -1,4 +1,4 @@
-/* Copyright 2017-2019 Fabian Koller
+/* Copyright 2017-2019 Fabian Koller, Axel Huebl
  *
  * This file is part of openPMD-api.
  *
@@ -43,7 +43,12 @@ namespace openPMD
             case Format::HDF5:
                 return std::make_shared< ParallelHDF5IOHandler >(path, accessTypeBackend, comm);
             case Format::ADIOS1:
+#   if openPMD_HAVE_ADIOS1
                 return std::make_shared< ParallelADIOS1IOHandler >(path, accessTypeBackend, comm);
+#   else
+                throw std::runtime_error("openPMD-api built without ADIOS1 support");
+                return std::make_shared< DummyIOHandler >(path, accessTypeBackend);
+#   endif
             case Format::ADIOS2:
                 throw std::runtime_error("ADIOS2 backend not yet implemented");
             default:
@@ -63,7 +68,12 @@ namespace openPMD
             case Format::HDF5:
                 return std::make_shared< HDF5IOHandler >(path, accessType);
             case Format::ADIOS1:
+#   if openPMD_HAVE_ADIOS1
                 return std::make_shared< ADIOS1IOHandler >(path, accessType);
+#   else
+                throw std::runtime_error("openPMD-api built without ADIOS1 support");
+                return std::make_shared< DummyIOHandler >(path, accessType);
+#   endif
             case Format::ADIOS2:
                 throw std::runtime_error("ADIOS2 backend not yet implemented");
             case Format::JSON:
