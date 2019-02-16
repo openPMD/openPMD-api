@@ -364,6 +364,7 @@ target_include_directories(openPMD PUBLIC
 )
 
 # C++11 std::variant (C++17 stdlib preview)
+# TODO not needed with C++17 compiler
 add_library(openPMD::thirdparty::mpark_variant INTERFACE IMPORTED)
 if(openPMD_USE_INTERNAL_VARIANT)
     target_include_directories(openPMD::thirdparty::mpark_variant SYSTEM INTERFACE
@@ -376,6 +377,7 @@ else()
         INTERFACE mpark_variant)
     message(STATUS "MPark.Variant: Found version ${mpark_variant_VERSION}")
 endif()
+target_link_libraries(openPMD PUBLIC openPMD::thirdparty::mpark_variant)
 
 # Catch2 for unit tests
 if(BUILD_TESTING)
@@ -424,33 +426,34 @@ else()
 endif()
 
 # ADIOS1 Backend
-add_library(openPMD.ADIOS1.Serial SHARED ${IO_ADIOS1_SEQUENTIAL_SOURCE})
-add_library(openPMD.ADIOS1.Parallel SHARED ${IO_ADIOS1_SOURCE})
-target_compile_features(openPMD.ADIOS1.Serial
-    PUBLIC cxx_std_11
-)
-target_compile_features(openPMD.ADIOS1.Parallel
-    PUBLIC cxx_std_11
-)
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-    target_compile_options(openPMD.ADIOS1.Serial PUBLIC "/bigobj")
-    target_compile_options(openPMD.ADIOS1.Parallel PUBLIC "/bigobj")
-endif()
-target_link_libraries(openPMD.ADIOS1.Serial PUBLIC openPMD::thirdparty::mpark_variant)
-target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC openPMD::thirdparty::mpark_variant)
-
-target_include_directories(openPMD.ADIOS1.Serial SYSTEM PRIVATE
-    ${openPMD_SOURCE_DIR}/include)
-target_include_directories(openPMD.ADIOS1.Parallel SYSTEM PRIVATE
-    ${openPMD_SOURCE_DIR}/include)
-
-if(openPMD_HAVE_MPI)
-    target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC MPI::MPI_C MPI::MPI_CXX)
-    target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "-DopenPMD_HAVE_MPI=1")
-else()
-    target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "-DopenPMD_HAVE_MPI=0")
-endif()
 if(openPMD_HAVE_ADIOS1)
+    add_library(openPMD.ADIOS1.Serial SHARED ${IO_ADIOS1_SEQUENTIAL_SOURCE})
+    add_library(openPMD.ADIOS1.Parallel SHARED ${IO_ADIOS1_SOURCE})
+    target_compile_features(openPMD.ADIOS1.Serial
+        PUBLIC cxx_std_11
+    )
+    target_compile_features(openPMD.ADIOS1.Parallel
+        PUBLIC cxx_std_11
+    )
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+        target_compile_options(openPMD.ADIOS1.Serial PUBLIC "/bigobj")
+        target_compile_options(openPMD.ADIOS1.Parallel PUBLIC "/bigobj")
+    endif()
+    target_link_libraries(openPMD.ADIOS1.Serial PUBLIC openPMD::thirdparty::mpark_variant)
+    target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC openPMD::thirdparty::mpark_variant)
+
+    target_include_directories(openPMD.ADIOS1.Serial SYSTEM PRIVATE
+        ${openPMD_SOURCE_DIR}/include)
+    target_include_directories(openPMD.ADIOS1.Parallel SYSTEM PRIVATE
+        ${openPMD_SOURCE_DIR}/include)
+
+    if(openPMD_HAVE_MPI)
+        target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC MPI::MPI_C MPI::MPI_CXX)
+        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "-DopenPMD_HAVE_MPI=1")
+    else()
+        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "-DopenPMD_HAVE_MPI=0")
+    endif()
+
     set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
         CXX_EXTENSIONS OFF
         CXX_STANDARD_REQUIRED ON
@@ -504,15 +507,21 @@ if(openPMD_HAVE_ADIOS1)
         target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "-DopenPMD_HAVE_ADIOS1=1")
     endif()
 
+    # Runtime parameter and API status checks ("asserts")
+    if(openPMD_USE_VERIFY)
+        target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "-DopenPMD_USE_VERIFY=1")
+        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "-DopenPMD_USE_VERIFY=1")
+    else()
+        target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "-DopenPMD_USE_VERIFY=0")
+        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "-DopenPMD_USE_VERIFY=0")
+    endif()
+
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS1=1")
+    target_link_libraries(openPMD PUBLIC openPMD.ADIOS1.Serial)
+    target_link_libraries(openPMD PUBLIC openPMD.ADIOS1.Parallel)
 else()
-    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "-DopenPMD_HAVE_ADIOS1=0")
-    target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "-DopenPMD_HAVE_ADIOS1=0")
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS1=0")
 endif()
-
-target_link_libraries(openPMD PUBLIC openPMD.ADIOS1.Serial)
-target_link_libraries(openPMD PUBLIC openPMD.ADIOS1.Parallel)
 
 # ADIOS2 Backend
 if(openPMD_HAVE_ADIOS2)
@@ -524,12 +533,8 @@ endif()
 
 # Runtime parameter and API status checks ("asserts")
 if(openPMD_USE_VERIFY)
-    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "-DopenPMD_USE_VERIFY=1")
-    target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "-DopenPMD_USE_VERIFY=1")
     target_compile_definitions(openPMD PRIVATE "-DopenPMD_USE_VERIFY=1")
 else()
-    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "-DopenPMD_USE_VERIFY=0")
-    target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "-DopenPMD_USE_VERIFY=0")
     target_compile_definitions(openPMD PRIVATE "-DopenPMD_USE_VERIFY=0")
 endif()
 
@@ -736,7 +741,14 @@ write_basic_package_version_file("openPMDConfigVersion.cmake"
 # Installs ####################################################################
 #
 # headers, libraries and exectuables
-install(TARGETS openPMD openPMD.ADIOS1.Serial openPMD.ADIOS1.Parallel
+set(openPMD_INSTALL_TARGET_NAMES openPMD)
+
+if(openPMD_HAVE_ADIOS1)
+    list(APPEND openPMD_INSTALL_TARGET_NAMES
+        openPMD.ADIOS1.Serial openPMD.ADIOS1.Parallel)
+endif()
+
+install(TARGETS ${openPMD_INSTALL_TARGET_NAMES}
     EXPORT openPMDTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -752,6 +764,7 @@ install(DIRECTORY "${openPMD_SOURCE_DIR}/include/openPMD"
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 # install third-party libraries
+# TODO not needed with C++17 compiler
 if(openPMD_USE_INTERNAL_VARIANT)
     install(DIRECTORY "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include/mpark"
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
