@@ -38,6 +38,7 @@ Other
 
   - PyPI install method #450 #451
   - more info on MPI #449
+  - new "first steps" section #473
 
 
 0.7.1-alpha

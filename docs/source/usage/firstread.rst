@@ -1,0 +1,322 @@
+.. _usage-firstread:
+
+First Read
+==========
+
+Step-by-step: how to read openPMD data?
+We are using the examples files from `openPMD-example-datasets <https://github.com/openPMD/openPMD-example-datasets>`_.
+
+.. raw:: html
+
+   <style>
+   @media screen and (min-width: 60em) {
+       /* C++11 and Python code samples side-by-side  */
+       #first-read > .section > .section:nth-of-type(2n+1) {
+           float: left;
+	       width: 48%;
+	       margin-right: 4%;
+       }
+       #first-read > .section > .section:nth-of-type(2n+0):after {
+           content: "";
+           display: table;
+           clear: both;
+       }
+       /* only show first C++11 and Python Headline */
+       #first-read > .section > .section:not(#c-11):not(#python) > h3 {
+           display: none;
+       }
+   }
+   /* align language headline */
+   #first-read > .section > .section > h3 {
+       text-align: center;
+       padding-left: 1em;
+   }
+   /* avoid jumping of headline when hovering to get anchor */
+   #first-read > .section > .section > h3 > a.headerlink {
+       display: inline-block;
+   }
+   #first-read > .section > .section > h3 > .headerlink:after {
+       visibility: hidden;
+   }
+   #first-read > .section > .section > h3:hover > .headerlink:after {
+       visibility: visible;
+   }
+   </style>
+
+Include / Import
+----------------
+
+After successfull :ref:`installation <install>`, you can start using openPMD-api as follows:
+
+C++11
+^^^^^
+
+.. code-block:: cpp
+
+   #include <openPMD/openPMD.hpp>
+
+   // example: data handling & print
+   #include <vector>   // std::vector
+   #include <iostream> // std::cout
+   #include <memory>   // std::shared_ptr
+
+   namespace api = openPMD;
+
+Python
+^^^^^^
+
+.. code-block:: python3
+
+   import openpmd_api as api
+
+   # example: data handling
+   import numpy as np
+
+
+Open
+----
+
+Open an existing openPMD series in ``data<N>.h5``.
+Further file formats than ``.h5`` (`HDF5 <https://hdfgroup.org>`_) are supported:
+``.bp`` (`ADIOS1 <https://www.olcf.ornl.gov/center-projects/adios/>`_) or ``.json`` (`JSON <https://en.wikipedia.org/wiki/JSON#Example>`_).
+
+C++11
+^^^^^
+
+.. code-block:: cpp
+
+   auto series = api::Series(
+       "data%T.h5",
+       AccessType::READ_ONLY);
+
+
+Python
+^^^^^^
+
+.. code-block:: python3
+
+   series = api.Series(
+       "data%T.h5",
+       api.Access_Type.read_only)
+
+Iteration
+---------
+
+Grouping by an arbitrary, positive integer number ``<N>`` in a series.
+Let's take the iteration ``100``:
+
+C++11
+^^^^^
+
+.. code-block:: cpp
+
+   auto i = series.iterations[100];
+
+Python
+^^^^^^
+
+.. code-block:: python3
+
+   i = series.iterations[100]
+
+Attributes
+----------
+
+openPMD defines a kernel of meta attributes and can always be extended with more.
+Let's see what we've got:
+
+C++11
+^^^^^
+
+.. code-block:: cpp
+
+   std::cout
+       << "Author: "
+       << s.author() << "\n"
+       << "openPMD version: "
+       << s.openPMD() << "\n";
+
+Python
+^^^^^^
+
+.. code-block:: python3
+
+   print(
+       "Author: {0}"
+       "openPMD version: {1}"
+       .format(
+           s.author,
+           s.openPMD))
+
+Record
+------
+
+An openPMD record can be either structured (mesh) or unstructured (particles).
+Let's read an electric field:
+
+C++11
+^^^^^
+
+.. code-block:: cpp
+
+   // record
+   auto E = i.meshes["E"];
+
+   // record components
+   auto E_x = E["x"];
+
+Python
+^^^^^^
+
+.. code-block:: python3
+
+   # record
+   E = i.meshes["E"]
+
+   # record components
+   E_x = E["x"]
+
+Units
+-----
+
+On read, units are automatically converted to SI unless otherwise specified (not yet implemented).
+Even without the name "E" we can check the `dimensionality <https://en.wikipedia.org/wiki/Dimensional_analysis>`_ of a record to understand its purpose.
+
+C++11
+^^^^^
+
+.. code-block:: cpp
+
+   // unit system agnostic dimension
+   auto E_unitDim = E.getUnitDimension();
+
+   // ...
+   // api::UnitDimension::M
+
+Python
+^^^^^^
+
+.. code-block:: python3
+
+   # unit system agnostic dimension
+   E_unitDim = E.unit_dimension
+
+   # ...
+   # api.Unit_Dimension.M
+
+.. note::
+
+   This example is not yet written :-)
+
+Register Chunk
+--------------
+
+We can load record components partially and in parallel or at once.
+Reading small data one by one is is a performance killer for I/O.
+Therefore, we register the data to be loaded first and then flush it in collectively.
+
+C++11
+^^^^^
+
+.. code-block:: cpp
+
+   // alternatively, pass pre-allocated
+   std::shared_ptr< double > x_data =
+       E_x.loadChunk< double >();
+
+Python
+^^^^^^
+
+.. code-block:: python3
+
+   # returns an allocated but
+   # undefined numpy array
+   x_data = E_x.load_chunk()
+
+.. attention::
+
+   After registering a data chunk such as ``x_data`` for loading, it MUST NOT be modified or deleted until the ``flush()`` step is performed!
+   **You must not yet access** ``x_data`` **!**
+
+Flush Chunk
+-----------
+
+We now flush the registered data chunks and fill them with actual data from the I/O backend.
+Flushing several chunks at once allows to increase I/O performance significantly.
+**Only after that**, the variable ``x_data`` can be read, manipulated and/or deleted.
+
+C++11
+^^^^^
+
+.. code-block:: cpp
+
+   series.flush();
+
+Python
+^^^^^^
+
+.. code-block:: python3
+
+   series.flush()
+
+Data
+-----
+
+We can not work with the newly loaded data in ``x_data``:
+
+C++11
+^^^^^
+
+.. code-block:: cpp
+
+   auto extent = E_x.getExtent();
+
+   cout << "First values in E_x "
+           "of shape: ";
+   for( auto const& dim : extent )
+       cout << dim << ', ';
+   cout << "\n"
+
+   for( size_t col = 0;
+        col < extent[1] && col < 5;
+        ++col )
+       cout << x_data.get()[col]
+            << ", ";
+   cout << "\n";
+
+
+Python
+^^^^^^
+
+.. code-block:: python3
+
+   extent = E_x.shape
+
+   print(
+       "First values in E_x "
+       "of shape: ",
+       extent)
+
+
+   print(x_data[0, 0, :5])
+
+Close
+-----
+
+Finally, the Series is closed when its destructor is called.
+Make sure to have ``flush()`` ed all data loads at this point, otherwise it will be called once more implicitly.
+
+C++11
+^^^^^
+
+.. code-block:: cpp
+
+   // destruct series object,
+   // e.g. when out-of-scope
+
+Python
+^^^^^^
+
+.. code-block:: python3
+
+   del series

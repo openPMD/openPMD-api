@@ -1,7 +1,7 @@
 .. _usage-parallel:
 
-Parallel API
-============
+Parallel Examples
+=================
 
 The following examples show parallel reading and writing of domain-decomposed data with MPI.
 
