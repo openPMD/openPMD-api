@@ -56,9 +56,11 @@ using PyAttributeKeys = std::vector< std::string >;
 bool setAttributeFromBufferInfo(
     Attributable & attr,
     std::string const& key,
-    py::buffer_info const& buf
+    py::buffer& a
 ) {
     using DT = Datatype;
+
+    py::buffer_info buf = a.request();
 
     // Numpy: Handling of arrays and scalars
     // work-around for https://github.com/pybind/pybind11/issues/1224
@@ -121,26 +123,29 @@ bool setAttributeFromBufferInfo(
     // lists & ndarrays: all will be flattended to 1D lists
     else {
         // std::cout << "  array type '" << buf.format << "'" << std::endl;
-        // stride handling
-        for( auto d = 0; d < buf.ndim; ++d )
+
+        /* required are contiguous buffers
+         *
+         * - not strided with paddings
+         * - not a view in another buffer that results in striding
+         */
+        Py_buffer* view = new Py_buffer();
+        int flags = PyBUF_STRIDES | PyBUF_FORMAT;
+        if( PyObject_GetBuffer( a.ptr(), view, flags ) != 0 )
         {
-            // std::cout << "    stride '" << d << "': "
-            //           << buf.strides[d] / buf.itemsize
-            //           << " - " << buf.shape[d] << std::endl;
-            if( buf.strides[d] != buf.shape[d] * buf.itemsize ) // general criteria
-            {
-                if( buf.ndim == 1u && buf.strides[0] > buf.shape[0] * buf.itemsize )
-                    ; // ok in 1D
-                else if( buf.strides[d] == buf.itemsize )
-                    ; // ok to stride on an element level
-                else
-                    throw std::runtime_error("set_attribute: "
-                        "stride handling not implemented! (key='" +
-                        key + "')");
-            }
+            delete view;
+            throw py::error_already_set();
         }
+        bool isContiguous = ( PyBuffer_IsContiguous( view, 'A' ) != 0 );
+        PyBuffer_Release( view );
+        delete view;
+
+        if( !isContiguous )
+            throw py::index_error(
+                "non-contiguous buffer provided, handling not implemented!");
         // @todo in order to implement stride handling, one needs to
-        //       loop over the input data strides during write below
+        //       loop over the input data strides during write below,
+        //       also data might not be owned!
 
         // dtype handling
         /*if( buf.format.find("?") != std::string::npos )
@@ -261,13 +266,12 @@ void init_Attributable(py::module &m) {
         // C++ pass-through API: Setter
         // note that the order of overloads is important!
         // all buffer protocol compatible objects, including numpy arrays if not specialized specifically...
-        .def("set_attribute", []( Attributable & attr, std::string const& key, py::buffer a ) {
+        .def("set_attribute", []( Attributable & attr, std::string const& key, py::buffer& a ) {
             // std::cout << "set attr via py::buffer: " << key << std::endl;
-            py::buffer_info buf = a.request();
             return setAttributeFromBufferInfo(
                 attr,
                 key,
-                buf
+                a
             );
         })
 

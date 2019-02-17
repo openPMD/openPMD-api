@@ -46,14 +46,7 @@ if __name__ == "__main__":
     series.flush()
     print("File structure has been written")
 
-    # TODO implement slicing protocol
-    # E[offset[0]:extent[0], offset[1]:extent[1]] = global_data
-
-    # individual chunks from input or to output record component
-    #   offset = [0, 0]
-    #   rho.store_chunk(global_data, offset, extent)
-    # whole input to zero-offset in output record component
-    rho.store_chunk(global_data)
+    rho[()] = global_data
 
     print("Stored the whole Dataset contents as a single chunk, " +
           "ready to write content")
