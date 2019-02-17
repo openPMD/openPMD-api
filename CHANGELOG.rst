@@ -39,7 +39,7 @@ Other
 
   - PyPI install method #450 #451
   - more info on MPI #449
-  - new "first steps" section #473
+  - new "first steps" section #473 #478
   - update invasive test info #474
 
 

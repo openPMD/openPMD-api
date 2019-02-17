@@ -85,7 +85,7 @@ C++11
 
    auto series = api::Series(
        "myOutput/data_%05T.h5",
-       AccessType::CREATE);
+       api::AccessType::CREATE);
 
 
 Python
@@ -127,11 +127,11 @@ C++11
 
 .. code-block:: cpp
 
-   s.setAuthor(
+   series.setAuthor(
        "Axel Huebl <a.huebl@hzdr.de>");
-   s.setMachine(
+   series.setMachine(
        "Hall Probe 5000, Model 3");
-   s.setAttribute(
+   series.setAttribute(
        "dinner", "Pizza and Coke");
    i.setAttribute(
        "vacuum", true);
@@ -141,11 +141,11 @@ Python
 
 .. code-block:: python3
 
-   s.set_author(
+   series.set_author(
        "Axel Huebl <a.huebl@hzdr.de>")
-   s.set_machine(
+   series.set_machine(
        "Hall Probe 5000, Model 3")
-   s.set_attribute(
+   series.set_attribute(
        "dinner", "Pizza and Coke")
    i.set_attribute(
        "vacuum", True)
@@ -164,14 +164,14 @@ C++11
    std::vector<float> x_data(
        150 * 300);
    std::iota(
-       global_data.begin(),
-       global_data.end(),
+       x_data.begin(),
+       x_data.end(),
        0.);
 
    float y_data = 4.f;
 
-   std::vector<float> y_data(x_data);
-   for( auto& c : y_data )
+   std::vector<float> z_data(x_data);
+   for( auto& c : z_data )
        c -= 8000.f;
 
 Python
@@ -210,7 +210,7 @@ C++11
    auto B_z = B["z"];
 
    auto dataset = api::Dataset(
-       determineDatatype<float>(),
+       api::determineDatatype<float>(),
        {150, 300});
    B_x.resetDataset(dataset);
    B_y.resetDataset(dataset);
@@ -278,14 +278,14 @@ Python
 
 .. tip::
 
-   Annotating the `dimensionality <https://en.wikipedia.org/wiki/Dimensional_analysis>`_ of a record allows us to read data sets with *arbitrary names* and understand their purpose simply by *dimensionality*.
+   Annotating the `dimensionality <https://en.wikipedia.org/wiki/Dimensional_analysis>`_ of a record allows us to read data sets with *arbitrary names* and understand their purpose simply by *dimensional analysis*.
 
 Register Chunk
 --------------
 
 We can write record components partially and in parallel or at once.
 Writing very small data one by one is is a performance killer for I/O.
-Therefore, we register the data to be written first and then flush it out collectively.
+Therefore, we register all data to be written first and then flush it out collectively.
 
 C++11
 ^^^^^
@@ -293,11 +293,13 @@ C++11
 .. code-block:: cpp
 
    B_x.storeChunk(
-       api::shareRaw(x_data));
+       api::shareRaw(x_data),
+       {0, 0}, {150, 300});
    B_z.storeChunk(
-       api::shareRaw(z_data));
+       api::shareRaw(z_data),
+       {0, 0}, {150, 300});
 
-   B_x.makeConstant(y_data);
+   B_y.makeConstant(y_data);
 
 Python
 ^^^^^^
@@ -306,10 +308,12 @@ Python
 
    B_x.store_chunk(x_data)
 
+
    B_z.store_chunk(z_data)
 
 
-   B_x.make_constant(y_data)
+
+   B_y.make_constant(y_data)
 
 .. attention::
 
