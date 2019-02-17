@@ -86,7 +86,7 @@ for k_i, i in series.iterations.items():
 ### More!
 
 Curious?
-Our manual shows full [read & write examples](https://openpmd-api.readthedocs.io/en/latest/usage/firststeps.html), both serial and MPI-parallel!
+Our manual shows full [read & write examples](https://openpmd-api.readthedocs.io/en/latest/usage/firstwrite.html), both serial and MPI-parallel!
 
 ## Dependencies
 
