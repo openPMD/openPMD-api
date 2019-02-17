@@ -4,7 +4,7 @@ First Read
 ==========
 
 Step-by-step: how to read openPMD data?
-We are using the examples files from `openPMD-example-datasets <https://github.com/openPMD/openPMD-example-datasets>`_.
+We are using the examples files from `openPMD-example-datasets <https://github.com/openPMD/openPMD-example-datasets>`_ (``example-3d.tar.gz``).
 
 .. raw:: html
 
@@ -87,7 +87,7 @@ C++11
 
    auto series = api::Series(
        "data%T.h5",
-       AccessType::READ_ONLY);
+       api::AccessType::READ_ONLY);
 
 
 Python
@@ -130,23 +130,24 @@ C++11
 
 .. code-block:: cpp
 
-   std::cout
-       << "Author: "
-       << s.author() << "\n"
-       << "openPMD version: "
-       << s.openPMD() << "\n";
+   std::cout << "openPMD version: "
+       << series.openPMD() << "\n";
+
+   if( series.containsAttribute("author") )
+       std::cout << "Author: "
+           << series.author() << "\n";
 
 Python
 ^^^^^^
 
 .. code-block:: python3
 
-   print(
-       "Author: {0}"
-       "openPMD version: {1}"
-       .format(
-           s.author,
-           s.openPMD))
+   print("openPMD version: ",
+         series.openPMD)
+
+   if( series.contains_attribute("author") )
+       print("Author: ",
+             series.author)
 
 Record
 ------
@@ -179,8 +180,7 @@ Python
 Units
 -----
 
-On read, units are automatically converted to SI unless otherwise specified (not yet implemented).
-Even without the name "E" we can check the `dimensionality <https://en.wikipedia.org/wiki/Dimensional_analysis>`_ of a record to understand its purpose.
+Even without understanding the name "E" we can check the `dimensionality <https://en.wikipedia.org/wiki/Dimensional_analysis>`_ of a record to understand its purpose.
 
 C++11
 ^^^^^
@@ -188,10 +188,13 @@ C++11
 .. code-block:: cpp
 
    // unit system agnostic dimension
-   auto E_unitDim = E.getUnitDimension();
+   auto E_unitDim = E.unitDimension();
 
    // ...
    // api::UnitDimension::M
+
+   // conversion to SI
+   double x_unit = E_x.unitSI();
 
 Python
 ^^^^^^
@@ -204,16 +207,22 @@ Python
    # ...
    # api.Unit_Dimension.M
 
+   # conversion to SI
+   x_unit = E_x.unit_SI
+
 .. note::
 
    This example is not yet written :-)
+
+   In the future, units are automatically converted to a selected unit system (not yet implemented).
+   For now, please multiply your read data (``x_data``) with ``x_unit`` to covert to SI, otherwise the raw, potentially awkwardly scaled data is taken.
 
 Register Chunk
 --------------
 
 We can load record components partially and in parallel or at once.
 Reading small data one by one is is a performance killer for I/O.
-Therefore, we register the data to be loaded first and then flush it in collectively.
+Therefore, we register all data to be loaded first and then flush it in collectively.
 
 C++11
 ^^^^^
@@ -271,18 +280,18 @@ C++11
 
    auto extent = E_x.getExtent();
 
-   cout << "First values in E_x "
+   std::cout << "First values in E_x "
            "of shape: ";
    for( auto const& dim : extent )
-       cout << dim << ', ';
-   cout << "\n"
+       std::cout << dim << ", ";
+   std::cout << "\n";
 
    for( size_t col = 0;
         col < extent[1] && col < 5;
         ++col )
-       cout << x_data.get()[col]
-            << ", ";
-   cout << "\n";
+       std::cout << x_data.get()[col]
+                 << ", ";
+   std::cout << "\n";
 
 
 Python
