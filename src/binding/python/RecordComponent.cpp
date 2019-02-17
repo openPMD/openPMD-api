@@ -258,38 +258,28 @@ store_chunk(RecordComponent & r, py::array & a, Offset const & offset, Extent co
             );
     }
 
-    // verify input array is not strided (aka contiguous)
-    // a pseudo stride in one dimension is ok as long as all other
-    // dimensions stride exactly by itemsize
-    bool strideFound = false;
-    // all strides but one are element strides?
-    bool allOthersOne = true;
-    for( auto d = 0; d < a.ndim(); ++d )
+    /* required are contiguous buffers
+     *
+     * - not strided with paddings
+     * - not a view in another buffer that results in striding
+     */
+    Py_buffer* view = new Py_buffer();
+    int flags = PyBUF_STRIDES | PyBUF_FORMAT;
+    if( PyObject_GetBuffer( a.ptr(), view, flags ) != 0 )
     {
-        // std::cout << "    stride '" << d << "': "
-        //           << a.strides()[d] / a.itemsize()
-        //           << " - " << a.shape()[d] << std::endl;
-
-        if( a.strides()[d] == a.itemsize() )
-            continue; // ok to stride on element level
-        else
-        {
-            if( a.strides()[d] == a.shape()[d] * a.itemsize() )
-                allOthersOne = false;
-            else                         // padded stride
-                if( strideFound )        // more than one stride found
-                    throw py::index_error(
-                        "strides in chunk are inefficient, not implemented!");
-                else
-                    strideFound = true;  // first found stride, ok with allOthersOne
-        }
+        delete view;
+        throw py::error_already_set();
     }
-    if( strideFound && !allOthersOne )   // one padded stride and others not element strides
+    bool isContiguous = ( PyBuffer_IsContiguous( view, 'A' ) != 0 );
+    PyBuffer_Release( view );
+    delete view;
+
+    if( !isContiguous )
         throw py::index_error(
             "strides in chunk are inefficient, not implemented!");
-
     // @todo in order to implement stride handling, one needs to
-    //       loop over the input data strides during write below
+    //       loop over the input data strides during write below,
+    //       also data might not be owned!
 
     // store
     auto const dtype = dtype_from_numpy( a.dtype() );

@@ -27,6 +27,7 @@ Bug Fixes
 
 - do not require write permissions to open ``Series`` read-only #395
 - loadChunk: re-enable range/extent checks for adjusted ranges #469
+- Python: stricter contiguous check for user-provided arrays #458
 
 Other
 """""
