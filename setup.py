@@ -118,8 +118,8 @@ with open('./requirements.txt') as f:
 #   https://packaging.python.org/guides/distributing-packages-using-setuptools
 setup(
     name='openPMD-api',
-    # note PEP-440 syntax: x.y.zaN but x.y.z.devN
-    version='0.7.1.dev',
+    # note PEP-440 syntax: x.y.zbN but x.y.z.devN
+    version='0.8.0b',
     author='Fabian Koller, Franz Poeschel, Axel Huebl',
     author_email='f.koller@hzdr.de, f.poeschel@hzdr.de, a.huebl@hzdr.de',
     maintainer='Axel Huebl',
@@ -153,7 +153,7 @@ setup(
     # cmdclass={'test': PyTest},
     # platforms='any',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Natural Language :: English',
         'Environment :: Console',
         'Intended Audience :: Science/Research',
