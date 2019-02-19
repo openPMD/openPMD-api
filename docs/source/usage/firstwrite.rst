@@ -45,7 +45,7 @@ Step-by-step: how to write scientific data with openPMD-api?
 Include / Import
 ----------------
 
-After successfull :ref:`installation <install>`, you can start using openPMD-api as follows:
+After successful :ref:`installation <install>`, you can start using openPMD-api as follows:
 
 C++11
 ^^^^^

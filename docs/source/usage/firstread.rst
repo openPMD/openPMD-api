@@ -46,7 +46,7 @@ We are using the examples files from `openPMD-example-datasets <https://github.c
 Include / Import
 ----------------
 
-After successfull :ref:`installation <install>`, you can start using openPMD-api as follows:
+After successful :ref:`installation <install>`, you can start using openPMD-api as follows:
 
 C++11
 ^^^^^
@@ -271,7 +271,7 @@ Python
 Data
 -----
 
-We can not work with the newly loaded data in ``x_data``:
+We can now work with the newly loaded data in ``x_data``:
 
 C++11
 ^^^^^
