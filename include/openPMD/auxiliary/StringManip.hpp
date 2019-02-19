@@ -165,21 +165,43 @@ strip(std::string s, std::vector< char > to_remove)
     return s;
 }
 
+template< typename T >
 inline std::string
-join(std::vector< std::string > const& vs, std::string const& delimiter)
+join(std::vector< T > const& vt, std::string const& delimiter)
 {
-    switch( vs.size() )
+    switch( vt.size() )
     {
         case 0:
             return "";
         case 1:
-            return vs[0];
+            return std::to_string(vt[0]);
         default:
             std::ostringstream ss;
-            std::copy(vs.begin(),
-                      vs.end() - 1,
+            std::transform(vt.begin(),
+                           vt.end() - 1,
+                           std::ostream_iterator< std::string >(ss, delimiter.c_str()),
+                           [](T const& t) -> std::string { return std::to_string(t); });
+            ss << std::to_string(*(vt.end() - 1));
+            return ss.str();
+    }
+}
+
+template< >
+inline std::string
+join< std::string >(std::vector< std::string > const& vt, std::string const& delimiter)
+{
+    switch( vt.size() )
+    {
+        case 0:
+            return "";
+        case 1:
+            return vt[0];
+        default:
+            std::ostringstream ss;
+            std::copy(vt.begin(),
+                      vt.end() - 1,
                       std::ostream_iterator< std::string >(ss, delimiter.c_str()));
-            ss << *(vs.end() - 1);
+            ss << *(vt.end() - 1);
             return ss.str();
     }
 }

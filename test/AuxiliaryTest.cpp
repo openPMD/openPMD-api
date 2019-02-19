@@ -82,12 +82,26 @@ TEST_CASE( "string_test", "[auxiliary]" )
     REQUIRE("stringstringstring" == strip("\t string\tstring string\0", { '\0', '\t', ' '}));
     REQUIRE("stringstringstring" == strip("stringstringstring", { }));
 
-    REQUIRE("1,2,3,4" == join({"1", "2", "3", "4"}, ","));
-    REQUIRE("1234" == join({"1", "2", "3", "4"}, ""));
-    REQUIRE("" == join({}, ","));
-    REQUIRE("1" == join({"1"}, ","));
-    REQUIRE("1" == join({"1"}, ""));
-    REQUIRE("1,2" == join({"1", "2"}, ","));
+    REQUIRE("1,2,3,4" == join< std::string >({"1", "2", "3", "4"}, ","));
+    REQUIRE("1234" == join< std::string >({"1", "2", "3", "4"}, ""));
+    REQUIRE("" == join< std::string >({}, ","));
+    REQUIRE("1" == join< std::string >({"1"}, ","));
+    REQUIRE("1" == join< std::string >({"1"}, ""));
+    REQUIRE("1,2" == join< std::string >({"1", "2"}, ","));
+
+    REQUIRE("1,2,3,4" == join< int >({1,  2,  3,  4}, ","));
+    REQUIRE("1234" == join< int >({1,  2,  3,  4}, ""));
+    REQUIRE("" == join< int >({}, ","));
+    REQUIRE("1" == join< int >({1}, ","));
+    REQUIRE("1" == join< int >({1}, ""));
+    REQUIRE("1,2" == join< int >({1,  2}, ","));
+
+    REQUIRE("1.000000,2.000000,3.000000,4.000000" == join< float >({1.,  2.,  3.,  4.}, ","));
+    REQUIRE("1.0000002.0000003.0000004.000000" == join< float >({1.,  2.,  3.,  4.}, ""));
+    REQUIRE("" == join< float >({}, ","));
+    REQUIRE("1.000000" == join< float >({1.}, ","));
+    REQUIRE("1.000000" == join< float >({1.}, ""));
+    REQUIRE("1.000000,2.000000" == join< float >({1.,  2.}, ","));
 }
 
 namespace openPMD
