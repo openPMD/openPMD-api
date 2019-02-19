@@ -23,12 +23,12 @@
 
 namespace openPMD
 {
-/** File access permissions to use during IO.
- */
-enum class AccessType
-{
-    READ_ONLY,
-    READ_WRITE,
-    CREATE
-};  //AccessType
-} // openPMD
+    /** File access mode to use during IO.
+     */
+    enum class AccessType
+    {
+        READ_ONLY,  //!< open series as read-only, fails if series is not found
+        READ_WRITE, //!< open existing series as writable
+        CREATE      //!< create new series and truncate existing (files)
+    }; // AccessType
+} // namespace openPMD

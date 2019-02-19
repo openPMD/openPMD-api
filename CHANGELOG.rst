@@ -46,6 +46,7 @@ Other
   - more info on MPI #449
   - new "first steps" section #473 #478
   - update invasive test info #474
+  - more info on ``AccessType`` #483
 
 
 0.7.1-alpha
