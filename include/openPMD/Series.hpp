@@ -26,6 +26,7 @@
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AccessType.hpp"
+#include "openPMD/IO/FlushType.hpp"
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/IterationEncoding.hpp"
@@ -239,6 +240,25 @@ public:
 
     /** The currently used backend */
     std::string backend() const;
+
+    /** Set the data flush mode
+     *
+     * Control if RecordComponent::load_chunk and RecordComponent::store_chunk
+     * operations are flushed immediately or delayed until Series::flush
+     *
+     * DIRECT-ly populating passed data buffers is considered a safe and
+     * convienient default for all small-scale I/O operations. For large-scale
+     * IO or load/store of many small chunks, consider switching to DEFER
+     * mode and ensure passed data buffers are valid and unmodified until
+     * Series::flush is called.
+     *
+     * Default: FlushType::DIRECT
+     */
+    void setFlush(FlushType flushType);
+
+    /** Return the data flush mode
+     */
+    FlushType getFlush();
 
     /** Execute all required remaining IO operations to write or read data.
      */

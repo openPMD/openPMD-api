@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/backend/BaseRecordComponent.hpp"
+#include "openPMD/IO/FlushType.hpp"
 
 #include <unordered_map>
 #include <string>
@@ -56,13 +57,36 @@ public:
     uint8_t getDimensionality() const;
     Extent getExtent() const;
 
+    /** Load a patch record
+     *
+     * In FlushType::DEFER, the data managed by the returned
+     * std::shared_ptr< T > MUST NOT be read, modified or deleted until
+     * Series::flush is called.
+     */
     template< typename T >
     std::shared_ptr< T > load();
+
+    /** Load a patch record into pre-allocated memory
+     *
+     * In FlushType::DEFER, the data managed by the passed
+     * std::shared_ptr< T > MUST NOT be read, modified or deleted until
+     * Series::flush is called.
+     */
     template< typename T >
     void load(std::shared_ptr< T >);
+
+    /** Store a patch record
+     *
+     * In FlushType::DEFER, the passed data MUST NOT be modified or deleted
+     * until Series::flush is called.
+     */
     template< typename T >
     void store(uint64_t idx, T);
+
     //! @todo add support for constant patch record components
+
+    //! @todo allow to read all patch records at once in a convienient object
+    //!       to iterate over
 
 OPENPMD_private:
     PatchRecordComponent();
@@ -104,6 +128,16 @@ PatchRecordComponent::load(std::shared_ptr< T > data)
     dRead.dtype = getDatatype();
     dRead.data = std::static_pointer_cast< void >(data);
     m_chunks->push(IOTask(this, dRead));
+
+    if( this->IOHandler->flushType == FlushType::DIRECT )
+    {
+        while( !m_chunks->empty() )
+        {
+            IOHandler->enqueue(m_chunks->front());
+            m_chunks->pop();
+        }
+        IOHandler->flush();
+    }
 }
 
 template< typename T >
@@ -133,5 +167,15 @@ PatchRecordComponent::store(uint64_t idx, T data)
     dWrite.dtype = dtype;
     dWrite.data = std::make_shared< T >(data);
     m_chunks->push(IOTask(this, dWrite));
+
+    if( this->IOHandler->flushType == FlushType::DIRECT )
+    {
+        while( !m_chunks->empty() )
+        {
+            IOHandler->enqueue(m_chunks->front());
+            m_chunks->pop();
+        }
+        IOHandler->flush();
+    }
 }
 } // namespace openPMD

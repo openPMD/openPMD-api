@@ -359,6 +359,16 @@ Series::backend() const
     return IOHandler->backendName();
 }
 
+void Series::setFlush(FlushType flushType)
+{
+    IOHandler->flushType = flushType;
+}
+
+FlushType Series::getFlush()
+{
+    return IOHandler->flushType;
+}
+
 void
 Series::flush()
 {
