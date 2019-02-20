@@ -43,36 +43,35 @@ enum class Level
 }; // Level
 
 #if openPMD_HAVE_LOGGING
-static void
-set_level(Level level)
-{
-    switch( level ) {
-        case Level::TRACE:
-            spdlog::set_level(spdlog::level::trace);
-            return;
-        case Level::DEBUG:
-            spdlog::set_level(spdlog::level::debug);
-            return;
-        case Level::INFO:
-            spdlog::set_level(spdlog::level::info);
-            return;
-        case Level::WARN:
-            spdlog::set_level(spdlog::level::warn);
-            return;
-        case Level::ERROR:
-            spdlog::set_level(spdlog::level::err);
-            return;
-        case Level::CRITICAL:
-            spdlog::set_level(spdlog::level::critical);
-            return;
-        case Level::OFF:
-            spdlog::set_level(spdlog::level::off);
-            return;
-        default:
-            throw std::runtime_error("Logging level not supported!");
-    }
+#   define LOG_SET_LEVEL(LEVEL) {                                             \
+    [](openPMD::auxiliary::log::Level level) {                                \
+        switch( level ) {                                                     \
+            case openPMD::auxiliary::log::Level::TRACE:                       \
+                spdlog::set_level(spdlog::level::trace);                      \
+                return;                                                       \
+            case openPMD::auxiliary::log::Level::DEBUG:                       \
+                spdlog::set_level(spdlog::level::debug);                      \
+                return;                                                       \
+            case openPMD::auxiliary::log::Level::INFO:                        \
+                spdlog::set_level(spdlog::level::info);                       \
+                return;                                                       \
+            case openPMD::auxiliary::log::Level::WARN:                        \
+                spdlog::set_level(spdlog::level::warn);                       \
+                return;                                                       \
+            case openPMD::auxiliary::log::Level::ERROR:                       \
+                spdlog::set_level(spdlog::level::err);                        \
+                return;                                                       \
+            case openPMD::auxiliary::log::Level::CRITICAL:                    \
+                spdlog::set_level(spdlog::level::critical);                   \
+                return;                                                       \
+            case openPMD::auxiliary::log::Level::OFF:                         \
+                spdlog::set_level(spdlog::level::off);                        \
+                return;                                                       \
+            default:                                                          \
+                throw std::runtime_error("Logging level not supported!");     \
+        }                                                                     \
+    }((LEVEL));                                                               \
 }
-#   define LOG_SET_LEVEL(LEVEL) { set_level((LEVEL)); }
 #   define LOG_TRACE(...) { spdlog::trace(__VA_ARGS__); }
 #   define LOG_DEBUG(...) { spdlog::debug(__VA_ARGS__); }
 #   define LOG_INFO(...) { spdlog::info(__VA_ARGS__); }

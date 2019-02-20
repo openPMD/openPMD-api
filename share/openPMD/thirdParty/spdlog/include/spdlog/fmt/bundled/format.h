@@ -927,12 +927,12 @@ class add_thousands_sep {
   explicit add_thousands_sep(basic_string_view<Char> sep)
     : sep_(sep), digit_index_(0) {}
 
-  void operator()(Char *&buffer) {
+  void operator()(Char *&buf) {
     if (++digit_index_ % 3 != 0)
       return;
-    buffer -= sep_.size();
+    buf -= sep_.size();
     std::uninitialized_copy(sep_.data(), sep_.data() + sep_.size(),
-                            internal::make_checked(buffer, sep_.size()));
+                            internal::make_checked(buf, sep_.size()));
   }
 
   enum { size = 1 };
@@ -955,74 +955,74 @@ inline wchar_t thousands_sep(locale_ref loc) {
 // thousands_sep is a functor that is called after writing each char to
 // add a thousands separator if necessary.
 template <typename UInt, typename Char, typename ThousandsSep>
-inline Char *format_decimal(Char *buffer, UInt value, int num_digits,
+inline Char *format_decimal(Char *buf, UInt value, int num_digits,
                             ThousandsSep thousands_sep) {
   FMT_ASSERT(num_digits >= 0, "invalid digit count");
-  buffer += num_digits;
-  Char *end = buffer;
+  buf += num_digits;
+  Char *end = buf;
   while (value >= 100) {
     // Integer division is slow so do it for a group of two digits instead
     // of for every digit. The idea comes from the talk by Alexandrescu
     // "Three Optimization Tips for C++". See speed-test for a comparison.
     unsigned index = static_cast<unsigned>((value % 100) * 2);
     value /= 100;
-    *--buffer = static_cast<Char>(data::DIGITS[index + 1]);
-    thousands_sep(buffer);
-    *--buffer = static_cast<Char>(data::DIGITS[index]);
-    thousands_sep(buffer);
+    *--buf = static_cast<Char>(data::DIGITS[index + 1]);
+    thousands_sep(buf);
+    *--buf = static_cast<Char>(data::DIGITS[index]);
+    thousands_sep(buf);
   }
   if (value < 10) {
-    *--buffer = static_cast<Char>('0' + value);
+    *--buf = static_cast<Char>('0' + value);
     return end;
   }
   unsigned index = static_cast<unsigned>(value * 2);
-  *--buffer = static_cast<Char>(data::DIGITS[index + 1]);
-  thousands_sep(buffer);
-  *--buffer = static_cast<Char>(data::DIGITS[index]);
+  *--buf = static_cast<Char>(data::DIGITS[index + 1]);
+  thousands_sep(buf);
+  *--buf = static_cast<Char>(data::DIGITS[index]);
   return end;
 }
 
 template <typename OutChar, typename UInt, typename Iterator,
           typename ThousandsSep>
 inline Iterator format_decimal(
-    Iterator out, UInt value, int num_digits, ThousandsSep sep) {
+    Iterator out_it, UInt value, int num_digits, ThousandsSep sep) {
   FMT_ASSERT(num_digits >= 0, "invalid digit count");
   typedef typename ThousandsSep::char_type char_type;
   // Buffer should be large enough to hold all digits (<= digits10 + 1).
   enum { max_size = std::numeric_limits<UInt>::digits10 + 1 };
   FMT_ASSERT(ThousandsSep::size <= 1, "invalid separator");
-  char_type buffer[max_size + max_size / 3];
-  auto end = format_decimal(buffer, value, num_digits, sep);
-  return internal::copy_str<OutChar>(buffer, end, out);
+  char_type buf[max_size + max_size / 3];
+  auto end = format_decimal(buf, value, num_digits, sep);
+  return internal::copy_str<OutChar>(buf, end, out_it);
 }
 
 template <typename OutChar, typename It, typename UInt>
-inline It format_decimal(It out, UInt value, int num_digits) {
-  return format_decimal<OutChar>(out, value, num_digits, no_thousands_sep());
+inline It format_decimal(It out_it, UInt value, int num_digits) {
+  return format_decimal<OutChar>(out_it, value, num_digits, no_thousands_sep());
 }
 
 template <unsigned BASE_BITS, typename Char, typename UInt>
-inline Char *format_uint(Char *buffer, UInt value, int num_digits,
+inline Char *format_uint(Char *buf, UInt value, int num_digits,
                          bool upper = false) {
-  buffer += num_digits;
-  Char *end = buffer;
+  buf += num_digits;
+  Char *end = buf;
   do {
     const char *digits = upper ? "0123456789ABCDEF" : "0123456789abcdef";
     unsigned digit = (value & ((1 << BASE_BITS) - 1));
-    *--buffer = static_cast<Char>(BASE_BITS < 4 ? static_cast<char>('0' + digit)
+    *--buf = static_cast<Char>(BASE_BITS < 4 ? static_cast<char>('0' + digit)
                                                 : digits[digit]);
   } while ((value >>= BASE_BITS) != 0);
   return end;
 }
 
 template <unsigned BASE_BITS, typename Char, typename It, typename UInt>
-inline It format_uint(It out, UInt value, int num_digits,
+inline It format_uint(It out_it, UInt value, int num_digits,
                       bool upper = false) {
   // Buffer should be large enough to hold all digits (digits / BASE_BITS + 1)
   // and null.
-  char buffer[std::numeric_limits<UInt>::digits / BASE_BITS + 2];
-  format_uint<BASE_BITS>(buffer, value, num_digits, upper);
-  return internal::copy_str<Char>(buffer, buffer + num_digits, out);
+  char buf[std::numeric_limits<UInt>::digits / BASE_BITS + 2];
+  format_uint<BASE_BITS>(buf, value, num_digits, upper);
+  return internal::copy_str<Char>(buf, buf + num_digits, out_it);
 }
 
 #ifndef _WIN32

@@ -352,8 +352,8 @@ inline spdlog::level::level_enum spdlog::logger::flush_level() const
 
 inline bool spdlog::logger::should_flush_(const details::log_msg &msg)
 {
-    auto flush_level = flush_level_.load(std::memory_order_relaxed);
-    return (msg.level >= flush_level) && (msg.level != level::off);
+    auto flush_level__ = flush_level_.load(std::memory_order_relaxed);
+    return (msg.level >= flush_level__) && (msg.level != level::off);
 }
 
 inline spdlog::level::level_enum spdlog::logger::default_level()

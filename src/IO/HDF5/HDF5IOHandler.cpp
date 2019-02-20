@@ -817,9 +817,9 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
     }
 
     using DT = Datatype;
+    LOG_TRACE("Writing HDF5 attribute value \"{}{}\" (dtype {})", concrete_h5_file_position(writable), name, datatypeToString(dtype));
     switch( dtype )
     {
-        LOG_TRACE("Writing HDF5 attribute value \"{}{}\" (dtype {})", concrete_h5_file_position(writable), name, datatypeToString(dtype));
         case DT::CHAR:
         {
             char c = att.get< char >();
