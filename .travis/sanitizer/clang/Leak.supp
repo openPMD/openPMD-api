@@ -1,0 +1,13 @@
+# OpenMPI 1.10.2 Memory Leaks
+leak:mca_io_ompi*
+leak:mca_pmix_pmix*
+leak:libopen-pal*
+leak:libopen-rte*
+leak:libmpi*
+# CPython 3.7.1 and pybind11 2.2.4
+leak:*py*
+# 10 byte memleak in main of "make" 4.1
+leak:/usr/bin/make*
+# ADIOS 1.13.1
+leak:adios_read_bp_open_file
+leak:adios_inq_var

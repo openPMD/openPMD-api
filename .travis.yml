@@ -17,6 +17,7 @@ env:
     - CXXFLAGS: "-Werror"
     - SPACK_ROOT: $HOME/.cache/spack
     - PATH: $PATH:$HOME/.cache/spack/bin
+    - BUILD_TYPE: "Debug"
     - PYBIND11_VERSION=@2.2.4
     - USE_JSON: ON
     - USE_SHARED: OFF
@@ -112,7 +113,7 @@ jobs:
     #     - cd $HOME/build
     #     - cmake
     #         -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-    #         -DCMAKE_BUILD_TYPE=Debug
+    #         -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
     #         -DopenPMD_USE_MPI=$USE_MPI
     #         -DopenPMD_USE_JSON=$USE_JSON
     #         -DopenPMD_USE_HDF5=$USE_HDF5
@@ -201,7 +202,7 @@ jobs:
       addons:
         apt:
           <<: *apt_common_sources
-          packages: &clang50_deps
+          packages: &clang_deps
             - environment-modules
             - gfortran-4.9
             - g++-4.9  # CMake build
@@ -209,7 +210,7 @@ jobs:
         - mkdir -p $HOME/build
         - cd $HOME/build
         - if [ ! -d samples/git-sample/ ]; then
-            if [ "$USE_SAMPLES" = "ON" ]; then
+            if [ "$USE_SAMPLES" == "ON" ]; then
               $TRAVIS_BUILD_DIR/.travis/download_samples.sh;
               chmod u-w samples/git-sample/*.h5;
             fi
@@ -220,9 +221,10 @@ jobs:
               export EXTRA_CMAKE_FLAGS="$EXTRA_CMAKE_FLAGS -DopenPMD_USE_INTERNAL_PYBIND11=OFF";
             fi;
           fi
+        # build
         - CXXFLAGS=${CXXFLAGS} CXX=${CXX} CC=${CC}
           cmake
-            -DCMAKE_BUILD_TYPE=Debug
+            -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
             -DopenPMD_USE_MPI=$USE_MPI
             -DopenPMD_USE_JSON=$USE_JSON
             -DopenPMD_USE_HDF5=$USE_HDF5
@@ -235,7 +237,18 @@ jobs:
             -DCMAKE_INSTALL_PREFIX=$HOME/openPMD-test-install
             $TRAVIS_BUILD_DIR
         - make -j 2
+        # run tests
+        #   pybind11: work-around for missing symbols with sanitizers
+        #   /usr/local/clang-7.0.0/lib/clang/7.0.0/lib/linux/libclang_rt.asan-x86_64.so
+        #   /usr/local/clang-7.0.0/lib/clang/7.0.0/lib/linux/libclang_rt.ubsan_minimal-x86_64.so
+        - if [ "$USE_PYTHON" == "ON" ] && [ ! -z ${ASAN_OPTIONS+x} ]; then
+            export LD_PRELOAD=/usr/local/clang-7.0.0/lib/clang/7.0.0/lib/linux/libclang_rt.asan-x86_64.so;
+          fi
         - CTEST_OUTPUT_ON_FAILURE=1 make test
+        - if [ ! -z ${LD_PRELOAD+x} ]; then
+            unset LD_PRELOAD;
+          fi
+        # install
         - make install
         # - make package
         # - dpkg -i openPMD*.deb
@@ -251,7 +264,7 @@ jobs:
         apt:
           <<: *apt_common_sources
           packages:
-            - *clang50_deps
+            - *clang_deps
             - libopenmpi-dev
             - openmpi-bin
       script: *script-cpp-unit
@@ -278,35 +291,47 @@ jobs:
         - CXX=clang++-6.0 && CC=clang-6.0 && CXXFLAGS="-Werror -stdlib=libc++ -I/usr/include/libcxxabi/"
     # Clang 7.0.0 + Python 3.7.1 @ Xenial
     - <<: *test-cpp-unit
-      name: clang@7.0.0 +MPI +PY@3.7 +H5 +ADIOS1
+      name: clang@7.0.0 +MPI +PY@3.7 +H5 +ADIOS1 +Release
       dist: xenial
       language: python
       python: "3.7"
       env:
-        - CXXSPEC="%clang@7.0.0" USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
+        - CXXSPEC="%clang@7.0.0" USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON BUILD_TYPE="Release"
       compiler: clang
       addons:
         apt:
           <<: *apt_common_sources
           packages:
-            - *clang50_deps
+            - *clang_deps
             - libopenmpi-dev
             - openmpi-bin
       script: *script-cpp-unit
       before_install: &clang_init
         - CXX=clang++ && CC=clang
-    # Clang 7.0.0 + Address Sanitizer @ Xenial
+    # Clang 7.0.0 + Python 3.7.1 + Address Sanitizer + Undefined Behavior Sanitizer @ Xenial
     - <<: *test-cpp-unit
-      name: clang@7.0.0 -MPI -PY -H5 -ADIOS1 +JSON +AddressSanitize
+      name: clang@7.0.0 +MPI +PY@3.7 +H5 -ADIOS1 +JSON +ASan +UBSan
       dist: xenial
       language: python
       python: "3.7"
       env:
-        - CXXSPEC="%clang@7.0.0" USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=OFF USE_ADIOS1=OFF USE_ADIOS2=OFF USE_JSON=ON USE_SAMPLES=ON
+        - CXXSPEC="%clang@7.0.0" USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF USE_JSON=ON USE_SAMPLES=ON
+        #   USE_SHARED=ON
+        # sanitizer options: test as much as possible and suppress OpenMPI memory leaks
+        - ASAN_OPTIONS=detect_stack_use_after_return=1:detect_leaks=1:check_initialization_order=true:strict_init_order=true:detect_stack_use_after_scope=1:fast_unwind_on_malloc=0
+        - LSAN_OPTIONS=suppressions=${TRAVIS_BUILD_DIR}/.travis/sanitizer/clang/Leak.supp
       compiler: clang
+      addons:
+        apt:
+          <<: *apt_common_sources
+          packages:
+            - *clang_deps
+            - libopenmpi-dev
+            - openmpi-bin
       script: *script-cpp-unit
       before_install:
-        - CXX=clang++ && CC=clang && CXXFLAGS="-Werror -fsanitize=address"
+        - CXX=clang++ && CC=clang && CXXFLAGS="-Werror -fsanitize=address,undefined -shared-libsan" && LDFLAGS="-fsanitize=address,undefined -shared-libsan"
+        # - find / -name libclang_rt*
     # Clang 9.1.0-apple + Python 3.7.2 @ OSX "highsierra"
     - <<: *test-cpp-unit
       name: AppleClang@9.1.0 -MPI +PY@3.7 +H5 +ADIOS1
@@ -525,7 +550,7 @@ jobs:
           fi
         - CXXFLAGS="-g -O0 -fprofile-arcs -ftest-coverage" CXX=$CXX CC=$CC
           cmake
-            -DCMAKE_BUILD_TYPE=Debug
+            -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
             -DopenPMD_USE_MPI=$USE_MPI
             -DopenPMD_USE_JSON=$USE_JSON
             -DopenPMD_USE_HDF5=$USE_HDF5

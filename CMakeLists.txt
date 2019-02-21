@@ -702,14 +702,15 @@ endif()
 # TODO: LEGACY! Use CMake TOOLCHAINS instead!
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     # list(APPEND CMAKE_CXX_FLAGS "-fsanitize=address") # address, memory, undefined
-    # list(APPEND CMAKE_EXE_LINKER_FLAGS "-fsanitize=address")
-    # list(APPEND CMAKE_SHARED_LINKER_FLAGS "-fsanitize=address")
-    # list(APPEND CMAKE_MODULE_LINKER_FLAGS "-fsanitize=address")
+    # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+    # set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
+    # set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=address")
 
     # note: might still need a
     #   export LD_PRELOAD=libclang_rt.asan.so
     # or on Debian 9 with Clang 6.0
-    #   export LD_PRELOAD=/usr/lib/llvm-6.0/lib/clang/6.0.0/lib/linux/libclang_rt.asan-x86_64.so
+    #   export LD_PRELOAD=/usr/lib/llvm-6.0/lib/clang/6.0.0/lib/linux/libclang_rt.asan-x86_64.so:
+    #                     /usr/lib/llvm-6.0/lib/clang/6.0.0/lib/linux/libclang_rt.ubsan_minimal-x86_64.so
     # at runtime when used with symbol-hidden code (e.g. pybind11 module)
 
     #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
