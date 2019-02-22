@@ -48,6 +48,9 @@ int main(int argc, char *argv[])
     );
     cout << "Created an empty " << series.iterationEncoding() << " Series\n";
 
+    // accumulate load/store I/O operations until .flush()
+    // series.setFlush(FlushType::DEFER);
+
     MeshRecordComponent rho =
       series
           .iterations[1]
@@ -63,7 +66,8 @@ int main(int argc, char *argv[])
     rho.resetDataset(dataset);
     cout << "Set the dataset properties for the scalar field rho in iteration 1\n";
 
-    series.flush();
+    // in FlushType::DEFER, call now:
+    // series.flush();
     cout << "File structure and required attributes have been written\n";
 
     Offset offset = {0, 0};
@@ -71,7 +75,8 @@ int main(int argc, char *argv[])
     cout << "Stored the whole Dataset contents as a single chunk, "
             "ready to write content\n";
 
-    series.flush();
+    // in FlushType::DEFER, call now:
+    // series.flush();
     cout << "Dataset content has been fully written\n";
 
     /* The files in 'series' are still open until the object is destroyed, on

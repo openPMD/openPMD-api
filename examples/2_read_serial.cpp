@@ -37,6 +37,9 @@ int main()
     cout << "Read a Series with openPMD standard version "
          << series.openPMD() << '\n';
 
+    // accumulate load/store I/O operations until .flush()
+    // series.setFlush(FlushType::DEFER);
+
     cout << "The Series contains " << series.iterations.size() << " iterations:";
     for( auto const& i : series.iterations )
         cout << "\n\t" << i.first;
@@ -64,7 +67,8 @@ int main()
     auto chunk_data = E_x.loadChunk<double>(chunk_offset, chunk_extent);
     cout << "Queued the loading of a single chunk from disk, "
             "ready to execute\n";
-    series.flush();
+    // in FlushType::DEFER, call now:
+    // series.flush();
     cout << "Chunk has been read from disk\n"
          << "Read chunk contains:\n";
     for( size_t row = 0; row < chunk_extent[0]; ++row )
@@ -77,7 +81,8 @@ int main()
     }
 
     auto all_data = E_x.loadChunk<double>();
-    series.flush();
+    // in FlushType::DEFER, call now:
+    // series.flush();
     cout << "Full E/x starts with:\n\t{";
     for( size_t col = 0; col < extent[1] && col < 5; ++col )
         cout << all_data.get()[col] << ", ";

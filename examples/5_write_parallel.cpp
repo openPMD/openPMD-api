@@ -63,6 +63,9 @@ int main(int argc, char *argv[])
           cout << "Created an empty series in parallel with "
                << mpi_size << " MPI ranks\n";
 
+        // accumulate load/store I/O operations until .flush()
+        // series.setFlush(FlushType::DEFER);
+
         MeshRecordComponent mymesh =
             series
                 .iterations[1]
@@ -90,7 +93,8 @@ int main(int argc, char *argv[])
             cout << "Registered a single chunk per MPI rank containing its contribution, "
                     "ready to write content to disk\n";
 
-        series.flush();
+        // in FlushType::DEFER, call now:
+        // series.flush();
         if( 0 == mpi_rank )
             cout << "Dataset content has been fully written to disk\n";
     }

@@ -15,6 +15,9 @@ if __name__ == "__main__":
     print("Read a Series with openPMD standard version %s" %
           series.openPMD)
 
+    # accumulate load/store I/O operations until .flush()
+    # series.set_flush(openpmd_api.Flush_Type.defer)
+
     print("The Series contains {0} iterations:".format(len(series.iterations)))
     for i in series.iterations:
         print("\t {0}".format(i))
@@ -38,9 +41,10 @@ if __name__ == "__main__":
           shape, E_x.dtype))
 
     chunk_data = E_x[1:3, 1:3, 1:2]
-    # print("Queued the loading of a single chunk from disk, "
-    #       "ready to execute")
-    series.flush()
+
+    # in Flush_Type.defer, call now:
+    # series.flush()
+
     print("Chunk has been read from disk\n"
           "Read chunk contains:")
     print(chunk_data)
@@ -52,7 +56,10 @@ if __name__ == "__main__":
     #     print("")
 
     all_data = E_x.load_chunk()
-    series.flush()
+
+    # in Flush_Type.defer, call now:
+    # series.flush()
+
     print("Full E/x is of shape {0} and starts with:".format(all_data.shape))
     print(all_data[0, 0, :5])
 

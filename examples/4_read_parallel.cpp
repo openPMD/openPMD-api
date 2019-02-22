@@ -53,6 +53,9 @@ int main(int argc, char *argv[])
         if( 0 == mpi_rank )
             cout << "Read a series in parallel with " << mpi_size << " MPI ranks\n";
 
+        // accumulate load/store I/O operations until .flush()
+        // series.setFlush(FlushType::DEFER);
+
         MeshRecordComponent E_x = series.iterations[100].meshes["E"]["x"];
 
         Offset chunk_offset = {
@@ -67,7 +70,8 @@ int main(int argc, char *argv[])
         if( 0 == mpi_rank )
             cout << "Queued the loading of a single chunk per MPI rank from disk, "
                     "ready to execute\n";
-        series.flush();
+        // in FlushType::DEFER, call now:
+        // series.flush();
 
         if( 0 == mpi_rank )
             cout << "Chunks have been read from disk\n";
