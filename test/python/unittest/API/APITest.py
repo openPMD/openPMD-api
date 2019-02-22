@@ -112,6 +112,7 @@ class APITest(unittest.TestCase):
             "unittest_py_API." + file_ending,
             api.Access_Type.create
         )
+        self.assertEqual(series.flush_mode, api.Flush_Type.direct)
 
         # meta data
         series.set_software("nonsense")  # with unspecified version
@@ -852,6 +853,12 @@ class APITest(unittest.TestCase):
             "unittest_py_slice_API." + file_ending,
             api.Access_Type.create
         )
+
+        # FIXME GitHub issue #490
+        series.set_flush(api.Flush_Type.defer)
+
+        self.assertEqual(series.flush_mode, api.Flush_Type.defer)
+
         i = series.iterations[0]
 
         # create data to write
@@ -1028,6 +1035,10 @@ class APITest(unittest.TestCase):
             "unittest_py_particle_patches." + file_ending,
             api.Access_Type.create
         )
+
+        # FIXME GitHub issue #490
+        series.set_flush(api.Flush_Type.defer)
+
         e = series.iterations[42].particles["electrons"]
 
         for r in ["x", "y"]:
@@ -1083,7 +1094,8 @@ class APITest(unittest.TestCase):
         offset_x = e.particle_patches["offset"]["x"].load()
         offset_y = e.particle_patches["offset"]["y"].load()
 
-        series.flush()
+        # in Flush_Type.defer, call now:
+        # series.flush()
 
         np.testing.assert_almost_equal(
             numParticles, np.array([10, 113], np.uint64))

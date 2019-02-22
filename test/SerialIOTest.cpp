@@ -126,6 +126,9 @@ void constant_scalar(std::string file_ending)
     {
         // constant scalar
         Series s = Series("../samples/constant_scalar." + file_ending, AccessType::CREATE);
+        s.setFlush(FlushType::DEFER);
+        REQUIRE(s.getFlush() == FlushType::DEFER);
+
         auto rho = s.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR];
         rho.resetDataset(Dataset(Datatype::CHAR, {1, 2, 3}));
         rho.makeConstant(static_cast< char >('a'));
@@ -175,6 +178,7 @@ void constant_scalar(std::string file_ending)
 
     {
         Series s = Series("../samples/constant_scalar." + file_ending, AccessType::READ_ONLY);
+        s.setFlush(FlushType::DEFER);
         REQUIRE(s.iterations[1].meshes.count("rho") == 1);
         REQUIRE(s.iterations[1].meshes["rho"].count(MeshRecordComponent::SCALAR) == 1);
         REQUIRE(s.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR].containsAttribute("shape"));
@@ -287,6 +291,7 @@ void particle_patches( std::string file_ending )
     {
         // constant scalar
         Series s = Series("../samples/particle_patches." + file_ending, AccessType::CREATE);
+        s.setFlush(FlushType::DEFER);
 
         auto e = s.iterations[42].particles["electrons"];
 
@@ -333,6 +338,35 @@ void particle_patches( std::string file_ending )
     }
     {
         Series s = Series("../samples/particle_patches." + file_ending, AccessType::READ_ONLY);
+        REQUIRE(s.getFlush() == FlushType::DIRECT);
+
+        auto e = s.iterations[42].particles["electrons"];
+
+        auto numParticles = e.particlePatches["numParticles"][SCALAR].template load< uint64_t >();
+        auto numParticlesOffset = e.particlePatches["numParticlesOffset"][SCALAR].template load< uint64_t >();
+        auto extent_x = e.particlePatches["extent"]["x"].template load< float >();
+        auto extent_y = e.particlePatches["extent"]["y"].template load< float >();
+        auto offset_x = e.particlePatches["offset"]["x"].template load< float >();
+        auto offset_y = e.particlePatches["offset"]["y"].template load< float >();
+
+        // s.flush();  // not needed in DIRECT flush mode
+
+        REQUIRE(numParticles.get()[0] == 10);
+        REQUIRE(numParticles.get()[1] == 113);
+        REQUIRE(numParticlesOffset.get()[0] == 0);
+        REQUIRE(numParticlesOffset.get()[1] == 10);
+        REQUIRE(extent_x.get()[0] == 10.);
+        REQUIRE(extent_x.get()[1] == 113.);
+        REQUIRE(extent_y.get()[0] == 123.);
+        REQUIRE(extent_y.get()[1] == 123.);
+        REQUIRE(offset_x.get()[0] == 0.);
+        REQUIRE(offset_x.get()[1] == 10.);
+        REQUIRE(offset_y.get()[0] == 0.);
+        REQUIRE(offset_y.get()[1] == 0.);
+    }
+    {
+        Series s = Series("../samples/particle_patches." + file_ending, AccessType::READ_ONLY);
+        s.setFlush(FlushType::DEFER);
 
         auto e = s.iterations[42].particles["electrons"];
 
@@ -375,6 +409,7 @@ void dtype_test(const std::string & backend, bool test_128_bit = true)
     bool test_long_long = test_128_bit || sizeof (long long) <= 8;
     {
         Series s = Series("../samples/dtype_test." + backend, AccessType::CREATE);
+        s.setFlush(FlushType::DEFER);
 
         char c = 'c';
         s.setAttribute("char", c);
@@ -461,6 +496,7 @@ void dtype_test(const std::string & backend, bool test_128_bit = true)
     }
 
     Series s = Series("../samples/dtype_test." + backend, AccessType::READ_ONLY);
+    s.setFlush(FlushType::DEFER);
 
     REQUIRE(s.getAttribute("char").get< char >() == 'c');
     REQUIRE(s.getAttribute("uchar").get< unsigned char >() == 'u');
@@ -567,6 +603,7 @@ inline
 void write_test(const std::string & backend)
 {
     Series o = Series("../samples/serial_write." + backend, AccessType::CREATE);
+    o.setFlush(FlushType::DEFER);
 
     ParticleSpecies& e_1 = o.iterations[1].particles["e"];
 
@@ -659,6 +696,7 @@ void fileBased_write_test(const std::string & backend)
 
     {
         Series o = Series("../samples/subdir/serial_fileBased_write%08T." + backend, AccessType::CREATE);
+        o.setFlush(FlushType::DEFER);
 
         ParticleSpecies& e_1 = o.iterations[1].particles["e"];
 
@@ -737,6 +775,7 @@ void fileBased_write_test(const std::string & backend)
 
     {
         Series o = Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::READ_ONLY);
+        o.setFlush(FlushType::DEFER);
 
         REQUIRE(o.iterations.size() == 5);
         REQUIRE(o.iterations.count(1) == 1);
@@ -806,6 +845,7 @@ void fileBased_write_test(const std::string & backend)
     // extend existing series with new step and auto-detection of iteration padding
     {
         Series o = Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::READ_WRITE);
+        o.setFlush(FlushType::DEFER);
 
         REQUIRE(o.iterations.size() == 5);
         o.iterations[6];
@@ -817,6 +857,7 @@ void fileBased_write_test(const std::string & backend)
     // additional iteration with different iteration padding but similar content
     {
         Series o = Series("../samples/subdir/serial_fileBased_write%01T." + backend, AccessType::READ_WRITE);
+        o.setFlush(FlushType::DEFER);
 
         REQUIRE(o.iterations.empty());
 
@@ -835,6 +876,7 @@ void fileBased_write_test(const std::string & backend)
     // read back with auto-detection and non-fixed padding
     {
         Series s = Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::READ_ONLY);
+        s.setFlush(FlushType::DEFER);
         REQUIRE(s.iterations.size() == 7);
     }
 
@@ -847,6 +889,7 @@ void fileBased_write_test(const std::string & backend)
     // read back with auto-detection and fixed padding
     {
         Series s = Series("../samples/subdir/serial_fileBased_write%08T." + backend, AccessType::READ_ONLY);
+        s.setFlush(FlushType::DEFER);
         REQUIRE(s.iterations.size() == 6);
     }
 }
@@ -864,12 +907,14 @@ void bool_test(const std::string & backend)
 {
     {
         Series o = Series("../samples/serial_bool." + backend, AccessType::CREATE);
+        o.setFlush(FlushType::DEFER);
 
         o.setAttribute("Bool attribute (true)", true);
         o.setAttribute("Bool attribute (false)", false);
     }
     {
         Series o = Series("../samples/serial_bool." + backend, AccessType::READ_ONLY);
+        o.setFlush(FlushType::DEFER);
 
         auto attrs = o.attributes();
         REQUIRE(std::count(attrs.begin(), attrs.end(), "Bool attribute (true)") == 1);
@@ -891,6 +936,7 @@ inline
 void patch_test(const std::string & backend)
 {
     Series o = Series("../samples/serial_patch." + backend, AccessType::CREATE);
+    o.setFlush(FlushType::DEFER);
 
     auto dset = Dataset(Datatype::DOUBLE, {1});
     o.iterations[1].particles["e"].particlePatches["offset"]["x"].resetDataset(dset);
@@ -911,7 +957,7 @@ inline
 void deletion_test(const std::string & backend)
 {
     Series o = Series("../samples/serial_deletion." + backend, AccessType::CREATE);
-
+    o.setFlush(FlushType::DEFER);
 
     o.setAttribute("removed",
                    "this attribute will be removed after being written to disk");
@@ -970,6 +1016,7 @@ void optional_paths_110_test(const std::string & backend)
     {
         {
             Series s = Series("../samples/issue-sample/no_fields/data%T." + backend, AccessType::READ_ONLY);
+            s.setFlush(FlushType::DEFER);
             auto attrs = s.attributes();
             REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
             REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
@@ -979,6 +1026,7 @@ void optional_paths_110_test(const std::string & backend)
 
         {
             Series s = Series("../samples/issue-sample/no_particles/data%T." + backend, AccessType::READ_ONLY);
+            s.setFlush(FlushType::DEFER);
             auto attrs = s.attributes();
             REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
             REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
@@ -992,6 +1040,7 @@ void optional_paths_110_test(const std::string & backend)
 
     {
         Series s = Series("../samples/no_meshes_1.1.0_compliant." + backend, AccessType::CREATE);
+        s.setFlush(FlushType::DEFER);
         auto foo = s.iterations[1].particles["foo"];
         Dataset dset = Dataset(Datatype::DOUBLE, {1});
         foo["position"][RecordComponent::SCALAR].resetDataset(dset);
@@ -1000,6 +1049,7 @@ void optional_paths_110_test(const std::string & backend)
 
     {
         Series s = Series("../samples/no_particles_1.1.0_compliant." + backend, AccessType::CREATE);
+        s.setFlush(FlushType::DEFER);
         auto foo = s.iterations[1].meshes["foo"];
         Dataset dset = Dataset(Datatype::DOUBLE, {1});
         foo[RecordComponent::SCALAR].resetDataset(dset);
@@ -1007,6 +1057,7 @@ void optional_paths_110_test(const std::string & backend)
 
     {
         Series s = Series("../samples/no_meshes_1.1.0_compliant." + backend, AccessType::READ_ONLY);
+        s.setFlush(FlushType::DEFER);
         auto attrs = s.attributes();
         REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 0);
         REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
@@ -1016,6 +1067,7 @@ void optional_paths_110_test(const std::string & backend)
 
     {
         Series s = Series("../samples/no_particles_1.1.0_compliant." + backend, AccessType::READ_ONLY);
+        s.setFlush(FlushType::DEFER);
         auto attrs = s.attributes();
         REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
         REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 0);
@@ -1037,6 +1089,7 @@ TEST_CASE( "git_hdf5_sample_structure_test", "[serial][hdf5]" )
     try
     {
         Series o = Series("../samples/git-sample/data%T.h5", AccessType::READ_ONLY);
+        o.setFlush(FlushType::DEFER);
 
         REQUIRE(!o.parent);
         REQUIRE(o.iterations.parent == getWritable(&o));
@@ -1090,6 +1143,7 @@ TEST_CASE( "git_hdf5_sample_attribute_test", "[serial][hdf5]" )
     try
     {
         Series o = Series("../samples/git-sample/data%T.h5", AccessType::READ_ONLY);
+        o.setFlush(FlushType::DEFER);
 
         REQUIRE(o.openPMD() == "1.1.0");
         REQUIRE(o.openPMDextension() == 1);
@@ -1336,22 +1390,23 @@ TEST_CASE( "git_hdf5_sample_attribute_test", "[serial][hdf5]" )
 
 TEST_CASE( "git_hdf5_sample_content_test", "[serial][hdf5]" )
 {
+    double actual[3][3][3] = {
+       {{-1.9080703683727052e-09, -1.5632650729457964e-10, 1.1497536256399599e-09},
+        {-1.9979540244463578e-09, -2.5512036927466397e-10, 1.0402234629225404e-09},
+        {-1.7353589676361025e-09, -8.0899198451334087e-10, -1.6443779671249104e-10}},
+
+       {{-2.0029988778702545e-09, -1.9543477947081556e-10, 1.0916454407094989e-09},
+        {-2.3890367462087170e-09, -4.7158010829662089e-10, 9.0026075483251589e-10},
+        {-1.9033881137886510e-09, -7.5192119197708962e-10, 5.0038861942880430e-10}},
+
+       {{-1.3271805876513554e-09, -5.9243276950837753e-10, -2.2445734160214670e-10},
+        {-7.4578609954301101e-10, -1.1995737736469891e-10, 2.5611823772919706e-10},
+        {-9.4806251738077663e-10, -1.5472800818372434e-10, -3.6461900165818406e-10}}};
     try
     {
         Series o = Series("../samples/git-sample/data%T.h5", AccessType::READ_ONLY);
-
         {
-            double actual[3][3][3] = {{{-1.9080703683727052e-09, -1.5632650729457964e-10, 1.1497536256399599e-09},
-                                       {-1.9979540244463578e-09, -2.5512036927466397e-10, 1.0402234629225404e-09},
-                                       {-1.7353589676361025e-09, -8.0899198451334087e-10, -1.6443779671249104e-10}},
-
-                                      {{-2.0029988778702545e-09, -1.9543477947081556e-10, 1.0916454407094989e-09},
-                                       {-2.3890367462087170e-09, -4.7158010829662089e-10, 9.0026075483251589e-10},
-                                       {-1.9033881137886510e-09, -7.5192119197708962e-10, 5.0038861942880430e-10}},
-
-                                      {{-1.3271805876513554e-09, -5.9243276950837753e-10, -2.2445734160214670e-10},
-                                       {-7.4578609954301101e-10, -1.1995737736469891e-10, 2.5611823772919706e-10},
-                                       {-9.4806251738077663e-10, -1.5472800818372434e-10, -3.6461900165818406e-10}}};
+            o.setFlush(FlushType::DEFER);
             MeshRecordComponent& rho = o.iterations[100].meshes["rho"][MeshRecordComponent::SCALAR];
             Offset offset{20, 20, 190};
             Extent extent{3, 3, 3};
@@ -1364,8 +1419,22 @@ TEST_CASE( "git_hdf5_sample_content_test", "[serial][hdf5]" )
                     for( int k = 0; k < 3; ++k )
                         REQUIRE(raw_ptr[((i*3) + j)*3 + k] == actual[i][j][k]);
         }
-
         {
+            o.setFlush(FlushType::DIRECT);
+            MeshRecordComponent& rho = o.iterations[100].meshes["rho"][MeshRecordComponent::SCALAR];
+            Offset offset{20, 20, 190};
+            Extent extent{3, 3, 3};
+            auto data = rho.loadChunk<double>(offset, extent);
+            // o.flush();  // not needed in DIRECT flush mode
+            double* raw_ptr = data.get();
+
+            for( int i = 0; i < 3; ++i )
+                for( int j = 0; j < 3; ++j )
+                    for( int k = 0; k < 3; ++k )
+                        REQUIRE(raw_ptr[((i*3) + j)*3 + k] == actual[i][j][k]);
+        }
+        {
+            o.setFlush(FlushType::DEFER);
             double constant_value = 9.1093829099999999e-31;
             RecordComponent& electrons_mass = o.iterations[100].particles["electrons"]["mass"][RecordComponent::SCALAR];
             Offset offset{15};
@@ -1409,6 +1478,7 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
     try
     {
         Series o = Series("../samples/git-sample/data%08T.h5", AccessType::READ_ONLY);
+        o.setFlush(FlushType::DEFER);
 
         REQUIRE(o.iterations.size() == 5);
         REQUIRE(o.iterations.count(100) == 1);
@@ -1443,6 +1513,7 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
 
         {
             Series o = Series("../samples/git-sample/data%T.h5", AccessType::READ_WRITE);
+            o.setFlush(FlushType::DEFER);
 
 #if openPMD_USE_INVASIVE_TESTS
             REQUIRE(*o.m_filenamePadding == 8);
@@ -1476,6 +1547,7 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
         /* HZDR: /bigdata/hplsim/development/huebl/lwfa-openPMD-062-smallLWFA-h5
          * DOI:10.14278/rodare.57 */
         Series o = Series("../samples/hzdr-sample/h5/simData_%T.h5", AccessType::READ_ONLY);
+        o.setFlush(FlushType::DEFER);
 
         REQUIRE(o.openPMD() == "1.0.0");
         REQUIRE(o.openPMDextension() == 1);
@@ -1935,6 +2007,7 @@ TEST_CASE( "hzdr_adios1_sample_content_test", "[serial][adios1]" )
         /* HZDR: /bigdata/hplsim/development/huebl/lwfa-bgfield-001
          * DOI:10.14278/rodare.57 */
         Series o = Series("../samples/hzdr-sample/bp/checkpoint_%T.bp", AccessType::READ_ONLY);
+        o.setFlush(FlushType::DEFER);
 
         REQUIRE(o.openPMD() == "1.0.0");
         REQUIRE(o.openPMDextension() == 1);
