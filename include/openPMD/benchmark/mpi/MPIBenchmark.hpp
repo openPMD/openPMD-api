@@ -388,6 +388,7 @@ namespace openPMD
             AccessType::CREATE,
             m_benchmark->communicator
         );
+        series.setFlush(FlushType::DEFER);
 
         for( typename decltype( Series::iterations)::key_type i = 0;
             i < iterations;
@@ -461,6 +462,7 @@ namespace openPMD
             AccessType::READ_ONLY,
             m_benchmark->communicator
         );
+        series.setFlush(FlushType::DEFER);
 
         for( typename decltype( Series::iterations)::key_type i = 0;
             i < iterations;
