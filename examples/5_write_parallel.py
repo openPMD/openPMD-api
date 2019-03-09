@@ -19,17 +19,14 @@ if __name__ == "__main__":
     # also works with any other MPI communicator
     comm = MPI.COMM_WORLD
 
-    # allocate a data set to write
-    global_data = np.arange(comm.size, dtype=np.double)
+    # global data set to write: [MPI_Size * 10, 300]
+    # each rank writes a 10x300 slice with its MPI rank as values
+    local_value = comm.size
+    local_data = np.ones(10 * 300,
+                         dtype=np.double).reshape(10, 300) * local_value
     if 0 == comm.rank:
-        print("Set up a 1D array with one element per MPI rank ({}) "
+        print("Set up a 2D array with 10x300 elements per MPI rank ({}x) "
               "that will be written to disk".format(comm.size))
-
-    local_data = np.array([0, ], dtype=np.double)
-    local_data[0] = global_data[comm.rank]
-    if 0 == comm.rank:
-        print("Set up a 1D array with one element, representing the view of "
-              "the MPI rank")
 
     # open file for writing
     series = openpmd_api.Series(
@@ -41,31 +38,27 @@ if __name__ == "__main__":
         print("Created an empty series in parallel with {} MPI ranks".format(
               comm.size))
 
-    id = series.iterations[1]. \
-        meshes["id"][openpmd_api.Mesh_Record_Component.SCALAR]
+    mymesh = series.iterations[1]. \
+        meshes["mymesh"][openpmd_api.Mesh_Record_Component.SCALAR]
 
-    datatype = openpmd_api.Datatype.DOUBLE
-    # datatype = determineDatatype(local_data)
-    dataset_extent = [comm.size, ]
-    dataset = openpmd_api.Dataset(datatype, dataset_extent)
+    # example 1D domain decomposition in first index
+    global_extent = [comm.size * 10, 300]
+    dataset = openpmd_api.Dataset(local_data.dtype, global_extent)
 
     if 0 == comm.rank:
-        print("Created a Dataset of size {} and Datatype {}".format(
-              dataset.extent[0], dataset.dtype))
+        print("Prepared a Dataset of size {} and Datatype {}".format(
+              dataset.extent, dataset.dtype))
 
-    id.reset_dataset(dataset)
+    mymesh.reset_dataset(dataset)
     if 0 == comm.rank:
-        print("Set the global on-disk Dataset properties for the scalar field "
-              "id in iteration 1")
+        print("Set the global Dataset properties for the scalar field "
+              "mymesh in iteration 1")
 
-    series.flush()
+    # example shows a 1D domain decomposition in first index
+    mymesh[comm.rank*10:(comm.rank+1)*10, :] = local_data
     if 0 == comm.rank:
-        print("File structure has been written to disk")
-
-    id[comm.rank:comm.rank+1] = local_data
-    if 0 == comm.rank:
-        print("Stored a single chunk per MPI rank containing its contribution,"
-              " ready to write content to disk")
+        print("Registered a single chunk per MPI rank containing its "
+              "contribution, ready to write content to disk")
 
     series.flush()
     if 0 == comm.rank:

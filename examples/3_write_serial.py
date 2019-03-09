@@ -15,7 +15,7 @@ if __name__ == "__main__":
     size = 3
 
     # matrix dataset to write with values 0...size*size-1
-    global_data = np.arange(size*size, dtype=np.double).reshape(3, 3)
+    data = np.arange(size*size, dtype=np.double).reshape(3, 3)
 
     print("Set up a 2D square array ({0}x{1}) that will be written".format(
         size, size))
@@ -32,10 +32,7 @@ if __name__ == "__main__":
     rho = series.iterations[1]. \
         meshes["rho"][openpmd_api.Mesh_Record_Component.SCALAR]
 
-    datatype = openpmd_api.Datatype.DOUBLE
-    # datatype = openpmd_api.determineDatatype(global_data)
-    extent = [size, size]
-    dataset = openpmd_api.Dataset(datatype, extent)
+    dataset = openpmd_api.Dataset(data.dtype, data.shape)
 
     print("Created a Dataset of size {0}x{1} and Datatype {2}".format(
         dataset.extent[0], dataset.extent[1], dataset.dtype))
@@ -46,7 +43,7 @@ if __name__ == "__main__":
     series.flush()
     print("File structure has been written")
 
-    rho[()] = global_data
+    rho[()] = data
 
     print("Stored the whole Dataset contents as a single chunk, " +
           "ready to write content")

@@ -47,6 +47,7 @@ Other
   - new "first steps" section #473 #478
   - update invasive test info #474
   - more info on ``AccessType`` #483
+  - improved MPI-parallel write example #496
 
 
 0.7.1-alpha

@@ -229,7 +229,7 @@ Python
    B_y = B["y"]
    B_z = B["z"]
 
-   auto dataset = api::Dataset(
+   dataset = api.Dataset(
        x_data.dtype,
        x_data.shape)
    B_x.reset_dataset(dataset)

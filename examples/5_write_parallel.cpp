@@ -1,4 +1,4 @@
-/* Copyright 2017-2019 Fabian Koller
+/* Copyright 2017-2019 Fabian Koller, Axel Huebl
  *
  * This file is part of openPMD-api.
  *
@@ -24,6 +24,7 @@
 
 #include <iostream>
 #include <memory>
+#include <vector>   // std::vector
 
 
 using std::cout;
@@ -43,18 +44,14 @@ int main(int argc, char *argv[])
      *       prior to MPI_Finalize();
      */
     {
-        // allocate a data set to write
-        std::shared_ptr< double > global_data(new double[mpi_size], [](double *p) { delete[] p; });
-        for( int i = 0; i < mpi_size; ++i )
-            global_data.get()[i] = i;
+        // global data set to write: [MPI_Size * 10, 300]
+        // each rank writes a 10x300 slice with its MPI rank as values
+        float const value = float(mpi_size);
+        std::vector<float> local_data(
+            10 * 300, value);
         if( 0 == mpi_rank )
-            cout << "Set up a 1D array with one element per MPI rank (" << mpi_size
-                 << ") that will be written to disk\n";
-
-        std::shared_ptr< double > local_data{new double};
-        *local_data = global_data.get()[mpi_rank];
-        if( 0 == mpi_rank )
-            cout << "Set up a 1D array with one element, representing the view of the MPI rank\n";
+            cout << "Set up a 2D array with 10x300 elements per MPI rank (" << mpi_size
+                 << "x) that will be written to disk\n";
 
         // open file for writing
         Series series = Series(
@@ -66,32 +63,31 @@ int main(int argc, char *argv[])
           cout << "Created an empty series in parallel with "
                << mpi_size << " MPI ranks\n";
 
-        MeshRecordComponent id =
+        MeshRecordComponent mymesh =
             series
                 .iterations[1]
-                .meshes["id"][MeshRecordComponent::SCALAR];
+                .meshes["mymesh"][MeshRecordComponent::SCALAR];
 
-        Datatype datatype = determineDatatype(local_data);
-        Extent dataset_extent = {static_cast< long unsigned int >(mpi_size)};
-        Dataset dataset = Dataset(datatype, dataset_extent);
+        // example 1D domain decomposition in first index
+        Datatype datatype = determineDatatype<float>();
+        Extent global_extent = {10ul * mpi_size, 300};
+        Dataset dataset = Dataset(datatype, global_extent);
 
         if( 0 == mpi_rank )
-            cout << "Created a Dataset of size " << dataset.extent[0]
+            cout << "Prepared a Dataset of size " << dataset.extent[0]
+                 << "x" << dataset.extent[1]
                  << " and Datatype " << dataset.dtype << '\n';
 
-        id.resetDataset(dataset);
+        mymesh.resetDataset(dataset);
         if( 0 == mpi_rank )
-            cout << "Set the global on-disk Dataset properties for the scalar field id in iteration 1\n";
+            cout << "Set the global Dataset properties for the scalar field mymesh in iteration 1\n";
 
-        series.flush();
+        // example shows a 1D domain decomposition in first index
+        Offset chunk_offset = {10ul * mpi_rank, 0};
+        Extent chunk_extent = {10, 300};
+        mymesh.storeChunk(local_data, chunk_offset, chunk_extent);
         if( 0 == mpi_rank )
-            cout << "File structure has been written to disk\n";
-
-        Offset chunk_offset = {static_cast< long unsigned int >(mpi_rank)};
-        Extent chunk_extent = {1};
-        id.storeChunk(local_data, chunk_offset, chunk_extent);
-        if( 0 == mpi_rank )
-            cout << "Stored a single chunk per MPI rank containing its contribution, "
+            cout << "Registered a single chunk per MPI rank containing its contribution, "
                     "ready to write content to disk\n";
 
         series.flush();
