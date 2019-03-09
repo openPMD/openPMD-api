@@ -120,11 +120,14 @@ Optional language bindings:
 
 [![Spack Package](https://img.shields.io/badge/spack.io-openpmd--api-brightgreen.svg)](https://spack.io)
 [![Conda Package](https://img.shields.io/badge/conda.io-openpmd--api-brightgreen.svg)](https://anaconda.org/conda-forge/openpmd-api)
-[![PyPI Package](https://img.shields.io/badge/pypi.org-openPMD--api-yellow.svg)](https://pypi.org/project/openPMD-api)
+[![PyPI Package](https://img.shields.io/badge/pypi.org-openpmd--api-yellow.svg)](https://pypi.org/project/openPMD-api)
+[![From Source](https://img.shields.io/badge/from_source-CMake-brightgreen.svg)](https://cmake.org)
 
 Choose *one* of the install methods below to get started:
 
 ### [Spack](https://spack.io)
+
+[![Spack Status](https://img.shields.io/badge/method-recommended-brightgreen.svg)](https://spack.io)
 
 ```bash
 # optional:               +python +adios1 -mpi
@@ -135,6 +138,7 @@ spack load -r openpmd-api
 ### [Conda](https://conda.io)
 
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/openpmd-api.svg)](https://anaconda.org/conda-forge/openpmd-api)
+[![Conda Status](https://img.shields.io/badge/method-recommended-brightgreen.svg)](https://anaconda.org/conda-forge/openpmd-api)
 [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/openpmd-api.svg)](https://anaconda.org/conda-forge/openpmd-api)
 
 ```bash
@@ -146,15 +150,27 @@ conda install -c conda-forge openpmd-api
 
 [![PyPI Version](https://img.shields.io/pypi/v/openPMD-api.svg)](https://pypi.org/project/openPMD-api)
 [![PyPI Format](https://img.shields.io/pypi/format/openPMD-api.svg)](https://pypi.org/project/openPMD-api)
-[![PyPI Status](https://img.shields.io/badge/status-experimental-yellow.svg)](https://pypi.org/project/openPMD-api)
+[![PyPI Status](https://img.shields.io/badge/method-experimental-yellow.svg)](https://pypi.org/project/openPMD-api)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/openPMD-api.svg)](https://pypi.org/project/openPMD-api)
 
+Behind the scenes, this install method *compiles from source* against the found installations of HDF5, ADIOS and/or MPI (in system paths, from other package managers, or loaded via a module system, ...).
+The current status for this install method is *experimental*.
+Please feel free to [report](https://github.com/openPMD/openPMD-api/issues/new/choose) how this works for you.
+
 ```bash
-# optional:            [mpi] --user
-pip install openPMD-api
+# optional:             --user
+pip install openpmd-api
+```
+
+or with MPI support:
+```bash
+# optional:                                --user
+openPMD_USE_MPI=ON pip install openpmd-api
 ```
 
 ### From Source
+
+[![Source Status](https://img.shields.io/badge/method-advanced-brightgreen.svg)](https://cmake.org)
 
 openPMD can then be installed using [CMake](https://cmake.org/):
 

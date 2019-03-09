@@ -47,6 +47,8 @@ class CMakeBuild(build_ext):
             '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
             '-DCMAKE_PYTHON_OUTPUT_DIRECTORY=' + extdir,
             '-DPYTHON_EXECUTABLE=' + sys.executable,
+            # variants
+            '-DopenPMD_USE_MPI:BOOL=' + openPMD_USE_MPI,
             # skip building tests & examples
             '-DBUILD_TESTING:BOOL=OFF',
             '-DBUILD_EXAMPLES:BOOL=OFF',
@@ -95,9 +97,22 @@ class CMakeBuild(build_ext):
 with open('./README.md', encoding='utf-8') as f:
     long_description = f.read()
 
+# Allow to control options via environment vars.
+# Work-around for https://github.com/pypa/setuptools/issues/1712
+# note: changed default for MPI
+openPMD_USE_MPI = os.environ.get('openPMD_USE_MPI', 'OFF')
+
+# https://cmake.org/cmake/help/v3.0/command/if.html
+if openPMD_USE_MPI.upper() in ['1', 'ON', 'YES', 'TRUE', 'YES']:
+    openPMD_USE_MPI = "ON"
+else:
+    openPMD_USE_MPI = "OFF"
+
 # Get the package requirements from the requirements.txt file
 with open('./requirements.txt') as f:
     install_requires = [line.strip('\n') for line in f.readlines()]
+    if openPMD_USE_MPI == "ON":
+        install_requires.append('mpi4py>=2.1.0')
 
 # keyword reference:
 #   https://packaging.python.org/guides/distributing-packages-using-setuptools
@@ -128,9 +143,13 @@ setup(
     python_requires='>=3.5, <3.8',
     # tests_require=['pytest'],
     install_requires=install_requires,
-    extras_require={
-        'mpi': ['mpi4py'],
-    },
+    # we would like to use this mechanism, but pip / setuptools do not
+    # influence the build and build_ext with it.
+    # therefore, we use environment vars to control.
+    # ref: https://github.com/pypa/setuptools/issues/1712
+    # extras_require={
+    #     'mpi': ['mpi4py>=2.1.0'],
+    # },
     # cmdclass={'test': PyTest},
     # platforms='any',
     classifiers=[

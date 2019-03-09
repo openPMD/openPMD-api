@@ -42,7 +42,7 @@ Other
 - NLohmann-JSON: updated to 3.5.0+ #467
 - Docs:
 
-  - PyPI install method #450 #451
+  - PyPI install method #450 #451 #497
   - more info on MPI #449
   - new "first steps" section #473 #478
   - update invasive test info #474
