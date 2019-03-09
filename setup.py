@@ -119,7 +119,7 @@ with open('./requirements.txt') as f:
 setup(
     name='openPMD-api',
     # note PEP-440 syntax: x.y.zaN but x.y.z.devN
-    version='0.7.1.dev',
+    version='0.8.0a',
     author='Fabian Koller, Franz Poeschel, Axel Huebl',
     author_email='f.koller@hzdr.de, f.poeschel@hzdr.de, a.huebl@hzdr.de',
     maintainer='Axel Huebl',
