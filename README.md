@@ -25,10 +25,10 @@ Where supported, openPMD-api implements both serial and MPI parallel I/O capabil
 
 ### C++
 
-[![C++11][api-cpp]](https://isocpp.org/) ![C++11 API: Beta][dev-beta]
+[![C++11][api-cpp]](https://isocpp.org/) ![C++11 API: Alpha][dev-alpha]
 
 [api-cpp]: https://img.shields.io/badge/language-C%2B%2B11-yellowgreen.svg "C++11 API"
-[dev-beta]: https://img.shields.io/badge/phase-beta-yellowgreen.svg "Status: Beta"
+[dev-alpha]: https://img.shields.io/badge/phase-alpha-yellowgreen.svg "Status: Alpha"
 
 ```cpp
 #include <openPMD/openPMD.hpp>
@@ -57,7 +57,7 @@ for( auto const& i : s.iterations ) {
 
 ### Python
 
-[![Python3][api-py3]](https://www.python.org/) ![Python3 API: Beta][dev-beta]
+[![Python3][api-py3]](https://www.python.org/) ![Python3 API: Alpha][dev-alpha]
 
 [api-py3]: https://img.shields.io/badge/language-Python3-yellowgreen.svg "Python3 API"
 

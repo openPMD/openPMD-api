@@ -3,13 +3,12 @@
 Changelog
 =========
 
-0.8.0-beta
-----------
-**Date:** 2019-02-18
+0.8.0-alpha
+-----------
+**Date:** 2019-03-09
 
 Python mpi4py and Slice Support
 
-This release opens the "beta" phase of openPMD-api.
 We implemented MPI support for the Python frontend via ``mpi4py`` and added ``[]``-slice access to ``Record_Component`` loads and stores.
 A bug requiring write permissions for read-only series was fixed and memory provided by users is now properly checked for being contiguous.
 Introductory chapters in the manual have been greatly extended.
