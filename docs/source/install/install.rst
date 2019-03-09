@@ -67,8 +67,15 @@ Please feel free to `report <https://github.com/openPMD/openPMD-api/issues/new/c
 
 .. code-block:: bash
 
-   # optional:            [mpi] --user
-   pip install openPMD-api
+   # optional:             --user
+   pip install openpmd-api
+
+or with MPI support:
+
+.. code-block:: bash
+
+   # optional:                                --user
+   openPMD_USE_MPI=ON pip install openpmd-api
 
 .. _install-cmake:
 
