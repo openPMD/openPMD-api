@@ -13,6 +13,16 @@ RECURSIVE         = YES
 JAVADOC_AUTOBRIEF = YES
 USE_MDFILE_AS_MAINPAGE = README.md
 
+# "enable" all frontends and backends
+PREDEFINED        = openPMD_HAVE_MPI=1 \
+                    openPMD_HAVE_JSON=1 \
+                    openPMD_HAVE_HDF5=1 \
+                    openPMD_HAVE_ADIOS1=1 \
+                    openPMD_HAVE_ADIOS2=1 \
+                    openPMD_HAVE_PYTHON=1 \
+                    OPENPMD_private:=private \
+                    OPENPMD_protected:=protected
+
 # ideally, you want to warn on missing doc coverage!
 WARN_IF_UNDOCUMENTED = NO
 WARN_NO_PARAMDOC = NO
