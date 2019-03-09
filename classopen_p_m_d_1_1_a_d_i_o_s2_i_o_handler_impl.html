@@ -65,12 +65,93 @@ $(function() {
 </div>
 </div><!-- top -->
 <div class="header">
+  <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="classopen_p_m_d_1_1_a_d_i_o_s2_i_o_handler_impl-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">openPMD::ADIOS2IOHandlerImpl Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:a8badd8a447128db0b7161fbe683fa199"><td class="memItemLeft" align="right" valign="top"><a id="a8badd8a447128db0b7161fbe683fa199"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>ArgumentMap</b> = std::map&lt; std::string, ParameterArgument &gt;</td></tr>
+<tr class="separator:a8badd8a447128db0b7161fbe683fa199"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:a16d552bae90ab1c4f1a94a58dea439d9"><td class="memItemLeft" align="right" valign="top"><a id="a16d552bae90ab1c4f1a94a58dea439d9"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>ADIOS2IOHandlerImpl</b> (<a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler.html">AbstractIOHandler</a> *)</td></tr>
+<tr class="separator:a16d552bae90ab1c4f1a94a58dea439d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a735dacb32e9d560de4ba662cfeb1d684"><td class="memItemLeft" align="right" valign="top"><a id="a735dacb32e9d560de4ba662cfeb1d684"></a>
+virtual std::future&lt; void &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>flush</b> ()</td></tr>
+<tr class="separator:a735dacb32e9d560de4ba662cfeb1d684"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abfa54f0c0a7d6452f8ac9ba5fcb3386a"><td class="memItemLeft" align="right" valign="top"><a id="abfa54f0c0a7d6452f8ac9ba5fcb3386a"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>createFile</b> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, ArgumentMap const &amp;)</td></tr>
+<tr class="separator:abfa54f0c0a7d6452f8ac9ba5fcb3386a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a692d84e7ddbae650983e93430b090a75"><td class="memItemLeft" align="right" valign="top"><a id="a692d84e7ddbae650983e93430b090a75"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>createPath</b> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, ArgumentMap const &amp;)</td></tr>
+<tr class="separator:a692d84e7ddbae650983e93430b090a75"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adcaa528d254d3909acb428396e46d35f"><td class="memItemLeft" align="right" valign="top"><a id="adcaa528d254d3909acb428396e46d35f"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>createDataset</b> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, ArgumentMap const &amp;)</td></tr>
+<tr class="separator:adcaa528d254d3909acb428396e46d35f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7d468abd077aba3dea605078295069b5"><td class="memItemLeft" align="right" valign="top"><a id="a7d468abd077aba3dea605078295069b5"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>extendDataset</b> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, ArgumentMap const &amp;)</td></tr>
+<tr class="separator:a7d468abd077aba3dea605078295069b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2d3b73e46751b22728410e7423dd4ff"><td class="memItemLeft" align="right" valign="top"><a id="ab2d3b73e46751b22728410e7423dd4ff"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>openFile</b> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, ArgumentMap const &amp;)</td></tr>
+<tr class="separator:ab2d3b73e46751b22728410e7423dd4ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7d62fe777cd06beba0660d434c44f036"><td class="memItemLeft" align="right" valign="top"><a id="a7d62fe777cd06beba0660d434c44f036"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>openPath</b> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, ArgumentMap const &amp;)</td></tr>
+<tr class="separator:a7d62fe777cd06beba0660d434c44f036"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a52b37392d9d0eb79367f9fde317e1453"><td class="memItemLeft" align="right" valign="top"><a id="a52b37392d9d0eb79367f9fde317e1453"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>openDataset</b> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, ArgumentMap &amp;)</td></tr>
+<tr class="separator:a52b37392d9d0eb79367f9fde317e1453"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaf479db8a621fc4e6a918c33d47668a0"><td class="memItemLeft" align="right" valign="top"><a id="aaf479db8a621fc4e6a918c33d47668a0"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>deleteFile</b> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, ArgumentMap const &amp;)</td></tr>
+<tr class="separator:aaf479db8a621fc4e6a918c33d47668a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6f1929d77890c9b741720542c112b06c"><td class="memItemLeft" align="right" valign="top"><a id="a6f1929d77890c9b741720542c112b06c"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>deletePath</b> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, ArgumentMap const &amp;)</td></tr>
+<tr class="separator:a6f1929d77890c9b741720542c112b06c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aed93383814cefd0513d3ce654be6f549"><td class="memItemLeft" align="right" valign="top"><a id="aed93383814cefd0513d3ce654be6f549"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>deleteDataset</b> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, ArgumentMap const &amp;)</td></tr>
+<tr class="separator:aed93383814cefd0513d3ce654be6f549"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9f3d0c0db3f17cabee2659e4fab98b90"><td class="memItemLeft" align="right" valign="top"><a id="a9f3d0c0db3f17cabee2659e4fab98b90"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>deleteAttribute</b> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, ArgumentMap const &amp;)</td></tr>
+<tr class="separator:a9f3d0c0db3f17cabee2659e4fab98b90"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8f9723b7e1eb03796f311610884fe34c"><td class="memItemLeft" align="right" valign="top"><a id="a8f9723b7e1eb03796f311610884fe34c"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>writeDataset</b> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, ArgumentMap const &amp;)</td></tr>
+<tr class="separator:a8f9723b7e1eb03796f311610884fe34c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a76a4a2a45ad4fc34abdea88009a680c7"><td class="memItemLeft" align="right" valign="top"><a id="a76a4a2a45ad4fc34abdea88009a680c7"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>writeAttribute</b> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, ArgumentMap const &amp;)</td></tr>
+<tr class="separator:a76a4a2a45ad4fc34abdea88009a680c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2f7257d97fa38448acc037a3b23d9e27"><td class="memItemLeft" align="right" valign="top"><a id="a2f7257d97fa38448acc037a3b23d9e27"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>readDataset</b> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, ArgumentMap &amp;)</td></tr>
+<tr class="separator:a2f7257d97fa38448acc037a3b23d9e27"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0512a3971308ad6b8141667548888783"><td class="memItemLeft" align="right" valign="top"><a id="a0512a3971308ad6b8141667548888783"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>readAttribute</b> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, ArgumentMap &amp;)</td></tr>
+<tr class="separator:a0512a3971308ad6b8141667548888783"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3ac59cea6b30822fe38598d66bead02e"><td class="memItemLeft" align="right" valign="top"><a id="a3ac59cea6b30822fe38598d66bead02e"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>listPaths</b> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, ArgumentMap &amp;)</td></tr>
+<tr class="separator:a3ac59cea6b30822fe38598d66bead02e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1b8e0c04ef5dfd341c1032bcd6b9fab5"><td class="memItemLeft" align="right" valign="top"><a id="a1b8e0c04ef5dfd341c1032bcd6b9fab5"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>listDatasets</b> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, ArgumentMap &amp;)</td></tr>
+<tr class="separator:a1b8e0c04ef5dfd341c1032bcd6b9fab5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6e6535a5f62baec58d428122aef2d73b"><td class="memItemLeft" align="right" valign="top"><a id="a6e6535a5f62baec58d428122aef2d73b"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>listAttributes</b> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, ArgumentMap &amp;)</td></tr>
+<tr class="separator:a6e6535a5f62baec58d428122aef2d73b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a6c6ff055d068c06d2dcfea739fe4a8b6"><td class="memItemLeft" align="right" valign="top"><a id="a6c6ff055d068c06d2dcfea739fe4a8b6"></a>
+<a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler.html">AbstractIOHandler</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>m_handler</b></td></tr>
+<tr class="separator:a6c6ff055d068c06d2dcfea739fe4a8b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/tmp/tmp.fZRXpUDjwc/openPMD-api/include/openPMD/IO/ADIOS/<a class="el" href="_a_d_i_o_s2_i_o_handler_8hpp_source.html">ADIOS2IOHandler.hpp</a></li>
+<li>/tmp/tmp.nUZc9CM2xb/openPMD-api/include/openPMD/IO/ADIOS/<a class="el" href="_a_d_i_o_s2_i_o_handler_8hpp_source.html">ADIOS2IOHandler.hpp</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

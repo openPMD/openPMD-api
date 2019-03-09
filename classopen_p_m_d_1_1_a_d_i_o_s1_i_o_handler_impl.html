@@ -65,12 +65,888 @@ $(function() {
 </div>
 </div><!-- top -->
 <div class="header">
+  <div class="summary">
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pro-attribs">Protected Attributes</a> &#124;
+<a href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">openPMD::ADIOS1IOHandlerImpl Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<hr/>The documentation for this class was generated from the following file:<ul>
-<li>/tmp/tmp.fZRXpUDjwc/openPMD-api/include/openPMD/IO/ADIOS/<a class="el" href="_a_d_i_o_s1_i_o_handler_impl_8hpp_source.html">ADIOS1IOHandlerImpl.hpp</a></li>
+<div class="dynheader">
+Inheritance diagram for openPMD::ADIOS1IOHandlerImpl:</div>
+<div class="dyncontent">
+ <div class="center">
+  <img src="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.png" usemap="#openPMD::ADIOS1IOHandlerImpl_map" alt=""/>
+  <map id="openPMD::ADIOS1IOHandlerImpl_map" name="openPMD::ADIOS1IOHandlerImpl_map">
+<area href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html" alt="openPMD::AbstractIOHandlerImpl" shape="rect" coords="0,0,201,24"/>
+</map>
+ </div></div>
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
+Public Member Functions</h2></td></tr>
+<tr class="memitem:a9b04c64177bfe7abfe29f7b07e663968"><td class="memItemLeft" align="right" valign="top"><a id="a9b04c64177bfe7abfe29f7b07e663968"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>ADIOS1IOHandlerImpl</b> (<a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler.html">AbstractIOHandler</a> *)</td></tr>
+<tr class="separator:a9b04c64177bfe7abfe29f7b07e663968"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8f3504c6080f291b2936c3f9a96a2de0"><td class="memItemLeft" align="right" valign="top"><a id="a8f3504c6080f291b2936c3f9a96a2de0"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>init</b> ()</td></tr>
+<tr class="separator:a8f3504c6080f291b2936c3f9a96a2de0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a746f305eb9a7a05d787b768373df221a"><td class="memItemLeft" align="right" valign="top"><a id="a746f305eb9a7a05d787b768373df221a"></a>
+std::future&lt; void &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>flush</b> () override</td></tr>
+<tr class="separator:a746f305eb9a7a05d787b768373df221a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6422a5898330dbb8627e3712300fae94"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html#a6422a5898330dbb8627e3712300fae94">createFile</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::CREATE_FILE &gt; const &amp;) override</td></tr>
+<tr class="memdesc:a6422a5898330dbb8627e3712300fae94"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new file in physical storage, possibly overriding an existing file.  <a href="#a6422a5898330dbb8627e3712300fae94">More...</a><br /></td></tr>
+<tr class="separator:a6422a5898330dbb8627e3712300fae94"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab0df8504766454b96ccdb677c739b989"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html#ab0df8504766454b96ccdb677c739b989">createPath</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::CREATE_PATH &gt; const &amp;) override</td></tr>
+<tr class="memdesc:ab0df8504766454b96ccdb677c739b989"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create all necessary groups for a path, possibly recursively.  <a href="#ab0df8504766454b96ccdb677c739b989">More...</a><br /></td></tr>
+<tr class="separator:ab0df8504766454b96ccdb677c739b989"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaec53b0f23308ad9e38d1284ce65f677"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html#aaec53b0f23308ad9e38d1284ce65f677">createDataset</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::CREATE_DATASET &gt; const &amp;) override</td></tr>
+<tr class="memdesc:aaec53b0f23308ad9e38d1284ce65f677"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new dataset of given type, extent and storage properties.  <a href="#aaec53b0f23308ad9e38d1284ce65f677">More...</a><br /></td></tr>
+<tr class="separator:aaec53b0f23308ad9e38d1284ce65f677"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a04586f99f4927e37895e69f40b016573"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html#a04586f99f4927e37895e69f40b016573">extendDataset</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::EXTEND_DATASET &gt; const &amp;) override</td></tr>
+<tr class="memdesc:a04586f99f4927e37895e69f40b016573"><td class="mdescLeft">&#160;</td><td class="mdescRight">Increase the extent of an existing dataset.  <a href="#a04586f99f4927e37895e69f40b016573">More...</a><br /></td></tr>
+<tr class="separator:a04586f99f4927e37895e69f40b016573"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a43dc1969f61f27a44432650bdab1b33a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html#a43dc1969f61f27a44432650bdab1b33a">openFile</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::OPEN_FILE &gt; const &amp;) override</td></tr>
+<tr class="memdesc:a43dc1969f61f27a44432650bdab1b33a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Open an existing file assuming it conforms to openPMD.  <a href="#a43dc1969f61f27a44432650bdab1b33a">More...</a><br /></td></tr>
+<tr class="separator:a43dc1969f61f27a44432650bdab1b33a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a02f4eaa396e166ef6e0eb36e238d676c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html#a02f4eaa396e166ef6e0eb36e238d676c">openPath</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::OPEN_PATH &gt; const &amp;) override</td></tr>
+<tr class="memdesc:a02f4eaa396e166ef6e0eb36e238d676c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Open all contained groups in a path, possibly recursively.  <a href="#a02f4eaa396e166ef6e0eb36e238d676c">More...</a><br /></td></tr>
+<tr class="separator:a02f4eaa396e166ef6e0eb36e238d676c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf2494006be374755b06b3f051de4ad3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html#adf2494006be374755b06b3f051de4ad3">openDataset</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::OPEN_DATASET &gt; &amp;) override</td></tr>
+<tr class="memdesc:adf2494006be374755b06b3f051de4ad3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Open an existing dataset and determine its datatype and extent.  <a href="#adf2494006be374755b06b3f051de4ad3">More...</a><br /></td></tr>
+<tr class="separator:adf2494006be374755b06b3f051de4ad3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af361243e9acb2647836d388ce8688a18"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html#af361243e9acb2647836d388ce8688a18">deleteFile</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::DELETE_FILE &gt; const &amp;) override</td></tr>
+<tr class="memdesc:af361243e9acb2647836d388ce8688a18"><td class="mdescLeft">&#160;</td><td class="mdescRight">Delete an existing file from physical storage.  <a href="#af361243e9acb2647836d388ce8688a18">More...</a><br /></td></tr>
+<tr class="separator:af361243e9acb2647836d388ce8688a18"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2bfbb84e4a9c4cf9a1cb1225b77b641e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html#a2bfbb84e4a9c4cf9a1cb1225b77b641e">deletePath</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::DELETE_PATH &gt; const &amp;) override</td></tr>
+<tr class="memdesc:a2bfbb84e4a9c4cf9a1cb1225b77b641e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Delete all objects within an existing path.  <a href="#a2bfbb84e4a9c4cf9a1cb1225b77b641e">More...</a><br /></td></tr>
+<tr class="separator:a2bfbb84e4a9c4cf9a1cb1225b77b641e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1da6b48d01e55a6172284e9c14bbe5bc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html#a1da6b48d01e55a6172284e9c14bbe5bc">deleteDataset</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::DELETE_DATASET &gt; const &amp;) override</td></tr>
+<tr class="memdesc:a1da6b48d01e55a6172284e9c14bbe5bc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Delete an existing dataset.  <a href="#a1da6b48d01e55a6172284e9c14bbe5bc">More...</a><br /></td></tr>
+<tr class="separator:a1da6b48d01e55a6172284e9c14bbe5bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a12a19af7e80d17e715dd240193ed9cc1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html#a12a19af7e80d17e715dd240193ed9cc1">deleteAttribute</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::DELETE_ATT &gt; const &amp;) override</td></tr>
+<tr class="memdesc:a12a19af7e80d17e715dd240193ed9cc1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Delete an existing attribute.  <a href="#a12a19af7e80d17e715dd240193ed9cc1">More...</a><br /></td></tr>
+<tr class="separator:a12a19af7e80d17e715dd240193ed9cc1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0824e8e8dbf95801d3d2b549c93d65c8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html#a0824e8e8dbf95801d3d2b549c93d65c8">writeDataset</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::WRITE_DATASET &gt; const &amp;) override</td></tr>
+<tr class="memdesc:a0824e8e8dbf95801d3d2b549c93d65c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write a chunk of data into an existing dataset.  <a href="#a0824e8e8dbf95801d3d2b549c93d65c8">More...</a><br /></td></tr>
+<tr class="separator:a0824e8e8dbf95801d3d2b549c93d65c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a989388dccacac9b51b51f5a93e66b6d2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html#a989388dccacac9b51b51f5a93e66b6d2">writeAttribute</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::WRITE_ATT &gt; const &amp;) override</td></tr>
+<tr class="memdesc:a989388dccacac9b51b51f5a93e66b6d2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a single attribute and fill the value, possibly overwriting an existing attribute.  <a href="#a989388dccacac9b51b51f5a93e66b6d2">More...</a><br /></td></tr>
+<tr class="separator:a989388dccacac9b51b51f5a93e66b6d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aab89ba7d6bd30c1ce74310e11e9f4107"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html#aab89ba7d6bd30c1ce74310e11e9f4107">readDataset</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::READ_DATASET &gt; &amp;) override</td></tr>
+<tr class="memdesc:aab89ba7d6bd30c1ce74310e11e9f4107"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read a chunk of data from an existing dataset.  <a href="#aab89ba7d6bd30c1ce74310e11e9f4107">More...</a><br /></td></tr>
+<tr class="separator:aab89ba7d6bd30c1ce74310e11e9f4107"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acb5f1c9619d3c6d4c61d113e6e893fe5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html#acb5f1c9619d3c6d4c61d113e6e893fe5">readAttribute</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::READ_ATT &gt; &amp;) override</td></tr>
+<tr class="memdesc:acb5f1c9619d3c6d4c61d113e6e893fe5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read the value of an existing attribute.  <a href="#acb5f1c9619d3c6d4c61d113e6e893fe5">More...</a><br /></td></tr>
+<tr class="separator:acb5f1c9619d3c6d4c61d113e6e893fe5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a44190eecb7edb744ea57a4b25ce0b7a1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html#a44190eecb7edb744ea57a4b25ce0b7a1">listPaths</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::LIST_PATHS &gt; &amp;) override</td></tr>
+<tr class="memdesc:a44190eecb7edb744ea57a4b25ce0b7a1"><td class="mdescLeft">&#160;</td><td class="mdescRight">List all paths/sub-groups inside a group, non-recursively.  <a href="#a44190eecb7edb744ea57a4b25ce0b7a1">More...</a><br /></td></tr>
+<tr class="separator:a44190eecb7edb744ea57a4b25ce0b7a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0fcf7b9595a0477fe1377b5df84e022a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html#a0fcf7b9595a0477fe1377b5df84e022a">listDatasets</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::LIST_DATASETS &gt; &amp;) override</td></tr>
+<tr class="memdesc:a0fcf7b9595a0477fe1377b5df84e022a"><td class="mdescLeft">&#160;</td><td class="mdescRight">List all datasets inside a group, non-recursively.  <a href="#a0fcf7b9595a0477fe1377b5df84e022a">More...</a><br /></td></tr>
+<tr class="separator:a0fcf7b9595a0477fe1377b5df84e022a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a770a05548a5f2863a220732e4f9b43b6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html#a770a05548a5f2863a220732e4f9b43b6">listAttributes</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::LIST_ATTS &gt; &amp;) override</td></tr>
+<tr class="memdesc:a770a05548a5f2863a220732e4f9b43b6"><td class="mdescLeft">&#160;</td><td class="mdescRight">List all attributes associated with an object.  <a href="#a770a05548a5f2863a220732e4f9b43b6">More...</a><br /></td></tr>
+<tr class="separator:a770a05548a5f2863a220732e4f9b43b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9cd5f78f2c7c99a976ac42a754a25580"><td class="memItemLeft" align="right" valign="top"><a id="a9cd5f78f2c7c99a976ac42a754a25580"></a>
+virtual int64_t&#160;</td><td class="memItemRight" valign="bottom"><b>open_write</b> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *)</td></tr>
+<tr class="separator:a9cd5f78f2c7c99a976ac42a754a25580"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa92cf50e92c34f431b8c3fb3510f15f8"><td class="memItemLeft" align="right" valign="top"><a id="aa92cf50e92c34f431b8c3fb3510f15f8"></a>
+virtual ADIOS_FILE *&#160;</td><td class="memItemRight" valign="bottom"><b>open_read</b> (std::string const &amp;name)</td></tr>
+<tr class="separator:aa92cf50e92c34f431b8c3fb3510f15f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9e63d143524d7e96db3105b7dd672970"><td class="memItemLeft" align="right" valign="top"><a id="a9e63d143524d7e96db3105b7dd672970"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>close</b> (int64_t)</td></tr>
+<tr class="separator:a9e63d143524d7e96db3105b7dd672970"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a91f0dbd79d0d45aab939e9a4c3ec3543"><td class="memItemLeft" align="right" valign="top"><a id="a91f0dbd79d0d45aab939e9a4c3ec3543"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>close</b> (ADIOS_FILE *)</td></tr>
+<tr class="separator:a91f0dbd79d0d45aab939e9a4c3ec3543"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a156cac79c43c65041a396c5456a5279c"><td class="memItemLeft" align="right" valign="top"><a id="a156cac79c43c65041a396c5456a5279c"></a>
+int64_t&#160;</td><td class="memItemRight" valign="bottom"><b>initialize_group</b> (std::string const &amp;name)</td></tr>
+<tr class="separator:a156cac79c43c65041a396c5456a5279c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a87bd580ebeef772cb45ff654a96390b6"><td class="memItemLeft" align="right" valign="top"><a id="a87bd580ebeef772cb45ff654a96390b6"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>flush_attribute</b> (int64_t group, std::string const &amp;name, <a class="el" href="classopen_p_m_d_1_1_attribute.html">Attribute</a> const &amp;)</td></tr>
+<tr class="separator:a87bd580ebeef772cb45ff654a96390b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classopen_p_m_d_1_1_abstract_i_o_handler_impl"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classopen_p_m_d_1_1_abstract_i_o_handler_impl')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html">openPMD::AbstractIOHandlerImpl</a></td></tr>
+<tr class="memitem:a72ebfa6a03e69d9198c29df56b3c162b inherit pub_methods_classopen_p_m_d_1_1_abstract_i_o_handler_impl"><td class="memItemLeft" align="right" valign="top"><a id="a72ebfa6a03e69d9198c29df56b3c162b"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>AbstractIOHandlerImpl</b> (<a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler.html">AbstractIOHandler</a> *handler)</td></tr>
+<tr class="separator:a72ebfa6a03e69d9198c29df56b3c162b inherit pub_methods_classopen_p_m_d_1_1_abstract_i_o_handler_impl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
+Protected Attributes</h2></td></tr>
+<tr class="memitem:a9efa748856fc033329ae2d9e801ba15d"><td class="memItemLeft" align="right" valign="top"><a id="a9efa748856fc033329ae2d9e801ba15d"></a>
+ADIOS_READ_METHOD&#160;</td><td class="memItemRight" valign="bottom"><b>m_readMethod</b></td></tr>
+<tr class="separator:a9efa748856fc033329ae2d9e801ba15d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acf1f42abd38a97273971f555f8799935"><td class="memItemLeft" align="right" valign="top"><a id="acf1f42abd38a97273971f555f8799935"></a>
+std::unordered_map&lt; <a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, std::shared_ptr&lt; std::string &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>m_filePaths</b></td></tr>
+<tr class="separator:acf1f42abd38a97273971f555f8799935"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa8157fe80040d5156323adb660faedd2"><td class="memItemLeft" align="right" valign="top"><a id="aa8157fe80040d5156323adb660faedd2"></a>
+std::unordered_map&lt; std::shared_ptr&lt; std::string &gt;, int64_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>m_groups</b></td></tr>
+<tr class="separator:aa8157fe80040d5156323adb660faedd2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9b862d34ce5ac80ea423a9d45183eac2"><td class="memItemLeft" align="right" valign="top"><a id="a9b862d34ce5ac80ea423a9d45183eac2"></a>
+std::unordered_map&lt; std::shared_ptr&lt; std::string &gt;, bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>m_existsOnDisk</b></td></tr>
+<tr class="separator:a9b862d34ce5ac80ea423a9d45183eac2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1bdc4852e66b764f9b5567436e46ef9b"><td class="memItemLeft" align="right" valign="top"><a id="a1bdc4852e66b764f9b5567436e46ef9b"></a>
+std::unordered_map&lt; std::shared_ptr&lt; std::string &gt;, int64_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>m_openWriteFileHandles</b></td></tr>
+<tr class="separator:a1bdc4852e66b764f9b5567436e46ef9b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a14c6cfc2efd328535beb547724e7b716"><td class="memItemLeft" align="right" valign="top"><a id="a14c6cfc2efd328535beb547724e7b716"></a>
+std::unordered_map&lt; std::shared_ptr&lt; std::string &gt;, ADIOS_FILE *&gt;&#160;</td><td class="memItemRight" valign="bottom"><b>m_openReadFileHandles</b></td></tr>
+<tr class="separator:a14c6cfc2efd328535beb547724e7b716"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1edc7b05427ee253a811aef2668001bc"><td class="memItemLeft" align="right" valign="top"><a id="a1edc7b05427ee253a811aef2668001bc"></a>
+std::unordered_map&lt; ADIOS_FILE *, std::vector&lt; ADIOS_SELECTION *&gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>m_scheduledReads</b></td></tr>
+<tr class="separator:a1edc7b05427ee253a811aef2668001bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a20c0ac62bd8863a72f8150ca000466"><td class="memItemLeft" align="right" valign="top"><a id="a7a20c0ac62bd8863a72f8150ca000466"></a>
+std::unordered_map&lt; int64_t, std::unordered_map&lt; std::string, <a class="el" href="classopen_p_m_d_1_1_attribute.html">Attribute</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>m_attributeWrites</b></td></tr>
+<tr class="separator:a7a20c0ac62bd8863a72f8150ca000466"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
+Additional Inherited Members</h2></td></tr>
+<tr class="inherit_header pub_attribs_classopen_p_m_d_1_1_abstract_i_o_handler_impl"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_classopen_p_m_d_1_1_abstract_i_o_handler_impl')"><img src="closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html">openPMD::AbstractIOHandlerImpl</a></td></tr>
+<tr class="memitem:acf92f586e73df15e9f6ff9edf0ec855d inherit pub_attribs_classopen_p_m_d_1_1_abstract_i_o_handler_impl"><td class="memItemLeft" align="right" valign="top"><a id="acf92f586e73df15e9f6ff9edf0ec855d"></a>
+<a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler.html">AbstractIOHandler</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>m_handler</b></td></tr>
+<tr class="separator:acf92f586e73df15e9f6ff9edf0ec855d inherit pub_attribs_classopen_p_m_d_1_1_abstract_i_o_handler_impl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="aaec53b0f23308ad9e38d1284ce65f677"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaec53b0f23308ad9e38d1284ce65f677">&#9670;&nbsp;</a></span>createDataset()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void openPMD::ADIOS1IOHandlerImpl::createDataset </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::CREATE_DATASET &gt; const &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Create a new dataset of given type, extent and storage properties. </p>
+<p class="">The operation should fail if m_handler-&gt;accessType is AccessType::READ_ONLY. The path may contain multiple levels (e.g. group/dataset). The new dataset should have the name parameters.name. This name should not start or end with a slash ("/"). The new dataset should be of datatype parameters.dtype. The new dataset should have an extent of parameters.extent. If possible, the new dataset should be extensible. If possible, the new dataset should be divided into chunks with size parameters.chunkSize. If possible, the new dataset should be compressed according to parameters.compression. This may be format-specific. If possible, the new dataset should be transformed accoring to parameters.transform. This may be format-specific. The Writables file position should correspond to the newly created dataset. The <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> should be marked written when the operation completes successfully. </p>
+
+<p>Implements <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a71531a8a7d4efeb210a4c58e0fd1ea2e">openPMD::AbstractIOHandlerImpl</a>.</p>
+
+</div>
+</div>
+<a id="a6422a5898330dbb8627e3712300fae94"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6422a5898330dbb8627e3712300fae94">&#9670;&nbsp;</a></span>createFile()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void openPMD::ADIOS1IOHandlerImpl::createFile </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::CREATE_FILE &gt; const &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Create a new file in physical storage, possibly overriding an existing file. </p>
+<p class="">The operation should fail if m_handler-&gt;accessType is AccessType::READ_ONLY. The new file should be located in m_handler-&gt;directory. The new file should have the filename parameters.name. The filename should include the correct corresponding filename extension. Any existing file should be overwritten if m_handler-&gt;accessType is AccessType::CREATE. The Writables file position should correspond to the root group "/" of the hierarchy. The <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> should be marked written when the operation completes successfully. </p>
+
+<p>Implements <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#ad501362ff4599acc66d2a3358b5a9149">openPMD::AbstractIOHandlerImpl</a>.</p>
+
+</div>
+</div>
+<a id="ab0df8504766454b96ccdb677c739b989"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab0df8504766454b96ccdb677c739b989">&#9670;&nbsp;</a></span>createPath()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void openPMD::ADIOS1IOHandlerImpl::createPath </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::CREATE_PATH &gt; const &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Create all necessary groups for a path, possibly recursively. </p>
+<p class="">The operation should fail if m_handler-&gt;accessType is AccessType::READ_ONLY. The path parameters.path may contain multiple levels (e.g. first/second/third/). The Writables file position should correspond to the complete newly created path (i.e. first/second/third/ should be assigned to the Writables file position). The <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> should be marked written when the operation completes successfully. </p>
+
+<p>Implements <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a99ebc0452e248b2059995f5b78a67a87">openPMD::AbstractIOHandlerImpl</a>.</p>
+
+</div>
+</div>
+<a id="a12a19af7e80d17e715dd240193ed9cc1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a12a19af7e80d17e715dd240193ed9cc1">&#9670;&nbsp;</a></span>deleteAttribute()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void openPMD::ADIOS1IOHandlerImpl::deleteAttribute </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::DELETE_ATT &gt; const &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Delete an existing attribute. </p>
+<p class="">The operation should fail if m_handler-&gt;accessType is AccessType::READ_ONLY. The operation should pass if the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> was not marked written. The attribute should be associated with the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> and have the name parameters.name before deletion. The attribute should not be accessible in physical storage after the operation completes successfully. </p>
+
+<p>Implements <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#acd6c3134388a0f69713ab44ae6219f3e">openPMD::AbstractIOHandlerImpl</a>.</p>
+
+</div>
+</div>
+<a id="a1da6b48d01e55a6172284e9c14bbe5bc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1da6b48d01e55a6172284e9c14bbe5bc">&#9670;&nbsp;</a></span>deleteDataset()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void openPMD::ADIOS1IOHandlerImpl::deleteDataset </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::DELETE_DATASET &gt; const &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Delete an existing dataset. </p>
+<p class="">The operation should fail if m_handler-&gt;accessType is AccessType::READ_ONLY. The operation should pass if the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> was not marked written. The dataset should have the name parameters.name. This name should not start or end with a slash ("/"). It may also contain the current dataset ".". The dataset should not be accessible in physical storage after the operation completes successfully. The Writables file position should be set to an invalid position (i.e. the pointer should be a nullptr). The <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> should be marked not written when the operation completes successfully. </p>
+
+<p>Implements <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a05d1487961ae77a8fd17d4fed5b69649">openPMD::AbstractIOHandlerImpl</a>.</p>
+
+</div>
+</div>
+<a id="af361243e9acb2647836d388ce8688a18"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af361243e9acb2647836d388ce8688a18">&#9670;&nbsp;</a></span>deleteFile()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void openPMD::ADIOS1IOHandlerImpl::deleteFile </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::DELETE_FILE &gt; const &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Delete an existing file from physical storage. </p>
+<p class="">The operation should fail if m_handler-&gt;accessType is AccessType::READ_ONLY. The operation should pass if the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> was not marked written. All handles that correspond to the file should be closed before deletion. The file to delete should have the filename parameters.name. The filename should include the correct corresponding filename extension. The Writables file position should be set to an invalid position (i.e. the pointer should be a nullptr). The <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> should be marked not written when the operation completes successfully. </p>
+
+<p>Implements <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#acede3c709083bee5b89e19ee883e843f">openPMD::AbstractIOHandlerImpl</a>.</p>
+
+</div>
+</div>
+<a id="a2bfbb84e4a9c4cf9a1cb1225b77b641e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2bfbb84e4a9c4cf9a1cb1225b77b641e">&#9670;&nbsp;</a></span>deletePath()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void openPMD::ADIOS1IOHandlerImpl::deletePath </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::DELETE_PATH &gt; const &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Delete all objects within an existing path. </p>
+<p class="">The operation should fail if m_handler-&gt;accessType is AccessType::READ_ONLY. The operation should pass if the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> was not marked written. The path parameters.path may contain multiple levels (e.g. first/second/third/). This path should be relative (i.e. it should not start with a slash "/"). It may also contain the current group ".". All groups and datasets starting from the path should not be accessible in physical storage after the operation completes successfully. The Writables file position should be set to an invalid position (i.e. the pointer should be a nullptr). The <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> should be marked not written when the operation completes successfully. </p>
+
+<p>Implements <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#af006b4c69e15e42b4cccdce9be407d92">openPMD::AbstractIOHandlerImpl</a>.</p>
+
+</div>
+</div>
+<a id="a04586f99f4927e37895e69f40b016573"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a04586f99f4927e37895e69f40b016573">&#9670;&nbsp;</a></span>extendDataset()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void openPMD::ADIOS1IOHandlerImpl::extendDataset </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::EXTEND_DATASET &gt; const &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Increase the extent of an existing dataset. </p>
+<p class="">The operation should fail if m_handler-&gt;accessType is AccessType::READ_ONLY. The operation should fail if the dataset does not yet exist. The dataset should have the name parameters.name. This name should not start or end with a slash ("/"). The operation should fail if the new extent is not strictly large in every dimension. The dataset should have an extent of parameters.extent. </p>
+
+<p>Implements <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#ac67863e045adde85a9b5cf743e97c3c4">openPMD::AbstractIOHandlerImpl</a>.</p>
+
+</div>
+</div>
+<a id="a770a05548a5f2863a220732e4f9b43b6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a770a05548a5f2863a220732e4f9b43b6">&#9670;&nbsp;</a></span>listAttributes()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void openPMD::ADIOS1IOHandlerImpl::listAttributes </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::LIST_ATTS &gt; &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>List all attributes associated with an object. </p>
+<p class="">The operation should fail if the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> was not marked written. The attribute should be associated with the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a>. The list of attribute names should be stored in the location indicated by the pointer parameters.attributes. </p>
+
+<p>Implements <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a4ebaa1891bf8502801ca9ec7cbb7b427">openPMD::AbstractIOHandlerImpl</a>.</p>
+
+</div>
+</div>
+<a id="a0fcf7b9595a0477fe1377b5df84e022a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0fcf7b9595a0477fe1377b5df84e022a">&#9670;&nbsp;</a></span>listDatasets()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void openPMD::ADIOS1IOHandlerImpl::listDatasets </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::LIST_DATASETS &gt; &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>List all datasets inside a group, non-recursively. </p>
+<p class="">The operation should fail if the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> was not marked written. The operation should fail if the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> is not a group. The list of dataset names should be stored in the location indicated by the pointer parameters.datasets. </p>
+
+<p>Implements <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#aeb665b347a03054539e4a4cc8777a24a">openPMD::AbstractIOHandlerImpl</a>.</p>
+
+</div>
+</div>
+<a id="a44190eecb7edb744ea57a4b25ce0b7a1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a44190eecb7edb744ea57a4b25ce0b7a1">&#9670;&nbsp;</a></span>listPaths()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void openPMD::ADIOS1IOHandlerImpl::listPaths </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::LIST_PATHS &gt; &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>List all paths/sub-groups inside a group, non-recursively. </p>
+<p class="">The operation should fail if the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> was not marked written. The operation should fail if the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> is not a group. The list of group names should be stored in the location indicated by the pointer parameters.paths. </p>
+
+<p>Implements <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#ab4ac6771e110b8606cdcf20ce11a7373">openPMD::AbstractIOHandlerImpl</a>.</p>
+
+</div>
+</div>
+<a id="adf2494006be374755b06b3f051de4ad3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adf2494006be374755b06b3f051de4ad3">&#9670;&nbsp;</a></span>openDataset()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void openPMD::ADIOS1IOHandlerImpl::openDataset </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::OPEN_DATASET &gt; &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Open an existing dataset and determine its datatype and extent. </p>
+<p class="">The opened dataset should be located in a group below the group of the Writables parent writable-&gt;parent. The opened datasets name should be parameters.name. This name should not start or end with a slash ("/"). The opened datasets datatype should be stored in *(parameters.dtype). The opened datasets extent should be stored in *(parameters.extent). The Writables file position should correspond to the opened dataset. The <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> should be marked written when the operation completes successfully. </p>
+
+<p>Implements <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a884b0da0f517cbfcd36e359a6fdbbff8">openPMD::AbstractIOHandlerImpl</a>.</p>
+
+</div>
+</div>
+<a id="a43dc1969f61f27a44432650bdab1b33a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a43dc1969f61f27a44432650bdab1b33a">&#9670;&nbsp;</a></span>openFile()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void openPMD::ADIOS1IOHandlerImpl::openFile </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::OPEN_FILE &gt; const &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Open an existing file assuming it conforms to openPMD. </p>
+<p class="">The operation should fail if m_handler-&gt;directory is not accessible. The opened file should have filename parameters.name and include the correct corresponding filename extension. The operation should not open files more than once. If possible, the file should be opened with read-only permissions if m_handler-&gt;accessType is AccessType::READ_ONLY. The Writables file position should correspond to the root group "/" of the hierarchy in the opened file. The <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> should be marked written when the operation completes successfully. </p>
+
+<p>Implements <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a5e2a624108095732530bf900bc478f53">openPMD::AbstractIOHandlerImpl</a>.</p>
+
+</div>
+</div>
+<a id="a02f4eaa396e166ef6e0eb36e238d676c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a02f4eaa396e166ef6e0eb36e238d676c">&#9670;&nbsp;</a></span>openPath()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void openPMD::ADIOS1IOHandlerImpl::openPath </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::OPEN_PATH &gt; const &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Open all contained groups in a path, possibly recursively. </p>
+<p class="">The operation should overwrite existing file positions, even when the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> was already marked written. The path parameters.path may contain multiple levels (e.g. first/second/third/). This path should be relative (i.e. it should not start with a slash "/"). The Writables file position should correspond to the complete opened path (i.e. first/second/third/ should be assigned to the Writables file position). The <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> should be marked written when the operation completes successfully. </p>
+
+<p>Implements <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#af1b85b4bf85435804def41a2b335c952">openPMD::AbstractIOHandlerImpl</a>.</p>
+
+</div>
+</div>
+<a id="acb5f1c9619d3c6d4c61d113e6e893fe5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acb5f1c9619d3c6d4c61d113e6e893fe5">&#9670;&nbsp;</a></span>readAttribute()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void openPMD::ADIOS1IOHandlerImpl::readAttribute </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::READ_ATT &gt; &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Read the value of an existing attribute. </p>
+<p class="">The operation should fail if the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> was not marked written. The operation should fail if the attribute does not exist. The attribute should be associated with the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a> and have the name parameters.name. This name should not contain a slash ("/"). The attribute datatype should be stored in the location indicated by the pointer parameters.dtype. The attribute value should be stored as a generic Variant::resource in the location indicated by the pointer parameters.resource. All datatypes of Datatype should be supported in a type-safe way. </p>
+
+<p>Implements <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a97199cf24a6c858495efe510f0385d8e">openPMD::AbstractIOHandlerImpl</a>.</p>
+
+</div>
+</div>
+<a id="aab89ba7d6bd30c1ce74310e11e9f4107"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aab89ba7d6bd30c1ce74310e11e9f4107">&#9670;&nbsp;</a></span>readDataset()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void openPMD::ADIOS1IOHandlerImpl::readDataset </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::READ_DATASET &gt; &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Read a chunk of data from an existing dataset. </p>
+<p class="">The dataset should be associated with the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a>. The operation should fail if the dataset does not exist. The operation should fail if the chunk extent parameters.extent is not smaller or equals in every dimension. The operation should fail if chunk positions parameters.offset+parameters.extent do not reside inside the dataset. The dataset should match the dataype parameters.dtype. The data parameters.data should be a cast-to-void pointer to a flattened version of the chunk data. The chunk should be stored row-major. The region of the chunk should be written to the location indicated by the pointer after the operation completes successfully. </p>
+
+<p>Implements <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a16ffcaed2481904cec1b870916696c47">openPMD::AbstractIOHandlerImpl</a>.</p>
+
+</div>
+</div>
+<a id="a989388dccacac9b51b51f5a93e66b6d2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a989388dccacac9b51b51f5a93e66b6d2">&#9670;&nbsp;</a></span>writeAttribute()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void openPMD::ADIOS1IOHandlerImpl::writeAttribute </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::WRITE_ATT &gt; const &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Create a single attribute and fill the value, possibly overwriting an existing attribute. </p>
+<p class="">The operation should fail if m_handler-&gt;accessType is AccessType::READ_ONLY. The attribute should have the name parameters.name. This name should not contain a slash ("/"). The attribute should be of datatype parameters.dtype. Any existing attribute with the same name should be overwritten. If possible, only the value should be changed if the datatype stays the same. The attribute should be written to physical storage after the operation completes successfully. All datatypes of Datatype should be supported in a type-safe way. </p>
+
+<p>Implements <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#ac895fcbc53b2aea756559f7143e42b9b">openPMD::AbstractIOHandlerImpl</a>.</p>
+
+</div>
+</div>
+<a id="a0824e8e8dbf95801d3d2b549c93d65c8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0824e8e8dbf95801d3d2b549c93d65c8">&#9670;&nbsp;</a></span>writeDataset()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void openPMD::ADIOS1IOHandlerImpl::writeDataset </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::WRITE_DATASET &gt; const &amp;&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Write a chunk of data into an existing dataset. </p>
+<p class="">The operation should fail if m_handler-&gt;accessType is AccessType::READ_ONLY. The dataset should be associated with the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a>. The operation should fail if the dataset does not exist. The operation should fail if the chunk extent parameters.extent is not smaller or equals in every dimension. The operation should fail if chunk positions parameters.offset+parameters.extent do not reside inside the dataset. The dataset should match the dataype parameters.dtype. The data parameters.data is a cast-to-void pointer to a flattened version of the chunk data. It should be re-cast to the provided datatype. The chunk is stored row-major. The region of the chunk should be written to physical storage after the operation completes successully. </p>
+
+<p>Implements <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a64a29cc773e10f51ada54dd0128f87d8">openPMD::AbstractIOHandlerImpl</a>.</p>
+
+</div>
+</div>
+<hr/>The documentation for this class was generated from the following files:<ul>
+<li>/tmp/tmp.nUZc9CM2xb/openPMD-api/include/openPMD/IO/ADIOS/<a class="el" href="_a_d_i_o_s1_i_o_handler_impl_8hpp_source.html">ADIOS1IOHandlerImpl.hpp</a></li>
+<li>/tmp/tmp.nUZc9CM2xb/openPMD-api/src/IO/ADIOS/ADIOS1IOHandler.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

@@ -81,17 +81,17 @@ $(function() {
 <object type="image/svg+xml" data="https://img.shields.io/badge/phase-alpha-yellowgreen.svg" alt="Python3 API: Alpha" title="Status: Alpha"></object>
 </div>
 <div class="fragment"><div class="line">import openpmd_api</div><div class="line"></div><div class="line"><span class="comment"># ...</span></div><div class="line"></div><div class="line">series = openpmd_api.Series(<span class="stringliteral">&quot;samples/git-sample/data%T.h5&quot;</span>, openPMD.Access_Type.read_only)</div><div class="line"></div><div class="line"><span class="keywordflow">for</span> k_i, i <span class="keywordflow">in</span> series.iterations.items():</div><div class="line">    print(<span class="stringliteral">&quot;Iteration: {0}&quot;</span>.format(k_i))</div><div class="line"></div><div class="line">    <span class="keywordflow">for</span> k_m, m <span class="keywordflow">in</span> i.meshes.items():</div><div class="line">        print(<span class="stringliteral">&quot;  Mesh &#39;{0}&#39; attributes:&quot;</span>.format(k_m))</div><div class="line">        <span class="keywordflow">for</span> a <span class="keywordflow">in</span> m.attributes:</div><div class="line">            print(<span class="stringliteral">&quot;    {0}&quot;</span>.format(a))</div><div class="line"></div><div class="line">    <span class="keywordflow">for</span> k_p, p <span class="keywordflow">in</span> i.particles.items():</div><div class="line">        print(<span class="stringliteral">&quot;  Particle species &#39;{0}&#39; attributes:&quot;</span>.format(k_p))</div><div class="line">        <span class="keywordflow">for</span> a <span class="keywordflow">in</span> p.attributes:</div><div class="line">            print(<span class="stringliteral">&quot;    {0}&quot;</span>.format(a))</div></div><!-- fragment --><h3>More!</h3>
-<p class="">Curious? Our manual shows full <a href="https://openpmd-api.readthedocs.io/en/latest/usage/firststeps.html">read &amp; write examples</a>, both serial and MPI-parallel!</p>
+<p class="">Curious? Our manual shows full <a href="https://openpmd-api.readthedocs.io/en/latest/usage/firstwrite.html">read &amp; write examples</a>, both serial and MPI-parallel!</p>
 <h2>Dependencies</h2>
 <p class="">Required:</p><ul>
 <li>CMake 3.11.0+</li>
 <li>C++11 capable compiler, e.g. g++ 4.8+, clang 3.9+, VS 2015+</li>
 </ul>
 <p class="">Shipped internally in <code>share/openPMD/thirdParty/</code>:</p><ul>
-<li><a href="https://github.com/mpark/variant">MPark.Variant</a> 1.3.0+ (https://github.com/mpark/variant/blob/master/LICENSE.md "BSL-1.0")</li>
-<li><a href="https://github.com/catchorg/Catch2">Catch2</a> 2.3.0+ (<a href="https://github.com/catchorg/Catch2/blob/master/LICENSE.txt">BSL-1.0</a>)</li>
-<li><a href="https://github.com/pybind/pybind11">pybind11</a> 2.2.3+ (<a href="https://github.com/pybind/pybind11/blob/master/LICENSE">new BSD</a>)</li>
-<li><a href="https://github.com/nlohmann/json">NLohmann-JSON</a> 3.4.0+ (<a href="https://github.com/nlohmann/json/blob/develop/LICENSE.MIT">MIT</a>)</li>
+<li><a href="https://github.com/mpark/variant">MPark.Variant</a> 1.4.0+ (https://github.com/mpark/variant/blob/master/LICENSE.md "BSL-1.0")</li>
+<li><a href="https://github.com/catchorg/Catch2">Catch2</a> 2.6.1+ (<a href="https://github.com/catchorg/Catch2/blob/master/LICENSE.txt">BSL-1.0</a>)</li>
+<li><a href="https://github.com/pybind/pybind11">pybind11</a> 2.2.4+ (<a href="https://github.com/pybind/pybind11/blob/master/LICENSE">new BSD</a>)</li>
+<li><a href="https://github.com/nlohmann/json">NLohmann-JSON</a> 3.5.0+ (<a href="https://github.com/nlohmann/json/blob/develop/LICENSE.MIT">MIT</a>)</li>
 </ul>
 <p class="">Optional I/O backends:</p><ul>
 <li><a href="https://en.wikipedia.org/wiki/JSON">JSON</a></li>
@@ -105,55 +105,61 @@ $(function() {
 <p class="">Optional language bindings:</p><ul>
 <li>Python:<ul>
 <li>Python 3.5 - 3.7</li>
-<li>pybind 2.2.3+</li>
+<li>pybind 2.2.4+</li>
 <li>numpy 1.15+</li>
+<li>mpi4py 2.1+</li>
 </ul>
 </li>
 </ul>
 <h2>Installation</h2>
-<p class=""><a href="https://spack.io"></a> <a href="https://anaconda.org/conda-forge/openpmd-api"></a></p>
+<p class=""><a href="https://spack.io"></a> <a href="https://anaconda.org/conda-forge/openpmd-api"></a> <a href="https://pypi.org/project/openPMD-api"></a> <a href="https://cmake.org"></a></p>
 <p class="">Choose <em>one</em> of the install methods below to get started:</p>
 <h3><a href="https://spack.io">Spack</a></h3>
+<p class=""><a href="https://spack.io"></a></p>
 <div class="fragment"><div class="line"># optional:               +python +adios1 -mpi</div><div class="line">spack install openpmd-api</div><div class="line">spack load -r openpmd-api</div></div><!-- fragment --><h3><a href="https://conda.io">Conda</a></h3>
-<p class=""><a href="https://anaconda.org/conda-forge/openpmd-api"></a> <a href="https://anaconda.org/conda-forge/openpmd-api"></a></p>
-<div class="fragment"><div class="line"># serial version only</div><div class="line">conda install -c conda-forge openpmd-api</div></div><!-- fragment --><h3>From Source</h3>
+<p class=""><a href="https://anaconda.org/conda-forge/openpmd-api"></a> <a href="https://anaconda.org/conda-forge/openpmd-api"></a> <a href="https://anaconda.org/conda-forge/openpmd-api"></a></p>
+<div class="fragment"><div class="line"># serial version only</div><div class="line">conda install -c conda-forge openpmd-api</div></div><!-- fragment --><h3><a href="https://pypi.org">PyPI</a></h3>
+<p class=""><a href="https://pypi.org/project/openPMD-api"></a> <a href="https://pypi.org/project/openPMD-api"></a> <a href="https://pypi.org/project/openPMD-api"></a> <a href="https://pypi.org/project/openPMD-api"></a></p>
+<p class="">Behind the scenes, this install method <em>compiles from source</em> against the found installations of HDF5, ADIOS and/or MPI (in system paths, from other package managers, or loaded via a module system, ...). The current status for this install method is <em>experimental</em>. Please feel free to <a href="https://github.com/openPMD/openPMD-api/issues/new/choose">report</a> how this works for you.</p>
+<div class="fragment"><div class="line"># optional:             --user</div><div class="line">pip install openpmd-api</div></div><!-- fragment --><p class="">or with MPI support: </p><div class="fragment"><div class="line"># optional:                                --user</div><div class="line">openPMD_USE_MPI=ON pip install openpmd-api</div></div><!-- fragment --><h3>From Source</h3>
+<p class=""><a href="https://cmake.org"></a></p>
 <p class="">openPMD can then be installed using <a href="https://cmake.org/">CMake</a>:</p>
 <div class="fragment"><div class="line">git clone https://github.com/openPMD/openPMD-api.git</div><div class="line"></div><div class="line">mkdir -p openPMD-api-build</div><div class="line">cd openPMD-api-build</div><div class="line"></div><div class="line"># optional: for full tests, with unzip</div><div class="line">../openPMD-api/.travis/download_samples.sh</div><div class="line"></div><div class="line"># for own install prefix append:</div><div class="line">#   -DCMAKE_INSTALL_PREFIX=$HOME/somepath</div><div class="line"># for options append:</div><div class="line">#   -DopenPMD_USE_...=...</div><div class="line"># e.g. for python support add:</div><div class="line">#   -DopenPMD_USE_PYTHON=ON -DPYTHON_EXECUTABLE=$(which python)</div><div class="line">cmake ../openPMD-api</div><div class="line"></div><div class="line">cmake --build .</div><div class="line"></div><div class="line"># optional</div><div class="line">ctest</div><div class="line"></div><div class="line"># sudo might be required required for system paths</div><div class="line">cmake --build . --target install</div></div><!-- fragment --><p class="">The following options can be added to the <code>cmake</code> call to control features. CMake controls options with prefixed <code>-D</code>, e.g. <code>-DopenPMD_USE_MPI=OFF</code>:</p>
 <table class="markdownTable">
 <tr class="markdownTableHead">
 <th class="markdownTableHeadNone">CMake Option  </th><th class="markdownTableHeadNone">Values  </th><th class="markdownTableHeadNone">Description   </th></tr>
 <tr class="markdownTableBody" class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>openPMD_USE_MPI</code>  </td><td class="markdownTableBodyNone"><b>AUTO</b>/ON/OFF  </td><td class="markdownTableBodyNone">Enable MPI support   </td></tr>
+<td class="markdownTableBodyNone"><code>openPMD_USE_MPI</code>  </td><td class="markdownTableBodyNone"><b>AUTO</b>/ON/OFF  </td><td class="markdownTableBodyNone">Parallel, Multi-Node I/O for clusters   </td></tr>
 <tr class="markdownTableBody" class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>openPMD_USE_JSON</code>  </td><td class="markdownTableBodyNone"><b>AUTO</b>/ON/OFF  </td><td class="markdownTableBodyNone">Enable support for JSON   </td></tr>
+<td class="markdownTableBodyNone"><code>openPMD_USE_JSON</code>  </td><td class="markdownTableBodyNone"><b>AUTO</b>/ON/OFF  </td><td class="markdownTableBodyNone">JSON backend (<code>.json</code> files)   </td></tr>
 <tr class="markdownTableBody" class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>openPMD_USE_HDF5</code>  </td><td class="markdownTableBodyNone"><b>AUTO</b>/ON/OFF  </td><td class="markdownTableBodyNone">Enable support for HDF5   </td></tr>
+<td class="markdownTableBodyNone"><code>openPMD_USE_HDF5</code>  </td><td class="markdownTableBodyNone"><b>AUTO</b>/ON/OFF  </td><td class="markdownTableBodyNone">HDF5 backend (<code>.h5</code> files)   </td></tr>
 <tr class="markdownTableBody" class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>openPMD_USE_ADIOS1</code>  </td><td class="markdownTableBodyNone"><b>AUTO</b>/ON/OFF  </td><td class="markdownTableBodyNone">Enable support for ADIOS1   </td></tr>
+<td class="markdownTableBodyNone"><code>openPMD_USE_ADIOS1</code>  </td><td class="markdownTableBodyNone"><b>AUTO</b>/ON/OFF  </td><td class="markdownTableBodyNone">ADIOS1 backend (<code>.bp</code> files)   </td></tr>
 <tr class="markdownTableBody" class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>openPMD_USE_ADIOS2</code>  </td><td class="markdownTableBodyNone">AUTO/ON/**OFF**  </td><td class="markdownTableBodyNone">Enable support for ADIOS2 <sup>1</sup>   </td></tr>
+<td class="markdownTableBodyNone"><code>openPMD_USE_ADIOS2</code>  </td><td class="markdownTableBodyNone">AUTO/ON/**OFF**  </td><td class="markdownTableBodyNone">ADIOS2 backend (<code>.bp</code> files) <sup>1</sup>   </td></tr>
 <tr class="markdownTableBody" class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code>openPMD_USE_PYTHON</code>  </td><td class="markdownTableBodyNone"><b>AUTO</b>/ON/OFF  </td><td class="markdownTableBodyNone">Enable Python bindings   </td></tr>
 <tr class="markdownTableBody" class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>openPMD_USE_INVASIVE_TESTS</code>  </td><td class="markdownTableBodyNone"><b>AUTO</b>/ON/OFF  </td><td class="markdownTableBodyNone">Enable unit tests that modify source code <sup>2</sup>   </td></tr>
+<td class="markdownTableBodyNone"><code>openPMD_USE_INVASIVE_TESTS</code>  </td><td class="markdownTableBodyNone">ON/**OFF**  </td><td class="markdownTableBodyNone">Enable unit tests that modify source code <sup>2</sup>   </td></tr>
 <tr class="markdownTableBody" class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code>openPMD_USE_VERIFY</code>  </td><td class="markdownTableBodyNone"><b>ON</b>/OFF  </td><td class="markdownTableBodyNone">Enable internal VERIFY (assert) macro independent of build type <sup>3</sup>   </td></tr>
 <tr class="markdownTableBody" class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code>PYTHON_EXECUTABLE</code>  </td><td class="markdownTableBodyNone">(first found)  </td><td class="markdownTableBodyNone">Path to Python executable   </td></tr>
 </table>
-<p class=""><sup>1</sup> <em>not yet implemented</em> <sup>2</sup> <em>e.g. C++ keywords, currently disabled only for MSVC</em> <sup>3</sup> <em>this includes most pre-/post-condition checks, disabling without specific cause is highly discouraged</em></p>
+<p class=""><sup>1</sup> <em>not yet implemented</em> <sup>2</sup> <em>e.g. changes C++ visibility keywords, breaks MSVC</em> <sup>3</sup> <em>this includes most pre-/post-condition checks, disabling without specific cause is highly discouraged</em></p>
 <p class="">Additionally, the following libraries are shipped internally. The following options allow to switch to external installs:</p>
 <table class="markdownTable">
 <tr class="markdownTableHead">
 <th class="markdownTableHeadNone">CMake Option  </th><th class="markdownTableHeadNone">Values  </th><th class="markdownTableHeadNone">Library  </th><th class="markdownTableHeadNone">Version   </th></tr>
 <tr class="markdownTableBody" class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_VARIANT</code>  </td><td class="markdownTableBodyNone"><b>ON</b>/OFF  </td><td class="markdownTableBodyNone">MPark.Variant  </td><td class="markdownTableBodyNone">1.3.0+   </td></tr>
+<td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_VARIANT</code>  </td><td class="markdownTableBodyNone"><b>ON</b>/OFF  </td><td class="markdownTableBodyNone">MPark.Variant  </td><td class="markdownTableBodyNone">1.4.0+   </td></tr>
 <tr class="markdownTableBody" class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_CATCH</code>  </td><td class="markdownTableBodyNone"><b>ON</b>/OFF  </td><td class="markdownTableBodyNone">Catch2  </td><td class="markdownTableBodyNone">2.3.0+   </td></tr>
+<td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_CATCH</code>  </td><td class="markdownTableBodyNone"><b>ON</b>/OFF  </td><td class="markdownTableBodyNone">Catch2  </td><td class="markdownTableBodyNone">2.6.1+   </td></tr>
 <tr class="markdownTableBody" class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_PYBIND11</code>  </td><td class="markdownTableBodyNone"><b>ON</b>/OFF  </td><td class="markdownTableBodyNone">pybind11  </td><td class="markdownTableBodyNone">2.2.3+   </td></tr>
+<td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_PYBIND11</code>  </td><td class="markdownTableBodyNone"><b>ON</b>/OFF  </td><td class="markdownTableBodyNone">pybind11  </td><td class="markdownTableBodyNone">2.2.4+   </td></tr>
 <tr class="markdownTableBody" class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_JSON</code>  </td><td class="markdownTableBodyNone"><b>ON</b>/OFF  </td><td class="markdownTableBodyNone">NLohmann-JSON  </td><td class="markdownTableBodyNone">3.4.0+   </td></tr>
+<td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_JSON</code>  </td><td class="markdownTableBodyNone"><b>ON</b>/OFF  </td><td class="markdownTableBodyNone">NLohmann-JSON  </td><td class="markdownTableBodyNone">3.5.0+   </td></tr>
 </table>
 <p class="">By default, this will build as a static library (<code>libopenPMD.a</code>) and installs also its headers. In order to build a shared library, append <code>-DBUILD_SHARED_LIBS=ON</code> to the <code>cmake</code> command. You can only build a static or a shared library at a time.</p>
 <p class="">By default, the <code>Release</code> version is built. In order to build with debug symbols, pass <code>-DCMAKE_BUILD_TYPE=Debug</code> to your <code>cmake</code> command.</p>

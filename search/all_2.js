@@ -1,5 +1,6 @@
 var searchData=
 [
+  ['backend_5fwrite_5fslices',['backend_write_slices',['../classunittest_1_1_a_p_i_1_1_a_p_i_test_1_1_a_p_i_test.html#a6993a9dfa20c750e5592f5ab1b0ceffc',1,'unittest::API::APITest::APITest']]],
   ['basepath',['basePath',['../classopen_p_m_d_1_1_series.html#a422273507ae9975bc243a055e853bb1a',1,'openPMD::Series']]],
   ['baserecord',['BaseRecord',['../classopen_p_m_d_1_1_base_record.html',1,'openPMD']]],
   ['baserecord_3c_20meshrecordcomponent_20_3e',['BaseRecord&lt; MeshRecordComponent &gt;',['../classopen_p_m_d_1_1_base_record.html',1,'openPMD']]],

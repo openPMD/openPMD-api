@@ -22,6 +22,7 @@ var searchData=
   ['testparticlespecies',['testParticleSpecies',['../classunittest_1_1_a_p_i_1_1_a_p_i_test_1_1_a_p_i_test.html#a713d7eccbd3ab6a52f8bdfa7a5f00ce7',1,'unittest::API::APITest::APITest']]],
   ['testrecord',['testRecord',['../classunittest_1_1_a_p_i_1_1_a_p_i_test_1_1_a_p_i_test.html#a9e7d24c3346f2d46e929fff8ebb0dba6',1,'unittest::API::APITest::APITest']]],
   ['testrecord_5fcomponent',['testRecord_Component',['../classunittest_1_1_a_p_i_1_1_a_p_i_test_1_1_a_p_i_test.html#a7c9b0c9bda16a9fd68f77f60617befe1',1,'unittest::API::APITest::APITest']]],
+  ['testsliceread',['testSliceRead',['../classunittest_1_1_a_p_i_1_1_a_p_i_test_1_1_a_p_i_test.html#afa764fd1327bd42669566fd18800693d',1,'unittest::API::APITest::APITest']]],
   ['time',['time',['../classopen_p_m_d_1_1_iteration.html#a5314c6035456aab11622b7d94c9bfb84',1,'openPMD::Iteration']]],
   ['timeoffset',['timeOffset',['../classopen_p_m_d_1_1_mesh.html#a3affbfe83950d8b584d02de3e2e0574c',1,'openPMD::Mesh']]],
   ['timeunitsi',['timeUnitSI',['../classopen_p_m_d_1_1_iteration.html#a3824d680cc684644c4d3293d799df825',1,'openPMD::Iteration']]]
