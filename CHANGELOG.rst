@@ -20,6 +20,8 @@ Features
 Bug Fixes
 """""""""
 
+- warning: unused variable in JSON backend #507
+
 Other
 """""
 
