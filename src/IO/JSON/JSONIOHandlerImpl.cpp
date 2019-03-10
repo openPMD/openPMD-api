@@ -249,7 +249,7 @@ namespace openPMD
                                parameters.extent[currentdim],
                     "Cannot shrink the extent of a dataset" )
             }
-        } catch( json::basic_json::type_error & e )
+        } catch( json::basic_json::type_error & )
         {
             throw std::runtime_error( "The specified location contains no valid dataset" );
         }
@@ -1283,7 +1283,7 @@ namespace openPMD
                 dt = stringToDatatype( j["datatype"].get< std::string >( ) );
             VERIFY_ALWAYS( dt == parameters.dtype,
                 "Read/Write request does not fit the dataset's type" );
-        } catch( json::basic_json::type_error & e )
+        } catch( json::basic_json::type_error & )
         {
             throw std::runtime_error( "The given path does not contain a valid dataset." );
         }
