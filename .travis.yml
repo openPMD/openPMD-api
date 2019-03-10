@@ -20,7 +20,7 @@ env:
     - BUILD_TYPE: "Debug"
     - PYBIND11_VERSION=@2.2.4
     - USE_JSON: ON
-    - USE_SHARED: OFF
+    - USE_SHARED: ON
 
 addons:
   apt:
@@ -310,13 +310,12 @@ jobs:
         - CXX=clang++ && CC=clang
     # Clang 7.0.0 + Python 3.7.1 + Address Sanitizer + Undefined Behavior Sanitizer @ Xenial
     - <<: *test-cpp-unit
-      name: clang@7.0.0 +MPI +PY@3.7 +H5 -ADIOS1 +JSON +ASan +UBSan
+      name: clang@7.0.0 +MPI +PY@3.7 +H5 -ADIOS1 +JSON +ASan +UBSan +STATIC
       dist: xenial
       language: python
       python: "3.7"
       env:
-        - CXXSPEC="%clang@7.0.0" USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF USE_JSON=ON USE_SAMPLES=ON
-        #   USE_SHARED=ON
+        - CXXSPEC="%clang@7.0.0" USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF USE_SHARED=OFF USE_JSON=ON USE_SAMPLES=ON
         # sanitizer options: test as much as possible and suppress OpenMPI memory leaks
         - ASAN_OPTIONS=detect_stack_use_after_return=1:detect_leaks=1:check_initialization_order=true:strict_init_order=true:detect_stack_use_after_scope=1:fast_unwind_on_malloc=0
         - LSAN_OPTIONS=suppressions=${TRAVIS_BUILD_DIR}/.travis/sanitizer/clang/Leak.supp
@@ -445,13 +444,13 @@ jobs:
       script: *script-cpp-unit
     # GCC 8.1.0 + Python 3.7
     - <<: *test-cpp-unit
-      name: gcc@8.1.0 -MPI +PY@3.7 +H5 +ADIOS +SHARED
+      name: gcc@8.1.0 -MPI +PY@3.7 +H5 +ADIOS +STATIC
       language: python
       python: "3.7"
       sudo: required
       dist: xenial
       env:
-        - CXXSPEC="%gcc@8.1.0" USE_MPI=OFF USE_PYTHON=ON USE_INTERNAL_PYBIND11=OFF PYBIND11_VERSION=@2.2.4 USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SHARED=ON USE_SAMPLES=ON
+        - CXXSPEC="%gcc@8.1.0" USE_MPI=OFF USE_PYTHON=ON USE_INTERNAL_PYBIND11=OFF PYBIND11_VERSION=@2.2.4 USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SHARED=OFF USE_SAMPLES=ON
       compiler: gcc
       addons:
         apt:

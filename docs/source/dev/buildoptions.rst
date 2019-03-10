@@ -35,15 +35,15 @@ CMake Option                   Values          Description
 Shared or Static
 ----------------
 
-By default, we will build as a static library and install also its headers.
-You can only build a static (``libopenPMD.a`` or ``openPMD.lib``) or a shared library (``libopenPMD.so`` or ``openPMD.dll``) at a time.
+By default, we will build as a shared library and install also its headers.
+You can only build a static (``libopenPMD.a`` or ``openPMD.lib``) or a shared library (``libopenPMD.so`` or ``openPMD.dylib`` or ``openPMD.dll``) at a time.
 
-The following options can be tried to switch between static and shared builds and control if dependencies are linked dynamically or statically:
+The following options switch between static and shared builds and control if dependencies are linked dynamically or statically:
 
 ============================== =============== ==================================================
 CMake Option                   Values          Description
 ============================== =============== ==================================================
-``BUILD_SHARED_LIBS``          ON/**OFF**      Build the C++ API as shared library
+``BUILD_SHARED_LIBS``          **ON**/OFF      Build the C++ API as shared library
 ``HDF5_USE_STATIC_LIBRARIES``  ON/**OFF**      Require static HDF5 library
 ``ADIOS_USE_STATIC_LIBS``      ON/**OFF**      Require static ADIOS1 library
 ============================== =============== ==================================================
