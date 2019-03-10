@@ -22,6 +22,8 @@ Python
 
 - `2_read_serial.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/2_read_serial.py>`_: reading a mesh
 - `3_write_serial.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/3_write_serial.py>`_: writing a mesh
+- `4_read_parallel.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/4_read_parallel.py>`_: MPI-parallel mesh read
+- `5_write_parallel.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/5_write_parallel.py>`_: MPI-parallel mesh write
 - `7_extended_write_serial.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/7_extended_write_serial.py>`_: particle writing with patches and constant records
 - `9_particle_write_serial.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/9_particle_write_serial.py>`_: writing particles
 

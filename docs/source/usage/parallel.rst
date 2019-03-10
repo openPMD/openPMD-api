@@ -11,13 +11,33 @@ MPI is used on clusters, e.g. large-scale supercomputers, to communicate between
 Reading
 -------
 
+C++
+^^^
+
 .. literalinclude:: 4_read_parallel.cpp
    :language: cpp
    :lines: 21-
 
+Python
+^^^^^^
+
+.. literalinclude:: 4_read_parallel.py
+   :language: python3
+   :lines: 9-
+
 Writing
 -------
+
+C++
+^^^
 
 .. literalinclude:: 5_write_parallel.cpp
    :language: cpp
    :lines: 21-
+
+Python
+^^^^^^
+
+.. literalinclude:: 5_write_parallel.py
+   :language: python3
+   :lines: 9-
