@@ -17,6 +17,8 @@ Changes to "0.8.0-alpha"
 Features
 """"""""
 
+- CMake: Build a shared library by default #506
+
 Bug Fixes
 """""""""
 

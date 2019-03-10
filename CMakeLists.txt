@@ -75,6 +75,18 @@ if(NOT CMAKE_BUILD_TYPE)
         "Choose the build type, e.g. Release or Debug." FORCE)
 endif()
 
+include(CMakeDependentOption)
+
+# change CMake default (static libs):
+# build shared libs if supported by target platform
+get_property(SHARED_LIBS_SUPPORTED GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS)
+cmake_dependent_option(BUILD_SHARED_LIBS
+    "Build shared libraries (so/dylib/dll)."
+    ${SHARED_LIBS_SUPPORTED}
+    "SHARED_LIBS_SUPPORTED" OFF
+)
+mark_as_advanced(BUILD_SHARED_LIBS)
+
 include(CTest)
 # automatically defines: BUILD_TESTING, default is ON
 

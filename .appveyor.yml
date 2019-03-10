@@ -33,7 +33,7 @@ environment:
       CONDA_INSTALL_LOCN: C:\\Miniconda37
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
       platform: x86
-      SHARED: OFF
+      SHARED: ON
 
     - TARGET_ARCH: x64
       CONDA_PY: 37
