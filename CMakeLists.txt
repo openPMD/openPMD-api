@@ -372,7 +372,7 @@ if(openPMD_USE_INTERNAL_VARIANT)
     )
     message(STATUS "MPark.Variant: Using INTERNAL version 1.4.0")
 else()
-    find_package(mpark_variant 1.4.0 REQUIRED)
+    find_package(mpark_variant 1.3.0 REQUIRED) # TODO: we want 1.4.1+
     target_link_libraries(openPMD::thirdparty::mpark_variant
         INTERFACE mpark_variant)
     message(STATUS "MPark.Variant: Found version ${mpark_variant_VERSION}")
