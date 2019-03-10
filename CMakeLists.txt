@@ -728,8 +728,13 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     endif()
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # Warning C4503: "decorated name length exceeded, name was truncated"
-    # Symbols longer than 4096 chars are truncated
+    # Symbols longer than 4096 chars are truncated (and hashed instead)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4503")
+    # Yes, you should build against the same C++ runtime and with same
+    # configuration (Debug/Release). MSVC does inconvenient choices for their
+    # developers, so be it. (Our Windows-users use conda-forge builds, which
+    # are consistent.)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4251")
 endif ()
 
 
