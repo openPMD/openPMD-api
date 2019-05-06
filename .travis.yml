@@ -131,10 +131,10 @@ jobs:
     #         exit 1;
     #       fi
     # - <<: *static_code_cpp
-      name: clang-tidy@5.0.0 +MPI -PY +H5 +ADIOS1 +JSON
+      name: clang-tidy@5.0.0 +MPI -PY +H5 +ADIOS1 +ADIOS2 +JSON
       sudo: false
       env:
-        - CXXSPEC="%clang@5.0.0" USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF
+        - CXXSPEC="%clang@5.0.0" USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=ON
       addons:
         apt:
           sources:
@@ -444,7 +444,7 @@ jobs:
       script: *script-cpp-unit
     # GCC 8.1.0 + Python 3.7
     - <<: *test-cpp-unit
-      name: gcc@8.1.0 -MPI +PY@3.7 +H5 +ADIOS +STATIC
+      name: gcc@8.1.0 -MPI +PY@3.7 +H5 +ADIOS1 +STATIC
       language: python
       python: "3.7"
       sudo: required
@@ -465,7 +465,7 @@ jobs:
       script: *script-cpp-unit
     # GCC 6.4.0 + Python 3.6
     - <<: *test-cpp-unit
-      name: gcc@6.4.0 -MPI +PY@3.6 +H5@1.8.13 -ADIOS
+      name: gcc@6.4.0 -MPI +PY@3.6 +H5@1.8.13 -ADIOS1
       language: python
       python: "3.6"
       env:
@@ -480,7 +480,7 @@ jobs:
       script: *script-cpp-unit
     # GCC 4.8.5 + Python 3.5.5
     - <<: *test-cpp-unit
-      name: gcc@4.8.5 -MPI +PY@3.5 +H5 -ADIOS
+      name: gcc@4.8.5 -MPI +PY@3.5 +H5 -ADIOS1
       language: python
       python: "3.5"
       env:
@@ -701,10 +701,10 @@ install:
       spack load adios$ADIOS1_VERSION $SPACK_VAR_MPI ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
     fi
   - if [ $USE_ADIOS2 == "ON" ]; then
-      travis_wait spack install
-        adios2
+      travis_wait 30 spack install
+        adios2$ADIOS2_VERSION
         $SPACK_VAR_MPI
         $CXXSPEC &&
-      spack load adios2 $SPACK_VAR_MPI $CXXSPEC;
+      spack load adios2$ADIOS2_VERSION $SPACK_VAR_MPI $CXXSPEC;
     fi
   - spack clean -a
