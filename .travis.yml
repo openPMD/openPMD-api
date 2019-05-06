@@ -75,14 +75,12 @@ jobs:
     #   sudo: true
       language: python
       python: "3.6"
+      dist: xenial
       compiler: clang
     #   env:
     #     - CXXSPEC="%clang@5.0.0" USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF
     #   addons:
     #     apt:
-    #       sources:
-    #         - ubuntu-toolchain-r-test
-    #         - llvm-toolchain-trusty-5.0
     #       packages:
     #         - llvm-5.0-dev
     #         - libclang-5.0-dev
@@ -137,9 +135,6 @@ jobs:
         - CXXSPEC="%clang@5.0.0" USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=ON
       addons:
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-5.0
           packages:
             - clang-5.0
             - clang-tidy-5.0
@@ -196,6 +191,7 @@ jobs:
       stage: 'C++ Unit Tests'
       name: clang@5.0.0 -MPI -PY +H5 -ADIOS1
       language: cpp
+      dist: xenial
       env:
         - CXXSPEC="%clang@5.0.0" USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: clang
@@ -204,8 +200,12 @@ jobs:
           <<: *apt_common_sources
           packages: &clang_deps
             - environment-modules
+            - clang-5.0
+            - clang-tidy-5.0
             - gfortran-4.9
             - g++-4.9  # CMake build
+      before_install:            
+        - CXX=clang++-5.0 && CC=clang-5.0
       script: &script-cpp-unit
         - mkdir -p $HOME/build
         - cd $HOME/build
@@ -268,10 +268,11 @@ jobs:
             - libopenmpi-dev
             - openmpi-bin
       script: *script-cpp-unit
+      before_install:
+        - CXX=clang++-5.0 && CC=clang-5.0
     # Clang 6.0.0 + Python 3.6.3 @ Xenial
     - <<: *test-cpp-unit
       name: clang@6.0.0 -MPI +PY@3.6 +H5 +ADIOS1 libc++
-      dist: xenial
       language: python
       python: "3.6"
       env:
@@ -342,6 +343,8 @@ jobs:
         - CXXSPEC="%clang@9.1.0" USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: clang
       script: *script-cpp-unit
+      before_install:
+        - CXX=clang++ && CC=clang
     # Clang 10.0.0-apple + Python 3.7.2 @ OSX "mojave" with libc++
     - <<: *test-cpp-unit
       name: AppleClang@10.0.0 -MPI +PY@3.7 +H5 +ADIOS1 libc++
@@ -353,9 +356,12 @@ jobs:
         - CXXFLAGS="${CXXFLAGS} -stdlib=libc++" CXXSPEC="%clang@10.0.0" USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: clang
       script: *script-cpp-unit
+      before_install:
+        - CXX=clang++ && CC=clang
     # GCC 4.9.4
     - <<: *test-cpp-unit
       name: gcc@4.9.4 -MPI -PY +H5 +ADIOS1
+      dist: trusty
       language: python
       python: "3.6"
       env:
@@ -374,6 +380,7 @@ jobs:
       script: *script-cpp-unit
     - <<: *test-cpp-unit
       name: gcc@4.9.4 +MPI -PY +H5 +ADIOS1
+      dist: trusty
       language: python
       python: "3.6"
       env:
@@ -388,13 +395,14 @@ jobs:
             - openmpi-bin
       before_install: *gcc49_init
       script: *script-cpp-unit
-    # GCC 7.3.0
+    # GCC 7.4.0
     - <<: *test-cpp-unit
-      name: gcc@7.3.0 -MPI -PY +H5 +ADIOS1 -JSON
+      name: gcc@7.4.0 -MPI -PY +H5 +ADIOS1 -JSON
+      dist: trusty
       language: python
       python: "3.6"
       env:
-        - CXXSPEC="%gcc@7.3.0" USE_MPI=OFF USE_PYTHON=OFF USE_JSON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
+        - CXXSPEC="%gcc@7.4.0" USE_MPI=OFF USE_PYTHON=OFF USE_JSON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: gcc
       addons:
         apt:
@@ -408,11 +416,12 @@ jobs:
         - CXX=g++-7 && CC=gcc-7
       script: *script-cpp-unit
     - <<: *test-cpp-unit
-      name: gcc@7.3.0 +MPI -PY +H5 +ADIOS1
+      name: gcc@7.4.0 +MPI -PY +H5 +ADIOS1
+      dist: trusty
       language: python
       python: "3.6"
       env:
-        - CXXSPEC="%gcc@7.3.0" USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
+        - CXXSPEC="%gcc@7.4.0" USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: gcc
       addons:
         apt:
@@ -423,13 +432,14 @@ jobs:
             - openmpi-bin
       before_install: *gcc73_init
       script: *script-cpp-unit
-    # GCC 6.4.0 + Python 3.5
+    # GCC 6.5.0 + Python 3.5
     - <<: *test-cpp-unit
-      name: gcc@6.4.0 -MPI +PY@3.5 +H5 +ADIOS@1.13.1
+      name: gcc@6.5.0 -MPI +PY@3.5 +H5 +ADIOS@1.13.1
+      dist: trusty
       language: python
       python: "3.5"
       env:
-        - CXXSPEC="%gcc@6.4.0" USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON ADIOS1_VERSION=@1.13.1 USE_ADIOS2=OFF USE_SAMPLES=ON
+        - CXXSPEC="%gcc@6.5.0" USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON ADIOS1_VERSION=@1.13.1 USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: gcc
       addons:
         apt:
@@ -463,13 +473,14 @@ jobs:
       before_install: &gcc81_init
         - CXX=g++-8 && CC=gcc-8
       script: *script-cpp-unit
-    # GCC 6.4.0 + Python 3.6
+    # GCC 6.5.0 + Python 3.6
     - <<: *test-cpp-unit
-      name: gcc@6.4.0 -MPI +PY@3.6 +H5@1.8.13 -ADIOS1
+      name: gcc@6.5.0 -MPI +PY@3.6 +H5@1.8.13 -ADIOS1
+      dist: trusty
       language: python
       python: "3.6"
       env:
-        - CXXSPEC="%gcc@6.4.0" USE_MPI=OFF USE_PYTHON=ON USE_INTERNAL_PYBIND11=OFF USE_HDF5=ON HDF5_VERSION=@1.8.13 USE_ADIOS1=OFF USE_ADIOS2=OFF USE_SAMPLES=ON
+        - CXXSPEC="%gcc@6.5.0" USE_MPI=OFF USE_PYTHON=ON USE_INTERNAL_PYBIND11=OFF USE_HDF5=ON HDF5_VERSION=@1.8.13 USE_ADIOS1=OFF USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: gcc
       addons:
         apt:
@@ -481,6 +492,7 @@ jobs:
     # GCC 4.8.5 + Python 3.5.5
     - <<: *test-cpp-unit
       name: gcc@4.8.5 -MPI +PY@3.5 +H5 -ADIOS1
+      dist: trusty
       language: python
       python: "3.5"
       env:
@@ -503,13 +515,13 @@ jobs:
     ###########################################################################
     - &code_coverage
       stage: 'Code Coverage'
-      name: gcc@7.3.0 +coveralls
+      name: gcc@7.4.0 +coveralls
       sudo: required
       language: python
       python: "3.6"
       compiler: gcc
       env:
-        - CXXSPEC="%gcc@7.3.0" USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF
+        - CXXSPEC="%gcc@7.4.0" USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF
       addons:
         apt:
           <<: *apt_common_sources
@@ -659,9 +671,9 @@ install:
   - SPACK_VAR_MPI="~mpi";
   - if [ $USE_MPI == "ON" ]; then
       travis_wait spack install
-        openmpi@1.6.5
+        openmpi
         $CXXSPEC &&
-      spack load openmpi@1.6.5 $CXXSPEC;
+      spack load openmpi $CXXSPEC;
       SPACK_VAR_MPI="+mpi";
     fi
   - if [ $USE_PYTHON == "ON" ]; then
@@ -701,6 +713,8 @@ install:
       spack load adios$ADIOS1_VERSION $SPACK_VAR_MPI ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
     fi
   - if [ $USE_ADIOS2 == "ON" ]; then
+      echo "adios2$ADIOS2_VERSION $SPACK_VAR_MPI $CXXSPEC";
+      spack spec adios2$ADIOS2_VERSION $SPACK_VAR_MPI $CXXSPEC;
       travis_wait 30 spack install
         adios2$ADIOS2_VERSION
         $SPACK_VAR_MPI

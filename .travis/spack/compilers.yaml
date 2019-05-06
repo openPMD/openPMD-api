@@ -32,10 +32,10 @@ compilers:
     extra_rpaths: []
     flags: {}
     modules: []
-    operating_system: ubuntu14.04
+    operating_system: ubuntu16.04
     paths:
-      cc: /usr/local/clang-5.0.0/bin/clang
-      cxx: /usr/local/clang-5.0.0/bin/clang++
+      cc: /usr/lib/llvm-5.0/bin/clang
+      cxx: /usr/lib/llvm-5.0/bin/clang++
       f77: /usr/bin/gfortran-4.9
       fc: /usr/bin/gfortran-4.9
     spec: clang@5.0.0
@@ -105,7 +105,7 @@ compilers:
       cxx: /usr/bin/g++-6
       f77: /usr/bin/gfortran-6
       fc: /usr/bin/gfortran-6
-    spec: gcc@6.4.0
+    spec: gcc@6.5.0
     target: x86_64
 - compiler:
     environment: {}
@@ -118,7 +118,7 @@ compilers:
       cxx: /usr/bin/g++-7
       f77: /usr/bin/gfortran-7
       fc: /usr/bin/gfortran-7
-    spec: gcc@7.3.0
+    spec: gcc@7.4.0
     target: x86_64
 - compiler:
     environment: {}
