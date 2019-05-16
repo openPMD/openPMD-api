@@ -181,6 +181,18 @@ Mesh::setTimeOffset(T to)
     return *this;
 }
 
+template
+Mesh&
+Mesh::setTimeOffset( long double );
+
+template
+Mesh&
+Mesh::setTimeOffset( double );
+
+template
+Mesh&
+Mesh::setTimeOffset( float );
+
 void
 Mesh::flush_impl(std::string const& name)
 {

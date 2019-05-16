@@ -40,6 +40,19 @@ auto const backends = getBackends();
 inline
 void constant_scalar(std::string file_ending)
 {
+    Mesh::Geometry const geometry = Mesh::Geometry::spherical;
+    std::string const geometryParameters = "dummyGeometryParameters";
+    Mesh::DataOrder const dataOrder = Mesh::DataOrder::F;
+    std::vector< double > const gridSpacing { 1.0, 2.0, 3.0 };
+    std::vector< double > const gridGlobalOffset{ 11.0, 22.0, 33.0 };
+    double const gridUnitSI = 3.14;
+    std::vector< std::string > const axisLabels { "x", "y", "z" };
+    std::map< UnitDimension, double > const unitDimensions{
+        {UnitDimension::I, 1.0},
+        {UnitDimension::J, 2.0}
+    };
+    double const timeOffset = 1234.0;
+
     {
         // constant scalar
         Series s = Series("../samples/constant_scalar." + file_ending, AccessType::CREATE);
@@ -57,6 +70,18 @@ void constant_scalar(std::string file_ending)
         unsigned int e{0};
         std::generate(E.get(), E.get() + 6, [&e]{ return e++; });
         E_y.storeChunk(E, {0, 0, 0}, {1, 2, 3});
+
+        // store a number of predefined attributes in E
+        Mesh & E_mesh = s.iterations[1].meshes["E"];
+        E_mesh.setGeometry( geometry );
+        E_mesh.setGeometryParameters( geometryParameters );
+        E_mesh.setDataOrder( dataOrder );
+        E_mesh.setGridSpacing( gridSpacing );
+        E_mesh.setGridGlobalOffset( gridGlobalOffset );
+        E_mesh.setGridUnitSI( gridUnitSI );
+        E_mesh.setAxisLabels( axisLabels );
+        E_mesh.setUnitDimension(unitDimensions);
+        E_mesh.setTimeOffset( timeOffset );
 
         // constant scalar
         auto pos = s.iterations[1].particles["e"]["position"][RecordComponent::SCALAR];
@@ -124,6 +149,17 @@ void constant_scalar(std::string file_ending)
         REQUIRE(!s.iterations[1].particles["e"]["velocity"]["y"].containsAttribute("shape"));
         REQUIRE(!s.iterations[1].particles["e"]["velocity"]["y"].containsAttribute("value"));
         REQUIRE(s.iterations[1].particles["e"]["velocity"]["y"].getExtent() == Extent{3, 2, 1});
+
+        Mesh & E_mesh = s.iterations[1].meshes["E"];
+        REQUIRE( E_mesh.geometry() == geometry );
+        REQUIRE( E_mesh.geometryParameters() == geometryParameters );
+        REQUIRE( E_mesh.dataOrder() == dataOrder );
+        REQUIRE( E_mesh.gridSpacing< double >() == gridSpacing );
+        REQUIRE( E_mesh.gridGlobalOffset() == gridGlobalOffset );
+        REQUIRE( E_mesh.gridUnitSI() == gridUnitSI );
+        REQUIRE( E_mesh.axisLabels() == axisLabels );
+        // REQUIRE( E_mesh.unitDimension() == unitDimensions );
+        REQUIRE( E_mesh.timeOffset< double >() == timeOffset );
     }
 }
 
