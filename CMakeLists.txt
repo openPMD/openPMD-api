@@ -537,7 +537,7 @@ endif()
 
 # ADIOS2 Backend
 if(openPMD_HAVE_ADIOS2)
-    target_link_libraries(openPMD PUBLIC ADIOS2::ADIOS2)
+    target_link_libraries(openPMD PUBLIC adios2::adios2)
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS2=1")
 else()
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS2=0")
