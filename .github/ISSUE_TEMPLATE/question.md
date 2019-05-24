@@ -1,7 +1,7 @@
 ---
 name: Usage question
 about: Anything unclear or not well documented
-
+labels: question
 ---
 
 **What do you want to achieve, please describe.**
