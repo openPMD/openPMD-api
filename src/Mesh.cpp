@@ -47,7 +47,7 @@ Mesh::geometry() const
     else if( "thetaMode" == ret ) { return Geometry::thetaMode; }
     else if( "cylindrical" == ret ) { return Geometry::cylindrical; }
     else if( "spherical" == ret ) { return Geometry::spherical; }
-    else { throw std::runtime_error("Unkonwn geometry " + ret); }
+    else { throw std::runtime_error("Unknown geometry " + ret); }
 }
 
 Mesh&
@@ -253,7 +253,7 @@ Mesh::read()
         else if( "spherical" == tmpGeometry )
             setGeometry(Geometry::spherical);
         else
-            throw std::runtime_error("Unkonwn geometry " + tmpGeometry);
+            throw std::runtime_error("Unknown geometry " + tmpGeometry);
     }
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'geometry'");

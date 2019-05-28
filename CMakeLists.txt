@@ -768,7 +768,7 @@ write_basic_package_version_file("openPMDConfigVersion.cmake"
 
 # Installs ####################################################################
 #
-# headers, libraries and exectuables
+# headers, libraries and executables
 set(openPMD_INSTALL_TARGET_NAMES openPMD)
 
 if(openPMD_HAVE_ADIOS1)

@@ -300,7 +300,7 @@ void init_Attributable(py::module &m) {
             return attr.setAttribute( key, value );
         })
 
-        // Plain Python arrays and plain python lists of homogenous, fundamental Python types
+        // Plain Python arrays and plain python lists of homogeneous, fundamental Python types
         // not specialized in C++ API
         // .def("set_attribute", &Attributable::setAttribute< std::vector< bool > >)
         // there is only str in Python, chars are strings

@@ -31,7 +31,7 @@
 
 namespace openPMD
 {
-/** @brief Container for N-dimensional, homogenous Records.
+/** @brief Container for N-dimensional, homogeneous Records.
  *
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#mesh-based-records
  */
@@ -83,7 +83,7 @@ public:
     std::string geometryParameters() const;
     /** Set additional parameters for the geometry, separated by a @code ; @endcode.
      *
-     * @note    Seperation constraint is not verified by API.
+     * @note    Separation constraint is not verified by API.
      * @param   geometryParameters  additional parameters for the geometry, separated by a @code ; @endcode.
      * @return  Reference to modified mesh.
      */
@@ -96,7 +96,7 @@ public:
     /** Set the memory layout of N-dimensional data.
      *
      * @param   dataOrder   memory layout of N-dimensional data.
-     * @return  Refernce to modified mesh.
+     * @return  Reference to modified mesh.
      */
     Mesh& setDataOrder(DataOrder dataOrder);
 
@@ -154,7 +154,7 @@ public:
     /** Set the powers of the 7 base measures characterizing the record's unit in SI.
      *
      * @param   unitDimension   map containing pairs of (UnitDimension, double) that represent the power of the particular base.
-     * @return  Refence to modified mesh.
+     * @return  Reference to modified mesh.
      */
     Mesh& setUnitDimension(std::map< UnitDimension, double > const& unitDimension);
 

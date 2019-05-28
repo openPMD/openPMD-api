@@ -158,7 +158,7 @@ OPENPMD_protected:
     /** Retrieve the value of a floating point Attribute of user-defined precision with ensured type-safety.
      *
      * @note    Since the precision of certain Attributes is intentionally left
-     *          unspecified in the openPMD standard, this provides a mechnism to
+     *          unspecified in the openPMD standard, this provides a mechanism to
      *          retrieve those values without giving up type-safety.
      * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#conventions-throughout-these-documents
      * @note    If the supplied and stored floating point precision are not the
@@ -174,7 +174,7 @@ OPENPMD_protected:
     /** Retrieve a vector of values of a floating point Attributes of user-defined precision with ensured type-safety.
      *
      * @note    Since the precision of certain Attributes is intentionally left
-     *          unspecified in the openPMD standard, this provides a mechnism to
+     *          unspecified in the openPMD standard, this provides a mechanism to
      *          retrieve those values without giving up type-safety.
      * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#conventions-throughout-these-documents
      * @note    If the supplied and stored floating point precision are not the
@@ -203,7 +203,7 @@ private:
     std::shared_ptr< A_MAP > m_attributes;
 }; // Attributable
 
-//TODO explicitly instanciate Attributable::setAttribute for all T in Datatype
+//TODO explicitly instantiate Attributable::setAttribute for all T in Datatype
 template< typename T >
 inline bool
 Attributable::setAttribute(std::string const& key, T const& value)

@@ -36,7 +36,7 @@
 namespace openPMD
 {
 //TODO This might have to be a Writable
-//Reasoning - Flushes are expeted to be done often.
+//Reasoning - Flushes are expected to be done often.
 //Attributes should not be written unless dirty.
 //At the moment the dirty check is done at Attributable level,
 //resulting in all of an Attributables Attributes being written to disk even if only one changes

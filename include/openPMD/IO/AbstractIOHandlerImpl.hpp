@@ -234,7 +234,7 @@ public:
    * The operation should fail if chunk positions parameters.offset+parameters.extent do not reside inside the dataset.
    * The dataset should match the dataype parameters.dtype.
    * The data parameters.data is a cast-to-void pointer to a flattened version of the chunk data. It should be re-cast to the provided datatype. The chunk is stored row-major.
-   * The region of the chunk should be written to physical storage after the operation completes successully.
+   * The region of the chunk should be written to physical storage after the operation completes successfully.
    */
   virtual void writeDataset(Writable*, Parameter< Operation::WRITE_DATASET > const&) = 0;
   /** Create a single attribute and fill the value, possibly overwriting an existing attribute.

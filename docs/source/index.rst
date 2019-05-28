@@ -10,7 +10,7 @@ Implemented backends include HDF5 and ADIOS1.
 Doxygen
 -------
 
-The lastest Doxygen docs for the C++ API are published at:
+The latest Doxygen docs for the C++ API are published at:
 
 http://www.openpmd.org/openPMD-api
 
