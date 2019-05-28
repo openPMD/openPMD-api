@@ -799,7 +799,7 @@ class APITest(unittest.TestCase):
         with self.assertRaises(IndexError):
             d1 = w[1:2, 3:4]
 
-        # last riddle, which is inconvienient for users:
+        # last riddle, which is inconvenient for users:
         # w[42]           # segfaults because returned array is gone at flush()
         # w.load_chunk([0, ], [42, ])             # does (weirdly) not segfault
         # probably a garbage collection detail

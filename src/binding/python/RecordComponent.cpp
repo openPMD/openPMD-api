@@ -38,7 +38,7 @@ namespace py = pybind11;
 using namespace openPMD;
 
 
-/** Convert a py::typle of py::slices to Offset & Extent
+/** Convert a py::tuple of py::slices to Offset & Extent
  *
  * https://docs.scipy.org/doc/numpy-1.15.0/reference/arrays.indexing.html
  * https://github.com/numpy/numpy/blob/v1.16.1/numpy/core/src/multiarray/mapping.c#L348-L375
