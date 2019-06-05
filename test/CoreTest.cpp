@@ -449,8 +449,6 @@ TEST_CASE( "structure_test", "[core]" )
     REQUIRE(o.iterations[1].particles["P"].particlePatches.IOHandler);
     REQUIRE(o.iterations[1].particles["P"].particlePatches.parent == getWritable(&o.iterations[1].particles["P"]));
 
-    REQUIRE(1 == o.iterations[1].particles["P"].count("position"));
-    REQUIRE(1 == o.iterations[1].particles["P"].count("positionOffset"));
     auto dset = Dataset(Datatype::DOUBLE, {1});
     o.iterations[1].particles["P"]["position"][RecordComponent::SCALAR].resetDataset(dset);
     o.iterations[1].particles["P"]["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
