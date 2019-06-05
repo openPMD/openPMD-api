@@ -171,6 +171,41 @@ TEST_CASE( "constant_scalar", "[serial]" )
     }
 }
 
+TEST_CASE( "flush_without_position_positionOffset", "[serial]" )
+{
+    for( auto const & t : backends )
+    {
+        const std::string & file_ending = std::get< 0 >( t );
+        Series s = Series(
+            "../samples/flush_without_position_positionOffset." + file_ending,
+            AccessType::CREATE );
+        ParticleSpecies e = s.iterations[ 0 ].particles[ "e" ];
+        RecordComponent weighting = e[ "weighting" ][ RecordComponent::SCALAR ];
+        weighting.resetDataset( Dataset( Datatype::FLOAT, Extent{ 2, 2 } ) );
+        weighting.storeChunk( std::shared_ptr< float >(
+            new float[ 4 ]{},
+            []( float * ptr ) { delete[] ptr; } ),
+            { 0, 0 },
+            { 2, 2 } );
+            
+        s.flush();
+        
+        for( auto const & key : { "position", "positionOffset" } )
+        {
+            for( auto const & dim : { "x", "y", "z" } )
+            {
+                RecordComponent rc = e[ key ][ dim ];
+                rc.resetDataset( Dataset( Datatype::FLOAT , Extent{ 2, 2 } ) );
+                rc.storeChunk( std::shared_ptr< float >(
+                    new float[ 4 ]{},
+                    []( float * ptr ) { delete[] ptr; } ),
+                    { 0, 0 },
+                    { 2, 2 } );
+                    }
+        }
+    }
+}
+
 
 inline
 void particle_patches( std::string file_ending )
