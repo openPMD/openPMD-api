@@ -55,9 +55,6 @@ namespace traits
         template< typename T >
         void operator()(T & ret)
         {
-            /* enforce these two RecordComponents as required by the standard */
-            ret["position"].setUnitDimension({{UnitDimension::L, 1}});
-            ret["positionOffset"].setUnitDimension({{UnitDimension::L, 1}});
             ret.particlePatches.linkHierarchy(ret.m_writable);
 
             auto& np = ret.particlePatches["numParticles"];

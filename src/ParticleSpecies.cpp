@@ -122,6 +122,17 @@ ParticleSpecies::flush(std::string const& path)
             for( auto& patch : particlePatches )
                 patch.second.flush(patch.first);
         }
+
+        iterator it = find("position");
+        if ( it != end() )
+        {
+            it->second.setUnitDimension({{UnitDimension::L, 1}});
+        }
+        it = find("positionOffset");
+        if ( it != end() )
+        {
+            it->second.setUnitDimension({{UnitDimension::L, 1}});
+        }
     }
 }
 } // openPMD
