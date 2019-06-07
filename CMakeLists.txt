@@ -33,8 +33,9 @@ include(GNUInstallDirs)
 set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/openPMD"
     CACHE PATH "CMake config package location for installed targets")
 if(WIN32)
-    set(CMAKE_INSTALL_LIBDIR Lib)
-    set(CMAKE_INSTALL_CMAKEDIR "cmake")
+    set(CMAKE_INSTALL_LIBDIR Lib
+        CACHE PATH "Object code libraries")
+    set_property(CACHE CMAKE_INSTALL_CMAKEDIR PROPERTY VALUE "cmake")
 endif()
 
 
