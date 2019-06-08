@@ -118,7 +118,7 @@ Optional language bindings:
 
 ## Installation
 
-[![Spack Package](https://img.shields.io/badge/spack.io-openpmd--api-brightgreen.svg)](https://spack.io)
+[![Spack Package](https://img.shields.io/badge/spack.io-openpmd--api-brightgreen.svg)](https://spack.readthedocs.io/en/latest/package_list.html#openpmd-api)
 [![Conda Package](https://img.shields.io/badge/conda.io-openpmd--api-brightgreen.svg)](https://anaconda.org/conda-forge/openpmd-api)
 [![PyPI Package](https://img.shields.io/badge/pypi.org-openpmd--api-yellow.svg)](https://pypi.org/project/openPMD-api)
 [![From Source](https://img.shields.io/badge/from_source-CMake-brightgreen.svg)](https://cmake.org)
@@ -127,7 +127,8 @@ Choose *one* of the install methods below to get started:
 
 ### [Spack](https://spack.io)
 
-[![Spack Status](https://img.shields.io/badge/method-recommended-brightgreen.svg)](https://spack.io)
+[![Spack Version](https://img.shields.io/spack/v/openpmd-api.svg)](https://spack.readthedocs.io/en/latest/package_list.html#openpmd-api)
+[![Spack Status](https://img.shields.io/badge/method-recommended-brightgreen.svg)](https://spack.readthedocs.io/en/latest/package_list.html#openpmd-api)
 
 ```bash
 # optional:               +python +adios1 -mpi
@@ -142,7 +143,8 @@ spack load -r openpmd-api
 [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/openpmd-api.svg)](https://anaconda.org/conda-forge/openpmd-api)
 
 ```bash
-# serial version only
+# optional:            OpenMPI support  =*=mpi_openmpi*
+# optional:              MPICH support  =*=mpi_mpich*
 conda install -c conda-forge openpmd-api
 ```
 
