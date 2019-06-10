@@ -50,8 +50,12 @@ class CMakeBuild(build_ext):
             # variants
             '-DopenPMD_USE_MPI:BOOL=' + openPMD_USE_MPI,
             # skip building tests & examples
-            '-DBUILD_TESTING:BOOL=OFF',
-            '-DBUILD_EXAMPLES:BOOL=OFF',
+            '-DBUILD_TESTING:BOOL=' + BUILD_TESTING,
+            '-DBUILD_EXAMPLES:BOOL=' + BUILD_EXAMPLES,
+            # static/shared libs
+            '-DBUILD_SHARED_LIBS:BOOL=' + BUILD_SHARED_LIBS,
+            '-DHDF5_USE_STATIC_LIBRARIES:BOOL=' + HDF5_USE_STATIC_LIBRARIES,
+            '-DADIOS_USE_STATIC_LIBS:BOOL=' + ADIOS_USE_STATIC_LIBS,
             # Unix: rpath to current dir when packaged
             '-DCMAKE_INSTALL_RPATH=$ORIGIN',
             '-DCMAKE_BUILD_WITH_INSTALL_RPATH:BOOL=ON',
@@ -99,8 +103,13 @@ with open('./README.md', encoding='utf-8') as f:
 
 # Allow to control options via environment vars.
 # Work-around for https://github.com/pypa/setuptools/issues/1712
-# note: changed default for MPI
+# note: changed default for MPI, TESTING and EXAMPLES
 openPMD_USE_MPI = os.environ.get('openPMD_USE_MPI', 'OFF')
+HDF5_USE_STATIC_LIBRARIES = os.environ.get('HDF5_USE_STATIC_LIBRARIES', 'OFF')
+ADIOS_USE_STATIC_LIBS = os.environ.get('ADIOS_USE_STATIC_LIBS', 'OFF')
+BUILD_SHARED_LIBS = os.environ.get('BUILD_SHARED_LIBS', 'ON')
+BUILD_TESTING = os.environ.get('BUILD_TESTING', 'OFF')
+BUILD_EXAMPLES = os.environ.get('BUILD_EXAMPLES', 'OFF')
 
 # https://cmake.org/cmake/help/v3.0/command/if.html
 if openPMD_USE_MPI.upper() in ['1', 'ON', 'YES', 'TRUE', 'YES']:
