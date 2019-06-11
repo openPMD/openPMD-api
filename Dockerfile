@@ -1,9 +1,8 @@
-# manylinux1 wheels
+# manylinux2010 wheels
 # https://github.com/pypa/manylinux
 #
-# FROM       quay.io/pypa/manylinux2010_x86_64 as build-env
-FROM       quay.io/pypa/manylinux1_x86_64 as build-env
-MAINTAINER Axel Huebl <a.huebl@hzdr.de>
+FROM       quay.io/pypa/manylinux2010_x86_64 as build-env
+# FROM       quay.io/pypa/manylinux1_x86_64 as build-env
 ENV        DEBIAN_FRONTEND noninteractive
 
 # Python 3.5-3.7 via "35 36 37"
@@ -51,15 +50,10 @@ RUN        curl -sLo c-blosc-1.15.0.tar.gz https://github.com/Blosc/c-blosc/arch
            && PY_TARGET=${PY_VERSIONS:0:2} \
            && PY_BIN=/opt/python/cp${PY_TARGET}-cp${PY_TARGET}m/bin/python \
            && CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/" \
-           && PATH=${CMAKE_BIN}:${PATH} cmake -DBUILD_SHARED=OFF -DBUILD_TESTS=OFF -DBUILD_BENCHMARKS=OFF -DCMAKE_INSTALL_PREFIX=/usr ../c-blosc-1.15.0 \
+           && PATH=${CMAKE_BIN}:${PATH} cmake -DDEACTIVATE_SNAPPY=ON -DBUILD_SHARED=OFF -DBUILD_TESTS=OFF -DBUILD_BENCHMARKS=OFF -DCMAKE_INSTALL_PREFIX=/usr ../c-blosc-1.15.0 \
            && make \
            && make install
 
-# TODO: avoid shared wrapper libs for static-only ADIOS1 linking
-# FIXME: libpthread.a is not compiled with -fPIC on this system, also SHOULD better be linked shared!!
-#          snappy linker flag forwarding bug in c-blosc
-ENV        CFLAGS_OLD=${CFLAGS}
-ENV        CFLAGS="-lstdc++ ${CFLAGS}"
 RUN        curl -sLo adios-1.13.1.tar.gz http://users.nccs.gov/~pnorbert/adios-1.13.1.tar.gz \
            && file adios*.tar.gz \
            && tar -xzf adios*.tar.gz \
@@ -68,7 +62,6 @@ RUN        curl -sLo adios-1.13.1.tar.gz http://users.nccs.gov/~pnorbert/adios-1
            && ./configure --enable-static --disable-shared --disable-fortran --without-mpi --prefix=/usr --with-blosc=/usr \
            && make \
            && make install
-ENV        CFLAGS=${CFLAGS_OLD}
 
 ADD        . /opt/src
 
@@ -107,19 +100,24 @@ RUN        cd /opt/src; \
 # https://github.com/pypa/auditwheel
 #RUN        pip install auditwheel  # already installed
 RUN         for whl in /opt/src/dist/*.whl; do \
-                auditwheel show ${whl}; \
+                auditwheel show ${whl} && \
+                auditwheel repair --plat manylinux2010_x86_64 ${whl}; \
             done \
-            && du -hs /opt/src/dist/*
+            && du -hs /opt/src/dist/* \
+            && du -hs /wheelhouse/*
 
 # test in fresh env: Debian:Buster + Python 3.7
 FROM       debian:buster
 ENV        DEBIAN_FRONTEND noninteractive
-COPY --from=build-env /opt/src/dist/openPMD_api-*-cp37-cp37m-linux_x86_64.whl .
+COPY --from=build-env /wheelhouse/openPMD_api-*-cp37-cp37m-manylinux2010_x86_64.whl .
 RUN        apt-get update \
            && apt-get install -y --no-install-recommends python3 python3-pip \
            && rm -rf /var/lib/apt/lists/*
 RUN        python3 --version \
-           && python3 -m pip install openPMD_api-*-cp37-cp37m-linux_x86_64.whl
+           && python3 -m pip install -U pip \
+           && python3 -m pip install openPMD_api-*-cp37-cp37m-manylinux2010_x86_64.whl
+RUN        find / -name "openpmd*"
+RUN        ldd /usr/local/lib/python3.7/dist-packages/openpmd_api.cpython-37m-x86_64-linux-gnu.so
 RUN        python3 -c "import openpmd_api as api; print(api.__version__); print(api.variants)"
 #RUN        echo "* soft core 100000" >> /etc/security/limits.conf && \
 #           python3 -c "import openpmd_api as api;"; \
@@ -128,23 +126,31 @@ RUN        python3 -c "import openpmd_api as api; print(api.__version__); print(
 # test in fresh env: Ubuntu:18.04 + Python 3.6
 FROM       ubuntu:18.04
 ENV        DEBIAN_FRONTEND noninteractive
-COPY --from=build-env /opt/src/dist/openPMD_api-*-cp36-cp36m-linux_x86_64.whl .
+COPY --from=build-env /wheelhouse/openPMD_api-*-cp36-cp36m-manylinux2010_x86_64.whl .
 RUN        apt-get update \
            && apt-get install -y --no-install-recommends python3 python3-pip \
            && rm -rf /var/lib/apt/lists/*
 RUN        python3 --version \
-           && python3 -m pip install openPMD_api-*-cp36-cp36m-linux_x86_64.whl
+           && python3 -m pip install -U pip \
+           && python3 -m pip install openPMD_api-*-cp36-cp36m-manylinux2010_x86_64.whl
 RUN        python3 -c "import openpmd_api as api; print(api.__version__); print(api.variants)"
 
 # test in fresh env: Debian:Stretch + Python 3.5
 FROM       debian:stretch
 ENV        DEBIAN_FRONTEND noninteractive
-COPY --from=build-env /opt/src/dist/openPMD_api-*-cp35-cp35m-linux_x86_64.whl .
+COPY --from=build-env /wheelhouse/openPMD_api-*-cp35-cp35m-manylinux2010_x86_64.whl .
 RUN        apt-get update \
            && apt-get install -y --no-install-recommends python3 python3-pip \
            && rm -rf /var/lib/apt/lists/*
 RUN        python3 --version \
-           && python3 -m pip install openPMD_api-*-cp35-cp35m-linux_x86_64.whl
+           && python3 -m pip install -U pip \
+           && python3 -m pip install openPMD_api-*-cp35-cp35m-manylinux2010_x86_64.whl
 RUN        python3 -c "import openpmd_api as api; print(api.__version__); print(api.variants)"
 
-# copy wheels to mounted directory
+
+# copy binary artifacts (wheels)
+FROM       quay.io/pypa/manylinux2010_x86_64
+MAINTAINER Axel Huebl <a.huebl@hzdr.de>
+COPY --from=build-env /wheelhouse/openPMD_api-*.whl /opt/wheels/
+RUN        ls /opt/wheels/
+ENTRYPOINT if [ -d /dist ]; then cp /opt/wheels/* /dist/; fi
