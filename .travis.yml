@@ -18,7 +18,7 @@ env:
     - SPACK_ROOT: $HOME/.cache/spack
     - PATH: $PATH:$HOME/.cache/spack/bin
     - BUILD_TYPE: "Debug"
-    - PYBIND11_VERSION=@2.2.4
+    - PYBIND11_VERSION=@2.3.0
     - USE_JSON: ON
     - USE_SHARED: ON
 
@@ -460,7 +460,7 @@ jobs:
       sudo: required
       dist: xenial
       env:
-        - CXXSPEC="%gcc@8.1.0" USE_MPI=OFF USE_PYTHON=ON USE_INTERNAL_PYBIND11=OFF PYBIND11_VERSION=@2.2.4 USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SHARED=OFF USE_SAMPLES=ON
+        - CXXSPEC="%gcc@8.1.0" USE_MPI=OFF USE_PYTHON=ON USE_INTERNAL_PYBIND11=OFF PYBIND11_VERSION=@2.3.0 USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SHARED=OFF USE_SAMPLES=ON
       compiler: gcc
       addons:
         apt:
