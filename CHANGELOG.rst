@@ -27,6 +27,8 @@ Bug Fixes
 Other
 """""
 
+- increase pybind11 dependency to 2.3.0+ #525
+
 
 0.8.0-alpha
 -----------
