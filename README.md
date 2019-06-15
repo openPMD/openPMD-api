@@ -164,8 +164,8 @@ pip install openpmd-api
 
 or with MPI support:
 ```bash
-# optional:                                --user
-openPMD_USE_MPI=ON pip install openpmd-api
+# optional:                                                  --user
+openPMD_USE_MPI=ON pip install openpmd-api --no-binary :all:
 ```
 
 ### From Source

@@ -44,8 +44,17 @@ They do come handy to test pre-releases quickly with power-users.
    # 2. verify the version in setup.py is correct (PEP-0440),
    #    e.g. `<v>.dev[N]`, `<v>a[N]`, `<v>b[N]`, `<v>rc[N]`, or `<v>`
 
+   rm -rf dist/
+   setup.py clean --all
+
    # prepare source distribution
    python setup.py sdist
+
+   rm -rf openPMD_api.egg-info/
+
+   # prepare binary distribution (Linux only)
+   docker build -t openpmd-api .
+   docker run -u $(id -u $USER) -v ${PWD}/dist/:/dist -t openpmd-api
 
    # GPG sign and upload
    #   note: have up-to-date tools!
@@ -54,6 +63,10 @@ They do come handy to test pre-releases quickly with power-users.
 
    # verify everything is updated as expected on
    # https://pypi.org/project/openPMD-api/
+
+   # optional
+   docker rm openpmd-api
+   rm -rf dist/
 
 
 ReadTheDocs
