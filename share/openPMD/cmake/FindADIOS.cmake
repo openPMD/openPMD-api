@@ -229,6 +229,15 @@ if(ADIOS_FOUND)
             find_library(_LIB_DIR NAMES ${_LIB} PATHS ${ADIOS_LIBRARY_DIRS})
         endif()
 
+        # pthread should not be linked statically, allow fallback to shared
+        if(NOT _LIB_DIR AND _LIB MATCHES "pthread|m|rt")
+            if(ADIOS_USE_STATIC_LIBS)
+                set(CMAKE_FIND_LIBRARY_SUFFIXES ${_ORIG_CMAKE_FIND_LIBRARY_SUFFIXES})
+                find_library(_LIB_DIR NAMES ${_LIB} PATHS ${ADIOS_LIBRARY_DIRS})
+                set(CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_STATIC_LIBRARY_SUFFIX})
+            endif()
+        endif()
+
         if(_LIB MATCHES "^.*nompi.*$")
             set(ADIOS_HAVE_SEQUENTIAL TRUE)
         endif()

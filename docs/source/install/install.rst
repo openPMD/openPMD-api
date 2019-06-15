@@ -74,8 +74,8 @@ or with MPI support:
 
 .. code-block:: bash
 
-   # optional:                                --user
-   openPMD_USE_MPI=ON pip install openpmd-api
+   # optional:                                                  --user
+   openPMD_USE_MPI=ON pip install openpmd-api --no-binary :all:
 
 .. _install-cmake:
 
