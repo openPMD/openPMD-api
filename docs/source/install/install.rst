@@ -44,10 +44,12 @@ A package for openPMD-api is available on the `Spack <https://spack.io>`_ packag
 Using the Conda Package
 -----------------------
 
-A package for serial openPMD-api is available on the `Conda <https://conda.io>`_ package manager.
+A package for openPMD-api is available on the `Conda <https://conda.io>`_ package manager.
 
 .. code-block:: bash
 
+   # optional:            OpenMPI support  =*=mpi_openmpi*
+   # optional:              MPICH support  =*=mpi_mpich*
    conda install -c conda-forge openpmd-api
 
 .. _install-pypi:
