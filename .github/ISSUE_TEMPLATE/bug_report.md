@@ -36,7 +36,7 @@ cmake ..
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
-**Software Environment:**
+**Software Environment**
  - version of openPMD-api: [X.Y.Z-abc]
  - installed openPMD-api via: [conda-forge, spack, from source, module system, ...]
  - operating system: [name and version]
