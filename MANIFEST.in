@@ -1,4 +1,5 @@
 include README.md COPYING COPYING.LESSER
+include pyproject.toml
 include requirements.txt
 global-include CMakeLists.txt *.cmake *.cmake.in
 recursive-include include *
