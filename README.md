@@ -179,7 +179,7 @@ openPMD can then be installed using [CMake](https://cmake.org/):
 ```bash
 git clone https://github.com/openPMD/openPMD-api.git
 
-mkdir -p openPMD-api-build
+mkdir openPMD-api-build
 cd openPMD-api-build
 
 # optional: for full tests, with unzip
@@ -198,7 +198,7 @@ cmake --build .
 # optional
 ctest
 
-# sudo might be required required for system paths
+# sudo might be required for system paths
 cmake --build . --target install
 ```
 
