@@ -137,21 +137,6 @@ RecordComponent::flush(std::string const& name)
                 dCreate.compression = m_dataset->compression;
                 dCreate.transform = m_dataset->transform;
                 IOHandler->enqueue(IOTask(this, dCreate));
-                if( m_chunks->empty() )
-                {
-                    /* Ensure at least one WRITE_DATASET per dataset occurs
-                     * ADIOS1 backend only creates a dataset after at least once cell has been written */
-                    Parameter< Operation::WRITE_DATASET > dWrite;
-                    auto uptr = auxiliary::allocatePtr(dCreate.dtype, 1);
-                    std::shared_ptr< void > data{std::move(uptr)};
-                    dWrite.data = data;
-                    dWrite.dtype = dCreate.dtype;
-                    if( dWrite.dtype == Datatype::UNDEFINED )
-                        throw std::runtime_error("Dataset has not been defined for Record Component " + name);
-                    dWrite.extent = Extent(getDimensionality(), 1);
-                    dWrite.offset = Offset(getDimensionality(), 0);
-                    m_chunks->push(IOTask(this, dWrite));
-                }
             }
         }
 
