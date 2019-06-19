@@ -92,19 +92,19 @@ empty_dataset_test( std::string file_ending )
                 .meshes[ "rho" ][ "makeEmpty_resetDataset_dim3_notallzero" ];
         REQUIRE(makeEmpty_dim_7_int.getDimensionality() == 7);
         REQUIRE(makeEmpty_dim_7_int.getExtent() == Extent(7, 0));
-        REQUIRE(makeEmpty_dim_7_int.getDatatype() == determineDatatype< int >());
+        REQUIRE(isSame(makeEmpty_dim_7_int.getDatatype(), determineDatatype< int >()));
 
         REQUIRE(makeEmpty_dim_7_long.getDimensionality() == 7);
         REQUIRE(makeEmpty_dim_7_long.getExtent() == Extent(7, 0));
-        REQUIRE(makeEmpty_dim_7_long.getDatatype() == determineDatatype< long >());
+        REQUIRE(isSame(makeEmpty_dim_7_long.getDatatype(), determineDatatype< long >()));
 
         REQUIRE(makeEmpty_resetDataset_dim3.getDimensionality() == 3);
         REQUIRE(makeEmpty_resetDataset_dim3.getExtent() == Extent(3, 0));
-        REQUIRE(makeEmpty_resetDataset_dim3.getDatatype() == Datatype::LONG);
-        
+        REQUIRE(isSame(makeEmpty_resetDataset_dim3.getDatatype(), Datatype::LONG));
+
         REQUIRE(makeEmpty_resetDataset_dim3_notallzero.getDimensionality() == 3);
         REQUIRE(makeEmpty_resetDataset_dim3_notallzero.getExtent() == Extent{1,2,0});
-        REQUIRE(makeEmpty_resetDataset_dim3_notallzero.getDatatype() == Datatype::LONG_DOUBLE);
+        REQUIRE(isSame(makeEmpty_resetDataset_dim3_notallzero.getDatatype(), Datatype::LONG_DOUBLE));
     }
 }
 

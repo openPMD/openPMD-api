@@ -107,7 +107,7 @@ public:
 
     template< typename T >
     RecordComponent& makeConstant(T);
-    
+
     template< typename T >
     RecordComponent& makeEmpty( uint8_t dimensions );
 
