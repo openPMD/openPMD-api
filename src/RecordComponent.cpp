@@ -46,16 +46,18 @@ RecordComponent::setUnitSI(double usi)
     return *this;
 }
 
-RecordComponent&
-RecordComponent::resetDataset(Dataset d)
+RecordComponent &
+RecordComponent::resetDataset( Dataset d )
 {
     if( written )
-        throw std::runtime_error("A Records Dataset can not (yet) be changed after it has been written.");
-    if( d.extent.empty() )
-        throw std::runtime_error("Dataset extent must be at least 1D.");
-    if( std::any_of(d.extent.begin(), d.extent.end(),
-                    [](Extent::value_type const& i) { return i == 0u; }) )
-        throw std::runtime_error("Dataset extent must not be zero in any dimension.");
+        throw std::runtime_error( "A Records Dataset can not (yet) be changed "
+                                  "after it has been written." );
+    if( d.extent.empty() ||
+        std::any_of(
+            d.extent.begin(),
+            d.extent.end(),
+            []( Extent::value_type const & i ) { return i == 0u; } ) )
+        return makeEmpty( d );
 
     *m_dataset = d;
     dirty = true;
@@ -72,6 +74,24 @@ Extent
 RecordComponent::getExtent() const
 {
     return m_dataset->extent;
+}
+
+RecordComponent&
+RecordComponent::makeEmpty( Dataset d )
+{
+    if( written )
+        throw std::runtime_error(
+            "A recordComponent can not (yet) be made"
+            " empty after it has been written.");
+    
+    *m_dataset = d;
+    dirty = true;
+    static detail::DefaultValue< RecordComponent > dv;
+    switchType(
+        d.dtype,
+        dv,
+        *this );
+    return *this;
 }
 
 void

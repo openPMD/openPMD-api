@@ -61,4 +61,25 @@ OPENPMD_protected:
     std::shared_ptr< Dataset > m_dataset;
     std::shared_ptr< bool > m_isConstant;
 }; // BaseRecordComponent
+namespace detail
+{
+template< typename RecordComponent_T >
+struct DefaultValue
+{
+    template< typename T >
+    void
+    operator()( RecordComponent_T & rc )
+    {
+        rc.makeConstant( T() );
+    }
+
+    template< unsigned n, typename... Args >
+    void
+    operator()( Args &&... )
+    {
+        throw std::runtime_error(
+            "makeEmpty: Datatype not supported by openPMD." );
+    }
+};
+} // namespace detail
 } // namespace openPMD

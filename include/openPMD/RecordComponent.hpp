@@ -107,6 +107,9 @@ public:
 
     template< typename T >
     RecordComponent& makeConstant(T);
+    
+    template< typename T >
+    RecordComponent& makeEmpty( uint8_t dimensions );
 
     /** Load and allocate a chunk of data
      *
@@ -159,6 +162,7 @@ OPENPMD_protected:
 private:
     void flush(std::string const&);
     virtual void read();
+    RecordComponent& makeEmpty( Dataset );
 }; // RecordComponent
 
 
@@ -172,6 +176,15 @@ RecordComponent::makeConstant(T value)
     *m_constantValue = Attribute(value);
     *m_isConstant = true;
     return *this;
+}
+
+template< typename T >
+inline RecordComponent&
+RecordComponent::makeEmpty( uint8_t dimensions )
+{
+    return makeEmpty( Dataset(
+        determineDatatype< T >(),
+        Extent( dimensions, 0 ) ) );
 }
 
 template< typename T >
