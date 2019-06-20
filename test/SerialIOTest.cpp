@@ -44,22 +44,7 @@ empty_dataset_test( std::string file_ending )
     {
         Series series(
             "../samples/empty_datasets." + file_ending, AccessType::CREATE );
-        
-        // The ADIOS1 backend prefers to have actual data written to it 
-        // as soon as possible
-        // related: https://github.com/openPMD/openPMD-api/issues/520
-        RecordComponent circumvent_ADIOS1_bug =
-                series.iterations[ 1 ]
-                    .meshes[ "rho" ][ "circumvent_ADIOS1_bug"];
-        circumvent_ADIOS1_bug.resetDataset(
-                Dataset(Datatype::INT, Extent{1}));
-        std::vector< int > data{ 1 };
-        circumvent_ADIOS1_bug.storeChunk(
-                data,
-                Offset{0},
-                Extent{1} );
-        series.flush();
-        
+
         RecordComponent makeEmpty_dim_7_int =
             series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_dim_7_int" ];
         RecordComponent makeEmpty_dim_7_long =
@@ -267,9 +252,9 @@ TEST_CASE( "flush_without_position_positionOffset", "[serial]" )
             []( float * ptr ) { delete[] ptr; } ),
             { 0, 0 },
             { 2, 2 } );
-            
+
         s.flush();
-        
+
         for( auto const & key : { "position", "positionOffset" } )
         {
             for( auto const & dim : { "x", "y", "z" } )
