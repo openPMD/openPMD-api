@@ -182,6 +182,8 @@ template< typename T >
 inline RecordComponent&
 RecordComponent::makeEmpty( uint8_t dimensions )
 {
+    if ( dimensions == 0 )
+        throw std::runtime_error("Dataset extent must be at least 1D.");
     return makeEmpty( Dataset(
         determineDatatype< T >(),
         Extent( dimensions, 0 ) ) );

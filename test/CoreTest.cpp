@@ -680,5 +680,7 @@ TEST_CASE( "zero_extent_component", "[core]" )
     E_x.setComment("Datasets must contain dimensions.");
     REQUIRE_THROWS_WITH(E_x.resetDataset(Dataset(Datatype::LONG, {})),
                         Catch::Equals("Dataset extent must be at least 1D."));
+    REQUIRE_THROWS_WITH(E_x.makeEmpty<int>(0),
+                        Catch::Equals("Dataset extent must be at least 1D."));
     E_x.resetDataset(Dataset(Datatype::DOUBLE, {1}));
 }
