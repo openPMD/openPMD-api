@@ -45,13 +45,13 @@ empty_dataset_test( std::string file_ending )
         Series series(
             "../samples/empty_datasets." + file_ending, AccessType::CREATE );
 
-        RecordComponent makeEmpty_dim_7_int =
+        auto makeEmpty_dim_7_int =
             series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_dim_7_int" ];
-        RecordComponent makeEmpty_dim_7_long =
+        auto makeEmpty_dim_7_long =
             series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_dim_7_bool" ];
-        RecordComponent makeEmpty_resetDataset_dim3 =
+        auto makeEmpty_resetDataset_dim3 =
             series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_resetDataset_dim3" ];
-        RecordComponent makeEmpty_resetDataset_dim3_notallzero =
+        auto makeEmpty_resetDataset_dim3_notallzero =
             series.iterations[ 1 ]
                 .meshes[ "rho" ][ "makeEmpty_resetDataset_dim3_notallzero" ];
         makeEmpty_dim_7_int.makeEmpty< int >( 7 );
@@ -66,13 +66,13 @@ empty_dataset_test( std::string file_ending )
     {
         Series series(
             "../samples/empty_datasets." + file_ending, AccessType::READ_ONLY );
-        RecordComponent makeEmpty_dim_7_int =
+        auto makeEmpty_dim_7_int =
             series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_dim_7_int" ];
-        RecordComponent makeEmpty_dim_7_long =
+        auto makeEmpty_dim_7_long =
             series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_dim_7_bool" ];
-        RecordComponent makeEmpty_resetDataset_dim3 =
+        auto makeEmpty_resetDataset_dim3 =
             series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_resetDataset_dim3" ];
-        RecordComponent makeEmpty_resetDataset_dim3_notallzero =
+        auto makeEmpty_resetDataset_dim3_notallzero =
             series.iterations[ 1 ]
                 .meshes[ "rho" ][ "makeEmpty_resetDataset_dim3_notallzero" ];
         REQUIRE(makeEmpty_dim_7_int.getDimensionality() == 7);
