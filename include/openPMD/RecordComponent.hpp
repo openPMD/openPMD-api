@@ -158,6 +158,9 @@ OPENPMD_protected:
 
     std::shared_ptr< std::queue< IOTask > > m_chunks;
     std::shared_ptr< Attribute > m_constantValue;
+    std::shared_ptr< bool > m_isEmpty{
+        std::make_shared< bool >( false )
+    };
 
 private:
     void flush(std::string const&);
@@ -297,7 +300,7 @@ template< typename T >
 inline void
 RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
-    if( *m_isConstant )
+    if( *m_isConstant && !*m_isEmpty )
         throw std::runtime_error("Chunks can not be written for a constant RecordComponent.");
     if( !data )
         throw std::runtime_error("Unallocated pointer passed during chunk store.");
@@ -332,6 +335,8 @@ RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
                                      + " - Chunk: " + std::to_string(o[i] + e[i])
                                      + ")");
 
+    if (*m_isEmpty)
+        return;
     Parameter< Operation::WRITE_DATASET > dWrite;
     dWrite.offset = o;
     dWrite.extent = e;

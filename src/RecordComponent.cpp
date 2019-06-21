@@ -85,6 +85,7 @@ RecordComponent::makeEmpty( Dataset d )
             "A recordComponent can not (yet) be made"
             " empty after it has been written.");
 
+    *m_isEmpty = true;
     *m_dataset = d;
     dirty = true;
     static detail::DefaultValue< RecordComponent > dv;
