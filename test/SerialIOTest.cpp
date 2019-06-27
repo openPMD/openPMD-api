@@ -97,7 +97,6 @@ TEST_CASE( "empty_dataset_test", "[serial]" )
 {
     for (auto const & t: backends)
     {
-        //if (std::get<0>(t) == "json")
         empty_dataset_test(std::get<0>(t));
     }
 }

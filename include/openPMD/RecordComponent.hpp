@@ -108,6 +108,14 @@ public:
     template< typename T >
     RecordComponent& makeConstant(T);
 
+    /**
+     * Create a dataset with zero extent in each dimension.
+     * Implemented by creating a constant record component with
+     * a dummy value (default constructor of the respective datatype).
+     * @param dimensions The number of dimensions. Must be greater than
+     *                   zero.
+     * @return A reference to this RecordComponent.
+     */
     template< typename T >
     RecordComponent& makeEmpty( uint8_t dimensions );
 
@@ -158,13 +166,18 @@ OPENPMD_protected:
 
     std::shared_ptr< std::queue< IOTask > > m_chunks;
     std::shared_ptr< Attribute > m_constantValue;
-    std::shared_ptr< bool > m_isEmpty{
-        std::make_shared< bool >( false )
-    };
+    std::shared_ptr< bool > m_isEmpty = std::make_shared< bool >( false );
 
 private:
     void flush(std::string const&);
     virtual void read();
+
+    /**
+     * Internal method to be called by all methods that create an empty dataset.
+     *
+     * @param The dataset description. Must have nonzero dimensions.
+     * @return Reference to this RecordComponent instance.
+     */
     RecordComponent& makeEmpty( Dataset );
 }; // RecordComponent
 
@@ -185,8 +198,6 @@ template< typename T >
 inline RecordComponent&
 RecordComponent::makeEmpty( uint8_t dimensions )
 {
-    if ( dimensions == 0 )
-        throw std::runtime_error("Dataset extent must be at least 1D.");
     return makeEmpty( Dataset(
         determineDatatype< T >(),
         Extent( dimensions, 0 ) ) );

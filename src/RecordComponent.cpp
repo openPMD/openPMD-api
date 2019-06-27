@@ -50,7 +50,7 @@ RecordComponent &
 RecordComponent::resetDataset( Dataset d )
 {
     if( written )
-        throw std::runtime_error( "A Records Dataset can not (yet) be changed "
+        throw std::runtime_error( "A record's Dataset cannot (yet) be changed "
                                   "after it has been written." );
     if( d.extent.empty() )
         throw std::runtime_error("Dataset extent must be at least 1D.");
@@ -82,8 +82,10 @@ RecordComponent::makeEmpty( Dataset d )
 {
     if( written )
         throw std::runtime_error(
-            "A recordComponent can not (yet) be made"
+            "A RecordComponent cannot (yet) be made"
             " empty after it has been written.");
+    if( d.extent.size() == 0 )
+        throw std::runtime_error("Dataset extent must be at least 1D.");
 
     *m_isEmpty = true;
     *m_dataset = d;
