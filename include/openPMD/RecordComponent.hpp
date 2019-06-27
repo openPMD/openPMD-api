@@ -313,8 +313,10 @@ RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
     if( *m_isConstant && !*m_isEmpty )
         throw std::runtime_error("Chunks can not be written for a constant RecordComponent.");
-    if( !data )
+    if( !data && !*m_isEmpty )
         throw std::runtime_error("Unallocated pointer passed during chunk store.");
+    if( *m_isEmpty && data )
+        throw std::runtime_error("Non-null pointer passed during chunk store of an empty RecordComponent.");
     Datatype dtype = determineDatatype(data);
     if( dtype != getDatatype() )
     {
