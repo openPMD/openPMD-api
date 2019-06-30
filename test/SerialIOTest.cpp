@@ -38,6 +38,70 @@ std::vector<std::tuple<std::string, bool>> getBackends() {
 auto const backends = getBackends();
 
 inline
+void
+empty_dataset_test( std::string file_ending )
+{
+    {
+        Series series(
+            "../samples/empty_datasets." + file_ending, AccessType::CREATE );
+
+        auto makeEmpty_dim_7_int =
+            series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_dim_7_int" ];
+        auto makeEmpty_dim_7_long =
+            series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_dim_7_bool" ];
+        auto makeEmpty_resetDataset_dim3 =
+            series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_resetDataset_dim3" ];
+        auto makeEmpty_resetDataset_dim3_notallzero =
+            series.iterations[ 1 ]
+                .meshes[ "rho" ][ "makeEmpty_resetDataset_dim3_notallzero" ];
+        makeEmpty_dim_7_int.makeEmpty< int >( 7 );
+        makeEmpty_dim_7_long.makeEmpty< long >( 7 );
+        makeEmpty_resetDataset_dim3.resetDataset(
+            Dataset( Datatype::LONG, Extent( 3, 0 ) ) );
+        makeEmpty_resetDataset_dim3_notallzero.resetDataset(
+            Dataset( Datatype::LONG_DOUBLE, Extent{ 1, 2, 0 } ) );
+        series.flush();
+        
+    }
+    {
+        Series series(
+            "../samples/empty_datasets." + file_ending, AccessType::READ_ONLY );
+        auto makeEmpty_dim_7_int =
+            series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_dim_7_int" ];
+        auto makeEmpty_dim_7_long =
+            series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_dim_7_bool" ];
+        auto makeEmpty_resetDataset_dim3 =
+            series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_resetDataset_dim3" ];
+        auto makeEmpty_resetDataset_dim3_notallzero =
+            series.iterations[ 1 ]
+                .meshes[ "rho" ][ "makeEmpty_resetDataset_dim3_notallzero" ];
+        REQUIRE(makeEmpty_dim_7_int.getDimensionality() == 7);
+        REQUIRE(makeEmpty_dim_7_int.getExtent() == Extent(7, 0));
+        REQUIRE(isSame(makeEmpty_dim_7_int.getDatatype(), determineDatatype< int >()));
+
+        REQUIRE(makeEmpty_dim_7_long.getDimensionality() == 7);
+        REQUIRE(makeEmpty_dim_7_long.getExtent() == Extent(7, 0));
+        REQUIRE(isSame(makeEmpty_dim_7_long.getDatatype(), determineDatatype< long >()));
+
+        REQUIRE(makeEmpty_resetDataset_dim3.getDimensionality() == 3);
+        REQUIRE(makeEmpty_resetDataset_dim3.getExtent() == Extent(3, 0));
+        REQUIRE(isSame(makeEmpty_resetDataset_dim3.getDatatype(), Datatype::LONG));
+
+        REQUIRE(makeEmpty_resetDataset_dim3_notallzero.getDimensionality() == 3);
+        REQUIRE(makeEmpty_resetDataset_dim3_notallzero.getExtent() == Extent{1,2,0});
+        REQUIRE(isSame(makeEmpty_resetDataset_dim3_notallzero.getDatatype(), Datatype::LONG_DOUBLE));
+    }
+}
+
+TEST_CASE( "empty_dataset_test", "[serial]" )
+{
+    for (auto const & t: backends)
+    {
+        empty_dataset_test(std::get<0>(t));
+    }
+}
+
+inline
 void constant_scalar(std::string file_ending)
 {
     Mesh::Geometry const geometry = Mesh::Geometry::spherical;
@@ -187,9 +251,9 @@ TEST_CASE( "flush_without_position_positionOffset", "[serial]" )
             []( float * ptr ) { delete[] ptr; } ),
             { 0, 0 },
             { 2, 2 } );
-            
+
         s.flush();
-        
+
         for( auto const & key : { "position", "positionOffset" } )
         {
             for( auto const & dim : { "x", "y", "z" } )

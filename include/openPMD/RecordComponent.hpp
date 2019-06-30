@@ -108,6 +108,17 @@ public:
     template< typename T >
     RecordComponent& makeConstant(T);
 
+    /**
+     * Create a dataset with zero extent in each dimension.
+     * Implemented by creating a constant record component with
+     * a dummy value (default constructor of the respective datatype).
+     * @param dimensions The number of dimensions. Must be greater than
+     *                   zero.
+     * @return A reference to this RecordComponent.
+     */
+    template< typename T >
+    RecordComponent& makeEmpty( uint8_t dimensions );
+
     /** Load and allocate a chunk of data
      *
      * Set offset to {0u} and extent to {-1u} for full selection.
@@ -155,10 +166,19 @@ OPENPMD_protected:
 
     std::shared_ptr< std::queue< IOTask > > m_chunks;
     std::shared_ptr< Attribute > m_constantValue;
+    std::shared_ptr< bool > m_isEmpty = std::make_shared< bool >( false );
 
 private:
     void flush(std::string const&);
     virtual void read();
+
+    /**
+     * Internal method to be called by all methods that create an empty dataset.
+     *
+     * @param The dataset description. Must have nonzero dimensions.
+     * @return Reference to this RecordComponent instance.
+     */
+    RecordComponent& makeEmpty( Dataset );
 }; // RecordComponent
 
 
@@ -172,6 +192,15 @@ RecordComponent::makeConstant(T value)
     *m_constantValue = Attribute(value);
     *m_isConstant = true;
     return *this;
+}
+
+template< typename T >
+inline RecordComponent&
+RecordComponent::makeEmpty( uint8_t dimensions )
+{
+    return makeEmpty( Dataset(
+        determineDatatype< T >(),
+        Extent( dimensions, 0 ) ) );
 }
 
 template< typename T >
@@ -283,9 +312,11 @@ inline void
 RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
     if( *m_isConstant )
-        throw std::runtime_error("Chunks can not be written for a constant RecordComponent.");
+        throw std::runtime_error("Chunks cannot be written for a constant RecordComponent.");
+    if( *m_isEmpty )
+        throw std::runtime_error("Chunks cannot be written for an empty RecordComponent.");
     if( !data )
-        throw std::runtime_error("Unallocated pointer passed during chunk store.");
+throw std::runtime_error("Unallocated pointer passed during chunk store.");
     Datatype dtype = determineDatatype(data);
     if( dtype != getDatatype() )
     {
