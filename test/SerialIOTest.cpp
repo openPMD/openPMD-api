@@ -646,128 +646,6 @@ TEST_CASE( "write_test", "[serial]" )
 }
 
 inline
-void fileBased_write_empty_test(const std::string & backend)
-{
-    if( auxiliary::directory_exists("../samples/subdir") )
-        auxiliary::remove_directory("../samples/subdir");
-
-    Dataset dset = Dataset(Datatype::DOUBLE, {2});
-    {
-        Series o = Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::CREATE);
-
-        ParticleSpecies& e_1 = o.iterations[1].particles["e"];
-        e_1["position"][RecordComponent::SCALAR].resetDataset(dset);
-        e_1["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
-        o.iterations[1].setTime(1.f);
-        ParticleSpecies& e_2 = o.iterations[2].particles["e"];
-        e_2["position"][RecordComponent::SCALAR].resetDataset(dset);
-        e_2["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
-        o.iterations[2].setTime(2.f);
-        ParticleSpecies& e_3 = o.iterations[3].particles["e"];
-        e_3["position"][RecordComponent::SCALAR].resetDataset(dset);
-        e_3["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
-        o.iterations[3].setTime(3.f);
-    }
-
-    REQUIRE(auxiliary::directory_exists("../samples/subdir"));
-    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write1." + backend));
-    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write2." + backend));
-    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write3." + backend));
-
-    {
-        Series o = Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::READ_ONLY);
-
-        REQUIRE(o.iterations.size() == 3);
-        REQUIRE(o.iterations.count(1) == 1);
-        REQUIRE(o.iterations.count(2) == 1);
-        REQUIRE(o.iterations.count(3) == 1);
-
-        REQUIRE(o.iterations[1].time< float >() == 1.f);
-        REQUIRE(o.iterations[2].time< float >() == 2.f);
-        REQUIRE(o.iterations[3].time< float >() == 3.f);
-
-        REQUIRE(o.iterations[1].particles.size() == 1);
-        REQUIRE(o.iterations[1].particles.count("e") == 1);
-        REQUIRE(o.iterations[2].particles.size() == 1);
-        REQUIRE(o.iterations[2].particles.count("e") == 1);
-        REQUIRE(o.iterations[3].particles.size() == 1);
-        REQUIRE(o.iterations[3].particles.count("e") == 1);
-
-        REQUIRE(o.iterations[1].particles["e"].size() == 2);
-        REQUIRE(o.iterations[1].particles["e"].count("position") == 1);
-        REQUIRE(o.iterations[1].particles["e"].count("positionOffset") == 1);
-        REQUIRE(o.iterations[2].particles["e"].size() == 2);
-        REQUIRE(o.iterations[2].particles["e"].count("position") == 1);
-        REQUIRE(o.iterations[2].particles["e"].count("positionOffset") == 1);
-        REQUIRE(o.iterations[3].particles["e"].size() == 2);
-        REQUIRE(o.iterations[3].particles["e"].count("position") == 1);
-        REQUIRE(o.iterations[3].particles["e"].count("positionOffset") == 1);
-
-        REQUIRE(o.iterations[1].particles["e"]["position"].size() == 1);
-        REQUIRE(o.iterations[1].particles["e"]["position"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[1].particles["e"]["positionOffset"].size() == 1);
-        REQUIRE(o.iterations[1].particles["e"]["positionOffset"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].getDatatype() == Datatype::DOUBLE);
-        REQUIRE(o.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].getDimensionality() == 1);
-        REQUIRE(o.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].getExtent() == Extent{2});
-        REQUIRE(o.iterations[2].particles["e"]["position"].size() == 1);
-        REQUIRE(o.iterations[2].particles["e"]["position"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[2].particles["e"]["positionOffset"].size() == 1);
-        REQUIRE(o.iterations[2].particles["e"]["positionOffset"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[2].particles["e"]["position"][RecordComponent::SCALAR].getDatatype() == Datatype::DOUBLE);
-        REQUIRE(o.iterations[2].particles["e"]["position"][RecordComponent::SCALAR].getDimensionality() == 1);
-        REQUIRE(o.iterations[2].particles["e"]["position"][RecordComponent::SCALAR].getExtent() == Extent{2});
-        REQUIRE(o.iterations[3].particles["e"]["position"].size() == 1);
-        REQUIRE(o.iterations[3].particles["e"]["position"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[3].particles["e"]["positionOffset"].size() == 1);
-        REQUIRE(o.iterations[3].particles["e"]["positionOffset"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[3].particles["e"]["position"][RecordComponent::SCALAR].getDatatype() == Datatype::DOUBLE);
-        REQUIRE(o.iterations[3].particles["e"]["position"][RecordComponent::SCALAR].getDimensionality() == 1);
-        REQUIRE(o.iterations[3].particles["e"]["position"][RecordComponent::SCALAR].getExtent() == Extent{2});
-    }
-
-    {
-        Series o = Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::READ_WRITE);
-        ParticleSpecies& e_4 = o.iterations[4].particles["e"];
-        e_4["position"][RecordComponent::SCALAR].resetDataset(dset);
-        e_4["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
-        o.iterations[4].setTime(4.f);
-    }
-
-    {
-        Series o = Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::READ_ONLY);
-
-        REQUIRE(o.iterations.size() == 4);
-        REQUIRE(o.iterations.count(4) == 1);
-
-        REQUIRE(o.iterations[4].time< float >() == 4.f);
-
-        REQUIRE(o.iterations[4].particles.size() == 1);
-        REQUIRE(o.iterations[4].particles.count("e") == 1);
-
-        REQUIRE(o.iterations[4].particles["e"].size() == 2);
-        REQUIRE(o.iterations[4].particles["e"].count("position") == 1);
-        REQUIRE(o.iterations[4].particles["e"].count("positionOffset") == 1);
-
-        REQUIRE(o.iterations[4].particles["e"]["position"].size() == 1);
-        REQUIRE(o.iterations[4].particles["e"]["position"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[4].particles["e"]["positionOffset"].size() == 1);
-        REQUIRE(o.iterations[4].particles["e"]["positionOffset"].count(RecordComponent::SCALAR) == 1);
-        REQUIRE(o.iterations[4].particles["e"]["position"][RecordComponent::SCALAR].getDatatype() == Datatype::DOUBLE);
-        REQUIRE(o.iterations[4].particles["e"]["position"][RecordComponent::SCALAR].getDimensionality() == 1);
-        REQUIRE(o.iterations[4].particles["e"]["position"][RecordComponent::SCALAR].getExtent() == Extent{2});
-    }
-}
-
-TEST_CASE( "fileBased_write_empty_test", "[serial]" )
-{
-    for (auto const & t: backends)
-    {
-        fileBased_write_empty_test(std::get<0>(t));
-    }
-}
-
-inline
 void fileBased_write_test(const std::string & backend)
 {
     if( auxiliary::directory_exists("../samples/subdir") )
@@ -1995,26 +1873,6 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
     }
 }
 
-TEST_CASE( "hdf5_dtype_test", "[serial][hdf5]" )
-{
-    dtype_test("h5");
-}
-
-TEST_CASE( "hdf5_write_test", "[serial][hdf5]" )
-{
-    write_test("h5");
-}
-
-TEST_CASE( "hdf5_fileBased_write_empty_test", "[serial][hdf5]" )
-{
-    fileBased_write_empty_test("h5");
-}
-
-TEST_CASE( "hdf5_fileBased_write_test", "[serial][hdf5]" )
-{
-    fileBased_write_test("h5");
-}
-
 TEST_CASE( "hdf5_bool_test", "[serial][hdf5]" )
 {
     bool_test("h5");
@@ -2029,21 +1887,6 @@ TEST_CASE( "hdf5_deletion_test", "[serial][hdf5]" )
 {
     deletion_test("h5");
 }
-
-TEST_CASE( "hdf5_110_optional_paths", "[serial][hdf5]" )
-{
-    optional_paths_110_test("h5");
-}
-
-TEST_CASE( "hdf5_constant_scalar", "[serial][hdf5]" )
-{
-    constant_scalar("h5");
-}
-
-TEST_CASE( "hdf5_particle_patches", "[serial][hdf5]" )
-{
-    particle_patches("h5");
-}
 #else
 TEST_CASE( "no_serial_hdf5", "[serial][hdf5]" )
 {
@@ -2051,25 +1894,6 @@ TEST_CASE( "no_serial_hdf5", "[serial][hdf5]" )
 }
 #endif
 #if openPMD_HAVE_ADIOS1
-TEST_CASE( "adios1_dtype_test", "[serial][adios1]" )
-{
-    dtype_test(".bp");
-}
-
-TEST_CASE( "adios1_write_test", "[serial][adios1]")
-{
-    write_test("bp");
-}
-
-TEST_CASE( "adios1_fileBased_write_empty_test", "[serial][adios1]" )
-{
-    fileBased_write_empty_test("bp");
-}
-
-TEST_CASE( "adios1_fileBased_write_test", "[serial][adios1]" )
-{
-    fileBased_write_test("bp");
-}
 
 TEST_CASE( "hzdr_adios1_sample_content_test", "[serial][adios1]" )
 {
@@ -2231,14 +2055,7 @@ TEST_CASE( "hzdr_adios1_sample_content_test", "[serial][adios1]" )
         return;
     }
 }
-TEST_CASE( "adios1_constant_scalar", "[serial][adios1]" )
-{
-    constant_scalar("bp");
-}
-TEST_CASE( "adios1_particle_patches", "[serial][adios1]" )
-{
-    particle_patches("bp");
-}
+
 #else
 TEST_CASE( "no_serial_adios1", "[serial][adios]")
 {
