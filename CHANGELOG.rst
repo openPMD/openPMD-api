@@ -33,7 +33,10 @@ Bug Fixes
 - Remove dummy dataset writing from ``RecordComponent::flush()`` #528
 - remove dummy dataset writing from ``PatchRecordComponent::flush`` #512
 - Allow flushing before defining position and positionOffset components of particle species #518 #519
-- CMake: make install paths cacheable on Windows #521
+- CMake:
+
+  - make install paths cacheable on Windows #521
+  - HDF5 linkage is private #533
 - warnings:
 
   - unused variable in JSON backend #507
