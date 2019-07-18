@@ -62,6 +62,7 @@ openpmd_option(ADIOS1         "ADIOS1 backend (.bp files)"                AUTO)
 openpmd_option(ADIOS2         "ADIOS2 backend (.bp files)"                 OFF)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
 
+option(openPMD_HAVE_PKGCONFIG        "Generate a .pc file for pkg-config"   ON)
 option(openPMD_USE_INTERNAL_VARIANT  "Use internally shipped MPark.Variant" ON)
 option(openPMD_USE_INTERNAL_CATCH    "Use internally shipped Catch2"        ON)
 option(openPMD_USE_INTERNAL_PYBIND11 "Use internally shipped pybind11"      ON)
@@ -759,6 +760,18 @@ configure_file(
     ${openPMD_BINARY_DIR}/openPMDConfig.cmake
     @ONLY
 )
+if(openPMD_HAVE_PKGCONFIG)
+    get_target_property(openPMD_PC_DEFINES openPMD INTERFACE_COMPILE_DEFINITIONS)
+    foreach(PC_DEF IN LISTS openPMD_PC_DEFINES)
+        set(openPMD_PC_PUBLIC_DEFINES "${openPMD_PC_PUBLIC_DEFINES} -D${PC_DEF}")
+    endforeach()
+
+    CONFIGURE_FILE(
+        ${openPMD_SOURCE_DIR}/openPMD.pc.in
+        ${openPMD_BINARY_DIR}/openPMD.pc
+        @ONLY
+    )
+endif()
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file("openPMDConfigVersion.cmake"
@@ -817,6 +830,16 @@ install(
         ${openPMD_SOURCE_DIR}/share/openPMD/cmake/FindADIOS.cmake
     DESTINATION ${CMAKE_INSTALL_CMAKEDIR}/Modules
 )
+# pkg-config .pc file for depending legacy projects
+#   This is for projects that do not use a build file generator, e.g.
+#   because they compile manually on the command line or write their
+#   Makefiles by hand.
+if(openPMD_HAVE_PKGCONFIG)
+    install(
+        FILES       ${openPMD_BINARY_DIR}/openPMD.pc
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+    )
+endif()
 
 
 # Tests #######################################################################
