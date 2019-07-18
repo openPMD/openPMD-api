@@ -3,11 +3,11 @@
 Changelog
 =========
 
-0.8.1-alpha
+0.9.0-alpha
 -----------
 **Date:** TBA
 
-[Title]
+ADIOS2 Support
 
 [Summary]
 
@@ -17,17 +17,42 @@ Changes to "0.8.0-alpha"
 Features
 """"""""
 
+- ADIOS2: support added (v2.4.0+) #482 #513 #530
+- support empty datasets via ``RecordComponent::makeEmpty`` #528 #529
 - CMake: Build a shared library by default #506
+- Python:
+
+  - manylinux2010 wheels for PyPI #523
+  - add ``pyproject.toml`` for build dependencies (PEP-518) #527
 
 Bug Fixes
 """""""""
 
-- warning: unused variable in JSON backend #507
+- MPark.Variant: work-around missing version bump #504
+- linker error concerning ``Mesh::setTimeOffset`` method template #511
+- Remove dummy dataset writing from ``RecordComponent::flush()`` #528
+- remove dummy dataset writing from ``PatchRecordComponent::flush`` #512
+- Allow flushing before defining position and positionOffset components of particle species #518 #519
+- CMake: make install paths cacheable on Windows #521
+- warnings:
+
+  - unused variable in JSON backend #507
+  - MSVC: Warning DLL Interface STDlib #508
 
 Other
 """""
 
 - increase pybind11 dependency to 2.3.0+ #525
+- GitHub:
+
+  - auto-add labels #515
+  - issue template for install issues #526
+  - update badges #522
+- docs:
+
+  - link parallel python examples in manual #499
+  - improved Doxygen parsing for all backends #500
+  - fix typos #517
 
 
 0.8.0-alpha
