@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/config.hpp"
 #if openPMD_HAVE_HDF5
 #   include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #   include <hdf5.h>

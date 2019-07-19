@@ -21,7 +21,7 @@
 
 #pragma once
 
-
+#include "openPMD/config.hpp"
 #include "openPMD/IO/AbstractFilePosition.hpp"
 
 

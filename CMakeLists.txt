@@ -374,6 +374,7 @@ endif()
 # own headers
 target_include_directories(openPMD PUBLIC
     $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${openPMD_BINARY_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
 
@@ -413,10 +414,6 @@ if(openPMD_HAVE_MPI)
     # MPI targets: CMake 3.9+
     # note: often the PUBLIC dependency to CXX is missing in C targets...
     target_link_libraries(openPMD PUBLIC MPI::MPI_C MPI::MPI_CXX)
-
-    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_MPI=1")
-else()
-    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_MPI=0")
 endif()
 
 # JSON Backend
@@ -424,9 +421,6 @@ if(openPMD_HAVE_JSON)
     #target_link_libraries(openPMD PRIVATE openPMD::thirdparty::nlohmann_json)
     target_include_directories(openPMD SYSTEM PRIVATE
         $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
-    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_JSON=1")
-else()
-    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_JSON=0")
 endif()
 
 # HDF5 Backend
@@ -434,9 +428,6 @@ if(openPMD_HAVE_HDF5)
     target_link_libraries(openPMD PRIVATE ${HDF5_LIBRARIES})
     target_include_directories(openPMD SYSTEM PRIVATE ${HDF5_INCLUDE_DIRS})
     target_compile_definitions(openPMD PRIVATE ${HDF5_DEFINITIONS})
-    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_HDF5=1")
-else()
-    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_HDF5=0")
 endif()
 
 # ADIOS1 Backend
@@ -457,9 +448,9 @@ if(openPMD_HAVE_ADIOS1)
     target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC openPMD::thirdparty::mpark_variant)
 
     target_include_directories(openPMD.ADIOS1.Serial SYSTEM PRIVATE
-        ${openPMD_SOURCE_DIR}/include)
+        ${openPMD_SOURCE_DIR}/include ${openPMD_BINARY_DIR}/include)
     target_include_directories(openPMD.ADIOS1.Parallel SYSTEM PRIVATE
-        ${openPMD_SOURCE_DIR}/include)
+        ${openPMD_SOURCE_DIR}/include ${openPMD_BINARY_DIR}/include)
 
     if(openPMD_HAVE_MPI)
         target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC MPI::MPI_C MPI::MPI_CXX)
@@ -530,19 +521,13 @@ if(openPMD_HAVE_ADIOS1)
         target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "-DopenPMD_USE_VERIFY=0")
     endif()
 
-    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS1=1")
     target_link_libraries(openPMD PUBLIC openPMD.ADIOS1.Serial)
     target_link_libraries(openPMD PUBLIC openPMD.ADIOS1.Parallel)
-else()
-    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS1=0")
 endif()
 
 # ADIOS2 Backend
 if(openPMD_HAVE_ADIOS2)
     target_link_libraries(openPMD PUBLIC adios2::adios2)
-    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS2=1")
-else()
-    target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_ADIOS2=0")
 endif()
 
 # Runtime parameter and API status checks ("asserts")
@@ -665,27 +650,7 @@ if(BUILD_TESTING)
         add_executable(${testname}Tests test/${testname}Test.cpp)
 
         if(openPMD_USE_INVASIVE_TESTS)
-            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_USE_INVASIVE_TESTS=1")
-        endif()
-
-        if(openPMD_HAVE_MPI)
-            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_MPI=1")
-        endif()
-
-        if(openPMD_HAVE_JSON)
-            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_JSON=1")
-        endif()
-
-        if(openPMD_HAVE_HDF5)
-            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_HDF5=1")
-        endif()
-
-        if(openPMD_HAVE_ADIOS1)
-            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_ADIOS1=1")
-        endif()
-
-        if(openPMD_HAVE_ADIOS2)
-            target_compile_definitions(${testname}Tests PUBLIC "-DopenPMD_HAVE_ADIOS2=1")
+            target_compile_definitions(${testname}Tests PRIVATE "-DopenPMD_USE_INVASIVE_TESTS=1")
         endif()
         target_link_libraries(${testname}Tests PRIVATE openPMD)
         if(${testname} MATCHES "Parallel.+$")
@@ -756,16 +721,17 @@ endif ()
 #
 # TODO configure a version.hpp
 configure_file(
+    ${openPMD_SOURCE_DIR}/include/openPMD/config.hpp.in
+    ${openPMD_BINARY_DIR}/include/openPMD/config.hpp
+    @ONLY
+)
+
+configure_file(
     ${openPMD_SOURCE_DIR}/openPMDConfig.cmake.in
     ${openPMD_BINARY_DIR}/openPMDConfig.cmake
     @ONLY
 )
 if(openPMD_HAVE_PKGCONFIG)
-    get_target_property(openPMD_PC_DEFINES openPMD INTERFACE_COMPILE_DEFINITIONS)
-    foreach(PC_DEF IN LISTS openPMD_PC_DEFINES)
-        set(openPMD_PC_PUBLIC_DEFINES "${openPMD_PC_PUBLIC_DEFINES} -D${PC_DEF}")
-    endforeach()
-
     CONFIGURE_FILE(
         ${openPMD_SOURCE_DIR}/openPMD.pc.in
         ${openPMD_BINARY_DIR}/openPMD.pc
@@ -804,6 +770,11 @@ if(openPMD_HAVE_PYTHON)
 endif()
 install(DIRECTORY "${openPMD_SOURCE_DIR}/include/openPMD"
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.hpp"
+)
+install(
+    FILES ${openPMD_BINARY_DIR}/include/openPMD/config.hpp
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/openPMD
 )
 # install third-party libraries
 # TODO not needed with C++17 compiler

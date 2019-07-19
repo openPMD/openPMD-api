@@ -21,7 +21,7 @@
 
 #pragma once
 
-
+#include "openPMD/config.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"

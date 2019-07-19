@@ -351,5 +351,10 @@ ParallelADIOS1IOHandler::flush()
 {
     return std::future< void >();
 }
+
+void
+ParallelADIOS1IOHandler::enqueue(IOTask const&)
+{
+}
 #endif
 } // openPMD

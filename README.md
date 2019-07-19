@@ -290,5 +290,5 @@ pkg-config --libs openPMD
 # -L${HOME}/somepath/lib -lopenPMD
 
 pkg-config --cflags openPMD
-# -I${HOME}/somepath/include -DopenPMD_HAVE_MPI=1 -DopenPMD_HAVE_JSON=1 -D_FORTIFY_SOURCE=2 -DopenPMD_HAVE_HDF5=1 -DopenPMD_HAVE_ADIOS1=0 -DopenPMD_HAVE_ADIOS2=0
+# -I${HOME}/somepath/include
 ```

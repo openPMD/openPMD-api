@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/config.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"

@@ -21,16 +21,17 @@
 
 #pragma once
 
+#include "openPMD/config.hpp"
 #if openPMD_HAVE_MPI
 
+#include "openPMD/Datatype.hpp"
+#include "openPMD/Series.hpp"
 
 #include <map>
 #include <tuple>
 #include <vector>
 #include <mpi.h>
 #include "string.h"
-#include "openPMD/Datatype.hpp"
-#include "openPMD/Series.hpp"
 
 
 namespace openPMD

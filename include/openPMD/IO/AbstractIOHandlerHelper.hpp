@@ -19,7 +19,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #pragma once
-    
+
+#include "openPMD/config.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
 
