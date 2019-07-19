@@ -430,9 +430,9 @@ endif()
 
 # HDF5 Backend
 if(openPMD_HAVE_HDF5)
-    target_link_libraries(openPMD PUBLIC ${HDF5_LIBRARIES})
-    target_include_directories(openPMD SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
-    target_compile_definitions(openPMD PUBLIC ${HDF5_DEFINITIONS})
+    target_link_libraries(openPMD PRIVATE ${HDF5_LIBRARIES})
+    target_include_directories(openPMD SYSTEM PRIVATE ${HDF5_INCLUDE_DIRS})
+    target_compile_definitions(openPMD PRIVATE ${HDF5_DEFINITIONS})
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_HDF5=1")
 else()
     target_compile_definitions(openPMD PUBLIC "-DopenPMD_HAVE_HDF5=0")
