@@ -1,4 +1,4 @@
-/* Copyright 2017-2019 Fabian Koller
+/* Copyright 2019 Axel Huebl
  *
  * This file is part of openPMD-api.
  *
@@ -20,32 +20,22 @@
  */
 #pragma once
 
-#include "openPMD/config.hpp"
-#include "openPMD/IO/AbstractIOHandlerImpl.hpp"
-
-#if openPMD_HAVE_MPI
-#   include <mpi.h>
-#   if openPMD_HAVE_HDF5
-#       include "openPMD/IO/HDF5/HDF5IOHandlerImpl.hpp"
-#   endif
+#ifndef openPMD_HAVE_MPI
+#   cmakedefine01 openPMD_HAVE_MPI
 #endif
 
-
-namespace openPMD
-{
-#if openPMD_HAVE_HDF5 && openPMD_HAVE_MPI
-    class ParallelHDF5IOHandlerImpl : public HDF5IOHandlerImpl
-    {
-    public:
-        ParallelHDF5IOHandlerImpl(AbstractIOHandler*, MPI_Comm);
-        virtual ~ParallelHDF5IOHandlerImpl();
-
-        MPI_Comm m_mpiComm;
-        MPI_Info m_mpiInfo;
-    }; // ParallelHDF5IOHandlerImpl
-#else
-    class ParallelHDF5IOHandlerImpl
-    {
-    }; // ParallelHDF5IOHandlerImpl
+#ifndef openPMD_HAVE_JSON
+#   cmakedefine01 openPMD_HAVE_JSON
 #endif
-} // openPMD
+
+#ifndef openPMD_HAVE_HDF5
+#   cmakedefine01 openPMD_HAVE_HDF5
+#endif
+
+#ifndef openPMD_HAVE_ADIOS1
+#   cmakedefine01 openPMD_HAVE_ADIOS1
+#endif
+
+#ifndef openPMD_HAVE_ADIOS2
+#   cmakedefine01 openPMD_HAVE_ADIOS2
+#endif

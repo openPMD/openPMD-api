@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include "openPMD/config.hpp"
 #if openPMD_HAVE_MPI
 
 

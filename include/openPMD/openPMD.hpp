@@ -48,5 +48,6 @@
 #include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 
+#include "openPMD/config.hpp"
 #include "openPMD/version.hpp"
 // IWYU pragma: end_exports

@@ -247,7 +247,7 @@ The install will contain header files and libraries in the path set with `-DCMAK
 
 ### CMake
 
-If your project is using CMake for its build, one can conveniently use our provided `Config.cmake` package which is installed alongside the library.
+If your project is using CMake for its build, one can conveniently use our provided `openPMDConfig.cmake` package which is installed alongside the library.
 
 First set the following environment hint if openPMD-api was *not* installed in a system path:
 
@@ -271,4 +271,24 @@ endif()
 add_subdirectory("path/to/source/of/openPMD-api")
 
 target_link_libraries(YourTarget PRIVATE openPMD::openPMD)
+```
+
+### Manually
+
+If your (Linux/OSX) project is build by calling the compiler directly or uses a manually written `Makefile`, consider using our `openPMD.pc` helper file for `pkg-config` which are installed alongside the library.
+
+First set the following environment hint if openPMD-api was *not* installed in a system path:
+
+```bash
+# optional: only needed if installed outside of system paths
+export PKG_CONFIG_PATH=$HOME/somepath/lib/pkgconfig:$PKG_CONFIG_PATH
+```
+
+Additional linker and compiler flags for your project are available via:
+```bash
+pkg-config --libs openPMD
+# -L${HOME}/somepath/lib -lopenPMD
+
+pkg-config --cflags openPMD
+# -I${HOME}/somepath/include
 ```

@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/config.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
 #if openPMD_HAVE_ADIOS1

@@ -19,7 +19,10 @@ Features
 
 - ADIOS2: support added (v2.4.0+) #482 #513 #530
 - support empty datasets via ``RecordComponent::makeEmpty`` #528 #529
-- CMake: Build a shared library by default #506
+- CMake:
+
+  - build a shared library by default #506
+  - generate pkg-config ``.pc`` file #532
 - Python:
 
   - manylinux2010 wheels for PyPI #523

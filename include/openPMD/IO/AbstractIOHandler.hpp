@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/config.hpp"
 #include "openPMD/IO/AccessType.hpp"
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/IO/IOTask.hpp"

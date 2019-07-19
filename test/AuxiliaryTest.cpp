@@ -3,6 +3,7 @@
 #   define OPENPMD_private public
 #   define OPENPMD_protected public
 #endif
+#include "openPMD/config.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"

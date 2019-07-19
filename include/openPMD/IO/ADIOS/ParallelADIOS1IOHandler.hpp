@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/config.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
 #include <future>
