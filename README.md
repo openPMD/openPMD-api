@@ -1,3 +1,4 @@
+
 C++ & Python API for Scientific I/O with openPMD
 ================================================
 
@@ -288,6 +289,10 @@ Additional linker and compiler flags for your project are available via:
 ```bash
 pkg-config --libs openPMD
 # -L${HOME}/somepath/lib -lopenPMD
+
+# if you build openPMD-api as static library with `-DBUILD_SHARED_LIBS=OFF`
+pkg-config --libs --static openPMD
+# -L/usr/local/lib -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lopenPMD -pthread /usr/lib/libmpi.so -pthread /usr/lib/x86_64-linux-gnu/openmpi/lib/libmpi_cxx.so /usr/lib/libmpi.so /usr/lib/x86_64-linux-gnu/hdf5/openmpi/libhdf5.so /usr/lib/x86_64-linux-gnu/libsz.so /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/x86_64-linux-gnu/libdl.so /usr/lib/x86_64-linux-gnu/libm.so -pthread /usr/lib/libmpi.so -pthread /usr/lib/x86_64-linux-gnu/openmpi/lib/libmpi_cxx.so /usr/lib/libmpi.so
 
 pkg-config --cflags openPMD
 # -I${HOME}/somepath/include
