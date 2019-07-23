@@ -731,8 +731,25 @@ configure_file(
     ${openPMD_BINARY_DIR}/openPMDConfig.cmake
     @ONLY
 )
+
+# get absolute paths to linked libraries
+function(openpmdreclibs tgtname outname)
+    get_target_property(PC_PRIVATE_LIBS_TGT ${tgtname} INTERFACE_LINK_LIBRARIES)
+    foreach(PC_LIB IN LISTS PC_PRIVATE_LIBS_TGT)
+       if(TARGET ${PC_LIB})
+           openpmdreclibs(${PC_LIB} ${outname})
+       else()
+           if(PC_LIB)
+               string(APPEND ${outname} " ${PC_LIB}")
+           endif()
+       endif()
+    endforeach()
+    set(${outname} ${${outname}} PARENT_SCOPE)
+endfunction()
+
 if(openPMD_HAVE_PKGCONFIG)
-    CONFIGURE_FILE(
+    openpmdreclibs(openPMD openPMD_PC_PRIVATE_LIBS)
+    configure_file(
         ${openPMD_SOURCE_DIR}/openPMD.pc.in
         ${openPMD_BINARY_DIR}/openPMD.pc
         @ONLY
