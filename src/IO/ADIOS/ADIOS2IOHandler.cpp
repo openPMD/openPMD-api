@@ -655,26 +655,6 @@ ADIOS2IOHandlerImpl::verifyDataset( Offset const & offset,
     return var;
 }
 
-std::unique_ptr< std::pair< std::string, int > >
-ADIOS2IOHandlerImpl::workaroundDatatypeOfAttribute( adios2::IO & IO,
-                                                    std::string variable,
-                                                    std::string attribute )
-{
-    std::map< std::string, adios2::Params > attrs =
-        IO.AvailableAttributes( variable );
-    auto it = attrs.find( attribute );
-    if ( it == attrs.end( ) )
-    {
-        return std::unique_ptr< std::pair< std::string, int > >( );
-    }
-    else
-    {
-        return std::unique_ptr< std::pair< std::string, int > >(
-            new std::pair< std::string, int >(
-                it->second["Type"], std::stoi( it->second["Elements"] ) ) );
-    }
-}
-
 namespace detail
 {
     DatasetReader::DatasetReader( openPMD::ADIOS2IOHandlerImpl * impl )

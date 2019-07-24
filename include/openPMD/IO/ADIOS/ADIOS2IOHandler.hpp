@@ -258,17 +258,6 @@ private:
     adios2::Variable< T > verifyDataset( Offset const & offset,
                                          Extent const & extent, adios2::IO & IO,
                                          std::string const & var );
-
-
-    /*
-     * At the time of writing this, the ADIOS2 API supports creating
-     * attributes in a variable's scope, but only retrieving the type
-     * of an attribute defined in global (i.e. the IO's) scope
-     */
-    std::unique_ptr< std::pair< std::string, int > >
-    workaroundDatatypeOfAttribute( adios2::IO & IO, std::string variable,
-                                   std::string attribute );
-
 }; // ADIOS2IOHandlerImpl
 
 namespace detail
