@@ -23,6 +23,7 @@ Features
 Bug Fixes
 """""""""
 
+- Clang: fix pybind11 compile on older releases, such as AppleClang 7.3-9.0, Clang 3.9 #543
 
 Other
 """""

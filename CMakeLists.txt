@@ -562,6 +562,20 @@ if(openPMD_HAVE_PYTHON)
     )
     target_link_libraries(openPMD.py PRIVATE openPMD)
 
+    # ancient Clang releases
+    #   https://github.com/openPMD/openPMD-api/issues/542
+    #   https://pybind11.readthedocs.io/en/stable/faq.html#recursive-template-instantiation-exceeded-maximum-depth-of-256
+    #   https://bugs.llvm.org/show_bug.cgi?id=18417
+    #   https://github.com/llvm/llvm-project/commit/e55b4737c026ea2e0b44829e4115d208577a67b2
+    if(("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang" AND
+        CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.1) OR
+       ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" AND
+        CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.0))
+            message(STATUS "Clang: Passing -ftemplate-depth=1024")
+            target_compile_options(openPMD.py
+                PRIVATE -ftemplate-depth=1024)
+    endif()
+
     if(WIN32)
         set(CMAKE_INSTALL_PYTHONDIR_DEFAULT
             "${CMAKE_INSTALL_LIBDIR}\\site-packages"
