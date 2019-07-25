@@ -45,7 +45,7 @@ They do come handy to test pre-releases quickly with power-users.
    #    e.g. `<v>.dev[N]`, `<v>a[N]`, `<v>b[N]`, `<v>rc[N]`, or `<v>`
 
    rm -rf dist/
-   setup.py clean --all
+   python setup.py clean --all
 
    # prepare source distribution
    python setup.py sdist
