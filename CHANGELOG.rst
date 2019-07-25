@@ -5,11 +5,14 @@ Changelog
 
 0.9.0-alpha
 -----------
-**Date:** TBA
+**Date:** 2019-07-25
 
-ADIOS2 Support
+Improved Builds and Packages
 
-[Summary]
+This release improves PyPI releases with proper declaration of build dependencies (use pip 19.0+).
+For ``Makefile``-based projects, an ``openPMD.pc`` file to be used with ``pkg-config`` is added on install.
+``RecordComponent`` now supports a ``makeEmpty`` method to write a zero-extent, yet multi-dimensional record component.
+We are now building as shared library by default.
 
 Changes to "0.8.0-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -17,15 +20,14 @@ Changes to "0.8.0-alpha"
 Features
 """"""""
 
-- ADIOS2: support added (v2.4.0+) #482 #513 #530
-- support empty datasets via ``RecordComponent::makeEmpty`` #528 #529
+- C++: support empty datasets via ``RecordComponent::makeEmpty`` #528 #529
 - CMake:
 
   - build a shared library by default #506
-  - generate pkg-config ``.pc`` file #532 #535 #537
+  - generate ``pkg-config`` ``.pc`` file #532 #535 #537
 - Python:
 
-  - manylinux2010 wheels for PyPI #523
+  - ``manylinux2010`` wheels for PyPI #523
   - add ``pyproject.toml`` for build dependencies (PEP-518) #527
 
 Bug Fixes
@@ -33,9 +35,9 @@ Bug Fixes
 
 - MPark.Variant: work-around missing version bump #504
 - linker error concerning ``Mesh::setTimeOffset`` method template #511
-- Remove dummy dataset writing from ``RecordComponent::flush()`` #528
+- remove dummy dataset writing from ``RecordComponent::flush()`` #528
 - remove dummy dataset writing from ``PatchRecordComponent::flush`` #512
-- Allow flushing before defining position and positionOffset components of particle species #518 #519
+- allow flushing before defining ``position`` and ``positionOffset`` components of particle species #518 #519
 - CMake:
 
   - make install paths cacheable on Windows #521
