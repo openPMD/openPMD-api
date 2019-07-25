@@ -3,6 +3,31 @@
 Changelog
 =========
 
+0.10.0-alpha
+------------
+**Date:** TBA
+
+[Title]
+
+[Summary]
+
+Changes to "0.9.0-alpha"
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Features
+""""""""
+
+- ADIOS2: support added (v2.4.0+) #482 #513 #530
+- Python: support empty datasets via ``Record_Component.make_empty`` #538
+
+Bug Fixes
+"""""""""
+
+
+Other
+"""""
+
+
 0.9.0-alpha
 -----------
 **Date:** 2019-07-25
