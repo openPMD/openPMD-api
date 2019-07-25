@@ -3,6 +3,13 @@
 Upgrade Guide
 =============
 
+0.9.0-alpha
+-----------
+
+We are now building a shared library by default.
+In order to keep build the old default, a static library, append ``-DBUILD_SHARED_LIBS=OFF`` to the ``cmake`` command.
+
+
 0.7.0-alpha
 -----------
 
