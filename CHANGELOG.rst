@@ -22,7 +22,7 @@ Features
 - CMake:
 
   - build a shared library by default #506
-  - generate pkg-config ``.pc`` file #532 #535
+  - generate pkg-config ``.pc`` file #532 #535 #537
 - Python:
 
   - manylinux2010 wheels for PyPI #523
