@@ -889,14 +889,14 @@ Public Attributes</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Write a chunk of data into an existing dataset. </p>
-<p class="">The operation should fail if m_handler-&gt;accessType is AccessType::READ_ONLY. The dataset should be associated with the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a>. The operation should fail if the dataset does not exist. The operation should fail if the chunk extent parameters.extent is not smaller or equals in every dimension. The operation should fail if chunk positions parameters.offset+parameters.extent do not reside inside the dataset. The dataset should match the dataype parameters.dtype. The data parameters.data is a cast-to-void pointer to a flattened version of the chunk data. It should be re-cast to the provided datatype. The chunk is stored row-major. The region of the chunk should be written to physical storage after the operation completes successully. </p>
+<p class="">The operation should fail if m_handler-&gt;accessType is AccessType::READ_ONLY. The dataset should be associated with the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. ">Writable</a>. The operation should fail if the dataset does not exist. The operation should fail if the chunk extent parameters.extent is not smaller or equals in every dimension. The operation should fail if chunk positions parameters.offset+parameters.extent do not reside inside the dataset. The dataset should match the dataype parameters.dtype. The data parameters.data is a cast-to-void pointer to a flattened version of the chunk data. It should be re-cast to the provided datatype. The chunk is stored row-major. The region of the chunk should be written to physical storage after the operation completes successfully. </p>
 
 <p>Implemented in <a class="el" href="classopen_p_m_d_1_1_j_s_o_n_i_o_handler_impl.html#ab18c9365eccebb719fba852ed374c923">openPMD::JSONIOHandlerImpl</a>, <a class="el" href="classopen_p_m_d_1_1_parallel_a_d_i_o_s1_i_o_handler_impl.html#ab9b83fce49966a6869817f1ffeb68a65">openPMD::ParallelADIOS1IOHandlerImpl</a>, <a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html#a0824e8e8dbf95801d3d2b549c93d65c8">openPMD::ADIOS1IOHandlerImpl</a>, and <a class="el" href="classopen_p_m_d_1_1_h_d_f5_i_o_handler_impl.html#a4220fa7460bfc9748c458a86ec7d1121">openPMD::HDF5IOHandlerImpl</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/tmp/tmp.nUZc9CM2xb/openPMD-api/include/openPMD/IO/<a class="el" href="_abstract_i_o_handler_impl_8hpp_source.html">AbstractIOHandlerImpl.hpp</a></li>
+<li>/tmp/tmp.vM1u6JUEnh/openPMD-api/include/openPMD/IO/<a class="el" href="_abstract_i_o_handler_impl_8hpp_source.html">AbstractIOHandlerImpl.hpp</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

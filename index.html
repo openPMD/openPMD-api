@@ -90,14 +90,14 @@ $(function() {
 <p class="">Shipped internally in <code>share/openPMD/thirdParty/</code>:</p><ul>
 <li><a href="https://github.com/mpark/variant">MPark.Variant</a> 1.4.0+ (https://github.com/mpark/variant/blob/master/LICENSE.md "BSL-1.0")</li>
 <li><a href="https://github.com/catchorg/Catch2">Catch2</a> 2.6.1+ (<a href="https://github.com/catchorg/Catch2/blob/master/LICENSE.txt">BSL-1.0</a>)</li>
-<li><a href="https://github.com/pybind/pybind11">pybind11</a> 2.2.4+ (<a href="https://github.com/pybind/pybind11/blob/master/LICENSE">new BSD</a>)</li>
+<li><a href="https://github.com/pybind/pybind11">pybind11</a> 2.3.0+ (<a href="https://github.com/pybind/pybind11/blob/master/LICENSE">new BSD</a>)</li>
 <li><a href="https://github.com/nlohmann/json">NLohmann-JSON</a> 3.5.0+ (<a href="https://github.com/nlohmann/json/blob/develop/LICENSE.MIT">MIT</a>)</li>
 </ul>
 <p class="">Optional I/O backends:</p><ul>
 <li><a href="https://en.wikipedia.org/wiki/JSON">JSON</a></li>
 <li><a href="https://support.hdfgroup.org/HDF5">HDF5</a> 1.8.13+</li>
 <li><a href="https://www.olcf.ornl.gov/center-projects/adios">ADIOS1</a> 1.13.1+</li>
-<li><a href="https://github.com/ornladios/ADIOS2">ADIOS2</a> 2.1+ (<em>not yet implemented</em>)</li>
+<li><a href="https://github.com/ornladios/ADIOS2">ADIOS2</a> 2.4.0+ (<em>not yet implemented</em>)</li>
 </ul>
 <p class="">while those can be built either with or without:</p><ul>
 <li>MPI 2.1+, e.g. OpenMPI 1.6.5+ or MPICH2</li>
@@ -105,26 +105,26 @@ $(function() {
 <p class="">Optional language bindings:</p><ul>
 <li>Python:<ul>
 <li>Python 3.5 - 3.7</li>
-<li>pybind 2.2.4+</li>
+<li>pybind 2.3.0+</li>
 <li>numpy 1.15+</li>
 <li>mpi4py 2.1+</li>
 </ul>
 </li>
 </ul>
 <h2>Installation</h2>
-<p class=""><a href="https://spack.io"></a> <a href="https://anaconda.org/conda-forge/openpmd-api"></a> <a href="https://pypi.org/project/openPMD-api"></a> <a href="https://cmake.org"></a></p>
+<p class=""><a href="https://spack.readthedocs.io/en/latest/package_list.html#openpmd-api"></a> <a href="https://anaconda.org/conda-forge/openpmd-api"></a> <a href="https://pypi.org/project/openPMD-api"></a> <a href="https://cmake.org"></a></p>
 <p class="">Choose <em>one</em> of the install methods below to get started:</p>
 <h3><a href="https://spack.io">Spack</a></h3>
-<p class=""><a href="https://spack.io"></a></p>
+<p class=""><a href="https://spack.readthedocs.io/en/latest/package_list.html#openpmd-api"></a> <a href="https://spack.readthedocs.io/en/latest/package_list.html#openpmd-api"></a></p>
 <div class="fragment"><div class="line"># optional:               +python +adios1 -mpi</div><div class="line">spack install openpmd-api</div><div class="line">spack load -r openpmd-api</div></div><!-- fragment --><h3><a href="https://conda.io">Conda</a></h3>
 <p class=""><a href="https://anaconda.org/conda-forge/openpmd-api"></a> <a href="https://anaconda.org/conda-forge/openpmd-api"></a> <a href="https://anaconda.org/conda-forge/openpmd-api"></a></p>
-<div class="fragment"><div class="line"># serial version only</div><div class="line">conda install -c conda-forge openpmd-api</div></div><!-- fragment --><h3><a href="https://pypi.org">PyPI</a></h3>
+<div class="fragment"><div class="line"># optional:            OpenMPI support  =*=mpi_openmpi*</div><div class="line"># optional:              MPICH support  =*=mpi_mpich*</div><div class="line">conda install -c conda-forge openpmd-api</div></div><!-- fragment --><h3><a href="https://pypi.org">PyPI</a></h3>
 <p class=""><a href="https://pypi.org/project/openPMD-api"></a> <a href="https://pypi.org/project/openPMD-api"></a> <a href="https://pypi.org/project/openPMD-api"></a> <a href="https://pypi.org/project/openPMD-api"></a></p>
 <p class="">Behind the scenes, this install method <em>compiles from source</em> against the found installations of HDF5, ADIOS and/or MPI (in system paths, from other package managers, or loaded via a module system, ...). The current status for this install method is <em>experimental</em>. Please feel free to <a href="https://github.com/openPMD/openPMD-api/issues/new/choose">report</a> how this works for you.</p>
-<div class="fragment"><div class="line"># optional:             --user</div><div class="line">pip install openpmd-api</div></div><!-- fragment --><p class="">or with MPI support: </p><div class="fragment"><div class="line"># optional:                                --user</div><div class="line">openPMD_USE_MPI=ON pip install openpmd-api</div></div><!-- fragment --><h3>From Source</h3>
+<div class="fragment"><div class="line"># optional:             --user</div><div class="line">pip install openpmd-api</div></div><!-- fragment --><p class="">or with MPI support: </p><div class="fragment"><div class="line"># optional:                                                  --user</div><div class="line">openPMD_USE_MPI=ON pip install openpmd-api --no-binary :all:</div></div><!-- fragment --><h3>From Source</h3>
 <p class=""><a href="https://cmake.org"></a></p>
 <p class="">openPMD can then be installed using <a href="https://cmake.org/">CMake</a>:</p>
-<div class="fragment"><div class="line">git clone https://github.com/openPMD/openPMD-api.git</div><div class="line"></div><div class="line">mkdir -p openPMD-api-build</div><div class="line">cd openPMD-api-build</div><div class="line"></div><div class="line"># optional: for full tests, with unzip</div><div class="line">../openPMD-api/.travis/download_samples.sh</div><div class="line"></div><div class="line"># for own install prefix append:</div><div class="line">#   -DCMAKE_INSTALL_PREFIX=$HOME/somepath</div><div class="line"># for options append:</div><div class="line">#   -DopenPMD_USE_...=...</div><div class="line"># e.g. for python support add:</div><div class="line">#   -DopenPMD_USE_PYTHON=ON -DPYTHON_EXECUTABLE=$(which python)</div><div class="line">cmake ../openPMD-api</div><div class="line"></div><div class="line">cmake --build .</div><div class="line"></div><div class="line"># optional</div><div class="line">ctest</div><div class="line"></div><div class="line"># sudo might be required required for system paths</div><div class="line">cmake --build . --target install</div></div><!-- fragment --><p class="">The following options can be added to the <code>cmake</code> call to control features. CMake controls options with prefixed <code>-D</code>, e.g. <code>-DopenPMD_USE_MPI=OFF</code>:</p>
+<div class="fragment"><div class="line">git clone https://github.com/openPMD/openPMD-api.git</div><div class="line"></div><div class="line">mkdir openPMD-api-build</div><div class="line">cd openPMD-api-build</div><div class="line"></div><div class="line"># optional: for full tests, with unzip</div><div class="line">../openPMD-api/.travis/download_samples.sh</div><div class="line"></div><div class="line"># for own install prefix append:</div><div class="line">#   -DCMAKE_INSTALL_PREFIX=$HOME/somepath</div><div class="line"># for options append:</div><div class="line">#   -DopenPMD_USE_...=...</div><div class="line"># e.g. for python support add:</div><div class="line">#   -DopenPMD_USE_PYTHON=ON -DPYTHON_EXECUTABLE=$(which python)</div><div class="line">cmake ../openPMD-api</div><div class="line"></div><div class="line">cmake --build .</div><div class="line"></div><div class="line"># optional</div><div class="line">ctest</div><div class="line"></div><div class="line"># sudo might be required for system paths</div><div class="line">cmake --build . --target install</div></div><!-- fragment --><p class="">The following options can be added to the <code>cmake</code> call to control features. CMake controls options with prefixed <code>-D</code>, e.g. <code>-DopenPMD_USE_MPI=OFF</code>:</p>
 <table class="markdownTable">
 <tr class="markdownTableHead">
 <th class="markdownTableHeadNone">CMake Option  </th><th class="markdownTableHeadNone">Values  </th><th class="markdownTableHeadNone">Description   </th></tr>
@@ -157,19 +157,27 @@ $(function() {
 <tr class="markdownTableBody" class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_CATCH</code>  </td><td class="markdownTableBodyNone"><b>ON</b>/OFF  </td><td class="markdownTableBodyNone">Catch2  </td><td class="markdownTableBodyNone">2.6.1+   </td></tr>
 <tr class="markdownTableBody" class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_PYBIND11</code>  </td><td class="markdownTableBodyNone"><b>ON</b>/OFF  </td><td class="markdownTableBodyNone">pybind11  </td><td class="markdownTableBodyNone">2.2.4+   </td></tr>
+<td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_PYBIND11</code>  </td><td class="markdownTableBodyNone"><b>ON</b>/OFF  </td><td class="markdownTableBodyNone">pybind11  </td><td class="markdownTableBodyNone">2.3.0+   </td></tr>
 <tr class="markdownTableBody" class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_JSON</code>  </td><td class="markdownTableBodyNone"><b>ON</b>/OFF  </td><td class="markdownTableBodyNone">NLohmann-JSON  </td><td class="markdownTableBodyNone">3.5.0+   </td></tr>
 </table>
-<p class="">By default, this will build as a static library (<code>libopenPMD.a</code>) and installs also its headers. In order to build a shared library, append <code>-DBUILD_SHARED_LIBS=ON</code> to the <code>cmake</code> command. You can only build a static or a shared library at a time.</p>
+<p class="">By default, this will build as a shared library (<code>libopenPMD.[so|dylib|dll]</code>) and installs also its headers. In order to build a static library, append <code>-DBUILD_SHARED_LIBS=OFF</code> to the <code>cmake</code> command. You can only build a static or a shared library at a time.</p>
 <p class="">By default, the <code>Release</code> version is built. In order to build with debug symbols, pass <code>-DCMAKE_BUILD_TYPE=Debug</code> to your <code>cmake</code> command.</p>
 <p class="">By default, tests and examples are built. In order to skip building those, pass <code>-DBUILD_TESTING=OFF</code> or <code>-DBUILD_EXAMPLES</code> to your <code>cmake</code> command.</p>
 <h2>Linking to your project</h2>
 <p class="">The install will contain header files and libraries in the path set with <code>-DCMAKE_INSTALL_PREFIX</code>.</p>
 <h3>CMake</h3>
-<p class="">If your project is using CMake for its build, one can conveniently use our provided <code>Config.cmake</code> package which is installed alongside the library.</p>
+<p class="">If your project is using CMake for its build, one can conveniently use our provided <code>openPMDConfig.cmake</code> package which is installed alongside the library.</p>
 <p class="">First set the following environment hint if openPMD-api was <em>not</em> installed in a system path:</p>
-<div class="fragment"><div class="line"># optional: only needed if installed outside of system paths</div><div class="line">export CMAKE_PREFIX_PATH=$HOME/somepath:$CMAKE_PREFIX_PATH</div></div><!-- fragment --><p class="">Use the following lines in your project's <code>CMakeLists.txt</code>: </p><div class="fragment"><div class="line"># supports:                       COMPONENTS MPI NOMPI JSON HDF5 ADIOS1 ADIOS2</div><div class="line">find_package(openPMD 0.1.0 CONFIG)</div><div class="line"></div><div class="line">if(openPMD_FOUND)</div><div class="line">    target_link_libraries(YourTarget PRIVATE openPMD::openPMD)</div><div class="line">endif()</div></div><!-- fragment --><p class=""><em>Alternatively</em>, add the openPMD-api repository source directly to your project and use it via: </p><div class="fragment"><div class="line">add_subdirectory(&quot;path/to/source/of/openPMD-api&quot;)</div><div class="line"></div><div class="line">target_link_libraries(YourTarget PRIVATE openPMD::openPMD)</div></div><!-- fragment --> </div></div><!-- PageDoc -->
+<div class="fragment"><div class="line"># optional: only needed if installed outside of system paths</div><div class="line">export CMAKE_PREFIX_PATH=$HOME/somepath:$CMAKE_PREFIX_PATH</div></div><!-- fragment --><p class="">Use the following lines in your project's <code>CMakeLists.txt</code>: </p><div class="fragment"><div class="line"># supports:                       COMPONENTS MPI NOMPI JSON HDF5 ADIOS1 ADIOS2</div><div class="line">find_package(openPMD 0.1.0 CONFIG)</div><div class="line"></div><div class="line">if(openPMD_FOUND)</div><div class="line">    target_link_libraries(YourTarget PRIVATE openPMD::openPMD)</div><div class="line">endif()</div></div><!-- fragment --><p class=""><em>Alternatively</em>, add the openPMD-api repository source directly to your project and use it via: </p><div class="fragment"><div class="line">add_subdirectory(&quot;path/to/source/of/openPMD-api&quot;)</div><div class="line"></div><div class="line">target_link_libraries(YourTarget PRIVATE openPMD::openPMD)</div></div><!-- fragment --><h3>Manually</h3>
+<p class="">If your (Linux/OSX) project is build by calling the compiler directly or uses a manually written <code>Makefile</code>, consider using our <code>openPMD.pc</code> helper file for <code>pkg-config</code> which are installed alongside the library.</p>
+<p class="">First set the following environment hint if openPMD-api was <em>not</em> installed in a system path:</p>
+<div class="fragment"><div class="line"># optional: only needed if installed outside of system paths</div><div class="line">export PKG_CONFIG_PATH=$HOME/somepath/lib/pkgconfig:$PKG_CONFIG_PATH</div></div><!-- fragment --><p class="">Additional linker and compiler flags for your project are available via: ```bash pkg-config &ndash;libs openPMD </p><h1>-L${HOME}/somepath/lib -lopenPMD</h1>
+<h1>if you build openPMD-api as static library with <code>-DBUILD_SHARED_LIBS=OFF</code></h1>
+<p class="">pkg-config &ndash;libs &ndash;static openPMD </p><h1>-L/usr/local/lib -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lopenPMD -pthread /usr/lib/libmpi.so -pthread /usr/lib/x86_64-linux-gnu/openmpi/lib/libmpi_cxx.so /usr/lib/libmpi.so /usr/lib/x86_64-linux-gnu/hdf5/openmpi/libhdf5.so /usr/lib/x86_64-linux-gnu/libsz.so /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/x86_64-linux-gnu/libdl.so /usr/lib/x86_64-linux-gnu/libm.so -pthread /usr/lib/libmpi.so -pthread /usr/lib/x86_64-linux-gnu/openmpi/lib/libmpi_cxx.so /usr/lib/libmpi.so</h1>
+<p class="">pkg-config &ndash;cflags openPMD </p><h1>-I${HOME}/somepath/include</h1>
+<p class="">``` </p>
+</div></div><!-- PageDoc -->
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

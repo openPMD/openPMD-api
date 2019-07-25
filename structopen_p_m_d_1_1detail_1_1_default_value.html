@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.15"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>openPMD-api: openPMD::HDF5FilePosition Struct Reference</title>
+<title>openPMD-api: openPMD::detail::DefaultValue&lt; RecordComponent_T &gt; Struct Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -61,42 +61,47 @@ $(function() {
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><b>openPMD</b></li><li class="navelem"><a class="el" href="structopen_p_m_d_1_1_h_d_f5_file_position.html">HDF5FilePosition</a></li>  </ul>
+<li class="navelem"><b>openPMD</b></li><li class="navelem"><b>detail</b></li><li class="navelem"><a class="el" href="structopen_p_m_d_1_1detail_1_1_default_value.html">DefaultValue</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-attribs">Public Attributes</a> &#124;
-<a href="structopen_p_m_d_1_1_h_d_f5_file_position-members.html">List of all members</a>  </div>
+<a href="structopen_p_m_d_1_1detail_1_1_default_value-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">openPMD::HDF5FilePosition Struct Reference</div>  </div>
+<div class="title">openPMD::detail::DefaultValue&lt; RecordComponent_T &gt; Struct Template Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="dynheader">
-Inheritance diagram for openPMD::HDF5FilePosition:</div>
-<div class="dyncontent">
- <div class="center">
-  <img src="structopen_p_m_d_1_1_h_d_f5_file_position.png" usemap="#openPMD::HDF5FilePosition_map" alt=""/>
-  <map id="openPMD::HDF5FilePosition_map" name="openPMD::HDF5FilePosition_map">
-<area href="classopen_p_m_d_1_1_abstract_file_position.html" alt="openPMD::AbstractFilePosition" shape="rect" coords="0,0,186,24"/>
-</map>
- </div></div>
+
+<p>Functor template to be used in combination with &lt;switchType&gt;"()" to set a default value for constant record components via the respective type's default constructor.  
+ <a href="structopen_p_m_d_1_1detail_1_1_default_value.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="_base_record_component_8hpp_source.html">BaseRecordComponent.hpp</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a9ce9ec41eac13c7a27dac241a0252960"><td class="memItemLeft" align="right" valign="top"><a id="a9ce9ec41eac13c7a27dac241a0252960"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>HDF5FilePosition</b> (std::string const &amp;s)</td></tr>
-<tr class="separator:a9ce9ec41eac13c7a27dac241a0252960"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:a796fe0e8c326c85b0e5a2f9ffe466873"><td class="memItemLeft" align="right" valign="top"><a id="a796fe0e8c326c85b0e5a2f9ffe466873"></a>
-std::string&#160;</td><td class="memItemRight" valign="bottom"><b>location</b></td></tr>
-<tr class="separator:a796fe0e8c326c85b0e5a2f9ffe466873"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5cca54d8579ee1ff4d74ea2a613493e7"><td class="memTemplParams" colspan="2"><a id="a5cca54d8579ee1ff4d74ea2a613493e7"></a>
+template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a5cca54d8579ee1ff4d74ea2a613493e7"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>operator()</b> (RecordComponent_T &amp;rc)</td></tr>
+<tr class="separator:a5cca54d8579ee1ff4d74ea2a613493e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad9db3ae1f7173eb2b187f38f3e717431"><td class="memTemplParams" colspan="2"><a id="ad9db3ae1f7173eb2b187f38f3e717431"></a>
+template&lt;unsigned n, typename... Args&gt; </td></tr>
+<tr class="memitem:ad9db3ae1f7173eb2b187f38f3e717431"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>operator()</b> (Args &amp;&amp;...)</td></tr>
+<tr class="separator:ad9db3ae1f7173eb2b187f38f3e717431"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<hr/>The documentation for this struct was generated from the following file:<ul>
-<li>/tmp/tmp.vM1u6JUEnh/openPMD-api/include/openPMD/IO/HDF5/<a class="el" href="_h_d_f5_file_position_8hpp_source.html">HDF5FilePosition.hpp</a></li>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><h3>template&lt;typename RecordComponent_T&gt;<br />
+struct openPMD::detail::DefaultValue&lt; RecordComponent_T &gt;</h3>
+
+<p class="">Functor template to be used in combination with &lt;switchType&gt;"()" to set a default value for constant record components via the respective type's default constructor. </p>
+<p class="">Used to implement empty datasets in subclasses of <a class="el" href="classopen_p_m_d_1_1_base_record_component.html">BaseRecordComponent</a> (currently <a class="el" href="classopen_p_m_d_1_1_record_component.html">RecordComponent</a>). </p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">rc</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+</div><hr/>The documentation for this struct was generated from the following file:<ul>
+<li>/tmp/tmp.vM1u6JUEnh/openPMD-api/include/openPMD/backend/<a class="el" href="_base_record_component_8hpp_source.html">BaseRecordComponent.hpp</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

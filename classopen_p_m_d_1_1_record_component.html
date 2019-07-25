@@ -114,6 +114,10 @@ Extent&#160;</td><td class="memItemRight" valign="bottom"><b>getExtent</b> () co
 template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a92022d147ab5fe4913a905c0acf4d21c"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classopen_p_m_d_1_1_record_component.html">RecordComponent</a> &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><b>makeConstant</b> (T)</td></tr>
 <tr class="separator:a92022d147ab5fe4913a905c0acf4d21c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4452fb03770059889134043943459901"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a4452fb03770059889134043943459901"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classopen_p_m_d_1_1_record_component.html">RecordComponent</a> &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_record_component.html#a4452fb03770059889134043943459901">makeEmpty</a> (uint8_t dimensions)</td></tr>
+<tr class="memdesc:a4452fb03770059889134043943459901"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a dataset with zero extent in each dimension.  <a href="#a4452fb03770059889134043943459901">More...</a><br /></td></tr>
+<tr class="separator:a4452fb03770059889134043943459901"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8bdf6682bdeb7a31e1952d43d06a4b71"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a8bdf6682bdeb7a31e1952d43d06a4b71"><td class="memTemplItemLeft" align="right" valign="top">std::shared_ptr&lt; T &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_record_component.html#a8bdf6682bdeb7a31e1952d43d06a4b71">loadChunk</a> (Offset={0u}, Extent={-1u}, double targetUnitSI=std::numeric_limits&lt; double &gt;::quiet_NaN())</td></tr>
 <tr class="memdesc:a8bdf6682bdeb7a31e1952d43d06a4b71"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load and allocate a chunk of data.  <a href="#a8bdf6682bdeb7a31e1952d43d06a4b71">More...</a><br /></td></tr>
@@ -207,6 +211,9 @@ std::shared_ptr&lt; std::queue&lt; <a class="el" href="classopen_p_m_d_1_1_i_o_t
 <tr class="memitem:a9426fcb7eee6fba5a907101e70dee163"><td class="memItemLeft" align="right" valign="top"><a id="a9426fcb7eee6fba5a907101e70dee163"></a>
 std::shared_ptr&lt; <a class="el" href="classopen_p_m_d_1_1_attribute.html">Attribute</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>m_constantValue</b></td></tr>
 <tr class="separator:a9426fcb7eee6fba5a907101e70dee163"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab9daa9c341c22e68107474b01d0216a7"><td class="memItemLeft" align="right" valign="top"><a id="ab9daa9c341c22e68107474b01d0216a7"></a>
+std::shared_ptr&lt; bool &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>m_isEmpty</b> = std::make_shared&lt; bool &gt;( false )</td></tr>
+<tr class="separator:ab9daa9c341c22e68107474b01d0216a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_attribs_classopen_p_m_d_1_1_base_record_component"><td colspan="2" onclick="javascript:toggleInherit('pub_attribs_classopen_p_m_d_1_1_base_record_component')"><img src="closed.png" alt="-"/>&#160;Public Attributes inherited from <a class="el" href="classopen_p_m_d_1_1_base_record_component.html">openPMD::BaseRecordComponent</a></td></tr>
 <tr class="memitem:a40b2d61114b5c5b5344a179118df675c inherit pub_attribs_classopen_p_m_d_1_1_base_record_component"><td class="memItemLeft" align="right" valign="top"><a id="a40b2d61114b5c5b5344a179118df675c"></a>
 OPENPMD_protected&#160;</td><td class="memItemRight" valign="bottom"><b>__pad0__</b>: <a class="el" href="classopen_p_m_d_1_1_base_record_component.html">BaseRecordComponent</a>()</td></tr>
@@ -373,9 +380,46 @@ template&lt;typename T &gt; </div>
 
 </div>
 </div>
+<a id="a4452fb03770059889134043943459901"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4452fb03770059889134043943459901">&#9670;&nbsp;</a></span>makeEmpty()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classopen_p_m_d_1_1_record_component.html">RecordComponent</a> &amp; openPMD::RecordComponent::makeEmpty </td>
+          <td>(</td>
+          <td class="paramtype">uint8_t&#160;</td>
+          <td class="paramname"><em>dimensions</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Create a dataset with zero extent in each dimension. </p>
+<p class="">Implemented by creating a constant record component with a dummy value (default constructor of the respective datatype). </p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">dimensions</td><td>The number of dimensions. Must be greater than zero. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A reference to this <a class="el" href="classopen_p_m_d_1_1_record_component.html">RecordComponent</a>. </dd></dl>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>/tmp/tmp.nUZc9CM2xb/openPMD-api/include/openPMD/<a class="el" href="_record_component_8hpp_source.html">RecordComponent.hpp</a></li>
-<li>/tmp/tmp.nUZc9CM2xb/openPMD-api/src/RecordComponent.cpp</li>
+<li>/tmp/tmp.vM1u6JUEnh/openPMD-api/include/openPMD/<a class="el" href="_record_component_8hpp_source.html">RecordComponent.hpp</a></li>
+<li>/tmp/tmp.vM1u6JUEnh/openPMD-api/src/RecordComponent.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
