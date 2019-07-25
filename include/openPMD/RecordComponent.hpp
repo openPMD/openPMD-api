@@ -127,6 +127,16 @@ public:
     template< typename T >
     RecordComponent& makeEmpty( uint8_t dimensions );
 
+    /**
+     * @brief Non-template overload of RecordComponent::makeEmpty(). 
+     * Uses the passed openPMD datatype to determine the template parameter.
+     * 
+     * @param dt The datatype of which to create an empty dataset.
+     * @param dimensions The dimensionality of the dataset.
+     * @return RecordComponent& 
+     */
+    RecordComponent& makeEmpty( Datatype dt, uint8_t dimensions );
+
     /** Returns true if this is an empty record component
      *
      * An empty record component has a defined dimensionality but zero extent

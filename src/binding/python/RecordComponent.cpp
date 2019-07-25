@@ -546,6 +546,20 @@ void init_RecordComponent(py::module &m) {
             py::arg("value"))
         .def("make_constant", &RecordComponent::makeConstant<bool>,
             py::arg("value"))
+        .def("make_empty",
+            []( RecordComponent & rc, Datatype dt, uint8_t dimensionality )
+            {
+                return rc.makeEmpty( dt, dimensionality );
+            },
+            py::arg("datatype"), py::arg("dimensionality"))
+        .def("make_empty",
+            [](
+                RecordComponent & rc,
+                pybind11::dtype const dt,
+                uint8_t dimensionality )
+            {
+                return rc.makeEmpty( dtype_from_numpy( dt ), dimensionality );
+            })
 
         // TODO if we also want to support scalar arrays, we have to switch
         //      py::array for py::buffer as in Attributable
