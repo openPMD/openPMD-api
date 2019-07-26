@@ -24,6 +24,7 @@ Bug Fixes
 """""""""
 
 - Clang: fix pybind11 compile on older releases, such as AppleClang 7.3-9.0, Clang 3.9 #543
+- Python: skip examples using HDF5 if backend is missing #544
 
 Other
 """""

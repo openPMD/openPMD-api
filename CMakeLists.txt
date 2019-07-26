@@ -946,7 +946,8 @@ if(BUILD_EXAMPLES)
 endif()
 
 # Python Examples
-if(openPMD_HAVE_PYTHON)
+# Current examples all use HDF5, elaborate if other backends are used
+if(openPMD_HAVE_PYTHON AND openPMD_HAVE_HDF5)
     if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
         execute_process(COMMAND ${PYTHON_EXECUTABLE}
             -m mpi4py
