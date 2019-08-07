@@ -519,7 +519,7 @@ isSame( openPMD::Datatype const d, openPMD::Datatype const e )
     return false;
 }
 
-#if _MSC_VER && !__INTEL_COMPILER
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
 #define OPENPMD_TEMPLATE_OPERATOR operator
 #else
 #define OPENPMD_TEMPLATE_OPERATOR template operator
@@ -551,7 +551,7 @@ ReturnType switchType(
     Action action,
     Args && ...args
 ) {
-#if _MSC_VER && !__INTEL_COMPILER
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
     auto f = &Action::OPENPMD_TEMPLATE_OPERATOR() < int >;
     using fun = decltype(f);
 #else
@@ -667,13 +667,7 @@ ReturnType switchType(
         },
         {
             Datatype::BOOL ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < bool > },
-        {
-            Datatype::DATATYPE ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < 1000 > },
-        {
-            Datatype::UNDEFINED ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < 0 > }
+            &Action::OPENPMD_TEMPLATE_OPERATOR() < bool > }
     };
     auto it = funs.find( dt );
     if( it != funs.end( ) )
