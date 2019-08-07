@@ -519,7 +519,7 @@ isSame( openPMD::Datatype const d, openPMD::Datatype const e )
     return false;
 }
 
-#if _MSC_VER && !__INTEL_COMPILER
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
 #define OPENPMD_TEMPLATE_OPERATOR operator
 #else
 #define OPENPMD_TEMPLATE_OPERATOR template operator
@@ -551,7 +551,7 @@ ReturnType switchType(
     Action action,
     Args && ...args
 ) {
-#if _MSC_VER && !__INTEL_COMPILER
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
     auto f = &Action::OPENPMD_TEMPLATE_OPERATOR() < int >;
     using fun = decltype(f);
 #else
