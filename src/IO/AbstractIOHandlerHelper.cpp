@@ -17,7 +17,8 @@
  * You should have received a copy of the GNU General Public License
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
- */ 
+ */
+#include "openPMD/auxiliary/Logging.hpp"
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 #include "openPMD/IO/DummyIOHandler.hpp"
 #include "openPMD/IO/ADIOS/ADIOS1IOHandler.hpp"
@@ -41,17 +42,20 @@ namespace openPMD
         switch( format )
         {
             case Format::HDF5:
+                LOG_DEBUG("Creating parallel HDF5 IOHandler");
                 return std::make_shared< ParallelHDF5IOHandler >(path, accessTypeBackend, comm);
             case Format::ADIOS1:
+                LOG_DEBUG("Creating parallel ADIOS1 IOHandler");
 #   if openPMD_HAVE_ADIOS1
                 return std::make_shared< ParallelADIOS1IOHandler >(path, accessTypeBackend, comm);
 #   else
                 throw std::runtime_error("openPMD-api built without ADIOS1 support");
-                return std::make_shared< DummyIOHandler >(path, accessTypeBackend);
 #   endif
             case Format::ADIOS2:
+                LOG_DEBUG("Creating parallel ADIOS2 IOHandler");
                 throw std::runtime_error("ADIOS2 backend not yet implemented");
             default:
+                LOG_DEBUG("Creating parallel dummy IOHandler");
                 return std::make_shared< DummyIOHandler >(path, accessTypeBackend);
         }
     }
@@ -66,19 +70,23 @@ namespace openPMD
         switch( format )
         {
             case Format::HDF5:
+                LOG_DEBUG("Creating serial HDF5 IOHandler");
                 return std::make_shared< HDF5IOHandler >(path, accessType);
             case Format::ADIOS1:
+                LOG_DEBUG("Creating serial ADIOS1 IOHandler");
 #   if openPMD_HAVE_ADIOS1
                 return std::make_shared< ADIOS1IOHandler >(path, accessType);
 #   else
                 throw std::runtime_error("openPMD-api built without ADIOS1 support");
-                return std::make_shared< DummyIOHandler >(path, accessType);
 #   endif
             case Format::ADIOS2:
+                LOG_DEBUG("Creating serial ADIOS1 IOHandler");
                 throw std::runtime_error("ADIOS2 backend not yet implemented");
             case Format::JSON:
+                LOG_DEBUG("Creating serial ADIOS1 IOHandler");
                 return std::make_shared< JSONIOHandler >(path, accessType);
             default:
+                LOG_DEBUG("Creating serial dummy IOHandler");
                 return std::make_shared< DummyIOHandler >(path, accessType);
         }
     }

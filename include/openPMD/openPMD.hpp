@@ -44,6 +44,7 @@
 
 #include "openPMD/IO/AccessType.hpp"
 
+#include "openPMD/auxiliary/Logging.hpp"
 #include "openPMD/auxiliary/OutOfRangeMsg.hpp"
 #include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/auxiliary/Variant.hpp"

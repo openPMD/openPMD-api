@@ -2,4 +2,4 @@
 # FIXME: all performance-* reports
 # FIXME: all cert-* reports
 Checks: -*,bugprone-*,cppcoreguidelines-slicing,mpi-*
-HeaderFilterRegex: '((^(?!\/share\/openPMD\/).*)*include\/openPMD\/.+\.hpp|src\/^(?!binding).+\.cpp$)'
+HeaderFilterRegex: '((^(?!.*share\/openPMD\/thirdParty).*)*include\/openPMD\/.+\.hpp|src\/^(?!binding).+\.cpp$)'

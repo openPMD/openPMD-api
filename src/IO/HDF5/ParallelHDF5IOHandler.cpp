@@ -23,6 +23,9 @@
 
 #if openPMD_HAVE_MPI
 #   include <mpi.h>
+#   if openPMD_HAVE_HDF5
+#       include "openPMD/auxiliary/Logging.hpp"
+#   endif
 #endif
 
 #include <iostream>
@@ -69,6 +72,7 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(AbstractIOHandler* handler,
 
 ParallelHDF5IOHandlerImpl::~ParallelHDF5IOHandlerImpl()
 {
+    LOG_DEBUG("Destructing parallel HDF5 IOHandler");
     herr_t status;
     while( !m_openFileIDs.empty() )
     {

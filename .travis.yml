@@ -118,6 +118,7 @@ jobs:
     #         -DopenPMD_USE_ADIOS1=$USE_ADIOS1
     #         -DopenPMD_USE_ADIOS2=$USE_ADIOS2
     #         -DopenPMD_USE_PYTHON=OFF
+    #         -DopenPMD_USE_LOGGING=ON
     #         -DopenPMD_USE_INVASIVE_TESTS=ON
     #         -DBUILD_SHARED_LIBS=${USE_SHARED}
     #         $TRAVIS_BUILD_DIR
@@ -156,6 +157,7 @@ jobs:
             -DopenPMD_USE_ADIOS1=$USE_ADIOS1
             -DopenPMD_USE_ADIOS2=$USE_ADIOS2
             -DopenPMD_USE_PYTHON=$USE_PYTHON
+            -DopenPMD_USE_LOGGING=ON
             -DopenPMD_USE_INVASIVE_TESTS=ON
             -DBUILD_SHARED_LIBS=${USE_SHARED}
             $TRAVIS_BUILD_DIR
@@ -231,6 +233,7 @@ jobs:
             -DopenPMD_USE_ADIOS1=$USE_ADIOS1
             -DopenPMD_USE_ADIOS2=$USE_ADIOS2
             -DopenPMD_USE_PYTHON=$USE_PYTHON
+            -DopenPMD_USE_LOGGING=OFF
             -DopenPMD_USE_INVASIVE_TESTS=ON
             -DBUILD_SHARED_LIBS=${USE_SHARED}
             $EXTRA_CMAKE_FLAGS
@@ -568,6 +571,7 @@ jobs:
             -DopenPMD_USE_ADIOS1=$USE_ADIOS1
             -DopenPMD_USE_ADIOS2=$USE_ADIOS2
             -DopenPMD_USE_PYTHON=OFF
+            -DopenPMD_USE_LOGGING=OFF
             -DopenPMD_USE_INVASIVE_TESTS=ON
             -DBUILD_SHARED_LIBS=${USE_SHARED}
             $TRAVIS_BUILD_DIR
