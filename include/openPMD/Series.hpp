@@ -251,8 +251,8 @@ OPENPMD_private:
     void readBase();
     void read();
 
-    constexpr static char const * const OPENPMD = "1.1.0";
-    constexpr static char const * const BASEPATH = "/data/%T/";
+    static constexpr char const * const OPENPMD = "1.1.0";
+    static constexpr char const * const BASEPATH = "/data/%T/";
 
     std::shared_ptr< IterationEncoding > m_iterationEncoding;
     std::shared_ptr< std::string > m_name;
