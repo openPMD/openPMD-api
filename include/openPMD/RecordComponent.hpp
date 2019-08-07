@@ -157,7 +157,7 @@ public:
     >::type
     storeChunk(T_ContiguousContainer &, Offset = {0u}, Extent = {-1u});
 
-    constexpr static char const * const SCALAR = "\vScalar";
+    static constexpr char const * const SCALAR = "\vScalar";
 
 OPENPMD_protected:
     RecordComponent();
