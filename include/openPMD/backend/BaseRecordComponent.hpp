@@ -81,14 +81,6 @@ struct DefaultValue
     {
         rc.makeConstant( T() );
     }
-
-    template< unsigned n, typename... Args >
-    void
-    operator()( Args &&... )
-    {
-        throw std::runtime_error(
-            "makeEmpty: Datatype not supported by openPMD." );
-    }
 };
 } // namespace detail
 } // namespace openPMD

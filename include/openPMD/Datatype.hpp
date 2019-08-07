@@ -667,13 +667,7 @@ ReturnType switchType(
         },
         {
             Datatype::BOOL ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < bool > },
-        {
-            Datatype::DATATYPE ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < 1000 > },
-        {
-            Datatype::UNDEFINED ,
-            &Action::OPENPMD_TEMPLATE_OPERATOR() < 0 > }
+            &Action::OPENPMD_TEMPLATE_OPERATOR() < bool > }
     };
     auto it = funs.find( dt );
     if( it != funs.end( ) )
