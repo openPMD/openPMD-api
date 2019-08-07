@@ -247,7 +247,7 @@ TEST_CASE( "flush_without_position_positionOffset", "[serial]" )
         RecordComponent weighting = e[ "weighting" ][ RecordComponent::SCALAR ];
         weighting.resetDataset( Dataset( Datatype::FLOAT, Extent{ 2, 2 } ) );
         weighting.storeChunk( std::shared_ptr< float >(
-            new float[ 4 ]{},
+            new float[ 4 ](),
             []( float * ptr ) { delete[] ptr; } ),
             { 0, 0 },
             { 2, 2 } );
@@ -261,7 +261,7 @@ TEST_CASE( "flush_without_position_positionOffset", "[serial]" )
                 RecordComponent rc = e[ key ][ dim ];
                 rc.resetDataset( Dataset( Datatype::FLOAT , Extent{ 2, 2 } ) );
                 rc.storeChunk( std::shared_ptr< float >(
-                    new float[ 4 ]{},
+                    new float[ 4 ](),
                     []( float * ptr ) { delete[] ptr; } ),
                     { 0, 0 },
                     { 2, 2 } );
