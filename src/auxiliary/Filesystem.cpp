@@ -78,7 +78,7 @@ list_directory(std::string const& path )
     if( hFind == INVALID_HANDLE_VALUE )
         throw std::system_error(std::error_code(errno, std::system_category()));
     do {
-        if( strcmp(data.cFileName, ".") && strcmp(data.cFileName, "..") )
+        if( strcmp(data.cFileName, ".") != 0 && strcmp(data.cFileName, "..") != 0 )
             ret.emplace_back(data.cFileName);
     } while (FindNextFile(hFind, &data) != 0);
     FindClose(hFind);
@@ -88,7 +88,7 @@ list_directory(std::string const& path )
         throw std::system_error(std::error_code(errno, std::system_category()));
     dirent* entry;
     while ((entry = readdir(directory)) != nullptr)
-        if( strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..") )
+        if( strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0 )
             ret.emplace_back(entry->d_name);
     closedir(directory);
 #endif
