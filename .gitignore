@@ -47,6 +47,8 @@ __pycache__
 cmake-build-*/
 .kdev?/
 *.kdev?
+spack-build*
+build/
 
 # File-based project format:
 *.iws
