@@ -89,7 +89,7 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
     if( !written )
     {
         /* create file */
-        Series* s = dynamic_cast<Series *>(parent->attributable->parent->attributable);
+        auto s = dynamic_cast< Series* >(parent->attributable->parent->attributable);
         Parameter< Operation::CREATE_FILE > fCreate;
         fCreate.name = filename;
         IOHandler->enqueue(IOTask(s, fCreate));
@@ -105,7 +105,7 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
     } else
     {
         /* open file */
-        Series* s = dynamic_cast<Series *>(parent->attributable->parent->attributable);
+        auto s = dynamic_cast< Series* >(parent->attributable->parent->attributable);
         Parameter< Operation::OPEN_FILE > fOpen;
         fOpen.name = filename;
         IOHandler->enqueue(IOTask(s, fOpen));
@@ -153,7 +153,7 @@ Iteration::flush()
         Writable *w = this->parent;
         while( w->parent )
             w = w->parent;
-        Series* s = dynamic_cast<Series *>(w->attributable);
+        auto s = dynamic_cast< Series* >(w->attributable);
 
         if( !meshes.empty() || s->containsAttribute("meshesPath") )
         {
@@ -218,7 +218,7 @@ Iteration::read()
     Writable *w = getWritable(this);
     while( w->parent )
         w = w->parent;
-    Series* s = dynamic_cast<Series *>(w->attributable);
+    auto s = dynamic_cast< Series* >(w->attributable);
 
     Parameter< Operation::LIST_PATHS > pList;
     std::string version = s->openPMD();
