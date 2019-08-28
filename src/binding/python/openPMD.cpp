@@ -84,6 +84,12 @@ PYBIND11_MODULE(openpmd_api, m) {
         openPMDapi << "-" << OPENPMDAPI_VERSION_LABEL;
     m.attr("__version__") = openPMDapi.str();
 
+    // release channel
+    std::stringstream openPMD_release_channel;
+    if( std::string( "OPENPMDAPI_RELEASE_CHANNEL" ).size() > 0 )
+        openPMD_release_channel << "OPENPMDAPI_RELEASE_CHANNEL";
+    m.attr("release_channel") = openPMD_release_channel.str();
+
     // feature variants
     m.attr("variants") = std::map<std::string, bool>{
         {"mpi", bool(openPMD_HAVE_MPI)},
