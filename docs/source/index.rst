@@ -45,9 +45,8 @@ openPMD-api version     supported openPMD standard versions
 ``0.1.0-0.9.0`` (alpha) ``1.0.0-1.1.0``
 ======================= ===================================
 
-************
 Installation
-************
+------------
 .. toctree::
    :caption: INSTALLATION
    :maxdepth: 1
@@ -57,9 +56,8 @@ Installation
    install/changelog
    install/upgrade
 
-*****
 Usage
-*****
+-----
 .. toctree::
    :caption: USAGE
    :maxdepth: 1
@@ -71,9 +69,8 @@ Usage
    usage/parallel
    usage/examples
 
-***********
 Development
-***********
+-----------
 .. toctree::
    :caption: DEVELOPMENT
    :maxdepth: 1
@@ -88,9 +85,8 @@ Development
    dev/doxygen
    dev/release
 
-********
 Backends
-********
+--------
 .. toctree::
    :caption: BACKENDS
    :maxdepth: 1
@@ -99,9 +95,8 @@ Backends
    backends/json
    backends/adios1
 
-*********
 Utilities
-*********
+---------
 .. toctree::
    :caption: UTILITIES
    :maxdepth: 1
