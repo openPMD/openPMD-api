@@ -345,6 +345,7 @@ jobs:
       script: *script-cpp-unit
       before_install:
         - CXX=clang++ && CC=clang
+        - perl --version
     # Clang 10.0.0-apple + Python 3.7.2 @ OSX "mojave" with libc++
     - <<: *test-cpp-unit
       name: AppleClang@10.0.0 -MPI +PY@3.7 +H5 +ADIOS1 libc++
@@ -358,6 +359,7 @@ jobs:
       script: *script-cpp-unit
       before_install:
         - CXX=clang++ && CC=clang
+        - perl --version
     # GCC 4.9.4
     - <<: *test-cpp-unit
       name: gcc@4.9.4 -MPI -PY +H5 +ADIOS1
