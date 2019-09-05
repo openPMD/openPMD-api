@@ -1140,6 +1140,11 @@ namespace detail
 
     BufferedActions::~BufferedActions( )
     {
+        // if write accessing, ensure that the engine is opened
+        if ( !m_engine && m_mode != adios2::Mode::Read )
+        {
+            getEngine( );
+        }
         if ( m_engine )
         {
             m_engine->Close( );
