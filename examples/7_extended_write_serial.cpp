@@ -125,7 +125,7 @@ write2()
 
     // data is assumed to reside behind a pointer as a contiguous column-major array
     // shared data ownership during IO is indicated with a smart pointer
-    std::shared_ptr< double > partial_mesh(new double[5], [](double *p){ delete[] p; p = nullptr; });
+    std::shared_ptr< double > partial_mesh(new double[5], [](double const * p){ delete[] p; p = nullptr; });
 
     // before storing record data, you must specify the dataset once per component
     // this describes the datatype and shape of data as it should be written to disk
@@ -138,12 +138,12 @@ write2()
     ParticleSpecies& electrons = cur_it.particles["electrons"];
 
     Extent mpiDims{4};
-    std::shared_ptr< float > partial_particlePos(new float[2], [](float *p){ delete[] p; p = nullptr; });
+    std::shared_ptr< float > partial_particlePos(new float[2], [](float const * p){ delete[] p; p = nullptr; });
     dtype = determineDatatype(partial_particlePos);
     d = Dataset(dtype, mpiDims);
     electrons["position"]["x"].resetDataset(d);
 
-    std::shared_ptr< uint64_t > partial_particleOff(new uint64_t[2], [](uint64_t *p){ delete[] p; p = nullptr; });
+    std::shared_ptr< uint64_t > partial_particleOff(new uint64_t[2], [](uint64_t const * p){ delete[] p; p = nullptr; });
     dtype = determineDatatype(partial_particleOff);
     d = Dataset(dtype, mpiDims);
     electrons["positionOffset"]["x"].resetDataset(d);
