@@ -51,7 +51,7 @@ void write_test_zero_extent( std::string file_ending, bool writeAllChunks )
     std::vector< double > position_global(num_cells);
     double pos{1.};
     std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
-    std::shared_ptr< double > position_local(new double[rank], [](double *p) { delete[] p;});
+    std::shared_ptr< double > position_local(new double[rank], [](double const * p) { delete[] p;});
     uint64_t offset;
     if( rank != 0 )
         offset = ((rank-1)*(rank-1) + (rank-1))/2;
@@ -63,7 +63,7 @@ void write_test_zero_extent( std::string file_ending, bool writeAllChunks )
     std::vector< uint64_t > positionOffset_global(num_cells);
     uint64_t posOff{1};
     std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
-    std::shared_ptr< uint64_t > positionOffset_local(new uint64_t[rank], [](uint64_t *p) { delete[] p;});
+    std::shared_ptr< uint64_t > positionOffset_local(new uint64_t[rank], [](uint64_t const * p) { delete[] p;});
 
     e["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local), {num_cells}));
 
