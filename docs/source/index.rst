@@ -64,6 +64,7 @@ Development
 
    dev/contributing
    dev/repostructure
+   dev/design
    dev/backend
    dev/dependencies
    dev/buildoptions
