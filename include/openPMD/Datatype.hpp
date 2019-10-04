@@ -65,6 +65,13 @@ enum class Datatype : int
     UNDEFINED
 }; // Datatype
 
+/**
+ * @brief All openPMD datatypes defined in Datatype,
+ *        listed in order in a vector.
+ *
+ */
+extern std::vector< Datatype > openPMD_Datatypes;
+
 /** @brief Fundamental equivalence check for two given types T and U.
  *
  * This checks whether the fundamental datatype (i.e. that of a single value
@@ -696,8 +703,6 @@ Datatype toVectorType(Datatype dt);
 std::string datatypeToString( Datatype dt );
 
 Datatype stringToDatatype( std::string s );
-
-extern std::vector< Datatype > openPMD_Datatypes;
 
 std::string datatypeToString( Datatype dt );
 

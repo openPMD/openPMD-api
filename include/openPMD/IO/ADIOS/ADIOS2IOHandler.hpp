@@ -90,10 +90,6 @@ class ADIOS2IOHandlerImpl
 
 
 public:
-    static_assert(
-        sizeof( bool ) == 1,
-        "ADIOS2 backend needs a platform with boolean size equals one byte." );
-
 
 #if openPMD_HAVE_MPI
 
