@@ -14,7 +14,6 @@ cache:
 env:
   global:
     - BUILD: ~/buildTmp
-    - CXXFLAGS: "-Werror"
     - SPACK_ROOT: $HOME/.cache/spack
     - PATH: $PATH:$HOME/.cache/spack/bin
     - BUILD_TYPE: "Debug"
@@ -144,6 +143,7 @@ jobs:
       before_install:
         - CC=clang CXX=clang++
       before_script:
+        - CXXFLAGS="${CXXFLAGS} -Werror"
         - mkdir -p $HOME/build
         - cd $HOME/build
         - $TRAVIS_BUILD_DIR/.travis/download_samples.sh
@@ -222,7 +222,7 @@ jobs:
             fi;
           fi
         # build
-        - CXXFLAGS=${CXXFLAGS} CXX=${CXX} CC=${CC}
+        - CXXFLAGS="${CXXFLAGS} -Werror" CXX=${CXX} CC=${CC}
           cmake
             -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
             -DopenPMD_USE_MPI=$USE_MPI
@@ -289,7 +289,7 @@ jobs:
       script: *script-cpp-unit
       before_install: &clang_init
         # FIXME: extra include needed https://bugs.launchpad.net/ubuntu/+source/libc++/+bug/1812133
-        - CXX=clang++-6.0 && CC=clang-6.0 && CXXFLAGS="-Werror -stdlib=libc++ -I/usr/include/libcxxabi/"
+        - CXX=clang++-6.0 && CC=clang-6.0 && CXXFLAGS="${CXXFLAGS} -stdlib=libc++ -I/usr/include/libcxxabi/"
     # Clang 7.0.0 + Python 3.7.1 @ Xenial
     - <<: *test-cpp-unit
       name: clang@7.0.0 +MPI +PY@3.7 +H5 +ADIOS1 +Release
@@ -330,7 +330,7 @@ jobs:
             - openmpi-bin
       script: *script-cpp-unit
       before_install:
-        - CXX=clang++ && CC=clang && CXXFLAGS="-Werror -fsanitize=address,undefined -shared-libsan" && LDFLAGS="-fsanitize=address,undefined -shared-libsan"
+        - CXX=clang++ && CC=clang && CXXFLAGS="${CXXFLAGS} -fsanitize=address,undefined -shared-libsan" && LDFLAGS="-fsanitize=address,undefined -shared-libsan"
         # - find / -name libclang_rt*
     # Clang 9.1.0-apple + Python 3.7.2 @ OSX "highsierra"
     - <<: *test-cpp-unit
