@@ -1,4 +1,4 @@
-/* Copyright 2017-2019 Fabian Koller and Franz Pöschel
+/* Copyright 2017-2019 Fabian Koller and Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
