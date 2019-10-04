@@ -1,4 +1,4 @@
-/* Copyright 2018-2019 Franz Pöschel
+/* Copyright 2018-2019 Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -62,8 +62,8 @@ protected:
 
     std::tuple< InvalidatableFile,
                 std::unordered_map< Writable *, InvalidatableFile >::iterator,
-                bool >
-    getPossiblyExisting( std::string file );
+                bool
+    > getPossiblyExisting( std::string file );
 
     void associateWithFile( Writable * writable, InvalidatableFile file );
 

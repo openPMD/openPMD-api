@@ -204,6 +204,12 @@ join(std::vector< std::string > const& vs, std::string const& delimiter)
     }
 }
 
+/**
+ * @brief Remove surrounding slashes from a string.
+ *
+ * @param s A string, possibly with a slash as first and/or last letter.
+ * @return std::string The same string without those slashes.
+ */
 inline std::string
 removeSlashes( std::string s )
 {

@@ -1,4 +1,4 @@
-/* Copyright 2017-2019 Fabian Koller
+/* Copyright 2017-2019 Fabian Koller and Franz Poeschel.
  *
  * This file is part of openPMD-api.
  *
@@ -19,13 +19,13 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
-
 #include "openPMD/Datatype.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+
 #include <iostream>
 #include <string>
 #include <type_traits>
@@ -136,7 +136,7 @@ void ADIOS2IOHandlerImpl::createFile(
         associateWithFile( writable, shared_name );
         this->m_dirty.emplace( shared_name );
         getFileData( shared_name ).m_mode = adios2::Mode::Write; // WORKAROUND
-        // ↑ ADIOS2 does not yet implement ReadWrite Mode
+        // ADIOS2 does not yet implement ReadWrite Mode
 
         writable->written = true;
         writable->abstractFilePosition =
@@ -168,9 +168,6 @@ void ADIOS2IOHandlerImpl::createPath(
     writable->written = true;
     writable->abstractFilePosition = std::make_shared< ADIOS2FilePosition >(
         path, ADIOS2FilePosition::GD::GROUP );
-
-    auto varName = nameOfVariable( writable );
-    // m_IO.DefineVariable< void >( varName );
 }
 
 void ADIOS2IOHandlerImpl::createDataset(
@@ -191,8 +188,11 @@ void ADIOS2IOHandlerImpl::createDataset(
         auto filePos = setAndGetFilePosition( writable, name );
         filePos->gd = ADIOS2FilePosition::GD::DATASET;
         auto varName = filePositionToString( filePos );
-        // we use a unique_ptr to circumvent the fact that std::optional
-        // is only available beginning with c++17
+        /*
+         * @brief std::optional would be more idiomatic, but it's not in
+         *        the C++11 standard
+         * @todo replace with std::optional upon switching to C++17
+         */
         std::unique_ptr< adios2::Operator > compression;
         if ( !parameters.compression.empty( ) )
         {

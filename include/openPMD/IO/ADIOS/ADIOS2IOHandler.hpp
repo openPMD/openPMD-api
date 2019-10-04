@@ -40,12 +40,12 @@
 
 
 #if openPMD_HAVE_ADIOS2
-#include <adios2.h>
-#include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
+#   include <adios2.h>
+#   include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #endif
 
 #if openPMD_HAVE_MPI
-#include <mpi.h>
+#   include <mpi.h>
 #endif
 
 
@@ -196,8 +196,8 @@ private:
      * Not to be accessed directly, use getFileData().
      */
     std::unordered_map< InvalidatableFile,
-                        std::unique_ptr< detail::BufferedActions > >
-        m_fileData;
+                        std::unique_ptr< detail::BufferedActions >
+    > m_fileData;
 
     std::map< std::string, adios2::Operator > m_operators;
 
@@ -550,8 +550,11 @@ namespace detail
         std::string m_file;
         adios2::IO m_IO;
         std::vector< std::unique_ptr< BufferedAction > > m_buffer;
-        // std::optional would be more idiomatic, but it's not in
-        // the C++11 standard
+        /**
+         * @brief std::optional would be more idiomatic, but it's not in
+         *        the C++11 standard
+         * @todo replace with std::optional upon switching to C++17
+         */
         std::unique_ptr< adios2::Engine > m_engine;
         adios2::Mode m_mode;
         detail::WriteDataset m_writeDataset;
