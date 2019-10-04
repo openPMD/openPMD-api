@@ -1,4 +1,4 @@
-/* Copyright 2017-2019 Fabian Koller
+/* Copyright 2017-2019 Fabian Koller and Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -20,14 +20,50 @@
  */
 #pragma once
 
+
 #include "openPMD/IO/AbstractFilePosition.hpp"
+#include <string>
+#include <utility>
 
 
 namespace openPMD
 {
-struct ADIOS2FilePosition : public AbstractFilePosition
-{
-    ADIOS2FilePosition()
-    { }
-}; // ADIOS2FilePosition
+    struct ADIOS2FilePosition :
+        public AbstractFilePosition
+    {
+        enum class GD
+        {
+            GROUP,
+            DATASET
+        };
+
+
+        ADIOS2FilePosition(
+            std::string s,
+            GD groupOrDataset
+        ) :
+            location { std::move( s ) },
+            gd { groupOrDataset }
+        {}
+
+
+        explicit ADIOS2FilePosition( GD groupOrDataset ) :
+            ADIOS2FilePosition {
+                "/",
+                groupOrDataset
+            }
+        {}
+
+
+        ADIOS2FilePosition( ) :
+            ADIOS2FilePosition{ GD::GROUP }
+        {}
+
+
+        /**
+         * Convention: Starts with slash '/', ends without.
+         */
+        std::string location;
+        GD gd;
+    }; // ADIOS2FilePosition
 } // openPMD

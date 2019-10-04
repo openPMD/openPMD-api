@@ -18,18 +18,16 @@ CMake Option                   Values          Description
 ``openPMD_USE_JSON``           **AUTO**/ON/OFF JSON backend (``.json`` files)
 ``openPMD_USE_HDF5``           **AUTO**/ON/OFF HDF5 backend (``.h5`` files)
 ``openPMD_USE_ADIOS1``         **AUTO**/ON/OFF ADIOS1 backend (``.bp`` files)
-``openPMD_USE_ADIOS2``         AUTO/ON/**OFF** ADIOS2 backend (``.bp`` files) :sup:`1`
+``openPMD_USE_ADIOS2``         **AUTO**/ON/OFF ADIOS2 backend (``.bp`` files)
 ``openPMD_USE_PYTHON``         **AUTO**/ON/OFF Enable Python bindings
-``openPMD_USE_INVASIVE_TESTS`` ON/**OFF**      Enable unit tests that modify source code :sup:`2`
-``openPMD_USE_VERIFY``         **ON**/OFF      Enable internal VERIFY (assert) macro independent of build type :sup:`3`
+``openPMD_USE_INVASIVE_TESTS`` ON/**OFF**      Enable unit tests that modify source code :sup:`1`
+``openPMD_USE_VERIFY``         **ON**/OFF      Enable internal VERIFY (assert) macro independent of build type :sup:`2`
 ``PYTHON_EXECUTABLE``          (first found)   Path to Python executable
 ============================== =============== ========================================================================
 
-:sup:`1` *not yet implemented*
+:sup:`1` e.g. changes C++ visibility keywords, breaks MSVC
 
-:sup:`2` e.g. changes C++ visibility keywords, breaks MSVC
-
-:sup:`3` this includes most pre-/post-condition checks, disabling without specific cause is highly discouraged
+:sup:`2` this includes most pre-/post-condition checks, disabling without specific cause is highly discouraged
 
 
 Shared or Static

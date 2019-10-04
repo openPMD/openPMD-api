@@ -301,9 +301,17 @@ template<>
 struct EXPORT Parameter< Operation::WRITE_DATASET > : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const & p) : AbstractParameter(),
+    Parameter(Parameter<Operation::WRITE_DATASET> const & p) : AbstractParameter(),
         extent(p.extent), offset(p.offset), dtype(p.dtype),
         data(p.data) {};
+
+    Parameter& operator=(const Parameter& p) {
+        this->extent = p.extent;
+        this->offset = p.offset;
+        this->dtype = p.dtype;
+        this->data = p.data;
+        return *this;
+    }
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -322,9 +330,17 @@ template<>
 struct EXPORT Parameter< Operation::READ_DATASET > : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const & p) : AbstractParameter(),
+    Parameter(Parameter<Operation::READ_DATASET> const & p) : AbstractParameter(),
         extent(p.extent), offset(p.offset), dtype(p.dtype),
         data(p.data) {};
+
+    Parameter& operator=(const Parameter &p) {
+        this->extent = p.extent;
+        this->offset = p.offset;
+        this->dtype = p.dtype;
+        this->data = p.data;
+        return *this;
+    }
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -398,6 +414,13 @@ struct EXPORT Parameter< Operation::READ_ATT > : public AbstractParameter
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(),
         name(p.name), dtype(p.dtype), resource(p.resource) {};
+
+    Parameter& operator=(const Parameter &p) {
+        this->name = p.name;
+        this->dtype = p.dtype;
+        this->resource = p.resource;
+        return *this;
+    }
 
     std::unique_ptr< AbstractParameter >
     clone() const override

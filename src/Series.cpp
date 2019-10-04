@@ -865,10 +865,13 @@ determineFormat(std::string const& filename)
     if( auxiliary::ends_with(filename, ".h5") )
         return Format::HDF5;
     if( auxiliary::ends_with(filename, ".bp") )
+#if openPMD_HAVE_ADIOS2
+        return Format::ADIOS2;
+#else
         return Format::ADIOS1;
+#endif
     if( auxiliary::ends_with(filename, ".json") )
         return Format::JSON;
-
     if( std::string::npos != filename.find('.') /* extension is provided */ )
         throw std::runtime_error("Unknown file format. Did you append a valid filename extension?");
 

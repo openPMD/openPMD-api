@@ -1,4 +1,4 @@
-/* Copyright 2017-2019 Fabian Koller
+/* Copyright 2017-2019 Fabian Koller, Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -106,6 +106,26 @@ replace_last(std::string s,
 }
 
 inline std::string
+replace_all_nonrecursively(std::string s,
+            std::string const& target,
+            std::string const& replacement)
+{
+    std::string::size_type pos = 0;
+    auto tsize = target.size();
+    auto rsize = replacement.size();
+    while (true)
+    {
+        pos = s.find(target, pos);
+        if (pos == std::string::npos)
+            break;
+        s.replace(pos, tsize, replacement);
+        pos += rsize;
+    }
+    s.shrink_to_fit();
+    return s;
+}
+
+inline std::string
 replace_all(std::string s,
             std::string const& target,
             std::string const& replacement)
@@ -183,5 +203,40 @@ join(std::vector< std::string > const& vs, std::string const& delimiter)
             return ss.str();
     }
 }
+
+/**
+ * @brief Remove surrounding slashes from a string.
+ *
+ * @param s A string, possibly with a slash as first and/or last letter.
+ * @return std::string The same string without those slashes.
+ */
+inline std::string
+removeSlashes( std::string s )
+{
+    if( auxiliary::starts_with(
+        s,
+        '/'
+    ) )
+    {
+        s = auxiliary::replace_first(
+            s,
+            "/",
+            ""
+        );
+    }
+    if( auxiliary::ends_with(
+        s,
+        '/'
+    ) )
+    {
+        s = auxiliary::replace_last(
+            s,
+            "/",
+            ""
+        );
+    }
+    return s;
+}
+
 } // auxiliary
 } // openPMD

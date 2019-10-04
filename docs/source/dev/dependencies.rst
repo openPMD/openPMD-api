@@ -30,7 +30,7 @@ Optional: I/O backends
 * `JSON <https://en.wikipedia.org/wiki/JSON>`_
 * `HDF5 <https://support.hdfgroup.org/HDF5>`_ 1.8.13+
 * `ADIOS1 <https://www.olcf.ornl.gov/center-projects/adios>`_ 1.13.1+
-* `ADIOS2 <https://github.com/ornladios/ADIOS2>`_ 2.4.0+ (*not yet implemented*)
+* `ADIOS2 <https://github.com/ornladios/ADIOS2>`_ 2.4.0+
 
 while those can be build either with or without:
 
