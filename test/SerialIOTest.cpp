@@ -718,9 +718,12 @@ void fileBased_write_test(const std::string & backend)
         o.setOpenPMDextension(1);
         o.iterations[3].setTime(static_cast< double >(3));
     }
-    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000001." + backend));
-    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000002." + backend));
-    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000003." + backend));
+    REQUIRE((auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000001." + backend)
+        || auxiliary::directory_exists("../samples/subdir/serial_fileBased_write00000001." + backend)));
+    REQUIRE((auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000002." + backend)
+        || auxiliary::directory_exists("../samples/subdir/serial_fileBased_write00000002." + backend)));
+    REQUIRE((auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000003." + backend)
+        || auxiliary::directory_exists("../samples/subdir/serial_fileBased_write00000003." + backend)));
 
     {
         Series o = Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::READ_ONLY);
@@ -789,7 +792,8 @@ void fileBased_write_test(const std::string & backend)
         o.iterations[4];
         REQUIRE(o.iterations.size() == 4);
     }
-    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000004." + backend));
+    REQUIRE((auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000004." + backend)
+        || auxiliary::directory_exists("../samples/subdir/serial_fileBased_write00000004." + backend)));
 
     // additional iteration with different iteration padding but similar content
     {
@@ -806,7 +810,8 @@ void fileBased_write_test(const std::string & backend)
 
         REQUIRE(o.iterations.size() == 1);
     }
-    REQUIRE(auxiliary::file_exists("../samples/subdir/serial_fileBased_write10." + backend));
+    REQUIRE((auxiliary::file_exists("../samples/subdir/serial_fileBased_write10." + backend)
+        || auxiliary::directory_exists("../samples/subdir/serial_fileBased_write10." + backend)));
 
     // read back with auto-detection and non-fixed padding
     {
