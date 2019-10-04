@@ -34,6 +34,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <stdexcept>
 
 
 #if openPMD_HAVE_JSON
@@ -557,7 +558,9 @@ namespace openPMD
     {
     public:
         JSONIOHandlerImpl( openPMD::AbstractIOHandler * )
-        {};
+        {
+            throw std::runtime_error("openPMD-api built without JSON support");
+        };
 
 
         ~JSONIOHandlerImpl( )
