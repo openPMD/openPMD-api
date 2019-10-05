@@ -296,3 +296,33 @@ pkg-config --libs --static openPMD
 pkg-config --cflags openPMD
 # -I${HOME}/somepath/include
 ```
+
+## Author Contributions
+
+openPMD-api is developed by many people.
+It was initially started by [Computational Radiation Physics Group](https://hzdr.de/crp) at [HZDR](https://www.hzdr.de/) as successor to [libSplash](https://github.com/ComputationalRadiationPhysics/libSplash/), generalizing the [successful HDF5 & ADIOS1 implementations](https://arxiv.org/abs/1706.00522) in [PIConGPU](https://github.com/ComputationalRadiationPhysics/picongpu).
+The following people and institutions [contributed](https://github.com/openPMD/openPMD-api/graphs/contributors) to openPMD-api:
+
+* [Axel Huebl (HZDR, now LBNL)](https://github.com/ax3l):
+  project lead, releases, documentation, automated CI/CD, Python bindings, installation & packaging, prior reference implementations
+* [Fabian Koller (HZDR)](https://github.com/C0nsultant):
+  initial library design and implementation with HDF5 & ADIOS1 backend
+* [Franz Poeschel (HZDR)](https://github.com/franzpoeschel):
+  added JSON & ADIOS2 backend, data staging/streaming
+* [Carsten Fortmann-Grote (EU XFEL GmbH, now MPI-EvolBio)](https://github.com/CFGrote):
+  inital Python unit tests
+
+### Transitive Contributions
+
+openPMD-api stands on the shoulders of giants and we are grateful for the following projects included as direct dependencies:
+
+* [ADIOS1](https://github.com/ornladios/ADIOS) and [ADIOS2](https://github.com/ornladios/ADIOS2) by [PI S. Klasky (ORNL), team, collaborators](https://www.olcf.ornl.gov/center-projects/adios/) and [contributors](https://github.com/ornladios/ADIOS2/graphs/contributors)
+* [Catch2](https://github.com/catchorg/Catch2) by [Phil Nash](https://github.com/philsquared), [Martin Hořeňovský](https://github.com/horenmar) and [contributors](https://github.com/catchorg/Catch2/graphs/contributors)
+* HDF5 by [the HDF group](https://www.hdfgroup.org) and community
+* [json](https://github.com/nlohmann/json) by [Niels Lohmann](https://github.com/nlohmann) and [contributors](https://github.com/nlohmann/json/graphs/contributors)
+* [pybind11](https://github.com/pybind/pybind11) by [Wenzel Jakob (EPFL)](https://github.com/wjakob) and [contributors](https://github.com/pybind/pybind11/graphs/contributors)
+* all contributors to the evolution of modern C++ and early library preview developers, e.g. [Michael Park (Facebook)](https://github.com/mpark)
+* the [CMake build system](https://cmake.org) and [contributors](https://github.com/Kitware/CMake/blob/master/Copyright.txt)
+* packaging support by the [conda-forge](https://conda-forge.org), [PyPI](https://pypi.org) and [Spack](https://spack.io) communities, among others
+* the [openPMD-standard](https://github.com/openPMD/openPMD-standard) by [Axel Huebl (HZDR, now LBNL)](https://github.com/ax3l) and [contributors](https://github.com/openPMD/openPMD-standard/blob/latest/AUTHORS.md)
+
