@@ -132,7 +132,7 @@ Choose *one* of the install methods below to get started:
 [![Spack Status](https://img.shields.io/badge/method-recommended-brightgreen.svg)](https://spack.readthedocs.io/en/latest/package_list.html#openpmd-api)
 
 ```bash
-# optional:               +python +adios1 -mpi
+# optional:               +python +adios1 +adios2 -mpi
 spack install openpmd-api
 spack load -r openpmd-api
 ```
@@ -156,7 +156,7 @@ conda install -c conda-forge openpmd-api
 [![PyPI Status](https://img.shields.io/badge/method-experimental-yellow.svg)](https://pypi.org/project/openPMD-api)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/openPMD-api.svg)](https://pypi.org/project/openPMD-api)
 
-Behind the scenes, this install method *compiles from source* against the found installations of HDF5, ADIOS and/or MPI (in system paths, from other package managers, or loaded via a module system, ...).
+Behind the scenes, this install method *compiles from source* against the found installations of HDF5, ADIOS1, ADIOS2, and/or MPI (in system paths, from other package managers, or loaded via a module system, ...).
 The current status for this install method is *experimental*.
 Please feel free to [report](https://github.com/openPMD/openPMD-api/issues/new/choose) how this works for you.
 
@@ -211,8 +211,8 @@ CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 | `openPMD_USE_MPI`            | **AUTO**/ON/OFF  | Parallel, Multi-Node I/O for clusters                                        |
 | `openPMD_USE_JSON`           | **AUTO**/ON/OFF  | JSON backend (`.json` files)                                                 |
 | `openPMD_USE_HDF5`           | **AUTO**/ON/OFF  | HDF5 backend (`.h5` files)                                                   |
-| `openPMD_USE_ADIOS1`         | **AUTO**/ON/OFF  | ADIOS1 backend (`.bp` files)                                                 |
-| `openPMD_USE_ADIOS2`         | **AUTO**/ON/OFF  | ADIOS2 backend (`.bp` files)                                                 |
+| `openPMD_USE_ADIOS1`         | **AUTO**/ON/OFF  | ADIOS1 backend (`.bp` files up to version BP3)                               |
+| `openPMD_USE_ADIOS2`         | **AUTO**/ON/OFF  | ADIOS2 backend (`.bp` files in BP3, BP4 or higher)                           |
 | `openPMD_USE_PYTHON`         | **AUTO**/ON/OFF  | Enable Python bindings                                                       |
 | `openPMD_USE_INVASIVE_TESTS` | ON/**OFF**       | Enable unit tests that modify source code <sup>1</sup>                       |
 | `openPMD_USE_VERIFY`         | **ON**/OFF       | Enable internal VERIFY (assert) macro independent of build type <sup>2</sup> |
@@ -300,7 +300,7 @@ pkg-config --cflags openPMD
 ## Author Contributions
 
 openPMD-api is developed by many people.
-It was initially started by [Computational Radiation Physics Group](https://hzdr.de/crp) at [HZDR](https://www.hzdr.de/) as successor to [libSplash](https://github.com/ComputationalRadiationPhysics/libSplash/), generalizing the [successful HDF5 & ADIOS1 implementations](https://arxiv.org/abs/1706.00522) in [PIConGPU](https://github.com/ComputationalRadiationPhysics/picongpu).
+It was initially started by the [Computational Radiation Physics Group](https://hzdr.de/crp) at [HZDR](https://www.hzdr.de/) as successor to [libSplash](https://github.com/ComputationalRadiationPhysics/libSplash/), generalizing the [successful HDF5 & ADIOS1 implementations](https://arxiv.org/abs/1706.00522) in [PIConGPU](https://github.com/ComputationalRadiationPhysics/picongpu).
 The following people and institutions [contributed](https://github.com/openPMD/openPMD-api/graphs/contributors) to openPMD-api:
 
 * [Axel Huebl (HZDR, now LBNL)](https://github.com/ax3l):

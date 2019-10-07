@@ -23,15 +23,19 @@ Backend-Specific Controls
 The following environment variables control ADIOS1 I/O behavior at runtime.
 Fine-tuning these is especially useful when running at large scale.
 
-==================================== ======= =============================================================================
-environment variable                 default description
-==================================== ======= =============================================================================
-``OPENPMD_ADIOS_NUM_AGGREGATORS``    ``1``   Number of I/O aggregator nodes for ADIOS1 ``MPI_AGGREGATE`` transport method.
-``OPENPMD_ADIOS_NUM_OST``            ``0``   Number of I/O OSTs for ADIOS1 ``MPI_AGGREGATE`` transport method.
-``OPENPMD_ADIOS_HAVE_METADATA_FILE`` ``1``   Online creation of the adios journal file (``1``: yes, ``0``: no).
-==================================== ======= =============================================================================
+==================================== ========= ================================================================================
+environment variable                 default   description
+==================================== ========= ================================================================================
+``OPENPMD_ADIOS_NUM_AGGREGATORS``    ``1``     Number of I/O aggregator nodes for ADIOS1 ``MPI_AGGREGATE`` transport method.
+``OPENPMD_ADIOS_NUM_OST``            ``0``     Number of I/O OSTs for ADIOS1 ``MPI_AGGREGATE`` transport method.
+``OPENPMD_ADIOS_HAVE_METADATA_FILE`` ``1``     Online creation of the adios journal file (``1``: yes, ``0``: no).
+``OPENPMD_BP_BACKEND``              ``ADIOS2`` Chose preferred ``.bp`` file backend if ``ADIOS1`` and ``ADIOS2`` are available.
+==================================== ========= ================================================================================
 
-Please refer to the `ADIOS1 manual, section 6.1.5 <https://users.nccs.gov/~pnorbert/ADIOS-UsersManual-1.13.1.pdf>`_ for details.
+Please refer to the `ADIOS1 manual, section 6.1.5 <https://users.nccs.gov/~pnorbert/ADIOS-UsersManual-1.13.1.pdf>`_ for details on I/O tuning.
+
+In case only the ADIOS1 backend is enabled but not the :ref:`ADIOS2 backend <backends-adios2>`, the default of ``OPENPMD_BP_BACKEND`` is automatically switched to ``ADIOS1``.
+Be advised that ADIOS1 only supports ``.bp`` files up to the internal version BP3, while ADIOS2 supports BP3, BP4 and later formats.
 
 
 Best Practice at Large Scale

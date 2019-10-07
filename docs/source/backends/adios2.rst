@@ -23,15 +23,19 @@ Backend-Specific Controls
 The following environment variables control ADIOS2 I/O behavior at runtime.
 Fine-tuning these is especially useful when running at large scale.
 
-===================================== ======= ===================================================================
-environment variable                  default description
-===================================== ======= ===================================================================
-``OPENPMD_ADIOS2_HAVE_PROFILING``      ``1``   Turns on/off profiling information right after a run.
-``OPENPMD_ADIOS2_HAVE_METADATA_FILE``  ``1``   Online creation of the adios journal file (``1``: yes, ``0``: no).
-``OPENPMD_ADIOS2_NUM_SUBSTREAMS``      ``0``   Number of files to be created, 0 indicates maximum number possible.
-===================================== ======= ===================================================================
+===================================== ========= ================================================================================
+environment variable                  default   description
+===================================== ========= ================================================================================
+``OPENPMD_ADIOS2_HAVE_PROFILING``     ``1``     Turns on/off profiling information right after a run.
+``OPENPMD_ADIOS2_HAVE_METADATA_FILE`` ``1``     Online creation of the adios journal file (``1``: yes, ``0``: no).
+``OPENPMD_ADIOS2_NUM_SUBSTREAMS``     ``0``     Number of files to be created, 0 indicates maximum number possible.
+``OPENPMD_BP_BACKEND``               ``ADIOS2`` Chose preferred ``.bp`` file backend if ``ADIOS1`` and ``ADIOS2`` are available.
+===================================== ========= ================================================================================
 
-Please refer to the `ADIOS2 manual, section 5.1 <https://media.readthedocs.org/pdf/adios2/latest/adios2.pdf>`_ for details.
+Please refer to the `ADIOS2 manual, section 5.1 <https://media.readthedocs.org/pdf/adios2/latest/adios2.pdf>`_ for details on I/O tuning.
+
+In case both the the :ref:`ADIOS1 backend <backends-adios1>` and ADIOS2 backend are enabled, set ``OPENPMD_BP_BACKEND`` to ``ADIOS1`` to enforce using ADIOS1.
+Be advised that ADIOS1 only supports ``.bp`` files up to the internal version BP3, while ADIOS2 supports BP3, BP4 and later formats.
 
 
 Best Practice at Large Scale

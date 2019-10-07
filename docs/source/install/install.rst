@@ -31,7 +31,7 @@ A package for openPMD-api is available on the `Spack <https://spack.io>`_ packag
 
 .. code-block:: bash
 
-   # optional:               +python +adios1 -mpi
+   # optional:               +python +adios1 +adios2 -mpi
    spack install openpmd-api
    spack load -r openpmd-api
 
@@ -63,7 +63,7 @@ Using the PyPI Package
 
 A package for openPMD-api is available on the Python Package Index (`PyPI <https://pypi.org>`_).
 
-Behind the scenes, this install method *compiles from source* against the found installations of HDF5, ADIOS and/or MPI (in system paths, from other package managers, or loaded via a module system, ...).
+Behind the scenes, this install method *compiles from source* against the found installations of HDF5, ADIOS1, ADIOS2, and/or MPI (in system paths, from other package managers, or loaded via a module system, ...).
 The current status for this install method is *experimental*.
 Please feel free to `report <https://github.com/openPMD/openPMD-api/issues/new/choose>`_ how this works for you.
 

@@ -3,6 +3,14 @@
 Upgrade Guide
 =============
 
+0.10.0-alpha
+------------
+
+We added support for ADIOS2 in this release.
+As soon as the ADIOS2 backend is enabled it will take precedence for ``.bp`` files over a potentially also enabled ADIOS1 backend.
+In order to prefer the legacy ADIOS1 backend in such a situation, set an environment variable: ``export OPENPMD_BP_BACKEND="ADIOS1"``.
+
+
 0.9.0-alpha
 -----------
 
