@@ -69,12 +69,12 @@ namespace openPMD
             case Format::HDF5:
                 return std::make_shared< HDF5IOHandler >(path, accessType);
             case Format::ADIOS1:
-#   if openPMD_HAVE_ADIOS1
+#if openPMD_HAVE_ADIOS1
                 return std::make_shared< ADIOS1IOHandler >(path, accessType);
-#   else
+#else
                 throw std::runtime_error("openPMD-api built without ADIOS1 support");
                 return std::make_shared< DummyIOHandler >(path, accessType);
-#   endif
+#endif
 #if openPMD_HAVE_ADIOS2
             case Format::ADIOS2:
                 return std::make_shared<ADIOS2IOHandler>(path, accessType);
