@@ -7,7 +7,7 @@ From: debian:unstable
 Welcome to the openPMD-api container.
 This container contains a pre-installed openPMD-api library.
 This container provides serial I/O.
-Supported backends are HDF5 and ADIOS.
+Supported backends are HDF5 and ADIOS1.
 Supported frontends are C++11 and Python3.
 
 %setup
@@ -36,15 +36,18 @@ Supported frontends are C++11 and Python3.
     # libadios-openmpi-dev
     # libopenmpi-dev libhdf5-openmpi-dev
 
+    # libadios2-dev
+
     cd $(mktemp -d)
-    cmake /opt/openpmd-api \
-        -DopenPMD_USE_MPI=OFF \
-        -DopenPMD_USE_HDF5=ON \
-        -DopenPMD_USE_ADIOS1=ON \
+    cmake /opt/openpmd-api       \
+        -DopenPMD_USE_MPI=OFF    \
+        -DopenPMD_USE_HDF5=ON    \
+        -DopenPMD_USE_JSON=ON    \
+        -DopenPMD_USE_ADIOS1=ON  \
         -DopenPMD_USE_ADIOS2=OFF \
-        -DopenPMD_USE_PYTHON=ON \
+        -DopenPMD_USE_PYTHON=ON  \
         -DPYTHON_EXECUTABLE=$(which python3) \
-        -DBUILD_TESTING=OFF \
+        -DBUILD_TESTING=OFF      \
         -DCMAKE_INSTALL_PREFIX=/usr/local \
         -DCMAKE_INSTALL_PYTHONDIR=lib/python3.6/dist-packages
     make
@@ -60,6 +63,7 @@ Supported frontends are C++11 and Python3.
 %labels
     openPMD_HAVE_MPI OFF
     openPMD_HAVE_HDF5 ON
+    openPMD_HAVE_JSON ON
     openPMD_HAVE_ADIOS1 ON
     openPMD_HAVE_ADIOS2 OFF
     openPMD_HAVE_PYTHON ON

@@ -114,6 +114,8 @@ install:
 
   # Configure the VM.
   - cmd: conda install -n root --quiet --yes numpy>=1.15 cmake hdf5
+  # ADIOS2 build only for 64bit Windows and Python 3.6+
+  - cmd: if "%TARGET_ARCH%"=="x64" if %CONDA_PY% GEQ 36 conda install -n root --quiet --yes adios2
 
 before_build:
   - cmd: cd C:\projects\openpmd-api
@@ -140,4 +142,4 @@ build_script:
 
 test_script:
   - cmd: ctest -V -C %CONFIGURATION%
-  - cmd: python -c "import openpmd_api; print(openpmd_api.__version__)"
+  - cmd: python -c "import openpmd_api; print(openpmd_api.__version__); print(openpmd_api.variants)"
