@@ -244,7 +244,7 @@ jobs:
         - if [ "$USE_PYTHON" == "ON" ] && [ ! -z ${ASAN_OPTIONS+x} ]; then
             export LD_PRELOAD=/usr/local/clang-7.0.0/lib/clang/7.0.0/lib/linux/libclang_rt.asan-x86_64.so;
           fi
-        - CTEST_OUTPUT_ON_FAILURE=1 make test
+        - CTEST_OUTPUT_ON_FAILURE=1 travis_wait make test
         - if [ ! -z ${LD_PRELOAD+x} ]; then
             unset LD_PRELOAD;
           fi
@@ -348,13 +348,13 @@ jobs:
         - perl --version
     # Clang 10.0.0-apple + Python 3.7.2 @ OSX "mojave" with libc++
     - <<: *test-cpp-unit
-      name: AppleClang@10.0.0 -MPI +PY@3.7 +H5 +JSON +ADIOS1 +ADIOS2 libc++
+      name: AppleClang@10.0.0 -MPI +PY@3.7 +H5 +JSON -ADIOS1 +ADIOS2 libc++
       os: osx
       osx_image: xcode10.1
       sudo: required
       language: generic
       env:
-        - CXXFLAGS="${CXXFLAGS} -stdlib=libc++" CXXSPEC="%clang@10.0.0" USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=ON USE_SAMPLES=ON
+        - CXXFLAGS="${CXXFLAGS} -stdlib=libc++" CXXSPEC="%clang@10.0.0" USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=ON USE_SAMPLES=ON
       compiler: clang
       script: *script-cpp-unit
       before_install:
@@ -381,12 +381,12 @@ jobs:
         - CXX=g++-4.9 && CC=gcc-4.9
       script: *script-cpp-unit
     - <<: *test-cpp-unit
-      name: gcc@4.9.4 +MPI -PY +H5 +JSON +ADIOS1 +ADIOS2
+      name: gcc@4.9.4 +MPI -PY +H5 +JSON +ADIOS1 -ADIOS2
       dist: trusty
       language: python
       python: "3.6"
       env:
-        - CXXSPEC="%gcc@4.9.4" USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=ON USE_SAMPLES=ON
+        - CXXSPEC="%gcc@4.9.4" USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: gcc
       addons:
         apt:
@@ -399,12 +399,12 @@ jobs:
       script: *script-cpp-unit
     # GCC 7.4.0
     - <<: *test-cpp-unit
-      name: gcc@7.4.0 -MPI -PY +H5 -JSON +ADIOS1 +ADIOS2
+      name: gcc@7.4.0 -MPI -PY +H5 -JSON +ADIOS1 +ADIOS2@2.4.0
       dist: trusty
       language: python
       python: "3.6"
       env:
-        - CXXSPEC="%gcc@7.4.0" USE_MPI=OFF USE_PYTHON=OFF USE_JSON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=ON USE_SAMPLES=ON
+        - CXXSPEC="%gcc@7.4.0" USE_MPI=OFF USE_PYTHON=OFF USE_JSON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=ON ADIOS2_VERSION=@2.4.0 USE_SAMPLES=ON
       compiler: gcc
       addons:
         apt:
@@ -418,12 +418,12 @@ jobs:
         - CXX=g++-7 && CC=gcc-7
       script: *script-cpp-unit
     - <<: *test-cpp-unit
-      name: gcc@7.4.0 +MPI -PY +H5 +JSON +ADIOS1 +ADIOS2@2.4.0
+      name: gcc@7.4.0 +MPI -PY +H5 +JSON +ADIOS1 -ADIOS2
       dist: trusty
       language: python
       python: "3.6"
       env:
-        - CXXSPEC="%gcc@7.4.0" USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=ON ADIOS2_VERSION=@2.4.0 USE_SAMPLES=ON
+        - CXXSPEC="%gcc@7.4.0" USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: gcc
       addons:
         apt:
@@ -517,13 +517,13 @@ jobs:
     ###########################################################################
     - &code_coverage
       stage: 'Code Coverage'
-      name: gcc@7.4.0 +coveralls
+      name: gcc@7.4.0 +MPI +PY +H5 +JSON +ADIOS1 -ADIOS2 +coveralls
       sudo: required
       language: python
       python: "3.6"
       compiler: gcc
       env:
-        - CXXSPEC="%gcc@7.4.0" USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=ON
+        - CXXSPEC="%gcc@7.4.0" USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF
       addons:
         apt:
           <<: *apt_common_sources
@@ -578,7 +578,7 @@ jobs:
         - mkdir -p coverage
         - cd bin
         # TODO code coverage with mpirun
-        - for OPENPMD_BP_PROVIDER in "ADIOS1" "ADIOS2"; do
+        - for OPENPMD_BP_PROVIDER in "ADIOS1"; do
             export OPENPMD_BP_PROVIDER;
             for binary in *; do
               if [ -f $binary ]; then
