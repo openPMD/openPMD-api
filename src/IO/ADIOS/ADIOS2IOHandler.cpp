@@ -1,4 +1,4 @@
-/* Copyright 2017-2019 Fabian Koller and Franz Poeschel.
+/* Copyright 2017-2019 Franz Poeschel, Fabian Koller and Axel Huebl
  *
  * This file is part of openPMD-api.
  *
@@ -18,6 +18,7 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
+
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
@@ -29,6 +30,9 @@
 #include <iostream>
 #include <string>
 #include <type_traits>
+#include <algorithm>
+#include <iterator>
+
 
 namespace openPMD
 {
@@ -184,10 +188,10 @@ void ADIOS2IOHandlerImpl::createDataset(
         /* Sanitize name */
         std::string name = auxiliary::removeSlashes( parameters.name );
 
-        auto file = refreshFileFromParent( writable );
+        auto const file = refreshFileFromParent( writable );
         auto filePos = setAndGetFilePosition( writable, name );
         filePos->gd = ADIOS2FilePosition::GD::DATASET;
-        auto varName = filePositionToString( filePos );
+        auto const varName = filePositionToString( filePos );
         /*
          * @brief std::optional would be more idiomatic, but it's not in
          *        the C++11 standard
@@ -195,12 +199,14 @@ void ADIOS2IOHandlerImpl::createDataset(
          */
         std::unique_ptr< adios2::Operator > compression;
         if ( !parameters.compression.empty( ) )
-        {
             compression = getCompressionOperator( parameters.compression );
-        }
+
+        // cast from openPMD::Extent to adios2::Dims
+        adios2::Dims const shape( parameters.extent.begin(), parameters.extent.end() );
+
         switchType( parameters.dtype, detail::VariableDefiner( ),
                     getFileData( file ).m_IO, varName,
-                    std::move( compression ), parameters.extent );
+                    std::move( compression ), shape );
         writable->written = true;
         m_dirty.emplace( file );
     }
@@ -651,7 +657,11 @@ ADIOS2IOHandlerImpl::verifyDataset( Offset const & offset,
         VERIFY_ALWAYS( offset[i] + extent[i] <= shape[i],
                        "Dataset access out of bounds." )
     }
-    var.SetSelection( {offset, extent} );
+
+    var.SetSelection({
+        adios2::Dims(offset.begin(), offset.end()),
+        adios2::Dims(extent.begin(), extent.end())
+    });
     return var;
 }
 
@@ -942,7 +952,12 @@ namespace detail
                 "Failed retrieving ADIOS2 Variable with name '" + varName +
                 "' from file " + *file + "." );
         }
-        *parameters.extent = var.Shape( );
+
+        // cast from adios2::Dims to openPMD::Extent
+        auto const shape = var.Shape();
+        parameters.extent->clear();
+        parameters.extent->reserve( shape.size() );
+        std::copy( shape.begin(), shape.end(), std::back_inserter(*parameters.extent) );
     }
 
     template < typename T >
