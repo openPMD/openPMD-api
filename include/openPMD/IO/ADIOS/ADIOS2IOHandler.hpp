@@ -337,7 +337,7 @@ namespace detail
                           const adios2::Dims & shape = adios2::Dims( ),
                           const adios2::Dims & start = adios2::Dims( ),
                           const adios2::Dims & count = adios2::Dims( ),
-                          bool constantDims = false );
+                          const bool constantDims = false );
 
         template < int n, typename... Params >
         void operator( )( adios2::IO & IO, Params &&... );

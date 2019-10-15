@@ -13,7 +13,7 @@ ENV        CFLAGS="-fPIC ${CFLAGS}"
 ENV        CXXFLAGS="-fPIC ${CXXFLAGS}"
 
 # install dependencies
-#   CMake, zlib?, HDF5, c-blosc, ADIOS1, ADIOS2?
+#   CMake, zlib?, HDF5, c-blosc, ADIOS1, ADIOS2
 RUN        yum check-update -y \
            && yum -y install \
                glibc-static \
@@ -45,12 +45,12 @@ RUN        curl -sLo c-blosc-1.15.0.tar.gz https://github.com/Blosc/c-blosc/arch
            && file c-blosc*.tar.gz \
            && tar -xzf c-blosc*.tar.gz \
            && rm c-blosc*.tar.gz \
-           && mkdir c-blosc-build \
-           && cd c-blosc-build \
+           && mkdir build-c-blosc \
+           && cd build-c-blosc \
            && PY_TARGET=${PY_VERSIONS:0:2} \
            && PY_BIN=/opt/python/cp${PY_TARGET}-cp${PY_TARGET}m/bin/python \
            && CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/" \
-           && PATH=${CMAKE_BIN}:${PATH} cmake -DDEACTIVATE_SNAPPY=ON -DBUILD_SHARED=OFF -DBUILD_TESTS=OFF -DBUILD_BENCHMARKS=OFF -DCMAKE_INSTALL_PREFIX=/usr ../c-blosc-1.15.0 \
+           && PATH=${CMAKE_BIN}:${PATH} cmake -DDEACTIVATE_SNAPPY=ON -DBUILD_SHARED=OFF -DBUILD_TESTS=OFF -DBUILD_BENCHMARKS=OFF -DCMAKE_INSTALL_PREFIX=/usr ../c-blosc-* \
            && make \
            && make install
 
@@ -62,6 +62,23 @@ RUN        curl -sLo adios-1.13.1.tar.gz http://users.nccs.gov/~pnorbert/adios-1
            && ./configure --enable-static --disable-shared --disable-fortran --without-mpi --prefix=/usr --with-blosc=/usr \
            && make \
            && make install
+
+#RUN        curl -sLo adios2-2.5.0.tar.gz https://github.com/ornladios/ADIOS2/archive/v2.5.0.tar.gz \
+#           && file adios2*.tar.gz \
+#           && tar -xzf adios2*.tar.gz \
+#           && rm adios2*.tar.gz \
+#           && cd ADIOS2-* \
+#           && curl -sLo adios2-static.patch https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/1824.patch \
+#           && patch -p1 < adios2-static.patch \
+#           && cd .. \
+#           && mkdir build-ADIOS2 \
+#           && cd build-ADIOS2 \
+#           && PY_TARGET=${PY_VERSIONS:0:2} \
+#           && PY_BIN=/opt/python/cp${PY_TARGET}-cp${PY_TARGET}m/bin/python \
+#           && CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/" \
+#           && PATH=${CMAKE_BIN}:${PATH} cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DADIOS2_BUILD_EXAMPLES=OFF -DADIOS2_BUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=/usr ../ADIOS2-* \
+#           && make \
+#           && make install
 
 ADD        . /opt/src
 
@@ -113,10 +130,14 @@ COPY --from=build-env /wheelhouse/openPMD_api-*-cp37-cp37m-manylinux2010_x86_64.
 RUN        apt-get update \
            && apt-get install -y --no-install-recommends python3 python3-pip \
            && rm -rf /var/lib/apt/lists/*
+           # binutils
 RUN        python3 --version \
            && python3 -m pip install -U pip \
            && python3 -m pip install openPMD_api-*-cp37-cp37m-manylinux2010_x86_64.whl
 RUN        find / -name "openpmd*"
+RUN        ls -hal /usr/local/lib/python3.7/dist-packages/
+# RUN        ls -hal /usr/local/lib/python3.7/dist-packages/.libsopenpmd_api
+# RUN        objdump -x /usr/local/lib/python3.7/dist-packages/openpmd_api.cpython-37m-x86_64-linux-gnu.so | grep RPATH
 RUN        ldd /usr/local/lib/python3.7/dist-packages/openpmd_api.cpython-37m-x86_64-linux-gnu.so
 RUN        python3 -c "import openpmd_api as api; print(api.__version__); print(api.variants)"
 #RUN        echo "* soft core 100000" >> /etc/security/limits.conf && \

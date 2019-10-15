@@ -28,7 +28,7 @@ int main(
     // given that you provide it with an appropriate DatasetFillerProvider
     // (template parameter of the Benchmark class).
     using type = long int;
-#if openPMD_HAVE_ADIOS1 || openPMD_HAVE_HDF5
+#if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2 || openPMD_HAVE_HDF5
     openPMD::Datatype dt = openPMD::determineDatatype<type>();
 #endif
 
@@ -89,7 +89,7 @@ int main(
     // * The datatype to use for this run.
     // * The number of iterations. Effectively, the benchmark will be repeated for this many
     //   times.
-#if openPMD_HAVE_ADIOS1
+#if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
     benchmark.addConfiguration("", 0, "bp", dt, 10);
 #endif
 #if openPMD_HAVE_HDF5

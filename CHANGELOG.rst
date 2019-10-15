@@ -17,7 +17,7 @@ Changes to "0.9.0-alpha"
 Features
 """"""""
 
-- ADIOS2: support added (v2.4.0+) #482 #513 #530
+- ADIOS2: support added (v2.4.0+) #482 #513 #530 #568
 - Python: support empty datasets via ``Record_Component.make_empty`` #538
 
 Bug Fixes
