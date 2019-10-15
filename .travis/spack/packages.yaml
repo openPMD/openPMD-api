@@ -43,7 +43,7 @@ packages:
   adios:
     variants: ~zfp ~sz ~lz4 ~blosc
   adios2:
-    variants: ~zfp ~dataman ~python ~fortran
+    variants: ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc
   python:
     version: [3.5.5, 3.6.3, 3.7.1, 3.7.2]
     paths:
