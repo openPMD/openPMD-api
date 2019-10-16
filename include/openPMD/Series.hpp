@@ -227,9 +227,10 @@ public:
     Series& setIterationFormat(std::string const& iterationFormat);
 
     /**
-     * @return  String of a pattern for file names.
+     * @return String of a pattern for file names.
      */
     std::string name() const;
+
     /** Set the pattern for file names.
      *
      * @param   name    String of the pattern for file names. Must include iteration regex <CODE>\%T</CODE> for fileBased data.
@@ -237,7 +238,12 @@ public:
      */
     Series& setName(std::string const& name);
 
-    /** The currently used backend */
+    /** The currently used backend
+     *
+     * @see AbstractIOHandler::backendName()
+     *
+     * @return String of a pattern for data backend.
+     */
     std::string backend() const;
 
     /** Execute all required remaining IO operations to write or read data.

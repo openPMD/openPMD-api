@@ -19,9 +19,21 @@ Directory Structure
   * set ``-I`` here
   * prefixed with project name
 
+  * ``auxiliary/``
+
+    * internal auxiliary functionality
+
+  * ``helper/``, ``benchmark/``
+
+    * user-facing helper functionality
+
 * ``src/``
 
   * C++ source files
+
+  * ``cli/``
+
+    * user-facing command line tools
 
 * ``lib/``
 

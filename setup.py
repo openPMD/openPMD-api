@@ -45,6 +45,8 @@ class CMakeBuild(build_ext):
 
         cmake_args = [
             '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
+            # '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=' + extdir,
+            '-DBUILD_CLI_TOOLS:BOOL=OFF',  # TODO: how to install properly?
             '-DCMAKE_PYTHON_OUTPUT_DIRECTORY=' + extdir,
             '-DPYTHON_EXECUTABLE=' + sys.executable,
             # variants
@@ -80,6 +82,11 @@ class CMakeBuild(build_ext):
                     cfg.upper(),
                     extdir
                 )
+                # TODO: how to install properly?
+                # '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_{}={}'.format(
+                #     cfg.upper(),
+                #     extdir
+                # )
             ]
             if sys.maxsize > 2**32:
                 cmake_args += ['-A', 'x64']
@@ -156,6 +163,7 @@ setup(
     },
     ext_modules=[CMakeExtension('openpmd_api')],
     cmdclass=dict(build_ext=CMakeBuild),
+    # scripts=['openpmd-ls'],
     zip_safe=False,
     python_requires='>=3.5, <3.9',
     # tests_require=['pytest'],

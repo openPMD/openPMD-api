@@ -91,7 +91,8 @@ mark_as_advanced(BUILD_SHARED_LIBS)
 include(CTest)
 # automatically defines: BUILD_TESTING, default is ON
 
-option(BUILD_EXAMPLES "Build the examples" ON)
+option(BUILD_CLI_TOOLS "Build the command line tools" ON)
+option(BUILD_EXAMPLES  "Build the examples" ON)
 
 
 # Dependencies ################################################################
@@ -312,7 +313,8 @@ set(CORE_SOURCE
         src/backend/PatchRecord.cpp
         src/backend/PatchRecordComponent.cpp
         src/backend/Writable.cpp
-        src/benchmark/mpi/OneDimensionalBlockSlicer.cpp)
+        src/benchmark/mpi/OneDimensionalBlockSlicer.cpp
+        src/helper/list_series.cpp)
 set(IO_SOURCE
         src/IO/AbstractIOHandlerHelper.cpp
         src/IO/DummyIOHandler.cpp
@@ -525,6 +527,7 @@ if(openPMD_HAVE_PYTHON)
         src/binding/python/Container.cpp
         src/binding/python/Dataset.cpp
         src/binding/python/Datatype.cpp
+        src/binding/python/Helper.cpp
         src/binding/python/Iteration.cpp
         src/binding/python/IterationEncoding.cpp
         src/binding/python/Mesh.cpp
@@ -588,6 +591,10 @@ set(openPMD_TEST_NAMES
     SerialIO
     ParallelIO
 )
+# command line tools
+set(openPMD_CLI_TOOL_NAMES
+    ls
+)
 # examples
 set(openPMD_EXAMPLE_NAMES
     1_structure
@@ -650,6 +657,13 @@ if(BUILD_TESTING)
         else()
             target_link_libraries(${testname}Tests PRIVATE CatchMain)
         endif()
+    endforeach()
+endif()
+
+if(BUILD_CLI_TOOLS)
+    foreach(toolname ${openPMD_CLI_TOOL_NAMES})
+        add_executable(openpmd-${toolname} src/cli/${toolname}.cpp)
+        target_link_libraries(openpmd-${toolname} PRIVATE openPMD)
     endforeach()
 endif()
 
@@ -759,6 +773,12 @@ set(openPMD_INSTALL_TARGET_NAMES openPMD)
 if(openPMD_HAVE_ADIOS1)
     list(APPEND openPMD_INSTALL_TARGET_NAMES
         openPMD.ADIOS1.Serial openPMD.ADIOS1.Parallel)
+endif()
+
+if(BUILD_CLI_TOOLS)
+    foreach(toolname ${openPMD_CLI_TOOL_NAMES})
+        list(APPEND openPMD_INSTALL_TARGET_NAMES openpmd-${toolname})
+    endforeach()
 endif()
 
 install(TARGETS ${openPMD_INSTALL_TARGET_NAMES}
@@ -916,6 +936,25 @@ if(BUILD_EXAMPLES)
         else()
             message(STATUS "Note: Skipping C++ example tests (missing example files)")
         endif()
+    endif()
+endif()
+
+# Command Line Tools ##################################################
+#
+if(BUILD_CLI_TOOLS)
+    # all tools must provide a "--help"
+    foreach(toolname ${openPMD_CLI_TOOL_NAMES})
+        list(APPEND openPMD_INSTALL_TARGET_NAMES openpmd-${toolname})
+        add_test(NAME CLI.help.${toolname}
+            COMMAND openpmd-${toolname} --help
+            WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+        )
+    endforeach()
+    if(openPMD_HAVE_HDF5 AND EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
+        add_test(NAME CLI.ls
+            COMMAND openpmd-ls ../samples/git-sample/data%08T.h5
+            WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+        )
     endif()
 endif()
 

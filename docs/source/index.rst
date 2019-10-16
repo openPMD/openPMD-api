@@ -91,7 +91,8 @@ Utilities
    :maxdepth: 1
    :hidden:
 
-   utilities/benchmark.rst
+   utilities/cli
+   utilities/benchmark
 
 Backends
 --------

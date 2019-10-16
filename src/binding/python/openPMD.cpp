@@ -39,6 +39,7 @@ void init_BaseRecordComponent(py::module &);
 void init_Container(py::module &);
 void init_Dataset(py::module &);
 void init_Datatype(py::module &);
+void init_Helper(py::module &);
 void init_Iteration(py::module &);
 void init_IterationEncoding(py::module &);
 void init_Mesh(py::module &);
@@ -54,7 +55,33 @@ void init_UnitDimension(py::module &);
 
 
 PYBIND11_MODULE(openpmd_api, m) {
-    // m.doc() = ...;
+    m.doc() = R"pbdoc(
+            openPMD-api
+            -----------
+            .. currentmodule:: openpmd_api
+
+            .. autosummary::
+               :toctree: _generate
+               Access_Type
+               Attributable
+               Container
+               Dataset
+               Datatype
+               determine_datatype
+               Iteration
+               Iteration_Encoding
+               Mesh
+               Base_Record_Component
+               Record_Component
+               Mesh_Record_Component
+               Particle_Patches
+               Patch_Record
+               Patch_Record_Component
+               Particle_Species
+               Record
+               Series
+               list_series
+    )pbdoc";
 
     // note: order from parent to child classes
     init_AccessType(m);
@@ -64,6 +91,7 @@ PYBIND11_MODULE(openpmd_api, m) {
     init_BaseRecord(m);
     init_Dataset(m);
     init_Datatype(m);
+    init_Helper(m);
     init_Iteration(m);
     init_IterationEncoding(m);
     init_Mesh(m);
