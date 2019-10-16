@@ -63,22 +63,22 @@ RUN        curl -sLo adios-1.13.1.tar.gz http://users.nccs.gov/~pnorbert/adios-1
            && make \
            && make install
 
-#RUN        curl -sLo adios2-2.5.0.tar.gz https://github.com/ornladios/ADIOS2/archive/v2.5.0.tar.gz \
-#           && file adios2*.tar.gz \
-#           && tar -xzf adios2*.tar.gz \
-#           && rm adios2*.tar.gz \
-#           && cd ADIOS2-* \
-#           && curl -sLo adios2-static.patch https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/1824.patch \
-#           && patch -p1 < adios2-static.patch \
-#           && cd .. \
-#           && mkdir build-ADIOS2 \
-#           && cd build-ADIOS2 \
-#           && PY_TARGET=${PY_VERSIONS:0:2} \
-#           && PY_BIN=/opt/python/cp${PY_TARGET}-cp${PY_TARGET}m/bin/python \
-#           && CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/" \
-#           && PATH=${CMAKE_BIN}:${PATH} cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DADIOS2_BUILD_EXAMPLES=OFF -DADIOS2_BUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=/usr ../ADIOS2-* \
-#           && make \
-#           && make install
+RUN        curl -sLo adios2-2.5.0.tar.gz https://github.com/ornladios/ADIOS2/archive/v2.5.0.tar.gz \
+           && file adios2*.tar.gz \
+           && tar -xzf adios2*.tar.gz \
+           && rm adios2*.tar.gz \
+           && cd ADIOS2-* \
+           && curl -sLo adios2-static.patch https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/1828.patch \
+           && patch -p1 < adios2-static.patch \
+           && cd .. \
+           && mkdir build-ADIOS2 \
+           && cd build-ADIOS2 \
+           && PY_TARGET=${PY_VERSIONS:0:2} \
+           && PY_BIN=/opt/python/cp${PY_TARGET}-cp${PY_TARGET}m/bin/python \
+           && CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/" \
+           && PATH=${CMAKE_BIN}:${PATH} cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DADIOS2_BUILD_EXAMPLES=OFF -DADIOS2_BUILD_TESTING=OFF -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE -DCMAKE_DISABLE_FIND_PACKAGE_BISON=TRUE -DCMAKE_INSTALL_PREFIX=/usr ../ADIOS2-* \
+           && make \
+           && make install
 
 ADD        . /opt/src
 
