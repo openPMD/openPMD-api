@@ -96,6 +96,7 @@ Backends
    backends/json
    backends/adios1
    backends/adios2
+   backends/hdf5
 
 Utilities
 ---------
