@@ -18,6 +18,7 @@ Features
 """"""""
 
 - ADIOS2: support added (v2.4.0+) #482 #513 #530 #568
+- HDF5: add ``OPENPMD_HDF5_INDEPENDENT`` for non-collective parallel I/O #576
 - Python: support empty datasets via ``Record_Component.make_empty`` #538
 
 Bug Fixes

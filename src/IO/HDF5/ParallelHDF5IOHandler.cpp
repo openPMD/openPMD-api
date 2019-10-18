@@ -20,6 +20,7 @@
  */
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandlerImpl.hpp"
+#include "openPMD/auxiliary/Environment.hpp"
 
 #if openPMD_HAVE_MPI
 #   include <mpi.h>
@@ -60,8 +61,19 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(AbstractIOHandler* handler,
 {
     m_datasetTransferProperty = H5Pcreate(H5P_DATASET_XFER);
     m_fileAccessProperty = H5Pcreate(H5P_FILE_ACCESS);
+
+    H5FD_mpio_xfer_t xfer_mode = H5FD_MPIO_COLLECTIVE;
+    auto const hdf5_collective = auxiliary::getEnvString( "OPENPMD_HDF5_INDEPENDENT", "OFF" );
+    if( hdf5_collective == "ON" )
+        xfer_mode = H5FD_MPIO_INDEPENDENT;
+    else
+    {
+        VERIFY(hdf5_collective == "OFF", "Internal error: OPENPMD_HDF5_INDEPENDENT property must be either ON or OFF");
+    }
+
     herr_t status;
-    status = H5Pset_dxpl_mpio(m_datasetTransferProperty, H5FD_MPIO_COLLECTIVE);
+    status = H5Pset_dxpl_mpio(m_datasetTransferProperty, xfer_mode);
+
     VERIFY(status >= 0, "Internal error: Failed to set HDF5 dataset transfer property");
     status = H5Pset_fapl_mpio(m_fileAccessProperty, m_mpiComm, m_mpiInfo);
     VERIFY(status >= 0, "Internal error: Failed to set HDF5 file access property");
