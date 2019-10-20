@@ -58,10 +58,6 @@ ParallelADIOS1IOHandlerImpl::~ParallelADIOS1IOHandlerImpl()
 
     if( this->m_handler->accessTypeBackend != AccessType::READ_ONLY )
     {
-        for( auto& f : m_openWriteFileHandles )
-            close(f.second);
-        m_openWriteFileHandles.clear();
-
         for( auto& group : m_attributeWrites )
             for( auto& att : group.second )
                 flush_attribute(group.first, att.first, att.second);
@@ -75,6 +71,7 @@ ParallelADIOS1IOHandlerImpl::~ParallelADIOS1IOHandlerImpl()
 
         for( auto& f : m_openWriteFileHandles )
             close(f.second);
+        m_openWriteFileHandles.clear();
     }
 
     int status;
