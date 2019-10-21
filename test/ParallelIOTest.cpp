@@ -175,6 +175,12 @@ TEST_CASE( "hdf5_write_test_zero_extent", "[parallel][hdf5]" )
     write_test_zero_extent( "h5", true );
 }
 
+TEST_CASE( "hdf5_write_test_skip_chunk", "[parallel][hdf5]" )
+{
+    //! @todo add with H5FD_MPIO_INDEPENDENT
+    // write_test_zero_extent( "h5", false );
+    REQUIRE(true);
+}
 
 #else
 
@@ -224,6 +230,11 @@ TEST_CASE( "adios_write_test", "[parallel][adios]" )
 TEST_CASE( "adios_write_test_zero_extent", "[parallel][adios]" )
 {
     write_test_zero_extent( "bp", true );
+}
+
+TEST_CASE( "adios_write_test_skip_chunk", "[parallel][adios]" )
+{
+    write_test_zero_extent( "bp", false );
 }
 
 TEST_CASE( "hzdr_adios_sample_content_test", "[parallel][adios1]" )
