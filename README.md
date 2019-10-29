@@ -259,7 +259,7 @@ export CMAKE_PREFIX_PATH=$HOME/somepath:$CMAKE_PREFIX_PATH
 Use the following lines in your project's `CMakeLists.txt`:
 ```cmake
 # supports:                       COMPONENTS MPI NOMPI JSON HDF5 ADIOS1 ADIOS2
-find_package(openPMD 0.1.0 CONFIG)
+find_package(openPMD 0.9.0 CONFIG)
 
 if(openPMD_FOUND)
     target_link_libraries(YourTarget PRIVATE openPMD::openPMD)
@@ -286,12 +286,16 @@ export PKG_CONFIG_PATH=$HOME/somepath/lib/pkgconfig:$PKG_CONFIG_PATH
 
 Additional linker and compiler flags for your project are available via:
 ```bash
-pkg-config --libs openPMD
-# -L${HOME}/somepath/lib -lopenPMD
-
-# if you build openPMD-api as static library with BUILD_SHARED_LIBS=OFF
-pkg-config --libs --static openPMD
-# -L/usr/local/lib -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lopenPMD -pthread /usr/lib/libmpi.so -pthread /usr/lib/x86_64-linux-gnu/openmpi/lib/libmpi_cxx.so /usr/lib/libmpi.so /usr/lib/x86_64-linux-gnu/hdf5/openmpi/libhdf5.so /usr/lib/x86_64-linux-gnu/libsz.so /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/x86_64-linux-gnu/libdl.so /usr/lib/x86_64-linux-gnu/libm.so -pthread /usr/lib/libmpi.so -pthread /usr/lib/x86_64-linux-gnu/openmpi/lib/libmpi_cxx.so /usr/lib/libmpi.so
+# switch to check if openPMD-api was build as static library
+# (via BUILD_SHARED_LIBS=OFF) or as shared library (default)
+if [ "$(pkg-config --variable=static openPMD)" == "true" ]
+then
+    pkg-config --libs --static openPMD
+    # -L/usr/local/lib -L/usr/lib/x86_64-linux-gnu/openmpi/lib -lopenPMD -pthread /usr/lib/libmpi.so -pthread /usr/lib/x86_64-linux-gnu/openmpi/lib/libmpi_cxx.so /usr/lib/libmpi.so /usr/lib/x86_64-linux-gnu/hdf5/openmpi/libhdf5.so /usr/lib/x86_64-linux-gnu/libsz.so /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/x86_64-linux-gnu/libdl.so /usr/lib/x86_64-linux-gnu/libm.so -pthread /usr/lib/libmpi.so -pthread /usr/lib/x86_64-linux-gnu/openmpi/lib/libmpi_cxx.so /usr/lib/libmpi.so
+else
+    pkg-config --libs openPMD
+    # -L${HOME}/somepath/lib -lopenPMD
+fi
 
 pkg-config --cflags openPMD
 # -I${HOME}/somepath/include

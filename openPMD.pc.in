@@ -2,6 +2,7 @@ prefix=@CMAKE_INSTALL_PREFIX@
 exec_prefix=${prefix}/@CMAKE_INSTALL_BINDIR@
 libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
 includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+static=@openPMD_PC_STATIC@
 
 Name: openPMD
 Description: C++ & Python API for Scientific I/O with openPMD.
