@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+"""
+This file is part of the openPMD-api.
+
+Copyright 2019 openPMD contributors
+Authors: Axel Huebl
+License: LGPLv3+
+"""
 from openpmd_api import Series, Access_Type, Dataset, Mesh_Record_Component, \
     Unit_Dimension
 import numpy as np
