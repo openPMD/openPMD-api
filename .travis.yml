@@ -635,10 +635,10 @@ install:
   - cp $TRAVIS_BUILD_DIR/.travis/spack/*.yaml
        $SPACK_ROOT/etc/spack/
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      travis_wait brew upgrade;
-      travis_wait brew upgrade &&
-      travis_wait brew install python3 &&
-      travis_wait brew install modules &&
+      travis_wait 20 brew upgrade;
+      travis_wait 20 brew upgrade &&
+      travis_wait 20 brew install python3 &&
+      travis_wait 20 brew install modules &&
       brew info modules &&
       source /usr/local/opt/modules/init/bash &&
       export PATH=/usr/local/opt/python/libexec/bin:$PATH;
