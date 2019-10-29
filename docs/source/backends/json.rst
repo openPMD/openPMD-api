@@ -61,6 +61,7 @@ those values are rendered as ``null``.
 
 Instructing openPMD to write values of a datatype that is too wide for the JSON
 backend does *not* result in an error:
+
  * If casting the value to the widest supported datatype of the same category (integer or floating point)
    is possible without data loss, the cast is performed and the value is written.
    As an example, on a platform with ``sizeof(double) == 8``, writing the value
