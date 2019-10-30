@@ -130,9 +130,9 @@ setup(
     # note PEP-440 syntax: x.y.zaN but x.y.z.devN
     version='0.10.0.dev',
     author='Fabian Koller, Franz Poeschel, Axel Huebl',
-    author_email='f.koller@hzdr.de, f.poeschel@hzdr.de, a.huebl@hzdr.de',
+    author_email='f.koller@hzdr.de, f.poeschel@hzdr.de, axelhuebl@lbl.gov',
     maintainer='Axel Huebl',
-    maintainer_email='a.huebl@hzdr.de',
+    maintainer_email='axelhuebl@lbl.gov',
     description='C++ & Python API for Scientific I/O with openPMD',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -149,7 +149,7 @@ setup(
     ext_modules=[CMakeExtension('openpmd_api')],
     cmdclass=dict(build_ext=CMakeBuild),
     zip_safe=False,
-    python_requires='>=3.5, <3.8',
+    python_requires='>=3.5, <3.9',
     # tests_require=['pytest'],
     install_requires=install_requires,
     # we would like to use this mechanism, but pip / setuptools do not
@@ -174,6 +174,7 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         ('License :: OSI Approved :: '
          'GNU Lesser General Public License v3 or later (LGPLv3+)'),
     ],
