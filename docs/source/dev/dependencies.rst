@@ -41,7 +41,7 @@ Optional: language bindings
 
 * Python:
 
-  * Python 3.5 - 3.7
+  * Python 3.5 - 3.8
   * pybind11 2.3.0+
   * numpy 1.15+
   * mpi4py 2.1+

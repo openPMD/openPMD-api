@@ -112,7 +112,7 @@ while those can be built either with or without:
 
 Optional language bindings:
 * Python:
-  * Python 3.5 - 3.7
+  * Python 3.5 - 3.8
   * pybind 2.3.0+
   * numpy 1.15+
   * mpi4py 2.1+
