@@ -19,7 +19,7 @@ C++ & Python API for Scientific I/O with openPMD
 [api-platforms]: https://img.shields.io/badge/platforms-linux%20|%20osx%20|%20win-blue.svg "Supported Platforms"
 
 This library provides a high-level API for writing and reading scientific data according to [openPMD](https://www.openpmd.org/).
-It allows to build logical file structures which drive scientific I/O libraries such as HDF5 and ADIOS through a common, intuitive interface.
+It allows one to build logical file structures which drive scientific I/O libraries such as HDF5 and ADIOS through a common, intuitive interface.
 Where supported, openPMD-api implements both serial and MPI parallel I/O capabilities.
 
 ## Usage
