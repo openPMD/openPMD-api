@@ -538,7 +538,7 @@ endif()
 
 # python bindings
 if(openPMD_HAVE_PYTHON)
-    pybind11_add_module(openPMD.py MODULE
+    pybind11_add_module(openPMD.py MODULE SYSTEM
         src/binding/python/openPMD.cpp
         src/binding/python/AccessType.cpp
         src/binding/python/Attributable.cpp
@@ -706,18 +706,9 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     # at runtime when used with symbol-hidden code (e.g. pybind11 module)
 
     #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
-    # pybind11 does not fix -Wshadow https://github.com/pybind/pybind11/issues/1267
-    if(NOT openPMD_HAVE_PYTHON)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wshadow")
-    endif()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Wshadow")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
-    # pybind11 does not fix -Wshadow https://github.com/pybind/pybind11/issues/1267
-    # pybind11 does not fix -Wpedantic https://github.com/pybind/pybind11/issues/1417
-    if(NOT openPMD_HAVE_PYTHON)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wshadow -Wpedantic")
-    endif()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Wshadow")
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # Warning C4503: "decorated name length exceeded, name was truncated"
     # Symbols longer than 4096 chars are truncated (and hashed instead)

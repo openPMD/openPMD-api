@@ -635,9 +635,11 @@ install:
   - cp $TRAVIS_BUILD_DIR/.travis/spack/*.yaml
        $SPACK_ROOT/etc/spack/
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      travis_wait 20 brew upgrade;
-      travis_wait 20 brew upgrade &&
-      travis_wait 20 brew install python3 &&
+      export HOMEBREW_NO_AUTO_UPDATE=1 &&
+      travis_wait 20 brew update;
+      travis_wait 20 brew install python3;
+      travis_wait 20 brew install numpy;
+      travis_wait 20 brew upgrade numpy;
       travis_wait 20 brew install modules &&
       brew info modules &&
       source /usr/local/opt/modules/init/bash &&
@@ -727,3 +729,7 @@ install:
       spack load adios2$ADIOS2_VERSION $SPACK_VAR_MPI $CXXSPEC;
     fi
   - spack clean -a
+
+before_cache:
+  # https://stackoverflow.com/questions/39930171/cache-brew-builds-with-travis-ci
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then brew cleanup; fi
