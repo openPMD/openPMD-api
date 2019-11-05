@@ -484,18 +484,19 @@ void ADIOS2IOHandlerImpl::listAttributes(
     }
     auto & ba = getFileData( file );
     ba.getEngine( ); // make sure that the attributes are present
-    auto attrs = ba.m_IO.AvailableAttributes( attributePrefix );
-    for ( auto & pair : attrs )
+    auto const & attrs = ba.availableAttributesTemporary( attributePrefix );
+    for( auto & pair : attrs )
     {
         auto attr = auxiliary::removeSlashes( pair.first );
-        if ( attr.find_last_of( '/' ) == std::string::npos )
+        if( attr.find_last_of( '/' ) == std::string::npos )
         {
+            // std::cout << "ATTRIBUTE at " << attributePrefix << ": " << attr
+            // <<
+            //   std::endl;
             parameters.attributes->push_back( std::move( attr ) );
         }
     }
 }
-
-
 
 adios2::Mode ADIOS2IOHandlerImpl::adios2Accesstype( )
 {
@@ -1204,7 +1205,26 @@ namespace detail
 
     void BufferedActions::drop( )
     {
-        m_buffer.clear( );
+        m_buffer.clear();
+    }
+
+    std::map< std::string, adios2::Params >
+    BufferedActions::availableAttributesTemporary( std::string const & variable )
+    {
+        std::string var =
+            auxiliary::ends_with( variable, '/' ) ? variable : variable + '/';
+        auto attributes = m_IO.AvailableAttributes( "" );
+        decltype( attributes ) ret;
+        for( auto & pair : attributes )
+        {
+            if( auxiliary::starts_with( pair.first, var ) )
+            {
+                ret.emplace(
+                    auxiliary::replace_first( pair.first, var, "" ),
+                    std::move( pair.second ) );
+            }
+        }
+        return ret;
     }
 
 } // namespace detail

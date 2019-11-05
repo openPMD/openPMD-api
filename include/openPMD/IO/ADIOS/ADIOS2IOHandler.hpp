@@ -578,6 +578,9 @@ namespace detail
          * Delete all buffered actions without running them.
          */
         void drop( );
+
+        std::map< std::string, adios2::Params >
+        availableAttributesTemporary( std::string const & variable );
     };
 
 
