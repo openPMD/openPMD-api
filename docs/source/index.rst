@@ -69,6 +69,36 @@ Usage
    usage/parallel
    usage/examples
 
+API Details
+-----------
+.. toctree::
+   :caption: API DETAILS
+   :maxdepth: 1
+   :hidden:
+
+   details/mpi.rst
+
+Utilities
+---------
+.. toctree::
+   :caption: UTILITIES
+   :maxdepth: 1
+   :hidden:
+
+   utilities/benchmark.rst
+
+Backends
+--------
+.. toctree::
+   :caption: BACKENDS
+   :maxdepth: 1
+   :hidden:
+
+   backends/json
+   backends/adios1
+   backends/adios2
+   backends/hdf5
+
 Development
 -----------
 .. toctree::
@@ -85,24 +115,3 @@ Development
    dev/sphinx
    dev/doxygen
    dev/release
-
-Backends
---------
-.. toctree::
-   :caption: BACKENDS
-   :maxdepth: 1
-   :hidden:
-
-   backends/json
-   backends/adios1
-   backends/adios2
-   backends/hdf5
-
-Utilities
----------
-.. toctree::
-   :caption: UTILITIES
-   :maxdepth: 1
-   :hidden:
-
-   utilities/benchmark.rst
