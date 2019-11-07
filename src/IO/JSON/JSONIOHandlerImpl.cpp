@@ -37,8 +37,6 @@ namespace openPMD
 
 #define VERIFY_ALWAYS( CONDITION, TEXT ) { if(!(CONDITION)) throw std::runtime_error((TEXT)); }
 
-#if openPMD_HAVE_JSON
-
 
     JSONIOHandlerImpl::JSONIOHandlerImpl( AbstractIOHandler * handler ) :
         AbstractIOHandlerImpl( handler )
@@ -1543,17 +1541,12 @@ namespace openPMD
                 T
             >::value
         >::type
-    >::operator()( nlohmann::json const & j )
-    {
-        try
-        {
-            return j.get< T >( );
-        } catch( ... )
-        {
-            return std::numeric_limits< T >::quiet_NaN( );
+    >::operator()( nlohmann::json const & j ) {
+        try {
+            return j.get<T>();
+        } catch (...) {
+            return std::numeric_limits<T>::quiet_NaN();
         }
     }
-
-#endif
 
 } // namespace openPMD

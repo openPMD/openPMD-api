@@ -18,7 +18,6 @@ env:
     - PATH: $PATH:$HOME/.cache/spack/bin
     - BUILD_TYPE: "Debug"
     - PYBIND11_VERSION=@2.3.0
-    - USE_JSON: ON
     - USE_SHARED: ON
 
 addons:
@@ -112,7 +111,6 @@ jobs:
     #         -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
     #         -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
     #         -DopenPMD_USE_MPI=$USE_MPI
-    #         -DopenPMD_USE_JSON=$USE_JSON
     #         -DopenPMD_USE_HDF5=$USE_HDF5
     #         -DopenPMD_USE_ADIOS1=$USE_ADIOS1
     #         -DopenPMD_USE_ADIOS2=$USE_ADIOS2
@@ -128,7 +126,7 @@ jobs:
     #         exit 1;
     #       fi
     # - <<: *static_code_cpp
-      name: clang-tidy@5.0.0 +MPI -PY +H5 +JSON +ADIOS1 +ADIOS2
+      name: clang-tidy@5.0.0 +MPI -PY +H5 +ADIOS1 +ADIOS2
       sudo: false
       env:
         - CXXSPEC="%clang@5.0.0" USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=ON
@@ -151,7 +149,6 @@ jobs:
             -DCMAKE_CXX_CLANG_TIDY="$(which clang-tidy-5.0);-system-headers=0"
             -DCMAKE_BUILD_TYPE=Release
             -DopenPMD_USE_MPI=$USE_MPI
-            -DopenPMD_USE_JSON=$USE_JSON
             -DopenPMD_USE_HDF5=$USE_HDF5
             -DopenPMD_USE_ADIOS1=$USE_ADIOS1
             -DopenPMD_USE_ADIOS2=$USE_ADIOS2
@@ -189,7 +186,7 @@ jobs:
     # Clang 5.0.0
     - &test-cpp-unit
       stage: 'C++ Unit Tests'
-      name: clang@5.0.0 -MPI -PY +H5 +JSON -ADIOS1 -ADIOS2
+      name: clang@5.0.0 -MPI -PY +H5 -ADIOS1 -ADIOS2
       language: cpp
       dist: xenial
       env:
@@ -226,7 +223,6 @@ jobs:
           cmake
             -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
             -DopenPMD_USE_MPI=$USE_MPI
-            -DopenPMD_USE_JSON=$USE_JSON
             -DopenPMD_USE_HDF5=$USE_HDF5
             -DopenPMD_USE_ADIOS1=$USE_ADIOS1
             -DopenPMD_USE_ADIOS2=$USE_ADIOS2
@@ -254,7 +250,7 @@ jobs:
         # - dpkg -i openPMD*.deb
         - ls -R $HOME/openPMD-test-install | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'
     - <<: *test-cpp-unit
-      name: clang@5.0.0 +MPI -PY +H5 +JSON +ADIOS1 +ADIOS2
+      name: clang@5.0.0 +MPI -PY +H5 +ADIOS1 +ADIOS2
       language: python
       python: "3.6"
       env:
@@ -272,7 +268,7 @@ jobs:
         - CXX=clang++-5.0 && CC=clang-5.0
     # Clang 6.0.0 + Python 3.6.3 @ Xenial
     - <<: *test-cpp-unit
-      name: clang@6.0.0 -MPI +PY@3.6 +H5 +JSON +ADIOS1 +ADIOS2 libc++
+      name: clang@6.0.0 -MPI +PY@3.6 +H5 +ADIOS1 +ADIOS2 libc++
       language: python
       python: "3.6"
       env:
@@ -292,7 +288,7 @@ jobs:
         - CXX=clang++-6.0 && CC=clang-6.0 && CXXFLAGS="${CXXFLAGS} -stdlib=libc++ -I/usr/include/libcxxabi/"
     # Clang 7.0.0 + Python 3.8.0 @ Xenial
     - <<: *test-cpp-unit
-      name: clang@7.0.0 +MPI +PY@3.8 +H5 +JSON +ADIOS1 +ADIOS2 +Release
+      name: clang@7.0.0 +MPI +PY@3.8 +H5 +ADIOS1 +ADIOS2 +Release
       dist: xenial
       language: python
       python: "3.8"
@@ -311,12 +307,12 @@ jobs:
         - CXX=clang++ && CC=clang
     # Clang 7.0.0 + Python 3.7.1 + Address Sanitizer + Undefined Behavior Sanitizer @ Xenial
     - <<: *test-cpp-unit
-      name: clang@7.0.0 +MPI +PY@3.7 +H5 +JSON -ADIOS1 +ADIOS2 +ASan +UBSan +STATIC
+      name: clang@7.0.0 +MPI +PY@3.7 +H5 -ADIOS1 +ADIOS2 +ASan +UBSan +STATIC
       dist: xenial
       language: python
       python: "3.7"
       env:
-        - CXXSPEC="%clang@7.0.0" USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=ON USE_SHARED=OFF USE_JSON=ON USE_SAMPLES=ON
+        - CXXSPEC="%clang@7.0.0" USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=ON USE_SHARED=OFF USE_SAMPLES=ON
         # sanitizer options: test as much as possible and suppress OpenMPI memory leaks
         - ASAN_OPTIONS=detect_stack_use_after_return=1:detect_leaks=1:check_initialization_order=true:strict_init_order=true:detect_stack_use_after_scope=1:fast_unwind_on_malloc=0
         - LSAN_OPTIONS=suppressions=${TRAVIS_BUILD_DIR}/.travis/sanitizer/clang/Leak.supp
@@ -334,7 +330,7 @@ jobs:
         # - find / -name libclang_rt*
     # Clang 9.1.0-apple + Python 3.7.2 @ OSX "highsierra"
     - <<: *test-cpp-unit
-      name: AppleClang@9.1.0 -MPI +PY@3.7 +H5 +JSON +ADIOS1 -ADIOS2
+      name: AppleClang@9.1.0 -MPI +PY@3.7 +H5 +ADIOS1 -ADIOS2
       os: osx
       osx_image: xcode9.4
       sudo: required
@@ -348,7 +344,7 @@ jobs:
         - perl --version
     # Clang 10.0.0-apple + Python 3.7.2 @ OSX "mojave" with libc++
     - <<: *test-cpp-unit
-      name: AppleClang@10.0.0 -MPI +PY@3.7 +H5 +JSON -ADIOS1 +ADIOS2 libc++
+      name: AppleClang@10.0.0 -MPI +PY@3.7 +H5 -ADIOS1 +ADIOS2 libc++
       os: osx
       osx_image: xcode10.1
       sudo: required
@@ -362,7 +358,7 @@ jobs:
         - perl --version
     # GCC 4.9.4
     - <<: *test-cpp-unit
-      name: gcc@4.9.4 -MPI -PY +H5 +JSON +ADIOS1 +ADIOS2
+      name: gcc@4.9.4 -MPI -PY +H5 +ADIOS1 +ADIOS2
       dist: trusty
       language: python
       python: "3.6"
@@ -381,7 +377,7 @@ jobs:
         - CXX=g++-4.9 && CC=gcc-4.9
       script: *script-cpp-unit
     - <<: *test-cpp-unit
-      name: gcc@4.9.4 +MPI -PY +H5 +JSON +ADIOS1 -ADIOS2
+      name: gcc@4.9.4 +MPI -PY +H5 +ADIOS1 -ADIOS2
       dist: trusty
       language: python
       python: "3.6"
@@ -399,12 +395,12 @@ jobs:
       script: *script-cpp-unit
     # GCC 7.4.0
     - <<: *test-cpp-unit
-      name: gcc@7.4.0 -MPI -PY +H5 -JSON +ADIOS1 +ADIOS2@2.4.0
+      name: gcc@7.4.0 -MPI -PY +H5 +ADIOS1 +ADIOS2@2.4.0
       dist: trusty
       language: python
       python: "3.6"
       env:
-        - CXXSPEC="%gcc@7.4.0" USE_MPI=OFF USE_PYTHON=OFF USE_JSON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=ON ADIOS2_VERSION=@2.4.0 USE_SAMPLES=ON
+        - CXXSPEC="%gcc@7.4.0" USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=ON ADIOS2_VERSION=@2.4.0 USE_SAMPLES=ON
       compiler: gcc
       addons:
         apt:
@@ -418,7 +414,7 @@ jobs:
         - CXX=g++-7 && CC=gcc-7
       script: *script-cpp-unit
     - <<: *test-cpp-unit
-      name: gcc@7.4.0 +MPI -PY +H5 +JSON +ADIOS1 -ADIOS2
+      name: gcc@7.4.0 +MPI -PY +H5 +ADIOS1 -ADIOS2
       dist: trusty
       language: python
       python: "3.6"
@@ -436,7 +432,7 @@ jobs:
       script: *script-cpp-unit
     # GCC 6.5.0 + Python 3.5
     - <<: *test-cpp-unit
-      name: gcc@6.5.0 -MPI +PY@3.5 +H5 +JSON +ADIOS1@1.13.1 -ADIOS2
+      name: gcc@6.5.0 -MPI +PY@3.5 +H5 +ADIOS1@1.13.1 -ADIOS2
       dist: trusty
       language: python
       python: "3.5"
@@ -456,7 +452,7 @@ jobs:
       script: *script-cpp-unit
     # GCC 8.1.0 + Python 3.7
     - <<: *test-cpp-unit
-      name: gcc@8.1.0 -MPI +PY@3.7 +H5 +JSON +ADIOS1 -ADIOS2 +STATIC
+      name: gcc@8.1.0 -MPI +PY@3.7 +H5 +ADIOS1 -ADIOS2 +STATIC
       language: python
       python: "3.7"
       sudo: required
@@ -477,7 +473,7 @@ jobs:
       script: *script-cpp-unit
     # GCC 6.5.0 + Python 3.6
     - <<: *test-cpp-unit
-      name: gcc@6.5.0 -MPI +PY@3.6 +H5@1.8.13 +JSON -ADIOS1 -ADIOS2
+      name: gcc@6.5.0 -MPI +PY@3.6 +H5@1.8.13 -ADIOS1 -ADIOS2
       dist: trusty
       language: python
       python: "3.6"
@@ -493,7 +489,7 @@ jobs:
       script: *script-cpp-unit
     # GCC 4.8.5 + Python 3.5.5
     - <<: *test-cpp-unit
-      name: gcc@4.8.5 -MPI +PY@3.5 +H5 +JSON -ADIOS1 -ADIOS2
+      name: gcc@4.8.5 -MPI +PY@3.5 +H5 -ADIOS1 -ADIOS2
       dist: trusty
       language: python
       python: "3.5"
@@ -517,7 +513,7 @@ jobs:
     ###########################################################################
     - &code_coverage
       stage: 'Code Coverage'
-      name: gcc@7.4.0 +MPI +PY +H5 +JSON +ADIOS1 -ADIOS2 +coveralls
+      name: gcc@7.4.0 +MPI +PY +H5 +ADIOS1 -ADIOS2 +coveralls
       sudo: required
       language: python
       python: "3.6"
@@ -565,7 +561,6 @@ jobs:
           cmake
             -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
             -DopenPMD_USE_MPI=$USE_MPI
-            -DopenPMD_USE_JSON=$USE_JSON
             -DopenPMD_USE_HDF5=$USE_HDF5
             -DopenPMD_USE_ADIOS1=$USE_ADIOS1
             -DopenPMD_USE_ADIOS2=$USE_ADIOS2

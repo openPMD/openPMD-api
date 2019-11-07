@@ -87,7 +87,7 @@ PYBIND11_MODULE(openpmd_api, m) {
     // feature variants
     m.attr("variants") = std::map<std::string, bool>{
         {"mpi", bool(openPMD_HAVE_MPI)},
-        {"json", bool(openPMD_HAVE_JSON)},
+        {"json", true},
         {"hdf5", bool(openPMD_HAVE_HDF5)},
         {"adios1", bool(openPMD_HAVE_ADIOS1)},
         {"adios2", bool(openPMD_HAVE_ADIOS2)}

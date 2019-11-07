@@ -23,14 +23,14 @@
 
 namespace openPMD
 {
-/** File format to use during IO.
- */
-enum class Format
-{
-    HDF5,
-    ADIOS1,
-    ADIOS2,
-    JSON,
-    DUMMY
-};  //Format
+    /** File format to use during IO.
+     */
+    enum class Format
+    {
+        HDF5,
+        ADIOS1,
+        ADIOS2,
+        JSON,
+        DUMMY
+    };
 } // openPMD

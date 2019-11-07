@@ -15,7 +15,6 @@ USE_MDFILE_AS_MAINPAGE = README.md
 
 # "enable" all frontends and backends
 PREDEFINED        = openPMD_HAVE_MPI=1 \
-                    openPMD_HAVE_JSON=1 \
                     openPMD_HAVE_HDF5=1 \
                     openPMD_HAVE_ADIOS1=1 \
                     openPMD_HAVE_ADIOS2=1 \

@@ -4,10 +4,7 @@ JSON Backend
 ============
 
 openPMD supports writing to and reading from JSON files.
-For this, the installed copy of openPMD must have been built with support for the JSON backend.
-To build openPMD with support for JSON, use the CMake option ``-DopenPMD_USE_JSON=ON``.
-For further information, check out the :ref:`installation guide <install>`,
-:ref:`build dependencies <development-dependencies>` and the :ref:`build options <development-buildoptions>`.
+The JSON backend is always available.
 
 
 JSON File Format

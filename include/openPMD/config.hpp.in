@@ -24,9 +24,7 @@
 #   cmakedefine01 openPMD_HAVE_MPI
 #endif
 
-#ifndef openPMD_HAVE_JSON
-#   cmakedefine01 openPMD_HAVE_JSON
-#endif
+#define openPMD_HAVE_JSON 1
 
 #ifndef openPMD_HAVE_HDF5
 #   cmakedefine01 openPMD_HAVE_HDF5

@@ -38,7 +38,10 @@ Bug Fixes
 Other
 """""
 
-- NLohmann-JSON: updated to 3.7.0+ #556
+- JSON:
+
+  - the backend is now always enabled #587
+  - NLohmann-JSON dependency updated to 3.7.0+ #556
 
 
 0.9.0-alpha

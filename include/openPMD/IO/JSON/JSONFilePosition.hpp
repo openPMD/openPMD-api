@@ -24,26 +24,17 @@
 #include "openPMD/config.hpp"
 #include "openPMD/IO/AbstractFilePosition.hpp"
 
-
-#if openPMD_HAVE_JSON
 #include <nlohmann/json.hpp>
-#endif
+
 
 namespace openPMD
 {
-
-
     struct JSONFilePosition :
         public AbstractFilePosition
-#if openPMD_HAVE_JSON
     {
         using json = nlohmann::json;
         json::json_pointer id;
 
         JSONFilePosition( json::json_pointer ptr = json::json_pointer( ) );
     };
-#else
-    {};
-#endif
-
 } // openPMD
