@@ -42,7 +42,6 @@ Supported frontends are C++11 and Python3.
     cmake /opt/openpmd-api       \
         -DopenPMD_USE_MPI=OFF    \
         -DopenPMD_USE_HDF5=ON    \
-        -DopenPMD_USE_JSON=ON    \
         -DopenPMD_USE_ADIOS1=ON  \
         -DopenPMD_USE_ADIOS2=OFF \
         -DopenPMD_USE_PYTHON=ON  \
@@ -63,7 +62,6 @@ Supported frontends are C++11 and Python3.
 %labels
     openPMD_HAVE_MPI OFF
     openPMD_HAVE_HDF5 ON
-    openPMD_HAVE_JSON ON
     openPMD_HAVE_ADIOS1 ON
     openPMD_HAVE_ADIOS2 OFF
     openPMD_HAVE_PYTHON ON

@@ -56,7 +56,6 @@ function(openpmd_option name description default)
 endfunction()
 
 openpmd_option(MPI            "Parallel, Multi-Node I/O for clusters"     AUTO)
-openpmd_option(JSON           "JSON backend (.json files)"                AUTO)
 openpmd_option(HDF5           "HDF5 backend (.h5 files)"                  AUTO)
 openpmd_option(ADIOS1         "ADIOS1 backend (.bp files)"                AUTO)
 openpmd_option(ADIOS2         "ADIOS2 backend (.bp files)"                AUTO)
@@ -112,43 +111,20 @@ else()
     set(openPMD_HAVE_MPI FALSE)
 endif()
 
-# external library: nlohmann-json (optional)
-if(openPMD_USE_JSON STREQUAL AUTO)
-    if(openPMD_USE_INTERNAL_JSON)
-        set(JSON_BuildTests OFF CACHE INTERNAL "")
-        set(JSON_Install OFF CACHE INTERNAL "")  # only used PRIVATE
-        add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/json")
-        set(openPMD_HAVE_JSON TRUE)
-        message(STATUS "nlohmann-json: Using INTERNAL version 3.7.0")
-    else()
-        find_package(nlohmann_json 3.7.0 CONFIG)
-        if(nlohmann_json_FOUND)
-            set(openPMD_HAVE_JSON TRUE)
-            message(STATUS "nlohmann-json: Found version ${nlohmann_json_VERSION}")
-        else()
-            set(openPMD_HAVE_JSON FALSE)
-        endif()
-    endif()
-elseif(openPMD_USE_JSON)
-    if(openPMD_USE_INTERNAL_JSON)
-        set(JSON_BuildTests OFF CACHE INTERNAL "")
-        set(JSON_Install OFF CACHE INTERNAL "")  # only used PRIVATE
-        add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/json")
-        set(openPMD_HAVE_JSON TRUE)
-        message(STATUS "nlohmann-json: Using INTERNAL version 3.7.0")
-    else()
-        find_package(nlohmann_json 3.7.0 CONFIG REQUIRED)
-        set(openPMD_HAVE_JSON TRUE)
-        message(STATUS "nlohmann-json: Found version ${nlohmann_json_VERSION}")
-    endif()
+# external library: nlohmann-json (required)
+if(openPMD_USE_INTERNAL_JSON)
+    set(JSON_BuildTests OFF CACHE INTERNAL "")
+    set(JSON_Install OFF CACHE INTERNAL "")  # only used PRIVATE
+    add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/json")
+    message(STATUS "nlohmann-json: Using INTERNAL version 3.7.0")
 else()
-    set(openPMD_HAVE_JSON FALSE)
+    find_package(nlohmann_json 3.7.0 CONFIG REQUIRED)
+    message(STATUS "nlohmann-json: Found version ${nlohmann_json_VERSION}")
 endif()
-if(openPMD_HAVE_JSON)
-    add_library(openPMD::thirdparty::nlohmann_json INTERFACE IMPORTED)
-    target_link_libraries(openPMD::thirdparty::nlohmann_json
-        INTERFACE nlohmann_json::nlohmann_json)
-endif()
+add_library(openPMD::thirdparty::nlohmann_json INTERFACE IMPORTED)
+target_link_libraries(openPMD::thirdparty::nlohmann_json
+    INTERFACE nlohmann_json::nlohmann_json)
+
 
 # external library: HDF5 (optional)
 if(openPMD_USE_HDF5 STREQUAL AUTO)
@@ -415,12 +391,10 @@ if(openPMD_HAVE_MPI)
     target_link_libraries(openPMD PUBLIC MPI::MPI_C MPI::MPI_CXX)
 endif()
 
-# JSON Backend
-if(openPMD_HAVE_JSON)
-    #target_link_libraries(openPMD PRIVATE openPMD::thirdparty::nlohmann_json)
-    target_include_directories(openPMD SYSTEM PRIVATE
-        $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
-endif()
+# JSON Backend and User-Facing Runtime Options
+#target_link_libraries(openPMD PRIVATE openPMD::thirdparty::nlohmann_json)
+target_include_directories(openPMD SYSTEM PRIVATE
+    $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
 
 # HDF5 Backend
 if(openPMD_HAVE_HDF5)

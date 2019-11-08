@@ -101,11 +101,11 @@ Shipped internally in `share/openPMD/thirdParty/`:
 * [pybind11](https://github.com/pybind/pybind11) 2.3.0+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
 * [NLohmann-JSON](https://github.com/nlohmann/json) 3.7.0+ ([MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT))
 
-Optional I/O backends:
+I/O backends:
 * [JSON](https://en.wikipedia.org/wiki/JSON)
-* [HDF5](https://support.hdfgroup.org/HDF5) 1.8.13+
-* [ADIOS1](https://www.olcf.ornl.gov/center-projects/adios) 1.13.1+
-* [ADIOS2](https://github.com/ornladios/ADIOS2) 2.4.0+
+* [HDF5](https://support.hdfgroup.org/HDF5) 1.8.13+ (optional)
+* [ADIOS1](https://www.olcf.ornl.gov/center-projects/adios) 1.13.1+ (optional)
+* [ADIOS2](https://github.com/ornladios/ADIOS2) 2.4.0+ (optional)
 
 while those can be built either with or without:
 * MPI 2.1+, e.g. OpenMPI 1.6.5+ or MPICH2
@@ -132,7 +132,7 @@ Choose *one* of the install methods below to get started:
 [![Spack Status](https://img.shields.io/badge/method-recommended-brightgreen.svg)](https://spack.readthedocs.io/en/latest/package_list.html#openpmd-api)
 
 ```bash
-# optional:               +python +adios1 +adios2 -mpi
+# optional:               +python +adios1 +adios2 -hdf5 -mpi
 spack install openpmd-api
 spack load -r openpmd-api
 ```
@@ -209,7 +209,6 @@ CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 | CMake Option                 | Values           | Description                                                                  |
 |------------------------------|------------------|------------------------------------------------------------------------------|
 | `openPMD_USE_MPI`            | **AUTO**/ON/OFF  | Parallel, Multi-Node I/O for clusters                                        |
-| `openPMD_USE_JSON`           | **AUTO**/ON/OFF  | JSON backend (`.json` files)                                                 |
 | `openPMD_USE_HDF5`           | **AUTO**/ON/OFF  | HDF5 backend (`.h5` files)                                                   |
 | `openPMD_USE_ADIOS1`         | **AUTO**/ON/OFF  | ADIOS1 backend (`.bp` files up to version BP3)                               |
 | `openPMD_USE_ADIOS2`         | **AUTO**/ON/OFF  | ADIOS2 backend (`.bp` files in BP3, BP4 or higher)                           |
@@ -258,7 +257,7 @@ export CMAKE_PREFIX_PATH=$HOME/somepath:$CMAKE_PREFIX_PATH
 
 Use the following lines in your project's `CMakeLists.txt`:
 ```cmake
-# supports:                       COMPONENTS MPI NOMPI JSON HDF5 ADIOS1 ADIOS2
+# supports:                       COMPONENTS MPI NOMPI HDF5 ADIOS1 ADIOS2
 find_package(openPMD 0.9.0 CONFIG)
 
 if(openPMD_FOUND)
