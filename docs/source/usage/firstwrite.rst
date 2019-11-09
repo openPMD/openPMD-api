@@ -154,7 +154,7 @@ Data
 ----
 
 Let's prepare some data that we want to write.
-For example, a magnetic field :math:`\vec B(i, j)` slice in two dimensions with three components :math:`(B_x, B_y, B_z)^\intercal` of which the :math:`B_y` component shall be constant for all :math:`(i, j)` indices.
+For example, a magnetic field slice :math:`\vec B(i, j)` in two spatial dimensions with three components :math:`(B_x, B_y, B_z)^\intercal` of which the :math:`B_y` component shall be constant for all :math:`(i, j)` indices.
 
 C++11
 ^^^^^
@@ -239,18 +239,16 @@ Python
 Units
 -----
 
-Ouch, our measured magnetic field data is in `Gauss <https://en.wikipedia.org/wiki/Gauss_(unit)>`_!
-Quick, let's store the conversion factor to SI (`Tesla <https://en.wikipedia.org/wiki/Tesla_(unit)>`_).
+Let's decribe this magnetic field :math:`\vec B` in more detail.
+Independent of the absolute unit system, a magnetic field has the `physical dimension <https://en.wikipedia.org/wiki/Dimensional_analysis>`_ of [mass (M)\ :sup:`1`, electric current (I)\ :sup:`-1`, time (T)\ :sup:`-2`].
+
+Ouch, our magnetic field was measured in `cgs units <https://en.wikipedia.org/wiki/Gaussian_units>`_!
+Quick, let's also store the conversion factor 10\ :sup:`-4` from `Gauss <https://en.wikipedia.org/wiki/Gauss_(unit)>`_ (cgs) to `Tesla <https://en.wikipedia.org/wiki/Tesla_(unit)>`_ (SI).
 
 C++11
 ^^^^^
 
 .. code-block:: cpp
-
-   // conversion to SI
-   B_x.setUnitSI(1.e-4);
-   B_y.setUnitSI(1.e-4);
-   B_z.setUnitSI(1.e-4);
 
    // unit system agnostic dimension
    B.setUnitDimension({
@@ -259,15 +257,15 @@ C++11
        {api::UnitDimension::T, -2}
    });
 
+   // conversion to SI
+   B_x.setUnitSI(1.e-4);
+   B_y.setUnitSI(1.e-4);
+   B_z.setUnitSI(1.e-4);
+
 Python
 ^^^^^^
 
 .. code-block:: python3
-
-   # conversion to SI
-   B_x.set_unit_SI(1.e-4)
-   B_y.set_unit_SI(1.e-4)
-   B_z.set_unit_SI(1.e-4)
 
    # unit system agnostic dimension
    B.set_unit_dimension({
@@ -276,9 +274,16 @@ Python
        api.Unit_Dimension.T: -2
    })
 
+   # conversion to SI
+   B_x.set_unit_SI(1.e-4)
+   B_y.set_unit_SI(1.e-4)
+   B_z.set_unit_SI(1.e-4)
+
 .. tip::
 
-   Annotating the `dimensionality <https://en.wikipedia.org/wiki/Dimensional_analysis>`_ of a record allows us to read data sets with *arbitrary names* and understand their purpose simply by *dimensional analysis*.
+   Annotating the *physical dimension* (``unitDimension``) of a record allows us to read data sets with *arbitrary names* and understand their purpose simply by `dimensional analysis <https://en.wikipedia.org/wiki/Dimensional_analysis>`_.
+   The dimensional `base quantities <https://en.wikipedia.org/wiki/International_System_of_Quantities#Base_quantities>`_ in openPMD are lenght (``L``), mass (``M``), time (``T``), electric current (``I``), thermodynamic temperature (``theta``), amount of substance (``N``), luminous intensity (``J``) after the international system of quantities (ISQ).
+   The *factor to SI* (``unitSI``) on the other hand allows us to convert values between absolute unit systems.
 
 Register Chunk
 --------------
