@@ -37,7 +37,7 @@ The following requirements need to be installed (once) to build our documentatio
     sudo apt-get install doxygen
 
     # python tools & style theme
-    pip install -r requirements.txt # --user
+    python -m pip install -r requirements.txt # --user
 
 
 With all documentation-related software successfully installed, just run the following commands to build your docs locally.

@@ -69,15 +69,22 @@ Please feel free to `report <https://github.com/openPMD/openPMD-api/issues/new/c
 
 .. code-block:: bash
 
-   # optional:             --user
-   pip install openpmd-api
+   # we need pip 19 or newer
+   # optional:                   --user
+   python3 -m pip install -U pip
+
+   # optional:                        --user
+   python3 -m pip install openpmd-api
 
 or with MPI support:
 
 .. code-block:: bash
 
-   # optional:                                                  --user
-   openPMD_USE_MPI=ON pip install openpmd-api --no-binary :all:
+   # optional:                   --user
+   python3 -m pip install -U pip
+
+   # optional:                                                                   --user
+   openPMD_USE_MPI=ON python3 -m pip install openpmd-api --no-binary openpmd-api
 
 .. _install-cmake:
 

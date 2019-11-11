@@ -38,6 +38,7 @@ Bug Fixes
 Other
 """""
 
+- Python: improve ``pip`` install instructions #594
 - JSON:
 
   - the backend is now always enabled #587
