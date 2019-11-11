@@ -17,9 +17,9 @@ The communicator will be duplicated via ``MPI_Comm_dup`` in its constructor and 
 
 Accessing ``Series::iterations::operator[]``, ``Iteration::meshes::operator[]``, and ``Iteration::particles::operator[]`` for the first time will create or open openPMD objects, which is a collective operation.
 
-.. todo::
+.. note::
 
-   Verify ``operator[]`` access in parallel read via CI tests.
+   For read-only series, this contrain might be more relaxed but we first have to add more tests on it.
 
 Flush
 ^^^^^
@@ -27,7 +27,7 @@ Flush
 Flush should be treated as collective operation.
 After a ``<openPMD-api::object>::flush()``, exchanged memory buffers (``storeChunk()``/``loadChunk()``) can be manipulated or freed.
 
-.. todo::
+.. note::
 
    Although ``storeChunk()`` and ``loadChunk()`` are non-collective in most cases, we have not sufficient test coverage to ensure ``flush()`` can be called in a non-collective manner.
    Also see `GitHub Bug #490 <https://github.com/openPMD/openPMD-api/issues/490>`_ for limitations.
@@ -37,7 +37,7 @@ Attributes
 
 Attribute writes should be treated as collective operations until further tests were performed.
 
-.. todo::
+.. note::
 
    Attribute writes are likely non-collective in ADIOS1 & ADIOS2 and a single writing MPI rank is sufficient.
    (Needs tests in CI.)
