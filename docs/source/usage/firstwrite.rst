@@ -240,7 +240,7 @@ Units
 -----
 
 Let's decribe this magnetic field :math:`\vec B` in more detail.
-Independent of the absolute unit system, a magnetic field has the `physical dimension <https://en.wikipedia.org/wiki/Dimensional_analysis>`_ of [mass (M)\ :sup:`1`, electric current (I)\ :sup:`-1`, time (T)\ :sup:`-2`].
+Independent of the absolute unit system, a magnetic field has the `physical dimension <https://en.wikipedia.org/wiki/Dimensional_analysis>`_ of [mass (M)\ :sup:`1` :math:`\cdot` electric current (I)\ :sup:`-1` :math:`\cdot` time (T)\ :sup:`-2`].
 
 Ouch, our magnetic field was measured in `cgs units <https://en.wikipedia.org/wiki/Gaussian_units>`_!
 Quick, let's also store the conversion factor 10\ :sup:`-4` from `Gauss <https://en.wikipedia.org/wiki/Gauss_(unit)>`_ (cgs) to `Tesla <https://en.wikipedia.org/wiki/Tesla_(unit)>`_ (SI).
