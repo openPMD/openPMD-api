@@ -3,7 +3,10 @@
 All Examples
 ============
 
-The full list of examples is contained in our ``examples/`` folder:
+The full list of example scripts shown below is also contained in our ``examples/`` folder.
+
+Example data sets can be downloaded from: `github.com/openPMD/openPMD-example-datasets <https://github.com/openPMD/openPMD-example-datasets>`_.
+The following command will automatically install those into ``samples/`` on Linux and OSX: ``curl -sSL https://git.io/JewVw | bash``
 
 C++
 ---
