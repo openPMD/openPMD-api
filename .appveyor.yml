@@ -60,6 +60,8 @@ skip_tags: false
 
 branches:
   except:
+    - azure_install
+    - coverity_scan
     - gh-pages
 
 init:
