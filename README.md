@@ -1,0 +1,1 @@
+[![Nightly Packages Status](https://dev.azure.com/axelhuebl/openPMD-api/_apis/build/status/openPMD.openPMD-api?branchName=azure_install&label=nightly%20packages)](https://dev.azure.com/axelhuebl/openPMD-api/_build/latest?definitionId=1&branchName=azure_install)
