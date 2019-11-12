@@ -244,6 +244,7 @@ CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 | `openPMD_USE_ADIOS1`         | **AUTO**/ON/OFF  | ADIOS1 backend (`.bp` files up to version BP3)                               |
 | `openPMD_USE_ADIOS2`         | **AUTO**/ON/OFF  | ADIOS2 backend (`.bp` files in BP3, BP4 or higher)                           |
 | `openPMD_USE_PYTHON`         | **AUTO**/ON/OFF  | Enable Python bindings                                                       |
+| `openPMD_USE_IPO`            | **AUTO**/ON/OFF  | Enable interprocedural/link-time optimization                                |
 | `openPMD_USE_INVASIVE_TESTS` | ON/**OFF**       | Enable unit tests that modify source code <sup>1</sup>                       |
 | `openPMD_USE_VERIFY`         | **ON**/OFF       | Enable internal VERIFY (assert) macro independent of build type <sup>2</sup> |
 | `openPMD_INSTALL`            | **ON**/OFF       | Add installation targets                                                     |

@@ -68,6 +68,7 @@ openpmd_option(HDF5           "HDF5 backend (.h5 files)"                  AUTO)
 openpmd_option(ADIOS1         "ADIOS1 backend (.bp files)"                AUTO)
 openpmd_option(ADIOS2         "ADIOS2 backend (.bp files)"                AUTO)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
+openpmd_option(IPO       "Enable interprocedural/link-time optimization"  AUTO)
 
 option(openPMD_INSTALL               "Add installation targets"             ON)
 option(openPMD_HAVE_PKGCONFIG        "Generate a .pc file for pkg-config"   ON)
@@ -102,6 +103,39 @@ include(CTest)
 
 option(BUILD_CLI_TOOLS "Build the command line tools" ON)
 option(BUILD_EXAMPLES  "Build the examples" ON)
+
+
+# LTO / IPO ###################################################################
+#
+# Optional link-time optimization (LTO) / interprocedural optimization (IPO).
+# Do not use IPO if it's not supported by compiler.
+include(CheckIPOSupported)
+check_ipo_supported(
+    RESULT IPO_CHECK_RESULT
+    OUTPUT IPO_CHECK_OUTPUT
+#    LANGUAGES CXX
+)
+if(openPMD_USE_IPO STREQUAL AUTO)
+    if(IPO_CHECK_RESULT)
+        set(openPMD_HAVE_IPO TRUE)
+    else()
+        set(openPMD_HAVE_IPO FALSE)
+        message(STATUS "IPO/LTO is NOT supported: ${IPO_CHECK_OUTPUT}")
+    endif()
+elseif(openPMD_USE_IPO)
+    if(IPO_CHECK_RESULT)
+        set(openPMD_HAVE_IPO TRUE)
+    else()
+        set(openPMD_HAVE_IPO FALSE)
+        message(FATAL_ERROR "IPO/LTO is NOT supported: ${IPO_CHECK_OUTPUT}")
+    endif()
+else()
+    set(openPMD_HAVE_IPO FALSE)
+endif()
+
+if(openPMD_HAVE_IPO)
+    message(STATUS "IPO/LTO is supported")
+endif()
 
 
 # Dependencies ################################################################
@@ -357,6 +391,7 @@ set_target_properties(openPMD PROPERTIES
     CXX_STANDARD_REQUIRED ON
     POSITION_INDEPENDENT_CODE ON
     WINDOWS_EXPORT_ALL_SYMBOLS ON
+    INTERPROCEDURAL_OPTIMIZATION ${openPMD_HAVE_IPO}
 )
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     target_compile_options(openPMD PUBLIC "/bigobj")
@@ -453,7 +488,8 @@ if(openPMD_HAVE_ADIOS1)
         CXX_STANDARD_REQUIRED ON
         POSITION_INDEPENDENT_CODE ON
         CXX_VISIBILITY_PRESET hidden
-        VISIBILITY_INLINES_HIDDEN ON
+        VISIBILITY_INLINES_HIDDEN 1
+        INTERPROCEDURAL_OPTIMIZATION ${openPMD_HAVE_IPO}
     )
     if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
         set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
@@ -481,6 +517,7 @@ if(openPMD_HAVE_ADIOS1)
             POSITION_INDEPENDENT_CODE ON
             CXX_VISIBILITY_PRESET hidden
             VISIBILITY_INLINES_HIDDEN 1
+            INTERPROCEDURAL_OPTIMIZATION ${openPMD_HAVE_IPO}
         )
         if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
             set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES
@@ -653,6 +690,7 @@ if(BUILD_TESTING)
         CXX_STANDARD_REQUIRED ON
         POSITION_INDEPENDENT_CODE ON
         WINDOWS_EXPORT_ALL_SYMBOLS ON
+        # INTERPROCEDURAL_OPTIMIZATION ${openPMD_HAVE_IPO}
     )
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         target_compile_options(CatchRunner PUBLIC "/bigobj")
@@ -1013,7 +1051,7 @@ if(BUILD_TESTING)
                 RESULT_VARIABLE MPI4PY_RETURN)
 
             if(NOT MPI4PY_RETURN EQUAL 0)
-                message(STATUS "Note: mpi4py not found. "
+                message(STATUS "Note: mpi4py NOT found. "
                                "Skipping MPI-parallel Python examples.")
             endif()
 
