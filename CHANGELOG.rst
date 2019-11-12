@@ -32,6 +32,7 @@ Bug Fixes
 - Python:
 
   - OSX: fix ``dlopen`` issues due to missing ``@loader_path`` with ``pip``/``setup.py`` #595
+  - import ``mpi4py`` first (MPICH on OSX issue) #596
   - skip examples using HDF5 if backend is missing #544
   - fix a variable shadowing in ``Mesh`` #582
 - ADIOS1: fix deadlock in MPI-parallel, non-collective calls to ``storeChunk()`` #554
