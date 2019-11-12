@@ -6,12 +6,13 @@ Copyright 2019 openPMD contributors
 Authors: Axel Huebl
 License: LGPLv3+
 """
-import openpmd_api
-
+# IMPORTANT: include mpi4py FIRST
 # https://mpi4py.readthedocs.io/en/stable/mpi4py.run.html
 # on import: calls MPI_Init_thread()
 # exit hook: calls MPI_Finalize()
 from mpi4py import MPI
+
+import openpmd_api
 
 
 if __name__ == "__main__":
