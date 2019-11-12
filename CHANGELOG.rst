@@ -31,6 +31,7 @@ Bug Fixes
 - Clang: fix pybind11 compile on older releases, such as AppleClang 7.3-9.0, Clang 3.9 #543
 - Python:
 
+  - OSX: fix ``dlopen`` issues due to missing ``@loader_path`` with ``pip``/``setup.py`` #595
   - skip examples using HDF5 if backend is missing #544
   - fix a variable shadowing in ``Mesh`` #582
 - ADIOS1: fix deadlock in MPI-parallel, non-collective calls to ``storeChunk()`` #554

@@ -57,11 +57,14 @@ class CMakeBuild(build_ext):
             '-DHDF5_USE_STATIC_LIBRARIES:BOOL=' + HDF5_USE_STATIC_LIBRARIES,
             '-DADIOS_USE_STATIC_LIBS:BOOL=' + ADIOS_USE_STATIC_LIBS,
             # Unix: rpath to current dir when packaged
-            '-DCMAKE_INSTALL_RPATH=$ORIGIN',
             '-DCMAKE_BUILD_WITH_INSTALL_RPATH:BOOL=ON',
             '-DCMAKE_INSTALL_RPATH_USE_LINK_PATH:BOOL=OFF',
             # Windows: will already have %PATH% in package dir
         ]
+        if sys.platform == "darwin":
+            cmake_args.append('-DCMAKE_INSTALL_RPATH=@loader_path')
+        else:  # values: linux*, aix, freebsd, ... just as well win32 & cygwin
+            cmake_args.append('-DCMAKE_INSTALL_RPATH=$ORIGIN')
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
