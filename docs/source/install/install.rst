@@ -117,7 +117,7 @@ Linux & OSX
    # for options append:
    #   -DopenPMD_USE_...=...
    # e.g. for python support add:
-   #   -DopenPMD_USE_PYTHON=ON -DPYTHON_EXECUTABLE=$(which python)
+   #   -DopenPMD_USE_PYTHON=ON -DPYTHON_EXECUTABLE=$(which python3)
    cmake ../openPMD-api
 
    cmake --build .
