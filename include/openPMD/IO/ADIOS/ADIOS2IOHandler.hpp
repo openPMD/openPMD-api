@@ -562,6 +562,7 @@ namespace detail
         detail::AttributeReader m_attributeReader;
         ADIOS2IOHandlerImpl & m_impl;
 
+        using AttributeMap_t = std::map< std::string, adios2::Params >;
 
         BufferedActions( ADIOS2IOHandlerImpl & impl, InvalidatableFile file );
 
@@ -579,8 +580,36 @@ namespace detail
          */
         void drop( );
 
-        std::map< std::string, adios2::Params >
-        availableAttributesTemporary( std::string const & variable );
+        AttributeMap_t const &
+        availableAttributes();
+
+        std::vector< std::string >
+        availableAttributesPrefixed( std::string const & prefix );
+
+        void
+        invalidateAttributesMap();
+
+        AttributeMap_t const &
+        availableVariables();
+
+        std::vector< std::string >
+        availableVariablesPrefixed( std::string const & prefix );
+
+        void
+        invalidateVariablesMap();
+
+    private:
+        /*
+         * Revisit once https://github.com/openPMD/openPMD-api/issues/563 has
+         * been resolved
+         * If false, the buffered map has been invalidated and needs to be
+         * queried from ADIOS2 again.
+         */
+        bool m_availableAttributesValid = false;
+        AttributeMap_t m_availableAttributes;
+
+        bool m_availableVariablesValid = false;
+        AttributeMap_t m_availableVariables;
     };
 
 
