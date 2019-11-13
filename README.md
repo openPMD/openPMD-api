@@ -171,8 +171,8 @@ python3 -m pip install openpmd-api
 
 or with MPI support:
 ```bash
-# optional:                   --user
-python3 -m pip install -U pip
+# optional:                                          --user
+python3 -m pip install -U pip setuptools wheel cmake
 
 # optional:                                                                   --user
 openPMD_USE_MPI=ON python3 -m pip install openpmd-api --no-binary openpmd-api
