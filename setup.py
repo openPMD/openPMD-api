@@ -57,13 +57,18 @@ class CMakeBuild(build_ext):
             '-DHDF5_USE_STATIC_LIBRARIES:BOOL=' + HDF5_USE_STATIC_LIBRARIES,
             '-DADIOS_USE_STATIC_LIBS:BOOL=' + ADIOS_USE_STATIC_LIBS,
             # Unix: rpath to current dir when packaged
+            #       needed for shared (here non-default) builds and ADIOS1
+            #       wrapper libraries
             '-DCMAKE_BUILD_WITH_INSTALL_RPATH:BOOL=ON',
             '-DCMAKE_INSTALL_RPATH_USE_LINK_PATH:BOOL=OFF',
-            # Windows: will already have %PATH% in package dir
+            # Windows: has no RPath concept, all `.dll`s must be in %PATH%
+            #          or same dir as calling executable
         ]
         if sys.platform == "darwin":
             cmake_args.append('-DCMAKE_INSTALL_RPATH=@loader_path')
-        else:  # values: linux*, aix, freebsd, ... just as well win32 & cygwin
+        else:
+            # values: linux*, aix, freebsd, ...
+            #   just as well win32 & cygwin (although Windows has no RPaths)
             cmake_args.append('-DCMAKE_INSTALL_RPATH=$ORIGIN')
 
         cfg = 'Debug' if self.debug else 'Release'
@@ -106,11 +111,11 @@ with open('./README.md', encoding='utf-8') as f:
 
 # Allow to control options via environment vars.
 # Work-around for https://github.com/pypa/setuptools/issues/1712
-# note: changed default for MPI, TESTING and EXAMPLES
+# note: changed default for SHARED, MPI, TESTING and EXAMPLES
 openPMD_USE_MPI = os.environ.get('openPMD_USE_MPI', 'OFF')
 HDF5_USE_STATIC_LIBRARIES = os.environ.get('HDF5_USE_STATIC_LIBRARIES', 'OFF')
 ADIOS_USE_STATIC_LIBS = os.environ.get('ADIOS_USE_STATIC_LIBS', 'OFF')
-BUILD_SHARED_LIBS = os.environ.get('BUILD_SHARED_LIBS', 'ON')
+BUILD_SHARED_LIBS = os.environ.get('BUILD_SHARED_LIBS', 'OFF')
 BUILD_TESTING = os.environ.get('BUILD_TESTING', 'OFF')
 BUILD_EXAMPLES = os.environ.get('BUILD_EXAMPLES', 'OFF')
 

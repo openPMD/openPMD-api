@@ -32,6 +32,7 @@ Bug Fixes
 - Python:
 
   - OSX: fix ``dlopen`` issues due to missing ``@loader_path`` with ``pip``/``setup.py`` #595
+  - Windows: fix a missing ``DLL`` issue by building static with ``pip``/``setup.py`` #602
   - import ``mpi4py`` first (MPICH on OSX issue) #596
   - skip examples using HDF5 if backend is missing #544
   - fix a variable shadowing in ``Mesh`` #582

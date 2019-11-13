@@ -86,7 +86,6 @@ RUN        ls /opt/python/
 
 ENV        HDF5_USE_STATIC_LIBRARIES=ON \
            ADIOS_USE_STATIC_LIBS=ON \
-           BUILD_SHARED_LIBS=OFF \
            BUILD_TESTING=OFF \
            BUILD_EXAMPLES=OFF
 
