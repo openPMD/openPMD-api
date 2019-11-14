@@ -60,6 +60,7 @@ Other
   - fix tables & missing examples #579
   - "first write" explains ``unitDimension`` #592
   - link to datasets used in examples #598
+  - fix minor formatting and include problems #608
 - README:
 
   - add authors and acknowledgements #566

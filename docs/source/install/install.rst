@@ -135,7 +135,7 @@ The process is basically similar to Linux & OSX, with just a couple of minor twe
 Use ``ps ..\openPMD-api\.travis\download_samples.ps1`` to download sample files for tests (optional).
 Replace the last three commands with
 
-.. code-block:: cmd
+.. code-block:: bat
 
    cmake --build . --config Release
 
@@ -166,7 +166,7 @@ Adding those lines to your ``$HOME/.bashrc`` and re-opening your terminal will s
 
 Set hints on Windows with the CMake printed paths accordingly, e.g.:
 
-.. code-block:: cmd
+.. code-block:: bat
 
    set CMAKE_PREFIX_PATH=C:\\Program Files\openPMD;%CMAKE_PREFIX_PATH%
    set PATH=C:\\Program Files\openPMD\Lib;%PATH%

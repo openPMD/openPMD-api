@@ -1,7 +1,7 @@
 .. _backends-adios2:
 
-ADIOS2 Backend
-==============
+ADIOS2
+======
 
 openPMD supports writing to and reading from ADIOS2 ``.bp`` files.
 For this, the installed copy of openPMD must have been built with support for the ADIOS2 backend.

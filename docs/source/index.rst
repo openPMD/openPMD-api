@@ -22,9 +22,10 @@ http://www.openpmd.org/openPMD-api
     */
    div#installation.section,
    div#usage.section,
-   div#development.section,
+   div#api-details.section,
+   div#utilities.section,
    div#backends.section,
-   div#utilities.section {
+   div#development.section {
        display:none;
    }
    </style>
