@@ -1,7 +1,7 @@
 .. _backends-hdf5:
 
-HDF5 Backend
-============
+HDF5
+====
 
 openPMD supports writing to and reading from HDF5 ``.h5`` files.
 For this, the installed copy of openPMD must have been built with support for the HDF5 backend.

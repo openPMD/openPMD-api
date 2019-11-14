@@ -1,7 +1,7 @@
 .. _backends-json:
 
-JSON Backend
-============
+JSON
+====
 
 openPMD supports writing to and reading from JSON files.
 The JSON backend is always available.
