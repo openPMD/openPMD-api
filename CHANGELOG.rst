@@ -40,6 +40,7 @@ Bug Fixes
 - xlC 16.1: work-around C-array initializer parsing issue #547
 - icc 19.0.0 and PGI 19.5: fix compiler ID identification #548
 - CMake: fix false-positives in ``FindADIOS.cmake`` module #609
+- Series: throws an error message if no file ending is specified #610
 
 Other
 """""

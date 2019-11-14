@@ -14,6 +14,10 @@ We will change this default in upcoming releases to prefer ADIOS2.
 The JSON backend is now always enabled.
 The CMake option ``-DopenPMD_USE_JSON`` has been removed (as it is always ``ON`` now).
 
+Previously, omitting a file ending in the ``Series`` constructor chose a "dummy" no-operation file backend.
+This was confusing and instead a runtime error is now thrown.
+
+
 0.9.0-alpha
 -----------
 
