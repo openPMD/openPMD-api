@@ -29,12 +29,12 @@ environment variable                 default    description
 ``OPENPMD_ADIOS_NUM_AGGREGATORS``    ``1``      Number of I/O aggregator nodes for ADIOS1 ``MPI_AGGREGATE`` transport method.
 ``OPENPMD_ADIOS_NUM_OST``            ``0``      Number of I/O OSTs for ADIOS1 ``MPI_AGGREGATE`` transport method.
 ``OPENPMD_ADIOS_HAVE_METADATA_FILE`` ``1``      Online creation of the adios journal file (``1``: yes, ``0``: no).
-``OPENPMD_BP_BACKEND``               ``ADIOS2`` Chose preferred ``.bp`` file backend if ``ADIOS1`` and ``ADIOS2`` are available.
+``OPENPMD_BP_BACKEND``               ``ADIOS1`` Chose preferred ``.bp`` file backend if ``ADIOS1`` and ``ADIOS2`` are available.
 ==================================== ========== ================================================================================
 
 Please refer to the `ADIOS1 manual, section 6.1.5 <https://users.nccs.gov/~pnorbert/ADIOS-UsersManual-1.13.1.pdf>`_ for details on I/O tuning.
 
-In case only the ADIOS1 backend is enabled but not the :ref:`ADIOS2 backend <backends-adios2>`, the default of ``OPENPMD_BP_BACKEND`` is automatically switched to ``ADIOS1``.
+In case both the ADIOS1 backend and the :ref:`ADIOS2 backend <backends-adios2>` are enabled, set ``OPENPMD_BP_BACKEND`` to ``ADIOS2`` to enforce using ADIOS2.
 Be advised that ADIOS1 only supports ``.bp`` files up to the internal version BP3, while ADIOS2 supports BP3, BP4 and later formats.
 
 
