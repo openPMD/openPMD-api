@@ -38,13 +38,13 @@ openPMD-api is a library using `semantic versioning <https://semver.org/>`_, sta
 The supported version of the `openPMD standard <https://github.com/openPMD/openPMD-standard>`_ are reflected as follows:
 ``standardMAJOR.apiMAJOR.apiMINOR``.
 
-======================= ===================================
-openPMD-api version     supported openPMD standard versions
-======================= ===================================
-``2.0.0+``              ``2.0.0+``      (not released yet)
-``1.0.0+``              ``1.0.1-1.1.0`` (not released yet)
-``0.1.0-0.9.0`` (alpha) ``1.0.0-1.1.0``
-======================= ===================================
+======================== ===================================
+openPMD-api version      supported openPMD standard versions
+======================== ===================================
+``2.0.0+``               ``2.0.0+``      (not released yet)
+``1.0.0+``               ``1.0.1-1.1.0`` (not released yet)
+``0.1.0-0.10.0`` (alpha) ``1.0.0-1.1.0``
+======================== ===================================
 
 Installation
 ------------

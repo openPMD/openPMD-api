@@ -5,11 +5,15 @@ Changelog
 
 0.10.0-alpha
 ------------
-**Date:** TBA
+**Date:** 2019-11-14
 
-[Title]
+ADIOS2 Preview, Python & MPI Improved
 
-[Summary]
+This release adds a first (preview) implementation of ADIOS2 (BP4).
+Python 3.8 support as well as improved pip builds on macOS and Windows have been added.
+ADIOS1 and HDF5 now support non-collective (independent) store and load operations with MPI.
+More HPC compilers, such as IBM XL, ICC and PGI have been tested.
+The manual has been improved with more details on APIs, examples, installation and backends.
 
 Changes to "0.9.0-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^
