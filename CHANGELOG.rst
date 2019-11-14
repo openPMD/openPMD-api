@@ -17,7 +17,7 @@ Changes to "0.9.0-alpha"
 Features
 """"""""
 
-- ADIOS2: support added (v2.4.0+) #482 #513 #530 #568
+- ADIOS2: support added (v2.4.0+) #482 #513 #530 #568 #572 #573 #588 #605
 - HDF5: add ``OPENPMD_HDF5_INDEPENDENT`` for non-collective parallel I/O #576
 - Python:
 
@@ -37,15 +37,39 @@ Bug Fixes
   - skip examples using HDF5 if backend is missing #544
   - fix a variable shadowing in ``Mesh`` #582
 - ADIOS1: fix deadlock in MPI-parallel, non-collective calls to ``storeChunk()`` #554
+- xlC 16.1: work-around C-array initializer parsing issue #547
+- icc 19.0.0 and PGI 19.5: fix compiler ID identification #548
 
 Other
 """""
 
 - Python: improve ``pip`` install instructions #594 #600
+- PGI 19.5: fix warning ``static constexpr: storage class first`` #546
 - JSON:
 
-  - the backend is now always enabled #587
+  - the backend is now always enabled #564 #587
   - NLohmann-JSON dependency updated to 3.7.0+ #556
+- gitignore: generalize CLion, more build dirs #549 #552
+- fix clang-tidy warnings: ``strcmp`` and modernize ``auto``, ``const`` correctness #551 #560
+- ``ParallelIOTest``: less code duplication #553
+- Sphinx manual:
+
+  - PDF Chapters #557
+  - draft for the API architecture design #186
+  - draft for MPI data and collective contract in API usage #583
+  - fix tables & missing examples #579
+  - "first write" explains ``unitDimension`` #592
+  - link to datasets used in examples #598
+- README:
+
+  - add authors and acknowledgements #566
+  - correct a typo #584
+  - use ``$(which python3)`` for CMake Python option #599
+  - update ADIOS homepage & CMake #604
+- Travis CI:
+
+  - speedup dependency build #558
+  - ``-Werror`` only in build phase #565
 
 
 0.9.0-alpha
