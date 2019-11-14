@@ -182,7 +182,7 @@ openPMD_USE_MPI=ON python3 -m pip install openpmd-api --no-binary openpmd-api
 
 [![Source Status](https://img.shields.io/badge/method-advanced-brightgreen.svg)](https://cmake.org)
 
-openPMD can then be installed using [CMake](https://cmake.org/):
+openPMD-api can also be built and installed from source using [CMake](https://cmake.org/):
 
 ```bash
 git clone https://github.com/openPMD/openPMD-api.git
@@ -326,7 +326,7 @@ The following people and institutions [contributed](https://github.com/openPMD/o
 
 openPMD-api stands on the shoulders of giants and we are grateful for the following projects included as direct dependencies:
 
-* [ADIOS1](https://github.com/ornladios/ADIOS) and [ADIOS2](https://github.com/ornladios/ADIOS2) by [PI S. Klasky (ORNL), team, collaborators](https://www.olcf.ornl.gov/center-projects/adios/) and [contributors](https://github.com/ornladios/ADIOS2/graphs/contributors)
+* [ADIOS1](https://github.com/ornladios/ADIOS) and [ADIOS2](https://github.com/ornladios/ADIOS2) by [S. Klasky (ORNL), team, collaborators](https://csmd.ornl.gov/adios) and [contributors](https://github.com/ornladios/ADIOS2/graphs/contributors)
 * [Catch2](https://github.com/catchorg/Catch2) by [Phil Nash](https://github.com/philsquared), [Martin Hořeňovský](https://github.com/horenmar) and [contributors](https://github.com/catchorg/Catch2/graphs/contributors)
 * HDF5 by [the HDF group](https://www.hdfgroup.org) and community
 * [json](https://github.com/nlohmann/json) by [Niels Lohmann](https://github.com/nlohmann) and [contributors](https://github.com/nlohmann/json/graphs/contributors)
