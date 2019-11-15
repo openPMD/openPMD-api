@@ -1,0 +1,7 @@
+<map id="openPMD::test::Dotty" name="openPMD::test::Dotty">
+<area shape="rect" id="node2" href="$structopen_p_m_d_1_1test_1_1_test_helper.html" title="openPMD::test::TestHelper" alt="" coords="40,184,223,211"/>
+<area shape="rect" id="node3" href="$classopen_p_m_d_1_1_attributable.html" title="Layer to manage storage of attributes associated with file objects. " alt="" coords="138,95,293,121"/>
+<area shape="rect" id="node6" href="$classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. " alt="" coords="247,184,383,211"/>
+<area shape="rect" id="node4" href="$classopen_p_m_d_1_1_abstract_i_o_handler.html" title="Interface for communicating between logical and physically persistent data. " alt="" coords="5,5,201,32"/>
+<area shape="rect" id="node5" href="$classopen_p_m_d_1_1_abstract_file_position.html" title="openPMD::AbstractFilePosition" alt="" coords="226,5,431,32"/>
+</map>

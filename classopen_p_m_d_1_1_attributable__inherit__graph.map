@@ -1,0 +1,33 @@
+<map id="openPMD::Attributable" name="openPMD::Attributable">
+<area shape="rect" id="node2" href="$classopen_p_m_d_1_1_container.html" title="openPMD::Container\l\&lt; MeshRecordComponent \&gt;" alt="" coords="228,5,415,47"/>
+<area shape="rect" id="node5" href="$classopen_p_m_d_1_1_container.html" title="openPMD::Container\l\&lt; openPMD::Iteration,\l uint64_t \&gt;" alt="" coords="246,71,397,127"/>
+<area shape="rect" id="node6" href="$classopen_p_m_d_1_1_container.html" title="openPMD::Container\l\&lt; openPMD::Mesh \&gt;" alt="" coords="249,152,393,193"/>
+<area shape="rect" id="node7" href="$classopen_p_m_d_1_1_container.html" title="openPMD::Container\l\&lt; openPMD::ParticleSpecies \&gt;" alt="" coords="220,217,423,259"/>
+<area shape="rect" id="node8" href="$classopen_p_m_d_1_1_container.html" title="openPMD::Container\l\&lt; PatchRecord \&gt;" alt="" coords="249,283,393,324"/>
+<area shape="rect" id="node10" href="$classopen_p_m_d_1_1_container.html" title="openPMD::Container\l\&lt; PatchRecordComponent \&gt;" alt="" coords="227,348,416,389"/>
+<area shape="rect" id="node13" href="$classopen_p_m_d_1_1_container.html" title="openPMD::Container\l\&lt; Record \&gt;" alt="" coords="249,413,393,455"/>
+<area shape="rect" id="node15" href="$classopen_p_m_d_1_1_container.html" title="openPMD::Container\l\&lt; RecordComponent \&gt;" alt="" coords="244,479,399,520"/>
+<area shape="rect" id="node18" href="$classopen_p_m_d_1_1_container.html" title="openPMD::Container\l\&lt; T_elem \&gt;" alt="" coords="249,544,393,585"/>
+<area shape="rect" id="node20" href="$classopen_p_m_d_1_1_base_record_component.html" title="openPMD::BaseRecordComponent" alt="" coords="208,610,435,637"/>
+<area shape="rect" id="node24" href="$classopen_p_m_d_1_1_container.html" title="Map&#45;like container that enforces openPMD requirements and handles IO. " alt="" coords="234,661,409,703"/>
+<area shape="rect" id="node25" href="$classopen_p_m_d_1_1_iteration.html" title="Logical compilation of data from one snapshot (e.g. " alt="" coords="254,727,389,754"/>
+<area shape="rect" id="node26" href="$classopen_p_m_d_1_1_series.html" title="Root level of the openPMD hierarchy. " alt="" coords="259,778,384,805"/>
+<area shape="rect" id="node27" href="$structopen_p_m_d_1_1test_1_1_test_helper.html" title="openPMD::test::TestHelper" alt="" coords="230,829,413,855"/>
+<area shape="rect" id="node3" href="$classopen_p_m_d_1_1_base_record.html" title="openPMD::BaseRecord\l\&lt; MeshRecordComponent \&gt;" alt="" coords="505,5,691,47"/>
+<area shape="rect" id="node4" href="$classopen_p_m_d_1_1_mesh.html" title="Container for N&#45;dimensional, homogeneous Records. " alt="" coords="816,13,936,39"/>
+<area shape="rect" id="node9" href="$classopen_p_m_d_1_1_particle_patches.html" title="openPMD::ParticlePatches" alt="" coords="508,290,688,317"/>
+<area shape="rect" id="node11" href="$classopen_p_m_d_1_1_base_record.html" title="openPMD::BaseRecord\l\&lt; PatchRecordComponent \&gt;" alt="" coords="503,348,693,389"/>
+<area shape="rect" id="node12" href="$classopen_p_m_d_1_1_patch_record.html" title="openPMD::PatchRecord" alt="" coords="794,355,958,382"/>
+<area shape="rect" id="node14" href="$classopen_p_m_d_1_1_particle_species.html" title="openPMD::ParticleSpecies" alt="" coords="509,421,687,447"/>
+<area shape="rect" id="node16" href="$classopen_p_m_d_1_1_base_record.html" title="openPMD::BaseRecord\l\&lt; RecordComponent \&gt;" alt="" coords="518,479,678,520"/>
+<area shape="rect" id="node17" href="$classopen_p_m_d_1_1_record.html" title="openPMD::Record" alt="" coords="811,486,941,513"/>
+<area shape="rect" id="node19" href="$classopen_p_m_d_1_1_base_record.html" title="openPMD::BaseRecord\l\&lt; T_elem \&gt;" alt="" coords="518,544,678,585"/>
+<area shape="rect" id="node21" href="$classopen_p_m_d_1_1_patch_record_component.html" title="openPMD::PatchRecordComponent" alt="" coords="483,610,713,637"/>
+<area shape="rect" id="node22" href="$classopen_p_m_d_1_1_record_component.html" title="openPMD::RecordComponent" alt="" coords="499,661,697,687"/>
+<area shape="rect" id="node23" href="$classopen_p_m_d_1_1_mesh_record_component.html" title="openPMD::MeshRecordComponent" alt="" coords="761,661,991,687"/>
+<area shape="rect" id="node28" href="$structopen_p_m_d_1_1test_1_1_attributed_widget.html" title="openPMD::test::Attributed\lWidget" alt="" coords="511,712,685,753"/>
+<area shape="rect" id="node29" href="$structopen_p_m_d_1_1test_1_1_dotty.html" title="openPMD::test::Dotty" alt="" coords="523,778,673,805"/>
+<area shape="rect" id="node30" href="$structopen_p_m_d_1_1test_1_1_s.html" title="openPMD::test::S" alt="" coords="535,829,661,855"/>
+<area shape="rect" id="node31" href="$structopen_p_m_d_1_1test_1_1structure.html" title="openPMD::test::structure" alt="" coords="513,879,683,906"/>
+<area shape="rect" id="node32" href="$structopen_p_m_d_1_1test_1_1_widget.html" title="openPMD::test::Widget" alt="" coords="519,930,677,957"/>
+</map>

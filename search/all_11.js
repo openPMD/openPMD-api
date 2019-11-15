@@ -2,6 +2,7 @@ var searchData=
 [
   ['s',['S',['../structopen_p_m_d_1_1test_1_1_s.html',1,'openPMD::test']]],
   ['series',['Series',['../classopen_p_m_d_1_1_series.html',1,'openPMD']]],
+  ['setandgetfileposition',['setAndGetFilePosition',['../classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html#ad1cfcf10db0d34f295c77cb291d0f77a',1,'openPMD::AbstractIOHandlerImplCommon::setAndGetFilePosition(Writable *writable, bool write=true)'],['../classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html#a6d097344ec9d33fb077fd1f90a8bc866',1,'openPMD::AbstractIOHandlerImplCommon::setAndGetFilePosition(Writable *writable, std::string extend)']]],
   ['setattribute',['setAttribute',['../classopen_p_m_d_1_1_attributable.html#ae91469c652b0d2f528320bc36725d305',1,'openPMD::Attributable']]],
   ['setauthor',['setAuthor',['../classopen_p_m_d_1_1_series.html#a775496da0351d3bfdf0408265f9032e9',1,'openPMD::Series']]],
   ['setaxislabels',['setAxisLabels',['../classopen_p_m_d_1_1_mesh.html#a112c856717ce9ba2db4a3c7d6f2be6ca',1,'openPMD::Mesh']]],

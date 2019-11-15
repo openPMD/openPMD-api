@@ -1,0 +1,6 @@
+<map id="openPMD::detail::DatasetOpener" name="openPMD::detail::DatasetOpener">
+<area shape="rect" id="node2" href="$classopen_p_m_d_1_1_a_d_i_o_s2_i_o_handler_impl.html" title="openPMD::ADIOS2IOHandlerImpl" alt="" coords="15,261,237,288"/>
+<area shape="rect" id="node3" href="$classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html" title="openPMD::AbstractIOHandler\lImplCommon\&lt; ADIOS2FilePosition \&gt;" alt="" coords="5,171,247,212"/>
+<area shape="rect" id="node4" href="$classopen_p_m_d_1_1_abstract_i_o_handler_impl.html" title="openPMD::AbstractIOHandlerImpl" alt="" coords="15,95,237,121"/>
+<area shape="rect" id="node5" href="$classopen_p_m_d_1_1_abstract_i_o_handler.html" title="Interface for communicating between logical and physically persistent data. " alt="" coords="28,5,224,32"/>
+</map>
