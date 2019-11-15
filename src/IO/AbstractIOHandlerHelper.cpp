@@ -53,6 +53,7 @@ namespace openPMD
             case Format::ADIOS2:
                 return std::make_shared<ADIOS2IOHandler>(path, accessTypeBackend, comm);
             default:
+                throw std::runtime_error("Unknown file format! Did you specify a file ending?" );
                 return std::make_shared< DummyIOHandler >(path, accessTypeBackend);
         }
     }
@@ -82,6 +83,7 @@ namespace openPMD
             case Format::JSON:
                 return std::make_shared< JSONIOHandler >(path, accessType);
             default:
+                throw std::runtime_error("Unknown file format! Did you specify a file ending?" );
                 return std::make_shared< DummyIOHandler >(path, accessType);
         }
     }

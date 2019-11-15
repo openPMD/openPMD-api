@@ -128,7 +128,7 @@ TEST_CASE( "attribute_dtype_test", "[core]" )
 TEST_CASE( "output_default_test", "[core]" )
 {
     using IE = IterationEncoding;
-    Series o = Series("./new_openpmd_output_%T", AccessType::CREATE);
+    Series o = Series("./new_openpmd_output_%T.json", AccessType::CREATE);
 
     REQUIRE(o.openPMD() == "1.1.0");
     REQUIRE(o.openPMDextension() == static_cast<uint32_t>(0));
@@ -145,7 +145,7 @@ TEST_CASE( "output_default_test", "[core]" )
 TEST_CASE( "output_constructor_test", "[core]" )
 {
     using IE = IterationEncoding;
-    Series o = Series("./MyCustomOutput", AccessType::CREATE);
+    Series o = Series("./MyCustomOutput.json", AccessType::CREATE);
 
     o.setMeshesPath("customMeshesPath").setParticlesPath("customParticlesPath");
 
@@ -169,7 +169,7 @@ TEST_CASE( "output_constructor_test", "[core]" )
 
 TEST_CASE( "output_modification_test", "[core]" )
 {
-    Series o = Series("./MyOutput_%T", AccessType::CREATE);
+    Series o = Series("./MyOutput_%T.json", AccessType::CREATE);
 
     o.setOpenPMD("1.0.0");
     REQUIRE(o.openPMD() == "1.0.0");
@@ -194,7 +194,7 @@ TEST_CASE( "output_modification_test", "[core]" )
 
 TEST_CASE( "iteration_default_test", "[core]" )
 {
-    Series o = Series("./MyOutput_%T", AccessType::CREATE);
+    Series o = Series("./MyOutput_%T.json", AccessType::CREATE);
 
     Iteration& i = o.iterations[42];
 
@@ -208,7 +208,7 @@ TEST_CASE( "iteration_default_test", "[core]" )
 
 TEST_CASE( "iteration_modification_test", "[core]" )
 {
-    Series o = Series("./MyOutput_%T", AccessType::CREATE);
+    Series o = Series("./MyOutput_%T.json", AccessType::CREATE);
 
     Iteration& i = o.iterations[42];
 
@@ -226,7 +226,7 @@ TEST_CASE( "iteration_modification_test", "[core]" )
 
 TEST_CASE( "particleSpecies_modification_test", "[core]" )
 {
-    Series o = Series("./MyOutput_%T", AccessType::CREATE);
+    Series o = Series("./MyOutput_%T.json", AccessType::CREATE);
 
     auto& particles = o.iterations[42].particles;
     REQUIRE(0 == particles.numAttributes());
@@ -255,7 +255,7 @@ TEST_CASE( "particleSpecies_modification_test", "[core]" )
 
 TEST_CASE( "record_constructor_test", "[core]" )
 {
-    Series o = Series("./MyOutput_%T", AccessType::CREATE);
+    Series o = Series("./MyOutput_%T.json", AccessType::CREATE);
 
     ParticleSpecies ps = o.iterations[42].particles["species"];
     Record& r = ps["record"];
@@ -277,7 +277,7 @@ TEST_CASE( "record_constructor_test", "[core]" )
 
 TEST_CASE( "record_modification_test", "[core]" )
 {
-    Series o = Series("./MyOutput_%T", AccessType::CREATE);
+    Series o = Series("./MyOutput_%T.json", AccessType::CREATE);
 
     auto species = o.iterations[42].particles["species"];
     Record& r = species["position"];
@@ -305,7 +305,7 @@ TEST_CASE( "record_modification_test", "[core]" )
 
 TEST_CASE( "recordComponent_modification_test", "[core]" )
 {
-    Series o = Series("./MyOutput_%T", AccessType::CREATE);
+    Series o = Series("./MyOutput_%T.json", AccessType::CREATE);
 
     ParticleSpecies ps = o.iterations[42].particles["species"];
     Record& r = ps["record"];
@@ -327,7 +327,7 @@ TEST_CASE( "recordComponent_modification_test", "[core]" )
 
 TEST_CASE( "mesh_constructor_test", "[core]" )
 {
-    Series o = Series("./MyOutput_%T", AccessType::CREATE);
+    Series o = Series("./MyOutput_%T.json", AccessType::CREATE);
 
     Mesh &m = o.iterations[42].meshes["E"];
 
@@ -355,7 +355,7 @@ TEST_CASE( "mesh_constructor_test", "[core]" )
 
 TEST_CASE( "mesh_modification_test", "[core]" )
 {
-    Series o = Series("./MyOutput_%T", AccessType::CREATE);
+    Series o = Series("./MyOutput_%T.json", AccessType::CREATE);
 
     Mesh &m = o.iterations[42].meshes["E"];
     m["x"];
@@ -395,7 +395,7 @@ TEST_CASE( "mesh_modification_test", "[core]" )
 TEST_CASE( "structure_test", "[core]" )
 {
 #if openPMD_USE_INVASIVE_TESTS
-    Series o = Series("./new_openpmd_output_%T", AccessType::CREATE);
+    Series o = Series("./new_openpmd_output_%T.json", AccessType::CREATE);
 
     REQUIRE(o.IOHandler);
     REQUIRE(o.iterations.IOHandler);
@@ -520,7 +520,7 @@ TEST_CASE( "structure_test", "[core]" )
 
 TEST_CASE( "wrapper_test", "[core]" )
 {
-    Series o = Series("./new_openpmd_output", AccessType::CREATE);
+    Series o = Series("./new_openpmd_output.json", AccessType::CREATE);
 
     o.setOpenPMDextension(42);
     o.setIterationEncoding(IterationEncoding::fileBased);
@@ -569,8 +569,11 @@ TEST_CASE( "wrapper_test", "[core]" )
     mrc2.loadChunk(shareRaw(&loadData), {0}, {1});
     o.flush();
     REQUIRE(loadData == value);
-    value = 43.;
-    mrc2.makeConstant(value);
+    // TODO: do we want to be able to make data constant after already writing it once?
+    // value = 43.;
+    // mrc2.makeConstant(value);
+    REQUIRE_THROWS_WITH(mrc2.makeConstant(value),
+                        Catch::Equals("A recordComponent can not (yet) be made constant after it has been written."));
     std::array< double, 1 > moreData = {{ 112233. }};
     o.iterations[4].meshes["E"]["y"].loadChunk(shareRaw(moreData), {0}, {1});
     o.flush();
@@ -639,7 +642,7 @@ TEST_CASE( "wrapper_test", "[core]" )
 
 TEST_CASE( "use_count_test", "[core]" )
 {
-    Series o = Series("./new_openpmd_output", AccessType::CREATE);
+    Series o = Series("./new_openpmd_output.json", AccessType::CREATE);
 
     MeshRecordComponent mrc = o.iterations[1].meshes["E"]["x"];
     mrc.resetDataset(Dataset(determineDatatype<uint16_t>(), {42}));
@@ -663,7 +666,7 @@ TEST_CASE( "use_count_test", "[core]" )
 
 TEST_CASE( "empty_record_test", "[core]" )
 {
-    Series o = Series("./new_openpmd_output", AccessType::CREATE);
+    Series o = Series("./new_openpmd_output.json", AccessType::CREATE);
 
     o.iterations[1].meshes["E"].setComment("No assumption about contained RecordComponents will be made");
     REQUIRE_THROWS_WITH(o.flush(),
@@ -674,7 +677,7 @@ TEST_CASE( "empty_record_test", "[core]" )
 
 TEST_CASE( "zero_extent_component", "[core]" )
 {
-    Series o = Series("./new_openpmd_output", AccessType::CREATE);
+    Series o = Series("./new_openpmd_output.json", AccessType::CREATE);
 
     auto E_x = o.iterations[1].meshes["E"]["x"];
     E_x.setComment("Datasets must contain dimensions.");
@@ -683,4 +686,14 @@ TEST_CASE( "zero_extent_component", "[core]" )
     REQUIRE_THROWS_WITH(E_x.makeEmpty<int>(0),
                         Catch::Equals("Dataset extent must be at least 1D."));
     E_x.resetDataset(Dataset(Datatype::DOUBLE, {1}));
+}
+
+TEST_CASE( "no_file_ending", "[core]" )
+{
+    REQUIRE_THROWS_WITH(Series("./new_openpmd_output", AccessType::CREATE),
+                        Catch::Equals("Unknown file format! Did you specify a file ending?"));
+    REQUIRE_THROWS_WITH(Series("./new_openpmd_output_%T", AccessType::CREATE),
+                        Catch::Equals("Unknown file format! Did you specify a file ending?"));
+    REQUIRE_THROWS_WITH(Series("./new_openpmd_output_%05T", AccessType::CREATE),
+                        Catch::Equals("Unknown file format! Did you specify a file ending?"));
 }
