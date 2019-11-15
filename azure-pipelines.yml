@@ -112,7 +112,31 @@ jobs:
   - script: python3 -c "import openpmd_api as api; print(api.variants)"
 
 # spack -----------------------------------------------------------------------
-# TODO
+- job: linux_spack
+  displayName: Ubuntu spack
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+  - script: |
+      git clone https://github.com/spack/spack.git
+      . spack/share/spack/setup-env.sh
+      spack compiler find
+      spack install -v openpmd-api
+
+- job: linux_spack_all
+  displayName: Ubuntu spack w/ all
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+  - script: |
+      git clone https://github.com/spack/spack.git
+      . spack/share/spack/setup-env.sh
+      spack compiler find
+      spack bootstrap
+      . spack/share/spack/setup-env.sh
+      spack install -v openpmd-api +python +adios1 +adios2
+      spack load -r openpmd-api
+      python -c "import openpmd_api as api; print(api.variants)"
 
 # linuxbrew -------------------------------------------------------------------
 # TODO
@@ -221,7 +245,31 @@ jobs:
   - script: python3 -c "import openpmd_api as api; print(api.variants)"
 
 # spack -----------------------------------------------------------------------
-# TODO
+- job: macOS_spack
+  displayName: macOS spack
+  pool:
+    vmImage: macOS-latest
+  steps:
+  - script: |
+      git clone https://github.com/spack/spack.git
+      . spack/share/spack/setup-env.sh
+      spack compiler find
+      spack install -v openpmd-api
+
+- job: macOS_spack_all
+  displayName: macOS spack w/ all
+  pool:
+    vmImage: macOS-latest
+  steps:
+  - script: |
+      git clone https://github.com/spack/spack.git
+      . spack/share/spack/setup-env.sh
+      spack compiler find
+      spack bootstrap
+      . spack/share/spack/setup-env.sh
+      spack install -v openpmd-api +python +adios1 +adios2
+      spack load -r openpmd-api
+      python -c "import openpmd_api as api; print(api.variants)"
 
 # homebrew --------------------------------------------------------------------
 # TODO
