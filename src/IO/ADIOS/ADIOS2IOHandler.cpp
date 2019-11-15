@@ -699,10 +699,11 @@ namespace detail
          * that would otherwise be lost. Check whether this has been done.
          */
         using rep = AttributeTypes<bool>::rep;
+        if
 #if __cplusplus > 201402L
         constexpr
 #endif
-        if( std::is_same< T, rep >::value )
+        ( std::is_same< T, rep >::value )
         {
             std::string metaAttr = "__is_boolean__" + name;
             auto type = attributeInfo( IO, "__is_boolean__" + name );
