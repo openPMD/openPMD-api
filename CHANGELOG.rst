@@ -36,6 +36,7 @@ Bug Fixes
   - import ``mpi4py`` first (MPICH on OSX issue) #596
   - skip examples using HDF5 if backend is missing #544
   - fix a variable shadowing in ``Mesh`` #582
+  - add missing ``.unit_dimension`` for records #611
 - ADIOS1: fix deadlock in MPI-parallel, non-collective calls to ``storeChunk()`` #554
 - xlC 16.1: work-around C-array initializer parsing issue #547
 - icc 19.0.0 and PGI 19.5: fix compiler ID identification #548

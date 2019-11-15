@@ -34,10 +34,14 @@ using namespace openPMD;
 
 
 void init_BaseRecord(py::module &m) {
-    py::class_<BaseRecord< RecordComponent >, Container< RecordComponent > >(m, "Base_Record_Record_Component");
-    py::class_<BaseRecord< MeshRecordComponent >, Container< MeshRecordComponent > >(m, "Base_Record_Mesh_Record_Component");
-    py::class_<BaseRecord< BaseRecordComponent >, Container< BaseRecordComponent > >(m, "Base_Record_Base_Record_Component");
-    py::class_<BaseRecord< PatchRecordComponent >, Container< PatchRecordComponent > >(m, "Base_Record_Patch_Record_Component");
+    py::class_<BaseRecord< RecordComponent >, Container< RecordComponent > >(m, "Base_Record_Record_Component")
+        .def_property_readonly("unit_dimension", &BaseRecord< RecordComponent >::unitDimension);
+    py::class_<BaseRecord< MeshRecordComponent >, Container< MeshRecordComponent > >(m, "Base_Record_Mesh_Record_Component")
+        .def_property_readonly("unit_dimension", &BaseRecord< MeshRecordComponent >::unitDimension);
+    py::class_<BaseRecord< BaseRecordComponent >, Container< BaseRecordComponent > >(m, "Base_Record_Base_Record_Component")
+        .def_property_readonly("unit_dimension", &BaseRecord< BaseRecordComponent >::unitDimension);
+    py::class_<BaseRecord< PatchRecordComponent >, Container< PatchRecordComponent > >(m, "Base_Record_Patch_Record_Component")
+        .def_property_readonly("unit_dimension", &BaseRecord< PatchRecordComponent >::unitDimension);
 
     py::enum_<UnitDimension>(m, "Unit_Dimension")
         .value("L", UnitDimension::L)
