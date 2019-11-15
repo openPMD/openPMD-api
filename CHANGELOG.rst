@@ -39,6 +39,7 @@ Bug Fixes
 - ADIOS1: fix deadlock in MPI-parallel, non-collective calls to ``storeChunk()`` #554
 - xlC 16.1: work-around C-array initializer parsing issue #547
 - icc 19.0.0 and PGI 19.5: fix compiler ID identification #548
+- CMake: fix false-positives in ``FindADIOS.cmake`` module #609
 
 Other
 """""
