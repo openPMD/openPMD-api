@@ -489,6 +489,11 @@ class APITest(unittest.TestCase):
         E_x = E["x"]
         shape = E_x.shape
 
+        if found_numpy:
+            np.testing.assert_allclose(E.unit_dimension,
+                                       [1., 1., -3., -1., 0., 0., 0.])
+        self.assertAlmostEqual(E_x.unit_SI, 1.0)
+
         self.assertSequenceEqual(shape, [26, 26, 201])
         if found_numpy:
             self.assertEqual(E_x.dtype, np.float64)
@@ -539,6 +544,11 @@ class APITest(unittest.TestCase):
         E_x = E["x"]
         pos_y = electrons["position"]["y"]
         w = electrons["weighting"][api.Record_Component.SCALAR]
+
+        if found_numpy:
+            np.testing.assert_allclose(electrons["position"].unit_dimension,
+                                       [1., 0., 0., 0., 0., 0., 0.])
+        self.assertAlmostEqual(pos_y.unit_SI, 1.0)
 
         offset = [4, 5, 9]
         extent = [4, 2, 3]
