@@ -20,6 +20,8 @@ Features
 Bug Fixes
 """""""""
 
+- ADIOS2: fix C++17 build #614
+
 Other
 """""
 
