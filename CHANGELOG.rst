@@ -21,6 +21,9 @@ Bug Fixes
 """""""""
 
 - ADIOS2: fix C++17 build #614
+- nvcc:
+
+  - ignore export of ``enum class Operation`` #617
 
 Other
 """""
