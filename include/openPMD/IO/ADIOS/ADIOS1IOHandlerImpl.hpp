@@ -36,8 +36,10 @@
 #   include <unordered_set>
 #endif
 
-#if _MSC_VER
+#ifdef _MSC_VER
 #   define EXPORT __declspec( dllexport )
+#elif defined(__NVCC__)
+#   define EXPORT
 #else
 #   define EXPORT __attribute__((visibility("default")))
 #endif
