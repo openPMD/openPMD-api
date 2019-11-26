@@ -24,6 +24,7 @@ Bug Fixes
 - nvcc:
 
   - ignore export of ``enum class Operation`` #617
+  - fix C++14 build #618
 
 Other
 """""
