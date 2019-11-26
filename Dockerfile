@@ -5,8 +5,8 @@ FROM       quay.io/pypa/manylinux2010_x86_64 as build-env
 # FROM       quay.io/pypa/manylinux1_x86_64 as build-env
 ENV        DEBIAN_FRONTEND noninteractive
 
-# Python 3.5-3.7 via "35 36 37"
-ARG        PY_VERSIONS="35 36 37"
+# Python 3.5-3.8 via "35m 36m 37m 38"
+ARG        PY_VERSIONS="35m 36m 37m 38"
 
 # static libs need relocatable symbols for linking to shared python lib
 ENV        CFLAGS="-fPIC ${CFLAGS}"
@@ -25,7 +25,7 @@ RUN        yum check-update -y \
 #           && mv cmake* /opt/cmake
 #ENV        PATH=/opt/cmake/bin:${PATH}
 RUN        for PY_TARGET in ${PY_VERSIONS}; do \
-               PY_BIN=/opt/python/cp${PY_TARGET}-cp${PY_TARGET}m/bin/python \
+               PY_BIN=/opt/python/cp${PY_TARGET:0:2}-cp${PY_TARGET}/bin/python \
                && ${PY_BIN} -m pip install setuptools cmake; \
            done;
 
@@ -47,8 +47,8 @@ RUN        curl -sLo c-blosc-1.15.0.tar.gz https://github.com/Blosc/c-blosc/arch
            && rm c-blosc*.tar.gz \
            && mkdir build-c-blosc \
            && cd build-c-blosc \
-           && PY_TARGET=${PY_VERSIONS:0:2} \
-           && PY_BIN=/opt/python/cp${PY_TARGET}-cp${PY_TARGET}m/bin/python \
+           && PY_TARGET=${PY_VERSIONS%% *} \
+           && PY_BIN=/opt/python/cp${PY_TARGET:0:2}-cp${PY_TARGET}/bin/python \
            && CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/" \
            && PATH=${CMAKE_BIN}:${PATH} cmake -DDEACTIVATE_SNAPPY=ON -DBUILD_SHARED=OFF -DBUILD_TESTS=OFF -DBUILD_BENCHMARKS=OFF -DCMAKE_INSTALL_PREFIX=/usr ../c-blosc-* \
            && make \
@@ -73,8 +73,8 @@ RUN        curl -sLo adios2-2.5.0.tar.gz https://github.com/ornladios/ADIOS2/arc
            && cd .. \
            && mkdir build-ADIOS2 \
            && cd build-ADIOS2 \
-           && PY_TARGET=${PY_VERSIONS:0:2} \
-           && PY_BIN=/opt/python/cp${PY_TARGET}-cp${PY_TARGET}m/bin/python \
+           && PY_TARGET=${PY_VERSIONS%% *} \
+           && PY_BIN=/opt/python/cp${PY_TARGET:0:2}-cp${PY_TARGET}/bin/python \
            && CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/" \
            && PATH=${CMAKE_BIN}:${PATH} cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DADIOS2_BUILD_EXAMPLES=OFF -DADIOS2_BUILD_TESTING=OFF -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE -DCMAKE_DISABLE_FIND_PACKAGE_BISON=TRUE -DCMAKE_INSTALL_PREFIX=/usr ../ADIOS2-* \
            && make \
@@ -92,7 +92,7 @@ ENV        HDF5_USE_STATIC_LIBRARIES=ON \
 # build matrix
 RUN        cd /opt/src; \
            for PY_TARGET in ${PY_VERSIONS}; do \
-               PY_BIN=/opt/python/cp${PY_TARGET}-cp${PY_TARGET}m/bin/python \
+               PY_BIN=/opt/python/cp${PY_TARGET:0:2}-cp${PY_TARGET}/bin/python \
                && CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/" \
                && PATH=${CMAKE_BIN}:${PATH} ${PY_BIN} setup.py bdist_wheel \
                && ${PY_BIN} setup.py clean --all \
@@ -142,6 +142,19 @@ RUN        python3 -c "import openpmd_api as api; print(api.__version__); print(
 #RUN        echo "* soft core 100000" >> /etc/security/limits.conf && \
 #           python3 -c "import openpmd_api as api;"; \
 #           gdb -ex bt -c core
+
+# test in fresh env: Debian:Sid + Python 3.8
+FROM       debian:sid
+ENV        DEBIAN_FRONTEND noninteractive
+COPY --from=build-env /wheelhouse/openPMD_api-*-cp38-cp38-manylinux2010_x86_64.whl .
+RUN        apt-get update \
+           && apt-get install -y --no-install-recommends python3.8 python3-distutils ca-certificates curl \
+           && rm -rf /var/lib/apt/lists/*
+RUN        python3.8 --version \
+           && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+           && python3.8 get-pip.py \
+           && python3.8 -m pip install openPMD_api-*-cp38-cp38-manylinux2010_x86_64.whl
+RUN        python3.8 -c "import openpmd_api as api; print(api.__version__); print(api.variants)"
 
 # test in fresh env: Ubuntu:18.04 + Python 3.6
 FROM       ubuntu:18.04
