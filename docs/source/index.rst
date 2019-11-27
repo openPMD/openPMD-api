@@ -46,6 +46,11 @@ openPMD-api version      supported openPMD standard versions
 ``0.1.0-0.10.0`` (alpha) ``1.0.0-1.1.0``
 ======================== ===================================
 
+.. toctree::
+   :hidden:
+
+   coc
+
 Installation
 ------------
 .. toctree::

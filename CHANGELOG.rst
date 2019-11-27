@@ -29,6 +29,8 @@ Bug Fixes
 Other
 """""
 
+- community: code of conduct added #619
+
 
 0.10.0-alpha
 ------------
