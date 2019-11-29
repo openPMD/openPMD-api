@@ -586,6 +586,9 @@ namespace detail
         std::vector< std::string >
         availableAttributesPrefixed( std::string const & prefix );
 
+        /*
+         * See description below.
+         */
         void
         invalidateAttributesMap();
 
@@ -595,15 +598,26 @@ namespace detail
         std::vector< std::string >
         availableVariablesPrefixed( std::string const & prefix );
 
+        /*
+         * See description below.
+         */
         void
         invalidateVariablesMap();
 
     private:
         /*
+         * ADIOS2 does not give direct access to its internal attribute and 
+         * variable maps, but will instead give access to copies of them.
+         * In order to avoid unnecessary copies, we buffer the returned map.
+         * The downside of this is that we need to pay attention to invalidate
+         * the map whenever an attribute/variable is altered. In that case, we
+         * fetch the map anew.
          * Revisit once https://github.com/openPMD/openPMD-api/issues/563 has
          * been resolved
          * If false, the buffered map has been invalidated and needs to be
-         * queried from ADIOS2 again.
+         * queried from ADIOS2 again. If true, the buffered map is equivalent to
+         * the map that would be returned by a call to 
+         * IO::Available(Attributes|Variables).
          */
         bool m_availableAttributesValid = false;
         AttributeMap_t m_availableAttributes;
