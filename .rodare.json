@@ -30,9 +30,40 @@
             "type": "Other"
         },
         {
+            "affiliation": "Fermi National Accelerator Laboratory",
+            "name": "Amundson, James",
+            "orcid": "0000-0001-6918-2728",
+            "type": "Other"
+        },
+        {
             "affiliation": "Anaconda, Inc.",
             "name": "Donnelly, Ray",
             "type": "Other"
+        },
+        {
+            "affiliation": "Helmholtz-Zentrum Dresden-Rossendorf",
+            "name": "Widera, René",
+            "orcid": "0000-0003-1642-0459"
+        },
+        {
+            "affiliation": "Helmholtz-Zentrum Dresden-Rossendorf",
+            "name": "Zenker, Erik",
+            "orcid": "0000-0001-9417-8712"
+        },
+        {
+            "affiliation": "Helmholtz-Zentrum Dresden-Rossendorf",
+            "name": "Bastrakov, Sergei",
+            "orcid": "0000-0003-3396-6154"
+        },
+        {
+            "affiliation": "Lawrence Berkeley National Laboratory",
+            "name": "Lehe, Rémi",
+            "orcid": "0000-0002-3656-9659"
+        },
+        {
+            "affiliation": "Lawrence Berkeley National Laboratory",
+            "name": "Amorim, Lígia Diana",
+            "orcid": "0000-0002-1445-0032"
         }
     ],
     "title": "C++ & Python API for Scientific I/O with openPMD",
