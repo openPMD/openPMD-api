@@ -319,8 +319,27 @@ The following people and institutions [contributed](https://github.com/openPMD/o
   initial library design and implementation with HDF5 & ADIOS1 backend
 * [Franz Poeschel (HZDR)](https://github.com/franzpoeschel):
   added JSON & ADIOS2 backend, data staging/streaming
+
+Further thanks go to improvements and contributions from:
+
 * [Carsten Fortmann-Grote (EU XFEL GmbH, now MPI-EvolBio)](https://github.com/CFGrote):
-  inital Python unit tests
+  draft of our Python unit tests
+* [Dominik Stańczak (Warsaw University of Technology)](https://github.com/StanczakDominik):
+  documentation improvements
+* [Ray Donnelly (Anaconda, Inc.)](https://github.com/mingwandroid):
+  support on conda packaging and libc++ quirks
+* [James Amundson (FNAL)](https://github.com/amundson):
+  compile fix for newer compilers
+* [René Widera (HZDR)](https://github.com/psychocoderHPC):
+  design improvements for initial API design
+* [Erik Zenker (HZDR)](https://github.com/erikzenker):
+  design improvements for initial API design
+* [Sergei Bastrakov (HZDR)](https://github.com/sbastrakov):
+  documentation improvements (windows)
+* [Rémi Lehe (LBNL)](https://github.com/RemiLehe):
+  package integration testing on macOS and Linux
+* [Lígia Diana Amorim (LBNL)](https://github.com/LDAmorim):
+  package integration testing on macOS
 
 ### Transitive Contributions
 
