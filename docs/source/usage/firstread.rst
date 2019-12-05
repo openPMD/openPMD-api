@@ -177,6 +177,10 @@ Python
    # record components
    E_x = E["x"]
 
+.. tip::
+
+   You can check via ``i.meshes.contains("E")`` (`C++ <https://www.openpmd.org/openPMD-api/classopen_p_m_d_1_1_container.html>`_) or ``"E" in i.meshes`` (Python) if an entry exists.
+
 Units
 -----
 

@@ -64,6 +64,14 @@ empty_dataset_test( std::string file_ending )
     {
         Series series(
             "../samples/empty_datasets." + file_ending, AccessType::READ_ONLY );
+
+        REQUIRE(series.iterations.contains(1));
+        REQUIRE(series.iterations.count(1) == 1);
+        REQUIRE(series.iterations.count(123456) == 0);
+
+        REQUIRE(series.iterations[1].meshes.contains("rho"));
+        REQUIRE(series.iterations[1].meshes["rho"].contains("makeEmpty_dim_7_int"));
+
         auto makeEmpty_dim_7_int =
             series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_dim_7_int" ];
         auto makeEmpty_dim_7_long =
