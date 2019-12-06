@@ -188,10 +188,22 @@ public:
         }
     }
 
-    size_type count(key_type const& key) const { return m_container->count(key); }
-
     iterator find(key_type const& key) { return m_container->find(key); }
     const_iterator find(key_type const& key) const { return m_container->find(key); }
+
+    /** This returns either 1 if the key is found in the container of 0 if not.
+     *
+     * @param key key value of the element to count
+     * @return since keys are unique in this container, returns 0 or 1
+     */
+    size_type count(key_type const& key) const { return m_container->count(key); }
+
+    /** Checks if there is an element with a key equivalent to an exiting key in the container.
+     *
+     * @param key key value of the element to search for
+     * @return true of key is found, else false
+     */
+    bool contains(key_type const& key) const { return m_container->find(key) != m_container->end(); }
 
     /** Remove a single element from the container and (if written) from disk.
      *

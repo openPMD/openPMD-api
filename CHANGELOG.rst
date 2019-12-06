@@ -17,6 +17,8 @@ Changes to "0.10.0-alpha"
 Features
 """"""""
 
+- C++: add ``Container::contains`` method #622
+
 Bug Fixes
 """""""""
 

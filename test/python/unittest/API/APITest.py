@@ -536,6 +536,12 @@ class APITest(unittest.TestCase):
         series = self.__series
         i = series.iterations[400]
 
+        # Test some entries exist
+        self.assertTrue("E" in i.meshes)
+        self.assertFalse("yolo" in i.meshes)
+        self.assertTrue("electrons" in i.particles)
+        self.assertFalse("graviton" in i.particles)
+
         # Get a mesh record and a particle species.
         E = i.meshes["E"]
         electrons = i.particles["electrons"]
