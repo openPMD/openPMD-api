@@ -208,7 +208,7 @@ jobs:
   - script: |
       brew update
       brew install openmpi
-      python3 -m pip install -U pip setuptools wheel cmake --user
+      python3 -m pip install -U pip --user
       openPMD_USE_MPI=ON python3 -m pip install git+https://github.com/openPMD/openPMD-api.git@dev --user
   - script: python3 -c "import openpmd_api as api; print(api.variants)"
 
