@@ -204,9 +204,11 @@ void ADIOS2IOHandlerImpl::createDataset(
         // cast from openPMD::Extent to adios2::Dims
         adios2::Dims const shape( parameters.extent.begin(), parameters.extent.end() );
 
+        auto & fileData = getFileData( file );
         switchType( parameters.dtype, detail::VariableDefiner( ),
-                    getFileData( file ).m_IO, varName,
+                    fileData.m_IO, varName,
                     std::move( compression ), shape );
+        fileData.invalidateVariablesMap();
         writable->written = true;
         m_dirty.emplace( file );
     }
@@ -288,15 +290,19 @@ void ADIOS2IOHandlerImpl::deletePath(
     throw std::runtime_error( "ADIOS2 backend does not support deletion." );
 }
 
-void ADIOS2IOHandlerImpl::deleteDataset(
-    Writable *, const Parameter< Operation::DELETE_DATASET > & )
+void
+ADIOS2IOHandlerImpl::deleteDataset(
+    Writable *,
+    const Parameter< Operation::DELETE_DATASET > & )
 {
+    // call filedata.invalidateVariablesMap
     throw std::runtime_error( "ADIOS2 backend does not support deletion." );
 }
 
 void ADIOS2IOHandlerImpl::deleteAttribute(
     Writable *, const Parameter< Operation::DELETE_ATT > & )
 {
+    // call filedata.invalidateAttributesMap
     throw std::runtime_error( "ADIOS2 backend does not support deletion." );
 }
 
@@ -358,7 +364,6 @@ void ADIOS2IOHandlerImpl::listPaths(
         "Internal error: Writable not marked written during path listing" );
     auto file = refreshFileFromParent( writable );
     auto pos = setAndGetFilePosition( writable );
-    // adios2::Engine & engine = getEngine( file );
     std::string myName = filePositionToString( pos );
     if ( !auxiliary::ends_with( myName, '/' ) )
     {
@@ -368,10 +373,9 @@ void ADIOS2IOHandlerImpl::listPaths(
     /*
      * since ADIOS does not have a concept of paths, restore them
      * from variables and attributes.
-     * yes.
      */
-
-    auto & IO = getFileData( file ).m_IO;
+    auto & fileData = getFileData( file );
+    fileData.getEngine( ); // make sure that the attributes are present
 
     std::unordered_set< std::string > subdirs;
     /*
@@ -389,34 +393,30 @@ void ADIOS2IOHandlerImpl::listPaths(
     std::vector< std::string > delete_me;
     auto f = [myName, &subdirs, &delete_me](
                  std::vector< std::string > & varsOrAttrs, bool variables ) {
-        for ( auto var : varsOrAttrs )
+        for( auto var : varsOrAttrs )
         {
-            if ( auxiliary::starts_with( var, myName ) )
+            auto firstSlash = var.find_first_of( '/' );
+            if( firstSlash != std::string::npos )
             {
-                var = auxiliary::replace_first( var, myName, "" );
-                auto firstSlash = var.find_first_of( '/' );
-                if ( firstSlash != std::string::npos )
-                {
-                    var = var.substr( 0, firstSlash );
-                    subdirs.emplace( std::move( var ) );
-                }
-                else if ( variables )
-                { // var is a dataset at the current level
-                    delete_me.push_back( std::move( var ) );
-                }
+                var = var.substr( 0, firstSlash );
+                subdirs.emplace( std::move( var ) );
+            }
+            else if( variables )
+            { // var is a dataset at the current level
+                delete_me.push_back( std::move( var ) );
             }
         }
     };
     std::vector< std::string > vars;
-    for ( auto const & p : IO.AvailableVariables( ) )
+    for( auto const & p : fileData.availableVariablesPrefixed( myName ) )
     {
-        vars.emplace_back( p.first );
+        vars.emplace_back( std::move( p ) );
     }
 
     std::vector< std::string > attrs;
-    for ( auto const & p : IO.AvailableAttributes( ) )
+    for( auto const & p : fileData.availableAttributesPrefixed( myName ) )
     {
-        attrs.emplace_back( p.first );
+        attrs.emplace_back( std::move( p ) );
     }
     f( vars, true );
     f( attrs, false );
@@ -448,28 +448,25 @@ void ADIOS2IOHandlerImpl::listDatasets(
     /*
      * since ADIOS does not have a concept of paths, restore them
      * from variables and attributes.
-     * yes.
      */
 
+    auto & fileData = getFileData( file );
+    fileData.getEngine( ); // make sure that the attributes are present
+
     std::map< std::string, adios2::Params > vars =
-        getFileData( file ).m_IO.AvailableVariables( );
+        fileData.availableVariables();
 
     std::unordered_set< std::string > subdirs;
-    for ( auto & pair : vars )
+    for( auto & var : fileData.availableVariablesPrefixed( myName ) )
     {
-        std::string var = pair.first;
-        if ( auxiliary::starts_with( var, myName ) )
+        auto firstSlash = var.find_first_of( '/' );
+        if( firstSlash == std::string::npos )
         {
-            var = auxiliary::replace_first( var, myName, "" );
-            auto firstSlash = var.find_first_of( '/' );
-            if ( firstSlash == std::string::npos )
-            {
-                subdirs.emplace( std::move( var ) );
-            } // else: var is a path or a dataset in a group below the current
-            // group
-        }
+            subdirs.emplace( std::move( var ) );
+        } // else: var is a path or a dataset in a group below the current
+          // group
     }
-    for ( auto & dataset : subdirs )
+    for( auto & dataset : subdirs )
     {
         parameters.datasets->emplace_back( std::move( dataset ) );
     }
@@ -490,10 +487,10 @@ void ADIOS2IOHandlerImpl::listAttributes(
     }
     auto & ba = getFileData( file );
     ba.getEngine( ); // make sure that the attributes are present
-    auto const & attrs = ba.availableAttributesTemporary( attributePrefix );
-    for( auto & pair : attrs )
+    auto const & attrs = ba.availableAttributesPrefixed( attributePrefix );
+    for( auto & rawAttr : attrs )
     {
-        auto attr = auxiliary::removeSlashes( pair.first );
+        auto attr = auxiliary::removeSlashes( rawAttr );
         if( attr.find_last_of( '/' ) == std::string::npos )
         {
             // std::cout << "ATTRIBUTE at " << attributePrefix << ": " << attr
@@ -504,7 +501,8 @@ void ADIOS2IOHandlerImpl::listAttributes(
     }
 }
 
-adios2::Mode ADIOS2IOHandlerImpl::adios2Accesstype( )
+adios2::Mode
+ADIOS2IOHandlerImpl::adios2Accesstype()
 {
     switch ( m_handler->accessTypeBackend )
     {
@@ -742,7 +740,9 @@ namespace detail
         auto fullName = impl->nameOfAttribute( writable, parameters.name );
         auto prefix = impl->filePositionToString( pos );
 
-        adios2::IO IO = impl->getFileData( file ).m_IO;
+        auto & filedata = impl->getFileData( file );
+        filedata.invalidateAttributesMap();
+        adios2::IO IO = filedata.m_IO;
         impl->m_dirty.emplace( std::move( file ) );
 
         std::string t = IO.AttributeType( fullName );
@@ -1224,23 +1224,94 @@ namespace detail
         m_buffer.clear();
     }
 
-    std::map< std::string, adios2::Params >
-    BufferedActions::availableAttributesTemporary( std::string const & variable )
+    void
+    BufferedActions::invalidateAttributesMap()
     {
-        std::string var =
-            auxiliary::ends_with( variable, '/' ) ? variable : variable + '/';
-        auto attributes = m_IO.AvailableAttributes( "" );
-        decltype( attributes ) ret;
-        for( auto & pair : attributes )
+        m_availableAttributesValid = false;
+        m_availableAttributes.clear( );
+    }
+
+    BufferedActions::AttributeMap_t const &
+    BufferedActions::availableAttributes()
+    {
+        if( m_availableAttributesValid )
         {
-            if( auxiliary::starts_with( pair.first, var ) )
+            return m_availableAttributes;
+        }
+        else
+        {
+            m_availableAttributes = m_IO.AvailableAttributes();
+            m_availableAttributesValid = true;
+            return m_availableAttributes;
+        }
+    }
+
+    void
+    BufferedActions::invalidateVariablesMap()
+    {
+        m_availableVariablesValid = false;
+        m_availableVariables.clear();
+    }
+
+    BufferedActions::AttributeMap_t const &
+    BufferedActions::availableVariables()
+    {
+        if( m_availableVariablesValid )
+        {
+            return m_availableVariables;
+        }
+        else
+        {
+            m_availableVariables = m_IO.AvailableVariables();
+            m_availableVariablesValid = true;
+            return m_availableVariables;
+        }
+    }
+
+    static std::vector< std::string >
+    availableAttributesOrVariablesPrefixed(
+        std::string const & prefix,
+        BufferedActions::AttributeMap_t const & (
+            BufferedActions::*getBasicMap )(),
+        BufferedActions & ba )
+    {
+        std::string var = auxiliary::ends_with( prefix, '/' ) ? prefix
+                                                              : prefix + '/';
+        BufferedActions::AttributeMap_t const & attributes =
+            ( ba.*getBasicMap )();
+        std::vector< std::string > ret;
+        for( auto it = attributes.lower_bound( prefix ); it != attributes.end();
+             ++it )
+        {
+            if( auxiliary::starts_with( it->first, var ) )
             {
-                ret.emplace(
-                    auxiliary::replace_first( pair.first, var, "" ),
-                    std::move( pair.second ) );
+                ret.emplace_back(
+                    auxiliary::replace_first( it->first, var, "" ) );
+            }
+            else
+            {
+                break;
             }
         }
         return ret;
+    }
+
+    std::vector< std::string >
+    BufferedActions::availableAttributesPrefixed( std::string const & prefix )
+    {
+        return availableAttributesOrVariablesPrefixed(
+            prefix,
+            &BufferedActions::availableAttributes,
+            *this );
+    }
+
+    std::vector< std::string >
+    BufferedActions::availableVariablesPrefixed( std::string const & prefix )
+    {
+        return availableAttributesOrVariablesPrefixed(
+            prefix,
+            &BufferedActions::availableVariables,
+            *this );
     }
 
 } // namespace detail
