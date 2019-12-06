@@ -118,6 +118,9 @@ jobs:
     vmImage: ubuntu-latest
   steps:
   - script: |
+      sudo apt-get update
+      sudo apt-get install -y gfortran
+      export SYSTEM=$(uname -s)
       git clone https://github.com/spack/spack.git
       . spack/share/spack/setup-env.sh
       spack compiler find
@@ -129,6 +132,7 @@ jobs:
     vmImage: ubuntu-latest
   steps:
   - script: |
+      export SYSTEM=$(uname -s)
       git clone https://github.com/spack/spack.git
       . spack/share/spack/setup-env.sh
       spack compiler find
@@ -251,10 +255,25 @@ jobs:
     vmImage: macOS-latest
   steps:
   - script: |
+      brew update
+      brew install gcc
+      export SYSTEM=$(uname -s)
       git clone https://github.com/spack/spack.git
       . spack/share/spack/setup-env.sh
       spack compiler find
       spack install -v openpmd-api
+
+- job: macOS_spack_nompi
+  displayName: macOS spack w/o MPI
+  pool:
+    vmImage: macOS-latest
+  steps:
+  - script: |
+      export SYSTEM=$(uname -s)
+      git clone https://github.com/spack/spack.git
+      . spack/share/spack/setup-env.sh
+      spack compiler find
+      spack install -v openpmd-api -mpi
 
 - job: macOS_spack_all
   displayName: macOS spack w/ all
@@ -262,6 +281,9 @@ jobs:
     vmImage: macOS-latest
   steps:
   - script: |
+      brew update
+      brew install gcc
+      export SYSTEM=$(uname -s)
       git clone https://github.com/spack/spack.git
       . spack/share/spack/setup-env.sh
       spack compiler find
