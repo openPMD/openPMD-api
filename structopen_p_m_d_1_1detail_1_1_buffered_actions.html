@@ -63,6 +63,7 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="structopen_p_m_d_1_1detail_1_1_buffered_actions-members.html">List of all members</a>  </div>
@@ -85,6 +86,12 @@ Collaboration diagram for openPMD::detail::BufferedActions:</div>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:ac8de4d5dbe1bc250787a83a63ab412dc"><td class="memItemLeft" align="right" valign="top"><a id="ac8de4d5dbe1bc250787a83a63ab412dc"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>AttributeMap_t</b> = std::map&lt; std::string, adios2::Params &gt;</td></tr>
+<tr class="separator:ac8de4d5dbe1bc250787a83a63ab412dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a2dc6c458696cb9d0c1b08d75d4e8c328"><td class="memItemLeft" align="right" valign="top"><a id="a2dc6c458696cb9d0c1b08d75d4e8c328"></a>
@@ -106,9 +113,24 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>flush</b> ()</td></tr
 <tr class="memitem:aab32e3bc28522b21eae96d1fba5dce27"><td class="memItemLeft" align="right" valign="top"><a id="aab32e3bc28522b21eae96d1fba5dce27"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>drop</b> ()</td></tr>
 <tr class="separator:aab32e3bc28522b21eae96d1fba5dce27"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a56bad2963ff849a9d116402283841fe6"><td class="memItemLeft" align="right" valign="top"><a id="a56bad2963ff849a9d116402283841fe6"></a>
-std::map&lt; std::string, adios2::Params &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>availableAttributesTemporary</b> (std::string const &amp;variable)</td></tr>
-<tr class="separator:a56bad2963ff849a9d116402283841fe6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1b8c2a6609155de25a954eeb434bd6d1"><td class="memItemLeft" align="right" valign="top"><a id="a1b8c2a6609155de25a954eeb434bd6d1"></a>
+AttributeMap_t const  &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>availableAttributes</b> ()</td></tr>
+<tr class="separator:a1b8c2a6609155de25a954eeb434bd6d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a01c4db3c7cc4167e5f9442863ad99a13"><td class="memItemLeft" align="right" valign="top"><a id="a01c4db3c7cc4167e5f9442863ad99a13"></a>
+std::vector&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>availableAttributesPrefixed</b> (std::string const &amp;prefix)</td></tr>
+<tr class="separator:a01c4db3c7cc4167e5f9442863ad99a13"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0e5d11d758a2afed1a01c1d0e28ee9c1"><td class="memItemLeft" align="right" valign="top"><a id="a0e5d11d758a2afed1a01c1d0e28ee9c1"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>invalidateAttributesMap</b> ()</td></tr>
+<tr class="separator:a0e5d11d758a2afed1a01c1d0e28ee9c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac67753cb42adf789b9649900683579ba"><td class="memItemLeft" align="right" valign="top"><a id="ac67753cb42adf789b9649900683579ba"></a>
+AttributeMap_t const  &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>availableVariables</b> ()</td></tr>
+<tr class="separator:ac67753cb42adf789b9649900683579ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8936d86fb7f61e21bb179b21e1bd20ec"><td class="memItemLeft" align="right" valign="top"><a id="a8936d86fb7f61e21bb179b21e1bd20ec"></a>
+std::vector&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>availableVariablesPrefixed</b> (std::string const &amp;prefix)</td></tr>
+<tr class="separator:a8936d86fb7f61e21bb179b21e1bd20ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abbcb6bb668b673a78bf15845e3a1ff23"><td class="memItemLeft" align="right" valign="top"><a id="abbcb6bb668b673a78bf15845e3a1ff23"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>invalidateVariablesMap</b> ()</td></tr>
+<tr class="separator:abbcb6bb668b673a78bf15845e3a1ff23"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -159,8 +181,8 @@ adios2::Mode&#160;</td><td class="memItemRight" valign="bottom"><b>m_mode</b></t
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following files:<ul>
-<li>/tmp/tmp.GUTij9TyFq/openPMD-api/include/openPMD/IO/ADIOS/<a class="el" href="_a_d_i_o_s2_i_o_handler_8hpp_source.html">ADIOS2IOHandler.hpp</a></li>
-<li>/tmp/tmp.GUTij9TyFq/openPMD-api/src/IO/ADIOS/ADIOS2IOHandler.cpp</li>
+<li>/tmp/tmp.q9cwP7PVnp/openPMD-api/include/openPMD/IO/ADIOS/<a class="el" href="_a_d_i_o_s2_i_o_handler_8hpp_source.html">ADIOS2IOHandler.hpp</a></li>
+<li>/tmp/tmp.q9cwP7PVnp/openPMD-api/src/IO/ADIOS/ADIOS2IOHandler.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

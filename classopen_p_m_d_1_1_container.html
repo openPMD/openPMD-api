@@ -204,15 +204,18 @@ mapped_type const  &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>a
 <tr class="memitem:ae19450b82429262f7c6adbca17117730"><td class="memItemLeft" align="right" valign="top">virtual mapped_type &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_container.html#ae19450b82429262f7c6adbca17117730">operator[]</a> (key_type &amp;&amp;key)</td></tr>
 <tr class="memdesc:ae19450b82429262f7c6adbca17117730"><td class="mdescLeft">&#160;</td><td class="mdescRight">Access the value that is mapped to a key equivalent to key, creating it if such key does not exist already.  <a href="#ae19450b82429262f7c6adbca17117730">More...</a><br /></td></tr>
 <tr class="separator:ae19450b82429262f7c6adbca17117730"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5cd4fdcf28a83f768d3b2d31fd23c264"><td class="memItemLeft" align="right" valign="top"><a id="a5cd4fdcf28a83f768d3b2d31fd23c264"></a>
-size_type&#160;</td><td class="memItemRight" valign="bottom"><b>count</b> (key_type const &amp;key) const</td></tr>
-<tr class="separator:a5cd4fdcf28a83f768d3b2d31fd23c264"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af82ab555fea876daa878bf958ed71dbb"><td class="memItemLeft" align="right" valign="top"><a id="af82ab555fea876daa878bf958ed71dbb"></a>
 iterator&#160;</td><td class="memItemRight" valign="bottom"><b>find</b> (key_type const &amp;key)</td></tr>
 <tr class="separator:af82ab555fea876daa878bf958ed71dbb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaef63608c799cfec9176f411efed0125"><td class="memItemLeft" align="right" valign="top"><a id="aaef63608c799cfec9176f411efed0125"></a>
 const_iterator&#160;</td><td class="memItemRight" valign="bottom"><b>find</b> (key_type const &amp;key) const</td></tr>
 <tr class="separator:aaef63608c799cfec9176f411efed0125"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5cd4fdcf28a83f768d3b2d31fd23c264"><td class="memItemLeft" align="right" valign="top">size_type&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_container.html#a5cd4fdcf28a83f768d3b2d31fd23c264">count</a> (key_type const &amp;key) const</td></tr>
+<tr class="memdesc:a5cd4fdcf28a83f768d3b2d31fd23c264"><td class="mdescLeft">&#160;</td><td class="mdescRight">This returns either 1 if the key is found in the container of 0 if not.  <a href="#a5cd4fdcf28a83f768d3b2d31fd23c264">More...</a><br /></td></tr>
+<tr class="separator:a5cd4fdcf28a83f768d3b2d31fd23c264"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6312423c16c220697cf37c57ea414701"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_container.html#a6312423c16c220697cf37c57ea414701">contains</a> (key_type const &amp;key) const</td></tr>
+<tr class="memdesc:a6312423c16c220697cf37c57ea414701"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if there is an element with a key equivalent to an exiting key in the container.  <a href="#a6312423c16c220697cf37c57ea414701">More...</a><br /></td></tr>
+<tr class="separator:a6312423c16c220697cf37c57ea414701"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acbd3d8988c63567e4181a79ce8b8f029"><td class="memItemLeft" align="right" valign="top">virtual size_type&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_container.html#acbd3d8988c63567e4181a79ce8b8f029">erase</a> (key_type const &amp;key)</td></tr>
 <tr class="memdesc:acbd3d8988c63567e4181a79ce8b8f029"><td class="mdescLeft">&#160;</td><td class="mdescRight">Remove a single element from the container and (if written) from disk.  <a href="#acbd3d8988c63567e4181a79ce8b8f029">More...</a><br /></td></tr>
 <tr class="separator:acbd3d8988c63567e4181a79ce8b8f029"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -371,6 +374,80 @@ template&lt;typename T, typename T_key = std::string, typename T_container = std
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<a id="a6312423c16c220697cf37c57ea414701"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6312423c16c220697cf37c57ea414701">&#9670;&nbsp;</a></span>contains()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T, typename T_key = std::string, typename T_container = std::map&lt; T_key, T &gt;&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool <a class="el" href="classopen_p_m_d_1_1_container.html">openPMD::Container</a>&lt; T, T_key, T_container &gt;::contains </td>
+          <td>(</td>
+          <td class="paramtype">key_type const &amp;&#160;</td>
+          <td class="paramname"><em>key</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Checks if there is an element with a key equivalent to an exiting key in the container. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">key</td><td>key value of the element to search for </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true of key is found, else false </dd></dl>
+
+</div>
+</div>
+<a id="a5cd4fdcf28a83f768d3b2d31fd23c264"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5cd4fdcf28a83f768d3b2d31fd23c264">&#9670;&nbsp;</a></span>count()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T, typename T_key = std::string, typename T_container = std::map&lt; T_key, T &gt;&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">size_type <a class="el" href="classopen_p_m_d_1_1_container.html">openPMD::Container</a>&lt; T, T_key, T_container &gt;::count </td>
+          <td>(</td>
+          <td class="paramtype">key_type const &amp;&#160;</td>
+          <td class="paramname"><em>key</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>This returns either 1 if the key is found in the container of 0 if not. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">key</td><td>key value of the element to count </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>since keys are unique in this container, returns 0 or 1 </dd></dl>
 
 </div>
 </div>
@@ -566,7 +643,7 @@ template&lt;typename T, typename T_key = std::string, typename T_container = std
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/tmp/tmp.GUTij9TyFq/openPMD-api/include/openPMD/backend/<a class="el" href="_container_8hpp_source.html">Container.hpp</a></li>
+<li>/tmp/tmp.q9cwP7PVnp/openPMD-api/include/openPMD/backend/<a class="el" href="_container_8hpp_source.html">Container.hpp</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

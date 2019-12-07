@@ -66,7 +66,7 @@ $(function() {
 <object type="image/svg+xml" data="https://img.shields.io/badge/platforms-linux%20|%20osx%20|%20win-blue.svg" alt="Supported Platforms" title="Supported Platforms"></object>
 </div>
 <p> <a href="https://www.gnu.org/licenses/lgpl-3.0.html"></a> <a href="https://doi.org/10.14278/rodare.27"></a></p>
-<p><a href="https://travis-ci.org/openPMD/openPMD-api/branches"></a> <a href="https://ci.appveyor.com/project/ax3l/openpmd-api/branch/dev"></a> <a href="https://scan.coverity.com/projects/openpmd-openpmd-api"></a> <a href="https://coveralls.io/github/openPMD/openPMD-api"></a> <a href="https://www.codefactor.io/repository/github/openpmd/openpmd-api"></a></p>
+<p><a href="https://travis-ci.org/openPMD/openPMD-api/branches"></a> <a href="https://ci.appveyor.com/project/ax3l/openpmd-api/branch/dev"></a> <a href="https://dev.azure.com/axelhuebl/openPMD-api/_build/latest?definitionId=1&amp;branchName=azure_install"></a> <a href="https://scan.coverity.com/projects/openpmd-openpmd-api"></a> <a href="https://coveralls.io/github/openPMD/openPMD-api"></a> <a href="https://www.codefactor.io/repository/github/openpmd/openpmd-api"></a></p>
 <p>This library provides a high-level API for writing and reading scientific data according to <a href="https://www.openpmd.org/">openPMD</a>. It allows one to build logical file structures which drive scientific I/O libraries such as HDF5 and ADIOS through a common, intuitive interface. Where supported, openPMD-api implements both serial and MPI parallel I/O capabilities.</p>
 <h2>Usage</h2>
 <h3>C++</h3>
@@ -173,7 +173,18 @@ $(function() {
 <li><a href="https://github.com/ax3l">Axel Huebl (HZDR, now LBNL)</a>: project lead, releases, documentation, automated CI/CD, Python bindings, installation &amp; packaging, prior reference implementations</li>
 <li><a href="https://github.com/C0nsultant">Fabian Koller (HZDR)</a>: initial library design and implementation with HDF5 &amp; ADIOS1 backend</li>
 <li><a href="https://github.com/franzpoeschel">Franz Poeschel (HZDR)</a>: added JSON &amp; ADIOS2 backend, data staging/streaming</li>
-<li><a href="https://github.com/CFGrote">Carsten Fortmann-Grote (EU XFEL GmbH, now MPI-EvolBio)</a>: inital Python unit tests</li>
+</ul>
+<p>Further thanks go to improvements and contributions from:</p>
+<ul>
+<li><a href="https://github.com/CFGrote">Carsten Fortmann-Grote (EU XFEL GmbH, now MPI-EvolBio)</a>: draft of our Python unit tests</li>
+<li><a href="https://github.com/StanczakDominik">Dominik Stańczak (Warsaw University of Technology)</a>: documentation improvements</li>
+<li><a href="https://github.com/mingwandroid">Ray Donnelly (Anaconda, Inc.)</a>: support on conda packaging and libc++ quirks</li>
+<li><a href="https://github.com/amundson">James Amundson (FNAL)</a>: compile fix for newer compilers</li>
+<li><a href="https://github.com/psychocoderHPC">René Widera (HZDR)</a>: design improvements for initial API design</li>
+<li><a href="https://github.com/erikzenker">Erik Zenker (HZDR)</a>: design improvements for initial API design</li>
+<li><a href="https://github.com/sbastrakov">Sergei Bastrakov (HZDR)</a>: documentation improvements (windows)</li>
+<li><a href="https://github.com/RemiLehe">Rémi Lehe (LBNL)</a>: package integration testing on macOS and Linux</li>
+<li><a href="https://github.com/LDAmorim">Lígia Diana Amorim (LBNL)</a>: package integration testing on macOS</li>
 </ul>
 <h3>Transitive Contributions</h3>
 <p>openPMD-api stands on the shoulders of giants and we are grateful for the following projects included as direct dependencies:</p>
