@@ -394,3 +394,8 @@ jobs:
 
 # source ----------------------------------------------------------------------
 # TODO
+
+# other to do -----------------------------------------------------------------
+#
+# - open example data sets
+# - compile downstream examples with NVCC and clang -x cuda
