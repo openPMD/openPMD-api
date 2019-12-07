@@ -3,13 +3,15 @@
 Changelog
 =========
 
-0.11.0-alpha
+0.10.1-alpha
 ------------
-**Date:** TBA
+**Date:** 2019-12-06
 
-[Title]
+ADIOS2 Open Speed and NVCC Fixes
 
-[Summary]
+This releases improves the initial time spend when parsing data series with the ADIOS2 backend.
+Compile problems when using the CUDA NVCC compiler in downstream projects have been fixed.
+We adopted a Code of Conduct in openPMD.
 
 Changes to "0.10.0-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -22,7 +24,10 @@ Features
 Bug Fixes
 """""""""
 
-- ADIOS2: fix C++17 build #614
+- ADIOS2:
+
+  - fix C++17 build #614
+  - improve initial open speed of series #613
 - nvcc:
 
   - ignore export of ``enum class Operation`` #617
@@ -31,7 +36,11 @@ Bug Fixes
 Other
 """""
 
-- community: code of conduct added #619
+- community:
+
+  - code of conduct added #619
+  - all contributors listed in README #621
+- ``manylinux2010`` build automation updated for Python 3.8 #615
 
 
 0.10.0-alpha
