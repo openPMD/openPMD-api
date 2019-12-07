@@ -22,9 +22,9 @@
 
 // version of the openPMD-api library
 #define OPENPMDAPI_VERSION_MAJOR 0
-#define OPENPMDAPI_VERSION_MINOR 11
-#define OPENPMDAPI_VERSION_PATCH 0
-#define OPENPMDAPI_VERSION_LABEL "dev"
+#define OPENPMDAPI_VERSION_MINOR 10
+#define OPENPMDAPI_VERSION_PATCH 1
+#define OPENPMDAPI_VERSION_LABEL "alpha"
 
 // maximum supported version of the openPMD standard (read & write)
 #define OPENPMD_STANDARD_MAJOR 1
