@@ -43,27 +43,32 @@
         {
             "affiliation": "Helmholtz-Zentrum Dresden-Rossendorf",
             "name": "Widera, René",
-            "orcid": "0000-0003-1642-0459"
+            "orcid": "0000-0003-1642-0459",
+            "type": "Other"
         },
         {
             "affiliation": "Helmholtz-Zentrum Dresden-Rossendorf",
             "name": "Zenker, Erik",
-            "orcid": "0000-0001-9417-8712"
+            "orcid": "0000-0001-9417-8712",
+            "type": "Other"
         },
         {
             "affiliation": "Helmholtz-Zentrum Dresden-Rossendorf",
             "name": "Bastrakov, Sergei",
-            "orcid": "0000-0003-3396-6154"
+            "orcid": "0000-0003-3396-6154",
+            "type": "Other"
         },
         {
             "affiliation": "Lawrence Berkeley National Laboratory",
             "name": "Lehe, Rémi",
-            "orcid": "0000-0002-3656-9659"
+            "orcid": "0000-0002-3656-9659",
+            "type": "Other"
         },
         {
             "affiliation": "Lawrence Berkeley National Laboratory",
             "name": "Amorim, Lígia Diana",
-            "orcid": "0000-0002-1445-0032"
+            "orcid": "0000-0002-1445-0032",
+            "type": "Other"
         }
     ],
     "title": "C++ & Python API for Scientific I/O with openPMD",
