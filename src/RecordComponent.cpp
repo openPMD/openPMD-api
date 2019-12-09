@@ -58,9 +58,9 @@ RecordComponent::resetDataset( Dataset d )
             d.extent.begin(),
             d.extent.end(),
             []( Extent::value_type const & i ) { return i == 0u; } ) )
-        return makeEmpty( d );
+        return makeEmpty( std::move(d) );
 
-    *m_dataset = d;
+    *m_dataset = std::move(d);
     dirty = true;
     return *this;
 }
@@ -88,11 +88,11 @@ RecordComponent::makeEmpty( Dataset d )
         throw std::runtime_error("Dataset extent must be at least 1D.");
 
     *m_isEmpty = true;
-    *m_dataset = d;
+    *m_dataset = std::move(d);
     dirty = true;
     static detail::DefaultValue< RecordComponent > dv;
     switchType(
-        d.dtype,
+        m_dataset->dtype,
         dv,
         *this );
     return *this;
