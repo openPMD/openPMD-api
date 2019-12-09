@@ -665,7 +665,7 @@ install:
         spack install cmake@3.11.0 $CXXSPEC;
       fi;
     fi
-  - spack load cmake@3.11.0 $CXXSPEC
+  - spack load cmake@3.11.0 $CXXSPEC arch=$(spack arch)
   # diagnostics: modules created and visible?
   - module av
   - module li
@@ -675,29 +675,29 @@ install:
       travis_wait spack install
         openmpi
         $CXXSPEC &&
-      spack load openmpi $CXXSPEC;
+      spack load openmpi $CXXSPEC arch=$(spack arch);
       SPACK_VAR_MPI="+mpi";
     fi
   - if [ $USE_PYTHON == "ON" ]; then
       travis_wait spack install
         python@$TRAVIS_PYTHON_VERSION
         $CXXSPEC &&
-      spack load python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
+      spack load python@$TRAVIS_PYTHON_VERSION $CXXSPEC arch=$(spack arch);
       if [ "$USE_INTERNAL_PYBIND11" == "OFF" ]; then
         travis_wait spack install
           py-pybind11$PYBIND11_VERSION ^python@$TRAVIS_PYTHON_VERSION
           $CXXSPEC &&
-        spack load py-pybind11$PYBIND11_VERSION ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
+        spack load py-pybind11$PYBIND11_VERSION ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC arch=$(spack arch);
       fi;
       travis_wait spack install
         py-numpy ~blas ~lapack ^python@$TRAVIS_PYTHON_VERSION
         $CXXSPEC &&
-      spack load py-numpy ~blas ~lapack ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
+      spack load py-numpy ~blas ~lapack ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC arch=$(spack arch);
       if [ $USE_MPI == "ON" ]; then
         travis_wait spack install
           py-mpi4py ^python@$TRAVIS_PYTHON_VERSION
           $CXXSPEC &&
-        spack load py-mpi4py ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
+        spack load py-mpi4py ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC arch=$(spack arch);
       fi;
     fi
   - if [ $USE_HDF5 == "ON" ]; then
@@ -705,14 +705,14 @@ install:
         hdf5$HDF5_VERSION
         $SPACK_VAR_MPI
         $CXXSPEC &&
-      spack load hdf5$HDF5_VERSION $SPACK_VAR_MPI $CXXSPEC;
+      spack load hdf5$HDF5_VERSION $SPACK_VAR_MPI $CXXSPEC arch=$(spack arch);
     fi
   - if [ $USE_ADIOS1 == "ON" ]; then
       travis_wait 30 spack install
         adios$ADIOS1_VERSION
         $SPACK_VAR_MPI ^python@$TRAVIS_PYTHON_VERSION
         $CXXSPEC &&
-      spack load adios$ADIOS1_VERSION $SPACK_VAR_MPI ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
+      spack load adios$ADIOS1_VERSION $SPACK_VAR_MPI ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC arch=$(spack arch);
     fi
   - if [ $USE_ADIOS2 == "ON" ]; then
       echo "adios2$ADIOS2_VERSION $SPACK_VAR_MPI $CXXSPEC";
@@ -721,7 +721,7 @@ install:
         adios2$ADIOS2_VERSION
         $SPACK_VAR_MPI
         $CXXSPEC &&
-      spack load adios2$ADIOS2_VERSION $SPACK_VAR_MPI $CXXSPEC;
+      spack load adios2$ADIOS2_VERSION $SPACK_VAR_MPI $CXXSPEC arch=$(spack arch);
     fi
   - spack clean -a
 
