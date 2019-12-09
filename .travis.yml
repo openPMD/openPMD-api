@@ -653,8 +653,8 @@ install:
         wget -O cmake.sh https://cmake.org/files/v3.11/cmake-3.11.0-Linux-x86_64.sh &&
         sh cmake.sh --skip-license --exclude-subdir --prefix=$HOME/.cache/cmake-3.11.0 &&
         rm cmake.sh;
-        spack install cmake@3.11.0 $CXXSPEC;
       fi;
+      spack install cmake@3.11.0 $CXXSPEC;
     else
       if [ ! -d /Applications/CMake.app/Contents/ ]; then
         curl -L -s -o cmake.dmg https://cmake.org/files/v3.11/cmake-3.11.0-Darwin-x86_64.dmg &&
@@ -662,8 +662,8 @@ install:
         sudo cp -R "/Volumes/cmake-3.11.0-Darwin-x86_64/CMake.app" /Applications &&
         hdiutil detach /dev/disk1s1 &&
         rm cmake.dmg;
-        spack install cmake@3.11.0 $CXXSPEC;
       fi;
+      spack install cmake@3.11.0 $CXXSPEC;
     fi
   - spack load cmake@3.11.0 $CXXSPEC arch=$(spack arch)
   # diagnostics: modules created and visible?
