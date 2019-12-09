@@ -10,33 +10,38 @@ Spack
 
 Our recommended HPC release channel when in need for MPI.
 Also very useful for Linux and OSX desktop releases.
+Supports all variants of openPMD-api via flexible user-level controls.
+The same install workflow used to bundle this release also comes in handy to test a development version quickly with power-users.
 
 Example workflow for a new release:
 
-https://github.com/spack/spack/pull/9178
+https://github.com/spack/spack/pull/14018
 
-[TODO: show how to add a tag as version; please CC @ax3l on updates]
+Please CC ``@ax3l`` in your pull-request.
 
 
 Conda-Forge
 -----------
 
-Our primary release channel for desktops, fully automated binary distribution.
-Supports Windows, OSX and Linux.
-Packages are built without MPI.
+Our primary release channel for desktops via a fully automated binary distribution.
+Provides the C++ and Python API to users.
+Supports Windows, OSX, and Linux.
+Packages are built with and without MPI, the latter is the default variant.
 
 Example workflow for a new release:
 
-https://github.com/conda-forge/openpmd-api-feedstock/pull/7
+https://github.com/conda-forge/openpmd-api-feedstock/pull/41
 
 
 PyPI
 ----
 
-On PyPI, we only upload a source page with all settings to default / ``AUTO`` and proper ``RPATH`` settings for internal libraries.
+Our PyPI release provides our Python bindings in a self-contained way, without providing access to the C++ API.
+On PyPI, we upload a source page with all CMake settings to default (``AUTO``) and proper ``RPATH`` settings for internal libraries.
+Furthermore, we build portable, serial (non-MPI) binaries for Linux and upload them as `manylinux2010 wheels <https://github.com/pypa/manylinux>`_.
 
-PyPI releases are experimental and not highly recommended for the average user.
-They do come handy to test pre-releases quickly with power-users.
+PyPI releases are experimental but worth a shot in case conda is not an option.
+The same ``pip`` install workflow used to bundle this release also comes in handy to `test a development version quickly with power-users <https://github.com/openPMD/openPMD-api/blob/55f22a82e66ca66868704a3e0827c562ae669ff8/azure-pipelines.yml#L211-L212>`_.
 
 .. code-block:: bash
 
@@ -72,12 +77,9 @@ They do come handy to test pre-releases quickly with power-users.
 ReadTheDocs
 -----------
 
-Before a new version can be tagged in our manual, at least one commit must go to the mainline repo.
-(For some reason, pushing the tag alone does not trigger a webhook update on RTD.)
+Activate the new version in `Projects - openPMD-api - Versions <https://readthedocs.org/projects/openpmd-api/versions>`_ which triggers its build.
 
-Then, activate the new version in `Projects - openPMD-api - Versions <https://readthedocs.org/projects/openpmd-api/versions>`_ which triggers its build.
-
-And after the new version was built, and if this version was not a backport to an older release series, set the new default version in `Admin - Versions <https://readthedocs.org/dashboard/openpmd-api/versions>`_.
+And after the new version was built, and if this version was not a backport to an older release series, set the new default version in `Admin - Advanced Settings <https://readthedocs.org/dashboard/openpmd-api/advanced/>`_.
 
 
 Doxygen
