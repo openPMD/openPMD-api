@@ -1,0 +1,11 @@
+extraction: 
+  cpp:
+    prepare:
+      packages:
+        # MPI-enabled ADIOS missing on cosmic (but is available on disco+)
+        #- libhdf5-mpich-dev
+        #- libadios-mpich-dev
+        #- mpich
+        #- libmpich-dev
+        - libhdf5-dev
+        - libadios-dev
