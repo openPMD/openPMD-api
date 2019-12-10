@@ -141,7 +141,7 @@ struct DoConvert<std::vector< T >, std::vector< U >, false>
  */
 template< typename U >
 inline U
-getCast( Attribute const a )
+getCast( Attribute const & a )
 {
     auto v = a.getResource();
 

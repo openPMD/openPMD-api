@@ -8,14 +8,16 @@ C++ & Python API for Scientific I/O with openPMD
 [![Gitter chat](https://img.shields.io/gitter/room/openPMD/API.svg)](https://gitter.im/openPMD/API)
 ![Supported Platforms][api-platforms]
 [![License](https://img.shields.io/badge/license-LGPLv3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0.html)
-[![DOI](https://rodare.hzdr.de/badge/DOI/10.14278/rodare.27.svg)](https://doi.org/10.14278/rodare.27)
-
+[![DOI](https://rodare.hzdr.de/badge/DOI/10.14278/rodare.27.svg)](https://doi.org/10.14278/rodare.27)  
+[![CodeFactor](https://www.codefactor.io/repository/github/openpmd/openpmd-api/badge)](https://www.codefactor.io/repository/github/openpmd/openpmd-api)
+[![LGTM: C/C++](https://img.shields.io/lgtm/grade/cpp/g/openPMD/openPMD-api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/openPMD/openPMD-api/context:cpp)
+[![LGTM: Python](https://img.shields.io/lgtm/grade/python/g/openPMD/openPMD-api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/openPMD/openPMD-api/context:python)
+[![LGTM: Total alerts](https://img.shields.io/lgtm/alerts/g/openPMD/openPMD-api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/openPMD/openPMD-api/alerts/)
+[![Coverage Status](https://coveralls.io/repos/github/openPMD/openPMD-api/badge.svg)](https://coveralls.io/github/openPMD/openPMD-api)  
 [![Linux/OSX Build Status dev](https://img.shields.io/travis/openPMD/openPMD-api/dev.svg?label=dev)](https://travis-ci.org/openPMD/openPMD-api/branches)
 [![Windows Build Status dev](https://ci.appveyor.com/api/projects/status/x95q4n620pqk0e0t/branch/dev?svg=true)](https://ci.appveyor.com/project/ax3l/openpmd-api/branch/dev)
 [![Nightly Packages Status](https://dev.azure.com/axelhuebl/openPMD-api/_apis/build/status/openPMD.openPMD-api?branchName=azure_install&label=nightly%20packages)](https://dev.azure.com/axelhuebl/openPMD-api/_build/latest?definitionId=1&branchName=azure_install)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/17602/badge.svg)](https://scan.coverity.com/projects/openpmd-openpmd-api)
-[![Coverage Status](https://coveralls.io/repos/github/openPMD/openPMD-api/badge.svg)](https://coveralls.io/github/openPMD/openPMD-api)
-[![CodeFactor](https://www.codefactor.io/repository/github/openpmd/openpmd-api/badge)](https://www.codefactor.io/repository/github/openpmd/openpmd-api)
 
 [api-platforms]: https://img.shields.io/badge/platforms-linux%20|%20osx%20|%20win-blue.svg "Supported Platforms"
 
