@@ -44,6 +44,7 @@ class Iteration : public Attributable
 
 public:
     Iteration(Iteration const&);
+    Iteration& operator=(Iteration const&);
 
     /**
      * @tparam  T   Floating point type of user-selected precision (e.g. float, double).

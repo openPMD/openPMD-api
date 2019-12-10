@@ -42,6 +42,7 @@ class Mesh : public BaseRecord< MeshRecordComponent >
 
 public:
     Mesh(Mesh const&) = default;
+    Mesh& operator=(Mesh const&) = default;
 
     /** @brief Enumerated datatype for the geometry of the mesh.
      *

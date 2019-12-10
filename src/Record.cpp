@@ -31,6 +31,7 @@ Record::Record()
 }
 
 Record::Record(Record const&) = default;
+Record& Record::operator=(Record const&) = default;
 Record::~Record() = default;
 
 Record&

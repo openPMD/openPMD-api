@@ -50,6 +50,20 @@ Iteration::Iteration(Iteration const& i)
     particles.parent = this->m_writable.get();
 }
 
+Iteration& Iteration::operator=(Iteration const& i)
+{
+    Attributable::operator=( i );
+    meshes = i.meshes;
+    particles = i.particles;
+    IOHandler = i.IOHandler;
+    parent = i.parent;
+    meshes.IOHandler = IOHandler;
+    meshes.parent = this->m_writable.get();
+    particles.IOHandler = IOHandler;
+    particles.parent = this->m_writable.get();
+    return *this;
+}
+
 template< typename T >
 Iteration&
 Iteration::setTime(T newTime)

@@ -496,6 +496,14 @@ public:
         parameter{other.parameter}
     {}
 
+    IOTask& operator=(IOTask const & other)
+    {
+        writable = other.writable;
+        operation = other.operation;
+        parameter = other.parameter;
+        return *this;
+    }
+
     Writable* writable;
     Operation operation;
     std::shared_ptr< AbstractParameter > parameter;

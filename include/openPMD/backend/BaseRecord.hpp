@@ -56,6 +56,7 @@ public:
     using const_iterator = typename Container< T_elem >::const_iterator;
 
     BaseRecord(BaseRecord const& b);
+    BaseRecord& operator=(BaseRecord const& b);
     ~BaseRecord() override { }
 
     mapped_type& operator[](key_type const& key) override;
@@ -83,6 +84,13 @@ BaseRecord< T_elem >::BaseRecord(BaseRecord const& b)
         : Container< T_elem >(b),
           m_containsScalar{b.m_containsScalar}
 { }
+
+template< typename T_elem >
+BaseRecord< T_elem >& BaseRecord< T_elem >::operator=(openPMD::BaseRecord<T_elem> const& b) {
+    Container< T_elem >::operator=( b );
+    m_containsScalar = b.m_containsScalar;
+    return *this;
+}
 
 template< typename T_elem >
 BaseRecord< T_elem >::BaseRecord()
