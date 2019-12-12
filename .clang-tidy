@@ -1,5 +1,5 @@
 # Future consideration: cppcoreguidelines-*,clang-analyzer-*,google-*,hicpp-*,llvm-*,misc-*,modernize-*,readability-*,-clang-diagnostic-unused-command-line-argument,-*-namespace-comment*,-*-braces-around-statements,-google-readability-todo,-readability-inconsistent-declaration-parameter-name,-readability-named-parameter
 # FIXME: all performance-* reports
 # FIXME: all cert-* reports
-Checks: -*,bugprone-*,cppcoreguidelines-slicing,mpi-*,readability-non-const-parameter
+Checks: -*,bugprone-*,cppcoreguidelines-slicing,mpi-*,readability-non-const-parameter,modernize-use-override
 HeaderFilterRegex: '((^(?!\/share\/openPMD\/).*)*include\/openPMD\/.+\.hpp|src\/^(?!binding).+\.cpp$)'
