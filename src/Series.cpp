@@ -32,7 +32,7 @@
 #include <string>
 #include <tuple>
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER) && !defined(_MSC_VER)
 #   if (__GNUC__ == 4 && __GNUC_MINOR__ < 9)
 #       define IS_GCC_48 1
 #   endif
