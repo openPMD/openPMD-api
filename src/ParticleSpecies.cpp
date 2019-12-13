@@ -25,7 +25,6 @@
 
 namespace openPMD
 {
-ParticleSpecies::ParticleSpecies() = default;
 
 void
 ParticleSpecies::read()

@@ -102,7 +102,7 @@ public:
     explicit ADIOS2IOHandlerImpl( AbstractIOHandler * );
 
 
-    ~ADIOS2IOHandlerImpl( ) override;
+    ~ADIOS2IOHandlerImpl( ) override = default;
 
     std::future< void > flush( ) override;
 
@@ -641,7 +641,10 @@ private:
     ADIOS2IOHandlerImpl m_impl;
 
 public:
-    ~ADIOS2IOHandler( ) override;
+    ~ADIOS2IOHandler( ) override
+    {
+        this->flush( );
+    }
 
 #else
 public:

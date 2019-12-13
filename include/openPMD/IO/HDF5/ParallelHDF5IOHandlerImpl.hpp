@@ -38,7 +38,7 @@ namespace openPMD
     {
     public:
         ParallelHDF5IOHandlerImpl(AbstractIOHandler*, MPI_Comm);
-        virtual ~ParallelHDF5IOHandlerImpl();
+        ~ParallelHDF5IOHandlerImpl() override;
 
         MPI_Comm m_mpiComm;
         MPI_Info m_mpiInfo;

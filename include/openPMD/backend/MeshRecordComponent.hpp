@@ -44,6 +44,8 @@ private:
     void read() override;
 
 public:
+    ~MeshRecordComponent() override = default;
+
     template< typename T >
     std::vector< T > position() const;
     template< typename T >

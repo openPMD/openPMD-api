@@ -46,8 +46,7 @@ class BaseRecordComponent : public Attributable
     class Container;
 
 public:
-    virtual ~BaseRecordComponent()
-    { }
+    ~BaseRecordComponent() override = default;
 
     double unitSI() const;
 

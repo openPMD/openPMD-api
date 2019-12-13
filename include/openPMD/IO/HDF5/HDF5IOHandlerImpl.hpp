@@ -36,7 +36,7 @@ namespace openPMD
     {
     public:
         HDF5IOHandlerImpl(AbstractIOHandler*);
-        virtual ~HDF5IOHandlerImpl();
+        ~HDF5IOHandlerImpl() override;
 
         void createFile(Writable*, Parameter< Operation::CREATE_FILE > const&) override;
         void createPath(Writable*, Parameter< Operation::CREATE_PATH > const&) override;

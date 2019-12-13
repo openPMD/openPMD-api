@@ -33,6 +33,4 @@ Writable::Writable(Attributable* a)
           written{false}
 { }
 
-Writable::~Writable() = default;
-
 } // openPMD

@@ -37,9 +37,10 @@ namespace openPMD
 
     public:
         size_t numPatches() const;
+        ~ParticlePatches() override = default;
 
     private:
-        ParticlePatches();
+        ParticlePatches() = default;
         void read();
     }; // ParticlePatches
 

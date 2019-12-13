@@ -30,10 +30,6 @@ Record::Record()
     setTimeOffset(0.f);
 }
 
-Record::Record(Record const&) = default;
-Record& Record::operator=(Record const&) = default;
-Record::~Record() = default;
-
 Record&
 Record::setUnitDimension(std::map< UnitDimension, double > const& udim)
 {
