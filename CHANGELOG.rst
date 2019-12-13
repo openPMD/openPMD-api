@@ -22,6 +22,7 @@ Bug Fixes
 
 - Implement assignment operators for: ``IOTask``, ``Mesh``, ``Iteration``, ``BaseRecord``, ``Record`` #628
 - Missing ``virtual`` destructors added #632
+- Series: sanitize user paths to avoid parsing errors #633
 
 Other
 """""

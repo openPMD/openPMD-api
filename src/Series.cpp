@@ -403,10 +403,11 @@ Series::parseInput(std::string filepath)
 
     input->format = determineFormat(input->name);
 
+    //! @fixme before uxing input->name in regex expressions below, it must be sanitized
 #if defined(IS_GCC_48)
     regex_t pattern;
-    if( regcomp(&pattern, "(.*)%(0[[:digit:]]+)?T(.*)", REG_EXTENDED) )
-        throw std::runtime_error(std::string("Regex for iterationFormat '(.*)%(0[[:digit:]]+)?T(.*)' can not be compiled!"));
+    if( regcomp(&pattern, "(.*)%(0\\d+)?T(.*)", REG_EXTENDED) )
+        throw std::runtime_error(std::string("Regex for iterationFormat '(.*)%(0\\d+)?T(.*)' can not be compiled!"));
 
     constexpr uint8_t regexGroups = 4u;
     std::array< regmatch_t, regexGroups > regexMatch;
@@ -437,7 +438,7 @@ Series::parseInput(std::string filepath)
 
     regfree(&pattern);
 #else
-    std::regex pattern("(.*)%(0[[:digit:]]+)?T(.*)");
+    std::regex pattern("(.*)%(0\\d+)?T(.*)");
     std::smatch regexMatch;
     std::regex_match(input->name, regexMatch, pattern);
     if( regexMatch.empty() )
@@ -955,40 +956,57 @@ buildMatcher(std::string const& regexPattern)
 #endif
 }
 
+std::string
+sanitizeForRegex( std::string const & in )
+{
+    std::string const specialChars{ "\\-{}()*+?.,^$|# " };
+    std::string sanitizedPrefix = in;
+
+    for( auto it = sanitizedPrefix.begin(); it != sanitizedPrefix.end(); ++it )
+    {
+        if( specialChars.find(*it) != std::string::npos )
+        {
+            it = sanitizedPrefix.insert(it, '\\');
+            ++it;
+        }
+    }
+
+    // this simpler implementation throws a regex_error for for GCC 4.9.0
+    // on "C:\\\\ua.yo\\what oh no, ryl?!"  (but all later versions are fine)
+    // std::regex const specialChars{ R"([-[\]{}()*+?.,\^$|#\s])" };  // these need escaping with a backslash
+    // std::string const sanitizedPrefix = std::regex_replace( in, specialChars, R"(\$&)" );
+
+    return sanitizedPrefix;
+}
+
 std::function< std::tuple< bool, int >(std::string const&) >
 matcher(std::string const& prefix, int padding, std::string const& postfix, Format f)
 {
+    auto const sanitizedPrefix = sanitizeForRegex( prefix );
+
+    std::string nameReg = "^" + sanitizedPrefix + "(\\d";
+    if( padding != 0 )
+        nameReg.append("{" + std::to_string(padding) + "}");
+    else
+        nameReg.append("+");
+    nameReg.append(")" + postfix);
+
     switch( f )
     {
         case Format::HDF5:
         {
-            std::string nameReg = "^" + prefix + "([[:digit:]]";
-            if( padding != 0 )
-                nameReg += "{" + std::to_string(padding) + "}";
-            else
-                nameReg += "+";
-            nameReg += + ")" + postfix + ".h5$";
+            nameReg.append("\\.h5$");
             return buildMatcher(nameReg);
         }
         case Format::ADIOS1:
         case Format::ADIOS2:
         {
-            std::string nameReg = "^" + prefix + "([[:digit:]]";
-            if( padding != 0 )
-                nameReg += "{" + std::to_string(padding) + "}";
-            else
-                nameReg += "+";
-            nameReg += + ")" + postfix + ".bp$";
+            nameReg.append("\\.bp$");
             return buildMatcher(nameReg);
         }
         case Format::JSON:
         {
-            std::string nameReg = "^" + prefix + "([[:digit:]]";
-            if( padding != 0 )
-                nameReg += "{" + std::to_string(padding) + "}";
-            else
-                nameReg += "+";
-            nameReg += + ")" + postfix + ".json$";
+            nameReg.append("\\.json$");
             return buildMatcher(nameReg);
         }
         default:
