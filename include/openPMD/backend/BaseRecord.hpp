@@ -57,7 +57,7 @@ public:
 
     BaseRecord(BaseRecord const& b);
     BaseRecord& operator=(BaseRecord const& b);
-    ~BaseRecord() override { }
+    virtual ~BaseRecord() = default;
 
     mapped_type& operator[](key_type const& key) override;
     mapped_type& operator[](key_type&& key) override;
