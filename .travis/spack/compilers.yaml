@@ -32,6 +32,19 @@ compilers:
     extra_rpaths: []
     flags: {}
     modules: []
+    operating_system: mojave
+    paths:
+      cc: /usr/bin/clang
+      cxx: /usr/bin/clang++
+      f77: null
+      fc: null
+    spec: clang@11.0.0
+    target: x86_64
+- compiler:
+    environment: {}
+    extra_rpaths: []
+    flags: {}
+    modules: []
     operating_system: ubuntu16.04
     paths:
       cc: /usr/lib/llvm-5.0/bin/clang

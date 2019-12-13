@@ -90,6 +90,7 @@ public:
     Container< Mesh > meshes;
     Container< ParticleSpecies > particles; //particleSpecies?
 
+    virtual ~Iteration() = default;
 private:
     Iteration();
 

@@ -30,8 +30,6 @@ namespace openPMD
             : AbstractIOHandler(std::move(path), at)
     { }
 
-    DummyIOHandler::~DummyIOHandler() = default;
-
     void DummyIOHandler::enqueue(IOTask const&)
     { }
 

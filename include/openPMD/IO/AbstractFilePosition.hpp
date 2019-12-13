@@ -26,6 +26,6 @@ namespace openPMD
 class AbstractFilePosition
 {
 public:
-    virtual ~AbstractFilePosition() { }
+    virtual ~AbstractFilePosition() = default;
 }; // AbstractFilePosition
 } // openPMD

@@ -52,7 +52,7 @@ class AbstractIOHandlerImplCommon;
  *                      - whether the logical object has been modified compared
  *                        to last persistent state
  */
-class Writable
+class Writable final
 {
     friend class Attributable;
     template< typename T_elem >
@@ -81,7 +81,7 @@ class Writable
 
 public:
     Writable(Attributable* = nullptr);
-    virtual ~Writable();
+    ~Writable() = default;
 
 OPENPMD_private:
     std::shared_ptr< AbstractFilePosition > abstractFilePosition;

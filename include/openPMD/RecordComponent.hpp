@@ -159,6 +159,8 @@ public:
 
     static constexpr char const * const SCALAR = "\vScalar";
 
+    virtual ~RecordComponent() = default;
+
 OPENPMD_protected:
     RecordComponent();
 

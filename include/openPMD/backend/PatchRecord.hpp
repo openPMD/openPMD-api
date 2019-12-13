@@ -37,9 +37,10 @@ class PatchRecord : public BaseRecord< PatchRecordComponent >
 
 public:
     PatchRecord& setUnitDimension(std::map< UnitDimension, double > const&);
+    ~PatchRecord() override = default;
 
 private:
-    PatchRecord();
+    PatchRecord() = default;
 
     void flush_impl(std::string const&) override;
     void read() override;

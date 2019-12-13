@@ -23,7 +23,6 @@
 
 namespace openPMD
 {
-ParticlePatches::ParticlePatches() = default;
 
 size_t
 ParticlePatches::numPatches() const

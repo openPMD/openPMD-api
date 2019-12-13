@@ -24,9 +24,7 @@
 
 namespace openPMD
 {
-    JSONIOHandler::~JSONIOHandler( )
-    {}
-
+    JSONIOHandler::~JSONIOHandler( ) = default;
 
     JSONIOHandler::JSONIOHandler(
         std::string path,

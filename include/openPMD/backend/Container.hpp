@@ -91,7 +91,7 @@ public:
     using const_iterator = typename InternalContainer::const_iterator;
 
     Container(Container const&) = default;
-    virtual ~Container() { }
+    virtual ~Container() = default;
 
     iterator begin() noexcept { return m_container->begin(); }
     const_iterator begin() const noexcept { return m_container->begin(); }

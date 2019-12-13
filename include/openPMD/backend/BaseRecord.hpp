@@ -57,7 +57,7 @@ public:
 
     BaseRecord(BaseRecord const& b);
     BaseRecord& operator=(BaseRecord const& b);
-    ~BaseRecord() override { }
+    virtual ~BaseRecord() = default;
 
     mapped_type& operator[](key_type const& key) override;
     mapped_type& operator[](key_type&& key) override;
@@ -67,13 +67,12 @@ public:
 
 protected:
     BaseRecord();
-
     void readBase();
 
     std::shared_ptr< bool > m_containsScalar;
 
 private:
-    virtual void flush(std::string const&) final;
+    void flush(std::string const&) final;
     virtual void flush_impl(std::string const&) = 0;
     virtual void read() = 0;
 };  //BaseRecord

@@ -37,9 +37,9 @@ class Record : public BaseRecord< RecordComponent >
     friend class ParticleSpecies;
 
 public:
-    Record(Record const&);
-    Record& operator=(Record const&);
-    ~Record() override;
+    Record(Record const&) = default;
+    Record& operator=(Record const&) = default;
+    ~Record() override = default;
 
     Record& setUnitDimension(std::map< UnitDimension, double > const&);
 
