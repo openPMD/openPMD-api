@@ -72,8 +72,9 @@ packages:
   py-numpy:
     variants: ~blas ~lapack
 
-  # set MPI providers and compiler versions
+  # set generic binary generation, mpi providers and compiler versions
   all:
+    target: ['x86_64']
     providers:
       mpi: [openmpi]
     compiler: [clang@5.0.0, clang@6.0.0, clang@7.0.0, clang@9.1.0, clang@10.0.0, clang@11.0.0, gcc@4.8.5, gcc@4.9.4, gcc@6.5.0, gcc@7.4.0]
