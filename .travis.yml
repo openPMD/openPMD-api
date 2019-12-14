@@ -649,6 +649,7 @@ install:
       travis_wait 20 brew install python3;
       travis_wait 20 brew install numpy;
       travis_wait 20 brew upgrade numpy;
+      travis_wait 20 brew install jq;
       travis_wait 20 brew install modules &&
       brew info modules &&
       source /usr/local/opt/modules/init/bash &&
@@ -656,11 +657,12 @@ install:
       export TRAVIS_PYTHON_VERSION=3.7.2;
     fi
   - source $SPACK_ROOT/share/spack/setup-env.sh
-  - export SPACK_ARCH=$(spack spec --json cmake $CXXSPEC | jq -r '.spec[0].cmake.arch| (.platform + "-" + .platform_os + "-" + .target.name)')
+  - export SPACK_ARCH=$(spack spec --json cmake $CXXSPEC | jq -r '.spec[0].cmake.arch| (.platform + "-" + .platform_os + "-x86_64")')
   # fresh (cache-cleaned) travis runs seem to not properly init environment-modules
   - echo $MODULEPATH
   - if [[ ! $MODULEPATH = *"spack"* ]]; then
-      export MODULEPATH=$SPACK_ROOT/share/spack/modules/$(spack arch):$MODULEPATH;
+      export MODULEPATH=$SPACK_ROOT/share/spack/modules/${SPACK_ARCH}:$MODULEPATH;
+      echo ${MODULEPATH};
     fi
   # required dependencies - CMake 3.11.0
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
@@ -680,7 +682,7 @@ install:
       fi;
       spack install cmake@3.11.0 $CXXSPEC;
     fi
-  - spack load cmake@3.11.0 $CXXSPEC arch=${SPACK_ARCH}
+  - spack load cmake@3.11.0 $CXXSPEC
   # diagnostics: modules created and visible?
   - module av
   - module li
@@ -690,29 +692,29 @@ install:
       travis_wait spack install
         openmpi
         $CXXSPEC &&
-      spack load openmpi $CXXSPEC arch=${SPACK_ARCH};
+      spack load openmpi $CXXSPEC;
       SPACK_VAR_MPI="+mpi";
     fi
   - if [ $USE_PYTHON == "ON" ]; then
       travis_wait spack install
         python@$TRAVIS_PYTHON_VERSION
         $CXXSPEC &&
-      spack load python@$TRAVIS_PYTHON_VERSION $CXXSPEC arch=${SPACK_ARCH};
+      spack load python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
       if [ "$USE_INTERNAL_PYBIND11" == "OFF" ]; then
         travis_wait spack install
           py-pybind11$PYBIND11_VERSION ^python@$TRAVIS_PYTHON_VERSION
           $CXXSPEC &&
-        spack load py-pybind11$PYBIND11_VERSION ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC arch=${SPACK_ARCH};
+        spack load py-pybind11$PYBIND11_VERSION ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
       fi;
       travis_wait spack install
         py-numpy ~blas ~lapack ^python@$TRAVIS_PYTHON_VERSION
         $CXXSPEC &&
-      spack load py-numpy ~blas ~lapack ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC arch=${SPACK_ARCH};
+      spack load py-numpy ~blas ~lapack ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
       if [ $USE_MPI == "ON" ]; then
         travis_wait spack install
           py-mpi4py ^python@$TRAVIS_PYTHON_VERSION
           $CXXSPEC &&
-        spack load py-mpi4py ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC arch=${SPACK_ARCH};
+        spack load py-mpi4py ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
       fi;
     fi
   - if [ $USE_HDF5 == "ON" ]; then
@@ -720,14 +722,14 @@ install:
         hdf5$HDF5_VERSION
         $SPACK_VAR_MPI
         $CXXSPEC &&
-      spack load hdf5$HDF5_VERSION $SPACK_VAR_MPI $CXXSPEC arch=${SPACK_ARCH};
+      spack load hdf5$HDF5_VERSION $SPACK_VAR_MPI $CXXSPEC;
     fi
   - if [ $USE_ADIOS1 == "ON" ]; then
       travis_wait 30 spack install
         adios$ADIOS1_VERSION
         $SPACK_VAR_MPI ^python@$TRAVIS_PYTHON_VERSION
         $CXXSPEC &&
-      spack load adios$ADIOS1_VERSION $SPACK_VAR_MPI ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC arch=${SPACK_ARCH};
+      spack load adios$ADIOS1_VERSION $SPACK_VAR_MPI ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
     fi
   - if [ $USE_ADIOS2 == "ON" ]; then
       echo "adios2$ADIOS2_VERSION $SPACK_VAR_MPI $CXXSPEC";
@@ -736,7 +738,7 @@ install:
         adios2$ADIOS2_VERSION
         $SPACK_VAR_MPI
         $CXXSPEC &&
-      spack load adios2$ADIOS2_VERSION $SPACK_VAR_MPI $CXXSPEC arch=${SPACK_ARCH};
+      spack load adios2$ADIOS2_VERSION $SPACK_VAR_MPI $CXXSPEC;
     fi
   - spack clean -a
 
