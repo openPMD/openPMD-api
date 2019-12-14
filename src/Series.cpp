@@ -991,24 +991,17 @@ matcher(std::string const& prefix, int padding, std::string const& postfix, Form
         nameReg.append("+");
     nameReg.append(")" + postfix);
 
+    // escape the dot before the file extension/suffix
+    nameReg.append( "\\" )
+           .append( suffix( f ) )
+           .append( "$" );
     switch( f )
     {
         case Format::HDF5:
-        {
-            nameReg.append("\\.h5$");
-            return buildMatcher(nameReg);
-        }
         case Format::ADIOS1:
         case Format::ADIOS2:
-        {
-            nameReg.append("\\.bp$");
-            return buildMatcher(nameReg);
-        }
         case Format::JSON:
-        {
-            nameReg.append("\\.json$");
             return buildMatcher(nameReg);
-        }
         default:
             return [](std::string const&) -> std::tuple< bool, int > { return std::tuple< bool, int >{false, 0}; };
     }
