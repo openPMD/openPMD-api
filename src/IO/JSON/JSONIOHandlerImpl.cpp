@@ -70,7 +70,7 @@ namespace openPMD
     )
     {
         VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
-            "Creating a file in read-only mode is not possible." );
+            "[JSON] Creating a file in read-only mode is not possible." );
 
         if( !writable->written )
         {
@@ -88,7 +88,7 @@ namespace openPMD
             VERIFY_ALWAYS( !( m_handler->accessTypeBackend == AccessType::READ_WRITE &&
                               ( !std::get< 2 >( res_pair ) ||
                                 auxiliary::file_exists( fullPath( std::get< 0 >( res_pair ) ) ) ) ),
-                "Can only overwrite existing file in CREATE mode." );
+                "[JSON] Can only overwrite existing file in CREATE mode." );
 
             if( !std::get< 2 >( res_pair ) )
             {
@@ -103,7 +103,7 @@ namespace openPMD
             {
                 auto success = auxiliary::create_directories( dir );
                 VERIFY( success,
-                    "Could not create directory." );
+                    "[JSON] Could not create directory." );
             }
 
             associateWithFile(
@@ -190,7 +190,7 @@ namespace openPMD
     {
         if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
         {
-            throw std::runtime_error( "Creating a dataset in a file opened as read only is not possible." );
+            throw std::runtime_error( "[JSON] Creating a dataset in a file opened as read only is not possible." );
         }
         if( !writable->written )
         {
@@ -224,7 +224,7 @@ namespace openPMD
     )
     {
         VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
-            "Cannot extend a dataset in read-only mode." )
+            "[JSON] Cannot extend a dataset in read-only mode." )
         refreshFileFromParent( writable );
         setAndGetFilePosition( writable );
         auto name = removeSlashes( parameters.name );
@@ -236,7 +236,7 @@ namespace openPMD
             VERIFY_ALWAYS( datasetExtent.size( ) ==
                            parameters.extent
                                .size( ),
-                "Cannot change dimensionality of a dataset" )
+                "[JSON] Cannot change dimensionality of a dataset" )
             for( size_t currentdim = 0;
                 currentdim <
                 parameters.extent
@@ -245,11 +245,11 @@ namespace openPMD
             {
                 VERIFY_ALWAYS( datasetExtent[currentdim] <=
                                parameters.extent[currentdim],
-                    "Cannot shrink the extent of a dataset" )
+                    "[JSON] Cannot shrink the extent of a dataset" )
             }
         } catch( json::basic_json::type_error & )
         {
-            throw std::runtime_error( "The specified location contains no valid dataset" );
+            throw std::runtime_error( "[JSON] The specified location contains no valid dataset" );
         }
         j["data"] = initializeNDArray( parameters.extent );
         writable->written = true;
@@ -265,7 +265,7 @@ namespace openPMD
         if( !auxiliary::directory_exists( m_handler->directory ) )
         {
             throw no_such_file_error(
-                "Supplied directory is not valid: " + m_handler->directory
+                "[JSON] Supplied directory is not valid: " + m_handler->directory
             );
         }
 
@@ -354,7 +354,7 @@ namespace openPMD
     )
     {
         VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
-            "Cannot delete files in read-only mode" )
+            "[JSON] Cannot delete files in read-only mode" )
 
         if( !writable->written )
         {
@@ -388,7 +388,7 @@ namespace openPMD
     )
     {
         VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
-            "Cannot delete paths in read-only mode" )
+            "[JSON] Cannot delete paths in read-only mode" )
 
         if( !writable->written )
         {
@@ -399,7 +399,7 @@ namespace openPMD
             parameters.path,
             '/'
         ),
-            "Paths passed for deletion should be relative, the given path is absolute (starts with '/')" )
+            "[JSON] Paths passed for deletion should be relative, the given path is absolute (starts with '/')" )
         auto file = refreshFileFromParent( writable );
         auto filepos = setAndGetFilePosition(
             writable,
@@ -407,7 +407,7 @@ namespace openPMD
         );
         auto path = removeSlashes( parameters.path );
         VERIFY( !path.empty( ),
-            "No path passed for deletion." )
+            "[JSON] No path passed for deletion." )
         nlohmann::json * j;
         if( path == "." )
         {
@@ -417,7 +417,7 @@ namespace openPMD
                     .to_string( );
             if( s == "/" )
             {
-                throw std::runtime_error( "Cannot delete the root group" );
+                throw std::runtime_error( "[JSON] Cannot delete the root group" );
             }
 
             auto i = s.rfind( '/' );
@@ -494,7 +494,7 @@ namespace openPMD
     )
     {
         VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
-            "Cannot delete datasets in read-only mode" )
+            "[JSON] Cannot delete datasets in read-only mode" )
 
         if( !writable->written )
         {
@@ -517,7 +517,7 @@ namespace openPMD
                     .to_string( );
             if( s.empty( ) )
             {
-                throw std::runtime_error( "Invalid position for a dataset in the JSON file." );
+                throw std::runtime_error( "[JSON] Invalid position for a dataset in the JSON file." );
             }
             dataset = s;
             auto i = dataset.rfind( '/' );
@@ -549,7 +549,7 @@ namespace openPMD
     )
     {
         VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
-            "Cannot delete attributes in read-only mode" )
+            "[JSON] Cannot delete attributes in read-only mode" )
         if( !writable->written )
         {
             return;
@@ -568,7 +568,7 @@ namespace openPMD
     )
     {
         VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
-            "Cannot write data in read-only mode." );
+            "[JSON] Cannot write data in read-only mode." );
 
         auto pos = setAndGetFilePosition( writable );
         auto file = refreshFileFromParent( writable );
@@ -600,7 +600,7 @@ namespace openPMD
     {
         if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
         {
-            throw std::runtime_error( "Creating a dataset in a file opened as read only is not possible." );
+            throw std::runtime_error( "[JSON] Creating a dataset in a file opened as read only is not possible." );
         }
 
         /* Sanitize name */
@@ -661,7 +661,7 @@ namespace openPMD
             );
         } catch( json::basic_json::type_error & )
         {
-            throw std::runtime_error( "The given path does not contain a valid dataset." );
+            throw std::runtime_error( "[JSON] The given path does not contain a valid dataset." );
         }
     }
 
@@ -672,7 +672,7 @@ namespace openPMD
     )
     {
         VERIFY_ALWAYS( writable->written,
-            "Attributes have to be written before reading." )
+            "[JSON] Attributes have to be written before reading." )
         refreshFileFromParent( writable );
         auto name = removeSlashes( parameters.name );
         auto & jsonLoc = obtainJsonContents( writable )["attributes"];
@@ -681,7 +681,7 @@ namespace openPMD
             jsonLoc,
             name
         ),
-            "No such attribute in the given location." )
+            "[JSON] No such attribute in the given location." )
         auto & j = jsonLoc[name];
         try
         {
@@ -696,7 +696,7 @@ namespace openPMD
             );
         } catch( json::type_error & )
         {
-            throw std::runtime_error( "The given location does not contain a properly formatted attribute" );
+            throw std::runtime_error( "[JSON] The given location does not contain a properly formatted attribute" );
         }
     }
 
@@ -707,7 +707,7 @@ namespace openPMD
     )
     {
         VERIFY_ALWAYS( writable->written,
-            "Values have to be written before reading a directory" );
+            "[JSON] Values have to be written before reading a directory" );
         auto & j = obtainJsonContents( writable );
         setAndGetFilePosition( writable );
         refreshFileFromParent( writable );
@@ -730,7 +730,7 @@ namespace openPMD
     )
     {
         VERIFY_ALWAYS( writable->written,
-            "Datasets have to be written before reading." )
+            "[JSON] Datasets have to be written before reading." )
         refreshFileFromParent( writable );
         auto filePosition = setAndGetFilePosition( writable );
         auto & j = obtainJsonContents( writable );
@@ -753,7 +753,7 @@ namespace openPMD
     )
     {
         VERIFY_ALWAYS( writable->written,
-            "Attributes have to be written before reading." )
+            "[JSON] Attributes have to be written before reading." )
         refreshFileFromParent( writable );
         auto filePosition = setAndGetFilePosition( writable );
         auto & j = obtainJsonContents( writable )["attributes"];
@@ -772,7 +772,7 @@ namespace openPMD
     )
     {
         VERIFY_ALWAYS( fileName.valid( ),
-            "Tried opening a file that has been overwritten or deleted." )
+            "[JSON] Tried opening a file that has been overwritten or deleted." )
         auto path = fullPath( std::move( fileName ) );
         auto fs = std::make_shared< std::fstream >( );
         switch( accessType )
@@ -792,7 +792,7 @@ namespace openPMD
                 break;
         }
         VERIFY( fs->good( ),
-            "Failed opening a file" );
+            "[JSON] Failed opening a file" );
         return fs;
     }
 
@@ -1062,7 +1062,7 @@ namespace openPMD
     JSONIOHandlerImpl::obtainJsonContents( File file )
     {
         VERIFY_ALWAYS( file.valid( ),
-            "File has been overwritten or deleted before reading" );
+            "[JSON] File has been overwritten or deleted before reading" );
         auto it = m_jsonVals.find( file );
         if( it != m_jsonVals.end( ) )
         {
@@ -1077,7 +1077,7 @@ namespace openPMD
             res = std::make_shared< nlohmann::json >( );
         *fh >> *res;
         VERIFY( fh->good( ),
-            "Failed reading from a file." );
+            "[JSON] Failed reading from a file." );
         m_jsonVals.emplace(
             file,
             res
@@ -1104,7 +1104,7 @@ namespace openPMD
     )
     {
         VERIFY_ALWAYS( filename.valid( ),
-            "File has been overwritten/deleted before writing" );
+            "[JSON] File has been overwritten/deleted before writing" );
         auto it = m_jsonVals.find( filename );
         if( it != m_jsonVals.end( ) )
         {
@@ -1115,7 +1115,7 @@ namespace openPMD
             ( *it->second )["platform_byte_widths"] = platformSpecifics( );
             *fh << *it->second << std::endl;
             VERIFY( fh->good( ),
-                "Failed writing data to disk." )
+                "[JSON] Failed writing data to disk." )
             m_jsonVals.erase( it );
             if( unsetDirty )
             {
@@ -1257,7 +1257,7 @@ namespace openPMD
     )
     {
         VERIFY_ALWAYS( isDataset(j),
-            "Specified dataset does not exist or is not a dataset." );
+            "[JSON] Specified dataset does not exist or is not a dataset." );
 
         try
         {
@@ -1265,7 +1265,7 @@ namespace openPMD
             VERIFY_ALWAYS( datasetExtent.size( ) ==
                            parameters.extent
                                .size( ),
-                "Read/Write request does not fit the dataset's dimension" );
+                "[JSON] Read/Write request does not fit the dataset's dimension" );
             for( unsigned int dimension = 0;
                 dimension <
                 parameters.extent
@@ -1275,15 +1275,15 @@ namespace openPMD
                 VERIFY_ALWAYS( parameters.offset[dimension] +
                                parameters.extent[dimension] <=
                                datasetExtent[dimension],
-                    "Read/Write request exceeds the dataset's size" );
+                    "[JSON] Read/Write request exceeds the dataset's size" );
             }
             Datatype
                 dt = stringToDatatype( j["datatype"].get< std::string >( ) );
             VERIFY_ALWAYS( dt == parameters.dtype,
-                "Read/Write request does not fit the dataset's type" );
+                "[JSON] Read/Write request does not fit the dataset's type" );
         } catch( json::basic_json::type_error & )
         {
-            throw std::runtime_error( "The given path does not contain a valid dataset." );
+            throw std::runtime_error( "[JSON] The given path does not contain a valid dataset." );
         }
     }
 
@@ -1348,7 +1348,7 @@ namespace openPMD
         const Parameter< Operation::WRITE_DATASET > &
     )
     {
-        throw std::runtime_error( "Unknown datatype given for writing." );
+        throw std::runtime_error( "[JSON] Unknown datatype given for writing." );
     }
 
 
@@ -1385,7 +1385,7 @@ namespace openPMD
         Parameter< Operation::READ_DATASET > &
     )
     {
-        throw std::runtime_error( "Unknown datatype while reading a dataset." );
+        throw std::runtime_error( "[JSON] Unknown datatype while reading a dataset." );
     }
 
 
@@ -1406,7 +1406,7 @@ namespace openPMD
         Attribute::resource const &
     )
     {
-        throw std::runtime_error( "Unknown datatype in attribute writing." );
+        throw std::runtime_error( "[JSON] Unknown datatype in attribute writing." );
     }
 
 
@@ -1416,7 +1416,7 @@ namespace openPMD
         Parameter< Operation::READ_ATT > &
     )
     {
-        throw std::runtime_error( "Unknown datatype while reading attribute." );
+        throw std::runtime_error( "[JSON] Unknown datatype while reading attribute." );
     }
 
 

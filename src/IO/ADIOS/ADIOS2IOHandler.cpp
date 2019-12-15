@@ -98,7 +98,7 @@ void ADIOS2IOHandlerImpl::createFile(
     Parameter< Operation::CREATE_FILE > const & parameters )
 {
     VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
-                   "Creating a file in read-only mode is not possible." );
+                   "[ADIOS2] Creating a file in read-only mode is not possible." );
 
     if ( !writable->written )
     {
@@ -115,7 +115,7 @@ void ADIOS2IOHandlerImpl::createFile(
                ( !std::get< PE_NewlyCreated >( res_pair ) ||
                  auxiliary::file_exists( fullPath(
                      std::get< PE_InvalidatableFile >( res_pair ) ) ) ) ),
-            "Can only overwrite existing file in CREATE mode." );
+            "[ADIOS2] Can only overwrite existing file in CREATE mode." );
 
         if ( !std::get< PE_NewlyCreated >( res_pair ) )
         {
@@ -129,7 +129,7 @@ void ADIOS2IOHandlerImpl::createFile(
         if ( !auxiliary::directory_exists( dir ) )
         {
             auto success = auxiliary::create_directories( dir );
-            VERIFY( success, "Could not create directory." );
+            VERIFY( success, "[ADIOS2] Could not create directory." );
         }
 
         associateWithFile( writable, shared_name );
@@ -175,7 +175,7 @@ void ADIOS2IOHandlerImpl::createDataset(
 {
     if ( m_handler->accessTypeBackend == AccessType::READ_ONLY )
     {
-        throw std::runtime_error( "Creating a dataset in a file opened as read "
+        throw std::runtime_error( "[ADIOS2] Creating a dataset in a file opened as read "
                                   "only is not possible." );
     }
     if ( !writable->written )
@@ -213,7 +213,7 @@ void ADIOS2IOHandlerImpl::extendDataset(
     Writable *, const Parameter< Operation::EXTEND_DATASET > & )
 {
     throw std::runtime_error(
-        "Dataset extension not implemented in ADIOS backend" );
+        "[ADIOS2] Dataset extension not implemented in ADIOS backend" );
 }
 
 void ADIOS2IOHandlerImpl::openFile(
@@ -221,7 +221,7 @@ void ADIOS2IOHandlerImpl::openFile(
 {
     if ( !auxiliary::directory_exists( m_handler->directory ) )
     {
-        throw no_such_file_error( "Supplied directory is not valid: " +
+        throw no_such_file_error( "[ADIOS2] Supplied directory is not valid: " +
                                   m_handler->directory );
     }
 
@@ -276,13 +276,13 @@ void ADIOS2IOHandlerImpl::openDataset(
 void ADIOS2IOHandlerImpl::deleteFile(
     Writable *, const Parameter< Operation::DELETE_FILE > & )
 {
-    throw std::runtime_error( "ADIOS2 backend does not support deletion." );
+    throw std::runtime_error( "[ADIOS2] Backend does not support deletion." );
 }
 
 void ADIOS2IOHandlerImpl::deletePath(
     Writable *, const Parameter< Operation::DELETE_PATH > & )
 {
-    throw std::runtime_error( "ADIOS2 backend does not support deletion." );
+    throw std::runtime_error( "[ADIOS2] Backend does not support deletion." );
 }
 
 void
@@ -291,14 +291,14 @@ ADIOS2IOHandlerImpl::deleteDataset(
     const Parameter< Operation::DELETE_DATASET > & )
 {
     // call filedata.invalidateVariablesMap
-    throw std::runtime_error( "ADIOS2 backend does not support deletion." );
+    throw std::runtime_error( "[ADIOS2] Backend does not support deletion." );
 }
 
 void ADIOS2IOHandlerImpl::deleteAttribute(
     Writable *, const Parameter< Operation::DELETE_ATT > & )
 {
     // call filedata.invalidateAttributesMap
-    throw std::runtime_error( "ADIOS2 backend does not support deletion." );
+    throw std::runtime_error( "[ADIOS2] Backend does not support deletion." );
 }
 
 void ADIOS2IOHandlerImpl::writeDataset(
@@ -306,7 +306,7 @@ void ADIOS2IOHandlerImpl::writeDataset(
     const Parameter< Operation::WRITE_DATASET > & parameters )
 {
     VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
-                   "Cannot write data in read-only mode." );
+                   "[ADIOS2] Cannot write data in read-only mode." );
     setAndGetFilePosition( writable );
     auto file = refreshFileFromParent( writable );
     detail::BufferedActions & ba = getFileData( file );
@@ -356,7 +356,7 @@ void ADIOS2IOHandlerImpl::listPaths(
 {
     VERIFY_ALWAYS(
         writable->written,
-        "Internal error: Writable not marked written during path listing" );
+        "[ADIOS2] Internal error: Writable not marked written during path listing" );
     auto file = refreshFileFromParent( writable );
     auto pos = setAndGetFilePosition( writable );
     std::string myName = filePositionToString( pos );
@@ -430,7 +430,7 @@ void ADIOS2IOHandlerImpl::listDatasets(
 {
     VERIFY_ALWAYS(
         writable->written,
-        "Internal error: Writable not marked written during path listing" );
+        "[ADIOS2] Internal error: Writable not marked written during path listing" );
     auto file = refreshFileFromParent( writable );
     auto pos = setAndGetFilePosition( writable );
     // adios2::Engine & engine = getEngine( file );
@@ -471,7 +471,7 @@ void ADIOS2IOHandlerImpl::listAttributes(
     Writable * writable, Parameter< Operation::LIST_ATTS > & parameters )
 {
     VERIFY_ALWAYS( writable->written,
-                   "Internal error: Writable not marked "
+                   "[ADIOS2] Internal error: Writable not marked "
                    "written during attribute writing" );
     auto file = refreshFileFromParent( writable );
     auto pos = setAndGetFilePosition( writable );
@@ -590,7 +590,7 @@ detail::BufferedActions &
 ADIOS2IOHandlerImpl::getFileData( InvalidatableFile file )
 {
     VERIFY_ALWAYS( file.valid( ),
-                   "Cannot retrieve file data for a file that has "
+                   "[ADIOS2] Cannot retrieve file data for a file that has "
                    "been overwritten or deleted." )
     auto it = m_fileData.find( file );
     if ( it == m_fileData.end( ) )
@@ -627,20 +627,20 @@ ADIOS2IOHandlerImpl::verifyDataset( Offset const & offset,
         auto requiredType = adios2::GetType< T >( );
         auto actualType = IO.VariableType( varName );
         VERIFY_ALWAYS( requiredType == actualType,
-                       "Trying to access a dataset with wrong type (trying to "
+                       "[ADIOS2] Trying to access a dataset with wrong type (trying to "
                        "access dataset with type " +
                            requiredType + ", but has type " + actualType + ")" )
     }
     adios2::Variable< T > var = IO.InquireVariable< T >( varName );
     VERIFY_ALWAYS( var.operator bool( ),
-                   "Internal error: Failed opening ADIOS2 variable." )
+                   "[ADIOS2] Internal error: Failed opening ADIOS2 variable." )
     // TODO leave this check to ADIOS?
     adios2::Dims shape = var.Shape( );
     auto actualDim = shape.size( );
     {
         auto requiredDim = extent.size( );
         VERIFY_ALWAYS( requiredDim == actualDim,
-                       "Trying to access a dataset with wrong dimensionality "
+                       "[ADIOS2] Trying to access a dataset with wrong dimensionality "
                        "(trying to access dataset with dimensionality " +
                            std::to_string( requiredDim ) +
                            ", but has dimensionality " +
@@ -649,7 +649,7 @@ ADIOS2IOHandlerImpl::verifyDataset( Offset const & offset,
     for ( unsigned int i = 0; i < actualDim; i++ )
     {
         VERIFY_ALWAYS( offset[i] + extent[i] <= shape[i],
-                       "Dataset access out of bounds." )
+                       "[ADIOS2] Dataset access out of bounds." )
     }
 
     var.SetSelection({
@@ -678,7 +678,7 @@ namespace detail
     void DatasetReader::operator( )( Params &&... )
     {
         throw std::runtime_error(
-            "Internal error: Unknown datatype trying to read a dataset." );
+            "[ADIOS2] Internal error: Unknown datatype trying to read a dataset." );
     }
 
     template < typename T >
@@ -717,7 +717,7 @@ namespace detail
     template < int n, typename... Params >
     Datatype AttributeReader::operator( )( Params &&... )
     {
-        throw std::runtime_error( "Internal error: Unknown datatype while "
+        throw std::runtime_error( "[ADIOS2] Internal error: Unknown datatype while "
                                   "trying to read an attribute." );
     }
 
@@ -729,7 +729,7 @@ namespace detail
 
         VERIFY_ALWAYS( impl->m_handler->accessTypeBackend !=
                            AccessType::READ_ONLY,
-                       "Cannot write attribute in read-only mode." );
+                       "[ADIOS2] Cannot write attribute in read-only mode." );
         auto pos = impl->setAndGetFilePosition( writable );
         auto file = impl->refreshFileFromParent( writable );
         auto fullName = impl->nameOfAttribute( writable, parameters.name );
@@ -748,13 +748,13 @@ namespace detail
         typename AttributeTypes< T >::Attr attr =
             AttributeTypes< T >::createAttribute(
                 IO, fullName, variantSrc::get< T >( parameters.resource ) );
-        VERIFY_ALWAYS( attr, "Failed creating attribute." )
+        VERIFY_ALWAYS( attr, "[ADIOS2] Failed creating attribute." )
     }
 
     template < int n, typename... Params >
     void AttributeWriter::operator( )( Params &&... )
     {
-        throw std::runtime_error( "Internal error: Unknown datatype while "
+        throw std::runtime_error( "[ADIOS2] Internal error: Unknown datatype while "
                                   "trying to write an attribute." );
     }
 
@@ -774,7 +774,7 @@ namespace detail
     void DatasetOpener::operator( )( Params &&... )
     {
         throw std::runtime_error(
-            "Unknown datatype while trying to open dataset." );
+            "[ADIOS2] Unknown datatype while trying to open dataset." );
     }
 
     WriteDataset::WriteDataset( ADIOS2IOHandlerImpl * handlerImpl )
@@ -793,7 +793,7 @@ namespace detail
     template < int n, typename... Params >
     void WriteDataset::operator( )( Params &&... )
     {
-        throw std::runtime_error( "WRITE_DATASET: Invalid datatype." );
+        throw std::runtime_error( "[ADIOS2] WRITE_DATASET: Invalid datatype." );
     }
 
     template < typename T >
@@ -810,7 +810,7 @@ namespace detail
     template < int n, typename... Params >
     void VariableDefiner::operator( )( adios2::IO &, Params &&... )
     {
-        throw std::runtime_error( "Defining a variable with undefined type." );
+        throw std::runtime_error( "[ADIOS2] Defining a variable with undefined type." );
     }
 
 
@@ -824,7 +824,7 @@ namespace detail
         if ( !attr )
         {
             throw std::runtime_error(
-                "Internal error: Failed defining attribute '" + name + "'." );
+                "[ADIOS2] Internal error: Failed defining attribute '" + name + "'." );
         }
         return attr;
     }
@@ -838,7 +838,7 @@ namespace detail
         if ( !attr )
         {
             throw std::runtime_error(
-                "Internal error: Failed reading attribute '" + name + "'." );
+                "[ADIOS2] Internal error: Failed reading attribute '" + name + "'." );
         }
         *resource = attr.Data( )[0];
     }
@@ -852,7 +852,7 @@ namespace detail
         if ( !attr )
         {
             throw std::runtime_error(
-                "Internal error: Failed defining attribute '" + name + "'." );
+                "[ADIOS2] Internal error: Failed defining attribute '" + name + "'." );
         }
         return attr;
     }
@@ -866,7 +866,7 @@ namespace detail
         if ( !attr )
         {
             throw std::runtime_error(
-                "Internal error: Failed reading attribute '" + name + "'." );
+                "[ADIOS2] Internal error: Failed reading attribute '" + name + "'." );
         }
         *resource = attr.Data( );
     }
@@ -880,7 +880,7 @@ namespace detail
         if ( !attr )
         {
             throw std::runtime_error(
-                "Internal error: Failed defining attribute '" + name + "'." );
+                "[ADIOS2] Internal error: Failed defining attribute '" + name + "'." );
         }
         return attr;
     }
@@ -894,7 +894,7 @@ namespace detail
         if ( !attr )
         {
             throw std::runtime_error(
-                "Internal error: Failed reading attribute '" + name + "'." );
+                "[ADIOS2] Internal error: Failed reading attribute '" + name + "'." );
         }
         auto data = attr.Data( );
         std::array< T, n > res;
@@ -922,7 +922,7 @@ namespace detail
         if ( !attr )
         {
             throw std::runtime_error(
-                "Internal error: Failed reading attribute '" + name + "'." );
+                "[ADIOS2] Internal error: Failed reading attribute '" + name + "'." );
         }
         *resource = fromRep( attr.Data( )[0] );
     }
@@ -946,7 +946,7 @@ namespace detail
         if ( !var )
         {
             throw std::runtime_error(
-                "Failed retrieving ADIOS2 Variable with name '" + varName +
+                "[ADIOS2] Failed retrieving ADIOS2 Variable with name '" + varName +
                 "' from file " + *file + "." );
         }
 
@@ -968,7 +968,7 @@ namespace detail
         if ( !var )
         {
             throw std::runtime_error(
-                "Failed retrieving ADIOS2 Variable with name '" + bp.name +
+                "[ADIOS2] Failed retrieving ADIOS2 Variable with name '" + bp.name +
                 "' from file " + fileName + "." );
         }
         auto ptr = std::static_pointer_cast< T >( bp.param.data ).get( );
@@ -988,7 +988,7 @@ namespace detail
         if ( !var )
         {
             throw std::runtime_error(
-                "Internal error: Could not create Variable '" + name + "'." );
+                "[ADIOS2] Internal error: Could not create Variable '" + name + "'." );
         }
         // check whether the unique_ptr has an element
         // and whether the held operator is valid
@@ -1006,7 +1006,7 @@ namespace detail
     {
         VERIFY_ALWAYS( m_impl->m_handler->accessTypeBackend !=
                            AccessType::READ_ONLY,
-                       "Cannot write data in read-only mode." );
+                       "[ADIOS2] Cannot write data in read-only mode." );
 
         auto ptr = std::static_pointer_cast< const T >( bp.param.data ).get( );
 
@@ -1029,7 +1029,7 @@ namespace detail
                             !DatasetTypes< T >::validType >::type >::throwErr( )
     {
         throw std::runtime_error(
-            "Trying to access dataset with unallowed datatype: " +
+            "[ADIOS2] Trying to access dataset with unallowed datatype: " +
             datatypeToString( determineDatatype< T >( ) ) );
     }
 
@@ -1087,7 +1087,7 @@ namespace detail
 
         if ( type == Datatype::UNDEFINED )
         {
-            throw std::runtime_error( "Requested attribute (" + name +
+            throw std::runtime_error( "[ADIOS2] Requested attribute (" + name +
                                       ") not found in backend." );
         }
 
@@ -1111,7 +1111,7 @@ namespace detail
         if ( !m_IO )
         {
             throw std::runtime_error(
-                "Internal error: Failed declaring ADIOS2 IO object for file " +
+                "[ADIOS2] Internal error: Failed declaring ADIOS2 IO object for file " +
                 m_file );
         }
         else
@@ -1171,7 +1171,7 @@ namespace detail
                 new adios2::Engine( m_IO.Open( m_file, m_mode ) ) );
             if ( !m_engine )
             {
-                throw std::runtime_error( "Failed opening ADIOS2 Engine." );
+                throw std::runtime_error( "[ADIOS2] Failed opening Engine." );
             }
         }
         return *m_engine;

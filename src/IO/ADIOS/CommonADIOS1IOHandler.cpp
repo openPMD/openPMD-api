@@ -28,7 +28,7 @@ CommonADIOS1IOHandlerImpl::close(int64_t fd)
 {
     int status;
     status = adios_close(fd);
-    VERIFY(status == err_no_error, "Internal error: Failed to close ADIOS file (open_write)");
+    VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to close ADIOS file (open_write)");
 }
 
 void
@@ -36,7 +36,7 @@ CommonADIOS1IOHandlerImpl::close(ADIOS_FILE* f)
 {
     int status;
     status = adios_read_close(f);
-    VERIFY(status == err_no_error, "Internal error: Failed to close ADIOS file (open_read)");
+    VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to close ADIOS file (open_read)");
 }
 
 void
@@ -98,7 +98,7 @@ CommonADIOS1IOHandlerImpl::flush_attribute(int64_t group, std::string const& nam
             break;
         case DT::UNDEFINED:
         case DT::DATATYPE:
-            throw std::runtime_error("Unknown Attribute datatype (ADIOS1 Attribute flush)");
+            throw std::runtime_error("[ADIOS1] Unknown Attribute datatype (ADIOS1 Attribute flush)");
         default:
             nelems = 1;
     }
@@ -324,9 +324,9 @@ CommonADIOS1IOHandlerImpl::flush_attribute(int64_t group, std::string const& nam
         }
         case DT::UNDEFINED:
         case DT::DATATYPE:
-            throw std::runtime_error("Unknown Attribute datatype (ADIOS1 Attribute flush)");
+            throw std::runtime_error("[ADIOS1] Unknown Attribute datatype (ADIOS1 Attribute flush)");
         default:
-            throw std::runtime_error("Datatype not implemented in ADIOS IO");
+            throw std::runtime_error("[ADIOS1] Datatype not implemented in ADIOS IO");
     }
 
     int status;
@@ -336,7 +336,7 @@ CommonADIOS1IOHandlerImpl::flush_attribute(int64_t group, std::string const& nam
                                             getBP1DataType(att.dtype),
                                             nelems,
                                             values.get());
-    VERIFY(status == err_no_error, "Internal error: Failed to define ADIOS attribute by value");
+    VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to define ADIOS attribute by value");
 
     if( att.dtype == Datatype::VEC_STRING )
     {
@@ -351,14 +351,14 @@ CommonADIOS1IOHandlerImpl::createFile(Writable* writable,
                                 Parameter< Operation::CREATE_FILE > const& parameters)
 {
     if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
-        throw std::runtime_error("Creating a file in read-only mode is not possible.");
+        throw std::runtime_error("[ADIOS1] Creating a file in read-only mode is not possible.");
 
     if( !writable->written )
     {
         if( !auxiliary::directory_exists(m_handler->directory) )
         {
             bool success = auxiliary::create_directories(m_handler->directory);
-            VERIFY(success, "Internal error: Failed to create directories during ADIOS file creation");
+            VERIFY(success, "[ADIOS1] Internal error: Failed to create directories during ADIOS file creation");
         }
 
         std::string name = m_handler->directory + parameters.name;
@@ -383,7 +383,7 @@ CommonADIOS1IOHandlerImpl::createPath(Writable* writable,
                                 Parameter< Operation::CREATE_PATH > const& parameters)
 {
     if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
-        throw std::runtime_error("Creating a path in a file opened as read only is not possible.");
+        throw std::runtime_error("[ADIOS1] Creating a path in a file opened as read only is not possible.");
 
     if( !writable->written )
     {
@@ -416,7 +416,7 @@ CommonADIOS1IOHandlerImpl::createDataset(Writable* writable,
                                    Parameter< Operation::CREATE_DATASET > const& parameters)
 {
     if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
-        throw std::runtime_error("Creating a dataset in a file opened as read only is not possible.");
+        throw std::runtime_error("[ADIOS1] Creating a dataset in a file opened as read only is not possible.");
 
     if( !writable->written )
     {
@@ -450,10 +450,10 @@ CommonADIOS1IOHandlerImpl::createDataset(Writable* writable,
         {
             chunkSize[i] = "/tmp" + path + "_chunkSize" + std::to_string(i);
             id = adios_define_var(group, chunkSize[i].c_str(), "", adios_unsigned_long, "", "", "");
-            VERIFY(id != 0, "Internal error: Failed to define ADIOS variable during Dataset creation");
+            VERIFY(id != 0, "[ADIOS1] Internal error: Failed to define ADIOS variable during Dataset creation");
             chunkOffset[i] = "/tmp" + path + "_chunkOffset" + std::to_string(i);
             id = adios_define_var(group, chunkOffset[i].c_str(), "", adios_unsigned_long, "", "", "");
-            VERIFY(id != 0, "Internal error: Failed to define ADIOS variable during Dataset creation");
+            VERIFY(id != 0, "[ADIOS1] Internal error: Failed to define ADIOS variable during Dataset creation");
         }
 
         std::string chunkSizeParam = auxiliary::join(chunkSize, ",");
@@ -466,7 +466,7 @@ CommonADIOS1IOHandlerImpl::createDataset(Writable* writable,
                               chunkSizeParam.c_str(),
                               globalSize.c_str(),
                               chunkOffsetParam.c_str());
-        VERIFY(id != 0, "Internal error: Failed to define ADIOS variable during Dataset creation");
+        VERIFY(id != 0, "[ADIOS1] Internal error: Failed to define ADIOS variable during Dataset creation");
 
         if( !parameters.compression.empty() )
             std::cerr << "Custom compression not compatible with ADIOS1 backend. Use transform instead."
@@ -476,7 +476,7 @@ CommonADIOS1IOHandlerImpl::createDataset(Writable* writable,
         {
             int status;
             status = adios_set_transform(id, parameters.transform.c_str());
-            VERIFY(status == err_no_error, "Internal error: Failed to set ADIOS transform during Dataset cretaion");
+            VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to set ADIOS transform during Dataset cretaion");
         }
 
         writable->written = true;
@@ -490,7 +490,7 @@ void
 CommonADIOS1IOHandlerImpl::extendDataset(Writable*,
                                    Parameter< Operation::EXTEND_DATASET > const&)
 {
-    throw std::runtime_error("Dataset extension not implemented in ADIOS backend");
+    throw std::runtime_error("[ADIOS1] Dataset extension not implemented in ADIOS backend");
 }
 
 void
@@ -498,7 +498,7 @@ CommonADIOS1IOHandlerImpl::openFile(Writable* writable,
                               Parameter< Operation::OPEN_FILE > const& parameters)
 {
     if( !auxiliary::directory_exists(m_handler->directory) )
-        throw no_such_file_error("Supplied directory is not valid: " + m_handler->directory);
+        throw no_such_file_error("[ADIOS1] Supplied directory is not valid: " + m_handler->directory);
 
     std::string name = m_handler->directory + parameters.name;
     if( !auxiliary::ends_with(name, ".bp") )
@@ -571,8 +571,8 @@ CommonADIOS1IOHandlerImpl::openDataset(Writable* writable,
     ADIOS_VARINFO* vi;
     vi = adios_inq_var(f,
                        datasetname.c_str());
-    VERIFY(adios_errno == err_no_error, "Internal error: Failed to inquire about ADIOS variable during dataset opening");
-    VERIFY(vi != nullptr, "Internal error: Failed to inquire about ADIOS variable during dataset opening");
+    VERIFY(adios_errno == err_no_error, "[ADIOS1] Internal error: Failed to inquire about ADIOS variable during dataset opening");
+    VERIFY(vi != nullptr, "[ADIOS1] Internal error: Failed to inquire about ADIOS variable during dataset opening");
 
     Datatype dtype;
 
@@ -594,7 +594,7 @@ CommonADIOS1IOHandlerImpl::openDataset(Writable* writable,
             else if( sizeof(long long) == 2u )
                 dtype = DT::LONGLONG;
             else
-                throw unsupported_data_error("No native equivalent for Datatype adios_short found.");
+                throw unsupported_data_error("[ADIOS1] No native equivalent for Datatype adios_short found.");
             break;
         case adios_integer:
             if( sizeof(short) == 4u )
@@ -606,7 +606,7 @@ CommonADIOS1IOHandlerImpl::openDataset(Writable* writable,
             else if( sizeof(long long) == 4u )
                 dtype = DT::LONGLONG;                
             else
-                throw unsupported_data_error("No native equivalent for Datatype adios_integer found.");
+                throw unsupported_data_error("[ADIOS1] No native equivalent for Datatype adios_integer found.");
             break;
         case adios_long:
             if( sizeof(short) == 8u )
@@ -618,7 +618,7 @@ CommonADIOS1IOHandlerImpl::openDataset(Writable* writable,
             else if( sizeof(long long) == 8u )
                 dtype = DT::LONGLONG;
             else
-                throw unsupported_data_error("No native equivalent for Datatype adios_long found.");
+                throw unsupported_data_error("[ADIOS1] No native equivalent for Datatype adios_long found.");
             break;
         case adios_unsigned_byte:
             dtype = DT::UCHAR;
@@ -633,7 +633,7 @@ CommonADIOS1IOHandlerImpl::openDataset(Writable* writable,
             else if( sizeof(unsigned long long) == 2u )
                 dtype = DT::ULONGLONG;
             else
-                throw unsupported_data_error("No native equivalent for Datatype adios_unsigned_short found.");
+                throw unsupported_data_error("[ADIOS1] No native equivalent for Datatype adios_unsigned_short found.");
             break;
         case adios_unsigned_integer:
             if( sizeof(unsigned short) == 4u )
@@ -645,7 +645,7 @@ CommonADIOS1IOHandlerImpl::openDataset(Writable* writable,
             else if( sizeof(unsigned long long) == 4u )
                 dtype = DT::ULONGLONG;                
             else
-                throw unsupported_data_error("No native equivalent for Datatype adios_unsigned_integer found.");
+                throw unsupported_data_error("[ADIOS1] No native equivalent for Datatype adios_unsigned_integer found.");
             break;
         case adios_unsigned_long:
             if( sizeof(unsigned short) == 8u )
@@ -657,7 +657,7 @@ CommonADIOS1IOHandlerImpl::openDataset(Writable* writable,
             else if( sizeof(unsigned long long) == 8u )
                 dtype = DT::ULONGLONG;
             else
-                throw unsupported_data_error("No native equivalent for Datatype adios_unsigned_long found.");
+                throw unsupported_data_error("[ADIOS1] No native equivalent for Datatype adios_unsigned_long found.");
             break;
         case adios_real:
             dtype = DT::FLOAT;
@@ -674,7 +674,7 @@ CommonADIOS1IOHandlerImpl::openDataset(Writable* writable,
         case adios_complex:
         case adios_double_complex:
         default:
-            throw unsupported_data_error("Datatype not implemented for ADIOS dataset writing");
+            throw unsupported_data_error("[ADIOS1] Datatype not implemented for ADIOS dataset writing");
     }
     *parameters.dtype = dtype;
 
@@ -696,7 +696,7 @@ CommonADIOS1IOHandlerImpl::deleteFile(Writable* writable,
                                 Parameter< Operation::DELETE_FILE > const& parameters)
 {
     if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
-        throw std::runtime_error("Deleting a file opened as read only is not possible.");
+        throw std::runtime_error("[ADIOS1] Deleting a file opened as read only is not possible.");
 
     if( writable->written )
     {
@@ -717,7 +717,7 @@ CommonADIOS1IOHandlerImpl::deleteFile(Writable* writable,
             name += ".bp";
 
         if( !auxiliary::file_exists(name) )
-            throw std::runtime_error("File does not exist: " + name);
+            throw std::runtime_error("[ADIOS1] File does not exist: " + name);
 
         auxiliary::remove_file(name);
 
@@ -732,21 +732,21 @@ void
 CommonADIOS1IOHandlerImpl::deletePath(Writable*,
                                 Parameter< Operation::DELETE_PATH > const&)
 {
-    throw std::runtime_error("Path deletion not implemented in ADIOS backend");
+    throw std::runtime_error("[ADIOS1] Path deletion not implemented in ADIOS backend");
 }
 
 void
 CommonADIOS1IOHandlerImpl::deleteDataset(Writable*,
                                    Parameter< Operation::DELETE_DATASET > const&)
 {
-    throw std::runtime_error("Dataset deletion not implemented in ADIOS backend");
+    throw std::runtime_error("[ADIOS1] Dataset deletion not implemented in ADIOS backend");
 }
 
 void
 CommonADIOS1IOHandlerImpl::deleteAttribute(Writable*,
                                      Parameter< Operation::DELETE_ATT > const&)
 {
-    throw std::runtime_error("Attribute deletion not implemented in ADIOS backend");
+    throw std::runtime_error("[ADIOS1] Attribute deletion not implemented in ADIOS backend");
 }
 
 void
@@ -754,7 +754,7 @@ CommonADIOS1IOHandlerImpl::writeDataset(Writable* writable,
                                   Parameter< Operation::WRITE_DATASET > const& parameters)
 {
     if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
-        throw std::runtime_error("Writing into a dataset in a file opened as read only is not possible.");
+        throw std::runtime_error("[ADIOS1] Writing into a dataset in a file opened as read only is not possible.");
 
     /* file opening is deferred until the first dataset write to a file occurs */
     auto res = m_filePaths.find(writable);
@@ -779,16 +779,16 @@ CommonADIOS1IOHandlerImpl::writeDataset(Writable* writable,
     {
         chunkSize = "/tmp" + name + "_chunkSize" + std::to_string(i);
         status = adios_write(fd, chunkSize.c_str(), &parameters.extent[i]);
-        VERIFY(status == err_no_error, "Internal error: Failed to write ADIOS variable during Dataset writing");
+        VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to write ADIOS variable during Dataset writing");
         chunkOffset = "/tmp" + name + "_chunkOffset" + std::to_string(i);
         status = adios_write(fd, chunkOffset.c_str(), &parameters.offset[i]);
-        VERIFY(status == err_no_error, "Internal error: Failed to write ADIOS variable during Dataset writing");
+        VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to write ADIOS variable during Dataset writing");
     }
 
     status = adios_write(fd,
                          name.c_str(),
                          parameters.data.get());
-    VERIFY(status == err_no_error, "Internal error: Failed to write ADIOS variable during Dataset writing");
+    VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to write ADIOS variable during Dataset writing");
 }
 
 void
@@ -796,7 +796,7 @@ CommonADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
                                     Parameter< Operation::WRITE_ATT > const& parameters)
 {
     if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
-        throw std::runtime_error("Writing an attribute in a file opened as read only is not possible.");
+        throw std::runtime_error("[ADIOS1] Writing an attribute in a file opened as read only is not possible.");
 
     std::string name = concrete_bp1_file_position(writable);
     if( !auxiliary::ends_with(name, '/') )
@@ -835,23 +835,24 @@ CommonADIOS1IOHandlerImpl::readDataset(Writable* writable,
         case DT::BOOL:
             break;
         case DT::UNDEFINED:
-            throw std::runtime_error("Unknown Attribute datatype (ADIOS1 Dataset read)");
+            throw std::runtime_error("[ADIOS1] Unknown Attribute datatype (ADIOS1 Dataset read)");
         case DT::DATATYPE:
-            throw std::runtime_error("Meta-Datatype leaked into IO");
+            throw std::runtime_error("[ADIOS1] Meta-Datatype leaked into IO");
         default:
-            throw std::runtime_error("Datatype not implemented in ADIOS1 IO");
+            throw std::runtime_error("[ADIOS1] Datatype not implemented in ADIOS1 IO");
     }
 
     ADIOS_FILE* f;
     f = m_openReadFileHandles.at(m_filePaths.at(writable));
-    VERIFY(std::strcmp(f->path, m_filePaths.at(writable)->c_str()) == 0, "Internal Error: Invalid ADIOS read file handle");
+    VERIFY(std::strcmp(f->path, m_filePaths.at(writable)->c_str()) == 0,
+           "[ADIOS1] Internal Error: Invalid ADIOS read file handle");
 
     ADIOS_SELECTION* sel;
     sel = adios_selection_boundingbox(parameters.extent.size(),
                                       parameters.offset.data(),
                                       parameters.extent.data());
-    VERIFY(sel != nullptr, "Internal error: Failed to select ADIOS bounding box during dataset reading");
-    VERIFY(adios_errno == err_no_error, "Internal error: Failed to select ADIOS bounding box during dataset reading");
+    VERIFY(sel != nullptr, "[ADIOS1] Internal error: Failed to select ADIOS bounding box during dataset reading");
+    VERIFY(adios_errno == err_no_error, "[ADIOS1] Internal error: Failed to select ADIOS bounding box during dataset reading");
 
     std::string varname = concrete_bp1_file_position(writable);
     void* data = parameters.data.get();
@@ -863,8 +864,8 @@ CommonADIOS1IOHandlerImpl::readDataset(Writable* writable,
                                  0,
                                  1,
                                  data);
-    VERIFY(status == err_no_error, "Internal error: Failed to schedule ADIOS read during dataset reading");
-    VERIFY(adios_errno == err_no_error, "Internal error: Failed to schedule ADIOS read during dataset reading");
+    VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to schedule ADIOS read during dataset reading");
+    VERIFY(adios_errno == err_no_error, "[ADIOS1] Internal error: Failed to schedule ADIOS read during dataset reading");
 
     m_scheduledReads[f].push_back(sel);
 }
@@ -874,7 +875,7 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                                    Parameter< Operation::READ_ATT >& parameters)
 {
     if( !writable->written )
-        throw std::runtime_error("Internal error: Writable not marked written during attribute reading");
+        throw std::runtime_error("[ADIOS1] Internal error: Writable not marked written during attribute reading");
 
     ADIOS_FILE* f;
     f = m_openReadFileHandles.at(m_filePaths.at(writable));
@@ -894,9 +895,9 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                             &datatype,
                             &size,
                             &data);
-    VERIFY(status == 0, "Internal error: Failed to get ADIOS1 attribute during attribute read");
-    VERIFY(datatype != adios_unknown, "Internal error: Read unknown ADIOS1 datatype during attribute read");
-    VERIFY(size != 0, "Internal error: ADIOS1 read 0-size attribute");
+    VERIFY(status == 0, "[ADIOS1] Internal error: Failed to get ADIOS1 attribute during attribute read");
+    VERIFY(datatype != adios_unknown, "[ADIOS1] Internal error: Read unknown ADIOS1 datatype during attribute read");
+    VERIFY(size != 0, "[ADIOS1] Internal error: ADIOS1 read 0-size attribute");
 
     // size is returned in number of allocated bytes
     // note the ill-named fixed-byte adios_... types
@@ -944,7 +945,7 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
         case adios_double_complex:
         default:
             throw unsupported_data_error(
-                    "readAttribute: Unsupported ADIOS1 attribute datatype '" +
+                    "[ADIOS1] readAttribute: Unsupported ADIOS1 attribute datatype '" +
                     std::to_string(datatype) + "' in size check");
     }
 
@@ -981,7 +982,7 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                     a = Attribute(*reinterpret_cast< long long* >(data));
                 }
                 else
-                    throw unsupported_data_error("No native equivalent for Datatype adios_short found.");
+                    throw unsupported_data_error("[ADIOS1] No native equivalent for Datatype adios_short found.");
                 break;
             case adios_integer:
                 if( sizeof(short) == 4u )
@@ -1005,7 +1006,7 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                     a = Attribute(*reinterpret_cast< long long* >(data));
                 }
                 else
-                    throw unsupported_data_error("No native equivalent for Datatype adios_integer found.");
+                    throw unsupported_data_error("[ADIOS1] No native equivalent for Datatype adios_integer found.");
                 break;
             case adios_long:
                 if( sizeof(short) == 8u )
@@ -1029,7 +1030,7 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                     a = Attribute(*reinterpret_cast< long long* >(data));
                 }
                 else
-                    throw unsupported_data_error("No native equivalent for Datatype adios_long found.");
+                    throw unsupported_data_error("[ADIOS1] No native equivalent for Datatype adios_long found.");
                 break;
             case adios_unsigned_byte:
                 dtype = DT::UCHAR;
@@ -1057,7 +1058,7 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                     a = Attribute(*reinterpret_cast< unsigned long long* >(data));
                 }
                 else
-                    throw unsupported_data_error("No native equivalent for Datatype adios_unsigned_short found.");
+                    throw unsupported_data_error("[ADIOS1] No native equivalent for Datatype adios_unsigned_short found.");
                 break;
             case adios_unsigned_integer:
                 if( sizeof(unsigned short) == 4u )
@@ -1081,7 +1082,7 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                     a = Attribute(*reinterpret_cast< unsigned long long* >(data));
                 }
                 else
-                    throw unsupported_data_error("No native equivalent for Datatype adios_unsigned_integer found.");
+                    throw unsupported_data_error("[ADIOS1] No native equivalent for Datatype adios_unsigned_integer found.");
                 break;
             case adios_unsigned_long:
                 if( sizeof(unsigned short) == 8u )
@@ -1105,7 +1106,7 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                     a = Attribute(*reinterpret_cast< unsigned long long* >(data));
                 }
                 else
-                    throw unsupported_data_error("No native equivalent for Datatype adios_unsigned_long found.");
+                    throw unsupported_data_error("[ADIOS1] No native equivalent for Datatype adios_unsigned_long found.");
                 break;
             case adios_real:
                 dtype = DT::FLOAT;
@@ -1145,7 +1146,7 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
             case adios_double_complex:
             default:
                 throw unsupported_data_error(
-                    "readAttribute: Unsupported ADIOS1 attribute datatype '" +
+                    "[ADIOS1] readAttribute: Unsupported ADIOS1 attribute datatype '" +
                     std::to_string(datatype) + "' in scalar branch");
         }
     }
@@ -1176,7 +1177,7 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 else if( sizeof(long long) == 2u )
                     std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< long long >(data, size), DT::VEC_LONGLONG);
                 else
-                    throw unsupported_data_error("No native equivalent for Datatype adios_short found.");
+                    throw unsupported_data_error("[ADIOS1] No native equivalent for Datatype adios_short found.");
                 break;
             }
             case adios_integer:
@@ -1190,7 +1191,7 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 else if( sizeof(long long) == 4u )
                     std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< long long >(data, size), DT::VEC_LONGLONG);
                 else
-                    throw unsupported_data_error("No native equivalent for Datatype adios_integer found.");
+                    throw unsupported_data_error("[ADIOS1] No native equivalent for Datatype adios_integer found.");
                 break;
             }
             case adios_long:
@@ -1204,7 +1205,7 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 else if( sizeof(long long) == 8u )
                     std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< long long >(data, size), DT::VEC_LONGLONG);
                 else
-                    throw unsupported_data_error("No native equivalent for Datatype adios_long found.");
+                    throw unsupported_data_error("[ADIOS1] No native equivalent for Datatype adios_long found.");
                 break;
             }
             case adios_unsigned_byte:
@@ -1229,7 +1230,7 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 else if( sizeof(unsigned long long) == 2u )
                     std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< unsigned long long >(data, size), DT::VEC_ULONGLONG);
                 else
-                    throw unsupported_data_error("No native equivalent for Datatype adios_unsigned_short found.");
+                    throw unsupported_data_error("[ADIOS1] No native equivalent for Datatype adios_unsigned_short found.");
                 break;
             }
             case adios_unsigned_integer:
@@ -1243,7 +1244,7 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 else if( sizeof(unsigned long long) == 4u )
                     std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< unsigned long long >(data, size), DT::VEC_ULONGLONG);
                 else
-                    throw unsupported_data_error("No native equivalent for Datatype adios_unsigned_integer found.");
+                    throw unsupported_data_error("[ADIOS1] No native equivalent for Datatype adios_unsigned_integer found.");
                 break;
             }
             case adios_unsigned_long:
@@ -1257,7 +1258,7 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 else if( sizeof(unsigned long long) == 8u )
                     std::tie(a, dtype) = std::make_tuple(readVectorAttributeInternal< unsigned long long >(data, size), DT::VEC_ULONGLONG);
                 else
-                    throw unsupported_data_error("No native equivalent for Datatype adios_unsigned_long found.");
+                    throw unsupported_data_error("[ADIOS1] No native equivalent for Datatype adios_unsigned_long found.");
                 break;
             }
             case adios_real:
@@ -1319,7 +1320,7 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
             case adios_double_complex:
             default:
                 throw unsupported_data_error(
-                    "readAttribute: Unsupported ADIOS1 attribute datatype '" +
+                    "[ADIOS1] readAttribute: Unsupported ADIOS1 attribute datatype '" +
                     std::to_string(datatype) + "' in vector branch");
         }
     }
@@ -1335,7 +1336,7 @@ CommonADIOS1IOHandlerImpl::listPaths(Writable* writable,
                                Parameter< Operation::LIST_PATHS >& parameters)
 {
     if( !writable->written )
-        throw std::runtime_error("Internal error: Writable not marked written during path listing");
+        throw std::runtime_error("[ADIOS1] Internal error: Writable not marked written during path listing");
 
     ADIOS_FILE* f;
     f = m_openReadFileHandles.at(m_filePaths.at(writable));
@@ -1393,7 +1394,7 @@ CommonADIOS1IOHandlerImpl::listDatasets(Writable* writable,
                                   Parameter< Operation::LIST_DATASETS >& parameters)
 {
     if( !writable->written )
-        throw std::runtime_error("Internal error: Writable not marked written during dataset listing");
+        throw std::runtime_error("[ADIOS1] Internal error: Writable not marked written during dataset listing");
 
     ADIOS_FILE* f;
     f = m_openReadFileHandles.at(m_filePaths.at(writable));
@@ -1425,7 +1426,7 @@ CommonADIOS1IOHandlerImpl::listAttributes(Writable* writable,
                                     Parameter< Operation::LIST_ATTS >& parameters)
 {
     if( !writable->written )
-        throw std::runtime_error("Internal error: Writable not marked written during attribute listing");
+        throw std::runtime_error("[ADIOS1] Internal error: Writable not marked written during attribute listing");
 
     ADIOS_FILE* f;
     f = m_openReadFileHandles.at(m_filePaths.at(writable));
@@ -1438,8 +1439,8 @@ CommonADIOS1IOHandlerImpl::listAttributes(Writable* writable,
         ADIOS_VARINFO* info;
         info = adios_inq_var(f,
                              name.c_str());
-        VERIFY(adios_errno == err_no_error, "Internal error: Failed to inquire ADIOS variable during attribute listing");
-        VERIFY(info != nullptr, "Internal error: Failed to inquire ADIOS variable during attribute listing");
+        VERIFY(adios_errno == err_no_error, "[ADIOS1] Internal error: Failed to inquire ADIOS variable during attribute listing");
+        VERIFY(info != nullptr, "[ADIOS1] Internal error: Failed to inquire ADIOS variable during attribute listing");
 
         name += '/';
         parameters.attributes->reserve(info->nattrs);
