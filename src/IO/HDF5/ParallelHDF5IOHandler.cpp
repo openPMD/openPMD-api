@@ -68,15 +68,15 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(AbstractIOHandler* handler,
         xfer_mode = H5FD_MPIO_INDEPENDENT;
     else
     {
-        VERIFY(hdf5_collective == "OFF", "Internal error: OPENPMD_HDF5_INDEPENDENT property must be either ON or OFF");
+        VERIFY(hdf5_collective == "OFF", "[HDF5] Internal error: OPENPMD_HDF5_INDEPENDENT property must be either ON or OFF");
     }
 
     herr_t status;
     status = H5Pset_dxpl_mpio(m_datasetTransferProperty, xfer_mode);
 
-    VERIFY(status >= 0, "Internal error: Failed to set HDF5 dataset transfer property");
+    VERIFY(status >= 0, "[HDF5] Internal error: Failed to set HDF5 dataset transfer property");
     status = H5Pset_fapl_mpio(m_fileAccessProperty, m_mpiComm, m_mpiInfo);
-    VERIFY(status >= 0, "Internal error: Failed to set HDF5 file access property");
+    VERIFY(status >= 0, "[HDF5] Internal error: Failed to set HDF5 file access property");
 }
 
 ParallelHDF5IOHandlerImpl::~ParallelHDF5IOHandlerImpl()

@@ -112,7 +112,7 @@ ADIOS1IOHandlerImpl::flush()
                     openFile(i.writable, *dynamic_cast< Parameter< O::OPEN_FILE >* >(i.parameter.get()));
                     break;
                 default:
-                    VERIFY(false, "Internal error: Wrong operation in ADIOS setup queue");
+                    VERIFY(false, "[ADIOS1] Internal error: Wrong operation in ADIOS setup queue");
             }
         } catch (unsupported_data_error& e)
         {
@@ -171,7 +171,7 @@ ADIOS1IOHandlerImpl::flush()
                     listAttributes(i.writable, *dynamic_cast< Parameter< O::LIST_ATTS >* >(i.parameter.get()));
                     break;
                 default:
-                    VERIFY(false, "Internal error: Wrong operation in ADIOS work queue");
+                    VERIFY(false, "[ADIOS1] Internal error: Wrong operation in ADIOS work queue");
             }
         } catch (unsupported_data_error& e)
         {
@@ -186,7 +186,7 @@ ADIOS1IOHandlerImpl::flush()
     {
         status = adios_perform_reads(file.first,
                                      1);
-        VERIFY(status == err_no_error, "Internal error: Failed to perform ADIOS reads during dataset reading");
+        VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to perform ADIOS reads during dataset reading");
 
         for( auto& sel : file.second )
             adios_selection_delete(sel);
@@ -201,11 +201,11 @@ ADIOS1IOHandlerImpl::init()
 {
     int status;
     status = adios_init_noxml(MPI_COMM_NULL);
-    VERIFY(status == err_no_error, "Internal error: Failed to initialize ADIOS");
+    VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to initialize ADIOS");
 
     m_readMethod = ADIOS_READ_METHOD_BP;
     status = adios_read_init_method(m_readMethod, MPI_COMM_NULL, "");
-    VERIFY(status == err_no_error, "Internal error: Failed to initialize ADIOS reading method");
+    VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to initialize ADIOS reading method");
 
 }
 #endif
@@ -275,7 +275,7 @@ ADIOS1IOHandlerImpl::open_write(Writable* writable)
                         res->second->c_str(),
                         mode.c_str(),
                         MPI_COMM_NULL);
-    VERIFY(status == err_no_error, "Internal error: Failed to open_write ADIOS file");
+    VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to open_write ADIOS file");
 
     return fd;
 }
@@ -287,8 +287,8 @@ ADIOS1IOHandlerImpl::open_read(std::string const & name)
     f = adios_read_open_file(name.c_str(),
                              m_readMethod,
                              MPI_COMM_NULL);
-    VERIFY(adios_errno != err_file_not_found, "Internal error: ADIOS file not found");
-    VERIFY(f != nullptr, "Internal error: Failed to open_read ADIOS file");
+    VERIFY(adios_errno != err_file_not_found, "[ADIOS1] Internal error: ADIOS file not found");
+    VERIFY(f != nullptr, "[ADIOS1] Internal error: Failed to open_read ADIOS file");
 
     return f;
 }
@@ -300,9 +300,9 @@ ADIOS1IOHandlerImpl::initialize_group(std::string const &name)
     int64_t group;
     ADIOS_STATISTICS_FLAG noStatistics = adios_stat_no;
     status = adios_declare_group(&group, name.c_str(), "", noStatistics);
-    VERIFY(status == err_no_error, "Internal error: Failed to declare ADIOS group");
+    VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to declare ADIOS group");
     status = adios_select_method(group, "POSIX", "", "");
-    VERIFY(status == err_no_error, "Internal error: Failed to select ADIOS method");
+    VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to select ADIOS method");
     return group;
 }
 
