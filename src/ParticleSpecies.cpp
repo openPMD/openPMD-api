@@ -21,6 +21,7 @@
 #include "openPMD/ParticleSpecies.hpp"
 
 #include <algorithm>
+#include <iostream>
 
 
 namespace openPMD
@@ -80,18 +81,30 @@ ParticleSpecies::read()
     Parameter< Operation::OPEN_DATASET > dOpen;
     for( auto const& record_name : *dList.datasets )
     {
-        Record& r = (*this)[record_name];
-        dOpen.name = record_name;
-        IOHandler->enqueue(IOTask(&r, dOpen));
-        IOHandler->flush();
-        RecordComponent& rc = r[RecordComponent::SCALAR];
-        rc.parent = r.parent;
-        IOHandler->enqueue(IOTask(&rc, dOpen));
-        IOHandler->flush();
-        rc.written = false;
-        rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
-        rc.written = true;
-        r.read();
+        try {
+            Record& r = (*this)[record_name];
+            dOpen.name = record_name;
+            IOHandler->enqueue(IOTask(&r, dOpen));
+            IOHandler->flush();
+            RecordComponent& rc = r[RecordComponent::SCALAR];
+            rc.parent = r.parent;
+            IOHandler->enqueue(IOTask(&rc, dOpen));
+            IOHandler->flush();
+            rc.written = false;
+            rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
+            rc.written = true;
+            r.read();
+        } catch( std::runtime_error const & )
+        {
+            std::cerr << "WARNING: Skipping invalid openPMD record '"
+                      << record_name << "'"
+                      << std::endl;
+            while( ! IOHandler->m_work.empty() )
+                IOHandler->m_work.pop();
+
+            //(*this)[record_name].erase(RecordComponent::SCALAR);
+            //this->erase(record_name);
+        }
     }
 
     readAttributes();
