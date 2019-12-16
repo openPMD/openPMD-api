@@ -109,8 +109,8 @@ namespace detail
         }
         else
         {
-            std::cerr << "Warning: Encountered unknown ADIOS2 datatype,"
-                    " defaulting to UNDEFINED." << std::endl;
+            std::cerr << "[ADIOS2] Warning: Encountered unknown ADIOS2 datatype,"
+                         " defaulting to UNDEFINED." << std::endl;
             return Datatype::UNDEFINED;
         }
     }
@@ -125,7 +125,7 @@ namespace detail
         if( !attribute )
         {
             throw std::runtime_error(
-                "Internal error: Attribute not present." );
+                "[ADIOS2] Internal error: Attribute not present." );
         }
         return attribute.Data().size();
     }
@@ -170,8 +170,8 @@ namespace detail
         std::string type = IO.AttributeType( attributeName );
         if( type.empty() )
         {
-            std::cerr << "Warning: Attribute with name " << attributeName
-                    << " has no type in backend." << std::endl;
+            std::cerr << "[ADIOS2] Warning: Attribute with name " << attributeName
+                      << " has no type in backend." << std::endl;
             return Datatype::UNDEFINED;
         }
         else
