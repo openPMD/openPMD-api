@@ -27,6 +27,7 @@ Other
 """""
 
 - Backends: Prefix Error Messages #634
+- ADIOS1: Skip Invalid Scalar Particle Records #635
 
 
 0.10.1-alpha
