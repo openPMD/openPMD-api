@@ -3,19 +3,16 @@
 Changelog
 =========
 
-0.11.0-alpha
+0.10.2-alpha
 ------------
-**Date:** TBA
+**Date:** 2019-12-17
 
-[Title]
+Improved Error Messages
 
-[Summary]
+Thrown errors are now prefixed by the backend in use and ADIOS1 series reads are more robust.
 
 Changes to "0.10.1-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^
-
-Features
-""""""""
 
 Bug Fixes
 """""""""
