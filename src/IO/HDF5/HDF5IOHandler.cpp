@@ -352,6 +352,11 @@ HDF5IOHandlerImpl::openFile(Writable* writable,
     if( !auxiliary::ends_with(name, ".h5") )
         name += ".h5";
 
+    auto search = m_fileIDs.find(writable);
+    if (search != m_fileIDs.end()) {
+      return;
+    }
+
     unsigned flags;
     AccessType at = m_handler->accessTypeBackend;
     if( at == AccessType::READ_ONLY )
