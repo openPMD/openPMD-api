@@ -442,7 +442,7 @@ HDF5IOHandlerImpl::openDataset(Writable* writable,
 
     using DT = Datatype;
     Datatype d;
-    if( dataset_class == H5S_SIMPLE || dataset_class == H5S_SCALAR )
+    if( dataset_class == H5S_SIMPLE || dataset_class == H5S_SCALAR || dataset_class == H5S_NULL )
     {
         if( H5Tequal(dataset_type, H5T_NATIVE_CHAR) )
             d = DT::CHAR;
