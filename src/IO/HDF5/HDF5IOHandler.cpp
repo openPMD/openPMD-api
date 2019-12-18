@@ -1238,7 +1238,35 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
             } else
                 throw unsupported_data_error("[HDF5] Unsupported attribute enumeration");
         } else if( H5Tget_class(attr_type) == H5T_COMPOUND )
-            throw unsupported_data_error("[HDF5] Compound attribute type not supported");
+        {
+            // re-implement legacy libSplash attributes for ColDim
+            // see: include/splash/basetypes/ColTypeDim.hpp
+            bool isLegacyLibSplashAttr = (
+                H5Tget_nmembers(attr_type) == 3 &&
+                H5Tget_size(attr_type) == sizeof(hsize_t) * 3
+            );
+            if( isLegacyLibSplashAttr )
+            {
+                char* m0 = H5Tget_member_name(attr_type, 0);
+                char* m1 = H5Tget_member_name(attr_type, 1);
+                char* m2 = H5Tget_member_name(attr_type, 2);
+                if(strcmp("x", m0) != 0 || strcmp("y", m1) != 0 || strcmp("z", m2) != 0)
+                    isLegacyLibSplashAttr = false;
+                free(m2);
+                free(m1);
+                free(m0);
+            }
+            if( isLegacyLibSplashAttr )
+            {
+                std::vector< hsize_t > vc(3, 0);
+                status = H5Aread(attr_id,
+                                 attr_type,
+                                 vc.data());
+                a = Attribute(vc);
+            }
+            else
+                throw unsupported_data_error("[HDF5] Compound attribute type not supported");
+        }
         else
             throw std::runtime_error("[HDF5] Unsupported scalar attribute type");
     } else if( attr_class == H5S_SIMPLE )

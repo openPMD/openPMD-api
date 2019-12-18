@@ -25,6 +25,8 @@ Bug Fixes
 Other
 """""
 
+- Better handling of legacy libSplash HDF5 files #641
+
 
 0.10.2-alpha
 ------------
