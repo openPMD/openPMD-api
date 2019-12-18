@@ -18,12 +18,12 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <openPMD/backend/Writable.hpp>
-#include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/Iteration.hpp"
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
-#include "openPMD/Iteration.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/backend/Writable.hpp"
 
 
 namespace openPMD
