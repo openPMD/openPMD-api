@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include <algorithm>
+#include <complex>
 #include <tuple>
 #include <string>
 
@@ -185,6 +186,23 @@ CommonADIOS1IOHandlerImpl::flush_attribute(int64_t group, std::string const& nam
             *ptr = att.get< long double >();
             break;
         }
+        case DT::CFLOAT:
+        {
+            auto ptr = reinterpret_cast< std::complex< float >* >(values.get());
+            *ptr = att.get< std::complex< float > >();
+            break;
+        }
+        case DT::CDOUBLE:
+        {
+            auto ptr = reinterpret_cast< std::complex< double >* >(values.get());
+            *ptr = att.get< std::complex< double > >();
+            break;
+        }
+        case DT::CLONG_DOUBLE:
+        {
+            throw std::runtime_error("[ADIOS1] Unknown Attribute datatype (CLONG_DOUBLE)");
+            break;
+        }
         case DT::STRING:
         {
             auto const & v = att.get< std::string >();
@@ -294,6 +312,27 @@ CommonADIOS1IOHandlerImpl::flush_attribute(int64_t group, std::string const& nam
             auto const& vec = att.get< std::vector< long double > >();
             for( size_t i = 0; i < vec.size(); ++i )
                 ptr[i] = vec[i];
+            break;
+        }
+        case DT::VEC_CFLOAT:
+        {
+            auto ptr = reinterpret_cast< std::complex< float >* >(values.get());
+            auto const& vec = att.get< std::vector< std::complex< float > > >();
+            for( size_t i = 0; i < vec.size(); ++i )
+                ptr[i] = vec[i];
+            break;
+        }
+        case DT::VEC_CDOUBLE:
+        {
+            auto ptr = reinterpret_cast< std::complex< double >* >(values.get());
+            auto const& vec = att.get< std::vector< std::complex< double > > >();
+            for( size_t i = 0; i < vec.size(); ++i )
+                ptr[i] = vec[i];
+            break;
+        }
+        case DT::VEC_CLONG_DOUBLE:
+        {
+            throw std::runtime_error("[ADIOS1] Unknown Attribute datatype (VEC_CLONG_DOUBLE)");
             break;
         }
         case DT::VEC_STRING:
@@ -735,11 +774,15 @@ CommonADIOS1IOHandlerImpl::openDataset(Writable* writable,
         case adios_long_double:
             dtype = DT::LONG_DOUBLE;
             break;
+        case adios_complex:
+            dtype = DT::CFLOAT;
+            break;
+        case adios_double_complex:
+            dtype = DT::CDOUBLE;
+            break;
 
         case adios_string:
         case adios_string_array:
-        case adios_complex:
-        case adios_double_complex:
         default:
             throw unsupported_data_error("[ADIOS1] Datatype not implemented for ADIOS dataset writing");
     }
@@ -900,6 +943,8 @@ CommonADIOS1IOHandlerImpl::readDataset(Writable* writable,
         using DT = Datatype;
         case DT::DOUBLE:
         case DT::FLOAT:
+        case DT::CDOUBLE:
+        case DT::CFLOAT:
         case DT::SHORT:
         case DT::INT:
         case DT::LONG:
@@ -1013,14 +1058,18 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
         case adios_long_double:
             size /= sizeof(long double);
             break;
+        case adios_complex:
+            size /= 8;
+            break;
+        case adios_double_complex:
+            size /= 16;
+            break;
         case adios_string:
             break;
         case adios_string_array:
             size /= sizeof(char*);
             break;
 
-        case adios_complex:
-        case adios_double_complex:
         default:
             throw unsupported_data_error(
                     "[ADIOS1] readAttribute: Unsupported ADIOS1 attribute datatype '" +
@@ -1198,6 +1247,14 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 dtype = DT::LONG_DOUBLE;
                 a = Attribute(*reinterpret_cast< long double* >(data));
                 break;
+            case adios_complex:
+                dtype = DT::CFLOAT;
+                a = Attribute(*reinterpret_cast< std::complex<float>* >(data));
+                break;
+            case adios_double_complex:
+                dtype = DT::CDOUBLE;
+                a = Attribute(*reinterpret_cast< std::complex<double>* >(data));
+                break;
             case adios_string:
             {
                 dtype = DT::STRING;
@@ -1220,8 +1277,6 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 a = Attribute(vs);
                 break;
             }
-            case adios_complex:
-            case adios_double_complex:
             default:
                 throw unsupported_data_error(
                     "[ADIOS1] readAttribute: Unsupported ADIOS1 attribute datatype '" +
@@ -1372,6 +1427,28 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 a = Attribute(vld);
                 break;
             }
+            case adios_complex:
+            {
+                dtype = DT::VEC_CFLOAT;
+                auto cf4 = reinterpret_cast< std::complex<float>* >(data);
+                std::vector< std::complex<float> > vcf;
+                vcf.resize(size);
+                for( int i = 0; i < size; ++i )
+                    vcf[i] = cf4[i];
+                a = Attribute(vcf);
+                break;
+            }
+            case adios_double_complex:
+            {
+                dtype = DT::VEC_CDOUBLE;
+                auto cd8 = reinterpret_cast< std::complex<double>* >(data);
+                std::vector< std::complex<double> > vcd;
+                vcd.resize(size);
+                for( int i = 0; i < size; ++i )
+                    vcd[i] = cd8[i];
+                a = Attribute(vcd);
+                break;
+            }
             case adios_string:
             {
                 dtype = DT::STRING;
@@ -1394,8 +1471,6 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 break;
             }
 
-            case adios_complex:
-            case adios_double_complex:
             default:
                 throw unsupported_data_error(
                     "[ADIOS1] readAttribute: Unsupported ADIOS1 attribute datatype '" +
