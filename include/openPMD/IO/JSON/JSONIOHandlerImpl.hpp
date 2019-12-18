@@ -30,6 +30,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <complex>
 #include <fstream>
 #include <memory>
 #include <tuple>
@@ -145,6 +146,16 @@ namespace std
             return std::hash< shared_ptr< openPMD::File::FileState>> {}( s.fileState );
         }
     };
+
+    // std::complex handling
+    template< class T > void to_json(nlohmann::json &j, const std::complex< T > &p) {
+        j = nlohmann::json {p.real(), p.imag()};
+    }
+
+    template< class T > void from_json(const nlohmann::json &j, std::complex< T > &p) {
+        p.real(j.at(0));
+        p.imag(j.at(1));
+    }
 }
 
 namespace openPMD
