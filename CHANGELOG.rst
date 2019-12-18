@@ -20,6 +20,8 @@ Features
 Bug Fixes
 """""""""
 
+- Source files: fix includes #640
+
 Other
 """""
 
