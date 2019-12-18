@@ -27,6 +27,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <climits>
+#include <complex>
 
 
 namespace openPMD
@@ -187,6 +188,15 @@ RecordComponent::readBase()
                 break;
             case DT::FLOAT:
                 makeConstant(a.get< float >());
+                break;
+            case DT::CLONG_DOUBLE:
+                makeConstant(a.get< std::complex< long double > >());
+                break;
+            case DT::CDOUBLE:
+                makeConstant(a.get< std::complex< double > >());
+                break;
+            case DT::CFLOAT:
+                makeConstant(a.get< std::complex< float > >());
                 break;
             case DT::SHORT:
                 makeConstant(a.get< short >());

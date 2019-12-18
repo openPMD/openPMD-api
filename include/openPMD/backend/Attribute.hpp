@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <array>
+#include <complex>
 #include <cstdint>
 #include <iterator>
 #include <stdexcept>
@@ -52,6 +53,7 @@ class Attribute :
                             short, int, long, long long,
                             unsigned short, unsigned int, unsigned long, unsigned long long,
                             float, double, long double,
+                            std::complex< float >, std::complex< double >, std::complex< long double >,
                             std::string,
                             std::vector< char >,
                             std::vector< short >,
@@ -66,6 +68,9 @@ class Attribute :
                             std::vector< float >,
                             std::vector< double >,
                             std::vector< long double >,
+                            std::vector< std::complex< float > >,
+                            std::vector< std::complex< double > >,
+                            std::vector< std::complex< long double > >,
                             std::vector< std::string >,
                             std::array< double, 7 >,
                             bool >
@@ -171,6 +176,12 @@ getCast( Attribute const & a )
         return DoConvert<double, U>{}(pvalue_d);
     else if(auto pvalue_ld = variantSrc::get_if< long double >( &v ) )
         return DoConvert<long double, U>{}(pvalue_ld);
+    else if(auto pvalue_cf = variantSrc::get_if< std::complex< float > >( &v ) )
+        return DoConvert<std::complex< float >, U>{}(pvalue_cf);
+    else if(auto pvalue_cd = variantSrc::get_if< std::complex< double > >( &v ) )
+        return DoConvert<std::complex< double >, U>{}(pvalue_cd);
+    else if(auto pvalue_cld = variantSrc::get_if< std::complex< long double > >( &v ) )
+        return DoConvert<std::complex< long double >, U>{}(pvalue_cld);
     else if(auto pvalue_str = variantSrc::get_if< std::string >( &v ) )
         return DoConvert<std::string, U>{}(pvalue_str);
     // vector
@@ -200,6 +211,12 @@ getCast( Attribute const & a )
         return DoConvert<std::vector< double >, U>{}(pvalue_vd);
     else if(auto pvalue_vld = variantSrc::get_if< std::vector< long double > >( &v ) )
         return DoConvert<std::vector< long double >, U>{}(pvalue_vld);
+    else if(auto pvalue_vcf = variantSrc::get_if< std::vector< std::complex< float > > >( &v ) )
+        return DoConvert<std::vector< std::complex< float > >, U>{}(pvalue_vcf);
+    else if(auto pvalue_vcd = variantSrc::get_if< std::vector< std::complex< double > > >( &v ) )
+        return DoConvert<std::vector< std::complex< double > >, U>{}(pvalue_vcd);
+    else if(auto pvalue_vcld = variantSrc::get_if< std::vector< std::complex< long double > > >( &v ) )
+        return DoConvert<std::vector< std::complex< long double > >, U>{}(pvalue_vcld);
     else if(auto pvalue_vstr = variantSrc::get_if< std::vector< std::string > >( &v ) )
         return DoConvert<std::vector< std::string >, U>{}(pvalue_vstr);
     // extra

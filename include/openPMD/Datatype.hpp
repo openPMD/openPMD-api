@@ -1,4 +1,4 @@
-/* Copyright 2017-2020 Fabian Koller and Franz Poeschel
+/* Copyright 2017-2020 Fabian Koller, Franz Poeschel, Axel Huebl
  *
  * This file is part of openPMD-api.
  *
@@ -31,6 +31,8 @@
 #include <map>
 #include <stdexcept>
 #include <string>
+#include <complex>
+
 
 
 namespace openPMD
@@ -43,6 +45,7 @@ enum class Datatype : int
     SHORT, INT, LONG, LONGLONG,
     USHORT, UINT, ULONG, ULONGLONG,
     FLOAT, DOUBLE, LONG_DOUBLE,
+    CFLOAT, CDOUBLE, CLONG_DOUBLE,
     STRING,
     VEC_CHAR,
     VEC_SHORT,
@@ -57,6 +60,9 @@ enum class Datatype : int
     VEC_FLOAT,
     VEC_DOUBLE,
     VEC_LONG_DOUBLE,
+    VEC_CFLOAT,
+    VEC_CDOUBLE,
+    VEC_CLONG_DOUBLE,
     VEC_STRING,
     ARR_DBL_7,
 
@@ -136,6 +142,9 @@ determineDatatype()
     else if( decay_equiv< T, float >::value ){ return DT::FLOAT; }
     else if( decay_equiv< T, double >::value ){ return DT::DOUBLE; }
     else if( decay_equiv< T, long double >::value ){ return DT::LONG_DOUBLE; }
+    else if( decay_equiv< T, std::complex< float > >::value ){ return DT::CFLOAT; }
+    else if( decay_equiv< T, std::complex< double > >::value ){ return DT::CDOUBLE; }
+    else if( decay_equiv< T, std::complex< long double > >::value ){ return DT::CLONG_DOUBLE; }
     else if( decay_equiv< T, std::string >::value ){ return DT::STRING; }
     else if( decay_equiv< T, std::vector< char > >::value ){ return DT::VEC_CHAR; }
     else if( decay_equiv< T, std::vector< short > >::value ){ return DT::VEC_SHORT; }
@@ -150,6 +159,9 @@ determineDatatype()
     else if( decay_equiv< T, std::vector< float > >::value ){ return DT::VEC_FLOAT; }
     else if( decay_equiv< T, std::vector< double > >::value ){ return DT::VEC_DOUBLE; }
     else if( decay_equiv< T, std::vector< long double > >::value ){ return DT::VEC_LONG_DOUBLE; }
+    else if( decay_equiv< T, std::vector< std::complex< float > > >::value ){ return DT::VEC_CFLOAT; }
+    else if( decay_equiv< T, std::vector< std::complex< double > > >::value ){ return DT::VEC_CDOUBLE; }
+    else if( decay_equiv< T, std::vector< std::complex< long double > > >::value ){ return DT::VEC_CLONG_DOUBLE; }
     else if( decay_equiv< T, std::vector< std::string > >::value ){ return DT::VEC_STRING; }
     else if( decay_equiv< T, std::array< double, 7 > >::value ){ return DT::ARR_DBL_7; }
     else if( decay_equiv< T, bool  >::value ){ return DT::BOOL; }
@@ -178,6 +190,9 @@ determineDatatype(std::shared_ptr< T >)
     else if( decay_equiv< T, float  >::value ){ return DT::FLOAT; }
     else if( decay_equiv< T, double  >::value ){ return DT::DOUBLE; }
     else if( decay_equiv< T, long double  >::value ){ return DT::LONG_DOUBLE; }
+    else if( decay_equiv< T, std::complex< float > >::value ){ return DT::CFLOAT; }
+    else if( decay_equiv< T, std::complex< double > >::value ){ return DT::CDOUBLE; }
+    else if( decay_equiv< T, std::complex< long double > >::value ){ return DT::CLONG_DOUBLE; }
     else if( decay_equiv< T, std::string >::value ){ return DT::STRING; }
     else if( decay_equiv< T, std::vector< char > >::value ){ return DT::VEC_CHAR; }
     else if( decay_equiv< T, std::vector< short > >::value ){ return DT::VEC_SHORT; }
@@ -192,6 +207,9 @@ determineDatatype(std::shared_ptr< T >)
     else if( decay_equiv< T, std::vector< float > >::value ){ return DT::VEC_FLOAT; }
     else if( decay_equiv< T, std::vector< double > >::value ){ return DT::VEC_DOUBLE; }
     else if( decay_equiv< T, std::vector< long double > >::value ){ return DT::VEC_LONG_DOUBLE; }
+    else if( decay_equiv< T, std::vector< std::complex< float > > >::value ){ return DT::VEC_CFLOAT; }
+    else if( decay_equiv< T, std::vector< std::complex< double > > >::value ){ return DT::VEC_CDOUBLE; }
+    else if( decay_equiv< T, std::vector< std::complex< long double > > >::value ){ return DT::VEC_CLONG_DOUBLE; }
     else if( decay_equiv< T, std::vector< std::string > >::value ){ return DT::VEC_STRING; }
     else if( decay_equiv< T, std::array< double, 7 > >::value ){ return DT::ARR_DBL_7; }
     else if( decay_equiv< T, bool  >::value ){ return DT::BOOL; }
@@ -255,6 +273,19 @@ toBytes( Datatype d )
         case DT::LONG_DOUBLE:
         case DT::VEC_LONG_DOUBLE:
             return sizeof(long double);
+            break;
+        case DT::CFLOAT:
+        case DT::VEC_CFLOAT:
+            return sizeof(float) * 2;
+            break;
+        case DT::CDOUBLE:
+        case DT::VEC_CDOUBLE:
+            return sizeof(double) * 2;
+            break;
+        case DT::CLONG_DOUBLE:
+        case DT::VEC_CLONG_DOUBLE:
+            return sizeof(long double) * 2;
+            break;
         case DT::BOOL:
             return sizeof(bool);
         case DT::DATATYPE:
@@ -300,6 +331,9 @@ isVector( Datatype d )
         case DT::VEC_FLOAT:
         case DT::VEC_DOUBLE:
         case DT::VEC_LONG_DOUBLE:
+        case DT::VEC_CFLOAT:
+        case DT::VEC_CDOUBLE:
+        case DT::VEC_CLONG_DOUBLE:
         case DT::VEC_STRING:
             return true;
         default:
@@ -327,6 +361,35 @@ isFloatingPoint( Datatype d )
         case DT::VEC_DOUBLE:
         case DT::LONG_DOUBLE:
         case DT::VEC_LONG_DOUBLE:
+        // note: complex floats are not std::is_floating_point
+            return true;
+            break;
+        default:
+            return false;
+            break;
+    }
+}
+
+/** Compare if a Datatype is a complex floating point type
+ *
+ * Includes our vector types
+ *
+ * @param d Datatype to test
+ * @return true if complex floating point, otherwise false
+ */
+inline bool
+isComplexFloatingPoint( Datatype d )
+{
+    using DT = Datatype;
+
+    switch( d )
+    {
+        case DT::CFLOAT:
+        case DT::VEC_CFLOAT:
+        case DT::CDOUBLE:
+        case DT::VEC_CDOUBLE:
+        case DT::CLONG_DOUBLE:
+        case DT::VEC_CLONG_DOUBLE:
             return true;
         default:
             return false;
@@ -347,6 +410,22 @@ isFloatingPoint()
     Datatype dtype = determineDatatype< T >();
 
     return isFloatingPoint( dtype );
+}
+
+/** Compare if a type is a complex floating point type
+ *
+ * Like isFloatingPoint but for complex floats
+ *
+ * @tparam T type to test
+ * @return true if complex floating point, otherwise false
+ */
+template< typename T >
+inline bool
+isComplexFloatingPoint()
+{
+    Datatype dtype = determineDatatype< T >();
+
+    return isComplexFloatingPoint(dtype);
 }
 
 /** Compare if a Datatype is an integer type
@@ -430,6 +509,32 @@ isSameFloatingPoint( Datatype d )
         return false;
 }
 
+/** Compare if a Datatype is equivalent to a complex floating point type
+ *
+ * @tparam T_CFP complex floating point type to compare
+ * @param d Datatype to compare
+ * @return true if both types are complex floating point and same bitness, else false
+ */
+template< typename T_CFP >
+inline bool
+isSameComplexFloatingPoint( Datatype d )
+{
+    // template
+    bool tt_is_cfp = isComplexFloatingPoint< T_CFP >();
+
+    // Datatype
+    bool dt_is_cfp = isComplexFloatingPoint( d );
+
+    if(
+        tt_is_cfp &&
+        dt_is_cfp &&
+        toBits( d ) == toBits( determineDatatype< T_CFP >() )
+    )
+        return true;
+    else
+        return false;
+}
+
 /** Compare if a Datatype is equivalent to an integer type
  *
  * @tparam T_Int signed or unsigned integer type to compare
@@ -496,6 +601,18 @@ isSame( openPMD::Datatype const d, openPMD::Datatype const e )
     if(
         d_is_fp &&
         e_is_fp &&
+        d_is_vec == e_is_vec &&
+        toBits( d ) == toBits( e )
+    )
+        return true;
+
+    // same complex floating point
+    bool d_is_cfp = isComplexFloatingPoint(d);
+    bool e_is_cfp = isComplexFloatingPoint(e);
+
+    if(
+        d_is_cfp &&
+        e_is_cfp &&
         d_is_vec == e_is_vec &&
         toBits( d ) == toBits( e )
     )
@@ -571,6 +688,15 @@ ReturnType switchType( Datatype dt, Action action, Args &&... args )
     case Datatype::LONG_DOUBLE:
         return action.OPENPMD_TEMPLATE_OPERATOR( )< long double >(
             std::forward< Args >( args )... );
+    case Datatype::CFLOAT:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< std::complex< float > >(
+                std::forward< Args >( args )... );
+    case Datatype::CDOUBLE:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< std::complex< double > >(
+                std::forward< Args >( args )... );
+    case Datatype::CLONG_DOUBLE:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< std::complex< long double > >(
+                std::forward< Args >( args )... );
     case Datatype::STRING:
         return action.OPENPMD_TEMPLATE_OPERATOR( )< std::string >(
             std::forward< Args >( args )... );
@@ -619,6 +745,16 @@ ReturnType switchType( Datatype dt, Action action, Args &&... args )
         return action
             .OPENPMD_TEMPLATE_OPERATOR( )< std::vector< long double > >(
                 std::forward< Args >( args )... );
+    case Datatype::VEC_CFLOAT:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< std::vector< std::complex< float > > >(
+                std::forward< Args >( args )... );
+    case Datatype::VEC_CDOUBLE:
+        return action.OPENPMD_TEMPLATE_OPERATOR( )< std::vector< std::complex< double > > >(
+                std::forward< Args >( args )... );
+    case Datatype::VEC_CLONG_DOUBLE:
+        return action
+                .OPENPMD_TEMPLATE_OPERATOR( )< std::vector< std::complex< long double > > >(
+                        std::forward< Args >( args )... );
     case Datatype::VEC_STRING:
         return action
             .OPENPMD_TEMPLATE_OPERATOR( )< std::vector< std::string > >(

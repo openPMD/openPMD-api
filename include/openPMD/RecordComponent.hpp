@@ -273,7 +273,9 @@ RecordComponent::loadChunk(std::shared_ptr< T > data, Offset o, Extent e, double
         throw std::runtime_error("unitSI scaling during chunk loading not yet implemented");
     Datatype dtype = determineDatatype(data);
     if( dtype != getDatatype() )
-        if( !isSameInteger< T >( dtype ) && !isSameFloatingPoint< T >( dtype ) )
+        if( !isSameInteger< T >( dtype ) &&
+            !isSameFloatingPoint< T >( dtype ) &&
+            !isSameComplexFloatingPoint< T >( dtype ) )
             throw std::runtime_error("Type conversion during chunk loading not yet implemented");
 
     uint8_t dim = getDimensionality();

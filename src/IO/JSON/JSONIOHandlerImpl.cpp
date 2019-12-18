@@ -1335,6 +1335,9 @@ namespace openPMD
             Datatype::FLOAT,
             Datatype::DOUBLE,
             Datatype::LONG_DOUBLE,
+            Datatype::CFLOAT,
+            Datatype::CDOUBLE,
+            Datatype::CLONG_DOUBLE,
             Datatype::BOOL
         };
         for( auto it = std::begin( datatypes );
