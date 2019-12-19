@@ -58,6 +58,8 @@ namespace openPMD
         void listAttributes(Writable*, Parameter< Operation::LIST_ATTS > &) override;
 
         std::unordered_map< Writable*, hid_t > m_fileIDs;
+        std::unordered_map< std::string,  hid_t > m_fileNamesWithID;
+
         std::unordered_set< hid_t > m_openFileIDs;
 
         hid_t m_datasetTransferProperty;

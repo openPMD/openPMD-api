@@ -124,6 +124,7 @@ HDF5IOHandlerImpl::createFile(Writable* writable,
         writable->abstractFilePosition = std::make_shared< HDF5FilePosition >("/");
 
         m_fileIDs[writable] = id;
+        m_fileNamesWithID[std::move(name)]=id;
         m_openFileIDs.insert(id);
     }
 }
@@ -352,8 +353,17 @@ HDF5IOHandlerImpl::openFile(Writable* writable,
     if( !auxiliary::ends_with(name, ".h5") )
         name += ".h5";
 
-    auto search = m_fileIDs.find(writable);
-    if (search != m_fileIDs.end()) {
+    // this segment of name/id  checking is a quick attempt to address
+    // the above TODO.  More  work needs to be done on efficiency at the Series.flush() call
+    // with regard  to iteration management
+    auto search = m_fileNamesWithID.find(name);
+    if (search != m_fileNamesWithID.end()) {
+      auto search2 = m_fileIDs.find(writable);
+      if (search2 != m_fileIDs.end())  {
+          if (m_fileIDs[writable] ==  m_fileNamesWithID[name])
+              return;
+      } 
+      m_fileIDs[writable] = m_fileNamesWithID[name];
       return;
     }
 
@@ -377,6 +387,9 @@ HDF5IOHandlerImpl::openFile(Writable* writable,
 
     m_fileIDs.erase(writable);
     m_fileIDs.insert({writable, file_id});
+
+    m_fileNamesWithID.erase(name);
+    m_fileNamesWithID.insert({std::move(name), file_id});
     m_openFileIDs.insert(file_id);
 }
 
@@ -539,6 +552,7 @@ HDF5IOHandlerImpl::deleteFile(Writable* writable,
 
         m_openFileIDs.erase(file_id);
         m_fileIDs.erase(writable);
+        m_fileNamesWithID.erase(name);
     }
 }
 
