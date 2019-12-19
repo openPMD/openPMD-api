@@ -30,10 +30,14 @@
 #   include "openPMD/IO/HDF5/HDF5FilePosition.hpp"
 #endif
 
+#include <complex>
 #include <cstring>
 #include <future>
 #include <iostream>
 #include <string>
+#include <typeinfo>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace openPMD
@@ -49,9 +53,13 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(AbstractIOHandler* handler)
         : AbstractIOHandlerImpl(handler),
           m_datasetTransferProperty{H5P_DEFAULT},
           m_fileAccessProperty{H5P_DEFAULT},
-          m_H5T_BOOL_ENUM{H5Tenum_create(H5T_NATIVE_INT8)}
+          m_H5T_BOOL_ENUM{H5Tenum_create(H5T_NATIVE_INT8)},
+          m_H5T_CFLOAT{H5Tcreate(H5T_COMPOUND, sizeof(float) * 2)},
+          m_H5T_CDOUBLE{H5Tcreate(H5T_COMPOUND, sizeof(double) * 2)},
+          m_H5T_CLONG_DOUBLE{H5Tcreate(H5T_COMPOUND, sizeof(long double) * 2)}
 {
-    VERIFY(m_H5T_BOOL_ENUM >= 0, "[HDF5] Internal error: Failed to create HDF5 enum");
+    // create a h5py compatible bool type
+    VERIFY(m_H5T_BOOL_ENUM >= 0, "[HDF5] Internal error: Failed to create bool enum");
     std::string t{"TRUE"};
     std::string f{"FALSE"};
     int64_t tVal = 1;
@@ -61,6 +69,17 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(AbstractIOHandler* handler)
     VERIFY(status == 0, "[HDF5] Internal error: Failed to insert into HDF5 enum");
     status = H5Tenum_insert(m_H5T_BOOL_ENUM, f.c_str(), &fVal);
     VERIFY(status == 0, "[HDF5] Internal error: Failed to insert into HDF5 enum");
+
+    // create h5py compatible complex types
+    VERIFY(m_H5T_CFLOAT >= 0, "[HDF5] Internal error: Failed to create complex float");
+    VERIFY(m_H5T_CDOUBLE >= 0, "[HDF5] Internal error: Failed to create complex double");
+    VERIFY(m_H5T_CLONG_DOUBLE >= 0, "[HDF5] Internal error: Failed to create complex long double");
+    H5Tinsert(m_H5T_CFLOAT, "r", 0, H5T_NATIVE_FLOAT);
+    H5Tinsert(m_H5T_CFLOAT, "i", sizeof(float), H5T_NATIVE_FLOAT);
+    H5Tinsert(m_H5T_CDOUBLE, "r", 0, H5T_NATIVE_DOUBLE);
+    H5Tinsert(m_H5T_CDOUBLE, "i", sizeof(double), H5T_NATIVE_DOUBLE);
+    H5Tinsert(m_H5T_CLONG_DOUBLE, "r", 0, H5T_NATIVE_LDOUBLE);
+    H5Tinsert(m_H5T_CLONG_DOUBLE, "i", sizeof(long double), H5T_NATIVE_LDOUBLE);
 }
 
 HDF5IOHandlerImpl::~HDF5IOHandlerImpl()
@@ -68,26 +87,36 @@ HDF5IOHandlerImpl::~HDF5IOHandlerImpl()
     herr_t status;
     status = H5Tclose(m_H5T_BOOL_ENUM);
     if( status < 0 )
-        std::cerr << "Internal error: Failed to close HDF5 enum\n";
+        std::cerr << "[HDF5] Internal error: Failed to close bool enum\n";
+    status = H5Tclose(m_H5T_CFLOAT);
+    if( status < 0 )
+        std::cerr << "[HDF5] Internal error: Failed to close complex float type\n";
+    status = H5Tclose(m_H5T_CDOUBLE);
+    if( status < 0 )
+        std::cerr << "[HDF5] Internal error: Failed to close complex double type\n";
+    status = H5Tclose(m_H5T_CLONG_DOUBLE);
+    if( status < 0 )
+        std::cerr << "[HDF5] Internal error: Failed to close complex long double type\n";
+
     while( !m_openFileIDs.empty() )
     {
         auto file = m_openFileIDs.begin();
         status = H5Fclose(*file);
         if( status < 0 )
-            std::cerr << "Internal error: Failed to close HDF5 file (serial)\n";
+            std::cerr << "[HDF5] Internal error: Failed to close HDF5 file (serial)\n";
         m_openFileIDs.erase(file);
     }
     if( m_datasetTransferProperty != H5P_DEFAULT )
     {
         status = H5Pclose(m_datasetTransferProperty);
         if( status < 0 )
-            std::cerr <<  "Internal error: Failed to close HDF5 dataset transfer property\n";
+            std::cerr <<  "[HDF5] Internal error: Failed to close HDF5 dataset transfer property\n";
     }
     if( m_fileAccessProperty != H5P_DEFAULT )
     {
         status = H5Pclose(m_fileAccessProperty);
         if( status < 0 )
-            std::cerr << "Internal error: Failed to close HDF5 file access property\n";
+            std::cerr << "[HDF5] Internal error: Failed to close HDF5 file access property\n";
     }
 }
 
@@ -221,7 +250,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         if( d == Datatype::UNDEFINED )
         {
             // TODO handle unknown dtype
-            std::cerr << "Datatype::UNDEFINED caught during dataset creation (serial HDF5)" << std::endl;
+            std::cerr << "[HDF5] Datatype::UNDEFINED caught during dataset creation (serial HDF5)" << std::endl;
             d = Datatype::BOOL;
         }
         Attribute a(0);
@@ -245,7 +274,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
 
         std::string const& compression = parameters.compression;
         if( !compression.empty() )
-          std::cerr << "Compression not yet implemented in HDF5 backend."
+          std::cerr << "[HDF5] Compression not yet implemented in HDF5 backend."
                     << std::endl;
         /*
         {
@@ -257,11 +286,11 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
                 status = H5Pset_deflate(datasetCreationProperty, std::stoi(args[1]));
                 VERIFY(status == 0, "[HDF5] Internal error: Failed to set deflate compression during dataset creation");
             } else if( format == "szip" || format == "nbit" || format == "scaleoffset" )
-                std::cerr << "Compression format " << format
+                std::cerr << "[HDF5] Compression format " << format
                           << " not yet implemented. Data will not be compressed!"
                           << std::endl;
             else
-                std::cerr << "Compression format " << format
+                std::cerr << "[HDF5] Compression format " << format
                           << " unknown. Data will not be compressed!"
                           << std::endl;
         }
@@ -269,9 +298,15 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
 
         std::string const& transform = parameters.transform;
         if( !transform.empty() )
-            std::cerr << "Custom transform not yet implemented in HDF5 backend."
+            std::cerr << "[HDF5] Custom transform not yet implemented in HDF5 backend."
                       << std::endl;
 
+        GetH5DataType getH5DataType({
+            { typeid(bool).name(), m_H5T_BOOL_ENUM },
+            { typeid(std::complex< float       >).name(), m_H5T_CFLOAT },
+            { typeid(std::complex< double      >).name(), m_H5T_CDOUBLE },
+            { typeid(std::complex< long double >).name(), m_H5T_CLONG_DOUBLE },
+        });
         hid_t datatype = getH5DataType(a);
         VERIFY(datatype >= 0, "[HDF5] Internal error: Failed to get HDF5 datatype during dataset creation");
         hid_t group_id = H5Dcreate(node_id,
@@ -523,6 +558,14 @@ HDF5IOHandlerImpl::openDataset(Writable* writable,
             d = DT::FLOAT;
         else if( H5Tequal(dataset_type, H5T_NATIVE_DOUBLE) )
             d = DT::DOUBLE;
+        else if( H5Tequal(dataset_type, H5T_NATIVE_LDOUBLE) )
+            d = DT::LONG_DOUBLE;
+        else if( H5Tequal(dataset_type, m_H5T_CFLOAT) )
+            d = DT::CFLOAT;
+        else if( H5Tequal(dataset_type, m_H5T_CDOUBLE) )
+            d = DT::CDOUBLE;
+        else if( H5Tequal(dataset_type, m_H5T_CLONG_DOUBLE) )
+            d = DT::CLONG_DOUBLE;
         else if( H5Tequal(dataset_type, H5T_NATIVE_USHORT) )
             d = DT::USHORT;
         else if( H5Tequal(dataset_type, H5T_NATIVE_UINT) )
@@ -756,6 +799,13 @@ HDF5IOHandlerImpl::writeDataset(Writable* writable,
 
     std::shared_ptr< void const > data = parameters.data;
 
+    GetH5DataType getH5DataType({
+        { typeid(bool).name(), m_H5T_BOOL_ENUM },
+        { typeid(std::complex< float       >).name(), m_H5T_CFLOAT },
+        { typeid(std::complex< double      >).name(), m_H5T_CDOUBLE },
+        { typeid(std::complex< long double >).name(), m_H5T_CLONG_DOUBLE },
+    });
+
     //TODO Check if parameter dtype and dataset dtype match
     Attribute a(0);
     a.dtype = parameters.dtype;
@@ -764,8 +814,12 @@ HDF5IOHandlerImpl::writeDataset(Writable* writable,
     switch( a.dtype )
     {
         using DT = Datatype;
+        case DT::LONG_DOUBLE:
         case DT::DOUBLE:
         case DT::FLOAT:
+        case DT::CLONG_DOUBLE:
+        case DT::CDOUBLE:
+        case DT::CFLOAT:
         case DT::SHORT:
         case DT::INT:
         case DT::LONG:
@@ -822,11 +876,13 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
     Attribute const att(parameters.resource);
     Datatype dtype = parameters.dtype;
     herr_t status;
-    hid_t dataType;
-    if( dtype == Datatype::BOOL )
-        dataType = m_H5T_BOOL_ENUM;
-    else
-        dataType = getH5DataType(att);
+    GetH5DataType getH5DataType({
+        { typeid(bool).name(), m_H5T_BOOL_ENUM },
+        { typeid(std::complex< float       >).name(), m_H5T_CFLOAT },
+        { typeid(std::complex< double      >).name(), m_H5T_CDOUBLE },
+        { typeid(std::complex< long double >).name(), m_H5T_CLONG_DOUBLE },
+    });
+    hid_t dataType = getH5DataType(att);
     VERIFY(dataType >= 0, "[HDF5] Internal error: Failed to get HDF5 datatype during attribute write");
     std::string name = parameters.name;
     if( H5Aexists(node_id, name.c_str()) == 0 )
@@ -931,6 +987,24 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
             status = H5Awrite(attribute_id, dataType, &d);
             break;
         }
+        case DT::CFLOAT:
+        {
+            std::complex< float > f = att.get< std::complex< float > >();
+            status = H5Awrite(attribute_id, dataType, &f);
+            break;
+        }
+        case DT::CDOUBLE:
+        {
+            std::complex< double > d = att.get< std::complex< double > >();
+            status = H5Awrite(attribute_id, dataType, &d);
+            break;
+        }
+        case DT::CLONG_DOUBLE:
+        {
+            std::complex< long double > d = att.get< std::complex< long double > >();
+            status = H5Awrite(attribute_id, dataType, &d);
+            break;
+        }
         case DT::STRING:
             status = H5Awrite(attribute_id,
                               dataType,
@@ -1001,6 +1075,21 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
                               dataType,
                               att.get< std::vector< long double > >().data());
             break;
+        case DT::VEC_CFLOAT:
+            status = H5Awrite(attribute_id,
+                              dataType,
+                              att.get< std::vector< std::complex< float > > >().data());
+            break;
+        case DT::VEC_CDOUBLE:
+            status = H5Awrite(attribute_id,
+                              dataType,
+                              att.get< std::vector< std::complex< double > > >().data());
+            break;
+        case DT::VEC_CLONG_DOUBLE:
+            status = H5Awrite(attribute_id,
+                              dataType,
+                              att.get< std::vector< std::complex< long double > > >().data());
+            break;
         case DT::VEC_STRING:
         {
             auto vs = att.get< std::vector< std::string > >();
@@ -1032,11 +1121,8 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
     }
     VERIFY(status == 0, "[HDF5] Internal error: Failed to write attribute " + name + " at " + concrete_h5_file_position(writable));
 
-    if( dataType != m_H5T_BOOL_ENUM )
-    {
-        status = H5Tclose(dataType);
-        VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 datatype during Attribute write");
-    }
+    status = H5Tclose(dataType);
+    VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 datatype during Attribute write");
 
     status = H5Aclose(attribute_id);
     VERIFY(status == 0, "[HDF5] Internal error: Failed to close attribute " + name + " at " + concrete_h5_file_position(writable) + " during attribute write");
@@ -1085,8 +1171,12 @@ HDF5IOHandlerImpl::readDataset(Writable* writable,
     switch( a.dtype )
     {
         using DT = Datatype;
+        case DT::LONG_DOUBLE:
         case DT::DOUBLE:
         case DT::FLOAT:
+        case DT::CLONG_DOUBLE:
+        case DT::CDOUBLE:
+        case DT::CFLOAT:
         case DT::SHORT:
         case DT::INT:
         case DT::LONG:
@@ -1106,6 +1196,12 @@ HDF5IOHandlerImpl::readDataset(Writable* writable,
         default:
             throw std::runtime_error("[HDF5] Datatype not implemented in HDF5 IO");
     }
+    GetH5DataType getH5DataType({
+        { typeid(bool).name(), m_H5T_BOOL_ENUM },
+        { typeid(std::complex< float       >).name(), m_H5T_CFLOAT },
+        { typeid(std::complex< double      >).name(), m_H5T_CDOUBLE },
+        { typeid(std::complex< long double >).name(), m_H5T_CLONG_DOUBLE },
+    });
     hid_t dataType = getH5DataType(a);
     VERIFY(dataType >= 0, "[HDF5] Internal error: Failed to get HDF5 datatype during dataset read");
     status = H5Dread(dataset_id,
@@ -1303,6 +1399,17 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
                 throw unsupported_data_error("[HDF5] Unsupported attribute enumeration");
         } else if( H5Tget_class(attr_type) == H5T_COMPOUND )
         {
+            bool isComplexType = false;
+            if( H5Tget_nmembers(attr_type) == 2 )
+            {
+                char* m0 = H5Tget_member_name(attr_type, 0);
+                char* m1 = H5Tget_member_name(attr_type, 1);
+                if( (strncmp("r" , m0, 4) == 0) && (strncmp("i", m1, 5) == 0) )
+                    isComplexType = true;
+                H5free_memory(m1);
+                H5free_memory(m0);
+            }
+
             // re-implement legacy libSplash attributes for ColDim
             // see: include/splash/basetypes/ColTypeDim.hpp
             bool isLegacyLibSplashAttr = (
@@ -1327,6 +1434,29 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
                                  attr_type,
                                  vc.data());
                 a = Attribute(vc);
+            } else if( isComplexType )
+            {
+                size_t complexSize = H5Tget_member_offset(attr_type, 1);
+                if( complexSize == sizeof(float) )
+                {
+                    std::complex< float > cf;
+                    status = H5Aread(attr_id, attr_type, &cf);
+                    a = Attribute(cf);
+                }
+                else if( complexSize == sizeof(double) )
+                {
+                    std::complex< double > cd;
+                    status = H5Aread(attr_id, attr_type, &cd);
+                    a = Attribute(cd);
+                }
+                else if( complexSize == sizeof(long double) )
+                {
+                    std::complex< long double > cld;
+                    status = H5Aread(attr_id, attr_type, &cld);
+                    a = Attribute(cld);
+                }
+                else
+                    throw unsupported_data_error("[HDF5] Unknow complex type representation");
             }
             else
                 throw unsupported_data_error("[HDF5] Compound attribute type not supported");
@@ -1439,6 +1569,27 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
                              attr_type,
                              vld.data());
             a = Attribute(vld);
+        }  else if( H5Tequal(attr_type, m_H5T_CFLOAT) )
+        {
+            std::vector< std::complex< float > > vcf(dims[0], 0);
+            status = H5Aread(attr_id,
+                             attr_type,
+                             vcf.data());
+            a = Attribute(vcf);
+        } else if( H5Tequal(attr_type, m_H5T_CDOUBLE) )
+        {
+            std::vector< std::complex< double > > vcd(dims[0], 0);
+            status = H5Aread(attr_id,
+                             attr_type,
+                             vcd.data());
+            a = Attribute(vcd);
+        } else if( H5Tequal(attr_type, m_H5T_CLONG_DOUBLE) )
+        {
+            std::vector< std::complex< long double > > vcld(dims[0], 0);
+            status = H5Aread(attr_id,
+                             attr_type,
+                             vcld.data());
+            a = Attribute(vcld);
         } else if( H5Tget_class(attr_type) == H5T_STRING )
         {
             std::vector< std::string > vs;
