@@ -69,6 +69,23 @@
             "name": "Amorim, Lígia Diana",
             "orcid": "0000-0002-1445-0032",
             "type": "Other"
+        },
+        {
+            "affiliation": "Helmholtz-Zentrum Dresden-Rossendorf",
+            "name": "Bastrakova, Kseniia",
+            "type": "Other"
+        },
+        {
+            "affiliation": "Helmholtz-Zentrum Dresden-Rossendorf",
+            "name": "Pausch, Richard",
+            "orcid": "0000-0001-7990-9564",
+            "type": "Other"
+        },
+        {
+            "affiliation": "Lawrence Berkeley National Laboratory",
+            "name": "Gu, Junmin",
+            "orcid": "0000-0002-1521-8534",
+            "type": "Other"
         }
     ],
     "title": "C++ & Python API for Scientific I/O with openPMD",
@@ -90,6 +107,7 @@
         "file-format",
         "file-handling"
     ],
+    "notes": "Supported by the Exascale Computing Project (17-SC-20-SC), a collaborative effort of two U.S. Department of Energy organizations (Office of Science and the National Nuclear Security Administration). Supported by the Consortium for Advanced Modeling of Particles Accelerators (CAMPA), funded by the U.S. DOE Office of Science under Contract No. DE-AC02-05CH11231.",
     "grants": [
         {
             "id": "654220"

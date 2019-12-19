@@ -343,6 +343,19 @@ Further thanks go to improvements and contributions from:
   package integration testing on macOS and Linux
 * [Lígia Diana Amorim (LBNL)](https://github.com/LDAmorim):
   package integration testing on macOS
+* [Kseniia Bastrakova (HZDR)](https://github.com/KseniaBastrakova):
+  compatibility testing
+* [Richard Pausch (HZDR)](https://github.com/PrometheusPi):
+  compatibility testing
+* [Junmin Gu (LBNL)](https://github.com/guj):
+  non-collective parallel I/O testing
+
+### Grants
+
+The openPMD-api authors acknowledge support via the following programs.
+This project has received funding from the European Unions Horizon 2020 research and innovation programme under grant agreement No 654220.
+Supported by the Consortium for Advanced Modeling of Particles Accelerators (CAMPA), funded by the U.S. DOE Office of Science under Contract No. DE-AC02-05CH11231.
+Supported by the Exascale Computing Project (17-SC-20-SC), a collaborative effort of two U.S. Department of Energy organizations (Office of Science and the National Nuclear Security Administration).
 
 ### Transitive Contributions
 
