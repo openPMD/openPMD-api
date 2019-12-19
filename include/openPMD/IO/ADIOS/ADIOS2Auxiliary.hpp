@@ -25,6 +25,8 @@
 #if openPMD_HAVE_ADIOS2
 #include "openPMD/Datatype.hpp"
 #include <adios2.h>
+#include <complex>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -79,10 +81,30 @@ namespace detail
         getSize( adios2::IO &, std::string const & attributeName );
     };
 
+    template < > struct AttributeInfoHelper< std::complex< long double > >
+    {
+        static typename std::vector< long double >::size_type
+        getSize( adios2::IO &, std::string const & )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex attribute types" );
+        }
+    };
+
     template < typename T > struct AttributeInfoHelper< std::vector< T > >
     {
         static typename std::vector< T >::size_type
         getSize( adios2::IO &, std::string const & attributeName );
+    };
+
+    template < > struct AttributeInfoHelper< std::vector< std::complex< long double > > >
+    {
+        static typename std::vector< std::complex< long double > >::size_type
+        getSize( adios2::IO &, std::string const & )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex vector attribute types" );
+        }
     };
 
     template < typename T, std::size_t n >

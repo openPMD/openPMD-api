@@ -335,7 +335,7 @@ namespace detail
         explicit DatasetReader( openPMD::ADIOS2IOHandlerImpl * impl );
 
 
-        template < typename T >
+        template < typename T, typename = void >
         void operator( )( BufferedGet & bp, adios2::IO & IO,
                           adios2::Engine & engine,
                           std::string const & fileName );
@@ -345,7 +345,7 @@ namespace detail
 
     struct AttributeReader
     {
-        template < typename T >
+        template < typename T, typename = void >
         Datatype operator( )( adios2::IO & IO, std::string name,
                           std::shared_ptr< Attribute::resource > resource );
 
@@ -355,7 +355,7 @@ namespace detail
 
     struct AttributeWriter
     {
-        template < typename T >
+        template < typename T, typename = void >
         void
         operator( )( ADIOS2IOHandlerImpl * impl, Writable * writable,
                      const Parameter< Operation::WRITE_ATT > & parameters );
@@ -372,7 +372,7 @@ namespace detail
         explicit DatasetOpener( ADIOS2IOHandlerImpl * impl );
 
 
-        template < typename T >
+        template < typename T, typename = void >
         void operator( )( InvalidatableFile, const std::string & varName,
                           Parameter< Operation::OPEN_DATASET > & parameters );
 
@@ -388,7 +388,7 @@ namespace detail
         WriteDataset( ADIOS2IOHandlerImpl * handlerImpl );
 
 
-        template < typename T >
+        template < typename T, typename = void >
         void operator( )( BufferedPut & bp, adios2::IO & IO,
                           adios2::Engine & engine );
 
@@ -398,7 +398,7 @@ namespace detail
     struct VariableDefiner
     {
         // Parameters such as DatasetHelper< T >::defineVariable
-        template < typename T, typename... Params >
+        template < typename T, typename... Params, typename = void >
         void operator( )( Params &&... params );
 
         template< int n, typename... Params >
@@ -428,6 +428,48 @@ namespace detail
         static void
         readAttribute( adios2::IO & IO, std::string name,
                        std::shared_ptr< Attribute::resource > resource );
+    };
+
+    template< > struct AttributeTypes< std::complex< long double > >
+    {
+        using Attr = adios2::Attribute< std::complex< double > >;
+        using BasicType = double;
+
+        static Attr createAttribute( adios2::IO &, std::string,
+                                     std::complex< long double > )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex attribute types" );
+        }
+
+        static void
+        readAttribute( adios2::IO &, std::string,
+                       std::shared_ptr< Attribute::resource > )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex attribute types" );
+        }
+    };
+
+    template< > struct AttributeTypes< std::vector< std::complex< long double > > >
+    {
+        using Attr = adios2::Attribute< std::complex< double > >;
+        using BasicType = double;
+
+        static Attr createAttribute( adios2::IO &, std::string,
+                                     const std::vector< std::complex< long double > > & )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex vector attribute types" );
+        }
+
+        static void
+        readAttribute( adios2::IO &, std::string,
+                       std::shared_ptr< Attribute::resource > )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex vector attribute types" );
+        }
     };
 
     template < typename T > struct AttributeTypes< std::vector< T > >
@@ -504,6 +546,10 @@ namespace detail
         static constexpr bool validType = false;
     };
 
+    template <> struct DatasetTypes< std::complex< long double > >
+    {
+        static constexpr bool validType = false;
+    };
 
     template < typename T, size_t n > struct DatasetTypes< std::array< T, n > >
     {

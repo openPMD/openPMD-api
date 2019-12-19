@@ -766,13 +766,22 @@ ADIOS2IOHandlerImpl::verifyDataset( Offset const & offset,
 
 namespace detail
 {
+    // missing std::complex< long double > type in ADIOS2 v2.6.0
+    template< typename T >
+    using disable_if_cld = typename std::enable_if<
+        ! std::is_same<
+            T, std::complex<long double>
+        >::value_type
+    >::type;
+
     DatasetReader::DatasetReader( openPMD::ADIOS2IOHandlerImpl * impl )
     : m_impl{impl}
     {
     }
 
-    template < typename T >
-    void DatasetReader::operator( )( detail::BufferedGet & bp, adios2::IO & IO,
+    template < typename T, typename = disable_if_cld<T> >
+    void
+    DatasetReader::operator( )( detail::BufferedGet & bp, adios2::IO & IO,
                                      adios2::Engine & engine,
                                      std::string const & fileName )
     {
@@ -786,7 +795,7 @@ namespace detail
             "[ADIOS2] Internal error: Unknown datatype trying to read a dataset." );
     }
 
-    template < typename T >
+    template < typename T, typename = disable_if_cld<T> >
     Datatype AttributeReader::
     operator( )( adios2::IO & IO, std::string name,
                  std::shared_ptr< Attribute::resource > resource )
@@ -826,7 +835,7 @@ namespace detail
                                   "trying to read an attribute." );
     }
 
-    template < typename T >
+    template < typename T, typename = disable_if_cld<T> >
     void AttributeWriter::
     operator( )( ADIOS2IOHandlerImpl * impl, Writable * writable,
                  const Parameter< Operation::WRITE_ATT > & parameters )
@@ -867,7 +876,7 @@ namespace detail
     {
     }
 
-    template < typename T >
+    template < typename T, typename = disable_if_cld<T> >
     void DatasetOpener::
     operator( )( InvalidatableFile file, const std::string & varName,
                  Parameter< Operation::OPEN_DATASET > & parameters )
@@ -887,7 +896,7 @@ namespace detail
     {
     }
 
-    template < typename T >
+    template < typename T, typename = disable_if_cld<T> >
     void WriteDataset::operator( )( detail::BufferedPut & bp, adios2::IO & IO,
                                     adios2::Engine & engine )
     {
@@ -901,7 +910,7 @@ namespace detail
         throw std::runtime_error( "[ADIOS2] WRITE_DATASET: Invalid datatype." );
     }
 
-    template < typename T, typename... Params >
+    template < typename T, typename... Params, typename = disable_if_cld<T> >
     void VariableDefiner::
     operator( )( Params &&... params )
     {
