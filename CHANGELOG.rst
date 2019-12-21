@@ -3,29 +3,28 @@
 Changelog
 =========
 
-0.11.0-alpha
+0.10.3-alpha
 ------------
-**Date:** TBA
+**Date:** 2019-12-22
 
-[Title]
+Improved HDF5 Handling
 
-[Summary]
+More robust HDF5 file handling and fixes of local includes for more isolated builds.
 
 Changes to "0.10.2-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^
-
-Features
-""""""""
 
 Bug Fixes
 """""""""
 
 - Source files: fix includes #640
+- HDF5: gracefully handle already open files #643
 
 Other
 """""
 
 - Better handling of legacy libSplash HDF5 files #641
+- new contributors #644
 
 
 0.10.2-alpha
