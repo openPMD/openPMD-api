@@ -54,7 +54,7 @@
 #   target_link_libraries(foo ${ADIOS_LIBRARIES})
 # endif()
 ###############################################################################
-#Copyright (c) 2014-2019, Axel Huebl and Felix Schmitt from http://picongpu.hzdr.de
+#Copyright (c) 2014-2020, Axel Huebl and Felix Schmitt from http://picongpu.hzdr.de
 #All rights reserved.
 
 #Redistribution and use in source and binary forms, with or without
