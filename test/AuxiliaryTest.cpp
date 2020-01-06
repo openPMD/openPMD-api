@@ -223,19 +223,30 @@ TEST_CASE( "container_access_test", "[auxiliary]" )
     c.m_writable->IOHandler = createIOHandler(".", AccessType::CREATE, Format::JSON);
     c.IOHandler = c.m_writable->IOHandler.get();
 
-    c["firstWidget"] = Widget(0);
+    c["1firstWidget"] = Widget(0);
     REQUIRE(c.size() == 1);
 
-    c["firstWidget"] = Widget(1);
+    c["1firstWidget"] = Widget(1);
     REQUIRE(c.size() == 1);
 
-    c["secondWidget"] = Widget(2);
-    REQUIRE(c.size() == 2);
-    REQUIRE(c.erase("firstWidget") == true);
-    REQUIRE(c.size() == 1);
+    c["2secondWidget"] = Widget(2);
+    c["3thirdWidget"] = Widget(3);
+    c["4fourthWidget"] = Widget(4);
+    c["5fifthWidget"] = Widget(5);
+
+    REQUIRE(c.size() == 5);
+    REQUIRE(c.erase("1firstWidget") == true);
+    REQUIRE(c.size() == 4);
     REQUIRE(c.erase("nonExistentWidget") == false);
+    REQUIRE(c.size() == 4);
+    REQUIRE(c.erase("2secondWidget") == true);
+    REQUIRE(c.size() == 3);
+    REQUIRE(c.erase(c.find("5fifthWidget")) == c.end());
+    REQUIRE(c.size() == 2);
+    REQUIRE(c.erase(c.find("3thirdWidget")) == c.find("4fourthWidget"));
     REQUIRE(c.size() == 1);
-    REQUIRE(c.erase("secondWidget") == true);
+    REQUIRE(c.erase(c.find("4fourthWidget")) == c.end());
+    REQUIRE(c.size() == 0);
     REQUIRE(c.empty());
 #else
     std::cerr << "Invasive tests not enabled. Hierarchy is not visible.\n";
