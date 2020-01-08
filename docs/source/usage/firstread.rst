@@ -145,7 +145,7 @@ Python
    print("openPMD version: ",
          series.openPMD)
 
-   if( series.contains_attribute("author") )
+   if( series.contains_attribute("author") ):
        print("Author: ",
              series.author)
 
