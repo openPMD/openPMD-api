@@ -111,7 +111,7 @@ template<>
 struct EXPORT Parameter< Operation::CREATE_FILE > : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {};
+    Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -127,7 +127,7 @@ template<>
 struct EXPORT Parameter< Operation::OPEN_FILE > : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {};
+    Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -143,7 +143,7 @@ template<>
 struct EXPORT Parameter< Operation::DELETE_FILE > : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {};
+    Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -159,7 +159,7 @@ template<>
 struct EXPORT Parameter< Operation::CREATE_PATH > : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const & p) : AbstractParameter(), path(p.path) {};
+    Parameter(Parameter const & p) : AbstractParameter(), path(p.path) {}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -175,7 +175,7 @@ template<>
 struct EXPORT Parameter< Operation::OPEN_PATH > : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const & p) : AbstractParameter(), path(p.path) {};
+    Parameter(Parameter const & p) : AbstractParameter(), path(p.path) {}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -191,7 +191,7 @@ template<>
 struct EXPORT Parameter< Operation::DELETE_PATH > : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const & p) : AbstractParameter(), path(p.path) {};
+    Parameter(Parameter const & p) : AbstractParameter(), path(p.path) {}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -207,7 +207,7 @@ template<>
 struct EXPORT Parameter< Operation::LIST_PATHS > : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const & p) : AbstractParameter(), paths(p.paths) {};
+    Parameter(Parameter const & p) : AbstractParameter(), paths(p.paths) {}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -227,7 +227,7 @@ struct EXPORT Parameter< Operation::CREATE_DATASET > : public AbstractParameter
     Parameter(Parameter const & p) : AbstractParameter(),
         name(p.name), extent(p.extent), dtype(p.dtype),
         chunkSize(p.chunkSize), compression(p.compression),
-        transform(p.transform) {};
+        transform(p.transform) {}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -249,7 +249,7 @@ struct EXPORT Parameter< Operation::EXTEND_DATASET > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(),
-        name(p.name), extent(p.extent) {};
+        name(p.name), extent(p.extent) {}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -267,7 +267,7 @@ struct EXPORT Parameter< Operation::OPEN_DATASET > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(),
-        name(p.name), dtype(p.dtype), extent(p.extent) {};
+        name(p.name), dtype(p.dtype), extent(p.extent) {}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -287,7 +287,7 @@ template<>
 struct EXPORT Parameter< Operation::DELETE_DATASET > : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {};
+    Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -305,7 +305,7 @@ struct EXPORT Parameter< Operation::WRITE_DATASET > : public AbstractParameter
     Parameter() = default;
     Parameter(Parameter<Operation::WRITE_DATASET> const & p) : AbstractParameter(),
         extent(p.extent), offset(p.offset), dtype(p.dtype),
-        data(p.data) {};
+        data(p.data) {}
 
     Parameter& operator=(const Parameter& p) {
         this->extent = p.extent;
@@ -334,7 +334,7 @@ struct EXPORT Parameter< Operation::READ_DATASET > : public AbstractParameter
     Parameter() = default;
     Parameter(Parameter<Operation::READ_DATASET> const & p) : AbstractParameter(),
         extent(p.extent), offset(p.offset), dtype(p.dtype),
-        data(p.data) {};
+        data(p.data) {}
 
     Parameter& operator=(const Parameter &p) {
         this->extent = p.extent;
@@ -362,7 +362,7 @@ struct EXPORT Parameter< Operation::LIST_DATASETS > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(),
-        datasets(p.datasets) {};
+        datasets(p.datasets) {}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -379,7 +379,7 @@ template<>
 struct EXPORT Parameter< Operation::DELETE_ATT > : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {};
+    Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -396,7 +396,7 @@ struct EXPORT Parameter< Operation::WRITE_ATT > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(),
-        name(p.name), dtype(p.dtype), resource(p.resource) {};
+        name(p.name), dtype(p.dtype), resource(p.resource) {}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -415,7 +415,7 @@ struct EXPORT Parameter< Operation::READ_ATT > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(),
-        name(p.name), dtype(p.dtype), resource(p.resource) {};
+        name(p.name), dtype(p.dtype), resource(p.resource) {}
 
     Parameter& operator=(const Parameter &p) {
         this->name = p.name;
@@ -443,7 +443,7 @@ struct EXPORT Parameter< Operation::LIST_ATTS > : public AbstractParameter
 {
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(),
-        attributes(p.attributes) {};
+        attributes(p.attributes) {}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
