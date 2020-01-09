@@ -680,9 +680,9 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     # at runtime when used with symbol-hidden code (e.g. pybind11 module)
 
     #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Wshadow")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Wshadow -Woverloaded-virtual")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Wshadow")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Wshadow -Woverloaded-virtual")
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     # Warning C4503: "decorated name length exceeded, name was truncated"
     # Symbols longer than 4096 chars are truncated (and hashed instead)
