@@ -921,6 +921,13 @@ void deletion_test(const std::string & backend)
     e.erase("deletion_scalar");
     o.flush();
 
+    e["deletion_scalar_two"][RecordComponent::SCALAR].resetDataset(dset);
+    o.flush();
+
+    e["deletion_scalar_two"].erase(e["deletion_scalar_two"].find(RecordComponent::SCALAR));
+    e.erase(e.find("deletion_scalar_two"));
+    o.flush();
+
     double value = 0.;
     e["deletion_scalar_constant"][RecordComponent::SCALAR].resetDataset(dset);
     e["deletion_scalar_constant"][RecordComponent::SCALAR].makeConstant(value);

@@ -62,6 +62,9 @@ public:
     mapped_type& operator[](key_type const& key) override;
     mapped_type& operator[](key_type&& key) override;
     size_type erase(key_type const& key) override;
+    iterator erase(iterator res) override;
+    //! @todo add also, as soon as added in Container:
+    // iterator erase(const_iterator first, const_iterator last) override;
 
     virtual std::array< double, 7 > unitDimension() const;
 
@@ -179,6 +182,36 @@ BaseRecord< T_elem >::erase(key_type const& key)
         *this->m_containsScalar = false;
     }
     return res;
+}
+
+template< typename T_elem >
+inline typename BaseRecord< T_elem >::iterator
+BaseRecord< T_elem >::erase(iterator res)
+{
+    bool scalar = (res->first == RecordComponent::SCALAR);
+    iterator ret;
+    if( !scalar || (scalar && *this->at(res->first).m_isConstant) )
+        ret = Container< T_elem >::erase(res);
+    else
+    {
+        mapped_type& rc = this->find(RecordComponent::SCALAR)->second;
+        if( rc.written )
+        {
+            Parameter< Operation::DELETE_DATASET > dDelete;
+            dDelete.name = ".";
+            this->IOHandler->enqueue(IOTask(&rc, dDelete));
+            this->IOHandler->flush();
+        }
+        ret = Container< T_elem >::erase(res);
+    }
+
+    if( scalar )
+    {
+        this->written = false;
+        this->m_writable->abstractFilePosition.reset();
+        *this->m_containsScalar = false;
+    }
+    return ret;
 }
 
 template< typename T_elem >
