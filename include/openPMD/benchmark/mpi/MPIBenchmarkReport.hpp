@@ -58,7 +58,7 @@ namespace openPMD
                 std::string, // extension
                 int, // thread size
                 Datatype,
-                typename decltype( Series::iterations)::key_type
+                typename decltype( Series::iterations )::key_type
             >,
             std::pair<
                 Duration,
@@ -79,8 +79,14 @@ namespace openPMD
 
         /**
          * Add results for a certain compression strategy and level.
+         *
+         * @param rootThread ...
          * @param compression Compression strategy.
          * @param level Compression level
+         * @param extension ...
+         * @param threadSize ...
+         * @param dt ...
+         * @param iterations ...
          * @param report A pair of write and read time measurements.
          */
         void addReport(
@@ -90,17 +96,22 @@ namespace openPMD
             std::string extension,
             int threadSize,
             Datatype dt,
-            typename decltype( Series::iterations)::key_type,
+            typename decltype( Series::iterations )::key_type iterations,
             std::pair<
                 Duration,
                 Duration
             > const & report
         );
 
-        /**
-         * Retrieve the time measured for a certain compression strategy.
+        /** Retrieve the time measured for a certain compression strategy.
+         *
+         * @param rank ...
          * @param compression Compression strategy.
          * @param level Compression level
+         * @param extension ...
+         * @param threadSize ...
+         * @param dt ...
+         * @param iterations ...
          * @return A pair of write and read time measurements.
          */
         std::pair<
@@ -108,12 +119,12 @@ namespace openPMD
             Duration
         > getReport(
             int rank,
-            std::string,
-            uint8_t,
+            std::string compression,
+            uint8_t level,
             std::string extension,
             int threadSize,
             Datatype dt,
-            typename decltype( Series::iterations)::key_type
+            typename decltype( Series::iterations)::key_type iterations
         );
 
     private:
@@ -238,7 +249,7 @@ namespace openPMD
         std::string extension,
         int threadSize,
         Datatype dt,
-        typename decltype( Series::iterations)::key_type iterations,
+        typename decltype( Series::iterations )::key_type iterations,
         std::pair<
             Duration,
             Duration
@@ -342,7 +353,7 @@ namespace openPMD
         std::string extension,
         int threadSize,
         Datatype dt,
-        typename decltype( Series::iterations)::key_type iterations
+        typename decltype( Series::iterations )::key_type iterations
     )
     {
         auto

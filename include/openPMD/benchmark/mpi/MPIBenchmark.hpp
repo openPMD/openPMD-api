@@ -92,9 +92,10 @@ namespace openPMD
 
         /**
          * @param compression Compression string.
-         * @param compressionLevel
+         * @param compressionLevel ...
          * @param backend Backend to use, specified by filename extension (eg "bp" or "h5").
          * @param dt Type of data to write and read.
+         * @param iterations ...
          * @param threadSize Number of threads to use.
          */
         void addConfiguration(
@@ -102,17 +103,20 @@ namespace openPMD
             uint8_t compressionLevel,
             std::string backend,
             Datatype dt,
-            typename decltype( Series::iterations)::key_type iterations,
+            typename decltype( Series::iterations )::key_type iterations,
             int threadSize
         );
 
         /**
          * Version of addConfiguration() that automatically sets the number of used
          * threads to the MPI size.
-         * @param compression
-         * @param compressionLevel
-         * @param backend
-         * @param dt
+         * @param compression ...
+         * @param compressionLevel ...
+         * @param backend ...
+         * @param dt ...
+         * @param iterations The number of iterations to write and read for each
+         * compression strategy. The DatasetFiller functor will be called for each
+         * iteration, so it should create sufficient data for one iteration.
          */
         void addConfiguration(
             std::string compression,
@@ -129,9 +133,7 @@ namespace openPMD
          * Main function for running a benchmark. The benchmark is repeated for all
          * previously requested compressions strategies, backends and thread sizes.
          * @tparam Clock Clock type to use.
-         * @param iterations The number of iterations to write and read for each
-         * compression strategy. The DatasetFiller functor will be called for each
-         * iteration, so it should create sufficient data for one iteration.
+         * @param rootThread ...
          * @return A report about the time needed for writing and reading under each
          * compression strategy.
          */
@@ -180,9 +182,13 @@ namespace openPMD
 
             /**
          * Execute a single read benchmark.
-         * @tparam Clock Clock type to use.
+         * @tparam T Clock type to use.
          * @param compression Compression to use.
          * @param level Compression level to use.
+         * @param offset ...
+         * @param extent ...
+         * @param extension ...
+         * @param datasetFiller ...
          * @param iterations The number of iterations to write.
          * @return The time passed.
          */
@@ -201,7 +207,10 @@ namespace openPMD
 
             /**
              * Execute a single read benchmark.
-             * @tparam Clock Clock type to use.
+             * @tparam T Clock type to use.
+             * @param offset ...
+             * @param extent ...
+             * @param extension ...
              * @param iterations The number of iterations to read.
              * @return The time passed.
              */

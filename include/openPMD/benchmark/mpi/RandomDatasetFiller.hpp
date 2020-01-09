@@ -84,6 +84,7 @@ namespace openPMD
          * @tparam X Dummy template parameter such that the RandomDatasetFiller is
          * usable also when this function's implementation does not work on the
          * distribution's concrete type.
+         * @param numberOfItems ...
          * @param lower Lower bound for the random values to be generated.
          * @param upper Upper bound for the random values to be generated.
          * @return An instance of RandomDatasetFiller matching the given parameters.
