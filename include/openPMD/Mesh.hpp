@@ -73,10 +73,10 @@ public:
     Geometry geometry() const;
     /** Set the geometry of the mesh of the mesh record.
      *
-     * @param   geometry    geometry of the mesh of the mesh record.
+     * @param   g    geometry of the mesh of the mesh record.
      * @return  Reference to modified mesh.
      */
-    Mesh& setGeometry(Geometry geometry);
+    Mesh& setGeometry(Geometry g);
 
     /**
      * @throw   no_such_attribute_error If Mesh::geometry is not Mesh::Geometry::thetaMode.
@@ -97,10 +97,10 @@ public:
     DataOrder dataOrder() const;
     /** Set the memory layout of N-dimensional data.
      *
-     * @param   dataOrder   memory layout of N-dimensional data.
+     * @param   dor   memory layout of N-dimensional data.
      * @return  Reference to modified mesh.
      */
-    Mesh& setDataOrder(DataOrder dataOrder);
+    Mesh& setDataOrder(DataOrder dor);
 
     /**
      * @return  Ordering of the labels for the Mesh::geometry of the mesh.

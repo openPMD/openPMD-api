@@ -69,14 +69,14 @@ namespace detail
  * respective type's default constructor.
  * Used to implement empty datasets in subclasses of BaseRecordComponent
  * (currently RecordComponent).
- * @param rc
+ * @param T_RecordComponent
  */
-template< typename RecordComponent_T >
+template< typename T_RecordComponent >
 struct DefaultValue
 {
     template< typename T >
     void
-    operator()( RecordComponent_T & rc )
+    operator()( T_RecordComponent & rc )
     {
         rc.makeConstant( T() );
     }

@@ -82,7 +82,7 @@ public:
     double timeUnitSI() const;
     /** Set the conversion factor to convert time and dt to seconds.
      *
-     * @param  newTimeUnitSI
+     * @param  newTimeUnitSI new value for timeUnitSI
      * @return Reference to modified iteration.
      */
     Iteration& setTimeUnitSI(double newTimeUnitSI);
