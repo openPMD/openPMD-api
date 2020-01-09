@@ -23,6 +23,8 @@ Bug Fixes
 Other
 """""
 
+- nvcc: update NVCC C++14 hotfix #618 to upstream version #650
+
 
 0.10.3-alpha
 ------------
