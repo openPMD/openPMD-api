@@ -177,10 +177,10 @@ private:
     /**
      * Internal method to be called by all methods that create an empty dataset.
      *
-     * @param The dataset description. Must have nonzero dimensions.
+     * @param d The dataset description. Must have nonzero dimensions.
      * @return Reference to this RecordComponent instance.
      */
-    RecordComponent& makeEmpty( Dataset );
+    RecordComponent& makeEmpty( Dataset d );
 }; // RecordComponent
 
 

@@ -78,8 +78,8 @@ extern std::vector< Datatype > openPMD_Datatypes;
  * indicated by a (multi-)pointer, a C-style array or a scalar) of one type
  * equals the fundamendtal datatype of another type.
  *
- * @tparam  T
- * @tparam  U
+ * @tparam  T first type
+ * @tparam  U second type
  */
 template<
         typename T,
