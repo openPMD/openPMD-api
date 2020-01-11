@@ -97,7 +97,7 @@ protected:
     /**
      * Figure out the file position of the writable and extend it.
      * @param writable The writable.
-     * @param write The extension string.
+     * @param extend The extension string.
      * @return The current file position.
      */
     virtual std::shared_ptr< FilePositionType >

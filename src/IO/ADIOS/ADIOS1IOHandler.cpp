@@ -306,9 +306,11 @@ ADIOS1IOHandlerImpl::initialize_group(std::string const &name)
     return group;
 }
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CommonADIOS1IOHandlerImpl ADIOS1IOHandlerImpl
 #include "CommonADIOS1IOHandler.cpp"
 #undef CommonADIOS1IOHandlerImpl
+#endif
 
 #else
 ADIOS1IOHandler::ADIOS1IOHandler(std::string path, AccessType at)

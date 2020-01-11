@@ -22,6 +22,7 @@
 
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/RecordComponent.hpp"
+#include "openPMD/UnitDimension.hpp"
 
 #include <array>
 #include <string>
@@ -30,10 +31,6 @@
 
 namespace openPMD
 {
-enum class UnitDimension : uint8_t
-{
-    L = 0, M, T, I, theta, N, J
-};
 
 template< typename T_elem >
 class BaseRecord : public Container< T_elem >

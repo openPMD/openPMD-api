@@ -41,7 +41,7 @@ namespace traits
     /** Container Element Creation Policy
      *
      * The operator() of this policy is called after the container
-     * ::insert of a new element. The passed parameter is an iterator to the
+     * insert() of a new element. The passed parameter is an iterator to the
      * newly added element.
      */
     template< typename U >

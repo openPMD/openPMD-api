@@ -20,6 +20,10 @@
  */
 #pragma once
 
+/** Public definitions of openPMD-api
+ */
+namespace openPMD {}
+
 // IWYU pragma: begin_exports
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
@@ -31,6 +35,7 @@
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Record.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/UnitDimension.hpp"
 
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Attribute.hpp"

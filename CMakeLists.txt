@@ -532,6 +532,7 @@ if(openPMD_HAVE_PYTHON)
         src/binding/python/RecordComponent.cpp
         src/binding/python/MeshRecordComponent.cpp
         src/binding/python/Series.cpp
+        src/binding/python/UnitDimension.cpp
     )
     target_link_libraries(openPMD.py PRIVATE openPMD)
 

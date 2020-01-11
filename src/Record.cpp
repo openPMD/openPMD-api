@@ -19,6 +19,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/Record.hpp"
+#include "openPMD/RecordComponent.hpp"
+#include "openPMD/backend/BaseRecord.hpp"
 
 #include <iostream>
 
@@ -131,7 +133,7 @@ Record::read()
     readAttributes();
 }
 
-template
+template <>
 BaseRecord<RecordComponent>::mapped_type&
 BaseRecord<RecordComponent>::operator[](std::string&& key);
 } // openPMD

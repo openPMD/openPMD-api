@@ -223,8 +223,8 @@ private:
 
     /**
      * @brief nameOfAttribute
-     * @param The Writable at whose level the attribute lies.
-     * @param The openPMD name of the attribute.
+     * @param writable The Writable at whose level the attribute lies.
+     * @param attribute The openPMD name of the attribute.
      * @return The ADIOS2 name of the attribute, consisting of
      * the variable that the attribute is associated with
      * (possibly the empty string, representing no variable)
