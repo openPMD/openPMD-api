@@ -1,7 +1,11 @@
 PROJECT_NAME      = "openPMD-api"
 XML_OUTPUT        = xml
-INPUT             = ../
-EXCLUDE_PATTERNS  = */share/openPMD/thirdParty/*
+INPUT             = ../src ../include
+EXCLUDE_PATTERNS  = *CommonADIOS1IOHandler.cpp *benchmark*
+
+# TAGFILES += "cppreference-doxygen-web.tag.xml=http://en.cppreference.com/w/"
+BUILTIN_STL_SUPPORT = YES
+
 GENERATE_LATEX    = NO
 GENERATE_MAN      = NO
 GENERATE_RTF      = NO
@@ -14,13 +18,17 @@ JAVADOC_AUTOBRIEF = YES
 USE_MDFILE_AS_MAINPAGE = README.md
 
 # "enable" all frontends and backends
-PREDEFINED        = openPMD_HAVE_MPI=1 \
+MACRO_EXPANSION   = YES
+PREDEFINED        = DOXYGEN_SHOULD_SKIP_THIS \
+                    openPMD_HAVE_MPI=1 \
                     openPMD_HAVE_HDF5=1 \
                     openPMD_HAVE_ADIOS1=1 \
                     openPMD_HAVE_ADIOS2=1 \
                     openPMD_HAVE_PYTHON=1 \
                     OPENPMD_private:=private \
-                    OPENPMD_protected:=protected
+                    OPENPMD_protected:=protected \
+                    __attribute__(x)= \
+                    __declspec(x)=
 
 # ideally, you want to warn on missing doc coverage!
 WARN_IF_UNDOCUMENTED = NO

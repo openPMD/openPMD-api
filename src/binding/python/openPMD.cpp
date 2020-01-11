@@ -50,6 +50,7 @@ void init_PatchRecordComponent(py::module &);
 void init_Record(py::module &);
 void init_RecordComponent(py::module &);
 void init_Series(py::module &);
+void init_UnitDimension(py::module &);
 
 
 PYBIND11_MODULE(openpmd_api, m) {
@@ -57,6 +58,7 @@ PYBIND11_MODULE(openpmd_api, m) {
 
     // note: order from parent to child classes
     init_AccessType(m);
+    init_UnitDimension(m);
     init_Attributable(m);
     init_Container(m);
     init_BaseRecord(m);

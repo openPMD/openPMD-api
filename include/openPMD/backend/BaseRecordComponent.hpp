@@ -64,7 +64,7 @@ OPENPMD_protected:
 namespace detail
 {
 /**
- * Functor template to be used in combination with <switchType>"()"
+ * Functor template to be used in combination with switchType::operator()
  * to set a default value for constant record components via the
  * respective type's default constructor.
  * Used to implement empty datasets in subclasses of BaseRecordComponent

@@ -42,14 +42,4 @@ void init_BaseRecord(py::module &m) {
         .def_property_readonly("unit_dimension", &BaseRecord< BaseRecordComponent >::unitDimension);
     py::class_<BaseRecord< PatchRecordComponent >, Container< PatchRecordComponent > >(m, "Base_Record_Patch_Record_Component")
         .def_property_readonly("unit_dimension", &BaseRecord< PatchRecordComponent >::unitDimension);
-
-    py::enum_<UnitDimension>(m, "Unit_Dimension")
-        .value("L", UnitDimension::L)
-        .value("M", UnitDimension::M)
-        .value("T", UnitDimension::T)
-        .value("I", UnitDimension::I)
-        .value("theta", UnitDimension::theta)
-        .value("N", UnitDimension::N)
-        .value("J", UnitDimension::J)
-    ;
 }
