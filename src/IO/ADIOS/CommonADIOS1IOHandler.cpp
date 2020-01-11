@@ -604,7 +604,7 @@ CommonADIOS1IOHandlerImpl::openDataset(Writable* writable,
             else if( sizeof(long) == 4u )
                 dtype = DT::LONG;
             else if( sizeof(long long) == 4u )
-                dtype = DT::LONGLONG;                
+                dtype = DT::LONGLONG;
             else
                 throw unsupported_data_error("[ADIOS1] No native equivalent for Datatype adios_integer found.");
             break;
@@ -643,7 +643,7 @@ CommonADIOS1IOHandlerImpl::openDataset(Writable* writable,
             else if( sizeof(unsigned long) == 4u )
                 dtype = DT::ULONG;
             else if( sizeof(unsigned long long) == 4u )
-                dtype = DT::ULONGLONG;                
+                dtype = DT::ULONGLONG;
             else
                 throw unsupported_data_error("[ADIOS1] No native equivalent for Datatype adios_unsigned_integer found.");
             break;

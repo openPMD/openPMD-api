@@ -362,7 +362,7 @@ HDF5IOHandlerImpl::openFile(Writable* writable,
       if (search2 != m_fileIDs.end())  {
           if (m_fileIDs[writable] ==  m_fileNamesWithID[name])
               return;
-      } 
+      }
       m_fileIDs[writable] = m_fileNamesWithID[name];
       return;
     }

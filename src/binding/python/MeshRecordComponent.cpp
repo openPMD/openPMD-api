@@ -38,7 +38,7 @@ void init_MeshRecordComponent(py::module &m) {
                 + std::to_string(rc.getDimensionality()) + "'>";
             }
         )
-        
+
         // @todo add position
     ;
 }

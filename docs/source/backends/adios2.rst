@@ -47,7 +47,7 @@ Best Practice at Large Scale
 ----------------------------
 
 A good practice at scale is to disable the online creation of the metadata file.
-After writing the data, run ``bpmeta`` on the (to-be-created) filename to generate the metadata file offline (repeat per iteration for file-based encoding). 
+After writing the data, run ``bpmeta`` on the (to-be-created) filename to generate the metadata file offline (repeat per iteration for file-based encoding).
 This metadata file is needed for reading, while the actual heavy data resides in ``<metadata filename>.dir/`` directories.
 Note that such a tool is not yet available for ADIOS2, but the ``bpmeta`` utility provided by ADIOS1 is capable of processing files written by ADIOS2.
 

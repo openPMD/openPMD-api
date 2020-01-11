@@ -80,7 +80,7 @@ TEST_CASE( "attribute_dtype_test", "[core]" )
     REQUIRE(Datatype::ARR_DBL_7 == a.dtype);
     a = Attribute(static_cast< bool >(false));
     REQUIRE(Datatype::BOOL == a.dtype);
-    
+
     // fixed size integers
     a = Attribute(static_cast< int16_t >(0));
     REQUIRE(determineDatatype< int16_t >() == a.dtype);

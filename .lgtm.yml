@@ -1,4 +1,4 @@
-extraction: 
+extraction:
   cpp:
     prepare:
       packages:

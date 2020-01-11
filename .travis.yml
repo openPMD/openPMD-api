@@ -201,7 +201,7 @@ jobs:
             - clang-tidy-5.0
             - gfortran-4.9
             - g++-4.9  # CMake build
-      before_install:            
+      before_install:
         - CXX=clang++-5.0 && CC=clang-5.0
       script: &script-cpp-unit
         - mkdir -p $HOME/build

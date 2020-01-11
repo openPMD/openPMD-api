@@ -166,7 +166,7 @@ remove_file( std::string const& path )
 #else
     return (0 == remove(path.c_str()));
 #endif
-}  
+}
 
 } // auxiliary
 } // openPMD

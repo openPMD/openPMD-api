@@ -1091,11 +1091,11 @@ namespace detail
                                       ") not found in backend." );
         }
 
-        Datatype ret = 
-            switchType< Datatype >( 
-                type, 
-                detail::AttributeReader{}, 
-                ba.m_IO, 
+        Datatype ret =
+            switchType< Datatype >(
+                type,
+                detail::AttributeReader{},
+                ba.m_IO,
                 name,
                 param.resource );
         *param.dtype = ret;
@@ -1118,7 +1118,7 @@ namespace detail
         {
             // read parameters from environment
             if ( 1 ==
-                 auxiliary::getEnvNum( 
+                 auxiliary::getEnvNum(
                     "OPENPMD_ADIOS2_HAVE_METADATA_FILE", 1 ) )
             {
                 m_IO.SetParameter( "CollectiveMetadata", "On" );
@@ -1321,8 +1321,8 @@ ADIOS2IOHandler::ADIOS2IOHandler( std::string path, openPMD::AccessType at,
 {
 }
 
-#endif 
-                                                    
+#endif
+
 ADIOS2IOHandler::ADIOS2IOHandler( std::string path, AccessType at )
 : AbstractIOHandler( std::move( path ), at ), m_impl{this}
 {

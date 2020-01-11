@@ -59,7 +59,7 @@ empty_dataset_test( std::string file_ending )
         makeEmpty_resetDataset_dim3_notallzero.resetDataset(
             Dataset( Datatype::LONG_DOUBLE, Extent{ 1, 2, 0 } ) );
         series.flush();
-        
+
     }
     {
         Series series(

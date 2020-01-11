@@ -19,7 +19,7 @@ Any **openPMD group** is represented in JSON as a JSON object with two reserved 
  * ``attributes``: Attributes associated with the group. This key may be null or not be present
    at all, thus indicating a group without attributes.
  * ``platform_byte_widths`` (root group only): Byte widths specific to the writing platform.
-   Will be overwritten every time that a JSON value is stored to disk, hence this information 
+   Will be overwritten every time that a JSON value is stored to disk, hence this information
    is only available about the last platform writing the JSON value.
 
 All datasets and subgroups contained in this group are represented as a further key of
