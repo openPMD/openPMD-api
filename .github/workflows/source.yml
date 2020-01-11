@@ -4,12 +4,19 @@ on: [push, pull_request]
 
 jobs:
   style:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v1
     - name: TABs
       run: .github/workflows/source/hasTabs
     - name: End-of-Line whitespaces
       run: .github/workflows/source/hasEOLwhiteSpace
+
+  documentation:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install
+      run: sudo apt-get install -y --no-install-recommends doxygen
+    - name: Doxygen
+      run: .github/workflows/source/buildDoxygen
