@@ -13,8 +13,8 @@ We are using the examples files from `openPMD-example-datasets <https://github.c
        /* C++11 and Python code samples side-by-side  */
        #first-read > .section > .section:nth-of-type(2n+1) {
            float: left;
-	       width: 48%;
-	       margin-right: 4%;
+           width: 48%;
+           margin-right: 4%;
        }
        #first-read > .section > .section:nth-of-type(2n+0):after {
            content: "";

@@ -12,8 +12,8 @@ Step-by-step: how to write scientific data with openPMD-api?
        /* C++11 and Python code samples side-by-side  */
        #first-write > .section > .section:nth-of-type(2n+1) {
            float: left;
-	       width: 48%;
-	       margin-right: 4%;
+           width: 48%;
+           margin-right: 4%;
        }
        #first-write > .section > .section:nth-of-type(2n+0):after {
            content: "";
