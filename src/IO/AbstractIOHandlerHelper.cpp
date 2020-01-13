@@ -52,7 +52,7 @@ namespace openPMD
                 throw std::runtime_error("openPMD-api built without ADIOS1 support");
 #   endif
             case Format::ADIOS2:
-                return std::make_shared<ADIOS2IOHandler>(path, accessTypeBackend, comm);
+                return std::make_shared<ADIOS2IOHandler>(path, accessTypeBackend, comm, std::move(optionsJson));
             default:
                 throw std::runtime_error("Unknown file format! Did you specify a file ending?" );
         }
@@ -77,8 +77,9 @@ namespace openPMD
                 throw std::runtime_error("openPMD-api built without ADIOS1 support");
 #endif
 #if openPMD_HAVE_ADIOS2
-            case Format::ADIOS2:
-                return std::make_shared<ADIOS2IOHandler>(path, accessType);
+        case Format::ADIOS2:
+            return std::make_shared< ADIOS2IOHandler >(
+                path, accessType, std::move( optionsJson ) );
 #endif
             case Format::JSON:
                 return std::make_shared< JSONIOHandler >(path, accessType);
