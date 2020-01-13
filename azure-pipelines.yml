@@ -111,6 +111,23 @@ jobs:
       conda install -y -c conda-forge openpmd-api=*=mpi_openmpi*
   - script: python3 -c "import openpmd_api as api; print(api.variants)"
 
+- job: linux_conda_cuda_mpi
+  displayName: Ubuntu conda w/ CUDA
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+  - bash: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+  - script: |
+      source activate base
+      conda install -y -c conda-forge openpmd-api=*=mpi* cudatoolkit-dev
+      echo '#include <openPMD/openPMD.hpp>' > main.cu
+      echo 'int main(){ return 0; }' >> main.cu
+      nvcc -std c++11 main.cu
+      nvcc -std c++14 main.cu
+# CUDA 10.2+:
+#     nvcc --Werror all-warnings -std c++14 main.cu
+
 # spack -----------------------------------------------------------------------
 # timeout: >60min
 #- job: linux_spack
