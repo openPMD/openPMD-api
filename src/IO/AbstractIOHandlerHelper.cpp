@@ -27,6 +27,7 @@
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
 #include "openPMD/IO/JSON/JSONIOHandler.hpp"
 
+#include <nlohmann/json.hpp>
 
 namespace openPMD
 {
@@ -36,9 +37,10 @@ namespace openPMD
         std::string path,
         AccessType accessTypeBackend,
         Format format,
-        MPI_Comm comm
-    )
+        MPI_Comm comm,
+        std::string const & options )
     {
+        nlohmann::json optionsJson = nlohmann::json::parse( options );
         switch( format )
         {
             case Format::HDF5:
@@ -60,9 +62,10 @@ namespace openPMD
     createIOHandler(
         std::string path,
         AccessType accessType,
-        Format format
-    )
+        Format format,
+        std::string const & options )
     {
+        nlohmann::json optionsJson = nlohmann::json::parse( options );
         switch( format )
         {
             case Format::HDF5:

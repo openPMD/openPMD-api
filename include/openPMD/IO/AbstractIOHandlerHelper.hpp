@@ -36,26 +36,28 @@ namespace openPMD
      * @param   comm        MPI communicator used for IO.
      * @return  Smart pointer to created IOHandler.
      */
-    std::shared_ptr< AbstractIOHandler >
-    createIOHandler(
-        std::string path,
-        AccessType accessType,
-        Format format,
-        MPI_Comm comm
-    );
+std::shared_ptr< AbstractIOHandler >
+createIOHandler(
+    std::string path,
+    AccessType accessType,
+    Format format,
+    MPI_Comm comm,
+    std::string const & options = "{}" );
 #endif
 
-    /** Construct an appropriate specific IOHandler for the desired IO mode.
-     *
-     * @param   path        Path to root folder for all operations associated with the desired handler.
-     * @param   accessType  AccessType describing desired operations and permissions of the desired handler.
-     * @param   format      Format describing the IO backend of the desired handler.
-     * @return  Smart pointer to created IOHandler.
-     */
-    std::shared_ptr< AbstractIOHandler >
-    createIOHandler(
-        std::string path,
-        AccessType accessType,
-        Format format
-    );
-} // openPMD
+/** Construct an appropriate specific IOHandler for the desired IO mode.
+ *
+ * @param   path        Path to root folder for all operations associated with
+ * the desired handler.
+ * @param   accessType  AccessType describing desired operations and permissions
+ * of the desired handler.
+ * @param   format      Format describing the IO backend of the desired handler.
+ * @return  Smart pointer to created IOHandler.
+ */
+std::shared_ptr< AbstractIOHandler >
+createIOHandler(
+    std::string path,
+    AccessType accessType,
+    Format format,
+    std::string const & options = "{}" );
+} // namespace openPMD

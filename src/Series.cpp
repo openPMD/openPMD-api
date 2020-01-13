@@ -81,25 +81,30 @@ struct Series::ParsedInput
 };  //ParsedInput
 
 #if openPMD_HAVE_MPI
-Series::Series(std::string const& filepath,
-               AccessType at,
-               MPI_Comm comm)
-        : iterations{Container< Iteration, uint64_t >()},
-          m_iterationEncoding{std::make_shared< IterationEncoding >()}
+Series::Series(
+    std::string const & filepath,
+    AccessType at,
+    MPI_Comm comm,
+    std::string const & options )
+    : iterations{ Container< Iteration, uint64_t >() }
+    , m_iterationEncoding{ std::make_shared< IterationEncoding >() }
 {
-    auto input = parseInput(filepath);
-    auto handler = createIOHandler(input->path, at, input->format, comm);
-    init(handler, std::move(input));
+    auto input = parseInput( filepath );
+    auto handler =
+        createIOHandler( input->path, at, input->format, comm, options );
+    init( handler, std::move( input ) );
 }
 #endif
 
-Series::Series(std::string const& filepath,
-               AccessType at)
-        : iterations{Container< Iteration, uint64_t >()},
-          m_iterationEncoding{std::make_shared< IterationEncoding >()}
+Series::Series(
+    std::string const & filepath,
+    AccessType at,
+    std::string const & options )
+    : iterations{ Container< Iteration, uint64_t >() }
+    , m_iterationEncoding{ std::make_shared< IterationEncoding >() }
 {
-    auto input = parseInput(filepath);
-    auto handler = createIOHandler(input->path, at, input->format);
+    auto input = parseInput( filepath );
+    auto handler = createIOHandler( input->path, at, input->format, options );
     init(handler, std::move(input));
 }
 
