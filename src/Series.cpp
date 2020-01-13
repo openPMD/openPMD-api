@@ -25,6 +25,7 @@
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/auxiliary/MPI.hpp"
 
 #include <exception>
 #include <iomanip>
@@ -44,7 +45,6 @@
 #else
 #   include <regex>
 #endif
-
 
 namespace openPMD
 {
@@ -88,6 +88,7 @@ Series::Series(
     std::string const & options )
     : iterations{ Container< Iteration, uint64_t >() }
     , m_iterationEncoding{ std::make_shared< IterationEncoding >() }
+    , m_communicator{comm}
 {
     auto input = parseInput( filepath );
     auto handler =
@@ -286,6 +287,84 @@ Series&
 Series::setMachine(std::string const &newMachine)
 {
     setAttribute("machine", newMachine);
+    return *this;
+}
+
+chunk_assignment::RankMeta
+Series::mpiRanksMetaInfo( ) const
+{
+    try 
+    {
+        return getAttribute( "rankMetaInfo" )
+            .get< chunk_assignment::RankMeta >( );
+    }
+    catch ( std::runtime_error const & )
+    {
+        // workaround: if vector has length 1, some backends may report a 
+        // single value instead of a vector
+        return chunk_assignment::RankMeta {
+            getAttribute( "rankMetaInfo" )
+                .get< chunk_assignment::RankMeta::value_type >( ) };
+    }
+
+}
+
+Series &
+Series::setMpiRanksMetaInfo( chunk_assignment::RankMeta rankMeta )
+{
+    setAttribute( "rankMetaInfo", std::move( rankMeta ) );
+    return *this;
+}
+
+#if openPMD_HAVE_MPI
+Series &
+Series::setMpiRanksMetaInfo( std::string const & myRankInfo )
+{
+    int rank;
+    MPI_Comm_rank( m_communicator, &rank );
+    chunk_assignment::RankMeta rankMeta =
+        auxiliary::collectStringsTo(
+            m_communicator, 0, myRankInfo );
+    if ( rank == 0 )
+    {
+        setMpiRanksMetaInfo( std::move( rankMeta ) );
+    }
+    return *this;
+}
+#endif
+
+Series &
+Series::setMpiRanksMetaInfoByFile( std::string const & pathToMetaFile )
+{
+    chunk_assignment::RankMeta rankMeta;
+    try
+    {
+        rankMeta = auxiliary::read_file_by_lines( pathToMetaFile );
+    }
+    catch( auxiliary::no_such_file_error const & )
+    {
+        std::cerr << "Not setting rank meta information, because file has "
+            "not been found: " << pathToMetaFile << std::endl;
+        return *this;
+    }
+    setAttribute( "rankMetaInfo", rankMeta );
+    return *this;
+}
+
+Series &
+Series::setMpiRanksMetaInfoByEnvvar( std::string const & envvar )
+{
+    const char * filename = std::getenv( envvar.c_str( ) );
+    if ( filename )
+    {
+        setMpiRanksMetaInfoByFile( filename );
+    }
+    else
+    {
+        std::cerr << "Not setting rank meta information, because environment"
+            " variable containing path to file has not been found: "
+            << envvar << std::endl;
+    }
     return *this;
 }
 

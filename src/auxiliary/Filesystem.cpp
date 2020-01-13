@@ -32,6 +32,8 @@
 
 #include <stdexcept>
 #include <system_error>
+#include <sstream>
+#include <fstream>
 
 
 namespace openPMD
@@ -166,6 +168,24 @@ remove_file( std::string const& path )
 #else
     return (0 == remove(path.c_str()));
 #endif
+}
+
+std::vector< std::string >
+read_file_by_lines( std::string const & path )
+{
+    std::vector< std::string > res;
+    std::ifstream file( path, std::ios_base::in );
+    if ( file.fail( ) )
+    {
+        throw no_such_file_error( );
+    }
+    std::string line;
+    while( std::getline( file, line ) )
+    {
+        res.push_back( std::move( line ) );
+        line = std::string( );
+    }
+    return res;
 }
 
 } // auxiliary
