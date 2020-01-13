@@ -20,17 +20,96 @@
  */
 #include "openPMD/Dataset.hpp"
 
-#include <iostream>
+#include <algorithm>
 #include <cstddef>
+#include <iostream>
 
 
 namespace openPMD
 {
-Dataset::Dataset(Datatype d, Extent e)
-        : extent{e},
-          dtype{d},
-          rank{static_cast<uint8_t>(e.size())},
-          chunkSize{e}
+void
+restrictToSelection(
+    Offset & offset,
+    Extent & extent,
+    Offset const & withinOffset,
+    Extent const & withinExtent )
+{
+    for( size_t i = 0; i < offset.size(); ++i )
+    {
+        if( offset[ i ] < withinOffset[ i ] )
+        {
+            auto delta = withinOffset[ i ] - offset[ i ];
+            offset[ i ] = withinOffset[ i ];
+            if( delta > extent[ i ] )
+            {
+                extent[ i ] = 0;
+            }
+            else
+            {
+                extent[ i ] -= delta;
+            }
+        }
+        auto totalExtent = extent[ i ] + offset[ i ];
+        auto totalWithinExtent = withinExtent[ i ] + withinOffset[ i ];
+        if( totalExtent > totalWithinExtent )
+        {
+            auto delta = totalExtent - totalWithinExtent;
+            if( delta > extent[ i ] )
+            {
+                extent[ i ] = 0;
+            }
+            else
+            {
+                extent[ i ] -= delta;
+            }
+        }
+    }
+}
+
+size_t
+rowMajorIndex( Offset const & offset, Extent const & globalExtent )
+{
+    size_t res = 0;
+    size_t factor = 1;
+    size_t i = offset.size();
+    do
+    {
+        --i;
+        res += offset[ i ] * factor;
+        factor *= globalExtent[ i ];
+    } while( i != 0 );
+    return res;
+}
+
+RowMajorIterator::RowMajorIterator( Extent _extent )
+    : extent( _extent ), current( extent.size(), 0 )
+{
+}
+
+bool
+RowMajorIterator::step()
+{
+    size_t dim = extent.size();
+    while( dim > 0 )
+    {
+        --dim;
+        if( current[ dim ] + 1 >= extent[ dim ] )
+        {
+            current[ dim ] = 0;
+            continue;
+        }
+        ++current[ dim ];
+        ++index;
+        return true;
+    }
+    return false;
+}
+
+Dataset::Dataset( Datatype d, Extent e )
+    : extent{ e }
+    , dtype{ d }
+    , rank{ static_cast< uint8_t >( e.size() ) }
+    , chunkSize{ e }
 { }
 
 Dataset&
@@ -82,4 +161,4 @@ Dataset::setCustomTransform(std::string const& parameter)
     transform = parameter;
     return *this;
 }
-} // openPMD
+} // namespace openPMD
