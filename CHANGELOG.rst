@@ -25,8 +25,15 @@ Bug Fixes
 Other
 """""
 
-- nvcc: update NVCC C++14 hotfix #618 to upstream version #650
 - ADIOS2: require version 2.5.0+ #656
+- nvcc:
+
+  - warning missing ``erase`` overload of ``Container`` child classes #648
+  - MPark.Variant: update C++14 hotfix #618 to upstream version #650
+- docs:
+
+  - typo in Python example for first read #649
+  - remove all Doxygen warnings and add to CI #654
 
 
 0.10.3-alpha
