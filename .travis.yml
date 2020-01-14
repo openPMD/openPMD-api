@@ -409,12 +409,12 @@ jobs:
       script: *script-cpp-unit
     # GCC 7.4.0
     - <<: *test-cpp-unit
-      name: gcc@7.4.0 -MPI -PY +H5 +ADIOS1 +ADIOS2@2.4.0
+      name: gcc@7.4.0 -MPI -PY +H5 +ADIOS1 +ADIOS2@2.5.0
       dist: trusty
       language: python
       python: "3.6"
       env:
-        - CXXSPEC="%gcc@7.4.0" USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=ON ADIOS2_VERSION=@2.4.0 USE_SAMPLES=ON
+        - CXXSPEC="%gcc@7.4.0" USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=ON ADIOS2_VERSION=@2.5.0 USE_SAMPLES=ON
       compiler: gcc
       addons:
         apt:
