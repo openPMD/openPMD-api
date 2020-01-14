@@ -17,6 +17,8 @@ Changes to "0.10.3-alpha"
 Features
 """"""""
 
+- ADIOS2: expose engine #656
+
 Bug Fixes
 """""""""
 
@@ -24,6 +26,7 @@ Other
 """""
 
 - nvcc: update NVCC C++14 hotfix #618 to upstream version #650
+- ADIOS2: require version 2.5.0+ #656
 
 
 0.10.3-alpha
