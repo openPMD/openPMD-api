@@ -1117,6 +1117,9 @@ namespace detail
         else
         {
             // read parameters from environment
+            auto const engine = auxiliary::getEnvString( "OPENPMD_ADIOS2_ENGINE", "File" );
+            m_IO.SetEngine( engine );
+
             if ( 1 ==
                  auxiliary::getEnvNum(
                     "OPENPMD_ADIOS2_HAVE_METADATA_FILE", 1 ) )
@@ -1127,6 +1130,7 @@ namespace detail
             {
                 m_IO.SetParameter( "CollectiveMetadata", "Off" );
             }
+
             if ( 1 ==
                  auxiliary::getEnvNum( "OPENPMD_ADIOS2_HAVE_PROFILING", 1 ) )
             {

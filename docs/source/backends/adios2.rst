@@ -34,6 +34,7 @@ environment variable                  default    description
 ``OPENPMD_ADIOS2_HAVE_PROFILING``     ``1``      Turns on/off profiling information right after a run.
 ``OPENPMD_ADIOS2_HAVE_METADATA_FILE`` ``1``      Online creation of the adios journal file (``1``: yes, ``0``: no).
 ``OPENPMD_ADIOS2_NUM_SUBSTREAMS``     ``0``      Number of files to be created, 0 indicates maximum number possible.
+``OPENPMD_ADIOS2_ENGINE``             ``File``   `ADIOS2 engine <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_
 ``OPENPMD_BP_BACKEND``                ``ADIOS1`` Chose preferred ``.bp`` file backend if ``ADIOS1`` and ``ADIOS2`` are available.
 ===================================== ========== ================================================================================
 
