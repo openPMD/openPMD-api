@@ -113,6 +113,11 @@ class APITest(unittest.TestCase):
             api.Access_Type.create
         )
 
+        # meta data
+        series.set_software("nonsense")  # with unspecified version
+        series.set_software_version("1.2.3")  # deprecated
+        series.set_software("openPMD-api-python-tests", "0.42.0")
+
         # write one of each supported types
         series.set_attribute("char", 'c')  # string
         series.set_attribute("pyint", 13)

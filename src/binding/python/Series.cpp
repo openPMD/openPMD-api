@@ -125,9 +125,13 @@ void init_Series(py::module &m) {
         .def_property_readonly("author", &Series::author)
         .def("set_author", &Series::setAuthor)
         .def_property_readonly("software", &Series::software)
-        .def("set_software", &Series::setSoftware)
+        .def("set_software", &Series::setSoftware,
+            py::arg("name"), py::arg("version") = std::string("unspecified"))
         .def_property_readonly("software_version", &Series::softwareVersion)
-        .def("set_software_version", &Series::setSoftwareVersion)
+        .def("set_software_version", [](Series & s, std::string const& softwareVersion) {
+            py::print("Series.set_software_version is deprecated. Set the version with the second argument of Series.set_software");
+            s.setSoftware(s.software(), softwareVersion);
+        })
         // softwareDependencies
         // machine
         .def_property_readonly("date", &Series::date)

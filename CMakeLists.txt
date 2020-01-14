@@ -301,6 +301,7 @@ set(CORE_SOURCE
         src/Record.cpp
         src/RecordComponent.cpp
         src/Series.cpp
+        src/auxiliary/Date.cpp
         src/auxiliary/Filesystem.cpp
         src/backend/Attributable.cpp
         src/backend/BaseRecordComponent.cpp
