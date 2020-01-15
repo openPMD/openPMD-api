@@ -136,7 +136,7 @@ TEST_CASE( "output_default_test", "[core]" )
     REQUIRE(o.iterationEncoding() == IE::fileBased);
     REQUIRE(o.iterationFormat() == "new_openpmd_output_%T");
     REQUIRE(o.iterations.empty());
-    REQUIRE(o.numAttributes() == 8); /* openPMD, openPMDextension, basePath, software, softwareVersion, iterationEncoding, iterationFormat, date, software, softwareVersion */
+    REQUIRE(o.numAttributes() == 8); /* openPMD, openPMDextension, basePath, iterationEncoding, iterationFormat, date, software, softwareVersion */
     REQUIRE(o.name() == "new_openpmd_output_%T");
 
     o.iterations[0];
