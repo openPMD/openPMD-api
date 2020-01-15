@@ -19,7 +19,7 @@ Features
 
 - ADIOS2: expose engine #656
 - defaults for ``date`` and software base attributes #657
-- ``Series::setSoftware()`` add second argument for version #658
+- ``Series::setSoftware()`` add second argument for version #657
 
 Bug Fixes
 """""""""
