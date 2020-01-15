@@ -3,6 +3,14 @@
 Upgrade Guide
 =============
 
+0.11.0-alpha
+------------
+
+The ``Series::setSoftwareVersion`` method is now deprecated and will be removed in future versions of the library.
+Use ``Series::setSoftware(name, version)`` instead.
+Similarly for the Python API, use ``Series.set_software`` instead of ``Series.set_software_version``.
+
+
 0.10.0-alpha
 ------------
 

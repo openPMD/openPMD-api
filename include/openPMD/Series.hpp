@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/config.hpp"
+#include "openPMD/auxiliary/Deprecated.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
@@ -28,6 +29,7 @@
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/IterationEncoding.hpp"
+#include "openPMD/version.hpp"
 
 #if openPMD_HAVE_MPI
 #   include <mpi.h>
@@ -140,10 +142,11 @@ public:
     std::string software() const;
     /** Indicate the software/code/simulation that created the file.
      *
-     * @param   software    String indicating the software/code/simulation that created the file.
+     * @param   newName    String indicating the software/code/simulation that created the file.
+     * @param   newVersion String indicating the version of the software/code/simulation that created the file.
      * @return  Reference to modified series.
      */
-    Series& setSoftware(std::string const& software);
+    Series& setSoftware(std::string const& newName, std::string const& newVersion = std::string("unspecified"));
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
@@ -152,9 +155,12 @@ public:
     std::string softwareVersion() const;
     /** Indicate the version of the software/code/simulation that created the file.
      *
+     * @deprecated Set the version with the second argument of setSoftware()
+     *
      * @param   softwareVersion String indicating the version of the software/code/simulation that created the file.
      * @return  Reference to modified series.
      */
+    OPENPMDAPI_DEPRECATED("Set the version with the second argument of setSoftware()")
     Series& setSoftwareVersion(std::string const& softwareVersion);
 
     /**
@@ -251,7 +257,6 @@ OPENPMD_private:
     void readBase();
     void read();
 
-    static constexpr char const * const OPENPMD = "1.1.0";
     static constexpr char const * const BASEPATH = "/data/%T/";
 
     std::shared_ptr< IterationEncoding > m_iterationEncoding;

@@ -18,6 +18,8 @@ Features
 """"""""
 
 - ADIOS2: expose engine #656
+- defaults for ``date`` and software base attributes #657
+- ``Series::setSoftware()`` add second argument for version #658
 
 Bug Fixes
 """""""""
@@ -25,6 +27,7 @@ Bug Fixes
 Other
 """""
 
+- deprecated ``Series::setSoftwareVersion``: set the version with the second argument of ``setSoftware()`` #657
 - ADIOS2: require version 2.5.0+ #656
 - nvcc:
 

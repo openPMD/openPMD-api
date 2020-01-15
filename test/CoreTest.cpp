@@ -136,7 +136,7 @@ TEST_CASE( "output_default_test", "[core]" )
     REQUIRE(o.iterationEncoding() == IE::fileBased);
     REQUIRE(o.iterationFormat() == "new_openpmd_output_%T");
     REQUIRE(o.iterations.empty());
-    REQUIRE(o.numAttributes() == 5); /* openPMD, openPMDextension, basePath, iterationEncoding, iterationFormat */
+    REQUIRE(o.numAttributes() == 8); /* openPMD, openPMDextension, basePath, software, softwareVersion, iterationEncoding, iterationFormat, date, software, softwareVersion */
     REQUIRE(o.name() == "new_openpmd_output_%T");
 
     o.iterations[0];
@@ -163,7 +163,7 @@ TEST_CASE( "output_constructor_test", "[core]" )
     REQUIRE(o.iterationEncoding() == IE::groupBased);
     REQUIRE(o.iterationFormat() == "/data/%T/");
     REQUIRE(o.iterations.size() == 1);
-    REQUIRE(o.numAttributes() == 7); /* openPMD, openPMDextension, basePath, meshesPath, particlesPath, iterationEncoding, iterationFormat */
+    REQUIRE(o.numAttributes() == 10); /* openPMD, openPMDextension, basePath, meshesPath, particlesPath, iterationEncoding, iterationFormat, date, software, softwareVersion */
     REQUIRE(o.name() == "MyCustomOutput");
 }
 

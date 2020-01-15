@@ -18,6 +18,7 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
+#include "openPMD/auxiliary/Date.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
@@ -226,9 +227,10 @@ Series::software() const
 }
 
 Series&
-Series::setSoftware(std::string const& s)
+Series::setSoftware( std::string const& newName, std::string const& newVersion )
 {
-    setAttribute("software", s);
+    setAttribute( "software", newName );
+    setAttribute( "softwareVersion", newVersion );
     return *this;
 }
 
@@ -519,9 +521,24 @@ Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
 void
 Series::initDefaults()
 {
-    setOpenPMD(OPENPMD);
+    std::stringstream openPMDstandard;
+    openPMDstandard << OPENPMD_STANDARD_MAJOR << "."
+                    << OPENPMD_STANDARD_MINOR << "."
+                    << OPENPMD_STANDARD_PATCH;
+    setOpenPMD( openPMDstandard.str() );
     setOpenPMDextension(0);
     setAttribute("basePath", std::string(BASEPATH));
+    setDate( auxiliary::getDateString() );
+
+    std::stringstream openPMDapi;
+    openPMDapi << OPENPMDAPI_VERSION_MAJOR << "."
+               << OPENPMDAPI_VERSION_MINOR << "."
+               << OPENPMDAPI_VERSION_PATCH;
+    if( std::string( OPENPMDAPI_VERSION_LABEL ).size() > 0 )
+        openPMDapi << "-" << OPENPMDAPI_VERSION_LABEL;
+    setSoftware( "openPMD-api", openPMDapi.str() );
+
+    //! @todo Potentially warn on flush if software and author are not user-provided (defaulted)
 }
 
 void
