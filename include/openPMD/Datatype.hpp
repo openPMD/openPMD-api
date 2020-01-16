@@ -122,37 +122,36 @@ determineDatatype()
 {
     using DT = Datatype;
     if( decay_equiv< T, char >::value ){ return DT::CHAR; }
-    if( decay_equiv< T, unsigned char >::value ){ return DT::UCHAR; }
-    if( decay_equiv< T, short >::value ){ return DT::SHORT; }
-    if( decay_equiv< T, int >::value ){ return DT::INT; }
-    if( decay_equiv< T, long >::value ){ return DT::LONG; }
-    if( decay_equiv< T, long long >::value ){ return DT::LONGLONG; }
-    if( decay_equiv< T, unsigned short >::value ){ return DT::USHORT; }
-    if( decay_equiv< T, unsigned int >::value ){ return DT::UINT; }
-    if( decay_equiv< T, unsigned long >::value ){ return DT::ULONG; }
-    if( decay_equiv< T, unsigned long long >::value ){ return DT::ULONGLONG; }
-    if( decay_equiv< T, float >::value ){ return DT::FLOAT; }
-    if( decay_equiv< T, double >::value ){ return DT::DOUBLE; }
-    if( decay_equiv< T, long double >::value ){ return DT::LONG_DOUBLE; }
-    if( decay_equiv< T, std::string >::value ){ return DT::STRING; }
-    if( decay_equiv< T, std::vector< char > >::value ){ return DT::VEC_CHAR; }
-    if( decay_equiv< T, std::vector< short > >::value ){ return DT::VEC_SHORT; }
-    if( decay_equiv< T, std::vector< int > >::value ){ return DT::VEC_INT; }
-    if( decay_equiv< T, std::vector< long > >::value ){ return DT::VEC_LONG; }
-    if( decay_equiv< T, std::vector< long long > >::value ){ return DT::VEC_LONGLONG; }
-    if( decay_equiv< T, std::vector< unsigned char > >::value ){ return DT::VEC_UCHAR; }
-    if( decay_equiv< T, std::vector< unsigned short > >::value ){ return DT::VEC_USHORT; }
-    if( decay_equiv< T, std::vector< unsigned int > >::value ){ return DT::VEC_UINT; }
-    if( decay_equiv< T, std::vector< unsigned long > >::value ){ return DT::VEC_ULONG; }
-    if( decay_equiv< T, std::vector< unsigned long long > >::value ){ return DT::VEC_ULONGLONG; }
-    if( decay_equiv< T, std::vector< float > >::value ){ return DT::VEC_FLOAT; }
-    if( decay_equiv< T, std::vector< double > >::value ){ return DT::VEC_DOUBLE; }
-    if( decay_equiv< T, std::vector< long double > >::value ){ return DT::VEC_LONG_DOUBLE; }
-    if( decay_equiv< T, std::vector< std::string > >::value ){ return DT::VEC_STRING; }
-    if( decay_equiv< T, std::array< double, 7 > >::value ){ return DT::ARR_DBL_7; }
-    if( decay_equiv< T, bool  >::value ){ return DT::BOOL; }
-
-    return Datatype::UNDEFINED;
+    else if( decay_equiv< T, unsigned char >::value ){ return DT::UCHAR; }
+    else if( decay_equiv< T, short >::value ){ return DT::SHORT; }
+    else if( decay_equiv< T, int >::value ){ return DT::INT; }
+    else if( decay_equiv< T, long >::value ){ return DT::LONG; }
+    else if( decay_equiv< T, long long >::value ){ return DT::LONGLONG; }
+    else if( decay_equiv< T, unsigned short >::value ){ return DT::USHORT; }
+    else if( decay_equiv< T, unsigned int >::value ){ return DT::UINT; }
+    else if( decay_equiv< T, unsigned long >::value ){ return DT::ULONG; }
+    else if( decay_equiv< T, unsigned long long >::value ){ return DT::ULONGLONG; }
+    else if( decay_equiv< T, float >::value ){ return DT::FLOAT; }
+    else if( decay_equiv< T, double >::value ){ return DT::DOUBLE; }
+    else if( decay_equiv< T, long double >::value ){ return DT::LONG_DOUBLE; }
+    else if( decay_equiv< T, std::string >::value ){ return DT::STRING; }
+    else if( decay_equiv< T, std::vector< char > >::value ){ return DT::VEC_CHAR; }
+    else if( decay_equiv< T, std::vector< short > >::value ){ return DT::VEC_SHORT; }
+    else if( decay_equiv< T, std::vector< int > >::value ){ return DT::VEC_INT; }
+    else if( decay_equiv< T, std::vector< long > >::value ){ return DT::VEC_LONG; }
+    else if( decay_equiv< T, std::vector< long long > >::value ){ return DT::VEC_LONGLONG; }
+    else if( decay_equiv< T, std::vector< unsigned char > >::value ){ return DT::VEC_UCHAR; }
+    else if( decay_equiv< T, std::vector< unsigned short > >::value ){ return DT::VEC_USHORT; }
+    else if( decay_equiv< T, std::vector< unsigned int > >::value ){ return DT::VEC_UINT; }
+    else if( decay_equiv< T, std::vector< unsigned long > >::value ){ return DT::VEC_ULONG; }
+    else if( decay_equiv< T, std::vector< unsigned long long > >::value ){ return DT::VEC_ULONGLONG; }
+    else if( decay_equiv< T, std::vector< float > >::value ){ return DT::VEC_FLOAT; }
+    else if( decay_equiv< T, std::vector< double > >::value ){ return DT::VEC_DOUBLE; }
+    else if( decay_equiv< T, std::vector< long double > >::value ){ return DT::VEC_LONG_DOUBLE; }
+    else if( decay_equiv< T, std::vector< std::string > >::value ){ return DT::VEC_STRING; }
+    else if( decay_equiv< T, std::array< double, 7 > >::value ){ return DT::ARR_DBL_7; }
+    else if( decay_equiv< T, bool  >::value ){ return DT::BOOL; }
+    else return Datatype::UNDEFINED;
 }
 
 template< typename T >
@@ -165,37 +164,36 @@ determineDatatype(std::shared_ptr< T >)
 {
     using DT = Datatype;
     if( decay_equiv< T, char  >::value ){ return DT::CHAR; }
-    if( decay_equiv< T, unsigned char  >::value ){ return DT::UCHAR; }
-    if( decay_equiv< T, short  >::value ){ return DT::SHORT; }
-    if( decay_equiv< T, int  >::value ){ return DT::INT; }
-    if( decay_equiv< T, long  >::value ){ return DT::LONG; }
-    if( decay_equiv< T, long long  >::value ){ return DT::LONGLONG; }
-    if( decay_equiv< T, unsigned short  >::value ){ return DT::USHORT; }
-    if( decay_equiv< T, unsigned int  >::value ){ return DT::UINT; }
-    if( decay_equiv< T, unsigned long  >::value ){ return DT::ULONG; }
-    if( decay_equiv< T, unsigned long long  >::value ){ return DT::ULONGLONG; }
-    if( decay_equiv< T, float  >::value ){ return DT::FLOAT; }
-    if( decay_equiv< T, double  >::value ){ return DT::DOUBLE; }
-    if( decay_equiv< T, long double  >::value ){ return DT::LONG_DOUBLE; }
-    if( decay_equiv< T, std::string >::value ){ return DT::STRING; }
-    if( decay_equiv< T, std::vector< char > >::value ){ return DT::VEC_CHAR; }
-    if( decay_equiv< T, std::vector< short > >::value ){ return DT::VEC_SHORT; }
-    if( decay_equiv< T, std::vector< int > >::value ){ return DT::VEC_INT; }
-    if( decay_equiv< T, std::vector< long > >::value ){ return DT::VEC_LONG; }
-    if( decay_equiv< T, std::vector< long long > >::value ){ return DT::VEC_LONGLONG; }
-    if( decay_equiv< T, std::vector< unsigned char > >::value ){ return DT::VEC_UCHAR; }
-    if( decay_equiv< T, std::vector< unsigned short > >::value ){ return DT::VEC_USHORT; }
-    if( decay_equiv< T, std::vector< unsigned int > >::value ){ return DT::VEC_UINT; }
-    if( decay_equiv< T, std::vector< unsigned long > >::value ){ return DT::VEC_ULONG; }
-    if( decay_equiv< T, std::vector< unsigned long long > >::value ){ return DT::VEC_ULONGLONG; }
-    if( decay_equiv< T, std::vector< float > >::value ){ return DT::VEC_FLOAT; }
-    if( decay_equiv< T, std::vector< double > >::value ){ return DT::VEC_DOUBLE; }
-    if( decay_equiv< T, std::vector< long double > >::value ){ return DT::VEC_LONG_DOUBLE; }
-    if( decay_equiv< T, std::vector< std::string > >::value ){ return DT::VEC_STRING; }
-    if( decay_equiv< T, std::array< double, 7 > >::value ){ return DT::ARR_DBL_7; }
-    if( decay_equiv< T, bool  >::value ){ return DT::BOOL; }
-
-    return DT::UNDEFINED;
+    else if( decay_equiv< T, unsigned char  >::value ){ return DT::UCHAR; }
+    else if( decay_equiv< T, short  >::value ){ return DT::SHORT; }
+    else if( decay_equiv< T, int  >::value ){ return DT::INT; }
+    else if( decay_equiv< T, long  >::value ){ return DT::LONG; }
+    else if( decay_equiv< T, long long  >::value ){ return DT::LONGLONG; }
+    else if( decay_equiv< T, unsigned short  >::value ){ return DT::USHORT; }
+    else if( decay_equiv< T, unsigned int  >::value ){ return DT::UINT; }
+    else if( decay_equiv< T, unsigned long  >::value ){ return DT::ULONG; }
+    else if( decay_equiv< T, unsigned long long  >::value ){ return DT::ULONGLONG; }
+    else if( decay_equiv< T, float  >::value ){ return DT::FLOAT; }
+    else if( decay_equiv< T, double  >::value ){ return DT::DOUBLE; }
+    else if( decay_equiv< T, long double  >::value ){ return DT::LONG_DOUBLE; }
+    else if( decay_equiv< T, std::string >::value ){ return DT::STRING; }
+    else if( decay_equiv< T, std::vector< char > >::value ){ return DT::VEC_CHAR; }
+    else if( decay_equiv< T, std::vector< short > >::value ){ return DT::VEC_SHORT; }
+    else if( decay_equiv< T, std::vector< int > >::value ){ return DT::VEC_INT; }
+    else if( decay_equiv< T, std::vector< long > >::value ){ return DT::VEC_LONG; }
+    else if( decay_equiv< T, std::vector< long long > >::value ){ return DT::VEC_LONGLONG; }
+    else if( decay_equiv< T, std::vector< unsigned char > >::value ){ return DT::VEC_UCHAR; }
+    else if( decay_equiv< T, std::vector< unsigned short > >::value ){ return DT::VEC_USHORT; }
+    else if( decay_equiv< T, std::vector< unsigned int > >::value ){ return DT::VEC_UINT; }
+    else if( decay_equiv< T, std::vector< unsigned long > >::value ){ return DT::VEC_ULONG; }
+    else if( decay_equiv< T, std::vector< unsigned long long > >::value ){ return DT::VEC_ULONGLONG; }
+    else if( decay_equiv< T, std::vector< float > >::value ){ return DT::VEC_FLOAT; }
+    else if( decay_equiv< T, std::vector< double > >::value ){ return DT::VEC_DOUBLE; }
+    else if( decay_equiv< T, std::vector< long double > >::value ){ return DT::VEC_LONG_DOUBLE; }
+    else if( decay_equiv< T, std::vector< std::string > >::value ){ return DT::VEC_STRING; }
+    else if( decay_equiv< T, std::array< double, 7 > >::value ){ return DT::ARR_DBL_7; }
+    else if( decay_equiv< T, bool  >::value ){ return DT::BOOL; }
+    else return DT::UNDEFINED;
 }
 
 /** Return number of bytes representing a Datatype
@@ -214,11 +212,9 @@ toBytes( Datatype d )
         case DT::STRING:
         case DT::VEC_STRING:
             return sizeof(char);
-            break;
         case DT::UCHAR:
         case DT::VEC_UCHAR:
             return sizeof(unsigned char);
-            break;
         // case DT::SCHAR:
         // case DT::VEC_SCHAR:
         //     return sizeof(signed char);
@@ -226,57 +222,44 @@ toBytes( Datatype d )
         case DT::SHORT:
         case DT::VEC_SHORT:
             return sizeof(short);
-            break;
         case DT::INT:
         case DT::VEC_INT:
             return sizeof(int);
-            break;
         case DT::LONG:
         case DT::VEC_LONG:
             return sizeof(long);
-            break;
         case DT::LONGLONG:
         case DT::VEC_LONGLONG:
             return sizeof(long long);
-            break;
         case DT::USHORT:
         case DT::VEC_USHORT:
             return sizeof(unsigned short);
-            break;
         case DT::UINT:
         case DT::VEC_UINT:
             return sizeof(unsigned int);
-            break;
         case DT::ULONG:
         case DT::VEC_ULONG:
             return sizeof(unsigned long);
-            break;
         case DT::ULONGLONG:
         case DT::VEC_ULONGLONG:
             return sizeof(unsigned long long);
-            break;
         case DT::FLOAT:
         case DT::VEC_FLOAT:
             return sizeof(float);
-            break;
         case DT::DOUBLE:
         case DT::VEC_DOUBLE:
         case DT::ARR_DBL_7:
             return sizeof(double);
-            break;
         case DT::LONG_DOUBLE:
         case DT::VEC_LONG_DOUBLE:
             return sizeof(long double);
-            break;
         case DT::BOOL:
             return sizeof(bool);
-            break;
         case DT::DATATYPE:
         case DT::UNDEFINED:
+        default:
             throw std::runtime_error("toBytes: Invalid datatype!");
-            break;
     }
-    return 0;
 }
 
 /** Return number of bits representing a Datatype
@@ -317,10 +300,8 @@ isVector( Datatype d )
         case DT::VEC_LONG_DOUBLE:
         case DT::VEC_STRING:
             return true;
-            break;
         default:
             return false;
-            break;
     }
 }
 
@@ -345,10 +326,8 @@ isFloatingPoint( Datatype d )
         case DT::LONG_DOUBLE:
         case DT::VEC_LONG_DOUBLE:
             return true;
-            break;
         default:
             return false;
-            break;
     }
 }
 
@@ -392,7 +371,6 @@ isInteger( Datatype d )
         case DT::LONGLONG:
         case DT::VEC_LONGLONG:
             return std::make_tuple( true, true );
-            break;
         case DT::USHORT:
         case DT::VEC_USHORT:
         case DT::UINT:
@@ -402,10 +380,8 @@ isInteger( Datatype d )
         case DT::ULONGLONG:
         case DT::VEC_ULONGLONG:
             return std::make_tuple( true, false );
-            break;
         default:
             return std::make_tuple( false, false );
-            break;
     }
 }
 
