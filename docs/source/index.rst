@@ -100,6 +100,7 @@ Backends
    :maxdepth: 1
    :hidden:
 
+   backends/overview
    backends/json
    backends/adios1
    backends/adios2

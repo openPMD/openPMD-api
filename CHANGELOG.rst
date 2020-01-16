@@ -12,7 +12,7 @@ Changelog
 [Summary]
 
 Changes to "0.10.3-alpha"
-^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Features
 """"""""
@@ -32,11 +32,14 @@ Other
 - nvcc:
 
   - warning missing ``erase`` overload of ``Container`` child classes #648
+  - warning on unreachable code #659
   - MPark.Variant: update C++14 hotfix #618 to upstream version #650
 - docs:
 
   - typo in Python example for first read #649
   - remove all Doxygen warnings and add to CI #654
+  - backend feature matrix #661
+- migrate static checks for python code to GitHub actions #660
 
 
 0.10.3-alpha
@@ -48,7 +51,7 @@ Improved HDF5 Handling
 More robust HDF5 file handling and fixes of local includes for more isolated builds.
 
 Changes to "0.10.2-alpha"
-^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Bug Fixes
 """""""""
@@ -72,7 +75,7 @@ Improved Error Messages
 Thrown errors are now prefixed by the backend in use and ADIOS1 series reads are more robust.
 
 Changes to "0.10.1-alpha"
-^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Bug Fixes
 """""""""
@@ -98,7 +101,7 @@ Compile problems when using the CUDA NVCC compiler in downstream projects have b
 We adopted a Code of Conduct in openPMD.
 
 Changes to "0.10.0-alpha"
-^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Features
 """"""""
