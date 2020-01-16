@@ -349,6 +349,8 @@ Further thanks go to improvements and contributions from:
   compatibility testing
 * [Junmin Gu (LBNL)](https://github.com/guj):
   non-collective parallel I/O testing
+* [Paweł Ordyna (HZDR)](https://github.com/pordyna):
+  report on NVCC warnings
 
 ### Grants
 

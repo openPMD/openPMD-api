@@ -156,10 +156,10 @@ parseTupleSlices(uint8_t const ndim, Extent const & full_extent, py::tuple const
 
         if( slices[i].ptr() == Py_None )
         {
-            py::none newaxis = py::cast< py::none >( slices[i] );;
+            // py::none newaxis = py::cast< py::none >( slices[i] );;
             throw py::index_error("None (newaxis) not implemented!");
 
-            continue;
+            // continue;
         }
 
         // if we get here, the last slice type was not successfully processed

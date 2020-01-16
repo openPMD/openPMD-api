@@ -129,7 +129,6 @@ struct DoConvert<std::vector< T >, std::vector< U >, false>
     -> typename std::enable_if< !convertible, std::vector< UU > >::type
     {
         throw std::runtime_error("getCast: no vector cast possible.");
-        return std::vector< U >{};
     }
 };
 
