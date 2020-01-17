@@ -33,6 +33,7 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <memory>
 
 #if defined(__GNUC__)
 #   if (__GNUC__ == 4 && __GNUC_MINOR__ < 9)
@@ -458,10 +459,91 @@ Series::flush()
     IOHandler->flush();
 }
 
-std::unique_ptr< Series::ParsedInput >
-Series::parseInput(std::string filepath)
+ConsumingFuture< AdvanceStatus >
+Series::advance( AdvanceMode mode )
 {
-    std::unique_ptr< Series::ParsedInput > input{new Series::ParsedInput};
+    switch( *m_iterationEncoding )
+    {
+        case IterationEncoding::fileBased:
+        {
+            std::cerr << "Advancing not yet implemented in file-based mode, "
+                         "defaulting to performing a flush."
+                      << std::endl;
+            flushFileBased( iterations );
+            auto res = ConsumingFuture< AdvanceStatus >(
+                std::packaged_task< AdvanceStatus() >(
+                    []() { return AdvanceStatus::OK; } ) );
+            res();
+            return res;
+        }
+        case IterationEncoding::groupBased:
+            flushGroupBased( iterations );
+            auxiliary::ConsumingFuture< AdvanceStatus > future =
+                advance( mode, *m_name );
+            // capture this by reference since the destructor will issue a
+            // flush
+            // https://github.com/openPMD/openPMD-api/issues/534
+            std::packaged_task< AdvanceStatus( AdvanceStatus ) > postProcessing(
+                [ this ]( AdvanceStatus status ) mutable {
+                    if( status != AdvanceStatus::OK )
+                    {
+                        return status;
+                    }
+
+                    // re-read -> new datasets might be available
+                    if( this->IOHandler->m_frontendAccess ==
+                            Access::READ_ONLY ||
+                        this->IOHandler->m_frontendAccess ==
+                            Access::READ_WRITE )
+                    {
+                        bool previous = this->iterations.written();
+                        this->iterations.written() = false;
+                        auto oldType = this->IOHandler->m_frontendAccess;
+                        auto newType = const_cast< Access * >(
+                            &this->IOHandler->m_frontendAccess );
+                        *newType = Access::READ_WRITE;
+                        this->readGroupBased( false );
+                        *newType = oldType;
+                        this->iterations.written() = previous;
+                    }
+
+                    if( this->IOHandler->m_frontendAccess == Access::CREATE ||
+                        this->IOHandler->m_frontendAccess ==
+                            Access::READ_WRITE )
+                    {
+                        for( auto & i : iterations )
+                        {
+                            if( *i.second.m_closed ==
+                                Iteration::CloseStatus::ClosedInFrontend )
+                            {
+                                Parameter< Operation::STALE_GROUP > fStale;
+                                IOHandler->enqueue(
+                                    IOTask( &i.second, std::move( fStale ) ) );
+                                *i.second.m_closed =
+                                    Iteration::CloseStatus::ClosedInBackend;
+                            }
+                        }
+                    }
+
+                    return status;
+                } );
+            auxiliary::ConsumingFuture< AdvanceStatus > futurePost =
+                auxiliary::chain_futures<
+                    AdvanceStatus,
+                    AdvanceStatus,
+                    auxiliary::RunFutureNonThreaded >(
+                    std::move( future ), std::move( postProcessing ) );
+            futurePost.run_as_thread();
+            return futurePost;
+    }
+    throw std::runtime_error(
+        "Bug in the openPMD API: This path cannot be taken." );
+}
+
+std::unique_ptr< Series::ParsedInput >
+Series::parseInput( std::string filepath )
+{
+    std::unique_ptr< Series::ParsedInput > input{ new Series::ParsedInput };
 
 #ifdef _WIN32
     if( auxiliary::contains(filepath, '/') )
@@ -692,9 +774,7 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
             written() = false;
             iterations.written() = false;
 
-            std::stringstream iteration("");
-            iteration << std::setw(*m_filenamePadding) << std::setfill('0') << i.first;
-            std::string filename = *m_filenamePrefix + iteration.str() + *m_filenamePostfix;
+            std::string filename = iterationFilename( i.first );
 
             dirty() |= i.second.dirty();
             i.second.flushFileBased(filename, i.first);
@@ -788,8 +868,8 @@ Series::flushGroupBased( IterationsContainer && iterationsToFlush )
             }
             if( !i.second.written() )
             {
-                i.second.m_writable->parent = getWritable(&iterations);
-                i.second.parent = getWritable(&iterations);
+                i.second.m_writable->parent = getWritable( &iterations );
+                i.second.parent = getWritable( &iterations );
             }
             i.second.flushGroupBased(i.first);
             if( *i.second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
@@ -917,54 +997,51 @@ Series::readFileBased()
 }
 
 void
-Series::readGroupBased()
+Series::readGroupBased( bool init )
 {
     Parameter< Operation::OPEN_FILE > fOpen;
     fOpen.name = *m_name;
     IOHandler->enqueue(IOTask(this, fOpen));
     IOHandler->flush();
 
-    readBase();
-
-    using DT = Datatype;
-    Parameter< Operation::READ_ATT > aRead;
-    aRead.name = "iterationEncoding";
-    IOHandler->enqueue(IOTask(this, aRead));
-    IOHandler->flush();
-    if( *aRead.dtype == DT::STRING )
+    if( init )
     {
-        std::string encoding = Attribute(*aRead.resource).get< std::string >();
-        if( encoding == "groupBased" )
-            *m_iterationEncoding = IterationEncoding::groupBased;
-        else if( encoding == "fileBased" )
+        readBase();
+
+        using DT = Datatype;
+        Parameter< Operation::READ_ATT > aRead;
+        aRead.name = "iterationEncoding";
+        IOHandler->enqueue(IOTask(this, aRead));
+        IOHandler->flush();
+        if( *aRead.dtype == DT::STRING )
         {
-            *m_iterationEncoding = IterationEncoding::fileBased;
-            std::cerr << "Series constructor called with explicit iteration suggests loading a "
-                      << "single file with groupBased iteration encoding. Loaded file is fileBased.\n";
-        } else
-            throw std::runtime_error("Unknown iterationEncoding: " + encoding);
-        setAttribute("iterationEncoding", encoding);
-    }
-    else
-        throw std::runtime_error("Unexpected Attribute datatype for 'iterationEncoding'");
+            std::string encoding = Attribute(*aRead.resource).get< std::string >();
+            if( encoding == "groupBased" )
+                *m_iterationEncoding = IterationEncoding::groupBased;
+            else if( encoding == "fileBased" )
+            {
+                *m_iterationEncoding = IterationEncoding::fileBased;
+                std::cerr << "Series constructor called with explicit iteration suggests loading a "
+                          << "single file with groupBased iteration encoding. Loaded file is fileBased.\n";
+            } else
+                throw std::runtime_error("Unknown iterationEncoding: " + encoding);
+            setAttribute("iterationEncoding", encoding);
+        }
+        else
+            throw std::runtime_error("Unexpected Attribute datatype for 'iterationEncoding'");
 
-    aRead.name = "iterationFormat";
-    IOHandler->enqueue(IOTask(this, aRead));
-    IOHandler->flush();
-    if( *aRead.dtype == DT::STRING )
-    {
-        written() = false;
-        setIterationFormat(Attribute(*aRead.resource).get< std::string >());
-        written() = true;
+        aRead.name = "iterationFormat";
+        IOHandler->enqueue(IOTask(this, aRead));
+        IOHandler->flush();
+        if( *aRead.dtype == DT::STRING )
+        {
+            written() = false;
+            setIterationFormat(Attribute(*aRead.resource).get< std::string >());
+            written() = true;
+        }
+        else
+            throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
     }
-    else
-        throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
-
-    /* do not use the public checked version
-     * at this point we can guarantee clearing the container won't break anything */
-    written() = false;
-    iterations.clear_unchecked();
-    written() = true;
 
     read();
 }
@@ -1055,6 +1132,7 @@ Series::read()
         throw std::runtime_error("Unknown openPMD version - " + version);
     IOHandler->enqueue(IOTask(&iterations, pOpen));
 
+    readAttributes();
     iterations.readAttributes();
 
     /* obtain all paths inside the basepath (i.e. all iterations) */
@@ -1065,12 +1143,88 @@ Series::read()
     for( auto const& it : *pList.paths )
     {
         Iteration& i = iterations[std::stoull(it)];
+        if ( i.closed( ) )
+        {
+            continue;
+        }
         pOpen.path = it;
         IOHandler->enqueue(IOTask(&i, pOpen));
         i.read();
     }
+}
 
-    readAttributes();
+std::string
+Series::iterationFilename( uint64_t i )
+{
+    std::stringstream iteration( "" );
+    iteration << std::setw( *m_filenamePadding ) << std::setfill( '0' )
+              << i;
+    return *m_filenamePrefix + iteration.str() + *m_filenamePostfix;
+}
+
+auxiliary::ConsumingFuture< AdvanceStatus >
+Series::advance( AdvanceMode mode, std::string )
+// file parameter maybe for an open_file command later on
+{
+    // resolve AdvanceMode
+    Access at = IOHandler->m_frontendAccess;
+    AdvanceMode actualMode = mode;
+    switch( mode )
+    {
+        case AdvanceMode::AUTO:
+            switch( at )
+            {
+                case Access::READ_WRITE:
+                    throw std::runtime_error(
+                        "Series::advance(): Please specify "
+                        "advance mode explicitly." );
+                case Access::READ_ONLY:
+                    actualMode = AdvanceMode::READ;
+                    break;
+                case Access::CREATE:
+                    actualMode = AdvanceMode::WRITE;
+                    break;
+            }
+            break;
+        case AdvanceMode::READ:
+            if( at == Access::CREATE )
+            {
+                throw std::runtime_error(
+                    "Cannot use advance mode 'read' in combination with "
+                    "access type 'create'" );
+            }
+            else
+            {
+                actualMode = AdvanceMode::READ;
+            }
+            break;
+        case AdvanceMode::WRITE:
+            if( at == Access::READ_ONLY )
+            {
+                throw std::runtime_error(
+                    "Cannot use advance mode 'write' in combination with "
+                    "access type 'read only'" );
+            }
+            else
+            {
+                actualMode = AdvanceMode::WRITE;
+            }
+            break;
+    }
+    Parameter< Operation::ADVANCE > param;
+    param.mode = actualMode;
+    IOTask task( this, param );
+    IOHandler->enqueue( task );
+    // this flush will
+    // (1) flush all actions that are still queued up
+    // (2) finally run the advance task
+
+    auto first_future = IOHandler->flush();
+    return auxiliary::chain_futures< 
+        void,
+        AdvanceStatus >(
+        std::move( first_future ),
+        std::move( *param.task ) );
 }
 
 std::string

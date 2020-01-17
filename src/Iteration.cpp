@@ -172,10 +172,10 @@ Iteration::closedByWriter() const
 void
 Iteration::flushFileBased(std::string const& filename, uint64_t i)
 {
+    Series* s = dynamic_cast<Series *>(parent->attributable->parent->attributable);
     if( !written() )
     {
         /* create file */
-        auto s = dynamic_cast< Series* >(parent->attributable->parent->attributable);
         Parameter< Operation::CREATE_FILE > fCreate;
         fCreate.name = filename;
         IOHandler->enqueue(IOTask(s, fCreate));
@@ -194,7 +194,6 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
         if((IOHandler->m_frontendAccess == Access::CREATE ) &&
            ( (IOHandler->backendName() == "MPI_ADIOS1") || (IOHandler->backendName() == "ADIOS1") ) )
         {
-            auto s = dynamic_cast< Series* >(parent->attributable->parent->attributable);
             Parameter< Operation::OPEN_FILE > fOpen;
             fOpen.name = filename;
             IOHandler->enqueue(IOTask(s, fOpen));
@@ -205,7 +204,6 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
 
         // operations for read/read-write mode
         /* open file */
-        auto s = dynamic_cast< Series* >(parent->attributable->parent->attributable);
         Parameter< Operation::OPEN_FILE > fOpen;
         fOpen.name = filename;
         IOHandler->enqueue(IOTask(s, fOpen));

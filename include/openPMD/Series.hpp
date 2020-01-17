@@ -31,6 +31,7 @@
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/version.hpp"
 #include "openPMD/Streaming.hpp"
+#include "openPMD/auxiliary/Future.hpp"
 
 #if openPMD_HAVE_MPI
 #   include <mpi.h>
@@ -313,7 +314,11 @@ public:
 
     /** Execute all required remaining IO operations to write or read data.
      */
-    void flush();
+    void
+    flush();
+
+    ConsumingFuture< AdvanceStatus > advance(
+        AdvanceMode = AdvanceMode::AUTO );
 
     Container< Iteration, uint64_t > iterations;
 
@@ -329,9 +334,12 @@ OPENPMD_private:
     void flushMeshesPath();
     void flushParticlesPath();
     void readFileBased();
-    void readGroupBased();
+    void readGroupBased( bool init = true );
     void readBase();
     void read();
+    std::string iterationFilename(uint64_t i);
+    auxiliary::ConsumingFuture< AdvanceStatus >
+    advance( AdvanceMode, std::string file );
 
     static constexpr char const * const BASEPATH = "/data/%T/";
 

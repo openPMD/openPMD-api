@@ -209,6 +209,12 @@ private:
      */
     bool
     dirtyRecursive() const;
+
+protected:
+    /*
+    * Make sure to parse a RecordComponent only once.
+    */
+    std::shared_ptr< bool > hasBeenRead = std::make_shared< bool >( false );
 }; // RecordComponent
 
 

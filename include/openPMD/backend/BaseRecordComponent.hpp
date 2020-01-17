@@ -22,6 +22,7 @@
 
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/Dataset.hpp"
+#include "openPMD/Streaming.hpp"
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_protected
@@ -58,6 +59,8 @@ public:
      * @return true if a constant record component
      */
     bool constant() const;
+
+    ChunkTable availableChunks();
 
 OPENPMD_protected:
     BaseRecordComponent();

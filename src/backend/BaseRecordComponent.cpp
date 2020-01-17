@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/backend/BaseRecordComponent.hpp"
+#include "openPMD/IO/IOTask.hpp"
 
 
 namespace openPMD
@@ -55,4 +56,14 @@ BaseRecordComponent::constant() const
 {
     return *m_isConstant;
 }
-} // namespace openPMD
+
+ChunkTable
+BaseRecordComponent::availableChunks()
+{
+    Parameter< Operation::AVAILABLE_CHUNKS > param;
+    IOTask task( this, param );
+    IOHandler->enqueue( task );
+    IOHandler->flush();
+    return std::move( *param.chunks );
+}
+} // openPMD
