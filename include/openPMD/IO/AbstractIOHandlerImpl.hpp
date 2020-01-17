@@ -110,10 +110,20 @@ public:
                     case O::LIST_ATTS:
                         listAttributes(i.writable, deref_dynamic_cast< Parameter< O::LIST_ATTS > >(i.parameter.get()));
                         break;
+                    case O::ADVANCE:
+                        advance(i.writable, deref_dynamic_cast< Parameter< O::ADVANCE > >(i.parameter.get()));
+                        break;
+                    case O::AVAILABLE_CHUNKS:
+                        availableChunks(i.writable, deref_dynamic_cast< Parameter< O::AVAILABLE_CHUNKS > >(i.parameter.get()));
+                        break;
+                    case O::STALE_GROUP:
+                        staleGroup(i.writable, deref_dynamic_cast< Parameter< O::STALE_GROUP > >(i.parameter.get()));
+                        break;
                 }
-            } catch (unsupported_data_error&)
+            }
+            catch( unsupported_data_error & )
             {
-                (*m_handler).m_work.pop();
+                ( *m_handler ).m_work.pop();
                 throw;
             }
             (*m_handler).m_work.pop();
@@ -127,6 +137,46 @@ public:
    */
   virtual void
   closeFile( Writable *, Parameter< Operation::CLOSE_FILE > const & ) = 0;
+  /** Advance the file/stream that this writable belongs to.
+   *
+   * Fundamentally, this task has the purpose to provide storage-/transport-side
+   * guarantees.
+   * In write mode, this means that all data written up to this point should be
+   * available in storage. In read mode, this shall guarantee data availability
+   * in the backend (in persistent FS-based backends, this will generally be
+   * a no-op).
+   * This task is used to implement streaming-aware semantics in the openPMD API
+   * by splitting data into packets that are written to and read from transport.
+   * 
+   * The advance mode is determined by parameters.mode.
+   * The return value shall be a packaged task that will eventually return a
+   * status code.
+   * @TODO use a std::future instead?
+   */
+  virtual void advance(Writable*, Parameter< Operation::ADVANCE > &)
+  {}
+  /** Report chunks that are available for loading from the dataset represented
+   *  by this writable.
+   *
+   * The resulting chunks should be stored into parameters.chunks.
+   * 
+   */
+  virtual void
+  availableChunks( Writable *, Parameter< Operation::AVAILABLE_CHUNKS > & )
+  {}
+  /** Declare a group stale.
+   * 
+   * This is an optimization-enabling task and may be ignored by backends.
+   * Indicates that the group corresponding with the writable needs not be held
+   * in a parseable state for this and upcoming IO steps, allowing for deletion
+   * of metadata to be sent/stored (attributes, datasets, ..).
+   * Should fail if the writable is not written.
+   * Should fail if m_handler->accessType is AccessType::READ_ONLY.
+   *
+   */
+  virtual void
+  staleGroup( Writable *, Parameter< Operation::STALE_GROUP > const & )
+  {}
   /** Create a new file in physical storage, possibly overriding an existing file.
    *
    * The operation should fail if m_handler->m_frontendAccess is Access::READ_ONLY.
