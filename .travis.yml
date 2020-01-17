@@ -29,26 +29,6 @@ addons:
 jobs:
   fast_finish: true
   include:
-    ###########################################################################
-    # Stage: Style                                                            #
-    ###########################################################################
-    - &style_python
-      stage: 'Style'
-      name: PY@3.5 +PEP8
-      language: python
-      python: "3.5"
-      install: pip install -U flake8
-      script:
-        # Test Python Files for PEP8 conformance
-        - flake8 --exclude=thirdParty .
-    - <<: *style_python
-      name: PY@3.6 +PEP8
-      python: "3.6"
-    - <<: *style_python
-      name: PY@3.7 +PEP8
-      python: "3.7"
-      dist: xenial
-      sudo: true
     # - &style_cpp
     #   stage: 'Style'
     #   name: clang-format@5.0.0
@@ -68,7 +48,8 @@ jobs:
     # Stage: Static Code Analysis                                             #
     ###########################################################################
     - &static_code_cpp
-      stage: 'Static Code Analysis'
+      # stage: 'Static Code Analysis'
+      stage: 'C++ Unit Tests'
     #   name: clang@5.0.0 +IncludeWhatYouUse
     #   sudo: true
       language: python
@@ -163,29 +144,12 @@ jobs:
         - if [[ $(wc -m <clang-tidy.log) -gt 1 ]]; then
             exit 1;
           fi
-    - &static_code_python
-      stage: 'Static Code Analysis'
-      name: pyflakes 3.5
-      language: python
-      python: "3.5"
-      install: pip install -U pyflakes
-      script:
-        # Warnings, unused code, etc.
-        - pyflakes docs/ examples/ test/
-    - <<: *static_code_python
-      name: pyflakes 3.6
-      python: "3.6"
-    - <<: *static_code_python
-      name: pyflakes 3.7
-      python: "3.7"
-      dist: xenial
-      sudo: true
     ###########################################################################
     # Stage: C++ Unit Tests                                                   #
     ###########################################################################
     # Clang 5.0.0
     - &test-cpp-unit
-      stage: 'C++ Unit Tests'
+      # stage: 'C++ Unit Tests'
       name: clang@5.0.0 -MPI -PY +H5 -ADIOS1 -ADIOS2
       language: cpp
       dist: xenial

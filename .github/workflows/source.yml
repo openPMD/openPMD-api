@@ -11,6 +11,19 @@ jobs:
       run: .github/workflows/source/hasTabs
     - name: End-of-Line whitespaces
       run: .github/workflows/source/hasEOLwhiteSpace
+    - name: PEP8
+      run: |
+        python3 -m pip install -U flake8
+        python3 -m flake8 --exclude=thirdParty .
+
+  static-analysis:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: pyflakes
+      run: |
+        python3 -m pip install -U pyflakes
+        python3 -m pyflakes docs/ examples/ test/ setup.py
 
   documentation:
     runs-on: ubuntu-latest
