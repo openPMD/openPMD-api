@@ -20,7 +20,7 @@
  */
 #pragma once
 
-#include <iosfwd>
+#include <ostream>
 
 
 namespace openPMD
@@ -33,10 +33,8 @@ enum class IterationEncoding
 {
     fileBased, groupBased
 };
-} // openPMD
 
-namespace std
-{
-    ostream&
-    operator<<(ostream&, openPMD::IterationEncoding);
-} // std
+std::ostream&
+operator<<(std::ostream&, openPMD::IterationEncoding const&);
+
+} // openPMD

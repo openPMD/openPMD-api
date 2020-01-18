@@ -24,7 +24,7 @@
 
 
 std::ostream&
-std::operator<<(std::ostream& os, openPMD::IterationEncoding ie)
+openPMD::operator<<(std::ostream& os, openPMD::IterationEncoding const& ie)
 {
     switch( ie )
     {

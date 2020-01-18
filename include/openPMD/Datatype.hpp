@@ -688,6 +688,10 @@ void
 warnWrongDtype(std::string const& key,
                Datatype store,
                Datatype request);
+
+std::ostream&
+operator<<(std::ostream&, openPMD::Datatype const&);
+
 } // namespace openPMD
 
 #if !defined(_MSC_VER)
@@ -717,9 +721,3 @@ operator!=( openPMD::Datatype d, openPMD::Datatype e )
 /** @}
  */
 #endif
-
-namespace std
-{
-    ostream&
-    operator<<(ostream&, openPMD::Datatype);
-} // namespace std
