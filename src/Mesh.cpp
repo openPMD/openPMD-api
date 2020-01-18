@@ -365,7 +365,7 @@ Mesh::read()
 } // openPMD
 
 std::ostream&
-std::operator<<(std::ostream& os, openPMD::Mesh::Geometry go)
+openPMD::operator<<(std::ostream& os, openPMD::Mesh::Geometry const& go)
 {
     switch( go )
     {
@@ -386,7 +386,7 @@ std::operator<<(std::ostream& os, openPMD::Mesh::Geometry go)
 }
 
 std::ostream&
-std::operator<<(std::ostream& os, openPMD::Mesh::DataOrder dor)
+openPMD::operator<<(std::ostream& os, openPMD::Mesh::DataOrder const& dor)
 {
     switch( dor )
     {

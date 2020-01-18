@@ -37,11 +37,9 @@ void warnWrongDtype(std::string const& key,
               << ", requested as " << request
               << ". Casting unconditionally with possible loss of precision.\n";
 }
-} // openPMD
-
 
 std::ostream&
-std::operator<<(std::ostream& os, openPMD::Datatype d)
+operator<<(std::ostream& os, openPMD::Datatype const & d)
 {
     using DT = openPMD::Datatype;
     switch( d )
@@ -147,8 +145,6 @@ std::operator<<(std::ostream& os, openPMD::Datatype d)
     return os;
 }
 
-namespace openPMD
-{
     Datatype stringToDatatype( std::string s )
     {
         static std::unordered_map<

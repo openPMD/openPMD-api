@@ -24,6 +24,8 @@ Features
 Bug Fixes
 """""""""
 
+- ``std::ostream& operator<<`` overloads are not declared in namespace ``std`` anymore #662
+
 Other
 """""
 

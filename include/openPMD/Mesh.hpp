@@ -25,8 +25,9 @@
 #include "openPMD/backend/MeshRecordComponent.hpp"
 
 #include <array>
-#include <vector>
+#include <ostream>
 #include <string>
+#include <vector>
 
 
 namespace openPMD
@@ -192,13 +193,11 @@ template< typename T >
 inline T
 Mesh::timeOffset() const
 { return readFloatingpoint< T >("timeOffset"); }
+
+std::ostream&
+operator<<(std::ostream&, openPMD::Mesh::Geometry const&);
+
+std::ostream&
+operator<<(std::ostream&, openPMD::Mesh::DataOrder const&);
+
 } // openPMD
-
-namespace std
-{
-    ostream&
-    operator<<(ostream&, openPMD::Mesh::Geometry);
-
-    std::ostream&
-    operator<<(ostream&, openPMD::Mesh::DataOrder);
-} // std
