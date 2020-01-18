@@ -40,6 +40,7 @@ Other
   - remove all Doxygen warnings and add to CI #654
   - backend feature matrix #661
 - migrate static checks for python code to GitHub actions #660
+- ``Attribute`` constructor: move argument into place #663
 
 
 0.10.3-alpha

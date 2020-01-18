@@ -23,14 +23,15 @@
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/Datatype.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
-#include <vector>
-#include <string>
 #include <iterator>
-#include <algorithm>
-#include <type_traits>
 #include <stdexcept>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 
 namespace openPMD
@@ -70,7 +71,7 @@ class Attribute :
                             bool >
 {
 public:
-    Attribute(resource r) : Variant(r)
+    Attribute(resource r) : Variant(std::move(r))
     { }
 
     /** Retrieve a stored specific Attribute and cast if convertible.
