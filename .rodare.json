@@ -86,6 +86,11 @@
             "name": "Gu, Junmin",
             "orcid": "0000-0002-1521-8534",
             "type": "Other"
+        },
+        {
+            "affiliation": "Helmholtz-Zentrum Dresden-Rossendorf",
+            "name": "Ordyna, Paweł",
+            "type": "Other"
         }
     ],
     "title": "C++ & Python API for Scientific I/O with openPMD",
