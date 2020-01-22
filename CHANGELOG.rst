@@ -43,6 +43,7 @@ Other
   - backend feature matrix #661
 - migrate static checks for python code to GitHub actions #660
 - ``Attribute`` constructor: move argument into place #663
+- Spack: ADIOS1 backend now enabled by default #664
 
 
 0.10.3-alpha

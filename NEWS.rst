@@ -10,6 +10,9 @@ The ``Series::setSoftwareVersion`` method is now deprecated and will be removed 
 Use ``Series::setSoftware(name, version)`` instead.
 Similarly for the Python API, use ``Series.set_software`` instead of ``Series.set_software_version``.
 
+Our `Spack <https://spack.io>`_ packages build the ADIOS1 backend now by default.
+Pass ``-adios1`` to the Spack spec to disable it: ``spack install openpmd-api -adios1`` (same for ``spack load``).
+
 
 0.10.0-alpha
 ------------
