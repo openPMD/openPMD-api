@@ -135,7 +135,7 @@ Choose *one* of the install methods below to get started:
 [![Spack Status](https://img.shields.io/badge/method-recommended-brightgreen.svg)](https://spack.readthedocs.io/en/latest/package_list.html#openpmd-api)
 
 ```bash
-# optional:               +python +adios1 +adios2 -hdf5 -mpi
+# optional:               +python +adios2 -adios1 -hdf5 -mpi
 spack install openpmd-api
 spack load -r openpmd-api
 ```
