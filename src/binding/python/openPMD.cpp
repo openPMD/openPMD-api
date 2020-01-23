@@ -77,23 +77,11 @@ PYBIND11_MODULE(openpmd_api, m) {
     init_Record(m);
     init_Series(m);
 
-    // build version
-    std::stringstream openPMDapi;
-    openPMDapi << OPENPMDAPI_VERSION_MAJOR << "."
-               << OPENPMDAPI_VERSION_MINOR << "."
-               << OPENPMDAPI_VERSION_PATCH;
-    if( std::string( OPENPMDAPI_VERSION_LABEL ).size() > 0 )
-        openPMDapi << "-" << OPENPMDAPI_VERSION_LABEL;
-    m.attr("__version__") = openPMDapi.str();
+    // API runtime version
+    m.attr("__version__") = openPMD::getVersion();
 
-    // feature variants
-    m.attr("variants") = std::map<std::string, bool>{
-        {"mpi", bool(openPMD_HAVE_MPI)},
-        {"json", true},
-        {"hdf5", bool(openPMD_HAVE_HDF5)},
-        {"adios1", bool(openPMD_HAVE_ADIOS1)},
-        {"adios2", bool(openPMD_HAVE_ADIOS2)}
-    };
+    // API runtime feature variants
+    m.attr("variants") = openPMD::getVariants();
 
     // TODO broken numpy if not at least v1.15.0: raise warning
     // auto numpy = py::module::import("numpy");

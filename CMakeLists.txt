@@ -291,6 +291,7 @@ endif()
 # Targets #####################################################################
 #
 set(CORE_SOURCE
+        src/config.cpp
         src/Dataset.cpp
         src/Datatype.cpp
         src/Iteration.cpp
@@ -301,6 +302,7 @@ set(CORE_SOURCE
         src/Record.cpp
         src/RecordComponent.cpp
         src/Series.cpp
+        src/version.cpp
         src/auxiliary/Date.cpp
         src/auxiliary/Filesystem.cpp
         src/backend/Attributable.cpp
