@@ -42,6 +42,7 @@ Other
   - typo in Python example for first read #649
   - remove all Doxygen warnings and add to CI #654
   - backend feature matrix #661
+  - document CMake's ``FetchContent`` feature for developers #667
 - migrate static checks for python code to GitHub actions #660
 - ``Attribute`` constructor: move argument into place #663
 - Spack: ADIOS1 backend now enabled by default #664

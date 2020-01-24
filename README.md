@@ -282,6 +282,20 @@ add_subdirectory("path/to/source/of/openPMD-api")
 target_link_libraries(YourTarget PRIVATE openPMD::openPMD)
 ```
 
+For development workflows, you can even automatically download and build openPMD-api from within a depending CMake project.
+Just replace the `add_subdirectory` call with:
+```cmake
+include(FetchContent)
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+set(BUILD_TESTING OFF)
+set(BUILD_EXAMPLES OFF)
+set(openPMD_USE_PYTHON OFF)
+FetchContent_Declare(openPMD
+  GIT_REPOSITORY "https://github.com/openPMD/openPMD-api.git"
+  GIT_TAG        "dev")
+FetchContent_MakeAvailable(openPMD)
+```
+
 ### Manually
 
 If your (Linux/OSX) project is build by calling the compiler directly or uses a manually written `Makefile`, consider using our `openPMD.pc` helper file for `pkg-config` which are installed alongside the library.
