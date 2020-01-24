@@ -356,9 +356,10 @@ jobs:
       versionSpec: '3.6'
       architecture: 'x64'
   - script: |
-      py -m pip install -U pip --user
-      py -m pip install -v openpmd-api --user
-  - script: py -c "import openpmd_api as api; print(api.variants)"
+      which python
+      python -m pip install -U pip --user
+      python -m pip install -v openpmd-api --user
+  - script: python -c "import openpmd_api as api; print(api.variants)"
 
 - job: win_pip_pypi_nobin
   displayName: Windows pip from PyPI w/o binary
@@ -370,23 +371,27 @@ jobs:
       versionSpec: '3.7'
       architecture: 'x64'
   - script: |
-      py -m pip install -U pip setuptools wheel cmake --user
-      py -m pip install -v openpmd-api --no-binary openpmd-api --user
-  - script: py -c "import openpmd_api as api; print(api.variants)"
+      which python
+      python -m pip install -U pip setuptools wheel cmake --user
+      python -m pip install -v openpmd-api --no-binary openpmd-api --user
+  - script: python -c "import openpmd_api as api; print(api.variants)"
 
 - job: win_pip_dev
   displayName: Windows pip from dev
   pool:
-    vmImage: windows-latest
+#   vmImage: windows-latest
+#   vmImage: windows-2019
+    vmImage: vs2017-win2016
   steps:
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '3.7'
       architecture: 'x64'
   - script: |
-      py -m pip install -U pip --user
-      py -m pip install -v git+https://github.com/openPMD/openPMD-api.git@dev --user
-  - script: py -c "import openpmd_api as api; print(api.variants)"
+      which python
+      python -m pip install -U pip --user
+      python -m pip install -v git+https://github.com/openPMD/openPMD-api.git@dev --user
+  - script: python -c "import openpmd_api as api; print(api.variants)"
 
 # conda -----------------------------------------------------------------------
 # attn: each build step runs in its own process and might require
