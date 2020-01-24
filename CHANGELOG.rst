@@ -20,6 +20,7 @@ Features
 - ADIOS2: expose engine #656
 - defaults for ``date`` and software base attributes #657
 - ``Series::setSoftware()`` add second argument for version #657
+- free standing functions to query the API version and feature variants at runtime #665
 
 Bug Fixes
 """""""""
