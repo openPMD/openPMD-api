@@ -44,9 +44,10 @@ Other
   - backend feature matrix #661
   - document CMake's ``FetchContent`` feature for developers #667
 - migrate static checks for python code to GitHub actions #660
+- add MPICH tests to CI #670
 - ``Attribute`` constructor: move argument into place #663
 - Spack: ADIOS1 backend now enabled by default #664
-- add independent HDF5 write test to CI #668
+- add independent HDF5 write test to CI #669
 
 
 0.10.3-alpha
