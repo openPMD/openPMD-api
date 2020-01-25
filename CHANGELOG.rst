@@ -46,6 +46,7 @@ Other
 - migrate static checks for python code to GitHub actions #660
 - ``Attribute`` constructor: move argument into place #663
 - Spack: ADIOS1 backend now enabled by default #664
+- add independent HDF5 write test to CI #668
 
 
 0.10.3-alpha
