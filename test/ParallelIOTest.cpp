@@ -2,6 +2,7 @@
  * To guarantee a correct call to Init, launch the tests manually.
  */
 #include "openPMD/openPMD.hpp"
+#include "openPMD/auxiliary/Environment.hpp"
 
 #include <catch2/catch.hpp>
 
@@ -177,9 +178,12 @@ TEST_CASE( "hdf5_write_test_zero_extent", "[parallel][hdf5]" )
 
 TEST_CASE( "hdf5_write_test_skip_chunk", "[parallel][hdf5]" )
 {
-    //! @todo add with H5FD_MPIO_INDEPENDENT
-    // write_test_zero_extent( "h5", false );
-    REQUIRE(true);
+    //! @todo add via JSON option instead of environment read
+    auto const hdf5_collective = auxiliary::getEnvString( "OPENPMD_HDF5_INDEPENDENT", "OFF" );
+    if( hdf5_collective == "ON" )
+        write_test_zero_extent( "h5", false );
+    else
+        REQUIRE(true);
 }
 
 #else
