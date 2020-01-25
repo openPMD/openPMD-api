@@ -86,6 +86,19 @@ compilers:
     extra_rpaths: []
     flags: {}
     modules: []
+    operating_system: ubuntu18.04
+    paths:
+      cc: /usr/bin/clang-8
+      cxx: /usr/bin/clang++-8
+      f77: /usr/bin/gfortran-7.4
+      fc: /usr/bin/gfortran-7.4
+    spec: clang@8.0.0
+    target: x86_64
+- compiler:
+    environment: {}
+    extra_rpaths: []
+    flags: {}
+    modules: []
     operating_system: ubuntu14.04
     paths:
       cc: /usr/bin/gcc-4.8
