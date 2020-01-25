@@ -25,7 +25,7 @@ TEST_CASE( "none", "[parallel]" )
 #endif
 
 #if openPMD_HAVE_MPI
-void write_test_zero_extent( std::string file_ending, bool writeAllChunks )
+void write_test_zero_extent( bool fileBased, std::string file_ending, bool writeAllChunks )
 {
     int mpi_s{-1};
     int mpi_r{-1};
@@ -33,9 +33,16 @@ void write_test_zero_extent( std::string file_ending, bool writeAllChunks )
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_r);
     uint64_t size = static_cast<uint64_t>(mpi_s);
     uint64_t rank = static_cast<uint64_t>(mpi_r);
-    Series o = Series("../samples/parallel_write_zero_extent." + file_ending, AccessType::CREATE, MPI_COMM_WORLD);
 
-    ParticleSpecies& e = o.iterations[1].particles["e"];
+    std::string filePath = "../samples/parallel_write_zero_extent";
+    if( fileBased )
+        filePath += "_%07T";
+    Series o = Series( filePath.append(".").append(file_ending), AccessType::CREATE, MPI_COMM_WORLD);
+
+    Iteration it = o.iterations[1];
+    it.setAttribute("yolo", "yo");
+
+    ParticleSpecies e = it.particles["e"];
 
     /* every rank n writes n consecutive cells, increasing values
      * rank 0 does a zero-extent write
@@ -173,7 +180,8 @@ TEST_CASE( "hdf5_write_test", "[parallel][hdf5]" )
 
 TEST_CASE( "hdf5_write_test_zero_extent", "[parallel][hdf5]" )
 {
-    write_test_zero_extent( "h5", true );
+    write_test_zero_extent( false, "h5", true );
+    write_test_zero_extent( true, "h5", true );
 }
 
 TEST_CASE( "hdf5_write_test_skip_chunk", "[parallel][hdf5]" )
@@ -181,7 +189,10 @@ TEST_CASE( "hdf5_write_test_skip_chunk", "[parallel][hdf5]" )
     //! @todo add via JSON option instead of environment read
     auto const hdf5_collective = auxiliary::getEnvString( "OPENPMD_HDF5_INDEPENDENT", "OFF" );
     if( hdf5_collective == "ON" )
-        write_test_zero_extent( "h5", false );
+    {
+        write_test_zero_extent( false, "h5", false );
+        write_test_zero_extent( true, "h5", false );
+    }
     else
         REQUIRE(true);
 }
@@ -233,12 +244,14 @@ TEST_CASE( "adios_write_test", "[parallel][adios]" )
 
 TEST_CASE( "adios_write_test_zero_extent", "[parallel][adios]" )
 {
-    write_test_zero_extent( "bp", true );
+    write_test_zero_extent( false, "bp", true );
+    write_test_zero_extent( true, "bp", true );
 }
 
 TEST_CASE( "adios_write_test_skip_chunk", "[parallel][adios]" )
 {
-    write_test_zero_extent( "bp", false );
+    write_test_zero_extent( false, "bp", false );
+    write_test_zero_extent( true, "bp", false ); // FIXME fails!
 }
 
 TEST_CASE( "hzdr_adios_sample_content_test", "[parallel][adios1]" )
