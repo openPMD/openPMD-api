@@ -251,7 +251,7 @@ TEST_CASE( "adios_write_test_zero_extent", "[parallel][adios]" )
 TEST_CASE( "adios_write_test_skip_chunk", "[parallel][adios]" )
 {
     write_test_zero_extent( false, "bp", false );
-    write_test_zero_extent( true, "bp", false ); // FIXME fails!
+    write_test_zero_extent( true, "bp", false );
 }
 
 TEST_CASE( "hzdr_adios_sample_content_test", "[parallel][adios1]" )
