@@ -725,8 +725,7 @@ void fileBased_write_test(const std::string & backend)
         o.setOpenPMDextension(1);
         o.iterations[3].setTime(static_cast< double >(3));
         o.iterations[4].setTime(static_cast< double >(4));
-        if( o.backend() != "ADIOS1" )  // FIXME fails with ADIOS1
-            o.flush();
+        o.flush();
         o.iterations[5].setTime(static_cast< double >(5));
     }
     REQUIRE((auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000001." + backend)

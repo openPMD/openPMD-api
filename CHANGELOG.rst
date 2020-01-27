@@ -26,6 +26,9 @@ Bug Fixes
 """""""""
 
 - ``std::ostream& operator<<`` overloads are not declared in namespace ``std`` anymore #662
+- ADIOS1:
+
+  - ensure creation of files that only contain attributes #674
 
 Other
 """""
