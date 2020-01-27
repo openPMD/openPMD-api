@@ -52,6 +52,8 @@ namespace openPMD
         ADIOS1IOHandler(std::string path, AccessType);
         ~ADIOS1IOHandler() override;
 
+        std::string backendName() const override { return "ADIOS1"; }
+
         std::future< void > flush() override;
 
         void enqueue(IOTask const&) override;
@@ -68,6 +70,8 @@ namespace openPMD
     public:
         ADIOS1IOHandler(std::string path, AccessType);
         ~ADIOS1IOHandler() override;
+
+        std::string backendName() const override { return "DUMMY_ADIOS1"; }
 
         std::future< void > flush() override;
 

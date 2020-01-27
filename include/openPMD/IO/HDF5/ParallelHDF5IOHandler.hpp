@@ -42,6 +42,8 @@ namespace openPMD
     #endif
         ~ParallelHDF5IOHandler() override;
 
+        std::string backendName() const override { return "MPI_HDF5"; }
+
         std::future< void > flush() override;
 
     private:

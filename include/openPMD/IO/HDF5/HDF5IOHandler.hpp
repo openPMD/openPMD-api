@@ -37,6 +37,8 @@ public:
     HDF5IOHandler(std::string path, AccessType);
     ~HDF5IOHandler() override;
 
+    std::string backendName() const override { return "HDF5"; }
+
     std::future< void > flush() override;
 
 private:
