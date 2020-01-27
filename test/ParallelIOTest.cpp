@@ -85,6 +85,7 @@ void write_test_zero_extent( bool fileBased, std::string file_ending, bool write
         e["position"]["x"].storeChunk(position_local, {offset}, {rank});
         e["positionOffset"]["x"].storeChunk(positionOffset_local, {offset}, {rank});
     }
+    o.flush();
 
     //TODO read back, verify
 }
