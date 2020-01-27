@@ -353,6 +353,12 @@ Series::setName(std::string const& n)
     return *this;
 }
 
+std::string
+Series::backend() const
+{
+    return IOHandler->backendName();
+}
+
 void
 Series::flush()
 {

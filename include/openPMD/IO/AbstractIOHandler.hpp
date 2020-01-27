@@ -97,6 +97,9 @@ public:
      */
     virtual std::future< void > flush() = 0;
 
+    /** The currently used backend */
+    virtual std::string backendName() const = 0;
+
     std::string const directory;
     AccessType const accessTypeBackend;
     AccessType const accessTypeFrontend;

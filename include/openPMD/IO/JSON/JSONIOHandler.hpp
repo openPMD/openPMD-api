@@ -39,6 +39,8 @@ namespace openPMD
 
         ~JSONIOHandler( ) override;
 
+        std::string backendName() const override { return "JSON"; }
+
         std::future< void > flush( ) override;
 
     private:

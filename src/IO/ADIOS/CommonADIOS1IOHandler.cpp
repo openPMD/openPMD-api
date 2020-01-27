@@ -756,7 +756,7 @@ CommonADIOS1IOHandlerImpl::writeDataset(Writable* writable,
     if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
         throw std::runtime_error("[ADIOS1] Writing into a dataset in a file opened as read only is not possible.");
 
-    /* file opening is deferred until the first dataset write to a file occurs */
+    /* file opening is deferred until the first dataset/attribute write to a file occurs */
     auto res = m_filePaths.find(writable);
     if( res == m_filePaths.end() )
         res = m_filePaths.find(writable->parent);
@@ -803,9 +803,18 @@ CommonADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
         name += '/';
     name += parameters.name;
 
+    /* file opening is deferred until the first dataset/attribute write to a file occurs */
     auto res = m_filePaths.find(writable);
     if( res == m_filePaths.end() )
         res = m_filePaths.find(writable->parent);
+    int64_t fd;
+    if( m_openWriteFileHandles.find(res->second) == m_openWriteFileHandles.end() )
+    {
+        fd = open_write(writable);
+        m_openWriteFileHandles[res->second] = fd;
+    } else
+        fd = m_openWriteFileHandles.at(res->second);
+
     int64_t group = m_groups[res->second];
 
     auto& attributes = m_attributeWrites[group];

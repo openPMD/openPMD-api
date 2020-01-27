@@ -55,6 +55,8 @@ namespace openPMD
 #   endif
         ~ParallelADIOS1IOHandler() override;
 
+        std::string backendName() const override { return "MPI_ADIOS1"; }
+
         std::future< void > flush() override;
 #if openPMD_HAVE_ADIOS1
         void enqueue(IOTask const&) override;

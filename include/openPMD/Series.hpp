@@ -237,6 +237,9 @@ public:
      */
     Series& setName(std::string const& name);
 
+    /** The currently used backend */
+    std::string backend() const;
+
     /** Execute all required remaining IO operations to write or read data.
      */
     void flush();
