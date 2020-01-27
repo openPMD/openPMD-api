@@ -673,6 +673,7 @@ void fileBased_write_test(const std::string & backend)
         std::shared_ptr< uint64_t > positionOffset_local_1(new uint64_t);
         e_1["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_1), {4}));
 
+        //o.setOpenPMDextension(1); // this would be before the first flush
         for( uint64_t i = 0; i < 4; ++i )
         {
             *position_local_1 = position_global[i];
@@ -723,6 +724,10 @@ void fileBased_write_test(const std::string & backend)
 
         o.setOpenPMDextension(1);
         o.iterations[3].setTime(static_cast< double >(3));
+
+        o.iterations[4].setTime(static_cast< double >(4));
+        //o.flush(); // FIXME fails with ADIOS1
+        o.iterations[5].setTime(static_cast< double >(5));
     }
     REQUIRE((auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000001." + backend)
         || auxiliary::directory_exists("../samples/subdir/serial_fileBased_write00000001." + backend)));
@@ -734,10 +739,12 @@ void fileBased_write_test(const std::string & backend)
     {
         Series o = Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::READ_ONLY);
 
-        REQUIRE(o.iterations.size() == 3);
+        REQUIRE(o.iterations.size() == 5);
         REQUIRE(o.iterations.count(1) == 1);
         REQUIRE(o.iterations.count(2) == 1);
         REQUIRE(o.iterations.count(3) == 1);
+        REQUIRE(o.iterations.count(4) == 1);
+        REQUIRE(o.iterations.count(5) == 1);
 
 #if openPMD_USE_INVASIVE_TESTS
         REQUIRE(*o.m_filenamePadding == 8);
@@ -759,6 +766,10 @@ void fileBased_write_test(const std::string & backend)
             REQUIRE(it.dt< double >() == 1.);
             REQUIRE(it.time< double >() == static_cast< double >(entry.first));
             REQUIRE(it.timeUnitSI() == 1.);
+
+            if( entry.first > 3 )
+                continue; // empty iterations
+
             auto& pos = it.particles.at("e").at("position");
             REQUIRE(pos.timeOffset< float >() == 0.f);
             REQUIRE(pos.unitDimension() == udim);
@@ -788,15 +799,18 @@ void fileBased_write_test(const std::string & backend)
               REQUIRE(positionOffset_raw[j] == j + (entry.first-1)*4);
             }
         }
+        REQUIRE(o.iterations[3].time< double >() == 3.0);
+        REQUIRE(o.iterations[4].time< double >() == 4.0);
+        REQUIRE(o.iterations[5].time< double >() == 5.0);
     }
 
     // extend existing series with new step and auto-detection of iteration padding
     {
         Series o = Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::READ_WRITE);
 
-        REQUIRE(o.iterations.size() == 3);
-        o.iterations[4];
-        REQUIRE(o.iterations.size() == 4);
+        REQUIRE(o.iterations.size() == 5);
+        o.iterations[6];
+        REQUIRE(o.iterations.size() == 6);
     }
     REQUIRE((auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000004." + backend)
         || auxiliary::directory_exists("../samples/subdir/serial_fileBased_write00000004." + backend)));
@@ -822,7 +836,7 @@ void fileBased_write_test(const std::string & backend)
     // read back with auto-detection and non-fixed padding
     {
         Series s = Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::READ_ONLY);
-        REQUIRE(s.iterations.size() == 5);
+        REQUIRE(s.iterations.size() == 7);
     }
 
     // write with auto-detection and in-consistent padding
@@ -834,7 +848,7 @@ void fileBased_write_test(const std::string & backend)
     // read back with auto-detection and fixed padding
     {
         Series s = Series("../samples/subdir/serial_fileBased_write%08T." + backend, AccessType::READ_ONLY);
-        REQUIRE(s.iterations.size() == 4);
+        REQUIRE(s.iterations.size() == 6);
     }
 }
 
