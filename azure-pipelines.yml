@@ -308,7 +308,7 @@ jobs:
       . spack/share/spack/setup-env.sh
       spack compiler find
       spack install -v openpmd-api@develop -mpi
-      export CMAKE_PREFIX_PATH=$(spack location -i openpmd-api@develop -mpi):$(spack location -i mpark-variant):$(spack location -i adios):$(spack location -i adios2):$(spack location -i hdf5):$CMAKE_PREFIX_PATH
+      spack load openpmd-api
       wget https://gist.githubusercontent.com/ax3l/b2399f2e8923def6a5e55f8bd4e5384c/raw/89ed4101559c917bc7d857f9427682e3f5d40024/CMakeLists.txt
       wget -O main.cpp https://raw.githubusercontent.com/openPMD/openPMD-api/dev/examples/3_write_serial.cpp
       mkdir build
@@ -332,7 +332,7 @@ jobs:
 #      spack compiler find
 #            spack bootstrap
 #      . spack/share/spack/setup-env.sh
-#      spack install -v openpmd-api +python +adios1 +adios2
+#      spack install -v openpmd-api +python +adios2
 #      spack load -r openpmd-api
 #      python -c "import openpmd_api as api; print(api.variants)"
 
