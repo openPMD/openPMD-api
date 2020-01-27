@@ -27,7 +27,17 @@
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
 #include "openPMD/IO/JSON/JSONIOHandler.hpp"
+
 #include <nlohmann/json.hpp>
+
+#include <stdexcept>
+#include <memory>
+
+#if openPMD_USE_VERIFY
+#    define VERIFY(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error((TEXT)); }
+#else
+#    define VERIFY(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
+#endif
 
 namespace openPMD
 {
@@ -43,17 +53,29 @@ namespace openPMD
         nlohmann::json optionsJson = nlohmann::json::parse( options );
         switch( format )
         {
-            case Format::HDF5:
-                return std::make_shared< ParallelHDF5IOHandler >( path, access, comm );
-            case Format::ADIOS1:
+            case Format::HDF5: {
+                auto new_iohandler = std::dynamic_pointer_cast<AbstractIOHandler>(
+                        std::make_shared<ParallelHDF5IOHandler>(path, access, comm));
+                VERIFY(new_iohandler != nullptr,
+                       "[AbstractIOHandler] Internal error: Cannot create parallel HDF5 handler");
+                return new_iohandler;
+            }
+            case Format::ADIOS1: {
 #   if openPMD_HAVE_ADIOS1
-                return std::make_shared< ParallelADIOS1IOHandler >( path, access, comm );
+                auto new_iohandler = std::dynamic_pointer_cast<AbstractIOHandler>(std::make_shared< ParallelADIOS1IOHandler >(path, access, comm));
+                VERIFY( new_iohandler != nullptr, "[AbstractIOHandler] Internal error: Cannot create parallel ADIOS1 handler");
+                return new_iohandler;
 #   else
                 throw std::runtime_error("openPMD-api built without ADIOS1 support");
 #   endif
-            case Format::ADIOS2:
-                return std::make_shared< ADIOS2IOHandler >(
-                    path, access, comm, std::move( optionsJson ) );
+            }
+            case Format::ADIOS2: {
+                auto new_iohandler = std::dynamic_pointer_cast<AbstractIOHandler>(
+                        std::make_shared<ADIOS2IOHandler>(path, access, comm, std::move( optionsJson )));
+                VERIFY(new_iohandler != nullptr,
+                       "[AbstractIOHandler] Internal error: Cannot create parallel ADIOS2 handler");
+                return new_iohandler;
+            }
             default:
                 throw std::runtime_error(
                     "Unknown file format! Did you specify a file ending?" );
@@ -69,23 +91,37 @@ namespace openPMD
         std::string const & options )
     {
         nlohmann::json optionsJson = nlohmann::json::parse( options );
-        switch( format )
-        {
-            case Format::HDF5:
-                return std::make_shared< HDF5IOHandler >( path, access );
-            case Format::ADIOS1:
+        switch( format ) {
+            case Format::HDF5: {
+                auto new_iohandler = std::dynamic_pointer_cast<AbstractIOHandler>(
+                        std::make_shared<HDF5IOHandler>(path, access));
+                VERIFY(new_iohandler != nullptr, "[AbstractIOHandler] Internal error: Cannot create HDF5 handler");
+                return new_iohandler;
+            }
+            case Format::ADIOS1: {
 #if openPMD_HAVE_ADIOS1
-                return std::make_shared< ADIOS1IOHandler >( path, access );
+            auto new_iohandler = std::dynamic_pointer_cast<AbstractIOHandler>(std::make_shared< ADIOS1IOHandler >(path, access));
+            VERIFY( new_iohandler != nullptr, "[AbstractIOHandler] Internal error: Cannot create ADIOS1 handler");
+            return new_iohandler;
 #else
                 throw std::runtime_error("openPMD-api built without ADIOS1 support");
 #endif
+            }
+            case Format::ADIOS2: {
 #if openPMD_HAVE_ADIOS2
-            case Format::ADIOS2:
-                return std::make_shared< ADIOS2IOHandler >(
-                    path, access, std::move( optionsJson ) );
-#endif // openPMD_HAVE_ADIOS2
-            case Format::JSON:
-                return std::make_shared< JSONIOHandler >( path, access );
+                auto new_iohandler = std::dynamic_pointer_cast<AbstractIOHandler>(std::make_shared<ADIOS2IOHandler>(path, access, std::move( optionsJson )));
+                VERIFY( new_iohandler != nullptr, "[AbstractIOHandler] Internal error: Cannot create ADIOS2 handler");
+                return new_iohandler;
+#else
+                throw std::runtime_error("openPMD-api built without ADIOS2 support");
+#endif
+            }
+            case Format::JSON: {
+                auto new_iohandler = std::dynamic_pointer_cast<AbstractIOHandler>(
+                        std::make_shared<JSONIOHandler>(path, access));
+                VERIFY(new_iohandler != nullptr, "[AbstractIOHandler] Internal error: Cannot create JSON handler");
+                return new_iohandler;
+            }
             default:
                 throw std::runtime_error(
                     "Unknown file format! Did you specify a file ending?" );

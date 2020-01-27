@@ -30,6 +30,7 @@
 #   include "openPMD/IO/ADIOS/ADIOS1FilePosition.hpp"
 #   include <adios.h>
 #   include <iostream>
+#   include <stdexcept>
 #   include <memory>
 #endif
 #include <utility>
