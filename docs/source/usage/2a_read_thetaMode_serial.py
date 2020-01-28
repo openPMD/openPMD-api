@@ -1,0 +1,1 @@
+../../../examples/2a_read_thetaMode_serial.py

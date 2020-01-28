@@ -13,6 +13,7 @@ C++
 
 - `1_structure.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/1_structure.cpp>`_: creating a first series
 - `2_read_serial.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/2_read_serial.cpp>`_: reading a mesh
+- `2a_read_thetaMode_serial.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/2a_read_thetaMode_serial.cpp>`_: reading an azimuthally decomposed mesh (and reconstruct it)
 - `3_write_serial.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/3_write_serial.cpp>`_: writing a mesh
 - `4_read_parallel.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/4_read_parallel.cpp>`_: MPI-parallel mesh read
 - `5_write_parallel.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/5_write_parallel.cpp>`_: MPI-parallel mesh write
@@ -24,6 +25,7 @@ Python
 ------
 
 - `2_read_serial.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/2_read_serial.py>`_: reading a mesh
+- `2a_read_thetaMode_serial.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/2a_read_thetaMode_serial.py>`_: reading an azimuthally decomposed mesh (and reconstruct it)
 - `3_write_serial.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/3_write_serial.py>`_: writing a mesh
 - `4_read_parallel.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/4_read_parallel.py>`_: MPI-parallel mesh read
 - `5_write_parallel.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/5_write_parallel.py>`_: MPI-parallel mesh write

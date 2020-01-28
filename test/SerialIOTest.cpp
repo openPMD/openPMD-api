@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <cmath>
 #include <memory>
 #include <limits>
 #include <list>
@@ -1512,6 +1513,72 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
             REQUIRE(auxiliary::file_exists(file));
             auxiliary::remove_file(file);
         }
+    } catch (no_such_file_error& e)
+    {
+        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+        return;
+    }
+}
+
+
+TEST_CASE( "git_hdf5_sample_read_thetaMode", "[serial][hdf5][thetaMode]" )
+{
+    try
+    {
+        Series o = Series("../samples/git-sample/thetaMode/data%T.h5", AccessType::READ_ONLY);
+
+        REQUIRE(o.iterations.size() == 5);
+        REQUIRE(o.iterations.count(100) == 1);
+        REQUIRE(o.iterations.count(200) == 1);
+        REQUIRE(o.iterations.count(300) == 1);
+        REQUIRE(o.iterations.count(400) == 1);
+        REQUIRE(o.iterations.count(500) == 1);
+
+        auto i = o.iterations[500];
+
+        REQUIRE(i.meshes.size() == 4);
+        REQUIRE(i.meshes.count("B") == 1);
+        REQUIRE(i.meshes.count("E") == 1);
+        REQUIRE(i.meshes.count("J") == 1);
+        REQUIRE(i.meshes.count("rho") == 1);
+
+        Mesh B = i.meshes["B"];
+        std::vector< std::string > const al{"r", "z"};
+        std::vector< double > const gs{3.e-7, 1.e-7};
+        std::vector< double > const ggo{0., 3.02e-5};
+        std::array< double, 7 > const ud{{0.,  1., -2., -1.,  0.,  0.,  0.}};
+        REQUIRE(B.geometry() == Mesh::Geometry::thetaMode);
+        REQUIRE(B.geometryParameters() == "m=2;imag=+");
+        REQUIRE(B.dataOrder() == Mesh::DataOrder::C);
+        REQUIRE(B.axisLabels() == al);
+        REQUIRE(B.gridSpacing< double >().size() == 2u);
+        REQUIRE(B.gridGlobalOffset().size() == 2u);
+        REQUIRE(std::abs(B.gridSpacing< double >()[0] - gs[0]) <= std::numeric_limits<double>::epsilon());
+        REQUIRE(std::abs(B.gridSpacing< double >()[1] - gs[1]) <= std::numeric_limits<double>::epsilon());
+        REQUIRE(std::abs(B.gridGlobalOffset()[0] - ggo[0]) <= std::numeric_limits<double>::epsilon());
+        REQUIRE(std::abs(B.gridGlobalOffset()[1] - ggo[1]) <= std::numeric_limits<double>::epsilon());
+        REQUIRE(B.gridUnitSI() == 1.0);
+        REQUIRE(B.unitDimension() == ud);
+        REQUIRE(B.timeOffset< double >() == static_cast< double >(0.0f));
+
+        REQUIRE(B.size() == 3);
+        REQUIRE(B.count("r") == 1);
+        REQUIRE(B.count("t") == 1);
+        REQUIRE(B.count("z") == 1);
+
+        MeshRecordComponent B_z = B["z"];
+        std::vector< double > const pos{0.5, 0.0};
+        Extent const ext{3, 51, 201};
+        REQUIRE(B_z.unitSI() == 1.0);
+        REQUIRE(B_z.position< double >() == pos);
+        REQUIRE(B_z.getDatatype() == Datatype::DOUBLE);
+        REQUIRE(B_z.getExtent() == ext);
+        REQUIRE(B_z.getDimensionality() == 3);
+
+        Offset const offset{1, 10, 90}; // skip mode_0 (one scalar field)
+        Extent const extent{2, 30, 20}; // mode_1 (two scalar fields)
+        auto data = B_z.loadChunk< double >(offset, extent);
+        o.flush();
     } catch (no_such_file_error& e)
     {
         std::cerr << "git sample not accessible. (" << e.what() << ")\n";
