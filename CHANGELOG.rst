@@ -21,6 +21,7 @@ Features
 
   - new default for ``.bp`` files (over ADIOS1) #676
   - expose engine #656
+- HDF5: ``OPENPMD_HDF5_INDEPENDENT=ON`` is now default in parallel I/O #677
 - defaults for ``date`` and software base attributes #657
 - ``Series::setSoftware()`` add second argument for version #657
 - free standing functions to query the API version and feature variants at runtime #665

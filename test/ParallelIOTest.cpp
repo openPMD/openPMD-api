@@ -188,7 +188,7 @@ TEST_CASE( "hdf5_write_test_zero_extent", "[parallel][hdf5]" )
 TEST_CASE( "hdf5_write_test_skip_chunk", "[parallel][hdf5]" )
 {
     //! @todo add via JSON option instead of environment read
-    auto const hdf5_collective = auxiliary::getEnvString( "OPENPMD_HDF5_INDEPENDENT", "OFF" );
+    auto const hdf5_collective = auxiliary::getEnvString( "OPENPMD_HDF5_INDEPENDENT", "ON" );
     if( hdf5_collective == "ON" )
     {
         write_test_zero_extent( false, "h5", false );
