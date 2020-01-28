@@ -144,6 +144,7 @@ TEST_CASE( "output_default_test", "[core]" )
 {
     using IE = IterationEncoding;
     Series o = Series("./new_openpmd_output_%T.json", AccessType::CREATE);
+    o.setFlush(FlushType::DEFER);
 
     REQUIRE(o.openPMD() == "1.1.0");
     REQUIRE(o.openPMDextension() == static_cast<uint32_t>(0));
@@ -161,6 +162,7 @@ TEST_CASE( "output_constructor_test", "[core]" )
 {
     using IE = IterationEncoding;
     Series o = Series("./MyCustomOutput.json", AccessType::CREATE);
+    o.setFlush(FlushType::DEFER);
 
     o.setMeshesPath("customMeshesPath").setParticlesPath("customParticlesPath");
 
@@ -185,6 +187,7 @@ TEST_CASE( "output_constructor_test", "[core]" )
 TEST_CASE( "output_modification_test", "[core]" )
 {
     Series o = Series("./MyOutput_%T.json", AccessType::CREATE);
+    o.setFlush(FlushType::DEFER);
 
     o.setOpenPMD("1.0.0");
     REQUIRE(o.openPMD() == "1.0.0");
@@ -210,6 +213,7 @@ TEST_CASE( "output_modification_test", "[core]" )
 TEST_CASE( "iteration_default_test", "[core]" )
 {
     Series o = Series("./MyOutput_%T.json", AccessType::CREATE);
+    o.setFlush(FlushType::DEFER);
 
     Iteration& i = o.iterations[42];
 
@@ -224,6 +228,7 @@ TEST_CASE( "iteration_default_test", "[core]" )
 TEST_CASE( "iteration_modification_test", "[core]" )
 {
     Series o = Series("./MyOutput_%T.json", AccessType::CREATE);
+    o.setFlush(FlushType::DEFER);
 
     Iteration& i = o.iterations[42];
 
@@ -242,6 +247,7 @@ TEST_CASE( "iteration_modification_test", "[core]" )
 TEST_CASE( "particleSpecies_modification_test", "[core]" )
 {
     Series o = Series("./MyOutput_%T.json", AccessType::CREATE);
+    o.setFlush(FlushType::DEFER);
 
     auto& particles = o.iterations[42].particles;
     REQUIRE(0 == particles.numAttributes());
@@ -271,6 +277,7 @@ TEST_CASE( "particleSpecies_modification_test", "[core]" )
 TEST_CASE( "record_constructor_test", "[core]" )
 {
     Series o = Series("./MyOutput_%T.json", AccessType::CREATE);
+    o.setFlush(FlushType::DEFER);
 
     ParticleSpecies ps = o.iterations[42].particles["species"];
     Record& r = ps["record"];
@@ -293,6 +300,7 @@ TEST_CASE( "record_constructor_test", "[core]" )
 TEST_CASE( "record_modification_test", "[core]" )
 {
     Series o = Series("./MyOutput_%T.json", AccessType::CREATE);
+    o.setFlush(FlushType::DEFER);
 
     auto species = o.iterations[42].particles["species"];
     Record& r = species["position"];
@@ -321,6 +329,7 @@ TEST_CASE( "record_modification_test", "[core]" )
 TEST_CASE( "recordComponent_modification_test", "[core]" )
 {
     Series o = Series("./MyOutput_%T.json", AccessType::CREATE);
+    o.setFlush(FlushType::DEFER);
 
     ParticleSpecies ps = o.iterations[42].particles["species"];
     Record& r = ps["record"];
@@ -343,6 +352,7 @@ TEST_CASE( "recordComponent_modification_test", "[core]" )
 TEST_CASE( "mesh_constructor_test", "[core]" )
 {
     Series o = Series("./MyOutput_%T.json", AccessType::CREATE);
+    o.setFlush(FlushType::DEFER);
 
     Mesh &m = o.iterations[42].meshes["E"];
 
@@ -371,6 +381,7 @@ TEST_CASE( "mesh_constructor_test", "[core]" )
 TEST_CASE( "mesh_modification_test", "[core]" )
 {
     Series o = Series("./MyOutput_%T.json", AccessType::CREATE);
+    o.setFlush(FlushType::DEFER);
 
     Mesh &m = o.iterations[42].meshes["E"];
     m["x"];
@@ -411,6 +422,7 @@ TEST_CASE( "structure_test", "[core]" )
 {
 #if openPMD_USE_INVASIVE_TESTS
     Series o = Series("./new_openpmd_output_%T.json", AccessType::CREATE);
+    o.setFlush(FlushType::DEFER);
 
     REQUIRE(o.IOHandler);
     REQUIRE(o.iterations.IOHandler);
@@ -536,6 +548,7 @@ TEST_CASE( "structure_test", "[core]" )
 TEST_CASE( "wrapper_test", "[core]" )
 {
     Series o = Series("./new_openpmd_output.json", AccessType::CREATE);
+    o.setFlush(FlushType::DEFER);
 
     o.setOpenPMDextension(42);
     o.setIterationEncoding(IterationEncoding::fileBased);
@@ -658,6 +671,7 @@ TEST_CASE( "wrapper_test", "[core]" )
 TEST_CASE( "use_count_test", "[core]" )
 {
     Series o = Series("./new_openpmd_output.json", AccessType::CREATE);
+    o.setFlush(FlushType::DEFER);
 
     MeshRecordComponent mrc = o.iterations[1].meshes["E"]["x"];
     mrc.resetDataset(Dataset(determineDatatype<uint16_t>(), {42}));
@@ -667,6 +681,14 @@ TEST_CASE( "use_count_test", "[core]" )
     REQUIRE(storeData.use_count() == 2);
     o.flush();
     REQUIRE(storeData.use_count() == 1);
+
+    o.setFlush(FlushType::DIRECT);
+    mrc.storeChunk(storeData, {0}, {1});
+    REQUIRE(storeData.use_count() == 1);
+    o.flush();
+    REQUIRE(storeData.use_count() == 1);
+
+    o.setFlush(FlushType::DEFER);
 
 #if openPMD_USE_INVASIVE_TESTS
     PatchRecordComponent pprc = o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR];
@@ -682,6 +704,7 @@ TEST_CASE( "use_count_test", "[core]" )
 TEST_CASE( "empty_record_test", "[core]" )
 {
     Series o = Series("./new_openpmd_output.json", AccessType::CREATE);
+    o.setFlush(FlushType::DEFER);
 
     o.iterations[1].meshes["E"].setComment("No assumption about contained RecordComponents will be made");
     REQUIRE_THROWS_WITH(o.flush(),
@@ -693,6 +716,7 @@ TEST_CASE( "empty_record_test", "[core]" )
 TEST_CASE( "zero_extent_component", "[core]" )
 {
     Series o = Series("./new_openpmd_output.json", AccessType::CREATE);
+    o.setFlush(FlushType::DEFER);
 
     auto E_x = o.iterations[1].meshes["E"]["x"];
     E_x.setComment("Datasets must contain dimensions.");

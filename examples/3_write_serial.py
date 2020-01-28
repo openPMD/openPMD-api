@@ -26,6 +26,9 @@ if __name__ == "__main__":
         openpmd_api.Access_Type.create
     )
 
+    # accumulate load/store I/O operations until .flush()
+    # series.set_flush(openpmd_api.Flush_Type.defer)
+
     print("Created an empty {0} Series".format(series.iteration_encoding))
 
     print(len(series.iterations))
@@ -40,16 +43,12 @@ if __name__ == "__main__":
     rho.reset_dataset(dataset)
     print("Set the dataset properties for the scalar field rho in iteration 1")
 
-    series.flush()
-    print("File structure has been written")
-
     rho[()] = data
 
-    print("Stored the whole Dataset contents as a single chunk, " +
-          "ready to write content")
+    # in Flush_Type.defer, call now:
+    # series.flush()
 
-    series.flush()
-    print("Dataset content has been fully written")
+    print("Stored the whole Dataset contents as a single chunk")
 
     # The files in 'series' are still open until the object is destroyed, on
     # which it cleanly flushes and closes all open file handles.

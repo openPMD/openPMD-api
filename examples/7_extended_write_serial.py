@@ -6,8 +6,8 @@ Copyright 2018-2020 openPMD contributors
 Authors: Axel Huebl, Fabian Koller
 License: LGPLv3+
 """
-from openpmd_api import Series, Access_Type, Dataset, Mesh_Record_Component, \
-    Unit_Dimension
+from openpmd_api import Series, Access_Type, Dataset, Flush_Type, \
+    Mesh_Record_Component, Unit_Dimension
 import numpy as np
 
 
@@ -20,6 +20,9 @@ if __name__ == "__main__":
         "working/directory/2D_simData_py.h5",
         Access_Type.create
     )
+
+    # accumulate load/store I/O operations until .flush()
+    f.set_flush(Flush_Type.defer)
 
     # all required openPMD attributes will be set to reasonable default values
     # (all ones, all zeros, empty strings,...)
@@ -130,9 +133,10 @@ if __name__ == "__main__":
         {Unit_Dimension.L: 1})
     electrons.particle_patches["extent"]["x"].reset_dataset(dset)
 
-    # at any point in time you may decide to dump already created output to
-    # disk note that this will make some operations impossible (e.g. renaming
-    # files)
+    # in Flush_Type.defer:
+    #   at any point in time you may decide to dump already created output to
+    #   disk note that this will make some operations impossible (e.g. renaming
+    #   files)
     f.flush()
 
     # chunked writing of the final dataset at a time is supported
@@ -148,8 +152,9 @@ if __name__ == "__main__":
             partial_mesh[col] = mesh_x[i, col]
 
         mesh["x"][i, 0:5] = partial_mesh
-        # operations between store and flush MUST NOT modify the pointed-to
-        # data
+        # in Flush_Type.defer:
+        #   operations between store and flush MUST NOT modify the pointed-to
+        #   data
         f.flush()
         # after the flush completes successfully, access to the shared
         # resource is returned to the caller

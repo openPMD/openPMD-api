@@ -244,6 +244,7 @@ Features
 
   - ``manylinux2010`` wheels for PyPI #523
   - add ``pyproject.toml`` for build dependencies (PEP-518) #527
+- Series: flush type "direct" (new default) and "defer" (previous default) #484
 
 Bug Fixes
 """""""""

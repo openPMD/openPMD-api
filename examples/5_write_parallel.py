@@ -35,6 +35,10 @@ if __name__ == "__main__":
         openpmd_api.Access_Type.create,
         comm
     )
+
+    # accumulate load/store I/O operations until .flush()
+    # series.set_flush(openpmd_api.Flush_Type.defer)
+
     if 0 == comm.rank:
         print("Created an empty series in parallel with {} MPI ranks".format(
               comm.size))
@@ -61,7 +65,8 @@ if __name__ == "__main__":
         print("Registered a single chunk per MPI rank containing its "
               "contribution, ready to write content to disk")
 
-    series.flush()
+    # in Flush_Type.defer, call now:
+    # series.flush()
     if 0 == comm.rank:
         print("Dataset content has been fully written to disk")
 

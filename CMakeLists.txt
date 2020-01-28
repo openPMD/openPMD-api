@@ -524,6 +524,7 @@ if(openPMD_HAVE_PYTHON)
         src/binding/python/Container.cpp
         src/binding/python/Dataset.cpp
         src/binding/python/Datatype.cpp
+        src/binding/python/FlushType.cpp
         src/binding/python/Iteration.cpp
         src/binding/python/IterationEncoding.cpp
         src/binding/python/Mesh.cpp

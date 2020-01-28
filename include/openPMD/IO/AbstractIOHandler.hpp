@@ -24,6 +24,7 @@
 #include "openPMD/IO/AccessType.hpp"
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/IO/IOTask.hpp"
+#include "openPMD/IO/FlushType.hpp"
 
 #if openPMD_HAVE_MPI
 #   include <mpi.h>
@@ -70,13 +71,15 @@ class AbstractIOHandler
 public:
 #if openPMD_HAVE_MPI
     AbstractIOHandler(std::string path, AccessType at, MPI_Comm)
-        : directory{std::move(path)},
+        : flushType(FlushType::DIRECT),
+          directory{std::move(path)},
           accessTypeBackend{at},
           accessTypeFrontend{at}
     { }
 #endif
     AbstractIOHandler(std::string path, AccessType at)
-        : directory{std::move(path)},
+        : flushType(FlushType::DIRECT),
+          directory{std::move(path)},
           accessTypeBackend{at},
           accessTypeFrontend{at}
     { }
@@ -100,6 +103,7 @@ public:
     /** The currently used backend */
     virtual std::string backendName() const = 0;
 
+    FlushType flushType;
     std::string const directory;
     AccessType const accessTypeBackend;
     AccessType const accessTypeFrontend;

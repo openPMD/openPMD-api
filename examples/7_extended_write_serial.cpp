@@ -10,6 +10,10 @@ void
 write()
 {
     Series o = Series("../samples/serial_write.h5", AccessType::CREATE);
+
+    // accumulate load/store I/O operations until .flush()
+    o.setFlush(FlushType::DEFER);
+
     ParticleSpecies& e = o.iterations[1].particles["e"];
 
     std::vector< double > position_global(4);
@@ -22,7 +26,7 @@ write()
     {
         *position_local = position_global[i];
         e["position"]["x"].storeChunk(position_local, {i}, {1});
-        o.flush();
+        o.flush();  // series with FlushType::DEFER
     }
 
     std::vector< uint64_t > positionOffset_global(4);
@@ -35,7 +39,7 @@ write()
     {
         *positionOffset_local = positionOffset_global[i];
         e["positionOffset"]["x"].storeChunk(positionOffset_local, {i}, {1});
-        o.flush();
+        o.flush();  // series with FlushType::DEFER
     }
 
     /* The files in 'o' are still open until the object is destroyed, on
@@ -48,6 +52,9 @@ void
 write2()
 {
     Series f = Series("working/directory/2D_simData.h5", AccessType::CREATE);
+
+    // accumulate load/store I/O operations until .flush()
+    f.setFlush(FlushType::DEFER);
 
     // all required openPMD attributes will be set to reasonable default values (all ones, all zeros, empty strings,...)
     // manually setting them enforces the openPMD standard
@@ -158,8 +165,10 @@ write2()
     electrons.particlePatches["extent"].setUnitDimension({{UnitDimension::L, 1}});
     electrons.particlePatches["extent"]["x"].resetDataset(dset);
 
-    // at any point in time you may decide to dump already created output to disk
-    // note that this will make some operations impossible (e.g. renaming files)
+    // in FlushType::DEFER:
+    //   At any point in time you may decide to dump already created output to
+    //   disk. Note that this will make some operations impossible
+    //   (e.g. renaming files).
     f.flush();
 
     // chunked writing of the final dataset at a time is supported
@@ -176,7 +185,8 @@ write2()
         Offset o = Offset{i, 0};
         Extent e = Extent{1, 5};
         mesh["x"].storeChunk(partial_mesh, o, e);
-        // operations between store and flush MUST NOT modify the pointed-to data
+        // in FlushType::DEFER:
+        //     operations between store and flush MUST NOT modify the pointed-to data
         f.flush();
         // after the flush completes successfully, access to the shared resource is returned to the caller
 

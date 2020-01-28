@@ -24,6 +24,10 @@ if __name__ == "__main__":
         openpmd_api.Access_Type.read_only,
         comm
     )
+
+    # accumulate load/store I/O operations until .flush()
+    # series.set_flush(openpmd_api.Flush_Type.defer)
+
     if 0 == comm.rank:
         print("Read a series in parallel with {} MPI ranks".format(
               comm.size))
@@ -38,7 +42,8 @@ if __name__ == "__main__":
     if 0 == comm.rank:
         print("Queued the loading of a single chunk per MPI rank from disk, "
               "ready to execute")
-    series.flush()
+    # in Flush_Type.defer, call now:
+    # series.flush()
 
     if 0 == comm.rank:
         print("Chunks have been read from disk")

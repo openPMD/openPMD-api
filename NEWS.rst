@@ -28,6 +28,52 @@ The CMake option ``-DopenPMD_USE_JSON`` has been removed (as it is always ``ON``
 Previously, omitting a file ending in the ``Series`` constructor chose a "dummy" no-operation file backend.
 This was confusing and instead a runtime error is now thrown.
 
+Python
+^^^^^^
+
+``.flush()`` Method
+"""""""""""""""""""
+
+The ``Series.flush()`` method for ``load_chunk`` and ``store_chunk`` as well as particle patch ``load``/``store`` is now only needed in ``defer``-red flush mode.
+By default, a series will be opened with the new ``direct`` mode, which can be less performant for large-scale or many-var I/O but is more convenient.
+
+In order to restore the old default, set the new ``Series.set_flush`` method to ``Flush_Type.defer``.
+Both modes will be supported in the future and ``Flush_Type.defer`` is recommended for all high-throughput workloads.
+
+.. code-block:: python3
+
+   import openPMD_api as api
+
+   s = api.Series(
+       "data_%T.h5",
+       api.Access_Type.create)
+
+   # new default: api.Flush_Type.direct
+   s.set_flush(api.Flush_Type.defer)
+
+C++
+^^^
+
+``.flush()`` Method
+"""""""""""""""""""
+
+The ``Series::flush()`` method for ``loadChunk`` and ``storeChunk`` as well as particle patch ``load``/``store`` is now only needed in ``DEFER``-red flush mode.
+By default, a series will be opened with the new ``DIRECT`` mode, which can be less performant for large-scale or many-var I/O but is more convenient.
+
+In order to restore the old default, set the new ``Series::setFlush`` method to ``FlushType::DEFER``.
+Both modes will be supported in the future and ``FlushType::DEFER`` is recommended for all high-throughput workloads.
+
+.. code-block:: python3
+
+   #include <openPMD/openPMD.hpp>
+
+   s = openPMD::Series(
+       "data_%T.h5",
+       openPMD::AccessType::CREATE);
+
+   // new default: openPMD::FlushType::DIRECT
+   s.setFlush(openPMD::FlushType::DEFER);
+
 
 0.9.0-alpha
 -----------

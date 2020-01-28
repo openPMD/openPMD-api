@@ -38,6 +38,7 @@ void write_test_zero_extent( bool fileBased, std::string file_ending, bool write
     if( fileBased )
         filePath += "_%07T";
     Series o = Series( filePath.append(".").append(file_ending), AccessType::CREATE, MPI_COMM_WORLD);
+    o.setFlush(FlushType::DEFER);  // @bug crashes in DIRECT flush mode
 
     Iteration it = o.iterations[1];
     it.setAttribute("yolo", "yo");
@@ -101,6 +102,7 @@ TEST_CASE( "git_hdf5_sample_content_test", "[parallel][hdf5]" )
     try
     {
         Series o = Series("../samples/git-sample/data00000%T.h5", AccessType::READ_ONLY, MPI_COMM_WORLD);
+        o.setFlush(FlushType::DEFER);
 
         {
             double actual[3][3][3] = {{{-1.9080703683727052e-09, -1.5632650729457964e-10, 1.1497536256399599e-09},
@@ -154,6 +156,7 @@ TEST_CASE( "hdf5_write_test", "[parallel][hdf5]" )
     uint64_t mpi_size = static_cast<uint64_t>(mpi_s);
     uint64_t mpi_rank = static_cast<uint64_t>(mpi_r);
     Series o = Series("../samples/parallel_write.h5", AccessType::CREATE, MPI_COMM_WORLD);
+    o.setFlush(FlushType::DEFER);  // @bug crashes in DIRECT flush mode
 
     o.setAuthor("Parallel HDF5");
     ParticleSpecies& e = o.iterations[1].particles["e"];
@@ -166,6 +169,8 @@ TEST_CASE( "hdf5_write_test", "[parallel][hdf5]" )
 
     e["position"]["x"].resetDataset(Dataset(determineDatatype(position_local), {mpi_size}));
     e["position"]["x"].storeChunk(position_local, {mpi_rank}, {1});
+
+    // o.flush();  // @todo why does this crash in DEFER flush mode?
 
     std::vector< uint64_t > positionOffset_global(mpi_size);
     uint64_t posOff{0};
@@ -211,6 +216,7 @@ TEST_CASE( "no_parallel_hdf5", "[parallel][hdf5]" )
 TEST_CASE( "adios_write_test", "[parallel][adios]" )
 {
     Series o = Series("../samples/parallel_write.bp", AccessType::CREATE, MPI_COMM_WORLD);
+    o.setFlush(FlushType::DEFER);  // @bug crashes in DIRECT flush mode
 
     int size{-1};
     int rank{-1};
@@ -265,6 +271,7 @@ TEST_CASE( "hzdr_adios_sample_content_test", "[parallel][adios1]" )
     {
         /* development/huebl/lwfa-bgfield-001 */
         Series o = Series("../samples/hzdr-sample/bp/checkpoint_%T.bp", AccessType::READ_ONLY, MPI_COMM_WORLD);
+        o.setFlush(FlushType::DEFER);
 
         if( o.iterations.count(0) == 1)
         {

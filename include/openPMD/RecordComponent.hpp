@@ -21,6 +21,8 @@
 #pragma once
 
 #include "openPMD/backend/BaseRecordComponent.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/FlushType.hpp"
 #include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/Dataset.hpp"
 
@@ -125,6 +127,14 @@ public:
      *
      * If offset is non-zero and extent is {-1u} the leftover extent in the
      * record component will be selected.
+     *
+     * In FlushType::DEFER, the data managed by the returned
+     * std::shared_ptr< T > MUST NOT be read, modified or deleted until
+     * Series::flush is called.
+     *
+     * @todo implement: if the shared pointers' `use_count` drops to one
+     *       before Series::flush is called, the load will be skipped during
+     *       Series::flush.
      */
     template< typename T >
     std::shared_ptr< T > loadChunk(
@@ -140,6 +150,15 @@ public:
      *
      * If offset is non-zero and extent is {-1u} the leftover extent in the
      * record component will be selected.
+     *
+     * In FlushType::DEFER, the data managed by the passed
+     * std::shared_ptr< T > MUST NOT be read, modified or deleted until
+     * Series::flush is called.
+     *
+     * @todo implement: if the shared pointers' `use_count` drops to one
+     *       before Series::flush is called, the load will be skipped during
+     *       Series::flush.
+     *       Depends on https://github.com/openPMD/openPMD-api/issues/470
      */
     template< typename T >
     void loadChunk(
@@ -148,9 +167,38 @@ public:
         Extent,
         double targetUnitSI = std::numeric_limits< double >::quiet_NaN() );
 
+    /** Store a chunk of data
+     *
+     * shared_ptr< T > for data must be contiguous and large enough for extent
+     *
+     * In FlushType::DEFER, the data managed by the passed
+     * std::shared_ptr< T > MUST NOT be modified or deleted until
+     * Series::flush is called.
+     *
+     * @todo implement: if the shared pointers' `use_count` drops to one
+     *       before Series::flush is called, the store will be skipped during
+     *       Series::flush.
+     *       Depends on https://github.com/openPMD/openPMD-api/issues/470
+     */
     template< typename T >
     void storeChunk(std::shared_ptr< T >, Offset, Extent);
 
+    /** Store a chunk of data
+     *
+     * Passed contiguous container must be large enough for extent.
+     *
+     * Define a new openPMD::traits::IsContiguousContainer trait
+     * to allow further user-defined, contiguous memory layout containers.
+     *
+     * Set offset to {0u} and extent to {-1u} for selecting the beginning
+     * of the record component up to the extent of the contiguous container.
+     *
+     * If offset is non-zero and extent is {-1u} the leftover extent in the
+     * contiguous container will be selected in the record component.
+     *
+     * In FlushType::DEFER, the data managed by the passed contiguous
+     * container MUST NOT be modified or deleted until Series::flush is called.
+     */
     template< typename T_ContiguousContainer >
     typename std::enable_if<
         traits::IsContiguousContainer< T_ContiguousContainer >::value
@@ -234,6 +282,7 @@ RecordComponent::loadChunk(Offset o, Extent e, double targetUnitSI)
 
     auto newData = std::shared_ptr<T>(new T[numPoints], []( T *p ){ delete [] p; });
     loadChunk(newData, offset, extent, targetUnitSI);
+
     return newData;
 }
 
@@ -306,6 +355,16 @@ RecordComponent::loadChunk(std::shared_ptr< T > data, Offset o, Extent e, double
         dRead.dtype = getDatatype();
         dRead.data = std::static_pointer_cast< void >(data);
         m_chunks->push(IOTask(this, dRead));
+
+        if( this->IOHandler->flushType == FlushType::DIRECT )
+        {
+            while( !m_chunks->empty() )
+            {
+                IOHandler->enqueue(m_chunks->front());
+                m_chunks->pop();
+            }
+            IOHandler->flush();
+        }
     }
 }
 
@@ -357,6 +416,16 @@ throw std::runtime_error("Unallocated pointer passed during chunk store.");
     /* std::static_pointer_cast correctly reference-counts the pointer */
     dWrite.data = std::static_pointer_cast< void const >(data);
     m_chunks->push(IOTask(this, dWrite));
+
+    if( this->IOHandler->flushType == FlushType::DIRECT )
+    {
+        while( !m_chunks->empty() )
+        {
+            IOHandler->enqueue(m_chunks->front());
+            m_chunks->pop();
+        }
+        IOHandler->flush();
+    }
 }
 
 template< typename T_ContiguousContainer >

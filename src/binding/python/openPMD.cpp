@@ -39,6 +39,7 @@ void init_BaseRecordComponent(py::module &);
 void init_Container(py::module &);
 void init_Dataset(py::module &);
 void init_Datatype(py::module &);
+void init_FlushType(py::module &);
 void init_Iteration(py::module &);
 void init_IterationEncoding(py::module &);
 void init_Mesh(py::module &);
@@ -64,6 +65,7 @@ PYBIND11_MODULE(openpmd_api, m) {
     init_BaseRecord(m);
     init_Dataset(m);
     init_Datatype(m);
+    init_FlushType(m);
     init_Iteration(m);
     init_IterationEncoding(m);
     init_Mesh(m);

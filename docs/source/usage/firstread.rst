@@ -89,6 +89,9 @@ C++11
        "data%T.h5",
        api::AccessType::READ_ONLY);
 
+   // optional: accumulate heavy load
+   //    operations until .flush()
+   // series.setFlush(api::FlushType::DEFER);
 
 Python
 ^^^^^^
@@ -98,6 +101,10 @@ Python
    series = api.Series(
        "data%T.h5",
        api.Access_Type.read_only)
+
+   # optional: accumulate heavy load
+   #   operations until .flush()
+   # series.set_flush(api.Flush_Type.defer)
 
 Iteration
 ---------
@@ -271,6 +278,11 @@ Python
 .. code-block:: python3
 
    series.flush()
+
+.. note::
+
+   You can *skip this step* if your series flush mode is *not* ``FlushType::DEFER``/``Flush_Type.defer``.
+   With the convenient default (``FlushType::DIRECT``/``Flush_Type.direct``), we call ``flush()`` implicitly in ``load_chunk()``.
 
 Data
 -----

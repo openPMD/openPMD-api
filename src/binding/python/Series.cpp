@@ -142,6 +142,8 @@ void init_Series(py::module &m) {
         .def("set_iteration_format", &Series::setIterationFormat)
         .def_property_readonly("name", &Series::name)
         .def("set_name", &Series::setName)
+        .def("set_flush", &Series::setFlush)
+        .def_property_readonly("flush_mode", &Series::getFlush)
         .def("flush", &Series::flush)
 
         .def_readwrite("iterations", &Series::iterations,

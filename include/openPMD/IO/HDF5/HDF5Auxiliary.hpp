@@ -28,6 +28,7 @@
 #include <hdf5.h>
 
 #include <stack>
+#include <iostream>
 
 
 namespace openPMD
@@ -253,7 +254,13 @@ concrete_h5_file_position(Writable* w)
     std::string pos;
     while( !hierarchy.empty() )
     {
-        pos += std::dynamic_pointer_cast< HDF5FilePosition >(hierarchy.top()->abstractFilePosition)->location;
+        auto afp = hierarchy.top()->abstractFilePosition;
+
+        auto afp_h5 = std::dynamic_pointer_cast< HDF5FilePosition >(afp);
+        if( afp_h5 == nullptr )
+            std::cerr << "WARNING: invalid file position in writable stack!" << std::endl;
+        else
+            pos.append(afp_h5->location);
         hierarchy.pop();
     }
 
