@@ -17,7 +17,10 @@ Changes to "0.10.3-alpha"
 Features
 """"""""
 
-- ADIOS2: expose engine #656
+- ADIOS2:
+
+  - new default for ``.bp`` files (over ADIOS1) #676
+  - expose engine #656
 - defaults for ``date`` and software base attributes #657
 - ``Series::setSoftware()`` add second argument for version #657
 - free standing functions to query the API version and feature variants at runtime #665
@@ -29,6 +32,7 @@ Bug Fixes
 - ADIOS1:
 
   - ensure creation of files that only contain attributes #674
+  - deprecated in favor of ADIOS2 backend #676
 
 Other
 """""

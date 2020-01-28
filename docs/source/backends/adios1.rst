@@ -9,6 +9,10 @@ To build openPMD with support for ADIOS, use the CMake option ``-DopenPMD_USE_AD
 For further information, check out the :ref:`installation guide <install>`,
 :ref:`build dependencies <development-dependencies>` and the :ref:`build options <development-buildoptions>`.
 
+.. note::
+
+   This backend is deprecated, please use ADIOS2 instead.
+
 
 I/O Method
 ----------
@@ -29,12 +33,13 @@ environment variable                 default    description
 ``OPENPMD_ADIOS_NUM_AGGREGATORS``    ``1``      Number of I/O aggregator nodes for ADIOS1 ``MPI_AGGREGATE`` transport method.
 ``OPENPMD_ADIOS_NUM_OST``            ``0``      Number of I/O OSTs for ADIOS1 ``MPI_AGGREGATE`` transport method.
 ``OPENPMD_ADIOS_HAVE_METADATA_FILE`` ``1``      Online creation of the adios journal file (``1``: yes, ``0``: no).
-``OPENPMD_BP_BACKEND``               ``ADIOS1`` Chose preferred ``.bp`` file backend if ``ADIOS1`` and ``ADIOS2`` are available.
+``OPENPMD_BP_BACKEND``               ``ADIOS2`` Chose preferred ``.bp`` file backend if ``ADIOS1`` and ``ADIOS2`` are available.
 ==================================== ========== ================================================================================
 
 Please refer to the `ADIOS1 manual, section 6.1.5 <https://users.nccs.gov/~pnorbert/ADIOS-UsersManual-1.13.1.pdf>`_ for details on I/O tuning.
 
-In case both the ADIOS1 backend and the :ref:`ADIOS2 backend <backends-adios2>` are enabled, set ``OPENPMD_BP_BACKEND`` to ``ADIOS2`` to enforce using ADIOS2.
+In case both the ADIOS1 backend and the :ref:`ADIOS2 backend <backends-adios2>` are enabled, set ``OPENPMD_BP_BACKEND`` to ``ADIOS1`` to enforce using ADIOS1.
+If only the ADIOS1 backend was compiled but not the :ref:`ADIOS2 backend <backends-adios2>`, the default of ``OPENPMD_BP_BACKEND`` is automatically switched to ``ADIOS1``.
 Be advised that ADIOS1 only supports ``.bp`` files up to the internal version BP3, while ADIOS2 supports BP3, BP4 and later formats.
 
 

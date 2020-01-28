@@ -214,11 +214,11 @@ jobs:
         # - dpkg -i openPMD*.deb
         - ls -R $HOME/openPMD-test-install | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'
     - <<: *test-cpp-unit
-      name: clang@5.0.0 +OMPI -PY +H5 +ADIOS1 +ADIOS2 (BP4)
+      name: clang@5.0.0 +OMPI -PY +H5 +ADIOS1 (BP3) +ADIOS2
       language: python
       python: "3.6"
       env:
-        - CXXSPEC="%clang@5.0.0" USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=ON OPENPMD_BP_BACKEND=ADIOS2 USE_SAMPLES=ON
+        - CXXSPEC="%clang@5.0.0" USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=ON OPENPMD_BP_BACKEND=ADIOS1 USE_SAMPLES=ON
       compiler: clang
       addons:
         apt:
