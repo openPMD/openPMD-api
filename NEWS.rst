@@ -6,12 +6,17 @@ Upgrade Guide
 0.11.0-alpha
 ------------
 
+ADIOS2 is now the default backend for ``.bp`` files.
+As soon as the ADIOS2 backend is enabled it will take precedence over a potentially also enabled ADIOS1 backend.
+In order to prefer the legacy ADIOS1 backend in such a situation, set an environment variable: ``export OPENPMD_BP_BACKEND="ADIOS1"``.
+Support for ADIOS1 is now deprecated.
+
+Our `Spack <https://spack.io>`_ packages build the ADIOS2 backend now by default.
+Pass ``-adios2`` to the Spack spec to disable it: ``spack install openpmd-api -adios2`` (same for ``spack load``).
+
 The ``Series::setSoftwareVersion`` method is now deprecated and will be removed in future versions of the library.
 Use ``Series::setSoftware(name, version)`` instead.
 Similarly for the Python API, use ``Series.set_software`` instead of ``Series.set_software_version``.
-
-Our `Spack <https://spack.io>`_ packages build the ADIOS1 backend now by default.
-Pass ``-adios1`` to the Spack spec to disable it: ``spack install openpmd-api -adios1`` (same for ``spack load``).
 
 
 0.10.0-alpha

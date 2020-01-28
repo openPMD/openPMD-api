@@ -892,12 +892,12 @@ determineFormat(std::string const& filename)
     {
         auto const bp_backend = auxiliary::getEnvString(
             "OPENPMD_BP_BACKEND",
-#if openPMD_HAVE_ADIOS1
-            "ADIOS1"
-#elif openPMD_HAVE_ADIOS2
+#if openPMD_HAVE_ADIOS2
             "ADIOS2"
-#else
+#elif openPMD_HAVE_ADIOS1
             "ADIOS1"
+#else
+            "ADIOS2"
 #endif
         );
 
