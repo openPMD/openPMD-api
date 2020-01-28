@@ -11,6 +11,11 @@ As soon as the ADIOS2 backend is enabled it will take precedence over a potentia
 In order to prefer the legacy ADIOS1 backend in such a situation, set an environment variable: ``export OPENPMD_BP_BACKEND="ADIOS1"``.
 Support for ADIOS1 is now deprecated.
 
+Independent MPI-I/O is now the default in parallel HDF5.
+For the old default, collective parallel I/O, set the environment variable ``export OPENPMD_HDF5_INDEPENDENT="OFF"``.
+Collective parallel I/O makes more functionality, such as ``storeChunk`` and ``loadChunk``, MPI-collective.
+HDF5 attribute writes are MPI-collective in either case, due to HDF5 restrictions.
+
 Our `Spack <https://spack.io>`_ packages build the ADIOS2 backend now by default.
 Pass ``-adios2`` to the Spack spec to disable it: ``spack install openpmd-api -adios2`` (same for ``spack load``).
 

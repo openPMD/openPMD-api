@@ -63,7 +63,7 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(AbstractIOHandler* handler,
     m_fileAccessProperty = H5Pcreate(H5P_FILE_ACCESS);
 
     H5FD_mpio_xfer_t xfer_mode = H5FD_MPIO_COLLECTIVE;
-    auto const hdf5_collective = auxiliary::getEnvString( "OPENPMD_HDF5_INDEPENDENT", "OFF" );
+    auto const hdf5_collective = auxiliary::getEnvString( "OPENPMD_HDF5_INDEPENDENT", "ON" );
     if( hdf5_collective == "ON" )
         xfer_mode = H5FD_MPIO_INDEPENDENT;
     else

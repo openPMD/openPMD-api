@@ -21,17 +21,17 @@ Backend-Specific Controls
 
 The following environment variables control HDF5 I/O behavior at runtime.
 
-===================================== ========= ================================================================================
+===================================== ========= ====================================================================================
 environment variable                  default   description
-===================================== ========= ================================================================================
-``OPENPMD_HDF5_INDEPENDENT``          ``OFF``   Sets the MPI-parallel transfer mode to collective or independent.
-===================================== ========= ================================================================================
+===================================== ========= ====================================================================================
+``OPENPMD_HDF5_INDEPENDENT``          ``ON``    Sets the MPI-parallel transfer mode to collective (``OFF``) or independent (``ON``).
+===================================== ========= ====================================================================================
 
-``OPENPMD_HDF5_INDEPENDENT``: by default, the HDF5's MPI-parallel write/read operations are `MPI-collective <https://www.mpi-forum.org/docs/mpi-2.2/mpi22-report/node87.htm#Node87>`_.
-Since we call those underneath each ``storeChunk`` and ``loadChunk`` call, these methods become MPI-collective as well.
-Please refer to the `HDF5 manual, function H5Pset_dxpl_mpio <https://support.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_dxpl_mpio.htm>`_ for more details.
-In case you decide to use independent I/O with parallel HDF5, be advised that we did see performance penalties as well problems with some MPI-I/O implementations in the past.
+``OPENPMD_HDF5_INDEPENDENT``: by default, we implement MPI-parallel data ``storeChunk`` (write) and ``loadChunk`` (read) calls as `none-collective MPI operations <https://www.mpi-forum.org/docs/mpi-2.2/mpi22-report/node87.htm#Node87>`_.
+Attribute writes are always collective in parallel HDF5.
+Although we choose the default to be non-collective (independent) for ease of use, be advised that performance penalties may occur, although this depends heavily on the use-case.
 For independent parallel I/O, potentially prefer using a modern version of the MPICH implementation (especially, use ROMIO instead of OpenMPI's ompio implementation).
+Please refer to the `HDF5 manual, function H5Pset_dxpl_mpio <https://support.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_dxpl_mpio.htm>`_ for more details.
 
 
 Selected References

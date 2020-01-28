@@ -294,12 +294,12 @@ jobs:
         # - find / -name libclang_rt*
     # Clang 8.0.0 + Python 3.8.0 @ Bionic
     - <<: *test-cpp-unit
-      name: clang@8.0.0 +MPICH +PY@3.8 +H5 +H5_INDEP +ADIOS1 +ADIOS2
+      name: clang@8.0.0 +MPICH +PY@3.8 +H5 (collective) +ADIOS1 +ADIOS2
       dist: bionic
       language: python
       python: "3.8"
       env:
-        - CXXSPEC="%clang@8.0.0" USE_MPI=ON MPI_FLAVOR="^mpich" USE_PYTHON=ON USE_HDF5=ON OPENPMD_HDF5_INDEPENDENT=ON USE_ADIOS1=ON USE_ADIOS2=ON USE_SAMPLES=ON
+        - CXXSPEC="%clang@8.0.0" USE_MPI=ON MPI_FLAVOR="^mpich" USE_PYTHON=ON USE_HDF5=ON OPENPMD_HDF5_INDEPENDENT=OFF USE_ADIOS1=ON USE_ADIOS2=ON USE_SAMPLES=ON
       compiler: clang
       addons:
         apt:
@@ -412,12 +412,12 @@ jobs:
         - CXX=g++-7 && CC=gcc-7
       script: *script-cpp-unit
     - <<: *test-cpp-unit
-      name: gcc@7.4.0 +OMPI -PY +H5 +H5_INDEP +ADIOS1 -ADIOS2
+      name: gcc@7.4.0 +OMPI -PY +H5 (collective) +ADIOS1 -ADIOS2
       dist: trusty
       language: python
       python: "3.6"
       env:
-        - CXXSPEC="%gcc@7.4.0" USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON OPENPMD_HDF5_INDEPENDENT=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
+        - CXXSPEC="%gcc@7.4.0" USE_MPI=ON USE_PYTHON=OFF USE_HDF5=ON OPENPMD_HDF5_INDEPENDENT=OFF USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: gcc
       addons:
         apt:
