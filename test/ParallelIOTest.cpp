@@ -39,53 +39,56 @@ void write_test_zero_extent( bool fileBased, std::string file_ending, bool write
         filePath += "_%07T";
     Series o = Series( filePath.append(".").append(file_ending), AccessType::CREATE, MPI_COMM_WORLD);
 
-    Iteration it = o.iterations[1];
-    it.setAttribute("yolo", "yo");
+    int max_step = 100;
+    // this is an ADIOS1 bug, comment the following line to see it
+    if( o.backend() == "MPI_ADIOS1" ) max_step = 1;
 
-    ParticleSpecies e = it.particles["e"];
+    for( int step=0; step<=max_step; step+=20 ) {
+        Iteration it = o.iterations[step];
+        it.setAttribute("yolo", "yo");
 
-    /* every rank n writes n consecutive cells, increasing values
-     * rank 0 does a zero-extent write
-     * two ranks will result in {1}
-     * three ranks will result in {1, 2, 3}
-     * four ranks will result in {1, 2, 3, 4, 5, 6} */
-    uint64_t num_cells = ((size-1)*(size-1) + (size-1))/2; /* (n^2 + n) / 2 */
-    if( num_cells == 0u )
-    {
-        std::cerr << "Test can only be run with at least two ranks" << std::endl;
-        return;
+        ParticleSpecies e = it.particles["e"];
+
+        /* every rank n writes n consecutive cells, increasing values
+         * rank 0 does a zero-extent write
+         * two ranks will result in {1}
+         * three ranks will result in {1, 2, 3}
+         * four ranks will result in {1, 2, 3, 4, 5, 6} */
+        uint64_t num_cells = ((size - 1) * (size - 1) + (size - 1)) / 2; /* (n^2 + n) / 2 */
+        if (num_cells == 0u) {
+            std::cerr << "Test can only be run with at least two ranks" << std::endl;
+            return;
+        }
+
+        std::vector<double> position_global(num_cells);
+        double pos{1.};
+        std::generate(position_global.begin(), position_global.end(), [&pos] { return pos++; });
+        std::shared_ptr<double> position_local(new double[rank], [](double const *p) { delete[] p; });
+        uint64_t offset;
+        if (rank != 0)
+            offset = ((rank - 1) * (rank - 1) + (rank - 1)) / 2;
+        else
+            offset = 0;
+
+        e["position"]["x"].resetDataset(Dataset(determineDatatype(position_local), {num_cells}));
+
+        std::vector<uint64_t> positionOffset_global(num_cells);
+        uint64_t posOff{1};
+        std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff] { return posOff++; });
+        std::shared_ptr<uint64_t> positionOffset_local(new uint64_t[rank], [](uint64_t const *p) { delete[] p; });
+
+        e["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local), {num_cells}));
+
+        for (uint64_t i = 0; i < rank; ++i) {
+            position_local.get()[i] = position_global[offset + i];
+            positionOffset_local.get()[i] = positionOffset_global[offset + i];
+        }
+        if (rank != 0 || writeAllChunks) {
+            e["position"]["x"].storeChunk(position_local, {offset}, {rank});
+            e["positionOffset"]["x"].storeChunk(positionOffset_local, {offset}, {rank});
+        }
+        o.flush();
     }
-
-    std::vector< double > position_global(num_cells);
-    double pos{1.};
-    std::generate(position_global.begin(), position_global.end(), [&pos]{ return pos++; });
-    std::shared_ptr< double > position_local(new double[rank], [](double const * p) { delete[] p;});
-    uint64_t offset;
-    if( rank != 0 )
-        offset = ((rank-1)*(rank-1) + (rank-1))/2;
-    else
-        offset = 0;
-
-    e["position"]["x"].resetDataset(Dataset(determineDatatype(position_local), {num_cells}));
-
-    std::vector< uint64_t > positionOffset_global(num_cells);
-    uint64_t posOff{1};
-    std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
-    std::shared_ptr< uint64_t > positionOffset_local(new uint64_t[rank], [](uint64_t const * p) { delete[] p;});
-
-    e["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local), {num_cells}));
-
-    for( uint64_t i = 0; i < rank; ++i )
-    {
-        position_local.get()[i] = position_global[offset + i];
-        positionOffset_local.get()[i] = positionOffset_global[offset + i];
-    }
-    if( rank != 0 || writeAllChunks )
-    {
-        e["position"]["x"].storeChunk(position_local, {offset}, {rank});
-        e["positionOffset"]["x"].storeChunk(positionOffset_local, {offset}, {rank});
-    }
-    o.flush();
 
     //TODO read back, verify
 }
