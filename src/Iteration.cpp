@@ -119,10 +119,10 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
     } else
     {
       if (IOHandler->accessTypeFrontend == AccessType::CREATE)
-	{ 
-	  flush();
-	  return;
-	}
+    { 
+      flush();
+      return;
+    }
 
         // operations for read mode 
         /* open file */
