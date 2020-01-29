@@ -119,12 +119,12 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
     } else
     {
       if (IOHandler->accessTypeFrontend == AccessType::CREATE)
-    { 
+    {
       flush();
       return;
     }
 
-        // operations for read mode 
+        // operations for read mode
         /* open file */
         auto s = dynamic_cast< Series* >(parent->attributable->parent->attributable);
         Parameter< Operation::OPEN_FILE > fOpen;
