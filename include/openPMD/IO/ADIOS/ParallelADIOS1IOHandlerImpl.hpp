@@ -94,6 +94,7 @@ namespace openPMD
         std::unordered_map< std::shared_ptr< std::string >, ADIOS_FILE* > m_openReadFileHandles;
         std::unordered_map< ADIOS_FILE*, std::vector< ADIOS_SELECTION* > > m_scheduledReads;
         std::unordered_map< int64_t, std::unordered_map< std::string, Attribute > > m_attributeWrites;
+        int64_t GetFileHandle(Writable*);
         MPI_Comm m_mpiComm;
         MPI_Info m_mpiInfo;
     }; // ParallelADIOS1IOHandlerImpl
