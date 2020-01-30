@@ -375,6 +375,8 @@ CommonADIOS1IOHandlerImpl::createFile(Writable* writable,
         m_groups[m_filePaths[writable]] = initialize_group(name);
         /* defer actually opening the file handle until the first Operation::WRITE_DATASET occurs */
         m_existsOnDisk[m_filePaths[writable]] = false;
+
+	int64_t fd = GetFileHandle(writable);
     }
 }
 
@@ -424,12 +426,7 @@ CommonADIOS1IOHandlerImpl::createDataset(Writable* writable,
         auto res = m_filePaths.find(writable);
         if( res == m_filePaths.end() )
             res = m_filePaths.find(writable->parent);
-        auto it = m_openWriteFileHandles.find(res->second);
-        if( it != m_openWriteFileHandles.end() )
-        {
-            close(m_openWriteFileHandles.at(res->second));
-            m_openWriteFileHandles.erase(it);
-        }
+
         int64_t group = m_groups[res->second];
 
         /* Sanitize name */
@@ -749,6 +746,32 @@ CommonADIOS1IOHandlerImpl::deleteAttribute(Writable*,
     throw std::runtime_error("[ADIOS1] Attribute deletion not implemented in ADIOS backend");
 }
 
+int64_t CommonADIOS1IOHandlerImpl::GetFileHandle(Writable* writable)
+{
+    auto res = m_filePaths.find(writable);
+    if( res == m_filePaths.end() )
+        res = m_filePaths.find(writable->parent);
+    int64_t fd;
+    if( m_openWriteFileHandles.find(res->second) == m_openWriteFileHandles.end() )
+    {
+      // write all opening handles and close them
+      {
+        for( auto& group : m_attributeWrites )
+	  for( auto& att : group.second )
+	    flush_attribute(group.first, att.first, att.second);
+	
+	for( auto& f : m_openWriteFileHandles )
+	  close(f.second);
+	m_openWriteFileHandles.clear();
+      }
+
+      fd = open_write(writable);
+      m_openWriteFileHandles[res->second] = fd;
+    } else
+      fd = m_openWriteFileHandles.at(res->second);
+
+    return fd;
+}
 void
 CommonADIOS1IOHandlerImpl::writeDataset(Writable* writable,
                                   Parameter< Operation::WRITE_DATASET > const& parameters)
@@ -756,17 +779,7 @@ CommonADIOS1IOHandlerImpl::writeDataset(Writable* writable,
     if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
         throw std::runtime_error("[ADIOS1] Writing into a dataset in a file opened as read only is not possible.");
 
-    /* file opening is deferred until the first dataset/attribute write to a file occurs */
-    auto res = m_filePaths.find(writable);
-    if( res == m_filePaths.end() )
-        res = m_filePaths.find(writable->parent);
-    int64_t fd;
-    if( m_openWriteFileHandles.find(res->second) == m_openWriteFileHandles.end() )
-    {
-        fd = open_write(writable);
-        m_openWriteFileHandles[res->second] = fd;
-    } else
-        fd = m_openWriteFileHandles.at(res->second);
+    int64_t fd = GetFileHandle(writable);
 
     std::string name = concrete_bp1_file_position(writable);
 
@@ -803,17 +816,26 @@ CommonADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
         name += '/';
     name += parameters.name;
 
-    /* file opening is deferred until the first dataset/attribute write to a file occurs */
     auto res = m_filePaths.find(writable);
     if( res == m_filePaths.end() )
         res = m_filePaths.find(writable->parent);
-    int64_t fd;
-    if( m_openWriteFileHandles.find(res->second) == m_openWriteFileHandles.end() )
-    {
-        fd = open_write(writable);
-        m_openWriteFileHandles[res->second] = fd;
-    } else
-        fd = m_openWriteFileHandles.at(res->second);
+
+    int64_t fd = -1;
+
+    if( m_openWriteFileHandles.find(res->second) == m_openWriteFileHandles.end()) {
+      // 
+      // not a perfect splot: 
+      // past iterators still tend to write attributes. 
+      // if file is not there anymore, return. 
+      // should not be here in the first place if dirty flag is set properly (for storeChunk & setAttribute)
+      // 
+      return;
+      //fd = open_write(writable);
+      //m_openWriteFileHandles[res->second] = fd;
+    } else {
+      fd = m_openWriteFileHandles.at(res->second);
+    }
+
 
     int64_t group = m_groups[res->second];
 
