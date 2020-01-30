@@ -7,6 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
+    - name: Non-ASCII Characters
+      run: .github/workflows/source/hasNonASCII
     - name: TABs
       run: .github/workflows/source/hasTabs
     - name: End-of-Line whitespaces

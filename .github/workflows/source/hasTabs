@@ -2,7 +2,7 @@
 #
 # Copyright 2016-2020 Axel Huebl
 #
-# License: BSD-3-Clause-LBNL
+# License: LGPLv3+
 
 # search recursive inside a folder if a file contains tabs
 #
