@@ -68,11 +68,11 @@ ParallelADIOS1IOHandlerImpl::~ParallelADIOS1IOHandlerImpl()
         /* create all files, even if ADIOS file creation has been deferred,
          * but execution of the deferred operation has never been triggered
          * (happens when no Operation::WRITE_DATASET is performed) */
-  
+
         for( auto& f : m_filePaths )
             if( m_openWriteFileHandles.find(f.second) == m_openWriteFileHandles.end() )
                 m_openWriteFileHandles[f.second] = open_write(f.first);
-#endif  
+#endif
         for( auto& f : m_openWriteFileHandles )
             close(f.second);
         m_openWriteFileHandles.clear();

@@ -759,7 +759,7 @@ int64_t CommonADIOS1IOHandlerImpl::GetFileHandle(Writable* writable)
         for( auto& group : m_attributeWrites )
       for( auto& att : group.second )
         flush_attribute(group.first, att.first, att.second);
-    
+
     for( auto& f : m_openWriteFileHandles )
       close(f.second);
     m_openWriteFileHandles.clear();
@@ -823,12 +823,12 @@ CommonADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
     int64_t fd = -1;
 
     if( m_openWriteFileHandles.find(res->second) == m_openWriteFileHandles.end()) {
-      // 
-      // not a perfect splot: 
-      // past iterators still tend to write attributes. 
-      // if file is not there anymore, return. 
+      //
+      // not a perfect splot:
+      // past iterators still tend to write attributes.
+      // if file is not there anymore, return.
       // should not be here in the first place if dirty flag is set properly (for storeChunk & setAttribute)
-      // 
+      //
       return;
       //fd = open_write(writable);
       //m_openWriteFileHandles[res->second] = fd;
