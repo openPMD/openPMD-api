@@ -820,7 +820,7 @@ CommonADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
     if( res == m_filePaths.end() )
         res = m_filePaths.find(writable->parent);
 
-    int64_t fd = -1;
+    //int64_t fd = -1;
 
     if( m_openWriteFileHandles.find(res->second) == m_openWriteFileHandles.end()) {
       //
