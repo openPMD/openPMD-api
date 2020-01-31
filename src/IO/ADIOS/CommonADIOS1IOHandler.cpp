@@ -376,7 +376,7 @@ CommonADIOS1IOHandlerImpl::createFile(Writable* writable,
         /* defer actually opening the file handle until the first Operation::WRITE_DATASET occurs */
         m_existsOnDisk[m_filePaths[writable]] = false;
 
-    int64_t fd = GetFileHandle(writable);
+        /*int64_t fd = */GetFileHandle(writable);
     }
 }
 
@@ -833,9 +833,8 @@ CommonADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
       //fd = open_write(writable);
       //m_openWriteFileHandles[res->second] = fd;
     } else {
-      fd = m_openWriteFileHandles.at(res->second);
+      //fd = m_openWriteFileHandles.at(res->second);
     }
-
 
     int64_t group = m_groups[res->second];
 
