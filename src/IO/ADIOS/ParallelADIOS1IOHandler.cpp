@@ -62,9 +62,9 @@ ParallelADIOS1IOHandlerImpl::~ParallelADIOS1IOHandlerImpl()
             for( auto& att : group.second )
                 flush_attribute(group.first, att.first, att.second);
 #ifdef NEVER
-	//
-	// not needed anymore b/c file is created at create_file
-	//
+    //
+    // not needed anymore b/c file is created at create_file
+    //
         /* create all files, even if ADIOS file creation has been deferred,
          * but execution of the deferred operation has never been triggered
          * (happens when no Operation::WRITE_DATASET is performed) */

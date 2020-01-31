@@ -376,7 +376,7 @@ CommonADIOS1IOHandlerImpl::createFile(Writable* writable,
         /* defer actually opening the file handle until the first Operation::WRITE_DATASET occurs */
         m_existsOnDisk[m_filePaths[writable]] = false;
 
-	int64_t fd = GetFileHandle(writable);
+    int64_t fd = GetFileHandle(writable);
     }
 }
 
@@ -757,12 +757,12 @@ int64_t CommonADIOS1IOHandlerImpl::GetFileHandle(Writable* writable)
       // write all opening handles and close them
       {
         for( auto& group : m_attributeWrites )
-	  for( auto& att : group.second )
-	    flush_attribute(group.first, att.first, att.second);
-	
-	for( auto& f : m_openWriteFileHandles )
-	  close(f.second);
-	m_openWriteFileHandles.clear();
+      for( auto& att : group.second )
+        flush_attribute(group.first, att.first, att.second);
+    
+    for( auto& f : m_openWriteFileHandles )
+      close(f.second);
+    m_openWriteFileHandles.clear();
       }
 
       fd = open_write(writable);
