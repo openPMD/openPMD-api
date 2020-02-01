@@ -118,7 +118,8 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
         IOHandler->enqueue(IOTask(this, pCreate));
     } else
     {
-      if (IOHandler->accessTypeFrontend == AccessType::CREATE)
+      if ((IOHandler->accessTypeFrontend == AccessType::CREATE)
+	  && (IOHandler->backendName() == "MPI_ADIOS1"))
     {
       flush();
       return;
