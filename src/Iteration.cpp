@@ -119,7 +119,7 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
     } else
     {
       if ((IOHandler->accessTypeFrontend == AccessType::CREATE)
-      && (IOHandler->backendName() == "MPI_ADIOS1"))
+          && ( (IOHandler->backendName() == "MPI_ADIOS1") || (IOHandler->backendName() == "ADIOS1")))
     {
       flush();
       return;
