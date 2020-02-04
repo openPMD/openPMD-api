@@ -58,23 +58,26 @@ ParallelADIOS1IOHandlerImpl::~ParallelADIOS1IOHandlerImpl()
 
     if( this->m_handler->accessTypeBackend != AccessType::READ_ONLY )
     {
+
         for( auto& group : m_attributeWrites )
             for( auto& att : group.second )
                 flush_attribute(group.first, att.first, att.second);
-#ifdef NEVER
-    //
-    // not needed anymore b/c file is created at create_file
-    //
-        /* create all files, even if ADIOS file creation has been deferred,
-         * but execution of the deferred operation has never been triggered
-         * (happens when no Operation::WRITE_DATASET is performed) */
 
-        for( auto& f : m_filePaths )
-            if( m_openWriteFileHandles.find(f.second) == m_openWriteFileHandles.end() )
-                m_openWriteFileHandles[f.second] = open_write(f.first);
-#endif
+	// unordered map caused the value of the same container
+	// stored with different orders in different processors. 
+	// which  caused trouble with  close(), which is collective
+	// so I just sort by file name to force  all processors  close
+	// all the fids in the same order
+	std::map< std::string, int64_t> allFiles;
         for( auto& f : m_openWriteFileHandles )
-            close(f.second);
+            allFiles[*(f.first)] = f.second;
+	
+	for (auto p :  allFiles)
+	  {
+	    auto fid =  p.second;
+	    close(fid);
+	  }
+	
         m_openWriteFileHandles.clear();
     }
 
