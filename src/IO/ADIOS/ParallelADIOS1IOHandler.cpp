@@ -63,21 +63,21 @@ ParallelADIOS1IOHandlerImpl::~ParallelADIOS1IOHandlerImpl()
             for( auto& att : group.second )
                 flush_attribute(group.first, att.first, att.second);
 
-	// unordered map caused the value of the same container
-	// stored with different orders in different processors. 
-	// which  caused trouble with  close(), which is collective
-	// so I just sort by file name to force  all processors  close
-	// all the fids in the same order
-	std::map< std::string, int64_t> allFiles;
+    // unordered map caused the value of the same container
+    // stored with different orders in different processors. 
+    // which  caused trouble with  close(), which is collective
+    // so I just sort by file name to force  all processors  close
+    // all the fids in the same order
+    std::map< std::string, int64_t> allFiles;
         for( auto& f : m_openWriteFileHandles )
             allFiles[*(f.first)] = f.second;
-	
-	for (auto p :  allFiles)
-	  {
-	    auto fid =  p.second;
-	    close(fid);
-	  }
-	
+    
+    for (auto p :  allFiles)
+      {
+        auto fid =  p.second;
+        close(fid);
+      }
+    
         m_openWriteFileHandles.clear();
     }
 
