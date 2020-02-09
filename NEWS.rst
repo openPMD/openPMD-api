@@ -17,7 +17,7 @@ Collective parallel I/O makes more functionality, such as ``storeChunk`` and ``l
 HDF5 attribute writes are MPI-collective in either case, due to HDF5 restrictions.
 
 Our `Spack <https://spack.io>`_ packages build the ADIOS2 backend now by default.
-Pass ``-adios2`` to the Spack spec to disable it: ``spack install openpmd-api -adios2`` (same for ``spack load``).
+Pass ``-adios2`` to the Spack spec to disable it: ``spack install openpmd-api -adios2`` (same for ``spack load -r``).
 
 The ``Series::setSoftwareVersion`` method is now deprecated and will be removed in future versions of the library.
 Use ``Series::setSoftware(name, version)`` instead.
