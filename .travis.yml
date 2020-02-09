@@ -342,13 +342,13 @@ jobs:
         - perl --version
     # Clang 11.0.0-apple + Python 3.7.2 @ OSX "mojave"
     - <<: *test-cpp-unit
-      name: AppleClang@11.0.0 -MPI -PY +H5 +ADIOS1 +ADIOS2
+      name: AppleClang@11.0.0 -MPI -PY +H5 -ADIOS1 +ADIOS2
       os: osx
       osx_image: xcode11.2
       sudo: required
       language: generic
       env:
-        - CXXSPEC="%clang@11.0.0" USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=ON USE_SAMPLES=ON
+        - CXXSPEC="%clang@11.0.0" USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=ON USE_SAMPLES=ON
       compiler: clang
       script: *script-cpp-unit
       before_install:
