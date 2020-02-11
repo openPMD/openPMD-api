@@ -187,16 +187,16 @@ public:
 private:
     adios2::ADIOS m_ADIOS;
 
-#   if openPMD_HAVE_JSON
-    nlohmann::json m_config;
-    static nlohmann::json nullvalue;
+#    if openPMD_HAVE_JSON
+    auxiliary::TracingJSON m_config;
+    static auxiliary::TracingJSON nullvalue;
 
     void
     init( nlohmann::json config );
 
     template< typename Key >
-    nlohmann::json &
-    config( Key && key, nlohmann::json & cfg )
+    auxiliary::TracingJSON
+    config( Key && key, auxiliary::TracingJSON & cfg )
     {
         if( cfg.is_object() && cfg.contains( key ) )
         {
@@ -209,7 +209,7 @@ private:
     }
 
     template< typename Key >
-    nlohmann::json &
+    auxiliary::TracingJSON
     config( Key && key )
     {
         return config< Key >( std::forward< Key >( key ), m_config );

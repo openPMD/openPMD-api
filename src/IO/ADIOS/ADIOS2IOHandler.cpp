@@ -21,7 +21,9 @@
 
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 
+#include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <set>
 #include <string>
 
@@ -30,10 +32,9 @@
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+// #include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include <type_traits>
-#include <algorithm>
-#include <iterator>
 
 
 namespace openPMD
@@ -82,18 +83,19 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
 
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     AbstractIOHandler * handler
-#       if openPMD_HAVE_JSON
-    , nlohmann::json cfg
-#       endif // openPMD_HAVE_JSON
-)
+#    if openPMD_HAVE_JSON
+    ,
+    nlohmann::json cfg
+#    endif // openPMD_HAVE_JSON
+    )
     : AbstractIOHandlerImplCommon( handler ), m_ADIOS{ ADIOS2_DEBUG_MODE }
 {
-#       if openPMD_HAVE_JSON
+#    if openPMD_HAVE_JSON
     init( std::move( cfg ) );
-#       endif // openPMD_HAVE_JSON
+#    endif // openPMD_HAVE_JSON
 }
 
-#       if openPMD_HAVE_JSON
+#    if openPMD_HAVE_JSON
 void
 ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
 {
@@ -101,10 +103,17 @@ ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
     {
         m_config = std::move( cfg[ "adios2" ] );
     }
+    else
+    {
+        std::cerr << "Warning: ADIOS2 is not configured in the JSON "
+                     "configuration. Running with default settings."
+                  << std::endl;
+    }
 }
-#       endif // openPMD_HAVE_JSON
+#    endif // openPMD_HAVE_JSON
 
-std::future< void > ADIOS2IOHandlerImpl::flush( )
+std::future< void >
+ADIOS2IOHandlerImpl::flush()
 {
     auto res = AbstractIOHandlerImpl::flush( );
     for ( auto & p : m_fileData )
@@ -542,9 +551,9 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2Accesstype( )
     }
 }
 
-#       if openPMD_HAVE_JSON
-nlohmann::json ADIOS2IOHandlerImpl::nullvalue = nlohmann::json();
-#       endif // openPMD_HAVE_JSON
+#    if openPMD_HAVE_JSON
+auxiliary::TracingJSON ADIOS2IOHandlerImpl::nullvalue = nlohmann::json();
+#    endif // openPMD_HAVE_JSON
 
 std::string ADIOS2IOHandlerImpl::filePositionToString(
     std::shared_ptr< ADIOS2FilePosition > filepos )
@@ -1170,12 +1179,17 @@ namespace detail
     {
         (void)impl;
         std::set< std::string > alreadyConfigured;
-#if openPMD_HAVE_JSON
-        auto & engineConfig = impl.config( detail::str_engine );
+#    if openPMD_HAVE_JSON
+        // TODO if changing TracingJSON to return references upon operator[](),
+        // change this to a reference
+        auto engineConfig = impl.config( detail::str_engine );
         if( !engineConfig.is_null() )
         {
             m_IO.SetEngine( impl.config( detail::str_type, engineConfig ) );
-            auto & params = impl.config( detail::str_params, engineConfig );
+            // TODO if changing TracingJSON to return references upon
+            // operator[](), change this to a reference
+            auto params = impl.config( detail::str_params, engineConfig );
+            params.declareFullyRead();
             if( params.is_object() )
             {
                 for( auto it = params.begin(); it != params.end(); it++ )
@@ -1186,7 +1200,14 @@ namespace detail
             }
             alreadyConfigured.emplace( "Engine" );
         }
-#endif // openPMD_HAVE_JSON
+        auto shadow = impl.m_config.invertShadow();
+        if( shadow.size() > 0 )
+        {
+            std::cerr << "Warning: parts of the JSON configuration for ADIOS2 "
+                         "remain unused:\n"
+                      << shadow << std::endl;
+        }
+#    endif // openPMD_HAVE_JSON
         auto notYetConfigured =
             [&alreadyConfigured]( std::string const & param ) {
                 auto it = alreadyConfigured.find( param );
