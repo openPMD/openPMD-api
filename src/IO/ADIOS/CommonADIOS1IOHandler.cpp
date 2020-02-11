@@ -812,7 +812,6 @@ CommonADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
     auto res = m_filePaths.find(writable);
     if( res == m_filePaths.end() )
         res = m_filePaths.find(writable->parent);
-    //int64_t fd = GetFileHandle(writable);
     GetFileHandle(writable);
 
     int64_t group = m_groups[res->second];
