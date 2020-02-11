@@ -51,6 +51,7 @@ Other
   - remove all Doxygen warnings and add to CI #654
   - backend feature matrix #661
   - document CMake's ``FetchContent`` feature for developers #667
+  - more notes on HDF5 & ADIOS1 #685
 - migrate static checks for python code to GitHub actions #660
 - add MPICH tests to CI #670
 - ``Attribute`` constructor: move argument into place #663

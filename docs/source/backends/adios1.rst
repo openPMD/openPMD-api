@@ -57,6 +57,23 @@ A good number for aggregators is usually the number of contributing nodes divide
 For fine-tuning at extreme scale or for exotic systems, please refer to the ADIOS1 manual and talk to your filesystem admins and the ADIOS1 authors.
 Be aware that extreme-sale I/O is a research topic after all.
 
+
+Limitations
+-----------
+
+.. note::
+
+   You cannot initialize and use more than one ``openPMD::Series`` with ADIOS1 backend at the same time in a process, even if both Series operate on totally independent data.
+   This is an upstream bug in ADIOS1 that we cannot control: ADIOS1 cannot be initialized more than once, probably because it shares some internal state.
+
+.. note::
+
+   The way we currently implement ADIOS1 in openPMD-api is sub-ideal and we close/re-open file handles way too often.
+   Consequently, this can lead to severe performance degradation unless fixed.
+   Mea culpa, we did better in the past (in PIConGPU).
+   Please consider using our ADIOS2 backend instead, on which we focus our developments these days.
+
+
 Selected References
 -------------------
 
