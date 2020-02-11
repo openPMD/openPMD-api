@@ -25,6 +25,7 @@ The following environment variables control HDF5 I/O behavior at runtime.
 environment variable                  default   description
 ===================================== ========= ====================================================================================
 ``OPENPMD_HDF5_INDEPENDENT``          ``ON``    Sets the MPI-parallel transfer mode to collective (``OFF``) or independent (``ON``).
+``H5_COLL_API_SANITY_CHECK``          unset     Set to ``1`` to perform an ``MPI_Barrier`` inside each meta-data operation.
 ===================================== ========= ====================================================================================
 
 ``OPENPMD_HDF5_INDEPENDENT``: by default, we implement MPI-parallel data ``storeChunk`` (write) and ``loadChunk`` (read) calls as `none-collective MPI operations <https://www.mpi-forum.org/docs/mpi-2.2/mpi22-report/node87.htm#Node87>`_.
@@ -32,6 +33,10 @@ Attribute writes are always collective in parallel HDF5.
 Although we choose the default to be non-collective (independent) for ease of use, be advised that performance penalties may occur, although this depends heavily on the use-case.
 For independent parallel I/O, potentially prefer using a modern version of the MPICH implementation (especially, use ROMIO instead of OpenMPI's ompio implementation).
 Please refer to the `HDF5 manual, function H5Pset_dxpl_mpio <https://support.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_dxpl_mpio.htm>`_ for more details.
+
+``H5_COLL_API_SANITY_CHECK``: this is a HDF5 control option for debugging parallel I/O logic (API calls).
+Debugging a parallel program with that option enabled can help to spot bugs such as collective MPI-calls that are not called by all participating MPI ranks.
+Do not use in production, this will slow parallel I/O operations down.
 
 
 Selected References
