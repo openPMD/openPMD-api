@@ -376,7 +376,7 @@ CommonADIOS1IOHandlerImpl::createFile(Writable* writable,
         /* defer actually opening the file handle until the first Operation::WRITE_DATASET occurs */
         m_existsOnDisk[m_filePaths[writable]] = false;
 
-        /*int64_t fd = */GetFileHandle(writable);
+        GetFileHandle(writable);
     }
 }
 
