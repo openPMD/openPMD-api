@@ -21,15 +21,14 @@
 #include "openPMD/auxiliary/Date.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
-#include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
+#include "openPMD/IO/Format.hpp"
 #include "openPMD/Series.hpp"
 
 #include <iomanip>
 #include <iostream>
 #include <set>
-#include <sstream>
 #include <string>
 #include <tuple>
 
@@ -48,20 +47,6 @@
 
 namespace openPMD
 {
-/** Determine the storage format of a Series from the used filename extension.
- *
- * @param   filename    tring containing the filename.
- * @return  Format that best fits the filename extension.
- */
-Format determineFormat(std::string const& filename);
-
-/** Determine the default filename suffix for a given storage format.
- *
- * @param   f   File format to determine suffix for.
- * @return  String containing the default filename suffix
- */
-std::string suffix(Format f);
-
 /** Remove the filename extension of a given storage format.
  *
  * @param   filename    String containing the filename, possibly with filename extension.
@@ -881,58 +866,6 @@ Series::read()
     }
 
     readAttributes();
-}
-
-Format
-determineFormat(std::string const& filename)
-{
-    if( auxiliary::ends_with(filename, ".h5") )
-        return Format::HDF5;
-    if( auxiliary::ends_with(filename, ".bp") )
-    {
-        auto const bp_backend = auxiliary::getEnvString(
-            "OPENPMD_BP_BACKEND",
-#if openPMD_HAVE_ADIOS2
-            "ADIOS2"
-#elif openPMD_HAVE_ADIOS1
-            "ADIOS1"
-#else
-            "ADIOS2"
-#endif
-        );
-
-        if( bp_backend == "ADIOS2" )
-            return Format::ADIOS2;
-        else if( bp_backend == "ADIOS1" )
-            return Format::ADIOS1;
-        else
-            throw std::runtime_error(
-                "Environment variable OPENPMD_BP_BACKEND for .bp backend is neither ADIOS1 nor ADIOS2: " + bp_backend
-            );
-    }
-    if( auxiliary::ends_with(filename, ".json") )
-        return Format::JSON;
-    if( std::string::npos != filename.find('.') /* extension is provided */ )
-        throw std::runtime_error("Unknown file format. Did you append a valid filename extension?");
-
-    return Format::DUMMY;
-}
-
-std::string
-suffix(Format f)
-{
-    switch( f )
-    {
-        case Format::HDF5:
-            return ".h5";
-        case Format::ADIOS1:
-        case Format::ADIOS2:
-            return ".bp";
-        case Format::JSON:
-            return ".json";
-        default:
-            return "";
-    }
 }
 
 std::string

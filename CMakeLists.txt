@@ -294,6 +294,7 @@ set(CORE_SOURCE
         src/config.cpp
         src/Dataset.cpp
         src/Datatype.cpp
+        src/Format.cpp
         src/Iteration.cpp
         src/IterationEncoding.cpp
         src/Mesh.cpp
