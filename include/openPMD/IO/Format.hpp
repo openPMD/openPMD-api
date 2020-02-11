@@ -1,4 +1,4 @@
-/* Copyright 2017-2020 Fabian Koller
+/* Copyright 2017-2020 Fabian Koller, Axel Huebl
  *
  * This file is part of openPMD-api.
  *
@@ -20,6 +20,8 @@
  */
 #pragma once
 
+#include <string>
+
 
 namespace openPMD
 {
@@ -33,4 +35,18 @@ namespace openPMD
         JSON,
         DUMMY
     };
+
+    /** Determine the storage format of a Series from the used filename extension.
+     *
+     * @param   filename    string containing the filename.
+     * @return  Format that best fits the filename extension.
+     */
+    Format determineFormat(std::string const& filename);
+
+    /** Determine the default filename suffix for a given storage format.
+     *
+     * @param   f   File format to determine suffix for.
+     * @return  String containing the default filename suffix
+     */
+    std::string suffix(Format f);
 } // openPMD

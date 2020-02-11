@@ -48,6 +48,7 @@ namespace openPMD {}
 #include "openPMD/backend/Writable.hpp"
 
 #include "openPMD/IO/AccessType.hpp"
+#include "openPMD/IO/Format.hpp"
 
 #include "openPMD/auxiliary/Date.hpp"
 #include "openPMD/auxiliary/Deprecated.hpp"
