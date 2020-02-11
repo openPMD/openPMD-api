@@ -74,7 +74,7 @@ ParallelADIOS1IOHandlerImpl::~ParallelADIOS1IOHandlerImpl()
 
     for (auto p :  allFiles)
       {
-        auto fid =  p.second;
+        auto const fid = p.second;
         close(fid);
       }
 
