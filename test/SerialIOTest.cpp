@@ -15,7 +15,9 @@
 #include <array>
 #include <memory>
 #include <limits>
+#include <list>
 #include <numeric>
+#include <tuple>
 
 using namespace openPMD;
 
@@ -34,6 +36,56 @@ std::vector<std::tuple<std::string, bool>> getBackends() {
 }
 
 auto const backends = getBackends();
+
+
+TEST_CASE( "multi_series_test", "[serial]" )
+{
+    std::list< Series > allSeries;
+
+    using StrBoolTuple = std::tuple< std::string, bool >;
+    auto myBackends = getBackends();
+
+    // this test demonstrates an ADIOS1 (upstream) bug, comment this section to trigger it
+    auto const rmEnd = std::remove_if( myBackends.begin(), myBackends.end(), [](StrBoolTuple const & beit) {
+        return std::get<0>(beit) == "bp" &&
+               determineFormat("test.bp") == Format::ADIOS1;
+    });
+    myBackends.erase(rmEnd, myBackends.end());
+
+    // have multiple serial series alive at the same time
+    for (auto const sn : {1, 2, 3}) {
+        for (auto const & t: myBackends)
+        {
+            auto const file_ending = std::get<0>(t);
+            std::cout << file_ending << std::endl;
+            allSeries.emplace_back(
+                std::string("../samples/multi_open_test_").
+                    append(std::to_string(sn)).append(".").append(file_ending),
+                AccessType::CREATE
+            );
+            allSeries.back().iterations[sn].setAttribute("wululu", sn);
+            allSeries.back().flush();
+        }
+    }
+    // skip some series: sn=1
+    auto it = allSeries.begin();
+    std::for_each( myBackends.begin(), myBackends.end(), [&it](StrBoolTuple const &){
+        it++;
+    });
+    // remove some series: sn=2
+    std::for_each( myBackends.begin(), myBackends.end(), [&it, &allSeries](StrBoolTuple const &){
+        it = allSeries.erase(it);
+    });
+    // write from last series: sn=3
+    std::for_each( myBackends.begin(), myBackends.end(), [&it](StrBoolTuple const &){
+        it->iterations[10].setAttribute("wululu", 10);
+        it->flush();
+        it++;
+    });
+
+    // remove all leftover series
+    allSeries.clear();
+}
 
 inline
 void

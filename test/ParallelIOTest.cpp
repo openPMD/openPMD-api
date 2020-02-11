@@ -13,10 +13,26 @@
 #   include <algorithm>
 #   include <string>
 #   include <vector>
-#   include <array>
+#   include <list>
 #   include <memory>
+#   include <tuple>
 
 using namespace openPMD;
+
+std::vector<std::string> getBackends() {
+    // first component: backend file ending
+    // second component: whether to test 128 bit values
+    std::vector<std::string> res;
+#if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
+    res.emplace_back("bp");
+#endif
+#if openPMD_HAVE_HDF5
+    res.emplace_back("h5");
+#endif
+    return res;
+}
+
+auto const backends = getBackends();
 
 #else
 
@@ -25,6 +41,55 @@ TEST_CASE( "none", "[parallel]" )
 #endif
 
 #if openPMD_HAVE_MPI
+TEST_CASE( "parallel_multi_series_test", "[parallel]" )
+{
+    std::list< Series > allSeries;
+
+    auto myBackends = getBackends();
+
+    // this test demonstrates an ADIOS1 (upstream) bug, comment this section to trigger it
+    auto const rmEnd = std::remove_if( myBackends.begin(), myBackends.end(), [](std::string const & beit) {
+        return beit == "bp" &&
+               determineFormat("test.bp") == Format::ADIOS1;
+    });
+    myBackends.erase(rmEnd, myBackends.end());
+
+    // have multiple serial series alive at the same time
+    for (auto const sn : {1, 2, 3}) {
+        for (auto const & t: myBackends)
+        {
+            auto const file_ending = t;
+            std::cout << file_ending << std::endl;
+            allSeries.emplace_back(
+                    std::string("../samples/parallel_multi_open_test_").
+                            append(std::to_string(sn)).append(".").append(file_ending),
+                    AccessType::CREATE,
+                    MPI_COMM_WORLD
+            );
+            allSeries.back().iterations[sn].setAttribute("wululu", sn);
+            allSeries.back().flush();
+        }
+    }
+    // skip some series: sn=1
+    auto it = allSeries.begin();
+    std::for_each( myBackends.begin(), myBackends.end(), [&it](std::string const &){
+        it++;
+    });
+    // remove some series: sn=2
+    std::for_each( myBackends.begin(), myBackends.end(), [&it, &allSeries](std::string const &){
+        it = allSeries.erase(it);
+    });
+    // write from last series: sn=3
+    std::for_each( myBackends.begin(), myBackends.end(), [&it](std::string const &){
+        it->iterations[10].setAttribute("wululu", 10);
+        it->flush();
+        it++;
+    });
+
+    // remove all leftover series
+    allSeries.clear();
+}
+
 void write_test_zero_extent( bool fileBased, std::string file_ending, bool writeAllChunks )
 {
     int mpi_s{-1};

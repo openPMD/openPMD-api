@@ -58,6 +58,7 @@ Other
 - ``Attribute`` constructor: move argument into place #663
 - Spack: ADIOS1 backend now enabled by default #664
 - add independent HDF5 write test to CI #669
+- add test of multiple active ``Series`` #686
 
 
 0.10.3-alpha
