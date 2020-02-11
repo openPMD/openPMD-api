@@ -770,7 +770,7 @@ CommonADIOS1IOHandlerImpl::writeDataset(Writable* writable,
                                   Parameter< Operation::WRITE_DATASET > const& parameters)
 {
     if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
-        throw std::runtime_error("[ADIOS1] Writing into a dataset in a file opened as read only is not possible.");
+        throw std::runtime_error("[ADIOS1] Writing into a dataset in a file opened as read-only is not possible.");
 
     int64_t fd = GetFileHandle(writable);
 
