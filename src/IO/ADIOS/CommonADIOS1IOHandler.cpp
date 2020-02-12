@@ -509,6 +509,16 @@ CommonADIOS1IOHandlerImpl::openFile(Writable* writable,
     else
         filePath = it->second;
 
+    if( m_handler->accessTypeBackend == AccessType::CREATE )
+    {
+        // called at Series.flush for iterations that has been flushed before
+	// this is to make sure to point the Series.m_writer points to this iteration
+	// so when call Series.flushAttribute(), the atributes can be flushed to the iteration level file.
+	m_filePaths[writable] = filePath;
+        writable->written = true;
+        writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >("/");
+        return;
+     }
     /* close the handle that corresponds to the file we want to open */
     if( m_openWriteFileHandles.find(filePath) != m_openWriteFileHandles.end() )
     {

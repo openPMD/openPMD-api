@@ -121,7 +121,12 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
       if ((IOHandler->accessTypeFrontend == AccessType::CREATE)
           && ( (IOHandler->backendName() == "MPI_ADIOS1") || (IOHandler->backendName() == "ADIOS1")))
     {
+      auto s = dynamic_cast< Series* >(parent->attributable->parent->attributable);
+      Parameter< Operation::OPEN_FILE > fOpen;
+      fOpen.name = filename;
+      IOHandler->enqueue(IOTask(s, fOpen));
       flush();
+
       return;
     }
 
