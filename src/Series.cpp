@@ -912,7 +912,7 @@ Series::flushParticlesPath()
 }
 
 void
-Series::readFileBased()
+Series::readFileBased( bool init )
 {
     Parameter< Operation::OPEN_FILE > fOpen;
     Parameter< Operation::READ_ATT > aRead;
@@ -938,40 +938,51 @@ Series::readFileBased()
             iterations.m_writable->parent = getWritable(this);
             iterations.parent = getWritable(this);
 
-            readBase();
-
-            using DT = Datatype;
-            aRead.name = "iterationEncoding";
-            IOHandler->enqueue(IOTask(this, aRead));
-            IOHandler->flush();
-            if( *aRead.dtype == DT::STRING )
+            if( init )
             {
-                std::string encoding = Attribute(*aRead.resource).get< std::string >();
-                if( encoding == "fileBased" )
-                    *m_iterationEncoding = IterationEncoding::fileBased;
-                else if( encoding == "groupBased" )
+                readBase();
+
+                using DT = Datatype;
+                aRead.name = "iterationEncoding";
+                IOHandler->enqueue( IOTask( this, aRead ) );
+                IOHandler->flush();
+                if( *aRead.dtype == DT::STRING )
                 {
-                    *m_iterationEncoding = IterationEncoding::groupBased;
-                    std::cerr << "Series constructor called with iteration regex '%T' suggests loading a "
-                              << "time series with fileBased iteration encoding. Loaded file is groupBased.\n";
-                } else
-                    throw std::runtime_error("Unknown iterationEncoding: " + encoding);
-                setAttribute("iterationEncoding", encoding);
-            }
-            else
-                throw std::runtime_error("Unexpected Attribute datatype for 'iterationEncoding'");
+                    std::string encoding =
+                        Attribute( *aRead.resource ).get< std::string >();
+                    if( encoding == "fileBased" )
+                        *m_iterationEncoding = IterationEncoding::fileBased;
+                    else if( encoding == "groupBased" )
+                    {
+                        *m_iterationEncoding = IterationEncoding::groupBased;
+                        std::cerr << "Series constructor called with iteration "
+                                     "regex '%T' suggests loading a "
+                                  << "time series with fileBased iteration "
+                                     "encoding. Loaded file is groupBased.\n";
+                    }
+                    else
+                        throw std::runtime_error(
+                            "Unknown iterationEncoding: " + encoding );
+                    setAttribute( "iterationEncoding", encoding );
+                }
+                else
+                    throw std::runtime_error( "Unexpected Attribute datatype "
+                                              "for 'iterationEncoding'" );
 
-            aRead.name = "iterationFormat";
-            IOHandler->enqueue(IOTask(this, aRead));
-            IOHandler->flush();
-            if( *aRead.dtype == DT::STRING )
-            {
-                written() = false;
-                setIterationFormat(Attribute(*aRead.resource).get< std::string >());
-                written() = true;
+                aRead.name = "iterationFormat";
+                IOHandler->enqueue( IOTask( this, aRead ) );
+                IOHandler->flush();
+                if( *aRead.dtype == DT::STRING )
+                {
+                    written() = false;
+                    setIterationFormat(
+                        Attribute( *aRead.resource ).get< std::string >() );
+                    written() = true;
+                }
+                else
+                    throw std::runtime_error(
+                        "Unexpected Attribute datatype for 'iterationFormat'" );
             }
-            else
-                throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
 
             read();
         }
