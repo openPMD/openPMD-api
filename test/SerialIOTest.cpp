@@ -673,7 +673,6 @@ void fileBased_write_test(const std::string & backend)
         std::shared_ptr< uint64_t > positionOffset_local_1(new uint64_t);
         e_1["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_1), {4}));
 
-        o.setOpenPMDextension(1); // this would be before the first flush
         for( uint64_t i = 0; i < 4; ++i )
         {
             *position_local_1 = position_global[i];
@@ -722,10 +721,10 @@ void fileBased_write_test(const std::string & backend)
             o.flush();
         }
 
-        //o.setOpenPMDextension(1); // this will make iteration 1&2 have extension 0.
+        o.setOpenPMDextension(1); 
         o.iterations[3].setTime(static_cast< double >(3));
         o.iterations[4].setTime(static_cast< double >(4));
-        o.flush();
+        //o.flush();
         o.iterations[5].setTime(static_cast< double >(5));
     }
     REQUIRE((auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000001." + backend)
