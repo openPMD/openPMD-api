@@ -1580,30 +1580,6 @@ namespace detail
     std::packaged_task< AdvanceStatus() >
     BufferedActions::advance( AdvanceMode mode )
     {
-        // TODO refactor this a bit
-        // TODO allow user to override this choice
-        if( *streamStatus == StreamStatus::NoStream )
-        {
-            std::cerr << "Warning: called Series::advance() in non-streaming "
-                << "mode. Defaulting to performing a flush." << std::endl;
-            flush();
-            switch (mode) {
-            case AdvanceMode::READ:
-                return std::packaged_task< AdvanceStatus() >(
-                    []() {
-                        return AdvanceStatus::OVER;
-                    } );
-            case AdvanceMode::WRITE:
-                return std::packaged_task< AdvanceStatus() >(
-                    []() {
-                        return AdvanceStatus::OK;
-                    } );
-            case AdvanceMode::AUTO:
-                throw std::runtime_error(
-                        "Internal error: Advance mode should be explicitly"
-                        " chosen by the front-end.");
-            }
-        }
         switch (mode) {
         case AdvanceMode::WRITE:
         {
