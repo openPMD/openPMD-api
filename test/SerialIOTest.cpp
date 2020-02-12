@@ -721,7 +721,7 @@ void fileBased_write_test(const std::string & backend)
             o.flush();
         }
 
-        o.setOpenPMDextension(1); 
+        o.setOpenPMDextension(1);
         o.iterations[3].setTime(static_cast< double >(3));
         o.iterations[4].setTime(static_cast< double >(4));
         //o.flush();
