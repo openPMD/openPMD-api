@@ -519,8 +519,11 @@ Series::advance( AdvanceMode mode )
                                 Parameter< Operation::STALE_GROUP > fStale;
                                 IOHandler->enqueue(
                                     IOTask( &i.second, std::move( fStale ) ) );
-                                // *i.second.m_closed = // @todo
-                                //     Iteration::CloseStatus::ClosedInBackend;
+                                // In group-based iteration layout, files are
+                                // not closed on a per-iteration basis
+                                // We will treat it as such nonetheless
+                                *i.second.m_closed =
+                                    Iteration::CloseStatus::ClosedInBackend;
                             }
                         }
                     }

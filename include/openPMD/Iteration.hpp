@@ -155,6 +155,8 @@ private:
      * but not necessarily yet in the backend.
      * Will be propagated to the backend upon next flush.
      * Store the current status.
+     * Once an iteration has been closed, no further flushes shall be performed.
+     * If flushing a closed file, the old file may otherwise be overwritten.
      */
     std::shared_ptr< CloseStatus > m_closed =
         std::make_shared< CloseStatus >( CloseStatus::Open );
