@@ -72,7 +72,7 @@ ParallelADIOS1IOHandlerImpl::~ParallelADIOS1IOHandlerImpl()
         for( auto& f : m_openWriteFileHandles )
             allFiles[*(f.first)] = f.second;
 
-    for (auto& p :  allFiles)
+    for (auto const& p :  allFiles)
       {
         auto const fid = p.second;
         close(fid);
