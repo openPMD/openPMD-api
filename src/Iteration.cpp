@@ -169,10 +169,62 @@ Iteration::closedByWriter() const
     }
 }
 
-void
-Iteration::flushFileBased(std::string const& filename, uint64_t i)
+ConsumingFuture< AdvanceStatus >
+Iteration::advance( AdvanceMode mode )
 {
-    Series* s = dynamic_cast<Series *>(parent->attributable->parent->attributable);
+    Series & series =
+        *dynamic_cast< Series * >( parent->attributable->parent->attributable );
+    if( *series.m_iterationEncoding == IterationEncoding::groupBased )
+    {
+        return series.advance( mode );
+    }
+    auxiliary::ConsumingFuture< AdvanceStatus > future =
+        series.advance( mode, *this );
+    // capture series by reference since the destructor will issue a flush
+    // https://github.com/openPMD/openPMD-api/issues/534
+    std::packaged_task< AdvanceStatus( AdvanceStatus ) > postProcessing(
+        [this, &series]( AdvanceStatus status ) mutable {
+            if( status != AdvanceStatus::OK )
+            {
+                return status;
+            }
+
+            // re-read -> new datasets might be available
+            if( this->IOHandler->m_frontendAccess == AccessType::READ_ONLY ||
+                this->IOHandler->m_frontendAccess == AccessType::READ_WRITE )
+            {
+                bool previous = this->written();
+                this->written() = false;
+                auto oldType = this->IOHandler->m_frontendAccess;
+                auto newType = const_cast< Access * >(
+                    &this->IOHandler->m_frontendAccess );
+                *newType = AccessType::READ_WRITE;
+
+                throw std::runtime_error( "unimplemented" ); // TODO
+
+                *newType = oldType;
+                this->written() = previous;
+            }
+
+            // If file has been finalized, it has been closed by the last flush
+
+            return status;
+        } );
+    auxiliary::ConsumingFuture< AdvanceStatus > futurePost =
+        auxiliary::chain_futures<
+            AdvanceStatus,
+            AdvanceStatus,
+            auxiliary::RunFutureNonThreaded >(
+            std::move( future ), std::move( postProcessing ) );
+    futurePost.run_as_thread();
+    return futurePost;
+}
+
+void
+Iteration::flushFileBased( std::string const & filename, uint64_t i )
+{
+    Series * s =
+        dynamic_cast< Series * >( parent->attributable->parent->attributable );
     if( !written() )
     {
         /* create file */
@@ -187,8 +239,9 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
 
         /* create iteration path */
         pCreate.path = std::to_string(i);
-        IOHandler->enqueue(IOTask(this, pCreate));
-    } else
+        IOHandler->enqueue( IOTask( this, pCreate ) );
+    }
+    else
     {
         // operations for create mode
         if((IOHandler->m_frontendAccess == Access::CREATE ) &&

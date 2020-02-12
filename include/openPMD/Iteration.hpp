@@ -20,10 +20,12 @@
  */
 #pragma once
 
-#include "openPMD/backend/Attributable.hpp"
-#include "openPMD/backend/Container.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
+#include "openPMD/Streaming.hpp"
+#include "openPMD/auxiliary/Future.hpp"
+#include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/Container.hpp"
 
 
 namespace openPMD
@@ -125,10 +127,14 @@ public:
     bool
     closedByWriter() const;
 
+    ConsumingFuture< AdvanceStatus >
+    advance( AdvanceMode mode = AdvanceMode::AUTO );
+
     Container< Mesh > meshes;
-    Container< ParticleSpecies > particles; //particleSpecies?
+    Container< ParticleSpecies > particles; // particleSpecies?
 
     virtual ~Iteration() = default;
+
 private:
     Iteration();
 
