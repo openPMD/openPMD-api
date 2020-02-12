@@ -479,7 +479,7 @@ Series::advance( AdvanceMode mode )
         case IterationEncoding::groupBased:
             flushGroupBased( iterations );
             auxiliary::ConsumingFuture< AdvanceStatus > future =
-                advance( mode, *m_name );
+                advance( mode, *this );
             // capture this by reference since the destructor will issue a
             // flush
             // https://github.com/openPMD/openPMD-api/issues/534
@@ -519,8 +519,8 @@ Series::advance( AdvanceMode mode )
                                 Parameter< Operation::STALE_GROUP > fStale;
                                 IOHandler->enqueue(
                                     IOTask( &i.second, std::move( fStale ) ) );
-                                *i.second.m_closed =
-                                    Iteration::CloseStatus::ClosedInBackend;
+                                // *i.second.m_closed = // @todo
+                                //     Iteration::CloseStatus::ClosedInBackend;
                             }
                         }
                     }
@@ -1163,7 +1163,7 @@ Series::iterationFilename( uint64_t i )
 }
 
 auxiliary::ConsumingFuture< AdvanceStatus >
-Series::advance( AdvanceMode mode, std::string )
+Series::advance( AdvanceMode mode, Attributable & file )
 // file parameter maybe for an open_file command later on
 {
     // resolve AdvanceMode
@@ -1213,7 +1213,7 @@ Series::advance( AdvanceMode mode, std::string )
     }
     Parameter< Operation::ADVANCE > param;
     param.mode = actualMode;
-    IOTask task( this, param );
+    IOTask task( &file, param );
     IOHandler->enqueue( task );
     // this flush will
     // (1) flush all actions that are still queued up

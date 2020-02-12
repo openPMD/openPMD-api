@@ -339,7 +339,7 @@ OPENPMD_private:
     void read();
     std::string iterationFilename(uint64_t i);
     auxiliary::ConsumingFuture< AdvanceStatus >
-    advance( AdvanceMode, std::string file );
+    advance( AdvanceMode, Attributable & file );
 
     static constexpr char const * const BASEPATH = "/data/%T/";
 
