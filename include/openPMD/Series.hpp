@@ -314,7 +314,7 @@ public:
 
     /** Execute all required remaining IO operations to write or read data.
      */
-    void
+    std::future< void >
     flush();
 
     ConsumingFuture< AdvanceStatus > advance(

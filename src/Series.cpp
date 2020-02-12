@@ -442,7 +442,7 @@ Series::backend() const
     return IOHandler->backendName();
 }
 
-void
+std::future< void >
 Series::flush()
 {
     switch( *m_iterationEncoding )
@@ -456,7 +456,7 @@ Series::flush()
             break;
     }
 
-    IOHandler->flush();
+    return IOHandler->flush();
 }
 
 ConsumingFuture< AdvanceStatus >
@@ -467,9 +467,8 @@ Series::advance( AdvanceMode mode )
         case IterationEncoding::fileBased:
         {
             std::cerr << "Advancing not yet implemented in file-based mode, "
-                         "defaulting to performing a flush."
-                      << std::endl;
-            flushFileBased( iterations );
+                "defaulting to performing a flush." << std::endl;
+            flush();
             auto res = ConsumingFuture< AdvanceStatus >(
                 std::packaged_task< AdvanceStatus() >(
                     []() { return AdvanceStatus::OK; } ) );
@@ -477,7 +476,6 @@ Series::advance( AdvanceMode mode )
             return res;
         }
         case IterationEncoding::groupBased:
-            flushGroupBased( iterations );
             auxiliary::ConsumingFuture< AdvanceStatus > future =
                 advance( mode, *this );
             // capture this by reference since the destructor will issue a
@@ -1222,7 +1220,7 @@ Series::advance( AdvanceMode mode, Attributable & file )
     // (1) flush all actions that are still queued up
     // (2) finally run the advance task
 
-    auto first_future = IOHandler->flush();
+    auto first_future = flush();
     return auxiliary::chain_futures< 
         void,
         AdvanceStatus >(
