@@ -511,10 +511,10 @@ CommonADIOS1IOHandlerImpl::openFile(Writable* writable,
 
     if( m_handler->accessTypeBackend == AccessType::CREATE )
     {
-        // called at Series.flush for iterations that has been flushed before
-    // this is to make sure to point the Series.m_writer points to this iteration
-    // so when call Series.flushAttribute(), the atributes can be flushed to the iteration level file.
-    m_filePaths[writable] = filePath;
+        // called at Series::flush for iterations that has been flushed before
+        // this is to make sure to point the Series.m_writer points to this iteration
+        // so when call Series.flushAttribute(), the attributes can be flushed to the iteration level file.
+        m_filePaths[writable] = filePath;
         writable->written = true;
         writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >("/");
         return;
@@ -765,13 +765,13 @@ int64_t CommonADIOS1IOHandlerImpl::GetFileHandle(Writable* writable)
 
     if( m_openWriteFileHandles.find(res->second) == m_openWriteFileHandles.end() )
     {
-      std::string  name  = *(res->second);
-      m_groups[m_filePaths[writable]] = initialize_group(name);
+        std::string  name  = *(res->second);
+        m_groups[m_filePaths[writable]] = initialize_group(name);
 
-      fd = open_write(writable);
-      m_openWriteFileHandles[res->second] = fd;
+        fd = open_write(writable);
+        m_openWriteFileHandles[res->second] = fd;
     } else
-      fd = m_openWriteFileHandles.at(res->second);
+        fd = m_openWriteFileHandles.at(res->second);
 
     return fd;
 }
