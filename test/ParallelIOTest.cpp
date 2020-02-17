@@ -104,9 +104,7 @@ void write_test_zero_extent( bool fileBased, std::string file_ending, bool write
         filePath += "_%07T";
     Series o = Series( filePath.append(".").append(file_ending), AccessType::CREATE, MPI_COMM_WORLD);
 
-    int max_step = 100;
-    // this is an ADIOS1 bug, comment the following line to see it
-    if( o.backend() == "MPI_ADIOS1" ) max_step = 1;
+    int const max_step = 100;
 
     for( int step=0; step<=max_step; step+=20 ) {
         Iteration it = o.iterations[step];

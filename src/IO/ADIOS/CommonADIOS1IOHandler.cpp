@@ -372,9 +372,11 @@ CommonADIOS1IOHandlerImpl::createFile(Writable* writable,
 
         /* our control flow allows for more than one open file handle
          * if multiple files are opened with the same group, data might be lost */
-        m_groups[m_filePaths[writable]] = initialize_group(name);
+
         /* defer actually opening the file handle until the first Operation::WRITE_DATASET occurs */
         m_existsOnDisk[m_filePaths[writable]] = false;
+
+        GetFileHandle(writable);
     }
 }
 
@@ -424,12 +426,7 @@ CommonADIOS1IOHandlerImpl::createDataset(Writable* writable,
         auto res = m_filePaths.find(writable);
         if( res == m_filePaths.end() )
             res = m_filePaths.find(writable->parent);
-        auto it = m_openWriteFileHandles.find(res->second);
-        if( it != m_openWriteFileHandles.end() )
-        {
-            close(m_openWriteFileHandles.at(res->second));
-            m_openWriteFileHandles.erase(it);
-        }
+
         int64_t group = m_groups[res->second];
 
         /* Sanitize name */
@@ -512,6 +509,16 @@ CommonADIOS1IOHandlerImpl::openFile(Writable* writable,
     else
         filePath = it->second;
 
+    if( m_handler->accessTypeBackend == AccessType::CREATE )
+    {
+        // called at Series::flush for iterations that has been flushed before
+        // this is to make sure to point the Series.m_writer points to this iteration
+        // so when call Series.flushAttribute(), the attributes can be flushed to the iteration level file.
+        m_filePaths[writable] = filePath;
+        writable->written = true;
+        writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >("/");
+        return;
+     }
     /* close the handle that corresponds to the file we want to open */
     if( m_openWriteFileHandles.find(filePath) != m_openWriteFileHandles.end() )
     {
@@ -749,24 +756,33 @@ CommonADIOS1IOHandlerImpl::deleteAttribute(Writable*,
     throw std::runtime_error("[ADIOS1] Attribute deletion not implemented in ADIOS backend");
 }
 
+int64_t CommonADIOS1IOHandlerImpl::GetFileHandle(Writable* writable)
+{
+    auto res = m_filePaths.find(writable);
+    if( res == m_filePaths.end() )
+        res = m_filePaths.find(writable->parent);
+    int64_t fd;
+
+    if( m_openWriteFileHandles.find(res->second) == m_openWriteFileHandles.end() )
+    {
+        std::string  name  = *(res->second);
+        m_groups[m_filePaths[writable]] = initialize_group(name);
+
+        fd = open_write(writable);
+        m_openWriteFileHandles[res->second] = fd;
+    } else
+        fd = m_openWriteFileHandles.at(res->second);
+
+    return fd;
+}
 void
 CommonADIOS1IOHandlerImpl::writeDataset(Writable* writable,
                                   Parameter< Operation::WRITE_DATASET > const& parameters)
 {
     if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
-        throw std::runtime_error("[ADIOS1] Writing into a dataset in a file opened as read only is not possible.");
+        throw std::runtime_error("[ADIOS1] Writing into a dataset in a file opened as read-only is not possible.");
 
-    /* file opening is deferred until the first dataset/attribute write to a file occurs */
-    auto res = m_filePaths.find(writable);
-    if( res == m_filePaths.end() )
-        res = m_filePaths.find(writable->parent);
-    int64_t fd;
-    if( m_openWriteFileHandles.find(res->second) == m_openWriteFileHandles.end() )
-    {
-        fd = open_write(writable);
-        m_openWriteFileHandles[res->second] = fd;
-    } else
-        fd = m_openWriteFileHandles.at(res->second);
+    int64_t fd = GetFileHandle(writable);
 
     std::string name = concrete_bp1_file_position(writable);
 
@@ -803,17 +819,10 @@ CommonADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
         name += '/';
     name += parameters.name;
 
-    /* file opening is deferred until the first dataset/attribute write to a file occurs */
     auto res = m_filePaths.find(writable);
     if( res == m_filePaths.end() )
         res = m_filePaths.find(writable->parent);
-    int64_t fd;
-    if( m_openWriteFileHandles.find(res->second) == m_openWriteFileHandles.end() )
-    {
-        fd = open_write(writable);
-        m_openWriteFileHandles[res->second] = fd;
-    } else
-        fd = m_openWriteFileHandles.at(res->second);
+    GetFileHandle(writable);
 
     int64_t group = m_groups[res->second];
 

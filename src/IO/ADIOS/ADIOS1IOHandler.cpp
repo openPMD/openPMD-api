@@ -55,23 +55,13 @@ ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
 
     if( this->m_handler->accessTypeBackend != AccessType::READ_ONLY )
     {
-        for( auto& f : m_openWriteFileHandles )
-            close(f.second);
-        m_openWriteFileHandles.clear();
-
         for( auto& group : m_attributeWrites )
             for( auto& att : group.second )
                 flush_attribute(group.first, att.first, att.second);
 
-        /* create all files, even if ADIOS file creation has been deferred,
-         * but execution of the deferred operation has never been triggered
-         * (happens when no Operation::WRITE_DATASET is performed) */
-        for( auto& f : m_filePaths )
-            if( m_openWriteFileHandles.find(f.second) == m_openWriteFileHandles.end() )
-                m_openWriteFileHandles[f.second] = open_write(f.first);
-
         for( auto& f : m_openWriteFileHandles )
             close(f.second);
+        m_openWriteFileHandles.clear();
     }
 
     int status;

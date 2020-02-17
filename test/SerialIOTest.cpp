@@ -725,7 +725,6 @@ void fileBased_write_test(const std::string & backend)
         std::shared_ptr< uint64_t > positionOffset_local_1(new uint64_t);
         e_1["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_1), {4}));
 
-        //o.setOpenPMDextension(1); // this would be before the first flush
         for( uint64_t i = 0; i < 4; ++i )
         {
             *position_local_1 = position_global[i];

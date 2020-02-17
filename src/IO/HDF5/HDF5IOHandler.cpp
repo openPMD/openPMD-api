@@ -162,6 +162,11 @@ HDF5IOHandlerImpl::createPath(Writable* writable,
         groups.push(node_id);
         for( std::string const& folder : auxiliary::split(path, "/", false) )
         {
+            // avoid creation of paths that already exist
+            htri_t const found = H5Lexists(groups.top(), folder.c_str(), H5P_DEFAULT);
+            if (found > 0)
+              continue;
+
             hid_t group_id = H5Gcreate(groups.top(),
                                        folder.c_str(),
                                        H5P_DEFAULT,
