@@ -336,6 +336,8 @@ The following people and institutions [contributed](https://github.com/openPMD/o
   initial library design and implementation with HDF5 & ADIOS1 backend
 * [Franz Poeschel (HZDR)](https://github.com/franzpoeschel):
   added JSON & ADIOS2 backend, data staging/streaming
+* [Junmin Gu (LBNL)](https://github.com/guj):
+  non-collective parallel I/O fixes, ADIOS improvements
 
 Further thanks go to improvements and contributions from:
 
@@ -361,8 +363,6 @@ Further thanks go to improvements and contributions from:
   compatibility testing
 * [Richard Pausch (HZDR)](https://github.com/PrometheusPi):
   compatibility testing
-* [Junmin Gu (LBNL)](https://github.com/guj):
-  non-collective parallel I/O testing
 * [Paweł Ordyna (HZDR)](https://github.com/pordyna):
   report on NVCC warnings
 

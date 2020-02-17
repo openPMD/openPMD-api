@@ -34,6 +34,7 @@ Bug Fixes
 
   - ensure creation of files that only contain attributes #674
   - deprecated in favor of ADIOS2 backend #676
+  - allow non-collective ``storeChunk()`` calls with multiple iterations #679
 
 Other
 """""
