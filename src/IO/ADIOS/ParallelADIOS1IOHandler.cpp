@@ -29,6 +29,8 @@
 #   include "openPMD/IO/ADIOS/ADIOS1FilePosition.hpp"
 #   include <adios.h>
 #   include <cstring>
+#   include <map>
+#   include <string>
 #endif
 
 namespace openPMD
