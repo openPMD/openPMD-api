@@ -21,16 +21,27 @@ namespace auxiliary
      * but an object. This means that objects contained in arrays will not be
      * traced.
      *
-     * Warning: The current implementation is inefficient because it will copy
-     * the accessed JSON value upon access. Currently not to be used for deeply
-     * nested / large JSON structures.
+     * If working directly with the underlying JSON value (necessary since this
+     * class only redefines operator[]), declareFullyRead() may be used to
+     * declare keys read manually.
      *
      */
-    class TracingJSON : public nlohmann::json
+    class TracingJSON
     {
     public:
         TracingJSON();
         TracingJSON( nlohmann::json );
+
+        /**
+         * @brief Access the underlying JSON value
+         *
+         * @return nlohmann::json&
+         */
+        inline nlohmann::json &
+        json()
+        {
+            return *m_positionInOriginal;
+        }
 
         template< typename Key >
         TracingJSON operator[]( Key && key );
@@ -61,34 +72,43 @@ namespace auxiliary
         declareFullyRead();
 
     private:
+        std::shared_ptr< nlohmann::json > m_originalJSON;
         std::shared_ptr< nlohmann::json > m_shadow;
-        nlohmann::json * m_position;
+        nlohmann::json * m_positionInOriginal;
+        nlohmann::json * m_positionInShadow;
         bool m_trace = true;
 
         void
         invertShadow( nlohmann::json & result, nlohmann::json & shadow );
 
         TracingJSON(
-            nlohmann::json,
+            std::shared_ptr< nlohmann::json > originalJSON,
             std::shared_ptr< nlohmann::json > shadow,
-            nlohmann::json * position,
+            nlohmann::json * positionInOriginal,
+            nlohmann::json * positionInShadow,
             bool trace );
     };
 
     template< typename Key >
     TracingJSON TracingJSON::operator[]( Key && key )
     {
-        nlohmann::json::const_reference res = nlohmann::json::operator[]( key );
+        nlohmann::json * newPositionInOriginal =
+            &m_positionInOriginal->operator[]( key );
         // If accessing a leaf in the JSON tree from an object (not an array!)
         // erase the corresponding key
         static nlohmann::json nullvalue;
-        nlohmann::json * emplaced = &nullvalue;
-        if( m_trace && this->is_object() )
+        nlohmann::json * newPositionInShadow = &nullvalue;
+        if( m_trace && m_positionInOriginal->is_object() )
         {
-            emplaced = &m_position->operator[]( key );
+            newPositionInShadow = &m_positionInShadow->operator[]( key );
         }
-        bool traceFurther = res.is_object();
-        return TracingJSON( res, m_shadow, emplaced, traceFurther );
+        bool traceFurther = newPositionInOriginal->is_object();
+        return TracingJSON(
+            m_originalJSON,
+            m_shadow,
+            newPositionInOriginal,
+            newPositionInShadow,
+            traceFurther );
     }
 } // namespace auxiliary
 } // namespace openPMD

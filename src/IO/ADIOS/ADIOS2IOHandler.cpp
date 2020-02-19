@@ -1183,16 +1183,18 @@ namespace detail
         // TODO if changing TracingJSON to return references upon operator[](),
         // change this to a reference
         auto engineConfig = impl.config( detail::str_engine );
-        if( !engineConfig.is_null() )
+        if( !engineConfig.json().is_null() )
         {
-            m_IO.SetEngine( impl.config( detail::str_type, engineConfig ) );
+            m_IO.SetEngine(
+                impl.config( detail::str_type, engineConfig ).json() );
             // TODO if changing TracingJSON to return references upon
             // operator[](), change this to a reference
             auto params = impl.config( detail::str_params, engineConfig );
             params.declareFullyRead();
-            if( params.is_object() )
+            if( params.json().is_object() )
             {
-                for( auto it = params.begin(); it != params.end(); it++ )
+                for( auto it = params.json().begin(); it != params.json().end();
+                     it++ )
                 {
                     m_IO.SetParameter( it.key(), it.value() );
                     alreadyConfigured.emplace( it.key() );

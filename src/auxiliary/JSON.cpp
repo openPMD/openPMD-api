@@ -13,23 +13,25 @@ namespace auxiliary
     }
 
     TracingJSON::TracingJSON( nlohmann::json json )
-        : nlohmann::json( std::move( json ) )
+        : m_originalJSON(
+              std::make_shared< nlohmann::json >( std::move( json ) ) )
         , m_shadow( std::make_shared< nlohmann::json >() )
-        , m_position( &*m_shadow )
+        , m_positionInOriginal( &*m_originalJSON )
+        , m_positionInShadow( &*m_shadow )
     {
     }
 
     nlohmann::json const &
     TracingJSON::getShadow()
     {
-        return *m_position;
+        return *m_positionInShadow;
     }
 
     nlohmann::json
     TracingJSON::invertShadow()
     {
-        nlohmann::json inverted = *this;
-        invertShadow( inverted, *m_position );
+        nlohmann::json inverted = *m_positionInOriginal;
+        invertShadow( inverted, *m_positionInShadow );
         return inverted;
     }
 
@@ -70,18 +72,21 @@ namespace auxiliary
     {
         if( m_trace )
         {
-            *m_position = *this;
+            // copy over
+            *m_positionInShadow = *m_positionInOriginal;
         }
     }
 
     TracingJSON::TracingJSON(
-        nlohmann::json json,
+        std::shared_ptr< nlohmann::json > originalJSON,
         std::shared_ptr< nlohmann::json > shadow,
-        nlohmann::json * position,
+        nlohmann::json * positionInOriginal,
+        nlohmann::json * positionInShadow,
         bool trace )
-        : nlohmann::json( json )
+        : m_originalJSON( std::move( originalJSON ) )
         , m_shadow( std::move( shadow ) )
-        , m_position( position )
+        , m_positionInOriginal( positionInOriginal )
+        , m_positionInShadow( positionInShadow )
         , m_trace( trace )
     {
     }

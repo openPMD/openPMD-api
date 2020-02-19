@@ -198,7 +198,7 @@ private:
     auxiliary::TracingJSON
     config( Key && key, auxiliary::TracingJSON & cfg )
     {
-        if( cfg.is_object() && cfg.contains( key ) )
+        if( cfg.json().is_object() && cfg.json().contains( key ) )
         {
             return cfg[ key ];
         }
