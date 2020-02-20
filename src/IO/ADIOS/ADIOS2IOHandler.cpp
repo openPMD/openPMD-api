@@ -834,21 +834,20 @@ namespace detail
         throw std::runtime_error( "[ADIOS2] WRITE_DATASET: Invalid datatype." );
     }
 
-    template < typename T >
+    template < typename T, typename... Params >
     void VariableDefiner::
-    operator( )( adios2::IO & IO, const std::string & name,
-                 std::unique_ptr< adios2::Operator > compression,
-                 const adios2::Dims & shape, const adios2::Dims & start,
-                 const adios2::Dims & count, const bool constantDims )
+    operator( )( Params &&... params )
     {
-        DatasetHelper< T >::defineVariable( IO, name, std::move( compression ),
-                                            shape, start, count, constantDims );
+        DatasetHelper< T >::defineVariable(
+            std::forward< Params >( params )... );
     }
 
-    template < int n, typename... Params >
-    void VariableDefiner::operator( )( adios2::IO &, Params &&... )
+    template< int n, typename... Params >
+    void
+    VariableDefiner::operator()( Params &&... )
     {
-        throw std::runtime_error( "[ADIOS2] Defining a variable with undefined type." );
+        throw std::runtime_error(
+            "[ADIOS2] Defining a variable with undefined type." );
     }
 
 

@@ -375,17 +375,13 @@ namespace detail
 
     struct VariableDefiner
     {
+        // Parameters such as DatasetHelper< T >::defineVariable
+        template < typename T, typename... Params >
+        void operator( )( Params &&... params );
 
-        template < typename T >
-        void operator( )( adios2::IO & IO, const std::string & name,
-                          std::unique_ptr< adios2::Operator > compression,
-                          const adios2::Dims & shape = adios2::Dims( ),
-                          const adios2::Dims & start = adios2::Dims( ),
-                          const adios2::Dims & count = adios2::Dims( ),
-                          const bool constantDims = false );
-
-        template < int n, typename... Params >
-        void operator( )( adios2::IO & IO, Params &&... );
+        template< int n, typename... Params >
+        void
+        operator()( Params &&... );
     };
 
 
@@ -517,10 +513,14 @@ namespace detail
                           std::string const & fileName );
 
         static void
-        defineVariable( adios2::IO & IO, const std::string & name,
-                        std::unique_ptr< adios2::Operator > compression,
-                        const adios2::Dims & shape, const adios2::Dims & start,
-                        const adios2::Dims & count, bool constantDims );
+        defineVariable(
+            adios2::IO & IO,
+            std::string const & name,
+            std::unique_ptr< adios2::Operator > compression,
+            adios2::Dims const & shape = adios2::Dims(),
+            adios2::Dims const & start = adios2::Dims(),
+            adios2::Dims const & count = adios2::Dims(),
+            bool const constantDims = false );
 
         void writeDataset( BufferedPut &, adios2::IO &, adios2::Engine & );
     };
