@@ -180,6 +180,14 @@ public:
 private:
     adios2::ADIOS m_ADIOS;
 
+    struct ParameterizedOperator
+    {
+        adios2::Operator const op;
+        adios2::Params const params;
+    };
+
+    std::vector< ParameterizedOperator > defaultOperators;
+
     auxiliary::TracingJSON m_config;
     static auxiliary::TracingJSON nullvalue;
 
@@ -206,6 +214,21 @@ private:
     {
         return config< Key >( std::forward< Key >( key ), m_config );
     }
+
+    /**
+     *
+     * @param config The top-level of the ADIOS2 configuration JSON object
+     * with operators to be found under dataset.operators
+     * @return first parameter: the operators, second parameters: whether
+     * operators have been configured
+     */
+    std::pair< std::vector< ParameterizedOperator >, bool >
+    getOperators( auxiliary::TracingJSON config );
+
+    // use m_config
+    std::pair< std::vector< ParameterizedOperator >, bool >
+    getOperators();
+
     /*
      * We need to give names to IO objects. These names are irrelevant
      * within this application, since:
@@ -516,7 +539,8 @@ namespace detail
         defineVariable(
             adios2::IO & IO,
             std::string const & name,
-            std::unique_ptr< adios2::Operator > compression,
+            std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator >
+                compressions,
             adios2::Dims const & shape = adios2::Dims(),
             adios2::Dims const & start = adios2::Dims(),
             adios2::Dims const & count = adios2::Dims(),

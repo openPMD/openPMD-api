@@ -86,17 +86,66 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
 void
 ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
 {
-    if( cfg.contains( "adios2" ) )
-    {
-        m_config = std::move( cfg[ "adios2" ] );
-    }
-    else
+    if( !cfg.contains( "adios2" ) )
     {
         std::cerr << "Warning: ADIOS2 is not configured in the JSON "
                      "configuration. Running with default settings."
                   << std::endl;
         return;
     }
+    m_config = std::move( cfg[ "adios2" ] );
+    defaultOperators = getOperators().first;
+}
+
+std::pair< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator >, bool >
+ADIOS2IOHandlerImpl::getOperators( auxiliary::TracingJSON cfg )
+{
+    std::vector< ParameterizedOperator > res;
+    if( !cfg.json().contains( "dataset" ) )
+    {
+        return std::make_pair( res, false );
+    }
+    auto datasetConfig = cfg[ "dataset" ];
+    if( !datasetConfig.json().contains( "operators" ) )
+    {
+        return std::make_pair( res, false );
+    }
+    auto _operators = datasetConfig[ "operators" ];
+    nlohmann::json const & operators = _operators.json();
+    for( auto operatorIterator = operators.begin();
+         operatorIterator != operators.end();
+         ++operatorIterator )
+    {
+        nlohmann::json const & op = operatorIterator.value();
+        std::string const & type = op[ "type" ];
+        adios2::Params adiosParams;
+        if( op.contains( "parameters" ) )
+        {
+            nlohmann::json const & params = op[ "parameters" ];
+            for( auto paramIterator = params.begin();
+                 paramIterator != params.end();
+                 ++paramIterator )
+            {
+                adiosParams[ paramIterator.key() ] =
+                    std::string( paramIterator.value() );
+            }
+        }
+        std::unique_ptr< adios2::Operator > adiosOperator =
+            getCompressionOperator( type );
+        if( adiosOperator )
+        {
+            res.emplace_back( ParameterizedOperator{
+                *adiosOperator, std::move( adiosParams ) } );
+        }
+    }
+    _operators.declareFullyRead();
+    return std::make_pair( res, true );
+}
+
+std::pair< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator >, bool >
+ADIOS2IOHandlerImpl::getOperators()
+{
+    return getOperators( m_config );
 }
 
 std::future< void >
@@ -216,17 +265,33 @@ void ADIOS2IOHandlerImpl::createDataset(
          *        the C++11 standard
          * @todo replace with std::optional upon switching to C++17
          */
+
+        auto operators = defaultOperators;
+
         std::unique_ptr< adios2::Operator > compression;
-        if ( !parameters.compression.empty( ) )
-            compression = getCompressionOperator( parameters.compression );
+        if( !parameters.compression.empty() )
+        {
+            std::unique_ptr< adios2::Operator > adiosOperator =
+                getCompressionOperator( parameters.compression );
+            if( adiosOperator )
+            {
+                operators.push_back( ParameterizedOperator{
+                    *adiosOperator,
+                    adios2::Params() } );
+            }
+        }
 
         // cast from openPMD::Extent to adios2::Dims
         adios2::Dims const shape( parameters.extent.begin(), parameters.extent.end() );
 
         auto & fileData = getFileData( file );
-        switchType( parameters.dtype, detail::VariableDefiner( ),
-                    fileData.m_IO, varName,
-                    std::move( compression ), shape );
+        switchType(
+            parameters.dtype,
+            detail::VariableDefiner(),
+            fileData.m_IO,
+            varName,
+            operators,
+            shape );
         fileData.invalidateVariablesMap();
         writable->written = true;
         m_dirty.emplace( file );
@@ -1012,13 +1077,20 @@ namespace detail
         engine.Get( var, ptr );
     }
 
-    template < typename T >
-    void DatasetHelper<
-        T, typename std::enable_if< DatasetTypes< T >::validType >::type >::
-        defineVariable( adios2::IO & IO, const std::string & name,
-                        std::unique_ptr< adios2::Operator > compression,
-                        const adios2::Dims & shape, const adios2::Dims & start,
-                        const adios2::Dims & count, const bool constantDims )
+    template< typename T >
+    void
+    DatasetHelper<
+        T,
+        typename std::enable_if< DatasetTypes< T >::validType >::type >::
+        defineVariable(
+            adios2::IO & IO,
+            const std::string & name,
+            std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator >
+                compressions,
+            const adios2::Dims & shape,
+            const adios2::Dims & start,
+            const adios2::Dims & count,
+            const bool constantDims )
     {
         adios2::Variable< T > var =
             IO.DefineVariable< T >( name, shape, start, count, constantDims );
@@ -1029,9 +1101,14 @@ namespace detail
         }
         // check whether the unique_ptr has an element
         // and whether the held operator is valid
-        if ( compression && *compression )
+        for( auto const & compression : compressions )
         {
-            var.AddOperation( *compression );
+            if( compression.op )
+            {
+                var.AddOperation(
+                    std::move( compression.op ),
+                    std::move( compression.params ) );
+            }
         }
     }
 
