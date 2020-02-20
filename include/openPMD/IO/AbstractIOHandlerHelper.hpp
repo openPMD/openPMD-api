@@ -34,6 +34,8 @@ namespace openPMD
      * @param   accessType  AccessType describing desired operations and permissions of the desired handler.
      * @param   format      Format describing the IO backend of the desired handler.
      * @param   comm        MPI communicator used for IO.
+     * @param   options     JSON-formatted option string, to be interpreted by
+     *                      the backend.
      * @return  Smart pointer to created IOHandler.
      */
 std::shared_ptr< AbstractIOHandler >
@@ -52,6 +54,8 @@ createIOHandler(
  * @param   accessType  AccessType describing desired operations and permissions
  * of the desired handler.
  * @param   format      Format describing the IO backend of the desired handler.
+ * @param   options     JSON-formatted option string, to be interpreted by
+ *                      the backend.
  * @return  Smart pointer to created IOHandler.
  */
 std::shared_ptr< AbstractIOHandler >

@@ -12,9 +12,9 @@ namespace auxiliary
     {
     }
 
-    TracingJSON::TracingJSON( nlohmann::json json )
+    TracingJSON::TracingJSON( nlohmann::json originalJSON )
         : m_originalJSON(
-              std::make_shared< nlohmann::json >( std::move( json ) ) )
+              std::make_shared< nlohmann::json >( std::move( originalJSON ) ) )
         , m_shadow( std::make_shared< nlohmann::json >() )
         , m_positionInOriginal( &*m_originalJSON )
         , m_positionInShadow( &*m_shadow )
