@@ -43,10 +43,14 @@ __pycache__
 #######
 # IDE #
 #######
+/*.cbp
+/*.layout
 .idea/
-cmake-build-*/
 .kdev?/
 *.kdev?
+/nbproject/
+.vimrc
+cmake-build-*/
 spack-build*
 build/
 
@@ -63,9 +67,11 @@ build/
 # Icon must end with two \r
 Icon
 
-
 # Thumbnails
 ._*
+
+# temporary files / backup
+*~
 
 # Files that might appear in the root of a volume
 .DocumentRevisions-V100
