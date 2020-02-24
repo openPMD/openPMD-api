@@ -80,8 +80,9 @@ or with MPI support:
 
 .. code-block:: bash
 
-   # optional:                                          --user
-   python3 -m pip install -U pip setuptools wheel cmake
+   # optional:                                    --user
+   python3 -m pip install -U pip setuptools wheel
+   python3 -m pip install -U cmake
 
    # optional:                                                                   --user
    openPMD_USE_MPI=ON python3 -m pip install openpmd-api --no-binary openpmd-api
