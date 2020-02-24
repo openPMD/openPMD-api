@@ -37,7 +37,8 @@ jobs:
     vmImage: ubuntu-18.04
   steps:
   - script: |
-      python3 -m pip install -U pip setuptools wheel cmake --user
+      python3 -m pip install -U pip setuptools wheel --user
+      python3 -m pip install -U cmake --user
       python3 -m pip install openpmd-api --no-binary openpmd-api --user
   - script: python3 -c "import openpmd_api as api; print(api.variants)"
 
@@ -49,7 +50,8 @@ jobs:
   - script: |
       sudo apt-get update
       sudo apt-get install -y libmpich-dev
-      python3 -m pip install -U pip setuptools wheel cmake --user
+      python3 -m pip install -U pip setuptools wheel --user
+      python3 -m pip install -U cmake --user
       openPMD_USE_MPI=ON python3 -m pip install openpmd-api --no-binary openpmd-api --user
   - script: python3 -c "import openpmd_api as api; print(api.variants)"
 
@@ -61,7 +63,8 @@ jobs:
   - script: |
       sudo apt-get update
       sudo apt-get install -y libopenmpi-dev
-      python3 -m pip install -U pip setuptools wheel cmake --user
+      python3 -m pip install -U pip setuptools wheel --user
+      python3 -m pip install -U cmake --user
       openPMD_USE_MPI=ON python3 -m pip install git+https://github.com/openPMD/openPMD-api.git@dev --user
   - script: python3 -c "import openpmd_api as api; print(api.variants)"
 
