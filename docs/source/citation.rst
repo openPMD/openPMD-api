@@ -1,0 +1,93 @@
+.. _acknowledgement:
+
+Citation
+========
+
+openPMD (Open Standard for Particle-Mesh Data Files) is a community project with many people contributing to it.
+If you use openPMD and/or openPMD related software in your work, please credit it when publishing and/or presenting work performed with it in order to give back to the community.
+
+openPMD-standard
+----------------
+
+The central definition of **openPMD is the meta data schema** defined in `openPMD/openPMD-standard <https://github.com/openPMD/openPMD-standard>`_.
+The most general reference to openPMD is:
+
+.. tip::
+
+   Axel Huebl, Remi Lehe, Jean-Luc Vay, David P. Grote, Ivo F. Sbalzarini, Stephan Kuschel, David Sagan, Christopher Mayes, Frederic Perez, Fabian Koller, and Michael Bussmann.
+   *"openPMD: A meta data standard for particle and mesh based data,"*
+   `DOI:10.5281/zenodo.591699 <https://doi.org/10.5281/zenodo.591699>`_ (2015)
+
+Since the openPMD-standard is an actively evolving meta data schema, a specific version of the openPMD standard might be used in your work.
+You can select a version-specific DOI from the `release page <https://github.com/openPMD/openPMD-standard/releases>`_ and add the version number to the cited title, e.g.
+
+.. note::
+
+   [author list as above] ...
+   *"openPMD 1.1.0: A meta data standard for particle and mesh based data,"*
+   `DOI:10.5281/zenodo.1167843 <https://doi.org/10.5281/zenodo.1167843>`_ (2018)
+
+openPMD-api
+-----------
+
+openPMD-api is a **software library** that provides a reference implementation of the openPMD-standard for popular data formats.
+It targets both desktop as well as high-performance computing environments.
+
+It is good scientific practice to document all used software, including transient dependencies, with versions in, e.g. a methods section of a publication.
+As a software citation, you almost always want to refer to a *specific version* of openPMD-api in your work, as illustrated for version 0.10.3:
+
+.. tip::
+
+   Fabian Koller, Franz Poeschel, Junmin Gu, and Axel Huebl.
+   *"openPMD-api 0.10.3: C++ & Python API for Scientific I/O with openPMD,"*
+   `DOI:10.14278/rodare.209 <https://doi.org/10.14278/rodare.209>`_ (2019)
+
+A list of all releases and DOIs can be found `on the release page <https://github.com/openPMD/openPMD-api/releases>`_.
+
+We also provide a DOI that refers to all releases of openPMD-api:
+
+.. note::
+
+   [author list as above] ...
+   *"openPMD-api: C++ & Python API for Scientific I/O with openPMD"*
+   `DOI:10.14278/rodare.27 <https://doi.org/10.14278/rodare.27>`_ (2018)
+
+Dependent Software
+~~~~~~~~~~~~~~~~~~
+
+The good way to control complex software environments is to install software through a :ref:`package manager (see installation) <install>`.
+Furthermore, openPMD-api provides functionality to simplify the documentation of its version and enabled backends:
+
+C++11
+^^^^^
+
+.. code-block:: cpp
+
+   #include <openPMD/openPMD.hpp>
+   #include <iostream>
+
+   namespace api = openPMD;
+
+   // ...
+   std::cout << "openPMD-api: "
+             << api::getVersion() << std::endl;
+   std::cout << "openPMD-standard: "
+             << api::getStandard() << std::endl;
+
+   std::cout << "openPMD-api backend variants: " << std::endl;
+   for( auto const & v : api::getVariants() )
+       std::cout << "  " << v.first << ": "
+                 << v.second << std::endl;
+
+Python
+^^^^^^
+
+.. code-block:: python3
+
+   import openpmd_api as api
+
+   print("openPMD-api: {}"
+         .format(api.__version__))
+   print("openPMD-api backend variants: {}"
+         .format(api.variants))
+

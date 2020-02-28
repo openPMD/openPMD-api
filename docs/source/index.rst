@@ -50,6 +50,7 @@ openPMD-api version      supported openPMD standard versions
    :hidden:
 
    coc
+   citation
 
 Installation
 ------------
