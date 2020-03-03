@@ -666,6 +666,7 @@ install:
       fi;
       spack install cmake@3.11.0 $CXXSPEC;
     fi
+  - spack find cmake
   - spack load cmake@3.11.0 $CXXSPEC
   # diagnostics: modules created and visible?
   - module av
@@ -676,6 +677,7 @@ install:
       travis_wait spack install
         openmpi
         $CXXSPEC &&
+      spack find openmpi &&
       spack load openmpi $CXXSPEC;
       SPACK_VAR_MPI="+mpi";
       if [ -z "$MPI_FLAVOR" ]; then
@@ -686,21 +688,25 @@ install:
       travis_wait spack install
         python@$TRAVIS_PYTHON_VERSION
         $CXXSPEC &&
+      spack find python &&
       spack load python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
       if [ "$USE_INTERNAL_PYBIND11" == "OFF" ]; then
         travis_wait spack install
           py-pybind11$PYBIND11_VERSION ^python@$TRAVIS_PYTHON_VERSION
           $CXXSPEC &&
+        spack find py-pybind11 &&
         spack load py-pybind11$PYBIND11_VERSION ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
       fi;
       travis_wait spack install
         py-numpy ~blas ~lapack ^python@$TRAVIS_PYTHON_VERSION
         $CXXSPEC &&
+      spack find py-numpy &&
       spack load py-numpy ~blas ~lapack ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
       if [ $USE_MPI == "ON" ]; then
         travis_wait spack install
           py-mpi4py ^python@$TRAVIS_PYTHON_VERSION
           $CXXSPEC &&
+        spack find py-mpi4py &&
         spack load py-mpi4py ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
       fi;
     fi
@@ -709,6 +715,7 @@ install:
         hdf5$HDF5_VERSION
         $SPACK_VAR_MPI
         $CXXSPEC &&
+      spack find hdf5 &&
       spack load hdf5$HDF5_VERSION $SPACK_VAR_MPI $CXXSPEC;
     fi
   - if [ $USE_ADIOS1 == "ON" ]; then
@@ -716,6 +723,7 @@ install:
         adios$ADIOS1_VERSION
         $SPACK_VAR_MPI ^python@$TRAVIS_PYTHON_VERSION
         $CXXSPEC &&
+      spack find adios &&
       spack load adios$ADIOS1_VERSION $SPACK_VAR_MPI ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
     fi
   - if [ $USE_ADIOS2 == "ON" ]; then
@@ -725,6 +733,7 @@ install:
         adios2$ADIOS2_VERSION
         $SPACK_VAR_MPI
         $CXXSPEC &&
+      spack find adios2 &&
       spack load adios2$ADIOS2_VERSION $SPACK_VAR_MPI $CXXSPEC;
     fi
   - spack clean -a
