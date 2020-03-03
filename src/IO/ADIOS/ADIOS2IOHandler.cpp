@@ -32,7 +32,6 @@
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
-// #include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include <type_traits>
 
@@ -65,37 +64,25 @@ namespace openPMD
 
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     AbstractIOHandler * handler,
-    MPI_Comm communicator
-#       if openPMD_HAVE_JSON
-    , nlohmann::json cfg
-#       endif // openPMD_HAVE_JSON
-)
+    MPI_Comm communicator,
+    nlohmann::json cfg )
     : AbstractIOHandlerImplCommon( handler )
     , m_comm{ communicator }
     , m_ADIOS{ communicator, ADIOS2_DEBUG_MODE }
 {
-#       if openPMD_HAVE_JSON
     init( std::move( cfg ) );
-#       endif // openPMD_HAVE_JSON
 }
 
 #    endif // openPMD_HAVE_MPI
 
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
-    AbstractIOHandler * handler
-#    if openPMD_HAVE_JSON
-    ,
-    nlohmann::json cfg
-#    endif // openPMD_HAVE_JSON
-    )
+    AbstractIOHandler * handler,
+    nlohmann::json cfg )
     : AbstractIOHandlerImplCommon( handler ), m_ADIOS{ ADIOS2_DEBUG_MODE }
 {
-#    if openPMD_HAVE_JSON
     init( std::move( cfg ) );
-#    endif // openPMD_HAVE_JSON
 }
 
-#    if openPMD_HAVE_JSON
 void
 ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
 {
@@ -110,12 +97,11 @@ ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
                   << std::endl;
     }
 }
-#    endif // openPMD_HAVE_JSON
 
 std::future< void >
 ADIOS2IOHandlerImpl::flush()
 {
-    auto res = AbstractIOHandlerImpl::flush( );
+    auto res = AbstractIOHandlerImpl::flush();
     for ( auto & p : m_fileData )
     {
         if ( m_dirty.find( p.first ) != m_dirty.end( ) )
@@ -551,11 +537,10 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2Accesstype( )
     }
 }
 
-#    if openPMD_HAVE_JSON
 auxiliary::TracingJSON ADIOS2IOHandlerImpl::nullvalue = nlohmann::json();
-#    endif // openPMD_HAVE_JSON
 
-std::string ADIOS2IOHandlerImpl::filePositionToString(
+std::string
+ADIOS2IOHandlerImpl::filePositionToString(
     std::shared_ptr< ADIOS2FilePosition > filepos )
 {
     return filepos->location;
@@ -1179,7 +1164,6 @@ namespace detail
     {
         (void)impl;
         std::set< std::string > alreadyConfigured;
-#    if openPMD_HAVE_JSON
         // TODO if changing TracingJSON to return references upon operator[](),
         // change this to a reference
         auto engineConfig = impl.config( detail::str_engine );
@@ -1209,7 +1193,6 @@ namespace detail
                          "remain unused:\n"
                       << shadow << std::endl;
         }
-#    endif // openPMD_HAVE_JSON
         auto notYetConfigured =
             [&alreadyConfigured]( std::string const & param ) {
                 auto it = alreadyConfigured.find( param );
@@ -1417,19 +1400,10 @@ namespace detail
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     openPMD::AccessType at,
-    MPI_Comm comm
-#   if openPMD_HAVE_JSON
-    , nlohmann::json options
-#   endif
-)
+    MPI_Comm comm,
+    nlohmann::json options )
     : AbstractIOHandler( std::move( path ), at, comm )
-    , m_impl{
-        this,
-        comm
-#   if openPMD_HAVE_JSON
-        , std::move( options )
-#   endif
-    }
+    , m_impl{ this, comm, std::move( options ) }
 {
 }
 
@@ -1437,50 +1411,38 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
-    AccessType at
-#   if openPMD_HAVE_JSON
-    , nlohmann::json options
-#   endif
-)
+    AccessType at,
+    nlohmann::json options )
     : AbstractIOHandler( std::move( path ), at )
-    , m_impl{
-        this
-#   if openPMD_HAVE_JSON
-        , std::move( options )
-#   endif
-    }
+    , m_impl{ this, std::move( options ) }
 {
 }
 
-std::future< void > ADIOS2IOHandler::flush( )
+std::future< void >
+ADIOS2IOHandler::flush()
 {
-    return m_impl.flush( );
+    return m_impl.flush();
 }
 
 #else // openPMD_HAVE_ADIOS2
 
-#if openPMD_HAVE_MPI
+#    if openPMD_HAVE_MPI
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     AccessType at,
     MPI_Comm comm
-#   if openPMD_HAVE_JSON
     , nlohmann::json
-#   endif
 )
     : AbstractIOHandler( std::move( path ), at, comm )
 {
 }
 
-#endif // openPMD_HAVE_MPI
+#    endif // openPMD_HAVE_MPI
 
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
-    AccessType at
-#if openPMD_HAVE_JSON
-    , nlohmann::json
-#endif
-)
+    AccessType at,
+    nlohmann::json )
     : AbstractIOHandler( std::move( path ), at )
 {
 }

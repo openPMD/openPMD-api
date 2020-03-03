@@ -1,8 +1,8 @@
-#include "openPMD/config.hpp"
-#if openPMD_HAVE_JSON
-#    include <vector>
+#include "openPMD/auxiliary/JSON.hpp"
 
-#    include "openPMD/auxiliary/JSON.hpp"
+#include <vector>
+
+#include "openPMD/config.hpp"
 
 namespace openPMD
 {
@@ -92,5 +92,3 @@ namespace auxiliary
     }
 } // namespace auxiliary
 } // namespace openPMD
-
-#endif

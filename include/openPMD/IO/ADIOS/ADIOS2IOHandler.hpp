@@ -96,13 +96,7 @@ public:
 
 #if openPMD_HAVE_MPI
 
-    ADIOS2IOHandlerImpl(
-        AbstractIOHandler *,
-        MPI_Comm
-#   if openPMD_HAVE_JSON
-        , nlohmann::json config
-#   endif
-    );
+    ADIOS2IOHandlerImpl( AbstractIOHandler *, MPI_Comm, nlohmann::json config );
 
     MPI_Comm m_comm;
 
@@ -110,15 +104,14 @@ public:
 
     explicit ADIOS2IOHandlerImpl(
         AbstractIOHandler *
-#   if openPMD_HAVE_JSON
         , nlohmann::json config
-#   endif
     );
 
 
-    ~ADIOS2IOHandlerImpl( ) override = default;
+    ~ADIOS2IOHandlerImpl() override = default;
 
-    std::future< void > flush( ) override;
+    std::future< void >
+    flush() override;
 
     void createFile( Writable *,
                      Parameter< Operation::CREATE_FILE > const & ) override;
@@ -187,7 +180,6 @@ public:
 private:
     adios2::ADIOS m_ADIOS;
 
-#    if openPMD_HAVE_JSON
     auxiliary::TracingJSON m_config;
     static auxiliary::TracingJSON nullvalue;
 
@@ -214,7 +206,6 @@ private:
     {
         return config< Key >( std::forward< Key >( key ), m_config );
     }
-#   endif // openPMD_HAVE_JSON
     /*
      * We need to give names to IO objects. These names are irrelevant
      * within this application, since:
@@ -719,20 +710,12 @@ public:
         std::string path,
         AccessType,
         MPI_Comm
-#   if openPMD_HAVE_JSON
         , nlohmann::json options
-#   endif
     );
 
 #endif
 
-    ADIOS2IOHandler(
-        std::string path,
-        AccessType
-#if openPMD_HAVE_JSON
-        , nlohmann::json options
-#endif
-    );
+    ADIOS2IOHandler( std::string path, AccessType, nlohmann::json options );
 
     std::string backendName() const override { return "ADIOS2"; }
 

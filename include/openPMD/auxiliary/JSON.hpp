@@ -1,13 +1,10 @@
 #pragma once
 
+#include <memory>  // std::shared_ptr
+#include <utility> // std::forward
+
 #include "openPMD/config.hpp"
-
-#if openPMD_HAVE_JSON
-
-#    include <memory>  // std::shared_ptr
-#    include <utility> // std::forward
-
-#    include <nlohmann/json.hpp>
+#include <nlohmann/json.hpp>
 
 namespace openPMD
 {
@@ -112,5 +109,3 @@ namespace auxiliary
     }
 } // namespace auxiliary
 } // namespace openPMD
-
-#endif // openPMD_HAVE_JSON
