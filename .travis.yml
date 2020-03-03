@@ -648,6 +648,8 @@ install:
       export MODULEPATH=$SPACK_ROOT/share/spack/modules/${SPACK_ARCH}:$MODULEPATH;
       echo ${MODULEPATH};
     fi
+  # Configured Spack compilers
+  - spack compilers
   # required dependencies - CMake 3.11.0
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       if [ ! -f $HOME/.cache/cmake-3.11.0/bin/cmake ]; then
