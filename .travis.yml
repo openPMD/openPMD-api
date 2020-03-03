@@ -724,7 +724,7 @@ install:
         $SPACK_VAR_MPI ^python@$TRAVIS_PYTHON_VERSION
         $CXXSPEC &&
       spack find adios &&
-      spack load adios$ADIOS1_VERSION $SPACK_VAR_MPI ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
+      spack load adios$ADIOS1_VERSION $SPACK_VAR_MPI $CXXSPEC;
     fi
   - if [ $USE_ADIOS2 == "ON" ]; then
       echo "adios2$ADIOS2_VERSION $SPACK_VAR_MPI $CXXSPEC";
