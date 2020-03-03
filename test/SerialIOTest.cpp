@@ -2320,3 +2320,94 @@ TEST_CASE( "no_serial_adios1", "[serial][adios]")
 }
 #endif
 
+#if openPMD_HAVE_ADIOS2
+TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
+{
+    std::string writeConfig = R"END(
+{
+  "adios2": {
+    "engine": {
+      "type": "bp4",
+      "unused": "parameter",
+      "parameters": {
+        "BufferGrowthFactor": "2.0",
+        "Profile": "On"
+      }
+    },
+    "unused": "as well",
+    "dataset": {
+      "operators": [
+        { "type": "BZip2" }
+      ]
+    }
+  }
+}
+)END";
+    {
+        openPMD::Series series(
+            "../samples/jsonConfigured.bp",
+            openPMD::AccessType::CREATE,
+            writeConfig );
+        auto E_x = series.iterations[ 0 ].meshes[ "E" ][ "x" ];
+        E_x.resetDataset( openPMD::Dataset( openPMD::Datatype::INT, { 1000 } ) );
+        std::vector< int > data( 1000, 0 );
+        E_x.storeChunk( data, { 0 }, { 1000 } );
+        series.flush();
+    }
+    std::string wrongReadConfig = R"END(
+{
+  "adios2": {
+    "engine": {
+      "type": "bp3",
+      "unused": "parameter"
+    }
+  }
+}
+)END";
+    // catching the exception thrown in ADIOS2 does not work
+    // maybe rel.:https://stackoverflow.com/questions/38878999/try-catch-doesnt-work-in-shared-library
+#    if 0
+    {
+        // wrong engine
+        // Catching the exception from the constructor will not work with
+        // REQUIRE_THROWS, so we use a plain old try.
+        try {
+            openPMD::Series(
+                "../samples/jsonConfigured.bp",
+                openPMD::AccessType::READ_ONLY,
+                wrongReadConfig );
+            FAIL_CHECK( "Reading with a wrong engine should fail." );
+        } catch (...)
+        {
+            REQUIRE( true );
+        }
+    }
+#    endif
+
+    std::string correctReadConfig = R"END(
+{
+  "adios2": {
+    "engine": {
+      "type": "bp4",
+      "unused": "parameter"
+    }
+  }
+}
+)END";
+    {
+        openPMD::Series series(
+            "../samples/jsonConfigured.bp",
+            openPMD::AccessType::READ_ONLY,
+            correctReadConfig );
+        auto E_x = series.iterations[ 0 ].meshes[ "E" ][ "x" ];
+        REQUIRE( E_x.getDimensionality() == 1 );
+        REQUIRE( E_x.getExtent()[ 0 ] == 1000 );
+        auto chunk = E_x.loadChunk< int >( { 0 }, { 1000 } );
+        series.flush();
+        for( size_t i = 0; i < 1000; ++i )
+        {
+            REQUIRE( chunk.get()[ i ] == 0 );
+        }
+    }
+}
+#endif
