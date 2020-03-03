@@ -287,16 +287,22 @@ private:
                                          std::string const & var );
 }; // ADIOS2IOHandlerImpl
 
+/*
+ * The following strings are used during parsing of the JSON configuration
+ * string for the ADIOS2 backend.
+ * Note that this struct's members additionally need to be defined at namespace
+ * scope up until C++17, see ADIOS2IOHandlerImpl.cpp
+ */
+struct ADIOS2Defaults
+{
+    using const_str = char const * const;
+    constexpr static const_str str_engine = "engine";
+    constexpr static const_str str_type = "type";
+    constexpr static const_str str_params = "parameters";
+};
+
 namespace detail
 {
-    /*
-     * The following strings are used during parsing of the JSON configuration
-     * string for the ADIOS2 backend.
-     */
-    constexpr char const * const str_engine = "engine";
-    constexpr char const * str_type = "type";
-    constexpr char const * str_params = "parameters";
-
     // Helper structs for calls to the switchType function
 
     struct DatasetReader

@@ -95,6 +95,7 @@ ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
         std::cerr << "Warning: ADIOS2 is not configured in the JSON "
                      "configuration. Running with default settings."
                   << std::endl;
+        return;
     }
 }
 
@@ -684,6 +685,18 @@ ADIOS2IOHandlerImpl::verifyDataset( Offset const & offset,
     return var;
 }
 
+#    if __cplusplus < 201703L
+// https://en.cppreference.com/w/cpp/language/static:
+// If a static data member is declared constexpr, it is implicitly inline and
+// does not need to be redeclared at namespace scope. This redeclaration
+// without an initializer (formerly required as shown above)
+// is still permitted, but is deprecated. (since C++17)
+
+constexpr ADIOS2Defaults::const_str ADIOS2Defaults::str_engine;
+constexpr ADIOS2Defaults::const_str ADIOS2Defaults::str_type;
+constexpr ADIOS2Defaults::const_str ADIOS2Defaults::str_params;
+#    endif
+
 namespace detail
 {
     DatasetReader::DatasetReader( openPMD::ADIOS2IOHandlerImpl * impl )
@@ -1166,14 +1179,15 @@ namespace detail
         std::set< std::string > alreadyConfigured;
         // TODO if changing TracingJSON to return references upon operator[](),
         // change this to a reference
-        auto engineConfig = impl.config( detail::str_engine );
+        auto engineConfig = impl.config( ADIOS2Defaults::str_engine );
         if( !engineConfig.json().is_null() )
         {
             m_IO.SetEngine(
-                impl.config( detail::str_type, engineConfig ).json() );
+                impl.config( ADIOS2Defaults::str_type, engineConfig ).json() );
             // TODO if changing TracingJSON to return references upon
             // operator[](), change this to a reference
-            auto params = impl.config( detail::str_params, engineConfig );
+            auto params =
+                impl.config( ADIOS2Defaults::str_params, engineConfig );
             params.declareFullyRead();
             if( params.json().is_object() )
             {
@@ -1395,7 +1409,7 @@ namespace detail
 
 } // namespace detail
 
-#if openPMD_HAVE_MPI
+#    if openPMD_HAVE_MPI
 
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
