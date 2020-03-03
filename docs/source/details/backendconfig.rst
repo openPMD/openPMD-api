@@ -1,9 +1,11 @@
 .. _backendconfig
 
-Backend-specific configuration
+Backend-Specific configuration
 ==============================
 
-While the openPMD API intends to be a backend-*independent* implementation of the openPMD standard, it is often necessary to pass configuration parameters to the concrete backend in use. Some backends recognize a number of configuration options via environment variables (see the backends' documentations), the preferred way to do so, however, *– as far as it is implemented –* is via a JSON-formatted string.
+While the openPMD API intends to be a backend-*independent* implementation of the openPMD standard, it is sometimes useful to pass configuration parameters to the specific backend in use.
+:ref:`For each backend <backends-overview>`, configuration options can be passed via a JSON-formatted string or via environment variables.
+A JSON option always takes precedence over an environment variable.
 
 The fundamental structure of this JSON configuration string is given as follows:
 
@@ -11,18 +13,24 @@ The fundamental structure of this JSON configuration string is given as follows:
 
 This structure allows keeping one configuration string for several backends at once, with the concrete backend configuration being chosen upon choosing the backend itself.
 
-The configuration is currently read in a case-sensitive manner. Since this may change in the future, all parts of the configuration are given in *lower case*. Parameters that are directly passed through to an external library and not interpreted within the openPMD API (e.g. ``adios2.engine.parameters``) are unaffected by this and follow the respective library's conventions.
+The configuration is read in a case-sensitive manner.
+Generally, keys of the configuration are *lower case*.
+Parameters that are directly passed through to an external library and not interpreted within openPMD API (e.g. ``adios2.engine.parameters``) are unaffected by this and follow the respective library's conventions.
 
-The configuration string may refer to the complete ``openPMD::Series`` and additionally be specified per ``openPMD::Dataset``, passed in the respective constructors. *Configuration per dataset is currently not yet implemented.* This reflects the fact that certain backend-specific parameters may refer to the whole Series (such as storage engines and their parameters) and others refer to actual datasets (such as compression).
+The configuration string may refer to the complete ``openPMD::Series`` or may additionally be specified per ``openPMD::Dataset``, passed in the respective constructors.
+*A configuration per dataset is currently not yet implemented.*
+This reflects the fact that certain backend-specific parameters may refer to the whole Series (such as storage engines and their parameters) and others refer to actual datasets (such as compression).
 
 For a consistent user interface, backends shall follow the following rules:
 
 * The configuration structures for the Series and for each dataset should be defined equivalently.
 * Any setting referring to single datasets should also be applicable globally, affecting all datasets.
 * If a setting is defined globally, but also for a concrete dataset, the dataset-specific setting should override the global one.
-* If a setting is passed to a dataset that only makes sense globally (such as the storage engine), the setting should be ignored except for printing a warning. Backends should define clearly which keys are applicable to datasets and which are not.
+* If a setting is passed to a dataset that only makes sense globally (such as the storage engine), the setting should be ignored except for printing a warning.
+  Backends should define clearly which keys are applicable to datasets and which are not.
 
-Configuration structure per backend
+
+Configuration Structure per Backend
 -----------------------------------
 
 ADIOS2
