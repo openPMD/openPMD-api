@@ -268,7 +268,6 @@ void ADIOS2IOHandlerImpl::createDataset(
 
         auto operators = defaultOperators;
 
-        std::unique_ptr< adios2::Operator > compression;
         if( !parameters.compression.empty() )
         {
             std::unique_ptr< adios2::Operator > adiosOperator =
@@ -1085,7 +1084,7 @@ namespace detail
         defineVariable(
             adios2::IO & IO,
             const std::string & name,
-            std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator >
+            std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > const &
                 compressions,
             const adios2::Dims & shape,
             const adios2::Dims & start,
@@ -1099,15 +1098,11 @@ namespace detail
             throw std::runtime_error(
                 "[ADIOS2] Internal error: Could not create Variable '" + name + "'." );
         }
-        // check whether the unique_ptr has an element
-        // and whether the held operator is valid
         for( auto const & compression : compressions )
         {
             if( compression.op )
             {
-                var.AddOperation(
-                    std::move( compression.op ),
-                    std::move( compression.params ) );
+                var.AddOperation( compression.op, compression.params );
             }
         }
     }

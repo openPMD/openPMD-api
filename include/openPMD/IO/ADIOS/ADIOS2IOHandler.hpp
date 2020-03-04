@@ -539,7 +539,7 @@ namespace detail
         defineVariable(
             adios2::IO & IO,
             std::string const & name,
-            std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator >
+            std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > const &
                 compressions,
             adios2::Dims const & shape = adios2::Dims(),
             adios2::Dims const & start = adios2::Dims(),
