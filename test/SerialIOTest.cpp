@@ -2323,7 +2323,27 @@ TEST_CASE( "no_serial_adios1", "[serial][adios]")
 #if openPMD_HAVE_ADIOS2
 TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
 {
-    std::string writeConfig = R"END(
+    std::string writeConfigBP3 = R"END(
+{
+  "adios2": {
+    "engine": {
+      "type": "bp3",
+      "unused": "parameter",
+      "parameters": {
+        "BufferGrowthFactor": "2.0",
+        "Profile": "On"
+      }
+    },
+    "unused": "as well",
+    "dataset": {
+      "operators": [
+        { "type": "BZip2" }
+      ]
+    }
+  }
+}
+)END";
+    std::string writeConfigBP4 = R"END(
 {
   "adios2": {
     "engine": {
@@ -2343,18 +2363,26 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
   }
 }
 )END";
-    {
-        openPMD::Series series(
-            "../samples/jsonConfigured.bp",
-            openPMD::AccessType::CREATE,
-            writeConfig );
+    auto write = []( std::string const & filename,
+                     std::string const & config ) {
+        openPMD::Series series( filename, openPMD::AccessType::CREATE, config );
         auto E_x = series.iterations[ 0 ].meshes[ "E" ][ "x" ];
-        E_x.resetDataset( openPMD::Dataset( openPMD::Datatype::INT, { 1000 } ) );
+        E_x.resetDataset(
+            openPMD::Dataset( openPMD::Datatype::INT, { 1000 } ) );
         std::vector< int > data( 1000, 0 );
         E_x.storeChunk( data, { 0 }, { 1000 } );
         series.flush();
-    }
-    std::string wrongReadConfig = R"END(
+    };
+    write( "../samples/jsonConfiguredBP4.bp", writeConfigBP4 );
+    write( "../samples/jsonConfiguredBP3.bp", writeConfigBP3 );
+
+    // BP3 engine writes files, BP4 writes directories
+    REQUIRE(
+        openPMD::auxiliary::file_exists( "../samples/jsonConfiguredBP3.bp" ) );
+    REQUIRE( openPMD::auxiliary::directory_exists(
+        "../samples/jsonConfiguredBP4.bp" ) );
+
+    std::string readConfigBP3 = R"END(
 {
   "adios2": {
     "engine": {
@@ -2364,27 +2392,7 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
   }
 }
 )END";
-    // catching the exception thrown in ADIOS2 does not work
-    // maybe rel.:https://stackoverflow.com/questions/38878999/try-catch-doesnt-work-in-shared-library
-#    if 0
-    {
-        // wrong engine
-        // Catching the exception from the constructor will not work with
-        // REQUIRE_THROWS, so we use a plain old try.
-        try {
-            openPMD::Series(
-                "../samples/jsonConfigured.bp",
-                openPMD::AccessType::READ_ONLY,
-                wrongReadConfig );
-            FAIL_CHECK( "Reading with a wrong engine should fail." );
-        } catch (...)
-        {
-            REQUIRE( true );
-        }
-    }
-#    endif
-
-    std::string correctReadConfig = R"END(
+    std::string readConfigBP4 = R"END(
 {
   "adios2": {
     "engine": {
@@ -2394,11 +2402,9 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
   }
 }
 )END";
-    {
+    auto read = []( std::string const & filename, std::string const & config ) {
         openPMD::Series series(
-            "../samples/jsonConfigured.bp",
-            openPMD::AccessType::READ_ONLY,
-            correctReadConfig );
+            filename, openPMD::AccessType::READ_ONLY, config );
         auto E_x = series.iterations[ 0 ].meshes[ "E" ][ "x" ];
         REQUIRE( E_x.getDimensionality() == 1 );
         REQUIRE( E_x.getExtent()[ 0 ] == 1000 );
@@ -2408,6 +2414,8 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
         {
             REQUIRE( chunk.get()[ i ] == 0 );
         }
-    }
+    };
+    read( "../samples/jsonConfiguredBP3.bp", readConfigBP3 );
+    read( "../samples/jsonConfiguredBP4.bp", readConfigBP4 );
 }
 #endif
