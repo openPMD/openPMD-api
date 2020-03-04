@@ -677,8 +677,7 @@ install:
   - SPACK_VAR_MPI="~mpi";
   - if [ $USE_MPI == "ON" ]; then
       travis_wait spack install
-        openmpi
-        $CXXSPEC &&
+        openmpi $CXXSPEC &&
       spack find openmpi &&
       spack load openmpi $CXXSPEC;
       SPACK_VAR_MPI="+mpi";
@@ -688,55 +687,52 @@ install:
     fi;
   - if [ $USE_PYTHON == "ON" ]; then
       travis_wait spack install
-        python@$TRAVIS_PYTHON_VERSION
-        $CXXSPEC &&
+        python@$TRAVIS_PYTHON_VERSION $CXXSPEC &&
       spack find python &&
       spack load python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
       if [ "$USE_INTERNAL_PYBIND11" == "OFF" ]; then
         travis_wait spack install
-          py-pybind11$PYBIND11_VERSION ^python@$TRAVIS_PYTHON_VERSION
-          $CXXSPEC &&
+          py-pybind11$PYBIND11_VERSION $CXXSPEC
+          ^python@$TRAVIS_PYTHON_VERSION &&
         spack find py-pybind11 &&
-        spack load py-pybind11$PYBIND11_VERSION ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
+        spack load py-pybind11$PYBIND11_VERSION $CXXSPEC ^python@$TRAVIS_PYTHON_VERSION;
       fi;
       travis_wait spack install
-        py-numpy ~blas ~lapack ^python@$TRAVIS_PYTHON_VERSION
-        $CXXSPEC &&
+        py-numpy $CXXSPEC ~blas ~lapack
+        ^python@$TRAVIS_PYTHON_VERSION &&
       spack find py-numpy &&
-      spack load py-numpy ~blas ~lapack ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
+      spack load py-numpy ~blas ~lapack $CXXSPEC ^python@$TRAVIS_PYTHON_VERSION;
       if [ $USE_MPI == "ON" ]; then
         travis_wait spack install
-          py-mpi4py ^python@$TRAVIS_PYTHON_VERSION
-          $CXXSPEC &&
+          py-mpi4py $CXXSPEC
+          ^python@$TRAVIS_PYTHON_VERSION &&
         spack find py-mpi4py &&
-        spack load py-mpi4py ^python@$TRAVIS_PYTHON_VERSION $CXXSPEC;
+        spack load py-mpi4py $CXXSPEC ^python@$TRAVIS_PYTHON_VERSION;
       fi;
     fi
   - if [ $USE_HDF5 == "ON" ]; then
       travis_wait spack install
-        hdf5$HDF5_VERSION
-        $SPACK_VAR_MPI
-        $CXXSPEC &&
+        hdf5$HDF5_VERSION $CXXSPEC
+        $SPACK_VAR_MPI &&
       spack find hdf5 &&
-      spack load hdf5$HDF5_VERSION $SPACK_VAR_MPI $CXXSPEC;
+      spack load hdf5$HDF5_VERSION $CXXSPEC $SPACK_VAR_MPI;
     fi
   - if [ $USE_ADIOS1 == "ON" ]; then
       travis_wait 30 spack install
-        adios$ADIOS1_VERSION
-        $SPACK_VAR_MPI ^python@$TRAVIS_PYTHON_VERSION
-        $CXXSPEC &&
+        adios$ADIOS1_VERSION $CXXSPEC
+        $SPACK_VAR_MPI
+        ^python@$TRAVIS_PYTHON_VERSION &&
       spack find adios &&
-      spack load adios$ADIOS1_VERSION $SPACK_VAR_MPI $CXXSPEC;
+      spack load adios$ADIOS1_VERSION $CXXSPEC $SPACK_VAR_MPI;
     fi
   - if [ $USE_ADIOS2 == "ON" ]; then
-      echo "adios2$ADIOS2_VERSION $SPACK_VAR_MPI $CXXSPEC";
-      spack spec adios2$ADIOS2_VERSION $SPACK_VAR_MPI $CXXSPEC;
+      echo "adios2$ADIOS2_VERSION $CXXSPEC $SPACK_VAR_MPI";
+      spack spec adios2$ADIOS2_VERSION $CXXSPEC $SPACK_VAR_MPI;
       travis_wait 30 spack install
-        adios2$ADIOS2_VERSION
-        $SPACK_VAR_MPI
-        $CXXSPEC &&
+        adios2$ADIOS2_VERSION $CXXSPEC
+        $SPACK_VAR_MPI &&
       spack find adios2 &&
-      spack load adios2$ADIOS2_VERSION $SPACK_VAR_MPI $CXXSPEC;
+      spack load adios2$ADIOS2_VERSION $CXXSPEC $SPACK_VAR_MPI;
     fi
   - spack clean -a
 
