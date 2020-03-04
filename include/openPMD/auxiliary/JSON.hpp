@@ -109,3 +109,4 @@ namespace auxiliary
     }
 } // namespace auxiliary
 } // namespace openPMD
+
