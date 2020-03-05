@@ -90,8 +90,7 @@ TEST_CASE( "parallel_multi_series_test", "[parallel]" )
     allSeries.clear();
 }
 
-void write_test_zero_extent( bool fileBased, std::string file_ending, bool writeAllChunks )
-{
+void write_test_zero_extent( bool fileBased, std::string file_ending, bool writeAllChunks, bool declareFromAll ) {
     int mpi_s{-1};
     int mpi_r{-1};
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_s);
@@ -110,45 +109,47 @@ void write_test_zero_extent( bool fileBased, std::string file_ending, bool write
         Iteration it = o.iterations[step];
         it.setAttribute("yolo", "yo");
 
-        ParticleSpecies e = it.particles["e"];
+        if( rank != 0 || declareFromAll ) {
+            ParticleSpecies e = it.particles["e"];
 
-        /* every rank n writes n consecutive cells, increasing values
-         * rank 0 does a zero-extent write
-         * two ranks will result in {1}
-         * three ranks will result in {1, 2, 3}
-         * four ranks will result in {1, 2, 3, 4, 5, 6} */
-        uint64_t num_cells = ((size - 1) * (size - 1) + (size - 1)) / 2; /* (n^2 + n) / 2 */
-        if (num_cells == 0u) {
-            std::cerr << "Test can only be run with at least two ranks" << std::endl;
-            return;
-        }
+            /* every rank n writes n consecutive cells, increasing values
+             * rank 0 does a zero-extent write
+             * two ranks will result in {1}
+             * three ranks will result in {1, 2, 3}
+             * four ranks will result in {1, 2, 3, 4, 5, 6} */
+            uint64_t num_cells = ((size - 1) * (size - 1) + (size - 1)) / 2; /* (n^2 + n) / 2 */
+            if (num_cells == 0u) {
+                std::cerr << "Test can only be run with at least two ranks" << std::endl;
+                return;
+            }
 
-        std::vector<double> position_global(num_cells);
-        double pos{1.};
-        std::generate(position_global.begin(), position_global.end(), [&pos] { return pos++; });
-        std::shared_ptr<double> position_local(new double[rank], [](double const *p) { delete[] p; });
-        uint64_t offset;
-        if (rank != 0)
-            offset = ((rank - 1) * (rank - 1) + (rank - 1)) / 2;
-        else
-            offset = 0;
+            std::vector<double> position_global(num_cells);
+            double pos{1.};
+            std::generate(position_global.begin(), position_global.end(), [&pos] { return pos++; });
+            std::shared_ptr<double> position_local(new double[rank], [](double const *p) { delete[] p; });
+            uint64_t offset;
+            if (rank != 0)
+                offset = ((rank - 1) * (rank - 1) + (rank - 1)) / 2;
+            else
+                offset = 0;
 
-        e["position"]["x"].resetDataset(Dataset(determineDatatype(position_local), {num_cells}));
+            e["position"]["x"].resetDataset(Dataset(determineDatatype(position_local), {num_cells}));
 
-        std::vector<uint64_t> positionOffset_global(num_cells);
-        uint64_t posOff{1};
-        std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff] { return posOff++; });
-        std::shared_ptr<uint64_t> positionOffset_local(new uint64_t[rank], [](uint64_t const *p) { delete[] p; });
+            std::vector<uint64_t> positionOffset_global(num_cells);
+            uint64_t posOff{1};
+            std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff] { return posOff++; });
+            std::shared_ptr<uint64_t> positionOffset_local(new uint64_t[rank], [](uint64_t const *p) { delete[] p; });
 
-        e["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local), {num_cells}));
+            e["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local), {num_cells}));
 
-        for (uint64_t i = 0; i < rank; ++i) {
-            position_local.get()[i] = position_global[offset + i];
-            positionOffset_local.get()[i] = positionOffset_global[offset + i];
-        }
-        if (rank != 0 || writeAllChunks) {
-            e["position"]["x"].storeChunk(position_local, {offset}, {rank});
-            e["positionOffset"]["x"].storeChunk(positionOffset_local, {offset}, {rank});
+            for (uint64_t i = 0; i < rank; ++i) {
+                position_local.get()[i] = position_global[offset + i];
+                positionOffset_local.get()[i] = positionOffset_global[offset + i];
+            }
+            if (rank != 0 || writeAllChunks) {
+                e["position"]["x"].storeChunk(position_local, {offset}, {rank});
+                e["positionOffset"]["x"].storeChunk(positionOffset_local, {offset}, {rank});
+            }
         }
         o.flush();
     }
@@ -247,8 +248,8 @@ TEST_CASE( "hdf5_write_test", "[parallel][hdf5]" )
 
 TEST_CASE( "hdf5_write_test_zero_extent", "[parallel][hdf5]" )
 {
-    write_test_zero_extent( false, "h5", true );
-    write_test_zero_extent( true, "h5", true );
+    write_test_zero_extent( false, "h5", true, true );
+    write_test_zero_extent( true, "h5", true, true );
 }
 
 TEST_CASE( "hdf5_write_test_skip_chunk", "[parallel][hdf5]" )
@@ -257,8 +258,21 @@ TEST_CASE( "hdf5_write_test_skip_chunk", "[parallel][hdf5]" )
     auto const hdf5_collective = auxiliary::getEnvString( "OPENPMD_HDF5_INDEPENDENT", "ON" );
     if( hdf5_collective == "ON" )
     {
-        write_test_zero_extent( false, "h5", false );
-        write_test_zero_extent( true, "h5", false );
+        write_test_zero_extent( false, "h5", false, true );
+        write_test_zero_extent( true, "h5", false, true );
+    }
+    else
+        REQUIRE(true);
+}
+
+TEST_CASE( "hdf5_write_test_skip_declare", "[parallel][hdf5]" )
+{
+    //! @todo add via JSON option instead of environment read
+    auto const hdf5_collective = auxiliary::getEnvString( "OPENPMD_HDF5_INDEPENDENT", "OFF" );
+    if( hdf5_collective == "ON" )
+    {
+        write_test_zero_extent( false, "h5", false, false );
+        write_test_zero_extent( true, "h5", false, false );
     }
     else
         REQUIRE(true);
@@ -311,14 +325,20 @@ TEST_CASE( "adios_write_test", "[parallel][adios]" )
 
 TEST_CASE( "adios_write_test_zero_extent", "[parallel][adios]" )
 {
-    write_test_zero_extent( false, "bp", true );
-    write_test_zero_extent( true, "bp", true );
+    write_test_zero_extent( false, "bp", true, true );
+    write_test_zero_extent( true, "bp", true, true );
 }
 
 TEST_CASE( "adios_write_test_skip_chunk", "[parallel][adios]" )
 {
-    write_test_zero_extent( false, "bp", false );
-    write_test_zero_extent( true, "bp", false );
+    write_test_zero_extent( false, "bp", false, true );
+    write_test_zero_extent( true, "bp", false, true );
+}
+
+TEST_CASE( "adios_write_test_skip_declare", "[parallel][adios]" )
+{
+    write_test_zero_extent( false, "bp", false, false );
+    write_test_zero_extent( true, "bp", false, false );
 }
 
 TEST_CASE( "hzdr_adios_sample_content_test", "[parallel][adios1]" )
