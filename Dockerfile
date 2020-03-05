@@ -139,6 +139,7 @@ RUN        ls -hal /usr/local/lib/python3.7/dist-packages/
 # RUN        objdump -x /usr/local/lib/python3.7/dist-packages/openpmd_api.cpython-37m-x86_64-linux-gnu.so | grep RPATH
 RUN        ldd /usr/local/lib/python3.7/dist-packages/openpmd_api.cpython-37m-x86_64-linux-gnu.so
 RUN        python3 -c "import openpmd_api as api; print(api.__version__); print(api.variants)"
+#RUN        openpmd-ls --help
 #RUN        echo "* soft core 100000" >> /etc/security/limits.conf && \
 #           python3 -c "import openpmd_api as api;"; \
 #           gdb -ex bt -c core
@@ -167,6 +168,7 @@ RUN        python3 --version \
            && python3 -m pip install -U pip \
            && python3 -m pip install openPMD_api-*-cp36-cp36m-manylinux2010_x86_64.whl
 RUN        python3 -c "import openpmd_api as api; print(api.__version__); print(api.variants)"
+#RUN        openpmd-ls --help
 
 # test in fresh env: Debian:Stretch + Python 3.5
 FROM       debian:stretch
@@ -179,6 +181,7 @@ RUN        python3 --version \
            && python3 -m pip install -U pip \
            && python3 -m pip install openPMD_api-*-cp35-cp35m-manylinux2010_x86_64.whl
 RUN        python3 -c "import openpmd_api as api; print(api.__version__); print(api.variants)"
+#RUN        openpmd-ls --help
 
 
 # copy binary artifacts (wheels)

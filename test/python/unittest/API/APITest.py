@@ -526,13 +526,25 @@ class APITest(unittest.TestCase):
             )
 
     def testLoadSeries(self):
-        """ Test loading a pmd series from hdf5."""
+        """ Test loading an openPMD series from hdf5."""
 
         # Get series.
         series = self.__series
         self.assertIsInstance(series, api.Series)
 
         self.assertEqual(series.openPMD, "1.1.0")
+
+    def testListSeries(self):
+        """ Test print()-ing and openPMD series from hdf5."""
+
+        # Get series.
+        series = self.__series
+        self.assertRaises(TypeError, api.list_series)
+        api.list_series(series)
+        api.list_series(series, False)
+        api.list_series(series, True)
+
+        print(api.list_series.__doc__)
 
     def testSliceRead(self):
         """ Testing sliced read on record components. """

@@ -75,8 +75,8 @@ CMake Option                      Values      Installs Library       Version
 ================================= =========== ======== ============= ========
 
 
-Tests
------
+Tests, Examples and Command Line Tools
+--------------------------------------
 
-By default, tests and examples are built.
-In order to skip building those, pass ``-DBUILD_TESTING=OFF`` or ``-DBUILD_EXAMPLES=OFF`` to your ``cmake`` command.
+By default, tests, examples and command line tools are built.
+In order to skip building those, pass ``-DBUILD_TESTING=OFF``, ``-DBUILD_EXAMPLES=OFF``, or ``-DBUILD_CLI_TOOLS=OFF`` to your ``cmake`` command.
