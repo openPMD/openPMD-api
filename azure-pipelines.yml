@@ -192,7 +192,7 @@ jobs:
 - job: macOS_pip_pypi
   displayName: macOS pip from PyPI
   pool:
-    vmImage: macOS-10.13
+    vmImage: macOS-10.14
   steps:
   - script: |
       python3 -m pip install -U pip --user
@@ -202,7 +202,7 @@ jobs:
 - job: macOS_pip_pypi_nobin
   displayName: macOS pip from PyPI w/o binary
   pool:
-    vmImage: macOS-10.13
+    vmImage: macOS-10.14
   steps:
   - script: |
       python3 -m pip install -U pip setuptools wheel cmake --user
@@ -212,7 +212,7 @@ jobs:
 - job: macOS_pip_pypi_mpich
   displayName: macOS pip from PyPI w/ MPICH
   pool:
-    vmImage: macOS-10.14
+    vmImage: macOS-10.15
   steps:
   - script: |
       brew update
@@ -249,7 +249,7 @@ jobs:
 - job: macOS_conda
   displayName: macOS conda
   pool:
-    vmImage: macOS-10.13
+    vmImage: macOS-10.14
   steps:
   - bash: |
       echo "##vso[task.prependpath]$CONDA/bin"
@@ -262,7 +262,7 @@ jobs:
 - job: macOS_conda_mpich
   displayName: macOS conda w/ MPICH
   pool:
-    vmImage: macOS-10.14
+    vmImage: macOS-10.15
   steps:
   - bash: |
       echo "##vso[task.prependpath]$CONDA/bin"
