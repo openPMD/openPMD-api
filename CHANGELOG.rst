@@ -5,11 +5,12 @@ Changelog
 
 0.11.0-alpha
 ------------
-**Date:** TBA
+**Date:** 2020-03-05
 
-[Title]
+Robust Independent I/O
 
-[Summary]
+This release improves MPI-parallel I/O with HDF5 and ADIOS.
+ADIOS2 is now the default backend for handing ``.bp`` files.
 
 Changes to "0.10.3-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -59,7 +60,7 @@ Other
 - migrate static checks for python code to GitHub actions #660
 - add MPICH tests to CI #670
 - ``Attribute`` constructor: move argument into place #663
-- Spack: ADIOS1 backend now enabled by default #664
+- Spack: ADIOS2 backend now enabled by default #664 #676
 - add independent HDF5 write test to CI #669
 - add test of multiple active ``Series`` #686
 
