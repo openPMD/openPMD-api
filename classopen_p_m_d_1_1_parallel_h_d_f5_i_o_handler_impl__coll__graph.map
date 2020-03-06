@@ -1,5 +1,0 @@
-<map id="openPMD::ParallelHDF5IOHandlerImpl" name="openPMD::ParallelHDF5IOHandlerImpl">
-<area shape="rect" id="node2" href="$classopen_p_m_d_1_1_h_d_f5_i_o_handler_impl.html" title="openPMD::HDF5IOHandlerImpl" alt="" coords="27,171,234,197"/>
-<area shape="rect" id="node3" href="$classopen_p_m_d_1_1_abstract_i_o_handler_impl.html" title="openPMD::AbstractIOHandlerImpl" alt="" coords="20,95,241,121"/>
-<area shape="rect" id="node4" href="$classopen_p_m_d_1_1_abstract_i_o_handler.html" title="Interface for communicating between logical and physically persistent data. " alt="" coords="33,5,229,32"/>
-</map>

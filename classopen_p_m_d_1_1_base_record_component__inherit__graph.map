@@ -1,6 +1,0 @@
-<map id="openPMD::BaseRecordComponent" name="openPMD::BaseRecordComponent">
-<area shape="rect" id="node3" href="$classopen_p_m_d_1_1_patch_record_component.html" title="openPMD::PatchRecordComponent" alt="" coords="5,155,236,181"/>
-<area shape="rect" id="node4" href="$classopen_p_m_d_1_1_record_component.html" title="openPMD::RecordComponent" alt="" coords="261,155,458,181"/>
-<area shape="rect" id="node2" href="$classopen_p_m_d_1_1_attributable.html" title="Layer to manage storage of attributes associated with file objects. " alt="" coords="162,5,317,32"/>
-<area shape="rect" id="node5" href="$classopen_p_m_d_1_1_mesh_record_component.html" title="openPMD::MeshRecordComponent" alt="" coords="245,229,474,256"/>
-</map>

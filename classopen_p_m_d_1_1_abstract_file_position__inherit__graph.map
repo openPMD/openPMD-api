@@ -1,6 +1,0 @@
-<map id="openPMD::AbstractFilePosition" name="openPMD::AbstractFilePosition">
-<area shape="rect" id="node2" href="$structopen_p_m_d_1_1_a_d_i_o_s1_file_position.html" title="openPMD::ADIOS1FilePosition" alt="" coords="259,5,464,32"/>
-<area shape="rect" id="node3" href="$structopen_p_m_d_1_1_a_d_i_o_s2_file_position.html" title="openPMD::ADIOS2FilePosition" alt="" coords="259,56,464,83"/>
-<area shape="rect" id="node4" href="$structopen_p_m_d_1_1_h_d_f5_file_position.html" title="openPMD::HDF5FilePosition" alt="" coords="266,107,457,133"/>
-<area shape="rect" id="node5" href="$structopen_p_m_d_1_1_j_s_o_n_file_position.html" title="openPMD::JSONFilePosition" alt="" coords="265,157,457,184"/>
-</map>

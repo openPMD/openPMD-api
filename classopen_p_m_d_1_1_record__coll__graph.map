@@ -1,8 +1,0 @@
-<map id="openPMD::Record" name="openPMD::Record">
-<area shape="rect" id="node2" href="$classopen_p_m_d_1_1_base_record.html" title="openPMD::BaseRecord\l\&lt; RecordComponent \&gt;" alt="" coords="66,275,226,316"/>
-<area shape="rect" id="node3" href="$classopen_p_m_d_1_1_container.html" title="openPMD::Container\l\&lt; RecordComponent \&gt;" alt="" coords="69,184,223,225"/>
-<area shape="rect" id="node4" href="$classopen_p_m_d_1_1_attributable.html" title="Layer to manage storage of attributes associated with file objects. " alt="" coords="138,95,293,121"/>
-<area shape="rect" id="node7" href="$classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. " alt="" coords="247,191,383,218"/>
-<area shape="rect" id="node5" href="$classopen_p_m_d_1_1_abstract_i_o_handler.html" title="Interface for communicating between logical and physically persistent data. " alt="" coords="5,5,201,32"/>
-<area shape="rect" id="node6" href="$classopen_p_m_d_1_1_abstract_file_position.html" title="openPMD::AbstractFilePosition" alt="" coords="226,5,431,32"/>
-</map>

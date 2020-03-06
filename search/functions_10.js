@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['variant',['Variant',['../classopen_p_m_d_1_1auxiliary_1_1_variant.html#a5a89420168435051e80d0f855c1b9e8e',1,'openPMD::auxiliary::Variant']]]
+  ['unitdimension_534',['unitDimension',['../classopen_p_m_d_1_1_base_record.html#adcd24ca5844d3c22f8b4b16f08cdaf77',1,'openPMD::BaseRecord']]]
 ];

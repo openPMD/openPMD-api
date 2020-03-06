@@ -1,8 +1,0 @@
-<map id="openPMD::Iteration" name="openPMD::Iteration">
-<area shape="rect" id="node2" href="$classopen_p_m_d_1_1_attributable.html" title="Layer to manage storage of attributes associated with file objects. " alt="" coords="379,88,533,115"/>
-<area shape="rect" id="node5" href="$classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file. " alt="" coords="684,74,820,100"/>
-<area shape="rect" id="node6" href="$classopen_p_m_d_1_1_container.html" title="openPMD::Container\l\&lt; openPMD::Mesh \&gt;" alt="" coords="680,125,824,166"/>
-<area shape="rect" id="node7" href="$classopen_p_m_d_1_1_container.html" title="openPMD::Container\l\&lt; openPMD::ParticleSpecies \&gt;" alt="" coords="651,190,853,232"/>
-<area shape="rect" id="node3" href="$classopen_p_m_d_1_1_abstract_i_o_handler.html" title="Interface for communicating between logical and physically persistent data. " alt="" coords="10,63,206,90"/>
-<area shape="rect" id="node4" href="$classopen_p_m_d_1_1_abstract_file_position.html" title="openPMD::AbstractFilePosition" alt="" coords="5,114,211,140"/>
-</map>

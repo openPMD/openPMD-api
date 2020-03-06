@@ -1,5 +1,0 @@
-<map id="openPMD::detail::BufferedAction" name="openPMD::detail::BufferedAction">
-<area shape="rect" id="node2" href="$structopen_p_m_d_1_1detail_1_1_buffered_attribute_read.html" title="openPMD::detail::Buffered\lAttributeRead" alt="" coords="240,5,416,47"/>
-<area shape="rect" id="node3" href="$structopen_p_m_d_1_1detail_1_1_buffered_get.html" title="openPMD::detail::BufferedGet" alt="" coords="229,71,427,98"/>
-<area shape="rect" id="node4" href="$structopen_p_m_d_1_1detail_1_1_buffered_put.html" title="openPMD::detail::BufferedPut" alt="" coords="230,122,426,149"/>
-</map>

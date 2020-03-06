@@ -1,9 +1,0 @@
-<map id="openPMD::detail::BufferedActions" name="openPMD::detail::BufferedActions">
-<area shape="rect" id="node2" href="$structopen_p_m_d_1_1detail_1_1_attribute_reader.html" title="openPMD::detail::Attribute\lReader" alt="" coords="1249,5,1425,47"/>
-<area shape="rect" id="node3" href="$structopen_p_m_d_1_1detail_1_1_dataset_reader.html" title="openPMD::detail::Dataset\lReader" alt="" coords="1250,135,1423,176"/>
-<area shape="rect" id="node4" href="$classopen_p_m_d_1_1_a_d_i_o_s2_i_o_handler_impl.html" title="openPMD::ADIOS2IOHandlerImpl" alt="" coords="876,142,1097,169"/>
-<area shape="rect" id="node8" href="$structopen_p_m_d_1_1detail_1_1_write_dataset.html" title="openPMD::detail::WriteDataset" alt="" coords="1235,201,1439,227"/>
-<area shape="rect" id="node5" href="$classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html" title="openPMD::AbstractIOHandler\lImplCommon\&lt; ADIOS2FilePosition \&gt;" alt="" coords="585,135,827,176"/>
-<area shape="rect" id="node6" href="$classopen_p_m_d_1_1_abstract_i_o_handler_impl.html" title="openPMD::AbstractIOHandlerImpl" alt="" coords="315,142,536,169"/>
-<area shape="rect" id="node7" href="$classopen_p_m_d_1_1_abstract_i_o_handler.html" title="Interface for communicating between logical and physically persistent data. " alt="" coords="5,142,201,169"/>
-</map>
