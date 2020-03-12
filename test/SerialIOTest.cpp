@@ -2337,7 +2337,13 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
     "unused": "as well",
     "dataset": {
       "operators": [
-        { "type": "BZip2" }
+        {
+          "type": "blosc",
+          "parameters": {
+              "clevel": "1",
+              "doshuffle": "BLOSC_BITSHUFFLE"
+          }
+        }
       ]
     }
   }
@@ -2357,7 +2363,13 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
     "unused": "as well",
     "dataset": {
       "operators": [
-        { "type": "BZip2" }
+        {
+          "type": "blosc",
+          "parameters": {
+              "clevel": "1",
+              "doshuffle": "BLOSC_BITSHUFFLE"
+          }
+        }
       ]
     }
   }
