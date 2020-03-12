@@ -749,18 +749,6 @@ ADIOS2IOHandlerImpl::verifyDataset( Offset const & offset,
     return var;
 }
 
-#    if __cplusplus < 201703L
-// https://en.cppreference.com/w/cpp/language/static:
-// If a static data member is declared constexpr, it is implicitly inline and
-// does not need to be redeclared at namespace scope. This redeclaration
-// without an initializer (formerly required as shown above)
-// is still permitted, but is deprecated. (since C++17)
-
-constexpr ADIOS2Defaults::const_str ADIOS2Defaults::str_engine;
-constexpr ADIOS2Defaults::const_str ADIOS2Defaults::str_type;
-constexpr ADIOS2Defaults::const_str ADIOS2Defaults::str_params;
-#    endif
-
 namespace detail
 {
     DatasetReader::DatasetReader( openPMD::ADIOS2IOHandlerImpl * impl )

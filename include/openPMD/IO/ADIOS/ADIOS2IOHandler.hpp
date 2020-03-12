@@ -316,13 +316,13 @@ private:
  * Note that this struct's members additionally need to be defined at namespace
  * scope up until C++17, see ADIOS2IOHandlerImpl.cpp
  */
-struct ADIOS2Defaults
+namespace ADIOS2Defaults
 {
     using const_str = char const * const;
-    constexpr static const_str str_engine = "engine";
-    constexpr static const_str str_type = "type";
-    constexpr static const_str str_params = "parameters";
-};
+    constexpr const_str str_engine = "engine";
+    constexpr const_str str_type = "type";
+    constexpr const_str str_params = "parameters";
+}
 
 namespace detail
 {
