@@ -1,6 +1,6 @@
 .. _backendconfig
 
-Backend-Specific configuration
+Backend-Specific Configuration
 ==============================
 
 While the openPMD API intends to be a backend-*independent* implementation of the openPMD standard, it is sometimes useful to pass configuration parameters to the specific backend in use.
@@ -10,6 +10,7 @@ A JSON option always takes precedence over an environment variable.
 The fundamental structure of this JSON configuration string is given as follows:
 
 .. literalinclude:: config_layout.json
+   :language: json
 
 This structure allows keeping one configuration string for several backends at once, with the concrete backend configuration being chosen upon choosing the backend itself.
 
@@ -39,12 +40,17 @@ ADIOS2
 A full configuration of the ADIOS2 backend:
 
 .. literalinclude:: adios2.json
+   :language: json
 
-All keys found under ``adios2.dataset`` are applicable globally as well as per dataset, keys found under ``adios2.engine`` only globally. Explanation of the single keys:
+All keys found under ``adios2.dataset`` are applicable globally as well as per dataset, keys found under ``adios2.engine`` only globally.
+Explanation of the single keys:
 
-* ``adios2.engine.type``: A string that is passed directly to ``adios2::IO:::SetEngine`` for choosing the ADIOS2 engine to be used. Please refer to the `official ADIOS2 documentation <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_ for a list of available engines.
-* ``adios2.engine.type``: An associative array of string-formatted engine parameters, passed directly through to ``adios2::IO::SetParameters``. Please refer to the official ADIOS2 documentation for the allowable engine parameters.
-* ``adios2.dataset.operators``: (*currently unimplemented* – please use the ``openPMD::Dataset::compression`` for the meantime) This key contains a list of ADIOS2 `operators <https://adios2.readthedocs.io/en/latest/components/components.html#operator>`_, used to enable compression or dataset transformations. Each object in the list has three keys:
+* ``adios2.engine.type``: A string that is passed directly to ``adios2::IO:::SetEngine`` for choosing the ADIOS2 engine to be used.
+  Please refer to the `official ADIOS2 documentation <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_ for a list of available engines.
+* ``adios2.engine.type``: An associative array of string-formatted engine parameters, passed directly through to ``adios2::IO::SetParameters``.
+  Please refer to the official ADIOS2 documentation for the allowable engine parameters.
+* ``adios2.dataset.operators``: (*currently unimplemented* – please use the ``openPMD::Dataset::compression`` for the meantime) This key contains a list of ADIOS2 `operators <https://adios2.readthedocs.io/en/latest/components/components.html#operator>`_, used to enable compression or dataset transformations.
+  Each object in the list has three keys:
 
   * ``type`` supported ADIOS operator type, e.g. zfp, sz
   * ``parameters`` is an associative map of string parameters for the operator (e.g. compression levels)
@@ -52,4 +58,5 @@ All keys found under ``adios2.dataset`` are applicable globally as well as per d
 Other backends
 ^^^^^^^^^^^^^^
 
-Do currently not read the configuration string. Please refer to the respective backends' documentations for further information on their configuration.
+Do currently not read the configuration string.
+Please refer to the respective backends' documentations for further information on their configuration.

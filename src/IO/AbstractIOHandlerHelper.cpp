@@ -19,17 +19,15 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
-#include "openPMD/IO/DummyIOHandler.hpp"
+
 #include "openPMD/IO/ADIOS/ADIOS1IOHandler.hpp"
-#include "openPMD/IO/ADIOS/ParallelADIOS1IOHandler.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
+#include "openPMD/IO/ADIOS/ParallelADIOS1IOHandler.hpp"
+#include "openPMD/IO/DummyIOHandler.hpp"
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
 #include "openPMD/IO/JSON/JSONIOHandler.hpp"
-
-#if openPMD_HAVE_JSON
-#   include <nlohmann/json.hpp>
-#endif
+#include <nlohmann/json.hpp>
 
 namespace openPMD
 {
@@ -42,12 +40,7 @@ namespace openPMD
         MPI_Comm comm,
         std::string const & options )
     {
-#   if openPMD_HAVE_JSON
         nlohmann::json optionsJson = nlohmann::json::parse( options );
-#   else
-        if( options.size() > 0u && options != "{}" )
-            throw std::runtime_error("openPMD-api built without JSON support which is required for runtime options!");
-#   endif
         switch( format )
         {
             case Format::HDF5:
@@ -59,16 +52,11 @@ namespace openPMD
                 throw std::runtime_error("openPMD-api built without ADIOS1 support");
 #   endif
             case Format::ADIOS2:
-                return std::make_shared<ADIOS2IOHandler>(
-                    path,
-                    accessTypeBackend,
-                    comm
-#   if openPMD_HAVE_JSON
-                    , std::move(optionsJson)
-#   endif
-                );
+                return std::make_shared< ADIOS2IOHandler >(
+                    path, accessTypeBackend, comm, std::move( optionsJson ) );
             default:
-                throw std::runtime_error("Unknown file format! Did you specify a file ending?" );
+                throw std::runtime_error(
+                    "Unknown file format! Did you specify a file ending?" );
         }
     }
 #endif
@@ -79,12 +67,7 @@ namespace openPMD
         Format format,
         std::string const & options )
     {
-#if openPMD_HAVE_JSON
         nlohmann::json optionsJson = nlohmann::json::parse( options );
-#else
-        if( options.size() > 0u && options != "{}" )
-            throw std::runtime_error("openPMD-api built without JSON support which is required for runtime options!");
-#endif
         switch( format )
         {
             case Format::HDF5:
@@ -96,19 +79,15 @@ namespace openPMD
                 throw std::runtime_error("openPMD-api built without ADIOS1 support");
 #endif
 #if openPMD_HAVE_ADIOS2
-        case Format::ADIOS2:
-            return std::make_shared< ADIOS2IOHandler >(
-                path,
-                accessType
-#   if openPMD_HAVE_JSON
-                , std::move( optionsJson )
-#   endif // openPMD_HAVE_JSON
-            );
+            case Format::ADIOS2:
+                return std::make_shared< ADIOS2IOHandler >(
+                    path, accessType, std::move( optionsJson ) );
 #endif // openPMD_HAVE_ADIOS2
             case Format::JSON:
-                return std::make_shared< JSONIOHandler >(path, accessType);
+                return std::make_shared< JSONIOHandler >( path, accessType );
             default:
-                throw std::runtime_error("Unknown file format! Did you specify a file ending?" );
+                throw std::runtime_error(
+                    "Unknown file format! Did you specify a file ending?" );
         }
     }
-} // openPMD
+    } // namespace openPMD

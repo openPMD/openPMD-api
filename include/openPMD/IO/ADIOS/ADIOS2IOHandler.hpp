@@ -26,6 +26,7 @@
 #include "openPMD/IO/AbstractIOHandlerImplCommon.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
+#include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/backend/Writable.hpp"
 
 #include <array>
@@ -41,6 +42,8 @@
 #include <nlohmann/json.hpp>
 
 #include "openPMD/config.hpp"
+
+#include <nlohmann/json.hpp>
 
 #if openPMD_HAVE_ADIOS2
 #   include <adios2.h>
@@ -535,6 +538,21 @@ namespace detail
         void readDataset( BufferedGet &, adios2::IO &, adios2::Engine &,
                           std::string const & fileName );
 
+        /**
+         * @brief Define a Variable of type T within the passed IO.
+         * 
+         * @param IO The adios2::IO object within which to define the
+         *           variable. The variable can later be retrieved from
+         *           the IO using the passed name.
+         * @param name As in adios2::IO::DefineVariable
+         * @param compressions ADIOS2 operators, including an arbitrary
+         *                     number of parameters, to be added to the
+         *                     variable upon definition.
+         * @param shape As in adios2::IO::DefineVariable
+         * @param start As in adios2::IO::DefineVariable
+         * @param count As in adios2::IO::DefineVariable
+         * @param constantDims As in adios2::IO::DefineVariable
+         */
         static void
         defineVariable(
             adios2::IO & IO,

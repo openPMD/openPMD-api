@@ -85,4 +85,5 @@ The example code in the :ref:`usage section <usage-serial>` will produce the fol
 when picking the JSON backend:
 
 .. literalinclude:: json_example.json
+   :language: json
 
