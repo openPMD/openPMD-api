@@ -252,12 +252,12 @@ jobs:
         - CXX=clang++-6.0 && CC=clang-6.0 && CXXFLAGS="${CXXFLAGS} -stdlib=libc++ -I/usr/include/libcxxabi/"
     # Clang 7.0.0 + Python 3.8.0 @ Xenial
     - <<: *test-cpp-unit
-      name: clang@7.0.0 +OMPI +PY@3.8 +H5 +ADIOS1 +ADIOS2 +Release
+      name: clang@7.0.0 +OMPI +PY@3.8 +H5@1.10.6 +ADIOS1 +ADIOS2 +Release
       dist: xenial
       language: python
       python: "3.8"
       env:
-        - CXXSPEC="%clang@7.0.0" USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=ON USE_SAMPLES=ON BUILD_TYPE="Release"
+        - CXXSPEC="%clang@7.0.0" USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON HDF5_VERSION=@1.10.6 USE_ADIOS1=ON USE_ADIOS2=ON USE_SAMPLES=ON BUILD_TYPE="Release"
       compiler: clang
       addons:
         apt:
