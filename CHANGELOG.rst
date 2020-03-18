@@ -17,6 +17,8 @@ Changes to "0.11.0-alpha"
 Features
 """"""""
 
+- HDF5: Support 1.12 release #696
+
 Bug Fixes
 """""""""
 
