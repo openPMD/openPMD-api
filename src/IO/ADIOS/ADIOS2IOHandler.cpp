@@ -127,7 +127,7 @@ ADIOS2IOHandlerImpl::getOperators( auxiliary::TracingJSON cfg )
                  ++paramIterator )
             {
                 adiosParams[ paramIterator.key() ] =
-                    std::string( paramIterator.value() );
+                    paramIterator.value().get< std::string >();
             }
         }
         std::unique_ptr< adios2::Operator > adiosOperator =
