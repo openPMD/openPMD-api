@@ -160,6 +160,18 @@ jobs:
       spack install -v openpmd-api -mpi ^adios2~fortran
 # FIXME https://github.com/ornladios/ADIOS2/issues/1885
 
+- job: linux_spack_nompi_adios2master
+  displayName: Ubuntu spack w/o MPI ADIOS2@master
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+  - script: |
+      export SYSTEM=$(uname -s)
+      git clone https://github.com/spack/spack.git
+      . spack/share/spack/setup-env.sh
+      spack compiler find
+      spack install -v openpmd-api -mpi ^adios2@master
+
 # timeout: >60min
 #- job: linux_spack_all
 #  displayName: Ubuntu spack w/ all
