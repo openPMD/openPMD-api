@@ -12,5 +12,8 @@
 set -eu -o pipefail
 
 cd docs
+
+# treat all warnings as errors
 echo "WARN_AS_ERROR = YES" >> Doxyfile
+
 doxygen

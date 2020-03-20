@@ -31,7 +31,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
+    - uses: s-weigand/setup-conda@v1
+      with:
+        update-conda: true
+        conda-channels: conda-forge
     - name: Install
-      run: sudo apt-get install -y --no-install-recommends doxygen
+      run: conda install -c conda-forge doxygen
     - name: Doxygen
       run: .github/workflows/source/buildDoxygen

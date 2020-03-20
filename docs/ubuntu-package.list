@@ -1,3 +1,5 @@
+doxygen
+graphviz
 latexmk
 texlive-latex-recommended
 texlive-fonts-recommended

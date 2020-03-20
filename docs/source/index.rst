@@ -7,13 +7,6 @@ This library provides an abstract API for openPMD file handling.
 It provides both support for writing & reading into various formats and works both serial and parallel (MPI).
 Implemented backends include HDF5 and ADIOS1.
 
-Doxygen
--------
-
-The latest Doxygen docs for the C++ API are published at:
-
-http://www.openpmd.org/openPMD-api
-
 .. raw:: html
 
    <style>
@@ -25,7 +18,8 @@ http://www.openpmd.org/openPMD-api
    div#api-details.section,
    div#utilities.section,
    div#backends.section,
-   div#development.section {
+   div#development.section,
+   div#maintenance.section {
        display:none;
    }
    </style>
@@ -83,6 +77,7 @@ API Details
    :maxdepth: 1
    :hidden:
 
+   details/doxygen.rst
    details/mpi.rst
 
 Utilities
@@ -122,5 +117,12 @@ Development
    dev/dependencies
    dev/buildoptions
    dev/sphinx
-   dev/doxygen
-   dev/release
+
+Maintenance
+-----------
+.. toctree::
+   :caption: MAINTENANCE
+   :maxdepth: 1
+   :hidden:
+
+   maintenance/release
