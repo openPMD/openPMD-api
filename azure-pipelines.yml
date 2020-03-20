@@ -133,22 +133,24 @@ jobs:
 
 # spack -----------------------------------------------------------------------
 # timeout: >60min
-#- job: linux_spack
-#  displayName: Ubuntu spack
-#  pool:
-#    vmImage: ubuntu-latest
-#  steps:
-#  - script: |
-#      sudo apt-get update
-#      sudo apt-get install -y gfortran
-#      export SYSTEM=$(uname -s)
-#      git clone https://github.com/spack/spack.git
-#      . spack/share/spack/setup-env.sh
-#      spack compiler find
-#      spack install -v openpmd-api %gcc@5.5.0
+- job: linux_spack
+  displayName: Ubuntu spack
+  timeoutInMinutes: 120
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+  - script: |
+      sudo apt-get update
+      sudo apt-get install -y gfortran
+      export SYSTEM=$(uname -s)
+      git clone https://github.com/spack/spack.git
+      . spack/share/spack/setup-env.sh
+      spack compiler find
+      spack install -v openpmd-api %gcc@7.5.0
 
 - job: linux_spack_nompi
   displayName: Ubuntu spack w/o MPI
+  timeoutInMinutes: 120
   pool:
     vmImage: ubuntu-latest
   steps:
@@ -162,6 +164,7 @@ jobs:
 
 - job: linux_spack_nompi_adios2master
   displayName: Ubuntu spack w/o MPI ADIOS2@master
+  timeoutInMinutes: 120
   pool:
     vmImage: ubuntu-latest
   steps:
@@ -172,24 +175,25 @@ jobs:
       spack compiler find
       spack install -v openpmd-api -mpi ^adios2@master
 
-# timeout: >60min
-#- job: linux_spack_all
-#  displayName: Ubuntu spack w/ all
-#  pool:
-#    vmImage: ubuntu-latest
-#  steps:
-#  - script: |
-#      sudo apt-get update
-#      sudo apt-get install -y gfortran
-#      export SYSTEM=$(uname -s)
-#      git clone https://github.com/spack/spack.git
-#      . spack/share/spack/setup-env.sh
-#      spack compiler find
-#      spack bootstrap
-#      . spack/share/spack/setup-env.sh
-#      spack install -v openpmd-api +python +adios1 +adios2 %gcc@5.5.0
-#      spack load -r openpmd-api
-#      python -c "import openpmd_api as api; print(api.variants)"
+# timeout: >120min
+- job: linux_spack_all
+  displayName: Ubuntu spack w/ all
+  timeoutInMinutes: 360
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+  - script: |
+      sudo apt-get update
+      sudo apt-get install -y gfortran
+      export SYSTEM=$(uname -s)
+      git clone https://github.com/spack/spack.git
+      . spack/share/spack/setup-env.sh
+      spack compiler find
+      spack bootstrap
+      . spack/share/spack/setup-env.sh
+      spack install -v openpmd-api +python +adios1 +adios2 %gcc@7.5.0
+      spack load -r openpmd-api
+      python -c "import openpmd_api as api; print(api.variants)"
 
 # linuxbrew -------------------------------------------------------------------
 # TODO
@@ -299,22 +303,24 @@ jobs:
 
 # spack -----------------------------------------------------------------------
 # timeout: >60min
-#- job: macOS_spack
-#  displayName: macOS spack
-#  pool:
-#    vmImage: macOS-latest
-#  steps:
-#  - script: |
-#      brew update
-#      brew install gcc
-#      export SYSTEM=$(uname -s)
-#      git clone https://github.com/spack/spack.git
-#      . spack/share/spack/setup-env.sh
-#      spack compiler find
-#      spack install -v openpmd-api
+- job: macOS_spack
+  displayName: macOS spack
+  timeoutInMinutes: 120
+  pool:
+    vmImage: macOS-latest
+  steps:
+  - script: |
+      brew update
+      brew install gcc
+      export SYSTEM=$(uname -s)
+      git clone https://github.com/spack/spack.git
+      . spack/share/spack/setup-env.sh
+      spack compiler find
+      spack install -v openpmd-api
 
 - job: macOS_spack_nompi
   displayName: macOS spack from dev w/o MPI
+  timeoutInMinutes: 120
   pool:
     vmImage: macOS-latest
   steps:
@@ -335,23 +341,20 @@ jobs:
       ./mytest
 
 # timeout: >60min
-#- job: macOS_spack_all
-#  displayName: macOS spack w/ all
-#  pool:
-#    vmImage: macOS-latest
-#  steps:
-#  - script: |
-#      brew update
-#      brew install gcc
-#      export SYSTEM=$(uname -s)
-#      git clone https://github.com/spack/spack.git
-#      . spack/share/spack/setup-env.sh
-#      spack compiler find
-#            spack bootstrap
-#      . spack/share/spack/setup-env.sh
-#      spack install -v openpmd-api +python +adios2
-#      spack load -r openpmd-api
-#      python -c "import openpmd_api as api; print(api.variants)"
+- job: macOS_spack_all
+  displayName: macOS spack w/ all
+  timeoutInMinutes: 360
+  pool:
+    vmImage: macOS-latest
+  steps:
+  - script: |
+      export SYSTEM=$(uname -s)
+      git clone https://github.com/spack/spack.git
+      . spack/share/spack/setup-env.sh
+      spack compiler find
+      spack install -v openpmd-api +python +adios1
+      spack load -r openpmd-api
+      python -c "from mpi4py import MPI; import openpmd_api as api; print(api.variants)"
 
 # homebrew --------------------------------------------------------------------
 # TODO
