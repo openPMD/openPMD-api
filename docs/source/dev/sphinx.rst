@@ -34,7 +34,7 @@ The following requirements need to be installed (once) to build our documentatio
     # doxygen is not shipped via pip, install it externally,
     # from the homepage, your package manager, conda, etc.
     # example:
-    sudo apt-get install doxygen
+    sudo apt-get install doxygen graphviz
 
     # python tools & style theme
     python -m pip install -r requirements.txt # --user
@@ -48,9 +48,6 @@ Please check your documentation build is successful and renders as you expected 
     # skip this if you are still in docs/
     cd docs/
 
-    # parse the C++ API documentation,
-    #   enjoy the doxygen warnings!
-    doxygen
     # render the `.rst` files and replace their macros within
     #   enjoy the breathe errors on things it does not understand from doxygen :)
     make html

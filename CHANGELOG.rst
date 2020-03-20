@@ -18,6 +18,7 @@ Features
 """"""""
 
 - HDF5: Support 1.12 release #696
+- Doxygen: per-version index in Sphinx pages #697
 
 Bug Fixes
 """""""""

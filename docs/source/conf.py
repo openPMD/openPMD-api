@@ -46,9 +46,13 @@ if not on_rtd:
 breathe_projects = {'openPMD-api': '../xml'}
 breathe_default_project = 'openPMD-api'
 
-if on_rtd:
-    subprocess.call('cd ..; doxygen', shell=True)
-else:
+subprocess.call('cd ..; doxygen;'
+                'mkdir -p source/_static;'
+                'cp -r doxyhtml source/_static/;'
+                'cp openpmd-api-doxygen-web.tag.xml source/_static/doxyhtml/',
+                shell=True)
+
+if not on_rtd:
     import sphinx_rtd_theme
     html_theme = "sphinx_rtd_theme"
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]

@@ -1,4 +1,4 @@
-.. _development-release:
+.. _maintenance-release:
 
 Release Channels
 ================
@@ -85,7 +85,7 @@ And after the new version was built, and if this version was not a backport to a
 Doxygen
 -------
 
-In order to update the Doxygen C++ API docs, do:
+In order to update the *latest* Doxygen C++ API docs, located under http://www.openPMD.org/openPMD-api/, do:
 
 .. code-block:: bash
 
@@ -103,3 +103,5 @@ In order to update the Doxygen C++ API docs, do:
    # go back
    git checkout -
    git stash pop
+
+Note that we publish per-release versions of the :ref:`Doxygen HTML pages <details-doxygen>` automatically on ReadTheDocs.

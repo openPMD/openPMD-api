@@ -107,14 +107,18 @@ CTestTestfile.cmake
 ###########
 # Doxygen #
 ###########
+docs/doxyhtml/
+docs/doxyxml/
 docs/html/
 docs/xml/
 docs/doxygen_sqlite3.db
+docs/openpmd-api-doxygen-web.tag.xml
 
 ####################
 # Sphinx & Breathe #
 ####################
 docs/build/
+docs/source/_static/doxyhtml/
 
 ################
 # Sample files #
