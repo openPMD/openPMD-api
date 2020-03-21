@@ -3,8 +3,6 @@
 C++ Index
 =========
 
-.. sectionauthor:: Axel Huebl
-
 Our Doxygen page `provides an index of all C++ functionality <../_static/doxyhtml/index.html>`_.
 
 External Documentation

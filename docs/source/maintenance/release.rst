@@ -3,8 +3,6 @@
 Release Channels
 ================
 
-.. sectionauthor:: Axel Huebl
-
 Spack
 -----
 

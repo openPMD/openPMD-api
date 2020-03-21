@@ -3,8 +3,6 @@
 Sphinx
 ======
 
-.. sectionauthor:: Axel Huebl
-
 In the following section we explain how to contribute to this documentation.
 
 If you are reading the HTML version on http://openPMD-api.readthedocs.io and want to improve or correct existing pages, check the "Edit on GitHub" link on the right upper corner of each document.

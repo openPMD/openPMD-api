@@ -3,8 +3,6 @@
 Build Options
 =============
 
-.. sectionauthor:: Axel Huebl
-
 Variants
 --------
 

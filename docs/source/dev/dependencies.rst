@@ -3,8 +3,6 @@
 Build Dependencies
 ==================
 
-.. sectionauthor:: Axel Huebl
-
 ``openPMD-api`` depends on a series of third-party projects.
 These are currently:
 
