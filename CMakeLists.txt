@@ -599,7 +599,9 @@ set(openPMD_CLI_TOOL_NAMES
 set(openPMD_EXAMPLE_NAMES
     1_structure
     2_read_serial
+    2a_read_thetaMode_serial
     3_write_serial
+    3a_write_thetaMode_serial
     4_read_parallel
     5_write_parallel
     6_dump_filebased_series
@@ -608,7 +610,9 @@ set(openPMD_EXAMPLE_NAMES
 )
 set(openPMD_PYTHON_EXAMPLE_NAMES
     2_read_serial
+    2a_read_thetaMode_serial
     3_write_serial
+    3a_write_thetaMode_serial
     4_read_parallel
     5_write_parallel
     7_extended_write_serial

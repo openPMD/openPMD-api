@@ -10,9 +10,11 @@
 
 #include <iostream>
 #include <algorithm>
+#include <sstream>
 #include <string>
 #include <vector>
 #include <array>
+#include <cmath>
 #include <memory>
 #include <limits>
 #include <list>
@@ -911,6 +913,81 @@ TEST_CASE( "fileBased_write_test", "[serial]" )
 }
 
 inline
+void sample_write_thetaMode(std::string file_ending)
+{
+    Series o = Series(std::string("../samples/thetaMode_%05T.").append(file_ending), AccessType::CREATE);
+
+    unsigned int const num_modes = 4u;
+    unsigned int const num_fields = 1u + (num_modes-1u) * 2u; // the first mode is purely real
+    unsigned int const N_r = 40;
+    unsigned int const N_z = 128;
+
+    std::shared_ptr< float >  E_r_data(new  float[num_fields*N_r*N_z], [](float const *p){ delete[] p; });
+    std::shared_ptr< double > E_t_data(new double[num_fields*N_r*N_z], [](double const *p){ delete[] p; });
+    float  e_r{0};
+    std::generate(E_r_data.get(), E_r_data.get() + num_fields*N_r*N_z, [&e_r]{ return e_r += 1.0f; });
+    double e_t{100};
+    std::generate(E_t_data.get(), E_t_data.get() + num_fields*N_r*N_z, [&e_t]{ return e_t += 2.0; });
+
+    std::stringstream geos;
+    geos << "m=" << num_modes << ";imag=+";
+    std::string const geometryParameters = geos.str();
+
+    for(int i = 0; i <= 400; i+=100 )
+    {
+        auto it = o.iterations[i];
+
+        Mesh E = it.meshes["E"];
+        E.setGeometry( Mesh::Geometry::thetaMode );
+        E.setGeometryParameters( geometryParameters );
+        E.setDataOrder( Mesh::DataOrder::C );
+        E.setGridSpacing( std::vector<double>{1.0, 1.0} );
+        E.setGridGlobalOffset( std::vector<double>{0.0, 0.0} );
+        E.setGridUnitSI( 1.0 );
+        E.setAxisLabels( std::vector< std::string >{"r", "z"} );
+        std::map< UnitDimension, double > const unitDimensions{
+            {UnitDimension::I, 1.0},
+            {UnitDimension::J, 2.0}
+        };
+        E.setUnitDimension( unitDimensions );
+        E.setTimeOffset( 1.e-12 * double(i) );
+
+        auto E_z = E["z"];
+        E_z.setUnitSI( 10. );
+        E_z.setPosition(std::vector< double >{0.0, 0.5});
+        E_z.resetDataset( Dataset(Datatype::FLOAT, {num_fields, N_r, N_z}) ); // (modes, r, z) see setGeometryParameters
+        E_z.makeConstant( static_cast< float >(42.54) );
+
+        // write all modes at once (otherwise iterate over modes and first index)
+        auto E_r = E["r"];
+        E_r.setUnitSI( 10. );
+        E_r.setPosition(std::vector< double >{0.5, 0.0});
+        E_r.resetDataset(
+            Dataset(Datatype::FLOAT, {num_fields, N_r, N_z})
+        );
+        E_r.storeChunk(E_r_data, Offset{0, 0, 0}, Extent{num_fields, N_r, N_z});
+
+        auto E_t = E["t"];
+        E_t.setUnitSI( 10. );
+        E_t.setPosition(std::vector< double >{0.0, 0.0});
+        E_t.resetDataset(
+            Dataset(Datatype::DOUBLE, {num_fields, N_r, N_z})
+        );
+        E_t.storeChunk(E_t_data, Offset{0, 0, 0}, Extent{num_fields, N_r, N_z});
+
+        o.flush();
+    }
+}
+
+TEST_CASE( "sample_write_thetaMode", "[serial][thetaMode]" )
+{
+    for (auto const & t: backends)
+    {
+        sample_write_thetaMode(std::get<0>(t));
+    }
+}
+
+inline
 void bool_test(const std::string & backend)
 {
     {
@@ -1512,6 +1589,71 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
             REQUIRE(auxiliary::file_exists(file));
             auxiliary::remove_file(file);
         }
+    } catch (no_such_file_error& e)
+    {
+        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+        return;
+    }
+}
+
+TEST_CASE( "git_hdf5_sample_read_thetaMode", "[serial][hdf5][thetaMode]" )
+{
+    try
+    {
+        Series o = Series("../samples/git-sample/thetaMode/data%T.h5", AccessType::READ_ONLY);
+
+        REQUIRE(o.iterations.size() == 5);
+        REQUIRE(o.iterations.count(100) == 1);
+        REQUIRE(o.iterations.count(200) == 1);
+        REQUIRE(o.iterations.count(300) == 1);
+        REQUIRE(o.iterations.count(400) == 1);
+        REQUIRE(o.iterations.count(500) == 1);
+
+        auto i = o.iterations[500];
+
+        REQUIRE(i.meshes.size() == 4);
+        REQUIRE(i.meshes.count("B") == 1);
+        REQUIRE(i.meshes.count("E") == 1);
+        REQUIRE(i.meshes.count("J") == 1);
+        REQUIRE(i.meshes.count("rho") == 1);
+
+        Mesh B = i.meshes["B"];
+        std::vector< std::string > const al{"r", "z"};
+        std::vector< double > const gs{3.e-7, 1.e-7};
+        std::vector< double > const ggo{0., 3.02e-5};
+        std::array< double, 7 > const ud{{0.,  1., -2., -1.,  0.,  0.,  0.}};
+        REQUIRE(B.geometry() == Mesh::Geometry::thetaMode);
+        REQUIRE(B.geometryParameters() == "m=2;imag=+");
+        REQUIRE(B.dataOrder() == Mesh::DataOrder::C);
+        REQUIRE(B.axisLabels() == al);
+        REQUIRE(B.gridSpacing< double >().size() == 2u);
+        REQUIRE(B.gridGlobalOffset().size() == 2u);
+        REQUIRE(std::abs(B.gridSpacing< double >()[0] - gs[0]) <= std::numeric_limits<double>::epsilon());
+        REQUIRE(std::abs(B.gridSpacing< double >()[1] - gs[1]) <= std::numeric_limits<double>::epsilon());
+        REQUIRE(std::abs(B.gridGlobalOffset()[0] - ggo[0]) <= std::numeric_limits<double>::epsilon());
+        REQUIRE(std::abs(B.gridGlobalOffset()[1] - ggo[1]) <= std::numeric_limits<double>::epsilon());
+        REQUIRE(B.gridUnitSI() == 1.0);
+        REQUIRE(B.unitDimension() == ud);
+        REQUIRE(B.timeOffset< double >() == static_cast< double >(0.0f));
+
+        REQUIRE(B.size() == 3);
+        REQUIRE(B.count("r") == 1);
+        REQUIRE(B.count("t") == 1);
+        REQUIRE(B.count("z") == 1);
+
+        MeshRecordComponent B_z = B["z"];
+        std::vector< double > const pos{0.5, 0.0};
+        Extent const ext{3, 51, 201};
+        REQUIRE(B_z.unitSI() == 1.0);
+        REQUIRE(B_z.position< double >() == pos);
+        REQUIRE(B_z.getDatatype() == Datatype::DOUBLE);
+        REQUIRE(B_z.getExtent() == ext);
+        REQUIRE(B_z.getDimensionality() == 3);
+
+        Offset const offset{1, 10, 90}; // skip mode_0 (one scalar field)
+        Extent const extent{2, 30, 20}; // mode_1 (two scalar fields)
+        auto data = B_z.loadChunk< double >(offset, extent);
+        o.flush();
     } catch (no_such_file_error& e)
     {
         std::cerr << "git sample not accessible. (" << e.what() << ")\n";
