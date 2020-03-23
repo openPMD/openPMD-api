@@ -58,14 +58,14 @@ C++11
    #include <numeric>  // std::iota
    #include <vector>   // std::vector
 
-   namespace api = openPMD;
+   namespace io = openPMD;
 
 Python
 ^^^^^^
 
 .. code-block:: python3
 
-   import openpmd_api as api
+   import openpmd_api as io
 
    # example: data handling
    import numpy as np
@@ -83,9 +83,9 @@ C++11
 
 .. code-block:: cpp
 
-   auto series = api::Series(
+   auto series = io::Series(
        "myOutput/data_%05T.h5",
-       api::AccessType::CREATE);
+       io::AccessType::CREATE);
 
 
 Python
@@ -93,9 +93,9 @@ Python
 
 .. code-block:: python3
 
-   series = api.Series(
+   series = io.Series(
        "myOutput/data_%05T.h5",
-       api.Access_Type.create)
+       io.Access_Type.create)
 
 Iteration
 ---------
@@ -209,8 +209,8 @@ C++11
    auto B_y = B["y"];
    auto B_z = B["z"];
 
-   auto dataset = api::Dataset(
-       api::determineDatatype<float>(),
+   auto dataset = io::Dataset(
+       io::determineDatatype<float>(),
        {150, 300});
    B_x.resetDataset(dataset);
    B_y.resetDataset(dataset);
@@ -229,7 +229,7 @@ Python
    B_y = B["y"]
    B_z = B["z"]
 
-   dataset = api.Dataset(
+   dataset = io.Dataset(
        x_data.dtype,
        x_data.shape)
    B_x.reset_dataset(dataset)
@@ -252,9 +252,9 @@ C++11
 
    // unit system agnostic dimension
    B.setUnitDimension({
-       {api::UnitDimension::M,  1},
-       {api::UnitDimension::I, -1},
-       {api::UnitDimension::T, -2}
+       {io::UnitDimension::M,  1},
+       {io::UnitDimension::I, -1},
+       {io::UnitDimension::T, -2}
    });
 
    // conversion to SI
@@ -269,9 +269,9 @@ Python
 
    # unit system agnostic dimension
    B.set_unit_dimension({
-       api.Unit_Dimension.M:  1,
-       api.Unit_Dimension.I: -1,
-       api.Unit_Dimension.T: -2
+       io.Unit_Dimension.M:  1,
+       io.Unit_Dimension.I: -1,
+       io.Unit_Dimension.T: -2
    })
 
    # conversion to SI
@@ -298,10 +298,10 @@ C++11
 .. code-block:: cpp
 
    B_x.storeChunk(
-       api::shareRaw(x_data),
+       io::shareRaw(x_data),
        {0, 0}, {150, 300});
    B_z.storeChunk(
-       api::shareRaw(z_data),
+       io::shareRaw(z_data),
        {0, 0}, {150, 300});
 
    B_y.makeConstant(y_data);

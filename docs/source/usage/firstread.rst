@@ -60,14 +60,14 @@ C++11
    #include <iostream> // std::cout
    #include <memory>   // std::shared_ptr
 
-   namespace api = openPMD;
+   namespace io = openPMD;
 
 Python
 ^^^^^^
 
 .. code-block:: python3
 
-   import openpmd_api as api
+   import openpmd_api as io
 
    # example: data handling
    import numpy as np
@@ -85,9 +85,9 @@ C++11
 
 .. code-block:: cpp
 
-   auto series = api::Series(
+   auto series = io::Series(
        "data%T.h5",
-       api::AccessType::READ_ONLY);
+       io::AccessType::READ_ONLY);
 
 
 Python
@@ -95,9 +95,9 @@ Python
 
 .. code-block:: python3
 
-   series = api.Series(
+   series = io.Series(
        "data%T.h5",
-       api.Access_Type.read_only)
+       io.Access_Type.read_only)
 
 Iteration
 ---------
@@ -195,7 +195,7 @@ C++11
    auto E_unitDim = E.unitDimension();
 
    // ...
-   // api::UnitDimension::M
+   // io::UnitDimension::M
 
    // conversion to SI
    double x_unit = E_x.unitSI();
@@ -209,7 +209,7 @@ Python
    E_unitDim = E.unit_dimension
 
    # ...
-   # api.Unit_Dimension.M
+   # io.Unit_Dimension.M
 
    # conversion to SI
    x_unit = E_x.unit_SI

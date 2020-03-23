@@ -6,15 +6,15 @@ Copyright 2020 openPMD contributors
 Authors: Axel Huebl
 License: LGPLv3+
 """
-import openpmd_api as api
+import openpmd_api as io
 import numpy as np
 
 
 if __name__ == "__main__":
     # open file for writing
-    series = api.Series(
+    series = io.Series(
         "../samples/3_write_thetaMode_serial_py.h5",
-        api.Access_Type.create
+        io.Access_Type.create
     )
 
     # configure and setup geometry
@@ -32,35 +32,35 @@ if __name__ == "__main__":
     geometry_parameters = "m={0};imag=+".format(num_modes)
 
     E = series.iterations[0].meshes["E"]
-    E.set_geometry(api.Geometry.thetaMode)
+    E.set_geometry(io.Geometry.thetaMode)
     E.set_geometry_parameters(geometry_parameters)
-    E.set_data_order(api.Data_Order.C)
+    E.set_data_order(io.Data_Order.C)
     E.set_grid_spacing([1.0, 1.0])
     E.set_grid_global_offset([0.0, 0.0])
     E.set_grid_unit_SI(1.0)
     E.set_axis_labels(["r", "z"])
-    E.set_unit_dimension({api.Unit_Dimension.I: 1.0,
-                          api.Unit_Dimension.J: 2.0})
+    E.set_unit_dimension({io.Unit_Dimension.I: 1.0,
+                          io.Unit_Dimension.J: 2.0})
 
     # write components: E_z, E_r, E_t
     E_z = E["z"]
     E_z.set_unit_SI(10.)
     # E_z.set_position([0.0, 0.5])  # TODO add me
     #   (modes, r, z) see set_geometry_parameters
-    E_z.reset_dataset(api.Dataset(api.Datatype.FLOAT, [num_fields, N_r, N_z]))
+    E_z.reset_dataset(io.Dataset(io.Datatype.FLOAT, [num_fields, N_r, N_z]))
     E_z.make_constant(42.54)
 
     # write all modes at once (otherwise iterate over modes and first index
     E_r = E["r"]
     E_r.set_unit_SI(10.)
     # E_r.set_position([0.5, 0.0])  # TOOD add me
-    E_r.reset_dataset(api.Dataset(E_r_data.dtype, E_r_data.shape))
+    E_r.reset_dataset(io.Dataset(E_r_data.dtype, E_r_data.shape))
     E_r.store_chunk(E_r_data)
 
     E_t = E["t"]
     E_t.set_unit_SI(10.)
     # E_t.set_position([0.0, 0.0])  # TODO add me
-    E_t.reset_dataset(api.Dataset(E_t_data.dtype, E_t_data.shape))
+    E_t.reset_dataset(io.Dataset(E_t_data.dtype, E_t_data.shape))
     E_t.store_chunk(E_t_data)
 
     series.flush()

@@ -138,10 +138,10 @@ RUN        ls -hal /usr/local/lib/python3.7/dist-packages/
 # RUN        ls -hal /usr/local/lib/python3.7/dist-packages/.libsopenpmd_api
 # RUN        objdump -x /usr/local/lib/python3.7/dist-packages/openpmd_api.cpython-37m-x86_64-linux-gnu.so | grep RPATH
 RUN        ldd /usr/local/lib/python3.7/dist-packages/openpmd_api.cpython-37m-x86_64-linux-gnu.so
-RUN        python3 -c "import openpmd_api as api; print(api.__version__); print(api.variants)"
+RUN        python3 -c "import openpmd_api as io; print(api.__version__); print(api.variants)"
 #RUN        openpmd-ls --help
 #RUN        echo "* soft core 100000" >> /etc/security/limits.conf && \
-#           python3 -c "import openpmd_api as api;"; \
+#           python3 -c "import openpmd_api as io;"; \
 #           gdb -ex bt -c core
 
 # test in fresh env: Debian:Sid + Python 3.8
@@ -155,7 +155,7 @@ RUN        python3.8 --version \
            && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
            && python3.8 get-pip.py \
            && python3.8 -m pip install openPMD_api-*-cp38-cp38-manylinux2010_x86_64.whl
-RUN        python3.8 -c "import openpmd_api as api; print(api.__version__); print(api.variants)"
+RUN        python3.8 -c "import openpmd_api as io; print(api.__version__); print(api.variants)"
 
 # test in fresh env: Ubuntu:18.04 + Python 3.6
 FROM       ubuntu:18.04
@@ -167,7 +167,7 @@ RUN        apt-get update \
 RUN        python3 --version \
            && python3 -m pip install -U pip \
            && python3 -m pip install openPMD_api-*-cp36-cp36m-manylinux2010_x86_64.whl
-RUN        python3 -c "import openpmd_api as api; print(api.__version__); print(api.variants)"
+RUN        python3 -c "import openpmd_api as io; print(api.__version__); print(api.variants)"
 #RUN        openpmd-ls --help
 
 # test in fresh env: Debian:Stretch + Python 3.5
@@ -180,7 +180,7 @@ RUN        apt-get update \
 RUN        python3 --version \
            && python3 -m pip install -U pip \
            && python3 -m pip install openPMD_api-*-cp35-cp35m-manylinux2010_x86_64.whl
-RUN        python3 -c "import openpmd_api as api; print(api.__version__); print(api.variants)"
+RUN        python3 -c "import openpmd_api as io; print(api.__version__); print(api.variants)"
 #RUN        openpmd-ls --help
 
 
