@@ -1,9 +1,23 @@
 .. _details-doxygen:
 
-C++ Index
-=========
+C++
+===
 
 Our Doxygen page `provides an index of all C++ functionality <../_static/doxyhtml/index.html>`_.
+
+
+Public Headers
+--------------
+
+``#include ...`` the following headers to use openPMD-api:
+
+===========================  =======================================================
+Include                      Description
+===========================  =======================================================
+``<openPMD/openPMD.hpp>``    Public facade header (serial and MPI)
+``<openPMD/benchmark/...>``  Optional :ref:`benchmark <utilities-benchmark>` helpers
+===========================  =======================================================
+
 
 External Documentation
 ----------------------

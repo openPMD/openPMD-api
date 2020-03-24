@@ -3,9 +3,12 @@
 openPMD C++ & Python API
 ------------------------
 
-This library provides an abstract API for openPMD file handling.
-It provides both support for writing & reading into various formats and works both serial and parallel (MPI).
-Implemented backends include HDF5 and ADIOS1.
+openPMD is an open meta-data schema that provides meaning and self-description to data sets in science and engineering.
+See `the openPMD standard <https://github.com/openPMD/openPMD-standard>`_ for details of this schema.
+
+This library provides a reference API for openPMD data handling.
+Since openPMD is a schema (or markup) on top of portable, hierarchical file formats, this library implements various backends such as HDF5, ADIOS1, ADIOS2 and JSON.
+Writing & reading through those backends and their associated files is supported for serial and `MPI-parallel <https://www.mpi-forum.org/docs/>`_ workflows.
 
 .. raw:: html
 
@@ -27,7 +30,9 @@ Implemented backends include HDF5 and ADIOS1.
 Supported openPMD Standard Versions
 -----------------------------------
 
-openPMD-api is a library using `semantic versioning <https://semver.org/>`_, starting with version 1.0.0.
+openPMD-api is a library using `semantic versioning <https://semver.org/>`_ for its public API.
+Please see `this link for ABI-compatibility <https://abi-laboratory.pro/?view=timeline&l=openpmd-api>`_.
+The version number of openPMD-api is not related to the version of `the openPMD standard <https://github.com/openPMD/openPMD-standard>`_.
 
 The supported version of the `openPMD standard <https://github.com/openPMD/openPMD-standard>`_ are reflected as follows:
 ``standardMAJOR.apiMAJOR.apiMINOR``.
@@ -78,6 +83,7 @@ API Details
    :hidden:
 
    details/doxygen.rst
+   details/python.rst
    details/mpi.rst
 
 Utilities
