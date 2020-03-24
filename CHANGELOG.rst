@@ -5,11 +5,12 @@ Changelog
 
 0.11.1-alpha
 ------------
-**Date:** TBA
+**Date:** 2020-03-24
 
-[Title]
+HDF5-1.12, Azimuthal Examples & Tagfile
 
-[Summary]
+This release adds support for the latest HDF5 release.
+Also, we add versioned Doxygen and a tagfile for external docs to our online manual.
 
 Changes to "0.11.0-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -19,9 +20,6 @@ Features
 
 - HDF5: Support 1.12 release #696
 - Doxygen: per-version index in Sphinx pages #697
-
-Bug Fixes
-"""""""""
 
 Other
 """""
