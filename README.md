@@ -26,7 +26,7 @@ See [the openPMD standard](https://github.com/openPMD/openPMD-standard) for deta
 
 This library provides a reference API for openPMD data handling.
 Since openPMD is a schema (or markup) on top of portable, hierarchical file formats, this library implements various backends such as HDF5, ADIOS1, ADIOS2 and JSON.
-Writing & reading through those backends and their associated files is supported for serial and `MPI-parallel <https://www.mpi-forum.org/docs/>`_ workflows.
+Writing & reading through those backends and their associated files is supported for serial and (MPI-parallel](https://www.mpi-forum.org/docs/) workflows.
 
 ## Usage
 
