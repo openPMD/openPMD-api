@@ -66,16 +66,16 @@ C++11
    #include <openPMD/openPMD.hpp>
    #include <iostream>
 
-   namespace api = openPMD;
+   namespace io = openPMD;
 
    // ...
    std::cout << "openPMD-api: "
-             << api::getVersion() << std::endl;
+             << io::getVersion() << std::endl;
    std::cout << "openPMD-standard: "
-             << api::getStandard() << std::endl;
+             << io::getStandard() << std::endl;
 
    std::cout << "openPMD-api backend variants: " << std::endl;
-   for( auto const & v : api::getVariants() )
+   for( auto const & v : io::getVariants() )
        std::cout << "  " << v.first << ": "
                  << v.second << std::endl;
 
@@ -84,10 +84,10 @@ Python
 
 .. code-block:: python3
 
-   import openpmd_api as api
+   import openpmd_api as io
 
    print("openPMD-api: {}"
-         .format(api.__version__))
+         .format(io.__version__))
    print("openPMD-api backend variants: {}"
-         .format(api.variants))
+         .format(io.variants))
 

@@ -6,7 +6,7 @@ Authors: Axel Huebl, Carsten Fortmann-Grote
 License: LGPLv3+
 """
 
-import openpmd_api as api
+import openpmd_api as io
 
 import os
 import shutil
@@ -46,10 +46,10 @@ class APITest(unittest.TestCase):
                 os.path.join("issue-sample", "no_fields", "data%T.h5"))
         path_to_data = generateTestFilePath(
                 os.path.join("git-sample", "data%T.h5"))
-        mode = api.Access_Type.read_only
-        self.__field_series = api.Series(path_to_field_data, mode)
-        self.__particle_series = api.Series(path_to_particle_data, mode)
-        self.__series = api.Series(path_to_data, mode)
+        mode = io.Access_Type.read_only
+        self.__field_series = io.Series(path_to_field_data, mode)
+        self.__particle_series = io.Series(path_to_particle_data, mode)
+        self.__series = io.Series(path_to_data, mode)
 
     def tearDown(self):
         """ Tearing down a test. """
@@ -108,9 +108,9 @@ class APITest(unittest.TestCase):
 
     def attributeRoundTrip(self, file_ending):
         # write
-        series = api.Series(
+        series = io.Series(
             "unittest_py_API." + file_ending,
-            api.Access_Type.create
+            io.Access_Type.create
         )
 
         # meta data
@@ -206,9 +206,9 @@ class APITest(unittest.TestCase):
         del series
 
         # read back
-        series = api.Series(
+        series = io.Series(
             "unittest_py_API." + file_ending,
-            api.Access_Type.read_only
+            io.Access_Type.read_only
         )
 
         self.assertEqual(series.get_attribute("char"), "c")
@@ -300,21 +300,21 @@ class APITest(unittest.TestCase):
             'hdf5': 'h5',
             'adios1': 'bp'
         }
-        for b in api.variants:
-            if api.variants[b] is True and b in backend_filesupport:
+        for b in io.variants:
+            if io.variants[b] is True and b in backend_filesupport:
                 self.attributeRoundTrip(backend_filesupport[b])
 
     def makeConstantRoundTrip(self, file_ending):
         # write
-        series = api.Series(
+        series = io.Series(
             "unittest_py_constant_API." + file_ending,
-            api.Access_Type.create
+            io.Access_Type.create
         )
 
         ms = series.iterations[0].meshes
-        SCALAR = api.Mesh_Record_Component.SCALAR
-        DS = api.Dataset
-        DT = api.Datatype
+        SCALAR = io.Mesh_Record_Component.SCALAR
+        DS = io.Dataset
+        DT = io.Datatype
 
         extent = [42, 24, 11]
 
@@ -355,9 +355,9 @@ class APITest(unittest.TestCase):
         del series
 
         # read back
-        series = api.Series(
+        series = io.Series(
             "unittest_py_constant_API." + file_ending,
-            api.Access_Type.read_only
+            io.Access_Type.read_only
         )
 
         ms = series.iterations[0].meshes
@@ -414,8 +414,8 @@ class APITest(unittest.TestCase):
             'hdf5': 'h5',
             'adios1': 'bp'
         }
-        for b in api.variants:
-            if api.variants[b] is True and b in backend_filesupport:
+        for b in io.variants:
+            if io.variants[b] is True and b in backend_filesupport:
                 self.makeConstantRoundTrip(backend_filesupport[b])
 
     def testData(self):
@@ -423,7 +423,7 @@ class APITest(unittest.TestCase):
 
         # Get series.
         series = self.__series
-        self.assertIsInstance(series, api.Series)
+        self.assertIsInstance(series, io.Series)
 
         self.assertEqual(series.openPMD, "1.1.0")
 
@@ -435,7 +435,7 @@ class APITest(unittest.TestCase):
         # Check type.
         self.assertTrue(400 in series.iterations)
         i = series.iterations[400]
-        self.assertIsInstance(i, api.Iteration)
+        self.assertIsInstance(i, io.Iteration)
         with self.assertRaises(TypeError):
             series.iterations[-1]
         with self.assertRaises(IndexError):
@@ -451,7 +451,7 @@ class APITest(unittest.TestCase):
 
         # Get a mesh.
         E = i.meshes["E"]
-        self.assertIsInstance(E, api.Mesh)
+        self.assertIsInstance(E, io.Mesh)
 
         self.assertEqual(len(i.particles), 1)
         for ps in i.particles:
@@ -459,9 +459,9 @@ class APITest(unittest.TestCase):
 
         # Get a particle species.
         electrons = i.particles["electrons"]
-        self.assertIsInstance(electrons, api.ParticleSpecies)
+        self.assertIsInstance(electrons, io.ParticleSpecies)
         pos_y = electrons["position"]["y"]
-        w = electrons["weighting"][api.Record_Component.SCALAR]
+        w = electrons["weighting"][io.Record_Component.SCALAR]
         assert pos_y.dtype == np.double
         assert w.dtype == np.double
 
@@ -530,7 +530,7 @@ class APITest(unittest.TestCase):
 
         # Get series.
         series = self.__series
-        self.assertIsInstance(series, api.Series)
+        self.assertIsInstance(series, io.Series)
 
         self.assertEqual(series.openPMD, "1.1.0")
 
@@ -539,12 +539,12 @@ class APITest(unittest.TestCase):
 
         # Get series.
         series = self.__series
-        self.assertRaises(TypeError, api.list_series)
-        api.list_series(series)
-        api.list_series(series, False)
-        api.list_series(series, True)
+        self.assertRaises(TypeError, io.list_series)
+        io.list_series(series)
+        io.list_series(series, False)
+        io.list_series(series, True)
 
-        print(api.list_series.__doc__)
+        print(io.list_series.__doc__)
 
     def testSliceRead(self):
         """ Testing sliced read on record components. """
@@ -566,7 +566,7 @@ class APITest(unittest.TestCase):
         # Get some record components
         E_x = E["x"]
         pos_y = electrons["position"]["y"]
-        w = electrons["weighting"][api.Record_Component.SCALAR]
+        w = electrons["weighting"][io.Record_Component.SCALAR]
 
         if found_numpy:
             np.testing.assert_allclose(electrons["position"].unit_dimension,
@@ -849,8 +849,8 @@ class APITest(unittest.TestCase):
             'hdf5': 'h5',
             'adios1': 'bp'
         }
-        for b in api.variants:
-            if api.variants[b] is True and b in backend_filesupport:
+        for b in io.variants:
+            if io.variants[b] is True and b in backend_filesupport:
                 self.backend_write_slices(backend_filesupport[b])
 
     def backend_write_slices(self, file_ending):
@@ -860,9 +860,9 @@ class APITest(unittest.TestCase):
             return
 
         # get series
-        series = api.Series(
+        series = io.Series(
             "unittest_py_slice_API." + file_ending,
-            api.Access_Type.create
+            io.Access_Type.create
         )
         i = series.iterations[0]
 
@@ -884,9 +884,9 @@ class APITest(unittest.TestCase):
         more_axes = np.ascontiguousarray(more_axes)
 
         # get a mesh record component
-        rho = i.meshes["rho"][api.Record_Component.SCALAR]
+        rho = i.meshes["rho"][io.Record_Component.SCALAR]
 
-        rho.reset_dataset(api.Dataset(data.dtype, data.shape))
+        rho.reset_dataset(io.Dataset(data.dtype, data.shape))
 
         # normal write
         rho[()] = data
@@ -930,16 +930,16 @@ class APITest(unittest.TestCase):
         series = self.__series
 
         # Loop over iterations.
-        self.assertIsInstance(series.iterations, api.Iteration_Container)
+        self.assertIsInstance(series.iterations, io.Iteration_Container)
         self.assertTrue(hasattr(series.iterations, "__getitem__"))
         for i in series.iterations:
             # self.assertIsInstance(i, int)
-            self.assertIsInstance(series.iterations[i], api.Iteration)
+            self.assertIsInstance(series.iterations[i], io.Iteration)
 
         # Check type.
         self.assertTrue(100 in series.iterations)
         i = series.iterations[100]
-        self.assertIsInstance(i, api.Iteration)
+        self.assertIsInstance(i, io.Iteration)
 
     def testMeshes(self):
         """ Test querying a mesh. """
@@ -954,7 +954,7 @@ class APITest(unittest.TestCase):
         self.assertTrue(hasattr(i.meshes, "__getitem__"))
         for m in i.meshes:
             # self.assertIsInstance(m, str)
-            self.assertIsInstance(i.meshes[m], api.Mesh)
+            self.assertIsInstance(i.meshes[m], io.Mesh)
 
     def testParticles(self):
         """ Test querying a particle species. """
@@ -968,45 +968,45 @@ class APITest(unittest.TestCase):
         self.assertTrue(hasattr(i.particles, "__getitem__"))
         for ps in i.particles:
             # self.assertIsInstance(ps, str)
-            self.assertIsInstance(i.particles[ps], api.ParticleSpecies)
+            self.assertIsInstance(i.particles[ps], io.ParticleSpecies)
 
     def testData_Order(self):
         """ Test Data_Order. """
-        obj = api.Data_Order('C')
+        obj = io.Data_Order('C')
         del obj
 
     def testDatatype(self):
         """ Test Datatype. """
-        data_type = api.Datatype(1)
+        data_type = io.Datatype(1)
         del data_type
 
     def testDataset(self):
         """ Test Dataset. """
-        data_type = api.Datatype.LONG
+        data_type = io.Datatype.LONG
         extent = [1, 1, 1]
-        obj = api.Dataset(data_type, extent)
+        obj = io.Dataset(data_type, extent)
         if found_numpy:
             d = np.array((1, 1, 1, ), dtype=np.int_)
-            obj2 = api.Dataset(d.dtype, d.shape)
-            assert data_type == api.determine_datatype(d.dtype)
+            obj2 = io.Dataset(d.dtype, d.shape)
+            assert data_type == io.determine_datatype(d.dtype)
             assert obj2.dtype == obj.dtype
             assert obj2.dtype == obj.dtype
         del obj
 
     def testGeometry(self):
         """ Test Geometry. """
-        obj = api.Geometry(0)
+        obj = io.Geometry(0)
         del obj
 
     def testIteration(self):
         """ Test Iteration. """
-        self.assertRaises(TypeError, api.Iteration)
+        self.assertRaises(TypeError, io.Iteration)
 
         iteration = self.__particle_series.iterations[400]
 
         # just a shallow copy "alias"
-        copy_iteration = api.Iteration(iteration)
-        self.assertIsInstance(copy_iteration, api.Iteration)
+        copy_iteration = io.Iteration(iteration)
+        self.assertIsInstance(copy_iteration, io.Iteration)
 
         # TODO open as readwrite
         # TODO verify copy and source are identical
@@ -1015,30 +1015,30 @@ class APITest(unittest.TestCase):
 
     def testIteration_Encoding(self):
         """ Test Iteration_Encoding. """
-        obj = api.Iteration_Encoding(1)
+        obj = io.Iteration_Encoding(1)
         del obj
 
     def testMesh(self):
         """ Test Mesh. """
-        self.assertRaises(TypeError, api.Mesh)
+        self.assertRaises(TypeError, io.Mesh)
         mesh = self.__series.iterations[100].meshes['E']
-        copy_mesh = api.Mesh(mesh)
+        copy_mesh = io.Mesh(mesh)
 
-        self.assertIsInstance(copy_mesh, api.Mesh)
+        self.assertIsInstance(copy_mesh, io.Mesh)
 
     def testMesh_Container(self):
         """ Test Mesh_Container. """
-        self.assertRaises(TypeError, api.Mesh_Container)
+        self.assertRaises(TypeError, io.Mesh_Container)
 
     def backend_particle_patches(self, file_ending):
-        DS = api.Dataset
-        SCALAR = api.Record_Component.SCALAR
+        DS = io.Dataset
+        SCALAR = io.Record_Component.SCALAR
         extent = [123, ]
         num_patches = 2
 
-        series = api.Series(
+        series = io.Series(
             "unittest_py_particle_patches." + file_ending,
-            api.Access_Type.create
+            io.Access_Type.create
         )
         e = series.iterations[42].particles["electrons"]
 
@@ -1081,9 +1081,9 @@ class APITest(unittest.TestCase):
         # read back
         del series
 
-        series = api.Series(
+        series = io.Series(
             "unittest_py_particle_patches." + file_ending,
-            api.Access_Type.read_only
+            io.Access_Type.read_only
         )
         e = series.iterations[42].particles["electrons"]
 
@@ -1111,49 +1111,49 @@ class APITest(unittest.TestCase):
             offset_y, [0., 0.])
 
     def testParticlePatches(self):
-        self.assertRaises(TypeError, api.Particle_Patches)
+        self.assertRaises(TypeError, io.Particle_Patches)
 
         backend_filesupport = {
             'json': 'json',
             'hdf5': 'h5',
             'adios1': 'bp'
         }
-        for b in api.variants:
-            if api.variants[b] is True and b in backend_filesupport:
+        for b in io.variants:
+            if io.variants[b] is True and b in backend_filesupport:
                 self.backend_particle_patches(backend_filesupport[b])
 
     def testParticleSpecies(self):
         """ Test ParticleSpecies. """
-        self.assertRaises(TypeError, api.ParticleSpecies)
+        self.assertRaises(TypeError, io.ParticleSpecies)
 
     def testParticle_Container(self):
         """ Test Particle_Container. """
-        self.assertRaises(TypeError, api.Particle_Container)
+        self.assertRaises(TypeError, io.Particle_Container)
 
     def testRecord(self):
         """ Test Record. """
         # Has only copy constructor.
-        self.assertRaises(TypeError, api.Record)
+        self.assertRaises(TypeError, io.Record)
 
         # Get a record.
         electrons = self.__series.iterations[400].particles['electrons']
         position = electrons['position']
-        self.assertIsInstance(position, api.Record)
+        self.assertIsInstance(position, io.Record)
         x = position['x']
-        self.assertIsInstance(x, api.Record_Component)
+        self.assertIsInstance(x, io.Record_Component)
 
         # Copy.
-        # copy_record = api.Record(position)
-        # copy_record_component = api.Record(x)
+        # copy_record = io.Record(position)
+        # copy_record_component = io.Record(x)
 
         # Check.
-        # self.assertIsInstance(copy_record, api.Record)
+        # self.assertIsInstance(copy_record, io.Record)
         # self.assertIsInstance(copy_record_component,
-        #                       api.Record_Component)
+        #                       io.Record_Component)
 
     def testRecord_Component(self):
         """ Test Record_Component. """
-        self.assertRaises(TypeError, api.Record_Component)
+        self.assertRaises(TypeError, io.Record_Component)
 
     def testFieldRecord(self):
         """ Test querying for a non-scalar field record. """
@@ -1161,7 +1161,7 @@ class APITest(unittest.TestCase):
         E = self.__series.iterations[100].meshes["E"]
         Ex = E["x"]
 
-        self.assertIsInstance(Ex, api.Mesh_Record_Component)
+        self.assertIsInstance(Ex, io.Mesh_Record_Component)
 
 
 if __name__ == '__main__':
