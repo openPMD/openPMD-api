@@ -1,55 +1,55 @@
 .. _details-mpi:
 
-MPI Behavior
-============
+MPI
+===
 
-openPMD-api can be used within a MPI-parallel environment.
-The following API contracts need to be followed.
+Collective Behavior
+-------------------
 
-Collective
-----------
+openPMD-api is designed to support both serial as well as parallel I/O.
+The latter is implemented through the `Message Passing Interface (MPI) <https://www.mpi-forum.org/docs/>`_.
 
-Series
-^^^^^^
+A **collective** operation needs to be executed by *all* MPI ranks of the MPI communicator that was passed to ``openPMD::Series``.
+Contrarily, **independent** operations can also be called by a subset of these MPI ranks.
+For more information, please see the `MPI standard documents <https://www.mpi-forum.org/docs/>`_, for example MPI-3.1 in `"Section 2.4 - Semantic Terms" <https://www.mpi-forum.org/docs/mpi-3.1/mpi31-report.pdf>`_.
 
-Generally, opening and closing the ``Series`` object with a MPI communicator is a collective operation.
-The communicator will be duplicated via ``MPI_Comm_dup`` in its constructor and freed in the destructor.
+======================== ================== ===========================
+Functionality            Behavior           Description
+======================== ================== ===========================
+``Series``               **collective**     open and close
+``::flush()``            **collective**     read and write
+``Iteration`` [1]_       independent        declare and open
+``Mesh`` [1]_            independent        declare, open, write
+``ParticleSpecies`` [1]_ independent        declare, open, write
+``::setAttribute`` [2]_  *backend-specific* declare, write
+``::getAttribute``       independent        open, reading
+``::storeChunk`` [1]_    independent        write
+``::loadChunk``          independent        read
+======================== ================== ===========================
 
-Accessing ``Series::iterations::operator[]``, ``Iteration::meshes::operator[]``, and ``Iteration::particles::operator[]`` for the first time will create or open openPMD objects, which is a collective operation.
+.. [1] Individual backends, e.g. :ref:`HDF5 <backends-hdf5>`, will only support independent operations if the default, non-collective behavior is kept.
+       (Otherwise these operations are collective.)
+
+.. [2] :ref:`HDF5 <backends-hdf5>` only supports collective attribute definitions/writes; :ref:`ADIOS1 <backends-adios1>` and :ref:`ADIOS2 <backends-adios2>` attributes can be written independently.
+       If you want to support all backends equally, treat as a collective operation.
+
+.. tip::
+
+   Just because an operation is independent does not mean it is allowed to be inconsistent.
+   For example, undefined behavior will occur if ranks pass differing values to ``::setAttribute`` or try to use differing names to describe the same mesh.
+
+
+Efficient Parallel I/O Patterns
+-------------------------------
 
 .. note::
 
-   For read-only series, this contrain might be more relaxed but we first have to add more tests on it.
+   This section is a stub.
+   We will improve it in future versions.
 
-Flush
-^^^^^
+**Write** as large data set chunks as possible in ``::storeChunk`` operations.
 
-Flush should be treated as collective operation.
-After a ``<openPMD-api::object>::flush()``, exchanged memory buffers (``storeChunk()``/``loadChunk()``) can be manipulated or freed.
+**Read** in large, non-overlapping subsets of the stored data (``::loadChunk``).
+Ideally, read the same chunk extents as were written, e.g. through ``ParticlePatches`` (example to-do).
 
-.. note::
-
-   Although ``storeChunk()`` and ``loadChunk()`` are non-collective in most cases, we have not sufficient test coverage to ensure ``flush()`` can be called in a non-collective manner.
-   Also see `GitHub Bug #490 <https://github.com/openPMD/openPMD-api/issues/490>`_ for limitations.
-
-Attributes
-^^^^^^^^^^
-
-Attribute writes should be treated as collective operations until further tests were performed.
-
-.. note::
-
-   Attribute writes are likely non-collective in ADIOS1 & ADIOS2 and a single writing MPI rank is sufficient.
-   (Needs tests in CI.)
-   Attribute reads should generally be non-collective (also needs tests in CI).
-
-Non-Collective
---------------
-
-Store and Load Chunk
-^^^^^^^^^^^^^^^^^^^^
-
-``RecordComponent::storeChunk()`` and ``::loadChunk()`` are designed to be non-collective.
-Participating MPI ranks can skip calls to these member functions or call them independently multiple times.
-
-If you rely on parallel HDF5 output with non-collective calls to these member functions, please see its :ref:`limitations and control options with various MPI-I/O implementations <backends-hdf5>` and set appropriate runtime options.
+See the :ref:`implemented I/O backends <backends-overview>` for individual tuning options.

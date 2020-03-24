@@ -19,16 +19,18 @@ Features
 
 - HDF5: Support 1.12 release #696
 - Doxygen: per-version index in Sphinx pages #697
-- Examples:
-
-  - document theta mode read/write #678
-  - better example namespace alias (io) #698
 
 Bug Fixes
 """""""""
 
 Other
 """""
+
+- Examples:
+
+  - document azimuthal decomposition read/write #678
+  - better example namespace alias (io) #698
+- Docs: update API detail pages #699
 
 
 0.11.0-alpha
