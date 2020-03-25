@@ -3,7 +3,7 @@
 openPMD C++ & Python API
 ------------------------
 
-openPMD is an open meta-data schema that provides meaning and self-description to data sets in science and engineering.
+openPMD is an open meta-data schema that provides meaning and self-description for data sets in science and engineering.
 See `the openPMD standard <https://github.com/openPMD/openPMD-standard>`_ for details of this schema.
 
 This library provides a reference API for openPMD data handling.
