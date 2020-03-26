@@ -49,18 +49,18 @@ namespace helper
         if( longer )
         {
             out << "data author: ";
-            try{ out << series.author() << "\n"; } catch( no_such_attribute_error const & e ) { out << "unknown\n"; }
+            try{ out << series.author() << "\n"; } catch( no_such_attribute_error const & ) { out << "unknown\n"; }
             out << "data created: ";
-            try{ out << series.date() << "\n"; } catch( no_such_attribute_error const & e ) { out << "unknown\n"; }
+            try{ out << series.date() << "\n"; } catch( no_such_attribute_error const & ) { out << "unknown\n"; }
             out << "data backend: " << series.backend() << "\n";
             out << "generating machine: ";
-            try{ out << series.machine() << "\n"; } catch( no_such_attribute_error const & e ) { out << "unknown\n"; }
+            try{ out << series.machine() << "\n"; } catch( no_such_attribute_error const & ) { out << "unknown\n"; }
             out << "generating software: ";
-            try{ out << series.software(); } catch( no_such_attribute_error const & e ) { out << "unknown"; }
+            try{ out << series.software(); } catch( no_such_attribute_error const & ) { out << "unknown"; }
             out <<  " (version: ";
-            try{ out << series.softwareVersion() << ")\n"; } catch( no_such_attribute_error const & e ) { out << "unknown)\n"; }
+            try{ out << series.softwareVersion() << ")\n"; } catch( no_such_attribute_error const & ) { out << "unknown)\n"; }
             out << "generating software dependencies: ";
-            try{ out << series.softwareDependencies() << "\n"; } catch( no_such_attribute_error const & e ) { out << "unknown\n"; }
+            try{ out << series.softwareDependencies() << "\n"; } catch( no_such_attribute_error const & ) { out << "unknown\n"; }
 
             out << "\n";
         }
