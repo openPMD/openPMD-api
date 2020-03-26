@@ -58,7 +58,7 @@ int main()
 
     std::pair<std::string, openPMD::ParticleSpecies> s_e = *i.particles.begin();
     std::pair<std::string, openPMD::Record> s_c = *s_e.second.begin();
-    auto charge = s_c.second[openPMD::RecordComponent::SCALAR].loadChunk<double>().get()[0];
+    std::shared_ptr< double > charge = s_c.second[openPMD::RecordComponent::SCALAR].loadChunk<double>();
     cout << "And first particle in particle species " << s_e.first
          << " has " << s_c.first << " = " << charge.get()[0];
     cout << '\n';
