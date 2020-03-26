@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/config.hpp"
+#include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
 #include <future>
@@ -30,20 +31,12 @@
 #   include <queue>
 #endif
 
-#ifdef _MSC_VER
-#   define EXPORT __declspec( dllexport )
-#elif defined(__NVCC__)
-#   define EXPORT
-#else
-#   define EXPORT __attribute__((visibility("default")))
-#endif
-
 
 namespace openPMD
 {
-    class EXPORT ParallelADIOS1IOHandlerImpl;
+    class OPENPMDAPI_EXPORT ParallelADIOS1IOHandlerImpl;
 
-    class EXPORT ParallelADIOS1IOHandler : public AbstractIOHandler
+    class OPENPMDAPI_EXPORT ParallelADIOS1IOHandler : public AbstractIOHandler
     {
         friend class ParallelADIOS1IOHandlerImpl;
 
@@ -70,5 +63,3 @@ namespace openPMD
     }; // ParallelADIOS1IOHandler
 
 } // openPMD
-
-#undef EXPORT

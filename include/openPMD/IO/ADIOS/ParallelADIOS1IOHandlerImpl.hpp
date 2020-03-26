@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/config.hpp"
+#include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
 #if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
@@ -37,19 +38,11 @@
 #   include <unordered_set>
 #endif
 
-#ifdef _MSC_VER
-#   define EXPORT __declspec( dllexport )
-#elif defined(__NVCC__)
-#   define EXPORT
-#else
-#   define EXPORT __attribute__((visibility("default")))
-#endif
-
 
 namespace openPMD
 {
 #if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
-    class EXPORT ParallelADIOS1IOHandlerImpl : public AbstractIOHandlerImpl
+    class OPENPMDAPI_EXPORT ParallelADIOS1IOHandlerImpl : public AbstractIOHandlerImpl
     {
     public:
         ParallelADIOS1IOHandlerImpl(AbstractIOHandler*, MPI_Comm);
@@ -103,11 +96,9 @@ namespace openPMD
         MPI_Info m_mpiInfo;
     }; // ParallelADIOS1IOHandlerImpl
 #else
-    class EXPORT ParallelADIOS1IOHandlerImpl
+    class OPENPMDAPI_EXPORT ParallelADIOS1IOHandlerImpl
     {
     }; // ParallelADIOS1IOHandlerImpl
 #endif
 
 } // openPMD
-
-#undef EXPORT
