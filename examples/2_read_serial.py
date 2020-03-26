@@ -32,7 +32,7 @@ if __name__ == "__main__":
         print("With records:")
         for r in i.particles[ps]:
             print("\t {0}".format(r))
-    
+
     # printing a scalar value
     s_e=[ps for ps in i.particles][0]
     s_c=[r for r in i.particles[s_electrons]][0]
