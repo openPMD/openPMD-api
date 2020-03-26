@@ -48,7 +48,7 @@ int main()
         cout << "\n\t" << m.first;
     cout << '\n';
     cout << "Iteration 100 contains " << i.particles.size() << " particle species:";
-    for( auto const& ps : i.particles ){
+    for( auto const& ps : i.particles ) {
         cout << "\n\t" << ps.first;
         for( auto const& r : ps.second ){
             cout << "\n\t" << r.first;
