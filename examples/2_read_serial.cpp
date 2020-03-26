@@ -58,7 +58,7 @@ int main()
     
     std::pair<std::string,openPMD::ParticleSpecies> s_e = *i.particles.begin();
     std::pair<std::string,openPMD::Record> s_c = *s_e.second.begin();
-    auto charge = s_c.second[openPMD::RecordComponent::SCALAR].loadChunk<amrex::Real>().get()[0];
+    auto charge = s_c.second[openPMD::RecordComponent::SCALAR].loadChunk<double>().get()[0];
     cout << "And " << s_c.first << " = " << charge;
     cout << '\n';
 
