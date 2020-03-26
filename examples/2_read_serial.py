@@ -29,6 +29,15 @@ if __name__ == "__main__":
         len(i.particles)))
     for ps in i.particles:
         print("\t {0}".format(ps))
+        print("With records:")
+        for r in i.particles[ps]:
+            print("\t {0}".format(r))
+    
+    # printing a scalar value
+    s_e=[ps for ps in i.particles][0]
+    s_c=[r for r in i.particles[s_electrons]][0]
+    charge=i.particles[s_e][s_c][openpmd_api.Mesh_Record_Component.SCALAR][0]
+    print("And ", s_c, " = ",charge)
     print("")
 
     E_x = i.meshes["E"]["x"]
