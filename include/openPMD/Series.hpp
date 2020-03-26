@@ -22,6 +22,7 @@
 
 #include "openPMD/config.hpp"
 #include "openPMD/auxiliary/Deprecated.hpp"
+#include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
@@ -52,7 +53,7 @@ namespace openPMD
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series
  */
-class Series : public Attributable
+class OPENPMDAPI_EXPORT Series : public Attributable
 {
     friend class Iteration;
 

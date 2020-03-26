@@ -20,6 +20,8 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Export.hpp"
+
 #include <array>
 #include <cstdint>
 #include <iosfwd>
@@ -676,6 +678,7 @@ Datatype basicDatatype(Datatype dt);
 
 Datatype toVectorType(Datatype dt);
 
+OPENPMDAPI_EXPORT
 std::string datatypeToString( Datatype dt );
 
 Datatype stringToDatatype( std::string s );
@@ -689,6 +692,7 @@ warnWrongDtype(std::string const& key,
                Datatype store,
                Datatype request);
 
+OPENPMDAPI_EXPORT
 std::ostream&
 operator<<(std::ostream&, openPMD::Datatype const&);
 

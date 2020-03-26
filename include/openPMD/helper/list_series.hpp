@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/Series.hpp"
+#include "openPMD/auxiliary/Export.hpp"
 
 #include <ostream>
 #include <iostream>
@@ -37,6 +38,7 @@ namespace helper
      * @param out    an output stream to write textual information to
      * @return reference to out as output stream, e.g. to pass the stream on via `operator<<`
      */
+    OPENPMDAPI_EXPORT
     std::ostream &
     listSeries(
         Series const & series,

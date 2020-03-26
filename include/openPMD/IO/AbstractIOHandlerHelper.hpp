@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/config.hpp"
+#include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
 
@@ -36,6 +37,7 @@ namespace openPMD
      * @param   comm        MPI communicator used for IO.
      * @return  Smart pointer to created IOHandler.
      */
+    OPENPMDAPI_EXPORT
     std::shared_ptr< AbstractIOHandler >
     createIOHandler(
         std::string path,
@@ -52,6 +54,7 @@ namespace openPMD
      * @param   format      Format describing the IO backend of the desired handler.
      * @return  Smart pointer to created IOHandler.
      */
+    OPENPMDAPI_EXPORT
     std::shared_ptr< AbstractIOHandler >
     createIOHandler(
         std::string path,

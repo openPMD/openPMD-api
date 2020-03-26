@@ -17,6 +17,8 @@ Changes to "0.11.1-alpha"
 Features
 """"""""
 
+- export: hide all non-exported symbols #705
+
 Bug Fixes
 """""""""
 

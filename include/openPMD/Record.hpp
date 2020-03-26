@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/RecordComponent.hpp"
 
@@ -30,7 +31,7 @@
 
 namespace openPMD
 {
-class Record : public BaseRecord< RecordComponent >
+class OPENPMDAPI_EXPORT Record : public BaseRecord< RecordComponent >
 {
     friend class Container< Record >;
     friend class Iteration;

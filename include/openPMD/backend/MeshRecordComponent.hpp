@@ -21,13 +21,14 @@
 #pragma once
 
 #include "openPMD/RecordComponent.hpp"
+#include "openPMD/auxiliary/Export.hpp"
 
 #include <vector>
 
 
 namespace openPMD
 {
-class MeshRecordComponent : public RecordComponent
+class OPENPMDAPI_EXPORT MeshRecordComponent : public RecordComponent
 {
     template<
             typename T,

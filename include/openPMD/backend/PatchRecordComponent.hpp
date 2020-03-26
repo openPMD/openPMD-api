@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 
 #include <unordered_map>
@@ -35,7 +36,7 @@
 
 namespace openPMD
 {
-class PatchRecordComponent : public BaseRecordComponent
+class OPENPMDAPI_EXPORT PatchRecordComponent : public BaseRecordComponent
 {
     template<
         typename T,

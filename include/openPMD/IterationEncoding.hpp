@@ -20,6 +20,8 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Export.hpp"
+
 #include <ostream>
 
 
@@ -34,6 +36,7 @@ enum class IterationEncoding
     fileBased, groupBased
 };
 
+OPENPMDAPI_EXPORT
 std::ostream&
 operator<<(std::ostream&, openPMD::IterationEncoding const&);
 

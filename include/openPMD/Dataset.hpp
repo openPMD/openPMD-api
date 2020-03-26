@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/Datatype.hpp"
+#include "openPMD/auxiliary/Export.hpp"
 
 #include <memory>
 #include <type_traits>
@@ -33,7 +34,7 @@ namespace openPMD
 using Extent = std::vector< std::uint64_t >;
 using Offset = std::vector< std::uint64_t >;
 
-class Dataset
+class OPENPMDAPI_EXPORT Dataset
 {
     friend class RecordComponent;
 

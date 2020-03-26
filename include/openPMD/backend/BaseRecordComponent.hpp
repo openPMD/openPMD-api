@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/Dataset.hpp"
 
@@ -31,7 +32,7 @@
 
 namespace openPMD
 {
-class BaseRecordComponent : public Attributable
+class OPENPMDAPI_EXPORT BaseRecordComponent : public Attributable
 {
     template< typename T_elem >
     friend
