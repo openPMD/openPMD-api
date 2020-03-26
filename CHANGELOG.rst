@@ -23,6 +23,9 @@ Bug Fixes
 Other
 """""
 
+- separate header for export macros #704
+- CI: migration to travis-ci.com / GitHub app #703
+
 
 0.11.1-alpha
 ------------

@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/config.hpp"
+#include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
 #if openPMD_HAVE_ADIOS1
@@ -36,19 +37,11 @@
 #   include <unordered_set>
 #endif
 
-#ifdef _MSC_VER
-#   define EXPORT __declspec( dllexport )
-#elif defined(__NVCC__)
-#   define EXPORT
-#else
-#   define EXPORT __attribute__((visibility("default")))
-#endif
-
 
 namespace openPMD
 {
 #if openPMD_HAVE_ADIOS1
-    class EXPORT ADIOS1IOHandlerImpl : public AbstractIOHandlerImpl
+    class OPENPMDAPI_EXPORT ADIOS1IOHandlerImpl : public AbstractIOHandlerImpl
     {
     public:
         ADIOS1IOHandlerImpl(AbstractIOHandler*);
@@ -100,10 +93,8 @@ namespace openPMD
         int64_t GetFileHandle(Writable*);
     }; // ADIOS1IOHandlerImpl
 #else
-    class EXPORT ADIOS1IOHandlerImpl
+    class OPENPMDAPI_EXPORT ADIOS1IOHandlerImpl
     {
     }; // ADIOS1IOHandlerImpl
 #endif
 } // openPMD
-
-#undef EXPORT
