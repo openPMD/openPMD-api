@@ -3,6 +3,27 @@
 Upgrade Guide
 =============
 
+0.12.0-alpha
+------------
+
+MPI-parallel C++ functionality has its own include ``<openPMD/MPI.hpp>`` and ``MPISeries`` class  now.
+The old ``Series(std::string, AccessType, MPI_Comm)`` constructor has been deprecated and will be removed in a future version.
+New usage for MPI-parallel I/O:
+
+.. code-block:: cpp
+
+   #include <openPMD/MPI.hpp>  // new include
+
+   using namespace io = openPMD;
+
+   // ...
+   auto series = io::MPISeries(  // instead of io::Series
+       "path/to/data_files_%T.h5",
+       io::AccessType::READ_ONLY,
+       MPI_COMM_WORLD
+   );
+
+
 0.11.0-alpha
 ------------
 

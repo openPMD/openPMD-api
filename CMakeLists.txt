@@ -315,6 +315,9 @@ set(CORE_SOURCE
         src/backend/Writable.cpp
         src/benchmark/mpi/OneDimensionalBlockSlicer.cpp
         src/helper/list_series.cpp)
+if(openPMD_HAVE_MPI)
+    set(CORE_SOURCE ${CORE_SOURCE} src/MPISeries.cpp)  # TODO: MPI_SOURCE and own target
+endif()
 set(IO_SOURCE
         src/IO/AbstractIOHandlerHelper.cpp
         src/IO/DummyIOHandler.cpp
