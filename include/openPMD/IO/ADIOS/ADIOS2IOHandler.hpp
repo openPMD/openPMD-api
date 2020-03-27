@@ -31,7 +31,9 @@
 #include "openPMD/backend/Writable.hpp"
 
 #include <array>
+#include <exception>
 #include <future>
+#include <iostream>
 #include <memory> // shared_ptr
 #include <string>
 #include <unordered_map>
@@ -643,7 +645,19 @@ private:
 public:
     ~ADIOS2IOHandler( ) override
     {
-        this->flush( );
+        // we must not throw in a destructor
+        try
+        {
+            this->flush( );
+        }
+        catch( std::exception const & ex )
+        {
+            std::cerr << "[~ADIOS2IOHandler] An error occurred: " << ex.what() << std::endl;
+        }
+        catch( ... )
+        {
+            std::cerr << "[~ADIOS2IOHandler] An error occurred." << std::endl;
+        }
     }
 
 #else

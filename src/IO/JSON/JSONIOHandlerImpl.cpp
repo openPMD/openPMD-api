@@ -26,6 +26,9 @@
 #include "openPMD/Datatype.hpp"
 #include "openPMD/IO/JSON/JSONIOHandlerImpl.hpp"
 
+#include <exception>
+#include <iostream>
+
 
 namespace openPMD
 {
@@ -45,7 +48,19 @@ namespace openPMD
 
     JSONIOHandlerImpl::~JSONIOHandlerImpl( )
     {
-        flush( );
+        // we must not throw in a destructor
+        try
+        {
+            flush( );
+        }
+        catch( std::exception const & ex )
+        {
+            std::cerr << "[~JSONIOHandlerImpl] An error occurred: " << ex.what() << std::endl;
+        }
+        catch( ... )
+        {
+            std::cerr << "[~JSONIOHandlerImpl] An error occurred." << std::endl;
+        }
     }
 
 
