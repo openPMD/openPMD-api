@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     # printing a scalar value
     electrons = i.particles["electrons"]
-    charge = electrons["charge][openpmd_api.Mesh_Record_Component.SCALAR]
+    charge = electrons["charge"][openpmd_api.Mesh_Record_Component.SCALAR]
     print("And the first electron particle has a charge {}"
           .format(charge[0]))
     print("")
