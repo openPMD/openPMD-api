@@ -34,11 +34,10 @@ if __name__ == "__main__":
             print("\t {0}".format(r))
 
     # printing a scalar value
-    s_e = [ps for ps in i.particles][0]
-    s_c = [r for r in i.particles[s_e]][0]
-    charge=i.particles[s_e][s_c][openpmd_api.Mesh_Record_Component.SCALAR][0]
-    print("And first particle in particle species {0} has {1} = {2}"
-          .format(s_e, s_c, charge))
+    electrons = i.particles["electrons"]
+    charge = electrons["charge][openpmd_api.Mesh_Record_Component.SCALAR]
+    print("And the first electron particle has a charge {}"
+          .format(charge[0]))
     print("")
 
     E_x = i.meshes["E"]["x"]
