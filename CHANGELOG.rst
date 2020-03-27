@@ -20,6 +20,8 @@ Features
 Bug Fixes
 """""""""
 
+- ``flush()`` exceptions in ``~Series``/``~..IOHandler`` do not abort anymore #709
+
 Other
 """""
 

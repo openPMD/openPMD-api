@@ -26,6 +26,7 @@
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/Series.hpp"
 
+#include <exception>
 #include <iomanip>
 #include <iostream>
 #include <set>
@@ -104,7 +105,19 @@ Series::Series(std::string const& filepath,
 
 Series::~Series()
 {
-    flush();
+    // we must not throw in a destructor
+    try
+    {
+        flush();
+    }
+    catch( std::exception const & ex )
+    {
+        std::cerr << "[~Series] An error occurred: " << ex.what() << std::endl;
+    }
+    catch( ... )
+    {
+        std::cerr << "[~Series] An error occurred." << std::endl;
+    }
 }
 
 std::string
