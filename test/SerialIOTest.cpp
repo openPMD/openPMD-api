@@ -1092,6 +1092,25 @@ TEST_CASE( "deletion_test", "[serial]" )
 }
 
 inline
+void read_missing_throw_test(const std::string & backend)
+{
+    try
+    {
+        auto s = Series("this/does/definitely/not/exist." + backend, AccessType::READ_ONLY);
+    }
+    catch( ... )
+    {
+        std::cout << "read missing: successfully caught! " << backend << std::endl;
+    }
+}
+
+TEST_CASE( "read_missing_throw_test", "[serial]" )
+{
+    for (auto const & t: backends)
+        read_missing_throw_test(std::get<0>(t));
+}
+
+inline
 void optional_paths_110_test(const std::string & backend)
 {
     try
