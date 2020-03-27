@@ -56,11 +56,9 @@ int main()
         }
     }
 
-    std::pair<std::string, openPMD::ParticleSpecies> s_e = *i.particles.begin();
-    std::pair<std::string, openPMD::Record> s_c = *s_e.second.begin();
-    std::shared_ptr< double > charge = s_c.second[openPMD::RecordComponent::SCALAR].loadChunk<double>();
-    cout << "And first particle in particle species " << s_e.first
-         << " has " << s_c.first << " = " << charge.get()[0];
+    openPMD::ParticleSpecies electrons = i.particles["electrons"];
+    std::shared_ptr<double> charge = electrons["charge"][openPMD::RecordComponent::SCALAR].loadChunk<double>();
+    cout << "And the first electron particle has a charge = " << charge.get()[0];
     cout << '\n';
 
     MeshRecordComponent E_x = i.meshes["E"]["x"];
