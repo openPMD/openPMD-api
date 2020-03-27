@@ -346,7 +346,9 @@ set_target_properties(openPMD PROPERTIES
     CXX_EXTENSIONS OFF
     CXX_STANDARD_REQUIRED ON
     POSITION_INDEPENDENT_CODE ON
-    WINDOWS_EXPORT_ALL_SYMBOLS ON
+    # WINDOWS_EXPORT_ALL_SYMBOLS ON
+    CXX_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN ON
 )
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     target_compile_options(openPMD PUBLIC "/bigobj")
@@ -470,7 +472,7 @@ if(openPMD_HAVE_ADIOS1)
             CXX_STANDARD_REQUIRED ON
             POSITION_INDEPENDENT_CODE ON
             CXX_VISIBILITY_PRESET hidden
-            VISIBILITY_INLINES_HIDDEN 1
+            VISIBILITY_INLINES_HIDDEN ON
         )
         if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
             set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES
@@ -637,7 +639,10 @@ if(BUILD_TESTING)
         CXX_STANDARD_REQUIRED ON
         POSITION_INDEPENDENT_CODE ON
         WINDOWS_EXPORT_ALL_SYMBOLS ON
+        #CXX_VISIBILITY_PRESET hidden
+        #VISIBILITY_INLINES_HIDDEN ON
     )
+
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         target_compile_options(CatchRunner PUBLIC "/bigobj")
         target_compile_options(CatchMain   PUBLIC "/bigobj")

@@ -20,6 +20,8 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Export.hpp"
+
 #include <map>
 #include <string>
 
@@ -55,6 +57,7 @@ namespace openPMD
      *
      * @return std::string API version (dot separated)
      */
+    OPENPMDAPI_EXPORT
     std::string
     getVersion( );
 
@@ -62,6 +65,7 @@ namespace openPMD
      *
      * @return std::string openPMD standard version (dot separated)
      */
+    OPENPMDAPI_EXPORT
     std::string
     getStandard( );
 
@@ -69,6 +73,7 @@ namespace openPMD
      *
      * @return std::string minimum openPMD standard version (dot separated)
      */
+    OPENPMDAPI_EXPORT
     std::string
     getStandardMinimum( );
 
@@ -76,6 +81,7 @@ namespace openPMD
      *
      * @return std::map< std::string, bool > with variants such as backends
      */
+    OPENPMDAPI_EXPORT
     std::map< std::string, bool >
     getVariants( );
 } // namespace openPMD

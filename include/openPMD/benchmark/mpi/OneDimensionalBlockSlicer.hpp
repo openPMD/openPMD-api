@@ -22,12 +22,13 @@
 #pragma once
 
 #include "openPMD/Dataset.hpp"
+#include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/benchmark/mpi/BlockSlicer.hpp"
 
 
 namespace openPMD
 {
-    class OneDimensionalBlockSlicer :
+    class OPENPMDAPI_EXPORT OneDimensionalBlockSlicer :
         public BlockSlicer
     {
     public:

@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
@@ -36,7 +37,7 @@ namespace openPMD
  *
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#mesh-based-records
  */
-class Mesh : public BaseRecord< MeshRecordComponent >
+class OPENPMDAPI_EXPORT Mesh : public BaseRecord< MeshRecordComponent >
 {
     friend class Container< Mesh >;
     friend class Iteration;
@@ -194,9 +195,11 @@ inline T
 Mesh::timeOffset() const
 { return readFloatingpoint< T >("timeOffset"); }
 
+OPENPMDAPI_EXPORT
 std::ostream&
 operator<<(std::ostream&, openPMD::Mesh::Geometry const&);
 
+OPENPMDAPI_EXPORT
 std::ostream&
 operator<<(std::ostream&, openPMD::Mesh::DataOrder const&);
 

@@ -20,6 +20,8 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Export.hpp"
+
 #include <string>
 #include <vector>
 
@@ -38,6 +40,7 @@ static constexpr char const directory_separator = '/';
  * @param   path    Absolute or relative path to examine.
  * @return  true if the given path or file status corresponds to an existing directory, false otherwise.
  */
+OPENPMDAPI_EXPORT
 bool
 directory_exists(std::string const& path);
 
@@ -46,6 +49,7 @@ directory_exists(std::string const& path);
  * @param   path    Absolute or relative path to examine.
  * @return  true if the given path or file status corresponds to an existing file, false otherwise.
  */
+OPENPMDAPI_EXPORT
 bool
 file_exists(std::string const& path);
 
@@ -58,6 +62,7 @@ file_exists(std::string const& path);
  * @param   path    Absolute or relative path of directory to examine.
  * @return  Vector of all contained files and directories.
  */
+OPENPMDAPI_EXPORT
 std::vector< std::string >
 list_directory(std::string const& path );
 
@@ -67,6 +72,7 @@ list_directory(std::string const& path );
  * @param   path    Absolute or relative path to the new directory to create.
  * @return  true if a directory was created for the directory p resolves to, false otherwise.
  */
+OPENPMDAPI_EXPORT
 bool
 create_directories(std::string const& path);
 
@@ -76,6 +82,7 @@ create_directories(std::string const& path);
  * @param   path    Absolute or relative path to the directory to delete.
  * @return  true if the directory was deleted, false otherwise and if it did not exist.
  */
+OPENPMDAPI_EXPORT
 bool
 remove_directory(std::string const& path);
 
@@ -85,6 +92,7 @@ remove_directory(std::string const& path);
  * @param   path    Absolute or relative path to the file to delete.
  * @return  true if the file was deleted, false otherwise and if it did not exist.
  */
+OPENPMDAPI_EXPORT
 bool
 remove_file(std::string const& path);
 } // auxiliary

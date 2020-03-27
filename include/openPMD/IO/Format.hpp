@@ -20,6 +20,8 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Export.hpp"
+
 #include <string>
 
 
@@ -41,6 +43,7 @@ namespace openPMD
      * @param   filename    string containing the filename.
      * @return  Format that best fits the filename extension.
      */
+    OPENPMDAPI_EXPORT
     Format determineFormat(std::string const& filename);
 
     /** Determine the default filename suffix for a given storage format.
@@ -48,5 +51,6 @@ namespace openPMD
      * @param   f   File format to determine suffix for.
      * @return  String containing the default filename suffix
      */
+    OPENPMDAPI_EXPORT
     std::string suffix(Format f);
 } // openPMD

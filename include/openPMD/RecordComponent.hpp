@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/backend/BaseRecordComponent.hpp"
+#include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/Dataset.hpp"
 
@@ -75,7 +76,7 @@ struct IsContiguousContainer< std::array< T_Value, N > >
 };
 } // namespace traits
 
-class RecordComponent : public BaseRecordComponent
+class OPENPMDAPI_EXPORT RecordComponent : public BaseRecordComponent
 {
     template<
             typename T,

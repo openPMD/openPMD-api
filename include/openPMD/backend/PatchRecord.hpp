@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 
@@ -29,7 +30,7 @@
 
 namespace openPMD
 {
-class PatchRecord : public BaseRecord< PatchRecordComponent >
+class OPENPMDAPI_EXPORT PatchRecord : public BaseRecord< PatchRecordComponent >
 {
     friend class Container< PatchRecord >;
     friend class ParticleSpecies;

@@ -37,6 +37,7 @@ namespace openPMD
 class Attributable;
 class Writable;
 
+OPENPMDAPI_EXPORT
 Writable*
 getWritable(Attributable*);
 

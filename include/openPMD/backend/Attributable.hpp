@@ -23,7 +23,9 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Writable.hpp"
+#include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/auxiliary/OutOfRangeMsg.hpp"
+
 
 #include <exception>
 #include <map>
@@ -47,7 +49,7 @@ namespace traits
 } // traits
 class AbstractFilePosition;
 
-class no_such_attribute_error : public std::runtime_error
+class OPENPMDAPI_EXPORT no_such_attribute_error : public std::runtime_error
 {
 public:
     no_such_attribute_error(std::string const& what_arg)
@@ -62,7 +64,7 @@ public:
  * Mandatory and user-defined Attributes and their data for every object in the
  * openPMD hierarchy are stored and managed through this class.
  */
-class Attributable
+class OPENPMDAPI_EXPORT Attributable
 {
     using A_MAP = std::map< std::string, Attribute >;
     friend Writable* getWritable(Attributable*);
