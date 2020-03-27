@@ -27,7 +27,10 @@ Other
 
 - ADIOS2: require version 2.7.0+ #927
 - pybind11: require version 2.6.2+ #977
-- CMake: Expose Python LTO Control #980
+- CMake:
+
+  - Expose Python LTO Control #980
+  - Require only C-in-CXX MPI component #710
 
 
 0.13.4
