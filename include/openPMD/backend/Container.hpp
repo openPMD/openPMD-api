@@ -75,6 +75,7 @@ class Container : public Attributable
     friend class Iteration;
     friend class ParticleSpecies;
     friend class Series;
+    friend class MPISeries;
 
 public:
     using key_type = typename InternalContainer::key_type;

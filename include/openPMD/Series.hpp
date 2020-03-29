@@ -22,6 +22,7 @@
 
 #include "openPMD/config.hpp"
 #include "openPMD/auxiliary/Deprecated.hpp"
+#include "openPMD/auxiliary/ParsedInput.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
@@ -41,6 +42,9 @@
 #ifndef OPENPMD_private
 #   define OPENPMD_private private
 #endif
+#ifndef OPENPMD_protected
+#   define OPENPMD_protected protected
+#endif
 
 
 namespace openPMD
@@ -58,6 +62,7 @@ class Series : public Attributable
 
 public:
 #if openPMD_HAVE_MPI
+    OPENPMDAPI_DEPRECATED("Please include <openPMD/MPI.h> and use the class MPISeries for MPI-parallel I/O.")
     Series(std::string const& filepath,
            AccessType at,
            MPI_Comm comm);
@@ -252,10 +257,19 @@ public:
 
     Container< Iteration, uint64_t > iterations;
 
+OPENPMD_protected:
+    /** This constructor is only for derived Series-types
+     *
+     * calling this will skip the creation of an ioHandler
+     */
+    Series();
+
+    std::unique_ptr< auxiliary::ParsedInput > parseInput(std::string);
+    void init(std::shared_ptr< AbstractIOHandler >, std::unique_ptr< auxiliary::ParsedInput >);
+
+    std::shared_ptr< IterationEncoding > m_iterationEncoding;
+
 OPENPMD_private:
-    struct ParsedInput;
-    std::unique_ptr< ParsedInput > parseInput(std::string);
-    void init(std::shared_ptr< AbstractIOHandler >, std::unique_ptr< ParsedInput >);
     void initDefaults();
     void flushFileBased();
     void flushGroupBased();
@@ -268,7 +282,6 @@ OPENPMD_private:
 
     static constexpr char const * const BASEPATH = "/data/%T/";
 
-    std::shared_ptr< IterationEncoding > m_iterationEncoding;
     std::shared_ptr< std::string > m_name;
     std::shared_ptr< Format > m_format;
 

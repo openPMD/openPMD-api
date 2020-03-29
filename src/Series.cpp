@@ -69,17 +69,6 @@ std::string cleanFilename(std::string const& filename, Format f);
 std::function< std::tuple< bool, int >(std::string const&) >
 matcher(std::string const& prefix, int padding, std::string const& postfix, Format f);
 
-struct Series::ParsedInput
-{
-    std::string path;
-    std::string name;
-    Format format;
-    IterationEncoding iterationEncoding;
-    std::string filenamePrefix;
-    std::string filenamePostfix;
-    int filenamePadding;
-};  //ParsedInput
-
 #if openPMD_HAVE_MPI
 Series::Series(std::string const& filepath,
                AccessType at,
@@ -101,6 +90,10 @@ Series::Series(std::string const& filepath,
     auto input = parseInput(filepath);
     auto handler = createIOHandler(input->path, at, input->format);
     init(handler, std::move(input));
+}
+
+Series::Series()
+{
 }
 
 Series::~Series()
@@ -374,10 +367,10 @@ Series::flush()
     IOHandler->flush();
 }
 
-std::unique_ptr< Series::ParsedInput >
+std::unique_ptr< auxiliary::ParsedInput >
 Series::parseInput(std::string filepath)
 {
-    std::unique_ptr< Series::ParsedInput > input{new Series::ParsedInput};
+    std::unique_ptr< auxiliary::ParsedInput > input{new auxiliary::ParsedInput};
 
 #ifdef _WIN32
     if( auxiliary::contains(filepath, '/') )
@@ -475,7 +468,7 @@ Series::parseInput(std::string filepath)
 
 void
 Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
-             std::unique_ptr< Series::ParsedInput > input)
+             std::unique_ptr< auxiliary::ParsedInput > input)
 {
     m_writable->IOHandler = ioHandler;
     IOHandler = m_writable->IOHandler.get();

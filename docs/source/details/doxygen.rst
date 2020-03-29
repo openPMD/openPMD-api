@@ -14,7 +14,8 @@ Public Headers
 ===========================  =======================================================
 Include                      Description
 ===========================  =======================================================
-``<openPMD/openPMD.hpp>``    Public facade header (serial and MPI)
+``<openPMD/openPMD.hpp>``    Public facade header (serial)
+``<openPMD/MPI.hpp>``        Public facade header (MPI)
 ``<openPMD/benchmark/...>``  Optional :ref:`benchmark <utilities-benchmark>` helpers
 ===========================  =======================================================
 
