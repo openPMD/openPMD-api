@@ -1236,15 +1236,11 @@ namespace detail
     {
         (void)impl;
         std::set< std::string > alreadyConfigured;
-        // TODO if changing TracingJSON to return references upon operator[](),
-        // change this to a reference
         auto engineConfig = impl.config( ADIOS2Defaults::str_engine );
         if( !engineConfig.json().is_null() )
         {
             m_IO.SetEngine(
                 impl.config( ADIOS2Defaults::str_type, engineConfig ).json() );
-            // TODO if changing TracingJSON to return references upon
-            // operator[](), change this to a reference
             auto params =
                 impl.config( ADIOS2Defaults::str_params, engineConfig );
             params.declareFullyRead();

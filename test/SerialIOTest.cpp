@@ -3,23 +3,23 @@
 #   define OPENPMD_private public
 #   define OPENPMD_protected public
 #endif
-#include "openPMD/openPMD.hpp"
-#include "openPMD/auxiliary/Filesystem.hpp"
-
-#include <catch2/catch.hpp>
-
-#include <iostream>
 #include <algorithm>
-#include <sstream>
-#include <string>
-#include <vector>
 #include <array>
 #include <cmath>
-#include <memory>
+#include <iostream>
 #include <limits>
 #include <list>
+#include <memory>
 #include <numeric>
+#include <sstream>
+#include <string>
 #include <tuple>
+#include <vector>
+
+#include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/Environment.hpp"
+#include "openPMD/openPMD.hpp"
+#include <catch2/catch.hpp>
 
 using namespace openPMD;
 
@@ -2323,6 +2323,11 @@ TEST_CASE( "no_serial_adios1", "[serial][adios]")
 #if openPMD_HAVE_ADIOS2
 TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
 {
+    if( auxiliary::getEnvString( "OPENPMD_BP_BACKEND", "NOT_SET" ) == "ADIOS1" )
+    {
+        // run this test for ADIOS2 only
+        return;
+    }
     std::string writeConfigBP3 = R"END(
 {
   "adios2": {
