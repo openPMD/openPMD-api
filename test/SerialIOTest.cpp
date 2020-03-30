@@ -181,8 +181,10 @@ void constant_scalar(std::string file_ending)
         // constant scalar
         Series s = Series("../samples/constant_scalar." + file_ending, AccessType::CREATE);
         auto rho = s.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR];
+        REQUIRE(s.iterations[1].meshes["rho"].scalar());
         rho.resetDataset(Dataset(Datatype::CHAR, {1, 2, 3}));
         rho.makeConstant(static_cast< char >('a'));
+        REQUIRE(rho.constant());
 
         // mixed constant/non-constant
         auto E_x = s.iterations[1].meshes["E"]["x"];
@@ -235,12 +237,17 @@ void constant_scalar(std::string file_ending)
         REQUIRE(s.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR].getAttribute("shape").get< std::vector< uint64_t > >() == Extent{1, 2, 3});
         REQUIRE(s.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR].containsAttribute("value"));
         REQUIRE(s.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR].getAttribute("value").get< char >() == 'a');
+        REQUIRE(s.iterations[1].meshes["rho"].scalar());
+        REQUIRE(s.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR].constant());
         REQUIRE(s.iterations[1].meshes.count("E") == 1);
+        REQUIRE(!s.iterations[1].meshes["E"].scalar());
         REQUIRE(s.iterations[1].meshes["E"].count("x") == 1);
+        REQUIRE(s.iterations[1].meshes["E"]["x"].constant());
         REQUIRE(s.iterations[1].meshes["E"]["x"].containsAttribute("shape"));
         REQUIRE(s.iterations[1].meshes["E"]["x"].getAttribute("shape").get< std::vector< uint64_t > >() == Extent{1, 2, 3});
         REQUIRE(s.iterations[1].meshes["E"]["x"].containsAttribute("value"));
         REQUIRE(s.iterations[1].meshes["E"]["x"].getAttribute("value").get< float >() == static_cast< float >(13.37));
+        REQUIRE(!s.iterations[1].meshes["E"]["y"].constant());
         REQUIRE(s.iterations[1].meshes["E"]["y"].getExtent() == Extent{1, 2, 3});
         REQUIRE(s.iterations[1].meshes["E"].count("y") == 1);
         REQUIRE(!s.iterations[1].meshes["E"]["y"].containsAttribute("shape"));
@@ -284,6 +291,11 @@ void constant_scalar(std::string file_ending)
         REQUIRE( E_mesh.axisLabels() == axisLabels );
         // REQUIRE( E_mesh.unitDimension() == unitDimensions );
         REQUIRE( E_mesh.timeOffset< double >() == timeOffset );
+
+        auto E_x_value = s.iterations[1].meshes["E"]["x"].loadChunk< float >();
+        s.flush();
+        for( int idx = 0; idx < 1*2*3; ++idx )
+            REQUIRE( E_x_value.get()[idx] == static_cast< float >(13.37) );
     }
 }
 
@@ -825,10 +837,12 @@ void fileBased_write_test(const std::string & backend)
             auto& pos = it.particles.at("e").at("position");
             REQUIRE(pos.timeOffset< float >() == 0.f);
             REQUIRE(pos.unitDimension() == udim);
+            REQUIRE(!pos.scalar());
             auto& pos_x = pos.at("x");
             REQUIRE(pos_x.unitSI() == 1.);
             REQUIRE(pos_x.getExtent() == ext);
             REQUIRE(pos_x.getDatatype() == Datatype::DOUBLE);
+            REQUIRE(!pos_x.constant());
             auto& posOff = it.particles.at("e").at("positionOffset");
             REQUIRE(posOff.timeOffset< float >() == 0.f);
             REQUIRE(posOff.unitDimension() == udim);

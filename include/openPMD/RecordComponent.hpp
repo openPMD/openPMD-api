@@ -105,11 +105,19 @@ public:
     uint8_t getDimensionality() const;
     Extent getExtent() const;
 
+    /** Create a dataset with regular extent and constant value
+     *
+     * In a constant record component, the value for each date in its extent is
+     * the same. Implemented by storing only a constant value as meta-data.
+     *
+     * @tparam T type of the stored value
+     * @return A reference to this RecordComponent.
+     */
     template< typename T >
     RecordComponent& makeConstant(T);
 
-    /**
-     * Create a dataset with zero extent in each dimension.
+    /** Create a dataset with zero extent in each dimension.
+     *
      * Implemented by creating a constant record component with
      * a dummy value (default constructor of the respective datatype).
      * @param dimensions The number of dimensions. Must be greater than
@@ -118,6 +126,15 @@ public:
      */
     template< typename T >
     RecordComponent& makeEmpty( uint8_t dimensions );
+
+    /** Returns true if this is an empty record component
+     *
+     * An empty record component has a defined dimensionality but zero extent
+     * and no value(s) stored in it.
+     *
+     * @return true if an empty record component
+     */
+    bool empty() const;
 
     /** Load and allocate a chunk of data
      *
@@ -288,7 +305,7 @@ RecordComponent::loadChunk(std::shared_ptr< T > data, Offset o, Extent e, double
     if( !data )
         throw std::runtime_error("Unallocated pointer passed during chunk loading.");
 
-    if( *m_isConstant )
+    if( constant() )
     {
         uint64_t numPoints = 1u;
         for( auto const& dimensionSize : extent )
@@ -313,9 +330,9 @@ template< typename T >
 inline void
 RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
-    if( *m_isConstant )
+    if( constant() )
         throw std::runtime_error("Chunks cannot be written for a constant RecordComponent.");
-    if( *m_isEmpty )
+    if( empty() )
         throw std::runtime_error("Chunks cannot be written for an empty RecordComponent.");
     if( !data )
 throw std::runtime_error("Unallocated pointer passed during chunk store.");

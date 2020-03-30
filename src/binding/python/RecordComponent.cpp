@@ -434,6 +434,7 @@ void init_RecordComponent(py::module &m) {
 
         .def_property_readonly("ndim", &RecordComponent::getDimensionality)
         .def_property_readonly("shape", &RecordComponent::getExtent)
+        .def_property_readonly("empty", &RecordComponent::empty)
 
         // buffer types
         .def("make_constant", [](RecordComponent & rc, py::buffer & a) {

@@ -328,6 +328,11 @@ class APITest(unittest.TestCase):
         ms["pybool"][SCALAR].reset_dataset(DS(DT.BOOL, extent))
         ms["pybool"][SCALAR].make_constant(False)
 
+        self.assertTrue(ms["char"][SCALAR].constant)
+        self.assertTrue(ms["pyint"][SCALAR].constant)
+        self.assertTrue(ms["pyfloat"][SCALAR].constant)
+        self.assertTrue(ms["pybool"][SCALAR].constant)
+
         if found_numpy:
             ms["int16"][SCALAR].reset_dataset(DS(np.dtype("int16"), extent))
             ms["int16"][SCALAR].make_constant(np.int16(234))
@@ -364,12 +369,36 @@ class APITest(unittest.TestCase):
         o = [1, 2, 3]
         e = [1, 1, 1]
 
+        self.assertTrue(ms["char"].scalar)
+        self.assertTrue(ms["pyint"].scalar)
+        self.assertTrue(ms["pyfloat"].scalar)
+        self.assertTrue(ms["pybool"].scalar)
+
+        self.assertTrue(ms["char"][SCALAR].constant)
+        self.assertTrue(ms["pyint"][SCALAR].constant)
+        self.assertTrue(ms["pyfloat"][SCALAR].constant)
+        self.assertTrue(ms["pybool"][SCALAR].constant)
+
         self.assertEqual(ms["char"][SCALAR].load_chunk(o, e), ord('c'))
         self.assertEqual(ms["pyint"][SCALAR].load_chunk(o, e), 13)
         self.assertEqual(ms["pyfloat"][SCALAR].load_chunk(o, e), 3.1416)
         self.assertEqual(ms["pybool"][SCALAR].load_chunk(o, e), False)
 
         if found_numpy:
+            self.assertTrue(ms["int16"].scalar)
+            self.assertTrue(ms["int32"].scalar)
+            self.assertTrue(ms["int64"].scalar)
+            self.assertTrue(ms["uint16"].scalar)
+            self.assertTrue(ms["uint32"].scalar)
+            self.assertTrue(ms["uint64"].scalar)
+            self.assertTrue(ms["single"].scalar)
+            self.assertTrue(ms["double"].scalar)
+            self.assertTrue(ms["longdouble"].scalar)
+
+            self.assertTrue(ms["int32"][SCALAR].constant)
+            self.assertTrue(ms["uint64"][SCALAR].constant)
+            self.assertTrue(ms["double"][SCALAR].constant)
+
             self.assertTrue(ms["int16"][SCALAR].load_chunk(o, e).dtype ==
                             np.dtype('int16'))
             self.assertTrue(ms["int32"][SCALAR].load_chunk(o, e).dtype ==
@@ -563,10 +592,17 @@ class APITest(unittest.TestCase):
         E = i.meshes["E"]
         electrons = i.particles["electrons"]
 
+        self.assertTrue(not E.scalar)
+        self.assertTrue(electrons["weighting"].scalar)
+
         # Get some record components
         E_x = E["x"]
         pos_y = electrons["position"]["y"]
         w = electrons["weighting"][io.Record_Component.SCALAR]
+
+        self.assertTrue(not E_x.constant)
+        self.assertTrue(not pos_y.constant)
+        self.assertTrue(not w.constant)
 
         if found_numpy:
             np.testing.assert_allclose(electrons["position"].unit_dimension,

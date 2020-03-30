@@ -204,7 +204,7 @@ Mesh::flush_impl(std::string const& name)
     {
         if( !written )
         {
-            if( *m_containsScalar )
+            if( scalar() )
             {
                 MeshRecordComponent& mrc = at(RecordComponent::SCALAR);
                 mrc.m_writable->parent = parent;
@@ -317,7 +317,7 @@ Mesh::read()
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'gridUnitSI'");
 
-    if( *m_containsScalar )
+    if( scalar() )
     {
         /* using operator[] will incorrectly update parent */
         this->at(MeshRecordComponent::SCALAR).read();

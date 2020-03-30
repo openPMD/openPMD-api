@@ -35,11 +35,15 @@ using namespace openPMD;
 
 void init_BaseRecord(py::module &m) {
     py::class_<BaseRecord< RecordComponent >, Container< RecordComponent > >(m, "Base_Record_Record_Component")
-        .def_property_readonly("unit_dimension", &BaseRecord< RecordComponent >::unitDimension);
+        .def_property_readonly("unit_dimension", &BaseRecord< RecordComponent >::unitDimension)
+        .def_property_readonly("scalar", &BaseRecord< RecordComponent >::scalar);
     py::class_<BaseRecord< MeshRecordComponent >, Container< MeshRecordComponent > >(m, "Base_Record_Mesh_Record_Component")
-        .def_property_readonly("unit_dimension", &BaseRecord< MeshRecordComponent >::unitDimension);
+        .def_property_readonly("unit_dimension", &BaseRecord< MeshRecordComponent >::unitDimension)
+        .def_property_readonly("scalar", &BaseRecord< MeshRecordComponent >::scalar);
     py::class_<BaseRecord< BaseRecordComponent >, Container< BaseRecordComponent > >(m, "Base_Record_Base_Record_Component")
-        .def_property_readonly("unit_dimension", &BaseRecord< BaseRecordComponent >::unitDimension);
+        .def_property_readonly("unit_dimension", &BaseRecord< BaseRecordComponent >::unitDimension)
+        .def_property_readonly("scalar", &BaseRecord< BaseRecordComponent >::scalar);
     py::class_<BaseRecord< PatchRecordComponent >, Container< PatchRecordComponent > >(m, "Base_Record_Patch_Record_Component")
-        .def_property_readonly("unit_dimension", &BaseRecord< PatchRecordComponent >::unitDimension);
+        .def_property_readonly("unit_dimension", &BaseRecord< PatchRecordComponent >::unitDimension)
+        .def_property_readonly("scalar", &BaseRecord< PatchRecordComponent >::scalar);
 }
