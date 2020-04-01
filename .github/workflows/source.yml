@@ -6,7 +6,7 @@ jobs:
   style:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Non-ASCII Characters
       run: .github/workflows/source/hasNonASCII
     - name: TABs
@@ -21,7 +21,7 @@ jobs:
   static-analysis:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: pyflakes
       run: |
         python3 -m pip install -U pyflakes
@@ -30,7 +30,7 @@ jobs:
   documentation:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - uses: s-weigand/setup-conda@v1
       with:
         update-conda: true
