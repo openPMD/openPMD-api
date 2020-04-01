@@ -164,7 +164,7 @@ jobs:
 
 - job: linux_spack_nompi_adios2master
   displayName: Ubuntu spack w/o MPI ADIOS2@master
-  timeoutInMinutes: 120
+  timeoutInMinutes: 180
   pool:
     vmImage: ubuntu-latest
   steps:
