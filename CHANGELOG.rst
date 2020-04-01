@@ -28,7 +28,10 @@ Other
 """""
 
 - separate header for export macros #704
-- CI: migration to travis-ci.com / GitHub app #703
+- CI:
+
+  - migration to travis-ci.com / GitHub app #703
+  - migrate to GitHub checkout action v2 #712
 - ``listSeries``: remove unused parameters in try-catch #706
 
 
