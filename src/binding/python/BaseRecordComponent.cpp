@@ -46,6 +46,7 @@ void init_BaseRecordComponent(py::module &m) {
         .def("reset_datatype", &BaseRecordComponent::resetDatatype)
 
         .def_property_readonly("unit_SI", &BaseRecordComponent::unitSI)
+        .def_property_readonly("constant", &BaseRecordComponent::constant)
         .def_property_readonly("dtype", [](BaseRecordComponent & brc) {
             return dtype_to_numpy( brc.getDatatype() );
         })

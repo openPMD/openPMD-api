@@ -17,6 +17,8 @@ Changes to "0.11.1-alpha"
 Features
 """"""""
 
+- ``Record(Component)``: ``scalar()``, ``constant()``, ``empty()`` #711
+
 Bug Fixes
 """""""""
 

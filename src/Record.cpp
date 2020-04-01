@@ -56,7 +56,7 @@ Record::flush_impl(std::string const& name)
     {
         if( !written )
         {
-            if( *m_containsScalar )
+            if( scalar() )
             {
                 RecordComponent& rc = at(RecordComponent::SCALAR);
                 rc.m_writable->parent = parent;
@@ -87,7 +87,7 @@ Record::flush_impl(std::string const& name)
 void
 Record::read()
 {
-    if( *m_containsScalar )
+    if( scalar() )
     {
         /* using operator[] will incorrectly update parent */
         this->at(RecordComponent::SCALAR).read();

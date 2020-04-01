@@ -577,9 +577,7 @@ TEST_CASE( "wrapper_test", "[core]" )
     o.iterations[4].meshes["E"]["y"].resetDataset(Dataset(Datatype::DOUBLE, {1}));
     o.iterations[4].meshes["E"]["y"].makeConstant(value);
     MeshRecordComponent mrc2 = o.iterations[4].meshes["E"]["y"];
-#if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(*mrc2.m_isConstant);
-#endif
+    REQUIRE(mrc2.constant());
     double loadData;
     mrc2.loadChunk(shareRaw(&loadData), {0}, {1});
     o.flush();

@@ -33,10 +33,6 @@ namespace openPMD
 {
 class BaseRecordComponent : public Attributable
 {
-    template< typename T_elem >
-    friend
-    class BaseRecord;
-
     template<
         typename T,
         typename T_key,
@@ -53,6 +49,15 @@ public:
     BaseRecordComponent& resetDatatype(Datatype);
 
     Datatype getDatatype() const;
+
+    /** Returns true if this is a constant record component
+     *
+     * In a constant record component, the value for each date in its extent is
+     * the same.
+     *
+     * @return true if a constant record component
+     */
+    bool constant() const;
 
 OPENPMD_protected:
     BaseRecordComponent();

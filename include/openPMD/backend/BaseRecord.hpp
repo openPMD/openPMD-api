@@ -65,6 +65,12 @@ public:
 
     virtual std::array< double, 7 > unitDimension() const;
 
+    /** Returns true if this record only contains a single component
+     *
+     * @return true if a record with only a single component
+     */
+    bool scalar() const;
+
 protected:
     BaseRecord();
     void readBase();
@@ -110,13 +116,13 @@ BaseRecord< T_elem >::operator[](key_type const& key)
         return it->second;
     else
     {
-        bool scalar = (key == RecordComponent::SCALAR);
-        if( (scalar && !Container< T_elem >::empty() && !*m_containsScalar) || (*m_containsScalar && !scalar) )
+        bool const keyScalar = (key == RecordComponent::SCALAR);
+        if( (keyScalar && !Container< T_elem >::empty() && !scalar()) || (scalar() && !keyScalar) )
             throw std::runtime_error("A scalar component can not be contained at "
                                      "the same time as one or more regular components.");
 
         mapped_type& ret = Container< T_elem >::operator[](key);
-        if( scalar )
+        if( keyScalar )
         {
             *m_containsScalar = true;
             ret.m_writable->parent = this->m_writable->parent;
@@ -135,13 +141,13 @@ BaseRecord< T_elem >::operator[](key_type&& key)
         return it->second;
     else
     {
-        bool scalar = (key == RecordComponent::SCALAR);
-        if( (scalar && !Container< T_elem >::empty() && !*m_containsScalar) || (*m_containsScalar && !scalar) )
+        bool const keyScalar = (key == RecordComponent::SCALAR);
+        if( (keyScalar && !Container< T_elem >::empty() && !scalar()) || (scalar() && !keyScalar) )
             throw std::runtime_error("A scalar component can not be contained at "
                                      "the same time as one or more regular components.");
 
         mapped_type& ret = Container< T_elem >::operator[](std::move(key));
-        if( scalar )
+        if( keyScalar )
         {
             *m_containsScalar = true;
             ret.m_writable->parent = this->m_writable->parent;
@@ -155,9 +161,9 @@ template< typename T_elem >
 inline typename BaseRecord< T_elem >::size_type
 BaseRecord< T_elem >::erase(key_type const& key)
 {
-    bool scalar = (key == RecordComponent::SCALAR);
+    bool const keyScalar = (key == RecordComponent::SCALAR);
     size_type res;
-    if( !scalar || (scalar && *this->at(key).m_isConstant) )
+    if( !keyScalar || (keyScalar && this->at(key).constant()) )
         res = Container< T_elem >::erase(key);
     else
     {
@@ -172,7 +178,7 @@ BaseRecord< T_elem >::erase(key_type const& key)
         res = Container< T_elem >::erase(key);
     }
 
-    if( scalar )
+    if( keyScalar )
     {
         this->written = false;
         this->m_writable->abstractFilePosition.reset();
@@ -185,9 +191,9 @@ template< typename T_elem >
 inline typename BaseRecord< T_elem >::iterator
 BaseRecord< T_elem >::erase(iterator res)
 {
-    bool scalar = (res->first == RecordComponent::SCALAR);
+    bool const keyScalar = (res->first == RecordComponent::SCALAR);
     iterator ret;
-    if( !scalar || (scalar && *this->at(res->first).m_isConstant) )
+    if( !keyScalar || (keyScalar && this->at(res->first).constant()) )
         ret = Container< T_elem >::erase(res);
     else
     {
@@ -202,7 +208,7 @@ BaseRecord< T_elem >::erase(iterator res)
         ret = Container< T_elem >::erase(res);
     }
 
-    if( scalar )
+    if( keyScalar )
     {
         this->written = false;
         this->m_writable->abstractFilePosition.reset();
@@ -216,6 +222,13 @@ inline std::array< double, 7 >
 BaseRecord< T_elem >::unitDimension() const
 {
     return Attributable::getAttribute("unitDimension").template get< std::array< double, 7 > >();
+}
+
+template< typename T_elem >
+inline bool
+BaseRecord< T_elem >::scalar() const
+{
+    return *m_containsScalar;
 }
 
 template< typename T_elem >

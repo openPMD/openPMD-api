@@ -49,4 +49,10 @@ BaseRecordComponent::getDatatype() const
 {
     return m_dataset->dtype;
 }
-} // openPMD
+
+bool
+BaseRecordComponent::constant() const
+{
+    return *m_isConstant;
+}
+} // namespace openPMD

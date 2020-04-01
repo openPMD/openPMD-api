@@ -98,6 +98,12 @@ RecordComponent::makeEmpty( Dataset d )
     return *this;
 }
 
+bool
+RecordComponent::empty() const
+{
+    return *m_isEmpty;
+}
+
 void
 RecordComponent::flush(std::string const& name)
 {
@@ -112,7 +118,7 @@ RecordComponent::flush(std::string const& name)
     {
         if( !written )
         {
-            if( *m_isConstant )
+            if( constant() )
             {
                 Parameter< Operation::CREATE_PATH > pCreate;
                 pCreate.path = name;
@@ -162,7 +168,7 @@ RecordComponent::readBase()
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
 
-    if( *m_isConstant )
+    if( constant() )
     {
         aRead.name = "value";
         IOHandler->enqueue(IOTask(this, aRead));
