@@ -46,7 +46,7 @@ namespace openPMD
     /**
      * Class representing a benchmark.
      * Allows to configure a benchmark and execute it.
-     * @tparam DatasetFillerProvide Functor type to create a DatasetFiller with
+     * @tparam DatasetFillerProvider Functor type to create a DatasetFiller with
      * the requested type. Should have a templated operator()() returning a value
      * that can be dynamically casted to a std::shared_ptr<openPMD::DatasetFiller<T>>.
      */
@@ -91,10 +91,13 @@ namespace openPMD
         );
 
         /**
-         * @param compression Compression string.
-         * @param compressionLevel
+         * @param compression Compression string, leave empty to disable commpression.
+         * @param compressionLevel Compression level.
          * @param backend Backend to use, specified by filename extension (eg "bp" or "h5").
          * @param dt Type of data to write and read.
+         * @param iterations The number of iterations to write and read for each
+         * compression strategy. The DatasetFiller functor will be called for each
+         * iteration, so it should create sufficient data for one iteration.
          * @param threadSize Number of threads to use.
          */
         void addConfiguration(
@@ -102,17 +105,20 @@ namespace openPMD
             uint8_t compressionLevel,
             std::string backend,
             Datatype dt,
-            typename decltype( Series::iterations)::key_type iterations,
+            typename decltype( Series::iterations )::key_type iterations,
             int threadSize
         );
 
         /**
          * Version of addConfiguration() that automatically sets the number of used
          * threads to the MPI size.
-         * @param compression
-         * @param compressionLevel
-         * @param backend
-         * @param dt
+         * @param compression Compression string, leave empty to disable commpression.
+         * @param compressionLevel Compression level.
+         * @param backend Backend to use, specified by filename extension (eg "bp" or "h5").
+         * @param dt Type of data to write and read.
+         * @param iterations The number of iterations to write and read for each
+         * compression strategy. The DatasetFiller functor will be called for each
+         * iteration, so it should create sufficient data for one iteration.
          */
         void addConfiguration(
             std::string compression,
@@ -129,9 +135,7 @@ namespace openPMD
          * Main function for running a benchmark. The benchmark is repeated for all
          * previously requested compressions strategies, backends and thread sizes.
          * @tparam Clock Clock type to use.
-         * @param iterations The number of iterations to write and read for each
-         * compression strategy. The DatasetFiller functor will be called for each
-         * iteration, so it should create sufficient data for one iteration.
+         * @param rootThread Rank at which the report will be read.
          * @return A report about the time needed for writing and reading under each
          * compression strategy.
          */
@@ -167,6 +171,12 @@ namespace openPMD
             Extent
         > slice( int size );
 
+        /**
+         * @brief Struct used by MPIBenchmark::runBenchmark in switchType.
+         *        Does the actual heavy lifting.
+         *
+         * @tparam Clock Clock type to use.
+         */
         template< typename Clock >
         struct BenchmarkExecution
         {
@@ -178,11 +188,15 @@ namespace openPMD
             {}
 
 
-            /**
+        /**
          * Execute a single read benchmark.
-         * @tparam Clock Clock type to use.
+         * @tparam T Type of the dataset to write.
          * @param compression Compression to use.
          * @param level Compression level to use.
+         * @param offset Local offset of the chunk to write.
+         * @param extent Local extent of the chunk to write.
+         * @param extension File extension to control the openPMD backend.
+         * @param datasetFiller The DatasetFiller to provide data for writing.
          * @param iterations The number of iterations to write.
          * @return The time passed.
          */
@@ -201,7 +215,10 @@ namespace openPMD
 
             /**
              * Execute a single read benchmark.
-             * @tparam Clock Clock type to use.
+             * @tparam T Type of the dataset to read.
+             * @param offset Local offset of the chunk to read.
+             * @param extent Local extent of the chunk to read.
+             * @param extension File extension to control the openPMD backend.
              * @param iterations The number of iterations to read.
              * @return The time passed.
              */
