@@ -1042,8 +1042,9 @@ endif()
 #
 message("")
 message("openPMD build configuration:")
-message("  library Version: ${openPMD_VERSION}")
+message("  Library Version: ${openPMD_VERSION}")
 message("  openPMD Standard: ${openPMD_STANDARD_VERSION}")
+message("  Generator: ${CMAKE_GENERATOR}")
 message("  C++ Compiler: ${CMAKE_CXX_COMPILER_ID} "
                         "${CMAKE_CXX_COMPILER_VERSION} "
                         "${CMAKE_CXX_COMPILER_WRAPPER}")

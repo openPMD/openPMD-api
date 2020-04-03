@@ -26,7 +26,7 @@ RUN        yum check-update -y \
 #ENV        PATH=/opt/cmake/bin:${PATH}
 RUN        for PY_TARGET in ${PY_VERSIONS}; do \
                PY_BIN=/opt/python/cp${PY_TARGET:0:2}-cp${PY_TARGET}/bin/python \
-               && ${PY_BIN} -m pip install setuptools cmake; \
+               && ${PY_BIN} -m pip install setuptools cmake scikit-build ninja; \
            done;
 
 RUN        curl -sLo hdf5-1.10.5.tar.gz https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.5/src/hdf5-1.10.5.tar.gz \
@@ -94,9 +94,10 @@ RUN        cd /opt/src; \
            for PY_TARGET in ${PY_VERSIONS}; do \
                PY_BIN=/opt/python/cp${PY_TARGET:0:2}-cp${PY_TARGET}/bin/python \
                && CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/" \
-               && PATH=${CMAKE_BIN}:${PATH} ${PY_BIN} setup.py bdist_wheel \
+               && PATH=${CMAKE_BIN}:${PATH} ${PY_BIN} \
+                  setup.py bdist_wheel -- -DCMAKE_INSTALL_LIBDIR=lib -- -j2 \
                && ${PY_BIN} setup.py clean --all \
-               && rm -rf openPMD_api.egg-info/; \
+               && rm -rf openPMD_api.egg-info/ _skbuild/; \
            done; \
            ls dist/
 
@@ -139,7 +140,7 @@ RUN        ls -hal /usr/local/lib/python3.7/dist-packages/
 # RUN        objdump -x /usr/local/lib/python3.7/dist-packages/openpmd_api.cpython-37m-x86_64-linux-gnu.so | grep RPATH
 RUN        ldd /usr/local/lib/python3.7/dist-packages/openpmd_api.cpython-37m-x86_64-linux-gnu.so
 RUN        python3 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
-#RUN        openpmd-ls --help
+RUN        /root/.local/bin/openpmd-ls --help
 #RUN        echo "* soft core 100000" >> /etc/security/limits.conf && \
 #           python3 -c "import openpmd_api as io"; \
 #           gdb -ex bt -c core
@@ -155,7 +156,9 @@ RUN        python3.8 --version \
            && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
            && python3.8 get-pip.py \
            && python3.8 -m pip install openPMD_api-*-cp38-cp38-manylinux2010_x86_64.whl
+RUN        find / -name "openpmd*"
 RUN        python3.8 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
+RUN        /root/.local/bin/openpmd-ls --help
 
 # test in fresh env: Ubuntu:18.04 + Python 3.6
 FROM       ubuntu:18.04
@@ -181,8 +184,7 @@ RUN        python3 --version \
            && python3 -m pip install -U pip \
            && python3 -m pip install openPMD_api-*-cp35-cp35m-manylinux2010_x86_64.whl
 RUN        python3 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
-#RUN        openpmd-ls --help
-
+RUN        /root/.local/bin/openpmd-ls --help
 
 # copy binary artifacts (wheels)
 FROM       quay.io/pypa/manylinux2010_x86_64
