@@ -21,10 +21,13 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include "openPMD/cli/ls.hpp"
 #include "openPMD/helper/list_series.hpp"
 #include "openPMD/Series.hpp"
 
+#include <string>
 #include <sstream>
+#include <vector>
 
 
 namespace py = pybind11;
@@ -40,5 +43,11 @@ void init_Helper(py::module &m) {
         py::arg("series"),
         py::arg_v("longer", false, "Print more verbose output."),
         "List information about an openPMD data series"
+    )
+    // CLI entry point
+    .def("ls", // &cli::ls::run
+        [](std::vector< std::string > & argv) {
+            return cli::ls::run( argv );
+        }
     );
 }

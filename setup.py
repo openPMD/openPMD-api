@@ -169,6 +169,12 @@ setup(
     python_requires='>=3.5, <3.9',
     # tests_require=['pytest'],
     install_requires=install_requires,
+#   see: https://github.com/scikit-build/cmake-python-distributions/blob/master/cmake/__init__.py
+#    entry_points={
+#        'console_scripts': [
+#            'openpmd-ls = openpmd_api:ls'
+#        ]
+#    },
     # we would like to use this mechanism, but pip / setuptools do not
     # influence the build and build_ext with it.
     # therefore, we use environment vars to control.
