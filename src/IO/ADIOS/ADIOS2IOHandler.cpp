@@ -1471,8 +1471,8 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     openPMD::AccessType at,
     MPI_Comm comm,
     nlohmann::json options )
-    : AbstractIOHandler( std::move( path ), at, comm )
-    , m_impl{ this, comm, std::move( options ) }
+    : AbstractIOHandler( std::move( path ), at, comm ),
+      m_impl{ this, comm, std::move( options ) }
 {
 }
 
@@ -1482,8 +1482,8 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     AccessType at,
     nlohmann::json options )
-    : AbstractIOHandler( std::move( path ), at )
-    , m_impl{ this, std::move( options ) }
+    : AbstractIOHandler( std::move( path ), at ),
+      m_impl{ this, std::move( options ) }
 {
 }
 
@@ -1499,8 +1499,8 @@ ADIOS2IOHandler::flush()
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     AccessType at,
-    MPI_Comm comm
-    , nlohmann::json
+    MPI_Comm comm,
+    nlohmann::json
 )
     : AbstractIOHandler( std::move( path ), at, comm )
 {

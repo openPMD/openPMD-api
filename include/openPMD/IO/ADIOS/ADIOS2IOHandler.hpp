@@ -21,6 +21,7 @@
 #pragma once
 
 #include "ADIOS2FilePosition.hpp"
+#include "openPMD/config.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #include "openPMD/IO/AbstractIOHandlerImplCommon.hpp"
@@ -28,22 +29,6 @@
 #include "openPMD/IO/InvalidatableFile.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/backend/Writable.hpp"
-
-#include <array>
-#include <exception>
-#include <future>
-#include <iostream>
-#include <memory> // shared_ptr
-#include <string>
-#include <unordered_map>
-#include <utility> // pair
-#include <vector>
-
-#include <nlohmann/json.hpp>
-
-#include "openPMD/config.hpp"
-
-#include <nlohmann/json.hpp>
 
 #if openPMD_HAVE_ADIOS2
 #   include <adios2.h>
@@ -54,6 +39,17 @@
 #   include <mpi.h>
 #endif
 
+#include <nlohmann/json.hpp>
+
+#include <array>
+#include <exception>
+#include <future>
+#include <iostream>
+#include <memory> // shared_ptr
+#include <string>
+#include <unordered_map>
+#include <utility> // pair
+#include <vector>
 
 namespace openPMD
 {
@@ -111,10 +107,9 @@ public:
     );
 
 
-    ~ADIOS2IOHandlerImpl() override = default;
+    ~ADIOS2IOHandlerImpl( ) override = default;
 
-    std::future< void >
-    flush() override;
+    std::future< void > flush( ) override;
 
     void createFile( Writable *,
                      Parameter< Operation::CREATE_FILE > const & ) override;
@@ -316,8 +311,6 @@ private:
 /*
  * The following strings are used during parsing of the JSON configuration
  * string for the ADIOS2 backend.
- * Note that this struct's members additionally need to be defined at namespace
- * scope up until C++17, see ADIOS2IOHandlerImpl.cpp
  */
 namespace ADIOS2Defaults
 {
@@ -757,8 +750,8 @@ public:
     ADIOS2IOHandler(
         std::string path,
         AccessType,
-        MPI_Comm
-        , nlohmann::json options
+        MPI_Comm,
+        nlohmann::json options
     );
 
 #endif

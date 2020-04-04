@@ -3,6 +3,13 @@
 #   define OPENPMD_private public
 #   define OPENPMD_protected public
 #endif
+
+#include "openPMD/auxiliary/Environment.hpp"
+#include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/openPMD.hpp"
+
+#include <catch2/catch.hpp>
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -15,11 +22,6 @@
 #include <string>
 #include <tuple>
 #include <vector>
-
-#include "openPMD/auxiliary/Filesystem.hpp"
-#include "openPMD/auxiliary/Environment.hpp"
-#include "openPMD/openPMD.hpp"
-#include <catch2/catch.hpp>
 
 using namespace openPMD;
 
@@ -2380,7 +2382,7 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
   }
 }
 )END";
-    auto write = []( std::string const & filename,
+    auto const write = []( std::string const & filename,
                      std::string const & config ) {
         openPMD::Series series( filename, openPMD::AccessType::CREATE, config );
         auto E_x = series.iterations[ 0 ].meshes[ "E" ][ "x" ];
@@ -2419,7 +2421,7 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
   }
 }
 )END";
-    auto read = []( std::string const & filename, std::string const & config ) {
+    auto const read = []( std::string const & filename, std::string const & config ) {
         openPMD::Series series(
             filename, openPMD::AccessType::READ_ONLY, config );
         auto E_x = series.iterations[ 0 ].meshes[ "E" ][ "x" ];
