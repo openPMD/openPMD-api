@@ -1,7 +1,7 @@
 sphinx_rtd_theme>=0.3.1
 recommonmark
 sphinx
-breathe>=4.5
+breathe>=4.5,<4.15
 sphinxcontrib.programoutput
 pygments
 # generate plots
