@@ -58,12 +58,17 @@ class Series : public Attributable
 
 public:
 #if openPMD_HAVE_MPI
-    Series(std::string const& filepath,
-           AccessType at,
-           MPI_Comm comm);
+    Series(
+        std::string const & filepath,
+        AccessType at,
+        MPI_Comm comm,
+        std::string const & options = "{}" );
 #endif
-    Series(std::string const& filepath,
-           AccessType at);
+
+    Series(
+        std::string const & filepath,
+        AccessType at,
+        std::string const & options = "{}" );
     ~Series();
 
     /**

@@ -85,6 +85,7 @@ API Details
    details/doxygen.rst
    details/python.rst
    details/mpi.rst
+   details/backendconfig.rst
 
 Utilities
 ---------

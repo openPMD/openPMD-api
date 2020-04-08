@@ -20,26 +20,15 @@
  */
 #pragma once
 
-#include "openPMD/config.hpp"
-
 #include "ADIOS2FilePosition.hpp"
+#include "openPMD/config.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #include "openPMD/IO/AbstractIOHandlerImplCommon.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
+#include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/backend/Writable.hpp"
-
-#include <array>
-#include <exception>
-#include <future>
-#include <iostream>
-#include <memory> // shared_ptr
-#include <string>
-#include <unordered_map>
-#include <utility> // pair
-#include <vector>
-
 
 #if openPMD_HAVE_ADIOS2
 #   include <adios2.h>
@@ -50,6 +39,17 @@
 #   include <mpi.h>
 #endif
 
+#include <nlohmann/json.hpp>
+
+#include <array>
+#include <exception>
+#include <future>
+#include <iostream>
+#include <memory> // shared_ptr
+#include <string>
+#include <unordered_map>
+#include <utility> // pair
+#include <vector>
 
 namespace openPMD
 {
@@ -95,13 +95,16 @@ public:
 
 #if openPMD_HAVE_MPI
 
-    ADIOS2IOHandlerImpl( AbstractIOHandler *, MPI_Comm );
+    ADIOS2IOHandlerImpl( AbstractIOHandler *, MPI_Comm, nlohmann::json config );
 
     MPI_Comm m_comm;
 
 #endif // openPMD_HAVE_MPI
 
-    explicit ADIOS2IOHandlerImpl( AbstractIOHandler * );
+    explicit ADIOS2IOHandlerImpl(
+        AbstractIOHandler *
+        , nlohmann::json config
+    );
 
 
     ~ADIOS2IOHandlerImpl( ) override = default;
@@ -165,8 +168,6 @@ public:
     listAttributes( Writable *,
                     Parameter< Operation::LIST_ATTS > & parameters ) override;
 
-
-
     /**
      * @brief The ADIOS2 access type to chose for Engines opened
      * within this instance.
@@ -176,6 +177,55 @@ public:
 
 private:
     adios2::ADIOS m_ADIOS;
+
+    struct ParameterizedOperator
+    {
+        adios2::Operator const op;
+        adios2::Params const params;
+    };
+
+    std::vector< ParameterizedOperator > defaultOperators;
+
+    auxiliary::TracingJSON m_config;
+    static auxiliary::TracingJSON nullvalue;
+
+    void
+    init( nlohmann::json config );
+
+    template< typename Key >
+    auxiliary::TracingJSON
+    config( Key && key, auxiliary::TracingJSON & cfg )
+    {
+        if( cfg.json().is_object() && cfg.json().contains( key ) )
+        {
+            return cfg[ key ];
+        }
+        else
+        {
+            return nullvalue;
+        }
+    }
+
+    template< typename Key >
+    auxiliary::TracingJSON
+    config( Key && key )
+    {
+        return config< Key >( std::forward< Key >( key ), m_config );
+    }
+
+    /**
+     *
+     * @param config The top-level of the ADIOS2 configuration JSON object
+     * with operators to be found under dataset.operators
+     * @return first parameter: the operators, second parameters: whether
+     * operators have been configured
+     */
+    std::pair< std::vector< ParameterizedOperator >, bool >
+    getOperators( auxiliary::TracingJSON config );
+
+    // use m_config
+    std::pair< std::vector< ParameterizedOperator >, bool >
+    getOperators();
 
     /*
      * We need to give names to IO objects. These names are irrelevant
@@ -258,6 +308,18 @@ private:
                                          std::string const & var );
 }; // ADIOS2IOHandlerImpl
 
+/*
+ * The following strings are used during parsing of the JSON configuration
+ * string for the ADIOS2 backend.
+ */
+namespace ADIOS2Defaults
+{
+    using const_str = char const * const;
+    constexpr const_str str_engine = "engine";
+    constexpr const_str str_type = "type";
+    constexpr const_str str_params = "parameters";
+}
+
 namespace detail
 {
     // Helper structs for calls to the switchType function
@@ -332,17 +394,13 @@ namespace detail
 
     struct VariableDefiner
     {
+        // Parameters such as DatasetHelper< T >::defineVariable
+        template < typename T, typename... Params >
+        void operator( )( Params &&... params );
 
-        template < typename T >
-        void operator( )( adios2::IO & IO, const std::string & name,
-                          std::unique_ptr< adios2::Operator > compression,
-                          const adios2::Dims & shape = adios2::Dims( ),
-                          const adios2::Dims & start = adios2::Dims( ),
-                          const adios2::Dims & count = adios2::Dims( ),
-                          const bool constantDims = false );
-
-        template < int n, typename... Params >
-        void operator( )( adios2::IO & IO, Params &&... );
+        template< int n, typename... Params >
+        void
+        operator()( Params &&... );
     };
 
 
@@ -473,11 +531,31 @@ namespace detail
         void readDataset( BufferedGet &, adios2::IO &, adios2::Engine &,
                           std::string const & fileName );
 
+        /**
+         * @brief Define a Variable of type T within the passed IO.
+         * 
+         * @param IO The adios2::IO object within which to define the
+         *           variable. The variable can later be retrieved from
+         *           the IO using the passed name.
+         * @param name As in adios2::IO::DefineVariable
+         * @param compressions ADIOS2 operators, including an arbitrary
+         *                     number of parameters, to be added to the
+         *                     variable upon definition.
+         * @param shape As in adios2::IO::DefineVariable
+         * @param start As in adios2::IO::DefineVariable
+         * @param count As in adios2::IO::DefineVariable
+         * @param constantDims As in adios2::IO::DefineVariable
+         */
         static void
-        defineVariable( adios2::IO & IO, const std::string & name,
-                        std::unique_ptr< adios2::Operator > compression,
-                        const adios2::Dims & shape, const adios2::Dims & start,
-                        const adios2::Dims & count, bool constantDims );
+        defineVariable(
+            adios2::IO & IO,
+            std::string const & name,
+            std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > const &
+                compressions,
+            adios2::Dims const & shape = adios2::Dims(),
+            adios2::Dims const & start = adios2::Dims(),
+            adios2::Dims const & count = adios2::Dims(),
+            bool const constantDims = false );
 
         void writeDataset( BufferedPut &, adios2::IO &, adios2::Engine & );
     };
@@ -569,6 +647,9 @@ namespace detail
         BufferedActions( ADIOS2IOHandlerImpl & impl, InvalidatableFile file );
 
         ~BufferedActions( );
+
+        void
+        configure_IO( ADIOS2IOHandlerImpl & impl );
 
         adios2::Engine & getEngine( );
 
@@ -666,11 +747,16 @@ public:
 
 #if openPMD_HAVE_MPI
 
-    ADIOS2IOHandler( std::string path, AccessType, MPI_Comm );
+    ADIOS2IOHandler(
+        std::string path,
+        AccessType,
+        MPI_Comm,
+        nlohmann::json options
+    );
 
 #endif
 
-    ADIOS2IOHandler( std::string path, AccessType );
+    ADIOS2IOHandler( std::string path, AccessType, nlohmann::json options );
 
     std::string backendName() const override { return "ADIOS2"; }
 

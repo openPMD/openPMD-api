@@ -20,18 +20,20 @@
  */
 
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
+
+#include <algorithm>
+#include <iostream>
+#include <iterator>
+#include <set>
+#include <string>
+
 #include "openPMD/Datatype.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
-
-#include <iostream>
-#include <string>
 #include <type_traits>
-#include <algorithm>
-#include <iterator>
 
 
 namespace openPMD
@@ -58,27 +60,98 @@ namespace openPMD
 
 #if openPMD_HAVE_ADIOS2
 
-#if openPMD_HAVE_MPI
+#    if openPMD_HAVE_MPI
 
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     AbstractIOHandler * handler,
-    MPI_Comm communicator )
+    MPI_Comm communicator,
+    nlohmann::json cfg )
     : AbstractIOHandlerImplCommon( handler )
     , m_comm{ communicator }
     , m_ADIOS{ communicator, ADIOS2_DEBUG_MODE }
 {
+    init( std::move( cfg ) );
 }
 
-#endif // openPMD_HAVE_MPI
+#    endif // openPMD_HAVE_MPI
 
-ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl( AbstractIOHandler * handler )
+ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
+    AbstractIOHandler * handler,
+    nlohmann::json cfg )
     : AbstractIOHandlerImplCommon( handler ), m_ADIOS{ ADIOS2_DEBUG_MODE }
 {
+    init( std::move( cfg ) );
 }
 
-std::future< void > ADIOS2IOHandlerImpl::flush( )
+void
+ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
 {
-    auto res = AbstractIOHandlerImpl::flush( );
+    if( !cfg.contains( "adios2" ) )
+    {
+        std::cerr << "Warning: ADIOS2 is not configured in the JSON "
+                     "configuration. Running with default settings."
+                  << std::endl;
+        return;
+    }
+    m_config = std::move( cfg[ "adios2" ] );
+    defaultOperators = getOperators().first;
+}
+
+std::pair< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator >, bool >
+ADIOS2IOHandlerImpl::getOperators( auxiliary::TracingJSON cfg )
+{
+    std::vector< ParameterizedOperator > res;
+    if( !cfg.json().contains( "dataset" ) )
+    {
+        return std::make_pair( res, false );
+    }
+    auto datasetConfig = cfg[ "dataset" ];
+    if( !datasetConfig.json().contains( "operators" ) )
+    {
+        return std::make_pair( res, false );
+    }
+    auto _operators = datasetConfig[ "operators" ];
+    nlohmann::json const & operators = _operators.json();
+    for( auto operatorIterator = operators.begin();
+         operatorIterator != operators.end();
+         ++operatorIterator )
+    {
+        nlohmann::json const & op = operatorIterator.value();
+        std::string const & type = op[ "type" ];
+        adios2::Params adiosParams;
+        if( op.contains( "parameters" ) )
+        {
+            nlohmann::json const & params = op[ "parameters" ];
+            for( auto paramIterator = params.begin();
+                 paramIterator != params.end();
+                 ++paramIterator )
+            {
+                adiosParams[ paramIterator.key() ] =
+                    paramIterator.value().get< std::string >();
+            }
+        }
+        std::unique_ptr< adios2::Operator > adiosOperator =
+            getCompressionOperator( type );
+        if( adiosOperator )
+        {
+            res.emplace_back( ParameterizedOperator{
+                *adiosOperator, std::move( adiosParams ) } );
+        }
+    }
+    _operators.declareFullyRead();
+    return std::make_pair( res, true );
+}
+
+std::pair< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator >, bool >
+ADIOS2IOHandlerImpl::getOperators()
+{
+    return getOperators( m_config );
+}
+
+std::future< void >
+ADIOS2IOHandlerImpl::flush()
+{
+    auto res = AbstractIOHandlerImpl::flush();
     for ( auto & p : m_fileData )
     {
         if ( m_dirty.find( p.first ) != m_dirty.end( ) )
@@ -192,17 +265,32 @@ void ADIOS2IOHandlerImpl::createDataset(
          *        the C++11 standard
          * @todo replace with std::optional upon switching to C++17
          */
-        std::unique_ptr< adios2::Operator > compression;
-        if ( !parameters.compression.empty( ) )
-            compression = getCompressionOperator( parameters.compression );
+
+        auto operators = defaultOperators;
+
+        if( !parameters.compression.empty() )
+        {
+            std::unique_ptr< adios2::Operator > adiosOperator =
+                getCompressionOperator( parameters.compression );
+            if( adiosOperator )
+            {
+                operators.push_back( ParameterizedOperator{
+                    *adiosOperator,
+                    adios2::Params() } );
+            }
+        }
 
         // cast from openPMD::Extent to adios2::Dims
         adios2::Dims const shape( parameters.extent.begin(), parameters.extent.end() );
 
         auto & fileData = getFileData( file );
-        switchType( parameters.dtype, detail::VariableDefiner( ),
-                    fileData.m_IO, varName,
-                    std::move( compression ), shape );
+        switchType(
+            parameters.dtype,
+            detail::VariableDefiner(),
+            fileData.m_IO,
+            varName,
+            operators,
+            shape );
         fileData.invalidateVariablesMap();
         writable->written = true;
         m_dirty.emplace( file );
@@ -496,8 +584,7 @@ void ADIOS2IOHandlerImpl::listAttributes(
     }
 }
 
-adios2::Mode
-ADIOS2IOHandlerImpl::adios2Accesstype()
+adios2::Mode ADIOS2IOHandlerImpl::adios2Accesstype( )
 {
     switch ( m_handler->accessTypeBackend )
     {
@@ -515,7 +602,10 @@ ADIOS2IOHandlerImpl::adios2Accesstype()
     }
 }
 
-std::string ADIOS2IOHandlerImpl::filePositionToString(
+auxiliary::TracingJSON ADIOS2IOHandlerImpl::nullvalue = nlohmann::json();
+
+std::string
+ADIOS2IOHandlerImpl::filePositionToString(
     std::shared_ptr< ADIOS2FilePosition > filepos )
 {
     return filepos->location;
@@ -796,21 +886,20 @@ namespace detail
         throw std::runtime_error( "[ADIOS2] WRITE_DATASET: Invalid datatype." );
     }
 
-    template < typename T >
+    template < typename T, typename... Params >
     void VariableDefiner::
-    operator( )( adios2::IO & IO, const std::string & name,
-                 std::unique_ptr< adios2::Operator > compression,
-                 const adios2::Dims & shape, const adios2::Dims & start,
-                 const adios2::Dims & count, const bool constantDims )
+    operator( )( Params &&... params )
     {
-        DatasetHelper< T >::defineVariable( IO, name, std::move( compression ),
-                                            shape, start, count, constantDims );
+        DatasetHelper< T >::defineVariable(
+            std::forward< Params >( params )... );
     }
 
-    template < int n, typename... Params >
-    void VariableDefiner::operator( )( adios2::IO &, Params &&... )
+    template< int n, typename... Params >
+    void
+    VariableDefiner::operator()( Params &&... )
     {
-        throw std::runtime_error( "[ADIOS2] Defining a variable with undefined type." );
+        throw std::runtime_error(
+            "[ADIOS2] Defining a variable with undefined type." );
     }
 
 
@@ -975,13 +1064,20 @@ namespace detail
         engine.Get( var, ptr );
     }
 
-    template < typename T >
-    void DatasetHelper<
-        T, typename std::enable_if< DatasetTypes< T >::validType >::type >::
-        defineVariable( adios2::IO & IO, const std::string & name,
-                        std::unique_ptr< adios2::Operator > compression,
-                        const adios2::Dims & shape, const adios2::Dims & start,
-                        const adios2::Dims & count, const bool constantDims )
+    template< typename T >
+    void
+    DatasetHelper<
+        T,
+        typename std::enable_if< DatasetTypes< T >::validType >::type >::
+        defineVariable(
+            adios2::IO & IO,
+            const std::string & name,
+            std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > const &
+                compressions,
+            const adios2::Dims & shape,
+            const adios2::Dims & start,
+            const adios2::Dims & count,
+            const bool constantDims )
     {
         adios2::Variable< T > var =
             IO.DefineVariable< T >( name, shape, start, count, constantDims );
@@ -990,11 +1086,12 @@ namespace detail
             throw std::runtime_error(
                 "[ADIOS2] Internal error: Could not create Variable '" + name + "'." );
         }
-        // check whether the unique_ptr has an element
-        // and whether the held operator is valid
-        if ( compression && *compression )
+        for( auto const & compression : compressions )
         {
-            var.AddOperation( *compression );
+            if( compression.op )
+            {
+                var.AddOperation( compression.op, compression.params );
+            }
         }
     }
 
@@ -1101,6 +1198,7 @@ namespace detail
         *param.dtype = ret;
     }
 
+
     BufferedActions::BufferedActions( ADIOS2IOHandlerImpl & impl,
                                       InvalidatableFile file )
     : m_file( impl.fullPath( std::move( file ) ) ),
@@ -1116,13 +1214,72 @@ namespace detail
         }
         else
         {
-            // read parameters from environment
-            auto const engine = auxiliary::getEnvString( "OPENPMD_ADIOS2_ENGINE", "File" );
-            m_IO.SetEngine( engine );
+            configure_IO(impl);
+        }
+    }
 
-            if ( 1 ==
-                 auxiliary::getEnvNum(
-                    "OPENPMD_ADIOS2_HAVE_METADATA_FILE", 1 ) )
+    BufferedActions::~BufferedActions()
+    {
+        // if write accessing, ensure that the engine is opened
+        if( !m_engine && m_mode != adios2::Mode::Read )
+        {
+            getEngine();
+        }
+        if( m_engine )
+        {
+            m_engine->Close();
+        }
+    }
+
+    void
+    BufferedActions::configure_IO( ADIOS2IOHandlerImpl & impl )
+    {
+        (void)impl;
+        std::set< std::string > alreadyConfigured;
+        auto engineConfig = impl.config( ADIOS2Defaults::str_engine );
+        if( !engineConfig.json().is_null() )
+        {
+            m_IO.SetEngine(
+                impl.config( ADIOS2Defaults::str_type, engineConfig ).json() );
+            auto params =
+                impl.config( ADIOS2Defaults::str_params, engineConfig );
+            params.declareFullyRead();
+            if( params.json().is_object() )
+            {
+                for( auto it = params.json().begin(); it != params.json().end();
+                     it++ )
+                {
+                    m_IO.SetParameter( it.key(), it.value() );
+                    alreadyConfigured.emplace( it.key() );
+                }
+            }
+            alreadyConfigured.emplace( "Engine" );
+        }
+        auto shadow = impl.m_config.invertShadow();
+        if( shadow.size() > 0 )
+        {
+            std::cerr << "Warning: parts of the JSON configuration for ADIOS2 "
+                         "remain unused:\n"
+                      << shadow << std::endl;
+        }
+        auto notYetConfigured =
+            [&alreadyConfigured]( std::string const & param ) {
+                auto it = alreadyConfigured.find( param );
+                return it == alreadyConfigured.end();
+            };
+
+        // read parameters from environment
+        if( notYetConfigured( "Engine" ) )
+        {
+            auto const engine =
+                auxiliary::getEnvString( "OPENPMD_ADIOS2_ENGINE", "File" );
+            m_IO.SetEngine( engine );
+        }
+
+        if( notYetConfigured( "CollectiveMetadata" ) )
+        {
+            if( 1 ==
+                auxiliary::getEnvNum( "OPENPMD_ADIOS2_HAVE_METADATA_FILE", 1 ) )
             {
                 m_IO.SetParameter( "CollectiveMetadata", "On" );
             }
@@ -1130,9 +1287,13 @@ namespace detail
             {
                 m_IO.SetParameter( "CollectiveMetadata", "Off" );
             }
-
-            if ( 1 ==
-                 auxiliary::getEnvNum( "OPENPMD_ADIOS2_HAVE_PROFILING", 1 ) )
+        }
+        if( notYetConfigured( "Profile" ) )
+        {
+            if( 1 ==
+                    auxiliary::getEnvNum(
+                        "OPENPMD_ADIOS2_HAVE_PROFILING", 1 ) &&
+                notYetConfigured( "Profile" ) )
             {
                 m_IO.SetParameter( "Profile", "On" );
             }
@@ -1140,34 +1301,22 @@ namespace detail
             {
                 m_IO.SetParameter( "Profile", "Off" );
             }
+        }
 #if openPMD_HAVE_MPI
+        {
+            auto num_substreams =
+                auxiliary::getEnvNum( "OPENPMD_ADIOS2_NUM_SUBSTREAMS", 0 );
+            if( notYetConfigured( "SubStreams" ) && 0 != num_substreams )
             {
-                auto num_substreams =
-                    auxiliary::getEnvNum( "OPENPMD_ADIOS2_NUM_SUBSTREAMS", 0 );
-                if ( 0 != num_substreams )
-                {
-                    m_IO.SetParameter( "SubStreams",
-                                       std::to_string( num_substreams ) );
-                }
+                m_IO.SetParameter(
+                    "SubStreams", std::to_string( num_substreams ) );
             }
+        }
 #endif
-        }
     }
 
-    BufferedActions::~BufferedActions( )
-    {
-        // if write accessing, ensure that the engine is opened
-        if ( !m_engine && m_mode != adios2::Mode::Read )
-        {
-            getEngine( );
-        }
-        if ( m_engine )
-        {
-            m_engine->Close( );
-        }
-    }
-
-    adios2::Engine & BufferedActions::getEngine( )
+    adios2::Engine &
+    BufferedActions::getEngine()
     {
         if ( !m_engine )
         {
@@ -1315,41 +1464,55 @@ namespace detail
 
 } // namespace detail
 
-#if openPMD_HAVE_MPI
+#    if openPMD_HAVE_MPI
 
-ADIOS2IOHandler::ADIOS2IOHandler( std::string path, openPMD::AccessType at,
-                                  MPI_Comm comm )
-: AbstractIOHandler( std::move( path ), at, comm ), m_impl{this, comm
-
-                                                    }
+ADIOS2IOHandler::ADIOS2IOHandler(
+    std::string path,
+    openPMD::AccessType at,
+    MPI_Comm comm,
+    nlohmann::json options )
+    : AbstractIOHandler( std::move( path ), at, comm ),
+      m_impl{ this, comm, std::move( options ) }
 {
 }
 
 #endif
 
-ADIOS2IOHandler::ADIOS2IOHandler( std::string path, AccessType at )
-: AbstractIOHandler( std::move( path ), at ), m_impl{this}
+ADIOS2IOHandler::ADIOS2IOHandler(
+    std::string path,
+    AccessType at,
+    nlohmann::json options )
+    : AbstractIOHandler( std::move( path ), at ),
+      m_impl{ this, std::move( options ) }
 {
 }
 
-std::future< void > ADIOS2IOHandler::flush( )
+std::future< void >
+ADIOS2IOHandler::flush()
 {
-    return m_impl.flush( );
+    return m_impl.flush();
 }
 
 #else // openPMD_HAVE_ADIOS2
 
-#if openPMD_HAVE_MPI
-ADIOS2IOHandler::ADIOS2IOHandler( std::string path, AccessType at,
-                                  MPI_Comm comm )
-: AbstractIOHandler( std::move( path ), at, comm )
+#    if openPMD_HAVE_MPI
+ADIOS2IOHandler::ADIOS2IOHandler(
+    std::string path,
+    AccessType at,
+    MPI_Comm comm,
+    nlohmann::json
+)
+    : AbstractIOHandler( std::move( path ), at, comm )
 {
 }
 
-#endif
+#    endif // openPMD_HAVE_MPI
 
-ADIOS2IOHandler::ADIOS2IOHandler( std::string path, AccessType at )
-: AbstractIOHandler( std::move( path ), at )
+ADIOS2IOHandler::ADIOS2IOHandler(
+    std::string path,
+    AccessType at,
+    nlohmann::json )
+    : AbstractIOHandler( std::move( path ), at )
 {
 }
 

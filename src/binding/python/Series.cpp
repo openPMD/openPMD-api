@@ -57,10 +57,14 @@ using namespace openPMD;
 void init_Series(py::module &m) {
     py::class_<Series, Attributable>(m, "Series")
 
-        .def(py::init<std::string const&, AccessType>(),
-            py::arg("filepath"), py::arg("access_type"))
+        .def(py::init<std::string const&, AccessType, std::string const &>(),
+            py::arg("filepath"), py::arg("access_type"), py::arg("options") = "{}")
 #if openPMD_HAVE_MPI
-        .def(py::init([](std::string const& filepath, AccessType at, py::object &comm){
+        .def(py::init([](
+                std::string const& filepath,
+                AccessType at,
+                py::object &comm,
+                std::string const& options){
             //! @todo perform mpi4py import test and check min-version
             //!       careful: double MPI_Init risk? only import mpi4py.MPI?
             //!       required C-API init? probably just checks:
@@ -106,9 +110,12 @@ void init_Series(py::module &m) {
                                          "(Mismatched MPI at compile vs. runtime?)");
             }
 
-            return new Series(filepath, at, *mpiCommPtr);
+            return new Series(filepath, at, *mpiCommPtr, options);
         }),
-            py::arg("filepath"), py::arg("access_type"), py::arg("mpi_communicator")
+            py::arg("filepath"),
+            py::arg("access_type"),
+            py::arg("mpi_communicator"),
+            py::arg("options") = "{}"
         )
 #endif
 

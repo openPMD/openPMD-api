@@ -3,23 +3,25 @@
 #   define OPENPMD_private public
 #   define OPENPMD_protected public
 #endif
-#include "openPMD/openPMD.hpp"
+
+#include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/openPMD.hpp"
 
 #include <catch2/catch.hpp>
 
-#include <iostream>
 #include <algorithm>
-#include <sstream>
-#include <string>
-#include <vector>
 #include <array>
 #include <cmath>
-#include <memory>
+#include <iostream>
 #include <limits>
 #include <list>
+#include <memory>
 #include <numeric>
+#include <sstream>
+#include <string>
 #include <tuple>
+#include <vector>
 
 using namespace openPMD;
 
@@ -2320,3 +2322,119 @@ TEST_CASE( "no_serial_adios1", "[serial][adios]")
 }
 #endif
 
+#if openPMD_HAVE_ADIOS2
+TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
+{
+    if( auxiliary::getEnvString( "OPENPMD_BP_BACKEND", "NOT_SET" ) == "ADIOS1" )
+    {
+        // run this test for ADIOS2 only
+        return;
+    }
+    std::string writeConfigBP3 = R"END(
+{
+  "adios2": {
+    "engine": {
+      "type": "bp3",
+      "unused": "parameter",
+      "parameters": {
+        "BufferGrowthFactor": "2.0",
+        "Profile": "On"
+      }
+    },
+    "unused": "as well",
+    "dataset": {
+      "operators": [
+        {
+          "type": "blosc",
+          "parameters": {
+              "clevel": "1",
+              "doshuffle": "BLOSC_BITSHUFFLE"
+          }
+        }
+      ]
+    }
+  }
+}
+)END";
+    std::string writeConfigBP4 = R"END(
+{
+  "adios2": {
+    "engine": {
+      "type": "bp4",
+      "unused": "parameter",
+      "parameters": {
+        "BufferGrowthFactor": "2.0",
+        "Profile": "On"
+      }
+    },
+    "unused": "as well",
+    "dataset": {
+      "operators": [
+        {
+          "type": "blosc",
+          "parameters": {
+              "clevel": "1",
+              "doshuffle": "BLOSC_BITSHUFFLE"
+          }
+        }
+      ]
+    }
+  }
+}
+)END";
+    auto const write = []( std::string const & filename,
+                     std::string const & config ) {
+        openPMD::Series series( filename, openPMD::AccessType::CREATE, config );
+        auto E_x = series.iterations[ 0 ].meshes[ "E" ][ "x" ];
+        E_x.resetDataset(
+            openPMD::Dataset( openPMD::Datatype::INT, { 1000 } ) );
+        std::vector< int > data( 1000, 0 );
+        E_x.storeChunk( data, { 0 }, { 1000 } );
+        series.flush();
+    };
+    write( "../samples/jsonConfiguredBP4.bp", writeConfigBP4 );
+    write( "../samples/jsonConfiguredBP3.bp", writeConfigBP3 );
+
+    // BP3 engine writes files, BP4 writes directories
+    REQUIRE(
+        openPMD::auxiliary::file_exists( "../samples/jsonConfiguredBP3.bp" ) );
+    REQUIRE( openPMD::auxiliary::directory_exists(
+        "../samples/jsonConfiguredBP4.bp" ) );
+
+    std::string readConfigBP3 = R"END(
+{
+  "adios2": {
+    "engine": {
+      "type": "bp3",
+      "unused": "parameter"
+    }
+  }
+}
+)END";
+    std::string readConfigBP4 = R"END(
+{
+  "adios2": {
+    "engine": {
+      "type": "bp4",
+      "unused": "parameter"
+    }
+  }
+}
+)END";
+    auto const read = []( std::string const & filename, std::string const & config ) {
+        openPMD::Series series(
+            filename, openPMD::AccessType::READ_ONLY, config );
+        auto E_x = series.iterations[ 0 ].meshes[ "E" ][ "x" ];
+        REQUIRE( E_x.getDimensionality() == 1 );
+        REQUIRE( E_x.getExtent()[ 0 ] == 1000 );
+        auto chunk = E_x.loadChunk< int >( { 0 }, { 1000 } );
+        series.flush();
+        for( size_t i = 0; i < 1000; ++i )
+        {
+            REQUIRE( chunk.get()[ i ] == 0 );
+        }
+    };
+    read( "../samples/jsonConfiguredBP3.bp", readConfigBP3 );
+    read( "../samples/jsonConfiguredBP4.bp", readConfigBP4 );
+}
+#endif

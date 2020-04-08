@@ -1,0 +1,19 @@
+{
+  "adios2": {
+    "engine": {
+      "type": "sst",
+      "parameters": {
+        "BufferGrowthFactor": "2.0",
+        "QueueLimit": "2"
+      }
+    },
+    "dataset": {
+      "operators": [ 
+        {
+          "type": "bzip2",
+          "parameters": {}
+        }
+      ]
+    }
+  }
+}
