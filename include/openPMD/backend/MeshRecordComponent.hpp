@@ -46,11 +46,34 @@ private:
 public:
     ~MeshRecordComponent() override = default;
 
+    /** Position on an element
+     *
+     * Relative on an element (node/cell/voxel) of the mesh
+     *
+     * @return relative position within range of [0.0:1.0)
+     */
     template< typename T >
     std::vector< T > position() const;
-    template< typename T >
-    MeshRecordComponent& setPosition(std::vector< T >);
 
+    /** Position on an element
+     *
+     * Relative on an element (node/cell/voxel) of the mesh
+     *
+     * @param[in] pos relative position in range [0.0:1.0)
+     */
+    template< typename T >
+    MeshRecordComponent& setPosition(std::vector< T > pos);
+
+    /** Create a dataset with regular extent and constant value
+     *
+     * In a constant record component, the value for each date in its extent is
+     * the same. Implemented by storing only a constant value as meta-data.
+     *
+     * @see RecordComponent::makeConstant
+     *
+     * @tparam T type of the stored value
+     * @return A reference to this RecordComponent.
+     */
     template< typename T >
     MeshRecordComponent& makeConstant(T);
 };
@@ -68,4 +91,4 @@ MeshRecordComponent::makeConstant(T value)
     RecordComponent::makeConstant(value);
     return *this;
 }
-} // openPMD
+} // namespace openPMD

@@ -329,6 +329,10 @@ class APITest(unittest.TestCase):
         ms["pybool"][SCALAR].reset_dataset(DS(DT.BOOL, extent))
         ms["pybool"][SCALAR].make_constant(False)
 
+        # staggering meta data
+        ms["pyint"][SCALAR].position = [0.25, 0.5]
+        ms["pyfloat"][SCALAR].position = [0.5, 0.75]
+
         self.assertTrue(ms["char"][SCALAR].constant)
         self.assertTrue(ms["pyint"][SCALAR].constant)
         self.assertTrue(ms["pyfloat"][SCALAR].constant)
@@ -387,6 +391,12 @@ class APITest(unittest.TestCase):
             self.assertEqual(ms["pybool"][SCALAR].load_chunk(o, e), False)
 
         if found_numpy:
+            # staggering meta data
+            np.testing.assert_allclose(ms["pyint"][SCALAR].position,
+                                       [0.25, 0.5])
+            np.testing.assert_allclose(ms["pyfloat"][SCALAR].position,
+                                       [0.5, 0.75])
+
             self.assertTrue(ms["int16"].scalar)
             self.assertTrue(ms["int32"].scalar)
             self.assertTrue(ms["int64"].scalar)
@@ -530,6 +540,8 @@ class APITest(unittest.TestCase):
         if found_numpy:
             np.testing.assert_allclose(E.unit_dimension,
                                        [1., 1., -3., -1., 0., 0., 0.])
+            np.testing.assert_allclose(E_x.position,
+                                       [0.5, 0., 0.])
         self.assertAlmostEqual(E_x.unit_SI, 1.0)
 
         self.assertSequenceEqual(shape, [26, 26, 201])
@@ -926,6 +938,7 @@ class APITest(unittest.TestCase):
 
         # get a mesh record component
         rho = i.meshes["rho"][io.Record_Component.SCALAR]
+        rho.position = [0., 0.]  # Yee staggered
 
         rho.reset_dataset(io.Dataset(data.dtype, data.shape))
 
