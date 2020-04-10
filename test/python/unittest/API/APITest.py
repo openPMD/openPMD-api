@@ -17,6 +17,7 @@ try:
     found_numpy = True
     print("numpy version: ", np.__version__)
 except ImportError:
+    print("numpy NOT found. Skipping most N-dim data and load tests.")
     found_numpy = False
 
 from TestUtilities.TestUtilities import generateTestFilePath
@@ -379,10 +380,11 @@ class APITest(unittest.TestCase):
         self.assertTrue(ms["pyfloat"][SCALAR].constant)
         self.assertTrue(ms["pybool"][SCALAR].constant)
 
-        self.assertEqual(ms["char"][SCALAR].load_chunk(o, e), ord('c'))
-        self.assertEqual(ms["pyint"][SCALAR].load_chunk(o, e), 13)
-        self.assertEqual(ms["pyfloat"][SCALAR].load_chunk(o, e), 3.1416)
-        self.assertEqual(ms["pybool"][SCALAR].load_chunk(o, e), False)
+        if found_numpy:
+            self.assertEqual(ms["char"][SCALAR].load_chunk(o, e), ord('c'))
+            self.assertEqual(ms["pyint"][SCALAR].load_chunk(o, e), 13)
+            self.assertEqual(ms["pyfloat"][SCALAR].load_chunk(o, e), 3.1416)
+            self.assertEqual(ms["pybool"][SCALAR].load_chunk(o, e), False)
 
         if found_numpy:
             self.assertTrue(ms["int16"].scalar)
@@ -491,20 +493,22 @@ class APITest(unittest.TestCase):
         self.assertIsInstance(electrons, io.ParticleSpecies)
         pos_y = electrons["position"]["y"]
         w = electrons["weighting"][io.Record_Component.SCALAR]
-        assert pos_y.dtype == np.double
-        assert w.dtype == np.double
+        if found_numpy:
+            assert pos_y.dtype == np.double
+            assert w.dtype == np.double
 
         self.assertSequenceEqual(pos_y.shape, [270625, ])
         self.assertSequenceEqual(w.shape, [270625, ])
         if found_numpy:
             self.assertEqual(pos_y.dtype, np.float64)
             self.assertEqual(w.dtype, np.float64)
-        y_data = pos_y.load_chunk([200000, ], [10, ])
-        w_data = w.load_chunk([200000, ], [10, ])
-        series.flush()
-        self.assertSequenceEqual(y_data.shape, [10, ])
-        self.assertSequenceEqual(w_data.shape, [10, ])
-        if found_numpy:
+
+            y_data = pos_y.load_chunk([200000, ], [10, ])
+            w_data = w.load_chunk([200000, ], [10, ])
+            series.flush()
+            self.assertSequenceEqual(y_data.shape, [10, ])
+            self.assertSequenceEqual(w_data.shape, [10, ])
+
             self.assertEqual(y_data.dtype, np.float64)
             self.assertEqual(w_data.dtype, np.float64)
 
@@ -535,10 +539,11 @@ class APITest(unittest.TestCase):
         offset = [1, 1, 1]
         extent = [2, 2, 1]
 
-        chunk_data = E_x.load_chunk(offset, extent)
-        series.flush()
-        self.assertSequenceEqual(chunk_data.shape, extent)
         if found_numpy:
+            chunk_data = E_x.load_chunk(offset, extent)
+            series.flush()
+            self.assertSequenceEqual(chunk_data.shape, extent)
+
             self.assertEqual(chunk_data.dtype, np.float64)
             np.testing.assert_allclose(
                 chunk_data,
@@ -604,10 +609,12 @@ class APITest(unittest.TestCase):
         self.assertTrue(not pos_y.constant)
         self.assertTrue(not w.constant)
 
-        if found_numpy:
-            np.testing.assert_allclose(electrons["position"].unit_dimension,
-                                       [1., 0., 0., 0., 0., 0., 0.])
         self.assertAlmostEqual(pos_y.unit_SI, 1.0)
+
+        if not found_numpy:
+            return
+        np.testing.assert_allclose(electrons["position"].unit_dimension,
+                                   [1., 0., 0., 0., 0., 0., 0.])
 
         offset = [4, 5, 9]
         extent = [4, 2, 3]
@@ -803,18 +810,16 @@ class APITest(unittest.TestCase):
 
         # - [ ]: [M, L, K]    array dimension reduction
         #        (not implemented)
-        if found_numpy:
-            d1 = np.zeros(E_x.shape)[2, :, 4]
-            d2 = E_x[2, :, 4]
-            np.testing.assert_array_equal(d1.shape, d2.shape)
+        d1 = np.zeros(E_x.shape)[2, :, 4]
+        d2 = E_x[2, :, 4]
+        np.testing.assert_array_equal(d1.shape, d2.shape)
 
         # - [ ]: [:, np.newaxis, :]    axis shuffle
         #        (not implemented)
         with self.assertRaises(IndexError):
             d1 = E_x[2, None, 4]
-        if found_numpy:
-            with self.assertRaises(IndexError):
-                d1 = E_x[2, np.newaxis, 4]
+        with self.assertRaises(IndexError):
+            d1 = E_x[2, np.newaxis, 4]
 
         # - [x] out-of-range exception
         with self.assertRaises(IndexError):
@@ -1067,6 +1072,9 @@ class APITest(unittest.TestCase):
         self.assertRaises(TypeError, io.Mesh_Container)
 
     def backend_particle_patches(self, file_ending):
+        if not found_numpy:
+            return
+
         DS = io.Dataset
         SCALAR = io.Record_Component.SCALAR
         extent = [123, ]
