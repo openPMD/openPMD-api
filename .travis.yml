@@ -631,11 +631,11 @@ install:
       export HOMEBREW_NO_AUTO_UPDATE=1 &&
       travis_wait 20 brew update;
       travis_wait 20 brew install python3;
-      travis_wait 20 brew install numpy;
-      travis_wait 20 brew upgrade numpy;
+      travis_wait 20 brew uninstall numpy;
       travis_wait 20 brew install jq;
       travis_wait 20 brew install modules &&
       brew info modules &&
+      python3 -m pip install -U numpy &&
       source /usr/local/opt/modules/init/bash &&
       export PATH=/usr/local/opt/python/libexec/bin:$PATH;
       export TRAVIS_PYTHON_VERSION=3.7.2;
