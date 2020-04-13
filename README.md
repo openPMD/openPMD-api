@@ -198,7 +198,7 @@ mkdir openPMD-api-build
 cd openPMD-api-build
 
 # optional: for full tests, with unzip
-../openPMD-api/.travis/download_samples.sh
+../openPMD-api/share/openPMD/download_samples.sh
 
 # for own install prefix append:
 #   -DCMAKE_INSTALL_PREFIX=$HOME/somepath

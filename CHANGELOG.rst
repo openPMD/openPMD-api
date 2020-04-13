@@ -33,6 +33,8 @@ Other
 
   - migration to travis-ci.com / GitHub app #703
   - migrate to GitHub checkout action v2 #712
+  - move ``.travis/`` to ``.github/ci/`` #715
+  - move example file download scripts to ``share/openPMD/`` #715
 - ``listSeries``: remove unused parameters in try-catch #706
 
 

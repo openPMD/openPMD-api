@@ -111,7 +111,7 @@ Linux & OSX
    cd openPMD-api-build
 
    # optional: for full tests
-   ../openPMD-api/.travis/download_samples.sh
+   ../openPMD-api/share/openPMD/download_samples.sh
 
    # for own install prefix append:
    #   -DCMAKE_INSTALL_PREFIX=$HOME/somepath
@@ -133,7 +133,7 @@ Windows
 ^^^^^^^
 
 The process is basically similar to Linux & OSX, with just a couple of minor tweaks.
-Use ``ps ..\openPMD-api\.travis\download_samples.ps1`` to download sample files for tests (optional).
+Use ``ps ..\openPMD-api\share\openPMD\download_samples.ps1`` to download sample files for tests (optional).
 Replace the last three commands with
 
 .. code-block:: bat

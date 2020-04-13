@@ -49,9 +49,11 @@ Directory Structure
 * ``samples/``
 
   * example files; need to be added manually with:
-    ``.travis/download_samples.sh``
+    ``share/openPMD/download_samples.sh`` (or ``.ps1``)
 
 * ``share/openPMD/``
+
+  * download scripts for example files
 
   * ``cmake/``
 
@@ -65,9 +67,17 @@ Directory Structure
 
   * unit tests which are run with ``ctest`` (``make test``)
 
-* ``.travis/``
+* ``.github/``
 
-  * setup scripts for our continuous integration systems
+  * GitHub issue/pull request templates
+
+  * ``workflows/``
+
+    * GitHub Action scripts for continuous integration checks
+
+  * ``ci/``
+
+    * service-agnostic configurations for continuous integration
 
 * ``docs/``
 
