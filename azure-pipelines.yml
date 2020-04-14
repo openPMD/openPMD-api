@@ -42,6 +42,35 @@ jobs:
       python3 -m pip install openpmd-api --no-binary openpmd-api --user
   - script: python3 -c "import openpmd_api as api; print(api.variants)"
 
+#- job: linux_pypy_pypi
+#  displayName: Ubuntu PyPy from PyPI
+#  pool:
+#    vmImage: ubuntu-disco
+#  steps:
+#  - script: |
+#      sudo apt-get update
+#      sudo apt-get install -y pypy3
+#      wget https://bootstrap.pypa.io/get-pip.py
+#      pypy3 get-pip.py
+#      pypy3 -m pip install -U pip --user
+#      pypy3 -m pip install openpmd-api --user
+#  - script: pypy3 -c "import openpmd_api as api; print(api.variants)"
+
+#- job: linux_pypy_pypi_nobin
+#  displayName: Ubuntu PyPy3 from PyPI w/o binary
+#  pool:
+#    vmImage: ubuntu-disco
+#  steps:
+#  - script: |
+#      sudo apt-get update
+#      sudo apt-get install -y pypy3
+#      wget https://bootstrap.pypa.io/get-pip.py
+#      pypy3 get-pip.py
+#      pypy3 -m pip install -U pip setuptools wheel --user
+#      pypy3 -m pip install -U cmake --user
+#      pypy3 -m pip install openpmd-api --no-binary openpmd-api --user
+#  - script: pypy3 -c "import openpmd_api as api; print(api.variants)"
+
 - job: linux_pip_pypi_mpich
   displayName: Ubuntu pip from PyPI w/ MPICH
   pool:
@@ -208,7 +237,7 @@ jobs:
 - job: macOS_pip_pypi
   displayName: macOS pip from PyPI
   pool:
-    vmImage: macOS-10.14
+    vmImage: macOS-10.15
   steps:
   - script: |
       python3 -m pip install -U pip --user
@@ -224,6 +253,30 @@ jobs:
       python3 -m pip install -U pip setuptools wheel cmake --user
       python3 -m pip install openpmd-api --no-binary openpmd-api --user
   - script: python3 -c "import openpmd_api as api; print(api.variants)"
+
+- job: macOS_pypy_pypi
+  displayName: macOS PyPy from PyPI
+  pool:
+    vmImage: macOS-10.15
+  steps:
+  - script: |
+      brew update
+      brew install pypy3
+      pypy3 -m pip install -U pip --user
+      pypy3 -m pip install openpmd-api --user
+  - script: pypy3 -c "import openpmd_api as api; print(api.variants)"
+
+- job: macOS_pypy_pypi_nobin
+  displayName: macOS PyPy from PyPI w/o binary
+  pool:
+    vmImage: macOS-latest
+  steps:
+  - script: |
+      brew update
+      brew install pypy3
+      pypy3 -m pip install -U pip setuptools wheel cmake --user
+      pypy3 -m pip install openpmd-api --no-binary openpmd-api --user
+  - script: pypy3 -c "import openpmd_api as api; print(api.variants)"
 
 - job: macOS_pip_pypi_mpich
   displayName: macOS pip from PyPI w/ MPICH
