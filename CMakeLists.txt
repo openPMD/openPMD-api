@@ -1029,11 +1029,11 @@ endif()
 if(NOT EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
     if(WIN32)
         message(STATUS "Note: run\n"
-                       "    Powershell.exe -File ${openPMD_SOURCE_DIR}/.travis/download_samples.ps1\n"
+                       "    Powershell.exe -File ${openPMD_SOURCE_DIR}/share/openPMD/download_samples.ps1\n"
                        "to add example files to samples/git-sample/ directory!")
     else()
         message(STATUS "Note: run\n"
-                       "    . ${openPMD_SOURCE_DIR}/.travis/download_samples.sh\n"
+                       "    . ${openPMD_SOURCE_DIR}/share/openPMD/download_samples.sh\n"
                        "to add example files to samples/git-sample/ directory!")
     endif()
 endif()

@@ -125,7 +125,7 @@ before_build:
   - cmd: cd build
 
   # Download example files
-  - ps: ..\.travis\download_samples.ps1
+  - ps: ..\share\openPMD\download_samples.ps1
 
   # Compiler & Generator Selection
   - cmd: if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2015" set OPENPMD_CMAKE_GENERATOR=Visual Studio 14 2015

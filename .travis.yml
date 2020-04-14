@@ -125,7 +125,7 @@ jobs:
         - CXXFLAGS="${CXXFLAGS} -Werror"
         - mkdir -p $HOME/build
         - cd $HOME/build
-        - $TRAVIS_BUILD_DIR/.travis/download_samples.sh
+        - $TRAVIS_BUILD_DIR/share/openPMD/download_samples.sh
         - cmake
             -DCMAKE_CXX_CLANG_TIDY="$(which clang-tidy-5.0);-system-headers=0"
             -DCMAKE_BUILD_TYPE=Release
@@ -172,7 +172,7 @@ jobs:
         - cd $HOME/build
         - if [ ! -d samples/git-sample/ ]; then
             if [ "$USE_SAMPLES" == "ON" ]; then
-              $TRAVIS_BUILD_DIR/.travis/download_samples.sh;
+              $TRAVIS_BUILD_DIR/share/openPMD/download_samples.sh;
               chmod u-w samples/git-sample/*.h5;
             fi
           fi
@@ -279,7 +279,7 @@ jobs:
         - CXXSPEC="%clang@7.0.0" USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=ON USE_SHARED=OFF USE_SAMPLES=ON
         # sanitizer options: test as much as possible and suppress OpenMPI memory leaks
         - ASAN_OPTIONS=detect_stack_use_after_return=1:detect_leaks=1:check_initialization_order=true:strict_init_order=true:detect_stack_use_after_scope=1:fast_unwind_on_malloc=0
-        - LSAN_OPTIONS=suppressions=${TRAVIS_BUILD_DIR}/.travis/sanitizer/clang/Leak.supp
+        - LSAN_OPTIONS=suppressions=${TRAVIS_BUILD_DIR}/.github/ci/sanitizer/clang/Leak.supp
       compiler: clang
       addons:
         apt:
@@ -552,7 +552,7 @@ jobs:
         - mkdir -p $HOME/build
         - cd $HOME/build
         - if [ ! -d samples/git-sample/ ]; then
-            $TRAVIS_BUILD_DIR/.travis/download_samples.sh;
+            $TRAVIS_BUILD_DIR/share/openPMD/download_samples.sh;
             chmod u-w samples/git-sample/*.h5;
           fi
         - CXXFLAGS="-g -O0 -fprofile-arcs -ftest-coverage" CXX=$CXX CC=$CC
@@ -612,7 +612,7 @@ jobs:
             name: "openPMD/openPMD-api"
             description: "C++ & Python API for Scientific I/O with openPMD"
           notification_email: axel.huebl@plasma.ninja
-          build_command_prepend: "mkdir coverity_build; cd coverity_build; . ../.travis/download_samples.sh; cmake .. -DPYTHON_EXECUTABLE:FILEPATH=$(which python3); cd .."
+          build_command_prepend: "mkdir coverity_build; cd coverity_build; . ../share/openPMD/download_samples.sh; cmake .. -DPYTHON_EXECUTABLE:FILEPATH=$(which python3); cd .."
           build_command: "make -C coverity_build -j 2"
           branch_pattern: coverity_scan
 
@@ -625,7 +625,7 @@ install:
     fi
   # spack setup
   - source /etc/profile
-  - cp $TRAVIS_BUILD_DIR/.travis/spack/*.yaml
+  - cp $TRAVIS_BUILD_DIR/.github/ci/spack/*.yaml
        $SPACK_ROOT/etc/spack/
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
       export HOMEBREW_NO_AUTO_UPDATE=1 &&
