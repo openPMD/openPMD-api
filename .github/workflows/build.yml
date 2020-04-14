@@ -47,9 +47,20 @@ jobs:
         ADIOS_USE_STATIC_LIBS: ON
       run: |
         cd src
+        python setup.py sdist --dist-dir ../wheelhouse
         python -m cibuildwheel --output-dir ../wheelhouse
 
+    - name: Publish on pypi.org
+      if: github.event_name == 'push'
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.pypa_gh_action_upload }}
+      run: |
+        python -m pip install -U twine
+        python -m twine upload --skip-existing wheelhouse/*
+
     - uses: actions/upload-artifact@v1
+      name: Publish as GitHub artifact
       with:
         name: wheels
         path: ./wheelhouse
