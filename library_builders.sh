@@ -9,16 +9,36 @@ CPU_COUNT="${CPU_COUNT:-2}"
 function install_buildessentials {
     if [ -e buildessentials-stamp ]; then return; fi
 
-    python -m pip install -U cmake
-
     # static libc, tar tool
-    if [[ "$(uname -s)" == "Linux*" ]]
+    if [ "$(uname -s)" = "Linux" ]
     then
-        yum check-update -y
-        yum -y install \
-            glibc-static \
+        yum check-update -y || true
+        yum -y install    \
+            glibc-static  \
             tar
+
+        CMAKE_FOUND=$(which cmake >/dev/null && { echo 0; } || { echo 1; })
+        if [ $CMAKE_FOUND -ne 0 ]
+        then
+          yum -y install openssl-devel
+          curl -sLo cmake-3.17.1.tar.gz \
+              https://github.com/Kitware/CMake/releases/download/v3.17.1/cmake-3.17.1.tar.gz
+          tar -xzf cmake-*.gz
+          cd cmake-*
+          ./bootstrap                                \
+              --parallel=${CPU_COUNT}                \
+              --                                     \
+              -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX}
+          make -j${CPU_COUNT}
+          make install
+          cd ..
+          rm cmake-*.tar.gz
+        fi
     fi
+
+    python -m pip install -U pip setuptools wheel
+    python -m pip install -U scikit-build
+    python -m pip install -U cmake
 
     touch buildessentials-stamp
 }
@@ -59,7 +79,17 @@ function build_adios2 {
     cd build-ADIOS2
     PY_BIN=$(which python)
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
-    PATH=${CMAKE_BIN}:${PATH} cmake -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DADIOS2_BUILD_EXAMPLES=OFF -DADIOS2_BUILD_TESTING=OFF -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE -DCMAKE_DISABLE_FIND_PACKAGE_BISON=TRUE -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} ../ADIOS2-*
+    PATH=${CMAKE_BIN}:${PATH} cmake               \
+        -DBUILD_SHARED_LIBS=OFF                   \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON      \
+        -DADIOS2_BUILD_EXAMPLES=OFF               \
+        -DADIOS2_BUILD_TESTING=OFF                \
+        -DADIOS2_USE_Fortran=OFF                  \
+        -DADIOS2_USE_PNG=OFF                      \
+        -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE  \
+        -DCMAKE_DISABLE_FIND_PACKAGE_BISON=TRUE   \
+        -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} ../ADIOS2-*
+
     make -j${CPU_COUNT}
     make install
     cd -
