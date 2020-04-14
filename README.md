@@ -2,24 +2,25 @@
 C++ & Python API for Scientific I/O with openPMD
 ================================================
 
-[![Supported openPMD Standard](https://img.shields.io/badge/openPMD-1.0.0--1.1.0-blue.svg)](https://github.com/openPMD/openPMD-standard/releases)
+[![Supported openPMD Standard](https://img.shields.io/badge/openPMD-1.0.0--1.1.0-blue)](https://github.com/openPMD/openPMD-standard/releases)
 [![Documentation Status](https://readthedocs.org/projects/openpmd-api/badge/?version=latest)](https://openpmd-api.readthedocs.io/en/latest/?badge=latest)
-[![Doxygen](https://img.shields.io/badge/API-Doxygen-blue.svg)](https://www.openpmd.org/openPMD-api)
-[![Gitter chat](https://img.shields.io/gitter/room/openPMD/API.svg)](https://gitter.im/openPMD/API)
+[![Doxygen](https://img.shields.io/badge/API-Doxygen-blue)](https://www.openpmd.org/openPMD-api)
+[![Gitter chat](https://img.shields.io/gitter/room/openPMD/API)](https://gitter.im/openPMD/API)
 ![Supported Platforms][api-platforms]
-[![License](https://img.shields.io/badge/license-LGPLv3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0.html)
-[![DOI](https://rodare.hzdr.de/badge/DOI/10.14278/rodare.27.svg)](https://doi.org/10.14278/rodare.27)  
+[![License](https://img.shields.io/badge/license-LGPLv3-blue)](https://www.gnu.org/licenses/lgpl-3.0.html)
+[![DOI](https://rodare.hzdr.de/badge/DOI/10.14278/rodare.27)](https://doi.org/10.14278/rodare.27)  
 [![CodeFactor](https://www.codefactor.io/repository/github/openpmd/openpmd-api/badge)](https://www.codefactor.io/repository/github/openpmd/openpmd-api)
-[![LGTM: C/C++](https://img.shields.io/lgtm/grade/cpp/g/openPMD/openPMD-api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/openPMD/openPMD-api/context:cpp)
-[![LGTM: Python](https://img.shields.io/lgtm/grade/python/g/openPMD/openPMD-api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/openPMD/openPMD-api/context:python)
-[![LGTM: Total alerts](https://img.shields.io/lgtm/alerts/g/openPMD/openPMD-api.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/openPMD/openPMD-api/alerts/)
-[![Coverage Status](https://coveralls.io/repos/github/openPMD/openPMD-api/badge.svg)](https://coveralls.io/github/openPMD/openPMD-api)  
-[![Linux/OSX Build Status dev](https://travis-ci.com/openPMD/openPMD-api.svg?branch=dev)](https://travis-ci.com/openPMD/openPMD-api)
+[![LGTM: C/C++](https://img.shields.io/lgtm/grade/cpp/g/openPMD/openPMD-api?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/openPMD/openPMD-api/context:cpp)
+[![LGTM: Python](https://img.shields.io/lgtm/grade/python/g/openPMD/openPMD-api?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/openPMD/openPMD-api/context:python)
+[![LGTM: Total alerts](https://img.shields.io/lgtm/alerts/g/openPMD/openPMD-api?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/openPMD/openPMD-api/alerts/)
+[![Coverage Status](https://coveralls.io/repos/github/openPMD/openPMD-api/badge)](https://coveralls.io/github/openPMD/openPMD-api)  
+[![Linux/OSX Build Status dev](https://travis-ci.com/openPMD/openPMD-api?branch=dev)](https://travis-ci.com/openPMD/openPMD-api)
 [![Windows Build Status dev](https://ci.appveyor.com/api/projects/status/x95q4n620pqk0e0t/branch/dev?svg=true)](https://ci.appveyor.com/project/ax3l/openpmd-api/branch/dev)
+[![PyPI Wheel Release](https://github.com/openPMD/openPMD-api/workflows/wheels/badge?branch=wheels&event=push)](https://github.com/openPMD/openPMD-api/actions?query=workflow%3Awheels)
 [![Nightly Packages Status](https://dev.azure.com/axelhuebl/openPMD-api/_apis/build/status/openPMD.openPMD-api?branchName=azure_install&label=nightly%20packages)](https://dev.azure.com/axelhuebl/openPMD-api/_build/latest?definitionId=1&branchName=azure_install)
-[![Coverity Scan Build Status](https://scan.coverity.com/projects/17602/badge.svg)](https://scan.coverity.com/projects/openpmd-openpmd-api)
+[![Coverity Scan Build Status](https://scan.coverity.com/projects/17602/badge)](https://scan.coverity.com/projects/openpmd-openpmd-api)
 
-[api-platforms]: https://img.shields.io/badge/platforms-linux%20|%20osx%20|%20win-blue.svg "Supported Platforms"
+[api-platforms]: https://img.shields.io/badge/platforms-linux%20|%20osx%20|%20win-blue "Supported Platforms"
 
 openPMD is an open meta-data schema that provides meaning and self-description for data sets in science and engineering.
 See [the openPMD standard](https://github.com/openPMD/openPMD-standard) for details of this schema.
@@ -34,8 +35,8 @@ Writing & reading through those backends and their associated files is supported
 
 [![C++11][api-cpp]](https://isocpp.org/) ![C++11 API: Alpha][dev-alpha]
 
-[api-cpp]: https://img.shields.io/badge/language-C%2B%2B11-yellowgreen.svg "C++11 API"
-[dev-alpha]: https://img.shields.io/badge/phase-alpha-yellowgreen.svg "Status: Alpha"
+[api-cpp]: https://img.shields.io/badge/language-C%2B%2B11-yellowgreen "C++11 API"
+[dev-alpha]: https://img.shields.io/badge/phase-alpha-yellowgreen "Status: Alpha"
 
 ```cpp
 #include <openPMD/openPMD.hpp>
@@ -66,7 +67,7 @@ for( auto const& i : s.iterations ) {
 
 [![Python3][api-py3]](https://www.python.org/) ![Python3 API: Alpha][dev-alpha]
 
-[api-py3]: https://img.shields.io/badge/language-Python3-yellowgreen.svg "Python3 API"
+[api-py3]: https://img.shields.io/badge/language-Python3-yellowgreen "Python3 API"
 
 
 ```py
@@ -125,17 +126,21 @@ Optional language bindings:
 
 ## Installation
 
-[![Spack Package](https://img.shields.io/badge/spack.io-openpmd--api-brightgreen.svg)](https://spack.readthedocs.io/en/latest/package_list.html#openpmd-api)
-[![Conda Package](https://img.shields.io/badge/conda.io-openpmd--api-brightgreen.svg)](https://anaconda.org/conda-forge/openpmd-api)
-[![PyPI Package](https://img.shields.io/badge/pypi.org-openpmd--api-yellow.svg)](https://pypi.org/project/openPMD-api)
-[![From Source](https://img.shields.io/badge/from_source-CMake-brightgreen.svg)](https://cmake.org)
+[![Spack Package](https://img.shields.io/badge/spack.io-openpmd--api-brightgreen)](https://spack.readthedocs.io/en/latest/package_list.html#openpmd-api)
+[![Conda Package](https://img.shields.io/badge/conda.io-openpmd--api-brightgreen)](https://anaconda.org/conda-forge/openpmd-api)
+[![PyPI Package](https://img.shields.io/badge/pypi.org-openpmd--api-brightgreen)](https://pypi.org/project/openPMD-api)
+[![From Source](https://img.shields.io/badge/from_source-CMake-brightgreen)](https://cmake.org)
+
+Our community loves to help each other.
+Please [report installation problems](https://github.com/openPMD/openPMD-api/issues/new?labels=install&template=install_problem.md) in case you should get stuck.
 
 Choose *one* of the install methods below to get started:
 
 ### [Spack](https://spack.io)
 
-[![Spack Version](https://img.shields.io/spack/v/openpmd-api.svg)](https://spack.readthedocs.io/en/latest/package_list.html#openpmd-api)
-[![Spack Status](https://img.shields.io/badge/method-recommended-brightgreen.svg)](https://spack.readthedocs.io/en/latest/package_list.html#openpmd-api)
+[![Spack Version](https://img.shields.io/spack/v/openpmd-api)](https://spack.readthedocs.io/en/latest/package_list.html#openpmd-api)
+[![Spack Platforms](https://img.shields.io/badge/platforms-linux%20|%20osx%20-blue)](https://spack.io)
+[![Spack Use Case](https://img.shields.io/badge/use_case-development,_HPC-brightgreen)](https://spack.readthedocs.io/en/latest/package_list.html#openpmd-api)
 
 ```bash
 # optional:               +python +adios1 -adios2 -hdf5 -mpi
@@ -145,9 +150,10 @@ spack load -r openpmd-api
 
 ### [Conda](https://conda.io)
 
-[![Conda Version](https://img.shields.io/conda/vn/conda-forge/openpmd-api.svg)](https://anaconda.org/conda-forge/openpmd-api)
-[![Conda Status](https://img.shields.io/badge/method-recommended-brightgreen.svg)](https://anaconda.org/conda-forge/openpmd-api)
-[![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/openpmd-api.svg)](https://anaconda.org/conda-forge/openpmd-api)
+[![Conda Version](https://img.shields.io/conda/vn/conda-forge/openpmd-api)](https://anaconda.org/conda-forge/openpmd-api)
+[![Conda Platforms](https://img.shields.io/badge/platforms-linux%20|%20osx%20|%20win-blue)](https://anaconda.org/conda-forge/openpmd-api)
+[![Conda Use Case](https://img.shields.io/badge/use_case-desktop_%28py%29-brightgreen)](https://anaconda.org/conda-forge/openpmd-api)
+[![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/openpmd-api)](https://anaconda.org/conda-forge/openpmd-api)
 
 ```bash
 # optional:            OpenMPI support  =*=mpi_openmpi*
@@ -157,14 +163,13 @@ conda install -c conda-forge openpmd-api
 
 ### [PyPI](https://pypi.org)
 
-[![PyPI Version](https://img.shields.io/pypi/v/openPMD-api.svg)](https://pypi.org/project/openPMD-api)
-[![PyPI Format](https://img.shields.io/pypi/format/openPMD-api.svg)](https://pypi.org/project/openPMD-api)
-[![PyPI Status](https://img.shields.io/badge/method-experimental-yellow.svg)](https://pypi.org/project/openPMD-api)
-[![PyPI Downloads](https://img.shields.io/pypi/dm/openPMD-api.svg)](https://pypi.org/project/openPMD-api)
+[![PyPI Version](https://img.shields.io/pypi/v/openPMD-api)](https://pypi.org/project/openPMD-api)
+[![PyPI Platforms](https://img.shields.io/badge/platforms-linux%20|%20osx%20|%20%28win%29-blue)](https://pypi.org/project/openPMD-api/#files)
+[![PyPI Use Case](https://img.shields.io/badge/use_case-desktop_%28py%29-brightgreen)](https://pypi.org/project/openPMD-api)
+[![PyPI Format](https://img.shields.io/pypi/format/openPMD-api)](https://pypi.org/project/openPMD-api)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/openPMD-api)](https://pypi.org/project/openPMD-api)
 
-Behind the scenes, this install method *compiles from source* against the found installations of HDF5, ADIOS1, ADIOS2, and/or MPI (in system paths, from other package managers, or loaded via a module system, ...).
-The current status for this install method is *experimental*.
-Please feel free to [report](https://github.com/openPMD/openPMD-api/issues/new/choose) how this works for you.
+On Windows and very old macOS versions, this install method *compiles from source* against the found installations of HDF5, ADIOS1, ADIOS2, and/or MPI (in system paths, from other package managers, or loaded via a module system, ...).
 
 ```bash
 # we need pip 19 or newer
@@ -175,7 +180,7 @@ python3 -m pip install -U pip
 python3 -m pip install openpmd-api
 ```
 
-or with MPI support:
+If MPI-support shall be enabled, we always have to recompile:
 ```bash
 # optional:                                    --user
 python3 -m pip install -U pip setuptools wheel
@@ -187,7 +192,7 @@ openPMD_USE_MPI=ON python3 -m pip install openpmd-api --no-binary openpmd-api
 
 ### From Source
 
-[![Source Status](https://img.shields.io/badge/method-advanced-brightgreen.svg)](https://cmake.org)
+[![Source Use Case](https://img.shields.io/badge/use_case-development-brightgreen)](https://cmake.org)
 
 openPMD-api can also be built and installed from source using [CMake](https://cmake.org/):
 

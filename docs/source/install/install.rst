@@ -16,6 +16,9 @@ Installation
    }
    </style>
 
+Our community loves to help each other.
+Please `report installation problems <https://github.com/openPMD/openPMD-api/issues/new?labels=install&template=install_problem.md>`_ in case you should get stuck.
+
 Choose *one* of the install methods below to get started:
 
 .. _install-spack:
@@ -27,7 +30,7 @@ Choose *one* of the install methods below to get started:
 Using the Spack Package
 -----------------------
 
-A package for openPMD-api is available on the `Spack <https://spack.io>`_ package manager.
+A package for openPMD-api is available via the `Spack <https://spack.io>`_ package manager.
 
 .. code-block:: bash
 
@@ -44,7 +47,7 @@ A package for openPMD-api is available on the `Spack <https://spack.io>`_ packag
 Using the Conda Package
 -----------------------
 
-A package for openPMD-api is available on the `Conda <https://conda.io>`_ package manager.
+A package for openPMD-api is available via the `Conda <https://conda.io>`_ package manager.
 
 .. code-block:: bash
 
@@ -61,11 +64,9 @@ A package for openPMD-api is available on the `Conda <https://conda.io>`_ packag
 Using the PyPI Package
 ----------------------
 
-A package for openPMD-api is available on the Python Package Index (`PyPI <https://pypi.org>`_).
+A package for openPMD-api is available via the Python Package Index (`PyPI <https://pypi.org>`_).
 
-Behind the scenes, this install method *compiles from source* against the found installations of HDF5, ADIOS1, ADIOS2, and/or MPI (in system paths, from other package managers, or loaded via a module system, ...).
-The current status for this install method is *experimental*.
-Please feel free to `report <https://github.com/openPMD/openPMD-api/issues/new/choose>`_ how this works for you.
+On Windows and very old macOS versions, this install method *compiles from source* against the found installations of HDF5, ADIOS1, ADIOS2, and/or MPI (in system paths, from other package managers, or loaded via a module system, ...).
 
 .. code-block:: bash
 
@@ -76,7 +77,7 @@ Please feel free to `report <https://github.com/openPMD/openPMD-api/issues/new/c
    # optional:                        --user
    python3 -m pip install openpmd-api
 
-or with MPI support:
+If MPI-support shall be enabled, we always have to recompile:
 
 .. code-block:: bash
 

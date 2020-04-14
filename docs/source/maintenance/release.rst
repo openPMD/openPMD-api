@@ -35,41 +35,14 @@ PyPI
 ----
 
 Our PyPI release provides our Python bindings in a self-contained way, without providing access to the C++ API.
-On PyPI, we upload a source page with all CMake settings to default (``AUTO``) and proper ``RPATH`` settings for internal libraries.
-Furthermore, we build portable, serial (non-MPI) binaries for Linux and upload them as `manylinux2010 wheels <https://github.com/pypa/manylinux>`_.
+On PyPI, we upload a source package with all build-variants to default (``AUTO``), but MPI (``OFF``) unless activated.
+Furthermore, we build portable, serial (non-MPI) binary wheels for Linux (`manylinux2010 <https://github.com/pypa/manylinux>`_) and macOS.
 
-PyPI releases are experimental but worth a shot in case conda is not an option.
+The deployment of our binary wheels is automated via `cibuildwheel <https://github.com/joerick/cibuildwheel>`_.
+Update the version number with a new git tag in the ``wheels`` `branch <https://github.com/openPMD/openPMD-api/blob/136f2363afcd95541d2a6edb343164caa6b530dd/.github/workflows/build.yml#L17>`_ to trigger an automated deployment to `pypi.org/project/openPMD-api <https://pypi.org/project/openPMD-api>`_ .
+A push (merge) to this branch will build and upload all wheels together with the source distribution through ``twine``.
+
 The same ``pip`` install workflow used to bundle this release also comes in handy to `test a development version quickly with power-users <https://github.com/openPMD/openPMD-api/blob/55f22a82e66ca66868704a3e0827c562ae669ff8/azure-pipelines.yml#L211-L212>`_.
-
-.. code-block:: bash
-
-   # 1. check out the git tag you want to release
-   # 2. verify the version in setup.py is correct (PEP-0440),
-   #    e.g. `<v>.dev[N]`, `<v>a[N]`, `<v>b[N]`, `<v>rc[N]`, or `<v>`
-
-   rm -rf dist/
-   python setup.py clean --all
-
-   # prepare source distribution
-   python setup.py sdist
-
-   rm -rf openPMD_api.egg-info/
-
-   # prepare binary distribution (Linux only)
-   docker build -t openpmd-api .
-   docker run -u $(id -u $USER) -v ${PWD}/dist/:/dist -t openpmd-api
-
-   # GPG sign and upload
-   #   note: have up-to-date tools!
-   #   https://packaging.python.org/guides/making-a-pypi-friendly-readme/
-   twine upload -s dist/*
-
-   # verify everything is updated as expected on
-   # https://pypi.org/project/openPMD-api/
-
-   # optional
-   docker rm openpmd-api
-   rm -rf dist/
 
 
 ReadTheDocs
