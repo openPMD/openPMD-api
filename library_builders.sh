@@ -110,6 +110,6 @@ export CXXFLAGS+=" -fPIC"
 
 install_buildessentials
 build_blosc
-# build_adios1
+build_adios1
 build_adios2
 build_hdf5
