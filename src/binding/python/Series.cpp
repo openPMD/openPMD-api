@@ -65,7 +65,7 @@ void init_Series(py::module &m) {
                 AccessType at,
                 py::object &comm,
                 std::string const& options){
-            //! @todo perform mpi4py import test and check min-version
+            //! TODO perform mpi4py import test and check min-version
             //!       careful: double MPI_Init risk? only import mpi4py.MPI?
             //!       required C-API init? probably just checks:
             //! refs:
@@ -82,7 +82,7 @@ void init_Series(py::module &m) {
             //   __str__ (pretty)
             //   __repr__ (unambiguous)
             //   mpi4py: <mpi4py.MPI.Intracomm object at 0x7f998e6e28d0>
-            //   pyMPI:  ... (todo)
+            //   pyMPI:  ... (TODO)
             py::str const comm_pystr = py::repr(comm);
             std::string const comm_str = comm_pystr.cast<std::string>();
             if( comm_str.substr(0, 12) != std::string("<mpi4py.MPI.") )
@@ -90,13 +90,13 @@ void init_Series(py::module &m) {
                                          comm_str);
             // only checks same layout, e.g. an `int` in `PyObject` could pass this
             if( !py::isinstance< py::class_<openPMD_PyMPIIntracommObject> >(comm.get_type()) )
-                //! @todo add mpi4py version from above import check to error message
+                // TODO add mpi4py version from above import check to error message
                 throw std::runtime_error("Series: comm has unexpected type layout in " +
                                          comm_str +
                                          " (Mismatched MPI at compile vs. runtime? "
                                          "Breaking mpi4py release?)");
 
-            //! @todo other possible implementations:
+            // todo other possible implementations:
             // - pyMPI (inactive since 2008?): import mpi; mpi.WORLD
 
             // reimplementation of mpi4py's:

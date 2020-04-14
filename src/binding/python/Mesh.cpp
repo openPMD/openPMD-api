@@ -64,7 +64,7 @@ void init_Mesh(py::module &m) {
         .def_property_readonly("time_offset", &Mesh::timeOffset<double>)
         .def_property_readonly("time_offset", &Mesh::timeOffset<long double>)
 
-        //! @todo missing specializations
+        // TODO missing specializations
         // .def("set_time_offset", &Mesh::setTimeOffset<float>)
         // .def("set_time_offset", &Mesh::setTimeOffset<double>)
         // .def("set_time_offset", &Mesh::setTimeOffset<long double>)

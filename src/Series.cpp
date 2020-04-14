@@ -547,7 +547,7 @@ Series::initDefaults()
         openPMDapi << "-" << OPENPMDAPI_VERSION_LABEL;
     setSoftware( "openPMD-api", openPMDapi.str() );
 
-    //! @todo Potentially warn on flush if software and author are not user-provided (defaulted)
+    // TODO Potentially warn on flush if software and author are not user-provided (defaulted)
 }
 
 void
@@ -661,7 +661,7 @@ Series::readFileBased()
         std::tie(isContained, padding) = isPartOfSeries(entry);
         if( isContained )
         {
-            //! @todo skip if the padding is exact the number of chars in an iteration?
+            // TODO skip if the padding is exact the number of chars in an iteration?
             paddings.insert(padding);
 
             fOpen.name = entry;

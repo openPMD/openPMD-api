@@ -35,6 +35,10 @@
 
 namespace openPMD
 {
+
+/**
+ * @todo add support for constant patch record components
+ */
 class PatchRecordComponent : public BaseRecordComponent
 {
     template<
@@ -62,7 +66,6 @@ public:
     void load(std::shared_ptr< T >);
     template< typename T >
     void store(uint64_t idx, T);
-    //! @todo add support for constant patch record components
 
 OPENPMD_private:
     PatchRecordComponent();

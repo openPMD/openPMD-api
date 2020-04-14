@@ -44,7 +44,7 @@ namespace helper
     {
         out << "openPMD series: " << series.name() << "\n";
         out << "openPMD standard: " << series.openPMD() << "\n";
-        out << "openPMD extensions: " << series.openPMDextension() << "\n\n";  //! @todo improve listing of extensions
+        out << "openPMD extensions: " << series.openPMDextension() << "\n\n";  // TODO improve listing of extensions
 
         if( longer )
         {
