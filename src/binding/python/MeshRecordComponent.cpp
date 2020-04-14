@@ -39,6 +39,18 @@ void init_MeshRecordComponent(py::module &m) {
             }
         )
 
-        // @todo add position
+        .def_property("position",
+            &MeshRecordComponent::position<float>,
+            &MeshRecordComponent::setPosition<float>,
+            "Relative position of the component on an element (node/cell/voxel) of the mesh")
+        .def_property("position",
+            &MeshRecordComponent::position<double>,
+            &MeshRecordComponent::setPosition<double>,
+            "Relative position of the component on an element (node/cell/voxel) of the mesh")
+        .def_property("position",
+            &MeshRecordComponent::position<long double>,
+            &MeshRecordComponent::setPosition<long double>,
+            "Relative position of the component on an element (node/cell/voxel) of the mesh")
+
     ;
 }

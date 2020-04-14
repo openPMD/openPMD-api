@@ -18,6 +18,7 @@ Features
 """"""""
 
 - ``Record(Component)``: ``scalar()``, ``constant()``, ``empty()`` #711
+- ``MeshRecordComponent``: add ``position`` read-write property #713
 
 Bug Fixes
 """""""""
