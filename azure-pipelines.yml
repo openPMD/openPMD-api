@@ -225,7 +225,21 @@ jobs:
       python -c "import openpmd_api as api; print(api.variants)"
 
 # linuxbrew -------------------------------------------------------------------
-# TODO
+- job: linux_brew
+  displayName: Ubuntu linuxbrew
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+  - script: |
+      bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+      test -d ~/.linuxbrew && eval $(~/.linuxbrew/bin/brew shellenv)
+      test -d /home/linuxbrew/.linuxbrew && eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
+      test -r ~/.bash_profile && echo "eval \$($(brew --prefix)/bin/brew shellenv)" >>~/.bash_profile
+      echo "eval \$($(brew --prefix)/bin/brew shellenv)" >>~/.profile
+      brew update
+      brew tap openpmd/openpmd
+      brew install openpmd-api
+      python3 -c "import openpmd_api as api; print(api.variants)"
 
 # source ----------------------------------------------------------------------
 # TODO
@@ -420,7 +434,17 @@ jobs:
       python -c "from mpi4py import MPI; import openpmd_api as api; print(api.variants)"
 
 # homebrew --------------------------------------------------------------------
-# TODO
+- job: macOS_brew
+  displayName: macOS homebrew
+  pool:
+    vmImage: macOS-10.14
+  steps:
+  - script: |
+      brew update
+      brew tap openpmd/openpmd
+      brew install openpmd-api
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
 
 # source ----------------------------------------------------------------------
 # TODO
