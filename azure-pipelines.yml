@@ -244,6 +244,16 @@ jobs:
       python3 -m pip install openpmd-api --user
   - script: python3 -c "import openpmd_api as api; print(api.variants)"
 
+- job: macOS_pip_pypi_old
+  displayName: macOS pip from PyPI (old)
+  pool:
+    vmImage: macOS-10.14
+  steps:
+  - script: |
+      python3 -m pip install -U pip --user
+      python3 -m pip install openpmd-api --user
+  - script: python3 -c "import openpmd_api as api; print(api.variants)"
+
 - job: macOS_pip_pypi_nobin
   displayName: macOS pip from PyPI w/o binary
   pool:
