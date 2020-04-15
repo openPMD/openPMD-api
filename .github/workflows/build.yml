@@ -51,7 +51,7 @@ jobs:
         python -m cibuildwheel --output-dir ../wheelhouse
 
     - name: Publish on pypi.org
-      if: github.event_name == 'push' && github.repository == 'openPMD/openPMD-api' && github.ref == 'wheels'
+      if: github.event_name == 'push' && github.repository == 'openPMD/openPMD-api' && github.ref == 'refs/heads/wheels'
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.pypa_gh_action_upload }}
