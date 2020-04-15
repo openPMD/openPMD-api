@@ -9,6 +9,15 @@ CPU_COUNT="${CPU_COUNT:-2}"
 function install_buildessentials {
     if [ -e buildessentials-stamp ]; then return; fi
 
+    # Cleanup:
+    #   - Travis-CI macOS ships a pre-installed HDF5
+    if [ "$(uname -s)" = "Darwin" ]
+    then
+        brew unlink hdf5 || true
+        brew uninstall --ignore-dependencies hdf5 || true
+        rm -rf /usr/local/Cellar/hdf5
+    fi
+
     # static libc, tar tool
     if [ "$(uname -s)" = "Linux" ]
     then
@@ -84,8 +93,11 @@ function build_adios2 {
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON      \
         -DADIOS2_BUILD_EXAMPLES=OFF               \
         -DADIOS2_BUILD_TESTING=OFF                \
+        -DADIOS2_USE_BZip2=OFF                    \
         -DADIOS2_USE_Fortran=OFF                  \
+        -DADIOS2_USE_MPI=OFF                      \
         -DADIOS2_USE_PNG=OFF                      \
+        -DHDF5_USE_STATIC_LIBRARIES:BOOL=ON       \
         -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE  \
         -DCMAKE_DISABLE_FIND_PACKAGE_BISON=TRUE   \
         -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} ../ADIOS2-*
@@ -138,8 +150,12 @@ function build_hdf5 {
 export CFLAGS+=" -fPIC"
 export CXXFLAGS+=" -fPIC"
 
+# CMake shall search for static dependencies of HDF5 and ADIOS1
+export HDF5_USE_STATIC_LIBRARIES="ON"
+export ADIOS_USE_STATIC_LIBS="ON"
+
 install_buildessentials
 build_blosc
+build_hdf5
 build_adios1
 build_adios2
-build_hdf5

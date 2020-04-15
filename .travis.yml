@@ -10,9 +10,6 @@ env:
     - CIBW_SKIP="cp27-* pp27-*"
     # Install dependencies on Linux and OSX
     - CIBW_BEFORE_BUILD="bash -x .github/library_builders.sh"
-    # CMake shall search for static dependencies of HDF5 and ADIOS1
-    - HDF5_USE_STATIC_LIBRARIES="ON"
-    - ADIOS_USE_STATIC_LIBS="ON"
 
 jobs:
   include:
