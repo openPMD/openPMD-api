@@ -56,7 +56,10 @@ function build_adios1 {
     if [ -e adios1-stamp ]; then return; fi
     
     # avoid picking up a static libpthread in adios (also: those libs lack -fPIC)
-    # rm /usr/lib64/libpthread.a /usr/lib64/libm.a /usr/lib64/librt.a
+    if [ "$(uname -s)" = "Linux" ]
+    then
+        rm -f /usr/lib64/libpthread.a /usr/lib64/libm.a /usr/lib64/librt.a
+    fi
 
     curl -sLo adios-1.13.1.tar.gz \
         http://users.nccs.gov/~pnorbert/adios-1.13.1.tar.gz
@@ -151,10 +154,6 @@ function build_hdf5 {
 # static libs need relocatable symbols for linking to shared python lib
 export CFLAGS+=" -fPIC"
 export CXXFLAGS+=" -fPIC"
-
-# CMake shall search for static dependencies of HDF5 and ADIOS1
-export HDF5_USE_STATIC_LIBRARIES="ON"
-export ADIOS_USE_STATIC_LIBS="ON"
 
 install_buildessentials
 build_blosc
