@@ -14,9 +14,8 @@ env:
 jobs:
   include:
     # perform a linux ARMv8 build
-    # blocked by https://github.com/ornladios/ADIOS2/issues/2137
-    # - services: docker
-    #   arch: aarch64
+    - services: docker
+      arch: aarch64
 
     # perform a linux PPC64LE build
     # blocked by https://github.com/pypa/auditwheel/issues/36

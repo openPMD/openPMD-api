@@ -83,6 +83,8 @@ function build_adios2 {
     cd ADIOS2-*
     curl -sLo adios2-static.patch https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/1828.patch
     patch -p1 < adios2-static.patch
+    curl -sLo adios2-i686.patch   https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/2138.patch
+    patch -p1 < adios2-i686.patch
     cd ..
     mkdir build-ADIOS2
     cd build-ADIOS2
