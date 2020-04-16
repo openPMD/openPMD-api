@@ -6,7 +6,7 @@ branches:
 
 env:
   global:
-    - OPENPMD_GIT_REF="0.11.1-alpha"
+    - OPENPMD_GIT_REF="0.11.1-alpha1"
 
     # (1,2) Skip building for Python 2.7 on all platforms
     # (3) GNU 7.3.1 & MPark.Variant 1.4.0 on i686:
