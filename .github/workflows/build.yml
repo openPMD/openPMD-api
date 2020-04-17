@@ -45,6 +45,10 @@ jobs:
         # for the openPMD-api build, CMake shall search for
         # static dependencies of HDF5 and ADIOS1 (see setup.py)
         CIBW_ENVIRONMENT: HDF5_USE_STATIC_LIBRARIES='ON' ADIOS_USE_STATIC_LIBS='ON'
+        # C++11 & 14 support in macOS 10.9+
+        # C++17 support in macOS 10.13+/10.14+
+        #   https://cibuildwheel.readthedocs.io/en/stable/cpp_standards/#macos-and-deployment-target-versions
+        MACOSX_DEPLOYMENT_TARGET: 10.9
       run: |
         cd src
         python setup.py sdist --dist-dir ../wheelhouse
