@@ -48,6 +48,11 @@ namespace ls
         std::cout << "    " << program_name << " ./samples/serial_patch.bp\n";
     }
 
+    /** Run the openpmd-ls command line tool
+     *
+     * @param argv command line arguments 1-N
+     * @return exit code (zero for success)
+     */
     inline int
     run( std::vector< std::string > const & argv )
     {

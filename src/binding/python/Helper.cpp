@@ -45,7 +45,7 @@ void init_Helper(py::module &m) {
         "List information about an openPMD data series"
     )
     // CLI entry point
-    .def("ls", // &cli::ls::run
+    .def("_ls_run", // &cli::ls::run
         [](std::vector< std::string > & argv) {
             return cli::ls::run( argv );
         }

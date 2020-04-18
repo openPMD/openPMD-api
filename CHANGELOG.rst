@@ -22,6 +22,7 @@ Features
 
   - ``__init__.py`` facade #720
   - add ``Mesh_Record_Component.position`` read-write property #713
+  - add ``openpmd-ls`` tool in ``pip`` installs #721
 
 Bug Fixes
 """""""""

@@ -213,6 +213,7 @@ jobs:
         # - make package
         # - dpkg -i openPMD*.deb
         - ls -R $HOME/openPMD-test-install | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'
+        # run CLI tools such as openpmd-ls
     - <<: *test-cpp-unit
       name: clang@5.0.0 +OMPI -PY +H5 +ADIOS1 (BP3) +ADIOS2
       language: python

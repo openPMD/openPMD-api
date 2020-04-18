@@ -47,7 +47,7 @@ class CMakeBuild(build_ext):
             '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' +
             os.path.join(extdir, "openpmd_api"),
             # '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=' + extdir,
-            '-DBUILD_CLI_TOOLS:BOOL=OFF',  # TODO: how to install properly?
+            '-DBUILD_CLI_TOOLS:BOOL=OFF',  # note: provided as console scripts
             '-DCMAKE_PYTHON_OUTPUT_DIRECTORY=' + extdir,
             '-DPYTHON_EXECUTABLE=' + sys.executable,
             # variants
@@ -83,11 +83,6 @@ class CMakeBuild(build_ext):
                     cfg.upper(),
                     extdir
                 )
-                # TODO: how to install properly?
-                # '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_{}={}'.format(
-                #     cfg.upper(),
-                #     extdir
-                # )
             ]
             if sys.maxsize > 2**32:
                 cmake_args += ['-A', 'x64']
@@ -169,12 +164,12 @@ setup(
     python_requires='>=3.5, <3.9',
     # tests_require=['pytest'],
     install_requires=install_requires,
-#   see: https://github.com/scikit-build/cmake-python-distributions/blob/master/cmake/__init__.py
-#    entry_points={
-#        'console_scripts': [
-#            'openpmd-ls = openpmd_api:ls'
-#        ]
-#    },
+    # see: src/bindings/python/cli
+    entry_points={
+        'console_scripts': [
+            'openpmd-ls = openpmd_api.cli:ls'
+        ]
+    },
     # we would like to use this mechanism, but pip / setuptools do not
     # influence the build and build_ext with it.
     # therefore, we use environment vars to control.
