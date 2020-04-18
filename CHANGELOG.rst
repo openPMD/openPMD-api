@@ -18,7 +18,10 @@ Features
 """"""""
 
 - ``Record(Component)``: ``scalar()``, ``constant()``, ``empty()`` #711
-- ``MeshRecordComponent``: add ``position`` read-write property #713
+- Python:
+
+  - ``__init__.py`` facade #720
+  - add ``Mesh_Record_Component.position`` read-write property #713
 
 Bug Fixes
 """""""""
@@ -35,6 +38,7 @@ Other
   - migrate to GitHub checkout action v2 #712
   - move ``.travis/`` to ``.github/ci/`` #715
   - move example file download scripts to ``share/openPMD/`` #715
+- CD: autodeploy wheels #716 #719
 - ``listSeries``: remove unused parameters in try-catch #706
 
 

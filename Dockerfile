@@ -15,7 +15,7 @@ ENV        CXXFLAGS="-fPIC ${CXXFLAGS}"
 # install dependencies
 #   CMake, zlib?, HDF5, c-blosc, ADIOS1, ADIOS2
 RUN        yum check-update -y \
-           && yum -y install \
+           ; yum -y install \
                glibc-static \
                tar
 #RUN        curl -sOL https://github.com/Kitware/CMake/releases/download/v3.14.5/cmake-3.14.5-Linux-x86_64.tar.gz \
@@ -26,7 +26,8 @@ RUN        yum check-update -y \
 #ENV        PATH=/opt/cmake/bin:${PATH}
 RUN        for PY_TARGET in ${PY_VERSIONS}; do \
                PY_BIN=/opt/python/cp${PY_TARGET:0:2}-cp${PY_TARGET}/bin/python \
-               && ${PY_BIN} -m pip install setuptools cmake; \
+               && ${PY_BIN} -m pip install -U pip               \
+               && ${PY_BIN} -m pip install -U setuptools cmake; \
            done;
 
 RUN        curl -sLo hdf5-1.10.5.tar.gz https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.5/src/hdf5-1.10.5.tar.gz \
