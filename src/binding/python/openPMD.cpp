@@ -54,11 +54,11 @@ void init_Series(py::module &);
 void init_UnitDimension(py::module &);
 
 
-PYBIND11_MODULE(openpmd_api, m) {
+PYBIND11_MODULE(openpmd_api_cxx, m) {
     m.doc() = R"pbdoc(
             openPMD-api
             -----------
-            .. currentmodule:: openpmd_api
+            .. currentmodule:: openpmd_api_cxx
 
             .. autosummary::
                :toctree: _generate
@@ -110,6 +110,9 @@ PYBIND11_MODULE(openpmd_api, m) {
 
     // API runtime feature variants
     m.attr("variants") = openPMD::getVariants();
+
+    // license SPDX identifier
+    m.attr("__license__") = "LGPL-3.0-or-later";
 
     // TODO broken numpy if not at least v1.15.0: raise warning
     // auto numpy = py::module::import("numpy");

@@ -560,7 +560,7 @@ if(openPMD_HAVE_PYTHON)
 
     if(WIN32)
         set(CMAKE_INSTALL_PYTHONDIR_DEFAULT
-            "${CMAKE_INSTALL_LIBDIR}\\site-packages"
+            "${CMAKE_INSTALL_LIBDIR}/site-packages"
         )
     else()
         set(CMAKE_INSTALL_PYTHONDIR_DEFAULT
@@ -575,13 +575,13 @@ if(openPMD_HAVE_PYTHON)
         CACHE PATH "Build directory for python modules"
     )
     set_target_properties(openPMD.py PROPERTIES
-        ARCHIVE_OUTPUT_NAME openpmd_api
-        LIBRARY_OUTPUT_NAME openpmd_api
-        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}
-        PDB_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}
-        COMPILE_PDB_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}
+        ARCHIVE_OUTPUT_NAME openpmd_api_cxx
+        LIBRARY_OUTPUT_NAME openpmd_api_cxx
+        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
+        PDB_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
+        COMPILE_PDB_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
     )
 endif()
 
@@ -794,8 +794,14 @@ install(TARGETS ${openPMD_INSTALL_TARGET_NAMES}
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 if(openPMD_HAVE_PYTHON)
-    install(TARGETS openPMD.py
+    install(
+        DIRECTORY   ${openPMD_SOURCE_DIR}/src/binding/python/openpmd_api
         DESTINATION ${CMAKE_INSTALL_PYTHONDIR}
+        PATTERN "*pyc" EXCLUDE
+        PATTERN "__pycache__" EXCLUDE
+    )
+    install(TARGETS openPMD.py
+        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/openpmd_api
     )
 endif()
 install(DIRECTORY "${openPMD_SOURCE_DIR}/include/openPMD"
@@ -963,6 +969,14 @@ if(BUILD_CLI_TOOLS)
     endif()
 endif()
 
+if(openPMD_HAVE_PYTHON)
+    add_custom_command(TARGET openPMD.py POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${openPMD_SOURCE_DIR}/src/binding/python/openpmd_api
+                ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
+    )
+endif()
+
 # Python Examples
 # Current examples all use HDF5, elaborate if other backends are used
 if(openPMD_HAVE_PYTHON AND openPMD_HAVE_HDF5)
@@ -976,6 +990,23 @@ if(openPMD_HAVE_PYTHON AND openPMD_HAVE_HDF5)
             message(STATUS "Note: mpi4py not found. "
                            "Skipping MPI-parallel Python examples.")
         endif()
+
+        #add_test(NAME Module.py.Help
+        #    COMMAND ${PYTHON_EXECUTABLE} -m openpmd-ls --help
+        #    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+        #)
+        #if(WIN32)
+        #    set_tests_properties(Module.py.Help
+        #        PROPERTY ENVIRONMENT
+        #            "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
+        #            "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${CMAKE_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
+        #    )
+        #else()
+        #    set_tests_properties(Module.py.Help
+        #        PROPERTIES ENVIRONMENT
+        #            "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
+        #    )
+        #endif()
 
         foreach(examplename ${openPMD_PYTHON_EXAMPLE_NAMES})
             add_custom_command(TARGET openPMD.py POST_BUILD

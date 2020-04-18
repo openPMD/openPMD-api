@@ -52,6 +52,15 @@ class APITest(unittest.TestCase):
         self.__particle_series = io.Series(path_to_particle_data, mode)
         self.__series = io.Series(path_to_data, mode)
 
+        assert io.__version__ is not None
+        assert io.__version__ != ""
+        assert io.__doc__ is not None
+        assert io.__doc__ != ""
+        assert io.__license__ is not None
+        assert io.__license__ != ""
+        # assert io.__author__ is not None
+        # assert io.__author__ != ""
+
     def tearDown(self):
         """ Tearing down a test. """
         for f in self.__files_to_remove:
