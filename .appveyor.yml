@@ -15,20 +15,6 @@ environment:
       SHARED: ON
 
     - TARGET_ARCH: x86
-      CONDA_PY: 36
-      CONDA_INSTALL_LOCN: C:\\Miniconda36
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-      platform: x86
-      SHARED: OFF
-
-    - TARGET_ARCH: x64
-      CONDA_PY: 36
-      CONDA_INSTALL_LOCN: C:\\Miniconda36-x64
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
-      platform: x64
-      SHARED: OFF
-
-    - TARGET_ARCH: x86
       CONDA_PY: 37
       CONDA_INSTALL_LOCN: C:\\Miniconda37
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
