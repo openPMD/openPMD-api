@@ -29,7 +29,9 @@ jobs:
   - script: |
       python3 -m pip install -U pip --user
       python3 -m pip install openpmd-api --user
-  - script: python3 -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+#      openpmd-ls --help
 
 - job: linux_pip_pypi_nobin
   displayName: Ubuntu pip from PyPI w/o binary
@@ -40,7 +42,9 @@ jobs:
       python3 -m pip install -U pip setuptools wheel --user
       python3 -m pip install -U cmake --user
       python3 -m pip install openpmd-api --no-binary openpmd-api --user
-  - script: python3 -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+#      openpmd-ls --help
 
 #- job: linux_pypy_pypi
 #  displayName: Ubuntu PyPy from PyPI
@@ -82,7 +86,9 @@ jobs:
       python3 -m pip install -U pip setuptools wheel --user
       python3 -m pip install -U cmake --user
       openPMD_USE_MPI=ON python3 -m pip install openpmd-api --no-binary openpmd-api --user
-  - script: python3 -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+#      openpmd-ls --help
 
 - job: linux_pip_dev_openmpi
   displayName: Ubuntu pip from dev w/ OpenMPI
@@ -95,7 +101,9 @@ jobs:
       python3 -m pip install -U pip setuptools wheel --user
       python3 -m pip install -U cmake --user
       openPMD_USE_MPI=ON python3 -m pip install git+https://github.com/openPMD/openPMD-api.git@dev --user
-  - script: python3 -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+#      openpmd-ls --help
 
 - job: linux_pip_dev
   displayName: Ubuntu pip from dev
@@ -105,7 +113,9 @@ jobs:
   - script: |
       python3 -m pip install -U pip --user
       python3 -m pip install git+https://github.com/openPMD/openPMD-api.git@dev --user
-  - script: python3 -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+#      openpmd-ls --help
 
 # conda -----------------------------------------------------------------------
 # attn: each build step runs in its own process and might require
@@ -119,7 +129,9 @@ jobs:
     displayName: Add conda to PATH
   - script: |
       conda install -y -c conda-forge openpmd-api
-  - script: python3 -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+      openpmd-ls --help
 
 - job: linux_conda_mpich
   displayName: Ubuntu conda w/ MPICH
@@ -130,7 +142,9 @@ jobs:
     displayName: Add conda to PATH
   - script: |
       conda install -y -c conda-forge openpmd-api=*=mpi_mpich*
-  - script: python3 -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+      openpmd-ls --help
 
 - job: linux_conda_openmpi
   displayName: Ubuntu conda w/ OpenMPI
@@ -141,7 +155,9 @@ jobs:
     displayName: Add conda to PATH
   - script: |
       conda install -y -c conda-forge openpmd-api=*=mpi_openmpi*
-  - script: python3 -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+      openpmd-ls --help
 
 - job: linux_conda_cuda_mpi
   displayName: Ubuntu conda w/ CUDA
@@ -176,6 +192,8 @@ jobs:
       . spack/share/spack/setup-env.sh
       spack compiler find
       spack install -v openpmd-api %gcc@7.5.0
+      spack load openpmd-api
+      openpmd-ls --help
 
 - job: linux_spack_nompi
   displayName: Ubuntu spack w/o MPI
@@ -189,6 +207,8 @@ jobs:
       . spack/share/spack/setup-env.sh
       spack compiler find
       spack install -v openpmd-api -mpi ^adios2~fortran
+      spack load openpmd-api
+      openpmd-ls --help
 # FIXME https://github.com/ornladios/ADIOS2/issues/1885
 
 - job: linux_spack_nompi_adios2master
@@ -203,6 +223,8 @@ jobs:
       . spack/share/spack/setup-env.sh
       spack compiler find
       spack install -v openpmd-api -mpi ^adios2@master
+      spack load openpmd-api
+      openpmd-ls --help
 
 # timeout: >120min
 - job: linux_spack_all
@@ -223,6 +245,7 @@ jobs:
       spack install -v openpmd-api +python +adios1 +adios2 %gcc@7.5.0
       spack load -r openpmd-api
       python -c "import openpmd_api as api; print(api.variants)"
+      openpmd-ls --help
 
 # linuxbrew -------------------------------------------------------------------
 - job: linux_brew
@@ -240,6 +263,7 @@ jobs:
       brew tap openpmd/openpmd
       brew install openpmd-api
       python3 -c "import openpmd_api as api; print(api.variants)"
+      openpmd-ls --help
 
 # source ----------------------------------------------------------------------
 # TODO
@@ -256,7 +280,9 @@ jobs:
   - script: |
       python3 -m pip install -U pip --user
       python3 -m pip install openpmd-api --user
-  - script: python3 -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+#      openpmd-ls --help
 
 - job: macOS_pip_pypi_old
   displayName: macOS pip from PyPI (old)
@@ -266,7 +292,9 @@ jobs:
   - script: |
       python3 -m pip install -U pip --user
       python3 -m pip install openpmd-api --user
-  - script: python3 -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+#      openpmd-ls --help
 
 - job: macOS_pip_pypi_nobin
   displayName: macOS pip from PyPI w/o binary
@@ -276,9 +304,11 @@ jobs:
   - script: |
       python3 -m pip install -U pip setuptools wheel cmake --user
       python3 -m pip install openpmd-api --no-binary openpmd-api --user
-  - script: python3 -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+#      openpmd-ls --help
 
-- job: macOS_pypy_pypi
+- job: macOS_pip_pypy_pypi
   displayName: macOS PyPy from PyPI
   pool:
     vmImage: macOS-10.15
@@ -288,9 +318,11 @@ jobs:
       brew install pypy3
       pypy3 -m pip install -U pip --user
       pypy3 -m pip install openpmd-api --user
-  - script: pypy3 -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      pypy3 -c "import openpmd_api as api; print(api.variants)"
+#      openpmd-ls --help
 
-- job: macOS_pypy_pypi_nobin
+- job: macOS_pip_pypy_pypi_nobin
   displayName: macOS PyPy from PyPI w/o binary
   pool:
     vmImage: macOS-latest
@@ -300,7 +332,23 @@ jobs:
       brew install pypy3
       pypy3 -m pip install -U pip setuptools wheel cmake --user
       pypy3 -m pip install openpmd-api --no-binary openpmd-api --user
-  - script: pypy3 -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      pypy3 -c "import openpmd_api as api; print(api.variants)"
+#      openpmd-ls --help
+
+- job: macOS_pip_pypy_dev
+  displayName: macOS PyPy from dev
+  pool:
+    vmImage: macOS-10.15
+  steps:
+  - script: |
+      brew update
+      brew install pypy3
+      pypy3 -m pip install -U pip --user
+      pypy3 -m pip install git+https://github.com/openPMD/openPMD-api.git@dev --user
+  - script: |
+      pypy3 -c "import openpmd_api as api; print(api.variants)"
+#      openpmd-ls --help
 
 - job: macOS_pip_pypi_mpich
   displayName: macOS pip from PyPI w/ MPICH
@@ -312,7 +360,9 @@ jobs:
       brew install mpich
       python3 -m pip install -U pip setuptools wheel cmake --user
       openPMD_USE_MPI=ON python3 -m pip install openpmd-api --no-binary openpmd-api --user
-  - script: python3 -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+#      openpmd-ls --help
 
 - job: macOS_pip_dev_openmpi
   displayName: macOS pip from dev w/ OpenMPI
@@ -324,7 +374,9 @@ jobs:
       brew install openmpi
       python3 -m pip install -U pip --user
       openPMD_USE_MPI=ON python3 -m pip install git+https://github.com/openPMD/openPMD-api.git@dev --user
-  - script: python3 -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+#      openpmd-ls --help
 
 - job: macOS_pip_dev
   displayName: macOS pip from dev
@@ -334,7 +386,9 @@ jobs:
   - script: |
       python3 -m pip install -U pip --user
       python3 -m pip install git+https://github.com/openPMD/openPMD-api.git@dev --user
-  - script: python3 -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+#      openpmd-ls --help
 
 # conda -----------------------------------------------------------------------
 # attn: each build step runs in its own process and might require
@@ -350,7 +404,9 @@ jobs:
     displayName: Add conda to PATH
   - script: |
       conda install -y -c conda-forge openpmd-api
-  - script: python3 -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+      openpmd-ls --help
 
 - job: macOS_conda_mpich
   displayName: macOS conda w/ MPICH
@@ -363,7 +419,9 @@ jobs:
     displayName: Add conda to PATH
   - script: |
       conda install -y -c conda-forge openpmd-api=*=mpi_mpich*
-  - script: python3 -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+      openpmd-ls --help
 
 - job: macOS_conda_openmpi
   displayName: macOS conda w/ OpenMPI
@@ -376,7 +434,9 @@ jobs:
     displayName: Add conda to PATH
   - script: |
       conda install -y -c conda-forge openpmd-api=*=mpi_openmpi*
-  - script: python3 -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+      openpmd-ls --help
 
 # spack -----------------------------------------------------------------------
 # timeout: >60min
@@ -394,6 +454,8 @@ jobs:
       . spack/share/spack/setup-env.sh
       spack compiler find
       spack install -v openpmd-api
+      spack load openpmd-api
+      openpmd-ls --help
 
 - job: macOS_spack_nompi
   displayName: macOS spack from dev w/o MPI
@@ -416,6 +478,8 @@ jobs:
       cmake ..
       make
       ./mytest
+      openpmd-ls --help
+      openpmd-ls ../samples/3_write_serial.h5
 
 # timeout: >60min
 - job: macOS_spack_all
@@ -432,6 +496,7 @@ jobs:
       spack install -v openpmd-api +python +adios1
       spack load -r openpmd-api
       python -c "from mpi4py import MPI; import openpmd_api as api; print(api.variants)"
+      openpmd-ls --help
 
 # homebrew --------------------------------------------------------------------
 - job: macOS_brew
@@ -445,6 +510,7 @@ jobs:
       brew install openpmd-api
   - script: |
       python3 -c "import openpmd_api as api; print(api.variants)"
+      openpmd-ls --help
 
 # source ----------------------------------------------------------------------
 # TODO
@@ -466,7 +532,9 @@ jobs:
       which python
       python -m pip install -U pip --user
       python -m pip install -v openpmd-api --user
-  - script: python -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      python -c "import openpmd_api as api; print(api.variants)"
+#      openpmd-ls --help
 
 - job: win_pip_pypi_nobin
   displayName: Windows pip from PyPI w/o binary
@@ -481,7 +549,9 @@ jobs:
       which python
       python -m pip install -U pip setuptools wheel cmake --user
       python -m pip install -v openpmd-api --no-binary openpmd-api --user
-  - script: python -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      python -c "import openpmd_api as api; print(api.variants)"
+#      openpmd-ls --help
 
 - job: win_pip_dev
   displayName: Windows pip from dev
@@ -498,7 +568,9 @@ jobs:
       which python
       python -m pip install -U pip --user
       python -m pip install -v git+https://github.com/openPMD/openPMD-api.git@dev --user
-  - script: python -c "import openpmd_api as api; print(api.variants)"
+  - script: |
+      python -c "import openpmd_api as api; print(api.variants)"
+      openpmd-ls --help
 
 # conda -----------------------------------------------------------------------
 # attn: each build step runs in its own process and might require
@@ -528,6 +600,7 @@ jobs:
   - script: |
       call activate base
       python -c "import openpmd_api as api; print(api.variants)"
+      openpmd-ls --help
 
 # source ----------------------------------------------------------------------
 # TODO
