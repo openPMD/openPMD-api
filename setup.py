@@ -81,7 +81,7 @@ class CMakeBuild(build_ext):
             cmake_args += [
                 '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(
                     cfg.upper(),
-                    extdir
+                    os.path.join(extdir, "openpmd_api")
                 )
                 # TODO: how to install properly?
                 # '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_{}={}'.format(
