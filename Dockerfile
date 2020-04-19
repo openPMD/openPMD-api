@@ -140,7 +140,7 @@ RUN        ls -hal /usr/local/lib/python3.7/dist-packages/
 # RUN        objdump -x /usr/local/lib/python3.7/dist-packages/openpmd_api.cpython-37m-x86_64-linux-gnu.so | grep RPATH
 RUN        ldd /usr/local/lib/python3.7/dist-packages/openpmd_api.cpython-37m-x86_64-linux-gnu.so
 RUN        python3 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
-#RUN        python3 -m openpmd_api.cli:ls --help
+RUN        python3 -m openpmd_api.ls --help
 RUN        openpmd-ls --help
 #RUN        echo "* soft core 100000" >> /etc/security/limits.conf && \
 #           python3 -c "import openpmd_api as io"; \
@@ -158,7 +158,7 @@ RUN        python3.8 --version \
            && python3.8 get-pip.py \
            && python3.8 -m pip install openPMD_api-*-cp38-cp38-manylinux2010_x86_64.whl
 RUN        python3.8 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
-#RUN        python3.8 -m openpmd_api.cli:ls --help
+RUN        python3.8 -m openpmd_api.ls --help
 RUN        openpmd-ls --help
 
 # test in fresh env: Ubuntu:18.04 + Python 3.6
@@ -172,7 +172,7 @@ RUN        python3 --version \
            && python3 -m pip install -U pip \
            && python3 -m pip install openPMD_api-*-cp36-cp36m-manylinux2010_x86_64.whl
 RUN        python3 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
-#RUN        python3 -m openpmd_api.cli:ls --help
+RUN        python3 -m openpmd_api.ls --help
 RUN        openpmd-ls --help
 
 # test in fresh env: Debian:Stretch + Python 3.5
@@ -186,7 +186,7 @@ RUN        python3 --version \
            && python3 -m pip install -U pip \
            && python3 -m pip install openPMD_api-*-cp35-cp35m-manylinux2010_x86_64.whl
 RUN        python3 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
-#RUN        python3 -m openpmd_api.cli:ls --help
+RUN        python3 -m openpmd_api.ls --help
 RUN        openpmd-ls --help
 
 

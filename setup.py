@@ -167,7 +167,7 @@ setup(
     # see: src/bindings/python/cli
     entry_points={
         'console_scripts': [
-            'openpmd-ls = openpmd_api.cli:ls'
+            'openpmd-ls = openpmd_api.ls.__main__:main'
         ]
     },
     # we would like to use this mechanism, but pip / setuptools do not

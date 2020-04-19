@@ -980,26 +980,24 @@ if(openPMD_HAVE_PYTHON)
     # Python CLI Modules
     # (Note that during setuptools install, these are furthermore installed as
     #  console scripts and replace the all-binary CLI tools.)
-    # TODO not sure how to expose the CLI scripts also as python module without
-    #      also defining an imported function in the main module
-    #foreach(pymodulename ${openPMD_PYTHON_CLI_MODULE_NAMES})
-    #     add_test(NAME CLI.py.help.${pymodulename}
-    #         COMMAND ${PYTHON_EXECUTABLE} -m openpmd_api.cli:${pymodulename} --help
-    #         WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-    #    )
-    #    if(WIN32)
-    #        set_tests_properties(CLI.py.help.${pymodulename}
-    #            PROPERTY ENVIRONMENT
-    #                "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
-    #                "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${CMAKE_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
-    #        )
-    #    else()
-    #        set_tests_properties(CLI.py.help.${pymodulename}
-    #            PROPERTIES ENVIRONMENT
-    #                "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
-    #        )
-    #    endif()
-    #endforeach()
+    foreach(pymodulename ${openPMD_PYTHON_CLI_MODULE_NAMES})
+         add_test(NAME CLI.py.help.${pymodulename}
+             COMMAND ${PYTHON_EXECUTABLE} -m openpmd_api.${pymodulename} --help
+             WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+        )
+        if(WIN32)
+            set_property(TEST CLI.py.help.${pymodulename}
+                PROPERTY ENVIRONMENT
+                    "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
+                    "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${CMAKE_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
+            )
+        else()
+            set_tests_properties(CLI.py.help.${pymodulename}
+                PROPERTIES ENVIRONMENT
+                    "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
+            )
+        endif()
+    endforeach()
 endif()
 
 # Python Examples
