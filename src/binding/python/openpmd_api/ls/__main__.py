@@ -9,14 +9,13 @@ Authors: Axel Huebl
 License: LGPLv3+
 """
 import sys
-from .openpmd_api_cxx import _ls_run
+from ..openpmd_api_cxx import _ls_run
 
 
-def ls():
-    """ see command line interface (CLI): openpmd-ls --help """
+def main():
+    """ for usage documentation, call this with a --help argument """
     return _ls_run(sys.argv)
 
 
-__all__ = [
-    'ls'
-]
+if __name__ == "__main__":
+    sys.exit(main())
