@@ -28,6 +28,7 @@ Bug Fixes
 """""""""
 
 - ``flush()`` exceptions in ``~Series``/``~..IOHandler`` do not abort anymore #709
+- readme: python example syntax was broken and outdated #722
 
 Other
 """""
