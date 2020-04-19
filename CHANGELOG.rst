@@ -12,7 +12,7 @@ Changelog
 [Summary]
 
 Changes to "0.11.1-alpha"
-^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Features
 """"""""
@@ -23,6 +23,10 @@ Features
   - ``__init__.py`` facade #720
   - add ``Mesh_Record_Component.position`` read-write property #713
   - add ``openpmd-ls`` tool in ``pip`` installs and as module #721 #724
+- CD:
+
+  - homebrew: add Formula (OSX/Linux) #724
+  - PyPI: autodeploy wheels (OSX/Linux) #716 #719
 
 Bug Fixes
 """""""""
@@ -40,7 +44,6 @@ Other
   - migrate to GitHub checkout action v2 #712
   - move ``.travis/`` to ``.github/ci/`` #715
   - move example file download scripts to ``share/openPMD/`` #715
-- CD: autodeploy wheels #716 #719
 - ``listSeries``: remove unused parameters in try-catch #706
 
 

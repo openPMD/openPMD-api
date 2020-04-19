@@ -19,7 +19,7 @@ Installation
 Our community loves to help each other.
 Please `report installation problems <https://github.com/openPMD/openPMD-api/issues/new?labels=install&template=install_problem.md>`_ in case you should get stuck.
 
-Choose *one* of the install methods below to get started:
+Choose *one* of the installation methods below to get started:
 
 .. _install-spack:
 
@@ -55,6 +55,24 @@ A package for openPMD-api is available via the `Conda <https://conda.io>`_ packa
    # optional:              MPICH support  =*=mpi_mpich*
    conda install -c conda-forge openpmd-api
 
+.. _install-brew:
+
+.. only:: html
+
+   .. image:: brew.svg
+
+Using the Brew Package
+----------------------
+
+A package for openPMD-api is available via the `Homebrew <https://brew.sh/>`_/`Linuxbrew <https://docs.brew.sh/Homebrew-on-Linux>`_ package manager.
+
+.. code-block:: bash
+
+   brew tap openpmd/openpmd
+   brew install openpmd-api
+
+Brew ship only the latest release, includes (Open)MPI support and lacks the ADIOS1 backend.
+
 .. _install-pypi:
 
 .. only:: html
@@ -66,7 +84,7 @@ Using the PyPI Package
 
 A package for openPMD-api is available via the Python Package Index (`PyPI <https://pypi.org>`_).
 
-On Windows and very old macOS versions, this install method *compiles from source* against the found installations of HDF5, ADIOS1, ADIOS2, and/or MPI (in system paths, from other package managers, or loaded via a module system, ...).
+On Windows and very old macOS versions (<10.9), this install method *compiles from source* against the found installations of HDF5, ADIOS1, ADIOS2, and/or MPI (in system paths, from other package managers, or loaded via a module system, ...).
 
 .. code-block:: bash
 
