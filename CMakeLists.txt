@@ -596,6 +596,7 @@ set(openPMD_TEST_NAMES
 set(openPMD_CLI_TOOL_NAMES
     ls
 )
+set(openPMD_PYTHON_CLI_MODULE_NAMES ${openPMD_CLI_TOOL_NAMES})
 # examples
 set(openPMD_EXAMPLE_NAMES
     1_structure
@@ -975,6 +976,30 @@ if(openPMD_HAVE_PYTHON)
                 ${openPMD_SOURCE_DIR}/src/binding/python/openpmd_api
                 ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
     )
+
+    # Python CLI Modules
+    # (Note that during setuptools install, these are furthermore installed as
+    #  console scripts and replace the all-binary CLI tools.)
+    # TODO not sure how to expose the CLI scripts also as python module without
+    #      also defining an imported function in the main module
+    #foreach(pymodulename ${openPMD_PYTHON_CLI_MODULE_NAMES})
+    #     add_test(NAME CLI.py.help.${pymodulename}
+    #         COMMAND ${PYTHON_EXECUTABLE} -m openpmd_api.cli:${pymodulename} --help
+    #         WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+    #    )
+    #    if(WIN32)
+    #        set_tests_properties(CLI.py.help.${pymodulename}
+    #            PROPERTY ENVIRONMENT
+    #                "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
+    #                "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${CMAKE_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
+    #        )
+    #    else()
+    #        set_tests_properties(CLI.py.help.${pymodulename}
+    #            PROPERTIES ENVIRONMENT
+    #                "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
+    #        )
+    #    endif()
+    #endforeach()
 endif()
 
 # Python Examples
@@ -990,23 +1015,6 @@ if(openPMD_HAVE_PYTHON AND openPMD_HAVE_HDF5)
             message(STATUS "Note: mpi4py not found. "
                            "Skipping MPI-parallel Python examples.")
         endif()
-
-        #add_test(NAME Module.py.Help
-        #    COMMAND ${PYTHON_EXECUTABLE} -m openpmd-ls --help
-        #    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-        #)
-        #if(WIN32)
-        #    set_tests_properties(Module.py.Help
-        #        PROPERTY ENVIRONMENT
-        #            "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
-        #            "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${CMAKE_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
-        #    )
-        #else()
-        #    set_tests_properties(Module.py.Help
-        #        PROPERTIES ENVIRONMENT
-        #            "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
-        #    )
-        #endif()
 
         foreach(examplename ${openPMD_PYTHON_EXAMPLE_NAMES})
             add_custom_command(TARGET openPMD.py POST_BUILD
