@@ -31,6 +31,7 @@ jobs:
       python3 -m pip install openpmd-api --user
   - script: |
       python3 -c "import openpmd_api as api; print(api.variants)"
+#      python3 -m openpmd_api.ls --help
 #      openpmd-ls --help
 
 - job: linux_pip_pypi_nobin
@@ -44,6 +45,7 @@ jobs:
       python3 -m pip install openpmd-api --no-binary openpmd-api --user
   - script: |
       python3 -c "import openpmd_api as api; print(api.variants)"
+#      python3 -m openpmd_api.ls --help
 #      openpmd-ls --help
 
 #- job: linux_pypy_pypi
@@ -88,6 +90,7 @@ jobs:
       openPMD_USE_MPI=ON python3 -m pip install openpmd-api --no-binary openpmd-api --user
   - script: |
       python3 -c "import openpmd_api as api; print(api.variants)"
+#      python3 -m openpmd_api.ls --help
 #      openpmd-ls --help
 
 - job: linux_pip_dev_openmpi
@@ -103,6 +106,7 @@ jobs:
       openPMD_USE_MPI=ON python3 -m pip install git+https://github.com/openPMD/openPMD-api.git@dev --user
   - script: |
       python3 -c "import openpmd_api as api; print(api.variants)"
+      python3 -m openpmd_api.ls --help
 #      openpmd-ls --help
 
 - job: linux_pip_dev
@@ -115,6 +119,7 @@ jobs:
       python3 -m pip install git+https://github.com/openPMD/openPMD-api.git@dev --user
   - script: |
       python3 -c "import openpmd_api as api; print(api.variants)"
+      python3 -m openpmd_api.ls --help
 #      openpmd-ls --help
 
 # conda -----------------------------------------------------------------------
@@ -132,6 +137,7 @@ jobs:
   - script: |
       python3 -c "import openpmd_api as api; print(api.variants)"
       openpmd-ls --help
+#     python3 -m openpmd_api.ls --help
 
 - job: linux_conda_mpich
   displayName: Ubuntu conda w/ MPICH
@@ -145,6 +151,7 @@ jobs:
   - script: |
       python3 -c "import openpmd_api as api; print(api.variants)"
       openpmd-ls --help
+#      python3 -m openpmd_api.ls --help
 
 - job: linux_conda_openmpi
   displayName: Ubuntu conda w/ OpenMPI
@@ -158,6 +165,7 @@ jobs:
   - script: |
       python3 -c "import openpmd_api as api; print(api.variants)"
       openpmd-ls --help
+#      python3 -m openpmd_api.ls --help
 
 - job: linux_conda_cuda_mpi
   displayName: Ubuntu conda w/ CUDA
@@ -246,6 +254,7 @@ jobs:
       spack load -r openpmd-api
       python -c "import openpmd_api as api; print(api.variants)"
       openpmd-ls --help
+#      python -m openpmd_api.ls --help
 
 # linuxbrew -------------------------------------------------------------------
 - job: linux_brew
@@ -264,6 +273,7 @@ jobs:
       brew install openpmd-api
       python3 -c "import openpmd_api as api; print(api.variants)"
       openpmd-ls --help
+#      python3 -m openpmd_api.ls --help
 
 # source ----------------------------------------------------------------------
 # TODO
@@ -282,6 +292,7 @@ jobs:
       python3 -m pip install openpmd-api --user
   - script: |
       python3 -c "import openpmd_api as api; print(api.variants)"
+#      python3 -m openpmd_api.ls --help
 #      openpmd-ls --help
 
 - job: macOS_pip_pypi_old
@@ -294,6 +305,7 @@ jobs:
       python3 -m pip install openpmd-api --user
   - script: |
       python3 -c "import openpmd_api as api; print(api.variants)"
+#      python3 -m openpmd_api.ls --help
 #      openpmd-ls --help
 
 - job: macOS_pip_pypi_nobin
@@ -306,6 +318,7 @@ jobs:
       python3 -m pip install openpmd-api --no-binary openpmd-api --user
   - script: |
       python3 -c "import openpmd_api as api; print(api.variants)"
+#      python3 -m openpmd_api.ls --help
 #      openpmd-ls --help
 
 - job: macOS_pip_pypy_pypi
@@ -320,6 +333,7 @@ jobs:
       pypy3 -m pip install openpmd-api --user
   - script: |
       pypy3 -c "import openpmd_api as api; print(api.variants)"
+#      pypy3 -m openpmd_api.ls --help
 #      openpmd-ls --help
 
 - job: macOS_pip_pypy_pypi_nobin
@@ -334,6 +348,7 @@ jobs:
       pypy3 -m pip install openpmd-api --no-binary openpmd-api --user
   - script: |
       pypy3 -c "import openpmd_api as api; print(api.variants)"
+#      pypy3 -m openpmd_api.ls --help
 #      openpmd-ls --help
 
 - job: macOS_pip_pypy_dev
@@ -348,6 +363,7 @@ jobs:
       pypy3 -m pip install git+https://github.com/openPMD/openPMD-api.git@dev --user
   - script: |
       pypy3 -c "import openpmd_api as api; print(api.variants)"
+      pypy3 -m openpmd_api.ls --help
 #      openpmd-ls --help
 
 - job: macOS_pip_pypi_mpich
@@ -362,6 +378,7 @@ jobs:
       openPMD_USE_MPI=ON python3 -m pip install openpmd-api --no-binary openpmd-api --user
   - script: |
       python3 -c "import openpmd_api as api; print(api.variants)"
+#      python3 -m openpmd_api.ls --help
 #      openpmd-ls --help
 
 - job: macOS_pip_dev_openmpi
@@ -376,6 +393,7 @@ jobs:
       openPMD_USE_MPI=ON python3 -m pip install git+https://github.com/openPMD/openPMD-api.git@dev --user
   - script: |
       python3 -c "import openpmd_api as api; print(api.variants)"
+      python3 -m openpmd_api.ls --help
 #      openpmd-ls --help
 
 - job: macOS_pip_dev
@@ -388,6 +406,7 @@ jobs:
       python3 -m pip install git+https://github.com/openPMD/openPMD-api.git@dev --user
   - script: |
       python3 -c "import openpmd_api as api; print(api.variants)"
+      python3 -m openpmd_api.ls --help
 #      openpmd-ls --help
 
 # conda -----------------------------------------------------------------------
@@ -407,6 +426,7 @@ jobs:
   - script: |
       python3 -c "import openpmd_api as api; print(api.variants)"
       openpmd-ls --help
+#      python3 -m openpmd_api.ls --help
 
 - job: macOS_conda_mpich
   displayName: macOS conda w/ MPICH
@@ -422,6 +442,7 @@ jobs:
   - script: |
       python3 -c "import openpmd_api as api; print(api.variants)"
       openpmd-ls --help
+#      python3 -m openpmd_api.ls --help
 
 - job: macOS_conda_openmpi
   displayName: macOS conda w/ OpenMPI
@@ -437,6 +458,7 @@ jobs:
   - script: |
       python3 -c "import openpmd_api as api; print(api.variants)"
       openpmd-ls --help
+#      python3 -m openpmd_api.ls --help
 
 # spack -----------------------------------------------------------------------
 # timeout: >60min
@@ -496,6 +518,7 @@ jobs:
       spack install -v openpmd-api +python +adios1
       spack load -r openpmd-api
       python -c "from mpi4py import MPI; import openpmd_api as api; print(api.variants)"
+      python -m openpmd_api.ls --help
       openpmd-ls --help
 
 # homebrew --------------------------------------------------------------------
@@ -511,6 +534,7 @@ jobs:
   - script: |
       python3 -c "import openpmd_api as api; print(api.variants)"
       openpmd-ls --help
+#      python3 -m openpmd_api.ls --help
 
 # source ----------------------------------------------------------------------
 # TODO
@@ -534,6 +558,7 @@ jobs:
       python -m pip install -v openpmd-api --user
   - script: |
       python -c "import openpmd_api as api; print(api.variants)"
+#      python -m openpmd_api.ls --help
 #      openpmd-ls --help
 
 - job: win_pip_pypi_nobin
@@ -551,6 +576,7 @@ jobs:
       python -m pip install -v openpmd-api --no-binary openpmd-api --user
   - script: |
       python -c "import openpmd_api as api; print(api.variants)"
+#      python -m openpmd_api.ls --help
 #      openpmd-ls --help
 
 - job: win_pip_dev
@@ -570,6 +596,7 @@ jobs:
       python -m pip install -v git+https://github.com/openPMD/openPMD-api.git@dev --user
   - script: |
       python -c "import openpmd_api as api; print(api.variants)"
+      python -m openpmd_api.ls --help
       openpmd-ls --help
 
 # conda -----------------------------------------------------------------------
@@ -601,6 +628,7 @@ jobs:
       call activate base
       python -c "import openpmd_api as api; print(api.variants)"
       openpmd-ls --help
+#      python -m openpmd_api.ls --help
 
 # source ----------------------------------------------------------------------
 # TODO
