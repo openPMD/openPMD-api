@@ -176,7 +176,9 @@ jobs:
     displayName: Add conda to PATH
   - script: |
       source activate base
-      conda install -vv -y -c conda-forge openpmd-api=*=mpi* cudatoolkit-dev
+      conda create -n cuda-dev -vv -y -c conda-forge openpmd-api=*=mpi* cudatoolkit-dev
+      source deactivate
+      source activate cuda-dev
       echo '#include <openPMD/openPMD.hpp>' > main.cu
       echo 'int main(){ return 0; }' >> main.cu
       nvcc -std c++11 main.cu
