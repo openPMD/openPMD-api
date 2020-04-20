@@ -1,13 +1,13 @@
 packages:
   perl:
-    version: [5.14.0, 5.18.2, 5.22.4, 5.26.1]
+    version: [5.14.0, 5.18.2, 5.22.4, 5.26.2]
     paths:
       perl@5.14.0%gcc@4.8.5 arch=linux-ubuntu14-x86_64: /usr
       perl@5.14.0%gcc@4.9.4 arch=linux-ubuntu14-x86_64: /usr
       perl@5.14.0%gcc@6.5.0 arch=linux-ubuntu14-x86_64: /usr
       perl@5.14.0%gcc@7.4.0 arch=linux-ubuntu14-x86_64: /usr
       perl@5.22.4%gcc@8.1.0 arch=linux-ubuntu16-x86_64: /usr
-      perl@5.26.1%gcc@9.3.0 arch=linux-ubuntu18-x86_64: /usr
+      perl@5.26.2%gcc@9.3.0 arch=linux-ubuntu18-x86_64: /usr
       perl@5.22.4%clang@5.0.0 arch=linux-ubuntu16-x86_64: /usr
       perl@5.22.4%clang@6.0.0 arch=linux-ubuntu16-x86_64: /usr
       perl@5.22.4%clang@7.0.0 arch=linux-ubuntu16-x86_64: /usr
