@@ -1,4 +1,4 @@
-.. _backendconfig
+.. _backendconfig:
 
 Backend-Specific Configuration
 ==============================

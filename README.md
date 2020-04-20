@@ -128,6 +128,7 @@ Optional language bindings:
 
 [![Spack Package](https://img.shields.io/badge/spack.io-openpmd--api-brightgreen)](https://spack.readthedocs.io/en/latest/package_list.html#openpmd-api)
 [![Conda Package](https://img.shields.io/badge/conda.io-openpmd--api-brightgreen)](https://anaconda.org/conda-forge/openpmd-api)
+[![Brew Package](https://img.shields.io/badge/brew.sh-openpmd--api-brightgreen)](https://github.com/openPMD/homebrew-openPMD)
 [![PyPI Package](https://img.shields.io/badge/pypi.org-openpmd--api-brightgreen)](https://pypi.org/project/openPMD-api)
 [![From Source](https://img.shields.io/badge/from_source-CMake-brightgreen)](https://cmake.org)
 
@@ -140,7 +141,7 @@ Choose *one* of the install methods below to get started:
 
 [![Spack Version](https://img.shields.io/spack/v/openpmd-api)](https://spack.readthedocs.io/en/latest/package_list.html#openpmd-api)
 [![Spack Platforms](https://img.shields.io/badge/platforms-linux%20|%20osx%20-blue)](https://spack.io)
-[![Spack Use Case](https://img.shields.io/badge/use_case-development,_HPC-brightgreen)](https://spack.readthedocs.io/en/latest/package_list.html#openpmd-api)
+[![Spack Use Case](https://img.shields.io/badge/use_case-desktop_%28C%2B%2B,_py%29,_development,_HPC-brightgreen)](https://spack.readthedocs.io/en/latest/package_list.html#openpmd-api)
 
 ```bash
 # optional:               +python +adios1 -adios2 -hdf5 -mpi
@@ -159,6 +160,17 @@ spack load -r openpmd-api
 # optional:            OpenMPI support  =*=mpi_openmpi*
 # optional:              MPICH support  =*=mpi_mpich*
 conda install -c conda-forge openpmd-api
+```
+
+### [Brew](https://brew.sh)
+
+[![Brew Version](https://img.shields.io/badge/brew-latest_version-orange)](https://github.com/openPMD/homebrew-openPMD)
+[![Brew Platforms](https://img.shields.io/badge/platforms-linux%20|%20osx%20-blue)](https://docs.brew.sh/Homebrew-on-Linux)
+[![Brew Use Case](https://img.shields.io/badge/use_case-desktop_%28C%2B%2B,_py%29-brightgreen)](https://brew.sh)
+
+```bash
+brew tap openpmd/openpmd
+brew install openpmd-api
 ```
 
 ### [PyPI](https://pypi.org)

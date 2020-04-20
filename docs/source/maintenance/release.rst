@@ -22,7 +22,7 @@ Conda-Forge
 -----------
 
 Our primary release channel for desktops via a fully automated binary distribution.
-Provides the C++ and Python API to users.
+Provides the C++ and Python API for users.
 Supports Windows, OSX, and Linux.
 Packages are built with and without MPI, the latter is the default variant.
 
@@ -31,12 +31,25 @@ Example workflow for a new release:
 https://github.com/conda-forge/openpmd-api-feedstock/pull/41
 
 
+Brew
+----
+
+We maintain a `homebrew tap <https://docs.brew.sh/How-to-Create-and-Maintain-a-Tap>`_ for `openPMD <https://github.com/openPMD/homebrew-openPMD>`_.
+Provides the C++ and Python API for users.
+Supports OSX and Linux.
+Its source-only Formula for the latest release includes (Open)MPI support and lacks the ADIOS1 backend.
+
+Example workflow for a new release:
+
+https://github.com/openPMD/homebrew-openPMD/commit/839c458f1e8fa2a40ad0b4fd7d0d239d1062f867
+
+
 PyPI
 ----
 
 Our PyPI release provides our Python bindings in a self-contained way, without providing access to the C++ API.
 On PyPI, we upload a source package with all build-variants to default (``AUTO``), but MPI (``OFF``) unless activated.
-Furthermore, we build portable, serial (non-MPI) binary wheels for Linux (`manylinux2010 <https://github.com/pypa/manylinux>`_) and macOS.
+Furthermore, we build portable, serial (non-MPI) binary wheels for Linux (`manylinux2010 <https://github.com/pypa/manylinux>`_) and macOS (10.9+).
 
 The deployment of our binary wheels is automated via `cibuildwheel <https://github.com/joerick/cibuildwheel>`_.
 Update the version number with a new git tag in the ``wheels`` `branch <https://github.com/openPMD/openPMD-api/blob/136f2363afcd95541d2a6edb343164caa6b530dd/.github/workflows/build.yml#L17>`_ to trigger an automated deployment to `pypi.org/project/openPMD-api <https://pypi.org/project/openPMD-api>`_ .
