@@ -167,25 +167,6 @@ jobs:
       openpmd-ls --help
 #      python3 -m openpmd_api.ls --help
 
-- job: linux_conda_cuda_mpi
-  displayName: Ubuntu conda w/ CUDA
-  pool:
-    vmImage: ubuntu-latest
-  steps:
-  - bash: echo "##vso[task.prependpath]$CONDA/bin"
-    displayName: Add conda to PATH
-  - script: |
-      source activate base
-      conda create -n cuda-dev -vv -y -c conda-forge openpmd-api=*=mpi* cudatoolkit-dev
-      source deactivate
-      source activate cuda-dev
-      echo '#include <openPMD/openPMD.hpp>' > main.cu
-      echo 'int main(){ return 0; }' >> main.cu
-      nvcc -std c++11 main.cu
-      nvcc -std c++14 main.cu
-# CUDA 10.2+:
-#     nvcc --Werror all-warnings -std c++14 main.cu
-
 # spack -----------------------------------------------------------------------
 # timeout: >60min
 - job: linux_spack
@@ -278,7 +259,25 @@ jobs:
 #      python3 -m openpmd_api.ls --help
 
 # source ----------------------------------------------------------------------
-# TODO
+- job: linux_source_cuda
+  displayName: Ubuntu dev source w/ CUDA
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+  - script: |
+      sudo apt-get update
+      sudo apt-get install -y cmake g++ nvidia-cuda-toolkit libhdf5-dev libadios-dev
+      curl -L -o cmake-easyinstall https://git.io/JvLxY
+      chmod a+x cmake-easyinstall
+      ./cmake-easyinstall --prefix=$HOME/sw/openPMD-api git+https://github.com/openPMD/openPMD-api.git
+      echo '#include <openPMD/openPMD.hpp>' > main.cu
+      echo 'int main(){ return 0; }' >> main.cu
+      cat main.cu
+      nvcc -std=c++11 -I$HOME/sw/openPMD-api/include main.cu
+      nvcc -std=c++14 -I$HOME/sw/openPMD-api/include main.cu
+# CUDA 10.2+:
+#     nvcc --Werror all-warnings -std c++14 main.cu
+# cudatoolkit-dev: conda install has permission problems creating some symlinks
 
 
 # macOS #######################################################################
