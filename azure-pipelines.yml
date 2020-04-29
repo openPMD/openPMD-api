@@ -185,6 +185,13 @@ jobs:
       spack install -v openpmd-api %gcc@7.5.0
       spack load openpmd-api
       openpmd-ls --help
+#      spack install cuda
+#      spack load cuda
+#      echo '#include <openPMD/openPMD.hpp>' > main.cu
+#      echo 'int main(){ return 0; }' >> main.cu
+#      cat main.cu
+#      nvcc --Werror all-warnings -std=c++11 main.cu
+#      nvcc --Werror all-warnings -std=c++14 main.cu
 
 - job: linux_spack_nompi
   displayName: Ubuntu spack w/o MPI
@@ -259,25 +266,54 @@ jobs:
 #      python3 -m openpmd_api.ls --help
 
 # source ----------------------------------------------------------------------
-- job: linux_source_cuda
-  displayName: Ubuntu dev source w/ CUDA
+- job: linux_source_cuda10_0
+  displayName: Ubuntu dev source w/ CUDA 10.0.130
   pool:
-    vmImage: ubuntu-latest
+    vmImage: ubuntu-18.04
   steps:
   - script: |
+      wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
+      sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
+      sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
+      sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
       sudo apt-get update
-      sudo apt-get install -y cmake g++ nvidia-cuda-toolkit libhdf5-dev libadios-dev
+      sudo apt-get install -y cmake cuda-10-0 g++ libhdf5-dev libadios-dev
       curl -L -o cmake-easyinstall https://git.io/JvLxY
       chmod a+x cmake-easyinstall
       ./cmake-easyinstall --prefix=$HOME/sw/openPMD-api git+https://github.com/openPMD/openPMD-api.git
       echo '#include <openPMD/openPMD.hpp>' > main.cu
       echo 'int main(){ return 0; }' >> main.cu
       cat main.cu
+      export PATH=/usr/local/cuda/bin:$PATH
       nvcc -std=c++11 -I$HOME/sw/openPMD-api/include main.cu
       nvcc -std=c++14 -I$HOME/sw/openPMD-api/include main.cu
 # CUDA 10.2+:
 #     nvcc --Werror all-warnings -std c++14 main.cu
 # cudatoolkit-dev: conda install has permission problems creating some symlinks
+# nvidia-cuda-toolkit 9.1.85: nvcc eats all memory & segfaults
+
+- job: linux_source_cuda10_2
+  displayName: Ubuntu dev source w/ CUDA 10.2.89
+  pool:
+    vmImage: ubuntu-18.04
+  steps:
+  - script: |
+      wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
+      sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
+      sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
+      sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
+      sudo apt-get update
+      sudo apt-get install -y cmake cuda g++ libhdf5-dev libadios-dev
+      curl -L -o cmake-easyinstall https://git.io/JvLxY
+      chmod a+x cmake-easyinstall
+      ./cmake-easyinstall --prefix=$HOME/sw/openPMD-api git+https://github.com/openPMD/openPMD-api.git
+      echo '#include <openPMD/openPMD.hpp>' > main.cu
+      echo 'int main(){ return 0; }' >> main.cu
+      cat main.cu
+      export PATH=/usr/local/cuda/bin:$PATH
+      nvcc -std=c++11 --Werror all-warnings -I$HOME/sw/openPMD-api/include main.cu
+      nvcc -std=c++14 --Werror all-warnings -I$HOME/sw/openPMD-api/include main.cu
+
 
 
 # macOS #######################################################################
