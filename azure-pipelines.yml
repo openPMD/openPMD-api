@@ -293,7 +293,7 @@ jobs:
 # nvidia-cuda-toolkit 9.1.85: nvcc eats all memory & segfaults
 
 - job: linux_source_cuda10_2
-  displayName: Ubuntu dev source w/ CUDA 10.2.89
+  displayName: Ubuntu dev source w/ CUDA 10.2.89 w/ OpenMPI
   pool:
     vmImage: ubuntu-18.04
   steps:
@@ -303,7 +303,7 @@ jobs:
       sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
       sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
       sudo apt-get update
-      sudo apt-get install -y cmake cuda g++ libhdf5-dev libadios-dev
+      sudo apt-get install -y cmake cuda g++ libhdf5-openmpi-dev libopenmpi-dev
       curl -L -o cmake-easyinstall https://git.io/JvLxY
       chmod a+x cmake-easyinstall
       ./cmake-easyinstall --prefix=$HOME/sw/openPMD-api git+https://github.com/openPMD/openPMD-api.git
@@ -311,9 +311,9 @@ jobs:
       echo 'int main(){ return 0; }' >> main.cu
       cat main.cu
       export PATH=/usr/local/cuda/bin:$PATH
-      nvcc -std=c++11 --Werror all-warnings -I$HOME/sw/openPMD-api/include main.cu
-      nvcc -std=c++14 --Werror all-warnings -I$HOME/sw/openPMD-api/include main.cu
-
+      nvcc -std=c++11 --Werror all-warnings -I$HOME/sw/openPMD-api/include -Xcompiler "$(mpic++ -showme:compile)" main.cu
+      nvcc -std=c++14 --Werror all-warnings -I$HOME/sw/openPMD-api/include -Xcompiler "$(mpic++ -showme:compile)" main.cu
+# Ubuntu Disco (19.04) and later: libadios-openmpi-dev
 
 
 # macOS #######################################################################
