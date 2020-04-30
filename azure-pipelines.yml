@@ -315,6 +315,36 @@ jobs:
       nvcc -std=c++14 --Werror all-warnings -I$HOME/sw/openPMD-api/include -Xcompiler "$(mpic++ -showme:compile)" main.cu
 # Ubuntu Disco (19.04) and later: libadios-openmpi-dev
 
+- job: linux_source_oneAPI
+  displayName: Ubuntu dev source w/ oneAPI
+  pool:
+    vmImage: ubuntu-18.04
+  steps:
+  - script: |
+      export DEBIAN_FRONTEND=noninteractive
+      sudo apt-get -qqq update
+      sudo apt-get install -y wget build-essential pkg-config cmake ca-certificates gnupg
+      sudo wget https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
+      sudo apt-key add GPG-PUB-KEY-INTEL-SW-PRODUCTS-2023.PUB
+      echo "deb https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+      sudo apt-get update
+      sudo apt-get install -y intel-oneapi-icc
+      set +e
+      source /opt/intel/inteloneapi/setvars.sh
+      set -e
+      export CXX=$(which icpc)
+      export CC=$(which icc)
+      curl -L -o cmake-easyinstall https://git.io/JvLxY
+      chmod a+x cmake-easyinstall
+      ./cmake-easyinstall --prefix=$HOME/sw/openPMD-api git+https://github.com/openPMD/openPMD-api.git
+      echo '#include <openPMD/openPMD.hpp>' > main.cpp
+      echo 'int main(){ return 0; }' >> main.cpp
+      cat main.cpp
+      export PATH=/usr/local/cuda/bin:$PATH
+      icc -std=c++11 -I$HOME/sw/openPMD-api/include main.cpp
+      icc -std=c++14 -I$HOME/sw/openPMD-api/include main.cpp
+# Ref.: https://github.com/rscohn2/oneapi-ci
+
 
 # macOS #######################################################################
 #
