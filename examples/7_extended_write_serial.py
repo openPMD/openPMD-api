@@ -89,7 +89,7 @@ if __name__ == "__main__":
     electrons["displacement"].set_unit_dimension({Unit_Dimension.M: 1})
     electrons["displacement"]["x"].set_unit_SI(1.e-6)
     del electrons["displacement"]
-    electrons["weighting"][SCALAR].set_unit_SI(1.e-5)
+    electrons["weighting"][SCALAR].make_constant(1.e-5)
 
     mesh = cur_it.meshes["lowRez_2D_field"]
     mesh.set_axis_labels(["x", "y"])
