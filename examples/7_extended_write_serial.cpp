@@ -117,7 +117,7 @@ write2()
         electrons["displacement"].setUnitDimension({{UnitDimension::M, 1}});
         electrons["displacement"]["x"].setUnitSI(1e-6);
         electrons.erase("displacement");
-        electrons["weighting"][RecordComponent::SCALAR].setUnitSI(1e-5);
+        electrons["weighting"][RecordComponent::SCALAR].makeConstant(1.e-5);
     }
 
     Mesh& mesh = cur_it.meshes["lowRez_2D_field"];
