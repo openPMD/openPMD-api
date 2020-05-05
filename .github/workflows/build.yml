@@ -33,13 +33,8 @@ jobs:
       env:
         # (1,2) Skip building for Python 2.7 on all platforms
         # (3) CMake/Pybind11 scripts not clever enough to build 32bit Windows with 64bit compiler
-        # (4) GNU 7.3.1 & MPark.Variant 1.4.0 on i686:
-        #     https://github.com/pypa/manylinux/issues/543
-        #       variant.hpp:2241:9: internal compiler error:
-        #       unexpected expression ‘I’ of kind template_parm_index
-        #       typename T = lib::type_pack_element_t<I, Ts...>,
-        # (5) skip Windows until we add HDF5 and ADIOS2 build scripts
-        CIBW_SKIP: cp27-* pp27-* *-win32 *-manylinux_i686 *win*
+        # (4) skip Windows until we add HDF5 and ADIOS2 build scripts
+        CIBW_SKIP: cp27-* pp27-* *-win32 *win*
         # Install dependencies on Linux and OSX
         CIBW_BEFORE_BUILD: bash -x .github/library_builders.sh
         # for the openPMD-api build, CMake shall search for
