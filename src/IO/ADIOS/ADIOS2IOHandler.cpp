@@ -88,9 +88,6 @@ ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
 {
     if( !cfg.contains( "adios2" ) )
     {
-        std::cerr << "Warning: ADIOS2 is not configured in the JSON "
-                     "configuration. Running with default settings."
-                  << std::endl;
         return;
     }
     m_config = std::move( cfg[ "adios2" ] );
