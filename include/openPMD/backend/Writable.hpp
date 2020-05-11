@@ -65,6 +65,7 @@ class Writable final
     friend class Container;
     friend class Iteration;
     friend class Mesh;
+    friend class MeshRecordComponent;
     friend class ParticleSpecies;
     friend class Series;
     friend class Record;
