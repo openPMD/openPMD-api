@@ -21,6 +21,8 @@
 #pragma once
 
 #include "openPMD/RecordComponent.hpp"
+#include "openPMD/backend/MeshGeometry.hpp"
+#include "openPMD/backend/MeshDataOrder.hpp"
 
 #include <vector>
 
@@ -76,6 +78,65 @@ public:
      */
     template< typename T >
     MeshRecordComponent& makeConstant(T);
+
+    // below are read-only attributes from Mesh, duplicated for user read-convenience
+
+    /** @brief Enumerated datatype for the geometry of the mesh.
+     *
+     * @note If the default values do not suit your application, you can set arbitrary
+     *       Geometry with Mesh::setAttribute("geometry", VALUE).
+     *       Note that this might break openPMD compliance and tool support.
+     */
+    using Geometry = MeshGeometry;
+
+    /** @brief Enumerated datatype for the memory layout of N-dimensional data.
+     */
+    using DataOrder = MeshDataOrder;
+
+    /**
+     * @return String representing the geometry of the mesh of the mesh record.
+     */
+    Geometry geometry() const;
+
+    /**
+     * @throw   no_such_attribute_error If Mesh::geometry is not Mesh::Geometry::thetaMode.
+     * @return  String representing additional parameters for the geometry, separated by a @code ; @endcode.
+     */
+    std::string geometryParameters() const;
+
+    /**
+     * @return  Memory layout of N-dimensional data.
+     */
+    DataOrder dataOrder() const;
+
+    /**
+     * @return  Ordering of the labels for the Mesh::geometry of the mesh.
+     */
+    std::vector< std::string > axisLabels() const;
+
+    /**
+     * @tparam  T   Floating point type of user-selected precision (e.g. float, double).
+     * @return  vector of T representing the spacing of the grid points along each dimension (in the units of the simulation).
+     */
+    template< typename T >
+    std::vector< T > gridSpacing() const;
+
+    /**
+     * @return  Vector of (double) representing the start of the current domain of the simulation (position of the beginning of the first cell) in simulation units.
+     */
+    std::vector< double > gridGlobalOffset() const;
+
+    /**
+     * @return  Unit-conversion factor to multiply each value in Mesh::gridSpacing and Mesh::gridGlobalOffset, in order to convert from simulation units to SI units.
+     */
+    double gridUnitSI() const;
+
+    /**
+     * @tparam  T   Floating point type of user-selected precision (e.g. float, double).
+     * @return  Offset between the time at which this record is defined and the Iteration::time attribute of the Series::basePath level.
+     */
+    template< typename T >
+    T timeOffset() const;
 };
 
 
@@ -91,4 +152,15 @@ MeshRecordComponent::makeConstant(T value)
     RecordComponent::makeConstant(value);
     return *this;
 }
+
+template< typename T >
+inline std::vector< T >
+MeshRecordComponent::gridSpacing() const
+{ return m_writable->parent->attributable->readVectorFloatingpoint< T >("gridSpacing"); }
+
+template< typename T >
+inline T
+MeshRecordComponent::timeOffset() const
+{ return m_writable->parent->attributable->readFloatingpoint< T >("timeOffset"); }
+
 } // namespace openPMD

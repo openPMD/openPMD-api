@@ -22,6 +22,8 @@
 
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
+#include "openPMD/backend/MeshGeometry.hpp"
+#include "openPMD/backend/MeshDataOrder.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
 
 #include <array>
@@ -49,24 +51,14 @@ public:
     /** @brief Enumerated datatype for the geometry of the mesh.
      *
      * @note If the default values do not suit your application, you can set arbitrary
-     *       Geometry with MeshRecordComponent::setAttribute("geometry", VALUE).
+     *       Geometry with Mesh::setAttribute("geometry", VALUE).
      *       Note that this might break openPMD compliance and tool support.
      */
-    enum class Geometry
-    {
-        cartesian,
-        thetaMode,
-        cylindrical,
-        spherical
-    };  //Geometry
+    using Geometry = MeshGeometry;
 
     /** @brief Enumerated datatype for the memory layout of N-dimensional data.
      */
-    enum class DataOrder : char
-    {
-        C = 'C',
-        F = 'F'
-    };  //DataOrder
+    using DataOrder = MeshDataOrder;
 
     /**
      * @return String representing the geometry of the mesh of the mesh record.

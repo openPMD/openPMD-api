@@ -18,6 +18,7 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
+#include "openPMD/backend/MeshDataOrder.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
 
 
@@ -54,6 +55,8 @@ MeshRecordComponent::read()
     else
         throw std::runtime_error( "Unexpected Attribute datatype for 'position'");
 
+    // auto xx = m_writable->parent->attributable->getAttribute("gridUnitSI").get< double >();
+
     readBase();
 }
 
@@ -77,4 +80,53 @@ MeshRecordComponent::setPosition(std::vector< double > pos);
 template
 MeshRecordComponent&
 MeshRecordComponent::setPosition(std::vector< long double > pos);
-} // openPMD
+
+MeshGeometry
+MeshRecordComponent::geometry() const
+{
+    auto const attributable = m_writable->parent->attributable;
+    std::string ret = attributable->getAttribute("geometry").get< std::string >();
+    if( "cartesian" == ret ) { return Geometry::cartesian; }
+    else if( "thetaMode" == ret ) { return Geometry::thetaMode; }
+    else if( "cylindrical" == ret ) { return Geometry::cylindrical; }
+    else if( "spherical" == ret ) { return Geometry::spherical; }
+    else { throw std::runtime_error("Unknown geometry " + ret); }
+}
+
+std::string
+MeshRecordComponent::geometryParameters() const
+{
+    auto const attributable = m_writable->parent->attributable;
+    return attributable->getAttribute("geometryParameters").get< std::string >();
+}
+
+MeshDataOrder
+MeshRecordComponent::dataOrder() const
+{
+    auto const attributable = m_writable->parent->attributable;
+    return MeshDataOrder(attributable->getAttribute("dataOrder").get< std::string >().c_str()[0]);
+}
+
+std::vector< std::string >
+MeshRecordComponent::axisLabels() const
+{
+    auto const attributable = m_writable->parent->attributable;
+    return attributable->getAttribute("axisLabels").get< std::vector< std::string > >();
+}
+
+
+std::vector< double >
+MeshRecordComponent::gridGlobalOffset() const
+{
+    auto const attributable = m_writable->parent->attributable;
+    return attributable->getAttribute("gridGlobalOffset").get< std::vector< double> >();
+}
+
+double
+MeshRecordComponent::gridUnitSI() const
+{
+    auto const attributable = m_writable->parent->attributable;
+    return attributable->getAttribute("gridUnitSI").get< double >();
+}
+
+} // namespace openPMD
