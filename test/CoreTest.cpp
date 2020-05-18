@@ -710,3 +710,15 @@ TEST_CASE( "no_file_ending", "[core]" )
     REQUIRE_THROWS_WITH(Series("./new_openpmd_output_%05T", AccessType::CREATE),
                         Catch::Equals("Unknown file format! Did you specify a file ending?"));
 }
+
+TEST_CASE( "fancy_paths", "[core]" )
+{
+    auto a = Series("moreOutput/this/is-quite-sophisticated.N02.mine/output/json/data_%05T.json", AccessType::CREATE);
+    a.iterations[0].meshes["test"]["x"].resetDataset(Dataset(Datatype::DOUBLE, {4})).makeConstant<float>(42.);
+
+    auto b = Series("./moreOutput/even/more/con-fusing.N02.json/outputs/json/data_%05T.json", AccessType::CREATE);
+    b.iterations[0].meshes["test"]["x"].resetDataset(Dataset(Datatype::DOUBLE, {4})).makeConstant<float>(42.);
+
+    auto c = Series("moreOutput/my data can space/data_%05T.json", AccessType::CREATE);
+    c.iterations[0].meshes["test"]["x"].resetDataset(Dataset(Datatype::DOUBLE, {4})).makeConstant<float>(42.);
+}
