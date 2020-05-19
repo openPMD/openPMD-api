@@ -301,15 +301,14 @@ TEST_CASE( "record_modification_test", "[core]" )
     species["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
 
     using RUD = UnitDimension;
-    r.setUnitDimension({{RUD::L, 1.},
-                        {RUD::M, 1.},
-                        {RUD::T, -3.},
-                        {RUD::I, -1.}});
+    r.unitDimension({{RUD::L, 1.},
+                    {RUD::M, 1.},
+                    {RUD::T, -3.},
+                    {RUD::I, -1.}});
     std::array< double, 7 > e_field_unitDimension{{1., 1., -3., -1., 0., 0., 0.}};
     REQUIRE(r.unitDimension() == e_field_unitDimension);
 
-    r.setUnitDimension({{RUD::L, 0.},
-                        {RUD::T, -2.}});
+    r.unitDimension({{RUD::L, 0.}, {RUD::T, -2.}});
     std::array< double, 7 > b_field_unitDimension{{0., 1., -2., -1., 0., 0., 0.}};
     REQUIRE(r.unitDimension() == b_field_unitDimension);
 

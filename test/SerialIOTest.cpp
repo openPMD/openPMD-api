@@ -208,7 +208,7 @@ void constant_scalar(std::string file_ending)
         E_mesh.setGridGlobalOffset( gridGlobalOffset );
         E_mesh.setGridUnitSI( gridUnitSI );
         E_mesh.setAxisLabels( axisLabels );
-        E_mesh.setUnitDimension(unitDimensions);
+        E_mesh.unitDimension( unitDimensions );
         E_mesh.setTimeOffset( timeOffset );
 
         // constant scalar
@@ -1011,7 +1011,7 @@ void sample_write_thetaMode(std::string file_ending)
             {UnitDimension::I, 1.0},
             {UnitDimension::J, 2.0}
         };
-        E.setUnitDimension( unitDimensions );
+        E.unitDimension( unitDimensions );
         E.setTimeOffset( 1.e-12 * double(i) );
 
         auto E_z = E["z"];

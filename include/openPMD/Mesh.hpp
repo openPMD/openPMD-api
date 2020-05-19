@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Deprecated.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
@@ -159,6 +160,10 @@ public:
      * @param   unitDimension   map containing pairs of (UnitDimension, double) that represent the power of the particular base.
      * @return  Reference to modified mesh.
      */
+    Mesh& unitDimension(std::map< UnitDimension, double > const& unitDimension);
+    using BaseRecord< MeshRecordComponent >::unitDimension;
+
+    OPENPMDAPI_DEPRECATED("Set unitDimension with unitDimension(std::map)")
     Mesh& setUnitDimension(std::map< UnitDimension, double > const& unitDimension);
 
     /**

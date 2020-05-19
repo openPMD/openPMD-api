@@ -65,7 +65,7 @@ int main()
         {UnitDimension::I, 1.0},
         {UnitDimension::J, 2.0}
     };
-    E.setUnitDimension( unitDimensions );
+    E.unitDimension( unitDimensions );
 
     // write components: E_z, E_r, E_t
     auto E_z = E["z"];

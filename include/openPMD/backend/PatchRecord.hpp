@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Deprecated.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 
@@ -36,6 +37,10 @@ class PatchRecord : public BaseRecord< PatchRecordComponent >
     friend class ParticlePatches;
 
 public:
+    PatchRecord& unitDimension(std::map< UnitDimension, double > const&);
+    using BaseRecord< PatchRecordComponent >::unitDimension;
+
+    OPENPMDAPI_DEPRECATED("Set unitDimension with unitDimension(std::map)")
     PatchRecord& setUnitDimension(std::map< UnitDimension, double > const&);
     ~PatchRecord() override = default;
 
