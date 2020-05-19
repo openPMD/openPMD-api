@@ -36,7 +36,7 @@ Bug Fixes
 - examples:
 
   - fix ``"weighting"`` record attribute (ED-PIC) #728
-  - fix & validate all created test/example files #739
+  - fix & validate all created test/example files #738 #739
 
 Other
 """""

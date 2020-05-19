@@ -208,6 +208,10 @@ jobs:
         - if [ ! -z ${LD_PRELOAD+x} ]; then
             unset LD_PRELOAD;
           fi
+        # validate created files
+        - if [ $USE_PYTHON == "ON" ]; then
+            $TRAVIS_BUILD_DIR/share/openPMD/validate_files.sh;
+          fi
         # install
         - make install
         # - make package
