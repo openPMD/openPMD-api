@@ -43,3 +43,15 @@ Optional: language bindings
   * pybind11 2.3.0+
   * numpy 1.15+
   * mpi4py 2.1+
+
+Quick Install with Spack
+------------------------
+
+Quickly install all dependencies with a `Spack anonymous environment <https://spack.readthedocs.io/en/latest/environments.html#anonymous-environments>`_.
+Go in the base directory and type:
+
+
+.. code-block:: bash
+
+   spack env activate -d .
+   spack install
