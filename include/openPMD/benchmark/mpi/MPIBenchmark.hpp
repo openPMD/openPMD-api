@@ -402,7 +402,7 @@ namespace openPMD
         // open file for writing
         Series series = Series(
             m_benchmark->m_basePath + "." + extension,
-            AccessType::CREATE,
+            Access::CREATE,
             m_benchmark->communicator
         );
 
@@ -475,7 +475,7 @@ namespace openPMD
 
         Series series = Series(
             m_benchmark->m_basePath + "." + extension,
-            AccessType::READ_ONLY,
+            Access::READ_ONLY,
             m_benchmark->communicator
         );
 

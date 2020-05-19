@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
         // open file for writing
         Series series = Series(
             "../samples/5_parallel_write.h5",
-            AccessType::CREATE,
+            Access::CREATE,
             MPI_COMM_WORLD
         );
         if( 0 == mpi_rank )

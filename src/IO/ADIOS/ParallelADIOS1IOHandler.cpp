@@ -224,7 +224,7 @@ ParallelADIOS1IOHandlerImpl::init()
 }
 
 ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string path,
-                                                 AccessType at,
+                                                 Access at,
                                                  MPI_Comm comm)
         : AbstractIOHandler(std::move(path), at, comm),
           m_impl{new ParallelADIOS1IOHandlerImpl(this, comm)}

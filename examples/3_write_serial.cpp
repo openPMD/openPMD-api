@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
     // open file for writing
     Series series = Series(
         "../samples/3_write_serial.h5",
-        AccessType::CREATE
+        Access::CREATE
     );
     cout << "Created an empty " << series.iterationEncoding() << " Series\n";
 

@@ -748,15 +748,15 @@ public:
 #if openPMD_HAVE_MPI
 
     ADIOS2IOHandler(
-        std::string path,
-        AccessType,
-        MPI_Comm,
-        nlohmann::json options
+            std::string path,
+            Access,
+            MPI_Comm,
+            nlohmann::json options
     );
 
 #endif
 
-    ADIOS2IOHandler( std::string path, AccessType, nlohmann::json options );
+    ADIOS2IOHandler(std::string path, Access, nlohmann::json options );
 
     std::string backendName() const override { return "ADIOS2"; }
 

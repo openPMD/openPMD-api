@@ -42,6 +42,7 @@ Other
 """""
 
 - separate header for export macros #704
+- rename ``AccessType``/``Access_Type`` to ``Access`` #740
 - CI:
 
   - migration to travis-ci.com / GitHub app #703
@@ -411,7 +412,7 @@ Other
   - more info on MPI #449
   - new "first steps" section #473 #478
   - update invasive test info #474
-  - more info on ``AccessType`` #483
+  - more info on ``Access`` #483
   - improved MPI-parallel write example #496
 
 

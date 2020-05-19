@@ -75,7 +75,7 @@ namespace ls
         try {
             auto s = Series(
                 argv[1],
-                AccessType::READ_ONLY
+                Access::READ_ONLY
             );
 
             helper::listSeries(s, true, std::cout);

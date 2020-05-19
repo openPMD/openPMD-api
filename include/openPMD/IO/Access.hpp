@@ -1,4 +1,4 @@
-/* Copyright 2018-2020 Axel Huebl
+/* Copyright 2017-2020 Fabian Koller and Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -18,19 +18,22 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#pragma once
 
-#include "openPMD/IO/AccessType.hpp"
-
-namespace py = pybind11;
-using namespace openPMD;
+#include "openPMD/auxiliary/Deprecated.hpp"
 
 
-void init_AccessType(py::module &m) {
-    py::enum_<AccessType>(m, "Access_Type")
-        .value("read_only", AccessType::READ_ONLY)
-        .value("read_write", AccessType::READ_WRITE)
-        .value("create", AccessType::CREATE)
-    ;
-}
+namespace openPMD
+{
+    /** File access mode to use during IO.
+     */
+    enum class Access
+    {
+        READ_ONLY,  //!< open series as read-only, fails if series is not found
+        READ_WRITE, //!< open existing series as writable
+        CREATE      //!< create new series and truncate existing (files)
+    }; // Access
+
+
+    using Access_Type OPENPMDAPI_DEPRECATED("Access_Type is deprecated, use Access instead.") = Access;
+} // namespace openPMD

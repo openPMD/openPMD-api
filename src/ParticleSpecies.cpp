@@ -113,7 +113,7 @@ ParticleSpecies::read()
 void
 ParticleSpecies::flush(std::string const& path)
 {
-    if( IOHandler->accessTypeFrontend == AccessType::READ_ONLY )
+    if(IOHandler->accessTypeFrontend == Access::READ_ONLY )
     {
         for( auto& record : *this )
             record.second.flush(record.first);

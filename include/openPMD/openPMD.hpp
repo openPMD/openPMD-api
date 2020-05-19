@@ -47,7 +47,7 @@ namespace openPMD {}
 #include "openPMD/backend/PatchRecordComponent.hpp"
 #include "openPMD/backend/Writable.hpp"
 
-#include "openPMD/IO/AccessType.hpp"
+#include "openPMD/IO/Access.hpp"
 #include "openPMD/IO/Format.hpp"
 
 #include "openPMD/auxiliary/Date.hpp"

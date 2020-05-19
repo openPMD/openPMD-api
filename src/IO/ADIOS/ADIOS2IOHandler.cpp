@@ -167,7 +167,7 @@ void ADIOS2IOHandlerImpl::createFile(
     Writable * writable,
     Parameter< Operation::CREATE_FILE > const & parameters )
 {
-    VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
+    VERIFY_ALWAYS( m_handler->accessTypeBackend != Access::READ_ONLY,
                    "[ADIOS2] Creating a file in read-only mode is not possible." );
 
     if ( !writable->written )
@@ -181,7 +181,7 @@ void ADIOS2IOHandlerImpl::createFile(
         auto res_pair = getPossiblyExisting( name );
         InvalidatableFile shared_name = InvalidatableFile( name );
         VERIFY_ALWAYS(
-            !( m_handler->accessTypeBackend == AccessType::READ_WRITE &&
+            !( m_handler->accessTypeBackend == Access::READ_WRITE &&
                ( !std::get< PE_NewlyCreated >( res_pair ) ||
                  auxiliary::file_exists( fullPath(
                      std::get< PE_InvalidatableFile >( res_pair ) ) ) ) ),
@@ -243,7 +243,7 @@ void ADIOS2IOHandlerImpl::createDataset(
     Writable * writable,
     const Parameter< Operation::CREATE_DATASET > & parameters )
 {
-    if ( m_handler->accessTypeBackend == AccessType::READ_ONLY )
+    if ( m_handler->accessTypeBackend == Access::READ_ONLY )
     {
         throw std::runtime_error( "[ADIOS2] Creating a dataset in a file opened as read "
                                   "only is not possible." );
@@ -390,7 +390,7 @@ void ADIOS2IOHandlerImpl::writeDataset(
     Writable * writable,
     const Parameter< Operation::WRITE_DATASET > & parameters )
 {
-    VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
+    VERIFY_ALWAYS( m_handler->accessTypeBackend != Access::READ_ONLY,
                    "[ADIOS2] Cannot write data in read-only mode." );
     setAndGetFilePosition( writable );
     auto file = refreshFileFromParent( writable );
@@ -585,11 +585,11 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2Accesstype( )
 {
     switch ( m_handler->accessTypeBackend )
     {
-    case AccessType::CREATE:
+    case Access::CREATE:
         return adios2::Mode::Write;
-    case AccessType::READ_ONLY:
+    case Access::READ_ONLY:
         return adios2::Mode::Read;
-    case AccessType::READ_WRITE:
+    case Access::READ_WRITE:
         std::cerr << "ADIOS2 does currently not yet implement ReadWrite "
                      "(Append) mode."
                   << "Replacing with Read mode." << std::endl;
@@ -815,7 +815,7 @@ namespace detail
     {
 
         VERIFY_ALWAYS( impl->m_handler->accessTypeBackend !=
-                           AccessType::READ_ONLY,
+                           Access::READ_ONLY,
                        "[ADIOS2] Cannot write attribute in read-only mode." );
         auto pos = impl->setAndGetFilePosition( writable );
         auto file = impl->refreshFileFromParent( writable );
@@ -1099,7 +1099,7 @@ namespace detail
                       adios2::Engine & engine )
     {
         VERIFY_ALWAYS( m_impl->m_handler->accessTypeBackend !=
-                           AccessType::READ_ONLY,
+                           Access::READ_ONLY,
                        "[ADIOS2] Cannot write data in read-only mode." );
 
         auto ptr = std::static_pointer_cast< const T >( bp.param.data ).get( );
@@ -1465,7 +1465,7 @@ namespace detail
 
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
-    openPMD::AccessType at,
+    openPMD::Access at,
     MPI_Comm comm,
     nlohmann::json options )
     : AbstractIOHandler( std::move( path ), at, comm ),
@@ -1477,7 +1477,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
-    AccessType at,
+    Access at,
     nlohmann::json options )
     : AbstractIOHandler( std::move( path ), at ),
       m_impl{ this, std::move( options ) }
@@ -1494,10 +1494,10 @@ ADIOS2IOHandler::flush()
 
 #    if openPMD_HAVE_MPI
 ADIOS2IOHandler::ADIOS2IOHandler(
-    std::string path,
-    AccessType at,
-    MPI_Comm comm,
-    nlohmann::json
+        std::string path,
+        Access at,
+        MPI_Comm comm,
+        nlohmann::json
 )
     : AbstractIOHandler( std::move( path ), at, comm )
 {
@@ -1506,9 +1506,9 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 #    endif // openPMD_HAVE_MPI
 
 ADIOS2IOHandler::ADIOS2IOHandler(
-    std::string path,
-    AccessType at,
-    nlohmann::json )
+        std::string path,
+        Access at,
+        nlohmann::json )
     : AbstractIOHandler( std::move( path ), at )
 {
 }

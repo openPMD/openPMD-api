@@ -12,7 +12,7 @@ License: LGPLv3+
 # exit hook: calls MPI_Finalize()
 from mpi4py import MPI
 
-import openpmd_api
+import openpmd_api as io
 import numpy as np
 
 
@@ -30,9 +30,9 @@ if __name__ == "__main__":
               "that will be written to disk".format(comm.size))
 
     # open file for writing
-    series = openpmd_api.Series(
+    series = io.Series(
         "../samples/5_parallel_write_py.h5",
-        openpmd_api.Access_Type.create,
+        io.Access.create,
         comm
     )
     if 0 == comm.rank:
@@ -40,11 +40,11 @@ if __name__ == "__main__":
               comm.size))
 
     mymesh = series.iterations[1]. \
-        meshes["mymesh"][openpmd_api.Mesh_Record_Component.SCALAR]
+        meshes["mymesh"][io.Mesh_Record_Component.SCALAR]
 
     # example 1D domain decomposition in first index
     global_extent = [comm.size * 10, 300]
-    dataset = openpmd_api.Dataset(local_data.dtype, global_extent)
+    dataset = io.Dataset(local_data.dtype, global_extent)
 
     if 0 == comm.rank:
         print("Prepared a Dataset of size {} and Datatype {}".format(

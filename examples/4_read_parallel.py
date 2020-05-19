@@ -12,16 +12,16 @@ License: LGPLv3+
 # exit hook: calls MPI_Finalize()
 from mpi4py import MPI
 
-import openpmd_api
+import openpmd_api as io
 
 
 if __name__ == "__main__":
     # also works with any other MPI communicator
     comm = MPI.COMM_WORLD
 
-    series = openpmd_api.Series(
+    series = io.Series(
         "../samples/git-sample/data%T.h5",
-        openpmd_api.Access_Type.read_only,
+        io.Access.read_only,
         comm
     )
     if 0 == comm.rank:

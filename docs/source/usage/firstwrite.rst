@@ -85,7 +85,7 @@ C++11
 
    auto series = io::Series(
        "myOutput/data_%05T.h5",
-       io::AccessType::CREATE);
+       io::Access::CREATE);
 
 
 Python
@@ -95,7 +95,7 @@ Python
 
    series = io.Series(
        "myOutput/data_%05T.h5",
-       io.Access_Type.create)
+       io.Access.create)
 
 Iteration
 ---------

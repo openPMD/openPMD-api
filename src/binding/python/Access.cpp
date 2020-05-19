@@ -1,4 +1,4 @@
-/* Copyright 2017-2020 Fabian Koller and Franz Poeschel
+/* Copyright 2018-2020 Axel Huebl
  *
  * This file is part of openPMD-api.
  *
@@ -18,17 +18,19 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+
+#include "openPMD/IO/Access.hpp"
+
+namespace py = pybind11;
+using namespace openPMD;
 
 
-namespace openPMD
-{
-    /** File access mode to use during IO.
-     */
-    enum class AccessType
-    {
-        READ_ONLY,  //!< open series as read-only, fails if series is not found
-        READ_WRITE, //!< open existing series as writable
-        CREATE      //!< create new series and truncate existing (files)
-    }; // AccessType
-} // namespace openPMD
+void init_Access(py::module &m) {
+    py::enum_<Access>(m, "Access")
+        .value("read_only", Access::READ_ONLY)
+        .value("read_write", Access::READ_WRITE)
+        .value("create", Access::CREATE)
+    ;
+}

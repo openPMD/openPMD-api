@@ -32,7 +32,7 @@ int main()
 {
     Series series = Series(
         "../samples/git-sample/data%T.h5",
-        AccessType::READ_ONLY
+        Access::READ_ONLY
     );
     cout << "Read a Series with openPMD standard version "
          << series.openPMD() << '\n';

@@ -42,7 +42,7 @@ PatchRecord::flush_impl(std::string const& path)
 {
     if( this->find(RecordComponent::SCALAR) == this->end() )
     {
-        if( IOHandler->accessTypeFrontend != AccessType::READ_ONLY )
+        if(IOHandler->accessTypeFrontend != Access::READ_ONLY )
             Container< PatchRecordComponent >::flush(path);
         for( auto& comp : *this )
             comp.second.flush(comp.first);

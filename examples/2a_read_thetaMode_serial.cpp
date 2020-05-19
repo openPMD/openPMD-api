@@ -32,7 +32,7 @@ int main()
 {
     Series series = Series(
         "../samples/git-sample/thetaMode/data%T.h5",
-        AccessType::READ_ONLY
+        Access::READ_ONLY
     );
 
     Iteration i = series.iterations[500];

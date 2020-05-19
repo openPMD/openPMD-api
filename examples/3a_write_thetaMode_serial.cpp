@@ -34,7 +34,7 @@ int main()
     // open file for writing
     Series series = Series(
         "../samples/3_write_thetaMode_serial.h5",
-        AccessType::CREATE
+        Access::CREATE
     );
 
     // configure and setup geometry

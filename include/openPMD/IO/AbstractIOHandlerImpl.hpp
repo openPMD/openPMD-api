@@ -117,18 +117,18 @@ public:
 
   /** Create a new file in physical storage, possibly overriding an existing file.
    *
-   * The operation should fail if m_handler->accessType is AccessType::READ_ONLY.
+   * The operation should fail if m_handler->accessType is Access::READ_ONLY.
    * The new file should be located in m_handler->directory.
    * The new file should have the filename parameters.name.
    * The filename should include the correct corresponding filename extension.
-   * Any existing file should be overwritten if m_handler->accessType is AccessType::CREATE.
+   * Any existing file should be overwritten if m_handler->accessType is Access::CREATE.
    * The Writables file position should correspond to the root group "/" of the hierarchy.
    * The Writable should be marked written when the operation completes successfully.
    */
   virtual void createFile(Writable*, Parameter< Operation::CREATE_FILE > const&) = 0;
   /** Create all necessary groups for a path, possibly recursively.
    *
-   * The operation should fail if m_handler->accessType is AccessType::READ_ONLY.
+   * The operation should fail if m_handler->accessType is Access::READ_ONLY.
    * The path parameters.path may contain multiple levels (e.g. first/second/third/).
    * The Writables file position should correspond to the complete newly created path (i.e. first/second/third/ should be assigned to the Writables file position).
    * The Writable should be marked written when the operation completes successfully.
@@ -136,7 +136,7 @@ public:
   virtual void createPath(Writable*, Parameter< Operation::CREATE_PATH > const&) = 0;
   /** Create a new dataset of given type, extent and storage properties.
    *
-   * The operation should fail if m_handler->accessType is AccessType::READ_ONLY.
+   * The operation should fail if m_handler->accessType is Access::READ_ONLY.
    * The path may contain multiple levels (e.g. group/dataset).
    * The new dataset should have the name parameters.name. This name should not start or end with a slash ("/").
    * The new dataset should be of datatype parameters.dtype.
@@ -151,7 +151,7 @@ public:
   virtual void createDataset(Writable*, Parameter< Operation::CREATE_DATASET > const&) = 0;
   /** Increase the extent of an existing dataset.
    *
-   * The operation should fail if m_handler->accessType is AccessType::READ_ONLY.
+   * The operation should fail if m_handler->accessType is Access::READ_ONLY.
    * The operation should fail if the dataset does not yet exist.
    * The dataset should have the name parameters.name. This name should not start or end with a slash ("/").
    * The operation should fail if the new extent is not strictly large in every dimension.
@@ -163,7 +163,7 @@ public:
    * The operation should fail if m_handler->directory is not accessible.
    * The opened file should have filename parameters.name and include the correct corresponding filename extension.
    * The operation should not open files more than once.
-   * If possible, the file should be opened with read-only permissions if m_handler->accessType is AccessType::READ_ONLY.
+   * If possible, the file should be opened with read-only permissions if m_handler->accessType is Access::READ_ONLY.
    * The Writables file position should correspond to the root group "/" of the hierarchy in the opened file.
    * The Writable should be marked written when the operation completes successfully.
    */
@@ -188,7 +188,7 @@ public:
   virtual void openDataset(Writable*, Parameter< Operation::OPEN_DATASET > &) = 0;
   /** Delete an existing file from physical storage.
    *
-   * The operation should fail if m_handler->accessType is AccessType::READ_ONLY.
+   * The operation should fail if m_handler->accessType is Access::READ_ONLY.
    * The operation should pass if the Writable was not marked written.
    * All handles that correspond to the file should be closed before deletion.
    * The file to delete should have the filename parameters.name.
@@ -199,7 +199,7 @@ public:
   virtual void deleteFile(Writable*, Parameter< Operation::DELETE_FILE > const&) = 0;
   /** Delete all objects within an existing path.
    *
-   * The operation should fail if m_handler->accessType is AccessType::READ_ONLY.
+   * The operation should fail if m_handler->accessType is Access::READ_ONLY.
    * The operation should pass if the Writable was not marked written.
    * The path parameters.path may contain multiple levels (e.g. first/second/third/). This path should be relative (i.e. it should not start with a slash "/"). It may also contain the current group ".".
    * All groups and datasets starting from the path should not be accessible in physical storage after the operation completes successfully.
@@ -209,7 +209,7 @@ public:
   virtual void deletePath(Writable*, Parameter< Operation::DELETE_PATH > const&) = 0;
   /** Delete an existing dataset.
    *
-   * The operation should fail if m_handler->accessType is AccessType::READ_ONLY.
+   * The operation should fail if m_handler->accessType is Access::READ_ONLY.
    * The operation should pass if the Writable was not marked written.
    * The dataset should have the name parameters.name. This name should not start or end with a slash ("/"). It may also contain the current dataset ".".
    * The dataset should not be accessible in physical storage after the operation completes successfully.
@@ -219,7 +219,7 @@ public:
   virtual void deleteDataset(Writable*, Parameter< Operation::DELETE_DATASET > const&) = 0;
   /** Delete an existing attribute.
    *
-   * The operation should fail if m_handler->accessType is AccessType::READ_ONLY.
+   * The operation should fail if m_handler->accessType is Access::READ_ONLY.
    * The operation should pass if the Writable was not marked written.
    * The attribute should be associated with the Writable and have the name parameters.name before deletion.
    * The attribute should not be accessible in physical storage after the operation completes successfully.
@@ -227,7 +227,7 @@ public:
   virtual void deleteAttribute(Writable*, Parameter< Operation::DELETE_ATT > const&) = 0;
   /** Write a chunk of data into an existing dataset.
    *
-   * The operation should fail if m_handler->accessType is AccessType::READ_ONLY.
+   * The operation should fail if m_handler->accessType is Access::READ_ONLY.
    * The dataset should be associated with the Writable.
    * The operation should fail if the dataset does not exist.
    * The operation should fail if the chunk extent parameters.extent is not smaller or equals in every dimension.
@@ -239,7 +239,7 @@ public:
   virtual void writeDataset(Writable*, Parameter< Operation::WRITE_DATASET > const&) = 0;
   /** Create a single attribute and fill the value, possibly overwriting an existing attribute.
    *
-   * The operation should fail if m_handler->accessType is AccessType::READ_ONLY.
+   * The operation should fail if m_handler->accessType is Access::READ_ONLY.
    * The attribute should have the name parameters.name. This name should not contain a slash ("/").
    * The attribute should be of datatype parameters.dtype.
    * Any existing attribute with the same name should be overwritten. If possible, only the value should be changed if the datatype stays the same.

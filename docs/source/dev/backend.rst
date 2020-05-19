@@ -81,7 +81,7 @@ On the very basic level, you will need to derive a class from ``AbstractIOHandle
     class JSONIOHandler : public AbstractIOHandler
     {
     public:
-        JSONIOHandler(std::string const& path, AccessType);
+        JSONIOHandler(std::string const& path, Access);
         virtual ~JSONIOHandler();
 
         std::future< void > flush() override;
@@ -95,7 +95,7 @@ On the very basic level, you will need to derive a class from ``AbstractIOHandle
 
     namespace openPMD
     {
-    JSONIOHandler::JSONIOHandler(std::string const& path, AccessType at)
+    JSONIOHandler::JSONIOHandler(std::string const& path, Access at)
             : AbstractIOHandler(path, at)
     { }
 
@@ -115,7 +115,7 @@ Familiarizing your backend with the rest of the API happens in just one place in
     std::shared_ptr< AbstractIOHandler >
     createIOHandler(
         std::string const& path,
-        AccessType at,
+        Access at,
         Format f,
         MPI_Comm comm
     )
@@ -134,7 +134,7 @@ Familiarizing your backend with the rest of the API happens in just one place in
     std::shared_ptr< AbstractIOHandler >
     createIOHandler(
         std::string const& path,
-        AccessType at,
+        Access at,
         Format f
     )
     {

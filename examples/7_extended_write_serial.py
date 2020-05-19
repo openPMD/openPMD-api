@@ -6,7 +6,7 @@ Copyright 2018-2020 openPMD contributors
 Authors: Axel Huebl, Fabian Koller
 License: LGPLv3+
 """
-from openpmd_api import Series, Access_Type, Dataset, Mesh_Record_Component, \
+from openpmd_api import Series, Access, Dataset, Mesh_Record_Component, \
     Unit_Dimension
 import numpy as np
 
@@ -18,7 +18,7 @@ if __name__ == "__main__":
     # open file for writing
     f = Series(
         "working/directory/2D_simData_py.h5",
-        Access_Type.create
+        Access.create
     )
 
     # all required openPMD attributes will be set to reasonable default values

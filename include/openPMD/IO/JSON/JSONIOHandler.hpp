@@ -33,8 +33,8 @@ namespace openPMD
     {
     public:
         JSONIOHandler(
-            std::string path,
-            AccessType at
+                std::string path,
+                Access at
         );
 
         ~JSONIOHandler( ) override;

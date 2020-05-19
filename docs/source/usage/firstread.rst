@@ -87,7 +87,7 @@ C++11
 
    auto series = io::Series(
        "data%T.h5",
-       io::AccessType::READ_ONLY);
+       io::Access::READ_ONLY);
 
 
 Python
@@ -97,7 +97,7 @@ Python
 
    series = io.Series(
        "data%T.h5",
-       io.Access_Type.read_only)
+       io.Access.read_only)
 
 Iteration
 ---------

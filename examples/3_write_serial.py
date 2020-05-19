@@ -6,7 +6,7 @@ Copyright 2018-2020 openPMD contributors
 Authors: Axel Huebl
 License: LGPLv3+
 """
-import openpmd_api
+import openpmd_api as io
 import numpy as np
 
 
@@ -21,18 +21,18 @@ if __name__ == "__main__":
         size, size))
 
     # open file for writing
-    series = openpmd_api.Series(
+    series = io.Series(
         "../samples/3_write_serial_py.h5",
-        openpmd_api.Access_Type.create
+        io.Access.create
     )
 
     print("Created an empty {0} Series".format(series.iteration_encoding))
 
     print(len(series.iterations))
     rho = series.iterations[1]. \
-        meshes["rho"][openpmd_api.Mesh_Record_Component.SCALAR]
+        meshes["rho"][io.Mesh_Record_Component.SCALAR]
 
-    dataset = openpmd_api.Dataset(data.dtype, data.shape)
+    dataset = io.Dataset(data.dtype, data.shape)
 
     print("Created a Dataset of size {0}x{1} and Datatype {2}".format(
         dataset.extent[0], dataset.extent[1], dataset.dtype))

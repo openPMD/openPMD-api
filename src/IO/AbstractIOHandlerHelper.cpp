@@ -34,11 +34,11 @@ namespace openPMD
 #if openPMD_HAVE_MPI
     std::shared_ptr< AbstractIOHandler >
     createIOHandler(
-        std::string path,
-        AccessType accessTypeBackend,
-        Format format,
-        MPI_Comm comm,
-        std::string const & options )
+            std::string path,
+            Access accessTypeBackend,
+            Format format,
+            MPI_Comm comm,
+            std::string const & options )
     {
         nlohmann::json optionsJson = nlohmann::json::parse( options );
         switch( format )
@@ -62,10 +62,10 @@ namespace openPMD
 #endif
     std::shared_ptr< AbstractIOHandler >
     createIOHandler(
-        std::string path,
-        AccessType accessType,
-        Format format,
-        std::string const & options )
+            std::string path,
+            Access accessType,
+            Format format,
+            std::string const & options )
     {
         nlohmann::json optionsJson = nlohmann::json::parse( options );
         switch( format )
