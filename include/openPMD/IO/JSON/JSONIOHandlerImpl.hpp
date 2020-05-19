@@ -278,9 +278,9 @@ namespace openPMD
         // shared pointer to circumvent the fact that c++ pre 17 does
         // not enforce (only allow) copy elision in return statements
         std::shared_ptr< FILEHANDLE > getFilehandle(
-                File,
-                Access accessType
-        ); //, Access accessTypeFrontend=this->m_handler->accessTypeFrontend);
+            File,
+            Access access
+        ); //, Access m_frontendAccess=this->m_handler->m_frontendAccess);
 
         // full operating system path of the given file
         std::string fullPath( File );

@@ -40,18 +40,18 @@ namespace openPMD
      */
 std::shared_ptr< AbstractIOHandler >
 createIOHandler(
-        std::string path,
-        Access access,
-        Format format,
-        MPI_Comm comm,
-        std::string const & options = "{}" );
+    std::string path,
+    Access access,
+    Format format,
+    MPI_Comm comm,
+    std::string const & options = "{}" );
 #endif
 
 /** Construct an appropriate specific IOHandler for the desired IO mode.
  *
  * @param   path        Path to root folder for all operations associated with
  * the desired handler.
- * @param   accessType  Access describing desired operations and permissions
+ * @param   access      Access describing desired operations and permissions
  * of the desired handler.
  * @param   format      Format describing the IO backend of the desired handler.
  * @param   options     JSON-formatted option string, to be interpreted by
@@ -60,8 +60,8 @@ createIOHandler(
  */
 std::shared_ptr< AbstractIOHandler >
 createIOHandler(
-        std::string path,
-        Access accessType,
-        Format format,
-        std::string const & options = "{}" );
+    std::string path,
+    Access access,
+    Format format,
+    std::string const & options = "{}" );
 } // namespace openPMD

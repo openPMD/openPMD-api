@@ -58,7 +58,7 @@ ParallelADIOS1IOHandlerImpl::~ParallelADIOS1IOHandlerImpl()
         close(f.second);
     m_openReadFileHandles.clear();
 
-    if( this->m_handler->accessTypeBackend != AccessType::READ_ONLY )
+    if( this->m_handler->m_backendAccess != Access::READ_ONLY )
     {
         for( auto& group : m_attributeWrites )
             for( auto& att : group.second )
@@ -336,7 +336,7 @@ ParallelADIOS1IOHandlerImpl::initialize_group(std::string const &name)
 #else
 #   if openPMD_HAVE_MPI
 ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string path,
-                                                 AccessType at,
+                                                 Access at,
                                                  MPI_Comm comm)
         : AbstractIOHandler(std::move(path), at, comm)
 {
@@ -344,7 +344,7 @@ ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string path,
 }
 #   else
 ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string path,
-                                                 AccessType at)
+                                                 Access at)
         : AbstractIOHandler(std::move(path), at)
 {
     throw std::runtime_error("openPMD-api built without parallel ADIOS1 support");

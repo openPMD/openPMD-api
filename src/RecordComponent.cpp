@@ -107,7 +107,7 @@ RecordComponent::empty() const
 void
 RecordComponent::flush(std::string const& name)
 {
-    if(IOHandler->accessTypeFrontend == Access::READ_ONLY )
+    if(IOHandler->m_frontendAccess == Access::READ_ONLY )
     {
         while( !m_chunks->empty() )
         {

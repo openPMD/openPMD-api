@@ -494,12 +494,12 @@ Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
     m_filenamePostfix = std::make_shared< std::string >(input->filenamePostfix);
     m_filenamePadding = std::make_shared< int >(input->filenamePadding);
 
-    if(IOHandler->accessTypeFrontend == Access::READ_ONLY || IOHandler->accessTypeFrontend == Access::READ_WRITE )
+    if(IOHandler->m_frontendAccess == Access::READ_ONLY || IOHandler->m_frontendAccess == Access::READ_WRITE )
     {
         /* Allow creation of values in Containers and setting of Attributes
          * Would throw for Access::READ_ONLY */
-        auto oldType = IOHandler->accessTypeFrontend;
-        auto newType = const_cast< Access* >(&m_writable->IOHandler->accessTypeFrontend);
+        auto oldType = IOHandler->m_frontendAccess;
+        auto newType = const_cast< Access* >(&m_writable->IOHandler->m_frontendAccess);
         *newType = Access::READ_WRITE;
 
         if( input->iterationEncoding == IterationEncoding::fileBased )
@@ -556,7 +556,7 @@ Series::flushFileBased()
     if( iterations.empty() )
         throw std::runtime_error("fileBased output can not be written with no iterations.");
 
-    if(IOHandler->accessTypeFrontend == Access::READ_ONLY )
+    if(IOHandler->m_frontendAccess == Access::READ_ONLY )
         for( auto& i : iterations )
             i.second.flush();
     else
@@ -593,7 +593,7 @@ Series::flushFileBased()
 void
 Series::flushGroupBased()
 {
-    if(IOHandler->accessTypeFrontend == Access::READ_ONLY )
+    if(IOHandler->m_frontendAccess == Access::READ_ONLY )
         for( auto& i : iterations )
             i.second.flush();
     else
@@ -713,7 +713,7 @@ Series::readFileBased()
     {
         /* Frontend access type might change during Series::read() to allow parameter modification.
          * Backend access type stays unchanged for the lifetime of a Series. */
-        if(IOHandler->accessTypeBackend == Access::READ_ONLY  )
+        if(IOHandler->m_backendAccess == Access::READ_ONLY  )
             throw std::runtime_error("No matching iterations found: " + name());
         else
             std::cerr << "No matching iterations found: " << name() << std::endl;
@@ -724,7 +724,7 @@ Series::readFileBased()
 
     /* Frontend access type might change during Series::read() to allow parameter modification.
      * Backend access type stays unchanged for the lifetime of a Series. */
-    if( paddings.size() > 1u && IOHandler->accessTypeBackend == Access::READ_WRITE )
+    if( paddings.size() > 1u && IOHandler->m_backendAccess == Access::READ_WRITE )
         throw std::runtime_error("Cannot write to a series with inconsistent iteration padding. "
                                  "Please specify '%0<N>T' or open as read-only.");
 }

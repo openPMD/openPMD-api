@@ -27,8 +27,8 @@ namespace openPMD
     JSONIOHandler::~JSONIOHandler( ) = default;
 
     JSONIOHandler::JSONIOHandler(
-            std::string path,
-            Access at
+        std::string path,
+        Access at
     ) :
         AbstractIOHandler {
             path,

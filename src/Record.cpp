@@ -48,7 +48,7 @@ Record::setUnitDimension(std::map< UnitDimension, double > const& udim)
 void
 Record::flush_impl(std::string const& name)
 {
-    if(IOHandler->accessTypeFrontend == Access::READ_ONLY )
+    if(IOHandler->m_frontendAccess == Access::READ_ONLY )
     {
         for( auto& comp : *this )
             comp.second.flush(comp.first);

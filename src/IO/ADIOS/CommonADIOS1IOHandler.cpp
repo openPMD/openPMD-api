@@ -350,7 +350,7 @@ void
 CommonADIOS1IOHandlerImpl::createFile(Writable* writable,
                                 Parameter< Operation::CREATE_FILE > const& parameters)
 {
-    if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
+    if( m_handler->m_backendAccess == Access::READ_ONLY )
         throw std::runtime_error("[ADIOS1] Creating a file in read-only mode is not possible.");
 
     if( !writable->written )
@@ -384,7 +384,7 @@ void
 CommonADIOS1IOHandlerImpl::createPath(Writable* writable,
                                 Parameter< Operation::CREATE_PATH > const& parameters)
 {
-    if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
+    if( m_handler->m_backendAccess == Access::READ_ONLY )
         throw std::runtime_error("[ADIOS1] Creating a path in a file opened as read only is not possible.");
 
     if( !writable->written )
@@ -417,7 +417,7 @@ void
 CommonADIOS1IOHandlerImpl::createDataset(Writable* writable,
                                    Parameter< Operation::CREATE_DATASET > const& parameters)
 {
-    if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
+    if( m_handler->m_backendAccess == Access::READ_ONLY )
         throw std::runtime_error("[ADIOS1] Creating a dataset in a file opened as read only is not possible.");
 
     if( !writable->written )
@@ -509,7 +509,7 @@ CommonADIOS1IOHandlerImpl::openFile(Writable* writable,
     else
         filePath = it->second;
 
-    if( m_handler->accessTypeBackend == AccessType::CREATE )
+    if( m_handler->m_backendAccess == Access::CREATE )
     {
         // called at Series::flush for iterations that has been flushed before
         // this is to make sure to point the Series.m_writer points to this iteration
@@ -702,7 +702,7 @@ void
 CommonADIOS1IOHandlerImpl::deleteFile(Writable* writable,
                                 Parameter< Operation::DELETE_FILE > const& parameters)
 {
-    if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
+    if( m_handler->m_backendAccess == Access::READ_ONLY )
         throw std::runtime_error("[ADIOS1] Deleting a file opened as read only is not possible.");
 
     if( writable->written )
@@ -779,7 +779,7 @@ void
 CommonADIOS1IOHandlerImpl::writeDataset(Writable* writable,
                                   Parameter< Operation::WRITE_DATASET > const& parameters)
 {
-    if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
+    if( m_handler->m_backendAccess == Access::READ_ONLY )
         throw std::runtime_error("[ADIOS1] Writing into a dataset in a file opened as read-only is not possible.");
 
     int64_t fd = GetFileHandle(writable);
@@ -811,7 +811,7 @@ void
 CommonADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
                                     Parameter< Operation::WRITE_ATT > const& parameters)
 {
-    if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
+    if( m_handler->m_backendAccess == Access::READ_ONLY )
         throw std::runtime_error("[ADIOS1] Writing an attribute in a file opened as read only is not possible.");
 
     std::string name = concrete_bp1_file_position(writable);

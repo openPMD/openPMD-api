@@ -172,7 +172,7 @@ public:
      * @brief The ADIOS2 access type to chose for Engines opened
      * within this instance.
      */
-    adios2::Mode adios2Accesstype( );
+    adios2::Mode adios2AccessMode( );
 
 
 private:
@@ -748,10 +748,10 @@ public:
 #if openPMD_HAVE_MPI
 
     ADIOS2IOHandler(
-            std::string path,
-            Access,
-            MPI_Comm,
-            nlohmann::json options
+        std::string path,
+        Access,
+        MPI_Comm,
+        nlohmann::json options
     );
 
 #endif
