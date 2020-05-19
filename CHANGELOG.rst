@@ -33,7 +33,10 @@ Bug Fixes
 
 - ``flush()`` exceptions in ``~Series``/``~..IOHandler`` do not abort anymore #709
 - readme: python example syntax was broken and outdated #722
-- examples: fix ``"weighting"`` record attribute (ED-PIC) #728
+- examples:
+
+  - fix ``"weighting"`` record attribute (ED-PIC) #728
+  - fix & validate all created test/example files #739
 
 Other
 """""
