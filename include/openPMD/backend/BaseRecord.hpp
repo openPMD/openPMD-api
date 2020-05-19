@@ -63,7 +63,23 @@ public:
     //! @todo add also, as soon as added in Container:
     // iterator erase(const_iterator first, const_iterator last) override;
 
-    virtual std::array< double, 7 > unitDimension() const;
+    /** Return the physical dimension (quantity) of a record
+     *
+     * Annotating the physical dimension of a record allows us to read data
+     * sets with arbitrary names and understand their purpose simply by
+     * dimensional analysis. The dimensional base quantities in openPMD are
+     * in order: length (L), mass (M), time (T), electric current (I),
+     * thermodynamic temperature (theta), amount of substance (N),
+     * luminous intensity (J) after the international system of quantities
+     * (ISQ).
+     *
+     * @see https://en.wikipedia.org/wiki/Dimensional_analysis
+     * @see https://en.wikipedia.org/wiki/International_System_of_Quantities#Base_quantities
+     * @see https://github.com/openPMD/openPMD-standard/blob/1.1.0/STANDARD.md#required-for-each-record
+     *
+     * @return powers of the 7 base measures in the order specified above
+     */
+    std::array< double, 7 > unitDimension() const;
 
     /** Returns true if this record only contains a single component
      *

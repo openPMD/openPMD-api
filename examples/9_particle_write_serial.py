@@ -37,8 +37,8 @@ if __name__ == "__main__":
         "Just kidding.")
 
     # let's set a weird user-defined record this time
-    electrons["displacement"].set_unit_dimension({Unit_Dimension.M: 1})
-    electrons["displacement"][SCALAR].set_unit_SI(1.e-6)
+    electrons["displacement"].unit_dimension = {Unit_Dimension.M: 1}
+    electrons["displacement"][SCALAR].unit_SI = 1.e-6
     dset = Dataset(np.dtype("float64"), extent=[2])
     electrons["displacement"][SCALAR].reset_dataset(dset)
     electrons["displacement"][SCALAR].make_constant(42.43)

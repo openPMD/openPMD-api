@@ -3,6 +3,16 @@
 Upgrade Guide
 =============
 
+0.12.0-alpha
+------------
+
+Python
+^^^^^^
+
+The already existing read-only properties ``unit_dimension``, ``unit_SI``, and ``time_offset`` are now declared as read-write properties.
+``set_unit_dimension``, ``set_unit_SI``, and ``set_time_offset`` are now deprecated and will be removed in future versions of the library.
+
+
 0.11.0-alpha
 ------------
 

@@ -32,7 +32,8 @@ using namespace openPMD;
 
 void init_PatchRecordComponent(py::module &m) {
     py::class_<PatchRecordComponent, BaseRecordComponent >(m, "Patch_Record_Component")
-        .def("set_unit_SI", &PatchRecordComponent::setUnitSI)
+        .def_property("unit_SI", &BaseRecordComponent::unitSI, &PatchRecordComponent::setUnitSI)
+
         .def("reset_dataset", &PatchRecordComponent::resetDataset)
         .def_property_readonly("ndims", &PatchRecordComponent::getDimensionality)
         .def_property_readonly("shape", &PatchRecordComponent::getExtent)
@@ -160,5 +161,8 @@ void init_PatchRecordComponent(py::module &m) {
             py::arg("idx"), py::arg("data"))
 
         // TODO implement convenient, patch-object level store/load
+
+        // TODO remove in future versions (deprecated)
+        .def("set_unit_SI", &PatchRecordComponent::setUnitSI)
     ;
 }
