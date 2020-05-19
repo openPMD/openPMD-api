@@ -24,6 +24,7 @@
 #include "openPMD/Record.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/RecordComponent.hpp"
+#include "openPMD/binding/python/UnitDimension.hpp"
 
 namespace py = pybind11;
 using namespace openPMD;
@@ -39,10 +40,17 @@ void init_Record(py::module &m) {
             }
         )
 
+        .def_property("unit_dimension",
+                      &Record::unitDimension,
+                      &Record::setUnitDimension,
+                      python::doc_unit_dimension)
+
+        .def_property("time_offset", &Record::timeOffset<float>, &Record::setTimeOffset<float>)
+        .def_property("time_offset", &Record::timeOffset<double>, &Record::setTimeOffset<double>)
+        .def_property("time_offset", &Record::timeOffset<long double>, &Record::setTimeOffset<long double>)
+
+        // TODO remove in future versions (deprecated)
         .def("set_unit_dimension", &Record::setUnitDimension)
-        .def_property_readonly("time_offset", &Record::timeOffset<float>)
-        .def_property_readonly("time_offset", &Record::timeOffset<double>)
-        .def_property_readonly("time_offset", &Record::timeOffset<long double>)
         .def("set_time_offset", &Record::setTimeOffset<float>)
         .def("set_time_offset", &Record::setTimeOffset<double>)
         .def("set_time_offset", &Record::setTimeOffset<long double>)

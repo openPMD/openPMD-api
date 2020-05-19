@@ -239,7 +239,7 @@ Python
 Units
 -----
 
-Let's decribe this magnetic field :math:`\vec B` in more detail.
+Let's describe this magnetic field :math:`\vec B` in more detail.
 Independent of the absolute unit system, a magnetic field has the `physical dimension <https://en.wikipedia.org/wiki/Dimensional_analysis>`_ of [mass (M)\ :sup:`1` :math:`\cdot` electric current (I)\ :sup:`-1` :math:`\cdot` time (T)\ :sup:`-2`].
 
 Ouch, our magnetic field was measured in `cgs units <https://en.wikipedia.org/wiki/Gaussian_units>`_!
@@ -268,21 +268,21 @@ Python
 .. code-block:: python3
 
    # unit system agnostic dimension
-   B.set_unit_dimension({
+   B.unit_dimension = {
        io.Unit_Dimension.M:  1,
        io.Unit_Dimension.I: -1,
        io.Unit_Dimension.T: -2
-   })
+   }
 
    # conversion to SI
-   B_x.set_unit_SI(1.e-4)
-   B_y.set_unit_SI(1.e-4)
-   B_z.set_unit_SI(1.e-4)
+   B_x.unit_SI = 1.e-4
+   B_y.unit_SI = 1.e-4
+   B_z.unit_SI = 1.e-4
 
 .. tip::
 
    Annotating the *physical dimension* (``unitDimension``) of a record allows us to read data sets with *arbitrary names* and understand their purpose simply by `dimensional analysis <https://en.wikipedia.org/wiki/Dimensional_analysis>`_.
-   The dimensional `base quantities <https://en.wikipedia.org/wiki/International_System_of_Quantities#Base_quantities>`_ in openPMD are lenght (``L``), mass (``M``), time (``T``), electric current (``I``), thermodynamic temperature (``theta``), amount of substance (``N``), luminous intensity (``J``) after the international system of quantities (ISQ).
+   The dimensional `base quantities <https://en.wikipedia.org/wiki/International_System_of_Quantities#Base_quantities>`_ in openPMD are length (``L``), mass (``M``), time (``T``), electric current (``I``), thermodynamic temperature (``theta``), amount of substance (``N``), luminous intensity (``J``) after the international system of quantities (ISQ).
    The *factor to SI* (``unitSI``) on the other hand allows us to convert values between absolute unit systems.
 
 Register Chunk

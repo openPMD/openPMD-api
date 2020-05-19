@@ -24,6 +24,7 @@
 #include "openPMD/Mesh.hpp"
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
+#include "openPMD/binding/python/UnitDimension.hpp"
 
 #include <string>
 
@@ -40,6 +41,11 @@ void init_Mesh(py::module &m) {
                 return "<openPMD.Mesh record with '" + std::to_string(mesh.size()) + "' record components>";
             }
         )
+
+        .def_property("unit_dimension",
+            &Mesh::unitDimension,
+            &Mesh::setUnitDimension,
+            python::doc_unit_dimension)
 
         .def_property_readonly("geometry", &Mesh::geometry)
         .def("set_geometry", &Mesh::setGeometry)
@@ -59,15 +65,13 @@ void init_Mesh(py::module &m) {
         .def("set_grid_global_offset", &Mesh::setGridGlobalOffset)
         .def_property_readonly("grid_unit_SI", &Mesh::gridUnitSI)
         .def("set_grid_unit_SI", &Mesh::setGridUnitSI)
-        .def("set_unit_dimension", &Mesh::setUnitDimension)
-        .def_property_readonly("time_offset", &Mesh::timeOffset<float>)
-        .def_property_readonly("time_offset", &Mesh::timeOffset<double>)
-        .def_property_readonly("time_offset", &Mesh::timeOffset<long double>)
+        .def_property("time_offset", &Mesh::timeOffset<float>, &Mesh::setTimeOffset<float>)
+        .def_property("time_offset", &Mesh::timeOffset<double>, &Mesh::setTimeOffset<double>)
+        .def_property("time_offset", &Mesh::timeOffset<long double>, &Mesh::setTimeOffset<long double>)
 
-        // TODO missing specializations
-        // .def("set_time_offset", &Mesh::setTimeOffset<float>)
-        // .def("set_time_offset", &Mesh::setTimeOffset<double>)
-        // .def("set_time_offset", &Mesh::setTimeOffset<long double>)
+        // TODO remove in future versions (deprecated)
+        .def("set_unit_dimension", &Mesh::setUnitDimension)
+
     ;
 
     py::enum_<Mesh::Geometry>(m, "Geometry")

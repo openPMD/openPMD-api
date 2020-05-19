@@ -69,8 +69,8 @@ if __name__ == "__main__":
     # the underlying concept for numeric data is the openPMD Record
     # https://github.com/openPMD/openPMD-standard/blob/upcoming-1.0.1/STANDARD.md#scalar-vector-and-tensor-records
     # Meshes are specialized records
-    cur_it.meshes["generic_2D_field"].set_unit_dimension(
-        {Unit_Dimension.L: -3, Unit_Dimension.M: 1})
+    cur_it.meshes["generic_2D_field"].unit_dimension = {
+        Unit_Dimension.L: -3, Unit_Dimension.M: 1}
 
     # as this is a reference, it modifies the original resource
     lowRez = cur_it.meshes["generic_2D_field"]
@@ -86,8 +86,8 @@ if __name__ == "__main__":
     electrons.set_attribute(
         "NoteWorthyParticleSpeciesProperty",
         "Observing this species was a blast.")
-    electrons["displacement"].set_unit_dimension({Unit_Dimension.M: 1})
-    electrons["displacement"]["x"].set_unit_SI(1.e-6)
+    electrons["displacement"].unit_dimension = {Unit_Dimension.M: 1}
+    electrons["displacement"]["x"].unit_SI = 1.e-6
     del electrons["displacement"]
     electrons["weighting"][SCALAR].make_constant(1.e-5)
 
@@ -183,7 +183,7 @@ if __name__ == "__main__":
             ], dtype=np.float32))
 
     mesh["y"].reset_dataset(d)
-    mesh["y"].set_unit_SI(4)
+    mesh["y"].unit_SI = 4
     constant_value = 0.3183098861837907
     # for datasets that contain a single unique value, openPMD offers
     # constant records

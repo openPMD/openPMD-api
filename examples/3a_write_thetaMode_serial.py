@@ -39,12 +39,12 @@ if __name__ == "__main__":
     E.set_grid_global_offset([0.0, 0.0])
     E.set_grid_unit_SI(1.0)
     E.set_axis_labels(["r", "z"])
-    E.set_unit_dimension({io.Unit_Dimension.I: 1.0,
-                          io.Unit_Dimension.J: 2.0})
+    E.unit_dimension = {io.Unit_Dimension.I: 1.0,
+                        io.Unit_Dimension.J: 2.0}
 
     # write components: E_z, E_r, E_t
     E_z = E["z"]
-    E_z.set_unit_SI(10.)
+    E_z.unit_SI = 10.
     E_z.position = [0.0, 0.5]
     #   (modes, r, z) see set_geometry_parameters
     E_z.reset_dataset(io.Dataset(io.Datatype.FLOAT, [num_fields, N_r, N_z]))
@@ -52,13 +52,13 @@ if __name__ == "__main__":
 
     # write all modes at once (otherwise iterate over modes and first index
     E_r = E["r"]
-    E_r.set_unit_SI(10.)
+    E_r.unit_SI = 10.
     E_r.position = [0.5, 0.0]
     E_r.reset_dataset(io.Dataset(E_r_data.dtype, E_r_data.shape))
     E_r.store_chunk(E_r_data)
 
     E_t = E["t"]
-    E_t.set_unit_SI(10.)
+    E_t.unit_SI = 10.
     E_t.position = [0.0, 0.0]
     E_t.reset_dataset(io.Dataset(E_t_data.dtype, E_t_data.shape))
     E_t.store_chunk(E_t_data)

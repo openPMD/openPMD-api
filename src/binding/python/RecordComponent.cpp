@@ -429,7 +429,8 @@ void init_RecordComponent(py::module &m) {
             }
         )
 
-        .def("set_unit_SI", &RecordComponent::setUnitSI)
+        .def_property("unit_SI", &BaseRecordComponent::unitSI, &RecordComponent::setUnitSI)
+
         .def("reset_dataset", &RecordComponent::resetDataset)
 
         .def_property_readonly("ndim", &RecordComponent::getDimensionality)
@@ -627,6 +628,9 @@ void init_RecordComponent(py::module &m) {
         )
 
         .def_property_readonly_static("SCALAR", [](py::object){ return RecordComponent::SCALAR; })
+
+        // TODO remove in future versions (deprecated)
+        .def("set_unit_SI", &RecordComponent::setUnitSI) // deprecated
     ;
 
     py::enum_<RecordComponent::Allocation>(m, "Allocation")
