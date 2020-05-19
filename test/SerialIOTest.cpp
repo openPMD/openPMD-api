@@ -720,6 +720,44 @@ TEST_CASE( "write_test", "[serial]" )
 }
 
 inline
+void fileBased_add_EDpic(ParticleSpecies& e, uint64_t const num_particles)
+{
+    // ED-PIC
+    e["position"].setAttribute("weightingPower", 0.0);
+    e["position"].setAttribute("macroWeighted", uint32_t(0));
+    e["positionOffset"].setAttribute("weightingPower", 0.0);
+    e["positionOffset"].setAttribute("macroWeighted", uint32_t(0));
+
+    auto const dsDbl = Dataset(Datatype::DOUBLE, {num_particles});
+    e["momentum"]["x"].resetDataset(dsDbl);
+    e["momentum"]["x"].makeConstant(1.2);
+    e["momentum"].setAttribute("weightingPower", 1.0);
+    e["momentum"].setAttribute("macroWeighted", uint32_t(0));
+
+
+    e["charge"][RecordComponent::SCALAR].resetDataset(dsDbl);
+    e["charge"][RecordComponent::SCALAR].makeConstant(2.3);
+    e["charge"].setAttribute("weightingPower", 1.0);
+    e["charge"].setAttribute("macroWeighted", uint32_t(0));
+
+    e["mass"][RecordComponent::SCALAR].resetDataset(dsDbl);
+    e["mass"][RecordComponent::SCALAR].makeConstant(3.4);
+    e["mass"].setAttribute("weightingPower", 1.0);
+    e["mass"].setAttribute("macroWeighted", uint32_t(0));
+
+    e["weighting"][RecordComponent::SCALAR].resetDataset(dsDbl);
+    e["weighting"][RecordComponent::SCALAR].makeConstant(1.0);
+    e["weighting"].setAttribute("weightingPower", 1.0);
+    e["weighting"].setAttribute("macroWeighted", uint32_t(1));
+
+    e.setAttribute("particleShape", 3.0);
+    e.setAttribute("currentDeposition", "Esirkepov");
+    e.setAttribute("particlePush", "Boris");
+    e.setAttribute("particleInterpolation", "uniform");
+    e.setAttribute("particleSmoothing", "none");
+}
+
+inline
 void fileBased_write_test(const std::string & backend)
 {
     if( auxiliary::directory_exists("../samples/subdir") )
@@ -741,6 +779,8 @@ void fileBased_write_test(const std::string & backend)
         std::shared_ptr< uint64_t > positionOffset_local_1(new uint64_t);
         e_1["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_1), {4}));
 
+        fileBased_add_EDpic(e_1, 4);
+
         for( uint64_t i = 0; i < 4; ++i )
         {
             *position_local_1 = position_global[i];
@@ -759,6 +799,8 @@ void fileBased_write_test(const std::string & backend)
         std::generate(positionOffset_global.begin(), positionOffset_global.end(), [&posOff]{ return posOff++; });
         std::shared_ptr< uint64_t > positionOffset_local_2(new uint64_t);
         e_2["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_2), {4}));
+
+        fileBased_add_EDpic(e_2, 4);
 
         for( uint64_t i = 0; i < 4; ++i )
         {
@@ -780,6 +822,8 @@ void fileBased_write_test(const std::string & backend)
         std::shared_ptr< uint64_t > positionOffset_local_3(new uint64_t);
         e_3["positionOffset"]["x"].resetDataset(Dataset(determineDatatype(positionOffset_local_3), {4}));
 
+        fileBased_add_EDpic(e_3, 4);
+
         for( uint64_t i = 0; i < 4; ++i )
         {
             *position_local_3 = position_global[i];
@@ -789,7 +833,7 @@ void fileBased_write_test(const std::string & backend)
             o.flush();
         }
 
-        o.setOpenPMDextension(1);
+        o.setOpenPMDextension(1); // this happens intentionally "late" in this test
         o.iterations[3].setTime(static_cast< double >(3));
         o.iterations[4].setTime(static_cast< double >(4));
         o.flush();
@@ -895,6 +939,8 @@ void fileBased_write_test(const std::string & backend)
         e["positionOffset"]["x"].resetDataset(Dataset(Datatype::DOUBLE, {42}));
         e["position"]["x"].makeConstant(1.23);
         e["positionOffset"]["x"].makeConstant(1.23);
+
+        fileBased_add_EDpic(e, 42);
 
         REQUIRE(o.iterations.size() == 1);
     }
@@ -1036,11 +1082,28 @@ void patch_test(const std::string & backend)
 {
     Series o = Series("../samples/serial_patch." + backend, AccessType::CREATE);
 
-    auto dset = Dataset(Datatype::DOUBLE, {1});
-    o.iterations[1].particles["e"].particlePatches["offset"]["x"].resetDataset(dset);
-    o.iterations[1].particles["e"].particlePatches["offset"]["x"].setUnitSI(42);
-    o.iterations[1].particles["e"]["position"][RecordComponent::SCALAR].resetDataset(dset);
-    o.iterations[1].particles["e"]["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
+    auto e = o.iterations[1].particles["e"];
+
+    uint64_t const num_particles = 1u;
+    auto dset_d = Dataset(Datatype::DOUBLE, {num_particles});
+    e["position"]["x"].resetDataset(dset_d);
+    e["position"]["x"].makeConstant(20.0);
+    e["positionOffset"]["x"].resetDataset(dset_d);
+    e["positionOffset"]["x"].makeConstant(22.0);
+
+    uint64_t const patch_idx = 0u;
+    uint64_t const num_patches = 1u;
+    auto const dset_n = Dataset(determineDatatype<uint64_t>(), {num_patches, });
+    e.particlePatches["numParticles"][RecordComponent::SCALAR].resetDataset(dset_n);
+    e.particlePatches["numParticles"][RecordComponent::SCALAR].store(patch_idx, num_particles);
+    e.particlePatches["numParticlesOffset"][RecordComponent::SCALAR].resetDataset(dset_n);
+    e.particlePatches["numParticlesOffset"][RecordComponent::SCALAR].store(patch_idx, uint64_t(0u));
+
+    auto const dset_f = Dataset(determineDatatype<float>(), {num_patches, });
+    e.particlePatches["offset"]["x"].resetDataset(dset_f);
+    e.particlePatches["offset"]["x"].store(patch_idx, 0.f);
+    e.particlePatches["extent"]["x"].resetDataset(dset_f);
+    e.particlePatches["extent"]["x"].store(patch_idx, 50.f);
 }
 
 TEST_CASE( "patch_test", "[serial]" )
@@ -1067,7 +1130,9 @@ void deletion_test(const std::string & backend)
     ParticleSpecies& e = o.iterations[1].particles["e"];
     auto dset = Dataset(Datatype::DOUBLE, {1});
     e["position"][RecordComponent::SCALAR].resetDataset(dset);
+    e["position"][RecordComponent::SCALAR].makeConstant(20.0);
     e["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
+    e["positionOffset"][RecordComponent::SCALAR].makeConstant(22.0);
     e.erase("deletion");
     o.flush();
 
@@ -1158,7 +1223,9 @@ void optional_paths_110_test(const std::string & backend)
         auto foo = s.iterations[1].particles["foo"];
         Dataset dset = Dataset(Datatype::DOUBLE, {1});
         foo["position"][RecordComponent::SCALAR].resetDataset(dset);
+        foo["position"][RecordComponent::SCALAR].makeConstant(20.0);
         foo["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
+        foo["positionOffset"][RecordComponent::SCALAR].makeConstant(22.0);
     }
 
     {

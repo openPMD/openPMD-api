@@ -49,8 +49,10 @@ int main()
 
     /* Required Records and RecordComponents are created automatically.
      * Initialization has to be done explicitly by the user. */
-    electrons["position"][RecordComponent::SCALAR].resetDataset(dataset);
-    electrons["positionOffset"][RecordComponent::SCALAR].resetDataset(dataset);
+    electrons["position"]["x"].resetDataset(dataset);
+    electrons["position"]["x"].makeConstant(20.0);
+    electrons["positionOffset"]["x"].resetDataset(dataset);
+    electrons["positionOffset"]["x"].makeConstant(22.0);
 
     /* The files in 'series' are still open until the object is destroyed, on
      * which it cleanly flushes and closes all open file handles.
