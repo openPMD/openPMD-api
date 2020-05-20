@@ -29,7 +29,7 @@
 #   elif defined(__GNUC__) && defined(__GNUC_PATCHLEVEL__)
 #       define OPENPMDAPI_DEPRECATED(msg) __attribute__((deprecated))
 #   elif defined(_MSC_VER)
-#       define OPENPMDAPI_DEPRECATED(msg) __declspec(deprecated)
+#       define OPENPMDAPI_DEPRECATED(msg) __declspec(deprecated(msg))
 #   else
 #       define OPENPMDAPI_DEPRECATED(msg)
 #   endif

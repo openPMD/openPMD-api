@@ -35,5 +35,11 @@ namespace openPMD
     }; // Access
 
 
+#if (__cplusplus < 201402L) && defined(_MSC_VER)
+    // this is a non-standard order
+    //   https://en.cppreference.com/w/cpp/language/attributes/deprecated
+    typedef OPENPMDAPI_DEPRECATED("Access_Type is deprecated, use Access instead.") Access Access_Type;
+#else
     using Access_Type OPENPMDAPI_DEPRECATED("Access_Type is deprecated, use Access instead.") = Access;
+#endif
 } // namespace openPMD
