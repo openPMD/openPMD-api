@@ -25,7 +25,7 @@
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
-#include "openPMD/IO/AccessType.hpp"
+#include "openPMD/IO/Access.hpp"
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/IterationEncoding.hpp"
@@ -60,14 +60,14 @@ public:
 #if openPMD_HAVE_MPI
     Series(
         std::string const & filepath,
-        AccessType at,
+        Access at,
         MPI_Comm comm,
         std::string const & options = "{}" );
 #endif
 
     Series(
         std::string const & filepath,
-        AccessType at,
+        Access at,
         std::string const & options = "{}" );
     ~Series();
 

@@ -6,12 +6,12 @@ Copyright 2020 openPMD contributors
 Authors: Axel Huebl
 License: LGPLv3+
 """
-import openpmd_api
+import openpmd_api as io
 
 
 if __name__ == "__main__":
-    series = openpmd_api.Series("../samples/git-sample/thetaMode/data%T.h5",
-                                openpmd_api.Access_Type.read_only)
+    series = io.Series("../samples/git-sample/thetaMode/data%T.h5",
+                       io.Access.read_only)
 
     i = series.iterations[500]
     E_z_modes = i.meshes["E"]["z"]
@@ -30,8 +30,8 @@ if __name__ == "__main__":
     # reconstruct E_z, E_t, and E_r
     # TODO add helper functions
     #   user change frequency: time ~= component >> theta >> selected modes
-    # toCylindrical      = openpmd_api.thetaMode.toCylindrical(modes="all")
-    # toCylindricalSlice = openpmd_api.thetaMode.toCylindricalSlice(
+    # toCylindrical      = io.thetaMode.toCylindrical(modes="all")
+    # toCylindricalSlice = io.thetaMode.toCylindricalSlice(
     #     theta_radian=1.5708, modes="all")  # and theta_degree
     # reconstruction to 2D slice in cylindrical coordinates (r, z)
     #   for a fixed theta
@@ -43,9 +43,9 @@ if __name__ == "__main__":
     # series.flush()
 
     # reconstruction to 3D and 2D cartesian: E_x, E_y, E_z
-    # toCartesian        = openpmd_api.thetaMode.toCartesian(
+    # toCartesian        = io.thetaMode.toCartesian(
     #     discretize={'x': 1.e-6, 'y': 1.e-6}, modes="all")
-    # toCartesianSliceYZ = openpmd_api.thetaMode.toCartesianSlice(
+    # toCartesianSliceYZ = io.thetaMode.toCartesianSlice(
     #     discretize={'x': 1.e-6, 'y': 1.e-6}, slice_dir='x',
     #     slice_rel=0., modes="all")  # and absolute slice position
     # E_z_xyz = toCartesian(E_z_modes)[:, :, :]      # (x, y, z)

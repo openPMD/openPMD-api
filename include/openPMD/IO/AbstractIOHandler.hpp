@@ -21,7 +21,7 @@
 #pragma once
 
 #include "openPMD/config.hpp"
-#include "openPMD/IO/AccessType.hpp"
+#include "openPMD/IO/Access.hpp"
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/IO/IOTask.hpp"
 
@@ -69,16 +69,16 @@ class AbstractIOHandler
 {
 public:
 #if openPMD_HAVE_MPI
-    AbstractIOHandler(std::string path, AccessType at, MPI_Comm)
+    AbstractIOHandler(std::string path, Access at, MPI_Comm)
         : directory{std::move(path)},
-          accessTypeBackend{at},
-          accessTypeFrontend{at}
+          m_backendAccess{at},
+          m_frontendAccess{at}
     { }
 #endif
-    AbstractIOHandler(std::string path, AccessType at)
+    AbstractIOHandler(std::string path, Access at)
         : directory{std::move(path)},
-          accessTypeBackend{at},
-          accessTypeFrontend{at}
+          m_backendAccess{at},
+          m_frontendAccess{at}
     { }
     virtual ~AbstractIOHandler() = default;
 
@@ -101,8 +101,8 @@ public:
     virtual std::string backendName() const = 0;
 
     std::string const directory;
-    AccessType const accessTypeBackend;
-    AccessType const accessTypeFrontend;
+    Access const m_backendAccess;
+    Access const m_frontendAccess;
     std::queue< IOTask > m_work;
 }; // AbstractIOHandler
 

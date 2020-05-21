@@ -25,7 +25,7 @@
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
-#include "openPMD/IO/AccessType.hpp"
+#include "openPMD/IO/Access.hpp"
 #include "openPMD/IO/JSON/JSONFilePosition.hpp"
 
 #include <nlohmann/json.hpp>
@@ -279,8 +279,8 @@ namespace openPMD
         // not enforce (only allow) copy elision in return statements
         std::shared_ptr< FILEHANDLE > getFilehandle(
             File,
-            AccessType accessType
-        ); //, AccessType accessTypeFrontend=this->m_handler->accessTypeFrontend);
+            Access access
+        ); //, Access m_frontendAccess=this->m_handler->m_frontendAccess);
 
         // full operating system path of the given file
         std::string fullPath( File );

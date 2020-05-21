@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
     {
         Series series = Series(
             "../samples/git-sample/data%T.h5",
-            AccessType::READ_ONLY,
+            Access::READ_ONLY,
             MPI_COMM_WORLD
         );
         if( 0 == mpi_rank )

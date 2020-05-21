@@ -83,7 +83,7 @@ struct Series::ParsedInput
 #if openPMD_HAVE_MPI
 Series::Series(
     std::string const & filepath,
-    AccessType at,
+    Access at,
     MPI_Comm comm,
     std::string const & options )
     : iterations{ Container< Iteration, uint64_t >() }
@@ -98,7 +98,7 @@ Series::Series(
 
 Series::Series(
     std::string const & filepath,
-    AccessType at,
+    Access at,
     std::string const & options )
     : iterations{ Container< Iteration, uint64_t >() }
     , m_iterationEncoding{ std::make_shared< IterationEncoding >() }
@@ -494,13 +494,13 @@ Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
     m_filenamePostfix = std::make_shared< std::string >(input->filenamePostfix);
     m_filenamePadding = std::make_shared< int >(input->filenamePadding);
 
-    if( IOHandler->accessTypeFrontend == AccessType::READ_ONLY || IOHandler->accessTypeFrontend == AccessType::READ_WRITE )
+    if(IOHandler->m_frontendAccess == Access::READ_ONLY || IOHandler->m_frontendAccess == Access::READ_WRITE )
     {
         /* Allow creation of values in Containers and setting of Attributes
-         * Would throw for AccessType::READ_ONLY */
-        auto oldType = IOHandler->accessTypeFrontend;
-        auto newType = const_cast< AccessType* >(&m_writable->IOHandler->accessTypeFrontend);
-        *newType = AccessType::READ_WRITE;
+         * Would throw for Access::READ_ONLY */
+        auto oldType = IOHandler->m_frontendAccess;
+        auto newType = const_cast< Access* >(&m_writable->IOHandler->m_frontendAccess);
+        *newType = Access::READ_WRITE;
 
         if( input->iterationEncoding == IterationEncoding::fileBased )
             readFileBased();
@@ -509,7 +509,7 @@ Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
 
         if( iterations.empty() )
         {
-            /* AccessType::READ_WRITE can be used to create a new Series
+            /* Access::READ_WRITE can be used to create a new Series
              * allow setting attributes in that case */
             written = false;
 
@@ -556,7 +556,7 @@ Series::flushFileBased()
     if( iterations.empty() )
         throw std::runtime_error("fileBased output can not be written with no iterations.");
 
-    if( IOHandler->accessTypeFrontend == AccessType::READ_ONLY )
+    if(IOHandler->m_frontendAccess == Access::READ_ONLY )
         for( auto& i : iterations )
             i.second.flush();
     else
@@ -593,7 +593,7 @@ Series::flushFileBased()
 void
 Series::flushGroupBased()
 {
-    if( IOHandler->accessTypeFrontend == AccessType::READ_ONLY )
+    if(IOHandler->m_frontendAccess == Access::READ_ONLY )
         for( auto& i : iterations )
             i.second.flush();
     else
@@ -713,7 +713,7 @@ Series::readFileBased()
     {
         /* Frontend access type might change during Series::read() to allow parameter modification.
          * Backend access type stays unchanged for the lifetime of a Series. */
-        if( IOHandler->accessTypeBackend == AccessType::READ_ONLY  )
+        if(IOHandler->m_backendAccess == Access::READ_ONLY  )
             throw std::runtime_error("No matching iterations found: " + name());
         else
             std::cerr << "No matching iterations found: " << name() << std::endl;
@@ -724,7 +724,7 @@ Series::readFileBased()
 
     /* Frontend access type might change during Series::read() to allow parameter modification.
      * Backend access type stays unchanged for the lifetime of a Series. */
-    if( paddings.size() > 1u && IOHandler->accessTypeBackend == AccessType::READ_WRITE )
+    if( paddings.size() > 1u && IOHandler->m_backendAccess == Access::READ_WRITE )
         throw std::runtime_error("Cannot write to a series with inconsistent iteration padding. "
                                  "Please specify '%0<N>T' or open as read-only.");
 }

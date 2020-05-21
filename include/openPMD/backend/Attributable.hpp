@@ -208,7 +208,7 @@ template< typename T >
 inline bool
 Attributable::setAttribute(std::string const& key, T const& value)
 {
-    if( IOHandler && AccessType::READ_ONLY == IOHandler->accessTypeFrontend )
+    if(IOHandler && Access::READ_ONLY == IOHandler->m_frontendAccess )
     {
         auxiliary::OutOfRangeMsg const out_of_range_msg(
             "Attribute",

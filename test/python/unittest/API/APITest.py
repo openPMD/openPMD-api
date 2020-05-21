@@ -47,7 +47,7 @@ class APITest(unittest.TestCase):
                 os.path.join("issue-sample", "no_fields", "data%T.h5"))
         path_to_data = generateTestFilePath(
                 os.path.join("git-sample", "data%T.h5"))
-        mode = io.Access_Type.read_only
+        mode = io.Access.read_only
         self.__field_series = io.Series(path_to_field_data, mode)
         self.__particle_series = io.Series(path_to_particle_data, mode)
         self.__series = io.Series(path_to_data, mode)
@@ -120,7 +120,7 @@ class APITest(unittest.TestCase):
         # write
         series = io.Series(
             "unittest_py_API." + file_ending,
-            io.Access_Type.create
+            io.Access.create
         )
 
         # meta data
@@ -218,7 +218,7 @@ class APITest(unittest.TestCase):
         # read back
         series = io.Series(
             "unittest_py_API." + file_ending,
-            io.Access_Type.read_only
+            io.Access.read_only
         )
 
         self.assertEqual(series.get_attribute("char"), "c")
@@ -318,7 +318,7 @@ class APITest(unittest.TestCase):
         # write
         series = io.Series(
             "unittest_py_constant_API." + file_ending,
-            io.Access_Type.create
+            io.Access.create
         )
 
         ms = series.iterations[0].meshes
@@ -376,7 +376,7 @@ class APITest(unittest.TestCase):
         # read back
         series = io.Series(
             "unittest_py_constant_API." + file_ending,
-            io.Access_Type.read_only
+            io.Access.read_only
         )
 
         ms = series.iterations[0].meshes
@@ -924,7 +924,7 @@ class APITest(unittest.TestCase):
         # get series
         series = io.Series(
             "unittest_py_slice_API." + file_ending,
-            io.Access_Type.create
+            io.Access.create
         )
         i = series.iterations[0]
 
@@ -1104,7 +1104,7 @@ class APITest(unittest.TestCase):
 
         series = io.Series(
             "unittest_py_particle_patches." + file_ending,
-            io.Access_Type.create
+            io.Access.create
         )
         e = series.iterations[42].particles["electrons"]
 
@@ -1149,7 +1149,7 @@ class APITest(unittest.TestCase):
 
         series = io.Series(
             "unittest_py_particle_patches." + file_ending,
-            io.Access_Type.read_only
+            io.Access.read_only
         )
         e = series.iterations[42].particles["electrons"]
 

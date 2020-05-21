@@ -26,7 +26,7 @@
 
 namespace openPMD
 {
-    DummyIOHandler::DummyIOHandler(std::string path, AccessType at)
+    DummyIOHandler::DummyIOHandler(std::string path, Access at)
             : AbstractIOHandler(std::move(path), at)
     { }
 

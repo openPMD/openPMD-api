@@ -119,8 +119,8 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
     } else
     {
         // operations for create mode
-        if( ( IOHandler->accessTypeFrontend == AccessType::CREATE ) &&
-            ( (IOHandler->backendName() == "MPI_ADIOS1") || (IOHandler->backendName() == "ADIOS1") ) )
+        if((IOHandler->m_frontendAccess == Access::CREATE ) &&
+           ( (IOHandler->backendName() == "MPI_ADIOS1") || (IOHandler->backendName() == "ADIOS1") ) )
         {
             auto s = dynamic_cast< Series* >(parent->attributable->parent->attributable);
             Parameter< Operation::OPEN_FILE > fOpen;
@@ -168,7 +168,7 @@ Iteration::flushGroupBased(uint64_t i)
 void
 Iteration::flush()
 {
-    if( IOHandler->accessTypeFrontend == AccessType::READ_ONLY )
+    if(IOHandler->m_frontendAccess == Access::READ_ONLY )
     {
         for( auto& m : meshes )
             m.second.flush(m.first);

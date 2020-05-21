@@ -65,7 +65,7 @@ TEST_CASE( "multi_series_test", "[serial]" )
             allSeries.emplace_back(
                 std::string("../samples/multi_open_test_").
                     append(std::to_string(sn)).append(".").append(file_ending),
-                AccessType::CREATE
+                Access::CREATE
             );
             allSeries.back().iterations[sn].setAttribute("wululu", sn);
             allSeries.back().flush();
@@ -97,7 +97,7 @@ empty_dataset_test( std::string file_ending )
 {
     {
         Series series(
-            "../samples/empty_datasets." + file_ending, AccessType::CREATE );
+            "../samples/empty_datasets." + file_ending, Access::CREATE );
 
         auto makeEmpty_dim_7_int =
             series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_dim_7_int" ];
@@ -119,7 +119,7 @@ empty_dataset_test( std::string file_ending )
     }
     {
         Series series(
-            "../samples/empty_datasets." + file_ending, AccessType::READ_ONLY );
+            "../samples/empty_datasets." + file_ending, Access::READ_ONLY );
 
         REQUIRE(series.iterations.contains(1));
         REQUIRE(series.iterations.count(1) == 1);
@@ -181,7 +181,7 @@ void constant_scalar(std::string file_ending)
 
     {
         // constant scalar
-        Series s = Series("../samples/constant_scalar." + file_ending, AccessType::CREATE);
+        Series s = Series("../samples/constant_scalar." + file_ending, Access::CREATE);
         auto rho = s.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR];
         REQUIRE(s.iterations[1].meshes["rho"].scalar());
         rho.resetDataset(Dataset(Datatype::CHAR, {1, 2, 3}));
@@ -232,7 +232,7 @@ void constant_scalar(std::string file_ending)
     }
 
     {
-        Series s = Series("../samples/constant_scalar." + file_ending, AccessType::READ_ONLY);
+        Series s = Series("../samples/constant_scalar." + file_ending, Access::READ_ONLY);
         REQUIRE(s.iterations[1].meshes.count("rho") == 1);
         REQUIRE(s.iterations[1].meshes["rho"].count(MeshRecordComponent::SCALAR) == 1);
         REQUIRE(s.iterations[1].meshes["rho"][MeshRecordComponent::SCALAR].containsAttribute("shape"));
@@ -316,7 +316,7 @@ TEST_CASE( "flush_without_position_positionOffset", "[serial]" )
         const std::string & file_ending = std::get< 0 >( t );
         Series s = Series(
             "../samples/flush_without_position_positionOffset." + file_ending,
-            AccessType::CREATE );
+            Access::CREATE );
         ParticleSpecies e = s.iterations[ 0 ].particles[ "e" ];
         RecordComponent weighting = e[ "weighting" ][ RecordComponent::SCALAR ];
         weighting.resetDataset( Dataset( Datatype::FLOAT, Extent{ 2, 2 } ) );
@@ -354,7 +354,7 @@ void particle_patches( std::string file_ending )
     uint64_t const num_patches = 2u;
     {
         // constant scalar
-        Series s = Series("../samples/particle_patches." + file_ending, AccessType::CREATE);
+        Series s = Series("../samples/particle_patches." + file_ending, Access::CREATE);
 
         auto e = s.iterations[42].particles["electrons"];
 
@@ -400,7 +400,7 @@ void particle_patches( std::string file_ending )
         e.particlePatches["extent"]["y"].store(1, float(123.));
     }
     {
-        Series s = Series("../samples/particle_patches." + file_ending, AccessType::READ_ONLY);
+        Series s = Series("../samples/particle_patches." + file_ending, Access::READ_ONLY);
 
         auto e = s.iterations[42].particles["electrons"];
 
@@ -442,7 +442,7 @@ void dtype_test(const std::string & backend, bool test_128_bit = true)
     bool test_long_double = test_128_bit || sizeof (long double) <= 8;
     bool test_long_long = test_128_bit || sizeof (long long) <= 8;
     {
-        Series s = Series("../samples/dtype_test." + backend, AccessType::CREATE);
+        Series s = Series("../samples/dtype_test." + backend, Access::CREATE);
 
         char c = 'c';
         s.setAttribute("char", c);
@@ -528,7 +528,7 @@ void dtype_test(const std::string & backend, bool test_128_bit = true)
         }
     }
 
-    Series s = Series("../samples/dtype_test." + backend, AccessType::READ_ONLY);
+    Series s = Series("../samples/dtype_test." + backend, Access::READ_ONLY);
 
     REQUIRE(s.getAttribute("char").get< char >() == 'c');
     REQUIRE(s.getAttribute("uchar").get< unsigned char >() == 'u');
@@ -634,7 +634,7 @@ TEST_CASE( "dtype_test", "[serial]" )
 inline
 void write_test(const std::string & backend)
 {
-    Series o = Series("../samples/serial_write." + backend, AccessType::CREATE);
+    Series o = Series("../samples/serial_write." + backend, Access::CREATE);
 
     ParticleSpecies& e_1 = o.iterations[1].particles["e"];
 
@@ -764,7 +764,7 @@ void fileBased_write_test(const std::string & backend)
         auxiliary::remove_directory("../samples/subdir");
 
     {
-        Series o = Series("../samples/subdir/serial_fileBased_write%08T." + backend, AccessType::CREATE);
+        Series o = Series("../samples/subdir/serial_fileBased_write%08T." + backend, Access::CREATE);
 
         ParticleSpecies& e_1 = o.iterations[1].particles["e"];
 
@@ -847,7 +847,7 @@ void fileBased_write_test(const std::string & backend)
         || auxiliary::directory_exists("../samples/subdir/serial_fileBased_write00000003." + backend)));
 
     {
-        Series o = Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::READ_ONLY);
+        Series o = Series("../samples/subdir/serial_fileBased_write%T." + backend, Access::READ_ONLY);
 
         REQUIRE(o.iterations.size() == 5);
         REQUIRE(o.iterations.count(1) == 1);
@@ -918,7 +918,7 @@ void fileBased_write_test(const std::string & backend)
 
     // extend existing series with new step and auto-detection of iteration padding
     {
-        Series o = Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::READ_WRITE);
+        Series o = Series("../samples/subdir/serial_fileBased_write%T." + backend, Access::READ_WRITE);
 
         REQUIRE(o.iterations.size() == 5);
         o.iterations[6];
@@ -929,7 +929,7 @@ void fileBased_write_test(const std::string & backend)
 
     // additional iteration with different iteration padding but similar content
     {
-        Series o = Series("../samples/subdir/serial_fileBased_write%01T." + backend, AccessType::READ_WRITE);
+        Series o = Series("../samples/subdir/serial_fileBased_write%01T." + backend, Access::READ_WRITE);
 
         REQUIRE(o.iterations.empty());
 
@@ -949,19 +949,19 @@ void fileBased_write_test(const std::string & backend)
 
     // read back with auto-detection and non-fixed padding
     {
-        Series s = Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::READ_ONLY);
+        Series s = Series("../samples/subdir/serial_fileBased_write%T." + backend, Access::READ_ONLY);
         REQUIRE(s.iterations.size() == 7);
     }
 
     // write with auto-detection and in-consistent padding
     {
-        REQUIRE_THROWS_WITH(Series("../samples/subdir/serial_fileBased_write%T." + backend, AccessType::READ_WRITE),
+        REQUIRE_THROWS_WITH(Series("../samples/subdir/serial_fileBased_write%T." + backend, Access::READ_WRITE),
             Catch::Equals("Cannot write to a series with inconsistent iteration padding. Please specify '%0<N>T' or open as read-only."));
     }
 
     // read back with auto-detection and fixed padding
     {
-        Series s = Series("../samples/subdir/serial_fileBased_write%08T." + backend, AccessType::READ_ONLY);
+        Series s = Series("../samples/subdir/serial_fileBased_write%08T." + backend, Access::READ_ONLY);
         REQUIRE(s.iterations.size() == 6);
     }
 }
@@ -977,7 +977,7 @@ TEST_CASE( "fileBased_write_test", "[serial]" )
 inline
 void sample_write_thetaMode(std::string file_ending)
 {
-    Series o = Series(std::string("../samples/thetaMode_%05T.").append(file_ending), AccessType::CREATE);
+    Series o = Series(std::string("../samples/thetaMode_%05T.").append(file_ending), Access::CREATE);
 
     unsigned int const num_modes = 4u;
     unsigned int const num_fields = 1u + (num_modes-1u) * 2u; // the first mode is purely real
@@ -1053,13 +1053,13 @@ inline
 void bool_test(const std::string & backend)
 {
     {
-        Series o = Series("../samples/serial_bool." + backend, AccessType::CREATE);
+        Series o = Series("../samples/serial_bool." + backend, Access::CREATE);
 
         o.setAttribute("Bool attribute (true)", true);
         o.setAttribute("Bool attribute (false)", false);
     }
     {
-        Series o = Series("../samples/serial_bool." + backend, AccessType::READ_ONLY);
+        Series o = Series("../samples/serial_bool." + backend, Access::READ_ONLY);
 
         auto attrs = o.attributes();
         REQUIRE(std::count(attrs.begin(), attrs.end(), "Bool attribute (true)") == 1);
@@ -1080,7 +1080,7 @@ TEST_CASE( "bool_test", "[serial]" )
 inline
 void patch_test(const std::string & backend)
 {
-    Series o = Series("../samples/serial_patch." + backend, AccessType::CREATE);
+    Series o = Series("../samples/serial_patch." + backend, Access::CREATE);
 
     auto e = o.iterations[1].particles["e"];
 
@@ -1117,7 +1117,7 @@ TEST_CASE( "patch_test", "[serial]" )
 inline
 void deletion_test(const std::string & backend)
 {
-    Series o = Series("../samples/serial_deletion." + backend, AccessType::CREATE);
+    Series o = Series("../samples/serial_deletion." + backend, Access::CREATE);
 
 
     o.setAttribute("removed",
@@ -1177,7 +1177,7 @@ void read_missing_throw_test(const std::string & backend)
 {
     try
     {
-        auto s = Series("this/does/definitely/not/exist." + backend, AccessType::READ_ONLY);
+        auto s = Series("this/does/definitely/not/exist." + backend, Access::READ_ONLY);
     }
     catch( ... )
     {
@@ -1197,7 +1197,7 @@ void optional_paths_110_test(const std::string & backend)
     try
     {
         {
-            Series s = Series("../samples/issue-sample/no_fields/data%T." + backend, AccessType::READ_ONLY);
+            Series s = Series("../samples/issue-sample/no_fields/data%T." + backend, Access::READ_ONLY);
             auto attrs = s.attributes();
             REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
             REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
@@ -1206,7 +1206,7 @@ void optional_paths_110_test(const std::string & backend)
         }
 
         {
-            Series s = Series("../samples/issue-sample/no_particles/data%T." + backend, AccessType::READ_ONLY);
+            Series s = Series("../samples/issue-sample/no_particles/data%T." + backend, Access::READ_ONLY);
             auto attrs = s.attributes();
             REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
             REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
@@ -1219,7 +1219,7 @@ void optional_paths_110_test(const std::string & backend)
     }
 
     {
-        Series s = Series("../samples/no_meshes_1.1.0_compliant." + backend, AccessType::CREATE);
+        Series s = Series("../samples/no_meshes_1.1.0_compliant." + backend, Access::CREATE);
         auto foo = s.iterations[1].particles["foo"];
         Dataset dset = Dataset(Datatype::DOUBLE, {1});
         foo["position"][RecordComponent::SCALAR].resetDataset(dset);
@@ -1229,14 +1229,14 @@ void optional_paths_110_test(const std::string & backend)
     }
 
     {
-        Series s = Series("../samples/no_particles_1.1.0_compliant." + backend, AccessType::CREATE);
+        Series s = Series("../samples/no_particles_1.1.0_compliant." + backend, Access::CREATE);
         auto foo = s.iterations[1].meshes["foo"];
         Dataset dset = Dataset(Datatype::DOUBLE, {1});
         foo[RecordComponent::SCALAR].resetDataset(dset);
     }
 
     {
-        Series s = Series("../samples/no_meshes_1.1.0_compliant." + backend, AccessType::READ_ONLY);
+        Series s = Series("../samples/no_meshes_1.1.0_compliant." + backend, Access::READ_ONLY);
         auto attrs = s.attributes();
         REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 0);
         REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 1);
@@ -1245,7 +1245,7 @@ void optional_paths_110_test(const std::string & backend)
     }
 
     {
-        Series s = Series("../samples/no_particles_1.1.0_compliant." + backend, AccessType::READ_ONLY);
+        Series s = Series("../samples/no_particles_1.1.0_compliant." + backend, Access::READ_ONLY);
         auto attrs = s.attributes();
         REQUIRE(std::count(attrs.begin(), attrs.end(), "meshesPath") == 1);
         REQUIRE(std::count(attrs.begin(), attrs.end(), "particlesPath") == 0);
@@ -1266,7 +1266,7 @@ TEST_CASE( "git_hdf5_sample_structure_test", "[serial][hdf5]" )
 #if openPMD_USE_INVASIVE_TESTS
     try
     {
-        Series o = Series("../samples/git-sample/data%T.h5", AccessType::READ_ONLY);
+        Series o = Series("../samples/git-sample/data%T.h5", Access::READ_ONLY);
 
         REQUIRE(!o.parent);
         REQUIRE(o.iterations.parent == getWritable(&o));
@@ -1319,7 +1319,7 @@ TEST_CASE( "git_hdf5_sample_attribute_test", "[serial][hdf5]" )
 {
     try
     {
-        Series o = Series("../samples/git-sample/data%T.h5", AccessType::READ_ONLY);
+        Series o = Series("../samples/git-sample/data%T.h5", Access::READ_ONLY);
 
         REQUIRE(o.openPMD() == "1.1.0");
         REQUIRE(o.openPMDextension() == 1);
@@ -1568,7 +1568,7 @@ TEST_CASE( "git_hdf5_sample_content_test", "[serial][hdf5]" )
 {
     try
     {
-        Series o = Series("../samples/git-sample/data%T.h5", AccessType::READ_ONLY);
+        Series o = Series("../samples/git-sample/data%T.h5", Access::READ_ONLY);
 
         {
             double actual[3][3][3] = {{{-1.9080703683727052e-09, -1.5632650729457964e-10, 1.1497536256399599e-09},
@@ -1618,7 +1618,7 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
 {
     try
     {
-        Series o = Series("../samples/git-sample/data%T.h5", AccessType::READ_ONLY);
+        Series o = Series("../samples/git-sample/data%T.h5", Access::READ_ONLY);
 
         REQUIRE(o.iterations.size() == 5);
         REQUIRE(o.iterations.count(100) == 1);
@@ -1638,7 +1638,7 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
 
     try
     {
-        Series o = Series("../samples/git-sample/data%08T.h5", AccessType::READ_ONLY);
+        Series o = Series("../samples/git-sample/data%08T.h5", Access::READ_ONLY);
 
         REQUIRE(o.iterations.size() == 5);
         REQUIRE(o.iterations.count(100) == 1);
@@ -1656,7 +1656,7 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
         return;
     }
 
-    REQUIRE_THROWS_WITH(Series("../samples/git-sample/data%07T.h5", AccessType::READ_ONLY),
+    REQUIRE_THROWS_WITH(Series("../samples/git-sample/data%07T.h5", Access::READ_ONLY),
                         Catch::Equals("No matching iterations found: data%07T"));
 
     try
@@ -1672,7 +1672,7 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
                 auxiliary::remove_file(file);
 
         {
-            Series o = Series("../samples/git-sample/data%T.h5", AccessType::READ_WRITE);
+            Series o = Series("../samples/git-sample/data%T.h5", Access::READ_WRITE);
 
 #if openPMD_USE_INVASIVE_TESTS
             REQUIRE(*o.m_filenamePadding == 8);
@@ -1702,7 +1702,7 @@ TEST_CASE( "git_hdf5_sample_read_thetaMode", "[serial][hdf5][thetaMode]" )
 {
     try
     {
-        Series o = Series("../samples/git-sample/thetaMode/data%T.h5", AccessType::READ_ONLY);
+        Series o = Series("../samples/git-sample/thetaMode/data%T.h5", Access::READ_ONLY);
 
         REQUIRE(o.iterations.size() == 5);
         REQUIRE(o.iterations.count(100) == 1);
@@ -1770,7 +1770,7 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
     {
         /* HZDR: /bigdata/hplsim/development/huebl/lwfa-openPMD-062-smallLWFA-h5
          * DOI:10.14278/rodare.57 */
-        Series o = Series("../samples/hzdr-sample/h5/simData_%T.h5", AccessType::READ_ONLY);
+        Series o = Series("../samples/hzdr-sample/h5/simData_%T.h5", Access::READ_ONLY);
 
         REQUIRE(o.openPMD() == "1.0.0");
         REQUIRE(o.openPMDextension() == 1);
@@ -2229,7 +2229,7 @@ TEST_CASE( "hzdr_adios1_sample_content_test", "[serial][adios1]" )
     {
         /* HZDR: /bigdata/hplsim/development/huebl/lwfa-bgfield-001
          * DOI:10.14278/rodare.57 */
-        Series o = Series("../samples/hzdr-sample/bp/checkpoint_%T.bp", AccessType::READ_ONLY);
+        Series o = Series("../samples/hzdr-sample/bp/checkpoint_%T.bp", Access::READ_ONLY);
 
         REQUIRE(o.openPMD() == "1.0.0");
         REQUIRE(o.openPMDextension() == 1);
@@ -2451,7 +2451,7 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
 )END";
     auto const write = []( std::string const & filename,
                      std::string const & config ) {
-        openPMD::Series series( filename, openPMD::AccessType::CREATE, config );
+        openPMD::Series series( filename, openPMD::Access::CREATE, config );
         auto E_x = series.iterations[ 0 ].meshes[ "E" ][ "x" ];
         E_x.resetDataset(
             openPMD::Dataset( openPMD::Datatype::INT, { 1000 } ) );
@@ -2490,7 +2490,7 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
 )END";
     auto const read = []( std::string const & filename, std::string const & config ) {
         openPMD::Series series(
-            filename, openPMD::AccessType::READ_ONLY, config );
+            filename, openPMD::Access::READ_ONLY, config );
         auto E_x = series.iterations[ 0 ].meshes[ "E" ][ "x" ];
         REQUIRE( E_x.getDimensionality() == 1 );
         REQUIRE( E_x.getExtent()[ 0 ] == 1000 );

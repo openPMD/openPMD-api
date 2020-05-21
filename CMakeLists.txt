@@ -521,7 +521,7 @@ endif()
 if(openPMD_HAVE_PYTHON)
     pybind11_add_module(openPMD.py MODULE SYSTEM
         src/binding/python/openPMD.cpp
-        src/binding/python/AccessType.cpp
+        src/binding/python/Access.cpp
         src/binding/python/Attributable.cpp
         src/binding/python/BaseRecord.cpp
         src/binding/python/BaseRecordComponent.cpp

@@ -39,7 +39,7 @@ namespace openPMD
 #   endif
 
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string path,
-                                             AccessType at,
+                                             Access at,
                                              MPI_Comm comm)
         : AbstractIOHandler(std::move(path), at, comm),
           m_impl{new ParallelHDF5IOHandlerImpl(this, comm)}
@@ -94,7 +94,7 @@ ParallelHDF5IOHandlerImpl::~ParallelHDF5IOHandlerImpl()
 #else
 #   if openPMD_HAVE_MPI
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string path,
-                                             AccessType at,
+                                             Access at,
                                              MPI_Comm comm)
         : AbstractIOHandler(std::move(path), at, comm)
 {
@@ -102,7 +102,7 @@ ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string path,
 }
 #   else
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string path,
-                                             AccessType at)
+                                             Access at)
         : AbstractIOHandler(std::move(path), at)
 {
     throw std::runtime_error("openPMD-api built without parallel support and without HDF5 support");

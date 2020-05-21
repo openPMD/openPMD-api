@@ -71,7 +71,7 @@ Attributable::getAttribute(std::string const& key) const
 bool
 Attributable::deleteAttribute(std::string const& key)
 {
-    if( AccessType::READ_ONLY == IOHandler->accessTypeFrontend )
+    if(Access::READ_ONLY == IOHandler->m_frontendAccess )
         throw std::runtime_error("Can not delete an Attribute in a read-only Series.");
 
     auto it = m_attributes->find(key);

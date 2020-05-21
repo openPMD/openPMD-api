@@ -44,7 +44,7 @@ Writing & reading through those backends and their associated files is supported
 
 // ...
 
-auto s = openPMD::Series("samples/git-sample/data%T.h5", openPMD::AccessType::READ_ONLY);
+auto s = openPMD::Series("samples/git-sample/data%T.h5", openPMD::Access::READ_ONLY);
 
 for( auto const& i : s.iterations ) {
     std::cout << "Iteration: " << i.first << "\n";
@@ -75,7 +75,7 @@ import openpmd_api as io
 
 # ...
 
-series = io.Series("samples/git-sample/data%T.h5", io.Access_Type.read_only)
+series = io.Series("samples/git-sample/data%T.h5", io.Access.read_only)
 
 for k_i, i in series.iterations.items():
     print("Iteration: {0}".format(k_i))

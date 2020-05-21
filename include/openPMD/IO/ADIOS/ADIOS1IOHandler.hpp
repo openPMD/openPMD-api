@@ -42,7 +42,7 @@ namespace openPMD
         friend class ADIOS1IOHandlerImpl;
 
     public:
-        ADIOS1IOHandler(std::string path, AccessType);
+        ADIOS1IOHandler(std::string path, Access);
         ~ADIOS1IOHandler() override;
 
         std::string backendName() const override { return "ADIOS1"; }
@@ -61,7 +61,7 @@ namespace openPMD
         friend class ADIOS1IOHandlerImpl;
 
     public:
-        ADIOS1IOHandler(std::string path, AccessType);
+        ADIOS1IOHandler(std::string path, Access);
         ~ADIOS1IOHandler() override;
 
         std::string backendName() const override { return "DUMMY_ADIOS1"; }

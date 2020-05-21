@@ -12,6 +12,15 @@ Python
 The already existing read-only properties ``unit_dimension``, ``unit_SI``, and ``time_offset`` are now declared as read-write properties.
 ``set_unit_dimension``, ``set_unit_SI``, and ``set_time_offset`` are now deprecated and will be removed in future versions of the library.
 
+``Access_Type`` is now called ``Access``.
+Using it by the old name is deprecated and will be removed in future versions of the library.
+
+C++
+^^^
+
+``AccessType`` is now called ``Access``.
+Using it by the old name is deprecated and will be removed in future versions of the library.
+
 
 0.11.0-alpha
 ------------

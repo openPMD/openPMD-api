@@ -14,7 +14,7 @@ if __name__ == "__main__":
     # open file for writing
     series = io.Series(
         "../samples/3_write_thetaMode_serial_py.h5",
-        io.Access_Type.create
+        io.Access.create
     )
 
     # configure and setup geometry

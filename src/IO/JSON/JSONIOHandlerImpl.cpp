@@ -84,7 +84,7 @@ namespace openPMD
         Parameter< Operation::CREATE_FILE > const & parameters
     )
     {
-        VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
+        VERIFY_ALWAYS(m_handler->m_backendAccess != Access::READ_ONLY,
             "[JSON] Creating a file in read-only mode is not possible." );
 
         if( !writable->written )
@@ -100,8 +100,8 @@ namespace openPMD
 
             auto res_pair = getPossiblyExisting( name );
             File shared_name = File( name );
-            VERIFY_ALWAYS( !( m_handler->accessTypeBackend == AccessType::READ_WRITE &&
-                              ( !std::get< 2 >( res_pair ) ||
+            VERIFY_ALWAYS( !(m_handler->m_backendAccess == Access::READ_WRITE &&
+                             ( !std::get< 2 >( res_pair ) ||
                                 auxiliary::file_exists( fullPath( std::get< 0 >( res_pair ) ) ) ) ),
                 "[JSON] Can only overwrite existing file in CREATE mode." );
 
@@ -203,7 +203,7 @@ namespace openPMD
         Parameter< Operation::CREATE_DATASET > const & parameter
     )
     {
-        if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
+        if(m_handler->m_backendAccess == Access::READ_ONLY )
         {
             throw std::runtime_error( "[JSON] Creating a dataset in a file opened as read only is not possible." );
         }
@@ -238,7 +238,7 @@ namespace openPMD
         Parameter< Operation::EXTEND_DATASET > const & parameters
     )
     {
-        VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
+        VERIFY_ALWAYS(m_handler->m_backendAccess != Access::READ_ONLY,
             "[JSON] Cannot extend a dataset in read-only mode." )
         refreshFileFromParent( writable );
         setAndGetFilePosition( writable );
@@ -368,7 +368,7 @@ namespace openPMD
         Parameter< Operation::DELETE_FILE > const & parameters
     )
     {
-        VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
+        VERIFY_ALWAYS(m_handler->m_backendAccess != Access::READ_ONLY,
             "[JSON] Cannot delete files in read-only mode" )
 
         if( !writable->written )
@@ -402,7 +402,7 @@ namespace openPMD
         Parameter< Operation::DELETE_PATH > const & parameters
     )
     {
-        VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
+        VERIFY_ALWAYS(m_handler->m_backendAccess != Access::READ_ONLY,
             "[JSON] Cannot delete paths in read-only mode" )
 
         if( !writable->written )
@@ -508,7 +508,7 @@ namespace openPMD
         Parameter< Operation::DELETE_DATASET > const & parameters
     )
     {
-        VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
+        VERIFY_ALWAYS(m_handler->m_backendAccess != Access::READ_ONLY,
             "[JSON] Cannot delete datasets in read-only mode" )
 
         if( !writable->written )
@@ -563,7 +563,7 @@ namespace openPMD
         Parameter< Operation::DELETE_ATT > const & parameters
     )
     {
-        VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
+        VERIFY_ALWAYS(m_handler->m_backendAccess != Access::READ_ONLY,
             "[JSON] Cannot delete attributes in read-only mode" )
         if( !writable->written )
         {
@@ -582,7 +582,7 @@ namespace openPMD
         Parameter< Operation::WRITE_DATASET > const & parameters
     )
     {
-        VERIFY_ALWAYS( m_handler->accessTypeBackend != AccessType::READ_ONLY,
+        VERIFY_ALWAYS(m_handler->m_backendAccess != Access::READ_ONLY,
             "[JSON] Cannot write data in read-only mode." );
 
         auto pos = setAndGetFilePosition( writable );
@@ -613,7 +613,7 @@ namespace openPMD
         Parameter< Operation::WRITE_ATT > const & parameter
     )
     {
-        if( m_handler->accessTypeBackend == AccessType::READ_ONLY )
+        if(m_handler->m_backendAccess == Access::READ_ONLY )
         {
             throw std::runtime_error( "[JSON] Creating a dataset in a file opened as read only is not possible." );
         }
@@ -783,23 +783,23 @@ namespace openPMD
     std::shared_ptr< JSONIOHandlerImpl::FILEHANDLE >
     JSONIOHandlerImpl::getFilehandle(
         File fileName,
-        AccessType accessType
+        Access access
     )
     {
         VERIFY_ALWAYS( fileName.valid( ),
             "[JSON] Tried opening a file that has been overwritten or deleted." )
         auto path = fullPath( std::move( fileName ) );
         auto fs = std::make_shared< std::fstream >( );
-        switch( accessType )
+        switch( access )
         {
-            case AccessType::CREATE:
-            case AccessType::READ_WRITE:
+            case Access::CREATE:
+            case Access::READ_WRITE:
                 fs->open(
                     path,
                     std::ios_base::out | std::ios_base::trunc
                 );
                 break;
-            case AccessType::READ_ONLY:
+            case Access::READ_ONLY:
                 fs->open(
                     path,
                     std::ios_base::in
@@ -1086,7 +1086,7 @@ namespace openPMD
         // read from file
         auto fh = getFilehandle(
             file,
-            AccessType::READ_ONLY
+            Access::READ_ONLY
         );
         std::shared_ptr< nlohmann::json >
             res = std::make_shared< nlohmann::json >( );
@@ -1124,8 +1124,8 @@ namespace openPMD
         if( it != m_jsonVals.end( ) )
         {
             auto fh = getFilehandle(
-                filename,
-                AccessType::CREATE
+                    filename,
+                    Access::CREATE
             );
             ( *it->second )["platform_byte_widths"] = platformSpecifics( );
             *fh << *it->second << std::endl;
