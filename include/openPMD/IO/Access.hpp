@@ -35,11 +35,17 @@ namespace openPMD
     }; // Access
 
 
-#if (__cplusplus < 201402L) && defined(_MSC_VER)
+    // deprecated name (prior to 0.12.0)
+#if __cplusplus >= 201402L
+    using Access_Type OPENPMDAPI_DEPRECATED("Access_Type is deprecated, use Access instead.") = Access;
+#elif defined(__GNUC__) && defined(__GNUC_PATCHLEVEL__)
+    using Access_Type OPENPMDAPI_DEPRECATED("Access_Type is deprecated, use Access instead.") = Access;
+#elif defined(_MSC_VER)
     // this is a non-standard order
     //   https://en.cppreference.com/w/cpp/language/attributes/deprecated
     typedef OPENPMDAPI_DEPRECATED("Access_Type is deprecated, use Access instead.") Access Access_Type;
 #else
-    using Access_Type OPENPMDAPI_DEPRECATED("Access_Type is deprecated, use Access instead.") = Access;
+    // don't warn because pre C++14 attribute order is too compiler-dependent
+    using Access_Type = Access;
 #endif
 } // namespace openPMD
