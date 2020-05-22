@@ -39,18 +39,18 @@ namespace openPMD
 #if __cplusplus >= 201402L
 #   if defined(__INTEL_COMPILER)
     // Intel C++ 19.1.0.20200306 bug: 04651484
-    OPENPMDAPI_DEPRECATED("Access_Type is deprecated, use Access instead.") typedef Access Access_Type;
+    OPENPMDAPI_DEPRECATED("AccessType is deprecated, use Access instead.") typedef Access AccessType;
 #   else
-    using Access_Type OPENPMDAPI_DEPRECATED("Access_Type is deprecated, use Access instead.") = Access;
+    using AccessType OPENPMDAPI_DEPRECATED("AccessType is deprecated, use Access instead.") = Access;
 #   endif
 #elif defined(__GNUC__) && defined(__GNUC_PATCHLEVEL__)
-    using Access_Type OPENPMDAPI_DEPRECATED("Access_Type is deprecated, use Access instead.") = Access;
+    using AccessType OPENPMDAPI_DEPRECATED("AccessType is deprecated, use Access instead.") = Access;
 #elif defined(_MSC_VER)
     // this is a non-standard order
     //   https://en.cppreference.com/w/cpp/language/attributes/deprecated
-    typedef OPENPMDAPI_DEPRECATED("Access_Type is deprecated, use Access instead.") Access Access_Type;
+    typedef OPENPMDAPI_DEPRECATED("AccessType is deprecated, use Access instead.") Access AccessType;
 #else
     // don't warn because pre C++14 attribute order is too compiler-dependent
-    using Access_Type = Access;
+    using AccessType = Access;
 #endif
 } // namespace openPMD
