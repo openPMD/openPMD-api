@@ -35,9 +35,14 @@ namespace openPMD
     }; // Access
 
 
-    // deprecated name (prior to 0.12.0)
+    // deprecated name (used prior to 0.12.0)
 #if __cplusplus >= 201402L
+#   if defined(__INTEL_COMPILER)
+    // Intel C++ 19.1.0.20200306 bug: 04651484
+    OPENPMDAPI_DEPRECATED("Access_Type is deprecated, use Access instead.") typedef Access Access_Type;
+#   else
     using Access_Type OPENPMDAPI_DEPRECATED("Access_Type is deprecated, use Access instead.") = Access;
+#   endif
 #elif defined(__GNUC__) && defined(__GNUC_PATCHLEVEL__)
     using Access_Type OPENPMDAPI_DEPRECATED("Access_Type is deprecated, use Access instead.") = Access;
 #elif defined(_MSC_VER)
