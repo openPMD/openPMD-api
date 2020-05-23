@@ -37,20 +37,15 @@ namespace openPMD
 
     // deprecated name (used prior to 0.12.0)
 #if __cplusplus >= 201402L
-#   if defined(__INTEL_COMPILER)
-    // Intel C++ 19.1.0.20200306 bug: 04651484
+    // note: "using old [[deprecated(msg)]] = new;" is still badly supported, thus using typedef
+    //       https://en.cppreference.com/w/cpp/language/attributes/deprecated
+    //   - NVCC 10.1 works but noisy "warning: attribute does not apply to any entity"
+    //     Nvidia bug report: 2991260
+    //   - Intel C++ 19.1.0.20200306 bug report: 04651484
     OPENPMDAPI_DEPRECATED("AccessType is deprecated, use Access instead.") typedef Access AccessType;
-#   else
-    using AccessType OPENPMDAPI_DEPRECATED("AccessType is deprecated, use Access instead.") = Access;
-#   endif
-#elif defined(__GNUC__) && defined(__GNUC_PATCHLEVEL__)
-    using AccessType OPENPMDAPI_DEPRECATED("AccessType is deprecated, use Access instead.") = Access;
-#elif defined(_MSC_VER)
-    // this is a non-standard order
-    //   https://en.cppreference.com/w/cpp/language/attributes/deprecated
-    typedef OPENPMDAPI_DEPRECATED("AccessType is deprecated, use Access instead.") Access AccessType;
 #else
     // don't warn because pre C++14 attribute order is too compiler-dependent
+    // NVCC, ICC, GCC, MSVC are all irregular
     using AccessType = Access;
 #endif
 } // namespace openPMD
