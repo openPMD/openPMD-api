@@ -337,6 +337,7 @@ ADIOS2IOHandlerImpl::closeFile(
     auto fileIterator = m_files.find( writable );
     if ( fileIterator != m_files.end( ) )
     {
+        fileIterator->second.invalidate( );
         auto it = m_fileData.find( fileIterator->second );
         if ( it != m_fileData.end( ) )
         {
