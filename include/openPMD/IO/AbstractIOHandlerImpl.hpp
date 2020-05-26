@@ -22,6 +22,7 @@
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/IOTask.hpp"
+#include "openPMD/auxiliary/DerefDynamicCast.hpp"
 
 #include <future>
 
@@ -42,6 +43,8 @@ public:
 
     virtual std::future< void > flush()
     {
+        using namespace auxiliary;
+
         while( !(*m_handler).m_work.empty() )
         {
             IOTask& i = (*m_handler).m_work.front();
@@ -51,58 +54,58 @@ public:
                 {
                     using O = Operation;
                     case O::CREATE_FILE:
-                        createFile(i.writable, *dynamic_cast< Parameter< Operation::CREATE_FILE >* >(i.parameter.get()));
+                        createFile(i.writable, deref_dynamic_cast< Parameter< Operation::CREATE_FILE > >(i.parameter.get()));
                         break;
                     case O::CREATE_PATH:
-                        createPath(i.writable, *dynamic_cast< Parameter< O::CREATE_PATH >* >(i.parameter.get()));
+                        createPath(i.writable, deref_dynamic_cast< Parameter< O::CREATE_PATH > >(i.parameter.get()));
                         break;
                     case O::CREATE_DATASET:
-                        createDataset(i.writable, *dynamic_cast< Parameter< O::CREATE_DATASET >* >(i.parameter.get()));
+                        createDataset(i.writable, deref_dynamic_cast< Parameter< O::CREATE_DATASET > >(i.parameter.get()));
                         break;
                     case O::EXTEND_DATASET:
-                        extendDataset(i.writable, *dynamic_cast< Parameter< O::EXTEND_DATASET >* >(i.parameter.get()));
+                        extendDataset(i.writable, deref_dynamic_cast< Parameter< O::EXTEND_DATASET > >(i.parameter.get()));
                         break;
                     case O::OPEN_FILE:
-                        openFile(i.writable, *dynamic_cast< Parameter< O::OPEN_FILE >* >(i.parameter.get()));
+                        openFile(i.writable, deref_dynamic_cast< Parameter< O::OPEN_FILE > >(i.parameter.get()));
                         break;
                     case O::OPEN_PATH:
-                        openPath(i.writable, *dynamic_cast< Parameter< O::OPEN_PATH >* >(i.parameter.get()));
+                        openPath(i.writable, deref_dynamic_cast< Parameter< O::OPEN_PATH > >(i.parameter.get()));
                         break;
                     case O::OPEN_DATASET:
-                        openDataset(i.writable, *dynamic_cast< Parameter< O::OPEN_DATASET >* >(i.parameter.get()));
+                        openDataset(i.writable, deref_dynamic_cast< Parameter< O::OPEN_DATASET > >(i.parameter.get()));
                         break;
                     case O::DELETE_FILE:
-                        deleteFile(i.writable, *dynamic_cast< Parameter< O::DELETE_FILE >* >(i.parameter.get()));
+                        deleteFile(i.writable, deref_dynamic_cast< Parameter< O::DELETE_FILE > >(i.parameter.get()));
                         break;
                     case O::DELETE_PATH:
-                        deletePath(i.writable, *dynamic_cast< Parameter< O::DELETE_PATH >* >(i.parameter.get()));
+                        deletePath(i.writable, deref_dynamic_cast< Parameter< O::DELETE_PATH > >(i.parameter.get()));
                         break;
                     case O::DELETE_DATASET:
-                        deleteDataset(i.writable, *dynamic_cast< Parameter< O::DELETE_DATASET >* >(i.parameter.get()));
+                        deleteDataset(i.writable, deref_dynamic_cast< Parameter< O::DELETE_DATASET > >(i.parameter.get()));
                         break;
                     case O::DELETE_ATT:
-                        deleteAttribute(i.writable, *dynamic_cast< Parameter< O::DELETE_ATT >* >(i.parameter.get()));
+                        deleteAttribute(i.writable, deref_dynamic_cast< Parameter< O::DELETE_ATT > >(i.parameter.get()));
                         break;
                     case O::WRITE_DATASET:
-                        writeDataset(i.writable, *dynamic_cast< Parameter< O::WRITE_DATASET >* >(i.parameter.get()));
+                        writeDataset(i.writable, deref_dynamic_cast< Parameter< O::WRITE_DATASET > >(i.parameter.get()));
                         break;
                     case O::WRITE_ATT:
-                        writeAttribute(i.writable, *dynamic_cast< Parameter< O::WRITE_ATT >* >(i.parameter.get()));
+                        writeAttribute(i.writable, deref_dynamic_cast< Parameter< O::WRITE_ATT > >(i.parameter.get()));
                         break;
                     case O::READ_DATASET:
-                        readDataset(i.writable, *dynamic_cast< Parameter< O::READ_DATASET >* >(i.parameter.get()));
+                        readDataset(i.writable, deref_dynamic_cast< Parameter< O::READ_DATASET > >(i.parameter.get()));
                         break;
                     case O::READ_ATT:
-                        readAttribute(i.writable, *dynamic_cast< Parameter< O::READ_ATT >* >(i.parameter.get()));
+                        readAttribute(i.writable, deref_dynamic_cast< Parameter< O::READ_ATT > >(i.parameter.get()));
                         break;
                     case O::LIST_PATHS:
-                        listPaths(i.writable, *dynamic_cast< Parameter< O::LIST_PATHS >* >(i.parameter.get()));
+                        listPaths(i.writable, deref_dynamic_cast< Parameter< O::LIST_PATHS > >(i.parameter.get()));
                         break;
                     case O::LIST_DATASETS:
-                        listDatasets(i.writable, *dynamic_cast< Parameter< O::LIST_DATASETS >* >(i.parameter.get()));
+                        listDatasets(i.writable, deref_dynamic_cast< Parameter< O::LIST_DATASETS > >(i.parameter.get()));
                         break;
                     case O::LIST_ATTS:
-                        listAttributes(i.writable, *dynamic_cast< Parameter< O::LIST_ATTS >* >(i.parameter.get()));
+                        listAttributes(i.writable, deref_dynamic_cast< Parameter< O::LIST_ATTS > >(i.parameter.get()));
                         break;
                 }
             } catch (unsupported_data_error&)

@@ -28,6 +28,7 @@
 #include <adios_types.h>
 
 #include <cstring>
+#include <exception>
 #include <iterator>
 #include <iostream>
 #include <sstream>
@@ -208,7 +209,10 @@ concrete_bp1_file_position(Writable* w)
     std::string pos;
     while( !hierarchy.empty() )
     {
-        pos += std::dynamic_pointer_cast< ADIOS1FilePosition >(hierarchy.top()->abstractFilePosition)->location;
+        auto const tmp_ptr = std::dynamic_pointer_cast< ADIOS1FilePosition >(hierarchy.top()->abstractFilePosition);
+        if( tmp_ptr == nullptr )
+            throw std::runtime_error("Dynamic pointer cast returned a nullptr!");
+        pos += tmp_ptr->location;
         hierarchy.pop();
     }
 

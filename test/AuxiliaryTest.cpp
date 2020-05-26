@@ -7,6 +7,7 @@
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
+#include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
@@ -17,10 +18,11 @@
 #include <catch2/catch.hpp>
 
 #include <array>
+#include <exception>
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <vector>
-#include <iostream>
 
 using namespace openPMD;
 
@@ -40,6 +42,27 @@ struct TestHelper : public Attributable
 } // test
 } // openPMD
 
+
+TEST_CASE( "deref_cast_test", "[auxiliary]" ) {
+    using namespace auxiliary;
+
+    struct A { double m_x; A(double x) : m_x(x){} virtual ~A() = default; };
+    struct B : virtual A { B(double x) : A(x){}};
+    struct C { float m_x; };
+
+    B const value = {123.45};
+    B const * const ptr = &value;
+
+    auto const a = deref_dynamic_cast<A const>(ptr);
+    auto const& ra = deref_dynamic_cast<A const>(ptr);
+    (void)a;
+    (void)ra;
+
+    REQUIRE_THROWS_AS(deref_dynamic_cast<C const>(ptr), std::runtime_error);
+
+    A * const nptr = nullptr;
+    REQUIRE_THROWS_AS(deref_dynamic_cast<B>(nptr), std::runtime_error);
+}
 
 TEST_CASE( "string_test", "[auxiliary]" )
 {

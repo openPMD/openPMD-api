@@ -24,21 +24,23 @@
 #include "openPMD/config.hpp"
 #if openPMD_HAVE_MPI
 
+#include "RandomDatasetFiller.hpp"
 
 #include "openPMD/openPMD.hpp"
+#include "openPMD/benchmark/mpi/MPIBenchmarkReport.hpp"
+#include "openPMD/benchmark/mpi/DatasetFiller.hpp"
+#include "openPMD/benchmark/mpi/BlockSlicer.hpp"
+
 #include <mpi.h>
+
 #include <chrono>
+#include <exception>
 #include <iostream>
 #include <sstream>
 #include <utility>
 #include <vector>
 #include <tuple>
 #include <set>
-#include "openPMD/benchmark/mpi/MPIBenchmarkReport.hpp"
-#include "openPMD/benchmark/mpi/DatasetFiller.hpp"
-#include "openPMD/benchmark/mpi/BlockSlicer.hpp"
-#include "openPMD/Datatype.hpp"
-#include "RandomDatasetFiller.hpp"
 
 
 namespace openPMD
@@ -296,7 +298,10 @@ namespace openPMD
         m_blockSlicer { std::move( blockSlicer ) },
         m_dfp { dfp },
         m_basePath { std::move( basePath ) }
-    {}
+    {
+        if( m_blockSlicer == nullptr )
+            throw std::runtime_error("Argument blockSlicer cannot be a nullptr!");
+    }
 
 
     template< typename DatasetFillerProvider >
