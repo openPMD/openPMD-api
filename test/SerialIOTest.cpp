@@ -91,8 +91,39 @@ TEST_CASE( "multi_series_test", "[serial]" )
     allSeries.clear();
 }
 
-inline
 void
+close_iteration_test( std::string file_ending )
+{
+    std::string name = "../samples/close_iterations_%T." + file_ending;
+
+    std::vector< int > data{ 2, 4, 6, 8 };
+    // { // we do *not* need these parentheses
+        Series write( name, Access::CREATE );
+        Iteration it0 = write.iterations[ 0 ];
+        auto E_x = it0.meshes[ "E" ][ "x" ];
+        E_x.resetDataset( { Datatype::INT, { 2, 2 } } );
+        E_x.storeChunk( data, { 0, 0 }, { 2, 2 } );
+        it0.close();
+        write.flush();
+    // }
+
+    Series read( name, Access::READ_ONLY );
+    auto E_x_read = read.iterations[ 0 ].meshes[ "E" ][ "x" ];
+    auto chunk = E_x_read.loadChunk< int >( { 0, 0 }, { 2, 2 } );
+    read.flush();
+    for( size_t i = 0; i < data.size(); ++i )
+    {
+        REQUIRE( data[ i ] == chunk.get()[ i ] );
+    }
+    std::cout << "close_iteration_test end" << std::endl;
+}
+
+TEST_CASE( "close_iteration_test", "[serial]" )
+{
+    close_iteration_test( "bp" );
+}
+
+inline void
 empty_dataset_test( std::string file_ending )
 {
     {
