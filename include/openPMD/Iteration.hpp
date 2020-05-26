@@ -87,6 +87,16 @@ public:
      */
     Iteration& setTimeUnitSI(double newTimeUnitSI);
 
+    /**
+     * @brief Declare an iteration finalized. Indicates that no further
+     * alterations will be made to this iteration.
+     * @return Reference to modified iteration.
+     */
+    Iteration& close( );
+
+    bool
+    closed() const;
+
     Container< Mesh > meshes;
     Container< ParticleSpecies > particles; //particleSpecies?
 
@@ -98,6 +108,14 @@ private:
     void flushGroupBased(uint64_t);
     void flush();
     void read();
+
+    /*
+     * Once an iteration is declared finalized, we do not flush it any longer
+     * to avoid reading undefined data if a backend implements optimizations
+     * based on this information.
+     */
+    std::shared_ptr< bool > skipFlush =
+        std::make_shared< bool >( false );
 
     virtual void linkHierarchy(std::shared_ptr< Writable > const& w);
 };  //Iteration
