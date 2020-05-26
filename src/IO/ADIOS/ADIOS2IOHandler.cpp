@@ -324,6 +324,28 @@ void ADIOS2IOHandlerImpl::openFile(
     writable->abstractFilePosition = std::make_shared< ADIOS2FilePosition >( );
 }
 
+void
+ADIOS2IOHandlerImpl::closeFile(
+    Writable * writable,
+    Parameter< Operation::CLOSE_FILE > const & parameters )
+{
+    std::string name = parameters.name;
+    if ( !auxiliary::ends_with( name, ".bp" ) )
+    {
+        name += ".bp";
+    }
+    auto fileIterator = m_files.find( writable );
+    if ( fileIterator != m_files.end( ) )
+    {
+        auto it = m_fileData.find( fileIterator->second );
+        if ( it != m_fileData.end( ) )
+        {
+            it->second->flush( );
+            m_fileData.erase( it );
+        }
+    }
+}
+
 void ADIOS2IOHandlerImpl::openPath(
     Writable * writable, const Parameter< Operation::OPEN_PATH > & parameters )
 {
