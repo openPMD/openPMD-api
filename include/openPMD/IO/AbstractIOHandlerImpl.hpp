@@ -69,7 +69,7 @@ public:
                         openFile(i.writable, deref_dynamic_cast< Parameter< O::OPEN_FILE > >(i.parameter.get()));
                         break;
                     case O::CLOSE_FILE:
-                        closeFile(i.writable, *dynamic_cast< Parameter< O::CLOSE_FILE >* >(i.parameter.get()));
+                        closeFile(i.writable, deref_dynamic_cast< Parameter< O::CLOSE_FILE > >(i.parameter.get()));
                         break;
                     case O::OPEN_PATH:
                         openPath(i.writable, deref_dynamic_cast< Parameter< O::OPEN_PATH > >(i.parameter.get()));
