@@ -564,6 +564,10 @@ Series::flushFileBased()
         bool allDirty = dirty;
         for( auto& i : iterations )
         {
+            if ( *i.second.skipFlush )
+            {
+                continue;
+            }
             /* as there is only one series,
              * emulate the file belonging to each iteration as not yet written */
             written = false;
@@ -585,6 +589,7 @@ Series::flushFileBased()
                 Parameter< Operation::CLOSE_FILE > fClose;
                 fClose.name = filename;
                 IOHandler->enqueue( IOTask( &i.second, std::move( fClose ) ) );
+                *i.second.skipFlush = true;
             }
 
             IOHandler->flush();
@@ -616,6 +621,10 @@ Series::flushGroupBased()
 
         for( auto& i : iterations )
         {
+            if( *i.second.skipFlush )
+            {
+                continue;
+            }
             if( !i.second.written )
             {
                 i.second.m_writable->parent = getWritable(&iterations);
