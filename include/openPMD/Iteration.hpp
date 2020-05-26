@@ -109,14 +109,6 @@ private:
     void flush();
     void read();
 
-    /*
-     * Once an iteration is declared finalized, we do not flush it any longer
-     * to avoid reading undefined data if a backend implements optimizations
-     * based on this information.
-     */
-    std::shared_ptr< bool > skipFlush =
-        std::make_shared< bool >( false );
-
     virtual void linkHierarchy(std::shared_ptr< Writable > const& w);
 };  //Iteration
 
