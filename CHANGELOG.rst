@@ -27,6 +27,7 @@ Features
 
   - homebrew: add Formula (OSX/Linux) #724
   - PyPI: autodeploy wheels (OSX/Linux) #716 #719
+- version compare macro #747
 
 Bug Fixes
 """""""""

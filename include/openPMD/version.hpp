@@ -48,7 +48,16 @@
 #define OPENPMD_STANDARD_MIN_PATCH 0
 /** @} */
 
-// runtime functions (TODO: noinline qualifiers? what about LTO/IPO?)
+/** convert major, minor, patch version into a 1000th-interleaved number
+ */
+#define OPENPMDAPI_VERSIONIFY(major,minor,patch) (major * 1000000 + minor * 1000 + patch)
+
+/** Compare if the library version is greater or equal than major,minor,patch
+ */
+#define OPENPMDAPI_VERSION_GE(major,minor,patch) \
+    (OPENPMDAPI_VERSIONIFY(OPENPMDAPI_VERSION_MAJOR,OPENPMDAPI_VERSION_MINOR,OPENPMDAPI_VERSION_PATCH) >= \
+     OPENPMDAPI_VERSIONIFY(major,minor,patch))
+
 namespace openPMD
 {
     /** Return the version of the openPMD-api library (run-time)
