@@ -51,6 +51,7 @@ Other
   - move ``.travis/`` to ``.github/ci/`` #715
   - move example file download scripts to ``share/openPMD/`` #715
 - ``listSeries``: remove unused parameters in try-catch #706
+- safer internal ``*dynamic_cast``s of pointers #745
 
 
 0.11.1-alpha
