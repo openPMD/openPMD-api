@@ -132,7 +132,7 @@ template<>
 struct OPENPMDAPI_EXPORT Parameter< Operation::CLOSE_FILE > : public AbstractParameter
 {
     Parameter() = default;
-    Parameter( Parameter const & p ) : AbstractParameter(), name( p.name ){};
+    Parameter( Parameter const & p ) : AbstractParameter(), name( p.name ){}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
