@@ -98,24 +98,48 @@ close_iteration_test( std::string file_ending )
 
     std::vector< int > data{ 2, 4, 6, 8 };
     // { // we do *not* need these parentheses
-        Series write( name, Access::CREATE );
+    Series write( name, Access::CREATE );
+    {
         Iteration it0 = write.iterations[ 0 ];
         auto E_x = it0.meshes[ "E" ][ "x" ];
         E_x.resetDataset( { Datatype::INT, { 2, 2 } } );
         E_x.storeChunk( data, { 0, 0 }, { 2, 2 } );
-        it0.close();
-        write.flush();
+        it0.close( /* flush = */ false );
+    }
+    write.flush();
     // }
 
-    Series read( name, Access::READ_ONLY );
-    auto E_x_read = read.iterations[ 0 ].meshes[ "E" ][ "x" ];
-    auto chunk = E_x_read.loadChunk< int >( { 0, 0 }, { 2, 2 } );
-    read.flush();
-    for( size_t i = 0; i < data.size(); ++i )
     {
-        REQUIRE( data[ i ] == chunk.get()[ i ] );
+        Series read( name, Access::READ_ONLY );
+        auto E_x_read = read.iterations[ 0 ].meshes[ "E" ][ "x" ];
+        auto chunk = E_x_read.loadChunk< int >( { 0, 0 }, { 2, 2 } );
+        read.flush();
+        for( size_t i = 0; i < data.size(); ++i )
+        {
+            REQUIRE( data[ i ] == chunk.get()[ i ] );
+        }
     }
-    std::cout << "close_iteration_test end" << std::endl;
+
+    {
+
+        Iteration it1 = write.iterations[ 1 ];
+        auto E_x = it1.meshes[ "E" ][ "x" ];
+        E_x.resetDataset( { Datatype::INT, { 2, 2 } } );
+        E_x.storeChunk( data, { 0, 0 }, { 2, 2 } );
+        it1.close( /* flush = */ true );
+    }
+
+    {
+        Series read( name, Access::READ_ONLY );
+        auto E_x_read = read.iterations[ 1 ].meshes[ "E" ][ "x" ];
+        auto chunk = E_x_read.loadChunk< int >( { 0, 0 }, { 2, 2 } );
+        read.flush();
+        for( size_t i = 0; i < data.size(); ++i )
+        {
+            REQUIRE( data[ i ] == chunk.get()[ i ] );
+        }
+    }
+
 }
 
 TEST_CASE( "close_iteration_test", "[serial]" )

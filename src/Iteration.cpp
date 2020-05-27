@@ -97,10 +97,16 @@ Iteration::setTimeUnitSI(double newTimeUnitSI)
     return *this;
 }
 
-Iteration&
-Iteration::close( )
+Iteration &
+Iteration::close( bool flush )
 {
     setAttribute( "closed", true );
+    if( flush )
+    {
+        Series * s = dynamic_cast< Series * >(
+            parent->attributable->parent->attributable );
+        s->flush();
+    }
     return *this;
 }
 

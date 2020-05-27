@@ -92,7 +92,8 @@ public:
      * alterations will be made to this iteration.
      * @return Reference to modified iteration.
      */
-    Iteration& close( );
+    Iteration &
+    close( bool flush = true );
 
     bool
     closed() const;
