@@ -587,7 +587,6 @@ Series::flushFileBased()
             if ( i.second.closed( ) )
             {
                 Parameter< Operation::CLOSE_FILE > fClose;
-                fClose.name = filename;
                 IOHandler->enqueue( IOTask( &i.second, std::move( fClose ) ) );
                 *i.second.skipFlush = true;
             }

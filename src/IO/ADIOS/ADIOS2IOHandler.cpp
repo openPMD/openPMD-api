@@ -327,13 +327,8 @@ void ADIOS2IOHandlerImpl::openFile(
 void
 ADIOS2IOHandlerImpl::closeFile(
     Writable * writable,
-    Parameter< Operation::CLOSE_FILE > const & parameters )
+    Parameter< Operation::CLOSE_FILE > const & )
 {
-    std::string name = parameters.name;
-    if ( !auxiliary::ends_with( name, ".bp" ) )
-    {
-        name += ".bp";
-    }
     auto fileIterator = m_files.find( writable );
     if ( fileIterator != m_files.end( ) )
     {

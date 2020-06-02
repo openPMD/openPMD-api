@@ -132,7 +132,7 @@ template<>
 struct OPENPMDAPI_EXPORT Parameter< Operation::CLOSE_FILE > : public AbstractParameter
 {
     Parameter() = default;
-    Parameter( Parameter const & p ) : AbstractParameter(), name( p.name ){}
+    Parameter( Parameter const & ) : AbstractParameter() {}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -140,8 +140,6 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::CLOSE_FILE > : public AbstractPar
         return std::unique_ptr< AbstractParameter >(
             new Parameter< Operation::CLOSE_FILE >( *this ) );
     }
-
-    std::string name = "";
 };
 
 template<>
