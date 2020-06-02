@@ -144,7 +144,10 @@ close_iteration_test( std::string file_ending )
 
 TEST_CASE( "close_iteration_test", "[serial]" )
 {
+#if openPMD_HAVE_ADIOS2
     close_iteration_test( "bp" );
+#endif
+    close_iteration_test( "json" );
 }
 
 inline void
