@@ -540,8 +540,68 @@ CommonADIOS1IOHandlerImpl::openFile(Writable* writable,
 }
 
 void
-CommonADIOS1IOHandlerImpl::openPath(Writable* writable,
-                              Parameter< Operation::OPEN_PATH > const& parameters)
+CommonADIOS1IOHandlerImpl::closeFile(
+    Writable * writable,
+    Parameter< Operation::CLOSE_FILE > const & )
+{
+    auto myFile = m_filePaths.find( writable );
+    if( myFile == m_filePaths.end() )
+    {
+        return;
+    }
+
+    // finish write operations
+    auto myGroup = m_groups.find( myFile->second );
+    if( myGroup != m_groups.end() )
+    {
+        auto attributeWrites = m_attributeWrites.find( myGroup->second );
+        if( this->m_handler->m_backendAccess != Access::READ_ONLY &&
+            attributeWrites != m_attributeWrites.end() )
+        {
+            for( auto & att : attributeWrites->second )
+            {
+                std::cout << "flushing attribute " << att.first << std::endl;
+                flush_attribute( myGroup->second, att.first, att.second );
+            }
+        }
+        m_groups.erase( myGroup );
+    }
+
+    auto handle_write = m_openWriteFileHandles.find( myFile->second );
+    if( handle_write != m_openWriteFileHandles.end() )
+    {
+        close( handle_write->second );
+        m_openWriteFileHandles.erase( handle_write );
+    }
+
+    // finish read operations
+    auto handle_read = m_openReadFileHandles.find( myFile->second );
+    if( handle_read != m_openReadFileHandles.end() )
+    {
+        auto scheduled = m_scheduledReads.find( handle_read->second );
+        if( scheduled != m_scheduledReads.end() )
+        {
+            auto status = adios_perform_reads( scheduled->first, 1 );
+            VERIFY(
+                status == err_no_error,
+                "[ADIOS1] Internal error: Failed to perform ADIOS reads during "
+                "dataset reading" );
+
+            for( auto & sel : scheduled->second )
+                adios_selection_delete( sel );
+            m_scheduledReads.erase( scheduled );
+        }
+        close( handle_read->second );
+        m_openReadFileHandles.erase( handle_read );
+    }
+    m_filePaths.erase( myFile );
+    m_existsOnDisk.erase( myFile->second );
+}
+
+void
+CommonADIOS1IOHandlerImpl::openPath(
+    Writable * writable,
+    Parameter< Operation::OPEN_PATH > const & parameters )
 {
     /* Sanitize path */
     std::string path = parameters.path;
