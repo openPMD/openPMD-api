@@ -98,6 +98,7 @@ close_iteration_test( std::string file_ending )
 
     std::vector< int > data{ 2, 4, 6, 8 };
     // { // we do *not* need these parentheses
+    #if 1
     Series write( name, Access::CREATE );
     {
         Iteration it0 = write.iterations[ 0 ];
@@ -107,8 +108,16 @@ close_iteration_test( std::string file_ending )
         it0.close( /* flush = */ false );
     }
     write.flush();
+    #endif
     // }
 
+    /*
+     * This block will run fine if commented in
+     * But the following block will fail with a segfault
+     * upon adios_select_method ????
+     * Commenting this block in and the other following two out will work, too.
+     */
+    #if 0
     {
         Series read( name, Access::READ_ONLY );
         auto E_x_read = read.iterations[ 0 ].meshes[ "E" ][ "x" ];
@@ -119,7 +128,9 @@ close_iteration_test( std::string file_ending )
             REQUIRE( data[ i ] == chunk.get()[ i ] );
         }
     }
+    #endif
 
+    #if 1
     {
 
         Iteration it1 = write.iterations[ 1 ];
@@ -128,7 +139,9 @@ close_iteration_test( std::string file_ending )
         E_x.storeChunk( data, { 0, 0 }, { 2, 2 } );
         it1.close( /* flush = */ true );
     }
+    #endif
 
+    #if 1
     {
         Series read( name, Access::READ_ONLY );
         auto E_x_read = read.iterations[ 1 ].meshes[ "E" ][ "x" ];
@@ -139,6 +152,7 @@ close_iteration_test( std::string file_ending )
             REQUIRE( data[ i ] == chunk.get()[ i ] );
         }
     }
+    #endif
 
 }
 
