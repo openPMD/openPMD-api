@@ -112,7 +112,7 @@ void Test_1(int& mpi_size, int& mpi_rank, unsigned long& bulk)
     /* note: this scope is intentional to destruct the openPMD::Series object
      *       prior to MPI_Finalize();
      */
-  Timer kk("Test 1: ", mpi_rank);
+    Timer kk("Test 1: ", mpi_rank);
     {
         // global data set to write: [MPI_Size * bulk, 300]
         // each rank writes a bulk * 300 slice with its MPI rank as values
@@ -179,12 +179,14 @@ void Test_1(int& mpi_size, int& mpi_rank, unsigned long& bulk)
 //
 void Test_2(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg)
 {
-  Timer kk("Test 2", mpi_rank);
+    Timer kk("Test 2", mpi_rank);
     /* note: this scope is intentional to destruct the openPMD::Series object
      *       prior to MPI_Finalize();
      */
-  if (mpi_rank == 0)
-    std::cout<<"\n==> 1D array with a few blocks per rank."<<std::endl;
+    if (mpi_rank == 0) {
+        std::cout<<"\n==> 1D array with a few blocks per rank."<<std::endl;
+    }
+
     {
         // open file for writing
         Series series = Series(
@@ -257,8 +259,9 @@ void Test_3(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
     /* note: this scope is intentional to destruct the openPMD::Series object
      *       prior to MPI_Finalize();
      */
-    if (mpi_rank == 0)
+    if (mpi_rank == 0) {
       std::cout<<"\n==> 2-D array with a few blocks per rank."<<std::endl;
+    }
 
     {
         // open file for writing
