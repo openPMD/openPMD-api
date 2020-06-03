@@ -363,7 +363,7 @@ int main(int argc, char *argv[])
 
     Timer g("  Main  ", mpi_rank);
     unsigned long bulk = 1000ul;
-    int testNum = 1;
+    int testNum = 0;
 
     //Test_1(mpi_size, mpi_rank, bulk);
     if (argc >= 2)
