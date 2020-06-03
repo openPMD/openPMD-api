@@ -88,8 +88,7 @@ std::vector<unsigned long> segments(unsigned long top, unsigned int upTo)
 
   unsigned long counter = 0;
 
-#ifndef ALLOW_ZERO_Particles
-  for (int i=0; i<howMany; i++) {
+  for (unsigned int i=0; i<howMany; i++) {
     if (counter < top) {
       if (i == howMany -1)
     result.push_back(top - counter);
@@ -101,24 +100,7 @@ std::vector<unsigned long> segments(unsigned long top, unsigned int upTo)
     } else
       result.push_back(0);
   }
-#else
-  for (int i=0; i<howMany; i++) {
-    if (counter < top) {
-      if (i == howMany -1)
-    result.push_back(top - counter);
-      else {
-    unsigned long curr = 0;
-    if (top > (counter + howMany))
-      curr = rand() % (top-counter-howMany);
-    if (curr == 0)
-      curr = 1;
-    result.push_back(curr);
-    counter += curr;
-      }
-    } else
-      result.push_back(0);
-  }
-#endif
+
   return result;
 }
 
@@ -239,7 +221,7 @@ void Test_2(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
       srand (time(NULL) + mpi_rank);
       std::vector<unsigned long> local_bulks = segments(bulk, numSeg);
       unsigned long counter = 0;
-      for (int i=0; i<local_bulks.size(); i++) {
+      for (unsigned long i=0; i<local_bulks.size(); i++) {
         Offset chunk_offset = {(bulk * mpi_rank + counter)*300};
         Extent chunk_extent = {local_bulks[i]*300};
 
@@ -248,7 +230,7 @@ void Test_2(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
           unsigned long local_size = local_bulks[i] * 300;
           std::shared_ptr< float > E(new float[local_size], [](float const *p){ delete[] p; });
 
-          for (int j=0; j<local_size; j++)
+          for (unsigned long j=0; j<local_size; j++)
         E.get()[j] = value;
 
           {
@@ -314,7 +296,7 @@ void Test_3(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
       srand (time(NULL) + mpi_rank);
       std::vector<unsigned long> local_bulks = segments(bulk, numSeg);
       unsigned long counter = 0;
-      for (int i=0; i<local_bulks.size(); i++) {
+      for (unsigned long i=0; i<local_bulks.size(); i++) {
         Offset chunk_offset = {bulk * mpi_rank + counter, 0};
         Extent chunk_extent = {local_bulks[i], 300};
 
@@ -323,7 +305,7 @@ void Test_3(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
           unsigned long local_size = local_bulks[i] * 300;
           std::shared_ptr< float > E(new float[local_size], [](float const *p){ delete[] p; });
 
-          for (int j=0; j<local_size; j++)
+          for (unsigned long j=0; j<local_size; j++)
         E.get()[j] = value;
 
           {
