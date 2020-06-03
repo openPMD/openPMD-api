@@ -363,19 +363,20 @@ int main(int argc, char *argv[])
 
     Timer g("  Main  ", mpi_rank);
     unsigned long bulk = 1000ul;
-    if (argc == 1) {
-      Test_1(mpi_size, mpi_rank, bulk);
-    } else {
-      int testNum = atoi(argv[1]);
-      if (argc >= 3)
-    bulk = strtoul(argv[2], NULL, 0);
+    int testNum = 1;
 
-      unsigned int numSeg=1;
-      if (argc >= 4)
-    numSeg = atoi(argv[3]);
+    //Test_1(mpi_size, mpi_rank, bulk);
+    if (argc >= 2)
+      testNum = atoi(argv[1]);
+    if (argc >= 3)
+      bulk = strtoul(argv[2], NULL, 0);
 
-      TestRun(mpi_size, mpi_rank, bulk, testNum, numSeg);
-    }
+    unsigned int numSeg=1;
+    if (argc >= 4)
+      numSeg = atoi(argv[3]);
+
+    TestRun(mpi_size, mpi_rank, bulk, testNum, numSeg);
+    
     // openPMD::Series MUST be destructed at this point
     MPI_Finalize();
 
