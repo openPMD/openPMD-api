@@ -399,8 +399,46 @@ HDF5IOHandlerImpl::openFile(Writable* writable,
 }
 
 void
-HDF5IOHandlerImpl::openPath(Writable* writable,
-                            Parameter< Operation::OPEN_PATH > const& parameters)
+HDF5IOHandlerImpl::closeFile(
+    Writable * writable,
+    Parameter< Operation::CLOSE_FILE > const & )
+{
+    auto fileID_it = m_fileIDs.find( writable );
+    if( fileID_it == m_fileIDs.end() )
+    {
+        return;
+    }
+    hid_t fileID = fileID_it->second;
+    H5Fclose( fileID );
+    m_openFileIDs.erase( fileID );
+    m_fileIDs.erase( fileID_it );
+
+    /*
+     * std::unordered_map::erase:
+     * References and iterators to the erased elements are invalidated. Other
+     * iterators and references are not invalidated.
+     */
+    using iter_t = decltype( m_fileNamesWithID )::iterator;
+    std::vector< iter_t > deleteMe;
+    deleteMe.reserve( 1 ); // should normally suffice
+    for( auto it = m_fileNamesWithID.begin(); it != m_fileNamesWithID.end();
+         ++it )
+    {
+        if( it->second == fileID )
+        {
+            deleteMe.push_back( it );
+        }
+    }
+    for( auto iterator : deleteMe )
+    {
+        m_fileNamesWithID.erase( iterator );
+    }
+}
+
+void
+HDF5IOHandlerImpl::openPath(
+    Writable * writable,
+    Parameter< Operation::OPEN_PATH > const & parameters )
 {
     auto res = m_fileIDs.find(writable->parent);
     hid_t node_id, path_id;

@@ -158,10 +158,10 @@ close_iteration_test( std::string file_ending )
 
 TEST_CASE( "close_iteration_test", "[serial]" )
 {
-#if openPMD_HAVE_ADIOS2 || openPMD_HAVE_ADIOS1
-    close_iteration_test( "bp" );
-#endif
-    close_iteration_test( "json" );
+    for( auto const & t : backends )
+    {
+        close_iteration_test( std::get< 0 >( t ) );
+    }
 }
 
 inline void
