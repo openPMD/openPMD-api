@@ -52,7 +52,7 @@ public:
       std::cout<<"  ["<<m_Tag<<"] took:"<< secs <<" seconds\n";
     else 
       std::cout<<m_Tag<<" took:"<< secs <<" seconds. From ProgStart in seconds "<< 
-	std::chrono::duration_cast<std::chrono::milliseconds>(m_End - m_ProgStart).count()/1000.0<<std::endl;
+    std::chrono::duration_cast<std::chrono::milliseconds>(m_End - m_ProgStart).count()/1000.0<<std::endl;
   }
 private:
   std::chrono::time_point<std::chrono::system_clock> m_Start;
@@ -92,11 +92,11 @@ std::vector<unsigned long> segments(unsigned long top, unsigned int upTo)
   for (int i=0; i<howMany; i++) {
     if (counter < top) {
       if (i == howMany -1)
-	result.push_back(top - counter);
+    result.push_back(top - counter);
       else {
-	unsigned long curr = rand() % (top-counter);
-	result.push_back(curr);
-	counter += curr;
+    unsigned long curr = rand() % (top-counter);
+    result.push_back(curr);
+    counter += curr;
       }
     } else 
       result.push_back(0);
@@ -105,15 +105,15 @@ std::vector<unsigned long> segments(unsigned long top, unsigned int upTo)
   for (int i=0; i<howMany; i++) {
     if (counter < top) {
       if (i == howMany -1)
-	result.push_back(top - counter);
+    result.push_back(top - counter);
       else {
-	unsigned long curr = 0;
-	if (top > (counter + howMany)) 
-	  curr = rand() % (top-counter-howMany);
-	if (curr == 0)
-	  curr = 1;
-	result.push_back(curr);
-	counter += curr;
+    unsigned long curr = 0;
+    if (top > (counter + howMany)) 
+      curr = rand() % (top-counter-howMany);
+    if (curr == 0)
+      curr = 1;
+    result.push_back(curr);
+    counter += curr;
       }
     } else 
       result.push_back(0);
@@ -173,17 +173,17 @@ void Test_1(int& mpi_size, int& mpi_rank, unsigned long& bulk)
         // example shows a 1D domain decomposition in first index
         Offset chunk_offset = {bulk * mpi_rank, 0};
         Extent chunk_extent = {bulk, 300};
-	{
-	  mymesh.storeChunk(local_data, chunk_offset, chunk_extent);
-	}
+    {
+      mymesh.storeChunk(local_data, chunk_offset, chunk_extent);
+    }
         if( 0 == mpi_rank )
             cout << "Registered a single chunk per MPI rank containing its contribution, "
                     "ready to write content to disk\n";
 
-	{
-	  Timer g("Flush 1", mpi_rank);
-	  series.flush();
-	}
+    {
+      Timer g("Flush 1", mpi_rank);
+      series.flush();
+    }
         if( 0 == mpi_rank )
             cout << "Dataset content has been fully written to disk\n";
     }
@@ -233,36 +233,36 @@ void Test_2(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
             cout << "Set the global Dataset properties for the scalar field mymesh in iteration 1\n";
 
         // example shows a 1D domain decomposition in first index
-	{
+    {
 
-	  // many small writes	  
-	  srand (time(NULL) + mpi_rank);
-	  std::vector<unsigned long> local_bulks = segments(bulk, numSeg);
-	  unsigned long counter = 0;
-	  for (int i=0; i<local_bulks.size(); i++) {	  
-	    Offset chunk_offset = {(bulk * mpi_rank + counter)*300};
-	    Extent chunk_extent = {local_bulks[i]*300};
+      // many small writes      
+      srand (time(NULL) + mpi_rank);
+      std::vector<unsigned long> local_bulks = segments(bulk, numSeg);
+      unsigned long counter = 0;
+      for (int i=0; i<local_bulks.size(); i++) {      
+        Offset chunk_offset = {(bulk * mpi_rank + counter)*300};
+        Extent chunk_extent = {local_bulks[i]*300};
 
-	    if (local_bulks[i] > 0) {
-	      float const value = float(i);
-	      unsigned long local_size = local_bulks[i] * 300;
-	      std::shared_ptr< float > E(new float[local_size], [](float const *p){ delete[] p; });
-	      
-	      for (int j=0; j<local_size; j++)
-		E.get()[j] = value;
+        if (local_bulks[i] > 0) {
+          float const value = float(i);
+          unsigned long local_size = local_bulks[i] * 300;
+          std::shared_ptr< float > E(new float[local_size], [](float const *p){ delete[] p; });
+          
+          for (int j=0; j<local_size; j++)
+        E.get()[j] = value;
 
-	      {
-		mymesh.storeChunk(E, chunk_offset, chunk_extent);
-	      }
-	    }
-	    counter += local_bulks[i];
-	  }
-	}
+          {
+        mymesh.storeChunk(E, chunk_offset, chunk_extent);
+          }
+        }
+        counter += local_bulks[i];
+      }
+    }
 
-	{
-	  Timer g("Flush", mpi_rank);
-	  series.flush();
-	}
+    {
+      Timer g("Flush", mpi_rank);
+      series.flush();
+    }
         if( 0 == mpi_rank )
             cout << "Dataset content has been fully written to disk\n";
     }
@@ -309,35 +309,35 @@ void Test_3(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
             cout << "Set the global Dataset properties for the scalar field mymesh in iteration 1\n";
 
         // example shows a 1D domain decomposition in first index
-	{
-	  // many small writes	  
-	  srand (time(NULL) + mpi_rank);
-	  std::vector<unsigned long> local_bulks = segments(bulk, numSeg);
-	  unsigned long counter = 0;
-	  for (int i=0; i<local_bulks.size(); i++) {	  
-	    Offset chunk_offset = {bulk * mpi_rank + counter, 0};
-	    Extent chunk_extent = {local_bulks[i], 300};
+    {
+      // many small writes      
+      srand (time(NULL) + mpi_rank);
+      std::vector<unsigned long> local_bulks = segments(bulk, numSeg);
+      unsigned long counter = 0;
+      for (int i=0; i<local_bulks.size(); i++) {      
+        Offset chunk_offset = {bulk * mpi_rank + counter, 0};
+        Extent chunk_extent = {local_bulks[i], 300};
 
-	    if (local_bulks[i] > 0) {
-	      float const value = float(i);
-	      unsigned long local_size = local_bulks[i] * 300;
-	      std::shared_ptr< float > E(new float[local_size], [](float const *p){ delete[] p; });
-	      
-	      for (int j=0; j<local_size; j++)
-		E.get()[j] = value;
+        if (local_bulks[i] > 0) {
+          float const value = float(i);
+          unsigned long local_size = local_bulks[i] * 300;
+          std::shared_ptr< float > E(new float[local_size], [](float const *p){ delete[] p; });
+          
+          for (int j=0; j<local_size; j++)
+        E.get()[j] = value;
 
-	      {
-		mymesh.storeChunk(E, chunk_offset, chunk_extent);
-	      }
-	    }
-	    counter += local_bulks[i];
-	  }
-	}
+          {
+        mymesh.storeChunk(E, chunk_offset, chunk_extent);
+          }
+        }
+        counter += local_bulks[i];
+      }
+    }
 
-	{
-	  Timer g("Flush", mpi_rank);
-	  series.flush();
-	}
+    {
+      Timer g("Flush", mpi_rank);
+      series.flush();
+    }
         if( 0 == mpi_rank )
             cout << "Dataset content has been fully written to disk\n";
     }
@@ -383,11 +383,11 @@ int main(int argc, char *argv[])
     } else {
       int testNum = atoi(argv[1]);
       if (argc >= 3)
-	bulk = strtoul(argv[2], NULL, 0);
+    bulk = strtoul(argv[2], NULL, 0);
 
       unsigned int numSeg=1;
       if (argc >= 4) 
-	numSeg = atoi(argv[3]);
+    numSeg = atoi(argv[3]);
       
       TestRun(mpi_size, mpi_rank, bulk, testNum, numSeg);
     }
