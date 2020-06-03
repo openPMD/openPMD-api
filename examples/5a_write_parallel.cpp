@@ -37,7 +37,7 @@ class Timer
 public:
 
   Timer(const char* tag, int rank) {
-    m_Tag = tag; 
+    m_Tag = tag;
     m_Rank = rank;
     m_Start = std::chrono::system_clock::now();
   }
@@ -46,12 +46,12 @@ public:
 
     double millis = std::chrono::duration_cast<std::chrono::milliseconds>(m_End - m_Start).count();
     double secs = millis/1000.0;
-    if (m_Rank > 0) 
+    if (m_Rank > 0)
       return;
     if (secs < 0.1)
       std::cout<<"  ["<<m_Tag<<"] took:"<< secs <<" seconds\n";
-    else 
-      std::cout<<m_Tag<<" took:"<< secs <<" seconds. From ProgStart in seconds "<< 
+    else
+      std::cout<<m_Tag<<" took:"<< secs <<" seconds. From ProgStart in seconds "<<
     std::chrono::duration_cast<std::chrono::milliseconds>(m_End - m_ProgStart).count()/1000.0<<std::endl;
   }
 private:
@@ -79,7 +79,7 @@ std::vector<unsigned long> segments(unsigned long top, unsigned int upTo)
   unsigned int howMany = rand() % upTo;
 
   if (howMany == 0)
-    howMany = 1; 
+    howMany = 1;
 
   if (howMany == 1) {
     result.push_back(top);
@@ -88,7 +88,7 @@ std::vector<unsigned long> segments(unsigned long top, unsigned int upTo)
 
   unsigned long counter = 0;
 
-#ifndef ALLOW_ZERO_Particles   
+#ifndef ALLOW_ZERO_Particles
   for (int i=0; i<howMany; i++) {
     if (counter < top) {
       if (i == howMany -1)
@@ -98,7 +98,7 @@ std::vector<unsigned long> segments(unsigned long top, unsigned int upTo)
     result.push_back(curr);
     counter += curr;
       }
-    } else 
+    } else
       result.push_back(0);
   }
 #else
@@ -108,14 +108,14 @@ std::vector<unsigned long> segments(unsigned long top, unsigned int upTo)
     result.push_back(top - counter);
       else {
     unsigned long curr = 0;
-    if (top > (counter + howMany)) 
+    if (top > (counter + howMany))
       curr = rand() % (top-counter-howMany);
     if (curr == 0)
       curr = 1;
     result.push_back(curr);
     counter += curr;
       }
-    } else 
+    } else
       result.push_back(0);
   }
 #endif
@@ -196,12 +196,12 @@ void Test_1(int& mpi_size, int& mpi_rank, unsigned long& bulk)
 // use a big buffer to save all the data
 //
 void Test_2(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg)
-{  
+{
   Timer kk("Test 2", mpi_rank);
     /* note: this scope is intentional to destruct the openPMD::Series object
      *       prior to MPI_Finalize();
      */
-  if (mpi_rank == 0) 
+  if (mpi_rank == 0)
     std::cout<<"\n==> 1D array with a few blocks per rank."<<std::endl;
     {
         // open file for writing
@@ -235,11 +235,11 @@ void Test_2(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
         // example shows a 1D domain decomposition in first index
     {
 
-      // many small writes      
+      // many small writes
       srand (time(NULL) + mpi_rank);
       std::vector<unsigned long> local_bulks = segments(bulk, numSeg);
       unsigned long counter = 0;
-      for (int i=0; i<local_bulks.size(); i++) {      
+      for (int i=0; i<local_bulks.size(); i++) {
         Offset chunk_offset = {(bulk * mpi_rank + counter)*300};
         Extent chunk_extent = {local_bulks[i]*300};
 
@@ -247,7 +247,7 @@ void Test_2(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
           float const value = float(i);
           unsigned long local_size = local_bulks[i] * 300;
           std::shared_ptr< float > E(new float[local_size], [](float const *p){ delete[] p; });
-          
+
           for (int j=0; j<local_size; j++)
         E.get()[j] = value;
 
@@ -270,7 +270,7 @@ void Test_2(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
 
 
 void Test_3(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg)
-{  
+{
     Timer kk("Test 3", mpi_rank);
     /* note: this scope is intentional to destruct the openPMD::Series object
      *       prior to MPI_Finalize();
@@ -310,11 +310,11 @@ void Test_3(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
 
         // example shows a 1D domain decomposition in first index
     {
-      // many small writes      
+      // many small writes
       srand (time(NULL) + mpi_rank);
       std::vector<unsigned long> local_bulks = segments(bulk, numSeg);
       unsigned long counter = 0;
-      for (int i=0; i<local_bulks.size(); i++) {      
+      for (int i=0; i<local_bulks.size(); i++) {
         Offset chunk_offset = {bulk * mpi_rank + counter, 0};
         Extent chunk_extent = {local_bulks[i], 300};
 
@@ -322,7 +322,7 @@ void Test_3(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
           float const value = float(i);
           unsigned long local_size = local_bulks[i] * 300;
           std::shared_ptr< float > E(new float[local_size], [](float const *p){ delete[] p; });
-          
+
           for (int j=0; j<local_size; j++)
         E.get()[j] = value;
 
@@ -354,7 +354,7 @@ void TestRun(int& mpi_size, int& mpi_rank, unsigned long& bulk, int which, unsig
 
   if (which == 1)
     Test_1(mpi_size, mpi_rank, bulk);
-  else if (which == 2) 
+  else if (which == 2)
     Test_2(mpi_size, mpi_rank, bulk, numSeg);
   else if (which == 3)
     Test_3(mpi_size, mpi_rank, bulk, numSeg);
@@ -362,7 +362,7 @@ void TestRun(int& mpi_size, int& mpi_rank, unsigned long& bulk, int which, unsig
     Test_2(mpi_size, mpi_rank, bulk, numSeg);
     Test_3(mpi_size, mpi_rank, bulk, numSeg);
   }
-    
+
 }
 
 
@@ -386,9 +386,9 @@ int main(int argc, char *argv[])
     bulk = strtoul(argv[2], NULL, 0);
 
       unsigned int numSeg=1;
-      if (argc >= 4) 
+      if (argc >= 4)
     numSeg = atoi(argv[3]);
-      
+
       TestRun(mpi_size, mpi_rank, bulk, testNum, numSeg);
     }
     // openPMD::Series MUST be destructed at this point
