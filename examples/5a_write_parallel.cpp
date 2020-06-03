@@ -376,7 +376,7 @@ int main(int argc, char *argv[])
       numSeg = atoi(argv[3]);
 
     TestRun(mpi_size, mpi_rank, bulk, testNum, numSeg);
-    
+
     // openPMD::Series MUST be destructed at this point
     MPI_Finalize();
 
