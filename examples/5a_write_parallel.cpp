@@ -190,7 +190,7 @@ void Test_2(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
     {
         // open file for writing
         Series series = Series(
-            "../samples/5a_parallel_write_4.bp",
+            "../samples/5a_parallel_write_1d.bp",
             Access::CREATE,
             MPI_COMM_WORLD
         );
@@ -266,7 +266,7 @@ void Test_3(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
     {
         // open file for writing
         Series series = Series(
-            "../samples/5a_parallel_write_5.bp",
+            "../samples/5a_parallel_write_2d.bp",
             Access::CREATE,
             MPI_COMM_WORLD
         );
@@ -344,6 +344,7 @@ void TestRun(int& mpi_size, int& mpi_rank, unsigned long& bulk, int which, unsig
   else if (which == 3)
     Test_3(mpi_size, mpi_rank, bulk, numSeg);
   else if (which == 0) {
+    Test_1(mpi_size, mpi_rank, bulk);
     Test_2(mpi_size, mpi_rank, bulk, numSeg);
     Test_3(mpi_size, mpi_rank, bulk, numSeg);
   }
