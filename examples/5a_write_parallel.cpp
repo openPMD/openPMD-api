@@ -131,7 +131,7 @@ void Test_1(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
 
         if( 0 == mpi_rank )
             cout << "Prepared a Dataset of size " << dataset.extent[0]
-                 << " and Datatype " << dataset.dtype << '\n';
+                 << " and Datatype " << dataset.dtype << "STEP : "<<step<<'\n';
 
         mymesh.resetDataset(dataset);
     {
