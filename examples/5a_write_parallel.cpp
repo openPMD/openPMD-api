@@ -160,9 +160,6 @@ void Test_1(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
       Timer g("Flush", mpi_rank);
       series.flush();
     }
-        if( 0 == mpi_rank )
-            cout << "Dataset content has been fully written to disk\n";
-
       } // steps finished
     } // test1  finished
 
@@ -381,8 +378,6 @@ void Test_4(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
       Timer g("Flush", mpi_rank);
       series.flush();
     }
-        if( 0 == mpi_rank )
-            cout << "Dataset content has been fully written to disk\n";
 
       } // steps finished
     } // test4  finished
