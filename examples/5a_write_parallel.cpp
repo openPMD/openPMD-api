@@ -153,7 +153,7 @@ void Test_1(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
 	      
 	      for (unsigned long j=0; j<local_size; j++)
 		E.get()[j] = value;
-		mymesh.storeChunk(E, chunk_offset, chunk_extent);
+	      mymesh.storeChunk(E, chunk_offset, chunk_extent);
 	    }
 	    counter += local_bulks[i];
 	  }
@@ -232,11 +232,9 @@ void Test_2(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
           std::shared_ptr< float > E(new float[local_size], [](float const *p){ delete[] p; });
 
           for (unsigned long j=0; j<local_size; j++)
-        E.get()[j] = value;
-
-          {
-        mymesh.storeChunk(E, chunk_offset, chunk_extent);
-          }
+	    E.get()[j] = value;
+	  
+	  mymesh.storeChunk(E, chunk_offset, chunk_extent);          
         }
         counter += local_bulks[i];
       }
@@ -308,11 +306,9 @@ void Test_3(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
           std::shared_ptr< float > E(new float[local_size], [](float const *p){ delete[] p; });
 
           for (unsigned long j=0; j<local_size; j++)
-        E.get()[j] = value;
+               E.get()[j] = value;
 
-          {
-        mymesh.storeChunk(E, chunk_offset, chunk_extent);
-          }
+	  mymesh.storeChunk(E, chunk_offset, chunk_extent);
         }
         counter += local_bulks[i];
       }
@@ -378,7 +374,7 @@ void Test_4(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
 	      
 	      for (unsigned long j=0; j<local_size; j++)
 		E.get()[j] = value;
-		mymesh.storeChunk(E, chunk_offset, chunk_extent);
+	      mymesh.storeChunk(E, chunk_offset, chunk_extent);
 	    }
 	    counter += local_bulks[i];
 	  }
