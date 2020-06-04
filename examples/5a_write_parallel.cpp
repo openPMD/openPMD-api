@@ -125,7 +125,7 @@ void Test_1(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
       {
         MeshRecordComponent mymesh = series.iterations[step].meshes["var1"][MeshRecordComponent::SCALAR]; 
         // example 1D domain decomposition in first index
-        Datatype datatype = determineDatatype<float>();
+        Datatype datatype = determineDatatype<double>();
         Extent global_extent = {bulk * mpi_size * 300};
         Dataset dataset = Dataset(datatype, global_extent);
 
@@ -134,38 +134,35 @@ void Test_1(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
                  << " and Datatype " << dataset.dtype << '\n';
 
         mymesh.resetDataset(dataset);
-        if( 0 == mpi_rank )
-            cout << "Set the global Dataset properties for the scalar field mymesh in iteration 1\n";
+    {
+      // many small writes
+      srand (time(NULL) + mpi_rank);
+      std::vector<unsigned long> local_bulks = segments(bulk, numSeg);
+      unsigned long counter = 0;
+      for (unsigned long i=0; i<local_bulks.size(); i++) {
+        Offset chunk_offset = {(bulk * mpi_rank + counter)*300};
+        Extent chunk_extent = {local_bulks[i]*300};
+        
+        if (local_bulks[i] > 0) {
+          double const value = double(i);
+          unsigned long local_size = local_bulks[i] * 300;
+          std::shared_ptr< double > E(new double[local_size], [](double const *p){ delete[] p; });
+          
+          for (unsigned long j=0; j<local_size; j++)
+        E.get()[j] = value;
+          mymesh.storeChunk(E, chunk_offset, chunk_extent);
+        }
+        counter += local_bulks[i];
+      }
+    }
 
-	{
-	  // many small writes
-	  srand (time(NULL) + mpi_rank);
-	  std::vector<unsigned long> local_bulks = segments(bulk, numSeg);
-	  unsigned long counter = 0;
-	  for (unsigned long i=0; i<local_bulks.size(); i++) {
-	    Offset chunk_offset = {(bulk * mpi_rank + counter)*300};
-	    Extent chunk_extent = {local_bulks[i]*300};
-	    
-	    if (local_bulks[i] > 0) {
-	      float const value = float(i);
-	      unsigned long local_size = local_bulks[i] * 300;
-	      std::shared_ptr< float > E(new float[local_size], [](float const *p){ delete[] p; });
-	      
-	      for (unsigned long j=0; j<local_size; j++)
-		E.get()[j] = value;
-	      mymesh.storeChunk(E, chunk_offset, chunk_extent);
-	    }
-	    counter += local_bulks[i];
-	  }
-	}
-
-	{
-	  Timer g("Flush", mpi_rank);
-	  series.flush();
-	}
+    {
+      Timer g("Flush", mpi_rank);
+      series.flush();
+    }
         if( 0 == mpi_rank )
             cout << "Dataset content has been fully written to disk\n";
-	
+    
       } // steps finished
     } // test1  finished
     
@@ -203,7 +200,7 @@ void Test_2(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
                 .meshes["var2"][MeshRecordComponent::SCALAR];
 
         // example 1D domain decomposition in first index
-        Datatype datatype = determineDatatype<float>();
+        Datatype datatype = determineDatatype<double>();
         Extent global_extent = {bulk * mpi_size * 300};
         Dataset dataset = Dataset(datatype, global_extent);
 
@@ -227,14 +224,14 @@ void Test_2(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
         Extent chunk_extent = {local_bulks[i]*300};
 
         if (local_bulks[i] > 0) {
-          float const value = float(i);
+          double const value = double(i);
           unsigned long local_size = local_bulks[i] * 300;
-          std::shared_ptr< float > E(new float[local_size], [](float const *p){ delete[] p; });
+          std::shared_ptr< double > E(new double[local_size], [](double const *p){ delete[] p; });
 
           for (unsigned long j=0; j<local_size; j++)
-	    E.get()[j] = value;
-	  
-	  mymesh.storeChunk(E, chunk_offset, chunk_extent);          
+        E.get()[j] = value;
+      
+      mymesh.storeChunk(E, chunk_offset, chunk_extent);          
         }
         counter += local_bulks[i];
       }
@@ -277,7 +274,7 @@ void Test_3(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
                 .meshes["var3"][MeshRecordComponent::SCALAR];
 
         // example 1D domain decomposition in first index
-        Datatype datatype = determineDatatype<float>();
+        Datatype datatype = determineDatatype<double>();
         Extent global_extent = {bulk * mpi_size, 300};
         Dataset dataset = Dataset(datatype, global_extent);
 
@@ -301,14 +298,14 @@ void Test_3(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
         Extent chunk_extent = {local_bulks[i], 300};
 
         if (local_bulks[i] > 0) {
-          float const value = float(i);
+          double const value = double(i);
           unsigned long local_size = local_bulks[i] * 300;
-          std::shared_ptr< float > E(new float[local_size], [](float const *p){ delete[] p; });
+          std::shared_ptr< double > E(new double[local_size], [](double const *p){ delete[] p; });
 
           for (unsigned long j=0; j<local_size; j++)
                E.get()[j] = value;
 
-	  mymesh.storeChunk(E, chunk_offset, chunk_extent);
+      mymesh.storeChunk(E, chunk_offset, chunk_extent);
         }
         counter += local_bulks[i];
       }
@@ -346,7 +343,7 @@ void Test_4(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
       {
         MeshRecordComponent mymesh = series.iterations[step].meshes["var4"][MeshRecordComponent::SCALAR]; 
         // example 1D domain decomposition in first index
-        Datatype datatype = determineDatatype<float>();
+        Datatype datatype = determineDatatype<double>();
         Extent global_extent = {bulk * mpi_size * 300};
         Dataset dataset = Dataset(datatype, global_extent);
 
@@ -358,35 +355,35 @@ void Test_4(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
         if( 0 == mpi_rank )
             cout << "Set the global Dataset properties for the scalar field mymesh in iteration 1\n";
 
-	{
-	  // many small writes
-	  srand (time(NULL) + mpi_rank);
-	  std::vector<unsigned long> local_bulks = segments(bulk, numSeg);
-	  unsigned long counter = 0;
-	  for (unsigned long i=0; i<local_bulks.size(); i++) {
-	    Offset chunk_offset = {(bulk * mpi_rank + counter)*300};
-	    Extent chunk_extent = {local_bulks[i]*300};
-	    
-	    if (local_bulks[i] > 0) {
-	      float const value = float(i);
-	      unsigned long local_size = local_bulks[i] * 300;
-	      std::shared_ptr< float > E(new float[local_size], [](float const *p){ delete[] p; });
-	      
-	      for (unsigned long j=0; j<local_size; j++)
-		E.get()[j] = value;
-	      mymesh.storeChunk(E, chunk_offset, chunk_extent);
-	    }
-	    counter += local_bulks[i];
-	  }
-	}
+    {
+      // many small writes
+      srand (time(NULL) + mpi_rank);
+      std::vector<unsigned long> local_bulks = segments(bulk, numSeg);
+      unsigned long counter = 0;
+      for (unsigned long i=0; i<local_bulks.size(); i++) {
+        Offset chunk_offset = {(bulk * mpi_rank + counter)*300};
+        Extent chunk_extent = {local_bulks[i]*300};
+        
+        if (local_bulks[i] > 0) {
+          double const value = double(i);
+          unsigned long local_size = local_bulks[i] * 300;
+          std::shared_ptr< double > E(new double[local_size], [](double const *p){ delete[] p; });
+          
+          for (unsigned long j=0; j<local_size; j++)
+        E.get()[j] = value;
+          mymesh.storeChunk(E, chunk_offset, chunk_extent);
+        }
+        counter += local_bulks[i];
+      }
+    }
 
-	{
-	  Timer g("Flush", mpi_rank);
-	  series.flush();
-	}
+    {
+      Timer g("Flush", mpi_rank);
+      series.flush();
+    }
         if( 0 == mpi_rank )
             cout << "Dataset content has been fully written to disk\n";
-	
+    
       } // steps finished
     } // test4  finished
     
