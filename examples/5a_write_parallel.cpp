@@ -48,11 +48,11 @@ public:
     double secs = millis/1000.0;
     if (m_Rank > 0)
       return;
-    if (secs < 0.1)
-      std::cout<<"  ["<<m_Tag<<"] took:"<< secs <<" seconds\n";
-    else
-      std::cout<<m_Tag<<" took:"<< secs <<" seconds. From ProgStart in seconds "<<
-    std::chrono::duration_cast<std::chrono::milliseconds>(m_End - m_ProgStart).count()/1000.0<<std::endl;
+
+    std::cout<<"  ["<<m_Tag<<"] took:"<< secs <<" seconds\n";
+
+    //std::cout<<m_Tag<<"  From ProgStart in seconds "<<
+    //std::chrono::duration_cast<std::chrono::milliseconds>(m_End - m_ProgStart).count()/1000.0<<std::endl;
   }
 private:
   std::chrono::time_point<std::chrono::system_clock> m_Start;
@@ -121,9 +121,9 @@ void Test_1(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
          cout << "Created an empty series in parallel with "
               << mpi_size << " MPI ranks\n";
 
-      for  (int  step =1; step<=numSteps; step++) 
+      for  (int  step =1; step<=numSteps; step++)
       {
-        MeshRecordComponent mymesh = series.iterations[step].meshes["var1"][MeshRecordComponent::SCALAR]; 
+        MeshRecordComponent mymesh = series.iterations[step].meshes["var1"][MeshRecordComponent::SCALAR];
         // example 1D domain decomposition in first index
         Datatype datatype = determineDatatype<double>();
         Extent global_extent = {bulk * mpi_size * 300};
@@ -142,12 +142,12 @@ void Test_1(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
       for (unsigned long i=0; i<local_bulks.size(); i++) {
         Offset chunk_offset = {(bulk * mpi_rank + counter)*300};
         Extent chunk_extent = {local_bulks[i]*300};
-        
+
         if (local_bulks[i] > 0) {
           double const value = double(i);
           unsigned long local_size = local_bulks[i] * 300;
           std::shared_ptr< double > E(new double[local_size], [](double const *p){ delete[] p; });
-          
+
           for (unsigned long j=0; j<local_size; j++)
         E.get()[j] = value;
           mymesh.storeChunk(E, chunk_offset, chunk_extent);
@@ -162,10 +162,10 @@ void Test_1(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
     }
         if( 0 == mpi_rank )
             cout << "Dataset content has been fully written to disk\n";
-    
+
       } // steps finished
     } // test1  finished
-    
+
 }
 
 
@@ -230,8 +230,8 @@ void Test_2(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
 
           for (unsigned long j=0; j<local_size; j++)
         E.get()[j] = value;
-      
-      mymesh.storeChunk(E, chunk_offset, chunk_extent);          
+
+      mymesh.storeChunk(E, chunk_offset, chunk_extent);
         }
         counter += local_bulks[i];
       }
@@ -339,9 +339,9 @@ void Test_4(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
          cout << "Created an empty series in parallel with "
               << mpi_size << " MPI ranks\n";
 
-      for  (int  step =1; step<=numSteps; step++) 
+      for  (int  step =1; step<=numSteps; step++)
       {
-        MeshRecordComponent mymesh = series.iterations[step].meshes["var4"][MeshRecordComponent::SCALAR]; 
+        MeshRecordComponent mymesh = series.iterations[step].meshes["var4"][MeshRecordComponent::SCALAR];
         // example 1D domain decomposition in first index
         Datatype datatype = determineDatatype<double>();
         Extent global_extent = {bulk * mpi_size * 300};
@@ -363,12 +363,12 @@ void Test_4(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
       for (unsigned long i=0; i<local_bulks.size(); i++) {
         Offset chunk_offset = {(bulk * mpi_rank + counter)*300};
         Extent chunk_extent = {local_bulks[i]*300};
-        
+
         if (local_bulks[i] > 0) {
           double const value = double(i);
           unsigned long local_size = local_bulks[i] * 300;
           std::shared_ptr< double > E(new double[local_size], [](double const *p){ delete[] p; });
-          
+
           for (unsigned long j=0; j<local_size; j++)
         E.get()[j] = value;
           mymesh.storeChunk(E, chunk_offset, chunk_extent);
@@ -383,10 +383,10 @@ void Test_4(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
     }
         if( 0 == mpi_rank )
             cout << "Dataset content has been fully written to disk\n";
-    
+
       } // steps finished
     } // test4  finished
-    
+
 }
 
  void TestRun(int& mpi_size, int& mpi_rank, unsigned long& bulk, int which, unsigned int numSeg, int numSteps)
@@ -404,7 +404,7 @@ void Test_4(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
     Test_2(mpi_size, mpi_rank, bulk, numSeg);
   else if (which == 3)
     Test_3(mpi_size, mpi_rank, bulk, numSeg);
-  else if (which == 4) 
+  else if (which == 4)
     Test_4(mpi_size, mpi_rank, bulk, numSeg, numSteps);
   else if (which == 0) {
     Test_1(mpi_size, mpi_rank, bulk, numSeg, numSteps);
@@ -448,7 +448,7 @@ int main(int argc, char *argv[])
 
     TestRun(mpi_size, mpi_rank, bulk, testNum, numSeg, numSteps);
 
-    
+
     MPI_Finalize();
 
     return 0;
