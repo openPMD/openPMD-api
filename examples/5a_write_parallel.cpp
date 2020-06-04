@@ -405,6 +405,7 @@ void Test_4(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
     Test_1(mpi_size, mpi_rank, bulk, numSeg, numSteps);
     Test_2(mpi_size, mpi_rank, bulk, numSeg);
     Test_3(mpi_size, mpi_rank, bulk, numSeg);
+    Test_4(mpi_size, mpi_rank, bulk, numSeg, numSteps);
   } else {
     if (mpi_rank == 0) std::cout<<" No test with number "<<which<<std::endl;
   }
