@@ -134,7 +134,7 @@ void LoadData(Series& series, const char* varName, int& mpi_size, int& mpi_rank,
      auto tmp = mpi_rank  + step;
          std::vector<unsigned long> local_bulks = segments(bulk, numSeg, tmp);
          unsigned long counter = 0;
-         for (auto i=0; i<local_bulks.size(); i++) {
+         for (unsigned long i=0; i<local_bulks.size(); i++) {
               Offset chunk_offset = {(bulk * mpi_rank + counter)};
               Extent chunk_extent = {local_bulks[i]};
 
@@ -143,7 +143,7 @@ void LoadData(Series& series, const char* varName, int& mpi_size, int& mpi_rank,
                  unsigned long local_size = local_bulks[i] ;
                  std::shared_ptr< double > E(new double[local_size], [](double const *p){ delete[] p; });
 
-                 for (auto j=0; j<local_size; j++)
+                 for (unsigned long j=0; j<local_size; j++)
                     E.get()[j] = value;
                  mymesh.storeChunk(E, chunk_offset, chunk_extent);
                }
