@@ -24,6 +24,7 @@
 
 #include <iostream>
 #include <memory>
+#include <random>
 #include <vector>   // std::vector
 
 
@@ -68,7 +69,7 @@ private:
 //
 // divide "top" elements  into <upTo> non-zero segments
 //
-std::vector<unsigned long> segments(unsigned long top, unsigned int upTo)
+std::vector<unsigned long> segments(unsigned long top, unsigned int upTo, int& repeats)
 {
   std::vector<unsigned long> result;
 
@@ -76,7 +77,15 @@ std::vector<unsigned long> segments(unsigned long top, unsigned int upTo)
     return result;
 
   // how many partitions
-  unsigned int howMany = rand() % upTo;
+  std::default_random_engine generator;
+  std::uniform_int_distribution<int> distribution(1,upTo);
+  auto dice = std::bind ( distribution, generator );
+
+  int howMany = dice();
+  // repeat to avoid duplicates btw ranks
+  for (auto i=0; i<repeats; i++)
+    howMany = dice();
+
 
   if (howMany == 0)
     howMany = 1;
@@ -88,14 +97,14 @@ std::vector<unsigned long> segments(unsigned long top, unsigned int upTo)
 
   unsigned long counter = 0;
 
-  for (unsigned int i=0; i<howMany; i++) {
+  for (auto i=0; i<howMany; i++) {
     if (counter < top) {
       if (i == howMany -1)
-    result.push_back(top - counter);
+          result.push_back(top - counter);
       else {
-    unsigned long curr = rand() % (top-counter);
-    result.push_back(curr);
-    counter += curr;
+          auto curr = rand() % (top-counter);
+          result.push_back(curr);
+          counter += curr;
       }
     } else
       result.push_back(0);
@@ -104,6 +113,49 @@ std::vector<unsigned long> segments(unsigned long top, unsigned int upTo)
   return result;
 }
 
+void LoadData(Series& series, const char* varName, int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg, int& step)
+{
+
+        MeshRecordComponent mymesh = series.iterations[step].meshes[varName][MeshRecordComponent::SCALAR];
+        // example 1D domain decomposition in first index
+        Datatype datatype = determineDatatype<double>();
+        Extent global_extent = {bulk * mpi_size };
+        Dataset dataset = Dataset(datatype, global_extent);
+
+        if( 0 == mpi_rank )
+            cout << "Prepared a Dataset of size " << dataset.extent[0]
+                 << " and Datatype " << dataset.dtype << "STEP : "<<step<<'\n';
+
+        mymesh.resetDataset(dataset);
+
+        {
+         // many small writes
+         srand (time(NULL) * (mpi_rank+mpi_size));
+	 auto tmp = mpi_rank  + step;
+         std::vector<unsigned long> local_bulks = segments(bulk, numSeg, tmp);
+         unsigned long counter = 0;
+         for (auto i=0; i<local_bulks.size(); i++) {
+              Offset chunk_offset = {(bulk * mpi_rank + counter)};
+              Extent chunk_extent = {local_bulks[i]};
+
+              if (local_bulks[i] > 0) {
+                 double const value = double(i);
+                 unsigned long local_size = local_bulks[i] ;
+                 std::shared_ptr< double > E(new double[local_size], [](double const *p){ delete[] p; });
+
+                 for (auto j=0; j<local_size; j++)
+                    E.get()[j] = value;
+                 mymesh.storeChunk(E, chunk_offset, chunk_extent);
+               }
+               counter += local_bulks[i];
+           }
+         }
+
+         {
+           Timer g("Flush", mpi_rank);
+           series.flush();
+         }
+}
 
 void Test_1(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg, int& numSteps)
 {
@@ -121,47 +173,11 @@ void Test_1(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
          cout << "Created an empty series in parallel with "
               << mpi_size << " MPI ranks\n";
 
-      for  (int  step =1; step<=numSteps; step++)
+      for  (auto  step =1; step<=numSteps; step++)
       {
-        MeshRecordComponent mymesh = series.iterations[step].meshes["var1"][MeshRecordComponent::SCALAR];
-        // example 1D domain decomposition in first index
-        Datatype datatype = determineDatatype<double>();
-        Extent global_extent = {bulk * mpi_size * 300};
-        Dataset dataset = Dataset(datatype, global_extent);
-
-        if( 0 == mpi_rank )
-            cout << "Prepared a Dataset of size " << dataset.extent[0]
-                 << " and Datatype " << dataset.dtype << "STEP : "<<step<<'\n';
-
-        mymesh.resetDataset(dataset);
-    {
-      // many small writes
-      srand (time(NULL) + mpi_rank);
-      std::vector<unsigned long> local_bulks = segments(bulk, numSeg);
-      unsigned long counter = 0;
-      for (unsigned long i=0; i<local_bulks.size(); i++) {
-        Offset chunk_offset = {(bulk * mpi_rank + counter)*300};
-        Extent chunk_extent = {local_bulks[i]*300};
-
-        if (local_bulks[i] > 0) {
-          double const value = double(i);
-          unsigned long local_size = local_bulks[i] * 300;
-          std::shared_ptr< double > E(new double[local_size], [](double const *p){ delete[] p; });
-
-          for (unsigned long j=0; j<local_size; j++)
-        E.get()[j] = value;
-          mymesh.storeChunk(E, chunk_offset, chunk_extent);
-        }
-        counter += local_bulks[i];
-      }
-    }
-
-    {
-      Timer g("Flush", mpi_rank);
-      series.flush();
-    }
-      } // steps finished
-    } // test1  finished
+         LoadData(series, "var1", mpi_size, mpi_rank, bulk, numSeg, step);
+      } 
+    } 
 
 }
 
@@ -191,129 +207,8 @@ void Test_2(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
           cout << "Created an empty series in parallel with "
                << mpi_size << " MPI ranks\n";
 
-        MeshRecordComponent mymesh =
-            series
-                .iterations[1]
-                .meshes["var2"][MeshRecordComponent::SCALAR];
-
-        // example 1D domain decomposition in first index
-        Datatype datatype = determineDatatype<double>();
-        Extent global_extent = {bulk * mpi_size * 300};
-        Dataset dataset = Dataset(datatype, global_extent);
-
-        if( 0 == mpi_rank )
-            cout << "Prepared a Dataset of size " << dataset.extent[0]
-                 << " and Datatype " << dataset.dtype << '\n';
-
-        mymesh.resetDataset(dataset);
-        if( 0 == mpi_rank )
-            cout << "Set the global Dataset properties for the scalar field mymesh in iteration 1\n";
-
-        // example shows a 1D domain decomposition in first index
-    {
-
-      // many small writes
-      srand (time(NULL) + mpi_rank);
-      std::vector<unsigned long> local_bulks = segments(bulk, numSeg);
-      unsigned long counter = 0;
-      for (unsigned long i=0; i<local_bulks.size(); i++) {
-        Offset chunk_offset = {(bulk * mpi_rank + counter)*300};
-        Extent chunk_extent = {local_bulks[i]*300};
-
-        if (local_bulks[i] > 0) {
-          double const value = double(i);
-          unsigned long local_size = local_bulks[i] * 300;
-          std::shared_ptr< double > E(new double[local_size], [](double const *p){ delete[] p; });
-
-          for (unsigned long j=0; j<local_size; j++)
-        E.get()[j] = value;
-
-      mymesh.storeChunk(E, chunk_offset, chunk_extent);
-        }
-        counter += local_bulks[i];
-      }
-    }
-
-    {
-      Timer g("Flush", mpi_rank);
-      series.flush();
-    }
-        if( 0 == mpi_rank )
-            cout << "Dataset content has been fully written to disk\n";
-    }
-}
-
-
-void Test_3(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg)
-{
-    Timer kk("Test 3", mpi_rank);
-    /* note: this scope is intentional to destruct the openPMD::Series object
-     *       prior to MPI_Finalize();
-     */
-    if (mpi_rank == 0) {
-      std::cout<<"\n==> 2-D array with a few blocks per rank."<<std::endl;
-    }
-
-    {
-        // open file for writing
-        Series series = Series(
-            "../samples/5a_parallel_write_2d.bp",
-            Access::CREATE,
-            MPI_COMM_WORLD
-        );
-        if( 0 == mpi_rank )
-          cout << "Created an empty series in parallel with "
-               << mpi_size << " MPI ranks\n";
-
-        MeshRecordComponent mymesh =
-            series
-                .iterations[1]
-                .meshes["var3"][MeshRecordComponent::SCALAR];
-
-        // example 1D domain decomposition in first index
-        Datatype datatype = determineDatatype<double>();
-        Extent global_extent = {bulk * mpi_size, 300};
-        Dataset dataset = Dataset(datatype, global_extent);
-
-        if( 0 == mpi_rank )
-            cout << "Prepared a Dataset of size " << dataset.extent[0]
-                 << "x" << dataset.extent[1]
-                 << " and Datatype " << dataset.dtype << '\n';
-
-        mymesh.resetDataset(dataset);
-        if( 0 == mpi_rank )
-            cout << "Set the global Dataset properties for the scalar field mymesh in iteration 1\n";
-
-        // example shows a 1D domain decomposition in first index
-    {
-      // many small writes
-      srand (time(NULL) + mpi_rank);
-      std::vector<unsigned long> local_bulks = segments(bulk, numSeg);
-      unsigned long counter = 0;
-      for (unsigned long i=0; i<local_bulks.size(); i++) {
-        Offset chunk_offset = {bulk * mpi_rank + counter, 0};
-        Extent chunk_extent = {local_bulks[i], 300};
-
-        if (local_bulks[i] > 0) {
-          double const value = double(i);
-          unsigned long local_size = local_bulks[i] * 300;
-          std::shared_ptr< double > E(new double[local_size], [](double const *p){ delete[] p; });
-
-          for (unsigned long j=0; j<local_size; j++)
-               E.get()[j] = value;
-
-      mymesh.storeChunk(E, chunk_offset, chunk_extent);
-        }
-        counter += local_bulks[i];
-      }
-    }
-
-    {
-      Timer g("Flush", mpi_rank);
-      series.flush();
-    }
-        if( 0 == mpi_rank )
-            cout << "Dataset content has been fully written to disk\n";
+	auto step = 1;
+        LoadData(series, "var4", mpi_size, mpi_rank, bulk, numSeg, step);
     }
 
 }
@@ -321,66 +216,26 @@ void Test_3(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
 
 
 
-void Test_4(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg, int& numSteps)
+void Test_3(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg, int& numSteps)
 {
     if (mpi_rank == 0) {
         std::cout<<"\n==> One file with Multistep 1D arrays with a few blocks per rank."<<"  num steps: "<<numSteps<<std::endl;
     }
 
-    Timer kk("Test 4: ", mpi_rank);
+    Timer kk("Test 3: ", mpi_rank);
     {
-      std::string filename = "../samples/5a_parallel_write_4.bp";
+      std::string filename = "../samples/5a_parallel_write_3.bp";
       Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
 
       if( 0 == mpi_rank )
          cout << "Created an empty series in parallel with "
               << mpi_size << " MPI ranks\n";
 
-      for  (int  step =1; step<=numSteps; step++)
+      for  (auto  step =1; step<=numSteps; step++)
       {
-        MeshRecordComponent mymesh = series.iterations[step].meshes["var4"][MeshRecordComponent::SCALAR];
-        // example 1D domain decomposition in first index
-        Datatype datatype = determineDatatype<double>();
-        Extent global_extent = {bulk * mpi_size * 300};
-        Dataset dataset = Dataset(datatype, global_extent);
-
-        if( 0 == mpi_rank )
-            cout << "Prepared a Dataset of size " << dataset.extent[0]
-                 << " and Datatype " << dataset.dtype << '\n';
-
-        mymesh.resetDataset(dataset);
-        if( 0 == mpi_rank )
-            cout << "Set the global Dataset properties for the scalar field mymesh in iteration 1\n";
-
-    {
-      // many small writes
-      srand (time(NULL) + mpi_rank);
-      std::vector<unsigned long> local_bulks = segments(bulk, numSeg);
-      unsigned long counter = 0;
-      for (unsigned long i=0; i<local_bulks.size(); i++) {
-        Offset chunk_offset = {(bulk * mpi_rank + counter)*300};
-        Extent chunk_extent = {local_bulks[i]*300};
-
-        if (local_bulks[i] > 0) {
-          double const value = double(i);
-          unsigned long local_size = local_bulks[i] * 300;
-          std::shared_ptr< double > E(new double[local_size], [](double const *p){ delete[] p; });
-
-          for (unsigned long j=0; j<local_size; j++)
-        E.get()[j] = value;
-          mymesh.storeChunk(E, chunk_offset, chunk_extent);
-        }
-        counter += local_bulks[i];
-      }
-    }
-
-    {
-      Timer g("Flush", mpi_rank);
-      series.flush();
-    }
-
-      } // steps finished
-    } // test4  finished
+        LoadData(series, "var3", mpi_size, mpi_rank, bulk, numSeg, step);
+      } 
+    } 
 
 }
 
@@ -398,14 +253,11 @@ void Test_4(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
   else if (which == 2)
     Test_2(mpi_size, mpi_rank, bulk, numSeg);
   else if (which == 3)
-    Test_3(mpi_size, mpi_rank, bulk, numSeg);
-  else if (which == 4)
-    Test_4(mpi_size, mpi_rank, bulk, numSeg, numSteps);
+    Test_3(mpi_size, mpi_rank, bulk, numSeg, numSteps);
   else if (which == 0) {
     Test_1(mpi_size, mpi_rank, bulk, numSeg, numSteps);
     Test_2(mpi_size, mpi_rank, bulk, numSeg);
-    Test_3(mpi_size, mpi_rank, bulk, numSeg);
-    Test_4(mpi_size, mpi_rank, bulk, numSeg, numSteps);
+    Test_3(mpi_size, mpi_rank, bulk, numSeg, numSteps);
   } else {
     if (mpi_rank == 0) std::cout<<" No test with number "<<which<<std::endl;
   }
