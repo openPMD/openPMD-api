@@ -131,7 +131,7 @@ void LoadData(Series& series, const char* varName, int& mpi_size, int& mpi_rank,
         {
          // many small writes
          srand (time(NULL) * (mpi_rank+mpi_size));
-	 auto tmp = mpi_rank  + step;
+     auto tmp = mpi_rank  + step;
          std::vector<unsigned long> local_bulks = segments(bulk, numSeg, tmp);
          unsigned long counter = 0;
          for (auto i=0; i<local_bulks.size(); i++) {
@@ -207,7 +207,7 @@ void Test_2(int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
           cout << "Created an empty series in parallel with "
                << mpi_size << " MPI ranks\n";
 
-	auto step = 1;
+    auto step = 1;
         LoadData(series, "var4", mpi_size, mpi_rank, bulk, numSeg, step);
     }
 
