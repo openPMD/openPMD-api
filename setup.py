@@ -47,14 +47,15 @@ class CMakeBuild(build_ext):
             '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' +
             os.path.join(extdir, "openpmd_api"),
             # '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=' + extdir,
-            '-DBUILD_CLI_TOOLS:BOOL=OFF',  # note: provided as console scripts
             '-DCMAKE_PYTHON_OUTPUT_DIRECTORY=' + extdir,
             '-DPYTHON_EXECUTABLE=' + sys.executable,
+            '-DopenPMD_USE_PYTHON:BOOL=ON',
             # variants
             '-DopenPMD_USE_MPI:BOOL=' + openPMD_USE_MPI,
-            # skip building tests & examples
-            '-DBUILD_TESTING:BOOL=' + BUILD_TESTING,
+            # skip building cli tools, examples & tests
+            '-DBUILD_CLI_TOOLS:BOOL=OFF',  # note: provided as console scripts
             '-DBUILD_EXAMPLES:BOOL=' + BUILD_EXAMPLES,
+            '-DBUILD_TESTING:BOOL=' + BUILD_TESTING,
             # static/shared libs
             '-DBUILD_SHARED_LIBS:BOOL=' + BUILD_SHARED_LIBS,
             '-DHDF5_USE_STATIC_LIBRARIES:BOOL=' + HDF5_USE_STATIC_LIBRARIES,

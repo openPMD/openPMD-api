@@ -56,11 +56,11 @@ jobs:
         run: |
           python3.7m.exe -m pip install -U pip setuptools wheel
           python3.7m.exe -m pip install git+https://github.com/ax3l/scikit-build.git@topic-cygwinPlatform
-          python3.7m.exe -m pip wheel --no-build-isolation --no-deps .
+          python3.7m.exe -m pip wheel --no-build-isolation --no-deps -v .
       - name: Install
         shell: cmd
         run: |
-          python3.7m.exe -m pip install *whl
+          python3.7m.exe -m pip install -v *whl
       - name: Test
         shell: cmd
         run: |
