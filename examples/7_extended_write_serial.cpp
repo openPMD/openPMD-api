@@ -166,9 +166,9 @@ write2()
     // this loop writes one row at a time
     double mesh_x[2][5] = {{1,  3,  5,  7,  9},
                            {11, 13, 15, 17, 19}};
-    float particle_position[4] = {0.1, 0.2, 0.3, 0.4};
-    uint64_t particle_positionOffset[4] = {0, 1, 2, 3};
-    for( uint64_t i = 0; i < 2; ++i )
+    float particle_position[4] = {0.1f, 0.2f, 0.3f, 0.4f};
+    uint64_t particle_positionOffset[4] = {0u, 1u, 2u, 3u};
+    for( uint64_t i = 0u; i < 2u; ++i )
     {
         for( int col = 0; col < 5; ++col )
             partial_mesh.get()[col] = mesh_x[i][col];
