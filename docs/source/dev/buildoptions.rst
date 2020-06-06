@@ -19,6 +19,7 @@ CMake Option                   Values          Description
 ``openPMD_USE_PYTHON``         **AUTO**/ON/OFF Enable Python bindings
 ``openPMD_USE_INVASIVE_TESTS`` ON/**OFF**      Enable unit tests that modify source code :sup:`1`
 ``openPMD_USE_VERIFY``         **ON**/OFF      Enable internal VERIFY (assert) macro independent of build type :sup:`2`
+``openPMD_INSTALL``            **ON**/OFF      Add installation targets
 ``PYTHON_EXECUTABLE``          (first found)   Path to Python executable
 ============================== =============== ========================================================================
 

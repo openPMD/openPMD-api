@@ -53,6 +53,7 @@ Other
 - extended write example: remove MSVC warning #752
 - ``listSeries``: remove unused parameters in try-catch #706
 - safer internal ``*dynamic_cast``s of pointers #745
+- CMake: subproject inclusion cleanup #751
 
 
 0.11.1-alpha
