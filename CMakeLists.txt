@@ -592,6 +592,11 @@ if(openPMD_HAVE_PYTHON)
         PDB_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
         COMPILE_PDB_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
     )
+    add_custom_command(TARGET openPMD.py POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${openPMD_SOURCE_DIR}/src/binding/python/openpmd_api
+        ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
+    )
 endif()
 
 # tests
@@ -976,12 +981,6 @@ if(BUILD_TESTING)
 
     # Python CLI Modules
     if(openPMD_HAVE_PYTHON)
-        add_custom_command(TARGET openPMD.py POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    ${openPMD_SOURCE_DIR}/src/binding/python/openpmd_api
-                    ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
-        )
-
         # (Note that during setuptools install, these are furthermore installed as
         #  console scripts and replace the all-binary CLI tools.)
         foreach(pymodulename ${openPMD_PYTHON_CLI_MODULE_NAMES})

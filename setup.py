@@ -108,6 +108,8 @@ class CMakeBuild(build_ext):
             ['cmake', '--build', '.'] + build_args,
             cwd=self.build_temp
         )
+        # note that this does not call install;
+        # we pick up artifacts directly from the build output dirs
 
 
 with open('./README.md', encoding='utf-8') as f:
