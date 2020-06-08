@@ -86,19 +86,6 @@ compilers:
     extra_rpaths: []
     flags: {}
     modules: []
-    operating_system: ubuntu18.04
-    paths:
-      cc: /usr/bin/clang-8
-      cxx: /usr/bin/clang++-8
-      f77: /usr/bin/gfortran-7.4
-      fc: /usr/bin/gfortran-7.4
-    spec: clang@8.0.0
-    target: x86_64
-- compiler:
-    environment: {}
-    extra_rpaths: []
-    flags: {}
-    modules: []
     operating_system: ubuntu14.04
     paths:
       cc: /usr/bin/gcc-4.8
@@ -158,4 +145,43 @@ compilers:
       f77: /usr/bin/gfortran-8
       fc: /usr/bin/gfortran-8
     spec: gcc@8.1.0
+    target: x86_64
+- compiler:
+    environment: {}
+    extra_rpaths: []
+    flags: {}
+    modules: []
+    operating_system: ubuntu18.04
+    paths:
+      cc: /usr/bin/gcc-7
+      cxx: /usr/bin/g++-7
+      f77: /usr/bin/gfortran-7
+      fc: /usr/bin/gfortran-7
+    spec: gcc@7.4.0
+    target: x86_64
+- compiler:
+    environment: {}
+    extra_rpaths: []
+    flags: {}
+    modules: []
+    operating_system: ubuntu18.04
+    paths:
+      cc: /usr/bin/clang-8
+      cxx: /usr/bin/clang++-8
+      f77: /usr/bin/gfortran-7.4
+      fc: /usr/bin/gfortran-7.4
+    spec: clang@8.0.0
+    target: x86_64
+- compiler:
+    environment: {}
+    extra_rpaths: []
+    flags: {}
+    modules: []
+    operating_system: ubuntu18.04
+    paths:
+      cc: /usr/bin/gcc-9
+      cxx: /usr/bin/g++-9
+      f77: /usr/bin/gfortran-9
+      fc: /usr/bin/gfortran-9
+    spec: gcc@9.3.0
     target: x86_64

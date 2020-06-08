@@ -50,6 +50,7 @@ Other
   - migrate to GitHub checkout action v2 #712
   - move ``.travis/`` to ``.github/ci/`` #715
   - move example file download scripts to ``share/openPMD/`` #715
+  - add GCC 9.3 builds #723
 - extended write example: remove MSVC warning #752
 - ``listSeries``: remove unused parameters in try-catch #706
 - safer internal ``*dynamic_cast``s of pointers #745

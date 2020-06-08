@@ -1,12 +1,13 @@
 packages:
   perl:
-    version: [5.14.0, 5.18.2, 5.22.4, 5.26.1]
+    version: [5.14.0, 5.18.2, 5.22.4, 5.26.2]
     paths:
       perl@5.14.0%gcc@4.8.5 arch=linux-ubuntu14-x86_64: /usr
       perl@5.14.0%gcc@4.9.4 arch=linux-ubuntu14-x86_64: /usr
       perl@5.14.0%gcc@6.5.0 arch=linux-ubuntu14-x86_64: /usr
       perl@5.14.0%gcc@7.4.0 arch=linux-ubuntu14-x86_64: /usr
       perl@5.22.4%gcc@8.1.0 arch=linux-ubuntu16-x86_64: /usr
+      perl@5.26.2%gcc@9.3.0 arch=linux-ubuntu18-x86_64: /usr
       perl@5.22.4%clang@5.0.0 arch=linux-ubuntu16-x86_64: /usr
       perl@5.22.4%clang@6.0.0 arch=linux-ubuntu16-x86_64: /usr
       perl@5.22.4%clang@7.0.0 arch=linux-ubuntu16-x86_64: /usr
@@ -23,6 +24,7 @@ packages:
       cmake@3.11.0%gcc@6.5.0 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.11.0
       cmake@3.11.0%gcc@7.4.0 arch=linux-ubuntu14-x86_64: /home/travis/.cache/cmake-3.11.0
       cmake@3.11.0%gcc@8.1.0 arch=linux-ubuntu16-x86_64: /home/travis/.cache/cmake-3.11.0
+      cmake@3.11.0%gcc@9.3.0 arch=linux-ubuntu18-x86_64: /home/travis/.cache/cmake-3.11.0
       cmake@3.11.0%clang@5.0.0 arch=linux-ubuntu16-x86_64: /home/travis/.cache/cmake-3.11.0
       cmake@3.11.0%clang@6.0.0 arch=linux-ubuntu16-x86_64: /home/travis/.cache/cmake-3.11.0
       cmake@3.11.0%clang@7.0.0 arch=linux-ubuntu16-x86_64: /home/travis/.cache/cmake-3.11.0
@@ -32,13 +34,14 @@ packages:
       cmake@3.11.0%clang@11.0.0 arch=darwin-mojave-x86_64: /Applications/CMake.app/Contents/
     buildable: False
   openmpi:
-    version: [1.6.5, 1.10.2]
+    version: [1.6.5, 1.10.2, 2.1.1]
     paths:
       openmpi@1.6.5%gcc@4.8.5 arch=linux-ubuntu14-x86_64: /usr
       openmpi@1.6.5%gcc@4.9.4 arch=linux-ubuntu14-x86_64: /usr
       openmpi@1.6.5%gcc@6.5.0 arch=linux-ubuntu14-x86_64: /usr
       openmpi@1.6.5%gcc@7.4.0 arch=linux-ubuntu14-x86_64: /usr
       openmpi@1.10.2%gcc@8.1.0 arch=linux-ubuntu16-x86_64: /usr
+      openmpi@2.1.1%gcc@9.3.0 arch=linux-ubuntu18-x86_64: /usr
       openmpi@1.10.2%clang@5.0.0 arch=linux-ubuntu16-x86_64: /usr
       openmpi@1.10.2%clang@7.0.0 arch=linux-ubuntu16-x86_64: /usr
     buildable: False
@@ -61,6 +64,7 @@ packages:
       python@3.7.1%clang@7.0.0 arch=linux-ubuntu16-x86_64: /home/travis/virtualenv/python3.7
       python@3.6.3%clang@6.0.0 arch=linux-ubuntu16-x86_64: /home/travis/virtualenv/python3.6
       python@3.6.3%clang@5.0.0 arch=linux-ubuntu16-x86_64: /home/travis/virtualenv/python3.6
+      python@3.8.0%gcc@9.3.0 arch=linux-ubuntu18-x86_64: /home/travis/virtualenv/python3.8
       python@3.6.3%gcc@7.4.0 arch=linux-ubuntu14-x86_64: /home/travis/virtualenv/python3.6
       python@3.5.5%gcc@6.5.0 arch=linux-ubuntu14-x86_64: /home/travis/virtualenv/python3.5
       python@3.6.3%gcc@4.9.4 arch=linux-ubuntu14-x86_64: /home/travis/virtualenv/python3.6
@@ -85,4 +89,4 @@ packages:
     target: ['x86_64']
     providers:
       mpi: [openmpi, mpich]
-    compiler: [clang@5.0.0, clang@6.0.0, clang@7.0.0, clang@8.0.0, clang@9.1.0, clang@10.0.0, clang@11.0.0, gcc@4.8.5, gcc@4.9.4, gcc@6.5.0, gcc@7.4.0]
+    compiler: [clang@5.0.0, clang@6.0.0, clang@7.0.0, clang@8.0.0, clang@9.1.0, clang@10.0.0, clang@11.0.0, gcc@4.8.5, gcc@4.9.4, gcc@6.5.0, gcc@7.4.0, gcc@8.1.0, gcc@9.3.0]
