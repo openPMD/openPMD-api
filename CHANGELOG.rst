@@ -55,6 +55,7 @@ Other
 - ``listSeries``: remove unused parameters in try-catch #706
 - safer internal ``*dynamic_cast``s of pointers #745
 - CMake: subproject inclusion cleanup #751
+- Python: remove redundant move in container #753
 
 
 0.11.1-alpha
