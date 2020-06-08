@@ -33,20 +33,20 @@ using namespace openPMD;
 // FIXME this variable seems unused
 static std::chrono::time_point<std::chrono::system_clock>  m_ProgStart = std::chrono::system_clock::now();
 
-/** ... title missing ...
+/** BENCHMARK TESTS FOR PARALLEL WRITE
  *
- * ... description missing ...
+ *  Intended to mimic the WarpX I/O patterns
  */
 class Timer
 {
 public:
 
-    /** ... title missing ...
+    /** 
      *
-     * ... description missing ...
+     * Simple Timer
      *
-     * @param tag ... description missing ...
-     * @param rank ... description missing ...
+     * @param tag      item to measure
+     * @param rank     MPI rank
      */
     Timer(const char* tag, int rank) {
         m_Tag = tag;
@@ -74,12 +74,12 @@ private:
 
 /** divide "top" elements into "upTo" non-zero segments
  *
- * ... description missing ...
+ * 
  *
- * @param top ... description missing ...
- * @param upTo ... description missing ...
- * @param repeats ... description missing ...
- * @return ... description missing ...
+ * @param top ...  number of elements to be subdivided
+ * @param upTo ... subdivide into this many different blocks
+ * @param repeats ... roll the die this many times to avoid duplicates between ranks
+ * @return ... returns the vector that has subdivision information
  */
 std::vector< unsigned long >
 segments( unsigned long top, unsigned int upTo, int& repeats )
@@ -126,17 +126,17 @@ segments( unsigned long top, unsigned int upTo, int& repeats )
 }
 
 
-/** ... title missing ...
+/** Load data into series
  *
- * ... description missing ...
+ * all tests call this functions to store and flush 1D data
  *
- * @param series ... description missing ...
- * @param varName ... description missing ...
- * @param mpi_size ... description missing ...
- * @param mpi_rank ... description missing ...
- * @param bulk ... description missing ...
- * @param numSeg ... description missing ...
- * @param step ... description missing ...
+ * @param series ..... opemPMD-api series
+ * @param varName .... variable name
+ * @param mpi_size ... MPI size
+ * @param mpi_rank ... MPI rank
+ * @param bulk ....... number of particles
+ * @param numSeg ..... how many subdivision for the particles
+ * @param step ....... iteration step
  */
 void
 LoadData(Series& series, const char* varName, int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg, int& step)
@@ -183,15 +183,15 @@ LoadData(Series& series, const char* varName, int& mpi_size, int& mpi_rank, unsi
 }
 
 
-/** ... title and/or better test name missing ...
+/** ... Test 1: 
  *
- * ... description missing ...
+ * .... 1D array in multiple steps, each steps is one file
  *
- * @param mpi_size ... description missing ...
- * @param mpi_rank ... description missing ...
- * @param bulk ... description missing ...
- * @param numSeg ... description missing ...
- * @param numSteps ... description missing ...
+ * @param mpi_size .... MPI size
+ * @param mpi_rank .... MPI rank
+ * @param bulk ........ num of elements
+ * @param numSeg ...... num of subdivition for the elements
+ * @param numSteps .... num of iterations
  */
 void
 Test_1( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg, int& numSteps )
@@ -217,63 +217,28 @@ Test_1( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg,
 }
 
 
-/** ... title and/or better test name missing ...
+
+
+/** ... 1D array with many steps, all in one file
  *
- * many small writes, use a big buffer to save all the data
+ * ..... all iterations save in one file
  *
- * @param mpi_size ... description missing ...
- * @param mpi_rank ... description missing ...
- * @param bulk ... description missing ...
- * @param numSeg ... description missing ...
+ * @param mpi_size ... MPI size
+ * @param mpi_rank ... MPI rank
+ * @param bulk ....... number of elements
+ * @param numSeg ..... number of subdivision
+ * @param numSteps ... number of iterations
  */
 void
-Test_2( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg )
-{
-    Timer kk("Test 2", mpi_rank);
-    if( mpi_rank == 0 )
-        std::cout << "\n==> 1D array with a few blocks per rank." << std::endl;
-
-    /* note: this scope is intentional to destruct the openPMD::Series object
-     *       prior to MPI_Finalize();
-     */
-    {
-        // open file for writing
-        Series series = Series(
-            "../samples/5a_parallel_write_1d.bp",
-            Access::CREATE,
-            MPI_COMM_WORLD
-        );
-        if( 0 == mpi_rank )
-          cout << "Created an empty series in parallel with "
-               << mpi_size << " MPI ranks\n";
-
-        int step = 1;
-        LoadData(series, "var4", mpi_size, mpi_rank, bulk, numSeg, step);
-    }
-
-}
-
-
-/** ... title and/or better test name missing ...
- *
- * ... description missing ...
- *
- * @param mpi_size ... description missing ...
- * @param mpi_rank ... description missing ...
- * @param bulk ... description missing ...
- * @param numSeg ... description missing ...
- * @param numSteps ... description missing ...
- */
-void
-Test_3( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg, int& numSteps )
+Test_2( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg, int& numSteps )
 {
     if (mpi_rank == 0)
         std::cout << "\n==> One file with Multistep 1D arrays with a few blocks per rank."
                   << "  num steps: " << numSteps << std::endl;
 
-    Timer kk("Test 3: ", mpi_rank);
+    Timer kk("Test 2: ", mpi_rank);
     {
-        std::string filename = "../samples/5a_parallel_write_3.bp";
+        std::string filename = "../samples/5a_parallel_write_2.bp";
         Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
 
         if( 0 == mpi_rank )
@@ -281,21 +246,21 @@ Test_3( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg,
                  << mpi_size << " MPI ranks\n";
 
         for( int step =1; step<=numSteps; step++ )
-            LoadData( series, "var3", mpi_size, mpi_rank, bulk, numSeg, step );
+            LoadData( series, "var2", mpi_size, mpi_rank, bulk, numSeg, step );
     }
 
 }
 
 
-/** ... title and/or better test name missing ...
- * ... description missing ...
+/** ... Run the tests according to input
+ * .... test 0 means run all
  *
- * @param mpi_size ... description missing ...
- * @param mpi_rank ... description missing ...
- * @param bulk ... description missing ...
- * @param which ... description missing ...
- * @param numSeg ... description missing ...
- * @param numSteps ... description missing ...
+ * @param mpi_size ... MPI size
+ * @param mpi_rank ... MPI rank
+ * @param bulk ....... number of elements, input for individual test
+ * @param which ...... test number
+ * @param numSeg ..... number of subdivision, input for individual test
+ * @param numSteps ... number of iterations,  input for individual test
  */
 void
 TestRun( int& mpi_size, int& mpi_rank, unsigned long& bulk, int which, unsigned int numSeg, int numSteps )
@@ -313,20 +278,17 @@ TestRun( int& mpi_size, int& mpi_rank, unsigned long& bulk, int which, unsigned 
     if (which == 1)
         Test_1(mpi_size, mpi_rank, bulk, numSeg, numSteps);
     else if (which == 2)
-        Test_2(mpi_size, mpi_rank, bulk, numSeg);
-    else if (which == 3)
-        Test_3(mpi_size, mpi_rank, bulk, numSeg, numSteps);
+        Test_2(mpi_size, mpi_rank, bulk, numSeg, numSteps);
     else if (which == 0) {
         Test_1(mpi_size, mpi_rank, bulk, numSeg, numSteps);
-        Test_2(mpi_size, mpi_rank, bulk, numSeg);
-        Test_3(mpi_size, mpi_rank, bulk, numSeg, numSteps);
+        Test_2(mpi_size, mpi_rank, bulk, numSeg, numSteps);
     } else {
         if (mpi_rank == 0)
             std::cout << " No test with number " << which << std::endl;
     }
 }
 
-/** ... program description ...
+/** ... TEST MAIN
  *
  * ... description of runtime options/flags ...
  */
@@ -343,9 +305,9 @@ main( int argc, char *argv[] )
 
     Timer g( "  Main  ", mpi_rank );
 
-    unsigned long bulk = 1000ul; // ... description missing ...
-    int testNum = 0; // ... description missing ...
-    int numSteps = 5; // ... description missing ...
+    unsigned long bulk = 1000ul; // ... default num elements
+    int testNum = 0; // .... default test num to 0 to run all, for code coverage
+    int numSteps = 5; // ... default num iterations
 
     unsigned int numSeg=1;
 
