@@ -37,6 +37,8 @@ using namespace openPMD;
  *  Simple Memory usage report that works on linux system
  */
 
+static std::chrono::time_point<std::chrono::system_clock>  m_ProgStart = std::chrono::system_clock::now();
+
 class MemoryProfiler
 {
     /** 
@@ -104,8 +106,11 @@ public:
         m_Tag = tag;
         m_Rank = rank;
         m_Start = std::chrono::system_clock::now();
+	MemoryProfiler (rank, tag);
     }
     ~Timer() {
+        std::string tt = "--"+m_Tag;     
+        MemoryProfiler (m_Rank, tt.c_str());
         m_End = std::chrono::system_clock::now();
 
         double millis = std::chrono::duration_cast< std::chrono::milliseconds >( m_End - m_Start ).count();
@@ -114,6 +119,9 @@ public:
           return;
 
         std::cout << "  [" << m_Tag << "] took:" << secs << " seconds\n";
+	std::cout<<"     "<<m_Tag<<"  From ProgStart in seconds "<<
+	  std::chrono::duration_cast<std::chrono::milliseconds>(m_End - m_ProgStart).count()/1000.0<<std::endl;
+
     }
 private:
     std::chrono::time_point<std::chrono::system_clock> m_Start;
@@ -206,6 +214,7 @@ LoadData(Series& series, const char* varName, int& mpi_size, int& mpi_rank, unsi
 
         mymesh.resetDataset( dataset );
 
+#ifdef SHARED_PTR
         {
             // many small writes
             srand(time(NULL) * (mpi_rank+mpi_size) );
@@ -228,6 +237,14 @@ LoadData(Series& series, const char* varName, int& mpi_size, int& mpi_rank, unsi
                 counter += local_bulks[i];
             }
         }
+#else
+	{
+	  std::cout<<" SIMPLE DEMO OF MEMORY UPHOLDING "<<std::endl;
+	std::vector<double> all(bulk, mpi_rank);
+        auto  p = openPMD::shareRaw(all);
+        mymesh.storeChunk(all, {bulk*mpi_rank}, {bulk});
+	}
+#endif
         {
             Timer g("Flush", mpi_rank);
             series.flush();
