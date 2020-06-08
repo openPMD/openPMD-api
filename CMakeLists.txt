@@ -469,7 +469,7 @@ if(openPMD_HAVE_ADIOS1)
         target_link_libraries(openPMD.ADIOS1.Serial PRIVATE ${adlib})
     endforeach()
     target_include_directories(openPMD.ADIOS1.Serial SYSTEM PRIVATE ${ADIOS_INCLUDE_DIRS_SEQUENTIAL})
-    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE ${ADIOS_DEFINITIONS_SEQUENTIAL})
+    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "${ADIOS_DEFINITIONS_SEQUENTIAL}")
     target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE openPMD_HAVE_ADIOS1=1)
     target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE openPMD_HAVE_MPI=0)
     target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE _NOMPI=1)
@@ -497,7 +497,7 @@ if(openPMD_HAVE_ADIOS1)
         endforeach()
 
         target_include_directories(openPMD.ADIOS1.Parallel SYSTEM PRIVATE ${ADIOS_INCLUDE_DIRS})
-        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE ${ADIOS_DEFINITIONS})
+        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "${ADIOS_DEFINITIONS}")
         target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_HAVE_ADIOS1=1)
     endif()
 
@@ -961,7 +961,6 @@ if(BUILD_TESTING)
     if(BUILD_CLI_TOOLS)
         # all tools must provide a "--help"
         foreach(toolname ${openPMD_CLI_TOOL_NAMES})
-            list(APPEND openPMD_INSTALL_TARGET_NAMES openpmd-${toolname})
             add_test(NAME CLI.help.${toolname}
                 COMMAND openpmd-${toolname} --help
                 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
