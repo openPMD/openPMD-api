@@ -594,8 +594,8 @@ CommonADIOS1IOHandlerImpl::closeFile(
         close( handle_read->second );
         m_openReadFileHandles.erase( handle_read );
     }
-    m_filePaths.erase( myFile );
     m_existsOnDisk.erase( myFile->second );
+    m_filePaths.erase( myFile );
 }
 
 void
