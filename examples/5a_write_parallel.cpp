@@ -26,21 +26,73 @@
 #include <memory>
 #include <random>
 #include <vector>
+#include <fstream>
 
 using std::cout;
 using namespace openPMD;
 
-// FIXME this variable seems unused
-static std::chrono::time_point<std::chrono::system_clock>  m_ProgStart = std::chrono::system_clock::now();
 
-/** BENCHMARK TESTS FOR PARALLEL WRITE
+/** The Memory profiler class for profiling purpose
  *
- *  Intended to mimic the WarpX I/O patterns
+ *  Simple Memory usage report that works on linux system
+ */
+
+class MemoryProfiler
+{
+    /** 
+     *
+     * Simple Timer
+     *
+     * @param tag      item to measure
+     * @param rank     MPI rank
+     */
+public:
+  MemoryProfiler(int rank, const  char* tag) {
+    m_Rank = rank;
+#if defined(__linux)
+    //m_Name = "/proc/meminfo";
+    m_Name = "/proc/self/status";  
+    Display(tag);
+#else
+    m_Name = "";
+#endif    
+  }
+
+  void Display(const char*  tag){
+    if (0 == m_Name.size())
+      return;
+
+    if (m_Rank > 0)
+      return;
+    std::cout<<" memory at:  "<<tag;
+    std::ifstream input(m_Name.c_str());
+    if (input.is_open()) {
+      for (std::string line; getline(input, line);)
+        {
+          if (line.find("VmRSS") == 0)
+	    std::cout<<line<<" ";
+          if (line.find("VmSize") == 0)
+	    std::cout<<line<<" ";
+          if (line.find("VmSwap") == 0)
+	    std::cout<<line;
+        }
+      std::cout<<std::endl;
+      input.close();
+    }
+  }
+private:
+  int m_Rank;
+  std::string  m_Name;
+};
+
+
+/** The Timer class for profiling purpose
+ *
+ *  Simple Timer that measures time consumption btw constucture and destructor
  */
 class Timer
 {
 public:
-
     /** 
      *
      * Simple Timer
