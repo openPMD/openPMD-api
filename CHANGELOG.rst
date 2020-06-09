@@ -56,6 +56,7 @@ Other
 - safer internal ``*dynamic_cast``s of pointers #745
 - CMake: subproject inclusion cleanup #751
 - Python: remove redundant move in container #753
+- read example: show particle load #706
 
 
 0.11.1-alpha
