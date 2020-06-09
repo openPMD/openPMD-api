@@ -246,6 +246,7 @@ CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 | `openPMD_USE_PYTHON`         | **AUTO**/ON/OFF  | Enable Python bindings                                                       |
 | `openPMD_USE_INVASIVE_TESTS` | ON/**OFF**       | Enable unit tests that modify source code <sup>1</sup>                       |
 | `openPMD_USE_VERIFY`         | **ON**/OFF       | Enable internal VERIFY (assert) macro independent of build type <sup>2</sup> |
+| `openPMD_INSTALL`            | **ON**/OFF       | Add installation targets                                                     |
 | `PYTHON_EXECUTABLE`          | (first found)    | Path to Python executable                                                    |
 
 <sup>1</sup> *e.g. changes C++ visibility keywords, breaks MSVC*
@@ -308,8 +309,10 @@ Just replace the `add_subdirectory` call with:
 ```cmake
 include(FetchContent)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-set(BUILD_TESTING OFF)
+set(BUILD_CLI_TOOLS OFF)
 set(BUILD_EXAMPLES OFF)
+set(BUILD_TESTING OFF)
+set(openPMD_INSTALL ${BUILD_SHARED_LIBS})  # e.g. only install if used as shared library
 set(openPMD_USE_PYTHON OFF)
 FetchContent_Declare(openPMD
   GIT_REPOSITORY "https://github.com/openPMD/openPMD-api.git"

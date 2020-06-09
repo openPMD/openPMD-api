@@ -22,20 +22,28 @@ endif()
 # Project structure ###########################################################
 #
 # temporary build directories
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-    CACHE PATH "Build directory for archives")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-    CACHE PATH "Build directory for libraries")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-    CACHE PATH "Build directory for binaries")
+if(NOT CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+        CACHE PATH "Build directory for archives")
+endif()
+if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+        CACHE PATH "Build directory for libraries")
+endif()
+if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+        CACHE PATH "Build directory for binaries")
+endif()
 # install directories
-include(GNUInstallDirs)
-set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/openPMD"
-    CACHE PATH "CMake config package location for installed targets")
-if(WIN32)
-    set(CMAKE_INSTALL_LIBDIR Lib
-        CACHE PATH "Object code libraries")
-    set_property(CACHE CMAKE_INSTALL_CMAKEDIR PROPERTY VALUE "cmake")
+if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+    include(GNUInstallDirs)
+    set(CMAKE_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/openPMD"
+        CACHE PATH "CMake config package location for installed targets")
+    if(WIN32)
+        set(CMAKE_INSTALL_LIBDIR Lib
+            CACHE PATH "Object code libraries")
+        set_property(CACHE CMAKE_INSTALL_CMAKEDIR PROPERTY VALUE "cmake")
+    endif()
 endif()
 
 
@@ -61,6 +69,7 @@ openpmd_option(ADIOS1         "ADIOS1 backend (.bp files)"                AUTO)
 openpmd_option(ADIOS2         "ADIOS2 backend (.bp files)"                AUTO)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
 
+option(openPMD_INSTALL               "Add installation targets"             ON)
 option(openPMD_HAVE_PKGCONFIG        "Generate a .pc file for pkg-config"   ON)
 option(openPMD_USE_INTERNAL_VARIANT  "Use internally shipped MPark.Variant" ON)
 option(openPMD_USE_INTERNAL_CATCH    "Use internally shipped Catch2"        ON)
@@ -117,10 +126,10 @@ if(openPMD_USE_INTERNAL_JSON)
     set(JSON_BuildTests OFF CACHE INTERNAL "")
     set(JSON_Install OFF CACHE INTERNAL "")  # only used PRIVATE
     add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/json")
-    message(STATUS "nlohmann-json: Using INTERNAL version 3.7.0")
+    message(STATUS "nlohmann-json: Using INTERNAL version '3.7.0'")
 else()
     find_package(nlohmann_json 3.7.0 CONFIG REQUIRED)
-    message(STATUS "nlohmann-json: Found version ${nlohmann_json_VERSION}")
+    message(STATUS "nlohmann-json: Found version '${nlohmann_json_VERSION}'")
 endif()
 add_library(openPMD::thirdparty::nlohmann_json INTERFACE IMPORTED)
 target_link_libraries(openPMD::thirdparty::nlohmann_json
@@ -248,7 +257,7 @@ if(openPMD_USE_PYTHON STREQUAL AUTO)
         find_package(pybind11 2.3.0 CONFIG)
         if(pybind11_FOUND)
             set(openPMD_HAVE_PYTHON TRUE)
-            message(STATUS "pybind11: Found version ${pybind11_VERSION}")
+            message(STATUS "pybind11: Found version '${pybind11_VERSION}'")
         else()
             set(openPMD_HAVE_PYTHON FALSE)
         endif()
@@ -256,8 +265,8 @@ if(openPMD_USE_PYTHON STREQUAL AUTO)
     if(openPMD_HAVE_PYTHON AND
        PYTHON_VERSION_MAJOR LESS 3)
         set(openPMD_HAVE_PYTHON FALSE)
-        message(STATUS "python: Found version "
-                       "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR} "
+        message(STATUS "python: Found version '"
+                       "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}' "
                        "is NOT supported. Set for example "
                        "-DPYTHON_EXECUTABLE=$(which python3) "
                        "to use 3.5+.")
@@ -270,11 +279,11 @@ elseif(openPMD_USE_PYTHON)
     else()
         find_package(pybind11 2.3.0 REQUIRED CONFIG)
         set(openPMD_HAVE_PYTHON TRUE)
-        message(STATUS "pybind11: Found version ${pybind11_VERSION}")
+        message(STATUS "pybind11: Found version '${pybind11_VERSION}'")
     endif()
     if(PYTHON_VERSION_MAJOR LESS 3)
-        message(FATAL_ERROR "python: Found version "
-                            "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR} "
+        message(FATAL_ERROR "python: Found version '"
+                            "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}' "
                             "is NOT supported. Set for example "
                             "-DPYTHON_EXECUTABLE=$(which python3) "
                             "to use 3.5+.")
@@ -367,12 +376,12 @@ if(openPMD_USE_INTERNAL_VARIANT)
     target_include_directories(openPMD::thirdparty::mpark_variant SYSTEM INTERFACE
         $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include>
     )
-    message(STATUS "MPark.Variant: Using INTERNAL version 1.4.0")
+    message(STATUS "MPark.Variant: Using INTERNAL version '1.4.0'")
 else()
     find_package(mpark_variant 1.3.0 REQUIRED) # TODO: we want 1.4.1+
     target_link_libraries(openPMD::thirdparty::mpark_variant
         INTERFACE mpark_variant)
-    message(STATUS "MPark.Variant: Found version ${mpark_variant_VERSION}")
+    message(STATUS "MPark.Variant: Found version '${mpark_variant_VERSION}'")
 endif()
 target_link_libraries(openPMD PUBLIC openPMD::thirdparty::mpark_variant)
 
@@ -383,12 +392,12 @@ if(BUILD_TESTING)
         target_include_directories(openPMD::thirdparty::Catch2 SYSTEM INTERFACE
             $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/catch2/include>
         )
-        message(STATUS "Catch2: Using INTERNAL version 2.6.1")
+        message(STATUS "Catch2: Using INTERNAL version '2.6.1'")
     else()
         find_package(Catch2 2.6.1 REQUIRED CONFIG)
         target_link_libraries(openPMD::thirdparty::Catch2
             INTERFACE Catch2::Catch2)
-        message(STATUS "Catch2: Found version ${Catch2_VERSION}")
+        message(STATUS "Catch2: Found version '${Catch2_VERSION}'")
     endif()
 endif()
 
@@ -434,9 +443,9 @@ if(openPMD_HAVE_ADIOS1)
 
     if(openPMD_HAVE_MPI)
         target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC MPI::MPI_C MPI::MPI_CXX)
-        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "-DopenPMD_HAVE_MPI=1")
+        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_HAVE_MPI=1)
     else()
-        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "-DopenPMD_HAVE_MPI=0")
+        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_HAVE_MPI=0)
     endif()
 
     set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
@@ -461,9 +470,9 @@ if(openPMD_HAVE_ADIOS1)
     endforeach()
     target_include_directories(openPMD.ADIOS1.Serial SYSTEM PRIVATE ${ADIOS_INCLUDE_DIRS_SEQUENTIAL})
     target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "${ADIOS_DEFINITIONS_SEQUENTIAL}")
-    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "-DopenPMD_HAVE_ADIOS1=1")
-    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "-DopenPMD_HAVE_MPI=0")
-    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "-D_NOMPI=1")
+    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE openPMD_HAVE_ADIOS1=1)
+    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE openPMD_HAVE_MPI=0)
+    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE _NOMPI=1)
 
     if(openPMD_HAVE_MPI)
         set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES
@@ -489,16 +498,16 @@ if(openPMD_HAVE_ADIOS1)
 
         target_include_directories(openPMD.ADIOS1.Parallel SYSTEM PRIVATE ${ADIOS_INCLUDE_DIRS})
         target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "${ADIOS_DEFINITIONS}")
-        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "-DopenPMD_HAVE_ADIOS1=1")
+        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_HAVE_ADIOS1=1)
     endif()
 
     # Runtime parameter and API status checks ("asserts")
     if(openPMD_USE_VERIFY)
-        target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "-DopenPMD_USE_VERIFY=1")
-        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "-DopenPMD_USE_VERIFY=1")
+        target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE openPMD_USE_VERIFY=1)
+        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_USE_VERIFY=1)
     else()
-        target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "-DopenPMD_USE_VERIFY=0")
-        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "-DopenPMD_USE_VERIFY=0")
+        target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE openPMD_USE_VERIFY=0)
+        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_USE_VERIFY=0)
     endif()
 
     target_link_libraries(openPMD PUBLIC openPMD.ADIOS1.Serial)
@@ -512,9 +521,9 @@ endif()
 
 # Runtime parameter and API status checks ("asserts")
 if(openPMD_USE_VERIFY)
-    target_compile_definitions(openPMD PRIVATE "-DopenPMD_USE_VERIFY=1")
+    target_compile_definitions(openPMD PRIVATE openPMD_USE_VERIFY=1)
 else()
-    target_compile_definitions(openPMD PRIVATE "-DopenPMD_USE_VERIFY=0")
+    target_compile_definitions(openPMD PRIVATE openPMD_USE_VERIFY=0)
 endif()
 
 # python bindings
@@ -583,6 +592,11 @@ if(openPMD_HAVE_PYTHON)
         PDB_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
         COMPILE_PDB_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
     )
+    add_custom_command(TARGET openPMD.py POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${openPMD_SOURCE_DIR}/src/binding/python/openpmd_api
+        ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
+    )
 endif()
 
 # tests
@@ -648,14 +662,14 @@ if(BUILD_TESTING)
     target_link_libraries(CatchMain   PUBLIC openPMD::thirdparty::Catch2)
     if(openPMD_HAVE_MPI)
         target_link_libraries(CatchRunner PUBLIC MPI::MPI_C MPI::MPI_CXX)
-        target_compile_definitions(CatchRunner PUBLIC "-DopenPMD_HAVE_MPI=1")
+        target_compile_definitions(CatchRunner PUBLIC openPMD_HAVE_MPI=1)
     endif()
 
     foreach(testname ${openPMD_TEST_NAMES})
         add_executable(${testname}Tests test/${testname}Test.cpp)
 
         if(openPMD_USE_INVASIVE_TESTS)
-            target_compile_definitions(${testname}Tests PRIVATE "-DopenPMD_USE_INVASIVE_TESTS=1")
+            target_compile_definitions(${testname}Tests PRIVATE openPMD_USE_INVASIVE_TESTS=1)
         endif()
         target_link_libraries(${testname}Tests PRIVATE openPMD)
         if(${testname} MATCHES "Parallel.+$")
@@ -774,79 +788,81 @@ write_basic_package_version_file("openPMDConfigVersion.cmake"
 # Installs ####################################################################
 #
 # headers, libraries and executables
-set(openPMD_INSTALL_TARGET_NAMES openPMD)
+if(openPMD_INSTALL)
+    set(openPMD_INSTALL_TARGET_NAMES openPMD)
 
-if(openPMD_HAVE_ADIOS1)
-    list(APPEND openPMD_INSTALL_TARGET_NAMES
-        openPMD.ADIOS1.Serial openPMD.ADIOS1.Parallel)
-endif()
+    if(openPMD_HAVE_ADIOS1)
+        list(APPEND openPMD_INSTALL_TARGET_NAMES
+            openPMD.ADIOS1.Serial openPMD.ADIOS1.Parallel)
+    endif()
 
-if(BUILD_CLI_TOOLS)
-    foreach(toolname ${openPMD_CLI_TOOL_NAMES})
-        list(APPEND openPMD_INSTALL_TARGET_NAMES openpmd-${toolname})
-    endforeach()
-endif()
+    if(BUILD_CLI_TOOLS)
+        foreach(toolname ${openPMD_CLI_TOOL_NAMES})
+            list(APPEND openPMD_INSTALL_TARGET_NAMES openpmd-${toolname})
+        endforeach()
+    endif()
 
-install(TARGETS ${openPMD_INSTALL_TARGET_NAMES}
-    EXPORT openPMDTargets
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
-if(openPMD_HAVE_PYTHON)
-    install(
-        DIRECTORY   ${openPMD_SOURCE_DIR}/src/binding/python/openpmd_api
-        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}
-        PATTERN "*pyc" EXCLUDE
-        PATTERN "__pycache__" EXCLUDE
+    install(TARGETS ${openPMD_INSTALL_TARGET_NAMES}
+        EXPORT openPMDTargets
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
-    install(TARGETS openPMD.py
-        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/openpmd_api
-    )
-endif()
-install(DIRECTORY "${openPMD_SOURCE_DIR}/include/openPMD"
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    FILES_MATCHING PATTERN "*.hpp"
-)
-install(
-    FILES ${openPMD_BINARY_DIR}/include/openPMD/config.hpp
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/openPMD
-)
-# install third-party libraries
-# TODO not needed with C++17 compiler
-if(openPMD_USE_INTERNAL_VARIANT)
-    install(DIRECTORY "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include/mpark"
+    if(openPMD_HAVE_PYTHON)
+        install(
+            DIRECTORY   ${openPMD_SOURCE_DIR}/src/binding/python/openpmd_api
+            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}
+            PATTERN "*pyc" EXCLUDE
+            PATTERN "__pycache__" EXCLUDE
+        )
+        install(TARGETS openPMD.py
+            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/openpmd_api
+        )
+    endif()
+    install(DIRECTORY "${openPMD_SOURCE_DIR}/include/openPMD"
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        FILES_MATCHING PATTERN "*.hpp"
     )
-endif()
-
-# CMake package file for find_package(openPMD::openPMD) in depending projects
-install(EXPORT openPMDTargets
-    FILE openPMDTargets.cmake
-    NAMESPACE openPMD::
-    DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
-)
-install(
-    FILES
-        ${openPMD_BINARY_DIR}/openPMDConfig.cmake
-        ${openPMD_BINARY_DIR}/openPMDConfigVersion.cmake
-    DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
-)
-install(
-    FILES
-        ${openPMD_SOURCE_DIR}/share/openPMD/cmake/FindADIOS.cmake
-    DESTINATION ${CMAKE_INSTALL_CMAKEDIR}/Modules
-)
-# pkg-config .pc file for depending legacy projects
-#   This is for projects that do not use a build file generator, e.g.
-#   because they compile manually on the command line or write their
-#   Makefiles by hand.
-if(openPMD_HAVE_PKGCONFIG)
     install(
-        FILES       ${openPMD_BINARY_DIR}/openPMD.pc
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+        FILES ${openPMD_BINARY_DIR}/include/openPMD/config.hpp
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/openPMD
     )
+    # install third-party libraries
+    # TODO not needed with C++17 compiler
+    if(openPMD_USE_INTERNAL_VARIANT)
+        install(DIRECTORY "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include/mpark"
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        )
+    endif()
+
+    # CMake package file for find_package(openPMD::openPMD) in depending projects
+    install(EXPORT openPMDTargets
+        FILE openPMDTargets.cmake
+        NAMESPACE openPMD::
+        DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
+    )
+    install(
+        FILES
+            ${openPMD_BINARY_DIR}/openPMDConfig.cmake
+            ${openPMD_BINARY_DIR}/openPMDConfigVersion.cmake
+        DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
+    )
+    install(
+        FILES
+            ${openPMD_SOURCE_DIR}/share/openPMD/cmake/FindADIOS.cmake
+        DESTINATION ${CMAKE_INSTALL_CMAKEDIR}/Modules
+    )
+    # pkg-config .pc file for depending legacy projects
+    #   This is for projects that do not use a build file generator, e.g.
+    #   because they compile manually on the command line or write their
+    #   Makefiles by hand.
+    if(openPMD_HAVE_PKGCONFIG)
+        install(
+            FILES       ${openPMD_BINARY_DIR}/openPMD.pc
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+        )
+    endif()
 endif()
 
 
@@ -887,10 +903,8 @@ if(BUILD_TESTING)
             )
         endif()
     endforeach()
-endif()
 
-# Python Unit tests
-if(BUILD_TESTING)
+    # Python Unit tests
     if(openPMD_HAVE_PYTHON)
         if(openPMD_HAVE_HDF5)
             if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
@@ -920,158 +934,149 @@ if(BUILD_TESTING)
             endif()
         endif()
     endif()
-endif()
 
-
-# Examples ####################################################################
-#
-if(BUILD_EXAMPLES)
-    # C++ Examples
-    # Current examples all use HDF5, elaborate if other backends are used
-    if(openPMD_HAVE_HDF5)
-        if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
-            foreach(examplename ${openPMD_EXAMPLE_NAMES})
-                if(${examplename} MATCHES "^.*_parallel$")
-                    if(openPMD_HAVE_MPI)
-                        add_test(NAME MPI.${examplename}
-                                COMMAND ${MPI_TEST_EXE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}
+    # Examples
+    if(BUILD_EXAMPLES)
+        # C++ Examples
+        # Current examples all use HDF5, elaborate if other backends are used
+        if(openPMD_HAVE_HDF5)
+            if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
+                foreach(examplename ${openPMD_EXAMPLE_NAMES})
+                    if(${examplename} MATCHES "^.*_parallel$")
+                        if(openPMD_HAVE_MPI)
+                            add_test(NAME MPI.${examplename}
+                                    COMMAND ${MPI_TEST_EXE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}
+                                    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                                    )
+                        endif()
+                    else()
+                        add_test(NAME Serial.${examplename}
+                                COMMAND ${examplename}
                                 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
                                 )
                     endif()
-                else()
-                    add_test(NAME Serial.${examplename}
-                            COMMAND ${examplename}
-                            WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                endforeach()
+            else()
+                message(STATUS "Note: Skipping C++ example tests (missing example files)")
+            endif()
+        endif()
+    endif()
+
+    # Command Line Tools
+    if(BUILD_CLI_TOOLS)
+        # all tools must provide a "--help"
+        foreach(toolname ${openPMD_CLI_TOOL_NAMES})
+            add_test(NAME CLI.help.${toolname}
+                COMMAND openpmd-${toolname} --help
+                WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+            )
+        endforeach()
+        if(openPMD_HAVE_HDF5 AND EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
+            add_test(NAME CLI.ls
+                COMMAND openpmd-ls ../samples/git-sample/data%08T.h5
+                WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+            )
+        endif()
+    endif()
+
+    # Python CLI Modules
+    if(openPMD_HAVE_PYTHON)
+        # (Note that during setuptools install, these are furthermore installed as
+        #  console scripts and replace the all-binary CLI tools.)
+        foreach(pymodulename ${openPMD_PYTHON_CLI_MODULE_NAMES})
+             add_test(NAME CLI.py.help.${pymodulename}
+                 COMMAND ${PYTHON_EXECUTABLE} -m openpmd_api.${pymodulename} --help
+                 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+            )
+            if(WIN32)
+                set_property(TEST CLI.py.help.${pymodulename}
+                    PROPERTY ENVIRONMENT
+                        "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
+                        "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${CMAKE_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
+                )
+            else()
+                set_tests_properties(CLI.py.help.${pymodulename}
+                    PROPERTIES ENVIRONMENT
+                        "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
+                )
+            endif()
+        endforeach()
+    endif()
+
+    # Python Examples
+    # Current examples all use HDF5, elaborate if other backends are used
+    if(openPMD_HAVE_PYTHON AND openPMD_HAVE_HDF5)
+        if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
+            execute_process(COMMAND ${PYTHON_EXECUTABLE}
+                -m mpi4py
+                -c "import mpi4py.MPI"
+                RESULT_VARIABLE MPI4PY_RETURN)
+
+            if(NOT MPI4PY_RETURN EQUAL 0)
+                message(STATUS "Note: mpi4py not found. "
+                               "Skipping MPI-parallel Python examples.")
+            endif()
+
+            foreach(examplename ${openPMD_PYTHON_EXAMPLE_NAMES})
+                add_custom_command(TARGET openPMD.py POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy
+                            ${openPMD_SOURCE_DIR}/examples/${examplename}.py
+                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
+                )
+                if(BUILD_TESTING)
+                    if(${examplename} MATCHES "^.*_parallel$")
+                        if(openPMD_HAVE_MPI AND MPI4PY_RETURN EQUAL 0)
+                            # see https://mpi4py.readthedocs.io/en/stable/mpi4py.run.html
+                            add_test(NAME Example.py.${examplename}
+                                COMMAND ${MPI_TEST_EXE} ${PYTHON_EXECUTABLE} -m mpi4py
+                                    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
+                                WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
                             )
+                        else()
+                            continue()
+                        endif()
+                    else()
+                        add_test(NAME Example.py.${examplename}
+                            COMMAND ${PYTHON_EXECUTABLE}
+                                ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
+                            WORKING_DIRECTORY
+                                ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+                        )
+                    endif()
+                    if(WIN32)
+                        string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BASEDIR ${openPMD_BINARY_DIR})
+                        string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+                        string(REPLACE ";" "\\;" WIN_PATH "$ENV{PATH}")
+                        string(REPLACE ";" "\\;" WIN_PYTHONPATH "$ENV{PYTHONPATH}")
+                        set_property(TEST Example.py.${examplename}
+                            PROPERTY ENVIRONMENT
+                                "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
+                                "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${CMAKE_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
+                        )
+                    else()
+                        set_tests_properties(Example.py.${examplename}
+                            PROPERTIES ENVIRONMENT
+                                "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
+                        )
+                    endif()
                 endif()
             endforeach()
         else()
-            message(STATUS "Note: Skipping C++ example tests (missing example files)")
+            message(STATUS "Note: Skipping Python example tests (missing example files)")
         endif()
     endif()
-endif()
 
-# Command Line Tools ##################################################
-#
-if(BUILD_CLI_TOOLS)
-    # all tools must provide a "--help"
-    foreach(toolname ${openPMD_CLI_TOOL_NAMES})
-        list(APPEND openPMD_INSTALL_TARGET_NAMES openpmd-${toolname})
-        add_test(NAME CLI.help.${toolname}
-            COMMAND openpmd-${toolname} --help
-            WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-        )
-    endforeach()
-    if(openPMD_HAVE_HDF5 AND EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
-        add_test(NAME CLI.ls
-            COMMAND openpmd-ls ../samples/git-sample/data%08T.h5
-            WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-        )
-    endif()
-endif()
-
-if(openPMD_HAVE_PYTHON)
-    add_custom_command(TARGET openPMD.py POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-                ${openPMD_SOURCE_DIR}/src/binding/python/openpmd_api
-                ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
-    )
-
-    # Python CLI Modules
-    # (Note that during setuptools install, these are furthermore installed as
-    #  console scripts and replace the all-binary CLI tools.)
-    foreach(pymodulename ${openPMD_PYTHON_CLI_MODULE_NAMES})
-         add_test(NAME CLI.py.help.${pymodulename}
-             COMMAND ${PYTHON_EXECUTABLE} -m openpmd_api.${pymodulename} --help
-             WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-        )
+    # hint: how to prepare sample data for testing
+    if(NOT EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
         if(WIN32)
-            set_property(TEST CLI.py.help.${pymodulename}
-                PROPERTY ENVIRONMENT
-                    "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
-                    "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${CMAKE_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
-            )
+            message(STATUS "Note: run\n"
+                           "    Powershell.exe -File ${openPMD_SOURCE_DIR}/share/openPMD/download_samples.ps1\n"
+                           "to add example files to samples/git-sample/ directory!")
         else()
-            set_tests_properties(CLI.py.help.${pymodulename}
-                PROPERTIES ENVIRONMENT
-                    "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
-            )
+            message(STATUS "Note: run\n"
+                           "    . ${openPMD_SOURCE_DIR}/share/openPMD/download_samples.sh\n"
+                           "to add example files to samples/git-sample/ directory!")
         endif()
-    endforeach()
-endif()
-
-# Python Examples
-# Current examples all use HDF5, elaborate if other backends are used
-if(openPMD_HAVE_PYTHON AND openPMD_HAVE_HDF5)
-    if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
-        execute_process(COMMAND ${PYTHON_EXECUTABLE}
-            -m mpi4py
-            -c "import mpi4py.MPI"
-            RESULT_VARIABLE MPI4PY_RETURN)
-
-        if(NOT MPI4PY_RETURN EQUAL 0)
-            message(STATUS "Note: mpi4py not found. "
-                           "Skipping MPI-parallel Python examples.")
-        endif()
-
-        foreach(examplename ${openPMD_PYTHON_EXAMPLE_NAMES})
-            add_custom_command(TARGET openPMD.py POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy
-                        ${openPMD_SOURCE_DIR}/examples/${examplename}.py
-                        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
-            )
-            if(BUILD_TESTING)
-                if(${examplename} MATCHES "^.*_parallel$")
-                    if(openPMD_HAVE_MPI AND MPI4PY_RETURN EQUAL 0)
-                        # see https://mpi4py.readthedocs.io/en/stable/mpi4py.run.html
-                        add_test(NAME Example.py.${examplename}
-                            COMMAND ${MPI_TEST_EXE} ${PYTHON_EXECUTABLE} -m mpi4py
-                                ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
-                            WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-                        )
-                    else()
-                        continue()
-                    endif()
-                else()
-                    add_test(NAME Example.py.${examplename}
-                        COMMAND ${PYTHON_EXECUTABLE}
-                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
-                        WORKING_DIRECTORY
-                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-                    )
-                endif()
-                if(WIN32)
-                    string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BASEDIR ${openPMD_BINARY_DIR})
-                    string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-                    string(REPLACE ";" "\\;" WIN_PATH "$ENV{PATH}")
-                    string(REPLACE ";" "\\;" WIN_PYTHONPATH "$ENV{PYTHONPATH}")
-                    set_property(TEST Example.py.${examplename}
-                        PROPERTY ENVIRONMENT
-                            "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
-                            "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${CMAKE_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
-                    )
-                else()
-                    set_tests_properties(Example.py.${examplename}
-                        PROPERTIES ENVIRONMENT
-                            "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
-                    )
-                endif()
-            endif()
-        endforeach()
-    else()
-        message(STATUS "Note: Skipping Python example tests (missing example files)")
-    endif()
-endif()
-
-if(NOT EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
-    if(WIN32)
-        message(STATUS "Note: run\n"
-                       "    Powershell.exe -File ${openPMD_SOURCE_DIR}/share/openPMD/download_samples.ps1\n"
-                       "to add example files to samples/git-sample/ directory!")
-    else()
-        message(STATUS "Note: run\n"
-                       "    . ${openPMD_SOURCE_DIR}/share/openPMD/download_samples.sh\n"
-                       "to add example files to samples/git-sample/ directory!")
     endif()
 endif()
 
@@ -1087,17 +1092,21 @@ message("  C++ Compiler: ${CMAKE_CXX_COMPILER_ID} "
                         "${CMAKE_CXX_COMPILER_WRAPPER}")
 message("    ${CMAKE_CXX_COMPILER}")
 message("")
-message("  Installation prefix: ${CMAKE_INSTALL_PREFIX}")
-message("        bin: ${CMAKE_INSTALL_BINDIR}")
-message("        lib: ${CMAKE_INSTALL_LIBDIR}")
-message("    include: ${CMAKE_INSTALL_INCLUDEDIR}")
-message("      cmake: ${CMAKE_INSTALL_CMAKEDIR}")
-if(openPMD_HAVE_PYTHON)
-    message("     python: ${CMAKE_INSTALL_PYTHONDIR}")
+if(openPMD_INSTALL)
+    message("  Installation prefix: ${CMAKE_INSTALL_PREFIX}")
+    message("        bin: ${CMAKE_INSTALL_BINDIR}")
+    message("        lib: ${CMAKE_INSTALL_LIBDIR}")
+    message("    include: ${CMAKE_INSTALL_INCLUDEDIR}")
+    message("      cmake: ${CMAKE_INSTALL_CMAKEDIR}")
+    if(openPMD_HAVE_PYTHON)
+        message("     python: ${CMAKE_INSTALL_PYTHONDIR}")
+    endif()
+    message("")
+    message("  Additionally, install following third party libraries:")
+    message("    MPark.Variant: ${openPMD_USE_INTERNAL_VARIANT}")
+else()
+    message("  Installation: OFF")
 endif()
-message("")
-message("  Additionally, install following third party libraries:")
-message("    MPark.Variant: ${openPMD_USE_INTERNAL_VARIANT}")
 message("")
 message("  Build Type: ${CMAKE_BUILD_TYPE}")
 if(BUILD_SHARED_LIBS)
@@ -1105,6 +1114,8 @@ if(BUILD_SHARED_LIBS)
 else()
     message("  Library: static")
 endif()
+message("  CLI Tools: ${BUILD_CLI_TOOLS}")
+message("  Examples: ${BUILD_EXAMPLES}")
 message("  Testing: ${BUILD_TESTING}")
 message("  Invasive Tests: ${openPMD_USE_INVASIVE_TESTS}")
 message("  Internal VERIFY: ${openPMD_USE_VERIFY}")
