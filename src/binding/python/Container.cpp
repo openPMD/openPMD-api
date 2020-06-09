@@ -63,7 +63,8 @@ namespace detail
     >
     py::class_<
         Map,
-        holder_type
+        holder_type,
+        Attributable
     > bind_container(
         py::handle scope,
         std::string const & name,
@@ -195,7 +196,7 @@ namespace detail
             }
         );
 
-        return std::move(cl);
+        return cl;
     }
 } // namespace detail
 
