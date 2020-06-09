@@ -94,12 +94,19 @@ TEST_CASE( "multi_series_test", "[serial]" )
 void
 close_iteration_test( std::string file_ending )
 {
+#if openPMD_HAVE_ADIOS1 && !openPMD_HAVE_ADIOS2
+    bool isAdios1 = file_ending == "bp";
+#elif openPMD_HAVE_ADIOS1 && openPMD_HAVE_ADIOS2
+    bool isAdios1 = file_ending == "bp" &&
+        auxiliary::getEnvString("OPENPMD_BP_BACKEND", "NOT_SET") == "ADIOS1";
+#else
+    bool isAdios1 = false;
+#endif
     std::string name = "../samples/close_iterations_%T." + file_ending;
 
-    std::vector< int > data{ 2, 4, 6, 8 };
+    std::vector<int> data{2, 4, 6, 8};
     // { // we do *not* need these parentheses
-    #if 1
-    Series write( name, Access::CREATE );
+    Series write(name, Access::CREATE);
     {
         Iteration it0 = write.iterations[ 0 ];
         auto E_x = it0.meshes[ "E" ][ "x" ];
@@ -108,16 +115,15 @@ close_iteration_test( std::string file_ending )
         it0.close( /* flush = */ false );
     }
     write.flush();
-    #endif
     // }
 
-    /*
-     * This block will run fine if commented in
-     * But the following block will fail with a segfault
-     * upon adios_select_method ????
-     * Commenting this block in and the other following two out will work, too.
-     */
-    #if 0
+    if (isAdios1)
+    {
+        // run a simplified test for Adios1 since Adios1 has issues opening
+        // twice in the same process
+        REQUIRE(auxiliary::file_exists(name));
+    }
+    else
     {
         Series read( name, Access::READ_ONLY );
         auto E_x_read = read.iterations[ 0 ].meshes[ "E" ][ "x" ];
@@ -128,20 +134,22 @@ close_iteration_test( std::string file_ending )
             REQUIRE( data[ i ] == chunk.get()[ i ] );
         }
     }
-    #endif
 
-    #if 1
     {
-
-        Iteration it1 = write.iterations[ 1 ];
+        Iteration it1 = write.iterations[1];
         auto E_x = it1.meshes[ "E" ][ "x" ];
         E_x.resetDataset( { Datatype::INT, { 2, 2 } } );
         E_x.storeChunk( data, { 0, 0 }, { 2, 2 } );
-        it1.close( /* flush = */ true );
+        it1.close(/* flush = */ true);
     }
-    #endif
 
-    #if 1
+    if (isAdios1)
+    {
+        // run a simplified test for Adios1 since Adios1 has issues opening
+        // twice in the same process
+        REQUIRE(auxiliary::file_exists(name));
+    }
+    else
     {
         Series read( name, Access::READ_ONLY );
         auto E_x_read = read.iterations[ 1 ].meshes[ "E" ][ "x" ];
@@ -152,8 +160,6 @@ close_iteration_test( std::string file_ending )
             REQUIRE( data[ i ] == chunk.get()[ i ] );
         }
     }
-    #endif
-
 }
 
 TEST_CASE( "close_iteration_test", "[serial]" )
