@@ -126,8 +126,10 @@ close_iteration_test( std::string file_ending )
     else
     {
         Series read( name, Access::READ_ONLY );
-        auto E_x_read = read.iterations[ 0 ].meshes[ "E" ][ "x" ];
+        Iteration it0 = read.iterations[ 0 ];
+        auto E_x_read = it0.meshes[ "E" ][ "x" ];
         auto chunk = E_x_read.loadChunk< int >( { 0, 0 }, { 2, 2 } );
+        it0.close( /* flush = */ false );
         read.flush();
         for( size_t i = 0; i < data.size(); ++i )
         {
@@ -152,9 +154,10 @@ close_iteration_test( std::string file_ending )
     else
     {
         Series read( name, Access::READ_ONLY );
-        auto E_x_read = read.iterations[ 1 ].meshes[ "E" ][ "x" ];
+        Iteration it1 = read.iterations[ 1 ];
+        auto E_x_read = it1.meshes[ "E" ][ "x" ];
         auto chunk = E_x_read.loadChunk< int >( { 0, 0 }, { 2, 2 } );
-        read.flush();
+        it1.close( /* flush = */ true );
         for( size_t i = 0; i < data.size(); ++i )
         {
             REQUIRE( data[ i ] == chunk.get()[ i ] );

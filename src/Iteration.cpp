@@ -37,10 +37,12 @@ Iteration::Iteration()
     setTimeUnitSI(1);
 }
 
-Iteration::Iteration(Iteration const& i)
-        : Attributable{i},
-          meshes{i.meshes},
-          particles{i.particles}
+Iteration::Iteration( Iteration const & i )
+    : Attributable{ i }
+    , meshes{ i.meshes }
+    , particles{ i.particles }
+    , m_closed{ i.m_closed }
+    , skipFlush{ i.skipFlush }
 {
     IOHandler = i.IOHandler;
     parent = i.parent;
@@ -57,6 +59,8 @@ Iteration& Iteration::operator=(Iteration const& i)
     particles = i.particles;
     IOHandler = i.IOHandler;
     parent = i.parent;
+    m_closed = i.m_closed;
+    skipFlush = i.skipFlush;
     meshes.IOHandler = IOHandler;
     meshes.parent = this->m_writable.get();
     particles.IOHandler = IOHandler;
@@ -100,7 +104,11 @@ Iteration::setTimeUnitSI(double newTimeUnitSI)
 Iteration &
 Iteration::close( bool _flush )
 {
-    setAttribute( "closed", true );
+    if( this->IOHandler->m_frontendAccess != Access::READ_ONLY )
+    {
+        setAttribute( "closed", true );
+    }
+    *m_closed = true;
     if( _flush )
     {
         Series * s = dynamic_cast< Series * >(
@@ -112,6 +120,12 @@ Iteration::close( bool _flush )
 
 bool
 Iteration::closed() const
+{
+    return *m_closed;
+}
+
+bool
+Iteration::closedByWriter() const
 {
     if( containsAttribute( "closed" ) )
     {

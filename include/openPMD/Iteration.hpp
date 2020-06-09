@@ -98,25 +98,35 @@ public:
     bool
     closed() const;
 
+    bool
+    closedByWriter() const;
+
     Container< Mesh > meshes;
-    Container< ParticleSpecies > particles; //particleSpecies?
+    Container< ParticleSpecies > particles; // particleSpecies?
 
     virtual ~Iteration() = default;
+
 private:
     Iteration();
 
     void flushFileBased(std::string const&, uint64_t);
     void flushGroupBased(uint64_t);
     void flush();
-    void read();
+    void
+    read();
+
+    /*
+     * Indicates that an iteration has been logically closed.
+     * Will be physically closed upon next flush.
+     */
+    std::shared_ptr< bool > m_closed = std::make_shared< bool >( false );
 
     /*
      * Once an iteration is declared finalized, we do not flush it any longer
      * to avoid reading undefined data if a backend implements optimizations
      * based on this information.
      */
-    std::shared_ptr< bool > skipFlush =
-        std::make_shared< bool >( false );
+    std::shared_ptr< bool > skipFlush = std::make_shared< bool >( false );
 
     virtual void linkHierarchy(std::shared_ptr< Writable > const& w);
 };  //Iteration
