@@ -39,10 +39,10 @@ namespace openPMD
 #if __cplusplus >= 201402L
     // note: "using old [[deprecated(msg)]] = new;" is still badly supported, thus using typedef
     //       https://en.cppreference.com/w/cpp/language/attributes/deprecated
-    //   - NVCC 10.1 works but noisy "warning: attribute does not apply to any entity"
+    //   - NVCC < 11.0.167 works but noisy "warning: attribute does not apply to any entity"
     //     Nvidia bug report: 2991260
     //   - Intel C++ 19.1.0.20200306 bug report: 04651484
-    OPENPMDAPI_DEPRECATED("AccessType is deprecated, use Access instead.") typedef Access AccessType;
+    [[deprecated("AccessType is deprecated, use Access instead.")]] typedef Access AccessType;
 #else
     // don't warn because pre C++14 attribute order is too compiler-dependent
     // NVCC, ICC, GCC, MSVC are all irregular
