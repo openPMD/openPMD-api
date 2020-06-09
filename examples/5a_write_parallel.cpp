@@ -28,6 +28,10 @@
 #include <vector>
 #include <fstream>
 
+#if openPMD_HAVE_ADIOS2
+#   include <adios2.h>
+#endif
+
 using std::cout;
 using namespace openPMD;
 
@@ -109,7 +113,7 @@ public:
 	MemoryProfiler (rank, tag);
     }
     ~Timer() {
-        std::string tt = "--"+m_Tag;     
+        std::string tt = "~"+m_Tag;     
         MemoryProfiler (m_Rank, tt.c_str());
         m_End = std::chrono::system_clock::now();
 
@@ -214,7 +218,6 @@ LoadData(Series& series, const char* varName, int& mpi_size, int& mpi_rank, unsi
 
         mymesh.resetDataset( dataset );
 
-#ifdef SHARED_PTR
         {
             // many small writes
             srand(time(NULL) * (mpi_rank+mpi_size) );
@@ -237,21 +240,93 @@ LoadData(Series& series, const char* varName, int& mpi_size, int& mpi_rank, unsi
                 counter += local_bulks[i];
             }
         }
-#else
-	{
-	  std::cout<<" SIMPLE DEMO OF MEMORY UPHOLDING "<<std::endl;
-	std::vector<double> all(bulk, mpi_rank);
-        auto  p = openPMD::shareRaw(all);
-        mymesh.storeChunk(all, {bulk*mpi_rank}, {bulk});
-	}
-#endif
+
         {
             Timer g("Flush", mpi_rank);
             series.flush();
         }
 }
 
+void testVector1(unsigned long& s)
+{  
+  {
+    Timer g("Vector test .. using insert", 0);
+    std::vector<double> all(s);
+    std::cout<<" start size="<<all.size()<<std::endl;
+    {
+      std::vector<double> b(s);
+      all.insert(all.end(), b.begin(), b.end());      
+    }
+    std::cout<<" end size="<<all.size()<<std::endl;
+  }
+  std::cout<<std::endl;
+}
 
+void testVector2(unsigned long& s)
+{
+      Timer g("Vector test .. using reserve & resize", 0);
+      std::vector<double> all(s);
+      std::cout<<" start size="<<all.size()<<std::endl;
+      {
+	all.reserve(2*s);
+	all.resize(2*s, 100);
+      }
+      std::cout<<" end size="<<all.size()<<std::endl;
+    
+    std::cout<<std::endl;
+}
+
+void testVector3(unsigned long& s)
+    {
+    Timer g("Vector test .. using reserve then insert", 0);
+    std::vector<double> all(s);
+    std::cout<<" start size="<<all.size()<<std::endl;
+    {
+      all.reserve(2*s);
+      std::vector<double> b(s);
+      all.insert(all.end(), b.begin(), b.end());      
+    }
+    std::cout<<" end size="<<all.size()<<std::endl;
+    
+    std::cout<<std::endl;
+}
+
+void
+Test_adios( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg, int& numSteps )
+{
+#ifdef  openPMD_HAVE_ADIOS2
+  if (0 == mpi_rank)  std::cout<<"TESTING direct ADIOS2 write "<<std::endl;
+  Timer kk("ADIOS2 test. ", mpi_rank);
+  {
+     std::string filename = "../samples/5a_adios.bp";
+     
+     adios2::ADIOS adios(MPI_COMM_WORLD);
+     adios2::IO bpIO = adios.DeclareIO("BPDirect");
+
+     if (numSeg == 0) bpIO.SetEngine("NULL");
+     adios2::Engine bpFileWriter = bpIO.Open(filename, adios2::Mode::Write);
+     
+     for (int i=1; i<=numSteps; i++) {
+       Timer newstep(" New step ", mpi_rank);
+       std::ostringstream varName;
+       varName << "/data/"<<i<<"/meshes/var";
+
+
+       double* E = new double[bulk];
+       for (unsigned long k=0; k<bulk; k++)
+	 E[k] = (unsigned long)mpi_rank;
+       
+       adios2::Variable<double> var = bpIO.DefineVariable<double>(varName.str(),{bulk * mpi_size}, {mpi_rank * bulk}, {bulk});
+       bpFileWriter.Put<double>(var, E, adios2::Mode::Sync);
+       bpFileWriter.PerformPuts();
+
+       delete[] E;
+
+     }
+     bpFileWriter.Close();
+  }
+#endif
+}
 /** ... Test 1: 
  *
  * .... 1D array in multiple steps, each steps is one file
@@ -345,7 +420,7 @@ TestRun( int& mpi_size, int& mpi_rank, unsigned long& bulk, int which, unsigned 
                   << bulk << " seg=" << numSeg << std::endl;
 
     if (which == 1)
-        Test_1(mpi_size, mpi_rank, bulk, numSeg, numSteps);
+        Test_adios(mpi_size, mpi_rank, bulk, numSeg, numSteps);
     else if (which == 2)
         Test_2(mpi_size, mpi_rank, bulk, numSeg, numSteps);
     else if (which == 0) {
