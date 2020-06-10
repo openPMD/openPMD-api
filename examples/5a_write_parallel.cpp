@@ -47,9 +47,9 @@ class MemoryProfiler
 {
     /** 
      *
-     * Simple Timer
+     * Simple Memory profiler for linux
      *
-     * @param tag      item to measure
+     * @param tag      item name to measure
      * @param rank     MPI rank
      */
 public:
@@ -64,23 +64,33 @@ public:
 #endif    
   }
 
+    /** 
+     *
+     * Read from /proc/self/status and display the Virtual Memory info at rank 0 on console
+     * 
+     * @param tag      item name to measure
+     * @param rank     MPI rank
+     */
+  
   void Display(const char*  tag){
     if (0 == m_Name.size())
       return;
 
     if (m_Rank > 0)
       return;
+    
     std::cout<<" memory at:  "<<tag;
     std::ifstream input(m_Name.c_str());
+    
     if (input.is_open()) {
       for (std::string line; getline(input, line);)
         {
           if (line.find("VmRSS") == 0)
-	    std::cout<<line<<" ";
+        std::cout<<line<<" ";
           if (line.find("VmSize") == 0)
-	    std::cout<<line<<" ";
+        std::cout<<line<<" ";
           if (line.find("VmSwap") == 0)
-	    std::cout<<line;
+        std::cout<<line;
         }
       std::cout<<std::endl;
       input.close();
@@ -95,6 +105,7 @@ private:
 /** The Timer class for profiling purpose
  *
  *  Simple Timer that measures time consumption btw constucture and destructor
+ *  Reports at rank 0 at the console, for immediate convenience 
  */
 class Timer
 {
@@ -103,14 +114,14 @@ public:
      *
      * Simple Timer
      *
-     * @param tag      item to measure
+     * @param tag      item name to measure
      * @param rank     MPI rank
      */
     Timer(const char* tag, int rank) {
         m_Tag = tag;
         m_Rank = rank;
         m_Start = std::chrono::system_clock::now();
-	MemoryProfiler (rank, tag);
+    MemoryProfiler (rank, tag);
     }
     ~Timer() {
         std::string tt = "~"+m_Tag;     
@@ -123,8 +134,8 @@ public:
           return;
 
         std::cout << "  [" << m_Tag << "] took:" << secs << " seconds\n";
-	std::cout<<"     "<<m_Tag<<"  From ProgStart in seconds "<<
-	  std::chrono::duration_cast<std::chrono::milliseconds>(m_End - m_ProgStart).count()/1000.0<<std::endl;
+    std::cout<<"     "<<m_Tag<<"  From ProgStart in seconds "<<
+      std::chrono::duration_cast<std::chrono::milliseconds>(m_End - m_ProgStart).count()/1000.0<<std::endl;
 
     }
 private:
@@ -247,49 +258,6 @@ LoadData(Series& series, const char* varName, int& mpi_size, int& mpi_rank, unsi
         }
 }
 
-void testVector1(unsigned long& s)
-{  
-  {
-    Timer g("Vector test .. using insert", 0);
-    std::vector<double> all(s);
-    std::cout<<" start size="<<all.size()<<std::endl;
-    {
-      std::vector<double> b(s);
-      all.insert(all.end(), b.begin(), b.end());      
-    }
-    std::cout<<" end size="<<all.size()<<std::endl;
-  }
-  std::cout<<std::endl;
-}
-
-void testVector2(unsigned long& s)
-{
-      Timer g("Vector test .. using reserve & resize", 0);
-      std::vector<double> all(s);
-      std::cout<<" start size="<<all.size()<<std::endl;
-      {
-	all.reserve(2*s);
-	all.resize(2*s, 100);
-      }
-      std::cout<<" end size="<<all.size()<<std::endl;
-    
-    std::cout<<std::endl;
-}
-
-void testVector3(unsigned long& s)
-    {
-    Timer g("Vector test .. using reserve then insert", 0);
-    std::vector<double> all(s);
-    std::cout<<" start size="<<all.size()<<std::endl;
-    {
-      all.reserve(2*s);
-      std::vector<double> b(s);
-      all.insert(all.end(), b.begin(), b.end());      
-    }
-    std::cout<<" end size="<<all.size()<<std::endl;
-    
-    std::cout<<std::endl;
-}
 
 void
 Test_adios( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg, int& numSteps )
@@ -303,7 +271,11 @@ Test_adios( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
      adios2::ADIOS adios(MPI_COMM_WORLD);
      adios2::IO bpIO = adios.DeclareIO("BPDirect");
 
-     if (numSeg == 0) bpIO.SetEngine("NULL");
+     if (numSeg == 0) {
+       std::cout<<" Applying ADIOS2 NULL ENGINE "<<std::endl;
+       bpIO.SetEngine("NULL");
+     }
+     
      adios2::Engine bpFileWriter = bpIO.Open(filename, adios2::Mode::Write);
      
      for (int i=1; i<=numSteps; i++) {
@@ -311,17 +283,14 @@ Test_adios( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
        std::ostringstream varName;
        varName << "/data/"<<i<<"/meshes/var";
 
+       std::shared_ptr< double > E(new double[bulk], [](double const *p){ delete[] p; });
 
-       double* E = new double[bulk];
        for (unsigned long k=0; k<bulk; k++)
-	 E[k] = (unsigned long)mpi_rank;
-       
+         E.get()[k] = (unsigned long)(5+i);;
+
        adios2::Variable<double> var = bpIO.DefineVariable<double>(varName.str(),{bulk * mpi_size}, {mpi_rank * bulk}, {bulk});
-       bpFileWriter.Put<double>(var, E, adios2::Mode::Sync);
+       bpFileWriter.Put<double>(var, E.get(), adios2::Mode::Sync);
        bpFileWriter.PerformPuts();
-
-       delete[] E;
-
      }
      bpFileWriter.Close();
   }
@@ -420,15 +389,17 @@ TestRun( int& mpi_size, int& mpi_rank, unsigned long& bulk, int which, unsigned 
                   << bulk << " seg=" << numSeg << std::endl;
 
     if (which == 1)
-        Test_adios(mpi_size, mpi_rank, bulk, numSeg, numSteps);
+        Test_1(mpi_size, mpi_rank, bulk, numSeg, numSteps);
     else if (which == 2)
         Test_2(mpi_size, mpi_rank, bulk, numSeg, numSteps);
     else if (which == 0) {
+        Test_adios(mpi_size, mpi_rank, bulk, numSeg, numSteps);
         Test_1(mpi_size, mpi_rank, bulk, numSeg, numSteps);
         Test_2(mpi_size, mpi_rank, bulk, numSeg, numSteps);
     } else {
         if (mpi_rank == 0)
-            std::cout << " No test with number " << which << std::endl;
+            std::cout << " No test with number " << which <<" default to adios test."<< std::endl;
+    Test_adios(mpi_size, mpi_rank, bulk, numSeg, numSteps);
     }
 }
 
