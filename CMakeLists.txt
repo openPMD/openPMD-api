@@ -516,7 +516,11 @@ endif()
 
 # ADIOS2 Backend
 if(openPMD_HAVE_ADIOS2)
-    target_link_libraries(openPMD PUBLIC adios2::adios2)
+    if(openPMD_HAVE_MPI)
+        target_link_libraries(openPMD PUBLIC adios2::cxx11_mpi)
+    else()
+        target_link_libraries(openPMD PUBLIC adios2::cxx11)
+    endif()
 endif()
 
 # Runtime parameter and API status checks ("asserts")
