@@ -45,7 +45,7 @@ static std::chrono::time_point<std::chrono::system_clock>  m_ProgStart = std::ch
 
 class MemoryProfiler
 {
-    /** 
+    /**
      *
      * Simple Memory profiler for linux
      *
@@ -57,31 +57,31 @@ public:
     m_Rank = rank;
 #if defined(__linux)
     //m_Name = "/proc/meminfo";
-    m_Name = "/proc/self/status";  
+    m_Name = "/proc/self/status";
     Display(tag);
 #else
     m_Name = "";
-#endif    
+#endif
   }
 
-    /** 
+    /**
      *
      * Read from /proc/self/status and display the Virtual Memory info at rank 0 on console
-     * 
+     *
      * @param tag      item name to measure
      * @param rank     MPI rank
      */
-  
+
   void Display(const char*  tag){
     if (0 == m_Name.size())
       return;
 
     if (m_Rank > 0)
       return;
-    
+
     std::cout<<" memory at:  "<<tag;
     std::ifstream input(m_Name.c_str());
-    
+
     if (input.is_open()) {
       for (std::string line; getline(input, line);)
         {
@@ -105,12 +105,12 @@ private:
 /** The Timer class for profiling purpose
  *
  *  Simple Timer that measures time consumption btw constucture and destructor
- *  Reports at rank 0 at the console, for immediate convenience 
+ *  Reports at rank 0 at the console, for immediate convenience
  */
 class Timer
 {
 public:
-    /** 
+    /**
      *
      * Simple Timer
      *
@@ -124,7 +124,7 @@ public:
     MemoryProfiler (rank, tag);
     }
     ~Timer() {
-        std::string tt = "~"+m_Tag;     
+        std::string tt = "~"+m_Tag;
         MemoryProfiler (m_Rank, tt.c_str());
         m_End = std::chrono::system_clock::now();
 
@@ -149,7 +149,7 @@ private:
 
 /** divide "top" elements into "upTo" non-zero segments
  *
- * 
+ *
  *
  * @param top ...  number of elements to be subdivided
  * @param upTo ... subdivide into this many different blocks
@@ -267,7 +267,7 @@ Test_adios( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
   Timer kk("ADIOS2 test. ", mpi_rank);
   {
      std::string filename = "../samples/5a_adios.bp";
-     
+
      adios2::ADIOS adios(MPI_COMM_WORLD);
      adios2::IO bpIO = adios.DeclareIO("BPDirect");
 
@@ -275,9 +275,9 @@ Test_adios( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
        std::cout<<" Applying ADIOS2 NULL ENGINE "<<std::endl;
        bpIO.SetEngine("NULL");
      }
-     
+
      adios2::Engine bpFileWriter = bpIO.Open(filename, adios2::Mode::Write);
-     
+
      for (int i=1; i<=numSteps; i++) {
        Timer newstep(" New step ", mpi_rank);
        std::ostringstream varName;
@@ -296,7 +296,7 @@ Test_adios( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
   }
 #endif
 }
-/** ... Test 1: 
+/** ... Test 1:
  *
  * .... 1D array in multiple steps, each steps is one file
  *
