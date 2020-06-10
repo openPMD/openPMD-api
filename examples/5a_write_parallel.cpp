@@ -262,7 +262,7 @@ LoadData(Series& series, const char* varName, int& mpi_size, int& mpi_rank, unsi
 void
 Test_adios( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg, int& numSteps )
 {
-#ifdef  openPMD_HAVE_ADIOS2
+#if  openPMD_HAVE_ADIOS2
   if (0 == mpi_rank)  std::cout<<"TESTING direct ADIOS2 write "<<std::endl;
   Timer kk("ADIOS2 test. ", mpi_rank);
   {
