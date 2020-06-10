@@ -48,8 +48,18 @@ int main()
         cout << "\n\t" << m.first;
     cout << '\n';
     cout << "Iteration 100 contains " << i.particles.size() << " particle species:";
-    for( auto const& ps : i.particles )
+    for( auto const& ps : i.particles ) {
         cout << "\n\t" << ps.first;
+        for( auto const& r : ps.second ) {
+            cout << "\n\t" << r.first;
+            cout << '\n';
+        }
+    }
+
+    openPMD::ParticleSpecies electrons = i.particles["electrons"];
+    std::shared_ptr<double> charge = electrons["charge"][openPMD::RecordComponent::SCALAR].loadChunk<double>();
+    series.flush();
+    cout << "And the first electron particle has a charge = " << charge.get()[0];
     cout << '\n';
 
     MeshRecordComponent E_x = i.meshes["E"]["x"];

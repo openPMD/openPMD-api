@@ -29,6 +29,16 @@ if __name__ == "__main__":
         len(i.particles)))
     for ps in i.particles:
         print("\t {0}".format(ps))
+        print("With records:")
+        for r in i.particles[ps]:
+            print("\t {0}".format(r))
+
+    # printing a scalar value
+    electrons = i.particles["electrons"]
+    charge = electrons["charge"][io.Mesh_Record_Component.SCALAR]
+    series.flush()
+    print("And the first electron particle has a charge {}"
+          .format(charge[0]))
     print("")
 
     E_x = i.meshes["E"]["x"]
