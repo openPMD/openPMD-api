@@ -42,6 +42,7 @@ Bug Fixes
 Other
 """""
 
+- CMake: require version 3.12.0+ #755
 - separate header for export macros #704
 - rename ``AccessType``/``Access_Type`` to ``Access`` #740
 - CI:
