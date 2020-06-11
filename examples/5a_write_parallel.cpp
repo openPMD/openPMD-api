@@ -134,7 +134,7 @@ public:
           return;
 
         std::cout << "  [" << m_Tag << "] took:" << secs << " seconds\n";
-    std::cout<<"     "<<m_Tag<<"  From ProgStart in seconds "<<
+        std::cout<<"     " << m_Tag <<"  From ProgStart in seconds "<<
       std::chrono::duration_cast<std::chrono::milliseconds>(m_End - m_ProgStart).count()/1000.0<<std::endl;
 
     }
@@ -326,6 +326,37 @@ Test_1( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg,
         for( int step = 1; step <= numSteps; step++ )
             LoadData(series, "var1", mpi_size, mpi_rank, bulk, numSeg, step );
     }
+}
+
+
+/** ... Test 3:
+ *
+ * .... 1D array in multiple steps, each steps is its own series, hence one file
+ *      notice multiple series (=numSteps) will be created for this test.
+ *
+ * @param mpi_size .... MPI size
+ * @param mpi_rank .... MPI rank
+ * @param bulk ........ num of elements
+ * @param numSeg ...... num of subdivition for the elements
+ * @param numSteps .... num of iterations
+ */
+void
+Test_3( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg, int& numSteps )
+{
+    if( mpi_rank == 0 )
+        std::cout << "\n==> Multistep 1D arrays with a few blocks per rank."
+                  << "  num steps: " << numSteps << std::endl;
+
+    Timer kk("Test 3: ", mpi_rank);
+    {
+        std::string filename = "../samples/5a_parallel_write_m";
+        filename.append("_%07T.bp");
+
+        for( int step = 1; step <= numSteps; step++ )	{
+	  Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
+	  LoadData(series, "var3", mpi_size, mpi_rank, bulk, numSeg, step );
+	}
+    }
 
 }
 
@@ -392,14 +423,17 @@ TestRun( int& mpi_size, int& mpi_rank, unsigned long& bulk, int which, unsigned 
         Test_1(mpi_size, mpi_rank, bulk, numSeg, numSteps);
     else if (which == 2)
         Test_2(mpi_size, mpi_rank, bulk, numSeg, numSteps);
+    else if (which == 3)
+        Test_3(mpi_size, mpi_rank, bulk, numSeg, numSteps);     
     else if (which == 0) {
         Test_adios(mpi_size, mpi_rank, bulk, numSeg, numSteps);
         Test_1(mpi_size, mpi_rank, bulk, numSeg, numSteps);
         Test_2(mpi_size, mpi_rank, bulk, numSeg, numSteps);
+        Test_3(mpi_size, mpi_rank, bulk, numSeg, numSteps);	
     } else {
         if (mpi_rank == 0)
             std::cout << " No test with number " << which <<" default to adios test."<< std::endl;
-    Test_adios(mpi_size, mpi_rank, bulk, numSeg, numSteps);
+        Test_adios(mpi_size, mpi_rank, bulk, numSeg, numSteps);
     }
 }
 
