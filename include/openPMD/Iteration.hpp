@@ -102,10 +102,9 @@ public:
     closedByWriter() const;
 
     Container< Mesh > meshes;
-    Container< ParticleSpecies > particles; // particleSpecies?
+    Container< ParticleSpecies > particles; //particleSpecies?
 
     virtual ~Iteration() = default;
-
 private:
     Iteration();
 
