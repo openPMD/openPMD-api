@@ -121,7 +121,7 @@ close_iteration_test( std::string file_ending )
     {
         // run a simplified test for Adios1 since Adios1 has issues opening
         // twice in the same process
-        REQUIRE(auxiliary::file_exists(name));
+        REQUIRE( auxiliary::file_exists( "../samples/close_iterations_0.bp" ) );
     }
     else
     {
@@ -149,7 +149,7 @@ close_iteration_test( std::string file_ending )
     {
         // run a simplified test for Adios1 since Adios1 has issues opening
         // twice in the same process
-        REQUIRE(auxiliary::file_exists(name));
+        REQUIRE( auxiliary::file_exists( "../samples/close_iterations_1.bp" ) );
     }
     else
     {
