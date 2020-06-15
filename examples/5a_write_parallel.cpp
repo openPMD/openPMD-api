@@ -147,6 +147,52 @@ private:
 };
 
 
+/** ... createData
+ *      generate a shared ptr of given size  with given type & default value
+ *
+ * @param T   ......... data type
+ * @param size ... .... data size
+ * @param val  ........ data value by default
+ *
+ */
+
+template<typename T>
+std::shared_ptr< T > createData(const unsigned long& size,  const T& val ) 
+  {
+    auto E = std::shared_ptr< T > {
+      new T[size], []( T * d ) {delete[] d;}
+    };
+
+    for(unsigned long  i = 0ul; i < size; i++ )	
+      {
+	E.get()[i] = val;
+      }
+    return E;
+  }
+
+
+/** ... Class TestInput
+ *
+ *
+ * @param mpi_size .... MPI size
+ * @param mpi_rank .... MPI rank
+ * @param bulk ........ num of elements
+ * @param numSeg ...... num of subdivition for the elements
+ * @param numSteps .... num of iterations
+ */
+class TestInput
+{
+public:
+  TestInput() =  default;
+  
+  int m_MPISize = 1;
+  int m_MPIRank = 0;
+  unsigned long m_Bulk = 1000ul; 
+  unsigned int m_Seg = 1;
+  int m_Steps = 1;
+  int m_TestNum = 1;
+};
+
 /** divide "top" elements into "upTo" non-zero segments
  *
  *
@@ -207,23 +253,20 @@ segments( unsigned long top, unsigned int upTo, int& repeats )
  *
  * @param series ..... opemPMD-api series
  * @param varName .... variable name
- * @param mpi_size ... MPI size
- * @param mpi_rank ... MPI rank
- * @param bulk ....... number of particles
- * @param numSeg ..... how many subdivision for the particles
+ * @param input ...... input parameters
  * @param step ....... iteration step
  */
 void
-LoadData(Series& series, const char* varName, int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg, int& step)
+LoadData( Series& series, const char* varName,  const TestInput& input, int& step )
 {
 
         MeshRecordComponent mymesh = series.iterations[step].meshes[varName][MeshRecordComponent::SCALAR];
         // example 1D domain decomposition in first index
         Datatype datatype = determineDatatype< double >();
-        Extent global_extent = { bulk * mpi_size };
+        Extent global_extent = { input.m_Bulk * input.m_MPISize };
         Dataset dataset = Dataset( datatype, global_extent );
 
-        if( 0 == mpi_rank )
+        if( 0 == input.m_MPIRank )
             cout << "Prepared a Dataset of size " << dataset.extent[0]
                  << " and Datatype " << dataset.dtype << "STEP : " << step << "\n";
 
@@ -231,21 +274,19 @@ LoadData(Series& series, const char* varName, int& mpi_size, int& mpi_rank, unsi
 
         {
             // many small writes
-            srand(time(NULL) * (mpi_rank+mpi_size) );
-            auto tmp = mpi_rank  + step; // ... description or better variable name missing ...
-            std::vector< unsigned long > local_bulks = segments( bulk, numSeg, tmp );
+            srand(time(NULL) * (input.m_MPIRank  + input.m_MPISize) );
+            auto  repeat = input.m_MPIRank  + step; 
+            std::vector< unsigned long > local_bulks = segments( input.m_Bulk, input.m_Seg, repeat );
+
             unsigned long counter = 0ul;
             for( unsigned long i = 0ul; i < local_bulks.size(); i++ ) {
-                Offset chunk_offset = {(bulk * mpi_rank + counter)};
+                Offset chunk_offset = {(input.m_Bulk * input.m_MPIRank + counter)};
                 Extent chunk_extent = {local_bulks[i]};
 
                 if (local_bulks[i] > 0) {
-                    double const value = double(i);
                     unsigned long local_size = local_bulks[i] ;
-                    std::shared_ptr< double > E(new double[local_size], [](double const *p){ delete[] p; });
-
-                    for( unsigned long j = 0ul; j < local_size; j++ )
-                        E.get()[j] = value;
+                    double const value = double(i);
+		    auto E = createData<double>( local_size, value ) ;
                     mymesh.storeChunk( E, chunk_offset, chunk_extent );
                 }
                 counter += local_bulks[i];
@@ -253,49 +294,103 @@ LoadData(Series& series, const char* varName, int& mpi_size, int& mpi_rank, unsi
         }
 
         {
-            Timer g("Flush", mpi_rank);
+            Timer g("Flush", input.m_MPIRank);
             series.flush();
         }
 }
 
 
+/** ... Test adios:
+ *
+ * .... Tests  through ADIOS  directly, no  openPMD-api
+ *
+ * @param input  ...... test input
+ *
+ */
+
 void
-Test_adios( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg, int& numSteps )
+Test_adios(const TestInput&  input)
 {
 #if  openPMD_HAVE_ADIOS2
-  if (0 == mpi_rank)  std::cout<<"TESTING direct ADIOS2 write "<<std::endl;
-  Timer kk("ADIOS2 test. ", mpi_rank);
+  if (0 == input.m_MPIRank)  std::cout<<"TESTING direct ADIOS2 write "<<std::endl;
+  Timer kk("ADIOS2 test. ", input.m_MPIRank);
   {
-     std::string filename = "../samples/5a_adios.bp";
-
      adios2::ADIOS adios(MPI_COMM_WORLD);
      adios2::IO bpIO = adios.DeclareIO("BPDirect");
+     std::string filename = "../samples/5a_adios.bp";
 
-     if (numSeg == 0) {
+     if (input.m_Seg == 0) {
        std::cout<<" Applying ADIOS2 NULL ENGINE "<<std::endl;
        bpIO.SetEngine("NULL");
      }
 
      adios2::Engine bpFileWriter = bpIO.Open(filename, adios2::Mode::Write);
 
-     for (int i=1; i<=numSteps; i++) {
-       Timer newstep(" New step ", mpi_rank);
+     if (input.m_Seg == 10) {
+       if (0 == input.m_MPIRank) std::cout<<"Using begin/end steps one variable"<<std::endl;
        std::ostringstream varName;
-       varName << "/data/"<<i<<"/meshes/var";
+       varName << "/data/"<<"/meshes/var";
+       adios2::Variable<double> var = bpIO.DefineVariable<double>(varName.str(),
+	 {input.m_Bulk * input.m_MPISize}, {input.m_MPIRank * input.m_Bulk}, {input.m_Bulk});
 
-       std::shared_ptr< double > E(new double[bulk], [](double const *p){ delete[] p; });
-
-       for (unsigned long k=0; k<bulk; k++)
-         E.get()[k] = (unsigned long)(5+i);;
-
-       adios2::Variable<double> var = bpIO.DefineVariable<double>(varName.str(),{bulk * mpi_size}, {mpi_rank * bulk}, {bulk});
-       bpFileWriter.Put<double>(var, E.get(), adios2::Mode::Sync);
-       bpFileWriter.PerformPuts();
+       for (int i=1; i <= input.m_Steps; i++) {
+	 bpFileWriter.BeginStep();
+	 /*
+	 std::shared_ptr< double > E(new double[input.m_Bulk], [](double const *p){ delete[] p; });
+	 for (unsigned long k=0; k<input.m_Bulk; k++)
+	   E.get()[k] = (unsigned long)(5+i);
+	 */
+	 double const value = double(i);
+	 auto E = createData<double>( input.m_Bulk, value) ;
+	 bpFileWriter.Put<double>(var, E.get(), adios2::Mode::Sync);
+	 bpFileWriter.EndStep();
+       }
+     } else if (input.m_Seg == 20) {
+       if (0 == input.m_MPIRank) std::cout<<"Using begin/end steps. Though many variables (step in var name)"<<std::endl;
+       for (int i=1; i <= input.m_Steps; i++) {
+	 bpFileWriter.BeginStep();
+	 std::ostringstream varName;
+	 varName << "/data/"<<i<<"/meshes/var";
+	 /*
+	 std::shared_ptr< double > E(new double[input.m_Bulk], [](double const *p){ delete[] p; });
+	 
+	 for (unsigned long k=0; k< input.m_Bulk; k++)
+	   E.get()[k] = (unsigned long)(5+i);;
+	 */
+	 double const value = double(i);
+	 auto E = createData<double>( input.m_Bulk, value ) ;
+	 adios2::Variable<double> var = bpIO.DefineVariable<double>(varName.str(),
+	   {input.m_Bulk * input.m_MPISize}, {input.m_MPIRank *  input.m_Bulk}, {input.m_Bulk});
+	 bpFileWriter.Put<double>(var, E.get(), adios2::Mode::Sync);
+	 bpFileWriter.EndStep();
+       }
+     } else  {
+       for (int i=1; i <= input.m_Steps; i++) {
+	 Timer newstep(" New step ", input.m_MPIRank);
+	 std::ostringstream varName;
+	 varName << "/data/"<<i<<"/meshes/var";
+	 /*
+	 std::shared_ptr< double > E(new double[input.m_Bulk], [](double const *p){ delete[] p; });
+	 
+	 for (unsigned long k=0; k<input.m_Bulk; k++)
+	   E.get()[k] = (unsigned long)(5+i);;
+	 */
+	 double const value  =  double(i);
+	 auto E = createData<double>( input.m_Bulk, value);
+	 adios2::Variable<double> var = bpIO.DefineVariable<double>(varName.str(),
+           {input.m_Bulk * input.m_MPISize}, {input.m_MPIRank * input.m_Bulk}, {input.m_Bulk});
+	   
+	 bpFileWriter.Put<double>(var, E.get(), adios2::Mode::Sync);
+	 bpFileWriter.PerformPuts();
+       }
      }
-     bpFileWriter.Close();
+
+     bpFileWriter.Close();       
   }
 #endif
 }
+
+
 /** ... Test 1:
  *
  * .... 1D array in multiple steps, each steps is one file
@@ -307,24 +402,26 @@ Test_adios( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& num
  * @param numSteps .... num of iterations
  */
 void
-Test_1( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg, int& numSteps )
+//Test_1( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg, int& numSteps )
+Test_1( const TestInput& input)
 {
-    if( mpi_rank == 0 )
+    if( 0 == input.m_MPIRank )
         std::cout << "\n==> Multistep 1D arrays with a few blocks per rank."
-                  << "  num steps: " << numSteps << std::endl;
+                  << "  num steps: " << input.m_Steps << std::endl;
 
-    Timer kk("Test 1: ", mpi_rank);
+    Timer kk("Test 1: ", input.m_MPIRank);
     {
         std::string filename = "../samples/5a_parallel_write";
         filename.append("_%07T.bp");
         Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
 
-        if( 0 == mpi_rank )
+        if( 0 == input.m_MPIRank )
             cout << "Created an empty series in parallel with "
-                 << mpi_size << " MPI ranks\n";
+                 << input.m_MPISize << " MPI ranks\n";
 
-        for( int step = 1; step <= numSteps; step++ )
-            LoadData(series, "var1", mpi_size, mpi_rank, bulk, numSeg, step );
+        for( int step = 1; step <= input.m_Steps; step++ )
+	  //LoadData(series, "var1", mpi_size, mpi_rank, bulk, numSeg, step );
+	  LoadData(series, "var1", input, step);
     }
 }
 
@@ -341,20 +438,22 @@ Test_1( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg,
  * @param numSteps .... num of iterations
  */
 void
-Test_3( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg, int& numSteps )
+//Test_3( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg, int& numSteps )
+Test_3( const TestInput& input)
 {
-    if( mpi_rank == 0 )
+    if( 0 == input.m_MPIRank )
         std::cout << "\n==> Multistep 1D arrays with a few blocks per rank."
-                  << "  num steps: " << numSteps << std::endl;
+                  << "  num steps: " << input.m_Steps << std::endl;
 
-    Timer kk("Test 3: ", mpi_rank);
+    Timer kk("Test 3: ", input.m_MPIRank);
     {
         std::string filename = "../samples/5a_parallel_write_m";
         filename.append("_%07T.bp");
 
-        for( int step = 1; step <= numSteps; step++ )	{
+        for( int step = 1; step <= input.m_Steps; step++ )	{
 	  Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
-	  LoadData(series, "var3", mpi_size, mpi_rank, bulk, numSeg, step );
+	  //LoadData(series, "var3", mpi_size, mpi_rank, bulk, numSeg, step );
+	  LoadData(series, "var3", input, step);
 	}
     }
 
@@ -374,23 +473,25 @@ Test_3( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg,
  * @param numSteps ... number of iterations
  */
 void
-Test_2( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg, int& numSteps )
+//Test_2( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg, int& numSteps )
+Test_2(const TestInput& input)
 {
-    if (mpi_rank == 0)
+    if (0 == input.m_MPIRank)
         std::cout << "\n==> One file with Multistep 1D arrays with a few blocks per rank."
-                  << "  num steps: " << numSteps << std::endl;
+                  << "  num steps: " << input.m_Steps << std::endl;
 
-    Timer kk("Test 2: ", mpi_rank);
+    Timer kk("Test 2: ", input.m_MPIRank); 
     {
         std::string filename = "../samples/5a_parallel_write_2.bp";
         Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
 
-        if( 0 == mpi_rank )
+        if( 0 == input.m_MPIRank )
             cout << "Created an empty series in parallel with "
-                 << mpi_size << " MPI ranks\n";
+                 << input.m_MPISize << " MPI ranks\n";
 
-        for( int step =1; step<=numSteps; step++ )
-            LoadData( series, "var2", mpi_size, mpi_rank, bulk, numSeg, step );
+        for( int step =1; step <= input.m_Steps; step++ )
+	  //LoadData( series, "var2", mpi_size, mpi_rank, bulk, numSeg, step );
+	  LoadData( series, "var2", input, step);
     }
 
 }
@@ -407,33 +508,35 @@ Test_2( int& mpi_size, int& mpi_rank, unsigned long& bulk, unsigned int& numSeg,
  * @param numSteps ... number of iterations,  input for individual test
  */
 void
-TestRun( int& mpi_size, int& mpi_rank, unsigned long& bulk, int which, unsigned int numSeg, int numSteps )
+//TestRun( int& mpi_size, int& mpi_rank, unsigned long& bulk, int which, unsigned int numSeg, int numSteps 
+TestRun(const  TestInput& input)
 {
-    if (which < 0) {
-        if( mpi_rank == 0 )
+    if (input.m_TestNum < 0) {
+        if( input.m_MPIRank == 0 )
             std::cout << " No negative  tests. " << std::endl;
         return;
     }
 
-    if (mpi_rank == 0)
-        std::cout << "Test: " << which << " Per Rank particle size:"
-                  << bulk << " seg=" << numSeg << std::endl;
+    if ( input.m_MPIRank == 0 )
+        std::cout << "Test: " << input.m_TestNum << " Per Rank particle size:"
+                  << input.m_Bulk << " seg=" << input.m_Seg << std::endl;
 
-    if (which == 1)
-        Test_1(mpi_size, mpi_rank, bulk, numSeg, numSteps);
-    else if (which == 2)
-        Test_2(mpi_size, mpi_rank, bulk, numSeg, numSteps);
-    else if (which == 3)
-        Test_3(mpi_size, mpi_rank, bulk, numSeg, numSteps);     
-    else if (which == 0) {
-        Test_adios(mpi_size, mpi_rank, bulk, numSeg, numSteps);
-        Test_1(mpi_size, mpi_rank, bulk, numSeg, numSteps);
-        Test_2(mpi_size, mpi_rank, bulk, numSeg, numSteps);
-        Test_3(mpi_size, mpi_rank, bulk, numSeg, numSteps);	
+    if ( 1 == input.m_TestNum )
+        Test_1(input);
+    else if (2 == input.m_TestNum)
+        Test_2(input);
+    else if (3 == input.m_TestNum)
+        Test_3(input);
+    else if (10 == input.m_TestNum) {
+      //Test_adios(mpi_size, mpi_rank, bulk, numSeg, numSteps);
+        Test_adios(input);
+        Test_1(input);
+        Test_2(input);
+        Test_3(input); 
     } else {
-        if (mpi_rank == 0)
-            std::cout << " No test with number " << which <<" default to adios test."<< std::endl;
-        Test_adios(mpi_size, mpi_rank, bulk, numSeg, numSteps);
+        if ( 0 == input.m_MPIRank )
+            std::cout << " No test with number " << input.m_TestNum <<" default to adios test."<< std::endl;
+        Test_adios(input);
     }
 }
 
@@ -446,32 +549,34 @@ main( int argc, char *argv[] )
 {
     MPI_Init( &argc, &argv );
 
-    int mpi_size;
-    int mpi_rank;
+    TestInput input;
+    //int mpi_size;
+    //int mpi_rank;
 
-    MPI_Comm_size( MPI_COMM_WORLD, &mpi_size );
-    MPI_Comm_rank( MPI_COMM_WORLD, &mpi_rank );
+    MPI_Comm_size( MPI_COMM_WORLD, &input.m_MPISize );
+    MPI_Comm_rank( MPI_COMM_WORLD, &input.m_MPIRank );
 
-    Timer g( "  Main  ", mpi_rank );
+    Timer g( "  Main  ", input.m_MPIRank );
 
-    unsigned long bulk = 1000ul; // ... default num elements
-    int testNum = 0; // .... default test num to 0 to run all, for code coverage
-    int numSteps = 5; // ... default num iterations
+    //unsigned long bulk = 1000ul; // ... default num elements
+    //int testNum = 0; // .... default test num to 0 to run all, for code coverage
+    //int numSteps = 5; // ... default num iterations
 
-    unsigned int numSeg=1;
+    //unsigned int numSeg=1;
 
     if( argc >= 2 )
-        testNum = atoi( argv[1] );
+        input.m_TestNum = atoi( argv[1] );
     if( argc >= 3 )
-        bulk = strtoul( argv[2], NULL, 0 );
+        input.m_Bulk = strtoul( argv[2], NULL, 0 );
 
     if( argc >= 4 )
-        numSeg = atoi( argv[3] );
+        input.m_Seg = atoi( argv[3] );
 
     if( argc >= 5 )
-        numSteps = atoi( argv[4] );
+        input.m_Steps = atoi( argv[4] );
 
-    TestRun( mpi_size, mpi_rank, bulk, testNum, numSeg, numSteps );
+    //TestRun(mpi_size, mpi_rank, bulk, testNum, numSeg, numSteps );
+    TestRun(input);
 
     MPI_Finalize();
 
