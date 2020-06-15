@@ -99,7 +99,7 @@ Our manual shows full [read & write examples](https://openpmd-api.readthedocs.io
 ## Dependencies
 
 Required:
-* CMake 3.11.0+
+* CMake 3.12.0+
 * C++11 capable compiler, e.g. g++ 4.8+, clang 3.9+, VS 2015+
 
 Shipped internally in `share/openPMD/thirdParty/`:
