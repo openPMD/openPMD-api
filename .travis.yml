@@ -17,6 +17,7 @@ env:
     - SPACK_ROOT: $HOME/.cache/spack
     - PATH: $PATH:$HOME/.cache/spack/bin
     - BUILD_TYPE: "Debug"
+    - ADIOS2_VERSION=@2.6.0
     - PYBIND11_VERSION=@2.3.0
     - USE_SHARED: ON
 
@@ -196,13 +197,16 @@ jobs:
             $EXTRA_CMAKE_FLAGS
             -DCMAKE_INSTALL_PREFIX=$HOME/openPMD-test-install
             $TRAVIS_BUILD_DIR
-        - make -j 2
+        - make VERBOSE=ON
         # run tests
         #   pybind11: work-around for missing symbols with sanitizers
         #   /usr/local/clang-7.0.0/lib/clang/7.0.0/lib/linux/libclang_rt.asan-x86_64.so
         #   /usr/local/clang-7.0.0/lib/clang/7.0.0/lib/linux/libclang_rt.ubsan_minimal-x86_64.so
         - if [ "$USE_PYTHON" == "ON" ] && [ ! -z ${ASAN_OPTIONS+x} ]; then
             export LD_PRELOAD=/usr/local/clang-7.0.0/lib/clang/7.0.0/lib/linux/libclang_rt.asan-x86_64.so;
+          fi
+        - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
+            otool -l /Users/travis/build/bin/openpmd-ls;
           fi
         - CTEST_OUTPUT_ON_FAILURE=1 travis_wait make test
         - if [ ! -z ${LD_PRELOAD+x} ]; then
@@ -745,6 +749,10 @@ install:
       spack load adios2$ADIOS2_VERSION $CXXSPEC $SPACK_VAR_MPI;
     fi
   - spack clean -a
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
+      ls -hal /Users/travis/.cache/spack/opt/spack/darwin-*/apple-clang-*/adios2-2.6.0-*/lib/*;
+      otool -l /Users/travis/.cache/spack/opt/spack/darwin-*/apple-clang-*/adios2-2.6.0-*/lib/libadios2_cxx11.2.dylib;
+    fi
 
 before_cache:
   # https://stackoverflow.com/questions/39930171/cache-brew-builds-with-travis-ci
