@@ -591,9 +591,13 @@ TestRun(const  TestInput& input)
         Test_2(input);
         Test_3(input);
     } else if (10 == input.m_TestNum) {
+#if openPMD_HAVE_ADIOS2
       Test_adios_1v_nStep(input);
+#endif
     } else if (20 == input.m_TestNum) {
+#if openPMD_HAVE_ADIOS2
       Test_adios_nv_nStep(input);
+#endif
     } else {
         if ( 0 == input.m_MPIRank )
             std::cout << " No test with number " << input.m_TestNum <<". Exitingx"<< std::endl;
