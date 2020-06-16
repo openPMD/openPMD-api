@@ -583,7 +583,7 @@ TestRun(const  TestInput& input)
 #endif
         Test_1(input);
         Test_2(input);
-        Test_3(input);	
+        Test_3(input);
     } else if (10 == input.m_TestNum) {
 #if openPMD_HAVE_ADIOS2
       Test_adios_1v_nStep(input);
