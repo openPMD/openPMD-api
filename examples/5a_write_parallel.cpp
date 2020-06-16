@@ -343,10 +343,10 @@ LoadData_ADIOS(adios2::Engine& bpFileWriter,  adios2::Variable<T>&  var,  const 
  * @param input  ...... test input
  *
  */
+#if  openPMD_HAVE_ADIOS2
 void
 Test_adios_1v_nStep(const TestInput&  input)
 {
-#if  openPMD_HAVE_ADIOS2
   if (0 == input.m_MPIRank)  std::cout<<"TESTING direct ADIOS2 write "<<std::endl;
   Timer kk("ADIOS2 test: N Steps per variable", input.m_MPIRank);
   {
@@ -375,8 +375,8 @@ Test_adios_1v_nStep(const TestInput&  input)
      }
      bpFileWriter.Close();
   }
-#endif
 }
+#endif
 
 
 /** Test adios write: Use  a different var name for each step
