@@ -386,10 +386,10 @@ Test_adios_1v_nStep(const TestInput&  input)
  * @param input  ...... test input
  *
  */
+#if  openPMD_HAVE_ADIOS2
 void
 Test_adios_nv_nStep(const TestInput&  input)
 {
-#if  openPMD_HAVE_ADIOS2
   if (0 == input.m_MPIRank)  std::cout<<"TESTING direct ADIOS2 write "<<std::endl;
   Timer kk("ADIOS2 test. 1v for Each timestep", input.m_MPIRank);
   {
@@ -417,8 +417,8 @@ Test_adios_nv_nStep(const TestInput&  input)
      }
      bpFileWriter.Close();
   }
-#endif
 }
+#endif
 
 /** Test adios, no step:(this is proven to be slow and OOM prone)
  *
@@ -427,10 +427,10 @@ Test_adios_nv_nStep(const TestInput&  input)
  * @param input  ...... test input
  *
  */
+#if  openPMD_HAVE_ADIOS2
 void
 Test_adios_noStep(const TestInput&  input)
 {
-#if  openPMD_HAVE_ADIOS2
   if (0 == input.m_MPIRank)  std::cout<<"TESTING direct ADIOS2 write "<<std::endl;
   Timer kk("ADIOS2 test. No step", input.m_MPIRank);
   {
@@ -459,8 +459,8 @@ Test_adios_noStep(const TestInput&  input)
 
      bpFileWriter.Close();
   }
-#endif
 }
+#endif
 
 
 /** ... Test 1 (this is OOM prone and is discouraged)
@@ -580,12 +580,13 @@ TestRun(const  TestInput& input)
     else if (3 == input.m_TestNum)
         Test_3(input);
     else if (0 == input.m_TestNum) {
+#if openPMD_HAVE_ADIOS2
       // for code coverage
         Test_adios_1v_nStep(input);
         Test_adios_nv_nStep(input);
 
         Test_adios_noStep(input);
-
+#endif
         Test_1(input);
         Test_2(input);
         Test_3(input);
