@@ -563,12 +563,6 @@ Test_2(const TestInput& input)
 void
 TestRun(const  TestInput& input)
 {
-    if (input.m_TestNum < 0) {
-        if( input.m_MPIRank == 0 )
-            std::cout << " No negative  tests. " << std::endl;
-        return;
-    }
-
     if ( input.m_MPIRank == 0 )
         std::cout << "Test: " << input.m_TestNum << " Per Rank particle size:"
                   << input.m_Bulk << " seg=" << input.m_Seg << std::endl;
@@ -580,8 +574,8 @@ TestRun(const  TestInput& input)
     else if (3 == input.m_TestNum)
         Test_3(input);
     else if (0 == input.m_TestNum) {
+      // for code coverage only
 #if openPMD_HAVE_ADIOS2
-      // for code coverage
         Test_adios_1v_nStep(input);
         Test_adios_nv_nStep(input);
 
@@ -589,7 +583,7 @@ TestRun(const  TestInput& input)
 #endif
         Test_1(input);
         Test_2(input);
-        Test_3(input);
+        Test_3(input);	
     } else if (10 == input.m_TestNum) {
 #if openPMD_HAVE_ADIOS2
       Test_adios_1v_nStep(input);
@@ -632,6 +626,17 @@ main( int argc, char *argv[] )
         input.m_Steps = atoi( argv[4] );
 
     TestRun(input);
+
+    if (argc == 1) {
+      input.m_TestNum = 10;
+      TestRun(input);
+      input.m_TestNum = 20;
+      TestRun(input);
+      input.m_TestNum = 30;
+      TestRun(input);
+      input.m_Seg = 5;
+      TestRun(input);
+    }
 
     MPI_Finalize();
 
