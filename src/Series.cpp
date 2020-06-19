@@ -563,7 +563,7 @@ Series::flushFileBased()
             {
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
-                // verify that there have been no further access
+                // verify that there have been no further accesses
                 if( !i.second.verifyClosed() )
                 {
                     throw std::runtime_error(
@@ -591,7 +591,7 @@ Series::flushFileBased()
             {
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
-                // verify that there have been no further access
+                // verify that there have been no further accesses
                 if (!i.second.written)
                 {
                     throw std::runtime_error(
@@ -646,7 +646,23 @@ Series::flushGroupBased()
 {
     if(IOHandler->m_frontendAccess == Access::READ_ONLY )
         for( auto& i : iterations )
+        {
+            if ( *i.second.skipFlush )
+            {
+                // file corresponding with the iteration has previously been
+                // closed and fully flushed
+                // verify that there have been no further accesses
+                if( !i.second.verifyClosed() )
+                {
+                    throw std::runtime_error(
+                        "[Series] Illegal access to iteration " +
+                        std::to_string( i.first ) +
+                        " that has been closed previously." );
+                }
+                continue;
+            }
             i.second.flush();
+        }
     else
     {
         if( !written )
@@ -660,8 +676,24 @@ Series::flushGroupBased()
 
         for( auto& i : iterations )
         {
-            if( *i.second.skipFlush )
+            if ( *i.second.skipFlush )
             {
+                // file corresponding with the iteration has previously been
+                // closed and fully flushed
+                // verify that there have been no further accesses
+                if (!i.second.written)
+                {
+                    throw std::runtime_error(
+                        "[Series] Closed iteration has not been written. This "
+                        "is an internal error.");
+                }
+                if( !i.second.verifyClosed() )
+                {
+                    throw std::runtime_error(
+                        "[Series] Illegal access to iteration " +
+                        std::to_string( i.first ) +
+                        " that has been closed previously." );
+                }
                 continue;
             }
             if( !i.second.written )
