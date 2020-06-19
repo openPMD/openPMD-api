@@ -566,10 +566,27 @@ Series::flushFileBased()
         {
             if ( *i.second.skipFlush )
             {
+                // file corresponding with the iteration has previously been
+                // closed and fully flushed
+                // verify that there have been no further access
+                if (!i.second.written)
+                {
+                    throw std::runtime_error(
+                        "[Series] Closed iteration has not been written. This "
+                        "is an internal error.");
+                }
+                if (i.second.dirty)
+                {
+                    throw std::runtime_error(
+                        "[Series] Illegal access to iteration with "
+                        "number " + std::to_string(
+                            i.first) + " that has been closed previously.");
+                }
                 continue;
             }
             /* as there is only one series,
-             * emulate the file belonging to each iteration as not yet written */
+             * emulate the file belonging to each iteration as not yet written
+             */
             written = false;
             iterations.written = false;
 
@@ -584,7 +601,7 @@ Series::flushFileBased()
 
             flushAttributes();
 
-            if ( i.second.closed( ) )
+            if ( i.second.closed( ) && !*i.second.skipFlush )
             {
                 Parameter< Operation::CLOSE_FILE > fClose;
                 IOHandler->enqueue( IOTask( &i.second, std::move( fClose ) ) );
