@@ -575,12 +575,12 @@ Series::flushFileBased()
                         "[Series] Closed iteration has not been written. This "
                         "is an internal error.");
                 }
-                if (i.second.dirty)
+                if( !i.second.verifyClosed() )
                 {
                     throw std::runtime_error(
-                        "[Series] Illegal access to iteration with "
-                        "number " + std::to_string(
-                            i.first) + " that has been closed previously.");
+                        "[Series] Illegal access to iteration with number " +
+                        std::to_string( i.first ) +
+                        " that has been closed previously." );
                 }
                 continue;
             }

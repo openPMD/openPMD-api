@@ -143,4 +143,21 @@ ParticleSpecies::flush(std::string const& path)
         }
     }
 }
-} // openPMD
+
+bool
+ParticleSpecies::verifyClosed() const
+{
+    if( dirty )
+    {
+        return false;
+    }
+    for( auto const & pair : *this )
+    {
+        if( !pair.second.verifyClosed() )
+        {
+            return false;
+        }
+    }
+    return true;
+}
+} // namespace openPMD

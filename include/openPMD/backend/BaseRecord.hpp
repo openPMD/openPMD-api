@@ -94,10 +94,23 @@ protected:
     std::shared_ptr< bool > m_containsScalar;
 
 private:
-    void flush(std::string const&) final;
-    virtual void flush_impl(std::string const&) = 0;
-    virtual void read() = 0;
-};  //BaseRecord
+    void
+    flush( std::string const & ) final;
+    virtual void
+    flush_impl( std::string const & ) = 0;
+    virtual void
+    read() = 0;
+
+    /**
+     * @brief Verify that a base record in a closed iteration has not
+     *        been wrongly accessed.
+     *
+     * @return true If closed iteration had no wrong accesses.
+     * @return false Otherwise.
+     */
+    bool
+    verifyClosed() const;
+}; // BaseRecord
 
 
 template< typename T_elem >
@@ -295,4 +308,22 @@ BaseRecord< T_elem >::flush(std::string const& name)
 
     this->flush_impl(name);
 }
-} // openPMD
+
+template< typename T_elem >
+inline bool
+BaseRecord< T_elem >::verifyClosed() const
+{
+    if( Attributable::dirty )
+    {
+        return false;
+    }
+    for( auto const & pair : *this )
+    {
+        if( !pair.second.verifyClosed() )
+        {
+            return false;
+        }
+    }
+    return true;
+}
+} // namespace openPMD

@@ -265,5 +265,14 @@ RecordComponent::readBase()
 
     readAttributes();
 }
-} // openPMD
 
+bool
+RecordComponent::verifyClosed() const
+{
+    if( Attributable::dirty )
+    {
+        return false;
+    }
+    return m_chunks->empty();
+}
+} // namespace openPMD

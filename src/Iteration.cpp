@@ -407,16 +407,40 @@ Iteration::linkHierarchy(std::shared_ptr< Writable > const& w)
     particles.linkHierarchy(m_writable);
 }
 
+bool
+Iteration::verifyClosed() const
+{
+    if( dirty )
+    {
+        return false;
+    }
+    for( auto const & pair : particles )
+    {
+        if( !pair.second.verifyClosed() )
+        {
+            return false;
+        }
+    }
+    for( auto const & pair : meshes )
+    {
+        if( !pair.second.verifyClosed() )
+        {
+            return false;
+        }
+    }
+    return true;
+}
 
-template
-float Iteration::time< float >() const;
-template
-double Iteration::time< double >() const;
-template
-long double Iteration::time< long double >() const;
 
-template
-float Iteration::dt< float >() const;
+template float
+Iteration::time< float >() const;
+template double
+Iteration::time< double >() const;
+template long double
+Iteration::time< long double >() const;
+
+template float
+Iteration::dt< float >() const;
 template
 double Iteration::dt< double >() const;
 template

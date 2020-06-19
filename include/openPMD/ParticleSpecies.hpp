@@ -43,8 +43,20 @@ public:
 private:
     ParticleSpecies() = default;
 
-    void read();
-    void flush(std::string const &) override;
+    void
+    read();
+    void
+    flush( std::string const & ) override;
+
+    /**
+     * @brief Verify that a particle species in a closed iteration has not
+     *        been wrongly accessed.
+     *
+     * @return true If closed iteration had no wrong accesses.
+     * @return false Otherwise.
+     */
+    bool
+    verifyClosed() const;
 };
 
 namespace traits

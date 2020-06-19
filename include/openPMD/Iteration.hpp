@@ -127,11 +127,20 @@ private:
      */
     std::shared_ptr< bool > skipFlush = std::make_shared< bool >( false );
 
-    virtual void linkHierarchy(std::shared_ptr< Writable > const& w);
-};  //Iteration
+    virtual void
+    linkHierarchy( std::shared_ptr< Writable > const & w );
 
-extern template
-float
+    /**
+     * @brief Verify that a closed iteration has not been wrongly accessed.
+     *
+     * @return true If closed iteration had no wrong accesses.
+     * @return false Otherwise.
+     */
+    bool
+    verifyClosed() const;
+}; // Iteration
+
+extern template float
 Iteration::time< float >() const;
 
 extern template
