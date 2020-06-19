@@ -558,7 +558,23 @@ Series::flushFileBased()
 
     if(IOHandler->m_frontendAccess == Access::READ_ONLY )
         for( auto& i : iterations )
+        {
+            if ( *i.second.skipFlush )
+            {
+                // file corresponding with the iteration has previously been
+                // closed and fully flushed
+                // verify that there have been no further access
+                continue;
+            }
             i.second.flush();
+            if ( i.second.closed( ) && !*i.second.skipFlush )
+            {
+                Parameter< Operation::CLOSE_FILE > fClose;
+                IOHandler->enqueue( IOTask( &i.second, std::move( fClose ) ) );
+                *i.second.skipFlush = true;
+            }
+            IOHandler->flush();
+        }
     else
     {
         bool allDirty = dirty;
