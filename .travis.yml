@@ -744,6 +744,10 @@ install:
       spack load adios2$ADIOS2_VERSION $CXXSPEC $SPACK_VAR_MPI;
     fi
   - spack clean -a
+  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
+      ls -hal /Users/travis/.cache/spack/opt/spack/darwin-*/clang-*/adios2-2.5.0-*/lib/*;
+      otool -l /Users/travis/.cache/spack/opt/spack/darwin-*/clang-*/adios2-2.5.0-*/lib/libadios2*.dylib;
+    fi
 
 before_cache:
   # https://stackoverflow.com/questions/39930171/cache-brew-builds-with-travis-ci
