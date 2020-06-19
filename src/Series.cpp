@@ -564,6 +564,13 @@ Series::flushFileBased()
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
                 // verify that there have been no further access
+                if( !i.second.verifyClosed() )
+                {
+                    throw std::runtime_error(
+                        "[Series] Illegal access to iteration " +
+                        std::to_string( i.first ) +
+                        " that has been closed previously." );
+                }
                 continue;
             }
             i.second.flush();
@@ -594,7 +601,7 @@ Series::flushFileBased()
                 if( !i.second.verifyClosed() )
                 {
                     throw std::runtime_error(
-                        "[Series] Illegal access to iteration with number " +
+                        "[Series] Illegal access to iteration " +
                         std::to_string( i.first ) +
                         " that has been closed previously." );
                 }

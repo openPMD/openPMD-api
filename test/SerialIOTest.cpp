@@ -142,7 +142,11 @@ close_iteration_test( std::string file_ending )
         auto E_x = it1.meshes[ "E" ][ "x" ];
         E_x.resetDataset( { Datatype::INT, { 2, 2 } } );
         E_x.storeChunk( data, { 0, 0 }, { 2, 2 } );
-        it1.close(/* flush = */ true);
+        it1.close( /* flush = */ true );
+
+        // illegally access iteration after closing
+        E_x.storeChunk( data, { 0, 0 }, { 2, 2 } );
+        REQUIRE_THROWS( write.flush() );
     }
 
     if (isAdios1)
@@ -162,6 +166,8 @@ close_iteration_test( std::string file_ending )
         {
             REQUIRE( data[ i ] == chunk.get()[ i ] );
         }
+        auto read_again = E_x_read.loadChunk< int >( { 0, 0 }, { 2, 2 } );
+        REQUIRE_THROWS( read.flush() );
     }
 }
 
