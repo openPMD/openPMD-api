@@ -559,7 +559,7 @@ Series::flushFileBased()
     if(IOHandler->m_frontendAccess == Access::READ_ONLY )
         for( auto& i : iterations )
         {
-            if ( *i.second.skipFlush )
+            if ( *i.second.m_closedInBackend )
             {
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
@@ -574,11 +574,11 @@ Series::flushFileBased()
                 continue;
             }
             i.second.flush();
-            if ( i.second.closed( ) && !*i.second.skipFlush )
+            if ( i.second.closed( ) && !*i.second.m_closedInBackend )
             {
                 Parameter< Operation::CLOSE_FILE > fClose;
                 IOHandler->enqueue( IOTask( &i.second, std::move( fClose ) ) );
-                *i.second.skipFlush = true;
+                *i.second.m_closedInBackend = true;
             }
             IOHandler->flush();
         }
@@ -587,7 +587,7 @@ Series::flushFileBased()
         bool allDirty = dirty;
         for( auto& i : iterations )
         {
-            if ( *i.second.skipFlush )
+            if ( *i.second.m_closedInBackend )
             {
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
@@ -624,11 +624,11 @@ Series::flushFileBased()
 
             flushAttributes();
 
-            if ( i.second.closed( ) && !*i.second.skipFlush )
+            if ( i.second.closed( ) && !*i.second.m_closedInBackend )
             {
                 Parameter< Operation::CLOSE_FILE > fClose;
                 IOHandler->enqueue( IOTask( &i.second, std::move( fClose ) ) );
-                *i.second.skipFlush = true;
+                *i.second.m_closedInBackend = true;
             }
 
             IOHandler->flush();
@@ -647,7 +647,7 @@ Series::flushGroupBased()
     if(IOHandler->m_frontendAccess == Access::READ_ONLY )
         for( auto& i : iterations )
         {
-            if ( *i.second.skipFlush )
+            if ( *i.second.m_closedInBackend )
             {
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
@@ -676,7 +676,7 @@ Series::flushGroupBased()
 
         for( auto& i : iterations )
         {
-            if ( *i.second.skipFlush )
+            if ( *i.second.m_closedInBackend )
             {
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
