@@ -114,19 +114,21 @@ private:
     void
     read();
 
-    /*
-     * Indicates that an iteration has been logically closed in the frontend,
-     * but not necessarily yet in the backend.
-     * Will be propagated to the backend upon next flush.
-     */
-    std::shared_ptr< bool > m_closedInFrontend =
-        std::make_shared< bool >( false );
+    enum class CloseStatus
+    {
+        Open,
+        ClosedInFrontend,
+        ClosedInBackend
+    };
 
     /*
-     * Whether this iteration has been closed in the backend.
+     * An iteration may be logically closed in the frontend,
+     * but not necessarily yet in the backend.
+     * Will be propagated to the backend upon next flush.
+     * Store the current status.
      */
-    std::shared_ptr< bool > m_closedInBackend =
-        std::make_shared< bool >( false );
+    std::shared_ptr< CloseStatus > m_closed =
+        std::make_shared< CloseStatus >( CloseStatus::Open );
 
     virtual void
     linkHierarchy( std::shared_ptr< Writable > const & w );

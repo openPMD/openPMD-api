@@ -559,7 +559,7 @@ Series::flushFileBased()
     if(IOHandler->m_frontendAccess == Access::READ_ONLY )
         for( auto& i : iterations )
         {
-            if ( *i.second.m_closedInBackend )
+            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInBackend )
             {
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
@@ -574,11 +574,11 @@ Series::flushFileBased()
                 continue;
             }
             i.second.flush();
-            if ( i.second.closed( ) && !*i.second.m_closedInBackend )
+            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
             {
                 Parameter< Operation::CLOSE_FILE > fClose;
                 IOHandler->enqueue( IOTask( &i.second, std::move( fClose ) ) );
-                *i.second.m_closedInBackend = true;
+                *i.second.m_closed = Iteration::CloseStatus::ClosedInBackend;
             }
             IOHandler->flush();
         }
@@ -587,7 +587,7 @@ Series::flushFileBased()
         bool allDirty = dirty;
         for( auto& i : iterations )
         {
-            if ( *i.second.m_closedInBackend )
+            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInBackend )
             {
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
@@ -624,11 +624,11 @@ Series::flushFileBased()
 
             flushAttributes();
 
-            if ( i.second.closed( ) && !*i.second.m_closedInBackend )
+            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
             {
                 Parameter< Operation::CLOSE_FILE > fClose;
                 IOHandler->enqueue( IOTask( &i.second, std::move( fClose ) ) );
-                *i.second.m_closedInBackend = true;
+                *i.second.m_closed = Iteration::CloseStatus::ClosedInBackend;
             }
 
             IOHandler->flush();
@@ -645,9 +645,9 @@ void
 Series::flushGroupBased()
 {
     if(IOHandler->m_frontendAccess == Access::READ_ONLY )
-        for( auto& i : iterations )
+        for( auto & i : iterations )
         {
-            if ( *i.second.m_closedInBackend )
+            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInBackend )
             {
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
@@ -674,9 +674,9 @@ Series::flushGroupBased()
 
         iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
 
-        for( auto& i : iterations )
+        for( auto & i : iterations )
         {
-            if ( *i.second.m_closedInBackend )
+            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInBackend )
             {
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed

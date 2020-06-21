@@ -41,8 +41,7 @@ Iteration::Iteration( Iteration const & i )
     : Attributable{ i }
     , meshes{ i.meshes }
     , particles{ i.particles }
-    , m_closedInFrontend{ i.m_closedInFrontend }
-    , m_closedInBackend{ i.m_closedInBackend }
+    , m_closed{ i.m_closed }
 {
     IOHandler = i.IOHandler;
     parent = i.parent;
@@ -59,8 +58,7 @@ Iteration& Iteration::operator=(Iteration const& i)
     particles = i.particles;
     IOHandler = i.IOHandler;
     parent = i.parent;
-    m_closedInFrontend = i.m_closedInFrontend;
-    m_closedInBackend = i.m_closedInBackend;
+    m_closed = i.m_closed;
     meshes.IOHandler = IOHandler;
     meshes.parent = this->m_writable.get();
     particles.IOHandler = IOHandler;
@@ -108,7 +106,7 @@ Iteration::close( bool _flush )
     {
         setAttribute( "closed", true );
     }
-    *m_closedInFrontend = true;
+    *m_closed = CloseStatus::ClosedInFrontend;
     if( _flush )
     {
         Series * s = dynamic_cast< Series * >(
@@ -121,7 +119,7 @@ Iteration::close( bool _flush )
 bool
 Iteration::closed() const
 {
-    return *m_closedInFrontend;
+    return *m_closed != CloseStatus::Open;
 }
 
 bool
