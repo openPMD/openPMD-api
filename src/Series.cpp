@@ -369,10 +369,10 @@ Series::flush()
     {
         using IE = IterationEncoding;
         case IE::fileBased:
-            flushFileBased();
+            flushFileBased( iterations );
             break;
         case IE::groupBased:
-            flushGroupBased();
+            flushGroupBased( iterations );
             break;
     }
 
@@ -550,14 +550,16 @@ Series::initDefaults()
     // TODO Potentially warn on flush if software and author are not user-provided (defaulted)
 }
 
+template< typename IterationsContainer >
 void
-Series::flushFileBased()
+Series::flushFileBased( IterationsContainer && iterationsToFlush )
 {
-    if( iterations.empty() )
-        throw std::runtime_error("fileBased output can not be written with no iterations.");
+    if( iterationsToFlush.empty() )
+        throw std::runtime_error(
+            "fileBased output can not be written with no iterations." );
 
-    if(IOHandler->m_frontendAccess == Access::READ_ONLY )
-        for( auto& i : iterations )
+    if( IOHandler->m_frontendAccess == Access::READ_ONLY )
+        for( auto & i : iterationsToFlush )
         {
             if( *i.second.m_closed == Iteration::CloseStatus::ClosedInBackend )
             {
@@ -567,9 +569,8 @@ Series::flushFileBased()
                 if( !i.second.verifyClosed() )
                 {
                     throw std::runtime_error(
-                        "[Series] Illegal access to iteration " +
-                        std::to_string( i.first ) +
-                        " that has been closed previously." );
+                        "[Series] Detected illegal access to iteration that "
+                        "has been closed previously." );
                 }
                 continue;
             }
@@ -585,7 +586,7 @@ Series::flushFileBased()
     else
     {
         bool allDirty = dirty;
-        for( auto& i : iterations )
+        for( auto & i : iterationsToFlush )
         {
             if( *i.second.m_closed == Iteration::CloseStatus::ClosedInBackend )
             {
@@ -601,9 +602,8 @@ Series::flushFileBased()
                 if( !i.second.verifyClosed() )
                 {
                     throw std::runtime_error(
-                        "[Series] Illegal access to iteration " +
-                        std::to_string( i.first ) +
-                        " that has been closed previously." );
+                        "[Series] Detected illegal access to iteration that "
+                        "has been closed previously." );
                 }
                 continue;
             }
@@ -641,11 +641,16 @@ Series::flushFileBased()
     }
 }
 
+template void
+Series::flushFileBased< std::map< uint64_t, Iteration > & >(
+    std::map< uint64_t, Iteration > & );
+
+template< typename IterationsContainer >
 void
-Series::flushGroupBased()
+Series::flushGroupBased( IterationsContainer && iterationsToFlush )
 {
-    if(IOHandler->m_frontendAccess == Access::READ_ONLY )
-        for( auto & i : iterations )
+    if( IOHandler->m_frontendAccess == Access::READ_ONLY )
+        for( auto & i : iterationsToFlush )
         {
             if( *i.second.m_closed == Iteration::CloseStatus::ClosedInBackend )
             {
@@ -672,9 +677,9 @@ Series::flushGroupBased()
             IOHandler->enqueue(IOTask(this, fCreate));
         }
 
-        iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
+        iterations.flush( auxiliary::replace_first( basePath(), "%T/", "" ) );
 
-        for( auto & i : iterations )
+        for( auto & i : iterationsToFlush )
         {
             if( *i.second.m_closed == Iteration::CloseStatus::ClosedInBackend )
             {
@@ -707,6 +712,10 @@ Series::flushGroupBased()
         flushAttributes();
     }
 }
+
+template void
+Series::flushGroupBased< std::map< uint64_t, Iteration > & >(
+    std::map< uint64_t, Iteration > & );
 
 void
 Series::flushMeshesPath()

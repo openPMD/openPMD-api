@@ -261,9 +261,12 @@ OPENPMD_private:
     struct ParsedInput;
     std::unique_ptr< ParsedInput > parseInput(std::string);
     void init(std::shared_ptr< AbstractIOHandler >, std::unique_ptr< ParsedInput >);
-    void initDefaults();
-    void flushFileBased();
-    void flushGroupBased();
+    void
+    initDefaults();
+    template< typename IterationsContainer >
+    void flushFileBased( IterationsContainer && iterationsToFlush );
+    template< typename IterationsContainer >
+    void flushGroupBased( IterationsContainer && iterationsToFlush );
     void flushMeshesPath();
     void flushParticlesPath();
     void readFileBased();

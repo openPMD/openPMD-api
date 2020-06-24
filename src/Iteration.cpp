@@ -19,6 +19,9 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/Iteration.hpp"
+
+#include <tuple>
+
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/Series.hpp"
@@ -111,7 +114,35 @@ Iteration::close( bool _flush )
     {
         Series * s = dynamic_cast< Series * >(
             parent->attributable->parent->attributable );
-        s->flush();
+        // figure out my iteration number
+        uint64_t index;
+        bool found = false;
+        for( auto const & pair : s->iterations )
+        {
+            if( pair.second.m_writable.get() == this->m_writable.get() )
+            {
+                found = true;
+                index = pair.first;
+                break;
+            }
+        }
+        if( !found )
+        {
+            throw std::runtime_error(
+                "[Iteration::close] Iteration not found in Series." );
+        }
+        std::map< uint64_t, Iteration > flushOnlyThisIteration{
+            { index, *this } };
+        switch( *s->m_iterationEncoding )
+        {
+            using IE = IterationEncoding;
+            case IE::fileBased:
+                s->flushFileBased( flushOnlyThisIteration );
+                break;
+            case IE::groupBased:
+                s->flushGroupBased( flushOnlyThisIteration );
+                break;
+        }
     }
     return *this;
 }
