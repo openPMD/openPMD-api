@@ -560,9 +560,9 @@ CommonADIOS1IOHandlerImpl::closeFile(
         {
             for( auto & att : attributeWrites->second )
             {
-                std::cout << "flushing attribute " << att.first << std::endl;
                 flush_attribute( myGroup->second, att.first, att.second );
             }
+            m_attributeWrites.erase( attributeWrites );
         }
         m_groups.erase( myGroup );
     }
