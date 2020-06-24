@@ -180,10 +180,8 @@ public:
 private:
     Mesh();
 
-    void
-    flush_impl( std::string const & ) override;
-    void
-    read() override;
+    void flush_impl(std::string const&) override;
+    void read() override;
 
     /**
      * @brief Verify that a mesh in a closed iteration has not

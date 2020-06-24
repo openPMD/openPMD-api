@@ -197,8 +197,7 @@ private:
      * @param d The dataset description. Must have nonzero dimensions.
      * @return Reference to this RecordComponent instance.
      */
-    RecordComponent &
-    makeEmpty( Dataset d );
+    RecordComponent& makeEmpty( Dataset d );
 
     /**
      * @brief Verify that a record component in a closed iteration has not

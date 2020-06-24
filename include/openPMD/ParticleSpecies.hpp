@@ -43,10 +43,8 @@ public:
 private:
     ParticleSpecies() = default;
 
-    void
-    read();
-    void
-    flush( std::string const & ) override;
+    void read();
+    void flush(std::string const &) override;
 
     /**
      * @brief Verify that a particle species in a closed iteration has not

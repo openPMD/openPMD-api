@@ -111,8 +111,7 @@ private:
     void flushFileBased(std::string const&, uint64_t);
     void flushGroupBased(uint64_t);
     void flush();
-    void
-    read();
+    void read();
 
     enum class CloseStatus
     {
@@ -130,9 +129,6 @@ private:
     std::shared_ptr< CloseStatus > m_closed =
         std::make_shared< CloseStatus >( CloseStatus::Open );
 
-    virtual void
-    linkHierarchy( std::shared_ptr< Writable > const & w );
-
     /**
      * @brief Verify that a closed iteration has not been wrongly accessed.
      *
@@ -141,9 +137,12 @@ private:
      */
     bool
     verifyClosed() const;
-}; // Iteration
 
-extern template float
+    virtual void linkHierarchy(std::shared_ptr< Writable > const& w);
+};  // Iteration
+
+extern template
+float
 Iteration::time< float >() const;
 
 extern template

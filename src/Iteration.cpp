@@ -40,11 +40,11 @@ Iteration::Iteration()
     setTimeUnitSI(1);
 }
 
-Iteration::Iteration( Iteration const & i )
-    : Attributable{ i }
-    , meshes{ i.meshes }
-    , particles{ i.particles }
-    , m_closed{ i.m_closed }
+Iteration::Iteration(Iteration const& i)
+        : Attributable{i},
+          meshes{i.meshes},
+          particles{i.particles},
+          m_closed{i.m_closed}
 {
     IOHandler = i.IOHandler;
     parent = i.parent;
@@ -428,14 +428,6 @@ Iteration::read()
     readAttributes();
 }
 
-void
-Iteration::linkHierarchy(std::shared_ptr< Writable > const& w)
-{
-    Attributable::linkHierarchy(w);
-    meshes.linkHierarchy(m_writable);
-    particles.linkHierarchy(m_writable);
-}
-
 bool
 Iteration::verifyClosed() const
 {
@@ -460,6 +452,13 @@ Iteration::verifyClosed() const
     return true;
 }
 
+void
+Iteration::linkHierarchy(std::shared_ptr< Writable > const& w)
+{
+    Attributable::linkHierarchy(w);
+    meshes.linkHierarchy(m_writable);
+    particles.linkHierarchy(m_writable);
+}
 
 template float
 Iteration::time< float >() const;

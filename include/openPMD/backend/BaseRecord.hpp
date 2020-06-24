@@ -94,12 +94,9 @@ protected:
     std::shared_ptr< bool > m_containsScalar;
 
 private:
-    void
-    flush( std::string const & ) final;
-    virtual void
-    flush_impl( std::string const & ) = 0;
-    virtual void
-    read() = 0;
+    void flush(std::string const&) final;
+    virtual void flush_impl(std::string const&) = 0;
+    virtual void read() = 0;
 
     /**
      * @brief Verify that a base record in a closed iteration has not
