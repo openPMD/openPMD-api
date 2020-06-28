@@ -315,7 +315,7 @@ jobs:
       nvcc -std=c++14 --Werror all-warnings -I$HOME/sw/openPMD-api/include -Xcompiler "$(mpic++ -showme:compile)" main.cu
 # Ubuntu Disco (19.04) and later: libadios-openmpi-dev
 
-- job: linux_source_oneAPI
+- job: linux_source_oneAPI_icc
   displayName: Ubuntu dev source w/ oneAPI
   pool:
     vmImage: ubuntu-18.04
@@ -336,7 +336,7 @@ jobs:
       export CC=$(which icc)
       curl -L -o cmake-easyinstall https://git.io/JvLxY
       chmod a+x cmake-easyinstall
-      ./cmake-easyinstall --prefix=$HOME/sw/openPMD-api git+https://github.com/openPMD/openPMD-api.git
+      ./cmake-easyinstall --prefix=$HOME/sw/openPMD-api git+https://github.com/openPMD/openPMD-api.git -DCMAKE_VERBOSE_MAKEFILE=ON
       echo '#include <openPMD/openPMD.hpp>' > main.cpp
       echo 'int main(){ return 0; }' >> main.cpp
       cat main.cpp
