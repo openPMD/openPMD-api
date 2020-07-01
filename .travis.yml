@@ -317,7 +317,7 @@ jobs:
       script: *script-cpp-unit
       before_install: &clang_init
         - CXX=clang++-8 && CC=clang-8
-    # Clang 9.1.0-apple + Python 3.7.2 @ OSX "highsierra"
+    # AppleClang 9.1.0 + Python 3.7.2 @ OSX "highsierra"
     - <<: *test-cpp-unit
       name: AppleClang@9.1.0 -MPI +PY@3.7 +H5 +ADIOS1 -ADIOS2
       os: osx
@@ -331,7 +331,7 @@ jobs:
       before_install:
         - CXX=clang++ && CC=clang
         - perl --version
-    # Clang 10.0.0-apple + Python 3.7.2 @ OSX "highsierra" with libc++
+    # AppleClang 10.0.0 + Python 3.7.2 @ OSX "highsierra" with libc++
     - <<: *test-cpp-unit
       name: AppleClang@10.0.0 -MPI +PY@3.7 +H5 -ADIOS1 +ADIOS2 libc++
       os: osx
@@ -345,7 +345,7 @@ jobs:
       before_install:
         - CXX=clang++ && CC=clang
         - perl --version
-    # Clang 11.0.0-apple + Python 3.7.2 @ OSX "mojave"
+    # AppleClang 11.0.0 + Python 3.7.2 @ OSX "mojave"
     - <<: *test-cpp-unit
       name: AppleClang@11.0.0 -MPI -PY +H5 -ADIOS1 +ADIOS2
       os: osx
