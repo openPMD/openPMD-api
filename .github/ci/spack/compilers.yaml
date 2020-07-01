@@ -10,7 +10,7 @@ compilers:
       cxx: /usr/bin/clang++
       f77: null
       fc: null
-    spec: clang@9.1.0
+    spec: apple-clang@9.1.0
     target: x86_64
 - compiler:
     environment: {}
@@ -25,7 +25,7 @@ compilers:
       cxx: /usr/bin/clang++
       f77: null
       fc: null
-    spec: clang@10.0.0
+    spec: apple-clang@10.0.0
     target: x86_64
 - compiler:
     environment: {}
@@ -38,7 +38,7 @@ compilers:
       cxx: /usr/bin/clang++
       f77: null
       fc: null
-    spec: clang@11.0.0
+    spec: apple-clang@11.0.0
     target: x86_64
 - compiler:
     environment: {}
