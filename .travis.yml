@@ -325,7 +325,7 @@ jobs:
       sudo: required
       language: generic
       env:
-        - CXXSPEC="%clang@9.1.0" USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
+        - CXXSPEC="%apple-clang@9.1.0" USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=ON USE_ADIOS2=OFF USE_SAMPLES=ON
       compiler: clang
       script: *script-cpp-unit
       before_install:
@@ -339,7 +339,7 @@ jobs:
       sudo: required
       language: generic
       env:
-        - CXXFLAGS="${CXXFLAGS} -stdlib=libc++" CXXSPEC="%clang@10.0.0" USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=ON USE_SAMPLES=ON
+        - CXXFLAGS="${CXXFLAGS} -stdlib=libc++" CXXSPEC="%apple-clang@10.0.0" USE_MPI=OFF USE_PYTHON=ON USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=ON USE_SAMPLES=ON
       compiler: clang
       script: *script-cpp-unit
       before_install:
@@ -353,7 +353,7 @@ jobs:
       sudo: required
       language: generic
       env:
-        - CXXSPEC="%clang@11.0.0" USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=ON USE_SAMPLES=ON
+        - CXXSPEC="%apple-clang@11.0.0" USE_MPI=OFF USE_PYTHON=OFF USE_HDF5=ON USE_ADIOS1=OFF USE_ADIOS2=ON USE_SAMPLES=ON
       compiler: clang
       script: *script-cpp-unit
       before_install:
