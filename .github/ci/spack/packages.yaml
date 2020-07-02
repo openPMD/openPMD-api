@@ -36,10 +36,10 @@ packages:
   openmpi:
     version: [1.6.5, 1.10.2, 2.1.1]
     paths:
-      openmpi@1.6.5%gcc@4.8.5 arch=linux-ubuntu14-x86_64: /usr
-      openmpi@1.6.5%gcc@4.9.4 arch=linux-ubuntu14-x86_64: /usr
-      openmpi@1.6.5%gcc@6.5.0 arch=linux-ubuntu14-x86_64: /usr
-      openmpi@1.6.5%gcc@7.4.0 arch=linux-ubuntu14-x86_64: /usr
+      openmpi@1.6.5%gcc@4.8.5 ~wrapper-rpath arch=linux-ubuntu14-x86_64: /usr
+      openmpi@1.6.5%gcc@4.9.4 ~wrapper-rpath arch=linux-ubuntu14-x86_64: /usr
+      openmpi@1.6.5%gcc@6.5.0 ~wrapper-rpath arch=linux-ubuntu14-x86_64: /usr
+      openmpi@1.6.5%gcc@7.4.0 ~wrapper-rpath arch=linux-ubuntu14-x86_64: /usr
       openmpi@1.10.2%gcc@8.1.0 arch=linux-ubuntu16-x86_64: /usr
       openmpi@2.1.1%gcc@9.3.0 arch=linux-ubuntu18-x86_64: /usr
       openmpi@1.10.2%clang@5.0.0 arch=linux-ubuntu16-x86_64: /usr

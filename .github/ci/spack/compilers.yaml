@@ -49,8 +49,8 @@ compilers:
     paths:
       cc: /usr/lib/llvm-5.0/bin/clang
       cxx: /usr/lib/llvm-5.0/bin/clang++
-      f77: /usr/bin/gfortran-4.9
-      fc: /usr/bin/gfortran-4.9
+      f77: null
+      fc: null
     spec: clang@5.0.0
     target: x86_64
 - compiler:
@@ -168,8 +168,8 @@ compilers:
     paths:
       cc: /usr/bin/clang-8
       cxx: /usr/bin/clang++-8
-      f77: /usr/bin/gfortran-7.4
-      fc: /usr/bin/gfortran-7.4
+      f77: null
+      fc: null
     spec: clang@8.0.0
     target: x86_64
 - compiler:
