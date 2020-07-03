@@ -133,7 +133,7 @@ Iteration::close( bool _flush )
             auto end = begin;
             ++end;
 
-            s->flush( begin, end );
+            s->flush_impl( begin, end );
         }
     }
     else

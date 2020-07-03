@@ -365,7 +365,7 @@ Series::backend() const
 void
 Series::flush()
 {
-    flush( iterations.begin(), iterations.end() );
+    flush_impl( iterations.begin(), iterations.end() );
 }
 
 SeriesIterable
@@ -552,7 +552,7 @@ Series::initDefaults()
 }
 
 std::future< void >
-Series::flush( iterations_iterator begin, iterations_iterator end )
+Series::flush_impl( iterations_iterator begin, iterations_iterator end )
 {
     switch( *m_iterationEncoding )
     {

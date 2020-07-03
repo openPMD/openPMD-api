@@ -274,7 +274,7 @@ OPENPMD_private:
     void init(std::shared_ptr< AbstractIOHandler >, std::unique_ptr< ParsedInput >);
     void initDefaults();
     using iterations_iterator = decltype( iterations )::iterator;
-    std::future< void > flush(
+    std::future< void > flush_impl(
         iterations_iterator begin, iterations_iterator end );
     void flushFileBased( iterations_iterator begin, iterations_iterator end );
     void flushGroupBased( iterations_iterator begin, iterations_iterator end );
