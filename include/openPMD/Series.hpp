@@ -292,6 +292,11 @@ OPENPMD_private:
         iterations_iterator it,
         Iteration & iteration );
 
+    bool
+    usesSteps() const;
+    void
+    useSteps();
+
     /**
      * Steps may be opened manually or automatically.
      * If opened automatically, they should close
@@ -320,8 +325,9 @@ class SeriesIterator
 
     using maybe_series_t = auxiliary::Option< Series >;
 
-    iteration_index_t m_currentIteration = 0;
     maybe_series_t m_series;
+    iteration_index_t m_currentIteration = 0;
+    bool useSteps = true;
 
     // construct the end() iterator
     SeriesIterator();

@@ -377,6 +377,7 @@ Series::readIterations()
 IterationSteps
 Series::writeIterations()
 {
+    useSteps();
     return IterationSteps( this->iterations );
 }
 
@@ -1081,6 +1082,28 @@ Series::advance(
     return *param.status;
 }
 
+bool
+Series::usesSteps() const
+{
+    using bool_type = unsigned char;
+    if( containsAttribute( "usesSteps" ) )
+    {
+        return ( getAttribute( "usesSteps" ).get< bool_type >() == 0u )
+            ? false : true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+void
+Series::useSteps()
+{
+    using bool_type = unsigned char;
+    setAttribute< bool_type >( "usesSteps", 1u );
+}
+
 std::string
 cleanFilename(std::string const& filename, Format f)
 {
@@ -1169,7 +1192,8 @@ SeriesIterator::SeriesIterator() : m_series()
 {
 }
 
-SeriesIterator::SeriesIterator( Series & _series ) : m_series( _series )
+SeriesIterator::SeriesIterator( Series & _series )
+    : m_series( _series ), useSteps( _series.usesSteps() )
 {
     auto it = _series.iterations.begin();
     if( it == _series.iterations.end() )
@@ -1177,7 +1201,7 @@ SeriesIterator::SeriesIterator( Series & _series ) : m_series( _series )
         *this = end();
         return;
     }
-    else
+    else if( useSteps )
     {
         auto status = it->second.beginStep();
         if( status == AdvanceStatus::OVER )
@@ -1200,25 +1224,28 @@ SeriesIterator::operator++()
     }
     Series series = m_series.get();
     auto & iterations = series.iterations;
-    switch( *series.m_iterationEncoding )
+    if( useSteps )
     {
-        using IE = IterationEncoding;
-        case IE::groupBased:
+        switch( *series.m_iterationEncoding )
         {
-            // since we are in group-based iteration layout, it does not matter
-            // which iteration we begin a step upon
-            auto & iteration = series.iterations[ m_currentIteration ];
-            AdvanceStatus status = iteration.beginStep();
-            if( status == AdvanceStatus::OVER )
+            using IE = IterationEncoding;
+            case IE::groupBased:
             {
-                *this = end();
-                return *this;
+                // since we are in group-based iteration layout, it does not
+                // matter which iteration we begin a step upon
+                auto & iteration = series.iterations[ m_currentIteration ];
+                AdvanceStatus status = iteration.beginStep();
+                if( status == AdvanceStatus::OVER )
+                {
+                    *this = end();
+                    return *this;
+                }
+                *iteration.automaticallyOpenedStepActive() = true;
+                break;
             }
-            *iteration.automaticallyOpenedStepActive() = true;
-            break;
+            default:
+                break;
         }
-        default:
-            break;
     }
     auto it = iterations.find( m_currentIteration );
     auto itEnd = iterations.end();
@@ -1234,23 +1261,26 @@ SeriesIterator::operator++()
         return *this;
     }
     m_currentIteration = it->first;
-    switch( *series.m_iterationEncoding )
+    if( useSteps )
     {
-        using IE = IterationEncoding;
-        case IE::fileBased:
+        switch( *series.m_iterationEncoding )
         {
-            auto & iteration = series.iterations[ m_currentIteration ];
-            AdvanceStatus status = iteration.beginStep();
-            if( status == AdvanceStatus::OVER )
+            using IE = IterationEncoding;
+            case IE::fileBased:
             {
-                *this = end();
-                return *this;
+                auto & iteration = series.iterations[ m_currentIteration ];
+                AdvanceStatus status = iteration.beginStep();
+                if( status == AdvanceStatus::OVER )
+                {
+                    *this = end();
+                    return *this;
+                }
+                *iteration.automaticallyOpenedStepActive() = true;
+                break;
             }
-            *iteration.automaticallyOpenedStepActive() = true;
-            break;
+            default:
+                break;
         }
-        default:
-            break;
     }
     return *this;
 }
