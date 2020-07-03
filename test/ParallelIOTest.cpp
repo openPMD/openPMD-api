@@ -384,7 +384,7 @@ TEST_CASE( "hzdr_adios_sample_content_test", "[parallel][adios1]" )
 }
 #endif
 
-#if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
+#if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
 
 void
 adios2_streaming()
