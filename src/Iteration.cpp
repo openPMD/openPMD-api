@@ -105,9 +105,10 @@ Iteration::setTimeUnitSI(double newTimeUnitSI)
 Iteration &
 Iteration::close( bool _flush )
 {
+    using bool_type = unsigned char;
     if( this->IOHandler->m_frontendAccess != Access::READ_ONLY )
     {
-        setAttribute( "closed", true );
+        setAttribute< bool_type >( "closed", 1u );
     }
     *m_closed = CloseStatus::ClosedInFrontend;
     if( _flush )
@@ -156,9 +157,10 @@ Iteration::closed() const
 bool
 Iteration::closedByWriter() const
 {
+    using bool_type = unsigned char;
     if( containsAttribute( "closed" ) )
     {
-        return getAttribute( "closed" ).get< bool >();
+        return getAttribute( "closed" ).get< bool_type >() == 0u ? false : true;
     }
     else
     {
