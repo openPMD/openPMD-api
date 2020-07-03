@@ -106,15 +106,18 @@ close_iteration_test( std::string file_ending )
 
     std::vector<int> data{2, 4, 6, 8};
     // { // we do *not* need these parentheses
-    Series write(name, Access::CREATE);
+
+    // let this Series leak, otherwise the destructor will throw
+    // catch2 does not catch exceptions from within destructors
+    Series * write = new Series(name, Access::CREATE);
     {
-        Iteration it0 = write.iterations[ 0 ];
+        Iteration it0 = write->iterations[ 0 ];
         auto E_x = it0.meshes[ "E" ][ "x" ];
         E_x.resetDataset( { Datatype::INT, { 2, 2 } } );
         E_x.storeChunk( data, { 0, 0 }, { 2, 2 } );
         it0.close( /* flush = */ false );
     }
-    write.flush();
+    write->flush();
     // }
 
     if (isAdios1)
@@ -138,7 +141,7 @@ close_iteration_test( std::string file_ending )
     }
 
     {
-        Iteration it1 = write.iterations[1];
+        Iteration it1 = write->iterations[1];
         auto E_x = it1.meshes[ "E" ][ "x" ];
         E_x.resetDataset( { Datatype::INT, { 2, 2 } } );
         E_x.storeChunk( data, { 0, 0 }, { 2, 2 } );
@@ -146,7 +149,7 @@ close_iteration_test( std::string file_ending )
 
         // illegally access iteration after closing
         E_x.storeChunk( data, { 0, 0 }, { 2, 2 } );
-        REQUIRE_THROWS( write.flush() );
+        REQUIRE_THROWS( write->flush() );
     }
 
     if (isAdios1)
@@ -157,8 +160,10 @@ close_iteration_test( std::string file_ending )
     }
     else
     {
-        Series read( name, Access::READ_ONLY );
-        Iteration it1 = read.iterations[ 1 ];
+        // let this Series leak, otherwise the destructor will throw
+        // catch2 does not catch exceptions from within destructors
+        Series * read = new Series( name, Access::READ_ONLY );
+        Iteration it1 = read->iterations[ 1 ];
         auto E_x_read = it1.meshes[ "E" ][ "x" ];
         auto chunk = E_x_read.loadChunk< int >( { 0, 0 }, { 2, 2 } );
         it1.close( /* flush = */ true );
@@ -167,7 +172,7 @@ close_iteration_test( std::string file_ending )
             REQUIRE( data[ i ] == chunk.get()[ i ] );
         }
         auto read_again = E_x_read.loadChunk< int >( { 0, 0 }, { 2, 2 } );
-        REQUIRE_THROWS( read.flush() );
+        REQUIRE_THROWS( read->flush() );
     }
 }
 
