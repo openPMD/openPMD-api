@@ -18,22 +18,22 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include "openPMD/auxiliary/Date.hpp"
-#include "openPMD/auxiliary/Filesystem.hpp"
-#include "openPMD/auxiliary/StringManip.hpp"
-#include "openPMD/IO/AbstractIOHandler.hpp"
-#include "openPMD/IO/AbstractIOHandlerHelper.hpp"
-#include "openPMD/IO/Format.hpp"
 #include "openPMD/Series.hpp"
-#include "openPMD/auxiliary/MPI.hpp"
 
 #include <exception>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <set>
 #include <string>
 #include <tuple>
-#include <memory>
+
+#include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/AbstractIOHandlerHelper.hpp"
+#include "openPMD/IO/Format.hpp"
+#include "openPMD/auxiliary/Date.hpp"
+#include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
 
 #if defined(__GNUC__)
 #   if (__GNUC__ == 4 && __GNUC_MINOR__ < 9)
@@ -291,84 +291,6 @@ Series::setMachine(std::string const &newMachine)
     return *this;
 }
 
-chunk_assignment::RankMeta
-Series::mpiRanksMetaInfo( ) const
-{
-    try 
-    {
-        return getAttribute( "rankMetaInfo" )
-            .get< chunk_assignment::RankMeta >( );
-    }
-    catch ( std::runtime_error const & )
-    {
-        // workaround: if vector has length 1, some backends may report a 
-        // single value instead of a vector
-        return chunk_assignment::RankMeta {
-            getAttribute( "rankMetaInfo" )
-                .get< chunk_assignment::RankMeta::value_type >( ) };
-    }
-
-}
-
-Series &
-Series::setMpiRanksMetaInfo( chunk_assignment::RankMeta rankMeta )
-{
-    setAttribute( "rankMetaInfo", std::move( rankMeta ) );
-    return *this;
-}
-
-#if openPMD_HAVE_MPI
-Series &
-Series::setMpiRanksMetaInfo( std::string const & myRankInfo )
-{
-    int rank;
-    MPI_Comm_rank( m_communicator, &rank );
-    chunk_assignment::RankMeta rankMeta =
-        auxiliary::collectStringsTo(
-            m_communicator, 0, myRankInfo );
-    if ( rank == 0 )
-    {
-        setMpiRanksMetaInfo( std::move( rankMeta ) );
-    }
-    return *this;
-}
-#endif
-
-Series &
-Series::setMpiRanksMetaInfoByFile( std::string const & pathToMetaFile )
-{
-    chunk_assignment::RankMeta rankMeta;
-    try
-    {
-        rankMeta = auxiliary::read_file_by_lines( pathToMetaFile );
-    }
-    catch( auxiliary::no_such_file_error const & )
-    {
-        std::cerr << "Not setting rank meta information, because file has "
-            "not been found: " << pathToMetaFile << std::endl;
-        return *this;
-    }
-    setAttribute( "rankMetaInfo", rankMeta );
-    return *this;
-}
-
-Series &
-Series::setMpiRanksMetaInfoByEnvvar( std::string const & envvar )
-{
-    const char * filename = std::getenv( envvar.c_str( ) );
-    if ( filename )
-    {
-        setMpiRanksMetaInfoByFile( filename );
-    }
-    else
-    {
-        std::cerr << "Not setting rank meta information, because environment"
-            " variable containing path to file has not been found: "
-            << envvar << std::endl;
-    }
-    return *this;
-}
-
 IterationEncoding
 Series::iterationEncoding() const
 {
@@ -445,100 +367,19 @@ Series::backend() const
 std::future< void >
 Series::flush()
 {
-    switch( *m_iterationEncoding )
-    {
-        using IE = IterationEncoding;
-        case IE::fileBased:
-            flushFileBased( iterations );
-            break;
-        case IE::groupBased:
-            flushGroupBased( iterations );
-            break;
-    }
-
-    return IOHandler->flush();
+    return flush( iterations.begin(), iterations.end() );
 }
 
-ConsumingFuture< AdvanceStatus >
-Series::advance( AdvanceMode mode )
+SeriesIterable
+Series::readIterations()
 {
-    switch( *m_iterationEncoding )
-    {
-        case IterationEncoding::fileBased:
-        {
-            std::cerr << "Advancing not yet implemented in file-based mode, "
-                "defaulting to performing a flush." << std::endl;
-            flush();
-            auto res = ConsumingFuture< AdvanceStatus >(
-                std::packaged_task< AdvanceStatus() >(
-                    []() { return AdvanceStatus::OK; } ) );
-            res();
-            return res;
-        }
-        case IterationEncoding::groupBased:
-            auxiliary::ConsumingFuture< AdvanceStatus > future =
-                advance( mode, *this );
-            // capture this by reference since the destructor will issue a
-            // flush
-            // https://github.com/openPMD/openPMD-api/issues/534
-            std::packaged_task< AdvanceStatus( AdvanceStatus ) > postProcessing(
-                [ this ]( AdvanceStatus status ) mutable {
-                    if( status != AdvanceStatus::OK )
-                    {
-                        return status;
-                    }
+    return SeriesIterable( *this );
+}
 
-                    // re-read -> new datasets might be available
-                    if( this->IOHandler->m_frontendAccess ==
-                            Access::READ_ONLY ||
-                        this->IOHandler->m_frontendAccess ==
-                            Access::READ_WRITE )
-                    {
-                        bool previous = this->iterations.written();
-                        this->iterations.written() = false;
-                        auto oldType = this->IOHandler->m_frontendAccess;
-                        auto newType = const_cast< Access * >(
-                            &this->IOHandler->m_frontendAccess );
-                        *newType = Access::READ_WRITE;
-                        this->readGroupBased( false );
-                        *newType = oldType;
-                        this->iterations.written() = previous;
-                    }
-
-                    if( this->IOHandler->m_frontendAccess == Access::CREATE ||
-                        this->IOHandler->m_frontendAccess ==
-                            Access::READ_WRITE )
-                    {
-                        for( auto & i : iterations )
-                        {
-                            if( *i.second.m_closed ==
-                                Iteration::CloseStatus::ClosedInFrontend )
-                            {
-                                Parameter< Operation::STALE_GROUP > fStale;
-                                IOHandler->enqueue(
-                                    IOTask( &i.second, std::move( fStale ) ) );
-                                // In group-based iteration layout, files are
-                                // not closed on a per-iteration basis
-                                // We will treat it as such nonetheless
-                                *i.second.m_closed =
-                                    Iteration::CloseStatus::ClosedInBackend;
-                            }
-                        }
-                    }
-
-                    return status;
-                } );
-            auxiliary::ConsumingFuture< AdvanceStatus > futurePost =
-                auxiliary::chain_futures<
-                    AdvanceStatus,
-                    AdvanceStatus,
-                    auxiliary::RunFutureNonThreaded >(
-                    std::move( future ), std::move( postProcessing ) );
-            futurePost.run_as_thread();
-            return futurePost;
-    }
-    throw std::runtime_error(
-        "Bug in the openPMD API: This path cannot be taken." );
+IterationSteps
+Series::writeIterations()
+{
+    return IterationSteps( this->iterations );
 }
 
 std::unique_ptr< Series::ParsedInput >
@@ -712,23 +553,40 @@ Series::initDefaults()
     // TODO Potentially warn on flush if software and author are not user-provided (defaulted)
 }
 
-template< typename IterationsContainer >
-void
-Series::flushFileBased( IterationsContainer && iterationsToFlush )
+std::future< void >
+Series::flush( iterations_iterator begin, iterations_iterator end )
 {
-    if( iterationsToFlush.empty() )
+    switch( *m_iterationEncoding )
+    {
+        using IE = IterationEncoding;
+        case IE::fileBased:
+            flushFileBased( begin, end );
+            break;
+        case IE::groupBased:
+            flushGroupBased( begin, end );
+            break;
+    }
+
+    return IOHandler->flush();
+}
+
+void
+Series::flushFileBased( iterations_iterator begin, iterations_iterator end )
+{
+    if( end == begin )
         throw std::runtime_error(
             "fileBased output can not be written with no iterations." );
 
     if( IOHandler->m_frontendAccess == Access::READ_ONLY )
-        for( auto & i : iterationsToFlush )
+        for( auto it = begin; it != end; ++it )
         {
-            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInBackend )
+            if( *it->second.m_closed ==
+                Iteration::CloseStatus::ClosedInBackend )
             {
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
                 // verify that there have been no further accesses
-                if( i.second.dirtyRecursive() )
+                if( it->second.dirtyRecursive() )
                 {
                     throw std::runtime_error(
                         "[Series] Detected illegal access to iteration that "
@@ -736,32 +594,35 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
                 }
                 continue;
             }
-            i.second.flush();
-            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
+            it->second.flush();
+            if( *it->second.m_closed ==
+                Iteration::CloseStatus::ClosedInFrontend )
             {
                 Parameter< Operation::CLOSE_FILE > fClose;
-                IOHandler->enqueue( IOTask( &i.second, std::move( fClose ) ) );
-                *i.second.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                IOHandler->enqueue(
+                    IOTask( &it->second, std::move( fClose ) ) );
+                *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
             }
             IOHandler->flush();
         }
     else
     {
         bool allDirty = dirty();
-        for( auto & i : iterationsToFlush )
+        for( auto it = begin; it != end; ++it )
         {
-            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInBackend )
+            if( *it->second.m_closed ==
+                Iteration::CloseStatus::ClosedInBackend )
             {
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
                 // verify that there have been no further accesses
-                if (!i.second.written())
+                if (!it->second.written())
                 {
                     throw std::runtime_error(
                         "[Series] Closed iteration has not been written. This "
-                        "is an internal error.");
+                        "is an internal error." );
                 }
-                if( i.second.dirtyRecursive() )
+                if( it->second.dirtyRecursive() )
                 {
                     throw std::runtime_error(
                         "[Series] Detected illegal access to iteration that "
@@ -775,20 +636,23 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
             written() = false;
             iterations.written() = false;
 
-            std::string filename = iterationFilename( i.first );
+            std::string filename = iterationFilename( it->first );
 
-            dirty() |= i.second.dirty();
-            i.second.flushFileBased(filename, i.first);
+            dirty() |= it->second.dirty();
+            it->second.flushFileBased(filename, it->first);
 
-            iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
+            iterations.flush(
+                auxiliary::replace_first( basePath(), "%T/", "" ) );
 
             flushAttributes();
 
-            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
+            if( *it->second.m_closed ==
+                Iteration::CloseStatus::ClosedInFrontend )
             {
                 Parameter< Operation::CLOSE_FILE > fClose;
-                IOHandler->enqueue( IOTask( &i.second, std::move( fClose ) ) );
-                *i.second.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                IOHandler->enqueue(
+                    IOTask( &it->second, std::move( fClose ) ) );
+                *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
             }
 
             IOHandler->flush();
@@ -801,36 +665,32 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
     }
 }
 
-template void
-Series::flushFileBased< std::map< uint64_t, Iteration > & >(
-    std::map< uint64_t, Iteration > & );
-
-template< typename IterationsContainer >
 void
-Series::flushGroupBased( IterationsContainer && iterationsToFlush )
+Series::flushGroupBased( iterations_iterator begin, iterations_iterator end )
 {
     if( IOHandler->m_frontendAccess == Access::READ_ONLY )
-        for( auto & i : iterationsToFlush )
+        for( auto it = begin; it != end; ++it )
         {
-            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInBackend )
+            if( *it->second.m_closed ==
+                Iteration::CloseStatus::ClosedInBackend )
             {
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
                 // verify that there have been no further accesses
-                if( i.second.dirtyRecursive() )
+                if( it->second.dirtyRecursive() )
                 {
                     throw std::runtime_error(
                         "[Series] Illegal access to iteration " +
-                        std::to_string( i.first ) +
+                        std::to_string( it->first ) +
                         " that has been closed previously." );
                 }
                 continue;
             }
-            i.second.flush();
-            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
+            it->second.flush();
+            if( *it->second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
             {
                 // the iteration has no dedicated file in group-based mode
-                *i.second.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
             }
             IOHandler->flush();
         }
@@ -840,43 +700,44 @@ Series::flushGroupBased( IterationsContainer && iterationsToFlush )
         {
             Parameter< Operation::CREATE_FILE > fCreate;
             fCreate.name = *m_name;
-            IOHandler->enqueue(IOTask(this, fCreate));
+            IOHandler->enqueue( IOTask( this, fCreate ) );
         }
 
         iterations.flush( auxiliary::replace_first( basePath(), "%T/", "" ) );
 
-        for( auto & i : iterationsToFlush )
+        for( auto it = begin; it != end; ++it )
         {
-            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInBackend )
+            if( *it->second.m_closed ==
+                Iteration::CloseStatus::ClosedInBackend )
             {
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
                 // verify that there have been no further accesses
-                if (!i.second.written())
+                if (!it->second.written())
                 {
                     throw std::runtime_error(
                         "[Series] Closed iteration has not been written. This "
-                        "is an internal error.");
+                        "is an internal error." );
                 }
-                if( i.second.dirtyRecursive() )
+                if( it->second.dirtyRecursive() )
                 {
                     throw std::runtime_error(
                         "[Series] Illegal access to iteration " +
-                        std::to_string( i.first ) +
+                        std::to_string( it->first ) +
                         " that has been closed previously." );
                 }
                 continue;
             }
-            if( !i.second.written() )
+            if( !it->second.written() )
             {
-                i.second.m_writable->parent = getWritable( &iterations );
-                i.second.parent = getWritable( &iterations );
+                it->second.m_writable->parent = getWritable( &iterations );
+                it->second.parent = getWritable( &iterations );
             }
-            i.second.flushGroupBased(i.first);
-            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
+            it->second.flushGroupBased(it->first);
+            if( *it->second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
             {
                 // the iteration has no dedicated file in group-based mode
-                *i.second.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
             }
         }
 
@@ -884,10 +745,6 @@ Series::flushGroupBased( IterationsContainer && iterationsToFlush )
         IOHandler->flush();
     }
 }
-
-template void
-Series::flushGroupBased< std::map< uint64_t, Iteration > & >(
-    std::map< uint64_t, Iteration > & );
 
 void
 Series::flushMeshesPath()
@@ -1169,74 +1026,62 @@ std::string
 Series::iterationFilename( uint64_t i )
 {
     std::stringstream iteration( "" );
-    iteration << std::setw( *m_filenamePadding ) << std::setfill( '0' )
-              << i;
+    iteration << std::setw( *m_filenamePadding ) << std::setfill( '0' ) << i;
     return *m_filenamePrefix + iteration.str() + *m_filenamePostfix;
 }
 
-auxiliary::ConsumingFuture< AdvanceStatus >
-Series::advance( AdvanceMode mode, Attributable & file )
-// file parameter maybe for an open_file command later on
+AdvanceStatus
+Series::advance(
+    AdvanceMode mode,
+    Attributable & file,
+    iterations_iterator begin,
+    Iteration & iteration )
 {
-    // resolve AdvanceMode
-    Access at = IOHandler->m_frontendAccess;
-    AdvanceMode actualMode = mode;
-    switch( mode )
+    auto end = begin;
+    ++end;
+    /*
+     * @todo By calling flushFileBased/GroupBased, we do not propagate tasks to
+     *       the backend yet. We will append ADVANCE and CLOSE_FILE tasks
+     *       manually.
+     */
+    Iteration::CloseStatus oldCloseStatus = *iteration.m_closed;
+    if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend )
     {
-        case AdvanceMode::AUTO:
-            switch( at )
-            {
-                case Access::READ_WRITE:
-                    throw std::runtime_error(
-                        "Series::advance(): Please specify "
-                        "advance mode explicitly." );
-                case Access::READ_ONLY:
-                    actualMode = AdvanceMode::READ;
-                    break;
-                case Access::CREATE:
-                    actualMode = AdvanceMode::WRITE;
-                    break;
-            }
+        *iteration.m_closed = Iteration::CloseStatus::Open;
+    }
+
+    switch( *m_iterationEncoding )
+    {
+        using IE = IterationEncoding;
+        case IE::groupBased:
+            flushGroupBased( begin, end );
             break;
-        case AdvanceMode::READ:
-            if( at == Access::CREATE )
-            {
-                throw std::runtime_error(
-                    "Cannot use advance mode 'read' in combination with "
-                    "access type 'create'" );
-            }
-            else
-            {
-                actualMode = AdvanceMode::READ;
-            }
-            break;
-        case AdvanceMode::WRITE:
-            if( at == Access::READ_ONLY )
-            {
-                throw std::runtime_error(
-                    "Cannot use advance mode 'write' in combination with "
-                    "access type 'read only'" );
-            }
-            else
-            {
-                actualMode = AdvanceMode::WRITE;
-            }
+        case IE::fileBased:
+            flushFileBased( begin, end );
             break;
     }
+    *iteration.m_closed = oldCloseStatus;
+
     Parameter< Operation::ADVANCE > param;
-    param.mode = actualMode;
+    param.mode = mode;
     IOTask task( &file, param );
     IOHandler->enqueue( task );
-    // this flush will
-    // (1) flush all actions that are still queued up
-    // (2) finally run the advance task
 
-    auto first_future = flush();
-    return auxiliary::chain_futures< 
-        void,
-        AdvanceStatus >(
-        std::move( first_future ),
-        std::move( *param.task ) );
+
+    if( *m_iterationEncoding == IterationEncoding::fileBased &&
+        oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend )
+    {
+        Parameter< Operation::CLOSE_FILE > fClose;
+        IOHandler->enqueue( IOTask( &iteration, std::move( fClose ) ) );
+        *iteration.m_closed = Iteration::CloseStatus::ClosedInBackend;
+    }
+
+    // We cannot call Series::flush now, since the IO handler is still filled
+    // from calling flush(Group|File)based, but has not been emptied yet
+    // Do that manually
+    IOHandler->flush();
+
+    return *param.status;
 }
 
 std::string
@@ -1319,7 +1164,140 @@ matcher(std::string const& prefix, int padding, std::string const& postfix, Form
             return buildMatcher(nameReg);
         }
         default:
-            return [](std::string const&) -> std::tuple< bool, int > { return std::tuple< bool, int >{false, 0}; };
+            return []( std::string const & ) -> std::tuple< bool, int > {
+                return std::tuple< bool, int >{ false, 0 };
+            };
     }
 }
-} // openPMD
+
+SeriesIterator::SeriesIterator() : m_series()
+{
+}
+
+SeriesIterator::SeriesIterator( Series & _series ) : m_series( _series )
+{
+    auto it = _series.iterations.begin();
+    if( it == _series.iterations.end() )
+    {
+        *this = end();
+        return;
+    }
+    else
+    {
+        auto status = it->second.beginStep();
+        if( status == AdvanceStatus::OVER )
+        {
+            *this = end();
+            return;
+        }
+        *it->second.automaticallyOpenedStepActive() = true;
+    }
+    m_currentIteration = it->first;
+}
+
+SeriesIterator &
+SeriesIterator::operator++()
+{
+    if( !m_series.has_value() )
+    {
+        *this = end();
+        return *this;
+    }
+    Series series = m_series.get();
+    auto & iterations = series.iterations;
+    switch( *series.m_iterationEncoding )
+    {
+        using IE = IterationEncoding;
+        case IE::groupBased:
+        {
+            // since we are in group-based iteration layout, it does not matter
+            // which iteration we begin a step upon
+            auto & iteration = series.iterations[ m_currentIteration ];
+            AdvanceStatus status = iteration.beginStep();
+            if( status == AdvanceStatus::OVER )
+            {
+                *this = end();
+                return *this;
+            }
+            *iteration.automaticallyOpenedStepActive() = true;
+            break;
+        }
+        default:
+            break;
+    }
+    auto it = iterations.find( m_currentIteration );
+    auto itEnd = iterations.end();
+    if( it == itEnd )
+    {
+        *this = end();
+        return *this;
+    }
+    ++it;
+    if( it == itEnd )
+    {
+        *this = end();
+        return *this;
+    }
+    m_currentIteration = it->first;
+    switch( *series.m_iterationEncoding )
+    {
+        using IE = IterationEncoding;
+        case IE::fileBased:
+        {
+            auto & iteration = series.iterations[ m_currentIteration ];
+            AdvanceStatus status = iteration.beginStep();
+            if( status == AdvanceStatus::OVER )
+            {
+                *this = end();
+                return *this;
+            }
+            *iteration.automaticallyOpenedStepActive() = true;
+            break;
+        }
+        default:
+            break;
+    }
+    return *this;
+}
+
+Iteration &
+SeriesIterator::operator*()
+{
+    return m_series.get().iterations[ m_currentIteration ];
+}
+
+bool
+SeriesIterator::operator==( SeriesIterator const & other ) const
+{
+    return this->m_currentIteration == other.m_currentIteration &&
+        this->m_series.has_value() == other.m_series.has_value();
+}
+
+bool
+SeriesIterator::operator!=( SeriesIterator const & other ) const
+{
+    return !operator==( other );
+}
+
+SeriesIterator
+SeriesIterator::end()
+{
+    return {};
+}
+
+SeriesIterable::SeriesIterable( Series _series ) : m_series( _series )
+{
+}
+
+SeriesIterable::iterator_t
+SeriesIterable::begin()
+{
+    return iterator_t{ m_series };
+}
+
+SeriesIterable::iterator_t
+SeriesIterable::end()
+{
+    return SeriesIterator::end();
+}
+} // namespace openPMD

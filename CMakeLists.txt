@@ -315,7 +315,6 @@ set(CORE_SOURCE
         src/Series.cpp
         src/version.cpp
         src/auxiliary/Date.cpp
-        src/Streaming.cpp
         src/auxiliary/Filesystem.cpp
         src/auxiliary/JSON.cpp
         src/backend/Attributable.cpp

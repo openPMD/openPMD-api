@@ -14,14 +14,7 @@
 #include <complex>
 #include <cstddef>
 #include <cstdint>
-#include <iostream>
 #include <sstream>
-#include <string>
-#include <vector>
-
-#include "openPMD/auxiliary/Future.hpp"
-#include "openPMD/openPMD.hpp"
-#include <catch2/catch.hpp>
 
 using namespace openPMD;
 
@@ -722,36 +715,4 @@ TEST_CASE( "no_file_ending", "[core]" )
                         Catch::Equals("Unknown file format! Did you specify a file ending?"));
     REQUIRE_THROWS_WITH(Series("./new_openpmd_output_%05T", Access::CREATE),
                         Catch::Equals("Unknown file format! Did you specify a file ending?"));
-}
-
-TEST_CASE( "futures_chaining", "[core]" )
-{
-    std::packaged_task< int() > firstStageTask{ []() { return 10; } };
-    std::future< int > firstStageFuture = firstStageTask.get_future();
-    firstStageTask();
-    std::packaged_task< int( int ) > secondStageTask{ []( int n ) {
-        return 2 * n;
-    } };
-    ConsumingFuture< int > secondStageFuture =
-        openPMD::auxiliary::chain_futures< int, int >(
-            std::move( firstStageFuture ), std::move( secondStageTask ) );
-    std::packaged_task< std::string( int ) > thirdStageTask{ []( int n ) {
-        return std::to_string( n );
-    } };
-    ConsumingFuture< std::string > thirdStageFuture =
-        openPMD::auxiliary::chain_futures<
-            int,
-            std::string,
-            openPMD::auxiliary::RunFutureNonThreaded >(
-            std::move( secondStageFuture ), std::move( thirdStageTask ) );
-    std::packaged_task< std::string( std::string ) > fourthStageTask{
-        []( std::string s ) { return s + s; }
-    };
-    ConsumingFuture< std::string > fourthStageFuture = auxiliary::chain_futures<
-        std::string,
-        std::string,
-        openPMD::auxiliary::RunFutureThreaded >(
-        std::move( thirdStageFuture ), std::move( fourthStageTask ) );
-    fourthStageFuture();
-    REQUIRE( fourthStageFuture.get() == std::string( "2020" ) );
 }

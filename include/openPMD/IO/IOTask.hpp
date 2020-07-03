@@ -54,6 +54,7 @@ OPENPMDAPI_EXPORT_ENUM_CLASS(Operation)
     DELETE_FILE,
 
     CREATE_PATH,
+    CLOSE_PATH,
     OPEN_PATH,
     DELETE_PATH,
     LIST_PATHS,
@@ -71,9 +72,7 @@ OPENPMDAPI_EXPORT_ENUM_CLASS(Operation)
     READ_ATT,
     LIST_ATTS,
 
-    ADVANCE,
-    AVAILABLE_CHUNKS,
-    STALE_GROUP
+    ADVANCE
 }; // Operation
 
 struct OPENPMDAPI_EXPORT AbstractParameter
@@ -472,7 +471,7 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::ADVANCE > : public AbstractParame
 {
     Parameter() = default;
     Parameter( Parameter const & p )
-        : AbstractParameter(), mode( p.mode ), task( p.task )
+        : AbstractParameter(), mode( p.mode ), status( p.status )
     {
     }
 
@@ -486,39 +485,12 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::ADVANCE > : public AbstractParame
     // input parameter
     AdvanceMode mode;
     // output parameter
-    std::shared_ptr< std::packaged_task< AdvanceStatus() > > task =
-        std::make_shared< std::packaged_task< AdvanceStatus() > >();
+    std::shared_ptr< AdvanceStatus > status =
+        std::make_shared< AdvanceStatus >( AdvanceStatus::OK );
 };
 
 template<>
-struct OPENPMDAPI_EXPORT Parameter< Operation::AVAILABLE_CHUNKS >
-    : public AbstractParameter
-{
-    Parameter() = default;
-    Parameter( Parameter const & p ) : AbstractParameter(), chunks( p.chunks )
-    {
-    }
-
-    Parameter &
-    operator=( Parameter const & p )
-    {
-        chunks = p.chunks;
-        return *this;
-    }
-
-    std::unique_ptr< AbstractParameter >
-    clone() const override
-    {
-        return std::unique_ptr< AbstractParameter >(
-            new Parameter< Operation::AVAILABLE_CHUNKS >( *this ) );
-    }
-
-    // output parameter
-    std::shared_ptr< ChunkTable > chunks = std::make_shared< ChunkTable >();
-};
-
-template<>
-struct OPENPMDAPI_EXPORT Parameter< Operation::STALE_GROUP > : public AbstractParameter
+struct OPENPMDAPI_EXPORT Parameter< Operation::CLOSE_PATH > : public AbstractParameter
 {
     Parameter() = default;
     Parameter( Parameter const & ) : AbstractParameter()
@@ -535,7 +507,7 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::STALE_GROUP > : public AbstractPa
     clone() const override
     {
         return std::unique_ptr< AbstractParameter >(
-            new Parameter< Operation::STALE_GROUP >( *this ) );
+            new Parameter< Operation::CLOSE_PATH >( *this ) );
     }
 };
 

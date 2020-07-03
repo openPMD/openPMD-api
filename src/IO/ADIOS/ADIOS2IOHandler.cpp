@@ -604,44 +604,22 @@ ADIOS2IOHandlerImpl::advance(
     Writable * writable,
     Parameter< Operation::ADVANCE > & parameters )
 {
-    auto file = refreshFileFromParent( writable );
+    auto file = m_files[ writable ];
     auto & ba = getFileData( file );
-    *parameters.task = ba.advance( parameters.mode );
+    *parameters.status = ba.advance( parameters.mode );
 }
 
 void
-ADIOS2IOHandlerImpl::availableChunks(
+ADIOS2IOHandlerImpl::closePath(
     Writable * writable,
-    Parameter< Operation::AVAILABLE_CHUNKS > & parameters )
-{
-    setAndGetFilePosition( writable );
-    auto file = refreshFileFromParent( writable );
-    detail::BufferedActions & ba = getFileData( file );
-    std::string varName = nameOfVariable( writable );
-    ba.requireActiveStep( );
-    auto datatype = detail::fromADIOS2Type( ba.m_IO.VariableType( varName ) );
-    static detail::RetrieveBlocksInfo rbi;
-    switchType(
-        datatype,
-        rbi,
-        parameters,
-        ba.m_IO,
-        ba.requireActiveStep(),
-        varName,
-        ba.currentStep );
-}
-
-void
-ADIOS2IOHandlerImpl::staleGroup(
-    Writable * writable,
-    Parameter< Operation::STALE_GROUP > const & )
+    Parameter< Operation::CLOSE_PATH > const & )
 {
     VERIFY_ALWAYS(
         writable->written,
-        "Cannot put a group in stale mode that has not been written yet." );
+        "Cannot close a path that has not been written yet." );
     VERIFY_ALWAYS(
         m_handler->m_backendAccess != AccessType::READ_ONLY,
-        "Cannot put a group in stale while in read-only mode." );
+        "Cannot close a path while in read-only mode." );
     auto file = refreshFileFromParent( writable );
     auto & fileData = getFileData( file );
     if( !fileData.isStreaming )
@@ -981,18 +959,6 @@ namespace detail
             "[ADIOS2] Defining a variable with undefined type." );
     }
 
-    template < typename T, typename... Params >
-    void RetrieveBlocksInfo::operator( )( Params &&... params )
-    {
-        DatasetHelper< T >::blocksInfo( std::forward< Params >( params )... );
-    }
-
-    template < int n, typename... Args >
-    void RetrieveBlocksInfo::operator( )( Args&&... )
-    {
-        // variable has not been found, so we don't fill in any blocks
-    }
-
     template < typename T >
     typename AttributeTypes< T >::Attr
     AttributeTypes< T >::createAttribute( adios2::IO & IO, std::string name,
@@ -1205,28 +1171,6 @@ namespace detail
     }
 
     template < typename T >
-    void DatasetHelper<
-        T, typename std::enable_if< DatasetTypes< T >::validType >::type >::
-        blocksInfo(
-            Parameter< Operation::AVAILABLE_CHUNKS > & params,
-            adios2::IO IO,
-            adios2::Engine engine,
-            std::string const & varName,
-            size_t /* step */ )
-    {
-        auto var = IO.InquireVariable< T >( varName );
-        for ( auto const & info : engine.BlocksInfo< T >( var, 0 ) )
-        {
-            Offset offset = info.Start;
-            Extent extent = info.Count;
-            params.chunks->chunkTable[ info.WriterID ]
-                .emplace_back(
-                    std::make_pair< Offset, Extent >(
-                        std::move( offset ), std::move( extent ) ) );
-        }
-    }
-
-    template < typename T >
     DatasetHelper<
         T, typename std::enable_if< !DatasetTypes< T >::validType >::type >::
         DatasetHelper( openPMD::ADIOS2IOHandlerImpl * )
@@ -1275,15 +1219,6 @@ namespace detail
     void DatasetHelper<
         T, typename std::enable_if< !DatasetTypes< T >::validType >::type >::
         writeDataset( Params &&... )
-    {
-        throwErr( );
-    }
-
-    template < typename T >
-    template < typename... Params >
-    void DatasetHelper<
-        T, typename std::enable_if< !DatasetTypes< T >::validType >::type >::
-        blocksInfo( Params &&... )
     {
         throwErr( );
     }
@@ -1508,10 +1443,10 @@ namespace detail
 
     adios2::Engine & BufferedActions::requireActiveStep( )
     {
-        adios2::Engine & eng = getEngine( );
-        if ( *streamStatus == StreamStatus::OutsideOfStep )
+        adios2::Engine & eng = getEngine();
+        if( *streamStatus == StreamStatus::OutsideOfStep )
         {
-            eng.BeginStep( );
+            *m_lastStepStatus = eng.BeginStep();
             *streamStatus = StreamStatus::DuringStep;
         }
         return eng;
@@ -1541,17 +1476,19 @@ namespace detail
         /*
          * Only open a new step if it is necessary.
          */
-        if ( *streamStatus == StreamStatus::OutsideOfStep && !m_buffer.empty() )
+        if( *streamStatus == StreamStatus::OutsideOfStep )
         {
-            eng.BeginStep();
-            *streamStatus = StreamStatus::DuringStep;
+            if( m_buffer.empty() )
+            {
+                return;
+            }
+            else
+            {
+                requireActiveStep();
+            }
         }
-        else if ( *streamStatus == StreamStatus::TemporarilyInvalid )
         {
-            return; // no flush heh
-        }
-        {
-            for ( auto & ba : m_buffer )
+            for( auto & ba : m_buffer )
             {
                 ba->run( *this );
             }
@@ -1574,68 +1511,65 @@ namespace detail
                 break;
             }
         }
-        m_buffer.clear( );
+        m_buffer.clear();
     }
 
-    std::packaged_task< AdvanceStatus() >
+    AdvanceStatus
     BufferedActions::advance( AdvanceMode mode )
     {
-        switch (mode) {
-        case AdvanceMode::WRITE:
+        switch( mode )
         {
-            /*
-             * Advance mode write:
-             * Close the current step, defer opening the new step
-             * until one is actually needed:
-             * (1) The engine is accessed in BufferedActions::flush
-             * (2) A new step is opened before the currently active step
-             *     has seen an access. See the following lines: open the
-             *     step just to skip it again.
-             */
-            if( *streamStatus == StreamStatus::OutsideOfStep )
+            case AdvanceMode::ENDSTEP:
             {
-                getEngine().BeginStep();
-            }
-            flush();
-            getEngine().EndStep();
-            currentStep++;
-            *streamStatus = StreamStatus::OutsideOfStep;
-            return std::packaged_task< AdvanceStatus() >(
-                []() {
-                    return AdvanceStatus::OK;
-                } );
-        }
-        case AdvanceMode::READ:
-        {
-            if ( *streamStatus == StreamStatus::DuringStep )
-            {
+                /*
+                 * Advance mode write:
+                 * Close the current step, defer opening the new step
+                 * until one is actually needed:
+                 * (1) The engine is accessed in BufferedActions::flush
+                 * (2) A new step is opened before the currently active step
+                 *     has seen an access. See the following lines: open the
+                 *     step just to skip it again.
+                 */
+                if( *streamStatus == StreamStatus::OutsideOfStep )
+                {
+                    getEngine().BeginStep();
+                }
                 flush();
                 getEngine().EndStep();
+                currentStep++;
+                *streamStatus = StreamStatus::OutsideOfStep;
+                return AdvanceStatus::OK;
             }
-            currentStep++;
-            // c++ won't allow capturing class members, so we make intermediate
-            // copies
-            auto _streamStatus = streamStatus;
-            getEngine();
-            auto engine = m_engine;
-            invalidateAttributesMap();
-            invalidateVariablesMap();
-            *streamStatus = StreamStatus::TemporarilyInvalid;
-            return std::packaged_task< AdvanceStatus() >(
-                [engine, _streamStatus]() mutable {
-                    switch( engine->BeginStep() )
-                    {
-                        case adios2::StepStatus::EndOfStream:
-                            *_streamStatus = StreamStatus::StreamOver;
-                            return AdvanceStatus::OVER;
-                        default:
-                            *_streamStatus = StreamStatus::DuringStep;
-                            return AdvanceStatus::OK;
-                    }
-                } );
-        }
-        case AdvanceMode::AUTO:
-            break;
+            case AdvanceMode::BEGINSTEP:
+            {
+                adios2::StepStatus adiosStatus = *m_lastStepStatus;
+
+                // Step might have been opened implicitly already
+                // by requireActiveStep()
+                // In that case, streamStatus is DuringStep and Adios
+                // return status is stored in m_lastStepStatus
+                if( *streamStatus != StreamStatus::DuringStep )
+                {
+                    flush();
+                    adiosStatus = getEngine().BeginStep();
+                }
+                currentStep++;
+                AdvanceStatus res = AdvanceStatus::OK;
+                switch( adiosStatus )
+                {
+                    case adios2::StepStatus::EndOfStream:
+                        *streamStatus = StreamStatus::StreamOver;
+                        res = AdvanceStatus::OVER;
+                        break;
+                    default:
+                        *streamStatus = StreamStatus::DuringStep;
+                        res = AdvanceStatus::OK;
+                        break;
+                }
+                invalidateAttributesMap();
+                invalidateVariablesMap();
+                return res;
+            }
         }
         throw std::runtime_error(
             "Internal error: Advance mode should be explicitly"

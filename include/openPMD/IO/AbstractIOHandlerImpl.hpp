@@ -74,6 +74,9 @@ public:
                     case O::OPEN_PATH:
                         openPath(i.writable, deref_dynamic_cast< Parameter< O::OPEN_PATH > >(i.parameter.get()));
                         break;
+                    case O::CLOSE_PATH:
+                        closePath(i.writable, deref_dynamic_cast< Parameter< O::CLOSE_PATH > >(i.parameter.get()));
+                        break;
                     case O::OPEN_DATASET:
                         openDataset(i.writable, deref_dynamic_cast< Parameter< O::OPEN_DATASET > >(i.parameter.get()));
                         break;
@@ -113,12 +116,6 @@ public:
                     case O::ADVANCE:
                         advance(i.writable, deref_dynamic_cast< Parameter< O::ADVANCE > >(i.parameter.get()));
                         break;
-                    case O::AVAILABLE_CHUNKS:
-                        availableChunks(i.writable, deref_dynamic_cast< Parameter< O::AVAILABLE_CHUNKS > >(i.parameter.get()));
-                        break;
-                    case O::STALE_GROUP:
-                        staleGroup(i.writable, deref_dynamic_cast< Parameter< O::STALE_GROUP > >(i.parameter.get()));
-                        break;
                 }
             }
             catch( unsupported_data_error & )
@@ -155,15 +152,6 @@ public:
    */
   virtual void advance(Writable*, Parameter< Operation::ADVANCE > &)
   {}
-  /** Report chunks that are available for loading from the dataset represented
-   *  by this writable.
-   *
-   * The resulting chunks should be stored into parameters.chunks.
-   * 
-   */
-  virtual void
-  availableChunks( Writable *, Parameter< Operation::AVAILABLE_CHUNKS > & )
-  {}
   /** Declare a group stale.
    * 
    * This is an optimization-enabling task and may be ignored by backends.
@@ -175,7 +163,7 @@ public:
    *
    */
   virtual void
-  staleGroup( Writable *, Parameter< Operation::STALE_GROUP > const & )
+  closePath( Writable *, Parameter< Operation::CLOSE_PATH > const & )
   {}
   /** Create a new file in physical storage, possibly overriding an existing file.
    *

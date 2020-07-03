@@ -91,8 +91,104 @@ public:
 
     T_DTYPES dtype;
 
-private:
+protected:
     resource m_data;
 };
-} // auxiliary
-} // openPMD
+
+namespace detail
+{
+    struct Empty
+    {
+    };
+} // namespace detail
+
+template< typename T >
+class Option
+{
+    using data_t = variantSrc::variant< T, detail::Empty >;
+    data_t m_data;
+
+public:
+    explicit Option() : m_data( detail::Empty() )
+    {
+    }
+    Option( T data ) : m_data( std::move( data ) )
+    {
+    }
+
+    Option( Option const & other ) = default;
+
+    Option &
+    operator=( Option && other )
+    {
+        if( other.has_value() )
+        {
+            m_data.template emplace< 0 >( std::move( other.get() ) );
+        }
+        else
+        {
+            m_data.template emplace< 1 >( detail::Empty() );
+        }
+        return *this;
+    }
+
+    Option &
+    operator=( Option const & other )
+    {
+        if( other.has_value() )
+        {
+            m_data.template emplace< 0 >( other.get() );
+        }
+        else
+        {
+            m_data.template emplace< 1 >( detail::Empty() );
+        }
+        return *this;
+    }
+
+    bool
+    operator==( Option const & other ) const
+    {
+        if( has_value() )
+        {
+            return !other.has_value();
+        }
+        else
+        {
+            if( !other.has_value() )
+            {
+                return false;
+            }
+            else
+            {
+                return get() == other.get();
+            }
+        }
+    }
+
+    bool
+    operator!=( Option const & other ) const
+    {
+        return !( *this == other );
+    }
+
+    bool
+    has_value() const
+    {
+        return m_data.index() == 0;
+    }
+
+    T const &
+    get() const
+    {
+        return variantSrc::template get< T >( m_data );
+    }
+
+    T &
+    get()
+    {
+        return variantSrc::template get< T >( m_data );
+    }
+};
+} // namespace auxiliary
+} // namespace openPMD

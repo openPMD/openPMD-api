@@ -41,11 +41,12 @@ Iteration::Iteration()
     setTimeUnitSI(1);
 }
 
-Iteration::Iteration(Iteration const& i)
-        : Attributable{i},
-          meshes{i.meshes},
-          particles{i.particles},
-          m_closed{i.m_closed}
+Iteration::Iteration( Iteration const & i )
+    : Attributable{ i },
+      meshes{ i.meshes },
+      particles{ i.particles },
+      m_closed{ i.m_closed },
+      m_automaticallyOpenedStepActive{ i.m_automaticallyOpenedStepActive }
 {
     IOHandler = i.IOHandler;
     parent = i.parent;
@@ -63,6 +64,7 @@ Iteration& Iteration::operator=(Iteration const& i)
     IOHandler = i.IOHandler;
     parent = i.parent;
     m_closed = i.m_closed;
+    m_automaticallyOpenedStepActive = i.m_automaticallyOpenedStepActive;
     meshes.IOHandler = IOHandler;
     meshes.parent = this->m_writable.get();
     particles.IOHandler = IOHandler;
@@ -103,6 +105,8 @@ Iteration::setTimeUnitSI(double newTimeUnitSI)
     return *this;
 }
 
+using iterator_t = Container< Iteration, uint64_t >::iterator;
+
 Iteration &
 Iteration::close( bool _flush )
 {
@@ -111,39 +115,34 @@ Iteration::close( bool _flush )
     {
         setAttribute< bool_type >( "closed", 1u );
     }
+    bool * flag = automaticallyOpenedStepActive();
     *m_closed = CloseStatus::ClosedInFrontend;
     if( _flush )
     {
-        Series * s = &auxiliary::deref_dynamic_cast< Series >(
-            parent->attributable->parent->attributable );
-        // figure out my iteration number
-        uint64_t index;
-        bool found = false;
-        for( auto const & pair : s->iterations )
+        if( *flag )
         {
-            if( pair.second.m_writable.get() == this->m_writable.get() )
-            {
-                found = true;
-                index = pair.first;
-                break;
-            }
+            endStep();
+            *flag = false;
         }
-        if( !found )
+        else
         {
-            throw std::runtime_error(
-                "[Iteration::close] Iteration not found in Series." );
+            // flush things manually
+            Series * s = &auxiliary::deref_dynamic_cast< Series >(
+                parent->attributable->parent->attributable );
+            // figure out my iteration number
+            auto begin = myIteration< iterator_t >();
+            auto end = begin;
+            ++end;
+
+            s->flush( begin, end );
         }
-        std::map< uint64_t, Iteration > flushOnlyThisIteration{
-            { index, *this } };
-        switch( *s->m_iterationEncoding )
+    }
+    else
+    {
+        if( *flag )
         {
-            using IE = IterationEncoding;
-            case IE::fileBased:
-                s->flushFileBased( flushOnlyThisIteration );
-                break;
-            case IE::groupBased:
-                s->flushGroupBased( flushOnlyThisIteration );
-                break;
+            throw std::runtime_error( "Using deferred Iteration::close "
+                                      "unimplemented in auto-stepping mode." );
         }
     }
     return *this;
@@ -169,55 +168,97 @@ Iteration::closedByWriter() const
     }
 }
 
-ConsumingFuture< AdvanceStatus >
-Iteration::advance( AdvanceMode mode )
+AdvanceStatus
+Iteration::beginStep()
 {
+    using IE = IterationEncoding;
     Series & series =
         *dynamic_cast< Series * >( parent->attributable->parent->attributable );
-    if( *series.m_iterationEncoding == IterationEncoding::groupBased )
+    // Initialize file with this to quiet warnings
+    // The following switch is comprehensive
+    Attributable * file = this;
+    switch( *series.m_iterationEncoding )
     {
-        return series.advance( mode );
+        case IE::fileBased:
+            file = this;
+            break;
+        case IE::groupBased:
+            file = &series;
+            break;
     }
-    auxiliary::ConsumingFuture< AdvanceStatus > future =
-        series.advance( mode, *this );
-    // capture series by reference since the destructor will issue a flush
-    // https://github.com/openPMD/openPMD-api/issues/534
-    std::packaged_task< AdvanceStatus( AdvanceStatus ) > postProcessing(
-        [this, &series]( AdvanceStatus status ) mutable {
-            if( status != AdvanceStatus::OK )
-            {
-                return status;
-            }
+    AdvanceStatus status = series.advance(
+        AdvanceMode::BEGINSTEP, *file, myIteration< iterator_t >(), *this );
+    if( status != AdvanceStatus::OK )
+    {
+        return status;
+    }
 
-            // re-read -> new datasets might be available
-            if( this->IOHandler->m_frontendAccess == AccessType::READ_ONLY ||
-                this->IOHandler->m_frontendAccess == AccessType::READ_WRITE )
-            {
-                bool previous = this->written();
-                this->written() = false;
-                auto oldType = this->IOHandler->m_frontendAccess;
-                auto newType = const_cast< Access * >(
-                    &this->IOHandler->m_frontendAccess );
-                *newType = AccessType::READ_WRITE;
+    // re-read -> new datasets might be available
+    if( *series.m_iterationEncoding == IE::groupBased &&
+        ( this->IOHandler->m_frontendAccess == Access::READ_ONLY ||
+          this->IOHandler->m_frontendAccess == Access::READ_WRITE ) )
+    {
+        bool previous = series.iterations.written();
+        series.iterations.written() = false;
+        auto oldType = this->IOHandler->m_frontendAccess;
+        auto newType =
+            const_cast< Access * >( &this->IOHandler->m_frontendAccess );
+        *newType = Access::READ_WRITE;
+        series.readGroupBased( false );
+        *newType = oldType;
+        series.iterations.written() = previous;
+    }
 
-                series.readFileBased( /* init = */ false );
+    return status;
+}
 
-                *newType = oldType;
-                this->written() = previous;
-            }
+void
+Iteration::endStep()
+{
+    using IE = IterationEncoding;
+    Series & series =
+        *dynamic_cast< Series * >( parent->attributable->parent->attributable );
+    // Initialize file with this to quiet warnings
+    // The following switch is comprehensive
+    Attributable * file = this;
+    switch( *series.m_iterationEncoding )
+    {
+        case IE::fileBased:
+            file = this;
+            break;
+        case IE::groupBased:
+            file = &series;
+            break;
+    }
+    // @todo filebased check
+    AdvanceStatus status = series.advance(
+        AdvanceMode::ENDSTEP, *file, myIteration< iterator_t >(), *this );
+    if( status != AdvanceStatus::OK )
+    {
+        return;
+    }
 
-            // If file has been finalized, it has been closed by the last flush
+    if( *series.m_iterationEncoding == IE::fileBased )
+    {
+        return;
+    }
 
-            return status;
-        } );
-    auxiliary::ConsumingFuture< AdvanceStatus > futurePost =
-        auxiliary::chain_futures<
-            AdvanceStatus,
-            AdvanceStatus,
-            auxiliary::RunFutureNonThreaded >(
-            std::move( future ), std::move( postProcessing ) );
-    futurePost.run_as_thread();
-    return futurePost;
+    // We can now put some groups to rest
+    if( this->IOHandler->m_frontendAccess == Access::CREATE ||
+        this->IOHandler->m_frontendAccess == Access::READ_WRITE )
+    {
+        if( *m_closed == CloseStatus::ClosedInFrontend )
+        {
+            Parameter< Operation::CLOSE_PATH > fClose;
+            IOHandler->enqueue( IOTask( this, std::move( fClose ) ) );
+            // In group-based iteration layout, files are
+            // not closed on a per-iteration basis
+            // We will treat it as such nonetheless
+            *m_closed = CloseStatus::ClosedInBackend;
+        }
+    }
+
+    return;
 }
 
 void
@@ -482,6 +523,43 @@ Iteration::read()
     readAttributes();
 }
 
+template< typename Iterator >
+Iterator
+Iteration::myIteration()
+{
+    Series * s =
+        dynamic_cast< Series * >( parent->attributable->parent->attributable );
+    for( auto it = s->iterations.begin(); it != s->iterations.end(); ++it )
+    {
+        if( it->second.m_writable.get() == this->m_writable.get() )
+        {
+            return it;
+        }
+    }
+    throw std::runtime_error(
+        "[Iteration::close] Iteration not found in Series." );
+}
+
+
+bool *
+Iteration::automaticallyOpenedStepActive()
+{
+    Series * s =
+        dynamic_cast< Series * >( parent->attributable->parent->attributable );
+    bool * flag;
+    switch( *s->m_iterationEncoding )
+    {
+        using IE = IterationEncoding;
+        case IE::fileBased:
+            flag = &*this->m_automaticallyOpenedStepActive;
+            break;
+        case IE::groupBased:
+            flag = &*s->m_automaticallyOpenedStepActive;
+            break;
+    }
+    return flag;
+}
+
 bool
 Iteration::dirtyRecursive() const
 {
@@ -541,4 +619,34 @@ template
 Iteration& Iteration::setDt< double >(double dt);
 template
 Iteration& Iteration::setDt< long double >(long double dt);
-} // openPMD
+
+IterationSteps::IterationSteps( super_t _super )
+    : super_t{ std::move( _super ) }
+{
+}
+
+IterationSteps::mapped_type &
+IterationSteps::operator[]( key_type const & key )
+{
+    auto & res = super_t::operator[]( key );
+    bool * flag = res.automaticallyOpenedStepActive();
+    if( !*flag )
+    {
+        res.beginStep();
+        *flag = true;
+    }
+    return res;
+}
+IterationSteps::mapped_type &
+IterationSteps::operator[]( key_type && key )
+{
+    auto & res = super_t::operator[]( std::move( key ) );
+    bool * flag = res.automaticallyOpenedStepActive();
+    if( !*flag )
+    {
+        res.beginStep();
+        *flag = true;
+    }
+    return res;
+}
+} // namespace openPMD

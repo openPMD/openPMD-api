@@ -149,7 +149,7 @@ void init_Series(py::module &m) {
         .def("set_iteration_format", &Series::setIterationFormat)
         .def_property_readonly("name", &Series::name)
         .def("set_name", &Series::setName)
-        .def("flush", &Series::flush)
+        .def("flush", [](Series & series){ return series.flush(); })
 
         .def_property_readonly("backend", &Series::backend)
 

@@ -20,10 +20,10 @@
  */
 #pragma once
 
+#include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/Streaming.hpp"
-#include "openPMD/auxiliary/Future.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
 
@@ -43,6 +43,8 @@ class Iteration : public Attributable
     >
     friend class Container;
     friend class Series;
+    friend class IterationSteps;
+    friend class SeriesIterator;
 
 public:
     Iteration(Iteration const&);
@@ -127,8 +129,11 @@ public:
     bool
     closedByWriter() const;
 
-    ConsumingFuture< AdvanceStatus >
-    advance( AdvanceMode mode = AdvanceMode::AUTO );
+    AdvanceStatus
+    beginStep();
+
+    void
+    endStep();
 
     Container< Mesh > meshes;
     Container< ParticleSpecies > particles; // particleSpecies?
@@ -166,6 +171,33 @@ private:
      */
     std::shared_ptr< CloseStatus > m_closed =
         std::make_shared< CloseStatus >( CloseStatus::Open );
+
+    /**
+     * Steps may be opened manually or automatically.
+     * If opened automatically, they should close
+     * automatically upon Iteration::close.
+     * Used for file-based iteration layout, see Series.hpp for
+     * group-based layout.
+     */
+    std::shared_ptr< bool > m_automaticallyOpenedStepActive =
+        std::make_shared< bool >( false );
+
+    /**
+     * We cannot give the return type yet, since Iteration is still an
+     * incomplete type.
+     * It's decltype(Series::iterations)::iterator.
+     */
+    template< typename Iterator >
+    Iterator myIteration( );
+
+    /**
+     * @brief Has a step been opened automatically? Returns a pointer to the
+     * corresponding flag. Either this iteration's flag if file-based layout is
+     * being used, or the complete Series' flag for group-based layout.
+     *
+     */
+    bool *
+    automaticallyOpenedStepActive();
 
     /*
      * @brief Check recursively whether this Iteration is dirty.
@@ -215,4 +247,19 @@ template< typename T >
 inline T
 Iteration::dt() const
 { return Attributable::readFloatingpoint< T >("dt"); }
-} // openPMD
+
+class IterationSteps : private Container< Iteration, uint64_t >
+{
+    friend class Series;
+
+private:
+    using super_t = Container< Iteration, uint64_t >;
+    IterationSteps( super_t );
+
+public:
+    mapped_type &
+    operator[]( key_type const & key ) override;
+    mapped_type &
+    operator[]( key_type && key ) override;
+};
+} // namespace openPMD

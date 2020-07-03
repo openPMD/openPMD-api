@@ -4,12 +4,6 @@
 #   define OPENPMD_protected public
 #endif
 
-#include "openPMD/auxiliary/Environment.hpp"
-#include "openPMD/auxiliary/Filesystem.hpp"
-#include "openPMD/openPMD.hpp"
-
-#include <catch2/catch.hpp>
-
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -23,6 +17,11 @@
 #include <string>
 #include <tuple>
 #include <vector>
+
+#include "openPMD/auxiliary/Environment.hpp"
+#include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/openPMD.hpp"
+#include <catch2/catch.hpp>
 
 using namespace openPMD;
 
@@ -2759,3 +2758,50 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
     read( "../samples/jsonConfiguredBP4.bp", readConfigBP4 );
 }
 #endif
+
+void
+serial_iterator( std::string const & file )
+{
+    {
+        Series writeSeries( file, AccessType::CREATE );
+        auto iterations = writeSeries.writeIterations();
+        for( size_t i = 0; i < 10; ++i )
+        {
+            auto iteration = iterations[ i ];
+            auto E_x = iteration.meshes[ "E" ][ "x" ];
+            E_x.resetDataset(
+                openPMD::Dataset( openPMD::Datatype::INT, { 1000 } ) );
+            std::vector< int > data( 1000, i );
+            E_x.storeChunk( data, { 0 }, { 1000 } );
+            iteration.close();
+        }
+    }
+
+    Series readSeries( file, AccessType::READ_ONLY );
+
+    size_t iteration_index = 0;
+    for( auto iteration : readSeries.readIterations() )
+    {
+        auto E_x = iteration.meshes[ "E" ][ "x" ];
+        REQUIRE( E_x.getDimensionality() == 1 );
+        REQUIRE( E_x.getExtent()[ 0 ] == 1000 );
+        auto chunk = E_x.loadChunk< int >( { 0 }, { 1000 } );
+        iteration.close(); // @todo replace with ::close()
+        for( size_t i = 0; i < 1000; ++i )
+        {
+            REQUIRE( chunk.get()[ i ] == iteration_index );
+        }
+        ++iteration_index;
+    }
+    REQUIRE( iteration_index == 10 );
+}
+
+TEST_CASE( "serial_iterator", "[serial][adios2]" )
+{
+    for( auto const & t : backends )
+    {
+        auto const & suffix = std::get< 0 >( t );
+        serial_iterator( "../samples/serial_iterator_filebased_%T." + suffix );
+        serial_iterator( "../samples/serial_iterator_groupbased." + suffix );
+    }
+}

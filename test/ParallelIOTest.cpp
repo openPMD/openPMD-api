@@ -383,3 +383,81 @@ TEST_CASE( "hzdr_adios_sample_content_test", "[parallel][adios1]" )
     }
 }
 #endif
+
+#if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
+
+void
+adios2_streaming()
+{
+    int size{ -1 };
+    int rank{ -1 };
+    MPI_Comm_size( MPI_COMM_WORLD, &size );
+    MPI_Comm_rank( MPI_COMM_WORLD, &rank );
+    if( auxiliary::getEnvString( "OPENPMD_BP_BACKEND", "NOT_SET" ) == "ADIOS1" )
+    {
+        // run this test for ADIOS2 only
+        return;
+    }
+    std::string adios2Config = R"END(
+{
+  "adios2": {
+    "engine": {
+      "type": "sst"
+    }
+  }
+}
+)END";
+
+    if( size < 2 || rank > 1 )
+    {
+        return;
+    }
+
+    if( rank == 0 )
+    {
+        // write
+        Series writeSeries(
+            "../samples/adios2_stream.bp", AccessType::CREATE, adios2Config );
+        auto iterations = writeSeries.writeIterations();
+        for( size_t i = 0; i < 10; ++i )
+        {
+            auto iteration = iterations[ i ];
+            auto E_x = iteration.meshes[ "E" ][ "x" ];
+            E_x.resetDataset(
+                openPMD::Dataset( openPMD::Datatype::INT, { 1000 } ) );
+            std::vector< int > data( 1000, 0 );
+            E_x.storeChunk( data, { 0 }, { 1000 } );
+            iteration.close();
+        }
+    }
+    else if( rank == 1 )
+    {
+        // read
+        Series readSeries(
+            "../samples/adios2_stream.bp",
+            AccessType::READ_ONLY,
+            adios2Config );
+
+        size_t iteration_index = 0;
+        for( auto iteration : readSeries.readIterations() )
+        {
+            auto E_x = iteration.meshes[ "E" ][ "x" ];
+            REQUIRE( E_x.getDimensionality() == 1 );
+            REQUIRE( E_x.getExtent()[ 0 ] == 1000 );
+            auto chunk = E_x.loadChunk< int >( { 0 }, { 1000 } );
+            iteration.close();
+            for( size_t i = 0; i < 1000; ++i )
+            {
+                REQUIRE( chunk.get()[ i ] == 0 );
+            }
+            ++iteration_index;
+        }
+        REQUIRE( iteration_index == 10 );
+    }
+}
+
+TEST_CASE( "adios2_streaming", "[pseudoserial][adios2]" )
+{
+    adios2_streaming();
+}
+#endif

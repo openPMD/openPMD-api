@@ -60,8 +60,6 @@ public:
      */
     bool constant() const;
 
-    ChunkTable availableChunks();
-
 OPENPMD_protected:
     BaseRecordComponent();
 

@@ -20,21 +20,21 @@
  */
 #pragma once
 
-#include "openPMD/config.hpp"
-#include "openPMD/auxiliary/Deprecated.hpp"
-#include "openPMD/backend/Attributable.hpp"
-#include "openPMD/backend/Container.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/IterationEncoding.hpp"
-#include "openPMD/version.hpp"
 #include "openPMD/Streaming.hpp"
-#include "openPMD/auxiliary/Future.hpp"
+#include "openPMD/auxiliary/Deprecated.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
+#include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/Container.hpp"
+#include "openPMD/config.hpp"
+#include "openPMD/version.hpp"
 
 #if openPMD_HAVE_MPI
-#   include <mpi.h>
+#    include <mpi.h>
 #endif
 
 #include <string>
@@ -49,6 +49,8 @@
 
 namespace openPMD
 {
+class SeriesIterable;
+
 /** @brief  Root level of the openPMD hierarchy.
  *
  * Entry point and common link between all iterations of particle and mesh data.
@@ -59,6 +61,7 @@ namespace openPMD
 class Series : public Attributable
 {
     friend class Iteration;
+    friend class SeriesIterator;
 
 public:
 #if openPMD_HAVE_MPI
@@ -209,63 +212,6 @@ public:
     Series& setMachine(std::string const& newMachine);
 
     /**
-     * @throw   no_such_attribute_error If optional attribute is not present.
-     * @return  Vector with a String per (writing) MPI rank, indicating user-
-     *          defined meta information per rank. Example: host name.
-     */
-    chunk_assignment::RankMeta
-    mpiRanksMetaInfo( ) const;
-
-    /**
-     * @brief Set the Mpi Ranks Meta Info attribute, i.e. a Vector with
-     *        a String per (writing) MPI rank, indicating user-
-     *        defined meta information per rank. Example: host name.
-     *
-     * @return Reference to modified series.
-     */
-    Series &
-    setMpiRanksMetaInfo( chunk_assignment::RankMeta );
-
-#if openPMD_HAVE_MPI
-    /**
-     * @brief Set the Mpi Ranks Meta Info attribute, i.e. a Vector with
-     *        a String per (writing) MPI rank, indicating user-
-     *        defined meta information per rank. Example: host name.
-     *        This operation is collective. Use setMPIRanksMetaInfo(), 
-     *        setMpiRanksMetaInfoByFile() or setMpiRanksMetaInfoByEnvvar() if
-     *        this is not wanted.
-     *
-     * @return Reference to modified series.
-     */
-    Series &
-    setMpiRanksMetaInfo( std::string const & myRankInfo );
-#endif
-
-    /**
-     * @brief Set the Mpi Ranks Meta Info attribute, i.e. a Vector with
-     *        a String per (writing) MPI rank, indicating user-
-     *        defined meta information per rank. Example: host name.
-     *        This vector is read from the given file line by line.
-     *
-     * @return Reference to modified series.
-     */
-    Series &
-    setMpiRanksMetaInfoByFile( std::string const & pathToMetaFile );
-
-    /**
-     * @brief Set the Mpi Ranks Meta Info attribute, i.e. a Vector with
-     *        a String per (writing) MPI rank, indicating user-
-     *        defined meta information per rank. Example: host name.
-     *        This vector is read from a file whose location is found
-     *        in an environment variable.
-     *
-     * @return Reference to modified series.
-     */
-    Series &
-    setMpiRanksMetaInfoByEnvvar(
-        std::string const & envvar = chunk_assignment::HOSTFILE_VARNAME );
-
-    /**
      * @return  Current encoding style for multiple iterations in this series.
      */
     IterationEncoding iterationEncoding() const;
@@ -317,8 +263,11 @@ public:
     std::future< void >
     flush();
 
-    ConsumingFuture< AdvanceStatus > advance(
-        AdvanceMode = AdvanceMode::AUTO );
+    SeriesIterable
+    readIterations();
+
+    IterationSteps
+    writeIterations();
 
     Container< Iteration, uint64_t > iterations;
 
@@ -327,19 +276,34 @@ OPENPMD_private:
     std::unique_ptr< ParsedInput > parseInput(std::string);
     void init(std::shared_ptr< AbstractIOHandler >, std::unique_ptr< ParsedInput >);
     void initDefaults();
-    template< typename IterationsContainer >
-    void flushFileBased( IterationsContainer && iterationsToFlush );
-    template< typename IterationsContainer >
-    void flushGroupBased( IterationsContainer && iterationsToFlush );
+    using iterations_iterator = decltype( iterations )::iterator;
+    std::future< void > flush(
+        iterations_iterator begin, iterations_iterator end );
+    void flushFileBased( iterations_iterator begin, iterations_iterator end );
+    void flushGroupBased( iterations_iterator begin, iterations_iterator end );
     void flushMeshesPath();
     void flushParticlesPath();
     void readFileBased( bool init = true );
     void readGroupBased( bool init = true );
     void readBase();
     void read();
-    std::string iterationFilename(uint64_t i);
-    auxiliary::ConsumingFuture< AdvanceStatus >
-    advance( AdvanceMode, Attributable & file );
+    std::string iterationFilename( uint64_t i );
+    AdvanceStatus
+    advance(
+        AdvanceMode,
+        Attributable & file,
+        iterations_iterator it,
+        Iteration & iteration );
+
+    /**
+     * Steps may be opened manually or automatically.
+     * If opened automatically, they should close
+     * automatically upon Iteration::close.
+     * Used for group-based iteration layout, see Series.hpp for
+     * iteration-based layout.
+     */
+    std::shared_ptr< bool > m_automaticallyOpenedStepActive =
+        std::make_shared< bool >( false );
 
     static constexpr char const * const BASEPATH = "/data/%T/";
 
@@ -354,4 +318,53 @@ OPENPMD_private:
     const MPI_Comm m_communicator = MPI_COMM_SELF;
 #endif
 }; // Series
+
+class SeriesIterator
+{
+    using iterations_t = decltype( Series::iterations );
+    using iteration_index_t = iterations_t::key_type;
+
+    using maybe_series_t = auxiliary::Option< Series >;
+
+    iteration_index_t m_currentIteration = 0;
+    maybe_series_t m_series;
+
+    // construct the end() iterator
+    SeriesIterator();
+
+public:
+    SeriesIterator( Series & );
+
+    SeriesIterator &
+    operator++();
+
+    Iteration &
+    operator*();
+
+    bool
+    operator==( SeriesIterator const & other ) const;
+
+    bool
+    operator!=( SeriesIterator const & other ) const;
+
+    static SeriesIterator
+    end();
+};
+
+class SeriesIterable
+{
+    using iterations_t = decltype( Series::iterations );
+    using iterator_t = SeriesIterator;
+
+    Series m_series;
+
+public:
+    SeriesIterable( Series );
+
+    iterator_t
+    begin();
+
+    iterator_t
+    end();
+};
 } // namespace openPMD
