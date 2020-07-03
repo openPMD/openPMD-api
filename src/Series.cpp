@@ -769,7 +769,7 @@ Series::flushParticlesPath()
 }
 
 void
-Series::readFileBased( bool init )
+Series::readFileBased( bool __init )
 {
     Parameter< Operation::OPEN_FILE > fOpen;
     Parameter< Operation::READ_ATT > aRead;
@@ -795,7 +795,7 @@ Series::readFileBased( bool init )
             iterations.m_writable->parent = getWritable(this);
             iterations.parent = getWritable(this);
 
-            if( init )
+            if( __init )
             {
                 readBase();
 
@@ -866,14 +866,14 @@ Series::readFileBased( bool init )
 }
 
 void
-Series::readGroupBased( bool init )
+Series::readGroupBased( bool __init )
 {
     Parameter< Operation::OPEN_FILE > fOpen;
     fOpen.name = *m_name;
     IOHandler->enqueue(IOTask(this, fOpen));
     IOHandler->flush();
 
-    if( init )
+    if( __init )
     {
         readBase();
 

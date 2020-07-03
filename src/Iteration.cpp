@@ -546,7 +546,7 @@ Iteration::automaticallyOpenedStepActive()
 {
     Series * s =
         dynamic_cast< Series * >( parent->attributable->parent->attributable );
-    bool * flag;
+    bool * flag = nullptr;;
     switch( *s->m_iterationEncoding )
     {
         using IE = IterationEncoding;
@@ -556,6 +556,8 @@ Iteration::automaticallyOpenedStepActive()
         case IE::groupBased:
             flag = &*s->m_automaticallyOpenedStepActive;
             break;
+        default:
+            throw std::runtime_error( "[Iteration] unreachable" );
     }
     return flag;
 }
