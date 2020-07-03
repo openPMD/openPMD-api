@@ -132,6 +132,9 @@ ADIOS1IOHandlerImpl::flush()
                 case O::OPEN_PATH:
                     openPath(i.writable, deref_dynamic_cast< Parameter< O::OPEN_PATH > >(i.parameter.get()));
                     break;
+                case O::CLOSE_PATH:
+                    closePath(i.writable, deref_dynamic_cast< Parameter< O::CLOSE_PATH > >(i.parameter.get()));
+                    break;
                 case O::OPEN_DATASET:
                     openDataset(i.writable, deref_dynamic_cast< Parameter< O::OPEN_DATASET > >(i.parameter.get()));
                     break;
@@ -167,6 +170,9 @@ ADIOS1IOHandlerImpl::flush()
                     break;
                 case O::LIST_ATTS:
                     listAttributes(i.writable, deref_dynamic_cast< Parameter< O::LIST_ATTS > >(i.parameter.get()));
+                    break;
+                case O::ADVANCE:
+                    advance(i.writable, deref_dynamic_cast< Parameter< O::ADVANCE > >(i.parameter.get()));
                     break;
                 default:
                     VERIFY(false, "[ADIOS1] Internal error: Wrong operation in ADIOS work queue");
