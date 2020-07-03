@@ -2806,3 +2806,54 @@ TEST_CASE( "serial_iterator", "[serial][adios2]" )
         serial_iterator( "../samples/serial_iterator_groupbased." + suffix );
     }
 }
+
+void
+iterate_nonstreaming_series( std::string const & file )
+{
+    {
+        Series writeSeries( file, AccessType::CREATE );
+        // use conventional API to write iterations
+        auto iterations = writeSeries.iterations;
+        for( size_t i = 0; i < 10; ++i )
+        {
+            auto iteration = iterations[ i ];
+            auto E_x = iteration.meshes[ "E" ][ "x" ];
+            E_x.resetDataset(
+                openPMD::Dataset( openPMD::Datatype::INT, { 1000 } ) );
+            std::vector< int > data( 1000, i );
+            E_x.storeChunk( data, { 0 }, { 1000 } );
+            iteration.close();
+        }
+    }
+
+    Series readSeries( file, AccessType::READ_ONLY );
+
+    size_t iteration_index = 0;
+    // conventionally written Series must be readable with streaming-aware API!
+    for( auto iteration : readSeries.readIterations() )
+    {
+        auto E_x = iteration.meshes[ "E" ][ "x" ];
+        REQUIRE( E_x.getDimensionality() == 1 );
+        REQUIRE( E_x.getExtent()[ 0 ] == 1000 );
+        auto chunk = E_x.loadChunk< int >( { 0 }, { 1000 } );
+        iteration.close(); // @todo replace with ::close()
+        for( size_t i = 0; i < 1000; ++i )
+        {
+            REQUIRE( chunk.get()[ i ] == iteration_index );
+        }
+        ++iteration_index;
+    }
+    REQUIRE( iteration_index == 10 );
+}
+
+TEST_CASE( "iterate_nonstreaming_series", "[serial][adios2]" )
+{
+    for( auto const & t : backends )
+    {
+        auto const & suffix = std::get< 0 >( t );
+        iterate_nonstreaming_series(
+            "../samples/iterate_nonstreaming_series_filebased_%T." + suffix );
+        iterate_nonstreaming_series(
+            "../samples/iterate_nonstreaming_series_groupbased." + suffix );
+    }
+}
