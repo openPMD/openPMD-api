@@ -22,7 +22,6 @@
 
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/Dataset.hpp"
-#include "openPMD/Streaming.hpp"
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_protected

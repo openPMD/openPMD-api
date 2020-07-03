@@ -20,18 +20,17 @@
  */
 #include "openPMD/Dataset.hpp"
 
-#include <algorithm>
-#include <cstddef>
 #include <iostream>
+#include <cstddef>
 
 
 namespace openPMD
 {
-Dataset::Dataset( Datatype d, Extent e )
-    : extent{ e }
-    , dtype{ d }
-    , rank{ static_cast< uint8_t >( e.size() ) }
-    , chunkSize{ e }
+Dataset::Dataset(Datatype d, Extent e)
+        : extent{e},
+          dtype{d},
+          rank{static_cast<uint8_t>(e.size())},
+          chunkSize{e}
 { }
 
 Dataset&
@@ -83,4 +82,4 @@ Dataset::setCustomTransform(std::string const& parameter)
     transform = parameter;
     return *this;
 }
-} // namespace openPMD
+} // openPMD

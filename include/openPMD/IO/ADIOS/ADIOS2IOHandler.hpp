@@ -186,7 +186,6 @@ public:
 
 private:
     adios2::ADIOS m_ADIOS;
-    bool m_isSerial = true;
 
     struct ParameterizedOperator
     {

@@ -34,7 +34,6 @@
 #include <type_traits>
 #include <vector>
 #include <array>
-#include <list>
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_protected
@@ -348,7 +347,7 @@ RecordComponent::loadChunk(std::shared_ptr< T > data, Offset o, Extent e, double
 
 template< typename T >
 inline void
-RecordComponent::storeChunk( std::shared_ptr< T > data, Offset o, Extent e )
+RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
 {
     if( constant() )
         throw std::runtime_error("Chunks cannot be written for a constant RecordComponent.");

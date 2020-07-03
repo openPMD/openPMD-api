@@ -20,13 +20,13 @@
  */
 #pragma once
 
-#include <algorithm>
-#include <memory>
-#include <string>
-#include <vector>
-
 #include "openPMD/Datatype.hpp"
+
+#include <memory>
 #include <type_traits>
+#include <vector>
+#include <string>
+
 
 namespace openPMD
 {

@@ -34,11 +34,9 @@
 #include "openPMD/version.hpp"
 
 #if openPMD_HAVE_MPI
-#    include <mpi.h>
+#   include <mpi.h>
 #endif
 
-#include <string>
-#include <future>
 #include <map>
 
 // expose private and protected members for invasive testing
@@ -260,8 +258,7 @@ public:
 
     /** Execute all required remaining IO operations to write or read data.
      */
-    std::future< void >
-    flush();
+    void flush();
 
     SeriesIterable
     readIterations();
@@ -314,9 +311,6 @@ OPENPMD_private:
     std::shared_ptr< std::string > m_filenamePrefix;
     std::shared_ptr< std::string > m_filenamePostfix;
     std::shared_ptr< int > m_filenamePadding;
-#if openPMD_HAVE_MPI
-    const MPI_Comm m_communicator = MPI_COMM_SELF;
-#endif
 }; // Series
 
 class SeriesIterator

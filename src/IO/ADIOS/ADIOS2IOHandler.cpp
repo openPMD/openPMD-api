@@ -1258,27 +1258,15 @@ namespace detail
     BufferedActions::BufferedActions(
         ADIOS2IOHandlerImpl & impl,
         InvalidatableFile file )
-        : m_file( impl.fullPath( std::move( file ) ) )
-        , m_IOName( std::to_string( impl.nameCounter++ ) )
-        , m_ADIOS( impl.m_ADIOS )
-        , m_IO( impl.m_ADIOS.DeclareIO( m_IOName ) )
-        , m_mode( impl.adios2AccessMode() )
-        , m_writeDataset( &impl )
-        , m_readDataset( &impl )
-        , m_attributeReader()
+        : m_file( impl.fullPath( std::move( file ) ) ),
+          m_IOName( std::to_string( impl.nameCounter++ ) ),
+          m_ADIOS( impl.m_ADIOS ),
+          m_IO( impl.m_ADIOS.DeclareIO( m_IOName ) ),
+          m_mode( impl.adios2AccessMode() ),
+          m_writeDataset( &impl ),
+          m_readDataset( &impl ),
+          m_attributeReader()
     {
-        if ( impl.m_isSerial )
-        {
-            mpi_rank = 0;
-            mpi_size = 1;
-        }
-        else
-        {
-#if openPMD_HAVE_MPI
-            MPI_Comm_rank( impl.m_comm, &mpi_rank );
-            MPI_Comm_size( impl.m_comm, &mpi_size );
-#endif
-        }
         if ( !m_IO )
         {
             throw std::runtime_error(

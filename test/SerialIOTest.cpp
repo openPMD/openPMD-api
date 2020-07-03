@@ -4,6 +4,12 @@
 #   define OPENPMD_protected public
 #endif
 
+#include "openPMD/auxiliary/Environment.hpp"
+#include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/openPMD.hpp"
+
+#include <catch2/catch.hpp>
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -17,11 +23,6 @@
 #include <string>
 #include <tuple>
 #include <vector>
-
-#include "openPMD/auxiliary/Environment.hpp"
-#include "openPMD/auxiliary/Filesystem.hpp"
-#include "openPMD/openPMD.hpp"
-#include <catch2/catch.hpp>
 
 using namespace openPMD;
 

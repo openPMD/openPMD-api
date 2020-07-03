@@ -19,7 +19,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/backend/BaseRecordComponent.hpp"
-#include "openPMD/IO/IOTask.hpp"
 
 
 namespace openPMD
@@ -56,4 +55,4 @@ BaseRecordComponent::constant() const
 {
     return *m_isConstant;
 }
-} // openPMD
+} // namespace openPMD

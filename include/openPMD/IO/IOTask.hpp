@@ -25,7 +25,6 @@
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/Dataset.hpp"
 
-#include <future> // std::packaged_task
 #include <map>
 #include <memory> // std::shared_ptr
 #include <string>

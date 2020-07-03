@@ -19,7 +19,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/Iteration.hpp"
-
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/Series.hpp"
@@ -262,7 +261,7 @@ Iteration::endStep()
 }
 
 void
-Iteration::flushFileBased( std::string const & filename, uint64_t i )
+Iteration::flushFileBased(std::string const& filename, uint64_t i)
 {
     Series * s =
         dynamic_cast< Series * >( parent->attributable->parent->attributable );
@@ -280,9 +279,8 @@ Iteration::flushFileBased( std::string const & filename, uint64_t i )
 
         /* create iteration path */
         pCreate.path = std::to_string(i);
-        IOHandler->enqueue( IOTask( this, pCreate ) );
-    }
-    else
+        IOHandler->enqueue(IOTask(this, pCreate));
+    } else
     {
         // operations for create mode
         if((IOHandler->m_frontendAccess == Access::CREATE ) &&
@@ -594,15 +592,15 @@ Iteration::linkHierarchy(std::shared_ptr< Writable > const& w)
     particles.linkHierarchy(m_writable);
 }
 
-template float
-Iteration::time< float >() const;
-template double
-Iteration::time< double >() const;
-template long double
-Iteration::time< long double >() const;
+template
+float Iteration::time< float >() const;
+template
+double Iteration::time< double >() const;
+template
+long double Iteration::time< long double >() const;
 
-template float
-Iteration::dt< float >() const;
+template
+float Iteration::dt< float >() const;
 template
 double Iteration::dt< double >() const;
 template

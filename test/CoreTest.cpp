@@ -15,6 +15,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <sstream>
+#include <iostream>
 
 using namespace openPMD;
 

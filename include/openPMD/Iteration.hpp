@@ -136,7 +136,7 @@ public:
     endStep();
 
     Container< Mesh > meshes;
-    Container< ParticleSpecies > particles; // particleSpecies?
+    Container< ParticleSpecies > particles; //particleSpecies?
 
     virtual ~Iteration() = default;
 
@@ -211,7 +211,7 @@ private:
     dirtyRecursive() const;
 
     virtual void linkHierarchy(std::shared_ptr< Writable > const& w);
-};  // Iteration
+};  //Iteration
 
 extern template
 float

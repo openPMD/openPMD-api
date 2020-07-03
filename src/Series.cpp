@@ -18,22 +18,20 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
+#include "openPMD/auxiliary/Date.hpp"
+#include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/AbstractIOHandlerHelper.hpp"
+#include "openPMD/IO/Format.hpp"
 #include "openPMD/Series.hpp"
 
 #include <exception>
 #include <iomanip>
 #include <iostream>
-#include <memory>
 #include <set>
 #include <string>
 #include <tuple>
-
-#include "openPMD/IO/AbstractIOHandler.hpp"
-#include "openPMD/IO/AbstractIOHandlerHelper.hpp"
-#include "openPMD/IO/Format.hpp"
-#include "openPMD/auxiliary/Date.hpp"
-#include "openPMD/auxiliary/Filesystem.hpp"
-#include "openPMD/auxiliary/StringManip.hpp"
 
 #if defined(__GNUC__)
 #   if (__GNUC__ == 4 && __GNUC_MINOR__ < 9)
@@ -46,6 +44,7 @@
 #else
 #   include <regex>
 #endif
+
 
 namespace openPMD
 {
@@ -89,7 +88,6 @@ Series::Series(
     std::string const & options )
     : iterations{ Container< Iteration, uint64_t >() }
     , m_iterationEncoding{ std::make_shared< IterationEncoding >() }
-    , m_communicator{comm}
 {
     auto input = parseInput( filepath );
     auto handler =
@@ -364,10 +362,10 @@ Series::backend() const
     return IOHandler->backendName();
 }
 
-std::future< void >
+void
 Series::flush()
 {
-    return flush( iterations.begin(), iterations.end() );
+    flush( iterations.begin(), iterations.end() );
 }
 
 SeriesIterable
@@ -383,9 +381,9 @@ Series::writeIterations()
 }
 
 std::unique_ptr< Series::ParsedInput >
-Series::parseInput( std::string filepath )
+Series::parseInput(std::string filepath)
 {
-    std::unique_ptr< Series::ParsedInput > input{ new Series::ParsedInput };
+    std::unique_ptr< Series::ParsedInput > input{new Series::ParsedInput};
 
 #ifdef _WIN32
     if( auxiliary::contains(filepath, '/') )
@@ -641,8 +639,7 @@ Series::flushFileBased( iterations_iterator begin, iterations_iterator end )
             dirty() |= it->second.dirty();
             it->second.flushFileBased(filename, it->first);
 
-            iterations.flush(
-                auxiliary::replace_first( basePath(), "%T/", "" ) );
+            iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
 
             flushAttributes();
 
@@ -700,10 +697,10 @@ Series::flushGroupBased( iterations_iterator begin, iterations_iterator end )
         {
             Parameter< Operation::CREATE_FILE > fCreate;
             fCreate.name = *m_name;
-            IOHandler->enqueue( IOTask( this, fCreate ) );
+            IOHandler->enqueue(IOTask(this, fCreate));
         }
 
-        iterations.flush( auxiliary::replace_first( basePath(), "%T/", "" ) );
+        iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
 
         for( auto it = begin; it != end; ++it )
         {
@@ -1164,9 +1161,7 @@ matcher(std::string const& prefix, int padding, std::string const& postfix, Form
             return buildMatcher(nameReg);
         }
         default:
-            return []( std::string const & ) -> std::tuple< bool, int > {
-                return std::tuple< bool, int >{ false, 0 };
-            };
+            return [](std::string const&) -> std::tuple< bool, int > { return std::tuple< bool, int >{false, 0}; };
     }
 }
 
