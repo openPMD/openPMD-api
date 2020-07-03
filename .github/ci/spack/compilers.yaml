@@ -179,6 +179,19 @@ compilers:
     modules: []
     operating_system: ubuntu18.04
     paths:
+      cc: /usr/bin/clang-10
+      cxx: /usr/bin/clang++-10
+      f77: null
+      fc: null
+    spec: clang@10.0.0
+    target: x86_64
+- compiler:
+    environment: {}
+    extra_rpaths: []
+    flags: {}
+    modules: []
+    operating_system: ubuntu18.04
+    paths:
       cc: /usr/bin/gcc-9
       cxx: /usr/bin/g++-9
       f77: /usr/bin/gfortran-9

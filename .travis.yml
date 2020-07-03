@@ -255,25 +255,6 @@ jobs:
       before_install: &clang_init
         # FIXME: extra include needed https://bugs.launchpad.net/ubuntu/+source/libc++/+bug/1812133
         - CXX=clang++-6.0 && CC=clang-6.0 && CXXFLAGS="${CXXFLAGS} -stdlib=libc++ -I/usr/include/libcxxabi/"
-    # Clang 7.0.0 + Python 3.8.0 @ Xenial
-    - <<: *test-cpp-unit
-      name: clang@7.0.0 +OMPI +PY@3.8 +H5@1.10.6 +ADIOS1 +ADIOS2 +Release
-      dist: xenial
-      language: python
-      python: "3.8"
-      env:
-        - CXXSPEC="%clang@7.0.0" USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON HDF5_VERSION=@1.10.6 USE_ADIOS1=ON USE_ADIOS2=ON USE_SAMPLES=ON BUILD_TYPE="Release"
-      compiler: clang
-      addons:
-        apt:
-          <<: *apt_common_sources
-          packages:
-            - *clang_deps
-            - libopenmpi-dev
-            - openmpi-bin
-      script: *script-cpp-unit
-      before_install: &clang_init
-        - CXX=clang++ && CC=clang
     # Clang 7.0.0 + Python 3.7.1 + Address Sanitizer + Undefined Behavior Sanitizer @ Xenial
     - <<: *test-cpp-unit
       name: clang@7.0.0 +OMPI +PY@3.7 +H5 -ADIOS1 +ADIOS2 +ASan +UBSan +STATIC
@@ -317,6 +298,26 @@ jobs:
       script: *script-cpp-unit
       before_install: &clang_init
         - CXX=clang++-8 && CC=clang-8
+    # Clang 10.0.0 + Python 3.8.0 @ Bionic
+    - <<: *test-cpp-unit
+      name: clang@10.0.0 +OMPI +PY@3.8 +H5@1.10.6 +ADIOS1 +ADIOS2 +Release
+      dist: bionic
+      language: python
+      python: "3.8"
+      env:
+        - CXXSPEC="%clang@10.0.0" USE_MPI=ON USE_PYTHON=ON USE_HDF5=ON HDF5_VERSION=@1.10.6 USE_ADIOS1=ON USE_ADIOS2=ON USE_SAMPLES=ON BUILD_TYPE="Release"
+      compiler: clang
+      addons:
+        apt:
+          <<: *apt_common_sources
+          packages: &clang100_bionic_deps
+            - environment-modules
+            - clang-10
+            - libopenmpi-dev
+            - openmpi-bin
+      script: *script-cpp-unit
+      before_install: &clang_init
+        - CXX=clang++-10 && CC=clang-10
     # AppleClang 9.1.0 + Python 3.7.2 @ OSX "highsierra"
     - <<: *test-cpp-unit
       name: AppleClang@9.1.0 -MPI +PY@3.7 +H5 +ADIOS1 -ADIOS2
