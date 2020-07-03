@@ -766,12 +766,10 @@ namespace detail
             OutsideOfStep,
             StreamOver
         };
-        std::shared_ptr< StreamStatus > streamStatus =
-            std::make_shared< StreamStatus >( StreamStatus::NoStream );
+        StreamStatus streamStatus = StreamStatus::NoStream;
         int mpi_rank, mpi_size;
-        std::shared_ptr< adios2::Engine > m_engine;
-        std::shared_ptr< adios2::StepStatus > m_lastStepStatus =
-            std::make_shared< adios2::StepStatus >( adios2::StepStatus::OK );
+        adios2::Engine m_engine;
+        adios2::StepStatus m_lastStepStatus = adios2::StepStatus::OK;
 
         /*
          * ADIOS2 does not give direct access to its internal attribute and

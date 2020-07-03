@@ -1300,12 +1300,11 @@ namespace detail
         }
         if( m_engine )
         {
-            if( *streamStatus == StreamStatus::DuringStep )
+            if( streamStatus == StreamStatus::DuringStep )
             {
-                m_engine->EndStep();
+                m_engine.EndStep();
             }
-            std::cerr << "Closing ADIOS2 engine " << m_file << std::endl;
-            m_engine->Close( );
+            m_engine.Close( );
             m_ADIOS.RemoveIO( m_IOName );
         }
     }
@@ -1329,7 +1328,7 @@ namespace detail
                 if( it != streamingEngines.end() )
                 {
                     isStreaming = true;
-                    *streamStatus = StreamStatus::OutsideOfStep;
+                    streamStatus = StreamStatus::OutsideOfStep;
                 }
                 else
                 {
@@ -1337,14 +1336,14 @@ namespace detail
                     it = fileEngines.find( type );
                     if( it != fileEngines.end() )
                     {
-                        *streamStatus = StreamStatus::NoStream;
+                        streamStatus = StreamStatus::NoStream;
                     }
                     else
                     {
                         std::cerr << "Unknown engine type (" << type
                                   << "). Defaulting to non-streaming mode."
                                   << std::endl;
-                        *streamStatus = StreamStatus::NoStream;
+                        streamStatus = StreamStatus::NoStream;
                     }
                 }
             }
@@ -1431,23 +1430,22 @@ namespace detail
     {
         if ( !m_engine )
         {
-            m_engine = std::make_shared< adios2::Engine >(
-                adios2::Engine( m_IO.Open( m_file, m_mode ) ) );
-            if ( !*m_engine )
+            m_engine = m_IO.Open( m_file, m_mode );
+            if ( !m_engine )
             {
                 throw std::runtime_error( "[ADIOS2] Failed opening Engine." );
             }
         }
-        return *m_engine;
+        return m_engine;
     }
 
     adios2::Engine & BufferedActions::requireActiveStep( )
     {
         adios2::Engine & eng = getEngine();
-        if( *streamStatus == StreamStatus::OutsideOfStep )
+        if( streamStatus == StreamStatus::OutsideOfStep )
         {
-            *m_lastStepStatus = eng.BeginStep();
-            *streamStatus = StreamStatus::DuringStep;
+            m_lastStepStatus = eng.BeginStep();
+            streamStatus = StreamStatus::DuringStep;
         }
         return eng;
     }
@@ -1468,7 +1466,7 @@ namespace detail
 
     void BufferedActions::flush( )
     {
-        if( *streamStatus == StreamStatus::StreamOver )
+        if( streamStatus == StreamStatus::StreamOver )
         {
             return;
         }
@@ -1476,7 +1474,7 @@ namespace detail
         /*
          * Only open a new step if it is necessary.
          */
-        if( *streamStatus == StreamStatus::OutsideOfStep )
+        if( streamStatus == StreamStatus::OutsideOfStep )
         {
             if( m_buffer.empty() )
             {
@@ -1530,25 +1528,25 @@ namespace detail
                  *     has seen an access. See the following lines: open the
                  *     step just to skip it again.
                  */
-                if( *streamStatus == StreamStatus::OutsideOfStep )
+                if( streamStatus == StreamStatus::OutsideOfStep )
                 {
                     getEngine().BeginStep();
                 }
                 flush();
                 getEngine().EndStep();
                 currentStep++;
-                *streamStatus = StreamStatus::OutsideOfStep;
+                streamStatus = StreamStatus::OutsideOfStep;
                 return AdvanceStatus::OK;
             }
             case AdvanceMode::BEGINSTEP:
             {
-                adios2::StepStatus adiosStatus = *m_lastStepStatus;
+                adios2::StepStatus adiosStatus = m_lastStepStatus;
 
                 // Step might have been opened implicitly already
                 // by requireActiveStep()
                 // In that case, streamStatus is DuringStep and Adios
                 // return status is stored in m_lastStepStatus
-                if( *streamStatus != StreamStatus::DuringStep )
+                if( streamStatus != StreamStatus::DuringStep )
                 {
                     flush();
                     adiosStatus = getEngine().BeginStep();
@@ -1558,11 +1556,11 @@ namespace detail
                 switch( adiosStatus )
                 {
                     case adios2::StepStatus::EndOfStream:
-                        *streamStatus = StreamStatus::StreamOver;
+                        streamStatus = StreamStatus::StreamOver;
                         res = AdvanceStatus::OVER;
                         break;
                     default:
-                        *streamStatus = StreamStatus::DuringStep;
+                        streamStatus = StreamStatus::DuringStep;
                         res = AdvanceStatus::OK;
                         break;
                 }
