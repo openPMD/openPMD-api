@@ -28,6 +28,7 @@ Features
   - homebrew: add Formula (OSX/Linux) #724
   - PyPI: autodeploy wheels (OSX/Linux) #716 #719
 - version compare macro #747
+- Spack environment file ``spack.yaml`` added to repo #737
 
 Bug Fixes
 """""""""

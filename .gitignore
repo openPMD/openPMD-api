@@ -89,7 +89,7 @@ Temporary Items
 .apdisk
 
 #########
-# Cmake #
+# CMake #
 #########
 CMakeCache.txt
 CMakeFiles
@@ -98,6 +98,14 @@ cmake_install.cmake
 install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
+
+####################
+# Package Managers #
+####################
+# anonymous Spack environments
+# https://spack.readthedocs.io/en/latest/environments.html#anonymous-environments
+.spack-env/
+spack.lock
 
 #########
 # Tools #
