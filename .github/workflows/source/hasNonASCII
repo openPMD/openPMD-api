@@ -15,7 +15,7 @@
 ok=0
 
 pattern="\.c$|\.cpp$|\.F90$|\.h$|\.H$|\.ini$|\.py$|"\
-"\.rst$|\.sh$|\.tex$|\.txt$|\.xml$|\.yml$|"\
+"\.rst$|\.sh$|\.tex$|\.txt$|\.xml$|\.yml$|\.yaml$|"\
 "CMakeLists\.txt|inputs"
 
 for i in $(find . \
