@@ -20,12 +20,13 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Variant.hpp"
+#include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/Container.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/Streaming.hpp"
-#include "openPMD/backend/Attributable.hpp"
-#include "openPMD/backend/Container.hpp"
 
 
 namespace openPMD
@@ -43,7 +44,7 @@ class Iteration : public Attributable
     >
     friend class Container;
     friend class Series;
-    friend class IterationSteps;
+    friend class WriteIterations;
     friend class SeriesIterator;
 
 public:
@@ -129,9 +130,23 @@ public:
     bool
     closedByWriter() const;
 
+    /**
+     * @brief Begin an IO step on the IO file (or file-like object)
+     *        containing this iteration. In case of group-based iteration
+     *        layout, this will be the complete Series.
+     * 
+     * @return AdvanceStatus 
+     */
     AdvanceStatus
     beginStep();
 
+    /**
+     * @brief End an IO step on the IO file (or file-like object)
+     *        containing this iteration. In case of group-based iteration
+     *        layout, this will be the complete Series.
+     * 
+     * @return AdvanceStatus 
+     */
     void
     endStep();
 
@@ -139,7 +154,6 @@ public:
     Container< ParticleSpecies > particles; //particleSpecies?
 
     virtual ~Iteration() = default;
-
 private:
     Iteration();
 
@@ -179,10 +193,10 @@ private:
      * Used for file-based iteration layout, see Series.hpp for
      * group-based layout.
      */
-    std::shared_ptr< bool > m_automaticallyOpenedStepActive =
-        std::make_shared< bool >( false );
+    std::shared_ptr< StepStatus > m_stepStatus =
+        std::make_shared< StepStatus >( StepStatus::NoStep );
 
-    /**
+    /*
      * We cannot give the return type yet, since Iteration is still an
      * incomplete type.
      * It's decltype(Series::iterations)::iterator.
@@ -196,8 +210,8 @@ private:
      * being used, or the complete Series' flag for group-based layout.
      *
      */
-    bool *
-    automaticallyOpenedStepActive();
+    StepStatus *
+    stepStatus();
 
     /*
      * @brief Check recursively whether this Iteration is dirty.
@@ -248,13 +262,30 @@ inline T
 Iteration::dt() const
 { return Attributable::readFloatingpoint< T >("dt"); }
 
-class IterationSteps : private Container< Iteration, uint64_t >
+/**
+ * @brief Writing side of the streaming API. Create instance via
+ *        Series::writeIterations().
+ *        For use via WriteIterations::operator[]().
+ *        Designed to allow reading any kind of Series, streaming and non-
+ *        streaming alike. Calling Iteration::close() manually before opening
+ *        the next iteration is encouraged and will implicitly flush all
+ *        deferred IO actions. Otherwise, Iteration::close() will be implicitly
+ *        called upon SeriesIterator::operator++(), i.e. upon going to the next
+ *        iteration in the foreach loop.
+ *
+ *        Since this is designed for streaming mode, reopening an iteration is
+ *        not possible once it has been closed.
+ *
+ */
+class WriteIterations : private Container< Iteration, uint64_t >
 {
     friend class Series;
 
 private:
     using super_t = Container< Iteration, uint64_t >;
-    IterationSteps( super_t );
+    WriteIterations( super_t );
+    // Index of the last opened iteration
+    auxiliary::Option< uint64_t > currentlyOpen;
 
 public:
     mapped_type &

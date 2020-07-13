@@ -25,14 +25,13 @@
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/Dataset.hpp"
 
+#include <memory>
 #include <map>
-#include <memory> // std::shared_ptr
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "openPMD/Streaming.hpp" // ChunkTable
-#include "openPMD/backend/Attribute.hpp"
+#include "openPMD/Streaming.hpp"
 
 
 namespace openPMD

@@ -368,17 +368,17 @@ Series::flush()
     flush_impl( iterations.begin(), iterations.end() );
 }
 
-SeriesIterable
+ReadIterations
 Series::readIterations()
 {
-    return SeriesIterable( *this );
+    return ReadIterations( *this );
 }
 
-IterationSteps
+WriteIterations
 Series::writeIterations()
 {
     useSteps();
-    return IterationSteps( this->iterations );
+    return WriteIterations( this->iterations );
 }
 
 std::unique_ptr< Series::ParsedInput >
@@ -1209,7 +1209,7 @@ SeriesIterator::SeriesIterator( Series & _series )
             *this = end();
             return;
         }
-        *it->second.automaticallyOpenedStepActive() = true;
+        *it->second.stepStatus() = StepStatus::DuringStep;
     }
     m_currentIteration = it->first;
 }
@@ -1224,6 +1224,11 @@ SeriesIterator::operator++()
     }
     Series series = m_series.get();
     auto & iterations = series.iterations;
+    auto & currentIteration = **this;
+    if( !currentIteration.closed() )
+    {
+        currentIteration.close();
+    }
     if( useSteps )
     {
         switch( *series.m_iterationEncoding )
@@ -1233,14 +1238,13 @@ SeriesIterator::operator++()
             {
                 // since we are in group-based iteration layout, it does not
                 // matter which iteration we begin a step upon
-                auto & iteration = series.iterations[ m_currentIteration ];
-                AdvanceStatus status = iteration.beginStep();
+                AdvanceStatus status = currentIteration.beginStep();
                 if( status == AdvanceStatus::OVER )
                 {
                     *this = end();
                     return *this;
                 }
-                *iteration.automaticallyOpenedStepActive() = true;
+                *currentIteration.stepStatus() = StepStatus::DuringStep;
                 break;
             }
             default:
@@ -1275,7 +1279,7 @@ SeriesIterator::operator++()
                     *this = end();
                     return *this;
                 }
-                *iteration.automaticallyOpenedStepActive() = true;
+                *iteration.stepStatus() = StepStatus::DuringStep;
                 break;
             }
             default:
@@ -1310,18 +1314,18 @@ SeriesIterator::end()
     return {};
 }
 
-SeriesIterable::SeriesIterable( Series _series ) : m_series( _series )
+ReadIterations::ReadIterations( Series _series ) : m_series( _series )
 {
 }
 
-SeriesIterable::iterator_t
-SeriesIterable::begin()
+ReadIterations::iterator_t
+ReadIterations::begin()
 {
     return iterator_t{ m_series };
 }
 
-SeriesIterable::iterator_t
-SeriesIterable::end()
+ReadIterations::iterator_t
+ReadIterations::end()
 {
     return SeriesIterator::end();
 }

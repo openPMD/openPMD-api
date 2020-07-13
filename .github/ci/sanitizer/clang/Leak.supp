@@ -11,3 +11,10 @@ leak:/usr/bin/make*
 # ADIOS 1.13.1
 leak:adios_read_bp_open_file
 leak:adios_inq_var
+# ADIOS2
+leak:adios2::core::engine::SstReader::*
+leak:adios2::core::engine::BP4Reader::*
+leak:adios2::core::engine::SstWriter::*
+leak:adios2::core::engine::BP4Writer::*
+leak:CMpoll_forever
+leak:SstWriterClose

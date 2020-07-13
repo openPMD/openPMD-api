@@ -135,25 +135,25 @@ public:
   closeFile( Writable *, Parameter< Operation::CLOSE_FILE > const & ) = 0;
   /** Advance the file/stream that this writable belongs to.
    *
-   * Fundamentally, this task has the purpose to provide storage-/transport-side
-   * guarantees.
-   * In write mode, this means that all data written up to this point should be
-   * available in storage. In read mode, this shall guarantee data availability
-   * in the backend (in persistent FS-based backends, this will generally be
-   * a no-op).
+   * If the backend is based around usage of IO steps (especially streaming
+   * backends), open or close an IO step. This is modeled closely after the
+   * step concept in ADIOS2.
+   *
    * This task is used to implement streaming-aware semantics in the openPMD API
    * by splitting data into packets that are written to and read from transport.
+   *
+   * IO actions up to the point of closing a step must be performed now.
    * 
    * The advance mode is determined by parameters.mode.
-   * The return value shall be a packaged task that will eventually return a
-   * status code.
-   * @TODO use a std::future instead?
+   * The return status code shall be stored as parameters.status.
    */
   virtual void advance(Writable*, Parameter< Operation::ADVANCE > &)
   {}
-  /** Declare a group stale.
+  /** Close an openPMD group.
    * 
    * This is an optimization-enabling task and may be ignored by backends.
+   * Indicates that the group will not be accessed any further.
+   * Especially in step-based IO mode (e.g. streaming):
    * Indicates that the group corresponding with the writable needs not be held
    * in a parseable state for this and upcoming IO steps, allowing for deletion
    * of metadata to be sent/stored (attributes, datasets, ..).

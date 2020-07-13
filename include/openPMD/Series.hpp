@@ -47,7 +47,7 @@
 
 namespace openPMD
 {
-class SeriesIterable;
+class ReadIterations;
 
 /** @brief  Root level of the openPMD hierarchy.
  *
@@ -260,20 +260,21 @@ public:
      */
     void flush();
 
-    SeriesIterable
+    ReadIterations
     readIterations();
 
-    IterationSteps
+    WriteIterations
     writeIterations();
 
     Container< Iteration, uint64_t > iterations;
 
 OPENPMD_private:
     struct ParsedInput;
+    using iterations_iterator = decltype( iterations )::iterator;
+
     std::unique_ptr< ParsedInput > parseInput(std::string);
     void init(std::shared_ptr< AbstractIOHandler >, std::unique_ptr< ParsedInput >);
     void initDefaults();
-    using iterations_iterator = decltype( iterations )::iterator;
     std::future< void > flush_impl(
         iterations_iterator begin, iterations_iterator end );
     void flushFileBased( iterations_iterator begin, iterations_iterator end );
@@ -285,13 +286,43 @@ OPENPMD_private:
     void readBase();
     void read();
     std::string iterationFilename( uint64_t i );
+
+    /**
+     * @brief In step-based IO mode, begin or end an IO step for the given
+     *        iteration.
+     * 
+     * @param mode Whether to begin or end a step.
+     * @param file The Attributable representing the iteration. In file-based
+     *             iteration layout, this is an Iteration object, in group-
+     *             based layout, it's the Series object.
+     * @param it The iterator within Series::iterations pointing to that
+     *           iteration.
+     * @param iteration The actual Iteration object.
+     * @return AdvanceStatus 
+     */
     AdvanceStatus
     advance(
-        AdvanceMode,
+        AdvanceMode mode,
         Attributable & file,
         iterations_iterator it,
         Iteration & iteration );
 
+    /*
+     * Reading routines in the streaming-aware API need to know whether the
+     * opened Series has been created using a step-based writing mode.
+     * Trying to read a non-step Series using steps might lead to reading only
+     * the first iteration, since no further steps are found. Vice versa, trying
+     * to read a streaming-based Series without steps will not work at all,
+     * since steps are required for streaming.
+     *
+     * Since it is hard to guess at this stage (i.e. in the frontend) what mode
+     * should be employed, step-based writers should add a top-level attribute
+     * "usesSteps" of type UCHAR with value 1 to the Series, so the frontend
+     * knows what is up.
+     * 
+     * The following internal calls do this. This all happens automatically in
+     * the openPMD API and users need not care about it.
+     */
     bool
     usesSteps() const;
     void
@@ -304,8 +335,8 @@ OPENPMD_private:
      * Used for group-based iteration layout, see Series.hpp for
      * iteration-based layout.
      */
-    std::shared_ptr< bool > m_automaticallyOpenedStepActive =
-        std::make_shared< bool >( false );
+    std::shared_ptr< StepStatus > m_stepStatus =
+        std::make_shared< StepStatus >( StepStatus::NoStep );
 
     static constexpr char const * const BASEPATH = "/data/%T/";
 
@@ -351,7 +382,21 @@ public:
     end();
 };
 
-class SeriesIterable
+/**
+ * @brief Reading side of the streaming API. Create instance via
+ *        Series::readIterations(). For use in a C++11-style foreach loop.
+ *        Designed to allow reading any kind of Series, streaming and non-
+ *        streaming alike. Calling Iteration::close() manually before opening
+ *        the next iteration is encouraged and will implicitly flush all
+ *        deferred IO actions. Otherwise, Iteration::close() will be implicitly
+ *        called upon SeriesIterator::operator++(), i.e. upon going to the next
+ *        iteration in the foreach loop.
+ *
+ *        Since this is designed for streaming mode, reopening an iteration is
+ *        not possible once it has been closed.
+ *
+ */
+class ReadIterations
 {
     using iterations_t = decltype( Series::iterations );
     using iterator_t = SeriesIterator;
@@ -359,7 +404,7 @@ class SeriesIterable
     Series m_series;
 
 public:
-    SeriesIterable( Series );
+    ReadIterations( Series );
 
     iterator_t
     begin();

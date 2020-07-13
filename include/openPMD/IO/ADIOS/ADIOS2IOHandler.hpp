@@ -692,7 +692,6 @@ namespace detail
         bool isStreaming = false;
 
         using AttributeMap_t = std::map< std::string, adios2::Params >;
-        size_t currentStep = 0;
 
         BufferedActions( ADIOS2IOHandlerImpl & impl, InvalidatableFile file );
 

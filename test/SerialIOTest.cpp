@@ -2764,7 +2764,7 @@ void
 serial_iterator( std::string const & file )
 {
     {
-        Series writeSeries( file, AccessType::CREATE );
+        Series writeSeries( file, Access::CREATE );
         auto iterations = writeSeries.writeIterations();
         for( size_t i = 0; i < 10; ++i )
         {
@@ -2778,17 +2778,27 @@ serial_iterator( std::string const & file )
         }
     }
 
-    Series readSeries( file, AccessType::READ_ONLY );
+    Series readSeries( file, Access::READ_ONLY );
 
     size_t iteration_index = 0;
     for( auto iteration : readSeries.readIterations() )
     {
         auto E_x = iteration.meshes[ "E" ][ "x" ];
         REQUIRE( E_x.getDimensionality() == 1 );
-        REQUIRE( E_x.getExtent()[ 0 ] == 1000 );
-        auto chunk = E_x.loadChunk< int >( { 0 }, { 1000 } );
-        iteration.close(); // @todo replace with ::close()
-        for( size_t i = 0; i < 1000; ++i )
+        REQUIRE( E_x.getExtent()[ 0 ] == extent );
+        auto chunk = E_x.loadChunk< int >( { 0 }, { extent } );
+        // we encourage manually closing iterations, but it should not matter
+        // so let's do the switcharoo for this test
+        if( iteration_index % 2 == 0 )
+        {
+            readSeries.flush();
+        }
+        else
+        {
+            iteration.close();
+        }
+        
+        for( size_t i = 0; i < extent; ++i )
         {
             REQUIRE( chunk.get()[ i ] == iteration_index );
         }
@@ -2810,8 +2820,9 @@ TEST_CASE( "serial_iterator", "[serial][adios2]" )
 void
 iterate_nonstreaming_series( std::string const & file )
 {
+    constexpr size_t extent = 100;
     {
-        Series writeSeries( file, AccessType::CREATE );
+        Series writeSeries( file, Access::CREATE );
         // use conventional API to write iterations
         auto iterations = writeSeries.iterations;
         for( size_t i = 0; i < 10; ++i )
@@ -2819,14 +2830,23 @@ iterate_nonstreaming_series( std::string const & file )
             auto iteration = iterations[ i ];
             auto E_x = iteration.meshes[ "E" ][ "x" ];
             E_x.resetDataset(
-                openPMD::Dataset( openPMD::Datatype::INT, { 1000 } ) );
-            std::vector< int > data( 1000, i );
-            E_x.storeChunk( data, { 0 }, { 1000 } );
-            iteration.close();
+                openPMD::Dataset( openPMD::Datatype::INT, { extent } ) );
+            std::vector< int > data( extent, i );
+            E_x.storeChunk( data, { 0 }, { extent } );
+            // we encourage manually closing iterations, but it should not matter
+            // so let's do the switcharoo for this test
+            if( i % 2 == 0 )
+            {
+                writeSeries.flush();
+            }
+            else
+            {
+                iteration.close();
+            }
         }
     }
 
-    Series readSeries( file, AccessType::READ_ONLY );
+    Series readSeries( file, Access::READ_ONLY );
 
     size_t iteration_index = 0;
     // conventionally written Series must be readable with streaming-aware API!

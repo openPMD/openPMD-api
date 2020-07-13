@@ -618,7 +618,7 @@ ADIOS2IOHandlerImpl::closePath(
         writable->written,
         "Cannot close a path that has not been written yet." );
     VERIFY_ALWAYS(
-        m_handler->m_backendAccess != AccessType::READ_ONLY,
+        m_handler->m_backendAccess != Access::READ_ONLY,
         "Cannot close a path while in read-only mode." );
     auto file = refreshFileFromParent( writable );
     auto & fileData = getFileData( file );
@@ -1522,7 +1522,6 @@ namespace detail
                 }
                 flush();
                 getEngine().EndStep();
-                currentStep++;
                 streamStatus = StreamStatus::OutsideOfStep;
                 return AdvanceStatus::OK;
             }
@@ -1539,7 +1538,6 @@ namespace detail
                     flush();
                     adiosStatus = getEngine().BeginStep();
                 }
-                currentStep++;
                 AdvanceStatus res = AdvanceStatus::OK;
                 switch( adiosStatus )
                 {

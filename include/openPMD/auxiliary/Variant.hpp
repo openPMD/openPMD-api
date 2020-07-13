@@ -102,6 +102,11 @@ namespace detail
     };
 } // namespace detail
 
+/**
+ * @brief Simple Option type based on variantSrc::variant.
+ *
+ * @tparam T Type that can be optionally stored in an Optional object.
+ */
 template< typename T >
 class Option
 {
@@ -109,9 +114,19 @@ class Option
     data_t m_data;
 
 public:
+    /**
+     * @brief Create an empty Option.
+     *
+     */
     explicit Option() : m_data( detail::Empty() )
     {
     }
+
+    /**
+     * @brief Create a full Option.
+     *
+     * @param data The object to emplace in the Option.
+     */
     Option( T data ) : m_data( std::move( data ) )
     {
     }
@@ -172,18 +187,33 @@ public:
         return !( *this == other );
     }
 
+    /**
+     * @return Is an object constantly stored in this?
+     */
     bool
     has_value() const
     {
         return m_data.index() == 0;
     }
 
+    /**
+     * @brief Access the emplaced object if one is present.
+     *
+     * @throw std::bad_variant_access if no object is present.
+     * @return T const& The emplaced object.
+     */
     T const &
     get() const
     {
         return variantSrc::template get< T >( m_data );
     }
 
+    /**
+     * @brief Access the emplaced object if one is present.
+     *
+     * @throw std::bad_variant_access if no object is present.
+     * @return T& The emplaced object.
+     */
     T &
     get()
     {

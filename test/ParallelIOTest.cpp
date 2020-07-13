@@ -413,21 +413,32 @@ adios2_streaming()
         return;
     }
 
+    constexpr size_t extent = 100;
+
     if( rank == 0 )
     {
         // write
         Series writeSeries(
-            "../samples/adios2_stream.bp", AccessType::CREATE, adios2Config );
+            "../samples/adios2_stream.bp", Access::CREATE, adios2Config );
         auto iterations = writeSeries.writeIterations();
         for( size_t i = 0; i < 10; ++i )
         {
             auto iteration = iterations[ i ];
             auto E_x = iteration.meshes[ "E" ][ "x" ];
             E_x.resetDataset(
-                openPMD::Dataset( openPMD::Datatype::INT, { 1000 } ) );
-            std::vector< int > data( 1000, 0 );
-            E_x.storeChunk( data, { 0 }, { 1000 } );
-            iteration.close();
+                openPMD::Dataset( openPMD::Datatype::INT, { extent } ) );
+            std::vector< int > data( extent, 0 );
+            E_x.storeChunk( data, { 0 }, { extent } );
+            // we encourage manually closing iterations, but it should 
+            // not matter so let's do the switcharoo for this test
+            if( i % 2 == 0 )
+            {
+                writeSeries.flush();
+            }
+            else
+            {
+                iteration.close();
+            }
         }
     }
     else if( rank == 1 )
@@ -435,7 +446,7 @@ adios2_streaming()
         // read
         Series readSeries(
             "../samples/adios2_stream.bp",
-            AccessType::READ_ONLY,
+            Access::READ_ONLY,
             adios2Config );
 
         size_t iteration_index = 0;
@@ -443,10 +454,19 @@ adios2_streaming()
         {
             auto E_x = iteration.meshes[ "E" ][ "x" ];
             REQUIRE( E_x.getDimensionality() == 1 );
-            REQUIRE( E_x.getExtent()[ 0 ] == 1000 );
-            auto chunk = E_x.loadChunk< int >( { 0 }, { 1000 } );
-            iteration.close();
-            for( size_t i = 0; i < 1000; ++i )
+            REQUIRE( E_x.getExtent()[ 0 ] == extent );
+            auto chunk = E_x.loadChunk< int >( { 0 }, { extent } );
+            // we encourage manually closing iterations, but it should 
+            // not matter so let's do the switcharoo for this test
+            if( iteration_index % 2 == 0 )
+            {
+                readSeries.flush();
+            }
+            else
+            {
+                iteration.close();
+            }
+            for( size_t i = 0; i < extent; ++i )
             {
                 REQUIRE( chunk.get()[ i ] == 0 );
             }

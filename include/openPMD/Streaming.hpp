@@ -11,15 +11,21 @@
 
 namespace openPMD
 {
-enum class AdvanceStatus
+enum class AdvanceStatus : unsigned char
 {
     OK,
     OVER
 };
 
-enum class AdvanceMode
+enum class AdvanceMode : unsigned char
 {
     BEGINSTEP,
     ENDSTEP
+};
+
+enum class StepStatus : unsigned char
+{
+    DuringStep,
+    NoStep
 };
 } // namespace openPMD

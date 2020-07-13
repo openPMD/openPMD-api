@@ -45,7 +45,7 @@ Iteration::Iteration( Iteration const & i )
       meshes{ i.meshes },
       particles{ i.particles },
       m_closed{ i.m_closed },
-      m_automaticallyOpenedStepActive{ i.m_automaticallyOpenedStepActive }
+      m_stepStatus{ i.m_stepStatus }
 {
     IOHandler = i.IOHandler;
     parent = i.parent;
@@ -63,7 +63,7 @@ Iteration& Iteration::operator=(Iteration const& i)
     IOHandler = i.IOHandler;
     parent = i.parent;
     m_closed = i.m_closed;
-    m_automaticallyOpenedStepActive = i.m_automaticallyOpenedStepActive;
+    m_stepStatus = i.m_stepStatus;
     meshes.IOHandler = IOHandler;
     meshes.parent = this->m_writable.get();
     particles.IOHandler = IOHandler;
@@ -114,14 +114,14 @@ Iteration::close( bool _flush )
     {
         setAttribute< bool_type >( "closed", 1u );
     }
-    bool * flag = automaticallyOpenedStepActive();
+    StepStatus * flag = stepStatus();
     *m_closed = CloseStatus::ClosedInFrontend;
     if( _flush )
     {
-        if( *flag )
+        if( *flag == StepStatus::DuringStep )
         {
             endStep();
-            *flag = false;
+            *flag = StepStatus::NoStep;
         }
         else
         {
@@ -138,7 +138,7 @@ Iteration::close( bool _flush )
     }
     else
     {
-        if( *flag )
+        if( *flag == StepStatus::DuringStep )
         {
             throw std::runtime_error( "Using deferred Iteration::close "
                                       "unimplemented in auto-stepping mode." );
@@ -539,20 +539,20 @@ Iteration::myIteration()
 }
 
 
-bool *
-Iteration::automaticallyOpenedStepActive()
+StepStatus *
+Iteration::stepStatus()
 {
     Series * s =
         dynamic_cast< Series * >( parent->attributable->parent->attributable );
-    bool * flag = nullptr;;
+    StepStatus * flag = nullptr;;
     switch( *s->m_iterationEncoding )
     {
         using IE = IterationEncoding;
         case IE::fileBased:
-            flag = &*this->m_automaticallyOpenedStepActive;
+            flag = &*this->m_stepStatus;
             break;
         case IE::groupBased:
-            flag = &*s->m_automaticallyOpenedStepActive;
+            flag = &*s->m_stepStatus;
             break;
         default:
             throw std::runtime_error( "[Iteration] unreachable" );
@@ -620,32 +620,35 @@ Iteration& Iteration::setDt< double >(double dt);
 template
 Iteration& Iteration::setDt< long double >(long double dt);
 
-IterationSteps::IterationSteps( super_t _super )
+WriteIterations::WriteIterations( super_t _super )
     : super_t{ std::move( _super ) }
 {
 }
 
-IterationSteps::mapped_type &
-IterationSteps::operator[]( key_type const & key )
+WriteIterations::mapped_type &
+WriteIterations::operator[]( key_type const & key )
 {
-    auto & res = super_t::operator[]( key );
-    bool * flag = res.automaticallyOpenedStepActive();
-    if( !*flag )
-    {
-        res.beginStep();
-        *flag = true;
-    }
-    return res;
+    // make a copy
+    return operator[]( key_type{ key } );
 }
-IterationSteps::mapped_type &
-IterationSteps::operator[]( key_type && key )
+WriteIterations::mapped_type &
+WriteIterations::operator[]( key_type && key )
 {
+    if( currentlyOpen.has_value() )
+    {
+        auto & lastIteration = this->at( currentlyOpen.get() );
+        if( !lastIteration.closed() )
+        {
+            lastIteration.close();
+        }
+    }
+    currentlyOpen = key;
     auto & res = super_t::operator[]( std::move( key ) );
-    bool * flag = res.automaticallyOpenedStepActive();
-    if( !*flag )
+    StepStatus * flag = res.stepStatus();
+    if( *flag == StepStatus::NoStep )
     {
         res.beginStep();
-        *flag = true;
+        *flag = StepStatus::DuringStep;
     }
     return res;
 }
