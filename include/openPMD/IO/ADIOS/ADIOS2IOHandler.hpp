@@ -766,7 +766,6 @@ namespace detail
             StreamOver
         };
         StreamStatus streamStatus = StreamStatus::NoStream;
-        int mpi_rank, mpi_size;
         adios2::Engine m_engine;
         adios2::StepStatus m_lastStepStatus = adios2::StepStatus::OK;
 
