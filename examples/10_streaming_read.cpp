@@ -25,10 +25,10 @@ main()
 
     Series series = Series( "electrons.bp", AccessType::READ_ONLY, options );
 
-    size_t iteration_index = 0;
-    for( Iteration iteration : series.readIterations() )
+    for( IndexedIteration iteration : series.readIterations() )
     {
-        std::cout << "Current iteration: " << iteration_index << std::endl;
+        std::cout << "Current iteration: " << iteration.iterationIndex
+                  << std::endl;
         Record electronPositions = iteration.particles[ "e" ][ "position" ];
         std::array< std::shared_ptr< position_t >, 3 > loadedChunks;
         std::array< Extent, 3 > extents;
@@ -58,7 +58,6 @@ main()
             }
             std::cout << "\n----------\n" << std::endl;
         }
-        ++iteration_index;
     }
 
     return 0;

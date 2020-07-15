@@ -349,10 +349,27 @@ OPENPMD_private:
     std::shared_ptr< int > m_filenamePadding;
 }; // Series
 
+class IndexedIteration : public Iteration
+{
+    friend class SeriesIterator;
+
+public:
+    using iterations_t = decltype( Series::iterations );
+    using index_t = iterations_t::key_type;
+    index_t const iterationIndex;
+
+private:
+    template< typename Iteration_t >
+    IndexedIteration( Iteration_t && it, index_t index )
+        : Iteration( std::forward< Iteration_t >( it ) )
+        , iterationIndex( index )
+    {
+    }
+};
+
 class SeriesIterator
 {
-    using iterations_t = decltype( Series::iterations );
-    using iteration_index_t = iterations_t::key_type;
+    using iteration_index_t = IndexedIteration::index_t;
 
     using maybe_series_t = auxiliary::Option< Series >;
 
@@ -369,7 +386,7 @@ public:
     SeriesIterator &
     operator++();
 
-    Iteration &
+    IndexedIteration
     operator*();
 
     bool

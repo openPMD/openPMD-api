@@ -427,9 +427,9 @@ adios2_streaming()
             auto E_x = iteration.meshes[ "E" ][ "x" ];
             E_x.resetDataset(
                 openPMD::Dataset( openPMD::Datatype::INT, { extent } ) );
-            std::vector< int > data( extent, 0 );
+            std::vector< int > data( extent, i );
             E_x.storeChunk( data, { 0 }, { extent } );
-            // we encourage manually closing iterations, but it should 
+            // we encourage manually closing iterations, but it should
             // not matter so let's do the switcharoo for this test
             if( i % 2 == 0 )
             {
@@ -449,16 +449,16 @@ adios2_streaming()
             Access::READ_ONLY,
             adios2Config );
 
-        size_t iteration_index = 0;
+        size_t last_iteration_index = 0;
         for( auto iteration : readSeries.readIterations() )
         {
             auto E_x = iteration.meshes[ "E" ][ "x" ];
             REQUIRE( E_x.getDimensionality() == 1 );
             REQUIRE( E_x.getExtent()[ 0 ] == extent );
             auto chunk = E_x.loadChunk< int >( { 0 }, { extent } );
-            // we encourage manually closing iterations, but it should 
+            // we encourage manually closing iterations, but it should
             // not matter so let's do the switcharoo for this test
-            if( iteration_index % 2 == 0 )
+            if( last_iteration_index % 2 == 0 )
             {
                 readSeries.flush();
             }
@@ -468,11 +468,11 @@ adios2_streaming()
             }
             for( size_t i = 0; i < extent; ++i )
             {
-                REQUIRE( chunk.get()[ i ] == 0 );
+                REQUIRE( chunk.get()[ i ] == iteration.iterationIndex );
             }
-            ++iteration_index;
+            last_iteration_index = iteration.iterationIndex;
         }
-        REQUIRE( iteration_index == 10 );
+        REQUIRE( last_iteration_index == 9 );
     }
 }
 

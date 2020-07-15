@@ -2780,7 +2780,7 @@ serial_iterator( std::string const & file )
 
     Series readSeries( file, Access::READ_ONLY );
 
-    size_t iteration_index = 0;
+    size_t last_iteration_index = 0;
     for( auto iteration : readSeries.readIterations() )
     {
         auto E_x = iteration.meshes[ "E" ][ "x" ];
@@ -2800,11 +2800,11 @@ serial_iterator( std::string const & file )
         
         for( size_t i = 0; i < extent; ++i )
         {
-            REQUIRE( chunk.get()[ i ] == iteration_index );
+            REQUIRE( chunk.get()[ i ] == iteration.iterationIndex );
         }
-        ++iteration_index;
+        last_iteration_index = iteration.iterationIndex;
     }
-    REQUIRE( iteration_index == 10 );
+    REQUIRE( last_iteration_index == 9 );
 }
 
 TEST_CASE( "serial_iterator", "[serial][adios2]" )
@@ -2848,22 +2848,32 @@ iterate_nonstreaming_series( std::string const & file )
 
     Series readSeries( file, Access::READ_ONLY );
 
-    size_t iteration_index = 0;
+    size_t last_iteration_index = 0;
     // conventionally written Series must be readable with streaming-aware API!
     for( auto iteration : readSeries.readIterations() )
     {
         auto E_x = iteration.meshes[ "E" ][ "x" ];
         REQUIRE( E_x.getDimensionality() == 1 );
-        REQUIRE( E_x.getExtent()[ 0 ] == 1000 );
-        auto chunk = E_x.loadChunk< int >( { 0 }, { 1000 } );
-        iteration.close(); // @todo replace with ::close()
-        for( size_t i = 0; i < 1000; ++i )
+        REQUIRE( E_x.getExtent()[ 0 ] == extent );
+        auto chunk = E_x.loadChunk< int >( { 0 }, { extent } );
+        // we encourage manually closing iterations, but it should not matter
+        // so let's do the switcharoo for this test
+        if( last_iteration_index % 2 == 0 )
         {
-            REQUIRE( chunk.get()[ i ] == iteration_index );
+            readSeries.flush();
         }
-        ++iteration_index;
+        else
+        {
+            iteration.close();
+        }
+        
+        for( size_t i = 0; i < extent; ++i )
+        {
+            REQUIRE( chunk.get()[ i ] == iteration.iterationIndex );
+        }
+        last_iteration_index = iteration.iterationIndex;
     }
-    REQUIRE( iteration_index == 10 );
+    REQUIRE( last_iteration_index == 9 );
 }
 
 TEST_CASE( "iterate_nonstreaming_series", "[serial][adios2]" )

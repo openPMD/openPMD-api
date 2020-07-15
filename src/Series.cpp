@@ -1224,7 +1224,7 @@ SeriesIterator::operator++()
     }
     Series series = m_series.get();
     auto & iterations = series.iterations;
-    auto & currentIteration = **this;
+    auto & currentIteration = iterations[ m_currentIteration ];
     if( !currentIteration.closed() )
     {
         currentIteration.close();
@@ -1289,10 +1289,11 @@ SeriesIterator::operator++()
     return *this;
 }
 
-Iteration &
+IndexedIteration
 SeriesIterator::operator*()
 {
-    return m_series.get().iterations[ m_currentIteration ];
+    return IndexedIteration(
+        m_series.get().iterations[ m_currentIteration ], m_currentIteration );
 }
 
 bool
