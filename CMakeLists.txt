@@ -627,6 +627,8 @@ set(openPMD_EXAMPLE_NAMES
     6_dump_filebased_series
     7_extended_write_serial
     8_benchmark_parallel
+    10_streaming_write
+    10_streaming_read
 )
 set(openPMD_PYTHON_EXAMPLE_NAMES
     2_read_serial
