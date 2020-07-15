@@ -182,10 +182,10 @@ jobs:
       git clone https://github.com/spack/spack.git
       . spack/share/spack/setup-env.sh
       spack compiler find
-      spack install -v openpmd-api %gcc@7.5.0
+      spack install -v --fail-fast openpmd-api %gcc@7.5.0
       spack load openpmd-api
       openpmd-ls --help
-#      spack install cuda
+#      spack install -v --fail-fast cuda
 #      spack load cuda
 #      echo '#include <openPMD/openPMD.hpp>' > main.cu
 #      echo 'int main(){ return 0; }' >> main.cu
@@ -204,7 +204,7 @@ jobs:
       git clone https://github.com/spack/spack.git
       . spack/share/spack/setup-env.sh
       spack compiler find
-      spack install -v openpmd-api -mpi ^adios2~fortran
+      spack install -v --fail-fast openpmd-api -mpi ^adios2~fortran
       spack load openpmd-api
       openpmd-ls --help
 # FIXME https://github.com/ornladios/ADIOS2/issues/1885
@@ -220,7 +220,7 @@ jobs:
       git clone https://github.com/spack/spack.git
       . spack/share/spack/setup-env.sh
       spack compiler find
-      spack install -v openpmd-api -mpi ^adios2@master
+      spack install -v --fail-fast openpmd-api -mpi ^adios2@master
       spack load openpmd-api
       openpmd-ls --help
 
@@ -240,7 +240,7 @@ jobs:
       spack compiler find
       spack bootstrap
       . spack/share/spack/setup-env.sh
-      spack install -v openpmd-api +python +adios1 +adios2 %gcc@7.5.0
+      spack install -v --fail-fast openpmd-api +python +adios1 +adios2 %gcc@7.5.0
       spack load -r openpmd-api
       python -c "import openpmd_api as api; print(api.variants)"
       openpmd-ls --help
@@ -542,7 +542,7 @@ jobs:
       git clone https://github.com/spack/spack.git
       . spack/share/spack/setup-env.sh
       spack compiler find
-      spack install -v openpmd-api
+      spack install -v --fail-fast openpmd-api
       spack load openpmd-api
       openpmd-ls --help
 
@@ -558,7 +558,7 @@ jobs:
       git clone https://github.com/spack/spack.git
       . spack/share/spack/setup-env.sh
       spack compiler find
-      spack install -v openpmd-api@dev -mpi ^adios2~fortran
+      spack install -v --fail-fast openpmd-api@dev -mpi ^adios2~fortran
       spack load -r openpmd-api
       wget https://gist.githubusercontent.com/ax3l/b2399f2e8923def6a5e55f8bd4e5384c/raw/89ed4101559c917bc7d857f9427682e3f5d40024/CMakeLists.txt
       wget -O main.cpp https://raw.githubusercontent.com/openPMD/openPMD-api/dev/examples/3_write_serial.cpp
@@ -582,7 +582,7 @@ jobs:
       git clone https://github.com/spack/spack.git
       . spack/share/spack/setup-env.sh
       spack compiler find
-      spack install -v openpmd-api +python +adios1
+      spack install -v --fail-fast openpmd-api +python +adios1
       spack load -r openpmd-api
       python -c "from mpi4py import MPI; import openpmd_api as api; print(api.variants)"
       python -m openpmd_api.ls --help
