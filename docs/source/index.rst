@@ -73,6 +73,7 @@ Usage
    usage/firstread
    usage/serial
    usage/parallel
+   usage/streaming
    usage/examples
 
 API Details

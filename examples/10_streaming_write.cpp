@@ -24,7 +24,7 @@ main()
     )";
 
     // open file for writing
-    Series series = Series( "electrons.bp", AccessType::CREATE, options );
+    Series series = Series( "electrons.bp", Access::CREATE, options );
 
     Datatype datatype = determineDatatype< position_t >();
     constexpr unsigned long length = 10ul;
@@ -50,8 +50,9 @@ main()
         std::iota( local_data.get(), local_data.get() + length, i * length );
         for( auto const & dim : { "x", "y", "z" } )
         {
-            electronPositions[ dim ].storeChunk(
-                local_data, Offset{ 0 }, global_extent );
+            RecordComponent pos = electronPositions[ dim ];
+            pos.resetDataset( dataset );
+            pos.storeChunk( local_data, Offset{ 0 }, global_extent );
         }
         iteration.close();
     }

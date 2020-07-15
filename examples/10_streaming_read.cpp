@@ -23,7 +23,7 @@ main()
         }
     )";
 
-    Series series = Series( "electrons.bp", AccessType::READ_ONLY, options );
+    Series series = Series( "electrons.bp", Access::READ_ONLY, options );
 
     for( IndexedIteration iteration : series.readIterations() )
     {
