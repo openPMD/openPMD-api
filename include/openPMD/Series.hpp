@@ -415,14 +415,17 @@ public:
  */
 class ReadIterations
 {
+    friend class Series;
+
+private:
     using iterations_t = decltype( Series::iterations );
     using iterator_t = SeriesIterator;
 
     Series m_series;
 
-public:
     ReadIterations( Series );
 
+public:
     iterator_t
     begin();
 
