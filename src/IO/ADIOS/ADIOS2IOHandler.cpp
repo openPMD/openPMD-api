@@ -1310,7 +1310,7 @@ namespace detail
         static std::set< std::string > streamingEngines =
             { "sst", "insitumpi", "inline" };
         static std::set< std::string > fileEngines =
-            { "bp4", "bp3", "hdf5" };
+            { "bp3", "hdf5" };
 
         std::set< std::string > alreadyConfigured;
         auto engineConfig = impl.config( ADIOS2Defaults::str_engine );
@@ -1333,6 +1333,11 @@ namespace detail
                     if( it != fileEngines.end() )
                     {
                         streamStatus = StreamStatus::NoStream;
+                    }
+                    else if ( type == "bp4" )
+                    {
+                        isStreaming = false;
+                        streamStatus = StreamStatus::OutsideOfStep;
                     }
                     else
                     {
