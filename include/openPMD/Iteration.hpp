@@ -284,8 +284,10 @@ class WriteIterations : private Container< Iteration, uint64_t >
 private:
     using super_t = Container< Iteration, uint64_t >;
     WriteIterations( super_t );
+    explicit WriteIterations() = default;
     // Index of the last opened iteration
-    auxiliary::Option< uint64_t > currentlyOpen;
+    std::shared_ptr< auxiliary::Option< uint64_t > > currentlyOpen =
+        std::make_shared< auxiliary::Option< uint64_t > >();
 
 public:
     mapped_type &

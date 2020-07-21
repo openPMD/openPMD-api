@@ -378,7 +378,11 @@ WriteIterations
 Series::writeIterations()
 {
     useSteps();
-    return WriteIterations( this->iterations );
+    if( !m_writeIterations->has_value() )
+    {
+        *m_writeIterations = WriteIterations( this->iterations );
+    }
+    return m_writeIterations->get();
 }
 
 std::unique_ptr< Series::ParsedInput >

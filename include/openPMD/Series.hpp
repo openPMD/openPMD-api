@@ -347,6 +347,9 @@ OPENPMD_private:
     std::shared_ptr< std::string > m_filenamePrefix;
     std::shared_ptr< std::string > m_filenamePostfix;
     std::shared_ptr< int > m_filenamePadding;
+
+    std::shared_ptr< auxiliary::Option< WriteIterations > > m_writeIterations =
+        std::make_shared< auxiliary::Option< WriteIterations > >();
 }; // Series
 
 class IndexedIteration : public Iteration
