@@ -387,7 +387,7 @@ TEST_CASE( "hzdr_adios_sample_content_test", "[parallel][adios1]" )
 #if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
 
 void
-adios2_streaming( std::string const & adios2Config )
+adios2_streaming()
 {
     int size{ -1 };
     int rank{ -1 };
@@ -398,6 +398,15 @@ adios2_streaming( std::string const & adios2Config )
         // run this test for ADIOS2 only
         return;
     }
+    std::string adios2Config = R"END(
+{
+  "adios2": {
+    "engine": {
+      "type": "sst"
+    }
+  }
+}
+)END";
 
     if( size < 2 || rank > 1 )
     {
@@ -469,25 +478,6 @@ adios2_streaming( std::string const & adios2Config )
 
 TEST_CASE( "adios2_streaming", "[pseudoserial][adios2]" )
 {
-    std::string adios2ConfigSst = R"END(
-{
-  "adios2": {
-    "engine": {
-      "type": "sst"
-    }
-  }
-}
-)END";
-    std::string adios2ConfigBp4 = R"END(
-{
-  "adios2": {
-    "engine": {
-      "type": "bp4"
-    }
-  }
-}
-)END";
-    adios2_streaming( adios2ConfigSst );
-    adios2_streaming( adios2ConfigBp4 );
+    adios2_streaming();
 }
 #endif
