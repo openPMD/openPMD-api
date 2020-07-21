@@ -88,16 +88,39 @@ public:
     Iteration& setTimeUnitSI(double newTimeUnitSI);
 
     /**
-     * @brief Declare an iteration finalized. Indicates that no further
-     * alterations will be made to this iteration.
-     * @return Reference to modified iteration.
+     * @brief Close an iteration. No further (backend-propagating) accesses
+     *        may be performed on this iteration.
+     *        A closed iteration may not (yet) be reopened.
+     * @return Reference to iteration.
+     */
+    /*
+     * Note: If the API is changed in future to allow reopening closed
+     * iterations, measures should be taken to prevent this in the streaming
+     * API. Currently, disallowing to reopen closed iterations satisfies
+     * the requirements of the streaming API.
      */
     Iteration &
     close( bool flush = true );
 
+    /**
+     * @brief Has the iteration been closed?
+     *        A closed iteration may not (yet) be reopened.
+     *
+     * @return Whether the iteration has been closed.
+     */
     bool
     closed() const;
 
+    /**
+     * @brief Has the iteration been closed by the writer?
+     *        Background: Upon calling Iteration::close(), the openPMD API
+     *        will add metadata to the iteration in form of an attribute,
+     *        indicating that the iteration has indeed been closed.
+     *        Useful mainly in streaming context.
+     *
+     * @return Whether the iteration has been explicitly closed (yet) by the
+     *         writer.
+     */
     bool
     closedByWriter() const;
 
