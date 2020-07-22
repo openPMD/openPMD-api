@@ -29,7 +29,9 @@
 #include <tuple>
 #include <climits>
 #include <map>
+#include <stdexcept>
 #include <string>
+
 
 namespace openPMD
 {
