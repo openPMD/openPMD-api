@@ -39,6 +39,7 @@ Bug Fixes
 
   - fix ``"weighting"`` record attribute (ED-PIC) #728
   - fix & validate all created test/example files #738 #739
+- ``Datatype.hpp``: add missing include #764
 
 Other
 """""
@@ -59,6 +60,7 @@ Other
 - CMake: subproject inclusion cleanup #751
 - Python: remove redundant move in container #753
 - read example: show particle load #706
+- Record component: fix formatting #763
 
 
 0.11.1-alpha
