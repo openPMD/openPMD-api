@@ -335,7 +335,7 @@ RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
     if( empty() )
         throw std::runtime_error("Chunks cannot be written for an empty RecordComponent.");
     if( !data )
-throw std::runtime_error("Unallocated pointer passed during chunk store.");
+        throw std::runtime_error("Unallocated pointer passed during chunk store.");
     Datatype dtype = determineDatatype(data);
     if( dtype != getDatatype() )
     {
