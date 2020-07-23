@@ -53,6 +53,7 @@ void init_Iteration(py::module &m) {
         .def("set_dt", &Iteration::setDt<long double>)
         .def("time_unit_SI", &Iteration::timeUnitSI)
         .def("set_time_unit_SI", &Iteration::setTimeUnitSI)
+        .def("close", &Iteration::close, py::arg("flush") = true)
 
         .def_readwrite("meshes", &Iteration::meshes,
             py::return_value_policy::reference,
