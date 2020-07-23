@@ -266,6 +266,7 @@ Features
   - Python 3.8 support #581
   - support empty datasets via ``Record_Component.make_empty`` #538
 - pkg-config: add ``static`` variable (``true``/``false``) to ``openPMD.pc`` package #580
+- CMake: interprocedural/link-time optimization #597
 
 Bug Fixes
 """""""""
