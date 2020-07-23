@@ -1235,50 +1235,51 @@ class APITest(unittest.TestCase):
             "unittest_closeIteration_%T." + file_ending,
             io.Access_Type.create
         )
-        DT = io.Datatype
         DS = io.Dataset
-        data = np.array([2,4,6,8], dtype=np.dtype("int"))
+        data = np.array([2, 4, 6, 8], dtype=np.dtype("int"))
         extent = [4]
 
         it0 = series.iterations[0]
         E_x = it0.meshes["E"]["x"]
         E_x.reset_dataset(DS(np.dtype("int"), extent))
         E_x.store_chunk(data, [0], extent)
-        it0.close(flush = True)
+        it0.close(flush=True)
 
-        read = io.Series(
-            "unittest_closeIteration_%T." + file_ending,
-            io.Access_Type.read_only
-        )
-        it0 = read.iterations[0]
-        E_x = it0.meshes["E"]["x"]
-        chunk = E_x.load_chunk([0], extent)
-        it0.close() # flush = True <- default argument
+        if backend != 'adios1':
+            read = io.Series(
+                "unittest_closeIteration_%T." + file_ending,
+                io.Access_Type.read_only
+            )
+            it0 = read.iterations[0]
+            E_x = it0.meshes["E"]["x"]
+            chunk = E_x.load_chunk([0], extent)
+            it0.close()  # flush = True <- default argument
 
-        for i in range(len(data)):
-            self.assertEqual(data[i], chunk[i])
-        del read
+            for i in range(len(data)):
+                self.assertEqual(data[i], chunk[i])
+            del read
 
         it1 = series.iterations[1]
         E_x = it1.meshes["E"]["x"]
         E_x.reset_dataset(DS(np.dtype("int"), extent))
         E_x.store_chunk(data, [0], extent)
-        it1.close(flush = False)
+        it1.close(flush=False)
         series.flush()
 
-        read = io.Series(
-            "unittest_closeIteration_%T." + file_ending,
-            io.Access_Type.read_only
-        )
-        it1 = read.iterations[1]
-        E_x = it1.meshes["E"]["x"]
-        chunk = E_x.load_chunk([0], extent)
-        it1.close(flush = False)
-        read.flush()
+        if backend != 'adios1':
+            read = io.Series(
+                "unittest_closeIteration_%T." + file_ending,
+                io.Access_Type.read_only
+            )
+            it1 = read.iterations[1]
+            E_x = it1.meshes["E"]["x"]
+            chunk = E_x.load_chunk([0], extent)
+            it1.close(flush=False)
+            read.flush()
 
-        for i in range(len(data)):
-            self.assertEqual(data[i], chunk[i])
-        del read
+            for i in range(len(data)):
+                self.assertEqual(data[i], chunk[i])
+            del read
 
     def testCloseIteration(self):
         backend_filesupport = {
