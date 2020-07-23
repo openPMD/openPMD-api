@@ -116,7 +116,8 @@ public:
      *        Background: Upon calling Iteration::close(), the openPMD API
      *        will add metadata to the iteration in form of an attribute,
      *        indicating that the iteration has indeed been closed.
-     *        Useful mainly in streaming context.
+     *        Useful mainly in streaming context when a reader inquires from
+     *        a writer that it is done writing.
      *
      * @return Whether the iteration has been explicitly closed (yet) by the
      *         writer.
@@ -136,11 +137,17 @@ private:
     void flush();
     void read();
 
+    /**
+     * @brief Whether an iteration has been closed yet.
+     *
+     */
     enum class CloseStatus
     {
-        Open,
-        ClosedInFrontend,
-        ClosedInBackend
+        Open,             //!< Iteration has not been closed
+        ClosedInFrontend, /*!< Iteration has been closed, but task has not yet
+                               been propagated to the backend */
+        ClosedInBackend   /*!< Iteration has been closed and task has been
+                               propagated to the backend */
     };
 
     /*
@@ -152,14 +159,16 @@ private:
     std::shared_ptr< CloseStatus > m_closed =
         std::make_shared< CloseStatus >( CloseStatus::Open );
 
-    /**
-     * @brief Verify that a closed iteration has not been wrongly accessed.
+    /*
+     * @brief Check recursively whether this Iteration is dirty.
+     *        It is dirty if any attribute or dataset is read from or written to
+     *        the backend.
      *
-     * @return true If closed iteration had no wrong accesses.
+     * @return true If dirty.
      * @return false Otherwise.
      */
     bool
-    verifyClosed() const;
+    dirtyRecursive() const;
 
     virtual void linkHierarchy(std::shared_ptr< Writable > const& w);
 };  // Iteration

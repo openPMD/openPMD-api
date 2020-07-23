@@ -47,14 +47,15 @@ private:
     void flush(std::string const &) override;
 
     /**
-     * @brief Verify that a particle species in a closed iteration has not
-     *        been wrongly accessed.
+     * @brief Check recursively whether this ParticleSpecies is dirty.
+     *        It is dirty if any attribute or dataset is read from or written to
+     *        the backend.
      *
-     * @return true If closed iteration had no wrong accesses.
+     * @return true If dirty.
      * @return false Otherwise.
      */
     bool
-    verifyClosed() const;
+    dirtyRecursive() const;
 };
 
 namespace traits

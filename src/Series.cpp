@@ -566,7 +566,7 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
                 // verify that there have been no further accesses
-                if( !i.second.verifyClosed() )
+                if( i.second.dirtyRecursive() )
                 {
                     throw std::runtime_error(
                         "[Series] Detected illegal access to iteration that "
@@ -599,7 +599,7 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
                         "[Series] Closed iteration has not been written. This "
                         "is an internal error.");
                 }
-                if( !i.second.verifyClosed() )
+                if( i.second.dirtyRecursive() )
                 {
                     throw std::runtime_error(
                         "[Series] Detected illegal access to iteration that "
@@ -657,7 +657,7 @@ Series::flushGroupBased( IterationsContainer && iterationsToFlush )
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
                 // verify that there have been no further accesses
-                if( !i.second.verifyClosed() )
+                if( i.second.dirtyRecursive() )
                 {
                     throw std::runtime_error(
                         "[Series] Illegal access to iteration " +
@@ -667,6 +667,12 @@ Series::flushGroupBased( IterationsContainer && iterationsToFlush )
                 continue;
             }
             i.second.flush();
+            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
+            {
+                // the iteration has no dedicated file in group-based mode
+                *i.second.m_closed = Iteration::CloseStatus::ClosedInBackend;
+            }
+            IOHandler->flush();
         }
     else
     {
@@ -692,7 +698,7 @@ Series::flushGroupBased( IterationsContainer && iterationsToFlush )
                         "[Series] Closed iteration has not been written. This "
                         "is an internal error.");
                 }
-                if( !i.second.verifyClosed() )
+                if( i.second.dirtyRecursive() )
                 {
                     throw std::runtime_error(
                         "[Series] Illegal access to iteration " +
@@ -707,9 +713,15 @@ Series::flushGroupBased( IterationsContainer && iterationsToFlush )
                 i.second.parent = getWritable(&iterations);
             }
             i.second.flushGroupBased(i.first);
+            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
+            {
+                // the iteration has no dedicated file in group-based mode
+                *i.second.m_closed = Iteration::CloseStatus::ClosedInBackend;
+            }
         }
 
         flushAttributes();
+        IOHandler->flush();
     }
 }
 

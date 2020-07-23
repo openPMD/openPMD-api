@@ -145,19 +145,19 @@ ParticleSpecies::flush(std::string const& path)
 }
 
 bool
-ParticleSpecies::verifyClosed() const
+ParticleSpecies::dirtyRecursive() const
 {
     if( dirty )
     {
-        return false;
+        return true;
     }
     for( auto const & pair : *this )
     {
-        if( !pair.second.verifyClosed() )
+        if( pair.second.dirtyRecursive() )
         {
-            return false;
+            return true;
         }
     }
-    return true;
+    return false;
 }
 } // namespace openPMD

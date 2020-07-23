@@ -406,6 +406,9 @@ HDF5IOHandlerImpl::closeFile(
     auto fileID_it = m_fileIDs.find( writable );
     if( fileID_it == m_fileIDs.end() )
     {
+        throw std::runtime_error(
+            "[HDF5] Trying to close a file that is not "
+            "present in the backend" );
         return;
     }
     hid_t fileID = fileID_it->second;
@@ -413,8 +416,7 @@ HDF5IOHandlerImpl::closeFile(
     m_openFileIDs.erase( fileID );
     m_fileIDs.erase( fileID_it );
 
-    /*
-     * std::unordered_map::erase:
+    /* std::unordered_map::erase:
      * References and iterators to the erased elements are invalidated. Other
      * iterators and references are not invalidated.
      */

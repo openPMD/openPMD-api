@@ -20,13 +20,14 @@
  */
 #include "openPMD/Iteration.hpp"
 
-#include <tuple>
-
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Writable.hpp"
+
+#include <tuple>
 
 
 namespace openPMD
@@ -113,7 +114,7 @@ Iteration::close( bool _flush )
     *m_closed = CloseStatus::ClosedInFrontend;
     if( _flush )
     {
-        Series * s = dynamic_cast< Series * >(
+        Series * s = &auxiliary::deref_dynamic_cast< Series >(
             parent->attributable->parent->attributable );
         // figure out my iteration number
         uint64_t index;
@@ -431,27 +432,27 @@ Iteration::read()
 }
 
 bool
-Iteration::verifyClosed() const
+Iteration::dirtyRecursive() const
 {
     if( dirty )
     {
-        return false;
+        return true;
     }
     for( auto const & pair : particles )
     {
-        if( !pair.second.verifyClosed() )
+        if( pair.second.dirtyRecursive() )
         {
-            return false;
+            return true;
         }
     }
     for( auto const & pair : meshes )
     {
-        if( !pair.second.verifyClosed() )
+        if( pair.second.dirtyRecursive() )
         {
-            return false;
+            return true;
         }
     }
-    return true;
+    return false;
 }
 
 void

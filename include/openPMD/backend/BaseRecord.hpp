@@ -99,14 +99,15 @@ private:
     virtual void read() = 0;
 
     /**
-     * @brief Verify that a base record in a closed iteration has not
-     *        been wrongly accessed.
+     * @brief Check recursively whether this BaseRecord is dirty.
+     *        It is dirty if any attribute or dataset is read from or written to
+     *        the backend.
      *
-     * @return true If closed iteration had no wrong accesses.
+     * @return true If dirty.
      * @return false Otherwise.
      */
     bool
-    verifyClosed() const;
+    dirtyRecursive() const;
 }; // BaseRecord
 
 
@@ -308,19 +309,19 @@ BaseRecord< T_elem >::flush(std::string const& name)
 
 template< typename T_elem >
 inline bool
-BaseRecord< T_elem >::verifyClosed() const
+BaseRecord< T_elem >::dirtyRecursive() const
 {
     if( Attributable::dirty )
     {
-        return false;
+        return true;
     }
     for( auto const & pair : *this )
     {
-        if( !pair.second.verifyClosed() )
+        if( pair.second.dirtyRecursive() )
         {
-            return false;
+            return true;
         }
     }
-    return true;
+    return false;
 }
 } // namespace openPMD

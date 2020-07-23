@@ -267,12 +267,12 @@ RecordComponent::readBase()
 }
 
 bool
-RecordComponent::verifyClosed() const
+RecordComponent::dirtyRecursive() const
 {
     if( Attributable::dirty )
     {
-        return false;
+        return true;
     }
-    return m_chunks->empty();
+    return !m_chunks->empty();
 }
 } // namespace openPMD

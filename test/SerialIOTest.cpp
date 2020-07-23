@@ -94,19 +94,12 @@ TEST_CASE( "multi_series_test", "[serial]" )
 void
 close_iteration_test( std::string file_ending )
 {
-#if openPMD_HAVE_ADIOS1 && !openPMD_HAVE_ADIOS2
-    bool isAdios1 = file_ending == "bp";
-#elif openPMD_HAVE_ADIOS1 && openPMD_HAVE_ADIOS2
-    bool isAdios1 = file_ending == "bp" &&
-        auxiliary::getEnvString("OPENPMD_BP_BACKEND", "NOT_SET") == "ADIOS1";
-#else
-    bool isAdios1 = false;
-#endif
     std::string name = "../samples/close_iterations_%T." + file_ending;
 
     std::vector<int> data{2, 4, 6, 8};
     // { // we do *not* need these parentheses
     Series write(name, Access::CREATE);
+    bool isAdios1 = write.backend() == "ADIOS1";
     {
         Iteration it0 = write.iterations[ 0 ];
         auto E_x = it0.meshes[ "E" ][ "x" ];
@@ -178,6 +171,56 @@ TEST_CASE( "close_iteration_test", "[serial]" )
         close_iteration_test( std::get< 0 >( t ) );
     }
 }
+
+#if openPMD_HAVE_ADIOS2
+TEST_CASE( "close_iteration_throws_test", "[serial" )
+{
+    /*
+     * Iterations should not be accessed any more after closing.
+     * Test that the openPMD API detects that case and throws.
+     */
+    {
+        Series series( "close_iteration_throws_1.bp", Access::CREATE );
+        auto it0 = series.iterations[ 0 ];
+        auto E_x = it0.meshes[ "E" ][ "x" ];
+        E_x.resetDataset( { Datatype::INT, { 5 } } );
+        std::vector< int > data{ 0, 1, 2, 3, 4 };
+        E_x.storeChunk( data, { 0 }, { 5 } );
+        it0.close();
+
+        auto B_y = it0.meshes[ "B" ][ "y" ];
+        B_y.resetDataset( { Datatype::INT, { 5 } } );
+        B_y.storeChunk( data, { 0 }, { 5 } );
+        REQUIRE_THROWS( series.flush() );
+    }
+    {
+        Series series( "close_iteration_throws_2.bp", Access::CREATE );
+        auto it0 = series.iterations[ 0 ];
+        auto E_x = it0.meshes[ "E" ][ "x" ];
+        E_x.resetDataset( { Datatype::INT, { 5 } } );
+        std::vector< int > data{ 0, 1, 2, 3, 4 };
+        E_x.storeChunk( data, { 0 }, { 5 } );
+        it0.close();
+
+        auto e_position_x = it0.particles[ "e" ][ "position" ][ "x" ];
+        e_position_x.resetDataset( { Datatype::INT, { 5 } } );
+        e_position_x.storeChunk( data, { 0 }, { 5 } );
+        REQUIRE_THROWS( series.flush() );
+    }
+    {
+        Series series( "close_iteration_throws_3.bp", Access::CREATE );
+        auto it0 = series.iterations[ 0 ];
+        auto E_x = it0.meshes[ "E" ][ "x" ];
+        E_x.resetDataset( { Datatype::INT, { 5 } } );
+        std::vector< int > data{ 0, 1, 2, 3, 4 };
+        E_x.storeChunk( data, { 0 }, { 5 } );
+        it0.close();
+
+        it0.setTimeUnitSI( 2.0 );
+        REQUIRE_THROWS( series.flush() );
+    }
+}
+#endif
 
 inline void
 empty_dataset_test( std::string file_ending )

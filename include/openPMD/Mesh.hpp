@@ -182,14 +182,6 @@ private:
 
     void flush_impl(std::string const&) override;
     void read() override;
-
-    /**
-     * @brief Verify that a mesh in a closed iteration has not
-     *        been wrongly accessed.
-     *
-     * @return true If closed iteration had no wrong accesses.
-     * @return false Otherwise.
-     */
 }; // Mesh
 
 template< typename T >

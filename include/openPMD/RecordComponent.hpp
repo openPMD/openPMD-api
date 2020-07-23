@@ -200,14 +200,15 @@ private:
     RecordComponent& makeEmpty( Dataset d );
 
     /**
-     * @brief Verify that a record component in a closed iteration has not
-     *        been wrongly accessed.
+     * @brief Check recursively whether this RecordComponent is dirty.
+     *        It is dirty if any attribute or dataset is read from or written to
+     *        the backend.
      *
-     * @return true If closed iteration had no wrong accesses.
+     * @return true If dirty.
      * @return false Otherwise.
      */
     bool
-    verifyClosed() const;
+    dirtyRecursive() const;
 }; // RecordComponent
 
 
