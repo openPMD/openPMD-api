@@ -622,7 +622,7 @@ ADIOS2IOHandlerImpl::closePath(
         "Cannot close a path while in read-only mode." );
     auto file = refreshFileFromParent( writable );
     auto & fileData = getFileData( file );
-    if( !fileData.isStreaming )
+    if( !fileData.optimizeAttributesStreaming )
     {
         return;
     }
@@ -1323,16 +1323,19 @@ namespace detail
                 auto it = streamingEngines.find( type );
                 if( it != streamingEngines.end() )
                 {
-                    isStreaming = true;
+                    optimizeAttributesStreaming = true;
+                    useAdiosSteps = true;
                     streamStatus = StreamStatus::OutsideOfStep;
                 }
                 else
                 {
-                    isStreaming = false;
+                    optimizeAttributesStreaming = false;
                     it = fileEngines.find( type );
                     if( it != fileEngines.end() )
                     {
                         streamStatus = StreamStatus::NoStream;
+                        optimizeAttributesStreaming = false;
+                        useAdiosSteps = false;
                     }
                     else
                     {
@@ -1340,6 +1343,8 @@ namespace detail
                                   << "). Defaulting to non-streaming mode."
                                   << std::endl;
                         streamStatus = StreamStatus::NoStream;
+                        optimizeAttributesStreaming = false;
+                        useAdiosSteps = false;
                     }
                 }
             }
@@ -1353,6 +1358,22 @@ namespace detail
                 {
                     m_IO.SetParameter( it.key(), it.value() );
                     alreadyConfigured.emplace( it.key() );
+                }
+            }
+            auto _useAdiosSteps =
+                impl.config( ADIOS2Defaults::str_usesteps, engineConfig );
+            if( !_useAdiosSteps.json().is_null() )
+            {
+                bool tmp = _useAdiosSteps.json();
+                if( useAdiosSteps && !tmp )
+                {
+                    throw std::runtime_error(
+                        "Cannot switch off steps for streaming engines." );
+                }
+                useAdiosSteps = tmp;
+                if( !useAdiosSteps )
+                {
+                    streamStatus = StreamStatus::NoStream;
                 }
             }
             alreadyConfigured.emplace( "Engine" );
@@ -1511,6 +1532,11 @@ namespace detail
     AdvanceStatus
     BufferedActions::advance( AdvanceMode mode )
     {
+        if( !useAdiosSteps )
+        {
+            flush();
+            return AdvanceStatus::OK;
+        }
         switch( mode )
         {
             case AdvanceMode::ENDSTEP:

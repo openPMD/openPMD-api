@@ -327,7 +327,8 @@ namespace ADIOS2Defaults
     constexpr const_str str_engine = "engine";
     constexpr const_str str_type = "type";
     constexpr const_str str_params = "parameters";
-}
+    constexpr const_str str_usesteps = "usesteps";
+} // namespace ADIOS2Defaults
 
 namespace detail
 {
@@ -689,7 +690,22 @@ namespace detail
         detail::WriteDataset const m_writeDataset;
         detail::DatasetReader const m_readDataset;
         detail::AttributeReader const m_attributeReader;
-        bool isStreaming = false;
+        /*
+         * The openPMD API will generally create new attributes for each
+         * iteration. This results in a growing number of attributes over time.
+         * In streaming-based modes, these will be completely sent anew in each
+         * iteration. If the following boolean is true, old attributes will be
+         * removed upon CLOSE_GROUP.
+         * Should not be set to true in persistent backends.
+         * Will be set by BufferedActions::configure_IO depending on chosen
+         * ADIOS2 engine.
+         */
+        bool optimizeAttributesStreaming = false;
+        /*
+         * Workaround for the fact that ADIOS steps (currently) break random-
+         * access: Make ADIOS steps opt-in for persistent backends.
+         */
+        bool useAdiosSteps = false;
 
         using AttributeMap_t = std::map< std::string, adios2::Params >;
 
