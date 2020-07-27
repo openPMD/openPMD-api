@@ -45,6 +45,17 @@ private:
 
     void read();
     void flush(std::string const &) override;
+
+    /**
+     * @brief Check recursively whether this ParticleSpecies is dirty.
+     *        It is dirty if any attribute or dataset is read from or written to
+     *        the backend.
+     *
+     * @return true If dirty.
+     * @return false Otherwise.
+     */
+    bool
+    dirtyRecursive() const;
 };
 
 namespace traits

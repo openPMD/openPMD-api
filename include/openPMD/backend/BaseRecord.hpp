@@ -97,7 +97,18 @@ private:
     void flush(std::string const&) final;
     virtual void flush_impl(std::string const&) = 0;
     virtual void read() = 0;
-};  //BaseRecord
+
+    /**
+     * @brief Check recursively whether this BaseRecord is dirty.
+     *        It is dirty if any attribute or dataset is read from or written to
+     *        the backend.
+     *
+     * @return true If dirty.
+     * @return false Otherwise.
+     */
+    bool
+    dirtyRecursive() const;
+}; // BaseRecord
 
 
 template< typename T_elem >
@@ -295,4 +306,22 @@ BaseRecord< T_elem >::flush(std::string const& name)
 
     this->flush_impl(name);
 }
-} // openPMD
+
+template< typename T_elem >
+inline bool
+BaseRecord< T_elem >::dirtyRecursive() const
+{
+    if( Attributable::dirty )
+    {
+        return true;
+    }
+    for( auto const & pair : *this )
+    {
+        if( pair.second.dirtyRecursive() )
+        {
+            return true;
+        }
+    }
+    return false;
+}
+} // namespace openPMD

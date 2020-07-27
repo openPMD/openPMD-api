@@ -87,6 +87,44 @@ public:
      */
     Iteration& setTimeUnitSI(double newTimeUnitSI);
 
+    /**
+     * @brief Close an iteration. No further (backend-propagating) accesses
+     *        may be performed on this iteration.
+     *        A closed iteration may not (yet) be reopened.
+     * @return Reference to iteration.
+     */
+    /*
+     * Note: If the API is changed in future to allow reopening closed
+     * iterations, measures should be taken to prevent this in the streaming
+     * API. Currently, disallowing to reopen closed iterations satisfies
+     * the requirements of the streaming API.
+     */
+    Iteration &
+    close( bool flush = true );
+
+    /**
+     * @brief Has the iteration been closed?
+     *        A closed iteration may not (yet) be reopened.
+     *
+     * @return Whether the iteration has been closed.
+     */
+    bool
+    closed() const;
+
+    /**
+     * @brief Has the iteration been closed by the writer?
+     *        Background: Upon calling Iteration::close(), the openPMD API
+     *        will add metadata to the iteration in form of an attribute,
+     *        indicating that the iteration has indeed been closed.
+     *        Useful mainly in streaming context when a reader inquires from
+     *        a writer that it is done writing.
+     *
+     * @return Whether the iteration has been explicitly closed (yet) by the
+     *         writer.
+     */
+    bool
+    closedByWriter() const;
+
     Container< Mesh > meshes;
     Container< ParticleSpecies > particles; //particleSpecies?
 
@@ -99,8 +137,41 @@ private:
     void flush();
     void read();
 
+    /**
+     * @brief Whether an iteration has been closed yet.
+     *
+     */
+    enum class CloseStatus
+    {
+        Open,             //!< Iteration has not been closed
+        ClosedInFrontend, /*!< Iteration has been closed, but task has not yet
+                               been propagated to the backend */
+        ClosedInBackend   /*!< Iteration has been closed and task has been
+                               propagated to the backend */
+    };
+
+    /*
+     * An iteration may be logically closed in the frontend,
+     * but not necessarily yet in the backend.
+     * Will be propagated to the backend upon next flush.
+     * Store the current status.
+     */
+    std::shared_ptr< CloseStatus > m_closed =
+        std::make_shared< CloseStatus >( CloseStatus::Open );
+
+    /*
+     * @brief Check recursively whether this Iteration is dirty.
+     *        It is dirty if any attribute or dataset is read from or written to
+     *        the backend.
+     *
+     * @return true If dirty.
+     * @return false Otherwise.
+     */
+    bool
+    dirtyRecursive() const;
+
     virtual void linkHierarchy(std::shared_ptr< Writable > const& w);
-};  //Iteration
+};  // Iteration
 
 extern template
 float

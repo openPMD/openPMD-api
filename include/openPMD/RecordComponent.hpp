@@ -198,6 +198,17 @@ private:
      * @return Reference to this RecordComponent instance.
      */
     RecordComponent& makeEmpty( Dataset d );
+
+    /**
+     * @brief Check recursively whether this RecordComponent is dirty.
+     *        It is dirty if any attribute or dataset is read from or written to
+     *        the backend.
+     *
+     * @return true If dirty.
+     * @return false Otherwise.
+     */
+    bool
+    dirtyRecursive() const;
 }; // RecordComponent
 
 

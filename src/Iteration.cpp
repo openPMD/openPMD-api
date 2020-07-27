@@ -19,11 +19,15 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/Iteration.hpp"
+
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Writable.hpp"
+
+#include <tuple>
 
 
 namespace openPMD
@@ -40,7 +44,8 @@ Iteration::Iteration()
 Iteration::Iteration(Iteration const& i)
         : Attributable{i},
           meshes{i.meshes},
-          particles{i.particles}
+          particles{i.particles},
+          m_closed{i.m_closed}
 {
     IOHandler = i.IOHandler;
     parent = i.parent;
@@ -57,6 +62,7 @@ Iteration& Iteration::operator=(Iteration const& i)
     particles = i.particles;
     IOHandler = i.IOHandler;
     parent = i.parent;
+    m_closed = i.m_closed;
     meshes.IOHandler = IOHandler;
     meshes.parent = this->m_writable.get();
     particles.IOHandler = IOHandler;
@@ -95,6 +101,72 @@ Iteration::setTimeUnitSI(double newTimeUnitSI)
 {
     setAttribute("timeUnitSI", newTimeUnitSI);
     return *this;
+}
+
+Iteration &
+Iteration::close( bool _flush )
+{
+    using bool_type = unsigned char;
+    if( this->IOHandler->m_frontendAccess != Access::READ_ONLY )
+    {
+        setAttribute< bool_type >( "closed", 1u );
+    }
+    *m_closed = CloseStatus::ClosedInFrontend;
+    if( _flush )
+    {
+        Series * s = &auxiliary::deref_dynamic_cast< Series >(
+            parent->attributable->parent->attributable );
+        // figure out my iteration number
+        uint64_t index;
+        bool found = false;
+        for( auto const & pair : s->iterations )
+        {
+            if( pair.second.m_writable.get() == this->m_writable.get() )
+            {
+                found = true;
+                index = pair.first;
+                break;
+            }
+        }
+        if( !found )
+        {
+            throw std::runtime_error(
+                "[Iteration::close] Iteration not found in Series." );
+        }
+        std::map< uint64_t, Iteration > flushOnlyThisIteration{
+            { index, *this } };
+        switch( *s->m_iterationEncoding )
+        {
+            using IE = IterationEncoding;
+            case IE::fileBased:
+                s->flushFileBased( flushOnlyThisIteration );
+                break;
+            case IE::groupBased:
+                s->flushGroupBased( flushOnlyThisIteration );
+                break;
+        }
+    }
+    return *this;
+}
+
+bool
+Iteration::closed() const
+{
+    return *m_closed != CloseStatus::Open;
+}
+
+bool
+Iteration::closedByWriter() const
+{
+    using bool_type = unsigned char;
+    if( containsAttribute( "closed" ) )
+    {
+        return getAttribute( "closed" ).get< bool_type >() == 0u ? false : true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 void
@@ -359,6 +431,30 @@ Iteration::read()
     readAttributes();
 }
 
+bool
+Iteration::dirtyRecursive() const
+{
+    if( dirty )
+    {
+        return true;
+    }
+    for( auto const & pair : particles )
+    {
+        if( pair.second.dirtyRecursive() )
+        {
+            return true;
+        }
+    }
+    for( auto const & pair : meshes )
+    {
+        if( pair.second.dirtyRecursive() )
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void
 Iteration::linkHierarchy(std::shared_ptr< Writable > const& w)
 {
@@ -367,16 +463,15 @@ Iteration::linkHierarchy(std::shared_ptr< Writable > const& w)
     particles.linkHierarchy(m_writable);
 }
 
+template float
+Iteration::time< float >() const;
+template double
+Iteration::time< double >() const;
+template long double
+Iteration::time< long double >() const;
 
-template
-float Iteration::time< float >() const;
-template
-double Iteration::time< double >() const;
-template
-long double Iteration::time< long double >() const;
-
-template
-float Iteration::dt< float >() const;
+template float
+Iteration::dt< float >() const;
 template
 double Iteration::dt< double >() const;
 template

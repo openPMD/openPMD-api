@@ -143,4 +143,21 @@ ParticleSpecies::flush(std::string const& path)
         }
     }
 }
-} // openPMD
+
+bool
+ParticleSpecies::dirtyRecursive() const
+{
+    if( dirty )
+    {
+        return true;
+    }
+    for( auto const & pair : *this )
+    {
+        if( pair.second.dirtyRecursive() )
+        {
+            return true;
+        }
+    }
+    return false;
+}
+} // namespace openPMD

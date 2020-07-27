@@ -306,6 +306,21 @@ namespace openPMD
     }
 
 
+    void JSONIOHandlerImpl::closeFile(
+        Writable * writable,
+        Parameter< Operation::CLOSE_FILE > const &
+    )
+    {
+        auto fileIterator = m_files.find( writable );
+        if ( fileIterator != m_files.end( ) )
+        {
+            putJsonContents( fileIterator->second );
+            fileIterator->second.invalidate( );
+            m_files.erase( fileIterator );
+        }
+    }
+
+
     void JSONIOHandlerImpl::openPath(
         Writable * writable,
         Parameter< Operation::OPEN_PATH > const & parameters

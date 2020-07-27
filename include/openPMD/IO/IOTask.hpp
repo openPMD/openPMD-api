@@ -46,6 +46,7 @@ OPENPMDAPI_EXPORT_ENUM_CLASS(Operation)
 {
     CREATE_FILE,
     OPEN_FILE,
+    CLOSE_FILE,
     DELETE_FILE,
 
     CREATE_PATH,
@@ -125,6 +126,20 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::OPEN_FILE > : public AbstractPara
     }
 
     std::string name = "";
+};
+
+template<>
+struct OPENPMDAPI_EXPORT Parameter< Operation::CLOSE_FILE > : public AbstractParameter
+{
+    Parameter() = default;
+    Parameter( Parameter const & ) : AbstractParameter() {}
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::CLOSE_FILE >( *this ) );
+    }
 };
 
 template<>

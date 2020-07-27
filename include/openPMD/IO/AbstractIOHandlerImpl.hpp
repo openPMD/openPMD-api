@@ -68,6 +68,9 @@ public:
                     case O::OPEN_FILE:
                         openFile(i.writable, deref_dynamic_cast< Parameter< O::OPEN_FILE > >(i.parameter.get()));
                         break;
+                    case O::CLOSE_FILE:
+                        closeFile(i.writable, *dynamic_cast< Parameter< O::CLOSE_FILE >* >(i.parameter.get()));
+                        break;
                     case O::OPEN_PATH:
                         openPath(i.writable, deref_dynamic_cast< Parameter< O::OPEN_PATH > >(i.parameter.get()));
                         break;
@@ -118,6 +121,12 @@ public:
         return std::future< void >();
     }
 
+  /**
+   * Close the file corresponding with the writable and release file handles.
+   * The operation should succeed in any access mode.
+   */
+  virtual void
+  closeFile( Writable *, Parameter< Operation::CLOSE_FILE > const & ) = 0;
   /** Create a new file in physical storage, possibly overriding an existing file.
    *
    * The operation should fail if m_handler->m_frontendAccess is Access::READ_ONLY.

@@ -135,6 +135,9 @@ ADIOS1IOHandlerImpl::flush()
                 case O::OPEN_DATASET:
                     openDataset(i.writable, deref_dynamic_cast< Parameter< O::OPEN_DATASET > >(i.parameter.get()));
                     break;
+                case O::CLOSE_FILE:
+                    closeFile(i.writable, *dynamic_cast< Parameter< O::CLOSE_FILE >* >(i.parameter.get()));
+                    break;
                 case O::DELETE_FILE:
                     deleteFile(i.writable, deref_dynamic_cast< Parameter< O::DELETE_FILE > >(i.parameter.get()));
                     break;
