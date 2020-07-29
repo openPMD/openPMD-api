@@ -330,7 +330,7 @@ jobs:
       sudo apt-get update
       sudo apt-get install -y intel-oneapi-icc
       set +e
-      source /opt/intel/inteloneapi/setvars.sh
+      source /opt/intel/oneapi/setvars.sh
       set -e
       export CXX=$(which icpc)
       export CC=$(which icc)
