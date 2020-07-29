@@ -6,7 +6,7 @@ cache:
   apt: true
   directories:
     - $HOME/.cache/spack
-    - $HOME/.cache/cmake-3.17.0
+    - $HOME/.cache/cmake-3.12.0
     - $HOME/.cache/kcov-35
     - $HOME/Library/Caches/Homebrew
   pip: true
@@ -664,26 +664,26 @@ install:
     fi
   # Configured Spack compilers
   - spack compilers
-  # required dependencies - CMake 3.17.0
+  # required dependencies - CMake 3.12.0
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      if [ ! -f $HOME/.cache/cmake-3.17.0/bin/cmake ]; then
-        wget -O cmake.sh https://cmake.org/files/v3.17/cmake-3.17.0-Linux-x86_64.sh &&
-        sh cmake.sh --skip-license --exclude-subdir --prefix=$HOME/.cache/cmake-3.17.0 &&
+      if [ ! -f $HOME/.cache/cmake-3.12.0/bin/cmake ]; then
+        wget -O cmake.sh https://cmake.org/files/v3.12/cmake-3.12.0-Linux-x86_64.sh &&
+        sh cmake.sh --skip-license --exclude-subdir --prefix=$HOME/.cache/cmake-3.12.0 &&
         rm cmake.sh;
       fi;
-      spack install cmake@3.17.0 $CXXSPEC;
+      spack install cmake@3.12.0 $CXXSPEC;
     else
       if [ ! -d /Applications/CMake.app/Contents/ ]; then
-        curl -L -s -o cmake.dmg https://cmake.org/files/v3.17/cmake-3.17.0-Darwin-x86_64.dmg &&
+        curl -L -s -o cmake.dmg https://cmake.org/files/v3.12/cmake-3.12.0-Darwin-x86_64.dmg &&
         yes | hdiutil mount cmake.dmg &&
-        sudo cp -R "/Volumes/cmake-3.17.0-Darwin-x86_64/CMake.app" /Applications &&
+        sudo cp -R "/Volumes/cmake-3.12.0-Darwin-x86_64/CMake.app" /Applications &&
         hdiutil detach /dev/disk1s1 &&
         rm cmake.dmg;
       fi;
-      spack install cmake@3.17.0 $CXXSPEC;
+      spack install cmake@3.12.0 $CXXSPEC;
     fi
   - spack find cmake
-  - spack load cmake@3.17.0 $CXXSPEC
+  - spack load cmake@3.12.0 $CXXSPEC
   # diagnostics: modules created and visible?
   - module av
   - module li
@@ -749,10 +749,6 @@ install:
       spack load adios2$ADIOS2_VERSION $CXXSPEC $SPACK_VAR_MPI;
     fi
   - spack clean -a
-  - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
-      ls -hal /Users/travis/.cache/spack/opt/spack/darwin-*/apple-clang-*/adios2-2.6.0-*/lib/*;
-      otool -l /Users/travis/.cache/spack/opt/spack/darwin-*/apple-clang-*/adios2-2.6.0-*/lib/libadios2_cxx11.2.dylib;
-    fi
 
 before_cache:
   # https://stackoverflow.com/questions/39930171/cache-brew-builds-with-travis-ci
