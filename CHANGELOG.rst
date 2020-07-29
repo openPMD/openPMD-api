@@ -18,14 +18,17 @@ Features
 """"""""
 
 - ``Record(Component)``: ``scalar()``, ``constant()``, ``empty()`` #711
+- Advanced backend configuration via JSON #569 #733
+- Functionality to close an iteration (and associated files) #746
 - Python:
 
   - ``__init__.py`` facade #720
   - add ``Mesh_Record_Component.position`` read-write property #713
   - add ``openpmd-ls`` tool in ``pip`` installs and as module #721 #724
+  - more idiomatic unit properties #735
 - CD:
 
-  - homebrew: add Formula (OSX/Linux) #724
+  - homebrew: add Formula (OSX/Linux) #724 #725
   - PyPI: autodeploy wheels (OSX/Linux) #716 #719
 - version compare macro #747
 - Spack environment file ``spack.yaml`` added to repo #737
@@ -34,33 +37,44 @@ Bug Fixes
 """""""""
 
 - ``flush()`` exceptions in ``~Series``/``~..IOHandler`` do not abort anymore #709
+- ``Datatype.hpp``: add missing include #764
 - readme: python example syntax was broken and outdated #722
 - examples:
 
   - fix ``"weighting"`` record attribute (ED-PIC) #728
   - fix & validate all created test/example files #738 #739
-- ``Datatype.hpp``: add missing include #764
+- warnings:
+
+  - ``listSeries``: unused params in try-catch #707
+  - fix Doxygen 1.18.8 warnings
+  - extended write example: remove MSVC warning #752
 
 Other
 """""
 
 - CMake: require version 3.12.0+ #755
 - separate header for export macros #704
-- rename ``AccessType``/``Access_Type`` to ``Access`` #740
+- rename ``AccessType``/``Access_Type`` to ``Access`` #740 #743 #744
 - CI:
 
   - migration to travis-ci.com / GitHub app #703
   - migrate to GitHub checkout action v2 #712
+  - fix OSX numpy install #714
   - move ``.travis/`` to ``.github/ci/`` #715
   - move example file download scripts to ``share/openPMD/`` #715
   - add GCC 9.3 builds #723
-- extended write example: remove MSVC warning #752
+  - add Cygwin builds #727
+  - add Clang 10.0 builds #759
+  - migrate Spack to use AppleClang #758
+  - style check scripts: ``eval``-uable #757
 - ``listSeries``: remove unused parameters in try-catch #706
 - safer internal ``*dynamic_cast``s of pointers #745
 - CMake: subproject inclusion cleanup #751
 - Python: remove redundant move in container #753
 - read example: show particle load #706
 - Record component: fix formatting #763
+- add ``.editorconfig`` file #762
+- MPI benchmark: doxygen params #653
 
 
 0.11.1-alpha
