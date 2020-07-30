@@ -2758,6 +2758,69 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
     read( "../samples/jsonConfiguredBP3.bp", readConfigBP3 );
     read( "../samples/jsonConfiguredBP4.bp", readConfigBP4 );
 }
+
+void
+bp4_steps( std::string const & file, std::string const & options_write, std::string const & options_read )
+{
+    {
+        Series writeSeries( file, Access::CREATE, options_write );
+        auto iterations = writeSeries.writeIterations();
+        for( size_t i = 0; i < 10; ++i )
+        {
+            auto iteration = iterations[ i ];
+            auto E_x = iteration.meshes[ "E" ][ "x" ];
+            E_x.resetDataset(
+                openPMD::Dataset( openPMD::Datatype::INT, { 10 } ) );
+            std::vector< int > data( 10, i );
+            E_x.storeChunk( data, { 0 }, { 10 } );
+            iteration.close();
+        }
+    }
+
+    Series readSeries( file, Access::READ_ONLY, options_read );
+
+    size_t last_iteration_index = 0;
+    for( auto iteration : readSeries.readIterations() )
+    {
+        auto E_x = iteration.meshes[ "E" ][ "x" ];
+        REQUIRE( E_x.getDimensionality() == 1 );
+        REQUIRE( E_x.getExtent()[ 0 ] == 10 );
+        auto chunk = E_x.loadChunk< int >( { 0 }, { 10 } );
+        iteration.close(); // @todo replace with ::close()
+        for( size_t i = 0; i < 10; ++i )
+        {
+            REQUIRE( chunk.get()[ i ] == iteration.iterationIndex );
+        }
+        last_iteration_index = iteration.iterationIndex;
+    }
+    REQUIRE( last_iteration_index == 9 );
+}
+
+TEST_CASE( "bp4_steps", "[serial][adios2]" )
+{
+    std::string useSteps = R"(
+    {
+        "adios2": {
+            "engine": {
+                "type": "bp4",
+                "usesteps": true
+            }
+        }
+    }
+    )";
+    std::string dontUseSteps = R"(
+    {
+        "adios2": {
+            "engine": {
+                "type": "bp4",
+                "usesteps": false
+            }
+        }
+    }
+    )";
+    bp4_steps("bp4steps_yes_yes.bp", useSteps, useSteps);
+    bp4_steps("bp4steps_no_no.bp", dontUseSteps, dontUseSteps);
+}
 #endif
 
 void
