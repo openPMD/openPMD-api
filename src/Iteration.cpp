@@ -230,34 +230,8 @@ Iteration::endStep()
             break;
     }
     // @todo filebased check
-    AdvanceStatus status = series.advance(
+    series.advance(
         AdvanceMode::ENDSTEP, *file, myIteration< iterator_t >(), *this );
-    if( status != AdvanceStatus::OK )
-    {
-        return;
-    }
-
-    if( *series.m_iterationEncoding == IE::fileBased )
-    {
-        return;
-    }
-
-    // We can now put some groups to rest
-    if( this->IOHandler->m_frontendAccess == Access::CREATE ||
-        this->IOHandler->m_frontendAccess == Access::READ_WRITE )
-    {
-        if( *m_closed == CloseStatus::ClosedInFrontend )
-        {
-            Parameter< Operation::CLOSE_PATH > fClose;
-            IOHandler->enqueue( IOTask( this, std::move( fClose ) ) );
-            // In group-based iteration layout, files are
-            // not closed on a per-iteration basis
-            // We will treat it as such nonetheless
-            *m_closed = CloseStatus::ClosedInBackend;
-        }
-    }
-
-    return;
 }
 
 void

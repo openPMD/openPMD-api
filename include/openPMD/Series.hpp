@@ -308,27 +308,6 @@ OPENPMD_private:
         iterations_iterator it,
         Iteration & iteration );
 
-    /*
-     * Reading routines in the streaming-aware API need to know whether the
-     * opened Series has been created using a step-based writing mode.
-     * Trying to read a non-step Series using steps might lead to reading only
-     * the first iteration, since no further steps are found. Vice versa, trying
-     * to read a streaming-based Series without steps will not work at all,
-     * since steps are required for streaming.
-     *
-     * Since it is hard to guess at this stage (i.e. in the frontend) what mode
-     * should be employed, step-based writers should add a top-level attribute
-     * "usesSteps" of type UCHAR with value 1 to the Series, so the frontend
-     * knows what is up.
-     * 
-     * The following internal calls do this. This all happens automatically in
-     * the openPMD API and users need not care about it.
-     */
-    bool
-    usesSteps() const;
-    void
-    useSteps();
-
     /**
      * Steps may be opened manually or automatically.
      * If opened automatically, they should close
@@ -379,7 +358,6 @@ class SeriesIterator
 
     maybe_series_t m_series;
     iteration_index_t m_currentIteration = 0;
-    bool useSteps = true;
 
     // construct the end() iterator
     SeriesIterator();

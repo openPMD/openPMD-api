@@ -377,7 +377,6 @@ Series::readIterations()
 WriteIterations
 Series::writeIterations()
 {
-    useSteps();
     if( !m_writeIterations->has_value() )
     {
         *m_writeIterations = WriteIterations( this->iterations );
@@ -1070,8 +1069,9 @@ Series::advance(
     IOHandler->enqueue( task );
 
 
-    if( *m_iterationEncoding == IterationEncoding::fileBased &&
-        oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend )
+    if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend &&
+        *m_iterationEncoding == IterationEncoding::fileBased &&
+        mode == AdvanceMode::ENDSTEP )
     {
         Parameter< Operation::CLOSE_FILE > fClose;
         IOHandler->enqueue( IOTask( &iteration, std::move( fClose ) ) );
@@ -1083,33 +1083,29 @@ Series::advance(
     // Do that manually
     IOHandler->flush();
 
+    // We can now put some groups to rest
+    if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend &&
+        *m_iterationEncoding == IterationEncoding::groupBased &&
+        mode == AdvanceMode::ENDSTEP )
+    {
+        // TODO
+        if( this->IOHandler->m_frontendAccess == Access::CREATE ||
+            this->IOHandler->m_frontendAccess == Access::READ_WRITE )
+        {
+            Parameter< Operation::CLOSE_PATH > fClose;
+            IOHandler->enqueue( IOTask( &iteration, std::move( fClose ) ) );
+        }
+        // In group-based iteration layout, files are
+        // not closed on a per-iteration basis
+        // We will treat it as such nonetheless
+        *iteration.m_closed = Iteration::CloseStatus::ClosedInBackend;
+    }
+
     return *param.status;
 }
 
-bool
-Series::usesSteps() const
-{
-    using bool_type = unsigned char;
-    if( containsAttribute( "usesSteps" ) )
-    {
-        return ( getAttribute( "usesSteps" ).get< bool_type >() == 0u )
-            ? false : true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-void
-Series::useSteps()
-{
-    using bool_type = unsigned char;
-    setAttribute< bool_type >( "usesSteps", 1u );
-}
-
 std::string
-cleanFilename(std::string const& filename, Format f)
+cleanFilename( std::string const & filename, Format f )
 {
     switch( f )
     {
@@ -1196,8 +1192,7 @@ SeriesIterator::SeriesIterator() : m_series()
 {
 }
 
-SeriesIterator::SeriesIterator( Series & _series )
-    : m_series( _series ), useSteps( _series.usesSteps() )
+SeriesIterator::SeriesIterator( Series & _series ) : m_series( _series )
 {
     auto it = _series.iterations.begin();
     if( it == _series.iterations.end() )
@@ -1205,7 +1200,7 @@ SeriesIterator::SeriesIterator( Series & _series )
         *this = end();
         return;
     }
-    else if( useSteps )
+    else
     {
         auto status = it->second.beginStep();
         if( status == AdvanceStatus::OVER )
@@ -1233,27 +1228,24 @@ SeriesIterator::operator++()
     {
         currentIteration.close();
     }
-    if( useSteps )
+    switch( *series.m_iterationEncoding )
     {
-        switch( *series.m_iterationEncoding )
+        using IE = IterationEncoding;
+        case IE::groupBased:
         {
-            using IE = IterationEncoding;
-            case IE::groupBased:
+            // since we are in group-based iteration layout, it does not
+            // matter which iteration we begin a step upon
+            AdvanceStatus status = currentIteration.beginStep();
+            if( status == AdvanceStatus::OVER )
             {
-                // since we are in group-based iteration layout, it does not
-                // matter which iteration we begin a step upon
-                AdvanceStatus status = currentIteration.beginStep();
-                if( status == AdvanceStatus::OVER )
-                {
-                    *this = end();
-                    return *this;
-                }
-                *currentIteration.stepStatus() = StepStatus::DuringStep;
-                break;
+                *this = end();
+                return *this;
             }
-            default:
-                break;
+            *currentIteration.stepStatus() = StepStatus::DuringStep;
+            break;
         }
+        default:
+            break;
     }
     auto it = iterations.find( m_currentIteration );
     auto itEnd = iterations.end();
@@ -1269,26 +1261,23 @@ SeriesIterator::operator++()
         return *this;
     }
     m_currentIteration = it->first;
-    if( useSteps )
+    switch( *series.m_iterationEncoding )
     {
-        switch( *series.m_iterationEncoding )
+        using IE = IterationEncoding;
+        case IE::fileBased:
         {
-            using IE = IterationEncoding;
-            case IE::fileBased:
+            auto & iteration = series.iterations[ m_currentIteration ];
+            AdvanceStatus status = iteration.beginStep();
+            if( status == AdvanceStatus::OVER )
             {
-                auto & iteration = series.iterations[ m_currentIteration ];
-                AdvanceStatus status = iteration.beginStep();
-                if( status == AdvanceStatus::OVER )
-                {
-                    *this = end();
-                    return *this;
-                }
-                *iteration.stepStatus() = StepStatus::DuringStep;
-                break;
+                *this = end();
+                return *this;
             }
-            default:
-                break;
+            *iteration.stepStatus() = StepStatus::DuringStep;
+            break;
         }
+        default:
+            break;
     }
     return *this;
 }

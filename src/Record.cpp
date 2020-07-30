@@ -118,9 +118,13 @@ Record::read()
         Parameter< Operation::OPEN_DATASET > dOpen;
         for( auto const& component : *dList.datasets )
         {
-            RecordComponent& rc = (*this)[component];
+            RecordComponent & rc = ( *this )[ component ];
+            if( *rc.hasBeenRead )
+            {
+                continue;
+            }
             dOpen.name = component;
-            IOHandler->enqueue(IOTask(&rc, dOpen));
+            IOHandler->enqueue( IOTask( &rc, dOpen ) );
             IOHandler->flush();
             rc.written() = false;
             rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
