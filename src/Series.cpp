@@ -1334,4 +1334,38 @@ ReadIterations::end()
 {
     return SeriesIterator::end();
 }
+
+WriteIterations::WriteIterations( super_t _super )
+    : super_t{ std::move( _super ) }
+{
+}
+
+WriteIterations::mapped_type &
+WriteIterations::operator[]( key_type const & key )
+{
+    // make a copy
+    return operator[]( key_type{ key } );
+}
+WriteIterations::mapped_type &
+WriteIterations::operator[]( key_type && key )
+{
+    if( currentlyOpen->has_value() )
+    {
+        auto lastIterationIndex = currentlyOpen->get();
+        auto & lastIteration = this->at( lastIterationIndex );
+        if( lastIterationIndex != key && !lastIteration.closed() )
+        {
+            lastIteration.close();
+        }
+    }
+    *currentlyOpen = key;
+    auto & res = super_t::operator[]( std::move( key ) );
+    StepStatus * flag = res.stepStatus();
+    if( *flag == StepStatus::NoStep )
+    {
+        res.beginStep();
+        *flag = StepStatus::DuringStep;
+    }
+    return res;
+}
 } // namespace openPMD

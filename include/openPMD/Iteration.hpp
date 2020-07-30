@@ -261,38 +261,4 @@ template< typename T >
 inline T
 Iteration::dt() const
 { return Attributable::readFloatingpoint< T >("dt"); }
-
-/**
- * @brief Writing side of the streaming API. Create instance via
- *        Series::writeIterations().
- *        For use via WriteIterations::operator[]().
- *        Designed to allow reading any kind of Series, streaming and non-
- *        streaming alike. Calling Iteration::close() manually before opening
- *        the next iteration is encouraged and will implicitly flush all
- *        deferred IO actions. Otherwise, Iteration::close() will be implicitly
- *        called upon SeriesIterator::operator++(), i.e. upon going to the next
- *        iteration in the foreach loop.
- *
- *        Since this is designed for streaming mode, reopening an iteration is
- *        not possible once it has been closed.
- *
- */
-class WriteIterations : private Container< Iteration, uint64_t >
-{
-    friend class Series;
-
-private:
-    using super_t = Container< Iteration, uint64_t >;
-    WriteIterations( super_t );
-    explicit WriteIterations() = default;
-    // Index of the last opened iteration
-    std::shared_ptr< auxiliary::Option< uint64_t > > currentlyOpen =
-        std::make_shared< auxiliary::Option< uint64_t > >();
-
-public:
-    mapped_type &
-    operator[]( key_type const & key ) override;
-    mapped_type &
-    operator[]( key_type && key ) override;
-};
 } // namespace openPMD
