@@ -1384,6 +1384,24 @@ class APITest(unittest.TestCase):
 
         del series
 
+        # read
+
+        read = io.Series(
+            "unittest_serialIterator." + file_ending,
+            io.Access_Type.read_only,
+            jsonConfig
+        )
+        for it in read.readIterations():
+            lastIterationIndex = it.iterationIndex
+            E_x = it.meshes["E"]["x"]
+            chunk = E_x.load_chunk([0], extent)
+            it.close()
+
+            for i in range(len(data)):
+                self.assertEqual(data[i], chunk[i])
+        del read
+        self.assertEqual(lastIterationIndex, 9)
+
     def testIterator(self):
         backend_filesupport = {
             'json': 'json',
