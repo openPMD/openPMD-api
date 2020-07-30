@@ -2818,8 +2818,12 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
         }
     }
     )";
+    // sing the yes no song
     bp4_steps("bp4steps_yes_yes.bp", useSteps, useSteps);
+    bp4_steps("bp4steps_no_yes.bp", dontUseSteps, useSteps);
+    bp4_steps("bp4steps_yes_no.bp", useSteps, dontUseSteps);
     bp4_steps("bp4steps_no_no.bp", dontUseSteps, dontUseSteps);
+    bp4_steps("bp4steps_default.bp", "{}", "{}");
 }
 #endif
 

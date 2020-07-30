@@ -1324,7 +1324,7 @@ namespace detail
                 if( it != streamingEngines.end() )
                 {
                     optimizeAttributesStreaming = true;
-                    useAdiosSteps = true;
+                    useAdiosSteps = Steps::UseSteps;
                     streamStatus = StreamStatus::OutsideOfStep;
                 }
                 else
@@ -1335,7 +1335,7 @@ namespace detail
                     {
                         streamStatus = StreamStatus::NoStream;
                         optimizeAttributesStreaming = false;
-                        useAdiosSteps = false;
+                        useAdiosSteps = Steps::DontUseSteps;
                     }
                     else
                     {
@@ -1344,7 +1344,7 @@ namespace detail
                                   << std::endl;
                         streamStatus = StreamStatus::NoStream;
                         optimizeAttributesStreaming = false;
-                        useAdiosSteps = false;
+                        useAdiosSteps = Steps::DontUseSteps;
                     }
                 }
             }
@@ -1365,22 +1365,27 @@ namespace detail
             if( !_useAdiosSteps.json().is_null() )
             {
                 bool tmp = _useAdiosSteps.json();
-                if( useAdiosSteps && !tmp )
+                if( useAdiosSteps == Steps::UseSteps && !bool(tmp) )
                 {
                     throw std::runtime_error(
                         "Cannot switch off steps for streaming engines." );
                 }
-                useAdiosSteps = tmp;
-                if( !useAdiosSteps )
-                {
-                    streamStatus = StreamStatus::NoStream;
-                }
+                useAdiosSteps = bool( tmp ) ? Steps::UseSteps
+                                            : Steps::DontUseSteps;
             }
             alreadyConfigured.emplace( "Engine" );
         }
         else
         {
             m_IO.SetEngine( "bp4" );
+            useAdiosSteps = Steps::DontUseSteps;
+            optimizeAttributesStreaming = false;
+            streamStatus = StreamStatus::NoStream;
+        }
+        if( m_mode == adios2::Mode::Read )
+        {
+            // decide upon opening engine
+            useAdiosSteps = Steps::Undecided;
         }
         auto shadow = impl.m_config.invertShadow();
         if( shadow.size() > 0 )
@@ -1445,10 +1450,54 @@ namespace detail
     adios2::Engine &
     BufferedActions::getEngine()
     {
-        if ( !m_engine )
+        if( !m_engine )
         {
-            m_engine = m_IO.Open( m_file, m_mode );
-            if ( !m_engine )
+            switch( m_mode )
+            {
+                case adios2::Mode::Write:
+                {
+                    bool_representation usesSteps =
+                        useAdiosSteps == Steps::UseSteps ? 1 : 0;
+                    m_IO.DefineAttribute< bool_representation >(
+                        ADIOS2Defaults::str_usesstepsAttribute, usesSteps );
+                    m_engine = m_IO.Open( m_file, m_mode );
+                    break;
+                }
+                case adios2::Mode::Read:
+                {
+                    m_engine = m_IO.Open( m_file, m_mode );
+                    if( useAdiosSteps != Steps::Undecided )
+                    {
+                        break;
+                    }
+                    if( streamStatus == StreamStatus::NoStream )
+                    {
+                        auto attr =
+                            m_IO.InquireAttribute< bool_representation >(
+                                ADIOS2Defaults::str_usesstepsAttribute );
+                        if( attr )
+                        {
+                            useAdiosSteps = attr.Data()[ 0 ] == 1
+                                ? Steps::UseSteps
+                                : Steps::DontUseSteps;
+                        }
+                        else
+                        {
+                            useAdiosSteps = Steps::DontUseSteps;
+                        }
+                    }
+                    else
+                    {
+                        useAdiosSteps = Steps::UseSteps;
+                    }
+                    break;
+                }
+                default:
+                    throw std::runtime_error(
+                        "[ADIOS2] Invalid ADIOS access mode" );
+            }
+
+            if( !m_engine )
             {
                 throw std::runtime_error( "[ADIOS2] Failed opening Engine." );
             }
@@ -1532,7 +1581,7 @@ namespace detail
     AdvanceStatus
     BufferedActions::advance( AdvanceMode mode )
     {
-        if( !useAdiosSteps )
+        if( useAdiosSteps == Steps::DontUseSteps )
         {
             flush();
             return AdvanceStatus::OK;

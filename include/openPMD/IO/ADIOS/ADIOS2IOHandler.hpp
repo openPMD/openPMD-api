@@ -328,6 +328,7 @@ namespace ADIOS2Defaults
     constexpr const_str str_type = "type";
     constexpr const_str str_params = "parameters";
     constexpr const_str str_usesteps = "usesteps";
+    constexpr const_str str_usesstepsAttribute = "__openPMD_internal/usesSteps";
 } // namespace ADIOS2Defaults
 
 namespace detail
@@ -701,11 +702,17 @@ namespace detail
          * ADIOS2 engine.
          */
         bool optimizeAttributesStreaming = false;
+        enum class Steps
+        {
+            UseSteps,
+            DontUseSteps,
+            Undecided
+        };
         /*
          * Workaround for the fact that ADIOS steps (currently) break random-
          * access: Make ADIOS steps opt-in for persistent backends.
          */
-        bool useAdiosSteps = false;
+        Steps useAdiosSteps = Steps::Undecided;
 
         using AttributeMap_t = std::map< std::string, adios2::Params >;
 
