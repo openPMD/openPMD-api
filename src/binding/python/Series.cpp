@@ -67,7 +67,7 @@ void init_Series(py::module &m) {
     ;
     py::class_<IndexedIteration, Iteration>(m, "IndexedIteration")
         .def_readonly(
-            "iterationIndex", &IndexedIteration::iterationIndex)
+            "iteration_index", &IndexedIteration::iterationIndex)
     ;
     py::class_<ReadIterations>(m, "ReadIterations")
         .def("__iter__", [](ReadIterations & readIterations) {
@@ -180,8 +180,8 @@ void init_Series(py::module &m) {
             py::return_value_policy::reference,
             // garbage collection: return value must be freed before Series
             py::keep_alive<1, 0>())
-        .def("readIterations", &Series::readIterations, py::keep_alive<0, 1>())
-        .def("writeIterations",
+        .def("read_iterations", &Series::readIterations, py::keep_alive<0, 1>())
+        .def("write_iterations",
             &Series::writeIterations, py::keep_alive<0, 1>())
     ;
 }

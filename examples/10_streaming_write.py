@@ -21,7 +21,7 @@ if __name__ == "__main__":
     global_extent = [10]
     dataset = io.Dataset(datatype, global_extent)
 
-    iterations = series.writeIterations()
+    iterations = series.write_iterations()
     for i in range(100):
         iteration = iterations[i]
         electronPositions = iteration.particles["e"]["position"]

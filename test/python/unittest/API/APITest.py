@@ -1376,7 +1376,7 @@ class APITest(unittest.TestCase):
         extent = [4]
 
         for i in range(10):
-            it = series.writeIterations()[i]
+            it = series.write_iterations()[i]
             E_x = it.meshes["E"]["x"]
             E_x.reset_dataset(DS(np.dtype("int"), extent))
             E_x.store_chunk(data, [0], extent)
@@ -1391,8 +1391,8 @@ class APITest(unittest.TestCase):
             io.Access_Type.read_only,
             jsonConfig
         )
-        for it in read.readIterations():
-            lastIterationIndex = it.iterationIndex
+        for it in read.read_iterations():
+            lastIterationIndex = it.iteration_index
             E_x = it.meshes["E"]["x"]
             chunk = E_x.load_chunk([0], extent)
             it.close()

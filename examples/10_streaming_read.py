@@ -17,8 +17,8 @@ if __name__ == "__main__":
 """
     series = io.Series("stream.bp", io.Access_Type.read_only, options)
 
-    for iteration in series.readIterations():
-        print("Current iteration {}".format(iteration.iterationIndex))
+    for iteration in series.read_iterations():
+        print("Current iteration {}".format(iteration.iteration_index))
         electronPositions = iteration.particles["e"]["position"]
         loadedChunks = []
         shapes = []
