@@ -458,6 +458,8 @@ class WriteIterations : private Container< Iteration, uint64_t >
 
 private:
     using super_t = Container< Iteration, uint64_t >;
+    using key_type = typename super_t::key_type;
+    using value_type = typename super_t::key_type;
     WriteIterations( super_t );
     explicit WriteIterations() = default;
     // Index of the last opened iteration

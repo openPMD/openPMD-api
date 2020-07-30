@@ -55,6 +55,16 @@ using namespace openPMD;
 
 
 void init_Series(py::module &m) {
+    
+    using iterations_key_t = decltype(Series::iterations)::key_type;
+    py::class_<WriteIterations>(m, "WriteIterations")
+        .def("__getitem__",
+            [](WriteIterations writeIterations, iterations_key_t key){
+                return writeIterations[key];
+        })
+    ;
+
+    py::class_<ReadIterations>(m, "ReadIterations");
     py::class_<Series, Attributable>(m, "Series")
 
         .def(py::init<std::string const&, Access, std::string const &>(),
@@ -157,5 +167,7 @@ void init_Series(py::module &m) {
             py::return_value_policy::reference,
             // garbage collection: return value must be freed before Series
             py::keep_alive<1, 0>())
+        .def("readIterations", &Series::readIterations)
+        .def("writeIterations", &Series::writeIterations)
     ;
 }

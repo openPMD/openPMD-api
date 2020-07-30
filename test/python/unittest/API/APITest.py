@@ -1354,6 +1354,47 @@ class APITest(unittest.TestCase):
         for ext in io.file_extensions:
             self.makeCloseIterationRoundTrip(ext)
 
+    def makeIteratorRoundTrip(self, backend, file_ending):
+        # write
+        jsonConfig = """
+{
+  "adios2": {
+    "engine": {
+      "type": "bp4",
+      "usesteps": true
+    }
+  }
+}
+"""
+        series = io.Series(
+            "unittest_serialIterator." + file_ending,
+            io.Access_Type.create,
+            jsonConfig
+        )
+        DS = io.Dataset
+        data = np.array([2, 4, 6, 8], dtype=np.dtype("int"))
+        extent = [4]
+
+        for i in range(10):
+            it = series.writeIterations()[i]
+            E_x = it.meshes["E"]["x"]
+            E_x.reset_dataset(DS(np.dtype("int"), extent))
+            E_x.store_chunk(data, [0], extent)
+            it.close()
+
+        del series
+
+    def testIterator(self):
+        backend_filesupport = {
+            'json': 'json',
+            'hdf5': 'h5',
+            'adios1': 'bp',
+            'adios2': 'bp'
+        }
+        for b in io.variants:
+            if io.variants[b] is True and b in backend_filesupport:
+                self.makeIteratorRoundTrip(b, backend_filesupport[b])
+
 
 if __name__ == '__main__':
     unittest.main()
