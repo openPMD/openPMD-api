@@ -53,6 +53,7 @@ Other
 """""
 
 - CMake: require version 3.12.0+ #755
+- ADIOS2: require version 2.6.0+ #754
 - separate header for export macros #704
 - rename ``AccessType``/``Access_Type`` to ``Access`` #740 #743 #744
 - CI:

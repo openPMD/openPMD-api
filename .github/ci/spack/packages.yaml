@@ -58,8 +58,12 @@ packages:
   adios:
     variants: ~zfp ~sz ~lz4 ~blosc
   adios2:
-    version: [2.5.0]
-    variants: ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc
+    variants: ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2
+    # ~shared is a work-around macOS dylib rpath issue for ADIOS2
+    #   https://github.com/ornladios/ADIOS2/issues/2316
+    #   https://spack.readthedocs.io/en/latest/config_yaml.html
+    # ~bzip2
+    #   Library not loaded: @rpath/libbz2.1.dylib
   python:
     version: [3.5.5, 3.6.3, 3.7.1, 3.7.2, 3.8.0]
     paths:
