@@ -39,14 +39,6 @@ main()
         Iteration iteration = iterations[ i ];
         Record electronPositions = iteration.particles[ "e" ][ "position" ];
 
-        RecordComponent pos_x = electronPositions[ "x" ];
-        RecordComponent pos_y = electronPositions[ "y" ];
-        RecordComponent pos_z = electronPositions[ "z" ];
-
-        pos_x.resetDataset( dataset );
-        pos_y.resetDataset( dataset );
-        pos_z.resetDataset( dataset );
-
         std::iota( local_data.get(), local_data.get() + length, i * length );
         for( auto const & dim : { "x", "y", "z" } )
         {
