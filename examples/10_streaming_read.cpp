@@ -32,7 +32,7 @@ main()
         Record electronPositions = iteration.particles[ "e" ][ "position" ];
         std::array< std::shared_ptr< position_t >, 3 > loadedChunks;
         std::array< Extent, 3 > extents;
-        std::array< std::string, 3 > const dimensions{ "x", "y", "z" };
+        std::array< std::string, 3 > const dimensions{ { "x", "y", "z" } };
 
         for( size_t i = 0; i < 3; ++i )
         {
@@ -64,5 +64,6 @@ main()
     std::cout << "The streaming example requires that openPMD has been built "
                  "with ADIOS2."
               << std::endl;
+    return 0;
 #endif
 }

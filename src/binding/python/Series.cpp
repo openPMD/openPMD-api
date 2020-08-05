@@ -55,7 +55,7 @@ using namespace openPMD;
 
 
 void init_Series(py::module &m) {
-    
+
     using iterations_key_t = decltype(Series::iterations)::key_type;
     py::class_<WriteIterations>(m, "WriteIterations")
         .def("__getitem__",

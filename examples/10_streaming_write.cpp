@@ -31,7 +31,8 @@ main()
     Extent global_extent = { length };
     Dataset dataset = Dataset( datatype, global_extent );
     std::shared_ptr< position_t > local_data(
-        new position_t[ length ], []( position_t * ptr ) { delete[] ptr; } );
+        new position_t[ length ],
+        []( position_t const * ptr ) { delete[] ptr; } );
 
     WriteIterations iterations = series.writeIterations();
     for( size_t i = 0; i < 100; ++i )
@@ -54,5 +55,6 @@ main()
     std::cout << "The streaming example requires that openPMD has been built "
                  "with ADIOS2."
               << std::endl;
+    return 0;
 #endif
 }

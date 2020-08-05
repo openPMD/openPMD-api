@@ -2,7 +2,7 @@ import openpmd_api as io
 import numpy as np
 
 if __name__ == "__main__":
-    if not 'adios2' in io.variants or not io.variants['adios2']:
+    if 'adios2' not in io.variants or not io.variants['adios2']:
         print('This example requires ADIOS2')
         exit(0)
 

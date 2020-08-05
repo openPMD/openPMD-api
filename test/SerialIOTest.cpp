@@ -2864,7 +2864,7 @@ serial_iterator( std::string const & file )
         {
             iteration.close();
         }
-        
+
         for( size_t i = 0; i < extent; ++i )
         {
             REQUIRE( chunk.get()[ i ] == iteration.iterationIndex );
