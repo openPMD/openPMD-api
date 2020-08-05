@@ -1,3 +1,5 @@
+#define BUILD_STREAMING_EXAMPLE false
+#if BUILD_STREAMING_EXAMPLE
 #include <openPMD/openPMD.hpp>
 
 #include <array>
@@ -8,7 +10,7 @@ using std::cout;
 using namespace openPMD;
 
 int
-main()
+run()
 {
 #if openPMD_HAVE_ADIOS2
     using position_t = double;
@@ -17,13 +19,17 @@ main()
         {
           "adios2": {
             "engine": {
-              "type": "sst"
+              "type": "sst",
+              "parameters": {
+                  "OpenTimeoutSecs": "5"
+              }
             }
           }
         }
     )";
 
-    Series series = Series( "electrons.bp", Access::READ_ONLY, options );
+    // open file for reading
+    Series series( "electrons.bp", Access::READ_ONLY, options );
 
     for( IndexedIteration iteration : series.readIterations() )
     {
@@ -67,3 +73,24 @@ main()
     return 0;
 #endif
 }
+
+int
+main()
+{
+    try
+    {
+        run();
+    }
+    catch( std::runtime_error & e )
+    {
+        /*
+         * This will catch a timeout error if no writer has been found
+         */
+        std::cout << "Reading end of the streaming example failed:\n"
+                  << e.what() << std::endl;
+    }
+    return 0;
+}
+#else
+int main(){ return 0; }
+#endif
