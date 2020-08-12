@@ -165,7 +165,7 @@ std::shared_ptr< T > createData(const unsigned long& size,  const T& val )
 
     for(unsigned long  i = 0ul; i < size; i++ )
       {
-    E.get()[i] = val;
+        E.get()[i] = val;
       }
     return E;
   }
@@ -352,7 +352,7 @@ Test_adios_1v_nStep(const TestInput&  input)
   {
      adios2::ADIOS adios(MPI_COMM_WORLD);
      adios2::IO bpIO = adios.DeclareIO("BPDirect");
-     std::string filename = "../samples/5a_adios_1vNs.bp";
+     std::string filename = "../samples/8a_adios_1vNs.bp";
 
      if (input.m_Seg == 0) {
        std::cout<<" Applying ADIOS2 NULL ENGINE "<<std::endl;
@@ -395,7 +395,7 @@ Test_adios_nv_nStep(const TestInput&  input)
   {
      adios2::ADIOS adios(MPI_COMM_WORLD);
      adios2::IO bpIO = adios.DeclareIO("BPDirect");
-     std::string filename = "../samples/5a_adios_NvNs.bp";
+     std::string filename = "../samples/8a_adios_NvNs.bp";
 
      if (input.m_Seg == 0) {
        std::cout<<" Applying ADIOS2 NULL ENGINE "<<std::endl;
@@ -436,7 +436,7 @@ Test_adios_noStep(const TestInput&  input)
   {
      adios2::ADIOS adios(MPI_COMM_WORLD);
      adios2::IO bpIO = adios.DeclareIO("BPDirect");
-     std::string filename = "../samples/5a_adios_noStep.bp";
+     std::string filename = "../samples/8a_adios_noStep.bp";
 
      if (input.m_Seg == 0) {
        std::cout<<" Applying ADIOS2 NULL ENGINE "<<std::endl;
@@ -479,7 +479,7 @@ Test_1( const TestInput& input)
 
     Timer kk("Test 1: ", input.m_MPIRank);
     {
-        std::string filename = "../samples/5a_parallel_write";
+        std::string filename = "../samples/8a_parallel_write";
         filename.append("_%07T.bp");
         Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
 
@@ -510,7 +510,7 @@ Test_3( const TestInput& input)
 
     Timer kk("Test 3: ", input.m_MPIRank);
     {
-        std::string filename = "../samples/5a_parallel_write_m";
+        std::string filename = "../samples/8a_parallel_write_m";
         filename.append("_%07T.bp");
 
         for( int step = 1; step <= input.m_Steps; step++ )    {
@@ -540,7 +540,7 @@ Test_2(const TestInput& input)
 
     Timer kk("Test 2: ", input.m_MPIRank);
     {
-        std::string filename = "../samples/5a_parallel_write_2.bp";
+        std::string filename = "../samples/8a_parallel_write_2.bp";
         Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
 
         if( 0 == input.m_MPIRank )
