@@ -623,11 +623,11 @@ set(openPMD_EXAMPLE_NAMES
     3_write_serial
     3a_write_thetaMode_serial
     4_read_parallel
-    5_write_parallel
-    5a_write_parallel
+    5_write_parallel   
     6_dump_filebased_series
     7_extended_write_serial
     8_benchmark_parallel
+    8a_benchmark_write1D2D_parallel
 )
 set(openPMD_PYTHON_EXAMPLE_NAMES
     2_read_serial
