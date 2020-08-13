@@ -18,10 +18,10 @@ C++
 - `3a_write_thetaMode_serial.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/3a_write_thetaMode_serial.cpp>`_: write an azimuthally decomposed mesh
 - `4_read_parallel.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/4_read_parallel.cpp>`_: MPI-parallel mesh read
 - `5_write_parallel.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/5_write_parallel.cpp>`_: MPI-parallel mesh write
-- `5a_write_parallel.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/5a_write_parallel.cpp>`_: creates 1D or 2D arrays, with each rank having a few blocks to write to
 - `6_dump_filebased_series.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/6_dump_filebased_series.cpp>`_: detailed reading with a file-based series
 - `7_extended_write_serial.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/7_extended_write_serial.cpp>`_: particle writing with patches and constant records
 - `8_benchmark_parallel.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/8_benchmark_parallel.cpp>`_: a MPI-parallel IO-benchmark
+- `8a_benchmark_write1D2D_parallel.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/8a_benchmark_write1D2D_parallel.cpp>`_: creates 1D or 2D arrays, with each rank having a few blocks to write to
 
 Python
 ------
