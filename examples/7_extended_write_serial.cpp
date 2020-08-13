@@ -9,7 +9,13 @@ using namespace openPMD;
 void
 write()
 {
+#if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
+    Series o = Series("../samples/serial_write.bp", Access::CREATE);
+#elif openPMD_HAVE_HDF5
     Series o = Series("../samples/serial_write.h5", Access::CREATE);
+#else
+    Series o = Series("../samples/serial_write.json", Access::CREATE);
+#endif
     ParticleSpecies& e = o.iterations[1].particles["e"];
 
     std::vector< double > position_global(4);
@@ -47,8 +53,13 @@ write()
 void
 write2()
 {
+#if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
+    Series f = Series("working/directory/2D_simData.bp", Access::CREATE);
+#elif openPMD_HAVE_HDF5
     Series f = Series("working/directory/2D_simData.h5", Access::CREATE);
-
+#else
+    Series f = Series("working/directory/2D_simData.json", Access::CREATE);
+#endif
     // all required openPMD attributes will be set to reasonable default values (all ones, all zeros, empty strings,...)
     // manually setting them enforces the openPMD standard
     f.setMeshesPath("custom_meshes_path");
@@ -60,9 +71,11 @@ write2()
         "custom_attribute_name",
         std::string("This attribute is manually added and can contain about any datatype you would want")
     );
+#if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
+#else
     // note that removing attributes required by the standard typically makes the file unusable for post-processing
     f.deleteAttribute("custom_attribute_name");
-
+#endif
     // everything that is accessed with [] should be interpreted as permanent storage
     // the objects sunk into these locations are deep copies
     {
@@ -85,8 +98,10 @@ write2()
         copy.setComment("Modifications to copies will only take effect after you reassign the copy");
         f.iterations[1] = copy;
     }
+#if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
+#else
     f.iterations[1].deleteAttribute("comment");
-
+#endif
     Iteration& cur_it = f.iterations[1];
 
     // the underlying concept for numeric data is the openPMD Record
@@ -218,7 +233,13 @@ write2()
 void
 w()
 {
+#if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
+    Series o = Series("../samples/serial_write_%T.bp", Access::CREATE);
+#elif openPMD_HAVE_HDF5
     Series o = Series("../samples/serial_write_%T.h5", Access::CREATE);
+#else
+    Series o = Series("../samples/serial_write_%T.json", Access::CREATE);
+#endif
 
     /* The files in 'o' are still open until the object is destroyed, on
      * which it cleanly flushes and closes all open file handles.
