@@ -9,7 +9,7 @@ using namespace openPMD;
 void
 write()
 {
-#if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
+#if openPMD_HAVE_ADIOS2
     Series o = Series("../samples/serial_write.bp", Access::CREATE);
 #elif openPMD_HAVE_HDF5
     Series o = Series("../samples/serial_write.h5", Access::CREATE);
@@ -53,7 +53,7 @@ write()
 void
 write2()
 {
-#if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
+#if openPMD_HAVE_ADIOS2
     Series f = Series("working/directory/2D_simData.bp", Access::CREATE);
 #elif openPMD_HAVE_HDF5
     Series f = Series("working/directory/2D_simData.h5", Access::CREATE);
@@ -71,7 +71,7 @@ write2()
         "custom_attribute_name",
         std::string("This attribute is manually added and can contain about any datatype you would want")
     );
-#if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
+#if openPMD_HAVE_ADIOS2
 #else
     // note that removing attributes required by the standard typically makes the file unusable for post-processing
     f.deleteAttribute("custom_attribute_name");
@@ -98,7 +98,7 @@ write2()
         copy.setComment("Modifications to copies will only take effect after you reassign the copy");
         f.iterations[1] = copy;
     }
-#if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
+#if openPMD_HAVE_ADIOS2
 #else
     f.iterations[1].deleteAttribute("comment");
 #endif
@@ -233,7 +233,7 @@ write2()
 void
 w()
 {
-#if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
+#if openPMD_HAVE_ADIOS2
     Series o = Series("../samples/serial_write_%T.bp", Access::CREATE);
 #elif openPMD_HAVE_HDF5
     Series o = Series("../samples/serial_write_%T.h5", Access::CREATE);
