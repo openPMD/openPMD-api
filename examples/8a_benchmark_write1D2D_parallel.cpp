@@ -285,7 +285,7 @@ LoadData( Series& series, const char* varName,  const TestInput& input, int& ste
                 if (local_bulks[i] > 0) {
                     unsigned long local_size = local_bulks[i] ;
                     double const value = double(i);
-            auto E = createData<double>( local_size, value ) ;
+                    auto E = createData<double>( local_size, value ) ;
                     mymesh.storeChunk( E, chunk_offset, chunk_extent );
                 }
                 counter += local_bulks[i];
@@ -323,12 +323,12 @@ LoadData_ADIOS(adios2::Engine& bpFileWriter,  adios2::Variable<T>&  var,  const 
     unsigned long counter = 0ul;
     for( unsigned long i = 0ul; i < local_bulks.size(); i++ ) {
       if (local_bulks[i] > 0) {
-    unsigned long local_size = local_bulks[i] ;
-    T const value = T(i);
-    auto E = createData<T>( local_size, value ) ;
-    const adios2::Box<adios2::Dims> sel({(input.m_Bulk * input.m_MPIRank + counter)}, {local_bulks[i]});
-    var.SetSelection(sel);
-    bpFileWriter.Put<T>(var, E.get(),  adios2::Mode::Sync);
+          unsigned long local_size = local_bulks[i] ;
+          T const value = T(i);
+          auto E = createData<T>( local_size, value ) ;
+          const adios2::Box<adios2::Dims> sel({(input.m_Bulk * input.m_MPIRank + counter)}, {local_bulks[i]});
+          var.SetSelection(sel);
+          bpFileWriter.Put<T>(var, E.get(),  adios2::Mode::Sync);
       }
       counter += local_bulks[i];
     }
@@ -373,6 +373,7 @@ Test_adios_1v_nStep(const TestInput&  input)
 
        bpFileWriter.EndStep();
      }
+
      bpFileWriter.Close();
   }
 }
@@ -405,16 +406,17 @@ Test_adios_nv_nStep(const TestInput&  input)
      adios2::Engine bpFileWriter = bpIO.Open(filename, adios2::Mode::Write);
 
      for (int i=1; i <= input.m_Steps; i++) {
-     bpFileWriter.BeginStep();
-     std::ostringstream varName;
-     varName << "/data/"<<i<<"/meshes/var";
-     adios2::Variable<double> var = bpIO.DefineVariable<double>(varName.str(),
-       {input.m_Bulk * input.m_MPISize}, {input.m_MPIRank *  input.m_Bulk}, {input.m_Bulk});
+          bpFileWriter.BeginStep();
+          std::ostringstream varName;
+          varName << "/data/"<<i<<"/meshes/var";
+          adios2::Variable<double> var = bpIO.DefineVariable<double>(varName.str(),
+          {input.m_Bulk * input.m_MPISize}, {input.m_MPIRank *  input.m_Bulk}, {input.m_Bulk});
 
-     LoadData_ADIOS(bpFileWriter, var,  input, i);
+          LoadData_ADIOS(bpFileWriter, var,  input, i);
 
-     bpFileWriter.EndStep();
+          bpFileWriter.EndStep();
      }
+
      bpFileWriter.Close();
   }
 }
@@ -446,15 +448,15 @@ Test_adios_noStep(const TestInput&  input)
      adios2::Engine bpFileWriter = bpIO.Open(filename, adios2::Mode::Write);
 
      for (int i=1; i <= input.m_Steps; i++) {
-     Timer newstep(" New step ", input.m_MPIRank);
-     std::ostringstream varName;
-     varName << "/data/"<<i<<"/meshes/var";
-     adios2::Variable<double> var = bpIO.DefineVariable<double>(varName.str(),
-           {input.m_Bulk * input.m_MPISize}, {input.m_MPIRank * input.m_Bulk}, {input.m_Bulk});
+          Timer newstep(" New step ", input.m_MPIRank);
+          std::ostringstream varName;
+          varName << "/data/"<<i<<"/meshes/var";
+          adios2::Variable<double> var = bpIO.DefineVariable<double>(varName.str(),
+             {input.m_Bulk * input.m_MPISize}, {input.m_MPIRank * input.m_Bulk}, {input.m_Bulk});
 
-     LoadData_ADIOS(bpFileWriter, var,  input, i);
+          LoadData_ADIOS(bpFileWriter, var,  input, i);
 
-     bpFileWriter.PerformPuts();
+          bpFileWriter.PerformPuts();
      }
 
      bpFileWriter.Close();
@@ -488,7 +490,7 @@ Test_1( const TestInput& input)
                  << input.m_MPISize << " MPI ranks\n";
 
         for( int step = 1; step <= input.m_Steps; step++ )
-      LoadData(series, "var1", input, step);
+             LoadData(series, "var1", input, step);
     }
 }
 
@@ -514,9 +516,9 @@ Test_3( const TestInput& input)
         filename.append("_%07T.bp");
 
         for( int step = 1; step <= input.m_Steps; step++ )    {
-      Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
-      LoadData(series, "var3", input, step);
-    }
+             Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
+             LoadData(series, "var3", input, step);
+        }
     }
 
 }
@@ -548,7 +550,7 @@ Test_2(const TestInput& input)
                  << input.m_MPISize << " MPI ranks\n";
 
         for( int step =1; step <= input.m_Steps; step++ )
-      LoadData( series, "var2", input, step);
+             LoadData( series, "var2", input, step);
     }
 
 }
