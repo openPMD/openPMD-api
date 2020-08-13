@@ -251,6 +251,8 @@ w()
 int
 main()
 {
+  write(); // added here to increase the code coverage ..
+
   if( auxiliary::getEnvString( "OPENPMD_BP_BACKEND", "NOT_SET" ) == "ADIOS1" )
     {
       // this test fails with adios1
