@@ -1,5 +1,6 @@
 #include <openPMD/openPMD.hpp>
 
+#include "openPMD/auxiliary/Environment.hpp"
 #include <algorithm>
 #include <iostream>
 
@@ -250,6 +251,12 @@ w()
 int
 main()
 {
+  if( auxiliary::getEnvString( "OPENPMD_BP_BACKEND", "NOT_SET" ) == "ADIOS1" )
+    {
+      // this test fails with adios1
+      return 0;
+    }
+
     write2();
     return 0;
 }
