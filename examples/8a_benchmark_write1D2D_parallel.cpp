@@ -171,9 +171,9 @@ std::shared_ptr< T > createData(const unsigned long& size,  const T& val )
     return E;
   }
 
-/** Find supported backends 
- *  (looking for ADIOS2 or H5) 
- * 
+/** Find supported backends
+ *  (looking for ADIOS2 or H5)
+ *
  */
 std::vector<std::string> getBackends() {
     std::vector<std::string> res;
@@ -208,7 +208,7 @@ public:
   unsigned int m_Seg = 1;
   int m_Steps = 1;
   int m_TestNum = 0;
-  std::string m_Backend = ".bp";  
+  std::string m_Backend = ".bp";
 };
 
 /** divide "top" elements into "upTo" non-zero segments
@@ -655,17 +655,17 @@ main( int argc, char *argv[] )
         input.m_Steps = atoi( argv[4] );
 
     auto backends = getBackends();
-    for (auto which: backends) 
+    for (auto which: backends)
     {
-      input.m_Backend = which;    
+      input.m_Backend = which;
       TestRun(input);
-            
+
       if (argc == 1) {
           input.m_Seg = 5;
           TestRun(input);
           input.m_Seg = 1; // back to default for next backend
       } // code coverage
-    } 
+    }
 
     MPI_Finalize();
 
