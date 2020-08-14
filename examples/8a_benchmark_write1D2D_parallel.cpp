@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include <openPMD/openPMD.hpp>
+#include "openPMD/auxiliary/Environment.hpp"
 
 #include <mpi.h>
 
@@ -170,6 +171,22 @@ std::shared_ptr< T > createData(const unsigned long& size,  const T& val )
     return E;
   }
 
+/** Find supported backends 
+ *  (looking for ADIOS2 or H5) 
+ * 
+ */
+std::vector<std::string> getBackends() {
+    std::vector<std::string> res;
+#if openPMD_HAVE_ADIOS2
+    if( auxiliary::getEnvString( "OPENPMD_BP_BACKEND", "NOT_SET" ) != "ADIOS1" )
+        res.emplace_back(".bp");
+#endif
+
+#if openPMD_HAVE_HDF5
+    res.emplace_back(".h5");
+#endif
+    return res;
+}
 
 /** ... Class TestInput
  *
@@ -191,6 +208,7 @@ public:
   unsigned int m_Seg = 1;
   int m_Steps = 1;
   int m_TestNum = 0;
+  std::string m_Backend = ".bp";  
 };
 
 /** divide "top" elements into "upTo" non-zero segments
@@ -347,7 +365,9 @@ LoadData_ADIOS(adios2::Engine& bpFileWriter,  adios2::Variable<T>&  var,  const 
 void
 Test_adios_1v_nStep(const TestInput&  input)
 {
-  if (0 == input.m_MPIRank)  std::cout<<"TESTING direct ADIOS2 write "<<std::endl;
+  if (input.m_Backend.find("h5") != std::string::npos)
+      return;
+  if (0 == input.m_MPIRank)  std::cout<<"==> TESTING direct ADIOS2 write "<<std::endl;
   Timer kk("ADIOS2 test: N Steps per variable", input.m_MPIRank);
   {
      adios2::ADIOS adios(MPI_COMM_WORLD);
@@ -391,7 +411,10 @@ Test_adios_1v_nStep(const TestInput&  input)
 void
 Test_adios_nv_nStep(const TestInput&  input)
 {
-  if (0 == input.m_MPIRank)  std::cout<<"TESTING direct ADIOS2 write "<<std::endl;
+  if (input.m_Backend.find("h5") != std::string::npos)
+      return;
+
+  if (0 == input.m_MPIRank)  std::cout<<"==> TESTING direct ADIOS2 write "<<std::endl;
   Timer kk("ADIOS2 test. 1v for Each timestep", input.m_MPIRank);
   {
      adios2::ADIOS adios(MPI_COMM_WORLD);
@@ -433,7 +456,10 @@ Test_adios_nv_nStep(const TestInput&  input)
 void
 Test_adios_noStep(const TestInput&  input)
 {
-  if (0 == input.m_MPIRank)  std::cout<<"TESTING direct ADIOS2 write "<<std::endl;
+  if (input.m_Backend.find("h5") != std::string::npos)
+      return;
+
+  if (0 == input.m_MPIRank)  std::cout<<"==> TESTING direct ADIOS2 write "<<std::endl;
   Timer kk("ADIOS2 test. No step", input.m_MPIRank);
   {
      adios2::ADIOS adios(MPI_COMM_WORLD);
@@ -475,14 +501,15 @@ Test_adios_noStep(const TestInput&  input)
 void
 Test_1( const TestInput& input)
 {
+    std::string filename = "../samples/8a_parallel_write";
+    filename.append("_%07T"+input.m_Backend);
+
     if( 0 == input.m_MPIRank )
         std::cout << "\n==> Multistep 1D arrays with a few blocks per rank."
-                  << "  num steps: " << input.m_Steps << std::endl;
+                  << "  num steps: " << input.m_Steps << ".\n==> File: "<<filename<<std::endl;
 
     Timer kk("Test 1: ", input.m_MPIRank);
     {
-        std::string filename = "../samples/8a_parallel_write";
-        filename.append("_%07T.bp");
         Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
 
         if( 0 == input.m_MPIRank )
@@ -506,15 +533,15 @@ Test_1( const TestInput& input)
 void
 Test_3( const TestInput& input)
 {
+    std::string filename = "../samples/8a_parallel_write_m";
+    filename.append("_%07T"+input.m_Backend);
+
     if( 0 == input.m_MPIRank )
-        std::cout << "\n==> Multistep 1D arrays with a few blocks per rank."
-                  << "  num steps: " << input.m_Steps << std::endl;
+        std::cout << "\n==> Multistep 1D arrays with a few blocks per rank. Different Series per step"
+                  << "  num steps: " << input.m_Steps << ".\n==> File:"<<filename<<std::endl;
 
     Timer kk("Test 3: ", input.m_MPIRank);
     {
-        std::string filename = "../samples/8a_parallel_write_m";
-        filename.append("_%07T.bp");
-
         for( int step = 1; step <= input.m_Steps; step++ )    {
              Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
              LoadData(series, "var3", input, step);
@@ -536,13 +563,14 @@ Test_3( const TestInput& input)
 void
 Test_2(const TestInput& input)
 {
+    std::string filename = "../samples/8a_parallel_write_2"+input.m_Backend;
+
     if (0 == input.m_MPIRank)
         std::cout << "\n==> One file with Multistep 1D arrays with a few blocks per rank."
-                  << "  num steps: " << input.m_Steps << std::endl;
+                  << "  num steps: " << input.m_Steps << ".\n==> File: "<<filename<<std::endl;
 
     Timer kk("Test 2: ", input.m_MPIRank);
     {
-        std::string filename = "../samples/8a_parallel_write_2.bp";
         Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
 
         if( 0 == input.m_MPIRank )
@@ -566,7 +594,7 @@ void
 TestRun(const  TestInput& input)
 {
     if ( input.m_MPIRank == 0 )
-        std::cout << "Test: " << input.m_TestNum << " Per Rank particle size:"
+        std::cout << "\nTestRun [" << input.m_TestNum << "]  Per Rank particle size:"
                   << input.m_Bulk << " seg=" << input.m_Seg << std::endl;
 
     if ( 1 == input.m_TestNum )
@@ -608,7 +636,6 @@ int
 main( int argc, char *argv[] )
 {
     MPI_Init( &argc, &argv );
-
     TestInput input;
 
     MPI_Comm_size( MPI_COMM_WORLD, &input.m_MPISize );
@@ -627,18 +654,18 @@ main( int argc, char *argv[] )
     if( argc >= 5 )
         input.m_Steps = atoi( argv[4] );
 
-    TestRun(input);
-
-    if (argc == 1) {
-      input.m_TestNum = 10;
+    auto backends = getBackends();
+    for (auto which: backends) 
+    {
+      input.m_Backend = which;    
       TestRun(input);
-      input.m_TestNum = 20;
-      TestRun(input);
-      input.m_TestNum = 30;
-      TestRun(input);
-      input.m_Seg = 5;
-      TestRun(input);
-    }
+            
+      if (argc == 1) {
+          input.m_Seg = 5;
+          TestRun(input);
+          input.m_Seg = 1; // back to default for next backend
+      } // code coverage
+    } 
 
     MPI_Finalize();
 
