@@ -233,7 +233,8 @@ TEST_CASE( "close_iteration_throws_test", "[serial]" )
      * Test that the openPMD API detects that case and throws.
      */
     {
-        Series series( "close_iteration_throws_1.bp", Access::CREATE );
+        Series series(
+            "../samples/close_iteration_throws_1.bp", Access::CREATE );
         auto it0 = series.iterations[ 0 ];
         auto E_x = it0.meshes[ "E" ][ "x" ];
         E_x.resetDataset( { Datatype::INT, { 5 } } );
@@ -247,7 +248,8 @@ TEST_CASE( "close_iteration_throws_test", "[serial]" )
         REQUIRE_THROWS( series.flush() );
     }
     {
-        Series series( "close_iteration_throws_2.bp", Access::CREATE );
+        Series series(
+            "../samples/close_iteration_throws_2.bp", Access::CREATE );
         auto it0 = series.iterations[ 0 ];
         auto E_x = it0.meshes[ "E" ][ "x" ];
         E_x.resetDataset( { Datatype::INT, { 5 } } );
@@ -261,7 +263,8 @@ TEST_CASE( "close_iteration_throws_test", "[serial]" )
         REQUIRE_THROWS( series.flush() );
     }
     {
-        Series series( "close_iteration_throws_3.bp", Access::CREATE );
+        Series series(
+            "../samples/close_iteration_throws_3.bp", Access::CREATE );
         auto it0 = series.iterations[ 0 ];
         auto E_x = it0.meshes[ "E" ][ "x" ];
         E_x.resetDataset( { Datatype::INT, { 5 } } );
@@ -2819,11 +2822,11 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
     }
     )";
     // sing the yes no song
-    bp4_steps("bp4steps_yes_yes.bp", useSteps, useSteps);
-    bp4_steps("bp4steps_no_yes.bp", dontUseSteps, useSteps);
-    bp4_steps("bp4steps_yes_no.bp", useSteps, dontUseSteps);
-    bp4_steps("bp4steps_no_no.bp", dontUseSteps, dontUseSteps);
-    bp4_steps("bp4steps_default.bp", "{}", "{}");
+    bp4_steps( "../samples/bp4steps_yes_yes.bp", useSteps, useSteps );
+    bp4_steps( "../samples/bp4steps_no_yes.bp", dontUseSteps, useSteps );
+    bp4_steps( "../samples/bp4steps_yes_no.bp", useSteps, dontUseSteps );
+    bp4_steps( "../samples/bp4steps_no_no.bp", dontUseSteps, dontUseSteps );
+    bp4_steps("../samples/bp4steps_default.bp", "{}", "{}");
 }
 #endif
 

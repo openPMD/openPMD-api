@@ -1299,7 +1299,7 @@ class APITest(unittest.TestCase):
     def makeCloseIterationRoundTrip(self, file_ending):
         # write
         series = io.Series(
-            "unittest_closeIteration_%T." + file_ending,
+            "../samples/unittest_closeIteration_%T." + file_ending,
             io.Access_Type.create
         )
         DS = io.Dataset
@@ -1316,7 +1316,7 @@ class APITest(unittest.TestCase):
         # not supported in ADIOS1: can only open one ADIOS1 series at a time
         if not is_adios1:
             read = io.Series(
-                "unittest_closeIteration_%T." + file_ending,
+                "../samples/unittest_closeIteration_%T." + file_ending,
                 io.Access_Type.read_only
             )
             it0 = read.iterations[0]
@@ -1337,7 +1337,7 @@ class APITest(unittest.TestCase):
 
         if not is_adios1:
             read = io.Series(
-                "unittest_closeIteration_%T." + file_ending,
+                "../samples/unittest_closeIteration_%T." + file_ending,
                 io.Access_Type.read_only
             )
             it1 = read.iterations[1]
@@ -1367,7 +1367,7 @@ class APITest(unittest.TestCase):
 }
 """
         series = io.Series(
-            "unittest_serialIterator." + file_ending,
+            "../samples/unittest_serialIterator." + file_ending,
             io.Access_Type.create,
             jsonConfig
         )
@@ -1387,7 +1387,7 @@ class APITest(unittest.TestCase):
         # read
 
         read = io.Series(
-            "unittest_serialIterator." + file_ending,
+            "../samples/unittest_serialIterator." + file_ending,
             io.Access_Type.read_only,
             jsonConfig
         )
