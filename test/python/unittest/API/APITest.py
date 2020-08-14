@@ -1381,6 +1381,7 @@ class APITest(unittest.TestCase):
             E_x.reset_dataset(DS(np.dtype("int"), extent))
             E_x.store_chunk(data, [0], extent)
             it.close()
+            del it
 
         del series
 
