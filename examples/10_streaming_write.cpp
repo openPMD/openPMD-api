@@ -15,18 +15,8 @@ main()
 #if openPMD_HAVE_ADIOS2
     using position_t = double;
 
-    std::string options = R"(
-        {
-          "adios2": {
-            "engine": {
-              "type": "sst"
-            }
-          }
-        }
-    )";
-
     // open file for writing
-    Series series = Series( "electrons.bp", Access::CREATE, options );
+    Series series = Series( "electrons.sst", Access::CREATE );
 
     Datatype datatype = determineDatatype< position_t >();
     constexpr unsigned long length = 10ul;

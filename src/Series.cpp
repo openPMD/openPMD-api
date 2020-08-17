@@ -1112,6 +1112,7 @@ cleanFilename( std::string const & filename, Format f )
         case Format::HDF5:
         case Format::ADIOS1:
         case Format::ADIOS2:
+        case Format::ADIOS2_SST:
         case Format::JSON:
             return auxiliary::replace_last(filename, suffix(f), "");
         default:
@@ -1171,6 +1172,16 @@ matcher(std::string const& prefix, int padding, std::string const& postfix, Form
             else
                 nameReg += "+";
             nameReg += + ")" + postfix + ".bp$";
+            return buildMatcher(nameReg);
+        }
+        case Format::ADIOS2_SST:
+        {
+            std::string nameReg = "^" + prefix + "([[:digit:]]";
+            if( padding != 0 )
+                nameReg += "{" + std::to_string(padding) + "}";
+            else
+                nameReg += "+";
+            nameReg += + ")" + postfix + ".sst$";
             return buildMatcher(nameReg);
         }
         case Format::JSON:

@@ -22,6 +22,7 @@
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 
 #include <algorithm>
+#include <cctype> // std::tolower
 #include <iostream>
 #include <iterator>
 #include <set>
@@ -65,10 +66,12 @@ namespace openPMD
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     AbstractIOHandler * handler,
     MPI_Comm communicator,
-    nlohmann::json cfg )
+    nlohmann::json cfg,
+    std::string _engineType )
     : AbstractIOHandlerImplCommon( handler )
     , m_comm{ communicator }
     , m_ADIOS{ communicator, ADIOS2_DEBUG_MODE }
+    , engineType( std::move( _engineType ) )
 {
     init( std::move( cfg ) );
 }
@@ -77,8 +80,11 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
 
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     AbstractIOHandler * handler,
-    nlohmann::json cfg )
-    : AbstractIOHandlerImplCommon( handler ), m_ADIOS{ ADIOS2_DEBUG_MODE }
+    nlohmann::json cfg,
+    std::string _engineType )
+    : AbstractIOHandlerImplCommon( handler )
+    , m_ADIOS{ ADIOS2_DEBUG_MODE }
+    , engineType( std::move( _engineType ) )
 {
     init( std::move( cfg ) );
 }
@@ -92,6 +98,21 @@ ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
     }
     m_config = std::move( cfg[ "adios2" ] );
     defaultOperators = getOperators().first;
+    auto engineConfig = config( ADIOS2Defaults::str_engine );
+    if( !engineConfig.json().is_null() )
+    {
+        auto engineTypeConfig =
+            config( ADIOS2Defaults::str_type, engineConfig ).json();
+        if( !engineTypeConfig.is_null() )
+        {
+            engineType = engineTypeConfig;
+            std::transform(
+                engineType.begin(),
+                engineType.end(),
+                engineType.begin(),
+                []( unsigned char c ) { return std::tolower( c ); } );
+        }
+    }
 }
 
 std::pair< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator >, bool >
@@ -145,6 +166,24 @@ ADIOS2IOHandlerImpl::getOperators()
     return getOperators( m_config );
 }
 
+std::string
+ADIOS2IOHandlerImpl::fileSuffix() const
+{
+    static std::map< std::string, std::string > endings{
+        { "sst", ".sst" }, { "staging", ".sst" }, { "bp4", ".bp" },
+        { "bp3", ".bp" },  { "file", ".bp" },     { "hdf5", ".h5" }
+    };
+    auto it = endings.find( engineType );
+    if( it != endings.end() )
+    {
+        return it->second;
+    }
+    else
+    {
+        return ".adios2";
+    }
+}
+
 std::future< void >
 ADIOS2IOHandlerImpl::flush()
 {
@@ -173,9 +212,10 @@ void ADIOS2IOHandlerImpl::createFile(
     if ( !writable->written )
     {
         std::string name = parameters.name;
-        if ( !auxiliary::ends_with( name, ".bp" ) )
+        std::string suffix( fileSuffix() );
+        if( !auxiliary::ends_with( name, suffix ) )
         {
-            name += ".bp";
+            name += suffix;
         }
 
         auto res_pair = getPossiblyExisting( name );
@@ -311,9 +351,10 @@ void ADIOS2IOHandlerImpl::openFile(
     }
 
     std::string name = parameters.name;
-    if ( !auxiliary::ends_with( name, ".bp" ) )
+    std::string suffix( fileSuffix() );
+    if( !auxiliary::ends_with( name, suffix ) )
     {
-        name += ".bp";
+        name += suffix;
     }
 
     auto file = std::get< PE_InvalidatableFile >( getPossiblyExisting( name ) );
@@ -1266,16 +1307,17 @@ namespace detail
     BufferedActions::BufferedActions(
         ADIOS2IOHandlerImpl & impl,
         InvalidatableFile file )
-        : m_file( impl.fullPath( std::move( file ) ) ),
-          m_IOName( std::to_string( impl.nameCounter++ ) ),
-          m_ADIOS( impl.m_ADIOS ),
-          m_IO( impl.m_ADIOS.DeclareIO( m_IOName ) ),
-          m_mode( impl.adios2AccessMode() ),
-          m_writeDataset( &impl ),
-          m_readDataset( &impl ),
-          m_attributeReader()
+        : m_file( impl.fullPath( std::move( file ) ) )
+        , m_IOName( std::to_string( impl.nameCounter++ ) )
+        , m_ADIOS( impl.m_ADIOS )
+        , m_IO( impl.m_ADIOS.DeclareIO( m_IOName ) )
+        , m_mode( impl.adios2AccessMode() )
+        , m_writeDataset( &impl )
+        , m_readDataset( &impl )
+        , m_attributeReader()
+        , m_engineType( impl.engineType )
     {
-        if ( !m_IO )
+        if( !m_IO )
         {
             throw std::runtime_error(
                 "[ADIOS2] Internal error: Failed declaring ADIOS2 IO object for file " +
@@ -1306,48 +1348,51 @@ namespace detail
     }
 
     void BufferedActions::configure_IO(ADIOS2IOHandlerImpl& impl){
-        (void)impl;
-        static std::set< std::string > streamingEngines =
-            { "sst", "insitumpi", "inline" };
-        static std::set< std::string > fileEngines =
-            { "bp4", "bp3", "hdf5" };
+        ( void )impl;
+        static std::set< std::string > streamingEngines = {
+            "sst", "insitumpi", "inline", "staging"
+        };
+        static std::set< std::string > fileEngines = {
+            "bp4", "bp3", "hdf5", "file"
+        };
 
+        // set engine type
+        {
+            // allow overriding through environment variable
+            m_engineType = auxiliary::getEnvString(
+                "OPENPMD_ADIOS2_ENGINE", m_engineType );
+            m_IO.SetEngine( m_engineType );
+            auto it = streamingEngines.find( m_engineType );
+            if( it != streamingEngines.end() )
+            {
+                optimizeAttributesStreaming = true;
+                useAdiosSteps = Steps::UseSteps;
+                streamStatus = StreamStatus::OutsideOfStep;
+            }
+            else
+            {
+                it = fileEngines.find( m_engineType );
+                if( it != fileEngines.end() )
+                {
+                    streamStatus = StreamStatus::NoStream;
+                    optimizeAttributesStreaming = false;
+                    useAdiosSteps = Steps::DontUseSteps;
+                }
+                else
+                {
+                    throw std::runtime_error(
+                        "[ADIOS2IOHandler] Unknown engine type. Please choose "
+                        "one out of [sst, staging, bp4, bp3, hdf5, file]" );
+                    // not listing unsupported engines
+                }
+            }
+        }
+
+        // set engine parameters
         std::set< std::string > alreadyConfigured;
         auto engineConfig = impl.config( ADIOS2Defaults::str_engine );
         if( !engineConfig.json().is_null() )
         {
-            std::string type =
-                impl.config( ADIOS2Defaults::str_type, engineConfig ).json();
-            m_IO.SetEngine( type );
-            {
-                auto it = streamingEngines.find( type );
-                if( it != streamingEngines.end() )
-                {
-                    optimizeAttributesStreaming = true;
-                    useAdiosSteps = Steps::UseSteps;
-                    streamStatus = StreamStatus::OutsideOfStep;
-                }
-                else
-                {
-                    optimizeAttributesStreaming = false;
-                    it = fileEngines.find( type );
-                    if( it != fileEngines.end() )
-                    {
-                        streamStatus = StreamStatus::NoStream;
-                        optimizeAttributesStreaming = false;
-                        useAdiosSteps = Steps::DontUseSteps;
-                    }
-                    else
-                    {
-                        std::cerr << "Unknown engine type (" << type
-                                  << "). Defaulting to non-streaming mode."
-                                  << std::endl;
-                        streamStatus = StreamStatus::NoStream;
-                        optimizeAttributesStreaming = false;
-                        useAdiosSteps = Steps::DontUseSteps;
-                    }
-                }
-            }
             auto params =
                 impl.config( ADIOS2Defaults::str_params, engineConfig );
             params.declareFullyRead();
@@ -1373,15 +1418,8 @@ namespace detail
                 useAdiosSteps = bool( tmp ) ? Steps::UseSteps
                                             : Steps::DontUseSteps;
             }
-            alreadyConfigured.emplace( "Engine" );
         }
-        else
-        {
-            m_IO.SetEngine( "bp4" );
-            useAdiosSteps = Steps::DontUseSteps;
-            optimizeAttributesStreaming = false;
-            streamStatus = StreamStatus::NoStream;
-        }
+
         if( m_mode == adios2::Mode::Read )
         {
             // decide upon opening engine
@@ -1401,13 +1439,6 @@ namespace detail
             };
 
         // read parameters from environment
-        if( notYetConfigured( "Engine" ) )
-        {
-            auto const engine =
-                auxiliary::getEnvString( "OPENPMD_ADIOS2_ENGINE", "File" );
-            m_IO.SetEngine( engine );
-        }
-
         if( notYetConfigured( "CollectiveMetadata" ) )
         {
             if( 1 ==
@@ -1746,9 +1777,10 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     openPMD::Access at,
     MPI_Comm comm,
-    nlohmann::json options )
-    : AbstractIOHandler( std::move( path ), at, comm ),
-      m_impl{ this, comm, std::move( options ) }
+    nlohmann::json options,
+    std::string engineType )
+    : AbstractIOHandler( std::move( path ), at, comm )
+    , m_impl{ this, comm, std::move( options ), std::move( engineType ) }
 {
 }
 
@@ -1757,9 +1789,10 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     Access at,
-    nlohmann::json options )
-    : AbstractIOHandler( std::move( path ), at ),
-      m_impl{ this, std::move( options ) }
+    nlohmann::json options,
+    std::string engineType )
+    : AbstractIOHandler( std::move( path ), at )
+    , m_impl{ this, std::move( options ), std::move( engineType ) }
 {
 }
 
@@ -1776,8 +1809,8 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     Access at,
     MPI_Comm comm,
-    nlohmann::json
-)
+    nlohmann::json,
+    std::string )
     : AbstractIOHandler( std::move( path ), at, comm )
 {
 }
@@ -1787,7 +1820,8 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     Access at,
-    nlohmann::json )
+    nlohmann::json,
+    std::string )
     : AbstractIOHandler( std::move( path ), at )
 {
 }

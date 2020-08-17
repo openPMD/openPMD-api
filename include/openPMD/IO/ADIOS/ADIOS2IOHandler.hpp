@@ -95,16 +95,20 @@ public:
 
 #if openPMD_HAVE_MPI
 
-    ADIOS2IOHandlerImpl( AbstractIOHandler *, MPI_Comm, nlohmann::json config );
+    ADIOS2IOHandlerImpl(
+        AbstractIOHandler *,
+        MPI_Comm,
+        nlohmann::json config,
+        std::string engineType );
 
     MPI_Comm m_comm;
 
-#endif // openPMD_HAVE_MPI
+#    endif // openPMD_HAVE_MPI
 
     explicit ADIOS2IOHandlerImpl(
-        AbstractIOHandler *
-        , nlohmann::json config
-    );
+        AbstractIOHandler *,
+        nlohmann::json config,
+        std::string engineType );
 
 
     ~ADIOS2IOHandlerImpl( ) override = default;
@@ -186,6 +190,7 @@ public:
 
 private:
     adios2::ADIOS m_ADIOS;
+    std::string engineType;
 
     struct ParameterizedOperator
     {
@@ -235,6 +240,9 @@ private:
     // use m_config
     std::pair< std::vector< ParameterizedOperator >, bool >
     getOperators();
+
+    std::string
+    fileSuffix() const;
 
     /*
      * We need to give names to IO objects. These names are irrelevant
@@ -763,6 +771,7 @@ namespace detail
         invalidateVariablesMap();
 
     private:
+        std::string m_engineType;
         /*
          * streamStatus is NoStream for file-based ADIOS engines.
          * This is relevant for the method BufferedActions::requireActiveStep,
@@ -857,12 +866,16 @@ public:
         std::string path,
         Access,
         MPI_Comm,
-        nlohmann::json options
-    );
+        nlohmann::json options,
+        std::string engineType );
 
 #endif
 
-    ADIOS2IOHandler(std::string path, Access, nlohmann::json options );
+    ADIOS2IOHandler(
+        std::string path,
+        Access,
+        nlohmann::json options,
+        std::string engineType );
 
     std::string backendName() const override { return "ADIOS2"; }
 

@@ -398,15 +398,6 @@ adios2_streaming()
         // run this test for ADIOS2 only
         return;
     }
-    std::string adios2Config = R"END(
-{
-  "adios2": {
-    "engine": {
-      "type": "sst"
-    }
-  }
-}
-)END";
 
     if( size < 2 || rank > 1 )
     {
@@ -419,7 +410,7 @@ adios2_streaming()
     {
         // write
         Series writeSeries(
-            "../samples/adios2_stream.bp", Access::CREATE, adios2Config );
+            "../samples/adios2_stream.sst", Access::CREATE );
         auto iterations = writeSeries.writeIterations();
         for( size_t i = 0; i < 10; ++i )
         {
@@ -444,10 +435,20 @@ adios2_streaming()
     else if( rank == 1 )
     {
         // read
+        // it should be possible to select the sst engine via file ending or
+        // via JSON without difference
+        std::string options = R"(
+        {
+          "adios2": {
+            "engine": {
+              "type": "SST"
+            }
+          }
+        }
+        )";
+
         Series readSeries(
-            "../samples/adios2_stream.bp",
-            Access::READ_ONLY,
-            adios2Config );
+            "../samples/adios2_stream.bp", Access::READ_ONLY, options );
 
         size_t last_iteration_index = 0;
         for( auto iteration : readSeries.readIterations() )

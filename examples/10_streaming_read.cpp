@@ -14,18 +14,7 @@ main()
 {
 #if openPMD_HAVE_ADIOS2
     using position_t = double;
-
-    std::string options = R"(
-        {
-          "adios2": {
-            "engine": {
-              "type": "sst"
-            }
-          }
-        }
-    )";
-
-    Series series = Series( "electrons.bp", Access::READ_ONLY, options );
+    Series series = Series( "electrons.sst", Access::READ_ONLY );
 
     for( IndexedIteration iteration : series.readIterations() )
     {

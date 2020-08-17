@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import openpmd_api as io
 
 if __name__ == "__main__":
@@ -5,16 +6,7 @@ if __name__ == "__main__":
         print('This example requires ADIOS2')
         exit(0)
 
-    options = """
-    {
-        "adios2": {
-            "engine": {
-                "type": "sst"
-            }
-        }
-    }
-"""
-    series = io.Series("stream.bp", io.Access_Type.read_only, options)
+    series = io.Series("stream.sst", io.Access_Type.read_only)
 
     for iteration in series.read_iterations():
         print("Current iteration {}".format(iteration.iteration_index))

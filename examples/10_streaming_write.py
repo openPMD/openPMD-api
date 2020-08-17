@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import openpmd_api as io
 import numpy as np
 
@@ -6,16 +7,7 @@ if __name__ == "__main__":
         print('This example requires ADIOS2')
         exit(0)
 
-    options = """
-    {
-        "adios2": {
-            "engine": {
-                "type": "sst"
-            }
-        }
-    }
-"""
-    series = io.Series("stream.bp", io.Access_Type.create, options)
+    series = io.Series("stream.sst", io.Access_Type.create)
     datatype = np.dtype("double")
     length = 10
     global_extent = [10]
