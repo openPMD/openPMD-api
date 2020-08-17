@@ -10,7 +10,7 @@ using std::cout;
 using namespace openPMD;
 
 int
-run()
+main()
 {
 #if openPMD_HAVE_ADIOS2
     using position_t = double;
@@ -19,17 +19,13 @@ run()
         {
           "adios2": {
             "engine": {
-              "type": "sst",
-              "parameters": {
-                  "OpenTimeoutSecs": "5"
-              }
+              "type": "sst"
             }
           }
         }
     )";
 
-    // open file for reading
-    Series series( "electrons.bp", Access::READ_ONLY, options );
+    Series series = Series( "electrons.bp", Access::READ_ONLY, options );
 
     for( IndexedIteration iteration : series.readIterations() )
     {
@@ -72,24 +68,6 @@ run()
               << std::endl;
     return 0;
 #endif
-}
-
-int
-main()
-{
-    try
-    {
-        run();
-    }
-    catch( std::runtime_error & e )
-    {
-        /*
-         * This will catch a timeout error if no writer has been found
-         */
-        std::cout << "Reading end of the streaming example failed:\n"
-                  << e.what() << std::endl;
-    }
-    return 0;
 }
 #else
 int main(){ return 0; }
