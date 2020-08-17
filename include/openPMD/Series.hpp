@@ -435,14 +435,22 @@ class WriteIterations : private Container< Iteration, uint64_t >
     friend class Series;
 
 private:
-    using super_t = Container< Iteration, uint64_t >;
-    using key_type = typename super_t::key_type;
-    using value_type = typename super_t::key_type;
-    WriteIterations( super_t );
+    using iterations_t = Container< Iteration, uint64_t >;
+    struct SharedResources
+    {
+        iterations_t iterations;
+        auxiliary::Option< uint64_t > currentlyOpen;
+
+        SharedResources( iterations_t );
+        ~SharedResources();
+    };
+
+    using key_type = typename iterations_t::key_type;
+    using value_type = typename iterations_t::key_type;
+    WriteIterations( iterations_t );
     explicit WriteIterations() = default;
     // Index of the last opened iteration
-    std::shared_ptr< auxiliary::Option< uint64_t > > currentlyOpen =
-        std::make_shared< auxiliary::Option< uint64_t > >();
+    std::shared_ptr< SharedResources > shared;
 
 public:
     mapped_type &

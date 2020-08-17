@@ -1324,8 +1324,26 @@ ReadIterations::end()
     return SeriesIterator::end();
 }
 
-WriteIterations::WriteIterations( super_t _super )
-    : super_t{ std::move( _super ) }
+WriteIterations::SharedResources::SharedResources( iterations_t _iterations )
+    : iterations( std::move( _iterations ) )
+{
+}
+
+WriteIterations::SharedResources::~SharedResources()
+{
+    if( currentlyOpen.has_value() )
+    {
+        auto lastIterationIndex = currentlyOpen.get();
+        auto & lastIteration = iterations.at( lastIterationIndex );
+        if( !lastIteration.closed() )
+        {
+            lastIteration.close();
+        }
+    }
+}
+
+WriteIterations::WriteIterations( iterations_t iterations )
+    : shared{ std::make_shared< SharedResources >( std::move( iterations ) ) }
 {
 }
 
@@ -1338,17 +1356,17 @@ WriteIterations::operator[]( key_type const & key )
 WriteIterations::mapped_type &
 WriteIterations::operator[]( key_type && key )
 {
-    if( currentlyOpen->has_value() )
+    if( shared->currentlyOpen.has_value() )
     {
-        auto lastIterationIndex = currentlyOpen->get();
-        auto & lastIteration = this->at( lastIterationIndex );
+        auto lastIterationIndex = shared->currentlyOpen.get();
+        auto & lastIteration = shared->iterations.at( lastIterationIndex );
         if( lastIterationIndex != key && !lastIteration.closed() )
         {
             lastIteration.close();
         }
     }
-    *currentlyOpen = key;
-    auto & res = super_t::operator[]( std::move( key ) );
+    shared->currentlyOpen = key;
+    auto & res = shared->iterations[ std::move( key ) ];
     StepStatus * flag = res.stepStatus();
     if( *flag == StepStatus::NoStep )
     {
