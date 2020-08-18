@@ -291,9 +291,9 @@ ReadData( Series& series, const char* varName,  const TestInput& input, int& ste
 
         data_off[0] = input.m_MPIRank * ext[0]/input.m_MPISize;
         if (input.m_MPIRank == (input.m_MPISize - 1))
-	  data_ext[0] = ext[0] - data_off[0];
-	else 
-	  data_ext[0] = ext[0] / input.m_MPISize;
+            data_ext[0] = ext[0] - data_off[0];
+        else
+            data_ext[0] = ext[0] / input.m_MPISize;
 
         auto data = mymesh.loadChunk<double>(data_off, data_ext);
         {
@@ -326,7 +326,7 @@ ReadData_ADIOS(adios2::Engine& bpFileReader,  adios2::Variable<T>&  var,  const 
     if (0 == input.m_MPIRank) {
       std::cout<<"\tShape:[ ";
       for (auto curr : varShape) 
-	std::cout<<curr<<" ";
+           std::cout<<curr<<" ";
       std::cout<<" ]"<<std::endl;
     }
     std::vector<T> data;
@@ -374,7 +374,7 @@ Test_adios_1v_nStep(const TestInput&  input)
      while (true) {
        status = bpFileReader.BeginStep();
        if (status != adios2::StepStatus::OK)
-	 break;
+           break;
 
        ReadData_ADIOS(bpFileReader, var,  input);
 
@@ -465,7 +465,7 @@ Test_adios_noStep(const TestInput&  input)
        adios2::Variable<double> var = bpIO.InquireVariable<double>(varName.str());
 
        if (!var)
-	 break;
+     break;
        ReadData_ADIOS(bpFileReader, var,  input);
 
        bpFileReader.PerformGets();
@@ -502,7 +502,8 @@ Test_1( const TestInput& input)
             cout << "Opened a series in parallel with "
                  << input.m_MPISize << " MPI ranks\n";
 
-	std::cout<<"num of iterations: "<<series.iterations.size()<<std::endl;
+        if (0 == input.m_MPIRank)
+            std::cout<<"num of iterations: "<<series.iterations.size()<<std::endl;
         for( int step = 1; step <= series.iterations.size(); step++ )
              ReadData(series, "var1", input, step);
     }
@@ -529,14 +530,6 @@ Test_3( const TestInput& input)
 
     Timer kk("Test 3: ", input.m_MPIRank);
     {
-      //std::cout<<"..num of iterations: "<<series.iterations.size()<<std::endl;
-      /*
-      a  for( int step = 1; step <= input.m_Steps; step++ )    {
-a             Series series = Series(filename, Access::READ_ONLY, MPI_COMM_WORLD);
-	     std::cout<<"num of iterations: "<<series.iterations.size()<<" step="<<step<<std::endl;
-             ReadData(series, "var3", input, step);
-        }
-      */
       Series series = Series(filename, Access::READ_ONLY, MPI_COMM_WORLD);
       std::cout<<".. num of iterations: "<<series.iterations.size()<<std::endl;
       for( int step = 1; step <= series.iterations.size(); step++ )    
@@ -607,7 +600,7 @@ TestRun(TestInput& input)
         Test_adios_noStep(input);
 #endif
         Test_1(input);
-        input.m_Steps = Test_2(input);        	
+        input.m_Steps = Test_2(input);
         Test_3(input);
     } else if (10 == input.m_TestNum) {
 #if openPMD_HAVE_ADIOS2
