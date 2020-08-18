@@ -179,7 +179,7 @@ std::vector<std::string> getBackends() {
     std::vector<std::string> res;
 #if openPMD_HAVE_ADIOS2
     if( auxiliary::getEnvString( "OPENPMD_BP_BACKEND", "NOT_SET" ) != "ADIOS1" )
-        res.emplace_back(".bp");    
+        res.emplace_back(".bp");
 #endif
 
 #if openPMD_HAVE_HDF5
@@ -279,7 +279,7 @@ ReadData( Series& series, const char* varName,  const TestInput& input, int& ste
         auto ext = mymesh.getExtent();
 
         if (0 == input.m_MPIRank)
-        {  
+        {
             std::cout<<"extent:[ ";
             for (auto e:ext)
                std::cout<<e<<" ";
@@ -325,13 +325,13 @@ ReadData_ADIOS(adios2::Engine& bpFileReader,  adios2::Variable<T>&  var,  const 
 
     if (0 == input.m_MPIRank) {
       std::cout<<"\tShape:[ ";
-      for (auto curr : varShape) 
+      for (auto curr : varShape)
            std::cout<<curr<<" ";
       std::cout<<" ]"<<std::endl;
     }
     std::vector<T> data;
     bpFileReader.Get<T>(var, data);
-    if (0 == input.m_MPIRank) 
+    if (0 == input.m_MPIRank)
       std::cout<<"\tdata size="<<data.size()<<std::endl;
   }
 }
@@ -364,11 +364,11 @@ Test_adios_1v_nStep(const TestInput&  input)
      varName << "/data/"<<"/meshes/var";
      adios2::Variable<double> var = bpIO.InquireVariable<double>(varName.str());
 
-     if (!var) {              
+     if (!var) {
        std::cerr<<"ERROR: Failed to find var:"<<varName.str()<<" from:"<<filename<<std::endl;
        return;
      }
-       
+
      adios2::StepStatus status = adios2::StepStatus::OK;
 
      while (true) {
@@ -419,7 +419,7 @@ Test_adios_nv_nStep(const TestInput&  input)
        std::ostringstream varName;
        varName << "/data/"<<i<<"/meshes/var";
        adios2::Variable<double> var = bpIO.InquireVariable<double>(varName.str());
-       if (!var) {              
+       if (!var) {
            std::cerr<<"ERROR: Failed to find var:"<<varName.str()<<" from:"<<filename<<std::endl;
            continue;
        }
@@ -532,7 +532,7 @@ Test_3( const TestInput& input)
     {
       Series series = Series(filename, Access::READ_ONLY, MPI_COMM_WORLD);
       std::cout<<".. num of iterations: "<<series.iterations.size()<<std::endl;
-      for( int step = 1; step <= series.iterations.size(); step++ )    
+      for( int step = 1; step <= series.iterations.size(); step++ )
         ReadData(series, "var3", input, step);
     }
 }
@@ -561,15 +561,15 @@ Test_2(const TestInput& input)
         Series series = Series(filename, Access::READ_ONLY, MPI_COMM_WORLD);
 
         if( 0 == input.m_MPIRank )
-            cout << "Opened series in parallel with " << input.m_MPISize << " MPI ranks\n";                 
+            cout << "Opened series in parallel with " << input.m_MPISize << " MPI ranks\n";
 
-        if (0 == input.m_MPIRank) 
+        if (0 == input.m_MPIRank)
             std::cout<<"num of iterations: "<<series.iterations.size()<<std::endl;
 
         for( int step =1; step <= series.iterations.size(); step++ )
              ReadData( series, "var2", input, step);
         return series.iterations.size();
-    }    
+    }
 }
 
 
