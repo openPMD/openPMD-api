@@ -321,7 +321,6 @@ ReadData_ADIOS(adios2::Engine& bpFileReader,  adios2::Variable<T>&  var,  const 
 {
   {
     adios2::Dims varShape = var.Shape( );
-    auto varDim = varShape.size( );
 
     if (0 == input.m_MPIRank) {
       std::cout<<"\tShape:[ ";
@@ -504,7 +503,7 @@ Test_1( const TestInput& input)
 
         if (0 == input.m_MPIRank)
             std::cout<<"num of iterations: "<<series.iterations.size()<<std::endl;
-        for( int step = 1; step <= series.iterations.size(); step++ )
+        for( auto step = 1; step <= series.iterations.size(); step++ )
              ReadData(series, "var1", input, step);
     }
 }
@@ -532,7 +531,7 @@ Test_3( const TestInput& input)
     {
       Series series = Series(filename, Access::READ_ONLY, MPI_COMM_WORLD);
       std::cout<<".. num of iterations: "<<series.iterations.size()<<std::endl;
-      for( int step = 1; step <= series.iterations.size(); step++ )
+      for( auto step = 1; step <= series.iterations.size(); step++ )
         ReadData(series, "var3", input, step);
     }
 }
@@ -566,7 +565,7 @@ Test_2(const TestInput& input)
         if (0 == input.m_MPIRank)
             std::cout<<"num of iterations: "<<series.iterations.size()<<std::endl;
 
-        for( int step =1; step <= series.iterations.size(); step++ )
+        for( auto step =1; step <= series.iterations.size(); step++ )
              ReadData( series, "var2", input, step);
         return series.iterations.size();
     }
