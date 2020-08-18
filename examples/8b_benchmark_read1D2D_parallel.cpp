@@ -273,7 +273,7 @@ segments( unsigned long top, unsigned int upTo, int& repeats )
  * @param step ....... iteration step
  */
 void
-ReadData( Series& series, const char* varName,  const TestInput& input, int& step )
+ReadData( Series& series, const char* varName,  const TestInput& input, int step )
 {
         MeshRecordComponent mymesh = series.iterations[step].meshes[varName][MeshRecordComponent::SCALAR];
         auto ext = mymesh.getExtent();
@@ -503,7 +503,7 @@ Test_1( const TestInput& input)
 
         if (0 == input.m_MPIRank)
             std::cout<<"num of iterations: "<<series.iterations.size()<<std::endl;
-        for( auto step = 1; step <= series.iterations.size(); step++ )
+        for( size_t step = 1; step <= series.iterations.size(); step++ )
              ReadData(series, "var1", input, step);
     }
 }
@@ -531,7 +531,7 @@ Test_3( const TestInput& input)
     {
       Series series = Series(filename, Access::READ_ONLY, MPI_COMM_WORLD);
       std::cout<<".. num of iterations: "<<series.iterations.size()<<std::endl;
-      for( auto step = 1; step <= series.iterations.size(); step++ )
+      for( size_t step = 1; step <= series.iterations.size(); step++ )
         ReadData(series, "var3", input, step);
     }
 }
@@ -565,7 +565,7 @@ Test_2(const TestInput& input)
         if (0 == input.m_MPIRank)
             std::cout<<"num of iterations: "<<series.iterations.size()<<std::endl;
 
-        for( auto step =1; step <= series.iterations.size(); step++ )
+        for( size_t step =1; step <= series.iterations.size(); step++ )
              ReadData( series, "var2", input, step);
         return series.iterations.size();
     }
