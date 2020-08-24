@@ -169,8 +169,10 @@ ADIOS2IOHandlerImpl::getOperators()
 std::string
 ADIOS2IOHandlerImpl::fileSuffix() const
 {
+    // SST engine adds its suffix unconditionally
+    // so we don't add it
     static std::map< std::string, std::string > endings{
-        { "sst", ".sst" }, { "staging", ".sst" }, { "bp4", ".bp" },
+        { "sst", "" }, { "staging", ".sst" }, { "bp4", ".bp" },
         { "bp3", ".bp" },  { "file", ".bp" },     { "hdf5", ".h5" }
     };
     auto it = endings.find( engineType );
@@ -220,7 +222,6 @@ void ADIOS2IOHandlerImpl::createFile(
 
         auto res_pair = getPossiblyExisting( name );
         InvalidatableFile shared_name = InvalidatableFile( name );
-        printf( "creating file %s\n", name.c_str() );
         VERIFY_ALWAYS(
             !( m_handler->m_backendAccess == Access::READ_WRITE &&
                ( !std::get< PE_NewlyCreated >( res_pair ) ||
