@@ -371,7 +371,7 @@ Series::flush()
 ReadIterations
 Series::readIterations()
 {
-    return ReadIterations( *this );
+    return ReadIterations( this );
 }
 
 WriteIterations
@@ -1203,10 +1203,10 @@ SeriesIterator::SeriesIterator() : m_series()
 {
 }
 
-SeriesIterator::SeriesIterator( Series & _series ) : m_series( _series )
+SeriesIterator::SeriesIterator( Series * _series ) : m_series( _series )
 {
-    auto it = _series.iterations.begin();
-    if( it == _series.iterations.end() )
+    auto it = _series->iterations.begin();
+    if( it == _series->iterations.end() )
     {
         *this = end();
         return;
@@ -1232,7 +1232,7 @@ SeriesIterator::operator++()
         *this = end();
         return *this;
     }
-    Series series = m_series.get();
+    Series & series = *m_series.get();
     auto & iterations = series.iterations;
     auto & currentIteration = iterations[ m_currentIteration ];
     if( !currentIteration.closed() )
@@ -1297,7 +1297,7 @@ IndexedIteration
 SeriesIterator::operator*()
 {
     return IndexedIteration(
-        m_series.get().iterations[ m_currentIteration ], m_currentIteration );
+        m_series.get()->iterations[ m_currentIteration ], m_currentIteration );
 }
 
 bool
@@ -1319,7 +1319,7 @@ SeriesIterator::end()
     return {};
 }
 
-ReadIterations::ReadIterations( Series _series ) : m_series( _series )
+ReadIterations::ReadIterations( Series * _series ) : m_series( _series )
 {
 }
 
