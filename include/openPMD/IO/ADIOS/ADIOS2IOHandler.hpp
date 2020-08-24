@@ -39,17 +39,18 @@
 #   include <mpi.h>
 #endif
 
-#include <nlohmann/json.hpp>
-
 #include <array>
 #include <exception>
 #include <future>
 #include <iostream>
 #include <memory> // shared_ptr
+#include <set>
 #include <string>
-#include <unordered_map>
 #include <utility> // pair
 #include <vector>
+
+#include <nlohmann/json.hpp>
+#include <unordered_map>
 
 namespace openPMD
 {
@@ -441,6 +442,22 @@ namespace detail
         static void
         readAttribute( adios2::IO & IO, std::string name,
                        std::shared_ptr< Attribute::resource > resource );
+
+        static bool
+        attributeUnchanged( adios2::IO & IO, std::string name, BasicType val )
+        {
+            auto attr = IO.InquireAttribute< BasicType >( name );
+            if( !attr )
+            {
+                return false;
+            }
+            std::vector< BasicType > data = attr.Data();
+            if( data.size() != 1 )
+            {
+                return false;
+            }
+            return data[ 0 ] == val;
+        }
     };
 
     template< > struct AttributeTypes< std::complex< long double > >
@@ -496,6 +513,32 @@ namespace detail
         static void
         readAttribute( adios2::IO & IO, std::string name,
                        std::shared_ptr< Attribute::resource > resource );
+
+        static bool
+        attributeUnchanged(
+            adios2::IO & IO,
+            std::string name,
+            std::vector< T > val )
+        {
+            auto attr = IO.InquireAttribute< BasicType >( name );
+            if( !attr )
+            {
+                return false;
+            }
+            std::vector< BasicType > data = attr.Data();
+            if( data.size() != val.size() )
+            {
+                return false;
+            }
+            for( size_t i = 0; i < val.size(); ++i )
+            {
+                if( data[ i ] != val[ i ] )
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
     };
 
     template < typename T, size_t n >
@@ -510,6 +553,32 @@ namespace detail
         static void
         readAttribute( adios2::IO & IO, std::string name,
                        std::shared_ptr< Attribute::resource > resource );
+
+        static bool
+        attributeUnchanged(
+            adios2::IO & IO,
+            std::string name,
+            std::array< T, n > val )
+        {
+            auto attr = IO.InquireAttribute< BasicType >( name );
+            if( !attr )
+            {
+                return false;
+            }
+            std::vector< BasicType > data = attr.Data();
+            if( data.size() != n )
+            {
+                return false;
+            }
+            for( size_t i = 0; i < n; ++i )
+            {
+                if( data[ i ] != val[ i ] )
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
     };
 
     template <> struct AttributeTypes< bool >
@@ -535,6 +604,22 @@ namespace detail
         static constexpr bool fromRep( rep r )
         {
             return r != 0;
+        }
+
+        static bool
+        attributeUnchanged( adios2::IO & IO, std::string name, bool val )
+        {
+            auto attr = IO.InquireAttribute< BasicType >( name );
+            if( !attr )
+            {
+                return false;
+            }
+            std::vector< BasicType > data = attr.Data();
+            if( data.size() != 1 )
+            {
+                return false;
+            }
+            return data[ 0 ] == toRep( val );
         }
     };
 
@@ -699,6 +784,13 @@ namespace detail
         detail::WriteDataset const m_writeDataset;
         detail::DatasetReader const m_readDataset;
         detail::AttributeReader const m_attributeReader;
+
+        /*
+         * We call an attribute committed if the step during which it was
+         * written has been closed.
+         * A committed attribute cannot be modified.
+         */
+        std::set< std::string > uncommittedAttributes;
         /*
          * The openPMD API will generally create new attributes for each
          * iteration. This results in a growing number of attributes over time.

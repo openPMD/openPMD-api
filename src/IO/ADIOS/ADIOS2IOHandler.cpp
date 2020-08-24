@@ -220,6 +220,7 @@ void ADIOS2IOHandlerImpl::createFile(
 
         auto res_pair = getPossiblyExisting( name );
         InvalidatableFile shared_name = InvalidatableFile( name );
+        printf( "creating file %s\n", name.c_str() );
         VERIFY_ALWAYS(
             !( m_handler->m_backendAccess == Access::READ_WRITE &&
                ( !std::get< PE_NewlyCreated >( res_pair ) ||
@@ -938,9 +939,37 @@ namespace detail
         std::string t = IO.AttributeType( fullName );
         if ( !t.empty( ) ) // an attribute is present <=> it has a type
         {
-            // don't overwrite attributes that have already been written
-            return;
+            // don't overwrite attributes if they are equivalent
+            // overwriting is only legal within the same step
+
+            auto attributeModifiable = [ &filedata, &fullName ]() {
+                auto it = filedata.uncommittedAttributes.find( fullName );
+                return it != filedata.uncommittedAttributes.end();
+            };
+            if( AttributeTypes< T >::attributeUnchanged(
+                    IO,
+                    fullName,
+                    variantSrc::get< T >( parameters.resource ) ) )
+            {
+                return;
+            }
+            else if( attributeModifiable() )
+            {
+                IO.RemoveAttribute( fullName );
+            }
+            else
+            {
+                std::cerr << "[Warning][ADIOS2] Cannot modify attribute from "
+                             "previous step: "
+                          << fullName << std::endl;
+                return;
+            }
         }
+        else
+        {
+            filedata.uncommittedAttributes.emplace( fullName );
+        }
+
         typename AttributeTypes< T >::Attr attr =
             AttributeTypes< T >::createAttribute(
                 IO, fullName, variantSrc::get< T >( parameters.resource ) );
@@ -1637,6 +1666,7 @@ namespace detail
                 }
                 flush();
                 getEngine().EndStep();
+                uncommittedAttributes.clear();
                 streamStatus = StreamStatus::OutsideOfStep;
                 return AdvanceStatus::OK;
             }
