@@ -176,7 +176,6 @@ ADIOS2IOHandlerImpl::fileSuffix() const
     auto it = endings.find( engineType );
     if( it != endings.end() )
     {
-        std::cout << "engine type: " << engineType << ", ending: " << it->second << std::endl;
         return it->second;
     }
     else
@@ -466,7 +465,6 @@ void ADIOS2IOHandlerImpl::writeDataset(
 void ADIOS2IOHandlerImpl::writeAttribute(
     Writable * writable, const Parameter< Operation::WRITE_ATT > & parameters )
 {
-    std::cout << "writing attribute: " << parameters.name << std::endl;
     switchType( parameters.dtype, detail::AttributeWriter( ), this, writable,
                 parameters );
 }
@@ -940,7 +938,8 @@ namespace detail
         std::string t = IO.AttributeType( fullName );
         if ( !t.empty( ) ) // an attribute is present <=> it has a type
         {
-            IO.RemoveAttribute( fullName );
+            // don't overwrite attributes that have already been written
+            return;
         }
         typename AttributeTypes< T >::Attr attr =
             AttributeTypes< T >::createAttribute(
@@ -1342,7 +1341,6 @@ namespace detail
         {
             if( streamStatus == StreamStatus::DuringStep )
             {
-                printf("[EndStep] destructor\n");
                 m_engine.EndStep();
             }
             m_engine.Close( );
@@ -1544,7 +1542,6 @@ namespace detail
         adios2::Engine & eng = getEngine();
         if( streamStatus == StreamStatus::OutsideOfStep )
         {
-            printf("[BeginStep] requireActive\n");
             m_lastStepStatus = eng.BeginStep();
             streamStatus = StreamStatus::DuringStep;
         }
@@ -1636,11 +1633,9 @@ namespace detail
                  */
                 if( streamStatus == StreamStatus::OutsideOfStep )
                 {
-                    printf("[BeginStep] before endstep\n");
                     getEngine().BeginStep();
                 }
                 flush();
-                printf("[EndStep] call\n");
                 getEngine().EndStep();
                 streamStatus = StreamStatus::OutsideOfStep;
                 return AdvanceStatus::OK;
@@ -1656,7 +1651,6 @@ namespace detail
                 if( streamStatus != StreamStatus::DuringStep )
                 {
                     flush();
-                    printf("[BeginStep] call\n");
                     adiosStatus = getEngine().BeginStep();
                 }
                 AdvanceStatus res = AdvanceStatus::OK;
