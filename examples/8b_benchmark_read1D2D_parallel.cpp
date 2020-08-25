@@ -328,8 +328,21 @@ ReadData_ADIOS(adios2::Engine& bpFileReader,  adios2::Variable<T>&  var,  const 
            std::cout<<curr<<" ";
       std::cout<<" ]"<<std::endl;
     }
+
+    adios2::Dims offset(varShape.size(), 0);
+    adios2::Dims count(varShape.size(), 1);
+
+    offset[0] = input.m_MPIRank * varShape[0]/input.m_MPISize;
+    if (input.m_MPIRank == (input.m_MPISize - 1))
+      count[0] = varShape[0] - offset[0];
+    else
+      count[0] = varShape[0] / input.m_MPISize;
+
+    var.SetSelection({offset, count});
     std::vector<T> data;
-    bpFileReader.Get<T>(var, data);
+    data.resize(count[0]);
+
+    bpFileReader.Get(var, data.data(), adios2::Mode::Sync);
     if (0 == input.m_MPIRank)
       std::cout<<"\tdata size="<<data.size()<<std::endl;
   }
