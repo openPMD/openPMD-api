@@ -195,12 +195,21 @@ std::vector<std::string> getBackends() {
  * @param mpi_rank .... MPI rank
  * @param bulk ........ num of elements
  * @param numSeg ...... num of subdivition for the elements
+ *               ...... note that with h5collect mode, numSeg must be 1
  * @param numSteps .... num of iterations
  */
 class TestInput
 {
 public:
   TestInput() =  default;
+
+  unsigned int GetSeg() const
+  {
+    if (m_Backend == ".h5")
+        if (auxiliary::getEnvString( "OPENPMD_HDF5_INDEPENDENT", "ON" ) != "ON")
+            return 1;
+    return m_Seg;
+  }
 
   int m_MPISize = 1;
   int m_MPIRank = 0;
@@ -293,7 +302,7 @@ LoadData( Series& series, const char* varName,  const TestInput& input, int& ste
             // many small writes
             srand(time(NULL) * (input.m_MPIRank  + input.m_MPISize) );
             auto  repeat = input.m_MPIRank  + step;
-            std::vector< unsigned long > local_bulks = segments( input.m_Bulk, input.m_Seg, repeat );
+            std::vector< unsigned long > local_bulks = segments( input.m_Bulk, input.GetSeg(), repeat );
 
             unsigned long counter = 0ul;
             for( unsigned long i = 0ul; i < local_bulks.size(); i++ ) {
