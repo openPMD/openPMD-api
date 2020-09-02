@@ -335,7 +335,7 @@ namespace detail
         explicit DatasetReader( openPMD::ADIOS2IOHandlerImpl * impl );
 
 
-        template < typename T, typename = void >
+        template < typename T >
         void operator( )( BufferedGet & bp, adios2::IO & IO,
                           adios2::Engine & engine,
                           std::string const & fileName );
@@ -345,7 +345,7 @@ namespace detail
 
     struct AttributeReader
     {
-        template < typename T, typename = void >
+        template < typename T >
         Datatype operator( )( adios2::IO & IO, std::string name,
                           std::shared_ptr< Attribute::resource > resource );
 
@@ -355,7 +355,7 @@ namespace detail
 
     struct AttributeWriter
     {
-        template < typename T, typename = void >
+        template < typename T >
         void
         operator( )( ADIOS2IOHandlerImpl * impl, Writable * writable,
                      const Parameter< Operation::WRITE_ATT > & parameters );
@@ -372,7 +372,7 @@ namespace detail
         explicit DatasetOpener( ADIOS2IOHandlerImpl * impl );
 
 
-        template < typename T, typename = void >
+        template < typename T >
         void operator( )( InvalidatableFile, const std::string & varName,
                           Parameter< Operation::OPEN_DATASET > & parameters );
 
@@ -388,7 +388,7 @@ namespace detail
         WriteDataset( ADIOS2IOHandlerImpl * handlerImpl );
 
 
-        template < typename T, typename = void >
+        template < typename T >
         void operator( )( BufferedPut & bp, adios2::IO & IO,
                           adios2::Engine & engine );
 
@@ -398,7 +398,7 @@ namespace detail
     struct VariableDefiner
     {
         // Parameters such as DatasetHelper< T >::defineVariable
-        template < typename T, typename... Params, typename = void >
+        template < typename T, typename... Params >
         void operator( )( Params &&... params );
 
         template< int n, typename... Params >
@@ -546,6 +546,7 @@ namespace detail
         static constexpr bool validType = false;
     };
 
+    // missing std::complex< long double > type in ADIOS2 v2.6.0
     template <> struct DatasetTypes< std::complex< long double > >
     {
         static constexpr bool validType = false;
@@ -582,7 +583,7 @@ namespace detail
 
         /**
          * @brief Define a Variable of type T within the passed IO.
-         * 
+         *
          * @param IO The adios2::IO object within which to define the
          *           variable. The variable can later be retrieved from
          *           the IO using the passed name.
@@ -738,7 +739,7 @@ namespace detail
 
     private:
         /*
-         * ADIOS2 does not give direct access to its internal attribute and 
+         * ADIOS2 does not give direct access to its internal attribute and
          * variable maps, but will instead give access to copies of them.
          * In order to avoid unnecessary copies, we buffer the returned map.
          * The downside of this is that we need to pay attention to invalidate
@@ -748,7 +749,7 @@ namespace detail
          * been resolved
          * If false, the buffered map has been invalidated and needs to be
          * queried from ADIOS2 again. If true, the buffered map is equivalent to
-         * the map that would be returned by a call to 
+         * the map that would be returned by a call to
          * IO::Available(Attributes|Variables).
          */
         bool m_availableAttributesValid = false;
