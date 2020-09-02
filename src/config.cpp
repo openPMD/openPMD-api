@@ -23,6 +23,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 
 std::map< std::string, bool >
@@ -35,4 +36,18 @@ openPMD::getVariants( )
             {"adios1", bool(openPMD_HAVE_ADIOS1)},
             {"adios2", bool(openPMD_HAVE_ADIOS2)}
     };
+}
+
+std::vector< std::string >
+openPMD::getFileExtensions()
+{
+    std::vector< std::string > fext;
+    fext.emplace_back("json");
+#if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
+    fext.emplace_back("bp");
+#endif
+#if openPMD_HAVE_HDF5
+    fext.emplace_back("h5");
+#endif
+    return fext;
 }
