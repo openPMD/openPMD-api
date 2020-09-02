@@ -73,6 +73,10 @@ Limitations
    Mea culpa, we did better in the past (in PIConGPU).
    Please consider using our ADIOS2 backend instead, on which we focus our developments these days.
 
+.. note::
+
+   ADIOS1 does not support attributes that are `arrays of complex types <https://github.com/ornladios/ADIOS/issues/212>`_.
+
 
 Selected References
 -------------------

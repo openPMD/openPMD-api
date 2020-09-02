@@ -314,25 +314,14 @@ CommonADIOS1IOHandlerImpl::flush_attribute(int64_t group, std::string const& nam
                 ptr[i] = vec[i];
             break;
         }
+        /* not supported by ADIOS 1.13.1:
+         *   https://github.com/ornladios/ADIOS/issues/212
+         */
         case DT::VEC_CFLOAT:
-        {
-            auto ptr = reinterpret_cast< std::complex< float >* >(values.get());
-            auto const& vec = att.get< std::vector< std::complex< float > > >();
-            for( size_t i = 0; i < vec.size(); ++i )
-                ptr[i] = vec[i];
-            break;
-        }
         case DT::VEC_CDOUBLE:
-        {
-            auto ptr = reinterpret_cast< std::complex< double >* >(values.get());
-            auto const& vec = att.get< std::vector< std::complex< double > > >();
-            for( size_t i = 0; i < vec.size(); ++i )
-                ptr[i] = vec[i];
-            break;
-        }
         case DT::VEC_CLONG_DOUBLE:
         {
-            throw std::runtime_error("[ADIOS1] Unknown Attribute datatype (VEC_CLONG_DOUBLE)");
+            throw std::runtime_error("[ADIOS1] Arrays of complex attributes are not supported");
             break;
         }
         case DT::VEC_STRING:
@@ -1427,28 +1416,9 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
                 a = Attribute(vld);
                 break;
             }
-            case adios_complex:
-            {
-                dtype = DT::VEC_CFLOAT;
-                auto cf4 = reinterpret_cast< std::complex<float>* >(data);
-                std::vector< std::complex<float> > vcf;
-                vcf.resize(size);
-                for( int i = 0; i < size; ++i )
-                    vcf[i] = cf4[i];
-                a = Attribute(vcf);
-                break;
-            }
-            case adios_double_complex:
-            {
-                dtype = DT::VEC_CDOUBLE;
-                auto cd8 = reinterpret_cast< std::complex<double>* >(data);
-                std::vector< std::complex<double> > vcd;
-                vcd.resize(size);
-                for( int i = 0; i < size; ++i )
-                    vcd[i] = cd8[i];
-                a = Attribute(vcd);
-                break;
-            }
+            /* not supported by ADIOS 1.13.1: VEC_CFLOAT, VEC_CDOUBLE, VEC_CLONG_DOUBLE
+             *   https://github.com/ornladios/ADIOS/issues/212
+             */
             case adios_string:
             {
                 dtype = DT::STRING;
