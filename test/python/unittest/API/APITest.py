@@ -292,7 +292,8 @@ class APITest(unittest.TestCase):
         # c_types
         self.assertEqual(series.get_attribute("byte_c"), 30)
         self.assertEqual(series.get_attribute("ubyte_c"), 50)
-        self.assertEqual(chr(series.get_attribute("char_c")), 'd')
+        if file_ending != "json":  # TODO: returns [100] instead of 100 in json
+            self.assertEqual(chr(series.get_attribute("char_c")), 'd')
         self.assertEqual(series.get_attribute("int16_c"), 2)
         self.assertEqual(series.get_attribute("int32_c"), 3)
         self.assertEqual(series.get_attribute("int64_c"), 4)
@@ -306,7 +307,7 @@ class APITest(unittest.TestCase):
 
     def testAttributes(self):
         backend_filesupport = {
-            # 'json': 'json',
+            'json': 'json',
             'hdf5': 'h5',
             'adios1': 'bp'
         }
