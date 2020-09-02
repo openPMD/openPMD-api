@@ -25,42 +25,25 @@
 
 using namespace openPMD;
 
-std::vector<std::tuple<std::string, bool>> getBackends() {
-    // first component: backend file ending
-    // second component: whether to test 128 bit values
-    std::vector<std::tuple<std::string, bool>> res;
-    res.emplace_back("json", false);
-#if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
-    res.emplace_back("bp", true);
-#endif
-#if openPMD_HAVE_HDF5
-    res.emplace_back("h5", true);
-#endif
-    return res;
-}
-
-auto const backends = getBackends();
-
 
 TEST_CASE( "multi_series_test", "[serial]" )
 {
     std::list< Series > allSeries;
 
-    using StrBoolTuple = std::tuple< std::string, bool >;
-    auto myBackends = getBackends();
+    auto myfileExtensions = getFileExtensions();
 
     // this test demonstrates an ADIOS1 (upstream) bug, comment this section to trigger it
-    auto const rmEnd = std::remove_if( myBackends.begin(), myBackends.end(), [](StrBoolTuple const & beit) {
-        return std::get<0>(beit) == "bp" &&
+    auto const rmEnd = std::remove_if( myfileExtensions.begin(), myfileExtensions.end(), [](std::string const & beit) {
+        return beit == "bp" &&
                determineFormat("test.bp") == Format::ADIOS1;
     });
-    myBackends.erase(rmEnd, myBackends.end());
+    myfileExtensions.erase(rmEnd, myfileExtensions.end());
 
     // have multiple serial series alive at the same time
     for (auto const sn : {1, 2, 3}) {
-        for (auto const & t: myBackends)
+        for (auto const & t: myfileExtensions)
         {
-            auto const file_ending = std::get<0>(t);
+            auto const file_ending = t;
             std::cout << file_ending << std::endl;
             allSeries.emplace_back(
                 std::string("../samples/multi_open_test_").
@@ -73,15 +56,15 @@ TEST_CASE( "multi_series_test", "[serial]" )
     }
     // skip some series: sn=1
     auto it = allSeries.begin();
-    std::for_each( myBackends.begin(), myBackends.end(), [&it](StrBoolTuple const &){
+    std::for_each( myfileExtensions.begin(), myfileExtensions.end(), [&it](std::string const &){
         it++;
     });
     // remove some series: sn=2
-    std::for_each( myBackends.begin(), myBackends.end(), [&it, &allSeries](StrBoolTuple const &){
+    std::for_each( myfileExtensions.begin(), myfileExtensions.end(), [&it, &allSeries](std::string const &){
         it = allSeries.erase(it);
     });
     // write from last series: sn=3
-    std::for_each( myBackends.begin(), myBackends.end(), [&it](StrBoolTuple const &){
+    std::for_each( myfileExtensions.begin(), myfileExtensions.end(), [&it](std::string const &){
         it->iterations[10].setAttribute("wululu", 10);
         it->flush();
         it++;
@@ -166,9 +149,9 @@ close_iteration_test( std::string file_ending )
 
 TEST_CASE( "close_iteration_test", "[serial]" )
 {
-    for( auto const & t : backends )
+    for( auto const & t : getFileExtensions() )
     {
-        close_iteration_test( std::get< 0 >( t ) );
+        close_iteration_test( t );
     }
 }
 
@@ -287,9 +270,9 @@ empty_dataset_test( std::string file_ending )
 
 TEST_CASE( "empty_dataset_test", "[serial]" )
 {
-    for (auto const & t: backends)
+    for (auto const & t: getFileExtensions())
     {
-        empty_dataset_test(std::get<0>(t));
+        empty_dataset_test( t );
     }
 }
 
@@ -433,17 +416,17 @@ void constant_scalar(std::string file_ending)
 
 TEST_CASE( "constant_scalar", "[serial]" )
 {
-    for (auto const & t: backends)
+    for (auto const & t: getFileExtensions())
     {
-        constant_scalar(std::get<0>(t));
+        constant_scalar( t );
     }
 }
 
 TEST_CASE( "flush_without_position_positionOffset", "[serial]" )
 {
-    for( auto const & t : backends )
+    for( auto const & t : getFileExtensions() )
     {
-        const std::string & file_ending = std::get< 0 >( t );
+        const std::string & file_ending = t;
         Series s = Series(
             "../samples/flush_without_position_positionOffset." + file_ending,
             Access::CREATE );
@@ -560,17 +543,17 @@ void particle_patches( std::string file_ending )
 
 TEST_CASE( "particle_patches", "[serial]" )
 {
-    for (auto const & t: backends)
+    for (auto const & t: getFileExtensions())
     {
-        particle_patches(std::get<0>(t));
+        particle_patches( t );
     }
 }
 
 inline
-void dtype_test(const std::string & backend, bool test_128_bit = true)
+void dtype_test( const std::string & backend )
 {
-    bool test_long_double = test_128_bit || sizeof (long double) <= 8;
-    bool test_long_long = test_128_bit || sizeof (long long) <= 8;
+    bool test_long_double = (backend != "json") || sizeof (long double) <= 8;
+    bool test_long_long = (backend != "json") || sizeof (long long) <= 8;
     {
         Series s = Series("../samples/dtype_test." + backend, Access::CREATE);
 
@@ -752,13 +735,8 @@ void dtype_test(const std::string & backend, bool test_128_bit = true)
 
 TEST_CASE( "dtype_test", "[serial]" )
 {
-    std::string backend;
-    bool test_128_bit;
-    for (auto const & t: backends)
-    {
-        std::tie(backend, test_128_bit) = t;
-        dtype_test(backend, test_128_bit);
-    }
+    for (auto const & t: getFileExtensions())
+        dtype_test(t);
 }
 
 inline
@@ -843,9 +821,9 @@ void write_test(const std::string & backend)
 
 TEST_CASE( "write_test", "[serial]" )
 {
-    for (auto const & t: backends)
+    for (auto const & t: getFileExtensions())
     {
-        write_test(std::get<0>(t));
+        write_test( t );
     }
 }
 
@@ -1098,9 +1076,9 @@ void fileBased_write_test(const std::string & backend)
 
 TEST_CASE( "fileBased_write_test", "[serial]" )
 {
-    for (auto const & t: backends)
+    for (auto const & t: getFileExtensions())
     {
-        fileBased_write_test(std::get<0>(t));
+        fileBased_write_test( t );
     }
 }
 
@@ -1173,9 +1151,9 @@ void sample_write_thetaMode(std::string file_ending)
 
 TEST_CASE( "sample_write_thetaMode", "[serial][thetaMode]" )
 {
-    for (auto const & t: backends)
+    for (auto const & t: getFileExtensions())
     {
-        sample_write_thetaMode(std::get<0>(t));
+        sample_write_thetaMode( t );
     }
 }
 
@@ -1201,9 +1179,9 @@ void bool_test(const std::string & backend)
 
 TEST_CASE( "bool_test", "[serial]" )
 {
-    for (auto const & t: backends)
+    for (auto const & t: getFileExtensions())
     {
-        bool_test(std::get<0>(t));
+        bool_test( t );
     }
 }
 
@@ -1238,9 +1216,9 @@ void patch_test(const std::string & backend)
 
 TEST_CASE( "patch_test", "[serial]" )
 {
-    for (auto const & t: backends)
+    for (auto const & t: getFileExtensions())
     {
-        patch_test(std::get<0>(t));
+        patch_test( t );
     }
 }
 
@@ -1292,13 +1270,13 @@ void deletion_test(const std::string & backend)
 
 TEST_CASE( "deletion_test", "[serial]" )
 {
-    for (auto const & t: backends)
+    for (auto const & t: getFileExtensions())
     {
-        if (std::get<0>(t) == "bp")
+        if (t == "bp")
         {
             continue; // deletion not implemented in ADIOS1 backend
         }
-        deletion_test(std::get<0>(t));
+        deletion_test( t );
     }
 }
 
@@ -1317,8 +1295,8 @@ void read_missing_throw_test(const std::string & backend)
 
 TEST_CASE( "read_missing_throw_test", "[serial]" )
 {
-    for (auto const & t: backends)
-        read_missing_throw_test(std::get<0>(t));
+    for (auto const & t: getFileExtensions())
+        read_missing_throw_test( t );
 }
 
 inline

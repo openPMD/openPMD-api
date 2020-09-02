@@ -22,6 +22,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 /** version of the openPMD-api library (compile-time)
  * @{
@@ -87,4 +88,12 @@ namespace openPMD
      */
     std::map< std::string, bool >
     getVariants( );
+
+    /** Return the file extensions supported in this variant of the openPMD-api library (run-time)
+     *
+     * @return std::vector< std::string > with file extensions
+     */
+    std::vector< std::string >
+    getFileExtensions( );
+
 } // namespace openPMD

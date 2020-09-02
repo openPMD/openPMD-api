@@ -110,6 +110,9 @@ PYBIND11_MODULE(openpmd_api_cxx, m) {
 
     // API runtime feature variants
     m.attr("variants") = openPMD::getVariants();
+    // API file backends
+    m.attr("file_extensions") = openPMD::getFileExtensions();
+    // TODO expose determineFormat function
 
     // license SPDX identifier
     m.attr("__license__") = "LGPL-3.0-or-later";

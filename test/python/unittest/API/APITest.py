@@ -306,14 +306,8 @@ class APITest(unittest.TestCase):
                                ctypes.c_longdouble(6.e200).value)
 
     def testAttributes(self):
-        backend_filesupport = {
-            'json': 'json',
-            'hdf5': 'h5',
-            'adios1': 'bp'
-        }
-        for b in io.variants:
-            if io.variants[b] is True and b in backend_filesupport:
-                self.attributeRoundTrip(backend_filesupport[b])
+        for ext in io.file_extensions:
+            self.attributeRoundTrip(ext)
 
     def makeConstantRoundTrip(self, file_ending):
         # write
@@ -460,14 +454,8 @@ class APITest(unittest.TestCase):
                              np.double(1.234567))
 
     def testConstantRecords(self):
-        backend_filesupport = {
-            'json': 'json',
-            'hdf5': 'h5',
-            'adios1': 'bp'
-        }
-        for b in io.variants:
-            if io.variants[b] is True and b in backend_filesupport:
-                self.makeConstantRoundTrip(backend_filesupport[b])
+        for ext in io.file_extensions:
+            self.makeConstantRoundTrip(ext)
 
     def testData(self):
         """ Test IO on data containing particles and meshes."""
@@ -907,14 +895,8 @@ class APITest(unittest.TestCase):
         series.flush()
 
     def testSliceWrite(self):
-        backend_filesupport = {
-            'json': 'json',
-            'hdf5': 'h5',
-            'adios1': 'bp'
-        }
-        for b in io.variants:
-            if io.variants[b] is True and b in backend_filesupport:
-                self.backend_write_slices(backend_filesupport[b])
+        for ext in io.file_extensions:
+            self.backend_write_slices(ext)
 
     def backend_write_slices(self, file_ending):
         """ Testing sliced write on record components. """
@@ -1180,14 +1162,8 @@ class APITest(unittest.TestCase):
     def testParticlePatches(self):
         self.assertRaises(TypeError, io.Particle_Patches)
 
-        backend_filesupport = {
-            'json': 'json',
-            'hdf5': 'h5',
-            'adios1': 'bp'
-        }
-        for b in io.variants:
-            if io.variants[b] is True and b in backend_filesupport:
-                self.backend_particle_patches(backend_filesupport[b])
+        for ext in io.file_extensions:
+            self.backend_particle_patches(ext)
 
     def testParticleSpecies(self):
         """ Test ParticleSpecies. """
@@ -1230,7 +1206,7 @@ class APITest(unittest.TestCase):
 
         self.assertIsInstance(Ex, io.Mesh_Record_Component)
 
-    def makeCloseIterationRoundTrip(self, backend, file_ending):
+    def makeCloseIterationRoundTrip(self, file_ending):
         # write
         series = io.Series(
             "unittest_closeIteration_%T." + file_ending,
@@ -1244,9 +1220,11 @@ class APITest(unittest.TestCase):
         E_x = it0.meshes["E"]["x"]
         E_x.reset_dataset(DS(np.dtype("int"), extent))
         E_x.store_chunk(data, [0], extent)
+        is_adios1 = series.backend == 'ADIOS1'
         it0.close(flush=True)
 
-        if backend != 'adios1':
+        # not supported in ADIOS1: can only open one ADIOS1 series at a time
+        if not is_adios1:
             read = io.Series(
                 "unittest_closeIteration_%T." + file_ending,
                 io.Access_Type.read_only
@@ -1267,7 +1245,7 @@ class APITest(unittest.TestCase):
         it1.close(flush=False)
         series.flush()
 
-        if backend != 'adios1':
+        if not is_adios1:
             read = io.Series(
                 "unittest_closeIteration_%T." + file_ending,
                 io.Access_Type.read_only
@@ -1283,15 +1261,8 @@ class APITest(unittest.TestCase):
             del read
 
     def testCloseIteration(self):
-        backend_filesupport = {
-            'json': 'json',
-            'hdf5': 'h5',
-            'adios1': 'bp',
-            'adios2': 'bp'
-        }
-        for b in io.variants:
-            if io.variants[b] is True and b in backend_filesupport:
-                self.makeCloseIterationRoundTrip(b, backend_filesupport[b])
+        for ext in io.file_extensions:
+            self.makeCloseIterationRoundTrip(ext)
 
 
 if __name__ == '__main__':
