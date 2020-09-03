@@ -66,7 +66,11 @@ namespace openPMD
         hid_t m_datasetTransferProperty;
         hid_t m_fileAccessProperty;
 
+        // h5py compatible types for bool and complex
         hid_t m_H5T_BOOL_ENUM;
+        hid_t m_H5T_CFLOAT;
+        hid_t m_H5T_CDOUBLE;
+        hid_t m_H5T_CLONG_DOUBLE;
     }; // HDF5IOHandlerImpl
 #else
     class HDF5IOHandlerImpl

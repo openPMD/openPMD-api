@@ -27,9 +27,10 @@
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/binding/python/Numpy.hpp"
 
+#include <array>
+#include <complex>
 #include <string>
 #include <vector>
-#include <array>
 
 
 // std::variant
@@ -113,6 +114,15 @@ bool setAttributeFromBufferInfo(
             case DT::LONG_DOUBLE:
                 return attr.setAttribute( key, *static_cast<long double*>(buf.ptr) );
                 break;
+            case DT::CFLOAT:
+                return attr.setAttribute( key, *static_cast<std::complex<float>*>(buf.ptr) );
+                break;
+            case DT::CDOUBLE:
+                return attr.setAttribute( key, *static_cast<std::complex<double>*>(buf.ptr) );
+                break;
+            case DT::CLONG_DOUBLE:
+                return attr.setAttribute( key, *static_cast<std::complex<long double>*>(buf.ptr) );
+                break;
             default:
                 throw std::runtime_error("set_attribute: Unknown "
                     "Python type '" + buf.format +
@@ -155,6 +165,7 @@ bool setAttributeFromBufferInfo(
                     static_cast<bool*>(buf.ptr) + buf.size
                 ) );
         else */
+        // std::cout << "+++++++++++ BUFFER: " << buf.format << std::endl;
         if( buf.format.find("b") != std::string::npos )
             return attr.setAttribute( key,
                 std::vector<char>(
@@ -215,6 +226,24 @@ bool setAttributeFromBufferInfo(
                     static_cast<unsigned long long*>(buf.ptr),
                     static_cast<unsigned long long*>(buf.ptr) + buf.size
                 ) );
+        else if( buf.format.find("Zf") != std::string::npos )
+            return attr.setAttribute( key,
+              std::vector<std::complex<float>>(
+                      static_cast<std::complex<float>*>(buf.ptr),
+                      static_cast<std::complex<float>*>(buf.ptr) + buf.size
+              ) );
+        else if( buf.format.find("Zd") != std::string::npos )
+            return attr.setAttribute( key,
+              std::vector<std::complex<double>>(
+                      static_cast<std::complex<double>*>(buf.ptr),
+                      static_cast<std::complex<double>*>(buf.ptr) + buf.size
+              ) );
+        else if( buf.format.find("Zg") != std::string::npos )
+            return attr.setAttribute( key,
+              std::vector<std::complex<long double>>(
+                      static_cast<std::complex<long double>*>(buf.ptr),
+                      static_cast<std::complex<long double>*>(buf.ptr) + buf.size
+              ) );
         else if( buf.format.find("f") != std::string::npos )
             return attr.setAttribute( key,
                 std::vector<float>(
@@ -307,7 +336,7 @@ void init_Attributable(py::module &m) {
         // .def("set_attribute", &Attributable::setAttribute< std::vector< char > >)
         .def("set_attribute", &Attributable::setAttribute< std::vector< unsigned char > >)
         .def("set_attribute", &Attributable::setAttribute< std::vector< long > >)
-        .def("set_attribute", &Attributable::setAttribute< std::vector< double > >)
+        .def("set_attribute", &Attributable::setAttribute< std::vector< double > >) // TODO: this implicitly casts list of complex
         // probably affected by bug https://github.com/pybind/pybind11/issues/1258
         .def("set_attribute", []( Attributable & attr, std::string const& key, std::vector< std::string > const& value ) {
             return attr.setAttribute( key, value );

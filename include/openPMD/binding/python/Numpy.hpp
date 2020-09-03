@@ -57,6 +57,12 @@ namespace openPMD
             return Datatype::ULONG;
         else if( dt.is(pybind11::dtype("ulonglong")) )
             return Datatype::ULONGLONG;
+        else if( dt.is(pybind11::dtype("clongdouble")) )
+            return Datatype::CLONG_DOUBLE;
+        else if( dt.is(pybind11::dtype("cdouble")) )
+            return Datatype::CDOUBLE;
+        else if( dt.is(pybind11::dtype("csingle")) )
+            return Datatype::CFLOAT;
         else if( dt.is(pybind11::dtype("longdouble")) )
             return Datatype::LONG_DOUBLE;
         else if( dt.is(pybind11::dtype("double")) )
@@ -65,8 +71,10 @@ namespace openPMD
             return Datatype::FLOAT;
         else if( dt.is(pybind11::dtype("bool")) )
             return Datatype::BOOL;
-        else
+        else {
+            pybind11::print(dt);
             throw std::runtime_error("Datatype '...' not known in 'dtype_from_numpy'!"); // _s.format(dt)
+        }
     }
 
     /** Return openPMD::Datatype from py::buffer_info::format
@@ -79,7 +87,7 @@ namespace openPMD
         // refs:
         //   https://docs.scipy.org/doc/numpy-1.15.0/reference/arrays.interface.html
         //   https://docs.python.org/3/library/struct.html#format-characters
-        // std::cout << "  scalar type '" << buf.format << "'" << std::endl;
+        // std::cout << "  scalar type '" << fmt << "'" << std::endl;
         // typestring: encoding + type + number of bytes
         if( fmt.find("?") != std::string::npos )
             return DT::BOOL;
@@ -103,6 +111,12 @@ namespace openPMD
             return DT::ULONG;
         else if( fmt.find("Q") != std::string::npos )
             return DT::ULONGLONG;
+        else if( fmt.find("Zf") != std::string::npos )
+            return DT::CFLOAT;
+        else if( fmt.find("Zd") != std::string::npos )
+            return DT::CDOUBLE;
+        else if( fmt.find("Zg") != std::string::npos )
+            return DT::CLONG_DOUBLE;
         else if( fmt.find("f") != std::string::npos )
             return DT::FLOAT;
         else if( fmt.find("d") != std::string::npos )
@@ -178,6 +192,18 @@ namespace openPMD
             case DT::LONG_DOUBLE:
             case DT::VEC_LONG_DOUBLE:
                 return pybind11::dtype("longdouble");
+                break;
+            case DT::CFLOAT:
+            case DT::VEC_CFLOAT:
+                return pybind11::dtype("csingle");
+                break;
+            case DT::CDOUBLE:
+            case DT::VEC_CDOUBLE:
+                return pybind11::dtype("cdouble");
+                break;
+            case DT::CLONG_DOUBLE:
+            case DT::VEC_CLONG_DOUBLE:
+                return pybind11::dtype("clongdouble");
                 break;
             case DT::BOOL:
                 return pybind11::dtype("bool"); // also "?"

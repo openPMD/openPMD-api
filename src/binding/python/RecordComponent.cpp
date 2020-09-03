@@ -27,6 +27,7 @@
 #include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/binding/python/Numpy.hpp"
 
+#include <complex>
 #include <string>
 #include <algorithm>
 #include <tuple>
@@ -395,6 +396,12 @@ load_chunk(RecordComponent & r, Offset const & offset, Extent const & extent, st
         r.loadChunk<double>(shareRaw((double*) a.mutable_data()), offset, extent);
     else if( r.getDatatype() == Datatype::FLOAT )
         r.loadChunk<float>(shareRaw((float*) a.mutable_data()), offset, extent);
+    else if( r.getDatatype() == Datatype::CLONG_DOUBLE )
+        r.loadChunk<std::complex<long double>>(shareRaw((std::complex<long double>*) a.mutable_data()), offset, extent);
+    else if( r.getDatatype() == Datatype::CDOUBLE )
+        r.loadChunk<std::complex<double>>(shareRaw((std::complex<double>*) a.mutable_data()), offset, extent);
+    else if( r.getDatatype() == Datatype::CFLOAT )
+        r.loadChunk<std::complex<float>>(shareRaw((std::complex<float>*) a.mutable_data()), offset, extent);
     else if( r.getDatatype() == Datatype::BOOL )
         r.loadChunk<bool>(shareRaw((bool*) a.mutable_data()), offset, extent);
     else
@@ -507,6 +514,15 @@ void init_RecordComponent(py::module &m) {
                         break;
                     case DT::LONG_DOUBLE:
                         return rc.makeConstant( *static_cast<long double*>(buf.ptr) );
+                        break;
+                    case DT::CFLOAT:
+                        return rc.makeConstant( *static_cast<std::complex<float>*>(buf.ptr) );
+                        break;
+                    case DT::CDOUBLE:
+                        return rc.makeConstant( *static_cast<std::complex<double>*>(buf.ptr) );
+                        break;
+                    case DT::CLONG_DOUBLE:
+                        return rc.makeConstant( *static_cast<std::complex<long double>*>(buf.ptr) );
                         break;
                     default:
                         throw std::runtime_error("make_constant: "

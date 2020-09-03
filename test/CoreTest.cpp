@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <complex>
 #include <cstddef>
 #include <cstdint>
 #include <sstream>
@@ -61,6 +62,12 @@ TEST_CASE( "attribute_dtype_test", "[core]" )
     REQUIRE(Datatype::DOUBLE == a.dtype);
     a = Attribute(static_cast< long double >(0.));
     REQUIRE(Datatype::LONG_DOUBLE == a.dtype);
+    a = Attribute(static_cast< std::complex< float > >(0.));
+    REQUIRE(Datatype::CFLOAT == a.dtype);
+    a = Attribute(static_cast< std::complex< double > >(0.));
+    REQUIRE(Datatype::CDOUBLE == a.dtype);
+    a = Attribute(static_cast< std::complex< long double > >(0.));
+    REQUIRE(Datatype::CLONG_DOUBLE == a.dtype);
     a = Attribute(std::string(""));
     REQUIRE(Datatype::STRING == a.dtype);
     a = Attribute(std::vector< char >());

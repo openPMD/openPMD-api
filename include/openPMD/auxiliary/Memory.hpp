@@ -23,6 +23,7 @@
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
 
+#include <complex>
 #include <functional>
 #include <memory>
 #include <utility>
@@ -59,6 +60,21 @@ allocatePtr(Datatype dtype, uint64_t numPoints)
         case DT::FLOAT:
             data = new float[numPoints];
             del = [](void* p){ delete[] static_cast< float* >(p); };
+            break;
+        case DT::VEC_CLONG_DOUBLE:
+        case DT::CLONG_DOUBLE:
+            data = new std::complex<long double>[numPoints];
+            del = [](void* p){ delete[] static_cast< std::complex<long double>* >(p); };
+            break;
+        case DT::VEC_CDOUBLE:
+        case DT::CDOUBLE:
+            data = new std::complex<double>[numPoints];
+            del = [](void* p){ delete[] static_cast< std::complex<double>* >(p); };
+            break;
+        case DT::VEC_CFLOAT:
+        case DT::CFLOAT:
+            data = new std::complex<float>[numPoints];
+            del = [](void* p){ delete[] static_cast< std::complex<float>* >(p); };
             break;
         case DT::VEC_SHORT:
         case DT::SHORT:

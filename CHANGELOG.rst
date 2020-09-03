@@ -19,6 +19,7 @@ Features
 
 - ``Record(Component)``: ``scalar()``, ``constant()``, ``empty()`` #711
 - Advanced backend configuration via JSON #569 #733
+- Support for complex floating point types #639
 - Functionality to close an iteration (and associated files) #746
 - Python:
 

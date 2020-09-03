@@ -771,8 +771,9 @@ namespace detail
     {
     }
 
-    template < typename T >
-    void DatasetReader::operator( )( detail::BufferedGet & bp, adios2::IO & IO,
+    template < typename T>
+    void
+    DatasetReader::operator( )( detail::BufferedGet & bp, adios2::IO & IO,
                                      adios2::Engine & engine,
                                      std::string const & fileName )
     {

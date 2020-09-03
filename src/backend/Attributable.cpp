@@ -23,6 +23,7 @@
 
 #include <iostream>
 #include <set>
+#include <complex>
 
 
 namespace openPMD
@@ -219,6 +220,15 @@ Attributable::readAttributes()
             case DT::LONG_DOUBLE:
                 setAttribute(att, a.get< long double >());
                 break;
+            case DT::CFLOAT:
+                setAttribute(att, a.get< std::complex< float > >());
+                break;
+            case DT::CDOUBLE:
+                setAttribute(att, a.get< std::complex< double > >());
+                break;
+            case DT::CLONG_DOUBLE:
+                setAttribute(att, a.get< std::complex< long double > >());
+                break;
             case DT::STRING:
                 setAttribute(att, a.get< std::string >());
                 break;
@@ -260,6 +270,15 @@ Attributable::readAttributes()
                 break;
             case DT::VEC_LONG_DOUBLE:
                 setAttribute(att, a.get< std::vector< long double > >());
+                break;
+            case DT::VEC_CFLOAT:
+                setAttribute(att, a.get< std::vector< std::complex< float > > >());
+                break;
+            case DT::VEC_CDOUBLE:
+                setAttribute(att, a.get< std::vector< std::complex< double > > >());
+                break;
+            case DT::VEC_CLONG_DOUBLE:
+                setAttribute(att, a.get< std::vector< std::complex< long double > > >());
                 break;
             case DT::VEC_STRING:
                 setAttribute(att, a.get< std::vector< std::string > >());

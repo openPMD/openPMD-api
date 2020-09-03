@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <complex>
 #include <iostream>
 #include <limits>
 #include <list>
@@ -824,6 +825,82 @@ TEST_CASE( "write_test", "[serial]" )
     for (auto const & t: getFileExtensions())
     {
         write_test( t );
+    }
+}
+
+void test_complex(const std::string & backend) {
+    {
+        Series o = Series("../samples/serial_write_complex." + backend, AccessType::CREATE);
+        o.setAttribute("lifeIsComplex", std::complex<double>(4.56, 7.89));
+        o.setAttribute("butComplexFloats", std::complex<float>(42.3, -99.3));
+        if( backend != "bp" )
+            o.setAttribute("longDoublesYouSay", std::complex<long double>(5.5, -4.55));
+
+        auto Cflt = o.iterations[0].meshes["Cflt"][RecordComponent::SCALAR];
+        std::vector< std::complex<float> > cfloats(3);
+        cfloats.at(0) = {1., 2.};
+        cfloats.at(1) = {-3., 4.};
+        cfloats.at(2) = {5., -6.};
+        Cflt.resetDataset(Dataset(Datatype::CFLOAT, {cfloats.size()}));
+        Cflt.storeChunk(cfloats, {0});
+
+        auto Cdbl = o.iterations[0].meshes["Cdbl"][RecordComponent::SCALAR];
+        std::vector< std::complex<double> > cdoubles(3);
+        cdoubles.at(0) = {2., 1.};
+        cdoubles.at(1) = {-4., 3.};
+        cdoubles.at(2) = {6., -5.};
+        Cdbl.resetDataset(Dataset(Datatype::CDOUBLE, {cdoubles.size()}));
+        Cdbl.storeChunk(cdoubles, {0});
+
+        std::vector< std::complex<long double> > cldoubles(3);
+        if( backend != "bp" )
+        {
+            auto Cldbl = o.iterations[0].meshes["Cldbl"][RecordComponent::SCALAR];
+            cldoubles.at(0) = {3., 2.};
+            cldoubles.at(1) = {-5., 4.};
+            cldoubles.at(2) = {7., -6.};
+            Cldbl.resetDataset(Dataset(Datatype::CLONG_DOUBLE, {cldoubles.size()}));
+            Cldbl.storeChunk(cldoubles, {0});
+        }
+
+        o.flush();
+    }
+
+    //! @todo clarify that complex data is not N+1 data in JSON
+    if( backend != "json" )
+    {
+        Series i = Series("../samples/serial_write_complex." + backend, AccessType::READ_ONLY);
+        REQUIRE(i.getAttribute("lifeIsComplex").get< std::complex<double> >() == std::complex<double>(4.56, 7.89));
+        REQUIRE(i.getAttribute("butComplexFloats").get< std::complex<float> >() == std::complex<float>(42.3, -99.3));
+        if( backend != "bp" ) {
+            REQUIRE(i.getAttribute("longDoublesYouSay").get<std::complex<long double> >() ==
+                    std::complex<long double>(5.5, -4.55));
+        }
+
+        auto rcflt = i.iterations[0].meshes["Cflt"][RecordComponent::SCALAR].loadChunk< std::complex<float>  >();
+        auto rcdbl = i.iterations[0].meshes["Cdbl"][RecordComponent::SCALAR].loadChunk< std::complex<double> >();
+        i.flush();
+
+        REQUIRE(rcflt.get()[1] == std::complex<float>(-3., 4.));
+        REQUIRE(rcdbl.get()[2] == std::complex<double>(6, -5.));
+
+        if( backend != "bp" )
+        {
+            auto rcldbl = i.iterations[0].meshes["Cldbl"][RecordComponent::SCALAR].loadChunk< std::complex<long double> >();
+            i.flush();
+            REQUIRE(rcldbl.get()[2] == std::complex<long double>(7., -6.));
+        }
+    }
+}
+
+TEST_CASE( "test_complex", "[serial]" )
+{
+    // Notes:
+    // - ADIOS1 and ADIOS 2.6.0 have no complex long double
+    // - JSON read-back not distinguishable yet from N+1 shaped data set
+    for (auto const & t : getFileExtensions())
+    {
+        test_complex(t);
     }
 }
 

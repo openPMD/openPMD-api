@@ -430,6 +430,48 @@ namespace detail
                        std::shared_ptr< Attribute::resource > resource );
     };
 
+    template< > struct AttributeTypes< std::complex< long double > >
+    {
+        using Attr = adios2::Attribute< std::complex< double > >;
+        using BasicType = double;
+
+        static Attr createAttribute( adios2::IO &, std::string,
+                                     std::complex< long double > )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex attribute types" );
+        }
+
+        static void
+        readAttribute( adios2::IO &, std::string,
+                       std::shared_ptr< Attribute::resource > )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex attribute types" );
+        }
+    };
+
+    template< > struct AttributeTypes< std::vector< std::complex< long double > > >
+    {
+        using Attr = adios2::Attribute< std::complex< double > >;
+        using BasicType = double;
+
+        static Attr createAttribute( adios2::IO &, std::string,
+                                     const std::vector< std::complex< long double > > & )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex vector attribute types" );
+        }
+
+        static void
+        readAttribute( adios2::IO &, std::string,
+                       std::shared_ptr< Attribute::resource > )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex vector attribute types" );
+        }
+    };
+
     template < typename T > struct AttributeTypes< std::vector< T > >
     {
         using Attr = adios2::Attribute< T >;
@@ -504,6 +546,11 @@ namespace detail
         static constexpr bool validType = false;
     };
 
+    // missing std::complex< long double > type in ADIOS2 v2.6.0
+    template <> struct DatasetTypes< std::complex< long double > >
+    {
+        static constexpr bool validType = false;
+    };
 
     template < typename T, size_t n > struct DatasetTypes< std::array< T, n > >
     {
@@ -536,7 +583,7 @@ namespace detail
 
         /**
          * @brief Define a Variable of type T within the passed IO.
-         * 
+         *
          * @param IO The adios2::IO object within which to define the
          *           variable. The variable can later be retrieved from
          *           the IO using the passed name.
@@ -692,7 +739,7 @@ namespace detail
 
     private:
         /*
-         * ADIOS2 does not give direct access to its internal attribute and 
+         * ADIOS2 does not give direct access to its internal attribute and
          * variable maps, but will instead give access to copies of them.
          * In order to avoid unnecessary copies, we buffer the returned map.
          * The downside of this is that we need to pay attention to invalidate
@@ -702,7 +749,7 @@ namespace detail
          * been resolved
          * If false, the buffered map has been invalidated and needs to be
          * queried from ADIOS2 again. If true, the buffered map is equivalent to
-         * the map that would be returned by a call to 
+         * the map that would be returned by a call to
          * IO::Available(Attributes|Variables).
          */
         bool m_availableAttributesValid = false;

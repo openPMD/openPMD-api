@@ -158,6 +158,10 @@ class APITest(unittest.TestCase):
             series.set_attribute("single", np.single(1.234))
             series.set_attribute("double", np.double(1.234567))
             series.set_attribute("longdouble", np.longdouble(1.23456789))
+            series.set_attribute("csingle", np.complex64(1.+2.j))
+            series.set_attribute("cdouble", np.complex128(3.+4.j))
+            if file_ending != "bp":
+                series.set_attribute("clongdouble", np.clongdouble(5.+6.j))
             # array of ...
             series.set_attribute("arr_int16", (np.int16(23), np.int16(26), ))
             series.set_attribute("arr_int32", (np.int32(34), np.int32(37), ))
@@ -183,6 +187,19 @@ class APITest(unittest.TestCase):
             series.set_attribute("l_double", [np.double(6.7), np.double(7.1)])
             series.set_attribute("l_longdouble",
                                  [np.longdouble(7.8e9), np.longdouble(8.2e3)])
+            # TODO: ComplexWarning: Casting complex values to real discards the
+            #       imaginary part
+            # series.set_attribute("l_csingle",
+            #                      [np.csingle(5.6+7.8j),
+            #                       np.csingle(5.9+5.8j)])
+            # series.set_attribute("l_cdouble",
+            #                      [np.complex_(6.7+6.8j),
+            #                       np.complex_(7.1+7.2j)])
+            # if file_ending != "bp":
+            #     series.set_attribute("l_clongdouble",
+            #                          [np.clongfloat(7.8e9-6.5e9j),
+            #                           np.clongfloat(8.2e3-9.1e3j)])
+
             # numpy.array of ...
             series.set_attribute("nparr_int16",
                                  np.array([234, 567], dtype=np.int16))
@@ -196,6 +213,21 @@ class APITest(unittest.TestCase):
                                  np.array([4.5, 6.7], dtype=np.double))
             series.set_attribute("nparr_longdouble",
                                  np.array([8.9, 7.6], dtype=np.longdouble))
+            # note: looks like ADIOS 1.13.1 cannot write arrays of complex
+            #       as attributes (writes 1st value for single and crashes
+            #       in write for complex double)
+            #   https://github.com/ornladios/ADIOS/issues/212
+            if series.backend != "ADIOS1":
+                series.set_attribute("nparr_csingle",
+                                     np.array([1.2 - 0.3j, 2.3 + 4.2j],
+                                              dtype=np.complex64))
+                series.set_attribute("nparr_cdouble",
+                                     np.array([4.5 + 1.1j, 6.7 - 2.2j],
+                                              dtype=np.complex128))
+            if file_ending != "bp":
+                series.set_attribute("nparr_clongdouble",
+                                     np.array([8.9 + 7.8j, 7.6 + 9.2j],
+                                              dtype=np.clongdouble))
 
         # c_types
         # TODO remove the .value and handle types directly?
@@ -239,6 +271,13 @@ class APITest(unittest.TestCase):
                                    1.234567)
             self.assertAlmostEqual(series.get_attribute("longdouble"),
                                    1.23456789)
+            np.testing.assert_almost_equal(series.get_attribute("csingle"),
+                                           np.complex64(1.+2.j))
+            self.assertAlmostEqual(series.get_attribute("cdouble"),
+                                   3.+4.j)
+            if file_ending != "bp":
+                self.assertAlmostEqual(series.get_attribute("clongdouble"),
+                                       5.+6.j)
             # array of ... (will be returned as list)
             self.assertListEqual(series.get_attribute("arr_int16"),
                                  [np.int16(23), np.int16(26), ])
@@ -261,6 +300,14 @@ class APITest(unittest.TestCase):
                                  [np.double(6.7), np.double(7.1)])
             self.assertListEqual(series.get_attribute("l_longdouble"),
                                  [np.longdouble(7.8e9), np.longdouble(8.2e3)])
+            # TODO: l_csingle
+            # self.assertListEqual(series.get_attribute("l_cdouble"),
+            #                      [np.complex128(6.7 + 6.8j),
+            #                       np.double(7.1 + 7.2j)])
+            # if file_ending != "bp":
+            #     self.assertListEqual(series.get_attribute("l_clongdouble"),
+            #                          [np.clongdouble(7.8e9 - 6.5e9j),
+            #                           np.clongdouble(8.2e3 - 9.1e3j)])
 
             # numpy.array of ...
             self.assertListEqual(series.get_attribute("nparr_int16"),
@@ -275,6 +322,19 @@ class APITest(unittest.TestCase):
                 series.get_attribute("nparr_double"), [4.5, 6.7])
             np.testing.assert_almost_equal(
                 series.get_attribute("nparr_longdouble"), [8.9, 7.6])
+            # see https://github.com/ornladios/ADIOS/issues/212
+            if series.backend != "ADIOS1":
+                np.testing.assert_almost_equal(
+                    series.get_attribute("nparr_csingle"),
+                    np.array([1.2 - 0.3j, 2.3 + 4.2j],
+                             dtype=np.complex64))
+                np.testing.assert_almost_equal(
+                    series.get_attribute("nparr_cdouble"),
+                    [4.5 + 1.1j, 6.7 - 2.2j])
+            if file_ending != "bp":  # not in ADIOS 1.13.1 nor ADIOS 2.6.0
+                np.testing.assert_almost_equal(
+                    series.get_attribute("nparr_clongdouble"),
+                    [8.9 + 7.8j, 7.6 + 9.2j])
             # TODO instead of returning lists, return all arrays as np.array?
             # self.assertEqual(
             #     series.get_attribute("nparr_int16").dtype, np.int16)
@@ -365,6 +425,20 @@ class APITest(unittest.TestCase):
                                                       extent))
             ms["longdouble"][SCALAR].make_constant(np.longdouble(1.23456789))
 
+            ms["complex64"][SCALAR].reset_dataset(
+                DS(np.dtype("complex64"), extent))
+            ms["complex64"][SCALAR].make_constant(
+                np.complex64(1.234 + 2.345j))
+            ms["complex128"][SCALAR].reset_dataset(
+                DS(np.dtype("complex128"), extent))
+            ms["complex128"][SCALAR].make_constant(
+                np.complex128(1.234567 + 2.345678j))
+            if file_ending != "bp":
+                ms["clongdouble"][SCALAR].reset_dataset(
+                    DS(np.dtype("clongdouble"), extent))
+                ms["clongdouble"][SCALAR].make_constant(
+                    np.clongdouble(1.23456789 + 2.34567890j))
+
         # flush and close file
         del series
 
@@ -433,7 +507,16 @@ class APITest(unittest.TestCase):
                             np.dtype('double'))
             self.assertTrue(ms["longdouble"][SCALAR].load_chunk(o, e).dtype
                             == np.dtype('longdouble'))
+            if file_ending != "json":
+                self.assertTrue(ms["complex64"][SCALAR].load_chunk(o, e).dtype
+                                == np.dtype('complex64'))
+                self.assertTrue(ms["complex128"][SCALAR].load_chunk(o, e).dtype
+                                == np.dtype('complex128'))
+                if file_ending != "bp":
+                    self.assertTrue(ms["clongdouble"][SCALAR].load_chunk(o, e)
+                                    .dtype == np.dtype('clongdouble'))
 
+            # FIXME: why does this even work w/o a flush() ?
             self.assertEqual(ms["int16"][SCALAR].load_chunk(o, e),
                              np.int16(234))
             self.assertEqual(ms["int32"][SCALAR].load_chunk(o, e),
@@ -452,6 +535,13 @@ class APITest(unittest.TestCase):
                              np.longdouble(1.23456789))
             self.assertEqual(ms["double"][SCALAR].load_chunk(o, e),
                              np.double(1.234567))
+            self.assertEqual(ms["complex64"][SCALAR].load_chunk(o, e),
+                             np.complex64(1.234 + 2.345j))
+            self.assertEqual(ms["complex128"][SCALAR].load_chunk(o, e),
+                             np.complex128(1.234567 + 2.345678j))
+            if file_ending != "bp":
+                self.assertEqual(ms["clongdouble"][SCALAR].load_chunk(o, e),
+                                 np.clongdouble(1.23456789 + 2.34567890j))
 
     def testConstantRecords(self):
         for ext in io.file_extensions:

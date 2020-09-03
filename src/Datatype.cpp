@@ -83,6 +83,15 @@ operator<<(std::ostream& os, openPMD::Datatype const & d)
         case DT::LONG_DOUBLE:
             os << "LONG_DOUBLE";
             break;
+        case DT::CFLOAT:
+            os << "CFLOAT";
+            break;
+        case DT::CDOUBLE:
+            os << "CDOUBLE";
+            break;
+        case DT::CLONG_DOUBLE:
+            os << "CLONG_DOUBLE";
+            break;
         case DT::STRING:
             os << "STRING";
             break;
@@ -124,6 +133,15 @@ operator<<(std::ostream& os, openPMD::Datatype const & d)
             break;
         case DT::VEC_LONG_DOUBLE:
             os << "VEC_LONG_DOUBLE";
+            break;
+        case DT::VEC_CFLOAT:
+            os << "VEC_CFLOAT";
+            break;
+        case DT::VEC_CDOUBLE:
+            os << "VEC_CDOUBLE";
+            break;
+        case DT::VEC_CLONG_DOUBLE:
+            os << "VEC_CLONG_DOUBLE";
             break;
         case DT::VEC_STRING:
             os << "VEC_STRING";
@@ -204,6 +222,18 @@ operator<<(std::ostream& os, openPMD::Datatype const & d)
                 Datatype::LONG_DOUBLE
             },
             {
+                "CFLOAT",
+                Datatype::CFLOAT
+            },
+            {
+                "CDOUBLE",
+                Datatype::CDOUBLE
+            },
+            {
+                "CLONG_DOUBLE",
+                Datatype::CLONG_DOUBLE
+            },
+            {
                 "STRING",
                 Datatype::STRING
             },
@@ -260,6 +290,18 @@ operator<<(std::ostream& os, openPMD::Datatype const & d)
                 Datatype::VEC_LONG_DOUBLE
             },
             {
+                "VEC_CFLOAT",
+                Datatype::VEC_CFLOAT
+            },
+            {
+                "VEC_CDOUBLE",
+                Datatype::VEC_CDOUBLE
+            },
+            {
+                "VEC_CLONG_DOUBLE",
+                Datatype::VEC_CLONG_DOUBLE
+            },
+            {
                 "VEC_STRING",
                 Datatype::VEC_STRING
             },
@@ -314,6 +356,9 @@ operator<<(std::ostream& os, openPMD::Datatype const & d)
            Datatype::FLOAT,
            Datatype::DOUBLE,
            Datatype::LONG_DOUBLE,
+           Datatype::CFLOAT,
+           Datatype::CDOUBLE,
+           Datatype::CLONG_DOUBLE,
            Datatype::STRING,
            Datatype::VEC_CHAR,
            Datatype::VEC_SHORT,
@@ -328,6 +373,9 @@ operator<<(std::ostream& os, openPMD::Datatype const & d)
            Datatype::VEC_FLOAT,
            Datatype::VEC_DOUBLE,
            Datatype::VEC_LONG_DOUBLE,
+           Datatype::VEC_CFLOAT,
+           Datatype::VEC_CDOUBLE,
+           Datatype::VEC_CLONG_DOUBLE,
            Datatype::VEC_STRING,
            Datatype::ARR_DBL_7,
            Datatype::BOOL,
@@ -363,7 +411,7 @@ operator<<(std::ostream& os, openPMD::Datatype const & d)
         if (it != map.end()) {
             return it->second;
         } else {
-            std::cerr << "Encountered non-basice type " << dt << ", aborting."
+            std::cerr << "Encountered non-basic type " << dt << ", aborting."
                     << std::endl;
             throw std::runtime_error("toVectorType: passed non-basic type.");
         }

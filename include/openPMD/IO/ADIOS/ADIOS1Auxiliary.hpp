@@ -181,6 +181,15 @@ getBP1DataType(Datatype dtype)
         case DT::LONG_DOUBLE:
         case DT::VEC_LONG_DOUBLE:
             return adios_long_double;
+        case DT::CFLOAT:
+        case DT::VEC_CFLOAT:
+            return adios_complex;
+        case DT::CDOUBLE:
+        case DT::VEC_CDOUBLE:
+            return adios_double_complex;
+        case DT::CLONG_DOUBLE:
+        case DT::VEC_CLONG_DOUBLE:
+            throw unsupported_data_error("No native equivalent for Datatype::CLONG_DOUBLE found.");
         case DT::STRING:
             return adios_string;
         case DT::VEC_STRING:
