@@ -195,7 +195,7 @@ BaseRecord< T_elem >::erase(key_type const& key)
     else
     {
         mapped_type& rc = this->find(RecordComponent::SCALAR)->second;
-        if( rc.written )
+        if( rc.written() )
         {
             Parameter< Operation::DELETE_DATASET > dDelete;
             dDelete.name = ".";
@@ -207,7 +207,7 @@ BaseRecord< T_elem >::erase(key_type const& key)
 
     if( keyScalar )
     {
-        this->written = false;
+        this->written() = false;
         this->m_writable->abstractFilePosition.reset();
         *this->m_containsScalar = false;
     }
@@ -225,7 +225,7 @@ BaseRecord< T_elem >::erase(iterator res)
     else
     {
         mapped_type& rc = this->find(RecordComponent::SCALAR)->second;
-        if( rc.written )
+        if( rc.written() )
         {
             Parameter< Operation::DELETE_DATASET > dDelete;
             dDelete.name = ".";
@@ -237,7 +237,7 @@ BaseRecord< T_elem >::erase(iterator res)
 
     if( keyScalar )
     {
-        this->written = false;
+        this->written() = false;
         this->m_writable->abstractFilePosition.reset();
         *this->m_containsScalar = false;
     }
@@ -301,7 +301,7 @@ template< typename T_elem >
 inline void
 BaseRecord< T_elem >::flush(std::string const& name)
 {
-    if( !this->written && this->empty() )
+    if( !this->written() && this->empty() )
         throw std::runtime_error("A Record can not be written without any contained RecordComponents: " + name);
 
     this->flush_impl(name);
@@ -311,7 +311,7 @@ template< typename T_elem >
 inline bool
 BaseRecord< T_elem >::dirtyRecursive() const
 {
-    if( Attributable::dirty )
+    if( Attributable::dirty() )
     {
         return true;
     }

@@ -36,7 +36,7 @@ PatchRecordComponent::setUnitSI(double usi)
 PatchRecordComponent&
 PatchRecordComponent::resetDataset(Dataset d)
 {
-    if( written )
+    if( written() )
         throw std::runtime_error("A Records Dataset can not (yet) be changed after it has been written.");
     if( d.extent.empty() )
       throw std::runtime_error("Dataset extent must be at least 1D.");
@@ -45,7 +45,7 @@ PatchRecordComponent::resetDataset(Dataset d)
         throw std::runtime_error("Dataset extent must not be zero in any dimension.");
 
     *m_dataset = d;
-    dirty = true;
+    dirty() = true;
     return *this;
 }
 
@@ -79,7 +79,7 @@ PatchRecordComponent::flush(std::string const& name)
         }
     } else
     {
-        if( !written )
+        if( !written() )
         {
             Parameter< Operation::CREATE_DATASET > dCreate;
             dCreate.name = name;

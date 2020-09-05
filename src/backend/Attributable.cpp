@@ -33,8 +33,6 @@ Attributable::Attributable()
           abstractFilePosition{m_writable->abstractFilePosition.get()},
           IOHandler{m_writable->IOHandler.get()},
           parent{m_writable->parent},
-          dirty{m_writable->dirty},
-          written{m_writable->written},
           m_attributes{std::make_shared< A_MAP >()}
 { }
 
@@ -43,8 +41,6 @@ Attributable::Attributable(Attributable const& rhs)
           abstractFilePosition{rhs.m_writable->abstractFilePosition.get()},
           IOHandler{rhs.m_writable->IOHandler.get()},
           parent{rhs.m_writable->parent},
-          dirty{rhs.m_writable->dirty},
-          written{rhs.m_writable->written},
           m_attributes{rhs.m_attributes}
 { }
 
@@ -53,8 +49,11 @@ Attributable::operator=(Attributable const& a)
 {
     if( this != &a )
     {
-        Attributable tmp(a);
-        std::swap(m_attributes, tmp.m_attributes);
+        m_writable = a.m_writable;
+        abstractFilePosition = a.m_writable->abstractFilePosition.get();
+        IOHandler = a.m_writable->IOHandler.get();
+        parent = a.m_writable->parent;
+        m_attributes = a.m_attributes;
     }
     return *this;
 }
@@ -127,7 +126,7 @@ Attributable::setComment(std::string const& c)
 void
 Attributable::flushAttributes()
 {
-    if( dirty )
+    if( dirty() )
     {
         Parameter< Operation::WRITE_ATT > aWrite;
         for( std::string const & att_name : attributes() )
@@ -138,7 +137,7 @@ Attributable::flushAttributes()
             IOHandler->enqueue(IOTask(this, aWrite));
         }
 
-        dirty = false;
+        dirty() = false;
     }
 }
 
@@ -295,7 +294,7 @@ Attributable::readAttributes()
         }
     }
 
-    dirty = false;
+    dirty() = false;
 }
 
 void

@@ -218,7 +218,7 @@ public:
             throw std::runtime_error("Can not erase from a container in a read-only Series.");
 
         auto res = m_container->find(key);
-        if( res != m_container->end() && res->second.written )
+        if( res != m_container->end() && res->second.written() )
         {
             Parameter< Operation::DELETE_PATH > pDelete;
             pDelete.path = ".";
@@ -234,7 +234,7 @@ public:
         if(Access::READ_ONLY == IOHandler->m_frontendAccess )
             throw std::runtime_error("Can not erase from a container in a read-only Series.");
 
-        if( res != m_container->end() && res->second.written )
+        if( res != m_container->end() && res->second.written() )
         {
             Parameter< Operation::DELETE_PATH > pDelete;
             pDelete.path = ".";
@@ -260,7 +260,7 @@ OPENPMD_protected:
 
     void clear_unchecked()
     {
-        if( written )
+        if( written() )
             throw std::runtime_error("Clearing a written container not (yet) implemented.");
 
         m_container->clear();
@@ -268,7 +268,7 @@ OPENPMD_protected:
 
     virtual void flush(std::string const& path)
     {
-        if( !written )
+        if( !written() )
         {
             Parameter< Operation::CREATE_PATH > pCreate;
             pCreate.path = path;

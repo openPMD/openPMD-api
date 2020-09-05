@@ -172,7 +172,7 @@ Iteration::closedByWriter() const
 void
 Iteration::flushFileBased(std::string const& filename, uint64_t i)
 {
-    if( !written )
+    if( !written() )
     {
         /* create file */
         auto s = dynamic_cast< Series* >(parent->attributable->parent->attributable);
@@ -226,7 +226,7 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
 void
 Iteration::flushGroupBased(uint64_t i)
 {
-    if( !written )
+    if( !written() )
     {
         /* create iteration path */
         Parameter< Operation::CREATE_PATH > pCreate;
@@ -398,9 +398,9 @@ Iteration::read()
             mrc.parent = m.parent;
             IOHandler->enqueue(IOTask(&mrc, dOpen));
             IOHandler->flush();
-            mrc.written = false;
+            mrc.written() = false;
             mrc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
-            mrc.written = true;
+            mrc.written() = true;
             m.read();
         }
     }
@@ -434,7 +434,7 @@ Iteration::read()
 bool
 Iteration::dirtyRecursive() const
 {
-    if( dirty )
+    if( dirty() )
     {
         return true;
     }

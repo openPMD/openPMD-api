@@ -178,14 +178,14 @@ Series&
 Series::setMeshesPath(std::string const& mp)
 {
     if( std::any_of(iterations.begin(), iterations.end(),
-                    [](Container< Iteration, uint64_t >::value_type const& i){ return i.second.meshes.written; }) )
+                    [](Container< Iteration, uint64_t >::value_type const& i){ return i.second.meshes.written(); }) )
         throw std::runtime_error("A files meshesPath can not (yet) be changed after it has been written.");
 
     if( auxiliary::ends_with(mp, '/') )
         setAttribute("meshesPath", mp);
     else
         setAttribute("meshesPath", mp + "/");
-    dirty = true;
+    dirty() = true;
     return *this;
 }
 
@@ -199,14 +199,14 @@ Series&
 Series::setParticlesPath(std::string const& pp)
 {
     if( std::any_of(iterations.begin(), iterations.end(),
-                    [](Container< Iteration, uint64_t >::value_type const& i){ return i.second.particles.written; }) )
+                    [](Container< Iteration, uint64_t >::value_type const& i){ return i.second.particles.written(); }) )
         throw std::runtime_error("A files particlesPath can not (yet) be changed after it has been written.");
 
     if( auxiliary::ends_with(pp, '/') )
         setAttribute("particlesPath", pp);
     else
         setAttribute("particlesPath", pp + "/");
-    dirty = true;
+    dirty() = true;
     return *this;
 }
 
@@ -298,7 +298,7 @@ Series::iterationEncoding() const
 Series&
 Series::setIterationEncoding(IterationEncoding ie)
 {
-    if( written )
+    if( written() )
         throw std::runtime_error("A files iterationEncoding can not (yet) be changed after it has been written.");
 
     *m_iterationEncoding = ie;
@@ -325,7 +325,7 @@ Series::iterationFormat() const
 Series&
 Series::setIterationFormat(std::string const& i)
 {
-    if( written )
+    if( written() )
         throw std::runtime_error("A files iterationFormat can not (yet) be changed after it has been written.");
 
     if( *m_iterationEncoding == IterationEncoding::groupBased )
@@ -345,14 +345,14 @@ Series::name() const
 Series&
 Series::setName(std::string const& n)
 {
-    if( written )
+    if( written() )
         throw std::runtime_error("A files name can not (yet) be changed after it has been written.");
 
     if( *m_iterationEncoding == IterationEncoding::fileBased && !auxiliary::contains(*m_name, "%T") )
             throw std::runtime_error("For fileBased formats the iteration regex %T must be included in the file name");
 
     *m_name = n;
-    dirty = true;
+    dirty() = true;
     return *this;
 }
 
@@ -511,12 +511,12 @@ Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
         {
             /* Access::READ_WRITE can be used to create a new Series
              * allow setting attributes in that case */
-            written = false;
+            written() = false;
 
             initDefaults();
             setIterationEncoding(input->iterationEncoding);
 
-            written = true;
+            written() = true;
         }
 
         *newType = oldType;
@@ -585,7 +585,7 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
         }
     else
     {
-        bool allDirty = dirty;
+        bool allDirty = dirty();
         for( auto & i : iterationsToFlush )
         {
             if( *i.second.m_closed == Iteration::CloseStatus::ClosedInBackend )
@@ -593,7 +593,7 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
                 // verify that there have been no further accesses
-                if (!i.second.written)
+                if (!i.second.written())
                 {
                     throw std::runtime_error(
                         "[Series] Closed iteration has not been written. This "
@@ -610,14 +610,14 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
             /* as there is only one series,
              * emulate the file belonging to each iteration as not yet written
              */
-            written = false;
-            iterations.written = false;
+            written() = false;
+            iterations.written() = false;
 
             std::stringstream iteration("");
             iteration << std::setw(*m_filenamePadding) << std::setfill('0') << i.first;
             std::string filename = *m_filenamePrefix + iteration.str() + *m_filenamePostfix;
 
-            dirty |= i.second.dirty;
+            dirty() |= i.second.dirty();
             i.second.flushFileBased(filename, i.first);
 
             iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
@@ -635,9 +635,9 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
 
             /* reset the dirty bit for every iteration (i.e. file)
              * otherwise only the first iteration will have updates attributes */
-            dirty = allDirty;
+            dirty() = allDirty;
         }
-        dirty = false;
+        dirty() = false;
     }
 }
 
@@ -676,7 +676,7 @@ Series::flushGroupBased( IterationsContainer && iterationsToFlush )
         }
     else
     {
-        if( !written )
+        if( !written() )
         {
             Parameter< Operation::CREATE_FILE > fCreate;
             fCreate.name = *m_name;
@@ -692,7 +692,7 @@ Series::flushGroupBased( IterationsContainer && iterationsToFlush )
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
                 // verify that there have been no further accesses
-                if (!i.second.written)
+                if (!i.second.written())
                 {
                     throw std::runtime_error(
                         "[Series] Closed iteration has not been written. This "
@@ -707,7 +707,7 @@ Series::flushGroupBased( IterationsContainer && iterationsToFlush )
                 }
                 continue;
             }
-            if( !i.second.written )
+            if( !i.second.written() )
             {
                 i.second.m_writable->parent = getWritable(&iterations);
                 i.second.parent = getWritable(&iterations);
@@ -806,9 +806,9 @@ Series::readFileBased()
             IOHandler->flush();
             if( *aRead.dtype == DT::STRING )
             {
-                written = false;
+                written() = false;
                 setIterationFormat(Attribute(*aRead.resource).get< std::string >());
-                written = true;
+                written() = true;
             }
             else
                 throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
@@ -874,18 +874,18 @@ Series::readGroupBased()
     IOHandler->flush();
     if( *aRead.dtype == DT::STRING )
     {
-        written = false;
+        written() = false;
         setIterationFormat(Attribute(*aRead.resource).get< std::string >());
-        written = true;
+        written() = true;
     }
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
 
     /* do not use the public checked version
      * at this point we can guarantee clearing the container won't break anything */
-    written = false;
+    written() = false;
     iterations.clear_unchecked();
-    written = true;
+    written() = true;
 
     read();
 }
@@ -932,12 +932,12 @@ Series::readBase()
         {
             /* allow setting the meshes path after completed IO */
             for( auto& it : iterations )
-                it.second.meshes.written = false;
+                it.second.meshes.written() = false;
 
             setMeshesPath(Attribute(*aRead.resource).get< std::string >());
 
             for( auto& it : iterations )
-                it.second.meshes.written = true;
+                it.second.meshes.written() = true;
         }
         else
             throw std::runtime_error("Unexpected Attribute datatype for 'meshesPath'");
@@ -952,13 +952,13 @@ Series::readBase()
         {
             /* allow setting the meshes path after completed IO */
             for( auto& it : iterations )
-                it.second.particles.written = false;
+                it.second.particles.written() = false;
 
             setParticlesPath(Attribute(*aRead.resource).get< std::string >());
 
 
             for( auto& it : iterations )
-                it.second.particles.written = true;
+                it.second.particles.written() = true;
         }
         else
             throw std::runtime_error("Unexpected Attribute datatype for 'particlesPath'");

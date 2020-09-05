@@ -32,7 +32,7 @@ BaseRecordComponent::unitSI() const
 BaseRecordComponent&
 BaseRecordComponent::resetDatatype(Datatype d)
 {
-    if( written )
+    if( written() )
         throw std::runtime_error("A Records Datatype can not (yet) be changed after it has been written.");
 
     m_dataset->dtype = d;
