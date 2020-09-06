@@ -216,7 +216,7 @@ template< typename T >
 inline RecordComponent&
 RecordComponent::makeConstant(T value)
 {
-    if( written )
+    if( written() )
         throw std::runtime_error("A recordComponent can not (yet) be made constant after it has been written.");
 
     *m_constantValue = Attribute(value);

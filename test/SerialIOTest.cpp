@@ -26,6 +26,14 @@
 
 using namespace openPMD;
 
+namespace {
+    // only needed until we require C++14 and newer (201402L+)
+    template<typename T, typename... Args>
+    std::unique_ptr<T> my_make_unique(Args&&... args) {
+        return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+    }
+}
+
 
 TEST_CASE( "multi_series_test", "[serial]" )
 {
@@ -156,8 +164,69 @@ TEST_CASE( "close_iteration_test", "[serial]" )
     }
 }
 
+void
+close_and_copy_attributable_test( std::string file_ending )
+{
+    using position_t = double;
+
+    // open file for writing
+    Series series( "electrons." + file_ending, Access::CREATE );
+
+    Datatype datatype = determineDatatype< position_t >();
+    constexpr unsigned long length = 10ul;
+    Extent global_extent = { length };
+    Dataset dataset = Dataset( datatype, global_extent );
+    std::shared_ptr< position_t > local_data(
+            new position_t[ length ],
+            []( position_t const * ptr ) { delete[] ptr; } );
+
+    std::unique_ptr< Iteration > iteration_ptr;
+    for( size_t i = 0; i < 100; ++i )
+    {
+        if( iteration_ptr )
+        {
+            *iteration_ptr = series.iterations[ i ];
+        }
+        else
+        {
+            // use copy constructor
+            iteration_ptr =
+                    my_make_unique< Iteration >( series.iterations[ i ] );
+        }
+        Record electronPositions =
+                iteration_ptr->particles[ "e" ][ "position" ];
+        // TODO set this automatically to zero if not provided
+        Record electronPositionsOffset =
+                iteration_ptr->particles[ "e" ][ "positionOffset" ];
+
+        std::iota( local_data.get(), local_data.get() + length, i * length );
+        for( auto const & dim : { "x", "y", "z" } )
+        {
+            RecordComponent pos = electronPositions[ dim ];
+            pos.resetDataset( dataset );
+            pos.storeChunk( local_data, Offset{ 0 }, global_extent );
+
+            RecordComponent posOff = electronPositionsOffset[ dim ];
+            posOff.resetDataset( dataset );
+            posOff.makeConstant( position_t( 0.0 ) );
+        }
+        iteration_ptr->close();
+        // force re-flush of previous iterations
+        series.flush();
+    }
+}
+
+TEST_CASE( "close_and_copy_attributable_test", "[serial]" )
+{
+    // demonstrator for https://github.com/openPMD/openPMD-api/issues/765
+    for( auto const & t : getFileExtensions() )
+    {
+        close_and_copy_attributable_test( t );
+    }
+}
+
 #if openPMD_HAVE_ADIOS2
-TEST_CASE( "close_iteration_throws_test", "[serial" )
+TEST_CASE( "close_iteration_throws_test", "[serial]" )
 {
     /*
      * Iterations should not be accessed any more after closing.

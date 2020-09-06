@@ -54,7 +54,7 @@ Record::flush_impl(std::string const& name)
             comp.second.flush(comp.first);
     } else
     {
-        if( !written )
+        if( !written() )
         {
             if( scalar() )
             {
@@ -66,7 +66,7 @@ Record::flush_impl(std::string const& name)
                 m_writable->abstractFilePosition = rc.m_writable->abstractFilePosition;
                 rc.abstractFilePosition = m_writable->abstractFilePosition.get();
                 abstractFilePosition = rc.abstractFilePosition;
-                written = true;
+                written() = true;
             } else
             {
                 Parameter< Operation::CREATE_PATH > pCreate;
@@ -93,9 +93,9 @@ Record::read()
         this->at(RecordComponent::SCALAR).read();
     } else
     {
-        written = false;
+        written() = false;
         clear_unchecked();
-        written = true;
+        written() = true;
         Parameter< Operation::LIST_PATHS > pList;
         IOHandler->enqueue(IOTask(this, pList));
         IOHandler->flush();
@@ -121,9 +121,9 @@ Record::read()
             dOpen.name = component;
             IOHandler->enqueue(IOTask(&rc, dOpen));
             IOHandler->flush();
-            rc.written = false;
+            rc.written() = false;
             rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
-            rc.written = true;
+            rc.written() = true;
             rc.read();
         }
     }

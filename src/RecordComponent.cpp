@@ -50,7 +50,7 @@ RecordComponent::setUnitSI(double usi)
 RecordComponent &
 RecordComponent::resetDataset( Dataset d )
 {
-    if( written )
+    if( written() )
         throw std::runtime_error( "A record's Dataset cannot (yet) be changed "
                                   "after it has been written." );
     //if( d.extent.empty() )
@@ -62,7 +62,7 @@ RecordComponent::resetDataset( Dataset d )
         return makeEmpty( std::move(d) );
 
     *m_dataset = std::move(d);
-    dirty = true;
+    dirty() = true;
     return *this;
 }
 
@@ -81,7 +81,7 @@ RecordComponent::getExtent() const
 RecordComponent&
 RecordComponent::makeEmpty( Dataset d )
 {
-    if( written )
+    if( written() )
         throw std::runtime_error(
             "A RecordComponent cannot (yet) be made"
             " empty after it has been written.");
@@ -90,7 +90,7 @@ RecordComponent::makeEmpty( Dataset d )
 
     *m_isEmpty = true;
     *m_dataset = std::move(d);
-    dirty = true;
+    dirty() = true;
     static detail::DefaultValue< RecordComponent > dv;
     switchType(
         m_dataset->dtype,
@@ -117,7 +117,7 @@ RecordComponent::flush(std::string const& name)
         }
     } else
     {
-        if( !written )
+        if( !written() )
         {
             if( constant() )
             {
@@ -177,7 +177,7 @@ RecordComponent::readBase()
 
         Attribute a(*aRead.resource);
         DT dtype = *aRead.dtype;
-        written = false;
+        written() = false;
         switch( dtype )
         {
             case DT::LONG_DOUBLE:
@@ -234,7 +234,7 @@ RecordComponent::readBase()
             default:
                 throw std::runtime_error("Unexpected constant datatype");
         }
-        written = true;
+        written() = true;
 
         aRead.name = "shape";
         IOHandler->enqueue(IOTask(this, aRead));
@@ -260,9 +260,9 @@ RecordComponent::readBase()
             throw std::runtime_error(oss.str());
         }
 
-        written = false;
+        written() = false;
         resetDataset(Dataset(dtype, e));
-        written = true;
+        written() = true;
     }
 
     aRead.name = "unitSI";
@@ -279,7 +279,7 @@ RecordComponent::readBase()
 bool
 RecordComponent::dirtyRecursive() const
 {
-    if( Attributable::dirty )
+    if( Attributable::dirty() )
     {
         return true;
     }
