@@ -184,7 +184,6 @@ close_and_copy_attributable_test( std::string file_ending )
     std::unique_ptr< Iteration > iteration_ptr;
     for( size_t i = 0; i < 100; ++i )
     {
-        std::cout << "starting to write iteration " << i << std::endl;
         if( iteration_ptr )
         {
             *iteration_ptr = series.iterations[ i ];
@@ -199,6 +198,9 @@ close_and_copy_attributable_test( std::string file_ending )
         }
         Record electronPositions =
                 iteration_ptr->particles[ "e" ][ "position" ];
+        // TODO set this automatically to zero if not provided
+        Record electronPositionsOffset =
+                iteration_ptr->particles[ "e" ][ "positionOffset" ];
 
         std::iota( local_data.get(), local_data.get() + length, i * length );
         for( auto const & dim : { "x", "y", "z" } )
@@ -206,6 +208,10 @@ close_and_copy_attributable_test( std::string file_ending )
             RecordComponent pos = electronPositions[ dim ];
             pos.resetDataset( dataset );
             pos.storeChunk( local_data, Offset{ 0 }, global_extent );
+
+            RecordComponent posOff = electronPositionsOffset[ dim ];
+            posOff.resetDataset( dataset );
+            posOff.makeConstant( position_t( 0.0 ) );
         }
         iteration_ptr->close();
         // force re-flush of previous iterations
@@ -223,7 +229,7 @@ TEST_CASE( "close_and_copy_attributable_test", "[serial]" )
 }
 
 #if openPMD_HAVE_ADIOS2
-TEST_CASE( "close_iteration_throws_test", "[serial" )
+TEST_CASE( "close_iteration_throws_test", "[serial]" )
 {
     /*
      * Iterations should not be accessed any more after closing.
