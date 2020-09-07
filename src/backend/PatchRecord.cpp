@@ -25,7 +25,7 @@
 namespace openPMD
 {
 PatchRecord&
-PatchRecord::setUnitDimension(std::map< UnitDimension, double > const& udim)
+PatchRecord::unitDimension(std::map< UnitDimension, double > const& udim)
 {
     if( !udim.empty() )
     {
@@ -35,6 +35,12 @@ PatchRecord::setUnitDimension(std::map< UnitDimension, double > const& udim)
         setAttribute("unitDimension", tmpUnitDimension);
     }
     return *this;
+}
+
+PatchRecord&
+PatchRecord::setUnitDimension(std::map< UnitDimension, double > const& udim)
+{
+    return unitDimension(udim);
 }
 
 void

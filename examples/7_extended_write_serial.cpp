@@ -92,7 +92,7 @@ write2()
     // the underlying concept for numeric data is the openPMD Record
     // https://github.com/openPMD/openPMD-standard/blob/upcoming-1.0.1/STANDARD.md#scalar-vector-and-tensor-records
     // Meshes are specialized records
-    cur_it.meshes["generic_2D_field"].setUnitDimension({{UnitDimension::L, -3}, {UnitDimension::M, 1}});
+    cur_it.meshes["generic_2D_field"].unitDimension({{UnitDimension::L, -3}, {UnitDimension::M, 1}});
 
     {
         // TODO outdated!
@@ -114,7 +114,7 @@ write2()
         ParticleSpecies& electrons = cur_it.particles["electrons"];
         electrons.setAttribute("NoteWorthyParticleSpeciesProperty",
                                std::string("Observing this species was a blast."));
-        electrons["displacement"].setUnitDimension({{UnitDimension::M, 1}});
+        electrons["displacement"].unitDimension({{UnitDimension::M, 1}});
         electrons["displacement"]["x"].setUnitSI(1e-6);
         electrons.erase("displacement");
         electrons["weighting"][RecordComponent::SCALAR].makeConstant(1.e-5);
@@ -153,9 +153,9 @@ write2()
     electrons.particlePatches["numParticlesOffset"][RecordComponent::SCALAR].resetDataset(dset);
 
     dset = Dataset(Datatype::FLOAT, {2});
-    electrons.particlePatches["offset"].setUnitDimension({{UnitDimension::L, 1}});
+    electrons.particlePatches["offset"].unitDimension({{UnitDimension::L, 1}});
     electrons.particlePatches["offset"]["x"].resetDataset(dset);
-    electrons.particlePatches["extent"].setUnitDimension({{UnitDimension::L, 1}});
+    electrons.particlePatches["extent"].unitDimension({{UnitDimension::L, 1}});
     electrons.particlePatches["extent"]["x"].resetDataset(dset);
 
     // at any point in time you may decide to dump already created output to disk

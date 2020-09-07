@@ -251,7 +251,7 @@ C++11
 .. code-block:: cpp
 
    // unit system agnostic dimension
-   B.setUnitDimension({
+   B.unitDimension({
        {io::UnitDimension::M,  1},
        {io::UnitDimension::I, -1},
        {io::UnitDimension::T, -2}

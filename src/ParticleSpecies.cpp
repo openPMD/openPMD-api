@@ -123,10 +123,10 @@ ParticleSpecies::flush(std::string const& path)
     {
         iterator it = find("position");
         if ( it != end() )
-            it->second.setUnitDimension({{UnitDimension::L, 1}});
+            it->second.unitDimension({{UnitDimension::L, 1}});
         it = find("positionOffset");
         if ( it != end() )
-            it->second.setUnitDimension({{UnitDimension::L, 1}});
+            it->second.unitDimension({{UnitDimension::L, 1}});
 
         Container< Record >::flush(path);
 

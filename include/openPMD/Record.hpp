@@ -20,8 +20,9 @@
  */
 #pragma once
 
-#include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/RecordComponent.hpp"
+#include "openPMD/auxiliary/Deprecated.hpp"
+#include "openPMD/backend/BaseRecord.hpp"
 
 #include <map>
 #include <type_traits>
@@ -41,6 +42,10 @@ public:
     Record& operator=(Record const&) = default;
     ~Record() override = default;
 
+    Record& unitDimension(std::map< UnitDimension, double > const&);
+    using BaseRecord< RecordComponent >::unitDimension;
+
+    OPENPMDAPI_DEPRECATED("Set unitDimension with unitDimension(std::map)")
     Record& setUnitDimension(std::map< UnitDimension, double > const&);
 
     template< typename T >

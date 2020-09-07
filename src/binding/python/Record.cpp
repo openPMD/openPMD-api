@@ -29,6 +29,11 @@
 namespace py = pybind11;
 using namespace openPMD;
 
+// C++11 work-around for C++14 py::overload_cast
+//   https://pybind11.readthedocs.io/en/stable/classes.html
+template <typename... Args>
+using overload_cast_ = pybind11::detail::overload_cast_impl<Args...>;
+
 
 void init_Record(py::module &m) {
     py::class_<Record, BaseRecord< RecordComponent > >(m, "Record")
@@ -41,8 +46,8 @@ void init_Record(py::module &m) {
         )
 
         .def_property("unit_dimension",
-                      &Record::unitDimension,
-                      &Record::setUnitDimension,
+                      overload_cast_<>()(&Record::unitDimension, py::const_),
+                      overload_cast_< std::map< UnitDimension, double > const& >()(&Record::unitDimension),
                       python::doc_unit_dimension)
 
         .def_property("time_offset", &Record::timeOffset<float>, &Record::setTimeOffset<float>)
@@ -50,7 +55,8 @@ void init_Record(py::module &m) {
         .def_property("time_offset", &Record::timeOffset<long double>, &Record::setTimeOffset<long double>)
 
         // TODO remove in future versions (deprecated)
-        .def("set_unit_dimension", &Record::setUnitDimension)
+        .def("set_unit_dimension",
+             overload_cast_< std::map< UnitDimension, double > const& >()(&Record::unitDimension))
         .def("set_time_offset", &Record::setTimeOffset<float>)
         .def("set_time_offset", &Record::setTimeOffset<double>)
         .def("set_time_offset", &Record::setTimeOffset<long double>)

@@ -159,16 +159,22 @@ Mesh::setGridUnitSI(double gusi)
 }
 
 Mesh&
-Mesh::setUnitDimension(std::map< UnitDimension, double > const& udim)
+Mesh::unitDimension(std::map< UnitDimension, double > const& udim)
 {
     if( !udim.empty() )
     {
-        std::array< double, 7 > tmpUnitDimension = this->unitDimension();
+        std::array< double, 7 > tmpUnitDimension = unitDimension();
         for( auto const& entry : udim )
             tmpUnitDimension[static_cast<uint8_t>(entry.first)] = entry.second;
         setAttribute("unitDimension", tmpUnitDimension);
     }
     return *this;
+}
+
+Mesh&
+Mesh::setUnitDimension(std::map< UnitDimension, double > const& udim)
+{
+    return unitDimension(udim);
 }
 
 template< typename T >

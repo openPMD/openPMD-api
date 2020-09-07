@@ -31,6 +31,11 @@
 namespace py = pybind11;
 using namespace openPMD;
 
+// C++11 work-around for C++14 py::overload_cast
+//   https://pybind11.readthedocs.io/en/stable/classes.html
+template <typename... Args>
+using overload_cast_ = pybind11::detail::overload_cast_impl<Args...>;
+
 
 void init_Mesh(py::module &m) {
     py::class_<Mesh, BaseRecord<MeshRecordComponent> >(m, "Mesh")
@@ -43,8 +48,8 @@ void init_Mesh(py::module &m) {
         )
 
         .def_property("unit_dimension",
-            &Mesh::unitDimension,
-            &Mesh::setUnitDimension,
+            overload_cast_<>()(&Mesh::unitDimension, py::const_),
+            overload_cast_< std::map< UnitDimension, double > const& >()(&Mesh::unitDimension),
             python::doc_unit_dimension)
 
         .def_property_readonly("geometry", &Mesh::geometry)
@@ -70,7 +75,8 @@ void init_Mesh(py::module &m) {
         .def_property("time_offset", &Mesh::timeOffset<long double>, &Mesh::setTimeOffset<long double>)
 
         // TODO remove in future versions (deprecated)
-        .def("set_unit_dimension", &Mesh::setUnitDimension)
+        .def("set_unit_dimension",
+            overload_cast_< std::map< UnitDimension, double > const& >()(&Mesh::unitDimension))
 
     ;
 

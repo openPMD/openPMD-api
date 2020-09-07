@@ -29,15 +29,21 @@
 namespace py = pybind11;
 using namespace openPMD;
 
+// C++11 work-around for C++14 py::overload_cast
+//   https://pybind11.readthedocs.io/en/stable/classes.html
+template <typename... Args>
+using overload_cast_ = pybind11::detail::overload_cast_impl<Args...>;
+
 
 void init_PatchRecord(py::module &m) {
     py::class_<PatchRecord, BaseRecord< PatchRecordComponent > >(m, "Patch_Record")
         .def_property("unit_dimension",
-                      &PatchRecord::unitDimension,
-                      &PatchRecord::setUnitDimension,
-                      python::doc_unit_dimension)
+                      overload_cast_<>()(&PatchRecord::unitDimension, py::const_),
+                      overload_cast_< std::map< UnitDimension, double > const& >()(&PatchRecord::unitDimension),
+        python::doc_unit_dimension)
 
         // TODO remove in future versions (deprecated)
-        .def("set_unit_dimension", &PatchRecord::setUnitDimension)
+        .def("set_unit_dimension",
+             overload_cast_< std::map< UnitDimension, double > const& >()(&PatchRecord::unitDimension))
     ;
 }
