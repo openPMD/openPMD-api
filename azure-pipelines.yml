@@ -167,6 +167,54 @@ jobs:
       openpmd-ls --help
 #      python3 -m openpmd_api.ls --help
 
+# mamba -----------------------------------------------------------------------
+# attn: each build step runs in its own process and might require
+#       "conda activate <env>"!
+- job: linux_mamba
+  displayName: Ubuntu mamba
+  pool:
+    vmImage: ubuntu-16.04
+  steps:
+  - bash: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+  - script: |
+      conda install -y -c conda-forge mamba
+      mamba install -y -c conda-forge openpmd-api
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+      openpmd-ls --help
+#     python3 -m openpmd_api.ls --help
+
+- job: linux_mamba_mpich
+  displayName: Ubuntu mamba w/ MPICH
+  pool:
+    vmImage: ubuntu-18.04
+  steps:
+  - bash: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+  - script: |
+      conda install -y -c conda-forge mamba
+      mamba install -y -c conda-forge openpmd-api=*=mpi_mpich*
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+      openpmd-ls --help
+#      python3 -m openpmd_api.ls --help
+
+- job: linux_mamba_openmpi
+  displayName: Ubuntu mamba w/ OpenMPI
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+  - bash: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+  - script: |
+      conda install -y -c conda-forge mamba
+      mamba install -y -c conda-forge openpmd-api=*=mpi_openmpi*
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+      openpmd-ls --help
+#      python3 -m openpmd_api.ls --help
+
 # spack -----------------------------------------------------------------------
 # timeout: >60min
 - job: linux_spack
@@ -527,6 +575,60 @@ jobs:
       openpmd-ls --help
 #      python3 -m openpmd_api.ls --help
 
+# mamba -----------------------------------------------------------------------
+# attn: each build step runs in its own process and might require
+#       "conda activate <env>"!
+- job: macOS_mamba
+  displayName: macOS mamba
+  pool:
+    vmImage: macOS-10.14
+  steps:
+  - bash: |
+      echo "##vso[task.prependpath]$CONDA/bin"
+      sudo chown -R $USER $CONDA
+    displayName: Add conda to PATH
+  - script: |
+      conda install -y -c conda-forge mamba
+      mamba install -y -c conda-forge openpmd-api
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+      openpmd-ls --help
+#      python3 -m openpmd_api.ls --help
+
+- job: macOS_mamba_mpich
+  displayName: macOS mamba w/ MPICH
+  pool:
+    vmImage: macOS-10.15
+  steps:
+  - bash: |
+      echo "##vso[task.prependpath]$CONDA/bin"
+      sudo chown -R $USER $CONDA
+    displayName: Add conda to PATH
+  - script: |
+      conda install -y -c conda-forge mamba
+      mamba install -y -c conda-forge openpmd-api=*=mpi_mpich*
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+      openpmd-ls --help
+#      python3 -m openpmd_api.ls --help
+
+- job: macOS_mamba_openmpi
+  displayName: macOS mamba w/ OpenMPI
+  pool:
+    vmImage: macOS-latest
+  steps:
+  - bash: |
+      echo "##vso[task.prependpath]$CONDA/bin"
+      sudo chown -R $USER $CONDA
+    displayName: Add conda to PATH
+  - script: |
+      conda install -y -c conda-forge mamba
+      mamba install -y -c conda-forge openpmd-api=*=mpi_openmpi*
+  - script: |
+      python3 -c "import openpmd_api as api; print(api.variants)"
+      openpmd-ls --help
+#      python3 -m openpmd_api.ls --help
+
 # spack -----------------------------------------------------------------------
 # timeout: >60min
 - job: macOS_spack
@@ -679,6 +781,41 @@ jobs:
   - script: |
       call activate base
       conda install -c conda-forge openpmd-api
+    displayName: Activate base env, install openPMD package
+
+#  - script: dumpbin.exe /dependents C:\Miniconda\Lib\site-packages\openpmd_api.cp37-win_amd64.pyd
+  - script: |
+      which python
+      which python.exe
+
+  - script: |
+      call activate base
+      which python
+      which python.exe
+
+  - script: |
+      call activate base
+      python -c "import openpmd_api as api; print(api.variants)"
+      openpmd-ls --help
+#      python -m openpmd_api.ls --help
+
+# mamba -----------------------------------------------------------------------
+# attn: each build step runs in its own process and might require
+#       "call activate <env>"!
+- job: win_mamba
+  displayName: Windows mamba
+  pool:
+    vmImage: vs2017-win2016
+  steps:
+  - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+    displayName: Add conda command to PATH
+  - script: |
+      call activate base
+      conda install -y -c conda-forge mamba
+    displayName: Activate base env, install mamba package
+  - script: |
+      call activate base
+      mamba install -y -c conda-forge openpmd-api
     displayName: Activate base env, install openPMD package
 
 #  - script: dumpbin.exe /dependents C:\Miniconda\Lib\site-packages\openpmd_api.cp37-win_amd64.pyd
