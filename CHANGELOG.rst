@@ -23,6 +23,10 @@ Bug Fixes
 Other
 """""
 
+- Docs:
+
+  - Release cibuildwheel example #775
+
 
 0.12.0-alpha
 ------------
