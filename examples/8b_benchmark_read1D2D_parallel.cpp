@@ -430,7 +430,7 @@ TestRun(TestInput& input)
 
 /**     TEST MAIN
  *
- *     description of runtime options/flags    
+ *     description of runtime options/flags
  */
 int
 main( int argc, char *argv[] )
