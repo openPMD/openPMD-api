@@ -20,7 +20,7 @@ doxygen
 
 # update old documentation
 cd $myDir
-rsync -r --delete --filter='P update.sh' --filter='P .git' --filter="P .nojekyll" $TMPDIR/openPMD-api/docs/html/ .
+rsync -r --delete --filter='P update.sh' --filter='P .git' --filter="P .nojekyll" $TMPDIR/openPMD-api/docs/doxyhtml/ .
 
 rm -rf $TDIR
 exit 0
