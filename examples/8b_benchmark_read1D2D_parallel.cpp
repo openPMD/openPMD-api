@@ -209,59 +209,6 @@ public:
   std::string m_Backend = ".bp";
 };
 
-/** divide "top" elements into "upTo" non-zero segments
- *
- *
- *
- * @param top      number of elements to be subdivided
- * @param upTo     subdivide into this many different blocks
- * @param repeats     roll the die this many times to avoid duplicates between ranks
- * @return     returns the vector that has subdivision information
- */
-std::vector< unsigned long >
-segments( unsigned long top, unsigned int upTo, int& repeats )
-{
-    std::vector< unsigned long > result;
-
-    if( upTo == 0 || top < upTo )
-        return result;
-
-    // how many partitions
-    std::default_random_engine generator;
-    std::uniform_int_distribution< int > distribution( 1, upTo );
-    auto dice = std::bind ( distribution, generator );
-
-    int howMany = dice();
-    // repeat to avoid duplicates btw ranks
-    for( auto i=0; i<repeats; i++ )
-        howMany = dice();
-
-    if( howMany == 0 )
-        howMany = 1;
-
-    if( howMany == 1 ) {
-        result.push_back(top);
-        return result;
-    }
-
-    unsigned long counter = 0ul;
-
-    for( int i=0; i<howMany; i++ ) {
-        if( counter < top ) {
-            if( i == howMany - 1 )
-                result.push_back(top - counter);
-            else {
-                auto curr = rand() % (top-counter);
-                result.push_back(curr);
-                counter += curr;
-            }
-        } else
-            result.push_back( 0u );
-    }
-
-    return result;
-}
-
 
 /** Read data into series
  *
