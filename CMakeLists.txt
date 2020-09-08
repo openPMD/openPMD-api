@@ -639,11 +639,14 @@ if(openPMD_HAVE_PYTHON)
     set_target_properties(openPMD.py PROPERTIES
         ARCHIVE_OUTPUT_NAME openpmd_api_cxx
         LIBRARY_OUTPUT_NAME openpmd_api_cxx
-        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
-        PDB_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
-        COMPILE_PDB_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
+        # note: we append an empty generator expression $<0:> to avoid a suffix
+        # of the config type on multi-config generators (VS and XCode)
+        # https://cmake.org/cmake/help/latest/prop_tgt/ARCHIVE_OUTPUT_DIRECTORY.html
+        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api$<0:>
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api$<0:>
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api$<0:>
+        PDB_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api$<0:>
+        COMPILE_PDB_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api$<0:>
     )
     add_custom_command(TARGET openPMD.py POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -1011,19 +1014,22 @@ if(openPMD_BUILD_TESTING)
                         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
                 )
                 if(WIN32)
-                    string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BASEDIR ${openPMD_BINARY_DIR})
+                    string(REGEX REPLACE "/" "\\\\" WIN_BUILD_PYDIR ${CMAKE_PYTHON_OUTPUT_DIRECTORY})
                     string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+                    string(REGEX REPLACE "/" "\\\\" WIN_LIB_BINDIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
                     string(REPLACE ";" "\\;" WIN_PATH "$ENV{PATH}")
                     string(REPLACE ";" "\\;" WIN_PYTHONPATH "$ENV{PYTHONPATH}")
+                    message(STATUS "PATH=${WIN_BUILD_BINDIR}\;${WIN_LIB_BINDIR}\;${WIN_PATH}\n")
+                    message(STATUS "PYTHONPATH=${WIN_BUILD_PYDIR}\;${WIN_PYTHONPATH}")
                     set_property(TEST Unittest.py
                         PROPERTY ENVIRONMENT
-                            "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
-                            "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${CMAKE_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
+                            "PATH=${WIN_BUILD_BINDIR}\;${WIN_LIB_BINDIR}\;${WIN_PATH}\n"
+                            "PYTHONPATH=${WIN_BUILD_PYDIR}\;${WIN_PYTHONPATH}"
                     )
                 else()
                     set_tests_properties(Unittest.py
                         PROPERTIES ENVIRONMENT
-                            "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
+                            "PYTHONPATH=${CMAKE_PYTHON_OUTPUT_DIRECTORY}:$ENV{PYTHONPATH}"
                     )
                 endif()
             endif()
@@ -1089,15 +1095,22 @@ if(openPMD_BUILD_TESTING)
                  WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
             )
             if(WIN32)
+                string(REGEX REPLACE "/" "\\\\" WIN_BUILD_PYDIR ${CMAKE_PYTHON_OUTPUT_DIRECTORY})
+                string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+                string(REGEX REPLACE "/" "\\\\" WIN_LIB_BINDIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+                string(REPLACE ";" "\\;" WIN_PATH "$ENV{PATH}")
+                string(REPLACE ";" "\\;" WIN_PYTHONPATH "$ENV{PYTHONPATH}")
+                message(STATUS "PATH=${WIN_BUILD_BINDIR}\;${WIN_LIB_BINDIR}\;${WIN_PATH}\n")
+                message(STATUS "PYTHONPATH=${WIN_BUILD_PYDIR}\;${WIN_PYTHONPATH}")
                 set_property(TEST CLI.py.help.${pymodulename}
                     PROPERTY ENVIRONMENT
-                        "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
-                        "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${CMAKE_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
+                        "PATH=${WIN_BUILD_BINDIR}\;${WIN_LIB_BINDIR}\;${WIN_PATH}\n"
+                        "PYTHONPATH=${WIN_BUILD_PYDIR}\;${WIN_PYTHONPATH}"
                 )
             else()
                 set_tests_properties(CLI.py.help.${pymodulename}
                     PROPERTIES ENVIRONMENT
-                        "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
+                        "PYTHONPATH=${CMAKE_PYTHON_OUTPUT_DIRECTORY}:$ENV{PYTHONPATH}"
                 )
             endif()
         endforeach()
@@ -1134,19 +1147,22 @@ if(openPMD_BUILD_TESTING)
                         )
                     endif()
                     if(WIN32)
-                        string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BASEDIR ${openPMD_BINARY_DIR})
+                        string(REGEX REPLACE "/" "\\\\" WIN_BUILD_PYDIR ${CMAKE_PYTHON_OUTPUT_DIRECTORY})
                         string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+                        string(REGEX REPLACE "/" "\\\\" WIN_LIB_BINDIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
                         string(REPLACE ";" "\\;" WIN_PATH "$ENV{PATH}")
                         string(REPLACE ";" "\\;" WIN_PYTHONPATH "$ENV{PYTHONPATH}")
+                        message(STATUS "PATH=${WIN_BUILD_BINDIR}\;${WIN_LIB_BINDIR}\;${WIN_PATH}\n")
+                        message(STATUS "PYTHONPATH=${WIN_BUILD_PYDIR}\;${WIN_PYTHONPATH}")
                         set_property(TEST Example.py.${examplename}
                             PROPERTY ENVIRONMENT
-                                "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
-                                "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${CMAKE_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
+                                "PATH=${WIN_BUILD_BINDIR}\;${WIN_LIB_BINDIR}\;${WIN_PATH}\n"
+                                "PYTHONPATH=${WIN_BUILD_PYDIR}\;${WIN_PYTHONPATH}"
                         )
                     else()
                         set_tests_properties(Example.py.${examplename}
                             PROPERTIES ENVIRONMENT
-                                "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
+                                "PYTHONPATH=${CMAKE_PYTHON_OUTPUT_DIRECTORY}:$ENV{PYTHONPATH}"
                         )
                     endif()
                 endif()
