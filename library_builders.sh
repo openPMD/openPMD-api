@@ -58,6 +58,7 @@ function build_adios1 {
     # avoid picking up a static libpthread in adios (also: those libs lack -fPIC)
     if [ "$(uname -s)" = "Linux" ]
     then
+        rm -f /usr/lib/libpthread.a   /usr/lib/libm.a   /usr/lib/librt.a
         rm -f /usr/lib64/libpthread.a /usr/lib64/libm.a /usr/lib64/librt.a
     fi
 
@@ -78,21 +79,23 @@ function build_adios1 {
 function build_adios2 {
     if [ -e adios2-stamp ]; then return; fi
 
-    curl -sLo adios2-2.5.0.tar.gz \
-        https://github.com/ornladios/ADIOS2/archive/v2.5.0.tar.gz
+    curl -sLo adios2-2.6.0.tar.gz \
+        https://github.com/ornladios/ADIOS2/archive/v2.6.0.tar.gz
     file adios2*.tar.gz
     tar -xzf adios2*.tar.gz
     rm adios2*.tar.gz
-    cd ADIOS2-*
-    curl -sLo adios2-static.patch https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/1828.patch
-    patch -p1 < adios2-static.patch
-    curl -sLo adios2-i686.patch   https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/2138.patch
-    patch -p1 < adios2-i686.patch
-    cd ..
     mkdir build-ADIOS2
     cd build-ADIOS2
     PY_BIN=$(which python)
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
+    if [ "$(uname -s)" = "Linux" ]
+    then
+        USE_SST="ON"
+    else
+        # FIXME SST disabled because EVPATH does not build on macOS
+        #       https://github.com/GTkorvo/evpath/issues/47
+        USE_SST="OFF"
+    fi
     PATH=${CMAKE_BIN}:${PATH} cmake               \
         -DBUILD_SHARED_LIBS=OFF                   \
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON      \
@@ -102,6 +105,7 @@ function build_adios2 {
         -DADIOS2_USE_Fortran=OFF                  \
         -DADIOS2_USE_MPI=OFF                      \
         -DADIOS2_USE_PNG=OFF                      \
+        -DADIOS2_USE_SST=${USE_SST}               \
         -DHDF5_USE_STATIC_LIBRARIES:BOOL=ON       \
         -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE  \
         -DCMAKE_DISABLE_FIND_PACKAGE_BISON=TRUE   \

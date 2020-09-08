@@ -6,7 +6,7 @@ branches:
 
 env:
   global:
-    - OPENPMD_GIT_REF="0.11.1-alpha1"
+    - OPENPMD_GIT_REF="0.12.0-alpha"
 
     # (1,2) Skip building for Python 2.7 on all platforms
     # (3) GNU 7.3.1 & MPark.Variant 1.4.0 on i686:
@@ -55,7 +55,7 @@ jobs:
 install:
   - git clone --branch ${OPENPMD_GIT_REF} --depth 1 https://github.com/openPMD/openPMD-api.git src
   - cp library_builders.sh src/.github/
-  - python3 -m pip install cibuildwheel==1.3.0
+  - python3 -m pip install cibuildwheel==1.5.5
 
 script:
   - cd src
