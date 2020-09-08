@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['location_538',['location',['../structopen_p_m_d_1_1_a_d_i_o_s2_file_position.html#a7c3dfe82ee37ad6f03f2d7a546d6a0ff',1,'openPMD::ADIOS2FilePosition']]]
+  ['durations_634',['durations',['../structopen_p_m_d_1_1_m_p_i_benchmark_report.html#a8c7d33cfdc3584f52508b60066ba29db',1,'openPMD::MPIBenchmarkReport']]]
 ];
