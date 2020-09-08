@@ -19,7 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include <openPMD/openPMD.hpp>
-#include "openPMD/auxiliary/Environment.hpp"
+#include <openPMD/auxiliary/Environment.hpp>
 
 #include <mpi.h>
 
@@ -148,12 +148,12 @@ private:
 };
 
 
-/** ... createData
+/**     createData
  *      generate a shared ptr of given size  with given type & default value
  *
- * @param T   ......... data type
- * @param size ... .... data size
- * @param val  ........ data value by default
+ * @param T             data type
+ * @param size          data size
+ * @param val           data value by default
  *
  */
 
@@ -188,15 +188,15 @@ std::vector<std::string> getBackends() {
     return res;
 }
 
-/** ... Class TestInput
+/**     Class TestInput
  *
  *
- * @param mpi_size .... MPI size
- * @param mpi_rank .... MPI rank
- * @param bulk ........ num of elements
- * @param numSeg ...... num of subdivition for the elements
- *               ...... note that with h5collect mode, numSeg must be 1
- * @param numSteps .... num of iterations
+ * @param mpi_size      MPI size
+ * @param mpi_rank      MPI rank
+ * @param bulk          num of elements
+ * @param numSeg        num of subdivition for the elements
+ *                      note that with h5collect mode, numSeg must be 1
+ * @param numSteps      num of iterations
  */
 class TestInput
 {
@@ -224,10 +224,10 @@ public:
  *
  *
  *
- * @param top ...  number of elements to be subdivided
- * @param upTo ... subdivide into this many different blocks
- * @param repeats ... roll the die this many times to avoid duplicates between ranks
- * @return ... returns the vector that has subdivision information
+ * @param top      number of elements to be subdivided
+ * @param upTo     subdivide into this many different blocks
+ * @param repeats     roll the die this many times to avoid duplicates between ranks
+ * @return     returns the vector that has subdivision information
  */
 std::vector< unsigned long >
 segments( unsigned long top, unsigned int upTo, int& repeats )
@@ -278,10 +278,10 @@ segments( unsigned long top, unsigned int upTo, int& repeats )
  *
  * all tests call this functions to store and flush 1D data
  *
- * @param series ..... opemPMD-api series
- * @param varName .... variable name
- * @param input ...... input parameters
- * @param step ....... iteration step
+ * @param series       opemPMD-api series
+ * @param varName      variable name
+ * @param input        input parameters
+ * @param step         iteration step
  */
 void
 LoadData( Series& series, const char* varName,  const TestInput& input, int& step )
@@ -327,11 +327,11 @@ LoadData( Series& series, const char* varName,  const TestInput& input, int& ste
 
 
 
-/** ... Test 1 (this is OOM prone and is discouraged)
+/**     Test 1 (this is OOM prone and is discouraged)
  *
- * .... 1D array in multiple steps, each steps is one file
+ *      1D array in multiple steps, each steps is one file
  *
- * @param input ....... input
+ * @param input       . input
  *
  */
 void
@@ -358,12 +358,12 @@ Test_1( const TestInput& input)
 }
 
 
-/** ... Test 3:
+/**     Test 3:
  *
- * .... 1D array in multiple steps, each steps is its own series, hence one file
+ *      1D array in multiple steps, each steps is its own series, hence one file
  *      notice multiple series (=numSteps) will be created for this test.
  *
- * @param input........ input
+ * @param input         input
  *
  */
 void
@@ -389,11 +389,11 @@ Test_3( const TestInput& input)
 
 
 
-/** ... 1D array with many steps, all in one file
+/**     Test 2: 1D array with many steps, all in one file
  *
- * ..... all iterations save in one file
+ *       all iterations save in one file
  *
- * @param input ... input
+ * @param input     input
  *
  */
 void
@@ -420,10 +420,10 @@ Test_2(const TestInput& input)
 }
 
 
-/** ... Run the tests according to input setup
- * .... test 0 means run all
+/**     Run the tests according to input setup
+ *    . test 0 means run all
  *
- * @param input ... input
+ * @param input     input
  *
  */
 void
@@ -449,9 +449,9 @@ TestRun(const  TestInput& input)
     }
 }
 
-/** ... TEST MAIN
+/**     TEST MAIN
  *
- * ... description of runtime options/flags ...
+ *     description of runtime options/flags    
  */
 int
 main( int argc, char *argv[] )
@@ -476,8 +476,10 @@ main( int argc, char *argv[] )
         input.m_Steps = atoi( argv[4] );
 
     auto backends = getBackends();
+    //auto backends = openPMD::getFileExtensions();
     for (auto which: backends)
     {
+      //input.m_Backend = "."+which;
       input.m_Backend = which;
       TestRun(input);
 
