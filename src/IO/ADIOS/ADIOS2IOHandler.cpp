@@ -1126,9 +1126,7 @@ namespace detail
         adios2::Variable< T > var = m_impl->verifyDataset< T >(
             bp.param.offset, bp.param.extent, IO, bp.name );
 
-    // using sync mode has the same effect as deferred and less memory consumption
-    // at of now.
-        engine.Put( var, ptr, adios2::Mode::Sync );
+        engine.Put( var, ptr );
     }
 
     template < typename T >
