@@ -5,11 +5,13 @@ Changelog
 
 0.12.0-alpha
 ------------
-**Date:** TBA
+**Date:** 2020-09-07
 
-[Title]
+Complex Numbers, Close & Backend Options
 
-[Summary]
+This release adds data type support for complex numbers, allows to close iterations and adds first support for backend configuration options (via JSON), which are currently implemented for ADIOS2.
+Further installation options have been added (homebrew and CLI tool support with pip).
+New free standing functions and macro defines are provided for version checks.
 
 Changes to "0.11.1-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -27,17 +29,21 @@ Features
   - add ``Mesh_Record_Component.position`` read-write property #713
   - add ``openpmd-ls`` tool in ``pip`` installs and as module #721 #724
   - more idiomatic unit properties #735
+  - add ``file_extensions`` property #768
 - CD:
 
   - homebrew: add Formula (OSX/Linux) #724 #725
   - PyPI: autodeploy wheels (OSX/Linux) #716 #719
 - version compare macro #747
+- ``getFileExtensions`` function #768
 - Spack environment file ``spack.yaml`` added to repo #737
+- ``openpmd-ls``: add ``-v, --version`` option #771
 
 Bug Fixes
 """""""""
 
 - ``flush()`` exceptions in ``~Series``/``~..IOHandler`` do not abort anymore #709
+- ``Iteration``/``Attributable`` assignment operator left object in invalid state #769
 - ``Datatype.hpp``: add missing include #764
 - readme: python example syntax was broken and outdated #722
 - examples:
@@ -47,7 +53,7 @@ Bug Fixes
 - warnings:
 
   - ``listSeries``: unused params in try-catch #707
-  - fix Doxygen 1.18.8 warnings
+  - fix Doxygen 1.18.8 and 1.18.20 warnings #766
   - extended write example: remove MSVC warning #752
 
 Other
@@ -57,7 +63,7 @@ Other
 - ADIOS2: require version 2.6.0+ #754
 - separate header for export macros #704
 - rename ``AccessType``/``Access_Type`` to ``Access`` #740 #743 #744
-- CI:
+- CI & tests:
 
   - migration to travis-ci.com / GitHub app #703
   - migrate to GitHub checkout action v2 #712
@@ -69,6 +75,8 @@ Other
   - add Clang 10.0 builds #759
   - migrate Spack to use AppleClang #758
   - style check scripts: ``eval``-uable #757
+  - new Spack external package syntax #760
+  - python tests: ``testAttributes`` JSON backend coverage #767
 - ``listSeries``: remove unused parameters in try-catch #706
 - safer internal ``*dynamic_cast``s of pointers #745
 - CMake: subproject inclusion cleanup #751

@@ -6,6 +6,9 @@ Upgrade Guide
 0.12.0-alpha
 ------------
 
+CMake 3.12.0 is now the minimally supported version for CMake.
+ADIOS 2.6.0 is now the minimally supported version for ADIOS2 support.
+
 Python
 ^^^^^^
 
