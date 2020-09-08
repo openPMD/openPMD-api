@@ -1,6 +1,5 @@
 #include <openPMD/openPMD.hpp>
 
-#include "openPMD/auxiliary/Environment.hpp"
 #include <algorithm>
 #include <iostream>
 
@@ -10,13 +9,7 @@ using namespace openPMD;
 void
 write()
 {
-#if openPMD_HAVE_ADIOS2
-    Series o = Series("../samples/serial_write.bp", Access::CREATE);
-#elif openPMD_HAVE_HDF5
-    Series o = Series("../samples/serial_write.h5", Access::CREATE);
-#else
-    Series o = Series("../samples/serial_write.json", Access::CREATE);
-#endif
+    Series o = Series("../samples/serial_write.h5", AccessType::CREATE);
     ParticleSpecies& e = o.iterations[1].particles["e"];
 
     std::vector< double > position_global(4);
@@ -54,13 +47,8 @@ write()
 void
 write2()
 {
-#if openPMD_HAVE_ADIOS2
-    Series f = Series("working/directory/2D_simData.bp", Access::CREATE);
-#elif openPMD_HAVE_HDF5
-    Series f = Series("working/directory/2D_simData.h5", Access::CREATE);
-#else
-    Series f = Series("working/directory/2D_simData.json", Access::CREATE);
-#endif
+    Series f = Series("working/directory/2D_simData.h5", AccessType::CREATE);
+
     // all required openPMD attributes will be set to reasonable default values (all ones, all zeros, empty strings,...)
     // manually setting them enforces the openPMD standard
     f.setMeshesPath("custom_meshes_path");
@@ -72,11 +60,9 @@ write2()
         "custom_attribute_name",
         std::string("This attribute is manually added and can contain about any datatype you would want")
     );
-#if openPMD_HAVE_ADIOS2
-#else
     // note that removing attributes required by the standard typically makes the file unusable for post-processing
     f.deleteAttribute("custom_attribute_name");
-#endif
+
     // everything that is accessed with [] should be interpreted as permanent storage
     // the objects sunk into these locations are deep copies
     {
@@ -99,10 +85,8 @@ write2()
         copy.setComment("Modifications to copies will only take effect after you reassign the copy");
         f.iterations[1] = copy;
     }
-#if openPMD_HAVE_ADIOS2
-#else
     f.iterations[1].deleteAttribute("comment");
-#endif
+
     Iteration& cur_it = f.iterations[1];
 
     // the underlying concept for numeric data is the openPMD Record
@@ -133,7 +117,7 @@ write2()
         electrons["displacement"].setUnitDimension({{UnitDimension::M, 1}});
         electrons["displacement"]["x"].setUnitSI(1e-6);
         electrons.erase("displacement");
-        electrons["weighting"][RecordComponent::SCALAR].makeConstant(1.e-5);
+        electrons["weighting"][RecordComponent::SCALAR].setUnitSI(1e-5);
     }
 
     Mesh& mesh = cur_it.meshes["lowRez_2D_field"];
@@ -182,9 +166,9 @@ write2()
     // this loop writes one row at a time
     double mesh_x[2][5] = {{1,  3,  5,  7,  9},
                            {11, 13, 15, 17, 19}};
-    float particle_position[4] = {0.1f, 0.2f, 0.3f, 0.4f};
-    uint64_t particle_positionOffset[4] = {0u, 1u, 2u, 3u};
-    for( uint64_t i = 0u; i < 2u; ++i )
+    float particle_position[4] = {0.1, 0.2, 0.3, 0.4};
+    uint64_t particle_positionOffset[4] = {0, 1, 2, 3};
+    for( uint64_t i = 0; i < 2; ++i )
     {
         for( int col = 0; col < 5; ++col )
             partial_mesh.get()[col] = mesh_x[i][col];
@@ -234,13 +218,7 @@ write2()
 void
 w()
 {
-#if openPMD_HAVE_ADIOS2
-    Series o = Series("../samples/serial_write_%T.bp", Access::CREATE);
-#elif openPMD_HAVE_HDF5
-    Series o = Series("../samples/serial_write_%T.h5", Access::CREATE);
-#else
-    Series o = Series("../samples/serial_write_%T.json", Access::CREATE);
-#endif
+    Series o = Series("../samples/serial_write_%T.h5", AccessType::CREATE);
 
     /* The files in 'o' are still open until the object is destroyed, on
      * which it cleanly flushes and closes all open file handles.
@@ -251,14 +229,6 @@ w()
 int
 main()
 {
-  write(); // added here to increase the code coverage ..
-
-  if( auxiliary::getEnvString( "OPENPMD_BP_BACKEND", "NOT_SET" ) == "ADIOS1" )
-    {
-      // this test fails with adios1
-      return 0;
-    }
-
     write2();
     return 0;
 }
