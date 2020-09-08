@@ -13,9 +13,9 @@ The same install workflow used to bundle this release also comes in handy to tes
 
 Example workflow for a new release:
 
-https://github.com/spack/spack/pull/14018
+- https://github.com/spack/spack/pull/14018
 
-Please CC ``@ax3l`` in your pull-request.
+Please ping `@ax3l <github.com/ax3l>`_ in your pull-request.
 
 
 Conda-Forge
@@ -28,7 +28,7 @@ Packages are built with and without MPI, the latter is the default variant.
 
 Example workflow for a new release:
 
-https://github.com/conda-forge/openpmd-api-feedstock/pull/41
+- https://github.com/conda-forge/openpmd-api-feedstock/pull/41
 
 
 Brew
@@ -41,7 +41,7 @@ Its source-only Formula for the latest release includes (Open)MPI support and la
 
 Example workflow for a new release:
 
-https://github.com/openPMD/homebrew-openPMD/commit/839c458f1e8fa2a40ad0b4fd7d0d239d1062f867
+- https://github.com/openPMD/homebrew-openPMD/commit/839c458f1e8fa2a40ad0b4fd7d0d239d1062f867
 
 
 PyPI
@@ -56,6 +56,10 @@ Update the version number with a new git tag in the ``wheels`` `branch <https://
 A push (merge) to this branch will build and upload all wheels together with the source distribution through ``twine``.
 
 The same ``pip`` install workflow used to bundle this release also comes in handy to `test a development version quickly with power-users <https://github.com/openPMD/openPMD-api/blob/55f22a82e66ca66868704a3e0827c562ae669ff8/azure-pipelines.yml#L211-L212>`_.
+
+Example workflow for a new release:
+
+- https://github.com/openPMD/openPMD-api/pull/774
 
 
 ReadTheDocs
@@ -81,7 +85,8 @@ In order to update the *latest* Doxygen C++ API docs, located under http://www.o
 
    # optional first argument is branch/tag on mainline repo, default: dev
    ./update.sh
-   git commit -a
+   git add .
+   git commit
    git push
 
    # go back
