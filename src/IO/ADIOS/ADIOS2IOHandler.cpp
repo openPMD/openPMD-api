@@ -1107,7 +1107,8 @@ namespace detail
         adios2::Variable< T > var = m_impl->verifyDataset< T >(
             bp.param.offset, bp.param.extent, IO, bp.name );
 
-        engine.Put( var, ptr );
+        // default is Deferred, and it is error prone
+        engine.Put( var, ptr, adios2::Mode::Sync );
     }
 
     template < typename T >
