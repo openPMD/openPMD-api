@@ -479,6 +479,14 @@ namespace detail
             throw std::runtime_error(
                 "[ADIOS2] Internal error: no support for long double complex attribute types" );
         }
+
+        static bool
+        attributeUnchanged(
+            adios2::IO &, std::string, std::complex< long double > )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex attribute types" );
+        }
     };
 
     template< > struct AttributeTypes< std::vector< std::complex< long double > > >
@@ -496,6 +504,16 @@ namespace detail
         static void
         readAttribute( adios2::IO &, std::string,
                        std::shared_ptr< Attribute::resource > )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex vector attribute types" );
+        }
+
+        static bool
+        attributeUnchanged(
+            adios2::IO &,
+            std::string,
+            std::vector< std::complex< long double > > )
         {
             throw std::runtime_error(
                 "[ADIOS2] Internal error: no support for long double complex vector attribute types" );

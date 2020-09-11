@@ -902,7 +902,7 @@ TEST_CASE( "write_test", "[serial]" )
 
 void test_complex(const std::string & backend) {
     {
-        Series o = Series("../samples/serial_write_complex." + backend, AccessType::CREATE);
+        Series o = Series("../samples/serial_write_complex." + backend, Access::CREATE);
         o.setAttribute("lifeIsComplex", std::complex<double>(4.56, 7.89));
         o.setAttribute("butComplexFloats", std::complex<float>(42.3, -99.3));
         if( backend != "bp" )
@@ -941,7 +941,7 @@ void test_complex(const std::string & backend) {
     //! @todo clarify that complex data is not N+1 data in JSON
     if( backend != "json" )
     {
-        Series i = Series("../samples/serial_write_complex." + backend, AccessType::READ_ONLY);
+        Series i = Series("../samples/serial_write_complex." + backend, Access::READ_ONLY);
         REQUIRE(i.getAttribute("lifeIsComplex").get< std::complex<double> >() == std::complex<double>(4.56, 7.89));
         REQUIRE(i.getAttribute("butComplexFloats").get< std::complex<float> >() == std::complex<float>(42.3, -99.3));
         if( backend != "bp" ) {
@@ -2833,6 +2833,7 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
 void
 serial_iterator( std::string const & file )
 {
+    constexpr auto extent = 1000;
     {
         Series writeSeries( file, Access::CREATE );
         auto iterations = writeSeries.writeIterations();
@@ -2857,17 +2858,7 @@ serial_iterator( std::string const & file )
         REQUIRE( E_x.getDimensionality() == 1 );
         REQUIRE( E_x.getExtent()[ 0 ] == extent );
         auto chunk = E_x.loadChunk< int >( { 0 }, { extent } );
-        // we encourage manually closing iterations, but it should not matter
-        // so let's do the switcharoo for this test
-        if( iteration_index % 2 == 0 )
-        {
-            readSeries.flush();
-        }
-        else
-        {
-            iteration.close();
-        }
-
+        iteration.close();
         for( size_t i = 0; i < extent; ++i )
         {
             REQUIRE( chunk.get()[ i ] == iteration.iterationIndex );
@@ -2879,11 +2870,10 @@ serial_iterator( std::string const & file )
 
 TEST_CASE( "serial_iterator", "[serial][adios2]" )
 {
-    for( auto const & t : backends )
+    for( auto const & t : getFileExtensions() )
     {
-        auto const & suffix = std::get< 0 >( t );
-        serial_iterator( "../samples/serial_iterator_filebased_%T." + suffix );
-        serial_iterator( "../samples/serial_iterator_groupbased." + suffix );
+        serial_iterator( "../samples/serial_iterator_filebased_%T." + t );
+        serial_iterator( "../samples/serial_iterator_groupbased." + t );
     }
 }
 
@@ -2948,12 +2938,11 @@ iterate_nonstreaming_series( std::string const & file )
 
 TEST_CASE( "iterate_nonstreaming_series", "[serial][adios2]" )
 {
-    for( auto const & t : backends )
+    for( auto const & t : getFileExtensions() )
     {
-        auto const & suffix = std::get< 0 >( t );
         iterate_nonstreaming_series(
-            "../samples/iterate_nonstreaming_series_filebased_%T." + suffix );
+            "../samples/iterate_nonstreaming_series_filebased_%T." + t );
         iterate_nonstreaming_series(
-            "../samples/iterate_nonstreaming_series_groupbased." + suffix );
+            "../samples/iterate_nonstreaming_series_groupbased." + t );
     }
 }
