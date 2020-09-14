@@ -47,8 +47,9 @@ Explanation of the single keys:
 
 * ``adios2.engine.type``: A string that is passed directly to ``adios2::IO:::SetEngine`` for choosing the ADIOS2 engine to be used.
   Please refer to the `official ADIOS2 documentation <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_ for a list of available engines.
-* ``adios2.engine.type``: An associative array of string-formatted engine parameters, passed directly through to ``adios2::IO::SetParameters``.
+* ``adios2.engine.parameters``: An associative array of string-formatted engine parameters, passed directly through to ``adios2::IO::SetParameters``.
   Please refer to the official ADIOS2 documentation for the allowable engine parameters.
+* ``adios2.engine.usesteps``: Described more closely in the documentation for the :ref:`ADIOS2 backend<backends-adios2>`.
 * ``adios2.dataset.operators``: (*currently unimplemented* – please use the ``openPMD::Dataset::compression`` for the meantime) This key contains a list of ADIOS2 `operators <https://adios2.readthedocs.io/en/latest/components/components.html#operator>`_, used to enable compression or dataset transformations.
   Each object in the list has three keys:
 

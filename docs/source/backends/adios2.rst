@@ -13,8 +13,18 @@ For further information, check out the :ref:`installation guide <install>`,
 I/O Method
 ----------
 
-ADIOS2 has several engines for alternative file formats and other kinds of backends, yet natively writes to ``.bp`` files. At the moment, the openPMD API exclusively uses the BPFile engine.
+ADIOS2 has several engines for alternative file formats and other kinds of backends, yet natively writes to ``.bp`` files.
+The openPMD API uses the BP4 engine as the default file engine and the SST engine for streaming support.
 We currently leverage the default ADIOS2 transport parameters, i.e. ``POSIX`` on Unix systems and ``FStream`` on Windows.
+
+Steps
+-----
+
+ADIOS2 is optimized towards organizing the process of reading/writing data into IO steps.
+In order to activate steps, it is imperative to use the :ref:`Streaming API <usage-streaming>` (which can be used for either file-based or streaming-based workflows).
+With ADIOS2 releases 2.5.0 and 2.6.0 containing a bug (fixed in development versions) that disallows random-accessing steps in file-based engines, step-based processing must currently be opted in to via use of the :ref:`JSON parameter<backendconfig>` ``adios2.engine.usesteps = true`` when using a file-based engine such as BP3 or BP4.
+With these ADIOS2 releases, files written in such a way may only be read using the streaming API.
+Steps are mandatory for streaming-based engines and trying to switch them off will result in a runtime error.
 
 
 Backend-Specific Controls
