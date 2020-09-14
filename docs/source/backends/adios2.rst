@@ -20,6 +20,8 @@ We currently leverage the default ADIOS2 transport parameters, i.e. ``POSIX`` on
 Backend-Specific Controls
 -------------------------
 
+The ADIOS2 SST engine for streaming can be picked by specifying the ending ``.sst`` instead of ``.bp``.
+
 The following environment variables control ADIOS2 I/O behavior at runtime.
 Fine-tuning these is especially useful when running at large scale.
 
