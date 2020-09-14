@@ -2833,7 +2833,7 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
 void
 serial_iterator( std::string const & file )
 {
-    constexpr auto extent = 1000;
+    constexpr Extent::value_type extent = 1000;
     {
         Series writeSeries( file, Access::CREATE );
         auto iterations = writeSeries.writeIterations();
