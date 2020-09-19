@@ -13,7 +13,7 @@ Operating Systems  Linux, OSX             Linux, OSX, Windows
 Serial             supported     supported     supported supported
 MPI-parallel       supported     supported     supported no
 Dataset deletion   no            no            supported supported
-Compression        upcoming      upcoming      upcoming  no
+Compression        upcoming      supported     upcoming  no
 Streaming/Staging  not exposed   upcoming      no        no
 Portable Files     limited       awaiting      yes       yes
 PByte-scalable     yes           yes           no        no
