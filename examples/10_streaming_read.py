@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 import openpmd_api as io
 
+run_streaming_example = False
+
+if not run_streaming_example:
+    exit(0)
+
 if __name__ == "__main__":
     if 'adios2' not in io.variants or not io.variants['adios2']:
         print('This example requires ADIOS2')
