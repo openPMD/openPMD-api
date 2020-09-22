@@ -1107,7 +1107,8 @@ namespace detail
         adios2::Variable< T > var = m_impl->verifyDataset< T >(
             bp.param.offset, bp.param.extent, IO, bp.name );
 
-        // default is Deferred, and it is error prone
+        // default is Deferred, which is error prone (as of 2.6.0) and will 
+        // make another copy (memory footprint)
         engine.Put( var, ptr, adios2::Mode::Sync );
     }
 
