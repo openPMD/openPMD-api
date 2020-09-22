@@ -181,7 +181,7 @@ close_and_copy_attributable_test( std::string file_ending )
             []( position_t const * ptr ) { delete[] ptr; } );
 
     std::unique_ptr< Iteration > iteration_ptr;
-    for( size_t i = 0; i < 100; ++i )
+    for( size_t i = 0; i < 5; ++i )
     {
         if( iteration_ptr )
         {
