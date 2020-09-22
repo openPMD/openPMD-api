@@ -1362,7 +1362,8 @@ WriteIterations::mapped_type &
 WriteIterations::operator[]( key_type const & key )
 {
     // make a copy
-    return operator[]( key_type{ key } );
+    // explicit cast so MSVC can figure out how to do it correctly
+    return operator[]( static_cast< key_type && >( key_type{ key } ) );
 }
 WriteIterations::mapped_type &
 WriteIterations::operator[]( key_type && key )
