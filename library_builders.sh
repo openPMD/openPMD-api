@@ -106,6 +106,7 @@ function build_adios2 {
         -DADIOS2_USE_MPI=OFF                      \
         -DADIOS2_USE_PNG=OFF                      \
         -DADIOS2_USE_SST=${USE_SST}               \
+        -DADIOS2_USE_ZFP=ON                       \
         -DHDF5_USE_STATIC_LIBRARIES:BOOL=ON       \
         -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE  \
         -DCMAKE_DISABLE_FIND_PACKAGE_BISON=TRUE   \
@@ -138,6 +139,26 @@ function build_blosc {
     touch blosc-stamp
 }
 
+function build_zfp {
+    if [ -e zfp-stamp ]; then return; fi
+
+    curl -sLo zfp-0.5.5.tar.gz \
+        http://computing.llnl.gov/projects/floating-point-compression/download/zfp-0.5.5.tar.gz
+    file zfp*.tar.gz
+    tar -xzf zfp*.tar.gz
+    rm zfp*.tar.gz
+    mkdir build-zfp
+    cd build-zfp
+    PY_BIN=$(which python)
+    CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
+    PATH=${CMAKE_BIN}:${PATH} cmake -DBUILD_SHARED=OFF -DZFP_WITH_OPENMP=OFF -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} ../zfp-*
+    make -j${CPU_COUNT}
+    make install
+    cd -
+
+    touch zfp-stamp
+}
+
 function build_hdf5 {
     if [ -e hdf5-stamp ]; then return; fi
 
@@ -161,6 +182,7 @@ export CXXFLAGS+=" -fPIC"
 
 install_buildessentials
 build_blosc
+build_zfp
 build_hdf5
 build_adios1
 build_adios2
