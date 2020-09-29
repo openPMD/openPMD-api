@@ -90,11 +90,11 @@ function build_adios2 {
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
     if [ "$(uname -s)" = "Linux" ]
     then
-        USE_SST="ON"
+        EVPATH_ZPL="ON"
     else
-        # FIXME SST disabled because EVPATH does not build on macOS
+        # ZPL in EVPATH disabled because it does not build with older macOS
         #       https://github.com/GTkorvo/evpath/issues/47
-        USE_SST="OFF"
+        EVPATH_ZPL="OFF"
     fi
     PATH=${CMAKE_BIN}:${PATH} cmake               \
         -DBUILD_SHARED_LIBS=OFF                   \
@@ -105,8 +105,8 @@ function build_adios2 {
         -DADIOS2_USE_Fortran=OFF                  \
         -DADIOS2_USE_MPI=OFF                      \
         -DADIOS2_USE_PNG=OFF                      \
-        -DADIOS2_USE_SST=${USE_SST}               \
         -DADIOS2_USE_ZFP=ON                       \
+        -DEVPATH_USE_ZPL_ENET=${EVPATH_ZPL}       \
         -DHDF5_USE_STATIC_LIBRARIES:BOOL=ON       \
         -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE  \
         -DCMAKE_DISABLE_FIND_PACKAGE_BISON=TRUE   \
