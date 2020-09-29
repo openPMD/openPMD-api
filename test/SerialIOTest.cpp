@@ -37,6 +37,7 @@ namespace {
 
 TEST_CASE( "multi_series_test", "[serial]" )
 {
+    std::cout << "STARTING TEST: multi_series_test" << std::endl;
     std::list< Series > allSeries;
 
     auto myfileExtensions = getFileExtensions();
@@ -158,6 +159,7 @@ close_iteration_test( std::string file_ending )
 
 TEST_CASE( "close_iteration_test", "[serial]" )
 {
+    std::cout << "STARTING TEST: close_iteration_test" << std::endl;
     for( auto const & t : getFileExtensions() )
     {
         close_iteration_test( t );
@@ -218,6 +220,7 @@ close_and_copy_attributable_test( std::string file_ending )
 
 TEST_CASE( "close_and_copy_attributable_test", "[serial]" )
 {
+    std::cout << "STARTING TEST: close_and_copy_attributable_test" << std::endl;
     // demonstrator for https://github.com/openPMD/openPMD-api/issues/765
     for( auto const & t : getFileExtensions() )
     {
@@ -228,6 +231,7 @@ TEST_CASE( "close_and_copy_attributable_test", "[serial]" )
 #if openPMD_HAVE_ADIOS2
 TEST_CASE( "close_iteration_throws_test", "[serial]" )
 {
+    std::cout << "STARTING TEST: close_iteration_throws_test" << std::endl;
     /*
      * Iterations should not be accessed any more after closing.
      * Test that the openPMD API detects that case and throws.
@@ -343,6 +347,7 @@ empty_dataset_test( std::string file_ending )
 
 TEST_CASE( "empty_dataset_test", "[serial]" )
 {
+    std::cout << "STARTING TEST: empty_dataset_test" << std::endl;
     for (auto const & t: getFileExtensions())
     {
         empty_dataset_test( t );
@@ -489,6 +494,7 @@ void constant_scalar(std::string file_ending)
 
 TEST_CASE( "constant_scalar", "[serial]" )
 {
+    std::cout << "STARTING TEST: constant_scalar" << std::endl;
     for (auto const & t: getFileExtensions())
     {
         constant_scalar( t );
@@ -497,6 +503,7 @@ TEST_CASE( "constant_scalar", "[serial]" )
 
 TEST_CASE( "flush_without_position_positionOffset", "[serial]" )
 {
+    std::cout << "STARTING TEST: flush_without_position_positionOffset" << std::endl;
     for( auto const & t : getFileExtensions() )
     {
         const std::string & file_ending = t;
@@ -616,6 +623,7 @@ void particle_patches( std::string file_ending )
 
 TEST_CASE( "particle_patches", "[serial]" )
 {
+    std::cout << "STARTING TEST: particle_patches" << std::endl;
     for (auto const & t: getFileExtensions())
     {
         particle_patches( t );
@@ -808,6 +816,7 @@ void dtype_test( const std::string & backend )
 
 TEST_CASE( "dtype_test", "[serial]" )
 {
+    std::cout << "STARTING TEST: dtype_test" << std::endl;
     for (auto const & t: getFileExtensions())
         dtype_test(t);
 }
@@ -894,6 +903,7 @@ void write_test(const std::string & backend)
 
 TEST_CASE( "write_test", "[serial]" )
 {
+    std::cout << "STARTING TEST: write_test" << std::endl;
     for (auto const & t: getFileExtensions())
     {
         write_test( t );
@@ -967,6 +977,7 @@ void test_complex(const std::string & backend) {
 
 TEST_CASE( "test_complex", "[serial]" )
 {
+    std::cout << "STARTING TEST: test_complex" << std::endl;
     // Notes:
     // - ADIOS1 and ADIOS 2.6.0 have no complex long double
     // - JSON read-back not distinguishable yet from N+1 shaped data set
@@ -1225,6 +1236,7 @@ void fileBased_write_test(const std::string & backend)
 
 TEST_CASE( "fileBased_write_test", "[serial]" )
 {
+    std::cout << "STARTING TEST: fileBased_write_test" << std::endl;
     for (auto const & t: getFileExtensions())
     {
         fileBased_write_test( t );
@@ -1300,6 +1312,7 @@ void sample_write_thetaMode(std::string file_ending)
 
 TEST_CASE( "sample_write_thetaMode", "[serial][thetaMode]" )
 {
+    std::cout << "STARTING TEST: sample_write_thetaMode" << std::endl;
     for (auto const & t: getFileExtensions())
     {
         sample_write_thetaMode( t );
@@ -1328,6 +1341,7 @@ void bool_test(const std::string & backend)
 
 TEST_CASE( "bool_test", "[serial]" )
 {
+    std::cout << "STARTING TEST: bool_test" << std::endl;
     for (auto const & t: getFileExtensions())
     {
         bool_test( t );
@@ -1365,6 +1379,7 @@ void patch_test(const std::string & backend)
 
 TEST_CASE( "patch_test", "[serial]" )
 {
+    std::cout << "STARTING TEST: patch_test" << std::endl;
     for (auto const & t: getFileExtensions())
     {
         patch_test( t );
@@ -1419,6 +1434,7 @@ void deletion_test(const std::string & backend)
 
 TEST_CASE( "deletion_test", "[serial]" )
 {
+    std::cout << "STARTING TEST: deletion_test" << std::endl;
     for (auto const & t: getFileExtensions())
     {
         if (t == "bp")
@@ -1444,6 +1460,7 @@ void read_missing_throw_test(const std::string & backend)
 
 TEST_CASE( "read_missing_throw_test", "[serial]" )
 {
+    std::cout << "STARTING TEST: read_missing_throw_test" << std::endl;
     for (auto const & t: getFileExtensions())
         read_missing_throw_test( t );
 }
@@ -1515,11 +1532,13 @@ void optional_paths_110_test(const std::string & backend)
 #if openPMD_HAVE_HDF5
 TEST_CASE( "optional_paths_110_test", "[serial]" )
 {
+    std::cout << "STARTING TEST: optional_paths_110_test" << std::endl;
     optional_paths_110_test("h5"); // samples only present for hdf5
 }
 
 TEST_CASE( "git_hdf5_sample_structure_test", "[serial][hdf5]" )
 {
+    std::cout << "STARTING TEST: git_hdf5_sample_structure_test" << std::endl;
 #if openPMD_USE_INVASIVE_TESTS
     try
     {
@@ -1574,6 +1593,7 @@ TEST_CASE( "git_hdf5_sample_structure_test", "[serial][hdf5]" )
 
 TEST_CASE( "git_hdf5_sample_attribute_test", "[serial][hdf5]" )
 {
+    std::cout << "STARTING TEST: git_hdf5_sample_attribute_test" << std::endl;
     try
     {
         Series o = Series("../samples/git-sample/data%T.h5", Access::READ_ONLY);
@@ -1823,6 +1843,7 @@ TEST_CASE( "git_hdf5_sample_attribute_test", "[serial][hdf5]" )
 
 TEST_CASE( "git_hdf5_sample_content_test", "[serial][hdf5]" )
 {
+    std::cout << "STARTING TEST: git_hdf5_sample_content_test" << std::endl;
     try
     {
         Series o = Series("../samples/git-sample/data%T.h5", Access::READ_ONLY);
@@ -1873,6 +1894,7 @@ TEST_CASE( "git_hdf5_sample_content_test", "[serial][hdf5]" )
 
 TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
 {
+    std::cout << "STARTING TEST: git_hdf5_sample_fileBased_read_test" << std::endl;
     try
     {
         Series o = Series("../samples/git-sample/data%T.h5", Access::READ_ONLY);
@@ -1957,6 +1979,7 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
 
 TEST_CASE( "git_hdf5_sample_read_thetaMode", "[serial][hdf5][thetaMode]" )
 {
+    std::cout << "STARTING TEST: git_hdf5_sample_read_thetaMode" << std::endl;
     try
     {
         Series o = Series("../samples/git-sample/thetaMode/data%T.h5", Access::READ_ONLY);
@@ -2022,6 +2045,7 @@ TEST_CASE( "git_hdf5_sample_read_thetaMode", "[serial][hdf5][thetaMode]" )
 
 TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
 {
+    std::cout << "STARTING TEST: hzdr_hdf5_sample_content_test" << std::endl;
     // since this file might not be publicly available, gracefully handle errors
     try
     {
@@ -2458,21 +2482,25 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
 
 TEST_CASE( "hdf5_bool_test", "[serial][hdf5]" )
 {
+    std::cout << "STARTING TEST: hdf5_bool_test" << std::endl;
     bool_test("h5");
 }
 
 TEST_CASE( "hdf5_patch_test", "[serial][hdf5]" )
 {
+    std::cout << "STARTING TEST: hdf5_patch_test" << std::endl;
     patch_test("h5");
 }
 
 TEST_CASE( "hdf5_deletion_test", "[serial][hdf5]" )
 {
+    std::cout << "STARTING TEST: hdf5_deletion_test" << std::endl;
     deletion_test("h5");
 }
 #else
 TEST_CASE( "no_serial_hdf5", "[serial][hdf5]" )
 {
+    std::cout << "STARTING TEST: no_serial_hdf5" << std::endl;
     REQUIRE(true);
 }
 #endif
@@ -2480,6 +2508,7 @@ TEST_CASE( "no_serial_hdf5", "[serial][hdf5]" )
 
 TEST_CASE( "hzdr_adios1_sample_content_test", "[serial][adios1]" )
 {
+    std::cout << "STARTING TEST: hzdr_adios1_sample_content_test" << std::endl;
     // since this file might not be publicly available, gracefully handle errors
     /** @todo add bp example files to https://github.com/openPMD/openPMD-example-datasets */
     try
@@ -2642,6 +2671,7 @@ TEST_CASE( "hzdr_adios1_sample_content_test", "[serial][adios1]" )
 #else
 TEST_CASE( "no_serial_adios1", "[serial][adios]")
 {
+    std::cout << "STARTING TEST: no_serial_adios1" << std::endl;
     REQUIRE(true);
 }
 #endif
@@ -2649,6 +2679,7 @@ TEST_CASE( "no_serial_adios1", "[serial][adios]")
 #if openPMD_HAVE_ADIOS2
 TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
 {
+    std::cout << "STARTING TEST: serial_adios2_json_config" << std::endl;
     if( auxiliary::getEnvString( "OPENPMD_BP_BACKEND", "NOT_SET" ) == "ADIOS1" )
     {
         // run this test for ADIOS2 only
@@ -2801,6 +2832,7 @@ bp4_steps( std::string const & file, std::string const & options_write, std::str
 
 TEST_CASE( "bp4_steps", "[serial][adios2]" )
 {
+    std::cout << "STARTING TEST: bp4_steps" << std::endl;
     std::string useSteps = R"(
     {
         "adios2": {
@@ -2870,6 +2902,7 @@ serial_iterator( std::string const & file )
 
 TEST_CASE( "serial_iterator", "[serial][adios2]" )
 {
+    std::cout << "STARTING TEST: serial_iterator" << std::endl;
     for( auto const & t : getFileExtensions() )
     {
         serial_iterator( "../samples/serial_iterator_filebased_%T." + t );
@@ -2938,6 +2971,7 @@ iterate_nonstreaming_series( std::string const & file )
 
 TEST_CASE( "iterate_nonstreaming_series", "[serial][adios2]" )
 {
+    std::cout << "STARTING TEST: iterate_nonstreaming_series" << std::endl;
     for( auto const & t : getFileExtensions() )
     {
         iterate_nonstreaming_series(
