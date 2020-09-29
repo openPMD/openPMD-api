@@ -2865,7 +2865,7 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
 void
 serial_iterator( std::string const & file )
 {
-    constexpr Extent::value_type extent = 1000;
+    constexpr Extent::value_type extent = 50;
     {
         Series writeSeries( file, Access::CREATE );
         auto iterations = writeSeries.writeIterations();
@@ -2874,9 +2874,9 @@ serial_iterator( std::string const & file )
             auto iteration = iterations[ i ];
             auto E_x = iteration.meshes[ "E" ][ "x" ];
             E_x.resetDataset(
-                openPMD::Dataset( openPMD::Datatype::INT, { 1000 } ) );
-            std::vector< int > data( 1000, i );
-            E_x.storeChunk( data, { 0 }, { 1000 } );
+                openPMD::Dataset( openPMD::Datatype::INT, { extent } ) );
+            std::vector< int > data( extent, i );
+            E_x.storeChunk( data, { 0 }, { extent } );
             iteration.close();
         }
     }
@@ -2913,7 +2913,7 @@ TEST_CASE( "serial_iterator", "[serial][adios2]" )
 void
 iterate_nonstreaming_series( std::string const & file )
 {
-    constexpr size_t extent = 100;
+    constexpr size_t extent = 50;
     {
         Series writeSeries( file, Access::CREATE );
         // use conventional API to write iterations
