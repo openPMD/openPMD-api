@@ -102,8 +102,6 @@ public:
         nlohmann::json config,
         std::string engineType );
 
-    MPI_Comm m_comm;
-
 #    endif // openPMD_HAVE_MPI
 
     explicit ADIOS2IOHandlerImpl(

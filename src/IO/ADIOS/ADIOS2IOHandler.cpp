@@ -69,7 +69,6 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     nlohmann::json cfg,
     std::string _engineType )
     : AbstractIOHandlerImplCommon( handler )
-    , m_comm{ communicator }
     , m_ADIOS{ communicator, ADIOS2_DEBUG_MODE }
     , engineType( std::move( _engineType ) )
 {
