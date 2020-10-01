@@ -27,6 +27,7 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Writable.hpp"
 
+#include <exception>
 #include <tuple>
 
 
@@ -114,8 +115,16 @@ Iteration::close( bool _flush )
     *m_closed = CloseStatus::ClosedInFrontend;
     if( _flush )
     {
-        Series * s = &auxiliary::deref_dynamic_cast< Series >(
-            parent->attributable->parent->attributable );
+        /* Find the root point [Series] of this file,
+         * meshesPath and particlesPath are stored there */
+        Writable *w = this->parent;
+        while( w->parent )
+            w = w->parent;
+
+        auto s = dynamic_cast< Series* >( w->attributable );
+        if( s == nullptr )
+            throw std::runtime_error("[Iteration::close] Series* is a nullptr");
+
         // figure out my iteration number
         uint64_t index;
         bool found = false;
@@ -172,10 +181,19 @@ Iteration::closedByWriter() const
 void
 Iteration::flushFileBased(std::string const& filename, uint64_t i)
 {
+    /* Find the root point [Series] of this file,
+     * meshesPath and particlesPath are stored there */
+    Writable *w = this->parent;
+    while( w->parent )
+        w = w->parent;
+
+    auto s = dynamic_cast< Series* >( w->attributable );
+    if( s == nullptr )
+        throw std::runtime_error("[Iteration::flushFileBased] Series* is a nullptr");
+
     if( !written() )
     {
         /* create file */
-        auto s = dynamic_cast< Series* >(parent->attributable->parent->attributable);
         Parameter< Operation::CREATE_FILE > fCreate;
         fCreate.name = filename;
         IOHandler->enqueue(IOTask(s, fCreate));
@@ -194,7 +212,6 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
         if((IOHandler->m_frontendAccess == Access::CREATE ) &&
            ( (IOHandler->backendName() == "MPI_ADIOS1") || (IOHandler->backendName() == "ADIOS1") ) )
         {
-            auto s = dynamic_cast< Series* >(parent->attributable->parent->attributable);
             Parameter< Operation::OPEN_FILE > fOpen;
             fOpen.name = filename;
             IOHandler->enqueue(IOTask(s, fOpen));
@@ -205,7 +222,6 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
 
         // operations for read/read-write mode
         /* open file */
-        auto s = dynamic_cast< Series* >(parent->attributable->parent->attributable);
         Parameter< Operation::OPEN_FILE > fOpen;
         fOpen.name = filename;
         IOHandler->enqueue(IOTask(s, fOpen));
