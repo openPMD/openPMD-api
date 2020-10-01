@@ -48,26 +48,29 @@
 
 namespace openPMD
 {
-/** Remove the filename extension of a given storage format.
- *
- * @param   filename    String containing the filename, possibly with filename extension.
- * @param   f           File format to remove filename extension for.
- * @return  String containing the filename without filename extension.
- */
-std::string cleanFilename(std::string const& filename, Format f);
+namespace
+{
+    /** Remove the filename extension of a given storage format.
+     *
+     * @param   filename    String containing the filename, possibly with filename extension.
+     * @param   f           File format to remove filename extension for.
+     * @return  String containing the filename without filename extension.
+     */
+    std::string cleanFilename(std::string const &filename, Format f);
 
-/** Create a functor to determine if a file can be of a format and matches an iterationEncoding, given the filename on disk.
- *
- * @param   prefix      String containing head (i.e. before %T) of desired filename without filename extension.
- * @param   padding     Amount of padding allowed in iteration number %T. If zero, any amount of padding is matched.
- * @param   postfix     String containing tail (i.e. after %T) of desired filename without filename extension.
- * @param   f           File format to check backend applicability for.
- * @return  Functor returning tuple of bool and int.
- *          bool is True if file could be of type f and matches the iterationEncoding. False otherwise.
- *          int is the amount of padding present in the iteration number %T. Is 0 if bool is False.
- */
-std::function< std::tuple< bool, int >(std::string const&) >
-matcher(std::string const& prefix, int padding, std::string const& postfix, Format f);
+    /** Create a functor to determine if a file can be of a format and matches an iterationEncoding, given the filename on disk.
+     *
+     * @param   prefix      String containing head (i.e. before %T) of desired filename without filename extension.
+     * @param   padding     Amount of padding allowed in iteration number %T. If zero, any amount of padding is matched.
+     * @param   postfix     String containing tail (i.e. after %T) of desired filename without filename extension.
+     * @param   f           File format to check backend applicability for.
+     * @return  Functor returning tuple of bool and int.
+     *          bool is True if file could be of type f and matches the iterationEncoding. False otherwise.
+     *          int is the amount of padding present in the iteration number %T. Is 0 if bool is False.
+     */
+    std::function<std::tuple<bool, int>(std::string const &)>
+    matcher(std::string const &prefix, int padding, std::string const &postfix, Format f);
+} // namespace [anonymous]
 
 struct Series::ParsedInput
 {
@@ -994,87 +997,81 @@ Series::read()
     readAttributes();
 }
 
-std::string
-cleanFilename(std::string const& filename, Format f)
+namespace
 {
-    switch( f )
-    {
-        case Format::HDF5:
-        case Format::ADIOS1:
-        case Format::ADIOS2:
-        case Format::JSON:
-            return auxiliary::replace_last(filename, suffix(f), "");
-        default:
-            return filename;
+    std::string
+    cleanFilename(std::string const &filename, Format f) {
+        switch (f) {
+            case Format::HDF5:
+            case Format::ADIOS1:
+            case Format::ADIOS2:
+            case Format::JSON:
+                return auxiliary::replace_last(filename, suffix(f), "");
+            default:
+                return filename;
+        }
     }
-}
 
-std::function< std::tuple< bool, int >(std::string const&) >
-buildMatcher(std::string const& regexPattern)
-{
+    std::function<std::tuple<bool, int>(std::string const &)>
+    buildMatcher(std::string const &regexPattern) {
 #if defined(IS_GCC_48)
-    auto pattern = std::shared_ptr< regex_t >(new regex_t, [](regex_t* p){ regfree(p); delete p; });
-    if( regcomp(pattern.get(), regexPattern.c_str(), REG_EXTENDED) )
-        throw std::runtime_error(std::string("Regex for name '") + regexPattern + std::string("' can not be compiled!"));
+        auto pattern = std::shared_ptr< regex_t >(new regex_t, [](regex_t* p){ regfree(p); delete p; });
+        if( regcomp(pattern.get(), regexPattern.c_str(), REG_EXTENDED) )
+            throw std::runtime_error(std::string("Regex for name '") + regexPattern + std::string("' can not be compiled!"));
 
-    return [pattern](std::string const& filename) -> std::tuple< bool, int >
-        {
-            std::array< regmatch_t, 2 > regexMatches;
-            bool match = !regexec(pattern.get(), filename.c_str(), regexMatches.size(), regexMatches.data(), 0);
-            int padding = match ? regexMatches[1].rm_eo - regexMatches[1].rm_so : 0;
-            return std::tuple< bool, int >{match, padding};
-        };
+        return [pattern](std::string const& filename) -> std::tuple< bool, int >
+            {
+                std::array< regmatch_t, 2 > regexMatches;
+                bool match = !regexec(pattern.get(), filename.c_str(), regexMatches.size(), regexMatches.data(), 0);
+                int padding = match ? regexMatches[1].rm_eo - regexMatches[1].rm_so : 0;
+                return std::tuple< bool, int >{match, padding};
+            };
 #else
-    std::regex pattern(regexPattern);
+        std::regex pattern(regexPattern);
 
-    return [pattern](std::string const& filename) -> std::tuple< bool, int >
-        {
+        return [pattern](std::string const &filename) -> std::tuple<bool, int> {
             std::smatch regexMatches;
             bool match = std::regex_match(filename, regexMatches, pattern);
             int padding = match ? regexMatches[1].length() : 0;
-            return std::tuple< bool, int >{match, padding};
+            return std::tuple<bool, int>{match, padding};
         };
 #endif
-}
-
-std::function< std::tuple< bool, int >(std::string const&) >
-matcher(std::string const& prefix, int padding, std::string const& postfix, Format f)
-{
-    switch( f )
-    {
-        case Format::HDF5:
-        {
-            std::string nameReg = "^" + prefix + "([[:digit:]]";
-            if( padding != 0 )
-                nameReg += "{" + std::to_string(padding) + "}";
-            else
-                nameReg += "+";
-            nameReg += + ")" + postfix + ".h5$";
-            return buildMatcher(nameReg);
-        }
-        case Format::ADIOS1:
-        case Format::ADIOS2:
-        {
-            std::string nameReg = "^" + prefix + "([[:digit:]]";
-            if( padding != 0 )
-                nameReg += "{" + std::to_string(padding) + "}";
-            else
-                nameReg += "+";
-            nameReg += + ")" + postfix + ".bp$";
-            return buildMatcher(nameReg);
-        }
-        case Format::JSON:
-        {
-            std::string nameReg = "^" + prefix + "([[:digit:]]";
-            if( padding != 0 )
-                nameReg += "{" + std::to_string(padding) + "}";
-            else
-                nameReg += "+";
-            nameReg += + ")" + postfix + ".json$";
-            return buildMatcher(nameReg);
-        }
-        default:
-            return [](std::string const&) -> std::tuple< bool, int > { return std::tuple< bool, int >{false, 0}; };
     }
-}
-} // openPMD
+
+    std::function<std::tuple<bool, int>(std::string const &)>
+    matcher(std::string const &prefix, int padding, std::string const &postfix, Format f) {
+        switch (f) {
+            case Format::HDF5: {
+                std::string nameReg = "^" + prefix + "([[:digit:]]";
+                if (padding != 0)
+                    nameReg += "{" + std::to_string(padding) + "}";
+                else
+                    nameReg += "+";
+                nameReg += +")" + postfix + ".h5$";
+                return buildMatcher(nameReg);
+            }
+            case Format::ADIOS1:
+            case Format::ADIOS2: {
+                std::string nameReg = "^" + prefix + "([[:digit:]]";
+                if (padding != 0)
+                    nameReg += "{" + std::to_string(padding) + "}";
+                else
+                    nameReg += "+";
+                nameReg += +")" + postfix + ".bp$";
+                return buildMatcher(nameReg);
+            }
+            case Format::JSON: {
+                std::string nameReg = "^" + prefix + "([[:digit:]]";
+                if (padding != 0)
+                    nameReg += "{" + std::to_string(padding) + "}";
+                else
+                    nameReg += "+";
+                nameReg += +")" + postfix + ".json$";
+                return buildMatcher(nameReg);
+            }
+            default:
+                return [](std::string const &) -> std::tuple<bool, int> { return std::tuple<bool, int>{false, 0}; };
+        }
+    }
+} // namespace [anonymous]
+} // namespace openPMD
