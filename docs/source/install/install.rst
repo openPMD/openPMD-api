@@ -178,6 +178,7 @@ CMake will summarize the install paths for you before the build step.
    # install prefix         |------------|
    export CMAKE_PREFIX_PATH=$HOME/somepath:$CMAKE_PREFIX_PATH
    export LD_LIBRARY_PATH=$HOME/somepath/lib:$LD_LIBRARY_PATH
+   # Please be aware that on a 64-bit system `.../lib` might need to be replaced by `.../lib64`.
 
    #                change path to your python MAJOR.MINOR version
    export PYTHONPATH=$HOME/somepath/lib/python3.5/site-packages:$PYTHONPATH
