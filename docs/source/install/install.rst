@@ -181,7 +181,7 @@ CMake will summarize the install paths for you before the build step.
    # Note that one some systems, /lib might need to be replaced with /lib64.
 
    #                change path to your python MAJOR.MINOR version
-   export PYTHONPATH=$HOME/somepath/lib/python3.5/site-packages:$PYTHONPATH
+   export PYTHONPATH=$HOME/somepath/lib/python3.8/site-packages:$PYTHONPATH
 
 Adding those lines to your ``$HOME/.bashrc`` and re-opening your terminal will set them permanently.
 
