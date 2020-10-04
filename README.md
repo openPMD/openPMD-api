@@ -386,7 +386,7 @@ Further thanks go to improvements and contributions from:
 * [Kseniia Bastrakova (HZDR)](https://github.com/KseniaBastrakova):
   compatibility testing
 * [Richard Pausch (HZDR)](https://github.com/PrometheusPi):
-  compatibility testing
+  compatibility testing, documentation
 * [Paweł Ordyna (HZDR)](https://github.com/pordyna):
   report on NVCC warnings
 
