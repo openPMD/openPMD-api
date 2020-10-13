@@ -131,6 +131,8 @@ void init_Series(py::module &m) {
         .def("set_particles_path", &Series::setParticlesPath)
         .def_property_readonly("author", &Series::author)
         .def("set_author", &Series::setAuthor)
+        .def_property_readonly("machine", &Series::machine)
+        .def("set_machine", &Series::setMachine)
         .def_property_readonly("software", &Series::software)
         .def("set_software", &Series::setSoftware,
             py::arg("name"), py::arg("version") = std::string("unspecified"))
