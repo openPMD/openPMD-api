@@ -127,6 +127,7 @@ class APITest(unittest.TestCase):
         series.set_software("nonsense")  # with unspecified version
         series.set_software_version("1.2.3")  # deprecated
         series.set_software("openPMD-api-python-tests", "0.42.0")
+        series.machine = "testMachine"
 
         # write one of each supported types
         series.set_attribute("char", 'c')  # string
@@ -252,6 +253,8 @@ class APITest(unittest.TestCase):
             "unittest_py_API." + file_ending,
             io.Access.read_only
         )
+
+        self.assertEqual(series.machine, "testMachine")
 
         self.assertEqual(series.get_attribute("char"), "c")
         self.assertEqual(series.get_attribute("pystring"), "howdy!")
