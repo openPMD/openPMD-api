@@ -133,8 +133,9 @@ jobs:
   - bash: echo "##vso[task.prependpath]$CONDA/bin"
     displayName: Add conda to PATH
   - script: |
-      conda install -y -c conda-forge openpmd-api
+      conda create -n openpmd -y -c conda-forge openpmd-api
   - script: |
+      source activate openpmd
       python3 -c "import openpmd_api as api; print(api.variants)"
       openpmd-ls --help
 #     python3 -m openpmd_api.ls --help
@@ -147,8 +148,9 @@ jobs:
   - bash: echo "##vso[task.prependpath]$CONDA/bin"
     displayName: Add conda to PATH
   - script: |
-      conda install -y -c conda-forge openpmd-api=*=mpi_mpich*
+      conda create -n openpmd -y -c conda-forge openpmd-api=*=mpi_mpich*
   - script: |
+      source activate openpmd
       python3 -c "import openpmd_api as api; print(api.variants)"
       openpmd-ls --help
 #      python3 -m openpmd_api.ls --help
@@ -161,8 +163,9 @@ jobs:
   - bash: echo "##vso[task.prependpath]$CONDA/bin"
     displayName: Add conda to PATH
   - script: |
-      conda install -y -c conda-forge openpmd-api=*=mpi_openmpi*
+      conda create -n openpmd -y -c conda-forge openpmd-api=*=mpi_openmpi*
   - script: |
+      source activate openpmd
       python3 -c "import openpmd_api as api; print(api.variants)"
       openpmd-ls --help
 #      python3 -m openpmd_api.ls --help
@@ -537,8 +540,9 @@ jobs:
       sudo chown -R $USER $CONDA
     displayName: Add conda to PATH
   - script: |
-      conda install -y -c conda-forge openpmd-api
+      conda create -n openpmd -y -c conda-forge openpmd-api
   - script: |
+      source activate openpmd
       python3 -c "import openpmd_api as api; print(api.variants)"
       openpmd-ls --help
 #      python3 -m openpmd_api.ls --help
@@ -553,8 +557,9 @@ jobs:
       sudo chown -R $USER $CONDA
     displayName: Add conda to PATH
   - script: |
-      conda install -y -c conda-forge openpmd-api=*=mpi_mpich*
+      conda create -n openpmd -y -c conda-forge openpmd-api=*=mpi_mpich*
   - script: |
+      source activate openpmd
       python3 -c "import openpmd_api as api; print(api.variants)"
       openpmd-ls --help
 #      python3 -m openpmd_api.ls --help
@@ -569,8 +574,9 @@ jobs:
       sudo chown -R $USER $CONDA
     displayName: Add conda to PATH
   - script: |
-      conda install -y -c conda-forge openpmd-api=*=mpi_openmpi*
+      conda create -n openpmd -y -c conda-forge openpmd-api=*=mpi_openmpi*
   - script: |
+      source activate openpmd
       python3 -c "import openpmd_api as api; print(api.variants)"
       openpmd-ls --help
 #      python3 -m openpmd_api.ls --help
