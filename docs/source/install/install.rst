@@ -51,9 +51,10 @@ A package for openPMD-api is available via the `Conda <https://conda.io>`_ packa
 
 .. code-block:: bash
 
-   # optional:            OpenMPI support  =*=mpi_openmpi*
-   # optional:              MPICH support  =*=mpi_mpich*
-   conda install -c conda-forge openpmd-api
+   # optional:                      OpenMPI support  =*=mpi_openmpi*
+   # optional:                        MPICH support  =*=mpi_mpich*
+   conda create -n openpmd -c conda-forge openpmd-api
+   conda activate openpmd
 
 .. _install-brew:
 
