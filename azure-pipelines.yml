@@ -387,7 +387,7 @@ jobs:
       export CC=$(which icc)
       curl -L -o cmake-easyinstall https://git.io/JvLxY
       chmod a+x cmake-easyinstall
-      ./cmake-easyinstall --prefix=$HOME/sw/openPMD-api git+https://github.com/openPMD/openPMD-api.git -DCMAKE_VERBOSE_MAKEFILE=ON
+      ./cmake-easyinstall --prefix=$HOME/sw/openPMD-api git+https://github.com/openPMD/openPMD-api.git -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF
       echo '#include <openPMD/openPMD.hpp>' > main.cpp
       echo 'int main(){ return 0; }' >> main.cpp
       cat main.cpp
