@@ -354,7 +354,7 @@ Mesh::read()
                 continue;
             }
             dOpen.name = component;
-            IOHandler->enqueue( IOTask( &rc, dOpen ) );
+            IOHandler->enqueue(IOTask(&rc, dOpen));
             IOHandler->flush();
             rc.written() = false;
             rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));

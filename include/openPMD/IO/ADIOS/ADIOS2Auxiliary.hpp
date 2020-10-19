@@ -133,9 +133,18 @@ namespace detail
         size_t operator( )( Params &&... );
     };
 
+    /**
+     * @brief Get openPMD datatype of attribute within given ADIOS IO.
+     *
+     * @param IO The IO within which to retrieve the attribute.
+     * @param attributeName The full ADIOS name of the attribute.
+     * @param verbose If true, print a warning if not finding the attribute.
+     * @return The openPMD datatype corresponding to the type of the attribute.
+     *         UNDEFINED if attribute is not found.
+     */
     Datatype
     attributeInfo(
-        adios2::IO &,
+        adios2::IO & IO,
         std::string const & attributeName,
         bool verbose );
 } // namespace detail

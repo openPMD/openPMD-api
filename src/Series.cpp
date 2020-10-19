@@ -1105,7 +1105,7 @@ Series::advance(
 }
 
 std::string
-cleanFilename( std::string const & filename, Format f )
+cleanFilename(std::string const& filename, Format f)
 {
     switch( f )
     {

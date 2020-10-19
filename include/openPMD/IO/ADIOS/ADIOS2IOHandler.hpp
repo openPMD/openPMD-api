@@ -102,7 +102,7 @@ public:
         nlohmann::json config,
         std::string engineType );
 
-#    endif // openPMD_HAVE_MPI
+#endif // openPMD_HAVE_MPI
 
     explicit ADIOS2IOHandlerImpl(
         AbstractIOHandler *,
@@ -441,6 +441,10 @@ namespace detail
         readAttribute( adios2::IO & IO, std::string name,
                        std::shared_ptr< Attribute::resource > resource );
 
+        /**
+         * @brief Is the attribute given by parameters name and val already
+         *        defined exactly in that way within the given IO?
+         */
         static bool
         attributeUnchanged( adios2::IO & IO, std::string name, BasicType val )
         {
@@ -814,8 +818,8 @@ namespace detail
          * iteration. If the following boolean is true, old attributes will be
          * removed upon CLOSE_GROUP.
          * Should not be set to true in persistent backends.
-         * Will be set by BufferedActions::configure_IO depending on chosen
-         * ADIOS2 engine.
+         * Will be automatically set by BufferedActions::configure_IO depending
+         * on chosen ADIOS2 engine and can not be explicitly overridden by user.
          */
         bool optimizeAttributesStreaming = false;
         enum class Steps
@@ -843,9 +847,14 @@ namespace detail
 
         template < typename BA > void enqueue( BA && ba, decltype( m_buffer ) & );
 
-
         void flush( );
 
+        /**
+         * @brief Begin or end an ADIOS step.
+         *
+         * @param mode Whether to begin or end a step.
+         * @return AdvanceStatus
+         */
         AdvanceStatus
         advance( AdvanceMode mode );
 
@@ -879,6 +888,7 @@ namespace detail
         invalidateVariablesMap();
 
     private:
+        // ADIOS engine
         std::string m_engineType;
         /*
          * streamStatus is NoStream for file-based ADIOS engines.
@@ -895,6 +905,10 @@ namespace detail
          *   step are shown which hinders parsing. So, until a step is
          *   explicitly opened via ADIOS2IOHandlerImpl::advance, do not open
          *   one.
+         *   (This is a workaround for the fact that attributes
+         *    are not associated with steps in ADIOS -- seeing all attributes
+         *    from all steps in file-based engines, but only the current
+         *    variables breaks parsing otherwise.)
          *
          */
         enum class StreamStatus

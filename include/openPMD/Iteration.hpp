@@ -130,26 +130,6 @@ public:
     bool
     closedByWriter() const;
 
-    /**
-     * @brief Begin an IO step on the IO file (or file-like object)
-     *        containing this iteration. In case of group-based iteration
-     *        layout, this will be the complete Series.
-     * 
-     * @return AdvanceStatus 
-     */
-    AdvanceStatus
-    beginStep();
-
-    /**
-     * @brief End an IO step on the IO file (or file-like object)
-     *        containing this iteration. In case of group-based iteration
-     *        layout, this will be the complete Series.
-     * 
-     * @return AdvanceStatus 
-     */
-    void
-    endStep();
-
     Container< Mesh > meshes;
     Container< ParticleSpecies > particles; //particleSpecies?
 
@@ -187,14 +167,34 @@ private:
         std::make_shared< CloseStatus >( CloseStatus::Open );
 
     /**
-     * Steps may be opened manually or automatically.
-     * If opened automatically, they should close
-     * automatically upon Iteration::close.
+     * Whether a step is currently active for this iteration.
      * Used for file-based iteration layout, see Series.hpp for
      * group-based layout.
+     * Access via stepStatus() method to automatically select the correct
+     * one among both flags.
      */
     std::shared_ptr< StepStatus > m_stepStatus =
         std::make_shared< StepStatus >( StepStatus::NoStep );
+
+    /**
+     * @brief Begin an IO step on the IO file (or file-like object)
+     *        containing this iteration. In case of group-based iteration
+     *        layout, this will be the complete Series.
+     *
+     * @return AdvanceStatus
+     */
+    AdvanceStatus
+    beginStep();
+
+    /**
+     * @brief End an IO step on the IO file (or file-like object)
+     *        containing this iteration. In case of group-based iteration
+     *        layout, this will be the complete Series.
+     *
+     * @return AdvanceStatus
+     */
+    void
+    endStep();
 
     /*
      * We cannot give the return type yet, since Iteration is still an
@@ -225,7 +225,7 @@ private:
     dirtyRecursive() const;
 
     virtual void linkHierarchy(std::shared_ptr< Writable > const& w);
-};  //Iteration
+};  // Iteration
 
 extern template
 float
@@ -261,4 +261,4 @@ template< typename T >
 inline T
 Iteration::dt() const
 { return Attributable::readFloatingpoint< T >("dt"); }
-} // namespace openPMD
+} // openPMD

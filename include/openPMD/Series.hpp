@@ -261,9 +261,21 @@ public:
      */
     void flush();
 
+    /**
+     * @brief Entry point to the reading end of the streaming API.
+     *        Look for the ReadIterations class for further documentation.
+     *
+     * @return ReadIterations
+     */
     ReadIterations
     readIterations();
 
+    /**
+     * @brief Entry point to the writing end of the streaming API.
+     *        Look for the WriteIterations class for further documentation.
+     *
+     * @return WriteIterations
+     */
     WriteIterations
     writeIterations();
 
@@ -282,6 +294,14 @@ OPENPMD_private:
     void flushGroupBased( iterations_iterator begin, iterations_iterator end );
     void flushMeshesPath();
     void flushParticlesPath();
+    /*
+     * Note:
+     * If init == false, the parsing process will seek for new
+     * Iterations/Records/Record Components etc.
+     * Re-parsing of objects that have already been parsed, is not implemented
+     * as of yet. Such a facility will be required upon implementing things such
+     * as resizable datasets.
+     */
     void readFileBased( bool init = true );
     void readGroupBased( bool init = true );
     void readBase();
@@ -309,11 +329,11 @@ OPENPMD_private:
         Iteration & iteration );
 
     /**
-     * Steps may be opened manually or automatically.
-     * If opened automatically, they should close
-     * automatically upon Iteration::close.
+     *  Whether a step is currently active for this iteration.
      * Used for group-based iteration layout, see Series.hpp for
      * iteration-based layout.
+     * Access via stepStatus() method to automatically select the correct
+     * one among both flags.
      */
     std::shared_ptr< StepStatus > m_stepStatus =
         std::make_shared< StepStatus >( StepStatus::NoStep );
@@ -332,6 +352,10 @@ OPENPMD_private:
         std::make_shared< auxiliary::Option< WriteIterations > >();
 }; // Series
 
+/**
+ * @brief Subclass of Iteration that knows its own index withing the containing
+ *        Series.
+ */
 class IndexedIteration : public Iteration
 {
     friend class SeriesIterator;

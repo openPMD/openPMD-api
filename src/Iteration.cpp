@@ -167,73 +167,6 @@ Iteration::closedByWriter() const
     }
 }
 
-AdvanceStatus
-Iteration::beginStep()
-{
-    using IE = IterationEncoding;
-    Series & series =
-        *dynamic_cast< Series * >( parent->attributable->parent->attributable );
-    // Initialize file with this to quiet warnings
-    // The following switch is comprehensive
-    Attributable * file = this;
-    switch( *series.m_iterationEncoding )
-    {
-        case IE::fileBased:
-            file = this;
-            break;
-        case IE::groupBased:
-            file = &series;
-            break;
-    }
-    AdvanceStatus status = series.advance(
-        AdvanceMode::BEGINSTEP, *file, myIteration< iterator_t >(), *this );
-    if( status != AdvanceStatus::OK )
-    {
-        return status;
-    }
-
-    // re-read -> new datasets might be available
-    if( *series.m_iterationEncoding == IE::groupBased &&
-        ( this->IOHandler->m_frontendAccess == Access::READ_ONLY ||
-          this->IOHandler->m_frontendAccess == Access::READ_WRITE ) )
-    {
-        bool previous = series.iterations.written();
-        series.iterations.written() = false;
-        auto oldType = this->IOHandler->m_frontendAccess;
-        auto newType =
-            const_cast< Access * >( &this->IOHandler->m_frontendAccess );
-        *newType = Access::READ_WRITE;
-        series.readGroupBased( false );
-        *newType = oldType;
-        series.iterations.written() = previous;
-    }
-
-    return status;
-}
-
-void
-Iteration::endStep()
-{
-    using IE = IterationEncoding;
-    Series & series =
-        *dynamic_cast< Series * >( parent->attributable->parent->attributable );
-    // Initialize file with this to quiet warnings
-    // The following switch is comprehensive
-    Attributable * file = this;
-    switch( *series.m_iterationEncoding )
-    {
-        case IE::fileBased:
-            file = this;
-            break;
-        case IE::groupBased:
-            file = &series;
-            break;
-    }
-    // @todo filebased check
-    series.advance(
-        AdvanceMode::ENDSTEP, *file, myIteration< iterator_t >(), *this );
-}
-
 void
 Iteration::flushFileBased(std::string const& filename, uint64_t i)
 {
@@ -495,6 +428,73 @@ Iteration::read()
     readAttributes();
 }
 
+AdvanceStatus
+Iteration::beginStep()
+{
+    using IE = IterationEncoding;
+    Series & series =
+        *dynamic_cast< Series * >( parent->attributable->parent->attributable );
+    // Initialize file with this to quiet warnings
+    // The following switch is comprehensive
+    Attributable * file = this;
+    switch( *series.m_iterationEncoding )
+    {
+        case IE::fileBased:
+            file = this;
+            break;
+        case IE::groupBased:
+            file = &series;
+            break;
+    }
+    AdvanceStatus status = series.advance(
+        AdvanceMode::BEGINSTEP, *file, myIteration< iterator_t >(), *this );
+    if( status != AdvanceStatus::OK )
+    {
+        return status;
+    }
+
+    // re-read -> new datasets might be available
+    if( *series.m_iterationEncoding == IE::groupBased &&
+        ( this->IOHandler->m_frontendAccess == Access::READ_ONLY ||
+          this->IOHandler->m_frontendAccess == Access::READ_WRITE ) )
+    {
+        bool previous = series.iterations.written();
+        series.iterations.written() = false;
+        auto oldType = this->IOHandler->m_frontendAccess;
+        auto newType =
+            const_cast< Access * >( &this->IOHandler->m_frontendAccess );
+        *newType = Access::READ_WRITE;
+        series.readGroupBased( false );
+        *newType = oldType;
+        series.iterations.written() = previous;
+    }
+
+    return status;
+}
+
+void
+Iteration::endStep()
+{
+    using IE = IterationEncoding;
+    Series & series =
+        *dynamic_cast< Series * >( parent->attributable->parent->attributable );
+    // Initialize file with this to quiet warnings
+    // The following switch is comprehensive
+    Attributable * file = this;
+    switch( *series.m_iterationEncoding )
+    {
+        case IE::fileBased:
+            file = this;
+            break;
+        case IE::groupBased:
+            file = &series;
+            break;
+    }
+    // @todo filebased check
+    series.advance(
+        AdvanceMode::ENDSTEP, *file, myIteration< iterator_t >(), *this );
+}
+
 template< typename Iterator >
 Iterator
 Iteration::myIteration()
@@ -566,19 +566,19 @@ Iteration::linkHierarchy(std::shared_ptr< Writable > const& w)
     particles.linkHierarchy(m_writable);
 }
 
-template
-float Iteration::time< float >() const;
-template
-double Iteration::time< double >() const;
-template
-long double Iteration::time< long double >() const;
+template float
+Iteration::time< float >() const;
+template double
+Iteration::time< double >() const;
+template long double
+Iteration::time< long double >() const;
 
-template
-float Iteration::dt< float >() const;
-template
-double Iteration::dt< double >() const;
-template
-long double Iteration::dt< long double >() const;
+template float
+Iteration::dt< float >() const;
+template double
+Iteration::dt< double >() const;
+template long double
+Iteration::dt< long double >() const;
 
 template
 Iteration& Iteration::setTime< float >(float time);
@@ -593,4 +593,4 @@ template
 Iteration& Iteration::setDt< double >(double dt);
 template
 Iteration& Iteration::setDt< long double >(long double dt);
-} // namespace openPMD
+} // openPMD

@@ -104,6 +104,7 @@ ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
             config( ADIOS2Defaults::str_type, engineConfig ).json();
         if( !engineTypeConfig.is_null() )
         {
+            // convert to string
             engineType = engineTypeConfig;
             std::transform(
                 engineType.begin(),
@@ -171,7 +172,7 @@ ADIOS2IOHandlerImpl::fileSuffix() const
     // SST engine adds its suffix unconditionally
     // so we don't add it
     static std::map< std::string, std::string > endings{
-        { "sst", "" }, { "staging", ".sst" }, { "bp4", ".bp" },
+        { "sst", "" }, { "staging", "" }, { "bp4", ".bp" },
         { "bp3", ".bp" },  { "file", ".bp" },     { "hdf5", ".h5" }
     };
     auto it = endings.find( engineType );

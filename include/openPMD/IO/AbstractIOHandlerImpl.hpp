@@ -117,7 +117,7 @@ public:
                         advance(i.writable, deref_dynamic_cast< Parameter< O::ADVANCE > >(i.parameter.get()));
                         break;
                 }
-            } catch(unsupported_data_error&)
+            } catch (unsupported_data_error&)
             {
                 (*m_handler).m_work.pop();
                 throw;
