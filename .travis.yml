@@ -208,7 +208,7 @@ jobs:
         - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
             otool -l /Users/travis/build/bin/openpmd-ls;
           fi
-        - travis_wait ctest --verbose
+        - CTEST_OUTPUT_ON_FAILURE=1 travis_wait make test
         - if [ ! -z ${LD_PRELOAD+x} ]; then
             unset LD_PRELOAD;
           fi
