@@ -287,6 +287,57 @@ TEST_CASE( "no_parallel_hdf5", "[parallel][hdf5]" )
 
 #endif
 
+#if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
+void
+available_chunks_test( std::string file_ending )
+{
+    int __mpi_rank{ -1 }, __mpi_size{ -1 };
+    MPI_Comm_rank( MPI_COMM_WORLD, &__mpi_rank );
+    MPI_Comm_size( MPI_COMM_WORLD, &__mpi_size );
+    unsigned mpi_rank{ static_cast< unsigned >( __mpi_rank ) },
+        mpi_size{ static_cast< unsigned >( __mpi_size ) };
+    std::string name = "../samples/available_chunks." + file_ending;
+
+    std::vector< int > data{ 2, 4, 6, 8 };
+    {
+        Series write( name, Access::CREATE, MPI_COMM_WORLD );
+        Iteration it0 = write.iterations[ 0 ];
+        auto E_x = it0.meshes[ "E" ][ "x" ];
+        E_x.resetDataset( { Datatype::INT, { mpi_size, 4 } } );
+        E_x.storeChunk( data, { mpi_rank, 0 }, { 1, 4 } );
+        it0.close();
+    }
+
+    {
+        Series read( name, Access::READ_ONLY, MPI_COMM_WORLD );
+        Iteration it0 = read.iterations[ 0 ];
+        auto E_x = it0.meshes[ "E" ][ "x" ];
+        ChunkTable table = E_x.availableChunks();
+        std::vector< int > ranks;
+        ranks.reserve( table.size() );
+        for( auto const & chunk : table )
+        {
+            REQUIRE(
+                chunk.offset ==
+                Offset{ static_cast< unsigned >( chunk.rank ), 0 } );
+            REQUIRE( chunk.extent == Extent{ 1, 4 } );
+            ranks.emplace_back( chunk.rank );
+        }
+        std::sort( ranks.begin(), ranks.end() );
+        for( size_t i = 0; i < ranks.size(); ++i )
+        {
+            REQUIRE( ranks[ i ] == i );
+        }
+    }
+}
+
+TEST_CASE( "available_chunks_test", "[parallel][adios]" )
+{
+    available_chunks_test( "bp" );
+}
+
+#endif
+
 #if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
 TEST_CASE( "adios_write_test", "[parallel][adios]" )
 {

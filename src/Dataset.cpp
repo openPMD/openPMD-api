@@ -82,4 +82,11 @@ Dataset::setCustomTransform(std::string const& parameter)
     transform = parameter;
     return *this;
 }
-} // openPMD
+
+Chunk::Chunk( Offset _offset, Extent _extent, int _rank )
+    : offset( std::move( _offset ) )
+    , extent( std::move( _extent ) )
+    , rank( _rank )
+{
+}
+} // namespace openPMD

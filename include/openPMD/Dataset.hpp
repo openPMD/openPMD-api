@@ -52,4 +52,14 @@ public:
     std::string compression;
     std::string transform;
 };
-} // openPMD
+
+struct Chunk
+{
+    Offset const offset;
+    Extent const extent;
+    int const rank;
+
+    Chunk( Offset, Extent, int rank );
+};
+using ChunkTable = std::vector< Chunk >;
+} // namespace openPMD

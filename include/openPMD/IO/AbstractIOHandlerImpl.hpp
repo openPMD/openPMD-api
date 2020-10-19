@@ -110,6 +110,9 @@ public:
                     case O::LIST_ATTS:
                         listAttributes(i.writable, deref_dynamic_cast< Parameter< O::LIST_ATTS > >(i.parameter.get()));
                         break;
+                    case O::AVAILABLE_CHUNKS:
+                        availableChunks(i.writable, deref_dynamic_cast< Parameter< O::AVAILABLE_CHUNKS > >(i.parameter.get()));
+                        break;
                 }
             } catch (unsupported_data_error&)
             {
@@ -127,6 +130,15 @@ public:
    */
   virtual void
   closeFile( Writable *, Parameter< Operation::CLOSE_FILE > const & ) = 0;
+  /** Report chunks that are available for loading from the dataset represented
+   *  by this writable.
+   *
+   * The resulting chunks should be stored into parameters.chunks.
+   * 
+   */
+  virtual void
+  availableChunks( Writable *, Parameter< Operation::AVAILABLE_CHUNKS > & )
+  {}
   /** Create a new file in physical storage, possibly overriding an existing file.
    *
    * The operation should fail if m_handler->m_frontendAccess is Access::READ_ONLY.

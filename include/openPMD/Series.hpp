@@ -29,6 +29,8 @@
 #include "openPMD/Iteration.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/version.hpp"
+#include "openPMD/Streaming.hpp"
+#include "openPMD/auxiliary/Future.hpp"
 
 #if openPMD_HAVE_MPI
 #   include <mpi.h>
