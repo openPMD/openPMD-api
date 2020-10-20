@@ -711,33 +711,37 @@ endif()
 # Warnings ####################################################################
 #
 # TODO: LEGACY! Use CMake TOOLCHAINS instead!
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    # list(APPEND CMAKE_CXX_FLAGS "-fsanitize=address") # address, memory, undefined
-    # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
-    # set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
-    # set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=address")
+if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        # list(APPEND CMAKE_CXX_FLAGS "-fsanitize=address") # address, memory, undefined
+        # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+        # set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
+        # set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fsanitize=address")
 
-    # note: might still need a
-    #   export LD_PRELOAD=libclang_rt.asan.so
-    # or on Debian 9 with Clang 6.0
-    #   export LD_PRELOAD=/usr/lib/llvm-6.0/lib/clang/6.0.0/lib/linux/libclang_rt.asan-x86_64.so:
-    #                     /usr/lib/llvm-6.0/lib/clang/6.0.0/lib/linux/libclang_rt.ubsan_minimal-x86_64.so
-    # at runtime when used with symbol-hidden code (e.g. pybind11 module)
+        # note: might still need a
+        #   export LD_PRELOAD=libclang_rt.asan.so
+        # or on Debian 9 with Clang 6.0
+        #   export LD_PRELOAD=/usr/lib/llvm-6.0/lib/clang/6.0.0/lib/linux/libclang_rt.asan-x86_64.so:
+        #                     /usr/lib/llvm-6.0/lib/clang/6.0.0/lib/linux/libclang_rt.ubsan_minimal-x86_64.so
+        # at runtime when used with symbol-hidden code (e.g. pybind11 module)
 
-    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Wshadow -Woverloaded-virtual -Wextra-semi -Wunreachable-code")
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Wshadow -Woverloaded-virtual -Wunreachable-code")
-elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-    # Warning C4503: "decorated name length exceeded, name was truncated"
-    # Symbols longer than 4096 chars are truncated (and hashed instead)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4503")
-    # Yes, you should build against the same C++ runtime and with same
-    # configuration (Debug/Release). MSVC does inconvenient choices for their
-    # developers, so be it. (Our Windows-users use conda-forge builds, which
-    # are consistent.)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4251")
-endif ()
+        #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Wshadow -Woverloaded-virtual -Wextra-semi -Wunreachable-code")
+    elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w3 -wd193,383,1572")
+    elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Wshadow -Woverloaded-virtual -Wunreachable-code")
+    elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+        # Warning C4503: "decorated name length exceeded, name was truncated"
+        # Symbols longer than 4096 chars are truncated (and hashed instead)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4503")
+        # Yes, you should build against the same C++ runtime and with same
+        # configuration (Debug/Release). MSVC does inconvenient choices for their
+        # developers, so be it. (Our Windows-users use conda-forge builds, which
+        # are consistent.)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4251")
+    endif()
+endif()
 
 
 # Generate Files with Configuration Options ###################################

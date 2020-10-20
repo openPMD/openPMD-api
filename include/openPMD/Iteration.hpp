@@ -92,10 +92,13 @@ public:
      */
     Iteration& setTimeUnitSI(double newTimeUnitSI);
 
-    /**
-     * @brief Close an iteration. No further (backend-propagating) accesses
-     *        may be performed on this iteration.
-     *        A closed iteration may not (yet) be reopened.
+    /** Close an iteration
+     *
+     * No further (backend-propagating) accesses may be performed on this
+     * iteration. A closed iteration may not (yet) be reopened.
+     *
+     * With an MPI-parallel series, close is an MPI-collective operation.
+     *
      * @return Reference to iteration.
      */
     /*

@@ -31,7 +31,7 @@
 #endif
 
 #ifndef OPENPMDAPI_EXPORT_ENUM_CLASS
-#   if defined(__GNUC__) && (__GNUC__ < 6) && !defined(__clang__)
+#   if defined(__GNUC__) && (__GNUC__ < 6) && !defined(__clang__) && !defined(__INTEL_COMPILER)
         // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=43407
 #       define OPENPMDAPI_EXPORT_ENUM_CLASS(ECNAME) enum class ECNAME : OPENPMDAPI_EXPORT unsigned int
 #   else

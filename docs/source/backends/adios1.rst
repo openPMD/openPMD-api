@@ -55,7 +55,7 @@ If your filesystem exposes explicit object-storage-targets (OSTs), such as Lustr
 A good number for aggregators is usually the number of contributing nodes divided by four.
 
 For fine-tuning at extreme scale or for exotic systems, please refer to the ADIOS1 manual and talk to your filesystem admins and the ADIOS1 authors.
-Be aware that extreme-sale I/O is a research topic after all.
+Be aware that extreme-scale I/O is a research topic after all.
 
 
 Limitations

@@ -157,9 +157,10 @@ spack load -r openpmd-api
 [![Conda Downloads](https://img.shields.io/conda/dn/conda-forge/openpmd-api)](https://anaconda.org/conda-forge/openpmd-api)
 
 ```bash
-# optional:            OpenMPI support  =*=mpi_openmpi*
-# optional:              MPICH support  =*=mpi_mpich*
-conda install -c conda-forge openpmd-api
+# optional:                      OpenMPI support  =*=mpi_openmpi*
+# optional:                        MPICH support  =*=mpi_mpich*
+conda create -n openpmd -c conda-forge openpmd-api
+conda activate openpmd
 ```
 
 ### [Brew](https://brew.sh)
@@ -386,7 +387,7 @@ Further thanks go to improvements and contributions from:
 * [Kseniia Bastrakova (HZDR)](https://github.com/KseniaBastrakova):
   compatibility testing
 * [Richard Pausch (HZDR)](https://github.com/PrometheusPi):
-  compatibility testing
+  compatibility testing, documentation improvements
 * [Paweł Ordyna (HZDR)](https://github.com/pordyna):
   report on NVCC warnings
 

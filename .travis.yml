@@ -184,6 +184,10 @@ jobs:
             fi;
           fi
         # build
+        - if [ ! -z ${ASAN_OPTIONS+x} ]; then
+            CXXFLAGS="${CXXFLAGS} -fsanitize=address,undefined -shared-libsan" &&
+            LDFLAGS="-fsanitize=address,undefined -shared-libsan";
+          fi
         - CXXFLAGS="${CXXFLAGS} -Werror" CXX=${CXX} CC=${CC}
           cmake
             -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
@@ -280,7 +284,7 @@ jobs:
             - openmpi-bin
       script: *script-cpp-unit
       before_install:
-        - CXX=clang++ && CC=clang && CXXFLAGS="${CXXFLAGS} -fsanitize=address,undefined -shared-libsan" && LDFLAGS="-fsanitize=address,undefined -shared-libsan"
+        - CXX=clang++ && CC=clang
         # - find / -name libclang_rt*
     # Clang 8.0.0 + Python 3.8.0 @ Bionic
     - <<: *test-cpp-unit

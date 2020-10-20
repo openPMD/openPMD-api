@@ -143,8 +143,7 @@ Python
 
    series.set_author(
        "Axel Huebl <a.huebl@hzdr.de>")
-   series.set_machine(
-       "Hall Probe 5000, Model 3")
+   series.machine = "Hall Probe 5000, Model 3"
    series.set_attribute(
        "dinner", "Pizza and Coke")
    i.set_attribute(

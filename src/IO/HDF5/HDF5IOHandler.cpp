@@ -1361,6 +1361,9 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
                 status = H5Aread(attr_id,
                                  attr_type,
                                  c);
+                VERIFY(status == 0,
+                    "[HDF5] Internal error: Failed to read attribute " + attr_name +
+                    " at " + concrete_h5_file_position(writable));
                 a = Attribute(auxiliary::strip(std::string(c), {'\0'}));
                 status = H5Dvlen_reclaim(attr_type,
                                          attr_space,
@@ -1599,6 +1602,9 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
                 status = H5Aread(attr_id,
                                  attr_type,
                                  vc.data());
+                VERIFY(status == 0,
+                    "[HDF5] Internal error: Failed to read attribute " + attr_name +
+                    " at " + concrete_h5_file_position(writable));
                 for( auto const& val : vc )
                     vs.push_back(auxiliary::strip(std::string(val), {'\0'}));
                 status = H5Dvlen_reclaim(attr_type,

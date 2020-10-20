@@ -51,9 +51,10 @@ A package for openPMD-api is available via the `Conda <https://conda.io>`_ packa
 
 .. code-block:: bash
 
-   # optional:            OpenMPI support  =*=mpi_openmpi*
-   # optional:              MPICH support  =*=mpi_mpich*
-   conda install -c conda-forge openpmd-api
+   # optional:                      OpenMPI support  =*=mpi_openmpi*
+   # optional:                        MPICH support  =*=mpi_mpich*
+   conda create -n openpmd -c conda-forge openpmd-api
+   conda activate openpmd
 
 .. _install-brew:
 
@@ -178,9 +179,10 @@ CMake will summarize the install paths for you before the build step.
    # install prefix         |------------|
    export CMAKE_PREFIX_PATH=$HOME/somepath:$CMAKE_PREFIX_PATH
    export LD_LIBRARY_PATH=$HOME/somepath/lib:$LD_LIBRARY_PATH
+   # Note that one some systems, /lib might need to be replaced with /lib64.
 
    #                change path to your python MAJOR.MINOR version
-   export PYTHONPATH=$HOME/somepath/lib/python3.5/site-packages:$PYTHONPATH
+   export PYTHONPATH=$HOME/somepath/lib/python3.8/site-packages:$PYTHONPATH
 
 Adding those lines to your ``$HOME/.bashrc`` and re-opening your terminal will set them permanently.
 

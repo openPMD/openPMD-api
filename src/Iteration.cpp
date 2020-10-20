@@ -26,6 +26,7 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Writable.hpp"
 
+#include <exception>
 #include <tuple>
 
 
@@ -170,8 +171,16 @@ Iteration::closedByWriter() const
 void
 Iteration::flushFileBased(std::string const& filename, uint64_t i)
 {
-    Series * s =
-        dynamic_cast< Series * >( parent->attributable->parent->attributable );
+    /* Find the root point [Series] of this file,
+     * meshesPath and particlesPath are stored there */
+    Writable *w = this->parent;
+    while( w->parent )
+        w = w->parent;
+
+    auto s = dynamic_cast< Series* >( w->attributable );
+    if( s == nullptr )
+        throw std::runtime_error("[Iteration::flushFileBased] Series* is a nullptr");
+
     if( !written() )
     {
         /* create file */
@@ -499,8 +508,15 @@ template< typename Iterator >
 Iterator
 Iteration::myIteration()
 {
-    Series * s =
-        dynamic_cast< Series * >( parent->attributable->parent->attributable );
+    /* Find the root point [Series] of this file,
+        * meshesPath and particlesPath are stored there */
+    Writable *w = this->parent;
+    while( w->parent )
+        w = w->parent;
+
+    auto s = dynamic_cast< Series* >( w->attributable );
+    if( s == nullptr )
+        throw std::runtime_error("[Iteration::close] Series* is a nullptr");
     for( auto it = s->iterations.begin(); it != s->iterations.end(); ++it )
     {
         if( it->second.m_writable.get() == this->m_writable.get() )
