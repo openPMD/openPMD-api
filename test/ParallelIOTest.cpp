@@ -396,7 +396,7 @@ close_iteration_test( std::string file_ending )
     std::vector< int > data{ 2, 4, 6, 8 };
     // { // we do *not* need these parentheses
     Series write( name, Access::CREATE, MPI_COMM_WORLD );
-    bool isAdios1 = write.backend() == "ADIOS1";
+    bool isAdios1 = write.backend() == "MPI_ADIOS1";
     {
         Iteration it0 = write.iterations[ 0 ];
         auto E_x = it0.meshes[ "E" ][ "x" ];
