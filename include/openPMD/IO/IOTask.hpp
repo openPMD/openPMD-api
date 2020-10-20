@@ -20,16 +20,16 @@
  */
 #pragma once
 
-#include <map>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
-
-#include "openPMD/Dataset.hpp"
 #include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attribute.hpp"
+#include "openPMD/Dataset.hpp"
+
+#include <memory>
+#include <map>
+#include <vector>
+#include <string>
+#include <utility>
 
 
 namespace openPMD

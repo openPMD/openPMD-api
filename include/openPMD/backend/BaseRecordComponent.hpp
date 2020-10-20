@@ -20,8 +20,8 @@
  */
 #pragma once
 
-#include "openPMD/Dataset.hpp"
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/Dataset.hpp"
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_protected

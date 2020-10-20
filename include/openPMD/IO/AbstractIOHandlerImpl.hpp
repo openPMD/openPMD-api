@@ -134,7 +134,7 @@ public:
    *  by this writable.
    *
    * The resulting chunks should be stored into parameters.chunks.
-   * 
+   *
    */
   virtual void
   availableChunks( Writable *, Parameter< Operation::AVAILABLE_CHUNKS > & )

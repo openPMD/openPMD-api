@@ -1176,8 +1176,7 @@ namespace detail
 
     template< typename T >
     DatasetHelper<
-        T,
-        typename std::enable_if< !DatasetTypes< T >::validType >::type >::
+        T, typename std::enable_if< !DatasetTypes< T >::validType >::type >::
         DatasetHelper( openPMD::ADIOS2IOHandlerImpl * )
     {
     }
