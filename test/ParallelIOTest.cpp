@@ -1018,4 +1018,107 @@ TEST_CASE( "parallel_adios2_json_config", "[parallel][adios2]" )
     read( "../samples/jsonConfiguredBP3Parallel.bp", readConfigBP3 );
     read( "../samples/jsonConfiguredBP4Parallel.bp", readConfigBP4 );
 }
+
+void
+adios2_ssc()
+{
+    int global_size{ -1 };
+    int global_rank{ -1 };
+    MPI_Comm_size( MPI_COMM_WORLD, &global_size );
+    MPI_Comm_rank( MPI_COMM_WORLD, &global_rank );
+    if( auxiliary::getEnvString( "OPENPMD_BP_BACKEND", "NOT_SET" ) == "ADIOS1" )
+    {
+        // run this test for ADIOS2 only
+        return;
+    }
+
+    if( global_size < 2 )
+    {
+        return;
+    }
+
+    int color = global_rank % 2;
+    MPI_Comm local_comm;
+    MPI_Comm_split( MPI_COMM_WORLD, color, global_rank, &local_comm );
+    int local_size{ -1 };
+    int local_rank{ -1 };
+    MPI_Comm_size( local_comm, &local_size );
+    MPI_Comm_rank( local_comm, &local_rank );
+
+    constexpr size_t extent = 10;
+
+    std::string options = R"(
+    {
+        "adios2": {
+            "engine": {
+                "type": "ssc"
+            }
+        }
+    })";
+
+    if( color == 0 )
+    {
+        // write
+        Series writeSeries(
+            "../samples/adios2_stream.bp",
+            Access::CREATE,
+            local_comm,
+            options );
+        auto iterations = writeSeries.writeIterations();
+        for( size_t i = 0; i < 10; ++i )
+        {
+            auto iteration = iterations[ i ];
+            auto E_x = iteration.meshes[ "E" ][ "x" ];
+            E_x.resetDataset( openPMD::Dataset(
+                openPMD::Datatype::INT, { unsigned( local_size ), extent } ) );
+            std::vector< int > data( extent, i );
+            E_x.storeChunk(
+                data, { unsigned( local_rank ), 0 }, { 1, extent } );
+
+            iteration.close();
+        }
+    }
+    else if( color == 1 )
+    {
+        // read
+        Series readSeries(
+            "../samples/adios2_stream.bp",
+            Access::READ_ONLY,
+            local_comm,
+            options );
+
+        size_t last_iteration_index = 0;
+        for( auto iteration : readSeries.readIterations() )
+        {
+            auto E_x = iteration.meshes[ "E" ][ "x" ];
+            REQUIRE( E_x.getDimensionality() == 2 );
+            REQUIRE( E_x.getExtent()[ 1 ] == extent );
+            auto chunk = E_x.loadChunk< int >(
+                { unsigned( local_rank ), 0 }, { 1, extent } );
+
+            iteration.close();
+
+            for( size_t i = 0; i < extent; ++i )
+            {
+                REQUIRE( chunk.get()[ i ] == iteration.iterationIndex );
+            }
+            last_iteration_index = iteration.iterationIndex;
+        }
+        REQUIRE( last_iteration_index == 9 );
+    }
+}
+
+TEST_CASE( "adios2_ssc", "[parallel][adios2]" )
+{
+    /*
+     * @todo Activate this test as soon as we rely upon an ADIOS2 version
+     *       including this fix https://github.com/ornladios/ADIOS2/pull/2568
+     *       (e.g. ADIOS 2.7.0).
+     */
+    constexpr bool testAdiosSSC = false;
+    if( testAdiosSSC )
+    {
+        adios2_ssc();
+    }
+}
 #endif

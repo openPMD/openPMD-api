@@ -3148,6 +3148,48 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
     bp4_steps( "../samples/bp4steps_no_no.bp", dontUseSteps, dontUseSteps );
     bp4_steps( "../samples/nullcore.bp", nullcore, "" );
     bp4_steps( "../samples/bp4steps_default.bp", "{}", "{}" );
+
+    /*
+     * Do this whole thing once more, but this time use the new attribute
+     * layout.
+     */
+    useSteps = R"(
+    {
+        "adios2": {
+            "new_attribute_layout": true,
+            "engine": {
+                "type": "bp4",
+                "usesteps": true
+            }
+        }
+    }
+    )";
+    dontUseSteps = R"(
+    {
+        "adios2": {
+            "new_attribute_layout": true,
+            "engine": {
+                "type": "bp4",
+                "usesteps": false
+            }
+        }
+    }
+    )";
+    /*
+     * @todo Activate these tests for Windows as soon as we bump the required
+     *       ADIOS2 version to 2.7.0. Read here:
+     *       https://github.com/openPMD/openPMD-api/pull/813#issuecomment-762235260
+     */
+#ifndef _WIN32
+    // sing the yes no song
+    bp4_steps( "../samples/newlayout_bp4steps_yes_yes.bp", useSteps, useSteps );
+    bp4_steps(
+        "../samples/newlayout_bp4steps_no_yes.bp", dontUseSteps, useSteps );
+    bp4_steps(
+        "../samples/newlayout_bp4steps_yes_no.bp", useSteps, dontUseSteps );
+    bp4_steps(
+        "../samples/newlayout_bp4steps_no_no.bp", dontUseSteps, dontUseSteps );
+#endif
 }
 #endif
 

@@ -78,6 +78,30 @@ jobs:
         export OPENPMD_BP_BACKEND=ADIOS1
         ctest --output-on-failure
 
+  clang5_nopy_ompi_h5_ad2_newLayout_bp3:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Spack Cache
+      uses: actions/cache@v2
+      with: {path: /opt/spack, key: clang5_nopy_ompi_h5_ad1_ad2_bp3 }
+    - name: Install
+      run: |
+        sudo apt-get install clang-5.0 gfortran libopenmpi-dev python3
+        sudo .github/workflows/dependencies/install_spack
+    - name: Build
+      env: {CC: clang-5.0, CXX: clang++-5.0, CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      run: |
+        eval $(spack env activate --sh .github/ci/spack-envs/clang5_nopy_ompi_h5_ad1_ad2_bp3/)
+        spack install
+
+        mkdir build && cd build
+        ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=OFF -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS1=OFF -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON
+        cmake --build . --parallel 2
+        export OPENPMD_NEW_ATTRIBUTE_LAYOUT=1
+        ctest --output-on-failure
+
 # TODO
 #  clang6_py36_nompi_h5_ad1_ad2_libcpp
 

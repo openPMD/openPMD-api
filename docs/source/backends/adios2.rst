@@ -75,6 +75,29 @@ A good number for substreams is usually the number of contributing nodes divided
 For fine-tuning at extreme scale or for exotic systems, please refer to the ADIOS2 manual and talk to your filesystem admins and the ADIOS2 authors.
 Be aware that extreme-scale I/O is a research topic after all.
 
+Experimental new attribute layout
+---------------------------------
+
+We are experimenting with a breaking change to our layout of openPMD datasets in ADIOS2.
+It is likely that we will in future use ADIOS attributes only for a handful of internal flags.
+Actual openPMD attributes will be modeled by ADIOS variables of the same name.
+In order to distinguish datasets from attributes, datasets will be suffixed by ``/__data__``.
+
+We hope that this will bring several advantages:
+
+* Unlike ADIOS attributes, ADIOS variables are mutable.
+* ADIOS variables are more closely related to the concept of ADIOS steps.
+  An ADIOS variable that is not written to in one step is not seen by the reader.
+  This will bring more manageable amounts of metadata for readers to parse through.
+
+The new layout may be activated **for experimental purposes** in two ways:
+
+* Via the JSON parameter ``adios2.new_attribute_layout = true``.
+* Via the environment variable ``export OPENPMD_NEW_ATTRIBUTE_LAYOUT=1``.
+
+The classical and the new layout are absolutely incompatible with one another.
+The ADIOS2 backend will **not** (yet) automatically recognize the layout that has been used by a writer when reading a dataset.
+
 Selected References
 -------------------
 
