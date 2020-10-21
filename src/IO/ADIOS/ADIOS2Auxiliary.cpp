@@ -168,13 +168,20 @@ namespace detail
     }
 
     Datatype
-    attributeInfo( adios2::IO & IO, std::string const & attributeName )
+    attributeInfo(
+        adios2::IO & IO,
+        std::string const & attributeName,
+        bool verbose )
     {
         std::string type = IO.AttributeType( attributeName );
         if( type.empty() )
         {
-            std::cerr << "[ADIOS2] Warning: Attribute with name " << attributeName
-                      << " has no type in backend." << std::endl;
+            if( verbose )
+            {
+                std::cerr << "[ADIOS2] Warning: Attribute with name "
+                          << attributeName << " has no type in backend."
+                          << std::endl;
+            }
             return Datatype::UNDEFINED;
         }
         else

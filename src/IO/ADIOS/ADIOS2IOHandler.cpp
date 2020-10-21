@@ -805,8 +805,15 @@ namespace detail
         ( std::is_same< T, rep >::value )
         {
             std::string metaAttr = "__is_boolean__" + name;
-            auto type = attributeInfo( IO, "__is_boolean__" + name );
-            if ( type == determineDatatype<rep>() )
+            /*
+             * In verbose mode, attributeInfo will yield a warning if not
+             * finding the requested attribute. Since we expect the attribute
+             * not to be present in many cases (i.e. when it is actually not
+             * a boolean), let's tell attributeInfo to be quiet.
+             */
+            auto type = attributeInfo(
+                IO, "__is_boolean__" + name, /* verbose = */ false );
+            if( type == determineDatatype< rep >() )
             {
                 auto attr = IO.InquireAttribute< rep >( metaAttr );
                 if (attr.Data().size() == 1 && attr.Data()[0] == 1)
@@ -1194,9 +1201,10 @@ namespace detail
                     ba.getEngine( ) );
     }
 
-    void BufferedAttributeRead::run( BufferedActions & ba )
+    void
+    BufferedAttributeRead::run( BufferedActions & ba )
     {
-        auto type = attributeInfo( ba.m_IO, name );
+        auto type = attributeInfo( ba.m_IO, name, /* verbose = */ true );
 
         if ( type == Datatype::UNDEFINED )
         {
