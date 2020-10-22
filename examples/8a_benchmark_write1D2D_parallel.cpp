@@ -136,8 +136,9 @@ public:
 
         std::cout << "  [" << m_Tag << "] took:" << secs << " seconds\n";
         std::cout<<"     " << m_Tag <<"  From ProgStart in seconds "<<
-      std::chrono::duration_cast<std::chrono::milliseconds>(m_End - m_ProgStart).count()/1000.0<<std::endl;
+          std::chrono::duration_cast<std::chrono::milliseconds>(m_End - m_ProgStart).count()/1000.0<<std::endl;
 
+	std::cout<<std::endl;
     }
 private:
     std::chrono::time_point<std::chrono::system_clock> m_Start;
@@ -158,7 +159,7 @@ private:
  */
 
 template<typename T>
-std::shared_ptr< T > createData(const unsigned long& size,  const T& val )
+std::shared_ptr< T > createData(const unsigned long& size,  const T& val, bool increment=false)
   {
     auto E = std::shared_ptr< T > {
       new T[size], []( T * d ) {delete[] d;}
@@ -166,7 +167,10 @@ std::shared_ptr< T > createData(const unsigned long& size,  const T& val )
 
     for(unsigned long  i = 0ul; i < size; i++ )
       {
-        E.get()[i] = val;
+	if (increment)
+	  E.get()[i] = val+i;	  
+	else
+	  E.get()[i] = val;
       }
     return E;
   }
@@ -211,243 +215,319 @@ public:
     return m_Seg;
   }
 
+  /*
+   * create unbalanced load if (step % 3 == 1) %% (m_MPISize >= 2)
+   * move loads on rank that  (% 10 = 0) to the next rank
+   *
+   */
+  void GetRankCountOffset(unsigned long& offset, unsigned long& count, int& step) const
+  {
+    count = m_Bulk;
+    offset = m_Bulk * m_MPIRank;
+
+    if (!m_Unbalance)
+      return;
+   
+    if (m_MPISize < 2)
+      return; 
+
+    if (step % 3 != 1) 
+      return;
+
+    if (m_MPIRank % 10 == 0)
+	count = 0;
+
+    if (m_MPIRank % 10 == 1)
+      {
+	offset -= m_Bulk;
+        count += m_Bulk;
+      }
+  }
+
+  void setBlockDistributionInRank(int step) 
+  {
+    unsigned long rankOffset, rankCount;
+    GetRankCountOffset(rankOffset, rankCount, step);
+
+    //std::cout<<"  .. Step = "<<step<<" Rank="<<m_MPIRank<<"  .. "<<rankOffset<<", "<<rankCount<<" "<<m_GlobalMesh.size()<<std::endl;
+
+    if (0 == rankCount)
+      return;
+
+    // many small writes
+    srand(time(NULL) * (m_MPIRank  + m_MPISize) );
+    
+    auto nBlocks = GetSeg();
+    if ((rankCount / nBlocks) <= 1) 
+      nBlocks = 1;      
+      
+    //std::vector<std::pair<unsigned long, unsigned long>> distribution;
+    m_InRankDistribution.clear();
+    unsigned long counter = 0ul;
+    for( unsigned long i = 0ul; i < nBlocks; i++ ) {
+      unsigned long blockSize = rankCount/nBlocks;
+      if ((rankCount % nBlocks != 0) && (i == (nBlocks -1)))
+	blockSize = rankCount - blockSize * (nBlocks -1);
+
+      //distribution.push_back(std::make_pair(rankOffset + counter, blockSize));
+      m_InRankDistribution.push_back(std::make_pair(rankOffset + counter, blockSize));
+      counter += blockSize;
+    }
+
+  } // setBlockDistributionInRank
+
+
+  void run(int nDim)
+  {
+    std::string balance="b";
+    if (m_Unbalance) 
+      balance="u";
+
+    { // file based
+      std::ostringstream s;
+      s << "../samples/8a_parallel_"<<m_MPISize<<"_"<<nDim<<"Dm"<<m_Ratio<<balance<<"_%07T"<<m_Backend;
+
+      std::string filename = s.str();
+
+      {
+	std::string tag = "Writing: "+filename ;
+	Timer kk(tag.c_str(), m_MPIRank);
+	
+	for( int step = 1; step <= m_Steps; step++ )    
+	  {
+	    setMesh(step, nDim);
+	    Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
+	    series.setMeshesPath( "fields" );
+	    store(series, step);
+	  }
+      } 
+    }
+
+    
+    { // group based
+      std::ostringstream s;
+      s << "../samples/8a_parallel_"<<m_MPISize<<"_"<<nDim<<"Dm"<<m_Ratio<<balance<<m_Backend;
+
+      std::string filename = s.str();
+      
+      {
+	std::string tag = "Writing: "+filename ;
+	Timer kk(tag.c_str(), m_MPIRank);
+          
+	Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
+	series.setMeshesPath( "fields" );
+
+	for( int step = 1; step <= m_Steps; step++ ) {
+	  store(series, step);
+	}
+      }
+    }
+  } // run
+
+  void
+  storeMesh(Series& series, int step, std::string& fieldName, std::string& compName)
+  {
+    MeshRecordComponent compA = series.iterations[step].meshes[fieldName][compName];
+
+    Datatype datatype = determineDatatype< double >();
+    Dataset dataset = Dataset( datatype, m_GlobalMesh );
+
+    compA.resetDataset( dataset );	
+
+    auto nBlocks = getNumBlocks();
+
+    for ( unsigned int n=0; n<nBlocks; n++ )
+      {
+	Extent meshExtent;
+	Offset meshOffset;
+	auto blockSize = getNthMeshExtent(n, meshOffset, meshExtent);
+	if (blockSize > 0) {
+	  double const value = double(1.0*n + 0.0001*step);
+	  auto A = createData<double>( blockSize, value, false ) ;
+	  compA.storeChunk( A, meshOffset, meshExtent );
+	}
+      }
+  }
+
+  //
+  // 
+  //
+  void 
+  storeParticles( ParticleSpecies& currSpecies,  int& step )
+  {
+    currSpecies.setAttribute( "particleSmoothing", "none" );
+    currSpecies.setAttribute( "openPMD_STEP", step );
+    currSpecies.setAttribute( "multiplier", m_Ratio );
+    
+    auto np = getTotalNumParticles();
+    auto const intDataSet = openPMD::Dataset(openPMD::determineDatatype< uint64_t >(), {np});
+    auto const realDataSet = openPMD::Dataset(openPMD::determineDatatype< double >(), {np});
+    currSpecies["id"][RecordComponent::SCALAR].resetDataset( intDataSet );
+    currSpecies["charge"][RecordComponent::SCALAR].resetDataset( realDataSet );
+    
+    currSpecies["momentum"]["x"].resetDataset( realDataSet );
+
+    auto nBlocks = getNumBlocks();
+
+    for ( unsigned int n=0; n<nBlocks; n++ )
+      {
+	unsigned long offset, count;
+	getNthParticleExtent(n, offset, count);
+	if (count > 0) {
+	  auto ids = createData<uint64_t>( count, offset, true ) ;
+	  currSpecies["id"][RecordComponent::SCALAR].storeChunk(ids, {offset}, {count});
+
+	  auto charges = createData<double>(count, 0.001*step, false) ;
+	  currSpecies["charge"][RecordComponent::SCALAR].storeChunk(charges,
+								    {offset}, {count});
+
+	  auto mx = createData<double>(count, 0.0003*step, false) ;
+	  currSpecies["momentum"]["x"].storeChunk(mx, 
+						  {offset}, {count});
+
+	}
+      }     
+  } // storeParticles
+
+
+  void store(Series& series, int step)
+  {
+    std::string comp_alpha = "alpha";
+    std::string fieldName1 = "E";
+    storeMesh(series, step, fieldName1, comp_alpha);
+
+    std::string fieldName2 = "B";
+    storeMesh(series, step, fieldName2, comp_alpha);
+
+    std::string field_rho = "rho";
+    std::string scalar = openPMD::MeshRecordComponent::SCALAR;
+    storeMesh(series, step, field_rho, scalar);
+
+    ParticleSpecies& currSpecies = series.iterations[step].particles["ion"];
+    storeParticles(currSpecies, step);
+
+    series.iterations[step].close();
+  }
+
+  void setMesh(int step, int nDim=1)
+  {
+    if (2 < nDim)
+      return;
+
+    if (1 == nDim)
+      m_GlobalMesh = {m_Bulk * m_MPISize};
+    if (2 == nDim) 
+      m_GlobalMesh = {m_Bulk * m_MPISize, 128};
+
+    setBlockDistributionInRank(step);
+
+  }
+
+  unsigned int getNumBlocks()
+  {
+    if (1 == m_GlobalMesh.size())
+      return m_InRankDistribution.size();
+    if (2 == m_GlobalMesh.size())
+      return m_InRankDistribution.size() * 2; 
+
+    return 0;
+  }
+
+  unsigned long  getNthMeshExtent(unsigned int n, Offset& offset, Extent& count)
+  {
+    if (n >= getNumBlocks())
+      return 0;
+
+    if (1 == m_GlobalMesh.size())
+      {
+	offset = {m_InRankDistribution[n].first};
+	count  = {m_InRankDistribution[n].second};
+	return count[0];
+      }
+    
+    if (2 == m_GlobalMesh.size())
+      {
+	auto mid = m_GlobalMesh[1]/2;
+	auto rest = m_GlobalMesh[1] - mid;
+	auto ss = m_InRankDistribution.size();
+	if (n < ss)
+	  {
+	    offset = {m_InRankDistribution[n].first, 0};
+	    count  = {m_InRankDistribution[n].second, mid};
+	  } 
+	else 
+	  { // ss <= n << 2*ss
+	    offset = {m_InRankDistribution[n-ss].first, rest};
+	    count  = {m_InRankDistribution[n-ss].second, rest};
+	  }
+	
+	return count[0] * count[1];
+      }
+
+    return 0;
+  }
+
+
+  unsigned long getTotalNumParticles()
+  {
+    unsigned long result = m_Ratio;
+
+    for (unsigned int  i=0; i<m_GlobalMesh.size(); i++)
+      result *= m_GlobalMesh[i];
+
+    return result;
+  }
+
+  void getNthParticleExtent( unsigned int n, unsigned long& offset, unsigned long& count )
+  {
+    if ( n >= getNumBlocks() )
+      return;
+
+    if ( 1 == m_GlobalMesh.size() )
+      {
+	offset =  m_InRankDistribution[n].first  * m_Ratio ;
+	count  =  m_InRankDistribution[n].second * m_Ratio ;
+	return;
+      }
+    
+    if ( 2 == m_GlobalMesh.size() )
+      {
+	auto mid = m_GlobalMesh[1]/2;
+	auto rest = m_GlobalMesh[1] - mid;
+	auto ss = m_InRankDistribution.size();
+
+	if ( n < ss )
+	  {
+	    offset = m_InRankDistribution[n].first  * mid * m_Ratio;
+	    count  = m_InRankDistribution[n].second * mid * m_Ratio;
+	  } 
+	else // ss <= n << 2*ss
+	  {
+	    auto firstHalf = m_Bulk * mid * m_Ratio;
+	    offset =  m_InRankDistribution[n - ss].first  * rest * m_Ratio + firstHalf;
+	    count  =  m_InRankDistribution[n - ss].second * rest * m_Ratio;
+	  }
+      }
+  }
+
+  
   int m_MPISize = 1;
   int m_MPIRank = 0;
   unsigned long m_Bulk = 1000ul;
   unsigned int m_Seg = 1;
   int m_Steps = 1;
   int m_TestNum = 0;
-  std::string m_Backend = ".bp";
-};
+  std::string m_Backend = ".bp";  
+  bool m_Unbalance = false;
 
-/** divide "top" elements into "upTo" non-zero segments
- *
- *
- *
- * @param top      number of elements to be subdivided
- * @param upTo     subdivide into this many different blocks
- * @param repeats     roll the die this many times to avoid duplicates between ranks
- * @return     returns the vector that has subdivision information
- */
-std::vector< unsigned long >
-segments( unsigned long top, unsigned int upTo, int& repeats )
-{
-    std::vector< unsigned long > result;
+  int m_Ratio = 1;
 
-    if( upTo == 0 || top < upTo )
-        return result;
-
-    // how many partitions
-    std::default_random_engine generator;
-    std::uniform_int_distribution< int > distribution( 1, upTo );
-    auto dice = std::bind ( distribution, generator );
-
-    int howMany = dice();
-    // repeat to avoid duplicates btw ranks
-    for( auto i=0; i<repeats; i++ )
-        howMany = dice();
-
-    if( howMany == 0 )
-        howMany = 1;
-
-    if( howMany == 1 ) {
-        result.push_back(top);
-        return result;
-    }
-
-    unsigned long counter = 0ul;
-
-    for( int i=0; i<howMany; i++ ) {
-        if( counter < top ) {
-            if( i == howMany - 1 )
-                result.push_back(top - counter);
-            else {
-                auto curr = rand() % (top-counter);
-                result.push_back(curr);
-                counter += curr;
-            }
-        } else
-            result.push_back( 0u );
-    }
-
-    return result;
-}
-
-
-/** Load data into series
- *
- * all tests call this functions to store and flush 1D data
- *
- * @param series       opemPMD-api series
- * @param varName      variable name
- * @param input        input parameters
- * @param step         iteration step
- */
-void
-LoadData( Series& series, const char* varName,  const TestInput& input, int& step )
-{
-        MeshRecordComponent mymesh = series.iterations[step].meshes[varName][MeshRecordComponent::SCALAR];
-        // example 1D domain decomposition in first index
-        Datatype datatype = determineDatatype< double >();
-        Extent global_extent = { input.m_Bulk * input.m_MPISize };
-        Dataset dataset = Dataset( datatype, global_extent );
-
-        if( 0 == input.m_MPIRank )
-            cout << "Prepared a Dataset of size " << dataset.extent[0]
-                 << " and Datatype " << dataset.dtype << "STEP : " << step << "\n";
-
-        mymesh.resetDataset( dataset );
-
-        {
-            // many small writes
-            srand(time(NULL) * (input.m_MPIRank  + input.m_MPISize) );
-            auto  repeat = input.m_MPIRank  + step;
-            std::vector< unsigned long > local_bulks = segments( input.m_Bulk, input.GetSeg(), repeat );
-
-            unsigned long counter = 0ul;
-            for( unsigned long i = 0ul; i < local_bulks.size(); i++ ) {
-                Offset chunk_offset = {(input.m_Bulk * input.m_MPIRank + counter)};
-                Extent chunk_extent = {local_bulks[i]};
-
-                if (local_bulks[i] > 0) {
-                    unsigned long local_size = local_bulks[i] ;
-                    double const value = double(i);
-                    auto E = createData<double>( local_size, value ) ;
-                    mymesh.storeChunk( E, chunk_offset, chunk_extent );
-                }
-                counter += local_bulks[i];
-            }
-        }
-
-        {
-            Timer g("Flush", input.m_MPIRank);
-            series.flush();
-        }
-}
+  Extent m_GlobalMesh;
+  std::vector<std::pair<unsigned long, unsigned long>> m_InRankDistribution;
+}; // class TestInput
 
 
 
-/**     Test 1 (this is OOM prone and is discouraged)
- *
- *      1D array in multiple steps, each steps is one file
- *
- * @param input       . input
- *
- */
-void
-Test_1( const TestInput& input)
-{
-    std::string filename = "../samples/8a_parallel_write";
-    filename.append("_%07T"+input.m_Backend);
-
-    if( 0 == input.m_MPIRank )
-        std::cout << "\n==> Multistep 1D arrays with a few blocks per rank."
-                  << "  num steps: " << input.m_Steps << ".\n==> File: "<<filename<<std::endl;
-
-    Timer kk("Test 1: ", input.m_MPIRank);
-    {
-        Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
-
-        if( 0 == input.m_MPIRank )
-            cout << "Created an empty series in parallel with "
-                 << input.m_MPISize << " MPI ranks\n";
-
-        for( int step = 1; step <= input.m_Steps; step++ )
-             LoadData(series, "var1", input, step);
-    }
-}
-
-
-/**     Test 3:
- *
- *      1D array in multiple steps, each steps is its own series, hence one file
- *      notice multiple series (=numSteps) will be created for this test.
- *
- * @param input         input
- *
- */
-void
-Test_3( const TestInput& input)
-{
-    std::string filename = "../samples/8a_parallel_write_m";
-    filename.append("_%07T"+input.m_Backend);
-
-    if( 0 == input.m_MPIRank )
-        std::cout << "\n==> Multistep 1D arrays with a few blocks per rank. Different Series per step"
-                  << "  num steps: " << input.m_Steps << ".\n==> File:"<<filename<<std::endl;
-
-    Timer kk("Test 3: ", input.m_MPIRank);
-    {
-        for( int step = 1; step <= input.m_Steps; step++ )    {
-             Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
-             LoadData(series, "var3", input, step);
-        }
-    }
-
-}
-
-
-
-
-/**     Test 2: 1D array with many steps, all in one file
- *
- *       all iterations save in one file
- *
- * @param input     input
- *
- */
-void
-Test_2(const TestInput& input)
-{
-    std::string filename = "../samples/8a_parallel_write_2"+input.m_Backend;
-
-    if (0 == input.m_MPIRank)
-        std::cout << "\n==> One file with Multistep 1D arrays with a few blocks per rank."
-                  << "  num steps: " << input.m_Steps << ".\n==> File: "<<filename<<std::endl;
-
-    Timer kk("Test 2: ", input.m_MPIRank);
-    {
-        Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
-
-        if( 0 == input.m_MPIRank )
-            cout << "Created an empty series in parallel with "
-                 << input.m_MPISize << " MPI ranks\n";
-
-        for( int step =1; step <= input.m_Steps; step++ )
-             LoadData( series, "var2", input, step);
-    }
-
-}
-
-
-/**     Run the tests according to input setup
- *    . test 0 means run all
- *
- * @param input     input
- *
- */
-void
-TestRun(const  TestInput& input)
-{
-    if ( input.m_MPIRank == 0 )
-        std::cout << "\nTestRun [" << input.m_TestNum << "]  Per Rank particle size:"
-                  << input.m_Bulk << " seg=" << input.m_Seg << std::endl;
-
-    if ( 1 == input.m_TestNum )
-        Test_1(input);
-    else if (2 == input.m_TestNum)
-        Test_2(input);
-    else if (3 == input.m_TestNum)
-        Test_3(input);
-    else if (0 == input.m_TestNum) {
-        Test_1(input);
-        Test_2(input);
-        Test_3(input);
-    } else {
-        if ( 0 == input.m_MPIRank )
-            std::cout << " No test with number " << input.m_TestNum <<". Exitingx"<< std::endl;
-    }
-}
 
 /**     TEST MAIN
  *
@@ -464,8 +544,18 @@ main( int argc, char *argv[] )
 
     Timer g( "  Main  ", input.m_MPIRank );
 
-    if( argc >= 2 )
-        input.m_TestNum = atoi( argv[1] );
+    if( argc >= 2 ) {
+      int num = atoi( argv[1] ) ;
+
+      if (num > 10) 
+	input.m_Unbalance = true;
+
+      if ( num <=  0) 
+	num = 1;
+
+      input.m_Ratio = (num-1) % 10 + 1;
+    }
+
     if( argc >= 3 )
         input.m_Bulk = strtoul( argv[2], NULL, 0 );
 
@@ -475,20 +565,14 @@ main( int argc, char *argv[] )
     if( argc >= 5 )
         input.m_Steps = atoi( argv[4] );
 
-    auto backends = getBackends();
-    //auto backends = openPMD::getFileExtensions();
-    for (auto which: backends)
-    {
-      //input.m_Backend = "."+which;
-      input.m_Backend = which;
-      TestRun(input);
 
-      if (argc == 1) {
-          input.m_Seg = 5;
-          TestRun(input);
-          input.m_Seg = 1; // back to default for next backend
-      } // code coverage
-    }
+    auto backends = getBackends();
+    for (auto which: backends)
+      {
+	input.m_Backend = which;
+	input.run(1);
+	input.run(2);
+      }
 
     MPI_Finalize();
 

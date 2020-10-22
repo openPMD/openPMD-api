@@ -28,6 +28,7 @@
 #include <random>
 #include <vector>
 #include <fstream>
+#include <algorithm>
 
 #if openPMD_HAVE_ADIOS2
 #   include <adios2.h>
@@ -122,11 +123,11 @@ public:
         m_Tag = tag;
         m_Rank = rank;
         m_Start = std::chrono::system_clock::now();
-    MemoryProfiler (rank, tag);
+	//MemoryProfiler (rank, tag);
     }
     ~Timer() {
         std::string tt = "~"+m_Tag;
-        MemoryProfiler (m_Rank, tt.c_str());
+        //MemoryProfiler (m_Rank, tt.c_str());
         m_End = std::chrono::system_clock::now();
 
         double millis = std::chrono::duration_cast< std::chrono::milliseconds >( m_End - m_Start ).count();
@@ -134,10 +135,12 @@ public:
         if( m_Rank > 0 )
           return;
 
-        std::cout << "  [" << m_Tag << "] took:" << secs << " seconds\n";
-        std::cout<<"     " << m_Tag <<"  From ProgStart in seconds "<<
-      std::chrono::duration_cast<std::chrono::milliseconds>(m_End - m_ProgStart).count()/1000.0<<std::endl;
+        std::cout << "  [" << m_Tag << "] took:" << secs << " seconds.\n";	
+	std::cout <<"   \t From ProgStart in seconds "<<
+          std::chrono::duration_cast<std::chrono::milliseconds>(m_End - m_ProgStart).count()/1000.0<<std::endl;
+	
 
+	std::cout<<std::endl;
     }
 private:
     std::chrono::time_point<std::chrono::system_clock> m_Start;
@@ -158,7 +161,7 @@ private:
  */
 
 template<typename T>
-std::shared_ptr< T > createData(const unsigned long& size,  const T& val )
+std::shared_ptr< T > createData(const unsigned long& size,  const T& val, bool increment=false)
   {
     auto E = std::shared_ptr< T > {
       new T[size], []( T * d ) {delete[] d;}
@@ -166,7 +169,10 @@ std::shared_ptr< T > createData(const unsigned long& size,  const T& val )
 
     for(unsigned long  i = 0ul; i < size; i++ )
       {
-        E.get()[i] = val;
+	if (increment)
+	  E.get()[i] = val+i;	  
+	else
+	  E.get()[i] = val;
       }
     return E;
   }
@@ -193,24 +199,229 @@ std::vector<std::string> getBackends() {
  *
  * @param mpi_size      MPI size
  * @param mpi_rank      MPI rank
- * @param bulk          num of elements
- * @param numSeg        num of subdivition for the elements
- * @param numSteps      num of iterations
  */
 class TestInput
 {
 public:
   TestInput() =  default;
 
+  void run(std::string& prefix)
+  {
+    { // file based
+      std::ostringstream s;
+      s <<prefix<<"_%07T"<<m_Backend;
+
+      std::string filename = s.str();
+
+      read(filename);
+    }
+
+    
+    { // group based
+      std::ostringstream s;
+      s <<prefix<<m_Backend;
+
+      std::string filename = s.str();
+
+      read(filename);
+    }
+  } // run
+
+  void 
+  read(std::string& filename)
+  {
+    try {
+      std::string tag = "Reading: "+filename ;
+      Timer kk(tag.c_str(), m_MPIRank);
+      Series series = Series(filename, Access::READ_ONLY, MPI_COMM_WORLD);
+      
+      int numIterations = series.iterations.size();
+      if (0 == m_MPIRank) 
+	std::cout<<"\n\t Num Iterations in " << filename<<" : " << numIterations<<std::endl;
+      
+      {
+	int counter = 1;
+	for (auto const& i : series.iterations) 
+	  {
+	    if ((1 == counter) || (numIterations == counter))
+	      readStep(series, i.first);
+	    counter ++;
+	  }
+      }
+    } catch (std::exception& ex)
+      {
+	// ADIOS NULL engine produced no file
+      }
+  }
+
+
+  void
+  colSlice2D(Series& series, MeshRecordComponent& rho, bool rankZeroOnly)
+  {
+    if (rankZeroOnly && m_MPIRank)
+      return;
+
+    std::ostringstream s;
+    s << "Col slice time: ";
+    if (rankZeroOnly)
+      s <<" rank 0 only";
+
+    Extent meshExtent = rho.getExtent();
+
+    Timer colTime(s.str().c_str(), m_MPIRank);
+
+    Offset colOff = {0, m_MPIRank % meshExtent[1]};
+    Extent colExt = {meshExtent[0], 1};
+    auto col_data = rho.loadChunk<double>(colOff, colExt);    
+    series.flush();
+  }
+
+  void 
+  rowSlice2D(Series& series, MeshRecordComponent& rho, bool rankZeroOnly)
+  {    
+    if (rankZeroOnly && m_MPIRank)
+      return;
+
+    std::ostringstream s;
+    s << "Row slice time: ";
+    if (rankZeroOnly)
+      s <<" rank 0 only";
+
+    Extent meshExtent = rho.getExtent();
+
+    Timer rowTime(s.str().c_str(), m_MPIRank);
+      
+    Offset rowOff = {meshExtent[0] - 1 - m_MPIRank % meshExtent[0], 0};
+    Extent rowExt = {1, meshExtent[1]};
+    auto row_data = rho.loadChunk<double>(rowOff, rowExt);
+    series.flush();  
+  } 
+
+  void 
+  rowSlice2DSplit(Series& series, MeshRecordComponent& rho)
+  {
+    Extent meshExtent = rho.getExtent();
+	  
+    if ((unsigned int)m_MPISize >  meshExtent[1]) 
+      return;
+    
+    Timer rowTime("Row slice time, divide among all ranks", m_MPIRank);
+    auto blob = meshExtent[1]/m_MPISize;
+    
+    // not going throw all rows.
+    for (unsigned int row=0; row < meshExtent[0]; row++)
+      {
+	if (row >= (unsigned int) m_MPISize) break;
+
+	Offset rowOff = {row, m_MPIRank * blob};
+	Extent rowExt = {1, blob};
+	if (row == (meshExtent[0] - 1))
+	  rowExt[1]  = meshExtent[1] - rowOff[1];
+	auto row_data = rho.loadChunk<double>(rowOff, rowExt);
+	series.flush();
+      }
+  }
+
+  void 
+  colSlice2DSplit(Series& series, MeshRecordComponent& rho)
+  {
+    Extent meshExtent = rho.getExtent();
+
+    if ((unsigned int)m_MPISize >  meshExtent[0])
+      return;
+    
+    if (meshExtent[0] % m_MPISize != 0)
+      return;
+    
+    Timer colTime("Col slice time, divided load", m_MPIRank);
+    auto blob = meshExtent[0]/m_MPISize;
+    
+    for (unsigned int  col = 0; col < meshExtent[1]; col++)
+      {
+	if (col >= (unsigned int) m_MPISize) break;
+	
+	Offset colOff = {m_MPIRank*blob, col};
+	Extent colExt = {blob, 1};
+	auto col_data = rho.loadChunk<double>(colOff, colExt);
+	series.flush();
+      }    	  
+  }
+
+  void
+  readStep(Series& series, int ts)
+  {
+
+    std::string comp_name = openPMD::MeshRecordComponent::SCALAR;
+
+    MeshRecordComponent rho = series.iterations[ts].meshes["rho"][comp_name];
+
+    Extent meshExtent = rho.getExtent();
+
+    if ( 2 == meshExtent.size() ) 
+      {
+	if ( 0 == m_MPIRank ) 
+	  std::cout<<"... rho meshExtent : ts="<<ts<<" ["<<meshExtent[0]<<","<<meshExtent[1]<<"]"<<std::endl;
+
+	if ( m_Pattern % 3 == 0) {
+	  rowSlice2D(series, rho, false);
+	  colSlice2D(series, rho, false);
+	}
+
+	if (m_Pattern % 2 == 0) {
+	  rowSlice2DSplit(series, rho);
+	  colSlice2DSplit(series, rho);	  	  
+	}
+
+	if (m_Pattern % 5 == 0) {
+	  rowSlice2D(series, rho, true);
+	  colSlice2D(series, rho, true);
+	}
+      }    
+
+    if (m_Pattern % 4 == 0) 
+      {     // reading particles
+	openPMD::ParticleSpecies electrons = 
+	  series.iterations[ts].particles["ion"];
+	RecordComponent charge = electrons["charge"][RecordComponent::SCALAR];
+	sliceParticles(series, charge);
+      }
+  }
+
+  void sliceParticles(Series& series, RecordComponent& charge)
+  {
+    Extent pExtent = charge.getExtent();
+
+    auto blob = pExtent[0]/(10*m_MPISize);
+    if (0 == blob) 
+      return;
+
+    auto start = pExtent[0]/4;
+
+    std::ostringstream s;
+    s << "particle retrievel time, ["<<start<<" + "<< (blob * m_MPISize) <<"] ";
+
+    Timer colTime(s.str().c_str(), m_MPIRank);
+  
+    Offset colOff = {m_MPIRank*blob};
+    Extent colExt = {blob};
+    auto col_data = charge.loadChunk<double>(colOff, colExt);
+    series.flush();
+  }
+
+
+  
   int m_MPISize = 1;
   int m_MPIRank = 0;
-  int m_Steps = 1; // only needed for reading Test_3 data
-  int m_TestNum = 0;
-  std::string m_Backend = ".bp";
-};
+  int m_Pattern = 30;
+  std::string m_Backend = ".bp";  
+
+  //std::vector<std::pair<unsigned long, unsigned long>> m_InRankDistribution;
+}; // class TestInput
 
 
-/** Read data into series
+
+
+/** Load data into series
  *
  * all tests call this functions to store and flush 1D data
  *
@@ -219,162 +430,21 @@ public:
  * @param input        input parameters
  * @param step         iteration step
  */
-void
-ReadData( Series& series, const char* varName,  const TestInput& input, int step )
+/*
+void 
+LoadData( Series& series, const char* varName,  const TestInput& input, int& step )
 {
-        MeshRecordComponent mymesh = series.iterations[step].meshes[varName][MeshRecordComponent::SCALAR];
-        auto ext = mymesh.getExtent();
+  LoadMesh2D(series, varName, input, step);
 
-        if (0 == input.m_MPIRank)
-        {
-            std::cout<<"extent:[ ";
-            for (auto e:ext)
-               std::cout<<e<<" ";
-            std::cout<<"] "<<std::endl;
-        }
-
-        Offset data_off(ext.size(), 0);
-        Extent data_ext(ext.size(), 1);
-
-        data_off[0] = input.m_MPIRank * ext[0]/input.m_MPISize;
-        if (input.m_MPIRank == (input.m_MPISize - 1))
-            data_ext[0] = ext[0] - data_off[0];
-        else
-            data_ext[0] = ext[0] / input.m_MPISize;
-
-        auto data = mymesh.loadChunk<double>(data_off, data_ext);
-        {
-            Timer g("Flush", input.m_MPIRank);
-            series.flush();
-        }
-        //std::cout<<"check data: "<<data.get()[0]<<"     "<<data.get()[data_ext[0]-1]<<std::endl;
+  ParticleSpecies& currSpecies = series.iterations[step].particles["ion"];
+  LoadParticles(currSpecies, input, step);
+  {
+    Timer g("Flush", input.m_MPIRank);
+    series.flush();
+  }  
 }
 
-
-/**     Test 1 (this is OOM prone and is discouraged)
- *
- *      1D array in multiple steps, each steps is one file
- *
- * @param input       . input
- *
- */
-void
-Test_1( const TestInput& input)
-{
-    std::string filename = "../samples/8a_parallel_write";
-    filename.append("_%07T"+input.m_Backend);
-
-    if( 0 == input.m_MPIRank )
-        std::cout << "\n==> Multistep 1D arrays with a few blocks per rank."
-                  << ".\n==> File: "<<filename<<std::endl;
-
-    Timer kk("Test 1: ", input.m_MPIRank);
-    {
-        Series series = Series(filename, Access::READ_ONLY, MPI_COMM_WORLD);
-
-        if( 0 == input.m_MPIRank )
-            cout << "Opened a series in parallel with "
-                 << input.m_MPISize << " MPI ranks\n";
-
-        if (0 == input.m_MPIRank)
-            std::cout<<"num of iterations: "<<series.iterations.size()<<std::endl;
-        for( size_t step = 1; step <= series.iterations.size(); step++ )
-             ReadData(series, "var1", input, step);
-    }
-}
-
-
-/**     Test 3:
- *
- *      1D array in multiple steps, each steps is its own series, hence one file
- *      notice multiple series (=numSteps) was applied for this test.
- *
- * @param input         input
- *
- */
-void
-Test_3( const TestInput& input)
-{
-    std::string filename = "../samples/8a_parallel_write_m";
-    filename.append("_%07T"+input.m_Backend);
-
-    if( 0 == input.m_MPIRank )
-        std::cout << "\n==> Multistep 1D arrays with a few blocks per rank. Different Series per step"
-                  << ".\n==> File:"<<filename<<std::endl;
-
-    Timer kk("Test 3: ", input.m_MPIRank);
-    {
-      Series series = Series(filename, Access::READ_ONLY, MPI_COMM_WORLD);
-      std::cout<<".. num of iterations: "<<series.iterations.size()<<std::endl;
-      for( size_t step = 1; step <= series.iterations.size(); step++ )
-        ReadData(series, "var3", input, step);
-    }
-}
-
-
-
-
-/**  Test 2:
- *       1D array with many steps, all in one file
- *
- *       all iterations save in one file
- *
- * @param input     input
- *
- */
-int
-Test_2(const TestInput& input)
-{
-    std::string filename = "../samples/8a_parallel_write_2"+input.m_Backend;
-
-    if (0 == input.m_MPIRank)
-        std::cout << "\n==> One file with Multistep 1D arrays with a few blocks per rank."
-                  << ".\n==> File: "<<filename<<std::endl;
-
-    Timer kk("Test 2: ", input.m_MPIRank);
-    {
-        Series series = Series(filename, Access::READ_ONLY, MPI_COMM_WORLD);
-
-        if( 0 == input.m_MPIRank )
-            cout << "Opened series in parallel with " << input.m_MPISize << " MPI ranks\n";
-
-        if (0 == input.m_MPIRank)
-            std::cout<<"num of iterations: "<<series.iterations.size()<<std::endl;
-
-        for( size_t step =1; step <= series.iterations.size(); step++ )
-             ReadData( series, "var2", input, step);
-        return series.iterations.size();
-    }
-}
-
-
-/**     Run the tests according to input setup
- *    . test 0 means run all
- *
- * @param input     input
- *
- */
-void
-TestRun(TestInput& input)
-{
-    if ( input.m_MPIRank == 0 )
-        std::cout << "\nTestRun [" << input.m_TestNum << "] "<< std::endl;
-
-    if ( 1 == input.m_TestNum )
-        Test_1(input);
-    else if (2 == input.m_TestNum)
-        Test_2(input);
-    else if (3 == input.m_TestNum)
-        Test_3(input);
-    else if (0 == input.m_TestNum) {
-        Test_1(input);
-        input.m_Steps = Test_2(input);
-        Test_3(input);
-    } else {
-        if ( 0 == input.m_MPIRank )
-            std::cout << " No test with number " << input.m_TestNum <<". Exitingx"<< std::endl;
-    }
-}
+*/
 
 /**     TEST MAIN
  *
@@ -384,22 +454,31 @@ int
 main( int argc, char *argv[] )
 {
     MPI_Init( &argc, &argv );
-    TestInput input;
 
+    TestInput input;
     MPI_Comm_size( MPI_COMM_WORLD, &input.m_MPISize );
     MPI_Comm_rank( MPI_COMM_WORLD, &input.m_MPIRank );
 
+    if (argc < 2) {
+      if (input.m_MPIRank == 0) 
+	std::cout<<"Usage: "<<argv[0]<<" input_file_prefix"<<std::endl;
+      MPI_Finalize();
+      return -1;
+    }
+
     Timer g( "  Main  ", input.m_MPIRank );
 
-    if( argc >= 2 )
-        input.m_TestNum = atoi( argv[1] );
+    std::string prefix = argv[1];
+
+    if (argc >= 3)
+      input.m_Pattern = atoi(argv[2]);
 
     auto backends = getBackends();
     for (auto which: backends)
-    {
-      input.m_Backend = which;
-      TestRun(input);
-    }
+      {
+	input.m_Backend = which;
+	input.run(prefix);
+      }
 
     MPI_Finalize();
 
