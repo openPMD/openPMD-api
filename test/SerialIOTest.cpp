@@ -75,6 +75,53 @@ TEST_CASE( "multi_series_test", "[serial]" )
     allSeries.clear();
 }
 
+TEST_CASE( "multiple_series_handles_test", "[serial]" )
+{
+    /*
+     * First test: No premature flushes through destructor when another copy
+     * is still around
+     */
+    {
+        std::unique_ptr< openPMD::Series > series_ptr;
+        {
+            openPMD::Series series(
+                "sample%T.json", openPMD::AccessType::CREATE );
+            series_ptr = std::make_unique< openPMD::Series >( series );
+            /*
+             * we have two handles for the same Series instance now:
+             * series and series_ptr
+             * series goes out of scope before series_ptr
+             * destructor should only do a flush after both of them go out of
+             * scope, but it will currently run directly after this comment
+             * since no iteration has been written yet, an error will be thrown
+             */
+        }
+        series_ptr->iterations[ 0 ].meshes[ "E" ][ "x" ].makeEmpty< int >( 1 );
+    }
+    /*
+     * Second test: A Series handle should remain accessible even if the
+     * original handle is destroyed
+     */
+    {
+        std::unique_ptr< openPMD::Series > series_ptr;
+        {
+            openPMD::Series series(
+                "sample%T.json", openPMD::AccessType::CREATE );
+            series_ptr = std::make_unique< openPMD::Series >( series );
+            series_ptr->iterations[ 0 ].meshes[ "E" ][ "x" ].makeEmpty< int >(
+                1 );
+        }
+        /*
+         * series_ptr is still in scope, but the original Series instance
+         * has been destroyed
+         * since internal pointers actually refer to the original *handle*,
+         * doing anything with series_ptr now (such as flushing it) yields
+         * nullpointer accesses
+         */
+        series_ptr->flush();
+    }
+}
+
 void
 close_iteration_test( std::string file_ending )
 {
