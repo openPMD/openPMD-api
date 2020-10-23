@@ -219,6 +219,10 @@ public:
    * create unbalanced load if (step % 3 == 1) %% (m_MPISize >= 2)
    * move loads on rank that  (% 10 = 0) to the next rank
    *
+   * @param offset      return   
+   * @param count       return   
+   * @param step        iteration step 
+   *
    */
   void GetRankCountOffset(unsigned long& offset, unsigned long& count, int& step) const
   {
@@ -244,12 +248,15 @@ public:
       }
   }
 
+  /*
+   * Decide the distribution blocks for this rank
+   * 
+   * @ param step       iteration step
+   */
   void setBlockDistributionInRank(int step)
   {
     unsigned long rankOffset, rankCount;
     GetRankCountOffset(rankOffset, rankCount, step);
-
-    //std::cout<<"  .. Step = "<<step<<" Rank="<<m_MPIRank<<"  .. "<<rankOffset<<", "<<rankCount<<" "<<m_GlobalMesh.size()<<std::endl;
 
     if (0 == rankCount)
       return;
@@ -277,6 +284,12 @@ public:
   } // setBlockDistributionInRank
 
 
+  /*
+   * Run all the tests: (1D/2D) * (Group/File based) * (Un/balanced)
+   *
+   * @param nDim      mesh dimention, currently 1D or 2D
+   *
+   */
   void run(int nDim)
   {
     std::string balance="b";
@@ -285,47 +298,58 @@ public:
 
     { // file based
       std::ostringstream s;
-      s << "../samples/8a_parallel_"<<m_MPISize<<"_"<<nDim<<"Dm"<<m_Ratio<<balance<<"_%07T"<<m_Backend;
+      //s << "../samples/8a_parallel_"<<m_MPISize<<"_"<<nDim<<"Dm"<<m_Ratio<<balance<<"_%07T"<<m_Backend;
+      s << "../samples/8a_parallel_"<<nDim<<"D"<<balance<<"_%07T"<<m_Backend;
 
       std::string filename = s.str();
 
       {
-    std::string tag = "Writing: "+filename ;
-    Timer kk(tag.c_str(), m_MPIRank);
+        std::string tag = "Writing: "+filename ;
+        Timer kk(tag.c_str(), m_MPIRank);
 
-    for( int step = 1; step <= m_Steps; step++ )
-      {
-        setMesh(step, nDim);
-        Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
-        series.setMeshesPath( "fields" );
-        store(series, step);
-      }
+        for( int step = 1; step <= m_Steps; step++ )
+        {
+            setMesh(step, nDim);
+            Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
+            series.setMeshesPath( "fields" );
+            store(series, step);
+        }
       }
     }
 
 
     { // group based
       std::ostringstream s;
-      s << "../samples/8a_parallel_"<<m_MPISize<<"_"<<nDim<<"Dm"<<m_Ratio<<balance<<m_Backend;
-
+      //s << "../samples/8a_parallel_"<<m_MPISize<<"_"<<nDim<<"Dm"<<m_Ratio<<balance<<m_Backend;
+      s << "../samples/8a_parallel_"<<nDim<<"D"<<balance<<m_Backend;
       std::string filename = s.str();
 
       {
-    std::string tag = "Writing: "+filename ;
-    Timer kk(tag.c_str(), m_MPIRank);
+        std::string tag = "Writing: "+filename ;
+        Timer kk(tag.c_str(), m_MPIRank);
 
-    Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
-    series.setMeshesPath( "fields" );
+        Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
+        series.setMeshesPath( "fields" );
 
-    for( int step = 1; step <= m_Steps; step++ ) {
-      store(series, step);
-    }
+        for( int step = 1; step <= m_Steps; step++ ) {
+          store(series, step);
+        }
       }
     }
   } // run
 
+
+  /*
+   * Write meshes
+   *
+   *  @param series     Input, openPMD series
+   *  @param step       Input, iteration step
+   *  @param fieldName  Input, mesh name
+   *  @param compName   Input, component of mesh
+   *
+   */
   void
-  storeMesh(Series& series, int step, std::string& fieldName, std::string& compName)
+  storeMesh(Series& series, int step, const std::string& fieldName, const std::string& compName)
   {
     MeshRecordComponent compA = series.iterations[step].meshes[fieldName][compName];
 
@@ -338,20 +362,24 @@ public:
 
     for ( unsigned int n=0; n<nBlocks; n++ )
       {
-    Extent meshExtent;
-    Offset meshOffset;
-    auto blockSize = getNthMeshExtent(n, meshOffset, meshExtent);
-    if (blockSize > 0) {
-      double const value = double(1.0*n + 0.0001*step);
-      auto A = createData<double>( blockSize, value, false ) ;
-      compA.storeChunk( A, meshOffset, meshExtent );
-    }
+        Extent meshExtent;
+        Offset meshOffset;
+        auto blockSize = getNthMeshExtent(n, meshOffset, meshExtent);
+        if (blockSize > 0) {
+            double const value = double(1.0*n + 0.0001*step);
+            auto A = createData<double>( blockSize, value, false ) ;
+            compA.storeChunk( A, meshOffset, meshExtent );
+        }
       }
   }
 
-  //
-  //
-  //
+  /*
+   * Write particles. (always 1D)  
+   * 
+   * @param ParticleSpecies    Input
+   * @param step               Iteration step
+   *
+   */
   void
   storeParticles( ParticleSpecies& currSpecies,  int& step )
   {
@@ -371,18 +399,18 @@ public:
 
     for ( unsigned int n=0; n<nBlocks; n++ )
       {
-    unsigned long offset=0, count=0;
-    getNthParticleExtent(n, offset, count);
-    if (count > 0) {
-      auto ids = createData<uint64_t>( count, offset, true ) ;
-      currSpecies["id"][RecordComponent::SCALAR].storeChunk(ids, {offset}, {count});
+        unsigned long offset=0, count=0;
+        getNthParticleExtent(n, offset, count);
+        if (count > 0) {
+            auto ids = createData<uint64_t>( count, offset, true ) ;
+            currSpecies["id"][RecordComponent::SCALAR].storeChunk(ids, {offset}, {count});
 
-      auto charges = createData<double>(count, 0.001*step, false) ;
-      currSpecies["charge"][RecordComponent::SCALAR].storeChunk(charges,
+            auto charges = createData<double>(count, 0.001*step, false) ;
+            currSpecies["charge"][RecordComponent::SCALAR].storeChunk(charges,
                                     {offset}, {count});
 
-      auto mx = createData<double>(count, 0.0003*step, false) ;
-      currSpecies["momentum"]["x"].storeChunk(mx,
+            auto mx = createData<double>(count, 0.0003*step, false) ;
+            currSpecies["momentum"]["x"].storeChunk(mx,
                           {offset}, {count});
 
     }
@@ -390,6 +418,13 @@ public:
   } // storeParticles
 
 
+  /*
+   * Write a Series
+   *
+   * @param Series   input
+   * @param step     iteration step
+   *
+   */
   void store(Series& series, int step)
   {
     std::string comp_alpha = "alpha";
@@ -409,6 +444,16 @@ public:
     series.iterations[step].close();
   }
 
+  /*
+   * setup the mesh according to dimension
+   * when dim=2, second dimension is 128
+   * call this function before writing series
+   *
+   * @param step    iteration step
+   * @param nDim    num dimension
+   *
+   */
+
   void setMesh(int step, int nDim=1)
   {
     if (2 < nDim)
@@ -423,6 +468,11 @@ public:
 
   }
 
+  /*
+   * get number of blocks
+   * related to setMesh()
+   * 
+   */
   unsigned int getNumBlocks()
   {
     if (1 == m_GlobalMesh.size())
@@ -433,6 +483,14 @@ public:
     return 0;
   }
 
+  /*
+   * Returns offset/count of the Nth mesh block in a rank
+   *
+   * @param n         which block
+   * @param offset    Return
+   * @parm  count     Return
+   *
+   */
   unsigned long  getNthMeshExtent(unsigned int n, Offset& offset, Extent& count)
   {
     if (n >= getNumBlocks())
@@ -440,34 +498,39 @@ public:
 
     if (1 == m_GlobalMesh.size())
       {
-    offset = {m_InRankDistribution[n].first};
-    count  = {m_InRankDistribution[n].second};
-    return count[0];
+        offset = {m_InRankDistribution[n].first};
+        count  = {m_InRankDistribution[n].second};
+        return count[0];
       }
 
     if (2 == m_GlobalMesh.size())
       {
-    auto mid = m_GlobalMesh[1]/2;
-    auto rest = m_GlobalMesh[1] - mid;
-    auto ss = m_InRankDistribution.size();
-    if (n < ss)
-      {
-        offset = {m_InRankDistribution[n].first, 0};
-        count  = {m_InRankDistribution[n].second, mid};
-      }
-    else
-      { // ss <= n << 2*ss
-        offset = {m_InRankDistribution[n-ss].first, rest};
-        count  = {m_InRankDistribution[n-ss].second, rest};
-      }
+        auto mid = m_GlobalMesh[1]/2;
+        auto rest = m_GlobalMesh[1] - mid;
+        auto ss = m_InRankDistribution.size();
+        if (n < ss)
+        {
+           offset = {m_InRankDistribution[n].first, 0};
+           count  = {m_InRankDistribution[n].second, mid};
+        }
+        else
+        { // ss <= n << 2*ss
+          offset = {m_InRankDistribution[n-ss].first, rest};
+          count  = {m_InRankDistribution[n-ss].second, rest};
+        }
 
-    return count[0] * count[1];
-      }
+        return count[0] * count[1];
+     }
 
     return 0;
   }
 
 
+  /*
+   * Return total number of particles
+   *   set to be a multiple of mesh size
+   *
+   */
   unsigned long getTotalNumParticles()
   {
     unsigned long result = m_Ratio;
@@ -478,6 +541,10 @@ public:
     return result;
   }
 
+  /*
+   * Returns number of particles on a block in a rank
+   *
+   */
   void getNthParticleExtent( unsigned int n, unsigned long& offset, unsigned long& count )
   {
     if ( n >= getNumBlocks() )
@@ -485,28 +552,28 @@ public:
 
     if ( 1 == m_GlobalMesh.size() )
       {
-    offset =  m_InRankDistribution[n].first  * m_Ratio ;
-    count  =  m_InRankDistribution[n].second * m_Ratio ;
-    return;
+        offset =  m_InRankDistribution[n].first  * m_Ratio ;
+        count  =  m_InRankDistribution[n].second * m_Ratio ;
+        return;
       }
 
     if ( 2 == m_GlobalMesh.size() )
       {
-    auto mid = m_GlobalMesh[1]/2;
-    auto rest = m_GlobalMesh[1] - mid;
-    auto ss = m_InRankDistribution.size();
+        auto mid = m_GlobalMesh[1]/2;
+        auto rest = m_GlobalMesh[1] - mid;
+        auto ss = m_InRankDistribution.size();
 
-    if ( n < ss )
-      {
-        offset = m_InRankDistribution[n].first  * mid * m_Ratio;
-        count  = m_InRankDistribution[n].second * mid * m_Ratio;
-      }
-    else // ss <= n << 2*ss
-      {
-        auto firstHalf = m_Bulk * mid * m_Ratio;
-        offset =  m_InRankDistribution[n - ss].first  * rest * m_Ratio + firstHalf;
-        count  =  m_InRankDistribution[n - ss].second * rest * m_Ratio;
-      }
+        if ( n < ss )
+        {
+           offset = m_InRankDistribution[n].first  * mid * m_Ratio;
+           count  = m_InRankDistribution[n].second * mid * m_Ratio;
+        }
+        else // ss <= n << 2*ss
+        {
+           auto firstHalf = m_Bulk * mid * m_Ratio;
+           offset =  m_InRankDistribution[n - ss].first  * rest * m_Ratio + firstHalf;
+           count  =  m_InRankDistribution[n - ss].second * rest * m_Ratio;
+        }
       }
   }
 
