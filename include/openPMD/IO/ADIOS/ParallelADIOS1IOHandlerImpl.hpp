@@ -58,7 +58,7 @@ namespace openPMD
         void extendDataset(Writable*, Parameter< Operation::EXTEND_DATASET > const&) override;
         void openFile(Writable*, Parameter< Operation::OPEN_FILE > const&) override;
         void closeFile(Writable*, Parameter< Operation::CLOSE_FILE > const&) override;
-        void openPath(Writable*, Parameter< Operation::OPEN_PATH > const&) override;
+        void availableChunks(Writable*, Parameter< Operation::AVAILABLE_CHUNKS > &) override;void openPath(Writable*, Parameter< Operation::OPEN_PATH > const&) override;
         void openDataset(Writable*, Parameter< Operation::OPEN_DATASET > &) override;
         void deleteFile(Writable*, Parameter< Operation::DELETE_FILE > const&) override;
         void deletePath(Writable*, Parameter< Operation::DELETE_PATH > const&) override;
