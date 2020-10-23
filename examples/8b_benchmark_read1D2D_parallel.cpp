@@ -123,7 +123,7 @@ public:
         m_Tag = tag;
         m_Rank = rank;
         m_Start = std::chrono::system_clock::now();
-	//MemoryProfiler (rank, tag);
+    //MemoryProfiler (rank, tag);
     }
     ~Timer() {
         std::string tt = "~"+m_Tag;
@@ -135,12 +135,12 @@ public:
         if( m_Rank > 0 )
           return;
 
-        std::cout << "  [" << m_Tag << "] took:" << secs << " seconds.\n";	
-	std::cout <<"   \t From ProgStart in seconds "<<
+        std::cout << "  [" << m_Tag << "] took:" << secs << " seconds.\n";    
+    std::cout <<"   \t From ProgStart in seconds "<<
           std::chrono::duration_cast<std::chrono::milliseconds>(m_End - m_ProgStart).count()/1000.0<<std::endl;
-	
+    
 
-	std::cout<<std::endl;
+    std::cout<<std::endl;
     }
 private:
     std::chrono::time_point<std::chrono::system_clock> m_Start;
@@ -169,10 +169,10 @@ std::shared_ptr< T > createData(const unsigned long& size,  const T& val, bool i
 
     for(unsigned long  i = 0ul; i < size; i++ )
       {
-	if (increment)
-	  E.get()[i] = val+i;	  
-	else
-	  E.get()[i] = val;
+    if (increment)
+      E.get()[i] = val+i;      
+    else
+      E.get()[i] = val;
       }
     return E;
   }
@@ -237,20 +237,20 @@ public:
       
       int numIterations = series.iterations.size();
       if (0 == m_MPIRank) 
-	std::cout<<"\n\t Num Iterations in " << filename<<" : " << numIterations<<std::endl;
+    std::cout<<"\n\t Num Iterations in " << filename<<" : " << numIterations<<std::endl;
       
       {
-	int counter = 1;
-	for (auto const& i : series.iterations) 
-	  {
-	    if ((1 == counter) || (numIterations == counter))
-	      readStep(series, i.first);
-	    counter ++;
-	  }
+    int counter = 1;
+    for (auto const& i : series.iterations) 
+      {
+        if ((1 == counter) || (numIterations == counter))
+          readStep(series, i.first);
+        counter ++;
+      }
       }
     } catch (std::exception& ex)
       {
-	// ADIOS NULL engine produced no file
+    // ADIOS NULL engine produced no file
       }
   }
 
@@ -301,7 +301,7 @@ public:
   rowSlice2DSplit(Series& series, MeshRecordComponent& rho)
   {
     Extent meshExtent = rho.getExtent();
-	  
+      
     if ((unsigned int)m_MPISize >  meshExtent[1]) 
       return;
     
@@ -311,14 +311,14 @@ public:
     // not going throw all rows.
     for (unsigned int row=0; row < meshExtent[0]; row++)
       {
-	if (row >= (unsigned int) m_MPISize) break;
+    if (row >= (unsigned int) m_MPISize) break;
 
-	Offset rowOff = {row, m_MPIRank * blob};
-	Extent rowExt = {1, blob};
-	if (row == (meshExtent[0] - 1))
-	  rowExt[1]  = meshExtent[1] - rowOff[1];
-	auto row_data = rho.loadChunk<double>(rowOff, rowExt);
-	series.flush();
+    Offset rowOff = {row, m_MPIRank * blob};
+    Extent rowExt = {1, blob};
+    if (row == (meshExtent[0] - 1))
+      rowExt[1]  = meshExtent[1] - rowOff[1];
+    auto row_data = rho.loadChunk<double>(rowOff, rowExt);
+    series.flush();
       }
   }
 
@@ -338,13 +338,13 @@ public:
     
     for (unsigned int  col = 0; col < meshExtent[1]; col++)
       {
-	if (col >= (unsigned int) m_MPISize) break;
-	
-	Offset colOff = {m_MPIRank*blob, col};
-	Extent colExt = {blob, 1};
-	auto col_data = rho.loadChunk<double>(colOff, colExt);
-	series.flush();
-      }    	  
+    if (col >= (unsigned int) m_MPISize) break;
+    
+    Offset colOff = {m_MPIRank*blob, col};
+    Extent colExt = {blob, 1};
+    auto col_data = rho.loadChunk<double>(colOff, colExt);
+    series.flush();
+      }          
   }
 
   void
@@ -359,31 +359,31 @@ public:
 
     if ( 2 == meshExtent.size() ) 
       {
-	if ( 0 == m_MPIRank ) 
-	  std::cout<<"... rho meshExtent : ts="<<ts<<" ["<<meshExtent[0]<<","<<meshExtent[1]<<"]"<<std::endl;
+    if ( 0 == m_MPIRank ) 
+      std::cout<<"... rho meshExtent : ts="<<ts<<" ["<<meshExtent[0]<<","<<meshExtent[1]<<"]"<<std::endl;
 
-	if ( m_Pattern % 3 == 0) {
-	  rowSlice2D(series, rho, false);
-	  colSlice2D(series, rho, false);
-	}
+    if ( m_Pattern % 3 == 0) {
+      rowSlice2D(series, rho, false);
+      colSlice2D(series, rho, false);
+    }
 
-	if (m_Pattern % 2 == 0) {
-	  rowSlice2DSplit(series, rho);
-	  colSlice2DSplit(series, rho);	  	  
-	}
+    if (m_Pattern % 2 == 0) {
+      rowSlice2DSplit(series, rho);
+      colSlice2DSplit(series, rho);            
+    }
 
-	if (m_Pattern % 5 == 0) {
-	  rowSlice2D(series, rho, true);
-	  colSlice2D(series, rho, true);
-	}
+    if (m_Pattern % 5 == 0) {
+      rowSlice2D(series, rho, true);
+      colSlice2D(series, rho, true);
+    }
       }    
 
     if (m_Pattern % 4 == 0) 
       {     // reading particles
-	openPMD::ParticleSpecies electrons = 
-	  series.iterations[ts].particles["ion"];
-	RecordComponent charge = electrons["charge"][RecordComponent::SCALAR];
-	sliceParticles(series, charge);
+    openPMD::ParticleSpecies electrons = 
+      series.iterations[ts].particles["ion"];
+    RecordComponent charge = electrons["charge"][RecordComponent::SCALAR];
+    sliceParticles(series, charge);
       }
   }
 
@@ -461,7 +461,7 @@ main( int argc, char *argv[] )
 
     if (argc < 2) {
       if (input.m_MPIRank == 0) 
-	std::cout<<"Usage: "<<argv[0]<<" input_file_prefix"<<std::endl;
+    std::cout<<"Usage: "<<argv[0]<<" input_file_prefix"<<std::endl;
       MPI_Finalize();
       return -1;
     }
@@ -476,8 +476,8 @@ main( int argc, char *argv[] )
     auto backends = getBackends();
     for (auto which: backends)
       {
-	input.m_Backend = which;
-	input.run(prefix);
+    input.m_Backend = which;
+    input.run(prefix);
       }
 
     MPI_Finalize();

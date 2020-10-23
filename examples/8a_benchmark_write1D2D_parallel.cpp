@@ -138,7 +138,7 @@ public:
         std::cout<<"     " << m_Tag <<"  From ProgStart in seconds "<<
           std::chrono::duration_cast<std::chrono::milliseconds>(m_End - m_ProgStart).count()/1000.0<<std::endl;
 
-	std::cout<<std::endl;
+    std::cout<<std::endl;
     }
 private:
     std::chrono::time_point<std::chrono::system_clock> m_Start;
@@ -167,10 +167,10 @@ std::shared_ptr< T > createData(const unsigned long& size,  const T& val, bool i
 
     for(unsigned long  i = 0ul; i < size; i++ )
       {
-	if (increment)
-	  E.get()[i] = val+i;	  
-	else
-	  E.get()[i] = val;
+    if (increment)
+      E.get()[i] = val+i;      
+    else
+      E.get()[i] = val;
       }
     return E;
   }
@@ -235,11 +235,11 @@ public:
       return;
 
     if (m_MPIRank % 10 == 0)
-	count = 0;
+    count = 0;
 
     if (m_MPIRank % 10 == 1)
       {
-	offset -= m_Bulk;
+    offset -= m_Bulk;
         count += m_Bulk;
       }
   }
@@ -267,7 +267,7 @@ public:
     for( unsigned long i = 0ul; i < nBlocks; i++ ) {
       unsigned long blockSize = rankCount/nBlocks;
       if ((rankCount % nBlocks != 0) && (i == (nBlocks -1)))
-	blockSize = rankCount - blockSize * (nBlocks -1);
+    blockSize = rankCount - blockSize * (nBlocks -1);
 
       //distribution.push_back(std::make_pair(rankOffset + counter, blockSize));
       m_InRankDistribution.push_back(std::make_pair(rankOffset + counter, blockSize));
@@ -290,16 +290,16 @@ public:
       std::string filename = s.str();
 
       {
-	std::string tag = "Writing: "+filename ;
-	Timer kk(tag.c_str(), m_MPIRank);
-	
-	for( int step = 1; step <= m_Steps; step++ )    
-	  {
-	    setMesh(step, nDim);
-	    Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
-	    series.setMeshesPath( "fields" );
-	    store(series, step);
-	  }
+    std::string tag = "Writing: "+filename ;
+    Timer kk(tag.c_str(), m_MPIRank);
+    
+    for( int step = 1; step <= m_Steps; step++ )    
+      {
+        setMesh(step, nDim);
+        Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
+        series.setMeshesPath( "fields" );
+        store(series, step);
+      }
       } 
     }
 
@@ -311,15 +311,15 @@ public:
       std::string filename = s.str();
       
       {
-	std::string tag = "Writing: "+filename ;
-	Timer kk(tag.c_str(), m_MPIRank);
+    std::string tag = "Writing: "+filename ;
+    Timer kk(tag.c_str(), m_MPIRank);
           
-	Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
-	series.setMeshesPath( "fields" );
+    Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
+    series.setMeshesPath( "fields" );
 
-	for( int step = 1; step <= m_Steps; step++ ) {
-	  store(series, step);
-	}
+    for( int step = 1; step <= m_Steps; step++ ) {
+      store(series, step);
+    }
       }
     }
   } // run
@@ -332,20 +332,20 @@ public:
     Datatype datatype = determineDatatype< double >();
     Dataset dataset = Dataset( datatype, m_GlobalMesh );
 
-    compA.resetDataset( dataset );	
+    compA.resetDataset( dataset );    
 
     auto nBlocks = getNumBlocks();
 
     for ( unsigned int n=0; n<nBlocks; n++ )
       {
-	Extent meshExtent;
-	Offset meshOffset;
-	auto blockSize = getNthMeshExtent(n, meshOffset, meshExtent);
-	if (blockSize > 0) {
-	  double const value = double(1.0*n + 0.0001*step);
-	  auto A = createData<double>( blockSize, value, false ) ;
-	  compA.storeChunk( A, meshOffset, meshExtent );
-	}
+    Extent meshExtent;
+    Offset meshOffset;
+    auto blockSize = getNthMeshExtent(n, meshOffset, meshExtent);
+    if (blockSize > 0) {
+      double const value = double(1.0*n + 0.0001*step);
+      auto A = createData<double>( blockSize, value, false ) ;
+      compA.storeChunk( A, meshOffset, meshExtent );
+    }
       }
   }
 
@@ -371,21 +371,21 @@ public:
 
     for ( unsigned int n=0; n<nBlocks; n++ )
       {
-	unsigned long offset=0, count=0;
-	getNthParticleExtent(n, offset, count);
-	if (count > 0) {
-	  auto ids = createData<uint64_t>( count, offset, true ) ;
-	  currSpecies["id"][RecordComponent::SCALAR].storeChunk(ids, {offset}, {count});
+    unsigned long offset=0, count=0;
+    getNthParticleExtent(n, offset, count);
+    if (count > 0) {
+      auto ids = createData<uint64_t>( count, offset, true ) ;
+      currSpecies["id"][RecordComponent::SCALAR].storeChunk(ids, {offset}, {count});
 
-	  auto charges = createData<double>(count, 0.001*step, false) ;
-	  currSpecies["charge"][RecordComponent::SCALAR].storeChunk(charges,
-								    {offset}, {count});
+      auto charges = createData<double>(count, 0.001*step, false) ;
+      currSpecies["charge"][RecordComponent::SCALAR].storeChunk(charges,
+                                    {offset}, {count});
 
-	  auto mx = createData<double>(count, 0.0003*step, false) ;
-	  currSpecies["momentum"]["x"].storeChunk(mx, 
-						  {offset}, {count});
+      auto mx = createData<double>(count, 0.0003*step, false) ;
+      currSpecies["momentum"]["x"].storeChunk(mx, 
+                          {offset}, {count});
 
-	}
+    }
       }     
   } // storeParticles
 
@@ -440,28 +440,28 @@ public:
 
     if (1 == m_GlobalMesh.size())
       {
-	offset = {m_InRankDistribution[n].first};
-	count  = {m_InRankDistribution[n].second};
-	return count[0];
+    offset = {m_InRankDistribution[n].first};
+    count  = {m_InRankDistribution[n].second};
+    return count[0];
       }
     
     if (2 == m_GlobalMesh.size())
       {
-	auto mid = m_GlobalMesh[1]/2;
-	auto rest = m_GlobalMesh[1] - mid;
-	auto ss = m_InRankDistribution.size();
-	if (n < ss)
-	  {
-	    offset = {m_InRankDistribution[n].first, 0};
-	    count  = {m_InRankDistribution[n].second, mid};
-	  } 
-	else 
-	  { // ss <= n << 2*ss
-	    offset = {m_InRankDistribution[n-ss].first, rest};
-	    count  = {m_InRankDistribution[n-ss].second, rest};
-	  }
-	
-	return count[0] * count[1];
+    auto mid = m_GlobalMesh[1]/2;
+    auto rest = m_GlobalMesh[1] - mid;
+    auto ss = m_InRankDistribution.size();
+    if (n < ss)
+      {
+        offset = {m_InRankDistribution[n].first, 0};
+        count  = {m_InRankDistribution[n].second, mid};
+      } 
+    else 
+      { // ss <= n << 2*ss
+        offset = {m_InRankDistribution[n-ss].first, rest};
+        count  = {m_InRankDistribution[n-ss].second, rest};
+      }
+    
+    return count[0] * count[1];
       }
 
     return 0;
@@ -485,28 +485,28 @@ public:
 
     if ( 1 == m_GlobalMesh.size() )
       {
-	offset =  m_InRankDistribution[n].first  * m_Ratio ;
-	count  =  m_InRankDistribution[n].second * m_Ratio ;
-	return;
+    offset =  m_InRankDistribution[n].first  * m_Ratio ;
+    count  =  m_InRankDistribution[n].second * m_Ratio ;
+    return;
       }
     
     if ( 2 == m_GlobalMesh.size() )
       {
-	auto mid = m_GlobalMesh[1]/2;
-	auto rest = m_GlobalMesh[1] - mid;
-	auto ss = m_InRankDistribution.size();
+    auto mid = m_GlobalMesh[1]/2;
+    auto rest = m_GlobalMesh[1] - mid;
+    auto ss = m_InRankDistribution.size();
 
-	if ( n < ss )
-	  {
-	    offset = m_InRankDistribution[n].first  * mid * m_Ratio;
-	    count  = m_InRankDistribution[n].second * mid * m_Ratio;
-	  } 
-	else // ss <= n << 2*ss
-	  {
-	    auto firstHalf = m_Bulk * mid * m_Ratio;
-	    offset =  m_InRankDistribution[n - ss].first  * rest * m_Ratio + firstHalf;
-	    count  =  m_InRankDistribution[n - ss].second * rest * m_Ratio;
-	  }
+    if ( n < ss )
+      {
+        offset = m_InRankDistribution[n].first  * mid * m_Ratio;
+        count  = m_InRankDistribution[n].second * mid * m_Ratio;
+      } 
+    else // ss <= n << 2*ss
+      {
+        auto firstHalf = m_Bulk * mid * m_Ratio;
+        offset =  m_InRankDistribution[n - ss].first  * rest * m_Ratio + firstHalf;
+        count  =  m_InRankDistribution[n - ss].second * rest * m_Ratio;
+      }
       }
   }
 
@@ -548,10 +548,10 @@ main( int argc, char *argv[] )
       int num = atoi( argv[1] ) ;
 
       if (num > 10) 
-	input.m_Unbalance = true;
+    input.m_Unbalance = true;
 
       if ( num <=  0) 
-	num = 1;
+    num = 1;
 
       input.m_Ratio = (num-1) % 10 + 1;
     }
@@ -569,9 +569,9 @@ main( int argc, char *argv[] )
     auto backends = getBackends();
     for (auto which: backends)
       {
-	input.m_Backend = which;
-	input.run(1);
-	input.run(2);
+    input.m_Backend = which;
+    input.run(1);
+    input.run(2);
       }
 
     MPI_Finalize();
