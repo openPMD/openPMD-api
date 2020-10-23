@@ -393,7 +393,10 @@ public:
     currSpecies["id"][RecordComponent::SCALAR].resetDataset( intDataSet );
     currSpecies["charge"][RecordComponent::SCALAR].resetDataset( realDataSet );
 
-    currSpecies["momentum"]["x"].resetDataset( realDataSet );
+    currSpecies["position"]["x"].resetDataset( realDataSet );
+
+    currSpecies["positionOffset"]["x"].resetDataset( realDataSet );
+    currSpecies["positionOffset"]["x"].makeConstant( 0. );
 
     auto nBlocks = getNumBlocks();
 
@@ -410,7 +413,7 @@ public:
                                     {offset}, {count});
 
             auto mx = createData<double>(count, 0.0003*step, false) ;
-            currSpecies["momentum"]["x"].storeChunk(mx,
+            currSpecies["position"]["x"].storeChunk(mx,
                           {offset}, {count});
 
     }
