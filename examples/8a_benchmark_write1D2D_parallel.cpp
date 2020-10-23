@@ -219,9 +219,9 @@ public:
    * create unbalanced load if (step % 3 == 1) %% (m_MPISize >= 2)
    * move loads on rank that  (% 10 = 0) to the next rank
    *
-   * @param offset      return   
-   * @param count       return   
-   * @param step        iteration step 
+   * @param offset      return
+   * @param count       return
+   * @param step        iteration step
    *
    */
   void GetRankCountOffset(unsigned long& offset, unsigned long& count, int& step) const
@@ -250,7 +250,7 @@ public:
 
   /*
    * Decide the distribution blocks for this rank
-   * 
+   *
    * @ param step       iteration step
    */
   void setBlockDistributionInRank(int step)
@@ -374,8 +374,8 @@ public:
   }
 
   /*
-   * Write particles. (always 1D)  
-   * 
+   * Write particles. (always 1D)
+   *
    * @param ParticleSpecies    Input
    * @param step               Iteration step
    *
@@ -471,7 +471,7 @@ public:
   /*
    * get number of blocks
    * related to setMesh()
-   * 
+   *
    */
   unsigned int getNumBlocks()
   {

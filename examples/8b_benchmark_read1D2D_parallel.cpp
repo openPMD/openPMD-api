@@ -237,7 +237,7 @@ public:
   /*
    * read a file
    *
-   * @param filename    
+   * @param filename
    *
    */
   void
@@ -262,7 +262,7 @@ public:
        }
       }
     } catch (std::exception& ex)
-      {}          
+      {}
   }
 
   /*
@@ -392,10 +392,10 @@ public:
 
   /*
    * Read an iteration step, mesh & particles
-   *      
+   *
    *
    * @param Series        openPMD series
-   * @param ts            timestep 
+   * @param ts            timestep
    *
    */
   void
@@ -426,7 +426,7 @@ public:
         if ( m_Pattern % 5 == 0 ) {
              rowSlice2D(series, rho, true);
              colSlice2D(series, rho, true);
-        }   
+        }
       }
 
     if ( m_Pattern % 4 == 0 )
