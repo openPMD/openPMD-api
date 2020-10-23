@@ -135,10 +135,10 @@ public:
         if( m_Rank > 0 )
           return;
 
-        std::cout << "  [" << m_Tag << "] took:" << secs << " seconds.\n";    
+        std::cout << "  [" << m_Tag << "] took:" << secs << " seconds.\n";
     std::cout <<"   \t From ProgStart in seconds "<<
           std::chrono::duration_cast<std::chrono::milliseconds>(m_End - m_ProgStart).count()/1000.0<<std::endl;
-    
+
 
     std::cout<<std::endl;
     }
@@ -170,7 +170,7 @@ std::shared_ptr< T > createData(const unsigned long& size,  const T& val, bool i
     for(unsigned long  i = 0ul; i < size; i++ )
       {
     if (increment)
-      E.get()[i] = val+i;      
+      E.get()[i] = val+i;
     else
       E.get()[i] = val;
       }
@@ -216,7 +216,7 @@ public:
       read(filename);
     }
 
-    
+
     { // group based
       std::ostringstream s;
       s <<prefix<<m_Backend;
@@ -227,21 +227,21 @@ public:
     }
   } // run
 
-  void 
+  void
   read(std::string& filename)
   {
     try {
       std::string tag = "Reading: "+filename ;
       Timer kk(tag.c_str(), m_MPIRank);
       Series series = Series(filename, Access::READ_ONLY, MPI_COMM_WORLD);
-      
+
       int numIterations = series.iterations.size();
-      if (0 == m_MPIRank) 
+      if (0 == m_MPIRank)
     std::cout<<"\n\t Num Iterations in " << filename<<" : " << numIterations<<std::endl;
-      
+
       {
     int counter = 1;
-    for (auto const& i : series.iterations) 
+    for (auto const& i : series.iterations)
       {
         if ((1 == counter) || (numIterations == counter))
           readStep(series, i.first);
@@ -272,13 +272,13 @@ public:
 
     Offset colOff = {0, m_MPIRank % meshExtent[1]};
     Extent colExt = {meshExtent[0], 1};
-    auto col_data = rho.loadChunk<double>(colOff, colExt);    
+    auto col_data = rho.loadChunk<double>(colOff, colExt);
     series.flush();
   }
 
-  void 
+  void
   rowSlice2D(Series& series, MeshRecordComponent& rho, bool rankZeroOnly)
-  {    
+  {
     if (rankZeroOnly && m_MPIRank)
       return;
 
@@ -290,24 +290,24 @@ public:
     Extent meshExtent = rho.getExtent();
 
     Timer rowTime(s.str().c_str(), m_MPIRank);
-      
+
     Offset rowOff = {meshExtent[0] - 1 - m_MPIRank % meshExtent[0], 0};
     Extent rowExt = {1, meshExtent[1]};
     auto row_data = rho.loadChunk<double>(rowOff, rowExt);
-    series.flush();  
-  } 
+    series.flush();
+  }
 
-  void 
+  void
   rowSlice2DSplit(Series& series, MeshRecordComponent& rho)
   {
     Extent meshExtent = rho.getExtent();
-      
-    if ((unsigned int)m_MPISize >  meshExtent[1]) 
+
+    if ((unsigned int)m_MPISize >  meshExtent[1])
       return;
-    
+
     Timer rowTime("Row slice time, divide among all ranks", m_MPIRank);
     auto blob = meshExtent[1]/m_MPISize;
-    
+
     // not going throw all rows.
     for (unsigned int row=0; row < meshExtent[0]; row++)
       {
@@ -322,29 +322,29 @@ public:
       }
   }
 
-  void 
+  void
   colSlice2DSplit(Series& series, MeshRecordComponent& rho)
   {
     Extent meshExtent = rho.getExtent();
 
     if ((unsigned int)m_MPISize >  meshExtent[0])
       return;
-    
+
     if (meshExtent[0] % m_MPISize != 0)
       return;
-    
+
     Timer colTime("Col slice time, divided load", m_MPIRank);
     auto blob = meshExtent[0]/m_MPISize;
-    
+
     for (unsigned int  col = 0; col < meshExtent[1]; col++)
       {
     if (col >= (unsigned int) m_MPISize) break;
-    
+
     Offset colOff = {m_MPIRank*blob, col};
     Extent colExt = {blob, 1};
     auto col_data = rho.loadChunk<double>(colOff, colExt);
     series.flush();
-      }          
+      }
   }
 
   void
@@ -357,9 +357,9 @@ public:
 
     Extent meshExtent = rho.getExtent();
 
-    if ( 2 == meshExtent.size() ) 
+    if ( 2 == meshExtent.size() )
       {
-    if ( 0 == m_MPIRank ) 
+    if ( 0 == m_MPIRank )
       std::cout<<"... rho meshExtent : ts="<<ts<<" ["<<meshExtent[0]<<","<<meshExtent[1]<<"]"<<std::endl;
 
     if ( m_Pattern % 3 == 0) {
@@ -369,18 +369,18 @@ public:
 
     if (m_Pattern % 2 == 0) {
       rowSlice2DSplit(series, rho);
-      colSlice2DSplit(series, rho);            
+      colSlice2DSplit(series, rho);
     }
 
     if (m_Pattern % 5 == 0) {
       rowSlice2D(series, rho, true);
       colSlice2D(series, rho, true);
     }
-      }    
+      }
 
-    if (m_Pattern % 4 == 0) 
+    if (m_Pattern % 4 == 0)
       {     // reading particles
-    openPMD::ParticleSpecies electrons = 
+    openPMD::ParticleSpecies electrons =
       series.iterations[ts].particles["ion"];
     RecordComponent charge = electrons["charge"][RecordComponent::SCALAR];
     sliceParticles(series, charge);
@@ -392,7 +392,7 @@ public:
     Extent pExtent = charge.getExtent();
 
     auto blob = pExtent[0]/(10*m_MPISize);
-    if (0 == blob) 
+    if (0 == blob)
       return;
 
     auto start = pExtent[0]/4;
@@ -401,7 +401,7 @@ public:
     s << "particle retrievel time, ["<<start<<" + "<< (blob * m_MPISize) <<"] ";
 
     Timer colTime(s.str().c_str(), m_MPIRank);
-  
+
     Offset colOff = {m_MPIRank*blob};
     Extent colExt = {blob};
     auto col_data = charge.loadChunk<double>(colOff, colExt);
@@ -409,11 +409,11 @@ public:
   }
 
 
-  
+
   int m_MPISize = 1;
   int m_MPIRank = 0;
   int m_Pattern = 30;
-  std::string m_Backend = ".bp";  
+  std::string m_Backend = ".bp";
 
   //std::vector<std::pair<unsigned long, unsigned long>> m_InRankDistribution;
 }; // class TestInput
@@ -431,7 +431,7 @@ public:
  * @param step         iteration step
  */
 /*
-void 
+void
 LoadData( Series& series, const char* varName,  const TestInput& input, int& step )
 {
   LoadMesh2D(series, varName, input, step);
@@ -441,7 +441,7 @@ LoadData( Series& series, const char* varName,  const TestInput& input, int& ste
   {
     Timer g("Flush", input.m_MPIRank);
     series.flush();
-  }  
+  }
 }
 
 */
@@ -460,7 +460,7 @@ main( int argc, char *argv[] )
     MPI_Comm_rank( MPI_COMM_WORLD, &input.m_MPIRank );
 
     if (argc < 2) {
-      if (input.m_MPIRank == 0) 
+      if (input.m_MPIRank == 0)
     std::cout<<"Usage: "<<argv[0]<<" input_file_prefix"<<std::endl;
       MPI_Finalize();
       return -1;

@@ -168,7 +168,7 @@ std::shared_ptr< T > createData(const unsigned long& size,  const T& val, bool i
     for(unsigned long  i = 0ul; i < size; i++ )
       {
     if (increment)
-      E.get()[i] = val+i;      
+      E.get()[i] = val+i;
     else
       E.get()[i] = val;
       }
@@ -227,11 +227,11 @@ public:
 
     if (!m_Unbalance)
       return;
-   
-    if (m_MPISize < 2)
-      return; 
 
-    if (step % 3 != 1) 
+    if (m_MPISize < 2)
+      return;
+
+    if (step % 3 != 1)
       return;
 
     if (m_MPIRank % 10 == 0)
@@ -244,7 +244,7 @@ public:
       }
   }
 
-  void setBlockDistributionInRank(int step) 
+  void setBlockDistributionInRank(int step)
   {
     unsigned long rankOffset, rankCount;
     GetRankCountOffset(rankOffset, rankCount, step);
@@ -256,11 +256,11 @@ public:
 
     // many small writes
     srand(time(NULL) * (m_MPIRank  + m_MPISize) );
-    
+
     auto nBlocks = GetSeg();
-    if ((rankCount / nBlocks) <= 1) 
-      nBlocks = 1;      
-      
+    if ((rankCount / nBlocks) <= 1)
+      nBlocks = 1;
+
     //std::vector<std::pair<unsigned long, unsigned long>> distribution;
     m_InRankDistribution.clear();
     unsigned long counter = 0ul;
@@ -280,7 +280,7 @@ public:
   void run(int nDim)
   {
     std::string balance="b";
-    if (m_Unbalance) 
+    if (m_Unbalance)
       balance="u";
 
     { // file based
@@ -292,28 +292,28 @@ public:
       {
     std::string tag = "Writing: "+filename ;
     Timer kk(tag.c_str(), m_MPIRank);
-    
-    for( int step = 1; step <= m_Steps; step++ )    
+
+    for( int step = 1; step <= m_Steps; step++ )
       {
         setMesh(step, nDim);
         Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
         series.setMeshesPath( "fields" );
         store(series, step);
       }
-      } 
+      }
     }
 
-    
+
     { // group based
       std::ostringstream s;
       s << "../samples/8a_parallel_"<<m_MPISize<<"_"<<nDim<<"Dm"<<m_Ratio<<balance<<m_Backend;
 
       std::string filename = s.str();
-      
+
       {
     std::string tag = "Writing: "+filename ;
     Timer kk(tag.c_str(), m_MPIRank);
-          
+
     Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
     series.setMeshesPath( "fields" );
 
@@ -332,7 +332,7 @@ public:
     Datatype datatype = determineDatatype< double >();
     Dataset dataset = Dataset( datatype, m_GlobalMesh );
 
-    compA.resetDataset( dataset );    
+    compA.resetDataset( dataset );
 
     auto nBlocks = getNumBlocks();
 
@@ -350,21 +350,21 @@ public:
   }
 
   //
-  // 
   //
-  void 
+  //
+  void
   storeParticles( ParticleSpecies& currSpecies,  int& step )
   {
     currSpecies.setAttribute( "particleSmoothing", "none" );
     currSpecies.setAttribute( "openPMD_STEP", step );
     currSpecies.setAttribute( "multiplier", m_Ratio );
-    
+
     auto np = getTotalNumParticles();
     auto const intDataSet = openPMD::Dataset(openPMD::determineDatatype< uint64_t >(), {np});
     auto const realDataSet = openPMD::Dataset(openPMD::determineDatatype< double >(), {np});
     currSpecies["id"][RecordComponent::SCALAR].resetDataset( intDataSet );
     currSpecies["charge"][RecordComponent::SCALAR].resetDataset( realDataSet );
-    
+
     currSpecies["momentum"]["x"].resetDataset( realDataSet );
 
     auto nBlocks = getNumBlocks();
@@ -382,11 +382,11 @@ public:
                                     {offset}, {count});
 
       auto mx = createData<double>(count, 0.0003*step, false) ;
-      currSpecies["momentum"]["x"].storeChunk(mx, 
+      currSpecies["momentum"]["x"].storeChunk(mx,
                           {offset}, {count});
 
     }
-      }     
+      }
   } // storeParticles
 
 
@@ -416,7 +416,7 @@ public:
 
     if (1 == nDim)
       m_GlobalMesh = {m_Bulk * m_MPISize};
-    if (2 == nDim) 
+    if (2 == nDim)
       m_GlobalMesh = {m_Bulk * m_MPISize, 128};
 
     setBlockDistributionInRank(step);
@@ -428,7 +428,7 @@ public:
     if (1 == m_GlobalMesh.size())
       return m_InRankDistribution.size();
     if (2 == m_GlobalMesh.size())
-      return m_InRankDistribution.size() * 2; 
+      return m_InRankDistribution.size() * 2;
 
     return 0;
   }
@@ -444,7 +444,7 @@ public:
     count  = {m_InRankDistribution[n].second};
     return count[0];
       }
-    
+
     if (2 == m_GlobalMesh.size())
       {
     auto mid = m_GlobalMesh[1]/2;
@@ -454,13 +454,13 @@ public:
       {
         offset = {m_InRankDistribution[n].first, 0};
         count  = {m_InRankDistribution[n].second, mid};
-      } 
-    else 
+      }
+    else
       { // ss <= n << 2*ss
         offset = {m_InRankDistribution[n-ss].first, rest};
         count  = {m_InRankDistribution[n-ss].second, rest};
       }
-    
+
     return count[0] * count[1];
       }
 
@@ -489,7 +489,7 @@ public:
     count  =  m_InRankDistribution[n].second * m_Ratio ;
     return;
       }
-    
+
     if ( 2 == m_GlobalMesh.size() )
       {
     auto mid = m_GlobalMesh[1]/2;
@@ -500,7 +500,7 @@ public:
       {
         offset = m_InRankDistribution[n].first  * mid * m_Ratio;
         count  = m_InRankDistribution[n].second * mid * m_Ratio;
-      } 
+      }
     else // ss <= n << 2*ss
       {
         auto firstHalf = m_Bulk * mid * m_Ratio;
@@ -510,14 +510,14 @@ public:
       }
   }
 
-  
+
   int m_MPISize = 1;
   int m_MPIRank = 0;
   unsigned long m_Bulk = 1000ul;
   unsigned int m_Seg = 1;
   int m_Steps = 1;
   int m_TestNum = 0;
-  std::string m_Backend = ".bp";  
+  std::string m_Backend = ".bp";
   bool m_Unbalance = false;
 
   int m_Ratio = 1;
@@ -547,10 +547,10 @@ main( int argc, char *argv[] )
     if( argc >= 2 ) {
       int num = atoi( argv[1] ) ;
 
-      if (num > 10) 
+      if (num > 10)
     input.m_Unbalance = true;
 
-      if ( num <=  0) 
+      if ( num <=  0)
     num = 1;
 
       input.m_Ratio = (num-1) % 10 + 1;
