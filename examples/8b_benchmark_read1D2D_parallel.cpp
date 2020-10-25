@@ -136,7 +136,7 @@ public:
           return;
 
         std::cout << "  [" << m_Tag << "] took:" << secs << " seconds.\n";
-    std::cout <<"   \t From ProgStart in seconds "<<
+        std::cout <<"   \t From ProgStart in seconds "<<
           std::chrono::duration_cast<std::chrono::milliseconds>(m_End - m_ProgStart).count()/1000.0<<std::endl;
 
 
@@ -249,18 +249,18 @@ public:
       Series series = Series(filename, Access::READ_ONLY, MPI_COMM_WORLD);
 
       int numIterations = series.iterations.size();
-      if (0 == m_MPIRank)
+      if ( 0 == m_MPIRank )
          std::cout<<"\n\t Num Iterations in " << filename<<" : " << numIterations<<std::endl;
 
       {
-       int counter = 1;
-       for (auto const& i : series.iterations)
-       {
-        if ((1 == counter) || (numIterations == counter))
-          readStep(series, i.first);
-        counter ++;
-       }
-      }
+         int counter = 1;
+         for ( auto const& i : series.iterations )
+         {
+           if ( (1 == counter) || (numIterations == counter) )
+               readStep(series, i.first);
+               counter ++;
+           }
+         }
     } catch (std::exception& ex)
       {}
   }
@@ -274,7 +274,7 @@ public:
    *
    */
   void
-  colSlice2D(Series& series, MeshRecordComponent& rho, bool rankZeroOnly)
+  colSlice2D( Series& series, MeshRecordComponent& rho, bool rankZeroOnly )
   {
     if (rankZeroOnly && m_MPIRank)
       return;
@@ -317,7 +317,8 @@ public:
 
     Timer rowTime(s.str().c_str(), m_MPIRank);
 
-    Offset rowOff = {meshExtent[0] - 1 - m_MPIRank % meshExtent[0], 0};
+    //Offset rowOff = {meshExtent[0] - 1 - m_MPIRank % meshExtent[0], 0};
+    Offset rowOff = {m_MPIRank % meshExtent[0], 0};
     Extent rowExt = {1, meshExtent[1]};
     auto row_data = rho.loadChunk<double>(rowOff, rowExt);
     series.flush();
@@ -342,17 +343,17 @@ public:
     Timer rowTime("Row slice time, divide among all ranks", m_MPIRank);
     auto blob = meshExtent[1]/m_MPISize;
 
-    // not going throw all rows.
+    // not going through all rows. up to first <m_MPISize> rows
     for (unsigned int row=0; row < meshExtent[0]; row++)
       {
-    if (row >= (unsigned int) m_MPISize) break;
+       if (row >= (unsigned int) m_MPISize) break;
 
-    Offset rowOff = {row, m_MPIRank * blob};
-    Extent rowExt = {1, blob};
-    if (row == (meshExtent[0] - 1))
-      rowExt[1]  = meshExtent[1] - rowOff[1];
-    auto row_data = rho.loadChunk<double>(rowOff, rowExt);
-    series.flush();
+       Offset rowOff = {row, m_MPIRank * blob};
+       Extent rowExt = {1, blob};
+       if (row == (meshExtent[0] - 1))
+           rowExt[1]  = meshExtent[1] - rowOff[1];
+       auto row_data = rho.loadChunk<double>(rowOff, rowExt);
+       series.flush();
       }
   }
 
@@ -366,14 +367,14 @@ public:
    *
    */
   void
-  colSlice2DSplit(Series& series, MeshRecordComponent& rho)
+  colSlice2DSplit( Series& series, MeshRecordComponent& rho )
   {
     Extent meshExtent = rho.getExtent();
 
-    if ((unsigned int)m_MPISize >  meshExtent[0])
+    if ( (unsigned int)m_MPISize >  meshExtent[0] )
       return;
 
-    if (meshExtent[0] % m_MPISize != 0)
+    if ( meshExtent[0] % m_MPISize != 0 )
       return;
 
     Timer colTime("Col slice time, divided load", m_MPIRank);
@@ -381,12 +382,12 @@ public:
 
     for (unsigned int  col = 0; col < meshExtent[1]; col++)
       {
-    if (col >= (unsigned int) m_MPISize) break;
+        if ( col >= (unsigned int) m_MPISize ) break;
 
-    Offset colOff = {m_MPIRank*blob, col};
-    Extent colExt = {blob, 1};
-    auto col_data = rho.loadChunk<double>(colOff, colExt);
-    series.flush();
+        Offset colOff = {m_MPIRank*blob, col};
+        Extent colExt = {blob, 1};
+        auto col_data = rho.loadChunk<double>(colOff, colExt);
+        series.flush();
       }
   }
 
@@ -429,7 +430,7 @@ public:
         }
       }
 
-    if ( m_Pattern % 4 == 0 )
+    if ( m_Pattern % 7 == 0 )
       {     // reading particles
          openPMD::ParticleSpecies electrons =
          series.iterations[ts].particles["ion"];
