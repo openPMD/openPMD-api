@@ -339,9 +339,11 @@ set(IO_SOURCE
         src/IO/InvalidatableFile.cpp)
 set(IO_ADIOS1_SEQUENTIAL_SOURCE
         src/auxiliary/Filesystem.cpp
+        src/Dataset.cpp
         src/IO/ADIOS/ADIOS1IOHandler.cpp)
 set(IO_ADIOS1_SOURCE
         src/auxiliary/Filesystem.cpp
+        src/Dataset.cpp
         src/IO/ADIOS/ParallelADIOS1IOHandler.cpp)
 
 # library
