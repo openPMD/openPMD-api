@@ -257,10 +257,10 @@ public:
          for ( auto const& i : series.iterations )
          {
            if ( (1 == counter) || (numIterations == counter) )
-               readStep(series, i.first);
-               counter ++;
-           }
+               readStep(series, i.first);	 
+ 	   counter ++;
          }
+       }
     } catch (std::exception& ex)
       {}
   }

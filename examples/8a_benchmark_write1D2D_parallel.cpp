@@ -566,17 +566,18 @@ public:
         auto rest = m_GlobalMesh[1] - mid;
         auto ss = m_InRankDistribution.size();
 
-        if ( n < ss )
-        {
-           offset = m_InRankDistribution[n].first  * mid * m_Ratio;
-           count  = m_InRankDistribution[n].second * mid * m_Ratio;
-        }
-        else // ss <= n << 2*ss
-        {
-           auto firstHalf = m_Bulk * mid * m_Ratio;
+        auto rankPatch = m_Bulk * mid * m_MPIRank * m_Ratio; 
+        if ( n < ss)
+         {
+            offset = rankPatch + m_InRankDistribution[n].first  * mid * m_Ratio;
+            count  = m_InRankDistribution[n].second * mid * m_Ratio; 
+         }
+        else
+         {
+           auto firstHalf = m_Bulk  * mid * m_Ratio + rankPatch;
            offset =  m_InRankDistribution[n - ss].first  * rest * m_Ratio + firstHalf;
            count  =  m_InRankDistribution[n - ss].second * rest * m_Ratio;
-        }
+         }
       }
   }
 
