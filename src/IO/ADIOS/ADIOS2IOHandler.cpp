@@ -1170,7 +1170,18 @@ namespace detail
         table.reserve( blocksInfo.size() );
         for( auto const & info : blocksInfo )
         {
-            table.emplace_back( info.Start, info.Count, info.WriterID );
+            Offset offset;
+            Extent extent;
+            auto size = info.Start.size();
+            offset.reserve( size );
+            extent.reserve( size );
+            for( unsigned i = 0; i < size; ++i )
+            {
+                offset.push_back( info.Start[ i ] );
+                extent.push_back( info.Count[ i ] );
+            }
+            table.emplace_back(
+                std::move( offset ), std::move( extent ), info.WriterID );
         }
     }
 
