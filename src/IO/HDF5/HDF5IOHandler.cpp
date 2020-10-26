@@ -380,8 +380,17 @@ HDF5IOHandlerImpl::extendDataset(Writable* writable,
 }
 
 void
-HDF5IOHandlerImpl::openFile(Writable* writable,
-                            Parameter< Operation::OPEN_FILE > const& parameters)
+HDF5IOHandlerImpl::availableChunks(
+    Writable *,
+    Parameter< Operation::AVAILABLE_CHUNKS > & )
+{
+    throw std::runtime_error("[HDF5] availableChunks unimplemented!");
+}
+
+void
+HDF5IOHandlerImpl::openFile(
+    Writable * writable,
+    Parameter< Operation::OPEN_FILE > const & parameters )
 {
     //TODO check if file already open
     //not possible with current implementation
