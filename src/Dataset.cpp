@@ -89,4 +89,16 @@ Chunk::Chunk( Offset _offset, Extent _extent, int _rank )
     , rank( _rank )
 {
 }
+
+Chunk::Chunk( Offset _offset, Extent _extent )
+    : Chunk( std::move( _offset ), std::move( _extent ), -1 )
+{
+}
+
+bool
+Chunk::operator==( Chunk const & other ) const
+{
+    return this->rank == other.rank && this->offset == other.offset &&
+        this->extent == other.extent;
+}
 } // namespace openPMD

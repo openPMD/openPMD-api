@@ -271,6 +271,78 @@ namespace openPMD
 
     }
 
+    namespace
+    {
+        ChunkTable
+        chunksInJSON( nlohmann::json const & );
+        ChunkTable
+        chunksInJSON( nlohmann::json const & j )
+        {
+            if( !j.is_array() )
+            {
+                return ChunkTable{ Chunk( Offset{}, Extent{} ) };
+            }
+            ChunkTable res;
+            size_t it = 0;
+            size_t end = j.size();
+            while( it < end )
+            {
+                // skip empty slots
+                while( j[ it ].is_null() && it < end )
+                {
+                    ++it;
+                }
+                if( it == end )
+                {
+                    break;
+                }
+                // get block at current position
+                size_t offset = it;
+                ChunkTable referenceTable = chunksInJSON( j[ it ] );
+                ++it;
+                for( ; it < end; ++it )
+                {
+                    if( j[ it ].is_null() )
+                    {
+                        break;
+                    }
+                    ChunkTable currentTable = chunksInJSON( j[ it ] );
+                    if( currentTable != referenceTable )
+                    {
+                        break;
+                    }
+                }
+                size_t extent = it - offset; // sic! no -1
+                for( auto const & chunk : referenceTable )
+                {
+                    Offset o = { offset };
+                    Extent e = { extent };
+                    for( auto entry : chunk.offset )
+                    {
+                        o.push_back( entry );
+                    }
+                    for( auto entry : chunk.extent )
+                    {
+                        e.push_back( entry );
+                    }
+                    res.emplace_back(
+                        std::move( o ), std::move( e ), chunk.rank );
+                }
+            }
+            return res;
+        }
+    } // namespace
+
+    void
+    JSONIOHandlerImpl::availableChunks(
+        Writable * writable,
+        Parameter< Operation::AVAILABLE_CHUNKS > & parameters )
+    {
+        refreshFileFromParent( writable );
+        auto filePosition = setAndGetFilePosition( writable );
+        auto & j = obtainJsonContents( writable )[ "data" ];
+        *parameters.chunks = chunksInJSON( j );
+    }
 
     void JSONIOHandlerImpl::openFile(
         Writable * writable,

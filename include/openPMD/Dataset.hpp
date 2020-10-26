@@ -60,6 +60,10 @@ struct Chunk
     int const rank;
 
     Chunk( Offset, Extent, int rank );
+    Chunk( Offset, Extent );
+
+    bool
+    operator==( Chunk const & other ) const;
 };
 using ChunkTable = std::vector< Chunk >;
 } // namespace openPMD

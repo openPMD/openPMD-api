@@ -75,6 +75,63 @@ TEST_CASE( "multi_series_test", "[serial]" )
     allSeries.clear();
 }
 
+TEST_CASE( "available_chunks_test_json", "[serial][json]" )
+{
+    /*
+     * This test is JSON specific
+     * Our JSON backend does not store chunks explicitly,
+     * so the JSON will simply go through the multidimensional array
+     * and gather the data items into chunks
+     * Example dataset:
+     *
+     *      0123
+     *    0 ____
+     *    1 ____
+     *    2 ****
+     *    3 ****
+     *    4 ****
+     *    5 ****
+     *    6 ****
+     *    7 _**_
+     *    8 _**_
+     *    9 ____
+     *
+     * Will be read as two chunks:
+     * 1. (2,0) -- (5,4) (offset -- extent)
+     * 2. (7,1) -- (2,2) (offset -- extent)
+     *
+     */
+    constexpr unsigned height = 10;
+    std::string name = "../samples/available_chunks.json";
+
+    std::vector< int > data{ 2, 4, 6, 8 };
+    {
+        Series write( name, Access::CREATE );
+        Iteration it0 = write.iterations[ 0 ];
+        auto E_x = it0.meshes[ "E" ][ "x" ];
+        E_x.resetDataset( { Datatype::INT, { height, 4 } } );
+        for( unsigned line = 2; line < 7; ++line )
+        {
+            E_x.storeChunk( data, { line, 0 }, { 1, 4 } );
+        }
+        for( unsigned line = 7; line < 9; ++line )
+        {
+            E_x.storeChunk( data, { line, 1 }, { 1, 2 } );
+        }
+        it0.close();
+    }
+
+    {
+        Series read( name, Access::READ_ONLY );
+        Iteration it0 = read.iterations[ 0 ];
+        auto E_x = it0.meshes[ "E" ][ "x" ];
+        ChunkTable table = E_x.availableChunks();
+        REQUIRE( table.size() == 2 );
+        REQUIRE( table[ 0 ] == Chunk( { 2, 0 }, { 5, 4 }, -1 ) );
+        REQUIRE( table[ 1 ] == Chunk( { 7, 1 }, { 2, 2 }, -1 ) );
+    }
+}
+
 void
 close_iteration_test( std::string file_ending )
 {
