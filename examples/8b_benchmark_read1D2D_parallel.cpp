@@ -257,7 +257,7 @@ public:
          for ( auto const& i : series.iterations )
          {
            if ( (1 == counter) || (numIterations == counter) )
-               readStep(series, i.first);     
+               readStep(series, i.first);
         counter ++;
          }
        }
