@@ -57,8 +57,11 @@ struct Chunk
 {
     Offset const offset;
     Extent const extent;
-    int const rank;
+    unsigned int const rank;
 
+    /*
+     * If rank is smaller than zero, will be converted to zero.
+     */
     Chunk( Offset, Extent, int rank );
     Chunk( Offset, Extent );
 

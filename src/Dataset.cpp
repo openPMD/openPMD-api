@@ -86,12 +86,12 @@ Dataset::setCustomTransform(std::string const& parameter)
 Chunk::Chunk( Offset _offset, Extent _extent, int _rank )
     : offset( std::move( _offset ) )
     , extent( std::move( _extent ) )
-    , rank( _rank )
+    , rank( _rank < 0 ? 0 : _rank )
 {
 }
 
 Chunk::Chunk( Offset _offset, Extent _extent )
-    : Chunk( std::move( _offset ), std::move( _extent ), -1 )
+    : Chunk( std::move( _offset ), std::move( _extent ), 0 )
 {
 }
 
