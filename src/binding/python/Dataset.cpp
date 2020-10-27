@@ -62,5 +62,24 @@ void init_Dataset(py::module &m) {
             return dtype_to_numpy( d.dtype );
         })
     ;
+
+    py::class_<Chunk>(m, "Chunk")
+        .def(py::init<Offset, Extent>(),
+            py::arg("offset"), py::arg("extent"))
+        .def(py::init<Offset, Extent, int>(),
+            py::arg("offset"), py::arg("extent"), py::arg("rank"))
+        .def("__repr__",
+            [](const Chunk & c) {
+                return "<openPMD.Chunk of dimensionality "
+                    + std::to_string(c.offset.size()) + "'>";
+            }
+        )
+        // .def_property_readonly("offset", [](Chunk & c){ return c.offset; })
+        // .def_property_readonly("extent", [](Chunk & c){ return c.extent; })
+        // .def_property_readonly("rank",   [](Chunk & c){ return c.rank;   })
+        .def_readonly("offset", &Chunk::offset)
+        .def_readonly("extent", &Chunk::extent)
+        .def_readonly("rank",   &Chunk::rank  )
+    ;
 }
 

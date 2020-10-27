@@ -1515,6 +1515,50 @@ class APITest(unittest.TestCase):
         for ext in io.file_extensions:
             self.makeCloseIterationRoundTrip(ext)
 
+    def makeAvailableChunksRoundTrip(self, ext):
+        if ext == "json" or ext == "h5":
+            return
+        name = "../samples/available_chunks_python." + ext
+        write = io.Series(
+            name,
+            io.Access_Type.create
+        )
+
+        DS = io.Dataset
+        it0 = write.iterations[0]
+        E_x = write.iterations[0].meshes["E"]["x"]
+        E_x.reset_dataset(DS(np.dtype("int"), [10, 4]))
+        data = np.array([[2, 4, 6, 8], [10, 12, 14 ,16]], dtype=np.dtype("int"))
+        E_x.store_chunk(data, [1,0], [2,4])
+        data = np.array([[2, 4], [6, 8], [10, 12]], dtype=np.dtype("int"))
+        E_x.store_chunk(data, [4,2], [3,2])
+        data = np.array([[2], [4], [6], [8]], dtype=np.dtype("int"))
+        E_x.store_chunk(data, [6,0], [4,1])
+
+        del write
+
+        read = io.Series(
+            name,
+            io.Access_Type.read_only
+        )
+
+        chunks = read.iterations[0].meshes["E"]["x"].available_chunks()
+        chunks = sorted(chunks, key=lambda chunk: chunk.offset)
+        # print("EXTENSION:", ext)
+        # for chunk in chunks:
+        #     print("{} -- {}".format(chunk.offset, chunk.extent))
+        self.assertEqual(len(chunks), 3)
+        self.assertEqual(chunks[0].offset, [1,0])
+        self.assertEqual(chunks[0].extent, [2,4])
+        self.assertEqual(chunks[1].offset, [4,2])
+        self.assertEqual(chunks[1].extent, [3,2])
+        self.assertEqual(chunks[2].offset, [6,0])
+        self.assertEqual(chunks[2].extent, [4,1])
+
+    def testAvailableChunks(self):
+        for ext in io.file_extensions:
+            self.makeAvailableChunksRoundTrip(ext)
+
 
 if __name__ == '__main__':
     unittest.main()
