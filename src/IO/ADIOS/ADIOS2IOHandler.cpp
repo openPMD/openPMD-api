@@ -127,12 +127,12 @@ ADIOS2IOHandlerImpl::getOperators( auxiliary::TracingJSON cfg )
                     paramIterator.value().get< std::string >();
             }
         }
-        std::unique_ptr< adios2::Operator > adiosOperator =
+        auxiliary::Option< adios2::Operator > adiosOperator =
             getCompressionOperator( type );
         if( adiosOperator )
         {
             res.emplace_back( ParameterizedOperator{
-                *adiosOperator, std::move( adiosParams ) } );
+                adiosOperator.get(), std::move( adiosParams ) } );
         }
     }
     _operators.declareFullyRead();
@@ -257,23 +257,16 @@ void ADIOS2IOHandlerImpl::createDataset(
         auto filePos = setAndGetFilePosition( writable, name );
         filePos->gd = ADIOS2FilePosition::GD::DATASET;
         auto const varName = filePositionToString( filePos );
-        /*
-         * @brief std::optional would be more idiomatic, but it's not in
-         *        the C++11 standard
-         * @todo replace with std::optional upon switching to C++17
-         */
 
         auto operators = defaultOperators;
-
         if( !parameters.compression.empty() )
         {
-            std::unique_ptr< adios2::Operator > adiosOperator =
+            auxiliary::Option< adios2::Operator > adiosOperator =
                 getCompressionOperator( parameters.compression );
             if( adiosOperator )
             {
                 operators.push_back( ParameterizedOperator{
-                    *adiosOperator,
-                    adios2::Params() } );
+                    adiosOperator.get(), adios2::Params() } );
             }
         }
 
@@ -644,7 +637,7 @@ std::shared_ptr< ADIOS2FilePosition > ADIOS2IOHandlerImpl::extendFilePosition(
                                                    oldPos->gd );
 }
 
-std::unique_ptr< adios2::Operator >
+auxiliary::Option< adios2::Operator >
 ADIOS2IOHandlerImpl::getCompressionOperator( std::string const & compression )
 {
     adios2::Operator res;
@@ -657,22 +650,22 @@ ADIOS2IOHandlerImpl::getCompressionOperator( std::string const & compression )
         catch ( std::invalid_argument const & )
         {
             std::cerr << "Warning: ADIOS2 backend does not support compression "
-                "method " << compression << ". Continuing without compression."
-                << std::endl;
-            return std::unique_ptr< adios2::Operator >( );
+                         "method "
+                      << compression << ". Continuing without compression."
+                      << std::endl;
+            return auxiliary::Option< adios2::Operator >();
         }
         m_operators.emplace( compression, res );
-
     }
     else
     {
         res = it->second;
     }
-    return std::unique_ptr< adios2::Operator >(
-        new adios2::Operator( res ) );
+    return auxiliary::makeOption( adios2::Operator( res ) );
 }
 
-std::string ADIOS2IOHandlerImpl::nameOfVariable( Writable * writable )
+std::string
+ADIOS2IOHandlerImpl::nameOfVariable( Writable * writable )
 {
     return filePositionToString( setAndGetFilePosition( writable ) );
 }
@@ -1251,7 +1244,7 @@ namespace detail
         }
         if( m_engine )
         {
-            m_engine->Close();
+            m_engine.get().Close();
         }
     }
 
@@ -1344,14 +1337,14 @@ namespace detail
     {
         if ( !m_engine )
         {
-            m_engine = std::unique_ptr< adios2::Engine >(
-                new adios2::Engine( m_IO.Open( m_file, m_mode ) ) );
-            if ( !m_engine )
+            m_engine = auxiliary::makeOption(
+                adios2::Engine( m_IO.Open( m_file, m_mode ) ) );
+            if( !m_engine )
             {
                 throw std::runtime_error( "[ADIOS2] Failed opening Engine." );
             }
         }
-        return *m_engine;
+        return m_engine.get();
     }
 
     template < typename BA > void BufferedActions::enqueue( BA && ba )
@@ -1399,44 +1392,42 @@ namespace detail
     void
     BufferedActions::invalidateAttributesMap()
     {
-        m_availableAttributesValid = false;
-        m_availableAttributes.clear( );
+        m_availableAttributes = auxiliary::Option< AttributeMap_t >();
     }
 
     BufferedActions::AttributeMap_t const &
     BufferedActions::availableAttributes()
     {
-        if( m_availableAttributesValid )
+        if( m_availableAttributes )
         {
-            return m_availableAttributes;
+            return m_availableAttributes.get();
         }
         else
         {
-            m_availableAttributes = m_IO.AvailableAttributes();
-            m_availableAttributesValid = true;
-            return m_availableAttributes;
+            m_availableAttributes =
+                auxiliary::makeOption( m_IO.AvailableAttributes() );
+            return m_availableAttributes.get();
         }
     }
 
     void
     BufferedActions::invalidateVariablesMap()
     {
-        m_availableVariablesValid = false;
-        m_availableVariables.clear();
+        m_availableVariables = auxiliary::Option< AttributeMap_t >();
     }
 
     BufferedActions::AttributeMap_t const &
     BufferedActions::availableVariables()
     {
-        if( m_availableVariablesValid )
+        if( m_availableVariables )
         {
-            return m_availableVariables;
+            return m_availableVariables.get();
         }
         else
         {
-            m_availableVariables = m_IO.AvailableVariables();
-            m_availableVariablesValid = true;
-            return m_availableVariables;
+            m_availableVariables =
+                auxiliary::makeOption( m_IO.AvailableVariables() );
+            return m_availableVariables.get();
         }
     }
 
