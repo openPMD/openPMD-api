@@ -92,13 +92,14 @@ TEST_CASE( "available_chunks_test_json", "[serial][json]" )
      *    4 ****
      *    5 ****
      *    6 ****
-     *    7 _**_
-     *    8 _**_
-     *    9 ____
+     *    7 **__
+     *    8 **_*
+     *    9 ___*
      *
-     * Will be read as two chunks:
+     * Will be read as three chunks:
      * 1. (2,0) -- (5,4) (offset -- extent)
-     * 2. (7,1) -- (2,2) (offset -- extent)
+     * 2. (7,0) -- (2,2) (offset -- extent)
+     * 3. (8,3) -- (2,1) (offset -- extent)
      *
      */
     constexpr unsigned height = 10;
@@ -116,8 +117,9 @@ TEST_CASE( "available_chunks_test_json", "[serial][json]" )
         }
         for( unsigned line = 7; line < 9; ++line )
         {
-            E_x.storeChunk( data, { line, 1 }, { 1, 2 } );
+            E_x.storeChunk( data, { line, 0 }, { 1, 2 } );
         }
+        E_x.storeChunk( data, { 8, 3 }, {2, 1 } );
         it0.close();
     }
 
@@ -126,9 +128,10 @@ TEST_CASE( "available_chunks_test_json", "[serial][json]" )
         Iteration it0 = read.iterations[ 0 ];
         auto E_x = it0.meshes[ "E" ][ "x" ];
         ChunkTable table = E_x.availableChunks();
-        REQUIRE( table.size() == 2 );
-        REQUIRE( table[ 0 ] == Chunk( { 2, 0 }, { 5, 4 }, -1 ) );
-        REQUIRE( table[ 1 ] == Chunk( { 7, 1 }, { 2, 2 }, -1 ) );
+        REQUIRE( table.size() == 3 );
+        REQUIRE( table[ 0 ] == Chunk( { 2, 0 }, { 5, 4 } ) );
+        REQUIRE( table[ 1 ] == Chunk( { 7, 0 }, { 2, 2 } ) );
+        REQUIRE( table[ 2 ] == Chunk( { 8, 3 }, { 2, 1 } ) );
     }
 }
 

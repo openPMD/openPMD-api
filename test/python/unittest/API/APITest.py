@@ -1516,7 +1516,7 @@ class APITest(unittest.TestCase):
             self.makeCloseIterationRoundTrip(ext)
 
     def makeAvailableChunksRoundTrip(self, ext):
-        if ext == "json" or ext == "h5":
+        if ext == "h5":
             return
         name = "../samples/available_chunks_python." + ext
         write = io.Series(

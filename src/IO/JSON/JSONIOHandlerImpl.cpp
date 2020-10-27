@@ -331,6 +331,87 @@ namespace openPMD
             }
             return res;
         }
+
+        std::pair< bool, Chunk >
+        mergeChunks( Chunk const & _c1, Chunk const & _c2 )
+        {
+            Chunk const *c1( &_c1 ), *c2( &_c2 );
+            unsigned dimensionality = _c1.extent.size();
+            for( unsigned dim = 0; dim < dimensionality; ++dim )
+            {
+                // check if one chunk is the extension of the other at
+                // dimension dim
+                if( c1->offset[ dim ] > c2->offset[ dim ] )
+                {
+                    std::swap( c1, c2 );
+                }
+                // now, c1 begins at the lower of both offsets
+                // next check, that both chunks border one another exactly
+                if( c2->offset[ dim ] != c1->offset[ dim ] + c1->extent[ dim ] )
+                {
+                    continue;
+                }
+                // we've got a candidate
+                // verify that all other dimensions have equal values
+                auto equalValues = [ dimensionality, dim, c1, c2 ]() {
+                    for( unsigned j = 0; j < dimensionality; ++j )
+                    {
+                        if( j == dim )
+                        {
+                            continue;
+                        }
+                        if( c1->offset[ j ] != c2->offset[ j ] ||
+                            c1->extent[ j ] != c2->extent[ j ] )
+                        {
+                            return false;
+                        }
+                    }
+                    return true;
+                };
+                if( !equalValues() )
+                {
+                    continue;
+                }
+                // we can merge the chunks
+                Offset offset( c1->offset );
+                Extent extent( c1->extent );
+                extent[ dim ] += c2->extent[ dim ];
+                return std::make_pair( true, Chunk( offset, extent ) );
+            }
+            return std::make_pair( false, Chunk() );
+        }
+
+        void
+        mergeChunks( ChunkTable & table )
+        {
+            bool stillChanging;
+            do
+            {
+                stillChanging = false;
+                auto innerLoops = [ &table ]() {
+                    for( auto i = table.begin(); i < table.end(); ++i )
+                    {
+                        for( auto j = i + 1; j < table.end(); ++j )
+                        {
+                            std::pair< bool, Chunk > merged =
+                                mergeChunks( *i, *j );
+                            if( merged.first )
+                            {
+                                // erase order is important due to iterator
+                                // invalidation
+                                table.erase( j );
+                                table.erase( i );
+                                table.emplace_back(
+                                    std::move( merged.second ) );
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                };
+                stillChanging = innerLoops();
+            } while( stillChanging );
+        }
     } // namespace
 
     void
@@ -342,6 +423,7 @@ namespace openPMD
         auto filePosition = setAndGetFilePosition( writable );
         auto & j = obtainJsonContents( writable )[ "data" ];
         *parameters.chunks = chunksInJSON( j );
+        mergeChunks( *parameters.chunks );
     }
 
     void JSONIOHandlerImpl::openFile(

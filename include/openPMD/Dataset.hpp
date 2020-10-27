@@ -55,13 +55,14 @@ public:
 
 struct Chunk
 {
-    Offset const offset;
-    Extent const extent;
-    unsigned int const rank;
+    Offset offset;
+    Extent extent;
+    unsigned int rank = 0;
 
     /*
      * If rank is smaller than zero, will be converted to zero.
      */
+    explicit Chunk() = default;
     Chunk( Offset, Extent, int rank );
     Chunk( Offset, Extent );
 
