@@ -286,6 +286,10 @@ empty_dataset_test( std::string file_ending )
             series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_dim_7_int" ];
         auto makeEmpty_dim_7_long =
             series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_dim_7_bool" ];
+        auto makeEmpty_dim_7_int_alt =
+            series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_dim_7_int_alt" ];
+        auto makeEmpty_dim_7_long_alt =
+            series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_dim_7_bool_alt" ];
         auto makeEmpty_resetDataset_dim3 =
             series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_resetDataset_dim3" ];
         auto makeEmpty_resetDataset_dim3_notallzero =
@@ -293,6 +297,8 @@ empty_dataset_test( std::string file_ending )
                 .meshes[ "rho" ][ "makeEmpty_resetDataset_dim3_notallzero" ];
         makeEmpty_dim_7_int.makeEmpty< int >( 7 );
         makeEmpty_dim_7_long.makeEmpty< long >( 7 );
+        makeEmpty_dim_7_int_alt.makeEmpty( Datatype::INT, 7 );
+        makeEmpty_dim_7_long_alt.makeEmpty( Datatype::LONG, 7 );
         makeEmpty_resetDataset_dim3.resetDataset(
             Dataset( Datatype::LONG, Extent( 3, 0 ) ) );
         makeEmpty_resetDataset_dim3_notallzero.resetDataset(
@@ -315,6 +321,10 @@ empty_dataset_test( std::string file_ending )
             series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_dim_7_int" ];
         auto makeEmpty_dim_7_long =
             series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_dim_7_bool" ];
+        auto makeEmpty_dim_7_int_alt =
+            series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_dim_7_int_alt" ];
+        auto makeEmpty_dim_7_long_alt =
+            series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_dim_7_bool_alt" ];
         auto makeEmpty_resetDataset_dim3 =
             series.iterations[ 1 ].meshes[ "rho" ][ "makeEmpty_resetDataset_dim3" ];
         auto makeEmpty_resetDataset_dim3_notallzero =
@@ -327,6 +337,14 @@ empty_dataset_test( std::string file_ending )
         REQUIRE(makeEmpty_dim_7_long.getDimensionality() == 7);
         REQUIRE(makeEmpty_dim_7_long.getExtent() == Extent(7, 0));
         REQUIRE(isSame(makeEmpty_dim_7_long.getDatatype(), determineDatatype< long >()));
+
+        REQUIRE(makeEmpty_dim_7_int_alt.getDimensionality() == 7);
+        REQUIRE(makeEmpty_dim_7_int_alt.getExtent() == Extent(7, 0));
+        REQUIRE(isSame(makeEmpty_dim_7_int_alt.getDatatype(), determineDatatype< int >()));
+
+        REQUIRE(makeEmpty_dim_7_long_alt.getDimensionality() == 7);
+        REQUIRE(makeEmpty_dim_7_long_alt.getExtent() == Extent(7, 0));
+        REQUIRE(isSame(makeEmpty_dim_7_long_alt.getDatatype(), determineDatatype< long >()));
 
         REQUIRE(makeEmpty_resetDataset_dim3.getDimensionality() == 3);
         REQUIRE(makeEmpty_resetDataset_dim3.getExtent() == Extent(3, 0));
