@@ -47,14 +47,12 @@ static std::chrono::time_point<std::chrono::system_clock>  m_ProgStart = std::ch
 
 class MemoryProfiler
 {
-    /**
-     *
-     * Simple Memory profiler for linux
-     *
-     * @param tag      item name to measure
-     * @param rank     MPI rank
-     */
 public:
+    /** Simple Memory profiler for linux
+     *
+     * @param[in] rank     MPI rank
+     * @param[in] tag      item name to measure
+     */
   MemoryProfiler(int rank, const  char* tag) {
     m_Rank = rank;
 #if defined(__linux)
