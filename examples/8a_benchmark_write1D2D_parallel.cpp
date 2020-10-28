@@ -643,13 +643,13 @@ main( int argc, char *argv[] )
         input.m_Steps = atoi( argv[4] );
 
 
-    auto backends = getBackends();
-    for (auto which: backends)
-      {
-    input.m_Backend = which;
-    input.run(1);
-    input.run(2);
-      }
+    auto const backends = getBackends();
+    for( auto const & which: backends )
+    {
+        input.m_Backend = which;
+        input.run(1);
+        input.run(2);
+    }
 
     MPI_Finalize();
 
