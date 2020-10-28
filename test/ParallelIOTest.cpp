@@ -386,11 +386,11 @@ TEST_CASE( "hzdr_adios_sample_content_test", "[parallel][adios1]" )
 void
 close_iteration_test( std::string file_ending )
 {
-    int __mpi_rank{ -1 }, __mpi_size{ -1 };
-    MPI_Comm_rank( MPI_COMM_WORLD, &__mpi_rank );
-    MPI_Comm_size( MPI_COMM_WORLD, &__mpi_size );
-    unsigned mpi_rank{ static_cast< unsigned >( __mpi_rank ) },
-        mpi_size{ static_cast< unsigned >( __mpi_size ) };
+    int i_mpi_rank{ -1 }, i_mpi_size{ -1 };
+    MPI_Comm_rank( MPI_COMM_WORLD, &i_mpi_rank );
+    MPI_Comm_size( MPI_COMM_WORLD, &i_mpi_size );
+    unsigned mpi_rank{ static_cast< unsigned >( i_mpi_rank ) },
+        mpi_size{ static_cast< unsigned >( i_mpi_size ) };
     std::string name = "../samples/close_iterations_parallel_%T." + file_ending;
 
     std::vector< int > data{ 2, 4, 6, 8 };
