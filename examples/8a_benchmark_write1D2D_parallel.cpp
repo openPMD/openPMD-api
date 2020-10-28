@@ -52,7 +52,7 @@ public:
      * @param[in] rank     MPI rank
      * @param[in] tag      item name to measure
      */
-  MemoryProfiler(int rank, const  char* tag) {
+  MemoryProfiler(int rank, const std::string& tag) {
     m_Rank = rank;
 #if defined(__linux)
     //m_Name = "/proc/meminfo";
@@ -71,7 +71,7 @@ public:
      * @param rank     MPI rank
      */
 
-  void Display(const char*  tag){
+  void Display(const std::string& tag){
     if (0 == m_Name.size())
       return;
 
@@ -192,19 +192,17 @@ std::vector<std::string> getBackends() {
 
 /**     Class TestInput
  *
- *
- * @param mpi_size      MPI size
- * @param mpi_rank      MPI rank
- * @param bulk          num of elements
- * @param numSeg        num of subdivition for the elements
- *                      note that with h5collect mode, numSeg must be 1
- * @param numSteps      num of iterations
  */
 class TestInput
 {
 public:
   TestInput() =  default;
 
+  /** GetSeg()
+   * return number of partitions along the long dimension 
+   * m_Seg can be set from input
+   * exception is when h5 collective mode is on. m_Seg=1
+   */
   unsigned int GetSeg() const
   {
     if (m_Backend == ".h5")
@@ -266,17 +264,16 @@ public:
     if ((rankCount / nBlocks) <= 1)
       nBlocks = 1;
 
-    //std::vector<std::pair<unsigned long, unsigned long>> distribution;
     m_InRankDistribution.clear();
     unsigned long counter = 0ul;
-    for( unsigned long i = 0ul; i < nBlocks; i++ ) {
-      unsigned long blockSize = rankCount/nBlocks;
-      if ((rankCount % nBlocks != 0) && (i == (nBlocks -1)))
-    blockSize = rankCount - blockSize * (nBlocks -1);
+    for( unsigned long i = 0ul; i < nBlocks; i++ ) 
+    {
+       unsigned long blockSize = rankCount/nBlocks;
+       if ((rankCount % nBlocks != 0) && (i == (nBlocks -1)))
+           blockSize = rankCount - blockSize * (nBlocks -1);
 
-      //distribution.push_back(std::make_pair(rankOffset + counter, blockSize));
-      m_InRankDistribution.push_back(std::make_pair(rankOffset + counter, blockSize));
-      counter += blockSize;
+       m_InRankDistribution.push_back(std::make_pair(rankOffset + counter, blockSize));
+       counter += blockSize;
     }
 
   } // setBlockDistributionInRank
@@ -582,21 +579,21 @@ public:
 
   int m_MPISize = 1; //!< MPI size
   int m_MPIRank = 0; //!< MPI rank
-  unsigned long m_Bulk = 1000ul; //!< num of elements
+  unsigned long m_Bulk = 1000ul; //!< num of elements at long dimension
   /** number of subdivisions for the elements
    *
    * note that with h5collect mode, m_Seg must be 1
    */
   unsigned int m_Seg = 1;
   int m_Steps = 1;   //!< num of iterations
-  int m_TestNum = 0; //!< ... description here ...
   std::string m_Backend = ".bp"; //!< I/O backend by file ending
-  bool m_Unbalance = false;      //!< ... description here ...
+  bool m_Unbalance = false;      //! load is different among processors
 
-  int m_Ratio = 1; //!< ... description here ...
+  int m_Ratio = 1; //! particle:mesh ratio
 
-  Extent m_GlobalMesh; //!< ... description here ...
-  /** ... description here ...
+  Extent m_GlobalMesh; //! the global mesh grid 
+  /** partition the workload on this rank along the long dimension (default x) 
+   *  see setBlockDistributionInRank()
    */
   std::vector<std::pair<unsigned long, unsigned long>> m_InRankDistribution;
 }; // class TestInput
