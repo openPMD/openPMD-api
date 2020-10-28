@@ -184,10 +184,10 @@ jobs:
             fi;
           fi
         # build
-        #- if [ ! -z ${ASAN_OPTIONS+x} ]; then
-        #    CXXFLAGS="${CXXFLAGS} -fsanitize=address,undefined -shared-libsan" &&
-        #    LDFLAGS="-fsanitize=address,undefined -shared-libsan";
-        #  fi
+        - if [ ! -z ${ASAN_OPTIONS+x} ]; then
+            CXXFLAGS="${CXXFLAGS} -fsanitize=address,undefined -shared-libsan" &&
+            LDFLAGS="-fsanitize=address,undefined -shared-libsan";
+          fi
         - CXXFLAGS="${CXXFLAGS} -Werror" CXX=${CXX} CC=${CC}
           cmake
             -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
@@ -206,9 +206,9 @@ jobs:
         #   pybind11: work-around for missing symbols with sanitizers
         #   /usr/local/clang-7.0.0/lib/clang/7.0.0/lib/linux/libclang_rt.asan-x86_64.so
         #   /usr/local/clang-7.0.0/lib/clang/7.0.0/lib/linux/libclang_rt.ubsan_minimal-x86_64.so
-        #- if [ "$USE_PYTHON" == "ON" ] && [ ! -z ${ASAN_OPTIONS+x} ]; then
-        #    export LD_PRELOAD=/usr/local/clang-7.0.0/lib/clang/7.0.0/lib/linux/libclang_rt.asan-x86_64.so;
-        #  fi
+        - if [ "$USE_PYTHON" == "ON" ] && [ ! -z ${ASAN_OPTIONS+x} ]; then
+            export LD_PRELOAD=/usr/local/clang-7.0.0/lib/clang/7.0.0/lib/linux/libclang_rt.asan-x86_64.so;
+          fi
         - if [ "${TRAVIS_OS_NAME}" = "osx" ]; then
             otool -l /Users/travis/build/bin/openpmd-ls;
           fi
