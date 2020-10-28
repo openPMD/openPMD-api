@@ -582,18 +582,24 @@ public:
   }
 
 
-  int m_MPISize = 1;
-  int m_MPIRank = 0;
-  unsigned long m_Bulk = 1000ul;
+  int m_MPISize = 1; //!< MPI size
+  int m_MPIRank = 0; //!< MPI rank
+  unsigned long m_Bulk = 1000ul; //!< num of elements
+  /** number of subdivisions for the elements
+   *
+   * note that with h5collect mode, m_Seg must be 1
+   */
   unsigned int m_Seg = 1;
-  int m_Steps = 1;
-  int m_TestNum = 0;
-  std::string m_Backend = ".bp";
-  bool m_Unbalance = false;
+  int m_Steps = 1;   //!< num of iterations
+  int m_TestNum = 0; //!< ... description here ...
+  std::string m_Backend = ".bp"; //!< I/O backend by file ending
+  bool m_Unbalance = false;      //!< ... description here ...
 
-  int m_Ratio = 1;
+  int m_Ratio = 1; //!< ... description here ...
 
-  Extent m_GlobalMesh;
+  Extent m_GlobalMesh; //!< ... description here ...
+  /** ... description here ...
+   */
   std::vector<std::pair<unsigned long, unsigned long>> m_InRankDistribution;
 }; // class TestInput
 
