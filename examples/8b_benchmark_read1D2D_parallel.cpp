@@ -53,7 +53,7 @@ public:
      * @param[in] rank     MPI rank
      * @param[in] tag      item name to measure
      */
-  MemoryProfiler(int rank, const  char* tag) {
+  MemoryProfiler(int rank, const std::string& tag) {
     m_Rank = rank;
 #if defined(__linux)
     //m_Name = "/proc/meminfo";
@@ -72,7 +72,7 @@ public:
      * @param rank     MPI rank
      */
 
-  void Display(const char*  tag){
+  void Display(const std::string& tag){
     if (0 == m_Name.size())
       return;
 
@@ -117,7 +117,7 @@ public:
      * @param tag      item name to measure
      * @param rank     MPI rank
      */
-    Timer(const char* tag, int rank) {
+    Timer(const std::string& tag, int rank) {
         m_Tag = tag;
         m_Rank = rank;
         m_Start = std::chrono::system_clock::now();

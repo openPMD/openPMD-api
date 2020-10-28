@@ -116,11 +116,11 @@ public:
      * @param tag      item name to measure
      * @param rank     MPI rank
      */
-    Timer(const char* tag, int rank) {
+    Timer(const std::string& tag, int rank) {
         m_Tag = tag;
         m_Rank = rank;
         m_Start = std::chrono::system_clock::now();
-    MemoryProfiler (rank, tag);
+        MemoryProfiler (rank, tag);
     }
     ~Timer() {
         std::string tt = "~"+m_Tag;
