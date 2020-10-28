@@ -199,7 +199,7 @@ public:
   TestInput() =  default;
 
   /** GetSeg()
-   * return number of partitions along the long dimension 
+   * return number of partitions along the long dimension
    * m_Seg can be set from input
    * exception is when h5 collective mode is on. m_Seg=1
    */
@@ -266,7 +266,7 @@ public:
 
     m_InRankDistribution.clear();
     unsigned long counter = 0ul;
-    for( unsigned long i = 0ul; i < nBlocks; i++ ) 
+    for( unsigned long i = 0ul; i < nBlocks; i++ )
     {
        unsigned long blockSize = rankCount/nBlocks;
        if ((rankCount % nBlocks != 0) && (i == (nBlocks -1)))
@@ -591,8 +591,8 @@ public:
 
   int m_Ratio = 1; //! particle:mesh ratio
 
-  Extent m_GlobalMesh; //! the global mesh grid 
-  /** partition the workload on this rank along the long dimension (default x) 
+  Extent m_GlobalMesh; //! the global mesh grid
+  /** partition the workload on this rank along the long dimension (default x)
    *  see setBlockDistributionInRank()
    */
   std::vector<std::pair<unsigned long, unsigned long>> m_InRankDistribution;
