@@ -29,6 +29,9 @@ namespace variantSrc = std;
 namespace variantSrc = mpark;
 #endif
 
+#include <utility> // std::forward, std::move
+
+
 namespace openPMD
 {
 namespace auxiliary
@@ -52,16 +55,13 @@ namespace auxiliary
         data_t m_data;
 
     public:
-        /**
-         * @brief Create an empty Option.
-         *
+        /** Create an empty Option.
          */
         explicit Option() : m_data( detail::Empty() )
         {
         }
 
-        /**
-         * @brief Create a full Option.
+        /** Create a full Option.
          *
          * @param data The object to emplace in the Option.
          */
@@ -146,7 +146,7 @@ namespace auxiliary
          * @brief Access the emplaced object if one is present.
          *
          * @throw std::bad_variant_access if no object is present.
-         * @return T const& The emplaced object.
+         * @return The emplaced object.
          */
         T const &
         get() const
@@ -158,7 +158,7 @@ namespace auxiliary
          * @brief Access the emplaced object if one is present.
          *
          * @throw std::bad_variant_access if no object is present.
-         * @return T& The emplaced object.
+         * @return The emplaced object.
          */
         T &
         get()
