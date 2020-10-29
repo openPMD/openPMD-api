@@ -20,13 +20,7 @@
  */
 #pragma once
 
-#if __cplusplus >= 201703L
-#   include <variant> // IWYU pragma: export
-namespace variantSrc = std;
-#else
-#   include <mpark/variant.hpp> // IWYU pragma: export
-namespace variantSrc = mpark;
-#endif
+#include "VariantSrc.hpp"
 
 #include <type_traits>
 
@@ -79,7 +73,7 @@ public:
     {
         return m_data;
     }
-    
+
     /** Retrieve the index of the alternative that is currently been held
      *
      * @return  zero-based index
