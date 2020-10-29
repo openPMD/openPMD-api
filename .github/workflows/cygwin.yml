@@ -21,9 +21,7 @@ jobs:
       - name: Set Environment
         shell: cmd
         run: |
-          echo CC=/usr/bin/cc >> %GITHUB_ENV%
-          echo CXX=/usr/bin/c++.exe >> %GITHUB_ENV%
-          echo C:\\tools\\cygwin\\bin >> %GITHUB_PATH%
+          echo C:\\tools\\cygwin\\bin > %GITHUB_PATH%
           echo C:\\tools\\cygwin\\usr\\bin >> %GITHUB_PATH%
       - name: Install dependencies
         shell: cmd
@@ -55,9 +53,7 @@ jobs:
       - name: Set Environment
         shell: cmd
         run: |
-          echo CC=/usr/bin/cc >> %GITHUB_ENV%
-          echo CXX=/usr/bin/c++.exe >> %GITHUB_ENV%
-          echo C:\\tools\\cygwin\\bin >> %GITHUB_PATH%
+          echo C:\\tools\\cygwin\\bin > %GITHUB_PATH%
           echo C:\\tools\\cygwin\\usr\\bin >> %GITHUB_PATH%
       - name: Install dependencies
         shell: cmd
