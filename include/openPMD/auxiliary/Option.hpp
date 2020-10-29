@@ -21,13 +21,7 @@
 
 #pragma once
 
-#if __cplusplus >= 201703L
-#   include <variant> // IWYU pragma: export
-namespace variantSrc = std;
-#else
-#   include <mpark/variant.hpp> // IWYU pragma: export
-namespace variantSrc = mpark;
-#endif
+#include "VariantSrc.hpp"
 
 #include <utility> // std::forward, std::move
 
