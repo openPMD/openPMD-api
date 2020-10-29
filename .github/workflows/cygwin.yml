@@ -8,6 +8,11 @@ on:
     branches:
       - dev
 
+env:
+  PATH: C:\\tools\\cygwin\\bin;C:\\tools\\cygwin\\usr\\bin;$PATH
+  CC: /usr/bin/c++.exe
+  CXX: /usr/bin/cc
+
 jobs:
   cmake:
     runs-on: [windows-2019]
@@ -18,9 +23,6 @@ jobs:
         run: |
           choco config get cacheLocation
           choco install --no-progress cygwin
-          echo "C:\tools\cygwin\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8
-
-          echo "C:\tools\cygwin\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Install dependencies
         shell: cmd
@@ -49,9 +51,6 @@ jobs:
         run: |
           choco config get cacheLocation
           choco install --no-progress cygwin
-          echo "C:\tools\cygwin\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8
-
-          echo "C:\tools\cygwin\usr\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Install dependencies
         shell: cmd
