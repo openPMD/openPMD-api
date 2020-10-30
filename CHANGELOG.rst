@@ -12,7 +12,7 @@ Changelog
 [Summary]
 
 Changes to "0.12.0-alpha"
-^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Features
 """"""""
@@ -103,7 +103,7 @@ Other
   - new Spack external package syntax #760
   - python tests: ``testAttributes`` JSON backend coverage #767
 - ``listSeries``: remove unused parameters in try-catch #706
-- safer internal ``*dynamic_cast``s of pointers #745
+- safer internal ``*dynamic_cast`` of pointers #745
 - CMake: subproject inclusion cleanup #751
 - Python: remove redundant move in container #753
 - read example: show particle load #706
