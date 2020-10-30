@@ -1046,7 +1046,8 @@ Series::advance(
     /*
      * @todo By calling flushFileBased/GroupBased, we do not propagate tasks to
      *       the backend yet. We will append ADVANCE and CLOSE_FILE tasks
-     *       manually.
+     *       manually. In order to avoid having them automatically appended by
+     *       the flush*Based methods, set CloseStatus to Open for now.
      */
     Iteration::CloseStatus oldCloseStatus = *iteration.m_closed;
     if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend )
@@ -1073,36 +1074,36 @@ Series::advance(
 
 
     if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend &&
-        *m_iterationEncoding == IterationEncoding::fileBased &&
         mode == AdvanceMode::ENDSTEP )
     {
-        Parameter< Operation::CLOSE_FILE > fClose;
-        IOHandler->enqueue( IOTask( &iteration, std::move( fClose ) ) );
-        *iteration.m_closed = Iteration::CloseStatus::ClosedInBackend;
+        using IE = IterationEncoding;
+        switch( *m_iterationEncoding )
+        {
+            case IE::fileBased:
+            {
+                Parameter< Operation::CLOSE_FILE > fClose;
+                IOHandler->enqueue( IOTask( &iteration, std::move( fClose ) ) );
+                *iteration.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                break;
+            }
+            case IE::groupBased:
+            {
+                // We can now put some groups to rest
+                Parameter< Operation::CLOSE_PATH > fClose;
+                IOHandler->enqueue( IOTask( &iteration, std::move( fClose ) ) );
+                // In group-based iteration layout, files are
+                // not closed on a per-iteration basis
+                // We will treat it as such nonetheless
+                *iteration.m_closed = Iteration::CloseStatus::ClosedInBackend;
+            }
+            break;
+        }
     }
 
     // We cannot call Series::flush now, since the IO handler is still filled
     // from calling flush(Group|File)based, but has not been emptied yet
     // Do that manually
     IOHandler->flush();
-
-    // We can now put some groups to rest
-    if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend &&
-        *m_iterationEncoding == IterationEncoding::groupBased &&
-        mode == AdvanceMode::ENDSTEP )
-    {
-        // TODO
-        if( this->IOHandler->m_frontendAccess == Access::CREATE ||
-            this->IOHandler->m_frontendAccess == Access::READ_WRITE )
-        {
-            Parameter< Operation::CLOSE_PATH > fClose;
-            IOHandler->enqueue( IOTask( &iteration, std::move( fClose ) ) );
-        }
-        // In group-based iteration layout, files are
-        // not closed on a per-iteration basis
-        // We will treat it as such nonetheless
-        *iteration.m_closed = Iteration::CloseStatus::ClosedInBackend;
-    }
 
     return *param.status;
 }

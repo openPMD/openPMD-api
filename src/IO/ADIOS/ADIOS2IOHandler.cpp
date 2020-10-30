@@ -660,9 +660,11 @@ ADIOS2IOHandlerImpl::closePath(
     VERIFY_ALWAYS(
         writable->written,
         "Cannot close a path that has not been written yet." );
-    VERIFY_ALWAYS(
-        m_handler->m_backendAccess != Access::READ_ONLY,
-        "Cannot close a path while in read-only mode." );
+    if( m_handler->m_backendAccess == Access::READ_ONLY )
+    {
+        // nothing to do
+        return;
+    }
     auto file = refreshFileFromParent( writable );
     auto & fileData = getFileData( file );
     if( !fileData.optimizeAttributesStreaming )
