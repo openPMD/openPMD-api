@@ -288,7 +288,7 @@ namespace openPMD
             while( it < end )
             {
                 // skip empty slots
-                while( j[ it ].is_null() && it < end )
+                while( it < end && j[ it ].is_null() )
                 {
                     ++it;
                 }
