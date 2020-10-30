@@ -78,6 +78,32 @@ RecordComponent::getExtent() const
     return m_dataset->extent;
 }
 
+namespace detail
+{
+struct MakeEmpty
+{
+    template< typename T >
+    RecordComponent& operator()( RecordComponent & rc, uint8_t dimensions )
+    {
+        return rc.makeEmpty< T >( dimensions );
+    }
+
+    template< unsigned int N >
+    RecordComponent& operator()( RecordComponent &, uint8_t )
+    {
+        throw std::runtime_error(
+            "RecordComponent::makeEmpty: Unknown datatype." );
+    }
+};
+}
+
+RecordComponent&
+RecordComponent::makeEmpty( Datatype dt, uint8_t dimensions )
+{
+    static detail::MakeEmpty me;
+    return switchType< RecordComponent & >( dt, me, *this, dimensions );
+}
+
 RecordComponent&
 RecordComponent::makeEmpty( Dataset d )
 {

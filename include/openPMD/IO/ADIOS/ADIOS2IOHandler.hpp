@@ -21,18 +21,20 @@
 #pragma once
 
 #include "ADIOS2FilePosition.hpp"
-#include "openPMD/config.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #include "openPMD/IO/AbstractIOHandlerImplCommon.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
+#include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/backend/Writable.hpp"
+#include "openPMD/config.hpp"
 
 #if openPMD_HAVE_ADIOS2
-#   include <adios2.h>
-#   include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
+#    include <adios2.h>
+
+#    include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #endif
 
 #if openPMD_HAVE_MPI
@@ -280,7 +282,7 @@ private:
 
     // Helper methods.
 
-    std::unique_ptr< adios2::Operator >
+    auxiliary::Option< adios2::Operator >
     getCompressionOperator( std::string const & compression );
 
     /*
@@ -889,6 +891,7 @@ namespace detail
 
     private:
         // ADIOS engine
+        auxiliary::Option< adios2::Engine > m_engine;
         std::string m_engineType;
         /*
          * streamStatus is NoStream for file-based ADIOS engines.
@@ -919,7 +922,6 @@ namespace detail
             StreamOver
         };
         StreamStatus streamStatus = StreamStatus::NoStream;
-        adios2::Engine m_engine;
         adios2::StepStatus m_lastStepStatus = adios2::StepStatus::OK;
 
         /*
@@ -929,18 +931,13 @@ namespace detail
          * The downside of this is that we need to pay attention to invalidate
          * the map whenever an attribute/variable is altered. In that case, we
          * fetch the map anew.
-         * Revisit once https://github.com/openPMD/openPMD-api/issues/563 has
-         * been resolved
-         * If false, the buffered map has been invalidated and needs to be
-         * queried from ADIOS2 again. If true, the buffered map is equivalent to
+         * If empty, the buffered map has been invalidated and needs to be
+         * queried from ADIOS2 again. If full, the buffered map is equivalent to
          * the map that would be returned by a call to
          * IO::Available(Attributes|Variables).
          */
-        bool m_availableAttributesValid = false;
-        AttributeMap_t m_availableAttributes;
-
-        bool m_availableVariablesValid = false;
-        AttributeMap_t m_availableVariables;
+        auxiliary::Option< AttributeMap_t > m_availableAttributes;
+        auxiliary::Option< AttributeMap_t > m_availableVariables;
 
         void
         configure_IO( ADIOS2IOHandlerImpl & impl );

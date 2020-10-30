@@ -897,6 +897,40 @@ if(BUILD_TESTING)
         ${MPIEXEC_NUMPROC_FLAG} 2
     )
 
+    # do we have openPMD-example-datasets?
+    if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
+        set(EXAMPLE_DATA_FOUND ON)
+        message(STATUS "Found openPMD-example-datasets: TRUE")
+    else()
+        message(STATUS "Note: Skipping example and tool runs (missing openPMD-example-datasets)")
+        if(WIN32)
+            message(STATUS "Note: run\n"
+                           "    Powershell.exe -File ${openPMD_SOURCE_DIR}/share/openPMD/download_samples.ps1\n"
+                           "to add example files to samples/git-sample/ directory!")
+        else()
+            message(STATUS "Note: run\n"
+                           "    . ${openPMD_SOURCE_DIR}/share/openPMD/download_samples.sh\n"
+                           "to add example files to samples/git-sample/ directory!")
+        endif()
+    endif()
+
+    if(openPMD_HAVE_PYTHON)
+        # do we have mpi4py for MPI-parallel Python tests?
+        if(openPMD_HAVE_MPI)
+            execute_process(COMMAND ${PYTHON_EXECUTABLE}
+                -m mpi4py
+                -c "import mpi4py.MPI"
+                RESULT_VARIABLE MPI4PY_RETURN
+                OUTPUT_QUIET ERROR_QUIET)
+
+            if(MPI4PY_RETURN EQUAL 0)
+                message(STATUS "Found mpi4py: TRUE")
+            else()
+                message(STATUS "Could NOT find mpi4py (will NOT run MPI-parallel Python examples)")
+            endif()
+        endif()
+    endif()
+
     # C++ Unit tests
     foreach(testname ${openPMD_TEST_NAMES})
         if(${testname} MATCHES "^Parallel.*$")
@@ -917,8 +951,7 @@ if(BUILD_TESTING)
     # Python Unit tests
     if(openPMD_HAVE_PYTHON)
         if(openPMD_HAVE_HDF5)
-            if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
-
+            if(EXAMPLE_DATA_FOUND)
                 add_test(NAME Unittest.py
                     COMMAND ${PYTHON_EXECUTABLE}
                         ${openPMD_SOURCE_DIR}/test/python/unittest/Test.py -v
@@ -950,7 +983,7 @@ if(BUILD_TESTING)
         # C++ Examples
         # Current examples all use HDF5, elaborate if other backends are used
         if(openPMD_HAVE_HDF5)
-            if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
+            if(EXAMPLE_DATA_FOUND)
                 foreach(examplename ${openPMD_EXAMPLE_NAMES})
                     if(${examplename} MATCHES "^.*_parallel$")
                         if(openPMD_HAVE_MPI)
@@ -966,8 +999,6 @@ if(BUILD_TESTING)
                                 )
                     endif()
                 endforeach()
-            else()
-                message(STATUS "Note: Skipping C++ example tests (missing example files)")
             endif()
         endif()
     endif()
@@ -981,7 +1012,7 @@ if(BUILD_TESTING)
                 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
             )
         endforeach()
-        if(openPMD_HAVE_HDF5 AND EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
+        if(openPMD_HAVE_HDF5 AND EXAMPLE_DATA_FOUND)
             add_test(NAME CLI.ls
                 COMMAND openpmd-ls ../samples/git-sample/data%08T.h5
                 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
@@ -1016,17 +1047,7 @@ if(BUILD_TESTING)
     # Python Examples
     # Current examples all use HDF5, elaborate if other backends are used
     if(openPMD_HAVE_PYTHON AND openPMD_HAVE_HDF5)
-        if(EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
-            execute_process(COMMAND ${PYTHON_EXECUTABLE}
-                -m mpi4py
-                -c "import mpi4py.MPI"
-                RESULT_VARIABLE MPI4PY_RETURN)
-
-            if(NOT MPI4PY_RETURN EQUAL 0)
-                message(STATUS "Note: mpi4py not found. "
-                               "Skipping MPI-parallel Python examples.")
-            endif()
-
+        if(EXAMPLE_DATA_FOUND)
             foreach(examplename ${openPMD_PYTHON_EXAMPLE_NAMES})
                 add_custom_command(TARGET openPMD.py POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy
@@ -1071,21 +1092,6 @@ if(BUILD_TESTING)
                     endif()
                 endif()
             endforeach()
-        else()
-            message(STATUS "Note: Skipping Python example tests (missing example files)")
-        endif()
-    endif()
-
-    # hint: how to prepare sample data for testing
-    if(NOT EXISTS "${openPMD_BINARY_DIR}/samples/git-sample/")
-        if(WIN32)
-            message(STATUS "Note: run\n"
-                           "    Powershell.exe -File ${openPMD_SOURCE_DIR}/share/openPMD/download_samples.ps1\n"
-                           "to add example files to samples/git-sample/ directory!")
-        else()
-            message(STATUS "Note: run\n"
-                           "    . ${openPMD_SOURCE_DIR}/share/openPMD/download_samples.sh\n"
-                           "to add example files to samples/git-sample/ directory!")
         endif()
     endif()
 endif()

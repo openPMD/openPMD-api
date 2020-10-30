@@ -550,6 +550,162 @@ class APITest(unittest.TestCase):
         for ext in io.file_extensions:
             self.makeConstantRoundTrip(ext)
 
+    def makeEmptyRoundTrip(self, file_ending):
+        # write
+        series = io.Series(
+            "unittest_py_empty_API." + file_ending,
+            io.Access_Type.create
+        )
+
+        ms = series.iterations[0].meshes
+        SCALAR = io.Mesh_Record_Component.SCALAR
+        DT = io.Datatype
+
+        ms["CHAR"][SCALAR].make_empty(DT.CHAR, 1)
+        ms["UCHAR"][SCALAR].make_empty(DT.UCHAR, 2)
+        ms["SHORT"][SCALAR].make_empty(DT.SHORT, 3)
+        ms["INT"][SCALAR].make_empty(DT.INT, 4)
+        ms["LONG"][SCALAR].make_empty(DT.LONG, 5)
+        ms["LONGLONG"][SCALAR].make_empty(DT.LONGLONG, 6)
+        ms["USHORT"][SCALAR].make_empty(DT.USHORT, 7)
+        ms["UINT"][SCALAR].make_empty(DT.UINT, 8)
+        ms["ULONG"][SCALAR].make_empty(DT.ULONG, 9)
+        ms["ULONGLONG"][SCALAR].make_empty(DT.ULONGLONG, 10)
+        ms["FLOAT"][SCALAR].make_empty(DT.FLOAT, 11)
+        ms["DOUBLE"][SCALAR].make_empty(DT.DOUBLE, 12)
+        ms["LONG_DOUBLE"][SCALAR].make_empty(DT.LONG_DOUBLE, 13)
+
+        if found_numpy:
+            ms["int16"][SCALAR].make_empty(np.dtype("int16"), 14)
+            ms["int32"][SCALAR].make_empty(np.dtype("int32"), 15)
+            ms["int64"][SCALAR].make_empty(np.dtype("int64"), 16)
+            ms["uint16"][SCALAR].make_empty(np.dtype("uint16"), 17)
+            ms["uint32"][SCALAR].make_empty(np.dtype("uint32"), 18)
+            ms["uint64"][SCALAR].make_empty(np.dtype("uint64"), 19)
+            ms["single"][SCALAR].make_empty(np.dtype("single"), 20)
+            ms["np_double"][SCALAR].make_empty(np.dtype("double"), 21)
+
+        # flush and close file
+        del series
+
+        # read back
+        series = io.Series(
+            "unittest_py_empty_API." + file_ending,
+            io.Access_Type.read_only
+        )
+
+        ms = series.iterations[0].meshes
+
+        self.assertEqual(
+            ms["CHAR"][SCALAR].shape,
+            [0 for _ in range(1)]
+        )
+        self.assertEqual(
+            ms["UCHAR"][SCALAR].shape,
+            [0 for _ in range(2)]
+        )
+        self.assertEqual(
+            ms["SHORT"][SCALAR].shape,
+            [0 for _ in range(3)]
+        )
+        self.assertEqual(
+            ms["INT"][SCALAR].shape,
+            [0 for _ in range(4)]
+        )
+        self.assertEqual(
+            ms["LONG"][SCALAR].shape,
+            [0 for _ in range(5)]
+        )
+        self.assertEqual(
+            ms["LONGLONG"][SCALAR].shape,
+            [0 for _ in range(6)]
+        )
+        self.assertEqual(
+            ms["USHORT"][SCALAR].shape,
+            [0 for _ in range(7)]
+        )
+        self.assertEqual(
+            ms["UINT"][SCALAR].shape,
+            [0 for _ in range(8)]
+        )
+        self.assertEqual(
+            ms["ULONG"][SCALAR].shape,
+            [0 for _ in range(9)]
+        )
+        self.assertEqual(
+            ms["ULONGLONG"][SCALAR].shape,
+            [0 for _ in range(10)]
+        )
+        self.assertEqual(
+            ms["FLOAT"][SCALAR].shape,
+            [0 for _ in range(11)]
+        )
+        self.assertEqual(
+            ms["DOUBLE"][SCALAR].shape,
+            [0 for _ in range(12)]
+        )
+        self.assertEqual(
+            ms["LONG_DOUBLE"][SCALAR].shape,
+            [0 for _ in range(13)]
+        )
+
+        if found_numpy:
+            self.assertEqual(
+                ms["int16"][SCALAR].shape,
+                [0 for _ in range(14)]
+            )
+            self.assertEqual(
+                ms["int32"][SCALAR].shape,
+                [0 for _ in range(15)]
+            )
+            self.assertEqual(
+                ms["int64"][SCALAR].shape,
+                [0 for _ in range(16)]
+            )
+            self.assertEqual(
+                ms["uint16"][SCALAR].shape,
+                [0 for _ in range(17)]
+            )
+            self.assertEqual(
+                ms["uint32"][SCALAR].shape,
+                [0 for _ in range(18)]
+            )
+            self.assertEqual(
+                ms["uint64"][SCALAR].shape,
+                [0 for _ in range(19)]
+            )
+            self.assertEqual(
+                ms["single"][SCALAR].shape,
+                [0 for _ in range(20)]
+            )
+            self.assertEqual(
+                ms["np_double"][SCALAR].shape,
+                [0 for _ in range(21)]
+            )
+
+        # test datatypes for fixed-sized types only
+        if found_numpy:
+            self.assertTrue(ms["int16"][SCALAR].dtype == np.dtype("int16"))
+            self.assertTrue(ms["int32"][SCALAR].dtype == np.dtype("int32"))
+            self.assertTrue(ms["int64"][SCALAR].dtype == np.dtype("int64"))
+            self.assertTrue(ms["uint16"][SCALAR].dtype == np.dtype("uint16"))
+            self.assertTrue(ms["uint32"][SCALAR].dtype == np.dtype("uint32"))
+            self.assertTrue(ms["uint64"][SCALAR].dtype == np.dtype("uint64"))
+            self.assertTrue(ms["single"][SCALAR].dtype == np.dtype("single"))
+            self.assertTrue(
+                ms["np_double"][SCALAR].dtype == np.dtype("double"))
+
+    def testEmptyRecords(self):
+        backend_filesupport = {
+            'json': 'json',
+            'hdf5': 'h5',
+            'adios1': 'bp',
+            'adios2': 'bp'
+        }
+        for b in io.variants:
+            if io.variants[b] is True and b in backend_filesupport:
+                self.makeEmptyRoundTrip(backend_filesupport[b])
+
     def testData(self):
         """ Test IO on data containing particles and meshes."""
 

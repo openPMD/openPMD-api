@@ -20,13 +20,7 @@
  */
 #pragma once
 
-#if __cplusplus >= 201703L
-#   include <variant> // IWYU pragma: export
-namespace variantSrc = std;
-#else
-#   include <mpark/variant.hpp> // IWYU pragma: export
-namespace variantSrc = mpark;
-#endif
+#include "VariantSrc.hpp"
 
 #include <type_traits>
 
@@ -79,7 +73,7 @@ public:
     {
         return m_data;
     }
-    
+
     /** Retrieve the index of the alternative that is currently been held
      *
      * @return  zero-based index
@@ -91,134 +85,8 @@ public:
 
     T_DTYPES dtype;
 
-protected:
+private:
     resource m_data;
-};
-
-namespace detail
-{
-    struct Empty
-    {
-    };
-} // namespace detail
-
-/**
- * @brief Simple Option type based on variantSrc::variant.
- *
- * @tparam T Type that can be optionally stored in an Optional object.
- */
-template< typename T >
-class Option
-{
-    using data_t = variantSrc::variant< T, detail::Empty >;
-    data_t m_data;
-
-public:
-    /**
-     * @brief Create an empty Option.
-     *
-     */
-    explicit Option() : m_data( detail::Empty() )
-    {
-    }
-
-    /**
-     * @brief Create a full Option.
-     *
-     * @param data The object to emplace in the Option.
-     */
-    Option( T data ) : m_data( std::move( data ) )
-    {
-    }
-
-    Option( Option const & other ) = default;
-
-    Option &
-    operator=( Option && other )
-    {
-        if( other.has_value() )
-        {
-            m_data.template emplace< 0 >( std::move( other.get() ) );
-        }
-        else
-        {
-            m_data.template emplace< 1 >( detail::Empty() );
-        }
-        return *this;
-    }
-
-    Option &
-    operator=( Option const & other )
-    {
-        if( other.has_value() )
-        {
-            m_data.template emplace< 0 >( other.get() );
-        }
-        else
-        {
-            m_data.template emplace< 1 >( detail::Empty() );
-        }
-        return *this;
-    }
-
-    bool
-    operator==( Option const & other ) const
-    {
-        if( has_value() )
-        {
-            return !other.has_value();
-        }
-        else
-        {
-            if( !other.has_value() )
-            {
-                return false;
-            }
-            else
-            {
-                return get() == other.get();
-            }
-        }
-    }
-
-    bool
-    operator!=( Option const & other ) const
-    {
-        return !( *this == other );
-    }
-
-    /**
-     * @return Is an object constantly stored in this?
-     */
-    bool
-    has_value() const
-    {
-        return m_data.index() == 0;
-    }
-
-    /**
-     * @brief Access the emplaced object if one is present.
-     *
-     * @throw std::bad_variant_access if no object is present.
-     * @return T const& The emplaced object.
-     */
-    T const &
-    get() const
-    {
-        return variantSrc::template get< T >( m_data );
-    }
-
-    /**
-     * @brief Access the emplaced object if one is present.
-     *
-     * @throw std::bad_variant_access if no object is present.
-     * @return T& The emplaced object.
-     */
-    T &
-    get()
-    {
-        return variantSrc::template get< T >( m_data );
-    }
 };
 } // namespace auxiliary
 } // namespace openPMD
