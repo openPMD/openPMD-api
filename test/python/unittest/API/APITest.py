@@ -1525,7 +1525,6 @@ class APITest(unittest.TestCase):
         )
 
         DS = io.Dataset
-        it0 = write.iterations[0]
         E_x = write.iterations[0].meshes["E"]["x"]
         E_x.reset_dataset(DS(np.dtype("int"), [10, 4]))
         data = np.array([[2, 4, 6, 8], [10, 12, 14 , 16]], dtype=np.dtype("int"))
