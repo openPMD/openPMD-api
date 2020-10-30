@@ -25,6 +25,7 @@
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/version.hpp"
 
 #include <exception>
 #include <iomanip>
@@ -533,24 +534,16 @@ Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
 void
 Series::initDefaults()
 {
-    std::stringstream openPMDstandard;
-    openPMDstandard << OPENPMD_STANDARD_MAJOR << "."
-                    << OPENPMD_STANDARD_MINOR << "."
-                    << OPENPMD_STANDARD_PATCH;
-    setOpenPMD( openPMDstandard.str() );
-    setOpenPMDextension(0);
-    setAttribute("basePath", std::string(BASEPATH));
-    setDate( auxiliary::getDateString() );
-
-    std::stringstream openPMDapi;
-    openPMDapi << OPENPMDAPI_VERSION_MAJOR << "."
-               << OPENPMDAPI_VERSION_MINOR << "."
-               << OPENPMDAPI_VERSION_PATCH;
-    if( std::string( OPENPMDAPI_VERSION_LABEL ).size() > 0 )
-        openPMDapi << "-" << OPENPMDAPI_VERSION_LABEL;
-    setSoftware( "openPMD-api", openPMDapi.str() );
-
-    // TODO Potentially warn on flush if software and author are not user-provided (defaulted)
+    if( !containsAttribute("openPMD"))
+        setOpenPMD( getStandard() );
+    if( !containsAttribute("openPMDextension"))
+        setOpenPMDextension(0);
+    if( !containsAttribute("basePath"))
+        setAttribute("basePath", std::string(BASEPATH));
+    if( !containsAttribute("date"))
+        setDate( auxiliary::getDateString() );
+    if( !containsAttribute("software"))
+        setSoftware( "openPMD-api", getVersion() );
 }
 
 template< typename IterationsContainer >
