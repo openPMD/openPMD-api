@@ -629,7 +629,6 @@ set(openPMD_EXAMPLE_NAMES
     8_benchmark_parallel
     8a_benchmark_write1D2D_parallel
     8b_benchmark_read1D2D_parallel
-
 )
 set(openPMD_PYTHON_EXAMPLE_NAMES
     2_read_serial
