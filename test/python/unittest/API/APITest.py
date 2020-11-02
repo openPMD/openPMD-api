@@ -1527,7 +1527,8 @@ class APITest(unittest.TestCase):
         DS = io.Dataset
         E_x = write.iterations[0].meshes["E"]["x"]
         E_x.reset_dataset(DS(np.dtype("int"), [10, 4]))
-        data = np.array([[2, 4, 6, 8], [10, 12, 14 , 16]], dtype=np.dtype("int"))
+        data = np.array(
+            [[2, 4, 6, 8], [10, 12, 14, 16]], dtype=np.dtype("int"))
         E_x.store_chunk(data, [1, 0], [2, 4])
         data = np.array([[2, 4], [6, 8], [10, 12]], dtype=np.dtype("int"))
         E_x.store_chunk(data, [4, 2], [3, 2])
