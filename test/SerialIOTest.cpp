@@ -129,9 +129,13 @@ TEST_CASE( "available_chunks_test_json", "[serial][json]" )
         auto E_x = it0.meshes[ "E" ][ "x" ];
         ChunkTable table = E_x.availableChunks();
         REQUIRE( table.size() == 3 );
-        REQUIRE( table[ 0 ] == Chunk( { 2, 0 }, { 5, 4 } ) );
-        REQUIRE( table[ 1 ] == Chunk( { 7, 0 }, { 2, 2 } ) );
-        REQUIRE( table[ 2 ] == Chunk( { 8, 3 }, { 2, 1 } ) );
+        /*
+         * Explicitly convert things to bool, so Catch doesn't get the splendid
+         * idea to print the Chunk struct.
+         */
+        REQUIRE( bool( table[ 0 ] == Chunk( { 2, 0 }, { 5, 4 } ) ) );
+        REQUIRE( bool( table[ 1 ] == Chunk( { 7, 0 }, { 2, 2 } ) ) );
+        REQUIRE( bool( table[ 2 ] == Chunk( { 8, 3 }, { 2, 1 } ) ) );
     }
 }
 
