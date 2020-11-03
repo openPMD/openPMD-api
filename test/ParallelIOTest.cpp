@@ -1,9 +1,9 @@
 /* Running this test in parallel with MPI requires MPI::Init.
  * To guarantee a correct call to Init, launch the tests manually.
  */
-#include "openPMD/openPMD.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
-
+#include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/openPMD.hpp"
 #include <catch2/catch.hpp>
 
 #if openPMD_HAVE_MPI
@@ -380,6 +380,95 @@ TEST_CASE( "hzdr_adios_sample_content_test", "[parallel][adios1]" )
     {
         std::cerr << "git sample not accessible. (" << e.what() << ")\n";
         return;
+    }
+}
+
+void
+close_iteration_test( std::string file_ending )
+{
+    int i_mpi_rank{ -1 }, i_mpi_size{ -1 };
+    MPI_Comm_rank( MPI_COMM_WORLD, &i_mpi_rank );
+    MPI_Comm_size( MPI_COMM_WORLD, &i_mpi_size );
+    unsigned mpi_rank{ static_cast< unsigned >( i_mpi_rank ) },
+        mpi_size{ static_cast< unsigned >( i_mpi_size ) };
+    std::string name = "../samples/close_iterations_parallel_%T." + file_ending;
+
+    std::vector< int > data{ 2, 4, 6, 8 };
+    // { // we do *not* need these parentheses
+    Series write( name, Access::CREATE, MPI_COMM_WORLD );
+    bool isAdios1 = write.backend() == "MPI_ADIOS1";
+    {
+        Iteration it0 = write.iterations[ 0 ];
+        auto E_x = it0.meshes[ "E" ][ "x" ];
+        E_x.resetDataset( { Datatype::INT, { mpi_size, 4 } } );
+        E_x.storeChunk( data, { mpi_rank, 0 }, { 1, 4 } );
+        it0.close( /* flush = */ false );
+    }
+    write.flush();
+    // }
+
+    if( isAdios1 )
+    {
+        // run a simplified test for Adios1 since Adios1 has issues opening
+        // twice in the same process
+        REQUIRE( auxiliary::file_exists(
+            "../samples/close_iterations_parallel_0.bp" ) );
+    }
+    else
+    {
+        Series read( name, Access::READ_ONLY, MPI_COMM_WORLD );
+        Iteration it0 = read.iterations[ 0 ];
+        auto E_x_read = it0.meshes[ "E" ][ "x" ];
+        auto chunk = E_x_read.loadChunk< int >( { 0, 0 }, { mpi_size, 4 } );
+        it0.close( /* flush = */ false );
+        read.flush();
+        for( size_t i = 0; i < 4 * mpi_size; ++i )
+        {
+            REQUIRE( data[ i % 4 ] == chunk.get()[ i ] );
+        }
+    }
+
+    {
+        Iteration it1 = write.iterations[ 1 ];
+        auto E_x = it1.meshes[ "E" ][ "x" ];
+        E_x.resetDataset( { Datatype::INT, { mpi_size, 4 } } );
+        E_x.storeChunk( data, { mpi_rank, 0 }, { 1, 4 } );
+        it1.close( /* flush = */ true );
+
+        // illegally access iteration after closing
+        E_x.storeChunk( data, { mpi_rank, 0 }, { 1, 4 } );
+        REQUIRE_THROWS( write.flush() );
+    }
+
+    if( isAdios1 )
+    {
+        // run a simplified test for Adios1 since Adios1 has issues opening
+        // twice in the same process
+        REQUIRE( auxiliary::file_exists(
+            "../samples/close_iterations_parallel_1.bp" ) );
+    }
+    else
+    {
+        Series read( name, Access::READ_ONLY, MPI_COMM_WORLD );
+        Iteration it1 = read.iterations[ 1 ];
+        auto E_x_read = it1.meshes[ "E" ][ "x" ];
+        auto chunk = E_x_read.loadChunk< int >( { 0, 0 }, { mpi_size, 4 } );
+        it1.close( /* flush = */ true );
+        for( size_t i = 0; i < 4 * mpi_size; ++i )
+        {
+            REQUIRE( data[ i % 4 ] == chunk.get()[ i ] );
+        }
+        auto read_again =
+            E_x_read.loadChunk< int >( { 0, 0 }, { mpi_size, 4 } );
+        REQUIRE_THROWS( read.flush() );
+    }
+}
+
+TEST_CASE( "close_iteration_test", "[parallel]" )
+{
+    for( auto const & t : getBackends() )
+    {
+        close_iteration_test( t );
     }
 }
 #endif
