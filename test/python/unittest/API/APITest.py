@@ -254,6 +254,8 @@ class APITest(unittest.TestCase):
             io.Access.read_only
         )
 
+        self.assertEqual(series.software, "openPMD-api-python-tests")
+        self.assertEqual(series.software_version, "0.42.0")
         self.assertEqual(series.machine, "testMachine")
 
         self.assertEqual(series.get_attribute("char"), "c")
