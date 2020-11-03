@@ -542,17 +542,22 @@ TEST_CASE( "structure_test", "[core]" )
 
 TEST_CASE( "wrapper_test", "[core]" )
 {
-    Series o = Series("./new_openpmd_output.json", Access::CREATE);
+    Series o0 = Series("./new_openpmd_output.json", Access::CREATE);
 
-    o.setOpenPMDextension(42);
-    o.setIterationEncoding(IterationEncoding::fileBased);
-    Series copy = o;
+    o0.setOpenPMDextension(42);
+    o0.setIterationEncoding(IterationEncoding::fileBased);
+    // this might be allowed as a handle in the future
+    // Series copy = o0;
+    Series copy = std::move(o0);
     REQUIRE(copy.openPMDextension() == 42);
     REQUIRE(copy.iterationEncoding() == IterationEncoding::fileBased);
     REQUIRE(copy.name() == "new_openpmd_output");
     copy.setOpenPMD("1.2.0");
     copy.setIterationEncoding(IterationEncoding::groupBased);
     copy.setName("other_name");
+
+    Series & o = copy;
+
     REQUIRE(o.openPMD() == "1.2.0");
     REQUIRE(o.iterationEncoding() == IterationEncoding::groupBased);
     REQUIRE(o.name() == "other_name");

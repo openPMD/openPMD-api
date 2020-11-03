@@ -69,6 +69,12 @@ public:
         std::string const & filepath,
         Access at,
         std::string const & options = "{}" );
+
+    Series(Series &&) = default;
+
+    /** The meaning of copying a Series is not (yet) defined */
+    Series(Series const &) = delete;
+
     ~Series();
 
     /**

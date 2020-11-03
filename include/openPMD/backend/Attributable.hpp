@@ -82,7 +82,7 @@ class Attributable
 public:
     Attributable();
     Attributable(Attributable const&);
-    Attributable(Attributable&&) = delete;
+    Attributable(Attributable&&) = default;
     virtual ~Attributable() = default;
 
     Attributable& operator=(Attributable const&);
