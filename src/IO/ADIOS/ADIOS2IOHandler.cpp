@@ -67,10 +67,10 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     AbstractIOHandler * handler,
     MPI_Comm communicator,
     nlohmann::json cfg,
-    std::string _engineType )
+    std::string engineType )
     : AbstractIOHandlerImplCommon( handler )
     , m_ADIOS{ communicator, ADIOS2_DEBUG_MODE }
-    , engineType( std::move( _engineType ) )
+    , m_engineType( std::move( engineType ) )
 {
     init( std::move( cfg ) );
 }
@@ -80,10 +80,10 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     AbstractIOHandler * handler,
     nlohmann::json cfg,
-    std::string _engineType )
+    std::string engineType )
     : AbstractIOHandlerImplCommon( handler )
     , m_ADIOS{ ADIOS2_DEBUG_MODE }
-    , engineType( std::move( _engineType ) )
+    , m_engineType( std::move( engineType ) )
 {
     init( std::move( cfg ) );
 }
@@ -105,11 +105,11 @@ ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
         if( !engineTypeConfig.is_null() )
         {
             // convert to string
-            engineType = engineTypeConfig;
+            m_engineType = engineTypeConfig;
             std::transform(
-                engineType.begin(),
-                engineType.end(),
-                engineType.begin(),
+                m_engineType.begin(),
+                m_engineType.end(),
+                m_engineType.begin(),
                 []( unsigned char c ) { return std::tolower( c ); } );
         }
     }
@@ -175,7 +175,7 @@ ADIOS2IOHandlerImpl::fileSuffix() const
         { "sst", "" }, { "staging", "" }, { "bp4", ".bp" },
         { "bp3", ".bp" },  { "file", ".bp" },     { "hdf5", ".h5" }
     };
-    auto it = endings.find( engineType );
+    auto it = endings.find( m_engineType );
     if( it != endings.end() )
     {
         return it->second;
@@ -652,7 +652,7 @@ ADIOS2IOHandlerImpl::closePath(
 {
     VERIFY_ALWAYS(
         writable->written,
-        "Cannot close a path that has not been written yet." );
+        "[ADIOS2] Cannot close a path that has not been written yet." );
     if( m_handler->m_backendAccess == Access::READ_ONLY )
     {
         // nothing to do
@@ -668,7 +668,7 @@ ADIOS2IOHandlerImpl::closePath(
     auto const positionString = filePositionToString( position );
     VERIFY(
         !auxiliary::ends_with( positionString, '/' ),
-        "ADIOS2 backend: Position string has unexpected format. This is a bug "
+        "[ADIOS2] Position string has unexpected format. This is a bug "
         "in the openPMD API." );
 
     for( auto const & attr :
@@ -1341,7 +1341,7 @@ namespace detail
         , m_writeDataset( &impl )
         , m_readDataset( &impl )
         , m_attributeReader()
-        , m_engineType( impl.engineType )
+        , m_engineType( impl.m_engineType )
     {
         if( !m_IO )
         {
@@ -1387,6 +1387,12 @@ namespace detail
             // allow overriding through environment variable
             m_engineType = auxiliary::getEnvString(
                 "OPENPMD_ADIOS2_ENGINE", m_engineType );
+            std::transform(
+                m_engineType.begin(),
+                m_engineType.end(),
+                m_engineType.begin(),
+                []( unsigned char c ) { return std::tolower( c ); } );
+            impl.m_engineType = this->m_engineType;
             m_IO.SetEngine( m_engineType );
             auto it = streamingEngines.find( m_engineType );
             if( it != streamingEngines.end() )

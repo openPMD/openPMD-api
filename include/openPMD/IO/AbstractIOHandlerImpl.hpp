@@ -133,22 +133,27 @@ public:
    */
   virtual void
   closeFile( Writable *, Parameter< Operation::CLOSE_FILE > const & ) = 0;
+  
   /** Advance the file/stream that this writable belongs to.
    *
    * If the backend is based around usage of IO steps (especially streaming
    * backends), open or close an IO step. This is modeled closely after the
    * step concept in ADIOS2.
    *
-   * This task is used to implement streaming-aware semantics in the openPMD API
-   * by splitting data into packets that are written to and read from transport.
+   * This task is used to implement streaming-aware semantics in the openPMD
+   * API by splitting data into packets that are written to and read from
+   * transport.
    *
    * IO actions up to the point of closing a step must be performed now.
-   * 
+   *
    * The advance mode is determined by parameters.mode.
    * The return status code shall be stored as parameters.status.
    */
-  virtual void advance(Writable*, Parameter< Operation::ADVANCE > &)
-  {}
+  virtual void
+  advance( Writable *, Parameter< Operation::ADVANCE > & )
+  {
+  }
+
   /** Close an openPMD group.
    * 
    * This is an optimization-enabling task and may be ignored by backends.

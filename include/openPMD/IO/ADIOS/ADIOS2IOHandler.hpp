@@ -191,7 +191,10 @@ public:
 
 private:
     adios2::ADIOS m_ADIOS;
-    std::string engineType;
+    /**
+     * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
+     */
+    std::string m_engineType;
 
     struct ParameterizedOperator
     {
@@ -337,7 +340,7 @@ namespace ADIOS2Defaults
     constexpr const_str str_type = "type";
     constexpr const_str str_params = "parameters";
     constexpr const_str str_usesteps = "usesteps";
-    constexpr const_str str_usesstepsAttribute = "__openPMD_internal/usesSteps";
+    constexpr const_str str_usesstepsAttribute = "__openPMD_internal/useSteps";
 } // namespace ADIOS2Defaults
 
 namespace detail
@@ -797,7 +800,32 @@ namespace detail
     {
         BufferedActions( BufferedActions const & ) = delete;
 
+        /**
+         * The full path to the file created on disk, including the
+         * containing directory and the file extension, as determined
+         * by ADIOS2IOHandlerImpl::fileSuffix().
+         * (Meaning, in case of the SST engine, no file suffix since the
+         *  SST engine automatically adds its suffix unconditionally)
+         */
         std::string m_file;
+        /**
+         * ADIOS requires giving names to instances of adios2::IO.
+         * We make them different from the actual file name, because of the
+         * possible following workflow:
+         *
+         * 1. create file foo.bp
+         *    -> would create IO object named foo.bp
+         * 2. delete that file
+         *    (let's ignore that we don't support deletion yet and call it
+         *     preplanning)
+         * 3. create file foo.bp a second time
+         *    -> would create another IO object named foo.bp
+         *    -> craash
+         *
+         * So, we just give out names based on a counter for IO objects.
+         * Hence, next to the actual file name, also store the name for the
+         * IO.
+         */
         std::string const m_IOName;
         adios2::ADIOS & m_ADIOS;
         adios2::IO m_IO;
@@ -813,6 +841,7 @@ namespace detail
          * A committed attribute cannot be modified.
          */
         std::set< std::string > uncommittedAttributes;
+
         /*
          * The openPMD API will generally create new attributes for each
          * iteration. This results in a growing number of attributes over time.
@@ -824,17 +853,21 @@ namespace detail
          * on chosen ADIOS2 engine and can not be explicitly overridden by user.
          */
         bool optimizeAttributesStreaming = false;
-        enum class Steps
-        {
-            UseSteps,
-            DontUseSteps,
-            Undecided
-        };
-        /*
+        /** @defgroup workaroundSteps
+         *  @{
          * Workaround for the fact that ADIOS steps (currently) break random-
          * access: Make ADIOS steps opt-in for persistent backends.
+         *
          */
+        enum class Steps
+        {
+            UseSteps,     //!< In Streaming mode, actually do use ADIOS steps
+            DontUseSteps, //!< Don't use ADIOS steps, even in streaming mode
+            Undecided     //!< Not yet determined whether or not to use steps
+        };
         Steps useAdiosSteps = Steps::Undecided;
+        /** @}
+         */
 
         using AttributeMap_t = std::map< std::string, adios2::Params >;
 
@@ -890,8 +923,10 @@ namespace detail
         invalidateVariablesMap();
 
     private:
-        // ADIOS engine
-        auxiliary::Option< adios2::Engine > m_engine;
+        auxiliary::Option< adios2::Engine > m_engine; //! ADIOS engine
+        /**
+         * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
+         */
         std::string m_engineType;
         /*
          * streamStatus is NoStream for file-based ADIOS engines.

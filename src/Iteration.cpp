@@ -485,8 +485,8 @@ void
 Iteration::endStep()
 {
     using IE = IterationEncoding;
-    Series & series =
-        *dynamic_cast< Series * >( parent->attributable->parent->attributable );
+    Series & series = auxiliary::deref_dynamic_cast< Series >(
+        parent->attributable->parent->attributable );
     // Initialize file with this to quiet warnings
     // The following switch is comprehensive
     Attributable * file = this;
@@ -509,8 +509,8 @@ Iterator
 Iteration::myIteration()
 {
     /* Find the root point [Series] of this file,
-        * meshesPath and particlesPath are stored there */
-    Writable *w = this->parent;
+     * meshesPath and particlesPath are stored there */
+    Writable * w = this->parent;
     while( w->parent )
         w = w->parent;
 
@@ -532,9 +532,9 @@ Iteration::myIteration()
 StepStatus *
 Iteration::stepStatus()
 {
-    Series * s =
-        dynamic_cast< Series * >( parent->attributable->parent->attributable );
-    StepStatus * flag = nullptr;;
+    Series * s = &auxiliary::deref_dynamic_cast< Series >(
+        parent->attributable->parent->attributable );
+    StepStatus * flag = nullptr;
     switch( *s->m_iterationEncoding )
     {
         using IE = IterationEncoding;

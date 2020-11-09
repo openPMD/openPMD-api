@@ -39,6 +39,7 @@
 #endif
 
 #include <map>
+#include <string>
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_private
@@ -264,7 +265,11 @@ public:
 
     /**
      * @brief Entry point to the reading end of the streaming API.
-     *        Look for the ReadIterations class for further documentation.
+     *
+     * Creates and returns an instance of the ReadIterations class which can
+     * be used for iterating over the openPMD iterations in a C++11-style for
+     * loop.
+     * Look for the ReadIterations class for further documentation.
      *
      * @return ReadIterations
      */
@@ -273,7 +278,13 @@ public:
 
     /**
      * @brief Entry point to the writing end of the streaming API.
-     *        Look for the WriteIterations class for further documentation.
+     *
+     * Creates and returns an instance of the WriteIterations class which is a
+     * restricted container of iterations which takes care of
+     * streaming semantics.
+     * The created object is stored as member of the Series object, hence this
+     * method may be called as many times as a user wishes.
+     * Look for the WriteIterations class for further documentation.
      *
      * @return WriteIterations
      */
@@ -295,7 +306,9 @@ OPENPMD_private:
     void flushGroupBased( iterations_iterator begin, iterations_iterator end );
     void flushMeshesPath();
     void flushParticlesPath();
-    /*
+    /** @defgroup parsing
+     *  @{
+     *
      * Note:
      * If init == false, the parsing process will seek for new
      * Iterations/Records/Record Components etc.
@@ -305,14 +318,19 @@ OPENPMD_private:
      */
     void readFileBased( bool init = true );
     void readGroupBased( bool init = true );
-    void readBase();
+    /** @}
+     */
+    void
+    readBase();
     void read();
     std::string iterationFilename( uint64_t i );
 
     /**
      * @brief In step-based IO mode, begin or end an IO step for the given
      *        iteration.
-     * 
+     *
+     * Called internally by Iteration::beginStep and Iteration::endStep.
+     *
      * @param mode Whether to begin or end a step.
      * @param file The Attributable representing the iteration. In file-based
      *             iteration layout, this is an Iteration object, in group-
@@ -320,7 +338,7 @@ OPENPMD_private:
      * @param it The iterator within Series::iterations pointing to that
      *           iteration.
      * @param iteration The actual Iteration object.
-     * @return AdvanceStatus 
+     * @return AdvanceStatus
      */
     AdvanceStatus
     advance(
@@ -384,7 +402,7 @@ class SeriesIterator
     maybe_series_t m_series;
     iteration_index_t m_currentIteration = 0;
 
-    // construct the end() iterator
+    //! construct the end() iterator
     SeriesIterator();
 
 public:
@@ -407,17 +425,19 @@ public:
 };
 
 /**
- * @brief Reading side of the streaming API. Create instance via
- *        Series::readIterations(). For use in a C++11-style foreach loop.
- *        Designed to allow reading any kind of Series, streaming and non-
- *        streaming alike. Calling Iteration::close() manually before opening
- *        the next iteration is encouraged and will implicitly flush all
- *        deferred IO actions. Otherwise, Iteration::close() will be implicitly
- *        called upon SeriesIterator::operator++(), i.e. upon going to the next
- *        iteration in the foreach loop.
+ * @brief Reading side of the streaming API.
  *
- *        Since this is designed for streaming mode, reopening an iteration is
- *        not possible once it has been closed.
+ * Create instance via Series::readIterations().
+ * For use in a C++11-style foreach loop over iterations.
+ * Designed to allow reading any kind of Series, streaming and non-
+ * streaming alike.
+ * Calling Iteration::close() manually before opening the next iteration is
+ * encouraged and will implicitly flush all deferred IO actions.
+ * Otherwise, Iteration::close() will be implicitly called upon
+ * SeriesIterator::operator++(), i.e. upon going to the next iteration in
+ * the foreach loop.
+ * Since this is designed for streaming mode, reopening an iteration is
+ * not possible once it has been closed.
  *
  */
 class ReadIterations
@@ -440,19 +460,19 @@ public:
     end();
 };
 
-/**
- * @brief Writing side of the streaming API. Create instance via
- *        Series::writeIterations().
- *        For use via WriteIterations::operator[]().
- *        Designed to allow reading any kind of Series, streaming and non-
- *        streaming alike. Calling Iteration::close() manually before opening
- *        the next iteration is encouraged and will implicitly flush all
- *        deferred IO actions. Otherwise, Iteration::close() will be implicitly
- *        called upon SeriesIterator::operator++(), i.e. upon going to the next
- *        iteration in the foreach loop.
+/** Writing side of the streaming API.
  *
- *        Since this is designed for streaming mode, reopening an iteration is
- *        not possible once it has been closed.
+ * Create instance via Series::writeIterations().
+ * For use via WriteIterations::operator[]().
+ * Designed to allow reading any kind of Series, streaming and non-
+ * streaming alike. Calling Iteration::close() manually before opening
+ * the next iteration is encouraged and will implicitly flush all
+ * deferred IO actions. Otherwise, Iteration::close() will be implicitly
+ * called upon SeriesIterator::operator++(), i.e. upon going to the next
+ * iteration in the foreach loop.
+ *
+ * Since this is designed for streaming mode, reopening an iteration is
+ * not possible once it has been closed.
  *
  */
 class WriteIterations : private Container< Iteration, uint64_t >
@@ -474,7 +494,7 @@ private:
     using value_type = typename iterations_t::key_type;
     WriteIterations( iterations_t );
     explicit WriteIterations() = default;
-    // Index of the last opened iteration
+    //! Index of the last opened iteration
     std::shared_ptr< SharedResources > shared;
 
 public:

@@ -766,7 +766,7 @@ Series::flushParticlesPath()
 }
 
 void
-Series::readFileBased( bool __init )
+Series::readFileBased( bool do_init )
 {
     Parameter< Operation::OPEN_FILE > fOpen;
     Parameter< Operation::READ_ATT > aRead;
@@ -792,7 +792,7 @@ Series::readFileBased( bool __init )
             iterations.m_writable->parent = getWritable(this);
             iterations.parent = getWritable(this);
 
-            if( __init )
+            if( do_init )
             {
                 readBase();
 
@@ -863,14 +863,14 @@ Series::readFileBased( bool __init )
 }
 
 void
-Series::readGroupBased( bool __init )
+Series::readGroupBased( bool do_init )
 {
     Parameter< Operation::OPEN_FILE > fOpen;
     fOpen.name = *m_name;
     IOHandler->enqueue(IOTask(this, fOpen));
     IOHandler->flush();
 
-    if( __init )
+    if( do_init )
     {
         readBase();
 
@@ -1194,10 +1194,10 @@ SeriesIterator::SeriesIterator() : m_series()
 {
 }
 
-SeriesIterator::SeriesIterator( Series * _series ) : m_series( _series )
+SeriesIterator::SeriesIterator( Series * series ) : m_series( series )
 {
-    auto it = _series->iterations.begin();
-    if( it == _series->iterations.end() )
+    auto it = series->iterations.begin();
+    if( it == series->iterations.end() )
     {
         *this = end();
         return;
@@ -1310,7 +1310,7 @@ SeriesIterator::end()
     return {};
 }
 
-ReadIterations::ReadIterations( Series * _series ) : m_series( _series )
+ReadIterations::ReadIterations( Series * series ) : m_series( series )
 {
 }
 

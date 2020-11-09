@@ -480,9 +480,9 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::ADVANCE > : public AbstractParame
             new Parameter< Operation::ADVANCE >( *this ) );
     }
 
-    // input parameter
+    //! input parameter
     AdvanceMode mode;
-    // output parameter
+    //! output parameter
     std::shared_ptr< AdvanceStatus > status =
         std::make_shared< AdvanceStatus >( AdvanceStatus::OK );
 };
