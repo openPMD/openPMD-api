@@ -53,6 +53,11 @@ public:
     std::string transform;
 };
 
+/**
+ * A chunk consists of its offset, its extent
+ * and the rank from which it was written.
+ * If not specified explicitly, the rank will be assumed to be 0.
+ */
 struct Chunk
 {
     Offset offset;

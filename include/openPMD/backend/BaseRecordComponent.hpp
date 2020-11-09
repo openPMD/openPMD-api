@@ -59,10 +59,25 @@ public:
      */
     bool constant() const;
 
-    ChunkTable availableChunks();
+    /**
+     * Get data chunks that are available to be loaded from the backend.
+     * Note that this is backend-dependent information and the returned
+     * information may hence differ between different backends:
+     * * The ADIOS backends (versions 1 and 2) will return those chunks that
+     *   the writer has originally written.
+     * * The JSON backend will reconstruct the chunks by iterating the dataset.
+     * * The HDF5 backend will return the whole dataset as one large chunk.
+     *
+     * The results depend solely on the backend and are independent of any
+     * openPMD-related information. Especially is this call explicitly unrelated
+     * to openPMD's concept of particle patches, which users may additionally
+     * wish to use to store user-defined, backend-independent chunking
+     * information on particle datasets.
+     */
+    ChunkTable
+    availableChunks();
 
-OPENPMD_protected:
-    BaseRecordComponent();
+    OPENPMD_protected : BaseRecordComponent();
 
     std::shared_ptr< Dataset > m_dataset;
     std::shared_ptr< bool > m_isConstant;

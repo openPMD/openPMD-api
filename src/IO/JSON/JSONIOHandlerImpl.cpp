@@ -21,6 +21,7 @@
 
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
+#include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/Datatype.hpp"
@@ -273,11 +274,46 @@ namespace openPMD
 
     namespace
     {
+        // pre-declare since this one is recursive
         ChunkTable
         chunksInJSON( nlohmann::json const & );
         ChunkTable
         chunksInJSON( nlohmann::json const & j )
         {
+            /*
+             * Idea:
+             * Iterate (n-1)-dimensional hyperslabs line by line and query
+             * their chunks recursively.
+             * If two or more successive (n-1)-dimensional slabs return the
+             * same chunktable, they can be merged as one chunk.
+             *
+             * Notice that this approach is simple, relatively easily
+             * implemented, but not ideal, since chunks that overlap in some
+             * dimensions may be ripped apart:
+             *
+             *      0123
+             *    0 ____
+             *    1 ____
+             *    2 **__
+             *    3 **__
+             *    4 **__
+             *    5 **__
+             *    6 **__
+             *    7 **_*
+             *    8 ___*
+             *    9 ___*
+             *
+             * Since both of the drawn chunks overlap on line 7, this approach
+             * will return 4 chunks:
+             * offset - extent
+             * (2,0)  - (4,2)
+             * (7,0)  - (1,2)
+             * (7,3)  - (1,1)
+             * (8,3)  - (2,1)
+             *
+             * Hence, in a second phase, the mergeChunks function below will
+             * merge things back up.
+             */
             if( !j.is_array() )
             {
                 return ChunkTable{ Chunk( Offset{}, Extent{} ) };
@@ -296,8 +332,10 @@ namespace openPMD
                 {
                     break;
                 }
-                // get block at current position
-                size_t offset = it;
+                // get chunking at current position
+                // and additionally, number of successive rows with the same
+                // recursive results
+                size_t const offset = it;
                 ChunkTable referenceTable = chunksInJSON( j[ it ] );
                 ++it;
                 for( ; it < end; ++it )
@@ -312,7 +350,9 @@ namespace openPMD
                         break;
                     }
                 }
-                size_t extent = it - offset; // sic! no -1
+                size_t const extent = it - offset; // sic! no -1
+                // now we know the number of successive rows with same rec.
+                // results, let's extend these results to include dimension 0
                 for( auto const & chunk : referenceTable )
                 {
                     Offset o = { offset };
@@ -332,15 +372,27 @@ namespace openPMD
             return res;
         }
 
-        std::pair< bool, Chunk >
-        mergeChunks( Chunk const & _c1, Chunk const & _c2 )
+        /*
+         * Check whether two chunks can be merged to form a large one
+         * and optionally return that larger chunk
+         */
+        auxiliary::Option< Chunk >
+        mergeChunks( Chunk const & chunk1, Chunk const & chunk2 )
         {
-            Chunk const *c1( &_c1 ), *c2( &_c2 );
-            unsigned dimensionality = _c1.extent.size();
+            /*
+             * Idea:
+             * If two chunks can be merged into one, they agree on offsets and
+             * extents in all but exactly one dimension dim.
+             * At dimension dim, the offset of chunk 2 is equal to the offset
+             * of chunk 1 plus its extent -- or vice versa.
+             */
+            unsigned dimensionality = chunk1.extent.size();
             for( unsigned dim = 0; dim < dimensionality; ++dim )
             {
+                Chunk const *c1( &chunk1 ), *c2( &chunk2 );
                 // check if one chunk is the extension of the other at
                 // dimension dim
+                // first, let's put things in order
                 if( c1->offset[ dim ] > c2->offset[ dim ] )
                 {
                     std::swap( c1, c2 );
@@ -376,11 +428,15 @@ namespace openPMD
                 Offset offset( c1->offset );
                 Extent extent( c1->extent );
                 extent[ dim ] += c2->extent[ dim ];
-                return std::make_pair( true, Chunk( offset, extent ) );
+                return auxiliary::makeOption( Chunk( offset, extent ) );
             }
-            return std::make_pair( false, Chunk() );
+            return auxiliary::Option< Chunk >();
         }
 
+        /*
+         * Merge chunks in the chunktable until no chunks are left that can be
+         * merged.
+         */
         void
         mergeChunks( ChunkTable & table )
         {
@@ -389,20 +445,26 @@ namespace openPMD
             {
                 stillChanging = false;
                 auto innerLoops = [ &table ]() {
+                    /*
+                     * Iterate over pairs of chunks in the table.
+                     * If finding a pair that can be merged, merge it,
+                     * delete the original two chunks from the table,
+                     * put the new one in and return.
+                     */
                     for( auto i = table.begin(); i < table.end(); ++i )
                     {
                         for( auto j = i + 1; j < table.end(); ++j )
                         {
-                            std::pair< bool, Chunk > merged =
+                            auxiliary::Option< Chunk > merged =
                                 mergeChunks( *i, *j );
-                            if( merged.first )
+                            if( merged )
                             {
                                 // erase order is important due to iterator
                                 // invalidation
                                 table.erase( j );
                                 table.erase( i );
                                 table.emplace_back(
-                                    std::move( merged.second ) );
+                                    std::move( merged.get() ) );
                                 return true;
                             }
                         }
