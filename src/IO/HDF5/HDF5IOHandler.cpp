@@ -384,11 +384,6 @@ HDF5IOHandlerImpl::availableChunks(
     Writable * writable,
     Parameter< Operation::AVAILABLE_CHUNKS > & parameters )
 {
-    std::cerr << R"END(
-[HDF5] Warning: HDF5 does not carry information on available chunks.
-       Returning instead the whole dataset as one chunk.
-       Some positions in the chunk may hold undefined data.
-)END" << std::endl;
     auto res = m_fileIDs.find( writable );
     hid_t dataset_id = H5Dopen(
         res->second,
@@ -399,12 +394,44 @@ HDF5IOHandlerImpl::availableChunks(
         "[HDF5] Internal error: Failed to open HDF5 dataset during dataset "
         "read" );
     hid_t dataset_space = H5Dget_space( dataset_id );
-
     int ndims = H5Sget_simple_extent_ndims( dataset_space );
     VERIFY(
         ndims >= 0,
-        "[HDF5]: Internal error: Failed to retrieve dimensionality of dataset "
+        "[HDF5]: Internal error: Failed to retrieve dimensionality of "
+        "dataset "
         "during dataset read." );
+
+    // now let's figure out whether this one has chunks
+    hid_t propertyList = H5Dget_create_plist( dataset_id );
+    std::vector< hsize_t > chunkExtent( ndims, 0 );
+    int chunkDimensionality =
+        H5Pget_chunk( propertyList, ndims, chunkExtent.data() );
+
+    if( chunkDimensionality < 0 )
+    {
+        std::cerr << R"END(
+[HDF5] Warning: HDF5 does not carry information on available chunks.
+       Returning instead the whole dataset as one chunk.
+       Some positions in the chunk may hold undefined data.
+)END" << std::endl;
+    }
+    else
+    {
+        // so, the dataset indeed has chunks
+        // alas, this backend doesn't write chunks, so for now, reading them is
+        // unimplemented
+        std::cerr << R"END(
+[HDF5] Warning: HDF5 dataset has chunked layout. Since the openPMD API does not
+       support writing chunked HDF5 datasets, the whole dataset will be
+       returned as one chunk.
+       Some positions in the chunk may hold undefined data.
+)END" << std::endl;
+        /*
+         * https://hdf5.io/develop/group___h5_d.html#gaccff213d3e0765b86f66d08dd9959807
+         * May or may not be helpful if implementing this properly one day.
+         */
+    }
+
     std::vector< hsize_t > dims( ndims, 0 );
     // return value is equal to ndims
     H5Sget_simple_extent_dims( dataset_space, dims.data(), nullptr );
