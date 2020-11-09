@@ -130,7 +130,7 @@ Iteration::close( bool _flush )
             Series * s = &auxiliary::deref_dynamic_cast< Series >(
                 parent->attributable->parent->attributable );
             // figure out my iteration number
-            auto begin = myIteration< iterator_t >();
+            auto begin = s->indexOf( *this );
             auto end = begin;
             ++end;
 
@@ -456,7 +456,7 @@ Iteration::beginStep()
             break;
     }
     AdvanceStatus status = series.advance(
-        AdvanceMode::BEGINSTEP, *file, myIteration< iterator_t >(), *this );
+        AdvanceMode::BEGINSTEP, *file, series.indexOf( *this ), *this );
     if( status != AdvanceStatus::OK )
     {
         return status;
@@ -501,31 +501,7 @@ Iteration::endStep()
     }
     // @todo filebased check
     series.advance(
-        AdvanceMode::ENDSTEP, *file, myIteration< iterator_t >(), *this );
-}
-
-template< typename Iterator >
-Iterator
-Iteration::myIteration()
-{
-    /* Find the root point [Series] of this file,
-     * meshesPath and particlesPath are stored there */
-    Writable * w = this->parent;
-    while( w->parent )
-        w = w->parent;
-
-    auto s = dynamic_cast< Series* >( w->attributable );
-    if( s == nullptr )
-        throw std::runtime_error("[Iteration::close] Series* is a nullptr");
-    for( auto it = s->iterations.begin(); it != s->iterations.end(); ++it )
-    {
-        if( it->second.m_writable.get() == this->m_writable.get() )
-        {
-            return it;
-        }
-    }
-    throw std::runtime_error(
-        "[Iteration::close] Iteration not found in Series." );
+        AdvanceMode::ENDSTEP, *file, series.indexOf( *this ), *this );
 }
 
 StepStatus

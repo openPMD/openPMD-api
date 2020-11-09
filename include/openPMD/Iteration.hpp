@@ -199,14 +199,6 @@ private:
     void
     endStep();
 
-    /*
-     * We cannot give the return type yet, since Iteration is still an
-     * incomplete type.
-     * It's decltype(Series::iterations)::iterator.
-     */
-    template< typename Iterator >
-    Iterator myIteration( );
-
     /**
      * @brief Is a step currently active for this iteration?
      *

@@ -326,6 +326,13 @@ OPENPMD_private:
     std::string iterationFilename( uint64_t i );
 
     /**
+     * Find the given iteration in Series::iterations and return an iterator
+     * into Series::iterations at that place.
+     */
+    decltype( iterations )::iterator
+    indexOf( Iteration const & );
+
+    /**
      * @brief In step-based IO mode, begin or end an IO step for the given
      *        iteration.
      *
