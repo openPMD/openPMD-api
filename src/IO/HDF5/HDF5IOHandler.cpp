@@ -381,10 +381,43 @@ HDF5IOHandlerImpl::extendDataset(Writable* writable,
 
 void
 HDF5IOHandlerImpl::availableChunks(
-    Writable *,
-    Parameter< Operation::AVAILABLE_CHUNKS > & )
+    Writable * writable,
+    Parameter< Operation::AVAILABLE_CHUNKS > & parameters )
 {
-    throw std::runtime_error("[HDF5] availableChunks unimplemented!");
+    std::cerr << R"END(
+[HDF5] Warning: HDF5 does not carry information on available chunks.
+       Returning instead the whole dataset as one chunk.
+       Some positions in the chunk may hold undefined data.
+)END" << std::endl;
+    auto res = m_fileIDs.find( writable );
+    hid_t dataset_id = H5Dopen(
+        res->second,
+        concrete_h5_file_position( writable ).c_str(),
+        H5P_DEFAULT );
+    VERIFY(
+        dataset_id >= 0,
+        "[HDF5] Internal error: Failed to open HDF5 dataset during dataset "
+        "read" );
+    hid_t dataset_space = H5Dget_space( dataset_id );
+
+    int ndims = H5Sget_simple_extent_ndims( dataset_space );
+    VERIFY(
+        ndims >= 0,
+        "[HDF5]: Internal error: Failed to retrieve dimensionality of dataset "
+        "during dataset read." );
+    std::vector< hsize_t > dims( ndims, 0 );
+    // return value is equal to ndims
+    H5Sget_simple_extent_dims( dataset_space, dims.data(), nullptr );
+
+    Offset offset( ndims, 0 );
+    Extent extent;
+    extent.reserve( ndims );
+    for( auto e : dims )
+    {
+        extent.push_back( e );
+    }
+    parameters.chunks->push_back(
+        Chunk( std::move( offset ), std::move( extent ) ) );
 }
 
 void

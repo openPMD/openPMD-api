@@ -1588,6 +1588,51 @@ void optional_paths_110_test(const std::string & backend)
 
 
 #if openPMD_HAVE_HDF5
+TEST_CASE( "available_chunks_test_hdf5", "[serial][json]" )
+{
+    /*
+     * This test is HDF5 specific
+     * HDF5 does not store chunks explicitly,
+     * so the HDF5 backend will simply return the whole dataset as one chunk.
+     *
+     * Let's just write some random chunks and show that the HDF5 backend
+     * does not care.
+     */
+    constexpr unsigned height = 10;
+    std::string name = "../samples/available_chunks.h5";
+
+    std::vector< int > data{ 2, 4, 6, 8 };
+    {
+        Series write( name, Access::CREATE );
+        Iteration it0 = write.iterations[ 0 ];
+        auto E_x = it0.meshes[ "E" ][ "x" ];
+        E_x.resetDataset( { Datatype::INT, { height, 4 } } );
+        for( unsigned line = 2; line < 7; ++line )
+        {
+            E_x.storeChunk( data, { line, 0 }, { 1, 4 } );
+        }
+        for( unsigned line = 7; line < 9; ++line )
+        {
+            E_x.storeChunk( data, { line, 0 }, { 1, 2 } );
+        }
+        E_x.storeChunk( data, { 8, 3 }, {2, 1 } );
+        it0.close();
+    }
+
+    {
+        Series read( name, Access::READ_ONLY );
+        Iteration it0 = read.iterations[ 0 ];
+        auto E_x = it0.meshes[ "E" ][ "x" ];
+        ChunkTable table = E_x.availableChunks();
+        REQUIRE( table.size() == 1 );
+        /*
+         * Explicitly convert things to bool, so Catch doesn't get the splendid
+         * idea to print the Chunk struct.
+         */
+        REQUIRE( bool( table[ 0 ] == Chunk( { 0, 0 }, { height, 4 } ) ) );
+    }
+}
+
 TEST_CASE( "optional_paths_110_test", "[serial]" )
 {
     optional_paths_110_test("h5"); // samples only present for hdf5
