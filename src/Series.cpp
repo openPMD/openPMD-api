@@ -1027,7 +1027,7 @@ Series::iterationFilename( uint64_t i )
     return *m_filenamePrefix + iteration.str() + *m_filenamePostfix;
 }
 
-decltype( Series::iterations )::iterator
+Series::iterations_iterator
 Series::indexOf( Iteration const & iteration )
 {
     for( auto it = iterations.begin(); it != iterations.end(); ++it )

@@ -329,7 +329,7 @@ OPENPMD_private:
      * Find the given iteration in Series::iterations and return an iterator
      * into Series::iterations at that place.
      */
-    decltype( iterations )::iterator
+    iterations_iterator
     indexOf( Iteration const & );
 
     /**
