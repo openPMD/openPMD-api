@@ -80,7 +80,7 @@ TEST_CASE( "available_chunks_test_json", "[serial][json]" )
     /*
      * This test is JSON specific
      * Our JSON backend does not store chunks explicitly,
-     * so the JSON will simply go through the multidimensional array
+     * so the JSON backend will simply go through the multidimensional array
      * and gather the data items into chunks
      * Example dataset:
      *
@@ -101,6 +101,10 @@ TEST_CASE( "available_chunks_test_json", "[serial][json]" )
      * 2. (7,0) -- (2,2) (offset -- extent)
      * 3. (8,3) -- (2,1) (offset -- extent)
      *
+     * Since the chunks are reconstructed, they need not necessarily
+     * correspond with the way that the chunks are written.
+     * As an example, let's write the first chunk in the above depiction
+     * line by line.
      */
     constexpr unsigned height = 10;
     std::string name = "../samples/available_chunks.json";
