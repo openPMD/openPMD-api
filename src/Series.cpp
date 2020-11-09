@@ -1210,7 +1210,7 @@ SeriesIterator::SeriesIterator( Series * series ) : m_series( series )
             *this = end();
             return;
         }
-        *it->second.stepStatus() = StepStatus::DuringStep;
+        it->second.setStepStatus( StepStatus::DuringStep );
     }
     m_currentIteration = it->first;
 }
@@ -1243,7 +1243,7 @@ SeriesIterator::operator++()
                 *this = end();
                 return *this;
             }
-            *currentIteration.stepStatus() = StepStatus::DuringStep;
+            currentIteration.setStepStatus( StepStatus::DuringStep );
             break;
         }
         default:
@@ -1275,7 +1275,7 @@ SeriesIterator::operator++()
                 *this = end();
                 return *this;
             }
-            *iteration.stepStatus() = StepStatus::DuringStep;
+            iteration.setStepStatus( StepStatus::DuringStep );
             break;
         }
         default:
@@ -1370,11 +1370,10 @@ WriteIterations::operator[]( key_type && key )
     }
     shared->currentlyOpen = key;
     auto & res = shared->iterations[ std::move( key ) ];
-    StepStatus * flag = res.stepStatus();
-    if( *flag == StepStatus::NoStep )
+    if( res.getStepStatus() == StepStatus::NoStep )
     {
         res.beginStep();
-        *flag = StepStatus::DuringStep;
+        res.setStepStatus( StepStatus::DuringStep );
     }
     return res;
 }

@@ -208,13 +208,25 @@ private:
     Iterator myIteration( );
 
     /**
-     * @brief Has a step been opened automatically? Returns a pointer to the
-     * corresponding flag. Either this iteration's flag if file-based layout is
-     * being used, or the complete Series' flag for group-based layout.
+     * @brief Is a step currently active for this iteration?
      *
+     * In case of group-based iteration layout, this information is global
+     * (member of the Series object containing this iteration),
+     * in case of file-based iteration layout, it is local (member of this very
+     * object).
      */
-    StepStatus *
-    stepStatus();
+    StepStatus
+    getStepStatus();
+
+    /**
+     * @brief Set step activity status for this iteration.
+     *
+     * In case of group-based iteration layout, this information is set
+     * globally (member of the Series object containing this iteration),
+     * in case of file-based iteration layout, it is set locally (member of
+     * this very object).
+     */
+    void setStepStatus( StepStatus );
 
     /*
      * @brief Check recursively whether this Iteration is dirty.

@@ -115,14 +115,14 @@ Iteration::close( bool _flush )
     {
         setAttribute< bool_type >( "closed", 1u );
     }
-    StepStatus * flag = stepStatus();
+    StepStatus flag = getStepStatus();
     *m_closed = CloseStatus::ClosedInFrontend;
     if( _flush )
     {
-        if( *flag == StepStatus::DuringStep )
+        if( flag == StepStatus::DuringStep )
         {
             endStep();
-            *flag = StepStatus::NoStep;
+            setStepStatus( StepStatus::NoStep );
         }
         else
         {
@@ -139,7 +139,7 @@ Iteration::close( bool _flush )
     }
     else
     {
-        if( *flag == StepStatus::DuringStep )
+        if( flag == StepStatus::DuringStep )
         {
             throw std::runtime_error( "Using deferred Iteration::close "
                                       "unimplemented in auto-stepping mode." );
@@ -528,26 +528,40 @@ Iteration::myIteration()
         "[Iteration::close] Iteration not found in Series." );
 }
 
-
-StepStatus *
-Iteration::stepStatus()
+StepStatus
+Iteration::getStepStatus()
 {
     Series * s = &auxiliary::deref_dynamic_cast< Series >(
         parent->attributable->parent->attributable );
-    StepStatus * flag = nullptr;
     switch( *s->m_iterationEncoding )
     {
         using IE = IterationEncoding;
         case IE::fileBased:
-            flag = &*this->m_stepStatus;
+            return *this->m_stepStatus;
+        case IE::groupBased:
+            return *s->m_stepStatus;
+        default:
+            throw std::runtime_error( "[Iteration] unreachable" );
+    }
+}
+
+void
+Iteration::setStepStatus( StepStatus status )
+{
+    Series * s = &auxiliary::deref_dynamic_cast< Series >(
+        parent->attributable->parent->attributable );
+    switch( *s->m_iterationEncoding )
+    {
+        using IE = IterationEncoding;
+        case IE::fileBased:
+            *this->m_stepStatus = status;
             break;
         case IE::groupBased:
-            flag = &*s->m_stepStatus;
+            *s->m_stepStatus = status;
             break;
         default:
             throw std::runtime_error( "[Iteration] unreachable" );
     }
-    return flag;
 }
 
 bool
