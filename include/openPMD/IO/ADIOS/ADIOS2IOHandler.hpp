@@ -853,7 +853,7 @@ namespace detail
          * on chosen ADIOS2 engine and can not be explicitly overridden by user.
          */
         bool optimizeAttributesStreaming = false;
-        /** @defgroup workaroundSteps
+        /** @defgroup workaroundSteps Workaround for ADIOS steps in file mode
          *  @{
          * Workaround for the fact that ADIOS steps (currently) break random-
          * access: Make ADIOS steps opt-in for persistent backends.

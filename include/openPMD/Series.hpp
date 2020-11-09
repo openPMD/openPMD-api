@@ -306,7 +306,7 @@ OPENPMD_private:
     void flushGroupBased( iterations_iterator begin, iterations_iterator end );
     void flushMeshesPath();
     void flushParticlesPath();
-    /** @defgroup parsing
+    /** @defgroup parsing (Re-)parsing of the openPMD Series.
      *  @{
      *
      * Note:
