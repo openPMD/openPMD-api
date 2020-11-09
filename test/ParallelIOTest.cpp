@@ -287,7 +287,8 @@ TEST_CASE( "no_parallel_hdf5", "[parallel][hdf5]" )
 
 #endif
 
-#if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
+// this one works for both ADIOS1 and ADIOS2
+#if (openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2) && openPMD_HAVE_MPI
 void
 available_chunks_test( std::string file_ending )
 {
