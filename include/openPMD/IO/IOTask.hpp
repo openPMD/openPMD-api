@@ -67,7 +67,7 @@ OPENPMDAPI_EXPORT_ENUM_CLASS(Operation)
     READ_ATT,
     LIST_ATTS,
 
-    AVAILABLE_CHUNKS
+    AVAILABLE_CHUNKS //!< Query chunks that can be loaded in a dataset
 }; // Operation
 
 struct OPENPMDAPI_EXPORT AbstractParameter
