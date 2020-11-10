@@ -276,10 +276,10 @@ public:
   fullscan( Series& series, MeshRecordComponent& rho )
   {
     if ( m_Pattern < 10000 ) return;
-        
+
     Extent meshExtent = rho.getExtent();
     // 1D full scan is covered by slice
-    if (meshExtent.size() < 2) 
+    if (meshExtent.size() < 2)
       return;
 
     Extent grid (meshExtent.size(), 1);
@@ -287,18 +287,18 @@ public:
     grid[0] =  m_Pattern % 1000;
     grid[1] = (m_Pattern / 1000) % 1000;
 
-    if ( grid[0] * grid[1] == 0 ) return; 
+    if ( grid[0] * grid[1] == 0 ) return;
 
     if ( (grid[0] * grid[1] > (unsigned long) m_MPISize) || ((unsigned long)m_MPISize % (grid[0]*grid[1]) != 0) )
     {
-      if ( 0 == m_MPIRank ) 
+      if ( 0 == m_MPIRank )
     std::cerr<<" please check the grid decompisition. need to fit given mpi size:"<<m_MPISize<<std::endl;
       return;
     }
 
-    if ( (meshExtent[0] % grid[0] != 0) || (meshExtent[1] % grid[1] != 0) ) 
+    if ( (meshExtent[0] % grid[0] != 0) || (meshExtent[1] % grid[1] != 0) )
     {
-      if ( 0 == m_MPIRank ) 
+      if ( 0 == m_MPIRank )
     std::cerr<<" Not able to divide rho mesh by specified grid on X-Y: "<< grid[0] <<"*"<< grid[1] <<std::endl;
       return;
     }
@@ -306,8 +306,8 @@ public:
     Extent count (meshExtent.size(), 1);
     count[0] = meshExtent[0]/grid[0];
     count[1] = meshExtent[1]/grid[1];
-        
-    if ( meshExtent.size() == 3 ) 
+
+    if ( meshExtent.size() == 3 )
     {
       grid[2] =  m_MPISize / (grid[0]*grid[1]) ;
       count[2] = meshExtent[2]/grid[2];
@@ -315,18 +315,18 @@ public:
 
     unsigned long c=1;
     for (unsigned int i=0; i<grid.size(); i++) {
-      c = c*grid[i];    
+      c = c*grid[i];
     }
 
-    if ( c != (unsigned long) m_MPISize ) 
+    if ( c != (unsigned long) m_MPISize )
       {
-    if ( 0 == m_MPIRank ) 
+    if ( 0 == m_MPIRank )
       std::cerr<<" Not able to divide full scan according to input. "<<std::endl;
     return;
       }
 
     Offset offset(grid.size(), 0);
-    
+
     int m = m_MPIRank;
     for ( int i=(int)grid.size()-1; i>=0; i-- )
       {
@@ -342,12 +342,12 @@ public:
   }
 
   /*
-   * Read a block on a mesh. 
-   *   Chooses block according to 3 digit m_Pattern input: FDP: 
+   * Read a block on a mesh.
+   *   Chooses block according to 3 digit m_Pattern input: FDP:
    *         F = fraction (block will be 1/F along a dimension)
-   *         D = blocks grows with this dimenstion among all ranks. 
+   *         D = blocks grows with this dimenstion among all ranks.
    *             Invalid D means only rank 0 will read a block
-   *         P = when only rank 0 is active, pick where the block will locate: 
+   *         P = when only rank 0 is active, pick where the block will locate:
    *             center(0), top left(1), bottom right(2)
    *
    * @param series        input
@@ -361,7 +361,7 @@ public:
 
     if (m_Pattern >= 10000) return; // full scan
 
-    unsigned int  alongDim     = m_Pattern/10 % 10;    
+    unsigned int  alongDim     = m_Pattern/10 % 10;
 
     unsigned int fractionOnDim = m_Pattern/100;
 
@@ -377,7 +377,7 @@ public:
     s <<" Block retrieval fraction=1/"<<fractionOnDim;
 
     if ( rankZeroOnly ) {
-      s <<" rank 0 only, location:";      
+      s <<" rank 0 only, location:";
       if (atCenter)
     s<<" center ";
       else if (atTopLeft)
@@ -386,7 +386,7 @@ public:
     s<<" bottomRight ";
     } else if ( diagnalBlocks )
       s <<" blockStyle = diagnal";
-    else 
+    else
       s <<" blockStyle = alongDim"<<alongDim;
 
     if ( rankZeroOnly && m_MPIRank)
@@ -396,40 +396,40 @@ public:
     Offset off(meshExtent.size(),0);
     Extent ext(meshExtent.size(),1);
 
-    for ( unsigned int i=0; i<meshExtent.size(); i++ ) 
-      {    
+    for ( unsigned int i=0; i<meshExtent.size(); i++ )
+      {
     unsigned long blob = meshExtent[i]/fractionOnDim;
     if (0 == blob) return;
     ext[i] = blob;
-    
-    if ( rankZeroOnly ) 
+
+    if ( rankZeroOnly )
       {
-        if (atCenter) 
+        if (atCenter)
           off[i] = 0; // top corner
-        else if (atTopLeft) 
+        else if (atTopLeft)
           off[i] = (meshExtent[i]-blob); // bottom corner
         else if (atBottomRight)
           off[i] = (fractionOnDim/2) * blob; // middle corner
-      } 
+      }
     else
       {
-        off[i] = m_MPIRank * blob;       
+        off[i] = m_MPIRank * blob;
 
         if ( !diagnalBlocks )
-          if ( i != alongDim ) 
+          if ( i != alongDim )
         off[i] = (fractionOnDim/2) * blob; // middle corner
       }
       }
-    
-    auto prettyLambda = [&](Offset oo, Extent cc) { 
+
+    auto prettyLambda = [&](Offset oo, Extent cc) {
       std::ostringstream o; o<<"[ ";
       std::ostringstream c; c<<"[ ";
       for (unsigned int k=0; k<oo.size(); k++)
     {
       o<<oo[k]<<" ";
       c<<cc[k]<<" ";
-    }      
-      std::cout<<o.str()<<"] + "<<c.str()<<"]"<<std::endl;;      
+    }
+      std::cout<<o.str()<<"] + "<<c.str()<<"]"<<std::endl;;
     };
 
     if ((unsigned int) m_MPIRank < fractionOnDim)
@@ -453,14 +453,14 @@ public:
    *
    */
   bool
-  getSlice(Extent meshExtent, unsigned int whichDim, bool rankZeroOnly, 
+  getSlice(Extent meshExtent, unsigned int whichDim, bool rankZeroOnly,
        Offset& off, Extent& ext, std::ostringstream& s)
   {
     if ( rankZeroOnly && m_MPIRank )
       return false;
 
     if ( !rankZeroOnly && (m_MPISize == 1) ) // rankZero has to be on
-      return false; 
+      return false;
 
     //if ( whichDim < 0 ) return false;
 
@@ -471,19 +471,19 @@ public:
       s << "Row slice time: ";
     else if ( whichDim == 1 )
       s << "Col slice time: ";
-    else 
+    else
       s << "Z slice time: ";
     if ( rankZeroOnly )
       s <<" rank 0 only";
 
     off[whichDim] = m_MPIRank % meshExtent[whichDim];
-    for ( unsigned int i=0; i<meshExtent.size(); i++ ) 
+    for ( unsigned int i=0; i<meshExtent.size(); i++ )
       {
     if ( 1 == meshExtent.size() ) whichDim = 100;
-    if ( i != whichDim ) 
+    if ( i != whichDim )
       ext[i] = meshExtent[i];
       }
-    
+
     return true;
   }
 
@@ -518,20 +518,20 @@ public:
    * @param series     openPMD series
    * @param rho        a mesh
    */
-  void 
+  void
   sliceMe( Series& series, MeshRecordComponent& rho )
-  {    
-    if ( m_Pattern >= 100 ) 
+  {
+    if ( m_Pattern >= 100 )
       return;
 
     if ( ( m_Pattern % 10 != 3 ) && ( m_Pattern % 10 != 5 ) )
       return;
 
-    bool rankZeroOnly = true; 
-    
-    if ( m_Pattern % 10 == 5 ) 
+    bool rankZeroOnly = true;
+
+    if ( m_Pattern % 10 == 5 )
       rankZeroOnly = false;
-    
+
     unsigned int whichDim = (m_Pattern/10 % 10); // second digit
 
     slice(series, rho, whichDim, rankZeroOnly);
@@ -542,20 +542,20 @@ public:
    * Handles 3D mesh read of magnetic field
    * @param series     openPMD series
    */
-  void 
+  void
   sliceField( Series& series, int ts )
-  {    
-    if ( m_Pattern >= 100 ) 
+  {
+    if ( m_Pattern >= 100 )
       return;
 
     if ( ( m_Pattern % 10 != 3 ) && ( m_Pattern % 10 != 5 ) )
       return;
 
-    bool rankZeroOnly = true; 
-    
-    if ( m_Pattern % 10 == 5 ) 
+    bool rankZeroOnly = true;
+
+    if ( m_Pattern % 10 == 5 )
       rankZeroOnly = false;
-    
+
     int whichDim = (m_Pattern/10 % 10); // second digit
 
     if (whichDim < 5)
@@ -575,7 +575,7 @@ public:
     s<<" Eletrict Field slice: ";
     if (!getSlice(meshExtent, whichDim, rankZeroOnly, off, ext, s))
       return;
-    
+
     Timer sliceTime(s.str(), m_MPIRank);
     auto bx_data = bx.loadChunk<double>(off, ext);
     auto by_data = by.loadChunk<double>(off, ext);
@@ -601,23 +601,23 @@ public:
 
     Extent meshExtent = rho.getExtent();
 
-    if ( 0 == m_MPIRank ) 
+    if ( 0 == m_MPIRank )
       {
     std::cout<<"... rho meshExtent : ts="<<ts<<" [";
-    for (unsigned int i=0; i<meshExtent.size(); i++) 
+    for (unsigned int i=0; i<meshExtent.size(); i++)
       std::cout<<meshExtent[i]<<" ";
-    std::cout<<"]"<<std::endl;   
+    std::cout<<"]"<<std::endl;
       }
-    
+
     sliceMe(series, rho);
-    block(series, rho);    
+    block(series, rho);
     fullscan(series, rho);
-    
-    sliceField(series, ts);    
+
+    sliceField(series, ts);
 
     // read particles
     if ( m_Pattern == 7 )
-      {    
+      {
          openPMD::ParticleSpecies electrons =
          series.iterations[ts].particles["ion"];
          RecordComponent charge = electrons["charge"][RecordComponent::SCALAR];

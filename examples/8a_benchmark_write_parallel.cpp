@@ -196,7 +196,7 @@ std::vector<std::string> getBackends() {
 class TestInput;
 
 /* Class AbstractPattern
- *    defines grid layout from user inputs 
+ *    defines grid layout from user inputs
  *    subclasses detail the layout of mesh/particle at each rank
  */
 class AbstractPattern
@@ -207,7 +207,7 @@ public:
   unsigned long  getNthMeshExtent( unsigned int n, Offset& offset, Extent& count );
   virtual void getNthParticleExtent( unsigned int n, unsigned long& offset, unsigned long& count ) = 0;
   unsigned int getNumBlocks();
- 
+
   unsigned long getTotalNumParticles();
   void run();
   void store(Series& series, int step);
@@ -223,15 +223,15 @@ public:
 
   Extent m_GlobalUnitMesh;
   std::vector<std::pair<Offset, Extent>> m_InRankMeshLayout;
-  
+
   void PrintMe();
 };  // class Abstractpatter
 
 
 
-/* 
+/*
  * Class defining 1D mesh layout
- *   
+ *
  */
 class OneDimPattern: public AbstractPattern
 {
@@ -243,9 +243,9 @@ public:
   unsigned int getNumBlocks();
 };
 
-/* 
+/*
  * Class defining 2D mesh layout
- *   
+ *
  */
 class TwoDimPattern: public AbstractPattern
 {
@@ -256,15 +256,15 @@ public:
   void getNthParticleExtent( unsigned int n, unsigned long& offset, unsigned long& count );
   void coordinate(unsigned long idx, const Extent& grid, Offset& o);
 
-  Extent m_PatchUnitMesh; // based on m_GlobalUnitMesh  
+  Extent m_PatchUnitMesh; // based on m_GlobalUnitMesh
 
 
   std::vector<std::pair<unsigned long, unsigned long>> m_InRankParticleLayout;
 };
 
-/* 
+/*
  * Class defining 3D mesh layout
- *   
+ *
  */
 class ThreeDimPattern: public AbstractPattern
 {
@@ -275,7 +275,7 @@ public:
   void getNthParticleExtent( unsigned int n, unsigned long& offset, unsigned long& count );
   void coordinate(unsigned long idx, const Extent& grid, Offset& o);
 
-  Extent m_PatchUnitMesh; // based on m_GlobalUnitMesh  
+  Extent m_PatchUnitMesh; // based on m_GlobalUnitMesh
 
   std::vector<std::pair<unsigned long, unsigned long>> m_InRankParticleLayout;
 };
@@ -364,9 +364,9 @@ main( int argc, char *argv[] )
     if( argc >= 3 )
         input.m_XBulk = strtoul( argv[2], NULL, 0 );
 
-    // e.g. 32064 => [64,32] 
+    // e.g. 32064 => [64,32]
     if ( input.m_XBulk > 1000 )
-    {  
+    {
        input.m_YBulk = input.m_XBulk/1000;
        input.m_XBulk = input.m_XBulk % 1000;
     }
@@ -379,7 +379,7 @@ main( int argc, char *argv[] )
     if( argc >= 5 )
         input.m_Steps = atoi( argv[4] );
 
-    if ( 0 == input.m_XFactor ) 
+    if ( 0 == input.m_XFactor )
       input.m_XFactor = input.m_MPISize;
 
     auto const backends = getBackends();
@@ -447,7 +447,7 @@ void AbstractPattern::run()
       }
     }
 
-    
+
     { // group based
       std::ostringstream s;
       s << "../samples/8a_parallel_"<<m_GlobalMesh.size()<<"D"<<balance<<m_Input.m_Backend;
@@ -483,7 +483,7 @@ void AbstractPattern::store(Series& series, int step)
     std::string components[] = {"x", "y", "z"};
     std::string fieldName1 = "E";
     std::string fieldName2 = "B";
-    for (unsigned int i=0; i<m_GlobalMesh.size(); i++) 
+    for (unsigned int i=0; i<m_GlobalMesh.size(); i++)
     {
       storeMesh(series, step, fieldName1, components[i]);
       //storeMesh(series, step, fieldName1, comp_alpha);
@@ -605,7 +605,7 @@ unsigned long AbstractPattern::getTotalNumParticles()
 void AbstractPattern::PrintMe()
   {
     int ndim = m_MinBlock.size();
-    if ( !m_Input.m_MPIRank ) 
+    if ( !m_Input.m_MPIRank )
     {
       std::ostringstream g; g<<"\nGlobal: [ ";
       std::ostringstream u; u<<"  Unit: [ ";
@@ -628,7 +628,7 @@ void AbstractPattern::PrintMe()
 
     std::cout<<"Rank"<<m_Input.m_MPIRank<<" has numBlocks= "<<getNumBlocks()<<std::endl;
 
-    auto prettyLambda = [&](int i) { 
+    auto prettyLambda = [&](int i) {
       std::ostringstream o; o<<"[ ";
       std::ostringstream c; c<<"[ ";
       auto curr =  m_InRankMeshLayout[i];
@@ -636,7 +636,7 @@ void AbstractPattern::PrintMe()
     {
       o<<curr.first[k]<<" ";
       c<<curr.second[k]<<" ";
-    }      
+    }
       std::cout<<o.str()<<"] + "<<c.str()<<"]";
     };
 
@@ -661,31 +661,31 @@ OneDimPattern::OneDimPattern(const TestInput& input)
 {
   m_GlobalMesh = { input.m_XBulk * input.m_XFactor };
   m_MinBlock = { input.m_XBulk };
-  
+
   m_GlobalUnitMesh = { input.m_XFactor };
 
   auto m = (input.m_XFactor) % input.m_MPISize;
-  if ( m != 0)    
-    throw std::runtime_error( "Unable to balance load for 1D mesh among ranks ");   
+  if ( m != 0)
+    throw std::runtime_error( "Unable to balance load for 1D mesh among ranks ");
 
   PrintMe();
 }
 
 
 /*
- * Retrieves ParticleExtent 
+ * Retrieves ParticleExtent
  * @param  n:       nth block for this rank
  * @param  offset: return
  * @param  count:  return
  *
  */
-void TwoDimPattern::getNthParticleExtent( unsigned int n, unsigned long& offset, unsigned long& count ) 
-  {   
+void TwoDimPattern::getNthParticleExtent( unsigned int n, unsigned long& offset, unsigned long& count )
+  {
     if (n > m_InRankMeshLayout.size())
       return;
 
-    offset = m_InRankParticleLayout[n].first;         
-    count  = m_InRankParticleLayout[n].second;             
+    offset = m_InRankParticleLayout[n].first;
+    count  = m_InRankParticleLayout[n].second;
   }
 
 
@@ -695,33 +695,33 @@ void TwoDimPattern::getNthParticleExtent( unsigned int n, unsigned long& offset,
  * @param offset: return
  * @param count:  return
  */
-void ThreeDimPattern::getNthParticleExtent( unsigned int n, unsigned long& offset, unsigned long& count ) 
-  {   
+void ThreeDimPattern::getNthParticleExtent( unsigned int n, unsigned long& offset, unsigned long& count )
+  {
     if (n > m_InRankMeshLayout.size())
       return;
 
-    offset = m_InRankParticleLayout[n].first;         
-    count  = m_InRankParticleLayout[n].second;             
+    offset = m_InRankParticleLayout[n].first;
+    count  = m_InRankParticleLayout[n].second;
   }
 
 /*
  * Set layout
  * @param step: (in) iteration step
- * 
+ *
  */
-bool OneDimPattern::setLayOut(int step)  
+bool OneDimPattern::setLayOut(int step)
 {
     m_InRankMeshLayout.clear();
-        
+
     unsigned long unitCount = (m_GlobalUnitMesh[0] / m_Input.m_MPISize);
 
     unsigned long unitOffset = m_Input.m_MPIRank * unitCount;
-    
-    if ( m_Input.m_MPISize >= 2 ) 
+
+    if ( m_Input.m_MPISize >= 2 )
     {
       if ( m_Input.m_Unbalance )
       {
-    if (step % 3 == 1) 
+    if (step % 3 == 1)
         {
       if ( m_Input.m_MPIRank % 10 == 0 ) // no load
         unitCount = 0;
@@ -730,7 +730,7 @@ bool OneDimPattern::setLayOut(int step)
           unitOffset -= unitCount;
           unitCount  += unitCount;
         }
-    }        
+    }
       }
     }
 
@@ -744,14 +744,14 @@ bool OneDimPattern::setLayOut(int step)
     auto avg = unitCount / numPartition;
     for ( unsigned int i=0 ; i< numPartition; i++ )
     {
-      Offset offset = { unitOffset * m_MinBlock[0] }; 
+      Offset offset = { unitOffset * m_MinBlock[0] };
       if ( i < (numPartition - 1) ) {
-    Extent count  = { avg * m_MinBlock[0] }; 
-    m_InRankMeshLayout.push_back(std::make_pair(offset, count)); 
+    Extent count  = { avg * m_MinBlock[0] };
+    m_InRankMeshLayout.push_back(std::make_pair(offset, count));
       } else {
     auto res = unitCount - avg * (numPartition - 1);
-    Extent count  = { res * m_MinBlock[0] }; 
-    m_InRankMeshLayout.push_back(std::make_pair(offset, count)); 
+    Extent count  = { res * m_MinBlock[0] };
+    m_InRankMeshLayout.push_back(std::make_pair(offset, count));
       }
     }
 
@@ -760,14 +760,14 @@ bool OneDimPattern::setLayOut(int step)
 
 
 /*
- * Retrieves ParticleExtent 
+ * Retrieves ParticleExtent
  * @param  n:       nth block for this rank
  * @param  offset: return
  * @param  count:  return
  *
  */
-void OneDimPattern::getNthParticleExtent( unsigned int n, unsigned long& offset, unsigned long& count ) 
-  {   
+void OneDimPattern::getNthParticleExtent( unsigned int n, unsigned long& offset, unsigned long& count )
+  {
     if (n > m_InRankMeshLayout.size())
       return;
 
@@ -780,22 +780,22 @@ void OneDimPattern::getNthParticleExtent( unsigned int n, unsigned long& offset,
  *    Defines 2D layout
  * @param input: user specifications
  */
- 
+
 TwoDimPattern::TwoDimPattern(const TestInput& input)
   :AbstractPattern(input)
 {
   m_GlobalMesh = { input.m_XBulk * input.m_XFactor, input.m_YBulk * input.m_YFactor };
   m_MinBlock = { input.m_XBulk, input.m_YBulk };
-  
+
   m_GlobalUnitMesh = { input.m_XFactor, input.m_YFactor };
 
   auto m = (input.m_XFactor * input.m_YFactor) % input.m_MPISize;
-  if ( m != 0)    
-      throw std::runtime_error( "Unable to balance load for 2D mesh among ranks ");   
-  
+  if ( m != 0)
+      throw std::runtime_error( "Unable to balance load for 2D mesh among ranks ");
+
   if ( input.m_XFactor % input.m_MPISize == 0 )
     m_PatchUnitMesh = { input.m_XFactor / input.m_MPISize, m_GlobalUnitMesh[1] };
-  else if ( input.m_YFactor % input.m_MPISize == 0 )     
+  else if ( input.m_YFactor % input.m_MPISize == 0 )
     m_PatchUnitMesh = { m_GlobalUnitMesh[0], input.m_YFactor / input.m_MPISize };
   else if ( input.m_XFactor % m == 0 )
     m_PatchUnitMesh = {m, 1};
@@ -806,7 +806,7 @@ TwoDimPattern::TwoDimPattern(const TestInput& input)
 
   PrintMe();
 }
- 
+
 
 
 /*
@@ -821,12 +821,12 @@ bool TwoDimPattern::setLayOut(int step)  {
 
     unsigned long patchOffset = m_Input.m_MPIRank;
     unsigned long patchCount  = 1;
-    
-    if ( m_Input.m_MPISize >= 2 ) 
+
+    if ( m_Input.m_MPISize >= 2 )
     {
       if ( m_Input.m_Unbalance )
       {
-    if (step % 3 == 1) 
+    if (step % 3 == 1)
         {
       if ( m_Input.m_MPIRank % 4 == 0 ) // no load
         patchCount = 0;
@@ -835,7 +835,7 @@ bool TwoDimPattern::setLayOut(int step)  {
           patchOffset -= patchCount;
           patchCount  += patchCount;
         }
-    }        
+    }
       }
     }
 
@@ -852,38 +852,38 @@ bool TwoDimPattern::setLayOut(int step)  {
 
     Offset c {1,1};
     if ( patchCount > 1 ) {
-      coordinate( patchOffset + patchCount -1, patchGrid, c);    
+      coordinate( patchOffset + patchCount -1, patchGrid, c);
       c[0] += 1;
-      c[1] += 1; 
+      c[1] += 1;
     }
 
     // particle offset at this rank
-    unsigned long pOff   = countMe(m_PatchUnitMesh) * patchOffset * countMe(m_MinBlock) * m_Input.m_Ratio; 
+    unsigned long pOff   = countMe(m_PatchUnitMesh) * patchOffset * countMe(m_MinBlock) * m_Input.m_Ratio;
 
-    if ( 1 == numPartition ) 
-      { 
-    Offset offset = { p[0] * m_PatchUnitMesh[0] * m_MinBlock[0], 
-              p[1] * m_PatchUnitMesh[1] * m_MinBlock[1] }; 
+    if ( 1 == numPartition )
+      {
+    Offset offset = { p[0] * m_PatchUnitMesh[0] * m_MinBlock[0],
+              p[1] * m_PatchUnitMesh[1] * m_MinBlock[1] };
 
-    Extent count  = { c[0] * m_PatchUnitMesh[0] * m_MinBlock[0],  
+    Extent count  = { c[0] * m_PatchUnitMesh[0] * m_MinBlock[0],
               c[1] * m_PatchUnitMesh[1] * m_MinBlock[1] };
 
-    m_InRankMeshLayout.push_back(std::make_pair(offset, count));   
-    
+    m_InRankMeshLayout.push_back(std::make_pair(offset, count));
+
     auto pCount = countMe(count) * m_Input.m_Ratio;
     m_InRankParticleLayout.push_back(std::make_pair(pOff, pCount));
-      } 
-    else 
-      {    
+      }
+    else
+      {
     Offset unitOffset = { p[0] * m_PatchUnitMesh[0], p[1] * m_PatchUnitMesh[1] };
     Extent unitExtent = { c[0] * m_PatchUnitMesh[0], c[1] * m_PatchUnitMesh[1] };
-    
+
     auto counter = pOff;
 
-    for ( unsigned long i=0; i<unitExtent[0]; i++ ) 
-      for ( unsigned long j=0; j<unitExtent[1]; j++ ) 
+    for ( unsigned long i=0; i<unitExtent[0]; i++ )
+      for ( unsigned long j=0; j<unitExtent[1]; j++ )
         {
-          Offset currOff   = { (unitOffset[0] + i)  * m_MinBlock[0], 
+          Offset currOff   = { (unitOffset[0] + i)  * m_MinBlock[0],
                    (unitOffset[1] + j)  * m_MinBlock[1] };
           Extent currCount = {  m_MinBlock[0], m_MinBlock[1] };
 
@@ -893,7 +893,7 @@ bool TwoDimPattern::setLayOut(int step)  {
           m_InRankParticleLayout.push_back(std::make_pair(counter, pCount));
 
           counter += pCount;
-        }           
+        }
       }
 
     return true;
@@ -903,7 +903,7 @@ bool TwoDimPattern::setLayOut(int step)  {
 /* Returns num of blocks in a rank
  *
  */
-unsigned int AbstractPattern::getNumBlocks() 
+unsigned int AbstractPattern::getNumBlocks()
 {
     return m_InRankMeshLayout.size();
 }
@@ -914,7 +914,7 @@ unsigned int AbstractPattern::getNumBlocks()
  * @param offset: return
  * @param count:  return
  */
-unsigned long  AbstractPattern::getNthMeshExtent( unsigned int n, Offset& offset, Extent& count ) 
+unsigned long  AbstractPattern::getNthMeshExtent( unsigned int n, Offset& offset, Extent& count )
   {
     if (n > m_InRankMeshLayout.size())
       return 0;
@@ -935,14 +935,14 @@ inline void TwoDimPattern::coordinate(unsigned long idx, const Extent& grid, Off
 {
   auto yy = idx % grid[1];
   auto xx = ( idx - yy ) / grid[1];
-  
-  result[0] = xx; 
+
+  result[0] = xx;
   result[1] = yy;
 }
 
 /* Returns c order index in the global mesh
  * @param offset:  input, offset in the global mesh
- */ 
+ */
 inline unsigned long AbstractPattern::indexMe(const Offset& offset)
 {
   if (offset.size() == 0)
@@ -950,7 +950,7 @@ inline unsigned long AbstractPattern::indexMe(const Offset& offset)
 
   if (offset.size() == 1)
     return offset[0];
-  
+
   if (offset.size() == 2)
     {
       unsigned long result = offset[1];
@@ -972,7 +972,7 @@ inline unsigned long AbstractPattern::countMe(const Extent& count)
   unsigned long result = count[0];
   if ( count.size() >= 2 )
     result *= count[1];
-  
+
   if ( count.size() >= 3 )
     result *= count[2];
 
@@ -980,7 +980,7 @@ inline unsigned long AbstractPattern::countMe(const Extent& count)
 }
 
 /*
- * Get coordinate from index 
+ * Get coordinate from index
  * @param idx:    c order index
  * @param grid:   layout
  * @param result: return
@@ -991,14 +991,14 @@ inline void ThreeDimPattern::coordinate(unsigned long idx, const Extent& grid, O
   auto m = (idx - zz)/grid[2];
   auto yy = m % grid[1];
   auto xx = ( m - yy ) / grid[1];
-  
-  result[0] = xx; 
+
+  result[0] = xx;
   result[1] = yy;
   result[2] = zz;
 }
 
 
-/* 
+/*
  * Constructor ThreeDimPattern
  *    Defines 3D layout
  * @param input: user specifications
@@ -1008,11 +1008,11 @@ ThreeDimPattern::ThreeDimPattern(const TestInput& input)
   :AbstractPattern(input)
 {
   {
-    m_GlobalMesh = { input.m_XBulk * input.m_XFactor, 
+    m_GlobalMesh = { input.m_XBulk * input.m_XFactor,
              input.m_YBulk * input.m_YFactor,
              input.m_YBulk * input.m_YFactor }; // Z & Y have same size
-  
-    m_MinBlock = { input.m_XBulk, input.m_YBulk, input.m_YBulk };  
+
+    m_MinBlock = { input.m_XBulk, input.m_YBulk, input.m_YBulk };
     m_GlobalUnitMesh = { input.m_XFactor, input.m_YFactor, input.m_YFactor };
 
     PrintMe();
@@ -1020,12 +1020,12 @@ ThreeDimPattern::ThreeDimPattern(const TestInput& input)
 
   unsigned long zFactor = input.m_YFactor;
   auto m = (zFactor * input.m_XFactor * input.m_YFactor) % input.m_MPISize;
-  if ( m != 0)    
-      throw std::runtime_error( "Unable to balance load for 3D mesh among ranks ");    
-  
+  if ( m != 0)
+      throw std::runtime_error( "Unable to balance load for 3D mesh among ranks ");
+
   if ( input.m_XFactor % input.m_MPISize == 0 )
     m_PatchUnitMesh = { input.m_XFactor / input.m_MPISize, m_GlobalUnitMesh[1], m_GlobalUnitMesh[2] };
-  else if ( input.m_YFactor % input.m_MPISize == 0 )     
+  else if ( input.m_YFactor % input.m_MPISize == 0 )
     m_PatchUnitMesh = { m_GlobalUnitMesh[0], input.m_YFactor / input.m_MPISize, m_GlobalUnitMesh[2] };
   else if ( input.m_XFactor % m == 0 )
     m_PatchUnitMesh = {m, 1, 1};
@@ -1045,12 +1045,12 @@ bool ThreeDimPattern::setLayOut(int step)  {
 
     unsigned long patchOffset = m_Input.m_MPIRank;
     unsigned long patchCount  = 1;
-    
-    if ( m_Input.m_MPISize >= 2 ) 
+
+    if ( m_Input.m_MPISize >= 2 )
     {
       if ( m_Input.m_Unbalance )
       {
-    if (step % 3 == 1) 
+    if (step % 3 == 1)
         {
       if ( m_Input.m_MPIRank % 4 == 0 ) // no load
         patchCount = 0;
@@ -1059,7 +1059,7 @@ bool ThreeDimPattern::setLayOut(int step)  {
           patchOffset -= patchCount;
           patchCount  += patchCount;
         }
-    }        
+    }
       }
     }
 
@@ -1079,46 +1079,46 @@ bool ThreeDimPattern::setLayOut(int step)  {
 
     Offset c {1,1,1};
     if ( patchCount > 1 ) {
-      coordinate( patchOffset + patchCount -1, patchGrid, c);    
+      coordinate( patchOffset + patchCount -1, patchGrid, c);
       c[0] += 1;
-      c[1] += 1; 
+      c[1] += 1;
       c[2] += 1;
     }
 
     // particle offset at this rank
-    unsigned long  pOff   = countMe(m_PatchUnitMesh) * patchOffset * countMe(m_MinBlock) * m_Input.m_Ratio; 
+    unsigned long  pOff   = countMe(m_PatchUnitMesh) * patchOffset * countMe(m_MinBlock) * m_Input.m_Ratio;
 
-    if (1 == numPartition) 
-      { 
-    Offset offset = { p[0] * m_PatchUnitMesh[0] * m_MinBlock[0], 
-              p[1] * m_PatchUnitMesh[1] * m_MinBlock[1], 
-              p[2] * m_PatchUnitMesh[2] * m_MinBlock[2] }; 
+    if (1 == numPartition)
+      {
+    Offset offset = { p[0] * m_PatchUnitMesh[0] * m_MinBlock[0],
+              p[1] * m_PatchUnitMesh[1] * m_MinBlock[1],
+              p[2] * m_PatchUnitMesh[2] * m_MinBlock[2] };
 
-    Extent count  = { c[0] * m_PatchUnitMesh[0] * m_MinBlock[0],  
+    Extent count  = { c[0] * m_PatchUnitMesh[0] * m_MinBlock[0],
               c[1] * m_PatchUnitMesh[1] * m_MinBlock[1],
               c[2] * m_PatchUnitMesh[2] * m_MinBlock[2] };
 
-    m_InRankMeshLayout.push_back(std::make_pair(offset, count));   
-    
+    m_InRankMeshLayout.push_back(std::make_pair(offset, count));
+
     auto pCount = countMe(count) * m_Input.m_Ratio;
     m_InRankParticleLayout.push_back(std::make_pair(pOff, pCount));
-      } 
-    else 
+      }
+    else
       {
     Offset unitOffset = { p[0] * m_PatchUnitMesh[0], p[1] * m_PatchUnitMesh[1], p[2] * m_PatchUnitMesh[2] };
     Extent unitExtent = { c[0] * m_PatchUnitMesh[0], c[1] * m_PatchUnitMesh[1], c[2] * m_PatchUnitMesh[2] };
-    
+
     auto counter = pOff;
 
-    for ( unsigned long i=0; i<unitExtent[0]; i++ ) 
-      for ( unsigned long  j=0; j<unitExtent[1]; j++ ) 
-        for ( unsigned long k=0; k<unitExtent[2]; k++ ) 
+    for ( unsigned long i=0; i<unitExtent[0]; i++ )
+      for ( unsigned long  j=0; j<unitExtent[1]; j++ )
+        for ( unsigned long k=0; k<unitExtent[2]; k++ )
           {
-        Offset currOff   = { (unitOffset[0] + i)  * m_MinBlock[0], 
-                     (unitOffset[1] + j)  * m_MinBlock[1], 
+        Offset currOff   = { (unitOffset[0] + i)  * m_MinBlock[0],
+                     (unitOffset[1] + j)  * m_MinBlock[1],
                      (unitOffset[2] + k)  * m_MinBlock[2]  };
         Extent currCount = {  m_MinBlock[0], m_MinBlock[1], m_MinBlock[2] };
-        
+
         m_InRankMeshLayout.push_back(std::make_pair(currOff, currCount));
 
         auto pCount = countMe(currCount) * m_Input.m_Ratio;
@@ -1127,7 +1127,7 @@ bool ThreeDimPattern::setLayOut(int step)  {
         counter += pCount;
           }
       }
-      
+
     return true;
 }
 
