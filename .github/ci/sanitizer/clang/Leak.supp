@@ -13,3 +13,4 @@ leak:adios_read_bp_open_file
 leak:adios_inq_var
 # ADIOS2
 leak:adios2::core::engine::SstReader::*
+leak:adios2::core::engine::SstWriter::*
