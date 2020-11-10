@@ -3,6 +3,10 @@
 Streaming
 =========
 
+.. note::
+   Data streaming is a novel backend and under active development.
+   At the moment, the internal data format is still changing rapidly and is likely not compatible between releases of the openPMD-api.
+
 The openPMD API includes a streaming-aware API as well as streaming-enabled backends (currently: ADIOS2).
 
 Unlike in file-based backends, the order in which data is put out becomes relevant in streaming-based backends.

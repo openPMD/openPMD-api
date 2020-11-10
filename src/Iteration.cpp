@@ -173,11 +173,8 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
 {
     /* Find the root point [Series] of this file,
      * meshesPath and particlesPath are stored there */
-    Writable *w = this->parent;
-    while( w->parent )
-        w = w->parent;
-
-    auto s = dynamic_cast< Series* >( w->attributable );
+    Series * s = &auxiliary::deref_dynamic_cast< Series >(
+        parent->attributable->parent->attributable );
     if( s == nullptr )
         throw std::runtime_error("[Iteration::flushFileBased] Series* is a nullptr");
 
@@ -256,10 +253,8 @@ Iteration::flush()
     {
         /* Find the root point [Series] of this file,
          * meshesPath and particlesPath are stored there */
-        Writable *w = this->parent;
-        while( w->parent )
-            w = w->parent;
-        auto s = dynamic_cast< Series* >(w->attributable);
+        Series * s = &auxiliary::deref_dynamic_cast< Series >(
+            parent->attributable->parent->attributable );
 
         if( !meshes.empty() || s->containsAttribute("meshesPath") )
         {
@@ -321,10 +316,8 @@ Iteration::read()
 
     /* Find the root point [Series] of this file,
      * meshesPath and particlesPath are stored there */
-    Writable *w = getWritable(this);
-    while( w->parent )
-        w = w->parent;
-    auto s = dynamic_cast< Series* >(w->attributable);
+    Series * s = &auxiliary::deref_dynamic_cast< Series >(
+        parent->attributable->parent->attributable );
 
     Parameter< Operation::LIST_PATHS > pList;
     std::string version = s->openPMD();
@@ -441,8 +434,8 @@ AdvanceStatus
 Iteration::beginStep()
 {
     using IE = IterationEncoding;
-    Series & series =
-        *dynamic_cast< Series * >( parent->attributable->parent->attributable );
+    Series & series = auxiliary::deref_dynamic_cast< Series >(
+        parent->attributable->parent->attributable );
     // Initialize file with this to quiet warnings
     // The following switch is comprehensive
     Attributable * file = this;
