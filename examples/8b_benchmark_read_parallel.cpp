@@ -292,14 +292,14 @@ public:
     if ( (grid[0] * grid[1] > (unsigned long) m_MPISize) || ((unsigned long)m_MPISize % (grid[0]*grid[1]) != 0) )
     {
       if ( 0 == m_MPIRank ) 
-	std::cerr<<" please check the grid decompisition. need to fit given mpi size:"<<m_MPISize<<std::endl;
+    std::cerr<<" please check the grid decompisition. need to fit given mpi size:"<<m_MPISize<<std::endl;
       return;
     }
 
     if ( (meshExtent[0] % grid[0] != 0) || (meshExtent[1] % grid[1] != 0) ) 
     {
       if ( 0 == m_MPIRank ) 
-	std::cerr<<" Not able to divide rho mesh by specified grid on X-Y: "<< grid[0] <<"*"<< grid[1] <<std::endl;
+    std::cerr<<" Not able to divide rho mesh by specified grid on X-Y: "<< grid[0] <<"*"<< grid[1] <<std::endl;
       return;
     }
 
@@ -320,9 +320,9 @@ public:
 
     if ( c != (unsigned long) m_MPISize ) 
       {
-	if ( 0 == m_MPIRank ) 
-	  std::cerr<<" Not able to divide full scan according to input. "<<std::endl;
-	return;
+    if ( 0 == m_MPIRank ) 
+      std::cerr<<" Not able to divide full scan according to input. "<<std::endl;
+    return;
       }
 
     Offset offset(grid.size(), 0);
@@ -330,8 +330,8 @@ public:
     int m = m_MPIRank;
     for ( int i=(int)grid.size()-1; i>=0; i-- )
       {
-	offset[i] = m % grid[i];
-	m = (m - offset[i])/grid[i];
+    offset[i] = m % grid[i];
+    m = (m - offset[i])/grid[i];
       }
 
     for (unsigned int i=0; i<grid.size(); i++)
@@ -379,11 +379,11 @@ public:
     if ( rankZeroOnly ) {
       s <<" rank 0 only, location:";      
       if (atCenter)
-	s<<" center ";
+    s<<" center ";
       else if (atTopLeft)
-	s<<" topleft ";
+    s<<" topleft ";
       else if (atBottomRight)
-	s<<" bottomRight ";
+    s<<" bottomRight ";
     } else if ( diagnalBlocks )
       s <<" blockStyle = diagnal";
     else 
@@ -397,49 +397,49 @@ public:
     Extent ext(meshExtent.size(),1);
 
     for ( unsigned int i=0; i<meshExtent.size(); i++ ) 
-      {	
-	unsigned long blob = meshExtent[i]/fractionOnDim;
-	if (0 == blob) return;
-	ext[i] = blob;
-	
-	if ( rankZeroOnly ) 
-	  {
-	    if (atCenter) 
-	      off[i] = 0; // top corner
-	    else if (atTopLeft) 
-	      off[i] = (meshExtent[i]-blob); // bottom corner
-	    else if (atBottomRight)
-	      off[i] = (fractionOnDim/2) * blob; // middle corner
-	  } 
-	else
-	  {
-	    off[i] = m_MPIRank * blob;       
+      {    
+    unsigned long blob = meshExtent[i]/fractionOnDim;
+    if (0 == blob) return;
+    ext[i] = blob;
+    
+    if ( rankZeroOnly ) 
+      {
+        if (atCenter) 
+          off[i] = 0; // top corner
+        else if (atTopLeft) 
+          off[i] = (meshExtent[i]-blob); // bottom corner
+        else if (atBottomRight)
+          off[i] = (fractionOnDim/2) * blob; // middle corner
+      } 
+    else
+      {
+        off[i] = m_MPIRank * blob;       
 
-	    if ( !diagnalBlocks )
-	      if ( i != alongDim ) 
-		off[i] = (fractionOnDim/2) * blob; // middle corner
-	  }
+        if ( !diagnalBlocks )
+          if ( i != alongDim ) 
+        off[i] = (fractionOnDim/2) * blob; // middle corner
+      }
       }
     
     auto prettyLambda = [&](Offset oo, Extent cc) { 
       std::ostringstream o; o<<"[ ";
       std::ostringstream c; c<<"[ ";
       for (unsigned int k=0; k<oo.size(); k++)
-	{
-	  o<<oo[k]<<" ";
-	  c<<cc[k]<<" ";
-	}      
+    {
+      o<<oo[k]<<" ";
+      c<<cc[k]<<" ";
+    }      
       std::cout<<o.str()<<"] + "<<c.str()<<"]"<<std::endl;;      
     };
 
     if ((unsigned int) m_MPIRank < fractionOnDim)
       {
-	auto slice_data = rho.loadChunk<double>(off, ext);
-	series.flush();
+    auto slice_data = rho.loadChunk<double>(off, ext);
+    series.flush();
 
-	std::cout<<"Rank: "<<m_MPIRank;
+    std::cout<<"Rank: "<<m_MPIRank;
 
-	prettyLambda(off,ext);
+    prettyLambda(off,ext);
       }
   }
 
@@ -454,7 +454,7 @@ public:
    */
   bool
   getSlice(Extent meshExtent, unsigned int whichDim, bool rankZeroOnly, 
-	   Offset& off, Extent& ext, std::ostringstream& s)
+       Offset& off, Extent& ext, std::ostringstream& s)
   {
     if ( rankZeroOnly && m_MPIRank )
       return false;
@@ -479,9 +479,9 @@ public:
     off[whichDim] = m_MPIRank % meshExtent[whichDim];
     for ( unsigned int i=0; i<meshExtent.size(); i++ ) 
       {
-	if ( 1 == meshExtent.size() ) whichDim = 100;
-	if ( i != whichDim ) 
-	  ext[i] = meshExtent[i];
+    if ( 1 == meshExtent.size() ) whichDim = 100;
+    if ( i != whichDim ) 
+      ext[i] = meshExtent[i];
       }
     
     return true;
@@ -603,14 +603,14 @@ public:
 
     if ( 0 == m_MPIRank ) 
       {
-	std::cout<<"... rho meshExtent : ts="<<ts<<" [";
-	for (unsigned int i=0; i<meshExtent.size(); i++) 
-	  std::cout<<meshExtent[i]<<" ";
-	std::cout<<"]"<<std::endl;   
+    std::cout<<"... rho meshExtent : ts="<<ts<<" [";
+    for (unsigned int i=0; i<meshExtent.size(); i++) 
+      std::cout<<meshExtent[i]<<" ";
+    std::cout<<"]"<<std::endl;   
       }
     
     sliceMe(series, rho);
-    block(series, rho);	
+    block(series, rho);    
     fullscan(series, rho);
     
     sliceField(series, ts);    
