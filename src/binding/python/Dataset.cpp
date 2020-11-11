@@ -74,12 +74,12 @@ void init_Dataset(py::module &m) {
                     + std::to_string(c.offset.size()) + "'>";
             }
         )
-        // .def_property_readonly("offset", [](Chunk & c){ return c.offset; })
-        // .def_property_readonly("extent", [](Chunk & c){ return c.extent; })
-        // .def_property_readonly("rank",   [](Chunk & c){ return c.rank;   })
+        // .def_property_readonly("offset", [](Chunk & c){ return c.offset;   })
+        // .def_property_readonly("extent", [](Chunk & c){ return c.extent;   })
+        // .def_property_readonly("rank",   [](Chunk & c){ return c.mpi_rank; })
         .def_readonly("offset", &Chunk::offset)
         .def_readonly("extent", &Chunk::extent)
-        .def_readonly("rank",   &Chunk::rank  )
+        .def_readonly("mpi_rank",   &Chunk::mpi_rank  )
     ;
 }
 

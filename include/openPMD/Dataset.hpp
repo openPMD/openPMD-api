@@ -62,13 +62,13 @@ struct Chunk
 {
     Offset offset;
     Extent extent;
-    unsigned int rank = 0;
+    unsigned int mpi_rank = 0;
 
     /*
      * If rank is smaller than zero, will be converted to zero.
      */
     explicit Chunk() = default;
-    Chunk( Offset, Extent, int rank );
+    Chunk( Offset, Extent, int mpi_rank );
     Chunk( Offset, Extent );
 
     bool
