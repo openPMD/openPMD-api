@@ -33,9 +33,9 @@ namespace openPMD
  */
 struct Chunk
 {
-    Offset offset;
-    Extent extent;
-    unsigned int mpi_rank = 0;
+    Offset offset; //!< origin of the chunk
+    Extent extent; //!< size of the chunk
+    unsigned int mpi_rank = 0; //!< the MPI rank of the writing process
 
     /*
      * If rank is smaller than zero, will be converted to zero.
