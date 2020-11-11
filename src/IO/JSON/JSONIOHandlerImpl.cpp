@@ -447,7 +447,7 @@ namespace openPMD
                 auto innerLoops = [ &table ]() {
                     /*
                      * Iterate over pairs of chunks in the table.
-                     * If finding a pair that can be merged, merge it,
+                     * When a pair that can be merged is found, merge it,
                      * delete the original two chunks from the table,
                      * put the new one in and return.
                      */
