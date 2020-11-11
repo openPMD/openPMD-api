@@ -82,23 +82,4 @@ Dataset::setCustomTransform(std::string const& parameter)
     transform = parameter;
     return *this;
 }
-
-Chunk::Chunk( Offset offset_in, Extent extent_in, int mpi_rank_in )
-    : offset( std::move( offset_in ) )
-    , extent( std::move( extent_in ) )
-    , mpi_rank( mpi_rank_in < 0 ? 0 : mpi_rank_in )
-{
-}
-
-Chunk::Chunk( Offset offset_in, Extent extent_in )
-    : Chunk( std::move( offset_in ), std::move( extent_in ), 0 )
-{
-}
-
-bool
-Chunk::operator==( Chunk const & other ) const
-{
-    return this->mpi_rank == other.mpi_rank && this->offset == other.offset &&
-        this->extent == other.extent;
-}
-} // namespace openPMD
+} // openPMD

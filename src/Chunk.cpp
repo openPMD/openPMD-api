@@ -1,4 +1,4 @@
-/* Copyright 2017-2020 Fabian Koller
+/* Copyright 2020 Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -18,38 +18,26 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#pragma once
-
-#include "openPMD/Datatype.hpp"
-
-#include <memory>
-#include <type_traits>
-#include <vector>
-#include <string>
-
+#include "openPMD/Chunk.hpp"
 
 namespace openPMD
 {
-using Extent = std::vector< std::uint64_t >;
-using Offset = std::vector< std::uint64_t >;
-
-class Dataset
+Chunk::Chunk( Offset offset_in, Extent extent_in, int mpi_rank_in )
+    : offset( std::move( offset_in ) )
+    , extent( std::move( extent_in ) )
+    , mpi_rank( mpi_rank_in < 0 ? 0 : mpi_rank_in )
 {
-    friend class RecordComponent;
+}
 
-public:
-    Dataset(Datatype, Extent);
+Chunk::Chunk( Offset offset_in, Extent extent_in )
+    : Chunk( std::move( offset_in ), std::move( extent_in ), 0 )
+{
+}
 
-    Dataset& extend(Extent newExtent);
-    Dataset& setChunkSize(Extent const&);
-    Dataset& setCompression(std::string const&, uint8_t const);
-    Dataset& setCustomTransform(std::string const&);
-
-    Extent extent;
-    Datatype dtype;
-    uint8_t rank;
-    Extent chunkSize;
-    std::string compression;
-    std::string transform;
-};
-} // openPMD
+bool
+Chunk::operator==( Chunk const & other ) const
+{
+    return this->mpi_rank == other.mpi_rank && this->offset == other.offset &&
+        this->extent == other.extent;
+}
+} // namespace openPMD

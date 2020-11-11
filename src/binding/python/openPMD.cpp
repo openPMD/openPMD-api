@@ -36,6 +36,7 @@ void init_Access(py::module &);
 void init_Attributable(py::module &);
 void init_BaseRecord(py::module &);
 void init_BaseRecordComponent(py::module &);
+void init_Chunk(py::module &m);
 void init_Container(py::module &);
 void init_Dataset(py::module &);
 void init_Datatype(py::module &);
@@ -87,6 +88,7 @@ PYBIND11_MODULE(openpmd_api_cxx, m) {
     init_Access(m);
     init_UnitDimension(m);
     init_Attributable(m);
+    init_Chunk(m);
     init_Container(m);
     init_BaseRecord(m);
     init_Dataset(m);

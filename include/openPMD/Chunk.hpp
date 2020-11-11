@@ -1,4 +1,4 @@
-/* Copyright 2017-2020 Fabian Koller
+/* Copyright 2020 Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -20,36 +20,32 @@
  */
 #pragma once
 
-#include "openPMD/Datatype.hpp"
-
-#include <memory>
-#include <type_traits>
 #include <vector>
-#include <string>
 
+#include "openPMD/Dataset.hpp" // Offset, Extent
 
 namespace openPMD
 {
-using Extent = std::vector< std::uint64_t >;
-using Offset = std::vector< std::uint64_t >;
-
-class Dataset
+/**
+ * A chunk consists of its offset, its extent
+ * and the rank from which it was written.
+ * If not specified explicitly, the rank will be assumed to be 0.
+ */
+struct Chunk
 {
-    friend class RecordComponent;
-
-public:
-    Dataset(Datatype, Extent);
-
-    Dataset& extend(Extent newExtent);
-    Dataset& setChunkSize(Extent const&);
-    Dataset& setCompression(std::string const&, uint8_t const);
-    Dataset& setCustomTransform(std::string const&);
-
+    Offset offset;
     Extent extent;
-    Datatype dtype;
-    uint8_t rank;
-    Extent chunkSize;
-    std::string compression;
-    std::string transform;
+    unsigned int mpi_rank = 0;
+
+    /*
+     * If rank is smaller than zero, will be converted to zero.
+     */
+    explicit Chunk() = default;
+    Chunk( Offset, Extent, int mpi_rank );
+    Chunk( Offset, Extent );
+
+    bool
+    operator==( Chunk const & other ) const;
 };
-} // openPMD
+using ChunkTable = std::vector< Chunk >;
+} // namespace openPMD

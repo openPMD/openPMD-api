@@ -23,6 +23,7 @@
 #include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attribute.hpp"
+#include "openPMD/Chunk.hpp"
 #include "openPMD/Dataset.hpp"
 
 #include <memory>
