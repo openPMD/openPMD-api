@@ -624,8 +624,8 @@ namespace detail
         static void
         blocksInfo(
             Parameter< Operation::AVAILABLE_CHUNKS > & params,
-            adios2::IO IO,
-            adios2::Engine engine,
+            adios2::IO & IO,
+            adios2::Engine & engine,
             std::string const & varName );
     };
 

@@ -1160,8 +1160,8 @@ namespace detail
         T, typename std::enable_if< DatasetTypes< T >::validType >::type >::
         blocksInfo(
             Parameter< Operation::AVAILABLE_CHUNKS > & params,
-            adios2::IO IO,
-            adios2::Engine engine,
+            adios2::IO & IO,
+            adios2::Engine & engine,
             std::string const & varName)
     {
         auto var = IO.InquireVariable< T >( varName );
