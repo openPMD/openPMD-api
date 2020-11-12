@@ -8,10 +8,13 @@
       }
     },
     "dataset": {
-      "operators": [ 
+      "operators": [
         {
-          "type": "bzip2",
-          "parameters": {}
+          "type": "blosc",
+          "parameters": {
+              "clevel": "1",
+              "doshuffle": "BLOSC_BITSHUFFLE"
+          }
         }
       ]
     }
