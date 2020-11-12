@@ -51,5 +51,6 @@ public:
     Extent chunkSize;
     std::string compression;
     std::string transform;
+    std::string options = "{}"; //!< backend-dependent JSON configuration
 };
-} // openPMD
+} // namespace openPMD
