@@ -42,6 +42,15 @@ void init_Dataset(py::module &m) {
         }),
             py::arg("dtype"), py::arg("extent")
         )
+        .def(py::init<Datatype, Extent, std::string>(),
+            py::arg("dtype"), py::arg("extent"), py::arg("options")
+        )
+        .def(py::init( [](py::dtype dt, Extent e, std::string options) {
+            auto const d = dtype_from_numpy( dt );
+            return new Dataset{d, e, std::move(options)};
+        }),
+            py::arg("dtype"), py::arg("extent"), py::arg("options")
+        )
 
         .def("__repr__",
             [](const Dataset &d) {
@@ -61,6 +70,7 @@ void init_Dataset(py::module &m) {
         .def_property_readonly("dtype", [](const Dataset &d) {
             return dtype_to_numpy( d.dtype );
         })
+        .def_readwrite("options", &Dataset::options)
     ;
 }
 
