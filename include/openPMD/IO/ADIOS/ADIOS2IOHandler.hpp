@@ -188,8 +188,8 @@ private:
 
     struct ParameterizedOperator
     {
-        adios2::Operator const op;
-        adios2::Params const params;
+        adios2::Operator op;
+        adios2::Params params;
     };
 
     std::vector< ParameterizedOperator > defaultOperators;

@@ -264,7 +264,30 @@ void ADIOS2IOHandlerImpl::createDataset(
         filePos->gd = ADIOS2FilePosition::GD::DATASET;
         auto const varName = filePositionToString( filePos );
 
-        auto operators = defaultOperators;
+        std::vector< ParameterizedOperator > operators;
+        nlohmann::json options = nlohmann::json::parse( parameters.options );
+        if( options.contains( "adios2" ) )
+        {
+            auxiliary::TracingJSON datasetConfig( options[ "adios2" ] );
+            auto datasetOperators = getOperators( datasetConfig );
+
+            operators = datasetOperators ? datasetOperators.get()
+                                         : defaultOperators;
+
+            auto shadow = datasetConfig.invertShadow();
+            if( shadow.size() > 0 )
+            {
+                std::cerr << "Warning: parts of the JSON configuration for "
+                             "ADIOS2 dataset '"
+                          << varName << "' remain unused:\n"
+                          << shadow << std::endl;
+            }
+        }
+        else
+        {
+            operators = defaultOperators;
+        }
+
         if( !parameters.compression.empty() )
         {
             auxiliary::Option< adios2::Operator > adiosOperator =
