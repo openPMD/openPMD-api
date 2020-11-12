@@ -92,21 +92,26 @@ ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
         return;
     }
     m_config = std::move( cfg[ "adios2" ] );
-    defaultOperators = getOperators().first;
+    auto operators = getOperators();
+    if( operators )
+    {
+        defaultOperators = std::move( operators.get() );
+    }
 }
 
-std::pair< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator >, bool >
+auxiliary::Option< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > >
 ADIOS2IOHandlerImpl::getOperators( auxiliary::TracingJSON cfg )
 {
+    using ret_t = auxiliary::Option< std::vector< ParameterizedOperator > >;
     std::vector< ParameterizedOperator > res;
     if( !cfg.json().contains( "dataset" ) )
     {
-        return std::make_pair( res, false );
+        return ret_t();
     }
     auto datasetConfig = cfg[ "dataset" ];
     if( !datasetConfig.json().contains( "operators" ) )
     {
-        return std::make_pair( res, false );
+        return ret_t();
     }
     auto _operators = datasetConfig[ "operators" ];
     nlohmann::json const & operators = _operators.json();
@@ -137,10 +142,10 @@ ADIOS2IOHandlerImpl::getOperators( auxiliary::TracingJSON cfg )
         }
     }
     _operators.declareFullyRead();
-    return std::make_pair( res, true );
+    return auxiliary::makeOption( std::move( res ) );
 }
 
-std::pair< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator >, bool >
+auxiliary::Option< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > >
 ADIOS2IOHandlerImpl::getOperators()
 {
     return getOperators( m_config );

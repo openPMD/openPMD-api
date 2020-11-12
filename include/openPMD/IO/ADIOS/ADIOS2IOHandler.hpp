@@ -228,11 +228,11 @@ private:
      * @return first parameter: the operators, second parameters: whether
      * operators have been configured
      */
-    std::pair< std::vector< ParameterizedOperator >, bool >
+    auxiliary::Option< std::vector< ParameterizedOperator > >
     getOperators( auxiliary::TracingJSON config );
 
     // use m_config
-    std::pair< std::vector< ParameterizedOperator >, bool >
+    auxiliary::Option< std::vector< ParameterizedOperator > >
     getOperators();
 
     /*
