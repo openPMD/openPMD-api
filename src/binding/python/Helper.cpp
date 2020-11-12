@@ -35,7 +35,7 @@ using namespace openPMD;
 
 void init_Helper(py::module &m) {
     m.def("list_series",
-        [](Series const & series, bool const longer) {
+        [](Series & series, bool const longer) {
             std::stringstream s;
             helper::listSeries( series, longer, s );
             py::print(s.str());

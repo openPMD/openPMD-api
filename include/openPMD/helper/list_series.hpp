@@ -39,7 +39,7 @@ namespace helper
      */
     std::ostream &
     listSeries(
-        Series const & series,
+        Series & series,
         bool const longer = false,
         std::ostream & out = std::cout
     );
