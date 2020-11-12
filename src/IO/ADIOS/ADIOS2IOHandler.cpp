@@ -271,7 +271,7 @@ void ADIOS2IOHandlerImpl::createDataset(
             auxiliary::TracingJSON datasetConfig( options[ "adios2" ] );
             auto datasetOperators = getOperators( datasetConfig );
 
-            operators = datasetOperators ? datasetOperators.get()
+            operators = datasetOperators ? std::move( datasetOperators.get() )
                                          : defaultOperators;
 
             auto shadow = datasetConfig.invertShadow();
