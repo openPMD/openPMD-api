@@ -27,9 +27,9 @@
 namespace openPMD
 {
 /**
- * A chunk consists of its offset, its extent
- * and the rank from which it was written.
- * If not specified explicitly, the rank will be assumed to be 0.
+ * Represents the meta info around a chunk in a dataset.
+ *
+ * A chunk consists of its offset and its extent
  */
 struct ChunkInfo
 {
@@ -48,6 +48,15 @@ struct ChunkInfo
     operator==( ChunkInfo const & other ) const;
 };
 
+/**
+ * Represents the meta info around a chunk that has been written by some
+ * data producing application.
+ * Produced by BaseRecordComponent::availableChunk.
+ *
+ * Carries along the usual chunk meta info also the rank from which
+ * it was written.
+ * If not specified explicitly, the rank will be assumed to be 0.
+ */
 struct WrittenChunkInfo : ChunkInfo
 {
     unsigned int mpi_rank = 0; //!< the MPI rank of the writing process
