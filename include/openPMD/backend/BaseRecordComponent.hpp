@@ -67,12 +67,14 @@ public:
      *   the writer has originally written.
      * * The JSON backend will reconstruct the chunks by iterating the dataset.
      * * The HDF5 backend will return the whole dataset as one large chunk.
+     *   HDF5's notion of chunking is currently ignored.
+     *   (https://support.hdfgroup.org/HDF5/doc/Advanced/Chunking/)
      *
      * The results depend solely on the backend and are independent of any
-     * openPMD-related information. Especially is this call explicitly unrelated
-     * to openPMD's concept of particle patches, which users may additionally
-     * wish to use to store user-defined, backend-independent chunking
-     * information on particle datasets.
+     * openPMD-related information. Note that this call currently does not take
+     * into account the openPMD concept of particle patches, which users
+     * may additionally wish to use to store user-defined, backend-independent
+     * chunking information on particle datasets.
      */
     ChunkTable
     availableChunks();

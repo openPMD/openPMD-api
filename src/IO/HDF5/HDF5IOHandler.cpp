@@ -401,36 +401,23 @@ HDF5IOHandlerImpl::availableChunks(
         "dataset "
         "during dataset read." );
 
-    // now let's figure out whether this one has chunks
-    hid_t propertyList = H5Dget_create_plist( dataset_id );
-    std::vector< hsize_t > chunkExtent( ndims, 0 );
-    int chunkDimensionality =
-        H5Pget_chunk( propertyList, ndims, chunkExtent.data() );
+    // // now let's figure out whether this one has chunks
+    // hid_t propertyList = H5Dget_create_plist( dataset_id );
+    // std::vector< hsize_t > chunkExtent( ndims, 0 );
+    // int chunkDimensionality =
+    //     H5Pget_chunk( propertyList, ndims, chunkExtent.data() );
 
-    if( chunkDimensionality < 0 )
-    {
-        std::cerr << R"END(
-[HDF5] Warning: HDF5 does not carry information on available chunks.
-       Returning instead the whole dataset as one chunk.
-       Some positions in the chunk may hold undefined data.
-)END" << std::endl;
-    }
-    else
-    {
-        // so, the dataset indeed has chunks
-        // alas, this backend doesn't write chunks, so for now, reading them is
-        // unimplemented
-        std::cerr << R"END(
-[HDF5] Warning: HDF5 dataset has chunked layout. Since the openPMD API does not
-       support writing chunked HDF5 datasets, the whole dataset will be
-       returned as one chunk.
-       Some positions in the chunk may hold undefined data.
-)END" << std::endl;
-        /*
-         * https://hdf5.io/develop/group___h5_d.html#gaccff213d3e0765b86f66d08dd9959807
-         * May or may not be helpful if implementing this properly one day.
-         */
-    }
+    // if( chunkDimensionality >= 0 )
+    // {
+    //     /*
+    //      * so, the dataset indeed has chunks
+    //      * alas, this backend doesn't write chunks, so for now, reading them
+    //      * is unimplemented
+    //      *
+    //      * https://hdf5.io/develop/group___h5_d.html#gaccff213d3e0765b86f66d08dd9959807
+    //      * May or may not be helpful if implementing this properly one day.
+    //      */
+    // }
 
     std::vector< hsize_t > dims( ndims, 0 );
     // return value is equal to ndims
