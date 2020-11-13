@@ -137,9 +137,9 @@ TEST_CASE( "available_chunks_test_json", "[serial][json]" )
          * Explicitly convert things to bool, so Catch doesn't get the splendid
          * idea to print the Chunk struct.
          */
-        REQUIRE( bool( table[ 0 ] == Chunk( { 2, 0 }, { 5, 4 } ) ) );
-        REQUIRE( bool( table[ 1 ] == Chunk( { 7, 0 }, { 2, 2 } ) ) );
-        REQUIRE( bool( table[ 2 ] == Chunk( { 8, 3 }, { 2, 1 } ) ) );
+        REQUIRE( bool( table[ 0 ] == WrittenChunkInfo( { 2, 0 }, { 5, 4 } ) ) );
+        REQUIRE( bool( table[ 1 ] == WrittenChunkInfo( { 7, 0 }, { 2, 2 } ) ) );
+        REQUIRE( bool( table[ 2 ] == WrittenChunkInfo( { 8, 3 }, { 2, 1 } ) ) );
     }
 }
 
@@ -1629,7 +1629,8 @@ TEST_CASE( "available_chunks_test_hdf5", "[serial][json]" )
          * Explicitly convert things to bool, so Catch doesn't get the splendid
          * idea to print the Chunk struct.
          */
-        REQUIRE( bool( table[ 0 ] == Chunk( { 0, 0 }, { height, 4 } ) ) );
+        REQUIRE(
+            bool( table[ 0 ] == WrittenChunkInfo( { 0, 0 }, { height, 4 } ) ) );
     }
 }
 

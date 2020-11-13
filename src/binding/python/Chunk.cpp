@@ -30,23 +30,38 @@ using namespace openPMD;
 
 
 void init_Chunk(py::module &m) {
-    py::class_<Chunk>(m, "Chunk")
+    py::class_<ChunkInfo>(m, "ChunkInfo")
         .def(py::init<Offset, Extent>(),
             py::arg("offset"), py::arg("extent"))
-        .def(py::init<Offset, Extent, int>(),
-            py::arg("offset"), py::arg("extent"), py::arg("rank"))
         .def("__repr__",
-            [](const Chunk & c) {
-                return "<openPMD.Chunk of dimensionality "
+            [](const ChunkInfo & c) {
+                return "<openPMD.ChunkInfo of dimensionality "
                     + std::to_string(c.offset.size()) + "'>";
             }
         )
         // .def_property_readonly("offset", [](Chunk & c){ return c.offset;   })
         // .def_property_readonly("extent", [](Chunk & c){ return c.extent;   })
         // .def_property_readonly("rank",   [](Chunk & c){ return c.mpi_rank; })
-        .def_readonly("offset", &Chunk::offset)
-        .def_readonly("extent", &Chunk::extent)
-        .def_readonly("mpi_rank",   &Chunk::mpi_rank  )
+        .def_readonly("offset", &ChunkInfo::offset)
+        .def_readonly("extent", &ChunkInfo::extent)
+    ;
+    py::class_<WrittenChunkInfo, ChunkInfo>(m, "WrittenChunkInfo")
+        .def(py::init<Offset, Extent>(),
+            py::arg("offset"), py::arg("extent"))
+        .def(py::init<Offset, Extent, int>(),
+            py::arg("offset"), py::arg("extent"), py::arg("rank"))
+        .def("__repr__",
+            [](const WrittenChunkInfo & c) {
+                return "<openPMD.WrittenChunkInfo of dimensionality "
+                    + std::to_string(c.offset.size()) + "'>";
+            }
+        )
+        // .def_property_readonly("offset", [](Chunk & c){ return c.offset;   })
+        // .def_property_readonly("extent", [](Chunk & c){ return c.extent;   })
+        // .def_property_readonly("rank",   [](Chunk & c){ return c.mpi_rank; })
+        .def_readonly("offset",   &WrittenChunkInfo::offset   )
+        .def_readonly("extent",   &WrittenChunkInfo::extent   )
+        .def_readonly("mpi_rank", &WrittenChunkInfo::mpi_rank )
     ;
 }
 

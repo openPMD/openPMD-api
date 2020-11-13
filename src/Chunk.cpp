@@ -22,22 +22,35 @@
 
 namespace openPMD
 {
-Chunk::Chunk( Offset offset_in, Extent extent_in, int mpi_rank_in )
-    : offset( std::move( offset_in ) )
-    , extent( std::move( extent_in ) )
-    , mpi_rank( mpi_rank_in < 0 ? 0 : mpi_rank_in )
-{
-}
-
-Chunk::Chunk( Offset offset_in, Extent extent_in )
-    : Chunk( std::move( offset_in ), std::move( extent_in ), 0 )
+ChunkInfo::ChunkInfo( Offset offset_in, Extent extent_in )
+    : offset( std::move( offset_in ) ), extent( std::move( extent_in ) )
 {
 }
 
 bool
-Chunk::operator==( Chunk const & other ) const
+ChunkInfo::operator==( ChunkInfo const & other ) const
 {
-    return this->mpi_rank == other.mpi_rank && this->offset == other.offset &&
-        this->extent == other.extent;
+    return this->offset == other.offset && this->extent == other.extent;
+}
+
+WrittenChunkInfo::WrittenChunkInfo(
+    Offset offset_in,
+    Extent extent_in,
+    int mpi_rank_in )
+    : ChunkInfo( std::move( offset_in ), std::move( extent_in ) )
+    , mpi_rank( mpi_rank_in < 0 ? 0 : mpi_rank_in )
+{
+}
+
+WrittenChunkInfo::WrittenChunkInfo( Offset offset_in, Extent extent_in )
+    : WrittenChunkInfo( std::move( offset_in ), std::move( extent_in ), 0 )
+{
+}
+
+bool
+WrittenChunkInfo::operator==( WrittenChunkInfo const & other ) const
+{
+    return this->mpi_rank == other.mpi_rank &&
+        this->ChunkInfo::operator==( other );
 }
 } // namespace openPMD

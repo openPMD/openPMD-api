@@ -316,7 +316,7 @@ namespace openPMD
              */
             if( !j.is_array() )
             {
-                return ChunkTable{ Chunk( Offset{}, Extent{} ) };
+                return ChunkTable{ WrittenChunkInfo( Offset{}, Extent{} ) };
             }
             ChunkTable res;
             size_t it = 0;
@@ -376,8 +376,10 @@ namespace openPMD
          * Check whether two chunks can be merged to form a large one
          * and optionally return that larger chunk
          */
-        auxiliary::Option< Chunk >
-        mergeChunks( Chunk const & chunk1, Chunk const & chunk2 )
+        auxiliary::Option< WrittenChunkInfo >
+        mergeChunks(
+            WrittenChunkInfo const & chunk1,
+            WrittenChunkInfo const & chunk2 )
         {
             /*
              * Idea:
@@ -389,7 +391,7 @@ namespace openPMD
             unsigned dimensionality = chunk1.extent.size();
             for( unsigned dim = 0; dim < dimensionality; ++dim )
             {
-                Chunk const *c1( &chunk1 ), *c2( &chunk2 );
+                WrittenChunkInfo const *c1( &chunk1 ), *c2( &chunk2 );
                 // check if one chunk is the extension of the other at
                 // dimension dim
                 // first, let's put things in order
@@ -428,9 +430,10 @@ namespace openPMD
                 Offset offset( c1->offset );
                 Extent extent( c1->extent );
                 extent[ dim ] += c2->extent[ dim ];
-                return auxiliary::makeOption( Chunk( offset, extent ) );
+                return auxiliary::makeOption(
+                    WrittenChunkInfo( offset, extent ) );
             }
-            return auxiliary::Option< Chunk >();
+            return auxiliary::Option< WrittenChunkInfo >();
         }
 
         /*
@@ -455,7 +458,7 @@ namespace openPMD
                     {
                         for( auto j = i + 1; j < table.end(); ++j )
                         {
-                            auxiliary::Option< Chunk > merged =
+                            auxiliary::Option< WrittenChunkInfo > merged =
                                 mergeChunks( *i, *j );
                             if( merged )
                             {

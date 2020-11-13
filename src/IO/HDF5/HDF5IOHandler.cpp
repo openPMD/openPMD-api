@@ -431,7 +431,7 @@ HDF5IOHandlerImpl::availableChunks(
         extent.push_back( e );
     }
     parameters.chunks->push_back(
-        Chunk( std::move( offset ), std::move( extent ) ) );
+        WrittenChunkInfo( std::move( offset ), std::move( extent ) ) );
 }
 
 void

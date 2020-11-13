@@ -31,7 +31,7 @@ namespace openPMD
  * and the rank from which it was written.
  * If not specified explicitly, the rank will be assumed to be 0.
  */
-struct Chunk
+struct ChunkInfo
 {
     Offset offset; //!< origin of the chunk
     Extent extent; //!< size of the chunk
@@ -40,12 +40,28 @@ struct Chunk
     /*
      * If rank is smaller than zero, will be converted to zero.
      */
-    explicit Chunk() = default;
-    Chunk( Offset, Extent, int mpi_rank );
-    Chunk( Offset, Extent );
+    explicit ChunkInfo() = default;
+    ChunkInfo( Offset, Extent, int mpi_rank );
+    ChunkInfo( Offset, Extent );
 
     bool
-    operator==( Chunk const & other ) const;
+    operator==( ChunkInfo const & other ) const;
 };
-using ChunkTable = std::vector< Chunk >;
+
+struct WrittenChunkInfo : ChunkInfo
+{
+    unsigned int mpi_rank = 0; //!< the MPI rank of the writing process
+
+    /*
+     * If rank is smaller than zero, will be converted to zero.
+     */
+    explicit WrittenChunkInfo() = default;
+    WrittenChunkInfo( Offset, Extent, int mpi_rank );
+    WrittenChunkInfo( Offset, Extent );
+
+    bool
+    operator==( WrittenChunkInfo const & other ) const;
+};
+
+using ChunkTable = std::vector< WrittenChunkInfo >;
 } // namespace openPMD
