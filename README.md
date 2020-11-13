@@ -359,10 +359,10 @@ The following people and institutions [contributed](https://github.com/openPMD/o
   project lead, releases, documentation, automated CI/CD, Python bindings, installation & packaging, prior reference implementations
 * [Fabian Koller (HZDR)](https://github.com/C0nsultant):
   initial library design and implementation with HDF5 & ADIOS1 backend
-* [Franz Poeschel (HZDR)](https://github.com/franzpoeschel):
+* [Franz Poeschel (CASUS)](https://github.com/franzpoeschel):
   added JSON & ADIOS2 backend, data staging/streaming
 * [Junmin Gu (LBNL)](https://github.com/guj):
-  non-collective parallel I/O fixes, ADIOS improvements
+  non-collective parallel I/O fixes, ADIOS improvements, benchmarks
 
 Further thanks go to improvements and contributions from:
 
@@ -397,6 +397,7 @@ The openPMD-api authors acknowledge support via the following programs.
 This project has received funding from the European Unions Horizon 2020 research and innovation programme under grant agreement No 654220.
 Supported by the Consortium for Advanced Modeling of Particles Accelerators (CAMPA), funded by the U.S. DOE Office of Science under Contract No. DE-AC02-05CH11231.
 Supported by the Exascale Computing Project (17-SC-20-SC), a collaborative effort of two U.S. Department of Energy organizations (Office of Science and the National Nuclear Security Administration).
+This work was partially funded by the Center of Advanced Systems Understanding (CASUS), which is financed by Germany's Federal Ministry of Education and Research (BMBF) and by the Saxon Ministry for Science, Culture and Tourism (SMWK) with tax funds on the basis of the budget approved by the Saxon State Parliament.
 
 ### Transitive Contributions
 
