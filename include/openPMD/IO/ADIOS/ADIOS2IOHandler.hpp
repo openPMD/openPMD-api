@@ -882,7 +882,16 @@ namespace detail
 
         template < typename BA > void enqueue( BA && ba, decltype( m_buffer ) & );
 
-        void flush( );
+        /**
+         * Flush deferred IO actions.
+         *
+         * @param performDatasetPutGets Run adios2::Engine::Perform(Puts|Gets)
+         *        If true, also clears m_buffer. If false, both should be done
+         *        manually at callside. (Helpful, if calling flush() before
+         *        e.g. ending a step.)
+         */
+        void
+        flush( bool performDatasetPutGets );
 
         /**
          * @brief Begin or end an ADIOS step.

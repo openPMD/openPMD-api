@@ -194,7 +194,7 @@ ADIOS2IOHandlerImpl::flush()
     {
         if ( m_dirty.find( p.first ) != m_dirty.end( ) )
         {
-            p.second->flush( );
+            p.second->flush( true );
         }
         else
         {
@@ -372,7 +372,10 @@ ADIOS2IOHandlerImpl::closeFile(
         auto it = m_fileData.find( fileIterator->second );
         if ( it != m_fileData.end( ) )
         {
-            it->second->flush( );
+            auto & filedata = *it->second;
+            filedata.flush( false );
+            filedata.getEngine().Close();
+            filedata.m_buffer.clear();
             m_fileData.erase( it );
         }
     }
@@ -1364,12 +1367,17 @@ namespace detail
         }
         if( m_engine )
         {
-            if( streamStatus == StreamStatus::DuringStep )
+            auto & engine = m_engine.get();
+            // might have been closed previously
+            if( engine )
             {
-                m_engine.get().EndStep();
+                if( streamStatus == StreamStatus::DuringStep )
+                {
+                    engine.EndStep();
+                }
+                engine.Close();
+                m_ADIOS.RemoveIO( m_IOName );
             }
-            m_engine.get().Close();
-            m_ADIOS.RemoveIO( m_IOName );
         }
     }
 
@@ -1595,7 +1603,8 @@ namespace detail
             new _BA( std::forward< BA >( ba ) ) ) );
     }
 
-    void BufferedActions::flush( )
+    void
+    BufferedActions::flush( bool performDatasetPutGets )
     {
         if( streamStatus == StreamStatus::StreamOver )
         {
@@ -1616,11 +1625,12 @@ namespace detail
                 requireActiveStep();
             }
         }
+        for( auto & ba : m_buffer )
         {
-            for( auto & ba : m_buffer )
-            {
-                ba->run( *this );
-            }
+            ba->run( *this );
+        }
+        if( performDatasetPutGets )
+        {
             // Flush() does not necessarily perform
             // deferred actions....
             switch ( m_mode )
@@ -1639,8 +1649,8 @@ namespace detail
             default:
                 break;
             }
+            m_buffer.clear();
         }
-        m_buffer.clear();
     }
 
     AdvanceStatus
@@ -1648,7 +1658,7 @@ namespace detail
     {
         if( useAdiosSteps == Steps::DontUseSteps )
         {
-            flush();
+            flush( true );
             return AdvanceStatus::OK;
         }
         switch( mode )
@@ -1668,8 +1678,9 @@ namespace detail
                 {
                     getEngine().BeginStep();
                 }
-                flush();
+                flush( false );
                 getEngine().EndStep();
+                m_buffer.clear();
                 uncommittedAttributes.clear();
                 streamStatus = StreamStatus::OutsideOfStep;
                 return AdvanceStatus::OK;
@@ -1684,8 +1695,9 @@ namespace detail
                 // return status is stored in m_lastStepStatus
                 if( streamStatus != StreamStatus::DuringStep )
                 {
-                    flush();
+                    flush( false );
                     adiosStatus = getEngine().BeginStep();
+                    m_buffer.clear();
                 }
                 AdvanceStatus res = AdvanceStatus::OK;
                 switch( adiosStatus )
