@@ -1605,11 +1605,14 @@ class APITest(unittest.TestCase):
   }
 }
 """
+        if not io.variants['adios2']:
+            return
         series = io.Series(
             "../samples/unittest_jsonConfiguredBP3.bp",
             io.Access_Type.create,
             global_config)
         if series.backend != 'ADIOS2':
+            # might happen, if env. var. OPENPMD_BP_BACKEND is used
             return
 
         DS = io.Dataset
