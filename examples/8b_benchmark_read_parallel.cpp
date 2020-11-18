@@ -326,7 +326,7 @@ public:
       }
 
     std::ostringstream s;
-    s <<" Full Scan:"; 
+    s <<" Full Scan:";
     Timer fullscanTimer(s.str(), m_MPIRank);
 
     Offset offset(grid.size(), 0);
@@ -374,10 +374,10 @@ public:
       {
         unsigned long blob = meshExtent[i]/fractionOnDim;
         if ( 0 == blob ) {
-          if ( m_MPIRank == 0 ) 
+          if ( m_MPIRank == 0 )
               std::cout<<"Unable to use franction:"<<fractionOnDim<<std::endl;
           return;
-        }        
+        }
       }
 
     bool atCenter      = ( (m_Pattern % 10 == 0) || (fractionOnDim == 1) );

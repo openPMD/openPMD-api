@@ -382,13 +382,13 @@ main( int argc, char *argv[] )
     int dataDim = 3;
     if (argc >= 6)
       dataDim = atoi( argv[5] );
-    
+
     if ( (dataDim > 3) || (dataDim < 0) )  {
-      if ( 0 == input.m_MPIRank) 
+      if ( 0 == input.m_MPIRank)
          std::cerr<<" Sorry, Only supports data up to 3D!"<<std::endl;
       return 0;
     }
-      
+
     if ( 0 == input.m_XFactor )
       input.m_XFactor = input.m_MPISize;
 
@@ -400,7 +400,7 @@ main( int argc, char *argv[] )
         input.m_Backend = which;
         if ( 1 == dataDim ) {
           OneDimPattern    p1(input);
-          p1.run();    
+          p1.run();
         } else if ( 2 == dataDim ) {
           TwoDimPattern    p2(input);
           p2.run();
@@ -409,7 +409,7 @@ main( int argc, char *argv[] )
           p3.run();
         }
       }
-    } 
+    }
       catch (std::exception const & ex )
     {
       if (0 == input.m_MPIRank) std::cout<<"Error: "<<ex.what()<<std::endl;
@@ -1052,7 +1052,7 @@ ThreeDimPattern::ThreeDimPattern(const TestInput& input)
     m_PatchUnitMesh = {m, 1, 1};
   else if ( input.m_YFactor % m == 0 )
     m_PatchUnitMesh = {1, m, 1};
-  else {     
+  else {
     m  = (input.m_XFactor * input.m_YFactor) / input.m_MPISize;
     if ( (m > 0) && ( (input.m_XFactor * input.m_YFactor) % input.m_MPISize == 0 ))
      {
