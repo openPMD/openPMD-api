@@ -11,58 +11,72 @@ MPI is used on clusters, e.g. large-scale supercomputers, to communicate between
 Reading
 -------
 
-C++
-^^^
+**Source**: examples/8b_benchmark_read_parallel.cpp
+   
 
-.. literalinclude:: 8b_benchmark_read_parallel.cpp
-   :language: cpp
+This benchmark is to read from the files written by 8a. 
 
-This benchmark is to write the files from 8a. 
-It takes a file prefix, and a read pattern
+The options are: a file prefix, and a read pattern
 
-if the files are in the format of  /path/8a_parallel_3Db_%07T.bp
 
-the input will be /path/8a_parallel_3Db <pattern>
+For example, if the files are in the format of  /path/8a_parallel_3Db_%07T.bp
+the input will be: /path/8a_parallel_3Db <pattern>
 
-Read options measures:
-- metadata only  (pattern = 1) 
-- or data retrieval time (after metadata loaded)
+The Read options intent to measure overall processing time in the following categories:
+
+* Metadata only  (pattern = 1) 
+* or data retrieval (after metadata loaded)
  
 The data retrieval is furthur divided into:
-1) fullscan (pattern = 1002002)
-2) slice the "rho" mesh (pattern = 5/15/25 for x/y/z slice) 
-3) slice the magnetic field ("Bx/By/Bz") (pattern = 55/65/75 for x/y/z slice)
-4) retrieve a block (pattern = 840, which means retrieve a center block using rank 0, block size 1/8 of each dimension)
+
+1. fullscan (pattern = 1002002 for 8 readers) 
+2. slice the "rho" mesh (pattern = 5/15/25 for x/y/z slice) 
+3. slice the magnetic field ("Bx/By/Bz") (pattern = 55/65/75 for x/y/z slice)
+4. retrieve a block (pattern = 840, retrieves a center block using rank 0 only. The block size is 1/8 of each dimension)
 
 
 
 Writing
 -------
 
-C++
-^^^
-
-.. literalinclude:: 8a_benchmark_write_parallel.cpp
-   :language: cpp
+*Source*: examples/8a_benchmark_write_parallel.cpp
 
 This benchmark writes a few meshes and particles, 
 either 1D, 2D or 3D. 
-The meshes needs to provide mini block dimensions, 
-e.g. [64, 32],  and currently the numbers are limited to 3 digits
-Another limitation is that in the z dimision has the same value as y dimension.
 
-Next we the define a grid based on the mini block. 
-e.g. [16, 8]. Then we actual mesh size is [64x16, 32x8]
-again, the numbers for this grid is limited to 3 digits. 
+The meshes are viewed as grid of mini blocks. 
+As an example, we assume the mini blocks dimension are [64, 32].
 
-R is particle to mesh ratio, single non-zero digit.
+Next we define the grid based on the mini block. 
+say, [16, 8]. Then our actual mesh size is [64x16, 32x8].
 
-U is either 0 (balanced, all ranks have same load) or 1 (unbalanced)
+*Limitation Attention*:
+
+1. Currently the numbers above are limited to 3 digits.  
+2. The z dimision has the same value as y dimension.
+ 
+There are also two single digit parameters: 
+
+* R is particle to mesh ratio, single non-zero digit.
+
+* U is either 0 (balanced, all ranks have same load) or 1 (unbalanced)
 
 Options (with above mesh)
   8016UR 32064 <oneBlockPerRank=1> <numIteration=1> <dim=3>
-  
-All files generated are group based. I.e. One file per iteration.
+ 
+ If we want to write a file with above mesh using 
+ 
+ * balanced load (U=0) 
+ * partical to mesh ratio be 1 (R=1)
+ * 10 iteration steps 
+ * 2D data 
+ * 1 block per rank 
+ 
+ The final input will look like: 
+ 
+ 801601 32064 1 10 2 
+ 
+*Note: All files generated are group based. I.e. One file per iteration.*
 
 
 
