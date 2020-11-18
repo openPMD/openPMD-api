@@ -374,10 +374,10 @@ public:
       {
         unsigned long blob = meshExtent[i]/fractionOnDim;
         if ( 0 == blob ) {
-	  if ( m_MPIRank == 0 ) 
+          if ( m_MPIRank == 0 ) 
               std::cout<<"Unable to use franction:"<<fractionOnDim<<std::endl;
-	  return;
-        }	    
+          return;
+        }        
       }
 
     bool atCenter      = ( (m_Pattern % 10 == 0) || (fractionOnDim == 1) );
@@ -502,8 +502,8 @@ public:
     so <<"Rank: "<<m_MPIRank<<" offset [ "; sc<<" count[ ";
     for ( unsigned int i=0; i<meshExtent.size(); i++ )
       {
-	so <<off[i]<<" ";
-	sc <<ext[i]<<" ";
+    so <<off[i]<<" ";
+    sc <<ext[i]<<" ";
       }
     so <<"]"; sc<<"]";
     std::cout<<so.str()<<sc.str()<<std::endl;

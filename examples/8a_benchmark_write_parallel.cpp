@@ -385,7 +385,7 @@ main( int argc, char *argv[] )
     
     if ( (dataDim > 3) || (dataDim < 0) )  {
       if ( 0 == input.m_MPIRank) 
-	std::cerr<<" Sorry, Only supports data up to 3D!"<<std::endl;
+         std::cerr<<" Sorry, Only supports data up to 3D!"<<std::endl;
       return 0;
     }
       
@@ -400,7 +400,7 @@ main( int argc, char *argv[] )
         input.m_Backend = which;
         if ( 1 == dataDim ) {
           OneDimPattern    p1(input);
-          p1.run();	
+          p1.run();    
         } else if ( 2 == dataDim ) {
           TwoDimPattern    p2(input);
           p2.run();
