@@ -557,12 +557,13 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
     if( IOHandler->m_frontendAccess == Access::READ_ONLY )
         for( auto & i : iterationsToFlush )
         {
+            bool dirtyRecursive = i.second.dirtyRecursive();
             if( *i.second.m_closed == Iteration::CloseStatus::ClosedInBackend )
             {
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
                 // verify that there have been no further accesses
-                if( i.second.dirtyRecursive() )
+                if( dirtyRecursive )
                 {
                     throw std::runtime_error(
                         "[Series] Detected illegal access to iteration that "
@@ -570,6 +571,36 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
                 }
                 continue;
             }
+            /*
+             * Opening a file is expensive, so let's do it only if necessary.
+             * Necessary if:
+             * 1. The iteration itself has been changed somewhere.
+             * 2. Or the Series has been changed globally in a manner that
+             *    requires adapting all iterations.
+             */
+            if( !dirtyRecursive && !this->dirty() )
+            {
+                continue;
+            }
+
+            // open the iteration's file again
+            std::stringstream iteration( "" );
+            iteration << std::setw( *m_filenamePadding ) << std::setfill( '0' )
+                      << i.first;
+            std::string filename =
+                *m_filenamePrefix + iteration.str() + *m_filenamePostfix;
+            Parameter< Operation::OPEN_FILE > fOpen;
+            fOpen.name = filename;
+            IOHandler->enqueue( IOTask( this, fOpen ) );
+
+            /* open base path */
+            Parameter< Operation::OPEN_PATH > pOpen;
+            pOpen.path = auxiliary::replace_first( basePath(), "%T/", "" );
+            IOHandler->enqueue( IOTask( &iterations, pOpen ) );
+            /* open iteration path */
+            pOpen.path = std::to_string( i.first );
+            IOHandler->enqueue( IOTask( &i.second, pOpen ) );
+
             i.second.flush();
             if( *i.second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
             {
@@ -584,6 +615,7 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
         bool allDirty = dirty();
         for( auto & i : iterationsToFlush )
         {
+            bool dirtyRecursive = i.second.dirtyRecursive();
             if( *i.second.m_closed == Iteration::CloseStatus::ClosedInBackend )
             {
                 // file corresponding with the iteration has previously been
@@ -595,12 +627,24 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
                         "[Series] Closed iteration has not been written. This "
                         "is an internal error.");
                 }
-                if( i.second.dirtyRecursive() )
+                if( dirtyRecursive )
                 {
                     throw std::runtime_error(
                         "[Series] Detected illegal access to iteration that "
                         "has been closed previously." );
                 }
+                continue;
+            }
+
+            /*
+             * Opening a file is expensive, so let's do it only if necessary.
+             * Necessary if:
+             * 1. The iteration itself has been changed somewhere.
+             * 2. Or the Series has been changed globally in a manner that
+             *    requires adapting all iterations.
+             */
+            if( !dirtyRecursive && !this->dirty() )
+            {
                 continue;
             }
             /* as there is only one series,
@@ -751,6 +795,7 @@ void
 Series::readFileBased()
 {
     Parameter< Operation::OPEN_FILE > fOpen;
+    Parameter< Operation::CLOSE_FILE > fClose;
     Parameter< Operation::READ_ATT > aRead;
 
     if( !auxiliary::directory_exists(IOHandler->directory) )
@@ -810,6 +855,8 @@ Series::readFileBased()
                 throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
 
             read();
+            IOHandler->enqueue(IOTask(this, fClose));
+            IOHandler->flush();
         }
     }
 

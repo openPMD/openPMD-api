@@ -315,7 +315,8 @@ namespace openPMD
         if ( fileIterator != m_files.end( ) )
         {
             putJsonContents( fileIterator->second );
-            fileIterator->second.invalidate( );
+            // do not invalidate the file
+            // it still exists, it is just not open
             m_files.erase( fileIterator );
         }
     }
