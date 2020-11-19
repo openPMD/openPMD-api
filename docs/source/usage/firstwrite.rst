@@ -76,7 +76,7 @@ Open
 
 Write into a new openPMD series in ``myOutput/data_<00...N>.h5``.
 Further file formats than ``.h5`` (`HDF5 <https://hdfgroup.org>`_) are supported:
-``.bp`` (`ADIOS1 <https://www.olcf.ornl.gov/center-projects/adios/>`_) or ``.json`` (`JSON <https://en.wikipedia.org/wiki/JSON#Example>`_).
+``.bp`` (`ADIOS1 <https://www.olcf.ornl.gov/center-projects/adios/>`_/`ADIOS2 <https://csmd.ornl.gov/software/adios2>`_) or ``.json`` (`JSON <https://en.wikipedia.org/wiki/JSON#Example>`_).
 
 C++11
 ^^^^^
