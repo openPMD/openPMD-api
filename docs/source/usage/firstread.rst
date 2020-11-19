@@ -78,7 +78,7 @@ Open
 
 Open an existing openPMD series in ``data<N>.h5``.
 Further file formats than ``.h5`` (`HDF5 <https://hdfgroup.org>`_) are supported:
-``.bp`` (`ADIOS1 <https://www.olcf.ornl.gov/center-projects/adios/>`_) or ``.json`` (`JSON <https://en.wikipedia.org/wiki/JSON#Example>`_).
+``.bp`` (`ADIOS1 <https://www.olcf.ornl.gov/center-projects/adios/>`_/`ADIOS2 <https://csmd.ornl.gov/software/adios2>`_) or ``.json`` (`JSON <https://en.wikipedia.org/wiki/JSON#Example>`_).
 
 C++11
 ^^^^^
@@ -243,7 +243,7 @@ Python
 .. code-block:: python3
 
    # returns an allocated but
-   # undefined numpy array
+   # invalid numpy array
    x_data = E_x.load_chunk()
 
 .. attention::
@@ -251,12 +251,35 @@ Python
    After registering a data chunk such as ``x_data`` for loading, it MUST NOT be modified or deleted until the ``flush()`` step is performed!
    **You must not yet access** ``x_data`` **!**
 
+One can also request to load a slice of data:
+
+C++11
+^^^^^
+
+.. code-block:: cpp
+
+   Extent extent = E_x.getExtent();
+   extent.at(2) = 1;
+   std::shared_ptr< double > x_slice_data =
+       E_x.loadChunk< double >(
+           io::Offset{0, 0, 4}, extent);
+
+Python
+^^^^^^
+
+.. code-block:: python3
+
+   # we support slice syntax, too
+   x_slice_data = E_x[:, :, 4]
+
+Don't forget that we still need to ``flush()``.
+
 Flush Chunk
 -----------
 
 We now flush the registered data chunks and fill them with actual data from the I/O backend.
 Flushing several chunks at once allows to increase I/O performance significantly.
-**Only after that**, the variable ``x_data`` can be read, manipulated and/or deleted.
+**Only after that**, the variables ``x_data`` and ``x_slice_data`` can be read, manipulated and/or deleted.
 
 C++11
 ^^^^^
@@ -275,7 +298,7 @@ Python
 Data
 -----
 
-We can now work with the newly loaded data in ``x_data``:
+We can now work with the newly loaded data in ``x_data`` (or ``x_slice_data``):
 
 C++11
 ^^^^^
