@@ -18,11 +18,8 @@ jobs:
         run: |
           choco config get cacheLocation
           choco install --no-progress cygwin
-      - name: Set Environment
-        shell: cmd
-        run: |
-          echo C:\\tools\\cygwin\\bin > %GITHUB_PATH%
-          echo C:\\tools\\cygwin\\usr\\bin >> %GITHUB_PATH%
+          echo "C:\\tools\\cygwin\\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8
+          echo "C:\\tools\\cygwin\\usr\\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Install dependencies
         shell: cmd
         run: |
@@ -50,11 +47,8 @@ jobs:
         run: |
           choco config get cacheLocation
           choco install --no-progress cygwin
-      - name: Set Environment
-        shell: cmd
-        run: |
-          echo C:\\tools\\cygwin\\bin > %GITHUB_PATH%
-          echo C:\\tools\\cygwin\\usr\\bin >> %GITHUB_PATH%
+          echo "C:\\tools\\cygwin\\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8
+          echo "C:\\tools\\cygwin\\usr\\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Install dependencies
         shell: cmd
         run: |
