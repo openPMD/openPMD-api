@@ -740,7 +740,7 @@ main( int argc, char *argv[] )
         if ( types[1] == 'z')
           input.m_Pattern = 75;
       } else {
-	input.m_Pattern = atoi(argv[2]);
+    input.m_Pattern = atoi(argv[2]);
       }
     }
 

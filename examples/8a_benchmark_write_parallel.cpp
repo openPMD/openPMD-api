@@ -487,7 +487,7 @@ main( int argc, char *argv[] )
     int dataDim = parseArgs(argc, argv, input);
     if ( ( dataDim <= 0 ) || ( dataDim > 3 ) ) {
       if ( 0 == input.m_MPIRank)
-	std::cerr<<" Sorry, Only supports data 1D 2D 3D! not "<<dataDim<<std::endl;
+    std::cerr<<" Sorry, Only supports data 1D 2D 3D! not "<<dataDim<<std::endl;
       return -1;
     }
 
@@ -504,15 +504,15 @@ main( int argc, char *argv[] )
         input.m_Backend = which;
         if ( 1 == dataDim ) {
           OneDimPattern    p1(input);
-	  p1.PrintMe();
+      p1.PrintMe();
           //p1.run();
         } else if ( 2 == dataDim ) {
           TwoDimPattern    p2(input);
-	  p2.PrintMe();
+      p2.PrintMe();
           //p2.run();
         } else {
           ThreeDimPattern  p3(input);
-	  p3.PrintMe();
+      p3.PrintMe();
           //p3.run();
         }
       }
