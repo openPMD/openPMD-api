@@ -12,19 +12,22 @@ jobs:
   cmake:
     runs-on: [windows-2019]
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    defaults:
+      run:
+        shell: msys2 {0}
     steps:
+      - uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: >-
+            base-devel
+            gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-hdf5
+            mingw-w64-x86_64-python
+            mingw-w64-x86_64-python-numpy
       - uses: actions/checkout@v2
-      - name: Install dependencies
-        run: |
-          $env:PATH = "C:\msys64\mingw64\bin;C:\msys64\usr\bin;$origPath"
-          bash.exe -c "pacman-key --init 2>&1"
-          bash.exe -c "pacman-key --populate msys2 2>&1"
-          pacman -S --noconfirm --needed --noprogressbar mingw64/mingw-w64-x86_64-hdf5
-          pacman -S --noconfirm --needed --noprogressbar mingw64/mingw-w64-x86_64-python
-          pacman -S --noconfirm --needed --noprogressbar mingw64/mingw-w64-x86_64-python-numpy
-#          make,python37-devel,python37-numpy,zlib-devel
       - name: Build
-        shell: cmd
         run: |
           cmake -S . -B build -G "MSYS Makefiles"
           cmake --build build --parallel 2
