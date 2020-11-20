@@ -23,6 +23,9 @@
 #include "openPMD/config.hpp"
 #if openPMD_HAVE_HDF5
 #   include "openPMD/IO/AbstractIOHandlerImpl.hpp"
+
+#   include "openPMD/auxiliary/Option.hpp"
+
 #   include <hdf5.h>
 #   include <unordered_map>
 #   include <unordered_set>
@@ -58,7 +61,7 @@ namespace openPMD
         void listDatasets(Writable*, Parameter< Operation::LIST_DATASETS > &) override;
         void listAttributes(Writable*, Parameter< Operation::LIST_ATTS > &) override;
 
-        std::unordered_map< Writable*, hid_t > m_fileIDs;
+        std::unordered_map< Writable*, std::string > m_fileNames;
         std::unordered_map< std::string,  hid_t > m_fileNamesWithID;
 
         std::unordered_set< hid_t > m_openFileIDs;
@@ -71,6 +74,14 @@ namespace openPMD
         hid_t m_H5T_CFLOAT;
         hid_t m_H5T_CDOUBLE;
         hid_t m_H5T_CLONG_DOUBLE;
+
+    private:
+        struct File
+        {
+            std::string name;
+            hid_t id;
+        };
+        auxiliary::Option< File > getFile( Writable * );
     }; // HDF5IOHandlerImpl
 #else
     class HDF5IOHandlerImpl

@@ -24,6 +24,7 @@
 #include "VariantSrc.hpp"
 
 #include <utility> // std::forward, std::move
+#include <type_traits>
 
 
 namespace openPMD
@@ -162,10 +163,11 @@ namespace auxiliary
     };
 
     template< typename T >
-    Option< T >
+    Option< typename std::decay< T >::type >
     makeOption( T && val )
     {
-        return Option< T >( std::forward< T >( val ) );
+        return Option< typename std::decay< T >::type >(
+            std::forward< T >( val ) );
     }
 } // namespace auxiliary
 } // namespace openPMD
