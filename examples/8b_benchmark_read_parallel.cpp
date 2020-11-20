@@ -595,7 +595,7 @@ public:
     Extent meshExtent = bx.getExtent();
 
     if ( bx.getExtent().size() != 3) {
-      if (m_MPIRank == 0) 
+      if (m_MPIRank == 0)
           std::cerr<<" Field needs to be on 3D mesh. "<<std::endl;
         return;
       }
