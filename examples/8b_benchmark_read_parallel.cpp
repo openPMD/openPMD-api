@@ -4,7 +4,7 @@
  *
  * openPMD-api is free software: you can redistribute it and/or modify
  * it under the terms of of either the GNU General Public License or
- 1;95;0c* the GNU Lesser General Public License as published by
+ * the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
@@ -29,6 +29,9 @@
 #include <vector>
 #include <fstream>
 #include <algorithm>
+#include <ostream>
+#include <istream>
+#include <sstream>
 
 #if openPMD_HAVE_ADIOS2
 #   include <adios2.h>
@@ -220,7 +223,8 @@ public:
       read(filename);
     }
 
-    return; // not doing group based..
+    return; // not doing group based..yet
+    /*
     { // group based
       std::ostringstream s;
       s <<prefix<<m_Backend;
@@ -229,6 +233,7 @@ public:
 
       read(filename);
     }
+    */
   } // run
 
 
@@ -715,8 +720,29 @@ main( int argc, char *argv[] )
 
     std::string prefix = argv[1];
 
-    if (argc >= 3)
-      input.m_Pattern = atoi(argv[2]);
+    if (argc >= 3) {
+      std::string types = argv[2];
+
+      if ( types[0] == 'm' ) {
+       input.m_Pattern = 1;
+      } else if ( types[0] == 's' ) {
+        if ( types[1] == 'x')
+          input.m_Pattern = 5;
+        if ( types[1] == 'y')
+          input.m_Pattern = 15;
+        if ( types[1] == 'z')
+          input.m_Pattern = 25;
+      } else if ( types[0] == 'f' ) {
+        if ( types[1] == 'x')
+          input.m_Pattern = 55;
+        if ( types[1] == 'y')
+          input.m_Pattern = 65;
+        if ( types[1] == 'z')
+          input.m_Pattern = 75;
+      } else {
+	input.m_Pattern = atoi(argv[2]);
+      }
+    }
 
     auto backends = getBackends();
     for ( auto which: backends )

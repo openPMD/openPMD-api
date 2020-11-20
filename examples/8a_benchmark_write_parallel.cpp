@@ -28,6 +28,9 @@
 #include <random>
 #include <vector>
 #include <fstream>
+#include <ostream>
+#include <istream>
+#include <sstream>
 
 #if openPMD_HAVE_ADIOS2
 #   include <adios2.h>
@@ -309,6 +312,8 @@ public:
   int m_MPIRank = 0; //!< MPI rank
   unsigned long m_XBulk = 64ul; //!< min num of elements at X dimension
   unsigned long m_YBulk = 32ul;  //!< min num of elements at Y dimension
+  unsigned long m_ZBulk = 32ul;
+  int m_Dim = 3; // mesh  dim;
   /** number of subdivisions for the elements
    *
    * note that with h5collect mode, m_Seg must be 1
@@ -321,25 +326,100 @@ public:
   int m_Ratio = 1; //! particle:mesh ratio
   unsigned long  m_XFactor = 0; // if not overwritten, use m_MPISize
   unsigned long  m_YFactor = 8;
+  unsigned long  m_ZFactor = 8;
 }; // class TestInput
 
 
-
-
-/**     TEST MAIN
- *
- *     description of runtime options/flags
- */
-int
-main( int argc, char *argv[] )
+void parse(TestInput& input, std::string line)
 {
-    MPI_Init( &argc, &argv );
-    TestInput input;
+  // no valid input a=b
+  if ( line.size() <= 3 )
+    return;
+  if ( line[0] == '#' )
+    return;
 
-    MPI_Comm_size( MPI_COMM_WORLD, &input.m_MPISize );
-    MPI_Comm_rank( MPI_COMM_WORLD, &input.m_MPIRank );
+  std::istringstream iline(line);
 
-    Timer g( "  Main  ", input.m_MPIRank );
+  std::string s;
+  std::vector<std::string> vec;
+  while ( std::getline( iline, s, '=' ) )
+    vec.push_back(s);
+
+  if ( vec.size() != 2 )
+    return;
+
+  if ( vec[0].compare("dim") == 0 ) {
+    input.m_Dim = atoi(vec[1].c_str());
+    return;
+  }
+
+  if ( vec[0].compare("balanced") == 0 ) {
+    if ( vec[1].compare("false") == 0 )
+      input.m_Unbalance = true;
+    return;
+  }
+
+  if ( vec[0].compare("ratio") == 0 ) {
+    input.m_Ratio = atoi(vec[1].c_str());
+    return;
+  }
+
+  if ( vec[0].compare("steps") == 0 ) {
+    input.m_Steps = atoi(vec[1].c_str());
+    return;
+  }
+
+  if ( vec[0].compare("rankBlocks") == 0 ) {
+    if ( vec[1].compare("false") == 0 )
+      input.m_Seg = 10;
+    return;
+  }
+
+  // now vec[1] is N-dim integers
+  std::vector<unsigned long> numbers;
+  std::istringstream tmp(vec[1]);
+  while ( std::getline( tmp, s, ' ' ) )
+    numbers.push_back(strtoul( s.c_str(), NULL, 0 ));
+
+  if ( (numbers.size() == 0) || ( numbers.size() != input.m_Dim ) ) {
+    if ( input.m_MPIRank == 0 )
+      std::cout<<vec[1]<<" Expecting input: "<<input.m_Dim<<" dimensions."<<numbers.size()<<std::endl;
+    return;
+  }
+
+  if ( vec[0].compare("minBlock") == 0 ) {
+    input.m_XBulk = numbers[0];
+    if (numbers.size() > 0) input.m_YBulk = numbers[1];
+    if (numbers.size() > 1) input.m_ZBulk = numbers[2];
+  }
+
+  if ( vec[0].compare("grid") == 0 ) {
+    input.m_XFactor = numbers[0];
+    if (numbers.size() > 0) input.m_YFactor = numbers[1];
+    if (numbers.size() > 1) input.m_ZFactor = numbers[2];
+  }
+
+  //std::cout<<vec[0]<<"  "<<vec[1]<<std::endl;
+}
+
+int parseArgs( int argc, char *argv[], TestInput& input )
+{
+  if ( argc == 2 ) {
+    std::fstream infile;
+    infile.open(argv[1], std::ios::in);
+    if ( !infile.is_open() ) {
+      if ( input.m_MPIRank == 0 ) std::cout<< "No such file: "<<argv[1]<<std::endl;
+      return -1;
+    }
+
+    std::string tp;
+    while(getline(infile, tp)) {
+      parse(input, tp);
+    }
+
+    infile.close();
+    return input.m_Dim;
+  }
 
     if( argc >= 2 ) {
       // coded as:  b..b/aaa/c/d=[Yfactor][Xfactor][Balance][Ratio]
@@ -357,6 +437,7 @@ main( int argc, char *argv[] )
            if ( input.m_XFactor > 1000 ) {
                 input.m_YFactor = input.m_XFactor/1000;
                 input.m_XFactor = input.m_XFactor % 1000;
+                input.m_ZFactor = input.m_YFactor;
            }
       }
     }
@@ -379,15 +460,38 @@ main( int argc, char *argv[] )
     if( argc >= 5 )
         input.m_Steps = atoi( argv[4] );
 
-    int dataDim = 3;
-    if (argc >= 6)
-      dataDim = atoi( argv[5] );
 
-    if ( (dataDim > 3) || (dataDim < 0) )  {
+    if (argc >= 6)
+      input.m_Dim = atoi( argv[5] );
+
+    //if ( (dataDim > 3) || (dataDim < 0) )  {
+    //return -1;
+    //}
+
+    //input.m_Dim = dataDim;
+    return input.m_Dim;
+}
+/**     TEST MAIN
+ *
+ *     description of runtime options/flags
+ */
+int
+main( int argc, char *argv[] )
+{
+    MPI_Init( &argc, &argv );
+    TestInput input;
+
+    MPI_Comm_size( MPI_COMM_WORLD, &input.m_MPISize );
+    MPI_Comm_rank( MPI_COMM_WORLD, &input.m_MPIRank );
+
+    int dataDim = parseArgs(argc, argv, input);
+    if ( ( dataDim <= 0 ) || ( dataDim > 3 ) ) {
       if ( 0 == input.m_MPIRank)
-         std::cerr<<" Sorry, Only supports data up to 3D!"<<std::endl;
-      return 0;
+	std::cerr<<" Sorry, Only supports data 1D 2D 3D! not "<<dataDim<<std::endl;
+      return -1;
     }
+
+    Timer g( "  Main  ", input.m_MPIRank );
 
     if ( 0 == input.m_XFactor )
       input.m_XFactor = input.m_MPISize;
@@ -400,13 +504,16 @@ main( int argc, char *argv[] )
         input.m_Backend = which;
         if ( 1 == dataDim ) {
           OneDimPattern    p1(input);
-          p1.run();
+	  p1.PrintMe();
+          //p1.run();
         } else if ( 2 == dataDim ) {
           TwoDimPattern    p2(input);
-          p2.run();
+	  p2.PrintMe();
+          //p2.run();
         } else {
           ThreeDimPattern  p3(input);
-          p3.run();
+	  p3.PrintMe();
+          //p3.run();
         }
       }
     }
@@ -1028,21 +1135,21 @@ ThreeDimPattern::ThreeDimPattern(const TestInput& input)
 {
   {
     m_GlobalMesh = { input.m_XBulk * input.m_XFactor,
-             input.m_YBulk * input.m_YFactor,
-             input.m_YBulk * input.m_YFactor }; // Z & Y have same size
+                     input.m_YBulk * input.m_YFactor,
+                     input.m_ZBulk * input.m_ZFactor }; // Z & Y have same size
 
-    m_MinBlock = { input.m_XBulk, input.m_YBulk, input.m_YBulk };
-    m_GlobalUnitMesh = { input.m_XFactor, input.m_YFactor, input.m_YFactor };
+    m_MinBlock = { input.m_XBulk, input.m_YBulk, input.m_ZBulk };
+    m_GlobalUnitMesh = { input.m_XFactor, input.m_YFactor, input.m_ZFactor };
 
     PrintMe();
   }
 
-  unsigned long zFactor = input.m_YFactor;
-  auto m = (zFactor * input.m_XFactor * input.m_YFactor) % input.m_MPISize;
+  //unsigned long zFactor = input.m_YFactor;
+  auto m = (input.m_ZFactor * input.m_XFactor * input.m_YFactor) % input.m_MPISize;
   if ( m != 0)
       throw std::runtime_error( "Unable to balance load for 3D mesh among ranks ");
 
-  m = (zFactor * input.m_XFactor * input.m_YFactor) / input.m_MPISize;
+  m = (input.m_ZFactor * input.m_XFactor * input.m_YFactor) / input.m_MPISize;
 
   if ( input.m_XFactor % input.m_MPISize == 0 )
     m_PatchUnitMesh = { input.m_XFactor / input.m_MPISize, m_GlobalUnitMesh[1], m_GlobalUnitMesh[2] };
@@ -1052,14 +1159,16 @@ ThreeDimPattern::ThreeDimPattern(const TestInput& input)
     m_PatchUnitMesh = {m, 1, 1};
   else if ( input.m_YFactor % m == 0 )
     m_PatchUnitMesh = {1, m, 1};
+  else if ( input.m_ZFactor % m == 0 )
+    m_PatchUnitMesh = {1, 1, m};
   else {
     m  = (input.m_XFactor * input.m_YFactor) / input.m_MPISize;
     if ( (m > 0) && ( (input.m_XFactor * input.m_YFactor) % input.m_MPISize == 0 ))
      {
       if ( input.m_XFactor % m  == 0 )
-         m_PatchUnitMesh = {m, 1, zFactor};
+         m_PatchUnitMesh = {m, 1, input.m_ZFactor};
       else if ( input.m_YFactor % m == 0 )
-         m_PatchUnitMesh = {1, m, zFactor};
+         m_PatchUnitMesh = {1, m, input.m_ZFactor};
       else
          throw std::runtime_error( "Wait for next version with other 3D patch configurations" );
      }
