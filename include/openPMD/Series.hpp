@@ -271,6 +271,7 @@ OPENPMD_private:
     void readGroupBased();
     void readBase();
     void read();
+    void openIteration( uint64_t index, Iteration iteration );
 
     static constexpr char const * const BASEPATH = "/data/%T/";
 

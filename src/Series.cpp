@@ -583,23 +583,7 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
                 continue;
             }
 
-            // open the iteration's file again
-            std::stringstream iteration( "" );
-            iteration << std::setw( *m_filenamePadding ) << std::setfill( '0' )
-                      << i.first;
-            std::string filename =
-                *m_filenamePrefix + iteration.str() + *m_filenamePostfix;
-            Parameter< Operation::OPEN_FILE > fOpen;
-            fOpen.name = filename;
-            IOHandler->enqueue( IOTask( this, fOpen ) );
-
-            /* open base path */
-            Parameter< Operation::OPEN_PATH > pOpen;
-            pOpen.path = auxiliary::replace_first( basePath(), "%T/", "" );
-            IOHandler->enqueue( IOTask( &iterations, pOpen ) );
-            /* open iteration path */
-            pOpen.path = std::to_string( i.first );
-            IOHandler->enqueue( IOTask( &i.second, pOpen ) );
+            openIteration( i.first, i.second );
 
             i.second.flush();
             if( *i.second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
@@ -1037,6 +1021,27 @@ Series::read()
     readAttributes();
 }
 
+void
+Series::openIteration( uint64_t index, Iteration iteration )
+{
+    // open the iteration's file again
+    std::stringstream name( "" );
+    name << std::setw( *m_filenamePadding ) << std::setfill( '0' ) << index;
+    std::string filename = *m_filenamePrefix + name.str() + *m_filenamePostfix;
+
+    Parameter< Operation::OPEN_FILE > fOpen;
+    fOpen.name = filename;
+    IOHandler->enqueue( IOTask( this, fOpen ) );
+
+    /* open base path */
+    Parameter< Operation::OPEN_PATH > pOpen;
+    pOpen.path = auxiliary::replace_first( basePath(), "%T/", "" );
+    IOHandler->enqueue( IOTask( &iterations, pOpen ) );
+    /* open iteration path */
+    pOpen.path = std::to_string( index );
+    IOHandler->enqueue( IOTask( &iteration, pOpen ) );
+}
+
 namespace
 {
     std::string
@@ -1113,5 +1118,5 @@ namespace
                 return [](std::string const &) -> std::tuple<bool, int> { return std::tuple<bool, int>{false, 0}; };
         }
     }
-} // namespace [anonymous]
+} // namespace
 } // namespace openPMD

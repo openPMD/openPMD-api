@@ -223,18 +223,7 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
 
         // operations for read/read-write mode
         /* open file */
-        Parameter< Operation::OPEN_FILE > fOpen;
-        fOpen.name = filename;
-        IOHandler->enqueue(IOTask(s, fOpen));
-
-        /* open basePath */
-        Parameter< Operation::OPEN_PATH > pOpen;
-        pOpen.path = auxiliary::replace_first(s->basePath(), "%T/", "");
-        IOHandler->enqueue(IOTask(&s->iterations, pOpen));
-
-        /* open iteration path */
-        pOpen.path = std::to_string(i);
-        IOHandler->enqueue(IOTask(this, pOpen));
+        s->openIteration( i, *this );
     }
 
     flush();
