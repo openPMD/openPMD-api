@@ -478,7 +478,8 @@ public:
       return false;
 
     if ( !rankZeroOnly && (m_MPISize == 1) ) // rankZero has to be on
-      return false;
+      //return false;
+      rankZeroOnly = true;
 
     //if ( whichDim < 0 ) return false;
 
@@ -507,8 +508,8 @@ public:
     so <<"Rank: "<<m_MPIRank<<" offset [ "; sc<<" count[ ";
     for ( unsigned int i=0; i<meshExtent.size(); i++ )
       {
-    so <<off[i]<<" ";
-    sc <<ext[i]<<" ";
+        so <<off[i]<<" ";
+        sc <<ext[i]<<" ";
       }
     so <<"]"; sc<<"]";
     std::cout<<so.str()<<sc.str()<<std::endl;
@@ -591,10 +592,17 @@ public:
     whichDim -= 5;
 
     MeshRecordComponent bx = series.iterations[ts].meshes["B"]["x"];
+    Extent meshExtent = bx.getExtent();
+
+    if ( bx.getExtent().size() != 3) {
+      if (m_MPIRank == 0) 
+          std::cerr<<" Field needs to be on 3D mesh. "<<std::endl;
+        return;
+      }
+
     MeshRecordComponent by = series.iterations[ts].meshes["B"]["y"];
     MeshRecordComponent bz = series.iterations[ts].meshes["B"]["z"];
 
-    Extent meshExtent = bx.getExtent();
 
     Offset off(meshExtent.size(),0);
     Extent ext(meshExtent.size(),1);
@@ -740,7 +748,7 @@ main( int argc, char *argv[] )
         if ( types[1] == 'z')
           input.m_Pattern = 75;
       } else {
-    input.m_Pattern = atoi(argv[2]);
+          input.m_Pattern = atoi(argv[2]);
       }
     }
 

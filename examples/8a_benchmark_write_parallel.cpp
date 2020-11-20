@@ -381,9 +381,9 @@ void parse(TestInput& input, std::string line)
   while ( std::getline( tmp, s, ' ' ) )
     numbers.push_back(strtoul( s.c_str(), NULL, 0 ));
 
-  if ( (numbers.size() == 0) || ( numbers.size() != input.m_Dim ) ) {
+  if ( (numbers.size() == 0) || ((numbers.size() - input.m_Dim) != 0) ) {
     if ( input.m_MPIRank == 0 )
-      std::cout<<vec[1]<<" Expecting input: "<<input.m_Dim<<" dimensions."<<numbers.size()<<std::endl;
+      std::cout<<vec[1]<<" Expecting "<<input.m_Dim<<" dimensions. But given input is"<<numbers.size()<<std::endl;
     return;
   }
 
@@ -487,7 +487,7 @@ main( int argc, char *argv[] )
     int dataDim = parseArgs(argc, argv, input);
     if ( ( dataDim <= 0 ) || ( dataDim > 3 ) ) {
       if ( 0 == input.m_MPIRank)
-    std::cerr<<" Sorry, Only supports data 1D 2D 3D! not "<<dataDim<<std::endl;
+           std::cerr<<" Sorry, Only supports data 1D 2D 3D! not "<<dataDim<<std::endl;
       return -1;
     }
 
