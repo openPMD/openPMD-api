@@ -20,19 +20,29 @@ The options are: a file prefix, and a read pattern
 
 
 For example, if the files are in the format of  /path/8a_parallel_3Db_%07T.bp
-the input will be: /path/8a_parallel_3Db <pattern>
+the input will be: /path/8a_parallel_3Db <options>
 
 The Read options intent to measure overall processing time in the following categories:
 
-* Metadata only  (pattern = 1)
+* Metadata only  (option = m) 
 * or data retrieval (after metadata loaded)
 
 The data retrieval is furthur divided into:
 
-1. fullscan (pattern = 1002002 for 8 readers)
-2. slice the "rho" mesh (pattern = 5/15/25 for x/y/z slice)
-3. slice the magnetic field ("Bx/By/Bz") (pattern = 55/65/75 for x/y/z slice)
-4. retrieve a block (pattern = 840, retrieves a center block using rank 0 only. The block size is 1/8 of each dimension)
+* slice the "rho" mesh  
+    (options = sx/sy/sz depends on which direction. e.g. sx implies x=0.)
+* slice on the 3D magnetic field(e.g. find values for "Bx", "By" and "Bz") 
+    (options = fx/fy/fz depends on which direction. e.g. fx implies x=0.)
+ 
+So here are the options one can use to read a file:
+
+* m
+* sx 
+* sy
+* sz
+* fx
+* fy
+* fz
 
 
 
@@ -45,38 +55,33 @@ This benchmark writes a few meshes and particles,
 either 1D, 2D or 3D.
 
 The meshes are viewed as grid of mini blocks.
-As an example, we assume the mini blocks dimension are [64, 32].
+As an example, we assume the mini blocks dimension are [16, 32, 32].
+
 
 Next we define the grid based on the mini block.
-say, [16, 8]. Then our actual mesh size is [64x16, 32x8].
+say, [32, 32, 16]. Then our actual mesh size is [16x32, 32x32, 32x16].
 
-*Limitation Attention*:
 
-1. Currently the numbers above are limited to 3 digits.
-2. The z dimision has the same value as y dimension.
+Here is a sample input file:
+::
+   dim=3
+   balanced=true
+   ratio=1
+   steps=10
+   minBlock=16 32 32
+   grid=32 32 16
+::
+ 
 
-There are also two single digit parameters:
+ With the above input file,  we will create an openPMD file with the above mesh using
 
-* R is particle to mesh ratio, single non-zero digit.
-
-* U is either 0 (balanced, all ranks have same load) or 1 (unbalanced)
-
-Options (with above mesh)
-  8016UR 32064 <oneBlockPerRank=1> <numIteration=1> <dim=3>
-
- If we want to write a file with above mesh using
-
- * balanced load (U=0)
- * partical to mesh ratio be 1 (R=1)
+ * 3D data
+ * balanced load  
+ * particle to mesh ratio = 1 
  * 10 iteration steps
- * 2D data
- * 1 block per rank
+ 
 
- The final input will look like:
-
- 801601 32064 1 10 2
-
-*Note: All files generated are group based. I.e. One file per iteration.*
+*Note: All files generated are group based. i.e. One file per iteration.*
 
 
 
