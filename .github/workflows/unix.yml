@@ -33,7 +33,7 @@ jobs:
         sudo apt-get install clang-5.0
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-5.0, CXX: clang++-5.0, CXXFLAGS: -Werror}
+      env: {CC: clang-5.0, CXX: clang++-5.0, CXXFLAGS: -Werror -Wno-deprecated-declarations}
       run: |
         eval $(spack env activate --sh .github/ci/spack-envs/clang5_nopy_nompi_h5/)
         spack install
@@ -53,7 +53,7 @@ jobs:
         sudo apt-get install clang-5.0 gfortran libopenmpi-dev python3
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-5.0, CXX: clang++-5.0, CXXFLAGS: -Werror}
+      env: {CC: clang-5.0, CXX: clang++-5.0, CXXFLAGS: -Werror -Wno-deprecated-declarations}
       run: |
         eval $(spack env activate --sh .github/ci/spack-envs/clang5_nopy_ompi_h5_ad1_ad2_bp3/)
         spack install
@@ -113,7 +113,7 @@ jobs:
         brew install hdf5-mpi
         brew install python
     - name: Build
-      env: {CXXFLAGS: -Werror}
+      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations}
       run: |
         mkdir build && cd build
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
@@ -144,7 +144,7 @@ jobs:
         python3 -m pip install -U numpy
         python3 -m pip install -U mpi4py
     - name: Build
-      env: {CC: gcc-5, CXX: g++-5, CXXFLAGS: -Werror}
+      env: {CC: gcc-5, CXX: g++-5, CXXFLAGS: -Werror -Wno-deprecated-declarations}
       run: |
         eval $(spack env activate --sh .github/ci/spack-envs/gcc5_py36_ompi_h5_ad1_ad2/)
         spack install
@@ -164,7 +164,7 @@ jobs:
         sudo apt-get install g++ libopenmpi-dev libhdf5-openmpi-dev libadios-dev python3 python3-numpy python3-mpi4py
 #       TODO ADIOS1 (.pc file broken?) ADIOS2
     - name: Build
-      env: {CXXFLAGS: -Werror, PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig}
+      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations, PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig}
       run: |
         mkdir build && cd build
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
