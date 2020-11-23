@@ -3,6 +3,12 @@
 Upgrade Guide
 =============
 
+0.13.0-beta
+-----------
+
+Building openPMD-api now requires a compiler that supports C++14 or newer.
+
+
 0.12.0-alpha
 ------------
 

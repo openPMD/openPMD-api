@@ -10,7 +10,7 @@ Required
 --------
 
 * CMake 3.12.0+
-* C++11 capable compiler, e.g. g++ 4.8+, clang 3.9+, VS 2015+
+* C++14 capable compiler, e.g. g++ 5.0+, clang 5.0+, VS 2017+
 
 Shipped internally
 ------------------
