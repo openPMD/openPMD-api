@@ -20,8 +20,6 @@
  */
 #pragma once
 
-#include "openPMD/auxiliary/Deprecated.hpp"
-
 
 namespace openPMD
 {
@@ -36,16 +34,10 @@ namespace openPMD
 
 
     // deprecated name (used prior to 0.12.0)
-#if __cplusplus >= 201402L
     // note: "using old [[deprecated(msg)]] = new;" is still badly supported, thus using typedef
     //       https://en.cppreference.com/w/cpp/language/attributes/deprecated
     //   - NVCC < 11.0.167 works but noisy "warning: attribute does not apply to any entity"
     //     Nvidia bug report: 2991260
     //   - Intel C++ 19.1.0.20200306 bug report: 04651484
     [[deprecated("AccessType is deprecated, use Access instead.")]] typedef Access AccessType;
-#else
-    // don't warn because pre C++14 attribute order is too compiler-dependent
-    // NVCC, ICC, GCC, MSVC are all irregular
-    using AccessType = Access;
-#endif
 } // namespace openPMD

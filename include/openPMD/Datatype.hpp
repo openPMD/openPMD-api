@@ -112,19 +112,15 @@ struct decay_equiv :
         >::type
 { };
 
-#if __cplusplus >= 201402L
 template<
         typename T,
         typename U
 >
 constexpr bool decay_equiv_v = decay_equiv< T, U >::value;
-#endif
 
 template< typename T >
 inline
-#if __cplusplus >= 201402L
 constexpr
-#endif
 Datatype
 determineDatatype()
 {
@@ -170,9 +166,7 @@ determineDatatype()
 
 template< typename T >
 inline
-#if __cplusplus >= 201402L
 constexpr
-#endif
 Datatype
 determineDatatype(std::shared_ptr< T >)
 {
