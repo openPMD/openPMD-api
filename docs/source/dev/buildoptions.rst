@@ -69,7 +69,7 @@ CMake Option                      Values      Installs Library       Version
 ================================= =========== ======== ============= ========
 ``openPMD_USE_INTERNAL_VARIANT``  **ON**/OFF  Yes      MPark.Variant   1.4.0+
 ``openPMD_USE_INTERNAL_CATCH``    **ON**/OFF  No       Catch2          2.6.1+
-``openPMD_USE_INTERNAL_PYBIND11`` **ON**/OFF  No       pybind11        2.3.0+
+``openPMD_USE_INTERNAL_PYBIND11`` **ON**/OFF  No       pybind11        2.4.3+
 ``openPMD_USE_INTERNAL_JSON``     **ON**/OFF  No       NLohmann-JSON   3.7.0+
 ================================= =========== ======== ============= ========
 
