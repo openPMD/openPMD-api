@@ -1,0 +1,63 @@
+# This is a Spack environment file.
+#
+# Activating and installing this environment will provide all dependencies
+# that are needed for full-feature development.
+#   https//spack.readthedocs.io/en/latest/environments.html#anonymous-environments
+#
+spack:
+  specs:
+  - adios
+  - adios2
+  - hdf5
+  - openmpi
+
+  packages:
+    adios:
+      variants: ~zfp ~sz ~lz4 ~blosc
+    adios2:
+      variants: ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2
+    cmake:
+      externals:
+      - spec: "cmake"
+        prefix: /usr
+      buildable: False
+    openmpi:
+      externals:
+      - spec: "openmpi"
+        prefix: /usr
+      buildable: False
+    perl:
+      externals:
+      - spec: "perl"
+        prefix: /usr
+      buildable: False
+    python:
+      externals:
+      - spec: "python"
+        prefix: /usr
+      buildable: False
+    all:
+      target: ['x86_64']
+      variants: ~fortran
+      providers:
+        mpi: [openmpi]
+      compiler: [clang@10.0.0]
+
+  compilers:
+  - compiler:
+      environment: {}
+      extra_rpaths: []
+      flags: {}
+      modules: []
+      operating_system: ubuntu20.04
+      paths:
+        cc: /usr/lib/llvm-10/bin/clang
+        cxx: /usr/lib/llvm-10/bin/clang++
+        f77: /usr/bin/gfortran
+        fc: /usr/bin/gfortran
+      spec: clang@10.0.0
+      target: x86_64
+
+  config:
+    build_jobs: 2
+

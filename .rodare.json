@@ -6,7 +6,7 @@
             "orcid": "0000-0001-8704-1769"
         },
         {
-            "affiliation": "Helmholtz-Zentrum Dresden-Rossendorf",
+            "affiliation": "Center for Advanced Systems Understanding (CASUS)",
             "name": "Poeschel, Franz",
             "orcid": "0000-0001-7042-5088"
         },
@@ -111,7 +111,7 @@
         "file-format",
         "file-handling"
     ],
-    "notes": "Supported by the Exascale Computing Project (17-SC-20-SC), a collaborative effort of two U.S. Department of Energy organizations (Office of Science and the National Nuclear Security Administration). Supported by the Consortium for Advanced Modeling of Particles Accelerators (CAMPA), funded by the U.S. DOE Office of Science under Contract No. DE-AC02-05CH11231.",
+    "notes": "Supported by the Exascale Computing Project (17-SC-20-SC), a collaborative effort of two U.S. Department of Energy organizations (Office of Science and the National Nuclear Security Administration). Supported by the Consortium for Advanced Modeling of Particles Accelerators (CAMPA), funded by the U.S. DOE Office of Science under Contract No. DE-AC02-05CH11231. This work was partially funded by the Center of Advanced Systems Understanding (CASUS), which is financed by Germany's Federal Ministry of Education and Research (BMBF) and by the Saxon Ministry for Science, Culture and Tourism (SMWK) with tax funds on the basis of the budget approved by the Saxon State Parliament.",
     "grants": [
         {
             "id": "654220"

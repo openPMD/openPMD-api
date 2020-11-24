@@ -58,6 +58,7 @@ Iteration::Iteration(Iteration const& i)
 
 Iteration& Iteration::operator=(Iteration const& i)
 {
+    // warning (clang-tidy-10): bugprone-unhandled-self-assignment
     Attributable::operator=( i );
     meshes = i.meshes;
     particles = i.particles;

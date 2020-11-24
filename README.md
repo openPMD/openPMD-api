@@ -105,7 +105,7 @@ Required:
 Shipped internally in `share/openPMD/thirdParty/`:
 * [MPark.Variant](https://github.com/mpark/variant) 1.4.0+ ([BSL-1.0](https://github.com/mpark/variant/blob/master/LICENSE.md))
 * [Catch2](https://github.com/catchorg/Catch2) 2.6.1+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
-* [pybind11](https://github.com/pybind/pybind11) 2.3.0+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
+* [pybind11](https://github.com/pybind/pybind11) 2.4.3+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
 * [NLohmann-JSON](https://github.com/nlohmann/json) 3.7.0+ ([MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT))
 
 I/O backends:
@@ -120,7 +120,7 @@ while those can be built either with or without:
 Optional language bindings:
 * Python:
   * Python 3.5 - 3.8
-  * pybind 2.3.0+
+  * pybind 2.4.3+
   * numpy 1.15+
   * mpi4py 2.1+
 
@@ -260,7 +260,7 @@ The following options allow to switch to external installs:
 |---------------------------------|------------|---------------|---------|
 | `openPMD_USE_INTERNAL_VARIANT`  | **ON**/OFF | MPark.Variant |  1.4.0+ |
 | `openPMD_USE_INTERNAL_CATCH`    | **ON**/OFF | Catch2        |  2.6.1+ |
-| `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.3.0+ |
+| `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.4.3+ |
 | `openPMD_USE_INTERNAL_JSON`     | **ON**/OFF | NLohmann-JSON |  3.7.0+ |
 
 By default, this will build as a shared library (`libopenPMD.[so|dylib|dll]`) and installs also its headers.
@@ -359,10 +359,10 @@ The following people and institutions [contributed](https://github.com/openPMD/o
   project lead, releases, documentation, automated CI/CD, Python bindings, installation & packaging, prior reference implementations
 * [Fabian Koller (HZDR)](https://github.com/C0nsultant):
   initial library design and implementation with HDF5 & ADIOS1 backend
-* [Franz Poeschel (HZDR)](https://github.com/franzpoeschel):
+* [Franz Poeschel (CASUS)](https://github.com/franzpoeschel):
   added JSON & ADIOS2 backend, data staging/streaming
 * [Junmin Gu (LBNL)](https://github.com/guj):
-  non-collective parallel I/O fixes, ADIOS improvements
+  non-collective parallel I/O fixes, ADIOS improvements, benchmarks
 
 Further thanks go to improvements and contributions from:
 
@@ -397,6 +397,7 @@ The openPMD-api authors acknowledge support via the following programs.
 This project has received funding from the European Unions Horizon 2020 research and innovation programme under grant agreement No 654220.
 Supported by the Consortium for Advanced Modeling of Particles Accelerators (CAMPA), funded by the U.S. DOE Office of Science under Contract No. DE-AC02-05CH11231.
 Supported by the Exascale Computing Project (17-SC-20-SC), a collaborative effort of two U.S. Department of Energy organizations (Office of Science and the National Nuclear Security Administration).
+This work was partially funded by the Center of Advanced Systems Understanding (CASUS), which is financed by Germany's Federal Ministry of Education and Research (BMBF) and by the Saxon Ministry for Science, Culture and Tourism (SMWK) with tax funds on the basis of the budget approved by the Saxon State Parliament.
 
 ### Transitive Contributions
 
