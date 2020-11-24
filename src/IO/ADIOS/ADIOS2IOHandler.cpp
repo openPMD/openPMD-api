@@ -21,18 +21,19 @@
 
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 
-#include <algorithm>
-#include <iostream>
-#include <iterator>
-#include <set>
-#include <string>
-
 #include "openPMD/Datatype.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+
+#include <algorithm>
+#include <iostream>
+#include <iterator>
+#include <memory>
+#include <set>
+#include <string>
 #include <type_traits>
 
 
@@ -695,8 +696,8 @@ ADIOS2IOHandlerImpl::getFileData( InvalidatableFile file )
     {
         return *m_fileData
                     .emplace( std::move( file ),
-                              std::unique_ptr< detail::BufferedActions >{
-                                  new detail::BufferedActions{*this, file}} )
+                              std::make_unique< detail::BufferedActions >(
+                                  *this, file) )
                     .first->second;
     }
     else
@@ -1205,7 +1206,7 @@ namespace detail
                                       ") not found in backend." );
         }
 
-        Datatype ret =
+        auto ret =
             switchType< Datatype >(
                 type,
                 detail::AttributeReader{},

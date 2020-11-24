@@ -125,7 +125,7 @@ bool setAttributeFromBufferInfo(
          * - not strided with paddings
          * - not a view in another buffer that results in striding
          */
-        Py_buffer* view = new Py_buffer();
+        auto* view = new Py_buffer();
         int flags = PyBUF_STRIDES | PyBUF_FORMAT;
         if( PyObject_GetBuffer( a.ptr(), view, flags ) != 0 )
         {

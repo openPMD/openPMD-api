@@ -121,7 +121,7 @@ ParticleSpecies::flush(std::string const& path)
             patch.second.flush(patch.first);
     } else
     {
-        iterator it = find("position");
+        auto it = find("position");
         if ( it != end() )
             it->second.setUnitDimension({{UnitDimension::L, 1}});
         it = find("positionOffset");

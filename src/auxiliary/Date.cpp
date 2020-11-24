@@ -20,6 +20,7 @@
  */
 #include "openPMD/auxiliary/Date.hpp"
 
+#include <array>
 #include <ctime>
 #include <string>
 #include <sstream>
@@ -32,7 +33,7 @@ namespace auxiliary
     std::string getDateString( std::string const & format )
     {
         constexpr size_t maxLen = 30u;
-        char buffer [maxLen];
+        std::array< char, maxLen > buffer;
 
         time_t rawtime;
         time( &rawtime );
@@ -40,10 +41,10 @@ namespace auxiliary
         // https://github.com/openPMD/openPMD-api/pull/657#issuecomment-574424885
         timeinfo = localtime( &rawtime );  // lgtm[cpp/potentially-dangerous-function]
 
-        strftime( buffer, maxLen, format.c_str(), timeinfo );
+        strftime( buffer.data(), maxLen, format.c_str(), timeinfo );
 
         std::stringstream dateString;
-        dateString << buffer;
+        dateString << buffer.data();
 
         return dateString.str();
     }
