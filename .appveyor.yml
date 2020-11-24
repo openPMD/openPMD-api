@@ -1,15 +1,15 @@
 environment:
   matrix:
     - TARGET_ARCH: x86
-      CONDA_PY: 35
-      CONDA_INSTALL_LOCN: C:\\Miniconda35
+      CONDA_PY: 36
+      CONDA_INSTALL_LOCN: C:\\Miniconda36
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       platform: x86
       SHARED: ON
 
     - TARGET_ARCH: x64
-      CONDA_PY: 35
-      CONDA_INSTALL_LOCN: C:\\Miniconda35-x64
+      CONDA_PY: 37
+      CONDA_INSTALL_LOCN: C:\\Miniconda37-x64
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       platform: x64
       SHARED: ON
@@ -22,8 +22,8 @@ environment:
       SHARED: ON
 
     - TARGET_ARCH: x64
-      CONDA_PY: 37
-      CONDA_INSTALL_LOCN: C:\\Miniconda37-x64
+      CONDA_PY: 36
+      CONDA_INSTALL_LOCN: C:\\Miniconda36-x64
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       platform: x64
       SHARED: OFF
@@ -115,10 +115,10 @@ before_build:
 
   # Compiler & Generator Selection
   - cmd: if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2017" set OPENPMD_CMAKE_GENERATOR=Visual Studio 15 2017
+  - cmd: if "%APPVEYOR_BUILD_WORKER_IMAGE%"=="Visual Studio 2019" set OPENPMD_CMAKE_GENERATOR=Visual Studio 16 2019
   - cmd: if "%TARGET_ARCH%"=="x64" set OPENPMD_CMAKE_GENERATOR=%OPENPMD_CMAKE_GENERATOR% Win64
-#  - cmd: if "%TARGET_ARCH%"=="x86" "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64_x86
-  - cmd: if "%TARGET_ARCH%"=="x86" "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
-  - cmd: if "%TARGET_ARCH%"=="x64" "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
+#  - cmd: if "%TARGET_ARCH%"=="x86" "C:\Program Files (x86)\Microsoft Visual Studio 15.9\VC\vcvarsall.bat" x86
+#  - cmd: if "%TARGET_ARCH%"=="x64" "C:\Program Files (x86)\Microsoft Visual Studio 15.9\VC\vcvarsall.bat" amd64
 
   # CMake configure
   - cmd: cmake -G "%OPENPMD_CMAKE_GENERATOR%" -DCMAKE_BUILD_TYPE=%CONFIGURATION% -DBUILD_SHARED_LIBS=%SHARED% -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX="%CONDA_INSTALL_LOCN%" -DCMAKE_INSTALL_BINDIR="Library\bin" ".."
@@ -126,7 +126,6 @@ before_build:
 build_script:
   - cmd: cmake --build . --config %CONFIGURATION%
   - cmd: cmake --build . --config %CONFIGURATION% --target install
-#  - cmd: tree "%CONDA_INSTALL_LOCN%"
 
 test_script:
   - cmd: ctest -V -C %CONFIGURATION%
