@@ -24,6 +24,7 @@ Other
 """""
 
 - switch to C++14 #825
+- Python: support 3.6 - 3.9 #828
 - Docs:
 
   - Release cibuildwheel example #775

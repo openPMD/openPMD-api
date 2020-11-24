@@ -269,7 +269,7 @@ if(openPMD_USE_PYTHON STREQUAL AUTO)
                        "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}' "
                        "is NOT supported. Set for example "
                        "-DPYTHON_EXECUTABLE=$(which python3) "
-                       "to use 3.5+.")
+                       "to use 3.6+.")
     endif()
 elseif(openPMD_USE_PYTHON)
     if(openPMD_USE_INTERNAL_PYBIND11)
@@ -286,7 +286,7 @@ elseif(openPMD_USE_PYTHON)
                             "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}' "
                             "is NOT supported. Set for example "
                             "-DPYTHON_EXECUTABLE=$(which python3) "
-                            "to use 3.5+.")
+                            "to use 3.6+.")
     endif()
 else()
     set(openPMD_HAVE_PYTHON FALSE)

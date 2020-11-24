@@ -5,8 +5,8 @@ FROM       quay.io/pypa/manylinux2010_x86_64 as build-env
 # FROM       quay.io/pypa/manylinux1_x86_64 as build-env
 ENV        DEBIAN_FRONTEND noninteractive
 
-# Python 3.5-3.8 via "35m 36m 37m 38"
-ARG        PY_VERSIONS="35m 36m 37m 38"
+# Python 3.6-3.9 via "36m 37m 38 39"
+ARG        PY_VERSIONS="36m 37m 38 39"
 
 # static libs need relocatable symbols for linking to shared python lib
 ENV        CFLAGS="-fPIC ${CFLAGS}"
@@ -175,18 +175,19 @@ RUN        python3 -c "import openpmd_api as io; print(io.__version__); print(io
 RUN        python3 -m openpmd_api.ls --help
 RUN        openpmd-ls --help
 
-# test in fresh env: Debian:Stretch + Python 3.5
-FROM       debian:stretch
+# test in fresh env: Debian:Bullseye + Python 3.9
+FROM       debian:bullseye
 ENV        DEBIAN_FRONTEND noninteractive
-COPY --from=build-env /wheelhouse/openPMD_api-*-cp35-cp35m-manylinux2010_x86_64.whl .
+COPY --from=build-env /wheelhouse/openPMD_api-*-cp39-cp39-manylinux2010_x86_64.whl .
 RUN        apt-get update \
-           && apt-get install -y --no-install-recommends python3 python3-pip \
+           && apt-get install -y --no-install-recommends python3.9 python3-distutils ca-certificates curl \
            && rm -rf /var/lib/apt/lists/*
-RUN        python3 --version \
-           && python3 -m pip install -U pip \
-           && python3 -m pip install openPMD_api-*-cp35-cp35m-manylinux2010_x86_64.whl
-RUN        python3 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
-RUN        python3 -m openpmd_api.ls --help
+RUN        python3.9 --version \
+           && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+           && python3.9 get-pip.py \
+           && python3.9 -m pip install openPMD_api-*-cp39-cp39-manylinux2010_x86_64.whl
+RUN        python3.9 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
+RUN        python3.9 -m openpmd_api.ls --help
 RUN        openpmd-ls --help
 
 
