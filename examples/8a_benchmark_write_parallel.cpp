@@ -127,7 +127,7 @@ public:
     }
     ~Timer() {
         std::string tt = "~"+m_Tag;
-        MemoryProfiler (m_Rank, tt.c_str());
+        MemoryProfiler mp(m_Rank, tt.c_str());
         m_End = std::chrono::system_clock::now();
 
         double millis = std::chrono::duration_cast< std::chrono::milliseconds >( m_End - m_Start ).count();
