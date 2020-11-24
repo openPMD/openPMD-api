@@ -504,16 +504,13 @@ main( int argc, char *argv[] )
         input.m_Backend = which;
         if ( 1 == dataDim ) {
           OneDimPattern    p1(input);
-      p1.PrintMe();
-          //p1.run();
+          p1.run();
         } else if ( 2 == dataDim ) {
           TwoDimPattern    p2(input);
-      p2.PrintMe();
-          //p2.run();
+          p2.run();
         } else {
           ThreeDimPattern  p3(input);
-      p3.PrintMe();
-          //p3.run();
+          p3.run();
         }
       }
     }
