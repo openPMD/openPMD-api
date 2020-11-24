@@ -16,8 +16,7 @@ Writing
 
 *Source*: ``examples/8a_benchmark_write_parallel.cpp``
 
-This benchmark writes a few meshes and particles,
-either 1D, 2D or 3D.
+This benchmark writes a few meshes and particles, either 1D, 2D or 3D.
 
 The meshes are viewed as grid of mini blocks.
 As an example, we assume the mini blocks dimension are [16, 32, 32].
