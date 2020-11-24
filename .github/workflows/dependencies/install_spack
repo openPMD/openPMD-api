@@ -6,12 +6,13 @@ set -eu -o pipefail
 spack_ver="0.16.0"
 
 cd /opt
-if [ -d spack ]; then exit 0; fi
-
-# download
-curl -sOL https://github.com/spack/spack/archive/v${spack_ver}.tar.gz
-tar -xf v${spack_ver}.tar.gz && rm v${spack_ver}.tar.gz
-mv spack-${spack_ver} spack
+if [ ! -d spack ]
+then
+  # download
+  curl -sOL https://github.com/spack/spack/archive/v${spack_ver}.tar.gz
+  tar -xf v${spack_ver}.tar.gz && rm v${spack_ver}.tar.gz
+  mv spack-${spack_ver} spack
+fi
 
 # install
 ln -s /opt/spack/bin/spack /usr/bin/spack
