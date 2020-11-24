@@ -350,7 +350,7 @@ add_library(openPMD::openPMD ALIAS openPMD)
 
 # properties
 target_compile_features(openPMD
-    PUBLIC cxx_std_11
+    PUBLIC cxx_std_14
 )
 set_target_properties(openPMD PROPERTIES
     CXX_EXTENSIONS OFF
@@ -424,10 +424,10 @@ if(openPMD_HAVE_ADIOS1)
     add_library(openPMD.ADIOS1.Serial SHARED ${IO_ADIOS1_SEQUENTIAL_SOURCE})
     add_library(openPMD.ADIOS1.Parallel SHARED ${IO_ADIOS1_SOURCE})
     target_compile_features(openPMD.ADIOS1.Serial
-        PUBLIC cxx_std_11
+        PUBLIC cxx_std_14
     )
     target_compile_features(openPMD.ADIOS1.Parallel
-        PUBLIC cxx_std_11
+        PUBLIC cxx_std_14
     )
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         target_compile_options(openPMD.ADIOS1.Serial PUBLIC "/bigobj")
@@ -652,8 +652,8 @@ if(BUILD_TESTING)
     # compile Catch2 implementation part separately
     add_library(CatchRunner test/CatchRunner.cpp)  # Always MPI_Init with Serial Fallback
     add_library(CatchMain   test/CatchMain.cpp)    # Serial only
-    target_compile_features(CatchRunner PUBLIC cxx_std_11)
-    target_compile_features(CatchMain   PUBLIC cxx_std_11)
+    target_compile_features(CatchRunner PUBLIC cxx_std_14)
+    target_compile_features(CatchMain   PUBLIC cxx_std_14)
     set_target_properties(CatchRunner CatchMain PROPERTIES
         CXX_EXTENSIONS OFF
         CXX_STANDARD_REQUIRED ON

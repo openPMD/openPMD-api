@@ -26,14 +26,6 @@
 
 using namespace openPMD;
 
-namespace {
-    // only needed until we require C++14 and newer (201402L+)
-    template<typename T, typename... Args>
-    std::unique_ptr<T> my_make_unique(Args&&... args) {
-        return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-    }
-}
-
 
 TEST_CASE( "multi_series_test", "[serial]" )
 {
@@ -191,7 +183,7 @@ close_and_copy_attributable_test( std::string file_ending )
         {
             // use copy constructor
             iteration_ptr =
-                    my_make_unique< Iteration >( series.iterations[ i ] );
+                    std::make_unique< Iteration >( series.iterations[ i ] );
         }
         Record electronPositions =
                 iteration_ptr->particles[ "e" ][ "position" ];
