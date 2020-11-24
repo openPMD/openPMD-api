@@ -36,6 +36,14 @@ namespace detail {
     struct type_caster< variantSrc::variant< Ts... > > :
         variant_caster< variantSrc::variant< Ts... > >
     {};
+
+    template <>
+    struct visit_helper< variantSrc::variant > {
+        template <typename... Args>
+        static auto call(Args &&...args) -> decltype( variantSrc::visit(std::forward<Args>(args)...) ) {
+            return variantSrc::visit(std::forward<Args>(args)...);
+        }
+    };
 } // namespace detail
 } // namespace pybind11
 #endif
