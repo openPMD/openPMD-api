@@ -600,15 +600,12 @@ void AbstractPattern::run()
    */
 void AbstractPattern::store(Series& series, int step)
   {
-    //std::string comp_alpha = "x";
-    //std::string comp_alpha = "y";
     std::string components[] = {"x", "y", "z"};
     std::string fieldName1 = "E";
     std::string fieldName2 = "B";
     for (unsigned int i=0; i<m_GlobalMesh.size(); i++)
     {
       storeMesh(series, step, fieldName1, components[i]);
-      //storeMesh(series, step, fieldName1, comp_alpha);
       storeMesh(series, step, fieldName2, components[i]);
     }
 
