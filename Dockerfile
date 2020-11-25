@@ -40,7 +40,8 @@ RUN        curl -sLo hdf5-1.10.5.tar.gz https://support.hdfgroup.org/ftp/HDF5/re
            && make install
 
 # avoid picking up a static libpthread in adios (also: those libs lack -fPIC)
-RUN        rm /usr/lib64/libpthread.a /usr/lib64/libm.a /usr/lib64/librt.a
+RUN        rm -f /usr/lib64/libpthread.a /usr/lib64/libm.a /usr/lib64/librt.a
+RUN        rm -f /usr/lib/libpthread.a   /usr/lib/libm.a   /usr/lib/librt.a
 
 RUN        curl -sLo c-blosc-1.15.0.tar.gz https://github.com/Blosc/c-blosc/archive/v1.15.0.tar.gz \
            && file c-blosc*.tar.gz \
@@ -68,10 +69,6 @@ RUN        curl -sLo adios2-2.6.0.tar.gz https://github.com/ornladios/ADIOS2/arc
            && file adios2*.tar.gz \
            && tar -xzf adios2*.tar.gz \
            && rm adios2*.tar.gz \
-           && cd ADIOS2-* \
-           && curl -sLo adios2-static.patch https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/1828.patch \
-           && patch -p1 < adios2-static.patch \
-           && cd .. \
            && mkdir build-ADIOS2 \
            && cd build-ADIOS2 \
            && PY_TARGET=${PY_VERSIONS%% *} \
@@ -136,9 +133,10 @@ RUN        python3 --version \
            && python3 -m pip install openPMD_api-*-cp37-cp37m-manylinux2010_x86_64.whl
 RUN        find / -name "openpmd*"
 RUN        ls -hal /usr/local/lib/python3.7/dist-packages/
+RUN        ls -hal /usr/local/lib/python3.7/dist-packages/openpmd_api/
 # RUN        ls -hal /usr/local/lib/python3.7/dist-packages/.libsopenpmd_api
 # RUN        objdump -x /usr/local/lib/python3.7/dist-packages/openpmd_api.cpython-37m-x86_64-linux-gnu.so | grep RPATH
-RUN        ldd /usr/local/lib/python3.7/dist-packages/openpmd_api.cpython-37m-x86_64-linux-gnu.so
+RUN        ldd /usr/local/lib/python3.7/dist-packages/openpmd_api/openpmd_api_cxx.cpython-37m-x86_64-linux-gnu.so
 RUN        python3 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
 RUN        python3 -m openpmd_api.ls --help
 RUN        openpmd-ls --help
