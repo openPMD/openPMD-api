@@ -39,7 +39,7 @@ write_and_read_many_iterations( std::string const & ext )
     Series write( filename, Access::CREATE );
     for( unsigned int i = 0; i < nIterations; ++i )
     {
-        std::cout << "Putting iteration " << i << std::endl;
+        // std::cout << "Putting iteration " << i << std::endl;
         Iteration it = write.iterations[ i ];
         auto E_x = it.meshes[ "E" ][ "x" ];
         E_x.resetDataset( ds );
@@ -50,7 +50,7 @@ write_and_read_many_iterations( std::string const & ext )
     Series read( filename, Access::READ_ONLY );
     for( auto iteration : read.iterations )
     {
-        std::cout << "Reading iteration " << iteration.first << std::endl;
+        // std::cout << "Reading iteration " << iteration.first << std::endl;
         auto E_x = iteration.second.meshes[ "E" ][ "x" ];
         auto chunk = E_x.loadChunk< float >( { 0 }, { 10 } );
         iteration.second.close();
