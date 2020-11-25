@@ -31,7 +31,7 @@ int main(
 )
 {
     std::vector< std::string > str_argv;
-    for( int i = 0; i < argc; ++i ) str_argv.push_back(argv[i]);
+    for( int i = 0; i < argc; ++i ) str_argv.emplace_back(argv[i]);
 
     return openPMD::cli::ls::run( str_argv );
 }

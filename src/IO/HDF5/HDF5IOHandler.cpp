@@ -917,13 +917,13 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
         }
         case DT::UCHAR:
         {
-            unsigned char u = att.get< unsigned char >();
+            auto u = att.get< unsigned char >();
             status = H5Awrite(attribute_id, dataType, &u);
             break;
         }
         case DT::SHORT:
         {
-            short i = att.get< short >();
+            auto i = att.get< short >();
             status = H5Awrite(attribute_id, dataType, &i);
             break;
         }
@@ -941,49 +941,49 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
         }
         case DT::LONGLONG:
         {
-            long long i = att.get< long long >();
+            auto i = att.get< long long >();
             status = H5Awrite(attribute_id, dataType, &i);
             break;
         }
         case DT::USHORT:
         {
-            unsigned short u = att.get< unsigned short >();
+            auto u = att.get< unsigned short >();
             status = H5Awrite(attribute_id, dataType, &u);
             break;
         }
         case DT::UINT:
         {
-            unsigned int u = att.get< unsigned int >();
+            auto u = att.get< unsigned int >();
             status = H5Awrite(attribute_id, dataType, &u);
             break;
         }
         case DT::ULONG:
         {
-            unsigned long u = att.get< unsigned long >();
+            auto u = att.get< unsigned long >();
             status = H5Awrite(attribute_id, dataType, &u);
             break;
         }
         case DT::ULONGLONG:
         {
-            unsigned long long u = att.get< unsigned long long >();
+            auto u = att.get< unsigned long long >();
             status = H5Awrite(attribute_id, dataType, &u);
             break;
         }
         case DT::FLOAT:
         {
-            float f = att.get< float >();
+            auto f = att.get< float >();
             status = H5Awrite(attribute_id, dataType, &f);
             break;
         }
         case DT::DOUBLE:
         {
-            double d = att.get< double >();
+            auto d = att.get< double >();
             status = H5Awrite(attribute_id, dataType, &d);
             break;
         }
         case DT::LONG_DOUBLE:
         {
-            long double d = att.get< long double >();
+            auto d = att.get< long double >();
             status = H5Awrite(attribute_id, dataType, &d);
             break;
         }

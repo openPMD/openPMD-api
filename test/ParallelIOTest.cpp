@@ -95,8 +95,8 @@ void write_test_zero_extent( bool fileBased, std::string file_ending, bool write
     int mpi_r{-1};
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_s);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_r);
-    uint64_t size = static_cast<uint64_t>(mpi_s);
-    uint64_t rank = static_cast<uint64_t>(mpi_r);
+    auto size = static_cast<uint64_t>(mpi_s);
+    auto rank = static_cast<uint64_t>(mpi_r);
 
     std::string filePath = "../samples/parallel_write_zero_extent";
     if( fileBased )
@@ -218,8 +218,8 @@ TEST_CASE( "hdf5_write_test", "[parallel][hdf5]" )
     int mpi_r{-1};
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_s);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_r);
-    uint64_t mpi_size = static_cast<uint64_t>(mpi_s);
-    uint64_t mpi_rank = static_cast<uint64_t>(mpi_r);
+    auto mpi_size = static_cast<uint64_t>(mpi_s);
+    auto mpi_rank = static_cast<uint64_t>(mpi_r);
     Series o = Series("../samples/parallel_write.h5", Access::CREATE, MPI_COMM_WORLD);
 
     o.setAuthor("Parallel HDF5");
@@ -296,8 +296,8 @@ TEST_CASE( "adios_write_test", "[parallel][adios]" )
     int rank{-1};
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    uint64_t mpi_size = static_cast<uint64_t>(size);
-    uint64_t mpi_rank = static_cast<uint64_t>(rank);
+    auto mpi_size = static_cast<uint64_t>(size);
+    auto mpi_rank = static_cast<uint64_t>(rank);
 
     o.setAuthor("Parallel ADIOS1");
     ParticleSpecies& e = o.iterations[1].particles["e"];
