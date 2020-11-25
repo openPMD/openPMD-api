@@ -3,6 +3,13 @@
 Upgrade Guide
 =============
 
+0.13.0-beta
+-----------
+
+Building openPMD-api now requires a compiler that supports C++14 or newer.
+Supported Python version are now 3.6 to 3.9.
+
+
 0.12.0-alpha
 ------------
 

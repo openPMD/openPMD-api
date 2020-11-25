@@ -3,7 +3,6 @@ C++ & Python API for Scientific I/O with openPMD
 ================================================
 
 [![Supported openPMD Standard](https://img.shields.io/badge/openPMD-1.0.0--1.1.0-blue)](https://github.com/openPMD/openPMD-standard/releases)
-[![Documentation Status](https://readthedocs.org/projects/openpmd-api/badge/?version=latest)](https://openpmd-api.readthedocs.io/en/latest/?badge=latest)
 [![Doxygen](https://img.shields.io/badge/API-Doxygen-blue)](https://www.openpmd.org/openPMD-api)
 [![Gitter chat](https://img.shields.io/gitter/room/openPMD/API)](https://gitter.im/openPMD/API)
 ![Supported Platforms][api-platforms]
@@ -14,6 +13,7 @@ C++ & Python API for Scientific I/O with openPMD
 [![LGTM: Python](https://img.shields.io/lgtm/grade/python/g/openPMD/openPMD-api?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/openPMD/openPMD-api/context:python)
 [![LGTM: Total alerts](https://img.shields.io/lgtm/alerts/g/openPMD/openPMD-api?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/openPMD/openPMD-api/alerts/)
 [![Coverage Status](https://coveralls.io/repos/github/openPMD/openPMD-api/badge)](https://coveralls.io/github/openPMD/openPMD-api)  
+[![Documentation Status](https://readthedocs.org/projects/openpmd-api/badge/?version=latest)](https://openpmd-api.readthedocs.io/en/latest/?badge=latest)
 [![Linux/OSX Build Status dev](https://travis-ci.com/openPMD/openPMD-api.svg?branch=dev)](https://travis-ci.com/openPMD/openPMD-api)
 [![Windows Build Status dev](https://ci.appveyor.com/api/projects/status/x95q4n620pqk0e0t/branch/dev?svg=true)](https://ci.appveyor.com/project/ax3l/openpmd-api/branch/dev)
 [![PyPI Wheel Release](https://github.com/openPMD/openPMD-api/workflows/wheels/badge.svg?branch=wheels&event=push)](https://github.com/openPMD/openPMD-api/actions?query=workflow%3Awheels)
@@ -33,10 +33,10 @@ Writing & reading through those backends and their associated files is supported
 
 ### C++
 
-[![C++11][api-cpp]](https://isocpp.org/) ![C++11 API: Alpha][dev-alpha]
+[![C++14][api-cpp]](https://isocpp.org/) ![C++14 API: Beta][dev-beta]
 
-[api-cpp]: https://img.shields.io/badge/language-C%2B%2B11-yellowgreen "C++11 API"
-[dev-alpha]: https://img.shields.io/badge/phase-alpha-yellowgreen "Status: Alpha"
+[api-cpp]: https://img.shields.io/badge/language-C%2B%2B14-yellowgreen "C++14 API"
+[dev-beta]: https://img.shields.io/badge/phase-beta-yellowgreen "Status: Beta"
 
 ```cpp
 #include <openPMD/openPMD.hpp>
@@ -65,7 +65,7 @@ for( auto const& i : s.iterations ) {
 
 ### Python
 
-[![Python3][api-py3]](https://www.python.org/) ![Python3 API: Alpha][dev-alpha]
+[![Python3][api-py3]](https://www.python.org/) ![Python3 API: Beta][dev-beta]
 
 [api-py3]: https://img.shields.io/badge/language-Python3-yellowgreen "Python3 API"
 
@@ -100,7 +100,7 @@ Our manual shows full [read & write examples](https://openpmd-api.readthedocs.io
 
 Required:
 * CMake 3.12.0+
-* C++11 capable compiler, e.g. g++ 4.8+, clang 3.9+, VS 2015+
+* C++14 capable compiler, e.g. g++ 5.0+, clang 5.0+, VS 2017+
 
 Shipped internally in `share/openPMD/thirdParty/`:
 * [MPark.Variant](https://github.com/mpark/variant) 1.4.0+ ([BSL-1.0](https://github.com/mpark/variant/blob/master/LICENSE.md))
@@ -119,8 +119,8 @@ while those can be built either with or without:
 
 Optional language bindings:
 * Python:
-  * Python 3.5 - 3.8
-  * pybind 2.4.3+
+  * Python 3.6 - 3.9
+  * pybind11 2.4.3+
   * numpy 1.15+
   * mpi4py 2.1+
 
