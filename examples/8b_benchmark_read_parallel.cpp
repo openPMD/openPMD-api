@@ -319,8 +319,8 @@ public:
     }
 
     unsigned long c=1;
-    for (unsigned int i=0; i<grid.size(); i++) {
-      c = c*grid[i];
+    for (unsigned long i : grid) {
+      c = c*i;
     }
 
     if ( c != (unsigned long) m_MPISize )
@@ -375,9 +375,9 @@ public:
     unsigned int fractionOnDim = m_Pattern/100;
 
     Extent meshExtent  = rho.getExtent();
-    for ( unsigned int i=0; i<meshExtent.size(); i++ )
+    for (unsigned long i : meshExtent)
       {
-        unsigned long blob = meshExtent[i]/fractionOnDim;
+        unsigned long blob = i/fractionOnDim;
         if ( 0 == blob ) {
           if ( m_MPIRank == 0 )
               std::cout<<"Unable to use franction:"<<fractionOnDim<<std::endl;
@@ -640,8 +640,8 @@ public:
     if ( 0 == m_MPIRank )
       {
          std::cout<<"... rho meshExtent : ts="<<ts<<" [";
-         for ( unsigned int i=0; i<meshExtent.size(); i++ )
-              std::cout<<meshExtent[i]<<" ";
+         for (unsigned long i : meshExtent)
+              std::cout<<i<<" ";
          std::cout<<"]"<<std::endl;
       }
 

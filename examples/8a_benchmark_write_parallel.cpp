@@ -379,7 +379,7 @@ void parse(TestInput& input, std::string line)
   std::vector<unsigned long> numbers;
   std::istringstream tmp(vec[1]);
   while ( std::getline( tmp, s, ' ' ) )
-    numbers.push_back(strtoul( s.c_str(), NULL, 0 ));
+    numbers.push_back(strtoul( s.c_str(), nullptr, 0 ));
 
   if ( (numbers.size() == 0) || ((numbers.size() - input.m_Dim) != 0) ) {
     if ( input.m_MPIRank == 0 )
@@ -443,7 +443,7 @@ int parseArgs( int argc, char *argv[], TestInput& input )
     }
 
     if( argc >= 3 )
-        input.m_XBulk = strtoul( argv[2], NULL, 0 );
+        input.m_XBulk = strtoul( argv[2], nullptr, 0 );
 
     // e.g. 32064 => [64,32]
     if ( input.m_XBulk > 1000 )
@@ -644,7 +644,7 @@ void AbstractPattern::store(Series& series, int step)
         Offset meshOffset;
         auto blockSize = getNthMeshExtent(n, meshOffset, meshExtent);
         if (blockSize > 0) {
-            double const value = double(1.0*n + 0.01*step);
+            auto const value = double(1.0*n + 0.01*step);
             auto A = createData<double>( blockSize, value, 0.0001 ) ;
             compA.storeChunk( A, meshOffset, meshExtent );
         }
@@ -709,8 +709,8 @@ unsigned long AbstractPattern::getTotalNumParticles()
   {
     unsigned long result = m_Input.m_Ratio;
 
-    for (unsigned int  i=0; i<m_GlobalMesh.size(); i++)
-      result *= m_GlobalMesh[i];
+    for (unsigned long i : m_GlobalMesh)
+      result *= i;
 
     return result;
   }
@@ -864,11 +864,11 @@ bool OneDimPattern::setLayOut(int step)
       Offset offset = { unitOffset * m_MinBlock[0] };
       if ( i < (numPartition - 1) ) {
     Extent count  = { avg * m_MinBlock[0] };
-    m_InRankMeshLayout.push_back(std::make_pair(offset, count));
+    m_InRankMeshLayout.emplace_back(offset, count);
       } else {
     auto res = unitCount - avg * (numPartition - 1);
     Extent count  = { res * m_MinBlock[0] };
-    m_InRankMeshLayout.push_back(std::make_pair(offset, count));
+    m_InRankMeshLayout.emplace_back(offset, count);
       }
     }
 
@@ -989,10 +989,10 @@ bool TwoDimPattern::setLayOut(int step)  {
          Extent count  = { c[0] * m_PatchUnitMesh[0] * m_MinBlock[0],
                            c[1] * m_PatchUnitMesh[1] * m_MinBlock[1] };
 
-         m_InRankMeshLayout.push_back(std::make_pair(offset, count));
+         m_InRankMeshLayout.emplace_back(offset, count);
 
          auto pCount = countMe(count) * m_Input.m_Ratio;
-         m_InRankParticleLayout.push_back(std::make_pair(pOff, pCount));
+         m_InRankParticleLayout.emplace_back(pOff, pCount);
       }
     else
       {
@@ -1008,10 +1008,10 @@ bool TwoDimPattern::setLayOut(int step)  {
                                        (unitOffset[1] + j)  * m_MinBlock[1] };
                   Extent currCount = {  m_MinBlock[0], m_MinBlock[1] };
 
-                  m_InRankMeshLayout.push_back(std::make_pair(currOff, currCount));
+                  m_InRankMeshLayout.emplace_back(currOff, currCount);
 
                   auto pCount = countMe(currCount) * m_Input.m_Ratio;
-                  m_InRankParticleLayout.push_back(std::make_pair(counter, pCount));
+                  m_InRankParticleLayout.emplace_back(counter, pCount);
 
                   counter += pCount;
                }
@@ -1232,10 +1232,10 @@ bool ThreeDimPattern::setLayOut(int step)  {
               c[1] * m_PatchUnitMesh[1] * m_MinBlock[1],
               c[2] * m_PatchUnitMesh[2] * m_MinBlock[2] };
 
-    m_InRankMeshLayout.push_back(std::make_pair(offset, count));
+    m_InRankMeshLayout.emplace_back(offset, count);
 
     auto pCount = countMe(count) * m_Input.m_Ratio;
-    m_InRankParticleLayout.push_back(std::make_pair(pOff, pCount));
+    m_InRankParticleLayout.emplace_back(pOff, pCount);
       }
     else
       {
@@ -1253,10 +1253,10 @@ bool ThreeDimPattern::setLayOut(int step)  {
                      (unitOffset[2] + k)  * m_MinBlock[2]  };
         Extent currCount = {  m_MinBlock[0], m_MinBlock[1], m_MinBlock[2] };
 
-        m_InRankMeshLayout.push_back(std::make_pair(currOff, currCount));
+        m_InRankMeshLayout.emplace_back(currOff, currCount);
 
         auto pCount = countMe(currCount) * m_Input.m_Ratio;
-        m_InRankParticleLayout.push_back(std::make_pair(counter, pCount));
+        m_InRankParticleLayout.emplace_back(counter, pCount);
 
         counter += pCount;
           }
