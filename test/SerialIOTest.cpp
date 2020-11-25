@@ -26,14 +26,6 @@
 
 using namespace openPMD;
 
-namespace {
-    // only needed until we require C++14 and newer (201402L+)
-    template<typename T, typename... Args>
-    std::unique_ptr<T> my_make_unique(Args&&... args) {
-        return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-    }
-}
-
 void
 write_and_read_many_iterations( std::string const & ext )
 {

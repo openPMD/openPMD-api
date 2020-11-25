@@ -557,7 +557,7 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
     if( IOHandler->m_frontendAccess == Access::READ_ONLY )
         for( auto & i : iterationsToFlush )
         {
-            bool dirtyRecursive = i.second.dirtyRecursive();
+            bool const dirtyRecursive = i.second.dirtyRecursive();
             if( *i.second.m_closed == Iteration::CloseStatus::ClosedInBackend )
             {
                 // file corresponding with the iteration has previously been
@@ -599,7 +599,7 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
         bool allDirty = dirty();
         for( auto & i : iterationsToFlush )
         {
-            bool dirtyRecursive = i.second.dirtyRecursive();
+            bool const dirtyRecursive = i.second.dirtyRecursive();
             if( *i.second.m_closed == Iteration::CloseStatus::ClosedInBackend )
             {
                 // file corresponding with the iteration has previously been
