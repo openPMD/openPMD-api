@@ -25,8 +25,8 @@ Benchmarks
 ^^^^^^^^^^
 
 - `8_benchmark_parallel.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/8_benchmark_parallel.cpp>`_: a MPI-parallel IO-benchmark
-- `8a_benchmark_write1D2D_parallel.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/8a_benchmark_write1D2D_parallel.cpp>`_: creates 1D or 2D arrays, with each rank having a few blocks to write to
-- `8b_benchmark_read1D2D_parallel.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/8b_benchmark_read1D2D_parallel.cpp>`_: read slices of meshes and particles
+- `8a_benchmark_write_parallel.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/8a_benchmark_write_parallel.cpp>`_: creates 1D/2D/3D arrays, with each rank having a few blocks to write to
+- `8b_benchmark_read_parallel.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/8b_benchmark_read_parallel.cpp>`_: read slices of meshes and particles
 
 Python
 ------
