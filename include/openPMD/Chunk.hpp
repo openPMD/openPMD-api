@@ -35,13 +35,11 @@ struct ChunkInfo
 {
     Offset offset; //!< origin of the chunk
     Extent extent; //!< size of the chunk
-    unsigned int mpi_rank = 0; //!< the MPI rank of the writing process
 
     /*
      * If rank is smaller than zero, will be converted to zero.
      */
     explicit ChunkInfo() = default;
-    ChunkInfo( Offset, Extent, int mpi_rank );
     ChunkInfo( Offset, Extent );
 
     bool
