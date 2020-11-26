@@ -292,11 +292,11 @@ TEST_CASE( "no_parallel_hdf5", "[parallel][hdf5]" )
 void
 available_chunks_test( std::string file_ending )
 {
-    int __mpi_rank{ -1 }, __mpi_size{ -1 };
-    MPI_Comm_rank( MPI_COMM_WORLD, &__mpi_rank );
-    MPI_Comm_size( MPI_COMM_WORLD, &__mpi_size );
-    unsigned mpi_rank{ static_cast< unsigned >( __mpi_rank ) },
-        mpi_size{ static_cast< unsigned >( __mpi_size ) };
+    int r_mpi_rank{ -1 }, r_mpi_size{ -1 };
+    MPI_Comm_rank( MPI_COMM_WORLD, &r_mpi_rank );
+    MPI_Comm_size( MPI_COMM_WORLD, &r_mpi_size );
+    unsigned mpi_rank{ static_cast< unsigned >( r_mpi_rank ) },
+        mpi_size{ static_cast< unsigned >( r_mpi_size ) };
     std::string name = "../samples/available_chunks." + file_ending;
 
     std::vector< int > data{ 2, 4, 6, 8 };

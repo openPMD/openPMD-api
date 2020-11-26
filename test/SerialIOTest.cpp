@@ -101,8 +101,8 @@ TEST_CASE( "available_chunks_test_json", "[serial][json]" )
      * 2. (7,0) -- (2,2) (offset -- extent)
      * 3. (8,3) -- (2,1) (offset -- extent)
      *
-     * Since the chunks are reconstructed, they need not necessarily
-     * correspond with the way that the chunks are written.
+     * Since the chunks are reconstructed, they won't necessarily
+     * correspond with the way that the chunks were written.
      * As an example, let's write the first chunk in the above depiction
      * line by line.
      */
