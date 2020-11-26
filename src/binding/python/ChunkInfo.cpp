@@ -21,7 +21,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "openPMD/Chunk.hpp"
+#include "openPMD/ChunkInfo.hpp"
 
 #include <string>
 

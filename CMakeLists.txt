@@ -302,7 +302,7 @@ endif()
 #
 set(CORE_SOURCE
         src/config.cpp
-        src/Chunk.cpp
+        src/ChunkInfo.cpp
         src/Dataset.cpp
         src/Datatype.cpp
         src/Format.cpp
@@ -340,11 +340,11 @@ set(IO_SOURCE
         src/IO/InvalidatableFile.cpp)
 set(IO_ADIOS1_SEQUENTIAL_SOURCE
         src/auxiliary/Filesystem.cpp
-        src/Chunk.cpp
+        src/ChunkInfo.cpp
         src/IO/ADIOS/ADIOS1IOHandler.cpp)
 set(IO_ADIOS1_SOURCE
         src/auxiliary/Filesystem.cpp
-        src/Chunk.cpp
+        src/ChunkInfo.cpp
         src/IO/ADIOS/ParallelADIOS1IOHandler.cpp)
 
 # library
@@ -541,7 +541,7 @@ if(openPMD_HAVE_PYTHON)
         src/binding/python/Attributable.cpp
         src/binding/python/BaseRecord.cpp
         src/binding/python/BaseRecordComponent.cpp
-        src/binding/python/Chunk.cpp
+        src/binding/python/ChunkInfo.cpp
         src/binding/python/Container.cpp
         src/binding/python/Dataset.cpp
         src/binding/python/Datatype.cpp
