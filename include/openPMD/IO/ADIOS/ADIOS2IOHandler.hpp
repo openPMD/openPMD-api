@@ -853,27 +853,15 @@ namespace detail
          * on chosen ADIOS2 engine and can not be explicitly overridden by user.
          */
         bool optimizeAttributesStreaming = false;
-        /** @defgroup workaroundSteps Workaround for ADIOS steps in file mode
-         *  @{
-         * Workaround for the fact that ADIOS steps (currently) break random-
-         * access: Make ADIOS steps opt-in for persistent backends.
-         *
-         */
-        enum class Steps
-        {
-            UseSteps,     //!< In Streaming mode, actually do use ADIOS steps
-            DontUseSteps, //!< Don't use ADIOS steps, even in streaming mode
-            Undecided     //!< Not yet determined whether or not to use steps
-        };
-        Steps useAdiosSteps = Steps::Undecided;
-        /** @}
-         */
 
         using AttributeMap_t = std::map< std::string, adios2::Params >;
 
         BufferedActions( ADIOS2IOHandlerImpl & impl, InvalidatableFile file );
 
         ~BufferedActions( );
+
+        void
+        finalize();
 
         adios2::Engine & getEngine( );
         adios2::Engine & requireActiveStep( );
@@ -960,13 +948,56 @@ namespace detail
          */
         enum class StreamStatus
         {
-            NoStream,
+            /**
+             * A step is currently active.
+             */
             DuringStep,
+            /**
+             * A stream is active, but no step.
+             */
             OutsideOfStep,
-            StreamOver
+            /**
+             * Stream has ended.
+             */
+            StreamOver,
+            /**
+             * File is not written is streaming fashion.
+             * Begin/EndStep will be replaced by simple flushes.
+             * Used for:
+             * 1) Writing BP4 files without steps despite using the Streaming
+             *    API. This is due to the fact that ADIOS2.6.0 requires using
+             *    steps to read BP4 files written with steps, so using steps
+             *    is opt-in for now.
+             * 2) Reading with the Streaming API any file that has been written
+             *    without steps.
+             */
+            NoStream,
+            /**
+             * Necessary workaround under the following circumstances:
+             * 1) Using ADIOS2.6.0
+             * 2) Using attribute-based layout
+             * 3) Reading from a file-based engine a Series written with steps
+             * Up until ADIOS2.6.0, attributes are not associated with ADIOS
+             * steps in file-based engines. As a consequence, parsing one
+             * ADIOS step will show only the variables of that step, but the
+             * attributes of all steps which breaks our parsing logic.
+             * Workaround: If parsing before opening any step, all variables
+             * and attributes in the file will be shown.
+             * Hence, streamStatus == Parsing means that the first step has yet
+             * to be opened.
+             */
+            Parsing,
+            /**
+             * The stream status of a file-based engine will be decided upon
+             * opening the engine if in read mode. Up until then, this right
+             * here is the status.
+             */
+            Undecided
         };
-        StreamStatus streamStatus = StreamStatus::NoStream;
+        StreamStatus streamStatus = StreamStatus::OutsideOfStep;
         adios2::StepStatus m_lastStepStatus = adios2::StepStatus::OK;
+
+        bool delayOpeningTheFirstStep = false;
 
         /*
          * ADIOS2 does not give direct access to its internal attribute and
@@ -982,6 +1013,11 @@ namespace detail
          */
         auxiliary::Option< AttributeMap_t > m_availableAttributes;
         auxiliary::Option< AttributeMap_t > m_availableVariables;
+
+        /*
+         * finalize() will set this true to avoid running twice.
+         */
+        bool finalized = false;
 
         void
         configure_IO( ADIOS2IOHandlerImpl & impl );
