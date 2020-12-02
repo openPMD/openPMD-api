@@ -1330,7 +1330,18 @@ namespace detail
                     "SubStreams", std::to_string( num_substreams ) );
             }
         }
-#endif
+#    endif
+        if( notYetConfigured( "StatsLevel" ) )
+        {
+            /*
+             * Switch those off by default since they are expensive to compute
+             * and we don't read them anyway.
+             * No environement variable for this one, can still be switched
+             * on via JSON though.
+             * Default is "1".
+             */
+            m_IO.SetParameter( "StatsLevel", "0" );
+        }
     }
 
     adios2::Engine &
