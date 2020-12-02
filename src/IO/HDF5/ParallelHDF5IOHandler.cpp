@@ -74,6 +74,14 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(AbstractIOHandler* handler,
     herr_t status;
     status = H5Pset_dxpl_mpio(m_datasetTransferProperty, xfer_mode);
 
+    auto const strByte = auxiliary::getEnvString( "OPENPMD_HDF5_ALIGNMENT", "0" );       
+    std::stringstream sstream(strByte);
+    hsize_t bytes;
+    sstream >> bytes;
+
+    if ( bytes > 0 ) 
+         H5Pset_alignment(m_fileAccessProperty, 0, bytes);
+
     VERIFY(status >= 0, "[HDF5] Internal error: Failed to set HDF5 dataset transfer property");
     status = H5Pset_fapl_mpio(m_fileAccessProperty, m_mpiComm, m_mpiInfo);
     VERIFY(status >= 0, "[HDF5] Internal error: Failed to set HDF5 file access property");
