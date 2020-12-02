@@ -194,7 +194,7 @@ ADIOS2IOHandlerImpl::flush()
     {
         if ( m_dirty.find( p.first ) != m_dirty.end( ) )
         {
-            p.second->flush( true );
+            p.second->flush( );
         }
         else
         {
@@ -372,10 +372,15 @@ ADIOS2IOHandlerImpl::closeFile(
         auto it = m_fileData.find( fileIterator->second );
         if ( it != m_fileData.end( ) )
         {
-            auto & filedata = *it->second;
-            filedata.flush( false );
-            filedata.getEngine().Close();
-            filedata.m_buffer.clear();
+            /*
+             * No need to finalize unconditionally, destructor will take care
+             * of it.
+             */
+            it->second->flush(
+                []( detail::BufferedActions & ba, adios2::Engine & ) {
+                    ba.finalize();
+                },
+                /* flushUnconditinoally = */ false );
             m_fileData.erase( it );
         }
     }
@@ -1629,13 +1634,46 @@ namespace detail
     }
 
     void
-    BufferedActions::flush( bool performDatasetPutGets )
+    BufferedActions::flush( )
+    {
+        flush(
+            []( BufferedActions & ba, adios2::Engine & eng ) {
+                switch( ba.m_mode )
+                {
+                    case adios2::Mode::Write:
+                        eng.PerformPuts();
+                        break;
+                    case adios2::Mode::Read:
+                        eng.PerformGets();
+                        break;
+                    case adios2::Mode::Append:
+                        // TODO order?
+                        eng.PerformGets();
+                        eng.PerformPuts();
+                        break;
+                    default:
+                        break;
+                }
+            },
+            /* flushUnconditionally = */ false );
+    }
+
+    template< typename F >
+    void
+    BufferedActions::flush(
+        F && performPutGets,
+        bool flushUnconditionally )
     {
         if( streamStatus == StreamStatus::StreamOver )
         {
+            if( flushUnconditionally )
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Cannot access engine since stream is over." );
+            }
             return;
         }
-        auto & eng = getEngine( );
+        auto & eng = getEngine();
         /*
          * Only open a new step if it is necessary.
          */
@@ -1643,6 +1681,10 @@ namespace detail
         {
             if( m_buffer.empty() )
             {
+                if( flushUnconditionally )
+                {
+                    performPutGets( *this, eng );
+                }
                 return;
             }
             else
@@ -1654,28 +1696,10 @@ namespace detail
         {
             ba->run( *this );
         }
-        if( performDatasetPutGets )
-        {
-            // Flush() does not necessarily perform
-            // deferred actions....
-            switch ( m_mode )
-            {
-            case adios2::Mode::Write:
-                eng.PerformPuts( );
-                break;
-            case adios2::Mode::Read:
-                eng.PerformGets( );
-                break;
-            case adios2::Mode::Append:
-                // TODO order?
-                eng.PerformGets( );
-                eng.PerformPuts( );
-                break;
-            default:
-                break;
-            }
-            m_buffer.clear();
-        }
+
+        performPutGets( *this, eng );
+
+        m_buffer.clear();
     }
 
     AdvanceStatus
@@ -1683,7 +1707,7 @@ namespace detail
     {
         if( streamStatus == StreamStatus::NoStream )
         {
-            flush( /* writeAttributes = */ false );
+            flush();
             return AdvanceStatus::OK;
         }
         switch( mode )
@@ -1703,9 +1727,11 @@ namespace detail
                 {
                     getEngine().BeginStep();
                 }
-                flush( false );
-                getEngine().EndStep();
-                m_buffer.clear();
+                flush(
+                    []( BufferedActions &, adios2::Engine & eng ) {
+                        eng.EndStep();
+                    },
+                    /* flushUnconditinoally = */ true );
                 uncommittedAttributes.clear();
                 streamStatus = StreamStatus::OutsideOfStep;
                 return AdvanceStatus::OK;
@@ -1720,9 +1746,12 @@ namespace detail
                 // return status is stored in m_lastStepStatus
                 if( streamStatus != StreamStatus::DuringStep )
                 {
-                    flush( false );
-                    adiosStatus = getEngine().BeginStep();
-                    m_buffer.clear();
+                    flush(
+                        [ &adiosStatus ](
+                            BufferedActions &, adios2::Engine & engine ) {
+                            adiosStatus = engine.BeginStep();
+                        },
+                        /* flushUnconditinoally = */ true );
                 }
                 AdvanceStatus res = AdvanceStatus::OK;
                 switch( adiosStatus )

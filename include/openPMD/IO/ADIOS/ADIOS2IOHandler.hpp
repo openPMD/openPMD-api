@@ -879,7 +879,13 @@ namespace detail
          *        e.g. ending a step.)
          */
         void
-        flush( bool performDatasetPutGets );
+        flush( );
+
+        template< typename F >
+        void
+        flush(
+            F && performPutsGets,
+            bool flushUnconditionally );
 
         /**
          * @brief Begin or end an ADIOS step.
