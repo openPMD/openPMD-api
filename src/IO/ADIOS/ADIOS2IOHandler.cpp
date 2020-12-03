@@ -1633,36 +1633,9 @@ namespace detail
             new _BA( std::forward< BA >( ba ) ) ) );
     }
 
-    void
-    BufferedActions::flush( )
-    {
-        flush(
-            []( BufferedActions & ba, adios2::Engine & eng ) {
-                switch( ba.m_mode )
-                {
-                    case adios2::Mode::Write:
-                        eng.PerformPuts();
-                        break;
-                    case adios2::Mode::Read:
-                        eng.PerformGets();
-                        break;
-                    case adios2::Mode::Append:
-                        // TODO order?
-                        eng.PerformGets();
-                        eng.PerformPuts();
-                        break;
-                    default:
-                        break;
-                }
-            },
-            /* flushUnconditionally = */ false );
-    }
-
     template< typename F >
     void
-    BufferedActions::flush(
-        F && performPutGets,
-        bool flushUnconditionally )
+    BufferedActions::flush( F && performPutGets, bool flushUnconditionally )
     {
         if( streamStatus == StreamStatus::StreamOver )
         {
@@ -1700,6 +1673,31 @@ namespace detail
         performPutGets( *this, eng );
 
         m_buffer.clear();
+    }
+
+    void
+    BufferedActions::flush()
+    {
+        flush(
+            []( BufferedActions & ba, adios2::Engine & eng ) {
+                switch( ba.m_mode )
+                {
+                    case adios2::Mode::Write:
+                        eng.PerformPuts();
+                        break;
+                    case adios2::Mode::Read:
+                        eng.PerformGets();
+                        break;
+                    case adios2::Mode::Append:
+                        // TODO order?
+                        eng.PerformGets();
+                        eng.PerformPuts();
+                        break;
+                    default:
+                        break;
+                }
+            },
+            /* flushUnconditionally = */ false );
     }
 
     AdvanceStatus

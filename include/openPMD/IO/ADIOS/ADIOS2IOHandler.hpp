@@ -873,19 +873,27 @@ namespace detail
         /**
          * Flush deferred IO actions.
          *
-         * @param performDatasetPutGets Run adios2::Engine::Perform(Puts|Gets)
-         *        If true, also clears m_buffer. If false, both should be done
-         *        manually at callside. (Helpful, if calling flush() before
-         *        e.g. ending a step.)
+         * @performPutsGets A functor that takes as parameters (1) *this and
+         *     (2) the ADIOS2 engine.
+         *     Its task is to ensure that ADIOS2 performs Put/Get operations.
+         *     Several options for this:
+         *     * adios2::Engine::EndStep
+         *     * adios2::Engine::Perform(Puts|Gets)
+         *     * adios2::Engine::Close
+         * @flushUnconditionally Whether to run the functor even if no deferred
+         *     IO tasks had been queued.
          */
-        void
-        flush( );
-
         template< typename F >
         void
-        flush(
-            F && performPutsGets,
-            bool flushUnconditionally );
+        flush( F && performPutsGets, bool flushUnconditionally );
+
+        /**
+         * Overload of flush() that uses adios2::Engine::Perform(Puts|Gets)
+         * and does not flush unconditionally.
+         *
+         */
+        void
+        flush();
 
         /**
          * @brief Begin or end an ADIOS step.
