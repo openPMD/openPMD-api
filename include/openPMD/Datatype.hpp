@@ -615,7 +615,7 @@ isSame( openPMD::Datatype const d, openPMD::Datatype const e )
     return false;
 }
 
-#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && !defined(__clang__)
 #define OPENPMD_TEMPLATE_OPERATOR operator
 #else
 #define OPENPMD_TEMPLATE_OPERATOR template operator
