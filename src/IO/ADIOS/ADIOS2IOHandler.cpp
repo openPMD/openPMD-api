@@ -1782,6 +1782,12 @@ namespace detail
     AdvanceStatus
     BufferedActions::advance( AdvanceMode mode )
     {
+        if( streamStatus == StreamStatus::Undecided )
+        {
+            // stream status gets decided on upon opening an engine
+            getEngine();
+        }
+        // sic! no else
         if( streamStatus == StreamStatus::NoStream )
         {
             flush();
