@@ -318,7 +318,7 @@ OPENPMD_private:
      * as of yet. Such a facility will be required upon implementing things such
      * as resizable datasets.
      */
-    void readFileBased( bool init = true );
+    void readFileBased( );
     void readGroupBased( bool init = true );
     /** @}
      */

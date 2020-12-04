@@ -794,7 +794,7 @@ Series::flushParticlesPath()
 }
 
 void
-Series::readFileBased( bool do_init )
+Series::readFileBased( )
 {
     Parameter< Operation::OPEN_FILE > fOpen;
     Parameter< Operation::CLOSE_FILE > fClose;
@@ -821,51 +821,48 @@ Series::readFileBased( bool do_init )
             iterations.m_writable->parent = getWritable(this);
             iterations.parent = getWritable(this);
 
-            if( do_init )
+            readBase();
+
+            using DT = Datatype;
+            aRead.name = "iterationEncoding";
+            IOHandler->enqueue( IOTask( this, aRead ) );
+            IOHandler->flush();
+            if( *aRead.dtype == DT::STRING )
             {
-                readBase();
-
-                using DT = Datatype;
-                aRead.name = "iterationEncoding";
-                IOHandler->enqueue( IOTask( this, aRead ) );
-                IOHandler->flush();
-                if( *aRead.dtype == DT::STRING )
+                std::string encoding =
+                    Attribute( *aRead.resource ).get< std::string >();
+                if( encoding == "fileBased" )
+                    *m_iterationEncoding = IterationEncoding::fileBased;
+                else if( encoding == "groupBased" )
                 {
-                    std::string encoding =
-                        Attribute( *aRead.resource ).get< std::string >();
-                    if( encoding == "fileBased" )
-                        *m_iterationEncoding = IterationEncoding::fileBased;
-                    else if( encoding == "groupBased" )
-                    {
-                        *m_iterationEncoding = IterationEncoding::groupBased;
-                        std::cerr << "Series constructor called with iteration "
-                                     "regex '%T' suggests loading a "
-                                  << "time series with fileBased iteration "
-                                     "encoding. Loaded file is groupBased.\n";
-                    }
-                    else
-                        throw std::runtime_error(
-                            "Unknown iterationEncoding: " + encoding );
-                    setAttribute( "iterationEncoding", encoding );
-                }
-                else
-                    throw std::runtime_error( "Unexpected Attribute datatype "
-                                              "for 'iterationEncoding'" );
-
-                aRead.name = "iterationFormat";
-                IOHandler->enqueue( IOTask( this, aRead ) );
-                IOHandler->flush();
-                if( *aRead.dtype == DT::STRING )
-                {
-                    written() = false;
-                    setIterationFormat(
-                        Attribute( *aRead.resource ).get< std::string >() );
-                    written() = true;
+                    *m_iterationEncoding = IterationEncoding::groupBased;
+                    std::cerr << "Series constructor called with iteration "
+                                    "regex '%T' suggests loading a "
+                                << "time series with fileBased iteration "
+                                    "encoding. Loaded file is groupBased.\n";
                 }
                 else
                     throw std::runtime_error(
-                        "Unexpected Attribute datatype for 'iterationFormat'" );
+                        "Unknown iterationEncoding: " + encoding );
+                setAttribute( "iterationEncoding", encoding );
             }
+            else
+                throw std::runtime_error( "Unexpected Attribute datatype "
+                                            "for 'iterationEncoding'" );
+
+            aRead.name = "iterationFormat";
+            IOHandler->enqueue( IOTask( this, aRead ) );
+            IOHandler->flush();
+            if( *aRead.dtype == DT::STRING )
+            {
+                written() = false;
+                setIterationFormat(
+                    Attribute( *aRead.resource ).get< std::string >() );
+                written() = true;
+            }
+            else
+                throw std::runtime_error(
+                    "Unexpected Attribute datatype for 'iterationFormat'" );
 
             read();
             IOHandler->enqueue(IOTask(this, fClose));
