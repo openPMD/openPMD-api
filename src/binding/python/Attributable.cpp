@@ -18,35 +18,21 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <pybind11/pybind11.h>
-#include <pybind11/stl_bind.h>
-#include <pybind11/stl.h>
-
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/binding/python/Numpy.hpp"
+#include "openPMD/binding/python/Variant.hpp"
+
+#include <pybind11/pybind11.h>
+#include <pybind11/stl_bind.h>
+#include <pybind11/stl.h>
 
 #include <array>
 #include <complex>
 #include <string>
 #include <vector>
 
-
-// std::variant
-//   https://pybind11.readthedocs.io/en/stable/advanced/cast/stl.html
-// in C++17 mode already defined in <pybind11/stl.h>
-#if __cplusplus < 201703L
-namespace pybind11 {
-namespace detail {
-    template< typename... Ts >
-    struct type_caster< variantSrc::variant< Ts... > > :
-        variant_caster< variantSrc::variant< Ts... > >
-    {};
-
-} // namespace detail
-} // namespace pybind11
-#endif
 
 namespace py = pybind11;
 using namespace openPMD;
@@ -139,7 +125,7 @@ bool setAttributeFromBufferInfo(
          * - not strided with paddings
          * - not a view in another buffer that results in striding
          */
-        Py_buffer* view = new Py_buffer();
+        auto* view = new Py_buffer();
         int flags = PyBUF_STRIDES | PyBUF_FORMAT;
         if( PyObject_GetBuffer( a.ptr(), view, flags ) != 0 )
         {

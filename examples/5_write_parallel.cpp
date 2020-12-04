@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
     {
         // global data set to write: [MPI_Size * 10, 300]
         // each rank writes a 10x300 slice with its MPI rank as values
-        float const value = float(mpi_size);
+        auto const value = float(mpi_size);
         std::vector<float> local_data(
             10 * 300, value);
         if( 0 == mpi_rank )

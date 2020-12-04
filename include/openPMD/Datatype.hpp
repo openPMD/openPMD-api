@@ -112,19 +112,15 @@ struct decay_equiv :
         >::type
 { };
 
-#if __cplusplus >= 201402L
 template<
         typename T,
         typename U
 >
 constexpr bool decay_equiv_v = decay_equiv< T, U >::value;
-#endif
 
 template< typename T >
 inline
-#if __cplusplus >= 201402L
 constexpr
-#endif
 Datatype
 determineDatatype()
 {
@@ -170,9 +166,7 @@ determineDatatype()
 
 template< typename T >
 inline
-#if __cplusplus >= 201402L
 constexpr
-#endif
 Datatype
 determineDatatype(std::shared_ptr< T >)
 {
@@ -621,7 +615,7 @@ isSame( openPMD::Datatype const d, openPMD::Datatype const e )
     return false;
 }
 
-#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && !defined(__clang__)
 #define OPENPMD_TEMPLATE_OPERATOR operator
 #else
 #define OPENPMD_TEMPLATE_OPERATOR template operator

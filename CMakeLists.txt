@@ -252,9 +252,9 @@ if(openPMD_USE_PYTHON STREQUAL AUTO)
     if(openPMD_USE_INTERNAL_PYBIND11)
         add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11")
         set(openPMD_HAVE_PYTHON TRUE)
-        message(STATUS "pybind11: Using INTERNAL version 2.3.0")
+        message(STATUS "pybind11: Using INTERNAL version 2.4.3")
     else()
-        find_package(pybind11 2.3.0 CONFIG)
+        find_package(pybind11 2.4.3 CONFIG)
         if(pybind11_FOUND)
             set(openPMD_HAVE_PYTHON TRUE)
             message(STATUS "pybind11: Found version '${pybind11_VERSION}'")
@@ -269,15 +269,15 @@ if(openPMD_USE_PYTHON STREQUAL AUTO)
                        "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}' "
                        "is NOT supported. Set for example "
                        "-DPYTHON_EXECUTABLE=$(which python3) "
-                       "to use 3.5+.")
+                       "to use 3.6+.")
     endif()
 elseif(openPMD_USE_PYTHON)
     if(openPMD_USE_INTERNAL_PYBIND11)
         add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11")
         set(openPMD_HAVE_PYTHON TRUE)
-        message(STATUS "pybind11: Using INTERNAL version 2.3.0")
+        message(STATUS "pybind11: Using INTERNAL version 2.4.3")
     else()
-        find_package(pybind11 2.3.0 REQUIRED CONFIG)
+        find_package(pybind11 2.4.3 REQUIRED CONFIG)
         set(openPMD_HAVE_PYTHON TRUE)
         message(STATUS "pybind11: Found version '${pybind11_VERSION}'")
     endif()
@@ -286,7 +286,7 @@ elseif(openPMD_USE_PYTHON)
                             "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}' "
                             "is NOT supported. Set for example "
                             "-DPYTHON_EXECUTABLE=$(which python3) "
-                            "to use 3.5+.")
+                            "to use 3.6+.")
     endif()
 else()
     set(openPMD_HAVE_PYTHON FALSE)
@@ -302,6 +302,7 @@ endif()
 #
 set(CORE_SOURCE
         src/config.cpp
+        src/ChunkInfo.cpp
         src/Dataset.cpp
         src/Datatype.cpp
         src/Format.cpp
@@ -339,9 +340,11 @@ set(IO_SOURCE
         src/IO/InvalidatableFile.cpp)
 set(IO_ADIOS1_SEQUENTIAL_SOURCE
         src/auxiliary/Filesystem.cpp
+        src/ChunkInfo.cpp
         src/IO/ADIOS/ADIOS1IOHandler.cpp)
 set(IO_ADIOS1_SOURCE
         src/auxiliary/Filesystem.cpp
+        src/ChunkInfo.cpp
         src/IO/ADIOS/ParallelADIOS1IOHandler.cpp)
 
 # library
@@ -350,7 +353,7 @@ add_library(openPMD::openPMD ALIAS openPMD)
 
 # properties
 target_compile_features(openPMD
-    PUBLIC cxx_std_11
+    PUBLIC cxx_std_14
 )
 set_target_properties(openPMD PROPERTIES
     CXX_EXTENSIONS OFF
@@ -424,10 +427,10 @@ if(openPMD_HAVE_ADIOS1)
     add_library(openPMD.ADIOS1.Serial SHARED ${IO_ADIOS1_SEQUENTIAL_SOURCE})
     add_library(openPMD.ADIOS1.Parallel SHARED ${IO_ADIOS1_SOURCE})
     target_compile_features(openPMD.ADIOS1.Serial
-        PUBLIC cxx_std_11
+        PUBLIC cxx_std_14
     )
     target_compile_features(openPMD.ADIOS1.Parallel
-        PUBLIC cxx_std_11
+        PUBLIC cxx_std_14
     )
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         target_compile_options(openPMD.ADIOS1.Serial PUBLIC "/bigobj")
@@ -538,6 +541,7 @@ if(openPMD_HAVE_PYTHON)
         src/binding/python/Attributable.cpp
         src/binding/python/BaseRecord.cpp
         src/binding/python/BaseRecordComponent.cpp
+        src/binding/python/ChunkInfo.cpp
         src/binding/python/Container.cpp
         src/binding/python/Dataset.cpp
         src/binding/python/Datatype.cpp
@@ -627,8 +631,8 @@ set(openPMD_EXAMPLE_NAMES
     6_dump_filebased_series
     7_extended_write_serial
     8_benchmark_parallel
-    8a_benchmark_write1D2D_parallel
-    8b_benchmark_read1D2D_parallel
+    8a_benchmark_write_parallel
+    8b_benchmark_read_parallel
     10_streaming_write
     10_streaming_read
 )
@@ -654,8 +658,8 @@ if(BUILD_TESTING)
     # compile Catch2 implementation part separately
     add_library(CatchRunner test/CatchRunner.cpp)  # Always MPI_Init with Serial Fallback
     add_library(CatchMain   test/CatchMain.cpp)    # Serial only
-    target_compile_features(CatchRunner PUBLIC cxx_std_11)
-    target_compile_features(CatchMain   PUBLIC cxx_std_11)
+    target_compile_features(CatchRunner PUBLIC cxx_std_14)
+    target_compile_features(CatchMain   PUBLIC cxx_std_14)
     set_target_properties(CatchRunner CatchMain PROPERTIES
         CXX_EXTENSIONS OFF
         CXX_STANDARD_REQUIRED ON

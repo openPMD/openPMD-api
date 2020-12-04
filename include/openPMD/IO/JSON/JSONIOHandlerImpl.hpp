@@ -190,6 +190,12 @@ namespace openPMD
             Parameter< Operation::EXTEND_DATASET > const &
         ) override;
 
+        void
+        availableChunks(
+            Writable *,
+            Parameter< Operation::AVAILABLE_CHUNKS > &
+        ) override;
+
         void openFile(
             Writable *,
             Parameter< Operation::OPEN_FILE > const &

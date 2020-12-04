@@ -116,6 +116,9 @@ public:
                     case O::ADVANCE:
                         advance(i.writable, deref_dynamic_cast< Parameter< O::ADVANCE > >(i.parameter.get()));
                         break;
+                    case O::AVAILABLE_CHUNKS:
+                        availableChunks(i.writable, deref_dynamic_cast< Parameter< O::AVAILABLE_CHUNKS > >(i.parameter.get()));
+                        break;
                 }
             } catch (unsupported_data_error&)
             {
@@ -151,8 +154,7 @@ public:
    */
   virtual void
   advance( Writable *, Parameter< Operation::ADVANCE > & )
-  {
-  }
+  {}
 
   /** Close an openPMD group.
    * 
@@ -169,6 +171,16 @@ public:
   virtual void
   closePath( Writable *, Parameter< Operation::CLOSE_PATH > const & )
   {}
+
+  /** Report chunks that are available for loading from the dataset represented
+   *  by this writable.
+   *
+   * The resulting chunks should be stored into parameters.chunks.
+   *
+   */
+  virtual void
+  availableChunks( Writable *, Parameter< Operation::AVAILABLE_CHUNKS > & ) = 0;
+
   /** Create a new file in physical storage, possibly overriding an existing file.
    *
    * The operation should fail if m_handler->m_frontendAccess is Access::READ_ONLY.

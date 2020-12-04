@@ -43,7 +43,7 @@ PatchRecord::flush_impl(std::string const& path)
     if( this->find(RecordComponent::SCALAR) == this->end() )
     {
         if(IOHandler->m_frontendAccess != Access::READ_ONLY )
-            Container< PatchRecordComponent >::flush(path);
+            Container< PatchRecordComponent >::flush(path); // warning (clang-tidy-10): bugprone-parent-virtual-call
         for( auto& comp : *this )
             comp.second.flush(comp.first);
     } else

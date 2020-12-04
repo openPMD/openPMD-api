@@ -1,0 +1,186 @@
+name: unix
+
+on: [push, pull_request]
+
+jobs:
+  clangtidy10_nopy_ompi_h5_ad1_ad2:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Spack Cache
+      uses: actions/cache@v2
+      with: {path: /opt/spack, key: clangtidy10_nopy_ompi_h5_ad1_ad2 }
+    - name: Install
+      run: |
+        sudo apt-get install clang clang-tidy gfortran libopenmpi-dev python
+        sudo .github/workflows/dependencies/install_spack
+    - name: Build
+      env: {CC: clang, CXX: clang++, CXXFLAGS: -Wno-deprecated-declarations}
+      run: |
+        eval $(spack env activate --sh .github/ci/spack-envs/clangtidy_nopy_ompi_h5_ad1_ad2/)
+        spack install
+
+        mkdir build && cd build
+        ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
+        cmake -S .. -B . -DCMAKE_CXX_CLANG_TIDY="$(which clang-tidy);-system-headers=0" -DopenPMD_USE_INVASIVE_TESTS=ON
+        cmake --build . --parallel 2 2> clang-tidy.log
+        cat clang-tidy.log
+        if [[ $(wc -m <clang-tidy.log) -gt 1 ]]; then exit 1; fi
+
+  clang5_nopy_nompi_h5:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Spack Cache
+      uses: actions/cache@v2
+      with: {path: /opt/spack, key: clang5_nopy_nompi_h5 }
+    - name: Install
+      run: |
+        sudo apt-get install clang-5.0
+        sudo .github/workflows/dependencies/install_spack
+    - name: Build
+      env: {CC: clang-5.0, CXX: clang++-5.0, CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      run: |
+        eval $(spack env activate --sh .github/ci/spack-envs/clang5_nopy_nompi_h5/)
+        spack install
+
+        mkdir build && cd build
+        ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=OFF -DopenPMD_USE_MPI=OFF -DopenPMD_USE_HDF5=ON -DopenPMD_USE_INVASIVE_TESTS=ON
+        cmake --build . --parallel 2
+        ctest --output-on-failure
+
+  clang5_nopy_ompi_h5_ad1_ad2_bp3:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Spack Cache
+      uses: actions/cache@v2
+      with: {path: /opt/spack, key: clang5_nopy_ompi_h5_ad1_ad2_bp3 }
+    - name: Install
+      run: |
+        sudo apt-get install clang-5.0 gfortran libopenmpi-dev python3
+        sudo .github/workflows/dependencies/install_spack
+    - name: Build
+      env: {CC: clang-5.0, CXX: clang++-5.0, CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      run: |
+        eval $(spack env activate --sh .github/ci/spack-envs/clang5_nopy_ompi_h5_ad1_ad2_bp3/)
+        spack install
+
+        mkdir build && cd build
+        ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=OFF -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS1=ON -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON
+        cmake --build . --parallel 2
+        ctest --output-on-failure
+
+        find . -name *.bp     | xargs -n1 -P1 -I {} rm -rf {}
+        find . -name *.bp.dir | xargs -n1 -P1 -I {} rm -rf {}
+        export OPENPMD_BP_BACKEND=ADIOS1
+        ctest --output-on-failure
+
+# TODO
+#  clang6_py36_nompi_h5_ad1_ad2_libcpp
+
+  clang10_py38_nompi_h5_ad1_ad2_libcpp:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install
+      run: |
+        sudo apt-get install clang-10 libc++-dev libc++abi-dev libhdf5-dev python3
+        python3 -m pip install -U pip
+        python3 -m pip install -U numpy
+#       TODO ADIOS1 ADIOS2
+    - name: Build
+      env: {CC: clang-10, CXX: clang++-10, CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      # TODO
+      # , CXXFLAGS: -nostdinc++ -I/usr/include/c++/10 -I/usr/include/x86_64-linux-gnu/c++/10/, LDFLAGS: -stdlib=libc++ -lc++ -lc++abi}
+      run: |
+        mkdir build && cd build
+        ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DPYTHON_EXECUTABLE=$(which python3) -DopenPMD_USE_MPI=OFF -DopenPMD_USE_HDF5=ON -DopenPMD_USE_INVASIVE_TESTS=ON -DCMAKE_VERBOSE_MAKEFILE=ON
+        cmake --build . --parallel 2
+        ctest --output-on-failure
+
+# TODO
+#  clang7_py37_ompi_h5_ad2_asan_ubsan_static
+#  clang8_py38_mpich_h5_ad1_ad2_h5coll
+#  clang10_py38_ompi_h5_1-10-6_ad1_ad2_release
+
+#  appleclang9_py37_nompi_h5_ad1
+#  appleclang10_py37_h5_ad2_libcpp
+#  appleclang11_nopy_nompi_h5_ad2
+
+  appleclang12_py_mpi_h5_ad2:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install
+      run: |
+        brew update
+        brew install adios2
+        brew install hdf5-mpi
+        brew install python
+    - name: Build
+      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      run: |
+        mkdir build && cd build
+        ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DPYTHON_EXECUTABLE=$(which python3) -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON
+        cmake --build . --parallel 2
+        ctest --output-on-failure
+
+# TODO
+#  gcc-4.9.4_nopy_nompi_h5_ad1_ad2
+#  gcc-4.9.4_nopy_ompi_h5_ad1_ad2
+#  gcc-9.3.0_nopy_nompi_h5_ad1_ad2-2.6.0
+#  gcc-7.4.0_nopy_ompi_h5_ad1_h5coll
+#  gcc-6.5.0_py35_nompi_h5_ad1-1.13.1
+#  gcc-8.1.0_py37_nompi_h5_ad1_static
+#  gcc-6.5.0_py36_nompi_h5-1.8.13
+#  gcc-4.8.5_py35_nompi_h5
+#  gcc-7.4.0_py_ompi_h5_ad1_ad2_coveralls
+
+  gcc5_py36_ompi_h5_ad1_ad2:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Spack Cache
+      uses: actions/cache@v2
+      with: {path: /opt/spack, key: gcc5_py36_ompi_h5_ad1_ad2 }
+    - name: Install
+      run: |
+        sudo apt-get install g++-5 gfortran libopenmpi-dev python3 python3-setuptools
+        sudo .github/workflows/dependencies/install_spack
+        python3 -m pip install -U pip
+        python3 -m pip install -U numpy
+        python3 -m pip install -U mpi4py
+    - name: Build
+      env: {CC: gcc-5, CXX: g++-5, CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      run: |
+        eval $(spack env activate --sh .github/ci/spack-envs/gcc5_py36_ompi_h5_ad1_ad2/)
+        spack install
+
+        mkdir build && cd build
+        ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DPYTHON_EXECUTABLE=$(which python3) -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS1=ON -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON
+        cmake --build . --parallel 2
+        ctest --output-on-failure
+
+  gcc9_py38_nompi_h5_ad1_ad2_libcpp:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install
+      run: |
+        sudo apt-get install g++ libopenmpi-dev libhdf5-openmpi-dev libadios-dev python3 python3-numpy python3-mpi4py
+#       TODO ADIOS1 (.pc file broken?) ADIOS2
+    - name: Build
+      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations, PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig}
+      run: |
+        mkdir build && cd build
+        ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
+        find /usr -name adios.pc
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DPYTHON_EXECUTABLE=$(which python3) -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_INVASIVE_TESTS=ON
+        cmake --build . --parallel 2
+        ctest --output-on-failure

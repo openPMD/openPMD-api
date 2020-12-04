@@ -1,0 +1,34 @@
+# This is a Spack environment file.
+#
+# Activating and installing this environment will provide all dependencies
+# that are needed for full-feature development.
+#   https//spack.readthedocs.io/en/latest/environments.html#anonymous-environments
+#
+spack:
+  specs:
+  - hdf5
+
+  packages:
+    all:
+      target: ['x86_64']
+      variants: ~mpi ~fortran
+      compiler: [clang@5.0.0]
+
+  compilers:
+  - compiler:
+      environment: {}
+      extra_rpaths: []
+      flags: {}
+      modules: []
+      operating_system: ubuntu18.04
+      paths:
+        cc: /usr/lib/llvm-5.0/bin/clang
+        cxx: /usr/lib/llvm-5.0/bin/clang++
+        f77: null
+        fc: null
+      spec: clang@5.0.0
+      target: x86_64
+
+  config:
+    build_jobs: 2
+

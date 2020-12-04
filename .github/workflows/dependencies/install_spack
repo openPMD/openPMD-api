@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+#
+
+set -eu -o pipefail
+
+spack_ver="0.16.0"
+
+cd /opt
+if [ ! -d spack ]
+then
+  # download
+  curl -sOL https://github.com/spack/spack/archive/v${spack_ver}.tar.gz
+  tar -xf v${spack_ver}.tar.gz && rm v${spack_ver}.tar.gz
+  mv spack-${spack_ver} spack
+fi
+
+# install
+ln -s /opt/spack/bin/spack /usr/bin/spack
+
+# add binary mirror
+spack mirror add E4S https://cache.e4s.io
+curl -sOL https://oaciss.uoregon.edu/e4s/e4s.pub
+spack gpg trust e4s.pub
+
+# find compilers & external packages
+spack compiler find
+#spack external find
+
+# accessible by regular CI user
+chmod a+rwx -R /opt/spack
+chmod a+rwx $HOME/.spack/

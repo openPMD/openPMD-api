@@ -578,13 +578,14 @@ Series::flushFileBased( iterations_iterator begin, iterations_iterator end )
     if( IOHandler->m_frontendAccess == Access::READ_ONLY )
         for( auto it = begin; it != end; ++it )
         {
-            if( *it->second.m_closed ==
-                Iteration::CloseStatus::ClosedInBackend )
+            bool const dirtyRecursive = it->second.dirtyRecursive();
+            if( *it->second.m_closed
+                == Iteration::CloseStatus::ClosedInBackend )
             {
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
                 // verify that there have been no further accesses
-                if( it->second.dirtyRecursive() )
+                if( dirtyRecursive )
                 {
                     throw std::runtime_error(
                         "[Series] Detected illegal access to iteration that "
@@ -592,9 +593,23 @@ Series::flushFileBased( iterations_iterator begin, iterations_iterator end )
                 }
                 continue;
             }
+            /*
+             * Opening a file is expensive, so let's do it only if necessary.
+             * Necessary if:
+             * 1. The iteration itself has been changed somewhere.
+             * 2. Or the Series has been changed globally in a manner that
+             *    requires adapting all iterations.
+             */
+            if( !dirtyRecursive && !this->dirty() )
+            {
+                continue;
+            }
+
+            openIteration( it->first, it->second );
+
             it->second.flush();
-            if( *it->second.m_closed ==
-                Iteration::CloseStatus::ClosedInFrontend )
+            if( *it->second.m_closed
+                == Iteration::CloseStatus::ClosedInFrontend )
             {
                 Parameter< Operation::CLOSE_FILE > fClose;
                 IOHandler->enqueue(
@@ -608,8 +623,9 @@ Series::flushFileBased( iterations_iterator begin, iterations_iterator end )
         bool allDirty = dirty();
         for( auto it = begin; it != end; ++it )
         {
-            if( *it->second.m_closed ==
-                Iteration::CloseStatus::ClosedInBackend )
+            bool const dirtyRecursive = it->second.dirtyRecursive();
+            if( *it->second.m_closed
+                == Iteration::CloseStatus::ClosedInBackend )
             {
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
@@ -620,12 +636,24 @@ Series::flushFileBased( iterations_iterator begin, iterations_iterator end )
                         "[Series] Closed iteration has not been written. This "
                         "is an internal error." );
                 }
-                if( it->second.dirtyRecursive() )
+                if( dirtyRecursive )
                 {
                     throw std::runtime_error(
                         "[Series] Detected illegal access to iteration that "
                         "has been closed previously." );
                 }
+                continue;
+            }
+
+            /*
+             * Opening a file is expensive, so let's do it only if necessary.
+             * Necessary if:
+             * 1. The iteration itself has been changed somewhere.
+             * 2. Or the Series has been changed globally in a manner that
+             *    requires adapting all iterations.
+             */
+            if( !dirtyRecursive && !this->dirty() )
+            {
                 continue;
             }
             /* as there is only one series,
@@ -769,6 +797,7 @@ void
 Series::readFileBased( bool do_init )
 {
     Parameter< Operation::OPEN_FILE > fOpen;
+    Parameter< Operation::CLOSE_FILE > fClose;
     Parameter< Operation::READ_ATT > aRead;
 
     if( !auxiliary::directory_exists(IOHandler->directory) )
@@ -839,6 +868,8 @@ Series::readFileBased( bool do_init )
             }
 
             read();
+            IOHandler->enqueue(IOTask(this, fClose));
+            IOHandler->flush();
         }
     }
 
@@ -1113,6 +1144,29 @@ Series::advance(
     IOHandler->flush();
 
     return *param.status;
+}
+
+void
+Series::openIteration( uint64_t index, Iteration iteration )
+{
+    // open the iteration's file again
+    std::stringstream nameBuilder( "" );
+    nameBuilder << std::setw( *m_filenamePadding ) << std::setfill( '0' )
+                << index;
+    std::string filename =
+        *m_filenamePrefix + nameBuilder.str() + *m_filenamePostfix;
+
+    Parameter< Operation::OPEN_FILE > fOpen;
+    fOpen.name = filename;
+    IOHandler->enqueue( IOTask( this, fOpen ) );
+
+    /* open base path */
+    Parameter< Operation::OPEN_PATH > pOpen;
+    pOpen.path = auxiliary::replace_first( basePath(), "%T/", "" );
+    IOHandler->enqueue( IOTask( &iterations, pOpen ) );
+    /* open iteration path */
+    pOpen.path = std::to_string( index );
+    IOHandler->enqueue( IOTask( &iteration, pOpen ) );
 }
 
 namespace

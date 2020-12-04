@@ -5,8 +5,8 @@ FROM       quay.io/pypa/manylinux2010_x86_64 as build-env
 # FROM       quay.io/pypa/manylinux1_x86_64 as build-env
 ENV        DEBIAN_FRONTEND noninteractive
 
-# Python 3.5-3.8 via "35m 36m 37m 38"
-ARG        PY_VERSIONS="35m 36m 37m 38"
+# Python 3.6-3.9 via "36m 37m 38 39"
+ARG        PY_VERSIONS="36m 37m 38 39"
 
 # static libs need relocatable symbols for linking to shared python lib
 ENV        CFLAGS="-fPIC ${CFLAGS}"
@@ -40,7 +40,8 @@ RUN        curl -sLo hdf5-1.10.5.tar.gz https://support.hdfgroup.org/ftp/HDF5/re
            && make install
 
 # avoid picking up a static libpthread in adios (also: those libs lack -fPIC)
-RUN        rm /usr/lib64/libpthread.a /usr/lib64/libm.a /usr/lib64/librt.a
+RUN        rm -f /usr/lib64/libpthread.a /usr/lib64/libm.a /usr/lib64/librt.a
+RUN        rm -f /usr/lib/libpthread.a   /usr/lib/libm.a   /usr/lib/librt.a
 
 RUN        curl -sLo c-blosc-1.15.0.tar.gz https://github.com/Blosc/c-blosc/archive/v1.15.0.tar.gz \
            && file c-blosc*.tar.gz \
@@ -68,10 +69,6 @@ RUN        curl -sLo adios2-2.6.0.tar.gz https://github.com/ornladios/ADIOS2/arc
            && file adios2*.tar.gz \
            && tar -xzf adios2*.tar.gz \
            && rm adios2*.tar.gz \
-           && cd ADIOS2-* \
-           && curl -sLo adios2-static.patch https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/1828.patch \
-           && patch -p1 < adios2-static.patch \
-           && cd .. \
            && mkdir build-ADIOS2 \
            && cd build-ADIOS2 \
            && PY_TARGET=${PY_VERSIONS%% *} \
@@ -136,9 +133,10 @@ RUN        python3 --version \
            && python3 -m pip install openPMD_api-*-cp37-cp37m-manylinux2010_x86_64.whl
 RUN        find / -name "openpmd*"
 RUN        ls -hal /usr/local/lib/python3.7/dist-packages/
+RUN        ls -hal /usr/local/lib/python3.7/dist-packages/openpmd_api/
 # RUN        ls -hal /usr/local/lib/python3.7/dist-packages/.libsopenpmd_api
 # RUN        objdump -x /usr/local/lib/python3.7/dist-packages/openpmd_api.cpython-37m-x86_64-linux-gnu.so | grep RPATH
-RUN        ldd /usr/local/lib/python3.7/dist-packages/openpmd_api.cpython-37m-x86_64-linux-gnu.so
+RUN        ldd /usr/local/lib/python3.7/dist-packages/openpmd_api/openpmd_api_cxx.cpython-37m-x86_64-linux-gnu.so
 RUN        python3 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
 RUN        python3 -m openpmd_api.ls --help
 RUN        openpmd-ls --help
@@ -175,18 +173,19 @@ RUN        python3 -c "import openpmd_api as io; print(io.__version__); print(io
 RUN        python3 -m openpmd_api.ls --help
 RUN        openpmd-ls --help
 
-# test in fresh env: Debian:Stretch + Python 3.5
-FROM       debian:stretch
+# test in fresh env: Debian:Bullseye + Python 3.9
+FROM       debian:bullseye
 ENV        DEBIAN_FRONTEND noninteractive
-COPY --from=build-env /wheelhouse/openPMD_api-*-cp35-cp35m-manylinux2010_x86_64.whl .
+COPY --from=build-env /wheelhouse/openPMD_api-*-cp39-cp39-manylinux2010_x86_64.whl .
 RUN        apt-get update \
-           && apt-get install -y --no-install-recommends python3 python3-pip \
+           && apt-get install -y --no-install-recommends python3.9 python3-distutils ca-certificates curl \
            && rm -rf /var/lib/apt/lists/*
-RUN        python3 --version \
-           && python3 -m pip install -U pip \
-           && python3 -m pip install openPMD_api-*-cp35-cp35m-manylinux2010_x86_64.whl
-RUN        python3 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
-RUN        python3 -m openpmd_api.ls --help
+RUN        python3.9 --version \
+           && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+           && python3.9 get-pip.py \
+           && python3.9 -m pip install openPMD_api-*-cp39-cp39-manylinux2010_x86_64.whl
+RUN        python3.9 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
+RUN        python3.9 -m openpmd_api.ls --help
 RUN        openpmd-ls --help
 
 

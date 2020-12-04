@@ -174,6 +174,9 @@ ADIOS1IOHandlerImpl::flush()
                 case O::ADVANCE:
                     advance(i.writable, deref_dynamic_cast< Parameter< O::ADVANCE > >(i.parameter.get()));
                     break;
+                case O::AVAILABLE_CHUNKS:
+                    availableChunks(i.writable, deref_dynamic_cast< Parameter< O::AVAILABLE_CHUNKS > >(i.parameter.get()));
+                    break;
                 default:
                     VERIFY(false, "[ADIOS1] Internal error: Wrong operation in ADIOS work queue");
             }

@@ -23,6 +23,9 @@
 #include "openPMD/config.hpp"
 #if openPMD_HAVE_HDF5
 #   include "openPMD/IO/AbstractIOHandlerImpl.hpp"
+
+#   include "openPMD/auxiliary/Option.hpp"
+
 #   include <hdf5.h>
 #   include <unordered_map>
 #   include <unordered_set>
@@ -42,6 +45,7 @@ namespace openPMD
         void createPath(Writable*, Parameter< Operation::CREATE_PATH > const&) override;
         void createDataset(Writable*, Parameter< Operation::CREATE_DATASET > const&) override;
         void extendDataset(Writable*, Parameter< Operation::EXTEND_DATASET > const&) override;
+        void availableChunks(Writable *, Parameter< Operation::AVAILABLE_CHUNKS > &) override;
         void openFile(Writable*, Parameter< Operation::OPEN_FILE > const&) override;
         void closeFile(Writable*, Parameter< Operation::CLOSE_FILE > const&) override;
         void openPath(Writable*, Parameter< Operation::OPEN_PATH > const&) override;
@@ -58,7 +62,7 @@ namespace openPMD
         void listDatasets(Writable*, Parameter< Operation::LIST_DATASETS > &) override;
         void listAttributes(Writable*, Parameter< Operation::LIST_ATTS > &) override;
 
-        std::unordered_map< Writable*, hid_t > m_fileIDs;
+        std::unordered_map< Writable*, std::string > m_fileNames;
         std::unordered_map< std::string,  hid_t > m_fileNamesWithID;
 
         std::unordered_set< hid_t > m_openFileIDs;
@@ -71,6 +75,14 @@ namespace openPMD
         hid_t m_H5T_CFLOAT;
         hid_t m_H5T_CDOUBLE;
         hid_t m_H5T_CLONG_DOUBLE;
+
+    private:
+        struct File
+        {
+            std::string name;
+            hid_t id;
+        };
+        auxiliary::Option< File > getFile( Writable * );
     }; // HDF5IOHandlerImpl
 #else
     class HDF5IOHandlerImpl

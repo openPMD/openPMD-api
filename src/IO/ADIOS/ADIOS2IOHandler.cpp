@@ -21,19 +21,20 @@
 
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 
-#include <algorithm>
-#include <cctype> // std::tolower
-#include <iostream>
-#include <iterator>
-#include <set>
-#include <string>
-
 #include "openPMD/Datatype.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+
+#include <algorithm>
+#include <cctype> // std::tolower
+#include <iostream>
+#include <iterator>
+#include <memory>
+#include <set>
+#include <string>
 #include <type_traits>
 
 
@@ -368,7 +369,8 @@ ADIOS2IOHandlerImpl::closeFile(
     auto fileIterator = m_files.find( writable );
     if ( fileIterator != m_files.end( ) )
     {
-        fileIterator->second.invalidate( );
+        // do not invalidate the file
+        // it still exists, it is just not open
         auto it = m_fileData.find( fileIterator->second );
         if ( it != m_fileData.end( ) )
         {
@@ -686,6 +688,21 @@ ADIOS2IOHandlerImpl::closePath(
     }
 }
 
+void
+ADIOS2IOHandlerImpl::availableChunks(
+    Writable * writable,
+    Parameter< Operation::AVAILABLE_CHUNKS > & parameters )
+{
+    setAndGetFilePosition( writable );
+    auto file = refreshFileFromParent( writable );
+    detail::BufferedActions & ba = getFileData( file );
+    std::string varName = nameOfVariable( writable );
+    auto engine = ba.getEngine( ); // make sure that data are present
+    auto datatype = detail::fromADIOS2Type( ba.m_IO.VariableType( varName ) );
+    static detail::RetrieveBlocksInfo rbi;
+    switchType( datatype, rbi, parameters, ba.m_IO, engine, varName );
+}
+
 adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode( )
 {
     switch ( m_handler->m_backendAccess )
@@ -789,8 +806,8 @@ ADIOS2IOHandlerImpl::getFileData( InvalidatableFile file )
     {
         return *m_fileData
                     .emplace( std::move( file ),
-                              std::unique_ptr< detail::BufferedActions >{
-                                  new detail::BufferedActions{*this, file}} )
+                              std::make_unique< detail::BufferedActions >(
+                                  *this, file) )
                     .first->second;
     }
     else
@@ -886,7 +903,7 @@ namespace detail
          */
         using rep = AttributeTypes<bool>::rep;
         if
-#if __cplusplus > 201402L
+#if __cplusplus >= 201703L
         constexpr
 #endif
         ( std::is_same< T, rep >::value )
@@ -1039,6 +1056,18 @@ namespace detail
     {
         throw std::runtime_error(
             "[ADIOS2] Defining a variable with undefined type." );
+    }
+
+    template < typename T, typename... Params >
+    void RetrieveBlocksInfo::operator( )( Params &&... params )
+    {
+        DatasetHelper< T >::blocksInfo( std::forward< Params >( params )... );
+    }
+
+    template < int n, typename... Args >
+    void RetrieveBlocksInfo::operator( )( Args&&... )
+    {
+        // variable has not been found, so we don't fill in any blocks
     }
 
     template < typename T >
@@ -1253,6 +1282,36 @@ namespace detail
     }
 
     template < typename T >
+    void DatasetHelper<
+        T, typename std::enable_if< DatasetTypes< T >::validType >::type >::
+        blocksInfo(
+            Parameter< Operation::AVAILABLE_CHUNKS > & params,
+            adios2::IO & IO,
+            adios2::Engine & engine,
+            std::string const & varName)
+    {
+        auto var = IO.InquireVariable< T >( varName );
+        auto blocksInfo = engine.BlocksInfo< T >( var, engine.CurrentStep() );
+        auto & table = *params.chunks;
+        table.reserve( blocksInfo.size() );
+        for( auto const & info : blocksInfo )
+        {
+            Offset offset;
+            Extent extent;
+            auto size = info.Start.size();
+            offset.reserve( size );
+            extent.reserve( size );
+            for( unsigned i = 0; i < size; ++i )
+            {
+                offset.push_back( info.Start[ i ] );
+                extent.push_back( info.Count[ i ] );
+            }
+            table.emplace_back(
+                std::move( offset ), std::move( extent ), info.WriterID );
+        }
+    }
+
+    template< typename T >
     DatasetHelper<
         T, typename std::enable_if< !DatasetTypes< T >::validType >::type >::
         DatasetHelper( openPMD::ADIOS2IOHandlerImpl * )
@@ -1305,6 +1364,15 @@ namespace detail
         throwErr( );
     }
 
+    template < typename T >
+    template < typename... Params >
+    void DatasetHelper<
+        T, typename std::enable_if< !DatasetTypes< T >::validType >::type >::
+        blocksInfo( Params &&... )
+    {
+        throwErr( );
+    }
+
     void BufferedGet::run( BufferedActions & ba )
     {
         switchType( param.dtype, ba.m_readDataset, *this, ba.m_IO,
@@ -1328,7 +1396,7 @@ namespace detail
                                       ") not found in backend." );
         }
 
-        Datatype ret =
+        auto ret =
             switchType< Datatype >(
                 type,
                 detail::AttributeReader{},
@@ -1536,7 +1604,18 @@ namespace detail
                     "SubStreams", std::to_string( num_substreams ) );
             }
         }
-#endif
+#    endif
+        if( notYetConfigured( "StatsLevel" ) )
+        {
+            /*
+             * Switch those off by default since they are expensive to compute
+             * and we don't read them anyway.
+             * No environement variable for this one, can still be switched
+             * on via JSON though.
+             * Default is "1".
+             */
+            m_IO.SetParameter( "StatsLevel", "0" );
+        }
     }
 
     adios2::Engine &

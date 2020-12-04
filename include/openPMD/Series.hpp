@@ -20,6 +20,9 @@
  */
 #pragma once
 
+#include "openPMD/config.hpp"
+#include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/Container.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/IO/Format.hpp"
@@ -173,7 +176,7 @@ public:
      * @param   softwareVersion String indicating the version of the software/code/simulation that created the file.
      * @return  Reference to modified series.
      */
-    OPENPMDAPI_DEPRECATED("Set the version with the second argument of setSoftware()")
+    [[deprecated("Set the version with the second argument of setSoftware()")]]
     Series& setSoftwareVersion(std::string const& softwareVersion);
 
     /**
@@ -324,6 +327,7 @@ OPENPMD_private:
     readBase();
     void read();
     std::string iterationFilename( uint64_t i );
+    void openIteration( uint64_t index, Iteration iteration );
 
     /**
      * Find the given iteration in Series::iterations and return an iterator

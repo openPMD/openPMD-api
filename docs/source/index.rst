@@ -74,6 +74,7 @@ Usage
    usage/serial
    usage/parallel
    usage/streaming
+   usage/benchmarks
    usage/examples
 
 API Details

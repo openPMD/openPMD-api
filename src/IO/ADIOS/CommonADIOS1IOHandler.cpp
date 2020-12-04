@@ -627,6 +627,47 @@ CommonADIOS1IOHandlerImpl::closeFile(
 }
 
 void
+CommonADIOS1IOHandlerImpl::availableChunks(
+    Writable * writable,
+    Parameter< Operation::AVAILABLE_CHUNKS > & params )
+{
+    ADIOS_FILE * f;
+    f = m_openReadFileHandles.at( m_filePaths.at( writable ) );
+    std::string name = concrete_bp1_file_position( writable );
+    VERIFY(
+        std::strcmp( f->path, m_filePaths.at( writable )->c_str() ) == 0,
+        "[ADIOS1] Internal Error: Invalid ADIOS read file handle" );
+    ADIOS_VARINFO * varinfo = adios_inq_var( f, name.c_str() );
+    VERIFY(
+        adios_errno == err_no_error,
+        "[ADIOS1] Internal error: Failed to inquire ADIOS variable while "
+        "querying available chunks." );
+    int err = adios_inq_var_blockinfo( f, varinfo );
+    VERIFY(
+        err == 0,
+        "[ADIOS1] Internal error: Failed to obtain ADIOS varinfo while "
+        "querying available chunks." );
+    int nblocks =
+        varinfo->nblocks[ 0 ]; // we don't use steps, so index 0 is fine
+    int ndim = varinfo->ndim;
+    auto & table = *params.chunks;
+    table.reserve( nblocks );
+    for( int block = 0; block < nblocks; ++block )
+    {
+        ADIOS_VARBLOCK & varblock = varinfo->blockinfo[ block ];
+        Offset offset( ndim );
+        Extent extent( ndim );
+        for( int i = 0; i < ndim; ++i )
+        {
+            offset[ i ] = varblock.start[ i ];
+            extent[ i ] = varblock.count[ i ];
+        }
+        table.emplace_back( offset, extent, int( varblock.process_id ) );
+    }
+    adios_free_varinfo( varinfo );
+}
+
+void
 CommonADIOS1IOHandlerImpl::openPath(
     Writable * writable,
     Parameter< Operation::OPEN_PATH > const & parameters )

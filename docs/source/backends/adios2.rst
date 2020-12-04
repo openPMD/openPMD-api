@@ -46,11 +46,15 @@ environment variable                  default    description
 ``OPENPMD_BP_BACKEND``                ``ADIOS2`` Chose preferred ``.bp`` file backend if ``ADIOS1`` and ``ADIOS2`` are available.
 ===================================== ========== ================================================================================
 
-Please refer to the `ADIOS2 manual, section 5.1 <https://media.readthedocs.org/pdf/adios2/latest/adios2.pdf>`_ for details on I/O tuning.
+Please refer to the `ADIOS2 documentation <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_ for details on I/O tuning.
 
 In case the ADIOS2 backend was not compiled but only the deprecated :ref:`ADIOS1 backend <backends-adios1>`, the default of ``OPENPMD_BP_BACKEND`` will fall back to ``ADIOS1``.
 Be advised that ADIOS1 only supports ``.bp`` files up to the internal version BP3, while ADIOS2 supports BP3, BP4 and later formats.
 
+Notice that the ADIOS2 backend is alternatively configurable via :ref:`JSON parameters <backendconfig>`.
+
+Due to performance considerations, the ADIOS2 backend configures ADIOS2 not to compute any dataset statistics (Min/Max) by default.
+Statistics may be activated by setting the :ref:`JSON parameter <backendconfig>` ``adios2.engine.parameters.StatsLevel = "1"``.
 
 Best Practice at Large Scale
 ----------------------------

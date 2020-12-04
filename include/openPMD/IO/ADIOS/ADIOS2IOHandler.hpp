@@ -182,6 +182,9 @@ public:
     void
     advance( Writable*, Parameter< Operation::ADVANCE > & ) override;
 
+    void
+    availableChunks( Writable*,
+                     Parameter< Operation::AVAILABLE_CHUNKS > &) override;
     /**
      * @brief The ADIOS2 access type to chose for Engines opened
      * within this instance.
@@ -424,6 +427,15 @@ namespace detail
         template< int n, typename... Params >
         void
         operator()( Params &&... );
+    };
+
+    struct RetrieveBlocksInfo
+    {
+        template < typename T, typename... Params >
+        void operator( )( Params &&... );
+
+        template < int n, typename... Params >
+        void operator( )( Params &&... );
     };
 
     // Helper structs to help distinguish valid attribute/variable
@@ -731,6 +743,13 @@ namespace detail
             bool const constantDims = false );
 
         void writeDataset( BufferedPut &, adios2::IO &, adios2::Engine & );
+
+        static void
+        blocksInfo(
+            Parameter< Operation::AVAILABLE_CHUNKS > & params,
+            adios2::IO & IO,
+            adios2::Engine & engine,
+            std::string const & varName );
     };
 
     template < typename T >
@@ -750,6 +769,8 @@ namespace detail
         static void defineVariable( Params &&... );
 
         template < typename... Params > void writeDataset( Params &&... );
+
+        template < typename... Params > static void blocksInfo( Params &&... );
     };
 
     // Other datatypes used in the ADIOS2IOHandler implementation

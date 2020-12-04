@@ -3,8 +3,8 @@
 Changelog
 =========
 
-0.12.1-alpha
-------------
+0.13.0-beta
+-----------
 **Date:** TBA
 
 [Title]
@@ -23,6 +23,8 @@ Bug Fixes
 Other
 """""
 
+- switch to C++14 #825
+- Python: support 3.6 - 3.9 #828
 - Docs:
 
   - Release cibuildwheel example #775

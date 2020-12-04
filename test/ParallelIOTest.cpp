@@ -1,9 +1,9 @@
 /* Running this test in parallel with MPI requires MPI::Init.
  * To guarantee a correct call to Init, launch the tests manually.
  */
-#include "openPMD/openPMD.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
-
+#include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/openPMD.hpp"
 #include <catch2/catch.hpp>
 
 #if openPMD_HAVE_MPI
@@ -95,8 +95,8 @@ void write_test_zero_extent( bool fileBased, std::string file_ending, bool write
     int mpi_r{-1};
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_s);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_r);
-    uint64_t size = static_cast<uint64_t>(mpi_s);
-    uint64_t rank = static_cast<uint64_t>(mpi_r);
+    auto size = static_cast<uint64_t>(mpi_s);
+    auto rank = static_cast<uint64_t>(mpi_r);
 
     std::string filePath = "../samples/parallel_write_zero_extent";
     if( fileBased )
@@ -218,8 +218,8 @@ TEST_CASE( "hdf5_write_test", "[parallel][hdf5]" )
     int mpi_r{-1};
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_s);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_r);
-    uint64_t mpi_size = static_cast<uint64_t>(mpi_s);
-    uint64_t mpi_rank = static_cast<uint64_t>(mpi_r);
+    auto mpi_size = static_cast<uint64_t>(mpi_s);
+    auto mpi_rank = static_cast<uint64_t>(mpi_r);
     Series o = Series("../samples/parallel_write.h5", Access::CREATE, MPI_COMM_WORLD);
 
     o.setAuthor("Parallel HDF5");
@@ -287,6 +287,58 @@ TEST_CASE( "no_parallel_hdf5", "[parallel][hdf5]" )
 
 #endif
 
+// this one works for both ADIOS1 and ADIOS2
+#if (openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2) && openPMD_HAVE_MPI
+void
+available_chunks_test( std::string file_ending )
+{
+    int r_mpi_rank{ -1 }, r_mpi_size{ -1 };
+    MPI_Comm_rank( MPI_COMM_WORLD, &r_mpi_rank );
+    MPI_Comm_size( MPI_COMM_WORLD, &r_mpi_size );
+    unsigned mpi_rank{ static_cast< unsigned >( r_mpi_rank ) },
+        mpi_size{ static_cast< unsigned >( r_mpi_size ) };
+    std::string name = "../samples/available_chunks." + file_ending;
+
+    std::vector< int > data{ 2, 4, 6, 8 };
+    {
+        Series write( name, Access::CREATE, MPI_COMM_WORLD );
+        Iteration it0 = write.iterations[ 0 ];
+        auto E_x = it0.meshes[ "E" ][ "x" ];
+        E_x.resetDataset( { Datatype::INT, { mpi_size, 4 } } );
+        E_x.storeChunk( data, { mpi_rank, 0 }, { 1, 4 } );
+        it0.close();
+    }
+
+    {
+        Series read( name, Access::READ_ONLY, MPI_COMM_WORLD );
+        Iteration it0 = read.iterations[ 0 ];
+        auto E_x = it0.meshes[ "E" ][ "x" ];
+        ChunkTable table = E_x.availableChunks();
+        std::vector< int > ranks;
+        ranks.reserve( table.size() );
+        for( auto const & chunk : table )
+        {
+            REQUIRE(
+                chunk.offset ==
+                Offset{ static_cast< unsigned >( chunk.mpi_rank ), 0 } );
+            REQUIRE( chunk.extent == Extent{ 1, 4 } );
+            ranks.emplace_back( chunk.mpi_rank );
+        }
+        std::sort( ranks.begin(), ranks.end() );
+        for( size_t i = 0; i < ranks.size(); ++i )
+        {
+            REQUIRE( ranks[ i ] == i );
+        }
+    }
+}
+
+TEST_CASE( "available_chunks_test", "[parallel][adios]" )
+{
+    available_chunks_test( "bp" );
+}
+
+#endif
+
 #if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
 TEST_CASE( "adios_write_test", "[parallel][adios]" )
 {
@@ -296,8 +348,8 @@ TEST_CASE( "adios_write_test", "[parallel][adios]" )
     int rank{-1};
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    uint64_t mpi_size = static_cast<uint64_t>(size);
-    uint64_t mpi_rank = static_cast<uint64_t>(rank);
+    auto mpi_size = static_cast<uint64_t>(size);
+    auto mpi_rank = static_cast<uint64_t>(rank);
 
     o.setAuthor("Parallel ADIOS1");
     ParticleSpecies& e = o.iterations[1].particles["e"];
@@ -380,6 +432,95 @@ TEST_CASE( "hzdr_adios_sample_content_test", "[parallel][adios1]" )
     {
         std::cerr << "git sample not accessible. (" << e.what() << ")\n";
         return;
+    }
+}
+
+void
+close_iteration_test( std::string file_ending )
+{
+    int i_mpi_rank{ -1 }, i_mpi_size{ -1 };
+    MPI_Comm_rank( MPI_COMM_WORLD, &i_mpi_rank );
+    MPI_Comm_size( MPI_COMM_WORLD, &i_mpi_size );
+    unsigned mpi_rank{ static_cast< unsigned >( i_mpi_rank ) },
+        mpi_size{ static_cast< unsigned >( i_mpi_size ) };
+    std::string name = "../samples/close_iterations_parallel_%T." + file_ending;
+
+    std::vector< int > data{ 2, 4, 6, 8 };
+    // { // we do *not* need these parentheses
+    Series write( name, Access::CREATE, MPI_COMM_WORLD );
+    bool isAdios1 = write.backend() == "MPI_ADIOS1";
+    {
+        Iteration it0 = write.iterations[ 0 ];
+        auto E_x = it0.meshes[ "E" ][ "x" ];
+        E_x.resetDataset( { Datatype::INT, { mpi_size, 4 } } );
+        E_x.storeChunk( data, { mpi_rank, 0 }, { 1, 4 } );
+        it0.close( /* flush = */ false );
+    }
+    write.flush();
+    // }
+
+    if( isAdios1 )
+    {
+        // run a simplified test for Adios1 since Adios1 has issues opening
+        // twice in the same process
+        REQUIRE( auxiliary::file_exists(
+            "../samples/close_iterations_parallel_0.bp" ) );
+    }
+    else
+    {
+        Series read( name, Access::READ_ONLY, MPI_COMM_WORLD );
+        Iteration it0 = read.iterations[ 0 ];
+        auto E_x_read = it0.meshes[ "E" ][ "x" ];
+        auto chunk = E_x_read.loadChunk< int >( { 0, 0 }, { mpi_size, 4 } );
+        it0.close( /* flush = */ false );
+        read.flush();
+        for( size_t i = 0; i < 4 * mpi_size; ++i )
+        {
+            REQUIRE( data[ i % 4 ] == chunk.get()[ i ] );
+        }
+    }
+
+    {
+        Iteration it1 = write.iterations[ 1 ];
+        auto E_x = it1.meshes[ "E" ][ "x" ];
+        E_x.resetDataset( { Datatype::INT, { mpi_size, 4 } } );
+        E_x.storeChunk( data, { mpi_rank, 0 }, { 1, 4 } );
+        it1.close( /* flush = */ true );
+
+        // illegally access iteration after closing
+        E_x.storeChunk( data, { mpi_rank, 0 }, { 1, 4 } );
+        REQUIRE_THROWS( write.flush() );
+    }
+
+    if( isAdios1 )
+    {
+        // run a simplified test for Adios1 since Adios1 has issues opening
+        // twice in the same process
+        REQUIRE( auxiliary::file_exists(
+            "../samples/close_iterations_parallel_1.bp" ) );
+    }
+    else
+    {
+        Series read( name, Access::READ_ONLY, MPI_COMM_WORLD );
+        Iteration it1 = read.iterations[ 1 ];
+        auto E_x_read = it1.meshes[ "E" ][ "x" ];
+        auto chunk = E_x_read.loadChunk< int >( { 0, 0 }, { mpi_size, 4 } );
+        it1.close( /* flush = */ true );
+        for( size_t i = 0; i < 4 * mpi_size; ++i )
+        {
+            REQUIRE( data[ i % 4 ] == chunk.get()[ i ] );
+        }
+        auto read_again =
+            E_x_read.loadChunk< int >( { 0, 0 }, { mpi_size, 4 } );
+        REQUIRE_THROWS( read.flush() );
+    }
+}
+
+TEST_CASE( "close_iteration_test", "[parallel]" )
+{
+    for( auto const & t : getBackends() )
+    {
+        close_iteration_test( t );
     }
 }
 #endif

@@ -23,6 +23,7 @@
 #include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attribute.hpp"
+#include "openPMD/ChunkInfo.hpp"
 #include "openPMD/Dataset.hpp"
 
 #include <memory>
@@ -70,7 +71,8 @@ OPENPMDAPI_EXPORT_ENUM_CLASS(Operation)
     READ_ATT,
     LIST_ATTS,
 
-    ADVANCE
+    ADVANCE,
+    AVAILABLE_CHUNKS //!< Query chunks that can be loaded in a dataset
 }; // Operation
 
 struct OPENPMDAPI_EXPORT AbstractParameter
@@ -177,6 +179,28 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::CREATE_PATH > : public AbstractPa
     }
 
     std::string path = "";
+};
+
+template<>
+struct OPENPMDAPI_EXPORT Parameter< Operation::CLOSE_PATH > : public AbstractParameter
+{
+    Parameter() = default;
+    Parameter( Parameter const & ) : AbstractParameter()
+    {
+    }
+
+    Parameter &
+    operator=( Parameter const & )
+    {
+        return *this;
+    }
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::CLOSE_PATH >( *this ) );
+    }
 };
 
 template<>
@@ -488,16 +512,18 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::ADVANCE > : public AbstractParame
 };
 
 template<>
-struct OPENPMDAPI_EXPORT Parameter< Operation::CLOSE_PATH > : public AbstractParameter
+struct OPENPMDAPI_EXPORT Parameter< Operation::AVAILABLE_CHUNKS >
+    : public AbstractParameter
 {
     Parameter() = default;
-    Parameter( Parameter const & ) : AbstractParameter()
+    Parameter( Parameter const & p ) : AbstractParameter(), chunks( p.chunks )
     {
     }
 
     Parameter &
-    operator=( Parameter const & )
+    operator=( Parameter const & p )
     {
+        chunks = p.chunks;
         return *this;
     }
 
@@ -505,10 +531,12 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::CLOSE_PATH > : public AbstractPar
     clone() const override
     {
         return std::unique_ptr< AbstractParameter >(
-            new Parameter< Operation::CLOSE_PATH >( *this ) );
+            new Parameter< Operation::AVAILABLE_CHUNKS >( *this ) );
     }
-};
 
+    // output parameter
+    std::shared_ptr< ChunkTable > chunks = std::make_shared< ChunkTable >();
+};
 
 /** @brief Self-contained description of a single IO operation.
  *

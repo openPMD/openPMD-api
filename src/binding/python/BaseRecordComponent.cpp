@@ -44,6 +44,7 @@ void init_BaseRecordComponent(py::module &m) {
         )
 
         .def("reset_datatype", &BaseRecordComponent::resetDatatype)
+        .def("available_chunks", &BaseRecordComponent::availableChunks)
 
         .def_property_readonly("unit_SI", &BaseRecordComponent::unitSI)
         .def_property_readonly("constant", &BaseRecordComponent::constant)
