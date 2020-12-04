@@ -23,6 +23,7 @@
 #include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attribute.hpp"
+#include "openPMD/ChunkInfo.hpp"
 #include "openPMD/Dataset.hpp"
 
 #include <memory>
@@ -65,8 +66,10 @@ OPENPMDAPI_EXPORT_ENUM_CLASS(Operation)
     DELETE_ATT,
     WRITE_ATT,
     READ_ATT,
-    LIST_ATTS
-};  //Operation
+    LIST_ATTS,
+
+    AVAILABLE_CHUNKS //!< Query chunks that can be loaded in a dataset
+}; // Operation
 
 struct OPENPMDAPI_EXPORT AbstractParameter
 {
@@ -459,6 +462,32 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::LIST_ATTS > : public AbstractPara
             = std::make_shared< std::vector< std::string > >();
 };
 
+template<>
+struct OPENPMDAPI_EXPORT Parameter< Operation::AVAILABLE_CHUNKS >
+    : public AbstractParameter
+{
+    Parameter() = default;
+    Parameter( Parameter const & p ) : AbstractParameter(), chunks( p.chunks )
+    {
+    }
+
+    Parameter &
+    operator=( Parameter const & p )
+    {
+        chunks = p.chunks;
+        return *this;
+    }
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::AVAILABLE_CHUNKS >( *this ) );
+    }
+
+    // output parameter
+    std::shared_ptr< ChunkTable > chunks = std::make_shared< ChunkTable >();
+};
 
 /** @brief Self-contained description of a single IO operation.
  *

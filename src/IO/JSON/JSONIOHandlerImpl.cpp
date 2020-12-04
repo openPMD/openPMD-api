@@ -21,6 +21,7 @@
 
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
+#include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/Datatype.hpp"
@@ -271,6 +272,224 @@ namespace openPMD
 
     }
 
+    namespace
+    {
+        // pre-declare since this one is recursive
+        ChunkTable
+        chunksInJSON( nlohmann::json const & );
+        ChunkTable
+        chunksInJSON( nlohmann::json const & j )
+        {
+            /*
+             * Idea:
+             * Iterate (n-1)-dimensional hyperslabs line by line and query
+             * their chunks recursively.
+             * If two or more successive (n-1)-dimensional slabs return the
+             * same chunktable, they can be merged as one chunk.
+             *
+             * Notice that this approach is simple, relatively easily
+             * implemented, but not ideal, since chunks that overlap in some
+             * dimensions may be ripped apart:
+             *
+             *      0123
+             *    0 ____
+             *    1 ____
+             *    2 **__
+             *    3 **__
+             *    4 **__
+             *    5 **__
+             *    6 **__
+             *    7 **_*
+             *    8 ___*
+             *    9 ___*
+             *
+             * Since both of the drawn chunks overlap on line 7, this approach
+             * will return 4 chunks:
+             * offset - extent
+             * (2,0)  - (4,2)
+             * (7,0)  - (1,2)
+             * (7,3)  - (1,1)
+             * (8,3)  - (2,1)
+             *
+             * Hence, in a second phase, the mergeChunks function below will
+             * merge things back up.
+             */
+            if( !j.is_array() )
+            {
+                return ChunkTable{ WrittenChunkInfo( Offset{}, Extent{} ) };
+            }
+            ChunkTable res;
+            size_t it = 0;
+            size_t end = j.size();
+            while( it < end )
+            {
+                // skip empty slots
+                while( it < end && j[ it ].is_null() )
+                {
+                    ++it;
+                }
+                if( it == end )
+                {
+                    break;
+                }
+                // get chunking at current position
+                // and additionally, number of successive rows with the same
+                // recursive results
+                size_t const offset = it;
+                ChunkTable referenceTable = chunksInJSON( j[ it ] );
+                ++it;
+                for( ; it < end; ++it )
+                {
+                    if( j[ it ].is_null() )
+                    {
+                        break;
+                    }
+                    ChunkTable currentTable = chunksInJSON( j[ it ] );
+                    if( currentTable != referenceTable )
+                    {
+                        break;
+                    }
+                }
+                size_t const extent = it - offset; // sic! no -1
+                // now we know the number of successive rows with same rec.
+                // results, let's extend these results to include dimension 0
+                for( auto const & chunk : referenceTable )
+                {
+                    Offset o = { offset };
+                    Extent e = { extent };
+                    for( auto entry : chunk.offset )
+                    {
+                        o.push_back( entry );
+                    }
+                    for( auto entry : chunk.extent )
+                    {
+                        e.push_back( entry );
+                    }
+                    res.emplace_back(
+                        std::move( o ), std::move( e ), chunk.mpi_rank );
+                }
+            }
+            return res;
+        }
+
+        /*
+         * Check whether two chunks can be merged to form a large one
+         * and optionally return that larger chunk
+         */
+        auxiliary::Option< WrittenChunkInfo >
+        mergeChunks(
+            WrittenChunkInfo const & chunk1,
+            WrittenChunkInfo const & chunk2 )
+        {
+            /*
+             * Idea:
+             * If two chunks can be merged into one, they agree on offsets and
+             * extents in all but exactly one dimension dim.
+             * At dimension dim, the offset of chunk 2 is equal to the offset
+             * of chunk 1 plus its extent -- or vice versa.
+             */
+            unsigned dimensionality = chunk1.extent.size();
+            for( unsigned dim = 0; dim < dimensionality; ++dim )
+            {
+                WrittenChunkInfo const *c1( &chunk1 ), *c2( &chunk2 );
+                // check if one chunk is the extension of the other at
+                // dimension dim
+                // first, let's put things in order
+                if( c1->offset[ dim ] > c2->offset[ dim ] )
+                {
+                    std::swap( c1, c2 );
+                }
+                // now, c1 begins at the lower of both offsets
+                // next check, that both chunks border one another exactly
+                if( c2->offset[ dim ] != c1->offset[ dim ] + c1->extent[ dim ] )
+                {
+                    continue;
+                }
+                // we've got a candidate
+                // verify that all other dimensions have equal values
+                auto equalValues = [ dimensionality, dim, c1, c2 ]() {
+                    for( unsigned j = 0; j < dimensionality; ++j )
+                    {
+                        if( j == dim )
+                        {
+                            continue;
+                        }
+                        if( c1->offset[ j ] != c2->offset[ j ] ||
+                            c1->extent[ j ] != c2->extent[ j ] )
+                        {
+                            return false;
+                        }
+                    }
+                    return true;
+                };
+                if( !equalValues() )
+                {
+                    continue;
+                }
+                // we can merge the chunks
+                Offset offset( c1->offset );
+                Extent extent( c1->extent );
+                extent[ dim ] += c2->extent[ dim ];
+                return auxiliary::makeOption(
+                    WrittenChunkInfo( offset, extent ) );
+            }
+            return auxiliary::Option< WrittenChunkInfo >();
+        }
+
+        /*
+         * Merge chunks in the chunktable until no chunks are left that can be
+         * merged.
+         */
+        void
+        mergeChunks( ChunkTable & table )
+        {
+            bool stillChanging;
+            do
+            {
+                stillChanging = false;
+                auto innerLoops = [ &table ]() {
+                    /*
+                     * Iterate over pairs of chunks in the table.
+                     * When a pair that can be merged is found, merge it,
+                     * delete the original two chunks from the table,
+                     * put the new one in and return.
+                     */
+                    for( auto i = table.begin(); i < table.end(); ++i )
+                    {
+                        for( auto j = i + 1; j < table.end(); ++j )
+                        {
+                            auxiliary::Option< WrittenChunkInfo > merged =
+                                mergeChunks( *i, *j );
+                            if( merged )
+                            {
+                                // erase order is important due to iterator
+                                // invalidation
+                                table.erase( j );
+                                table.erase( i );
+                                table.emplace_back(
+                                    std::move( merged.get() ) );
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                };
+                stillChanging = innerLoops();
+            } while( stillChanging );
+        }
+    } // namespace
+
+    void
+    JSONIOHandlerImpl::availableChunks(
+        Writable * writable,
+        Parameter< Operation::AVAILABLE_CHUNKS > & parameters )
+    {
+        refreshFileFromParent( writable );
+        auto filePosition = setAndGetFilePosition( writable );
+        auto & j = obtainJsonContents( writable )[ "data" ];
+        *parameters.chunks = chunksInJSON( j );
+        mergeChunks( *parameters.chunks );
+    }
 
     void JSONIOHandlerImpl::openFile(
         Writable * writable,

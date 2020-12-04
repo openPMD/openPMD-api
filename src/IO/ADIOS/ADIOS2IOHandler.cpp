@@ -593,6 +593,21 @@ void ADIOS2IOHandlerImpl::listAttributes(
     }
 }
 
+void
+ADIOS2IOHandlerImpl::availableChunks(
+    Writable * writable,
+    Parameter< Operation::AVAILABLE_CHUNKS > & parameters )
+{
+    setAndGetFilePosition( writable );
+    auto file = refreshFileFromParent( writable );
+    detail::BufferedActions & ba = getFileData( file );
+    std::string varName = nameOfVariable( writable );
+    auto engine = ba.getEngine( ); // make sure that data are present
+    auto datatype = detail::fromADIOS2Type( ba.m_IO.VariableType( varName ) );
+    static detail::RetrieveBlocksInfo rbi;
+    switchType( datatype, rbi, parameters, ba.m_IO, engine, varName );
+}
+
 adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode( )
 {
     switch ( m_handler->m_backendAccess )
@@ -919,7 +934,17 @@ namespace detail
             "[ADIOS2] Defining a variable with undefined type." );
     }
 
+    template < typename T, typename... Params >
+    void RetrieveBlocksInfo::operator( )( Params &&... params )
+    {
+        DatasetHelper< T >::blocksInfo( std::forward< Params >( params )... );
+    }
 
+    template < int n, typename... Args >
+    void RetrieveBlocksInfo::operator( )( Args&&... )
+    {
+        // variable has not been found, so we don't fill in any blocks
+    }
 
     template < typename T >
     typename AttributeTypes< T >::Attr
@@ -1131,6 +1156,36 @@ namespace detail
     }
 
     template < typename T >
+    void DatasetHelper<
+        T, typename std::enable_if< DatasetTypes< T >::validType >::type >::
+        blocksInfo(
+            Parameter< Operation::AVAILABLE_CHUNKS > & params,
+            adios2::IO & IO,
+            adios2::Engine & engine,
+            std::string const & varName)
+    {
+        auto var = IO.InquireVariable< T >( varName );
+        auto blocksInfo = engine.BlocksInfo< T >( var, engine.CurrentStep() );
+        auto & table = *params.chunks;
+        table.reserve( blocksInfo.size() );
+        for( auto const & info : blocksInfo )
+        {
+            Offset offset;
+            Extent extent;
+            auto size = info.Start.size();
+            offset.reserve( size );
+            extent.reserve( size );
+            for( unsigned i = 0; i < size; ++i )
+            {
+                offset.push_back( info.Start[ i ] );
+                extent.push_back( info.Count[ i ] );
+            }
+            table.emplace_back(
+                std::move( offset ), std::move( extent ), info.WriterID );
+        }
+    }
+
+    template< typename T >
     DatasetHelper<
         T, typename std::enable_if< !DatasetTypes< T >::validType >::type >::
         DatasetHelper( openPMD::ADIOS2IOHandlerImpl * )
@@ -1179,6 +1234,15 @@ namespace detail
     void DatasetHelper<
         T, typename std::enable_if< !DatasetTypes< T >::validType >::type >::
         writeDataset( Params &&... )
+    {
+        throwErr( );
+    }
+
+    template < typename T >
+    template < typename... Params >
+    void DatasetHelper<
+        T, typename std::enable_if< !DatasetTypes< T >::validType >::type >::
+        blocksInfo( Params &&... )
     {
         throwErr( );
     }

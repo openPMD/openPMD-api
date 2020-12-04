@@ -380,8 +380,64 @@ HDF5IOHandlerImpl::extendDataset(Writable* writable,
 }
 
 void
-HDF5IOHandlerImpl::openFile(Writable* writable,
-                            Parameter< Operation::OPEN_FILE > const& parameters)
+HDF5IOHandlerImpl::availableChunks(
+    Writable * writable,
+    Parameter< Operation::AVAILABLE_CHUNKS > & parameters )
+{
+    auto res = m_fileIDs.find( writable );
+    hid_t dataset_id = H5Dopen(
+        res->second,
+        concrete_h5_file_position( writable ).c_str(),
+        H5P_DEFAULT );
+    VERIFY(
+        dataset_id >= 0,
+        "[HDF5] Internal error: Failed to open HDF5 dataset during dataset "
+        "read" );
+    hid_t dataset_space = H5Dget_space( dataset_id );
+    int ndims = H5Sget_simple_extent_ndims( dataset_space );
+    VERIFY(
+        ndims >= 0,
+        "[HDF5]: Internal error: Failed to retrieve dimensionality of "
+        "dataset "
+        "during dataset read." );
+
+    // // now let's figure out whether this one has chunks
+    // hid_t propertyList = H5Dget_create_plist( dataset_id );
+    // std::vector< hsize_t > chunkExtent( ndims, 0 );
+    // int chunkDimensionality =
+    //     H5Pget_chunk( propertyList, ndims, chunkExtent.data() );
+
+    // if( chunkDimensionality >= 0 )
+    // {
+    //     /*
+    //      * so, the dataset indeed has chunks
+    //      * alas, this backend doesn't write chunks, so for now, reading them
+    //      * is unimplemented
+    //      *
+    //      * https://hdf5.io/develop/group___h5_d.html#gaccff213d3e0765b86f66d08dd9959807
+    //      * May or may not be helpful if implementing this properly one day.
+    //      */
+    // }
+
+    std::vector< hsize_t > dims( ndims, 0 );
+    // return value is equal to ndims
+    H5Sget_simple_extent_dims( dataset_space, dims.data(), nullptr );
+
+    Offset offset( ndims, 0 );
+    Extent extent;
+    extent.reserve( ndims );
+    for( auto e : dims )
+    {
+        extent.push_back( e );
+    }
+    parameters.chunks->push_back(
+        WrittenChunkInfo( std::move( offset ), std::move( extent ) ) );
+}
+
+void
+HDF5IOHandlerImpl::openFile(
+    Writable * writable,
+    Parameter< Operation::OPEN_FILE > const & parameters )
 {
     //TODO check if file already open
     //not possible with current implementation
