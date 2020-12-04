@@ -154,8 +154,10 @@ private:
         Open,             //!< Iteration has not been closed
         ClosedInFrontend, /*!< Iteration has been closed, but task has not yet
                                been propagated to the backend */
-        ClosedInBackend   /*!< Iteration has been closed and task has been
+        ClosedInBackend,  /*!< Iteration has been closed and task has been
                                propagated to the backend */
+        ClosedTemporarily /*!< Iteration has been closed internally and may
+                               be reopened later */
     };
 
     /*

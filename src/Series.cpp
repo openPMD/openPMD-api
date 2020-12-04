@@ -870,6 +870,11 @@ Series::readFileBased( )
         }
     }
 
+    for( auto & iteration : iterations )
+    {
+        *iteration.second.m_closed = Iteration::CloseStatus::ClosedTemporarily;
+    }
+
     if( iterations.empty() )
     {
         /* Frontend access type might change during Series::read() to allow parameter modification.
@@ -1116,9 +1121,15 @@ Series::advance(
         {
             case IE::fileBased:
             {
-                Parameter< Operation::CLOSE_FILE > fClose;
-                IOHandler->enqueue( IOTask( &iteration, std::move( fClose ) ) );
-                *iteration.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                if( *iteration.m_closed !=
+                    Iteration::CloseStatus::ClosedTemporarily )
+                {
+                    Parameter< Operation::CLOSE_FILE > fClose;
+                    IOHandler->enqueue(
+                        IOTask( &iteration, std::move( fClose ) ) );
+                    *iteration.m_closed =
+                        Iteration::CloseStatus::ClosedInBackend;
+                }
                 break;
             }
             case IE::groupBased:
@@ -1164,6 +1175,22 @@ Series::openIteration( uint64_t index, Iteration iteration )
     /* open iteration path */
     pOpen.path = std::to_string( index );
     IOHandler->enqueue( IOTask( &iteration, pOpen ) );
+    switch( *iteration.m_closed )
+    {
+        using CL = Iteration::CloseStatus;
+        case CL::ClosedInFrontend:
+        case CL::ClosedInBackend:
+            break;
+            // throw std::runtime_error(
+            //     "[Series] Detected illegal access to iteration that "
+            //     "has been closed previously." );
+        case CL::Open:
+        case CL::ClosedTemporarily:
+            *iteration.m_closed = CL::Open;
+            break;
+        default:
+            throw std::runtime_error( "Unreachable!" );
+    }
 }
 
 namespace
