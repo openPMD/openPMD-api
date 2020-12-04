@@ -38,7 +38,7 @@ Please refer to the `HDF5 manual, function H5Pset_dxpl_mpio <https://support.hdf
 ``OPENPMD_HDF5_ALIGNMENT`` This sets the alignment in Bytes for writes via the ``H5Pset_alignment`` function.
 According to the `HDF5 documentation <https://support.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm>`_:
 *For MPI IO and other parallel systems, choose an alignment which is a multiple of the disk block size.*
-On Lustre filesystems, according to the `NERSC documentation <https://www.nersc.gov/users/training/online-tutorials/introduction-to-scientific-i-o/?start=5>`_, it is advised to set this to the Lustre stripe size.
+On Lustre filesystems, according to the `NERSC documentation <https://www.nersc.gov/users/training/online-tutorials/introduction-to-scientific-i-o/?start=5>`_, it is advised to set this to the Lustre stripe size. In addition, ORNL Summit GPFS users are recommended to set the alignment value to 16777216(16MB). 
 
 ``H5_COLL_API_SANITY_CHECK``: this is a HDF5 control option for debugging parallel I/O logic (API calls).
 Debugging a parallel program with that option enabled can help to spot bugs such as collective MPI-calls that are not called by all participating MPI ranks.
