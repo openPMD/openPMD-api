@@ -29,7 +29,6 @@
 #include "openPMD/Iteration.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Streaming.hpp"
-#include "openPMD/auxiliary/Deprecated.hpp"
 #include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
