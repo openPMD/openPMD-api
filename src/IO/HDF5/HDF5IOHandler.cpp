@@ -383,9 +383,15 @@ HDF5IOHandlerImpl::availableChunks(
     Writable * writable,
     Parameter< Operation::AVAILABLE_CHUNKS > & parameters )
 {
-    auto res = m_fileIDs.find( writable );
+    auto fname = m_fileNames.find( writable );
+    VERIFY( fname != m_fileNames.end(),
+            "[HDF5] File name not found in writable" );
+    auto fid = m_fileNamesWithID.find( fname->second );
+    VERIFY( fid != m_fileNamesWithID.end(),
+            "[HDF5] File ID not found with file name" );
+
     hid_t dataset_id = H5Dopen(
-        res->second,
+        fid->second,
         concrete_h5_file_position( writable ).c_str(),
         H5P_DEFAULT );
     VERIFY(
