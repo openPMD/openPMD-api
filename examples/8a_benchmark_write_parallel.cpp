@@ -310,9 +310,20 @@ public:
 
   int m_MPISize = 1; //!< MPI size
   int m_MPIRank = 0; //!< MPI rank
+
   unsigned long m_XBulk = 64ul; //!< min num of elements at X dimension
   unsigned long m_YBulk = 32ul;  //!< min num of elements at Y dimension
   unsigned long m_ZBulk = 32ul;
+
+  /**  relative expansion of min grid(m_XBulk, m_YBulk, m_ZBulk)
+   *   to form a max block. By default max:min=1, meaning suggested
+   *   max block is the same as min block. This parameter is effective
+   *   when the suggested max block size x m_MPISize = global_mesh.
+   *   In other words, this option is set to let per rank workload be
+   *   the max block (and the multiple mini blocks will be from there)
+   */
+  Extent m_MaxOverMin = {1,1,1};
+
   int m_Dim = 3; // mesh  dim;
   /** number of subdivisions for the elements
    *
@@ -398,8 +409,6 @@ void parse(TestInput& input, std::string line)
     if (numbers.size() > 0) input.m_YFactor = numbers[1];
     if (numbers.size() > 1) input.m_ZFactor = numbers[2];
   }
-
-  //std::cout<<vec[0]<<"  "<<vec[1]<<std::endl;
 }
 
 int parseArgs( int argc, char *argv[], TestInput& input )
@@ -435,9 +444,12 @@ int parseArgs( int argc, char *argv[], TestInput& input )
       if ( num > 100 ) {
            input.m_XFactor = num/100;
            if ( input.m_XFactor > 1000 ) {
-                input.m_YFactor = input.m_XFactor/1000;
+                input.m_YFactor = input.m_XFactor/1000 % 1000;
+                if ( input.m_XFactor > 1000000 )
+                   input.m_ZFactor = input.m_XFactor/1000000 % 1000;
+                else
+                   input.m_ZFactor = input.m_YFactor;
                 input.m_XFactor = input.m_XFactor % 1000;
-                input.m_ZFactor = input.m_YFactor;
            }
       }
     }
@@ -448,7 +460,11 @@ int parseArgs( int argc, char *argv[], TestInput& input )
     // e.g. 32064 => [64,32]
     if ( input.m_XBulk > 1000 )
     {
-       input.m_YBulk = input.m_XBulk/1000;
+       input.m_YBulk = input.m_XBulk/1000 % 1000;
+       if ( input.m_XBulk > 1000000 )
+         input.m_ZBulk = input.m_XBulk/1000000 % 1000;
+       else
+         input.m_ZBulk = input.m_YBulk;
        input.m_XBulk = input.m_XBulk % 1000;
     }
 
@@ -460,15 +476,19 @@ int parseArgs( int argc, char *argv[], TestInput& input )
     if( argc >= 5 )
         input.m_Steps = atoi( argv[4] );
 
-
     if (argc >= 6)
       input.m_Dim = atoi( argv[5] );
 
-    //if ( (dataDim > 3) || (dataDim < 0) )  {
-    //return -1;
-    //}
+    if (argc >= 7) {
+      long val = strtoul( argv[6], nullptr, 0 );
+      input.m_MaxOverMin[0] = val % 1000;
 
-    //input.m_Dim = dataDim;
+      if ( val >= 1000 )
+        input.m_MaxOverMin[1] = (val/1000) % 1000;
+      if ( val >= 1000000 )
+        input.m_MaxOverMin[2] = (val/1000000) % 1000;
+    }
+
     return input.m_Dim;
 }
 /**     TEST MAIN
@@ -1144,6 +1164,13 @@ ThreeDimPattern::ThreeDimPattern(const TestInput& input)
       throw std::runtime_error( "Unable to balance load for 3D mesh among ranks ");
 
   m = (input.m_ZFactor * input.m_XFactor * input.m_YFactor) / input.m_MPISize;
+  auto maxRatio = input.m_MaxOverMin[0] * input.m_MaxOverMin[1] * input.m_MaxOverMin[2];
+  if ( maxRatio == m ) {
+       m_PatchUnitMesh = { input.m_MaxOverMin[0],  input.m_MaxOverMin[1], input.m_MaxOverMin[2] };
+       if ( !m_Input.m_MPIRank )
+           std::cout<<" Using maxOverMin="<<input.m_MaxOverMin[0] <<", "<<input.m_MaxOverMin[1] <<", "<<input.m_MaxOverMin[2]<<std::endl;;
+    return;
+  }
 
   if ( input.m_XFactor % input.m_MPISize == 0 )
     m_PatchUnitMesh = { input.m_XFactor / input.m_MPISize, m_GlobalUnitMesh[1], m_GlobalUnitMesh[2] };
@@ -1206,7 +1233,6 @@ bool ThreeDimPattern::setLayOut(int step)  {
              m_GlobalUnitMesh[1]/m_PatchUnitMesh[1],
              m_GlobalUnitMesh[2]/m_PatchUnitMesh[2] };
 
-    //std::cout<<"... patchGrid: "<<patchGrid[0]<<" "<<patchGrid[1]<<" "<<patchGrid[2]<<std::endl;
 
     Offset p {0, 0, 0};
     coordinate(patchOffset, patchGrid, p);
