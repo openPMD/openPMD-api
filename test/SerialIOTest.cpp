@@ -26,6 +26,52 @@
 
 using namespace openPMD;
 
+void
+write_and_read_many_iterations( std::string const & ext )
+{
+    constexpr unsigned int nIterations = 1000;
+    std::string filename = "../samples/many_iterations/many_iterations_%T." + ext;
+
+    std::vector< float > data( 10 );
+    std::iota( data.begin(), data.end(), 0. );
+    Dataset ds{ Datatype::FLOAT, { 10 } };
+
+    Series write( filename, Access::CREATE );
+    for( unsigned int i = 0; i < nIterations; ++i )
+    {
+        // std::cout << "Putting iteration " << i << std::endl;
+        Iteration it = write.iterations[ i ];
+        auto E_x = it.meshes[ "E" ][ "x" ];
+        E_x.resetDataset( ds );
+        E_x.storeChunk( data, { 0 }, { 10 } );
+        it.close();
+    }
+
+    Series read( filename, Access::READ_ONLY );
+    for( auto iteration : read.iterations )
+    {
+        // std::cout << "Reading iteration " << iteration.first << std::endl;
+        auto E_x = iteration.second.meshes[ "E" ][ "x" ];
+        auto chunk = E_x.loadChunk< float >( { 0 }, { 10 } );
+        iteration.second.close();
+
+        auto array = chunk.get();
+        for( size_t i = 0; i < 10; ++i )
+        {
+            REQUIRE( array[ i ] == float( i ) );
+        }
+    }
+}
+
+TEST_CASE( "write_and_read_many_iterations", "[serial]" )
+{
+    if( auxiliary::directory_exists( "../samples/many_iterations" ) )
+        auxiliary::remove_directory( "../samples/many_iterations" );
+    for( auto const & t : getFileExtensions() )
+    {
+        write_and_read_many_iterations( t );
+    }
+}
 
 TEST_CASE( "multi_series_test", "[serial]" )
 {

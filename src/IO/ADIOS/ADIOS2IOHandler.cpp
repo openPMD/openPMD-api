@@ -326,7 +326,8 @@ ADIOS2IOHandlerImpl::closeFile(
     auto fileIterator = m_files.find( writable );
     if ( fileIterator != m_files.end( ) )
     {
-        fileIterator->second.invalidate( );
+        // do not invalidate the file
+        // it still exists, it is just not open
         auto it = m_fileData.find( fileIterator->second );
         if ( it != m_fileData.end( ) )
         {
