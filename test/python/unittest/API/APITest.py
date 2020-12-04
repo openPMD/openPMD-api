@@ -1574,6 +1574,7 @@ class APITest(unittest.TestCase):
         for b in io.variants:
             if io.variants[b] is True and b in backend_filesupport:
                 self.makeIteratorRoundTrip(b, backend_filesupport[b])
+
     def makeAvailableChunksRoundTrip(self, ext):
         if ext == "h5":
             return
