@@ -600,14 +600,13 @@ Series::flushFileBased( iterations_iterator begin, iterations_iterator end )
              * 2. Or the Series has been changed globally in a manner that
              *    requires adapting all iterations.
              */
-            if( !dirtyRecursive && !this->dirty() )
+            if( dirtyRecursive || this->dirty() )
             {
-                continue;
+                // openIteration() will update the close status
+                openIteration( it->first, it->second );
+                it->second.flush();
             }
 
-            openIteration( it->first, it->second );
-
-            it->second.flush();
             if( *it->second.m_closed
                 == Iteration::CloseStatus::ClosedInFrontend )
             {
@@ -652,24 +651,35 @@ Series::flushFileBased( iterations_iterator begin, iterations_iterator end )
              * 2. Or the Series has been changed globally in a manner that
              *    requires adapting all iterations.
              */
-            if( !dirtyRecursive && !this->dirty() )
+            if( dirtyRecursive || this->dirty() )
             {
-                continue;
+                /* as there is only one series,
+                * emulate the file belonging to each iteration as not yet written
+                */
+                written() = false;
+                iterations.written() = false;
+
+                dirty() |= it->second.dirty();
+                std::string filename = iterationFilename( it->first );
+                it->second.flushFileBased(filename, it->first);
+
+                iterations.flush(
+                    auxiliary::replace_first(basePath(), "%T/", ""));
+
+                flushAttributes();
+
+                switch( *it->second.m_closed )
+                {
+                    using CL = Iteration::CloseStatus;
+                    case CL::Open:
+                    case CL::ClosedTemporarily:
+                        *it->second.m_closed = CL::Open;
+                        break;
+                    default:
+                        // keep it
+                        break;
+                }
             }
-            /* as there is only one series,
-             * emulate the file belonging to each iteration as not yet written
-             */
-            written() = false;
-            iterations.written() = false;
-
-            std::string filename = iterationFilename( it->first );
-
-            dirty() |= it->second.dirty();
-            it->second.flushFileBased(filename, it->first);
-
-            iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
-
-            flushAttributes();
 
             if( *it->second.m_closed ==
                 Iteration::CloseStatus::ClosedInFrontend )
@@ -1178,15 +1188,16 @@ Series::openIteration( uint64_t index, Iteration iteration )
     switch( *iteration.m_closed )
     {
         using CL = Iteration::CloseStatus;
-        case CL::ClosedInFrontend:
         case CL::ClosedInBackend:
-            break;
-            // throw std::runtime_error(
-            //     "[Series] Detected illegal access to iteration that "
-            //     "has been closed previously." );
+            throw std::runtime_error(
+                "[Series] Detected illegal access to iteration that "
+                "has been closed previously." );
         case CL::Open:
         case CL::ClosedTemporarily:
             *iteration.m_closed = CL::Open;
+            break;
+        case CL::ClosedInFrontend:
+            // keep it like it is
             break;
         default:
             throw std::runtime_error( "Unreachable!" );
