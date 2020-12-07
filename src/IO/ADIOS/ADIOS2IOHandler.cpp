@@ -382,7 +382,7 @@ ADIOS2IOHandlerImpl::closeFile(
                 []( detail::BufferedActions & ba, adios2::Engine & ) {
                     ba.finalize();
                 },
-                /* flushUnconditinoally = */ false );
+                /* flushUnconditionally = */ false );
             m_fileData.erase( it );
         }
     }
@@ -1814,7 +1814,7 @@ namespace detail
                     []( BufferedActions &, adios2::Engine & eng ) {
                         eng.EndStep();
                     },
-                    /* flushUnconditinoally = */ true );
+                    /* flushUnconditionally = */ true );
                 uncommittedAttributes.clear();
                 streamStatus = StreamStatus::OutsideOfStep;
                 return AdvanceStatus::OK;
@@ -1834,7 +1834,7 @@ namespace detail
                             BufferedActions &, adios2::Engine & engine ) {
                             adiosStatus = engine.BeginStep();
                         },
-                        /* flushUnconditinoally = */ true );
+                        /* flushUnconditionally = */ true );
                 }
                 AdvanceStatus res = AdvanceStatus::OK;
                 switch( adiosStatus )

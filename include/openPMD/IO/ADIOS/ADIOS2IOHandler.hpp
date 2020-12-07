@@ -894,15 +894,15 @@ namespace detail
         /**
          * Flush deferred IO actions.
          *
-         * @performPutsGets A functor that takes as parameters (1) *this and
-         *     (2) the ADIOS2 engine.
+         * @param performPutsGets A functor that takes as parameters (1) *this
+         *     and (2)) the ADIOS2 engine.
          *     Its task is to ensure that ADIOS2 performs Put/Get operations.
          *     Several options for this:
          *     * adios2::Engine::EndStep
          *     * adios2::Engine::Perform(Puts|Gets)
          *     * adios2::Engine::Close
-         * @flushUnconditionally Whether to run the functor even if no deferred
-         *     IO tasks had been queued.
+         * @param flushUnconditionally Whether to run the functor even if no
+         *     deferred IO tasks had been queued.
          */
         template< typename F >
         void

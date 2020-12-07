@@ -1137,9 +1137,8 @@ Series::advance(
                     Parameter< Operation::CLOSE_FILE > fClose;
                     IOHandler->enqueue(
                         IOTask( &iteration, std::move( fClose ) ) );
-                    *iteration.m_closed =
-                        Iteration::CloseStatus::ClosedInBackend;
                 }
+                *iteration.m_closed = Iteration::CloseStatus::ClosedInBackend;
                 break;
             }
             case IE::groupBased:
