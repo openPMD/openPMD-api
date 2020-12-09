@@ -113,7 +113,32 @@ Iteration::close( bool _flush )
     {
         setAttribute< bool_type >( "closed", 1u );
     }
-    *m_closed = CloseStatus::ClosedInFrontend;
+    // update close status
+    switch( *m_closed )
+    {
+        case CloseStatus::Open:
+        case CloseStatus::ClosedInFrontend:
+            *m_closed = CloseStatus::ClosedInFrontend;
+            break;
+        case CloseStatus::ClosedTemporarily:
+            // should we bother to reopen?
+            if( dirtyRecursive() )
+            {
+                // let's reopen
+                *m_closed = CloseStatus::ClosedInFrontend;
+            }
+            else
+            {
+                // don't reopen
+                *m_closed = CloseStatus::ClosedInBackend;
+            }
+            break;
+        case CloseStatus::ClosedInBackend:
+            // just keep it like it is
+            break;
+        default:
+            throw std::runtime_error( "Unreachable!" );
+    }
     if( _flush )
     {
         /* Find the root point [Series] of this file,

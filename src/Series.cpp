@@ -578,14 +578,13 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
              * 2. Or the Series has been changed globally in a manner that
              *    requires adapting all iterations.
              */
-            if( !dirtyRecursive && !this->dirty() )
+            if( dirtyRecursive || this->dirty() )
             {
-                continue;
+                // openIteration() will update the close status
+                openIteration( i.first, i.second );
+                i.second.flush();
             }
 
-            openIteration( i.first, i.second );
-
-            i.second.flush();
             if( *i.second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
             {
                 Parameter< Operation::CLOSE_FILE > fClose;
@@ -627,26 +626,40 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
              * 2. Or the Series has been changed globally in a manner that
              *    requires adapting all iterations.
              */
-            if( !dirtyRecursive && !this->dirty() )
+            if( dirtyRecursive || this->dirty() )
             {
-                continue;
+                /* as there is only one series,
+                * emulate the file belonging to each iteration as not yet written
+                */
+                written() = false;
+                iterations.written() = false;
+
+                std::stringstream iteration("");
+                iteration << std::setw(*m_filenamePadding)
+                          << std::setfill('0') << i.first;
+                std::string filename =
+                    *m_filenamePrefix + iteration.str() + *m_filenamePostfix;
+
+                dirty() |= i.second.dirty();
+                i.second.flushFileBased(filename, i.first);
+
+                iterations.flush(
+                    auxiliary::replace_first(basePath(), "%T/", ""));
+
+                flushAttributes();
+
+                switch( *i.second.m_closed )
+                {
+                    using CL = Iteration::CloseStatus;
+                    case CL::Open:
+                    case CL::ClosedTemporarily:
+                        *i.second.m_closed = CL::Open;
+                        break;
+                    default:
+                        // keep it
+                        break;
+                }
             }
-            /* as there is only one series,
-             * emulate the file belonging to each iteration as not yet written
-             */
-            written() = false;
-            iterations.written() = false;
-
-            std::stringstream iteration("");
-            iteration << std::setw(*m_filenamePadding) << std::setfill('0') << i.first;
-            std::string filename = *m_filenamePrefix + iteration.str() + *m_filenamePostfix;
-
-            dirty() |= i.second.dirty();
-            i.second.flushFileBased(filename, i.first);
-
-            iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
-
-            flushAttributes();
 
             if( *i.second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
             {
@@ -842,6 +855,11 @@ Series::readFileBased()
             IOHandler->enqueue(IOTask(this, fClose));
             IOHandler->flush();
         }
+    }
+
+    for( auto & iteration : iterations )
+    {
+        *iteration.second.m_closed = Iteration::CloseStatus::ClosedTemporarily;
     }
 
     if( iterations.empty() )
@@ -1042,6 +1060,23 @@ Series::openIteration( uint64_t index, Iteration iteration )
     /* open iteration path */
     pOpen.path = std::to_string( index );
     IOHandler->enqueue( IOTask( &iteration, pOpen ) );
+    switch( *iteration.m_closed )
+    {
+        using CL = Iteration::CloseStatus;
+        case CL::ClosedInBackend:
+            throw std::runtime_error(
+                "[Series] Detected illegal access to iteration that "
+                "has been closed previously." );
+        case CL::Open:
+        case CL::ClosedTemporarily:
+            *iteration.m_closed = CL::Open;
+            break;
+        case CL::ClosedInFrontend:
+            // just keep it like it is
+            break;
+        default:
+            throw std::runtime_error( "Unreachable!" );
+    }
 }
 
 namespace
