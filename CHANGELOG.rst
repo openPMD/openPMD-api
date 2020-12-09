@@ -25,6 +25,7 @@ Other
 
 - switch to C++14 #825
 - Python: support 3.6 - 3.9 #828
+- NLohmann-JSON dependency updated to 3.9.1+ #839
 - Docs:
 
   - Release cibuildwheel example #775

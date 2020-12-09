@@ -89,6 +89,36 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     init( std::move( cfg ) );
 }
 
+ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
+{
+    /*
+     * m_fileData is an unordered_map indexed by pointer addresses
+     * to the fileState member of InvalidatableFile.
+     * This means that destruction order is nondeterministic.
+     * Let's determinize it (necessary if computing in parallel).
+     */
+    using file_t = std::unique_ptr< detail::BufferedActions >;
+    std::vector< file_t > sorted;
+    sorted.reserve( m_fileData.size() );
+    for( auto & pair : m_fileData )
+    {
+        sorted.push_back( std::move( pair.second ) );
+    }
+    m_fileData.clear();
+    std::sort(
+        sorted.begin(),
+        sorted.end(),
+        []( auto const & left, auto const & right ) {
+            return left->m_file <= right->m_file;
+        } );
+    // run the destructors
+    for( auto & file : sorted )
+    {
+        // std::unique_ptr interface
+        file.reset();
+    }
+}
+
 void
 ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
 {
