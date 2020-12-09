@@ -109,7 +109,7 @@ public:
     );
 
 
-    ~ADIOS2IOHandlerImpl( ) override = default;
+    ~ADIOS2IOHandlerImpl() override;
 
     std::future< void > flush( ) override;
 
