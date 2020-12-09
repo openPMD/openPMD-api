@@ -30,21 +30,10 @@
 #include <exception>
 #include <iomanip>
 #include <iostream>
+#include <regex>
 #include <set>
 #include <string>
 #include <tuple>
-
-#if defined(__GNUC__)
-#   if (__GNUC__ == 4 && __GNUC_MINOR__ < 9)
-#       define IS_GCC_48 1
-#   endif
-#endif
-
-#if defined(IS_GCC_48)
-#   include <regex.h>
-#else
-#   include <regex>
-#endif
 
 
 namespace openPMD
@@ -418,40 +407,6 @@ Series::parseInput(std::string filepath)
 
     input->format = determineFormat(input->name);
 
-#if defined(IS_GCC_48)
-    regex_t pattern;
-    if( regcomp(&pattern, "(.*)%(0[[:digit:]]+)?T(.*)", REG_EXTENDED) )
-        throw std::runtime_error(std::string("Regex for iterationFormat '(.*)%(0[[:digit:]]+)?T(.*)' can not be compiled!"));
-
-    constexpr uint8_t regexGroups = 4u;
-    std::array< regmatch_t, regexGroups > regexMatch;
-    if( regexec(&pattern, input->name.c_str(), regexGroups, regexMatch.data(), 0) )
-        input->iterationEncoding = IterationEncoding::groupBased;
-    else
-    {
-        input->iterationEncoding = IterationEncoding::fileBased;
-
-        if( regexMatch[0].rm_so == -1 || regexMatch[0].rm_eo == -1 )
-            throw std::runtime_error("Can not determine iterationFormat from filename " + input->name);
-
-        if( regexMatch[1].rm_so == -1 || regexMatch[1].rm_eo == -1 )
-            throw std::runtime_error("Can not determine iterationFormat (prefix) from filename " + input->name);
-        else
-            input->filenamePrefix = std::string(&input->name[regexMatch[1].rm_so], regexMatch[1].rm_eo - regexMatch[1].rm_so);
-
-        if( regexMatch[2].rm_so == -1 || regexMatch[2].rm_eo == -1 )
-            input->filenamePadding = 0;
-        else
-            input->filenamePadding = std::stoi(std::string(&input->name[regexMatch[2].rm_so], regexMatch[2].rm_eo - regexMatch[2].rm_so));
-
-        if( regexMatch[3].rm_so == -1 || regexMatch[3].rm_eo == -1 )
-            throw std::runtime_error("Can not determine iterationFormat (postfix) from filename " + input->name);
-        else
-            input->filenamePostfix = std::string(&input->name[regexMatch[3].rm_so], regexMatch[3].rm_eo - regexMatch[3].rm_so);
-    }
-
-    regfree(&pattern);
-#else
     std::regex pattern("(.*)%(0[[:digit:]]+)?T(.*)");
     std::smatch regexMatch;
     std::regex_match(input->name, regexMatch, pattern);
@@ -473,7 +428,6 @@ Series::parseInput(std::string filepath)
         input->filenamePostfix = regexMatch[3].str();
     } else
         throw std::runtime_error("Can not determine iterationFormat from filename " + input->name);
-#endif
 
     input->filenamePostfix = cleanFilename(input->filenamePostfix, input->format);
 
@@ -1096,19 +1050,6 @@ namespace
 
     std::function<std::tuple<bool, int>(std::string const &)>
     buildMatcher(std::string const &regexPattern) {
-#if defined(IS_GCC_48)
-        auto pattern = std::shared_ptr< regex_t >(new regex_t, [](regex_t* p){ regfree(p); delete p; });
-        if( regcomp(pattern.get(), regexPattern.c_str(), REG_EXTENDED) )
-            throw std::runtime_error(std::string("Regex for name '") + regexPattern + std::string("' can not be compiled!"));
-
-        return [pattern](std::string const& filename) -> std::tuple< bool, int >
-            {
-                std::array< regmatch_t, 2 > regexMatches;
-                bool match = !regexec(pattern.get(), filename.c_str(), regexMatches.size(), regexMatches.data(), 0);
-                int padding = match ? regexMatches[1].rm_eo - regexMatches[1].rm_so : 0;
-                return std::tuple< bool, int >{match, padding};
-            };
-#else
         std::regex pattern(regexPattern);
 
         return [pattern](std::string const &filename) -> std::tuple<bool, int> {
@@ -1117,7 +1058,6 @@ namespace
             int padding = match ? regexMatches[1].length() : 0;
             return std::tuple<bool, int>{match, padding};
         };
-#endif
     }
 
     std::function<std::tuple<bool, int>(std::string const &)>
