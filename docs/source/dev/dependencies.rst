@@ -20,7 +20,7 @@ The following libraries are shipped internally in ``share/openPMD/thirdParty/`` 
 * `MPark.Variant <https://github.com/mpark/variant>`_ 1.4.0+ (`BSL-1.0 <https://github.com/mpark/variant/blob/master/LICENSE.md>`_)
 * `Catch2 <https://github.com/catchorg/Catch2>`_ 2.6.1+ (`BSL-1.0 <https://github.com/catchorg/Catch2/blob/master/LICENSE.txt>`__)
 * `pybind11 <https://github.com/pybind/pybind11>`_ 2.4.3+ (`new BSD <https://github.com/pybind/pybind11/blob/master/LICENSE>`_)
-* `NLohmann-JSON <https://github.com/nlohmann/json>`_ 3.7.0+ (`MIT <https://github.com/nlohmann/json/blob/develop/LICENSE.MIT>`_)
+* `NLohmann-JSON <https://github.com/nlohmann/json>`_ 3.9.1+ (`MIT <https://github.com/nlohmann/json/blob/develop/LICENSE.MIT>`_)
 
 Optional: I/O backends
 ----------------------
