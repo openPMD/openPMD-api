@@ -375,7 +375,7 @@ Series::flush()
 ReadIterations
 Series::readIterations()
 {
-    return ReadIterations( this );
+    return { this };
 }
 
 WriteIterations

@@ -449,7 +449,7 @@ AdvanceStatus
 Iteration::beginStep()
 {
     using IE = IterationEncoding;
-    Series & series = auxiliary::deref_dynamic_cast< Series >(
+    auto & series = auxiliary::deref_dynamic_cast< Series >(
         parent->attributable->parent->attributable );
     // Initialize file with this to quiet warnings
     // The following switch is comprehensive
@@ -493,7 +493,7 @@ void
 Iteration::endStep()
 {
     using IE = IterationEncoding;
-    Series & series = auxiliary::deref_dynamic_cast< Series >(
+    auto & series = auxiliary::deref_dynamic_cast< Series >(
         parent->attributable->parent->attributable );
     // Initialize file with this to quiet warnings
     // The following switch is comprehensive
