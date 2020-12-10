@@ -1121,14 +1121,8 @@ void
 Series::openIteration( uint64_t index, Iteration iteration )
 {
     // open the iteration's file again
-    std::stringstream nameBuilder( "" );
-    nameBuilder << std::setw( *m_filenamePadding ) << std::setfill( '0' )
-                << index;
-    std::string filename =
-        *m_filenamePrefix + nameBuilder.str() + *m_filenamePostfix;
-
     Parameter< Operation::OPEN_FILE > fOpen;
-    fOpen.name = filename;
+    fOpen.name = iterationFilename( index );
     IOHandler->enqueue( IOTask( this, fOpen ) );
 
     /* open base path */
