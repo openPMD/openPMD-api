@@ -51,6 +51,7 @@ This pays tribute to the fact that in streaming mode, an iteration may be droppe
 
 .. literalinclude:: 10_streaming_read.py
    :language: python3
+
 Writing
 -------
 
