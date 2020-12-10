@@ -5,4 +5,4 @@ extraction:
         - openmpi-bin
         - libopenmpi-dev
         - libhdf5-openmpi-dev
-        - libadios-dev  # this is OpenMPI-enabled, explicit name on disco+
+        - libadios-openmpi-dev
