@@ -88,5 +88,5 @@ public:
 private:
     resource m_data;
 };
-} // namespace auxiliary
-} // namespace openPMD
+} // auxiliary
+} // openPMD

@@ -20,10 +20,11 @@
  */
 #pragma once
 
-#include "ADIOS2FilePosition.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #include "openPMD/IO/AbstractIOHandlerImplCommon.hpp"
+#include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
+#include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
@@ -33,13 +34,11 @@
 
 #if openPMD_HAVE_ADIOS2
 #    include <adios2.h>
-
-#    include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #endif
-
 #if openPMD_HAVE_MPI
 #   include <mpi.h>
 #endif
+#include <nlohmann/json.hpp>
 
 #include <array>
 #include <exception>
@@ -48,11 +47,10 @@
 #include <memory> // shared_ptr
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <utility> // pair
 #include <vector>
 
-#include <nlohmann/json.hpp>
-#include <unordered_map>
 
 namespace openPMD
 {
@@ -881,6 +879,10 @@ namespace detail
 
         ~BufferedActions( );
 
+        /**
+         * Implementation of destructor, will only run once.
+         *
+         */
         void
         finalize();
 
@@ -895,7 +897,7 @@ namespace detail
          * Flush deferred IO actions.
          *
          * @param performPutsGets A functor that takes as parameters (1) *this
-         *     and (2)) the ADIOS2 engine.
+         *     and (2) the ADIOS2 engine.
          *     Its task is to ensure that ADIOS2 performs Put/Get operations.
          *     Several options for this:
          *     * adios2::Engine::EndStep
@@ -1032,6 +1034,11 @@ namespace detail
         StreamStatus streamStatus = StreamStatus::OutsideOfStep;
         adios2::StepStatus m_lastStepStatus = adios2::StepStatus::OK;
 
+        /**
+         * See documentation for StreamStatus::Parsing.
+         * Will be set true under the circumstance described there in order to
+         * indicate that the first step should only be opened after parsing.
+         */
         bool delayOpeningTheFirstStep = false;
 
         /*

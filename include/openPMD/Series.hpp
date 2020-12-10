@@ -308,20 +308,16 @@ OPENPMD_private:
     void flushGroupBased( iterations_iterator begin, iterations_iterator end );
     void flushMeshesPath();
     void flushParticlesPath();
-    /** @defgroup parsing (Re-)parsing of the openPMD Series.
-     *  @{
-     *
-     * Note:
+    void readFileBased( );
+    /**
+     * Note on re-parsing of a Series:
      * If init == false, the parsing process will seek for new
      * Iterations/Records/Record Components etc.
-     * Re-parsing of objects that have already been parsed, is not implemented
+     * Re-parsing of objects that have already been parsed is not implemented
      * as of yet. Such a facility will be required upon implementing things such
      * as resizable datasets.
      */
-    void readFileBased( );
     void readGroupBased( bool init = true );
-    /** @}
-     */
     void
     readBase();
     void read();
