@@ -299,6 +299,10 @@ available_chunks_test( std::string file_ending )
         mpi_size{ static_cast< unsigned >( r_mpi_size ) };
     std::string name = "../samples/available_chunks." + file_ending;
 
+    /*
+     * ADIOS2 assigns writerIDs to blocks in a BP file by id of the substream
+     * (aggregator). So, use one aggregator per MPI rank to test this feature.
+     */
     std::stringstream parameters;
     parameters << R"END(
 {
