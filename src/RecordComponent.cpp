@@ -169,6 +169,7 @@ RecordComponent::flush(std::string const& name)
                 dCreate.chunkSize = m_dataset->chunkSize;
                 dCreate.compression = m_dataset->compression;
                 dCreate.transform = m_dataset->transform;
+                dCreate.options = m_dataset->options;
                 IOHandler->enqueue(IOTask(this, dCreate));
             }
         }

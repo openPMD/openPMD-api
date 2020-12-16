@@ -1619,6 +1619,91 @@ class APITest(unittest.TestCase):
         for ext in io.file_extensions:
             self.makeAvailableChunksRoundTrip(ext)
 
+    def testJsonConfigADIOS2(self):
+        global_config = """
+{
+  "adios2": {
+    "engine": {
+      "type": "bp3",
+      "unused": "parameter",
+      "parameters": {
+        "BufferGrowthFactor": "2.0",
+        "Profile": "On"
+      }
+    },
+    "unused": "as well",
+    "dataset": {
+      "operators": [
+        {
+          "type": "blosc",
+          "parameters": {
+              "clevel": "1",
+              "doshuffle": "BLOSC_BITSHUFFLE"
+          }
+        }
+      ]
+    }
+  }
+}
+"""
+        local_config = """
+{
+  "adios2": {
+    "unused": "dataset parameter",
+    "dataset": {
+      "unused": "too",
+      "operators": [
+        {
+          "type": "blosc",
+          "parameters": {
+              "clevel": "3",
+              "doshuffle": "BLOSC_BITSHUFFLE"
+          }
+        }
+      ]
+    }
+  }
+}
+"""
+        if not io.variants['adios2']:
+            return
+        series = io.Series(
+            "../samples/unittest_jsonConfiguredBP3.bp",
+            io.Access_Type.create,
+            global_config)
+        if series.backend != 'ADIOS2':
+            # might happen, if env. var. OPENPMD_BP_BACKEND is used
+            return
+
+        DS = io.Dataset
+        data = np.array(range(1000), dtype=np.dtype("double"))
+
+        E_x = series.iterations[0].meshes["E"]["x"]
+        E_x.reset_dataset(DS(np.dtype("double"), [1000]))
+        E_x.store_chunk(data, [0], [1000])
+
+        E_y = series.iterations[0].meshes["E"]["y"]
+        E_y.reset_dataset(DS(np.dtype("double"), [1000], local_config))
+        E_y.store_chunk(data, [0], [1000])
+
+        del series
+
+        read = io.Series(
+            "../samples/unittest_jsonConfiguredBP3.bp",
+            io.Access_Type.read_only,
+            global_config)
+
+        E_x = read.iterations[0].meshes["E"]["x"]
+        chunk_x = E_x.load_chunk([0], [1000])
+        E_y = read.iterations[0].meshes["E"]["x"]
+        chunk_y = E_y.load_chunk([0], [1000])
+
+        read.iterations[0].close()
+
+        for i in range(1000):
+            self.assertEqual(chunk_x[i], i)
+            self.assertEqual(chunk_y[i], i)
+
 
 if __name__ == '__main__':
     unittest.main()
