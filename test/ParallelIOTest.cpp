@@ -563,6 +563,8 @@ hipace_like_write( std::string file_ending )
     int const all_last_step = last_step + (i_mpi_size - 1) * int(local_Nz);
     for( int first_rank_step = 0; first_rank_step < all_last_step; ++first_rank_step )
     {
+        MPI_Barrier(MPI_COMM_WORLD);
+
         // first_rank_step: this step will "lead" the opening of an output step
         // step on the local rank
         int const step = first_rank_step - my_first_step;
@@ -589,6 +591,7 @@ hipace_like_write( std::string file_ending )
                 io::determineDatatype< precision >( ),
                 {global_Nz, global_Nx});
             E_x.resetDataset(dataset);
+            //series.flush();
         }
 
         // has this ranks started computations yet?
@@ -612,11 +615,19 @@ hipace_like_write( std::string file_ending )
 
         Offset chunk_offset = {local_Nz * mpi_rank, 0};
         Extent chunk_extent = {local_Nz, global_Nx};
+        auto const copyToShared = []( std::vector< precision > const & data ) {
+            auto d = std::shared_ptr<precision>(
+                new precision[data.size()], std::default_delete<precision[]>());
+            std::copy(data.begin(), data.end(), d.get());
+            return d;
+        };
         E_x.storeChunk(
-            io::shareRaw(E_x_data),
+            copyToShared(E_x_data),
+            //io::shareRaw(E_x_data),
             chunk_offset, chunk_extent);
-        series.flush();
+        //series.flush();
     }
+    series.flush();
 }
 
 TEST_CASE( "hipace_like_write", "[parallel]" )
