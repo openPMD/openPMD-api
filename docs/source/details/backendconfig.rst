@@ -19,7 +19,6 @@ Generally, keys of the configuration are *lower case*.
 Parameters that are directly passed through to an external library and not interpreted within openPMD API (e.g. ``adios2.engine.parameters``) are unaffected by this and follow the respective library's conventions.
 
 The configuration string may refer to the complete ``openPMD::Series`` or may additionally be specified per ``openPMD::Dataset``, passed in the respective constructors.
-*A configuration per dataset is currently not yet implemented.*
 This reflects the fact that certain backend-specific parameters may refer to the whole Series (such as storage engines and their parameters) and others refer to actual datasets (such as compression).
 
 For a consistent user interface, backends shall follow the following rules:
@@ -49,11 +48,14 @@ Explanation of the single keys:
   Please refer to the `official ADIOS2 documentation <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_ for a list of available engines.
 * ``adios2.engine.type``: An associative array of string-formatted engine parameters, passed directly through to ``adios2::IO::SetParameters``.
   Please refer to the official ADIOS2 documentation for the allowable engine parameters.
-* ``adios2.dataset.operators``: (*currently unimplemented* – please use the ``openPMD::Dataset::compression`` for the meantime) This key contains a list of ADIOS2 `operators <https://adios2.readthedocs.io/en/latest/components/components.html#operator>`_, used to enable compression or dataset transformations.
-  Each object in the list has three keys:
+* ``adios2.dataset.operators``: This key contains a list of ADIOS2 `operators <https://adios2.readthedocs.io/en/latest/components/components.html#operator>`_, used to enable compression or dataset transformations.
+  Each object in the list has two keys:
 
   * ``type`` supported ADIOS operator type, e.g. zfp, sz
   * ``parameters`` is an associative map of string parameters for the operator (e.g. compression levels)
+
+Any setting specified under ``adios2.dataset`` is applicable globally as well as on a per-dataset level.
+Any setting under ``adios2.engine`` is applicable globally only.
 
 Other backends
 ^^^^^^^^^^^^^^

@@ -26,11 +26,12 @@
 
 namespace openPMD
 {
-Dataset::Dataset(Datatype d, Extent e)
+Dataset::Dataset(Datatype d, Extent e, std::string options_in)
         : extent{e},
           dtype{d},
           rank{static_cast<uint8_t>(e.size())},
-          chunkSize{e}
+          chunkSize{e},
+          options{std::move(options_in)}
 { }
 
 Dataset&

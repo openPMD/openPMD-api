@@ -122,21 +122,26 @@ ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
         return;
     }
     m_config = std::move( cfg[ "adios2" ] );
-    defaultOperators = getOperators().first;
+    auto operators = getOperators();
+    if( operators )
+    {
+        defaultOperators = std::move( operators.get() );
+    }
 }
 
-std::pair< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator >, bool >
+auxiliary::Option< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > >
 ADIOS2IOHandlerImpl::getOperators( auxiliary::TracingJSON cfg )
 {
+    using ret_t = auxiliary::Option< std::vector< ParameterizedOperator > >;
     std::vector< ParameterizedOperator > res;
     if( !cfg.json().contains( "dataset" ) )
     {
-        return std::make_pair( res, false );
+        return ret_t();
     }
     auto datasetConfig = cfg[ "dataset" ];
     if( !datasetConfig.json().contains( "operators" ) )
     {
-        return std::make_pair( res, false );
+        return ret_t();
     }
     auto _operators = datasetConfig[ "operators" ];
     nlohmann::json const & operators = _operators.json();
@@ -167,10 +172,10 @@ ADIOS2IOHandlerImpl::getOperators( auxiliary::TracingJSON cfg )
         }
     }
     _operators.declareFullyRead();
-    return std::make_pair( res, true );
+    return auxiliary::makeOption( std::move( res ) );
 }
 
-std::pair< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator >, bool >
+auxiliary::Option< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > >
 ADIOS2IOHandlerImpl::getOperators()
 {
     return getOperators( m_config );
@@ -289,7 +294,30 @@ void ADIOS2IOHandlerImpl::createDataset(
         filePos->gd = ADIOS2FilePosition::GD::DATASET;
         auto const varName = filePositionToString( filePos );
 
-        auto operators = defaultOperators;
+        std::vector< ParameterizedOperator > operators;
+        nlohmann::json options = nlohmann::json::parse( parameters.options );
+        if( options.contains( "adios2" ) )
+        {
+            auxiliary::TracingJSON datasetConfig( options[ "adios2" ] );
+            auto datasetOperators = getOperators( datasetConfig );
+
+            operators = datasetOperators ? std::move( datasetOperators.get() )
+                                         : defaultOperators;
+
+            auto shadow = datasetConfig.invertShadow();
+            if( shadow.size() > 0 )
+            {
+                std::cerr << "Warning: parts of the JSON configuration for "
+                             "ADIOS2 dataset '"
+                          << varName << "' remain unused:\n"
+                          << shadow << std::endl;
+            }
+        }
+        else
+        {
+            operators = defaultOperators;
+        }
+
         if( !parameters.compression.empty() )
         {
             auxiliary::Option< adios2::Operator > adiosOperator =

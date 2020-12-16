@@ -38,7 +38,7 @@ class Dataset
     friend class RecordComponent;
 
 public:
-    Dataset(Datatype, Extent);
+    Dataset(Datatype, Extent, std::string options = "{}");
 
     Dataset& extend(Extent newExtent);
     Dataset& setChunkSize(Extent const&);
@@ -51,5 +51,6 @@ public:
     Extent chunkSize;
     std::string compression;
     std::string transform;
+    std::string options = "{}"; //!< backend-dependent JSON configuration
 };
-} // openPMD
+} // namespace openPMD
