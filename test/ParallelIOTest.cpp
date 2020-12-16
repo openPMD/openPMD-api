@@ -555,6 +555,8 @@ hipace_like_write( std::string file_ending )
 
     // open a parallel series
     Series series( name, Access::CREATE, MPI_COMM_WORLD );
+    series.setIterationEncoding( IterationEncoding::groupBased );
+    series.flush();
 
     // in HiPACE, ranks write one-by-one to a "swiped" step, overlapping
     // each other in time;
@@ -625,9 +627,9 @@ hipace_like_write( std::string file_ending )
             copyToShared(E_x_data),
             //io::shareRaw(E_x_data),
             chunk_offset, chunk_extent);
-        //series.flush();
+        series.flush();
     }
-    series.flush();
+    //series.flush();
 }
 
 TEST_CASE( "hipace_like_write", "[parallel]" )
