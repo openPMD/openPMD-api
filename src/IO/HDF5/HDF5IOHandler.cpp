@@ -1263,12 +1263,16 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
     obj_id = H5Oopen(file.id,
                      concrete_h5_file_position(writable).c_str(),
                      H5P_DEFAULT);
-    VERIFY(obj_id >= 0, "[HDF5] Internal error: Failed to open HDF5 object during attribute read");
+    VERIFY(obj_id >= 0, std::string("[HDF5] Internal error: Failed to open HDF5 object '") +
+        concrete_h5_file_position(writable).c_str() + "' during attribute read");
     std::string const & attr_name = parameters.name;
     attr_id = H5Aopen(obj_id,
                       attr_name.c_str(),
                       H5P_DEFAULT);
-    VERIFY(attr_id >= 0, "[HDF5] Internal error: Failed to open HDF5 attribute during attribute read");
+    VERIFY(attr_id >= 0,
+        std::string("[HDF5] Internal error: Failed to open HDF5 attribute '") +
+        attr_name + "' (" +
+        concrete_h5_file_position(writable).c_str() + ") during attribute read");
 
     hid_t attr_type, attr_space;
     attr_type = H5Aget_type(attr_id);
