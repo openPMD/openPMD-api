@@ -563,7 +563,7 @@ hipace_like_write( std::string file_ending )
     MPI_Comm_size( MPI_COMM_WORLD, &i_mpi_size );
     unsigned mpi_rank{ static_cast< unsigned >( i_mpi_rank ) },
              mpi_size{ static_cast< unsigned >( i_mpi_size ) };
-    std::string name = "../samples/hipace_like_write_%T." + file_ending;
+    std::string name = "../samples/hipace_like_write." + file_ending;
 
     // data (we just use the same data for each step for demonstration)
     // we assign 10 longitudinal cells & 300 transversal cells per rank here
@@ -571,9 +571,11 @@ hipace_like_write( std::string file_ending )
     unsigned const global_Nz = local_Nz * mpi_size;
     unsigned const global_Nx = 300u;
     using precision = double;
-    std::vector< precision > E_x_data( global_Nz * global_Nx );
+    std::vector< precision > E_x_data( global_Nx * local_Nz );
     // filling some values: 0, 1, ...
-    std::iota( E_x_data.begin(), E_x_data.end(), 0.);
+    std::iota( E_x_data.begin(), E_x_data.end(), local_Nz * mpi_rank);
+    std::transform(E_x_data.begin(), E_x_data.end(), E_x_data.begin(),
+        [](precision d) -> precision { return std::sin( d * 2.0 * 3.1415 / 20. ); });
 
     // open a parallel series
     Series series( name, Access::CREATE, MPI_COMM_WORLD );
@@ -613,7 +615,7 @@ hipace_like_write( std::string file_ending )
             auto E_x = E["x"]; // record component
             auto dataset = io::Dataset(
                 io::determineDatatype< precision >( ),
-                {global_Nz, global_Nx});
+                {global_Nx, global_Nz});
             E_x.resetDataset(dataset);
             //series.flush();
         }
@@ -632,13 +634,24 @@ hipace_like_write( std::string file_ending )
         auto E = it.meshes["E"]; // record
         auto E_x = E["x"];       // record component
 
+        // some meta-data
+        E.setAxisLabels({"z", "x"});
+        E.setGridSpacing<double>({1.0, 1.0});
+        E.setGridGlobalOffset({0.0, 0.0});
+        E_x.setPosition<double>({0.0, 0.0});
+
+        // update values
+        std::iota( E_x_data.begin(), E_x_data.end(), local_Nz * mpi_rank);
+        std::transform(E_x_data.begin(), E_x_data.end(), E_x_data.begin(),
+            [&step](precision d) -> precision { return std::sin( d * 2.0 * 3.1415 / 100. + step ); });
+
         auto dataset = io::Dataset(
             io::determineDatatype< precision >( ),
-            {global_Nz, global_Nx});
+            {global_Nx, global_Nz});
         E_x.resetDataset(dataset);
 
-        Offset chunk_offset = {local_Nz * mpi_rank, 0};
-        Extent chunk_extent = {local_Nz, global_Nx};
+        Offset chunk_offset = {0, local_Nz * mpi_rank};
+        Extent chunk_extent = {global_Nx, local_Nz};
         auto const copyToShared = []( std::vector< precision > const & data ) {
             auto d = std::shared_ptr<precision>(
                 new precision[data.size()], std::default_delete<precision[]>());
@@ -651,7 +664,6 @@ hipace_like_write( std::string file_ending )
             chunk_offset, chunk_extent);
         series.flush();
     }
-    //series.flush();
 }
 
 TEST_CASE( "hipace_like_write", "[parallel]" )
