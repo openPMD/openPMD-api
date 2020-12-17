@@ -299,9 +299,31 @@ available_chunks_test( std::string file_ending )
         mpi_size{ static_cast< unsigned >( r_mpi_size ) };
     std::string name = "../samples/available_chunks." + file_ending;
 
+    /*
+     * ADIOS2 assigns writerIDs to blocks in a BP file by id of the substream
+     * (aggregator). So, use one aggregator per MPI rank to test this feature.
+     */
+    std::stringstream parameters;
+    parameters << R"END(
+{
+    "adios2":
+    {
+        "engine":
+        {
+            "type": "bp4",
+            "parameters":
+            {
+                "NumAggregators":)END"
+                << "\"" << std::to_string(mpi_size) << "\""  << R"END(
+            }
+        }
+    }
+}
+)END";
+
     std::vector< int > data{ 2, 4, 6, 8 };
     {
-        Series write( name, Access::CREATE, MPI_COMM_WORLD );
+        Series write( name, Access::CREATE, MPI_COMM_WORLD, parameters.str() );
         Iteration it0 = write.iterations[ 0 ];
         auto E_x = it0.meshes[ "E" ][ "x" ];
         E_x.resetDataset( { Datatype::INT, { mpi_size, 4 } } );
