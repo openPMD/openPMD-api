@@ -17,3 +17,9 @@ Expand-Archive no_fields.zip -DestinationPath samples\issue-sample\
 Invoke-WebRequest https://github.com/yt-project/yt/files/1542670/no_particles.zip -OutFile no_particles.zip
 Expand-Archive no_particles.zip -DestinationPath samples\issue-sample\
 Remove-Item *.zip
+
+# Ref.: https://github.com/openPMD/openPMD-viewer/issues/296
+Invoke-WebRequest https://github.com/openPMD/openPMD-viewer/files/5655027/diags.zip -OutFile empty_alternate_fbpic.zip
+Expand-Archive empty_alternate_fbpic.zip
+Move-Item -Path empty_alternate_fbpic\diags\hdf5\data00000050.h5 samples\issue-sample\empty_alternate_fbpic.h5
+Remove-Item -Recurse -Force empty_alternate_fbpic*

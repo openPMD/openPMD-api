@@ -1632,8 +1632,31 @@ void optional_paths_110_test(const std::string & backend)
     }
 }
 
-
 #if openPMD_HAVE_HDF5
+TEST_CASE( "empty_alternate_fbpic", "[serial][hdf5]" )
+{
+    // Ref.: https://github.com/openPMD/openPMD-viewer/issues/296
+    try
+    {
+        {
+            Series s = Series("../samples/issue-sample/empty_alternate_fbpic.h5", Access::READ_ONLY);
+            REQUIRE(s.iterations.contains(50));
+            REQUIRE(s.iterations[50].particles.contains("electrons"));
+            REQUIRE(s.iterations[50].particles["electrons"].contains("momentum"));
+            REQUIRE(s.iterations[50].particles["electrons"]["momentum"].contains("x"));
+            auto empty_rc = s.iterations[50].particles["electrons"]["momentum"]["x"];
+
+            REQUIRE(empty_rc.empty());
+            REQUIRE(empty_rc.getDimensionality() == 1);
+            REQUIRE(empty_rc.getExtent() == Extent{0});
+            REQUIRE(isSame(empty_rc.getDatatype(), determineDatatype< double >()));
+        }
+    } catch (no_such_file_error& e)
+    {
+        std::cerr << "issue sample not accessible. (" << e.what() << ")\n";
+    }
+}
+
 TEST_CASE( "available_chunks_test_hdf5", "[serial][json]" )
 {
     /*
