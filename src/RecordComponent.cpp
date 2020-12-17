@@ -196,7 +196,7 @@ RecordComponent::readBase()
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
 
-    if( constant() )
+    if( constant() && !empty() )
     {
         aRead.name = "value";
         IOHandler->enqueue(IOTask(this, aRead));
