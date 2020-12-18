@@ -51,8 +51,11 @@ void init_Mesh(py::module &m) {
         .def("set_geometry", &Mesh::setGeometry)
         .def_property_readonly("geometry_parameters", &Mesh::geometryParameters)
         .def("set_geometry_parameters", &Mesh::setGeometryParameters)
-        .def_property_readonly("data_order", &Mesh::dataOrder)
-        .def("set_data_order", &Mesh::setDataOrder)
+        .def_property("data_order",
+              [](Mesh const & mesh){ return static_cast< char >(mesh.dataOrder()); },
+              [](Mesh & mesh, char d){ mesh.setDataOrder(Mesh::DataOrder(d)); },
+              "Data Order of the Mesh (deprecated and set to C in openPMD 2)"
+        )
         .def_property_readonly("axis_labels", &Mesh::axisLabels)
         .def("set_axis_labels", &Mesh::setAxisLabels)
         .def_property_readonly("grid_spacing", &Mesh::gridSpacing<float>)
@@ -79,10 +82,5 @@ void init_Mesh(py::module &m) {
         .value("thetaMode", Mesh::Geometry::thetaMode)
         .value("cylindrical", Mesh::Geometry::cylindrical)
         .value("spherical", Mesh::Geometry::spherical)
-    ;
-
-    py::enum_<Mesh::DataOrder>(m, "Data_Order")
-        .value("C", Mesh::DataOrder::C)
-        .value("F", Mesh::DataOrder::F)
     ;
 }
