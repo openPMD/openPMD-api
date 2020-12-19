@@ -122,8 +122,8 @@ function build_adios2 {
 function build_blosc {
     if [ -e blosc-stamp ]; then return; fi
 
-    curl -sLo c-blosc-1.15.0.tar.gz \
-        https://github.com/Blosc/c-blosc/archive/v1.15.0.tar.gz
+    curl -sLo c-blosc-1.20.1.tar.gz \
+        https://github.com/Blosc/c-blosc/archive/v1.20.1.tar.gz
     file c-blosc*.tar.gz
     tar -xzf c-blosc*.tar.gz
     rm c-blosc*.tar.gz
@@ -143,7 +143,7 @@ function build_zfp {
     if [ -e zfp-stamp ]; then return; fi
 
     curl -sLo zfp-0.5.5.tar.gz \
-        http://computing.llnl.gov/projects/floating-point-compression/download/zfp-0.5.5.tar.gz
+        https://computing.llnl.gov/projects/zfp/download/zfp-0.5.5.tar.gz
     file zfp*.tar.gz
     tar -xzf zfp*.tar.gz
     rm zfp*.tar.gz
@@ -162,8 +162,8 @@ function build_zfp {
 function build_hdf5 {
     if [ -e hdf5-stamp ]; then return; fi
 
-    curl -sLo hdf5-1.10.5.tar.gz \
-        https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.5/src/hdf5-1.10.5.tar.gz
+    curl -sLo hdf5-1.12.0.tar.gz \
+        https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12/hdf5-1.12.0/src/hdf5-1.12.0.tar.gz
     file hdf5*.tar.gz
     tar -xzf hdf5*.tar.gz
     rm hdf5*.tar.gz
