@@ -9,6 +9,25 @@ Upgrade Guide
 Building openPMD-api now requires a compiler that supports C++14 or newer.
 Supported Python version are now 3.6 to 3.9.
 
+Python
+^^^^^^
+
+Reading the ``data_order`` of a mesh was broken.
+The old setter function (``set_data_order``) and read-only property (``data_order``) are now unified in a single, writable property:
+
+.. code-block:: python3
+
+   import openpmd_api as io
+
+   series = io.Series("data%T.h5", io.Access.read_only)
+   rho = series.iterations[0].meshes["rho"]
+   rho.data_order = 'C'  # or 'F'
+
+   print(rho.data_order == 'C')  # True
+
+Note: we recommend using ``'C'`` order since version 2 of the openPMD-standard will simplify this option to ``'C'``, too.
+For Fortran-ordered indices, please just invert the attributes ``axis_labels``, ``grid_spacing`` and ``grid_global_offset`` accordingly.
+
 
 0.12.0-alpha
 ------------

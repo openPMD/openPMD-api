@@ -398,6 +398,12 @@ class APITest(unittest.TestCase):
         ms["pybool"][SCALAR].reset_dataset(DS(DT.BOOL, extent))
         ms["pybool"][SCALAR].make_constant(False)
 
+        # just testing the data_order attribute
+        ms["char"].data_order = 'C'
+        ms["pyint"].data_order = 'F'
+        self.assertEqual(ms["char"].data_order, 'C')
+        self.assertEqual(ms["pyint"].data_order, 'F')
+
         # staggering meta data
         ms["pyint"][SCALAR].position = [0.25, 0.5]
         ms["pyfloat"][SCALAR].position = [0.5, 0.75]
@@ -456,6 +462,9 @@ class APITest(unittest.TestCase):
         ms = series.iterations[0].meshes
         o = [1, 2, 3]
         e = [1, 1, 1]
+
+        self.assertEqual(ms["char"].data_order, 'C')
+        self.assertEqual(ms["pyint"].data_order, 'F')
 
         self.assertTrue(ms["char"].scalar)
         self.assertTrue(ms["pyint"].scalar)
@@ -1267,11 +1276,6 @@ class APITest(unittest.TestCase):
             # self.assertIsInstance(ps, str)
             self.assertIsInstance(i.particles[ps], io.ParticleSpecies)
 
-    def testData_Order(self):
-        """ Test Data_Order. """
-        obj = io.Data_Order('C')
-        del obj
-
     def testDatatype(self):
         """ Test Datatype. """
         data_type = io.Datatype(1)
@@ -1320,6 +1324,7 @@ class APITest(unittest.TestCase):
         self.assertRaises(TypeError, io.Mesh)
         mesh = self.__series.iterations[100].meshes['E']
         copy_mesh = io.Mesh(mesh)
+        self.assertEqual(mesh.data_order, 'C')
 
         self.assertIsInstance(copy_mesh, io.Mesh)
 

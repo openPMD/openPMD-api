@@ -34,11 +34,11 @@ if __name__ == "__main__":
     E = series.iterations[0].meshes["E"]
     E.set_geometry(io.Geometry.thetaMode)
     E.set_geometry_parameters(geometry_parameters)
-    E.set_data_order(io.Data_Order.C)
     E.set_grid_spacing([1.0, 1.0])
     E.set_grid_global_offset([0.0, 0.0])
     E.set_grid_unit_SI(1.0)
     E.set_axis_labels(["r", "z"])
+    E.data_order = "C"
     E.unit_dimension = {io.Unit_Dimension.I: 1.0,
                         io.Unit_Dimension.J: 2.0}
 
