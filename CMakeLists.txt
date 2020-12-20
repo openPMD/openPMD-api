@@ -716,7 +716,8 @@ endif()
 #
 # TODO: LEGACY! Use CMake TOOLCHAINS instead!
 if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    # On Windows, Clang -Wall aliases -Weverything; default is /W3
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" AND NOT WIN32)
         # list(APPEND CMAKE_CXX_FLAGS "-fsanitize=address") # address, memory, undefined
         # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
         # set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
@@ -739,6 +740,8 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
         # Warning C4503: "decorated name length exceeded, name was truncated"
         # Symbols longer than 4096 chars are truncated (and hashed instead)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4503")
+        # Warning C4244: "conversion from 'X' to 'Y', possible loss of data"
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4244")
         # Yes, you should build against the same C++ runtime and with same
         # configuration (Debug/Release). MSVC does inconvenient choices for their
         # developers, so be it. (Our Windows-users use conda-forge builds, which
