@@ -323,9 +323,6 @@ Mesh::read()
         this->at(MeshRecordComponent::SCALAR).read();
     } else
     {
-        written() = false;
-        clear_unchecked();
-        written() = true;
         Parameter< Operation::LIST_PATHS > pList;
         IOHandler->enqueue(IOTask(this, pList));
         IOHandler->flush();
@@ -334,6 +331,10 @@ Mesh::read()
         for( auto const& component : *pList.paths )
         {
             MeshRecordComponent& rc = (*this)[component];
+            if ( *rc.hasBeenRead )
+            {
+                continue;
+            }
             pOpen.path = component;
             IOHandler->enqueue(IOTask(&rc, pOpen));
             *rc.m_isConstant = true;
@@ -347,7 +348,11 @@ Mesh::read()
         Parameter< Operation::OPEN_DATASET > dOpen;
         for( auto const& component : *dList.datasets )
         {
-            MeshRecordComponent& rc = (*this)[component];
+            MeshRecordComponent & rc = ( *this )[ component ];
+            if( *rc.hasBeenRead )
+            {
+                continue;
+            }
             dOpen.name = component;
             IOHandler->enqueue(IOTask(&rc, dOpen));
             IOHandler->flush();

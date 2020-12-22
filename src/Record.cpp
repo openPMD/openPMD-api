@@ -93,9 +93,6 @@ Record::read()
         this->at(RecordComponent::SCALAR).read();
     } else
     {
-        written() = false;
-        clear_unchecked();
-        written() = true;
         Parameter< Operation::LIST_PATHS > pList;
         IOHandler->enqueue(IOTask(this, pList));
         IOHandler->flush();
@@ -104,6 +101,10 @@ Record::read()
         for( auto const& component : *pList.paths )
         {
             RecordComponent& rc = (*this)[component];
+            if ( *rc.hasBeenRead )
+            {
+                continue;
+            }
             pOpen.path = component;
             IOHandler->enqueue(IOTask(&rc, pOpen));
             *rc.m_isConstant = true;
@@ -117,7 +118,11 @@ Record::read()
         Parameter< Operation::OPEN_DATASET > dOpen;
         for( auto const& component : *dList.datasets )
         {
-            RecordComponent& rc = (*this)[component];
+            RecordComponent & rc = ( *this )[ component ];
+            if( *rc.hasBeenRead )
+            {
+                continue;
+            }
             dOpen.name = component;
             IOHandler->enqueue(IOTask(&rc, dOpen));
             IOHandler->flush();

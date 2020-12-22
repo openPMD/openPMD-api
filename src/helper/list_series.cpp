@@ -37,7 +37,7 @@ namespace helper
 {
     std::ostream &
     listSeries(
-        Series const & series,
+        Series & series,
         bool const longer,
         std::ostream & out
     )
@@ -77,21 +77,21 @@ namespace helper
             if( longer )
                 out << "  all iterations: ";
 
-            for( auto const& i : series.iterations ) {
+            for( auto const& i : series.readIterations() ) {
                 if( longer )
-                    out << i.first << " ";
+                    out << i.iterationIndex << " ";
 
                 // find unique record names
                 std::transform(
-                    i.second.meshes.begin(),
-                    i.second.meshes.end(),
+                    i.meshes.begin(),
+                    i.meshes.end(),
                     std::inserter( meshes, meshes.end() ),
                     []( std::pair< std::string, Mesh > const & p )
                         { return p.first; }
                 );
                 std::transform(
-                    i.second.particles.begin(),
-                    i.second.particles.end(),
+                    i.particles.begin(),
+                    i.particles.end(),
                     std::inserter( particles, particles.end() ),
                     []( std::pair< std::string, ParticleSpecies > const & p )
                         { return p.first; }

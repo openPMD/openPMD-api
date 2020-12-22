@@ -20,10 +20,11 @@
  */
 #pragma once
 
-#include "ADIOS2FilePosition.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #include "openPMD/IO/AbstractIOHandlerImplCommon.hpp"
+#include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
+#include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
@@ -33,14 +34,10 @@
 
 #if openPMD_HAVE_ADIOS2
 #    include <adios2.h>
-
-#    include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #endif
-
 #if openPMD_HAVE_MPI
 #   include <mpi.h>
 #endif
-
 #include <nlohmann/json.hpp>
 
 #include <array>
@@ -48,10 +45,12 @@
 #include <future>
 #include <iostream>
 #include <memory> // shared_ptr
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <utility> // pair
 #include <vector>
+
 
 namespace openPMD
 {
@@ -97,16 +96,18 @@ public:
 
 #if openPMD_HAVE_MPI
 
-    ADIOS2IOHandlerImpl( AbstractIOHandler *, MPI_Comm, nlohmann::json config );
-
-    MPI_Comm m_comm;
+    ADIOS2IOHandlerImpl(
+        AbstractIOHandler *,
+        MPI_Comm,
+        nlohmann::json config,
+        std::string engineType );
 
 #endif // openPMD_HAVE_MPI
 
     explicit ADIOS2IOHandlerImpl(
-        AbstractIOHandler *
-        , nlohmann::json config
-    );
+        AbstractIOHandler *,
+        nlohmann::json config,
+        std::string engineType );
 
 
     ~ADIOS2IOHandlerImpl() override;
@@ -135,6 +136,9 @@ public:
 
     void openPath( Writable *,
                    Parameter< Operation::OPEN_PATH > const & ) override;
+
+    void closePath( Writable *,
+                    Parameter< Operation::CLOSE_PATH > const & ) override;
 
     void openDataset( Writable *,
                       Parameter< Operation::OPEN_DATASET > & ) override;
@@ -174,6 +178,9 @@ public:
                     Parameter< Operation::LIST_ATTS > & parameters ) override;
 
     void
+    advance( Writable*, Parameter< Operation::ADVANCE > & ) override;
+
+    void
     availableChunks( Writable*,
                      Parameter< Operation::AVAILABLE_CHUNKS > &) override;
     /**
@@ -185,6 +192,10 @@ public:
 
 private:
     adios2::ADIOS m_ADIOS;
+    /**
+     * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
+     */
+    std::string m_engineType;
 
     struct ParameterizedOperator
     {
@@ -234,6 +245,9 @@ private:
     // use m_config
     auxiliary::Option< std::vector< ParameterizedOperator > >
     getOperators();
+
+    std::string
+    fileSuffix() const;
 
     /*
      * We need to give names to IO objects. These names are irrelevant
@@ -326,7 +340,9 @@ namespace ADIOS2Defaults
     constexpr const_str str_engine = "engine";
     constexpr const_str str_type = "type";
     constexpr const_str str_params = "parameters";
-}
+    constexpr const_str str_usesteps = "usesteps";
+    constexpr const_str str_usesstepsAttribute = "__openPMD_internal/useSteps";
+} // namespace ADIOS2Defaults
 
 namespace detail
 {
@@ -423,7 +439,6 @@ namespace detail
     // Helper structs to help distinguish valid attribute/variable
     // datatypes from invalid ones
 
-
     /*
      * This struct's purpose is to have specialisations
      * for vector and array types, as well as the boolean
@@ -440,6 +455,26 @@ namespace detail
         static void
         readAttribute( adios2::IO & IO, std::string name,
                        std::shared_ptr< Attribute::resource > resource );
+
+        /**
+         * @brief Is the attribute given by parameters name and val already
+         *        defined exactly in that way within the given IO?
+         */
+        static bool
+        attributeUnchanged( adios2::IO & IO, std::string name, BasicType val )
+        {
+            auto attr = IO.InquireAttribute< BasicType >( name );
+            if( !attr )
+            {
+                return false;
+            }
+            std::vector< BasicType > data = attr.Data();
+            if( data.size() != 1 )
+            {
+                return false;
+            }
+            return data[ 0 ] == val;
+        }
     };
 
     template< > struct AttributeTypes< std::complex< long double > >
@@ -457,6 +492,14 @@ namespace detail
         static void
         readAttribute( adios2::IO &, std::string,
                        std::shared_ptr< Attribute::resource > )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex attribute types" );
+        }
+
+        static bool
+        attributeUnchanged(
+            adios2::IO &, std::string, std::complex< long double > )
         {
             throw std::runtime_error(
                 "[ADIOS2] Internal error: no support for long double complex attribute types" );
@@ -482,6 +525,16 @@ namespace detail
             throw std::runtime_error(
                 "[ADIOS2] Internal error: no support for long double complex vector attribute types" );
         }
+
+        static bool
+        attributeUnchanged(
+            adios2::IO &,
+            std::string,
+            std::vector< std::complex< long double > > )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex vector attribute types" );
+        }
     };
 
     template < typename T > struct AttributeTypes< std::vector< T > >
@@ -495,6 +548,32 @@ namespace detail
         static void
         readAttribute( adios2::IO & IO, std::string name,
                        std::shared_ptr< Attribute::resource > resource );
+
+        static bool
+        attributeUnchanged(
+            adios2::IO & IO,
+            std::string name,
+            std::vector< T > val )
+        {
+            auto attr = IO.InquireAttribute< BasicType >( name );
+            if( !attr )
+            {
+                return false;
+            }
+            std::vector< BasicType > data = attr.Data();
+            if( data.size() != val.size() )
+            {
+                return false;
+            }
+            for( size_t i = 0; i < val.size(); ++i )
+            {
+                if( data[ i ] != val[ i ] )
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
     };
 
     template < typename T, size_t n >
@@ -509,6 +588,32 @@ namespace detail
         static void
         readAttribute( adios2::IO & IO, std::string name,
                        std::shared_ptr< Attribute::resource > resource );
+
+        static bool
+        attributeUnchanged(
+            adios2::IO & IO,
+            std::string name,
+            std::array< T, n > val )
+        {
+            auto attr = IO.InquireAttribute< BasicType >( name );
+            if( !attr )
+            {
+                return false;
+            }
+            std::vector< BasicType > data = attr.Data();
+            if( data.size() != n )
+            {
+                return false;
+            }
+            for( size_t i = 0; i < n; ++i )
+            {
+                if( data[ i ] != val[ i ] )
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
     };
 
     template <> struct AttributeTypes< bool >
@@ -534,6 +639,22 @@ namespace detail
         static constexpr bool fromRep( rep r )
         {
             return r != 0;
+        }
+
+        static bool
+        attributeUnchanged( adios2::IO & IO, std::string name, bool val )
+        {
+            auto attr = IO.InquireAttribute< BasicType >( name );
+            if( !attr )
+            {
+                return false;
+            }
+            std::vector< BasicType > data = attr.Data();
+            if( data.size() != 1 )
+            {
+                return false;
+            }
+            return data[ 0 ] == toRep( val );
         }
     };
 
@@ -698,20 +819,59 @@ namespace detail
     {
         BufferedActions( BufferedActions const & ) = delete;
 
+        /**
+         * The full path to the file created on disk, including the
+         * containing directory and the file extension, as determined
+         * by ADIOS2IOHandlerImpl::fileSuffix().
+         * (Meaning, in case of the SST engine, no file suffix since the
+         *  SST engine automatically adds its suffix unconditionally)
+         */
         std::string m_file;
+        /**
+         * ADIOS requires giving names to instances of adios2::IO.
+         * We make them different from the actual file name, because of the
+         * possible following workflow:
+         *
+         * 1. create file foo.bp
+         *    -> would create IO object named foo.bp
+         * 2. delete that file
+         *    (let's ignore that we don't support deletion yet and call it
+         *     preplanning)
+         * 3. create file foo.bp a second time
+         *    -> would create another IO object named foo.bp
+         *    -> craash
+         *
+         * So, we just give out names based on a counter for IO objects.
+         * Hence, next to the actual file name, also store the name for the
+         * IO.
+         */
+        std::string const m_IOName;
+        adios2::ADIOS & m_ADIOS;
         adios2::IO m_IO;
         std::vector< std::unique_ptr< BufferedAction > > m_buffer;
-        /**
-         * @brief std::optional would be more idiomatic, but it's not in
-         *        the C++11 standard
-         * @todo replace with std::optional upon switching to C++17
-         */
-        auxiliary::Option< adios2::Engine > m_engine;
         adios2::Mode m_mode;
-        detail::WriteDataset m_writeDataset;
-        detail::DatasetReader m_readDataset;
-        detail::AttributeReader m_attributeReader;
-        ADIOS2IOHandlerImpl & m_impl;
+        detail::WriteDataset const m_writeDataset;
+        detail::DatasetReader const m_readDataset;
+        detail::AttributeReader const m_attributeReader;
+
+        /*
+         * We call an attribute committed if the step during which it was
+         * written has been closed.
+         * A committed attribute cannot be modified.
+         */
+        std::set< std::string > uncommittedAttributes;
+
+        /*
+         * The openPMD API will generally create new attributes for each
+         * iteration. This results in a growing number of attributes over time.
+         * In streaming-based modes, these will be completely sent anew in each
+         * iteration. If the following boolean is true, old attributes will be
+         * removed upon CLOSE_GROUP.
+         * Should not be set to true in persistent backends.
+         * Will be automatically set by BufferedActions::configure_IO depending
+         * on chosen ADIOS2 engine and can not be explicitly overridden by user.
+         */
+        bool optimizeAttributesStreaming = false;
 
         using AttributeMap_t = std::map< std::string, adios2::Params >;
 
@@ -719,15 +879,53 @@ namespace detail
 
         ~BufferedActions( );
 
+        /**
+         * Implementation of destructor, will only run once.
+         *
+         */
         void
-        configure_IO( ADIOS2IOHandlerImpl & impl );
+        finalize();
 
         adios2::Engine & getEngine( );
+        adios2::Engine & requireActiveStep( );
 
         template < typename BA > void enqueue( BA && ba );
 
+        template < typename BA > void enqueue( BA && ba, decltype( m_buffer ) & );
 
-        void flush( );
+        /**
+         * Flush deferred IO actions.
+         *
+         * @param performPutsGets A functor that takes as parameters (1) *this
+         *     and (2) the ADIOS2 engine.
+         *     Its task is to ensure that ADIOS2 performs Put/Get operations.
+         *     Several options for this:
+         *     * adios2::Engine::EndStep
+         *     * adios2::Engine::Perform(Puts|Gets)
+         *     * adios2::Engine::Close
+         * @param flushUnconditionally Whether to run the functor even if no
+         *     deferred IO tasks had been queued.
+         */
+        template< typename F >
+        void
+        flush( F && performPutsGets, bool flushUnconditionally );
+
+        /**
+         * Overload of flush() that uses adios2::Engine::Perform(Puts|Gets)
+         * and does not flush unconditionally.
+         *
+         */
+        void
+        flush();
+
+        /**
+         * @brief Begin or end an ADIOS step.
+         *
+         * @param mode Whether to begin or end a step.
+         * @return AdvanceStatus
+         */
+        AdvanceStatus
+        advance( AdvanceMode mode );
 
         /*
          * Delete all buffered actions without running them.
@@ -759,6 +957,90 @@ namespace detail
         invalidateVariablesMap();
 
     private:
+        auxiliary::Option< adios2::Engine > m_engine; //! ADIOS engine
+        /**
+         * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
+         */
+        std::string m_engineType;
+        /*
+         * streamStatus is NoStream for file-based ADIOS engines.
+         * This is relevant for the method BufferedActions::requireActiveStep,
+         * where a step is only opened if the status is OutsideOfStep, but not
+         * if NoStream. The rationale behind this is that parsing a Series
+         * works differently for file-based and for stream-based engines:
+         * * stream-based: Iterations are parsed as they arrive. For parsing an
+         *   iteration, the iteration must be awaited.
+         *   BufferedActions::requireActiveStep takes care of this.
+         * * file-based: The Series is parsed up front. If no step has been
+         *   opened yet, ADIOS2 gives access to all variables and attributes
+         *   from all steps. Upon opening a step, only the variables from that
+         *   step are shown which hinders parsing. So, until a step is
+         *   explicitly opened via ADIOS2IOHandlerImpl::advance, do not open
+         *   one.
+         *   (This is a workaround for the fact that attributes
+         *    are not associated with steps in ADIOS -- seeing all attributes
+         *    from all steps in file-based engines, but only the current
+         *    variables breaks parsing otherwise.)
+         *
+         */
+        enum class StreamStatus
+        {
+            /**
+             * A step is currently active.
+             */
+            DuringStep,
+            /**
+             * A stream is active, but no step.
+             */
+            OutsideOfStep,
+            /**
+             * Stream has ended.
+             */
+            StreamOver,
+            /**
+             * File is not written is streaming fashion.
+             * Begin/EndStep will be replaced by simple flushes.
+             * Used for:
+             * 1) Writing BP4 files without steps despite using the Streaming
+             *    API. This is due to the fact that ADIOS2.6.0 requires using
+             *    steps to read BP4 files written with steps, so using steps
+             *    is opt-in for now.
+             * 2) Reading with the Streaming API any file that has been written
+             *    without steps.
+             */
+            NoStream,
+            /**
+             * Necessary workaround under the following circumstances:
+             * 1) Using ADIOS2.6.0
+             * 2) Using attribute-based layout
+             * 3) Reading from a file-based engine a Series written with steps
+             * Up until ADIOS2.6.0, attributes are not associated with ADIOS
+             * steps in file-based engines. As a consequence, parsing one
+             * ADIOS step will show only the variables of that step, but the
+             * attributes of all steps which breaks our parsing logic.
+             * Workaround: If parsing before opening any step, all variables
+             * and attributes in the file will be shown.
+             * Hence, streamStatus == Parsing means that the first step has yet
+             * to be opened.
+             */
+            Parsing,
+            /**
+             * The stream status of a file-based engine will be decided upon
+             * opening the engine if in read mode. Up until then, this right
+             * here is the status.
+             */
+            Undecided
+        };
+        StreamStatus streamStatus = StreamStatus::OutsideOfStep;
+        adios2::StepStatus m_lastStepStatus = adios2::StepStatus::OK;
+
+        /**
+         * See documentation for StreamStatus::Parsing.
+         * Will be set true under the circumstance described there in order to
+         * indicate that the first step should only be opened after parsing.
+         */
+        bool delayOpeningTheFirstStep = false;
+
         /*
          * ADIOS2 does not give direct access to its internal attribute and
          * variable maps, but will instead give access to copies of them.
@@ -767,12 +1049,20 @@ namespace detail
          * the map whenever an attribute/variable is altered. In that case, we
          * fetch the map anew.
          * If empty, the buffered map has been invalidated and needs to be
-         * queried from ADIOS2 again. If true, the buffered map is equivalent to
+         * queried from ADIOS2 again. If full, the buffered map is equivalent to
          * the map that would be returned by a call to
          * IO::Available(Attributes|Variables).
          */
         auxiliary::Option< AttributeMap_t > m_availableAttributes;
         auxiliary::Option< AttributeMap_t > m_availableVariables;
+
+        /*
+         * finalize() will set this true to avoid running twice.
+         */
+        bool finalized = false;
+
+        void
+        configure_IO( ADIOS2IOHandlerImpl & impl );
     };
 
 
@@ -817,12 +1107,16 @@ public:
         std::string path,
         Access,
         MPI_Comm,
-        nlohmann::json options
-    );
+        nlohmann::json options,
+        std::string engineType );
 
 #endif
 
-    ADIOS2IOHandler(std::string path, Access, nlohmann::json options );
+    ADIOS2IOHandler(
+        std::string path,
+        Access,
+        nlohmann::json options,
+        std::string engineType );
 
     std::string backendName() const override { return "ADIOS2"; }
 

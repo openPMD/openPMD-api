@@ -339,7 +339,8 @@ TEST_CASE( "close_iteration_throws_test", "[serial]" )
      * Test that the openPMD API detects that case and throws.
      */
     {
-        Series series( "close_iteration_throws_1.bp", Access::CREATE );
+        Series series(
+            "../samples/close_iteration_throws_1.bp", Access::CREATE );
         auto it0 = series.iterations[ 0 ];
         auto E_x = it0.meshes[ "E" ][ "x" ];
         E_x.resetDataset( { Datatype::INT, { 5 } } );
@@ -353,7 +354,8 @@ TEST_CASE( "close_iteration_throws_test", "[serial]" )
         REQUIRE_THROWS( series.flush() );
     }
     {
-        Series series( "close_iteration_throws_2.bp", Access::CREATE );
+        Series series(
+            "../samples/close_iteration_throws_2.bp", Access::CREATE );
         auto it0 = series.iterations[ 0 ];
         auto E_x = it0.meshes[ "E" ][ "x" ];
         E_x.resetDataset( { Datatype::INT, { 5 } } );
@@ -367,7 +369,8 @@ TEST_CASE( "close_iteration_throws_test", "[serial]" )
         REQUIRE_THROWS( series.flush() );
     }
     {
-        Series series( "close_iteration_throws_3.bp", Access::CREATE );
+        Series series(
+            "../samples/close_iteration_throws_3.bp", Access::CREATE );
         auto it0 = series.iterations[ 0 ];
         auto E_x = it0.meshes[ "E" ][ "x" ];
         E_x.resetDataset( { Datatype::INT, { 5 } } );
@@ -1023,7 +1026,7 @@ TEST_CASE( "write_test", "[serial]" )
 
 void test_complex(const std::string & backend) {
     {
-        Series o = Series("../samples/serial_write_complex." + backend, AccessType::CREATE);
+        Series o = Series("../samples/serial_write_complex." + backend, Access::CREATE);
         o.setAttribute("lifeIsComplex", std::complex<double>(4.56, 7.89));
         o.setAttribute("butComplexFloats", std::complex<float>(42.3, -99.3));
         if( backend != "bp" )
@@ -1062,7 +1065,7 @@ void test_complex(const std::string & backend) {
     //! @todo clarify that complex data is not N+1 data in JSON
     if( backend != "json" )
     {
-        Series i = Series("../samples/serial_write_complex." + backend, AccessType::READ_ONLY);
+        Series i = Series("../samples/serial_write_complex." + backend, Access::READ_ONLY);
         REQUIRE(i.getAttribute("lifeIsComplex").get< std::complex<double> >() == std::complex<double>(4.56, 7.89));
         REQUIRE(i.getAttribute("butComplexFloats").get< std::complex<float> >() == std::complex<float>(42.3, -99.3));
         if( backend != "bp" ) {
@@ -2988,4 +2991,188 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
     read( "../samples/jsonConfiguredBP3.bp", readConfigBP3 );
     read( "../samples/jsonConfiguredBP4.bp", readConfigBP4 );
 }
+
+void
+bp4_steps( std::string const & file, std::string const & options_write, std::string const & options_read )
+{
+    {
+        Series writeSeries( file, Access::CREATE, options_write );
+        auto iterations = writeSeries.writeIterations();
+        for( size_t i = 0; i < 10; ++i )
+        {
+            auto iteration = iterations[ i ];
+            auto E_x = iteration.meshes[ "E" ][ "x" ];
+            E_x.resetDataset(
+                openPMD::Dataset( openPMD::Datatype::INT, { 10 } ) );
+            std::vector< int > data( 10, i );
+            E_x.storeChunk( data, { 0 }, { 10 } );
+            iteration.close();
+        }
+    }
+
+    Series readSeries( file, Access::READ_ONLY, options_read );
+
+    size_t last_iteration_index = 0;
+    for( auto iteration : readSeries.readIterations() )
+    {
+        auto E_x = iteration.meshes[ "E" ][ "x" ];
+        REQUIRE( E_x.getDimensionality() == 1 );
+        REQUIRE( E_x.getExtent()[ 0 ] == 10 );
+        auto chunk = E_x.loadChunk< int >( { 0 }, { 10 } );
+        iteration.close(); // @todo replace with ::close()
+        for( size_t i = 0; i < 10; ++i )
+        {
+            REQUIRE( chunk.get()[ i ] == iteration.iterationIndex );
+        }
+        last_iteration_index = iteration.iterationIndex;
+    }
+    REQUIRE( last_iteration_index == 9 );
+}
+
+TEST_CASE( "bp4_steps", "[serial][adios2]" )
+{
+    std::string useSteps = R"(
+    {
+        "adios2": {
+            "engine": {
+                "type": "bp4",
+                "usesteps": true
+            }
+        }
+    }
+    )";
+    std::string dontUseSteps = R"(
+    {
+        "adios2": {
+            "engine": {
+                "type": "bp4",
+                "usesteps": false
+            }
+        }
+    }
+    )";
+    // sing the yes no song
+    bp4_steps( "../samples/bp4steps_yes_yes.bp", useSteps, useSteps );
+    bp4_steps( "../samples/bp4steps_no_yes.bp", dontUseSteps, useSteps );
+    bp4_steps( "../samples/bp4steps_yes_no.bp", useSteps, dontUseSteps );
+    bp4_steps( "../samples/bp4steps_no_no.bp", dontUseSteps, dontUseSteps );
+    bp4_steps("../samples/bp4steps_default.bp", "{}", "{}");
+}
 #endif
+
+void
+serial_iterator( std::string const & file )
+{
+    constexpr Extent::value_type extent = 1000;
+    {
+        Series writeSeries( file, Access::CREATE );
+        auto iterations = writeSeries.writeIterations();
+        for( size_t i = 0; i < 10; ++i )
+        {
+            auto iteration = iterations[ i ];
+            auto E_x = iteration.meshes[ "E" ][ "x" ];
+            E_x.resetDataset(
+                openPMD::Dataset( openPMD::Datatype::INT, { 1000 } ) );
+            std::vector< int > data( 1000, i );
+            E_x.storeChunk( data, { 0 }, { 1000 } );
+            iteration.close();
+        }
+    }
+
+    Series readSeries( file, Access::READ_ONLY );
+
+    size_t last_iteration_index = 0;
+    for( auto iteration : readSeries.readIterations() )
+    {
+        auto E_x = iteration.meshes[ "E" ][ "x" ];
+        REQUIRE( E_x.getDimensionality() == 1 );
+        REQUIRE( E_x.getExtent()[ 0 ] == extent );
+        auto chunk = E_x.loadChunk< int >( { 0 }, { extent } );
+        iteration.close();
+        for( size_t i = 0; i < extent; ++i )
+        {
+            REQUIRE( chunk.get()[ i ] == iteration.iterationIndex );
+        }
+        last_iteration_index = iteration.iterationIndex;
+    }
+    REQUIRE( last_iteration_index == 9 );
+}
+
+TEST_CASE( "serial_iterator", "[serial][adios2]" )
+{
+    for( auto const & t : getFileExtensions() )
+    {
+        serial_iterator( "../samples/serial_iterator_filebased_%T." + t );
+        serial_iterator( "../samples/serial_iterator_groupbased." + t );
+    }
+}
+
+void
+iterate_nonstreaming_series( std::string const & file )
+{
+    constexpr size_t extent = 100;
+    {
+        Series writeSeries( file, Access::CREATE );
+        // use conventional API to write iterations
+        auto iterations = writeSeries.iterations;
+        for( size_t i = 0; i < 10; ++i )
+        {
+            auto iteration = iterations[ i ];
+            auto E_x = iteration.meshes[ "E" ][ "x" ];
+            E_x.resetDataset(
+                openPMD::Dataset( openPMD::Datatype::INT, { extent } ) );
+            std::vector< int > data( extent, i );
+            E_x.storeChunk( data, { 0 }, { extent } );
+            // we encourage manually closing iterations, but it should not matter
+            // so let's do the switcharoo for this test
+            if( i % 2 == 0 )
+            {
+                writeSeries.flush();
+            }
+            else
+            {
+                iteration.close();
+            }
+        }
+    }
+
+    Series readSeries( file, Access::READ_ONLY );
+
+    size_t last_iteration_index = 0;
+    // conventionally written Series must be readable with streaming-aware API!
+    for( auto iteration : readSeries.readIterations() )
+    {
+        auto E_x = iteration.meshes[ "E" ][ "x" ];
+        REQUIRE( E_x.getDimensionality() == 1 );
+        REQUIRE( E_x.getExtent()[ 0 ] == extent );
+        auto chunk = E_x.loadChunk< int >( { 0 }, { extent } );
+        // we encourage manually closing iterations, but it should not matter
+        // so let's do the switcharoo for this test
+        if( last_iteration_index % 2 == 0 )
+        {
+            readSeries.flush();
+        }
+        else
+        {
+            iteration.close();
+        }
+
+        for( size_t i = 0; i < extent; ++i )
+        {
+            REQUIRE( chunk.get()[ i ] == iteration.iterationIndex );
+        }
+        last_iteration_index = iteration.iterationIndex;
+    }
+    REQUIRE( last_iteration_index == 9 );
+}
+
+TEST_CASE( "iterate_nonstreaming_series", "[serial][adios2]" )
+{
+    for( auto const & t : getFileExtensions() )
+    {
+        iterate_nonstreaming_series(
+            "../samples/iterate_nonstreaming_series_filebased_%T." + t );
+        iterate_nonstreaming_series(
+            "../samples/iterate_nonstreaming_series_groupbased." + t );
+    }
+}

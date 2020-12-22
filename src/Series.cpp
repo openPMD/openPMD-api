@@ -358,18 +358,23 @@ Series::backend() const
 void
 Series::flush()
 {
-    switch( *m_iterationEncoding )
-    {
-        using IE = IterationEncoding;
-        case IE::fileBased:
-            flushFileBased( iterations );
-            break;
-        case IE::groupBased:
-            flushGroupBased( iterations );
-            break;
-    }
+    flush_impl( iterations.begin(), iterations.end() );
+}
 
-    IOHandler->flush();
+ReadIterations
+Series::readIterations()
+{
+    return { this };
+}
+
+WriteIterations
+Series::writeIterations()
+{
+    if( !m_writeIterations->has_value() )
+    {
+        *m_writeIterations = WriteIterations( this->iterations );
+    }
+    return m_writeIterations->get();
 }
 
 std::unique_ptr< Series::ParsedInput >
@@ -500,19 +505,36 @@ Series::initDefaults()
         setSoftware( "openPMD-api", getVersion() );
 }
 
-template< typename IterationsContainer >
-void
-Series::flushFileBased( IterationsContainer && iterationsToFlush )
+std::future< void >
+Series::flush_impl( iterations_iterator begin, iterations_iterator end )
 {
-    if( iterationsToFlush.empty() )
+    switch( *m_iterationEncoding )
+    {
+        using IE = IterationEncoding;
+        case IE::fileBased:
+            flushFileBased( begin, end );
+            break;
+        case IE::groupBased:
+            flushGroupBased( begin, end );
+            break;
+    }
+
+    return IOHandler->flush();
+}
+
+void
+Series::flushFileBased( iterations_iterator begin, iterations_iterator end )
+{
+    if( end == begin )
         throw std::runtime_error(
             "fileBased output can not be written with no iterations." );
 
     if( IOHandler->m_frontendAccess == Access::READ_ONLY )
-        for( auto & i : iterationsToFlush )
+        for( auto it = begin; it != end; ++it )
         {
-            bool const dirtyRecursive = i.second.dirtyRecursive();
-            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInBackend )
+            bool const dirtyRecursive = it->second.dirtyRecursive();
+            if( *it->second.m_closed
+                == Iteration::CloseStatus::ClosedInBackend )
             {
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
@@ -535,34 +557,37 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
             if( dirtyRecursive || this->dirty() )
             {
                 // openIteration() will update the close status
-                openIteration( i.first, i.second );
-                i.second.flush();
+                openIteration( it->first, it->second );
+                it->second.flush();
             }
 
-            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
+            if( *it->second.m_closed
+                == Iteration::CloseStatus::ClosedInFrontend )
             {
                 Parameter< Operation::CLOSE_FILE > fClose;
-                IOHandler->enqueue( IOTask( &i.second, std::move( fClose ) ) );
-                *i.second.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                IOHandler->enqueue(
+                    IOTask( &it->second, std::move( fClose ) ) );
+                *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
             }
             IOHandler->flush();
         }
     else
     {
         bool allDirty = dirty();
-        for( auto & i : iterationsToFlush )
+        for( auto it = begin; it != end; ++it )
         {
-            bool const dirtyRecursive = i.second.dirtyRecursive();
-            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInBackend )
+            bool const dirtyRecursive = it->second.dirtyRecursive();
+            if( *it->second.m_closed
+                == Iteration::CloseStatus::ClosedInBackend )
             {
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
                 // verify that there have been no further accesses
-                if (!i.second.written())
+                if (!it->second.written())
                 {
                     throw std::runtime_error(
                         "[Series] Closed iteration has not been written. This "
-                        "is an internal error.");
+                        "is an internal error." );
                 }
                 if( dirtyRecursive )
                 {
@@ -588,26 +613,21 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
                 written() = false;
                 iterations.written() = false;
 
-                std::stringstream iteration("");
-                iteration << std::setw(*m_filenamePadding)
-                          << std::setfill('0') << i.first;
-                std::string filename =
-                    *m_filenamePrefix + iteration.str() + *m_filenamePostfix;
-
-                dirty() |= i.second.dirty();
-                i.second.flushFileBased(filename, i.first);
+                dirty() |= it->second.dirty();
+                std::string filename = iterationFilename( it->first );
+                it->second.flushFileBased(filename, it->first);
 
                 iterations.flush(
                     auxiliary::replace_first(basePath(), "%T/", ""));
 
                 flushAttributes();
 
-                switch( *i.second.m_closed )
+                switch( *it->second.m_closed )
                 {
                     using CL = Iteration::CloseStatus;
                     case CL::Open:
                     case CL::ClosedTemporarily:
-                        *i.second.m_closed = CL::Open;
+                        *it->second.m_closed = CL::Open;
                         break;
                     default:
                         // keep it
@@ -615,11 +635,13 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
                 }
             }
 
-            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
+            if( *it->second.m_closed ==
+                Iteration::CloseStatus::ClosedInFrontend )
             {
                 Parameter< Operation::CLOSE_FILE > fClose;
-                IOHandler->enqueue( IOTask( &i.second, std::move( fClose ) ) );
-                *i.second.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                IOHandler->enqueue(
+                    IOTask( &it->second, std::move( fClose ) ) );
+                *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
             }
 
             IOHandler->flush();
@@ -632,36 +654,32 @@ Series::flushFileBased( IterationsContainer && iterationsToFlush )
     }
 }
 
-template void
-Series::flushFileBased< std::map< uint64_t, Iteration > & >(
-    std::map< uint64_t, Iteration > & );
-
-template< typename IterationsContainer >
 void
-Series::flushGroupBased( IterationsContainer && iterationsToFlush )
+Series::flushGroupBased( iterations_iterator begin, iterations_iterator end )
 {
     if( IOHandler->m_frontendAccess == Access::READ_ONLY )
-        for( auto & i : iterationsToFlush )
+        for( auto it = begin; it != end; ++it )
         {
-            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInBackend )
+            if( *it->second.m_closed ==
+                Iteration::CloseStatus::ClosedInBackend )
             {
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
                 // verify that there have been no further accesses
-                if( i.second.dirtyRecursive() )
+                if( it->second.dirtyRecursive() )
                 {
                     throw std::runtime_error(
                         "[Series] Illegal access to iteration " +
-                        std::to_string( i.first ) +
+                        std::to_string( it->first ) +
                         " that has been closed previously." );
                 }
                 continue;
             }
-            i.second.flush();
-            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
+            it->second.flush();
+            if( *it->second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
             {
                 // the iteration has no dedicated file in group-based mode
-                *i.second.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
             }
             IOHandler->flush();
         }
@@ -674,40 +692,41 @@ Series::flushGroupBased( IterationsContainer && iterationsToFlush )
             IOHandler->enqueue(IOTask(this, fCreate));
         }
 
-        iterations.flush( auxiliary::replace_first( basePath(), "%T/", "" ) );
+        iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
 
-        for( auto & i : iterationsToFlush )
+        for( auto it = begin; it != end; ++it )
         {
-            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInBackend )
+            if( *it->second.m_closed ==
+                Iteration::CloseStatus::ClosedInBackend )
             {
                 // file corresponding with the iteration has previously been
                 // closed and fully flushed
                 // verify that there have been no further accesses
-                if (!i.second.written())
+                if (!it->second.written())
                 {
                     throw std::runtime_error(
                         "[Series] Closed iteration has not been written. This "
-                        "is an internal error.");
+                        "is an internal error." );
                 }
-                if( i.second.dirtyRecursive() )
+                if( it->second.dirtyRecursive() )
                 {
                     throw std::runtime_error(
                         "[Series] Illegal access to iteration " +
-                        std::to_string( i.first ) +
+                        std::to_string( it->first ) +
                         " that has been closed previously." );
                 }
                 continue;
             }
-            if( !i.second.written() )
+            if( !it->second.written() )
             {
-                i.second.m_writable->parent = getWritable(&iterations);
-                i.second.parent = getWritable(&iterations);
+                it->second.m_writable->parent = getWritable( &iterations );
+                it->second.parent = getWritable( &iterations );
             }
-            i.second.flushGroupBased(i.first);
-            if( *i.second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
+            it->second.flushGroupBased(it->first);
+            if( *it->second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
             {
                 // the iteration has no dedicated file in group-based mode
-                *i.second.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
             }
         }
 
@@ -715,10 +734,6 @@ Series::flushGroupBased( IterationsContainer && iterationsToFlush )
         IOHandler->flush();
     }
 }
-
-template void
-Series::flushGroupBased< std::map< uint64_t, Iteration > & >(
-    std::map< uint64_t, Iteration > & );
 
 void
 Series::flushMeshesPath()
@@ -743,7 +758,7 @@ Series::flushParticlesPath()
 }
 
 void
-Series::readFileBased()
+Series::readFileBased( )
 {
     Parameter< Operation::OPEN_FILE > fOpen;
     Parameter< Operation::CLOSE_FILE > fClose;
@@ -774,36 +789,44 @@ Series::readFileBased()
 
             using DT = Datatype;
             aRead.name = "iterationEncoding";
-            IOHandler->enqueue(IOTask(this, aRead));
+            IOHandler->enqueue( IOTask( this, aRead ) );
             IOHandler->flush();
             if( *aRead.dtype == DT::STRING )
             {
-                std::string encoding = Attribute(*aRead.resource).get< std::string >();
+                std::string encoding =
+                    Attribute( *aRead.resource ).get< std::string >();
                 if( encoding == "fileBased" )
                     *m_iterationEncoding = IterationEncoding::fileBased;
                 else if( encoding == "groupBased" )
                 {
                     *m_iterationEncoding = IterationEncoding::groupBased;
-                    std::cerr << "Series constructor called with iteration regex '%T' suggests loading a "
-                              << "time series with fileBased iteration encoding. Loaded file is groupBased.\n";
-                } else
-                    throw std::runtime_error("Unknown iterationEncoding: " + encoding);
-                setAttribute("iterationEncoding", encoding);
+                    std::cerr << "Series constructor called with iteration "
+                                    "regex '%T' suggests loading a "
+                                << "time series with fileBased iteration "
+                                    "encoding. Loaded file is groupBased.\n";
+                }
+                else
+                    throw std::runtime_error(
+                        "Unknown iterationEncoding: " + encoding );
+                setAttribute( "iterationEncoding", encoding );
             }
             else
-                throw std::runtime_error("Unexpected Attribute datatype for 'iterationEncoding'");
+                throw std::runtime_error( "Unexpected Attribute datatype "
+                                            "for 'iterationEncoding'" );
 
             aRead.name = "iterationFormat";
-            IOHandler->enqueue(IOTask(this, aRead));
+            IOHandler->enqueue( IOTask( this, aRead ) );
             IOHandler->flush();
             if( *aRead.dtype == DT::STRING )
             {
                 written() = false;
-                setIterationFormat(Attribute(*aRead.resource).get< std::string >());
+                setIterationFormat(
+                    Attribute( *aRead.resource ).get< std::string >() );
                 written() = true;
             }
             else
-                throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
+                throw std::runtime_error(
+                    "Unexpected Attribute datatype for 'iterationFormat'" );
 
             read();
             IOHandler->enqueue(IOTask(this, fClose));
@@ -837,54 +860,51 @@ Series::readFileBased()
 }
 
 void
-Series::readGroupBased()
+Series::readGroupBased( bool do_init )
 {
     Parameter< Operation::OPEN_FILE > fOpen;
     fOpen.name = *m_name;
     IOHandler->enqueue(IOTask(this, fOpen));
     IOHandler->flush();
 
-    readBase();
-
-    using DT = Datatype;
-    Parameter< Operation::READ_ATT > aRead;
-    aRead.name = "iterationEncoding";
-    IOHandler->enqueue(IOTask(this, aRead));
-    IOHandler->flush();
-    if( *aRead.dtype == DT::STRING )
+    if( do_init )
     {
-        std::string encoding = Attribute(*aRead.resource).get< std::string >();
-        if( encoding == "groupBased" )
-            *m_iterationEncoding = IterationEncoding::groupBased;
-        else if( encoding == "fileBased" )
+        readBase();
+
+        using DT = Datatype;
+        Parameter< Operation::READ_ATT > aRead;
+        aRead.name = "iterationEncoding";
+        IOHandler->enqueue(IOTask(this, aRead));
+        IOHandler->flush();
+        if( *aRead.dtype == DT::STRING )
         {
-            *m_iterationEncoding = IterationEncoding::fileBased;
-            std::cerr << "Series constructor called with explicit iteration suggests loading a "
-                      << "single file with groupBased iteration encoding. Loaded file is fileBased.\n";
-        } else
-            throw std::runtime_error("Unknown iterationEncoding: " + encoding);
-        setAttribute("iterationEncoding", encoding);
-    }
-    else
-        throw std::runtime_error("Unexpected Attribute datatype for 'iterationEncoding'");
+            std::string encoding = Attribute(*aRead.resource).get< std::string >();
+            if( encoding == "groupBased" )
+                *m_iterationEncoding = IterationEncoding::groupBased;
+            else if( encoding == "fileBased" )
+            {
+                *m_iterationEncoding = IterationEncoding::fileBased;
+                std::cerr << "Series constructor called with explicit iteration suggests loading a "
+                          << "single file with groupBased iteration encoding. Loaded file is fileBased.\n";
+            } else
+                throw std::runtime_error("Unknown iterationEncoding: " + encoding);
+            setAttribute("iterationEncoding", encoding);
+        }
+        else
+            throw std::runtime_error("Unexpected Attribute datatype for 'iterationEncoding'");
 
-    aRead.name = "iterationFormat";
-    IOHandler->enqueue(IOTask(this, aRead));
-    IOHandler->flush();
-    if( *aRead.dtype == DT::STRING )
-    {
-        written() = false;
-        setIterationFormat(Attribute(*aRead.resource).get< std::string >());
-        written() = true;
+        aRead.name = "iterationFormat";
+        IOHandler->enqueue(IOTask(this, aRead));
+        IOHandler->flush();
+        if( *aRead.dtype == DT::STRING )
+        {
+            written() = false;
+            setIterationFormat(Attribute(*aRead.resource).get< std::string >());
+            written() = true;
+        }
+        else
+            throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
     }
-    else
-        throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
-
-    /* do not use the public checked version
-     * at this point we can guarantee clearing the container won't break anything */
-    written() = false;
-    iterations.clear_unchecked();
-    written() = true;
 
     read();
 }
@@ -975,6 +995,7 @@ Series::read()
         throw std::runtime_error("Unknown openPMD version - " + version);
     IOHandler->enqueue(IOTask(&iterations, pOpen));
 
+    readAttributes();
     iterations.readAttributes();
 
     /* obtain all paths inside the basepath (i.e. all iterations) */
@@ -985,26 +1006,123 @@ Series::read()
     for( auto const& it : *pList.paths )
     {
         Iteration& i = iterations[std::stoull(it)];
+        if ( i.closedByWriter( ) )
+        {
+            continue;
+        }
         pOpen.path = it;
         IOHandler->enqueue(IOTask(&i, pOpen));
         i.read();
     }
+}
 
-    readAttributes();
+std::string
+Series::iterationFilename( uint64_t i )
+{
+    std::stringstream iteration( "" );
+    iteration << std::setw( *m_filenamePadding ) << std::setfill( '0' ) << i;
+    return *m_filenamePrefix + iteration.str() + *m_filenamePostfix;
+}
+
+Series::iterations_iterator
+Series::indexOf( Iteration const & iteration )
+{
+    for( auto it = iterations.begin(); it != iterations.end(); ++it )
+    {
+        if( it->second.m_writable.get() == iteration.m_writable.get() )
+        {
+            return it;
+        }
+    }
+    throw std::runtime_error(
+        "[Iteration::close] Iteration not found in Series." );
+}
+
+AdvanceStatus
+Series::advance(
+    AdvanceMode mode,
+    Attributable & file,
+    iterations_iterator begin,
+    Iteration & iteration )
+{
+    auto end = begin;
+    ++end;
+    /*
+     * @todo By calling flushFileBased/GroupBased, we do not propagate tasks to
+     *       the backend yet. We will append ADVANCE and CLOSE_FILE tasks
+     *       manually. In order to avoid having them automatically appended by
+     *       the flush*Based methods, set CloseStatus to Open for now.
+     */
+    Iteration::CloseStatus oldCloseStatus = *iteration.m_closed;
+    if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend )
+    {
+        *iteration.m_closed = Iteration::CloseStatus::Open;
+    }
+
+    switch( *m_iterationEncoding )
+    {
+        using IE = IterationEncoding;
+        case IE::groupBased:
+            flushGroupBased( begin, end );
+            break;
+        case IE::fileBased:
+            flushFileBased( begin, end );
+            break;
+    }
+    *iteration.m_closed = oldCloseStatus;
+
+    Parameter< Operation::ADVANCE > param;
+    param.mode = mode;
+    IOTask task( &file, param );
+    IOHandler->enqueue( task );
+
+
+    if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend &&
+        mode == AdvanceMode::ENDSTEP )
+    {
+        using IE = IterationEncoding;
+        switch( *m_iterationEncoding )
+        {
+            case IE::fileBased:
+            {
+                if( *iteration.m_closed !=
+                    Iteration::CloseStatus::ClosedTemporarily )
+                {
+                    Parameter< Operation::CLOSE_FILE > fClose;
+                    IOHandler->enqueue(
+                        IOTask( &iteration, std::move( fClose ) ) );
+                }
+                *iteration.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                break;
+            }
+            case IE::groupBased:
+            {
+                // We can now put some groups to rest
+                Parameter< Operation::CLOSE_PATH > fClose;
+                IOHandler->enqueue( IOTask( &iteration, std::move( fClose ) ) );
+                // In group-based iteration layout, files are
+                // not closed on a per-iteration basis
+                // We will treat it as such nonetheless
+                *iteration.m_closed = Iteration::CloseStatus::ClosedInBackend;
+            }
+            break;
+        }
+    }
+
+    // We cannot call Series::flush now, since the IO handler is still filled
+    // from calling flush(Group|File)based, but has not been emptied yet
+    // Do that manually
+    IOHandler->flush();
+
+    return *param.status;
 }
 
 void
 Series::openIteration( uint64_t index, Iteration iteration )
 {
     // open the iteration's file again
-    std::stringstream nameBuilder( "" );
-    nameBuilder << std::setw( *m_filenamePadding ) << std::setfill( '0' )
-                << index;
-    std::string filename =
-        *m_filenamePrefix + nameBuilder.str() + *m_filenamePostfix;
-
     Parameter< Operation::OPEN_FILE > fOpen;
-    fOpen.name = filename;
+    fOpen.name = iterationFilename( index );
     IOHandler->enqueue( IOTask( this, fOpen ) );
 
     /* open base path */
@@ -1041,6 +1159,7 @@ namespace
             case Format::HDF5:
             case Format::ADIOS1:
             case Format::ADIOS2:
+            case Format::ADIOS2_SST:
             case Format::JSON:
                 return auxiliary::replace_last(filename, suffix(f), "");
             default:
@@ -1082,6 +1201,16 @@ namespace
                 nameReg += +")" + postfix + ".bp$";
                 return buildMatcher(nameReg);
             }
+            case Format::ADIOS2_SST:
+            {
+                std::string nameReg = "^" + prefix + "([[:digit:]]";
+                if( padding != 0 )
+                    nameReg += "{" + std::to_string(padding) + "}";
+                else
+                    nameReg += "+";
+                nameReg += + ")" + postfix + ".sst$";
+                return buildMatcher(nameReg);
+            }
             case Format::JSON: {
                 std::string nameReg = "^" + prefix + "([[:digit:]]";
                 if (padding != 0)
@@ -1095,5 +1224,193 @@ namespace
                 return [](std::string const &) -> std::tuple<bool, int> { return std::tuple<bool, int>{false, 0}; };
         }
     }
-} // namespace
+} // namespace [anonymous]
+
+SeriesIterator::SeriesIterator() : m_series()
+{
+}
+
+SeriesIterator::SeriesIterator( Series * series ) : m_series( series )
+{
+    auto it = series->iterations.begin();
+    if( it == series->iterations.end() )
+    {
+        *this = end();
+        return;
+    }
+    else
+    {
+        auto status = it->second.beginStep();
+        if( status == AdvanceStatus::OVER )
+        {
+            *this = end();
+            return;
+        }
+        it->second.setStepStatus( StepStatus::DuringStep );
+    }
+    m_currentIteration = it->first;
+}
+
+SeriesIterator &
+SeriesIterator::operator++()
+{
+    if( !m_series.has_value() )
+    {
+        *this = end();
+        return *this;
+    }
+    Series & series = *m_series.get();
+    auto & iterations = series.iterations;
+    auto & currentIteration = iterations[ m_currentIteration ];
+    if( !currentIteration.closed() )
+    {
+        currentIteration.close();
+    }
+    switch( *series.m_iterationEncoding )
+    {
+        using IE = IterationEncoding;
+        case IE::groupBased:
+        {
+            // since we are in group-based iteration layout, it does not
+            // matter which iteration we begin a step upon
+            AdvanceStatus status = currentIteration.beginStep();
+            if( status == AdvanceStatus::OVER )
+            {
+                *this = end();
+                return *this;
+            }
+            currentIteration.setStepStatus( StepStatus::DuringStep );
+            break;
+        }
+        default:
+            break;
+    }
+    auto it = iterations.find( m_currentIteration );
+    auto itEnd = iterations.end();
+    if( it == itEnd )
+    {
+        *this = end();
+        return *this;
+    }
+    ++it;
+    if( it == itEnd )
+    {
+        *this = end();
+        return *this;
+    }
+    m_currentIteration = it->first;
+    switch( *series.m_iterationEncoding )
+    {
+        using IE = IterationEncoding;
+        case IE::fileBased:
+        {
+            auto & iteration = series.iterations[ m_currentIteration ];
+            AdvanceStatus status = iteration.beginStep();
+            if( status == AdvanceStatus::OVER )
+            {
+                *this = end();
+                return *this;
+            }
+            iteration.setStepStatus( StepStatus::DuringStep );
+            break;
+        }
+        default:
+            break;
+    }
+    return *this;
+}
+
+IndexedIteration
+SeriesIterator::operator*()
+{
+    return IndexedIteration(
+        m_series.get()->iterations[ m_currentIteration ], m_currentIteration );
+}
+
+bool
+SeriesIterator::operator==( SeriesIterator const & other ) const
+{
+    return this->m_currentIteration == other.m_currentIteration &&
+        this->m_series.has_value() == other.m_series.has_value();
+}
+
+bool
+SeriesIterator::operator!=( SeriesIterator const & other ) const
+{
+    return !operator==( other );
+}
+
+SeriesIterator
+SeriesIterator::end()
+{
+    return {};
+}
+
+ReadIterations::ReadIterations( Series * series ) : m_series( series )
+{
+}
+
+ReadIterations::iterator_t
+ReadIterations::begin()
+{
+    return iterator_t{ m_series };
+}
+
+ReadIterations::iterator_t
+ReadIterations::end()
+{
+    return SeriesIterator::end();
+}
+
+WriteIterations::SharedResources::SharedResources( iterations_t _iterations )
+    : iterations( std::move( _iterations ) )
+{
+}
+
+WriteIterations::SharedResources::~SharedResources()
+{
+    if( currentlyOpen.has_value() )
+    {
+        auto lastIterationIndex = currentlyOpen.get();
+        auto & lastIteration = iterations.at( lastIterationIndex );
+        if( !lastIteration.closed() )
+        {
+            lastIteration.close();
+        }
+    }
+}
+
+WriteIterations::WriteIterations( iterations_t iterations )
+    : shared{ std::make_shared< SharedResources >( std::move( iterations ) ) }
+{
+}
+
+WriteIterations::mapped_type &
+WriteIterations::operator[]( key_type const & key )
+{
+    // make a copy
+    // explicit cast so MSVC can figure out how to do it correctly
+    return operator[]( static_cast< key_type && >( key_type{ key } ) );
+}
+WriteIterations::mapped_type &
+WriteIterations::operator[]( key_type && key )
+{
+    if( shared->currentlyOpen.has_value() )
+    {
+        auto lastIterationIndex = shared->currentlyOpen.get();
+        auto & lastIteration = shared->iterations.at( lastIterationIndex );
+        if( lastIterationIndex != key && !lastIteration.closed() )
+        {
+            lastIteration.close();
+        }
+    }
+    shared->currentlyOpen = key;
+    auto & res = shared->iterations[ std::move( key ) ];
+    if( res.getStepStatus() == StepStatus::NoStep )
+    {
+        res.beginStep();
+        res.setStepStatus( StepStatus::DuringStep );
+    }
+    return res;
+}
 } // namespace openPMD

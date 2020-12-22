@@ -28,9 +28,11 @@
 
 #include <memory>
 #include <map>
-#include <vector>
 #include <string>
 #include <utility>
+#include <vector>
+
+#include "openPMD/Streaming.hpp"
 
 
 namespace openPMD
@@ -51,6 +53,7 @@ OPENPMDAPI_EXPORT_ENUM_CLASS(Operation)
     DELETE_FILE,
 
     CREATE_PATH,
+    CLOSE_PATH,
     OPEN_PATH,
     DELETE_PATH,
     LIST_PATHS,
@@ -68,6 +71,7 @@ OPENPMDAPI_EXPORT_ENUM_CLASS(Operation)
     READ_ATT,
     LIST_ATTS,
 
+    ADVANCE,
     AVAILABLE_CHUNKS //!< Query chunks that can be loaded in a dataset
 }; // Operation
 
@@ -175,6 +179,28 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::CREATE_PATH > : public AbstractPa
     }
 
     std::string path = "";
+};
+
+template<>
+struct OPENPMDAPI_EXPORT Parameter< Operation::CLOSE_PATH > : public AbstractParameter
+{
+    Parameter() = default;
+    Parameter( Parameter const & ) : AbstractParameter()
+    {
+    }
+
+    Parameter &
+    operator=( Parameter const & )
+    {
+        return *this;
+    }
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::CLOSE_PATH >( *this ) );
+    }
 };
 
 template<>
@@ -461,6 +487,29 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::LIST_ATTS > : public AbstractPara
 
     std::shared_ptr< std::vector< std::string > > attributes
             = std::make_shared< std::vector< std::string > >();
+};
+
+template<>
+struct OPENPMDAPI_EXPORT Parameter< Operation::ADVANCE > : public AbstractParameter
+{
+    Parameter() = default;
+    Parameter( Parameter const & p )
+        : AbstractParameter(), mode( p.mode ), status( p.status )
+    {
+    }
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::ADVANCE >( *this ) );
+    }
+
+    //! input parameter
+    AdvanceMode mode;
+    //! output parameter
+    std::shared_ptr< AdvanceStatus > status =
+        std::make_shared< AdvanceStatus >( AdvanceStatus::OK );
 };
 
 template<>

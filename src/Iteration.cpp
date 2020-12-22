@@ -19,7 +19,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/Iteration.hpp"
-
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/Series.hpp"
@@ -42,11 +41,12 @@ Iteration::Iteration()
     setTimeUnitSI(1);
 }
 
-Iteration::Iteration(Iteration const& i)
-        : Attributable{i},
-          meshes{i.meshes},
-          particles{i.particles},
-          m_closed{i.m_closed}
+Iteration::Iteration( Iteration const & i )
+    : Attributable{ i },
+      meshes{ i.meshes },
+      particles{ i.particles },
+      m_closed{ i.m_closed },
+      m_stepStatus{ i.m_stepStatus }
 {
     IOHandler = i.IOHandler;
     parent = i.parent;
@@ -65,6 +65,7 @@ Iteration& Iteration::operator=(Iteration const& i)
     IOHandler = i.IOHandler;
     parent = i.parent;
     m_closed = i.m_closed;
+    m_stepStatus = i.m_stepStatus;
     meshes.IOHandler = IOHandler;
     meshes.parent = this->m_writable.get();
     particles.IOHandler = IOHandler;
@@ -105,6 +106,8 @@ Iteration::setTimeUnitSI(double newTimeUnitSI)
     return *this;
 }
 
+using iterator_t = Container< Iteration, uint64_t >::iterator;
+
 Iteration &
 Iteration::close( bool _flush )
 {
@@ -113,6 +116,7 @@ Iteration::close( bool _flush )
     {
         setAttribute< bool_type >( "closed", 1u );
     }
+    StepStatus flag = getStepStatus();
     // update close status
     switch( *m_closed )
     {
@@ -141,44 +145,30 @@ Iteration::close( bool _flush )
     }
     if( _flush )
     {
-        /* Find the root point [Series] of this file,
-         * meshesPath and particlesPath are stored there */
-        Writable *w = this->parent;
-        while( w->parent )
-            w = w->parent;
-
-        auto s = dynamic_cast< Series* >( w->attributable );
-        if( s == nullptr )
-            throw std::runtime_error("[Iteration::close] Series* is a nullptr");
-
-        // figure out my iteration number
-        uint64_t index;
-        bool found = false;
-        for( auto const & pair : s->iterations )
+        if( flag == StepStatus::DuringStep )
         {
-            if( pair.second.m_writable.get() == this->m_writable.get() )
-            {
-                found = true;
-                index = pair.first;
-                break;
-            }
+            endStep();
+            setStepStatus( StepStatus::NoStep );
         }
-        if( !found )
+        else
         {
-            throw std::runtime_error(
-                "[Iteration::close] Iteration not found in Series." );
+            // flush things manually
+            Series * s = &auxiliary::deref_dynamic_cast< Series >(
+                parent->attributable->parent->attributable );
+            // figure out my iteration number
+            auto begin = s->indexOf( *this );
+            auto end = begin;
+            ++end;
+
+            s->flush_impl( begin, end );
         }
-        std::map< uint64_t, Iteration > flushOnlyThisIteration{
-            { index, *this } };
-        switch( *s->m_iterationEncoding )
+    }
+    else
+    {
+        if( flag == StepStatus::DuringStep )
         {
-            using IE = IterationEncoding;
-            case IE::fileBased:
-                s->flushFileBased( flushOnlyThisIteration );
-                break;
-            case IE::groupBased:
-                s->flushGroupBased( flushOnlyThisIteration );
-                break;
+            throw std::runtime_error( "Using deferred Iteration::close "
+                                      "unimplemented in auto-stepping mode." );
         }
     }
     return *this;
@@ -209,11 +199,8 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
 {
     /* Find the root point [Series] of this file,
      * meshesPath and particlesPath are stored there */
-    Writable *w = this->parent;
-    while( w->parent )
-        w = w->parent;
-
-    auto s = dynamic_cast< Series* >( w->attributable );
+    Series * s = &auxiliary::deref_dynamic_cast< Series >(
+        parent->attributable->parent->attributable );
     if( s == nullptr )
         throw std::runtime_error("[Iteration::flushFileBased] Series* is a nullptr");
 
@@ -281,10 +268,8 @@ Iteration::flush()
     {
         /* Find the root point [Series] of this file,
          * meshesPath and particlesPath are stored there */
-        Writable *w = this->parent;
-        while( w->parent )
-            w = w->parent;
-        auto s = dynamic_cast< Series* >(w->attributable);
+        Series * s = &auxiliary::deref_dynamic_cast< Series >(
+            parent->attributable->parent->attributable );
 
         if( !meshes.empty() || s->containsAttribute("meshesPath") )
         {
@@ -346,10 +331,8 @@ Iteration::read()
 
     /* Find the root point [Series] of this file,
      * meshesPath and particlesPath are stored there */
-    Writable *w = getWritable(this);
-    while( w->parent )
-        w = w->parent;
-    auto s = dynamic_cast< Series* >(w->attributable);
+    Series * s = &auxiliary::deref_dynamic_cast< Series >(
+        parent->attributable->parent->attributable );
 
     Parameter< Operation::LIST_PATHS > pList;
     std::string version = s->openPMD();
@@ -462,6 +445,109 @@ Iteration::read()
     readAttributes();
 }
 
+AdvanceStatus
+Iteration::beginStep()
+{
+    using IE = IterationEncoding;
+    auto & series = auxiliary::deref_dynamic_cast< Series >(
+        parent->attributable->parent->attributable );
+    // Initialize file with this to quiet warnings
+    // The following switch is comprehensive
+    Attributable * file = this;
+    switch( *series.m_iterationEncoding )
+    {
+        case IE::fileBased:
+            file = this;
+            break;
+        case IE::groupBased:
+            file = &series;
+            break;
+    }
+    AdvanceStatus status = series.advance(
+        AdvanceMode::BEGINSTEP, *file, series.indexOf( *this ), *this );
+    if( status != AdvanceStatus::OK )
+    {
+        return status;
+    }
+
+    // re-read -> new datasets might be available
+    if( *series.m_iterationEncoding == IE::groupBased &&
+        ( this->IOHandler->m_frontendAccess == Access::READ_ONLY ||
+          this->IOHandler->m_frontendAccess == Access::READ_WRITE ) )
+    {
+        bool previous = series.iterations.written();
+        series.iterations.written() = false;
+        auto oldType = this->IOHandler->m_frontendAccess;
+        auto newType =
+            const_cast< Access * >( &this->IOHandler->m_frontendAccess );
+        *newType = Access::READ_WRITE;
+        series.readGroupBased( false );
+        *newType = oldType;
+        series.iterations.written() = previous;
+    }
+
+    return status;
+}
+
+void
+Iteration::endStep()
+{
+    using IE = IterationEncoding;
+    auto & series = auxiliary::deref_dynamic_cast< Series >(
+        parent->attributable->parent->attributable );
+    // Initialize file with this to quiet warnings
+    // The following switch is comprehensive
+    Attributable * file = this;
+    switch( *series.m_iterationEncoding )
+    {
+        case IE::fileBased:
+            file = this;
+            break;
+        case IE::groupBased:
+            file = &series;
+            break;
+    }
+    // @todo filebased check
+    series.advance(
+        AdvanceMode::ENDSTEP, *file, series.indexOf( *this ), *this );
+}
+
+StepStatus
+Iteration::getStepStatus()
+{
+    Series * s = &auxiliary::deref_dynamic_cast< Series >(
+        parent->attributable->parent->attributable );
+    switch( *s->m_iterationEncoding )
+    {
+        using IE = IterationEncoding;
+        case IE::fileBased:
+            return *this->m_stepStatus;
+        case IE::groupBased:
+            return *s->m_stepStatus;
+        default:
+            throw std::runtime_error( "[Iteration] unreachable" );
+    }
+}
+
+void
+Iteration::setStepStatus( StepStatus status )
+{
+    Series * s = &auxiliary::deref_dynamic_cast< Series >(
+        parent->attributable->parent->attributable );
+    switch( *s->m_iterationEncoding )
+    {
+        using IE = IterationEncoding;
+        case IE::fileBased:
+            *this->m_stepStatus = status;
+            break;
+        case IE::groupBased:
+            *s->m_stepStatus = status;
+            break;
+        default:
+            throw std::runtime_error( "[Iteration] unreachable" );
+    }
+}
+
 bool
 Iteration::dirtyRecursive() const
 {
@@ -503,10 +589,10 @@ Iteration::time< long double >() const;
 
 template float
 Iteration::dt< float >() const;
-template
-double Iteration::dt< double >() const;
-template
-long double Iteration::dt< long double >() const;
+template double
+Iteration::dt< double >() const;
+template long double
+Iteration::dt< long double >() const;
 
 template
 Iteration& Iteration::setTime< float >(float time);

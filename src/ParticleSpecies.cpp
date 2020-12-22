@@ -30,10 +30,6 @@ namespace openPMD
 void
 ParticleSpecies::read()
 {
-    written() = false;
-    clear_unchecked();
-    written() = true;
-
     /* obtain all non-scalar records */
     Parameter< Operation::LIST_PATHS > pList;
     IOHandler->enqueue(IOTask(this, pList));

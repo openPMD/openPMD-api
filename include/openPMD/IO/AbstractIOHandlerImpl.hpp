@@ -69,10 +69,13 @@ public:
                         openFile(i.writable, deref_dynamic_cast< Parameter< O::OPEN_FILE > >(i.parameter.get()));
                         break;
                     case O::CLOSE_FILE:
-                        closeFile(i.writable, *dynamic_cast< Parameter< O::CLOSE_FILE >* >(i.parameter.get()));
+                        closeFile(i.writable, deref_dynamic_cast< Parameter< O::CLOSE_FILE > >(i.parameter.get()));
                         break;
                     case O::OPEN_PATH:
                         openPath(i.writable, deref_dynamic_cast< Parameter< O::OPEN_PATH > >(i.parameter.get()));
+                        break;
+                    case O::CLOSE_PATH:
+                        closePath(i.writable, deref_dynamic_cast< Parameter< O::CLOSE_PATH > >(i.parameter.get()));
                         break;
                     case O::OPEN_DATASET:
                         openDataset(i.writable, deref_dynamic_cast< Parameter< O::OPEN_DATASET > >(i.parameter.get()));
@@ -110,6 +113,9 @@ public:
                     case O::LIST_ATTS:
                         listAttributes(i.writable, deref_dynamic_cast< Parameter< O::LIST_ATTS > >(i.parameter.get()));
                         break;
+                    case O::ADVANCE:
+                        advance(i.writable, deref_dynamic_cast< Parameter< O::ADVANCE > >(i.parameter.get()));
+                        break;
                     case O::AVAILABLE_CHUNKS:
                         availableChunks(i.writable, deref_dynamic_cast< Parameter< O::AVAILABLE_CHUNKS > >(i.parameter.get()));
                         break;
@@ -130,6 +136,41 @@ public:
    */
   virtual void
   closeFile( Writable *, Parameter< Operation::CLOSE_FILE > const & ) = 0;
+  
+  /** Advance the file/stream that this writable belongs to.
+   *
+   * If the backend is based around usage of IO steps (especially streaming
+   * backends), open or close an IO step. This is modeled closely after the
+   * step concept in ADIOS2.
+   *
+   * This task is used to implement streaming-aware semantics in the openPMD
+   * API by splitting data into packets that are written to and read from
+   * transport.
+   *
+   * IO actions up to the point of closing a step must be performed now.
+   *
+   * The advance mode is determined by parameters.mode.
+   * The return status code shall be stored as parameters.status.
+   */
+  virtual void
+  advance( Writable *, Parameter< Operation::ADVANCE > & )
+  {}
+
+  /** Close an openPMD group.
+   * 
+   * This is an optimization-enabling task and may be ignored by backends.
+   * Indicates that the group will not be accessed any further.
+   * Especially in step-based IO mode (e.g. streaming):
+   * Indicates that the group corresponding with the writable needs not be held
+   * in a parseable state for this and upcoming IO steps, allowing for deletion
+   * of metadata to be sent/stored (attributes, datasets, ..).
+   * Should fail if the writable is not written.
+   * Should fail if m_handler->accessType is AccessType::READ_ONLY.
+   *
+   */
+  virtual void
+  closePath( Writable *, Parameter< Operation::CLOSE_PATH > const & )
+  {}
 
   /** Report chunks that are available for loading from the dataset represented
    *  by this writable.

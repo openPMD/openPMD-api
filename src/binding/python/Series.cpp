@@ -55,6 +55,29 @@ using namespace openPMD;
 
 
 void init_Series(py::module &m) {
+
+    using iterations_key_t = decltype(Series::iterations)::key_type;
+    py::class_<WriteIterations>(m, "WriteIterations")
+        .def("__getitem__",
+            [](WriteIterations writeIterations, iterations_key_t key){
+                return writeIterations[key];
+        },
+        // keep container alive while iterator exists
+        py::keep_alive<0, 1>())
+    ;
+    py::class_<IndexedIteration, Iteration>(m, "IndexedIteration")
+        .def_readonly(
+            "iteration_index", &IndexedIteration::iterationIndex)
+    ;
+    py::class_<ReadIterations>(m, "ReadIterations")
+        .def("__iter__", [](ReadIterations & readIterations) {
+            return py::make_iterator(
+                readIterations.begin(), readIterations.end());
+        },
+        // keep handle alive while iterator exists
+        py::keep_alive<0, 1>())
+    ;
+
     py::class_<Series, Attributable>(m, "Series")
 
         .def(py::init<std::string const&, Access, std::string const &>(),
@@ -161,5 +184,8 @@ void init_Series(py::module &m) {
             py::return_value_policy::reference,
             // garbage collection: return value must be freed before Series
             py::keep_alive<1, 0>())
+        .def("read_iterations", &Series::readIterations, py::keep_alive<0, 1>())
+        .def("write_iterations",
+            &Series::writeIterations, py::keep_alive<0, 1>())
     ;
 }

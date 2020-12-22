@@ -32,6 +32,7 @@ namespace openPMD
         HDF5,
         ADIOS1,
         ADIOS2,
+        ADIOS2_SST,
         JSON,
         DUMMY
     };

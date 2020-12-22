@@ -20,10 +20,13 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
+#include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
+#include "openPMD/Streaming.hpp"
 
 
 namespace openPMD
@@ -41,6 +44,8 @@ class Iteration : public Attributable
     >
     friend class Container;
     friend class Series;
+    friend class WriteIterations;
+    friend class SeriesIterator;
 
 public:
     Iteration(Iteration const&);
@@ -160,9 +165,62 @@ private:
      * but not necessarily yet in the backend.
      * Will be propagated to the backend upon next flush.
      * Store the current status.
+     * Once an iteration has been closed, no further flushes shall be performed.
+     * If flushing a closed file, the old file may otherwise be overwritten.
      */
     std::shared_ptr< CloseStatus > m_closed =
         std::make_shared< CloseStatus >( CloseStatus::Open );
+
+    /**
+     * Whether a step is currently active for this iteration.
+     * Used for file-based iteration layout, see Series.hpp for
+     * group-based layout.
+     * Access via stepStatus() method to automatically select the correct
+     * one among both flags.
+     */
+    std::shared_ptr< StepStatus > m_stepStatus =
+        std::make_shared< StepStatus >( StepStatus::NoStep );
+
+    /**
+     * @brief Begin an IO step on the IO file (or file-like object)
+     *        containing this iteration. In case of group-based iteration
+     *        layout, this will be the complete Series.
+     *
+     * @return AdvanceStatus
+     */
+    AdvanceStatus
+    beginStep();
+
+    /**
+     * @brief End an IO step on the IO file (or file-like object)
+     *        containing this iteration. In case of group-based iteration
+     *        layout, this will be the complete Series.
+     *
+     * @return AdvanceStatus
+     */
+    void
+    endStep();
+
+    /**
+     * @brief Is a step currently active for this iteration?
+     *
+     * In case of group-based iteration layout, this information is global
+     * (member of the Series object containing this iteration),
+     * in case of file-based iteration layout, it is local (member of this very
+     * object).
+     */
+    StepStatus
+    getStepStatus();
+
+    /**
+     * @brief Set step activity status for this iteration.
+     *
+     * In case of group-based iteration layout, this information is set
+     * globally (member of the Series object containing this iteration),
+     * in case of file-based iteration layout, it is set locally (member of
+     * this very object).
+     */
+    void setStepStatus( StepStatus );
 
     /*
      * @brief Check recursively whether this Iteration is dirty.

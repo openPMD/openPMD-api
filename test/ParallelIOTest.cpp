@@ -674,3 +674,102 @@ TEST_CASE( "hipace_like_write", "[parallel]" )
     }
 }
 #endif
+
+#if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
+
+void
+adios2_streaming()
+{
+    int size{ -1 };
+    int rank{ -1 };
+    MPI_Comm_size( MPI_COMM_WORLD, &size );
+    MPI_Comm_rank( MPI_COMM_WORLD, &rank );
+    if( auxiliary::getEnvString( "OPENPMD_BP_BACKEND", "NOT_SET" ) == "ADIOS1" )
+    {
+        // run this test for ADIOS2 only
+        return;
+    }
+
+    if( size < 2 || rank > 1 )
+    {
+        return;
+    }
+
+    constexpr size_t extent = 100;
+
+    if( rank == 0 )
+    {
+        // write
+        Series writeSeries(
+            "../samples/adios2_stream.sst", Access::CREATE );
+        auto iterations = writeSeries.writeIterations();
+        for( size_t i = 0; i < 10; ++i )
+        {
+            auto iteration = iterations[ i ];
+            auto E_x = iteration.meshes[ "E" ][ "x" ];
+            E_x.resetDataset(
+                openPMD::Dataset( openPMD::Datatype::INT, { extent } ) );
+            std::vector< int > data( extent, i );
+            E_x.storeChunk( data, { 0 }, { extent } );
+            // we encourage manually closing iterations, but it should
+            // not matter so let's do the switcharoo for this test
+            if( i % 2 == 0 )
+            {
+                writeSeries.flush();
+            }
+            else
+            {
+                iteration.close();
+            }
+        }
+    }
+    else if( rank == 1 )
+    {
+        // read
+        // it should be possible to select the sst engine via file ending or
+        // via JSON without difference
+        std::string options = R"(
+        {
+          "adios2": {
+            "engine": {
+              "type": "SST"
+            }
+          }
+        }
+        )";
+
+        Series readSeries(
+            "../samples/adios2_stream.bp", Access::READ_ONLY, options );
+
+        size_t last_iteration_index = 0;
+        for( auto iteration : readSeries.readIterations() )
+        {
+            auto E_x = iteration.meshes[ "E" ][ "x" ];
+            REQUIRE( E_x.getDimensionality() == 1 );
+            REQUIRE( E_x.getExtent()[ 0 ] == extent );
+            auto chunk = E_x.loadChunk< int >( { 0 }, { extent } );
+            // we encourage manually closing iterations, but it should
+            // not matter so let's do the switcharoo for this test
+            if( last_iteration_index % 2 == 0 )
+            {
+                readSeries.flush();
+            }
+            else
+            {
+                iteration.close();
+            }
+            for( size_t i = 0; i < extent; ++i )
+            {
+                REQUIRE( chunk.get()[ i ] == iteration.iterationIndex );
+            }
+            last_iteration_index = iteration.iterationIndex;
+        }
+        REQUIRE( last_iteration_index == 9 );
+    }
+}
+
+TEST_CASE( "adios2_streaming", "[pseudoserial][adios2]" )
+{
+    adios2_streaming();
+}
+#endif

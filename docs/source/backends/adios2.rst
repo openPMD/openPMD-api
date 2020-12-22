@@ -13,12 +13,30 @@ For further information, check out the :ref:`installation guide <install>`,
 I/O Method
 ----------
 
-ADIOS2 has several engines for alternative file formats and other kinds of backends, yet natively writes to ``.bp`` files. At the moment, the openPMD API exclusively uses the BPFile engine.
+ADIOS2 has several engines for alternative file formats and other kinds of backends, yet natively writes to ``.bp`` files.
+The openPMD API uses the BP4 engine as the default file engine and the SST engine for streaming support.
 We currently leverage the default ADIOS2 transport parameters, i.e. ``POSIX`` on Unix systems and ``FStream`` on Windows.
 
+Steps
+-----
+
+ADIOS2 is optimized towards organizing the process of reading/writing data into IO steps.
+In order to activate steps, it is imperative to use the :ref:`Streaming API <usage-streaming>` (which can be used for either file-based or streaming-based workflows).
+With ADIOS2 release 2.6.0 containing a bug (fixed in development versions, see `PR #2348 <https://github.com/ornladios/ADIOS2/pull/2348>`_) that disallows random-accessing steps in file-based engines, step-based processing must currently be opted in to via use of the :ref:`JSON parameter<backendconfig>` ``adios2.engine.usesteps = true`` when using a file-based engine such as BP3 or BP4.
+With these ADIOS2 releases, files written in such a way may only be read using the streaming API.
+Upon reading a file, the ADIOS2 backend will automatically recognize whether it has been written with or without steps, ignoring the JSON option mentioned above.
+Steps are mandatory for streaming-based engines and trying to switch them off will result in a runtime error.
+
+.. note::
+
+   ADIOS2 will in general dump data to disk/transport only upon closing a file/engine or a step.
+   If not using steps, users are hence strongly encouraged to use file-based iteration layout (by creating a Series with a filename pattern such as ``simData_%06T.bp``) and enforce dumping to disk by ``Iteration::close()``-ing an iteration after writing to it.
+   Otherwise, out-of-memory errors are likely to occur.
 
 Backend-Specific Controls
 -------------------------
+
+The ADIOS2 SST engine for streaming can be picked by specifying the ending ``.sst`` instead of ``.bp``.
 
 The following environment variables control ADIOS2 I/O behavior at runtime.
 Fine-tuning these is especially useful when running at large scale.
