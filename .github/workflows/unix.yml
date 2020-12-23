@@ -123,7 +123,10 @@ jobs:
         brew install hdf5-mpi
         brew install python
     - name: Build
-      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations, MACOSX_DEPLOYMENT_TARGET: 10.9}
+      # C++11 & 14 support in macOS 10.9+
+      # C++17 support in macOS 10.13+/10.14+
+      #   https://cibuildwheel.readthedocs.io/en/stable/cpp_standards/#macos-and-deployment-target-versions
       run: |
         mkdir build && cd build
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
