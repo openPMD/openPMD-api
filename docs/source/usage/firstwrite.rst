@@ -128,7 +128,7 @@ C++14
 .. code-block:: cpp
 
    series.setAuthor(
-       "Axel Huebl <a.huebl@hzdr.de>");
+       "Axel Huebl <axelhuebl@lbl.gov>");
    series.setMachine(
        "Hall Probe 5000, Model 3");
    series.setAttribute(
@@ -141,8 +141,8 @@ Python
 
 .. code-block:: python3
 
-   series.set_author(
-       "Axel Huebl <a.huebl@hzdr.de>")
+   series.author = \
+       "Axel Huebl <axelhuebl@lbl.gov>"
    series.machine = "Hall Probe 5000, Model 3"
    series.set_attribute(
        "dinner", "Pizza and Coke")

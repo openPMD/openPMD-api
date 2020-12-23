@@ -3,8 +3,8 @@
 Upgrade Guide
 =============
 
-0.13.0-beta
------------
+0.13.0
+------
 
 Building openPMD-api now requires a compiler that supports C++14 or newer.
 Supported Python version are now 3.6 to 3.9.
@@ -28,6 +28,18 @@ The old setter function (``set_data_order``) and read-only property (``data_orde
 
 Note: we recommend using ``'C'`` order since version 2 of the openPMD-standard will simplify this option to ``'C'``, too.
 For Fortran-ordered indices, please just invert the attributes ``axis_labels``, ``grid_spacing`` and ``grid_global_offset`` accordingly.
+
+The ``Iteration`` functions ``time``, ``dt`` and ``time_unit_SI`` have been replaced with read-write properties of the same name, essentially without the ``()``-access.
+``set_time``, ``set_dt`` and ``set_time_unit_SI`` are now deprecated and will be removed in future versions of the library.
+
+The already existing read-only ``Series`` properties ``openPMD``, ``openPMD_extension``, ``base_path``, ``meshes_path``, ``particles_path``, ``particles_path``, ``author``, ``date``, ``iteration_encoding``, ``iteration_format`` and ``name`` are now declared as read-write properties.
+``set_openPMD``, ``set_openPMD_extension``, ``set_base_path``, ``set_meshes_path``, ``set_particles_path``, ``set_author``, ``set_date``, ``set_iteration_encoding``, ``set_iteration_format`` and ``set_name`` are now deprecated and will be removed in future versions of the library.
+
+The already existing read-only ``Mesh`` properties ``geometry``, ``geometry_parameters``, ``axis_labels``, ``grid_spacing``, ``grid_global_offset`` and ``grid_unit_SI`` are now declared as read-write properties.
+``set_geometry``, ``set_geometry_parameters``, ``set_axis_labels``, ``set_grid_spacing``, ``set_grid_global_offset`` and ``set_grid_unit_SI`` are now deprecated and will be removed in future versions of the library.
+
+The already existing read-only ``Attributable`` property ``comment`` is now declared as read-write properties.
+``set_comment`` is now deprecated and will be removed in future versions of the library.
 
 
 0.12.0-alpha

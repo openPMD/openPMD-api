@@ -23,12 +23,12 @@ if __name__ == "__main__":
 
     # all required openPMD attributes will be set to reasonable default values
     # (all ones, all zeros, empty strings,...)
-    # manually setting them enforces the openPMD standard
-    f.set_meshes_path("custom_meshes_path")
-    f.set_particles_path("long_and_very_custom_particles_path")
+    # but one can also set customized values
+    f.meshes_path = "custom_meshes_path"
+    f.particles_path = "long_and_very_custom_particles_path"
 
     # it is possible to add and remove attributes
-    f.set_comment("This is fine and actually encouraged by the standard")
+    f.comment = "This is fine and actually encouraged by the standard"
     f.set_attribute(
         "custom_attribute_name",
         "This attribute is manually added and can contain about any datatype "
@@ -38,27 +38,27 @@ if __name__ == "__main__":
     # the file unusable for post-processing
     f.delete_attribute("custom_attribute_name")
 
-    # setting attributes can be chained in JS-like syntax for compact code
-    tmpItObj = f.iterations[1] \
-        .set_time(42.0) \
-        .set_dt(1.0) \
-        .set_time_unit_SI(1.39e-16)
+    # attributes are read-write properties
+    tmpItObj = f.iterations[1]
+    tmpItObj.time = 42.0
+    tmpItObj.dt = 1.0
+    tmpItObj.time_unit_SI = 1.39e-16
     # everything that is accessed with [] should be interpreted as permanent
     # storage the objects sunk into these locations are deep copies
-    f.iterations[2].set_comment("This iteration will not appear in any output")
+    f.iterations[2].comment = "This iteration will not appear in any output"
     del f.iterations[2]
 
     # this is a reference to an iteration
     reference = f.iterations[1]
-    reference.set_comment("Modifications to a reference will always be visible"
-                          " in the output")
+    reference.comment = "Modifications to a reference will always be visible" \
+                        " in the output"
     del reference
 
     # alternatively, a copy may be created and later re-assigned to
     # f.iterations[1]
     copy = f.iterations[1]  # TODO .copy()
-    copy.set_comment("Modifications to copies will only take effect after you "
-                     "reassign the copy")
+    copy.comment = "Modifications to copies will only take effect after you " \
+                   "reassign the copy"
     f.iterations[1] = copy
     del copy
 
@@ -74,8 +74,8 @@ if __name__ == "__main__":
 
     # as this is a reference, it modifies the original resource
     lowRez = cur_it.meshes["generic_2D_field"]
-    lowRez.set_grid_spacing([1, 1]) \
-        .set_grid_global_offset([0, 600])
+    lowRez.grid_spacing = [1, 1]
+    lowRez.grid_global_offset = [0, 600]
 
     # del cur_it.meshes["generic_2D_field"]
     cur_it.meshes["lowRez_2D_field"] = lowRez
@@ -92,7 +92,7 @@ if __name__ == "__main__":
     electrons["weighting"][SCALAR].make_constant(1.e-5)
 
     mesh = cur_it.meshes["lowRez_2D_field"]
-    mesh.set_axis_labels(["x", "y"])
+    mesh.axis_labels = ["x", "y"]
 
     # data is assumed to reside behind a pointer as a contiguous column-major
     # array shared data ownership during IO is indicated with a smart pointer
@@ -123,11 +123,11 @@ if __name__ == "__main__":
         reset_dataset(dset)
 
     dset = Dataset(partial_particlePos.dtype, extent=[2])
-    electrons.particle_patches["offset"].set_unit_dimension(
-        {Unit_Dimension.L: 1})
+    electrons.particle_patches["offset"].unit_dimension = \
+        {Unit_Dimension.L: 1}
     electrons.particle_patches["offset"]["x"].reset_dataset(dset)
-    electrons.particle_patches["extent"].set_unit_dimension(
-        {Unit_Dimension.L: 1})
+    electrons.particle_patches["extent"].unit_dimension = \
+        {Unit_Dimension.L: 1}
     electrons.particle_patches["extent"]["x"].reset_dataset(dset)
 
     # at any point in time you may decide to dump already created output to

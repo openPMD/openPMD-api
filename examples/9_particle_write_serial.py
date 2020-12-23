@@ -23,9 +23,9 @@ if __name__ == "__main__":
 
     # all required openPMD attributes will be set to reasonable default values
     # (all ones, all zeros, empty strings,...)
-    # manually setting them enforces the openPMD standard
-    f.set_meshes_path("fields")
-    f.set_particles_path("particles")
+    # but one can also set domain-specific values
+    f.meshes_path = "fields"
+    f.particles_path = "particles"
 
     # new iteration
     cur_it = f.iterations[0]

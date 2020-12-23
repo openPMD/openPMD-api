@@ -142,18 +142,12 @@ void init_Series(py::module &m) {
         )
 #endif
 
-        .def_property_readonly("openPMD", &Series::openPMD)
-        .def("set_openPMD", &Series::setOpenPMD)
-        .def_property_readonly("openPMD_extension", &Series::openPMDextension)
-        .def("set_openPMD_extension", &Series::setOpenPMDextension)
-        .def_property_readonly("base_path", &Series::basePath)
-        .def("set_base_path", &Series::setBasePath)
-        .def_property_readonly("meshes_path", &Series::meshesPath)
-        .def("set_meshes_path", &Series::setMeshesPath)
-        .def_property_readonly("particles_path", &Series::particlesPath)
-        .def("set_particles_path", &Series::setParticlesPath)
-        .def_property_readonly("author", &Series::author)
-        .def("set_author", &Series::setAuthor)
+        .def_property("openPMD", &Series::openPMD, &Series::setOpenPMD)
+        .def_property("openPMD_extension", &Series::openPMDextension, &Series::setOpenPMDextension)
+        .def_property("base_path", &Series::basePath, &Series::setBasePath)
+        .def_property("meshes_path", &Series::meshesPath, &Series::setMeshesPath)
+        .def_property("particles_path", &Series::particlesPath, &Series::setParticlesPath)
+        .def_property("author", &Series::author, &Series::setAuthor)
         .def_property("machine",
             &Series::machine,
             &Series::setMachine,
@@ -168,17 +162,25 @@ void init_Series(py::module &m) {
         })
         // softwareDependencies
         // machine
-        .def_property_readonly("date", &Series::date)
-        .def("set_date", &Series::setDate)
-        .def_property_readonly("iteration_encoding", &Series::iterationEncoding)
-        .def("set_iteration_encoding", &Series::setIterationEncoding)
-        .def_property_readonly("iteration_format", &Series::iterationFormat)
-        .def("set_iteration_format", &Series::setIterationFormat)
-        .def_property_readonly("name", &Series::name)
-        .def("set_name", &Series::setName)
+        .def_property("date", &Series::date, &Series::setDate)
+        .def_property("iteration_encoding", &Series::iterationEncoding, &Series::setIterationEncoding)
+        .def_property("iteration_format", &Series::iterationFormat, &Series::setIterationFormat)
+        .def_property("name", &Series::name, &Series::setName)
         .def("flush", &Series::flush)
 
         .def_property_readonly("backend", &Series::backend)
+
+        // TODO remove in future versions (deprecated)
+        .def("set_openPMD", &Series::setOpenPMD)
+        .def("set_openPMD_extension", &Series::setOpenPMDextension)
+        .def("set_base_path", &Series::setBasePath)
+        .def("set_meshes_path", &Series::setMeshesPath)
+        .def("set_particles_path", &Series::setParticlesPath)
+        .def("set_author", &Series::setAuthor)
+        .def("set_date", &Series::setDate)
+        .def("set_iteration_encoding", &Series::setIterationEncoding)
+        .def("set_iteration_format", &Series::setIterationFormat)
+        .def("set_name", &Series::setName)
 
         .def_readwrite("iterations", &Series::iterations,
             py::return_value_policy::reference,
