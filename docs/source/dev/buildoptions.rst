@@ -20,7 +20,7 @@ CMake Option                   Values          Description
 ``openPMD_USE_INVASIVE_TESTS`` ON/**OFF**      Enable unit tests that modify source code :sup:`1`
 ``openPMD_USE_VERIFY``         **ON**/OFF      Enable internal VERIFY (assert) macro independent of build type :sup:`2`
 ``openPMD_INSTALL``            **ON**/OFF      Add installation targets
-``PYTHON_EXECUTABLE``          (first found)   Path to Python executable
+``Python_EXECUTABLE``          (newest found)  Path to Python executable
 ============================== =============== ========================================================================
 
 :sup:`1` e.g. changes C++ visibility keywords, breaks MSVC
@@ -69,7 +69,7 @@ CMake Option                      Values      Installs Library       Version
 ================================= =========== ======== ============= ========
 ``openPMD_USE_INTERNAL_VARIANT``  **ON**/OFF  Yes      MPark.Variant   1.4.0+
 ``openPMD_USE_INTERNAL_CATCH``    **ON**/OFF  No       Catch2          2.6.1+
-``openPMD_USE_INTERNAL_PYBIND11`` **ON**/OFF  No       pybind11        2.4.3+
+``openPMD_USE_INTERNAL_PYBIND11`` **ON**/OFF  No       pybind11        2.6.1+
 ``openPMD_USE_INTERNAL_JSON``     **ON**/OFF  No       NLohmann-JSON   3.9.1+
 ================================= =========== ======== ============= ========
 

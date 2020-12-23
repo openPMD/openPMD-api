@@ -24,8 +24,10 @@ Other
 """""
 
 - switch to C++14 #825
+- CMake: require version 3.15.0+ #857
 - Python: support 3.6 - 3.9 #828
 - NLohmann-JSON dependency updated to 3.9.1+ #839
+- pybind11 dependency updated 2.6.1+ #857
 - Docs:
 
   - Release cibuildwheel example #775

@@ -99,13 +99,13 @@ Our manual shows full [read & write examples](https://openpmd-api.readthedocs.io
 ## Dependencies
 
 Required:
-* CMake 3.12.0+
+* CMake 3.15.0+
 * C++14 capable compiler, e.g. g++ 5.0+, clang 5.0+, VS 2017+
 
 Shipped internally in `share/openPMD/thirdParty/`:
 * [MPark.Variant](https://github.com/mpark/variant) 1.4.0+ ([BSL-1.0](https://github.com/mpark/variant/blob/master/LICENSE.md))
 * [Catch2](https://github.com/catchorg/Catch2) 2.6.1+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
-* [pybind11](https://github.com/pybind/pybind11) 2.4.3+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
+* [pybind11](https://github.com/pybind/pybind11) 2.6.1+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
 * [NLohmann-JSON](https://github.com/nlohmann/json) 3.9.1+ ([MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT))
 
 I/O backends:
@@ -120,7 +120,7 @@ while those can be built either with or without:
 Optional language bindings:
 * Python:
   * Python 3.6 - 3.9
-  * pybind11 2.4.3+
+  * pybind11 2.6.1+
   * numpy 1.15+
   * mpi4py 2.1+
 
@@ -223,7 +223,7 @@ cd openPMD-api-build
 # for options append:
 #   -DopenPMD_USE_...=...
 # e.g. for python support add:
-#   -DopenPMD_USE_PYTHON=ON -DPYTHON_EXECUTABLE=$(which python3)
+#   -DopenPMD_USE_PYTHON=ON
 cmake ../openPMD-api
 
 cmake --build .
@@ -248,7 +248,7 @@ CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 | `openPMD_USE_INVASIVE_TESTS` | ON/**OFF**       | Enable unit tests that modify source code <sup>1</sup>                       |
 | `openPMD_USE_VERIFY`         | **ON**/OFF       | Enable internal VERIFY (assert) macro independent of build type <sup>2</sup> |
 | `openPMD_INSTALL`            | **ON**/OFF       | Add installation targets                                                     |
-| `PYTHON_EXECUTABLE`          | (first found)    | Path to Python executable                                                    |
+| `Python_EXECUTABLE`          | (newest found)   | Path to Python executable                                                    |
 
 <sup>1</sup> *e.g. changes C++ visibility keywords, breaks MSVC*
 <sup>2</sup> *this includes most pre-/post-condition checks, disabling without specific cause is highly discouraged*
@@ -260,7 +260,7 @@ The following options allow to switch to external installs:
 |---------------------------------|------------|---------------|---------|
 | `openPMD_USE_INTERNAL_VARIANT`  | **ON**/OFF | MPark.Variant |  1.4.0+ |
 | `openPMD_USE_INTERNAL_CATCH`    | **ON**/OFF | Catch2        |  2.6.1+ |
-| `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.4.3+ |
+| `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.6.1+ |
 | `openPMD_USE_INTERNAL_JSON`     | **ON**/OFF | NLohmann-JSON |  3.9.1+ |
 
 By default, this will build as a shared library (`libopenPMD.[so|dylib|dll]`) and installs also its headers.

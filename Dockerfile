@@ -101,7 +101,7 @@ RUN        cd /opt/src; \
 #RUN        mkdir build \
 #           && cd build \
 #           && /opt/cmake/bin/cmake \
-#               -DPYTHON_EXECUTABLE=$(which /opt/python/cp${PY_TARGET}-cp${PY_TARGET}m/bin/python) \
+#               -DPython_ROOT_DIR=$(which /opt/python/cp${PY_TARGET}-cp${PY_TARGET}m) \
 #               -DHDF5_USE_STATIC_LIBRARIES=ON \
 #               -DBUILD_SHARED_LIBS=OFF \
 #               -DBUILD_TESTING=OFF \

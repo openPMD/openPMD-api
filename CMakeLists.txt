@@ -1,6 +1,6 @@
 # Preamble ####################################################################
 #
-cmake_minimum_required(VERSION 3.12.0)
+cmake_minimum_required(VERSION 3.15.0)
 
 project(openPMD VERSION 0.12.1) # LANGUAGES CXX
 
@@ -249,52 +249,37 @@ endif()
 
 # external library: pybind11 (optional)
 if(openPMD_USE_PYTHON STREQUAL AUTO)
-    if(openPMD_USE_INTERNAL_PYBIND11)
-        add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11")
-        set(openPMD_HAVE_PYTHON TRUE)
-        message(STATUS "pybind11: Using INTERNAL version 2.4.3")
-    else()
-        find_package(pybind11 2.4.3 CONFIG)
-        if(pybind11_FOUND)
+    find_package(Python 3.6.0 COMPONENTS Interpreter Development)
+    if(Python_FOUND)
+        if(openPMD_USE_INTERNAL_PYBIND11)
+            add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11")
             set(openPMD_HAVE_PYTHON TRUE)
-            message(STATUS "pybind11: Found version '${pybind11_VERSION}'")
+            message(STATUS "pybind11: Using INTERNAL version 2.6.1")
         else()
-            set(openPMD_HAVE_PYTHON FALSE)
+            find_package(pybind11 2.6.1 CONFIG)
+            if(pybind11_FOUND)
+                set(openPMD_HAVE_PYTHON TRUE)
+                message(STATUS "pybind11: Found version '${pybind11_VERSION}'")
+            else()
+                set(openPMD_HAVE_PYTHON FALSE)
+            endif()
         endif()
-    endif()
-    if(openPMD_HAVE_PYTHON AND
-       PYTHON_VERSION_MAJOR LESS 3)
+    else()
         set(openPMD_HAVE_PYTHON FALSE)
-        message(STATUS "python: Found version '"
-                       "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}' "
-                       "is NOT supported. Set for example "
-                       "-DPYTHON_EXECUTABLE=$(which python3) "
-                       "to use 3.6+.")
     endif()
 elseif(openPMD_USE_PYTHON)
+    find_package(Python COMPONENTS Interpreter Development REQUIRED)
     if(openPMD_USE_INTERNAL_PYBIND11)
         add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11")
         set(openPMD_HAVE_PYTHON TRUE)
-        message(STATUS "pybind11: Using INTERNAL version 2.4.3")
+        message(STATUS "pybind11: Using INTERNAL version 2.6.1")
     else()
-        find_package(pybind11 2.4.3 REQUIRED CONFIG)
+        find_package(pybind11 2.6.1 REQUIRED CONFIG)
         set(openPMD_HAVE_PYTHON TRUE)
         message(STATUS "pybind11: Found version '${pybind11_VERSION}'")
     endif()
-    if(PYTHON_VERSION_MAJOR LESS 3)
-        message(FATAL_ERROR "python: Found version '"
-                            "${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}' "
-                            "is NOT supported. Set for example "
-                            "-DPYTHON_EXECUTABLE=$(which python3) "
-                            "to use 3.6+.")
-    endif()
 else()
     set(openPMD_HAVE_PYTHON FALSE)
-endif()
-if(openPMD_HAVE_PYTHON)
-    add_library(openPMD::thirdparty::pybind11 INTERFACE IMPORTED)
-    target_link_libraries(openPMD::thirdparty::pybind11
-        INTERFACE pybind11::pybind11)
 endif()
 
 
@@ -535,7 +520,7 @@ endif()
 
 # python bindings
 if(openPMD_HAVE_PYTHON)
-    pybind11_add_module(openPMD.py MODULE SYSTEM
+    add_library(openPMD.py MODULE
         src/binding/python/openPMD.cpp
         src/binding/python/Access.cpp
         src/binding/python/Attributable.cpp
@@ -560,6 +545,13 @@ if(openPMD_HAVE_PYTHON)
         src/binding/python/UnitDimension.cpp
     )
     target_link_libraries(openPMD.py PRIVATE openPMD)
+    target_link_libraries(openPMD.py PRIVATE pybind11::module pybind11::lto pybind11::windows_extras)
+
+    pybind11_extension(openPMD.py)
+    pybind11_strip(openPMD.py)
+
+    set_target_properties(openPMD.py PROPERTIES CXX_VISIBILITY_PRESET "hidden"
+                                                CUDA_VISIBILITY_PRESET "hidden")
 
     # ancient Clang releases
     #   https://github.com/openPMD/openPMD-api/issues/542
@@ -581,7 +573,7 @@ if(openPMD_HAVE_PYTHON)
         )
     else()
         set(CMAKE_INSTALL_PYTHONDIR_DEFAULT
-            "${CMAKE_INSTALL_LIBDIR}/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages"
+            "${CMAKE_INSTALL_LIBDIR}/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages"
         )
     endif()
     set(CMAKE_INSTALL_PYTHONDIR "${CMAKE_INSTALL_PYTHONDIR_DEFAULT}"
@@ -926,7 +918,7 @@ if(BUILD_TESTING)
     if(openPMD_HAVE_PYTHON)
         # do we have mpi4py for MPI-parallel Python tests?
         if(openPMD_HAVE_MPI)
-            execute_process(COMMAND ${PYTHON_EXECUTABLE}
+            execute_process(COMMAND ${Python_EXECUTABLE}
                 -m mpi4py
                 -c "import mpi4py.MPI"
                 RESULT_VARIABLE MPI4PY_RETURN
@@ -962,7 +954,7 @@ if(BUILD_TESTING)
         if(openPMD_HAVE_HDF5)
             if(EXAMPLE_DATA_FOUND)
                 add_test(NAME Unittest.py
-                    COMMAND ${PYTHON_EXECUTABLE}
+                    COMMAND ${Python_EXECUTABLE}
                         ${openPMD_SOURCE_DIR}/test/python/unittest/Test.py -v
                     WORKING_DIRECTORY
                         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
@@ -1035,7 +1027,7 @@ if(BUILD_TESTING)
         #  console scripts and replace the all-binary CLI tools.)
         foreach(pymodulename ${openPMD_PYTHON_CLI_MODULE_NAMES})
              add_test(NAME CLI.py.help.${pymodulename}
-                 COMMAND ${PYTHON_EXECUTABLE} -m openpmd_api.${pymodulename} --help
+                 COMMAND ${Python_EXECUTABLE} -m openpmd_api.${pymodulename} --help
                  WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
             )
             if(WIN32)
@@ -1068,7 +1060,7 @@ if(BUILD_TESTING)
                         if(openPMD_HAVE_MPI AND MPI4PY_RETURN EQUAL 0)
                             # see https://mpi4py.readthedocs.io/en/stable/mpi4py.run.html
                             add_test(NAME Example.py.${examplename}
-                                COMMAND ${MPI_TEST_EXE} ${PYTHON_EXECUTABLE} -m mpi4py
+                                COMMAND ${MPI_TEST_EXE} ${Python_EXECUTABLE} -m mpi4py
                                     ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
                                 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
                             )
@@ -1077,7 +1069,7 @@ if(BUILD_TESTING)
                         endif()
                     else()
                         add_test(NAME Example.py.${examplename}
-                            COMMAND ${PYTHON_EXECUTABLE}
+                            COMMAND ${Python_EXECUTABLE}
                                 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
                             WORKING_DIRECTORY
                                 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}

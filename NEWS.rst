@@ -8,6 +8,7 @@ Upgrade Guide
 
 Building openPMD-api now requires a compiler that supports C++14 or newer.
 Supported Python version are now 3.6 to 3.9.
+CMake 3.15.0 is now the minimally supported version for CMake.
 
 Python
 ^^^^^^

@@ -45,7 +45,6 @@ Supported frontends are C++11 and Python3.
         -DopenPMD_USE_ADIOS1=ON  \
         -DopenPMD_USE_ADIOS2=OFF \
         -DopenPMD_USE_PYTHON=ON  \
-        -DPYTHON_EXECUTABLE=$(which python3) \
         -DBUILD_TESTING=OFF      \
         -DCMAKE_INSTALL_PREFIX=/usr/local \
         -DCMAKE_INSTALL_PYTHONDIR=lib/python3.6/dist-packages
