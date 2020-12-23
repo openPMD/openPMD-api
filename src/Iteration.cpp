@@ -23,6 +23,7 @@
 #include "openPMD/Datatype.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
+#include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Writable.hpp"
 
@@ -171,6 +172,24 @@ Iteration::close( bool _flush )
                                       "unimplemented in auto-stepping mode." );
         }
     }
+    return *this;
+}
+
+Iteration &
+Iteration::open()
+{
+    Series * s = &auxiliary::deref_dynamic_cast< Series >(
+        parent->attributable->parent->attributable );
+    // figure out my iteration number
+    auto begin = s->indexOf( *this );
+    //auto end = begin;
+    //++end;
+    s->openIteration( begin->first, *this );
+    //s->flush_impl( begin, end ); // does not work as expected
+    //s->flush(); // does not work as expected
+    this->flush();
+    IOHandler->flush();
+
     return *this;
 }
 

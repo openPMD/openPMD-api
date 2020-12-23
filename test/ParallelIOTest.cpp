@@ -625,11 +625,11 @@ file_based_write_read( std::string file_ending )
     {
         Series read( name, Access::READ_ONLY, MPI_COMM_WORLD );
         Iteration it = read.iterations[ 30 ];
-        // it.open(); // collective
-        if( mpi_rank == 0) // non-collective
+        it.open(); // collective
+        if( mpi_rank == 0 ) // non-collective branch
         {
             auto E_x = it.meshes["E"]["x"];
-            auto data = E_x.loadChunk<double>();
+            auto data = E_x.loadChunk< double >();
             read.flush();
         }
     }
