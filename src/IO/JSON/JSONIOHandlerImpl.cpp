@@ -366,7 +366,7 @@ namespace openPMD
                         e.push_back( entry );
                     }
                     res.emplace_back(
-                        std::move( o ), std::move( e ), chunk.mpi_rank );
+                        std::move( o ), std::move( e ), chunk.sourceID );
                 }
             }
             return res;

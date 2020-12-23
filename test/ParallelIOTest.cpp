@@ -343,9 +343,9 @@ available_chunks_test( std::string file_ending )
         {
             REQUIRE(
                 chunk.offset ==
-                Offset{ static_cast< unsigned >( chunk.mpi_rank ), 0 } );
+                Offset{ static_cast< unsigned >( chunk.sourceID ), 0 } );
             REQUIRE( chunk.extent == Extent{ 1, 4 } );
-            ranks.emplace_back( chunk.mpi_rank );
+            ranks.emplace_back( chunk.sourceID );
         }
         std::sort( ranks.begin(), ranks.end() );
         for( size_t i = 0; i < ranks.size(); ++i )

@@ -55,7 +55,7 @@ void init_Chunk(py::module &m) {
         )
         .def_readwrite("offset",   &WrittenChunkInfo::offset   )
         .def_readwrite("extent",   &WrittenChunkInfo::extent   )
-        .def_readwrite("mpi_rank", &WrittenChunkInfo::mpi_rank )
+        .def_readwrite("source_id", &WrittenChunkInfo::sourceID )
     ;
 }
 

@@ -36,9 +36,9 @@ ChunkInfo::operator==( ChunkInfo const & other ) const
 WrittenChunkInfo::WrittenChunkInfo(
     Offset offset_in,
     Extent extent_in,
-    int mpi_rank_in )
+    int sourceID_in )
     : ChunkInfo( std::move( offset_in ), std::move( extent_in ) )
-    , mpi_rank( mpi_rank_in < 0 ? 0 : mpi_rank_in )
+    , sourceID( sourceID_in < 0 ? 0 : sourceID_in )
 {
 }
 
@@ -50,7 +50,7 @@ WrittenChunkInfo::WrittenChunkInfo( Offset offset_in, Extent extent_in )
 bool
 WrittenChunkInfo::operator==( WrittenChunkInfo const & other ) const
 {
-    return this->mpi_rank == other.mpi_rank &&
+    return this->sourceID == other.sourceID &&
         this->ChunkInfo::operator==( other );
 }
 } // namespace openPMD
