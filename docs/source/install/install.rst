@@ -85,7 +85,7 @@ Using the PyPI Package
 
 A package for openPMD-api is available via the Python Package Index (`PyPI <https://pypi.org>`_).
 
-On Windows and very old macOS versions (<10.9), this install method *compiles from source* against the found installations of HDF5, ADIOS1, ADIOS2, and/or MPI (in system paths, from other package managers, or loaded via a module system, ...).
+On very old macOS versions (<10.9) or on exotic processor architectures, this install method *compiles from source* against the found installations of HDF5, ADIOS1, ADIOS2, and/or MPI (in system paths, from other package managers, or loaded via a module system, ...).
 
 .. code-block:: bash
 

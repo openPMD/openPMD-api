@@ -177,12 +177,12 @@ brew install openpmd-api
 ### [PyPI](https://pypi.org)
 
 [![PyPI Version](https://img.shields.io/pypi/v/openPMD-api)](https://pypi.org/project/openPMD-api)
-[![PyPI Platforms](https://img.shields.io/badge/platforms-linux%20|%20osx%20|%20%28win%29-blue)](https://pypi.org/project/openPMD-api/#files)
+[![PyPI Platforms](https://img.shields.io/badge/platforms-linux%20|%20osx%20|%20win-blue)](https://pypi.org/project/openPMD-api/#files)
 [![PyPI Use Case](https://img.shields.io/badge/use_case-desktop_%28py%29-brightgreen)](https://pypi.org/project/openPMD-api)
 [![PyPI Format](https://img.shields.io/pypi/format/openPMD-api)](https://pypi.org/project/openPMD-api)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/openPMD-api)](https://pypi.org/project/openPMD-api)
 
-On Windows and very old macOS versions, this install method *compiles from source* against the found installations of HDF5, ADIOS1, ADIOS2, and/or MPI (in system paths, from other package managers, or loaded via a module system, ...).
+On very old macOS versions (<10.9) or on exotic processor architectures, this install method *compiles from source* against the found installations of HDF5, ADIOS1, ADIOS2, and/or MPI (in system paths, from other package managers, or loaded via a module system, ...).
 
 ```bash
 # we need pip 19 or newer
