@@ -92,8 +92,8 @@ goodies:
 - pybind11 uses C++11 move constructors and move assignment operators
   whenever possible to efficiently transfer custom data types.
 
-- It’s easy to expose the internal storage of custom data types through
-  Pythons’ buffer protocols. This is handy e.g. for fast conversion
+- It's easy to expose the internal storage of custom data types through
+  Python's buffer protocols. THis is handy e.g. for fast conversion
   between C++ matrix classes like Eigen and NumPy without expensive
   copy operations.
 
@@ -141,7 +141,7 @@ Jakob <http://rgl.epfl.ch/people/wjakob>`_. Significant features and/or
 improvements to the code were contributed by Jonas Adler, Lori A. Burns,
 Sylvain Corlay, Eric Cousineau, Ralf Grosse-Kunstleve, Trent Houliston, Axel
 Huebl, @hulucc, Yannick Jadoul, Sergey Lyskov Johan Mabille, Tomasz Miąsko,
-Dean Moldovan, Ben Pritchard, Jason Rhinelander, Boris Schäling,  Pim
+Dean Moldovan, Ben Pritchard, Jason Rhinelander, Boris Schaeling,  Pim
 Schellart, Henry Schreiner, Ivan Smirnov, Boris Staletic, and Patrick Stewart.
 
 We thank Google for a generous financial contribution to the continuous
