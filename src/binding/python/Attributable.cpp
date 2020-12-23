@@ -342,7 +342,8 @@ void init_Attributable(py::module &m) {
 
         // @todo _ipython_key_completions_ if we find a way to add a [] interface
 
-        .def_property_readonly("comment", &Attributable::comment)
+        .def_property("comment", &Attributable::comment, &Attributable::setComment)
+        // TODO remove in future versions (deprecated)
         .def("set_comment", &Attributable::setComment)
     ;
 

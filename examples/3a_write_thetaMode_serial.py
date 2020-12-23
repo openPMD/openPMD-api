@@ -32,12 +32,12 @@ if __name__ == "__main__":
     geometry_parameters = "m={0};imag=+".format(num_modes)
 
     E = series.iterations[0].meshes["E"]
-    E.set_geometry(io.Geometry.thetaMode)
-    E.set_geometry_parameters(geometry_parameters)
-    E.set_grid_spacing([1.0, 1.0])
-    E.set_grid_global_offset([0.0, 0.0])
-    E.set_grid_unit_SI(1.0)
-    E.set_axis_labels(["r", "z"])
+    E.geometry = io.Geometry.thetaMode
+    E.geometry_parameters = geometry_parameters
+    E.grid_spacing = [1.0, 1.0]
+    E.grid_global_offset = [0.0, 0.0]
+    E.grid_unit_SI = 1.0
+    E.axis_labels = ["r", "z"]
     E.data_order = "C"
     E.unit_dimension = {io.Unit_Dimension.I: 1.0,
                         io.Unit_Dimension.J: 2.0}
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     E_z = E["z"]
     E_z.unit_SI = 10.
     E_z.position = [0.0, 0.5]
-    #   (modes, r, z) see set_geometry_parameters
+    #   (modes, r, z) see geometry_parameters
     E_z.reset_dataset(io.Dataset(io.Datatype.FLOAT, [num_fields, N_r, N_z]))
     E_z.make_constant(42.54)
 

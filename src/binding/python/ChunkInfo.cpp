@@ -39,8 +39,8 @@ void init_Chunk(py::module &m) {
                     + std::to_string(c.offset.size()) + "'>";
             }
         )
-        .def_readonly("offset", &ChunkInfo::offset)
-        .def_readonly("extent", &ChunkInfo::extent)
+        .def_readwrite("offset", &ChunkInfo::offset)
+        .def_readwrite("extent", &ChunkInfo::extent)
     ;
     py::class_<WrittenChunkInfo, ChunkInfo>(m, "WrittenChunkInfo")
         .def(py::init<Offset, Extent>(),
@@ -53,9 +53,9 @@ void init_Chunk(py::module &m) {
                     + std::to_string(c.offset.size()) + "'>";
             }
         )
-        .def_readonly("offset",   &WrittenChunkInfo::offset   )
-        .def_readonly("extent",   &WrittenChunkInfo::extent   )
-        .def_readonly("mpi_rank", &WrittenChunkInfo::mpi_rank )
+        .def_readwrite("offset",   &WrittenChunkInfo::offset   )
+        .def_readwrite("extent",   &WrittenChunkInfo::extent   )
+        .def_readwrite("mpi_rank", &WrittenChunkInfo::mpi_rank )
     ;
 }
 

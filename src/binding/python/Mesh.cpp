@@ -47,34 +47,33 @@ void init_Mesh(py::module &m) {
             &Mesh::setUnitDimension,
             python::doc_unit_dimension)
 
-        .def_property_readonly("geometry", &Mesh::geometry)
-        .def("set_geometry", &Mesh::setGeometry)
-        .def_property_readonly("geometry_parameters", &Mesh::geometryParameters)
-        .def("set_geometry_parameters", &Mesh::setGeometryParameters)
+        .def_property("geometry", &Mesh::geometry, &Mesh::setGeometry)
+        .def_property("geometry_parameters", &Mesh::geometryParameters, &Mesh::setGeometryParameters)
         .def_property("data_order",
               [](Mesh const & mesh){ return static_cast< char >(mesh.dataOrder()); },
               [](Mesh & mesh, char d){ mesh.setDataOrder(Mesh::DataOrder(d)); },
               "Data Order of the Mesh (deprecated and set to C in openPMD 2)"
         )
-        .def_property_readonly("axis_labels", &Mesh::axisLabels)
-        .def("set_axis_labels", &Mesh::setAxisLabels)
-        .def_property_readonly("grid_spacing", &Mesh::gridSpacing<float>)
-        .def_property_readonly("grid_spacing", &Mesh::gridSpacing<double>)
-        .def_property_readonly("grid_spacing", &Mesh::gridSpacing<long double>)
-        .def("set_grid_spacing", &Mesh::setGridSpacing<float>)
-        .def("set_grid_spacing", &Mesh::setGridSpacing<double>)
-        .def("set_grid_spacing", &Mesh::setGridSpacing<long double>)
-        .def_property_readonly("grid_global_offset", &Mesh::gridGlobalOffset)
-        .def("set_grid_global_offset", &Mesh::setGridGlobalOffset)
-        .def_property_readonly("grid_unit_SI", &Mesh::gridUnitSI)
-        .def("set_grid_unit_SI", &Mesh::setGridUnitSI)
+        .def_property("axis_labels", &Mesh::axisLabels, &Mesh::setAxisLabels)
+        .def_property("grid_spacing", &Mesh::gridSpacing<float>, &Mesh::setGridSpacing<float>)
+        .def_property("grid_spacing", &Mesh::gridSpacing<double>, &Mesh::setGridSpacing<double>)
+        .def_property("grid_spacing", &Mesh::gridSpacing<long double>, &Mesh::setGridSpacing<long double>)
+        .def_property("grid_global_offset", &Mesh::gridGlobalOffset, &Mesh::setGridGlobalOffset)
+        .def_property("grid_unit_SI", &Mesh::gridUnitSI, &Mesh::setGridUnitSI)
         .def_property("time_offset", &Mesh::timeOffset<float>, &Mesh::setTimeOffset<float>)
         .def_property("time_offset", &Mesh::timeOffset<double>, &Mesh::setTimeOffset<double>)
         .def_property("time_offset", &Mesh::timeOffset<long double>, &Mesh::setTimeOffset<long double>)
 
         // TODO remove in future versions (deprecated)
         .def("set_unit_dimension", &Mesh::setUnitDimension)
-
+        .def("set_geometry", &Mesh::setGeometry)
+        .def("set_geometry_parameters", &Mesh::setGeometryParameters)
+        .def("set_axis_labels", &Mesh::setAxisLabels)
+        .def("set_grid_spacing", &Mesh::setGridSpacing<float>)
+        .def("set_grid_spacing", &Mesh::setGridSpacing<double>)
+        .def("set_grid_spacing", &Mesh::setGridSpacing<long double>)
+        .def("set_grid_global_offset", &Mesh::setGridGlobalOffset)
+        .def("set_grid_unit_SI", &Mesh::setGridUnitSI)
     ;
 
     py::enum_<Mesh::Geometry>(m, "Geometry")
