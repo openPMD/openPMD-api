@@ -20,7 +20,7 @@ CMake Option                   Values          Description
 ``openPMD_USE_INVASIVE_TESTS`` ON/**OFF**      Enable unit tests that modify source code :sup:`1`
 ``openPMD_USE_VERIFY``         **ON**/OFF      Enable internal VERIFY (assert) macro independent of build type :sup:`2`
 ``openPMD_INSTALL``            **ON**/OFF      Add installation targets
-``PYTHON_EXECUTABLE``          (first found)   Path to Python executable
+``Python_EXECUTABLE``          (newest found)  Path to Python executable
 ============================== =============== ========================================================================
 
 :sup:`1` e.g. changes C++ visibility keywords, breaks MSVC

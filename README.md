@@ -223,7 +223,7 @@ cd openPMD-api-build
 # for options append:
 #   -DopenPMD_USE_...=...
 # e.g. for python support add:
-#   -DopenPMD_USE_PYTHON=ON -DPYTHON_EXECUTABLE=$(which python3)
+#   -DopenPMD_USE_PYTHON=ON
 cmake ../openPMD-api
 
 cmake --build .
@@ -248,7 +248,7 @@ CMake controls options with prefixed `-D`, e.g. `-DopenPMD_USE_MPI=OFF`:
 | `openPMD_USE_INVASIVE_TESTS` | ON/**OFF**       | Enable unit tests that modify source code <sup>1</sup>                       |
 | `openPMD_USE_VERIFY`         | **ON**/OFF       | Enable internal VERIFY (assert) macro independent of build type <sup>2</sup> |
 | `openPMD_INSTALL`            | **ON**/OFF       | Add installation targets                                                     |
-| `PYTHON_EXECUTABLE`          | (first found)    | Path to Python executable                                                    |
+| `Python_EXECUTABLE`          | (newest found)   | Path to Python executable                                                    |
 
 <sup>1</sup> *e.g. changes C++ visibility keywords, breaks MSVC*
 <sup>2</sup> *this includes most pre-/post-condition checks, disabling without specific cause is highly discouraged*
