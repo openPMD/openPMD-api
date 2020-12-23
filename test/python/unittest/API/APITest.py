@@ -1609,6 +1609,8 @@ class APITest(unittest.TestCase):
 
         chunks = read.iterations[0].meshes["E"]["x"].available_chunks()
         chunks = sorted(chunks, key=lambda chunk: chunk.offset)
+        for chunk in chunks:
+            self.assertEqual(chunk.source_id, 0)
         # print("EXTENSION:", ext)
         # for chunk in chunks:
         #     print("{} -- {}".format(chunk.offset, chunk.extent))

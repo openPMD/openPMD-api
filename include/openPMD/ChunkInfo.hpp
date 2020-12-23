@@ -51,19 +51,23 @@ struct ChunkInfo
  * data producing application.
  * Produced by BaseRecordComponent::availableChunk.
  *
- * Carries along the usual chunk meta info also the rank from which
- * it was written.
- * If not specified explicitly, the rank will be assumed to be 0.
+ * Carries along the usual chunk meta info also the ID for the data source from
+ * which the chunk is received.
+ * Examples for this include the writing MPI rank in streaming setups or the
+ * subfile containing the chunk.
+ * If not specified explicitly, the sourceID will be assumed to be 0.
+ * This information will vary between different backends and should be used
+ * for optimization purposes only.
  */
 struct WrittenChunkInfo : ChunkInfo
 {
-    unsigned int mpi_rank = 0; //!< the MPI rank of the writing process
+    unsigned int sourceID = 0; //!< ID of the data source containing the chunk
 
+    explicit WrittenChunkInfo() = default;
     /*
      * If rank is smaller than zero, will be converted to zero.
      */
-    explicit WrittenChunkInfo() = default;
-    WrittenChunkInfo( Offset, Extent, int mpi_rank );
+    WrittenChunkInfo( Offset, Extent, int sourceID );
     WrittenChunkInfo( Offset, Extent );
 
     bool
