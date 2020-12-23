@@ -98,7 +98,7 @@ jobs:
       run: |
         mkdir build && cd build
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
-        cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DPYTHON_EXECUTABLE=$(which python3) -DopenPMD_USE_MPI=OFF -DopenPMD_USE_HDF5=ON -DopenPMD_USE_INVASIVE_TESTS=ON -DCMAKE_VERBOSE_MAKEFILE=ON
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DopenPMD_USE_MPI=OFF -DopenPMD_USE_HDF5=ON -DopenPMD_USE_INVASIVE_TESTS=ON -DCMAKE_VERBOSE_MAKEFILE=ON
         cmake --build . --parallel 2
         ctest --output-on-failure
 
@@ -130,7 +130,7 @@ jobs:
       run: |
         mkdir build && cd build
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
-        cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DPYTHON_EXECUTABLE=$(which python3) -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build . --parallel 2
         ctest --output-on-failure
 
@@ -167,7 +167,7 @@ jobs:
 
         mkdir build && cd build
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
-        cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DPYTHON_EXECUTABLE=$(which python3) -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS1=ON -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS1=ON -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build . --parallel 2
         ctest --output-on-failure
 
@@ -185,6 +185,6 @@ jobs:
         mkdir build && cd build
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
         find /usr -name adios.pc
-        cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DPYTHON_EXECUTABLE=$(which python3) -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_INVASIVE_TESTS=ON
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build . --parallel 2
         ctest --output-on-failure
