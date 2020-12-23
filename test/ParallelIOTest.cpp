@@ -548,6 +548,102 @@ TEST_CASE( "close_iteration_test", "[parallel]" )
 }
 
 void
+file_based_write_read( std::string file_ending )
+{
+    namespace io = openPMD;
+
+    // the iterations we want to write
+    std::vector< int > iterations = { 10, 30, 50, 70 };
+
+    // MPI communicator meta-data and file name
+    int i_mpi_rank{ -1 }, i_mpi_size{ -1 };
+    MPI_Comm_rank( MPI_COMM_WORLD, &i_mpi_rank );
+    MPI_Comm_size( MPI_COMM_WORLD, &i_mpi_size );
+    unsigned mpi_rank{ static_cast< unsigned >( i_mpi_rank ) },
+             mpi_size{ static_cast< unsigned >( i_mpi_size ) };
+    std::string name = "../samples/file_based_write_read_%05T." + file_ending;
+
+    // data (we just use the same data for each step for demonstration)
+    // we assign 10 longitudinal cells & 300 transversal cells per rank here
+    unsigned const local_Nz  = 10u;
+    unsigned const global_Nz = local_Nz * mpi_size;
+    unsigned const global_Nx = 300u;
+    using precision = double;
+    std::vector< precision > E_x_data( global_Nx * local_Nz );
+    // filling some values: 0, 1, ...
+    std::iota( E_x_data.begin(), E_x_data.end(), local_Nz * mpi_rank);
+    std::transform(E_x_data.begin(), E_x_data.end(), E_x_data.begin(),
+                   [](precision d) -> precision { return std::sin( d * 2.0 * 3.1415 / 20. ); });
+
+    {
+        // open a parallel series
+        Series series(name, Access::CREATE, MPI_COMM_WORLD);
+        series.setIterationEncoding(IterationEncoding::fileBased);
+
+        int const last_step = 100;
+        for (int step = 0; step < last_step; ++step) {
+            MPI_Barrier(MPI_COMM_WORLD);
+
+            // is this an output step?
+            bool const rank_in_output_step =
+                    std::find(iterations.begin(), iterations.end(), step) != iterations.end();
+            if (!rank_in_output_step) continue;
+
+            // now we write (parallel, independent I/O)
+            auto it = series.iterations[step];
+            auto E = it.meshes["E"]; // record
+            auto E_x = E["x"];       // record component
+
+            // some meta-data
+            E.setAxisLabels({"z", "x"});
+            E.setGridSpacing<double>({1.0, 1.0});
+            E.setGridGlobalOffset({0.0, 0.0});
+            E_x.setPosition<double>({0.0, 0.0});
+
+            // update values
+            std::iota(E_x_data.begin(), E_x_data.end(), local_Nz * mpi_rank);
+            std::transform(E_x_data.begin(), E_x_data.end(), E_x_data.begin(),
+                           [&step](precision d) -> precision {
+                               return std::sin(d * 2.0 * 3.1415 / 100. + step);
+                           });
+
+            auto dataset = io::Dataset(
+                    io::determineDatatype<precision>(),
+                    {global_Nx, global_Nz});
+            E_x.resetDataset(dataset);
+
+            Offset chunk_offset = {0, local_Nz * mpi_rank};
+            Extent chunk_extent = {global_Nx, local_Nz};
+            E_x.storeChunk(
+                    io::shareRaw(E_x_data),
+                    chunk_offset, chunk_extent);
+            series.flush();
+        }
+    }
+
+    // check non-collective, parallel read
+    {
+        Series read( name, Access::READ_ONLY, MPI_COMM_WORLD );
+        Iteration it = read.iterations[ 30 ];
+        // it.open(); // collective
+        if( mpi_rank == 0) // non-collective
+        {
+            auto E_x = it.meshes["E"]["x"];
+            auto data = E_x.loadChunk<double>();
+            read.flush();
+        }
+    }
+}
+
+TEST_CASE( "file_based_write_read", "[parallel]" )
+{
+    for( auto const & t : getBackends() )
+    {
+        file_based_write_read( t );
+    }
+}
+
+void
 hipace_like_write( std::string file_ending )
 {
     namespace io = openPMD;
