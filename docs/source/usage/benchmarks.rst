@@ -101,15 +101,15 @@ The ADIOS BP files uses subfiles to store data from each rank. We have an option
 * grid of minimal blocks|balance|particle2mesh ratio
 * minial blocks
 * use multiple blocks
-* num of timesteps, 
+* num of timesteps,
 * dimensions
 * hint on work load arrangement.
 
 Example: "mpirun -n 4 ./8a_benchmark_write_parallel 400801 16016 1 5 3 4004002 "
 
-Here 4 ranks are used to write a 3D mesh, minimal block is [16,16,16], grid of minimal block is [8,4,4], so the actual mesh =  [16x8, 16x4, 16x4].  Number of timestep = 5. 
+Here 4 ranks are used to write a 3D mesh, minimal block is [16,16,16], grid of minimal block is [8,4,4], so the actual mesh =  [16x8, 16x4, 16x4].  Number of timestep = 5.
 
-The hint is asking each rank to work on a [16x2, 16x4, 16x4] block.  It precisely cover the mesh with 4 ranks, so will be applied. 
+The hint is asking each rank to work on a [16x2, 16x4, 16x4] block.  It precisely cover the mesh with 4 ranks, so will be applied.
 
 Benchmark Utilities
 -------------------
