@@ -182,13 +182,12 @@ Iteration::open()
         parent->attributable->parent->attributable );
     // figure out my iteration number
     auto begin = s->indexOf( *this );
-    //auto end = begin;
-    //++end;
-    s->openIteration( begin->first, *this );
-    //s->flush_impl( begin, end ); // does not work as expected
-    //s->flush(); // does not work as expected
-    this->flush();
-    IOHandler->flush();
+    auto end = begin;
+    ++end;
+    // set dirty, so Series::flush will open the file
+    this->dirty() = true;
+    s->flush_impl( begin, end );
+    this->dirty() = false;
 
     return *this;
 }
