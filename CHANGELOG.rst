@@ -3,13 +3,17 @@
 Changelog
 =========
 
-0.13.0-beta
------------
-**Date:** TBA
+0.13.0
+------
+**Date:** 2021-01-03
 
-[Title]
+Streaming Support, Python, Benchmarks
 
-[Summary]
+This release adds first support for streaming I/O via ADIOS2's SST engine.
+More I/O benchmarks have been added with realistic application load patterns.
+Many Python properties for openPMD attributes have been modernized, with slight breaking changes in Iteration and Mesh data order.
+This release requires C++14 and adds support for Python 3.9.
+With this release, we leave the "alpha" phase of the software and declare "beta" status.
 
 Changes to "0.12.0-alpha"
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -17,20 +21,84 @@ Changes to "0.12.0-alpha"
 Features
 """"""""
 
+- ADIOS2: streaming support (via ADIOS SST) #570
+- add ``::availableChunks`` call to record component types #802 #835 #847
+- HDF5: control alignment via ``OPENPMD_HDF5_ALIGNMENT`` #830
+- JSON configuration on the dataset level #818
+- Python
+
+  - attributes as properties in ``Series``, ``Mesh``, ``Iteration``, ... #859
+  - add missing python interface (read/write) for ``machine`` #796
+  - add ``Record_Component.make_empty()`` #538
+- added tests ``8a`` & ``8b`` to do 1D/2D mesh writing and reading #803 #816 #834
+- PyPI: support for Windows wheels on ``x86-64`` #853
+
 Bug Fixes
 """""""""
+
+- fix ``Series`` attributes: read defaults #812
+- allow reading a file-based series with many iterations without crashing the number of file handles #822 #837
+- Python: Fix & replace ``Data_Order`` semantics #850
+- ADIOS1:
+
+  - add missing ``CLOSE_FILE`` IO task to parallel backend #785
+- ADIOS2:
+
+  - fix engine destruction order, anticipating release 2.7.0 #838
+- HDF5:
+
+  - support alternate form of empty records (FBPIC) #849
+- Intel ICC (``icpc``):
+
+  - fix export #788
+  - fix segfault in ``Iteration`` #789
+- fix & support ClangCL on Windows #832
+- CMake:
+
+  - Warnings: ICC & root project only #791
+  - Warnings: FindADIOS(1).cmake 2.8.12+ #841
+  - Warnings: less verbose on Windows #851
 
 Other
 """""
 
-- switch to C++14 #825
-- CMake: require version 3.15.0+ #857
+- switched to "beta" status: dropping the version ``-suffix``
+- switch to C++14 #825 #826 #836
+- CMake:
+
+  - require version 3.15.0+ #857
+  - re-order dependency checks #810
 - Python: support 3.6 - 3.9 #828
 - NLohmann-JSON dependency updated to 3.9.1+ #839
 - pybind11 dependency updated 2.6.1+ #857
+- ADIOS2:
+
+  - less verbose about missing boolean helper attributes #801
+  - turn off statistics (Min/Max) #831
+- HDF5: better status checks & error messages #795
 - Docs:
 
-  - Release cibuildwheel example #775
+  - release cibuildwheel example #775
+  - ``Iteration::close()`` is MPI-collective #779
+  - overview compression ADIOS2 #781
+  - add comment on ``lib64/`` #793
+  - typo in description for ADIOS1 #797
+  - conda: recommend fresh environment #799
+  - Sphinx/rst: fix warnings #809
+  - first read: slice example #819
+- CI:
+
+  - Travis -> GH Action #823 #827
+  - remove Cygwin #820
+  - sanitize only project (temporarily disabled) #800
+  - update LGTM environment #844
+  - clang-tidy updates #843
+  - set oldest supported macOS #854
+- Tests:
+
+  - add HiPACE parallel I/O pattern #842 #848
+  - cover FBPIC empty HDF5 #849
+- Internal: add ``Optional`` based on ``variantSrc::variant`` #806
 
 
 0.12.0-alpha
