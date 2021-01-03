@@ -626,8 +626,7 @@ file_based_write_read( std::string file_ending )
         Series read( name, Access::READ_ONLY, MPI_COMM_WORLD );
         Iteration it = read.iterations[ 30 ];
         it.open(); // collective
-        bool isAdios1 = read.backend() == "MPI_ADIOS1"; // FIXME: this is an ADIOS1 backend bug
-        if( mpi_rank == 0 || isAdios1 ) // non-collective branch (unless ADIOS1)
+        if( mpi_rank == 0 ) // non-collective branch
         {
             auto E_x = it.meshes["E"]["x"];
             auto data = E_x.loadChunk< double >();
