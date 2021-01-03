@@ -46,6 +46,7 @@ void init_Iteration(py::module &m) {
         .def_property("dt", &Iteration::dt<double>, &Iteration::setDt<double>)
         .def_property("dt", &Iteration::dt<long double>, &Iteration::setDt<long double>)
         .def_property("time_unit_SI", &Iteration::timeUnitSI, &Iteration::setTimeUnitSI)
+        .def("open", &Iteration::open)
         .def("close", &Iteration::close, py::arg("flush") = true)
 
         // TODO remove in future versions (deprecated)

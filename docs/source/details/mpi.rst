@@ -19,6 +19,7 @@ Functionality            Behavior           Description
 ``Series``               **collective**     open and close
 ``::flush()``            **collective**     read and write
 ``Iteration`` [1]_       independent        declare and open
+``::open()`` [3]_        **collective**     explicit open
 ``Mesh`` [1]_            independent        declare, open, write
 ``ParticleSpecies`` [1]_ independent        declare, open, write
 ``::setAttribute`` [2]_  *backend-specific* declare, write
@@ -32,6 +33,8 @@ Functionality            Behavior           Description
 
 .. [2] :ref:`HDF5 <backends-hdf5>` only supports collective attribute definitions/writes; :ref:`ADIOS1 <backends-adios1>` and :ref:`ADIOS2 <backends-adios2>` attributes can be written independently.
        If you want to support all backends equally, treat as a collective operation.
+
+.. [3] We usually open iterations delayed on first access. This first access is usually the ``flush()`` call after a ``storeChunk``/``loadChunk`` operation. If the first access is non-collective, an explicit, collective ``Iteration::open()`` can be used to have the files already open.
 
 .. tip::
 

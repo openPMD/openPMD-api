@@ -110,6 +110,19 @@ public:
     Iteration &
     close( bool flush = true );
 
+    /** Open an iteration
+     *
+     * Explicitly open an iteration.
+     * Usually, file-open operations are delayed until the first load/storeChunk
+     * operation is flush-ed. In parallel contexts where it is know that such a
+     * first access needs to be run non-collectively, one can explicitly open
+     * an iteration through this collective call.
+     *
+     * @return Reference to iteration.
+     */
+    Iteration &
+    open();
+
     /**
      * @brief Has the iteration been closed?
      *        A closed iteration may not (yet) be reopened.
