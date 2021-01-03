@@ -1,0 +1,13 @@
+<map id="openPMD::detail::WriteDataset" name="openPMD::detail::WriteDataset">
+<area shape="rect" id="node1" title=" " alt="" coords="2308,60,2531,87"/>
+<area shape="rect" id="node2" href="$classopen_p_m_d_1_1_a_d_i_o_s2_i_o_handler_impl.html" title=" " alt="" coords="1923,60,2157,87"/>
+<area shape="rect" id="node3" href="$classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html" title=" " alt="" coords="1611,53,1873,94"/>
+<area shape="rect" id="node4" title=" " alt="" coords="1277,89,1506,130"/>
+<area shape="rect" id="node5" href="$structopen_p_m_d_1_1_invalidatable_file.html" title="Wrapper around a shared pointer to:" alt="" coords="963,76,1161,103"/>
+<area shape="rect" id="node10" title=" " alt="" coords="1275,8,1508,64"/>
+<area shape="rect" id="node6" title=" " alt="" coords="639,69,855,110"/>
+<area shape="rect" id="node7" href="$structopen_p_m_d_1_1_invalidatable_file_1_1_file_state.html" title=" " alt="" coords="369,69,568,110"/>
+<area shape="rect" id="node8" title="STL class." alt="" coords="193,76,280,103"/>
+<area shape="rect" id="node9" title="STL class." alt="" coords="5,69,144,110"/>
+<area shape="rect" id="node11" href="$classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file." alt="" coords="989,5,1135,32"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="openPMD::ChunkInfo" name="openPMD::ChunkInfo">
+<area shape="rect" id="node1" title="Represents the meta info around a chunk in a dataset." alt="" coords="29,5,188,32"/>
+<area shape="rect" id="node2" href="$structopen_p_m_d_1_1_written_chunk_info.html" title="Represents the meta info around a chunk that has been written by some data producing application." alt="" coords="5,80,212,107"/>
+</map>

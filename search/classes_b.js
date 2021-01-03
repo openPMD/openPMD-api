@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['onedimensionalblockslicer_424',['OneDimensionalBlockSlicer',['../classopen_p_m_d_1_1_one_dimensional_block_slicer.html',1,'openPMD']]],
-  ['openpmd_5fpympicommobject_425',['openPMD_PyMPICommObject',['../structopen_p_m_d___py_m_p_i_comm_object.html',1,'']]],
-  ['outofrangemsg_426',['OutOfRangeMsg',['../classopen_p_m_d_1_1auxiliary_1_1_out_of_range_msg.html',1,'openPMD::auxiliary']]]
+  ['no_5fsuch_5fattribute_5ferror_465',['no_such_attribute_error',['../classopen_p_m_d_1_1no__such__attribute__error.html',1,'openPMD']]],
+  ['no_5fsuch_5ffile_5ferror_466',['no_such_file_error',['../classopen_p_m_d_1_1no__such__file__error.html',1,'openPMD']]]
 ];

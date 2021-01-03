@@ -1,0 +1,11 @@
+<map id="openPMD::DummyIOHandler" name="openPMD::DummyIOHandler">
+<area shape="rect" id="node1" title="Dummy handler without any IO operations." alt="" coords="188,483,397,509"/>
+<area shape="rect" id="node2" href="$classopen_p_m_d_1_1_abstract_i_o_handler.html" title="Interface for communicating between logical and physically persistent data." alt="" coords="187,407,398,433"/>
+<area shape="rect" id="node3" title=" " alt="" coords="135,303,301,344"/>
+<area shape="rect" id="node4" href="$classopen_p_m_d_1_1_i_o_task.html" title="Self&#45;contained description of a single IO operation." alt="" coords="144,206,279,233"/>
+<area shape="rect" id="node5" title=" " alt="" coords="15,95,211,136"/>
+<area shape="rect" id="node6" href="$structopen_p_m_d_1_1_abstract_parameter.html" title=" " alt="" coords="5,5,220,32"/>
+<area shape="rect" id="node7" href="$classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file." alt="" coords="235,102,382,129"/>
+<area shape="rect" id="node8" title="STL class." alt="" coords="328,310,415,337"/>
+<area shape="rect" id="node9" title="STL class." alt="" coords="303,199,442,240"/>
+</map>

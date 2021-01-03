@@ -1,0 +1,5 @@
+<map id="openPMD::Iteration" name="openPMD::Iteration">
+<area shape="rect" id="node1" title="Logical compilation of data from one snapshot (e.g." alt="" coords="31,80,178,107"/>
+<area shape="rect" id="node3" href="$classopen_p_m_d_1_1_indexed_iteration.html" title="Subclass of Iteration that knows its own index withing the containing Series." alt="" coords="5,155,204,181"/>
+<area shape="rect" id="node2" href="$classopen_p_m_d_1_1_attributable.html" title="Layer to manage storage of attributes associated with file objects." alt="" coords="20,5,189,32"/>
+</map>
