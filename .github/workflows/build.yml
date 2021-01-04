@@ -30,11 +30,18 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel
         python -m pip install cibuildwheel==1.7.1
 
-    - name: Download Patch
+    - name: Download Patch 1/2
       uses: suisei-cn/actions-download-file@v1
       id: FindPythonModule
       with:
         url: "https://gist.githubusercontent.com/ax3l/ed1ac778aba49da3122e81496289a0c6/raw/e0fdf8536ab548875010bbccd7729d3b71d28f3f/FindPythonModule.patch"
+        target: src/.patch/
+
+    - name: Download Patch 2/2
+      uses: suisei-cn/actions-download-file@v1
+      id: setupversion
+      with:
+        url: "https://gist.githubusercontent.com/ax3l/ed1ac778aba49da3122e81496289a0c6/raw/5b8b1304cfb99cd78792061dde356a28e71a3692/setupversion.patch"
         target: src/.patch/
 
     - name: Apply Patch
@@ -42,6 +49,7 @@ jobs:
         python -m pip install "patch==1.*"
         cd src
         python -m patch .patch/FindPythonModule.patch
+        python -m patch .patch/setupversion.patch
 
     - name: Build wheel
       env:
