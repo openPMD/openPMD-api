@@ -337,16 +337,26 @@ available_chunks_test( std::string file_ending )
         Iteration it0 = read.iterations[ 0 ];
         auto E_x = it0.meshes[ "E" ][ "x" ];
         ChunkTable table = E_x.availableChunks();
+        std::sort(
+            table.begin(),
+            table.end(),
+            []( auto const & lhs, auto const & rhs ) {
+                return lhs.offset[ 0 ] < rhs.offset[ 0 ];
+            } );
         std::vector< int > ranks;
         ranks.reserve( table.size() );
-        for( auto const & chunk : table )
+        for( size_t i = 0; i < ranks.size(); ++i )
         {
-            REQUIRE(
-                chunk.offset ==
-                Offset{ static_cast< unsigned >( chunk.sourceID ), 0 } );
+            WrittenChunkInfo const & chunk = table[ i ];
+            REQUIRE( chunk.offset == Offset{ i, 0 } );
             REQUIRE( chunk.extent == Extent{ 1, 4 } );
             ranks.emplace_back( chunk.sourceID );
         }
+        /*
+         * In the BP4 engine, sourceID corresponds with the BP subfile.
+         * Since those are in a nondeterministic order, simply check that
+         * they are all present.
+         */
         std::sort( ranks.begin(), ranks.end() );
         for( size_t i = 0; i < ranks.size(); ++i )
         {
