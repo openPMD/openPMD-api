@@ -6,15 +6,15 @@ branches:
 
 env:
   global:
-    - OPENPMD_GIT_REF="0.12.0-alpha"
+    - OPENPMD_GIT_REF="0.13.0"
 
-    # (1,2) Skip building for Python 2.7 on all platforms
-    # (3) GNU 7.3.1 & MPark.Variant 1.4.0 on i686:
+    # (1,2,3) Skip building for Python 2.7 & 3.5 on all platforms
+    # (4) GNU 7.3.1 & MPark.Variant 1.4.0 on i686:
     #     https://github.com/pypa/manylinux/issues/543
     #       variant.hpp:2241:9: internal compiler error:
     #       unexpected expression ‘I’ of kind template_parm_index
     #       typename T = lib::type_pack_element_t<I, Ts...>,
-    - CIBW_SKIP="cp27-* pp27-* *-manylinux_i686"
+    - CIBW_SKIP="cp27-* pp27-* cp35-* *-manylinux_i686"
     # Install dependencies on Linux and OSX
     - CIBW_BEFORE_BUILD="bash -x .github/library_builders.sh"
     # for the openPMD-api build, CMake shall search for
@@ -47,15 +47,15 @@ jobs:
     #    - CIBW_BUILD="*_s390x"
 
     # and a build for old macOS versions (10.13 with xcode9.4.1 ~2017)
-    - os: osx
-      osx_image: xcode9.4
-      language: shell
-      python: 3.6
+    # - os: osx
+    #   osx_image: xcode9.4
+    #   language: shell
+    #   python: 3.6
 
 install:
   - git clone --branch ${OPENPMD_GIT_REF} --depth 1 https://github.com/openPMD/openPMD-api.git src
   - cp library_builders.sh src/.github/
-  - python3 -m pip install cibuildwheel==1.5.5
+  - python3 -m pip install cibuildwheel==1.7.1
 
 script:
   - cd src
