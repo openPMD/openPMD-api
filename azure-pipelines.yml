@@ -241,8 +241,8 @@ jobs:
 #      echo '#include <openPMD/openPMD.hpp>' > main.cu
 #      echo 'int main(){ return 0; }' >> main.cu
 #      cat main.cu
-#      nvcc --Werror all-warnings -std=c++11 main.cu
 #      nvcc --Werror all-warnings -std=c++14 main.cu
+#      nvcc --Werror all-warnings -std=c++17 main.cu
 
 - job: linux_spack_nompi
   displayName: Ubuntu spack w/o MPI
@@ -336,8 +336,8 @@ jobs:
       echo 'int main(){ return 0; }' >> main.cu
       cat main.cu
       export PATH=/usr/local/cuda/bin:$PATH
-      nvcc -std=c++11 -I$HOME/sw/openPMD-api/include main.cu
       nvcc -std=c++14 -I$HOME/sw/openPMD-api/include main.cu
+#      nvcc -std=c++17 -I$HOME/sw/openPMD-api/include main.cu
 # CUDA 10.2+:
 #     nvcc --Werror all-warnings -std c++14 main.cu
 # cudatoolkit-dev: conda install has permission problems creating some symlinks
@@ -362,8 +362,8 @@ jobs:
       echo 'int main(){ return 0; }' >> main.cu
       cat main.cu
       export PATH=/usr/local/cuda/bin:$PATH
-      nvcc -std=c++11 --Werror all-warnings -I$HOME/sw/openPMD-api/include -Xcompiler "$(mpic++ -showme:compile)" main.cu
       nvcc -std=c++14 --Werror all-warnings -I$HOME/sw/openPMD-api/include -Xcompiler "$(mpic++ -showme:compile)" main.cu
+#      nvcc -std=c++17 --Werror all-warnings -I$HOME/sw/openPMD-api/include -Xcompiler "$(mpic++ -showme:compile)" main.cu
 # Ubuntu Disco (19.04) and later: libadios-openmpi-dev
 
 - job: linux_source_oneAPI_icc
@@ -392,8 +392,8 @@ jobs:
       echo 'int main(){ return 0; }' >> main.cpp
       cat main.cpp
       export PATH=/usr/local/cuda/bin:$PATH
-      icc -std=c++11 -I$HOME/sw/openPMD-api/include main.cpp
       icc -std=c++14 -I$HOME/sw/openPMD-api/include main.cpp
+      icc -std=c++17 -I$HOME/sw/openPMD-api/include main.cpp
 # Ref.: https://github.com/rscohn2/oneapi-ci
 
 
