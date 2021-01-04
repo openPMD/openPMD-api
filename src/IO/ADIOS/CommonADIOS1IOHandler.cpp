@@ -557,12 +557,15 @@ CommonADIOS1IOHandlerImpl::openFile(Writable* writable,
     if( m_groups.find(filePath) == m_groups.end() )
         m_groups[filePath] = initialize_group(name);
 
-    ADIOS_FILE* f = open_read(name);
+    if( m_openReadFileHandles.find(filePath) == m_openReadFileHandles.end() )
+    {
+        ADIOS_FILE* f = open_read(name);
+        m_openReadFileHandles[filePath] = f;
+    }
 
     writable->written = true;
     writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >("/");
 
-    m_openReadFileHandles[filePath] = f;
     m_filePaths[writable] = filePath;
     m_existsOnDisk[filePath] = true;
 }
