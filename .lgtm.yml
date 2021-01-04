@@ -1,3 +1,5 @@
+# docs:
+#   https://help.semmle.com/lgtm-enterprise/user/help/lgtm.yml-configuration-file.html#example-of-complete-lgtmyml-file
 extraction:
   cpp:
     prepare:
@@ -6,3 +8,5 @@ extraction:
         - libopenmpi-dev
         - libhdf5-openmpi-dev
         - libadios-openmpi-dev
+    after_prepare: # make sure lgtm.com doesn't call setup.py (for which they use a python2 atm)
+      - rm -f setup.py
