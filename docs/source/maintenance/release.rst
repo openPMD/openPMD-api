@@ -49,7 +49,7 @@ PyPI
 
 Our PyPI release provides our Python bindings in a self-contained way, without providing access to the C++ API.
 On PyPI, we upload a source package with all build-variants to default (``AUTO``), but MPI (``OFF``) unless activated.
-Furthermore, we build portable, serial (non-MPI) binary wheels for Linux (`manylinux2010 <https://github.com/pypa/manylinux>`_) and macOS (10.9+).
+Furthermore, we build portable, serial (non-MPI) binary wheels for Linux (`manylinux2010 <https://github.com/pypa/manylinux>`_), macOS (10.9+) and Windows.
 
 The deployment of our binary wheels is automated via `cibuildwheel <https://github.com/joerick/cibuildwheel>`_.
 Update the version number with a new git tag in the ``wheels`` `branch <https://github.com/openPMD/openPMD-api/blob/136f2363afcd95541d2a6edb343164caa6b530dd/.github/workflows/build.yml#L17>`_ to trigger an automated deployment to `pypi.org/project/openPMD-api <https://pypi.org/project/openPMD-api>`_ .
@@ -65,7 +65,7 @@ Example workflow for a new release:
 ReadTheDocs
 -----------
 
-Activate the new version in `Projects - openPMD-api - Versions <https://readthedocs.org/projects/openpmd-api/versions>`_ which triggers its build.
+Activate the new version in `Projects - openPMD-api - Versions <https://readthedocs.org/projects/openpmd-api/versions>`_, which triggers its build.
 
 And after the new version was built, and if this version was not a backport to an older release series, set the new default version in `Admin - Advanced Settings <https://readthedocs.org/dashboard/openpmd-api/advanced/>`_.
 
