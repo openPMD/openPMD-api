@@ -151,7 +151,7 @@ function build_zfp {
     cd build-zfp
     PY_BIN=$(which python)
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
-    PATH=${CMAKE_BIN}:${PATH} cmake -DBUILD_SHARED=OFF -DZFP_WITH_OPENMP=OFF -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} ../zfp-*
+    PATH=${CMAKE_BIN}:${PATH} cmake -DBUILD_SHARED_LIBS=OFF -DZFP_WITH_OPENMP=OFF -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} ../zfp-*
     make -j${CPU_COUNT}
     make install
     cd -
