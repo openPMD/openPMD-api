@@ -927,11 +927,15 @@ namespace openPMD
         auto name = removeSlashes( parameters.name );
         auto & jsonLoc = obtainJsonContents( writable )["attributes"];
         setAndGetFilePosition( writable );
+        std::string error_msg("[JSON] No such attribute '");
+        error_msg.append(name)
+                 .append("' in the given location '")
+                 .append(jsonLoc.dump())
+                 .append("'.");
         VERIFY_ALWAYS( hasKey(
             jsonLoc,
             name
-        ),
-            "[JSON] No such attribute in the given location." )
+        ), error_msg )
         auto & j = jsonLoc[name];
         try
         {
