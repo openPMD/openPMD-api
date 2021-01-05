@@ -48,7 +48,7 @@ class CMakeBuild(build_ext):
             os.path.join(extdir, "openpmd_api"),
             # '-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=' + extdir,
             '-DCMAKE_PYTHON_OUTPUT_DIRECTORY=' + extdir,
-            '-DPython_ROOT_DIR=' + sys.exec_prefix,
+            '-DPython_EXECUTABLE=' + sys.executable,
             '-DopenPMD_USE_PYTHON:BOOL=ON',
             # variants
             '-DopenPMD_USE_MPI:BOOL=' + openPMD_USE_MPI,
