@@ -370,6 +370,9 @@ class APITest(unittest.TestCase):
         self.assertAlmostEqual(series.get_attribute("longdouble_c"),
                                ctypes.c_longdouble(6.e200).value)
 
+        # check listing API
+        io.list_series(series)
+
     def testAttributes(self):
         for ext in io.file_extensions:
             self.attributeRoundTrip(ext)
