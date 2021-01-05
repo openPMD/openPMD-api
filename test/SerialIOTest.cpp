@@ -1112,8 +1112,7 @@ void test_complex(const std::string & backend) {
     if( backend != "json" ) //! @todo clarify that complex data is not N+1 data in JSON
     {
         Series list{ "../samples/serial_write_complex." + backend, Access::READ_ONLY };
-        if( list.backend() != "ADIOS1" ) // FIXME: "Internal error: Failed to inquire about ADIOS variable during dataset opening"
-            helper::listSeries( list );
+        helper::listSeries( list );
     }
 }
 
@@ -1534,8 +1533,7 @@ TEST_CASE( "patch_test", "[serial]" )
         patch_test( t );
 
         Series list{"../samples/serial_patch." + t, Access::READ_ONLY};
-        if( list.backend() != "ADIOS1" ) // FIXME: "Internal error: Failed to inquire about ADIOS variable during dataset opening"
-            helper::listSeries(list);
+        helper::listSeries(list);
     }
 }
 
