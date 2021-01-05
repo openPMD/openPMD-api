@@ -20,6 +20,9 @@
  */
 #include "openPMD/ChunkInfo.hpp"
 
+#include <utility>
+
+
 namespace openPMD
 {
 ChunkInfo::ChunkInfo( Offset offset_in, Extent extent_in )

@@ -20,9 +20,10 @@
  */
 #pragma once
 
+#include "openPMD/Dataset.hpp" // Offset, Extent
+
 #include <vector>
 
-#include "openPMD/Dataset.hpp" // Offset, Extent
 
 namespace openPMD
 {
