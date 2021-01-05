@@ -775,7 +775,7 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode( )
         return adios2::Mode::Read;
     case Access::READ_WRITE:
         std::cerr << "ADIOS2 does currently not yet implement ReadWrite "
-                     "(Append) mode."
+                     "(Append) mode. "
                   << "Replacing with Read mode." << std::endl;
         return adios2::Mode::Read;
     default:
