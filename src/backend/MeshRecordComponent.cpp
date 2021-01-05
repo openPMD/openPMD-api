@@ -34,6 +34,7 @@ MeshRecordComponent::read()
 {
     if ( *hasBeenRead )
     {
+        dirty() = false;
         return;
     }
     using DT = Datatype;

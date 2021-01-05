@@ -103,6 +103,7 @@ Record::read()
             RecordComponent& rc = (*this)[component];
             if ( *rc.hasBeenRead )
             {
+                dirty() = false;
                 continue;
             }
             pOpen.path = component;
