@@ -27,40 +27,43 @@
 using namespace openPMD;
 
 void
-write_and_read_many_iterations( std::string const & ext )
-{
+write_and_read_many_iterations( std::string const & ext ) {
     constexpr unsigned int nIterations = 1000;
     std::string filename = "../samples/many_iterations/many_iterations_%T." + ext;
 
-    std::vector< float > data( 10 );
-    std::iota( data.begin(), data.end(), 0. );
-    Dataset ds{ Datatype::FLOAT, { 10 } };
+    std::vector<float> data(10);
+    std::iota(data.begin(), data.end(), 0.);
+    Dataset ds{Datatype::FLOAT, {10}};
 
-    Series write( filename, Access::CREATE );
-    for( unsigned int i = 0; i < nIterations; ++i )
     {
-        // std::cout << "Putting iteration " << i << std::endl;
-        Iteration it = write.iterations[ i ];
-        auto E_x = it.meshes[ "E" ][ "x" ];
-        E_x.resetDataset( ds );
-        E_x.storeChunk( data, { 0 }, { 10 } );
-        it.close();
-    }
+        Series write(filename, Access::CREATE);
+        for (unsigned int i = 0; i < nIterations; ++i) {
+            // std::cout << "Putting iteration " << i << std::endl;
+            Iteration it = write.iterations[i];
+            auto E_x = it.meshes["E"]["x"];
+            E_x.resetDataset(ds);
+            E_x.storeChunk(data, {0}, {10});
+            it.close();
+        }
+        // ~Series intentionally not yet called
 
-    Series read( filename, Access::READ_ONLY );
-    for( auto iteration : read.iterations )
-    {
-        // std::cout << "Reading iteration " << iteration.first << std::endl;
-        auto E_x = iteration.second.meshes[ "E" ][ "x" ];
-        auto chunk = E_x.loadChunk< float >( { 0 }, { 10 } );
-        iteration.second.close();
+        Series read(filename, Access::READ_ONLY);
+        for (auto iteration : read.iterations) {
+            // std::cout << "Reading iteration " << iteration.first << std::endl;
+            auto E_x = iteration.second.meshes["E"]["x"];
+            auto chunk = E_x.loadChunk<float>({0}, {10});
+            iteration.second.close();
 
-        auto array = chunk.get();
-        for( size_t i = 0; i < 10; ++i )
-        {
-            REQUIRE( array[ i ] == float( i ) );
+            auto array = chunk.get();
+            for (size_t i = 0; i < 10; ++i) {
+                REQUIRE(array[i] == float(i));
+            }
         }
     }
+
+    // FIXME
+    //Series list( filename, Access::READ_ONLY );
+    //helper::listSeries( list );
 }
 
 TEST_CASE( "write_and_read_many_iterations", "[serial]" )
@@ -260,6 +263,12 @@ close_iteration_test( std::string file_ending )
         auto read_again = E_x_read.loadChunk< int >( { 0, 0 }, { 2, 2 } );
         REQUIRE_THROWS( read.flush() );
     }
+
+    // FIXME
+    //{
+    //    Series list{ name, Access::READ_ONLY };
+    //    helper::listSeries( list );
+    //}
 }
 
 TEST_CASE( "close_iteration_test", "[serial]" )
@@ -463,6 +472,11 @@ empty_dataset_test( std::string file_ending )
         REQUIRE(makeEmpty_resetDataset_dim3_notallzero.getExtent() == Extent{1,2,0});
         REQUIRE(isSame(makeEmpty_resetDataset_dim3_notallzero.getDatatype(), Datatype::LONG_DOUBLE));
     }
+
+    {
+        Series list{ "../samples/empty_datasets." + file_ending, Access::READ_ONLY };
+        helper::listSeries( list );
+    }
 }
 
 TEST_CASE( "empty_dataset_test", "[serial]" )
@@ -608,6 +622,11 @@ void constant_scalar(std::string file_ending)
         s.flush();
         for( int idx = 0; idx < 1*2*3; ++idx )
             REQUIRE( E_x_value.get()[idx] == static_cast< float >(13.37) );
+    }
+
+    {
+        Series list{ "../samples/constant_scalar." + file_ending, Access::READ_ONLY };
+        helper::listSeries( list );
     }
 }
 
@@ -1021,6 +1040,8 @@ TEST_CASE( "write_test", "[serial]" )
     for (auto const & t: getFileExtensions())
     {
         write_test( t );
+        Series list{ "../samples/serial_write." + t, Access::READ_ONLY };
+        helper::listSeries( list );
     }
 }
 
@@ -1086,6 +1107,13 @@ void test_complex(const std::string & backend) {
             i.flush();
             REQUIRE(rcldbl.get()[2] == std::complex<long double>(7., -6.));
         }
+    }
+
+    if( backend != "json" ) //! @todo clarify that complex data is not N+1 data in JSON
+    {
+        Series list{ "../samples/serial_write_complex." + backend, Access::READ_ONLY };
+        if( list.backend() != "ADIOS1" ) // FIXME: "Internal error: Failed to inquire about ADIOS variable during dataset opening"
+            helper::listSeries( list );
     }
 }
 
@@ -1345,6 +1373,11 @@ void fileBased_write_test(const std::string & backend)
         Series s = Series("../samples/subdir/serial_fileBased_write%08T." + backend, Access::READ_ONLY);
         REQUIRE(s.iterations.size() == 6);
     }
+
+    {
+        Series list{ "../samples/subdir/serial_fileBased_write%08T." + backend, Access::READ_ONLY };
+        helper::listSeries( list );
+    }
 }
 
 TEST_CASE( "fileBased_write_test", "[serial]" )
@@ -1427,6 +1460,9 @@ TEST_CASE( "sample_write_thetaMode", "[serial][thetaMode]" )
     for (auto const & t: getFileExtensions())
     {
         sample_write_thetaMode( t );
+
+        Series list{ std::string("../samples/thetaMode_%05T.").append(t), Access::READ_ONLY };
+        helper::listSeries( list );
     }
 }
 
@@ -1447,6 +1483,10 @@ void bool_test(const std::string & backend)
         REQUIRE(std::count(attrs.begin(), attrs.end(), "Bool attribute (false)") == 1);
         REQUIRE(o.getAttribute("Bool attribute (true)").get< bool >() == true);
         REQUIRE(o.getAttribute("Bool attribute (false)").get< bool >() == false);
+    }
+    {
+        Series list{ "../samples/serial_bool." + backend, Access::READ_ONLY };
+        helper::listSeries( list );
     }
 }
 
@@ -1492,6 +1532,13 @@ TEST_CASE( "patch_test", "[serial]" )
     for (auto const & t: getFileExtensions())
     {
         patch_test( t );
+
+        if( t != "json" ) // FIXME: "[JSON] No such attribute in the given location."
+        {
+            Series list{"../samples/serial_patch." + t, Access::READ_ONLY};
+            if( list.backend() != "ADIOS1" ) // FIXME: "Internal error: Failed to inquire about ADIOS variable during dataset opening"
+                helper::listSeries(list);
+        }
     }
 }
 
@@ -1653,6 +1700,10 @@ TEST_CASE( "empty_alternate_fbpic", "[serial][hdf5]" )
             REQUIRE(empty_rc.getDimensionality() == 1);
             REQUIRE(empty_rc.getExtent() == Extent{0});
             REQUIRE(isSame(empty_rc.getDatatype(), determineDatatype< double >()));
+        }
+        {
+            Series list{ "../samples/issue-sample/empty_alternate_fbpic.h5", Access::READ_ONLY };
+            helper::listSeries( list );
         }
     } catch (no_such_file_error& e)
     {
