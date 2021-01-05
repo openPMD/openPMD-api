@@ -710,8 +710,12 @@ CommonADIOS1IOHandlerImpl::openDataset(Writable* writable,
     ADIOS_VARINFO* vi;
     vi = adios_inq_var(f,
                        datasetname.c_str());
-    VERIFY(adios_errno == err_no_error, "[ADIOS1] Internal error: Failed to inquire about ADIOS variable during dataset opening");
-    VERIFY(vi != nullptr, "[ADIOS1] Internal error: Failed to inquire about ADIOS variable during dataset opening");
+    std::string error_string("[ADIOS1] Internal error: ");
+    error_string.append("Failed to inquire about ADIOS variable '")
+                .append(datasetname)
+                .append("' during dataset opening");
+    VERIFY(adios_errno == err_no_error, error_string);
+    VERIFY(vi != nullptr, error_string);
 
     Datatype dtype;
 
