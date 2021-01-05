@@ -333,6 +333,7 @@ Mesh::read()
             MeshRecordComponent& rc = (*this)[component];
             if ( *rc.hasBeenRead )
             {
+                dirty() = false;
                 continue;
             }
             pOpen.path = component;
@@ -351,6 +352,7 @@ Mesh::read()
             MeshRecordComponent & rc = ( *this )[ component ];
             if( *rc.hasBeenRead )
             {
+                dirty() = false;
                 continue;
             }
             dOpen.name = component;

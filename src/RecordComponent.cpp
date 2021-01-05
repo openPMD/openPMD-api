@@ -189,6 +189,7 @@ RecordComponent::read()
 {
     if ( *hasBeenRead )
     {
+        dirty() = false;
         return;
     }
     readBase();
