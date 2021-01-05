@@ -1081,8 +1081,6 @@ void test_complex(const std::string & backend) {
         o.flush();
     }
 
-    //! @todo clarify that complex data is not N+1 data in JSON
-    if( backend != "json" )
     {
         Series i = Series("../samples/serial_write_complex." + backend, Access::READ_ONLY);
         REQUIRE(i.getAttribute("lifeIsComplex").get< std::complex<double> >() == std::complex<double>(4.56, 7.89));
@@ -1107,7 +1105,6 @@ void test_complex(const std::string & backend) {
         }
     }
 
-    if( backend != "json" ) //! @todo clarify that complex data is not N+1 data in JSON
     {
         Series list{ "../samples/serial_write_complex." + backend, Access::READ_ONLY };
         helper::listSeries( list );
