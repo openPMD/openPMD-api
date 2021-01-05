@@ -61,9 +61,8 @@ write_and_read_many_iterations( std::string const & ext ) {
         }
     }
 
-    // FIXME
-    //Series list( filename, Access::READ_ONLY );
-    //helper::listSeries( list );
+    Series list( filename, Access::READ_ONLY );
+    helper::listSeries( list );
 }
 
 TEST_CASE( "write_and_read_many_iterations", "[serial]" )
@@ -264,11 +263,10 @@ close_iteration_test( std::string file_ending )
         REQUIRE_THROWS( read.flush() );
     }
 
-    // FIXME
-    //{
-    //    Series list{ name, Access::READ_ONLY };
-    //    helper::listSeries( list );
-    //}
+    {
+        Series list{ name, Access::READ_ONLY };
+        helper::listSeries( list );
+    }
 }
 
 TEST_CASE( "close_iteration_test", "[serial]" )
