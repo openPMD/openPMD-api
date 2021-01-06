@@ -248,8 +248,15 @@ endif()
 # TODO: Check if ADIOS2 is parallel when openPMD_HAVE_MPI is ON
 
 # external library: pybind11 (optional)
+set(_PY_DEV_MODULE Development.Module)
+if(CMAKE_VERSION VERSION_LESS 3.18.0)
+    # over-specification needed for CMake<3.18
+    #   https://pybind11.readthedocs.io/en/latest/compiling.html#findpython-mode
+    #   https://cmake.org/cmake/help/v3.18/module/FindPython.html
+    set(_PY_DEV_MODULE Development)
+endif()
 if(openPMD_USE_PYTHON STREQUAL AUTO)
-    find_package(Python 3.6.0 COMPONENTS Interpreter Development)
+    find_package(Python 3.6.0 COMPONENTS Interpreter ${_PY_DEV_MODULE})
     if(Python_FOUND)
         if(openPMD_USE_INTERNAL_PYBIND11)
             add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11")
@@ -268,7 +275,7 @@ if(openPMD_USE_PYTHON STREQUAL AUTO)
         set(openPMD_HAVE_PYTHON FALSE)
     endif()
 elseif(openPMD_USE_PYTHON)
-    find_package(Python COMPONENTS Interpreter Development REQUIRED)
+    find_package(Python COMPONENTS Interpreter ${_PY_DEV_MODULE} REQUIRED)
     if(openPMD_USE_INTERNAL_PYBIND11)
         add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/pybind11")
         set(openPMD_HAVE_PYTHON TRUE)
