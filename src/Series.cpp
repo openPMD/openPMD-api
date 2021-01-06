@@ -1069,12 +1069,33 @@ Series::advance(
             flushFileBased( begin, end );
             break;
     }
-    *iteration.m_closed = oldCloseStatus;
+    if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend )
+    {
+        *iteration.m_closed = oldCloseStatus;
+    }
+    else if( oldCloseStatus == Iteration::CloseStatus::ClosedInBackend )
+    {
+        // all is well, nothing to do
+        return AdvanceStatus::OK;
+    }
 
     Parameter< Operation::ADVANCE > param;
-    param.mode = mode;
-    IOTask task( &file, param );
-    IOHandler->enqueue( task );
+    if( *iteration.m_closed == Iteration::CloseStatus::ClosedTemporarily &&
+        *m_iterationEncoding == IterationEncoding::fileBased )
+    {
+        /*
+         * If the Series has file-based iteration layout and the file has not
+         * been opened by flushFileFileBased(), there's no use in nagging the
+         * backend to do anything.
+         */
+        param.status = std::make_shared< AdvanceStatus >( AdvanceStatus::OK );
+    }
+    else
+    {
+        param.mode = mode;
+        IOTask task( &file, param );
+        IOHandler->enqueue( task );
+    }
 
 
     if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend &&

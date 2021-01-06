@@ -195,7 +195,21 @@ Iteration::open()
 bool
 Iteration::closed() const
 {
-    return *m_closed != CloseStatus::Open;
+    switch( *m_closed )
+    {
+        case CloseStatus::Open:
+        /*
+         * Temporarily closing a file is something that the openPMD API
+         * does for optimization purposes.
+         * Logically to the user, it is still open.
+         */
+        case CloseStatus::ClosedTemporarily:
+            return false;
+        case CloseStatus::ClosedInFrontend:
+        case CloseStatus::ClosedInBackend:
+            return true;
+    }
+    throw std::runtime_error( "Unreachable!" );
 }
 
 bool
