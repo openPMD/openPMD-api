@@ -585,10 +585,17 @@ namespace openPMD
         refreshFileFromParent( writable );
         auto name = removeSlashes( parameters.name );
         auto & datasetJson = obtainJsonContents( writable->parent )[name];
-        setAndGetFilePosition(
-            writable,
-            name
-        );
+        /*
+         * If the dataset has been opened previously, the path needs not be
+         * set again.
+         */
+        if(! writable->abstractFilePosition )
+        {
+            setAndGetFilePosition(
+                writable,
+                name
+            );
+        }
 
         *parameters.dtype =
             Datatype( stringToDatatype( datasetJson["datatype"].get< std::string >( ) ) );
