@@ -1533,12 +1533,9 @@ TEST_CASE( "patch_test", "[serial]" )
     {
         patch_test( t );
 
-        if( t != "json" ) // FIXME: "[JSON] No such attribute in the given location."
-        {
-            Series list{"../samples/serial_patch." + t, Access::READ_ONLY};
-            if( list.backend() != "ADIOS1" ) // FIXME: "Internal error: Failed to inquire about ADIOS variable during dataset opening"
-                helper::listSeries(list);
-        }
+        Series list{"../samples/serial_patch." + t, Access::READ_ONLY};
+        if( list.backend() != "ADIOS1" ) // FIXME: "Internal error: Failed to inquire about ADIOS variable during dataset opening"
+            helper::listSeries(list);
     }
 }
 

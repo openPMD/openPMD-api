@@ -585,10 +585,17 @@ namespace openPMD
         refreshFileFromParent( writable );
         auto name = removeSlashes( parameters.name );
         auto & datasetJson = obtainJsonContents( writable->parent )[name];
-        setAndGetFilePosition(
-            writable,
-            name
-        );
+        /*
+         * If the dataset has been opened previously, the path needs not be
+         * set again.
+         */
+        if(! writable->abstractFilePosition )
+        {
+            setAndGetFilePosition(
+                writable,
+                name
+            );
+        }
 
         *parameters.dtype =
             Datatype( stringToDatatype( datasetJson["datatype"].get< std::string >( ) ) );
@@ -927,11 +934,15 @@ namespace openPMD
         auto name = removeSlashes( parameters.name );
         auto & jsonLoc = obtainJsonContents( writable )["attributes"];
         setAndGetFilePosition( writable );
+        std::string error_msg("[JSON] No such attribute '");
+        error_msg.append(name)
+                 .append("' in the given location '")
+                 .append(jsonLoc.dump())
+                 .append("'.");
         VERIFY_ALWAYS( hasKey(
             jsonLoc,
             name
-        ),
-            "[JSON] No such attribute in the given location." )
+        ), error_msg )
         auto & j = jsonLoc[name];
         try
         {
