@@ -705,13 +705,19 @@ CommonADIOS1IOHandlerImpl::openDataset(Writable* writable,
     if( auxiliary::starts_with(name, '/') )
         name = auxiliary::replace_first(name, "/", "");
 
-    std::string datasetname = concrete_bp1_file_position(writable) + name;
+    std::string datasetname = writable->abstractFilePosition
+        ? concrete_bp1_file_position(writable)
+        : concrete_bp1_file_position(writable) + name;
 
     ADIOS_VARINFO* vi;
     vi = adios_inq_var(f,
                        datasetname.c_str());
-    VERIFY(adios_errno == err_no_error, "[ADIOS1] Internal error: Failed to inquire about ADIOS variable during dataset opening");
-    VERIFY(vi != nullptr, "[ADIOS1] Internal error: Failed to inquire about ADIOS variable during dataset opening");
+    std::string error_string("[ADIOS1] Internal error: ");
+    error_string.append("Failed to inquire about ADIOS variable '")
+                .append(datasetname)
+                .append("' during dataset opening");
+    VERIFY(adios_errno == err_no_error, error_string);
+    VERIFY(vi != nullptr, error_string);
 
     Datatype dtype;
 
@@ -828,7 +834,11 @@ CommonADIOS1IOHandlerImpl::openDataset(Writable* writable,
     *parameters.extent = e;
 
     writable->written = true;
-    writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >(name);
+    if( !writable->abstractFilePosition )
+    {
+        writable->abstractFilePosition
+            = std::make_shared< ADIOS1FilePosition >(name);
+    }
 
     m_openReadFileHandles[res->second] = f;
     m_filePaths[writable] = res->second;
