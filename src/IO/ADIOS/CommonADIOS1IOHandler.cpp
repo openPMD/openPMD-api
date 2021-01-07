@@ -705,7 +705,9 @@ CommonADIOS1IOHandlerImpl::openDataset(Writable* writable,
     if( auxiliary::starts_with(name, '/') )
         name = auxiliary::replace_first(name, "/", "");
 
-    std::string datasetname = concrete_bp1_file_position(writable) + name;
+    std::string datasetname = writable->abstractFilePosition
+        ? concrete_bp1_file_position(writable)
+        : concrete_bp1_file_position(writable) + name;
 
     ADIOS_VARINFO* vi;
     vi = adios_inq_var(f,
@@ -832,7 +834,11 @@ CommonADIOS1IOHandlerImpl::openDataset(Writable* writable,
     *parameters.extent = e;
 
     writable->written = true;
-    writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >(name);
+    if( !writable->abstractFilePosition )
+    {
+        writable->abstractFilePosition
+            = std::make_shared< ADIOS1FilePosition >(name);
+    }
 
     m_openReadFileHandles[res->second] = f;
     m_filePaths[writable] = res->second;
