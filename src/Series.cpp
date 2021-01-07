@@ -1073,9 +1073,15 @@ Series::advance(
     {
         *iteration.m_closed = oldCloseStatus;
     }
-    else if( oldCloseStatus == Iteration::CloseStatus::ClosedInBackend )
+    else if(
+        oldCloseStatus == Iteration::CloseStatus::ClosedInBackend &&
+        *m_iterationEncoding == IterationEncoding::fileBased )
     {
-        // all is well, nothing to do
+        /*
+         * In file-based iteration encoding, we want to avoid accidentally
+         * opening an iteration's file by beginning a step on it.
+         * So, return now.
+         */
         return AdvanceStatus::OK;
     }
 
