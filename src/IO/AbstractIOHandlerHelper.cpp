@@ -27,10 +27,39 @@
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
 #include "openPMD/IO/JSON/JSONIOHandler.hpp"
+
+#include <fstream>
 #include <nlohmann/json.hpp>
 
 namespace openPMD
 {
+namespace
+{
+    nlohmann::json
+    parseOptions( std::string const & options )
+    {
+        if( options.at( 0 ) == '@' )
+        {
+            std::fstream handle;
+            std::string filename = options;
+            filename.erase( 0, 1 );
+            handle.open( filename, std::ios_base::in );
+            nlohmann::json res;
+            handle >> res;
+            if( !handle.good() )
+            {
+                throw std::runtime_error(
+                    "Failed reading JSON config from file " + filename + "." );
+            }
+            return res;
+        }
+        else
+        {
+            return nlohmann::json::parse( options );
+        }
+    }
+} // namespace
+
 #if openPMD_HAVE_MPI
     std::shared_ptr< AbstractIOHandler >
     createIOHandler(
@@ -40,7 +69,7 @@ namespace openPMD
         MPI_Comm comm,
         std::string const & options )
     {
-        nlohmann::json optionsJson = nlohmann::json::parse( options );
+        nlohmann::json optionsJson = parseOptions( options );
         switch( format )
         {
             case Format::HDF5:
@@ -71,7 +100,7 @@ namespace openPMD
         Format format,
         std::string const & options )
     {
-        nlohmann::json optionsJson = nlohmann::json::parse( options );
+        nlohmann::json optionsJson = parseOptions( options );
         switch( format )
         {
             case Format::HDF5:

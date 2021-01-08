@@ -14,6 +14,7 @@
 #include <array>
 #include <cmath>
 #include <complex>
+#include <fstream>
 #include <iostream>
 #include <limits>
 #include <list>
@@ -3034,8 +3035,14 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
 )END";
     auto const read = []( std::string const & filename,
                           std::string const & config ) {
+        // let's write the config to a file and read it from there
+        std::fstream file;
+        file.open( "../samples/read_config.json", std::ios_base::out );
+        file << config;
+        file.flush();
         openPMD::Series series(
-            filename, openPMD::Access::READ_ONLY, config );
+            filename, openPMD::Access::READ_ONLY,
+            "@../samples/read_config.json" );
         auto E_x = series.iterations[ 0 ].meshes[ "E" ][ "x" ];
         REQUIRE( E_x.getDimensionality() == 1 );
         REQUIRE( E_x.getExtent()[ 0 ] == 1000 );
