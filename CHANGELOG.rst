@@ -3,6 +3,27 @@
 Changelog
 =========
 
+0.13.2
+------
+**Date:** TBA
+
+[Title]
+
+[Summary]
+
+Changes to "0.13.1"
+^^^^^^^^^^^^^^^^^^^
+
+Features
+""""""""
+
+Bug Fixes
+"""""""""
+
+Other
+"""""
+
+
 0.13.1
 ------
 **Date:** 2020-01-08
