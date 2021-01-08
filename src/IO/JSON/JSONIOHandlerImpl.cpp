@@ -281,7 +281,21 @@ namespace openPMD
         {
             throw std::runtime_error( "[JSON] The specified location contains no valid dataset" );
         }
-        j["data"] = initializeNDArray( parameters.extent );
+        switch( stringToDatatype( j[ "datatype" ].get< std::string >() ) )
+        {
+            case Datatype::CFLOAT:
+            case Datatype::CDOUBLE:
+            case Datatype::CLONG_DOUBLE:
+            {
+                auto complexExtent = parameters.extent;
+                complexExtent.push_back( 2 );
+                j["data"] = initializeNDArray( complexExtent );
+                break;
+            }
+            default:
+                j["data"] = initializeNDArray( parameters.extent );
+                break;
+        }
         writable->written = true;
 
     }
