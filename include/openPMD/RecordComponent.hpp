@@ -328,7 +328,7 @@ RecordComponent::loadChunk(std::shared_ptr< T > data, Offset o, Extent e, double
     for( uint8_t i = 0; i < dim; ++i )
         if( dse[i] < offset[i] + extent[i] )
             throw std::runtime_error("Chunk does not reside inside dataset (Dimension on index " + std::to_string(i)
-                                     + " - DS: " + std::to_string(dse[i])
+                                     + ". DS: " + std::to_string(dse[i])
                                      + " - Chunk: " + std::to_string(offset[i] + extent[i])
                                      + ")");
     if( !data )
@@ -392,7 +392,7 @@ RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
     for( uint8_t i = 0; i < dim; ++i )
         if( dse[i] < o[i] + e[i] )
             throw std::runtime_error("Chunk does not reside inside dataset (Dimension on index " + std::to_string(i)
-                                     + " - DS: " + std::to_string(dse[i])
+                                     + ". DS: " + std::to_string(dse[i])
                                      + " - Chunk: " + std::to_string(o[i] + e[i])
                                      + ")");
 
