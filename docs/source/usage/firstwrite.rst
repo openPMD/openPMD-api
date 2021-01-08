@@ -21,7 +21,7 @@ Step-by-step: how to write scientific data with openPMD-api?
            clear: both;
        }
        /* only show first C++14 and Python Headline */
-       #first-write > .section > .section:not(#c-11):not(#python) > h3 {
+       #first-write > .section > .section:not(#c-14):not(#python) > h3 {
            display: none;
        }
    }
