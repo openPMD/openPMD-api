@@ -5,23 +5,40 @@ Changelog
 
 0.13.1
 ------
-**Date:** TBA
+**Date:** 2020-01-08
 
-[Title]
+Fix openPMD-ls & Iteration open/close
 
-[Summary]
+This release fixes regressions in the series "ls" functionality and tools, related to ``Iteration::open()`` and ``::close()`` functionality.
+We also add support to read back complex numbers with JSON.
 
 Changes to "0.13.0"
 ^^^^^^^^^^^^^^^^^^^
 
-Features
-""""""""
-
 Bug Fixes
 """""""""
 
+- fix ``Iteration::close()`` and ``helper::listSeries``` / ``list_series`` / ``openPMD-ls`` #878 #880 #882 #883 #884
+- ``setup.py``: stay with ``Python_EXECUTABLE`` #875
+- ``FindPython.cmake``: Avoid overspecifying ``Development.Module`` with CMake 3.18+ #868
+- ``ChunkInfo``:
+
+  - fix includes #879
+  - tests: adapt ``sourceID`` to handle nondeterministic subfile order #871
+- ADIOS1: fix ``Iteration::open()`` #864
+- JSON: support complex datatype reads #885
+- Docs: fix formatting of first read/write #892
+
 Other
 """""
+
+- bounds check: more readable error message #890
+- ADIOS2: add a missing space in an error message #881
+- Docs: released pypi wheels include windows #869
+- CI:
+
+  - LGTM: fix C++ #873
+  - Brew returns non-zero if already installed #877
 
 
 0.13.0
