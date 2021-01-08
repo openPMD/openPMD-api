@@ -227,7 +227,21 @@ namespace openPMD
             );
             auto & dset = jsonVal[name];
             dset["datatype"] = datatypeToString( parameter.dtype );
-            dset["data"] = initializeNDArray( parameter.extent );
+            switch( parameter.dtype )
+            {
+                case Datatype::CFLOAT:
+                case Datatype::CDOUBLE:
+                case Datatype::CLONG_DOUBLE:
+                {
+                    auto complexExtent = parameter.extent;
+                    complexExtent.push_back( 2 );
+                    dset["data"] = initializeNDArray( complexExtent );
+                    break;
+                }
+                default:
+                    dset["data"] = initializeNDArray( parameter.extent );
+                    break;
+            }
             writable->written = true;
             m_dirty.emplace( file );
         }
@@ -248,7 +262,7 @@ namespace openPMD
 
         try
         {
-            auto datasetExtent = getExtent( j["data"] );
+            auto datasetExtent = getExtent( j );
             VERIFY_ALWAYS( datasetExtent.size( ) ==
                            parameters.extent
                                .size( ),
@@ -267,7 +281,21 @@ namespace openPMD
         {
             throw std::runtime_error( "[JSON] The specified location contains no valid dataset" );
         }
-        j["data"] = initializeNDArray( parameters.extent );
+        switch( stringToDatatype( j[ "datatype" ].get< std::string >() ) )
+        {
+            case Datatype::CFLOAT:
+            case Datatype::CDOUBLE:
+            case Datatype::CLONG_DOUBLE:
+            {
+                auto complexExtent = parameters.extent;
+                complexExtent.push_back( 2 );
+                j["data"] = initializeNDArray( complexExtent );
+                break;
+            }
+            default:
+                j["data"] = initializeNDArray( parameters.extent );
+                break;
+        }
         writable->written = true;
 
     }
@@ -599,9 +627,8 @@ namespace openPMD
 
         *parameters.dtype =
             Datatype( stringToDatatype( datasetJson["datatype"].get< std::string >( ) ) );
-        *parameters.extent = getExtent( datasetJson["data"] );
+        *parameters.extent = getExtent( datasetJson );
         writable->written = true;
-
     }
 
 
@@ -1195,11 +1222,23 @@ namespace openPMD
     Extent JSONIOHandlerImpl::getExtent( nlohmann::json & j )
     {
         Extent res;
-        nlohmann::json * ptr = &j;
+        nlohmann::json * ptr = &j["data"];
         while( ptr->is_array( ) )
         {
             res.push_back( ptr->size( ) );
             ptr = &( *ptr )[0];
+        }
+        switch( stringToDatatype( j["datatype"].get<std::string>() ) )
+        {
+            case Datatype::CFLOAT:
+            case Datatype::CDOUBLE:
+            case Datatype::CLONG_DOUBLE:
+                // the last "dimension" is only the two entries for the complex
+                // number, so remove that again
+                res.erase( res.end() - 1 );
+                break;
+            default:
+                break;
         }
         return res;
     }
@@ -1522,7 +1561,7 @@ namespace openPMD
 
         try
         {
-            auto datasetExtent = getExtent( j["data"] );
+            auto datasetExtent = getExtent( j );
             VERIFY_ALWAYS( datasetExtent.size( ) ==
                            parameters.extent
                                .size( ),
