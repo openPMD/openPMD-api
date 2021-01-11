@@ -2940,6 +2940,32 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
   }
 }
 )END";
+    std::string writeConfigNull = R"END(
+{
+  "adios2": {
+    "engine": {
+      "type": "null",
+      "unused": "parameter",
+      "parameters": {
+        "BufferGrowthFactor": "2.0",
+        "Profile": "On"
+      }
+    },
+    "unused": "as well",
+    "dataset": {
+      "operators": [
+        {
+          "type": "blosc",
+          "parameters": {
+              "clevel": "1",
+              "doshuffle": "BLOSC_BITSHUFFLE"
+          }
+        }
+      ]
+    }
+  }
+}
+)END";
     std::string datasetConfig = R"END(
 {
   "adios2": {
@@ -2978,6 +3004,7 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
     };
     write( "../samples/jsonConfiguredBP4.bp", writeConfigBP4 );
     write( "../samples/jsonConfiguredBP3.bp", writeConfigBP3 );
+    write( "../samples/jsonConfiguredNull.bp", writeConfigNull );
 
     // BP3 engine writes files, BP4 writes directories
     REQUIRE(
