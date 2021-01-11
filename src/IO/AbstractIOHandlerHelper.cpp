@@ -20,6 +20,8 @@
  */
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 
+#include <fstream>
+
 #include "openPMD/IO/ADIOS/ADIOS1IOHandler.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/IO/ADIOS/ParallelADIOS1IOHandler.hpp"
@@ -27,8 +29,7 @@
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
 #include "openPMD/IO/JSON/JSONIOHandler.hpp"
-
-#include <fstream>
+#include "openPMD/auxiliary/Filesystem.hpp"
 #include <nlohmann/json.hpp>
 
 namespace openPMD
@@ -58,6 +59,25 @@ namespace
             return nlohmann::json::parse( options );
         }
     }
+
+#if openPMD_HAVE_MPI
+    nlohmann::json
+    parseOptions( std::string const & options, MPI_Comm comm )
+    {
+        if( options.at( 0 ) == '@' )
+        {
+            std::string filename = options;
+            filename.erase( 0, 1 );
+            std::string fileContent = auxiliary::collective_file_read(
+                filename, comm );
+            return nlohmann::json::parse( fileContent );
+        }
+        else
+        {
+            return nlohmann::json::parse( options );
+        }
+    }
+#endif
 } // namespace
 
 #if openPMD_HAVE_MPI
@@ -69,7 +89,7 @@ namespace
         MPI_Comm comm,
         std::string const & options )
     {
-        nlohmann::json optionsJson = parseOptions( options );
+        nlohmann::json optionsJson = parseOptions( options, comm );
         switch( format )
         {
             case Format::HDF5:

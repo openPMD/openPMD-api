@@ -7,16 +7,16 @@
 #include <catch2/catch.hpp>
 
 #if openPMD_HAVE_MPI
-#   include <mpi.h>
-
-#   include <iostream>
-#   include <algorithm>
-#   include <string>
-#   include <vector>
-#   include <list>
-#   include <memory>
-#   include <numeric>
-#   include <tuple>
+#    include <algorithm>
+#    include <fstream>
+#    include <iostream>
+#    include <list>
+#    include <memory>
+#    include <mpi.h>
+#    include <numeric>
+#    include <string>
+#    include <tuple>
+#    include <vector>
 
 using namespace openPMD;
 
@@ -877,5 +877,144 @@ adios2_streaming()
 TEST_CASE( "adios2_streaming", "[pseudoserial][adios2]" )
 {
     adios2_streaming();
+}
+
+TEST_CASE( "parallel_adios2_json_config", "[parallel][adios2]" )
+{
+    if( auxiliary::getEnvString( "OPENPMD_BP_BACKEND", "NOT_SET" ) == "ADIOS1" )
+    {
+        // run this test for ADIOS2 only
+        return;
+    }
+    int size{ -1 };
+    int rank{ -1 };
+    MPI_Comm_size( MPI_COMM_WORLD, &size );
+    MPI_Comm_rank( MPI_COMM_WORLD, &rank );
+
+    std::string writeConfigBP3 = R"END(
+{
+  "adios2": {
+    "engine": {
+      "type": "bp3",
+      "unused": "parameter",
+      "parameters": {
+        "BufferGrowthFactor": "2.0",
+        "Profile": "On"
+      }
+    },
+    "unused": "as well",
+    "dataset": {
+      "operators": [
+        {
+          "type": "blosc",
+          "parameters": {
+              "clevel": "1",
+              "doshuffle": "BLOSC_BITSHUFFLE"
+          }
+        }
+      ]
+    }
+  }
+}
+)END";
+    std::string writeConfigBP4 = R"END(
+{
+  "adios2": {
+    "engine": {
+      "type": "bp4",
+      "unused": "parameter",
+      "parameters": {
+        "BufferGrowthFactor": "2.0",
+        "Profile": "On"
+      }
+    },
+    "unused": "as well",
+    "dataset": {
+      "operators": [
+        {
+          "type": "blosc",
+          "parameters": {
+              "clevel": "1",
+              "doshuffle": "BLOSC_BITSHUFFLE"
+          }
+        }
+      ]
+    }
+  }
+}
+)END";
+    auto const write = [ size, rank ](
+                           std::string const & filename,
+                           std::string const & config ) {
+        openPMD::Series series(
+            filename, openPMD::Access::CREATE, MPI_COMM_WORLD, config );
+        auto E_x = series.iterations[ 0 ].meshes[ "E" ][ "x" ];
+        openPMD::Dataset ds(
+            openPMD::Datatype::INT, { unsigned( size ), 1000 } );
+        E_x.resetDataset( ds );
+        std::vector< int > data( 1000, 0 );
+        E_x.storeChunk( data, { unsigned( rank ), 0 }, { 1, 1000 } );
+        series.flush();
+    };
+    write( "../samples/jsonConfiguredBP4Parallel.bp", writeConfigBP4 );
+    write( "../samples/jsonConfiguredBP3Parallel.bp", writeConfigBP3 );
+
+    // BP3 engine writes files, BP4 writes directories
+    REQUIRE(
+        openPMD::auxiliary::file_exists( "../samples/jsonConfiguredBP3.bp" ) );
+    REQUIRE( openPMD::auxiliary::directory_exists(
+        "../samples/jsonConfiguredBP4.bp" ) );
+
+    std::string readConfigBP3 = R"END(
+{
+  "adios2": {
+    "engine": {
+      "type": "bp3",
+      "unused": "parameter"
+    }
+  }
+}
+)END";
+    std::string readConfigBP4 = R"END(
+{
+  "adios2": {
+    "engine": {
+      "type": "bp4",
+      "unused": "parameter"
+    }
+  }
+}
+)END";
+    auto const read =
+        [ size, rank ]
+        ( std::string const & filename, std::string const & config ) {
+            // let's write the config to a file and read it from there
+            if( rank == 0 )
+            {
+                std::fstream file;
+                file.open( "../samples/read_config.json", std::ios_base::out );
+                file << config;
+                file.flush();
+            }
+            MPI_Barrier( MPI_COMM_WORLD );
+            openPMD::Series series(
+                filename,
+                openPMD::Access::READ_ONLY,
+                MPI_COMM_WORLD,
+                "@../samples/read_config.json" );
+            auto E_x = series.iterations[ 0 ].meshes[ "E" ][ "x" ];
+            REQUIRE( E_x.getDimensionality() == 2 );
+            REQUIRE( E_x.getExtent()[ 0 ] == unsigned( size ) );
+            REQUIRE( E_x.getExtent()[ 1 ] == 1000 );
+            auto chunk =
+                E_x.loadChunk< int >( { unsigned( rank ), 0 }, { 1, 1000 } );
+            series.flush();
+            for( size_t i = 0; i < 1000; ++i )
+            {
+                REQUIRE( chunk.get()[ i ] == 0 );
+            }
+        };
+    read( "../samples/jsonConfiguredBP3Parallel.bp", readConfigBP3 );
+    read( "../samples/jsonConfiguredBP4Parallel.bp", readConfigBP4 );
 }
 #endif

@@ -30,7 +30,10 @@
 #   include <dirent.h>
 #endif
 
+#include <fstream>
+#include <iostream>
 #include <stdexcept>
+
 #include <system_error>
 
 
@@ -168,5 +171,85 @@ remove_file( std::string const& path )
 #endif
 }
 
-} // auxiliary
-} // openPMD
+#if openPMD_HAVE_MPI
+
+namespace
+{
+    template< typename >
+    struct MPI_Types;
+
+    template<>
+    struct MPI_Types< unsigned long >
+    {
+        static MPI_Datatype const value;
+    };
+
+    template<>
+    struct MPI_Types< unsigned long long >
+    {
+        static MPI_Datatype const value;
+    };
+
+    template<>
+    struct MPI_Types< unsigned >
+    {
+        static MPI_Datatype const value;
+    };
+
+    MPI_Datatype const MPI_Types< unsigned >::value = MPI_UNSIGNED;
+    MPI_Datatype const MPI_Types< unsigned long >::value = MPI_UNSIGNED_LONG;
+    MPI_Datatype const MPI_Types< unsigned long long >::value = MPI_UNSIGNED_LONG_LONG;
+} // namespace
+
+std::string
+collective_file_read( std::string const & path, MPI_Comm comm )
+{
+    int rank, size;
+    MPI_Comm_rank( comm, &rank );
+    MPI_Comm_size( comm, &size );
+
+    std::string res;
+    size_t stringLength = 0;
+    if( rank == 0 )
+    {
+        std::fstream handle;
+        handle.open( path, std::ios_base::in );
+        std::stringstream stream;
+        stream << handle.rdbuf();
+        res = stream.str();
+        if( !handle.good() )
+        {
+            throw std::runtime_error(
+                "Failed reading JSON config from file " + path + "." );
+        }
+        stringLength = res.size() + 1;
+    }
+    MPI_Datatype datatype = MPI_Types< size_t >::value;
+    int err = MPI_Bcast( &stringLength, 1, datatype, 0, comm );
+    if( err )
+    {
+        throw std::runtime_error(
+            "[collective_file_read] MPI_Scatter failure." );
+    }
+    std::vector< char > recvbuf( stringLength, 0 );
+    if(rank == 0)
+    {
+        std::copy_n(res.c_str(), stringLength, recvbuf.data());
+    }
+    err = MPI_Bcast( recvbuf.data(), stringLength, MPI_CHAR, 0, comm );
+    if( err )
+    {
+        throw std::runtime_error(
+            "[collective_file_read] MPI_Scatter failure." );
+    }
+    if( rank != 0 )
+    {
+        res = recvbuf.data();
+    }
+    return res;
+}
+
+#endif
+
+} // namespace auxiliary
+} // namespace openPMD
