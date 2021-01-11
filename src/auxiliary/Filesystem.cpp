@@ -196,8 +196,15 @@ namespace
         static MPI_Datatype const value;
     };
 
+    /*
+     * Only some of these are actually instanciated,
+     * so suppress warnings for the others.
+     */
+    __attribute__((unused))
     MPI_Datatype const MPI_Types< unsigned >::value = MPI_UNSIGNED;
+    __attribute__((unused))
     MPI_Datatype const MPI_Types< unsigned long >::value = MPI_UNSIGNED_LONG;
+    __attribute__((unused))
     MPI_Datatype const MPI_Types< unsigned long long >::value = MPI_UNSIGNED_LONG_LONG;
 } // namespace
 
