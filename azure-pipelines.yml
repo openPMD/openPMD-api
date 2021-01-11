@@ -338,7 +338,7 @@ jobs:
       test -d /home/linuxbrew/.linuxbrew && eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
       test -r ~/.bash_profile && echo "eval \$($(brew --prefix)/bin/brew shellenv)" >>~/.bash_profile
       echo "eval \$($(brew --prefix)/bin/brew shellenv)" >>~/.profile
-      brew update
+      brew update || true
       brew tap openpmd/openpmd
       brew install openpmd-api
       python3 -c "import openpmd_api as api; print(api.variants)"
@@ -474,7 +474,7 @@ jobs:
     vmImage: macOS-10.15
   steps:
   - script: |
-      brew update
+      brew update || true
       brew install pypy3
       pypy3 -m pip install -U pip --user
       pypy3 -m pip install openpmd-api --user
@@ -489,7 +489,7 @@ jobs:
     vmImage: macOS-latest
   steps:
   - script: |
-      brew update
+      brew update || true
       brew install pypy3
       pypy3 -m pip install -U pip setuptools wheel cmake --user
       pypy3 -m pip install openpmd-api --no-binary openpmd-api --user
@@ -504,7 +504,7 @@ jobs:
     vmImage: macOS-10.15
   steps:
   - script: |
-      brew update
+      brew update || true
       brew install pypy3
       pypy3 -m pip install -U pip --user
       pypy3 -m pip install git+https://github.com/openPMD/openPMD-api.git@dev --user
@@ -519,7 +519,7 @@ jobs:
     vmImage: macOS-10.15
   steps:
   - script: |
-      brew update
+      brew update || true
       brew install mpich
       python3 -m pip install -U pip setuptools wheel cmake --user
       openPMD_USE_MPI=ON python3 -m pip install openpmd-api --no-binary openpmd-api --user
@@ -534,7 +534,7 @@ jobs:
     vmImage: macOS-latest
   steps:
   - script: |
-      brew update
+      brew update || true
       brew install openmpi
       python3 -m pip install -U pip --user
       openPMD_USE_MPI=ON python3 -m pip install git+https://github.com/openPMD/openPMD-api.git@dev --user
@@ -673,7 +673,7 @@ jobs:
     vmImage: macOS-latest
   steps:
   - script: |
-      brew update
+      brew update || true
       brew install gcc
       export SYSTEM=$(uname -s)
       git clone https://github.com/spack/spack.git
@@ -731,7 +731,7 @@ jobs:
   steps:
   - script: |
       rm -rf /usr/local/bin/2to3
-      brew update
+      brew update || true
       brew tap openpmd/openpmd
       brew install openpmd-api
   - script: |
