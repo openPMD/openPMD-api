@@ -3042,7 +3042,7 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
         file.flush();
         openPMD::Series series(
             filename, openPMD::Access::READ_ONLY,
-            "@../samples/read_config.json" );
+            "  @  ../samples/read_config.json    " );
         auto E_x = series.iterations[ 0 ].meshes[ "E" ][ "x" ];
         REQUIRE( E_x.getDimensionality() == 1 );
         REQUIRE( E_x.getExtent()[ 0 ] == 1000 );

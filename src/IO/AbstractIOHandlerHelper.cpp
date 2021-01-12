@@ -20,6 +20,7 @@
  */
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 
+#include <cctype> // std::isspace
 #include <fstream>
 
 #include "openPMD/IO/ADIOS/ADIOS1IOHandler.hpp"
@@ -30,27 +31,46 @@
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
 #include "openPMD/IO/JSON/JSONIOHandler.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/Option.hpp"
 #include <nlohmann/json.hpp>
 
 namespace openPMD
 {
 namespace
 {
+    auxiliary::Option< std::string >
+    extractFilename( std::string const & unparsed )
+    {
+        std::string trimmed = auxiliary::trim(
+            unparsed, []( char c ) { return std::isspace( c ); } );
+        if( trimmed.at( 0 ) == '@' )
+        {
+            trimmed = trimmed.substr( 1 );
+            trimmed = auxiliary::trim(
+                trimmed, []( char c ) { return std::isspace( c ); } );
+            return auxiliary::makeOption( trimmed );
+        }
+        else
+        {
+            return auxiliary::Option< std::string >{};
+        }
+    }
+
     nlohmann::json
     parseOptions( std::string const & options )
     {
-        if( options.at( 0 ) == '@' )
+        auto filename = extractFilename( options );
+        if( filename.has_value() )
         {
             std::fstream handle;
-            std::string filename = options;
-            filename.erase( 0, 1 );
-            handle.open( filename, std::ios_base::in );
+            handle.open( filename.get(), std::ios_base::in );
             nlohmann::json res;
             handle >> res;
             if( !handle.good() )
             {
                 throw std::runtime_error(
-                    "Failed reading JSON config from file " + filename + "." );
+                    "Failed reading JSON config from file " + filename.get() +
+                    "." );
             }
             return res;
         }
@@ -64,12 +84,11 @@ namespace
     nlohmann::json
     parseOptions( std::string const & options, MPI_Comm comm )
     {
-        if( options.at( 0 ) == '@' )
+        auto filename = extractFilename( options );
+        if( filename.has_value() )
         {
-            std::string filename = options;
-            filename.erase( 0, 1 );
-            std::string fileContent = auxiliary::collective_file_read(
-                filename, comm );
+            std::string fileContent =
+                auxiliary::collective_file_read( filename.get(), comm );
             return nlohmann::json::parse( fileContent );
         }
         else

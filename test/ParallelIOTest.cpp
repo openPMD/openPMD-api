@@ -1001,7 +1001,7 @@ TEST_CASE( "parallel_adios2_json_config", "[parallel][adios2]" )
                 filename,
                 openPMD::Access::READ_ONLY,
                 MPI_COMM_WORLD,
-                "@../samples/read_config.json" );
+                "  @   ../samples/read_config.json     " );
             auto E_x = series.iterations[ 0 ].meshes[ "E" ][ "x" ];
             REQUIRE( E_x.getDimensionality() == 2 );
             REQUIRE( E_x.getExtent()[ 0 ] == unsigned( size ) );
