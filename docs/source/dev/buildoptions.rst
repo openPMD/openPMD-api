@@ -39,7 +39,7 @@ The following options switch between static and shared builds and control if dep
 ============================== =============== ==================================================
 CMake Option                   Values          Description
 ============================== =============== ==================================================
-``BUILD_SHARED_LIBS``          **ON**/OFF      Build the C++ API as shared library
+``openPMD_BUILD_SHARED_LIBS``  **ON**/OFF      Build the C++ API as shared library
 ``HDF5_USE_STATIC_LIBRARIES``  ON/**OFF**      Require static HDF5 library
 ``ADIOS_USE_STATIC_LIBS``      ON/**OFF**      Require static ADIOS1 library
 ============================== =============== ==================================================
@@ -78,4 +78,12 @@ Tests, Examples and Command Line Tools
 --------------------------------------
 
 By default, tests, examples and command line tools are built.
-In order to skip building those, pass ``-DBUILD_TESTING=OFF``, ``-DBUILD_EXAMPLES=OFF``, or ``-DBUILD_CLI_TOOLS=OFF`` to your ``cmake`` command.
+In order to skip building those, pass ``OFF`` to these ``cmake`` options:
+
+============================== =============== ==================================================
+CMake Option                   Values          Description
+============================== =============== ==================================================
+``openPMD_BUILD_TESTING``      **ON**/OFF      Build tests
+``openPMD_BUILD_EXAMPLES``     **ON**/OFF      Build examples
+``openPMD_BUILD_CLI_TOOLS``    **ON**/OFF      Build command-line tools
+============================== =============== ==================================================

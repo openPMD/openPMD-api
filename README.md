@@ -271,7 +271,13 @@ By default, the `Release` version is built.
 In order to build with debug symbols, pass `-DCMAKE_BUILD_TYPE=Debug` to your `cmake` command.
 
 By default, tests, examples and command line tools are built.
-In order to skip building those, pass `-DBUILD_TESTING=OFF`, `-DBUILD_EXAMPLES=OFF`, or `-DBUILD_CLI_TOOLS=OFF` to your `cmake` command.
+In order to skip building those, pass ``OFF`` to these ``cmake`` options:
+
+| CMake Option              | Values     | Description              |
+|---------------------------|------------|--------------------------|
+| `openPMD_BUILD_TESTING`   | **ON**/OFF | Build tests              |
+| `openPMD_BUILD_EXAMPLES`  | **ON**/OFF | Build examples           |
+| `openPMD_BUILD_CLI_TOOLS` | **ON**/OFF | Build command-line tools |
 
 ## Linking to your project
 
@@ -310,9 +316,9 @@ Just replace the `add_subdirectory` call with:
 ```cmake
 include(FetchContent)
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-set(BUILD_CLI_TOOLS OFF)
-set(BUILD_EXAMPLES OFF)
-set(BUILD_TESTING OFF)
+set(openPMD_BUILD_CLI_TOOLS OFF)
+set(openPMD_BUILD_EXAMPLES OFF)
+set(openPMD_BUILD_TESTING OFF)
 set(openPMD_INSTALL ${BUILD_SHARED_LIBS})  # e.g. only install if used as shared library
 set(openPMD_USE_PYTHON OFF)
 FetchContent_Declare(openPMD
