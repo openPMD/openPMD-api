@@ -84,8 +84,8 @@ RUN        ls /opt/python/
 
 ENV        HDF5_USE_STATIC_LIBRARIES=ON \
            ADIOS_USE_STATIC_LIBS=ON \
-           BUILD_TESTING=OFF \
-           BUILD_EXAMPLES=OFF
+           openPMD_BUILD_TESTING=OFF \
+           openPMD_BUILD_EXAMPLES=OFF
 
 # build matrix
 RUN        cd /opt/src; \
@@ -104,8 +104,8 @@ RUN        cd /opt/src; \
 #               -DPython_ROOT_DIR=$(which /opt/python/cp${PY_TARGET}-cp${PY_TARGET}m) \
 #               -DHDF5_USE_STATIC_LIBRARIES=ON \
 #               -DBUILD_SHARED_LIBS=OFF \
-#               -DBUILD_TESTING=OFF \
-#               -DBUILD_EXAMPLES=OFF \
+#               -DopenPMD_BUILD_TESTING=OFF \
+#               -DopenPMD_BUILD_EXAMPLES=OFF \
 #               /opt/src \
 #           && make
 

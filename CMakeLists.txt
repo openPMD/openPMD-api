@@ -97,11 +97,26 @@ cmake_dependent_option(BUILD_SHARED_LIBS
 )
 mark_as_advanced(BUILD_SHARED_LIBS)
 
+# Testing logic with possibility to overwrite on a project basis in superbuilds
 include(CTest)
-# automatically defines: BUILD_TESTING, default is ON
+mark_as_advanced(BUILD_TESTING) # automatically defined, default: ON
+if(DEFINED BUILD_TESTING)
+    set(openPMD_BUILD_TESTING_DEFAULT ${BUILD_TESTING})
+else()
+    set(openPMD_BUILD_TESTING_DEFAULT ON)
+endif()
+option(openPMD_BUILD_TESTING "Build the openPMD tests"
+    ${openPMD_BUILD_TESTING_DEFAULT})
 
-option(BUILD_CLI_TOOLS "Build the command line tools" ON)
-option(BUILD_EXAMPLES  "Build the examples" ON)
+# deprecated: backwards compatibility to <= 0.13.*
+if(NOT DEFINED BUILD_CLI_TOOLS)
+    set(BUILD_CLI_TOOLS ON)
+endif()
+if(NOT DEFINED BUILD_EXAMPLES)
+    set(BUILD_EXAMPLES ON)
+endif()
+option(openPMD_BUILD_CLI_TOOLS "Build the command line tools" ${BUILD_CLI_TOOLS})
+option(openPMD_BUILD_EXAMPLES  "Build the examples" ${BUILD_EXAMPLES})
 
 
 # Dependencies ################################################################
@@ -381,7 +396,7 @@ endif()
 target_link_libraries(openPMD PUBLIC openPMD::thirdparty::mpark_variant)
 
 # Catch2 for unit tests
-if(BUILD_TESTING)
+if(openPMD_BUILD_TESTING)
     add_library(openPMD::thirdparty::Catch2 INTERFACE IMPORTED)
     if(openPMD_USE_INTERNAL_CATCH)
         target_include_directories(openPMD::thirdparty::Catch2 SYSTEM INTERFACE
@@ -653,7 +668,7 @@ if(openPMD_USE_INVASIVE_TESTS)
     endif()
 endif()
 
-if(BUILD_TESTING)
+if(openPMD_BUILD_TESTING)
     # compile Catch2 implementation part separately
     add_library(CatchRunner test/CatchRunner.cpp)  # Always MPI_Init with Serial Fallback
     add_library(CatchMain   test/CatchMain.cpp)    # Serial only
@@ -886,7 +901,7 @@ endif()
 
 # Tests #######################################################################
 #
-if(BUILD_TESTING)
+if(openPMD_BUILD_TESTING)
     enable_testing()
 
     # OpenMPI root guard: https://github.com/open-mpi/ompi/issues/4451
@@ -1062,7 +1077,7 @@ if(BUILD_TESTING)
                             ${openPMD_SOURCE_DIR}/examples/${examplename}.py
                             ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
                 )
-                if(BUILD_TESTING)
+                if(openPMD_BUILD_TESTING)
                     if(${examplename} MATCHES "^.*_parallel$")
                         if(openPMD_HAVE_MPI AND MPI4PY_RETURN EQUAL 0)
                             # see https://mpi4py.readthedocs.io/en/stable/mpi4py.run.html
@@ -1140,7 +1155,7 @@ else()
 endif()
 message("  CLI Tools: ${BUILD_CLI_TOOLS}")
 message("  Examples: ${BUILD_EXAMPLES}")
-message("  Testing: ${BUILD_TESTING}")
+message("  Testing: ${openPMD_BUILD_TESTING}")
 message("  Invasive Tests: ${openPMD_USE_INVASIVE_TESTS}")
 message("  Internal VERIFY: ${openPMD_USE_VERIFY}")
 message("  Build Options:")

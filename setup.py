@@ -53,11 +53,12 @@ class CMakeBuild(build_ext):
             # variants
             '-DopenPMD_USE_MPI:BOOL=' + openPMD_USE_MPI,
             # skip building cli tools, examples & tests
-            '-DBUILD_CLI_TOOLS:BOOL=OFF',  # note: provided as console scripts
-            '-DBUILD_EXAMPLES:BOOL=' + BUILD_EXAMPLES,
-            '-DBUILD_TESTING:BOOL=' + BUILD_TESTING,
+            #   note: CLI tools provided as console scripts
+            '-DopenPMD_BUILD_CLI_TOOLS:BOOL=OFF',
+            '-DopenPMD_BUILD_EXAMPLES:BOOL=' + BUILD_EXAMPLES,
+            '-DopenPMD_BUILD_TESTING:BOOL=' + BUILD_TESTING,
             # static/shared libs
-            '-DBUILD_SHARED_LIBS:BOOL=' + BUILD_SHARED_LIBS,
+            '-DopenPMD_BUILD_SHARED_LIBS:BOOL=' + BUILD_SHARED_LIBS,
             '-DHDF5_USE_STATIC_LIBRARIES:BOOL=' + HDF5_USE_STATIC_LIBRARIES,
             '-DADIOS_USE_STATIC_LIBS:BOOL=' + ADIOS_USE_STATIC_LIBS,
             # Unix: rpath to current dir when packaged
@@ -121,9 +122,17 @@ with open('./README.md', encoding='utf-8') as f:
 openPMD_USE_MPI = os.environ.get('openPMD_USE_MPI', 'OFF')
 HDF5_USE_STATIC_LIBRARIES = os.environ.get('HDF5_USE_STATIC_LIBRARIES', 'OFF')
 ADIOS_USE_STATIC_LIBS = os.environ.get('ADIOS_USE_STATIC_LIBS', 'OFF')
+# deprecated: backwards compatibility to <= 0.13.*
 BUILD_SHARED_LIBS = os.environ.get('BUILD_SHARED_LIBS', 'OFF')
 BUILD_TESTING = os.environ.get('BUILD_TESTING', 'OFF')
 BUILD_EXAMPLES = os.environ.get('BUILD_EXAMPLES', 'OFF')
+# end deprecated
+BUILD_SHARED_LIBS = os.environ.get('openPMD_BUILD_SHARED_LIBS',
+                                   BUILD_SHARED_LIBS)
+BUILD_TESTING = os.environ.get('openPMD_BUILD_TESTING',
+                               BUILD_TESTING)
+BUILD_EXAMPLES = os.environ.get('openPMD_BUILD_EXAMPLES',
+                                BUILD_EXAMPLES)
 
 # https://cmake.org/cmake/help/v3.0/command/if.html
 if openPMD_USE_MPI.upper() in ['1', 'ON', 'YES', 'TRUE', 'YES']:
