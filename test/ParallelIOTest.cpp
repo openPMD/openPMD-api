@@ -943,7 +943,26 @@ TEST_CASE( "parallel_adios2_json_config", "[parallel][adios2]" )
   }
 }
 )END";
-    auto const write = [ size, rank ](
+    std::string datasetConfig = R"END(
+{
+  "adios2": {
+    "unused": "dataset parameter",
+    "dataset": {
+      "unused": "too",
+      "operators": [
+        {
+          "type": "blosc",
+          "parameters": {
+              "clevel": "3",
+              "doshuffle": "BLOSC_BITSHUFFLE"
+          }
+        }
+      ]
+    }
+  }
+}
+)END";
+    auto const write = [ size, rank, &datasetConfig ](
                            std::string const & filename,
                            std::string const & config ) {
         openPMD::Series series(
@@ -954,6 +973,20 @@ TEST_CASE( "parallel_adios2_json_config", "[parallel][adios2]" )
         E_x.resetDataset( ds );
         std::vector< int > data( 1000, 0 );
         E_x.storeChunk( data, { unsigned( rank ), 0 }, { 1, 1000 } );
+
+        auto E_y = series.iterations[ 0 ].meshes[ "E" ][ "y" ];
+        // let's override the global compression settings
+        if( rank == 0 )
+        {
+            std::fstream file;
+            file.open( "../samples/dataset_config.json", std::ios_base::out );
+            file << datasetConfig;
+            file.flush();
+        }
+        MPI_Barrier( MPI_COMM_WORLD );
+        ds.options = " @../samples/dataset_config.json";
+        E_y.resetDataset( ds );
+        E_y.storeChunk( data, { unsigned( rank ), 0 }, { 1, 1000 } );
         series.flush();
     };
     write( "../samples/jsonConfiguredBP4Parallel.bp", writeConfigBP4 );

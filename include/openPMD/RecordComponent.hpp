@@ -100,6 +100,12 @@ public:
 
     RecordComponent& setUnitSI(double);
 
+    /**
+     * Note: If Dataset.options points to a file, this method will read the
+     * JSON options from that file.
+     * In that case, this method is MPI-collective.
+     * Otherwise, it is non-collective.
+     */
     RecordComponent& resetDataset(Dataset);
 
     uint8_t getDimensionality() const;

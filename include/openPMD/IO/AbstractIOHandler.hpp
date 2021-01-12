@@ -69,17 +69,22 @@ class AbstractIOHandler
 {
 public:
 #if openPMD_HAVE_MPI
-    AbstractIOHandler(std::string path, Access at, MPI_Comm)
-        : directory{std::move(path)},
-          m_backendAccess{at},
-          m_frontendAccess{at}
-    { }
+    MPI_Comm m_comm = nullptr;
+
+    AbstractIOHandler( std::string path, Access at, MPI_Comm comm )
+        : m_comm{ comm }
+        , directory{ std::move( path ) }
+        , m_backendAccess{ at }
+        , m_frontendAccess{ at }
+    {
+    }
 #endif
-    AbstractIOHandler(std::string path, Access at)
-        : directory{std::move(path)},
-          m_backendAccess{at},
-          m_frontendAccess{at}
-    { }
+    AbstractIOHandler( std::string path, Access at )
+        : directory{ std::move( path ) }
+        , m_backendAccess{ at }
+        , m_frontendAccess{ at }
+    {
+    }
     virtual ~AbstractIOHandler() = default;
 
     /** Add provided task to queue according to FIFO.

@@ -2998,7 +2998,13 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
 
         auto E_y = series.iterations[ 0 ].meshes[ "E" ][ "y" ];
         // let's override the global compression settings
-        ds.options = datasetConfig;
+        std::fstream file;
+        file.open( "../samples/dataset_config.json", std::ios_base::out );
+        file << datasetConfig;
+        file.flush();
+        ds.options = " @../samples/dataset_config.json";
+        ds.resolveOptions();
+        REQUIRE(ds.options == datasetConfig);
         E_y.resetDataset( ds );
         E_y.storeChunk( data, { 0 }, { 1000 } );
         series.flush();

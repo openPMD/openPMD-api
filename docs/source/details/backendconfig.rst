@@ -21,6 +21,16 @@ Parameters that are directly passed through to an external library and not inter
 The configuration string may refer to the complete ``openPMD::Series`` or may additionally be specified per ``openPMD::Dataset``, passed in the respective constructors.
 This reflects the fact that certain backend-specific parameters may refer to the whole Series (such as storage engines and their parameters) and others refer to actual datasets (such as compression).
 
+A JSON configuration may either be specified as a regular string that can be parsed as a JSON object, or alternatively as a path to a JSON-formatted text file.
+In the latter case, the file path must be prepended by an ampersand ``@``.
+
+.. note::
+
+   Reading text files in parallel openPMD is implemented in MPI-collective manner.
+   The file is read by rank 0 and its contents are then broadcast to all other ranks.
+   This happens at construction of the ``openPMD::Series`` object and when calling ``openPMD::RecordComponent::resetDataset()``, making those calls collective.
+   In order to avoid repeated (collective or non-collective) file access, the file contents for a dataset configuration may be buffered by calling ``openPMD::Dataset::resolveOptions()``.
+
 For a consistent user interface, backends shall follow the following rules:
 
 * The configuration structures for the Series and for each dataset should be defined equivalently.

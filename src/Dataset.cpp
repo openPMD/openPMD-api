@@ -20,6 +20,8 @@
  */
 #include "openPMD/Dataset.hpp"
 
+#include "openPMD/auxiliary/JSON.hpp"
+
 #include <iostream>
 #include <cstddef>
 
@@ -83,4 +85,20 @@ Dataset::setCustomTransform(std::string const& parameter)
     transform = parameter;
     return *this;
 }
+
+Dataset&
+Dataset::resolveOptions()
+{
+    options = auxiliary::readOptions( options );
+    return *this;
+}
+
+#if openPMD_HAVE_MPI
+Dataset&
+Dataset::resolveOptions( MPI_Comm comm )
+{
+    options = auxiliary::readOptions( options, comm );
+    return *this;
+}
+#endif
 } // openPMD

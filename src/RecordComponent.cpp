@@ -18,16 +18,18 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/RecordComponent.hpp"
-#include "openPMD/Dataset.hpp"
 
 #include <algorithm>
+#include <climits>
+#include <complex>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-#include <climits>
-#include <complex>
+
+#include "openPMD/Dataset.hpp"
+#include "openPMD/auxiliary/JSON.hpp"
+#include "openPMD/auxiliary/Memory.hpp"
 
 
 namespace openPMD
@@ -50,6 +52,25 @@ RecordComponent::setUnitSI(double usi)
 RecordComponent &
 RecordComponent::resetDataset( Dataset d )
 {
+    /*
+     * IOHandler is only set after construction of RecordComponent.
+     * But constructor call resetDataset.
+     */
+    if( IOHandler )
+    {
+#if openPMD_HAVE_MPI
+        if( IOHandler->m_comm )
+        {
+            d.options = auxiliary::readOptions( d.options, IOHandler->m_comm );
+        }
+        else
+        {
+            d.options = auxiliary::readOptions( d.options );
+        }
+#else
+        d.options = auxiliary::readOptions( d.options );
+#endif
+    }
     if( written() )
         throw std::runtime_error( "A record's Dataset cannot (yet) be changed "
                                   "after it has been written." );

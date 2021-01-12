@@ -21,13 +21,14 @@
 
 #include "openPMD/auxiliary/JSON.hpp"
 
+#include <cctype> // std::isspace
+#include <fstream>
+#include <sstream>
+#include <vector>
+
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
-
-#include <cctype> // std::isspace
-#include <fstream>
-#include <vector>
 
 namespace openPMD
 {
@@ -136,16 +137,17 @@ namespace auxiliary
     }
     }
 
-    nlohmann::json
-    parseOptions( std::string const & options )
+    std::string
+    readOptions( std::string const & options )
     {
         auto filename = extractFilename( options );
         if( filename.has_value() )
         {
             std::fstream handle;
             handle.open( filename.get(), std::ios_base::in );
-            nlohmann::json res;
-            handle >> res;
+            std::stringstream stream;
+            stream << handle.rdbuf();
+            std::string res = stream.str();
             if( !handle.good() )
             {
                 throw std::runtime_error(
@@ -156,25 +158,36 @@ namespace auxiliary
         }
         else
         {
-            return nlohmann::json::parse( options );
+            return options;
         }
     }
 
-#if openPMD_HAVE_MPI
+
     nlohmann::json
-    parseOptions( std::string const & options, MPI_Comm comm )
+    parseOptions( std::string const & options )
+    {
+        return nlohmann::json::parse( readOptions( options ) );
+    }
+
+#if openPMD_HAVE_MPI
+    std::string
+    readOptions( std::string const & options, MPI_Comm comm )
     {
         auto filename = extractFilename( options );
         if( filename.has_value() )
         {
-            std::string fileContent =
-                auxiliary::collective_file_read( filename.get(), comm );
-            return nlohmann::json::parse( fileContent );
+            return auxiliary::collective_file_read( filename.get(), comm );
         }
         else
         {
-            return nlohmann::json::parse( options );
+            return options;
         }
+    }
+
+    nlohmann::json
+    parseOptions( std::string const & options, MPI_Comm comm )
+    {
+        return nlohmann::json::parse( readOptions( options, comm ) );
     }
 #endif
 } // namespace auxiliary
