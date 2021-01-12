@@ -20,9 +20,7 @@
  */
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 
-#include <cctype> // std::isspace
-#include <fstream>
-
+#include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/IO/ADIOS/ADIOS1IOHandler.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/IO/ADIOS/ParallelADIOS1IOHandler.hpp"
@@ -30,75 +28,9 @@
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
 #include "openPMD/IO/JSON/JSONIOHandler.hpp"
-#include "openPMD/auxiliary/Filesystem.hpp"
-#include "openPMD/auxiliary/Option.hpp"
-#include <nlohmann/json.hpp>
 
 namespace openPMD
 {
-namespace
-{
-    auxiliary::Option< std::string >
-    extractFilename( std::string const & unparsed )
-    {
-        std::string trimmed = auxiliary::trim(
-            unparsed, []( char c ) { return std::isspace( c ); } );
-        if( trimmed.at( 0 ) == '@' )
-        {
-            trimmed = trimmed.substr( 1 );
-            trimmed = auxiliary::trim(
-                trimmed, []( char c ) { return std::isspace( c ); } );
-            return auxiliary::makeOption( trimmed );
-        }
-        else
-        {
-            return auxiliary::Option< std::string >{};
-        }
-    }
-
-    nlohmann::json
-    parseOptions( std::string const & options )
-    {
-        auto filename = extractFilename( options );
-        if( filename.has_value() )
-        {
-            std::fstream handle;
-            handle.open( filename.get(), std::ios_base::in );
-            nlohmann::json res;
-            handle >> res;
-            if( !handle.good() )
-            {
-                throw std::runtime_error(
-                    "Failed reading JSON config from file " + filename.get() +
-                    "." );
-            }
-            return res;
-        }
-        else
-        {
-            return nlohmann::json::parse( options );
-        }
-    }
-
-#if openPMD_HAVE_MPI
-    nlohmann::json
-    parseOptions( std::string const & options, MPI_Comm comm )
-    {
-        auto filename = extractFilename( options );
-        if( filename.has_value() )
-        {
-            std::string fileContent =
-                auxiliary::collective_file_read( filename.get(), comm );
-            return nlohmann::json::parse( fileContent );
-        }
-        else
-        {
-            return nlohmann::json::parse( options );
-        }
-    }
-#endif
-} // namespace
-
 #if openPMD_HAVE_MPI
     std::shared_ptr< AbstractIOHandler >
     createIOHandler(
@@ -108,7 +40,7 @@ namespace
         MPI_Comm comm,
         std::string const & options )
     {
-        nlohmann::json optionsJson = parseOptions( options, comm );
+        nlohmann::json optionsJson = auxiliary::parseOptions( options, comm );
         switch( format )
         {
             case Format::HDF5:
@@ -139,7 +71,7 @@ namespace
         Format format,
         std::string const & options )
     {
-        nlohmann::json optionsJson = parseOptions( options );
+        nlohmann::json optionsJson = auxiliary::parseOptions( options );
         switch( format )
         {
             case Format::HDF5:
@@ -165,4 +97,4 @@ namespace
                     "Unknown file format! Did you specify a file ending?" );
         }
     }
-    } // namespace openPMD
+} // namespace openPMD

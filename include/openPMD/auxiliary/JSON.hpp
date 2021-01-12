@@ -23,10 +23,15 @@
 
 #include "openPMD/config.hpp"
 
-#include <nlohmann/json.hpp>
-
 #include <memory>  // std::shared_ptr
+#include <nlohmann/json.hpp>
 #include <utility> // std::forward
+
+#if openPMD_HAVE_MPI
+
+#include <mpi.h>
+
+#endif
 
 namespace openPMD
 {
@@ -154,6 +159,15 @@ namespace auxiliary
             newPositionInShadow,
             traceFurther );
     }
+
+    nlohmann::json parseOptions( std::string const & options );
+
+#if openPMD_HAVE_MPI
+
+    nlohmann::json parseOptions( std::string const & options, MPI_Comm comm );
+
+#endif
+
 } // namespace auxiliary
 } // namespace openPMD
 
