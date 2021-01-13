@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2021 Fabian Koller, Axel Huebl, Junmin Gu
  *
  * This file is part of openPMD-api.
  *
@@ -72,16 +72,65 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
 
     herr_t status;
     status = H5Pset_dxpl_mpio(m_datasetTransferProperty, xfer_mode);
+    VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_dxpl_mpio");
 
-    auto const strByte = auxiliary::getEnvString( "OPENPMD_HDF5_ALIGNMENT", "1" );
+    auto const strByte = auxiliary::getEnvString( "OPENPMD_HDF5_ALIGNMENT", "4194304" );
     std::stringstream sstream(strByte);
     hsize_t bytes;
     sstream >> bytes;
 
-    if ( bytes > 1 )
-         H5Pset_alignment(m_fileAccessProperty, 0, bytes);
+    /*
+     * Note from https://support.hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetCache:
+     * "Raw dataset chunk caching is not currently supported when using the MPI I/O
+     * and MPI POSIX file drivers in read/write mode [...]. When using one of these
+     * file drivers, all calls to H5Dread and H5Dwrite will access the disk directly,
+     * and H5Pset_cache will have no effect on performance."
+     */
+    int metaCacheElements = 0;
+    size_t rawCacheElements = 0;
+    size_t rawCacheSize = 0;
+    double policy = 0.0;
+    status = H5Pget_cache(m_fileAccessProperty, &metaCacheElements, &rawCacheElements, &rawCacheSize, &policy);
+    VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pget_cache");
+    rawCacheSize = bytes * 4; // default: 1 MiB per dataset
+    status = H5Pset_cache(m_fileAccessProperty, metaCacheElements, rawCacheElements, rawCacheSize, policy);
+    VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_cache");
 
-    VERIFY(status >= 0, "[HDF5] Internal error: Failed to set HDF5 dataset transfer property");
+    // sets the maximum size for the type conversion buffer and background
+    // buffer and optionally supplies pointers to application-allocated
+    // buffers. If the buffer size is smaller than the entire amount of data
+    // being transferred between the application and the file, and a type
+    // conversion buffer or background buffer is required, then strip mining
+    // will be used.
+    //status = H5Pset_buffer(where?, 64*1024*1024, nullptr, nullptr); // 64 MiB; default: 1MiB
+    //VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_buffer");
+
+    if ( bytes > 1 )
+    {
+         VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_fapl_direct");
+         status = H5Pset_sieve_buf_size(m_fileAccessProperty, bytes);     /* 4MB; >=FS Blocksize*/
+         VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_sieve_buf_size");
+         hsize_t const threshold = bytes / 4;
+         status = H5Pset_alignment(m_fileAccessProperty, threshold, bytes); /* ~same */
+         VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_alignment");
+    }
+
+    // Metadata aggregation reduces the number of small data objects in the
+    // file that would otherwise be required for metadata. The aggregated
+    // block of metadata is usually written in a single write action and
+    // always in a contiguous block, potentially significantly improving
+    // library and application performance.
+    hsize_t const meta_block_size = 20480; // 20KiB; default: 2048 (2KiB)
+    status = H5Pset_meta_block_size(m_fileAccessProperty, meta_block_size);
+    VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_meta_block_size");
+
+    // more meta data knobs: H5Pset_cache, H5Pset_chunk_cache
+
+    // https://docs.nersc.gov/performance/io/knl/#direct-io-vs-buffered-io
+    // ... In the case of HDF5, we saw as much as 11% speedup.
+    //status = H5Pset_fapl_direct(m_fileAccessProperty, 2048, bytes, bytes * 4);
+    //VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_fapl_direct");
+
     status = H5Pset_fapl_mpio(m_fileAccessProperty, m_mpiComm, m_mpiInfo);
     VERIFY(status >= 0, "[HDF5] Internal error: Failed to set HDF5 file access property");
 }

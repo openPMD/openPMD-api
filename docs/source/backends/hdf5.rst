@@ -25,7 +25,7 @@ The following environment variables control HDF5 I/O behavior at runtime.
 environment variable                  default   description
 ===================================== ========= ====================================================================================
 ``OPENPMD_HDF5_INDEPENDENT``          ``ON``    Sets the MPI-parallel transfer mode to collective (``OFF``) or independent (``ON``).
-``OPENPMD_HDF5_ALIGNMENT``            ``1``     Tuning parameter for parallel I/O, choose an alignment which is a multiple of the disk block size.
+``OPENPMD_HDF5_ALIGNMENT``            ``ABC``   Tuning parameter for parallel I/O, choose an alignment which is a multiple of the disk block size.
 ``OPENPMD_HDF5_CHUNKS``               ``auto``  Defaults for ``H5Pset_chunk``: ``"auto"`` (heuristic) or ``"none"`` (no chunking).
 ``H5_COLL_API_SANITY_CHECK``          unset     Set to ``1`` to perform an ``MPI_Barrier`` inside each meta-data operation.
 ===================================== ========= ====================================================================================
