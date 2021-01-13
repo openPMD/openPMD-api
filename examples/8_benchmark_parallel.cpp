@@ -32,10 +32,14 @@ int main(
     openPMD::Datatype dt = openPMD::determineDatatype<type>();
 #endif
 
+
+    int rank, size;
+    MPI_Comm_rank( MPI_COMM_WORLD, &rank );
+    MPI_Comm_size( MPI_COMM_WORLD, &size );
     // Total (in this case 4D) dataset across all MPI ranks.
     // Will be the same for all configured benchmarks.
     openPMD::Extent total{
-        100,
+        100 * unsigned( size ),
         100,
         100,
         10
@@ -104,11 +108,6 @@ int main(
     auto res =
         benchmark.runBenchmark<std::chrono::high_resolution_clock>();
 
-    int rank;
-    MPI_Comm_rank(
-        MPI_COMM_WORLD,
-        &rank
-    );
     if( rank == 0 )
     {
         for( auto it = res.durations.begin();
