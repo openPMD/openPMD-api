@@ -173,7 +173,11 @@ if(openPMD_HAVE_MPI AND openPMD_HAVE_HDF5 AND NOT HDF5_IS_PARALLEL)
     string(CONCAT openPMD_HDF5_STATUS
         "Found MPI but only serial version of HDF5. Either set "
         "openPMD_USE_MPI=OFF to disable MPI or set openPMD_USE_HDF5=OFF "
-        "to disable HDF5 or provide a parallel install of HDF5.")
+        "to disable HDF5 or provide a parallel install of HDF5.\n"
+        "If you manually installed a parallel version of HDF5 in "
+        "a non-default path, add its installation prefix to the "
+        "environment variable CMAKE_PREFIX_PATH to find it: "
+        "https://cmake.org/cmake/help/latest/envvar/CMAKE_PREFIX_PATH.html")
     if(openPMD_USE_HDF5 STREQUAL AUTO)
         message(WARNING "${openPMD_HDF5_STATUS}")
         set(openPMD_HAVE_HDF5 FALSE)
@@ -186,7 +190,11 @@ if(openPMD_HAVE_HDF5 AND HDF5_IS_PARALLEL AND NOT openPMD_HAVE_MPI)
     string(CONCAT openPMD_HDF5_STATUS
         "Found only parallel version of HDF5 but no MPI. Either set "
         "openPMD_USE_MPI=ON to force using MPI or set openPMD_USE_HDF5=OFF "
-        "to disable HDF5 or provide a serial install of HDF5.")
+        "to disable HDF5 or provide a serial install of HDF5.\n"
+        "If you manually installed a serial version of HDF5 in "
+        "a non-default path, add its installation prefix to the "
+        "environment variable CMAKE_PREFIX_PATH to find it: "
+        "https://cmake.org/cmake/help/latest/envvar/CMAKE_PREFIX_PATH.html")
     if(openPMD_USE_HDF5 STREQUAL AUTO)
         message(WARNING "${openPMD_HDF5_STATUS}")
         set(openPMD_HAVE_HDF5 FALSE)
@@ -225,7 +233,11 @@ endif()
 if(openPMD_HAVE_MPI AND openPMD_HAVE_ADIOS1 AND ADIOS_HAVE_SEQUENTIAL)
     string(CONCAT openPMD_ADIOS1_STATUS
         "Found MPI but requested ADIOS1 is serial. "
-        "Set openPMD_USE_MPI=OFF to disable MPI.")
+        "Set openPMD_USE_MPI=OFF to disable MPI.\n"
+        "If you manually installed a parallel version of ADIOS1 in "
+        "a non-default path, add its installation prefix to the "
+        "environment variable CMAKE_PREFIX_PATH to find it: "
+        "https://cmake.org/cmake/help/latest/envvar/CMAKE_PREFIX_PATH.html")
     if(openPMD_USE_ADIOS1 STREQUAL AUTO)
         message(WARNING "${openPMD_ADIOS1_STATUS}")
         set(openPMD_HAVE_ADIOS1 FALSE)
@@ -236,7 +248,11 @@ endif()
 if(NOT openPMD_HAVE_MPI AND openPMD_HAVE_ADIOS1 AND NOT ADIOS_HAVE_SEQUENTIAL)
     string(CONCAT openPMD_ADIOS1_STATUS
         "Did not find MPI but requested ADIOS1 is parallel. "
-        "Set openPMD_USE_ADIOS1=OFF to disable ADIOS1.")
+        "Set openPMD_USE_ADIOS1=OFF to disable ADIOS1.\n"
+        "If you manually installed a serial version of ADIOS1 in "
+        "a non-default path, add its installation prefix to the "
+        "environment variable CMAKE_PREFIX_PATH to find it: "
+        "https://cmake.org/cmake/help/latest/envvar/CMAKE_PREFIX_PATH.html")
     if(openPMD_USE_ADIOS1 STREQUAL AUTO)
         message(WARNING "${openPMD_ADIOS1_STATUS}")
         set(openPMD_HAVE_ADIOS1 FALSE)
