@@ -96,6 +96,16 @@ cmake_dependent_option(BUILD_SHARED_LIBS
     "SHARED_LIBS_SUPPORTED" OFF
 )
 mark_as_advanced(BUILD_SHARED_LIBS)
+if(DEFINED BUILD_SHARED_LIBS)
+    set(openPMD_BUILD_SHARED_LIBS_DEFAULT ${BUILD_SHARED_LIBS})
+else()
+    set(openPMD_BUILD_SHARED_LIBS_DEFAULT ON)
+endif()
+option(openPMD_BUILD_SHARED_LIBS "Build the openPMD tests"
+    ${openPMD_BUILD_SHARED_LIBS_DEFAULT})
+if(openPMD_BUILD_SHARED_LIBS AND NOT SHARED_LIBS_SUPPORTED)
+    message(FATAL_ERROR "openPMD_BUILD_SHARED_LIBS requested but not supported by platform")
+endif()
 
 # Testing logic with possibility to overwrite on a project basis in superbuilds
 include(CTest)
@@ -722,14 +732,14 @@ if(openPMD_BUILD_TESTING)
     endforeach()
 endif()
 
-if(BUILD_CLI_TOOLS)
+if(openPMD_BUILD_CLI_TOOLS)
     foreach(toolname ${openPMD_CLI_TOOL_NAMES})
         add_executable(openpmd-${toolname} src/cli/${toolname}.cpp)
         target_link_libraries(openpmd-${toolname} PRIVATE openPMD)
     endforeach()
 endif()
 
-if(BUILD_EXAMPLES)
+if(openPMD_BUILD_EXAMPLES)
     foreach(examplename ${openPMD_EXAMPLE_NAMES})
         if(${examplename} MATCHES ".+parallel$")
             if(openPMD_HAVE_MPI)
@@ -815,7 +825,7 @@ endfunction()
 
 if(openPMD_HAVE_PKGCONFIG)
     openpmdreclibs(openPMD openPMD_PC_PRIVATE_LIBS)
-    if(BUILD_SHARED_LIBS)
+    if(openPMD_BUILD_SHARED_LIBS)
         set(openPMD_PC_STATIC false)
     else()
         set(openPMD_PC_STATIC true)
@@ -845,7 +855,7 @@ if(openPMD_INSTALL)
             openPMD.ADIOS1.Serial openPMD.ADIOS1.Parallel)
     endif()
 
-    if(BUILD_CLI_TOOLS)
+    if(openPMD_BUILD_CLI_TOOLS)
         foreach(toolname ${openPMD_CLI_TOOL_NAMES})
             list(APPEND openPMD_INSTALL_TARGET_NAMES openpmd-${toolname})
         endforeach()
@@ -1018,7 +1028,7 @@ if(openPMD_BUILD_TESTING)
     endif()
 
     # Examples
-    if(BUILD_EXAMPLES)
+    if(openPMD_BUILD_EXAMPLES)
         # C++ Examples
         # Current examples all use HDF5, elaborate if other backends are used
         if(openPMD_HAVE_HDF5)
@@ -1043,7 +1053,7 @@ if(openPMD_BUILD_TESTING)
     endif()
 
     # Command Line Tools
-    if(BUILD_CLI_TOOLS)
+    if(openPMD_BUILD_CLI_TOOLS)
         # all tools must provide a "--help"
         foreach(toolname ${openPMD_CLI_TOOL_NAMES})
             add_test(NAME CLI.help.${toolname}
@@ -1164,13 +1174,13 @@ else()
 endif()
 message("")
 message("  Build Type: ${CMAKE_BUILD_TYPE}")
-if(BUILD_SHARED_LIBS)
+if(openPMD_BUILD_SHARED_LIBS)
     message("  Library: shared")
 else()
     message("  Library: static")
 endif()
-message("  CLI Tools: ${BUILD_CLI_TOOLS}")
-message("  Examples: ${BUILD_EXAMPLES}")
+message("  CLI Tools: ${openPMD_BUILD_CLI_TOOLS}")
+message("  Examples: ${openPMD_BUILD_EXAMPLES}")
 message("  Testing: ${openPMD_BUILD_TESTING}")
 message("  Invasive Tests: ${openPMD_USE_INVASIVE_TESTS}")
 message("  Internal VERIFY: ${openPMD_USE_VERIFY}")

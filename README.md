@@ -273,7 +273,6 @@ In order to build with debug symbols, pass `-DCMAKE_BUILD_TYPE=Debug` to your `c
 By default, tests, examples and command line tools are built.
 In order to skip building those, pass ``OFF`` to these ``cmake`` options:
 
-| CMake Option              | Values     | Description              |
 |---------------------------|------------|--------------------------|
 | `openPMD_BUILD_TESTING`   | **ON**/OFF | Build tests              |
 | `openPMD_BUILD_EXAMPLES`  | **ON**/OFF | Build examples           |
@@ -319,7 +318,8 @@ set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 set(openPMD_BUILD_CLI_TOOLS OFF)
 set(openPMD_BUILD_EXAMPLES OFF)
 set(openPMD_BUILD_TESTING OFF)
-set(openPMD_INSTALL ${BUILD_SHARED_LIBS})  # e.g. only install if used as shared library
+# set(openPMD_BUILD_SHARED_LIBS OFF)  # precedence over BUILD_SHARED_LIBS if needed; or:
+set(openPMD_INSTALL ${BUILD_SHARED_LIBS})  # only install if used as shared a library
 set(openPMD_USE_PYTHON OFF)
 FetchContent_Declare(openPMD
   GIT_REPOSITORY "https://github.com/openPMD/openPMD-api.git"
