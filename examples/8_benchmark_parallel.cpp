@@ -80,7 +80,7 @@ int main(
     // multiple different benchmark runs with different datatypes,
     // given that you provide it with an appropriate DatasetFillerProvider
     // (template parameter of the Benchmark class).
-    using type = long int;
+    using type = uint64_t;
 #if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2 || openPMD_HAVE_HDF5
     openPMD::Datatype dt = openPMD::determineDatatype<type>();
 #endif
