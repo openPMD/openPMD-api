@@ -3,6 +3,28 @@
 Benchmarks
 ==========
 
+Parallel benchmark 8
+--------------------
+
+Build based on the helper functions in the :ref:`benchmark utilities <utilities-benchmark>`, this benchmark executes a simple parallel read-write test.
+
+In particular, this test case writes and reads a 4D array of type ``uint64_t``, sliced 1D along the first dimension.
+
+.. code-block:: cpp
+
+   openPMD::Extent total{
+       100 * scale_up, // sliced along this axis over MPI ranks
+       100,
+       100,
+       10
+   };
+
+The benchmark writes 10 iterations, meaning that in the strong-scaling case, always around 3/4 GB of data are produced.
+In the weak-scaling case, the data scales as :math:`N * 3/4 \mathrm{GiB}` with :math:`N` as the number of participating MPI ranks.
+
+By default, the benchmarks executes as strong-scaling unless the ``-w``/``--weak`` option is passed as a command-line argument to the executable.
+
+
 Parallel benchmarks 8a & 8b
 ---------------------------
 
