@@ -1034,7 +1034,10 @@ if(openPMD_BUILD_TESTING)
         if(openPMD_HAVE_HDF5)
             if(EXAMPLE_DATA_FOUND)
                 foreach(examplename ${openPMD_EXAMPLE_NAMES})
-                    if(${examplename} MATCHES "^.*_parallel$")
+                    message(STATUS "Example ${examplename}")
+                    if(${examplename} MATCHES "^10.*$")
+                        # streaming examples are done separately
+                    elseif(${examplename} MATCHES "^.*_parallel$")
                         if(openPMD_HAVE_MPI)
                             add_test(NAME MPI.${examplename}
                                     COMMAND ${MPI_TEST_EXE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}
