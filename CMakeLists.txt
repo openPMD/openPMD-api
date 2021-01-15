@@ -1053,6 +1053,11 @@ if(openPMD_BUILD_TESTING)
                 endforeach()
             endif()
         endif()
+        if(openPMD_HAVE_ADIOS2)
+            add_test(NAME Asynchronous.10_streaming
+                     COMMAND sh -c "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/10_streaming_write & ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/10_streaming_read"
+                     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+        endif()
     endif()
 
     # Command Line Tools
