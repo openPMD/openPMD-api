@@ -61,6 +61,7 @@ class CMakeBuild(build_ext):
             '-DopenPMD_BUILD_SHARED_LIBS:BOOL=' + BUILD_SHARED_LIBS,
             '-DHDF5_USE_STATIC_LIBRARIES:BOOL=' + HDF5_USE_STATIC_LIBRARIES,
             '-DADIOS_USE_STATIC_LIBS:BOOL=' + ADIOS_USE_STATIC_LIBS,
+            '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded',
             # Unix: rpath to current dir when packaged
             #       needed for shared (here non-default) builds and ADIOS1
             #       wrapper libraries
@@ -69,6 +70,13 @@ class CMakeBuild(build_ext):
             # Windows: has no RPath concept, all `.dll`s must be in %PATH%
             #          or same dir as calling executable
         ]
+        if platform.system() == "Windows":
+            if self.debug:
+                cmake_args.append('-DCMAKE_MSVC_RUNTIME_LIBRARY='
+                                  'MultiThreadedDebug')
+            else:
+                cmake_args.append('-DCMAKE_MSVC_RUNTIME_LIBRARY='
+                                  'MultiThreaded')
         if sys.platform == "darwin":
             cmake_args.append('-DCMAKE_INSTALL_RPATH=@loader_path')
         else:
