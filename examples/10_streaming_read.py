@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import openpmd_api as io
 
-run_streaming_example = False
+run_streaming_example = True
 
 if not run_streaming_example:
     exit(0)

@@ -1,4 +1,4 @@
-#define BUILD_STREAMING_EXAMPLE false
+#define BUILD_STREAMING_EXAMPLE true
 #if BUILD_STREAMING_EXAMPLE
 #include <openPMD/openPMD.hpp>
 

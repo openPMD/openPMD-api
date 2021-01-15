@@ -2,7 +2,7 @@
 import openpmd_api as io
 import numpy as np
 
-run_streaming_example = False
+run_streaming_example = True
 
 if not run_streaming_example:
     exit(0)
