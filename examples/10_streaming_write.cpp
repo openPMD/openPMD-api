@@ -1,4 +1,9 @@
-#define BUILD_STREAMING_EXAMPLE true
+#ifdef _WIN32
+#    define BUILD_STREAMING_EXAMPLE false
+#else
+#    define BUILD_STREAMING_EXAMPLE true
+#endif
+
 #if BUILD_STREAMING_EXAMPLE
 #include <openPMD/openPMD.hpp>
 

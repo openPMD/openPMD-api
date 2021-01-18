@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 import openpmd_api as io
+import platform
 
-run_streaming_example = True
+run_streaming_example = platform.system() != 'Windows'
 
 if not run_streaming_example:
     exit(0)
