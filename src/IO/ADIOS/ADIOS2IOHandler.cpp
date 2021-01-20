@@ -1530,7 +1530,7 @@ namespace detail
     void BufferedActions::configure_IO(ADIOS2IOHandlerImpl& impl){
         ( void )impl;
         static std::set< std::string > streamingEngines = {
-            "sst", "insitumpi", "inline", "staging", "null"
+            "sst", "insitumpi", "inline", "staging", "nullcore"
         };
         static std::set< std::string > fileEngines = {
             "bp4", "bp3", "hdf5", "file"
