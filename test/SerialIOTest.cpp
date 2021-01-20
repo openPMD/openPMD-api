@@ -2944,7 +2944,7 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
 {
   "adios2": {
     "engine": {
-      "type": "null",
+      "type": "nullcore",
       "unused": "parameter",
       "parameters": {
         "BufferGrowthFactor": "2.0",
