@@ -3078,6 +3078,11 @@ bp4_steps( std::string const & file, std::string const & options_write, std::str
         }
     }
 
+    if( options_read.empty() )
+    {
+        return;
+    }
+
     Series readSeries( file, Access::READ_ONLY, options_read );
 
     size_t last_iteration_index = 0;
@@ -3109,6 +3114,16 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
         }
     }
     )";
+    std::string nullcore = R"(
+    {
+        "adios2": {
+            "engine": {
+                "type": "bp4",
+                "usesteps": true
+            }
+        }
+    }
+    )";
     std::string dontUseSteps = R"(
     {
         "adios2": {
@@ -3124,7 +3139,8 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
     bp4_steps( "../samples/bp4steps_no_yes.bp", dontUseSteps, useSteps );
     bp4_steps( "../samples/bp4steps_yes_no.bp", useSteps, dontUseSteps );
     bp4_steps( "../samples/bp4steps_no_no.bp", dontUseSteps, dontUseSteps );
-    bp4_steps("../samples/bp4steps_default.bp", "{}", "{}");
+    bp4_steps( "../samples/nullcore.bp", nullcore, "" );
+    bp4_steps( "../samples/bp4steps_default.bp", "{}", "{}" );
 }
 #endif
 
