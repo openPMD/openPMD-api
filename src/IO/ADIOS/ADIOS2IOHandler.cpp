@@ -210,7 +210,7 @@ ADIOS2IOHandlerImpl::fileSuffix() const
     static std::map< std::string, std::string > endings{
         { "sst", "" }, { "staging", "" }, { "bp4", ".bp" },
         { "bp3", ".bp" },  { "file", ".bp" },     { "hdf5", ".h5" },
-        { "null", ".null" }
+        { "nullcore", ".nullcore" }
     };
     auto it = endings.find( m_engineType );
     if( it != endings.end() )
@@ -1530,7 +1530,7 @@ namespace detail
     void BufferedActions::configure_IO(ADIOS2IOHandlerImpl& impl){
         ( void )impl;
         static std::set< std::string > streamingEngines = {
-            "sst", "insitumpi", "inline", "staging", "null"
+            "sst", "insitumpi", "inline", "staging", "nullcore"
         };
         static std::set< std::string > fileEngines = {
             "bp4", "bp3", "hdf5", "file"
