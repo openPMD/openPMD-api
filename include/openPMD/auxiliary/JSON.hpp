@@ -163,22 +163,14 @@ namespace auxiliary
     /**
      * Check if options points to a file (indicated by an '@' for the first
      * non-whitespace character).
-     * If yes, return the file content, if not return options without change.
-     * @param options 
-     */
-    std::string readOptions( std::string const & options );
-    /**
-     * Like readOptions(), but also parses the returned string as a JSON value.
-     * @param options 
+     * If yes, return the file content, if not just parse options directly.
+     *
+     * @param options as a parsed JSON object.
      */
     nlohmann::json parseOptions( std::string const & options );
 
 #if openPMD_HAVE_MPI
 
-    /**
-     * Parallel version of readOptions(). MPI-collective.
-     */
-    std::string readOptions( std::string const & options, MPI_Comm comm );
     /**
      * Parallel version of parseOptions(). MPI-collective.
      */

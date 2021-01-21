@@ -118,7 +118,7 @@ namespace auxiliary
     }
 
     namespace {
-        auxiliary::Option< std::string >
+    auxiliary::Option< std::string >
     extractFilename( std::string const & unparsed )
     {
         std::string trimmed = auxiliary::trim(
@@ -137,17 +137,16 @@ namespace auxiliary
     }
     }
 
-    std::string
-    readOptions( std::string const & options )
+    nlohmann::json
+    parseOptions( std::string const & options )
     {
         auto filename = extractFilename( options );
         if( filename.has_value() )
         {
             std::fstream handle;
             handle.open( filename.get(), std::ios_base::in );
-            std::stringstream stream;
-            stream << handle.rdbuf();
-            std::string res = stream.str();
+            nlohmann::json res;
+            handle >> res;
             if( !handle.good() )
             {
                 throw std::runtime_error(
@@ -158,36 +157,24 @@ namespace auxiliary
         }
         else
         {
-            return options;
+            return nlohmann::json::parse( options );
         }
     }
 
-
-    nlohmann::json
-    parseOptions( std::string const & options )
-    {
-        return nlohmann::json::parse( readOptions( options ) );
-    }
-
 #if openPMD_HAVE_MPI
-    std::string
-    readOptions( std::string const & options, MPI_Comm comm )
+    nlohmann::json
+    parseOptions( std::string const & options, MPI_Comm comm )
     {
         auto filename = extractFilename( options );
         if( filename.has_value() )
         {
-            return auxiliary::collective_file_read( filename.get(), comm );
+            return nlohmann::json::parse(
+                auxiliary::collective_file_read( filename.get(), comm ) );
         }
         else
         {
-            return options;
+            return nlohmann::json::parse( options );
         }
-    }
-
-    nlohmann::json
-    parseOptions( std::string const & options, MPI_Comm comm )
-    {
-        return nlohmann::json::parse( readOptions( options, comm ) );
     }
 #endif
 } // namespace auxiliary

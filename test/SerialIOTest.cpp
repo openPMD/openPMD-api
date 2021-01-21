@@ -2995,18 +2995,6 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
         E_x.resetDataset( ds );
         std::vector< int > data( 1000, 0 );
         E_x.storeChunk( data, { 0 }, { 1000 } );
-
-        auto E_y = series.iterations[ 0 ].meshes[ "E" ][ "y" ];
-        // let's override the global compression settings
-        std::fstream file;
-        file.open( "../samples/dataset_config.json", std::ios_base::out );
-        file << datasetConfig;
-        file.flush();
-        ds.options = " @../samples/dataset_config.json";
-        ds.resolveOptions();
-        REQUIRE(ds.options == datasetConfig);
-        E_y.resetDataset( ds );
-        E_y.storeChunk( data, { 0 }, { 1000 } );
         series.flush();
     };
     write( "../samples/jsonConfiguredBP4.bp", writeConfigBP4 );
@@ -3053,16 +3041,6 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
         REQUIRE( E_x.getDimensionality() == 1 );
         REQUIRE( E_x.getExtent()[ 0 ] == 1000 );
         auto chunk = E_x.loadChunk< int >( { 0 }, { 1000 } );
-        series.flush();
-        for( size_t i = 0; i < 1000; ++i )
-        {
-            REQUIRE( chunk.get()[ i ] == 0 );
-        }
-
-        auto E_y = series.iterations[ 0 ].meshes[ "E" ][ "x" ];
-        REQUIRE( E_y.getDimensionality() == 1 );
-        REQUIRE( E_y.getExtent()[ 0 ] == 1000 );
-        chunk = E_y.loadChunk< int >( { 0 }, { 1000 } );
         series.flush();
         for( size_t i = 0; i < 1000; ++i )
         {

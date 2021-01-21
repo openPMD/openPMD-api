@@ -18,8 +18,6 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-
-#include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
 
@@ -38,25 +36,6 @@ PatchRecordComponent::setUnitSI(double usi)
 PatchRecordComponent&
 PatchRecordComponent::resetDataset(Dataset d)
 {
-    /*
-     * IOHandler is only set after construction of RecordComponent.
-     * But constructor call resetDataset.
-     */
-    if( IOHandler )
-    {
-#if openPMD_HAVE_MPI
-        if( IOHandler->m_comm )
-        {
-            d.options = auxiliary::readOptions( d.options, IOHandler->m_comm );
-        }
-        else
-        {
-            d.options = auxiliary::readOptions( d.options );
-        }
-#else
-        d.options = auxiliary::readOptions( d.options );
-#endif
-    }
     if( written() )
         throw std::runtime_error("A Records Dataset can not (yet) be changed after it has been written.");
     if( d.extent.empty() )

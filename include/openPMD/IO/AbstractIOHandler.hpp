@@ -69,22 +69,17 @@ class AbstractIOHandler
 {
 public:
 #if openPMD_HAVE_MPI
-
-    AbstractIOHandler( std::string path, Access at, MPI_Comm comm )
-        : directory{ std::move( path ) }
-        , m_backendAccess{ at }
-        , m_frontendAccess{ at }
-        , m_comm{ comm }
-    {
-    }
+    AbstractIOHandler(std::string path, Access at, MPI_Comm)
+        : directory{std::move(path)},
+          m_backendAccess{at},
+          m_frontendAccess{at}
+    { }
 #endif
-
-    AbstractIOHandler( std::string path, Access at )
-        : directory{ std::move( path ) }
-        , m_backendAccess{ at }
-        , m_frontendAccess{ at }
-    {
-    }
+    AbstractIOHandler(std::string path, Access at)
+        : directory{std::move(path)},
+          m_backendAccess{at},
+          m_frontendAccess{at}
+    { }
     virtual ~AbstractIOHandler() = default;
 
     /** Add provided task to queue according to FIFO.
@@ -109,15 +104,6 @@ public:
     Access const m_backendAccess;
     Access const m_frontendAccess;
     std::queue< IOTask > m_work;
-
-#if openPMD_HAVE_MPI
-    /*
-     * We must keep binary compatibility between parallel and serial IOHandlers
-     * since the ADIOS1 backend will be instantiated parallel and serial.
-     * So, this member must go to the end.
-     */
-    MPI_Comm m_comm = nullptr;
-#endif
 }; // AbstractIOHandler
 
 } // namespace openPMD

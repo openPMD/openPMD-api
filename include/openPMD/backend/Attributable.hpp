@@ -192,7 +192,7 @@ OPENPMD_protected:
     /* views into the resources held by m_writable
      * purely for convenience so code that uses these does not have to go through m_writable-> */
     AbstractFilePosition* abstractFilePosition;
-    AbstractIOHandler* IOHandler = nullptr;
+    AbstractIOHandler* IOHandler;
     Writable* parent;
     bool& dirty() const { return m_writable->dirty; }
     bool& written() const { return m_writable->written; }

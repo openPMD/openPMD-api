@@ -20,12 +20,7 @@
  */
 #pragma once
 
-#include "openPMD/config.hpp"
 #include "openPMD/Datatype.hpp"
-
-#if openPMD_HAVE_MPI
-#include <mpi.h>
-#endif
 
 #include <memory>
 #include <type_traits>
@@ -49,17 +44,6 @@ public:
     Dataset& setChunkSize(Extent const&);
     Dataset& setCompression(std::string const&, uint8_t const);
     Dataset& setCustomTransform(std::string const&);
-    /**
-     * If options point to a file, read that file.
-     * Avoids repeated file access if this Dataset object is reused.
-     */
-    Dataset& resolveOptions();
-#if openPMD_HAVE_MPI
-    /**
-     * Parallel version of resolveOptions(). MPI collective.
-     */
-    Dataset& resolveOptions( MPI_Comm );
-#endif
 
     Extent extent;
     Datatype dtype;
