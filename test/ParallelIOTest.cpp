@@ -943,26 +943,7 @@ TEST_CASE( "parallel_adios2_json_config", "[parallel][adios2]" )
   }
 }
 )END";
-    std::string datasetConfig = R"END(
-{
-  "adios2": {
-    "unused": "dataset parameter",
-    "dataset": {
-      "unused": "too",
-      "operators": [
-        {
-          "type": "blosc",
-          "parameters": {
-              "clevel": "3",
-              "doshuffle": "BLOSC_BITSHUFFLE"
-          }
-        }
-      ]
-    }
-  }
-}
-)END";
-    auto const write = [ size, rank, &datasetConfig ](
+    auto const write = [ size, rank ](
                            std::string const & filename,
                            std::string const & config ) {
         openPMD::Series series(
