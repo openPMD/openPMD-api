@@ -135,7 +135,7 @@ BUILD_EXAMPLES = os.environ.get('openPMD_BUILD_EXAMPLES',
                                 BUILD_EXAMPLES)
 
 # https://cmake.org/cmake/help/v3.0/command/if.html
-if openPMD_USE_MPI.upper() in ['1', 'ON', 'YES', 'TRUE', 'YES']:
+if openPMD_USE_MPI.upper() in ['1', 'ON', 'TRUE', 'YES']:
     openPMD_USE_MPI = "ON"
 else:
     openPMD_USE_MPI = "OFF"
