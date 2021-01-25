@@ -20,6 +20,7 @@
  */
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/auxiliary/Unused.hpp"
 
 #ifdef _WIN32
 #   include <windows.h>
@@ -199,11 +200,11 @@ namespace
      * Only some of these are actually instanciated,
      * so suppress warnings for the others.
      */
-    __attribute__((unused))
+    OPENPMDAPI_UNUSED
     MPI_Datatype const MPI_Types< unsigned >::value = MPI_UNSIGNED;
-    __attribute__((unused))
+    OPENPMDAPI_UNUSED
     MPI_Datatype const MPI_Types< unsigned long >::value = MPI_UNSIGNED_LONG;
-    __attribute__((unused))
+    OPENPMDAPI_UNUSED
     MPI_Datatype const MPI_Types< unsigned long long >::value = MPI_UNSIGNED_LONG_LONG;
 } // namespace
 
