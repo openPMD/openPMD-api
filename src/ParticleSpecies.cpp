@@ -154,6 +154,13 @@ ParticleSpecies::dirtyRecursive() const
             return true;
         }
     }
+    for( auto const & pair : particlePatches )
+    {
+        if( pair.second.dirtyRecursive() )
+        {
+            return true;
+        }
+    }
     return false;
 }
 } // namespace openPMD

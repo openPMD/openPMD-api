@@ -117,4 +117,14 @@ PatchRecordComponent::read()
 
     readAttributes();
 }
+
+bool
+PatchRecordComponent::dirtyRecursive() const
+{
+    if( this->dirty() )
+    {
+        return true;
+    }
+    return !m_chunks->empty();
+}
 } // openPMD
