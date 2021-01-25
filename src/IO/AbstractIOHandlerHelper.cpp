@@ -20,7 +20,6 @@
  */
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 
-#include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/IO/ADIOS/ADIOS1IOHandler.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/IO/ADIOS/ParallelADIOS1IOHandler.hpp"
@@ -28,6 +27,7 @@
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
 #include "openPMD/IO/JSON/JSONIOHandler.hpp"
+#include "openPMD/auxiliary/JSON.hpp"
 
 namespace openPMD
 {

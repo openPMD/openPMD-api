@@ -23,15 +23,14 @@
 
 #include "openPMD/config.hpp"
 
-#include <memory>  // std::shared_ptr
 #include <nlohmann/json.hpp>
-#include <utility> // std::forward
 
 #if openPMD_HAVE_MPI
-
-#include <mpi.h>
-
+#   include <mpi.h>
 #endif
+
+#include <memory>  // std::shared_ptr
+#include <utility> // std::forward
 
 namespace openPMD
 {
@@ -180,4 +179,3 @@ namespace auxiliary
 
 } // namespace auxiliary
 } // namespace openPMD
-

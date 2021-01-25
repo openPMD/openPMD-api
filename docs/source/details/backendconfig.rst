@@ -22,7 +22,7 @@ The configuration string may refer to the complete ``openPMD::Series`` or may ad
 This reflects the fact that certain backend-specific parameters may refer to the whole Series (such as storage engines and their parameters) and others refer to actual datasets (such as compression).
 
 A JSON configuration may either be specified as a regular string that can be parsed as a JSON object, or in the constructor of ``openPMD::Series`` alternatively as a path to a JSON-formatted text file.
-In the latter case, the file path must be prepended by an ampersand ``@``.
+In the latter case, the file path must be prepended by an at-sign ``@``.
 
 For a consistent user interface, backends shall follow the following rules:
 
