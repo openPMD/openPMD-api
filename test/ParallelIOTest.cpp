@@ -7,16 +7,17 @@
 #include <catch2/catch.hpp>
 
 #if openPMD_HAVE_MPI
-#    include <algorithm>
-#    include <fstream>
-#    include <iostream>
-#    include <list>
-#    include <memory>
-#    include <mpi.h>
-#    include <numeric>
-#    include <string>
-#    include <tuple>
-#    include <vector>
+#   include <mpi.h>
+
+#   include <fstream>
+#   include <iostream>
+#   include <algorithm>
+#   include <string>
+#   include <vector>
+#   include <list>
+#   include <memory>
+#   include <numeric>
+#   include <tuple>
 
 using namespace openPMD;
 

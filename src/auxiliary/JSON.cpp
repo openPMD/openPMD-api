@@ -21,14 +21,14 @@
 
 #include "openPMD/auxiliary/JSON.hpp"
 
+#include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/Option.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
+
 #include <cctype> // std::isspace
 #include <fstream>
 #include <sstream>
 #include <vector>
-
-#include "openPMD/auxiliary/Filesystem.hpp"
-#include "openPMD/auxiliary/Option.hpp"
-#include "openPMD/auxiliary/StringManip.hpp"
 
 namespace openPMD
 {
