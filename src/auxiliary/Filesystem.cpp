@@ -236,7 +236,7 @@ collective_file_read( std::string const & path, MPI_Comm comm )
     if( err )
     {
         throw std::runtime_error(
-            "[collective_file_read] MPI_Bcast failure." );
+            "[collective_file_read] MPI_Bcast stringLength failure." );
     }
     std::vector< char > recvbuf( stringLength, 0 );
     if(rank == 0)
@@ -247,7 +247,7 @@ collective_file_read( std::string const & path, MPI_Comm comm )
     if( err )
     {
         throw std::runtime_error(
-            "[collective_file_read] MPI_Bcast failure." );
+            "[collective_file_read] MPI_Bcast file content failure." );
     }
     if( rank != 0 )
     {
