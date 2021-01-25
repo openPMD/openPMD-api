@@ -74,6 +74,9 @@ ParticlePatches::read()
         prc.written() = false;
         prc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
         prc.written() = true;
+
+        pr.dirty() = false;
+        prc.read();
     }
 }
 } // openPMD
