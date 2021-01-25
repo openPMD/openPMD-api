@@ -106,6 +106,16 @@ ParticleSpecies::read()
     readAttributes();
 }
 
+namespace
+{
+    bool flushParticlePatches( ParticlePatches const & particlePatches )
+    {
+        return particlePatches.find("numParticles") != particlePatches.end()
+            && particlePatches.find("numParticlesOffset") != particlePatches.end()
+            && particlePatches.size() >= 3;
+    }
+}
+
 void
 ParticleSpecies::flush(std::string const& path)
 {
@@ -129,9 +139,7 @@ ParticleSpecies::flush(std::string const& path)
         for( auto& record : *this )
             record.second.flush(record.first);
 
-        if( particlePatches.find("numParticles") != particlePatches.end()
-            && particlePatches.find("numParticlesOffset") != particlePatches.end()
-            && particlePatches.size() >= 3 )
+        if( flushParticlePatches( particlePatches ) )
         {
             particlePatches.flush("particlePatches");
             for( auto& patch : particlePatches )
@@ -154,11 +162,14 @@ ParticleSpecies::dirtyRecursive() const
             return true;
         }
     }
-    for( auto const & pair : particlePatches )
+    if( flushParticlePatches( particlePatches ) )
     {
-        if( pair.second.dirtyRecursive() )
+        for( auto const & pair : particlePatches )
         {
-            return true;
+            if( pair.second.dirtyRecursive() )
+            {
+                return true;
+            }
         }
     }
     return false;
