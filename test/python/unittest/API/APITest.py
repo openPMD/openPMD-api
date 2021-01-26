@@ -8,6 +8,7 @@ License: LGPLv3+
 
 import openpmd_api as io
 
+import gc
 import os
 import shutil
 import unittest
@@ -1598,10 +1599,10 @@ class APITest(unittest.TestCase):
         data = np.array(
             [[2, 4, 6, 8], [10, 12, 14, 16]], dtype=np.dtype("int"))
         E_x.store_chunk(data, [1, 0], [2, 4])
-        data = np.array([[2, 4], [6, 8], [10, 12]], dtype=np.dtype("int"))
-        E_x.store_chunk(data, [4, 2], [3, 2])
-        data = np.array([[2], [4], [6], [8]], dtype=np.dtype("int"))
-        E_x.store_chunk(data, [6, 0], [4, 1])
+        data2 = np.array([[2, 4], [6, 8], [10, 12]], dtype=np.dtype("int"))
+        E_x.store_chunk(data2, [4, 2], [3, 2])
+        data3 = np.array([[2], [4], [6], [8]], dtype=np.dtype("int"))
+        E_x.store_chunk(data3, [6, 0], [4, 1])
 
         del write
 
@@ -1628,6 +1629,47 @@ class APITest(unittest.TestCase):
     def testAvailableChunks(self):
         for ext in io.file_extensions:
             self.makeAvailableChunksRoundTrip(ext)
+
+    def writeFromTemporaryStore(self, E_x):
+        E_x.store_chunk(np.array([[4, 5, 6]], dtype=np.dtype("int")),
+                        [1, 0])
+        data = np.array([[1, 2, 3]], dtype=np.dtype("int"))
+        E_x.store_chunk(data)
+
+    def writeFromTemporary(self, ext):
+        name = "../samples/write_from_temporary_python." + ext
+        write = io.Series(
+            name,
+            io.Access_Type.create
+        )
+
+        DS = io.Dataset
+        E_x = write.iterations[0].meshes["E"]["x"]
+        E_x.reset_dataset(DS(np.dtype("int"), [2, 3]))
+        self.writeFromTemporaryStore(E_x)
+        gc.collect()  # trigger removal of temporary data to check its copied
+
+        del write
+
+        read = io.Series(
+            name,
+            io.Access_Type.read_only
+        )
+
+        r_E_x = read.iterations[0].meshes["E"]["x"]
+        # self.assertEqual(len(r_E_x.available_chunks()), 2) # oddly, "1"
+        r_d = r_E_x[()]
+        read.flush()
+
+        if found_numpy:
+            np.testing.assert_allclose(
+                r_d,
+                np.array([[1, 2, 3], [4, 5, 6]], dtype=np.dtype("int"))
+            )
+
+    def testWriteFromTemporary(self):
+        for ext in io.file_extensions:
+            self.writeFromTemporary(ext)
 
     def testJsonConfigADIOS2(self):
         global_config = """
