@@ -2045,13 +2045,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 std::string
 ADIOS2IOHandler::backendProperty( std::string const &property ) const
 {
-    std::string lowercase{ property };
-    std::transform(
-        lowercase.begin(),
-        lowercase.end(),
-        lowercase.begin(),
-        []( unsigned char c ) { return std::tolower( c ); } );
-    if( lowercase == "sst" )
+    if( property == "sst" )
     {
 #if defined( __GNUG__ ) || defined( __clang__ )
         return "1";

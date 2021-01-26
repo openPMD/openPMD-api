@@ -27,6 +27,7 @@
 #include "openPMD/Series.hpp"
 #include "openPMD/version.hpp"
 
+#include <cctype> // std::tolower
 #include <exception>
 #include <iomanip>
 #include <iostream>
@@ -357,7 +358,13 @@ Series::backend() const
 
 std::string Series::backendProperty( std::string const &property ) const
 {
-    return IOHandler->backendProperty( property );
+    std::string lowercase{ property };
+    std::transform(
+        lowercase.begin(),
+        lowercase.end(),
+        lowercase.begin(),
+        []( unsigned char c ) { return std::tolower( c ); } );
+    return IOHandler->backendProperty( lowercase );
 }
 
 void Series::flush()
