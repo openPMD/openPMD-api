@@ -1120,6 +1120,8 @@ public:
 
     std::string backendName() const override { return "ADIOS2"; }
 
-    std::future< void > flush( ) override;
+    std::string backendProperty( std::string const & ) const override;
+
+    std::future<void> flush() override;
 }; // ADIOS2IOHandler
 } // namespace openPMD

@@ -355,8 +355,12 @@ Series::backend() const
     return IOHandler->backendName();
 }
 
-void
-Series::flush()
+std::string Series::backendProperty( std::string const &property ) const
+{
+    return IOHandler->backendProperty( property );
+}
+
+void Series::flush()
 {
     flush_impl( iterations.begin(), iterations.end() );
 }

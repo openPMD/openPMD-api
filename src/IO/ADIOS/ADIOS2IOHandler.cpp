@@ -2042,8 +2042,29 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 {
 }
 
-std::future< void >
-ADIOS2IOHandler::flush()
+std::string
+ADIOS2IOHandler::backendProperty( std::string const &property ) const
+{
+    std::string lowercase{ property };
+    std::transform(
+        lowercase.begin(),
+        lowercase.end(),
+        lowercase.begin(),
+        []( unsigned char c ) { return std::tolower( c ); } );
+    if( lowercase == "sst" )
+    {
+#if defined( __GNUG__ ) || defined( __clang__ )
+        return "1";
+#elif defined( __MSC_VER )
+        return "0";
+#else
+        return "1"
+#endif
+    }
+    return "";
+}
+
+std::future<void> ADIOS2IOHandler::flush()
 {
     return m_impl.flush();
 }
@@ -2075,6 +2096,11 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 std::future< void > ADIOS2IOHandler::flush( )
 {
     return std::future< void >( );
+}
+
+std::string ADIOS2IOHandler::backendProperty( std::string const & ) const
+{
+    return "";
 }
 
 #endif

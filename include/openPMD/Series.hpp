@@ -261,6 +261,20 @@ public:
      */
     std::string backend() const;
 
+    /** Properties of the currently used backend.
+     *
+     * A property is specified by a string and its value is also returned as a
+     * string.
+     *
+     * @param property The name of the property. It is treated in
+     *      case-insensitive manner. Backends should prefer to avoid unnecessary
+     *      prefixes (e.g. "SST" instead of "HAVE_SST").
+     *
+     * @return The property value. Booleans are represented by "0" and "1".
+     *      An empty string in case the property is not defined.
+     */
+    std::string backendProperty( std::string const &property ) const;
+
     /** Execute all required remaining IO operations to write or read data.
      */
     void flush();
