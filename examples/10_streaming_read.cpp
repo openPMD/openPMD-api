@@ -1,10 +1,3 @@
-#ifdef _WIN32
-#    define BUILD_STREAMING_EXAMPLE false
-#else
-#    define BUILD_STREAMING_EXAMPLE true
-#endif
-
-#if BUILD_STREAMING_EXAMPLE
 #include <openPMD/openPMD.hpp>
 
 #include <array>
@@ -20,6 +13,12 @@ main()
 #if openPMD_HAVE_ADIOS2
     using position_t = double;
     Series series = Series( "electrons.sst", Access::READ_ONLY );
+
+    if( series.backendProperty( "SST" ) == "0" )
+    {
+        std::cout << "SST engine not available in ADIOS2." << std::endl;
+        return 0;
+    }
 
     for( IndexedIteration iteration : series.readIterations() )
     {
@@ -63,6 +62,3 @@ main()
     return 0;
 #endif
 }
-#else
-int main(){ return 0; }
-#endif

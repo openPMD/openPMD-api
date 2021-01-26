@@ -14,6 +14,11 @@ if __name__ == "__main__":
         exit(0)
 
     series = io.Series("stream.sst", io.Access_Type.create)
+
+    if series.backend_property("SST") == "0":
+        print("SST engine not available in ADIOS2.")
+        sys.exit(0)
+
     datatype = np.dtype("double")
     length = 10
     global_extent = [10]

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import openpmd_api as io
 import platform
+import sys
 
 run_streaming_example = platform.system() != 'Windows'
 
@@ -13,6 +14,10 @@ if __name__ == "__main__":
         exit(0)
 
     series = io.Series("stream.sst", io.Access_Type.read_only)
+
+    if series.backend_property("SST") == "0":
+        print("SST engine not available in ADIOS2.")
+        sys.exit(0)
 
     for iteration in series.read_iterations():
         print("Current iteration {}".format(iteration.iteration_index))

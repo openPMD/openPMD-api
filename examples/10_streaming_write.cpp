@@ -1,10 +1,3 @@
-#ifdef _WIN32
-#    define BUILD_STREAMING_EXAMPLE false
-#else
-#    define BUILD_STREAMING_EXAMPLE true
-#endif
-
-#if BUILD_STREAMING_EXAMPLE
 #include <openPMD/openPMD.hpp>
 
 #include <iostream>
@@ -22,6 +15,11 @@ main()
 
     // open file for writing
     Series series = Series( "electrons.sst", Access::CREATE );
+    if( series.backendProperty( "SST" ) == "0" )
+    {
+        std::cout << "SST engine not available in ADIOS2." << std::endl;
+        return 0;
+    }
 
     Datatype datatype = determineDatatype< position_t >();
     constexpr unsigned long length = 10ul;
@@ -55,6 +53,3 @@ main()
     return 0;
 #endif
 }
-#else
-int main(){ return 0; }
-#endif
