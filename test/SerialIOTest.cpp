@@ -681,7 +681,7 @@ void particle_patches( std::string file_ending )
     uint64_t const num_patches = 2u;
     {
         // constant scalar
-        Series s = Series("../samples/particle_patches." + file_ending, Access::CREATE);
+        Series s = Series("../samples/particle_patches%T." + file_ending, Access::CREATE);
 
         auto e = s.iterations[42].particles["electrons"];
 
@@ -727,7 +727,7 @@ void particle_patches( std::string file_ending )
         e.particlePatches["extent"]["y"].store(1, float(123.));
     }
     {
-        Series s = Series("../samples/particle_patches." + file_ending, Access::READ_ONLY);
+        Series s = Series("../samples/particle_patches%T." + file_ending, Access::READ_ONLY);
 
         auto e = s.iterations[42].particles["electrons"];
 

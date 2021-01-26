@@ -105,6 +105,12 @@ PatchRecordComponent::flush(std::string const& name)
 void
 PatchRecordComponent::read()
 {
+    if ( *hasBeenRead )
+    {
+        dirty() = false;
+        return;
+    }
+
     Parameter< Operation::READ_ATT > aRead;
 
     aRead.name = "unitSI";
@@ -115,6 +121,18 @@ PatchRecordComponent::read()
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'unitSI'");
 
-    readAttributes();
+    readAttributes(); // this will set dirty() = false
+
+    *hasBeenRead = true;
+}
+
+bool
+PatchRecordComponent::dirtyRecursive() const
+{
+    if( this->dirty() )
+    {
+        return true;
+    }
+    return !m_chunks->empty();
 }
 } // openPMD
