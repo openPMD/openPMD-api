@@ -2,6 +2,7 @@
 import openpmd_api as io
 import numpy as np
 import platform
+import sys
 
 run_streaming_example = platform.system() != 'Windows'
 
