@@ -679,7 +679,7 @@ namespace detail
         static constexpr bool validType = false;
     };
 
-    // missing std::complex< long double > type in ADIOS2 v2.6.0
+    // missing std::complex< long double > type in ADIOS2 v2.7.0
     template <> struct DatasetTypes< std::complex< long double > >
     {
         static constexpr bool validType = false;
@@ -1000,7 +1000,7 @@ namespace detail
             /**
              * File is not written is streaming fashion.
              * Begin/EndStep will be replaced by simple flushes.
-             * Used for:
+             * Used for: FIXME for 2.7.0+ only
              * 1) Writing BP4 files without steps despite using the Streaming
              *    API. This is due to the fact that ADIOS2.6.0 requires using
              *    steps to read BP4 files written with steps, so using steps
@@ -1010,7 +1010,7 @@ namespace detail
              */
             NoStream,
             /**
-             * Necessary workaround under the following circumstances:
+             * Necessary workaround under the following circumstances: FIXME for 2.7.0+ only
              * 1) Using ADIOS2.6.0
              * 2) Using attribute-based layout
              * 3) Reading from a file-based engine a Series written with steps

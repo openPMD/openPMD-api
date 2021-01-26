@@ -137,7 +137,7 @@ jobs:
 # TODO
 #  gcc-4.9.4_nopy_nompi_h5_ad1_ad2
 #  gcc-4.9.4_nopy_ompi_h5_ad1_ad2
-#  gcc-9.3.0_nopy_nompi_h5_ad1_ad2-2.6.0
+#  gcc-9.3.0_nopy_nompi_h5_ad1_ad2-2.7.0
 #  gcc-7.4.0_nopy_ompi_h5_ad1_h5coll
 #  gcc-6.5.0_py35_nompi_h5_ad1-1.13.1
 #  gcc-8.1.0_py37_nompi_h5_ad1_static

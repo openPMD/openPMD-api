@@ -1115,7 +1115,7 @@ void test_complex(const std::string & backend) {
 TEST_CASE( "test_complex", "[serial]" )
 {
     // Notes:
-    // - ADIOS1 and ADIOS 2.6.0 have no complex long double
+    // - ADIOS1 and ADIOS 2.7.0 have no complex long double
     // - JSON read-back not distinguishable yet from N+1 shaped data set
     for (auto const & t : getFileExtensions())
     {

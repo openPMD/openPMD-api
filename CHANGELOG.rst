@@ -3,7 +3,7 @@
 Changelog
 =========
 
-0.13.2
+0.14.0
 ------
 **Date:** TBA
 
@@ -22,6 +22,8 @@ Bug Fixes
 
 Other
 """""
+
+- ADIOS2: require version 2.7.0+ #911
 
 
 0.13.1
