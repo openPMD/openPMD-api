@@ -25,6 +25,10 @@
 
 #include <nlohmann/json.hpp>
 
+#if openPMD_HAVE_MPI
+#   include <mpi.h>
+#endif
+
 #include <memory>  // std::shared_ptr
 #include <utility> // std::forward
 
@@ -154,6 +158,24 @@ namespace auxiliary
             newPositionInShadow,
             traceFurther );
     }
+
+    /**
+     * Check if options points to a file (indicated by an '@' for the first
+     * non-whitespace character).
+     * If yes, return the file content, if not just parse options directly.
+     *
+     * @param options as a parsed JSON object.
+     */
+    nlohmann::json parseOptions( std::string const & options );
+
+#if openPMD_HAVE_MPI
+
+    /**
+     * Parallel version of parseOptions(). MPI-collective.
+     */
+    nlohmann::json parseOptions( std::string const & options, MPI_Comm comm );
+
+#endif
+
 } // namespace auxiliary
 } // namespace openPMD
-

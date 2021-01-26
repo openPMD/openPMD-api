@@ -21,8 +21,13 @@
 
 #include "openPMD/auxiliary/JSON.hpp"
 
-#include "openPMD/config.hpp"
+#include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/Option.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
 
+#include <cctype> // std::isspace
+#include <fstream>
+#include <sstream>
 #include <vector>
 
 namespace openPMD
@@ -111,5 +116,66 @@ namespace auxiliary
           m_trace( trace )
     {
     }
+
+    namespace {
+    auxiliary::Option< std::string >
+    extractFilename( std::string const & unparsed )
+    {
+        std::string trimmed = auxiliary::trim(
+            unparsed, []( char c ) { return std::isspace( c ); } );
+        if( trimmed.at( 0 ) == '@' )
+        {
+            trimmed = trimmed.substr( 1 );
+            trimmed = auxiliary::trim(
+                trimmed, []( char c ) { return std::isspace( c ); } );
+            return auxiliary::makeOption( trimmed );
+        }
+        else
+        {
+            return auxiliary::Option< std::string >{};
+        }
+    }
+    }
+
+    nlohmann::json
+    parseOptions( std::string const & options )
+    {
+        auto filename = extractFilename( options );
+        if( filename.has_value() )
+        {
+            std::fstream handle;
+            handle.open( filename.get(), std::ios_base::in );
+            nlohmann::json res;
+            handle >> res;
+            if( !handle.good() )
+            {
+                throw std::runtime_error(
+                    "Failed reading JSON config from file " + filename.get() +
+                    "." );
+            }
+            return res;
+        }
+        else
+        {
+            return nlohmann::json::parse( options );
+        }
+    }
+
+#if openPMD_HAVE_MPI
+    nlohmann::json
+    parseOptions( std::string const & options, MPI_Comm comm )
+    {
+        auto filename = extractFilename( options );
+        if( filename.has_value() )
+        {
+            return nlohmann::json::parse(
+                auxiliary::collective_file_read( filename.get(), comm ) );
+        }
+        else
+        {
+            return nlohmann::json::parse( options );
+        }
+    }
+#endif
 } // namespace auxiliary
 } // namespace openPMD

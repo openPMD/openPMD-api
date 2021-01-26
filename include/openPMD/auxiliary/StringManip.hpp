@@ -185,6 +185,29 @@ strip(std::string s, std::vector< char > to_remove)
     return s;
 }
 
+template< typename F >
+std::string
+trim( std::string const & s, F && to_remove )
+{
+    auto begin = s.begin();
+    for( ; begin != s.end(); ++begin )
+    {
+        if( !to_remove( *begin ) )
+        {
+            break;
+        }
+    }
+    auto end = s.rbegin();
+    for( ; end != s.rend(); ++end )
+    {
+        if( !to_remove( *end ) )
+        {
+            break;
+        }
+    }
+    return s.substr( begin - s.begin(), end.base() - begin );
+}
+
 inline std::string
 join(std::vector< std::string > const& vs, std::string const& delimiter)
 {

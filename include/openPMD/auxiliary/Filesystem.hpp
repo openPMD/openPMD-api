@@ -23,6 +23,12 @@
 #include <string>
 #include <vector>
 
+#include "openPMD/config.hpp"
+
+#if openPMD_HAVE_MPI
+#    include <mpi.h>
+#endif
+
 namespace openPMD
 {
 namespace auxiliary
@@ -87,5 +93,12 @@ remove_directory(std::string const& path);
  */
 bool
 remove_file(std::string const& path);
-} // auxiliary
-} // openPMD
+
+#if openPMD_HAVE_MPI
+
+std::string
+collective_file_read( std::string const & path, MPI_Comm );
+
+#endif
+} // namespace auxiliary
+} // namespace openPMD

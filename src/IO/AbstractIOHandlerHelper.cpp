@@ -27,7 +27,7 @@
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
 #include "openPMD/IO/JSON/JSONIOHandler.hpp"
-#include <nlohmann/json.hpp>
+#include "openPMD/auxiliary/JSON.hpp"
 
 namespace openPMD
 {
@@ -40,7 +40,7 @@ namespace openPMD
         MPI_Comm comm,
         std::string const & options )
     {
-        nlohmann::json optionsJson = nlohmann::json::parse( options );
+        nlohmann::json optionsJson = auxiliary::parseOptions( options, comm );
         switch( format )
         {
             case Format::HDF5:
@@ -71,7 +71,7 @@ namespace openPMD
         Format format,
         std::string const & options )
     {
-        nlohmann::json optionsJson = nlohmann::json::parse( options );
+        nlohmann::json optionsJson = auxiliary::parseOptions( options );
         switch( format )
         {
             case Format::HDF5:
@@ -97,4 +97,4 @@ namespace openPMD
                     "Unknown file format! Did you specify a file ending?" );
         }
     }
-    } // namespace openPMD
+} // namespace openPMD
