@@ -93,5 +93,6 @@ PatchRecord::read()
         prc.written() = true;
         prc.read();
     }
+    dirty() = false;
 }
 } // openPMD

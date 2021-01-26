@@ -305,6 +305,7 @@ BaseRecord< T_elem >::flush(std::string const& name)
         throw std::runtime_error("A Record can not be written without any contained RecordComponents: " + name);
 
     this->flush_impl(name);
+    this->dirty() = false;
 }
 
 template< typename T_elem >

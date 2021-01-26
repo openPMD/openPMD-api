@@ -49,6 +49,7 @@ class PatchRecordComponent : public BaseRecordComponent
     friend
     class Container;
 
+    template< typename > friend class BaseRecord;
     friend class ParticlePatches;
     friend class PatchRecord;
 
@@ -74,6 +75,18 @@ OPENPMD_private:
     void read();
 
     std::shared_ptr< std::queue< IOTask > > m_chunks;
+    std::shared_ptr< bool > hasBeenRead = std::make_shared< bool >( false );
+
+    /**
+     * @brief Check recursively whether this RecordComponent is dirty.
+     *        It is dirty if any attribute or dataset is read from or written to
+     *        the backend.
+     *
+     * @return true If dirty.
+     * @return false Otherwise.
+     */
+    bool
+    dirtyRecursive() const;
 }; // PatchRecordComponent
 
 template< typename T >
