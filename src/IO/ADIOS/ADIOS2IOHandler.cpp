@@ -2050,6 +2050,8 @@ ADIOS2IOHandler::backendProperty( std::string const &property ) const
 #if defined( __GNUG__ ) || defined( __clang__ )
         return "1";
 #elif defined( __MSC_VER )
+        // see
+        // https://github.com/ornladios/ADIOS2/blob/5948ca8a85e05eaf2ff07c6b64fa049fe0c4f9bb/cmake/DetectOptions.cmake#L320
         return "0";
 #else
         return "1"
