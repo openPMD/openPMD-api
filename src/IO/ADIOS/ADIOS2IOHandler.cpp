@@ -2042,25 +2042,8 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 {
 }
 
-std::string
-ADIOS2IOHandler::backendProperty( std::string const &property ) const
-{
-    if( property == "sst" )
-    {
-#if defined( __GNUG__ ) || defined( __clang__ )
-        return "1";
-#elif defined( _MSC_VER )
-        // see
-        // https://github.com/ornladios/ADIOS2/blob/5948ca8a85e05eaf2ff07c6b64fa049fe0c4f9bb/cmake/DetectOptions.cmake#L320
-        return "0";
-#else
-        return "1";
-#endif
-    }
-    return "";
-}
-
-std::future<void> ADIOS2IOHandler::flush()
+std::future< void >
+ADIOS2IOHandler::flush()
 {
     return m_impl.flush();
 }
@@ -2092,11 +2075,6 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 std::future< void > ADIOS2IOHandler::flush( )
 {
     return std::future< void >( );
-}
-
-std::string ADIOS2IOHandler::backendProperty( std::string const & ) const
-{
-    return "";
 }
 
 #endif

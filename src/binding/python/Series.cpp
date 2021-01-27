@@ -169,7 +169,6 @@ void init_Series(py::module &m) {
         .def("flush", &Series::flush)
 
         .def_property_readonly("backend", &Series::backend)
-        .def("backend_property", &Series::backendProperty)
 
         // TODO remove in future versions (deprecated)
         .def("set_openPMD", &Series::setOpenPMD)

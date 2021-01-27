@@ -1,5 +1,6 @@
 #include <openPMD/openPMD.hpp>
 
+#include <algorithm>
 #include <iostream>
 #include <memory>
 #include <numeric> // std::iota
@@ -15,7 +16,8 @@ main()
 
     // open file for writing
     Series series = Series( "electrons.sst", Access::CREATE );
-    if( series.backendProperty( "SST" ) == "0" )
+    auto backends = openPMD::getFileExtensions();
+    if( std::find( backends.begin(), backends.end(), "sst" ) == backends.end() )
     {
         std::cout << "SST engine not available in ADIOS2." << std::endl;
         return 0;

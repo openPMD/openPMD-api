@@ -100,11 +100,6 @@ public:
     /** The currently used backend */
     virtual std::string backendName() const = 0;
 
-    virtual std::string backendProperty( std::string const & ) const
-    {
-        return {};
-    }
-
     std::string const directory;
     Access const m_backendAccess;
     Access const m_frontendAccess;
