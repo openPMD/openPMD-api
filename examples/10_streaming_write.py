@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import openpmd_api as io
 import numpy as np
-import platform
 import sys
 
 if __name__ == "__main__":
