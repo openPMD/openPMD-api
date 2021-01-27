@@ -47,6 +47,9 @@ jobs:
         if errorlevel 1 exit 1
         cmake --build . --config Release --parallel 2
         if errorlevel 1 exit 1
+        
+        dumpbin /dependents D:\a\openPMD-api\openPMD-api\build\lib\site-packages\openpmd_api\openpmd_api_cxx.cp39-win_amd64.pyd
+        
         ctest -V --output-on-failure --build-config Release
         if errorlevel 1 exit 1
         cmake --build . --config Release --target install
