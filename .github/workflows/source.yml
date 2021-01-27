@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   style:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
     - name: Non-ASCII Characters
@@ -19,7 +19,7 @@ jobs:
         python3 -m flake8 --exclude=thirdParty .
 
   static-analysis:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
     - name: pyflakes
@@ -28,7 +28,7 @@ jobs:
         python3 -m pyflakes docs/ examples/ test/ setup.py
 
   documentation:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
     - uses: s-weigand/setup-conda@v1
