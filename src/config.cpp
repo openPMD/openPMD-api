@@ -21,6 +21,9 @@
 #include "openPMD/config.hpp"
 #include "openPMD/version.hpp"
 
+#if openPMD_HAVE_ADIOS2
+#include <adios2.h>
+#endif
 #include <map>
 #include <string>
 #include <vector>
@@ -46,16 +49,9 @@ openPMD::getFileExtensions()
 #if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
     fext.emplace_back("bp");
 #endif
-
-#if openPMD_HAVE_ADIOS2
-#if openPMD_HAVE_ADIOS2 && !defined( _MSC_VER ) &&                             \
-    ( defined( __GNUG__ ) || defined( __clang__ ) )
-    fext.emplace_back( "sst" );
-    // no sst on MSVC:
-    // https://github.com/ornladios/ADIOS2/blob/5948ca8a85e05eaf2ff07c6b64fa049fe0c4f9bb/cmake/DetectOptions.cmake#L320
+#ifdef ADIOS2_HAVE_SST
+    fext.emplace_back("sst");
 #endif
-#endif
-
 #if openPMD_HAVE_HDF5
     fext.emplace_back("h5");
 #endif
