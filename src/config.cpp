@@ -48,7 +48,8 @@ openPMD::getFileExtensions()
 #endif
 
 #if openPMD_HAVE_ADIOS2
-#if defined( __GNUG__ ) || defined( __clang__ ) || !defined( _MSC_VER )
+#if openPMD_HAVE_ADIOS2 && !defined( _MSC_VER ) &&                             \
+    ( defined( __GNUG__ ) || defined( __clang__ ) )
     fext.emplace_back( "sst" );
     // no sst on MSVC:
     // https://github.com/ornladios/ADIOS2/blob/5948ca8a85e05eaf2ff07c6b64fa049fe0c4f9bb/cmake/DetectOptions.cmake#L320
