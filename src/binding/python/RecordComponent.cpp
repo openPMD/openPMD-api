@@ -282,30 +282,17 @@ store_chunk(RecordComponent & r, py::array & a, Offset const & offset, Extent co
     // @todo in order to implement stride handling, one needs to
     //       loop over the input data strides during write below
 
-    // check: did the user pass a temporary buffer? In that case, we copy as we
-    //        do in the shared_ptr API for C++
-    // note: there might be a corner-case if the user passes a temporary via
-    //       additional wrapper function calls here. We can cover this by
-    //       increasing the Py_SET_REFCNT of a ourselves and reducing it after
-    //       flush(), but that's too complicated/exotic to handle for now.
-    // yeah, every call adds a +1
-    // so here it's 3 (temporary) or >=4 (regular external var)
-    const bool copy = a.ref_count() <= 3 ? true : false;
-
-    void* data = a.mutable_data();
-    auto store_data = [ &r, &data, &offset, &extent, &copy ]( auto cxxtype ){
+    // here, we increase a reference on the user-passed data so that
+    // temporary and lost-scope variables stay alive until we flush
+    // note: this does not yet prevent the user, as in C++, to build
+    //       a race condition by manipulating the data they passed
+    auto store_data = [ &r, &a, &offset, &extent ]( auto cxxtype ) {
         using CXXType = decltype(cxxtype);
-        if( copy ) {
-            size_t num_elements = 1u;
-            for( auto const& si : extent )
-                num_elements *= si;
-            std::shared_ptr< CXXType > data_copy( new CXXType[num_elements],
-                                                  [](CXXType const *p) { delete[] p; } );
-            std::memcpy( data_copy.get(), data, num_elements * sizeof(CXXType) );
-            r.storeChunk( data_copy, offset, extent );
-        }
-        else
-            r.storeChunk( shareRaw( (CXXType*)data ), offset, extent );
+        a.inc_ref();
+        void* data = a.mutable_data();
+        std::shared_ptr< CXXType > shared( ( CXXType * )data,
+                                           [ a ]( CXXType * ) { a.dec_ref(); } );
+        r.storeChunk( std::move( shared ), offset, extent );
     };
 
     // store
