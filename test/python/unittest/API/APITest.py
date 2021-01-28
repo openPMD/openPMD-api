@@ -1657,7 +1657,10 @@ class APITest(unittest.TestCase):
         )
 
         r_E_x = read.iterations[0].meshes["E"]["x"]
-        # self.assertEqual(len(r_E_x.available_chunks()), 2) # oddly, "1"
+        if read.backend == 'ADIOS2':
+            self.assertEqual(len(r_E_x.available_chunks()), 2)
+        else:
+            self.assertEqual(len(r_E_x.available_chunks()), 1)
         r_d = r_E_x[()]
         read.flush()
 
