@@ -1631,10 +1631,11 @@ class APITest(unittest.TestCase):
             self.makeAvailableChunksRoundTrip(ext)
 
     def writeFromTemporaryStore(self, E_x):
-        E_x.store_chunk(np.array([[4, 5, 6]], dtype=np.dtype("int")),
-                        [1, 0])
-        data = np.array([[1, 2, 3]], dtype=np.dtype("int"))
-        E_x.store_chunk(data)
+        if found_numpy:
+            E_x.store_chunk(np.array([[4, 5, 6]], dtype=np.dtype("int")),
+                            [1, 0])
+            data = np.array([[1, 2, 3]], dtype=np.dtype("int"))
+            E_x.store_chunk(data)
 
     def writeFromTemporary(self, ext):
         name = "../samples/write_from_temporary_python." + ext
