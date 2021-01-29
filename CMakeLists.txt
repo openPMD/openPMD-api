@@ -1034,7 +1034,9 @@ if(openPMD_BUILD_TESTING)
         if(openPMD_HAVE_HDF5)
             if(EXAMPLE_DATA_FOUND)
                 foreach(examplename ${openPMD_EXAMPLE_NAMES})
-                    if(${examplename} MATCHES "^.*_parallel$")
+                    if(${examplename} MATCHES "^10.*$")
+                        # streaming examples are done separately
+                    elseif(${examplename} MATCHES "^.*_parallel$")
                         if(openPMD_HAVE_MPI)
                             add_test(NAME MPI.${examplename}
                                     COMMAND ${MPI_TEST_EXE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}
@@ -1049,6 +1051,11 @@ if(openPMD_BUILD_TESTING)
                     endif()
                 endforeach()
             endif()
+        endif()
+        if(openPMD_HAVE_ADIOS2)
+            add_test(NAME Asynchronous.10_streaming
+                     COMMAND sh -c "$<TARGET_FILE:10_streaming_write> & $<TARGET_FILE:10_streaming_read>"
+                     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
         endif()
     endif()
 

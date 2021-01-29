@@ -23,6 +23,8 @@ except ImportError:
 
 from TestUtilities.TestUtilities import generateTestFilePath
 
+tested_file_extensions = [ext for ext in io.file_extensions if ext != 'sst']
+
 
 class APITest(unittest.TestCase):
     """ Test class testing the openPMD python API (plus some IO). """
@@ -375,7 +377,7 @@ class APITest(unittest.TestCase):
         io.list_series(series)
 
     def testAttributes(self):
-        for ext in io.file_extensions:
+        for ext in tested_file_extensions:
             self.attributeRoundTrip(ext)
 
     def makeConstantRoundTrip(self, file_ending):
@@ -562,7 +564,7 @@ class APITest(unittest.TestCase):
                                  np.clongdouble(1.23456789 + 2.34567890j))
 
     def testConstantRecords(self):
-        for ext in io.file_extensions:
+        for ext in tested_file_extensions:
             self.makeConstantRoundTrip(ext)
 
     def makeEmptyRoundTrip(self, file_ending):
@@ -1159,7 +1161,7 @@ class APITest(unittest.TestCase):
         series.flush()
 
     def testSliceWrite(self):
-        for ext in io.file_extensions:
+        for ext in tested_file_extensions:
             self.backend_write_slices(ext)
 
     def backend_write_slices(self, file_ending):
@@ -1422,7 +1424,7 @@ class APITest(unittest.TestCase):
     def testParticlePatches(self):
         self.assertRaises(TypeError, io.Particle_Patches)
 
-        for ext in io.file_extensions:
+        for ext in tested_file_extensions:
             self.backend_particle_patches(ext)
 
     def testParticleSpecies(self):
@@ -1521,7 +1523,7 @@ class APITest(unittest.TestCase):
             del read
 
     def testCloseIteration(self):
-        for ext in io.file_extensions:
+        for ext in tested_file_extensions:
             self.makeCloseIterationRoundTrip(ext)
 
     def makeIteratorRoundTrip(self, backend, file_ending):
@@ -1627,7 +1629,7 @@ class APITest(unittest.TestCase):
         self.assertEqual(chunks[2].extent, [4, 1])
 
     def testAvailableChunks(self):
-        for ext in io.file_extensions:
+        for ext in tested_file_extensions:
             self.makeAvailableChunksRoundTrip(ext)
 
     def writeFromTemporaryStore(self, E_x):

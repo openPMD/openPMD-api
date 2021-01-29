@@ -21,6 +21,9 @@
 #include "openPMD/config.hpp"
 #include "openPMD/version.hpp"
 
+#if openPMD_HAVE_ADIOS2
+#include <adios2.h>
+#endif
 #include <map>
 #include <string>
 #include <vector>
@@ -45,6 +48,9 @@ openPMD::getFileExtensions()
     fext.emplace_back("json");
 #if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
     fext.emplace_back("bp");
+#endif
+#ifdef ADIOS2_HAVE_SST
+    fext.emplace_back("sst");
 #endif
 #if openPMD_HAVE_HDF5
     fext.emplace_back("h5");

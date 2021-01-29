@@ -27,6 +27,14 @@
 
 using namespace openPMD;
 
+std::vector< std::string > testedFileExtensions()
+{
+    auto allExtensions = getFileExtensions();
+    auto newEnd =
+        std::remove( allExtensions.begin(), allExtensions.end(), "sst" );
+    return { allExtensions.begin(), newEnd };
+}
+
 void
 write_and_read_many_iterations( std::string const & ext ) {
     constexpr unsigned int nIterations = 1000;
@@ -70,7 +78,7 @@ TEST_CASE( "write_and_read_many_iterations", "[serial]" )
 {
     if( auxiliary::directory_exists( "../samples/many_iterations" ) )
         auxiliary::remove_directory( "../samples/many_iterations" );
-    for( auto const & t : getFileExtensions() )
+    for( auto const & t : testedFileExtensions() )
     {
         write_and_read_many_iterations( t );
     }
@@ -80,7 +88,7 @@ TEST_CASE( "multi_series_test", "[serial]" )
 {
     std::list< Series > allSeries;
 
-    auto myfileExtensions = getFileExtensions();
+    auto myfileExtensions = testedFileExtensions();
 
     // this test demonstrates an ADIOS1 (upstream) bug, comment this section to trigger it
     auto const rmEnd = std::remove_if( myfileExtensions.begin(), myfileExtensions.end(), [](std::string const & beit) {
@@ -272,7 +280,7 @@ close_iteration_test( std::string file_ending )
 
 TEST_CASE( "close_iteration_test", "[serial]" )
 {
-    for( auto const & t : getFileExtensions() )
+    for( auto const & t : testedFileExtensions() )
     {
         close_iteration_test( t );
     }
@@ -333,7 +341,7 @@ close_and_copy_attributable_test( std::string file_ending )
 TEST_CASE( "close_and_copy_attributable_test", "[serial]" )
 {
     // demonstrator for https://github.com/openPMD/openPMD-api/issues/765
-    for( auto const & t : getFileExtensions() )
+    for( auto const & t : testedFileExtensions() )
     {
         close_and_copy_attributable_test( t );
     }
@@ -480,7 +488,7 @@ empty_dataset_test( std::string file_ending )
 
 TEST_CASE( "empty_dataset_test", "[serial]" )
 {
-    for (auto const & t: getFileExtensions())
+    for (auto const & t: testedFileExtensions())
     {
         empty_dataset_test( t );
     }
@@ -631,7 +639,7 @@ void constant_scalar(std::string file_ending)
 
 TEST_CASE( "constant_scalar", "[serial]" )
 {
-    for (auto const & t: getFileExtensions())
+    for (auto const & t: testedFileExtensions())
     {
         constant_scalar( t );
     }
@@ -639,7 +647,7 @@ TEST_CASE( "constant_scalar", "[serial]" )
 
 TEST_CASE( "flush_without_position_positionOffset", "[serial]" )
 {
-    for( auto const & t : getFileExtensions() )
+    for( auto const & t : testedFileExtensions() )
     {
         const std::string & file_ending = t;
         Series s = Series(
@@ -758,7 +766,7 @@ void particle_patches( std::string file_ending )
 
 TEST_CASE( "particle_patches", "[serial]" )
 {
-    for (auto const & t: getFileExtensions())
+    for (auto const & t: testedFileExtensions())
     {
         particle_patches( t );
     }
@@ -950,7 +958,7 @@ void dtype_test( const std::string & backend )
 
 TEST_CASE( "dtype_test", "[serial]" )
 {
-    for (auto const & t: getFileExtensions())
+    for (auto const & t: testedFileExtensions())
         dtype_test(t);
 }
 
@@ -1036,7 +1044,7 @@ void write_test(const std::string & backend)
 
 TEST_CASE( "write_test", "[serial]" )
 {
-    for (auto const & t: getFileExtensions())
+    for (auto const & t: testedFileExtensions())
     {
         write_test( t );
         Series list{ "../samples/serial_write." + t, Access::READ_ONLY };
@@ -1117,7 +1125,7 @@ TEST_CASE( "test_complex", "[serial]" )
     // Notes:
     // - ADIOS1 and ADIOS 2.6.0 have no complex long double
     // - JSON read-back not distinguishable yet from N+1 shaped data set
-    for (auto const & t : getFileExtensions())
+    for (auto const & t : testedFileExtensions())
     {
         test_complex(t);
     }
@@ -1377,7 +1385,7 @@ void fileBased_write_test(const std::string & backend)
 
 TEST_CASE( "fileBased_write_test", "[serial]" )
 {
-    for (auto const & t: getFileExtensions())
+    for (auto const & t: testedFileExtensions())
     {
         fileBased_write_test( t );
     }
@@ -1452,7 +1460,7 @@ void sample_write_thetaMode(std::string file_ending)
 
 TEST_CASE( "sample_write_thetaMode", "[serial][thetaMode]" )
 {
-    for (auto const & t: getFileExtensions())
+    for (auto const & t: testedFileExtensions())
     {
         sample_write_thetaMode( t );
 
@@ -1487,7 +1495,7 @@ void bool_test(const std::string & backend)
 
 TEST_CASE( "bool_test", "[serial]" )
 {
-    for (auto const & t: getFileExtensions())
+    for (auto const & t: testedFileExtensions())
     {
         bool_test( t );
     }
@@ -1524,7 +1532,7 @@ void patch_test(const std::string & backend)
 
 TEST_CASE( "patch_test", "[serial]" )
 {
-    for (auto const & t: getFileExtensions())
+    for (auto const & t: testedFileExtensions())
     {
         patch_test( t );
 
@@ -1581,7 +1589,7 @@ void deletion_test(const std::string & backend)
 
 TEST_CASE( "deletion_test", "[serial]" )
 {
-    for (auto const & t: getFileExtensions())
+    for (auto const & t: testedFileExtensions())
     {
         if (t == "bp")
         {
@@ -1606,7 +1614,7 @@ void read_missing_throw_test(const std::string & backend)
 
 TEST_CASE( "read_missing_throw_test", "[serial]" )
 {
-    for (auto const & t: getFileExtensions())
+    for (auto const & t: testedFileExtensions())
         read_missing_throw_test( t );
 }
 
@@ -3191,7 +3199,7 @@ serial_iterator( std::string const & file )
 
 TEST_CASE( "serial_iterator", "[serial][adios2]" )
 {
-    for( auto const & t : getFileExtensions() )
+    for( auto const & t : testedFileExtensions() )
     {
         serial_iterator( "../samples/serial_iterator_filebased_%T." + t );
         serial_iterator( "../samples/serial_iterator_groupbased." + t );
@@ -3259,7 +3267,7 @@ iterate_nonstreaming_series( std::string const & file )
 
 TEST_CASE( "iterate_nonstreaming_series", "[serial][adios2]" )
 {
-    for( auto const & t : getFileExtensions() )
+    for( auto const & t : testedFileExtensions() )
     {
         iterate_nonstreaming_series(
             "../samples/iterate_nonstreaming_series_filebased_%T." + t );
