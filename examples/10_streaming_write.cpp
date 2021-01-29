@@ -13,15 +13,15 @@ main()
 {
 #if openPMD_HAVE_ADIOS2
     using position_t = double;
-
-    // open file for writing
-    Series series = Series( "electrons.sst", Access::CREATE );
     auto backends = openPMD::getFileExtensions();
     if( std::find( backends.begin(), backends.end(), "sst" ) == backends.end() )
     {
         std::cout << "SST engine not available in ADIOS2." << std::endl;
         return 0;
     }
+
+    // open file for writing
+    Series series = Series( "electrons.sst", Access::CREATE );
 
     Datatype datatype = determineDatatype< position_t >();
     constexpr unsigned long length = 10ul;

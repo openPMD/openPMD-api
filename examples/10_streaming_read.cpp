@@ -13,14 +13,14 @@ main()
 {
 #if openPMD_HAVE_ADIOS2
     using position_t = double;
-    Series series = Series( "electrons.sst", Access::READ_ONLY );
-
     auto backends = openPMD::getFileExtensions();
     if( std::find( backends.begin(), backends.end(), "sst" ) == backends.end() )
     {
         std::cout << "SST engine not available in ADIOS2." << std::endl;
         return 0;
     }
+
+    Series series = Series( "electrons.sst", Access::READ_ONLY );
 
     for( IndexedIteration iteration : series.readIterations() )
     {
