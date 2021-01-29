@@ -27,13 +27,14 @@
 #include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/binding/python/Numpy.hpp"
 
-#include <complex>
-#include <string>
 #include <algorithm>
-#include <tuple>
-#include <iostream>
+#include <complex>
 #include <cstdint>
+#include <cstring>
 #include <exception>
+#include <iostream>
+#include <string>
+#include <tuple>
 
 namespace py = pybind11;
 using namespace openPMD;
@@ -279,44 +280,42 @@ store_chunk(RecordComponent & r, py::array & a, Offset const & offset, Extent co
         throw py::index_error(
             "strides in chunk are inefficient, not implemented!");
     // @todo in order to implement stride handling, one needs to
-    //       loop over the input data strides during write below,
-    //       also data might not be owned!
+    //       loop over the input data strides during write below
+
+    // here, we increase a reference on the user-passed data so that
+    // temporary and lost-scope variables stay alive until we flush
+    // note: this does not yet prevent the user, as in C++, to build
+    //       a race condition by manipulating the data they passed
+    auto store_data = [ &r, &a, &offset, &extent ]( auto cxxtype ) {
+        using CXXType = decltype(cxxtype);
+        a.inc_ref();
+        void* data = a.mutable_data();
+        std::shared_ptr< CXXType > shared( ( CXXType * )data,
+                                           [ a ]( CXXType * ) { a.dec_ref(); } );
+        r.storeChunk( std::move( shared ), offset, extent );
+    };
 
     // store
     auto const dtype = dtype_from_numpy( a.dtype() );
-    if( dtype == Datatype::CHAR )
-        r.storeChunk( shareRaw( (char*)a.mutable_data() ), offset, extent );
-    else if( dtype == Datatype::UCHAR )
-        r.storeChunk( shareRaw( (unsigned char*)a.mutable_data() ), offset, extent );
-    else if( dtype == Datatype::SHORT )
-        r.storeChunk( shareRaw( (short*)a.mutable_data() ), offset, extent );
-    else if( dtype == Datatype::INT )
-        r.storeChunk( shareRaw( (int*)a.mutable_data() ), offset, extent );
-    else if( dtype == Datatype::LONG )
-       r.storeChunk( shareRaw( (long*)a.mutable_data() ), offset, extent );
-    else if( dtype == Datatype::LONGLONG )
-        r.storeChunk( shareRaw( (long long*)a.mutable_data() ), offset, extent );
-    else if( dtype == Datatype::USHORT )
-        r.storeChunk( shareRaw( (unsigned short*)a.mutable_data() ), offset, extent );
-    else if( dtype == Datatype::UINT )
-        r.storeChunk( shareRaw( (unsigned int*)a.mutable_data() ), offset, extent );
-    else if( dtype == Datatype::ULONG )
-        r.storeChunk( shareRaw( (unsigned long*)a.mutable_data() ), offset, extent );
-    else if( dtype == Datatype::ULONGLONG )
-        r.storeChunk( shareRaw( (unsigned long long*)a.mutable_data() ), offset, extent );
-    else if( dtype == Datatype::LONG_DOUBLE )
-        r.storeChunk( shareRaw( (long double*)a.mutable_data() ), offset, extent );
-    else if( dtype == Datatype::DOUBLE )
-        r.storeChunk( shareRaw( (double*)a.mutable_data() ), offset, extent );
-    else if( dtype == Datatype::FLOAT )
-        r.storeChunk( shareRaw( (float*)a.mutable_data() ), offset, extent );
+    if( dtype == Datatype::CHAR ) store_data( char() );
+    else if( dtype == Datatype::UCHAR ) store_data( (unsigned char)0 );
+    else if( dtype == Datatype::SHORT ) store_data( short() );
+    else if( dtype == Datatype::INT ) store_data( int() );
+    else if( dtype == Datatype::LONG ) store_data( long() );
+    else if( dtype == Datatype::LONGLONG ) store_data( (long long)0 );
+    else if( dtype == Datatype::USHORT ) store_data( (unsigned short)0 );
+    else if( dtype == Datatype::UINT ) store_data( (unsigned int)0 );
+    else if( dtype == Datatype::ULONG ) store_data( (unsigned long)0 );
+    else if( dtype == Datatype::ULONGLONG ) store_data( (unsigned long long)0 );
+    else if( dtype == Datatype::LONG_DOUBLE ) store_data( (long double)0 );
+    else if( dtype == Datatype::DOUBLE ) store_data( double() );
+    else if( dtype == Datatype::FLOAT ) store_data( float() );
 /* @todo
 .value("STRING", Datatype::STRING)
 .value("VEC_STRING", Datatype::VEC_STRING)
 .value("ARR_DBL_7", Datatype::ARR_DBL_7)
 */
-    else if( dtype == Datatype::BOOL )
-        r.storeChunk( shareRaw( (bool*)a.mutable_data() ), offset, extent );
+    else if( dtype == Datatype::BOOL ) store_data( bool() );
     else
         throw std::runtime_error(
             std::string("Datatype '") +
