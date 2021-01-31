@@ -310,6 +310,9 @@ store_chunk(RecordComponent & r, py::array & a, Offset const & offset, Extent co
     else if( dtype == Datatype::LONG_DOUBLE ) store_data( (long double)0 );
     else if( dtype == Datatype::DOUBLE ) store_data( double() );
     else if( dtype == Datatype::FLOAT ) store_data( float() );
+    else if( dtype == Datatype::CLONG_DOUBLE ) store_data( std::complex<long double>() );
+    else if( dtype == Datatype::CDOUBLE ) store_data( std::complex<double>() );
+    else if( dtype == Datatype::CFLOAT ) store_data( std::complex<float>() );
 /* @todo
 .value("STRING", Datatype::STRING)
 .value("VEC_STRING", Datatype::VEC_STRING)

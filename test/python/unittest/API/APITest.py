@@ -525,14 +525,13 @@ class APITest(unittest.TestCase):
                             np.dtype('double'))
             self.assertTrue(ms["longdouble"][SCALAR].load_chunk(o, e).dtype
                             == np.dtype('longdouble'))
-            if file_ending != "json":
-                self.assertTrue(ms["complex64"][SCALAR].load_chunk(o, e).dtype
-                                == np.dtype('complex64'))
-                self.assertTrue(ms["complex128"][SCALAR].load_chunk(o, e).dtype
-                                == np.dtype('complex128'))
-                if file_ending != "bp":
-                    self.assertTrue(ms["clongdouble"][SCALAR].load_chunk(o, e)
-                                    .dtype == np.dtype('clongdouble'))
+            self.assertTrue(ms["complex64"][SCALAR].load_chunk(o, e).dtype
+                            == np.dtype('complex64'))
+            self.assertTrue(ms["complex128"][SCALAR].load_chunk(o, e).dtype
+                            == np.dtype('complex128'))
+            if file_ending != "bp":
+                self.assertTrue(ms["clongdouble"][SCALAR].load_chunk(o, e)
+                                .dtype == np.dtype('clongdouble'))
 
             # FIXME: why does this even work w/o a flush() ?
             self.assertEqual(ms["int16"][SCALAR].load_chunk(o, e),
@@ -564,6 +563,77 @@ class APITest(unittest.TestCase):
     def testConstantRecords(self):
         for ext in io.file_extensions:
             self.makeConstantRoundTrip(ext)
+
+    def makeDataRoundTrip(self, file_ending):
+        if not found_numpy:
+            return
+
+        # write
+        series = io.Series(
+            "unittest_py_data_API." + file_ending,
+            io.Access.create
+        )
+
+        ms = series.iterations[0].meshes
+        SCALAR = io.Mesh_Record_Component.SCALAR
+        DS = io.Dataset
+
+        extent = [42, 24, 11]
+
+        ms["complex64"][SCALAR].reset_dataset(
+            DS(np.dtype("complex64"), extent))
+        ms["complex64"][SCALAR].store_chunk(
+            np.ones(extent, dtype=np.complex64) *
+            np.complex64(1.234 + 2.345j))
+        ms["complex128"][SCALAR].reset_dataset(
+            DS(np.dtype("complex128"), extent))
+        ms["complex128"][SCALAR].store_chunk(
+            np.ones(extent, dtype=np.complex128) *
+            np.complex128(1.234567 + 2.345678j))
+        if file_ending != "bp":
+            ms["clongdouble"][SCALAR].reset_dataset(
+                DS(np.dtype("clongdouble"), extent))
+            ms["clongdouble"][SCALAR].store_chunk(
+                np.ones(extent, dtype=np.clongdouble) *
+                np.clongdouble(1.23456789 + 2.34567890j))
+
+        # flush and close file
+        del series
+
+        # read back
+        series = io.Series(
+            "unittest_py_data_API." + file_ending,
+            io.Access.read_only
+        )
+
+        ms = series.iterations[0].meshes
+        o = [1, 2, 3]
+        e = [1, 1, 1]
+
+        dc64 = ms["complex64"][SCALAR].load_chunk(o, e)
+        dc128 = ms["complex128"][SCALAR].load_chunk(o, e)
+        if file_ending != "bp":
+            dc256 = ms["clongdouble"][SCALAR].load_chunk(o, e)
+
+        self.assertTrue(dc64.dtype == np.dtype('complex64'))
+        self.assertTrue(dc128.dtype == np.dtype('complex128'))
+        if file_ending != "bp":
+            self.assertTrue(
+                dc256.dtype == np.dtype('clongdouble'))
+
+        series.flush()
+
+        self.assertEqual(dc64,
+                         np.complex64(1.234 + 2.345j))
+        self.assertEqual(dc128,
+                         np.complex128(1.234567 + 2.345678j))
+        if file_ending != "bp":
+            self.assertEqual(dc256,
+                             np.clongdouble(1.23456789 + 2.34567890j))
+
+    def testDataRoundTrip(self):
+        for ext in io.file_extensions:
+            self.makeDataRoundTrip(ext)
 
     def makeEmptyRoundTrip(self, file_ending):
         # write
