@@ -634,7 +634,7 @@ class APITest(unittest.TestCase):
                              np.clongdouble(1.23456789 + 2.34567890j))
 
     def testDataRoundTrip(self):
-        for ext in io.file_extensions:
+        for ext in tested_file_extensions:
             self.makeDataRoundTrip(ext)
 
     def makeEmptyRoundTrip(self, file_ending):
@@ -1744,7 +1744,7 @@ class APITest(unittest.TestCase):
             )
 
     def testWriteFromTemporary(self):
-        for ext in io.file_extensions:
+        for ext in tested_file_extensions:
             self.writeFromTemporary(ext)
 
     def testJsonConfigADIOS2(self):
