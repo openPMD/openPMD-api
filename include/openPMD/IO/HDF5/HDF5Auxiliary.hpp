@@ -20,288 +20,39 @@
  */
 #pragma once
 
-#include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/config.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Writable.hpp"
-#include "openPMD/IO/HDF5/HDF5FilePosition.hpp"
 
 #include <hdf5.h>
 
-#include <complex>
-#include <stack>
+#include <map>
 #include <string>
-#include <typeinfo>
 #include <unordered_map>
 #include <utility>
 
 
 namespace openPMD
 {
-struct GetH5DataType
-{
-    std::unordered_map< std::string, hid_t > m_userTypes;
-
-    GetH5DataType( std::unordered_map< std::string, hid_t > userTypes )
-    : m_userTypes{ std::move(userTypes) }
+#if openPMD_HAVE_HDF5
+    struct GetH5DataType
     {
-    }
+        std::unordered_map< std::string, hid_t > m_userTypes;
+
+        GetH5DataType( std::unordered_map< std::string, hid_t > userTypes )
+        : m_userTypes{ std::move(userTypes) }
+        {
+        }
+
+        hid_t
+        operator()(Attribute const &att);
+    };
 
     hid_t
-    operator()(Attribute const &att)
-    {
-        using DT = Datatype;
-        switch (att.dtype) {
-            case DT::CHAR:
-            case DT::VEC_CHAR:
-                return H5Tcopy(H5T_NATIVE_CHAR);
-            case DT::UCHAR:
-            case DT::VEC_UCHAR:
-                return H5Tcopy(H5T_NATIVE_UCHAR);
-            case DT::SHORT:
-            case DT::VEC_SHORT:
-                return H5Tcopy(H5T_NATIVE_SHORT);
-            case DT::INT:
-            case DT::VEC_INT:
-                return H5Tcopy(H5T_NATIVE_INT);
-            case DT::LONG:
-            case DT::VEC_LONG:
-                return H5Tcopy(H5T_NATIVE_LONG);
-            case DT::LONGLONG:
-            case DT::VEC_LONGLONG:
-                return H5Tcopy(H5T_NATIVE_LLONG);
-            case DT::USHORT:
-            case DT::VEC_USHORT:
-                return H5Tcopy(H5T_NATIVE_USHORT);
-            case DT::UINT:
-            case DT::VEC_UINT:
-                return H5Tcopy(H5T_NATIVE_UINT);
-            case DT::ULONG:
-            case DT::VEC_ULONG:
-                return H5Tcopy(H5T_NATIVE_ULONG);
-            case DT::ULONGLONG:
-            case DT::VEC_ULONGLONG:
-                return H5Tcopy(H5T_NATIVE_ULLONG);
-            case DT::FLOAT:
-            case DT::VEC_FLOAT:
-                return H5Tcopy(H5T_NATIVE_FLOAT);
-            case DT::DOUBLE:
-            case DT::ARR_DBL_7:
-            case DT::VEC_DOUBLE:
-                return H5Tcopy(H5T_NATIVE_DOUBLE);
-            case DT::LONG_DOUBLE:
-            case DT::VEC_LONG_DOUBLE:
-                return H5Tcopy(H5T_NATIVE_LDOUBLE);
-            case DT::CFLOAT:
-            case DT::VEC_CFLOAT:
-                return H5Tcopy( m_userTypes.at( typeid(std::complex< float >).name() ) );
-            case DT::CDOUBLE:
-            case DT::VEC_CDOUBLE:
-                return H5Tcopy( m_userTypes.at( typeid(std::complex< double >).name() ) );
-            case DT::CLONG_DOUBLE:
-            case DT::VEC_CLONG_DOUBLE:
-                return H5Tcopy( m_userTypes.at( typeid(std::complex< long double >).name() ) );
-            case DT::STRING: {
-                hid_t string_t_id = H5Tcopy(H5T_C_S1);
-                H5Tset_size(string_t_id, att.get<std::string>().size());
-                return string_t_id;
-            }
-            case DT::VEC_STRING: {
-                hid_t string_t_id = H5Tcopy(H5T_C_S1);
-                size_t max_len = 0;
-                for (std::string const &s : att.get<std::vector<std::string> >())
-                    max_len = std::max(max_len, s.size());
-                H5Tset_size(string_t_id, max_len);
-                return string_t_id;
-            }
-            case DT::BOOL:
-                return H5Tcopy( m_userTypes.at( typeid(bool).name() ) );
-            case DT::DATATYPE:
-                throw std::runtime_error("[HDF5] Meta-Datatype leaked into IO");
-            case DT::UNDEFINED:
-                throw std::runtime_error("[HDF5] Unknown Attribute datatype (HDF5 datatype)");
-            default:
-                throw std::runtime_error("[HDF5] Datatype not implemented");
-        }
-    }
-};
+    getH5DataSpace(Attribute const& att);
 
-inline hid_t
-getH5DataSpace(Attribute const& att)
-{
-    using DT = Datatype;
-    switch( att.dtype )
-    {
-        case DT::CHAR:
-        case DT::UCHAR:
-        case DT::SHORT:
-        case DT::INT:
-        case DT::LONG:
-        case DT::LONGLONG:
-        case DT::USHORT:
-        case DT::UINT:
-        case DT::ULONG:
-        case DT::ULONGLONG:
-        case DT::FLOAT:
-        case DT::DOUBLE:
-        case DT::LONG_DOUBLE:
-        case DT::CFLOAT:
-        case DT::CDOUBLE:
-        case DT::CLONG_DOUBLE:
-        case DT::STRING:
-        case DT::BOOL:
-            return H5Screate(H5S_SCALAR);
-        case DT::VEC_CHAR:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< char > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
-            return vec_t_id;
-        }
-        case DT::VEC_SHORT:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< short > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
-            return vec_t_id;
-        }
-        case DT::VEC_INT:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< int > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
-            return vec_t_id;
-        }
-        case DT::VEC_LONG:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< long > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
-            return vec_t_id;
-        }
-        case DT::VEC_LONGLONG:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< long long > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
-            return vec_t_id;
-        }
-        case DT::VEC_UCHAR:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< unsigned char > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
-            return vec_t_id;
-        }
-        case DT::VEC_USHORT:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< unsigned short > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
-            return vec_t_id;
-        }
-        case DT::VEC_UINT:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< unsigned int > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
-            return vec_t_id;
-        }
-        case DT::VEC_ULONG:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< unsigned long > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
-            return vec_t_id;
-        }
-        case DT::VEC_ULONGLONG:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< unsigned long long > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
-            return vec_t_id;
-        }
-        case DT::VEC_FLOAT:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< float > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
-            return vec_t_id;
-        }
-        case DT::VEC_DOUBLE:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< double > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
-            return vec_t_id;
-        }
-        case DT::VEC_LONG_DOUBLE:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< long double > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
-            return vec_t_id;
-        }
-        case DT::VEC_CFLOAT:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< std::complex< float > > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
-            return vec_t_id;
-        }
-        case DT::VEC_CDOUBLE:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< std::complex< double > > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
-            return vec_t_id;
-        }
-        case DT::VEC_CLONG_DOUBLE:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< std::complex< long double > > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
-            return vec_t_id;
-        }
-        case DT::VEC_STRING:
-        {
-            hid_t vec_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {att.get< std::vector< std::string > >().size()};
-            H5Sset_extent_simple(vec_t_id, 1, dims, nullptr);
-            return vec_t_id;
-        }
-        case DT::ARR_DBL_7:
-        {
-            hid_t array_t_id = H5Screate(H5S_SIMPLE);
-            hsize_t dims[1] = {7};
-            H5Sset_extent_simple(array_t_id, 1, dims, nullptr);
-            return array_t_id;
-        }
-        case DT::UNDEFINED:
-            throw std::runtime_error("Unknown Attribute datatype (HDF5 dataspace)");
-        default:
-            throw std::runtime_error("Datatype not implemented in HDF5 IO");
-    }
-}
+    std::string
+    concrete_h5_file_position(Writable* w);
 
-inline std::string
-concrete_h5_file_position(Writable* w)
-{
-    std::stack< Writable* > hierarchy;
-    if( !w->abstractFilePosition )
-        w = w->parent;
-    while( w )
-    {
-        hierarchy.push(w);
-        w = w->parent;
-    }
-
-    std::string pos;
-    while( !hierarchy.empty() )
-    {
-        pos += std::dynamic_pointer_cast< HDF5FilePosition >(hierarchy.top()->abstractFilePosition)->location;
-        hierarchy.pop();
-    }
-
-    return auxiliary::replace_all(pos, "//", "/");
-}
-} // openPMD
+#endif
+} // namespace openPMD

@@ -34,6 +34,7 @@
 #include <cstring>
 #include <future>
 #include <iostream>
+#include <stack>
 #include <string>
 #include <typeinfo>
 #include <unordered_map>
