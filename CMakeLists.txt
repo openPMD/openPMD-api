@@ -663,6 +663,9 @@ set(openPMD_TEST_NAMES
 set(openPMD_CLI_TOOL_NAMES
     ls
 )
+set(openPMD_PYTHON_CLI_TOOL_NAMES
+    pipe
+)
 set(openPMD_PYTHON_CLI_MODULE_NAMES ${openPMD_CLI_TOOL_NAMES})
 # examples
 set(openPMD_EXAMPLE_NAMES
@@ -881,6 +884,16 @@ if(openPMD_INSTALL)
         install(TARGETS openPMD.py
             DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/openpmd_api
         )
+        if(openPMD_BUILD_CLI_TOOLS)
+            foreach(toolname ${openPMD_PYTHON_CLI_TOOL_NAMES})
+                install(
+                    FILES ${openPMD_SOURCE_DIR}/src/cli/${toolname}.py
+                    DESTINATION ${CMAKE_INSTALL_BINDIR}
+                    RENAME openpmd-${toolname}.py
+                    PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+                )
+            endforeach()
+        endif()
     endif()
     install(DIRECTORY "${openPMD_SOURCE_DIR}/include/openPMD"
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
@@ -1079,6 +1092,21 @@ if(openPMD_BUILD_TESTING)
         endif()
     endif()
 
+    function(test_set_pythonpath test_name)
+        if(WIN32)
+            set_property(TEST ${test_name}
+                PROPERTY ENVIRONMENT
+                    "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
+                    "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${CMAKE_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
+            )
+        else()
+            set_tests_properties(${test_name}
+                PROPERTIES ENVIRONMENT
+                    "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
+            )
+        endif()
+    endfunction()
+
     # Python CLI Modules
     if(openPMD_HAVE_PYTHON)
         # (Note that during setuptools install, these are furthermore installed as
@@ -1088,19 +1116,74 @@ if(openPMD_BUILD_TESTING)
                  COMMAND ${Python_EXECUTABLE} -m openpmd_api.${pymodulename} --help
                  WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
             )
-            if(WIN32)
-                set_property(TEST CLI.py.help.${pymodulename}
-                    PROPERTY ENVIRONMENT
-                        "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
-                        "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${CMAKE_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
+            test_set_pythonpath(CLI.py.help.${pymodulename})
+        endforeach()
+    endif()
+
+    # Python-based command line tools
+    if(openPMD_BUILD_CLI_TOOLS AND openPMD_HAVE_PYTHON)
+        # all tools must provide a "--help"
+        # The custom target ensures that the file is copied to the build dir
+        # anew if the source file changes (and not only if openPMD.py is rebuilt)
+        add_custom_target(openPMD.py.cliTools)
+        add_dependencies(openPMD.py openPMD.py.cliTools)
+        foreach(toolname ${openPMD_PYTHON_CLI_TOOL_NAMES})
+            add_custom_command(TARGET openPMD.py.cliTools POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy
+                        ${openPMD_SOURCE_DIR}/src/cli/${toolname}.py
+                        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-${toolname}.py
+            )
+            add_test(NAME CLI.help.${toolname}.py
+                COMMAND ${Python_EXECUTABLE}
+                    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-${toolname}.py --help
+                WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+            )
+            test_set_pythonpath(CLI.help.${toolname}.py)
+        endforeach()
+
+        # openpmd-pipe.py test
+        if( openPMD_HAVE_HDF5
+            AND (openPMD_HAVE_ADIOS2 OR openPMD_HAVE_ADIOS1)
+            AND EXAMPLE_DATA_FOUND
+        )
+            if( openPMD_HAVE_MPI )
+                set(MPI_TEST_EXE
+                    ${MPIEXEC_EXECUTABLE}
+                    ${MPI_ALLOW_ROOT}
+                    #${MPIEXEC_NUMPROC_FLAG} 2
+                )
+                add_test(NAME CLI.pipe.py
+                    COMMAND sh -c
+                        "${MPI_TEST_EXE} ${Python_EXECUTABLE}                      \
+                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe.py      \
+                            --infile ../samples/git-sample/thetaMode/data%T.h5     \
+                            --outfile ../samples/git-sample/thetaMode/data%T.bp;   \
+                                                                                   \
+                            ${Python_EXECUTABLE}                                   \
+                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe.py      \
+                            --infile ../samples/git-sample/thetaMode/data%T.bp     \
+                            --outfile ../samples/git-sample/thetaMode/data%T.json  \
+                        "
+                    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
                 )
             else()
-                set_tests_properties(CLI.py.help.${pymodulename}
-                    PROPERTIES ENVIRONMENT
-                        "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
+                add_test(NAME CLI.pipe.py
+                    COMMAND sh -c
+                        "${Python_EXECUTABLE}                                      \
+                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe.py      \
+                            --infile ../samples/git-sample/thetaMode/data%T.h5     \
+                            --outfile ../samples/git-sample/thetaMode/data%T.bp;   \
+                                                                                   \
+                            ${Python_EXECUTABLE}                                   \
+                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe.py      \
+                            --infile ../samples/git-sample/thetaMode/data%T.bp     \
+                            --outfile ../samples/git-sample/thetaMode/data%T.json  \
+                        "
+                    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
                 )
             endif()
-        endforeach()
+            test_set_pythonpath(CLI.pipe.py)
+        endif()
     endif()
 
     # Python Examples
