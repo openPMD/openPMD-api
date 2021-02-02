@@ -257,6 +257,34 @@ bool setAttributeFromBufferInfo(
     }
 }
 
+struct SetAttributeFromObject
+{
+    template< typename RequestedType >
+    bool operator()(
+        Attributable & attr,
+        std::string const& key,
+        py::object& obj )
+    {
+        return attr.setAttribute< RequestedType >( key, obj.cast< RequestedType >() );
+    }
+    template< unsigned, typename... Args >
+    bool operator()( Args&&... )
+    {
+        throw std::runtime_error( "[setAttribute] Unknown datatype." );
+    }
+};
+
+bool setAttributeFromObject(
+    Attributable & attr,
+    std::string const& key,
+    py::object& obj,
+    std::string const& datatype
+) {
+    Datatype requestedDatatype = stringToDatatype( datatype );
+    static SetAttributeFromObject safo;
+    return switchType< bool >( requestedDatatype, safo, attr, key, obj );
+}
+
 void init_Attributable(py::module &m) {
     py::class_<Attributable>(m, "Attributable")
         .def(py::init<>())
@@ -289,6 +317,18 @@ void init_Attributable(py::module &m) {
                 a
             );
         })
+        .def("set_attribute", [](
+                Attributable & attr,
+                std::string const& key,
+                py::object& obj,
+                std::string const& datatype )
+        {
+            return setAttributeFromObject( attr, key, obj, datatype );
+        },
+            py::arg("key"),
+            py::arg("value"),
+            py::arg("datatype")
+        )
 
         // fundamental Python types
         .def("set_attribute", &Attributable::setAttribute< bool >)
@@ -334,6 +374,10 @@ void init_Attributable(py::module &m) {
             auto v = attr.getAttribute(key);
             return v.getResource();
             // TODO instead of returning lists, return all arrays (ndim > 0) as numpy arrays?
+        })
+        .def("get_attribute_type", []( Attributable & attr, std::string const& key ) {
+            auto v = attr.getAttribute(key);
+            return datatypeToString(v.dtype);
         })
         .def("delete_attribute", &Attributable::deleteAttribute)
         .def("contains_attribute", &Attributable::containsAttribute)
