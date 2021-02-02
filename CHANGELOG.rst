@@ -3,15 +3,15 @@
 Changelog
 =========
 
-0.13.2
+0.14.0
 ------
 **Date:** TBA
 
-[Title]
+...
 
-[Summary]
+...
 
-Changes to "0.13.1"
+Changes to "0.13.2"
 ^^^^^^^^^^^^^^^^^^^
 
 Features
@@ -24,9 +24,36 @@ Other
 """""
 
 
+0.13.2
+------
+**Date:** 2021-02-02
+
+Fix Patch Read & Python store_chunk
+
+This release fixes a regression with particle patches, related to ``Iteration::open()`` and ``::close()`` functionality.
+Also, issues with the Python ``store_chunk`` method are addressed.
+
+Changes to "0.13.1"
+^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- Read: check whether particle patches are dirty & handle gracefully #909
+- Python ``store_chunk``:
+
+  - add support for complex types #915
+  - fix a use-after-free with temporary variables #912
+
+Other
+"""""
+
+- CMake: hint ``CMAKE_PREFIX_PATH`` as a warning for HDF5 #896
+
+
 0.13.1
 ------
-**Date:** 2020-01-08
+**Date:** 2021-01-08
 
 Fix openPMD-ls & Iteration open/close
 
