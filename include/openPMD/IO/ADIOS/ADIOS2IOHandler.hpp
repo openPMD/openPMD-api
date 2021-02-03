@@ -25,6 +25,7 @@
 #include "openPMD/IO/AbstractIOHandlerImplCommon.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
+#include "openPMD/IO/ADIOS/ADIOS2PreloadAttributes.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
@@ -64,6 +65,8 @@ namespace detail
     struct DatasetReader;
     struct AttributeReader;
     struct AttributeWriter;
+    struct OldAttributeReader;
+    struct OldAttributeWriter;
     template < typename > struct AttributeTypes;
     struct DatasetOpener;
     template < typename > struct DatasetTypes;
@@ -72,6 +75,7 @@ namespace detail
     struct BufferedPut;
     struct BufferedGet;
     struct BufferedAttributeRead;
+    struct BufferedAttributeWrite;
 } // namespace detail
 
 
@@ -82,6 +86,8 @@ class ADIOS2IOHandlerImpl
     friend struct detail::DatasetReader;
     friend struct detail::AttributeReader;
     friend struct detail::AttributeWriter;
+    friend struct detail::OldAttributeReader;
+    friend struct detail::OldAttributeWriter;
     template < typename > friend struct detail::AttributeTypes;
     friend struct detail::DatasetOpener;
     template < typename > friend struct detail::DatasetTypes;
@@ -196,6 +202,14 @@ private:
      * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
      */
     std::string m_engineType;
+
+    enum class AttributeLayout : char
+    {
+        ByAdiosAttributes,
+        ByAdiosVariables
+    };
+
+    AttributeLayout m_attributeLayout = AttributeLayout::ByAdiosAttributes;
 
     struct ParameterizedOperator
     {
@@ -364,11 +378,44 @@ namespace detail
         template < int T, typename... Params > void operator( )( Params &&... );
     };
 
+    struct OldAttributeReader
+    {
+        template< typename T >
+        Datatype
+        operator()(
+            adios2::IO & IO,
+            std::string name,
+            std::shared_ptr< Attribute::resource > resource );
+
+        template< int n, typename... Params >
+        Datatype
+        operator()( Params &&... );
+    };
+
+    struct OldAttributeWriter
+    {
+        template< typename T >
+        void
+        operator()(
+            ADIOS2IOHandlerImpl * impl,
+            Writable * writable,
+            const Parameter< Operation::WRITE_ATT > & parameters );
+
+
+        template< int n, typename... Params >
+        void
+        operator()( Params &&... );
+    };
+
     struct AttributeReader
     {
-        template < typename T >
-        Datatype operator( )( adios2::IO & IO, std::string name,
-                          std::shared_ptr< Attribute::resource > resource );
+        template< typename T >
+        Datatype
+        operator()(
+            adios2::IO & IO,
+            detail::PreloadAdiosAttributes const & preloadedAttributes,
+            std::string name,
+            std::shared_ptr< Attribute::resource > resource );
 
         template < int n, typename... Params >
         Datatype operator( )( Params &&... );
@@ -378,8 +425,9 @@ namespace detail
     {
         template < typename T >
         void
-        operator( )( ADIOS2IOHandlerImpl * impl, Writable * writable,
-                     const Parameter< Operation::WRITE_ATT > & parameters );
+        operator()(
+            detail::BufferedAttributeWrite & params,
+            BufferedActions & fileData );
 
 
         template < int n, typename... Params > void operator( )( Params &&... );
@@ -444,31 +492,47 @@ namespace detail
      * for vector and array types, as well as the boolean
      * type (which is not natively supported by ADIOS).
      */
-    template < typename T > struct AttributeTypes
+    template< typename T >
+    struct AttributeTypes
     {
-        using Attr = adios2::Attribute< T >;
-        using BasicType = T;
-
-        static Attr createAttribute( adios2::IO & IO, std::string name,
-                                     BasicType value );
+        static void
+        oldCreateAttribute(
+            adios2::IO & IO,
+            std::string name,
+            T value );
 
         static void
-        readAttribute( adios2::IO & IO, std::string name,
-                       std::shared_ptr< Attribute::resource > resource );
+        oldReadAttribute(
+            adios2::IO & IO,
+            std::string name,
+            std::shared_ptr< Attribute::resource > resource );
+
+        static void
+        createAttribute(
+            adios2::IO & IO,
+            adios2::Engine & engine,
+            detail::BufferedAttributeWrite & params,
+            T value );
+
+        static void
+        readAttribute(
+            detail::PreloadAdiosAttributes const &,
+            std::string name,
+            std::shared_ptr< Attribute::resource > resource );
 
         /**
          * @brief Is the attribute given by parameters name and val already
          *        defined exactly in that way within the given IO?
          */
         static bool
-        attributeUnchanged( adios2::IO & IO, std::string name, BasicType val )
+        attributeUnchanged( adios2::IO & IO, std::string name, T val )
         {
-            auto attr = IO.InquireAttribute< BasicType >( name );
+            auto attr = IO.InquireAttribute< T >( name );
             if( !attr )
             {
                 return false;
             }
-            std::vector< BasicType > data = attr.Data();
+            std::vector< T > data = attr.Data();
             if( data.size() != 1 )
             {
                 return false;
@@ -479,19 +543,42 @@ namespace detail
 
     template< > struct AttributeTypes< std::complex< long double > >
     {
-        using Attr = adios2::Attribute< std::complex< double > >;
-        using BasicType = double;
-
-        static Attr createAttribute( adios2::IO &, std::string,
-                                     std::complex< long double > )
+        static void
+        oldCreateAttribute(
+            adios2::IO &,
+            std::string,
+            std::complex< long double > )
         {
             throw std::runtime_error(
                 "[ADIOS2] Internal error: no support for long double complex attribute types" );
         }
 
         static void
-        readAttribute( adios2::IO &, std::string,
-                       std::shared_ptr< Attribute::resource > )
+        oldReadAttribute(
+            adios2::IO &,
+            std::string,
+            std::shared_ptr< Attribute::resource > )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex attribute types" );
+        }
+
+        static void
+        createAttribute(
+            adios2::IO &,
+            adios2::Engine &,
+            detail::BufferedAttributeWrite &,
+            std::complex< long double > )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex attribute types" );
+        }
+
+        static void
+        readAttribute(
+            detail::PreloadAdiosAttributes const &,
+            std::string,
+            std::shared_ptr< Attribute::resource > )
         {
             throw std::runtime_error(
                 "[ADIOS2] Internal error: no support for long double complex attribute types" );
@@ -508,19 +595,42 @@ namespace detail
 
     template< > struct AttributeTypes< std::vector< std::complex< long double > > >
     {
-        using Attr = adios2::Attribute< std::complex< double > >;
-        using BasicType = double;
-
-        static Attr createAttribute( adios2::IO &, std::string,
-                                     const std::vector< std::complex< long double > > & )
+        static void
+        oldCreateAttribute(
+            adios2::IO &,
+            std::string,
+            const std::vector< std::complex< long double > > & )
         {
             throw std::runtime_error(
                 "[ADIOS2] Internal error: no support for long double complex vector attribute types" );
         }
 
         static void
-        readAttribute( adios2::IO &, std::string,
-                       std::shared_ptr< Attribute::resource > )
+        oldReadAttribute(
+            adios2::IO &,
+            std::string,
+            std::shared_ptr< Attribute::resource > )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex vector attribute types" );
+        }
+
+        static void
+        createAttribute(
+            adios2::IO &,
+            adios2::Engine &,
+            detail::BufferedAttributeWrite &,
+            const std::vector< std::complex< long double > > & )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex vector attribute types" );
+        }
+
+        static void
+        readAttribute(
+            detail::PreloadAdiosAttributes const &,
+            std::string,
+            std::shared_ptr< Attribute::resource > )
         {
             throw std::runtime_error(
                 "[ADIOS2] Internal error: no support for long double complex vector attribute types" );
@@ -539,15 +649,30 @@ namespace detail
 
     template < typename T > struct AttributeTypes< std::vector< T > >
     {
-        using Attr = adios2::Attribute< T >;
-        using BasicType = T;
-
-        static Attr createAttribute( adios2::IO & IO, std::string name,
-                                     const std::vector< T > & value );
+        static void
+        oldCreateAttribute(
+            adios2::IO & IO,
+            std::string name,
+            const std::vector< T > & value );
 
         static void
-        readAttribute( adios2::IO & IO, std::string name,
-                       std::shared_ptr< Attribute::resource > resource );
+        oldReadAttribute(
+            adios2::IO & IO,
+            std::string name,
+            std::shared_ptr< Attribute::resource > resource );
+
+        static void
+        createAttribute(
+            adios2::IO & IO,
+            adios2::Engine & engine,
+            detail::BufferedAttributeWrite & params,
+            const std::vector< T > & value );
+
+        static void
+        readAttribute(
+            detail::PreloadAdiosAttributes const &,
+            std::string name,
+            std::shared_ptr< Attribute::resource > resource );
 
         static bool
         attributeUnchanged(
@@ -555,12 +680,67 @@ namespace detail
             std::string name,
             std::vector< T > val )
         {
-            auto attr = IO.InquireAttribute< BasicType >( name );
+            auto attr = IO.InquireAttribute< T >( name );
             if( !attr )
             {
                 return false;
             }
-            std::vector< BasicType > data = attr.Data();
+            std::vector< T > data = attr.Data();
+            if( data.size() != val.size() )
+            {
+                return false;
+            }
+            for( size_t i = 0; i < val.size(); ++i )
+            {
+                if( data[ i ] != val[ i ] )
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+    };
+
+    template<>
+    struct AttributeTypes< std::vector< std::string > >
+    {
+        static void
+        oldCreateAttribute(
+            adios2::IO & IO,
+            std::string name,
+            const std::vector< std::string > & value );
+
+        static void
+        oldReadAttribute(
+            adios2::IO & IO,
+            std::string name,
+            std::shared_ptr< Attribute::resource > resource );
+
+        static void
+        createAttribute(
+            adios2::IO & IO,
+            adios2::Engine & engine,
+            detail::BufferedAttributeWrite & params,
+            const std::vector< std::string > & vec );
+
+        static void
+        readAttribute(
+            detail::PreloadAdiosAttributes const &,
+            std::string name,
+            std::shared_ptr< Attribute::resource > resource );
+
+        static bool
+        attributeUnchanged(
+            adios2::IO & IO,
+            std::string name,
+            std::vector< std::string > val )
+        {
+            auto attr = IO.InquireAttribute< std::string >( name );
+            if( !attr )
+            {
+                return false;
+            }
+            std::vector< std::string > data = attr.Data();
             if( data.size() != val.size() )
             {
                 return false;
@@ -579,15 +759,30 @@ namespace detail
     template < typename T, size_t n >
     struct AttributeTypes< std::array< T, n > >
     {
-        using Attr = adios2::Attribute< T >;
-        using BasicType = T;
-
-        static Attr createAttribute( adios2::IO & IO, std::string name,
-                                     const std::array< T, n > & value );
+        static void
+        oldCreateAttribute(
+            adios2::IO & IO,
+            std::string name,
+            const std::array< T, n > & value );
 
         static void
-        readAttribute( adios2::IO & IO, std::string name,
-                       std::shared_ptr< Attribute::resource > resource );
+        oldReadAttribute(
+            adios2::IO & IO,
+            std::string name,
+            std::shared_ptr< Attribute::resource > resource );
+
+        static void
+        createAttribute(
+            adios2::IO & IO,
+            adios2::Engine & engine,
+            detail::BufferedAttributeWrite & params,
+            const std::array< T, n > & value );
+
+        static void
+        readAttribute(
+            detail::PreloadAdiosAttributes const &,
+            std::string name,
+            std::shared_ptr< Attribute::resource > resource );
 
         static bool
         attributeUnchanged(
@@ -595,12 +790,12 @@ namespace detail
             std::string name,
             std::array< T, n > val )
         {
-            auto attr = IO.InquireAttribute< BasicType >( name );
+            auto attr = IO.InquireAttribute< T >( name );
             if( !attr )
             {
                 return false;
             }
-            std::vector< BasicType > data = attr.Data();
+            std::vector< T > data = attr.Data();
             if( data.size() != n )
             {
                 return false;
@@ -619,15 +814,28 @@ namespace detail
     template <> struct AttributeTypes< bool >
     {
         using rep = detail::bool_representation;
-        using Attr = adios2::Attribute< rep >;
-        using BasicType = rep;
-
-        static Attr createAttribute( adios2::IO & IO, std::string name,
-                                     bool value );
 
         static void
-        readAttribute( adios2::IO & IO, std::string name,
-                       std::shared_ptr< Attribute::resource > resource );
+        oldCreateAttribute( adios2::IO & IO, std::string name, bool value );
+
+        static void
+        oldReadAttribute(
+            adios2::IO & IO,
+            std::string name,
+            std::shared_ptr< Attribute::resource > resource );
+
+        static void
+        createAttribute(
+            adios2::IO & IO,
+            adios2::Engine & engine,
+            detail::BufferedAttributeWrite & params,
+            bool value );
+
+        static void
+        readAttribute(
+            detail::PreloadAdiosAttributes const &,
+            std::string name,
+            std::shared_ptr< Attribute::resource > resource );
 
 
         static constexpr rep toRep( bool b )
@@ -644,12 +852,12 @@ namespace detail
         static bool
         attributeUnchanged( adios2::IO & IO, std::string name, bool val )
         {
-            auto attr = IO.InquireAttribute< BasicType >( name );
+            auto attr = IO.InquireAttribute< rep >( name );
             if( !attr )
             {
                 return false;
             }
-            std::vector< BasicType > data = attr.Data();
+            std::vector< rep > data = attr.Data();
             if( data.size() != 1 )
             {
                 return false;
@@ -802,12 +1010,32 @@ namespace detail
         void run( BufferedActions & ) override;
     };
 
-    struct BufferedAttributeRead : BufferedAction
+    struct OldBufferedAttributeRead : BufferedAction
     {
         Parameter< Operation::READ_ATT > param;
         std::string name;
 
         void run( BufferedActions & ) override;
+    };
+
+    struct BufferedAttributeRead
+    {
+        Parameter< Operation::READ_ATT > param;
+        std::string name;
+
+        void
+        run( BufferedActions & );
+    };
+
+    struct BufferedAttributeWrite
+    {
+        std::string name;
+        Datatype dtype;
+        Attribute::resource resource;
+        std::vector< char > bufferForVecString;
+
+        void
+        run( BufferedActions & );
     };
 
     /*
@@ -849,10 +1077,15 @@ namespace detail
         adios2::ADIOS & m_ADIOS;
         adios2::IO m_IO;
         std::vector< std::unique_ptr< BufferedAction > > m_buffer;
+        std::map< std::string, BufferedAttributeWrite > m_attributeWrites;
+        std::vector< BufferedAttributeRead > m_attributeReads;
         adios2::Mode m_mode;
         detail::WriteDataset const m_writeDataset;
         detail::DatasetReader const m_readDataset;
         detail::AttributeReader const m_attributeReader;
+        PreloadAdiosAttributes preloadAttributes;
+        using AttributeLayout = ADIOS2IOHandlerImpl::AttributeLayout;
+        AttributeLayout m_attributeLayout = AttributeLayout::ByAdiosAttributes;
 
         /*
          * We call an attribute committed if the step during which it was
@@ -903,12 +1136,17 @@ namespace detail
          *     * adios2::Engine::EndStep
          *     * adios2::Engine::Perform(Puts|Gets)
          *     * adios2::Engine::Close
+         * @param writeAttributes If using the new attribute layout, perform
+         *     deferred attribute writes now.
          * @param flushUnconditionally Whether to run the functor even if no
          *     deferred IO tasks had been queued.
          */
         template< typename F >
         void
-        flush( F && performPutsGets, bool flushUnconditionally );
+        flush(
+            F && performPutsGets,
+            bool writeAttributes,
+            bool flushUnconditionally );
 
         /**
          * Overload of flush() that uses adios2::Engine::Perform(Puts|Gets)
@@ -916,7 +1154,7 @@ namespace detail
          *
          */
         void
-        flush();
+        flush( bool writeAttributes = false );
 
         /**
          * @brief Begin or end an ADIOS step.

@@ -119,61 +119,98 @@ namespace detail
     }
 
     template< typename T >
-    typename std::vector< T >::size_type
+    Extent
     AttributeInfoHelper< T >::getSize(
         adios2::IO & IO,
-        std::string const & attributeName )
+        std::string const & attributeName,
+        VariableOrAttribute voa )
     {
-        auto attribute = IO.InquireAttribute< T >( attributeName );
-        if( !attribute )
+        switch( voa )
         {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Attribute not present." );
+            case VariableOrAttribute::Attribute:
+            {
+                auto attribute = IO.InquireAttribute< T >( attributeName );
+                if( !attribute )
+                {
+                    throw std::runtime_error(
+                        "[ADIOS2] Internal error: Attribute not present." );
+                }
+                return { attribute.Data().size() };
+            }
+            case VariableOrAttribute::Variable:
+            {
+                auto variable = IO.InquireVariable< T >( attributeName );
+                if( !variable )
+                {
+                    throw std::runtime_error(
+                        "[ADIOS2] Internal error: Variable not present." );
+                }
+                auto shape = variable.Shape();
+                Extent res;
+                res.reserve( shape.size() );
+                for( auto val : shape )
+                {
+                    res.push_back( val );
+                }
+                return res;
+            }
+            default:
+                throw std::runtime_error( "[ADIOS2] Unreachable!" );
         }
-        return attribute.Data().size();
     }
 
     template< typename T >
-    typename std::vector< T >::size_type
+    Extent
     AttributeInfoHelper< std::vector< T > >::getSize(
         adios2::IO & IO,
-        std::string const & attributeName )
+        std::string const & attributeName,
+        VariableOrAttribute voa )
     {
-        return AttributeInfoHelper< T >::getSize( IO, attributeName );
+        return AttributeInfoHelper< T >::getSize( IO, attributeName, voa );
     }
 
-    typename std::vector< bool_representation >::size_type
+    Extent
     AttributeInfoHelper< bool >::getSize(
         adios2::IO & IO,
-        std::string const & attributeName )
+        std::string const & attributeName,
+        VariableOrAttribute voa )
     {
         return AttributeInfoHelper< bool_representation >::getSize(
-            IO, attributeName );
+            IO, attributeName, voa );
     }
 
-    template< typename T >
-    typename std::vector< T >::size_type
-    AttributeInfo::operator()(
-        adios2::IO & IO,
-        std::string const & attributeName )
+    template< typename T, typename... Params >
+    Extent
+    AttributeInfo::operator()( Params &&... params )
     {
-        return AttributeInfoHelper< T >::getSize( IO, attributeName );
+        return AttributeInfoHelper< T >::getSize(
+            std::forward< Params >( params )... );
     }
 
     template< int n, typename... Params >
-    size_t
+    Extent
     AttributeInfo::operator()( Params &&... )
     {
-        return 0;
+        return { 0 };
     }
 
     Datatype
     attributeInfo(
         adios2::IO & IO,
         std::string const & attributeName,
-        bool verbose )
+        bool verbose,
+        VariableOrAttribute voa )
     {
-        std::string type = IO.AttributeType( attributeName );
+        std::string type;
+        switch( voa )
+        {
+            case VariableOrAttribute::Attribute:
+                type = IO.AttributeType( attributeName );
+                break;
+            case VariableOrAttribute::Variable:
+                type = IO.VariableType( attributeName );
+                break;
+        }
         if( type.empty() )
         {
             if( verbose )
@@ -188,14 +225,69 @@ namespace detail
         {
             static AttributeInfo ai;
             Datatype basicType = fromADIOS2Type( type );
-            auto size =
-                switchType< size_t >( basicType, ai, IO, attributeName );
-            Datatype openPmdType = size == 1
-                ? basicType
-                : size == 7 && basicType == Datatype::DOUBLE
-                    ? Datatype::ARR_DBL_7
-                    : toVectorType( basicType );
-            return openPmdType;
+            Extent shape =
+                switchType< Extent >( basicType, ai, IO, attributeName, voa );
+
+            switch( voa )
+            {
+                case VariableOrAttribute::Attribute:
+                {
+                    auto size = shape[ 0 ];
+                    Datatype openPmdType = size == 1
+                        ? basicType
+                        : size == 7 && basicType == Datatype::DOUBLE
+                            ? Datatype::ARR_DBL_7
+                            : toVectorType( basicType );
+                    return openPmdType;
+                }
+                case VariableOrAttribute::Variable:
+                {
+                    if( shape.size() == 0 ||
+                        ( shape.size() == 1 && shape[ 0 ] == 1 ) )
+                    {
+                        // global single value variable
+                        return basicType;
+                    }
+                    else if( shape.size() == 1 )
+                    {
+                        auto size = shape[ 0 ];
+                        Datatype openPmdType =
+                            size == 7 && basicType == Datatype::DOUBLE
+                            ? Datatype::ARR_DBL_7
+                            : toVectorType( basicType );
+                        return openPmdType;
+                    }
+                    else if( shape.size() == 2 && basicType == Datatype::CHAR )
+                    {
+                        return Datatype::VEC_STRING;
+                    }
+                    else
+                    {
+                        throw std::runtime_error(
+                            "[ADIOS2] Unexpected shape for " + attributeName );
+                    }
+                }
+            }
+            if( shape.size() <= 1 )
+            {
+                // size == 0 <=> global single value variable
+                auto size = shape.size() == 0 ? 1 : shape[ 0 ];
+                Datatype openPmdType = size == 1
+                    ? basicType
+                    : size == 7 && basicType == Datatype::DOUBLE
+                        ? Datatype::ARR_DBL_7
+                        : toVectorType( basicType );
+                return openPmdType;
+            }
+            else if( shape.size() == 2 && basicType == Datatype::CHAR )
+            {
+                return Datatype::VEC_STRING;
+            }
+            else
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Unexpected shape for " + attributeName );
+            }
         }
     }
 } // namespace detail
