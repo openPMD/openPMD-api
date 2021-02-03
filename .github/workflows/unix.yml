@@ -78,7 +78,7 @@ jobs:
         export OPENPMD_BP_BACKEND=ADIOS1
         ctest --output-on-failure
 
-  clang5_nopy_ompi_h5_ad2_newLayout_bp3:
+  clang5_nopy_ompi_h5_ad2_newLayout:
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
