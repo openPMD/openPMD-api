@@ -395,9 +395,14 @@ set_target_properties(openPMD PROPERTIES
     POSITION_INDEPENDENT_CODE ON
     WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-    target_compile_options(openPMD PUBLIC "/bigobj")
-endif()
+set(_cxx_msvc   "$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>")
+set(_msvc_1914  "$<VERSION_GREATER_EQUAL:$<CXX_COMPILER_VERSION>,19.14>")
+set(_msvc_options)
+list(APPEND _msvc_options
+    $<${_cxx_msvc}:/bigobj>
+    $<${_cxx_msvc}:$<${_msvc_1914}:/Zc:__cplusplus>>
+)
+target_compile_options(openPMD PUBLIC ${_msvc_options})
 
 # own headers
 target_include_directories(openPMD PUBLIC
@@ -466,10 +471,8 @@ if(openPMD_HAVE_ADIOS1)
     target_compile_features(openPMD.ADIOS1.Parallel
         PUBLIC cxx_std_14
     )
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-        target_compile_options(openPMD.ADIOS1.Serial PUBLIC "/bigobj")
-        target_compile_options(openPMD.ADIOS1.Parallel PUBLIC "/bigobj")
-    endif()
+    target_compile_options(openPMD.ADIOS1.Serial PUBLIC ${_msvc_options})
+    target_compile_options(openPMD.ADIOS1.Parallel PUBLIC ${_msvc_options})
     target_link_libraries(openPMD.ADIOS1.Serial PUBLIC openPMD::thirdparty::mpark_variant)
     target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC openPMD::thirdparty::mpark_variant)
 
@@ -707,10 +710,8 @@ if(openPMD_BUILD_TESTING)
         POSITION_INDEPENDENT_CODE ON
         WINDOWS_EXPORT_ALL_SYMBOLS ON
     )
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-        target_compile_options(CatchRunner PUBLIC "/bigobj")
-        target_compile_options(CatchMain   PUBLIC "/bigobj")
-    endif()
+    target_compile_options(CatchRunner PUBLIC ${_msvc_options})
+    target_compile_options(CatchMain   PUBLIC ${_msvc_options})
     target_link_libraries(CatchRunner PUBLIC openPMD::thirdparty::Catch2)
     target_link_libraries(CatchMain   PUBLIC openPMD::thirdparty::Catch2)
     if(openPMD_HAVE_MPI)
