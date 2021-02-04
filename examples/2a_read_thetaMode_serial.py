@@ -2,7 +2,7 @@
 """
 This file is part of the openPMD-api.
 
-Copyright 2020 openPMD contributors
+Copyright 2020-2021 openPMD contributors
 Authors: Axel Huebl
 License: LGPLv3+
 """

@@ -1,4 +1,4 @@
-/* Copyright 2019-2020 Axel Huebl
+/* Copyright 2019-2021 Axel Huebl
  *
  * This file is part of openPMD-api.
  *

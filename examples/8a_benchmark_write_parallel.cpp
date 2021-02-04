@@ -1,4 +1,4 @@
-/* Copyright 2020 Junmin Gu, Axel Huebl
+/* Copyright 2020-2021 Junmin Gu, Axel Huebl
  *
  * This file is part of openPMD-api.
  *

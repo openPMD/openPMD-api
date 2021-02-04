@@ -1,4 +1,4 @@
-/* Copyright 2017-2020 Fabian Koller
+/* Copyright 2017-2021 Fabian Koller
  *
  * This file is part of openPMD-api.
  *
