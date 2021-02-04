@@ -4,7 +4,7 @@ This file is part of the openPMD-api.
 This module provides functions that are wrapped into sys.exit(...()) calls by
 the setuptools (setup.py) "entry_points" -> "console_scripts" generator.
 
-Copyright 2020 openPMD contributors
+Copyright 2020-2021 openPMD contributors
 Authors: Axel Huebl
 License: LGPLv3+
 """

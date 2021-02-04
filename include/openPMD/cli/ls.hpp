@@ -1,4 +1,4 @@
-/* Copyright 2020 Axel Huebl
+/* Copyright 2020-2021 Axel Huebl
  *
  * This file is part of openPMD-api.
  *
@@ -56,7 +56,7 @@ namespace ls
     {
         std::cout << program_name << " (openPMD-api) "
                   << getVersion() << "\n";
-        std::cout << "Copyright 2017-2020 openPMD contributors\n";
+        std::cout << "Copyright 2017-2021 openPMD contributors\n";
         std::cout << "Authors: Axel Huebl et al.\n";
         std::cout << "License: LGPLv3+\n";
         std::cout << "This is free software: you are free to change and redistribute it.\n"
