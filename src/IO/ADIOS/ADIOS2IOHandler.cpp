@@ -1659,30 +1659,61 @@ namespace detail
         std::string name,
         std::shared_ptr< Attribute::resource > resource )
     {
-        detail::AttributeWithShape< char > attr =
-            preloadedAttributes.getAttribute< char >( name );
-        if( attr.shape.size() != 2 )
-        {
-            throw std::runtime_error( "[ADIOS2] Expecting 2D ADIOS variable" );
-        }
-        size_t height = attr.shape[ 0 ];
-        size_t width = attr.shape[ 1 ];
+        /*
+         * char_type parameter only for specifying the "template" type.
+         */
+        auto loadFromDatatype =
+            [ &preloadedAttributes, &name, &resource ]( auto char_type ) {
+                using char_t = decltype( char_type );
+                detail::AttributeWithShape< char_t > attr =
+                    preloadedAttributes.getAttribute< char_t >( name );
+                if( attr.shape.size() != 2 )
+                {
+                    throw std::runtime_error(
+                        "[ADIOS2] Expecting 2D ADIOS variable" );
+                }
+                char_t const * loadedData = attr.data;
+                size_t height = attr.shape[ 0 ];
+                size_t width = attr.shape[ 1 ];
 
-        std::vector< std::string > res( height );
-        for( size_t i = 0; i < height; ++i )
-        {
-            size_t start = i * width;
-            char const * start_ptr = attr.data + start;
-            size_t j = 0;
-            while( j < width && start_ptr[ j ] != 0 )
-            {
-                ++j;
-            }
-            std::string & str = res[ i ];
-            str.append( start_ptr, start_ptr + j );
-        }
+                std::vector< std::string > res( height );
+                for( size_t i = 0; i < height; ++i )
+                {
+                    size_t start = i * width;
+                    char const * start_ptr =
+                        reinterpret_cast< char const * >( loadedData + start );
+                    size_t j = 0;
+                    while( j < width && start_ptr[ j ] != 0 )
+                    {
+                        ++j;
+                    }
+                    std::string & str = res[ i ];
+                    str.append( start_ptr, start_ptr + j );
+                }
 
-        *resource = res;
+                *resource = res;
+            };
+        /*
+         * If writing char variables in ADIOS2, they might become uint8_t on
+         * disk. So allow reading from both types.
+         */
+        switch( preloadedAttributes.attributeType( name ) )
+        {
+        case Datatype::CHAR: {
+            loadFromDatatype( char{} );
+            break;
+        }
+        case Datatype::UCHAR: {
+            using uchar_t = unsigned char;
+            loadFromDatatype( uchar_t{} );
+            break;
+        }
+        default: {
+            throw std::runtime_error(
+                "[ADIOS2] Expecting 2D ADIOS variable of "
+                "type signed or unsigned char." );
+        }
+        }
     }
 
     template< typename T, size_t n >

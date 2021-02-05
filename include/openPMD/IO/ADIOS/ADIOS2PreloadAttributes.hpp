@@ -132,8 +132,9 @@ namespace detail
          *      of PreloadAdiosAttributes is called.
          */
         template< typename T >
-        AttributeWithShape< T >
-        getAttribute( std::string const & name ) const;
+        AttributeWithShape< T > getAttribute( std::string const & name ) const;
+
+        Datatype attributeType( std::string const & name ) const;
     };
 
     template< typename T >

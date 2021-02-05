@@ -230,37 +230,29 @@ namespace detail
                             : toVectorType( basicType );
                         return openPmdType;
                     }
-                    else if( shape.size() == 2 && basicType == Datatype::CHAR )
+                    else if(
+                        shape.size() == 2 &&
+                        ( basicType == Datatype::CHAR ||
+                          basicType == Datatype::UCHAR ) )
                     {
                         return Datatype::VEC_STRING;
                     }
                     else
                     {
-                        throw std::runtime_error(
-                            "[ADIOS2] Unexpected shape for " + attributeName );
+                        std::stringstream errorMsg;
+                        errorMsg << "[ADIOS2] Unexpected shape for "
+                                 << attributeName << ": [";
+                        for( auto const ext : shape )
+                        {
+                            errorMsg << std::to_string( ext ) << ", ";
+                        }
+                        errorMsg << "] of type "
+                                 << datatypeToString( basicType );
+                        throw std::runtime_error( errorMsg.str() );
                     }
                 }
             }
-            if( shape.size() <= 1 )
-            {
-                // size == 0 <=> global single value variable
-                auto size = shape.size() == 0 ? 1 : shape[ 0 ];
-                Datatype openPmdType = size == 1
-                    ? basicType
-                    : size == 7 && basicType == Datatype::DOUBLE
-                        ? Datatype::ARR_DBL_7
-                        : toVectorType( basicType );
-                return openPmdType;
-            }
-            else if( shape.size() == 2 && basicType == Datatype::CHAR )
-            {
-                return Datatype::VEC_STRING;
-            }
-            else
-            {
-                throw std::runtime_error(
-                    "[ADIOS2] Unexpected shape for " + attributeName );
-            }
+            throw std::runtime_error( "Unreachable!" );
         }
     }
 } // namespace detail
