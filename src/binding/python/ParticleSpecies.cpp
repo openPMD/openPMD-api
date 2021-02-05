@@ -36,6 +36,7 @@ void init_ParticleSpecies(py::module &m) {
                 return "<openPMD.ParticleSpecies>";
             }
         )
+        .def("series_flush", &ParticleSpecies::seriesFlush)
 
         .def_readwrite("particle_patches", &ParticleSpecies::particlePatches)
     ;

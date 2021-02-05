@@ -177,6 +177,9 @@ public:
     template< typename T >
     Mesh& setTimeOffset(T timeOffset);
 
+    /** flush the corresponding Series */
+    void seriesFlush();
+
 private:
     Mesh();
 

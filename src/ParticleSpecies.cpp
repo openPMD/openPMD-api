@@ -19,6 +19,9 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/ParticleSpecies.hpp"
+#include "openPMD/Series.hpp"
+#include "openPMD/auxiliary/DerefDynamicCast.hpp"
+#include "openPMD/backend/Writable.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -114,6 +117,23 @@ namespace
             && particlePatches.find("numParticlesOffset") != particlePatches.end()
             && particlePatches.size() >= 3;
     }
+}
+
+void
+ParticleSpecies::seriesFlush()
+{
+    Writable * findSeries = &*m_writable;
+    while( findSeries->parent )
+    {
+        findSeries = findSeries->parent;
+    }
+    Series & series =
+        auxiliary::deref_dynamic_cast< Series >( findSeries->attributable );
+    series.flush_impl(
+        series.iterations.begin(),
+        series.iterations.end()
+        //, IOHandler->m_flushLevel
+    );
 }
 
 void
