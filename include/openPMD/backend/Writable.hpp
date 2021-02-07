@@ -83,6 +83,15 @@ public:
     Writable(Attributable* = nullptr);
     ~Writable() = default;
 
+    /** Flush the corresponding Series object
+     *
+     * Writable connects all objects of an openPMD series through a linked list
+     * of parents. This method will walk up the parent list until it reaches
+     * an object that has no parent, which is the Series object, and flush()-es
+     * it.
+     */
+    void seriesFlush();
+
 OPENPMD_private:
     std::shared_ptr< AbstractFilePosition > abstractFilePosition;
     std::shared_ptr< AbstractIOHandler > IOHandler;

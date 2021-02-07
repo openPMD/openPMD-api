@@ -64,8 +64,7 @@ class WriteIterations;
 class Series : public Attributable
 {
     friend class Iteration;
-    friend class Mesh;
-    friend class ParticleSpecies;
+    friend class Writable;
     friend class SeriesIterator;
 
 public:

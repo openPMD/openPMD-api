@@ -120,23 +120,6 @@ namespace
 }
 
 void
-ParticleSpecies::seriesFlush()
-{
-    Writable * findSeries = &*m_writable;
-    while( findSeries->parent )
-    {
-        findSeries = findSeries->parent;
-    }
-    Series & series =
-        auxiliary::deref_dynamic_cast< Series >( findSeries->attributable );
-    series.flush_impl(
-        series.iterations.begin(),
-        series.iterations.end()
-        //, IOHandler->m_flushLevel
-    );
-}
-
-void
 ParticleSpecies::flush(std::string const& path)
 {
     if(IOHandler->m_frontendAccess == Access::READ_ONLY )

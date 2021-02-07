@@ -197,23 +197,6 @@ Mesh&
 Mesh::setTimeOffset( float );
 
 void
-Mesh::seriesFlush()
-{
-    Writable * findSeries = &*m_writable;
-    while( findSeries->parent )
-    {
-        findSeries = findSeries->parent;
-    }
-    Series & series =
-        auxiliary::deref_dynamic_cast< Series >( findSeries->attributable );
-    series.flush_impl(
-        series.iterations.begin(),
-        series.iterations.end()
-        //, IOHandler->m_flushLevel
-    );
-}
-
-void
 Mesh::flush_impl(std::string const& name)
 {
     if(IOHandler->m_frontendAccess == Access::READ_ONLY )
