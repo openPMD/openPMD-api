@@ -849,7 +849,7 @@ class APITest(unittest.TestCase):
 
             y_data = pos_y.load_chunk([200000, ], [10, ])
             w_data = w.load_chunk([200000, ], [10, ])
-            series.flush()
+            electrons.series_flush()
             self.assertSequenceEqual(y_data.shape, [10, ])
             self.assertSequenceEqual(w_data.shape, [10, ])
 
@@ -887,7 +887,7 @@ class APITest(unittest.TestCase):
 
         if found_numpy:
             chunk_data = E_x.load_chunk(offset, extent)
-            series.flush()
+            E.series_flush()
             self.assertSequenceEqual(chunk_data.shape, extent)
 
             self.assertEqual(chunk_data.dtype, np.float64)

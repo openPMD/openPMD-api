@@ -1561,7 +1561,7 @@ void deletion_test(const std::string & backend)
     e["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
     e["positionOffset"][RecordComponent::SCALAR].makeConstant(22.0);
     e.erase("deletion");
-    o.flush();
+    e.seriesFlush();
 
     e["deletion_scalar"][RecordComponent::SCALAR].resetDataset(dset);
     o.flush();
@@ -2082,11 +2082,12 @@ TEST_CASE( "git_hdf5_sample_content_test", "[serial][hdf5]" )
                                       {{-1.3271805876513554e-09, -5.9243276950837753e-10, -2.2445734160214670e-10},
                                        {-7.4578609954301101e-10, -1.1995737736469891e-10, 2.5611823772919706e-10},
                                        {-9.4806251738077663e-10, -1.5472800818372434e-10, -3.6461900165818406e-10}}};
-            MeshRecordComponent& rho = o.iterations[100].meshes["rho"][MeshRecordComponent::SCALAR];
+            Mesh rhoMesh = o.iterations[100].meshes["rho"];
+            MeshRecordComponent rho = rhoMesh[MeshRecordComponent::SCALAR];
             Offset offset{20, 20, 190};
             Extent extent{3, 3, 3};
             auto data = rho.loadChunk<double>(offset, extent);
-            o.flush();
+            rhoMesh.seriesFlush();
             double* raw_ptr = data.get();
 
             for( int i = 0; i < 3; ++i )
@@ -2624,7 +2625,7 @@ TEST_CASE( "hzdr_hdf5_sample_content_test", "[serial][hdf5]" )
 
         std::vector< uint64_t > data( e_patches.size() );
         e_extent_z.load(shareRaw(data.data()));
-        o.flush();
+        species_e.seriesFlush();
         REQUIRE(data.at(0) == static_cast< uint64_t >(80));
         REQUIRE(data.at(1) == static_cast< uint64_t >(80));
         REQUIRE(data.at(2) == static_cast< uint64_t >(80));

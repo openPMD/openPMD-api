@@ -20,6 +20,9 @@
  */
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/Mesh.hpp"
+#include "openPMD/Series.hpp"
+#include "openPMD/auxiliary/DerefDynamicCast.hpp"
+#include "openPMD/backend/Writable.hpp"
 
 #include <iostream>
 
@@ -192,6 +195,23 @@ Mesh::setTimeOffset( double );
 template
 Mesh&
 Mesh::setTimeOffset( float );
+
+void
+Mesh::seriesFlush()
+{
+    Writable * findSeries = &*m_writable;
+    while( findSeries->parent )
+    {
+        findSeries = findSeries->parent;
+    }
+    Series & series =
+        auxiliary::deref_dynamic_cast< Series >( findSeries->attributable );
+    series.flush_impl(
+        series.iterations.begin(),
+        series.iterations.end()
+        //, IOHandler->m_flushLevel
+    );
+}
 
 void
 Mesh::flush_impl(std::string const& name)
