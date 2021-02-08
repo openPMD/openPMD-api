@@ -41,7 +41,6 @@ void init_Mesh(py::module &m) {
                 return "<openPMD.Mesh record with '" + std::to_string(mesh.size()) + "' record components>";
             }
         )
-        .def("series_flush", &Mesh::seriesFlush)
 
         .def_property("unit_dimension",
             &Mesh::unitDimension,

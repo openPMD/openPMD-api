@@ -40,9 +40,6 @@ class ParticleSpecies : public Container< Record >
 public:
     ParticlePatches particlePatches;
 
-    /** flush the corresponding Series */
-    void seriesFlush();
-
 private:
     ParticleSpecies() = default;
 

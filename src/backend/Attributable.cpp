@@ -124,6 +124,12 @@ Attributable::setComment(std::string const& c)
 }
 
 void
+Attributable::seriesFlush()
+{
+    m_writable->seriesFlush();
+}
+
+void
 Attributable::flushAttributes()
 {
     if( dirty() )
