@@ -185,7 +185,7 @@ class pipe:
                 "Internal error: Trying to copy mismatching types")
         for key in src.attributes:
             attr = src.get_attribute(key)
-            attr_type = src.get_attribute_type(key)
+            attr_type = src.get_attribute_dtype(key)
             dest.set_attribute(key, attr, attr_type)
         container_types = [
             io.Mesh_Container, io.Particle_Container, io.ParticleSpecies,
