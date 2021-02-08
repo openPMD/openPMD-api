@@ -3146,7 +3146,11 @@ bp4_steps( std::string const & file, std::string const & options_write, std::str
         for( size_t i = 0; i < 10; ++i )
         {
             auto iteration = iterations[ i ];
-            auto E_x = iteration.meshes[ "E" ][ "x" ];
+            auto E = iteration.meshes[ "E" ];
+            auto E_x = E[ "x" ];
+            E.setAttribute(
+                "vector_of_string",
+                std::vector< std::string >{ "vector", "of", "string" } );
             E_x.resetDataset(
                 openPMD::Dataset( openPMD::Datatype::INT, { 10 } ) );
             std::vector< int > data( 10, i );
@@ -3165,7 +3169,12 @@ bp4_steps( std::string const & file, std::string const & options_write, std::str
     size_t last_iteration_index = 0;
     for( auto iteration : readSeries.readIterations() )
     {
-        auto E_x = iteration.meshes[ "E" ][ "x" ];
+        auto E = iteration.meshes[ "E" ];
+        auto E_x = E[ "x" ];
+        REQUIRE(
+            E.getAttribute( "vector_of_string" )
+                .get< std::vector< std::string > >() ==
+            std::vector< std::string >{ "vector", "of", "string" } );
         REQUIRE( E_x.getDimensionality() == 1 );
         REQUIRE( E_x.getExtent()[ 0 ] == 10 );
         auto chunk = E_x.loadChunk< int >( { 0 }, { 10 } );
