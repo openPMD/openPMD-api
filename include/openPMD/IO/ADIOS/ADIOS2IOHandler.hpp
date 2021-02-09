@@ -80,6 +80,20 @@ namespace detail
 } // namespace detail
 
 
+namespace ADIOS2Schema
+{
+    using schema_t = uint64_t;
+    /*
+     * Original ADIOS schema.
+     */
+    constexpr schema_t schema_0000_00_00 = 00000000;
+    /*
+     * This introduces attribute layout via scalar ADIOS variables.
+     */
+    constexpr schema_t schema_2021_02_09 = 20210209;
+}
+
+
 class ADIOS2IOHandlerImpl
 : public AbstractIOHandlerImplCommon< ADIOS2FilePosition >
 {
@@ -203,6 +217,7 @@ private:
      * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
      */
     std::string m_engineType;
+    ADIOS2Schema::schema_t m_schema = ADIOS2Schema::schema_0000_00_00;
 
     enum class AttributeLayout : char
     {
@@ -210,7 +225,12 @@ private:
         ByAdiosVariables
     };
 
-    AttributeLayout m_attributeLayout = AttributeLayout::ByAdiosAttributes;
+    inline AttributeLayout attributeLayout() const
+    {
+        return m_schema < ADIOS2Schema::schema_2021_02_09
+            ? AttributeLayout::ByAdiosAttributes
+            : AttributeLayout::ByAdiosVariables;
+    }
 
     struct ParameterizedOperator
     {
@@ -357,6 +377,8 @@ namespace ADIOS2Defaults
     constexpr const_str str_params = "parameters";
     constexpr const_str str_usesteps = "usesteps";
     constexpr const_str str_usesstepsAttribute = "__openPMD_internal/useSteps";
+    constexpr const_str str_adios2Schema =
+        "__openPMD_internal/openPMD2_adios2_schema";
 } // namespace ADIOS2Defaults
 
 namespace detail
@@ -995,8 +1017,7 @@ namespace detail
         detail::DatasetReader const m_readDataset;
         detail::AttributeReader const m_attributeReader;
         PreloadAdiosAttributes preloadAttributes;
-        using AttributeLayout = ADIOS2IOHandlerImpl::AttributeLayout;
-        AttributeLayout m_attributeLayout = AttributeLayout::ByAdiosAttributes;
+        ADIOS2Schema::schema_t & m_schema;
 
         /*
          * We call an attribute committed if the step during which it was
@@ -1232,12 +1253,18 @@ namespace detail
 
         void
         configure_IO( ADIOS2IOHandlerImpl & impl );
-    };
 
+        using AttributeLayout = ADIOS2IOHandlerImpl::AttributeLayout;
+        inline AttributeLayout attributeLayout() const
+        {
+            return m_schema < ADIOS2Schema::schema_2021_02_09
+                ? AttributeLayout::ByAdiosAttributes
+                : AttributeLayout::ByAdiosVariables;
+        }
+    };
 
 } // namespace detail
 #endif // openPMD_HAVE_ADIOS2
-
 
 class ADIOS2IOHandler : public AbstractIOHandler
 {
@@ -1289,6 +1316,6 @@ public:
 
     std::string backendName() const override { return "ADIOS2"; }
 
-    std::future< void > flush( ) override;
+    std::future< void > flush() override;
 }; // ADIOS2IOHandler
 } // namespace openPMD
