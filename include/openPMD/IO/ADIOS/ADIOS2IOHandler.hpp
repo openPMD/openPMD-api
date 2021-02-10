@@ -1157,6 +1157,8 @@ namespace detail
              *    is opt-in for now.
              * 2) Reading with the Streaming API any file that has been written
              *    without steps.
+             *
+             * @todo [franzpoeschel] let's remove these work-arounds :-)
              */
             NoStream,
             /**
@@ -1172,6 +1174,8 @@ namespace detail
              * and attributes in the file will be shown.
              * Hence, streamStatus == Parsing means that the first step has yet
              * to be opened.
+             *
+             * @todo [franzpoeschel] let's remove these work-arounds :-)
              */
             Parsing,
             /**
