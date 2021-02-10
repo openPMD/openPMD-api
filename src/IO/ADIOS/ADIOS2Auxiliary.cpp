@@ -96,7 +96,7 @@ namespace detail
             { "long double", Datatype::LONG_DOUBLE },
             { "float complex", Datatype::CFLOAT },
             { "double complex", Datatype::CDOUBLE },
-            { "long double complex", Datatype::CLONG_DOUBLE }, // does not exist as of 2.6.0 but might come later
+            { "long double complex", Datatype::CLONG_DOUBLE }, // does not exist as of 2.7.0 but might come later
             { "uint8_t", Datatype::UCHAR },
             { "int8_t", Datatype::CHAR },
             { "uint16_t", determineDatatype< uint16_t >() },

@@ -65,7 +65,7 @@ RUN        curl -sLo adios-1.13.1.tar.gz http://users.nccs.gov/~pnorbert/adios-1
            && make \
            && make install
 
-RUN        curl -sLo adios2-2.6.0.tar.gz https://github.com/ornladios/ADIOS2/archive/v2.6.0.tar.gz \
+RUN        curl -sLo adios2-2.7.1.tar.gz https://github.com/ornladios/ADIOS2/archive/v2.7.1.tar.gz \
            && file adios2*.tar.gz \
            && tar -xzf adios2*.tar.gz \
            && rm adios2*.tar.gz \

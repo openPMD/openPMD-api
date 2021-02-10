@@ -339,7 +339,7 @@ class APITest(unittest.TestCase):
                 np.testing.assert_almost_equal(
                     series.get_attribute("nparr_cdouble"),
                     [4.5 + 1.1j, 6.7 - 2.2j])
-            if file_ending != "bp":  # not in ADIOS 1.13.1 nor ADIOS 2.6.0
+            if file_ending != "bp":  # not in ADIOS 1.13.1 nor ADIOS 2.7.0
                 np.testing.assert_almost_equal(
                     series.get_attribute("nparr_clongdouble"),
                     [8.9 + 7.8j, 7.6 + 9.2j])
