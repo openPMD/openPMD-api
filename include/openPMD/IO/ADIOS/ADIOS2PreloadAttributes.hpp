@@ -27,6 +27,7 @@
 #include <functional>
 #include <map>
 #include <stddef.h>
+#include <type_traits>
 
 #include "openPMD/Datatype.hpp"
 
@@ -148,8 +149,18 @@ namespace detail
                 "[ADIOS2] Requested attribute not found: " + name );
         }
         AttributeLocation const & location = it->second;
-        if( location.dt != determineDatatype< T >() )
+        Datatype determinedDatatype = determineDatatype< T >();
+        if( std::is_same< T, signed char >::value )
         {
+            // workaround: we use Datatype::CHAR to represent ADIOS2 signed char
+            // (ADIOS2 does not have chars with unspecified signed-ness
+            // anyway)
+            determinedDatatype = Datatype::CHAR;
+        }
+        if( location.dt != determinedDatatype )
+        {
+            std::cout << "location.dt=" << location.dt <<
+                "\tdetermineDatatype=" << determineDatatype< T > () << std::endl;
             throw std::runtime_error(
                 "[ADIOS2] Wrong datatype for attribute: " + name );
         }

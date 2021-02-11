@@ -1677,30 +1677,55 @@ namespace detail
                 size_t width = attr.shape[ 1 ];
 
                 std::vector< std::string > res( height );
-                for( size_t i = 0; i < height; ++i )
+                if( std::is_signed< char >::value ==
+                    std::is_signed< char_t >::value )
                 {
-                    size_t start = i * width;
-                    char const * start_ptr =
-                        reinterpret_cast< char const * >( loadedData + start );
-                    size_t j = 0;
-                    while( j < width && start_ptr[ j ] != 0 )
+                    // reinterpret_cast-ing will do
+                    for( size_t i = 0; i < height; ++i )
                     {
-                        ++j;
+                        size_t start = i * width;
+                        char const * start_ptr =
+                            reinterpret_cast< char const * >(
+                                loadedData + start );
+                        size_t j = 0;
+                        while( j < width && start_ptr[ j ] != 0 )
+                        {
+                            ++j;
+                        }
+                        std::string & str = res[ i ];
+                        str.append( start_ptr, start_ptr + j );
                     }
-                    std::string & str = res[ i ];
-                    str.append( start_ptr, start_ptr + j );
+                }
+                else
+                {
+                    // let's play safe and convert explicitly
+                    std::vector< char > converted( width );
+                    for( size_t i = 0; i < height; ++i )
+                    {
+                        size_t start = i * width;
+                        auto const * start_ptr = loadedData + start;
+                        size_t j = 0;
+                        while( j < width && start_ptr[ j ] != 0 )
+                        {
+                            converted[ j ] = start_ptr[ j ];
+                            ++j;
+                        }
+                        std::string & str = res[ i ];
+                        str.append( converted.data(), converted.data() + j );
+                    }
                 }
 
                 *resource = res;
             };
         /*
-         * If writing char variables in ADIOS2, they might become uint8_t on
-         * disk. So allow reading from both types.
+         * If writing char variables in ADIOS2, they might become either int8_t
+         * or uint8_t on disk. So allow reading from both types.
          */
         switch( preloadedAttributes.attributeType( name ) )
         {
         case Datatype::CHAR: {
-            loadFromDatatype( char{} );
+            using schar_t = signed char;
+            loadFromDatatype( schar_t{} );
             break;
         }
         case Datatype::UCHAR: {
