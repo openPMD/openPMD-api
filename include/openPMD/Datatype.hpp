@@ -36,11 +36,15 @@
 
 namespace openPMD
 {
+
+constexpr int LOWEST_DATATYPE = 0;
+constexpr int HIGHEST_DATATYPE = 1000;
+
 /** Concrete datatype of an object available at runtime.
  */
 enum class Datatype : int
 {
-    CHAR = 0, UCHAR, // SCHAR,
+    CHAR = LOWEST_DATATYPE, UCHAR, // SCHAR,
     SHORT, INT, LONG, LONGLONG,
     USHORT, UINT, ULONG, ULONGLONG,
     FLOAT, DOUBLE, LONG_DOUBLE,
@@ -67,7 +71,7 @@ enum class Datatype : int
 
     BOOL,
 
-    DATATYPE = 1000,
+    DATATYPE = HIGHEST_DATATYPE,
 
     UNDEFINED
 }; // Datatype
@@ -811,7 +815,7 @@ struct HasErrorMessageMember<
  * @tparam Args As in switchType().
  */
 template<
-    unsigned n,
+    int n,
     typename ReturnType,
     typename Action,
     typename Dummy,
@@ -829,15 +833,16 @@ struct CallUndefinedDatatype
     }
 };
 
-template< unsigned n, typename ReturnType, typename Action, typename... Args >
+template< int n, typename ReturnType, typename Action, typename... Args >
 struct CallUndefinedDatatype<
     n,
     ReturnType,
     Action,
     // check whether `action.template operator()<0>(args...)` is callable
     void_t< decltype(
-        std::declval< Action >().OPENPMD_TEMPLATE_OPERATOR() < 0 >(
-            std::forward< Args >( std::declval< Args >() )... ) ) >,
+        std::declval< Action >()
+            .OPENPMD_TEMPLATE_OPERATOR() < LOWEST_DATATYPE >(
+                std::forward< Args >( std::declval< Args >() )... ) ) >,
     Args... >
 {
     static ReturnType call( Action action, Args &&... args )
@@ -934,12 +939,20 @@ auto switchNonVectorType( Datatype dt, Action action, Args &&... args )
             std::forward< Args >( args )... );
     case Datatype::DATATYPE:
         return detail::CallUndefinedDatatype<
-            1000, ReturnType, Action, void, Args &&... >::
+            HIGHEST_DATATYPE,
+            ReturnType,
+            Action,
+            void,
+            Args &&... >::
             call( std::move( action ), std::forward< Args >( args )... );
     case Datatype::UNDEFINED:
-        return detail::
-            CallUndefinedDatatype< 0, ReturnType, Action, void, Args &&... >::
-                call( std::move( action ), std::forward< Args >( args )... );
+        return detail::CallUndefinedDatatype<
+            LOWEST_DATATYPE,
+            ReturnType,
+            Action,
+            void,
+            Args &&... >::
+            call( std::move( action ), std::forward< Args >( args )... );
     default:
         throw std::runtime_error(
             "Internal error: Encountered unknown datatype (switchType) ->" +
