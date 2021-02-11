@@ -12,7 +12,6 @@ For existing tasks, the labels `good first issue <https://github.com/openPMD/ope
 In case you want to start working on one of those, just *comment* in it first so no work is duplicated.
 
 New contributions in form of `pull requests <https://help.github.com/articles/about-pull-requests/>`_ always need to go in the ``dev`` (development) branch.
-The ``master`` branch contains the last stable release and receives updates only when a new version is drafted.
 
 Maintainers organize prioritites and progress in the `projects tab <https://github.com/openPMD/openPMD-api/projects>`_.
 
