@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <array>
 #include <complex>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -444,9 +445,14 @@ void init_Attributable(py::module &m) {
             return v.getResource();
             // TODO instead of returning lists, return all arrays (ndim > 0) as numpy arrays?
         })
-        .def("get_attribute_dtype", []( Attributable & attr, std::string const& key ) {
-            auto v = attr.getAttribute(key);
-            return dtype_to_numpy(v.dtype);
+        .def_property_readonly("attribute_dtypes", []( Attributable const & attributable ) {
+            std::map< std::string, pybind11::dtype > dtypes;
+            for( auto const & attr : attributable.attributes() )
+            {
+                dtypes[ attr ] =
+                    dtype_to_numpy( attributable.getAttribute( attr ).dtype );
+            }
+            return dtypes;
         })
         .def("delete_attribute", &Attributable::deleteAttribute)
         .def("contains_attribute", &Attributable::containsAttribute)

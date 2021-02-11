@@ -183,9 +183,10 @@ class pipe:
                 and not isinstance(dest, io.Iteration)):
             raise RuntimeError(
                 "Internal error: Trying to copy mismatching types")
+        attribute_dtypes = src.attribute_dtypes
         for key in src.attributes:
             attr = src.get_attribute(key)
-            attr_type = src.get_attribute_dtype(key)
+            attr_type = attribute_dtypes[key]
             dest.set_attribute(key, attr, attr_type)
         container_types = [
             io.Mesh_Container, io.Particle_Container, io.ParticleSpecies,
