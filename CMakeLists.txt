@@ -889,7 +889,7 @@ if(openPMD_INSTALL)
                 install(
                     FILES ${openPMD_SOURCE_DIR}/src/cli/${toolname}.py
                     DESTINATION ${CMAKE_INSTALL_BINDIR}
-                    RENAME openpmd-${toolname}.py
+                    RENAME openpmd-${toolname}
                     PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
                 )
             endforeach()
@@ -1131,17 +1131,17 @@ if(openPMD_BUILD_TESTING)
             add_custom_command(TARGET openPMD.py.cliTools POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy
                         ${openPMD_SOURCE_DIR}/src/cli/${toolname}.py
-                        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-${toolname}.py
+                        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-${toolname}
             )
             add_test(NAME CLI.help.${toolname}.py
                 COMMAND ${Python_EXECUTABLE}
-                    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-${toolname}.py --help
+                    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-${toolname} --help
                 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
             )
             test_set_pythonpath(CLI.help.${toolname}.py)
         endforeach()
 
-        # openpmd-pipe.py test
+        # openpmd-pipe (python) test
         if( openPMD_HAVE_HDF5
             AND (openPMD_HAVE_ADIOS2 OR openPMD_HAVE_ADIOS1)
             AND EXAMPLE_DATA_FOUND
@@ -1155,12 +1155,12 @@ if(openPMD_BUILD_TESTING)
                 add_test(NAME CLI.pipe.py
                     COMMAND sh -c
                         "${MPI_TEST_EXE} ${Python_EXECUTABLE}                      \
-                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe.py      \
+                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
                             --infile ../samples/git-sample/thetaMode/data%T.h5     \
                             --outfile ../samples/git-sample/thetaMode/data%T.bp;   \
                                                                                    \
                             ${Python_EXECUTABLE}                                   \
-                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe.py      \
+                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
                             --infile ../samples/git-sample/thetaMode/data%T.bp     \
                             --outfile ../samples/git-sample/thetaMode/data%T.json  \
                         "
@@ -1170,12 +1170,12 @@ if(openPMD_BUILD_TESTING)
                 add_test(NAME CLI.pipe.py
                     COMMAND sh -c
                         "${Python_EXECUTABLE}                                      \
-                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe.py      \
+                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
                             --infile ../samples/git-sample/thetaMode/data%T.h5     \
                             --outfile ../samples/git-sample/thetaMode/data%T.bp;   \
                                                                                    \
                             ${Python_EXECUTABLE}                                   \
-                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe.py      \
+                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
                             --infile ../samples/git-sample/thetaMode/data%T.bp     \
                             --outfile ../samples/git-sample/thetaMode/data%T.json  \
                         "
