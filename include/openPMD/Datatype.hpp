@@ -811,14 +811,14 @@ struct HasErrorMessageMember<
  * @tparam n As in switchType().
  * @tparam ReturnType As in switchType().
  * @tparam Action As in switchType().
- * @tparam Dummy For SFINAE, set to void.
+ * @tparam Placeholder For SFINAE, set to void.
  * @tparam Args As in switchType().
  */
 template<
     int n,
     typename ReturnType,
     typename Action,
-    typename Dummy,
+    typename Placeholder,
     typename... Args >
 struct CallUndefinedDatatype
 {
