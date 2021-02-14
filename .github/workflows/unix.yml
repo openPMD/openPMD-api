@@ -169,7 +169,7 @@ jobs:
 #  gcc-4.8.5_py35_nompi_h5
 #  gcc-7.4.0_py_ompi_h5_ad1_ad2_coveralls
 
-  gcc5_py36_ompi_h5_ad1_ad2:
+  gcc5_py36_pd_ompi_h5_ad1_ad2:
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
@@ -183,6 +183,7 @@ jobs:
         python3 -m pip install -U pip
         python3 -m pip install -U numpy
         python3 -m pip install -U mpi4py
+        python3 -m pip install -U pandas
     - name: Build
       env: {CC: gcc-5, CXX: g++-5, CXXFLAGS: -Werror -Wno-deprecated-declarations}
       run: |
@@ -195,13 +196,13 @@ jobs:
         cmake --build . --parallel 2
         ctest --output-on-failure
 
-  gcc9_py38_nompi_h5_ad1_ad2_libcpp:
+  gcc9_py38_pd_nompi_h5_ad1_ad2_libcpp:
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v2
     - name: Install
       run: |
-        sudo apt-get install g++ libopenmpi-dev libhdf5-openmpi-dev libadios-dev python3 python3-numpy python3-mpi4py
+        sudo apt-get install g++ libopenmpi-dev libhdf5-openmpi-dev libadios-dev python3 python3-numpy python3-mpi4py python3-pandas
 #       TODO ADIOS1 (.pc file broken?) ADIOS2
     - name: Build
       env: {CXXFLAGS: -Werror -Wno-deprecated-declarations, PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig}
