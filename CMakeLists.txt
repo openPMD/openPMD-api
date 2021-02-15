@@ -99,7 +99,7 @@ mark_as_advanced(BUILD_SHARED_LIBS)
 if(DEFINED BUILD_SHARED_LIBS)
     set(openPMD_BUILD_SHARED_LIBS_DEFAULT ${BUILD_SHARED_LIBS})
 else()
-    set(openPMD_BUILD_SHARED_LIBS_DEFAULT ON)
+    set(openPMD_BUILD_SHARED_LIBS_DEFAULT ${SHARED_LIBS_SUPPORTED})
 endif()
 option(openPMD_BUILD_SHARED_LIBS "Build the openPMD tests"
     ${openPMD_BUILD_SHARED_LIBS_DEFAULT})
@@ -383,7 +383,12 @@ set(IO_ADIOS1_SOURCE
         src/IO/ADIOS/ParallelADIOS1IOHandler.cpp)
 
 # library
-add_library(openPMD ${CORE_SOURCE} ${IO_SOURCE})
+if(openPMD_BUILD_SHARED_LIBS)
+    set(_openpmd_lib_type SHARED)
+else()
+    set(_openpmd_lib_type STATIC)
+endif()
+add_library(openPMD ${_openpmd_lib_type} ${CORE_SOURCE} ${IO_SOURCE})
 add_library(openPMD::openPMD ALIAS openPMD)
 
 # properties
@@ -702,8 +707,10 @@ endif()
 
 if(openPMD_BUILD_TESTING)
     # compile Catch2 implementation part separately
-    add_library(CatchRunner test/CatchRunner.cpp)  # Always MPI_Init with Serial Fallback
-    add_library(CatchMain   test/CatchMain.cpp)    # Serial only
+    add_library(CatchRunner ${_openpmd_lib_type}
+        test/CatchRunner.cpp)  # Always MPI_Init with Serial Fallback
+    add_library(CatchMain   ${_openpmd_lib_type}
+        test/CatchMain.cpp)    # Serial only
     target_compile_features(CatchRunner PUBLIC cxx_std_14)
     target_compile_features(CatchMain   PUBLIC cxx_std_14)
     set_target_properties(CatchRunner CatchMain PROPERTIES
