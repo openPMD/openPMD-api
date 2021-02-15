@@ -22,6 +22,7 @@
 #include "openPMD/IO/HDF5/HDF5IOHandlerImpl.hpp"
 
 #if openPMD_HAVE_HDF5
+#   include "openPMD/Datatype.hpp"
 #   include "openPMD/auxiliary/Filesystem.hpp"
 #   include "openPMD/auxiliary/StringManip.hpp"
 #   include "openPMD/backend/Attribute.hpp"
@@ -256,21 +257,30 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         Attribute a(0);
         a.dtype = d;
         std::vector< hsize_t > dims;
-        for( auto const& val : parameters.extent )
+        std::uint64_t num_elements = 1u;
+        for( auto const& val : parameters.extent ) {
             dims.push_back(static_cast< hsize_t >(val));
+            num_elements *= val;
+        }
 
         hid_t space = H5Screate_simple(static_cast< int >(dims.size()), dims.data(), dims.data());
         VERIFY(space >= 0, "[HDF5] Internal error: Failed to create dataspace during dataset creation");
 
-        std::vector< hsize_t > chunkDims;
-        for( auto const& val : parameters.chunkSize )
-            chunkDims.push_back(static_cast< hsize_t >(val));
-
         /* enable chunking on the created dataspace */
         hid_t datasetCreationProperty = H5Pcreate(H5P_DATASET_CREATE);
-        herr_t status;
-        //status = H5Pset_chunk(datasetCreationProperty, chunkDims.size(), chunkDims.data());
-        //VERIFY(status == 0, "[HDF5] Internal error: Failed to set chunk size during dataset creation");
+
+        if( num_elements != 0u )
+        {
+            // get chunking dimensions
+            std::vector< hsize_t > chunk_dims = getOptimalChunkDims(dims, toBytes(d));
+
+            // TODO: allow overwrite with user-provided chunk size
+            //for( auto const& val : parameters.chunkSize )
+            //    chunk_dims.push_back(static_cast< hsize_t >(val));
+
+            herr_t status = H5Pset_chunk(datasetCreationProperty, chunk_dims.size(), chunk_dims.data());
+            VERIFY(status == 0, "[HDF5] Internal error: Failed to set chunk size during dataset creation");
+        }
 
         std::string const& compression = parameters.compression;
         if( !compression.empty() )
@@ -318,6 +328,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
                                    H5P_DEFAULT);
         VERIFY(group_id >= 0, "[HDF5] Internal error: Failed to create HDF5 group during dataset creation");
 
+        herr_t status;
         status = H5Dclose(group_id);
         VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 dataset during dataset creation");
         status = H5Tclose(datatype);
