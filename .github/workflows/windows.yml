@@ -1,0 +1,56 @@
+name: windows
+
+on: [push, pull_request]
+
+jobs:
+  build_win_msvc:
+    name: MSVC w/o MPI
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build & Test
+      run: |
+        $erroractionpreference = "stop"
+        md build
+        cd build
+        powershell.exe ..\share\openPMD\download_samples.ps1
+        cmake .. `
+              -DCMAKE_BUILD_TYPE=Debug    `
+              -DCMAKE_VERBOSE_MAKEFILE=ON
+        cmake --build . --config Debug --parallel 2
+        if (-not $?) { throw "CMake build failed" }
+        ctest -V --output-on-failure --build-config Debug
+        if (-not $?) { throw "CTest failed" }
+        cmake --build . --config Debug --target install
+        if (-not $?) { throw "CMake install failed" }
+
+  build_win_clang:
+    name: Clang w/o MPI
+    runs-on: windows-2019
+    steps:
+    - uses: actions/checkout@v2
+    - uses: seanmiddleditch/gha-setup-ninja@master
+    - name: Build & Test
+      shell: cmd
+      run: |
+        md build
+        cd build
+        Powershell.exe -File ..\share\openPMD\download_samples.ps1
+        if errorlevel 1 exit 1
+        call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\vc\Auxiliary\build\vcvarsall.bat" x64
+        cmake ..                            ^
+              -G "Ninja"                    ^
+              -DCMAKE_C_COMPILER=clang-cl   ^
+              -DCMAKE_CXX_COMPILER=clang-cl ^
+              -DCMAKE_BUILD_TYPE=Release    ^
+              -DCMAKE_VERBOSE_MAKEFILE=ON
+        if errorlevel 1 exit 1
+        cmake --build . --config Release --parallel 2
+        if errorlevel 1 exit 1
+        
+        dumpbin /dependents D:\a\openPMD-api\openPMD-api\build\lib\site-packages\openpmd_api\openpmd_api_cxx.cp39-win_amd64.pyd
+        
+        ctest -V --output-on-failure --build-config Release
+        if errorlevel 1 exit 1
+        cmake --build . --config Release --target install
+        if errorlevel 1 exit 1

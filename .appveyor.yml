@@ -125,8 +125,10 @@ before_build:
 
 build_script:
   - cmd: cmake --build . --config %CONFIGURATION%
+  - cmd: ctest -V -C %CONFIGURATION%
   - cmd: cmake --build . --config %CONFIGURATION% --target install
+# note: running ctest after install seems to fail...
 
 test_script:
-  - cmd: ctest -V -C %CONFIGURATION%
   - cmd: python -c "import openpmd_api; print(openpmd_api.__version__); print(openpmd_api.variants)"
+
