@@ -21,27 +21,30 @@
 #pragma once
 
 #include <array>
+#include <climits>
+#include <complex>
 #include <cstdint>
 #include <iosfwd>
-#include <memory>
-#include <type_traits>
-#include <vector>
-#include <tuple>
-#include <climits>
 #include <map>
+#include <memory>
 #include <stdexcept>
 #include <string>
-#include <complex>
-
-
+#include <tuple>
+#include <type_traits>
+#include <utility> // std::declval
+#include <vector>
 
 namespace openPMD
 {
+
+constexpr int LOWEST_DATATYPE = 0;
+constexpr int HIGHEST_DATATYPE = 1000;
+
 /** Concrete datatype of an object available at runtime.
  */
 enum class Datatype : int
 {
-    CHAR = 0, UCHAR, // SCHAR,
+    CHAR = LOWEST_DATATYPE, UCHAR, // SCHAR,
     SHORT, INT, LONG, LONGLONG,
     USHORT, UINT, ULONG, ULONGLONG,
     FLOAT, DOUBLE, LONG_DOUBLE,
@@ -68,7 +71,7 @@ enum class Datatype : int
 
     BOOL,
 
-    DATATYPE = 1000,
+    DATATYPE = HIGHEST_DATATYPE,
 
     UNDEFINED
 }; // Datatype
@@ -765,6 +768,191 @@ ReturnType switchType( Datatype dt, Action action, Args &&... args )
     case Datatype::UNDEFINED:
         return action.OPENPMD_TEMPLATE_OPERATOR( )< 0 >(
             std::forward< Args >( args )... );
+    default:
+        throw std::runtime_error(
+            "Internal error: Encountered unknown datatype (switchType) ->" +
+            std::to_string( static_cast< int >( dt ) ) );
+    }
+}
+
+namespace detail
+{
+// std::void_t is C++17
+template< typename >
+using void_t = void;
+
+/*
+ * Check whether class T has a member "errorMsg" of type std::string.
+ * Used to give helpful compile-time error messages with static_assert
+ * down in CallUndefinedDatatype.
+ */
+template< typename T, typename = void >
+struct HasErrorMessageMember
+{
+    static constexpr bool value = false;
+};
+
+template< typename T >
+struct HasErrorMessageMember<
+    T,
+    typename std::enable_if< std::is_same<
+        std::remove_cv_t< std::remove_reference_t< decltype( T::errorMsg ) > >,
+        std::string >::value >::type >
+{
+    static constexpr bool value = true;
+};
+
+/**
+ * Purpose of this struct is to detect at compile time whether
+ * Action::template operator()\<0\>() exists. If yes, call
+ * Action::template operator()\<n\>() with the passed arguments.
+ * If not, throw an error.
+ *
+ * @tparam n As in switchType().
+ * @tparam ReturnType As in switchType().
+ * @tparam Action As in switchType().
+ * @tparam Placeholder For SFINAE, set to void.
+ * @tparam Args As in switchType().
+ */
+template<
+    int n,
+    typename ReturnType,
+    typename Action,
+    typename Placeholder,
+    typename... Args >
+struct CallUndefinedDatatype
+{
+    static ReturnType call( Action action, Args &&... )
+    {
+        static_assert(
+            HasErrorMessageMember< Action >::value,
+            "[switchType] Action needs either an errorMsg member of type "
+            "std::string or operator()<unsigned>() overloads." );
+        throw std::runtime_error(
+            "[" + action.errorMsg + "] Unknown Datatype." );
+    }
+};
+
+template< int n, typename ReturnType, typename Action, typename... Args >
+struct CallUndefinedDatatype<
+    n,
+    ReturnType,
+    Action,
+    // check whether `action.template operator()<0>(args...)` is callable
+    void_t< decltype(
+        std::declval< Action >()
+            .OPENPMD_TEMPLATE_OPERATOR() < LOWEST_DATATYPE >(
+                std::forward< Args >( std::declval< Args >() )... ) ) >,
+    Args... >
+{
+    static ReturnType call( Action action, Args &&... args )
+    {
+        return action.OPENPMD_TEMPLATE_OPERATOR()< n >(
+            std::forward< Args >( args )... );
+    }
+};
+}
+
+/**
+ * Generalizes switching over an openPMD datatype.
+ *
+ * Will call the functor passed
+ * to it using the C++ internal datatype corresponding to the openPMD datatype
+ * as template parameter for the templated <operator()>().
+ * Ignores vector and array types.
+ *
+ * @tparam ReturnType The functor's return type.
+ * @tparam Action The functor's type.
+ * @tparam Args The functors argument types.
+ * @param dt The openPMD datatype.
+ * @param action The functor.
+ * @param args The functor's arguments.
+ * @return The return value of the functor, when calling its <operator()>() with
+ * the passed arguments and the template parameter type corresponding to the
+ * openPMD type.
+ */
+template< typename Action, typename... Args >
+auto switchNonVectorType( Datatype dt, Action action, Args &&... args )
+    -> decltype(
+        action.OPENPMD_TEMPLATE_OPERATOR() < char >
+        ( std::forward< Args >( args )... ) )
+{
+    using ReturnType = decltype(
+        action.OPENPMD_TEMPLATE_OPERATOR() < char >
+        ( std::forward< Args >( args )... ) );
+    switch( dt )
+    {
+    case Datatype::CHAR:
+        return action.OPENPMD_TEMPLATE_OPERATOR()< char >(
+            std::forward< Args >( args )... );
+    case Datatype::UCHAR:
+        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned char >(
+            std::forward< Args >( args )... );
+    case Datatype::SHORT:
+        return action.OPENPMD_TEMPLATE_OPERATOR()< short >(
+            std::forward< Args >( args )... );
+    case Datatype::INT:
+        return action.OPENPMD_TEMPLATE_OPERATOR()< int >(
+            std::forward< Args >( args )... );
+    case Datatype::LONG:
+        return action.OPENPMD_TEMPLATE_OPERATOR()< long >(
+            std::forward< Args >( args )... );
+    case Datatype::LONGLONG:
+        return action.OPENPMD_TEMPLATE_OPERATOR()< long long >(
+            std::forward< Args >( args )... );
+    case Datatype::USHORT:
+        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned short >(
+            std::forward< Args >( args )... );
+    case Datatype::UINT:
+        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned int >(
+            std::forward< Args >( args )... );
+    case Datatype::ULONG:
+        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned long >(
+            std::forward< Args >( args )... );
+    case Datatype::ULONGLONG:
+        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned long long >(
+            std::forward< Args >( args )... );
+    case Datatype::FLOAT:
+        return action.OPENPMD_TEMPLATE_OPERATOR()< float >(
+            std::forward< Args >( args )... );
+    case Datatype::DOUBLE:
+        return action.OPENPMD_TEMPLATE_OPERATOR()< double >(
+            std::forward< Args >( args )... );
+    case Datatype::LONG_DOUBLE:
+        return action.OPENPMD_TEMPLATE_OPERATOR()< long double >(
+            std::forward< Args >( args )... );
+    case Datatype::CFLOAT:
+        return action.OPENPMD_TEMPLATE_OPERATOR()< std::complex< float > >(
+            std::forward< Args >( args )... );
+    case Datatype::CDOUBLE:
+        return action.OPENPMD_TEMPLATE_OPERATOR()< std::complex< double > >(
+            std::forward< Args >( args )... );
+    case Datatype::CLONG_DOUBLE:
+        return action
+            .OPENPMD_TEMPLATE_OPERATOR()< std::complex< long double > >(
+                std::forward< Args >( args )... );
+    case Datatype::STRING:
+        return action.OPENPMD_TEMPLATE_OPERATOR()< std::string >(
+            std::forward< Args >( args )... );
+    case Datatype::BOOL:
+        return action.OPENPMD_TEMPLATE_OPERATOR()< bool >(
+            std::forward< Args >( args )... );
+    case Datatype::DATATYPE:
+        return detail::CallUndefinedDatatype<
+            HIGHEST_DATATYPE,
+            ReturnType,
+            Action,
+            void,
+            Args &&... >::
+            call( std::move( action ), std::forward< Args >( args )... );
+    case Datatype::UNDEFINED:
+        return detail::CallUndefinedDatatype<
+            LOWEST_DATATYPE,
+            ReturnType,
+            Action,
+            void,
+            Args &&... >::
+            call( std::move( action ), std::forward< Args >( args )... );
     default:
         throw std::runtime_error(
             "Internal error: Encountered unknown datatype (switchType) ->" +

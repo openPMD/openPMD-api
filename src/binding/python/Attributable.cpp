@@ -28,8 +28,10 @@
 #include <pybind11/stl_bind.h>
 #include <pybind11/stl.h>
 
+#include <algorithm>
 #include <array>
 #include <complex>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -257,6 +259,102 @@ bool setAttributeFromBufferInfo(
     }
 }
 
+struct SetAttributeFromObject
+{
+    std::string errorMsg = "Attributable.set_attribute()";
+
+    template< typename RequestedType >
+    bool operator()(
+        Attributable & attr,
+        std::string const& key,
+        py::object& obj )
+    {
+        if( std::string( py::str( obj.get_type() ) ) == "<class 'list'>" )
+        {
+            using ListType = std::vector< RequestedType >;
+            return attr.setAttribute< ListType >( key, obj.cast< ListType >() );
+        }
+        else
+        {
+            return attr.setAttribute< RequestedType >(
+                key, obj.cast< RequestedType >() );
+        }
+    }
+};
+
+template<>
+bool SetAttributeFromObject::operator()< double >(
+    Attributable & attr, std::string const & key, py::object & obj )
+{
+    if( std::string( py::str( obj.get_type() ) ) == "<class 'list'>" )
+    {
+        using ListType = std::vector< double >;
+        using ArrayType = std::array< double, 7 >;
+        ListType const & asVector = obj.cast< ListType >();
+        if( asVector.size() == 7 && key == "unitDimension" )
+        {
+            ArrayType asArray;
+            std::copy_n( asVector.begin(), 7, asArray.begin() );
+            return attr.setAttribute< ArrayType >( key, asArray );
+        }
+        else
+        {
+            return attr.setAttribute< ListType >( key, asVector );
+        }
+    }
+    else
+    {
+        return attr.setAttribute< double >( key, obj.cast< double >() );
+    }
+}
+
+template<>
+bool SetAttributeFromObject::operator()< bool >(
+    Attributable & attr, std::string const & key, py::object & obj )
+{
+    return attr.setAttribute< bool >( key, obj.cast< bool >() );
+}
+
+template<>
+bool SetAttributeFromObject::operator()< char >(
+    Attributable & attr, std::string const & key, py::object & obj )
+{
+    if( std::string( py::str( obj.get_type() ) ) == "<class 'list'>" )
+    {
+        using ListChar = std::vector< char >;
+        using ListString = std::vector< std::string >;
+        try
+        {
+            return attr.setAttribute< ListString >(
+                key, obj.cast< ListString >() );
+        }
+        catch( const py::cast_error & )
+        {
+            return attr.setAttribute< ListChar >( key, obj.cast< ListChar >() );
+        }
+    }
+    else if( std::string( py::str( obj.get_type() ) ) == "<class 'str'>" )
+    {
+        return attr.setAttribute< std::string >(
+            key, obj.cast< std::string >() );
+    }
+    else
+    {
+        return attr.setAttribute< char >( key, obj.cast< char >() );
+    }
+}
+
+bool setAttributeFromObject(
+    Attributable & attr,
+    std::string const & key,
+    py::object & obj,
+    pybind11::dtype datatype )
+{
+    Datatype requestedDatatype = dtype_from_numpy( datatype );
+    static SetAttributeFromObject safo;
+    return switchNonVectorType( requestedDatatype, safo, attr, key, obj );
+}
+
 void init_Attributable(py::module &m) {
     py::class_<Attributable>(m, "Attributable")
         .def(py::init<>())
@@ -290,6 +388,18 @@ void init_Attributable(py::module &m) {
                 a
             );
         })
+        .def("set_attribute", [](
+                Attributable & attr,
+                std::string const& key,
+                py::object& obj,
+                pybind11::dtype datatype )
+        {
+            return setAttributeFromObject( attr, key, obj, datatype );
+        },
+            py::arg("key"),
+            py::arg("value"),
+            py::arg("datatype")
+        )
 
         // fundamental Python types
         .def("set_attribute", &Attributable::setAttribute< bool >)
@@ -335,6 +445,15 @@ void init_Attributable(py::module &m) {
             auto v = attr.getAttribute(key);
             return v.getResource();
             // TODO instead of returning lists, return all arrays (ndim > 0) as numpy arrays?
+        })
+        .def_property_readonly("attribute_dtypes", []( Attributable const & attributable ) {
+            std::map< std::string, pybind11::dtype > dtypes;
+            for( auto const & attr : attributable.attributes() )
+            {
+                dtypes[ attr ] =
+                    dtype_to_numpy( attributable.getAttribute( attr ).dtype );
+            }
+            return dtypes;
         })
         .def("delete_attribute", &Attributable::deleteAttribute)
         .def("contains_attribute", &Attributable::containsAttribute)
