@@ -1110,15 +1110,6 @@ adios2_ssc()
 
 TEST_CASE( "adios2_ssc", "[parallel][adios2]" )
 {
-    /*
-     * @todo Activate this test as soon as we rely upon an ADIOS2 version
-     *       including this fix https://github.com/ornladios/ADIOS2/pull/2568
-     *       (e.g. ADIOS 2.7.0).
-     */
-    constexpr bool testAdiosSSC = false;
-    if( testAdiosSSC )
-    {
-        adios2_ssc();
-    }
+    adios2_ssc();
 }
 #endif
