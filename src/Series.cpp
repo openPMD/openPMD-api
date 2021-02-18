@@ -1222,7 +1222,7 @@ Series::Series(
 
 ReadIterations Series::readIterations()
 {
-    return { this };
+    return { *this };
 }
 
 WriteIterations
@@ -1315,10 +1315,11 @@ SeriesIterator::SeriesIterator() : m_series()
 {
 }
 
-SeriesIterator::SeriesIterator( Series * series ) : m_series( series )
+SeriesIterator::SeriesIterator( Series series )
+    : m_series( std::move( series ) )
 {
-    auto it = series->iterations.begin();
-    if( it == series->iterations.end() )
+    auto it = series.get().iterations.begin();
+    if( it == series.get().iterations.end() )
     {
         *this = end();
         return;
@@ -1344,7 +1345,7 @@ SeriesIterator::operator++()
         *this = end();
         return *this;
     }
-    Series & series = *m_series.get();
+    Series & series = m_series.get();
     auto & iterations = series.iterations;
     auto & currentIteration = iterations[ m_currentIteration ];
     if( !currentIteration.closed() )
@@ -1409,7 +1410,7 @@ IndexedIteration
 SeriesIterator::operator*()
 {
     return IndexedIteration(
-        m_series.get()->iterations[ m_currentIteration ], m_currentIteration );
+        m_series.get().iterations[ m_currentIteration ], m_currentIteration );
 }
 
 bool
@@ -1431,7 +1432,8 @@ SeriesIterator::end()
     return {};
 }
 
-ReadIterations::ReadIterations( Series * series ) : m_series( series )
+ReadIterations::ReadIterations( Series series )
+    : m_series( std::move( series ) )
 {
 }
 

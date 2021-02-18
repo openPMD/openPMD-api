@@ -492,7 +492,7 @@ class SeriesIterator
 {
     using iteration_index_t = IndexedIteration::index_t;
 
-    using maybe_series_t = auxiliary::Option< Series * >;
+    using maybe_series_t = auxiliary::Option< Series >;
 
     maybe_series_t m_series;
     iteration_index_t m_currentIteration = 0;
@@ -501,10 +501,9 @@ class SeriesIterator
     SeriesIterator();
 
 public:
-    SeriesIterator( Series * );
+    SeriesIterator( Series );
 
-    SeriesIterator &
-    operator++();
+    SeriesIterator & operator++();
 
     IndexedIteration
     operator*();
@@ -543,13 +542,12 @@ private:
     using iterations_t = decltype( internal::SeriesData::iterations );
     using iterator_t = SeriesIterator;
 
-    Series * m_series;
+    Series m_series;
 
-    ReadIterations( Series * );
+    ReadIterations( Series );
 
 public:
-    iterator_t
-    begin();
+    iterator_t begin();
 
     iterator_t
     end();
