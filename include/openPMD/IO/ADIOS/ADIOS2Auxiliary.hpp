@@ -84,71 +84,14 @@ namespace detail
         Attribute
     };
 
-    template < typename T > struct AttributeInfoHelper
-    {
-        static Extent
-        getSize(
-            adios2::IO &,
-            std::string const & attributeName,
-            VariableOrAttribute );
-    };
-
-    template < > struct AttributeInfoHelper< std::complex< long double > >
-    {
-        static Extent
-        getSize( adios2::IO &, std::string const &, VariableOrAttribute )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: no support for long double complex attribute types" );
-        }
-    };
-
-    template < typename T > struct AttributeInfoHelper< std::vector< T > >
-    {
-        static Extent
-        getSize(
-            adios2::IO &,
-            std::string const & attributeName,
-            VariableOrAttribute );
-    };
-
-    template < > struct AttributeInfoHelper< std::vector< std::complex< long double > > >
-    {
-        static Extent
-        getSize( adios2::IO &, std::string const &, VariableOrAttribute )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: no support for long double complex vector attribute types" );
-        }
-    };
-
-    template < typename T, std::size_t n >
-    struct AttributeInfoHelper< std::array< T, n > >
-    {
-        static Extent
-        getSize(
-            adios2::IO & IO,
-            std::string const & attributeName,
-            VariableOrAttribute voa )
-        {
-            return AttributeInfoHelper< T >::getSize( IO, attributeName, voa );
-        }
-    };
-
-    template <> struct AttributeInfoHelper< bool >
-    {
-        static Extent
-        getSize(
-            adios2::IO &,
-            std::string const & attributeName,
-            VariableOrAttribute );
-    };
-
     struct AttributeInfo
     {
-        template< typename T, typename... Params >
+        template< typename T >
         Extent
-        operator()( Params &&... );
+        operator()(
+            adios2::IO &,
+            std::string const & attributeName,
+            VariableOrAttribute );
 
         template < int n, typename... Params >
         Extent operator( )( Params &&... );
@@ -169,42 +112,6 @@ namespace detail
         std::string const & attributeName,
         bool verbose,
         VariableOrAttribute = VariableOrAttribute::Attribute );
-
-    template< typename T >
-    struct IsTrivialType
-    {
-        constexpr static bool val = true;
-    };
-
-    template< typename T >
-    struct IsTrivialType< std::vector< T > >
-    {
-        constexpr static bool val = false;
-    };
-
-    template< typename T, size_t n >
-    struct IsTrivialType< std::array< T, n > >
-    {
-        constexpr static bool val = false;
-    };
-
-    template<>
-    struct IsTrivialType< bool >
-    {
-        constexpr static bool val = false;
-    };
-
-    template<>
-    struct IsTrivialType< std::complex< long double > >
-    {
-        constexpr static bool val = false;
-    };
-
-    template<>
-    struct IsTrivialType< std::vector< std::complex< long double > > >
-    {
-        constexpr static bool val = false;
-    };
 } // namespace detail
 
 } // namespace openPMD

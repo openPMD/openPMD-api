@@ -25,7 +25,9 @@
 #include "openPMD/IO/ADIOS/ADIOS2PreloadAttributes.hpp"
 
 #include "openPMD/Datatype.hpp"
+#define OPENPMD_SWITCHTYPE_ADIOS2
 #include "openPMD/DatatypeHelpers.hpp"
+#undef OPENPMD_SWITCHTYPE_ADIOS2
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
@@ -40,40 +42,45 @@ namespace detail
 {
     namespace
     {
-        template< typename T, typename = void >
-        struct AttributeTypes;
-
-        template< typename T >
-        struct AttributeTypes<
-            T,
-            typename std::enable_if< IsTrivialType< T >::val >::type >
+        struct GetAlignment
         {
-            static size_t
-            alignment()
+            template< typename T >
+            constexpr size_t
+            operator()() const
             {
-                return alignof( T );
+                return alignof(T);
             }
 
-            static size_t
-            size()
+            template< unsigned long, typename... Args >
+            constexpr size_t
+            operator()( Args &&... ) const
             {
-                return sizeof( T );
+                return 0;
+            }
+        };
+
+        struct GetSize
+        {
+            template< typename T >
+            constexpr size_t
+            operator()() const
+            {
+                return sizeof(T);
             }
 
-            static adios2::Dims
-            shape( adios2::IO & IO, std::string const & name )
+            template< unsigned long, typename... Args >
+            constexpr size_t
+            operator()( Args &&... ) const
             {
-                auto var = IO.InquireVariable< T >( name );
-                if( !var )
-                {
-                    throw std::runtime_error(
-                        "[ADIOS2] Variable not found: " + name );
-                }
-                return var.Shape();
+                return 0;
             }
+        };
 
-            static void
-            scheduleLoad(
+        struct ScheduleLoad
+        {
+            template< typename T >
+            void
+            operator()(
                 adios2::IO & IO,
                 adios2::Engine & engine,
                 std::string const & name,
@@ -103,114 +110,22 @@ namespace detail
                 engine.Get( var, dest, adios2::Mode::Deferred );
             }
 
-            static void attributeLocationDestroy( char *ptr, size_t numItems )
-            {
-                T *destroy = reinterpret_cast< T * >( ptr );
-                for( size_t i = 0; i < numItems; ++i )
-                {
-                    destroy[ i ].~T();
-                }
-            }
-        };
-
-        template< typename T >
-        struct AttributeTypes<
-            T,
-            typename std::enable_if< !IsTrivialType< T >::val >::type >
-        {
-            static size_t
-            alignment()
-            {
-                return 0; // we're not interested in those
-            }
-
-            static size_t
-            size()
-            {
-                return 0; // we're not interested in those
-            }
-
-            template< typename... Args >
-            static adios2::Dims
-            shape( Args &&... )
-            {
-                throw std::runtime_error( "[ADIOS2] Control Flow Error!" );
-            }
-
-            template< typename... Args >
-            static void
-            scheduleLoad( Args &&... )
-            {
-                throw std::runtime_error( "[ADIOS2] Control Flow Error!" );
-            }
-
-            template< typename... Args >
-            static void attributeLocationDestroy( Args &&... )
-            {
-                throw std::runtime_error( "[ADIOS2] Control Flow Error!" );
-            }
-        };
-
-        struct GetAlignment
-        {
-            template< typename T >
-            constexpr size_t
-            operator()() const
-            {
-                return AttributeTypes< T >::alignment();
-            }
-
-            template< unsigned long, typename... Args >
-            constexpr size_t
-            operator()( Args &&... ) const
-            {
-                return 0;
-            }
-        };
-
-        struct GetSize
-        {
-            template< typename T >
-            constexpr size_t
-            operator()() const
-            {
-                return AttributeTypes< T >::size();
-            }
-
-            template< unsigned long, typename... Args >
-            constexpr size_t
-            operator()( Args &&... ) const
-            {
-                return 0;
-            }
-        };
-
-        struct ScheduleLoad
-        {
-            template< typename T, typename... Args >
-            void
-            operator()( Args &&... args )
-            {
-                AttributeTypes< T >::scheduleLoad(
-                    std::forward< Args >( args )... );
-            }
-
-            template< unsigned long, typename... Args >
-            void
-            operator()( Args &&... )
-            {
-                throw std::runtime_error( "[ADIOS2] Unknown datatype." );
-            }
+            std::string errorMsg = "ADIOS2";
         };
 
         struct VariableShape
         {
-            template< typename T, typename... Args >
+            template< typename T >
             adios2::Dims
-            operator()( Args &&... args )
+            operator()( adios2::IO & IO, std::string const & name )
             {
-                return AttributeTypes< T >::shape(
-                    std::forward< Args >( args )... );
+                auto var = IO.InquireVariable< T >( name );
+                if( !var )
+                {
+                    throw std::runtime_error(
+                        "[ADIOS2] Variable not found: " + name );
+                }
+                return var.Shape();
             }
 
             template< unsigned long n, typename... Args >
@@ -223,11 +138,14 @@ namespace detail
 
         struct AttributeLocationDestroy
         {
-            template< typename T, typename... Args >
-            void operator()( Args &&...args )
+            template< typename T >
+            void operator()( char *ptr, size_t numItems )
             {
-                return AttributeTypes< T >::attributeLocationDestroy(
-                    std::forward< Args >( args )... );
+                T *destroy = reinterpret_cast< T * >( ptr );
+                for( size_t i = 0; i < numItems; ++i )
+                {
+                    destroy[ i ].~T();
+                }
             }
 
             template< unsigned long n, typename... Args >
@@ -279,7 +197,7 @@ namespace detail
                 length *= ext;
             }
             static AttributeLocationDestroy ald;
-            switchType( dt, ald, destroy, length );
+            switchAdios2AttributeType( dt, ald, destroy, length );
         }
     }
 
@@ -322,8 +240,9 @@ namespace detail
         VariableShape switchShape;
         for( auto & pair : attributesByType )
         {
-            size_t alignment = switchType( pair.first, switchAlignment );
-            size_t size = switchType( pair.first, switchSize );
+            size_t alignment = switchAdios2AttributeType(
+                pair.first, switchAlignment );
+            size_t size = switchAdios2AttributeType( pair.first, switchSize );
             // go to next offset with valid alignment
             size_t modulus = currentOffset % alignment;
             if( modulus > 0 )
@@ -333,7 +252,7 @@ namespace detail
             for( std::string & name : pair.second )
             {
                 adios2::Dims shape =
-                    switchType( pair.first, switchShape, IO, name );
+                    switchAdios2AttributeType( pair.first, switchShape, IO, name );
                 size_t elements = 1;
                 for( auto extent : shape )
                 {
@@ -353,7 +272,7 @@ namespace detail
         ScheduleLoad switchSchedule;
         for( auto & pair : m_offsets )
         {
-            switchType(
+            switchAdios2AttributeType(
                 pair.second.dt,
                 switchSchedule,
                 IO,

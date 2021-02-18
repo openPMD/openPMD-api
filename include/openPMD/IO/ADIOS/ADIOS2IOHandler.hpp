@@ -69,6 +69,7 @@ namespace detail
     struct OldAttributeWriter;
     template < typename > struct AttributeTypes;
     struct DatasetOpener;
+    struct VariableDefiner;
     template < typename > struct DatasetTypes;
     struct WriteDataset;
     struct BufferedActions;
@@ -90,6 +91,7 @@ class ADIOS2IOHandlerImpl
     friend struct detail::OldAttributeWriter;
     template < typename > friend struct detail::AttributeTypes;
     friend struct detail::DatasetOpener;
+    friend struct detail::VariableDefiner;
     template < typename > friend struct detail::DatasetTypes;
     friend struct detail::WriteDataset;
     friend struct detail::BufferedActions;
@@ -375,7 +377,7 @@ namespace detail
                           adios2::Engine & engine,
                           std::string const & fileName );
 
-        template < int T, typename... Params > void operator( )( Params &&... );
+        std::string errorMsg = "ADIOS2: readDataset()";
     };
 
     struct OldAttributeReader
@@ -437,7 +439,6 @@ namespace detail
     {
         ADIOS2IOHandlerImpl * m_impl;
 
-
         explicit DatasetOpener( ADIOS2IOHandlerImpl * impl );
 
 
@@ -446,7 +447,7 @@ namespace detail
                           Parameter< Operation::OPEN_DATASET > & parameters );
 
 
-        template < int n, typename... Params > void operator( )( Params &&... );
+        std::string errorMsg = "ADIOS2: openDataset()";
     };
 
     struct WriteDataset
@@ -466,19 +467,43 @@ namespace detail
 
     struct VariableDefiner
     {
-        // Parameters such as DatasetHelper< T >::defineVariable
-        template < typename T, typename... Params >
-        void operator( )( Params &&... params );
+        /**
+         * @brief Define a Variable of type T within the passed IO.
+         *
+         * @param IO The adios2::IO object within which to define the
+         *           variable. The variable can later be retrieved from
+         *           the IO using the passed name.
+         * @param name As in adios2::IO::DefineVariable
+         * @param compressions ADIOS2 operators, including an arbitrary
+         *                     number of parameters, to be added to the
+         *                     variable upon definition.
+         * @param shape As in adios2::IO::DefineVariable
+         * @param start As in adios2::IO::DefineVariable
+         * @param count As in adios2::IO::DefineVariable
+         * @param constantDims As in adios2::IO::DefineVariable
+         */
+        template < typename T >
+        void operator( )(
+            adios2::IO & IO,
+            std::string const & name,
+            std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > const &
+                compressions,
+            adios2::Dims const & shape = adios2::Dims(),
+            adios2::Dims const & start = adios2::Dims(),
+            adios2::Dims const & count = adios2::Dims(),
+            bool const constantDims = false );
 
-        template< int n, typename... Params >
-        void
-        operator()( Params &&... );
+        std::string errorMsg = "ADIOS2: defineVariable()";
     };
 
     struct RetrieveBlocksInfo
     {
-        template < typename T, typename... Params >
-        void operator( )( Params &&... );
+        template < typename T >
+        void operator( )(
+            Parameter< Operation::AVAILABLE_CHUNKS > & params,
+            adios2::IO & IO,
+            adios2::Engine & engine,
+            std::string const & varName );
 
         template < int n, typename... Params >
         void operator( )( Params &&... );
@@ -864,119 +889,6 @@ namespace detail
             }
             return data[ 0 ] == toRep( val );
         }
-    };
-
-
-    /**
-     * This struct's only field indicates whether the template
-     * parameter is a valid datatype to use for a dataset
-     * (ADIOS2 variable).
-     */
-    template < typename T > struct DatasetTypes
-    {
-        static constexpr bool validType = true;
-    };
-
-    template < typename T > struct DatasetTypes< std::vector< T > >
-    {
-        static constexpr bool validType = false;
-    };
-
-    template <> struct DatasetTypes< bool >
-    {
-        static constexpr bool validType = false;
-    };
-
-    // missing std::complex< long double > type in ADIOS2 v2.6.0
-    template <> struct DatasetTypes< std::complex< long double > >
-    {
-        static constexpr bool validType = false;
-    };
-
-    template < typename T, size_t n > struct DatasetTypes< std::array< T, n > >
-    {
-        static constexpr bool validType = false;
-    };
-
-    /*
-     * This struct's purpose is to have exactly two specialisations:
-     * (1) for types that are legal to use in a dataset
-     * (2) for types that are not legal to use in a dataset
-     * The methods in the latter specialisation will fail at runtime.
-     */
-    template < typename, typename = void > struct DatasetHelper;
-
-    template < typename T >
-    struct DatasetHelper<
-        T, typename std::enable_if< DatasetTypes< T >::validType >::type >
-    {
-        openPMD::ADIOS2IOHandlerImpl * m_impl;
-
-
-        explicit DatasetHelper( openPMD::ADIOS2IOHandlerImpl * impl );
-
-
-        void openDataset( InvalidatableFile, const std::string & varName,
-                          Parameter< Operation::OPEN_DATASET > & parameters );
-
-        void readDataset( BufferedGet &, adios2::IO &, adios2::Engine &,
-                          std::string const & fileName );
-
-        /**
-         * @brief Define a Variable of type T within the passed IO.
-         *
-         * @param IO The adios2::IO object within which to define the
-         *           variable. The variable can later be retrieved from
-         *           the IO using the passed name.
-         * @param name As in adios2::IO::DefineVariable
-         * @param compressions ADIOS2 operators, including an arbitrary
-         *                     number of parameters, to be added to the
-         *                     variable upon definition.
-         * @param shape As in adios2::IO::DefineVariable
-         * @param start As in adios2::IO::DefineVariable
-         * @param count As in adios2::IO::DefineVariable
-         * @param constantDims As in adios2::IO::DefineVariable
-         */
-        static void
-        defineVariable(
-            adios2::IO & IO,
-            std::string const & name,
-            std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > const &
-                compressions,
-            adios2::Dims const & shape = adios2::Dims(),
-            adios2::Dims const & start = adios2::Dims(),
-            adios2::Dims const & count = adios2::Dims(),
-            bool const constantDims = false );
-
-        void writeDataset( BufferedPut &, adios2::IO &, adios2::Engine & );
-
-        static void
-        blocksInfo(
-            Parameter< Operation::AVAILABLE_CHUNKS > & params,
-            adios2::IO & IO,
-            adios2::Engine & engine,
-            std::string const & varName );
-    };
-
-    template < typename T >
-    struct DatasetHelper<
-        T, typename std::enable_if< !DatasetTypes< T >::validType >::type >
-    {
-        explicit DatasetHelper( openPMD::ADIOS2IOHandlerImpl * impl );
-
-
-        static void throwErr( );
-
-        template < typename... Params > void openDataset( Params &&... );
-
-        template < typename... Params > void readDataset( Params &&... );
-
-        template < typename... Params >
-        static void defineVariable( Params &&... );
-
-        template < typename... Params > void writeDataset( Params &&... );
-
-        template < typename... Params > static void blocksInfo( Params &&... );
     };
 
     // Other datatypes used in the ADIOS2IOHandler implementation
