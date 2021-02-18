@@ -27,6 +27,7 @@
 #include "RandomDatasetFiller.hpp"
 
 #include "openPMD/openPMD.hpp"
+#include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/benchmark/mpi/MPIBenchmarkReport.hpp"
 #include "openPMD/benchmark/mpi/DatasetFiller.hpp"
 #include "openPMD/benchmark/mpi/BlockSlicer.hpp"

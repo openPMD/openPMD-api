@@ -25,6 +25,7 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/Datatype.hpp"
+#include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/IO/JSON/JSONIOHandlerImpl.hpp"
 
 #include <exception>

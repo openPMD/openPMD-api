@@ -25,6 +25,7 @@
 #include "openPMD/IO/ADIOS/ADIOS2PreloadAttributes.hpp"
 
 #include "openPMD/Datatype.hpp"
+#include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 

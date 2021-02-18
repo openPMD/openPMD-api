@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/Datatype.hpp"
+#include "openPMD/DatatypeHelpers.hpp"
 
 #include <string>
 #include <iostream>

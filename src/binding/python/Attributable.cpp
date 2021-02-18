@@ -23,6 +23,7 @@
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/binding/python/Numpy.hpp"
 #include "openPMD/binding/python/Variant.hpp"
+#include "openPMD/DatatypeHelpers.hpp"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl_bind.h>

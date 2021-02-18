@@ -21,6 +21,7 @@
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Dataset.hpp"
+#include "openPMD/DatatypeHelpers.hpp"
 
 #include <algorithm>
 #include <iostream>
