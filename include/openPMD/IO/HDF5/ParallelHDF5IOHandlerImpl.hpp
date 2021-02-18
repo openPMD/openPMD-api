@@ -27,6 +27,7 @@
 #   include <mpi.h>
 #   if openPMD_HAVE_HDF5
 #       include "openPMD/IO/HDF5/HDF5IOHandlerImpl.hpp"
+#       include <nlohmann/json.hpp>
 #   endif
 #endif
 
@@ -37,7 +38,8 @@ namespace openPMD
     class ParallelHDF5IOHandlerImpl : public HDF5IOHandlerImpl
     {
     public:
-        ParallelHDF5IOHandlerImpl(AbstractIOHandler*, MPI_Comm);
+        ParallelHDF5IOHandlerImpl(
+            AbstractIOHandler*, MPI_Comm, nlohmann::json config);
         ~ParallelHDF5IOHandlerImpl() override;
 
         MPI_Comm m_mpiComm;

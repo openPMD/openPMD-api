@@ -51,7 +51,8 @@ namespace openPMD
 #       define VERIFY(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
 #   endif
 
-HDF5IOHandlerImpl::HDF5IOHandlerImpl(AbstractIOHandler* handler)
+HDF5IOHandlerImpl::HDF5IOHandlerImpl(
+    AbstractIOHandler* handler, nlohmann::json config)
         : AbstractIOHandlerImpl(handler),
           m_datasetTransferProperty{H5P_DEFAULT},
           m_fileAccessProperty{H5P_DEFAULT},
@@ -82,6 +83,21 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(AbstractIOHandler* handler)
     H5Tinsert(m_H5T_CDOUBLE, "i", sizeof(double), H5T_NATIVE_DOUBLE);
     H5Tinsert(m_H5T_CLONG_DOUBLE, "r", 0, H5T_NATIVE_LDOUBLE);
     H5Tinsert(m_H5T_CLONG_DOUBLE, "i", sizeof(long double), H5T_NATIVE_LDOUBLE);
+
+    if( config.contains( "hdf5" ) )
+    {
+        m_config = std::move( config[ "hdf5" ] );
+        /*
+         * @todo Apply global configuration options from the JSON config here.
+         */
+        auto shadow = m_config.invertShadow();
+        if( shadow.size() > 0 )
+        {
+            std::cerr << "Warning: parts of the JSON configuration for "
+                         "HDF5 remain unused:\n"
+                      << shadow << std::endl;
+        }
+    }
 }
 
 HDF5IOHandlerImpl::~HDF5IOHandlerImpl()
@@ -238,6 +254,25 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
             name = auxiliary::replace_first(name, "/", "");
         if( auxiliary::ends_with(name, '/') )
             name = auxiliary::replace_last(name, "/", "");
+
+        auto config = nlohmann::json::parse( parameters.options );
+        if( config.contains( "hdf5" ) &&
+            config[ "hdf5" ].contains( "dataset" ) )
+        {
+            auxiliary::TracingJSON datasetConfig{
+                config[ "hdf5" ][ "dataset" ] };
+            /*
+             * @todo Read options from config here.
+             */
+            auto shadow = datasetConfig.invertShadow();
+            if( shadow.size() > 0 )
+            {
+                std::cerr << "Warning: parts of the JSON configuration for "
+                             "HDF5 dataset '"
+                          << name << "' remain unused:\n"
+                          << shadow << std::endl;
+            }
+        }
 
         /* Open H5Object to write into */
         auto res = getFile( writable );
@@ -1843,9 +1878,9 @@ HDF5IOHandlerImpl::getFile( Writable * writable )
 #endif
 
 #if openPMD_HAVE_HDF5
-HDF5IOHandler::HDF5IOHandler(std::string path, Access at)
+HDF5IOHandler::HDF5IOHandler(std::string path, Access at, nlohmann::json config)
         : AbstractIOHandler(std::move(path), at),
-          m_impl{new HDF5IOHandlerImpl(this)}
+          m_impl{new HDF5IOHandlerImpl(this, std::move(config))}
 { }
 
 HDF5IOHandler::~HDF5IOHandler() = default;
