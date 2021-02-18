@@ -31,7 +31,7 @@
 
 namespace openPMD
 {
-class BaseRecordComponent : public Attributable
+class BaseRecordComponent : public LegacyAttributable
 {
     template<
         typename T,
@@ -42,7 +42,7 @@ class BaseRecordComponent : public Attributable
     class Container;
 
 public:
-    ~BaseRecordComponent() override = default;
+    ~BaseRecordComponent() = default;
 
     double unitSI() const;
 

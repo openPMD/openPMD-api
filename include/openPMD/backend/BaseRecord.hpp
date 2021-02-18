@@ -206,7 +206,7 @@ BaseRecord< T_elem >::erase(key_type const& key)
     if( keyScalar )
     {
         this->written() = false;
-        this->m_writable->abstractFilePosition.reset();
+        this->writable()->abstractFilePosition.reset();
         *this->m_containsScalar = false;
     }
     return res;
@@ -236,7 +236,7 @@ BaseRecord< T_elem >::erase(iterator res)
     if( keyScalar )
     {
         this->written() = false;
-        this->m_writable->abstractFilePosition.reset();
+        this->writable()->abstractFilePosition.reset();
         *this->m_containsScalar = false;
     }
     return ret;
@@ -246,7 +246,7 @@ template< typename T_elem >
 inline std::array< double, 7 >
 BaseRecord< T_elem >::unitDimension() const
 {
-    return Attributable::getAttribute("unitDimension").template get< std::array< double, 7 > >();
+    return this->getAttribute("unitDimension").template get< std::array< double, 7 > >();
 }
 
 template< typename T_elem >
@@ -310,7 +310,7 @@ template< typename T_elem >
 inline bool
 BaseRecord< T_elem >::dirtyRecursive() const
 {
-    if( Attributable::dirty() )
+    if( this->dirty() )
     {
         return true;
     }

@@ -67,9 +67,11 @@ template<
         typename T_key = std::string,
         typename T_container = std::map< T_key, T >
 >
-class Container : public Attributable
+class Container : public LegacyAttributable
 {
-    static_assert(std::is_base_of< Attributable, T >::value, "Type of container element must be derived from Writable");
+    static_assert(
+        std::is_base_of< AttributableImpl, T >::value,
+        "Type of container element must be derived from Writable");
     using InternalContainer = T_container;
 
     friend class Iteration;
@@ -153,7 +155,7 @@ public:
             }
 
             T t = T();
-            t.linkHierarchy(m_writable);
+            t.linkHierarchy(writableShared());
             auto& ret = m_container->insert({key, std::move(t)}).first->second;
             traits::GenerationPolicy< T > gen;
             gen(ret);
@@ -180,7 +182,7 @@ public:
             }
 
             T t = T();
-            t.linkHierarchy(m_writable);
+            t.linkHierarchy(writableShared());
             auto& ret = m_container->insert({std::move(key), std::move(t)}).first->second;
             traits::GenerationPolicy< T > gen;
             gen(ret);

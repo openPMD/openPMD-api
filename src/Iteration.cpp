@@ -447,7 +447,7 @@ Iteration::beginStep()
     auto & series = retrieveSeries();
     // Initialize file with this to quiet warnings
     // The following switch is comprehensive
-    Attributable * file = this;
+    LegacyAttributable * file = this;
     switch( *series.m_iterationEncoding )
     {
         case IE::fileBased:
@@ -490,7 +490,7 @@ Iteration::endStep()
     auto & series = retrieveSeries();
     // Initialize file with this to quiet warnings
     // The following switch is comprehensive
-    Attributable * file = this;
+    LegacyAttributable * file = this;
     switch( *series.m_iterationEncoding )
     {
         case IE::fileBased:
@@ -566,9 +566,9 @@ Iteration::dirtyRecursive() const
 void
 Iteration::linkHierarchy(std::shared_ptr< Writable > const& w)
 {
-    Attributable::linkHierarchy(w);
-    meshes.linkHierarchy(m_writable);
-    particles.linkHierarchy(m_writable);
+    AttributableImpl::linkHierarchy(w);
+    meshes.linkHierarchy(writableShared());
+    particles.linkHierarchy(writableShared());
 }
 
 template float

@@ -64,7 +64,7 @@ namespace detail
     py::class_<
         Map,
         holder_type,
-        Attributable
+        AttributableImpl
     > bind_container(
         py::handle scope,
         std::string const & name,
@@ -76,7 +76,7 @@ namespace detail
         using Class_ = py::class_<
             Map,
             holder_type,
-            Attributable
+            AttributableImpl
         >;
 
         // If either type is a non-module-local bound type then make the map

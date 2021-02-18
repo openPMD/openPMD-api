@@ -445,8 +445,9 @@ void
 Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
              std::unique_ptr< Series::ParsedInput > input)
 {
-    m_writable->IOHandler = ioHandler;
-    iterations.linkHierarchy(m_writable);
+    AttributableImpl::get().m_series = this;
+    writable()->IOHandler = ioHandler;
+    iterations.linkHierarchy(writableShared());
 
     m_name = std::make_shared< std::string >(input->name);
 
@@ -718,7 +719,6 @@ Series::flushGroupBased( iterations_iterator begin, iterations_iterator end )
             }
             if( !it->second.written() )
             {
-                it->second.m_writable->parent = getWritable( &iterations );
                 it->second.parent() = getWritable( &iterations );
             }
             it->second.flushGroupBased(it->first);
@@ -781,7 +781,6 @@ Series::readFileBased( )
             fOpen.name = entry;
             IOHandler()->enqueue(IOTask(this, fOpen));
             IOHandler()->flush();
-            iterations.m_writable->parent = getWritable(this);
             iterations.parent() = getWritable(this);
 
             readBase();
@@ -1028,7 +1027,7 @@ Series::indexOf( Iteration const & iteration )
 {
     for( auto it = iterations.begin(); it != iterations.end(); ++it )
     {
-        if( it->second.m_writable.get() == iteration.m_writable.get() )
+        if( it->second.writable() == iteration.writable() )
         {
             return it;
         }
@@ -1040,7 +1039,7 @@ Series::indexOf( Iteration const & iteration )
 AdvanceStatus
 Series::advance(
     AdvanceMode mode,
-    Attributable & file,
+    LegacyAttributable & file,
     iterations_iterator begin,
     Iteration & iteration )
 {

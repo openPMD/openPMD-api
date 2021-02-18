@@ -32,11 +32,11 @@ namespace openPMD
 {
 namespace test
 {
-struct TestHelper : public Attributable
+struct TestHelper : public LegacyAttributable
 {
     TestHelper()
     {
-        m_writable->IOHandler = createIOHandler(".", Access::CREATE, Format::JSON);
+        writable()->IOHandler = createIOHandler(".", Access::CREATE, Format::JSON);
     }
 };
 } // test
@@ -302,7 +302,7 @@ TEST_CASE( "container_access_test", "[auxiliary]" )
 
 TEST_CASE( "attributable_default_test", "[auxiliary]" )
 {
-    Attributable a;
+    LegacyAttributable a;
 
     REQUIRE(a.numAttributes() == 0);
 }

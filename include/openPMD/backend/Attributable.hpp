@@ -46,6 +46,7 @@ namespace traits
     struct GenerationPolicy;
 } // traits
 class AbstractFilePosition;
+class AttributableImpl;
 class Series;
 
 class no_such_attribute_error : public std::runtime_error
@@ -57,16 +58,41 @@ public:
     virtual ~no_such_attribute_error() { }
 };
 
+namespace internal
+{
+class AttributableData
+{
+    friend class openPMD::AttributableImpl;
+
+public:
+    AttributableData();
+    AttributableData( AttributableData const & ) = delete;
+    AttributableData( AttributableData && ) = delete;
+    virtual ~AttributableData() = default;
+
+    AttributableData & operator=( AttributableData const & ) = delete;
+    AttributableData & operator=( AttributableData && ) = delete;
+
+    using A_MAP = std::map< std::string, Attribute >;
+    std::shared_ptr< Writable > m_writable;
+    // @todo remove this one
+    void * m_series = nullptr;
+
+private:
+    std::shared_ptr< A_MAP > m_attributes;
+};
+}
 
 /** @brief Layer to manage storage of attributes associated with file objects.
  *
  * Mandatory and user-defined Attributes and their data for every object in the
  * openPMD hierarchy are stored and managed through this class.
  */
-class Attributable
+class AttributableImpl
 {
+    // @todo remove unnecessary friend (wew that sounds bitter)
     using A_MAP = std::map< std::string, Attribute >;
-    friend Writable* getWritable(Attributable*);
+    friend Writable* getWritable(AttributableImpl*);
     template< typename T_elem >
     friend class BaseRecord;
     template<
@@ -79,23 +105,31 @@ class Attributable
     friend struct traits::GenerationPolicy;
     friend class Iteration;
     friend class Series;
+    friend class Writable;
+
+protected:
+    internal::AttributableData * m_attri;
+
+    AttributableImpl( internal::AttributableData * );
+    template< typename T >
+    AttributableImpl( T * attri )
+        : AttributableImpl{
+              static_cast< internal::AttributableData * >( attri ) }
+    {
+    }
 
 public:
-    Attributable();
-    Attributable(Attributable const&);
-    Attributable(Attributable&&) = delete;
-    virtual ~Attributable() = default;
-
-    Attributable& operator=(Attributable const&);
-    Attributable& operator=(Attributable&&) = delete;
+    virtual ~AttributableImpl() = default;
 
     /** Populate Attribute of provided name with provided value.
      *
      * @note If the provided Attribute already exists, the value is replaced.
      *       If it does not exist, a new Attribute is created.
      *
-     * @tparam  T       Type of the object to be stored. Only types contained in Datatype can be handled.
-     * @param   key     Key (i.e. name) to identify and store an Attributes value by.
+     * @tparam  T       Type of the object to be stored. Only types contained in
+     * Datatype can be handled.
+     * @param   key     Key (i.e. name) to identify and store an Attributes
+     * value by.
      * @param   value   Value of Attribute stored with the provided key.
      * @return  true if key was already present, false otherwise
      *
@@ -150,7 +184,7 @@ public:
      * @param   comment String value to be stored as a comment.
      * @return  Reference to modified Attributable.
      */
-    Attributable& setComment(std::string const& comment);
+    AttributableImpl& setComment(std::string const& comment);
 
     /** Flush the corresponding Series object
      *
@@ -202,47 +236,76 @@ OPENPMD_protected:
     template< typename T >
     std::vector< T > readVectorFloatingpoint(std::string const& key) const;
 
-    std::shared_ptr< Writable > m_writable;
     /* views into the resources held by m_writable
      * purely for convenience so code that uses these does not have to go through m_writable-> */
-    inline AbstractIOHandler * IOHandler()
+    AbstractIOHandler * IOHandler()
     {
-        return m_writable->IOHandler.get();
-    };
-    inline AbstractIOHandler const * IOHandler() const
+        return m_attri->m_writable->IOHandler.get();
+    }
+    AbstractIOHandler const * IOHandler() const
     {
-        return m_writable->IOHandler.get();
-    };
-    inline Writable *& parent()
+        return m_attri->m_writable->IOHandler.get();
+    }
+    Writable *& parent()
     {
-        return m_writable->parent;
-    };
-    inline Writable const * parent() const
+        return m_attri->m_writable->parent;
+    }
+    Writable const * parent() const
     {
-        return m_writable->parent;
-    };
-    inline Writable * writable()
+        return m_attri->m_writable->parent;
+    }
+    Writable * writable()
     {
-        return m_writable.get();
-    };
-    inline Writable const * writable() const
+        return m_attri->m_writable.get();
+    }
+    Writable const * writable() const
     {
-        return m_writable.get();
-    };
-    bool& dirty() const { return m_writable->dirty; }
-    bool& written() const { return m_writable->written; }
+        return m_attri->m_writable.get();
+    }
+    std::shared_ptr< Writable > const & writableShared() const
+    {
+        return get().m_writable;
+    }
+
+    inline
+    internal::AttributableData & get()
+    {
+        return *m_attri;
+    }
+    inline
+    internal::AttributableData const & get() const
+    {
+        return *m_attri;
+    }
+
+    bool dirty() const { return writable()->dirty; }
+    bool& dirty() { return writable()->dirty; }
+    bool written() const { return writable()->written; }
+    bool& written() { return writable()->written; }
 
 private:
     virtual void linkHierarchy(std::shared_ptr< Writable > const& w);
-
-    std::shared_ptr< A_MAP > m_attributes;
 }; // Attributable
+
+class LegacyAttributable : public AttributableImpl
+{
+private:
+    std::shared_ptr< internal::AttributableData > m_attributableData =
+        std::make_shared< internal::AttributableData >();
+
+public:
+    LegacyAttributable() : AttributableImpl{ nullptr }
+    {
+        AttributableImpl::m_attri = m_attributableData.get();
+    }
+};
 
 //TODO explicitly instantiate Attributable::setAttribute for all T in Datatype
 template< typename T >
 inline bool
-Attributable::setAttribute(std::string const& key, T const& value)
+AttributableImpl::setAttribute( std::string const & key, T const & value )
 {
+    auto & attri = get();
     if(IOHandler() && Access::READ_ONLY == IOHandler()->m_frontendAccess )
     {
         auxiliary::OutOfRangeMsg const out_of_range_msg(
@@ -253,8 +316,9 @@ Attributable::setAttribute(std::string const& key, T const& value)
     }
 
     dirty() = true;
-    auto it = m_attributes->lower_bound(key);
-    if( it != m_attributes->end() && !m_attributes->key_comp()(key, it->first) )
+    auto it = attri.m_attributes->lower_bound(key);
+    if( it != attri.m_attributes->end()
+        && !attri.m_attributes->key_comp()(key, it->first) )
     {
         // key already exists in map, just replace the value
         it->second = Attribute(value);
@@ -262,20 +326,19 @@ Attributable::setAttribute(std::string const& key, T const& value)
     } else
     {
         // emplace a new map element for an unknown key
-        m_attributes->emplace_hint(it,
-                                   std::make_pair(key, Attribute(value)));
+        attri.m_attributes->emplace_hint(
+            it, std::make_pair(key, Attribute(value)));
         return false;
     }
 }
 inline bool
-Attributable::setAttribute(std::string const& key, char const value[])
+AttributableImpl::setAttribute( std::string const & key, char const value[] )
 {
     return this->setAttribute(key, std::string(value));
 }
 
 template< typename T >
-inline T
-Attributable::readFloatingpoint(std::string const& key) const
+inline T AttributableImpl::readFloatingpoint( std::string const & key ) const
 {
     static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
 
@@ -284,7 +347,7 @@ Attributable::readFloatingpoint(std::string const& key) const
 
 template< typename T >
 inline std::vector< T >
-Attributable::readVectorFloatingpoint(std::string const& key) const
+AttributableImpl::readVectorFloatingpoint( std::string const & key ) const
 {
     static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
 

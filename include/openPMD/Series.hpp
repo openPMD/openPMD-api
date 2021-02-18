@@ -61,7 +61,7 @@ class WriteIterations;
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series
  */
-class Series : public Attributable
+class Series : public LegacyAttributable
 {
     friend class Iteration;
     friend class Writable;
@@ -350,7 +350,7 @@ OPENPMD_private:
     AdvanceStatus
     advance(
         AdvanceMode mode,
-        Attributable & file,
+        LegacyAttributable & file,
         iterations_iterator it,
         Iteration & iteration );
 

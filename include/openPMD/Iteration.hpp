@@ -35,7 +35,7 @@ namespace openPMD
  *
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#required-attributes-for-the-basepath
  */
-class Iteration : public Attributable
+class Iteration : public LegacyAttributable
 {
     template<
             typename T,
@@ -264,7 +264,7 @@ Iteration::time< long double >() const;
 template< typename T >
 inline T
 Iteration::time() const
-{ return Attributable::readFloatingpoint< T >("time"); }
+{ return this->readFloatingpoint< T >("time"); }
 
 
 extern template
@@ -282,5 +282,5 @@ Iteration::dt< long double >() const;
 template< typename T >
 inline T
 Iteration::dt() const
-{ return Attributable::readFloatingpoint< T >("dt"); }
+{ return this->readFloatingpoint< T >("dt"); }
 } // openPMD
