@@ -47,7 +47,10 @@ namespace traits
 } // traits
 class AbstractFilePosition;
 class AttributableImpl;
-class Series;
+namespace internal
+{
+class SeriesInternal;
+}
 
 class no_such_attribute_error : public std::runtime_error
 {
@@ -75,8 +78,6 @@ public:
 
     using A_MAP = std::map< std::string, Attribute >;
     std::shared_ptr< Writable > m_writable;
-    // @todo remove this one
-    void * m_series = nullptr;
 
 private:
     std::shared_ptr< A_MAP > m_attributes;
@@ -105,6 +106,7 @@ class AttributableImpl
     friend struct traits::GenerationPolicy;
     friend class Iteration;
     friend class Series;
+    friend class SeriesImpl;
     friend class Writable;
 
 protected:
@@ -197,8 +199,8 @@ public:
 
 OPENPMD_protected:
 
-    Series const & retrieveSeries() const;
-    Series & retrieveSeries();
+    internal::SeriesInternal const & retrieveSeries() const;
+    internal::SeriesInternal & retrieveSeries();
 
     void flushAttributes();
     void readAttributes();
@@ -289,7 +291,7 @@ private:
 
 class LegacyAttributable : public AttributableImpl
 {
-private:
+protected:
     std::shared_ptr< internal::AttributableData > m_attributableData =
         std::make_shared< internal::AttributableData >();
 

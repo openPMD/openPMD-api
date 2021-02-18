@@ -54,6 +54,11 @@ namespace traits
     };
 } // traits
 
+namespace internal
+{
+class SeriesData;
+}
+
 /** @brief Map-like container that enforces openPMD requirements and handles IO.
  *
  * @see http://en.cppreference.com/w/cpp/container/map
@@ -76,7 +81,8 @@ class Container : public LegacyAttributable
 
     friend class Iteration;
     friend class ParticleSpecies;
-    friend class Series;
+    friend class SeriesImpl;
+    friend class internal::SeriesData;
 
 public:
     using key_type = typename InternalContainer::key_type;

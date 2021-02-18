@@ -70,7 +70,7 @@ class Writable final
     friend class Iteration;
     friend class Mesh;
     friend class ParticleSpecies;
-    friend class Series;
+    friend class SeriesImpl;
     friend class Record;
     friend class ADIOS1IOHandlerImpl;
     friend class ParallelADIOS1IOHandlerImpl;

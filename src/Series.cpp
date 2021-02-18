@@ -62,7 +62,7 @@ namespace
     matcher(std::string const &prefix, int padding, std::string const &postfix, Format f);
 } // namespace [anonymous]
 
-struct Series::ParsedInput
+struct SeriesImpl::ParsedInput
 {
     std::string path;
     std::string name;
@@ -73,85 +73,47 @@ struct Series::ParsedInput
     int filenamePadding;
 };  //ParsedInput
 
-#if openPMD_HAVE_MPI
-Series::Series(
-    std::string const & filepath,
-    Access at,
-    MPI_Comm comm,
-    std::string const & options )
-    : iterations{ Container< Iteration, uint64_t >() }
-    , m_iterationEncoding{ std::make_shared< IterationEncoding >() }
+SeriesImpl::SeriesImpl(
+    internal::SeriesData * series, internal::AttributableData * attri )
+    : AttributableImpl{ attri }
+    , m_series{ series }
 {
-    auto input = parseInput( filepath );
-    auto handler =
-        createIOHandler( input->path, at, input->format, comm, options );
-    init( handler, std::move( input ) );
-}
-#endif
-
-Series::Series(
-    std::string const & filepath,
-    Access at,
-    std::string const & options )
-    : iterations{ Container< Iteration, uint64_t >() }
-    , m_iterationEncoding{ std::make_shared< IterationEncoding >() }
-{
-    auto input = parseInput( filepath );
-    auto handler = createIOHandler( input->path, at, input->format, options );
-    init(handler, std::move(input));
-}
-
-Series::~Series()
-{
-    // we must not throw in a destructor
-    try
-    {
-        flush();
-    }
-    catch( std::exception const & ex )
-    {
-        std::cerr << "[~Series] An error occurred: " << ex.what() << std::endl;
-    }
-    catch( ... )
-    {
-        std::cerr << "[~Series] An error occurred." << std::endl;
-    }
 }
 
 std::string
-Series::openPMD() const
+SeriesImpl::openPMD() const
 {
     return getAttribute("openPMD").get< std::string >();
 }
 
-Series&
-Series::setOpenPMD(std::string const& o)
+SeriesImpl&
+SeriesImpl::setOpenPMD(std::string const& o)
 {
     setAttribute("openPMD", o);
     return *this;
 }
 
 uint32_t
-Series::openPMDextension() const
+SeriesImpl::openPMDextension() const
 {
     return getAttribute("openPMDextension").get< uint32_t >();
 }
 
-Series&
-Series::setOpenPMDextension(uint32_t oe)
+SeriesImpl&
+SeriesImpl::setOpenPMDextension(uint32_t oe)
 {
     setAttribute("openPMDextension", oe);
     return *this;
 }
 
 std::string
-Series::basePath() const
+SeriesImpl::basePath() const
 {
     return getAttribute("basePath").get< std::string >();
 }
 
-Series&
-Series::setBasePath(std::string const& bp)
+SeriesImpl&
+SeriesImpl::setBasePath(std::string const& bp)
 {
     std::string version = openPMD();
     if( version == "1.0.0" || version == "1.0.1" || version == "1.1.0" )
@@ -162,15 +124,16 @@ Series::setBasePath(std::string const& bp)
 }
 
 std::string
-Series::meshesPath() const
+SeriesImpl::meshesPath() const
 {
     return getAttribute("meshesPath").get< std::string >();
 }
 
-Series&
-Series::setMeshesPath(std::string const& mp)
+SeriesImpl&
+SeriesImpl::setMeshesPath(std::string const& mp)
 {
-    if( std::any_of(iterations.begin(), iterations.end(),
+    auto & series = get();
+    if( std::any_of(series.iterations.begin(), series.iterations.end(),
                     [](Container< Iteration, uint64_t >::value_type const& i){ return i.second.meshes.written(); }) )
         throw std::runtime_error("A files meshesPath can not (yet) be changed after it has been written.");
 
@@ -183,15 +146,16 @@ Series::setMeshesPath(std::string const& mp)
 }
 
 std::string
-Series::particlesPath() const
+SeriesImpl::particlesPath() const
 {
     return getAttribute("particlesPath").get< std::string >();
 }
 
-Series&
-Series::setParticlesPath(std::string const& pp)
+SeriesImpl&
+SeriesImpl::setParticlesPath(std::string const& pp)
 {
-    if( std::any_of(iterations.begin(), iterations.end(),
+    auto & series = get();
+    if( std::any_of(series.iterations.begin(), series.iterations.end(),
                     [](Container< Iteration, uint64_t >::value_type const& i){ return i.second.particles.written(); }) )
         throw std::runtime_error("A files particlesPath can not (yet) be changed after it has been written.");
 
@@ -204,26 +168,26 @@ Series::setParticlesPath(std::string const& pp)
 }
 
 std::string
-Series::author() const
+SeriesImpl::author() const
 {
     return getAttribute("author").get< std::string >();
 }
 
-Series&
-Series::setAuthor(std::string const& a)
+SeriesImpl&
+SeriesImpl::setAuthor(std::string const& a)
 {
     setAttribute("author", a);
     return *this;
 }
 
 std::string
-Series::software() const
+SeriesImpl::software() const
 {
     return getAttribute("software").get< std::string >();
 }
 
-Series&
-Series::setSoftware( std::string const& newName, std::string const& newVersion )
+SeriesImpl&
+SeriesImpl::setSoftware( std::string const& newName, std::string const& newVersion )
 {
     setAttribute( "software", newName );
     setAttribute( "softwareVersion", newVersion );
@@ -231,74 +195,75 @@ Series::setSoftware( std::string const& newName, std::string const& newVersion )
 }
 
 std::string
-Series::softwareVersion() const
+SeriesImpl::softwareVersion() const
 {
     return getAttribute("softwareVersion").get< std::string >();
 }
 
-Series&
-Series::setSoftwareVersion(std::string const& sv)
+SeriesImpl&
+SeriesImpl::setSoftwareVersion(std::string const& sv)
 {
     setAttribute("softwareVersion", sv);
     return *this;
 }
 
 std::string
-Series::date() const
+SeriesImpl::date() const
 {
     return getAttribute("date").get< std::string >();
 }
 
-Series&
-Series::setDate(std::string const& d)
+SeriesImpl&
+SeriesImpl::setDate(std::string const& d)
 {
     setAttribute("date", d);
     return *this;
 }
 
 std::string
-Series::softwareDependencies() const
+SeriesImpl::softwareDependencies() const
 {
     return getAttribute("softwareDependencies").get< std::string >();
 }
 
-Series&
-Series::setSoftwareDependencies(std::string const &newSoftwareDependencies)
+SeriesImpl&
+SeriesImpl::setSoftwareDependencies(std::string const &newSoftwareDependencies)
 {
     setAttribute("softwareDependencies", newSoftwareDependencies);
     return *this;
 }
 
 std::string
-Series::machine() const
+SeriesImpl::machine() const
 {
     return getAttribute("machine").get< std::string >();
 }
 
-Series&
-Series::setMachine(std::string const &newMachine)
+SeriesImpl&
+SeriesImpl::setMachine(std::string const &newMachine)
 {
     setAttribute("machine", newMachine);
     return *this;
 }
 
 IterationEncoding
-Series::iterationEncoding() const
+SeriesImpl::iterationEncoding() const
 {
-    return *m_iterationEncoding;
+    return *get().m_iterationEncoding;
 }
 
-Series&
-Series::setIterationEncoding(IterationEncoding ie)
+SeriesImpl&
+SeriesImpl::setIterationEncoding(IterationEncoding ie)
 {
+    auto & series = get();
     if( written() )
         throw std::runtime_error("A files iterationEncoding can not (yet) be changed after it has been written.");
 
-    *m_iterationEncoding = ie;
+    *series.m_iterationEncoding = ie;
     switch( ie )
     {
         case IterationEncoding::fileBased:
-            setIterationFormat(*m_name);
+            setIterationFormat(*series.m_name);
             setAttribute("iterationEncoding", std::string("fileBased"));
             break;
         case IterationEncoding::groupBased:
@@ -310,18 +275,19 @@ Series::setIterationEncoding(IterationEncoding ie)
 }
 
 std::string
-Series::iterationFormat() const
+SeriesImpl::iterationFormat() const
 {
     return getAttribute("iterationFormat").get< std::string >();
 }
 
-Series&
-Series::setIterationFormat(std::string const& i)
+SeriesImpl&
+SeriesImpl::setIterationFormat(std::string const& i)
 {
+    auto & series = get();
     if( written() )
         throw std::runtime_error("A files iterationFormat can not (yet) be changed after it has been written.");
 
-    if( *m_iterationEncoding == IterationEncoding::groupBased )
+    if( *series.m_iterationEncoding == IterationEncoding::groupBased )
         if( basePath() != i && (openPMD() == "1.0.1" || openPMD() == "1.0.0") )
             throw std::invalid_argument("iterationFormat must not differ from basePath " + basePath() + " for groupBased data");
 
@@ -330,57 +296,43 @@ Series::setIterationFormat(std::string const& i)
 }
 
 std::string
-Series::name() const
+SeriesImpl::name() const
 {
-    return *m_name;
+    return *get().m_name;
 }
 
-Series&
-Series::setName(std::string const& n)
+SeriesImpl&
+SeriesImpl::setName(std::string const& n)
 {
+    auto & series = get();
     if( written() )
         throw std::runtime_error("A files name can not (yet) be changed after it has been written.");
 
-    if( *m_iterationEncoding == IterationEncoding::fileBased && !auxiliary::contains(*m_name, "%T") )
+    if( *series.m_iterationEncoding == IterationEncoding::fileBased && !auxiliary::contains(*series.m_name, "%T") )
             throw std::runtime_error("For fileBased formats the iteration regex %T must be included in the file name");
 
-    *m_name = n;
+    *series.m_name = n;
     dirty() = true;
     return *this;
 }
 
 std::string
-Series::backend() const
+SeriesImpl::backend() const
 {
     return IOHandler()->backendName();
 }
 
 void
-Series::flush()
+SeriesImpl::flush()
 {
-    flush_impl( iterations.begin(), iterations.end() );
+    auto & series = get();
+    flush_impl( series.iterations.begin(), series.iterations.end() );
 }
 
-ReadIterations
-Series::readIterations()
+std::unique_ptr< SeriesImpl::ParsedInput >
+SeriesImpl::parseInput(std::string filepath)
 {
-    return { this };
-}
-
-WriteIterations
-Series::writeIterations()
-{
-    if( !m_writeIterations->has_value() )
-    {
-        *m_writeIterations = WriteIterations( this->iterations );
-    }
-    return m_writeIterations->get();
-}
-
-std::unique_ptr< Series::ParsedInput >
-Series::parseInput(std::string filepath)
-{
-    std::unique_ptr< Series::ParsedInput > input{new Series::ParsedInput};
+    std::unique_ptr< SeriesImpl::ParsedInput > input{new SeriesImpl::ParsedInput};
 
 #ifdef _WIN32
     if( auxiliary::contains(filepath, '/') )
@@ -442,20 +394,20 @@ Series::parseInput(std::string filepath)
 }
 
 void
-Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
-             std::unique_ptr< Series::ParsedInput > input)
+SeriesImpl::init(std::shared_ptr< AbstractIOHandler > ioHandler,
+             std::unique_ptr< SeriesImpl::ParsedInput > input)
 {
-    AttributableImpl::get().m_series = this;
+    auto & series = get();
     writable()->IOHandler = ioHandler;
-    iterations.linkHierarchy(writableShared());
+    series.iterations.linkHierarchy(writableShared());
 
-    m_name = std::make_shared< std::string >(input->name);
+    series.m_name = std::make_shared< std::string >(input->name);
 
-    m_format = std::make_shared< Format >(input->format);
+    series.m_format = std::make_shared< Format >(input->format);
 
-    m_filenamePrefix = std::make_shared< std::string >(input->filenamePrefix);
-    m_filenamePostfix = std::make_shared< std::string >(input->filenamePostfix);
-    m_filenamePadding = std::make_shared< int >(input->filenamePadding);
+    series.m_filenamePrefix = std::make_shared< std::string >(input->filenamePrefix);
+    series.m_filenamePostfix = std::make_shared< std::string >(input->filenamePostfix);
+    series.m_filenamePadding = std::make_shared< int >(input->filenamePadding);
 
     if(IOHandler()->m_frontendAccess == Access::READ_ONLY || IOHandler()->m_frontendAccess == Access::READ_WRITE )
     {
@@ -470,7 +422,7 @@ Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
         else
             readGroupBased();
 
-        if( iterations.empty() )
+        if( series.iterations.empty() )
         {
             /* Access::READ_WRITE can be used to create a new Series
              * allow setting attributes in that case */
@@ -491,7 +443,7 @@ Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
 }
 
 void
-Series::initDefaults()
+SeriesImpl::initDefaults()
 {
     if( !containsAttribute("openPMD"))
         setOpenPMD( getStandard() );
@@ -506,9 +458,9 @@ Series::initDefaults()
 }
 
 std::future< void >
-Series::flush_impl( iterations_iterator begin, iterations_iterator end )
+SeriesImpl::flush_impl( iterations_iterator begin, iterations_iterator end )
 {
-    switch( *m_iterationEncoding )
+    switch( iterationEncoding() )
     {
         using IE = IterationEncoding;
         case IE::fileBased:
@@ -523,8 +475,9 @@ Series::flush_impl( iterations_iterator begin, iterations_iterator end )
 }
 
 void
-Series::flushFileBased( iterations_iterator begin, iterations_iterator end )
+SeriesImpl::flushFileBased( iterations_iterator begin, iterations_iterator end )
 {
+    auto & series = get();
     if( end == begin )
         throw std::runtime_error(
             "fileBased output can not be written with no iterations." );
@@ -611,13 +564,13 @@ Series::flushFileBased( iterations_iterator begin, iterations_iterator end )
                 * emulate the file belonging to each iteration as not yet written
                 */
                 written() = false;
-                iterations.written() = false;
+                series.iterations.written() = false;
 
                 dirty() |= it->second.dirty();
                 std::string filename = iterationFilename( it->first );
                 it->second.flushFileBased(filename, it->first);
 
-                iterations.flush(
+                series.iterations.flush(
                     auxiliary::replace_first(basePath(), "%T/", ""));
 
                 flushAttributes();
@@ -655,8 +608,9 @@ Series::flushFileBased( iterations_iterator begin, iterations_iterator end )
 }
 
 void
-Series::flushGroupBased( iterations_iterator begin, iterations_iterator end )
+SeriesImpl::flushGroupBased( iterations_iterator begin, iterations_iterator end )
 {
+    auto & series = get();
     if( IOHandler()->m_frontendAccess == Access::READ_ONLY )
         for( auto it = begin; it != end; ++it )
         {
@@ -688,11 +642,11 @@ Series::flushGroupBased( iterations_iterator begin, iterations_iterator end )
         if( !written() )
         {
             Parameter< Operation::CREATE_FILE > fCreate;
-            fCreate.name = *m_name;
+            fCreate.name = *series.m_name;
             IOHandler()->enqueue(IOTask(this, fCreate));
         }
 
-        iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
+        series.iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
 
         for( auto it = begin; it != end; ++it )
         {
@@ -719,7 +673,7 @@ Series::flushGroupBased( iterations_iterator begin, iterations_iterator end )
             }
             if( !it->second.written() )
             {
-                it->second.parent() = getWritable( &iterations );
+                it->second.parent() = getWritable( &series.iterations );
             }
             it->second.flushGroupBased(it->first);
             if( *it->second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
@@ -735,7 +689,7 @@ Series::flushGroupBased( iterations_iterator begin, iterations_iterator end )
 }
 
 void
-Series::flushMeshesPath()
+SeriesImpl::flushMeshesPath()
 {
     Parameter< Operation::WRITE_ATT > aWrite;
     aWrite.name = "meshesPath";
@@ -746,7 +700,7 @@ Series::flushMeshesPath()
 }
 
 void
-Series::flushParticlesPath()
+SeriesImpl::flushParticlesPath()
 {
     Parameter< Operation::WRITE_ATT > aWrite;
     aWrite.name = "particlesPath";
@@ -757,8 +711,9 @@ Series::flushParticlesPath()
 }
 
 void
-Series::readFileBased( )
+SeriesImpl::readFileBased( )
 {
+    auto & series = get();
     Parameter< Operation::OPEN_FILE > fOpen;
     Parameter< Operation::CLOSE_FILE > fClose;
     Parameter< Operation::READ_ATT > aRead;
@@ -766,7 +721,9 @@ Series::readFileBased( )
     if( !auxiliary::directory_exists(IOHandler()->directory) )
         throw no_such_file_error("Supplied directory is not valid: " + IOHandler()->directory);
 
-    auto isPartOfSeries = matcher(*m_filenamePrefix, *m_filenamePadding, *m_filenamePostfix, *m_format);
+    auto isPartOfSeries = matcher(
+        *series.m_filenamePrefix, *series.m_filenamePadding,
+        *series.m_filenamePostfix, *series.m_format);
     bool isContained;
     int padding;
     std::set< int > paddings;
@@ -781,7 +738,7 @@ Series::readFileBased( )
             fOpen.name = entry;
             IOHandler()->enqueue(IOTask(this, fOpen));
             IOHandler()->flush();
-            iterations.parent() = getWritable(this);
+            series.iterations.parent() = getWritable(this);
 
             readBase();
 
@@ -794,10 +751,10 @@ Series::readFileBased( )
                 std::string encoding =
                     Attribute( *aRead.resource ).get< std::string >();
                 if( encoding == "fileBased" )
-                    *m_iterationEncoding = IterationEncoding::fileBased;
+                    *series.m_iterationEncoding = IterationEncoding::fileBased;
                 else if( encoding == "groupBased" )
                 {
-                    *m_iterationEncoding = IterationEncoding::groupBased;
+                    *series.m_iterationEncoding = IterationEncoding::groupBased;
                     std::cerr << "Series constructor called with iteration "
                                     "regex '%T' suggests loading a "
                                 << "time series with fileBased iteration "
@@ -832,14 +789,14 @@ Series::readFileBased( )
         }
     }
 
-    for( auto & iteration : iterations )
+    for( auto & iteration : series.iterations )
     {
         *iteration.second.m_closed = Iteration::CloseStatus::ClosedTemporarily;
     }
 
-    if( iterations.empty() )
+    if( series.iterations.empty() )
     {
-        /* Frontend access type might change during Series::read() to allow parameter modification.
+        /* Frontend access type might change during SeriesImpl::read() to allow parameter modification.
          * Backend access type stays unchanged for the lifetime of a Series. */
         if(IOHandler()->m_backendAccess == Access::READ_ONLY  )
             throw std::runtime_error("No matching iterations found: " + name());
@@ -848,9 +805,9 @@ Series::readFileBased( )
     }
 
     if( paddings.size() == 1u )
-        *m_filenamePadding = *paddings.begin();
+        *series.m_filenamePadding = *paddings.begin();
 
-    /* Frontend access type might change during Series::read() to allow parameter modification.
+    /* Frontend access type might change during SeriesImpl::read() to allow parameter modification.
      * Backend access type stays unchanged for the lifetime of a Series. */
     if( paddings.size() > 1u && IOHandler()->m_backendAccess == Access::READ_WRITE )
         throw std::runtime_error("Cannot write to a series with inconsistent iteration padding. "
@@ -858,10 +815,11 @@ Series::readFileBased( )
 }
 
 void
-Series::readGroupBased( bool do_init )
+SeriesImpl::readGroupBased( bool do_init )
 {
+    auto & series = get();
     Parameter< Operation::OPEN_FILE > fOpen;
-    fOpen.name = *m_name;
+    fOpen.name = *series.m_name;
     IOHandler()->enqueue(IOTask(this, fOpen));
     IOHandler()->flush();
 
@@ -878,10 +836,10 @@ Series::readGroupBased( bool do_init )
         {
             std::string encoding = Attribute(*aRead.resource).get< std::string >();
             if( encoding == "groupBased" )
-                *m_iterationEncoding = IterationEncoding::groupBased;
+                *series.m_iterationEncoding = IterationEncoding::groupBased;
             else if( encoding == "fileBased" )
             {
-                *m_iterationEncoding = IterationEncoding::fileBased;
+                *series.m_iterationEncoding = IterationEncoding::fileBased;
                 std::cerr << "Series constructor called with explicit iteration suggests loading a "
                           << "single file with groupBased iteration encoding. Loaded file is fileBased.\n";
             } else
@@ -908,8 +866,9 @@ Series::readGroupBased( bool do_init )
 }
 
 void
-Series::readBase()
+SeriesImpl::readBase()
 {
+    auto & series = get();
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
 
@@ -948,12 +907,12 @@ Series::readBase()
         if( *aRead.dtype == DT::STRING )
         {
             /* allow setting the meshes path after completed IO */
-            for( auto& it : iterations )
+            for( auto& it : series.iterations )
                 it.second.meshes.written() = false;
 
             setMeshesPath(Attribute(*aRead.resource).get< std::string >());
 
-            for( auto& it : iterations )
+            for( auto& it : series.iterations )
                 it.second.meshes.written() = true;
         }
         else
@@ -968,13 +927,13 @@ Series::readBase()
         if( *aRead.dtype == DT::STRING )
         {
             /* allow setting the meshes path after completed IO */
-            for( auto& it : iterations )
+            for( auto& it : series.iterations )
                 it.second.particles.written() = false;
 
             setParticlesPath(Attribute(*aRead.resource).get< std::string >());
 
 
-            for( auto& it : iterations )
+            for( auto& it : series.iterations )
                 it.second.particles.written() = true;
         }
         else
@@ -983,27 +942,28 @@ Series::readBase()
 }
 
 void
-Series::read()
+SeriesImpl::read()
 {
+    auto & series = get();
     Parameter< Operation::OPEN_PATH > pOpen;
     std::string version = openPMD();
     if( version == "1.0.0" || version == "1.0.1" || version == "1.1.0" )
         pOpen.path = auxiliary::replace_first(basePath(), "/%T/", "");
     else
         throw std::runtime_error("Unknown openPMD version - " + version);
-    IOHandler()->enqueue(IOTask(&iterations, pOpen));
+    IOHandler()->enqueue(IOTask(&series.iterations, pOpen));
 
     readAttributes();
-    iterations.readAttributes();
+    series.iterations.readAttributes();
 
     /* obtain all paths inside the basepath (i.e. all iterations) */
     Parameter< Operation::LIST_PATHS > pList;
-    IOHandler()->enqueue(IOTask(&iterations, pList));
+    IOHandler()->enqueue(IOTask(&series.iterations, pList));
     IOHandler()->flush();
 
     for( auto const& it : *pList.paths )
     {
-        Iteration& i = iterations[std::stoull(it)];
+        Iteration& i = series.iterations[std::stoull(it)];
         if ( i.closedByWriter( ) )
         {
             continue;
@@ -1015,17 +975,22 @@ Series::read()
 }
 
 std::string
-Series::iterationFilename( uint64_t i )
+SeriesImpl::iterationFilename( uint64_t i )
 {
+    auto & series = get();
     std::stringstream iteration( "" );
-    iteration << std::setw( *m_filenamePadding ) << std::setfill( '0' ) << i;
-    return *m_filenamePrefix + iteration.str() + *m_filenamePostfix;
+    iteration << std::setw( *series.m_filenamePadding )
+              << std::setfill( '0' ) << i;
+    return *series.m_filenamePrefix + iteration.str()
+           + *series.m_filenamePostfix;
 }
 
-Series::iterations_iterator
-Series::indexOf( Iteration const & iteration )
+SeriesImpl::iterations_iterator
+SeriesImpl::indexOf( Iteration const & iteration )
 {
-    for( auto it = iterations.begin(); it != iterations.end(); ++it )
+    auto & series = get();
+    for( auto it = series.iterations.begin(); it != series.iterations.end();
+         ++it )
     {
         if( it->second.writable() == iteration.writable() )
         {
@@ -1037,12 +1002,13 @@ Series::indexOf( Iteration const & iteration )
 }
 
 AdvanceStatus
-Series::advance(
+SeriesImpl::advance(
     AdvanceMode mode,
-    LegacyAttributable & file,
+    internal::AttributableData & file,
     iterations_iterator begin,
     Iteration & iteration )
 {
+    auto & series = get();
     auto end = begin;
     ++end;
     /*
@@ -1057,7 +1023,7 @@ Series::advance(
         *iteration.m_closed = Iteration::CloseStatus::Open;
     }
 
-    switch( *m_iterationEncoding )
+    switch( *series.m_iterationEncoding )
     {
         using IE = IterationEncoding;
         case IE::groupBased:
@@ -1073,7 +1039,7 @@ Series::advance(
     }
     else if(
         oldCloseStatus == Iteration::CloseStatus::ClosedInBackend &&
-        *m_iterationEncoding == IterationEncoding::fileBased )
+        *series.m_iterationEncoding == IterationEncoding::fileBased )
     {
         /*
          * In file-based iteration encoding, we want to avoid accidentally
@@ -1085,7 +1051,7 @@ Series::advance(
 
     Parameter< Operation::ADVANCE > param;
     if( *iteration.m_closed == Iteration::CloseStatus::ClosedTemporarily &&
-        *m_iterationEncoding == IterationEncoding::fileBased )
+        *series.m_iterationEncoding == IterationEncoding::fileBased )
     {
         /*
          * If the Series has file-based iteration layout and the file has not
@@ -1097,7 +1063,7 @@ Series::advance(
     else
     {
         param.mode = mode;
-        IOTask task( &file, param );
+        IOTask task( file.m_writable.get(), param );
         IOHandler()->enqueue( task );
     }
 
@@ -1106,7 +1072,7 @@ Series::advance(
         mode == AdvanceMode::ENDSTEP )
     {
         using IE = IterationEncoding;
-        switch( *m_iterationEncoding )
+        switch( *series.m_iterationEncoding )
         {
             case IE::fileBased:
             {
@@ -1134,7 +1100,7 @@ Series::advance(
         }
     }
 
-    // We cannot call Series::flush now, since the IO handler is still filled
+    // We cannot call SeriesImpl::flush now, since the IO handler is still filled
     // from calling flush(Group|File)based, but has not been emptied yet
     // Do that manually
     IOHandler()->flush();
@@ -1143,8 +1109,9 @@ Series::advance(
 }
 
 void
-Series::openIteration( uint64_t index, Iteration iteration )
+SeriesImpl::openIteration( uint64_t index, Iteration iteration )
 {
+    auto & series = get();
     // open the iteration's file again
     Parameter< Operation::OPEN_FILE > fOpen;
     fOpen.name = iterationFilename( index );
@@ -1153,7 +1120,7 @@ Series::openIteration( uint64_t index, Iteration iteration )
     /* open base path */
     Parameter< Operation::OPEN_PATH > pOpen;
     pOpen.path = auxiliary::replace_first( basePath(), "%T/", "" );
-    IOHandler()->enqueue( IOTask( &iterations, pOpen ) );
+    IOHandler()->enqueue( IOTask( &series.iterations, pOpen ) );
     /* open iteration path */
     pOpen.path = std::to_string( index );
     IOHandler()->enqueue( IOTask( &iteration, pOpen ) );
@@ -1174,6 +1141,99 @@ Series::openIteration( uint64_t index, Iteration iteration )
         default:
             throw std::runtime_error( "Unreachable!" );
     }
+}
+
+namespace internal
+{
+#if openPMD_HAVE_MPI
+SeriesInternal::SeriesInternal(
+    std::string const & filepath,
+    Access at,
+    MPI_Comm comm,
+    std::string const & options )
+    : SeriesImpl{
+          static_cast< internal::SeriesData * >( this ),
+          static_cast< internal::AttributableData * >( this ) }
+{
+    auto input = parseInput( filepath );
+    auto handler =
+        createIOHandler( input->path, at, input->format, comm, options );
+    init( handler, std::move( input ) );
+}
+#endif
+
+SeriesInternal::SeriesInternal(
+    std::string const & filepath, Access at, std::string const & options )
+    : SeriesImpl{
+          static_cast< internal::SeriesData * >( this ),
+          static_cast< internal::AttributableData * >( this ) }
+{
+    auto input = parseInput( filepath );
+    auto handler = createIOHandler( input->path, at, input->format, options );
+    init( handler, std::move( input ) );
+}
+
+SeriesInternal::~SeriesInternal()
+{
+    // we must not throw in a destructor
+    try
+    {
+        flush();
+    }
+    catch( std::exception const & ex )
+    {
+        std::cerr << "[~Series] An error occurred: " << ex.what() << std::endl;
+    }
+    catch( ... )
+    {
+        std::cerr << "[~Series] An error occurred." << std::endl;
+    }
+}
+} // namespace internal
+
+#if openPMD_HAVE_MPI
+Series::Series(
+    std::string const & filepath,
+    Access at,
+    MPI_Comm comm,
+    std::string const & options )
+    : SeriesImpl{ nullptr, nullptr }
+    , m_series{ std::make_shared< internal::SeriesInternal >(
+          filepath, at, comm, options ) }
+    , iterations{ m_series->iterations }
+{
+    AttributableImpl::m_attri =
+        static_cast< internal::AttributableData * >( m_series.get() );
+    SeriesImpl::m_series = m_series.get();
+}
+#endif
+
+Series::Series(
+    std::string const & filepath, Access at, std::string const & options )
+    : SeriesImpl{ nullptr, nullptr }
+    , m_series{ std::make_shared< internal::SeriesInternal >(
+          filepath, at, options ) }
+    , iterations{ m_series->iterations }
+{
+    AttributableImpl::m_attri =
+        static_cast< internal::AttributableData * >( m_series.get() );
+    SeriesImpl::m_series = m_series.get();
+}
+
+ReadIterations Series::readIterations()
+{
+    return { this };
+}
+
+WriteIterations
+Series::writeIterations()
+{
+    auto & series = get();
+    if( !series.m_writeIterations->has_value() )
+    {
+        *series.m_writeIterations = WriteIterations( this->iterations );
+    }
+    return series.m_writeIterations->get();
 }
 
 namespace
@@ -1291,7 +1351,7 @@ SeriesIterator::operator++()
     {
         currentIteration.close();
     }
-    switch( *series.m_iterationEncoding )
+    switch( series.iterationEncoding() )
     {
         using IE = IterationEncoding;
         case IE::groupBased:
@@ -1324,7 +1384,7 @@ SeriesIterator::operator++()
         return *this;
     }
     m_currentIteration = it->first;
-    switch( *series.m_iterationEncoding )
+    switch( series.iterationEncoding() )
     {
         using IE = IterationEncoding;
         case IE::fileBased:

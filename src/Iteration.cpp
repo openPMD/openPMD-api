@@ -122,7 +122,7 @@ Iteration::close( bool _flush )
         else
         {
             // flush things manually
-            Series * s = &retrieveSeries();
+            internal::SeriesInternal * s = &retrieveSeries();
             // figure out my iteration number
             auto begin = s->indexOf( *this );
             auto end = begin;
@@ -145,7 +145,7 @@ Iteration::close( bool _flush )
 Iteration &
 Iteration::open()
 {
-    Series * s = &retrieveSeries();
+    internal::SeriesInternal * s = &retrieveSeries();
     // figure out my iteration number
     auto begin = s->indexOf( *this );
     auto end = begin;
@@ -197,7 +197,7 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
 {
     /* Find the root point [Series] of this file,
      * meshesPath and particlesPath are stored there */
-    Series * s = &retrieveSeries();
+    internal::SeriesInternal * s = &retrieveSeries();
     if( s == nullptr )
         throw std::runtime_error("[Iteration::flushFileBased] Series* is a nullptr");
 
@@ -265,7 +265,7 @@ Iteration::flush()
     {
         /* Find the root point [Series] of this file,
          * meshesPath and particlesPath are stored there */
-        Series * s = &retrieveSeries();
+        internal::SeriesInternal * s = &retrieveSeries();
 
         if( !meshes.empty() || s->containsAttribute("meshesPath") )
         {
@@ -327,7 +327,7 @@ Iteration::read()
 
     /* Find the root point [Series] of this file,
      * meshesPath and particlesPath are stored there */
-    Series * s = &retrieveSeries();
+    internal::SeriesInternal * s = &retrieveSeries();
 
     Parameter< Operation::LIST_PATHS > pList;
     std::string version = s->openPMD();
@@ -447,11 +447,11 @@ Iteration::beginStep()
     auto & series = retrieveSeries();
     // Initialize file with this to quiet warnings
     // The following switch is comprehensive
-    LegacyAttributable * file = this;
-    switch( *series.m_iterationEncoding )
+    internal::AttributableData * file = nullptr;
+    switch( series.iterationEncoding() )
     {
         case IE::fileBased:
-            file = this;
+            file = m_attributableData.get();
             break;
         case IE::groupBased:
             file = &series;
@@ -465,7 +465,7 @@ Iteration::beginStep()
     }
 
     // re-read -> new datasets might be available
-    if( *series.m_iterationEncoding == IE::groupBased &&
+    if( series.iterationEncoding() == IE::groupBased &&
         ( this->IOHandler()->m_frontendAccess == Access::READ_ONLY ||
           this->IOHandler()->m_frontendAccess == Access::READ_WRITE ) )
     {
@@ -490,11 +490,11 @@ Iteration::endStep()
     auto & series = retrieveSeries();
     // Initialize file with this to quiet warnings
     // The following switch is comprehensive
-    LegacyAttributable * file = this;
-    switch( *series.m_iterationEncoding )
+    internal::AttributableData * file = nullptr;
+    switch( series.iterationEncoding() )
     {
         case IE::fileBased:
-            file = this;
+            file = m_attributableData.get();
             break;
         case IE::groupBased:
             file = &series;
@@ -508,8 +508,8 @@ Iteration::endStep()
 StepStatus
 Iteration::getStepStatus()
 {
-    Series * s = &retrieveSeries();
-    switch( *s->m_iterationEncoding )
+    internal::SeriesInternal * s = &retrieveSeries();
+    switch( s->iterationEncoding() )
     {
         using IE = IterationEncoding;
         case IE::fileBased:
@@ -524,8 +524,8 @@ Iteration::getStepStatus()
 void
 Iteration::setStepStatus( StepStatus status )
 {
-    Series * s = &retrieveSeries();
-    switch( *s->m_iterationEncoding )
+    internal::SeriesInternal * s = &retrieveSeries();
+    switch( s->iterationEncoding() )
     {
         using IE = IterationEncoding;
         case IE::fileBased:

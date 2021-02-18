@@ -117,20 +117,20 @@ AttributableImpl::seriesFlush()
     writable()->seriesFlush();
 }
 
-Series const & AttributableImpl::retrieveSeries() const
+internal::SeriesInternal const & AttributableImpl::retrieveSeries() const
 {
     Writable const * findSeries = writable();
     while( findSeries->parent )
     {
         findSeries = findSeries->parent;
     }
-    // return auxiliary::deref_dynamic_cast< Series >( findSeries->attributable );
-    return *static_cast< Series* >( findSeries->attributable->m_series );
+    return auxiliary::deref_dynamic_cast< internal::SeriesInternal >(
+        findSeries->attributable );
 }
 
-Series & AttributableImpl::retrieveSeries()
+internal::SeriesInternal & AttributableImpl::retrieveSeries()
 {
-    return const_cast< Series & >(
+    return const_cast< internal::SeriesInternal & >(
         static_cast< AttributableImpl const * >( this )->retrieveSeries() );
 }
 
