@@ -46,6 +46,7 @@ namespace traits
     struct GenerationPolicy;
 } // traits
 class AbstractFilePosition;
+class Series;
 
 class no_such_attribute_error : public std::runtime_error
 {
@@ -161,6 +162,10 @@ public:
     void seriesFlush();
 
 OPENPMD_protected:
+
+    Series const & retrieveSeries() const;
+    Series & retrieveSeries();
+
     void flushAttributes();
     void readAttributes();
 
@@ -200,9 +205,30 @@ OPENPMD_protected:
     std::shared_ptr< Writable > m_writable;
     /* views into the resources held by m_writable
      * purely for convenience so code that uses these does not have to go through m_writable-> */
-    AbstractFilePosition* abstractFilePosition;
-    AbstractIOHandler* IOHandler;
-    Writable* parent;
+    inline AbstractIOHandler * IOHandler()
+    {
+        return m_writable->IOHandler.get();
+    };
+    inline AbstractIOHandler const * IOHandler() const
+    {
+        return m_writable->IOHandler.get();
+    };
+    inline Writable *& parent()
+    {
+        return m_writable->parent;
+    };
+    inline Writable const * parent() const
+    {
+        return m_writable->parent;
+    };
+    inline Writable * writable()
+    {
+        return m_writable.get();
+    };
+    inline Writable const * writable() const
+    {
+        return m_writable.get();
+    };
     bool& dirty() const { return m_writable->dirty; }
     bool& written() const { return m_writable->written; }
 
@@ -217,7 +243,7 @@ template< typename T >
 inline bool
 Attributable::setAttribute(std::string const& key, T const& value)
 {
-    if(IOHandler && Access::READ_ONLY == IOHandler->m_frontendAccess )
+    if(IOHandler() && Access::READ_ONLY == IOHandler()->m_frontendAccess )
     {
         auxiliary::OutOfRangeMsg const out_of_range_msg(
             "Attribute",

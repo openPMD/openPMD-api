@@ -352,7 +352,7 @@ Series::setName(std::string const& n)
 std::string
 Series::backend() const
 {
-    return IOHandler->backendName();
+    return IOHandler()->backendName();
 }
 
 void
@@ -446,7 +446,6 @@ Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
              std::unique_ptr< Series::ParsedInput > input)
 {
     m_writable->IOHandler = ioHandler;
-    IOHandler = m_writable->IOHandler.get();
     iterations.linkHierarchy(m_writable);
 
     m_name = std::make_shared< std::string >(input->name);
@@ -457,12 +456,12 @@ Series::init(std::shared_ptr< AbstractIOHandler > ioHandler,
     m_filenamePostfix = std::make_shared< std::string >(input->filenamePostfix);
     m_filenamePadding = std::make_shared< int >(input->filenamePadding);
 
-    if(IOHandler->m_frontendAccess == Access::READ_ONLY || IOHandler->m_frontendAccess == Access::READ_WRITE )
+    if(IOHandler()->m_frontendAccess == Access::READ_ONLY || IOHandler()->m_frontendAccess == Access::READ_WRITE )
     {
         /* Allow creation of values in Containers and setting of Attributes
          * Would throw for Access::READ_ONLY */
-        auto oldType = IOHandler->m_frontendAccess;
-        auto newType = const_cast< Access* >(&m_writable->IOHandler->m_frontendAccess);
+        auto oldType = IOHandler()->m_frontendAccess;
+        auto newType = const_cast< Access* >(&IOHandler()->m_frontendAccess);
         *newType = Access::READ_WRITE;
 
         if( input->iterationEncoding == IterationEncoding::fileBased )
@@ -519,7 +518,7 @@ Series::flush_impl( iterations_iterator begin, iterations_iterator end )
             break;
     }
 
-    return IOHandler->flush();
+    return IOHandler()->flush();
 }
 
 void
@@ -529,7 +528,7 @@ Series::flushFileBased( iterations_iterator begin, iterations_iterator end )
         throw std::runtime_error(
             "fileBased output can not be written with no iterations." );
 
-    if( IOHandler->m_frontendAccess == Access::READ_ONLY )
+    if( IOHandler()->m_frontendAccess == Access::READ_ONLY )
         for( auto it = begin; it != end; ++it )
         {
             bool const dirtyRecursive = it->second.dirtyRecursive();
@@ -565,11 +564,11 @@ Series::flushFileBased( iterations_iterator begin, iterations_iterator end )
                 == Iteration::CloseStatus::ClosedInFrontend )
             {
                 Parameter< Operation::CLOSE_FILE > fClose;
-                IOHandler->enqueue(
+                IOHandler()->enqueue(
                     IOTask( &it->second, std::move( fClose ) ) );
                 *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
             }
-            IOHandler->flush();
+            IOHandler()->flush();
         }
     else
     {
@@ -639,12 +638,12 @@ Series::flushFileBased( iterations_iterator begin, iterations_iterator end )
                 Iteration::CloseStatus::ClosedInFrontend )
             {
                 Parameter< Operation::CLOSE_FILE > fClose;
-                IOHandler->enqueue(
+                IOHandler()->enqueue(
                     IOTask( &it->second, std::move( fClose ) ) );
                 *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
             }
 
-            IOHandler->flush();
+            IOHandler()->flush();
 
             /* reset the dirty bit for every iteration (i.e. file)
              * otherwise only the first iteration will have updates attributes */
@@ -657,7 +656,7 @@ Series::flushFileBased( iterations_iterator begin, iterations_iterator end )
 void
 Series::flushGroupBased( iterations_iterator begin, iterations_iterator end )
 {
-    if( IOHandler->m_frontendAccess == Access::READ_ONLY )
+    if( IOHandler()->m_frontendAccess == Access::READ_ONLY )
         for( auto it = begin; it != end; ++it )
         {
             if( *it->second.m_closed ==
@@ -681,7 +680,7 @@ Series::flushGroupBased( iterations_iterator begin, iterations_iterator end )
                 // the iteration has no dedicated file in group-based mode
                 *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
             }
-            IOHandler->flush();
+            IOHandler()->flush();
         }
     else
     {
@@ -689,7 +688,7 @@ Series::flushGroupBased( iterations_iterator begin, iterations_iterator end )
         {
             Parameter< Operation::CREATE_FILE > fCreate;
             fCreate.name = *m_name;
-            IOHandler->enqueue(IOTask(this, fCreate));
+            IOHandler()->enqueue(IOTask(this, fCreate));
         }
 
         iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
@@ -720,7 +719,7 @@ Series::flushGroupBased( iterations_iterator begin, iterations_iterator end )
             if( !it->second.written() )
             {
                 it->second.m_writable->parent = getWritable( &iterations );
-                it->second.parent = getWritable( &iterations );
+                it->second.parent() = getWritable( &iterations );
             }
             it->second.flushGroupBased(it->first);
             if( *it->second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
@@ -731,7 +730,7 @@ Series::flushGroupBased( iterations_iterator begin, iterations_iterator end )
         }
 
         flushAttributes();
-        IOHandler->flush();
+        IOHandler()->flush();
     }
 }
 
@@ -743,7 +742,7 @@ Series::flushMeshesPath()
     Attribute a = getAttribute("meshesPath");
     aWrite.resource = a.getResource();
     aWrite.dtype = a.dtype;
-    IOHandler->enqueue(IOTask(this, aWrite));
+    IOHandler()->enqueue(IOTask(this, aWrite));
 }
 
 void
@@ -754,7 +753,7 @@ Series::flushParticlesPath()
     Attribute a = getAttribute("particlesPath");
     aWrite.resource = a.getResource();
     aWrite.dtype = a.dtype;
-    IOHandler->enqueue(IOTask(this, aWrite));
+    IOHandler()->enqueue(IOTask(this, aWrite));
 }
 
 void
@@ -764,14 +763,14 @@ Series::readFileBased( )
     Parameter< Operation::CLOSE_FILE > fClose;
     Parameter< Operation::READ_ATT > aRead;
 
-    if( !auxiliary::directory_exists(IOHandler->directory) )
-        throw no_such_file_error("Supplied directory is not valid: " + IOHandler->directory);
+    if( !auxiliary::directory_exists(IOHandler()->directory) )
+        throw no_such_file_error("Supplied directory is not valid: " + IOHandler()->directory);
 
     auto isPartOfSeries = matcher(*m_filenamePrefix, *m_filenamePadding, *m_filenamePostfix, *m_format);
     bool isContained;
     int padding;
     std::set< int > paddings;
-    for( auto const& entry : auxiliary::list_directory(IOHandler->directory) )
+    for( auto const& entry : auxiliary::list_directory(IOHandler()->directory) )
     {
         std::tie(isContained, padding) = isPartOfSeries(entry);
         if( isContained )
@@ -780,17 +779,17 @@ Series::readFileBased( )
             paddings.insert(padding);
 
             fOpen.name = entry;
-            IOHandler->enqueue(IOTask(this, fOpen));
-            IOHandler->flush();
+            IOHandler()->enqueue(IOTask(this, fOpen));
+            IOHandler()->flush();
             iterations.m_writable->parent = getWritable(this);
-            iterations.parent = getWritable(this);
+            iterations.parent() = getWritable(this);
 
             readBase();
 
             using DT = Datatype;
             aRead.name = "iterationEncoding";
-            IOHandler->enqueue( IOTask( this, aRead ) );
-            IOHandler->flush();
+            IOHandler()->enqueue( IOTask( this, aRead ) );
+            IOHandler()->flush();
             if( *aRead.dtype == DT::STRING )
             {
                 std::string encoding =
@@ -815,8 +814,8 @@ Series::readFileBased( )
                                             "for 'iterationEncoding'" );
 
             aRead.name = "iterationFormat";
-            IOHandler->enqueue( IOTask( this, aRead ) );
-            IOHandler->flush();
+            IOHandler()->enqueue( IOTask( this, aRead ) );
+            IOHandler()->flush();
             if( *aRead.dtype == DT::STRING )
             {
                 written() = false;
@@ -829,8 +828,8 @@ Series::readFileBased( )
                     "Unexpected Attribute datatype for 'iterationFormat'" );
 
             read();
-            IOHandler->enqueue(IOTask(this, fClose));
-            IOHandler->flush();
+            IOHandler()->enqueue(IOTask(this, fClose));
+            IOHandler()->flush();
         }
     }
 
@@ -843,7 +842,7 @@ Series::readFileBased( )
     {
         /* Frontend access type might change during Series::read() to allow parameter modification.
          * Backend access type stays unchanged for the lifetime of a Series. */
-        if(IOHandler->m_backendAccess == Access::READ_ONLY  )
+        if(IOHandler()->m_backendAccess == Access::READ_ONLY  )
             throw std::runtime_error("No matching iterations found: " + name());
         else
             std::cerr << "No matching iterations found: " << name() << std::endl;
@@ -854,7 +853,7 @@ Series::readFileBased( )
 
     /* Frontend access type might change during Series::read() to allow parameter modification.
      * Backend access type stays unchanged for the lifetime of a Series. */
-    if( paddings.size() > 1u && IOHandler->m_backendAccess == Access::READ_WRITE )
+    if( paddings.size() > 1u && IOHandler()->m_backendAccess == Access::READ_WRITE )
         throw std::runtime_error("Cannot write to a series with inconsistent iteration padding. "
                                  "Please specify '%0<N>T' or open as read-only.");
 }
@@ -864,8 +863,8 @@ Series::readGroupBased( bool do_init )
 {
     Parameter< Operation::OPEN_FILE > fOpen;
     fOpen.name = *m_name;
-    IOHandler->enqueue(IOTask(this, fOpen));
-    IOHandler->flush();
+    IOHandler()->enqueue(IOTask(this, fOpen));
+    IOHandler()->flush();
 
     if( do_init )
     {
@@ -874,8 +873,8 @@ Series::readGroupBased( bool do_init )
         using DT = Datatype;
         Parameter< Operation::READ_ATT > aRead;
         aRead.name = "iterationEncoding";
-        IOHandler->enqueue(IOTask(this, aRead));
-        IOHandler->flush();
+        IOHandler()->enqueue(IOTask(this, aRead));
+        IOHandler()->flush();
         if( *aRead.dtype == DT::STRING )
         {
             std::string encoding = Attribute(*aRead.resource).get< std::string >();
@@ -894,8 +893,8 @@ Series::readGroupBased( bool do_init )
             throw std::runtime_error("Unexpected Attribute datatype for 'iterationEncoding'");
 
         aRead.name = "iterationFormat";
-        IOHandler->enqueue(IOTask(this, aRead));
-        IOHandler->flush();
+        IOHandler()->enqueue(IOTask(this, aRead));
+        IOHandler()->flush();
         if( *aRead.dtype == DT::STRING )
         {
             written() = false;
@@ -916,37 +915,37 @@ Series::readBase()
     Parameter< Operation::READ_ATT > aRead;
 
     aRead.name = "openPMD";
-    IOHandler->enqueue(IOTask(this, aRead));
-    IOHandler->flush();
+    IOHandler()->enqueue(IOTask(this, aRead));
+    IOHandler()->flush();
     if( *aRead.dtype == DT::STRING )
         setOpenPMD(Attribute(*aRead.resource).get< std::string >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'openPMD'");
 
     aRead.name = "openPMDextension";
-    IOHandler->enqueue(IOTask(this, aRead));
-    IOHandler->flush();
+    IOHandler()->enqueue(IOTask(this, aRead));
+    IOHandler()->flush();
     if( *aRead.dtype == determineDatatype< uint32_t >() )
         setOpenPMDextension(Attribute(*aRead.resource).get< uint32_t >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'openPMDextension'");
 
     aRead.name = "basePath";
-    IOHandler->enqueue(IOTask(this, aRead));
-    IOHandler->flush();
+    IOHandler()->enqueue(IOTask(this, aRead));
+    IOHandler()->flush();
     if( *aRead.dtype == DT::STRING )
         setAttribute("basePath", Attribute(*aRead.resource).get< std::string >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'basePath'");
 
     Parameter< Operation::LIST_ATTS > aList;
-    IOHandler->enqueue(IOTask(this, aList));
-    IOHandler->flush();
+    IOHandler()->enqueue(IOTask(this, aList));
+    IOHandler()->flush();
     if( std::count(aList.attributes->begin(), aList.attributes->end(), "meshesPath") == 1 )
     {
         aRead.name = "meshesPath";
-        IOHandler->enqueue(IOTask(this, aRead));
-        IOHandler->flush();
+        IOHandler()->enqueue(IOTask(this, aRead));
+        IOHandler()->flush();
         if( *aRead.dtype == DT::STRING )
         {
             /* allow setting the meshes path after completed IO */
@@ -965,8 +964,8 @@ Series::readBase()
     if( std::count(aList.attributes->begin(), aList.attributes->end(), "particlesPath") == 1 )
     {
         aRead.name = "particlesPath";
-        IOHandler->enqueue(IOTask(this, aRead));
-        IOHandler->flush();
+        IOHandler()->enqueue(IOTask(this, aRead));
+        IOHandler()->flush();
         if( *aRead.dtype == DT::STRING )
         {
             /* allow setting the meshes path after completed IO */
@@ -993,15 +992,15 @@ Series::read()
         pOpen.path = auxiliary::replace_first(basePath(), "/%T/", "");
     else
         throw std::runtime_error("Unknown openPMD version - " + version);
-    IOHandler->enqueue(IOTask(&iterations, pOpen));
+    IOHandler()->enqueue(IOTask(&iterations, pOpen));
 
     readAttributes();
     iterations.readAttributes();
 
     /* obtain all paths inside the basepath (i.e. all iterations) */
     Parameter< Operation::LIST_PATHS > pList;
-    IOHandler->enqueue(IOTask(&iterations, pList));
-    IOHandler->flush();
+    IOHandler()->enqueue(IOTask(&iterations, pList));
+    IOHandler()->flush();
 
     for( auto const& it : *pList.paths )
     {
@@ -1011,7 +1010,7 @@ Series::read()
             continue;
         }
         pOpen.path = it;
-        IOHandler->enqueue(IOTask(&i, pOpen));
+        IOHandler()->enqueue(IOTask(&i, pOpen));
         i.read();
     }
 }
@@ -1100,7 +1099,7 @@ Series::advance(
     {
         param.mode = mode;
         IOTask task( &file, param );
-        IOHandler->enqueue( task );
+        IOHandler()->enqueue( task );
     }
 
 
@@ -1116,7 +1115,7 @@ Series::advance(
                     Iteration::CloseStatus::ClosedTemporarily )
                 {
                     Parameter< Operation::CLOSE_FILE > fClose;
-                    IOHandler->enqueue(
+                    IOHandler()->enqueue(
                         IOTask( &iteration, std::move( fClose ) ) );
                 }
                 *iteration.m_closed = Iteration::CloseStatus::ClosedInBackend;
@@ -1126,7 +1125,7 @@ Series::advance(
             {
                 // We can now put some groups to rest
                 Parameter< Operation::CLOSE_PATH > fClose;
-                IOHandler->enqueue( IOTask( &iteration, std::move( fClose ) ) );
+                IOHandler()->enqueue( IOTask( &iteration, std::move( fClose ) ) );
                 // In group-based iteration layout, files are
                 // not closed on a per-iteration basis
                 // We will treat it as such nonetheless
@@ -1139,7 +1138,7 @@ Series::advance(
     // We cannot call Series::flush now, since the IO handler is still filled
     // from calling flush(Group|File)based, but has not been emptied yet
     // Do that manually
-    IOHandler->flush();
+    IOHandler()->flush();
 
     return *param.status;
 }
@@ -1150,15 +1149,15 @@ Series::openIteration( uint64_t index, Iteration iteration )
     // open the iteration's file again
     Parameter< Operation::OPEN_FILE > fOpen;
     fOpen.name = iterationFilename( index );
-    IOHandler->enqueue( IOTask( this, fOpen ) );
+    IOHandler()->enqueue( IOTask( this, fOpen ) );
 
     /* open base path */
     Parameter< Operation::OPEN_PATH > pOpen;
     pOpen.path = auxiliary::replace_first( basePath(), "%T/", "" );
-    IOHandler->enqueue( IOTask( &iterations, pOpen ) );
+    IOHandler()->enqueue( IOTask( &iterations, pOpen ) );
     /* open iteration path */
     pOpen.path = std::to_string( index );
-    IOHandler->enqueue( IOTask( &iteration, pOpen ) );
+    IOHandler()->enqueue( IOTask( &iteration, pOpen ) );
     switch( *iteration.m_closed )
     {
         using CL = Iteration::CloseStatus;

@@ -152,8 +152,7 @@ BaseRecord< T_elem >::operator[](key_type const& key)
         if( keyScalar )
         {
             *m_containsScalar = true;
-            ret.m_writable->parent = this->m_writable->parent;
-            ret.parent = this->parent;
+            ret.parent() = this->parent();
         }
         return ret;
     }
@@ -177,8 +176,7 @@ BaseRecord< T_elem >::operator[](key_type&& key)
         if( keyScalar )
         {
             *m_containsScalar = true;
-            ret.m_writable->parent = this->m_writable->parent;
-            ret.parent = this->parent;
+            ret.parent() = this->parent();
         }
         return ret;
     }
@@ -199,8 +197,8 @@ BaseRecord< T_elem >::erase(key_type const& key)
         {
             Parameter< Operation::DELETE_DATASET > dDelete;
             dDelete.name = ".";
-            this->IOHandler->enqueue(IOTask(&rc, dDelete));
-            this->IOHandler->flush();
+            this->IOHandler()->enqueue(IOTask(&rc, dDelete));
+            this->IOHandler()->flush();
         }
         res = Container< T_elem >::erase(key);
     }
@@ -229,8 +227,8 @@ BaseRecord< T_elem >::erase(iterator res)
         {
             Parameter< Operation::DELETE_DATASET > dDelete;
             dDelete.name = ".";
-            this->IOHandler->enqueue(IOTask(&rc, dDelete));
-            this->IOHandler->flush();
+            this->IOHandler()->enqueue(IOTask(&rc, dDelete));
+            this->IOHandler()->flush();
         }
         ret = Container< T_elem >::erase(res);
     }
@@ -266,8 +264,8 @@ BaseRecord< T_elem >::readBase()
     Parameter< Operation::READ_ATT > aRead;
 
     aRead.name = "unitDimension";
-    this->IOHandler->enqueue(IOTask(this, aRead));
-    this->IOHandler->flush();
+    this->IOHandler()->enqueue(IOTask(this, aRead));
+    this->IOHandler()->flush();
     if( *aRead.dtype == DT::ARR_DBL_7 )
         this->setAttribute("unitDimension", Attribute(*aRead.resource).template get< std::array< double, 7 > >());
     else if( *aRead.dtype == DT::VEC_DOUBLE )
@@ -287,8 +285,8 @@ BaseRecord< T_elem >::readBase()
         throw std::runtime_error("Unexpected Attribute datatype for 'unitDimension'");
 
     aRead.name = "timeOffset";
-    this->IOHandler->enqueue(IOTask(this, aRead));
-    this->IOHandler->flush();
+    this->IOHandler()->enqueue(IOTask(this, aRead));
+    this->IOHandler()->flush();
     if( *aRead.dtype == DT::FLOAT )
         this->setAttribute("timeOffset", Attribute(*aRead.resource).template get< float >());
     else if( *aRead.dtype == DT::DOUBLE )

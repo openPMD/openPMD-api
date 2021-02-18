@@ -48,8 +48,8 @@ class Iteration : public Attributable
     friend class SeriesIterator;
 
 public:
-    Iteration(Iteration const&);
-    Iteration& operator=(Iteration const&);
+    Iteration( Iteration const & ) = default;
+    Iteration & operator=( Iteration const & ) = default;
 
     /**
      * @tparam  T   Floating point type of user-selected precision (e.g. float, double).

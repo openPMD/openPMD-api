@@ -37,21 +37,21 @@ void
 ParticlePatches::read()
 {
     Parameter< Operation::LIST_PATHS > pList;
-    IOHandler->enqueue(IOTask(this, pList));
-    IOHandler->flush();
+    IOHandler()->enqueue(IOTask(this, pList));
+    IOHandler()->flush();
 
     Parameter< Operation::OPEN_PATH > pOpen;
     for( auto const& record_name : *pList.paths )
     {
         PatchRecord& pr = (*this)[record_name];
         pOpen.path = record_name;
-        IOHandler->enqueue(IOTask(&pr, pOpen));
+        IOHandler()->enqueue(IOTask(&pr, pOpen));
         pr.read();
     }
 
     Parameter< Operation::LIST_DATASETS > dList;
-    IOHandler->enqueue(IOTask(this, dList));
-    IOHandler->flush();
+    IOHandler()->enqueue(IOTask(this, dList));
+    IOHandler()->flush();
 
     Parameter< Operation::OPEN_DATASET > dOpen;
     for( auto const& component_name : *dList.datasets )
@@ -61,11 +61,11 @@ ParticlePatches::read()
 
         PatchRecord& pr = Container< PatchRecord >::operator[](component_name);
         PatchRecordComponent& prc = pr[RecordComponent::SCALAR];
-        prc.parent = pr.parent;
+        prc.parent() = pr.parent();
         dOpen.name = component_name;
-        IOHandler->enqueue(IOTask(&pr, dOpen));
-        IOHandler->enqueue(IOTask(&prc, dOpen));
-        IOHandler->flush();
+        IOHandler()->enqueue(IOTask(&pr, dOpen));
+        IOHandler()->enqueue(IOTask(&prc, dOpen));
+        IOHandler()->flush();
 
         if( determineDatatype< uint64_t >() != *dOpen.dtype )
             throw std::runtime_error("Unexpected datatype for " + component_name);

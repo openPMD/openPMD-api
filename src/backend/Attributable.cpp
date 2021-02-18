@@ -19,28 +19,23 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/Series.hpp"
+#include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
+#include <complex>
 #include <iostream>
 #include <set>
-#include <complex>
-
 
 namespace openPMD
 {
 Attributable::Attributable()
         : m_writable{std::make_shared< Writable >(this)},
-          abstractFilePosition{m_writable->abstractFilePosition.get()},
-          IOHandler{m_writable->IOHandler.get()},
-          parent{m_writable->parent},
           m_attributes{std::make_shared< A_MAP >()}
 { }
 
 Attributable::Attributable(Attributable const& rhs)
         : m_writable{rhs.m_writable},
-          abstractFilePosition{rhs.m_writable->abstractFilePosition.get()},
-          IOHandler{rhs.m_writable->IOHandler.get()},
-          parent{rhs.m_writable->parent},
           m_attributes{rhs.m_attributes}
 { }
 
@@ -50,9 +45,6 @@ Attributable::operator=(Attributable const& a)
     if( this != &a )
     {
         m_writable = a.m_writable;
-        abstractFilePosition = a.m_writable->abstractFilePosition.get();
-        IOHandler = a.m_writable->IOHandler.get();
-        parent = a.m_writable->parent;
         m_attributes = a.m_attributes;
     }
     return *this;
@@ -71,7 +63,7 @@ Attributable::getAttribute(std::string const& key) const
 bool
 Attributable::deleteAttribute(std::string const& key)
 {
-    if(Access::READ_ONLY == IOHandler->m_frontendAccess )
+    if(Access::READ_ONLY == IOHandler()->m_frontendAccess )
         throw std::runtime_error("Can not delete an Attribute in a read-only Series.");
 
     auto it = m_attributes->find(key);
@@ -79,8 +71,8 @@ Attributable::deleteAttribute(std::string const& key)
     {
         Parameter< Operation::DELETE_ATT > aDelete;
         aDelete.name = key;
-        IOHandler->enqueue(IOTask(this, aDelete));
-        IOHandler->flush();
+        IOHandler()->enqueue(IOTask(this, aDelete));
+        IOHandler()->flush();
         m_attributes->erase(it);
         return true;
     }
@@ -129,6 +121,22 @@ Attributable::seriesFlush()
     m_writable->seriesFlush();
 }
 
+Series const & Attributable::retrieveSeries() const
+{
+    Writable * findSeries = &*m_writable;
+    while( findSeries->parent )
+    {
+        findSeries = findSeries->parent;
+    }
+    return auxiliary::deref_dynamic_cast< Series >( findSeries->attributable );
+}
+
+Series & Attributable::retrieveSeries()
+{
+    return const_cast< Series & >(
+        static_cast< Attributable const * >( this )->retrieveSeries() );
+}
+
 void
 Attributable::flushAttributes()
 {
@@ -140,7 +148,7 @@ Attributable::flushAttributes()
             aWrite.name = att_name;
             aWrite.resource = getAttribute(att_name).getResource();
             aWrite.dtype = getAttribute(att_name).dtype;
-            IOHandler->enqueue(IOTask(this, aWrite));
+            IOHandler()->enqueue(IOTask(this, aWrite));
         }
 
         dirty() = false;
@@ -151,8 +159,8 @@ void
 Attributable::readAttributes()
 {
     Parameter< Operation::LIST_ATTS > aList;
-    IOHandler->enqueue(IOTask(this, aList));
-    IOHandler->flush();
+    IOHandler()->enqueue(IOTask(this, aList));
+    IOHandler()->flush();
     std::vector< std::string > written_attributes = attributes();
 
     /* std::set_difference requires sorted ranges */
@@ -171,10 +179,10 @@ Attributable::readAttributes()
     {
         aRead.name = att_name;
         std::string att = auxiliary::strip(att_name, {'\0'});
-        IOHandler->enqueue(IOTask(this, aRead));
+        IOHandler()->enqueue(IOTask(this, aRead));
         try
         {
-            IOHandler->flush();
+            IOHandler()->flush();
         } catch( unsupported_data_error const& e )
         {
             std::cerr << "Skipping non-standard attribute "
@@ -308,9 +316,7 @@ Attributable::linkHierarchy(std::shared_ptr< Writable > const& w)
 {
     auto handler = w->IOHandler;
     m_writable->IOHandler = handler;
-    this->IOHandler = handler.get();
     auto writable = w.get();
     m_writable->parent = writable;
-    this->parent = writable;
 }
 } // openPMD

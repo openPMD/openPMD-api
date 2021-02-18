@@ -112,7 +112,7 @@ public:
      */
     void clear()
     {
-        if(Access::READ_ONLY == IOHandler->m_frontendAccess )
+        if(Access::READ_ONLY == IOHandler()->m_frontendAccess )
             throw std::runtime_error("Can not clear a container in a read-only Series.");
 
         clear_unchecked();
@@ -146,7 +146,7 @@ public:
             return it->second;
         else
         {
-            if(Access::READ_ONLY == IOHandler->m_frontendAccess )
+            if(Access::READ_ONLY == IOHandler()->m_frontendAccess )
             {
                 auxiliary::OutOfRangeMsg const out_of_range_msg;
                 throw std::out_of_range(out_of_range_msg(key));
@@ -173,7 +173,7 @@ public:
             return it->second;
         else
         {
-            if(Access::READ_ONLY == IOHandler->m_frontendAccess )
+            if(Access::READ_ONLY == IOHandler()->m_frontendAccess )
             {
                 auxiliary::OutOfRangeMsg out_of_range_msg;
                 throw std::out_of_range(out_of_range_msg(key));
@@ -214,7 +214,7 @@ public:
      */
     virtual size_type erase(key_type const& key)
     {
-        if(Access::READ_ONLY == IOHandler->m_frontendAccess )
+        if(Access::READ_ONLY == IOHandler()->m_frontendAccess )
             throw std::runtime_error("Can not erase from a container in a read-only Series.");
 
         auto res = m_container->find(key);
@@ -222,8 +222,8 @@ public:
         {
             Parameter< Operation::DELETE_PATH > pDelete;
             pDelete.path = ".";
-            IOHandler->enqueue(IOTask(&res->second, pDelete));
-            IOHandler->flush();
+            IOHandler()->enqueue(IOTask(&res->second, pDelete));
+            IOHandler()->flush();
         }
         return m_container->erase(key);
     }
@@ -231,15 +231,15 @@ public:
     //! @todo why does const_iterator not work compile with pybind11?
     virtual iterator erase(iterator res)
     {
-        if(Access::READ_ONLY == IOHandler->m_frontendAccess )
+        if(Access::READ_ONLY == IOHandler()->m_frontendAccess )
             throw std::runtime_error("Can not erase from a container in a read-only Series.");
 
         if( res != m_container->end() && res->second.written() )
         {
             Parameter< Operation::DELETE_PATH > pDelete;
             pDelete.path = ".";
-            IOHandler->enqueue(IOTask(&res->second, pDelete));
-            IOHandler->flush();
+            IOHandler()->enqueue(IOTask(&res->second, pDelete));
+            IOHandler()->flush();
         }
         return m_container->erase(res);
     }
@@ -272,7 +272,7 @@ OPENPMD_protected:
         {
             Parameter< Operation::CREATE_PATH > pCreate;
             pCreate.path = path;
-            IOHandler->enqueue(IOTask(this, pCreate));
+            IOHandler()->enqueue(IOTask(this, pCreate));
         }
 
         flushAttributes();

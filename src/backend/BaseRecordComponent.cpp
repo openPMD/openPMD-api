@@ -61,8 +61,8 @@ BaseRecordComponent::availableChunks()
 {
     Parameter< Operation::AVAILABLE_CHUNKS > param;
     IOTask task( this, param );
-    IOHandler->enqueue( task );
-    IOHandler->flush();
+    IOHandler()->enqueue( task );
+    IOHandler()->flush();
     return std::move( *param.chunks );
 }
 } // namespace openPMD
