@@ -387,9 +387,8 @@ operator<<(std::ostream& os, openPMD::Datatype const & d)
 
     Datatype basicDatatype( Datatype dt )
     {
-        return switchType<Datatype>(dt, detail::BasicDatatype{});
+        return switchType( dt, detail::BasicDatatype{} );
     }
-
 
     Datatype toVectorType( Datatype dt )
     {

@@ -1993,7 +1993,7 @@ namespace detail
                 ") not found in backend." );
         }
 
-        Datatype ret = switchType< Datatype >(
+        Datatype ret = switchType(
             type, detail::OldAttributeReader{}, ba.m_IO, name, param.resource );
         *param.dtype = ret;
     }
@@ -2014,7 +2014,7 @@ namespace detail
                 ") not found in backend." );
         }
 
-        Datatype ret = switchType< Datatype >(
+        Datatype ret = switchType(
             type,
             detail::AttributeReader{},
             ba.m_IO,

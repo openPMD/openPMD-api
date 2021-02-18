@@ -322,8 +322,8 @@ namespace detail
         VariableShape switchShape;
         for( auto & pair : attributesByType )
         {
-            size_t alignment = switchType< size_t >( pair.first, switchAlignment );
-            size_t size = switchType< size_t >( pair.first, switchSize );
+            size_t alignment = switchType( pair.first, switchAlignment );
+            size_t size = switchType( pair.first, switchSize );
             // go to next offset with valid alignment
             size_t modulus = currentOffset % alignment;
             if( modulus > 0 )
@@ -333,7 +333,7 @@ namespace detail
             for( std::string & name : pair.second )
             {
                 adios2::Dims shape =
-                    switchType< adios2::Dims >( pair.first, switchShape, IO, name );
+                    switchType( pair.first, switchShape, IO, name );
                 size_t elements = 1;
                 for( auto extent : shape )
                 {

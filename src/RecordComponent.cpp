@@ -102,7 +102,7 @@ RecordComponent&
 RecordComponent::makeEmpty( Datatype dt, uint8_t dimensions )
 {
     static detail::MakeEmpty me;
-    return switchType< RecordComponent & >( dt, me, *this, dimensions );
+    return switchType( dt, me, *this, dimensions );
 }
 
 RecordComponent&

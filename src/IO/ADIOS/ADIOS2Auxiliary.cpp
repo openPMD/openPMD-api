@@ -227,8 +227,7 @@ namespace detail
         {
             static AttributeInfo ai;
             Datatype basicType = fromADIOS2Type( type );
-            Extent shape =
-                switchType< Extent >( basicType, ai, IO, attributeName, voa );
+            Extent shape = switchType( basicType, ai, IO, attributeName, voa );
 
             switch( voa )
             {

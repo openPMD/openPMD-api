@@ -129,9 +129,14 @@ struct CallUndefinedDatatype<
  * the passed arguments and the template parameter type corresponding to the
  * openPMD type.
  */
-template< typename ReturnType = void, typename Action, typename... Args >
-ReturnType switchType( Datatype dt, Action action, Args &&... args )
+template< typename Action, typename... Args >
+auto switchType( Datatype dt, Action action, Args &&... args ) -> decltype(
+    action.OPENPMD_TEMPLATE_OPERATOR() < char >
+    ( std::forward< Args >( args )... ) )
 {
+    using ReturnType = decltype(
+        action.OPENPMD_TEMPLATE_OPERATOR() < char >
+        ( std::forward< Args >( args )... ) );
     switch( dt )
     {
     case Datatype::CHAR:
@@ -252,11 +257,21 @@ ReturnType switchType( Datatype dt, Action action, Args &&... args )
         return action.OPENPMD_TEMPLATE_OPERATOR()< bool >(
             std::forward< Args >( args )... );
     case Datatype::DATATYPE:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< 1000 >(
-            std::forward< Args >( args )... );
+        return detail::CallUndefinedDatatype<
+            HIGHEST_DATATYPE,
+            ReturnType,
+            Action,
+            void,
+            Args &&... >::
+            call( std::move( action ), std::forward< Args >( args )... );
     case Datatype::UNDEFINED:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< 0 >(
-            std::forward< Args >( args )... );
+        return detail::CallUndefinedDatatype<
+            LOWEST_DATATYPE,
+            ReturnType,
+            Action,
+            void,
+            Args &&... >::
+            call( std::move( action ), std::forward< Args >( args )... );
     default:
         throw std::runtime_error(
             "Internal error: Encountered unknown datatype (switchType) ->" +
