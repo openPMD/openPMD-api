@@ -42,7 +42,8 @@ template< typename >
 using void_t = void;
 
 /*
- * Check whether class T has a member "errorMsg" of type std::string.
+ * Check whether class T has a member "errorMsg" convertible
+ * to type std::string.
  * Used to give helpful compile-time error messages with static_assert
  * down in CallUndefinedDatatype.
  */
@@ -55,9 +56,7 @@ struct HasErrorMessageMember
 template< typename T >
 struct HasErrorMessageMember<
     T,
-    typename std::enable_if< std::is_same<
-        std::remove_cv_t< std::remove_reference_t< decltype( T::errorMsg ) > >,
-        std::string >::value >::type >
+    void_t< decltype( std::string( std::declval< T >().errorMsg ) ) > >
 {
     static constexpr bool value = true;
 };
@@ -89,7 +88,7 @@ struct CallUndefinedDatatype
             "[switchType] Action needs either an errorMsg member of type "
             "std::string or operator()<unsigned>() overloads." );
         throw std::runtime_error(
-            "[" + action.errorMsg + "] Unknown Datatype." );
+            "[" + std::string( action.errorMsg ) + "] Unknown Datatype." );
     }
 };
 
