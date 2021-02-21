@@ -3133,6 +3133,7 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
     std::string nullcore = R"(
     {
         "adios2": {
+            "type": "nullcore",
             "engine": {
                 "type": "bp4",
                 "usesteps": true
