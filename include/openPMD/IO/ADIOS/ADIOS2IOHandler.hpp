@@ -1127,10 +1127,13 @@ namespace detail
          *   step are shown which hinders parsing. So, until a step is
          *   explicitly opened via ADIOS2IOHandlerImpl::advance, do not open
          *   one.
-         *   (This is a workaround for the fact that attributes
-         *    are not associated with steps in ADIOS -- seeing all attributes
-         *    from all steps in file-based engines, but only the current
-         *    variables breaks parsing otherwise.)
+         *   This is to enable use of ADIOS files without the Streaming API
+         *   (i.e. all iterations should be visible to the user upon opening
+         *   the Series.)
+         *   @todo Add a workflow without up-front parsing of all iterations
+         *         for file-based engines.
+         *         (This would merely be an optimization since the streaming
+         *         API still works with files as intended.)
          *
          */
         enum class StreamStatus
@@ -1155,27 +1158,40 @@ namespace detail
              *    API. This is due to the fact that ADIOS2.6.0 requires using
              *    steps to read BP4 files written with steps, so using steps
              *    is opt-in for now.
+             *    Notice that while the openPMD API requires ADIOS >= 2.7.0,
+             *    the resulting files need to be readable from ADIOS 2.6.0 as
+             *    well. This workaround is hence staying until switching to
+             *    a new ADIOS schema.
              * 2) Reading with the Streaming API any file that has been written
-             *    without steps.
-             *
-             * @todo [franzpoeschel] let's remove these work-arounds :-)
+             *    without steps. This is not a workaround since not using steps,
+             *    while inefficient in ADIOS2, is something that we support.
              */
             NoStream,
             /**
-             * Necessary workaround under the following circumstances:
-             * 1) Using ADIOS2.6.0
-             * 2) Using attribute-based layout
-             * 3) Reading from a file-based engine a Series written with steps
-             * Up until ADIOS2.6.0, attributes are not associated with ADIOS
-             * steps in file-based engines. As a consequence, parsing one
-             * ADIOS step will show only the variables of that step, but the
-             * attributes of all steps which breaks our parsing logic.
-             * Workaround: If parsing before opening any step, all variables
-             * and attributes in the file will be shown.
-             * Hence, streamStatus == Parsing means that the first step has yet
-             * to be opened.
-             *
-             * @todo [franzpoeschel] let's remove these work-arounds :-)
+             * Rationale behind this state:
+             * When user code opens a Series, series.iterations should contain
+             * all available iterations.
+             * If accessing a file without opening a step, ADIOS2 will grant
+             * access to variables and attributes from all steps, allowing us
+             * to parse the complete dump.
+             * This state indicates that no step should be opened for parsing
+             * purposes (which is necessary in streaming engines, hence they
+             * are initialized with the OutsideOfStep state).
+             * A step should only be opened if an explicit ADVANCE task arrives
+             * at the backend.
+             * 
+             * @todo If the streaming API is used on files, parsing the whole
+             *       Series up front is unnecessary work.
+             *       Our frontend does not yet allow to distinguish whether
+             *       parsing the whole series will be necessary since parsing
+             *       happens upon construction time of Series,
+             *       but the classical and the streaming API are both activated
+             *       afterwards from the created Series object.
+             *       Hence, improving this requires refactoring in our
+             *       user-facing API. Ideas:
+             *       (1) Delayed lazy parsing of iterations upon accessing
+             *           (would bring other benefits also).
+             *       (2) Introduce a restricted class StreamingSeries.
              */
             Parsing,
             /**
