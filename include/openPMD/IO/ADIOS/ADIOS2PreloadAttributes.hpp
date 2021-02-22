@@ -26,6 +26,7 @@
 #include <adios2.h>
 #include <functional>
 #include <map>
+#include <sstream>
 #include <stddef.h>
 #include <type_traits>
 
@@ -159,10 +160,11 @@ namespace detail
         }
         if( location.dt != determinedDatatype )
         {
-            std::cout << "location.dt=" << location.dt <<
-                "\tdetermineDatatype=" << determineDatatype< T > () << std::endl;
-            throw std::runtime_error(
-                "[ADIOS2] Wrong datatype for attribute: " + name );
+            std::stringstream errorMsg;
+            errorMsg << "[ADIOS2] Wrong datatype for attribute: " << name
+                     << "(location.dt=" << location.dt
+                     << ", T=" << determineDatatype< T >() << ")";
+            throw std::runtime_error( errorMsg.str() );
         }
         AttributeWithShape< T > res;
         res.shape = location.shape;
