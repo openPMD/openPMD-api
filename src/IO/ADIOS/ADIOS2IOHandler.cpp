@@ -22,9 +22,6 @@
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 
 #include "openPMD/Datatype.hpp"
-#define OPENPMD_SWITCHTYPE_ADIOS2
-#include "openPMD/DatatypeHelpers.hpp"
-#undef OPENPMD_SWITCHTYPE_ADIOS2
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/auxiliary/Environment.hpp"

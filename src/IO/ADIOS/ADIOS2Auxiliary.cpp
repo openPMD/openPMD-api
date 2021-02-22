@@ -23,9 +23,6 @@
 #if openPMD_HAVE_ADIOS2
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/Datatype.hpp"
-#define OPENPMD_SWITCHTYPE_ADIOS2
-#include "openPMD/DatatypeHelpers.hpp"
-#undef OPENPMD_SWITCHTYPE_ADIOS2
 
 #include <iostream>
 
