@@ -1704,8 +1704,21 @@ class APITest(unittest.TestCase):
         if found_numpy:
             E_x.store_chunk(np.array([[4, 5, 6]], dtype=np.dtype("int")),
                             [1, 0])
+
             data = np.array([[1, 2, 3]], dtype=np.dtype("int"))
             E_x.store_chunk(data)
+
+            data2 = np.array([[7, 8, 9]], dtype=np.dtype("int"))
+            E_x.store_chunk(np.repeat(data2, 198, axis=0),
+                            [2, 0])
+
+    def loadToTemporaryStore(self, r_E_x):
+        # not catching the return value shall not result in a use-after-free:
+        r_E_x.load_chunk()
+        # we keep a reference on the data until we are done flush()ing
+        d = r_E_x[()]
+        del d
+        return
 
     def writeFromTemporary(self, ext):
         name = "../samples/write_from_temporary_python." + ext
@@ -1716,7 +1729,7 @@ class APITest(unittest.TestCase):
 
         DS = io.Dataset
         E_x = write.iterations[0].meshes["E"]["x"]
-        E_x.reset_dataset(DS(np.dtype("int"), [2, 3]))
+        E_x.reset_dataset(DS(np.dtype("int"), [200, 3]))
         self.writeFromTemporaryStore(E_x)
         gc.collect()  # trigger removal of temporary data to check its copied
 
@@ -1729,16 +1742,20 @@ class APITest(unittest.TestCase):
 
         r_E_x = read.iterations[0].meshes["E"]["x"]
         if read.backend == 'ADIOS2':
-            self.assertEqual(len(r_E_x.available_chunks()), 2)
+            self.assertEqual(len(r_E_x.available_chunks()), 3)
         else:
             self.assertEqual(len(r_E_x.available_chunks()), 1)
         r_d = r_E_x[()]
+        self.loadToTemporaryStore(r_E_x)
+        gc.collect()  # trigger removal of temporary data to check its copied
+
         read.flush()
 
         if found_numpy:
             np.testing.assert_allclose(
-                r_d,
-                np.array([[1, 2, 3], [4, 5, 6]], dtype=np.dtype("int"))
+                r_d[:3, :],
+                np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+                         dtype=np.dtype("int"))
             )
 
     def testWriteFromTemporary(self):
