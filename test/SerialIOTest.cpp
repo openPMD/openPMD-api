@@ -8,6 +8,9 @@
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/openPMD.hpp"
 
+#if openPMD_HAVE_ADIOS2
+#include <adios2.h>
+#endif
 #include <catch2/catch.hpp>
 
 #include <algorithm>
@@ -37,6 +40,126 @@ std::vector< std::string > testedFileExtensions()
         { return ext == "sst" || ext == "ssc"; } );
     return { allExtensions.begin(), newEnd };
 }
+
+#if openPMD_HAVE_ADIOS2
+TEST_CASE( "adios2_char_portability", "[serial][adios2]" )
+{
+    /*
+     * This tests portability of char attributes in ADIOS2 in schema 20210209.
+     */
+
+    // @todo remove new_attribute_layout key as soon as schema-based versioning
+    //       is merged
+    std::string const config = R"END(
+{
+    "adios2":
+    {
+        "new_attribute_layout": true,
+        "schema": 20210209
+    }
+})END";
+    {
+        adios2::ADIOS adios;
+        auto IO = adios.DeclareIO( "IO" );
+        auto engine = IO.Open(
+            "../samples/adios2_char_portability.bp", adios2::Mode::Write );
+        engine.BeginStep();
+
+        // write default openPMD attributes
+        auto writeAttribute =
+            [ &engine, &IO ]( std::string const & name, auto value )
+        {
+            using variable_type = decltype( value );
+            engine.Put( IO.DefineVariable< variable_type >( name ), value );
+        };
+        writeAttribute( "/basePath", std::string( "/data/%T/" ) );
+        writeAttribute( "/date", std::string( "2021-02-22 11:14:00 +0000" ) );
+        writeAttribute( "/iterationEncoding", std::string( "groupBased" ) );
+        writeAttribute( "/iterationFormat", std::string( "/data/%T/" ) );
+        writeAttribute( "/openPMD", std::string( "1.1.0" ) );
+        writeAttribute( "/openPMDextension", uint32_t( 0 ) );
+        writeAttribute( "/software", std::string( "openPMD-api" ) );
+        writeAttribute( "/softwareVersion", std::string( "0.14.0-dev" ) );
+
+        IO.DefineAttribute< uint64_t >(
+            "__openPMD_internal/openPMD2_adios2_schema", 20210209 );
+        IO.DefineAttribute< unsigned char >( "__openPMD_internal/useSteps", 1 );
+
+        // write char things that should be read back properly
+
+        std::string baseString = "abcdefghi";
+        // null termination not necessary, ADIOS knows the size of its variables
+        std::vector< signed char > signedVector( 9 );
+        std::vector< unsigned char > unsignedVector( 9 );
+        for( unsigned i = 0; i < 9; ++i )
+        {
+            signedVector[ i ] = baseString[ i ];
+            unsignedVector[ i ] = baseString[ i ];
+        }
+        engine.Put(
+            IO.DefineVariable< signed char >(
+                "/signedVector", { 3, 3 }, { 0, 0 }, { 3, 3 } ),
+            signedVector.data() );
+        engine.Put(
+            IO.DefineVariable< unsigned char >(
+                "/unsignedVector", { 3, 3 }, { 0, 0 }, { 3, 3 } ),
+            unsignedVector.data() );
+        engine.Put(
+            IO.DefineVariable< char >(
+                "/unspecifiedVector", { 3, 3 }, { 0, 0 }, { 3, 3 } ),
+            baseString.c_str() );
+
+        writeAttribute( "/signedChar", ( signed char )'a' );
+        writeAttribute( "/unsignedChar", ( unsigned char )'a' );
+        writeAttribute( "/char", ( char )'a' );
+
+        engine.EndStep();
+        engine.Close();
+    }
+
+    {
+        if( auxiliary::getEnvString( "OPENPMD_BP_BACKEND", "ADIOS2" ) !=
+            "ADIOS2" )
+        {
+            return;
+        }
+        Series read(
+            "../samples/adios2_char_portability.bp",
+            Access::READ_ONLY,
+            config );
+        auto signedVectorAttribute = read.getAttribute( "signedVector" );
+        REQUIRE( signedVectorAttribute.dtype == Datatype::VEC_STRING );
+        auto unsignedVectorAttribute = read.getAttribute( "unsignedVector" );
+        REQUIRE( unsignedVectorAttribute.dtype == Datatype::VEC_STRING );
+        auto unspecifiedVectorAttribute =
+            read.getAttribute( "unspecifiedVector" );
+        REQUIRE( unspecifiedVectorAttribute.dtype == Datatype::VEC_STRING );
+        std::vector< std::string > desiredVector{ "abc", "def", "ghi" };
+        REQUIRE(
+            signedVectorAttribute.get< std::vector< std::string > >() ==
+            desiredVector );
+        REQUIRE(
+            unsignedVectorAttribute.get< std::vector< std::string > >() ==
+            desiredVector );
+        REQUIRE(
+            unspecifiedVectorAttribute.get< std::vector< std::string > >() ==
+            desiredVector );
+
+        auto signedCharAttribute = read.getAttribute( "signedChar" );
+        // we don't have that datatype yet
+        // REQUIRE(unsignedCharAttribute.dtype == Datatype::SCHAR);
+        auto unsignedCharAttribute = read.getAttribute( "unsignedChar" );
+        REQUIRE( unsignedCharAttribute.dtype == Datatype::UCHAR );
+        auto charAttribute = read.getAttribute( "char" );
+        // might currently report Datatype::UCHAR on some platforms
+        // REQUIRE(unsignedCharAttribute.dtype == Datatype::CHAR);
+
+        REQUIRE( signedCharAttribute.get< char >() == char( 'a' ) );
+        REQUIRE( unsignedCharAttribute.get< char >() == char( 'a' ) );
+        REQUIRE( charAttribute.get< char >() == char( 'a' ) );
+    }
+}
+#endif
 
 void
 write_and_read_many_iterations( std::string const & ext ) {
