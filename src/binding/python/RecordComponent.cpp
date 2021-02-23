@@ -26,6 +26,7 @@
 #include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/binding/python/Numpy.hpp"
+#include "openPMD/DatatypeHelpers.hpp"
 
 #include <algorithm>
 #include <complex>
@@ -35,6 +36,7 @@
 #include <iostream>
 #include <string>
 #include <tuple>
+#include <type_traits>
 
 namespace py = pybind11;
 using namespace openPMD;
@@ -352,6 +354,214 @@ store_chunk(RecordComponent & r, py::array & a, py::tuple const & slices)
     store_chunk(r, a, offset, extent, flatten);
 }
 
+struct DynamicMemoryView
+{
+    using ShapeContainer = pybind11::array::ShapeContainer;
+
+    template< typename T >
+    DynamicMemoryView(
+        Span< T > span, ShapeContainer arrayShape, ShapeContainer strides )
+        : m_span(
+              std::shared_ptr< void >( new Span< T >( std::move( span ) ) ) )
+        , m_arrayShape( std::move( arrayShape ) )
+        , m_strides( std::move( strides ) )
+        , m_datatype( determineDatatype< T >() )
+    {
+    }
+
+    pybind11::memoryview currentView() const;
+
+    std::shared_ptr< void > m_span;
+    ShapeContainer m_arrayShape;
+    ShapeContainer m_strides;
+    Datatype m_datatype;
+};
+
+namespace
+{
+struct CurrentView
+{
+    template< typename T >
+    pybind11::memoryview operator()( DynamicMemoryView const & dynamicView )
+    {
+        auto & span = *static_cast< Span< T > * >( dynamicView.m_span.get() );
+        return py::memoryview::from_buffer(
+            span.data(),
+            dynamicView.m_arrayShape,
+            dynamicView.m_strides,
+            /* readonly = */ false );
+    }
+
+    std::string errorMsg = "DynamicMemoryView";
+};
+
+template<>
+pybind11::memoryview
+CurrentView::operator()< std::string >( DynamicMemoryView const & )
+{
+    throw std::runtime_error( "[DynamicMemoryView] Only PODs allowed." );
+}
+} // namespace
+
+pybind11::memoryview DynamicMemoryView::currentView() const
+{
+    static CurrentView cv;
+    return switchNonVectorType( m_datatype, cv, *this );
+}
+
+namespace
+{
+struct StoreChunkSpan
+{
+    template< typename T >
+    DynamicMemoryView operator()(
+        RecordComponent & r, Offset const & offset, Extent const & extent )
+    {
+        Span< T > span = r.storeChunk< T >( offset, extent );
+        pybind11::array::ShapeContainer arrayShape(
+            extent.begin(), extent.end() );
+        std::vector< py::ssize_t > strides( extent.size() );
+        {
+            py::ssize_t accumulator = sizeof( T );
+            size_t dim = extent.size();
+            while( dim > 0 )
+            {
+                --dim;
+                strides[ dim ] = accumulator;
+                accumulator *= extent[ dim ];
+            }
+        }
+        return DynamicMemoryView(
+            std::move( span ),
+            std::move( arrayShape ),
+            py::array::ShapeContainer( std::move( strides ) ) );
+    }
+
+    std::string errorMsg = "RecordComponent.store_chunk()";
+};
+
+template<>
+DynamicMemoryView StoreChunkSpan::operator()< std::string >(
+    RecordComponent &, Offset const &, Extent const & )
+{
+    throw std::runtime_error(
+        "[RecordComponent.store_chunk()] Only PODs allowed." );
+}
+} // namespace
+
+inline DynamicMemoryView store_chunk_span(
+    RecordComponent & r,
+    Offset const & offset,
+    Extent const & extent,
+    std::vector< bool > const & flatten )
+{
+    // some one-size dimensions might be flattended in our output due to
+    // selections by index
+    size_t const numFlattenDims =
+        std::count( flatten.begin(), flatten.end(), true );
+    std::vector< ptrdiff_t > shape( extent.size() - numFlattenDims );
+    auto maskIt = flatten.begin();
+    std::copy_if(
+        std::begin( extent ),
+        std::end( extent ),
+        std::begin( shape ),
+        [ &maskIt ]( std::uint64_t ) { return !*( maskIt++ ); } );
+
+    static StoreChunkSpan scs;
+    return switchNonVectorType( r.getDatatype(), scs, r, offset, extent );
+}
+
+inline DynamicMemoryView
+store_chunk_span( RecordComponent & r, py::tuple const & slices )
+{
+    uint8_t ndim = r.getDimensionality();
+    auto const full_extent = r.getExtent();
+
+    Offset offset;
+    Extent extent;
+    std::vector< bool > flatten;
+    std::tie( offset, extent, flatten ) =
+        parseTupleSlices( ndim, full_extent, slices );
+
+    return store_chunk_span( r, offset, extent, flatten );
+}
+
+/** Load Chunk
+ *
+ * Called with offset and extent that are already in the record component's
+ * dimension.
+ *
+ * Size checks of the requested chunk (spanned data is in valid bounds)
+ * will be performed at C++ API part in RecordComponent::loadChunk .
+ */
+void
+load_chunk(RecordComponent & r, py::buffer & buffer, Offset const & offset, Extent const & extent)
+{
+    auto const dtype = dtype_to_numpy( r.getDatatype() );
+    py::buffer_info buffer_info = buffer.request( /* writable = */ true );
+
+    auto const & strides = buffer_info.strides;
+    // this function requires a contiguous slab of memory, so check the strides
+    // whether we have that
+    if( strides.size() == 0 )
+    {
+        throw std::runtime_error(
+            "[Record_Component::load_chunk()] Empty buffer passed." );
+    }
+    {
+        py::ssize_t accumulator = toBytes( r.getDatatype() );
+        size_t dim = strides.size();
+        while( dim > 0 )
+        {
+            --dim;
+            if( strides[ dim ] != accumulator )
+            {
+                throw std::runtime_error(
+                    "[Record_Component::load_chunk()] Requires contiguous slab"
+                    " of memory." );
+            }
+            accumulator *= extent[ dim ];
+        }
+    }
+
+    if( r.getDatatype() == Datatype::CHAR )
+        r.loadChunk<char>(shareRaw((char*) buffer_info.ptr), offset, extent);
+    else if( r.getDatatype() == Datatype::UCHAR )
+        r.loadChunk<unsigned char>(shareRaw((unsigned char*) buffer_info.ptr), offset, extent);
+    else if( r.getDatatype() == Datatype::SHORT )
+        r.loadChunk<short>(shareRaw((short*) buffer_info.ptr), offset, extent);
+    else if( r.getDatatype() == Datatype::INT )
+        r.loadChunk<int>(shareRaw((int*) buffer_info.ptr), offset, extent);
+    else if( r.getDatatype() == Datatype::LONG )
+        r.loadChunk<long>(shareRaw((long*) buffer_info.ptr), offset, extent);
+    else if( r.getDatatype() == Datatype::LONGLONG )
+        r.loadChunk<long long>(shareRaw((long long*) buffer_info.ptr), offset, extent);
+    else if( r.getDatatype() == Datatype::USHORT )
+        r.loadChunk<unsigned short>(shareRaw((unsigned short*) buffer_info.ptr), offset, extent);
+    else if( r.getDatatype() == Datatype::UINT )
+        r.loadChunk<unsigned int>(shareRaw((unsigned int*) buffer_info.ptr), offset, extent);
+    else if( r.getDatatype() == Datatype::ULONG )
+        r.loadChunk<unsigned long>(shareRaw((unsigned long*) buffer_info.ptr), offset, extent);
+    else if( r.getDatatype() == Datatype::ULONGLONG )
+        r.loadChunk<unsigned long long>(shareRaw((unsigned long long*) buffer_info.ptr), offset, extent);
+    else if( r.getDatatype() == Datatype::LONG_DOUBLE )
+        r.loadChunk<long double>(shareRaw((long double*) buffer_info.ptr), offset, extent);
+    else if( r.getDatatype() == Datatype::DOUBLE )
+        r.loadChunk<double>(shareRaw((double*) buffer_info.ptr), offset, extent);
+    else if( r.getDatatype() == Datatype::FLOAT )
+        r.loadChunk<float>(shareRaw((float*) buffer_info.ptr), offset, extent);
+    else if( r.getDatatype() == Datatype::CLONG_DOUBLE )
+        r.loadChunk<std::complex<long double>>(shareRaw((std::complex<long double>*) buffer_info.ptr), offset, extent);
+    else if( r.getDatatype() == Datatype::CDOUBLE )
+        r.loadChunk<std::complex<double>>(shareRaw((std::complex<double>*) buffer_info.ptr), offset, extent);
+    else if( r.getDatatype() == Datatype::CFLOAT )
+        r.loadChunk<std::complex<float>>(shareRaw((std::complex<float>*) buffer_info.ptr), offset, extent);
+    else if( r.getDatatype() == Datatype::BOOL )
+        r.loadChunk<bool>(shareRaw((bool*) buffer_info.ptr), offset, extent);
+    else
+        throw std::runtime_error(std::string("Datatype not known in 'loadChunk'!"));
+}
+
 /** Load Chunk
  *
  * Called with offset and extent that are already in the record component's
@@ -476,6 +686,20 @@ load_chunk(RecordComponent & r, py::tuple const & slices)
 }
 
 void init_RecordComponent(py::module &m) {
+    py::class_<DynamicMemoryView>(m, "Dynamic_Memory_View")
+        // @todo implement __setitem__
+        .def("__repr__",
+            [](DynamicMemoryView const & view) {
+                return "<openPMD.Dynamic_Memory_view of dimensionality '"
+                    + std::to_string(view.m_arrayShape->size()) + "'>";
+            }
+        )
+        .def("current_buffer",
+            [](DynamicMemoryView const & view) {
+                return view.currentView();
+            }
+        );
+
     py::class_<RecordComponent, BaseRecordComponent>(m, "Record_Component")
         .def("__repr__",
             [](RecordComponent const & rc) {
@@ -684,6 +908,38 @@ void init_RecordComponent(py::module &m) {
             py::arg_v("offset", Offset(1,  0u), "np.zeros(Record_Component.shape)"),
             py::arg_v("extent", Extent(1, -1u), "Record_Component.shape")
         )
+        .def("load_chunk", [](
+                RecordComponent & r,
+                py::buffer buffer,
+                Offset const & offset_in,
+                Extent const & extent_in)
+        {
+            uint8_t ndim = r.getDimensionality();
+
+            // default arguments
+            //   offset = {0u}: expand to right dim {0u, 0u, ...}
+            Offset offset = offset_in;
+            if( offset_in.size() == 1u && offset_in.at(0) == 0u )
+                offset = Offset(ndim, 0u);
+
+            //   extent = {-1u}: take full size
+            Extent extent(ndim, 1u);
+            if( extent_in.size() == 1u && extent_in.at(0) == -1u )
+            {
+                extent = r.getExtent();
+                for( uint8_t i = 0u; i < ndim; ++i )
+                    extent[i] -= offset[i];
+            }
+            else
+                extent = extent_in;
+
+            std::vector<bool> flatten(ndim, false);
+            load_chunk(r, buffer, offset, extent);
+        },
+            py::arg("pre-allocated buffer"),
+            py::arg_v("offset", Offset(1,  0u), "np.zeros(Record_Component.shape)"),
+            py::arg_v("extent", Extent(1, -1u), "Record_Component.shape")
+        )
 
         // deprecated: pass-through C++ API
         .def("store_chunk", [](RecordComponent & r, py::array & a, Offset const & offset_in, Extent const & extent_in) {
@@ -705,6 +961,29 @@ void init_RecordComponent(py::module &m) {
             store_chunk(r, a, offset, extent, flatten);
         },
             py::arg("array"),
+            py::arg_v("offset", Offset(1,  0u), "np.zeros_like(array)"),
+            py::arg_v("extent", Extent(1, -1u), "array.shape")
+        )
+        .def("store_chunk", [](RecordComponent & r, Offset const & offset_in, Extent const & extent_in) {
+            // default arguments
+            //   offset = {0u}: expand to right dim {0u, 0u, ...}
+            unsigned dimensionality = r.getDimensionality();
+            Extent const & totalExtent = r.getExtent();
+            Offset offset = offset_in;
+            if( offset_in.size() == 1u && offset_in.at(0) == 0u && dimensionality > 1u )
+                offset = Offset(dimensionality, 0u);
+
+            //   extent = {-1u}: take full size
+            Extent extent(dimensionality, 1u);
+            if( extent_in.size() == 1u && extent_in.at(0) == -1u )
+                for( unsigned d = 0; d < dimensionality; ++d )
+                    extent.at(d) = totalExtent[d];
+            else
+                extent = extent_in;
+
+            std::vector<bool> flatten(r.getDimensionality(), false);
+            return store_chunk_span(r, offset, extent, flatten);
+        },
             py::arg_v("offset", Offset(1,  0u), "np.zeros_like(array)"),
             py::arg_v("extent", Extent(1, -1u), "array.shape")
         )

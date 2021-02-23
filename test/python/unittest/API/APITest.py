@@ -1625,6 +1625,14 @@ class APITest(unittest.TestCase):
             E_x = it.meshes["E"]["x"]
             E_x.reset_dataset(DS(np.dtype("int"), extent))
             E_x.store_chunk(data, [0], extent)
+
+            E_y = it.meshes["E"]["y"]
+            E_y.reset_dataset(DS(np.dtype("int"), [2, 2]))
+            span = E_y.store_chunk().current_buffer()
+            span[0, 0] = 0
+            span[0, 1] = 1
+            span[1, 0] = 2
+            span[1, 1] = 3
             it.close()
             del it
 
@@ -1641,10 +1649,16 @@ class APITest(unittest.TestCase):
             lastIterationIndex = it.iteration_index
             E_x = it.meshes["E"]["x"]
             chunk = E_x.load_chunk([0], extent)
+            E_y = it.meshes["E"]["y"]
+            chunk2 = E_y.load_chunk([0, 0], [2, 2])
             it.close()
 
             for i in range(len(data)):
                 self.assertEqual(data[i], chunk[i])
+            self.assertEqual(chunk2[0, 0], 0)
+            self.assertEqual(chunk2[0, 1], 1)
+            self.assertEqual(chunk2[1, 0], 2)
+            self.assertEqual(chunk2[1, 1], 3)
         del read
         self.assertEqual(lastIterationIndex, 9)
 
