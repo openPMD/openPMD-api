@@ -20,6 +20,8 @@
  */
 #pragma once
 
+#include "openPMD/IO/AbstractIOHandler.hpp"
+
 #include <string>
 #include <memory>
 
@@ -105,6 +107,7 @@ public:
     void seriesFlush();
 
 OPENPMD_private:
+    void seriesFlush( FlushLevel );
     /*
      * These members need to be shared pointers since distinct instances of
      * Writable may share them.

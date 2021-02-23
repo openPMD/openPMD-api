@@ -56,6 +56,28 @@ public:
     virtual ~unsupported_data_error() { }
 };
 
+/**
+ * @brief Determine what items should be flushed upon Series::flush()
+ *
+ */
+enum class FlushLevel : unsigned char
+{
+    UserFlush,
+    /**
+     * Default mode, flush everything that can be flushed
+     * Does not need to uphold user-level guarantees about clearing and filling
+     * buffers. Spans must not yet be read.
+     */
+    FlushEverything,
+    /**
+     * Restricted mode, flush all objects in the openPMD hierarchy to the
+     * backend, i.e. open paths and create files.
+     * Do not flush record components / datasets.
+     * Attributes may or may not be flushed yet.
+     */
+    SkeletonOnly
+};
+
 
 /** Interface for communicating between logical and physically persistent data.
  *
@@ -104,6 +126,7 @@ public:
     Access const m_backendAccess;
     Access const m_frontendAccess;
     std::queue< IOTask > m_work;
+    FlushLevel m_flushLevel = FlushLevel::FlushEverything;
 }; // AbstractIOHandler
 
 } // namespace openPMD

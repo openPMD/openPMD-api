@@ -238,14 +238,21 @@ private:
      * @return true If dirty.
      * @return false Otherwise.
      */
-    bool
-    dirtyRecursive() const;
+    bool dirtyRecursive() const;
 
 protected:
     /**
      * Make sure to parse a RecordComponent only once.
      */
     std::shared_ptr< bool > hasBeenRead = std::make_shared< bool >( false );
+    /**
+     * The same std::string that the parent class would pass as parameter to
+     * RecordComponent::flush().
+     * This is stored only upon RecordComponent::flush() if
+     * AbstractIOHandler::flushLevel is set to FlushLevel::SkeletonOnly
+     * (for use by the Span<T>-based overload of RecordComponent::storeChunk()).
+     */
+    std::shared_ptr< std::string > m_name = std::make_shared< std::string >();
 }; // RecordComponent
 
 
