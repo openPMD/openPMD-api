@@ -441,12 +441,7 @@ namespace openPMD
                 const Parameter< Operation::WRITE_DATASET > & parameters
             );
 
-            template< int n >
-            void operator()(
-                nlohmann::json & json,
-                const Parameter< Operation::WRITE_DATASET > & parameters
-            );
-
+            std::string errorMsg = "JSON: writeDataset";
         };
 
         struct DatasetReader
@@ -457,11 +452,7 @@ namespace openPMD
                 Parameter< Operation::READ_DATASET > & parameters
             );
 
-            template< int n >
-            void operator()(
-                nlohmann::json & json,
-                Parameter< Operation::READ_DATASET > & parameters
-            );
+            std::string errorMsg = "JSON: readDataset";
         };
 
         struct AttributeWriter
@@ -472,12 +463,7 @@ namespace openPMD
                 Attribute::resource const &
             );
 
-            template< int n >
-            void operator()(
-                nlohmann::json &,
-                Attribute::resource const &
-            );
-
+            std::string errorMsg = "JSON: writeAttribute";
         };
 
         struct AttributeReader
@@ -488,12 +474,7 @@ namespace openPMD
                 Parameter< Operation::READ_ATT > &
             );
 
-            template< int n >
-            void operator()(
-                nlohmann::json &,
-                Parameter< Operation::READ_ATT > &
-            );
-
+            std::string errorMsg = "JSON: writeAttribute";
         };
 
         template< typename T >

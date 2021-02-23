@@ -390,7 +390,7 @@ void ADIOS2IOHandlerImpl::createDataset(
         adios2::Dims const shape( parameters.extent.begin(), parameters.extent.end() );
 
         auto & fileData = getFileData( file );
-        switchType(
+        switchAdios2VariableType(
             parameters.dtype,
             detail::VariableDefiner(),
             fileData.m_IO,
@@ -495,8 +495,12 @@ void ADIOS2IOHandlerImpl::openDataset(
     auto varName = nameOfVariable( writable );
     *parameters.dtype = detail::fromADIOS2Type(
         getFileData( file ).m_IO.VariableType( varName ) );
-    switchType( *parameters.dtype, detail::DatasetOpener( this ), file, varName,
-                parameters );
+    switchAdios2VariableType(
+        *parameters.dtype,
+        detail::DatasetOpener( this ),
+        file,
+        varName,
+        parameters );
     writable->written = true;
 }
 
@@ -896,7 +900,8 @@ ADIOS2IOHandlerImpl::availableChunks(
     auto engine = ba.getEngine( ); // make sure that data are present
     auto datatype = detail::fromADIOS2Type( ba.m_IO.VariableType( varName ) );
     static detail::RetrieveBlocksInfo rbi;
-    switchType( datatype, rbi, parameters, ba.m_IO, engine, varName );
+    switchAdios2VariableType(
+        datatype, rbi, parameters, ba.m_IO, engine, varName );
 }
 
 adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode( )
@@ -1100,14 +1105,16 @@ namespace detail
                                      adios2::Engine & engine,
                                      std::string const & fileName )
     {
-        DatasetHelper< T >{m_impl}.readDataset( bp, IO, engine, fileName );
-    }
-
-    template < int n, typename... Params >
-    void DatasetReader::operator( )( Params &&... )
-    {
-        throw std::runtime_error(
-            "[ADIOS2] Internal error: Unknown datatype trying to read a dataset." );
+        adios2::Variable< T > var = m_impl->verifyDataset< T >(
+            bp.param.offset, bp.param.extent, IO, bp.name );
+        if ( !var )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Failed retrieving ADIOS2 Variable with name '" + bp.name +
+                "' from file " + fileName + "." );
+        }
+        auto ptr = std::static_pointer_cast< T >( bp.param.data ).get( );
+        engine.Get( var, ptr );
     }
 
     template< typename T >
@@ -1310,14 +1317,22 @@ namespace detail
     operator( )( InvalidatableFile file, const std::string & varName,
                  Parameter< Operation::OPEN_DATASET > & parameters )
     {
-        DatasetHelper< T >{m_impl}.openDataset( file, varName, parameters );
-    }
+        auto & fileData = m_impl->getFileData( file );
+        fileData.requireActiveStep();
+        auto & IO = fileData.m_IO;
+        adios2::Variable< T > var = IO.InquireVariable< T >( varName );
+        if ( !var )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Failed retrieving ADIOS2 Variable with name '" + varName +
+                "' from file " + *file + "." );
+        }
 
-    template < int n, typename... Params >
-    void DatasetOpener::operator( )( Params &&... )
-    {
-        throw std::runtime_error(
-            "[ADIOS2] Unknown datatype while trying to open dataset." );
+        // cast from adios2::Dims to openPMD::Extent
+        auto const shape = var.Shape();
+        parameters.extent->clear();
+        parameters.extent->reserve( shape.size() );
+        std::copy( shape.begin(), shape.end(), std::back_inserter(*parameters.extent) );
     }
 
     WriteDataset::WriteDataset( ADIOS2IOHandlerImpl * handlerImpl )
@@ -1329,8 +1344,16 @@ namespace detail
     void WriteDataset::operator( )( detail::BufferedPut & bp, adios2::IO & IO,
                                     adios2::Engine & engine )
     {
-        DatasetHelper< T > dh{m_handlerImpl};
-        dh.writeDataset( bp, IO, engine );
+        VERIFY_ALWAYS( m_handlerImpl->m_handler->m_backendAccess !=
+                           Access::READ_ONLY,
+                       "[ADIOS2] Cannot write data in read-only mode." );
+
+        auto ptr = std::static_pointer_cast< const T >( bp.param.data ).get( );
+
+        adios2::Variable< T > var = m_handlerImpl->verifyDataset< T >(
+            bp.param.offset, bp.param.extent, IO, bp.name );
+
+        engine.Put( var, ptr );
     }
 
     template < int n, typename... Params >
@@ -1339,26 +1362,59 @@ namespace detail
         throw std::runtime_error( "[ADIOS2] WRITE_DATASET: Invalid datatype." );
     }
 
-    template < typename T, typename... Params >
-    void VariableDefiner::
-    operator( )( Params &&... params )
+    template < typename T >
+    void VariableDefiner::operator( )(
+        adios2::IO & IO,
+        std::string const & name,
+        std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > const &
+            compressions,
+        adios2::Dims const & shape,
+        adios2::Dims const & start,
+        adios2::Dims const & count,
+        bool const constantDims )
     {
-        DatasetHelper< T >::defineVariable(
-            std::forward< Params >( params )... );
+        adios2::Variable< T > var =
+            IO.DefineVariable< T >( name, shape, start, count, constantDims );
+        if ( !var )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: Could not create Variable '" + name + "'." );
+        }
+        for( auto const & compression : compressions )
+        {
+            if( compression.op )
+            {
+                var.AddOperation( compression.op, compression.params );
+            }
+        }
     }
 
-    template< int n, typename... Params >
-    void
-    VariableDefiner::operator()( Params &&... )
+    template < typename T >
+    void RetrieveBlocksInfo::operator( )(
+            Parameter< Operation::AVAILABLE_CHUNKS > & params,
+            adios2::IO & IO,
+            adios2::Engine & engine,
+            std::string const & varName )
     {
-        throw std::runtime_error(
-            "[ADIOS2] Defining a variable with undefined type." );
-    }
-
-    template < typename T, typename... Params >
-    void RetrieveBlocksInfo::operator( )( Params &&... params )
-    {
-        DatasetHelper< T >::blocksInfo( std::forward< Params >( params )... );
+        auto var = IO.InquireVariable< T >( varName );
+        auto blocksInfo = engine.BlocksInfo< T >( var, engine.CurrentStep() );
+        auto & table = *params.chunks;
+        table.reserve( blocksInfo.size() );
+        for( auto const & info : blocksInfo )
+        {
+            Offset offset;
+            Extent extent;
+            auto size = info.Start.size();
+            offset.reserve( size );
+            extent.reserve( size );
+            for( unsigned i = 0; i < size; ++i )
+            {
+                offset.push_back( info.Start[ i ] );
+                extent.push_back( info.Count[ i ] );
+            }
+            table.emplace_back(
+                std::move( offset ), std::move( extent ), info.WriterID );
+        }
     }
 
     template < int n, typename... Args >
@@ -1771,200 +1827,9 @@ namespace detail
         *resource = fromRep( *attr.data );
     }
 
-    template < typename T >
-    DatasetHelper<
-        T, typename std::enable_if< DatasetTypes< T >::validType >::type >::
-        DatasetHelper( openPMD::ADIOS2IOHandlerImpl * impl )
-    : m_impl{impl}
-    {
-    }
-
-    template < typename T >
-    void DatasetHelper<
-        T, typename std::enable_if< DatasetTypes< T >::validType >::type >::
-        openDataset( InvalidatableFile file, const std::string & varName,
-                     Parameter< Operation::OPEN_DATASET > & parameters )
-    {
-        auto & fileData = m_impl->getFileData( file );
-        fileData.requireActiveStep();
-        auto & IO = fileData.m_IO;
-        adios2::Variable< T > var = IO.InquireVariable< T >( varName );
-        if ( !var )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Failed retrieving ADIOS2 Variable with name '" + varName +
-                "' from file " + *file + "." );
-        }
-
-        // cast from adios2::Dims to openPMD::Extent
-        auto const shape = var.Shape();
-        parameters.extent->clear();
-        parameters.extent->reserve( shape.size() );
-        std::copy( shape.begin(), shape.end(), std::back_inserter(*parameters.extent) );
-    }
-
-    template < typename T >
-    void DatasetHelper<
-        T, typename std::enable_if< DatasetTypes< T >::validType >::type >::
-        readDataset( detail::BufferedGet & bp, adios2::IO & IO,
-                     adios2::Engine & engine, std::string const & fileName )
-    {
-        adios2::Variable< T > var = m_impl->verifyDataset< T >(
-            bp.param.offset, bp.param.extent, IO, bp.name );
-        if ( !var )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Failed retrieving ADIOS2 Variable with name '" + bp.name +
-                "' from file " + fileName + "." );
-        }
-        auto ptr = std::static_pointer_cast< T >( bp.param.data ).get( );
-        engine.Get( var, ptr );
-    }
-
-    template< typename T >
-    void
-    DatasetHelper<
-        T,
-        typename std::enable_if< DatasetTypes< T >::validType >::type >::
-        defineVariable(
-            adios2::IO & IO,
-            const std::string & name,
-            std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > const &
-                compressions,
-            const adios2::Dims & shape,
-            const adios2::Dims & start,
-            const adios2::Dims & count,
-            const bool constantDims )
-    {
-        adios2::Variable< T > var =
-            IO.DefineVariable< T >( name, shape, start, count, constantDims );
-        if ( !var )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Could not create Variable '" + name + "'." );
-        }
-        for( auto const & compression : compressions )
-        {
-            if( compression.op )
-            {
-                var.AddOperation( compression.op, compression.params );
-            }
-        }
-    }
-
-    template < typename T >
-    void DatasetHelper<
-        T, typename std::enable_if< DatasetTypes< T >::validType >::type >::
-        writeDataset( detail::BufferedPut & bp, adios2::IO & IO,
-                      adios2::Engine & engine )
-    {
-        VERIFY_ALWAYS( m_impl->m_handler->m_backendAccess !=
-                           Access::READ_ONLY,
-                       "[ADIOS2] Cannot write data in read-only mode." );
-
-        auto ptr = std::static_pointer_cast< const T >( bp.param.data ).get( );
-
-        adios2::Variable< T > var = m_impl->verifyDataset< T >(
-            bp.param.offset, bp.param.extent, IO, bp.name );
-
-        engine.Put( var, ptr );
-    }
-
-    template < typename T >
-    void DatasetHelper<
-        T, typename std::enable_if< DatasetTypes< T >::validType >::type >::
-        blocksInfo(
-            Parameter< Operation::AVAILABLE_CHUNKS > & params,
-            adios2::IO & IO,
-            adios2::Engine & engine,
-            std::string const & varName)
-    {
-        auto var = IO.InquireVariable< T >( varName );
-        auto blocksInfo = engine.BlocksInfo< T >( var, engine.CurrentStep() );
-        auto & table = *params.chunks;
-        table.reserve( blocksInfo.size() );
-        for( auto const & info : blocksInfo )
-        {
-            Offset offset;
-            Extent extent;
-            auto size = info.Start.size();
-            offset.reserve( size );
-            extent.reserve( size );
-            for( unsigned i = 0; i < size; ++i )
-            {
-                offset.push_back( info.Start[ i ] );
-                extent.push_back( info.Count[ i ] );
-            }
-            table.emplace_back(
-                std::move( offset ), std::move( extent ), info.WriterID );
-        }
-    }
-
-    template< typename T >
-    DatasetHelper<
-        T, typename std::enable_if< !DatasetTypes< T >::validType >::type >::
-        DatasetHelper( openPMD::ADIOS2IOHandlerImpl * )
-    {
-    }
-
-    template < typename T >
-    void DatasetHelper< T,
-                        typename std::enable_if<
-                            !DatasetTypes< T >::validType >::type >::throwErr( )
-    {
-        throw std::runtime_error(
-            "[ADIOS2] Trying to access dataset with unallowed datatype: " +
-            datatypeToString( determineDatatype< T >( ) ) );
-    }
-
-    template < typename T >
-    template < typename... Params >
-    void DatasetHelper<
-        T, typename std::enable_if< !DatasetTypes< T >::validType >::type >::
-        openDataset( Params &&... )
-    {
-        throwErr( );
-    }
-
-    template < typename T >
-    template < typename... Params >
-    void DatasetHelper<
-        T, typename std::enable_if< !DatasetTypes< T >::validType >::type >::
-        readDataset( Params &&... )
-    {
-        throwErr( );
-    }
-
-    template < typename T >
-    template < typename... Params >
-    void DatasetHelper<
-        T, typename std::enable_if< !DatasetTypes< T >::validType >::type >::
-        defineVariable( Params &&... )
-    {
-        throwErr( );
-    }
-
-    template < typename T >
-    template < typename... Params >
-    void DatasetHelper<
-        T, typename std::enable_if< !DatasetTypes< T >::validType >::type >::
-        writeDataset( Params &&... )
-    {
-        throwErr( );
-    }
-
-    template < typename T >
-    template < typename... Params >
-    void DatasetHelper<
-        T, typename std::enable_if< !DatasetTypes< T >::validType >::type >::
-        blocksInfo( Params &&... )
-    {
-        throwErr( );
-    }
-
     void BufferedGet::run( BufferedActions & ba )
     {
-        switchType(
+        switchAdios2VariableType(
             param.dtype,
             ba.m_readDataset,
             *this,
@@ -1976,8 +1841,8 @@ namespace detail
     void
     BufferedPut::run( BufferedActions & ba )
     {
-        switchType( param.dtype, ba.m_writeDataset, *this, ba.m_IO,
-                    ba.getEngine( ) );
+        switchAdios2VariableType(
+            param.dtype, ba.m_writeDataset, *this, ba.m_IO, ba.getEngine() );
     }
 
     void
@@ -1992,7 +1857,7 @@ namespace detail
                 ") not found in backend." );
         }
 
-        Datatype ret = switchType< Datatype >(
+        Datatype ret = switchType(
             type, detail::OldAttributeReader{}, ba.m_IO, name, param.resource );
         *param.dtype = ret;
     }
@@ -2013,7 +1878,7 @@ namespace detail
                 ") not found in backend." );
         }
 
-        Datatype ret = switchType< Datatype >(
+        Datatype ret = switchType(
             type,
             detail::AttributeReader{},
             ba.m_IO,

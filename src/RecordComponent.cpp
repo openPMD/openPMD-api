@@ -21,6 +21,7 @@
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Dataset.hpp"
+#include "openPMD/DatatypeHelpers.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -101,7 +102,7 @@ RecordComponent&
 RecordComponent::makeEmpty( Datatype dt, uint8_t dimensions )
 {
     static detail::MakeEmpty me;
-    return switchType< RecordComponent & >( dt, me, *this, dimensions );
+    return switchType( dt, me, *this, dimensions );
 }
 
 RecordComponent&

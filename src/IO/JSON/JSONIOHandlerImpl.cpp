@@ -25,6 +25,7 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/Datatype.hpp"
+#include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/IO/JSON/JSONIOHandlerImpl.hpp"
 
 #include <exception>
@@ -1645,16 +1646,6 @@ namespace openPMD
     }
 
 
-    template< int n >
-    void JSONIOHandlerImpl::DatasetWriter::operator()(
-        nlohmann::json &,
-        const Parameter< Operation::WRITE_DATASET > &
-    )
-    {
-        throw std::runtime_error( "[JSON] Unknown datatype given for writing." );
-    }
-
-
     template< typename T >
     void JSONIOHandlerImpl::DatasetReader::operator()(
         nlohmann::json & json,
@@ -1682,16 +1673,6 @@ namespace openPMD
     }
 
 
-    template< int n >
-    void JSONIOHandlerImpl::DatasetReader::operator()(
-        nlohmann::json &,
-        Parameter< Operation::READ_DATASET > &
-    )
-    {
-        throw std::runtime_error( "[JSON] Unknown datatype while reading a dataset." );
-    }
-
-
     template< typename T >
     void JSONIOHandlerImpl::AttributeWriter::operator()(
         nlohmann::json & value,
@@ -1700,26 +1681,6 @@ namespace openPMD
     {
         CppToJSON< T > ctj;
         value = ctj( variantSrc::get< T >( resource ) );
-    }
-
-
-    template< int n >
-    void JSONIOHandlerImpl::AttributeWriter::operator()(
-        nlohmann::json &,
-        Attribute::resource const &
-    )
-    {
-        throw std::runtime_error( "[JSON] Unknown datatype in attribute writing." );
-    }
-
-
-    template< int n >
-    void JSONIOHandlerImpl::AttributeReader::operator()(
-        nlohmann::json &,
-        Parameter< Operation::READ_ATT > &
-    )
-    {
-        throw std::runtime_error( "[JSON] Unknown datatype while reading attribute." );
     }
 
 

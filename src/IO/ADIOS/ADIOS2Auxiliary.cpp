@@ -23,6 +23,7 @@
 #if openPMD_HAVE_ADIOS2
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/Datatype.hpp"
+
 #include <iostream>
 
 namespace openPMD
@@ -120,7 +121,7 @@ namespace detail
 
     template< typename T >
     Extent
-    AttributeInfoHelper< T >::getSize(
+    AttributeInfo::operator()(
         adios2::IO & IO,
         std::string const & attributeName,
         VariableOrAttribute voa )
@@ -157,34 +158,6 @@ namespace detail
             default:
                 throw std::runtime_error( "[ADIOS2] Unreachable!" );
         }
-    }
-
-    template< typename T >
-    Extent
-    AttributeInfoHelper< std::vector< T > >::getSize(
-        adios2::IO & IO,
-        std::string const & attributeName,
-        VariableOrAttribute voa )
-    {
-        return AttributeInfoHelper< T >::getSize( IO, attributeName, voa );
-    }
-
-    Extent
-    AttributeInfoHelper< bool >::getSize(
-        adios2::IO & IO,
-        std::string const & attributeName,
-        VariableOrAttribute voa )
-    {
-        return AttributeInfoHelper< bool_representation >::getSize(
-            IO, attributeName, voa );
-    }
-
-    template< typename T, typename... Params >
-    Extent
-    AttributeInfo::operator()( Params &&... params )
-    {
-        return AttributeInfoHelper< T >::getSize(
-            std::forward< Params >( params )... );
     }
 
     template< int n, typename... Params >
@@ -225,8 +198,8 @@ namespace detail
         {
             static AttributeInfo ai;
             Datatype basicType = fromADIOS2Type( type );
-            Extent shape =
-                switchType< Extent >( basicType, ai, IO, attributeName, voa );
+            Extent shape = switchAdios2AttributeType(
+                basicType, ai, IO, attributeName, voa );
 
             switch( voa )
             {
