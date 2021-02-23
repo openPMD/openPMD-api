@@ -62,6 +62,7 @@ class ADIOS2IOHandler;
 namespace detail
 {
     template < typename, typename > struct DatasetHelper;
+    struct GetSpan;
     struct DatasetReader;
     struct AttributeReader;
     struct AttributeWriter;
@@ -104,6 +105,7 @@ class ADIOS2IOHandlerImpl
 : public AbstractIOHandlerImplCommon< ADIOS2FilePosition >
 {
     template < typename, typename > friend struct detail::DatasetHelper;
+    friend struct detail::GetSpan;
     friend struct detail::DatasetReader;
     friend struct detail::AttributeReader;
     friend struct detail::AttributeWriter;
@@ -192,6 +194,9 @@ public:
 
     void readDataset( Writable *,
                       Parameter< Operation::READ_DATASET > & ) override;
+
+    void getBufferView( Writable *,
+                      Parameter< Operation::GET_BUFFER_VIEW > & ) override;
 
     void readAttribute( Writable *,
                         Parameter< Operation::READ_ATT > & ) override;
@@ -951,7 +956,14 @@ namespace detail
      */
     struct BufferedAction
     {
+        explicit BufferedAction( ) = default;
         virtual ~BufferedAction( ) = default;
+
+        BufferedAction( BufferedAction const & other ) = delete;
+        BufferedAction( BufferedAction && other ) = default;
+
+        BufferedAction & operator=( BufferedAction const & other ) = delete;
+        BufferedAction & operator=( BufferedAction && other ) = default;
 
         virtual void run( BufferedActions & ) = 0;
     };
@@ -989,15 +1001,30 @@ namespace detail
         run( BufferedActions & );
     };
 
-    struct BufferedAttributeWrite
+    struct BufferedAttributeWrite : BufferedAction
     {
         std::string name;
         Datatype dtype;
         Attribute::resource resource;
         std::vector< char > bufferForVecString;
 
-        void
-        run( BufferedActions & );
+        void run( BufferedActions & ) override;
+    };
+
+    struct I_UpdateSpan
+    {
+        virtual void *update() = 0;
+        virtual ~I_UpdateSpan() = default;
+    };
+
+    template< typename T >
+    struct UpdateSpan : I_UpdateSpan
+    {
+        adios2::detail::Span< T > span;
+
+        UpdateSpan( adios2::detail::Span< T > );
+
+        void *update() override;
     };
 
     /*
@@ -1041,7 +1068,9 @@ namespace detail
         std::vector< std::unique_ptr< BufferedAction > > m_buffer;
         std::map< std::string, BufferedAttributeWrite > m_attributeWrites;
         std::vector< BufferedAttributeRead > m_attributeReads;
+        std::vector< std::unique_ptr< BufferedAction > > m_alreadyEnqueued;
         adios2::Mode m_mode;
+        std::map< unsigned, std::unique_ptr< I_UpdateSpan > > m_updateSpans;
         detail::WriteDataset const m_writeDataset;
         detail::DatasetReader const m_readDataset;
         detail::AttributeReader const m_attributeReader;
@@ -1089,6 +1118,7 @@ namespace detail
         /**
          * Flush deferred IO actions.
          *
+         * @param level Flush Level. Only execute performPutsGets if UserFlush.
          * @param performPutsGets A functor that takes as parameters (1) *this
          *     and (2) the ADIOS2 engine.
          *     Its task is to ensure that ADIOS2 performs Put/Get operations.
@@ -1104,6 +1134,7 @@ namespace detail
         template< typename F >
         void
         flush(
+            FlushLevel level,
             F && performPutsGets,
             bool writeAttributes,
             bool flushUnconditionally );
@@ -1114,7 +1145,7 @@ namespace detail
          *
          */
         void
-        flush( bool writeAttributes = false );
+        flush( FlushLevel, bool writeAttributes = false );
 
         /**
          * @brief Begin or end an ADIOS step.

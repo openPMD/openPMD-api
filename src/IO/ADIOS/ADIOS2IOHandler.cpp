@@ -239,7 +239,7 @@ ADIOS2IOHandlerImpl::flush()
     {
         if ( m_dirty.find( p.first ) != m_dirty.end( ) )
         {
-            p.second->flush( /* writeAttributes = */ false );
+            p.second->flush( m_handler->m_flushLevel, /* writeAttributes = */ false );
         }
         else
         {
@@ -493,6 +493,7 @@ ADIOS2IOHandlerImpl::closeFile(
              * of it.
              */
             it->second->flush(
+                FlushLevel::UserFlush,
                 []( detail::BufferedActions & ba, adios2::Engine & ) {
                     ba.finalize();
                 },
@@ -638,8 +639,91 @@ void ADIOS2IOHandlerImpl::readDataset(
     m_dirty.emplace( std::move( file ) );
 }
 
-void ADIOS2IOHandlerImpl::readAttribute(
-    Writable * writable, Parameter< Operation::READ_ATT > & parameters )
+namespace detail
+{
+struct GetSpan
+{
+    template< typename T, typename... Args >
+    void operator()(
+        ADIOS2IOHandlerImpl * impl,
+        Parameter< Operation::GET_BUFFER_VIEW > & params,
+        detail::BufferedActions & ba,
+        std::string const & varName )
+    {
+        auto & IO = ba.m_IO;
+        auto & engine = ba.getEngine();
+        adios2::Variable< T > variable = impl->verifyDataset< T >(
+            params.offset, params.extent, IO, varName );
+        adios2::Dims offset( params.offset.begin(), params.offset.end() );
+        adios2::Dims extent( params.extent.begin(), params.extent.end() );
+        variable.SetSelection( { std::move( offset ), std::move( extent ) } );
+        typename adios2::Variable< T >::Span span = engine.Put( variable );
+        params.out->taskSupportedByBackend = true;
+        params.out->ptr = span.data();
+        unsigned nextIndex;
+        if( ba.m_updateSpans.empty() )
+        {
+            nextIndex = 0;
+        }
+        else
+        {
+            nextIndex = ba.m_updateSpans.rbegin()->first + 1;
+        }
+        params.out->viewIndex = nextIndex;
+        std::unique_ptr< I_UpdateSpan > updateSpan{
+            new UpdateSpan< T >{ std::move( span ) } };
+        ba.m_updateSpans.emplace_hint(
+            ba.m_updateSpans.end(), nextIndex, std::move( updateSpan ) );
+    }
+
+    std::string errorMsg = "ADIOS2: getBufferView()";
+};
+} // namespace detail
+
+void
+ADIOS2IOHandlerImpl::getBufferView(
+    Writable * writable,
+    Parameter< Operation::GET_BUFFER_VIEW > & parameters )
+{
+    // @todo check access mode
+    setAndGetFilePosition( writable );
+    auto file = refreshFileFromParent( writable );
+    detail::BufferedActions &ba = getFileData( file );
+    if( parameters.update )
+    {
+        detail::I_UpdateSpan &updater =
+            *ba.m_updateSpans.at( parameters.out->viewIndex );
+        parameters.out->ptr = updater.update();
+        parameters.out->taskSupportedByBackend = true;
+    }
+    else
+    {
+        static detail::GetSpan gs;
+        std::string name = nameOfVariable( writable );
+        switchAdios2VariableType( parameters.dtype, gs, this, parameters, ba, name );
+    }
+}
+
+// @todo move me
+namespace detail
+{
+template< typename T >
+UpdateSpan< T >::UpdateSpan( adios2::detail::Span< T > span_in ) :
+    span( std::move( span_in ) )
+{
+}
+
+template< typename T >
+void *UpdateSpan< T >::update()
+{
+    return span.data();
+}
+} // namespace detail
+
+void
+ADIOS2IOHandlerImpl::readAttribute(
+    Writable * writable,
+    Parameter< Operation::READ_ATT > & parameters )
 {
     auto file = refreshFileFromParent( writable );
     auto pos = setAndGetFilePosition( writable );
@@ -2400,6 +2484,7 @@ namespace detail
     template< typename F >
     void
     BufferedActions::flush(
+        FlushLevel level,
         F && performPutGets,
         bool writeAttributes,
         bool flushUnconditionally )
@@ -2438,6 +2523,7 @@ namespace detail
         {
             ba->run( *this );
         }
+
         if( writeAttributes )
         {
             for( auto & pair : m_attributeWrites )
@@ -2446,25 +2532,62 @@ namespace detail
             }
         }
 
-        performPutGets( *this, eng );
-
-        m_buffer.clear();
-
-        for( BufferedAttributeRead & task : m_attributeReads )
+        if( this->m_mode == adios2::Mode::Read )
         {
-            task.run( *this );
+            level = FlushLevel::UserFlush;
         }
-        m_attributeReads.clear();
-        if( writeAttributes )
+
+        switch( level )
         {
-            m_attributeWrites.clear();
+            case FlushLevel::UserFlush:
+                performPutGets( *this, eng );
+                m_updateSpans.clear();
+                m_buffer.clear();
+                m_alreadyEnqueued.clear();
+                if( writeAttributes )
+                {
+                    m_attributeWrites.clear();
+                }
+
+                for( BufferedAttributeRead & task : m_attributeReads )
+                {
+                    task.run( *this );
+                }
+                m_attributeReads.clear();
+                break;
+
+            case FlushLevel::FlushEverything:
+            case FlushLevel::SkeletonOnly:
+                /*
+                 * Tasks have been given to ADIOS2, but we don't flush them
+                 * yet. So, move everything to m_alreadyEnqueued to avoid
+                 * use-after-free.
+                 */
+                for( auto & task : m_buffer )
+                {
+                    m_alreadyEnqueued.emplace_back( std::move( task ) );
+                }
+                if( writeAttributes )
+                {
+                    for( auto & task : m_attributeWrites )
+                    {
+                        m_alreadyEnqueued.emplace_back(
+                            std::unique_ptr< BufferedAction >{
+                                new BufferedAttributeWrite{
+                                    std::move( task.second ) } } );
+                    }
+                    m_attributeWrites.clear();
+                }
+                m_buffer.clear();
+                break;
         }
     }
 
     void
-    BufferedActions::flush( bool writeAttributes )
+    BufferedActions::flush( FlushLevel level, bool writeAttributes )
     {
         flush(
+            level,
             []( BufferedActions & ba, adios2::Engine & eng ) {
                 switch( ba.m_mode )
                 {
@@ -2500,7 +2623,7 @@ namespace detail
         {
             m_IO.DefineAttribute< bool_representation >(
                 ADIOS2Defaults::str_usesstepsAttribute, 0 );
-            flush( /* writeAttributes = */ false );
+            flush( FlushLevel::UserFlush, /* writeAttributes = */ false );
             return AdvanceStatus::OK;
         }
 
@@ -2524,12 +2647,14 @@ namespace detail
                     getEngine().BeginStep();
                 }
                 flush(
+                    FlushLevel::UserFlush,
                     []( BufferedActions &, adios2::Engine & eng ) {
                         eng.EndStep();
                     },
                     /* writeAttributes = */ true,
                     /* flushUnconditionally = */ true );
                 uncommittedAttributes.clear();
+                m_updateSpans.clear();
                 streamStatus = StreamStatus::OutsideOfStep;
                 return AdvanceStatus::OK;
             }
@@ -2544,6 +2669,7 @@ namespace detail
                 if( streamStatus != StreamStatus::DuringStep )
                 {
                     flush(
+                        FlushLevel::UserFlush,
                         [ &adiosStatus ](
                             BufferedActions &, adios2::Engine & engine ) {
                             adiosStatus = engine.BeginStep();
