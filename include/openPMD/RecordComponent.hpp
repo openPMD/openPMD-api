@@ -75,6 +75,57 @@ struct IsContiguousContainer< std::array< T_Value, N > >
 };
 } // namespace traits
 
+/**
+ * @brief Subset of C++20 std::span class template.
+ *
+ * Any existing member behaves equivalently to those documented here:
+ * https://en.cppreference.com/w/cpp/container/span
+ */
+template< typename T >
+class Span
+{
+    friend class RecordComponent;
+
+private:
+    using param_t = Parameter< Operation::GET_BUFFER_VIEW >;
+    param_t m_param;
+    size_t m_size;
+    // @todo make this safe
+    Writable * m_writable;
+
+    Span( param_t param, size_t size, Writable * writable ) :
+        m_param( std::move( param ) ),
+        m_size( size ),
+        m_writable( std::move( writable ) )
+    {
+        m_param.update = true;
+    }
+
+public:
+    size_t size() const
+    {
+        return m_size;
+    }
+
+    T *data() const
+    {
+        if( m_param.out->taskSupportedByBackend )
+        {
+            // might need to update
+            m_writable->IOHandler->enqueue( IOTask( m_writable, m_param ) );
+            m_writable->IOHandler->flush();
+        }
+        return static_cast< T * >( m_param.out->ptr );
+    }
+
+    T &operator[]( size_t i ) const
+    {
+        return data()[ i ];
+    }
+};
+
+template class Span< int >;
+
 class RecordComponent : public BaseRecordComponent
 {
     template<
@@ -89,6 +140,8 @@ class RecordComponent : public BaseRecordComponent
     friend class BaseRecord;
     friend class Record;
     friend class Mesh;
+    template< typename >
+    friend class Span;
 
 public:
     enum class Allocation
@@ -200,6 +253,41 @@ public:
         traits::IsContiguousContainer< T_ContiguousContainer >::value
     >::type
     storeChunk(T_ContiguousContainer &, Offset = {0u}, Extent = {-1u});
+
+    /**
+     * @brief Overload of storeChunk() that lets the openPMD API allocate
+     *        a buffer.
+     *
+     * This may save memory if the openPMD backend in use is able to provide
+     * users a view into its own buffers, avoiding the need to allocate
+     * a new buffer.
+     *
+     * Data can be written into the returned buffer until the next call to
+     * Series::flush() at which time the data will be read from.
+     *
+     * In order to provide a view into backend buffers, this call must possibly
+     * create files and datasets in the backend, making it MPI-collective.
+     * In order to avoid this, calling Series::flush() prior to this is
+     * recommended to flush definitions.
+     *
+     * @param createBuffer If the backend in use as no special support for this
+     *        operation, the openPMD API will fall back to creating a buffer,
+     *        queuing it for writing and returning a view into that buffer to
+     *        the user. The functor createBuffer will be called for this
+     *        purpose. It consumes a length parameter of type size_t and should
+     *        return a shared_ptr of type T to a buffer at least that length.
+     *
+     * @return View into a buffer that can be filled with data.
+     */
+    template< typename T, typename F >
+    Span< T > storeChunk( Offset, Extent, F && createBuffer );
+
+    /**
+     * Overload of span-based storeChunk() that uses operator new() to create
+     * a buffer.
+     */
+    template< typename T >
+    Span< T > storeChunk( Offset, Extent );
 
     static constexpr char const * const SCALAR = "\vScalar";
 
@@ -457,5 +545,104 @@ RecordComponent::storeChunk(T_ContiguousContainer & data, Offset o, Extent e)
         extent = e;
 
     storeChunk(shareRaw(data), offset, extent);
+}
+
+template< typename T, typename F >
+inline Span< T >
+RecordComponent::storeChunk( Offset o, Extent e, F && createBuffer )
+{
+    if( constant() )
+        throw std::runtime_error(
+            "Chunks cannot be written for a constant RecordComponent." );
+    if( empty() )
+        throw std::runtime_error(
+            "Chunks cannot be written for an empty RecordComponent." );
+    Datatype dtype = determineDatatype<T>();
+    if( dtype != getDatatype() )
+    {
+        std::ostringstream oss;
+        oss << "Datatypes of chunk data ("
+            << dtype
+            << ") and record component ("
+            << getDatatype()
+            << ") do not match.";
+        throw std::runtime_error(oss.str());
+    }
+    uint8_t dim = getDimensionality();
+    if( e.size() != dim || o.size() != dim )
+    {
+        std::ostringstream oss;
+        oss << "Dimensionality of chunk ("
+            << "offset=" << o.size() << "D, "
+            << "extent=" << e.size() << "D) "
+            << "and record component ("
+            << int(dim) << "D) "
+            << "do not match.";
+        throw std::runtime_error(oss.str());
+    }
+    Extent dse = getExtent();
+    for( uint8_t i = 0; i < dim; ++i )
+        if( dse[i] < o[i] + e[i] )
+            throw std::runtime_error("Chunk does not reside inside dataset (Dimension on index " + std::to_string(i)
+                                     + ". DS: " + std::to_string(dse[i])
+                                     + " - Chunk: " + std::to_string(o[i] + e[i])
+                                     + ")");
+
+    /*
+     * The openPMD backend might not yet know about this dataset.
+     * Flush the openPMD hierarchy to the backend without flushing any actual
+     * data yet.
+     */
+    seriesFlush( FlushLevel::SkeletonOnly );
+
+    size_t size = 1;
+    for( auto ext : e )
+    {
+        size *= ext;
+    }
+    /*
+     * Flushing the skeleton does not create datasets,
+     * so we might need to do it now.
+     */
+    if( !written() )
+    {
+        Parameter< Operation::CREATE_DATASET > dCreate;
+        dCreate.name = *m_name;
+        dCreate.extent = getExtent();
+        dCreate.dtype = getDatatype();
+        dCreate.chunkSize = m_dataset->chunkSize;
+        dCreate.compression = m_dataset->compression;
+        dCreate.transform = m_dataset->transform;
+        dCreate.options = m_dataset->options;
+        IOHandler()->enqueue(IOTask(this, dCreate));
+    }
+    Parameter< Operation::GET_BUFFER_VIEW > getBufferView;
+    getBufferView.offset = o;
+    getBufferView.extent = e;
+    getBufferView.dtype = getDatatype();
+    IOHandler()->enqueue( IOTask( this, getBufferView ) );
+    IOHandler()->flush();
+    auto &out = *getBufferView.out;
+    if( !out.taskSupportedByBackend )
+    {
+        auto data = std::forward< F >( createBuffer )( size );
+        out.ptr = static_cast< void * >( data.get() );
+        storeChunk( std::move( data ), std::move( o ), std::move( e ) );
+    }
+    return Span< T >{ std::move( getBufferView ), size, &writable() };
+}
+
+template< typename T >
+inline Span< T >
+RecordComponent::storeChunk( Offset offset, Extent extent )
+{
+    return storeChunk< T >(
+        std::move( offset ),
+        std::move( extent ),
+        []( size_t size )
+        {
+            return std::shared_ptr< T >{
+                new T[ size ], []( auto * ptr ) { delete[] ptr; } };
+        } );
 }
 } // namespace openPMD

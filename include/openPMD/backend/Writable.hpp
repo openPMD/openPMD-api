@@ -42,6 +42,8 @@ class AbstractIOHandler;
 struct ADIOS2FilePosition;
 template <typename FilePositionType>
 class AbstractIOHandlerImplCommon;
+template<typename>
+class Span;
 
 namespace internal
 {
@@ -85,6 +87,8 @@ class Writable final
     friend struct test::TestHelper;
     friend std::string concrete_h5_file_position(Writable*);
     friend std::string concrete_bp1_file_position(Writable*);
+    template<typename>
+    friend class Span;
 
 private:
     Writable( internal::AttributableData * );

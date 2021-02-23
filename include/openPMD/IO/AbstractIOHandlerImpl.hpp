@@ -101,6 +101,9 @@ public:
                     case O::READ_DATASET:
                         readDataset(i.writable, deref_dynamic_cast< Parameter< O::READ_DATASET > >(i.parameter.get()));
                         break;
+                    case O::GET_BUFFER_VIEW:
+                        getBufferView(i.writable, deref_dynamic_cast< Parameter< O::GET_BUFFER_VIEW > >(i.parameter.get()));
+                        break;
                     case O::READ_ATT:
                         readAttribute(i.writable, deref_dynamic_cast< Parameter< O::READ_ATT > >(i.parameter.get()));
                         break;
@@ -136,7 +139,7 @@ public:
    */
   virtual void
   closeFile( Writable *, Parameter< Operation::CLOSE_FILE > const & ) = 0;
-  
+
   /** Advance the file/stream that this writable belongs to.
    *
    * If the backend is based around usage of IO steps (especially streaming
@@ -157,7 +160,7 @@ public:
   {}
 
   /** Close an openPMD group.
-   * 
+   *
    * This is an optimization-enabling task and may be ignored by backends.
    * Indicates that the group will not be accessed any further.
    * Especially in step-based IO mode (e.g. streaming):
@@ -303,6 +306,28 @@ public:
    * The region of the chunk should be written to physical storage after the operation completes successfully.
    */
   virtual void writeDataset(Writable*, Parameter< Operation::WRITE_DATASET > const&) = 0;
+
+  /** Get a view into a dataset buffer that can be filled by a user.
+   *
+   * The operation should fail if m_handler->m_frontendAccess is Access::READ_ONLY.
+   * The dataset should be associated with the Writable.
+   * The operation should fail if the dataset does not exist.
+   * The operation should fail if the chunk extent parameters.extent is not smaller or equals in every dimension.
+   * The operation should fail if chunk positions parameters.offset+parameters.extent do not reside inside the dataset.
+   * The dataset should match the dataype parameters.dtype.
+   * The buffer should be stored as a cast-to-char pointer to a flattened version of the backend buffer in parameters.out->ptr. The chunk is stored row-major.
+   * The buffer's content should be written to storage not before the next call to AbstractIOHandler::flush where AbstractIOHandler::m_flushLevel == FlushLevel::FlushEverything.
+   * The precise time of data consumption is defined by the backend:
+   * * Data written to the returned buffer should be consumed not earlier than the next call to AbstractIOHandler::flush where AbstractIOHandler::m_flushLevel == FlushLevel::FlushEverything.
+   * * Data should be consumed not later than the next Operation::ADVANCE task where parameter.mode == AdvanceMode::ENDSTEP.
+   *
+   * This task is optional and should either (1) not be implemented by a backend at all or (2) be implemented as indicated above and set parameters.out->taskSupportedByBackend = true.
+   */
+  virtual void getBufferView(Writable*, Parameter< Operation::GET_BUFFER_VIEW >& parameters)
+  {
+        // default implementation: operation unsupported by backend
+        parameters.out->taskSupportedByBackend = false;
+  }
   /** Create a single attribute and fill the value, possibly overwriting an existing attribute.
    *
    * The operation should fail if m_handler->m_frontendAccess is Access::READ_ONLY.

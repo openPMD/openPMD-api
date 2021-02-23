@@ -65,6 +65,7 @@ OPENPMDAPI_EXPORT_ENUM_CLASS(Operation)
     WRITE_DATASET,
     READ_DATASET,
     LIST_DATASETS,
+    GET_BUFFER_VIEW,
 
     DELETE_ATT,
     WRITE_ATT,
@@ -404,6 +405,37 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::LIST_DATASETS > : public Abstract
 
     std::shared_ptr< std::vector< std::string > > datasets
             = std::make_shared< std::vector< std::string > >();
+};
+
+template<>
+struct OPENPMDAPI_EXPORT Parameter< Operation::GET_BUFFER_VIEW > : public AbstractParameter
+{
+    Parameter() = default;
+    Parameter(Parameter const & p) : AbstractParameter(),
+        offset(p.offset), extent(p.extent), dtype(p.dtype), update(p.update),
+        out(p.out)
+    {}
+
+    std::unique_ptr< AbstractParameter >
+    clone() const override
+    {
+        return std::unique_ptr< AbstractParameter >(
+            new Parameter< Operation::GET_BUFFER_VIEW >(*this));
+    }
+
+    // in parameters
+    Offset offset;
+    Extent extent;
+    Datatype dtype = Datatype::UNDEFINED;
+    bool update = false;
+    // out parameters
+    struct OutParameters
+    {
+        bool taskSupportedByBackend = false;
+        unsigned viewIndex = 0;
+        void *ptr = nullptr;
+    };
+    std::shared_ptr< OutParameters > out = std::make_shared< OutParameters >();
 };
 
 template<>
