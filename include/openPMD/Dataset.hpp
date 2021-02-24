@@ -40,6 +40,14 @@ class Dataset
 public:
     Dataset(Datatype, Extent, std::string options = "{}");
 
+    /**
+     * @brief Constructor that sets the datatype to undefined.
+     *
+     * Helpful for resizing datasets, since datatypes need not be given twice.
+     *
+     */
+    Dataset( Extent );
+
     Dataset& extend(Extent newExtent);
     Dataset& setChunkSize(Extent const&);
     Dataset& setCompression(std::string const&, uint8_t const);

@@ -34,8 +34,12 @@ Dataset::Dataset(Datatype d, Extent e, std::string options_in)
           options{std::move(options_in)}
 { }
 
-Dataset&
-Dataset::extend(Extent newExtents)
+Dataset::Dataset( Extent e ) : Dataset( Datatype::UNDEFINED, std::move( e ) )
+{
+}
+
+Dataset &
+Dataset::extend( Extent newExtents )
 {
     if( newExtents.size() != rank )
         throw std::runtime_error("Dimensionality of extended Dataset must match the original dimensionality");
