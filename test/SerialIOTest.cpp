@@ -3520,3 +3520,139 @@ TEST_CASE( "iterate_nonstreaming_series", "[serial][adios2]" )
             "../samples/iterate_nonstreaming_series_groupbased." + t );
     }
 }
+
+void
+extendDataset( std::string const & ext )
+{
+    std::string filename = "../samples/extendDataset." + ext;
+    std::vector< int > data1( 25 );
+    std::vector< int > data2( 25 );
+    std::iota( data1.begin(), data1.end(), 0 );
+    std::iota( data2.begin(), data2.end(), 25 );
+    {
+        Series write( filename, Access::CREATE );
+        if( ext == "bp" && write.backend() != "ADIOS2" )
+        {
+            // dataset resizing unsupported in ADIOS1
+            return;
+        }
+        Dataset ds1{ Datatype::INT, { 5, 5 } };
+        Dataset ds2{ Datatype::INT, { 10, 5 } };
+
+        // array record component -> array record component
+        // should work
+        auto E_x = write.iterations[ 0 ].meshes[ "E" ][ "x" ];
+        E_x.resetDataset( ds1 );
+        E_x.storeChunk( data1, { 0, 0 }, { 5, 5 } );
+        write.flush();
+
+        E_x.resetDataset( ds2 );
+        E_x.storeChunk( data2, { 5, 0 }, { 5, 5 } );
+
+        // constant record component -> constant record component
+        // should work
+        auto E_y = write.iterations[ 0 ].meshes[ "E" ][ "y" ];
+        E_y.resetDataset( ds1 );
+        E_y.makeConstant( 10 );
+        write.flush();
+
+        E_y.resetDataset( ds2 );
+        write.flush();
+
+        // empty record component -> empty record component
+        // should work
+        // this does not make a lot of sense since we don't allow shrinking,
+        // but let's just reset it to itself
+        auto E_z = write.iterations[ 0 ].meshes[ "E" ][ "z" ];
+        E_z.makeEmpty< int >( 3 );
+        write.flush();
+
+        E_z.makeEmpty< int >( 3 );
+        write.flush();
+
+        // empty record component -> empty record component
+        // (created by resetDataset)
+        // should work
+        auto E_a = write.iterations[ 0 ].meshes[ "E" ][ "a" ];
+        E_a.makeEmpty< int >( 3 );
+        write.flush();
+
+        E_a.resetDataset( Dataset( Datatype::UNDEFINED, { 0, 1, 2 } ) );
+        write.flush();
+
+        // constant record component -> empty record component
+        // should fail, since this implies shrinking
+        auto E_b = write.iterations[ 0 ].meshes[ "E" ][ "b" ];
+        E_b.resetDataset( ds1 );
+        E_b.makeConstant( 10 );
+        write.flush();
+
+        REQUIRE_THROWS( E_b.makeEmpty< int >( 2 ) );
+
+        // empty record component -> constant record component
+        // should work
+        auto E_c = write.iterations[ 0 ].meshes[ "E" ][ "c" ];
+        E_c.makeEmpty< int >( 3 );
+        write.flush();
+
+        E_c.resetDataset( Dataset( { 1, 1, 2 } ) );
+        write.flush();
+
+        // array record component -> constant record component
+        // should fail
+        auto E_d = write.iterations[ 0 ].meshes[ "E" ][ "d" ];
+        E_d.resetDataset( ds1 );
+        E_d.storeChunk( data1, { 0, 0 }, { 5, 5 } );
+        write.flush();
+
+        REQUIRE_THROWS( E_d.makeConstant( 5 ) );
+
+        // array record component -> empty record component
+        // should fail
+        auto E_e = write.iterations[ 0 ].meshes[ "E" ][ "e" ];
+        E_e.resetDataset( ds1 );
+        E_e.storeChunk( data1, { 0, 0 }, { 5, 5 } );
+        write.flush();
+
+        REQUIRE_THROWS( E_e.makeEmpty< int >( 5 ) );
+    }
+
+    {
+        Series read( filename, Access::READ_ONLY );
+        auto E_x = read.iterations[ 0 ].meshes[ "E" ][ "x" ];
+        REQUIRE( E_x.getExtent() == Extent{ 10, 5 } );
+        auto chunk = E_x.loadChunk< int >( { 0, 0 }, { 10, 5 } );
+        read.flush();
+
+        for( size_t i = 0; i < 50; ++i )
+        {
+            REQUIRE( chunk.get()[ i ] == int( i ) );
+        }
+
+        auto E_y = read.iterations[ 0 ].meshes[ "E" ][ "y" ];
+        REQUIRE( E_y.getExtent() == Extent{ 10, 5 } );
+
+        auto E_z = read.iterations[ 0 ].meshes[ "E" ][ "z" ];
+        REQUIRE( E_z.getExtent() == Extent{ 0, 0, 0 } );
+
+        auto E_a = read.iterations[ 0 ].meshes[ "E" ][ "a" ];
+        REQUIRE( E_a.getExtent() == Extent{ 0, 1, 2 } );
+
+        // E_b could not be changed
+
+        auto E_c = read.iterations[ 0 ].meshes[ "E" ][ "c" ];
+        REQUIRE( E_c.getExtent() == Extent{ 1, 1, 2 } );
+        REQUIRE( !E_c.empty() );
+    }
+}
+
+TEST_CASE( "extend_dataset", "[serial]" )
+{
+    extendDataset( "json" );
+#if openPMD_HAVE_ADIOS2
+    extendDataset( "bp" );
+#endif
+#if openPMD_HAVE_HDF5
+    // extendDataset( "h5" );
+#endif
+}
