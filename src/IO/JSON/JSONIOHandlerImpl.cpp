@@ -248,18 +248,42 @@ namespace openPMD
         }
     }
 
-
-    void JSONIOHandlerImpl::extendDataset(
-        Writable * writable,
-        Parameter< Operation::EXTEND_DATASET > const & parameters
-    )
+    namespace
     {
-        VERIFY_ALWAYS(m_handler->m_backendAccess != Access::READ_ONLY,
+        void
+        mergeInto( nlohmann::json & into, nlohmann::json & from );
+        void
+        mergeInto( nlohmann::json & into, nlohmann::json & from )
+        {
+            if( !from.is_array() )
+            {
+                into = from; // copy
+            }
+            else
+            {
+                size_t size = from.size();
+                for( size_t i = 0; i < size; ++i )
+                {
+                    if( !from[ i ].is_null() )
+                    {
+                        mergeInto( into[ i ], from[ i ] );
+                    }
+                }
+            }
+        }
+    } // namespace
+
+    void
+    JSONIOHandlerImpl::extendDataset(
+        Writable * writable,
+        Parameter< Operation::EXTEND_DATASET > const & parameters )
+    {
+        VERIFY_ALWAYS(
+            m_handler->m_backendAccess != Access::READ_ONLY,
             "[JSON] Cannot extend a dataset in read-only mode." )
-        refreshFileFromParent( writable );
         setAndGetFilePosition( writable );
-        auto name = removeSlashes( parameters.name );
-        auto & j = obtainJsonContents( writable )[name];
+        refreshFileFromParent( writable );
+        auto & j = obtainJsonContents( writable );
 
         try
         {
@@ -280,7 +304,8 @@ namespace openPMD
             }
         } catch( json::basic_json::type_error & )
         {
-            throw std::runtime_error( "[JSON] The specified location contains no valid dataset" );
+            throw std::runtime_error(
+                "[JSON] The specified location contains no valid dataset" );
         }
         switch( stringToDatatype( j[ "datatype" ].get< std::string >() ) )
         {
@@ -288,17 +313,23 @@ namespace openPMD
             case Datatype::CDOUBLE:
             case Datatype::CLONG_DOUBLE:
             {
+                // @todo test complex resizing
                 auto complexExtent = parameters.extent;
                 complexExtent.push_back( 2 );
-                j["data"] = initializeNDArray( complexExtent );
+                nlohmann::json newData = initializeNDArray( complexExtent );
+                nlohmann::json & oldData = j[ "data" ];
+                mergeInto( newData, oldData );
+                j[ "data" ] = newData;
                 break;
             }
             default:
-                j["data"] = initializeNDArray( parameters.extent );
+                nlohmann::json newData = initializeNDArray( parameters.extent );
+                nlohmann::json & oldData = j[ "data" ];
+                mergeInto( newData, oldData );
+                j[ "data" ] = newData;
                 break;
         }
         writable->written = true;
-
     }
 
     namespace
