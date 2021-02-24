@@ -33,7 +33,7 @@ using namespace openPMD;
 
 
 void init_BaseRecordComponent(py::module &m) {
-    py::class_<BaseRecordComponent, AttributableImpl>(m, "Base_Record_Component")
+    py::class_<BaseRecordComponent, Attributable>(m, "Base_Record_Component")
         .def("__repr__",
             [](BaseRecordComponent const & brc) {
                 std::stringstream ss;

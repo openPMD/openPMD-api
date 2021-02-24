@@ -78,7 +78,7 @@ void init_Series(py::module &m) {
         py::keep_alive<0, 1>())
     ;
 
-    py::class_<Series, AttributableImpl>(m, "Series")
+    py::class_<Series, Attributable>(m, "Series")
 
         .def(py::init<std::string const&, Access, std::string const &>(),
             py::arg("filepath"), py::arg("access"), py::arg("options") = "{}")

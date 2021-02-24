@@ -287,7 +287,11 @@ OPENPMD_protected:
 
 private:
     virtual void linkHierarchy(std::shared_ptr< Writable > const& w);
-}; // Attributable
+}; // AttributableImpl
+
+// Alias this as Attributable since this is a public abstract parent class
+// for most of the classes in our object model of the openPMD hierarchy
+using Attributable = AttributableImpl;
 
 class LegacyAttributable : public AttributableImpl
 {

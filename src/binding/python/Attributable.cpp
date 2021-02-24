@@ -44,7 +44,7 @@ using PyAttributeKeys = std::vector< std::string >;
 //PYBIND11_MAKE_OPAQUE(PyAttributeKeys)
 
 bool setAttributeFromBufferInfo(
-    AttributableImpl & attr,
+    Attributable & attr,
     std::string const& key,
     py::buffer& a
 ) {
@@ -266,7 +266,7 @@ struct SetAttributeFromObject
 
     template< typename RequestedType >
     bool operator()(
-        AttributableImpl & attr,
+        Attributable & attr,
         std::string const& key,
         py::object& obj )
     {
@@ -285,7 +285,7 @@ struct SetAttributeFromObject
 
 template<>
 bool SetAttributeFromObject::operator()< double >(
-    AttributableImpl & attr, std::string const & key, py::object & obj )
+    Attributable & attr, std::string const & key, py::object & obj )
 {
     if( std::string( py::str( obj.get_type() ) ) == "<class 'list'>" )
     {
@@ -311,14 +311,14 @@ bool SetAttributeFromObject::operator()< double >(
 
 template<>
 bool SetAttributeFromObject::operator()< bool >(
-    AttributableImpl & attr, std::string const & key, py::object & obj )
+    Attributable & attr, std::string const & key, py::object & obj )
 {
     return attr.setAttribute< bool >( key, obj.cast< bool >() );
 }
 
 template<>
 bool SetAttributeFromObject::operator()< char >(
-    AttributableImpl & attr, std::string const & key, py::object & obj )
+    Attributable & attr, std::string const & key, py::object & obj )
 {
     if( std::string( py::str( obj.get_type() ) ) == "<class 'list'>" )
     {
@@ -346,7 +346,7 @@ bool SetAttributeFromObject::operator()< char >(
 }
 
 bool setAttributeFromObject(
-    AttributableImpl & attr,
+    Attributable & attr,
     std::string const & key,
     py::object & obj,
     pybind11::dtype datatype )
@@ -357,19 +357,19 @@ bool setAttributeFromObject(
 }
 
 void init_Attributable(py::module &m) {
-    py::class_<AttributableImpl>(m, "Attributable")
-        .def(py::init<AttributableImpl const &>())
+    py::class_<Attributable>(m, "Attributable")
+        .def(py::init<Attributable const &>())
 
         .def("__repr__",
-            [](AttributableImpl const & attr) {
+            [](Attributable const & attr) {
                 return "<openPMD.Attributable with '" + std::to_string(attr.numAttributes()) + "' attributes>";
             }
         )
-        .def("series_flush", &AttributableImpl::seriesFlush)
+        .def("series_flush", &Attributable::seriesFlush)
 
         .def_property_readonly(
             "attributes",
-            []( AttributableImpl & attr )
+            []( Attributable & attr )
             {
                 return attr.attributes();
             },
@@ -380,7 +380,7 @@ void init_Attributable(py::module &m) {
         // C++ pass-through API: Setter
         // note that the order of overloads is important!
         // all buffer protocol compatible objects, including numpy arrays if not specialized specifically...
-        .def("set_attribute", []( AttributableImpl & attr, std::string const& key, py::buffer& a ) {
+        .def("set_attribute", []( Attributable & attr, std::string const& key, py::buffer& a ) {
             // std::cout << "set attr via py::buffer: " << key << std::endl;
             return setAttributeFromBufferInfo(
                 attr,
@@ -389,7 +389,7 @@ void init_Attributable(py::module &m) {
             );
         })
         .def("set_attribute", [](
-                AttributableImpl & attr,
+                Attributable & attr,
                 std::string const& key,
                 py::object& obj,
                 pybind11::dtype datatype )
@@ -402,8 +402,8 @@ void init_Attributable(py::module &m) {
         )
 
         // fundamental Python types
-        .def("set_attribute", &AttributableImpl::setAttribute< bool >)
-        .def("set_attribute", &AttributableImpl::setAttribute< unsigned char >)
+        .def("set_attribute", &Attributable::setAttribute< bool >)
+        .def("set_attribute", &Attributable::setAttribute< unsigned char >)
         // -> handle all native python integers as long
         // .def("set_attribute", &Attributable::setAttribute< short >)
         // .def("set_attribute", &Attributable::setAttribute< int >)
@@ -413,16 +413,16 @@ void init_Attributable(py::module &m) {
         // .def("set_attribute", &Attributable::setAttribute< unsigned int >)
         // .def("set_attribute", &Attributable::setAttribute< unsigned long >)
         // .def("set_attribute", &Attributable::setAttribute< unsigned long long >)
-        .def("set_attribute", &AttributableImpl::setAttribute< long >)
+        .def("set_attribute", &Attributable::setAttribute< long >)
         // work-around for https://github.com/pybind/pybind11/issues/1512
         // -> handle all native python floats as double
         // .def("set_attribute", &Attributable::setAttribute< float >)
         // .def("set_attribute", &Attributable::setAttribute< long double >)
-        .def("set_attribute", &AttributableImpl::setAttribute< double >)
+        .def("set_attribute", &Attributable::setAttribute< double >)
         // work-around for https://github.com/pybind/pybind11/issues/1509
         // -> since there is only str in Python, chars are strings
         // .def("set_attribute", &Attributable::setAttribute< char >)
-        .def("set_attribute", []( AttributableImpl & attr, std::string const& key, std::string const& value ) {
+        .def("set_attribute", []( Attributable & attr, std::string const& key, std::string const& value ) {
             return attr.setAttribute( key, value );
         })
 
@@ -431,22 +431,22 @@ void init_Attributable(py::module &m) {
         // .def("set_attribute", &Attributable::setAttribute< std::vector< bool > >)
         // there is only str in Python, chars are strings
         // .def("set_attribute", &Attributable::setAttribute< std::vector< char > >)
-        .def("set_attribute", &AttributableImpl::setAttribute< std::vector< unsigned char > >)
-        .def("set_attribute", &AttributableImpl::setAttribute< std::vector< long > >)
-        .def("set_attribute", &AttributableImpl::setAttribute< std::vector< double > >) // TODO: this implicitly casts list of complex
+        .def("set_attribute", &Attributable::setAttribute< std::vector< unsigned char > >)
+        .def("set_attribute", &Attributable::setAttribute< std::vector< long > >)
+        .def("set_attribute", &Attributable::setAttribute< std::vector< double > >) // TODO: this implicitly casts list of complex
         // probably affected by bug https://github.com/pybind/pybind11/issues/1258
-        .def("set_attribute", []( AttributableImpl & attr, std::string const& key, std::vector< std::string > const& value ) {
+        .def("set_attribute", []( Attributable & attr, std::string const& key, std::vector< std::string > const& value ) {
             return attr.setAttribute( key, value );
         })
         // .def("set_attribute", &Attributable::setAttribute< std::array< double, 7 > >)
 
         // C++ pass-through API: Getter
-        .def("get_attribute", []( AttributableImpl & attr, std::string const& key ) {
+        .def("get_attribute", []( Attributable & attr, std::string const& key ) {
             auto v = attr.getAttribute(key);
             return v.getResource();
             // TODO instead of returning lists, return all arrays (ndim > 0) as numpy arrays?
         })
-        .def_property_readonly("attribute_dtypes", []( AttributableImpl const & attributable ) {
+        .def_property_readonly("attribute_dtypes", []( Attributable const & attributable ) {
             std::map< std::string, pybind11::dtype > dtypes;
             for( auto const & attr : attributable.attributes() )
             {
@@ -455,16 +455,16 @@ void init_Attributable(py::module &m) {
             }
             return dtypes;
         })
-        .def("delete_attribute", &AttributableImpl::deleteAttribute)
-        .def("contains_attribute", &AttributableImpl::containsAttribute)
+        .def("delete_attribute", &Attributable::deleteAttribute)
+        .def("contains_attribute", &Attributable::containsAttribute)
 
-        .def("__len__", &AttributableImpl::numAttributes)
+        .def("__len__", &Attributable::numAttributes)
 
         // @todo _ipython_key_completions_ if we find a way to add a [] interface
 
-        .def_property("comment", &AttributableImpl::comment, &AttributableImpl::setComment)
+        .def_property("comment", &Attributable::comment, &Attributable::setComment)
         // TODO remove in future versions (deprecated)
-        .def("set_comment", &AttributableImpl::setComment)
+        .def("set_comment", &Attributable::setComment)
     ;
 
     py::bind_vector< PyAttributeKeys >(
