@@ -57,6 +57,9 @@ namespace openPMD
             case Format::ADIOS2_SST:
                 return std::make_shared< ADIOS2IOHandler >(
                     path, access, comm, std::move( optionsJson ), "sst" );
+            case Format::ADIOS2_SSC:
+                return std::make_shared< ADIOS2IOHandler >(
+                    path, access, comm, std::move( optionsJson ), "ssc" );
             default:
                 throw std::runtime_error(
                     "Unknown file format! Did you specify a file ending?" );
@@ -89,6 +92,9 @@ namespace openPMD
             case Format::ADIOS2_SST:
                 return std::make_shared< ADIOS2IOHandler >(
                     path, access, std::move( optionsJson ), "sst" );
+            case Format::ADIOS2_SSC:
+                return std::make_shared< ADIOS2IOHandler >(
+                    path, access, std::move( optionsJson ), "ssc" );
 #endif // openPMD_HAVE_ADIOS2
             case Format::JSON:
                 return std::make_shared< JSONIOHandler >( path, access );

@@ -52,6 +52,9 @@ openPMD::getFileExtensions()
 #ifdef ADIOS2_HAVE_SST
     fext.emplace_back("sst");
 #endif
+#ifdef ADIOS2_HAVE_SSC
+    fext.emplace_back("ssc");
+#endif
 #if openPMD_HAVE_HDF5
     fext.emplace_back("h5");
 #endif

@@ -55,6 +55,8 @@ namespace openPMD {
         }
         if (auxiliary::ends_with(filename, ".sst"))
             return Format::ADIOS2_SST;
+        if (auxiliary::ends_with(filename, ".ssc"))
+            return Format::ADIOS2_SSC;
         if (auxiliary::ends_with(filename, ".json"))
             return Format::JSON;
         if (std::string::npos != filename.find('.') /* extension is provided */ )
@@ -73,6 +75,8 @@ namespace openPMD {
                 return ".bp";
             case Format::ADIOS2_SST:
                 return ".sst";
+            case Format::ADIOS2_SSC:
+                return ".ssc";
             case Format::JSON:
                 return ".json";
             default:

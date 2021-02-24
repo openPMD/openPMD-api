@@ -30,8 +30,11 @@ using namespace openPMD;
 std::vector< std::string > testedFileExtensions()
 {
     auto allExtensions = getFileExtensions();
-    auto newEnd =
-        std::remove( allExtensions.begin(), allExtensions.end(), "sst" );
+    auto newEnd = std::remove_if(
+        allExtensions.begin(),
+        allExtensions.end(),
+        []( std::string const & ext )
+        { return ext == "sst" || ext == "ssc"; } );
     return { allExtensions.begin(), newEnd };
 }
 
