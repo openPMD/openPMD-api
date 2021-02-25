@@ -112,6 +112,7 @@ class AttributableImpl
 protected:
     internal::AttributableData * m_attri;
 
+    // Should not be called publicly, only by implementing classes
     AttributableImpl( internal::AttributableData * );
     template< typename T >
     AttributableImpl( T * attri )
