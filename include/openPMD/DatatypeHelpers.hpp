@@ -97,10 +97,9 @@ struct CallUndefinedDatatype<
     n,
     ReturnType,
     Action,
-    // check whether `action.template operator()<0>(args...)` is callable
-    void_t< decltype(
-        std::declval< Action >().OPENPMD_TEMPLATE_OPERATOR() < LOWEST_DATATYPE >
-        ( std::forward< Args >( std::declval< Args >() )... ) ) >,
+    // Enable this, if no error message member is found.
+    // action.template operator()<n>() will be called instead
+    typename std::enable_if< !HasErrorMessageMember< Action >::value >::type,
     Args... >
 {
     static ReturnType call( Action action, Args &&... args )

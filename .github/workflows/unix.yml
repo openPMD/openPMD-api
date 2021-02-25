@@ -213,3 +213,51 @@ jobs:
         cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build . --parallel 2
         ctest --output-on-failure
+
+  icc_cxxonly:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install
+      run: |
+        sudo .github/workflows/dependencies/install_icc
+    - name: Build
+      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      run: |
+        set +e; source /opt/intel/oneapi/setvars.sh; set -e
+        mkdir build && cd build
+        ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
+        cmake -S .. -B . \
+          -DCMAKE_C_COMPILER=$(which icc)    \
+          -DCMAKE_CXX_COMPILER=$(which icpc) \
+          -DopenPMD_USE_PYTHON=OFF           \
+          -DopenPMD_USE_MPI=OFF
+        cmake --build . --parallel 2
+        ctest --output-on-failure
+
+  icx_cxxonly:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install
+      run: |
+        sudo .github/workflows/dependencies/install_icx
+    - name: Build
+      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      run: |
+        set +e; source /opt/intel/oneapi/setvars.sh; set -e
+        mkdir build && cd build
+        ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
+        cmake -S .. -B . \
+          -DCMAKE_C_COMPILER=$(which icx)    \
+          -DCMAKE_CXX_COMPILER=$(which icpx) \
+          -DopenPMD_USE_PYTHON=OFF           \
+          -DopenPMD_USE_MPI=OFF              \
+          -DCMAKE_C_COMPILER_ID="Clang"                  \
+          -DCMAKE_C_COMPILER_VERSION=12.0                \
+          -DCMAKE_C_STANDARD_COMPUTED_DEFAULT="11"       \
+          -DCMAKE_CXX_COMPILER_ID="Clang"                \
+          -DCMAKE_CXX_COMPILER_VERSION=12.0              \
+          -DCMAKE_CXX_STANDARD_COMPUTED_DEFAULT="14"
+        cmake --build . --parallel 2
+        ctest --output-on-failure
