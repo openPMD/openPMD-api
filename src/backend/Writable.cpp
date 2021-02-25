@@ -26,7 +26,7 @@
 
 namespace openPMD
 {
-    Writable::Writable(Attributable* a)
+    Writable::Writable(internal::AttributableData* a)
             : abstractFilePosition{nullptr},
               IOHandler{nullptr},
               attributable{a},
@@ -38,13 +38,8 @@ namespace openPMD
     void
     Writable::seriesFlush()
     {
-        Writable * findSeries = this;
-        while( findSeries->parent )
-        {
-            findSeries = findSeries->parent;
-        }
-        Series & series =
-                auxiliary::deref_dynamic_cast< Series >( findSeries->attributable );
+        auto & series =
+            AttributableImpl( attributable ).retrieveSeries();
         series.flush_impl(
                 series.iterations.begin(),
                 series.iterations.end()

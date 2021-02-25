@@ -42,7 +42,7 @@ PatchRecord::flush_impl(std::string const& path)
 {
     if( this->find(RecordComponent::SCALAR) == this->end() )
     {
-        if(IOHandler->m_frontendAccess != Access::READ_ONLY )
+        if(IOHandler()->m_frontendAccess != Access::READ_ONLY )
             Container< PatchRecordComponent >::flush(path); // warning (clang-tidy-10): bugprone-parent-virtual-call
         for( auto& comp : *this )
             comp.second.flush(comp.first);
@@ -55,8 +55,8 @@ PatchRecord::read()
 {
     Parameter< Operation::READ_ATT > aRead;
     aRead.name = "unitDimension";
-    IOHandler->enqueue(IOTask(this, aRead));
-    IOHandler->flush();
+    IOHandler()->enqueue(IOTask(this, aRead));
+    IOHandler()->flush();
 
     if( *aRead.dtype == Datatype::ARR_DBL_7 )
         this->setAttribute("unitDimension", Attribute(*aRead.resource).template get< std::array< double, 7 > >());
@@ -77,16 +77,16 @@ PatchRecord::read()
         throw std::runtime_error("Unexpected Attribute datatype for 'unitDimension'");
 
     Parameter< Operation::LIST_DATASETS > dList;
-    IOHandler->enqueue(IOTask(this, dList));
-    IOHandler->flush();
+    IOHandler()->enqueue(IOTask(this, dList));
+    IOHandler()->flush();
 
     Parameter< Operation::OPEN_DATASET > dOpen;
     for( auto const& component_name : *dList.datasets )
     {
         PatchRecordComponent& prc = (*this)[component_name];
         dOpen.name = component_name;
-        IOHandler->enqueue(IOTask(&prc, dOpen));
-        IOHandler->flush();
+        IOHandler()->enqueue(IOTask(&prc, dOpen));
+        IOHandler()->flush();
         /* allow all attributes to be set */
         prc.written() = false;
         prc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));

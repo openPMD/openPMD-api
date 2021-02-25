@@ -37,11 +37,11 @@
 
 namespace openPMD
 {
-class Attributable;
+class AttributableImpl;
 class Writable;
 
 Writable*
-getWritable(Attributable*);
+getWritable(AttributableImpl*);
 
 /** Type of IO operation between logical and persistent data.
  */
@@ -565,7 +565,7 @@ public:
     { }
 
     template< Operation op >
-    explicit IOTask(Attributable* a,
+    explicit IOTask(AttributableImpl* a,
            Parameter< op > const & p)
             : writable{getWritable(a)},
               operation{op},

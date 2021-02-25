@@ -135,11 +135,11 @@ RecordComponent::empty() const
 void
 RecordComponent::flush(std::string const& name)
 {
-    if(IOHandler->m_frontendAccess == Access::READ_ONLY )
+    if(IOHandler()->m_frontendAccess == Access::READ_ONLY )
     {
         while( !m_chunks->empty() )
         {
-            IOHandler->enqueue(m_chunks->front());
+            IOHandler()->enqueue(m_chunks->front());
             m_chunks->pop();
         }
     } else
@@ -150,17 +150,17 @@ RecordComponent::flush(std::string const& name)
             {
                 Parameter< Operation::CREATE_PATH > pCreate;
                 pCreate.path = name;
-                IOHandler->enqueue(IOTask(this, pCreate));
+                IOHandler()->enqueue(IOTask(this, pCreate));
                 Parameter< Operation::WRITE_ATT > aWrite;
                 aWrite.name = "value";
                 aWrite.dtype = m_constantValue->dtype;
                 aWrite.resource = m_constantValue->getResource();
-                IOHandler->enqueue(IOTask(this, aWrite));
+                IOHandler()->enqueue(IOTask(this, aWrite));
                 aWrite.name = "shape";
                 Attribute a(getExtent());
                 aWrite.dtype = a.dtype;
                 aWrite.resource = a.getResource();
-                IOHandler->enqueue(IOTask(this, aWrite));
+                IOHandler()->enqueue(IOTask(this, aWrite));
             } else
             {
                 Parameter< Operation::CREATE_DATASET > dCreate;
@@ -171,13 +171,13 @@ RecordComponent::flush(std::string const& name)
                 dCreate.compression = m_dataset->compression;
                 dCreate.transform = m_dataset->transform;
                 dCreate.options = m_dataset->options;
-                IOHandler->enqueue(IOTask(this, dCreate));
+                IOHandler()->enqueue(IOTask(this, dCreate));
             }
         }
 
         while( !m_chunks->empty() )
         {
-            IOHandler->enqueue(m_chunks->front());
+            IOHandler()->enqueue(m_chunks->front());
             m_chunks->pop();
         }
 
@@ -206,8 +206,8 @@ RecordComponent::readBase()
     if( constant() && !empty() )
     {
         aRead.name = "value";
-        IOHandler->enqueue(IOTask(this, aRead));
-        IOHandler->flush();
+        IOHandler()->enqueue(IOTask(this, aRead));
+        IOHandler()->flush();
 
         Attribute a(*aRead.resource);
         DT dtype = *aRead.dtype;
@@ -271,8 +271,8 @@ RecordComponent::readBase()
         written() = true;
 
         aRead.name = "shape";
-        IOHandler->enqueue(IOTask(this, aRead));
-        IOHandler->flush();
+        IOHandler()->enqueue(IOTask(this, aRead));
+        IOHandler()->flush();
         a = Attribute(*aRead.resource);
         Extent e;
 
@@ -300,8 +300,8 @@ RecordComponent::readBase()
     }
 
     aRead.name = "unitSI";
-    IOHandler->enqueue(IOTask(this, aRead));
-    IOHandler->flush();
+    IOHandler()->enqueue(IOTask(this, aRead));
+    IOHandler()->flush();
     if( *aRead.dtype == DT::DOUBLE )
         setUnitSI(Attribute(*aRead.resource).get< double >());
     else
@@ -313,7 +313,7 @@ RecordComponent::readBase()
 bool
 RecordComponent::dirtyRecursive() const
 {
-    if( Attributable::dirty() )
+    if( this->dirty() )
     {
         return true;
     }

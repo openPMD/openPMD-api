@@ -200,6 +200,53 @@ TEST_CASE( "available_chunks_test_json", "[serial][json]" )
     }
 }
 
+TEST_CASE( "multiple_series_handles_test", "[serial]" )
+{
+    /*
+     * First test: No premature flushes through destructor when another copy
+     * is still around
+     */
+    {
+        std::unique_ptr< openPMD::Series > series_ptr;
+        {
+            openPMD::Series series(
+                "sample%T.json", openPMD::AccessType::CREATE );
+            series_ptr = std::make_unique< openPMD::Series >( series );
+            /*
+             * we have two handles for the same Series instance now:
+             * series and series_ptr
+             * series goes out of scope before series_ptr
+             * destructor should only do a flush after both of them go out of
+             * scope, but it will currently run directly after this comment
+             * since no iteration has been written yet, an error will be thrown
+             */
+        }
+        series_ptr->iterations[ 0 ].meshes[ "E" ][ "x" ].makeEmpty< int >( 1 );
+    }
+    /*
+     * Second test: A Series handle should remain accessible even if the
+     * original handle is destroyed
+     */
+    {
+        std::unique_ptr< openPMD::Series > series_ptr;
+        {
+            openPMD::Series series(
+                "sample%T.json", openPMD::AccessType::CREATE );
+            series_ptr = std::make_unique< openPMD::Series >( series );
+            series_ptr->iterations[ 0 ].meshes[ "E" ][ "x" ].makeEmpty< int >(
+                1 );
+        }
+        /*
+         * series_ptr is still in scope, but the original Series instance
+         * has been destroyed
+         * since internal pointers actually refer to the original *handle*,
+         * doing anything with series_ptr now (such as flushing it) yields
+         * nullpointer accesses
+         */
+        series_ptr->flush();
+    }
+}
+
 void
 close_iteration_test( std::string file_ending )
 {
@@ -1269,7 +1316,7 @@ void fileBased_write_test(const std::string & backend)
         REQUIRE(o.iterations.count(5) == 1);
 
 #if openPMD_USE_INVASIVE_TESTS
-        REQUIRE(*o.m_filenamePadding == 8);
+        REQUIRE(*o.get().m_filenamePadding == 8);
 #endif
 
         REQUIRE(o.basePath() == "/data/%T/");
@@ -1768,38 +1815,38 @@ TEST_CASE( "git_hdf5_sample_structure_test", "[serial][hdf5]" )
     {
         Series o = Series("../samples/git-sample/data%T.h5", Access::READ_ONLY);
 
-        REQUIRE(!o.parent);
-        REQUIRE(o.iterations.parent == getWritable(&o));
+        REQUIRE(!o.parent());
+        REQUIRE(o.iterations.parent() == getWritable(&o));
         REQUIRE_THROWS_AS(o.iterations[42], std::out_of_range);
-        REQUIRE(o.iterations[100].parent == getWritable(&o.iterations));
-        REQUIRE(o.iterations[100].meshes.parent == getWritable(&o.iterations[100]));
-        REQUIRE(o.iterations[100].meshes["E"].parent == getWritable(&o.iterations[100].meshes));
-        REQUIRE(o.iterations[100].meshes["E"]["x"].parent == getWritable(&o.iterations[100].meshes["E"]));
-        REQUIRE(o.iterations[100].meshes["E"]["y"].parent == getWritable(&o.iterations[100].meshes["E"]));
-        REQUIRE(o.iterations[100].meshes["E"]["z"].parent == getWritable(&o.iterations[100].meshes["E"]));
-        REQUIRE(o.iterations[100].meshes["rho"].parent == getWritable(&o.iterations[100].meshes));
-        REQUIRE(o.iterations[100].meshes["rho"][MeshRecordComponent::SCALAR].parent == getWritable(&o.iterations[100].meshes));
+        REQUIRE(o.iterations[100].parent() == getWritable(&o.iterations));
+        REQUIRE(o.iterations[100].meshes.parent() == getWritable(&o.iterations[100]));
+        REQUIRE(o.iterations[100].meshes["E"].parent() == getWritable(&o.iterations[100].meshes));
+        REQUIRE(o.iterations[100].meshes["E"]["x"].parent() == getWritable(&o.iterations[100].meshes["E"]));
+        REQUIRE(o.iterations[100].meshes["E"]["y"].parent() == getWritable(&o.iterations[100].meshes["E"]));
+        REQUIRE(o.iterations[100].meshes["E"]["z"].parent() == getWritable(&o.iterations[100].meshes["E"]));
+        REQUIRE(o.iterations[100].meshes["rho"].parent() == getWritable(&o.iterations[100].meshes));
+        REQUIRE(o.iterations[100].meshes["rho"][MeshRecordComponent::SCALAR].parent() == getWritable(&o.iterations[100].meshes));
         REQUIRE_THROWS_AS(o.iterations[100].meshes["cherries"], std::out_of_range);
-        REQUIRE(o.iterations[100].particles.parent == getWritable(&o.iterations[100]));
-        REQUIRE(o.iterations[100].particles["electrons"].parent == getWritable(&o.iterations[100].particles));
-        REQUIRE(o.iterations[100].particles["electrons"]["charge"].parent == getWritable(&o.iterations[100].particles["electrons"]));
-        REQUIRE(o.iterations[100].particles["electrons"]["charge"][RecordComponent::SCALAR].parent == getWritable(&o.iterations[100].particles["electrons"]));
-        REQUIRE(o.iterations[100].particles["electrons"]["mass"].parent == getWritable(&o.iterations[100].particles["electrons"]));
-        REQUIRE(o.iterations[100].particles["electrons"]["mass"][RecordComponent::SCALAR].parent == getWritable(&o.iterations[100].particles["electrons"]));
-        REQUIRE(o.iterations[100].particles["electrons"]["momentum"].parent == getWritable(&o.iterations[100].particles["electrons"]));
-        REQUIRE(o.iterations[100].particles["electrons"]["momentum"]["x"].parent == getWritable(&o.iterations[100].particles["electrons"]["momentum"]));
-        REQUIRE(o.iterations[100].particles["electrons"]["momentum"]["y"].parent == getWritable(&o.iterations[100].particles["electrons"]["momentum"]));
-        REQUIRE(o.iterations[100].particles["electrons"]["momentum"]["z"].parent == getWritable(&o.iterations[100].particles["electrons"]["momentum"]));
-        REQUIRE(o.iterations[100].particles["electrons"]["position"].parent == getWritable(&o.iterations[100].particles["electrons"]));
-        REQUIRE(o.iterations[100].particles["electrons"]["position"]["x"].parent == getWritable(&o.iterations[100].particles["electrons"]["position"]));
-        REQUIRE(o.iterations[100].particles["electrons"]["position"]["y"].parent == getWritable(&o.iterations[100].particles["electrons"]["position"]));
-        REQUIRE(o.iterations[100].particles["electrons"]["position"]["z"].parent == getWritable(&o.iterations[100].particles["electrons"]["position"]));
-        REQUIRE(o.iterations[100].particles["electrons"]["positionOffset"].parent == getWritable(&o.iterations[100].particles["electrons"]));
-        REQUIRE(o.iterations[100].particles["electrons"]["positionOffset"]["x"].parent == getWritable(&o.iterations[100].particles["electrons"]["positionOffset"]));
-        REQUIRE(o.iterations[100].particles["electrons"]["positionOffset"]["y"].parent == getWritable(&o.iterations[100].particles["electrons"]["positionOffset"]));
-        REQUIRE(o.iterations[100].particles["electrons"]["positionOffset"]["z"].parent == getWritable(&o.iterations[100].particles["electrons"]["positionOffset"]));
-        REQUIRE(o.iterations[100].particles["electrons"]["weighting"].parent == getWritable(&o.iterations[100].particles["electrons"]));
-        REQUIRE(o.iterations[100].particles["electrons"]["weighting"][RecordComponent::SCALAR].parent == getWritable(&o.iterations[100].particles["electrons"]));
+        REQUIRE(o.iterations[100].particles.parent() == getWritable(&o.iterations[100]));
+        REQUIRE(o.iterations[100].particles["electrons"].parent() == getWritable(&o.iterations[100].particles));
+        REQUIRE(o.iterations[100].particles["electrons"]["charge"].parent() == getWritable(&o.iterations[100].particles["electrons"]));
+        REQUIRE(o.iterations[100].particles["electrons"]["charge"][RecordComponent::SCALAR].parent() == getWritable(&o.iterations[100].particles["electrons"]));
+        REQUIRE(o.iterations[100].particles["electrons"]["mass"].parent() == getWritable(&o.iterations[100].particles["electrons"]));
+        REQUIRE(o.iterations[100].particles["electrons"]["mass"][RecordComponent::SCALAR].parent() == getWritable(&o.iterations[100].particles["electrons"]));
+        REQUIRE(o.iterations[100].particles["electrons"]["momentum"].parent() == getWritable(&o.iterations[100].particles["electrons"]));
+        REQUIRE(o.iterations[100].particles["electrons"]["momentum"]["x"].parent() == getWritable(&o.iterations[100].particles["electrons"]["momentum"]));
+        REQUIRE(o.iterations[100].particles["electrons"]["momentum"]["y"].parent() == getWritable(&o.iterations[100].particles["electrons"]["momentum"]));
+        REQUIRE(o.iterations[100].particles["electrons"]["momentum"]["z"].parent() == getWritable(&o.iterations[100].particles["electrons"]["momentum"]));
+        REQUIRE(o.iterations[100].particles["electrons"]["position"].parent() == getWritable(&o.iterations[100].particles["electrons"]));
+        REQUIRE(o.iterations[100].particles["electrons"]["position"]["x"].parent() == getWritable(&o.iterations[100].particles["electrons"]["position"]));
+        REQUIRE(o.iterations[100].particles["electrons"]["position"]["y"].parent() == getWritable(&o.iterations[100].particles["electrons"]["position"]));
+        REQUIRE(o.iterations[100].particles["electrons"]["position"]["z"].parent() == getWritable(&o.iterations[100].particles["electrons"]["position"]));
+        REQUIRE(o.iterations[100].particles["electrons"]["positionOffset"].parent() == getWritable(&o.iterations[100].particles["electrons"]));
+        REQUIRE(o.iterations[100].particles["electrons"]["positionOffset"]["x"].parent() == getWritable(&o.iterations[100].particles["electrons"]["positionOffset"]));
+        REQUIRE(o.iterations[100].particles["electrons"]["positionOffset"]["y"].parent() == getWritable(&o.iterations[100].particles["electrons"]["positionOffset"]));
+        REQUIRE(o.iterations[100].particles["electrons"]["positionOffset"]["z"].parent() == getWritable(&o.iterations[100].particles["electrons"]["positionOffset"]));
+        REQUIRE(o.iterations[100].particles["electrons"]["weighting"].parent() == getWritable(&o.iterations[100].particles["electrons"]));
+        REQUIRE(o.iterations[100].particles["electrons"]["weighting"][RecordComponent::SCALAR].parent() == getWritable(&o.iterations[100].particles["electrons"]));
         REQUIRE_THROWS_AS(o.iterations[100].particles["electrons"]["numberOfLegs"], std::out_of_range);
         REQUIRE_THROWS_AS(o.iterations[100].particles["apples"], std::out_of_range);
 
@@ -2129,7 +2176,7 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
         REQUIRE(o.iterations.count(500) == 1);
 
 #if openPMD_USE_INVASIVE_TESTS
-        REQUIRE(*o.m_filenamePadding == 8);
+        REQUIRE(*o.get().m_filenamePadding == 8);
 #endif
     } catch (no_such_file_error& e)
     {
@@ -2149,7 +2196,7 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
         REQUIRE(o.iterations.count(500) == 1);
 
 #if openPMD_USE_INVASIVE_TESTS
-        REQUIRE(*o.m_filenamePadding == 8);
+        REQUIRE(*o.get().m_filenamePadding == 8);
 #endif
     } catch (no_such_file_error& e)
     {
@@ -2176,7 +2223,7 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
             Series o = Series("../samples/git-sample/data%T.h5", Access::READ_WRITE);
 
 #if openPMD_USE_INVASIVE_TESTS
-            REQUIRE(*o.m_filenamePadding == 8);
+            REQUIRE(*o.get().m_filenamePadding == 8);
 #endif
 
             o.iterations[1];

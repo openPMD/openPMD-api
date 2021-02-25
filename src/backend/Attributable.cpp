@@ -19,118 +19,123 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/Series.hpp"
+#include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
+#include <complex>
 #include <iostream>
 #include <set>
-#include <complex>
-
 
 namespace openPMD
 {
-Attributable::Attributable()
+namespace internal
+{
+AttributableData::AttributableData()
         : m_writable{std::make_shared< Writable >(this)},
-          abstractFilePosition{m_writable->abstractFilePosition.get()},
-          IOHandler{m_writable->IOHandler.get()},
-          parent{m_writable->parent},
           m_attributes{std::make_shared< A_MAP >()}
 { }
+}
 
-Attributable::Attributable(Attributable const& rhs)
-        : m_writable{rhs.m_writable},
-          abstractFilePosition{rhs.m_writable->abstractFilePosition.get()},
-          IOHandler{rhs.m_writable->IOHandler.get()},
-          parent{rhs.m_writable->parent},
-          m_attributes{rhs.m_attributes}
-{ }
-
-Attributable&
-Attributable::operator=(Attributable const& a)
+AttributableImpl::AttributableImpl( internal::AttributableData * attri )
+    : m_attri{ attri }
 {
-    if( this != &a )
-    {
-        m_writable = a.m_writable;
-        abstractFilePosition = a.m_writable->abstractFilePosition.get();
-        IOHandler = a.m_writable->IOHandler.get();
-        parent = a.m_writable->parent;
-        m_attributes = a.m_attributes;
-    }
-    return *this;
 }
 
 Attribute
-Attributable::getAttribute(std::string const& key) const
+AttributableImpl::getAttribute(std::string const& key) const
 {
-    auto it = m_attributes->find(key);
-    if( it != m_attributes->cend() )
+    auto & attri = get();
+    auto it = attri.m_attributes->find(key);
+    if( it != attri.m_attributes->cend() )
         return it->second;
 
     throw no_such_attribute_error(key);
 }
 
 bool
-Attributable::deleteAttribute(std::string const& key)
+AttributableImpl::deleteAttribute(std::string const& key)
 {
-    if(Access::READ_ONLY == IOHandler->m_frontendAccess )
+    auto & attri = get();
+    if(Access::READ_ONLY == IOHandler()->m_frontendAccess )
         throw std::runtime_error("Can not delete an Attribute in a read-only Series.");
 
-    auto it = m_attributes->find(key);
-    if( it != m_attributes->end() )
+    auto it = attri.m_attributes->find(key);
+    if( it != attri.m_attributes->end() )
     {
         Parameter< Operation::DELETE_ATT > aDelete;
         aDelete.name = key;
-        IOHandler->enqueue(IOTask(this, aDelete));
-        IOHandler->flush();
-        m_attributes->erase(it);
+        IOHandler()->enqueue(IOTask(this, aDelete));
+        IOHandler()->flush();
+        attri.m_attributes->erase(it);
         return true;
     }
     return false;
 }
 
 std::vector< std::string >
-Attributable::attributes() const
+AttributableImpl::attributes() const
 {
+    auto & attri = get();
     std::vector< std::string > ret;
-    ret.reserve(m_attributes->size());
-    for( auto const& entry : *m_attributes )
+    ret.reserve(attri.m_attributes->size());
+    for( auto const& entry : *attri.m_attributes )
         ret.emplace_back(entry.first);
 
     return ret;
 }
 
 size_t
-Attributable::numAttributes() const
+AttributableImpl::numAttributes() const
 {
-    return m_attributes->size();
+    return get().m_attributes->size();
 }
 
 bool
-Attributable::containsAttribute(std::string const &key) const
+AttributableImpl::containsAttribute(std::string const &key) const
 {
-    return m_attributes->find(key) != m_attributes->end();
+    auto & attri = get();
+    return attri.m_attributes->find(key) != attri.m_attributes->end();
 }
 
 std::string
-Attributable::comment() const
+AttributableImpl::comment() const
 {
     return getAttribute("comment").get< std::string >();
 }
 
-Attributable&
-Attributable::setComment(std::string const& c)
+AttributableImpl&
+AttributableImpl::setComment(std::string const& c)
 {
     setAttribute("comment", c);
     return *this;
 }
 
 void
-Attributable::seriesFlush()
+AttributableImpl::seriesFlush()
 {
-    m_writable->seriesFlush();
+    writable()->seriesFlush();
+}
+
+internal::SeriesInternal const & AttributableImpl::retrieveSeries() const
+{
+    Writable const * findSeries = writable();
+    while( findSeries->parent )
+    {
+        findSeries = findSeries->parent;
+    }
+    return auxiliary::deref_dynamic_cast< internal::SeriesInternal >(
+        findSeries->attributable );
+}
+
+internal::SeriesInternal & AttributableImpl::retrieveSeries()
+{
+    return const_cast< internal::SeriesInternal & >(
+        static_cast< AttributableImpl const * >( this )->retrieveSeries() );
 }
 
 void
-Attributable::flushAttributes()
+AttributableImpl::flushAttributes()
 {
     if( dirty() )
     {
@@ -140,7 +145,7 @@ Attributable::flushAttributes()
             aWrite.name = att_name;
             aWrite.resource = getAttribute(att_name).getResource();
             aWrite.dtype = getAttribute(att_name).dtype;
-            IOHandler->enqueue(IOTask(this, aWrite));
+            IOHandler()->enqueue(IOTask(this, aWrite));
         }
 
         dirty() = false;
@@ -148,11 +153,11 @@ Attributable::flushAttributes()
 }
 
 void
-Attributable::readAttributes()
+AttributableImpl::readAttributes()
 {
     Parameter< Operation::LIST_ATTS > aList;
-    IOHandler->enqueue(IOTask(this, aList));
-    IOHandler->flush();
+    IOHandler()->enqueue(IOTask(this, aList));
+    IOHandler()->flush();
     std::vector< std::string > written_attributes = attributes();
 
     /* std::set_difference requires sorted ranges */
@@ -171,10 +176,10 @@ Attributable::readAttributes()
     {
         aRead.name = att_name;
         std::string att = auxiliary::strip(att_name, {'\0'});
-        IOHandler->enqueue(IOTask(this, aRead));
+        IOHandler()->enqueue(IOTask(this, aRead));
         try
         {
-            IOHandler->flush();
+            IOHandler()->flush();
         } catch( unsupported_data_error const& e )
         {
             std::cerr << "Skipping non-standard attribute "
@@ -304,13 +309,10 @@ Attributable::readAttributes()
 }
 
 void
-Attributable::linkHierarchy(std::shared_ptr< Writable > const& w)
+AttributableImpl::linkHierarchy(std::shared_ptr< Writable > const& w)
 {
     auto handler = w->IOHandler;
-    m_writable->IOHandler = handler;
-    this->IOHandler = handler.get();
-    auto writable = w.get();
-    m_writable->parent = writable;
-    this->parent = writable;
+    writable()->IOHandler = handler;
+    writable()->parent = w.get();
 }
 } // openPMD

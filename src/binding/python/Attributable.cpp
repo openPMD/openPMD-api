@@ -358,7 +358,6 @@ bool setAttributeFromObject(
 
 void init_Attributable(py::module &m) {
     py::class_<Attributable>(m, "Attributable")
-        .def(py::init<>())
         .def(py::init<Attributable const &>())
 
         .def("__repr__",

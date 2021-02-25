@@ -48,7 +48,7 @@ Record::setUnitDimension(std::map< UnitDimension, double > const& udim)
 void
 Record::flush_impl(std::string const& name)
 {
-    if(IOHandler->m_frontendAccess == Access::READ_ONLY )
+    if(IOHandler()->m_frontendAccess == Access::READ_ONLY )
     {
         for( auto& comp : *this )
             comp.second.flush(comp.first);
@@ -59,21 +59,18 @@ Record::flush_impl(std::string const& name)
             if( scalar() )
             {
                 RecordComponent& rc = at(RecordComponent::SCALAR);
-                rc.m_writable->parent = parent;
-                rc.parent = parent;
+                rc.parent() = parent();
                 rc.flush(name);
-                IOHandler->flush();
-                m_writable->abstractFilePosition = rc.m_writable->abstractFilePosition;
-                rc.abstractFilePosition = m_writable->abstractFilePosition.get();
-                abstractFilePosition = rc.abstractFilePosition;
+                IOHandler()->flush();
+                writable()->abstractFilePosition = rc.writable()->abstractFilePosition;
                 written() = true;
             } else
             {
                 Parameter< Operation::CREATE_PATH > pCreate;
                 pCreate.path = name;
-                IOHandler->enqueue(IOTask(this, pCreate));
+                IOHandler()->enqueue(IOTask(this, pCreate));
                 for( auto& comp : *this )
-                    comp.second.parent = getWritable(this);
+                    comp.second.parent() = getWritable(this);
             }
         }
 
@@ -94,8 +91,8 @@ Record::read()
     } else
     {
         Parameter< Operation::LIST_PATHS > pList;
-        IOHandler->enqueue(IOTask(this, pList));
-        IOHandler->flush();
+        IOHandler()->enqueue(IOTask(this, pList));
+        IOHandler()->flush();
 
         Parameter< Operation::OPEN_PATH > pOpen;
         for( auto const& component : *pList.paths )
@@ -107,14 +104,14 @@ Record::read()
                 continue;
             }
             pOpen.path = component;
-            IOHandler->enqueue(IOTask(&rc, pOpen));
+            IOHandler()->enqueue(IOTask(&rc, pOpen));
             *rc.m_isConstant = true;
             rc.read();
         }
 
         Parameter< Operation::LIST_DATASETS > dList;
-        IOHandler->enqueue(IOTask(this, dList));
-        IOHandler->flush();
+        IOHandler()->enqueue(IOTask(this, dList));
+        IOHandler()->flush();
 
         Parameter< Operation::OPEN_DATASET > dOpen;
         for( auto const& component : *dList.datasets )
@@ -125,8 +122,8 @@ Record::read()
                 continue;
             }
             dOpen.name = component;
-            IOHandler->enqueue(IOTask(&rc, dOpen));
-            IOHandler->flush();
+            IOHandler()->enqueue(IOTask(&rc, dOpen));
+            IOHandler()->flush();
             rc.written() = false;
             rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
             rc.written() = true;

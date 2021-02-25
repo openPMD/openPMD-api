@@ -54,6 +54,11 @@ namespace traits
     };
 } // traits
 
+namespace internal
+{
+class SeriesData;
+}
+
 /** @brief Map-like container that enforces openPMD requirements and handles IO.
  *
  * @see http://en.cppreference.com/w/cpp/container/map
@@ -67,14 +72,17 @@ template<
         typename T_key = std::string,
         typename T_container = std::map< T_key, T >
 >
-class Container : public Attributable
+class Container : public LegacyAttributable
 {
-    static_assert(std::is_base_of< Attributable, T >::value, "Type of container element must be derived from Writable");
+    static_assert(
+        std::is_base_of< AttributableImpl, T >::value,
+        "Type of container element must be derived from Writable");
     using InternalContainer = T_container;
 
     friend class Iteration;
     friend class ParticleSpecies;
-    friend class Series;
+    friend class SeriesImpl;
+    friend class internal::SeriesData;
 
 public:
     using key_type = typename InternalContainer::key_type;
@@ -112,7 +120,7 @@ public:
      */
     void clear()
     {
-        if(Access::READ_ONLY == IOHandler->m_frontendAccess )
+        if(Access::READ_ONLY == IOHandler()->m_frontendAccess )
             throw std::runtime_error("Can not clear a container in a read-only Series.");
 
         clear_unchecked();
@@ -146,14 +154,14 @@ public:
             return it->second;
         else
         {
-            if(Access::READ_ONLY == IOHandler->m_frontendAccess )
+            if(Access::READ_ONLY == IOHandler()->m_frontendAccess )
             {
                 auxiliary::OutOfRangeMsg const out_of_range_msg;
                 throw std::out_of_range(out_of_range_msg(key));
             }
 
             T t = T();
-            t.linkHierarchy(m_writable);
+            t.linkHierarchy(writableShared());
             auto& ret = m_container->insert({key, std::move(t)}).first->second;
             traits::GenerationPolicy< T > gen;
             gen(ret);
@@ -173,14 +181,14 @@ public:
             return it->second;
         else
         {
-            if(Access::READ_ONLY == IOHandler->m_frontendAccess )
+            if(Access::READ_ONLY == IOHandler()->m_frontendAccess )
             {
                 auxiliary::OutOfRangeMsg out_of_range_msg;
                 throw std::out_of_range(out_of_range_msg(key));
             }
 
             T t = T();
-            t.linkHierarchy(m_writable);
+            t.linkHierarchy(writableShared());
             auto& ret = m_container->insert({std::move(key), std::move(t)}).first->second;
             traits::GenerationPolicy< T > gen;
             gen(ret);
@@ -214,7 +222,7 @@ public:
      */
     virtual size_type erase(key_type const& key)
     {
-        if(Access::READ_ONLY == IOHandler->m_frontendAccess )
+        if(Access::READ_ONLY == IOHandler()->m_frontendAccess )
             throw std::runtime_error("Can not erase from a container in a read-only Series.");
 
         auto res = m_container->find(key);
@@ -222,8 +230,8 @@ public:
         {
             Parameter< Operation::DELETE_PATH > pDelete;
             pDelete.path = ".";
-            IOHandler->enqueue(IOTask(&res->second, pDelete));
-            IOHandler->flush();
+            IOHandler()->enqueue(IOTask(&res->second, pDelete));
+            IOHandler()->flush();
         }
         return m_container->erase(key);
     }
@@ -231,15 +239,15 @@ public:
     //! @todo why does const_iterator not work compile with pybind11?
     virtual iterator erase(iterator res)
     {
-        if(Access::READ_ONLY == IOHandler->m_frontendAccess )
+        if(Access::READ_ONLY == IOHandler()->m_frontendAccess )
             throw std::runtime_error("Can not erase from a container in a read-only Series.");
 
         if( res != m_container->end() && res->second.written() )
         {
             Parameter< Operation::DELETE_PATH > pDelete;
             pDelete.path = ".";
-            IOHandler->enqueue(IOTask(&res->second, pDelete));
-            IOHandler->flush();
+            IOHandler()->enqueue(IOTask(&res->second, pDelete));
+            IOHandler()->flush();
         }
         return m_container->erase(res);
     }
@@ -272,7 +280,7 @@ OPENPMD_protected:
         {
             Parameter< Operation::CREATE_PATH > pCreate;
             pCreate.path = path;
-            IOHandler->enqueue(IOTask(this, pCreate));
+            IOHandler()->enqueue(IOTask(this, pCreate));
         }
 
         flushAttributes();

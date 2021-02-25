@@ -70,11 +70,11 @@ PatchRecordComponent::PatchRecordComponent()
 void
 PatchRecordComponent::flush(std::string const& name)
 {
-    if(IOHandler->m_frontendAccess == Access::READ_ONLY )
+    if(IOHandler()->m_frontendAccess == Access::READ_ONLY )
     {
         while( !m_chunks->empty() )
         {
-            IOHandler->enqueue(m_chunks->front());
+            IOHandler()->enqueue(m_chunks->front());
             m_chunks->pop();
         }
     } else
@@ -89,12 +89,12 @@ PatchRecordComponent::flush(std::string const& name)
             dCreate.compression = m_dataset->compression;
             dCreate.transform = m_dataset->transform;
             dCreate.options = m_dataset->options;
-            IOHandler->enqueue(IOTask(this, dCreate));
+            IOHandler()->enqueue(IOTask(this, dCreate));
         }
 
         while( !m_chunks->empty() )
         {
-            IOHandler->enqueue(m_chunks->front());
+            IOHandler()->enqueue(m_chunks->front());
             m_chunks->pop();
         }
 
@@ -114,8 +114,8 @@ PatchRecordComponent::read()
     Parameter< Operation::READ_ATT > aRead;
 
     aRead.name = "unitSI";
-    IOHandler->enqueue(IOTask(this, aRead));
-    IOHandler->flush();
+    IOHandler()->enqueue(IOTask(this, aRead));
+    IOHandler()->flush();
     if( *aRead.dtype == Datatype::DOUBLE )
         setUnitSI(Attribute(*aRead.resource).get< double >());
     else

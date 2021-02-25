@@ -35,8 +35,8 @@ ParticleSpecies::read()
 {
     /* obtain all non-scalar records */
     Parameter< Operation::LIST_PATHS > pList;
-    IOHandler->enqueue(IOTask(this, pList));
-    IOHandler->flush();
+    IOHandler()->enqueue(IOTask(this, pList));
+    IOHandler()->flush();
 
     Parameter< Operation::OPEN_PATH > pOpen;
     Parameter< Operation::LIST_ATTS > aList;
@@ -45,16 +45,16 @@ ParticleSpecies::read()
         if( record_name == "particlePatches" )
         {
             pOpen.path = "particlePatches";
-            IOHandler->enqueue(IOTask(&particlePatches, pOpen));
+            IOHandler()->enqueue(IOTask(&particlePatches, pOpen));
             particlePatches.read();
         } else
         {
             Record& r = (*this)[record_name];
             pOpen.path = record_name;
             aList.attributes->clear();
-            IOHandler->enqueue(IOTask(&r, pOpen));
-            IOHandler->enqueue(IOTask(&r, aList));
-            IOHandler->flush();
+            IOHandler()->enqueue(IOTask(&r, pOpen));
+            IOHandler()->enqueue(IOTask(&r, aList));
+            IOHandler()->flush();
 
             auto att_begin = aList.attributes->begin();
             auto att_end = aList.attributes->end();
@@ -63,9 +63,9 @@ ParticleSpecies::read()
             if( value != att_end && shape != att_end )
             {
                 RecordComponent& rc = r[RecordComponent::SCALAR];
-                rc.parent = r.parent;
-                IOHandler->enqueue(IOTask(&rc, pOpen));
-                IOHandler->flush();
+                rc.parent() = r.parent();
+                IOHandler()->enqueue(IOTask(&rc, pOpen));
+                IOHandler()->flush();
                 *rc.m_isConstant = true;
             }
             r.read();
@@ -74,8 +74,8 @@ ParticleSpecies::read()
 
     /* obtain all scalar records */
     Parameter< Operation::LIST_DATASETS > dList;
-    IOHandler->enqueue(IOTask(this, dList));
-    IOHandler->flush();
+    IOHandler()->enqueue(IOTask(this, dList));
+    IOHandler()->flush();
 
     Parameter< Operation::OPEN_DATASET > dOpen;
     for( auto const& record_name : *dList.datasets )
@@ -83,12 +83,12 @@ ParticleSpecies::read()
         try {
             Record& r = (*this)[record_name];
             dOpen.name = record_name;
-            IOHandler->enqueue(IOTask(&r, dOpen));
-            IOHandler->flush();
+            IOHandler()->enqueue(IOTask(&r, dOpen));
+            IOHandler()->flush();
             RecordComponent& rc = r[RecordComponent::SCALAR];
-            rc.parent = r.parent;
-            IOHandler->enqueue(IOTask(&rc, dOpen));
-            IOHandler->flush();
+            rc.parent() = r.parent();
+            IOHandler()->enqueue(IOTask(&rc, dOpen));
+            IOHandler()->flush();
             rc.written() = false;
             rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
             rc.written() = true;
@@ -98,8 +98,8 @@ ParticleSpecies::read()
             std::cerr << "WARNING: Skipping invalid openPMD record '"
                       << record_name << "'"
                       << std::endl;
-            while( ! IOHandler->m_work.empty() )
-                IOHandler->m_work.pop();
+            while( ! IOHandler()->m_work.empty() )
+                IOHandler()->m_work.pop();
 
             //(*this)[record_name].erase(RecordComponent::SCALAR);
             //this->erase(record_name);
@@ -122,7 +122,7 @@ namespace
 void
 ParticleSpecies::flush(std::string const& path)
 {
-    if(IOHandler->m_frontendAccess == Access::READ_ONLY )
+    if(IOHandler()->m_frontendAccess == Access::READ_ONLY )
     {
         for( auto& record : *this )
             record.second.flush(record.first);
