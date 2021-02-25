@@ -14,3 +14,5 @@ spack:
   - python
   - py-mpi4py
   - py-numpy
+  - py-pandas
+  - py-dask

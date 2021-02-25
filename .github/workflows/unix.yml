@@ -174,7 +174,7 @@ jobs:
 #  gcc-4.8.5_py35_nompi_h5
 #  gcc-7.4.0_py_ompi_h5_ad1_ad2_coveralls
 
-  gcc5_py36_pd_ompi_h5_ad1_ad2:
+  gcc5_py36_pd_dd_ompi_h5_ad1_ad2:
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
@@ -190,6 +190,8 @@ jobs:
         python3 -m pip install -U numpy
         python3 -m pip install -U mpi4py
         python3 -m pip install -U pandas
+        python3 -m pip install -U dask
+        python3 -m pip install -U pyarrow
     - name: Build
       env: {CC: gcc-5, CXX: g++-5, CXXFLAGS: -Werror -Wno-deprecated-declarations}
       run: |
@@ -198,7 +200,13 @@ jobs:
 
         mkdir build && cd build
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
-        cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS1=ON -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON
+        cmake -S .. -B . \
+          -DopenPMD_USE_PYTHON=ON \
+          -DopenPMD_USE_MPI=ON    \
+          -DopenPMD_USE_HDF5=ON   \
+          -DopenPMD_USE_ADIOS1=ON \
+          -DopenPMD_USE_ADIOS2=ON \
+          -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build . --parallel 2
         ctest --output-on-failure
 

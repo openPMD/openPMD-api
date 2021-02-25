@@ -122,7 +122,9 @@ Optional language bindings:
   * Python 3.6 - 3.9
   * pybind11 2.6.1+
   * numpy 1.15+
-  * mpi4py 2.1+
+  * mpi4py 2.1+ (optional, for MPI)
+  * pandas 1.0+ (optional, for dataframes)
+  * dask 2021+ (optional, for dask dataframes)
 
 ## Installation
 
@@ -397,6 +399,8 @@ Further thanks go to improvements and contributions from:
   compatibility testing, documentation improvements
 * [Paweł Ordyna (HZDR)](https://github.com/pordyna):
   report on NVCC warnings
+* [Dmitry Ganyushin (ORNL)](https://github.com/dmitry-ganyushin):
+  Dask dataframe support
 
 ### Grants
 
