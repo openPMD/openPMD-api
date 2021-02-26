@@ -58,6 +58,7 @@ class AttributableData;
  */
 class Writable final
 {
+    friend class internal::AttributableData;
     friend class AttributableImpl;
     template< typename T_elem >
     friend class BaseRecord;
@@ -83,9 +84,16 @@ class Writable final
     friend std::string concrete_h5_file_position(Writable*);
     friend std::string concrete_bp1_file_position(Writable*);
 
+private:
+    Writable( internal::AttributableData * );
+
 public:
-    Writable(internal::AttributableData* = nullptr);
     ~Writable() = default;
+
+    Writable( Writable const & other ) = delete;
+    Writable( Writable && other ) = delete;
+    Writable & operator=( Writable const & other ) = delete;
+    Writable & operator=( Writable && other ) = delete;
 
     /** Flush the corresponding Series object
      *
@@ -97,6 +105,10 @@ public:
     void seriesFlush();
 
 OPENPMD_private:
+    /*
+     * These members need to be shared pointers since distinct instances of
+     * Writable may share them.
+     */
     std::shared_ptr< AbstractFilePosition > abstractFilePosition;
     std::shared_ptr< AbstractIOHandler > IOHandler;
     internal::AttributableData* attributable;

@@ -206,7 +206,7 @@ BaseRecord< T_elem >::erase(key_type const& key)
     if( keyScalar )
     {
         this->written() = false;
-        this->writable()->abstractFilePosition.reset();
+        this->writable().abstractFilePosition.reset();
         *this->m_containsScalar = false;
     }
     return res;
@@ -236,7 +236,7 @@ BaseRecord< T_elem >::erase(iterator res)
     if( keyScalar )
     {
         this->written() = false;
-        this->writable()->abstractFilePosition.reset();
+        this->writable().abstractFilePosition.reset();
         *this->m_containsScalar = false;
     }
     return ret;

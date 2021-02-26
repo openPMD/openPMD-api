@@ -246,7 +246,12 @@ private:
     bool
     dirtyRecursive() const;
 
-    virtual void linkHierarchy(std::shared_ptr< Writable > const& w);
+    /**
+     * @brief Link with parent.
+     * 
+     * @param w The Writable representing the parent.
+     */
+    virtual void linkHierarchy(Writable& w);
 };  // Iteration
 
 extern template

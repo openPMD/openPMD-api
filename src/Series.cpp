@@ -398,8 +398,8 @@ SeriesImpl::init(std::shared_ptr< AbstractIOHandler > ioHandler,
              std::unique_ptr< SeriesImpl::ParsedInput > input)
 {
     auto & series = get();
-    writable()->IOHandler = ioHandler;
-    series.iterations.linkHierarchy(writableShared());
+    writable().IOHandler = ioHandler;
+    series.iterations.linkHierarchy(writable());
 
     series.m_name = input->name;
 
@@ -992,7 +992,7 @@ SeriesImpl::indexOf( Iteration const & iteration )
     for( auto it = series.iterations.begin(); it != series.iterations.end();
          ++it )
     {
-        if( it->second.writable() == iteration.writable() )
+        if( &it->second.Attributable::get() == &iteration.Attributable::get() )
         {
             return it;
         }
@@ -1063,7 +1063,7 @@ SeriesImpl::advance(
     else
     {
         param.mode = mode;
-        IOTask task( file.m_writable.get(), param );
+        IOTask task( &file.m_writable, param );
         IOHandler()->enqueue( task );
     }
 

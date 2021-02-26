@@ -564,11 +564,11 @@ Iteration::dirtyRecursive() const
 }
 
 void
-Iteration::linkHierarchy(std::shared_ptr< Writable > const& w)
+Iteration::linkHierarchy(Writable& w)
 {
     AttributableImpl::linkHierarchy(w);
-    meshes.linkHierarchy(writableShared());
-    particles.linkHierarchy(writableShared());
+    meshes.linkHierarchy(this->writable());
+    particles.linkHierarchy(this->writable());
 }
 
 template float

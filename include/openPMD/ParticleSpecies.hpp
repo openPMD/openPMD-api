@@ -66,7 +66,7 @@ namespace traits
         template< typename T >
         void operator()(T & ret)
         {
-            ret.particlePatches.linkHierarchy(ret.writableShared());
+            ret.particlePatches.linkHierarchy(ret.writable());
 
             auto& np = ret.particlePatches["numParticles"];
             auto& npc = np[RecordComponent::SCALAR];

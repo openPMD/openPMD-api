@@ -31,10 +31,9 @@ namespace openPMD
 {
 namespace internal
 {
-AttributableData::AttributableData()
-        : m_writable{std::make_shared< Writable >(this)},
-          m_attributes{std::make_shared< A_MAP >()}
-{ }
+AttributableData::AttributableData() : m_writable{ this }
+{
+}
 }
 
 AttributableImpl::AttributableImpl( internal::AttributableData * attri )
@@ -46,8 +45,8 @@ Attribute
 AttributableImpl::getAttribute(std::string const& key) const
 {
     auto & attri = get();
-    auto it = attri.m_attributes->find(key);
-    if( it != attri.m_attributes->cend() )
+    auto it = attri.m_attributes.find(key);
+    if( it != attri.m_attributes.cend() )
         return it->second;
 
     throw no_such_attribute_error(key);
@@ -60,14 +59,14 @@ AttributableImpl::deleteAttribute(std::string const& key)
     if(Access::READ_ONLY == IOHandler()->m_frontendAccess )
         throw std::runtime_error("Can not delete an Attribute in a read-only Series.");
 
-    auto it = attri.m_attributes->find(key);
-    if( it != attri.m_attributes->end() )
+    auto it = attri.m_attributes.find(key);
+    if( it != attri.m_attributes.end() )
     {
         Parameter< Operation::DELETE_ATT > aDelete;
         aDelete.name = key;
         IOHandler()->enqueue(IOTask(this, aDelete));
         IOHandler()->flush();
-        attri.m_attributes->erase(it);
+        attri.m_attributes.erase(it);
         return true;
     }
     return false;
@@ -78,8 +77,8 @@ AttributableImpl::attributes() const
 {
     auto & attri = get();
     std::vector< std::string > ret;
-    ret.reserve(attri.m_attributes->size());
-    for( auto const& entry : *attri.m_attributes )
+    ret.reserve(attri.m_attributes.size());
+    for( auto const& entry : attri.m_attributes )
         ret.emplace_back(entry.first);
 
     return ret;
@@ -88,14 +87,14 @@ AttributableImpl::attributes() const
 size_t
 AttributableImpl::numAttributes() const
 {
-    return get().m_attributes->size();
+    return get().m_attributes.size();
 }
 
 bool
 AttributableImpl::containsAttribute(std::string const &key) const
 {
     auto & attri = get();
-    return attri.m_attributes->find(key) != attri.m_attributes->end();
+    return attri.m_attributes.find(key) != attri.m_attributes.end();
 }
 
 std::string
@@ -114,12 +113,12 @@ AttributableImpl::setComment(std::string const& c)
 void
 AttributableImpl::seriesFlush()
 {
-    writable()->seriesFlush();
+    writable().seriesFlush();
 }
 
 internal::SeriesInternal const & AttributableImpl::retrieveSeries() const
 {
-    Writable const * findSeries = writable();
+    Writable const * findSeries = &writable();
     while( findSeries->parent )
     {
         findSeries = findSeries->parent;
@@ -309,10 +308,10 @@ AttributableImpl::readAttributes()
 }
 
 void
-AttributableImpl::linkHierarchy(std::shared_ptr< Writable > const& w)
+AttributableImpl::linkHierarchy(Writable& w)
 {
-    auto handler = w->IOHandler;
-    writable()->IOHandler = handler;
-    writable()->parent = w.get();
+    auto handler = w.IOHandler;
+    writable().IOHandler = handler;
+    writable().parent = &w;
 }
 } // openPMD

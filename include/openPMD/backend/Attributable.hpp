@@ -77,10 +77,10 @@ public:
     AttributableData & operator=( AttributableData && ) = delete;
 
     using A_MAP = std::map< std::string, Attribute >;
-    std::shared_ptr< Writable > m_writable;
+    Writable m_writable;
 
 private:
-    std::shared_ptr< A_MAP > m_attributes;
+    A_MAP m_attributes;
 };
 }
 
@@ -243,31 +243,27 @@ OPENPMD_protected:
      * purely for convenience so code that uses these does not have to go through m_writable-> */
     AbstractIOHandler * IOHandler()
     {
-        return m_attri->m_writable->IOHandler.get();
+        return m_attri->m_writable.IOHandler.get();
     }
     AbstractIOHandler const * IOHandler() const
     {
-        return m_attri->m_writable->IOHandler.get();
+        return m_attri->m_writable.IOHandler.get();
     }
     Writable *& parent()
     {
-        return m_attri->m_writable->parent;
+        return m_attri->m_writable.parent;
     }
     Writable const * parent() const
     {
-        return m_attri->m_writable->parent;
+        return m_attri->m_writable.parent;
     }
-    Writable * writable()
+    Writable & writable()
     {
-        return m_attri->m_writable.get();
+        return m_attri->m_writable;
     }
-    Writable const * writable() const
+    Writable const & writable() const
     {
-        return m_attri->m_writable.get();
-    }
-    std::shared_ptr< Writable > const & writableShared() const
-    {
-        return get().m_writable;
+        return m_attri->m_writable;
     }
 
     inline
@@ -281,13 +277,18 @@ OPENPMD_protected:
         return *m_attri;
     }
 
-    bool dirty() const { return writable()->dirty; }
-    bool& dirty() { return writable()->dirty; }
-    bool written() const { return writable()->written; }
-    bool& written() { return writable()->written; }
+    bool dirty() const { return writable().dirty; }
+    bool& dirty() { return writable().dirty; }
+    bool written() const { return writable().written; }
+    bool& written() { return writable().written; }
 
 private:
-    virtual void linkHierarchy(std::shared_ptr< Writable > const& w);
+    /**
+     * @brief Link with parent.
+     * 
+     * @param w The Writable representing the parent.
+     */
+    virtual void linkHierarchy(Writable& w);
 }; // AttributableImpl
 
 // Alias this as Attributable since this is a public abstract parent class
@@ -323,9 +324,9 @@ AttributableImpl::setAttribute( std::string const & key, T const & value )
     }
 
     dirty() = true;
-    auto it = attri.m_attributes->lower_bound(key);
-    if( it != attri.m_attributes->end()
-        && !attri.m_attributes->key_comp()(key, it->first) )
+    auto it = attri.m_attributes.lower_bound(key);
+    if( it != attri.m_attributes.end()
+        && !attri.m_attributes.key_comp()(key, it->first) )
     {
         // key already exists in map, just replace the value
         it->second = Attribute(value);
@@ -333,7 +334,7 @@ AttributableImpl::setAttribute( std::string const & key, T const & value )
     } else
     {
         // emplace a new map element for an unknown key
-        attri.m_attributes->emplace_hint(
+        attri.m_attributes.emplace_hint(
             it, std::make_pair(key, Attribute(value)));
         return false;
     }

@@ -62,7 +62,7 @@ Record::flush_impl(std::string const& name)
                 rc.parent() = parent();
                 rc.flush(name);
                 IOHandler()->flush();
-                writable()->abstractFilePosition = rc.writable()->abstractFilePosition;
+                writable().abstractFilePosition = rc.writable().abstractFilePosition;
                 written() = true;
             } else
             {

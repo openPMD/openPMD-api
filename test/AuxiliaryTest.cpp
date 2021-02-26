@@ -36,7 +36,7 @@ struct TestHelper : public LegacyAttributable
 {
     TestHelper()
     {
-        writable()->IOHandler = createIOHandler(".", Access::CREATE, Format::JSON);
+        writable().IOHandler = createIOHandler(".", Access::CREATE, Format::JSON);
     }
 };
 } // test

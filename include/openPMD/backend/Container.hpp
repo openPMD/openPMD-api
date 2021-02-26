@@ -161,7 +161,7 @@ public:
             }
 
             T t = T();
-            t.linkHierarchy(writableShared());
+            t.linkHierarchy(writable());
             auto& ret = m_container->insert({key, std::move(t)}).first->second;
             traits::GenerationPolicy< T > gen;
             gen(ret);
@@ -188,7 +188,7 @@ public:
             }
 
             T t = T();
-            t.linkHierarchy(writableShared());
+            t.linkHierarchy(writable());
             auto& ret = m_container->insert({std::move(key), std::move(t)}).first->second;
             traits::GenerationPolicy< T > gen;
             gen(ret);
