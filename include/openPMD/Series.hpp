@@ -128,6 +128,13 @@ public:
     Container< Iteration, uint64_t > iterations{};
 
 OPENPMD_private :
+    auxiliary::Option< WriteIterations > m_writeIterations;
+    std::string m_name;
+    std::string m_filenamePrefix;
+    std::string m_filenamePostfix;
+    int m_filenamePadding;
+    IterationEncoding m_iterationEncoding{};
+    Format m_format;
     /**
      *  Whether a step is currently active for this iteration.
      * Used for group-based iteration layout, see SeriesData.hpp for
@@ -136,15 +143,6 @@ OPENPMD_private :
      * one among both flags.
      */
     StepStatus m_stepStatus = StepStatus::NoStep;
-    IterationEncoding m_iterationEncoding{};
-    std::string m_name;
-    Format m_format;
-
-    std::string m_filenamePrefix;
-    std::string m_filenamePostfix;
-    int m_filenamePadding;
-
-    auxiliary::Option< WriteIterations > m_writeIterations;
 }; // SeriesData
 
 class SeriesInternal;
