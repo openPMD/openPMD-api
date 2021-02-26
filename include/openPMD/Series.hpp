@@ -52,9 +52,53 @@
 namespace openPMD
 {
 class ReadIterations;
-class WriteIterations;
 class Series;
 class SeriesImpl;
+
+
+/** Writing side of the streaming API.
+ *
+ * Create instance via Series::writeIterations().
+ * For use via WriteIterations::operator[]().
+ * Designed to allow reading any kind of Series, streaming and non-
+ * streaming alike. Calling Iteration::close() manually before opening
+ * the next iteration is encouraged and will implicitly flush all
+ * deferred IO actions. Otherwise, Iteration::close() will be implicitly
+ * called upon SeriesIterator::operator++(), i.e. upon going to the next
+ * iteration in the foreach loop.
+ *
+ * Since this is designed for streaming mode, reopening an iteration is
+ * not possible once it has been closed.
+ *
+ */
+class WriteIterations : private Container< Iteration, uint64_t >
+{
+    friend class Series;
+
+private:
+    using iterations_t = Container< Iteration, uint64_t >;
+    struct SharedResources
+    {
+        iterations_t iterations;
+        auxiliary::Option< uint64_t > currentlyOpen;
+
+        SharedResources( iterations_t );
+        ~SharedResources();
+    };
+
+    using key_type = typename iterations_t::key_type;
+    using value_type = typename iterations_t::key_type;
+    WriteIterations( iterations_t );
+    explicit WriteIterations() = default;
+    //! Index of the last opened iteration
+    std::shared_ptr< SharedResources > shared;
+
+public:
+    mapped_type &
+    operator[]( key_type const & key ) override;
+    mapped_type &
+    operator[]( key_type && key ) override;
+};
 
 namespace internal
 {
@@ -91,20 +135,16 @@ OPENPMD_private :
      * Access via stepStatus() method to automatically select the correct
      * one among both flags.
      */
-    std::shared_ptr< StepStatus >
-        m_stepStatus = std::make_shared< StepStatus >( StepStatus::NoStep );
+    StepStatus m_stepStatus = StepStatus::NoStep;
+    IterationEncoding m_iterationEncoding{};
+    std::string m_name;
+    Format m_format;
 
-    std::shared_ptr< IterationEncoding > m_iterationEncoding{
-        std::make_shared< IterationEncoding >() };
-    std::shared_ptr< std::string > m_name;
-    std::shared_ptr< Format > m_format;
+    std::string m_filenamePrefix;
+    std::string m_filenamePostfix;
+    int m_filenamePadding;
 
-    std::shared_ptr< std::string > m_filenamePrefix;
-    std::shared_ptr< std::string > m_filenamePostfix;
-    std::shared_ptr< int > m_filenamePadding;
-
-    std::shared_ptr< auxiliary::Option< WriteIterations > > m_writeIterations =
-        std::make_shared< auxiliary::Option< WriteIterations > >();
+    auxiliary::Option< WriteIterations > m_writeIterations;
 }; // SeriesData
 
 class SeriesInternal;
@@ -553,49 +593,5 @@ public:
 
     iterator_t
     end();
-};
-
-/** Writing side of the streaming API.
- *
- * Create instance via Series::writeIterations().
- * For use via WriteIterations::operator[]().
- * Designed to allow reading any kind of Series, streaming and non-
- * streaming alike. Calling Iteration::close() manually before opening
- * the next iteration is encouraged and will implicitly flush all
- * deferred IO actions. Otherwise, Iteration::close() will be implicitly
- * called upon SeriesIterator::operator++(), i.e. upon going to the next
- * iteration in the foreach loop.
- *
- * Since this is designed for streaming mode, reopening an iteration is
- * not possible once it has been closed.
- *
- */
-class WriteIterations : private Container< Iteration, uint64_t >
-{
-    friend class Series;
-
-private:
-    using iterations_t = Container< Iteration, uint64_t >;
-    struct SharedResources
-    {
-        iterations_t iterations;
-        auxiliary::Option< uint64_t > currentlyOpen;
-
-        SharedResources( iterations_t );
-        ~SharedResources();
-    };
-
-    using key_type = typename iterations_t::key_type;
-    using value_type = typename iterations_t::key_type;
-    WriteIterations( iterations_t );
-    explicit WriteIterations() = default;
-    //! Index of the last opened iteration
-    std::shared_ptr< SharedResources > shared;
-
-public:
-    mapped_type &
-    operator[]( key_type const & key ) override;
-    mapped_type &
-    operator[]( key_type && key ) override;
 };
 } // namespace openPMD

@@ -249,7 +249,7 @@ SeriesImpl::setMachine(std::string const &newMachine)
 IterationEncoding
 SeriesImpl::iterationEncoding() const
 {
-    return *get().m_iterationEncoding;
+    return get().m_iterationEncoding;
 }
 
 SeriesImpl&
@@ -259,11 +259,11 @@ SeriesImpl::setIterationEncoding(IterationEncoding ie)
     if( written() )
         throw std::runtime_error("A files iterationEncoding can not (yet) be changed after it has been written.");
 
-    *series.m_iterationEncoding = ie;
+    series.m_iterationEncoding = ie;
     switch( ie )
     {
         case IterationEncoding::fileBased:
-            setIterationFormat(*series.m_name);
+            setIterationFormat(series.m_name);
             setAttribute("iterationEncoding", std::string("fileBased"));
             break;
         case IterationEncoding::groupBased:
@@ -287,7 +287,7 @@ SeriesImpl::setIterationFormat(std::string const& i)
     if( written() )
         throw std::runtime_error("A files iterationFormat can not (yet) be changed after it has been written.");
 
-    if( *series.m_iterationEncoding == IterationEncoding::groupBased )
+    if( series.m_iterationEncoding == IterationEncoding::groupBased )
         if( basePath() != i && (openPMD() == "1.0.1" || openPMD() == "1.0.0") )
             throw std::invalid_argument("iterationFormat must not differ from basePath " + basePath() + " for groupBased data");
 
@@ -298,7 +298,7 @@ SeriesImpl::setIterationFormat(std::string const& i)
 std::string
 SeriesImpl::name() const
 {
-    return *get().m_name;
+    return get().m_name;
 }
 
 SeriesImpl&
@@ -308,10 +308,10 @@ SeriesImpl::setName(std::string const& n)
     if( written() )
         throw std::runtime_error("A files name can not (yet) be changed after it has been written.");
 
-    if( *series.m_iterationEncoding == IterationEncoding::fileBased && !auxiliary::contains(*series.m_name, "%T") )
+    if( series.m_iterationEncoding == IterationEncoding::fileBased && !auxiliary::contains(series.m_name, "%T") )
             throw std::runtime_error("For fileBased formats the iteration regex %T must be included in the file name");
 
-    *series.m_name = n;
+    series.m_name = n;
     dirty() = true;
     return *this;
 }
@@ -401,13 +401,13 @@ SeriesImpl::init(std::shared_ptr< AbstractIOHandler > ioHandler,
     writable()->IOHandler = ioHandler;
     series.iterations.linkHierarchy(writableShared());
 
-    series.m_name = std::make_shared< std::string >(input->name);
+    series.m_name = input->name;
 
-    series.m_format = std::make_shared< Format >(input->format);
+    series.m_format = input->format;
 
-    series.m_filenamePrefix = std::make_shared< std::string >(input->filenamePrefix);
-    series.m_filenamePostfix = std::make_shared< std::string >(input->filenamePostfix);
-    series.m_filenamePadding = std::make_shared< int >(input->filenamePadding);
+    series.m_filenamePrefix = input->filenamePrefix;
+    series.m_filenamePostfix = input->filenamePostfix;
+    series.m_filenamePadding = input->filenamePadding;
 
     if(IOHandler()->m_frontendAccess == Access::READ_ONLY || IOHandler()->m_frontendAccess == Access::READ_WRITE )
     {
@@ -642,7 +642,7 @@ SeriesImpl::flushGroupBased( iterations_iterator begin, iterations_iterator end 
         if( !written() )
         {
             Parameter< Operation::CREATE_FILE > fCreate;
-            fCreate.name = *series.m_name;
+            fCreate.name = series.m_name;
             IOHandler()->enqueue(IOTask(this, fCreate));
         }
 
@@ -722,8 +722,8 @@ SeriesImpl::readFileBased( )
         throw no_such_file_error("Supplied directory is not valid: " + IOHandler()->directory);
 
     auto isPartOfSeries = matcher(
-        *series.m_filenamePrefix, *series.m_filenamePadding,
-        *series.m_filenamePostfix, *series.m_format);
+        series.m_filenamePrefix, series.m_filenamePadding,
+        series.m_filenamePostfix, series.m_format);
     bool isContained;
     int padding;
     std::set< int > paddings;
@@ -751,10 +751,10 @@ SeriesImpl::readFileBased( )
                 std::string encoding =
                     Attribute( *aRead.resource ).get< std::string >();
                 if( encoding == "fileBased" )
-                    *series.m_iterationEncoding = IterationEncoding::fileBased;
+                    series.m_iterationEncoding = IterationEncoding::fileBased;
                 else if( encoding == "groupBased" )
                 {
-                    *series.m_iterationEncoding = IterationEncoding::groupBased;
+                    series.m_iterationEncoding = IterationEncoding::groupBased;
                     std::cerr << "Series constructor called with iteration "
                                     "regex '%T' suggests loading a "
                                 << "time series with fileBased iteration "
@@ -805,7 +805,7 @@ SeriesImpl::readFileBased( )
     }
 
     if( paddings.size() == 1u )
-        *series.m_filenamePadding = *paddings.begin();
+        series.m_filenamePadding = *paddings.begin();
 
     /* Frontend access type might change during SeriesImpl::read() to allow parameter modification.
      * Backend access type stays unchanged for the lifetime of a Series. */
@@ -819,7 +819,7 @@ SeriesImpl::readGroupBased( bool do_init )
 {
     auto & series = get();
     Parameter< Operation::OPEN_FILE > fOpen;
-    fOpen.name = *series.m_name;
+    fOpen.name = series.m_name;
     IOHandler()->enqueue(IOTask(this, fOpen));
     IOHandler()->flush();
 
@@ -836,10 +836,10 @@ SeriesImpl::readGroupBased( bool do_init )
         {
             std::string encoding = Attribute(*aRead.resource).get< std::string >();
             if( encoding == "groupBased" )
-                *series.m_iterationEncoding = IterationEncoding::groupBased;
+                series.m_iterationEncoding = IterationEncoding::groupBased;
             else if( encoding == "fileBased" )
             {
-                *series.m_iterationEncoding = IterationEncoding::fileBased;
+                series.m_iterationEncoding = IterationEncoding::fileBased;
                 std::cerr << "Series constructor called with explicit iteration suggests loading a "
                           << "single file with groupBased iteration encoding. Loaded file is fileBased.\n";
             } else
@@ -979,10 +979,10 @@ SeriesImpl::iterationFilename( uint64_t i )
 {
     auto & series = get();
     std::stringstream iteration( "" );
-    iteration << std::setw( *series.m_filenamePadding )
+    iteration << std::setw( series.m_filenamePadding )
               << std::setfill( '0' ) << i;
-    return *series.m_filenamePrefix + iteration.str()
-           + *series.m_filenamePostfix;
+    return series.m_filenamePrefix + iteration.str()
+           + series.m_filenamePostfix;
 }
 
 SeriesImpl::iterations_iterator
@@ -1023,7 +1023,7 @@ SeriesImpl::advance(
         *iteration.m_closed = Iteration::CloseStatus::Open;
     }
 
-    switch( *series.m_iterationEncoding )
+    switch( series.m_iterationEncoding )
     {
         using IE = IterationEncoding;
         case IE::groupBased:
@@ -1039,7 +1039,7 @@ SeriesImpl::advance(
     }
     else if(
         oldCloseStatus == Iteration::CloseStatus::ClosedInBackend &&
-        *series.m_iterationEncoding == IterationEncoding::fileBased )
+        series.m_iterationEncoding == IterationEncoding::fileBased )
     {
         /*
          * In file-based iteration encoding, we want to avoid accidentally
@@ -1051,7 +1051,7 @@ SeriesImpl::advance(
 
     Parameter< Operation::ADVANCE > param;
     if( *iteration.m_closed == Iteration::CloseStatus::ClosedTemporarily &&
-        *series.m_iterationEncoding == IterationEncoding::fileBased )
+        series.m_iterationEncoding == IterationEncoding::fileBased )
     {
         /*
          * If the Series has file-based iteration layout and the file has not
@@ -1072,7 +1072,7 @@ SeriesImpl::advance(
         mode == AdvanceMode::ENDSTEP )
     {
         using IE = IterationEncoding;
-        switch( *series.m_iterationEncoding )
+        switch( series.m_iterationEncoding )
         {
             case IE::fileBased:
             {
@@ -1229,11 +1229,11 @@ WriteIterations
 Series::writeIterations()
 {
     auto & series = get();
-    if( !series.m_writeIterations->has_value() )
+    if( !series.m_writeIterations.has_value() )
     {
-        *series.m_writeIterations = WriteIterations( this->iterations );
+        series.m_writeIterations = WriteIterations( this->iterations );
     }
-    return series.m_writeIterations->get();
+    return series.m_writeIterations.get();
 }
 
 namespace

@@ -515,7 +515,7 @@ Iteration::getStepStatus()
         case IE::fileBased:
             return *this->m_stepStatus;
         case IE::groupBased:
-            return *s->m_stepStatus;
+            return s->m_stepStatus;
         default:
             throw std::runtime_error( "[Iteration] unreachable" );
     }
@@ -532,7 +532,7 @@ Iteration::setStepStatus( StepStatus status )
             *this->m_stepStatus = status;
             break;
         case IE::groupBased:
-            *s->m_stepStatus = status;
+            s->m_stepStatus = status;
             break;
         default:
             throw std::runtime_error( "[Iteration] unreachable" );
