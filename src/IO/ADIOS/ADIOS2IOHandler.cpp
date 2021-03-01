@@ -659,7 +659,16 @@ struct GetSpan
         variable.SetSelection( { std::move( offset ), std::move( extent ) } );
         typename adios2::Variable< T >::Span span = engine.Put( variable );
         params.out->taskSupportedByBackend = true;
-        params.out->ptr = span.data();
+        /*
+         * SIC!
+         * Do not emplace span.data() yet.
+         * Only call span.data() as soon as the user needs the pointer
+         * (will always be propagated to the backend with parameters.update
+         *  = true).
+         * This avoids repeated resizing of ADIOS2 internal buffers if calling
+         * multiple spans.
+         */
+        // params.out->ptr = span.data();
         unsigned nextIndex;
         if( ba.m_updateSpans.empty() )
         {
