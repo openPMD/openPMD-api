@@ -28,6 +28,7 @@
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
+#include <cstddef>
 #include <cstdlib>
 #include <iostream>
 #include <numeric>
@@ -52,7 +53,7 @@ namespace detail
             constexpr size_t
             operator()( Args &&... ) const
             {
-                return 0;
+                return alignof(std::max_align_t);
             }
         };
 
@@ -102,7 +103,15 @@ namespace detail
                 {
                     numItems *= extent;
                 }
-                new( dest ) T[ numItems ]{};
+                /*
+                 * MSVC does not like placement new of arrays, so we do it
+                 * in a loop instead.
+                 * https://developercommunity.visualstudio.com/t/c-placement-new-is-incorrectly-compiled/206439
+                 */
+                for( size_t i = 0; i < numItems; ++i )
+                {
+                    new( dest + i ) T();
+                }
                 location.destroy = buffer;
                 engine.Get( var, dest, adios2::Mode::Deferred );
             }
