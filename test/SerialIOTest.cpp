@@ -3470,7 +3470,26 @@ iterate_nonstreaming_series( std::string const & file )
                 openPMD::Dataset( openPMD::Datatype::INT, { 2, extent } ) );
             std::vector< int > data( extent, i );
             E_x.storeChunk( data, { 0, 0 }, { 1, extent } );
-            Span< int > span = E_x.storeChunk< int >( { 1, 0 }, { 1, extent } );
+            bool taskSupportedByBackend = true;
+            Span< int > span = E_x.storeChunk< int >(
+                { 1, 0 },
+                { 1, extent },
+                /*
+                 * Hijack the functor that is called for buffer creation if the
+                 * backend doesn't support the task to see whether the backend
+                 * did support it or not.
+                 */
+                [ &taskSupportedByBackend ]( size_t size )
+                {
+                    taskSupportedByBackend = false;
+                    return std::shared_ptr< int >{
+                        new int[ size ], []( auto * ptr ) { delete[] ptr; } };
+                } );
+            if( writeSeries.backend() == "ADIOS2" )
+            {
+                // that backend must support span creation
+                REQUIRE( taskSupportedByBackend );
+            }
             for( size_t j = 0; j < span.size(); ++j )
             {
                 span[ j ] = j;

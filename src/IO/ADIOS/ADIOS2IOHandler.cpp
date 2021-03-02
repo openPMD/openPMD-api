@@ -695,6 +695,11 @@ ADIOS2IOHandlerImpl::getBufferView(
     Parameter< Operation::GET_BUFFER_VIEW > & parameters )
 {
     // @todo check access mode
+    if( m_engineType != "bp4" )
+    {
+        parameters.out->taskSupportedByBackend = false;
+        return;
+    }
     setAndGetFilePosition( writable );
     auto file = refreshFileFromParent( writable );
     detail::BufferedActions &ba = getFileData( file );
