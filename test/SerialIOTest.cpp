@@ -3494,6 +3494,20 @@ iterate_nonstreaming_series( std::string const & file )
             {
                 span[ j ] = j;
             }
+
+            /*
+             * This is to test whether defaults are correctly written for
+             * scalar record components since there previously was a bug.
+             */
+            auto scalarMesh =
+                iteration
+                    .meshes[ "i_energyDensity" ][ MeshRecordComponent::SCALAR ];
+            scalarMesh.resetDataset( Dataset( Datatype::INT, { 5 } ) );
+            auto scalarSpan = scalarMesh.storeChunk< int >( { 0 }, { 5 } );
+            for( size_t j = 0; j < scalarSpan.size(); ++j )
+            {
+                scalarSpan[ j ] = j;
+            }
             // we encourage manually closing iterations, but it should not
             // matter so let's do the switcharoo for this test
             if( i % 2 == 0 )

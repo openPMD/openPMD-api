@@ -303,10 +303,8 @@ BaseRecord< T_elem >::flush(std::string const& name)
         throw std::runtime_error("A Record can not be written without any contained RecordComponents: " + name);
 
     this->flush_impl(name);
-    if( this->IOHandler()->m_flushLevel != FlushLevel::SkeletonOnly )
-    {
-        this->dirty() = false;
-    }
+    // flush_impl must take care to correctly set the dirty() flag so this
+    // method doesn't do it
 }
 
 template< typename T_elem >

@@ -77,7 +77,11 @@ Record::flush_impl(std::string const& name)
         if( scalar() )
         {
             for( auto& comp : *this )
+            {
                 comp.second.flush(name);
+                writable()->abstractFilePosition =
+                    comp.second.writable()->abstractFilePosition;
+            }
         }
         else
         {
