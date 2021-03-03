@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
@@ -31,6 +32,11 @@
 
 namespace openPMD
 {
+namespace traits
+{
+struct AccessIteration;
+}
+
 /** @brief  Logical compilation of data from one snapshot (e.g. a single simulation cycle).
  *
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#required-attributes-for-the-basepath
@@ -46,6 +52,7 @@ class Iteration : public LegacyAttributable
     friend class SeriesImpl;
     friend class WriteIterations;
     friend class SeriesIterator;
+    friend struct traits::AccessIteration;
 
 public:
     Iteration( Iteration const & ) = default;
@@ -153,10 +160,21 @@ public:
 private:
     Iteration();
 
+    struct DeferredRead
+    {
+        std::string index;
+        bool fileBased = false;
+        std::string filename;
+    };
+
     void flushFileBased(std::string const&, uint64_t);
     void flushGroupBased(uint64_t);
     void flush();
+    void deferRead( DeferredRead );
     void read();
+    void readFileBased( std::string filePath, std::string const & groupPath );
+    void readGroupBased( std::string const & groupPath );
+    void read_impl( std::string const & groupPath );
 
     /**
      * @brief Whether an iteration has been closed yet.
@@ -193,6 +211,10 @@ private:
      */
     std::shared_ptr< StepStatus > m_stepStatus =
         std::make_shared< StepStatus >( StepStatus::NoStep );
+
+    std::shared_ptr< auxiliary::Option< DeferredRead > > m_deferredRead =
+        std::make_shared< auxiliary::Option< DeferredRead > >(
+            auxiliary::Option< DeferredRead >() );
 
     /**
      * @brief Begin an IO step on the IO file (or file-like object)
@@ -252,11 +274,33 @@ private:
      * @param w The Writable representing the parent.
      */
     virtual void linkHierarchy(Writable& w);
+
+    void accessLazily()
+    {
+        if( IOHandler()->m_frontendAccess == Access::CREATE )
+        {
+            return;
+        }
+        auto oldAccess = IOHandler()->m_frontendAccess;
+        auto newAccess =
+            const_cast< Access * >( &IOHandler()->m_frontendAccess );
+        *newAccess = Access::READ_WRITE;
+        try
+        {
+            read();
+        }
+        catch( ... )
+        {
+            *newAccess = oldAccess;
+            throw;
+        }
+        *newAccess = oldAccess;
+    }
 };  // Iteration
 
-extern template
-float
-Iteration::time< float >() const;
+using Iterations_t = Container< Iteration, uint64_t >;
+
+extern template float Iteration::time< float >() const;
 
 extern template
 double

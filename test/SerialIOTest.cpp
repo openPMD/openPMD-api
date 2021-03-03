@@ -191,9 +191,15 @@ write_and_read_many_iterations( std::string const & ext ) {
         }
         // ~Series intentionally not yet called
 
-        Series read(filename, Access::READ_ONLY);
-        for (auto iteration : read.iterations) {
-            // std::cout << "Reading iteration " << iteration.first << std::endl;
+        Series read = SeriesBuilder()
+            .filePath( filename )
+            .access( Access::READ_ONLY )
+            .parseLazily();
+        for( auto iteration : read.iterations )
+        {
+            iteration.second.open();
+            // std::cout << "Reading iteration " << iteration.first <<
+            // std::endl;
             auto E_x = iteration.second.meshes["E"]["x"];
             auto chunk = E_x.loadChunk<float>({0}, {10});
             iteration.second.close();
@@ -3480,12 +3486,16 @@ iterate_nonstreaming_series( std::string const & file )
         }
     }
 
-    Series readSeries( file, Access::READ_ONLY );
+    Series readSeries = SeriesBuilder()
+        .filePath( file )
+        .access( Access::READ_ONLY )
+        .parseLazily();
 
     size_t last_iteration_index = 0;
     // conventionally written Series must be readable with streaming-aware API!
     for( auto iteration : readSeries.readIterations() )
     {
+        // ReadIterations takes care of Iteration::open()ing iterations
         auto E_x = iteration.meshes[ "E" ][ "x" ];
         REQUIRE( E_x.getDimensionality() == 1 );
         REQUIRE( E_x.getExtent()[ 0 ] == extent );

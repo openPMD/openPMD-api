@@ -49,6 +49,19 @@ namespace
      */
     std::string cleanFilename(std::string const &filename, Format f);
 
+    struct Match
+    {
+        bool isContained{};
+        int padding{};
+        uint64_t iteration{};
+
+        // support for std::tie
+        operator std::tuple< bool &, int &, uint64_t & >()
+        {
+            return { isContained, padding, iteration };
+        }
+    };
+
     /** Create a functor to determine if a file can be of a format and matches an iterationEncoding, given the filename on disk.
      *
      * @param   prefix      String containing head (i.e. before %T) of desired filename without filename extension.
@@ -59,7 +72,7 @@ namespace
      *          bool is True if file could be of type f and matches the iterationEncoding. False otherwise.
      *          int is the amount of padding present in the iteration number %T. Is 0 if bool is False.
      */
-    std::function<std::tuple<bool, int>(std::string const &)>
+    std::function<Match(std::string const &)>
     matcher(std::string const &prefix, int padding, std::string const &postfix, Format f);
 } // namespace [anonymous]
 
@@ -716,7 +729,6 @@ SeriesImpl::readFileBased( )
 {
     auto & series = get();
     Parameter< Operation::OPEN_FILE > fOpen;
-    Parameter< Operation::CLOSE_FILE > fClose;
     Parameter< Operation::READ_ATT > aRead;
 
     if( !auxiliary::directory_exists(IOHandler()->directory) )
@@ -727,72 +739,18 @@ SeriesImpl::readFileBased( )
         series.m_filenamePostfix, series.m_format);
     bool isContained;
     int padding;
+    uint64_t iterationIndex;
     std::set< int > paddings;
     for( auto const& entry : auxiliary::list_directory(IOHandler()->directory) )
     {
-        std::tie(isContained, padding) = isPartOfSeries(entry);
+        std::tie(isContained, padding, iterationIndex) = isPartOfSeries(entry);
         if( isContained )
         {
+            Iteration & i = series.iterations[ iterationIndex ];
+            i.deferRead( { std::to_string( iterationIndex ), true, entry } );
             // TODO skip if the padding is exact the number of chars in an iteration?
             paddings.insert(padding);
-
-            fOpen.name = entry;
-            IOHandler()->enqueue(IOTask(this, fOpen));
-            IOHandler()->flush();
-            series.iterations.parent() = getWritable(this);
-
-            readBase();
-
-            using DT = Datatype;
-            aRead.name = "iterationEncoding";
-            IOHandler()->enqueue( IOTask( this, aRead ) );
-            IOHandler()->flush();
-            if( *aRead.dtype == DT::STRING )
-            {
-                std::string encoding =
-                    Attribute( *aRead.resource ).get< std::string >();
-                if( encoding == "fileBased" )
-                    series.m_iterationEncoding = IterationEncoding::fileBased;
-                else if( encoding == "groupBased" )
-                {
-                    series.m_iterationEncoding = IterationEncoding::groupBased;
-                    std::cerr << "Series constructor called with iteration "
-                                    "regex '%T' suggests loading a "
-                                << "time series with fileBased iteration "
-                                    "encoding. Loaded file is groupBased.\n";
-                }
-                else
-                    throw std::runtime_error(
-                        "Unknown iterationEncoding: " + encoding );
-                setAttribute( "iterationEncoding", encoding );
-            }
-            else
-                throw std::runtime_error( "Unexpected Attribute datatype "
-                                            "for 'iterationEncoding'" );
-
-            aRead.name = "iterationFormat";
-            IOHandler()->enqueue( IOTask( this, aRead ) );
-            IOHandler()->flush();
-            if( *aRead.dtype == DT::STRING )
-            {
-                written() = false;
-                setIterationFormat(
-                    Attribute( *aRead.resource ).get< std::string >() );
-                written() = true;
-            }
-            else
-                throw std::runtime_error(
-                    "Unexpected Attribute datatype for 'iterationFormat'" );
-
-            read();
-            IOHandler()->enqueue(IOTask(this, fClose));
-            IOHandler()->flush();
         }
-    }
-
-    for( auto & iteration : series.iterations )
-    {
-        *iteration.second.m_closed = Iteration::CloseStatus::ClosedTemporarily;
     }
 
     if( series.iterations.empty() )
@@ -805,6 +763,30 @@ SeriesImpl::readFileBased( )
             std::cerr << "No matching iterations found: " << name() << std::endl;
     }
 
+    auto readIterationEagerly = []( Iteration & iteration )
+    {
+        iteration.accessLazily();
+        Parameter< Operation::CLOSE_FILE > fClose;
+        iteration.IOHandler()->enqueue( IOTask( &iteration, fClose ) );
+        iteration.IOHandler()->flush();
+        *iteration.m_closed = Iteration::CloseStatus::ClosedTemporarily;
+    };
+    if( series.m_parseLazily )
+    {
+        // open the last iteration, just to parse Series attributes
+        auto getLastIteration = series.iterations.end();
+        getLastIteration--;
+        auto & lastIteration = getLastIteration->second;
+        readIterationEagerly( lastIteration );
+    }
+    else
+    {
+        for( auto & iteration : series.iterations )
+        {
+            readIterationEagerly( iteration.second );
+        }
+    }
+
     if( paddings.size() == 1u )
         series.m_filenamePadding = *paddings.begin();
 
@@ -813,6 +795,73 @@ SeriesImpl::readFileBased( )
     if( paddings.size() > 1u && IOHandler()->m_backendAccess == Access::READ_WRITE )
         throw std::runtime_error("Cannot write to a series with inconsistent iteration padding. "
                                  "Please specify '%0<N>T' or open as read-only.");
+}
+
+void SeriesImpl::readOneIterationFileBased( std::string const & filePath )
+{
+    auto & series = get();
+
+    Parameter< Operation::OPEN_FILE > fOpen;
+    Parameter< Operation::READ_ATT > aRead;
+
+    fOpen.name = filePath;
+    IOHandler()->enqueue(IOTask(this, fOpen));
+    IOHandler()->flush();
+    series.iterations.parent() = getWritable(this);
+
+    readBase();
+
+    using DT = Datatype;
+    aRead.name = "iterationEncoding";
+    IOHandler()->enqueue( IOTask( this, aRead ) );
+    IOHandler()->flush();
+    if( *aRead.dtype == DT::STRING )
+    {
+        std::string encoding =
+            Attribute( *aRead.resource ).get< std::string >();
+        if( encoding == "fileBased" )
+            series.m_iterationEncoding = IterationEncoding::fileBased;
+        else if( encoding == "groupBased" )
+        {
+            series.m_iterationEncoding = IterationEncoding::groupBased;
+            std::cerr << "Series constructor called with iteration "
+                            "regex '%T' suggests loading a "
+                        << "time series with fileBased iteration "
+                            "encoding. Loaded file is groupBased.\n";
+        }
+        else
+            throw std::runtime_error(
+                "Unknown iterationEncoding: " + encoding );
+        setAttribute( "iterationEncoding", encoding );
+    }
+    else
+        throw std::runtime_error( "Unexpected Attribute datatype "
+                                    "for 'iterationEncoding'" );
+
+    aRead.name = "iterationFormat";
+    IOHandler()->enqueue( IOTask( this, aRead ) );
+    IOHandler()->flush();
+    if( *aRead.dtype == DT::STRING )
+    {
+        written() = false;
+        setIterationFormat(
+            Attribute( *aRead.resource ).get< std::string >() );
+        written() = true;
+    }
+    else
+        throw std::runtime_error(
+            "Unexpected Attribute datatype for 'iterationFormat'" );
+
+    Parameter< Operation::OPEN_PATH > pOpen;
+    std::string version = openPMD();
+    if( version == "1.0.0" || version == "1.0.1" || version == "1.1.0" )
+        pOpen.path = auxiliary::replace_first(basePath(), "/%T/", "");
+    else
+        throw std::runtime_error("Unknown openPMD version - " + version);
+    IOHandler()->enqueue(IOTask(&series.iterations, pOpen));
+
+    readAttributes();
+    series.iterations.readAttributes();
 }
 
 void
@@ -863,7 +912,35 @@ SeriesImpl::readGroupBased( bool do_init )
             throw std::runtime_error("Unexpected Attribute datatype for 'iterationFormat'");
     }
 
-    read();
+    Parameter< Operation::OPEN_PATH > pOpen;
+    std::string version = openPMD();
+    if( version == "1.0.0" || version == "1.0.1" || version == "1.1.0" )
+        pOpen.path = auxiliary::replace_first(basePath(), "/%T/", "");
+    else
+        throw std::runtime_error("Unknown openPMD version - " + version);
+    IOHandler()->enqueue(IOTask(&series.iterations, pOpen));
+
+    readAttributes();
+    series.iterations.readAttributes();
+
+    /* obtain all paths inside the basepath (i.e. all iterations) */
+    Parameter< Operation::LIST_PATHS > pList;
+    IOHandler()->enqueue(IOTask(&series.iterations, pList));
+    IOHandler()->flush();
+
+    for( auto const& it : *pList.paths )
+    {
+        Iteration& i = series.iterations[std::stoull(it)];
+        if ( i.closedByWriter( ) )
+        {
+            continue;
+        }
+        i.deferRead( {it, false, ""} );
+        if( !series.m_parseLazily )
+        {
+            i.accessLazily();
+        }
+    }
 }
 
 void
@@ -939,39 +1016,6 @@ SeriesImpl::readBase()
         }
         else
             throw std::runtime_error("Unexpected Attribute datatype for 'particlesPath'");
-    }
-}
-
-void
-SeriesImpl::read()
-{
-    auto & series = get();
-    Parameter< Operation::OPEN_PATH > pOpen;
-    std::string version = openPMD();
-    if( version == "1.0.0" || version == "1.0.1" || version == "1.1.0" )
-        pOpen.path = auxiliary::replace_first(basePath(), "/%T/", "");
-    else
-        throw std::runtime_error("Unknown openPMD version - " + version);
-    IOHandler()->enqueue(IOTask(&series.iterations, pOpen));
-
-    readAttributes();
-    series.iterations.readAttributes();
-
-    /* obtain all paths inside the basepath (i.e. all iterations) */
-    Parameter< Operation::LIST_PATHS > pList;
-    IOHandler()->enqueue(IOTask(&series.iterations, pList));
-    IOHandler()->flush();
-
-    for( auto const& it : *pList.paths )
-    {
-        Iteration& i = series.iterations[std::stoull(it)];
-        if ( i.closedByWriter( ) )
-        {
-            continue;
-        }
-        pOpen.path = it;
-        IOHandler()->enqueue(IOTask(&i, pOpen));
-        i.read();
     }
 }
 
@@ -1151,11 +1195,13 @@ SeriesInternal::SeriesInternal(
     std::string const & filepath,
     Access at,
     MPI_Comm comm,
-    std::string const & options )
+    std::string const & options,
+    bool parseLazily )
     : SeriesImpl{
           static_cast< internal::SeriesData * >( this ),
           static_cast< internal::AttributableData * >( this ) }
 {
+    m_parseLazily = parseLazily;
     auto input = parseInput( filepath );
     auto handler =
         createIOHandler( input->path, at, input->format, comm, options );
@@ -1164,11 +1210,15 @@ SeriesInternal::SeriesInternal(
 #endif
 
 SeriesInternal::SeriesInternal(
-    std::string const & filepath, Access at, std::string const & options )
+    std::string const & filepath,
+    Access at,
+    std::string const & options,
+    bool parseLazily )
     : SeriesImpl{
           static_cast< internal::SeriesData * >( this ),
           static_cast< internal::AttributableData * >( this ) }
 {
+    m_parseLazily = parseLazily;
     auto input = parseInput( filepath );
     auto handler = createIOHandler( input->path, at, input->format, options );
     init( handler, std::move( input ) );
@@ -1197,10 +1247,11 @@ Series::Series(
     std::string const & filepath,
     Access at,
     MPI_Comm comm,
-    std::string const & options )
+    std::string const & options,
+    bool parseLazily )
     : SeriesImpl{ nullptr, nullptr }
     , m_series{ std::make_shared< internal::SeriesInternal >(
-          filepath, at, comm, options ) }
+          filepath, at, comm, options, parseLazily ) }
     , iterations{ m_series->iterations }
 {
     AttributableImpl::m_attri =
@@ -1210,10 +1261,13 @@ Series::Series(
 #endif
 
 Series::Series(
-    std::string const & filepath, Access at, std::string const & options )
+    std::string const & filepath,
+    Access at,
+    std::string const & options,
+    bool parseLazily )
     : SeriesImpl{ nullptr, nullptr }
     , m_series{ std::make_shared< internal::SeriesInternal >(
-          filepath, at, options ) }
+          filepath, at, options, parseLazily ) }
     , iterations{ m_series->iterations }
 {
     AttributableImpl::m_attri =
@@ -1254,19 +1308,19 @@ namespace
         }
     }
 
-    std::function<std::tuple<bool, int>(std::string const &)>
+    std::function<Match(std::string const &)>
     buildMatcher(std::string const &regexPattern) {
         std::regex pattern(regexPattern);
 
-        return [pattern](std::string const &filename) -> std::tuple<bool, int> {
+        return [pattern](std::string const &filename) -> Match {
             std::smatch regexMatches;
             bool match = std::regex_match(filename, regexMatches, pattern);
             int padding = match ? regexMatches[1].length() : 0;
-            return std::tuple<bool, int>{match, padding};
+            return {match, padding, match ? std::stoull(regexMatches[1]) : 0};
         };
     }
 
-    std::function<std::tuple<bool, int>(std::string const &)>
+    std::function<Match(std::string const &)>
     matcher(std::string const &prefix, int padding, std::string const &postfix, Format f) {
         switch (f) {
             case Format::HDF5: {
@@ -1318,8 +1372,8 @@ namespace
                 return buildMatcher(nameReg);
             }
             default:
-                return [](std::string const &) -> std::tuple<bool, int> { return std::tuple<bool, int>{false, 0}; };
+                return [](std::string const &) -> Match { return {false, 0, 0}; };
         }
     }
-    } // namespace [anonymous]
-    } // namespace openPMD
+} // namespace [anonymous]
+} // namespace openPMD

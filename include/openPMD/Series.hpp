@@ -69,6 +69,7 @@ class SeriesData : public AttributableData
     friend class openPMD::SeriesImpl;
     friend class openPMD::Iteration;
     friend class openPMD::Series;
+    friend class SeriesInternal;
 
 public:
     explicit SeriesData() = default;
@@ -81,7 +82,7 @@ public:
 
     virtual ~SeriesData() = default;
 
-    Container< Iteration, uint64_t > iterations{};
+    Iterations_t iterations{};
 
 OPENPMD_private :
     auxiliary::Option< WriteIterations > m_writeIterations;
@@ -99,6 +100,7 @@ OPENPMD_private :
      * one among both flags.
      */
     StepStatus m_stepStatus = StepStatus::NoStep;
+    bool m_parseLazily = false;
 }; // SeriesData
 
 class SeriesInternal;
@@ -312,8 +314,7 @@ OPENPMD_private:
     static constexpr char const * const BASEPATH = "/data/%T/";
 
     struct ParsedInput;
-    using iterations_t = decltype(internal::SeriesData::iterations);
-    using iterations_iterator = iterations_t::iterator;
+    using iterations_iterator = Iterations_t::iterator;
 
     internal::SeriesData * m_series;
 
@@ -337,6 +338,7 @@ OPENPMD_private:
     void flushMeshesPath();
     void flushParticlesPath();
     void readFileBased( );
+    void readOneIterationFileBased( std::string const & filePath );
     /**
      * Note on re-parsing of a Series:
      * If init == false, the parsing process will seek for new
@@ -347,7 +349,6 @@ OPENPMD_private:
      */
     void readGroupBased( bool init = true );
     void readBase();
-    void read();
     std::string iterationFilename( uint64_t i );
     void openIteration( uint64_t index, Iteration iteration );
 
@@ -393,13 +394,15 @@ public:
         std::string const & filepath,
         Access at,
         MPI_Comm comm,
-        std::string const & options = "{}" );
+        std::string const & options = "{}",
+        bool parseLazily = false );
 #endif
 
     SeriesInternal(
         std::string const & filepath,
         Access at,
-        std::string const & options = "{}" );
+        std::string const & options = "{}",
+        bool parseLazily = false );
     // @todo make AttributableImpl<>::linkHierarchy non-virtual
     virtual ~SeriesInternal();
 };
@@ -423,17 +426,22 @@ public:
         std::string const & filepath,
         Access at,
         MPI_Comm comm,
-        std::string const & options = "{}" );
+        std::string const & options = "{}",
+        bool parseLazily = false );
 #endif
 
+    /*
+     * @todo Think it's time for a SeriesBuilder.
+     */
     Series(
         std::string const & filepath,
         Access at,
-        std::string const & options = "{}" );
+        std::string const & options = "{}",
+        bool parseLazily = false );
 
     virtual ~Series() = default;
 
-    Container< Iteration, uint64_t > iterations;
+    Iterations_t iterations;
 
     /**
      * @brief Entry point to the reading end of the streaming API.

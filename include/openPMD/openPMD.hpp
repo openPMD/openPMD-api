@@ -27,15 +27,16 @@ namespace openPMD {}
 // IWYU pragma: begin_exports
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
-#include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Iteration.hpp"
+#include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticlePatches.hpp"
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/ReadIterations.hpp"
-#include "openPMD/RecordComponent.hpp"
 #include "openPMD/Record.hpp"
+#include "openPMD/RecordComponent.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/SeriesBuilder.hpp"
 #include "openPMD/UnitDimension.hpp"
 #include "openPMD/WriteIterations.hpp"
 

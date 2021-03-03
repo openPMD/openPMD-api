@@ -41,6 +41,16 @@ SeriesIterator::SeriesIterator( Series series )
     }
     else
     {
+        /*
+         * @todo
+         * Is that really clean?
+         * Use case: See Python ApiTest testListSeries:
+         * Call listSeries twice.
+         */
+        if( *it->second.m_closed != Iteration::CloseStatus::ClosedInBackend )
+        {
+            it->second.open();
+        }
         auto status = it->second.beginStep();
         if( status == AdvanceStatus::OVER )
         {
@@ -98,6 +108,10 @@ SeriesIterator & SeriesIterator::operator++()
         return *this;
     }
     m_currentIteration = it->first;
+    if( *it->second.m_closed != Iteration::CloseStatus::ClosedInBackend )
+    {
+        it->second.open();
+    }
     switch( series.iterationEncoding() )
     {
         using IE = IterationEncoding;

@@ -28,6 +28,7 @@
 #include "openPMD/backend/Writable.hpp"
 
 #include <exception>
+#include <iostream>
 #include <tuple>
 
 
@@ -145,6 +146,7 @@ Iteration::close( bool _flush )
 Iteration &
 Iteration::open()
 {
+    accessLazily();
     internal::SeriesInternal * s = &retrieveSeries();
     // figure out my iteration number
     auto begin = s->indexOf( *this );
@@ -291,9 +293,52 @@ Iteration::flush()
     }
 }
 
-void
-Iteration::read()
+void Iteration::deferRead( DeferredRead dr )
 {
+    *m_deferredRead = auxiliary::makeOption< DeferredRead >( std::move( dr ) );
+}
+
+void Iteration::read()
+{
+    if( !m_deferredRead->has_value() )
+    {
+        return;
+    }
+    auto const & deferred = m_deferredRead->get();
+    if( deferred.fileBased )
+    {
+        readFileBased( deferred.filename, deferred.index );
+    }
+    else
+    {
+        readGroupBased( deferred.index );
+    }
+    // reset this thing
+    *m_deferredRead = auxiliary::Option< DeferredRead >();
+}
+
+void Iteration::readFileBased(
+    std::string filePath, std::string const & groupPath )
+{
+    auto & series = retrieveSeries();
+
+    series.readOneIterationFileBased( filePath );
+
+    read_impl( groupPath );
+}
+
+void Iteration::readGroupBased( std::string const & groupPath )
+{
+
+    read_impl(groupPath );
+}
+
+void Iteration::read_impl( std::string const & groupPath )
+{
+    Parameter< Operation::OPEN_PATH > pOpen;
+    pOpen.path = groupPath;
+    IOHandler()->enqueue( IOTask( this, pOpen ) );
+
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
 
@@ -356,7 +401,6 @@ Iteration::read()
 
     if( hasMeshes )
     {
-        Parameter< Operation::OPEN_PATH > pOpen;
         pOpen.path = s->meshesPath();
         IOHandler()->enqueue(IOTask(&meshes, pOpen));
 
@@ -416,7 +460,6 @@ Iteration::read()
 
     if( hasParticles )
     {
-        Parameter< Operation::OPEN_PATH > pOpen;
         pOpen.path = s->particlesPath();
         IOHandler()->enqueue(IOTask(&particles, pOpen));
 
