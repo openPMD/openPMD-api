@@ -273,6 +273,7 @@ In order to build with debug symbols, pass `-DCMAKE_BUILD_TYPE=Debug` to your `c
 By default, tests, examples and command line tools are built.
 In order to skip building those, pass ``OFF`` to these ``cmake`` options:
 
+| CMake Option              | Values     | Library       | Version |
 |---------------------------|------------|--------------------------|
 | `openPMD_BUILD_TESTING`   | **ON**/OFF | Build tests              |
 | `openPMD_BUILD_EXAMPLES`  | **ON**/OFF | Build examples           |
