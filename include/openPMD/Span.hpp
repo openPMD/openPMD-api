@@ -40,13 +40,12 @@ private:
     using param_t = Parameter< Operation::GET_BUFFER_VIEW >;
     param_t m_param;
     size_t m_size;
-    // @todo make this safe
-    Writable * m_writable;
+    RecordComponent m_recordComponent;
 
-    Span( param_t param, size_t size, Writable * writable )
+    Span( param_t param, size_t size, RecordComponent recordComponent )
         : m_param( std::move( param ) )
         , m_size( size )
-        , m_writable( std::move( writable ) )
+        , m_recordComponent( std::move( recordComponent ) )
     {
         m_param.update = true;
     }
@@ -57,18 +56,19 @@ public:
         return m_size;
     }
 
-    T * data() const
+    T * data()
     {
         if( m_param.out->taskSupportedByBackend )
         {
             // might need to update
-            m_writable->IOHandler->enqueue( IOTask( m_writable, m_param ) );
-            m_writable->IOHandler->flush();
+            m_recordComponent.IOHandler()->enqueue(
+                IOTask( &m_recordComponent, m_param ) );
+            m_recordComponent.IOHandler()->flush();
         }
         return static_cast< T * >( m_param.out->ptr );
     }
 
-    T & operator[]( size_t i ) const
+    T & operator[]( size_t i )
     {
         return data()[ i ];
     }

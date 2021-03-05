@@ -311,7 +311,7 @@ RecordComponent::storeChunk( Offset o, Extent e, F && createBuffer )
         out.ptr = static_cast< void * >( data.get() );
         storeChunk( std::move( data ), std::move( o ), std::move( e ) );
     }
-    return Span< T >{ std::move( getBufferView ), size, &writable() };
+    return Span< T >{ std::move( getBufferView ), size, *this };
 }
 
 template< typename T >
