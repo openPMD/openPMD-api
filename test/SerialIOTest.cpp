@@ -48,6 +48,15 @@ TEST_CASE( "adios2_char_portability", "[serial][adios2]" )
      * This tests portability of char attributes in ADIOS2 in schema 20210209.
      */
 
+    if( auxiliary::getEnvString("OPENPMD_NEW_ATTRIBUTE_LAYOUT", "NOT_SET") == "NOT_SET")
+    {
+        /*
+         * @todo As soon as we have added automatic detection for the new
+         *       layout, this environment variable should be ignore read-side.
+         *       Then we can delete this if condition again.
+         */
+        return;
+    }
     // @todo remove new_attribute_layout key as soon as schema-based versioning
     //       is merged
     std::string const config = R"END(
