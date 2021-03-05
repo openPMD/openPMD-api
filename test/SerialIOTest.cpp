@@ -822,7 +822,6 @@ TEST_CASE( "particle_patches", "[serial]" )
 inline
 void dtype_test( const std::string & backend )
 {
-    std::cout << "SERIES HAS SIZE " << sizeof(internal::SeriesData) << std::endl;
     bool test_long_double = (backend != "json") || sizeof (long double) <= 8;
     bool test_long_long = (backend != "json") || sizeof (long long) <= 8;
     {
