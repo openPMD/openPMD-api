@@ -907,7 +907,9 @@ if(openPMD_INSTALL)
     endif()
     install(DIRECTORY "${openPMD_SOURCE_DIR}/include/openPMD"
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-        FILES_MATCHING PATTERN "*.hpp"
+        FILES_MATCHING
+            PATTERN "*.hpp"
+            PATTERN "*.tpp"
     )
     install(
         FILES ${openPMD_BINARY_DIR}/include/openPMD/config.hpp
