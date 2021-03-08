@@ -3158,7 +3158,7 @@ bp4_steps( std::string const & file, std::string const & options_write, std::str
         iteration.close(); // @todo replace with ::close()
         for( size_t i = 0; i < 10; ++i )
         {
-            REQUIRE( chunk.get()[ i ] == iteration.iterationIndex );
+            REQUIRE( chunk.get()[ i ] == int(iteration.iterationIndex) );
         }
         last_iteration_index = iteration.iterationIndex;
     }
@@ -3281,7 +3281,7 @@ serial_iterator( std::string const & file )
         iteration.close();
         for( size_t i = 0; i < extent; ++i )
         {
-            REQUIRE( chunk.get()[ i ] == iteration.iterationIndex );
+            REQUIRE( chunk.get()[ i ] == int(iteration.iterationIndex) );
         }
         last_iteration_index = iteration.iterationIndex;
     }
@@ -3349,7 +3349,7 @@ iterate_nonstreaming_series( std::string const & file )
 
         for( size_t i = 0; i < extent; ++i )
         {
-            REQUIRE( chunk.get()[ i ] == iteration.iterationIndex );
+            REQUIRE( chunk.get()[ i ] == int(iteration.iterationIndex) );
         }
         last_iteration_index = iteration.iterationIndex;
     }
