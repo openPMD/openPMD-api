@@ -59,6 +59,11 @@ BaseRecordComponent::constant() const
 ChunkTable
 BaseRecordComponent::availableChunks()
 {
+    if( m_isConstant && *m_isConstant )
+    {
+        Offset offset( m_dataset->extent.size(), 0 );
+        return ChunkTable{ { std::move( offset ), m_dataset->extent } };
+    }
     Parameter< Operation::AVAILABLE_CHUNKS > param;
     IOTask task( this, param );
     IOHandler->enqueue( task );

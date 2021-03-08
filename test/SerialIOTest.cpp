@@ -171,7 +171,12 @@ TEST_CASE( "available_chunks_test_json", "[serial][json]" )
         {
             E_x.storeChunk( data, { line, 0 }, { 1, 2 } );
         }
-        E_x.storeChunk( data, { 8, 3 }, {2, 1 } );
+        E_x.storeChunk( data, { 8, 3 }, { 2, 1 } );
+
+        auto E_y = it0.meshes[ "E" ][ "y" ];
+        E_y.resetDataset( { Datatype::INT, { height, 4 } } );
+        E_y.makeConstant( 1234 );
+
         it0.close();
     }
 
@@ -188,6 +193,12 @@ TEST_CASE( "available_chunks_test_json", "[serial][json]" )
         REQUIRE( bool( table[ 0 ] == WrittenChunkInfo( { 2, 0 }, { 5, 4 } ) ) );
         REQUIRE( bool( table[ 1 ] == WrittenChunkInfo( { 7, 0 }, { 2, 2 } ) ) );
         REQUIRE( bool( table[ 2 ] == WrittenChunkInfo( { 8, 3 }, { 2, 1 } ) ) );
+
+        auto E_y = it0.meshes[ "E" ][ "y" ];
+        table = E_y.availableChunks();
+        REQUIRE( table.size() == 1 );
+        REQUIRE(
+            bool( table[ 0 ] == WrittenChunkInfo( { 0, 0 }, { height, 4 } ) ) );
     }
 }
 
