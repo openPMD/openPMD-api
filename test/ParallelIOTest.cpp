@@ -359,7 +359,7 @@ available_chunks_test( std::string file_ending )
          * they are all present.
          */
         std::sort( ranks.begin(), ranks.end() );
-        for( size_t i = 0; i < ranks.size(); ++i )
+        for( int i = 0; i < int(ranks.size()); ++i )
         {
             REQUIRE( ranks[ i ] == i );
         }
@@ -867,7 +867,7 @@ adios2_streaming()
             }
             for( size_t i = 0; i < extent; ++i )
             {
-                REQUIRE( chunk.get()[ i ] == iteration.iterationIndex );
+                REQUIRE( chunk.get()[ i ] == int(iteration.iterationIndex) );
             }
             last_iteration_index = iteration.iterationIndex;
         }
@@ -1100,7 +1100,7 @@ adios2_ssc()
 
             for( size_t i = 0; i < extent; ++i )
             {
-                REQUIRE( chunk.get()[ i ] == iteration.iterationIndex );
+                REQUIRE( chunk.get()[ i ] == int(iteration.iterationIndex) );
             }
             last_iteration_index = iteration.iterationIndex;
         }
