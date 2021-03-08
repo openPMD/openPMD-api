@@ -23,22 +23,6 @@
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Series.hpp"
 
-/** Writing side of the streaming API.
- *
- * Create instance via Series::writeIterations().
- * For use via WriteIterations::operator[]().
- * Designed to allow reading any kind of Series, streaming and non-
- * streaming alike. Calling Iteration::close() manually before opening
- * the next iteration is encouraged and will implicitly flush all
- * deferred IO actions. Otherwise, Iteration::close() will be implicitly
- * called upon SeriesIterator::operator++(), i.e. upon going to the next
- * iteration in the foreach loop.
- *
- * Since this is designed for streaming mode, reopening an iteration is
- * not possible once it has been closed.
- *
- */
-
 namespace openPMD
 {
 /**
@@ -122,4 +106,4 @@ public:
 
     iterator_t end();
 };
-}
+} // namespace openPMD

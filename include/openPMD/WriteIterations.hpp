@@ -24,6 +24,11 @@
 #include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/backend/Container.hpp"
 
+
+namespace openPMD
+{
+class Series;
+
 /** Writing side of the streaming API.
  *
  * Create instance via Series::writeIterations().
@@ -39,11 +44,6 @@
  * not possible once it has been closed.
  *
  */
-
-namespace openPMD
-{
-class Series;
-
 class WriteIterations : private Container< Iteration, uint64_t >
 {
     friend class Series;
@@ -70,4 +70,4 @@ public:
     mapped_type & operator[]( key_type const & key ) override;
     mapped_type & operator[]( key_type && key ) override;
 };
-}
+} // namespace openPMD

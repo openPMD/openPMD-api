@@ -154,4 +154,4 @@ ReadIterations::iterator_t ReadIterations::end()
 {
     return SeriesIterator::end();
 }
-}
+} // namespace openPMD

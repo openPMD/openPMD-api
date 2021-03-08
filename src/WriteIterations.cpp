@@ -75,4 +75,4 @@ WriteIterations::mapped_type & WriteIterations::operator[]( key_type && key )
     }
     return res;
 }
-}
+} // namespace openPMD
