@@ -36,7 +36,7 @@ struct TestHelper : public LegacyAttributable
 {
     TestHelper()
     {
-        writable()->IOHandler = createIOHandler(".", Access::CREATE, Format::JSON);
+        writable().IOHandler = createIOHandler(".", Access::CREATE, Format::JSON);
     }
 };
 } // test
@@ -158,7 +158,7 @@ TEST_CASE( "container_default_test", "[auxiliary]")
 {
 #if openPMD_USE_INVASIVE_TESTS
     Container< openPMD::test::S > c = Container< openPMD::test::S >();
-    c.writable()->IOHandler = createIOHandler(".", Access::CREATE, Format::JSON);
+    c.writable().IOHandler = createIOHandler(".", Access::CREATE, Format::JSON);
 
     REQUIRE(c.empty());
     REQUIRE(c.erase("nonExistentKey") == false);
@@ -192,7 +192,7 @@ TEST_CASE( "container_retrieve_test", "[auxiliary]" )
 #if openPMD_USE_INVASIVE_TESTS
     using structure = openPMD::test::structure;
     Container< structure > c = Container< structure >();
-    c.writable()->IOHandler = createIOHandler(".", Access::CREATE, Format::JSON);
+    c.writable().IOHandler = createIOHandler(".", Access::CREATE, Format::JSON);
 
     structure s;
     std::string text = "The openPMD standard, short for open standard for particle-mesh data files is not a file format per se. It is a standard for meta data and naming schemes.";
@@ -268,7 +268,7 @@ TEST_CASE( "container_access_test", "[auxiliary]" )
 #if openPMD_USE_INVASIVE_TESTS
     using Widget = openPMD::test::Widget;
     Container< Widget > c = Container< Widget >();
-    c.writable()->IOHandler = createIOHandler(".", Access::CREATE, Format::JSON);
+    c.writable().IOHandler = createIOHandler(".", Access::CREATE, Format::JSON);
 
     c["1firstWidget"] = Widget(0);
     REQUIRE(c.size() == 1);

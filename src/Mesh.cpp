@@ -213,7 +213,7 @@ Mesh::flush_impl(std::string const& name)
                 mrc.parent() = parent();
                 mrc.flush(name);
                 IOHandler()->flush();
-                writable()->abstractFilePosition = mrc.writable()->abstractFilePosition;
+                writable().abstractFilePosition = mrc.writable().abstractFilePosition;
                 written() = true;
             } else
             {
@@ -221,7 +221,7 @@ Mesh::flush_impl(std::string const& name)
                 pCreate.path = name;
                 IOHandler()->enqueue(IOTask(this, pCreate));
                 for( auto& comp : *this )
-                    comp.second.parent() = this->writable();
+                    comp.second.parent() = &this->writable();
             }
         }
 

@@ -32,10 +32,12 @@ namespace openPMD {}
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticlePatches.hpp"
 #include "openPMD/ParticleSpecies.hpp"
+#include "openPMD/ReadIterations.hpp"
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Record.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/UnitDimension.hpp"
+#include "openPMD/WriteIterations.hpp"
 
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Attribute.hpp"

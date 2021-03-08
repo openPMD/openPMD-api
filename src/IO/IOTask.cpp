@@ -26,5 +26,5 @@ namespace openPMD
 {
 Writable*
 getWritable(AttributableImpl* a)
-{ return a->writable(); }
+{ return &a->writable(); }
 } // openPMD

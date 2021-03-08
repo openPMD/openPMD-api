@@ -344,10 +344,12 @@ set(CORE_SOURCE
         src/Mesh.cpp
         src/ParticlePatches.cpp
         src/ParticleSpecies.cpp
+        src/ReadIterations.cpp
         src/Record.cpp
         src/RecordComponent.cpp
         src/Series.cpp
         src/version.cpp
+        src/WriteIterations.cpp
         src/auxiliary/Date.cpp
         src/auxiliary/Filesystem.cpp
         src/auxiliary/JSON.cpp

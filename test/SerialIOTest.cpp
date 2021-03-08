@@ -1330,7 +1330,7 @@ void fileBased_write_test(const std::string & backend)
         REQUIRE(o.iterations.count(5) == 1);
 
 #if openPMD_USE_INVASIVE_TESTS
-        REQUIRE(*o.get().m_filenamePadding == 8);
+        REQUIRE(o.get().m_filenamePadding == 8);
 #endif
 
         REQUIRE(o.basePath() == "/data/%T/");
@@ -2190,7 +2190,7 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
         REQUIRE(o.iterations.count(500) == 1);
 
 #if openPMD_USE_INVASIVE_TESTS
-        REQUIRE(*o.get().m_filenamePadding == 8);
+        REQUIRE(o.get().m_filenamePadding == 8);
 #endif
     } catch (no_such_file_error& e)
     {
@@ -2210,7 +2210,7 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
         REQUIRE(o.iterations.count(500) == 1);
 
 #if openPMD_USE_INVASIVE_TESTS
-        REQUIRE(*o.get().m_filenamePadding == 8);
+        REQUIRE(o.get().m_filenamePadding == 8);
 #endif
     } catch (no_such_file_error& e)
     {
@@ -2237,7 +2237,7 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
             Series o = Series("../samples/git-sample/data%T.h5", Access::READ_WRITE);
 
 #if openPMD_USE_INVASIVE_TESTS
-            REQUIRE(*o.get().m_filenamePadding == 8);
+            REQUIRE(o.get().m_filenamePadding == 8);
 #endif
 
             o.iterations[1];

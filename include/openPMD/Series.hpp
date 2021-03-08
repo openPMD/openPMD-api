@@ -29,6 +29,7 @@
 #include "openPMD/Iteration.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Streaming.hpp"
+#include "openPMD/WriteIterations.hpp"
 #include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
@@ -52,7 +53,6 @@
 namespace openPMD
 {
 class ReadIterations;
-class WriteIterations;
 class Series;
 class SeriesImpl;
 
@@ -84,6 +84,13 @@ public:
     Container< Iteration, uint64_t > iterations{};
 
 OPENPMD_private :
+    auxiliary::Option< WriteIterations > m_writeIterations;
+    std::string m_name;
+    std::string m_filenamePrefix;
+    std::string m_filenamePostfix;
+    int m_filenamePadding;
+    IterationEncoding m_iterationEncoding{};
+    Format m_format;
     /**
      *  Whether a step is currently active for this iteration.
      * Used for group-based iteration layout, see SeriesData.hpp for
@@ -91,20 +98,7 @@ OPENPMD_private :
      * Access via stepStatus() method to automatically select the correct
      * one among both flags.
      */
-    std::shared_ptr< StepStatus >
-        m_stepStatus = std::make_shared< StepStatus >( StepStatus::NoStep );
-
-    std::shared_ptr< IterationEncoding > m_iterationEncoding{
-        std::make_shared< IterationEncoding >() };
-    std::shared_ptr< std::string > m_name;
-    std::shared_ptr< Format > m_format;
-
-    std::shared_ptr< std::string > m_filenamePrefix;
-    std::shared_ptr< std::string > m_filenamePostfix;
-    std::shared_ptr< int > m_filenamePadding;
-
-    std::shared_ptr< auxiliary::Option< WriteIterations > > m_writeIterations =
-        std::make_shared< auxiliary::Option< WriteIterations > >();
+    StepStatus m_stepStatus = StepStatus::NoStep;
 }; // SeriesData
 
 class SeriesInternal;
@@ -467,135 +461,8 @@ public:
      */
     WriteIterations writeIterations();
 };
-
-/**
- * @brief Subclass of Iteration that knows its own index withing the containing
- *        Series.
- */
-class IndexedIteration : public Iteration
-{
-    friend class SeriesIterator;
-
-public:
-    using iterations_t = decltype( internal::SeriesData::iterations );
-    using index_t = iterations_t::key_type;
-    index_t const iterationIndex;
-
-private:
-    template< typename Iteration_t >
-    IndexedIteration( Iteration_t && it, index_t index )
-        : Iteration( std::forward< Iteration_t >( it ) )
-        , iterationIndex( index )
-    {
-    }
-};
-
-class SeriesIterator
-{
-    using iteration_index_t = IndexedIteration::index_t;
-
-    using maybe_series_t = auxiliary::Option< Series >;
-
-    maybe_series_t m_series;
-    iteration_index_t m_currentIteration = 0;
-
-    //! construct the end() iterator
-    SeriesIterator();
-
-public:
-    SeriesIterator( Series );
-
-    SeriesIterator & operator++();
-
-    IndexedIteration
-    operator*();
-
-    bool
-    operator==( SeriesIterator const & other ) const;
-
-    bool
-    operator!=( SeriesIterator const & other ) const;
-
-    static SeriesIterator
-    end();
-};
-
-/**
- * @brief Reading side of the streaming API.
- *
- * Create instance via Series::readIterations().
- * For use in a C++11-style foreach loop over iterations.
- * Designed to allow reading any kind of Series, streaming and non-
- * streaming alike.
- * Calling Iteration::close() manually before opening the next iteration is
- * encouraged and will implicitly flush all deferred IO actions.
- * Otherwise, Iteration::close() will be implicitly called upon
- * SeriesIterator::operator++(), i.e. upon going to the next iteration in
- * the foreach loop.
- * Since this is designed for streaming mode, reopening an iteration is
- * not possible once it has been closed.
- *
- */
-class ReadIterations
-{
-    friend class Series;
-
-private:
-    using iterations_t = decltype( internal::SeriesData::iterations );
-    using iterator_t = SeriesIterator;
-
-    Series m_series;
-
-    ReadIterations( Series );
-
-public:
-    iterator_t begin();
-
-    iterator_t
-    end();
-};
-
-/** Writing side of the streaming API.
- *
- * Create instance via Series::writeIterations().
- * For use via WriteIterations::operator[]().
- * Designed to allow reading any kind of Series, streaming and non-
- * streaming alike. Calling Iteration::close() manually before opening
- * the next iteration is encouraged and will implicitly flush all
- * deferred IO actions. Otherwise, Iteration::close() will be implicitly
- * called upon SeriesIterator::operator++(), i.e. upon going to the next
- * iteration in the foreach loop.
- *
- * Since this is designed for streaming mode, reopening an iteration is
- * not possible once it has been closed.
- *
- */
-class WriteIterations : private Container< Iteration, uint64_t >
-{
-    friend class Series;
-
-private:
-    using iterations_t = Container< Iteration, uint64_t >;
-    struct SharedResources
-    {
-        iterations_t iterations;
-        auxiliary::Option< uint64_t > currentlyOpen;
-
-        SharedResources( iterations_t );
-        ~SharedResources();
-    };
-
-    using key_type = typename iterations_t::key_type;
-    using value_type = typename iterations_t::key_type;
-    WriteIterations( iterations_t );
-    explicit WriteIterations() = default;
-    //! Index of the last opened iteration
-    std::shared_ptr< SharedResources > shared;
-
-public:
-    mapped_type &
-    operator[]( key_type const & key ) override;
-    mapped_type &
-    operator[]( key_type && key ) override;
-};
 } // namespace openPMD
+
+// Make sure that this one is always included if Series.hpp is included,
+// otherwise SeriesImpl::readIterations() cannot be used
+#include "openPMD/ReadIterations.hpp"
