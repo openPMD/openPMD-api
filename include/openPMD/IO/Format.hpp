@@ -33,6 +33,7 @@ namespace openPMD
         ADIOS1,
         ADIOS2,
         ADIOS2_SST,
+        ADIOS2_SSC,
         JSON,
         DUMMY
     };

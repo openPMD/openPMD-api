@@ -1022,6 +1022,13 @@ TEST_CASE( "parallel_adios2_json_config", "[parallel][adios2]" )
 void
 adios2_ssc()
 {
+    auto const extensions = openPMD::getFileExtensions();
+    if( std::find( extensions.begin(), extensions.end(), "ssc" ) ==
+        extensions.end() )
+    {
+        // SSC engine not available in ADIOS2
+        return;
+    }
     int global_size{ -1 };
     int global_rank{ -1 };
     MPI_Comm_size( MPI_COMM_WORLD, &global_size );
@@ -1047,23 +1054,13 @@ adios2_ssc()
 
     constexpr size_t extent = 10;
 
-    std::string options = R"(
-    {
-        "adios2": {
-            "engine": {
-                "type": "ssc"
-            }
-        }
-    })";
-
     if( color == 0 )
     {
         // write
         Series writeSeries(
-            "../samples/adios2_stream.bp",
+            "../samples/adios2_stream.ssc",
             Access::CREATE,
-            local_comm,
-            options );
+            local_comm );
         auto iterations = writeSeries.writeIterations();
         for( size_t i = 0; i < 10; ++i )
         {
@@ -1082,10 +1079,9 @@ adios2_ssc()
     {
         // read
         Series readSeries(
-            "../samples/adios2_stream.bp",
+            "../samples/adios2_stream.ssc",
             Access::READ_ONLY,
-            local_comm,
-            options );
+            local_comm );
 
         size_t last_iteration_index = 0;
         for( auto iteration : readSeries.readIterations() )
@@ -1110,15 +1106,6 @@ adios2_ssc()
 
 TEST_CASE( "adios2_ssc", "[parallel][adios2]" )
 {
-    /*
-     * @todo Activate this test as soon as we rely upon an ADIOS2 version
-     *       including this fix https://github.com/ornladios/ADIOS2/pull/2568
-     *       (e.g. ADIOS 2.7.0).
-     */
-    constexpr bool testAdiosSSC = false;
-    if( testAdiosSSC )
-    {
-        adios2_ssc();
-    }
+    adios2_ssc();
 }
 #endif

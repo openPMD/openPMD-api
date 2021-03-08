@@ -22,8 +22,11 @@ Steps
 
 ADIOS2 is optimized towards organizing the process of reading/writing data into IO steps.
 In order to activate steps, it is imperative to use the :ref:`Streaming API <usage-streaming>` (which can be used for either file-based or streaming-based workflows).
-With ADIOS2 release 2.6.0 containing a bug (fixed in development versions, see `PR #2348 <https://github.com/ornladios/ADIOS2/pull/2348>`_) that disallows random-accessing steps in file-based engines, step-based processing must currently be opted in to via use of the :ref:`JSON parameter<backendconfig>` ``adios2.engine.usesteps = true`` when using a file-based engine such as BP3 or BP4.
-With these ADIOS2 releases, files written in such a way may only be read using the streaming API.
+
+ADIOS2 release 2.6.0 contained a bug (fixed in ADIOS 2.7.0, see `PR #2348 <https://github.com/ornladios/ADIOS2/pull/2348>`_) that disallows random-accessing steps in file-based engines.
+With this ADIOS2 release, files written with steps may only be read using the streaming API.
+In order to keep compatibility with older codes reading ADIOS2 files, step-based processing must currently be opted in to via use of the :ref:`JSON parameter<backendconfig>` ``adios2.engine.usesteps = true`` when using a file-based engine such as BP3 or BP4.
+
 Upon reading a file, the ADIOS2 backend will automatically recognize whether it has been written with or without steps, ignoring the JSON option mentioned above.
 Steps are mandatory for streaming-based engines and trying to switch them off will result in a runtime error.
 

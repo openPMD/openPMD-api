@@ -30,8 +30,11 @@ using namespace openPMD;
 std::vector< std::string > testedFileExtensions()
 {
     auto allExtensions = getFileExtensions();
-    auto newEnd =
-        std::remove( allExtensions.begin(), allExtensions.end(), "sst" );
+    auto newEnd = std::remove_if(
+        allExtensions.begin(),
+        allExtensions.end(),
+        []( std::string const & ext )
+        { return ext == "sst" || ext == "ssc"; } );
     return { allExtensions.begin(), newEnd };
 }
 
@@ -1170,7 +1173,7 @@ void test_complex(const std::string & backend) {
 TEST_CASE( "test_complex", "[serial]" )
 {
     // Notes:
-    // - ADIOS1 and ADIOS 2.6.0 have no complex long double
+    // - ADIOS1 and ADIOS 2.7.0 have no complex long double
     // - JSON read-back not distinguishable yet from N+1 shaped data set
     for (auto const & t : testedFileExtensions())
     {
@@ -3232,12 +3235,6 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
         }
     }
     )";
-    /*
-     * @todo Activate these tests for Windows as soon as we bump the required
-     *       ADIOS2 version to 2.7.0. Read here:
-     *       https://github.com/openPMD/openPMD-api/pull/813#issuecomment-762235260
-     */
-#ifndef _WIN32
     // sing the yes no song
     bp4_steps( "../samples/newlayout_bp4steps_yes_yes.bp", useSteps, useSteps );
     bp4_steps(
@@ -3246,7 +3243,6 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
         "../samples/newlayout_bp4steps_yes_no.bp", useSteps, dontUseSteps );
     bp4_steps(
         "../samples/newlayout_bp4steps_no_no.bp", dontUseSteps, dontUseSteps );
-#endif
 }
 #endif
 

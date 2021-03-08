@@ -1245,6 +1245,7 @@ namespace
             case Format::ADIOS1:
             case Format::ADIOS2:
             case Format::ADIOS2_SST:
+            case Format::ADIOS2_SSC:
             case Format::JSON:
                 return auxiliary::replace_last(filename, suffix(f), "");
             default:
@@ -1294,6 +1295,16 @@ namespace
                 else
                     nameReg += "+";
                 nameReg += + ")" + postfix + ".sst$";
+                return buildMatcher(nameReg);
+            }
+            case Format::ADIOS2_SSC:
+            {
+                std::string nameReg = "^" + prefix + "([[:digit:]]";
+                if( padding != 0 )
+                    nameReg += "{" + std::to_string(padding) + "}";
+                else
+                    nameReg += "+";
+                nameReg += + ")" + postfix + ".ssc$";
                 return buildMatcher(nameReg);
             }
             case Format::JSON: {

@@ -23,6 +23,8 @@ Bug Fixes
 Other
 """""
 
+- ADIOS2: require version 2.7.0+ #927
+
 
 0.13.2
 ------
