@@ -32,11 +32,6 @@
 
 namespace openPMD
 {
-namespace traits
-{
-struct AccessIteration;
-}
-
 /** @brief  Logical compilation of data from one snapshot (e.g. a single simulation cycle).
  *
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#required-attributes-for-the-basepath
@@ -52,7 +47,6 @@ class Iteration : public LegacyAttributable
     friend class SeriesImpl;
     friend class WriteIterations;
     friend class SeriesIterator;
-    friend struct traits::AccessIteration;
 
 public:
     Iteration( Iteration const & ) = default;
@@ -171,6 +165,20 @@ private:
     void flushGroupBased(uint64_t);
     void flush();
     void deferRead( DeferredRead );
+    /*
+     * Control flow for read(), readFileBased(), readGroupBased() and
+     * read_impl():
+     * read() is called as the entry point. File-based and group-based
+     * iteration layouts need to be parsed slightly differently:
+     * In file-based iteration layout, each iteration's file also contains
+     * attributes for the /data group. In group-based layout, those have
+     * already been parsed during opening of the Series.
+     * Hence, read() will call either readFileBased() or readGroupBased() to
+     * allow for those different control flows.
+     * Finally, read_impl() is called which contains the common parsing
+     * logic for an iteration.
+     *
+     */
     void read();
     void readFileBased( std::string filePath, std::string const & groupPath );
     void readGroupBased( std::string const & groupPath );
@@ -300,7 +308,9 @@ private:
 
 using Iterations_t = Container< Iteration, uint64_t >;
 
-extern template float Iteration::time< float >() const;
+extern template
+float
+Iteration::time< float >() const;
 
 extern template
 double

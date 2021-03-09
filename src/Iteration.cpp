@@ -28,7 +28,6 @@
 #include "openPMD/backend/Writable.hpp"
 
 #include <exception>
-#include <iostream>
 #include <tuple>
 
 

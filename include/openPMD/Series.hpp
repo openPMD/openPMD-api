@@ -430,9 +430,6 @@ public:
         bool parseLazily = false );
 #endif
 
-    /*
-     * @todo Think it's time for a SeriesBuilder.
-     */
     Series(
         std::string const & filepath,
         Access at,
