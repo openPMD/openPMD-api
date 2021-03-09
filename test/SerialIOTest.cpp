@@ -1,7 +1,7 @@
 // expose private and protected members for invasive testing
 #if openPMD_USE_INVASIVE_TESTS
-#   define OPENPMD_private public
-#   define OPENPMD_protected public
+#   define OPENPMD_private public:
+#   define OPENPMD_protected public:
 #endif
 
 #include "openPMD/auxiliary/Environment.hpp"

@@ -37,7 +37,7 @@
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_protected
-#   define OPENPMD_protected protected
+#   define OPENPMD_protected protected:
 #endif
 
 
@@ -327,7 +327,10 @@ private:
 
     RecordComponent();
 
-OPENPMD_protected:
+// clang-format off
+OPENPMD_protected
+// clang-format on
+
     RecordComponent( std::shared_ptr< internal::RecordComponentData > );
 
     inline internal::RecordComponentData const & get() const

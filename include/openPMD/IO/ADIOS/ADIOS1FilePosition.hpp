@@ -22,6 +22,7 @@
 
 #include "openPMD/IO/AbstractFilePosition.hpp"
 
+#include <string>
 
 namespace openPMD
 {

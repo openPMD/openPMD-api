@@ -33,7 +33,7 @@
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_protected
-#   define OPENPMD_protected protected
+#   define OPENPMD_protected protected:
 #endif
 
 
@@ -341,7 +341,10 @@ public:
         return container().emplace(std::forward<Args>(args)...);
     }
 
-OPENPMD_protected:
+// clang-format off
+OPENPMD_protected
+// clang-format on
+
     Container( std::shared_ptr< ContainerData > containerData )
         : Attributable{ containerData }
         , m_containerData{ std::move( containerData ) }
@@ -368,7 +371,10 @@ OPENPMD_protected:
         flushAttributes();
     }
 
-OPENPMD_private:
+// clang-format off
+OPENPMD_private
+// clang-format on
+
     Container() : Attributable{ nullptr }
     {
         Attributable::setData( m_containerData );
