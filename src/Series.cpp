@@ -58,7 +58,8 @@ namespace
         // support for std::tie
         operator std::tuple< bool &, int &, uint64_t & >()
         {
-            return { isContained, padding, iteration };
+            return std::tuple< bool &, int &, uint64_t & >{
+                isContained, padding, iteration };
         }
     };
 
