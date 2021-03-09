@@ -62,6 +62,15 @@ repos:
 
 # C++ formatting
 # clang-format
+- repo: local
+  hooks:
+  - id: clang-format
+    name: clang-format
+    description: Clang-format our code base
+    files: '^(include|src|test|examples)/.*\.(hpp|cpp|hpp\.in)$'
+    language: conda
+    entry: bash .github/workflows/clang-format/clang-format.sh
+    additional_dependencies: [-c, conda-forge, clang-format-12]
 
 # Autoremoves unused Python imports
 - repo: https://github.com/hadialqattan/pycln
