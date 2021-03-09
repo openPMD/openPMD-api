@@ -28,7 +28,7 @@
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_private
-#   define OPENPMD_private private
+#   define OPENPMD_private private:
 #endif
 
 
@@ -114,7 +114,10 @@ public:
      */
     void seriesFlush();
 
-OPENPMD_private:
+// clang-format off
+OPENPMD_private
+// clang-format on
+
     void seriesFlush( FlushLevel );
     /*
      * These members need to be shared pointers since distinct instances of

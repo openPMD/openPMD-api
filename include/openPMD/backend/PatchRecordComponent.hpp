@@ -29,7 +29,7 @@
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_private
-#   define OPENPMD_private private
+#   define OPENPMD_private private:
 #endif
 
 
@@ -88,7 +88,9 @@ public:
     template< typename T >
     void store(uint64_t idx, T);
 
-OPENPMD_private:
+// clang-format off
+OPENPMD_private
+// clang-format on
 
     void flush(std::string const&);
     void read();
@@ -110,7 +112,10 @@ OPENPMD_private:
 
     PatchRecordComponent();
 
-OPENPMD_protected:
+// clang-format off
+OPENPMD_protected
+// clang-format on
+
     PatchRecordComponent(
         std::shared_ptr< internal::PatchRecordComponentData > );
 

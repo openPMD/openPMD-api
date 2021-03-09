@@ -46,7 +46,7 @@
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_private
-#   define OPENPMD_private private
+#   define OPENPMD_private private:
 #endif
 
 
@@ -421,7 +421,10 @@ public:
      */
     WriteIterations writeIterations();
 
-OPENPMD_private:
+// clang-format off
+OPENPMD_private
+// clang-format on
+
     static constexpr char const * const BASEPATH = "/data/%T/";
 
     struct ParsedInput;

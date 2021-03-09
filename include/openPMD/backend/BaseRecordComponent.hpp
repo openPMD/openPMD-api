@@ -26,7 +26,7 @@
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_protected
-#   define OPENPMD_protected protected
+#   define OPENPMD_protected protected:
 #endif
 
 
