@@ -1634,7 +1634,8 @@ class APITest(unittest.TestCase):
         read = io.Series(
             "../samples/unittest_serialIterator." + file_ending,
             io.Access_Type.read_only,
-            jsonConfig
+            jsonConfig,
+            parse_lazily=True
         )
         for it in read.read_iterations():
             lastIterationIndex = it.iteration_index
@@ -1682,9 +1683,11 @@ class APITest(unittest.TestCase):
 
         read = io.Series(
             name,
-            io.Access_Type.read_only
+            io.Access_Type.read_only,
+            parse_lazily=True
         )
 
+        read.iterations[0].open()
         chunks = read.iterations[0].meshes["E"]["x"].available_chunks()
         chunks = sorted(chunks, key=lambda chunk: chunk.offset)
         for chunk in chunks:
