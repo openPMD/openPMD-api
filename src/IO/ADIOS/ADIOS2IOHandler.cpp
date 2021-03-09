@@ -1659,30 +1659,107 @@ namespace detail
         std::string name,
         std::shared_ptr< Attribute::resource > resource )
     {
-        detail::AttributeWithShape< char > attr =
-            preloadedAttributes.getAttribute< char >( name );
-        if( attr.shape.size() != 2 )
-        {
-            throw std::runtime_error( "[ADIOS2] Expecting 2D ADIOS variable" );
-        }
-        size_t height = attr.shape[ 0 ];
-        size_t width = attr.shape[ 1 ];
+        /*
+         * char_type parameter only for specifying the "template" type.
+         */
+        auto loadFromDatatype =
+            [ &preloadedAttributes, &name, &resource ]( auto char_type ) {
+                using char_t = decltype( char_type );
+                detail::AttributeWithShape< char_t > attr =
+                    preloadedAttributes.getAttribute< char_t >( name );
+                if( attr.shape.size() != 2 )
+                {
+                    throw std::runtime_error(
+                        "[ADIOS2] Expecting 2D ADIOS variable" );
+                }
+                char_t const * loadedData = attr.data;
+                size_t height = attr.shape[ 0 ];
+                size_t width = attr.shape[ 1 ];
 
-        std::vector< std::string > res( height );
-        for( size_t i = 0; i < height; ++i )
-        {
-            size_t start = i * width;
-            char const * start_ptr = attr.data + start;
-            size_t j = 0;
-            while( j < width && start_ptr[ j ] != 0 )
-            {
-                ++j;
-            }
-            std::string & str = res[ i ];
-            str.append( start_ptr, start_ptr + j );
-        }
+                std::vector< std::string > res( height );
+                if( std::is_signed< char >::value ==
+                    std::is_signed< char_t >::value )
+                {
+                    /*
+                     * This branch is chosen if the signedness of the
+                     * ADIOS variable corresponds with the signedness of the
+                     * char type on the current platform.
+                     * In this case, the C++ standard guarantees that the
+                     * representations for char and (un)signed char are
+                     * identical, reinterpret_cast-ing the loadedData to
+                     * char in order to construct our strings will be fine.
+                     */
+                    for( size_t i = 0; i < height; ++i )
+                    {
+                        size_t start = i * width;
+                        char const * start_ptr =
+                            reinterpret_cast< char const * >(
+                                loadedData + start );
+                        size_t j = 0;
+                        while( j < width && start_ptr[ j ] != 0 )
+                        {
+                            ++j;
+                        }
+                        std::string & str = res[ i ];
+                        str.append( start_ptr, start_ptr + j );
+                    }
+                }
+                else
+                {
+                    /*
+                     * This branch is chosen if the signedness of the
+                     * ADIOS variable is different from the signedness of the
+                     * char type on the current platform.
+                     * In this case, we play it safe, and explicitly convert
+                     * the loadedData to char pointwise.
+                     */
+                    std::vector< char > converted( width );
+                    for( size_t i = 0; i < height; ++i )
+                    {
+                        size_t start = i * width;
+                        auto const * start_ptr = loadedData + start;
+                        size_t j = 0;
+                        while( j < width && start_ptr[ j ] != 0 )
+                        {
+                            converted[ j ] = start_ptr[ j ];
+                            ++j;
+                        }
+                        std::string & str = res[ i ];
+                        str.append( converted.data(), converted.data() + j );
+                    }
+                }
 
-        *resource = res;
+                *resource = res;
+            };
+        /*
+         * If writing char variables in ADIOS2, they might become either int8_t
+         * or uint8_t on disk depending on the platform.
+         * So allow reading from both types.
+         */
+        switch( preloadedAttributes.attributeType( name ) )
+        {
+        /*
+         * Workaround for two bugs at once:
+         * ADIOS2 does not have an explicit char type,
+         * we don't have an explicit schar type.
+         * Until this is fixed, we use CHAR to represent ADIOS signed char.
+         */
+        case Datatype::CHAR: {
+            using schar_t = signed char;
+            loadFromDatatype( schar_t{} );
+            break;
+        }
+        case Datatype::UCHAR: {
+            using uchar_t = unsigned char;
+            loadFromDatatype( uchar_t{} );
+            break;
+        }
+        default: {
+            throw std::runtime_error(
+                "[ADIOS2] Expecting 2D ADIOS variable of "
+                "type signed or unsigned char." );
+        }
+        }
     }
 
     template< typename T, size_t n >

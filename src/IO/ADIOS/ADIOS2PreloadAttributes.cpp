@@ -288,6 +288,17 @@ namespace detail
                 pair.second );
         }
     }
+
+    Datatype
+    PreloadAdiosAttributes::attributeType( std::string const & name ) const
+    {
+        auto it = m_offsets.find( name );
+        if( it == m_offsets.end() )
+        {
+            return Datatype::UNDEFINED;
+        }
+        return it->second.dt;
+    }
 } // namespace detail
 } // namespace openPMD
 

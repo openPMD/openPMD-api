@@ -26,7 +26,9 @@
 #include <adios2.h>
 #include <functional>
 #include <map>
+#include <sstream>
 #include <stddef.h>
+#include <type_traits>
 
 #include "openPMD/Datatype.hpp"
 
@@ -132,8 +134,9 @@ namespace detail
          *      of PreloadAdiosAttributes is called.
          */
         template< typename T >
-        AttributeWithShape< T >
-        getAttribute( std::string const & name ) const;
+        AttributeWithShape< T > getAttribute( std::string const & name ) const;
+
+        Datatype attributeType( std::string const & name ) const;
     };
 
     template< typename T >
@@ -147,10 +150,21 @@ namespace detail
                 "[ADIOS2] Requested attribute not found: " + name );
         }
         AttributeLocation const & location = it->second;
-        if( location.dt != determineDatatype< T >() )
+        Datatype determinedDatatype = determineDatatype< T >();
+        if( std::is_same< T, signed char >::value )
         {
-            throw std::runtime_error(
-                "[ADIOS2] Wrong datatype for attribute: " + name );
+            // workaround: we use Datatype::CHAR to represent ADIOS2 signed char
+            // (ADIOS2 does not have chars with unspecified signed-ness
+            // anyway)
+            determinedDatatype = Datatype::CHAR;
+        }
+        if( location.dt != determinedDatatype )
+        {
+            std::stringstream errorMsg;
+            errorMsg << "[ADIOS2] Wrong datatype for attribute: " << name
+                     << "(location.dt=" << location.dt
+                     << ", T=" << determineDatatype< T >() << ")";
+            throw std::runtime_error( errorMsg.str() );
         }
         AttributeWithShape< T > res;
         res.shape = location.shape;
