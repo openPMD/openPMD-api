@@ -1295,6 +1295,7 @@ namespace detail
 } // namespace detail
 #endif // openPMD_HAVE_ADIOS2
 
+
 class ADIOS2IOHandler : public AbstractIOHandler
 {
 #if openPMD_HAVE_ADIOS2
@@ -1345,6 +1346,6 @@ public:
 
     std::string backendName() const override { return "ADIOS2"; }
 
-    std::future< void > flush() override;
+    std::future< void > flush( ) override;
 }; // ADIOS2IOHandler
 } // namespace openPMD
