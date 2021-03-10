@@ -51,7 +51,7 @@ environment variable                  default    description
 ``OPENPMD_ADIOS2_HAVE_METADATA_FILE`` ``1``      Online creation of the adios journal file (``1``: yes, ``0``: no).
 ``OPENPMD_ADIOS2_NUM_SUBSTREAMS``     ``0``      Number of files to be created, 0 indicates maximum number possible.
 ``OPENPMD_ADIOS2_ENGINE``             ``File``   `ADIOS2 engine <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_
-``OPENPMD_NEW_ATTRIBUTE_LAYOUT``      ``0``      Experimental: new attribute layout (see below)
+``OPENPMD2_ADIOS2_SCHEMA``            ``0``      ADIOS2 schema version (see below)
 ``OPENPMD_BP_BACKEND``                ``ADIOS2`` Chose preferred ``.bp`` file backend if ``ADIOS1`` and ``ADIOS2`` are available.
 ===================================== ========== ================================================================================
 
@@ -79,8 +79,8 @@ A good number for substreams is usually the number of contributing nodes divided
 For fine-tuning at extreme scale or for exotic systems, please refer to the ADIOS2 manual and talk to your filesystem admins and the ADIOS2 authors.
 Be aware that extreme-scale I/O is a research topic after all.
 
-Experimental new attribute layout
----------------------------------
+Experimental new ADIOS2 schema
+------------------------------
 
 We are experimenting with a breaking change to our layout of openPMD datasets in ADIOS2.
 It is likely that we will in future use ADIOS attributes only for a handful of internal flags.
@@ -96,11 +96,10 @@ We hope that this will bring several advantages:
 
 The new layout may be activated **for experimental purposes** in two ways:
 
-* Via the JSON parameter ``adios2.new_attribute_layout = true``.
-* Via the environment variable ``export OPENPMD_NEW_ATTRIBUTE_LAYOUT=1``.
+* Via the JSON parameter ``adios2.schema = 20210209``.
+* Via the environment variable ``export OPENPMD2_ADIOS2_SCHEMA=20210209``.
 
-The classical and the new layout are absolutely incompatible with one another.
-The ADIOS2 backend will **not** (yet) automatically recognize the layout that has been used by a writer when reading a dataset.
+The ADIOS2 backend will automatically recognize the layout that has been used by a writer when reading a dataset.
 
 Selected References
 -------------------
