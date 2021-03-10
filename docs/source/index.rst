@@ -74,6 +74,7 @@ Usage
    usage/firstread
    usage/serial
    usage/parallel
+   usage/workflow
    usage/streaming
    usage/benchmarks
    usage/examples

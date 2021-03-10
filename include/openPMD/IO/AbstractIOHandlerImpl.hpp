@@ -316,9 +316,9 @@ public:
    * The operation should fail if chunk positions parameters.offset+parameters.extent do not reside inside the dataset.
    * The dataset should match the dataype parameters.dtype.
    * The buffer should be stored as a cast-to-char pointer to a flattened version of the backend buffer in parameters.out->ptr. The chunk is stored row-major.
-   * The buffer's content should be written to storage not before the next call to AbstractIOHandler::flush where AbstractIOHandler::m_flushLevel == FlushLevel::FlushEverything.
+   * The buffer's content should be written to storage not before the next call to AbstractIOHandler::flush where AbstractIOHandler::m_flushLevel == FlushLevel::InternalFlush.
    * The precise time of data consumption is defined by the backend:
-   * * Data written to the returned buffer should be consumed not earlier than the next call to AbstractIOHandler::flush where AbstractIOHandler::m_flushLevel == FlushLevel::FlushEverything.
+   * * Data written to the returned buffer should be consumed not earlier than the next call to AbstractIOHandler::flush where AbstractIOHandler::m_flushLevel == FlushLevel::InternalFlush.
    * * Data should be consumed not later than the next Operation::ADVANCE task where parameter.mode == AdvanceMode::ENDSTEP.
    *
    * This task is optional and should either (1) not be implemented by a backend at all or (2) be implemented as indicated above and set parameters.out->taskSupportedByBackend = true.

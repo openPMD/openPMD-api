@@ -62,17 +62,25 @@ public:
  */
 enum class FlushLevel : unsigned char
 {
+    /**
+     * Flush operation that was triggered by user code.
+     * Everything flushable must be flushed.
+     * This mode defines a flush point (see docs/source/usage/workflow.rst.rst).
+     */
     UserFlush,
     /**
-     * Default mode, flush everything that can be flushed
-     * Does not need to uphold user-level guarantees about clearing and filling
-     * buffers. Spans must not yet be read.
+     * Default mode, used when flushes are triggered internally, e.g. during
+     * parsing to read attributes. Does not trigger a flush point.
+     * All operations must be performed by a backend, except for those that
+     * may only happen at a flush point. Those operations must not be
+     * performed.
      */
-    FlushEverything,
+    InternalFlush,
     /**
-     * Restricted mode, flush all objects in the openPMD hierarchy to the
-     * backend, i.e. open paths and create files.
-     * Do not flush record components / datasets.
+     * Restricted mode, ensures to set up the openPMD hierarchy (as far as
+     * defined so far) in the backend.
+     * Do not flush record components / datasets, especially do not flush
+     * CREATE_DATASET tasks.
      * Attributes may or may not be flushed yet.
      */
     SkeletonOnly
@@ -126,7 +134,7 @@ public:
     Access const m_backendAccess;
     Access const m_frontendAccess;
     std::queue< IOTask > m_work;
-    FlushLevel m_flushLevel = FlushLevel::FlushEverything;
+    FlushLevel m_flushLevel = FlushLevel::InternalFlush;
 }; // AbstractIOHandler
 
 } // namespace openPMD

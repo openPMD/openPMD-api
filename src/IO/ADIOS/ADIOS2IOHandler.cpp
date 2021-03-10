@@ -2570,7 +2570,7 @@ namespace detail
                 m_attributeReads.clear();
                 break;
 
-            case FlushLevel::FlushEverything:
+            case FlushLevel::InternalFlush:
             case FlushLevel::SkeletonOnly:
                 /*
                  * Tasks have been given to ADIOS2, but we don't flush them

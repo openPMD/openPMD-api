@@ -497,12 +497,12 @@ SeriesImpl::flush_impl(
                 break;
         }
         auto res = IOHandler()->flush();
-        IOHandler()->m_flushLevel = FlushLevel::FlushEverything;
+        IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
         return res;
     }
     catch( ... )
     {
-        IOHandler()->m_flushLevel = FlushLevel::FlushEverything;
+        IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
         throw;
     }
 }
@@ -1231,10 +1231,10 @@ SeriesImpl::advance(
     }
     catch( ... )
     {
-        IOHandler()->m_flushLevel = FlushLevel::FlushEverything;
+        IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
         throw;
     }
-    IOHandler()->m_flushLevel = FlushLevel::FlushEverything;
+    IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
 
     return *param.status;
 }

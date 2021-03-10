@@ -222,12 +222,19 @@ public:
      * In order to avoid this, calling Series::flush() prior to this is
      * recommended to flush definitions.
      *
-     * @param createBuffer If the backend in use as no special support for this
+     * @param o
+     * @param e
+     * @param createBuffer If the backend in use has no special support for this
      *        operation, the openPMD API will fall back to creating a buffer,
      *        queuing it for writing and returning a view into that buffer to
      *        the user. The functor createBuffer will be called for this
      *        purpose. It consumes a length parameter of type size_t and should
      *        return a shared_ptr of type T to a buffer at least that length.
+     *        In that case, using this API call is equivalent to (1) creating
+     *        a shared pointer via createBuffer and (2) then using the regular
+     *        storeChunk() API on it.
+     *        If the backend supports it, the buffer is not read before the next
+     *        flush point and becomes invalid afterwards.
      *
      * @return View into a buffer that can be filled with data.
      */
