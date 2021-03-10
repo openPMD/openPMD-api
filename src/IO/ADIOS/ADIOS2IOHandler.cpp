@@ -2030,7 +2030,7 @@ namespace detail
         , m_writeDataset( &impl )
         , m_readDataset( &impl )
         , m_attributeReader()
-        , m_schema( impl.m_schema )
+        , m_impl( &impl )
         , m_engineType( impl.m_engineType )
     {
         if( !m_IO )
@@ -2120,7 +2120,7 @@ namespace detail
             {
                 isStreaming = true;
                 optimizeAttributesStreaming =
-                    m_schema == ADIOS2Schema::schema_0000_00_00;
+                    schema() == SupportedSchema::s_0000_00_00;
                 streamStatus = StreamStatus::OutsideOfStep;
             }
             else
@@ -2146,13 +2146,14 @@ namespace detail
                          * Default for old layout is no steps.
                          * Default for new layout is to use steps.
                          */
-                        if( m_schema < ADIOS2Schema::schema_2021_02_09 )
+                        switch( schema() )
                         {
+                        case SupportedSchema::s_0000_00_00:
                             streamStatus = StreamStatus::NoStream;
-                        }
-                        else
-                        {
+                            break;
+                        case SupportedSchema::s_2021_02_09:
                             streamStatus = StreamStatus::OutsideOfStep;
+                            break;
                         }
                         break;
                     default:
@@ -2283,7 +2284,7 @@ namespace detail
                 // this makes sure that the attribute is only put in case
                 // the streaming API was used.
                 m_IO.DefineAttribute< ADIOS2Schema::schema_t >(
-                    ADIOS2Defaults::str_adios2Schema, m_schema );
+                    ADIOS2Defaults::str_adios2Schema, m_impl->m_schema );
                 m_engine = auxiliary::makeOption(
                     adios2::Engine( m_IO.Open( m_file, m_mode ) ) );
                 break;
@@ -2311,7 +2312,7 @@ namespace detail
                 switch( streamStatus )
                 {
                 case StreamStatus::Undecided: {
-                    m_schema = layoutVersion();
+                    m_impl->m_schema = layoutVersion();
                     auto attr = m_IO.InquireAttribute< bool_representation >(
                         ADIOS2Defaults::str_usesstepsAttribute );
                     if( attr && attr.Data()[ 0 ] == 1 )
@@ -2334,7 +2335,7 @@ namespace detail
                 }
                 case StreamStatus::OutsideOfStep:
                     m_engine.get().BeginStep();
-                    m_schema = layoutVersion();
+                    m_impl->m_schema = layoutVersion();
                     streamStatus = StreamStatus::DuringStep;
                     break;
                 default:

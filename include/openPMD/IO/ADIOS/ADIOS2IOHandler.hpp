@@ -91,8 +91,14 @@ namespace ADIOS2Schema
      * This introduces attribute layout via scalar ADIOS variables.
      */
     constexpr schema_t schema_2021_02_09 = 20210209;
-}
 
+    enum class SupportedSchema : char
+    {
+        s_0000_00_00,
+        s_2021_02_09
+    };
+}
+using SupportedSchema = ADIOS2Schema::SupportedSchema;
 
 class ADIOS2IOHandlerImpl
 : public AbstractIOHandlerImplCommon< ADIOS2FilePosition >
@@ -225,11 +231,31 @@ private:
         ByAdiosVariables
     };
 
+    inline SupportedSchema schema() const
+    {
+        switch( m_schema )
+        {
+        case ADIOS2Schema::schema_0000_00_00:
+            return SupportedSchema::s_0000_00_00;
+        case ADIOS2Schema::schema_2021_02_09:
+            return SupportedSchema::s_2021_02_09;
+        default:
+            throw std::runtime_error(
+                "[ADIOS2] Encountered unsupported schema version: " +
+                std::to_string( m_schema ) );
+        }
+    }
+
     inline AttributeLayout attributeLayout() const
     {
-        return m_schema < ADIOS2Schema::schema_2021_02_09
-            ? AttributeLayout::ByAdiosAttributes
-            : AttributeLayout::ByAdiosVariables;
+        switch( schema() )
+        {
+        case SupportedSchema::s_0000_00_00:
+            return AttributeLayout::ByAdiosAttributes;
+        case SupportedSchema::s_2021_02_09:
+            return AttributeLayout::ByAdiosVariables;
+        }
+        throw std::runtime_error( "Unreachable!" );
     }
 
     struct ParameterizedOperator
@@ -1017,7 +1043,6 @@ namespace detail
         detail::DatasetReader const m_readDataset;
         detail::AttributeReader const m_attributeReader;
         PreloadAdiosAttributes preloadAttributes;
-        ADIOS2Schema::schema_t & m_schema;
 
         /*
          * We call an attribute committed if the step during which it was
@@ -1127,6 +1152,7 @@ namespace detail
         invalidateVariablesMap();
 
     private:
+        ADIOS2IOHandlerImpl * m_impl;
         auxiliary::Option< adios2::Engine > m_engine; //! ADIOS engine
         /**
          * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
@@ -1251,15 +1277,18 @@ namespace detail
          */
         bool finalized = false;
 
+        inline SupportedSchema schema() const
+        {
+            return m_impl->schema();
+        }
+
         void
         configure_IO( ADIOS2IOHandlerImpl & impl );
 
         using AttributeLayout = ADIOS2IOHandlerImpl::AttributeLayout;
         inline AttributeLayout attributeLayout() const
         {
-            return m_schema < ADIOS2Schema::schema_2021_02_09
-                ? AttributeLayout::ByAdiosAttributes
-                : AttributeLayout::ByAdiosVariables;
+            return m_impl->attributeLayout();
         }
     };
 
