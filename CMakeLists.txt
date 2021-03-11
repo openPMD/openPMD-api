@@ -690,6 +690,7 @@ set(openPMD_EXAMPLE_NAMES
     8b_benchmark_read_parallel
     10_streaming_write
     10_streaming_read
+    12_span_write
 )
 set(openPMD_PYTHON_EXAMPLE_NAMES
     2_read_serial

@@ -23,6 +23,8 @@
 
 #include "openPMD/RecordComponent.hpp"
 
+#include <iterator>
+
 namespace openPMD
 {
 /**
@@ -51,6 +53,9 @@ private:
     }
 
 public:
+    using iterator = T *;
+    using reverse_iterator = std::reverse_iterator< iterator >;
+
     size_t size() const
     {
         return m_size;
@@ -71,6 +76,24 @@ public:
     T & operator[]( size_t i )
     {
         return data()[ i ];
+    }
+
+    iterator begin()
+    {
+        return data();
+    }
+    iterator end()
+    {
+        return data() + size();
+    }
+    reverse_iterator rbegin()
+    {
+        // std::reverse_iterator does the -1 thing automatically
+        return reverse_iterator{ data() + size() };
+    }
+    reverse_iterator rend()
+    {
+        return reverse_iterator{ data() };
     }
 };
 }
