@@ -702,6 +702,7 @@ set(openPMD_PYTHON_EXAMPLE_NAMES
     7_extended_write_serial
     9_particle_write_serial
     11_particle_dataframe
+    12_span_write
 )
 
 if(openPMD_USE_INVASIVE_TESTS)
