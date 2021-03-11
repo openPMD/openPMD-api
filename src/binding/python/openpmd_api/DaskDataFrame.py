@@ -75,9 +75,9 @@ def particles_to_daskdataframe(particle_species):
         return species.to_df(stride)
 
     # merge DataFrames
-    dfs = delayed(pd.concat(
-        [(read_chunk)(particle_species, chunk) for chunk in chunks]
-    ))
+    dfs = [
+        delayed(read_chunk)(particle_species, chunk) for chunk in chunks
+    ]
     df = dd.from_delayed(dfs)
 
     return df
