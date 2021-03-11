@@ -500,6 +500,10 @@ SeriesImpl::flushFileBased( iterations_iterator begin, iterations_iterator end )
     if( IOHandler()->m_frontendAccess == Access::READ_ONLY )
         for( auto it = begin; it != end; ++it )
         {
+            if( *it->second.m_closed == Iteration::CloseStatus::NotYetAccessed )
+            {
+                continue;
+            }
             bool const dirtyRecursive = it->second.dirtyRecursive();
             if( *it->second.m_closed
                 == Iteration::CloseStatus::ClosedInBackend )
@@ -544,6 +548,10 @@ SeriesImpl::flushFileBased( iterations_iterator begin, iterations_iterator end )
         bool allDirty = dirty();
         for( auto it = begin; it != end; ++it )
         {
+            if( *it->second.m_closed == Iteration::CloseStatus::NotYetAccessed )
+            {
+                continue;
+            }
             bool const dirtyRecursive = it->second.dirtyRecursive();
             if( *it->second.m_closed
                 == Iteration::CloseStatus::ClosedInBackend )
@@ -629,6 +637,10 @@ SeriesImpl::flushGroupBased( iterations_iterator begin, iterations_iterator end 
     if( IOHandler()->m_frontendAccess == Access::READ_ONLY )
         for( auto it = begin; it != end; ++it )
         {
+            if( *it->second.m_closed == Iteration::CloseStatus::NotYetAccessed )
+            {
+                continue;
+            }
             if( *it->second.m_closed ==
                 Iteration::CloseStatus::ClosedInBackend )
             {
@@ -665,6 +677,10 @@ SeriesImpl::flushGroupBased( iterations_iterator begin, iterations_iterator end 
 
         for( auto it = begin; it != end; ++it )
         {
+            if( *it->second.m_closed == Iteration::CloseStatus::NotYetAccessed )
+            {
+                continue;
+            }
             if( *it->second.m_closed ==
                 Iteration::CloseStatus::ClosedInBackend )
             {
@@ -774,6 +790,10 @@ SeriesImpl::readFileBased( )
     };
     if( series.m_parseLazily )
     {
+        for( auto & iteration : series.iterations )
+        {
+            *iteration.second.m_closed = Iteration::CloseStatus::NotYetAccessed;
+        }
         // open the last iteration, just to parse Series attributes
         auto getLastIteration = series.iterations.end();
         getLastIteration--;
@@ -929,17 +949,38 @@ SeriesImpl::readGroupBased( bool do_init )
     IOHandler()->enqueue(IOTask(&series.iterations, pList));
     IOHandler()->flush();
 
-    for( auto const& it : *pList.paths )
+    for( auto const & it : *pList.paths )
     {
-        Iteration& i = series.iterations[std::stoull(it)];
-        if ( i.closedByWriter( ) )
+        uint64_t index = std::stoull( it );
+        if( series.iterations.contains( index ) )
         {
-            continue;
+            // maybe re-read
+            auto & i = series.iterations.at( index );
+            if( i.closedByWriter() )
+            {
+                continue;
+            }
+            if( *i.m_closed != Iteration::CloseStatus::NotYetAccessed )
+            {
+                pOpen.path = it;
+                IOHandler()->enqueue( IOTask( &i, pOpen ) );
+                i.read();
+            }
         }
-        i.deferRead( {it, false, ""} );
-        if( !series.m_parseLazily )
+        else
         {
-            i.accessLazily();
+            // parse for the first time, resp. delay the parsing process
+            Iteration & i = series.iterations[ std::stoull( it ) ];
+            i.deferRead( { it, false, "" } );
+            if( !series.m_parseLazily )
+            {
+                i.accessLazily();
+                *i.m_closed = Iteration::CloseStatus::Open;
+            }
+            else
+            {
+                *i.m_closed = Iteration::CloseStatus::NotYetAccessed;
+            }
         }
     }
 }
@@ -1177,6 +1218,7 @@ SeriesImpl::openIteration( uint64_t index, Iteration iteration )
             throw std::runtime_error(
                 "[Series] Detected illegal access to iteration that "
                 "has been closed previously." );
+        case CL::NotYetAccessed:
         case CL::Open:
         case CL::ClosedTemporarily:
             *iteration.m_closed = CL::Open;
@@ -1184,9 +1226,7 @@ SeriesImpl::openIteration( uint64_t index, Iteration iteration )
         case CL::ClosedInFrontend:
             // just keep it like it is
             break;
-        default:
-            throw std::runtime_error( "Unreachable!" );
-    }
+        }
 }
 
 namespace internal

@@ -106,11 +106,10 @@ Iteration::close( bool _flush )
                 *m_closed = CloseStatus::ClosedInBackend;
             }
             break;
+        case CloseStatus::NotYetAccessed:
         case CloseStatus::ClosedInBackend:
             // just keep it like it is
             break;
-        default:
-            throw std::runtime_error( "Unreachable!" );
     }
     if( _flush )
     {
@@ -145,6 +144,10 @@ Iteration::close( bool _flush )
 Iteration &
 Iteration::open()
 {
+    if( *m_closed == CloseStatus::NotYetAccessed )
+    {
+        *m_closed = CloseStatus::Open;
+    }
     accessLazily();
     internal::SeriesInternal * s = &retrieveSeries();
     // figure out my iteration number
@@ -164,6 +167,7 @@ Iteration::closed() const
 {
     switch( *m_closed )
     {
+        case CloseStatus::NotYetAccessed:
         case CloseStatus::Open:
         /*
          * Temporarily closing a file is something that the openPMD API
