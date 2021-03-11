@@ -3666,3 +3666,54 @@ TEST_CASE( "extend_dataset", "[serial]" )
     // extendDataset( "h5" );
 #endif
 }
+
+
+void lazy_parsing( std::string const & extension )
+{
+    std::string const basename = "../samples/lazy_parsing/lazy_parsing_";
+    // create a single iteration
+    {
+        Series series( basename + "%T." + extension, Access::CREATE );
+        std::vector< float > buffer( 20 );
+        std::iota( buffer.begin(), buffer.end(), 0.f );
+        auto dataset = series.iterations[ 1000 ].meshes[ "E" ][ "x" ];
+        dataset.resetDataset( { Datatype::FLOAT, { 20 } } );
+        dataset.storeChunk( buffer, { 0 }, { 20 } );
+        series.flush();
+    }
+    // create some empty pseudo files
+    // if the reader tries accessing them it's game over
+    {
+        for( size_t i = 0; i < 1000; i += 100 )
+        {
+            std::ofstream file;
+            file.open( basename + std::to_string( i ) + "." + extension );
+            file.close();
+        }
+    }
+    {
+        Series series = SeriesBuilder()
+            .filePath( basename + "%T." + extension )
+            .access( Access::READ_ONLY )
+            .parseLazily();
+        auto dataset = series.iterations[ 1000 ]
+            .open()
+            .meshes[ "E" ][ "x" ]
+            .loadChunk< float >( { 0 }, { 20 } );
+        series.flush();
+        for( size_t i = 0; i < 20; ++i )
+        {
+            REQUIRE(
+                std::abs( dataset.get()[ i ] - float( i ) ) <=
+                std::numeric_limits< float >::epsilon() );
+        }
+    }
+}
+
+TEST_CASE( "lazy_parsing", "[serial]" )
+{
+    for( auto const & t : testedFileExtensions() )
+    {
+        lazy_parsing( t );
+    }
+}
