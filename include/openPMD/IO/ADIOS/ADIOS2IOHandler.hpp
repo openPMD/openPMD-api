@@ -195,8 +195,7 @@ public:
      * @brief The ADIOS2 access type to chose for Engines opened
      * within this instance.
      */
-    adios2::Mode adios2AccessMode( );
-
+    adios2::Mode adios2AccessMode( std::string const & fullPath );
 
 private:
     adios2::ADIOS m_ADIOS;
