@@ -1528,6 +1528,13 @@ void fileBased_write_test(const std::string & backend)
         REQUIRE(o.iterations.size() == 5);
         o.iterations[6];
         REQUIRE(o.iterations.size() == 6);
+        // write something to trigger opening of the file
+        // write something to trigger opening of the file
+        o.iterations[ 6 ].particles[ "e" ][ "position" ][ "x" ].resetDataset(
+            { Datatype::DOUBLE, { 10 } } );
+        o.iterations[ 6 ]
+            .particles[ "e" ][ "position" ][ "x" ]
+            .makeConstant< double >( 1.0 );
     }
     REQUIRE((auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000004." + backend)
         || auxiliary::directory_exists("../samples/subdir/serial_fileBased_write00000004." + backend)));
