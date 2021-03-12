@@ -40,10 +40,12 @@ ParticleSpecies::read()
 
     Parameter< Operation::OPEN_PATH > pOpen;
     Parameter< Operation::LIST_ATTS > aList;
+    bool hasParticlePatches = false;
     for( auto const& record_name : *pList.paths )
     {
         if( record_name == "particlePatches" )
         {
+            hasParticlePatches = true;
             pOpen.path = "particlePatches";
             IOHandler()->enqueue(IOTask(&particlePatches, pOpen));
             particlePatches.read();
@@ -70,6 +72,13 @@ ParticleSpecies::read()
             }
             r.read();
         }
+    }
+
+    if( !hasParticlePatches )
+    {
+        auto & container = *particlePatches.m_container;
+        container.erase( "numParticles" );
+        container.erase( "numParticlesOffset" );
     }
 
     /* obtain all scalar records */
