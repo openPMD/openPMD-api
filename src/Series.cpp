@@ -1144,16 +1144,28 @@ SeriesImpl::advance(
         *iteration.m_closed = Iteration::CloseStatus::Open;
     }
 
-    switch( series.m_iterationEncoding )
+    auto oldFlushLevel = IOHandler()->m_flushLevel;
+    IOHandler()->m_flushLevel = FlushLevel::UserFlush;
+    try
     {
-        using IE = IterationEncoding;
+        switch( series.m_iterationEncoding )
+        {
+            using IE = IterationEncoding;
         case IE::groupBased:
             flushGroupBased( begin, end );
             break;
         case IE::fileBased:
             flushFileBased( begin, end );
             break;
+        }
+        IOHandler()->m_flushLevel = oldFlushLevel;
     }
+    catch( ... )
+    {
+        IOHandler()->m_flushLevel = oldFlushLevel;
+        throw;
+    }
+
     if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend )
     {
         *iteration.m_closed = oldCloseStatus;
