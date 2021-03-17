@@ -1166,10 +1166,15 @@ if(openPMD_BUILD_TESTING)
                     COMMAND sh -c
                         "${MPI_TEST_EXE} ${Python_EXECUTABLE}                      \
                             ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
-                            --infile ../samples/git-sample/thetaMode/data%T.h5     \
-                            --outfile ../samples/git-sample/thetaMode/data%T.bp;   \
+                            --infile ../samples/git-sample/data%T.h5               \
+                            --outfile ../samples/git-sample/data%T.bp &&           \
                                                                                    \
-                            ${Python_EXECUTABLE}                                   \
+                        ${MPI_TEST_EXE} ${Python_EXECUTABLE}                       \
+                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
+                            --infile ../samples/git-sample/thetaMode/data%T.h5     \
+                            --outfile ../samples/git-sample/thetaMode/data%T.bp && \
+                                                                                   \
+                        ${Python_EXECUTABLE}                                       \
                             ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
                             --infile ../samples/git-sample/thetaMode/data%T.bp     \
                             --outfile ../samples/git-sample/thetaMode/data%T.json  \
@@ -1181,10 +1186,15 @@ if(openPMD_BUILD_TESTING)
                     COMMAND sh -c
                         "${Python_EXECUTABLE}                                      \
                             ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
-                            --infile ../samples/git-sample/thetaMode/data%T.h5     \
-                            --outfile ../samples/git-sample/thetaMode/data%T.bp;   \
+                            --infile ../samples/git-sample/data%T.h5               \
+                            --outfile ../samples/git-sample/data%T.bp &&           \
                                                                                    \
-                            ${Python_EXECUTABLE}                                   \
+                        ${Python_EXECUTABLE}                                       \
+                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
+                            --infile ../samples/git-sample/thetaMode/data%T.h5     \
+                            --outfile ../samples/git-sample/thetaMode/data%T.bp && \
+                                                                                   \
+                        ${Python_EXECUTABLE}                                       \
                             ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
                             --infile ../samples/git-sample/thetaMode/data%T.bp     \
                             --outfile ../samples/git-sample/thetaMode/data%T.json  \
