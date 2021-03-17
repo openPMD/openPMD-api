@@ -41,14 +41,17 @@ if found_dask:
     df = electrons.to_dask()
     print(df)
 
+    # check chunking of a variable
+    print("chunking={}".format(df["momentum_z"].to_dask_array()))
+
     # trigger a couple of compute actions
     #   example1: average momentum in z
     print("<momentum_z>={}".format(df["momentum_z"].mean().compute()))
 
     #   example2: momentum histogram
-    h, bins = da.histogram(df["momentum_z"], bins=50,
-                           range=[-8.0e-23, 8.0e-23])
-    #                      weights=df["weighting"]
+    h, bins = da.histogram(df["momentum_z"].to_dask_array(), bins=50,
+                           range=[-8.0e-23, 8.0e-23],
+                           weights=df["weighting"].to_dask_array())
     print(h.compute())
 
     #   example3: save all data data to parquet files
