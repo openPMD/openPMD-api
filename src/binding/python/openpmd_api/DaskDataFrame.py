@@ -13,7 +13,7 @@ try:
 except ImportError:
     found_dask = False
 try:
-    import pandas as pd
+    import pandas  # noqa
     found_pandas = True
 except ImportError:
     found_pandas = False
@@ -48,7 +48,7 @@ def particles_to_daskdataframe(particle_species):
     if not found_dask:
         raise ImportError("dask NOT found. Install dask for Dask DataFrame "
                           "support.")
-    if not found_pandas:
+    if not found_pandas:  # catch this early: before delayed functions
         raise ImportError("pandas NOT found. Install pandas for DataFrame "
                           "support.")
 
@@ -64,11 +64,15 @@ def particles_to_daskdataframe(particle_species):
         if chunks:
             break
 
-    # TODO: implement available_chunks for constant record components
-    #       and fall back to a single, big chunk here
+    # only constant record components:
+    # fall back to a single, big chunk here
     if chunks is None:
-        raise ValueError("All records are constant. No dask chunking "
-                         "implemented, use pandas dataframes.")
+        for k_r, r in particle_species.items():
+            for k_rc, rc in r.items():
+                chunks = rc.available_chunks()
+                break
+            if chunks:
+                break
 
     def read_chunk(species, chunk):
         stride = np.s_[chunk.offset[0]:chunk.extent[0]]
