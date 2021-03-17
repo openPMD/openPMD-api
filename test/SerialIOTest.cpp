@@ -1529,7 +1529,6 @@ void fileBased_write_test(const std::string & backend)
         o.iterations[6];
         REQUIRE(o.iterations.size() == 6);
         // write something to trigger opening of the file
-        // write something to trigger opening of the file
         o.iterations[ 6 ].particles[ "e" ][ "position" ][ "x" ].resetDataset(
             { Datatype::DOUBLE, { 10 } } );
         o.iterations[ 6 ]
