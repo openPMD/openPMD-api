@@ -90,6 +90,12 @@
             "affiliation": "Helmholtz-Zentrum Dresden-Rossendorf",
             "name": "Ordyna, Paweł",
             "type": "Other"
+        },
+        {
+            "affiliation": "Oak Ridge National Laboratory",
+            "name": "Ganyushin, Dmitry",
+            "orcid": "0000-0001-7337-2161",
+            "type": "Other"
         }
     ],
     "title": "C++ & Python API for Scientific I/O with openPMD",
