@@ -3475,9 +3475,10 @@ iterate_nonstreaming_series( std::string const & file )
                 { 1, 0 },
                 { 1, extent },
                 /*
-                 * Hijack the functor that is called for buffer creation if the
-                 * backend doesn't support the task to see whether the backend
-                 * did support it or not.
+                 * Hijack the functor that is called for buffer creation.
+                 * This allows us to check if the backend has explicit support
+                 * for buffer creation or if the fallback implementation is
+                 * used.
                  */
                 [ &taskSupportedByBackend ]( size_t size )
                 {
