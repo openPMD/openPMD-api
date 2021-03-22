@@ -913,6 +913,12 @@ SeriesImpl::readGroupBased( bool do_init )
                 series.m_iterationEncoding = IterationEncoding::fileBased;
                 std::cerr << "Series constructor called with explicit iteration suggests loading a "
                           << "single file with groupBased iteration encoding. Loaded file is fileBased.\n";
+                /*
+                 * We'll want the openPMD API to continue series.m_name to open
+                 * the file instead of piecing the name together via
+                 * prefix-padding-postfix things.
+                 */
+                series.m_overrideFilebasedFilename = series.m_name;
             } else
                 throw std::runtime_error("Unknown iterationEncoding: " + encoding);
             setAttribute("iterationEncoding", encoding);
@@ -1065,6 +1071,10 @@ std::string
 SeriesImpl::iterationFilename( uint64_t i )
 {
     auto & series = get();
+    if( series.m_overrideFilebasedFilename.has_value() )
+    {
+        return series.m_overrideFilebasedFilename.get();
+    }
     std::stringstream iteration( "" );
     iteration << std::setw( series.m_filenamePadding )
               << std::setfill( '0' ) << i;

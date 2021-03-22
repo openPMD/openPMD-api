@@ -86,6 +86,7 @@ public:
 
 OPENPMD_private :
     auxiliary::Option< WriteIterations > m_writeIterations;
+    auxiliary::Option< std::string > m_overrideFilebasedFilename;
     std::string m_name;
     std::string m_filenamePrefix;
     std::string m_filenamePostfix;
