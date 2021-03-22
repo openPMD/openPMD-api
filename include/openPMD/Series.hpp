@@ -342,13 +342,20 @@ OPENPMD_private:
 
     std::unique_ptr< ParsedInput > parseInput(std::string);
     void init(std::shared_ptr< AbstractIOHandler >, std::unique_ptr< ParsedInput >);
-    void initDefaults();
+    void initDefaults( IterationEncoding );
     std::future< void > flush_impl(
         iterations_iterator begin,
         iterations_iterator end,
         FlushLevel );
     void flushFileBased( iterations_iterator begin, iterations_iterator end );
-    void flushGroupBased( iterations_iterator begin, iterations_iterator end );
+    /*
+     * Group-based and variable-based iteration layouts share a lot of logic
+     * (realistically, the variable-based iteration layout only throws out
+     *  one layer in the hierarchy).
+     * As a convention, methods that deal with both layouts are called
+     * .*GorVBased, short for .*GroupOrVariableBased
+     */
+    void flushGorVBased( iterations_iterator begin, iterations_iterator end );
     void flushMeshesPath();
     void flushParticlesPath();
     void readFileBased( );
@@ -361,7 +368,7 @@ OPENPMD_private:
      * as of yet. Such a facility will be required upon implementing things such
      * as resizable datasets.
      */
-    void readGroupBased( bool init = true );
+    void readGorVBased( bool init = true );
     void readBase();
     std::string iterationFilename( uint64_t i );
     void openIteration( uint64_t index, Iteration iteration );

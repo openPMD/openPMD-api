@@ -6,6 +6,7 @@
 
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/openPMD.hpp"
 
 #if openPMD_HAVE_ADIOS2
@@ -3454,6 +3455,118 @@ TEST_CASE( "serial_iterator", "[serial][adios2]" )
     }
 }
 
+void
+variableBasedSingleIteration( std::string const & file )
+{
+    constexpr Extent::value_type extent = 1000;
+    {
+        Series writeSeries( file, Access::CREATE );
+        writeSeries.setIterationEncoding( IterationEncoding::variableBased );
+        auto iterations = writeSeries.writeIterations();
+        auto iteration = writeSeries.iterations[ 0 ];
+        auto E_x = iteration.meshes[ "E" ][ "x" ];
+        E_x.resetDataset(
+            openPMD::Dataset( openPMD::Datatype::INT, { 1000 } ) );
+        std::vector< int > data( 1000, 0 );
+        std::iota( data.begin(), data.end(), 0 );
+        E_x.storeChunk( data, { 0 }, { 1000 } );
+        writeSeries.flush();
+    }
+
+    {
+        Series readSeries( file, Access::READ_ONLY );
+
+        auto E_x = readSeries.iterations[ 0 ].meshes[ "E" ][ "x" ];
+        REQUIRE( E_x.getDimensionality() == 1 );
+        REQUIRE( E_x.getExtent()[ 0 ] == extent );
+        auto chunk = E_x.loadChunk< int >( { 0 }, { extent } );
+        readSeries.flush();
+        for( size_t i = 0; i < extent; ++i )
+        {
+            REQUIRE( chunk.get()[ i ] == int( i ) );
+        }
+    }
+}
+
+TEST_CASE( "variableBasedSingleIteration", "[serial][adios2]" )
+{
+    for( auto const & t : testedFileExtensions() )
+    {
+        variableBasedSingleIteration( "../samples/variableBasedSingleIteration." + t );
+    }
+}
+
+#if openPMD_HAVE_ADIOS2
+void
+variableBasedSeries( std::string const & file )
+{
+    constexpr Extent::value_type extent = 1000;
+    {
+        Series writeSeries( file, Access::CREATE );
+        REQUIRE(
+            writeSeries.iterationEncoding() == IterationEncoding::variableBased );
+        if( writeSeries.backend() == "ADIOS1" )
+        {
+            return;
+        }
+        auto iterations = writeSeries.writeIterations();
+        for( size_t i = 0; i < 10; ++i )
+        {
+            auto iteration = iterations[ i ];
+            auto E_x = iteration.meshes[ "E" ][ "x" ];
+            E_x.resetDataset( { openPMD::Datatype::INT, { 1000 } } );
+            std::vector< int > data( 1000, i );
+            E_x.storeChunk( data, { 0 }, { 1000 } );
+
+            auto E_y = iteration.meshes[ "E" ][ "y" ];
+            unsigned dimensionality = i % 3 + 1;
+            unsigned len = i + 1;
+            Extent changingExtent( dimensionality, len );
+            E_y.resetDataset( { openPMD::Datatype::INT, changingExtent } );
+            std::vector< int > changingData(
+                dimensionality * len, dimensionality );
+            E_y.storeChunk(
+                changingData, Offset( dimensionality, 0 ), changingExtent );
+            iteration.close();
+        }
+    }
+
+    REQUIRE( auxiliary::directory_exists(
+        auxiliary::replace_last( file, "%V", "" ) ) );
+
+    Series readSeries(
+        file, Access::READ_ONLY, "{\"defer_iteration_parsing\": true}" );
+
+    size_t last_iteration_index = 0;
+    for( auto iteration : readSeries.readIterations() )
+    {
+        auto E_x = iteration.meshes[ "E" ][ "x" ];
+        REQUIRE( E_x.getDimensionality() == 1 );
+        REQUIRE( E_x.getExtent()[ 0 ] == extent );
+        auto chunk = E_x.loadChunk< int >( { 0 }, { extent } );
+        iteration.close();
+        for( size_t i = 0; i < extent; ++i )
+        {
+            REQUIRE( chunk.get()[ i ] == int( iteration.iterationIndex ) );
+        }
+
+        auto E_y = iteration.meshes[ "E" ][ "y" ];
+        unsigned dimensionality = iteration.iterationIndex % 3 + 1;
+        unsigned len = iteration.iterationIndex + 1;
+        Extent changingExtent( dimensionality, len );
+        REQUIRE( E_y.getExtent() == changingExtent );
+        last_iteration_index = iteration.iterationIndex;
+    }
+    REQUIRE( last_iteration_index == 9 );
+}
+
+TEST_CASE( "variableBasedSeries", "[serial][adios2]" )
+{
+    variableBasedSeries( "../samples/variableBasedSeries%V.bp" );
+}
+#endif
+
+// @todo Upon switching to ADIOS2 2.7.0, test this the other way around also
 void
 iterate_nonstreaming_series( std::string const & file )
 {

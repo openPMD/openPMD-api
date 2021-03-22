@@ -119,6 +119,9 @@ ParallelADIOS1IOHandlerImpl::flush()
                 case O::CREATE_PATH:
                     createPath(i.writable, deref_dynamic_cast< Parameter< O::CREATE_PATH > >(i.parameter.get()));
                     break;
+                case O::OPEN_PATH:
+                    openPath(i.writable, deref_dynamic_cast< Parameter< O::OPEN_PATH > >(i.parameter.get()));
+                    break;
                 case O::CREATE_DATASET:
                     createDataset(i.writable, deref_dynamic_cast< Parameter< O::CREATE_DATASET > >(i.parameter.get()));
                     break;
@@ -150,9 +153,6 @@ ParallelADIOS1IOHandlerImpl::flush()
                 using O = Operation;
                 case O::EXTEND_DATASET:
                     extendDataset(i.writable, deref_dynamic_cast< Parameter< O::EXTEND_DATASET > >(i.parameter.get()));
-                    break;
-                case O::OPEN_PATH:
-                    openPath(i.writable, deref_dynamic_cast< Parameter< O::OPEN_PATH > >(i.parameter.get()));
                     break;
                 case O::CLOSE_PATH:
                     closePath(i.writable, deref_dynamic_cast< Parameter< O::CLOSE_PATH > >(i.parameter.get()));
@@ -265,6 +265,7 @@ ParallelADIOS1IOHandler::enqueue(IOTask const& i)
     {
         case Operation::CREATE_FILE:
         case Operation::CREATE_PATH:
+        case Operation::OPEN_PATH:
         case Operation::CREATE_DATASET:
         case Operation::OPEN_FILE:
         case Operation::WRITE_ATT:

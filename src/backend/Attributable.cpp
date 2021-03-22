@@ -186,21 +186,31 @@ AttributableImpl::flushAttributes()
 }
 
 void
-AttributableImpl::readAttributes()
+AttributableImpl::readAttributes( bool reread )
 {
     Parameter< Operation::LIST_ATTS > aList;
     IOHandler()->enqueue(IOTask(this, aList));
     IOHandler()->flush();
     std::vector< std::string > written_attributes = attributes();
 
-    /* std::set_difference requires sorted ranges */
-    std::sort(aList.attributes->begin(), aList.attributes->end());
-    std::sort(written_attributes.begin(), written_attributes.end());
-
     std::set< std::string > tmpAttributes;
-    std::set_difference(aList.attributes->begin(), aList.attributes->end(),
-                        written_attributes.begin(), written_attributes.end(),
-                        std::inserter(tmpAttributes, tmpAttributes.begin()));
+    if( reread )
+    {
+        tmpAttributes = std::set< std::string >(
+            aList.attributes->begin(),
+            aList.attributes->end() );
+    }
+    else
+    {
+        /* std::set_difference requires sorted ranges */
+        std::sort(aList.attributes->begin(), aList.attributes->end());
+        std::sort(written_attributes.begin(), written_attributes.end());
+
+        std::set_difference(
+            aList.attributes->begin(), aList.attributes->end(),
+            written_attributes.begin(), written_attributes.end(),
+            std::inserter(tmpAttributes, tmpAttributes.begin()));
+    }
 
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;

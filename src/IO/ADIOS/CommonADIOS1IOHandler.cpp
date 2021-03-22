@@ -677,10 +677,13 @@ CommonADIOS1IOHandlerImpl::openPath(
 {
     /* Sanitize path */
     std::string path = parameters.path;
-    if( auxiliary::starts_with(path, '/') )
-        path = auxiliary::replace_first(path, "/", "");
-    if( !auxiliary::ends_with(path, '/') )
-        path += '/';
+    if( !path.empty() )
+    {
+        if( auxiliary::starts_with(path, '/') )
+            path = auxiliary::replace_first(path, "/", "");
+        if( !auxiliary::ends_with(path, '/') )
+            path += '/';
+    }
 
     writable->written = true;
     writable->abstractFilePosition = std::make_shared< ADIOS1FilePosition >(path);

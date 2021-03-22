@@ -215,7 +215,7 @@ OPENPMD_protected:
     std::vector< std::string > myPath() const;
 
     void flushAttributes();
-    void readAttributes();
+    void readAttributes( bool reread = false );
 
     /** Retrieve the value of a floating point Attribute of user-defined precision with ensured type-safety.
      *

@@ -34,6 +34,9 @@ openPMD::operator<<(std::ostream& os, openPMD::IterationEncoding const& ie)
         case openPMD::IterationEncoding::groupBased:
             os << "groupBased";
             break;
+        case openPMD::IterationEncoding::variableBased:
+            os << "variableBased";
+            break;
     }
     return os;
 }

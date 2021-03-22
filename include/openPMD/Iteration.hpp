@@ -156,13 +156,15 @@ private:
 
     struct DeferredParseAccess
     {
-        std::string index;
+        std::string path;
+        uint64_t iteration = 0;
         bool fileBased = false;
         std::string filename;
     };
 
     void flushFileBased(std::string const&, uint64_t);
     void flushGroupBased(uint64_t);
+    void flushVariableBased(uint64_t);
     void flush();
     void deferParseAccess( DeferredParseAccess );
     /*

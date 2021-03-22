@@ -32,6 +32,7 @@
 #include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/config.hpp"
+#include "openPMD/IterationEncoding.hpp"
 
 #if openPMD_HAVE_ADIOS2
 #    include <adios2.h>
@@ -224,6 +225,7 @@ public:
 
 private:
     adios2::ADIOS m_ADIOS;
+    IterationEncoding m_iterationEncoding = IterationEncoding::groupBased;
     /**
      * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
      */
@@ -1367,7 +1369,7 @@ class ADIOS2IOHandler : public AbstractIOHandler
 {
 #if openPMD_HAVE_ADIOS2
 
-friend class ADIOS2IOHandlerImpl;
+    friend class ADIOS2IOHandlerImpl;
 
 private:
     ADIOS2IOHandlerImpl m_impl;
@@ -1386,7 +1388,7 @@ public:
         }
         catch( ... )
         {
-            std::cerr << "[~ADIOS2IOHandler] An error occurred." << std::endl;
+             std::cerr << "[~ADIOS2IOHandler] An error occurred." << std::endl;
         }
     }
 

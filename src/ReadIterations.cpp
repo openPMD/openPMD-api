@@ -68,7 +68,8 @@ SeriesIterator::SeriesIterator( Series series )
             openIteration();
             status = it->second.beginStep();
             break;
-        default:
+        case IterationEncoding::groupBased:
+        case IterationEncoding::variableBased:
             /*
              * In group-based iteration layout, we have definitely already had
              * access to the file until now. Better to begin a step right away,
@@ -105,7 +106,8 @@ SeriesIterator & SeriesIterator::operator++()
     switch( series.iterationEncoding() )
     {
         using IE = IterationEncoding;
-    case IE::groupBased: {
+    case IE::groupBased:
+    case IE::variableBased: {
         // since we are in group-based iteration layout, it does not
         // matter which iteration we begin a step upon
         AdvanceStatus status = currentIteration.beginStep();
