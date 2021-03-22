@@ -3524,7 +3524,7 @@ variableBasedSeries( std::string const & file )
             Extent changingExtent( dimensionality, len );
             E_y.resetDataset( { openPMD::Datatype::INT, changingExtent } );
             std::vector< int > changingData(
-                dimensionality * len, dimensionality );
+                std::pow( len, dimensionality ), dimensionality );
             E_y.storeChunk(
                 changingData, Offset( dimensionality, 0 ), changingExtent );
             iteration.close();
@@ -3534,30 +3534,63 @@ variableBasedSeries( std::string const & file )
     REQUIRE( auxiliary::directory_exists(
         auxiliary::replace_last( file, "%V", "" ) ) );
 
-    Series readSeries(
-        file, Access::READ_ONLY, "{\"defer_iteration_parsing\": true}" );
-
-    size_t last_iteration_index = 0;
-    for( auto iteration : readSeries.readIterations() )
     {
-        auto E_x = iteration.meshes[ "E" ][ "x" ];
-        REQUIRE( E_x.getDimensionality() == 1 );
-        REQUIRE( E_x.getExtent()[ 0 ] == extent );
-        auto chunk = E_x.loadChunk< int >( { 0 }, { extent } );
-        iteration.close();
-        for( size_t i = 0; i < extent; ++i )
-        {
-            REQUIRE( chunk.get()[ i ] == int( iteration.iterationIndex ) );
-        }
+        Series readSeries(
+            file,
+            Access::READ_ONLY,
+            "{\"defer_iteration_parsing\": true}" );
 
-        auto E_y = iteration.meshes[ "E" ][ "y" ];
-        unsigned dimensionality = iteration.iterationIndex % 3 + 1;
-        unsigned len = iteration.iterationIndex + 1;
-        Extent changingExtent( dimensionality, len );
-        REQUIRE( E_y.getExtent() == changingExtent );
-        last_iteration_index = iteration.iterationIndex;
+        size_t last_iteration_index = 0;
+        for( auto iteration : readSeries.readIterations() )
+        {
+            auto E_x = iteration.meshes[ "E" ][ "x" ];
+            REQUIRE( E_x.getDimensionality() == 1 );
+            REQUIRE( E_x.getExtent()[ 0 ] == extent );
+            auto chunk = E_x.loadChunk< int >( { 0 }, { extent } );
+            iteration.close();
+            for( size_t i = 0; i < extent; ++i )
+            {
+                REQUIRE( chunk.get()[ i ] == int( iteration.iterationIndex ) );
+            }
+
+            auto E_y = iteration.meshes[ "E" ][ "y" ];
+            unsigned dimensionality = iteration.iterationIndex % 3 + 1;
+            unsigned len = iteration.iterationIndex + 1;
+            Extent changingExtent( dimensionality, len );
+            REQUIRE( E_y.getExtent() == changingExtent );
+            last_iteration_index = iteration.iterationIndex;
+        }
+        REQUIRE( last_iteration_index == 9 );
     }
-    REQUIRE( last_iteration_index == 9 );
+
+    {
+        Series readSeries(
+            file,
+            Access::READ_ONLY,
+            "{\"defer_iteration_parsing\": false}" );
+
+        size_t last_iteration_index = 0;
+        for( auto iteration : readSeries.readIterations() )
+        {
+            auto E_x = iteration.meshes[ "E" ][ "x" ];
+            REQUIRE( E_x.getDimensionality() == 1 );
+            REQUIRE( E_x.getExtent()[ 0 ] == extent );
+            auto chunk = E_x.loadChunk< int >( { 0 }, { extent } );
+            iteration.close();
+            for( size_t i = 0; i < extent; ++i )
+            {
+                REQUIRE( chunk.get()[ i ] == int( iteration.iterationIndex ) );
+            }
+
+            auto E_y = iteration.meshes[ "E" ][ "y" ];
+            unsigned dimensionality = iteration.iterationIndex % 3 + 1;
+            unsigned len = iteration.iterationIndex + 1;
+            Extent changingExtent( dimensionality, len );
+            REQUIRE( E_y.getExtent() == changingExtent );
+            last_iteration_index = iteration.iterationIndex;
+        }
+        REQUIRE( last_iteration_index == 9 );
+    }
 }
 
 TEST_CASE( "variableBasedSeries", "[serial][adios2]" )
