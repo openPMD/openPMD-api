@@ -110,11 +110,6 @@ Record::read()
         for( auto const& component : *pList.paths )
         {
             RecordComponent& rc = (*this)[component];
-            if ( *rc.hasBeenRead )
-            {
-                dirty() = false;
-                continue;
-            }
             pOpen.path = component;
             IOHandler()->enqueue(IOTask(&rc, pOpen));
             *rc.m_isConstant = true;
@@ -129,10 +124,6 @@ Record::read()
         for( auto const& component : *dList.datasets )
         {
             RecordComponent & rc = ( *this )[ component ];
-            if( *rc.hasBeenRead )
-            {
-                continue;
-            }
             dOpen.name = component;
             IOHandler()->enqueue(IOTask(&rc, dOpen));
             IOHandler()->flush();

@@ -181,7 +181,7 @@ private:
      * logic for an iteration.
      *
      */
-    void read();
+    void read( std::string path, bool reread = false );
     void readFileBased( std::string filePath, std::string const & groupPath );
     void readGroupBased( std::string const & groupPath );
     void read_impl( std::string const & groupPath );

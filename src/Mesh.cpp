@@ -343,11 +343,6 @@ Mesh::read()
         for( auto const& component : *pList.paths )
         {
             MeshRecordComponent& rc = (*this)[component];
-            if ( *rc.hasBeenRead )
-            {
-                dirty() = false;
-                continue;
-            }
             pOpen.path = component;
             IOHandler()->enqueue(IOTask(&rc, pOpen));
             *rc.m_isConstant = true;
@@ -362,11 +357,6 @@ Mesh::read()
         for( auto const& component : *dList.datasets )
         {
             MeshRecordComponent & rc = ( *this )[ component ];
-            if( *rc.hasBeenRead )
-            {
-                dirty() = false;
-                continue;
-            }
             dOpen.name = component;
             IOHandler()->enqueue(IOTask(&rc, dOpen));
             IOHandler()->flush();

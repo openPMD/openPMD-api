@@ -1043,13 +1043,13 @@ SeriesImpl::readGorVBased( bool do_init )
 
     auto readSingleIteration =
         [&series, &pOpen, this]
-        (uint64_t index, std::string path)
+        (uint64_t index, std::string path, bool guardClosed )
     {
         if( series.iterations.contains( index ) )
         {
             // maybe re-read
             auto & i = series.iterations.at( index );
-            if( i.closedByWriter() )
+            if( guardClosed && i.closedByWriter() )
             {
                 return;
             }
@@ -1057,7 +1057,7 @@ SeriesImpl::readGorVBased( bool do_init )
             {
                 pOpen.path = path;
                 IOHandler()->enqueue( IOTask( &i, pOpen ) );
-                i.read();
+                i.read( path, /* reread = */ true );
             }
         }
         else
@@ -1087,7 +1087,7 @@ SeriesImpl::readGorVBased( bool do_init )
         for( auto const & it : *pList.paths )
         {
             uint64_t index = std::stoull( it );
-            readSingleIteration( index, it );
+            readSingleIteration( index, it, true );
         }
         break;
     case IterationEncoding::variableBased:
@@ -1099,7 +1099,7 @@ SeriesImpl::readGorVBased( bool do_init )
                 .getAttribute( "__step__" )
                 .get< uint64_t >();
         }
-        readSingleIteration( index, "" );
+        readSingleIteration( index, "", false );
         break;
     }
     }

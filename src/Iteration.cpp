@@ -334,8 +334,13 @@ void Iteration::deferParseAccess( DeferredParseAccess dr )
         auxiliary::makeOption< DeferredParseAccess >( std::move( dr ) );
 }
 
-void Iteration::read()
+void Iteration::read( std::string path, bool reread )
 {
+    if( reread )
+    {
+        read_impl( path );
+        return;
+    }
     if( !m_deferredParseAccess->has_value() )
     {
         return;
@@ -679,7 +684,7 @@ void Iteration::runDeferredParseAccess()
     *newAccess = Access::READ_WRITE;
     try
     {
-        read();
+        read( "", false );
     }
     catch( ... )
     {
