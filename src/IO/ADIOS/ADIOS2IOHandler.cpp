@@ -904,7 +904,8 @@ ADIOS2IOHandlerImpl::availableChunks(
         datatype, rbi, parameters, ba.m_IO, engine, varName );
 }
 
-adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode( )
+adios2::Mode
+ADIOS2IOHandlerImpl::adios2AccessMode( std::string const & fullPath )
 {
     switch ( m_handler->m_backendAccess )
     {
@@ -913,10 +914,21 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode( )
     case Access::READ_ONLY:
         return adios2::Mode::Read;
     case Access::READ_WRITE:
-        std::cerr << "ADIOS2 does currently not yet implement ReadWrite "
-                     "(Append) mode. "
-                  << "Replacing with Read mode." << std::endl;
-        return adios2::Mode::Read;
+        if( auxiliary::directory_exists( fullPath ) ||
+            auxiliary::file_exists( fullPath ) )
+        {
+            std::cerr << "ADIOS2 does currently not yet implement ReadWrite "
+                         "(Append) mode. "
+                      << "Replacing with Read mode." << std::endl;
+            return adios2::Mode::Read;
+        }
+        else
+        {
+            std::cerr << "ADIOS2 does currently not yet implement ReadWrite "
+                         "(Append) mode. "
+                      << "Replacing with Write mode." << std::endl;
+            return adios2::Mode::Write;
+        }
     default:
         return adios2::Mode::Undefined;
     }
@@ -1978,7 +1990,7 @@ namespace detail
         , m_IOName( std::to_string( impl.nameCounter++ ) )
         , m_ADIOS( impl.m_ADIOS )
         , m_IO( impl.m_ADIOS.DeclareIO( m_IOName ) )
-        , m_mode( impl.adios2AccessMode() )
+        , m_mode( impl.adios2AccessMode( m_file ) )
         , m_writeDataset( &impl )
         , m_readDataset( &impl )
         , m_attributeReader()
