@@ -346,24 +346,35 @@ HDF5IOHandlerImpl::extendDataset(Writable* writable,
     if( !writable->written )
         throw std::runtime_error("[HDF5] Extending an unwritten Dataset is not possible.");
 
-    auto file = getFile(writable->parent).get();
-    hid_t node_id, dataset_id;
-    node_id = H5Gopen(file.id,
-                      concrete_h5_file_position(writable->parent).c_str(),
-                      H5P_DEFAULT);
-    VERIFY(node_id >= 0, "[HDF5] Internal error: Failed to open HDF5 group during dataset extension");
-
-    /* Sanitize name */
-    std::string name = parameters.name;
-    if( auxiliary::starts_with(name, '/') )
-        name = auxiliary::replace_first(name, "/", "");
-    if( !auxiliary::ends_with(name, '/') )
-        name += '/';
-
-    dataset_id = H5Dopen(node_id,
-                         name.c_str(),
+    auto res = getFile( writable );
+    if( !res )
+        res = getFile( writable->parent );
+    hid_t dataset_id = H5Dopen(res.get().id,
+                         concrete_h5_file_position(writable).c_str(),
                          H5P_DEFAULT);
     VERIFY(dataset_id >= 0, "[HDF5] Internal error: Failed to open HDF5 dataset during dataset extension");
+
+    // Datasets may only be extended if they have chunked layout, so let's see
+    // whether this one does
+    {
+        hid_t dataset_space = H5Dget_space( dataset_id );
+        int ndims = H5Sget_simple_extent_ndims( dataset_space );
+        VERIFY(
+            ndims >= 0,
+            "[HDF5]: Internal error: Failed to retrieve dimensionality of "
+            "dataset "
+            "during dataset read." );
+        hid_t propertyList = H5Dget_create_plist( dataset_id );
+        std::vector< hsize_t > chunkExtent( ndims, 0 );
+        int chunkDimensionality =
+            H5Pget_chunk( propertyList, ndims, chunkExtent.data() );
+        if( chunkDimensionality < 0 )
+        {
+            throw std::runtime_error(
+                "[HDF5] Cannot extend datasets unless written with chunked "
+                "layout (currently unsupported)." );
+        }
+    }
 
     std::vector< hsize_t > size;
     for( auto const& val : parameters.extent )
@@ -375,8 +386,6 @@ HDF5IOHandlerImpl::extendDataset(Writable* writable,
 
     status = H5Dclose(dataset_id);
     VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 dataset during dataset extension");
-    status = H5Gclose(node_id);
-    VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 group during dataset extension");
 }
 
 void

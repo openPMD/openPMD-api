@@ -371,6 +371,63 @@ TEST_CASE( "available_chunks_test", "[parallel][adios]" )
     available_chunks_test( "bp" );
 }
 
+void
+extendDataset( std::string const & ext )
+{
+    std::string filename = "../samples/parallelExtendDataset." + ext;
+    int r_mpi_rank{ -1 }, r_mpi_size{ -1 };
+    MPI_Comm_rank( MPI_COMM_WORLD, &r_mpi_rank );
+    MPI_Comm_size( MPI_COMM_WORLD, &r_mpi_size );
+    unsigned mpi_rank{ static_cast< unsigned >( r_mpi_rank ) },
+        mpi_size{ static_cast< unsigned >( r_mpi_size ) };
+    std::vector< int > data1( 25 );
+    std::vector< int > data2( 25 );
+    std::iota( data1.begin(), data1.end(), 0 );
+    std::iota( data2.begin(), data2.end(), 25 );
+    {
+        Series write( filename, Access::CREATE, MPI_COMM_WORLD );
+        if( ext == "bp" && write.backend() != "ADIOS2" )
+        {
+            // dataset resizing unsupported in ADIOS1
+            return;
+        }
+        Dataset ds1{ Datatype::INT, { mpi_size, 25 } };
+        Dataset ds2{ { mpi_size, 50 } };
+
+        // array record component -> array record component
+        // should work
+        auto E_x = write.iterations[ 0 ].meshes[ "E" ][ "x" ];
+        E_x.resetDataset( ds1 );
+        E_x.storeChunk( data1, { mpi_rank, 0 }, { 1, 25 } );
+        write.flush();
+
+        E_x.resetDataset( ds2 );
+        E_x.storeChunk( data2, { mpi_rank, 25 }, { 1, 25 } );
+        write.flush();
+    }
+
+    MPI_Barrier( MPI_COMM_WORLD );
+
+    {
+        Series read( filename, Access::READ_ONLY );
+        auto E_x = read.iterations[ 0 ].meshes[ "E" ][ "x" ];
+        REQUIRE( E_x.getExtent() == Extent{ mpi_size, 50 } );
+        auto chunk = E_x.loadChunk< int >( { 0, 0 }, { mpi_size, 50 } );
+        read.flush();
+        for( size_t rank = 0; rank < mpi_size; ++rank )
+        {
+            for( size_t i = 0; i < 50; ++i )
+            {
+                REQUIRE( chunk.get()[ i ] == int( i ) );
+            }
+        }
+    }
+}
+
+TEST_CASE( "extend_dataset", "[parallel]" )
+{
+    extendDataset( "bp" );
+}
 #endif
 
 #if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI

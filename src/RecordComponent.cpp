@@ -52,17 +52,36 @@ RecordComponent &
 RecordComponent::resetDataset( Dataset d )
 {
     if( written() )
-        throw std::runtime_error( "A record's Dataset cannot (yet) be changed "
-                                  "after it has been written." );
-    //if( d.extent.empty() )
+    {
+        if( d.dtype == Datatype::UNDEFINED )
+        {
+            d.dtype = m_dataset->dtype;
+        }
+        else if( d.dtype != m_dataset->dtype )
+        {
+            throw std::runtime_error(
+                "Cannot change the datatype of a dataset." );
+        }
+        *m_hasBeenExtended = true;
+    }
+    // if( d.extent.empty() )
     //    throw std::runtime_error("Dataset extent must be at least 1D.");
     if( std::any_of(
             d.extent.begin(),
             d.extent.end(),
             []( Extent::value_type const & i ) { return i == 0u; } ) )
-        return makeEmpty( std::move(d) );
+        return makeEmpty( std::move( d ) );
 
-    *m_dataset = std::move(d);
+    *m_isEmpty = false;
+    if( written() )
+    {
+        m_dataset->extend( std::move( d.extent ) );
+    }
+    else
+    {
+        *m_dataset = std::move( d );
+    }
+
     dirty() = true;
     return *this;
 }
@@ -109,20 +128,41 @@ RecordComponent&
 RecordComponent::makeEmpty( Dataset d )
 {
     if( written() )
-        throw std::runtime_error(
-            "A RecordComponent cannot (yet) be made"
-            " empty after it has been written.");
-    if( d.extent.size() == 0 )
-        throw std::runtime_error("Dataset extent must be at least 1D.");
+    {
+        if( !constant() )
+        {
+            throw std::runtime_error(
+                "An empty record component's extent can only be changed"
+                " in case it has been initialized as an empty or constant"
+                " record component." );
+        }
+        if( d.dtype == Datatype::UNDEFINED )
+        {
+            d.dtype = m_dataset->dtype;
+        }
+        else if( d.dtype != m_dataset->dtype )
+        {
+            throw std::runtime_error(
+                "Cannot change the datatype of a dataset." );
+        }
+        m_dataset->extend( std::move( d.extent ) );
+        *m_hasBeenExtended = true;
+    }
+    else
+    {
+        *m_dataset = std::move( d );
+    }
+
+    if( m_dataset->extent.size() == 0 )
+        throw std::runtime_error( "Dataset extent must be at least 1D." );
 
     *m_isEmpty = true;
-    *m_dataset = std::move(d);
     dirty() = true;
-    static detail::DefaultValue< RecordComponent > dv;
-    switchType(
-        m_dataset->dtype,
-        dv,
-        *this );
+    if( !written() )
+    {
+        static detail::DefaultValue< RecordComponent > dv;
+        switchType( m_dataset->dtype, dv, *this );
+    }
     return *this;
 }
 
@@ -172,6 +212,26 @@ RecordComponent::flush(std::string const& name)
                 dCreate.transform = m_dataset->transform;
                 dCreate.options = m_dataset->options;
                 IOHandler()->enqueue(IOTask(this, dCreate));
+            }
+        }
+
+        if( *m_hasBeenExtended )
+        {
+            if( constant() )
+            {
+                Parameter< Operation::WRITE_ATT > aWrite;
+                aWrite.name = "shape";
+                Attribute a( getExtent() );
+                aWrite.dtype = a.dtype;
+                aWrite.resource = a.getResource();
+                IOHandler()->enqueue( IOTask( this, aWrite ) );
+            }
+            else
+            {
+                Parameter< Operation::EXTEND_DATASET > pExtend;
+                pExtend.extent = m_dataset->extent;
+                IOHandler()->enqueue( IOTask( this, std::move( pExtend ) ) );
+                *m_hasBeenExtended = false;
             }
         }
 

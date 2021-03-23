@@ -100,7 +100,26 @@ public:
 
     RecordComponent& setUnitSI(double);
 
-    RecordComponent& resetDataset(Dataset);
+    /**
+     * @brief Declare the dataset's type and extent.
+     *
+     * Calling this again after flushing will require resizing the dataset.
+     * Support for this depends on the backend.
+     * Unsupported are:
+     * * Changing the datatype.
+     * * Shrinking any dimension's extent.
+     * * Changing the number of dimensions.
+     *
+     * Backend support for resizing datasets:
+     * * JSON: Supported
+     * * ADIOS1: Unsupported
+     * * ADIOS2: Supported as of ADIOS2 2.7.0
+     * * HDF5: (Currently) unsupported.
+     *   Will be probably supported as soon as chunking is supported in HDF5.
+     *
+     * @return RecordComponent&
+     */
+    RecordComponent & resetDataset( Dataset );
 
     uint8_t getDimensionality() const;
     Extent getExtent() const;
@@ -196,6 +215,10 @@ OPENPMD_protected:
     std::shared_ptr< std::queue< IOTask > > m_chunks;
     std::shared_ptr< Attribute > m_constantValue;
     std::shared_ptr< bool > m_isEmpty = std::make_shared< bool >( false );
+    // User has extended the dataset, but the EXTEND task must yet be flushed
+    // to the backend
+    std::shared_ptr< bool > m_hasBeenExtended =
+        std::make_shared< bool >( false );
 
 private:
     void flush(std::string const&);

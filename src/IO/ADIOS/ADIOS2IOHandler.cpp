@@ -403,15 +403,58 @@ void ADIOS2IOHandlerImpl::createDataset(
     }
 }
 
-void ADIOS2IOHandlerImpl::extendDataset(
-    Writable *, const Parameter< Operation::EXTEND_DATASET > & )
+namespace detail
 {
-    throw std::runtime_error(
-        "[ADIOS2] Dataset extension not implemented in ADIOS backend" );
+    struct DatasetExtender
+    {
+        template< typename T, typename... Args >
+        void
+        operator()(
+            adios2::IO & IO,
+            std::string const & variable,
+            Extent const & newShape )
+        {
+            auto var = IO.InquireVariable< T >( variable );
+            if( !var )
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Unable to retrieve variable for resizing: '" +
+                    variable + "'." );
+            }
+            adios2::Dims dims;
+            dims.reserve( newShape.size() );
+            for( auto ext : newShape )
+            {
+                dims.push_back( ext );
+            }
+            var.SetShape( dims );
+        }
+
+        std::string errorMsg = "ADIOS2: extendDataset()";
+    };
+} // namespace detail
+
+void
+ADIOS2IOHandlerImpl::extendDataset(
+    Writable * writable,
+    const Parameter< Operation::EXTEND_DATASET > & parameters )
+{
+    VERIFY_ALWAYS(
+        m_handler->m_backendAccess != Access::READ_ONLY,
+        "[ADIOS2] Cannot extend datasets in read-only mode." );
+    setAndGetFilePosition( writable );
+    auto file = refreshFileFromParent( writable );
+    std::string name = nameOfVariable( writable );
+    auto & filedata = getFileData( file );
+    static detail::DatasetExtender de;
+    Datatype dt = detail::fromADIOS2Type( filedata.m_IO.VariableType( name ) );
+    switchAdios2VariableType( dt, de, filedata.m_IO, name, parameters.extent );
 }
 
-void ADIOS2IOHandlerImpl::openFile(
-    Writable * writable, const Parameter< Operation::OPEN_FILE > & parameters )
+void
+ADIOS2IOHandlerImpl::openFile(
+    Writable * writable,
+    const Parameter< Operation::OPEN_FILE > & parameters )
 {
     if ( !auxiliary::directory_exists( m_handler->directory ) )
     {

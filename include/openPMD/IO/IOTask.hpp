@@ -281,8 +281,7 @@ template<>
 struct OPENPMDAPI_EXPORT Parameter< Operation::EXTEND_DATASET > : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const & p) : AbstractParameter(),
-        name(p.name), extent(p.extent) {}
+    Parameter(Parameter const & p) : AbstractParameter(), extent(p.extent) {}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -291,7 +290,6 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::EXTEND_DATASET > : public Abstrac
             new Parameter< Operation::EXTEND_DATASET >(*this));
     }
 
-    std::string name = "";
     Extent extent = {};
 };
 
