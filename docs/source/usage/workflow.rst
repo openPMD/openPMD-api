@@ -1,10 +1,10 @@
 .. _workflow:
 
-Usual workflow
-==============
+Workflow
+========
 
-Deferred operation mode
------------------------
+Deferred Data API Contract
+--------------------------
 
 IO operations are in general not performed by the openPMD API immediately after calling the corresponding API function.
 Rather, operations are enqueued internally and performed at so-called *flush points*.
@@ -15,7 +15,7 @@ A flush point is a point within an application's sequential control flow where t
 *   In read mode, a buffer into which data from a dataset should be filled, must not be altered by the openPMD API before the flush point.
 *   In read mode, a buffer into which data from a dataset should be filled, must have been filled with the requested data after the flush point.
 
-In short: ``storeChunk()`` and ``loadChunk()`` operations must happen exactly at flush points.
+In short: operations requrested by ``storeChunk()`` and ``loadChunk()`` must happen exactly at flush points.
 
 Flush points are triggered by:
 
@@ -26,5 +26,5 @@ Flush points are triggered by:
 
 Attributes are (currently) unaffected by this:
 
-*   In writing, attributes are stored by value and can afterwards not be aliased by the user.
+*   In writing, attributes are stored by value and can afterwards not be aliased by the user (i.e. they are stored internally in the openPMD API and are not accessible to users).
 *   In reading, attributes are parsed upon opening the Series / an iteration and are available to read right-away without performing any IO.

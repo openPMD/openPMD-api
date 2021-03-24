@@ -687,7 +687,6 @@ load_chunk(RecordComponent & r, py::tuple const & slices)
 
 void init_RecordComponent(py::module &m) {
     py::class_<DynamicMemoryView>(m, "Dynamic_Memory_View")
-        // @todo implement __setitem__
         .def("__repr__",
             [](DynamicMemoryView const & view) {
                 return "<openPMD.Dynamic_Memory_view of dimensionality '"

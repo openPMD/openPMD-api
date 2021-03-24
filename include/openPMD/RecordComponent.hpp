@@ -222,8 +222,6 @@ public:
      * In order to avoid this, calling Series::flush() prior to this is
      * recommended to flush definitions.
      *
-     * @param o
-     * @param e
      * @param createBuffer If the backend in use has no special support for this
      *        operation, the openPMD API will fall back to creating a buffer,
      *        queuing it for writing and returning a view into that buffer to

@@ -718,7 +718,6 @@ ADIOS2IOHandlerImpl::getBufferView(
     }
 }
 
-// @todo move me
 namespace detail
 {
 template< typename T >
