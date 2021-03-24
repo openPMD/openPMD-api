@@ -1887,7 +1887,7 @@ TEST_CASE( "empty_alternate_fbpic", "[serial][hdf5]" )
     try
     {
         {
-            Series s = Series("../samples/issue-sample/empty_alternate_fbpic.h5", Access::READ_ONLY);
+            Series s = Series("../samples/issue-sample/empty_alternate_fbpic_%T.h5", Access::READ_ONLY);
             REQUIRE(s.iterations.contains(50));
             REQUIRE(s.iterations[50].particles.contains("electrons"));
             REQUIRE(s.iterations[50].particles["electrons"].contains("momentum"));
@@ -1900,7 +1900,7 @@ TEST_CASE( "empty_alternate_fbpic", "[serial][hdf5]" )
             REQUIRE(isSame(empty_rc.getDatatype(), determineDatatype< double >()));
         }
         {
-            Series list{ "../samples/issue-sample/empty_alternate_fbpic.h5", Access::READ_ONLY };
+            Series list{ "../samples/issue-sample/empty_alternate_fbpic_%T.h5", Access::READ_ONLY };
             helper::listSeries( list );
         }
     } catch (no_such_file_error& e)

@@ -24,5 +24,5 @@ rm -rf no_fields.zip no_particles.zip
 # Ref.: https://github.com/openPMD/openPMD-viewer/issues/296
 curl -sOL https://github.com/openPMD/openPMD-viewer/files/5655027/diags.zip
 unzip diags.zip
-mv diags/hdf5/data00000050.h5 samples/issue-sample/empty_alternate_fbpic.h5
+mv diags/hdf5/data00000050.h5 samples/issue-sample/empty_alternate_fbpic_00000050.h5
 rm -rf diags.zip diags
