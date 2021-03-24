@@ -21,5 +21,5 @@ Remove-Item *.zip
 # Ref.: https://github.com/openPMD/openPMD-viewer/issues/296
 Invoke-WebRequest https://github.com/openPMD/openPMD-viewer/files/5655027/diags.zip -OutFile empty_alternate_fbpic.zip
 Expand-Archive empty_alternate_fbpic.zip
-Move-Item -Path empty_alternate_fbpic\diags\hdf5\data00000050.h5 samples\issue-sample\empty_alternate_fbpic.h5
+Move-Item -Path empty_alternate_fbpic\diags\hdf5\data00000050.h5 samples\issue-sample\empty_alternate_fbpic_00000050.h5
 Remove-Item -Recurse -Force empty_alternate_fbpic*
