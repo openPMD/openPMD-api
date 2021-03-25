@@ -1185,7 +1185,8 @@ namespace detail
 #    endif
             ( std::is_same< T, rep >::value )
         {
-            std::string metaAttr = "__is_boolean__" + name;
+            std::string metaAttr =
+                ADIOS2Defaults::str_isBooleanOldLayout + name;
             /*
              * In verbose mode, attributeInfo will yield a warning if not
              * finding the requested attribute. Since we expect the attribute
@@ -1193,7 +1194,9 @@ namespace detail
              * a boolean), let's tell attributeInfo to be quiet.
              */
             auto type = attributeInfo(
-                IO, "__is_boolean__" + name, /* verbose = */ false );
+                IO,
+                ADIOS2Defaults::str_isBooleanOldLayout + name,
+                /* verbose = */ false );
             if( type == determineDatatype< rep >() )
             {
                 auto attr = IO.InquireAttribute< rep >( metaAttr );
@@ -1238,7 +1241,8 @@ namespace detail
 #endif
         ( std::is_same< T, rep >::value )
         {
-            std::string metaAttr = "__is_boolean__" + name;
+            std::string metaAttr =
+                ADIOS2Defaults::str_isBooleanNewLayout + name;
             /*
              * In verbose mode, attributeInfo will yield a warning if not
              * finding the requested attribute. Since we expect the attribute
@@ -1246,7 +1250,9 @@ namespace detail
              * a boolean), let's tell attributeInfo to be quiet.
              */
             auto type = attributeInfo(
-                IO, "__is_boolean__" + name, /* verbose = */ false );
+                IO,
+                ADIOS2Defaults::str_isBooleanNewLayout + name,
+                /* verbose = */ false );
             if( type == determineDatatype< rep >() )
             {
                 auto attr = IO.InquireAttribute< rep >( metaAttr );
@@ -1899,7 +1905,8 @@ namespace detail
         std::string name,
         const bool value )
     {
-        IO.DefineAttribute< bool_representation >( "__is_boolean__" + name, 1 );
+        IO.DefineAttribute< bool_representation >(
+            ADIOS2Defaults::str_isBooleanOldLayout + name, 1 );
         AttributeTypes< bool_representation >::oldCreateAttribute(
             IO, name, toRep( value ) );
     }
@@ -1929,7 +1936,7 @@ namespace detail
         const bool value )
     {
         IO.DefineAttribute< bool_representation >(
-            "__is_boolean__" + params.name, 1 );
+            ADIOS2Defaults::str_isBooleanNewLayout + params.name, 1 );
         AttributeTypes< bool_representation >::createAttribute(
             IO, engine, params, toRep( value ) );
     }

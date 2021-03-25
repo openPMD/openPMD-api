@@ -405,6 +405,9 @@ namespace ADIOS2Defaults
     constexpr const_str str_usesstepsAttribute = "__openPMD_internal/useSteps";
     constexpr const_str str_adios2Schema =
         "__openPMD_internal/openPMD2_adios2_schema";
+    constexpr const_str str_isBooleanOldLayout = "__is_boolean__";
+    constexpr const_str str_isBooleanNewLayout =
+        "__openPMD_internal/is_boolean";
 } // namespace ADIOS2Defaults
 
 namespace detail
