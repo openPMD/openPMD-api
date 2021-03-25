@@ -126,12 +126,10 @@ ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
     {
         m_config = std::move( cfg[ "adios2" ] );
 
-        if( m_config.json().contains( "new_attribute_layout" ) )
+        if( m_config.json().contains( "schema" ) )
         {
-            m_attributeLayout =
-                static_cast< bool >( m_config[ "new_attribute_layout" ].json() )
-                ? AttributeLayout::ByAdiosVariables
-                : AttributeLayout::ByAdiosAttributes;
+            m_schema =
+                m_config[ "schema" ].json().get< ADIOS2Schema::schema_t >();
         }
 
         auto engineConfig = config( ADIOS2Defaults::str_engine );
@@ -157,11 +155,7 @@ ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
         }
     }
     // environment-variable based configuration
-    int useNewLayout = auxiliary::getEnvNum(
-        "OPENPMD_NEW_ATTRIBUTE_LAYOUT",
-        m_attributeLayout == AttributeLayout::ByAdiosVariables );
-    m_attributeLayout = useNewLayout == 0 ? AttributeLayout::ByAdiosAttributes
-                                          : AttributeLayout::ByAdiosVariables;
+    m_schema = auxiliary::getEnvNum( "OPENPMD2_ADIOS2_SCHEMA", m_schema );
 }
 
 auxiliary::Option< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > >
@@ -595,7 +589,7 @@ void ADIOS2IOHandlerImpl::writeDataset(
 void ADIOS2IOHandlerImpl::writeAttribute(
     Writable * writable, const Parameter< Operation::WRITE_ATT > & parameters )
 {
-    switch( m_attributeLayout )
+    switch( attributeLayout() )
     {
         case AttributeLayout::ByAdiosAttributes:
             switchType(
@@ -650,7 +644,7 @@ void ADIOS2IOHandlerImpl::readAttribute(
     auto file = refreshFileFromParent( writable );
     auto pos = setAndGetFilePosition( writable );
     detail::BufferedActions & ba = getFileData( file );
-    switch( m_attributeLayout )
+    switch( attributeLayout() )
     {
         using AL = AttributeLayout;
         case AL::ByAdiosAttributes:
@@ -711,7 +705,7 @@ void ADIOS2IOHandlerImpl::listPaths(
      */
     std::vector< std::string > delete_me;
 
-    switch( m_attributeLayout )
+    switch( attributeLayout() )
     {
         using AL = AttributeLayout;
         case AL::ByAdiosVariables:
@@ -818,7 +812,7 @@ void ADIOS2IOHandlerImpl::listDatasets(
     std::unordered_set< std::string > subdirs;
     for( auto var : fileData.availableVariablesPrefixed( myName ) )
     {
-        if( m_attributeLayout == AttributeLayout::ByAdiosVariables )
+        if( attributeLayout() == AttributeLayout::ByAdiosVariables )
         {
             // since current Writable is a group and no dataset,
             // var == "__data__" is not possible
@@ -862,7 +856,7 @@ void ADIOS2IOHandlerImpl::listAttributes(
     ba.requireActiveStep(); // make sure that the attributes are present
 
     std::vector< std::string > attrs;
-    switch( m_attributeLayout )
+    switch( attributeLayout() )
     {
         using AL = AttributeLayout;
         case AL::ByAdiosAttributes:
@@ -874,7 +868,7 @@ void ADIOS2IOHandlerImpl::listAttributes(
     }
     for( auto & rawAttr : attrs )
     {
-        if( m_attributeLayout == AttributeLayout::ByAdiosVariables &&
+        if( attributeLayout() == AttributeLayout::ByAdiosVariables &&
             ( auxiliary::ends_with( rawAttr, "/__data__" ) ||
               rawAttr == "__data__" ) )
         {
@@ -1036,7 +1030,7 @@ ADIOS2IOHandlerImpl::nameOfVariable( Writable * writable )
 {
     auto filepos = setAndGetFilePosition( writable );
     auto res = filePositionToString( filepos );
-    if( m_attributeLayout == AttributeLayout::ByAdiosAttributes )
+    if( attributeLayout() == AttributeLayout::ByAdiosAttributes )
     {
         return res;
     }
@@ -1191,7 +1185,8 @@ namespace detail
 #    endif
             ( std::is_same< T, rep >::value )
         {
-            std::string metaAttr = "__is_boolean__" + name;
+            std::string metaAttr =
+                ADIOS2Defaults::str_isBooleanOldLayout + name;
             /*
              * In verbose mode, attributeInfo will yield a warning if not
              * finding the requested attribute. Since we expect the attribute
@@ -1199,7 +1194,9 @@ namespace detail
              * a boolean), let's tell attributeInfo to be quiet.
              */
             auto type = attributeInfo(
-                IO, "__is_boolean__" + name, /* verbose = */ false );
+                IO,
+                ADIOS2Defaults::str_isBooleanOldLayout + name,
+                /* verbose = */ false );
             if( type == determineDatatype< rep >() )
             {
                 auto attr = IO.InquireAttribute< rep >( metaAttr );
@@ -1244,7 +1241,8 @@ namespace detail
 #endif
         ( std::is_same< T, rep >::value )
         {
-            std::string metaAttr = "__is_boolean__" + name;
+            std::string metaAttr =
+                ADIOS2Defaults::str_isBooleanNewLayout + name;
             /*
              * In verbose mode, attributeInfo will yield a warning if not
              * finding the requested attribute. Since we expect the attribute
@@ -1252,7 +1250,9 @@ namespace detail
              * a boolean), let's tell attributeInfo to be quiet.
              */
             auto type = attributeInfo(
-                IO, "__is_boolean__" + name, /* verbose = */ false );
+                IO,
+                ADIOS2Defaults::str_isBooleanNewLayout + name,
+                /* verbose = */ false );
             if( type == determineDatatype< rep >() )
             {
                 auto attr = IO.InquireAttribute< rep >( metaAttr );
@@ -1905,7 +1905,8 @@ namespace detail
         std::string name,
         const bool value )
     {
-        IO.DefineAttribute< bool_representation >( "__is_boolean__" + name, 1 );
+        IO.DefineAttribute< bool_representation >(
+            ADIOS2Defaults::str_isBooleanOldLayout + name, 1 );
         AttributeTypes< bool_representation >::oldCreateAttribute(
             IO, name, toRep( value ) );
     }
@@ -1935,7 +1936,7 @@ namespace detail
         const bool value )
     {
         IO.DefineAttribute< bool_representation >(
-            "__is_boolean__" + params.name, 1 );
+            ADIOS2Defaults::str_isBooleanNewLayout + params.name, 1 );
         AttributeTypes< bool_representation >::createAttribute(
             IO, engine, params, toRep( value ) );
     }
@@ -2027,8 +2028,7 @@ namespace detail
     }
 
     BufferedActions::BufferedActions(
-        ADIOS2IOHandlerImpl & impl,
-        InvalidatableFile file )
+        ADIOS2IOHandlerImpl & impl, InvalidatableFile file )
         : m_file( impl.fullPath( std::move( file ) ) )
         , m_IOName( std::to_string( impl.nameCounter++ ) )
         , m_ADIOS( impl.m_ADIOS )
@@ -2037,7 +2037,7 @@ namespace detail
         , m_writeDataset( &impl )
         , m_readDataset( &impl )
         , m_attributeReader()
-        , m_attributeLayout( impl.m_attributeLayout )
+        , m_impl( &impl )
         , m_engineType( impl.m_engineType )
     {
         if( !m_IO )
@@ -2110,6 +2110,7 @@ namespace detail
         };
 
         // set engine type
+        bool isStreaming = false;
         {
             // allow overriding through environment variable
             m_engineType = auxiliary::getEnvString(
@@ -2124,8 +2125,9 @@ namespace detail
             auto it = streamingEngines.find( m_engineType );
             if( it != streamingEngines.end() )
             {
+                isStreaming = true;
                 optimizeAttributesStreaming =
-                    m_attributeLayout == AttributeLayout::ByAdiosAttributes;
+                    schema() == SupportedSchema::s_0000_00_00;
                 streamStatus = StreamStatus::OutsideOfStep;
             }
             else
@@ -2135,16 +2137,34 @@ namespace detail
                 {
                     switch( m_mode )
                     {
-                        case adios2::Mode::Read:
-                            streamStatus = StreamStatus::Undecided;
-                            delayOpeningTheFirstStep = m_attributeLayout ==
-                                AttributeLayout::ByAdiosAttributes;
-                            break;
-                        case adios2::Mode::Write:
+                    case adios2::Mode::Read:
+                        /*
+                         * File engines, read mode:
+                         * Use of steps is dictated by what is detected in the
+                         * file being read.
+                         */
+                        streamStatus = StreamStatus::Undecided;
+                        // @todo no?? should be default in both modes
+                        delayOpeningTheFirstStep = true;
+                        break;
+                    case adios2::Mode::Write:
+                        /*
+                         * File engines, write mode:
+                         * Default for old layout is no steps.
+                         * Default for new layout is to use steps.
+                         */
+                        switch( schema() )
+                        {
+                        case SupportedSchema::s_0000_00_00:
                             streamStatus = StreamStatus::NoStream;
                             break;
-                        default:
-                            throw std::runtime_error( "Unreachable!" );
+                        case SupportedSchema::s_2021_02_09:
+                            streamStatus = StreamStatus::OutsideOfStep;
+                            break;
+                        }
+                        break;
+                    default:
+                        throw std::runtime_error( "Unreachable!" );
                     }
                     optimizeAttributesStreaming = false;
                 }
@@ -2182,8 +2202,7 @@ namespace detail
                 m_mode != adios2::Mode::Read )
             {
                 bool tmp = _useAdiosSteps.json();
-                if( streamStatus == StreamStatus::OutsideOfStep &&
-                    !bool( tmp ) )
+                if( isStreaming && !bool( tmp ) )
                 {
                     throw std::runtime_error(
                         "Cannot switch off steps for streaming engines." );
@@ -2255,72 +2274,89 @@ namespace detail
              */
             m_IO.SetParameter( "StatsLevel", "0" );
         }
+
+        // We need to open the engine now already to inquire configuration
+        // options stored in there
+        getEngine();
     }
 
-    adios2::Engine &
-    BufferedActions::getEngine()
+    adios2::Engine & BufferedActions::getEngine()
     {
         if( !m_engine )
         {
             switch( m_mode )
             {
-                case adios2::Mode::Write:
-                {
-                    bool_representation usesSteps =
-                        streamStatus == StreamStatus::NoStream ? 0 : 1;
-                    m_IO.DefineAttribute< bool_representation >(
-                        ADIOS2Defaults::str_usesstepsAttribute, usesSteps );
-                    m_engine = auxiliary::makeOption(
-                        adios2::Engine( m_IO.Open( m_file, m_mode ) ) );
-                    break;
-                }
-                case adios2::Mode::Read:
-                {
-                    m_engine = auxiliary::makeOption(
-                        adios2::Engine( m_IO.Open( m_file, m_mode ) ) );
-                    switch( streamStatus )
+            case adios2::Mode::Write: {
+                // usesSteps attribute only written upon ::advance()
+                // this makes sure that the attribute is only put in case
+                // the streaming API was used.
+                m_IO.DefineAttribute< ADIOS2Schema::schema_t >(
+                    ADIOS2Defaults::str_adios2Schema, m_impl->m_schema );
+                m_engine = auxiliary::makeOption(
+                    adios2::Engine( m_IO.Open( m_file, m_mode ) ) );
+                break;
+            }
+            case adios2::Mode::Read: {
+                m_engine = auxiliary::makeOption(
+                    adios2::Engine( m_IO.Open( m_file, m_mode ) ) );
+                // decide attribute layout
+                // in streaming mode, this needs to be done after opening
+                // a step
+                // in file-based mode, we do it before
+                auto layoutVersion = [ IO{ m_IO } ]() mutable {
+                    auto attr = IO.InquireAttribute< ADIOS2Schema::schema_t >(
+                        ADIOS2Defaults::str_adios2Schema );
+                    if( !attr )
                     {
-                        case StreamStatus::Undecided:
+                        return ADIOS2Schema::schema_0000_00_00;
+                    }
+                    else
+                    {
+                        return attr.Data()[ 0 ];
+                    }
+                };
+                // decide streaming mode
+                switch( streamStatus )
+                {
+                case StreamStatus::Undecided: {
+                    m_impl->m_schema = layoutVersion();
+                    auto attr = m_IO.InquireAttribute< bool_representation >(
+                        ADIOS2Defaults::str_usesstepsAttribute );
+                    if( attr && attr.Data()[ 0 ] == 1 )
+                    {
+                        if( delayOpeningTheFirstStep )
                         {
-                            auto attr =
-                                m_IO.InquireAttribute< bool_representation >(
-                                    ADIOS2Defaults::str_usesstepsAttribute );
-                            if( attr && attr.Data()[ 0 ] == 1 )
-                            {
-                                if( delayOpeningTheFirstStep )
-                                {
-                                    streamStatus = StreamStatus::Parsing;
-                                }
-                                else
-                                {
-                                    m_engine.get().BeginStep();
-                                    streamStatus = StreamStatus::DuringStep;
-                                }
-                            }
-                            else
-                            {
-                                streamStatus = StreamStatus::NoStream;
-                            }
-                            break;
+                            streamStatus = StreamStatus::Parsing;
                         }
-                        case StreamStatus::OutsideOfStep:
+                        else
+                        {
                             m_engine.get().BeginStep();
                             streamStatus = StreamStatus::DuringStep;
-                            break;
-                        default:
-                            throw std::runtime_error(
-                                "[ADIOS2] Control flow error!" );
+                        }
                     }
-                    if( m_attributeLayout == AttributeLayout::ByAdiosVariables )
+                    else
                     {
-                        preloadAttributes.preloadAttributes(
-                            m_IO, m_engine.get() );
+                        streamStatus = StreamStatus::NoStream;
                     }
                     break;
                 }
+                case StreamStatus::OutsideOfStep:
+                    m_engine.get().BeginStep();
+                    m_impl->m_schema = layoutVersion();
+                    streamStatus = StreamStatus::DuringStep;
+                    break;
                 default:
-                    throw std::runtime_error(
-                        "[ADIOS2] Invalid ADIOS access mode" );
+                    throw std::runtime_error( "[ADIOS2] Control flow error!" );
+                }
+                if( attributeLayout() == AttributeLayout::ByAdiosVariables )
+                {
+                    preloadAttributes.preloadAttributes( m_IO, m_engine.get() );
+                }
+                break;
+            }
+            default:
+                throw std::runtime_error(
+                    "[ADIOS2] Invalid ADIOS access mode" );
             }
 
             if( !m_engine )
@@ -2338,7 +2374,7 @@ namespace detail
         {
             m_lastStepStatus = eng.BeginStep();
             if( m_mode == adios2::Mode::Read &&
-                m_attributeLayout == AttributeLayout::ByAdiosVariables )
+                attributeLayout() == AttributeLayout::ByAdiosVariables )
             {
                 preloadAttributes.preloadAttributes( m_IO, m_engine.get() );
             }
@@ -2462,9 +2498,14 @@ namespace detail
         // sic! no else
         if( streamStatus == StreamStatus::NoStream )
         {
+            m_IO.DefineAttribute< bool_representation >(
+                ADIOS2Defaults::str_usesstepsAttribute, 0 );
             flush( /* writeAttributes = */ false );
             return AdvanceStatus::OK;
         }
+
+        m_IO.DefineAttribute< bool_representation >(
+            ADIOS2Defaults::str_usesstepsAttribute, 1 );
         switch( mode )
         {
             case AdvanceMode::ENDSTEP:
@@ -2511,7 +2552,7 @@ namespace detail
                         /* flushUnconditionally = */ true );
                     if( adiosStatus == adios2::StepStatus::OK &&
                         m_mode == adios2::Mode::Read &&
-                        m_attributeLayout == AttributeLayout::ByAdiosVariables )
+                        attributeLayout() == AttributeLayout::ByAdiosVariables )
                     {
                         preloadAttributes.preloadAttributes(
                             m_IO, m_engine.get() );

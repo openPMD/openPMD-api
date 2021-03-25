@@ -3374,7 +3374,7 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
     useSteps = R"(
     {
         "adios2": {
-            "new_attribute_layout": true,
+            "schema": 20210209,
             "engine": {
                 "type": "bp4",
                 "usesteps": true
@@ -3385,7 +3385,7 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
     dontUseSteps = R"(
     {
         "adios2": {
-            "new_attribute_layout": true,
+            "schema": 20210209,
             "engine": {
                 "type": "bp4",
                 "usesteps": false
@@ -3396,9 +3396,9 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
     // sing the yes no song
     bp4_steps( "../samples/newlayout_bp4steps_yes_yes.bp", useSteps, useSteps );
     bp4_steps(
-        "../samples/newlayout_bp4steps_no_yes.bp", dontUseSteps, useSteps );
-    bp4_steps(
         "../samples/newlayout_bp4steps_yes_no.bp", useSteps, dontUseSteps );
+    bp4_steps(
+        "../samples/newlayout_bp4steps_no_yes.bp", dontUseSteps, useSteps );
     bp4_steps(
         "../samples/newlayout_bp4steps_no_no.bp", dontUseSteps, dontUseSteps );
 }
