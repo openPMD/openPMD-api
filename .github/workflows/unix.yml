@@ -28,6 +28,37 @@ jobs:
         cat clang-tidy.log
         if [[ $(wc -m <clang-tidy.log) -gt 1 ]]; then exit 1; fi
 
+  clangsanitizer10_nopy_ompi_h5_ad1_ad2:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Spack Cache
+      uses: actions/cache@v2
+      with: {path: /opt/spack, key: clang10_nopy_ompi_h5_ad1_ad2 }
+    - name: Install
+      run: |
+        sudo apt-get update
+        sudo apt-get install clang-10 libc++-dev libc++abi-dev python3 gfortran libopenmpi-dev
+        python3 -m pip install -U pip
+        python3 -m pip install -U numpy
+        sudo .github/workflows/dependencies/install_spack
+    - name: Build
+      env: {CC: mpicc, CXX: mpic++, OMPI_CC: clang-10, OMPI_CXX: clang++-10, CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      run: |
+        eval $(spack env activate --sh .github/ci/spack-envs/clangtidy_nopy_ompi_h5_ad1_ad2/)
+        spack install
+        SOURCEPATH="$(pwd)"
+        mkdir build && cd build
+        ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
+        export LDFLAGS="${LDFLAGS} -fsanitize=address,undefined -shared-libsan"
+        CXXFLAGS="${CXXFLAGS} -fsanitize=address,undefined -shared-libsan"
+        CXXFLAGS="${CXXFLAGS}" cmake -S .. -B . -DopenPMD_USE_MPI=ON -DopenPMD_USE_PYTHON=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_ADIOS1=ON -DopenPMD_USE_INVASIVE_TESTS=ON -DCMAKE_VERBOSE_MAKEFILE=ON
+        cmake --build . --parallel 2
+        export ASAN_OPTIONS=detect_stack_use_after_return=1:detect_leaks=1:check_initialization_order=true:strict_init_order=true:detect_stack_use_after_scope=1:fast_unwind_on_malloc=0
+        export LSAN_OPTIONS=suppressions="$SOURCEPATH/.github/ci/sanitizer/clang/Leak.supp"
+        export LD_PRELOAD=/usr/lib/clang/10/lib/linux/libclang_rt.asan-x86_64.so
+        ctest --output-on-failure
+
   clang5_nopy_nompi_h5:
     runs-on: ubuntu-18.04
     steps:
