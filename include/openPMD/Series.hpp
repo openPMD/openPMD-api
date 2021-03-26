@@ -413,6 +413,9 @@ public:
  *
  * Entry point and common link between all iterations of particle and mesh data.
  *
+ * An instance can be created either directly via the given constructors or via
+ * the SeriesBuilder class.
+ *
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series
  */

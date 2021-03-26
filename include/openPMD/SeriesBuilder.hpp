@@ -34,6 +34,10 @@
 
 namespace openPMD
 {
+/**
+ * @brief Builder pattern for the Series class.
+ *
+ */
 class SeriesBuilder
 {
 private:
@@ -49,16 +53,41 @@ private:
 public:
     explicit SeriesBuilder() = default;
 
+    /**
+     * @brief Construct the Series object with the settings previously applied.
+     */
     Series build();
 
+    /**
+     * @brief Shortcut for build().
+     */
     operator Series();
 
+    /**
+     * @brief As in the Series constructor. Default is "series.json".
+     */
     SeriesBuilder & filePath( std::string );
+    /**
+     * @brief As in the Series constructor. Default is "{}".
+     */
     SeriesBuilder & options( std::string );
+    /**
+     * @brief As in the Series constructor. Default is Access::READ_ONLY.
+     */
     SeriesBuilder & access( Access );
+    /**
+     * @brief Sets the parseLazily flag in the Series constructor to false.
+     */
     SeriesBuilder & parseEagerly();
+    /**
+     * @brief Sets the parseLazily flag in the Series constructor to true.
+     */
     SeriesBuilder & parseLazily();
 #if openPMD_HAVE_MPI
+    /**
+     * @brief As in the Series constructor. Default is to construct a
+     *        non-parallel Series.Mit
+     */
     SeriesBuilder & comm( MPI_Comm );
 #endif
 };
