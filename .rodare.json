@@ -96,6 +96,11 @@
             "name": "Ganyushin, Dmitry",
             "orcid": "0000-0001-7337-2161",
             "type": "Other"
+        },
+        {
+            "affiliation": "NVIDIA",
+            "name": "Kirkham, John",
+            "type": "Other"
         }
     ],
     "title": "C++ & Python API for Scientific I/O with openPMD",
