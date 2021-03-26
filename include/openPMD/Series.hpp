@@ -434,6 +434,25 @@ public:
         bool parseLazily = false );
 #endif
 
+    /**
+     * @brief Construct a new Series
+     *
+     * @param filepath The backend will be determined by the filepath extension.
+     * @param at Access mode.
+     * @param options Advanced backend configuration via JSON.
+     *      May be specified as a JSON-formatted string directly, or as a path
+     *      to a JSON textfile, prepended by an at sign '@'.
+     * @param parseLazily Whether to parse all iterations upon construction.
+     *      If parsing lazily, each iteration needs to be explicitly opened with
+     *      Iteration::open() before accessing.
+     *      (Notice that Iteration::open() is generally suggested to be used in
+     *      parallel contexts to avoid parallel file accessing hazards).
+     *      Using the Streaming API (i.e. SeriesImpl::readIteration()) will do
+     *      this automatically.
+     *      Parsing eagerly might be very expensive for a Series with many
+     *      iterations, but will avoid bugs by forgotten calls to
+     *      Iteration::open().
+     */
     Series(
         std::string const & filepath,
         Access at,
