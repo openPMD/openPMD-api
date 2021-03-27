@@ -57,3 +57,18 @@ if found_dask:
     #   example3: save all data data to parquet files
     delayed_save = delayed(df.to_parquet("electrons.parquet"))
     delayed_save.compute()
+
+# Dask example 2: meshes
+if found_dask:
+    E_x = s.iterations[400].meshes["E"]["x"]
+    E_y = s.iterations[400].meshes["E"]["y"]
+    E_z = s.iterations[400].meshes["E"]["z"]
+    darr_x = E_x.to_dask_array()
+    darr_y = E_y.to_dask_array()
+    darr_z = E_z.to_dask_array()
+
+    # example compute intensity
+    Intensity = darr_x * darr_x + darr_y * darr_y + darr_z * darr_z
+    Intensity_max = Intensity.max().compute()
+    idx_max = da.argwhere(Intensity == Intensity_max).compute()[0]
+    print("maximum intensity I={} at index={}".format(Intensity_max, idx_max))
