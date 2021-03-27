@@ -401,6 +401,8 @@ Further thanks go to improvements and contributions from:
   report on NVCC warnings
 * [Dmitry Ganyushin (ORNL)](https://github.com/dmitry-ganyushin):
   Dask dataframe support
+* [John Kirkham (NVIDIA)](https://github.com/jakirkham):
+  Dask guidance & reviews
 
 ### Grants
 

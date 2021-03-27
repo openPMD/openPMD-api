@@ -2,7 +2,7 @@
 This file is part of the openPMD-api.
 
 Copyright 2021 openPMD contributors
-Authors: Axel Huebl, Dmitry Ganyushin
+Authors: Axel Huebl, Dmitry Ganyushin, John Kirkham
 License: LGPLv3+
 """
 import numpy as np
@@ -17,6 +17,11 @@ try:
     found_pandas = True
 except ImportError:
     found_pandas = False
+
+
+def read_chunk_to_df(species, chunk):
+    stride = np.s_[chunk.offset[0]:chunk.extent[0]]
+    return species.to_df(stride)
 
 
 def particles_to_daskdataframe(particle_species):
@@ -74,13 +79,9 @@ def particles_to_daskdataframe(particle_species):
             if chunks:
                 break
 
-    def read_chunk(species, chunk):
-        stride = np.s_[chunk.offset[0]:chunk.extent[0]]
-        return species.to_df(stride)
-
     # merge DataFrames
     dfs = [
-        delayed(read_chunk)(particle_species, chunk) for chunk in chunks
+        delayed(read_chunk_to_df)(particle_species, chunk) for chunk in chunks
     ]
     df = dd.from_delayed(dfs)
 
