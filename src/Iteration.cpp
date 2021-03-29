@@ -109,6 +109,8 @@ Iteration::close( bool _flush )
         case CloseStatus::NotYetAccessed:
         case CloseStatus::ClosedInBackend:
             // just keep it like it is
+            // (this means that closing an iteration that has not been parsed
+            // yet keeps it re-openable)
             break;
     }
     if( _flush )
@@ -615,6 +617,28 @@ Iteration::linkHierarchy(Writable& w)
     AttributableImpl::linkHierarchy(w);
     meshes.linkHierarchy(this->writable());
     particles.linkHierarchy(this->writable());
+}
+
+void Iteration::accessLazily()
+{
+    if( IOHandler()->m_frontendAccess == Access::CREATE )
+    {
+        return;
+    }
+    auto oldAccess = IOHandler()->m_frontendAccess;
+    auto newAccess =
+        const_cast< Access * >( &IOHandler()->m_frontendAccess );
+    *newAccess = Access::READ_WRITE;
+    try
+    {
+        read();
+    }
+    catch( ... )
+    {
+        *newAccess = oldAccess;
+        throw;
+    }
+    *newAccess = oldAccess;
 }
 
 template float

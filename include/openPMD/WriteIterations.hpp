@@ -49,19 +49,19 @@ class WriteIterations : private Container< Iteration, uint64_t >
     friend class Series;
 
 private:
+    using iterations_t = Container< Iteration, uint64_t >;
     struct SharedResources
     {
-        Iterations_t iterations;
+        iterations_t iterations;
         auxiliary::Option< uint64_t > currentlyOpen;
 
-        SharedResources( Iterations_t );
+        SharedResources( iterations_t );
         ~SharedResources();
     };
 
-    using key_type = typename Iterations_t::key_type;
-    // @todo: this is wrong
-    using value_type = typename Iterations_t::key_type;
-    WriteIterations( Iterations_t );
+    using key_type = typename iterations_t::key_type;
+    using value_type = typename iterations_t::key_type;
+    WriteIterations( iterations_t );
     explicit WriteIterations() = default;
     //! Index of the last opened iteration
     std::shared_ptr< SharedResources > shared;

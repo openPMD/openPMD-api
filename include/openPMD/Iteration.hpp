@@ -190,7 +190,7 @@ private:
      */
     enum class CloseStatus
     {
-        NotYetAccessed,
+        NotYetAccessed,   //!< The reader has not yet parsed this iteration
         Open,             //!< Iteration has not been closed
         ClosedInFrontend, /*!< Iteration has been closed, but task has not yet
                                been propagated to the backend */
@@ -284,30 +284,13 @@ private:
      */
     virtual void linkHierarchy(Writable& w);
 
-    void accessLazily()
-    {
-        if( IOHandler()->m_frontendAccess == Access::CREATE )
-        {
-            return;
-        }
-        auto oldAccess = IOHandler()->m_frontendAccess;
-        auto newAccess =
-            const_cast< Access * >( &IOHandler()->m_frontendAccess );
-        *newAccess = Access::READ_WRITE;
-        try
-        {
-            read();
-        }
-        catch( ... )
-        {
-            *newAccess = oldAccess;
-            throw;
-        }
-        *newAccess = oldAccess;
-    }
+    /**
+     * @brief Access an iteration in read mode that has potentially not been
+     *      parsed yet.
+     * 
+     */
+    void accessLazily();
 };  // Iteration
-
-using Iterations_t = Container< Iteration, uint64_t >;
 
 extern template
 float

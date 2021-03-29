@@ -82,7 +82,7 @@ public:
 
     virtual ~SeriesData() = default;
 
-    Iterations_t iterations{};
+    Container< Iteration, uint64_t > iterations{};
 
 OPENPMD_private :
     auxiliary::Option< WriteIterations > m_writeIterations;
@@ -315,7 +315,8 @@ OPENPMD_private:
     static constexpr char const * const BASEPATH = "/data/%T/";
 
     struct ParsedInput;
-    using iterations_iterator = Iterations_t::iterator;
+    using iterations_t = decltype(internal::SeriesData::iterations);
+    using iterations_iterator = iterations_t::iterator;
 
     internal::SeriesData * m_series;
 
@@ -461,7 +462,7 @@ public:
 
     virtual ~Series() = default;
 
-    Iterations_t iterations;
+    Container< Iteration, uint64_t > iterations;
 
     /**
      * @brief Entry point to the reading end of the streaming API.

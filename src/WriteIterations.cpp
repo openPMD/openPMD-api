@@ -25,7 +25,7 @@
 
 namespace openPMD
 {
-WriteIterations::SharedResources::SharedResources( Iterations_t _iterations )
+WriteIterations::SharedResources::SharedResources( iterations_t _iterations )
     : iterations( std::move( _iterations ) )
 {
 }
@@ -43,7 +43,7 @@ WriteIterations::SharedResources::~SharedResources()
     }
 }
 
-WriteIterations::WriteIterations( Iterations_t iterations )
+WriteIterations::WriteIterations( iterations_t iterations )
     : shared{ std::make_shared< SharedResources >( std::move( iterations ) ) }
 {
 }
