@@ -57,7 +57,7 @@ void span_write( std::string const & filename )
                 } );
 
             /*
-             * Since ADIOS2 might reallocate its internal buffers when writing
+             * ADIOS2 might reallocate its internal buffers when writing
              * further data (e.g. if further datasets had been defined in
              * between). As a consequence, the actual pointer has to be acquired
              * directly before writing.

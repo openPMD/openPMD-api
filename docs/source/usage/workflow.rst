@@ -15,7 +15,7 @@ A flush point is a point within an application's sequential control flow where t
 *   In read mode, a buffer into which data from a dataset should be filled, must not be altered by the openPMD API before the flush point.
 *   In read mode, a buffer into which data from a dataset should be filled, must have been filled with the requested data after the flush point.
 
-In short: operations requrested by ``storeChunk()`` and ``loadChunk()`` must happen exactly at flush points.
+In short: operations requested by ``storeChunk()`` and ``loadChunk()`` must happen exactly at flush points.
 
 Flush points are triggered by:
 
