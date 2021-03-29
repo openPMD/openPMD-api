@@ -21,6 +21,7 @@
 #pragma once
 
 #include "openPMD/backend/BaseRecordComponent.hpp"
+#include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/Dataset.hpp"
 
@@ -174,9 +175,10 @@ public:
      */
     template< typename T >
     std::shared_ptr< T > loadChunk(
-        Offset = {0u},
-        Extent = {-1u},
-        double targetUnitSI = std::numeric_limits< double >::quiet_NaN() );
+        Offset = { 0u },
+        Extent = { -1u },
+        auxiliary::Option< double > targetUnitSI =
+            auxiliary::Option< double >() );
 
     /** Load a chunk of data into pre-allocated memory
      *
@@ -192,7 +194,8 @@ public:
         std::shared_ptr< T >,
         Offset,
         Extent,
-        double targetUnitSI = std::numeric_limits< double >::quiet_NaN() );
+        auxiliary::Option< double > targetUnitSI =
+            auxiliary::Option< double >() );
 
     template< typename T >
     void storeChunk(std::shared_ptr< T >, Offset, Extent);
@@ -273,8 +276,8 @@ RecordComponent::makeEmpty( uint8_t dimensions )
 }
 
 template< typename T >
-inline std::shared_ptr< T >
-RecordComponent::loadChunk(Offset o, Extent e, double targetUnitSI)
+inline std::shared_ptr< T > RecordComponent::loadChunk(
+    Offset o, Extent e, auxiliary::Option< double > targetUnitSI )
 {
     uint8_t dim = getDimensionality();
 
@@ -305,10 +308,13 @@ RecordComponent::loadChunk(Offset o, Extent e, double targetUnitSI)
 }
 
 template< typename T >
-inline void
-RecordComponent::loadChunk(std::shared_ptr< T > data, Offset o, Extent e, double targetUnitSI)
+inline void RecordComponent::loadChunk(
+    std::shared_ptr< T > data,
+    Offset o,
+    Extent e,
+    auxiliary::Option< double > targetUnitSI )
 {
-    if( !std::isnan(targetUnitSI) )
+    if( targetUnitSI.has_value() )
         throw std::runtime_error("unitSI scaling during chunk loading not yet implemented");
     Datatype dtype = determineDatatype(data);
     if( dtype != getDatatype() )
