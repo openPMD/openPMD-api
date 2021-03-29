@@ -36,20 +36,15 @@ namespace openPMD
 template< typename T >
 class Span
 {
-    friend class RecordComponent;
+    template< typename >
+    friend class DynamicMemoryView;
 
 private:
-    using param_t = Parameter< Operation::GET_BUFFER_VIEW >;
-    param_t m_param;
+    T * m_ptr;
     size_t m_size;
-    RecordComponent m_recordComponent;
 
-    Span( param_t param, size_t size, RecordComponent recordComponent )
-        : m_param( std::move( param ) )
-        , m_size( size )
-        , m_recordComponent( std::move( recordComponent ) )
+    Span( T * ptr, size_t size ) : m_ptr( ptr ), m_size( size )
     {
-        m_param.update = true;
     }
 
 public:
@@ -61,7 +56,57 @@ public:
         return m_size;
     }
 
-    T * data()
+    inline T * data() const
+    {
+        return m_ptr;
+    }
+
+    inline T & operator[]( size_t i ) const
+    {
+        return data()[ i ];
+    }
+
+    inline iterator begin() const
+    {
+        return data();
+    }
+    inline iterator end() const
+    {
+        return data() + size();
+    }
+    inline reverse_iterator rbegin() const
+    {
+        // std::reverse_iterator does the -1 thing automatically
+        return reverse_iterator{ data() + size() };
+    }
+    inline reverse_iterator rend() const
+    {
+        return reverse_iterator{ data() };
+    }
+};
+
+template< typename T >
+class DynamicMemoryView
+{
+    friend class RecordComponent;
+
+private:
+    using param_t = Parameter< Operation::GET_BUFFER_VIEW >;
+    param_t m_param;
+    size_t m_size;
+    RecordComponent m_recordComponent;
+
+    DynamicMemoryView(
+        param_t param, size_t size, RecordComponent recordComponent )
+        : m_param( std::move( param ) )
+        , m_size( size )
+        , m_recordComponent( std::move( recordComponent ) )
+    {
+        m_param.update = true;
+    }
+
+public:
+    Span< T > currentBuffer()
     {
         if( m_param.out->taskSupportedByBackend )
         {
@@ -70,30 +115,7 @@ public:
                 IOTask( &m_recordComponent, m_param ) );
             m_recordComponent.IOHandler()->flush();
         }
-        return static_cast< T * >( m_param.out->ptr );
-    }
-
-    T & operator[]( size_t i )
-    {
-        return data()[ i ];
-    }
-
-    iterator begin()
-    {
-        return data();
-    }
-    iterator end()
-    {
-        return data() + size();
-    }
-    reverse_iterator rbegin()
-    {
-        // std::reverse_iterator does the -1 thing automatically
-        return reverse_iterator{ data() + size() };
-    }
-    reverse_iterator rend()
-    {
-        return reverse_iterator{ data() };
+        return Span< T >{ static_cast< T * >( m_param.out->ptr ), m_size };
     }
 };
 }

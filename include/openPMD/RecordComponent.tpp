@@ -230,7 +230,7 @@ RecordComponent::storeChunk(T_ContiguousContainer & data, Offset o, Extent e)
 }
 
 template< typename T, typename F >
-inline Span< T >
+inline DynamicMemoryView< T >
 RecordComponent::storeChunk( Offset o, Extent e, F && createBuffer )
 {
     if( constant() )
@@ -311,11 +311,11 @@ RecordComponent::storeChunk( Offset o, Extent e, F && createBuffer )
         out.ptr = static_cast< void * >( data.get() );
         storeChunk( std::move( data ), std::move( o ), std::move( e ) );
     }
-    return Span< T >{ std::move( getBufferView ), size, *this };
+    return DynamicMemoryView< T >{ std::move( getBufferView ), size, *this };
 }
 
 template< typename T >
-inline Span< T >
+inline DynamicMemoryView< T >
 RecordComponent::storeChunk( Offset offset, Extent extent )
 {
     return storeChunk< T >(

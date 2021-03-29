@@ -354,15 +354,17 @@ store_chunk(RecordComponent & r, py::array & a, py::tuple const & slices)
     store_chunk(r, a, offset, extent, flatten);
 }
 
-struct DynamicMemoryView
+struct PythonDynamicMemoryView
 {
     using ShapeContainer = pybind11::array::ShapeContainer;
 
     template< typename T >
-    DynamicMemoryView(
-        Span< T > span, ShapeContainer arrayShape, ShapeContainer strides )
-        : m_span(
-              std::shared_ptr< void >( new Span< T >( std::move( span ) ) ) )
+    PythonDynamicMemoryView(
+        DynamicMemoryView< T > dynamicView,
+        ShapeContainer arrayShape,
+        ShapeContainer strides )
+        : m_dynamicView( std::shared_ptr< void >(
+              new DynamicMemoryView< T >( std::move( dynamicView ) ) ) )
         , m_arrayShape( std::move( arrayShape ) )
         , m_strides( std::move( strides ) )
         , m_datatype( determineDatatype< T >() )
@@ -371,7 +373,7 @@ struct DynamicMemoryView
 
     pybind11::memoryview currentView() const;
 
-    std::shared_ptr< void > m_span;
+    std::shared_ptr< void > m_dynamicView;
     ShapeContainer m_arrayShape;
     ShapeContainer m_strides;
     Datatype m_datatype;
@@ -379,12 +381,14 @@ struct DynamicMemoryView
 
 namespace
 {
-struct CurrentView
+struct GetCurrentView
 {
     template< typename T >
-    pybind11::memoryview operator()( DynamicMemoryView const & dynamicView )
+    pybind11::memoryview
+    operator()( PythonDynamicMemoryView const & dynamicView )
     {
-        auto & span = *static_cast< Span< T > * >( dynamicView.m_span.get() );
+        auto span = static_cast< DynamicMemoryView< T > * >(
+            dynamicView.m_dynamicView.get() )->currentBuffer();
         return py::memoryview::from_buffer(
             span.data(),
             dynamicView.m_arrayShape,
@@ -397,15 +401,15 @@ struct CurrentView
 
 template<>
 pybind11::memoryview
-CurrentView::operator()< std::string >( DynamicMemoryView const & )
+GetCurrentView::operator()< std::string >( PythonDynamicMemoryView const & )
 {
     throw std::runtime_error( "[DynamicMemoryView] Only PODs allowed." );
 }
 } // namespace
 
-pybind11::memoryview DynamicMemoryView::currentView() const
+pybind11::memoryview PythonDynamicMemoryView::currentView() const
 {
-    static CurrentView cv;
+    static GetCurrentView cv;
     return switchNonVectorType( m_datatype, cv, *this );
 }
 
@@ -414,10 +418,11 @@ namespace
 struct StoreChunkSpan
 {
     template< typename T >
-    DynamicMemoryView operator()(
+    PythonDynamicMemoryView operator()(
         RecordComponent & r, Offset const & offset, Extent const & extent )
     {
-        Span< T > span = r.storeChunk< T >( offset, extent );
+        DynamicMemoryView< T > dynamicView =
+            r.storeChunk< T >( offset, extent );
         pybind11::array::ShapeContainer arrayShape(
             extent.begin(), extent.end() );
         std::vector< py::ssize_t > strides( extent.size() );
@@ -431,8 +436,8 @@ struct StoreChunkSpan
                 accumulator *= extent[ dim ];
             }
         }
-        return DynamicMemoryView(
-            std::move( span ),
+        return PythonDynamicMemoryView(
+            std::move( dynamicView ),
             std::move( arrayShape ),
             py::array::ShapeContainer( std::move( strides ) ) );
     }
@@ -441,7 +446,7 @@ struct StoreChunkSpan
 };
 
 template<>
-DynamicMemoryView StoreChunkSpan::operator()< std::string >(
+PythonDynamicMemoryView StoreChunkSpan::operator()< std::string >(
     RecordComponent &, Offset const &, Extent const & )
 {
     throw std::runtime_error(
@@ -449,7 +454,7 @@ DynamicMemoryView StoreChunkSpan::operator()< std::string >(
 }
 } // namespace
 
-inline DynamicMemoryView store_chunk_span(
+inline PythonDynamicMemoryView store_chunk_span(
     RecordComponent & r,
     Offset const & offset,
     Extent const & extent,
@@ -471,7 +476,7 @@ inline DynamicMemoryView store_chunk_span(
     return switchNonVectorType( r.getDatatype(), scs, r, offset, extent );
 }
 
-inline DynamicMemoryView
+inline PythonDynamicMemoryView
 store_chunk_span( RecordComponent & r, py::tuple const & slices )
 {
     uint8_t ndim = r.getDimensionality();
@@ -686,15 +691,15 @@ load_chunk(RecordComponent & r, py::tuple const & slices)
 }
 
 void init_RecordComponent(py::module &m) {
-    py::class_<DynamicMemoryView>(m, "Dynamic_Memory_View")
+    py::class_<PythonDynamicMemoryView>(m, "Dynamic_Memory_View")
         .def("__repr__",
-            [](DynamicMemoryView const & view) {
+            [](PythonDynamicMemoryView const & view) {
                 return "<openPMD.Dynamic_Memory_view of dimensionality '"
                     + std::to_string(view.m_arrayShape->size()) + "'>";
             }
         )
         .def("current_buffer",
-            [](DynamicMemoryView const & view) {
+            [](PythonDynamicMemoryView const & view) {
                 return view.currentView();
             }
         );

@@ -45,7 +45,7 @@ void span_write( std::string const & filename )
              * flushed in each iteration to make the buffer reusable.
              */
             bool fallbackBufferIsUsed = false;
-            auto span = pos.storeChunk< position_t >(
+            auto dynamicMemoryView = pos.storeChunk< position_t >(
                 Offset{ 0 },
                 extent,
                 [ &fallbackBuffer, &fallbackBufferIsUsed ]( size_t size )
@@ -55,6 +55,14 @@ void span_write( std::string const & filename )
                     return std::shared_ptr< position_t >(
                         fallbackBuffer.data(), []( auto const * ) {} );
                 } );
+
+            /*
+             * Since ADIOS2 might reallocate its internal buffers when writing
+             * further data (e.g. if further datasets had been defined in
+             * between). As a consequence, the actual pointer has to be acquired
+             * directly before writing.
+             */
+            auto span = dynamicMemoryView.currentBuffer();
             if( ( i + j ) % 2 == 0 )
             {
                 std::iota(

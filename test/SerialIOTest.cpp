@@ -3471,7 +3471,7 @@ iterate_nonstreaming_series( std::string const & file )
             std::vector< int > data( extent, i );
             E_x.storeChunk( data, { 0, 0 }, { 1, extent } );
             bool taskSupportedByBackend = true;
-            Span< int > span = E_x.storeChunk< int >(
+            DynamicMemoryView< int > memoryView = E_x.storeChunk< int >(
                 { 1, 0 },
                 { 1, extent },
                 /*
@@ -3491,6 +3491,7 @@ iterate_nonstreaming_series( std::string const & file )
                 // that backend must support span creation
                 REQUIRE( taskSupportedByBackend );
             }
+            auto span = memoryView.currentBuffer();
             for( size_t j = 0; j < span.size(); ++j )
             {
                 span[ j ] = j;
@@ -3504,7 +3505,8 @@ iterate_nonstreaming_series( std::string const & file )
                 iteration
                     .meshes[ "i_energyDensity" ][ MeshRecordComponent::SCALAR ];
             scalarMesh.resetDataset( Dataset( Datatype::INT, { 5 } ) );
-            auto scalarSpan = scalarMesh.storeChunk< int >( { 0 }, { 5 } );
+            auto scalarSpan =
+                scalarMesh.storeChunk< int >( { 0 }, { 5 } ).currentBuffer();
             for( size_t j = 0; j < scalarSpan.size(); ++j )
             {
                 scalarSpan[ j ] = j;

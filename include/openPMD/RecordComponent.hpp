@@ -76,7 +76,7 @@ struct IsContiguousContainer< std::array< T_Value, N > >
 } // namespace traits
 
 template< typename T >
-class Span;
+class DynamicMemoryView;
 
 class RecordComponent : public BaseRecordComponent
 {
@@ -93,7 +93,7 @@ class RecordComponent : public BaseRecordComponent
     friend class Record;
     friend class Mesh;
     template< typename >
-    friend class Span;
+    friend class DynamicMemoryView;
 
 public:
     enum class Allocation
@@ -237,14 +237,14 @@ public:
      * @return View into a buffer that can be filled with data.
      */
     template< typename T, typename F >
-    Span< T > storeChunk( Offset, Extent, F && createBuffer );
+    DynamicMemoryView< T > storeChunk( Offset, Extent, F && createBuffer );
 
     /**
      * Overload of span-based storeChunk() that uses operator new() to create
      * a buffer.
      */
     template< typename T >
-    Span< T > storeChunk( Offset, Extent );
+    DynamicMemoryView< T > storeChunk( Offset, Extent );
 
     static constexpr char const * const SCALAR = "\vScalar";
 
