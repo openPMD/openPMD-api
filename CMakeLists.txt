@@ -348,7 +348,6 @@ set(CORE_SOURCE
         src/Record.cpp
         src/RecordComponent.cpp
         src/Series.cpp
-        src/SeriesBuilder.cpp
         src/version.cpp
         src/WriteIterations.cpp
         src/auxiliary/Date.cpp

@@ -902,10 +902,8 @@ adios2_streaming()
         }
         )";
 
-        Series readSeries = SeriesBuilder()
-            .filePath( "../samples/adios2_stream.sst" )
-            .access( Access::READ_ONLY )
-            .parseLazily();
+        Series readSeries(
+            "../samples/adios2_stream.sst", Access::READ_ONLY, "{}", true );
 
         size_t last_iteration_index = 0;
         for( auto iteration : readSeries.readIterations() )
