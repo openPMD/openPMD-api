@@ -32,15 +32,16 @@
 namespace openPMD
 {
 #if openPMD_HAVE_MPI
+    template<>
     std::shared_ptr< AbstractIOHandler >
-    createIOHandler(
+    createIOHandler< nlohmann::json >(
         std::string path,
         Access access,
         Format format,
         MPI_Comm comm,
-        std::string const & options )
+        nlohmann::json options )
     {
-        nlohmann::json optionsJson = auxiliary::parseOptions( options, comm );
+        (void) options;
         switch( format )
         {
             case Format::HDF5:
@@ -53,13 +54,13 @@ namespace openPMD
 #   endif
             case Format::ADIOS2:
                 return std::make_shared< ADIOS2IOHandler >(
-                    path, access, comm, std::move( optionsJson ), "bp4" );
+                    path, access, comm, std::move( options ), "bp4" );
             case Format::ADIOS2_SST:
                 return std::make_shared< ADIOS2IOHandler >(
-                    path, access, comm, std::move( optionsJson ), "sst" );
+                    path, access, comm, std::move( options ), "sst" );
             case Format::ADIOS2_SSC:
                 return std::make_shared< ADIOS2IOHandler >(
-                    path, access, comm, std::move( optionsJson ), "ssc" );
+                    path, access, comm, std::move( options ), "ssc" );
             default:
                 throw std::runtime_error(
                     "Unknown file format! Did you specify a file ending?" );
@@ -67,14 +68,15 @@ namespace openPMD
     }
 #endif
 
+    template<>
     std::shared_ptr< AbstractIOHandler >
-    createIOHandler(
+    createIOHandler< nlohmann::json >(
         std::string path,
         Access access,
         Format format,
-        std::string const & options )
+        nlohmann::json options )
     {
-        nlohmann::json optionsJson = auxiliary::parseOptions( options );
+        (void) options;
         switch( format )
         {
             case Format::HDF5:
@@ -88,13 +90,13 @@ namespace openPMD
 #if openPMD_HAVE_ADIOS2
             case Format::ADIOS2:
                 return std::make_shared< ADIOS2IOHandler >(
-                    path, access, std::move( optionsJson ), "bp4" );
+                    path, access, std::move( options ), "bp4" );
             case Format::ADIOS2_SST:
                 return std::make_shared< ADIOS2IOHandler >(
-                    path, access, std::move( optionsJson ), "sst" );
+                    path, access, std::move( options ), "sst" );
             case Format::ADIOS2_SSC:
                 return std::make_shared< ADIOS2IOHandler >(
-                    path, access, std::move( optionsJson ), "ssc" );
+                    path, access, std::move( options ), "ssc" );
 #endif // openPMD_HAVE_ADIOS2
             case Format::JSON:
                 return std::make_shared< JSONIOHandler >( path, access );
@@ -102,5 +104,12 @@ namespace openPMD
                 throw std::runtime_error(
                     "Unknown file format! Did you specify a file ending?" );
         }
+    }
+
+    std::shared_ptr< AbstractIOHandler >
+    createIOHandler( std::string path, Access access, Format format )
+    {
+        return createIOHandler(
+            std::move( path ), access, format, nlohmann::json::object() );
     }
 } // namespace openPMD

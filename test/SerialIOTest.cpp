@@ -191,7 +191,7 @@ write_and_read_many_iterations( std::string const & ext ) {
         }
         // ~Series intentionally not yet called
 
-        Series read( filename, Access::READ_ONLY, "{}", true );
+        Series read( filename, Access::READ_ONLY, "{\"parse_lazily\": true}" );
         for( auto iteration : read.iterations )
         {
             iteration.second.open();
@@ -3483,7 +3483,7 @@ iterate_nonstreaming_series( std::string const & file )
         }
     }
 
-    Series readSeries( file, Access::READ_ONLY, "{}", true );
+    Series readSeries( file, Access::READ_ONLY, "{\"parse_lazily\": true}" );
 
     size_t last_iteration_index = 0;
     // conventionally written Series must be readable with streaming-aware API!
@@ -3687,7 +3687,9 @@ void lazy_parsing( std::string const & extension )
     }
     {
         Series series(
-            basename + "%T." + extension, Access::READ_ONLY, "{}", true );
+            basename + "%T." + extension,
+            Access::READ_ONLY,
+            "{\"parse_lazily\": true}" );
         auto dataset = series.iterations[ 1000 ]
             .open()
             .meshes[ "E" ][ "x" ]

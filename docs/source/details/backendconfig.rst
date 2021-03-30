@@ -1,7 +1,7 @@
 .. _backendconfig:
 
-Backend-Specific Configuration
-==============================
+JSON configuration
+==================
 
 While the openPMD API intends to be a backend-*independent* implementation of the openPMD standard, it is sometimes useful to pass configuration parameters to the specific backend in use.
 :ref:`For each backend <backends-overview>`, configuration options can be passed via a JSON-formatted string or via environment variables.
@@ -32,6 +32,18 @@ For a consistent user interface, backends shall follow the following rules:
 * If a setting is passed to a dataset that only makes sense globally (such as the storage engine), the setting should be ignored except for printing a warning.
   Backends should define clearly which keys are applicable to datasets and which are not.
 
+
+Backend-independent JSON configuration
+--------------------------------------
+
+The key ``parse_lazily`` can be used to optimize the process of opening an openPMD Series.
+By default, a Series is parsed eagerly, i.e. opening a Series implies reading all available iterations.
+Especially when a Series has many iterations, this can be a costly operation and users may wish to defer parsing of iterations to a later point adding ``{"parse_lazily": true}`` to their JSON configuration.
+
+If parsing lazily, each iteration needs to be explicitly opened with ``Iteration::open()`` before accessing.
+(Notice that Iteration::open() is generally recommended to be used in parallel contexts to avoid parallel file accessing hazards).
+Using the Streaming API (i.e. SeriesImpl::readIteration()) will do this automatically.
+Parsing eagerly might be very expensive for a Series with many iterations, but will avoid bugs by forgotten calls to ``Iteration::open()``.
 
 Configuration Structure per Backend
 -----------------------------------

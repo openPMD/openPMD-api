@@ -20,6 +20,7 @@
  */
 #include "openPMD/auxiliary/Date.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
@@ -406,6 +407,26 @@ SeriesImpl::parseInput(std::string filepath)
     input->name = cleanFilename(input->name, input->format);
 
     return input;
+}
+
+namespace
+{
+template< typename T >
+void getJsonOption(
+    nlohmann::json const & config, std::string const & key, T & dest )
+{
+    if( config.contains( key ) )
+    {
+        dest = config.at( key ).get< T >();
+    }
+}
+}
+
+template<>
+void SeriesImpl::parseJsonOptions< nlohmann::json >(
+    nlohmann::json const & options )
+{
+    getJsonOption( options, "parse_lazily", get().m_parseLazily );
 }
 
 void
@@ -1246,16 +1267,16 @@ SeriesInternal::SeriesInternal(
     std::string const & filepath,
     Access at,
     MPI_Comm comm,
-    std::string const & options,
-    bool parseLazily )
+    std::string const & options )
     : SeriesImpl{
           static_cast< internal::SeriesData * >( this ),
           static_cast< internal::AttributableData * >( this ) }
 {
-    m_parseLazily = parseLazily;
+    nlohmann::json optionsJson = auxiliary::parseOptions( options, comm );
+    parseJsonOptions( optionsJson );
     auto input = parseInput( filepath );
-    auto handler =
-        createIOHandler( input->path, at, input->format, comm, options );
+    auto handler = createIOHandler(
+        input->path, at, input->format, comm, std::move( optionsJson ) );
     init( handler, std::move( input ) );
 }
 #endif
@@ -1263,15 +1284,16 @@ SeriesInternal::SeriesInternal(
 SeriesInternal::SeriesInternal(
     std::string const & filepath,
     Access at,
-    std::string const & options,
-    bool parseLazily )
+    std::string const & options )
     : SeriesImpl{
           static_cast< internal::SeriesData * >( this ),
           static_cast< internal::AttributableData * >( this ) }
 {
-    m_parseLazily = parseLazily;
+    nlohmann::json optionsJson = auxiliary::parseOptions( options );
+    parseJsonOptions( optionsJson );
     auto input = parseInput( filepath );
-    auto handler = createIOHandler( input->path, at, input->format, options );
+    auto handler = createIOHandler(
+        input->path, at, input->format, std::move( optionsJson ) );
     init( handler, std::move( input ) );
 }
 
@@ -1298,11 +1320,10 @@ Series::Series(
     std::string const & filepath,
     Access at,
     MPI_Comm comm,
-    std::string const & options,
-    bool parseLazily )
+    std::string const & options )
     : SeriesImpl{ nullptr, nullptr }
     , m_series{ std::make_shared< internal::SeriesInternal >(
-          filepath, at, comm, options, parseLazily ) }
+          filepath, at, comm, options ) }
     , iterations{ m_series->iterations }
 {
     AttributableImpl::m_attri =
@@ -1314,11 +1335,10 @@ Series::Series(
 Series::Series(
     std::string const & filepath,
     Access at,
-    std::string const & options,
-    bool parseLazily )
+    std::string const & options)
     : SeriesImpl{ nullptr, nullptr }
     , m_series{ std::make_shared< internal::SeriesInternal >(
-          filepath, at, options, parseLazily ) }
+          filepath, at, options ) }
     , iterations{ m_series->iterations }
 {
     AttributableImpl::m_attri =

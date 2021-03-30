@@ -1602,6 +1602,7 @@ class APITest(unittest.TestCase):
         # write
         jsonConfig = """
 {
+  "parse_lazily": true,
   "adios2": {
     "engine": {
       "type": "bp4",
@@ -1635,7 +1636,6 @@ class APITest(unittest.TestCase):
             "../samples/unittest_serialIterator." + file_ending,
             io.Access_Type.read_only,
             jsonConfig,
-            parse_lazily=True
         )
         for it in read.read_iterations():
             lastIterationIndex = it.iteration_index
@@ -1684,7 +1684,7 @@ class APITest(unittest.TestCase):
         read = io.Series(
             name,
             io.Access_Type.read_only,
-            parse_lazily=True
+            options="{\"parse_lazily\": true}"
         )
 
         read.iterations[0].open()

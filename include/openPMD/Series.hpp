@@ -331,6 +331,9 @@ OPENPMD_private:
     }
 
     std::unique_ptr< ParsedInput > parseInput(std::string);
+    // use a template in order not to expose nlohmann_json to users
+    template< typename JSON >
+    void parseJsonOptions( JSON const & );
     void init(std::shared_ptr< AbstractIOHandler >, std::unique_ptr< ParsedInput >);
     void initDefaults();
     std::future< void > flush_impl(
@@ -396,15 +399,13 @@ public:
         std::string const & filepath,
         Access at,
         MPI_Comm comm,
-        std::string const & options = "{}",
-        bool parseLazily = false );
+        std::string const & options = "{}" );
 #endif
 
     SeriesInternal(
         std::string const & filepath,
         Access at,
-        std::string const & options = "{}",
-        bool parseLazily = false );
+        std::string const & options = "{}" );
     // @todo make AttributableImpl<>::linkHierarchy non-virtual
     virtual ~SeriesInternal();
 };
@@ -431,8 +432,7 @@ public:
         std::string const & filepath,
         Access at,
         MPI_Comm comm,
-        std::string const & options = "{}",
-        bool parseLazily = false );
+        std::string const & options = "{}" );
 #endif
 
     /**
@@ -443,22 +443,11 @@ public:
      * @param options Advanced backend configuration via JSON.
      *      May be specified as a JSON-formatted string directly, or as a path
      *      to a JSON textfile, prepended by an at sign '@'.
-     * @param parseLazily Whether to parse all iterations upon construction.
-     *      If parsing lazily, each iteration needs to be explicitly opened with
-     *      Iteration::open() before accessing.
-     *      (Notice that Iteration::open() is generally suggested to be used in
-     *      parallel contexts to avoid parallel file accessing hazards).
-     *      Using the Streaming API (i.e. SeriesImpl::readIteration()) will do
-     *      this automatically.
-     *      Parsing eagerly might be very expensive for a Series with many
-     *      iterations, but will avoid bugs by forgotten calls to
-     *      Iteration::open().
      */
     Series(
         std::string const & filepath,
         Access at,
-        std::string const & options = "{}",
-        bool parseLazily = false );
+        std::string const & options = "{}" );
 
     virtual ~Series() = default;
 
