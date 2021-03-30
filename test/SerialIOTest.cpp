@@ -191,7 +191,7 @@ write_and_read_many_iterations( std::string const & ext ) {
         }
         // ~Series intentionally not yet called
 
-        Series read( filename, Access::READ_ONLY, "{\"parse_lazily\": true}" );
+        Series read( filename, Access::READ_ONLY, "{\"defer_iteration_parsing\": true}" );
         for( auto iteration : read.iterations )
         {
             iteration.second.open();
@@ -3483,7 +3483,7 @@ iterate_nonstreaming_series( std::string const & file )
         }
     }
 
-    Series readSeries( file, Access::READ_ONLY, "{\"parse_lazily\": true}" );
+    Series readSeries( file, Access::READ_ONLY, "{\"defer_iteration_parsing\": true}" );
 
     size_t last_iteration_index = 0;
     // conventionally written Series must be readable with streaming-aware API!
@@ -3662,7 +3662,7 @@ TEST_CASE( "extend_dataset", "[serial]" )
 }
 
 
-void lazy_parsing( std::string const & extension )
+void deferred_parsing( std::string const & extension )
 {
     std::string const basename = "../samples/lazy_parsing/lazy_parsing_";
     // create a single iteration
@@ -3689,7 +3689,7 @@ void lazy_parsing( std::string const & extension )
         Series series(
             basename + "%T." + extension,
             Access::READ_ONLY,
-            "{\"parse_lazily\": true}" );
+            "{\"defer_iteration_parsing\": true}" );
         auto dataset = series.iterations[ 1000 ]
             .open()
             .meshes[ "E" ][ "x" ]
@@ -3704,10 +3704,10 @@ void lazy_parsing( std::string const & extension )
     }
 }
 
-TEST_CASE( "lazy_parsing", "[serial]" )
+TEST_CASE( "deferred_parsing", "[serial]" )
 {
     for( auto const & t : testedFileExtensions() )
     {
-        lazy_parsing( t );
+        deferred_parsing( t );
     }
 }

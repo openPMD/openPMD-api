@@ -426,7 +426,7 @@ template<>
 void SeriesImpl::parseJsonOptions< nlohmann::json >(
     nlohmann::json const & options )
 {
-    getJsonOption( options, "parse_lazily", get().m_parseLazily );
+    getJsonOption( options, "defer_iteration_parsing", get().m_parseLazily );
 }
 
 void
@@ -521,7 +521,8 @@ SeriesImpl::flushFileBased( iterations_iterator begin, iterations_iterator end )
     if( IOHandler()->m_frontendAccess == Access::READ_ONLY )
         for( auto it = begin; it != end; ++it )
         {
-            if( *it->second.m_closed == Iteration::CloseStatus::NotYetAccessed )
+            if( *it->second.m_closed
+                == Iteration::CloseStatus::ParseAccessDeferred )
             {
                 continue;
             }
@@ -569,7 +570,8 @@ SeriesImpl::flushFileBased( iterations_iterator begin, iterations_iterator end )
         bool allDirty = dirty();
         for( auto it = begin; it != end; ++it )
         {
-            if( *it->second.m_closed == Iteration::CloseStatus::NotYetAccessed )
+            if( *it->second.m_closed
+                == Iteration::CloseStatus::ParseAccessDeferred )
             {
                 continue;
             }
@@ -658,7 +660,8 @@ SeriesImpl::flushGroupBased( iterations_iterator begin, iterations_iterator end 
     if( IOHandler()->m_frontendAccess == Access::READ_ONLY )
         for( auto it = begin; it != end; ++it )
         {
-            if( *it->second.m_closed == Iteration::CloseStatus::NotYetAccessed )
+            if( *it->second.m_closed
+                == Iteration::CloseStatus::ParseAccessDeferred )
             {
                 continue;
             }
@@ -698,7 +701,8 @@ SeriesImpl::flushGroupBased( iterations_iterator begin, iterations_iterator end 
 
         for( auto it = begin; it != end; ++it )
         {
-            if( *it->second.m_closed == Iteration::CloseStatus::NotYetAccessed )
+            if( *it->second.m_closed
+                == Iteration::CloseStatus::ParseAccessDeferred )
             {
                 continue;
             }
@@ -785,7 +789,8 @@ SeriesImpl::readFileBased( )
         if( isContained )
         {
             Iteration & i = series.iterations[ iterationIndex ];
-            i.deferRead( { std::to_string( iterationIndex ), true, entry } );
+            i.deferParseAccess(
+                { std::to_string( iterationIndex ), true, entry } );
             // TODO skip if the padding is exact the number of chars in an iteration?
             paddings.insert(padding);
         }
@@ -803,7 +808,7 @@ SeriesImpl::readFileBased( )
 
     auto readIterationEagerly = []( Iteration & iteration )
     {
-        iteration.accessLazily();
+        iteration.runDeferredParseAccess();
         Parameter< Operation::CLOSE_FILE > fClose;
         iteration.IOHandler()->enqueue( IOTask( &iteration, fClose ) );
         iteration.IOHandler()->flush();
@@ -813,7 +818,8 @@ SeriesImpl::readFileBased( )
     {
         for( auto & iteration : series.iterations )
         {
-            *iteration.second.m_closed = Iteration::CloseStatus::NotYetAccessed;
+            *iteration.second.m_closed =
+                Iteration::CloseStatus::ParseAccessDeferred;
         }
         // open the last iteration, just to parse Series attributes
         auto getLastIteration = series.iterations.end();
@@ -987,7 +993,7 @@ SeriesImpl::readGroupBased( bool do_init )
             {
                 continue;
             }
-            if( *i.m_closed != Iteration::CloseStatus::NotYetAccessed )
+            if( *i.m_closed != Iteration::CloseStatus::ParseAccessDeferred )
             {
                 pOpen.path = it;
                 IOHandler()->enqueue( IOTask( &i, pOpen ) );
@@ -998,15 +1004,15 @@ SeriesImpl::readGroupBased( bool do_init )
         {
             // parse for the first time, resp. delay the parsing process
             Iteration & i = series.iterations[ std::stoull( it ) ];
-            i.deferRead( { it, false, "" } );
+            i.deferParseAccess( { it, false, "" } );
             if( !series.m_parseLazily )
             {
-                i.accessLazily();
+                i.runDeferredParseAccess();
                 *i.m_closed = Iteration::CloseStatus::Open;
             }
             else
             {
-                *i.m_closed = Iteration::CloseStatus::NotYetAccessed;
+                *i.m_closed = Iteration::CloseStatus::ParseAccessDeferred;
             }
         }
     }
@@ -1249,7 +1255,7 @@ SeriesImpl::openIteration( uint64_t index, Iteration iteration )
             throw std::runtime_error(
                 "[Series] Detected illegal access to iteration that "
                 "has been closed previously." );
-        case CL::NotYetAccessed:
+        case CL::ParseAccessDeferred:
         case CL::Open:
         case CL::ClosedTemporarily:
             *iteration.m_closed = CL::Open;

@@ -154,7 +154,7 @@ public:
 private:
     Iteration();
 
-    struct DeferredRead
+    struct DeferredParseAccess
     {
         std::string index;
         bool fileBased = false;
@@ -164,7 +164,7 @@ private:
     void flushFileBased(std::string const&, uint64_t);
     void flushGroupBased(uint64_t);
     void flush();
-    void deferRead( DeferredRead );
+    void deferParseAccess( DeferredParseAccess );
     /*
      * Control flow for read(), readFileBased(), readGroupBased() and
      * read_impl():
@@ -190,7 +190,7 @@ private:
      */
     enum class CloseStatus
     {
-        NotYetAccessed,   //!< The reader has not yet parsed this iteration
+        ParseAccessDeferred, //!< The reader has not yet parsed this iteration
         Open,             //!< Iteration has not been closed
         ClosedInFrontend, /*!< Iteration has been closed, but task has not yet
                                been propagated to the backend */
@@ -221,9 +221,10 @@ private:
     std::shared_ptr< StepStatus > m_stepStatus =
         std::make_shared< StepStatus >( StepStatus::NoStep );
 
-    std::shared_ptr< auxiliary::Option< DeferredRead > > m_deferredRead =
-        std::make_shared< auxiliary::Option< DeferredRead > >(
-            auxiliary::Option< DeferredRead >() );
+    std::shared_ptr< auxiliary::Option< DeferredParseAccess > >
+        m_deferredParseAccess =
+            std::make_shared< auxiliary::Option< DeferredParseAccess > >(
+                auxiliary::Option< DeferredParseAccess >() );
 
     /**
      * @brief Begin an IO step on the IO file (or file-like object)
@@ -289,7 +290,7 @@ private:
      *      parsed yet.
      * 
      */
-    void accessLazily();
+    void runDeferredParseAccess();
 };  // Iteration
 
 extern template

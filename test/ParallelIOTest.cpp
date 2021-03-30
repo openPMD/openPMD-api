@@ -695,7 +695,7 @@ file_based_write_read( std::string file_ending )
             name,
             Access::READ_ONLY,
             MPI_COMM_WORLD,
-            "{\"parse_lazily\": true}" );
+            "{\"defer_iteration_parsing\": true}" );
         Iteration it = read.iterations[ 30 ];
         it.open(); // collective
         if( mpi_rank == 0 ) // non-collective branch
@@ -909,7 +909,7 @@ adios2_streaming()
         Series readSeries(
             "../samples/adios2_stream.sst",
             Access::READ_ONLY,
-            "{\"parse_lazily\": true}" );
+            "{\"defer_iteration_parsing\": true}" );
 
         size_t last_iteration_index = 0;
         for( auto iteration : readSeries.readIterations() )

@@ -106,7 +106,7 @@ Iteration::close( bool _flush )
                 *m_closed = CloseStatus::ClosedInBackend;
             }
             break;
-        case CloseStatus::NotYetAccessed:
+        case CloseStatus::ParseAccessDeferred:
         case CloseStatus::ClosedInBackend:
             // just keep it like it is
             // (this means that closing an iteration that has not been parsed
@@ -146,11 +146,11 @@ Iteration::close( bool _flush )
 Iteration &
 Iteration::open()
 {
-    if( *m_closed == CloseStatus::NotYetAccessed )
+    if( *m_closed == CloseStatus::ParseAccessDeferred )
     {
         *m_closed = CloseStatus::Open;
     }
-    accessLazily();
+    runDeferredParseAccess();
     internal::SeriesInternal * s = &retrieveSeries();
     // figure out my iteration number
     auto begin = s->indexOf( *this );
@@ -169,7 +169,7 @@ Iteration::closed() const
 {
     switch( *m_closed )
     {
-        case CloseStatus::NotYetAccessed:
+        case CloseStatus::ParseAccessDeferred:
         case CloseStatus::Open:
         /*
          * Temporarily closing a file is something that the openPMD API
@@ -298,18 +298,19 @@ Iteration::flush()
     }
 }
 
-void Iteration::deferRead( DeferredRead dr )
+void Iteration::deferParseAccess( DeferredParseAccess dr )
 {
-    *m_deferredRead = auxiliary::makeOption< DeferredRead >( std::move( dr ) );
+    *m_deferredParseAccess =
+        auxiliary::makeOption< DeferredParseAccess >( std::move( dr ) );
 }
 
 void Iteration::read()
 {
-    if( !m_deferredRead->has_value() )
+    if( !m_deferredParseAccess->has_value() )
     {
         return;
     }
-    auto const & deferred = m_deferredRead->get();
+    auto const & deferred = m_deferredParseAccess->get();
     if( deferred.fileBased )
     {
         readFileBased( deferred.filename, deferred.index );
@@ -319,7 +320,7 @@ void Iteration::read()
         readGroupBased( deferred.index );
     }
     // reset this thing
-    *m_deferredRead = auxiliary::Option< DeferredRead >();
+    *m_deferredParseAccess = auxiliary::Option< DeferredParseAccess >();
 }
 
 void Iteration::readFileBased(
@@ -619,7 +620,7 @@ Iteration::linkHierarchy(Writable& w)
     particles.linkHierarchy(this->writable());
 }
 
-void Iteration::accessLazily()
+void Iteration::runDeferredParseAccess()
 {
     if( IOHandler()->m_frontendAccess == Access::CREATE )
     {

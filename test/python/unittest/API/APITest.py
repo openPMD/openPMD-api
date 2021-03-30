@@ -1602,7 +1602,7 @@ class APITest(unittest.TestCase):
         # write
         jsonConfig = """
 {
-  "parse_lazily": true,
+  "defer_iteration_parsing": true,
   "adios2": {
     "engine": {
       "type": "bp4",
@@ -1684,7 +1684,7 @@ class APITest(unittest.TestCase):
         read = io.Series(
             name,
             io.Access_Type.read_only,
-            options="{\"parse_lazily\": true}"
+            options="{\"defer_iteration_parsing\": true}"
         )
 
         read.iterations[0].open()
