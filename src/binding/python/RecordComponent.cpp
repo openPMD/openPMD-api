@@ -409,7 +409,7 @@ GetCurrentView::operator()< std::string >( PythonDynamicMemoryView const & )
 
 pybind11::memoryview PythonDynamicMemoryView::currentView() const
 {
-    static GetCurrentView cv;
+    static GetCurrentView const cv;
     return switchNonVectorType( m_datatype, cv, *this );
 }
 
