@@ -174,9 +174,8 @@ public:
      */
     template< typename T >
     std::shared_ptr< T > loadChunk(
-        Offset = {0u},
-        Extent = {-1u},
-        double targetUnitSI = std::numeric_limits< double >::quiet_NaN() );
+        Offset = { 0u },
+        Extent = { -1u } );
 
     /** Load a chunk of data into pre-allocated memory
      *
@@ -191,8 +190,7 @@ public:
     void loadChunk(
         std::shared_ptr< T >,
         Offset,
-        Extent,
-        double targetUnitSI = std::numeric_limits< double >::quiet_NaN() );
+        Extent );
 
     template< typename T >
     void storeChunk(std::shared_ptr< T >, Offset, Extent);
@@ -273,8 +271,8 @@ RecordComponent::makeEmpty( uint8_t dimensions )
 }
 
 template< typename T >
-inline std::shared_ptr< T >
-RecordComponent::loadChunk(Offset o, Extent e, double targetUnitSI)
+inline std::shared_ptr< T > RecordComponent::loadChunk(
+    Offset o, Extent e )
 {
     uint8_t dim = getDimensionality();
 
@@ -300,16 +298,16 @@ RecordComponent::loadChunk(Offset o, Extent e, double targetUnitSI)
         numPoints *= dimensionSize;
 
     auto newData = std::shared_ptr<T>(new T[numPoints], []( T *p ){ delete [] p; });
-    loadChunk(newData, offset, extent, targetUnitSI);
+    loadChunk(newData, offset, extent);
     return newData;
 }
 
 template< typename T >
-inline void
-RecordComponent::loadChunk(std::shared_ptr< T > data, Offset o, Extent e, double targetUnitSI)
+inline void RecordComponent::loadChunk(
+    std::shared_ptr< T > data,
+    Offset o,
+    Extent e )
 {
-    if( !std::isnan(targetUnitSI) )
-        throw std::runtime_error("unitSI scaling during chunk loading not yet implemented");
     Datatype dtype = determineDatatype(data);
     if( dtype != getDatatype() )
         if( !isSameInteger< T >( dtype ) &&
