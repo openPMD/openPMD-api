@@ -54,6 +54,7 @@ namespace openPMD {}
 
 #include "openPMD/auxiliary/Date.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
+#include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/auxiliary/OutOfRangeMsg.hpp"
 #include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
