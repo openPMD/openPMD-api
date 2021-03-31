@@ -297,6 +297,7 @@ jobs:
         cmake -S .. -B . \
           -DCMAKE_C_COMPILER=$(which icx)    \
           -DCMAKE_CXX_COMPILER=$(which icpx) \
+          -DCMAKE_VERBOSE_MAKEFILES=ON       \
           -DopenPMD_USE_PYTHON=OFF           \
           -DopenPMD_USE_MPI=OFF              \
           -DCMAKE_C_COMPILER_ID="Clang"                  \
