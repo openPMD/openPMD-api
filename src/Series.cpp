@@ -409,29 +409,9 @@ SeriesImpl::parseInput(std::string filepath)
     return input;
 }
 
-namespace
-{
-template< typename T >
-void getJsonOption(
-    nlohmann::json const & config, std::string const & key, T & dest )
-{
-    if( config.contains( key ) )
-    {
-        dest = config.at( key ).get< T >();
-    }
-}
-}
-
-template<>
-void SeriesImpl::parseJsonOptions< nlohmann::json >(
-    nlohmann::json const & options )
-{
-    getJsonOption( options, "defer_iteration_parsing", get().m_parseLazily );
-}
-
-void
-SeriesImpl::init(std::shared_ptr< AbstractIOHandler > ioHandler,
-             std::unique_ptr< SeriesImpl::ParsedInput > input)
+void SeriesImpl::init(
+    std::shared_ptr< AbstractIOHandler > ioHandler,
+    std::unique_ptr< SeriesImpl::ParsedInput > input )
 {
     auto & series = get();
     writable().IOHandler = ioHandler;
@@ -1266,6 +1246,25 @@ SeriesImpl::openIteration( uint64_t index, Iteration iteration )
         }
 }
 
+namespace
+{
+template< typename T >
+void getJsonOption(
+    nlohmann::json const & config, std::string const & key, T & dest )
+{
+    if( config.contains( key ) )
+    {
+        dest = config.at( key ).get< T >();
+    }
+}
+
+void parseJsonOptions(
+    internal::SeriesData & series, nlohmann::json const & options )
+{
+    getJsonOption( options, "defer_iteration_parsing", series.m_parseLazily );
+}
+}
+
 namespace internal
 {
 #if openPMD_HAVE_MPI
@@ -1279,7 +1278,7 @@ SeriesInternal::SeriesInternal(
           static_cast< internal::AttributableData * >( this ) }
 {
     nlohmann::json optionsJson = auxiliary::parseOptions( options, comm );
-    parseJsonOptions( optionsJson );
+    parseJsonOptions( *this, optionsJson );
     auto input = parseInput( filepath );
     auto handler = createIOHandler(
         input->path, at, input->format, comm, std::move( optionsJson ) );
@@ -1288,15 +1287,13 @@ SeriesInternal::SeriesInternal(
 #endif
 
 SeriesInternal::SeriesInternal(
-    std::string const & filepath,
-    Access at,
-    std::string const & options )
+    std::string const & filepath, Access at, std::string const & options )
     : SeriesImpl{
           static_cast< internal::SeriesData * >( this ),
           static_cast< internal::AttributableData * >( this ) }
 {
     nlohmann::json optionsJson = auxiliary::parseOptions( options );
-    parseJsonOptions( optionsJson );
+    parseJsonOptions( *this, optionsJson );
     auto input = parseInput( filepath );
     auto handler = createIOHandler(
         input->path, at, input->format, std::move( optionsJson ) );

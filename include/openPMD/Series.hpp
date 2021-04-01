@@ -66,11 +66,6 @@ namespace internal
  */
 class SeriesData : public AttributableData
 {
-    friend class openPMD::SeriesImpl;
-    friend class openPMD::Iteration;
-    friend class openPMD::Series;
-    friend class SeriesInternal;
-
 public:
     explicit SeriesData() = default;
 
@@ -84,7 +79,6 @@ public:
 
     Container< Iteration, uint64_t > iterations{};
 
-OPENPMD_private :
     auxiliary::Option< WriteIterations > m_writeIterations;
     auxiliary::Option< std::string > m_overrideFilebasedFilename;
     std::string m_name;
@@ -331,9 +325,6 @@ OPENPMD_private:
     }
 
     std::unique_ptr< ParsedInput > parseInput(std::string);
-    // use a template in order not to expose nlohmann_json to users
-    template< typename JSON >
-    void parseJsonOptions( JSON const & );
     void init(std::shared_ptr< AbstractIOHandler >, std::unique_ptr< ParsedInput >);
     void initDefaults();
     std::future< void > flush_impl(
@@ -392,6 +383,9 @@ namespace internal
 class SeriesInternal : public SeriesData, public SeriesImpl
 {
     friend struct SeriesShared;
+    friend class openPMD::Iteration;
+    friend class openPMD::Series;
+    friend class openPMD::Writable;
 
 public:
 #if openPMD_HAVE_MPI
