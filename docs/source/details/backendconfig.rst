@@ -41,9 +41,10 @@ By default, a Series is parsed eagerly, i.e. opening a Series implies reading al
 Especially when a Series has many iterations, this can be a costly operation and users may wish to defer parsing of iterations to a later point adding ``{"defer_iteration_parsing": true}`` to their JSON configuration.
 
 When parsing non-eagerly, each iteration needs to be explicitly opened with ``Iteration::open()`` before accessing.
-(Notice that Iteration::open() is generally recommended to be used in parallel contexts to avoid parallel file accessing hazards).
-Using the Streaming API (i.e. SeriesImpl::readIteration()) will do this automatically.
+(Notice that ``Iteration::open()`` is generally recommended to be used in parallel contexts to avoid parallel file accessing hazards).
+Using the Streaming API (i.e. ``SeriesImpl::readIteration()``) will do this automatically.
 Parsing eagerly might be very expensive for a Series with many iterations, but will avoid bugs by forgotten calls to ``Iteration::open()``.
+In complex environments, calling ``Iteration::open()`` on an already open environment does no harm (and does not incur additional runtime cost for additional ``open()`` calls).
 
 Configuration Structure per Backend
 -----------------------------------

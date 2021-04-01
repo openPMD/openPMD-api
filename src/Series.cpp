@@ -50,11 +50,12 @@ namespace
      */
     std::string cleanFilename(std::string const &filename, Format f);
 
+    /** Compound return type for regex matching of filenames */
     struct Match
     {
-        bool isContained{};
-        int padding{};
-        uint64_t iteration{};
+        bool isContained{}; //! pattern match successful
+        int padding{}; //! number of zeros used for padding of iteration
+        uint64_t iteration{}; //! iteration found in regex pattern (default: 0)
 
         // support for std::tie
         operator std::tuple< bool &, int &, uint64_t & >()

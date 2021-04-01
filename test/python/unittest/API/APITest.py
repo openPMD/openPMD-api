@@ -1635,7 +1635,7 @@ class APITest(unittest.TestCase):
         read = io.Series(
             "../samples/unittest_serialIterator." + file_ending,
             io.Access_Type.read_only,
-            jsonConfig,
+            jsonConfig
         )
         for it in read.read_iterations():
             lastIterationIndex = it.iteration_index
