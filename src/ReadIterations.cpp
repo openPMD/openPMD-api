@@ -177,7 +177,7 @@ bool SeriesIterator::operator!=( SeriesIterator const & other ) const
 
 SeriesIterator SeriesIterator::end()
 {
-    return {};
+    return SeriesIterator{};
 }
 
 ReadIterations::ReadIterations( Series series )

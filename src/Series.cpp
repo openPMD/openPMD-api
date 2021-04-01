@@ -1319,6 +1319,10 @@ SeriesInternal::~SeriesInternal()
 }
 } // namespace internal
 
+Series::Series() : SeriesImpl{ nullptr, nullptr }, iterations{}
+{
+}
+
 #if openPMD_HAVE_MPI
 Series::Series(
     std::string const & filepath,
@@ -1348,6 +1352,11 @@ Series::Series(
     AttributableImpl::m_attri =
         static_cast< internal::AttributableData * >( m_series.get() );
     SeriesImpl::m_series = m_series.get();
+}
+
+Series::operator bool() const
+{
+    return m_series.operator bool();
 }
 
 ReadIterations Series::readIterations()

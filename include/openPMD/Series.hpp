@@ -421,6 +421,8 @@ private:
     std::shared_ptr< internal::SeriesInternal > m_series;
 
 public:
+    explicit Series();
+
 #if openPMD_HAVE_MPI
     Series(
         std::string const & filepath,
@@ -446,6 +448,14 @@ public:
     virtual ~Series() = default;
 
     Container< Iteration, uint64_t > iterations;
+
+    /**
+     * @brief Is this a usable Series object?
+     *
+     * @return true If a Series has been opened for reading and/or writing.
+     * @return false If the object has been default-constructed.
+     */
+    operator bool() const;
 
     /**
      * @brief Entry point to the reading end of the streaming API.
