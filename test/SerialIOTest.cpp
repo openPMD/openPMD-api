@@ -191,9 +191,12 @@ write_and_read_many_iterations( std::string const & ext ) {
         }
         // ~Series intentionally not yet called
 
-        Series read(filename, Access::READ_ONLY);
-        for (auto iteration : read.iterations) {
-            // std::cout << "Reading iteration " << iteration.first << std::endl;
+        Series read( filename, Access::READ_ONLY, "{\"defer_iteration_parsing\": true}" );
+        for( auto iteration : read.iterations )
+        {
+            iteration.second.open();
+            // std::cout << "Reading iteration " << iteration.first <<
+            // std::endl;
             auto E_x = iteration.second.meshes["E"]["x"];
             auto chunk = E_x.loadChunk<float>({0}, {10});
             iteration.second.close();
@@ -3480,12 +3483,13 @@ iterate_nonstreaming_series( std::string const & file )
         }
     }
 
-    Series readSeries( file, Access::READ_ONLY );
+    Series readSeries( file, Access::READ_ONLY, "{\"defer_iteration_parsing\": true}" );
 
     size_t last_iteration_index = 0;
     // conventionally written Series must be readable with streaming-aware API!
     for( auto iteration : readSeries.readIterations() )
     {
+        // ReadIterations takes care of Iteration::open()ing iterations
         auto E_x = iteration.meshes[ "E" ][ "x" ];
         REQUIRE( E_x.getDimensionality() == 1 );
         REQUIRE( E_x.getExtent()[ 0 ] == extent );
@@ -3655,4 +3659,55 @@ TEST_CASE( "extend_dataset", "[serial]" )
 #if openPMD_HAVE_HDF5
     // extendDataset( "h5" );
 #endif
+}
+
+
+void deferred_parsing( std::string const & extension )
+{
+    std::string const basename = "../samples/lazy_parsing/lazy_parsing_";
+    // create a single iteration
+    {
+        Series series( basename + "%T." + extension, Access::CREATE );
+        std::vector< float > buffer( 20 );
+        std::iota( buffer.begin(), buffer.end(), 0.f );
+        auto dataset = series.iterations[ 1000 ].meshes[ "E" ][ "x" ];
+        dataset.resetDataset( { Datatype::FLOAT, { 20 } } );
+        dataset.storeChunk( buffer, { 0 }, { 20 } );
+        series.flush();
+    }
+    // create some empty pseudo files
+    // if the reader tries accessing them it's game over
+    {
+        for( size_t i = 0; i < 1000; i += 100 )
+        {
+            std::ofstream file;
+            file.open( basename + std::to_string( i ) + "." + extension );
+            file.close();
+        }
+    }
+    {
+        Series series(
+            basename + "%T." + extension,
+            Access::READ_ONLY,
+            "{\"defer_iteration_parsing\": true}" );
+        auto dataset = series.iterations[ 1000 ]
+            .open()
+            .meshes[ "E" ][ "x" ]
+            .loadChunk< float >( { 0 }, { 20 } );
+        series.flush();
+        for( size_t i = 0; i < 20; ++i )
+        {
+            REQUIRE(
+                std::abs( dataset.get()[ i ] - float( i ) ) <=
+                std::numeric_limits< float >::epsilon() );
+        }
+    }
+}
+
+TEST_CASE( "deferred_parsing", "[serial]" )
+{
+    for( auto const & t : testedFileExtensions() )
+    {
+        deferred_parsing( t );
+    }
 }

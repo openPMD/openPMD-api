@@ -1602,6 +1602,7 @@ class APITest(unittest.TestCase):
         # write
         jsonConfig = """
 {
+  "defer_iteration_parsing": true,
   "adios2": {
     "engine": {
       "type": "bp4",
@@ -1682,9 +1683,11 @@ class APITest(unittest.TestCase):
 
         read = io.Series(
             name,
-            io.Access_Type.read_only
+            io.Access_Type.read_only,
+            options='{"defer_iteration_parsing": true}'
         )
 
+        read.iterations[0].open()
         chunks = read.iterations[0].meshes["E"]["x"].available_chunks()
         chunks = sorted(chunks, key=lambda chunk: chunk.offset)
         for chunk in chunks:

@@ -41,7 +41,43 @@ SeriesIterator::SeriesIterator( Series series )
     }
     else
     {
-        auto status = it->second.beginStep();
+        auto openIteration = [ &it ]()
+        {
+            /*
+             * @todo
+             * Is that really clean?
+             * Use case: See Python ApiTest testListSeries:
+             * Call listSeries twice.
+             */
+            if( *it->second.m_closed !=
+                Iteration::CloseStatus::ClosedInBackend )
+            {
+                it->second.open();
+            }
+        };
+        AdvanceStatus status{};
+        switch( series.iterationEncoding() )
+        {
+        case IterationEncoding::fileBased:
+            /*
+             * The file needs to be accessed before beginning a step upon it.
+             * In file-based iteration layout it maybe is not accessed yet,
+             * so do that now. There is only one step per file, so beginning
+             * the step after parsing the file is ok.
+             */
+            openIteration();
+            status = it->second.beginStep();
+            break;
+        default:
+            /*
+             * In group-based iteration layout, we have definitely already had
+             * access to the file until now. Better to begin a step right away,
+             * otherwise we might get another step's data.
+             */
+            status = it->second.beginStep();
+            openIteration();
+            break;
+        }
         if( status == AdvanceStatus::OVER )
         {
             *this = end();
@@ -98,6 +134,10 @@ SeriesIterator & SeriesIterator::operator++()
         return *this;
     }
     m_currentIteration = it->first;
+    if( *it->second.m_closed != Iteration::CloseStatus::ClosedInBackend )
+    {
+        it->second.open();
+    }
     switch( series.iterationEncoding() )
     {
         using IE = IterationEncoding;

@@ -66,10 +66,6 @@ namespace internal
  */
 class SeriesData : public AttributableData
 {
-    friend class openPMD::SeriesImpl;
-    friend class openPMD::Iteration;
-    friend class openPMD::Series;
-
 public:
     explicit SeriesData() = default;
 
@@ -83,8 +79,8 @@ public:
 
     Container< Iteration, uint64_t > iterations{};
 
-OPENPMD_private :
     auxiliary::Option< WriteIterations > m_writeIterations;
+    auxiliary::Option< std::string > m_overrideFilebasedFilename;
     std::string m_name;
     std::string m_filenamePrefix;
     std::string m_filenamePostfix;
@@ -99,6 +95,7 @@ OPENPMD_private :
      * one among both flags.
      */
     StepStatus m_stepStatus = StepStatus::NoStep;
+    bool m_parseLazily = false;
 }; // SeriesData
 
 class SeriesInternal;
@@ -337,6 +334,7 @@ OPENPMD_private:
     void flushMeshesPath();
     void flushParticlesPath();
     void readFileBased( );
+    void readOneIterationFileBased( std::string const & filePath );
     /**
      * Note on re-parsing of a Series:
      * If init == false, the parsing process will seek for new
@@ -347,7 +345,6 @@ OPENPMD_private:
      */
     void readGroupBased( bool init = true );
     void readBase();
-    void read();
     std::string iterationFilename( uint64_t i );
     void openIteration( uint64_t index, Iteration iteration );
 
@@ -386,6 +383,9 @@ namespace internal
 class SeriesInternal : public SeriesData, public SeriesImpl
 {
     friend struct SeriesShared;
+    friend class openPMD::Iteration;
+    friend class openPMD::Series;
+    friend class openPMD::Writable;
 
 public:
 #if openPMD_HAVE_MPI
@@ -409,6 +409,9 @@ public:
  *
  * Entry point and common link between all iterations of particle and mesh data.
  *
+ * An instance can be created either directly via the given constructors or via
+ * the SeriesBuilder class.
+ *
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series
  */
@@ -426,6 +429,15 @@ public:
         std::string const & options = "{}" );
 #endif
 
+    /**
+     * @brief Construct a new Series
+     *
+     * @param filepath The backend will be determined by the filepath extension.
+     * @param at Access mode.
+     * @param options Advanced backend configuration via JSON.
+     *      May be specified as a JSON-formatted string directly, or as a path
+     *      to a JSON textfile, prepended by an at sign '@'.
+     */
     Series(
         std::string const & filepath,
         Access at,

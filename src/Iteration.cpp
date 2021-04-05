@@ -106,11 +106,12 @@ Iteration::close( bool _flush )
                 *m_closed = CloseStatus::ClosedInBackend;
             }
             break;
+        case CloseStatus::ParseAccessDeferred:
         case CloseStatus::ClosedInBackend:
             // just keep it like it is
+            // (this means that closing an iteration that has not been parsed
+            // yet keeps it re-openable)
             break;
-        default:
-            throw std::runtime_error( "Unreachable!" );
     }
     if( _flush )
     {
@@ -145,6 +146,11 @@ Iteration::close( bool _flush )
 Iteration &
 Iteration::open()
 {
+    if( *m_closed == CloseStatus::ParseAccessDeferred )
+    {
+        *m_closed = CloseStatus::Open;
+    }
+    runDeferredParseAccess();
     internal::SeriesInternal * s = &retrieveSeries();
     // figure out my iteration number
     auto begin = s->indexOf( *this );
@@ -163,6 +169,7 @@ Iteration::closed() const
 {
     switch( *m_closed )
     {
+        case CloseStatus::ParseAccessDeferred:
         case CloseStatus::Open:
         /*
          * Temporarily closing a file is something that the openPMD API
@@ -291,9 +298,53 @@ Iteration::flush()
     }
 }
 
-void
-Iteration::read()
+void Iteration::deferParseAccess( DeferredParseAccess dr )
 {
+    *m_deferredParseAccess =
+        auxiliary::makeOption< DeferredParseAccess >( std::move( dr ) );
+}
+
+void Iteration::read()
+{
+    if( !m_deferredParseAccess->has_value() )
+    {
+        return;
+    }
+    auto const & deferred = m_deferredParseAccess->get();
+    if( deferred.fileBased )
+    {
+        readFileBased( deferred.filename, deferred.index );
+    }
+    else
+    {
+        readGroupBased( deferred.index );
+    }
+    // reset this thing
+    *m_deferredParseAccess = auxiliary::Option< DeferredParseAccess >();
+}
+
+void Iteration::readFileBased(
+    std::string filePath, std::string const & groupPath )
+{
+    auto & series = retrieveSeries();
+
+    series.readOneIterationFileBased( filePath );
+
+    read_impl( groupPath );
+}
+
+void Iteration::readGroupBased( std::string const & groupPath )
+{
+
+    read_impl(groupPath );
+}
+
+void Iteration::read_impl( std::string const & groupPath )
+{
+    Parameter< Operation::OPEN_PATH > pOpen;
+    pOpen.path = groupPath;
+    IOHandler()->enqueue( IOTask( this, pOpen ) );
+
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
 
@@ -356,7 +407,6 @@ Iteration::read()
 
     if( hasMeshes )
     {
-        Parameter< Operation::OPEN_PATH > pOpen;
         pOpen.path = s->meshesPath();
         IOHandler()->enqueue(IOTask(&meshes, pOpen));
 
@@ -416,7 +466,6 @@ Iteration::read()
 
     if( hasParticles )
     {
-        Parameter< Operation::OPEN_PATH > pOpen;
         pOpen.path = s->particlesPath();
         IOHandler()->enqueue(IOTask(&particles, pOpen));
 
@@ -569,6 +618,28 @@ Iteration::linkHierarchy(Writable& w)
     AttributableImpl::linkHierarchy(w);
     meshes.linkHierarchy(this->writable());
     particles.linkHierarchy(this->writable());
+}
+
+void Iteration::runDeferredParseAccess()
+{
+    if( IOHandler()->m_frontendAccess == Access::CREATE )
+    {
+        return;
+    }
+    auto oldAccess = IOHandler()->m_frontendAccess;
+    auto newAccess =
+        const_cast< Access * >( &IOHandler()->m_frontendAccess );
+    *newAccess = Access::READ_WRITE;
+    try
+    {
+        read();
+    }
+    catch( ... )
+    {
+        *newAccess = oldAccess;
+        throw;
+    }
+    *newAccess = oldAccess;
 }
 
 template float

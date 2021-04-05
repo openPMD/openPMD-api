@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
@@ -153,10 +154,35 @@ public:
 private:
     Iteration();
 
+    struct DeferredParseAccess
+    {
+        std::string index;
+        bool fileBased = false;
+        std::string filename;
+    };
+
     void flushFileBased(std::string const&, uint64_t);
     void flushGroupBased(uint64_t);
     void flush();
+    void deferParseAccess( DeferredParseAccess );
+    /*
+     * Control flow for read(), readFileBased(), readGroupBased() and
+     * read_impl():
+     * read() is called as the entry point. File-based and group-based
+     * iteration layouts need to be parsed slightly differently:
+     * In file-based iteration layout, each iteration's file also contains
+     * attributes for the /data group. In group-based layout, those have
+     * already been parsed during opening of the Series.
+     * Hence, read() will call either readFileBased() or readGroupBased() to
+     * allow for those different control flows.
+     * Finally, read_impl() is called which contains the common parsing
+     * logic for an iteration.
+     *
+     */
     void read();
+    void readFileBased( std::string filePath, std::string const & groupPath );
+    void readGroupBased( std::string const & groupPath );
+    void read_impl( std::string const & groupPath );
 
     /**
      * @brief Whether an iteration has been closed yet.
@@ -164,11 +190,12 @@ private:
      */
     enum class CloseStatus
     {
+        ParseAccessDeferred, //!< The reader has not yet parsed this iteration
         Open,             //!< Iteration has not been closed
         ClosedInFrontend, /*!< Iteration has been closed, but task has not yet
                                been propagated to the backend */
-        ClosedInBackend,  /*!< Iteration has been closed and task has been
-                               propagated to the backend */
+        ClosedInBackend, /*!< Iteration has been closed and task has been
+                              propagated to the backend */
         ClosedTemporarily /*!< Iteration has been closed internally and may
                                be reopened later */
     };
@@ -193,6 +220,11 @@ private:
      */
     std::shared_ptr< StepStatus > m_stepStatus =
         std::make_shared< StepStatus >( StepStatus::NoStep );
+
+    std::shared_ptr< auxiliary::Option< DeferredParseAccess > >
+        m_deferredParseAccess =
+            std::make_shared< auxiliary::Option< DeferredParseAccess > >(
+                auxiliary::Option< DeferredParseAccess >() );
 
     /**
      * @brief Begin an IO step on the IO file (or file-like object)
@@ -252,6 +284,13 @@ private:
      * @param w The Writable representing the parent.
      */
     virtual void linkHierarchy(Writable& w);
+
+    /**
+     * @brief Access an iteration in read mode that has potentially not been
+     *      parsed yet.
+     * 
+     */
+    void runDeferredParseAccess();
 };  // Iteration
 
 extern template
