@@ -1684,7 +1684,7 @@ class APITest(unittest.TestCase):
         read = io.Series(
             name,
             io.Access_Type.read_only,
-            options="{\"defer_iteration_parsing\": true}"
+            options='{"defer_iteration_parsing": true}'
         )
 
         read.iterations[0].open()
