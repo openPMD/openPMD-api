@@ -5,6 +5,7 @@ Copyright 2021 openPMD contributors
 Authors: Axel Huebl
 License: LGPLv3+
 """
+import math
 import numpy as np
 try:
     import pandas as pd
@@ -59,6 +60,8 @@ def particles_to_dataframe(particle_species, slice=None):
                 column_name = record_name + "_" + rc_name
             columns[column_name] = rc[slice]
             particle_species.series_flush()
-            columns[column_name] *= rc.unit_SI
+            if not math.isclose(1.0, rc.unit_SI):
+                columns[column_name] = np.multiply(
+                    columns[column_name], rc.unit_SI)
 
     return pd.DataFrame(columns)
