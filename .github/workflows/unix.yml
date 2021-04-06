@@ -255,7 +255,6 @@ jobs:
       run: |
         mkdir build && cd build
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
-        find /usr -name adios.pc
         cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build . --parallel 2
         ctest --output-on-failure
