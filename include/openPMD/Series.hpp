@@ -312,17 +312,32 @@ OPENPMD_private:
     using iterations_t = decltype(internal::SeriesData::iterations);
     using iterations_iterator = iterations_t::iterator;
 
-    internal::SeriesData * m_series;
+    internal::SeriesData * m_series = nullptr;
 
     inline internal::SeriesData & get()
     {
-        return *m_series;
+        if( m_series )
+        {
+            return *m_series;
+        }
+        else
+        {
+            throw std::runtime_error(
+                "[Series] Cannot use default-constructed Series." );
+        }
     }
 
     inline internal::SeriesData const & get() const
     {
-        return *m_series;
-    }
+        if( m_series )
+        {
+            return *m_series;
+        }
+        else
+        {
+            throw std::runtime_error(
+                "[Series] Cannot use default-constructed Series." );
+        }    }
 
     std::unique_ptr< ParsedInput > parseInput(std::string);
     void init(std::shared_ptr< AbstractIOHandler >, std::unique_ptr< ParsedInput >);
