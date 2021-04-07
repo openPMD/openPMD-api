@@ -110,7 +110,7 @@ class AttributableImpl
     friend class Writable;
 
 protected:
-    internal::AttributableData * m_attri;
+    internal::AttributableData * m_attri = nullptr;
 
     // Should not be called publicly, only by implementing classes
     AttributableImpl( internal::AttributableData * );
@@ -269,12 +269,30 @@ OPENPMD_protected:
     inline
     internal::AttributableData & get()
     {
-        return *m_attri;
+        if( m_attri )
+        {
+            return *m_attri;
+        }
+        else
+        {
+            throw std::runtime_error(
+                "[AttributableImpl] "
+                "Cannot use default-constructed Attributable." );
+        }
     }
     inline
     internal::AttributableData const & get() const
     {
-        return *m_attri;
+        if( m_attri )
+        {
+            return *m_attri;
+        }
+        else
+        {
+            throw std::runtime_error(
+                "[AttributableImpl] "
+                "Cannot use default-constructed Attributable." );
+        }
     }
 
     bool dirty() const { return writable().dirty; }

@@ -81,8 +81,9 @@ class Container : public LegacyAttributable
 
     friend class Iteration;
     friend class ParticleSpecies;
-    friend class SeriesImpl;
     friend class internal::SeriesData;
+    friend class SeriesImpl;
+    friend class Series;
 
 public:
     using key_type = typename InternalContainer::key_type;

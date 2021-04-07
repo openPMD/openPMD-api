@@ -56,10 +56,10 @@ class SeriesIterator
     maybe_series_t m_series;
     iteration_index_t m_currentIteration = 0;
 
-    //! construct the end() iterator
-    SeriesIterator();
-
 public:
+    //! construct the end() iterator
+    explicit SeriesIterator();
+
     SeriesIterator( Series );
 
     SeriesIterator & operator++();

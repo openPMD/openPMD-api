@@ -312,17 +312,32 @@ OPENPMD_private:
     using iterations_t = decltype(internal::SeriesData::iterations);
     using iterations_iterator = iterations_t::iterator;
 
-    internal::SeriesData * m_series;
+    internal::SeriesData * m_series = nullptr;
 
     inline internal::SeriesData & get()
     {
-        return *m_series;
+        if( m_series )
+        {
+            return *m_series;
+        }
+        else
+        {
+            throw std::runtime_error(
+                "[Series] Cannot use default-constructed Series." );
+        }
     }
 
     inline internal::SeriesData const & get() const
     {
-        return *m_series;
-    }
+        if( m_series )
+        {
+            return *m_series;
+        }
+        else
+        {
+            throw std::runtime_error(
+                "[Series] Cannot use default-constructed Series." );
+        }    }
 
     std::unique_ptr< ParsedInput > parseInput(std::string);
     void init(std::shared_ptr< AbstractIOHandler >, std::unique_ptr< ParsedInput >);
@@ -421,6 +436,8 @@ private:
     std::shared_ptr< internal::SeriesInternal > m_series;
 
 public:
+    explicit Series();
+
 #if openPMD_HAVE_MPI
     Series(
         std::string const & filepath,
@@ -446,6 +463,14 @@ public:
     virtual ~Series() = default;
 
     Container< Iteration, uint64_t > iterations;
+
+    /**
+     * @brief Is this a usable Series object?
+     *
+     * @return true If a Series has been opened for reading and/or writing.
+     * @return false If the object has been default-constructed.
+     */
+    operator bool() const;
 
     /**
      * @brief Entry point to the reading end of the streaming API.
