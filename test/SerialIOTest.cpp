@@ -3519,6 +3519,8 @@ variableBasedSeries( std::string const & file )
             std::vector< int > data( 1000, i );
             E_x.storeChunk( data, { 0 }, { 1000 } );
 
+            // this tests changing extents and dimensionalities
+            // across iterations
             auto E_y = iteration.meshes[ "E" ][ "y" ];
             unsigned dimensionality = i % 3 + 1;
             unsigned len = i + 1;
@@ -3528,6 +3530,12 @@ variableBasedSeries( std::string const & file )
                 std::pow( len, dimensionality ), dimensionality );
             E_y.storeChunk(
                 changingData, Offset( dimensionality, 0 ), changingExtent );
+
+            // this tests datasets that are present in one iteration, but not
+            // in others
+            auto E_z = iteration.meshes[ "E" ][ std::to_string( i ) ];
+            E_z.resetDataset( { Datatype::INT, { 1 } } );
+            E_z.makeConstant( i );
             iteration.close();
         }
     }
@@ -3558,6 +3566,24 @@ variableBasedSeries( std::string const & file )
             unsigned len = iteration.iterationIndex + 1;
             Extent changingExtent( dimensionality, len );
             REQUIRE( E_y.getExtent() == changingExtent );
+
+            // this loop ensures that only the recordcomponent ["E"]["i"] is
+            // present where i == iteration.iterationIndex
+            for( uint64_t otherIteration = 0; otherIteration < 10;
+                 ++otherIteration )
+            {
+                // component is present <=> (otherIteration == i)
+                REQUIRE(
+                    iteration.meshes[ "E" ].contains(
+                        std::to_string( otherIteration ) ) ==
+                    ( otherIteration == iteration.iterationIndex ) );
+            }
+            REQUIRE(
+                iteration
+                    .meshes[ "E" ][ std::to_string( iteration.iterationIndex ) ]
+                    .getAttribute( "value" )
+                    .get< int >() == int( iteration.iterationIndex ) );
+
             last_iteration_index = iteration.iterationIndex;
         }
         REQUIRE( last_iteration_index == 9 );
@@ -3587,6 +3613,24 @@ variableBasedSeries( std::string const & file )
             unsigned len = iteration.iterationIndex + 1;
             Extent changingExtent( dimensionality, len );
             REQUIRE( E_y.getExtent() == changingExtent );
+
+            // this loop ensures that only the recordcomponent ["E"]["i"] is
+            // present where i == iteration.iterationIndex
+            for( uint64_t otherIteration = 0; otherIteration < 10;
+                 ++otherIteration )
+            {
+                // component is present <=> (otherIteration == i)
+                REQUIRE(
+                    iteration.meshes[ "E" ].contains(
+                        std::to_string( otherIteration ) ) ==
+                    ( otherIteration == iteration.iterationIndex ) );
+            }
+            REQUIRE(
+                iteration
+                    .meshes[ "E" ][ std::to_string( iteration.iterationIndex ) ]
+                    .getAttribute( "value" )
+                    .get< int >() == int( iteration.iterationIndex ) );
+
             last_iteration_index = iteration.iterationIndex;
         }
         REQUIRE( last_iteration_index == 9 );
@@ -3601,11 +3645,21 @@ TEST_CASE( "variableBasedSeries", "[serial][adios2]" )
 
 // @todo Upon switching to ADIOS2 2.7.0, test this the other way around also
 void
-iterate_nonstreaming_series( std::string const & file )
+iterate_nonstreaming_series(
+    std::string const & file, bool variableBasedLayout )
 {
     constexpr size_t extent = 100;
     {
         Series writeSeries( file, Access::CREATE );
+        if( variableBasedLayout )
+        {
+            if( writeSeries.backend() != "ADIOS2" )
+            {
+                return;
+            }
+            writeSeries.setIterationEncoding(
+                IterationEncoding::variableBased );
+        }
         // use conventional API to write iterations
         auto iterations = writeSeries.iterations;
         for( size_t i = 0; i < 10; ++i )
@@ -3709,9 +3763,11 @@ TEST_CASE( "iterate_nonstreaming_series", "[serial][adios2]" )
     for( auto const & t : testedFileExtensions() )
     {
         iterate_nonstreaming_series(
-            "../samples/iterate_nonstreaming_series_filebased_%T." + t );
+            "../samples/iterate_nonstreaming_series_filebased_%T." + t, false );
         iterate_nonstreaming_series(
-            "../samples/iterate_nonstreaming_series_groupbased." + t );
+            "../samples/iterate_nonstreaming_series_groupbased." + t, false );
+        iterate_nonstreaming_series(
+            "../samples/iterate_nonstreaming_series_variablebased." + t, true );
     }
 }
 
@@ -3730,6 +3786,8 @@ extendDataset( std::string const & ext )
             // dataset resizing unsupported in ADIOS1
             return;
         }
+        // only one iteration written anyway
+        write.setIterationEncoding( IterationEncoding::variableBased );
         Dataset ds1{ Datatype::INT, { 5, 5 } };
         Dataset ds2{ Datatype::INT, { 10, 5 } };
 

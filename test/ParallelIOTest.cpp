@@ -846,7 +846,7 @@ TEST_CASE( "hipace_like_write", "[parallel]" )
 #if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
 
 void
-adios2_streaming()
+adios2_streaming( bool variableBasedLayout )
 {
     int size{ -1 };
     int rank{ -1 };
@@ -870,6 +870,11 @@ adios2_streaming()
         // write
         Series writeSeries(
             "../samples/adios2_stream.sst", Access::CREATE );
+        if( variableBasedLayout )
+        {
+            writeSeries.setIterationEncoding(
+                IterationEncoding::variableBased );
+        }
         auto iterations = writeSeries.writeIterations();
         for( size_t i = 0; i < 10; ++i )
         {
@@ -940,7 +945,8 @@ adios2_streaming()
 
 TEST_CASE( "adios2_streaming", "[pseudoserial][adios2]" )
 {
-    adios2_streaming();
+    adios2_streaming( true );
+    adios2_streaming( false );
 }
 
 TEST_CASE( "parallel_adios2_json_config", "[parallel][adios2]" )
