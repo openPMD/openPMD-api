@@ -389,25 +389,11 @@ SeriesImpl::parseInput(std::string filepath)
 
     input->format = determineFormat(input->name);
 
-    // first, check for file-based iteration layout
     std::regex pattern("(.*)%(0[[:digit:]]+)?T(.*)");
     std::smatch regexMatch;
     std::regex_match(input->name, regexMatch, pattern);
     if( regexMatch.empty() )
-    {
-        // now check for variable-based iteration layout
-        pattern = "(.*)%V(\\.[^.]+)";
-        std::regex_match( input->name, regexMatch, pattern );
-        if( regexMatch.empty() )
-        {
-            input->iterationEncoding = IterationEncoding::groupBased;
-        }
-        else
-        {
-            input->iterationEncoding = IterationEncoding::variableBased;
-            input->name = regexMatch[1].str() + regexMatch[2].str();
-        }
-    }
+        input->iterationEncoding = IterationEncoding::groupBased;
     else if( regexMatch.size() == 4 )
     {
         input->iterationEncoding = IterationEncoding::fileBased;

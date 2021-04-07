@@ -3503,6 +3503,7 @@ variableBasedSeries( std::string const & file )
     constexpr Extent::value_type extent = 1000;
     {
         Series writeSeries( file, Access::CREATE );
+        writeSeries.setIterationEncoding( IterationEncoding::variableBased );
         REQUIRE(
             writeSeries.iterationEncoding() == IterationEncoding::variableBased );
         if( writeSeries.backend() == "ADIOS1" )
@@ -3531,8 +3532,7 @@ variableBasedSeries( std::string const & file )
         }
     }
 
-    REQUIRE( auxiliary::directory_exists(
-        auxiliary::replace_last( file, "%V", "" ) ) );
+    REQUIRE( auxiliary::directory_exists( file ) );
 
     {
         Series readSeries(
@@ -3595,7 +3595,7 @@ variableBasedSeries( std::string const & file )
 
 TEST_CASE( "variableBasedSeries", "[serial][adios2]" )
 {
-    variableBasedSeries( "../samples/variableBasedSeries%V.bp" );
+    variableBasedSeries( "../samples/variableBasedSeries.bp" );
 }
 #endif
 
