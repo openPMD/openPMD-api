@@ -447,6 +447,8 @@ void Iteration::read_impl( std::string const & groupPath )
 
         meshes.readAttributes();
 
+        auto map = meshes.eraseStaleEntries();
+
         /* obtain all non-scalar meshes */
         IOHandler()->enqueue(IOTask(&meshes, pList));
         IOHandler()->flush();
@@ -454,7 +456,7 @@ void Iteration::read_impl( std::string const & groupPath )
         Parameter< Operation::LIST_ATTS > aList;
         for( auto const& mesh_name : *pList.paths )
         {
-            Mesh& m = meshes[mesh_name];
+            Mesh& m = map[mesh_name];
             pOpen.path = mesh_name;
             aList.attributes->clear();
             IOHandler()->enqueue(IOTask(&m, pOpen));
@@ -484,7 +486,7 @@ void Iteration::read_impl( std::string const & groupPath )
         Parameter< Operation::OPEN_DATASET > dOpen;
         for( auto const& mesh_name : *dList.datasets )
         {
-            Mesh& m = meshes[mesh_name];
+            Mesh& m = map[mesh_name];
             dOpen.name = mesh_name;
             IOHandler()->enqueue(IOTask(&m, dOpen));
             IOHandler()->flush();
@@ -515,9 +517,10 @@ void Iteration::read_impl( std::string const & groupPath )
         IOHandler()->enqueue(IOTask(&particles, pList));
         IOHandler()->flush();
 
+        auto map = particles.eraseStaleEntries();
         for( auto const& species_name : *pList.paths )
         {
-            ParticleSpecies& p = particles[species_name];
+            ParticleSpecies& p = map[species_name];
             pOpen.path = species_name;
             IOHandler()->enqueue(IOTask(&p, pOpen));
             IOHandler()->flush();

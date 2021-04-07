@@ -42,6 +42,8 @@ ParticleSpecies::read()
     IOHandler()->enqueue(IOTask(this, pList));
     IOHandler()->flush();
 
+    auto map = eraseStaleEntries();
+
     Parameter< Operation::OPEN_PATH > pOpen;
     Parameter< Operation::LIST_ATTS > aList;
     bool hasParticlePatches = false;
@@ -55,7 +57,7 @@ ParticleSpecies::read()
             particlePatches.read();
         } else
         {
-            Record& r = (*this)[record_name];
+            Record& r = map[record_name];
             pOpen.path = record_name;
             aList.attributes->clear();
             IOHandler()->enqueue(IOTask(&r, pOpen));
@@ -68,7 +70,8 @@ ParticleSpecies::read()
             auto shape = std::find(att_begin, att_end, "shape");
             if( value != att_end && shape != att_end )
             {
-                RecordComponent& rc = r[RecordComponent::SCALAR];
+                auto scalarMap = r.eraseStaleEntries();
+                RecordComponent& rc = scalarMap[RecordComponent::SCALAR];
                 rc.parent() = r.parent();
                 IOHandler()->enqueue(IOTask(&rc, pOpen));
                 IOHandler()->flush();
@@ -94,11 +97,12 @@ ParticleSpecies::read()
     for( auto const& record_name : *dList.datasets )
     {
         try {
-            Record& r = (*this)[record_name];
+            Record& r = map[record_name];
             dOpen.name = record_name;
             IOHandler()->enqueue(IOTask(&r, dOpen));
             IOHandler()->flush();
-            RecordComponent& rc = r[RecordComponent::SCALAR];
+            auto scalarMap = r.eraseStaleEntries();
+            RecordComponent& rc = scalarMap[RecordComponent::SCALAR];
             rc.parent() = r.parent();
             IOHandler()->enqueue(IOTask(&rc, dOpen));
             IOHandler()->flush();

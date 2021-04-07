@@ -18,10 +18,10 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Writable.hpp"
 
 #include <iostream>
@@ -247,6 +247,16 @@ Mesh::flush_impl(std::string const& name)
 void
 Mesh::read()
 {
+    /*
+     * @todo This is a proof-of-concept on how we need to rework our re-parsing
+     * procedures. Goals when parsing an iteration again:
+     * 1. Old handles must survive
+     * 2. Map entries that cannot be found any more must perish.
+     * @todo This approach will kill references that users may have to mapped
+     * components, so improve that.
+     */
+    auto map = eraseStaleEntries();
+
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
 
@@ -332,7 +342,7 @@ Mesh::read()
     if( scalar() )
     {
         /* using operator[] will incorrectly update parent */
-        this->at(MeshRecordComponent::SCALAR).read();
+        map.at(MeshRecordComponent::SCALAR).read();
     } else
     {
         Parameter< Operation::LIST_PATHS > pList;
@@ -342,7 +352,7 @@ Mesh::read()
         Parameter< Operation::OPEN_PATH > pOpen;
         for( auto const& component : *pList.paths )
         {
-            MeshRecordComponent& rc = (*this)[component];
+            MeshRecordComponent& rc = map[ component ];
             pOpen.path = component;
             IOHandler()->enqueue(IOTask(&rc, pOpen));
             *rc.m_isConstant = true;
@@ -356,7 +366,7 @@ Mesh::read()
         Parameter< Operation::OPEN_DATASET > dOpen;
         for( auto const& component : *dList.datasets )
         {
-            MeshRecordComponent & rc = ( *this )[ component ];
+            MeshRecordComponent & rc = map[ component ];
             dOpen.name = component;
             IOHandler()->enqueue(IOTask(&rc, dOpen));
             IOHandler()->flush();

@@ -33,7 +33,8 @@
 
 namespace openPMD
 {
-// we must instantiate this somewhere even if it is constexpr
+// We need to instantiate this somewhere otherwise there might be linker issues
+// despite this thing actually being constepxr
 constexpr char const * const RecordComponent::SCALAR;
 
 RecordComponent::RecordComponent()
