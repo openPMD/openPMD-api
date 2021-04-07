@@ -1,6 +1,9 @@
 sphinx_rtd_theme>=0.3.1
 recommonmark
 sphinx
+# docutils 0.17 breaks HTML tags & RTD theme
+# https://github.com/sphinx-doc/sphinx/issues/9001
+docutils<=0.16
 breathe>=4.5,<4.15
 sphinxcontrib.programoutput
 pygments
