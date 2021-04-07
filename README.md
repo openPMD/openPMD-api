@@ -365,7 +365,7 @@ It was initially started by the [Computational Radiation Physics Group](https://
 The following people and institutions [contributed](https://github.com/openPMD/openPMD-api/graphs/contributors) to openPMD-api:
 
 * [Axel Huebl (HZDR, now LBNL)](https://github.com/ax3l):
-  project lead, releases, documentation, automated CI/CD, Python bindings, installation & packaging, prior reference implementations
+  project lead, releases, documentation, automated CI/CD, Python bindings, Dask, installation & packaging, prior reference implementations
 * [Fabian Koller (HZDR)](https://github.com/C0nsultant):
   initial library design and implementation with HDF5 & ADIOS1 backend
 * [Franz Poeschel (CASUS)](https://github.com/franzpoeschel):
