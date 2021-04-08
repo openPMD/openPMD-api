@@ -271,7 +271,7 @@ Iteration::flushVariableBased( uint64_t i )
         Parameter< Operation::OPEN_PATH > pOpen;
         pOpen.path = "";
         IOHandler()->enqueue( IOTask( this, pOpen ) );
-        this->setAttribute( "__step__", i );
+        this->setAttribute( "snapshot", i );
     }
 
     flush();

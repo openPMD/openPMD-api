@@ -1019,7 +1019,7 @@ SeriesImpl::readGorVBased( bool do_init )
 
     readAttributes( ReadMode::IgnoreExisting );
     /*
-     * __step__ changes over steps, so reread that.
+     * 'snapshot' changes over steps, so reread that.
      */
     series.iterations.readAttributes( ReadMode::OverrideExisting );
     /* obtain all paths inside the basepath (i.e. all iterations) */
@@ -1079,10 +1079,10 @@ SeriesImpl::readGorVBased( bool do_init )
     case IterationEncoding::variableBased:
     {
         uint64_t index = 0;
-        if( series.iterations.containsAttribute( "__step__" ) )
+        if( series.iterations.containsAttribute( "snapshot" ) )
         {
             index = series.iterations
-                .getAttribute( "__step__" )
+                .getAttribute( "snapshot" )
                 .get< uint64_t >();
         }
         readSingleIteration( index, "", false );
