@@ -1465,9 +1465,9 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
                 char* m2 = H5Tget_member_name(attr_type, 2);
                 if(strcmp("x", m0) != 0 || strcmp("y", m1) != 0 || strcmp("z", m2) != 0)
                     isLegacyLibSplashAttr = false;
-                free(m2);
-                free(m1);
-                free(m0);
+                H5free_memory(m2);
+                H5free_memory(m1);
+                H5free_memory(m0);
             }
             if( isLegacyLibSplashAttr )
             {
