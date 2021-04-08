@@ -21,8 +21,6 @@
 #include <openPMD/openPMD.hpp>
 
 #include <iostream>
-#include <memory>
-#include <cstddef>
 
 
 using std::cout;
@@ -30,72 +28,23 @@ using namespace openPMD;
 
 int main()
 {
-    Series series = Series(
+    Series s = Series(
         "../samples/git-sample/data%T.h5",
         Access::READ_ONLY
     );
-    cout << "Read a Series with openPMD standard version "
-         << series.openPMD() << '\n';
 
-    cout << "The Series contains " << series.iterations.size() << " iterations:";
-    for( auto const& i : series.iterations )
-        cout << "\n\t" << i.first;
-    cout << '\n';
+    auto electrons = s.iterations[400].particles["electrons"];
 
-    Iteration i = series.iterations[100];
-    cout << "Iteration 100 contains " << i.meshes.size() << " meshes:";
-    for( auto const& m : i.meshes )
-        cout << "\n\t" << m.first;
-    cout << '\n';
-    cout << "Iteration 100 contains " << i.particles.size() << " particle species:";
-    for( auto const& ps : i.particles ) {
-        cout << "\n\t" << ps.first;
-        for( auto const& r : ps.second ) {
-            cout << "\n\t" << r.first;
-            cout << '\n';
+    for( auto & r : electrons )
+    {
+        std::cout << r.first << ": ";
+        for( auto & r_c : r.second )
+        {
+            std::cout << r_c.first << "\n";
+            if( !r_c.second.constant() )
+                auto chunks = r_c.second.availableChunks();
         }
     }
 
-    openPMD::ParticleSpecies electrons = i.particles["electrons"];
-    std::shared_ptr<double> charge = electrons["charge"][openPMD::RecordComponent::SCALAR].loadChunk<double>();
-    series.flush();
-    cout << "And the first electron particle has a charge = " << charge.get()[0];
-    cout << '\n';
-
-    MeshRecordComponent E_x = i.meshes["E"]["x"];
-    Extent extent = E_x.getExtent();
-    cout << "Field E/x has shape (";
-    for( auto const& dim : extent )
-        cout << dim << ',';
-    cout << ") and has datatype " << E_x.getDatatype() << '\n';
-
-    Offset chunk_offset = {1, 1, 1};
-    Extent chunk_extent = {2, 2, 1};
-    auto chunk_data = E_x.loadChunk<double>(chunk_offset, chunk_extent);
-    cout << "Queued the loading of a single chunk from disk, "
-            "ready to execute\n";
-    series.flush();
-    cout << "Chunk has been read from disk\n"
-         << "Read chunk contains:\n";
-    for( size_t row = 0; row < chunk_extent[0]; ++row )
-    {
-        for( size_t col = 0; col < chunk_extent[1]; ++col )
-            cout << "\t"
-                 << '(' << row + chunk_offset[0] << '|' << col + chunk_offset[1] << '|' << 1 << ")\t"
-                 << chunk_data.get()[row*chunk_extent[1]+col];
-        cout << '\n';
-    }
-
-    auto all_data = E_x.loadChunk<double>();
-    series.flush();
-    cout << "Full E/x starts with:\n\t{";
-    for( size_t col = 0; col < extent[1] && col < 5; ++col )
-        cout << all_data.get()[col] << ", ";
-    cout << "...}\n";
-
-    /* The files in 'series' are still open until the object is destroyed, on
-     * which it cleanly flushes and closes all open file handles.
-     * When running out of scope on return, the 'Series' destructor is called.
-     */
     return 0;
 }
