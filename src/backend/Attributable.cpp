@@ -241,6 +241,29 @@ AttributableImpl::readAttributes( ReadMode mode )
             continue;
         }
         Attribute a(*aRead.resource);
+
+        auto guardUnitDimension =
+            [ this ]( std::string const & key, auto vector )
+        {
+            if( key == "unitDimension" )
+            {
+                // Some backends may report the wrong type when reading
+                if( vector.size() != 7 )
+                {
+                    throw std::runtime_error(
+                        "[Attributable] "
+                        "Unexpected datatype for unitDimension." );
+                }
+                std::array< double, 7 > arr;
+                std::copy_n( vector.begin(), 7, arr.begin() );
+                setAttribute( key, std::move( arr ) );
+            }
+            else
+            {
+                setAttribute( key, std::move( vector ) );
+            }
+        };
+
         switch( *aRead.dtype )
         {
             case DT::CHAR:
@@ -325,13 +348,13 @@ AttributableImpl::readAttributes( ReadMode mode )
                 setAttribute(att, a.get< std::vector< unsigned long long > >());
                 break;
             case DT::VEC_FLOAT:
-                setAttribute(att, a.get< std::vector< float > >());
+                guardUnitDimension( att, a.get< std::vector< float > >() );
                 break;
             case DT::VEC_DOUBLE:
-                setAttribute(att, a.get< std::vector< double > >());
+                guardUnitDimension( att, a.get< std::vector< double > >() );
                 break;
             case DT::VEC_LONG_DOUBLE:
-                setAttribute(att, a.get< std::vector< long double > >());
+                guardUnitDimension( att, a.get< std::vector< long double > >() );
                 break;
             case DT::VEC_CFLOAT:
                 setAttribute(att, a.get< std::vector< std::complex< float > > >());
