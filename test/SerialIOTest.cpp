@@ -3536,17 +3536,20 @@ variableBasedSeries( std::string const & file )
             auto E_z = iteration.meshes[ "E" ][ std::to_string( i ) ];
             E_z.resetDataset( { Datatype::INT, { 1 } } );
             E_z.makeConstant( i );
+            // this tests attributes that are present in one iteration, but not
+            // in others
+            iteration.meshes[ "E" ].setAttribute(
+                "attr_" + std::to_string( i ), i );
+
             iteration.close();
         }
     }
 
     REQUIRE( auxiliary::directory_exists( file ) );
 
+    auto testRead = [ &file, &extent ]( std::string const & jsonConfig )
     {
-        Series readSeries(
-            file,
-            Access::READ_ONLY,
-            "{\"defer_iteration_parsing\": true}" );
+        Series readSeries( file, Access::READ_ONLY, jsonConfig );
 
         size_t last_iteration_index = 0;
         for( auto iteration : readSeries.readIterations() )
@@ -3577,52 +3580,9 @@ variableBasedSeries( std::string const & file )
                     iteration.meshes[ "E" ].contains(
                         std::to_string( otherIteration ) ) ==
                     ( otherIteration == iteration.iterationIndex ) );
-            }
-            REQUIRE(
-                iteration
-                    .meshes[ "E" ][ std::to_string( iteration.iterationIndex ) ]
-                    .getAttribute( "value" )
-                    .get< int >() == int( iteration.iterationIndex ) );
-
-            last_iteration_index = iteration.iterationIndex;
-        }
-        REQUIRE( last_iteration_index == 9 );
-    }
-
-    {
-        Series readSeries(
-            file,
-            Access::READ_ONLY,
-            "{\"defer_iteration_parsing\": false}" );
-
-        size_t last_iteration_index = 0;
-        for( auto iteration : readSeries.readIterations() )
-        {
-            auto E_x = iteration.meshes[ "E" ][ "x" ];
-            REQUIRE( E_x.getDimensionality() == 1 );
-            REQUIRE( E_x.getExtent()[ 0 ] == extent );
-            auto chunk = E_x.loadChunk< int >( { 0 }, { extent } );
-            iteration.close();
-            for( size_t i = 0; i < extent; ++i )
-            {
-                REQUIRE( chunk.get()[ i ] == int( iteration.iterationIndex ) );
-            }
-
-            auto E_y = iteration.meshes[ "E" ][ "y" ];
-            unsigned dimensionality = iteration.iterationIndex % 3 + 1;
-            unsigned len = iteration.iterationIndex + 1;
-            Extent changingExtent( dimensionality, len );
-            REQUIRE( E_y.getExtent() == changingExtent );
-
-            // this loop ensures that only the recordcomponent ["E"]["i"] is
-            // present where i == iteration.iterationIndex
-            for( uint64_t otherIteration = 0; otherIteration < 10;
-                 ++otherIteration )
-            {
-                // component is present <=> (otherIteration == i)
                 REQUIRE(
-                    iteration.meshes[ "E" ].contains(
-                        std::to_string( otherIteration ) ) ==
+                    iteration.meshes[ "E" ].containsAttribute(
+                        "attr_" + std::to_string( otherIteration ) ) ==
                     ( otherIteration == iteration.iterationIndex ) );
             }
             REQUIRE(
@@ -3630,11 +3590,19 @@ variableBasedSeries( std::string const & file )
                     .meshes[ "E" ][ std::to_string( iteration.iterationIndex ) ]
                     .getAttribute( "value" )
                     .get< int >() == int( iteration.iterationIndex ) );
+            REQUIRE(
+                iteration.meshes[ "E" ]
+                    .getAttribute(
+                        "attr_" + std::to_string( iteration.iterationIndex ) )
+                    .get< int >() == int( iteration.iterationIndex ) );
 
             last_iteration_index = iteration.iterationIndex;
         }
         REQUIRE( last_iteration_index == 9 );
-    }
+    };
+
+    testRead( "{\"defer_iteration_parsing\": true}" );
+    testRead( "{\"defer_iteration_parsing\": false}" );
 }
 
 TEST_CASE( "variableBasedSeries", "[serial][adios2]" )
