@@ -27,13 +27,13 @@ s = io.Series("../samples/git-sample/data%T.h5", io.Access.read_only)
 electrons = s.iterations[400].particles["electrons"]
 
 # all particles
-df = electrons.to_df()
-print(type(df) is pd.DataFrame)
-print(df)
+#df = electrons.to_df()
+#print(type(df) is pd.DataFrame)
+#print(df)
 
 # only first 100 particles
-df = electrons.to_df(np.s_[:100])
-print(df)
+#df = electrons.to_df(np.s_[:100])
+#print(df)
 
 
 # Particles
