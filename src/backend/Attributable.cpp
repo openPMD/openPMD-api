@@ -186,30 +186,39 @@ AttributableImpl::flushAttributes()
 }
 
 void
-AttributableImpl::readAttributes( bool reread )
+AttributableImpl::readAttributes( ReadMode mode )
 {
+    auto & attri = get();
     Parameter< Operation::LIST_ATTS > aList;
     IOHandler()->enqueue(IOTask(this, aList));
     IOHandler()->flush();
     std::vector< std::string > written_attributes = attributes();
 
-    std::set< std::string > tmpAttributes;
-    if( reread )
-    {
-        tmpAttributes = std::set< std::string >(
-            aList.attributes->begin(),
-            aList.attributes->end() );
-    }
-    else
-    {
-        /* std::set_difference requires sorted ranges */
-        std::sort(aList.attributes->begin(), aList.attributes->end());
-        std::sort(written_attributes.begin(), written_attributes.end());
+    /* std::set_difference requires sorted ranges */
+    std::sort(aList.attributes->begin(), aList.attributes->end());
+    std::sort(written_attributes.begin(), written_attributes.end());
 
+    std::set< std::string > tmpAttributes;
+    switch( mode )
+    {
+    case ReadMode::IgnoreExisting:
+        // reread: aList - written_attributes
         std::set_difference(
             aList.attributes->begin(), aList.attributes->end(),
             written_attributes.begin(), written_attributes.end(),
             std::inserter(tmpAttributes, tmpAttributes.begin()));
+        break;
+    case ReadMode::OverrideExisting:
+        tmpAttributes = std::set< std::string >(
+            aList.attributes->begin(),
+            aList.attributes->end() );
+        break;
+    case ReadMode::FullyReread:
+        attri.m_attributes.clear();
+        tmpAttributes = std::set< std::string >(
+            aList.attributes->begin(),
+            aList.attributes->end() );
+        break;
     }
 
     using DT = Datatype;

@@ -364,9 +364,6 @@ OPENPMD_private:
      * Note on re-parsing of a Series:
      * If init == false, the parsing process will seek for new
      * Iterations/Records/Record Components etc.
-     * Re-parsing of objects that have already been parsed is not implemented
-     * as of yet. Such a facility will be required upon implementing things such
-     * as resizable datasets.
      */
     void readGorVBased( bool init = true );
     void readBase();

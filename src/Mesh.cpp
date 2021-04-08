@@ -379,7 +379,7 @@ Mesh::read()
 
     readBase();
 
-    readAttributes();
+    readAttributes( ReadMode::FullyReread );
 }
 } // openPMD
 

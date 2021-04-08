@@ -948,8 +948,8 @@ void SeriesImpl::readOneIterationFileBased( std::string const & filePath )
         throw std::runtime_error("Unknown openPMD version - " + version);
     IOHandler()->enqueue(IOTask(&series.iterations, pOpen));
 
-    readAttributes();
-    series.iterations.readAttributes();
+    readAttributes( ReadMode::IgnoreExisting );
+    series.iterations.readAttributes(ReadMode::OverrideExisting );
 }
 
 void
@@ -1017,11 +1017,11 @@ SeriesImpl::readGorVBased( bool do_init )
         throw std::runtime_error("Unknown openPMD version - " + version);
     IOHandler()->enqueue(IOTask(&series.iterations, pOpen));
 
-    readAttributes();
+    readAttributes( ReadMode::IgnoreExisting );
     /*
      * __step__ changes over steps, so reread that.
      */
-    series.iterations.readAttributes( /* reread = */ true );
+    series.iterations.readAttributes( ReadMode::OverrideExisting );
     /* obtain all paths inside the basepath (i.e. all iterations) */
     Parameter< Operation::LIST_PATHS > pList;
     IOHandler()->enqueue(IOTask(&series.iterations, pList));

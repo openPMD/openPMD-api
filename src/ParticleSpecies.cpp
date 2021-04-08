@@ -123,7 +123,7 @@ ParticleSpecies::read()
         }
     }
 
-    readAttributes();
+    readAttributes( ReadMode::FullyReread );
 }
 
 namespace

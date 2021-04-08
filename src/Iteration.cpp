@@ -445,7 +445,7 @@ void Iteration::read_impl( std::string const & groupPath )
         pOpen.path = s->meshesPath();
         IOHandler()->enqueue(IOTask(&meshes, pOpen));
 
-        meshes.readAttributes();
+        meshes.readAttributes( ReadMode::FullyReread );
 
         auto map = meshes.eraseStaleEntries();
 
@@ -510,7 +510,7 @@ void Iteration::read_impl( std::string const & groupPath )
         pOpen.path = s->particlesPath();
         IOHandler()->enqueue(IOTask(&particles, pOpen));
 
-        particles.readAttributes();
+        particles.readAttributes( ReadMode::FullyReread );
 
         /* obtain all particle species */
         pList.paths->clear();
@@ -532,7 +532,7 @@ void Iteration::read_impl( std::string const & groupPath )
         particles.dirty() = false;
     }
 
-    readAttributes();
+    readAttributes( ReadMode::FullyReread );
 }
 
 AdvanceStatus

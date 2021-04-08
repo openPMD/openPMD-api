@@ -136,7 +136,7 @@ Record::read()
 
     readBase();
 
-    readAttributes();
+    readAttributes( ReadMode::FullyReread );
 }
 
 template <>

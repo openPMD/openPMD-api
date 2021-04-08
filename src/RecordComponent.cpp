@@ -370,7 +370,7 @@ RecordComponent::readBase()
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'unitSI'");
 
-    readAttributes();
+    readAttributes( ReadMode::FullyReread );
 }
 
 bool

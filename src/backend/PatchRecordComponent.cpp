@@ -115,7 +115,7 @@ PatchRecordComponent::read()
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'unitSI'");
 
-    readAttributes(); // this will set dirty() = false
+    readAttributes( ReadMode::FullyReread ); // this will set dirty() = false
 }
 
 bool

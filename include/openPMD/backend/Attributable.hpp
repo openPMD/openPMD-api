@@ -215,7 +215,24 @@ OPENPMD_protected:
     std::vector< std::string > myPath() const;
 
     void flushAttributes();
-    void readAttributes( bool reread = false );
+    enum ReadMode {
+        /**
+         * Don't read an attribute from the backend if it has been previously
+         * read.
+         */
+        IgnoreExisting,
+        /**
+         * Read all the attributes that the backend has to offer and override
+         * if it has been read previously.
+         */
+        OverrideExisting,
+        /**
+         * Remove all attributes that have been read previously and read
+         * everything that the backend currently has to offer.
+         */
+        FullyReread
+    };
+    void readAttributes( ReadMode );
 
     /** Retrieve the value of a floating point Attribute of user-defined precision with ensured type-safety.
      *
