@@ -20,7 +20,7 @@ except ImportError:
 
 
 def read_chunk_to_df(species, chunk):
-    stride = np.s_[chunk.offset[0]:chunk.extent[0]]
+    stride = np.s_[chunk.offset[0]:chunk.offset[0]+chunk.extent[0]]
     return species.to_df(stride)
 
 
