@@ -247,14 +247,6 @@ Mesh::flush_impl(std::string const& name)
 void
 Mesh::read()
 {
-    /*
-     * @todo This is a proof-of-concept on how we need to rework our re-parsing
-     * procedures. Goals when parsing an iteration again:
-     * 1. Old handles must survive
-     * 2. Map entries that cannot be found any more must perish.
-     * @todo This approach will kill references that users may have to mapped
-     * components, so improve that.
-     */
     auto map = eraseStaleEntries();
 
     using DT = Datatype;

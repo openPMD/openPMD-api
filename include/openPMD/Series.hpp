@@ -260,6 +260,9 @@ public:
      */
     IterationEncoding iterationEncoding() const;
     /** Set the <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series">encoding style</A> for multiple iterations in this series.
+     * A preview on the <A HREF="https://github.com/openPMD/openPMD-standard/pull/250">openPMD 2.0 variable-based iteration encoding</A> can be activated with this call.
+     * Making full use of the variable-based iteration encoding requires (1) explicit support by the backend (available only in ADIOS2) and (2) use of the openPMD streaming API.
+     * In other backends and without the streaming API, only one iteration/snapshot may be written in the variable-based encoding, making this encoding a good choice for single-snapshot data dumps.
      *
      * @param   iterationEncoding   Desired <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series">encoding style</A> for multiple iterations in this series.
      * @return  Reference to modified series.

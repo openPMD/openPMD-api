@@ -334,13 +334,8 @@ void Iteration::deferParseAccess( DeferredParseAccess dr )
         auxiliary::makeOption< DeferredParseAccess >( std::move( dr ) );
 }
 
-void Iteration::read( std::string path, bool reread )
+void Iteration::read()
 {
-    if( reread )
-    {
-        read_impl( path );
-        return;
-    }
     if( !m_deferredParseAccess->has_value() )
     {
         return;
@@ -352,10 +347,21 @@ void Iteration::read( std::string path, bool reread )
     }
     else
     {
-        readGroupBased( deferred.path );
+        readGorVBased( deferred.path );
     }
     // reset this thing
     *m_deferredParseAccess = auxiliary::Option< DeferredParseAccess >();
+}
+
+void Iteration::reread( std::string const & path )
+{
+    if( m_deferredParseAccess->has_value() )
+    {
+        throw std::runtime_error(
+            "[Iteration] Internal control flow error: Trying to reread an "
+            "iteration that has not yet been read for its first time." );
+    }
+    read_impl( path );
 }
 
 void Iteration::readFileBased(
@@ -368,7 +374,7 @@ void Iteration::readFileBased(
     read_impl( groupPath );
 }
 
-void Iteration::readGroupBased( std::string const & groupPath )
+void Iteration::readGorVBased( std::string const & groupPath )
 {
 
     read_impl(groupPath );
@@ -687,7 +693,7 @@ void Iteration::runDeferredParseAccess()
     *newAccess = Access::READ_WRITE;
     try
     {
-        read( "", false );
+        read();
     }
     catch( ... )
     {

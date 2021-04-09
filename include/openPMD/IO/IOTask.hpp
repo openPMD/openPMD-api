@@ -138,6 +138,11 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::OPEN_FILE > : public AbstractPara
     }
 
     std::string name = "";
+    /*
+     * The backends might need to ensure availability of certain features
+     * for some iteration encodings, e.g. availability of ADIOS steps for
+     * variableBased encoding.
+     */
     IterationEncoding encoding = IterationEncoding::groupBased;
 };
 

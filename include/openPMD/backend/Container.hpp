@@ -326,6 +326,14 @@ OPENPMD_protected:
 
     std::shared_ptr< InternalContainer > m_container;
 
+    /**
+     * This class wraps a Container and forwards operator[]() and at() to it.
+     * It remembers the keys used for accessing. Upon going out of scope, all
+     * keys not yet accessed are removed from the Container.
+     * Note that the container is stored by non-owning reference, thus
+     * requiring that the original Container stay in scope while using this
+     * class.
+     */
     class EraseStaleEntries
     {
         std::set< key_type > m_accessedKeys;

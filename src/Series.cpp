@@ -910,12 +910,15 @@ void SeriesImpl::readOneIterationFileBased( std::string const & filePath )
         }
         else if( encoding == "variableBased" )
         {
-            // @todo should we throw? test this path
-            series.m_iterationEncoding = IterationEncoding::variableBased;
-            std::cerr << "Series constructor called with iteration "
-                            "regex '%T' suggests loading a "
-                        << "time series with fileBased iteration "
-                            "encoding. Loaded file is variableBased.\n";
+            /*
+             * Unlike if the file were group-based, this one doesn't work
+             * at all since the group paths are different.
+             */
+            throw std::runtime_error(
+                "Series constructor called with iteration "
+                "regex '%T' suggests loading a "
+                "time series with fileBased iteration "
+                "encoding. Loaded file is variableBased." );
         }
         else
             throw std::runtime_error(
@@ -1043,7 +1046,7 @@ SeriesImpl::readGorVBased( bool do_init )
             {
                 pOpen.path = path;
                 IOHandler()->enqueue( IOTask( &i, pOpen ) );
-                i.read( path, /* reread = */ true );
+                i.reread( path );
             }
         }
         else

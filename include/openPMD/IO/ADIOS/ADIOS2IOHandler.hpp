@@ -225,6 +225,10 @@ public:
 
 private:
     adios2::ADIOS m_ADIOS;
+    /*
+     * If the iteration encoding is variableBased, we default to using the
+     * 2021_02_09 schema since it allows mutable attributes.
+     */
     IterationEncoding m_iterationEncoding = IterationEncoding::groupBased;
     /**
      * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
@@ -1369,7 +1373,7 @@ class ADIOS2IOHandler : public AbstractIOHandler
 {
 #if openPMD_HAVE_ADIOS2
 
-    friend class ADIOS2IOHandlerImpl;
+friend class ADIOS2IOHandlerImpl;
 
 private:
     ADIOS2IOHandlerImpl m_impl;
