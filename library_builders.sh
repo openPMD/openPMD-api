@@ -143,7 +143,7 @@ function build_zfp {
     if [ -e zfp-stamp ]; then return; fi
 
     curl -sLo zfp-0.5.5.tar.gz \
-        https://computing.llnl.gov/projects/zfp/download/zfp-0.5.5.tar.gz
+        https://github.com/LLNL/zfp/releases/download/0.5.5/zfp-0.5.5.tar.gz
     file zfp*.tar.gz
     tar -xzf zfp*.tar.gz
     rm zfp*.tar.gz
