@@ -7,11 +7,11 @@ def span_write(filename):
 
     datatype = np.dtype("double")
     length = 10
-    extent = [10]
+    extent = [length]
     dataset = io.Dataset(datatype, extent)
 
     iterations = series.write_iterations()
-    for i in range(10):
+    for i in range(12):
         iteration = iterations[i]
         electronPositions = iteration.particles["e"]["position"]
 

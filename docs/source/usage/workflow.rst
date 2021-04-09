@@ -22,9 +22,10 @@ Flush points are triggered by:
 *   Calling ``Series::flush()``.
 *   Calling ``Iteration::flush( flush=true )``.
     Flush point guarantees affect only the corresponding iteration.
+*   Calling ``Writable::seriesFlush()`` or ``Attributable::seriesFlush()``.
 *   The streaming API (i.e. ``Series.readIterations()`` and ``Series.writeIteration()``) automatically before accessing the next iteration.
 
 Attributes are (currently) unaffected by this:
 
-*   In writing, attributes are stored by value and can afterwards not be aliased by the user (i.e. they are stored internally in the openPMD API and are not accessible to users).
-*   In reading, attributes are parsed upon opening the Series / an iteration and are available to read right-away without performing any IO.
+*   In writing, attributes are stored internally by value and can afterwards not be accessed by the user.
+*   In reading, attributes are parsed upon opening the Series / an iteration and are available to read right-away.

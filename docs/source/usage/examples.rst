@@ -20,6 +20,7 @@ C++
 - `5_write_parallel.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/5_write_parallel.cpp>`_: MPI-parallel mesh write
 - `6_dump_filebased_series.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/6_dump_filebased_series.cpp>`_: detailed reading with a file-based series
 - `7_extended_write_serial.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/7_extended_write_serial.cpp>`_: particle writing with patches and constant records
+- `12_span_write.cpp <https://github.com/openPMD/openPMD-api/blob/dev/examples/12_span_write.cpp>`_: using the span-based API to save memory when writing
 
 Benchmarks
 ^^^^^^^^^^
@@ -39,6 +40,7 @@ Python
 - `5_write_parallel.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/5_write_parallel.py>`_: MPI-parallel mesh write
 - `7_extended_write_serial.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/7_extended_write_serial.py>`_: particle writing with patches and constant records
 - `9_particle_write_serial.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/9_particle_write_serial.py>`_: writing particles
+- `12_span_write.py <https://github.com/openPMD/openPMD-api/blob/dev/examples/12_span_write.py>`_: using the span-based API to save memory when writing
 
 Unit Tests
 ----------

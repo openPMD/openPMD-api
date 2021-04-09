@@ -87,7 +87,7 @@ public:
 
 /**
  * @brief A view into a buffer that might be reallocated at some points and
- *      have changing base pointers over time.
+ *      thus has changing base pointers over time.
  *      Reasoning: ADIOS2's span-based Engine::Put() API returns spans whose
  *      base pointers might change after internal reallocations.
  *      Hence, the concrete pointer needs to be acquired right before writing
