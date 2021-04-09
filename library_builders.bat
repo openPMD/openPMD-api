@@ -116,7 +116,7 @@ exit /b 0
   if exist zfp-stamp exit /b 0
 
   curl -sLo zfp-0.5.5.tar.gz ^
-    https://computing.llnl.gov/projects/zfp/download/zfp-0.5.5.tar.gz
+    https://github.com/LLNL/zfp/releases/download/0.5.5/zfp-0.5.5.tar.gz
   tar -xvzf zfp-0.5.5.tar.gz
   mv zfp-0.5.5 dep-zfp
 
