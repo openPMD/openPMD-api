@@ -1424,8 +1424,9 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
             {
                 char* m0 = H5Tget_member_name(attr_type, 0);
                 char* m1 = H5Tget_member_name(attr_type, 1);
-                if( (strncmp("TRUE" , m0, 4) == 0) && (strncmp("FALSE", m1, 5) == 0) )
-                    attrIsBool = true;
+                if( m0 != nullptr && m1 != nullptr )
+                    if( (strncmp("TRUE" , m0, 4) == 0) && (strncmp("FALSE", m1, 5) == 0) )
+                        attrIsBool = true;
                 H5free_memory(m1);
                 H5free_memory(m0);
             }
@@ -1446,8 +1447,9 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
             {
                 char* m0 = H5Tget_member_name(attr_type, 0);
                 char* m1 = H5Tget_member_name(attr_type, 1);
-                if( (strncmp("r" , m0, 4) == 0) && (strncmp("i", m1, 5) == 0) )
-                    isComplexType = true;
+                if( m0 != nullptr && m1 != nullptr )
+                    if( (strncmp("r" , m0, 1) == 0) && (strncmp("i", m1, 1) == 0) )
+                        isComplexType = true;
                 H5free_memory(m1);
                 H5free_memory(m0);
             }
@@ -1463,11 +1465,13 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
                 char* m0 = H5Tget_member_name(attr_type, 0);
                 char* m1 = H5Tget_member_name(attr_type, 1);
                 char* m2 = H5Tget_member_name(attr_type, 2);
-                if(strcmp("x", m0) != 0 || strcmp("y", m1) != 0 || strcmp("z", m2) != 0)
+                if( m0 == nullptr || m1 == nullptr || m2 == nullptr )
+                    isLegacyLibSplashAttr = false;  // NOLINT(bugprone-branch-clone)
+                else if(strcmp("x", m0) != 0 || strcmp("y", m1) != 0 || strcmp("z", m2) != 0)
                     isLegacyLibSplashAttr = false;
-                free(m2);
-                free(m1);
-                free(m0);
+                H5free_memory(m2);
+                H5free_memory(m1);
+                H5free_memory(m0);
             }
             if( isLegacyLibSplashAttr )
             {
@@ -1498,7 +1502,7 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
                     a = Attribute(cld);
                 }
                 else
-                    throw unsupported_data_error("[HDF5] Unknow complex type representation");
+                    throw unsupported_data_error("[HDF5] Unknown complex type representation");
             }
             else
                 throw unsupported_data_error("[HDF5] Compound attribute type not supported");
