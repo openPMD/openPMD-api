@@ -22,6 +22,8 @@
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Dataset.hpp"
 #include "openPMD/DatatypeHelpers.hpp"
+#include "openPMD/Series.hpp"
+#include "openPMD/IO/Format.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -174,6 +176,39 @@ bool
 RecordComponent::empty() const
 {
     return *m_isEmpty;
+}
+
+void
+RecordComponent::serialize()
+{
+    // verify: read-only
+    if( IOHandler()->m_frontendAccess != Access::READ_ONLY )
+        throw std::runtime_error("serialize only works on read-only access");
+    //if( IOHandler()->m_backendAccess != Access::READ_ONLY )
+    // as well??
+
+    // verify: no MPI
+    auto & series = this->retrieveSeries();
+    auto const str_backend = series.backend(); // HDF5, ADIOS2, ...
+    if( str_backend.find( "MPI" ) != std::string::npos )
+        throw std::runtime_error("serialize does not work with MPI");
+
+    // information to construct a new serial read-only series
+    auto const str_path = IOHandler()->directory; // samples/git-samples/
+    auto const str_name = series.name();          // data%T
+    auto const str_ext = suffix(series.m_format); // .bp, .h5, .json, ...
+    auto const filepath = str_path + str_name + str_ext;
+
+    // information to find iteration
+    //auto const int it = ...; // 400
+    // information to fid mesh/particle
+    // if particle: find species name
+    // information to find record & component
+    //auto const str_r = ...;  // "E"
+    //auto const str_rc = ...; // "x"
+
+    std::cout << "+++\n";
+    std::cout << filepath << std::endl;
 }
 
 void
