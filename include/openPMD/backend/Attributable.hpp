@@ -204,6 +204,9 @@ OPENPMD_protected:
     internal::SeriesInternal & retrieveSeries();
 
     void seriesFlush( FlushLevel );
+
+    std::vector< std::string > myPath() const;
+
     void flushAttributes();
     void readAttributes();
 

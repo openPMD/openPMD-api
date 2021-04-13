@@ -41,7 +41,7 @@ public:
     ParticlePatches particlePatches;
 
 private:
-    ParticleSpecies() = default;
+    ParticleSpecies();
 
     void read();
     void flush(std::string const &) override;

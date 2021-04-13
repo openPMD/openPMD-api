@@ -121,20 +121,22 @@ OPENPMD_private:
     internal::AttributableData* attributable;
     Writable* parent;
     bool dirty;
+    // @todo move this to AttributableData
+    std::string ownKeyWithinParent;
     /**
      * @brief Whether a Writable has been written to the backend.
-     * 
+     *
      * The class Writable is used to link objects in our (frontend) object model
      * of the openPMD group hierarchy to the backends.
      * The openPMD hierarchy needs to be built by each backend independently
      * from the frontend. This involves the following tasks:
      * * Opening/creating files/groups/datasets
      * * Setting up the path structure in Writable::abstractFilePosition
-     * 
+     *
      * If those tasks have been performed, the flag written is set as true.
      * The interpretation of that is that the backend has been made aware of the
      * Writable and its meaning within the current dataset.
-     * 
+     *
      */
     bool written;
 };

@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2021 Fabian Koller and Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -57,6 +57,24 @@ namespace traits
 namespace internal
 {
 class SeriesData;
+}
+
+namespace detail
+{
+template< typename T >
+std::string keyAsString( T && key, std::string const & parentKey )
+{
+    ( void )parentKey;
+    return std::to_string( std::forward< T >( key ) );
+}
+
+template<>
+std::string keyAsString< std::string const & >(
+    std::string const & key, std::string const & parentKey );
+
+template<>
+std::string
+keyAsString< std::string >( std::string && key, std::string const & parentKey );
 }
 
 /** @brief Map-like container that enforces openPMD requirements and handles IO.
@@ -164,6 +182,8 @@ public:
             T t = T();
             t.linkHierarchy(writable());
             auto& ret = m_container->insert({key, std::move(t)}).first->second;
+            ret.writable().ownKeyWithinParent =
+                detail::keyAsString( key, writable().ownKeyWithinParent );
             traits::GenerationPolicy< T > gen;
             gen(ret);
             return ret;
@@ -190,9 +210,11 @@ public:
 
             T t = T();
             t.linkHierarchy(writable());
-            auto& ret = m_container->insert({std::move(key), std::move(t)}).first->second;
+            auto& ret = m_container->insert({key, std::move(t)}).first->second;
+            ret.writable().ownKeyWithinParent = detail::keyAsString(
+                std::move( key ), writable().ownKeyWithinParent );
             traits::GenerationPolicy< T > gen;
-            gen(ret);
+            gen( ret );
             return ret;
         }
     }
