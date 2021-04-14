@@ -62,19 +62,20 @@ class SeriesData;
 namespace detail
 {
 template< typename T >
-std::string keyAsString( T && key, std::string const & parentKey )
+std::vector< std::string >
+keyAsString( T && key, std::vector< std::string > const & parentKey )
 {
     ( void )parentKey;
-    return std::to_string( std::forward< T >( key ) );
+    return { std::to_string( std::forward< T >( key ) ) };
 }
 
 template<>
-std::string keyAsString< std::string const & >(
-    std::string const & key, std::string const & parentKey );
+std::vector< std::string > keyAsString< std::string const & >(
+    std::string const & key, std::vector< std::string > const & parentKey );
 
 template<>
-std::string
-keyAsString< std::string >( std::string && key, std::string const & parentKey );
+std::vector< std::string > keyAsString< std::string >(
+    std::string && key, std::vector< std::string > const & parentKey );
 }
 
 /** @brief Map-like container that enforces openPMD requirements and handles IO.

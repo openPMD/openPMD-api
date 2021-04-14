@@ -170,10 +170,14 @@ TEST_CASE( "myPath", "[core]" )
         scalarMesh.myPath() ==
         vec_t{ "iterations", "1234", "meshes", "e_chargeDensity" } );
     auto scalarMeshComponent = scalarMesh[ RecordComponent::SCALAR ];
-    // @todo emplace SCALAR string here?
     REQUIRE(
         scalarMeshComponent.myPath() ==
-        vec_t{ "iterations", "1234", "meshes", "e_chargeDensity" } );
+        vec_t{
+            "iterations",
+            "1234",
+            "meshes",
+            "e_chargeDensity",
+            RecordComponent::SCALAR } );
     writeSomething( scalarMeshComponent );
 
     auto vectorMesh = iteration.meshes[ "E" ];
@@ -211,7 +215,7 @@ TEST_CASE( "myPath", "[core]" )
     auto speciesWeightingX = speciesWeighting[ RecordComponent::SCALAR ];
     REQUIRE(
         speciesWeightingX.myPath() ==
-        vec_t{ "iterations", "1234", "particles", "e", "weighting" } );
+        vec_t{ "iterations", "1234", "particles", "e", "weighting", RecordComponent::SCALAR } );
     writeSomething( speciesWeightingX );
 
     REQUIRE(
@@ -262,7 +266,8 @@ TEST_CASE( "myPath", "[core]" )
             "particles",
             "e",
             "particlePatches",
-            "numParticles" } );
+            "numParticles",
+            RecordComponent::SCALAR } );
 #endif
 }
 

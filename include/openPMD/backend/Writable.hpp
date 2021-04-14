@@ -24,6 +24,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_private
@@ -121,8 +122,7 @@ OPENPMD_private:
     internal::AttributableData* attributable;
     Writable* parent;
     bool dirty;
-    // @todo move this to AttributableData
-    std::string ownKeyWithinParent;
+    std::vector< std::string > ownKeyWithinParent;
     /**
      * @brief Whether a Writable has been written to the backend.
      *

@@ -420,7 +420,7 @@ void SeriesImpl::init(
     auto & series = get();
     writable().IOHandler = ioHandler;
     series.iterations.linkHierarchy(writable());
-    series.iterations.writable().ownKeyWithinParent = "iterations";
+    series.iterations.writable().ownKeyWithinParent = { "iterations" };
 
     series.m_name = input->name;
 

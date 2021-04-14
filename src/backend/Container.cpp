@@ -27,30 +27,34 @@ namespace openPMD
 namespace detail
 {
 template<>
-std::string keyAsString< std::string const & >(
-    std::string const & key, std::string const & parentKey )
+std::vector< std::string > keyAsString< std::string const & >(
+    std::string const & key, std::vector< std::string > const & parentKey )
 {
     if( key == RecordComponent::SCALAR )
     {
-        return parentKey;
+        auto ret = parentKey;
+        ret.emplace_back( RecordComponent::SCALAR );
+        return ret;
     }
     else
     {
-        return key;
+        return { key };
     }
 }
 
 template<>
-std::string
-keyAsString< std::string >( std::string && key, std::string const & parentKey )
+std::vector< std::string > keyAsString< std::string >(
+    std::string && key, std::vector< std::string > const & parentKey )
 {
     if( key == RecordComponent::SCALAR )
     {
-        return parentKey;
+        auto ret = parentKey;
+        ret.emplace_back( RecordComponent::SCALAR );
+        return ret;
     }
     else
     {
-        return std::move( key );
+        return { std::move( key ) };
     }
 }
 }

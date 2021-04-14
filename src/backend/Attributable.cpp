@@ -143,7 +143,14 @@ std::vector< std::string > AttributableImpl::myPath() const
         // we don't need to push_back the ownKeyWithinParent of the Series class
         // so it's alright that this loop doesn't ask the key of the last found
         // Writable
-        res.push_back( findSeries->ownKeyWithinParent );
+
+        // push these in reverse because we're building the list from the back
+        for( auto it = findSeries->ownKeyWithinParent.rbegin();
+             it != findSeries->ownKeyWithinParent.rend();
+             ++it )
+        {
+            res.push_back( *it );
+        }
         findSeries = findSeries->parent;
     }
     std::reverse( res.begin(), res.end() );
