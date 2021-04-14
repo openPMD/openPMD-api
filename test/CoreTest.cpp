@@ -147,6 +147,125 @@ TEST_CASE( "attribute_dtype_test", "[core]" )
     }
 }
 
+TEST_CASE( "myPath", "[core]" )
+{
+#if openPMD_USE_INVASIVE_TESTS
+    using vec_t = std::vector< std::string >;
+    Series series( "../samples/myPath.json", Access::CREATE );
+    REQUIRE( series.myPath() == vec_t{} );
+    auto iteration = series.iterations[ 1234 ];
+    REQUIRE( iteration.myPath() == vec_t{ "iterations", "1234" } );
+
+    auto writeSomething = []( auto & recordComponent )
+    {
+        recordComponent.resetDataset( { Datatype::INT, { 100 } } );
+        recordComponent.template makeConstant< int >( 5678 );
+    };
+
+    REQUIRE(
+        iteration.meshes.myPath() == vec_t{ "iterations", "1234", "meshes" } );
+
+    auto scalarMesh = iteration.meshes[ "e_chargeDensity" ];
+    REQUIRE(
+        scalarMesh.myPath() ==
+        vec_t{ "iterations", "1234", "meshes", "e_chargeDensity" } );
+    auto scalarMeshComponent = scalarMesh[ RecordComponent::SCALAR ];
+    // @todo emplace SCALAR string here?
+    REQUIRE(
+        scalarMeshComponent.myPath() ==
+        vec_t{ "iterations", "1234", "meshes", "e_chargeDensity" } );
+    writeSomething( scalarMeshComponent );
+
+    auto vectorMesh = iteration.meshes[ "E" ];
+    REQUIRE(
+        vectorMesh.myPath() == vec_t{ "iterations", "1234", "meshes", "E" } );
+    auto vectorMeshComponent = vectorMesh[ "x" ];
+    REQUIRE(
+        vectorMeshComponent.myPath() ==
+        vec_t{ "iterations", "1234", "meshes", "E", "x" } );
+
+    REQUIRE(
+        iteration.particles.myPath() ==
+        vec_t{ "iterations", "1234", "particles" } );
+
+    auto speciesE = iteration.particles[ "e" ];
+    REQUIRE(
+        speciesE.myPath() == vec_t{ "iterations", "1234", "particles", "e" } );
+
+    auto speciesPosition = speciesE[ "position" ];
+    REQUIRE(
+        speciesPosition.myPath() ==
+        vec_t{ "iterations", "1234", "particles", "e", "position" } );
+
+    auto speciesPositionX = speciesPosition[ "x" ];
+    REQUIRE(
+        speciesPositionX.myPath() ==
+        vec_t{ "iterations", "1234", "particles", "e", "position", "x" } );
+    writeSomething( speciesPositionX );
+
+    auto speciesWeighting = speciesE[ "weighting" ];
+    REQUIRE(
+        speciesWeighting.myPath() ==
+        vec_t{ "iterations", "1234", "particles", "e", "weighting" } );
+
+    auto speciesWeightingX = speciesWeighting[ RecordComponent::SCALAR ];
+    REQUIRE(
+        speciesWeightingX.myPath() ==
+        vec_t{ "iterations", "1234", "particles", "e", "weighting" } );
+    writeSomething( speciesWeightingX );
+
+    REQUIRE(
+        speciesE.particlePatches.myPath() ==
+        vec_t{ "iterations", "1234", "particles", "e", "particlePatches" } );
+
+    auto patchExtent = speciesE.particlePatches[ "extent" ];
+    REQUIRE(
+        patchExtent.myPath() ==
+        vec_t{
+            "iterations",
+            "1234",
+            "particles",
+            "e",
+            "particlePatches",
+            "extent" } );
+
+    auto patchExtentX = patchExtent[ "x" ];
+    REQUIRE(
+        patchExtentX.myPath() ==
+        vec_t{
+            "iterations",
+            "1234",
+            "particles",
+            "e",
+            "particlePatches",
+            "extent",
+            "x" } );
+
+    auto patchNumParticles = speciesE.particlePatches[ "numParticles" ];
+    REQUIRE(
+        patchNumParticles.myPath() ==
+        vec_t{
+            "iterations",
+            "1234",
+            "particles",
+            "e",
+            "particlePatches",
+            "numParticles" } );
+
+    auto patchNumParticlesComponent =
+        patchNumParticles[ RecordComponent::SCALAR ];
+    REQUIRE(
+        patchNumParticlesComponent.myPath() ==
+        vec_t{
+            "iterations",
+            "1234",
+            "particles",
+            "e",
+            "particlePatches",
+            "numParticles" } );
+#endif
+}
+
 TEST_CASE( "output_default_test", "[core]" )
 {
     using IE = IterationEncoding;
