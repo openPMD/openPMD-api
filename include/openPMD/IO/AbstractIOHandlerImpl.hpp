@@ -321,12 +321,12 @@ public:
    * * Data written to the returned buffer should be consumed not earlier than the next call to AbstractIOHandler::flush where AbstractIOHandler::m_flushLevel == FlushLevel::InternalFlush.
    * * Data should be consumed not later than the next Operation::ADVANCE task where parameter.mode == AdvanceMode::ENDSTEP.
    *
-   * This task is optional and should either (1) not be implemented by a backend at all or (2) be implemented as indicated above and set parameters.out->taskSupportedByBackend = true.
+   * This IOTask is optional and should either (1) not be implemented by a backend at all or (2) be implemented as indicated above and set parameters.out->backendManagedBuffer = true.
    */
   virtual void getBufferView(Writable*, Parameter< Operation::GET_BUFFER_VIEW >& parameters)
   {
         // default implementation: operation unsupported by backend
-        parameters.out->taskSupportedByBackend = false;
+        parameters.out->backendManagedBuffer = false;
   }
   /** Create a single attribute and fill the value, possibly overwriting an existing attribute.
    *

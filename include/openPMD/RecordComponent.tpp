@@ -305,7 +305,7 @@ RecordComponent::storeChunk( Offset o, Extent e, F && createBuffer )
     IOHandler()->enqueue( IOTask( this, getBufferView ) );
     IOHandler()->flush();
     auto &out = *getBufferView.out;
-    if( !out.taskSupportedByBackend )
+    if( !out.backendManagedBuffer )
     {
         auto data = std::forward< F >( createBuffer )( size );
         out.ptr = static_cast< void * >( data.get() );

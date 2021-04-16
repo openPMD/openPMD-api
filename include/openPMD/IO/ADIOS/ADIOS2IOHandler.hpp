@@ -1067,7 +1067,7 @@ namespace detail
         adios2::IO m_IO;
         /**
          * The default queue for deferred actions.
-         * Drained upon ::flush().
+         * Drained upon BufferedActions::flush().
          */
         std::vector< std::unique_ptr< BufferedAction > > m_buffer;
         /**

@@ -119,7 +119,7 @@ public:
      */
     Span< T > currentBuffer()
     {
-        if( m_param.out->taskSupportedByBackend )
+        if( m_param.out->backendManagedBuffer )
         {
             // might need to update
             m_recordComponent.IOHandler()->enqueue(

@@ -431,7 +431,7 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::GET_BUFFER_VIEW > : public Abstra
     // out parameters
     struct OutParameters
     {
-        bool taskSupportedByBackend = false;
+        bool backendManagedBuffer = false;
         unsigned viewIndex = 0;
         void *ptr = nullptr;
     };

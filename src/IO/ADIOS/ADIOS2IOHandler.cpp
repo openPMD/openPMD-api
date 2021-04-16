@@ -658,7 +658,7 @@ struct GetSpan
         adios2::Dims extent( params.extent.begin(), params.extent.end() );
         variable.SetSelection( { std::move( offset ), std::move( extent ) } );
         typename adios2::Variable< T >::Span span = engine.Put( variable );
-        params.out->taskSupportedByBackend = true;
+        params.out->backendManagedBuffer = true;
         /*
          * SIC!
          * Do not emplace span.data() yet.
@@ -697,7 +697,7 @@ ADIOS2IOHandlerImpl::getBufferView(
     // @todo check access mode
     if( m_engineType != "bp4" )
     {
-        parameters.out->taskSupportedByBackend = false;
+        parameters.out->backendManagedBuffer = false;
         return;
     }
     setAndGetFilePosition( writable );
@@ -708,7 +708,7 @@ ADIOS2IOHandlerImpl::getBufferView(
         detail::I_UpdateSpan &updater =
             *ba.m_updateSpans.at( parameters.out->viewIndex );
         parameters.out->ptr = updater.update();
-        parameters.out->taskSupportedByBackend = true;
+        parameters.out->backendManagedBuffer = true;
     }
     else
     {
