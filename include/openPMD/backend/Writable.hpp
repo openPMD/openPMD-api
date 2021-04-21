@@ -122,6 +122,12 @@ OPENPMD_private:
     internal::AttributableData* attributable;
     Writable* parent;
     bool dirty;
+    /**
+     * If parent is not null, then this is a vector of keys such that:
+     * &(*parent)[key_1]...[key_n] == this
+     * (Notice that scalar record components do not link their direct parent,
+     * but instead their parent's parent, hence a vector of keys)
+     */
     std::vector< std::string > ownKeyWithinParent;
     /**
      * @brief Whether a Writable has been written to the backend.

@@ -205,6 +205,13 @@ OPENPMD_protected:
 
     void seriesFlush( FlushLevel );
 
+    /**
+     * @brief The path to this object within its containing Series.
+     *
+     * @return A vector of openPMD group names indicating where this object
+     *     may be found within its Series.
+     *     Notice that RecordComponent::SCALAR is included in this list.
+     */
     std::vector< std::string > myPath() const;
 
     void flushAttributes();

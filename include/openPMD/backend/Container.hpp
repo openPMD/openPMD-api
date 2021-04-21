@@ -61,6 +61,15 @@ class SeriesData;
 
 namespace detail
 {
+/*
+ * This converts the key (first parameter) to its string name within the
+ * openPMD hierarchy.
+ * If the key is found to be equal to RecordComponent::SCALAR, the parentKey
+ * will be returned, adding RecordComponent::SCALAR to its back.
+ * Reason: Scalar record components do not link their containing record as
+ * parent, but rather the parent's parent, so the own key within the "apparent"
+ * parent must be given as two steps.
+ */
 template< typename T >
 std::vector< std::string >
 keyAsString( T && key, std::vector< std::string > const & parentKey )
@@ -69,6 +78,7 @@ keyAsString( T && key, std::vector< std::string > const & parentKey )
     return { std::to_string( std::forward< T >( key ) ) };
 }
 
+// moved to a *.cpp file so we don't need to include RecordComponent.hpp here
 template<>
 std::vector< std::string > keyAsString< std::string const & >(
     std::string const & key, std::vector< std::string > const & parentKey );
