@@ -24,6 +24,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_private
@@ -122,19 +123,26 @@ OPENPMD_private:
     Writable* parent;
     bool dirty;
     /**
+     * If parent is not null, then this is a vector of keys such that:
+     * &(*parent)[key_1]...[key_n] == this
+     * (Notice that scalar record components do not link their direct parent,
+     * but instead their parent's parent, hence a vector of keys)
+     */
+    std::vector< std::string > ownKeyWithinParent;
+    /**
      * @brief Whether a Writable has been written to the backend.
-     * 
+     *
      * The class Writable is used to link objects in our (frontend) object model
      * of the openPMD group hierarchy to the backends.
      * The openPMD hierarchy needs to be built by each backend independently
      * from the frontend. This involves the following tasks:
      * * Opening/creating files/groups/datasets
      * * Setting up the path structure in Writable::abstractFilePosition
-     * 
+     *
      * If those tasks have been performed, the flag written is set as true.
      * The interpretation of that is that the backend has been made aware of the
      * Writable and its meaning within the current dataset.
-     * 
+     *
      */
     bool written;
 };

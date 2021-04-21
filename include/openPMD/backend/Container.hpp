@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2021 Fabian Koller and Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -57,6 +57,35 @@ namespace traits
 namespace internal
 {
 class SeriesData;
+}
+
+namespace detail
+{
+/*
+ * This converts the key (first parameter) to its string name within the
+ * openPMD hierarchy.
+ * If the key is found to be equal to RecordComponent::SCALAR, the parentKey
+ * will be returned, adding RecordComponent::SCALAR to its back.
+ * Reason: Scalar record components do not link their containing record as
+ * parent, but rather the parent's parent, so the own key within the "apparent"
+ * parent must be given as two steps.
+ */
+template< typename T >
+std::vector< std::string >
+keyAsString( T && key, std::vector< std::string > const & parentKey )
+{
+    ( void )parentKey;
+    return { std::to_string( std::forward< T >( key ) ) };
+}
+
+// moved to a *.cpp file so we don't need to include RecordComponent.hpp here
+template<>
+std::vector< std::string > keyAsString< std::string const & >(
+    std::string const & key, std::vector< std::string > const & parentKey );
+
+template<>
+std::vector< std::string > keyAsString< std::string >(
+    std::string && key, std::vector< std::string > const & parentKey );
 }
 
 /** @brief Map-like container that enforces openPMD requirements and handles IO.
@@ -164,6 +193,8 @@ public:
             T t = T();
             t.linkHierarchy(writable());
             auto& ret = m_container->insert({key, std::move(t)}).first->second;
+            ret.writable().ownKeyWithinParent =
+                detail::keyAsString( key, writable().ownKeyWithinParent );
             traits::GenerationPolicy< T > gen;
             gen(ret);
             return ret;
@@ -190,9 +221,11 @@ public:
 
             T t = T();
             t.linkHierarchy(writable());
-            auto& ret = m_container->insert({std::move(key), std::move(t)}).first->second;
+            auto& ret = m_container->insert({key, std::move(t)}).first->second;
+            ret.writable().ownKeyWithinParent = detail::keyAsString(
+                std::move( key ), writable().ownKeyWithinParent );
             traits::GenerationPolicy< T > gen;
-            gen(ret);
+            gen( ret );
             return ret;
         }
     }

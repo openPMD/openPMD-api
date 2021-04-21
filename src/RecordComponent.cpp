@@ -33,6 +33,9 @@
 
 namespace openPMD
 {
+// we must instantiate this somewhere even if it is constexpr
+constexpr char const * const RecordComponent::SCALAR;
+
 RecordComponent::RecordComponent()
         : m_chunks{std::make_shared< std::queue< IOTask > >()},
           m_constantValue{std::make_shared< Attribute >(-1)}

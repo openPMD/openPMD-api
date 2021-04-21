@@ -23,6 +23,7 @@
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
+#include <algorithm>
 #include <complex>
 #include <iostream>
 #include <set>
@@ -131,6 +132,29 @@ internal::SeriesInternal & AttributableImpl::retrieveSeries()
 {
     return const_cast< internal::SeriesInternal & >(
         static_cast< AttributableImpl const * >( this )->retrieveSeries() );
+}
+
+std::vector< std::string > AttributableImpl::myPath() const
+{
+    std::vector< std::string > res{};
+    Writable const * findSeries = &writable();
+    while( findSeries->parent )
+    {
+        // we don't need to push_back the ownKeyWithinParent of the Series class
+        // so it's alright that this loop doesn't ask the key of the last found
+        // Writable
+
+        // push these in reverse because we're building the list from the back
+        for( auto it = findSeries->ownKeyWithinParent.rbegin();
+             it != findSeries->ownKeyWithinParent.rend();
+             ++it )
+        {
+            res.push_back( *it );
+        }
+        findSeries = findSeries->parent;
+    }
+    std::reverse( res.begin(), res.end() );
+    return res;
 }
 
 void
