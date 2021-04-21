@@ -690,6 +690,7 @@ set(openPMD_EXAMPLE_NAMES
     8b_benchmark_read_parallel
     10_streaming_write
     10_streaming_read
+    12_span_write
 )
 set(openPMD_PYTHON_EXAMPLE_NAMES
     2_read_serial
@@ -701,6 +702,7 @@ set(openPMD_PYTHON_EXAMPLE_NAMES
     7_extended_write_serial
     9_particle_write_serial
     11_particle_dataframe
+    12_span_write
 )
 
 if(openPMD_USE_INVASIVE_TESTS)
@@ -907,7 +909,9 @@ if(openPMD_INSTALL)
     endif()
     install(DIRECTORY "${openPMD_SOURCE_DIR}/include/openPMD"
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-        FILES_MATCHING PATTERN "*.hpp"
+        FILES_MATCHING
+            PATTERN "*.hpp"
+            PATTERN "*.tpp"
     )
     install(
         FILES ${openPMD_BINARY_DIR}/include/openPMD/config.hpp

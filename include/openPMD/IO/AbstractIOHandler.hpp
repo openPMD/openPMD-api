@@ -56,6 +56,36 @@ public:
     virtual ~unsupported_data_error() { }
 };
 
+/**
+ * @brief Determine what items should be flushed upon Series::flush()
+ *
+ */
+enum class FlushLevel : unsigned char
+{
+    /**
+     * Flush operation that was triggered by user code.
+     * Everything flushable must be flushed.
+     * This mode defines a flush point (see docs/source/usage/workflow.rst.rst).
+     */
+    UserFlush,
+    /**
+     * Default mode, used when flushes are triggered internally, e.g. during
+     * parsing to read attributes. Does not trigger a flush point.
+     * All operations must be performed by a backend, except for those that
+     * may only happen at a flush point. Those operations must not be
+     * performed.
+     */
+    InternalFlush,
+    /**
+     * Restricted mode, ensures to set up the openPMD hierarchy (as far as
+     * defined so far) in the backend.
+     * Do not flush record components / datasets, especially do not flush
+     * CREATE_DATASET tasks.
+     * Attributes may or may not be flushed yet.
+     */
+    SkeletonOnly
+};
+
 
 /** Interface for communicating between logical and physically persistent data.
  *
@@ -104,6 +134,7 @@ public:
     Access const m_backendAccess;
     Access const m_frontendAccess;
     std::queue< IOTask > m_work;
+    FlushLevel m_flushLevel = FlushLevel::InternalFlush;
 }; // AbstractIOHandler
 
 } // namespace openPMD

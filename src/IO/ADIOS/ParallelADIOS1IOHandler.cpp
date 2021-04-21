@@ -181,6 +181,9 @@ ParallelADIOS1IOHandlerImpl::flush()
                 case O::READ_DATASET:
                     readDataset(i.writable, deref_dynamic_cast< Parameter< O::READ_DATASET > >(i.parameter.get()));
                     break;
+                case O::GET_BUFFER_VIEW:
+                    getBufferView(i.writable, deref_dynamic_cast< Parameter< O::GET_BUFFER_VIEW > >(i.parameter.get()));
+                    break;
                 case O::READ_ATT:
                     readAttribute(i.writable, deref_dynamic_cast< Parameter< O::READ_ATT > >(i.parameter.get()));
                     break;

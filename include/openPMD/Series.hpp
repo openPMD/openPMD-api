@@ -110,6 +110,7 @@ class SeriesInternal;
  */
 class SeriesImpl : public AttributableImpl
 {
+    friend class AttributableImpl;
     friend class Iteration;
     friend class Writable;
     friend class SeriesIterator;
@@ -343,7 +344,9 @@ OPENPMD_private:
     void init(std::shared_ptr< AbstractIOHandler >, std::unique_ptr< ParsedInput >);
     void initDefaults();
     std::future< void > flush_impl(
-        iterations_iterator begin, iterations_iterator end );
+        iterations_iterator begin,
+        iterations_iterator end,
+        FlushLevel );
     void flushFileBased( iterations_iterator begin, iterations_iterator end );
     void flushGroupBased( iterations_iterator begin, iterations_iterator end );
     void flushMeshesPath();

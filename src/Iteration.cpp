@@ -129,7 +129,7 @@ Iteration::close( bool _flush )
             auto end = begin;
             ++end;
 
-            s->flush_impl( begin, end );
+            s->flush_impl( begin, end, FlushLevel::UserFlush );
         }
     }
     else
@@ -158,7 +158,7 @@ Iteration::open()
     ++end;
     // set dirty, so Series::flush will open the file
     this->dirty() = true;
-    s->flush_impl( begin, end );
+    s->flush_impl( begin, end, FlushLevel::UserFlush );
     this->dirty() = false;
 
     return *this;
@@ -283,6 +283,10 @@ Iteration::flush()
             for( auto& m : meshes )
                 m.second.flush(m.first);
         }
+        else
+        {
+            meshes.dirty() = false;
+        }
 
         if( !particles.empty() || s->containsAttribute("particlesPath") )
         {
@@ -292,6 +296,10 @@ Iteration::flush()
             particles.flush(s->particlesPath());
             for( auto& species : particles )
                 species.second.flush(species.first);
+        }
+        else
+        {
+            particles.dirty() = false;
         }
 
         flushAttributes();
@@ -463,6 +471,10 @@ void Iteration::read_impl( std::string const & groupPath )
             m.read();
         }
     }
+    else
+    {
+        meshes.dirty() = false;
+    }
 
     if( hasParticles )
     {
@@ -484,6 +496,10 @@ void Iteration::read_impl( std::string const & groupPath )
             IOHandler()->flush();
             p.read();
         }
+    }
+    else
+    {
+        particles.dirty() = false;
     }
 
     readAttributes();
@@ -592,6 +608,10 @@ bool
 Iteration::dirtyRecursive() const
 {
     if( dirty() )
+    {
+        return true;
+    }
+    if( particles.dirty() || meshes.dirty() )
     {
         return true;
     }

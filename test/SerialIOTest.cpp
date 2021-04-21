@@ -3467,11 +3467,52 @@ iterate_nonstreaming_series( std::string const & file )
             auto iteration = iterations[ i ];
             auto E_x = iteration.meshes[ "E" ][ "x" ];
             E_x.resetDataset(
-                openPMD::Dataset( openPMD::Datatype::INT, { extent } ) );
+                openPMD::Dataset( openPMD::Datatype::INT, { 2, extent } ) );
             std::vector< int > data( extent, i );
-            E_x.storeChunk( data, { 0 }, { extent } );
-            // we encourage manually closing iterations, but it should not matter
-            // so let's do the switcharoo for this test
+            E_x.storeChunk( data, { 0, 0 }, { 1, extent } );
+            bool taskSupportedByBackend = true;
+            DynamicMemoryView< int > memoryView = E_x.storeChunk< int >(
+                { 1, 0 },
+                { 1, extent },
+                /*
+                 * Hijack the functor that is called for buffer creation.
+                 * This allows us to check if the backend has explicit support
+                 * for buffer creation or if the fallback implementation is
+                 * used.
+                 */
+                [ &taskSupportedByBackend ]( size_t size )
+                {
+                    taskSupportedByBackend = false;
+                    return std::shared_ptr< int >{
+                        new int[ size ], []( auto * ptr ) { delete[] ptr; } };
+                } );
+            if( writeSeries.backend() == "ADIOS2" )
+            {
+                // that backend must support span creation
+                REQUIRE( taskSupportedByBackend );
+            }
+            auto span = memoryView.currentBuffer();
+            for( size_t j = 0; j < span.size(); ++j )
+            {
+                span[ j ] = j;
+            }
+
+            /*
+             * This is to test whether defaults are correctly written for
+             * scalar record components since there previously was a bug.
+             */
+            auto scalarMesh =
+                iteration
+                    .meshes[ "i_energyDensity" ][ MeshRecordComponent::SCALAR ];
+            scalarMesh.resetDataset( Dataset( Datatype::INT, { 5 } ) );
+            auto scalarSpan =
+                scalarMesh.storeChunk< int >( { 0 }, { 5 } ).currentBuffer();
+            for( size_t j = 0; j < scalarSpan.size(); ++j )
+            {
+                scalarSpan[ j ] = j;
+            }
+            // we encourage manually closing iterations, but it should not
+            // matter so let's do the switcharoo for this test
             if( i % 2 == 0 )
             {
                 writeSeries.flush();
@@ -3491,9 +3532,11 @@ iterate_nonstreaming_series( std::string const & file )
     {
         // ReadIterations takes care of Iteration::open()ing iterations
         auto E_x = iteration.meshes[ "E" ][ "x" ];
-        REQUIRE( E_x.getDimensionality() == 1 );
-        REQUIRE( E_x.getExtent()[ 0 ] == extent );
-        auto chunk = E_x.loadChunk< int >( { 0 }, { extent } );
+        REQUIRE( E_x.getDimensionality() == 2 );
+        REQUIRE( E_x.getExtent()[ 0 ] == 2 );
+        REQUIRE( E_x.getExtent()[ 1 ] == extent );
+        auto chunk = E_x.loadChunk< int >( { 0, 0 }, { 1, extent } );
+        auto chunk2 = E_x.loadChunk< int >( { 1, 0 }, { 1, extent } );
         // we encourage manually closing iterations, but it should not matter
         // so let's do the switcharoo for this test
         if( last_iteration_index % 2 == 0 )
@@ -3508,6 +3551,7 @@ iterate_nonstreaming_series( std::string const & file )
         for( size_t i = 0; i < extent; ++i )
         {
             REQUIRE( chunk.get()[ i ] == int(iteration.iterationIndex) );
+            REQUIRE( chunk2.get()[ i ] == int(i) );
         }
         last_iteration_index = iteration.iterationIndex;
     }

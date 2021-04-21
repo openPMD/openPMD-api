@@ -175,6 +175,11 @@ RecordComponent::empty() const
 void
 RecordComponent::flush(std::string const& name)
 {
+    if( IOHandler()->m_flushLevel == FlushLevel::SkeletonOnly )
+    {
+        *this->m_name = name;
+        return;
+    }
     if(IOHandler()->m_frontendAccess == Access::READ_ONLY )
     {
         while( !m_chunks->empty() )

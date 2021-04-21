@@ -74,8 +74,20 @@ Record::flush_impl(std::string const& name)
             }
         }
 
-        for( auto& comp : *this )
-            comp.second.flush(comp.first);
+        if( scalar() )
+        {
+            for( auto& comp : *this )
+            {
+                comp.second.flush(name);
+                writable().abstractFilePosition =
+                    comp.second.writable().abstractFilePosition;
+            }
+        }
+        else
+        {
+            for( auto& comp : *this )
+                comp.second.flush(comp.first);
+        }
 
         flushAttributes();
     }

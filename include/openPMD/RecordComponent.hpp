@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2021 Fabian Koller, Axel Huebl and Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -75,6 +75,9 @@ struct IsContiguousContainer< std::array< T_Value, N > >
 };
 } // namespace traits
 
+template< typename T >
+class DynamicMemoryView;
+
 class RecordComponent : public BaseRecordComponent
 {
     template<
@@ -89,6 +92,8 @@ class RecordComponent : public BaseRecordComponent
     friend class BaseRecord;
     friend class Record;
     friend class Mesh;
+    template< typename >
+    friend class DynamicMemoryView;
 
 public:
     enum class Allocation
@@ -201,6 +206,46 @@ public:
     >::type
     storeChunk(T_ContiguousContainer &, Offset = {0u}, Extent = {-1u});
 
+    /**
+     * @brief Overload of storeChunk() that lets the openPMD API allocate
+     *        a buffer.
+     *
+     * This may save memory if the openPMD backend in use is able to provide
+     * users a view into its own buffers, avoiding the need to allocate
+     * a new buffer.
+     *
+     * Data can be written into the returned buffer until the next call to
+     * Series::flush() at which time the data will be read from.
+     *
+     * In order to provide a view into backend buffers, this call must possibly
+     * create files and datasets in the backend, making it MPI-collective.
+     * In order to avoid this, calling Series::flush() prior to this is
+     * recommended to flush definitions.
+     *
+     * @param createBuffer If the backend in use has no special support for this
+     *        operation, the openPMD API will fall back to creating a buffer,
+     *        queuing it for writing and returning a view into that buffer to
+     *        the user. The functor createBuffer will be called for this
+     *        purpose. It consumes a length parameter of type size_t and should
+     *        return a shared_ptr of type T to a buffer at least that length.
+     *        In that case, using this API call is equivalent to (1) creating
+     *        a shared pointer via createBuffer and (2) then using the regular
+     *        storeChunk() API on it.
+     *        If the backend supports it, the buffer is not read before the next
+     *        flush point and becomes invalid afterwards.
+     *
+     * @return View into a buffer that can be filled with data.
+     */
+    template< typename T, typename F >
+    DynamicMemoryView< T > storeChunk( Offset, Extent, F && createBuffer );
+
+    /**
+     * Overload of span-based storeChunk() that uses operator new() to create
+     * a buffer.
+     */
+    template< typename T >
+    DynamicMemoryView< T > storeChunk( Offset, Extent );
+
     static constexpr char const * const SCALAR = "\vScalar";
 
     virtual ~RecordComponent() = default;
@@ -238,217 +283,22 @@ private:
      * @return true If dirty.
      * @return false Otherwise.
      */
-    bool
-    dirtyRecursive() const;
+    bool dirtyRecursive() const;
 
 protected:
     /**
      * Make sure to parse a RecordComponent only once.
      */
     std::shared_ptr< bool > hasBeenRead = std::make_shared< bool >( false );
+    /**
+     * The same std::string that the parent class would pass as parameter to
+     * RecordComponent::flush().
+     * This is stored only upon RecordComponent::flush() if
+     * AbstractIOHandler::flushLevel is set to FlushLevel::SkeletonOnly
+     * (for use by the Span<T>-based overload of RecordComponent::storeChunk()).
+     */
+    std::shared_ptr< std::string > m_name = std::make_shared< std::string >();
 }; // RecordComponent
-
-
-template< typename T >
-inline RecordComponent&
-RecordComponent::makeConstant(T value)
-{
-    if( written() )
-        throw std::runtime_error("A recordComponent can not (yet) be made constant after it has been written.");
-
-    *m_constantValue = Attribute(value);
-    *m_isConstant = true;
-    return *this;
-}
-
-template< typename T >
-inline RecordComponent&
-RecordComponent::makeEmpty( uint8_t dimensions )
-{
-    return makeEmpty( Dataset(
-        determineDatatype< T >(),
-        Extent( dimensions, 0 ) ) );
-}
-
-template< typename T >
-inline std::shared_ptr< T > RecordComponent::loadChunk(
-    Offset o, Extent e )
-{
-    uint8_t dim = getDimensionality();
-
-    // default arguments
-    //   offset = {0u}: expand to right dim {0u, 0u, ...}
-    Offset offset = o;
-    if( o.size() == 1u && o.at(0) == 0u && dim > 1u )
-        offset = Offset(dim, 0u);
-
-    //   extent = {-1u}: take full size
-    Extent extent(dim, 1u);
-    if( e.size() == 1u && e.at(0) == -1u )
-    {
-        extent = getExtent();
-        for( uint8_t i = 0u; i < dim; ++i )
-            extent[i] -= offset[i];
-    }
-    else
-        extent = e;
-
-    uint64_t numPoints = 1u;
-    for( auto const& dimensionSize : extent )
-        numPoints *= dimensionSize;
-
-    auto newData = std::shared_ptr<T>(new T[numPoints], []( T *p ){ delete [] p; });
-    loadChunk(newData, offset, extent);
-    return newData;
-}
-
-template< typename T >
-inline void RecordComponent::loadChunk(
-    std::shared_ptr< T > data,
-    Offset o,
-    Extent e )
-{
-    Datatype dtype = determineDatatype(data);
-    if( dtype != getDatatype() )
-        if( !isSameInteger< T >( dtype ) &&
-            !isSameFloatingPoint< T >( dtype ) &&
-            !isSameComplexFloatingPoint< T >( dtype ) )
-            throw std::runtime_error("Type conversion during chunk loading not yet implemented");
-
-    uint8_t dim = getDimensionality();
-
-    // default arguments
-    //   offset = {0u}: expand to right dim {0u, 0u, ...}
-    Offset offset = o;
-    if( o.size() == 1u && o.at(0) == 0u && dim > 1u )
-        offset = Offset(dim, 0u);
-
-    //   extent = {-1u}: take full size
-    Extent extent(dim, 1u);
-    if( e.size() == 1u && e.at(0) == -1u )
-    {
-        extent = getExtent();
-        for( uint8_t i = 0u; i < dim; ++i )
-            extent[i] -= offset[i];
-    }
-    else
-        extent = e;
-
-    if( extent.size() != dim || offset.size() != dim )
-    {
-        std::ostringstream oss;
-        oss << "Dimensionality of chunk ("
-            << "offset=" << offset.size() << "D, "
-            << "extent=" << extent.size() << "D) "
-            << "and record component ("
-            << int(dim) << "D) "
-            << "do not match.";
-        throw std::runtime_error(oss.str());
-    }
-    Extent dse = getExtent();
-    for( uint8_t i = 0; i < dim; ++i )
-        if( dse[i] < offset[i] + extent[i] )
-            throw std::runtime_error("Chunk does not reside inside dataset (Dimension on index " + std::to_string(i)
-                                     + ". DS: " + std::to_string(dse[i])
-                                     + " - Chunk: " + std::to_string(offset[i] + extent[i])
-                                     + ")");
-    if( !data )
-        throw std::runtime_error("Unallocated pointer passed during chunk loading.");
-
-    if( constant() )
-    {
-        uint64_t numPoints = 1u;
-        for( auto const& dimensionSize : extent )
-            numPoints *= dimensionSize;
-
-        T value = m_constantValue->get< T >();
-
-        T* raw_ptr = data.get();
-        std::fill(raw_ptr, raw_ptr + numPoints, value);
-    } else
-    {
-        Parameter< Operation::READ_DATASET > dRead;
-        dRead.offset = offset;
-        dRead.extent = extent;
-        dRead.dtype = getDatatype();
-        dRead.data = std::static_pointer_cast< void >(data);
-        m_chunks->push(IOTask(this, dRead));
-    }
-}
-
-template< typename T >
-inline void
-RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
-{
-    if( constant() )
-        throw std::runtime_error("Chunks cannot be written for a constant RecordComponent.");
-    if( empty() )
-        throw std::runtime_error("Chunks cannot be written for an empty RecordComponent.");
-    if( !data )
-        throw std::runtime_error("Unallocated pointer passed during chunk store.");
-    Datatype dtype = determineDatatype(data);
-    if( dtype != getDatatype() )
-    {
-        std::ostringstream oss;
-        oss << "Datatypes of chunk data ("
-            << dtype
-            << ") and record component ("
-            << getDatatype()
-            << ") do not match.";
-        throw std::runtime_error(oss.str());
-    }
-    uint8_t dim = getDimensionality();
-    if( e.size() != dim || o.size() != dim )
-    {
-        std::ostringstream oss;
-        oss << "Dimensionality of chunk ("
-            << "offset=" << o.size() << "D, "
-            << "extent=" << e.size() << "D) "
-            << "and record component ("
-            << int(dim) << "D) "
-            << "do not match.";
-        throw std::runtime_error(oss.str());
-    }
-    Extent dse = getExtent();
-    for( uint8_t i = 0; i < dim; ++i )
-        if( dse[i] < o[i] + e[i] )
-            throw std::runtime_error("Chunk does not reside inside dataset (Dimension on index " + std::to_string(i)
-                                     + ". DS: " + std::to_string(dse[i])
-                                     + " - Chunk: " + std::to_string(o[i] + e[i])
-                                     + ")");
-
-    Parameter< Operation::WRITE_DATASET > dWrite;
-    dWrite.offset = o;
-    dWrite.extent = e;
-    dWrite.dtype = dtype;
-    /* std::static_pointer_cast correctly reference-counts the pointer */
-    dWrite.data = std::static_pointer_cast< void const >(data);
-    m_chunks->push(IOTask(this, dWrite));
-}
-
-template< typename T_ContiguousContainer >
-inline typename std::enable_if<
-    traits::IsContiguousContainer< T_ContiguousContainer >::value
->::type
-RecordComponent::storeChunk(T_ContiguousContainer & data, Offset o, Extent e)
-{
-    uint8_t dim = getDimensionality();
-
-    // default arguments
-    //   offset = {0u}: expand to right dim {0u, 0u, ...}
-    Offset offset = o;
-    if( o.size() == 1u && o.at(0) == 0u && dim > 1u )
-        offset = Offset(dim, 0u);
-
-    //   extent = {-1u}: take full size
-    Extent extent(dim, 1u);
-    //   avoid outsmarting the user:
-    //   - stdlib data container implement 1D -> 1D chunk to write
-    if( e.size() == 1u && e.at(0) == -1u && dim == 1u )
-        extent.at(0) = data.size();
-    else
-        extent = e;
-
-    storeChunk(shareRaw(data), offset, extent);
-}
 } // namespace openPMD
+
+#include "RecordComponent.tpp"

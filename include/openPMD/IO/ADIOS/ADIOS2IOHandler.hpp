@@ -62,6 +62,7 @@ class ADIOS2IOHandler;
 namespace detail
 {
     template < typename, typename > struct DatasetHelper;
+    struct GetSpan;
     struct DatasetReader;
     struct AttributeReader;
     struct AttributeWriter;
@@ -104,6 +105,7 @@ class ADIOS2IOHandlerImpl
 : public AbstractIOHandlerImplCommon< ADIOS2FilePosition >
 {
     template < typename, typename > friend struct detail::DatasetHelper;
+    friend struct detail::GetSpan;
     friend struct detail::DatasetReader;
     friend struct detail::AttributeReader;
     friend struct detail::AttributeWriter;
@@ -192,6 +194,9 @@ public:
 
     void readDataset( Writable *,
                       Parameter< Operation::READ_DATASET > & ) override;
+
+    void getBufferView( Writable *,
+                      Parameter< Operation::GET_BUFFER_VIEW > & ) override;
 
     void readAttribute( Writable *,
                         Parameter< Operation::READ_ATT > & ) override;
@@ -951,7 +956,14 @@ namespace detail
      */
     struct BufferedAction
     {
+        explicit BufferedAction( ) = default;
         virtual ~BufferedAction( ) = default;
+
+        BufferedAction( BufferedAction const & other ) = delete;
+        BufferedAction( BufferedAction && other ) = default;
+
+        BufferedAction & operator=( BufferedAction const & other ) = delete;
+        BufferedAction & operator=( BufferedAction && other ) = default;
 
         virtual void run( BufferedActions & ) = 0;
     };
@@ -989,15 +1001,30 @@ namespace detail
         run( BufferedActions & );
     };
 
-    struct BufferedAttributeWrite
+    struct BufferedAttributeWrite : BufferedAction
     {
         std::string name;
         Datatype dtype;
         Attribute::resource resource;
         std::vector< char > bufferForVecString;
 
-        void
-        run( BufferedActions & );
+        void run( BufferedActions & ) override;
+    };
+
+    struct I_UpdateSpan
+    {
+        virtual void *update() = 0;
+        virtual ~I_UpdateSpan() = default;
+    };
+
+    template< typename T >
+    struct UpdateSpan : I_UpdateSpan
+    {
+        adios2::detail::Span< T > span;
+
+        UpdateSpan( adios2::detail::Span< T > );
+
+        void *update() override;
     };
 
     /*
@@ -1038,10 +1065,45 @@ namespace detail
         std::string const m_IOName;
         adios2::ADIOS & m_ADIOS;
         adios2::IO m_IO;
+        /**
+         * The default queue for deferred actions.
+         * Drained upon BufferedActions::flush().
+         */
         std::vector< std::unique_ptr< BufferedAction > > m_buffer;
+        /**
+         * Buffer for attributes to be written in the new (variable-based)
+         * attribute layout.
+         * Reason: If writing one variable twice within the same ADIOS step,
+         * it is undefined which value ADIOS2 will store.
+         * We want the last write operation to succeed, so this map stores
+         * attribute writes by attribute name, allowing us to override older
+         * write commands.
+         * The queue is drained only when closing a step / the engine.
+         */
         std::map< std::string, BufferedAttributeWrite > m_attributeWrites;
+        /**
+         * @todo This one is unnecessary, in the new schema, attribute reads do
+         * not need to be deferred, but can happen instantly without performance
+         * penalty, once preloadAttributes has been filled.
+         */
         std::vector< BufferedAttributeRead > m_attributeReads;
+        /**
+         * This contains deferred actions that have already been enqueued into
+         * ADIOS2, but not yet performed in ADIOS2.
+         * We must store them somewhere until the next PerformPuts/Gets, EndStep
+         * or Close in ADIOS2 to avoid use after free conditions.
+         */
+        std::vector< std::unique_ptr< BufferedAction > > m_alreadyEnqueued;
         adios2::Mode m_mode;
+        /**
+         * The base pointer of an ADIOS2 span might change after reallocations.
+         * The frontend will ask the backend for those updated base pointers.
+         * Spans given out by the ADIOS2 backend to the frontend are hence
+         * identified by an unsigned integer and stored in this member for later
+         * retrieval of the updated base pointer.
+         * This map is cleared upon flush points.
+         */
+        std::map< unsigned, std::unique_ptr< I_UpdateSpan > > m_updateSpans;
         detail::WriteDataset const m_writeDataset;
         detail::DatasetReader const m_readDataset;
         detail::AttributeReader const m_attributeReader;
@@ -1089,6 +1151,7 @@ namespace detail
         /**
          * Flush deferred IO actions.
          *
+         * @param level Flush Level. Only execute performPutsGets if UserFlush.
          * @param performPutsGets A functor that takes as parameters (1) *this
          *     and (2) the ADIOS2 engine.
          *     Its task is to ensure that ADIOS2 performs Put/Get operations.
@@ -1104,6 +1167,7 @@ namespace detail
         template< typename F >
         void
         flush(
+            FlushLevel level,
             F && performPutsGets,
             bool writeAttributes,
             bool flushUnconditionally );
@@ -1114,7 +1178,7 @@ namespace detail
          *
          */
         void
-        flush( bool writeAttributes = false );
+        flush( FlushLevel, bool writeAttributes = false );
 
         /**
          * @brief Begin or end an ADIOS step.

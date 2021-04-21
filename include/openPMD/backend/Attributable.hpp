@@ -203,6 +203,7 @@ OPENPMD_protected:
     internal::SeriesInternal const & retrieveSeries() const;
     internal::SeriesInternal & retrieveSeries();
 
+    void seriesFlush( FlushLevel );
     void flushAttributes();
     void readAttributes();
 

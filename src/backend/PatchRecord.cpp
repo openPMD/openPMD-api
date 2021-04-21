@@ -48,6 +48,10 @@ PatchRecord::flush_impl(std::string const& path)
             comp.second.flush(comp.first);
     } else
         this->operator[](RecordComponent::SCALAR).flush(path);
+    if( IOHandler()->m_flushLevel == FlushLevel::UserFlush )
+    {
+        this->dirty() = false;
+    }
 }
 
 void

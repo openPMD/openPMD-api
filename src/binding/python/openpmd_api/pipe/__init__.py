@@ -114,6 +114,14 @@ class Chunk:
         return Chunk(offset, extent)
 
 
+class deferred_load:
+    def __init__(self, source, dynamicView, offset, extent):
+        self.source = source
+        self.dynamicView = dynamicView
+        self.offset = offset
+        self.extent = extent
+
+
 class particle_patch_load:
     """
     A deferred load/store operation for a particle patch.
@@ -145,6 +153,7 @@ class pipe:
         self.outfile = outfile
         self.inconfig = inconfig
         self.outconfig = outconfig
+        self.loads = []
         self.comm = comm
 
     def run(self):
@@ -218,11 +227,16 @@ class pipe:
                 self.__copy(
                     in_iteration, out_iteration,
                     current_path + str(in_iteration.iteration_index) + "/")
+                for deferred in self.loads:
+                    deferred.source.load_chunk(
+                        deferred.dynamicView.current_buffer(), deferred.offset,
+                        deferred.extent)
                 in_iteration.close()
                 for patch_load in self.__particle_patches:
                     patch_load.run()
                 out_iteration.close()
                 self.__particle_patches.clear()
+                self.loads.clear()
                 sys.stdout.flush()
         elif isinstance(src, io.Record_Component):
             shape = src.shape
@@ -245,8 +259,10 @@ class pipe:
                     print("{}\t{}/{}:\t{} -- {}".format(
                         current_path, self.comm.rank, self.comm.size,
                         local_chunk.offset, end))
-                chunk = src.load_chunk(local_chunk.offset, local_chunk.extent)
-                dest.store_chunk(chunk, local_chunk.offset, local_chunk.extent)
+                span = dest.store_chunk(local_chunk.offset, local_chunk.extent)
+                self.loads.append(
+                    deferred_load(src, span, local_chunk.offset,
+                                  local_chunk.extent))
         elif isinstance(src, io.Patch_Record_Component):
             dest.reset_dataset(io.Dataset(src.dtype, src.shape))
             if self.comm.rank == 0:

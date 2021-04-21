@@ -134,8 +134,18 @@ internal::SeriesInternal & AttributableImpl::retrieveSeries()
 }
 
 void
+AttributableImpl::seriesFlush( FlushLevel level )
+{
+    writable().seriesFlush( level );
+}
+
+void
 AttributableImpl::flushAttributes()
 {
+    if( IOHandler()->m_flushLevel == FlushLevel::SkeletonOnly )
+    {
+        return;
+    }
     if( dirty() )
     {
         Parameter< Operation::WRITE_ATT > aWrite;

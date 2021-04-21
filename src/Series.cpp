@@ -343,7 +343,10 @@ void
 SeriesImpl::flush()
 {
     auto & series = get();
-    flush_impl( series.iterations.begin(), series.iterations.end() );
+    flush_impl(
+        series.iterations.begin(),
+        series.iterations.end(),
+        FlushLevel::UserFlush );
 }
 
 std::unique_ptr< SeriesImpl::ParsedInput >
@@ -475,20 +478,33 @@ SeriesImpl::initDefaults()
 }
 
 std::future< void >
-SeriesImpl::flush_impl( iterations_iterator begin, iterations_iterator end )
+SeriesImpl::flush_impl(
+    iterations_iterator begin,
+    iterations_iterator end,
+    FlushLevel level )
 {
-    switch( iterationEncoding() )
+    IOHandler()->m_flushLevel = level;
+    try
     {
-        using IE = IterationEncoding;
-        case IE::fileBased:
-            flushFileBased( begin, end );
-            break;
-        case IE::groupBased:
-            flushGroupBased( begin, end );
-            break;
+        switch( iterationEncoding() )
+        {
+            using IE = IterationEncoding;
+            case IE::fileBased:
+                flushFileBased( begin, end );
+                break;
+            case IE::groupBased:
+                flushGroupBased( begin, end );
+                break;
+        }
+        auto res = IOHandler()->flush();
+        IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
+        return res;
     }
-
-    return IOHandler()->flush();
+    catch( ... )
+    {
+        IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
+        throw;
+    }
 }
 
 void
@@ -1128,16 +1144,28 @@ SeriesImpl::advance(
         *iteration.m_closed = Iteration::CloseStatus::Open;
     }
 
-    switch( series.m_iterationEncoding )
+    auto oldFlushLevel = IOHandler()->m_flushLevel;
+    IOHandler()->m_flushLevel = FlushLevel::UserFlush;
+    try
     {
-        using IE = IterationEncoding;
+        switch( series.m_iterationEncoding )
+        {
+            using IE = IterationEncoding;
         case IE::groupBased:
             flushGroupBased( begin, end );
             break;
         case IE::fileBased:
             flushFileBased( begin, end );
             break;
+        }
+        IOHandler()->m_flushLevel = oldFlushLevel;
     }
+    catch( ... )
+    {
+        IOHandler()->m_flushLevel = oldFlushLevel;
+        throw;
+    }
+
     if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend )
     {
         *iteration.m_closed = oldCloseStatus;
@@ -1208,7 +1236,17 @@ SeriesImpl::advance(
     // We cannot call SeriesImpl::flush now, since the IO handler is still filled
     // from calling flush(Group|File)based, but has not been emptied yet
     // Do that manually
-    IOHandler()->flush();
+    IOHandler()->m_flushLevel = FlushLevel::UserFlush;
+    try
+    {
+        IOHandler()->flush();
+    }
+    catch( ... )
+    {
+        IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
+        throw;
+    }
+    IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
 
     return *param.status;
 }

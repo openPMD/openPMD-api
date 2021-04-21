@@ -19,7 +19,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/backend/Writable.hpp"
-#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 
@@ -38,12 +37,17 @@ namespace openPMD
     void
     Writable::seriesFlush()
     {
-        auto & series =
-            AttributableImpl( attributable ).retrieveSeries();
+        seriesFlush( FlushLevel::UserFlush );
+    }
+
+    void
+    Writable::seriesFlush( FlushLevel level )
+    {
+        auto & series = AttributableImpl( attributable ).retrieveSeries();
         series.flush_impl(
                 series.iterations.begin(),
-                series.iterations.end()
-                //, IOHandler->m_flushLevel
+                series.iterations.end(),
+                level
         );
     }
 
