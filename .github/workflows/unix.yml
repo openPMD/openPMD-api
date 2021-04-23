@@ -178,10 +178,12 @@ jobs:
     - name: Install
       run: |
         rm -rf /usr/local/bin/2to3
+        set +e
         brew update
         brew install adios2 || true
         brew install hdf5-mpi || true
         brew install python || true
+        set -e
     - name: Build
       env: {CXXFLAGS: -Werror -Wno-deprecated-declarations, MACOSX_DEPLOYMENT_TARGET: 10.9}
       # C++11 & 14 support in macOS 10.9+
