@@ -241,6 +241,7 @@ public:
    *
    * The operation should overwrite existing file positions, even when the Writable was already marked written.
    * The path parameters.path may contain multiple levels (e.g. first/second/third/). This path should be relative (i.e. it should not start with a slash "/").
+   * The number of levels may be zero, i.e. parameters.path may be an empty string.
    * The Writables file position should correspond to the complete opened path (i.e. first/second/third/ should be assigned to the Writables file position).
    * The Writable should be marked written when the operation completes successfully.
    */

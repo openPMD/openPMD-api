@@ -18,10 +18,10 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Writable.hpp"
 
 #include <iostream>
@@ -247,6 +247,8 @@ Mesh::flush_impl(std::string const& name)
 void
 Mesh::read()
 {
+    auto map = eraseStaleEntries();
+
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
 
@@ -332,7 +334,7 @@ Mesh::read()
     if( scalar() )
     {
         /* using operator[] will incorrectly update parent */
-        this->at(MeshRecordComponent::SCALAR).read();
+        map.at(MeshRecordComponent::SCALAR).read();
     } else
     {
         Parameter< Operation::LIST_PATHS > pList;
@@ -342,12 +344,7 @@ Mesh::read()
         Parameter< Operation::OPEN_PATH > pOpen;
         for( auto const& component : *pList.paths )
         {
-            MeshRecordComponent& rc = (*this)[component];
-            if ( *rc.hasBeenRead )
-            {
-                dirty() = false;
-                continue;
-            }
+            MeshRecordComponent& rc = map[ component ];
             pOpen.path = component;
             IOHandler()->enqueue(IOTask(&rc, pOpen));
             *rc.m_isConstant = true;
@@ -361,12 +358,7 @@ Mesh::read()
         Parameter< Operation::OPEN_DATASET > dOpen;
         for( auto const& component : *dList.datasets )
         {
-            MeshRecordComponent & rc = ( *this )[ component ];
-            if( *rc.hasBeenRead )
-            {
-                dirty() = false;
-                continue;
-            }
+            MeshRecordComponent & rc = map[ component ];
             dOpen.name = component;
             IOHandler()->enqueue(IOTask(&rc, dOpen));
             IOHandler()->flush();
@@ -379,7 +371,7 @@ Mesh::read()
 
     readBase();
 
-    readAttributes();
+    readAttributes( ReadMode::FullyReread );
 }
 } // openPMD
 

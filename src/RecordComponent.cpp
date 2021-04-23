@@ -33,7 +33,8 @@
 
 namespace openPMD
 {
-// we must instantiate this somewhere even if it is constexpr
+// We need to instantiate this somewhere otherwise there might be linker issues
+// despite this thing actually being constepxr
 constexpr char const * const RecordComponent::SCALAR;
 
 RecordComponent::RecordComponent()
@@ -256,13 +257,7 @@ RecordComponent::flush(std::string const& name)
 void
 RecordComponent::read()
 {
-    if ( *hasBeenRead )
-    {
-        dirty() = false;
-        return;
-    }
     readBase();
-    *hasBeenRead = true;
 }
 
 void
@@ -375,7 +370,7 @@ RecordComponent::readBase()
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'unitSI'");
 
-    readAttributes();
+    readAttributes( ReadMode::FullyReread );
 }
 
 bool

@@ -156,13 +156,31 @@ private:
 
     struct DeferredParseAccess
     {
-        std::string index;
+        /**
+         * The group path within /data containing this iteration.
+         * Example: "1" for iteration 1, "" in variable-based iteration
+         * encoding.
+         */
+        std::string path;
+        /**
+         * The iteration index as accessed by the user in series.iterations[i]
+         */
+        uint64_t iteration = 0;
+        /**
+         * If this iteration is part of a Series with file-based layout.
+         * (Group- and variable-based parsing shares the same code logic.)
+         */
         bool fileBased = false;
+        /**
+         * If fileBased == true, the file name (without file path) of the file
+         * containing this iteration.
+         */
         std::string filename;
     };
 
     void flushFileBased(std::string const&, uint64_t);
     void flushGroupBased(uint64_t);
+    void flushVariableBased(uint64_t);
     void flush();
     void deferParseAccess( DeferredParseAccess );
     /*
@@ -177,11 +195,15 @@ private:
      * allow for those different control flows.
      * Finally, read_impl() is called which contains the common parsing
      * logic for an iteration.
+     * 
+     * reread() reads again an Iteration that has been previously read.
+     * Calling it on an Iteration not yet parsed is an error.
      *
      */
     void read();
+    void reread( std::string const & path );
     void readFileBased( std::string filePath, std::string const & groupPath );
-    void readGroupBased( std::string const & groupPath );
+    void readGorVBased( std::string const & groupPath );
     void read_impl( std::string const & groupPath );
 
     /**

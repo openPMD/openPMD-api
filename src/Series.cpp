@@ -287,6 +287,11 @@ SeriesImpl::setIterationEncoding(IterationEncoding ie)
             setIterationFormat(BASEPATH);
             setAttribute("iterationEncoding", std::string("groupBased"));
             break;
+        case IterationEncoding::variableBased:
+            setIterationFormat(
+                auxiliary::replace_first(basePath(), "/%T/", ""));
+            setAttribute("iterationEncoding", std::string("variableBased"));
+            break;
     }
     return *this;
 }
@@ -300,13 +305,13 @@ SeriesImpl::iterationFormat() const
 SeriesImpl&
 SeriesImpl::setIterationFormat(std::string const& i)
 {
-    auto & series = get();
     if( written() )
         throw std::runtime_error("A files iterationFormat can not (yet) be changed after it has been written.");
 
-    if( series.m_iterationEncoding == IterationEncoding::groupBased )
+    if( iterationEncoding() == IterationEncoding::groupBased ||
+        iterationEncoding() == IterationEncoding::variableBased )
         if( basePath() != i && (openPMD() == "1.0.1" || openPMD() == "1.0.0") )
-            throw std::invalid_argument("iterationFormat must not differ from basePath " + basePath() + " for groupBased data");
+            throw std::invalid_argument("iterationFormat must not differ from basePath " + basePath() + " for group- or variableBased data");
 
     setAttribute("iterationFormat", i);
     return *this;
@@ -441,7 +446,7 @@ void SeriesImpl::init(
         if( input->iterationEncoding == IterationEncoding::fileBased )
             readFileBased();
         else
-            readGroupBased();
+            readGorVBased();
 
         if( series.iterations.empty() )
         {
@@ -449,7 +454,7 @@ void SeriesImpl::init(
              * allow setting attributes in that case */
             written() = false;
 
-            initDefaults();
+            initDefaults( input->iterationEncoding );
             setIterationEncoding(input->iterationEncoding);
 
             written() = true;
@@ -458,20 +463,30 @@ void SeriesImpl::init(
         *newType = oldType;
     } else
     {
-        initDefaults();
+        initDefaults( input->iterationEncoding );
         setIterationEncoding(input->iterationEncoding);
     }
 }
 
 void
-SeriesImpl::initDefaults()
+SeriesImpl::initDefaults( IterationEncoding ie )
 {
     if( !containsAttribute("openPMD"))
         setOpenPMD( getStandard() );
     if( !containsAttribute("openPMDextension"))
         setOpenPMDextension(0);
     if( !containsAttribute("basePath"))
-        setAttribute("basePath", std::string(BASEPATH));
+    {
+        if( ie == IterationEncoding::variableBased )
+        {
+            setAttribute(
+                "basePath", auxiliary::replace_first(BASEPATH, "/%T/", ""));
+        }
+        else
+        {
+            setAttribute("basePath", std::string(BASEPATH));
+        }
+    }
     if( !containsAttribute("date"))
         setDate( auxiliary::getDateString() );
     if( !containsAttribute("software"))
@@ -494,7 +509,8 @@ SeriesImpl::flush_impl(
                 flushFileBased( begin, end );
                 break;
             case IE::groupBased:
-                flushGroupBased( begin, end );
+            case IE::variableBased:
+                flushGorVBased( begin, end );
                 break;
         }
         auto res = IOHandler()->flush();
@@ -652,7 +668,7 @@ SeriesImpl::flushFileBased( iterations_iterator begin, iterations_iterator end )
 }
 
 void
-SeriesImpl::flushGroupBased( iterations_iterator begin, iterations_iterator end )
+SeriesImpl::flushGorVBased( iterations_iterator begin, iterations_iterator end )
 {
     auto & series = get();
     if( IOHandler()->m_frontendAccess == Access::READ_ONLY )
@@ -692,6 +708,7 @@ SeriesImpl::flushGroupBased( iterations_iterator begin, iterations_iterator end 
         {
             Parameter< Operation::CREATE_FILE > fCreate;
             fCreate.name = series.m_name;
+            fCreate.encoding = iterationEncoding();
             IOHandler()->enqueue(IOTask(this, fCreate));
         }
 
@@ -729,7 +746,19 @@ SeriesImpl::flushGroupBased( iterations_iterator begin, iterations_iterator end 
             {
                 it->second.parent() = getWritable( &series.iterations );
             }
-            it->second.flushGroupBased(it->first);
+            switch( iterationEncoding() )
+            {
+                using IE = IterationEncoding;
+                case IE::groupBased:
+                    it->second.flushGroupBased( it->first );
+                    break;
+                case IE::variableBased:
+                    it->second.flushVariableBased( it->first );
+                    break;
+                default:
+                    throw std::runtime_error(
+                        "[Series] Internal control flow error" );
+            }
             if( *it->second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
             {
                 // the iteration has no dedicated file in group-based mode
@@ -770,6 +799,7 @@ SeriesImpl::readFileBased( )
     auto & series = get();
     Parameter< Operation::OPEN_FILE > fOpen;
     Parameter< Operation::READ_ATT > aRead;
+    fOpen.encoding = iterationEncoding();
 
     if( !auxiliary::directory_exists(IOHandler()->directory) )
         throw no_such_file_error("Supplied directory is not valid: " + IOHandler()->directory);
@@ -787,8 +817,11 @@ SeriesImpl::readFileBased( )
         if( isContained )
         {
             Iteration & i = series.iterations[ iterationIndex ];
-            i.deferParseAccess(
-                { std::to_string( iterationIndex ), true, entry } );
+            i.deferParseAccess( {
+                std::to_string( iterationIndex ),
+                iterationIndex,
+                true,
+                entry } );
             // TODO skip if the padding is exact the number of chars in an iteration?
             paddings.insert(padding);
         }
@@ -875,6 +908,18 @@ void SeriesImpl::readOneIterationFileBased( std::string const & filePath )
                         << "time series with fileBased iteration "
                             "encoding. Loaded file is groupBased.\n";
         }
+        else if( encoding == "variableBased" )
+        {
+            /*
+             * Unlike if the file were group-based, this one doesn't work
+             * at all since the group paths are different.
+             */
+            throw std::runtime_error(
+                "Series constructor called with iteration "
+                "regex '%T' suggests loading a "
+                "time series with fileBased iteration "
+                "encoding. Loaded file is variableBased." );
+        }
         else
             throw std::runtime_error(
                 "Unknown iterationEncoding: " + encoding );
@@ -906,16 +951,17 @@ void SeriesImpl::readOneIterationFileBased( std::string const & filePath )
         throw std::runtime_error("Unknown openPMD version - " + version);
     IOHandler()->enqueue(IOTask(&series.iterations, pOpen));
 
-    readAttributes();
-    series.iterations.readAttributes();
+    readAttributes( ReadMode::IgnoreExisting );
+    series.iterations.readAttributes(ReadMode::OverrideExisting );
 }
 
 void
-SeriesImpl::readGroupBased( bool do_init )
+SeriesImpl::readGorVBased( bool do_init )
 {
     auto & series = get();
     Parameter< Operation::OPEN_FILE > fOpen;
     fOpen.name = series.m_name;
+    fOpen.encoding = iterationEncoding();
     IOHandler()->enqueue(IOTask(this, fOpen));
     IOHandler()->flush();
 
@@ -933,6 +979,8 @@ SeriesImpl::readGroupBased( bool do_init )
             std::string encoding = Attribute(*aRead.resource).get< std::string >();
             if( encoding == "groupBased" )
                 series.m_iterationEncoding = IterationEncoding::groupBased;
+            else if( encoding == "variableBased" )
+                series.m_iterationEncoding = IterationEncoding::variableBased;
             else if( encoding == "fileBased" )
             {
                 series.m_iterationEncoding = IterationEncoding::fileBased;
@@ -972,37 +1020,40 @@ SeriesImpl::readGroupBased( bool do_init )
         throw std::runtime_error("Unknown openPMD version - " + version);
     IOHandler()->enqueue(IOTask(&series.iterations, pOpen));
 
-    readAttributes();
-    series.iterations.readAttributes();
-
+    readAttributes( ReadMode::IgnoreExisting );
+    /*
+     * 'snapshot' changes over steps, so reread that.
+     */
+    series.iterations.readAttributes( ReadMode::OverrideExisting );
     /* obtain all paths inside the basepath (i.e. all iterations) */
     Parameter< Operation::LIST_PATHS > pList;
     IOHandler()->enqueue(IOTask(&series.iterations, pList));
     IOHandler()->flush();
 
-    for( auto const & it : *pList.paths )
+    auto readSingleIteration =
+        [&series, &pOpen, this]
+        (uint64_t index, std::string path, bool guardClosed )
     {
-        uint64_t index = std::stoull( it );
         if( series.iterations.contains( index ) )
         {
             // maybe re-read
             auto & i = series.iterations.at( index );
-            if( i.closedByWriter() )
+            if( guardClosed && i.closedByWriter() )
             {
-                continue;
+                return;
             }
             if( *i.m_closed != Iteration::CloseStatus::ParseAccessDeferred )
             {
-                pOpen.path = it;
+                pOpen.path = path;
                 IOHandler()->enqueue( IOTask( &i, pOpen ) );
-                i.read();
+                i.reread( path );
             }
         }
         else
         {
             // parse for the first time, resp. delay the parsing process
-            Iteration & i = series.iterations[ std::stoull( it ) ];
-            i.deferParseAccess( { it, false, "" } );
+            Iteration & i = series.iterations[ index ];
+            i.deferParseAccess( { path, index, false, "" } );
             if( !series.m_parseLazily )
             {
                 i.runDeferredParseAccess();
@@ -1013,6 +1064,33 @@ SeriesImpl::readGroupBased( bool do_init )
                 *i.m_closed = Iteration::CloseStatus::ParseAccessDeferred;
             }
         }
+    };
+
+    switch( iterationEncoding() )
+    {
+    case IterationEncoding::groupBased:
+    /*
+     * Sic! This happens when a file-based Series is opened in group-based mode.
+     */
+    case IterationEncoding::fileBased:
+        for( auto const & it : *pList.paths )
+        {
+            uint64_t index = std::stoull( it );
+            readSingleIteration( index, it, true );
+        }
+        break;
+    case IterationEncoding::variableBased:
+    {
+        uint64_t index = 0;
+        if( series.iterations.containsAttribute( "snapshot" ) )
+        {
+            index = series.iterations
+                .getAttribute( "snapshot" )
+                .get< uint64_t >();
+        }
+        readSingleIteration( index, "", false );
+        break;
+    }
     }
 }
 
@@ -1153,7 +1231,8 @@ SeriesImpl::advance(
         {
             using IE = IterationEncoding;
         case IE::groupBased:
-            flushGroupBased( begin, end );
+        case IE::variableBased:
+            flushGorVBased( begin, end );
             break;
         case IE::fileBased:
             flushFileBased( begin, end );
@@ -1229,8 +1308,10 @@ SeriesImpl::advance(
                 // not closed on a per-iteration basis
                 // We will treat it as such nonetheless
                 *iteration.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                break;
             }
-            break;
+            case IE::variableBased: // no action necessary
+                break;
         }
     }
 
@@ -1258,6 +1339,7 @@ SeriesImpl::openIteration( uint64_t index, Iteration iteration )
     auto & series = get();
     // open the iteration's file again
     Parameter< Operation::OPEN_FILE > fOpen;
+    fOpen.encoding = iterationEncoding();
     fOpen.name = iterationFilename( index );
     IOHandler()->enqueue( IOTask( this, fOpen ) );
 
@@ -1266,7 +1348,9 @@ SeriesImpl::openIteration( uint64_t index, Iteration iteration )
     pOpen.path = auxiliary::replace_first( basePath(), "%T/", "" );
     IOHandler()->enqueue( IOTask( &series.iterations, pOpen ) );
     /* open iteration path */
-    pOpen.path = std::to_string( index );
+    pOpen.path = iterationEncoding() == IterationEncoding::variableBased
+        ? ""
+        : std::to_string( index );
     IOHandler()->enqueue( IOTask( &iteration, pOpen ) );
     switch( *iteration.m_closed )
     {

@@ -25,6 +25,7 @@
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/ChunkInfo.hpp"
 #include "openPMD/Dataset.hpp"
+#include "openPMD/IterationEncoding.hpp"
 
 #include <memory>
 #include <map>
@@ -108,7 +109,8 @@ template<>
 struct OPENPMDAPI_EXPORT Parameter< Operation::CREATE_FILE > : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {}
+    Parameter(Parameter const & p) :
+        AbstractParameter(), name(p.name), encoding(p.encoding) {}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -118,13 +120,15 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::CREATE_FILE > : public AbstractPa
     }
 
     std::string name = "";
+    IterationEncoding encoding = IterationEncoding::groupBased;
 };
 
 template<>
 struct OPENPMDAPI_EXPORT Parameter< Operation::OPEN_FILE > : public AbstractParameter
 {
     Parameter() = default;
-    Parameter(Parameter const & p) : AbstractParameter(), name(p.name) {}
+    Parameter(Parameter const & p) :
+        AbstractParameter(), name(p.name), encoding(p.encoding) {}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -134,6 +138,12 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::OPEN_FILE > : public AbstractPara
     }
 
     std::string name = "";
+    /*
+     * The backends might need to ensure availability of certain features
+     * for some iteration encodings, e.g. availability of ADIOS steps for
+     * variableBased encoding.
+     */
+    IterationEncoding encoding = IterationEncoding::groupBased;
 };
 
 template<>

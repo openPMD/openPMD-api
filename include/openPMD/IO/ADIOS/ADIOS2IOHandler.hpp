@@ -32,6 +32,7 @@
 #include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/config.hpp"
+#include "openPMD/IterationEncoding.hpp"
 
 #if openPMD_HAVE_ADIOS2
 #    include <adios2.h>
@@ -224,6 +225,11 @@ public:
 
 private:
     adios2::ADIOS m_ADIOS;
+    /*
+     * If the iteration encoding is variableBased, we default to using the
+     * 2021_02_09 schema since it allows mutable attributes.
+     */
+    IterationEncoding m_iterationEncoding = IterationEncoding::groupBased;
     /**
      * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
      */
@@ -1386,7 +1392,7 @@ public:
         }
         catch( ... )
         {
-            std::cerr << "[~ADIOS2IOHandler] An error occurred." << std::endl;
+             std::cerr << "[~ADIOS2IOHandler] An error occurred." << std::endl;
         }
     }
 

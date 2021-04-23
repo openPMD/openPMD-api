@@ -31,7 +31,7 @@ namespace openPMD
  */
 enum class IterationEncoding
 {
-    fileBased, groupBased
+    fileBased, groupBased, variableBased
 };
 
 std::ostream&

@@ -23,10 +23,12 @@
 #include "openPMD/backend/Attributable.hpp"
 
 #include <initializer_list>
-#include <type_traits>
-#include <stdexcept>
 #include <map>
+#include <set>
+#include <stdexcept>
 #include <string>
+#include <type_traits>
+#include <utility>
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_protected
@@ -106,13 +108,15 @@ class Container : public LegacyAttributable
     static_assert(
         std::is_base_of< AttributableImpl, T >::value,
         "Type of container element must be derived from Writable");
-    using InternalContainer = T_container;
 
     friend class Iteration;
     friend class ParticleSpecies;
     friend class internal::SeriesData;
     friend class SeriesImpl;
     friend class Series;
+
+protected:
+    using InternalContainer = T_container;
 
 public:
     using key_type = typename InternalContainer::key_type;
@@ -321,6 +325,72 @@ OPENPMD_protected:
     }
 
     std::shared_ptr< InternalContainer > m_container;
+
+    /**
+     * This class wraps a Container and forwards operator[]() and at() to it.
+     * It remembers the keys used for accessing. Upon going out of scope, all
+     * keys not yet accessed are removed from the Container.
+     * Note that the container is stored by non-owning reference, thus
+     * requiring that the original Container stay in scope while using this
+     * class.
+     */
+    class EraseStaleEntries
+    {
+        std::set< key_type > m_accessedKeys;
+        /*
+         * Note: Putting a copy here leads to weird bugs due to destructors
+         * being called too eagerly upon destruction.
+         * Should be avoidable by extending the frontend redesign to the
+         * Container class template
+         * (https://github.com/openPMD/openPMD-api/pull/886)
+         */
+        Container & m_originalContainer;
+
+    public:
+        explicit EraseStaleEntries( Container & container_in )
+            : m_originalContainer( container_in )
+        {
+        }
+
+        template< typename K >
+        mapped_type & operator[]( K && k )
+        {
+            m_accessedKeys.insert( k ); // copy
+            return m_originalContainer[ std::forward< K >( k ) ];
+        }
+
+        template< typename K >
+        mapped_type & at( K && k )
+        {
+            m_accessedKeys.insert( k ); // copy
+            return m_originalContainer.at( std::forward< K >( k ) );
+        }
+
+        ~EraseStaleEntries()
+        {
+            auto & map = *m_originalContainer.m_container;
+            using iterator_t = typename InternalContainer::const_iterator;
+            std::vector< iterator_t > deleteMe;
+            deleteMe.reserve( map.size() - m_accessedKeys.size() );
+            for( iterator_t it = map.begin(); it != map.end(); ++it )
+            {
+                auto lookup = m_accessedKeys.find( it->first );
+                if( lookup == m_accessedKeys.end() )
+                {
+                    deleteMe.push_back( it );
+                }
+            }
+            for( auto & it : deleteMe )
+            {
+                map.erase( it );
+            }
+        }
+    };
+
+    EraseStaleEntries eraseStaleEntries()
+    {
+        return EraseStaleEntries( *this );
+    }
 };
 
 } // openPMD

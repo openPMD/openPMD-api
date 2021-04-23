@@ -233,6 +233,7 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
         {
             Parameter< Operation::OPEN_FILE > fOpen;
             fOpen.name = filename;
+            fOpen.encoding = IterationEncoding::fileBased;
             IOHandler()->enqueue(IOTask(s, fOpen));
             flush();
 
@@ -262,6 +263,21 @@ Iteration::flushGroupBased(uint64_t i)
 }
 
 void
+Iteration::flushVariableBased( uint64_t i )
+{
+    if( !written() )
+    {
+        /* create iteration path */
+        Parameter< Operation::OPEN_PATH > pOpen;
+        pOpen.path = "";
+        IOHandler()->enqueue( IOTask( this, pOpen ) );
+        this->setAttribute( "snapshot", i );
+    }
+
+    flush();
+}
+
+void
 Iteration::flush()
 {
     if(IOHandler()->m_frontendAccess == Access::READ_ONLY )
@@ -279,8 +295,10 @@ Iteration::flush()
         if( !meshes.empty() || s->containsAttribute("meshesPath") )
         {
             if( !s->containsAttribute("meshesPath") )
+            {
                 s->setMeshesPath("meshes/");
-            s->flushMeshesPath();
+                s->flushMeshesPath();
+            }
             meshes.flush(s->meshesPath());
             for( auto& m : meshes )
                 m.second.flush(m.first);
@@ -293,8 +311,10 @@ Iteration::flush()
         if( !particles.empty() || s->containsAttribute("particlesPath") )
         {
             if( !s->containsAttribute("particlesPath") )
+            {
                 s->setParticlesPath("particles/");
-            s->flushParticlesPath();
+                s->flushParticlesPath();
+            }
             particles.flush(s->particlesPath());
             for( auto& species : particles )
                 species.second.flush(species.first);
@@ -323,14 +343,25 @@ void Iteration::read()
     auto const & deferred = m_deferredParseAccess->get();
     if( deferred.fileBased )
     {
-        readFileBased( deferred.filename, deferred.index );
+        readFileBased( deferred.filename, deferred.path );
     }
     else
     {
-        readGroupBased( deferred.index );
+        readGorVBased( deferred.path );
     }
     // reset this thing
     *m_deferredParseAccess = auxiliary::Option< DeferredParseAccess >();
+}
+
+void Iteration::reread( std::string const & path )
+{
+    if( m_deferredParseAccess->has_value() )
+    {
+        throw std::runtime_error(
+            "[Iteration] Internal control flow error: Trying to reread an "
+            "iteration that has not yet been read for its first time." );
+    }
+    read_impl( path );
 }
 
 void Iteration::readFileBased(
@@ -343,7 +374,7 @@ void Iteration::readFileBased(
     read_impl( groupPath );
 }
 
-void Iteration::readGroupBased( std::string const & groupPath )
+void Iteration::readGorVBased( std::string const & groupPath )
 {
 
     read_impl(groupPath );
@@ -420,7 +451,9 @@ void Iteration::read_impl( std::string const & groupPath )
         pOpen.path = s->meshesPath();
         IOHandler()->enqueue(IOTask(&meshes, pOpen));
 
-        meshes.readAttributes();
+        meshes.readAttributes( ReadMode::FullyReread );
+
+        auto map = meshes.eraseStaleEntries();
 
         /* obtain all non-scalar meshes */
         IOHandler()->enqueue(IOTask(&meshes, pList));
@@ -429,7 +462,7 @@ void Iteration::read_impl( std::string const & groupPath )
         Parameter< Operation::LIST_ATTS > aList;
         for( auto const& mesh_name : *pList.paths )
         {
-            Mesh& m = meshes[mesh_name];
+            Mesh& m = map[mesh_name];
             pOpen.path = mesh_name;
             aList.attributes->clear();
             IOHandler()->enqueue(IOTask(&m, pOpen));
@@ -459,7 +492,7 @@ void Iteration::read_impl( std::string const & groupPath )
         Parameter< Operation::OPEN_DATASET > dOpen;
         for( auto const& mesh_name : *dList.datasets )
         {
-            Mesh& m = meshes[mesh_name];
+            Mesh& m = map[mesh_name];
             dOpen.name = mesh_name;
             IOHandler()->enqueue(IOTask(&m, dOpen));
             IOHandler()->flush();
@@ -483,16 +516,17 @@ void Iteration::read_impl( std::string const & groupPath )
         pOpen.path = s->particlesPath();
         IOHandler()->enqueue(IOTask(&particles, pOpen));
 
-        particles.readAttributes();
+        particles.readAttributes( ReadMode::FullyReread );
 
         /* obtain all particle species */
         pList.paths->clear();
         IOHandler()->enqueue(IOTask(&particles, pList));
         IOHandler()->flush();
 
+        auto map = particles.eraseStaleEntries();
         for( auto const& species_name : *pList.paths )
         {
-            ParticleSpecies& p = particles[species_name];
+            ParticleSpecies& p = map[species_name];
             pOpen.path = species_name;
             IOHandler()->enqueue(IOTask(&p, pOpen));
             IOHandler()->flush();
@@ -504,7 +538,7 @@ void Iteration::read_impl( std::string const & groupPath )
         particles.dirty() = false;
     }
 
-    readAttributes();
+    readAttributes( ReadMode::FullyReread );
 }
 
 AdvanceStatus
@@ -521,6 +555,7 @@ Iteration::beginStep()
             file = m_attributableData.get();
             break;
         case IE::groupBased:
+        case IE::variableBased:
             file = &series;
             break;
     }
@@ -532,7 +567,8 @@ Iteration::beginStep()
     }
 
     // re-read -> new datasets might be available
-    if( series.iterationEncoding() == IE::groupBased &&
+    if( ( series.iterationEncoding() == IE::groupBased ||
+          series.iterationEncoding() == IE::variableBased ) &&
         ( this->IOHandler()->m_frontendAccess == Access::READ_ONLY ||
           this->IOHandler()->m_frontendAccess == Access::READ_WRITE ) )
     {
@@ -542,7 +578,7 @@ Iteration::beginStep()
         auto newType =
             const_cast< Access * >( &this->IOHandler()->m_frontendAccess );
         *newType = Access::READ_WRITE;
-        series.readGroupBased( false );
+        series.readGorVBased( false );
         *newType = oldType;
         series.iterations.written() = previous;
     }
@@ -564,6 +600,7 @@ Iteration::endStep()
             file = m_attributableData.get();
             break;
         case IE::groupBased:
+        case IE::variableBased:
             file = &series;
             break;
     }
@@ -582,6 +619,7 @@ Iteration::getStepStatus()
         case IE::fileBased:
             return *this->m_stepStatus;
         case IE::groupBased:
+        case IE::variableBased:
             return s->m_stepStatus;
         default:
             throw std::runtime_error( "[Iteration] unreachable" );
@@ -599,6 +637,7 @@ Iteration::setStepStatus( StepStatus status )
             *this->m_stepStatus = status;
             break;
         case IE::groupBased:
+        case IE::variableBased:
             s->m_stepStatus = status;
             break;
         default:

@@ -186,8 +186,9 @@ AttributableImpl::flushAttributes()
 }
 
 void
-AttributableImpl::readAttributes()
+AttributableImpl::readAttributes( ReadMode mode )
 {
+    auto & attri = get();
     Parameter< Operation::LIST_ATTS > aList;
     IOHandler()->enqueue(IOTask(this, aList));
     IOHandler()->flush();
@@ -198,9 +199,27 @@ AttributableImpl::readAttributes()
     std::sort(written_attributes.begin(), written_attributes.end());
 
     std::set< std::string > tmpAttributes;
-    std::set_difference(aList.attributes->begin(), aList.attributes->end(),
-                        written_attributes.begin(), written_attributes.end(),
-                        std::inserter(tmpAttributes, tmpAttributes.begin()));
+    switch( mode )
+    {
+    case ReadMode::IgnoreExisting:
+        // reread: aList - written_attributes
+        std::set_difference(
+            aList.attributes->begin(), aList.attributes->end(),
+            written_attributes.begin(), written_attributes.end(),
+            std::inserter(tmpAttributes, tmpAttributes.begin()));
+        break;
+    case ReadMode::OverrideExisting:
+        tmpAttributes = std::set< std::string >(
+            aList.attributes->begin(),
+            aList.attributes->end() );
+        break;
+    case ReadMode::FullyReread:
+        attri.m_attributes.clear();
+        tmpAttributes = std::set< std::string >(
+            aList.attributes->begin(),
+            aList.attributes->end() );
+        break;
+    }
 
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
@@ -222,6 +241,29 @@ AttributableImpl::readAttributes()
             continue;
         }
         Attribute a(*aRead.resource);
+
+        auto guardUnitDimension =
+            [ this ]( std::string const & key, auto vector )
+        {
+            if( key == "unitDimension" )
+            {
+                // Some backends may report the wrong type when reading
+                if( vector.size() != 7 )
+                {
+                    throw std::runtime_error(
+                        "[Attributable] "
+                        "Unexpected datatype for unitDimension." );
+                }
+                std::array< double, 7 > arr;
+                std::copy_n( vector.begin(), 7, arr.begin() );
+                setAttribute( key, std::move( arr ) );
+            }
+            else
+            {
+                setAttribute( key, std::move( vector ) );
+            }
+        };
+
         switch( *aRead.dtype )
         {
             case DT::CHAR:
@@ -306,13 +348,13 @@ AttributableImpl::readAttributes()
                 setAttribute(att, a.get< std::vector< unsigned long long > >());
                 break;
             case DT::VEC_FLOAT:
-                setAttribute(att, a.get< std::vector< float > >());
+                guardUnitDimension( att, a.get< std::vector< float > >() );
                 break;
             case DT::VEC_DOUBLE:
-                setAttribute(att, a.get< std::vector< double > >());
+                guardUnitDimension( att, a.get< std::vector< double > >() );
                 break;
             case DT::VEC_LONG_DOUBLE:
-                setAttribute(att, a.get< std::vector< long double > >());
+                guardUnitDimension( att, a.get< std::vector< long double > >() );
                 break;
             case DT::VEC_CFLOAT:
                 setAttribute(att, a.get< std::vector< std::complex< float > > >());

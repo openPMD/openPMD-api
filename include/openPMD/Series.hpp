@@ -260,6 +260,9 @@ public:
      */
     IterationEncoding iterationEncoding() const;
     /** Set the <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series">encoding style</A> for multiple iterations in this series.
+     * A preview on the <A HREF="https://github.com/openPMD/openPMD-standard/pull/250">openPMD 2.0 variable-based iteration encoding</A> can be activated with this call.
+     * Making full use of the variable-based iteration encoding requires (1) explicit support by the backend (available only in ADIOS2) and (2) use of the openPMD streaming API.
+     * In other backends and without the streaming API, only one iteration/snapshot may be written in the variable-based encoding, making this encoding a good choice for single-snapshot data dumps.
      *
      * @param   iterationEncoding   Desired <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series">encoding style</A> for multiple iterations in this series.
      * @return  Reference to modified series.
@@ -342,13 +345,20 @@ OPENPMD_private:
 
     std::unique_ptr< ParsedInput > parseInput(std::string);
     void init(std::shared_ptr< AbstractIOHandler >, std::unique_ptr< ParsedInput >);
-    void initDefaults();
+    void initDefaults( IterationEncoding );
     std::future< void > flush_impl(
         iterations_iterator begin,
         iterations_iterator end,
         FlushLevel );
     void flushFileBased( iterations_iterator begin, iterations_iterator end );
-    void flushGroupBased( iterations_iterator begin, iterations_iterator end );
+    /*
+     * Group-based and variable-based iteration layouts share a lot of logic
+     * (realistically, the variable-based iteration layout only throws out
+     *  one layer in the hierarchy).
+     * As a convention, methods that deal with both layouts are called
+     * .*GorVBased, short for .*GroupOrVariableBased
+     */
+    void flushGorVBased( iterations_iterator begin, iterations_iterator end );
     void flushMeshesPath();
     void flushParticlesPath();
     void readFileBased( );
@@ -357,11 +367,8 @@ OPENPMD_private:
      * Note on re-parsing of a Series:
      * If init == false, the parsing process will seek for new
      * Iterations/Records/Record Components etc.
-     * Re-parsing of objects that have already been parsed is not implemented
-     * as of yet. Such a facility will be required upon implementing things such
-     * as resizable datasets.
      */
-    void readGroupBased( bool init = true );
+    void readGorVBased( bool init = true );
     void readBase();
     std::string iterationFilename( uint64_t i );
     void openIteration( uint64_t index, Iteration iteration );

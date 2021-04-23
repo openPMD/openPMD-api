@@ -528,19 +528,23 @@ HDF5IOHandlerImpl::openPath(
 
     /* Sanitize path */
     std::string path = parameters.path;
-    if( auxiliary::starts_with(path, '/') )
-        path = auxiliary::replace_first(path, "/", "");
-    if( !auxiliary::ends_with(path, '/') )
-        path += '/';
+    if( !path.empty() )
+    {
+        if( auxiliary::starts_with(path, '/') )
+            path = auxiliary::replace_first(path, "/", "");
+        if( !auxiliary::ends_with(path, '/') )
+            path += '/';
+        path_id = H5Gopen(node_id,
+                        path.c_str(),
+                        H5P_DEFAULT);
+        VERIFY(path_id >= 0, "[HDF5] Internal error: Failed to open HDF5 group during path opening");
 
-    path_id = H5Gopen(node_id,
-                      path.c_str(),
-                      H5P_DEFAULT);
-    VERIFY(path_id >= 0, "[HDF5] Internal error: Failed to open HDF5 group during path opening");
+        herr_t status;
+        status = H5Gclose(path_id);
+        VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 group during path opening");
+    }
 
     herr_t status;
-    status = H5Gclose(path_id);
-    VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 group during path opening");
     status = H5Gclose(node_id);
     VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 group during path opening");
 

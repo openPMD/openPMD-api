@@ -6,6 +6,7 @@
 
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/openPMD.hpp"
 
 #if openPMD_HAVE_ADIOS2
@@ -3455,11 +3456,178 @@ TEST_CASE( "serial_iterator", "[serial][adios2]" )
 }
 
 void
-iterate_nonstreaming_series( std::string const & file )
+variableBasedSingleIteration( std::string const & file )
+{
+    constexpr Extent::value_type extent = 1000;
+    {
+        Series writeSeries( file, Access::CREATE );
+        writeSeries.setIterationEncoding( IterationEncoding::variableBased );
+        auto iterations = writeSeries.writeIterations();
+        auto iteration = writeSeries.iterations[ 0 ];
+        auto E_x = iteration.meshes[ "E" ][ "x" ];
+        E_x.resetDataset(
+            openPMD::Dataset( openPMD::Datatype::INT, { 1000 } ) );
+        std::vector< int > data( 1000, 0 );
+        std::iota( data.begin(), data.end(), 0 );
+        E_x.storeChunk( data, { 0 }, { 1000 } );
+        writeSeries.flush();
+    }
+
+    {
+        Series readSeries( file, Access::READ_ONLY );
+
+        auto E_x = readSeries.iterations[ 0 ].meshes[ "E" ][ "x" ];
+        REQUIRE( E_x.getDimensionality() == 1 );
+        REQUIRE( E_x.getExtent()[ 0 ] == extent );
+        auto chunk = E_x.loadChunk< int >( { 0 }, { extent } );
+        readSeries.flush();
+        for( size_t i = 0; i < extent; ++i )
+        {
+            REQUIRE( chunk.get()[ i ] == int( i ) );
+        }
+    }
+}
+
+TEST_CASE( "variableBasedSingleIteration", "[serial][adios2]" )
+{
+    for( auto const & t : testedFileExtensions() )
+    {
+        variableBasedSingleIteration( "../samples/variableBasedSingleIteration." + t );
+    }
+}
+
+#if openPMD_HAVE_ADIOS2
+void
+variableBasedSeries( std::string const & file )
+{
+    constexpr Extent::value_type extent = 1000;
+    {
+        Series writeSeries( file, Access::CREATE );
+        writeSeries.setIterationEncoding( IterationEncoding::variableBased );
+        REQUIRE(
+            writeSeries.iterationEncoding() == IterationEncoding::variableBased );
+        if( writeSeries.backend() == "ADIOS1" )
+        {
+            return;
+        }
+        auto iterations = writeSeries.writeIterations();
+        for( size_t i = 0; i < 10; ++i )
+        {
+            auto iteration = iterations[ i ];
+            auto E_x = iteration.meshes[ "E" ][ "x" ];
+            E_x.resetDataset( { openPMD::Datatype::INT, { 1000 } } );
+            std::vector< int > data( 1000, i );
+            E_x.storeChunk( data, { 0 }, { 1000 } );
+
+            // this tests changing extents and dimensionalities
+            // across iterations
+            auto E_y = iteration.meshes[ "E" ][ "y" ];
+            unsigned dimensionality = i % 3 + 1;
+            unsigned len = i + 1;
+            Extent changingExtent( dimensionality, len );
+            E_y.resetDataset( { openPMD::Datatype::INT, changingExtent } );
+            std::vector< int > changingData(
+                std::pow( len, dimensionality ), dimensionality );
+            E_y.storeChunk(
+                changingData, Offset( dimensionality, 0 ), changingExtent );
+
+            // this tests datasets that are present in one iteration, but not
+            // in others
+            auto E_z = iteration.meshes[ "E" ][ std::to_string( i ) ];
+            E_z.resetDataset( { Datatype::INT, { 1 } } );
+            E_z.makeConstant( i );
+            // this tests attributes that are present in one iteration, but not
+            // in others
+            iteration.meshes[ "E" ].setAttribute(
+                "attr_" + std::to_string( i ), i );
+
+            iteration.close();
+        }
+    }
+
+    REQUIRE( auxiliary::directory_exists( file ) );
+
+    auto testRead = [ &file, &extent ]( std::string const & jsonConfig )
+    {
+        Series readSeries( file, Access::READ_ONLY, jsonConfig );
+
+        size_t last_iteration_index = 0;
+        for( auto iteration : readSeries.readIterations() )
+        {
+            auto E_x = iteration.meshes[ "E" ][ "x" ];
+            REQUIRE( E_x.getDimensionality() == 1 );
+            REQUIRE( E_x.getExtent()[ 0 ] == extent );
+            auto chunk = E_x.loadChunk< int >( { 0 }, { extent } );
+            iteration.close();
+            for( size_t i = 0; i < extent; ++i )
+            {
+                REQUIRE( chunk.get()[ i ] == int( iteration.iterationIndex ) );
+            }
+
+            auto E_y = iteration.meshes[ "E" ][ "y" ];
+            unsigned dimensionality = iteration.iterationIndex % 3 + 1;
+            unsigned len = iteration.iterationIndex + 1;
+            Extent changingExtent( dimensionality, len );
+            REQUIRE( E_y.getExtent() == changingExtent );
+
+            // this loop ensures that only the recordcomponent ["E"]["i"] is
+            // present where i == iteration.iterationIndex
+            for( uint64_t otherIteration = 0; otherIteration < 10;
+                 ++otherIteration )
+            {
+                // component is present <=> (otherIteration == i)
+                REQUIRE(
+                    iteration.meshes[ "E" ].contains(
+                        std::to_string( otherIteration ) ) ==
+                    ( otherIteration == iteration.iterationIndex ) );
+                REQUIRE(
+                    iteration.meshes[ "E" ].containsAttribute(
+                        "attr_" + std::to_string( otherIteration ) ) ==
+                    ( otherIteration == iteration.iterationIndex ) );
+            }
+            REQUIRE(
+                iteration
+                    .meshes[ "E" ][ std::to_string( iteration.iterationIndex ) ]
+                    .getAttribute( "value" )
+                    .get< int >() == int( iteration.iterationIndex ) );
+            REQUIRE(
+                iteration.meshes[ "E" ]
+                    .getAttribute(
+                        "attr_" + std::to_string( iteration.iterationIndex ) )
+                    .get< int >() == int( iteration.iterationIndex ) );
+
+            last_iteration_index = iteration.iterationIndex;
+        }
+        REQUIRE( last_iteration_index == 9 );
+    };
+
+    testRead( "{\"defer_iteration_parsing\": true}" );
+    testRead( "{\"defer_iteration_parsing\": false}" );
+}
+
+TEST_CASE( "variableBasedSeries", "[serial][adios2]" )
+{
+    variableBasedSeries( "../samples/variableBasedSeries.bp" );
+}
+#endif
+
+// @todo Upon switching to ADIOS2 2.7.0, test this the other way around also
+void
+iterate_nonstreaming_series(
+    std::string const & file, bool variableBasedLayout )
 {
     constexpr size_t extent = 100;
     {
         Series writeSeries( file, Access::CREATE );
+        if( variableBasedLayout )
+        {
+            if( writeSeries.backend() != "ADIOS2" )
+            {
+                return;
+            }
+            writeSeries.setIterationEncoding(
+                IterationEncoding::variableBased );
+        }
         // use conventional API to write iterations
         auto iterations = writeSeries.iterations;
         for( size_t i = 0; i < 10; ++i )
@@ -3563,9 +3731,11 @@ TEST_CASE( "iterate_nonstreaming_series", "[serial][adios2]" )
     for( auto const & t : testedFileExtensions() )
     {
         iterate_nonstreaming_series(
-            "../samples/iterate_nonstreaming_series_filebased_%T." + t );
+            "../samples/iterate_nonstreaming_series_filebased_%T." + t, false );
         iterate_nonstreaming_series(
-            "../samples/iterate_nonstreaming_series_groupbased." + t );
+            "../samples/iterate_nonstreaming_series_groupbased." + t, false );
+        iterate_nonstreaming_series(
+            "../samples/iterate_nonstreaming_series_variablebased." + t, true );
     }
 }
 
@@ -3584,6 +3754,8 @@ extendDataset( std::string const & ext )
             // dataset resizing unsupported in ADIOS1
             return;
         }
+        // only one iteration written anyway
+        write.setIterationEncoding( IterationEncoding::variableBased );
         Dataset ds1{ Datatype::INT, { 5, 5 } };
         Dataset ds2{ Datatype::INT, { 10, 5 } };
 

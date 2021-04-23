@@ -289,6 +289,7 @@ void ADIOS2IOHandlerImpl::createFile(
             VERIFY( success, "[ADIOS2] Could not create directory." );
         }
 
+        m_iterationEncoding = parameters.encoding;
         associateWithFile( writable, shared_name );
         this->m_dirty.emplace( shared_name );
         getFileData( shared_name ).m_mode = adios2::Mode::Write; // WORKAROUND
@@ -470,6 +471,7 @@ ADIOS2IOHandlerImpl::openFile(
     writable->written = true;
     writable->abstractFilePosition = std::make_shared< ADIOS2FilePosition >( );
 
+    m_iterationEncoding = parameters.encoding;
     // enforce opening the file
     // lazy opening is deathly in parallel situations
     getFileData( file );
@@ -512,7 +514,9 @@ void ADIOS2IOHandlerImpl::openPath(
     std::string prefix =
         filePositionToString( setAndGetFilePosition( writable->parent ) );
     std::string suffix = auxiliary::removeSlashes( parameters.path );
-    std::string infix = auxiliary::ends_with( prefix, '/' ) ? "" : "/";
+    std::string infix = suffix.empty() || auxiliary::ends_with( prefix, '/' )
+        ? ""
+        : "/";
 
     /* ADIOS has no concept for explicitly creating paths.
      * They are implicitly created with the paths of variables/attributes. */
@@ -1525,9 +1529,27 @@ namespace detail
         adios2::Dims const & count,
         bool const constantDims )
     {
-        adios2::Variable< T > var =
-            IO.DefineVariable< T >( name, shape, start, count, constantDims );
-        if ( !var )
+        /*
+         * Step/Variable-based iteration layout:
+         * The variable may already be defined from a previous step,
+         * so check if it's already here.
+         */
+        adios2::Variable< T > var = IO.InquireVariable< T >( name );
+        if( !var )
+        {
+            var = IO.DefineVariable< T >(
+                name, shape, start, count, constantDims );
+        }
+        else
+        {
+            var.SetShape( shape );
+            if( count.size() > 0 )
+            {
+                var.SetSelection( { start, count } );
+            }
+        }
+
+        if( !var )
         {
             throw std::runtime_error(
                 "[ADIOS2] Internal error: Could not create Variable '" + name + "'." );
@@ -2205,6 +2227,12 @@ namespace detail
         static std::set< std::string > fileEngines = {
             "bp4", "bp3", "hdf5", "file"
         };
+
+        // step/variable-based iteration encoding requires the new schema
+        if( m_impl->m_iterationEncoding == IterationEncoding::variableBased )
+        {
+            m_impl->m_schema = ADIOS2Schema::schema_2021_02_09;
+        }
 
         // set engine type
         bool isStreaming = false;

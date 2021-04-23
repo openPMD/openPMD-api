@@ -105,12 +105,6 @@ PatchRecordComponent::flush(std::string const& name)
 void
 PatchRecordComponent::read()
 {
-    if ( *hasBeenRead )
-    {
-        dirty() = false;
-        return;
-    }
-
     Parameter< Operation::READ_ATT > aRead;
 
     aRead.name = "unitSI";
@@ -121,9 +115,7 @@ PatchRecordComponent::read()
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'unitSI'");
 
-    readAttributes(); // this will set dirty() = false
-
-    *hasBeenRead = true;
+    readAttributes( ReadMode::FullyReread ); // this will set dirty() = false
 }
 
 bool
