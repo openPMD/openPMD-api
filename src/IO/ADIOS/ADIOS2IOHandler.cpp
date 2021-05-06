@@ -2399,6 +2399,27 @@ namespace detail
              */
             m_IO.SetParameter( "StatsLevel", "0" );
         }
+        if( m_engineType == "sst" && notYetConfigured( "QueueLimit" ) )
+        {
+            /*
+             * By default, the SST engine of ADIOS2 does not set a limit on its
+             * internal queue length.
+             * If the reading end is slower than the writing end, this will
+             * lead to a congestion in the queue and hence an increasing
+             * memory usage while the writing code goes forward.
+             * We could set a default queue limit of 1, thus forcing the
+             * two codes to proceed entirely in lock-step.
+             * We prefer a default queue limit of 2, which is still lower than
+             * the default infinity, but allows writer and reader to process
+             * data asynchronously as long as neither code fails to keep up the
+             * rhythm. The writer can produce the next iteration while the
+             * reader still deals with the old one.
+             * Thus, a limit of 2 is a good balance between 1 and infinity,
+             * keeping pipeline parallelism a default without running the risk
+             * of using unbound memory.
+             */
+            m_IO.SetParameter( "QueueLimit", "2" );
+        }
 
         // We need to open the engine now already to inquire configuration
         // options stored in there
