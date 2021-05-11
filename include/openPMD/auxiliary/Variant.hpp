@@ -1,4 +1,4 @@
-/* Copyright 2017-2020 Fabian Koller
+/* Copyright 2017-2021 Fabian Koller, Axel Huebl
  *
  * This file is part of openPMD-api.
  *
@@ -22,6 +22,7 @@
 
 #include "VariantSrc.hpp"
 
+#include <cstddef>
 #include <type_traits>
 
 
