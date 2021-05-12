@@ -300,6 +300,7 @@ store_chunk(RecordComponent & r, py::array & a, Offset const & offset, Extent co
         using CXXType = decltype(cxxtype);
         a.inc_ref();
         void* data = a.mutable_data();
+        //  warning: 'store_chunk(openPMD::RecordComponent&, pybind11::array&, const Offset&, const Extent&, const std::vector<bool>&)::<lambda(auto:8)> [with auto:8 = bool]::<lambda(CXXType*)>' declared with greater visibility than the type of its field 'store_chunk(openPMD::RecordComponent&, pybind11::array&, const Offset&, const Extent&, const std::vector<bool>&)::<lambda(auto:8)> [with auto:8 = bool]::<lambda(CXXType*)>::<a capture>' [-Wattributes]
         std::shared_ptr< CXXType > shared( ( CXXType * )data,
                                            [ a ]( CXXType * ) { a.dec_ref(); } );
         r.storeChunk( std::move( shared ), offset, extent );
@@ -628,6 +629,7 @@ load_chunk(RecordComponent & r, py::array & a, Offset const & offset, Extent con
         using CXXType = decltype(cxxtype);
         a.inc_ref();
         void* data = a.mutable_data();
+        //  warning: 'store_chunk(openPMD::RecordComponent&, pybind11::array&, const Offset&, const Extent&, const std::vector<bool>&)::<lambda(auto:8)> [with auto:8 = bool]::<lambda(CXXType*)>' declared with greater visibility than the type of its field 'store_chunk(openPMD::RecordComponent&, pybind11::array&, const Offset&, const Extent&, const std::vector<bool>&)::<lambda(auto:8)> [with auto:8 = bool]::<lambda(CXXType*)>::<a capture>' [-Wattributes]
         std::shared_ptr< CXXType > shared( ( CXXType * )data,
                                            [ a ]( CXXType * ) { a.dec_ref(); } );
         r.loadChunk( std::move( shared ), offset, extent );
