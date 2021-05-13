@@ -11,7 +11,7 @@ Changelog
 
 ...
 
-Changes to "0.13.2"
+Changes to "0.13.4"
 ^^^^^^^^^^^^^^^^^^^
 
 Features
@@ -24,6 +24,50 @@ Other
 """""
 
 - ADIOS2: require version 2.7.0+ #927
+
+
+0.13.4
+------
+**Date:** 2021-05-13
+
+Fix AppleClang & DPC++ Build
+
+Fix a missing include that fails builds with Apple's ``clang`` and Intel's ``dpcpp`` compilers.
+
+Changes to "0.13.3"
+^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- ``Variant.hpp``: ``size_t`` include #972
+
+
+0.13.3
+------
+**Date:** 2021-04-09
+
+Fix Various Read Issues
+
+This release fixes various bugs related to reading: a chunk fallback for constant components, skip missing patch records, a backend bug in each ADIOS2 & HDF5, and we made the Python ``load_chunk`` method more robust.
+
+Changes to "0.13.2"
+^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- ``available_chunks()`` for constant components #942
+- Particle Patches: Do not emplace patch records if they don't exist in the file being read #945
+- ADIOS2: decay ``ReadWrite`` mode into ``adios2::Mode::Read`` if the file exists #943
+- HDF5: fix segfault with libSplash files #962
+- Python: fix ``load_chunk`` to temporary #913
+
+Other
+"""""
+
+- Sphinx: limit docutils to 0.16
+- CI: remove a failing ``find`` command
 
 
 0.13.2
