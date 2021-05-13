@@ -3,6 +3,23 @@
 Changelog
 =========
 
+0.13.4
+------
+**Date:** 2021-05-13
+
+Fix AppleClang & DPC++ Build
+
+Fix a missing include that fails builds with Apple's ``clang`` and Intel's ``dpcpp`` compilers.
+
+Changes to "0.13.3"
+^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- ``Variant.hpp``: ``size_t`` include #972
+
+
 0.13.3
 ------
 **Date:** 2021-04-09
@@ -11,7 +28,7 @@ Fix Various Read Issues
 
 This release fixes various bugs related to reading: a chunk fallback for constant components, skip missing patch records, a backend bug in each ADIOS2 & HDF5, and we made the Python ``load_chunk`` method more robust.
 
-Changes to "0.13.3"
+Changes to "0.13.2"
 ^^^^^^^^^^^^^^^^^^^
 
 Bug Fixes
