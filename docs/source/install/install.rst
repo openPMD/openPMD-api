@@ -107,6 +107,14 @@ If MPI-support shall be enabled, we always have to recompile:
    # optional:                                                                   --user
    openPMD_USE_MPI=ON python3 -m pip install openpmd-api --no-binary openpmd-api
 
+For some exotic architectures and compilers, you might need to disable a compiler feature called `link-time/interprocedural optimization <https://en.wikipedia.org/wiki/Interprocedural_optimization>`_ if you encounter linking problems:
+
+.. code-block:: bash
+
+   export CMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF
+   # optional:                                                --user
+   python3 -m pip install openpmd-api --no-binary openpmd-api
+
 .. _install-cmake:
 
 .. only:: html

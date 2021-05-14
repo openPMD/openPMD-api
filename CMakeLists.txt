@@ -606,7 +606,25 @@ if(openPMD_HAVE_PYTHON)
         src/binding/python/UnitDimension.cpp
     )
     target_link_libraries(openPMD.py PRIVATE openPMD)
-    target_link_libraries(openPMD.py PRIVATE pybind11::module pybind11::lto pybind11::windows_extras)
+    target_link_libraries(openPMD.py PRIVATE pybind11::module pybind11::windows_extras)
+
+    # LTO/IPO: CMake target properties work well for 3.18+ and are buggy before
+    set(_USE_PY_LTO ON)  # default shall be ON
+    if(DEFINED CMAKE_INTERPROCEDURAL_OPTIMIZATION)  # overwrite default if defined
+        if(NOT CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+            set(_USE_PY_LTO OFF)
+        endif()
+    endif()
+    message(STATUS "Python LTO/IPO: ${_USE_PY_LTO}")
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18)
+        set_target_properties(openPMD.py PROPERTIES
+            INTERPROCEDURAL_OPTIMIZATION ${_USE_PY_LTO})
+    else()
+        if(_USE_PY_LTO)
+            target_link_libraries(openPMD.py PRIVATE pybind11::lto)
+        endif()
+    endif()
+    unset(_USE_PY_LTO)
 
     pybind11_extension(openPMD.py)
     pybind11_strip(openPMD.py)
