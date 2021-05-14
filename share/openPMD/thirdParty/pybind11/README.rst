@@ -5,18 +5,27 @@
 
 |Latest Documentation Status| |Stable Documentation Status| |Gitter chat| |CI| |Build status|
 
+|Repology| |PyPI package| |Conda-forge| |Python Versions|
+
+`Setuptools example <https://github.com/pybind/python_example>`_
+• `Scikit-build example <https://github.com/pybind/scikit_build_example>`_
+• `CMake example <https://github.com/pybind/cmake_example>`_
+
+.. start
+
 .. warning::
 
-   Combining older versions of pybind11 (< 2.6.0) with the brand-new Python
-   3.9.0 will trigger undefined behavior that typically manifests as crashes
-   during interpreter shutdown (but could also destroy your data. **You have been
+   Combining older versions of pybind11 (< 2.6.0) with Python 3.9.0 will
+   trigger undefined behavior that typically manifests as crashes during
+   interpreter shutdown (but could also destroy your data. **You have been
    warned.**)
 
-   We recommend that you wait for Python 3.9.1 slated for release in December,
-   which will include a `fix <https://github.com/python/cpython/pull/22670>`_
-   that resolves this problem.  In the meantime, please update to the latest
-   version of pybind11 (2.6.0 or newer), which includes a temporary workaround
-   specifically when Python 3.9.0 is detected at runtime.
+   We recommend that you update to the latest patch release of Python (3.9.1),
+   which includes a `fix <https://github.com/python/cpython/pull/22670>`_
+   that resolves this problem. If you do use Python 3.9.0, please update to
+   the latest version of pybind11 (2.6.0 or newer), which includes a temporary
+   workaround specifically when Python 3.9.0 is detected at runtime.
+
 
 **pybind11** is a lightweight header-only library that exposes C++ types
 in Python and vice versa, mainly to create Python bindings of existing
@@ -36,7 +45,7 @@ this heavy machinery has become an excessively large and unnecessary
 dependency.
 
 Think of this library as a tiny self-contained version of Boost.Python
-with everything stripped away that isn’t relevant for binding
+with everything stripped away that isn't relevant for binding
 generation. Without comments, the core header files only require ~4K
 lines of code and depend on Python (2.7 or 3.5+, or PyPy) and the C++
 standard library. This compact implementation was possible thanks to
@@ -93,7 +102,7 @@ goodies:
   whenever possible to efficiently transfer custom data types.
 
 - It's easy to expose the internal storage of custom data types through
-  Python's buffer protocols. THis is handy e.g. for fast conversion
+  Pythons' buffer protocols. This is handy e.g. for fast conversion
   between C++ matrix classes like Eigen and NumPy without expensive
   copy operations.
 
@@ -101,7 +110,7 @@ goodies:
   transparently applied to all entries of one or more NumPy array
   arguments.
 
-- Python’s slice-based access and assignment operations can be
+- Python's slice-based access and assignment operations can be
   supported with just a few lines of code.
 
 - Everything is contained in just a few header files; there is no need
@@ -123,15 +132,14 @@ goodies:
 Supported compilers
 -------------------
 
-1. Clang/LLVM 3.3 or newer (for Apple Xcode’s clang, this is 5.0.0 or
+1. Clang/LLVM 3.3 or newer (for Apple Xcode's clang, this is 5.0.0 or
    newer)
 2. GCC 4.8 or newer
 3. Microsoft Visual Studio 2015 Update 3 or newer
-4. Intel C++ compiler 18 or newer
-   (`possible issue <https://github.com/pybind/pybind11/pull/2573>`_ on 20.2)
-5. Cygwin/GCC (tested on 2.5.1)
-6. NVCC (CUDA 11.0 tested)
-7. NVIDIA PGI (20.7 and 20.9 tested)
+4. Intel classic C++ compiler 18 or newer (ICC 20.2 tested in CI)
+5. Cygwin/GCC (previously tested on 2.5.1)
+6. NVCC (CUDA 11.0 tested in CI)
+7. NVIDIA PGI (20.9 tested in CI)
 
 About
 -----
@@ -165,7 +173,7 @@ to the terms and conditions of this license.
 
 .. |Latest Documentation Status| image:: https://readthedocs.org/projects/pybind11/badge?version=latest
    :target: http://pybind11.readthedocs.org/en/latest
-.. |Stable Documentation Status| image:: https://img.shields.io/badge/docs-stable-blue
+.. |Stable Documentation Status| image:: https://img.shields.io/badge/docs-stable-blue.svg
    :target: http://pybind11.readthedocs.org/en/stable
 .. |Gitter chat| image:: https://img.shields.io/gitter/room/gitterHQ/gitter.svg
    :target: https://gitter.im/pybind/Lobby
@@ -173,3 +181,11 @@ to the terms and conditions of this license.
    :target: https://github.com/pybind/pybind11/actions
 .. |Build status| image:: https://ci.appveyor.com/api/projects/status/riaj54pn4h08xy40?svg=true
    :target: https://ci.appveyor.com/project/wjakob/pybind11
+.. |PyPI package| image:: https://img.shields.io/pypi/v/pybind11.svg
+   :target: https://pypi.org/project/pybind11/
+.. |Conda-forge| image:: https://img.shields.io/conda/vn/conda-forge/pybind11.svg
+   :target: https://github.com/conda-forge/pybind11-feedstock
+.. |Repology| image:: https://repology.org/badge/latest-versions/python:pybind11.svg
+   :target: https://repology.org/project/python:pybind11/versions
+.. |Python Versions| image:: https://img.shields.io/pypi/pyversions/pybind11.svg
+   :target: https://pypi.org/project/pybind11/
