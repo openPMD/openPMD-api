@@ -21,6 +21,7 @@ pattern="\.c$|\.cpp$|\.F90$|\.h$|\.H$|\.ini$|\.py$|"\
 
 for i in $(find . \
                 -not -path "./.git/*"  \
+                -not -path "./.spack-env/*" \
                 -not -path "./.idea/*" \
                 -type f | \
            grep -P "${pattern}")
