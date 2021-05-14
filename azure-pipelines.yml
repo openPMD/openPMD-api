@@ -233,7 +233,7 @@ jobs:
       git clone https://github.com/spack/spack.git
       . spack/share/spack/setup-env.sh
       spack compiler find
-      spack install -v --fail-fast openpmd-api %gcc@7.5.0
+      spack install -v --fail-fast openpmd-api %gcc
 
       spack load -r openpmd-api
       wget https://gist.githubusercontent.com/ax3l/b2399f2e8923def6a5e55f8bd4e5384c/raw/89ed4101559c917bc7d857f9427682e3f5d40024/CMakeLists.txt
@@ -313,7 +313,7 @@ jobs:
       spack compiler find
       spack bootstrap
       . spack/share/spack/setup-env.sh
-      spack install -v --fail-fast openpmd-api +python +adios1 +adios2 %gcc@7.5.0
+      spack install -v --fail-fast openpmd-api +python +adios1 +adios2 %gcc
 
       spack load -r openpmd-api
       wget https://gist.githubusercontent.com/ax3l/b2399f2e8923def6a5e55f8bd4e5384c/raw/89ed4101559c917bc7d857f9427682e3f5d40024/CMakeLists.txt
@@ -340,7 +340,7 @@ jobs:
       echo "eval \$($(brew --prefix)/bin/brew shellenv)" >>~/.profile
       brew update || true
       brew tap openpmd/openpmd
-      brew install openpmd-api
+      brew install -v openpmd-api
       python3 -c "import openpmd_api as api; print(api.variants)"
       python3 -m openpmd_api.ls --help
       openpmd-ls --help
@@ -521,6 +521,7 @@ jobs:
   - script: |
       brew update || true
       brew install mpich
+      export MPI_HOME=/usr/local
       python3 -m pip install -U pip setuptools wheel cmake --user
       openPMD_USE_MPI=ON python3 -m pip install openpmd-api --no-binary openpmd-api --user
   - script: |
