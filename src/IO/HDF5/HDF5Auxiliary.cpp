@@ -31,8 +31,15 @@
 #   include <array>
 #   include <complex>
 #   include <stack>
+#   include <stdexcept>
 #   include <string>
 #   include <typeinfo>
+
+#   if openPMD_USE_VERIFY
+#       define VERIFY(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error((TEXT)); }
+#   else
+#       define VERIFY(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
+#   endif
 
 
 hid_t
@@ -91,7 +98,10 @@ openPMD::GetH5DataType::operator()(Attribute const &att)
             return H5Tcopy( m_userTypes.at( typeid(std::complex< long double >).name() ) );
         case DT::STRING: {
             hid_t string_t_id = H5Tcopy(H5T_C_S1);
-            H5Tset_size(string_t_id, att.get<std::string>().size());
+            size_t const max_len = att.get<std::string>().size();
+            VERIFY(max_len > 0, "[HDF5] max_len must be >0 for STRING");
+            herr_t status = H5Tset_size(string_t_id, max_len);
+            VERIFY(status >= 0, "[HDF5] Internal error: Failed in H5Tset_size for STRING");
             return string_t_id;
         }
         case DT::VEC_STRING: {
@@ -99,7 +109,9 @@ openPMD::GetH5DataType::operator()(Attribute const &att)
             size_t max_len = 0;
             for (std::string const &s : att.get<std::vector<std::string> >())
                 max_len = std::max(max_len, s.size());
-            H5Tset_size(string_t_id, max_len);
+            VERIFY(max_len > 0, "[HDF5] max_len must be >0 for VEC_STRING");
+            herr_t status = H5Tset_size(string_t_id, max_len);
+            VERIFY(status >= 0, "[HDF5] Internal error: Failed in H5Tset_size for VEC_STRING");
             return string_t_id;
         }
         case DT::BOOL:
