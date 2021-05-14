@@ -233,7 +233,7 @@ jobs:
       git clone https://github.com/spack/spack.git
       . spack/share/spack/setup-env.sh
       spack compiler find
-      spack install -v --fail-fast openpmd-api %gcc
+      spack install -v --fail-fast openpmd-api %gcc@9.3.0
 
       spack load -r openpmd-api
       wget https://gist.githubusercontent.com/ax3l/b2399f2e8923def6a5e55f8bd4e5384c/raw/89ed4101559c917bc7d857f9427682e3f5d40024/CMakeLists.txt
@@ -263,7 +263,7 @@ jobs:
       git clone https://github.com/spack/spack.git
       . spack/share/spack/setup-env.sh
       spack compiler find
-      spack install -v --fail-fast openpmd-api -mpi ^adios2~fortran
+      spack install -v --fail-fast openpmd-api -mpi %gcc@9.3.0 ^adios2~fortran
 
       spack load -r openpmd-api
       wget https://gist.githubusercontent.com/ax3l/b2399f2e8923def6a5e55f8bd4e5384c/raw/89ed4101559c917bc7d857f9427682e3f5d40024/CMakeLists.txt
@@ -286,7 +286,7 @@ jobs:
       git clone https://github.com/spack/spack.git
       . spack/share/spack/setup-env.sh
       spack compiler find
-      spack install -v --fail-fast openpmd-api -mpi ^adios2@master
+      spack install -v --fail-fast openpmd-api -mpi %gcc@9.3.0 ^adios2@master
 
       spack load -r openpmd-api
       wget https://gist.githubusercontent.com/ax3l/b2399f2e8923def6a5e55f8bd4e5384c/raw/89ed4101559c917bc7d857f9427682e3f5d40024/CMakeLists.txt
@@ -313,7 +313,7 @@ jobs:
       spack compiler find
       spack bootstrap
       . spack/share/spack/setup-env.sh
-      spack install -v --fail-fast openpmd-api +python +adios1 +adios2 %gcc
+      spack install -v --fail-fast openpmd-api +python +adios1 +adios2 %gcc@9.3.0
 
       spack load -r openpmd-api
       wget https://gist.githubusercontent.com/ax3l/b2399f2e8923def6a5e55f8bd4e5384c/raw/89ed4101559c917bc7d857f9427682e3f5d40024/CMakeLists.txt
