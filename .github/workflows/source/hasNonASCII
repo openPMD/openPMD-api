@@ -20,7 +20,8 @@ pattern="\.c$|\.cpp$|\.F90$|\.h$|\.H$|\.ini$|\.py$|"\
 
 for i in $(find . \
                 -not -path "./.git/*" \
-                -not -path "./thirdParty/*" \
+                -not -path "./.spack-env/*" \
+                -not -path "./share/openPMD/thirdParty/*" \
                 -type f | \
            grep -P "${pattern}")
 do

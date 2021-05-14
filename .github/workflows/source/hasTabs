@@ -18,6 +18,7 @@ pattern="\.c$|\.cpp$|\.F90$|\.h$|\.H$|\.ini$|\.md$|\.py$|"\
 
 for i in $(find . \
                 -not -path "./.git/*"   \
+                -not -path "./.spack-env/*" \
                 -not -path "./.idea/*"  \
                 -not -path "*wp_parse*" \
                 -type f | \
