@@ -7,6 +7,7 @@ Upgrade Guide
 ------
 
 ADIOS 2.7.0 is now the minimally supported version for ADIOS2 support.
+pybind11 2.6.2 is now the minimally supported version for Python support.
 
 
 0.13.0
