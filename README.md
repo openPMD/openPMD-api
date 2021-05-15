@@ -205,6 +205,13 @@ python3 -m pip install -U cmake
 openPMD_USE_MPI=ON python3 -m pip install openpmd-api --no-binary openpmd-api
 ```
 
+For some exotic architectures and compilers, you might need to disable a compiler feature called [link-time/interprocedural optimization](https://en.wikipedia.org/wiki/Interprocedural_optimization) if you encounter linking problems:
+```bash
+export CMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF
+# optional:                                                --user
+python3 -m pip install openpmd-api --no-binary openpmd-api
+```
+
 ### From Source
 
 [![Source Use Case](https://img.shields.io/badge/use_case-development-brightgreen)](https://cmake.org)

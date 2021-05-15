@@ -69,6 +69,9 @@ class CMakeBuild(build_ext):
             # Windows: has no RPath concept, all `.dll`s must be in %PATH%
             #          or same dir as calling executable
         ]
+        if CMAKE_INTERPROCEDURAL_OPTIMIZATION is not None:
+            cmake_args.append('-DCMAKE_INTERPROCEDURAL_OPTIMIZATION=' +
+                              CMAKE_INTERPROCEDURAL_OPTIMIZATION)
         if sys.platform == "darwin":
             cmake_args.append('-DCMAKE_INSTALL_RPATH=@loader_path')
         else:
@@ -133,6 +136,8 @@ BUILD_TESTING = os.environ.get('openPMD_BUILD_TESTING',
                                BUILD_TESTING)
 BUILD_EXAMPLES = os.environ.get('openPMD_BUILD_EXAMPLES',
                                 BUILD_EXAMPLES)
+CMAKE_INTERPROCEDURAL_OPTIMIZATION = os.environ.get(
+    'CMAKE_INTERPROCEDURAL_OPTIMIZATION', None)
 
 # https://cmake.org/cmake/help/v3.0/command/if.html
 if openPMD_USE_MPI.upper() in ['1', 'ON', 'TRUE', 'YES']:
