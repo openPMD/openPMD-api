@@ -65,6 +65,9 @@ Notice that the ADIOS2 backend is alternatively configurable via :ref:`JSON para
 Due to performance considerations, the ADIOS2 backend configures ADIOS2 not to compute any dataset statistics (Min/Max) by default.
 Statistics may be activated by setting the :ref:`JSON parameter <backendconfig>` ``adios2.engine.parameters.StatsLevel = "1"``.
 
+The ADIOS2 backend overrides the default unlimited queueing behavior of the SST engine with a more cautious limit of 2 steps that may be held in the queue at one time.
+The default behavior may be restored by setting the :ref:`JSON parameter <backendconfig>` ``adios2.engine.parameters.QueueLimit = "0"``.
+
 Best Practice at Large Scale
 ----------------------------
 
