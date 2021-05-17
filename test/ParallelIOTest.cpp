@@ -9,6 +9,7 @@
 #if openPMD_HAVE_MPI
 #   include <mpi.h>
 
+#   include <chrono>
 #   include <fstream>
 #   include <iostream>
 #   include <algorithm>
@@ -17,6 +18,7 @@
 #   include <list>
 #   include <memory>
 #   include <numeric>
+#   include <thread>
 #   include <tuple>
 
 using namespace openPMD;
@@ -901,6 +903,14 @@ adios2_streaming( bool variableBasedLayout )
         // read
         // it should be possible to select the sst engine via file ending or
         // via JSON without difference
+
+        /*
+         * Sleep for a second so the writer comes first.
+         * If a previous run of the parallel IO tests left a stale .sst file,
+         * this avoids that the reader sees that file.
+         */
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for( 1s );
         std::string options = R"(
         {
           "adios2": {

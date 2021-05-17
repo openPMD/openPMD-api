@@ -1103,7 +1103,7 @@ if(openPMD_BUILD_TESTING)
         endif()
         if(openPMD_HAVE_ADIOS2)
             add_test(NAME Asynchronous.10_streaming
-                     COMMAND sh -c "$<TARGET_FILE:10_streaming_write> & $<TARGET_FILE:10_streaming_read>"
+                     COMMAND sh -c "$<TARGET_FILE:10_streaming_write> & sleep 1; $<TARGET_FILE:10_streaming_read>"
                      WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
         endif()
     endif()
