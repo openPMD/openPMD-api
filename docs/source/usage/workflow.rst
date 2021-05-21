@@ -20,7 +20,7 @@ In short: operations requested by ``storeChunk()`` and ``loadChunk()`` must happ
 Flush points are triggered by:
 
 *   Calling ``Series::flush()``.
-*   Calling ``Iteration::flush( flush=true )``.
+*   Calling ``Iteration::close( flush=true )``.
     Flush point guarantees affect only the corresponding iteration.
 *   Calling ``Writable::seriesFlush()`` or ``Attributable::seriesFlush()``.
 *   The streaming API (i.e. ``Series.readIterations()`` and ``Series.writeIteration()``) automatically before accessing the next iteration.
