@@ -348,6 +348,7 @@ set(CORE_SOURCE
         src/Record.cpp
         src/RecordComponent.cpp
         src/RegionCalculus.cpp
+        src/RegionCalculus2.cpp
         src/Series.cpp
         src/version.cpp
         src/WriteIterations.cpp
@@ -684,6 +685,7 @@ set(openPMD_TEST_NAMES
     Core
     Auxiliary
     RegionCalculus
+    RegionCalculus2
     SerialIO
     ParallelIO
 )

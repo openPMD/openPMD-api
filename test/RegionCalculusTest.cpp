@@ -1,5 +1,7 @@
 #include "openPMD/RegionCalculus.hpp"
 
+#if 0
+
 #include <gtest/gtest.h>
 
 #include <array>
@@ -1632,3 +1634,5 @@ TEST(RegionCalculus, benchmark_region_strict_subset) {
   using namespace benchmark;
   auto rlt = regs[0] < regs[1];
 }
+
+#endif
