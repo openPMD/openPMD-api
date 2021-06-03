@@ -65,7 +65,6 @@ private:
         ~SharedResources();
     };
 
-    using value_type = typename iterations_t::key_type;
     WriteIterations( iterations_t );
     explicit WriteIterations() = default;
     //! Index of the last opened iteration
