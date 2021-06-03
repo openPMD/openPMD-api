@@ -54,6 +54,7 @@ private:
 public:
     using key_type = typename iterations_t::key_type;
     using mapped_type = typename iterations_t::mapped_type;
+    using value_type = typename iterations_t::value_type;
 
 private:
     struct SharedResources
