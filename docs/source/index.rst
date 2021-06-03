@@ -70,6 +70,7 @@ Usage
    :maxdepth: 1
    :hidden:
 
+   usage/concepts
    usage/firstwrite
    usage/firstread
    usage/serial
