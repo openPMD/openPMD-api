@@ -8,41 +8,51 @@ env:
   global:
     - OPENPMD_GIT_REF="0.13.4"
 
-    # (1,2,3) Skip building for Python 2.7 & 3.5 on all platforms
-    # (4) GNU 7.3.1 & MPark.Variant 1.4.0 on i686:
-    #     https://github.com/pypa/manylinux/issues/543
-    #       variant.hpp:2241:9: internal compiler error:
-    #       unexpected expression ‘I’ of kind template_parm_index
-    #       typename T = lib::type_pack_element_t<I, Ts...>,
-    - CIBW_SKIP="cp27-* pp27-* cp35-* *-manylinux_i686"
+    - CIBW_PROJECT_REQUIRES_PYTHON=">=3.6"
     # Install dependencies on Linux and OSX
     - CIBW_BEFORE_BUILD="bash -x .github/library_builders.sh"
     # for the openPMD-api build, CMake shall search for
     # static dependencies of HDF5 and ADIOS1 (see setup.py)
     - CIBW_ENVIRONMENT="HDF5_USE_STATIC_LIBRARIES='ON' ADIOS_USE_STATIC_LIBS='ON'"
+    # Show a bit more output (pip -v)
+    - CIBW_BUILD_VERBOSITY="1"
 
 jobs:
   include:
     # perform a linux ARMv8 build
-    # blocked by https://github.com/scikit-build/cmake-python-distributions/issues/96
-    #            https://github.com/pypa/manylinux/issues/544
-    # - services: docker
-    #   arch: arm64
-    #   env:
-    #     - CIBW_BUILD="*_aarch64"
+    # note: takes >50min, so we need to split
+    - services: docker
+      arch: arm64
+      dist: focal
+      env:
+        - CIBW_BUILD="*_aarch64"
+        - CIBW_SKIP="cp38-* cp39-*"
+    - services: docker
+      arch: arm64
+      dist: focal
+      env:
+        - CIBW_BUILD="*_aarch64"
+        - CIBW_SKIP="cp36-* cp37-*"
 
     # perform a linux PPC64LE build
-    # blocked by https://github.com/pypa/auditwheel/issues/36
-    #            https://github.com/pypa/auditwheel/pull/213
-    # - services: docker
-    #   arch: ppc64le
-    #  env:
-    #    - CIBW_BUILD="*_ppc64le"
+    - services: docker
+      arch: ppc64le
+      dist: focal
+      env:
+        - CIBW_BUILD="*_ppc64le"
+        - CIBW_SKIP="cp38-* cp39-*"
+    - services: docker
+      arch: ppc64le
+      dist: focal
+      env:
+        - CIBW_BUILD="*_ppc64le"
+        - CIBW_SKIP="cp36-* cp37-*"
 
     # perform a linux S390X build
     # blocked by https://github.com/GTkorvo/dill/issues/15
-    # - services: docker
-    #   arch: s390x
+    #- services: docker
+    #  arch: s390x
+    #  dist: focal
     #  env:
     #    - CIBW_BUILD="*_s390x"
 
@@ -55,15 +65,21 @@ jobs:
 install:
   - git clone --branch ${OPENPMD_GIT_REF} --depth 1 https://github.com/openPMD/openPMD-api.git src
   - cp library_builders.sh src/.github/
-  - python3 -m pip install cibuildwheel==1.7.1
+  - python3 -m pip install cibuildwheel==2.0.0a2
+  # twine & cryptography: see
+  #   https://github.com/scikit-build/cmake-python-distributions/blob/4730aeee240917303f293dffc89a8d8d5a4787c4/requirements-deploy.txt
+  #   https://github.com/pyca/cryptography/issues/6086
+  - python3 -m pip install twine cryptography~=3.3.2
 
 script:
   - cd src
   - python3 -m cibuildwheel --output-dir ../wheelhouse
   - cd ..
 
-after_success:
-  - if [[ "$TRAVIS_EVENT_TYPE" == "push" ]]; then
-        python3 -m pip install -U twine;
-        python3 -m twine upload --skip-existing wheelhouse/*;
-    fi
+deploy:
+  - provider: script
+    script: python3 -m twine upload --skip-existing wheelhouse/*
+    skip_cleanup: true
+    on:
+      repo: ${TRAVIS_REPO_SLUG}
+      branch: wheels
