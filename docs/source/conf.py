@@ -37,6 +37,7 @@ show_authors = True
 extensions = ['sphinx.ext.mathjax',
               'breathe',
               'sphinxcontrib.programoutput',
+              'sphinx.ext.imgconverter',
               'matplotlib.sphinxext.plot_directive']
 
 if not on_rtd:
