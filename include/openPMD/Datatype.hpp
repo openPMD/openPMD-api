@@ -656,10 +656,6 @@ std::string datatypeToString( Datatype dt );
 
 Datatype stringToDatatype( std::string s );
 
-std::string datatypeToString( Datatype dt );
-
-Datatype stringToDatatype( std::string s );
-
 void
 warnWrongDtype(std::string const& key,
                Datatype store,
