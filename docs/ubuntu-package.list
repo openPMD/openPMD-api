@@ -1,7 +1,7 @@
 doxygen
 graphviz
 imagemagick
-latexmk
+librsvg2-bin
 texlive-latex-recommended
 texlive-fonts-recommended
 texlive-latex-extra
