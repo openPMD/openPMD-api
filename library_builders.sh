@@ -122,8 +122,8 @@ function build_adios2 {
 function build_blosc {
     if [ -e blosc-stamp ]; then return; fi
 
-    curl -sLo c-blosc-1.20.1.tar.gz \
-        https://github.com/Blosc/c-blosc/archive/v1.20.1.tar.gz
+    curl -sLo c-blosc-1.21.0.tar.gz \
+        https://github.com/Blosc/c-blosc/archive/v1.21.0.tar.gz
     file c-blosc*.tar.gz
     tar -xzf c-blosc*.tar.gz
     rm c-blosc*.tar.gz

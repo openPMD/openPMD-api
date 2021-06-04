@@ -52,11 +52,11 @@ exit /b 0
 :build_blosc
   if exist blosc-stamp exit /b 0
 
-  curl -sLo blosc-1.20.1.zip ^
-    https://github.com/Blosc/c-blosc/archive/v1.20.1.zip
-  powershell Expand-Archive blosc-1.20.1.zip -DestinationPath dep-blosc
+  curl -sLo blosc-1.21.0.zip ^
+    https://github.com/Blosc/c-blosc/archive/v1.21.0.zip
+  powershell Expand-Archive blosc-1.21.0.zip -DestinationPath dep-blosc
 
-  cmake -S dep-blosc/c-blosc-1.20.1 -B build-blosc ^
+  cmake -S dep-blosc/c-blosc-1.21.0 -B build-blosc ^
     -DCMAKE_BUILD_TYPE=Release  ^
     -DBUILD_BENCHMARKS=OFF      ^
     -DBUILD_SHARED=OFF          ^
