@@ -70,6 +70,19 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel
         python -m pip install cibuildwheel==2.0.0a2
 
+    - name: Download Patch 1/1
+      uses: suisei-cn/actions-download-file@v1
+      id: setupversion
+      with:
+        url: "https://gist.githubusercontent.com/ax3l/ee247f0705f918f8b4e325075230f015/raw/8357643c15b99d9048505a729c398312ddd8f152/setupversion.patch"
+        target: src/.patch/
+
+    - name: Apply Patch
+      run: |
+        python -m pip install "patch==1.*"
+        cd src
+        python -m patch .patch/setupversion.patch
+
     - name: Build wheel
       env:
         # (1) CMake/Pybind11 scripts not clever enough to build 32bit Windows with 64bit compiler

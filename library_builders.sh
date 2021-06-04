@@ -45,6 +45,14 @@ function install_buildessentials {
         fi
     fi
 
+    # avoid picking up a static libpthread in adios1 or blosc
+    # (also: those libs lack -fPIC)
+    if [ "$(uname -s)" = "Linux" ]
+    then
+        rm -f /usr/lib/libpthread.a   /usr/lib/libm.a   /usr/lib/librt.a
+        rm -f /usr/lib64/libpthread.a /usr/lib64/libm.a /usr/lib64/librt.a
+    fi
+
     python -m pip install -U pip setuptools wheel
     python -m pip install -U scikit-build
     python -m pip install -U cmake
@@ -54,13 +62,6 @@ function install_buildessentials {
 
 function build_adios1 {
     if [ -e adios1-stamp ]; then return; fi
-    
-    # avoid picking up a static libpthread in adios (also: those libs lack -fPIC)
-    if [ "$(uname -s)" = "Linux" ]
-    then
-        rm -f /usr/lib/libpthread.a   /usr/lib/libm.a   /usr/lib/librt.a
-        rm -f /usr/lib64/libpthread.a /usr/lib64/libm.a /usr/lib64/librt.a
-    fi
 
     curl -sLo adios-1.13.1.tar.gz \
         http://users.nccs.gov/~pnorbert/adios-1.13.1.tar.gz
@@ -79,8 +80,8 @@ function build_adios1 {
 function build_adios2 {
     if [ -e adios2-stamp ]; then return; fi
 
-    curl -sLo adios2-2.6.0.tar.gz \
-        https://github.com/ornladios/ADIOS2/archive/v2.6.0.tar.gz
+    curl -sLo adios2-2.7.1.tar.gz \
+        https://github.com/ornladios/ADIOS2/archive/v2.7.1.tar.gz
     file adios2*.tar.gz
     tar -xzf adios2*.tar.gz
     rm adios2*.tar.gz
@@ -91,6 +92,10 @@ function build_adios2 {
     if [ "$(uname -s)" = "Linux" ]
     then
         EVPATH_ZPL="ON"
+        # ADIOS 2.7.1 & Blosc 1.20.1/1.21.0
+        #   /usr/local/lib/libblosc.a(blosc.c.o): In function `blosc_init.part.9':
+        # blosc.c:(.text+0x43e): undefined reference to `pthread_atfork'
+        export LDFLAGS="-pthread"
     else
         # ZPL in EVPATH disabled because it does not build with older macOS
         #       https://github.com/GTkorvo/evpath/issues/47
@@ -98,14 +103,15 @@ function build_adios2 {
     fi
     PATH=${CMAKE_BIN}:${PATH} cmake               \
         -DBUILD_SHARED_LIBS=OFF                   \
+        -DBUILD_TESTING=OFF                       \
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON      \
         -DADIOS2_BUILD_EXAMPLES=OFF               \
-        -DADIOS2_BUILD_TESTING=OFF                \
         -DADIOS2_USE_BZip2=OFF                    \
         -DADIOS2_USE_Fortran=OFF                  \
         -DADIOS2_USE_MPI=OFF                      \
         -DADIOS2_USE_PNG=OFF                      \
         -DADIOS2_USE_ZFP=ON                       \
+        -DADIOS2_RUN_INSTALL_TEST=OFF             \
         -DEVPATH_USE_ZPL_ENET=${EVPATH_ZPL}       \
         -DHDF5_USE_STATIC_LIBRARIES:BOOL=ON       \
         -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE  \
@@ -122,8 +128,8 @@ function build_adios2 {
 function build_blosc {
     if [ -e blosc-stamp ]; then return; fi
 
-    curl -sLo c-blosc-1.20.1.tar.gz \
-        https://github.com/Blosc/c-blosc/archive/v1.20.1.tar.gz
+    curl -sLo c-blosc-1.21.0.tar.gz \
+        https://github.com/Blosc/c-blosc/archive/v1.21.0.tar.gz
     file c-blosc*.tar.gz
     tar -xzf c-blosc*.tar.gz
     rm c-blosc*.tar.gz

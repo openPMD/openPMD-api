@@ -16,21 +16,21 @@ exit /b 0
 
 :build_adios2
   if exist adios2-stamp exit /b 0
-  curl -sLo adios2-2.6.0.zip ^
-    https://github.com/ornladios/ADIOS2/archive/v2.6.0.zip
-  powershell Expand-Archive adios2-2.6.0.zip -DestinationPath dep-adios2
+  curl -sLo adios2-2.7.1.zip ^
+    https://github.com/ornladios/ADIOS2/archive/v2.7.1.zip
+  powershell Expand-Archive adios2-2.7.1.zip -DestinationPath dep-adios2
 
-  :: Patch FindBlosc.cmake w/ ADIOS 2.6.0
+  :: Patch Blosc Compression w/ ADIOS 2.7.1
   curl -sLo adios2-blosc.patch ^
-    https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/2550.patch
-  python -m patch -p 1 -d dep-adios2/ADIOS2-2.6.0 adios2-blosc.patch
+    https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/2746.patch
+  python -m patch -p 1 -d dep-adios2/ADIOS2-2.7.1 adios2-blosc.patch
 
-  cmake -S dep-adios2/ADIOS2-2.6.0 -B build-adios2 ^
+  cmake -S dep-adios2/ADIOS2-2.7.1 -B build-adios2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
     -DBUILD_SHARED_LIBS=OFF     ^
+    -DBUILD_TESTING=OFF         ^
     -DADIOS2_USE_MPI=OFF        ^
     -DADIOS2_BUILD_EXAMPLES=OFF ^
-    -DADIOS2_BUILD_TESTING=OFF  ^
     -DADIOS2_USE_Blosc=ON       ^
     -DADIOS2_USE_BZip2=OFF      ^
     -DADIOS2_USE_Fortran=OFF    ^
@@ -39,7 +39,8 @@ exit /b 0
     -DADIOS2_USE_Profiling=OFF  ^
     -DADIOS2_USE_Python=OFF     ^
     -DADIOS2_USE_ZeroMQ=OFF     ^
-    -DADIOS2_USE_ZFP=ON
+    -DADIOS2_USE_ZFP=ON         ^
+    -DADIOS2_RUN_INSTALL_TEST=OFF
   if errorlevel 1 exit 1
 :: TODO: Could NOT find HDF5 (missing: HDF5_LIBRARIES C)
 ::  -DADIOS2_USE_HDF5=ON
@@ -57,11 +58,11 @@ exit /b 0
 :build_blosc
   if exist blosc-stamp exit /b 0
 
-  curl -sLo blosc-1.20.1.zip ^
-    https://github.com/Blosc/c-blosc/archive/v1.20.1.zip
-  powershell Expand-Archive blosc-1.20.1.zip -DestinationPath dep-blosc
+  curl -sLo blosc-1.21.0.zip ^
+    https://github.com/Blosc/c-blosc/archive/v1.21.0.zip
+  powershell Expand-Archive blosc-1.21.0.zip -DestinationPath dep-blosc
 
-  cmake -S dep-blosc/c-blosc-1.20.1 -B build-blosc ^
+  cmake -S dep-blosc/c-blosc-1.21.0 -B build-blosc ^
     -DCMAKE_BUILD_TYPE=Release  ^
     -DBUILD_BENCHMARKS=OFF      ^
     -DBUILD_SHARED=OFF          ^
