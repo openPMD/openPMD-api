@@ -94,7 +94,7 @@ function build_adios2 {
         # ADIOS 2.7.1 & Blosc 1.20.1/1.21.0
         #   /usr/local/lib/libblosc.a(blosc.c.o): In function `blosc_init.part.9':
         # blosc.c:(.text+0x43e): undefined reference to `pthread_atfork'
-        export LDFLAGS="-pthread ${LDFLAGS}"
+        export LDFLAGS="-pthread"
     else
         # ZPL in EVPATH disabled because it does not build with older macOS
         #       https://github.com/GTkorvo/evpath/issues/47
@@ -102,14 +102,15 @@ function build_adios2 {
     fi
     PATH=${CMAKE_BIN}:${PATH} cmake               \
         -DBUILD_SHARED_LIBS=OFF                   \
+        -DBUILD_TESTING=OFF                       \
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON      \
         -DADIOS2_BUILD_EXAMPLES=OFF               \
-        -DADIOS2_BUILD_TESTING=OFF                \
         -DADIOS2_USE_BZip2=OFF                    \
         -DADIOS2_USE_Fortran=OFF                  \
         -DADIOS2_USE_MPI=OFF                      \
         -DADIOS2_USE_PNG=OFF                      \
         -DADIOS2_USE_ZFP=ON                       \
+        -DADIOS2_RUN_INSTALL_TEST=OFF             \
         -DEVPATH_USE_ZPL_ENET=${EVPATH_ZPL}       \
         -DHDF5_USE_STATIC_LIBRARIES:BOOL=ON       \
         -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE  \

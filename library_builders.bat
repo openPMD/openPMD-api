@@ -23,9 +23,9 @@ exit /b 0
   cmake -S dep-adios2/ADIOS2-2.7.1 -B build-adios2 ^
     -DCMAKE_BUILD_TYPE=Release  ^
     -DBUILD_SHARED_LIBS=OFF     ^
+    -DBUILD_TESTING=OFF         ^
     -DADIOS2_USE_MPI=OFF        ^
     -DADIOS2_BUILD_EXAMPLES=OFF ^
-    -DADIOS2_BUILD_TESTING=OFF  ^
     -DADIOS2_USE_Blosc=ON       ^
     -DADIOS2_USE_BZip2=OFF      ^
     -DADIOS2_USE_Fortran=OFF    ^
@@ -34,7 +34,8 @@ exit /b 0
     -DADIOS2_USE_Profiling=OFF  ^
     -DADIOS2_USE_Python=OFF     ^
     -DADIOS2_USE_ZeroMQ=OFF     ^
-    -DADIOS2_USE_ZFP=ON
+    -DADIOS2_USE_ZFP=ON         ^
+    -DADIOS2_RUN_INSTALL_TEST=OFF
   if errorlevel 1 exit 1
 :: TODO: Could NOT find HDF5 (missing: HDF5_LIBRARIES C)
 ::  -DADIOS2_USE_HDF5=ON
