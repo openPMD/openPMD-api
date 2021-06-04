@@ -45,6 +45,14 @@ function install_buildessentials {
         fi
     fi
 
+    # avoid picking up a static libpthread in adios1 or blosc
+    # (also: those libs lack -fPIC)
+    if [ "$(uname -s)" = "Linux" ]
+    then
+        rm -f /usr/lib/libpthread.a   /usr/lib/libm.a   /usr/lib/librt.a
+        rm -f /usr/lib64/libpthread.a /usr/lib64/libm.a /usr/lib64/librt.a
+    fi
+
     python -m pip install -U pip setuptools wheel
     python -m pip install -U scikit-build
     python -m pip install -U cmake
@@ -54,13 +62,6 @@ function install_buildessentials {
 
 function build_adios1 {
     if [ -e adios1-stamp ]; then return; fi
-    
-    # avoid picking up a static libpthread in adios (also: those libs lack -fPIC)
-    if [ "$(uname -s)" = "Linux" ]
-    then
-        rm -f /usr/lib/libpthread.a   /usr/lib/libm.a   /usr/lib/librt.a
-        rm -f /usr/lib64/libpthread.a /usr/lib64/libm.a /usr/lib64/librt.a
-    fi
 
     curl -sLo adios-1.13.1.tar.gz \
         http://users.nccs.gov/~pnorbert/adios-1.13.1.tar.gz
@@ -91,10 +92,6 @@ function build_adios2 {
     if [ "$(uname -s)" = "Linux" ]
     then
         EVPATH_ZPL="ON"
-        # ADIOS 2.7.1 & Blosc 1.20.1/1.21.0
-        #   /usr/local/lib/libblosc.a(blosc.c.o): In function `blosc_init.part.9':
-        # blosc.c:(.text+0x43e): undefined reference to `pthread_atfork'
-        export LDFLAGS="-pthread"
     else
         # ZPL in EVPATH disabled because it does not build with older macOS
         #       https://github.com/GTkorvo/evpath/issues/47
