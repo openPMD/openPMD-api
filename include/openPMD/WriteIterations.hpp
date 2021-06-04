@@ -50,6 +50,14 @@ class WriteIterations : private Container< Iteration, uint64_t >
 
 private:
     using iterations_t = Container< Iteration, uint64_t >;
+    
+public:
+    using key_type = typename iterations_t::key_type;
+    using mapped_type = typename iterations_t::mapped_type;
+    using value_type = typename iterations_t::value_type;
+    using reference = typename iterations_t::reference;
+
+private:
     struct SharedResources
     {
         iterations_t iterations;
@@ -59,8 +67,6 @@ private:
         ~SharedResources();
     };
 
-    using key_type = typename iterations_t::key_type;
-    using value_type = typename iterations_t::key_type;
     WriteIterations( iterations_t );
     explicit WriteIterations() = default;
     //! Index of the last opened iteration
