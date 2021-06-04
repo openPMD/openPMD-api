@@ -76,6 +76,15 @@ install:
   #   https://github.com/scikit-build/cmake-python-distributions/blob/4730aeee240917303f293dffc89a8d8d5a4787c4/requirements-deploy.txt
   #   https://github.com/pyca/cryptography/issues/6086
   - python3 -m pip install twine cryptography~=3.3.2
+  - python3 -m pip install "patch==1.*"
+
+before_script:
+  - mkdir -p src/.patch
+  - cd src/.patch
+  - curl -sOL https://gist.githubusercontent.com/ax3l/ee247f0705f918f8b4e325075230f015/raw/8357643c15b99d9048505a729c398312ddd8f152/setupversion.patch
+  - cd ..
+  - python3 -m patch .patch/setupversion.patch
+  - cd ..
 
 script:
   - cd src
