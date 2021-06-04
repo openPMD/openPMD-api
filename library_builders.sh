@@ -92,6 +92,10 @@ function build_adios2 {
     if [ "$(uname -s)" = "Linux" ]
     then
         EVPATH_ZPL="ON"
+        # ADIOS 2.7.1 & Blosc 1.20.1/1.21.0
+        #   /usr/local/lib/libblosc.a(blosc.c.o): In function `blosc_init.part.9':
+        # blosc.c:(.text+0x43e): undefined reference to `pthread_atfork'
+        export LDFLAGS="-pthread"
     else
         # ZPL in EVPATH disabled because it does not build with older macOS
         #       https://github.com/GTkorvo/evpath/issues/47
