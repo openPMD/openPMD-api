@@ -133,8 +133,16 @@ public:
   virtual T product1() const = 0;
   virtual T sum1() const = 0;
 
-  virtual bool operator==(const VPoint &x) const = 0;
-  virtual bool operator!=(const VPoint &x) const = 0;
+  virtual std::unique_ptr<VPoint> operator==(const VPoint &x) const = 0;
+  virtual std::unique_ptr<VPoint> operator!=(const VPoint &x) const = 0;
+  virtual std::unique_ptr<VPoint> operator<(const VPoint &x) const = 0;
+  virtual std::unique_ptr<VPoint> operator>(const VPoint &x) const = 0;
+  virtual std::unique_ptr<VPoint> operator<=(const VPoint &x) const = 0;
+  virtual std::unique_ptr<VPoint> operator>=(const VPoint &x) const = 0;
+
+  virtual bool equal_to1(const VPoint &x) const = 0;
+  virtual std::size_t hash1() const = 0;
+  virtual bool less1(const VPoint &x) const = 0;
 
   virtual std::ostream &output(std::ostream &os) const = 0;
 };
@@ -190,7 +198,9 @@ public:
     return fold(op, r, p, dynamic_cast<const WPoint &>(x).p);
   }
 
-  void set_from_vector(const std::vector<T> &vec) override { *this = WPoint(vec); }
+  void set_from_vector(const std::vector<T> &vec) override {
+    *this = WPoint(vec);
+  }
   operator std::vector<T>() const override { return std::vector<T>(p); }
 
   constexpr size_type size() const override { return p.size(); }
@@ -414,11 +424,31 @@ public:
   T product1() const override { return product(p); }
   T sum1() const override { return sum(p); }
 
-  bool operator==(const VPoint<T> &x) const override {
-    return p == dynamic_cast<const WPoint &>(x).p;
+  std::unique_ptr<VPoint<T>> operator==(const VPoint<T> &x) const override {
+    return std::make_unique<WPoint>(p == dynamic_cast<const WPoint &>(x).p);
   }
-  bool operator!=(const VPoint<T> &x) const override {
-    return p != dynamic_cast<const WPoint &>(x).p;
+  std::unique_ptr<VPoint<T>> operator!=(const VPoint<T> &x) const override {
+    return std::make_unique<WPoint>(p != dynamic_cast<const WPoint &>(x).p);
+  }
+  std::unique_ptr<VPoint<T>> operator<(const VPoint<T> &x) const override {
+    return std::make_unique<WPoint>(p < dynamic_cast<const WPoint &>(x).p);
+  }
+  std::unique_ptr<VPoint<T>> operator>(const VPoint<T> &x) const override {
+    return std::make_unique<WPoint>(p > dynamic_cast<const WPoint &>(x).p);
+  }
+  std::unique_ptr<VPoint<T>> operator<=(const VPoint<T> &x) const override {
+    return std::make_unique<WPoint>(p <= dynamic_cast<const WPoint &>(x).p);
+  }
+  std::unique_ptr<VPoint<T>> operator>=(const VPoint<T> &x) const override {
+    return std::make_unique<WPoint>(p >= dynamic_cast<const WPoint &>(x).p);
+  }
+
+  bool equal_to1(const VPoint<T> &x) const override {
+    return std::equal_to<Point<T, D>>()(p, dynamic_cast<const WPoint &>(x).p);
+  }
+  std::size_t hash1() const override { return std::hash<Point<T, D>>()(p); }
+  bool less1(const VPoint<T> &x) const override {
+    return std::less<Point<T, D>>()(p, dynamic_cast<const WPoint &>(x).p);
   }
 
   std::ostream &output(std::ostream &os) const override { return os << p; }
@@ -455,10 +485,12 @@ std::unique_ptr<VPoint<T>> make_VPoint(const std::size_t D) {
  * fixed-size vectors that support arithmetic operations.
  */
 template <typename T> class NDPoint {
-
   template <typename U> using VPoint = detail::VPoint<U>;
 
   template <typename U> friend class NDPoint;
+  friend struct std::equal_to<NDPoint>;
+  friend struct std::hash<NDPoint>;
+  friend struct std::less<NDPoint>;
 
   std::unique_ptr<VPoint<T>> p;
 
@@ -752,11 +784,23 @@ public:
   friend T product(const NDPoint &x) { return x.p->product1(); }
   friend T sum(const NDPoint &x) { return x.p->sum1(); }
 
-  friend bool operator==(const NDPoint &x, const NDPoint &y) {
+  friend NDPoint<bool> operator==(const NDPoint &x, const NDPoint &y) {
     return *x.p == *y.p;
   }
-  friend bool operator!=(const NDPoint &x, const NDPoint &y) {
+  friend NDPoint<bool> operator!=(const NDPoint &x, const NDPoint &y) {
     return *x.p != *y.p;
+  }
+  friend NDPoint<bool> operator<(const NDPoint &x, const NDPoint &y) {
+    return *x.p < *y.p;
+  }
+  friend NDPoint<bool> operator>(const NDPoint &x, const NDPoint &y) {
+    return *x.p > *y.p;
+  }
+  friend NDPoint<bool> operator<=(const NDPoint &x, const NDPoint &y) {
+    return *x.p <= *y.p;
+  }
+  friend NDPoint<bool> operator>=(const NDPoint &x, const NDPoint &y) {
+    return *x.p >= *y.p;
   }
 
   /** Output a point
@@ -772,5 +816,39 @@ public:
 
 } // namespace Regions
 } // namespace openPMD
+
+namespace std {
+
+template <typename T> struct equal_to<openPMD::Regions::NDPoint<T>> {
+  constexpr bool operator()(const openPMD::Regions::NDPoint<T> &x,
+                            const openPMD::Regions::NDPoint<T> &y) const {
+    if (!x.has_value() && !y.has_value())
+      return true;
+    if (!x.has_value() || !y.has_value())
+      return false;
+    return x.p->equal_to1(*y.p);
+  }
+};
+
+template <typename T> struct hash<openPMD::Regions::NDPoint<T>> {
+  constexpr size_t operator()(const openPMD::Regions::NDPoint<T> &x) const {
+    if (!x.has_value())
+      return size_t(0xf458b18eca40aef1ULL);
+    return x.p->hash1();
+  }
+};
+
+template <typename T> struct less<openPMD::Regions::NDPoint<T>> {
+  constexpr bool operator()(const openPMD::Regions::NDPoint<T> &x,
+                            const openPMD::Regions::NDPoint<T> &y) const {
+    if (!x.has_value())
+      return true;
+    if (!y.has_value())
+      return false;
+    return x.p->less1(*y.p);
+  }
+};
+
+} // namespace std
 
 #endif // #ifndef REGIONS_NDPOINT_HPP

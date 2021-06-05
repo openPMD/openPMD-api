@@ -30,6 +30,10 @@ namespace Regions {
 template <typename T, std::size_t D> class Point {
   std::array<T, D> elts;
 
+  friend struct std::equal_to<Point>;
+  friend struct std::hash<Point>;
+  friend struct std::less<Point>;
+
 public:
   /** Component type
    */
@@ -432,11 +436,42 @@ public:
     return fold([](const T &r, const T &a) { return r + a; }, T(0), x);
   }
 
-  friend constexpr bool operator==(const Point &x, const Point &y) {
-    return all(fmap([](const T &a, const T &b) { return a == b; }, x, y));
+  friend constexpr Point<bool, D> operator==(const Point &x, const Point &y) {
+    return fmap([](const T &a, const T &b) { return a == b; }, x, y);
   }
-  friend constexpr bool operator!=(const Point &x, const Point &y) {
-    return any(fmap([](const T &a, const T &b) { return a != b; }, x, y));
+  friend constexpr Point<bool, D> operator!=(const Point &x, const Point &y) {
+    return fmap([](const T &a, const T &b) { return a != b; }, x, y);
+  }
+  friend constexpr Point<bool, D> operator<(const Point &x, const Point &y) {
+    return fmap([](const T &a, const T &b) { return a < b; }, x, y);
+  }
+  friend constexpr Point<bool, D> operator>(const Point &x, const Point &y) {
+    return fmap([](const T &a, const T &b) { return a > b; }, x, y);
+  }
+  friend constexpr Point<bool, D> operator<=(const Point &x, const Point &y) {
+    return fmap([](const T &a, const T &b) { return a <= b; }, x, y);
+  }
+  friend constexpr Point<bool, D> operator>=(const Point &x, const Point &y) {
+    return fmap([](const T &a, const T &b) { return a >= b; }, x, y);
+  }
+
+  friend constexpr Point<bool, D> operator==(const Point &x, const T &b) {
+    return fmap([&](const T &a) { return a == b; }, x);
+  }
+  friend constexpr Point<bool, D> operator!=(const Point &x, const T &b) {
+    return fmap([&](const T &a) { return a != b; }, x);
+  }
+  friend constexpr Point<bool, D> operator<(const Point &x, const T &b) {
+    return fmap([&](const T &a) { return a < b; }, x);
+  }
+  friend constexpr Point<bool, D> operator>(const Point &x, const T &b) {
+    return fmap([&](const T &a) { return a > b; }, x);
+  }
+  friend constexpr Point<bool, D> operator<=(const Point &x, const T &b) {
+    return fmap([&](const T &a) { return a <= b; }, x);
+  }
+  friend constexpr Point<bool, D> operator>=(const Point &x, const T &b) {
+    return fmap([&](const T &a) { return a >= b; }, x);
   }
 
   /** Output a point
@@ -460,32 +495,31 @@ namespace std {
 
 template <typename T, std::size_t D>
 struct equal_to<openPMD::Regions::Point<T, D>> {
-  constexpr bool operator()(const openPMD::Regions::Point<T, D> &p,
-                            const openPMD::Regions::Point<T, D> &q) const {
-    return openPMD::Regions::Point<T, D>::all(
-        openPMD::Regions::Point<T, D>::fmap(
-            [](const T &a, const T &b) { return equal_to<T>()(a, b); }, p, q));
+  constexpr bool operator()(const openPMD::Regions::Point<T, D> &x,
+                            const openPMD::Regions::Point<T, D> &y) const {
+    const equal_to<std::array<T, D>> eq;
+    return eq(x.elts, y.elts);
   }
 };
 
 template <typename T, std::size_t D>
 struct hash<openPMD::Regions::Point<T, D>> {
-  constexpr size_t operator()(const openPMD::Regions::Point<T, D> &p) const {
-    return openPMD::Regions::Point<T, D>::fold(
-        [](size_t r, const T &b) {
-          return openPMD::Regions::detail::hash_combine(r, b);
+  constexpr size_t operator()(const openPMD::Regions::Point<T, D> &x) const {
+    const hash<T> h;
+    return fold(
+        [&](size_t r, const T &b) {
+          return openPMD::Regions::detail::hash_combine(r, h(b));
         },
-        size_t(0xb22da17173243869ULL), p);
+        size_t(0xb22da17173243869ULL), x);
   }
 };
 
 template <typename T, std::size_t D>
 struct less<openPMD::Regions::Point<T, D>> {
-  constexpr bool operator()(const openPMD::Regions::Point<T, D> &p,
-                            const openPMD::Regions::Point<T, D> &q) const {
-    return openPMD::Regions::Point<T, D>::fold(
-        [](bool r, const T &a, const T &b) { return r && less<T>()(a, b); },
-        true, p, q);
+  constexpr bool operator()(const openPMD::Regions::Point<T, D> &x,
+                            const openPMD::Regions::Point<T, D> &y) const {
+    const less<std::array<T, D>> lt;
+    return lt(x.elts, y.elts);
   }
 };
 

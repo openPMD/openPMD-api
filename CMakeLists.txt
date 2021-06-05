@@ -682,7 +682,8 @@ endif()
 set(openPMD_TEST_NAMES
     Core
     Auxiliary
-    Regions
+    RegionsBox
+    RegionsPoint
     SerialIO
     ParallelIO
 )
