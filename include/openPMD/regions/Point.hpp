@@ -64,7 +64,7 @@ public:
    * [0, ..., D-1]
    */
   template <typename F> static constexpr Point make(const F &f) {
-    return detail::construct_array<T, D>(f);
+    return helpers::construct_array<T, D>(f);
   }
 
   /** Create a point with each component set to the same value a
@@ -508,7 +508,7 @@ struct hash<openPMD::Regions::Point<T, D>> {
     const hash<T> h;
     return fold(
         [&](size_t r, const T &b) {
-          return openPMD::Regions::detail::hash_combine(r, h(b));
+          return openPMD::Regions::helpers::hash_combine(r, h(b));
         },
         size_t(0xb22da17173243869ULL), x);
   }

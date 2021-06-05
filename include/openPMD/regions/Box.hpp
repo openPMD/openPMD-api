@@ -1,6 +1,7 @@
 #ifndef REGIONS_BOX_HPP
 #define REGIONS_BOX_HPP
 
+#include "Helpers.hpp"
 #include "Point.hpp"
 
 #include <array>
@@ -12,74 +13,6 @@
 
 namespace openPMD {
 namespace Regions {
-
-namespace detail {
-namespace detail {
-
-template <std::size_t N> struct tuple_eq {
-  template <typename Tuple1, typename Tuple2>
-  constexpr bool operator()(const Tuple1 &x, const Tuple2 &y) const {
-    typedef std::tuple_element_t<N - 1, Tuple1> T1;
-    typedef std::tuple_element_t<N - 1, Tuple2> T2;
-    typedef std::common_type_t<T1, T2> T;
-    const std::equal_to<T> eq;
-    return tuple_eq<N - 1>()(x, y) &&
-           eq(std::get<N - 1>(x), std::get<N - 1>(y));
-  }
-};
-template <> struct tuple_eq<0> {
-  template <typename Tuple1, typename Tuple2>
-  constexpr bool operator()(const Tuple1 &x, const Tuple2 &y) const {
-    return true;
-  }
-};
-
-template <std::size_t N> struct tuple_cmp {
-  template <typename Tuple1, typename Tuple2>
-  constexpr int operator()(const Tuple1 &x, const Tuple2 &y) const {
-    typedef std::tuple_element_t<N - 1, Tuple1> T1;
-    typedef std::tuple_element_t<N - 1, Tuple2> T2;
-    typedef std::common_type_t<T1, T2> T;
-    const int cmp = tuple_cmp<N - 1>()(x, y);
-    if (cmp != 0)
-      return cmp;
-    const std::less<T> lt;
-    if (lt(std::get<N - 1>(x), std::get<N - 1>(y)))
-      return -1;
-    if (lt(std::get<N - 1>(y), std::get<N - 1>(x)))
-      return +1;
-    return 0;
-  }
-};
-template <> struct tuple_cmp<0> {
-  template <typename Tuple1, typename Tuple2>
-  constexpr int operator()(const Tuple1 &x, const Tuple2 &y) const {
-    return 0;
-  }
-};
-
-} // namespace detail
-
-template <typename Tuple1, typename Tuple2>
-constexpr bool tuple_eq(const Tuple1 &x, const Tuple2 &y) {
-  constexpr std::size_t sz = std::tuple_size_v<Tuple1>;
-  static_assert(std::tuple_size_v<Tuple2> == sz);
-  return detail::tuple_eq<sz>()(x, y);
-}
-
-template <typename Tuple1, typename Tuple2>
-constexpr int tuple_cmp(const Tuple1 &x, const Tuple2 &y) {
-  constexpr std::size_t sz = std::tuple_size_v<Tuple1>;
-  static_assert(std::tuple_size_v<Tuple2> == sz);
-  return detail::tuple_cmp<sz>()(x, y);
-}
-
-template <typename Tuple1, typename Tuple2>
-constexpr bool tuple_lt(const Tuple1 &x, const Tuple2 &y) {
-  return tuple_cmp(x, y) < 0;
-}
-
-} // namespace detail
 
 /** A D-dimensional box
  *
@@ -534,8 +467,8 @@ struct equal_to<openPMD::Regions::Box<T, D>> {
       return true;
     if (x.empty() || y.empty())
       return false;
-    return openPMD::Regions::detail::tuple_eq(make_tuple(x.lower(), x.upper()),
-                                              make_tuple(y.lower(), y.upper()));
+    return openPMD::Regions::helpers::tuple_eq(
+        make_tuple(x.lower(), x.upper()), make_tuple(y.lower(), y.upper()));
   }
 };
 
@@ -544,7 +477,7 @@ template <typename T, std::size_t D> struct hash<openPMD::Regions::Box<T, D>> {
     if (x.empty())
       return size_t(0xc9df21a36550a048ULL);
     hash<openPMD::Regions::Point<T, D>> h;
-    return openPMD::Regions::detail::hash_combine(h(x.lower()), h(x.upper()));
+    return openPMD::Regions::helpers::hash_combine(h(x.lower()), h(x.upper()));
   }
 };
 
@@ -566,8 +499,8 @@ template <typename T, std::size_t D> struct less<openPMD::Regions::Box<T, D>> {
       return true;
     if (y.empty())
       return false;
-    return openPMD::Regions::detail::tuple_lt(make_tuple(x.lower(), x.upper()),
-                                              make_tuple(y.lower(), y.upper()));
+    return openPMD::Regions::helpers::tuple_lt(
+        make_tuple(x.lower(), x.upper()), make_tuple(y.lower(), y.upper()));
   }
 };
 
