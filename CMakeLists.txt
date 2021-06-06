@@ -684,6 +684,7 @@ set(openPMD_TEST_NAMES
     Auxiliary
     RegionsBox
     RegionsPoint
+    RegionsRegion
     SerialIO
     ParallelIO
 )

@@ -40,7 +40,7 @@ public:
   typedef T value_type;
   /** Return type of Point::size()
    */
-  typedef std::size_t size_type;
+  typedef std::ptrdiff_t size_type;
 
   /** Create a value-initialized Point
    *
@@ -168,16 +168,20 @@ public:
 
   /** Convert a point to a std::array
    */
-  operator std::array<T, D>() const { return elts; }
+  constexpr operator std::array<T, D>() const { return elts; }
   /** Convert a point to a std::vector
    */
-  explicit operator std::vector<T>() const {
+  explicit constexpr operator std::vector<T>() const {
     return std::vector<T>(elts.begin(), elts.end());
   }
 
   /** Number of components (same as number of dimensions)
    */
   constexpr size_type size() const { return D; }
+
+  /** Number of dimensions (same as number of components)
+   */
+  constexpr size_type ndims() const { return D; }
 
   /** Get a component of a point
    */
@@ -186,9 +190,31 @@ public:
    */
   constexpr T &operator[](const size_type d) { return elts[d]; }
 
-  /** Number of dimensions (same as number of components)
+  /** Remove a component from a point
+   *
+   * This reduces the dimension of a point by one.
    */
-  constexpr size_type ndims() const { return D; }
+  constexpr Point<T, (D > 0 ? D - 1 : 0)> erase(size_type dir) const {
+    assert(dir >= 0 && dir < D);
+    return Point<T, (D > 0 ? D - 1 : 0)>::make(
+        [&](size_type d) { return d < dir ? (*this)[d] : (*this)[d + 1]; });
+  }
+  /** Add a component to a point
+   *
+   * This increases the dimension of a point by one.
+   */
+  constexpr Point<T, D + 1> insert(size_type dir, const T &a) const {
+    assert(dir >= 0 && dir <= D);
+    return Point<T, D + 1>::make([&](size_type d) {
+      return d < dir ? (*this)[d] : d == dir ? a : (*this)[d - 1];
+    });
+  }
+
+  /** Reverse the components of a point
+   */
+  constexpr Point reversed() const {
+    return Point::make([&](size_type d) { return (*this)[D - 1 - d]; });
+  }
 
   friend constexpr Point operator+(const Point &x) {
     return fmap([](const T &a) { return +a; }, x);
@@ -196,11 +222,29 @@ public:
   friend constexpr Point operator-(const Point &x) {
     return fmap([](const T &a) { return -a; }, x);
   }
+  // friend constexpr Point operator~(const Point &x) {
+  //   if constexpr (std::is_same_v<T, bool>)
+  //     // Special case to avoid compiler warnings
+  //     return fmap([](const T &a) { return true; }, x);
+  //   else if constexpr (std::is_integral_v<T>)
+  //     return fmap([](const T &a) { return ~a; }, x);
+  //   std::abort();
+  // }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT> &&
+                             !std::is_same_v<TT, bool>> * = nullptr>
   friend constexpr Point operator~(const Point &x) {
-    if constexpr (std::is_same_v<T, bool>)
-      return fmap([](const T &a) { return true; }, x);
-    else if constexpr (std::is_integral_v<T>)
-      return fmap([](const T &a) { return ~a; }, x);
+    return fmap([](const T &a) { return ~a; }, x);
+  }
+  template <typename TT = T,
+            std::enable_if_t<std::is_same_v<TT, bool>> * = nullptr>
+  friend constexpr Point operator~(const Point &x) {
+    // Special case to avoid compiler warnings
+    return fmap([](const T &a) { return true; }, x);
+  }
+  template <typename TT = T,
+            std::enable_if_t<!std::is_integral_v<TT>> * = nullptr>
+  friend constexpr Point operator~(const Point &x) {
     std::abort();
   }
   friend constexpr Point<bool, D> operator!(const Point &x) {

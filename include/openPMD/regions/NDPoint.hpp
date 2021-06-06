@@ -21,6 +21,10 @@
 namespace openPMD {
 namespace Regions {
 
+/** Maximum number of dimensions supported by NDPoint
+ */
+constexpr std::size_t max_ndims = 5;
+
 namespace detail {
 
 // Abstract base helper class
@@ -52,10 +56,13 @@ public:
 
   virtual size_type size() const = 0;
 
+  virtual size_type ndims() const = 0;
   virtual const T &operator[](const size_type d) const = 0;
   virtual T &operator[](const size_type d) = 0;
-
-  virtual size_type ndims() const = 0;
+  virtual std::unique_ptr<VPoint> erase(const size_type d) const = 0;
+  virtual std::unique_ptr<VPoint> insert(const size_type d,
+                                         const T &a) const = 0;
+  virtual std::unique_ptr<VPoint> reversed() const = 0;
 
   virtual std::unique_ptr<VPoint> operator+() const = 0;
   virtual std::unique_ptr<VPoint> operator-() const = 0;
@@ -205,10 +212,28 @@ public:
 
   constexpr size_type size() const override { return p.size(); }
 
+  constexpr size_type ndims() const override { return p.ndims(); }
+
   const T &operator[](const size_type d) const override { return p[d]; }
   T &operator[](const size_type d) override { return p[d]; }
 
-  constexpr size_type ndims() const override { return p.ndims(); }
+  std::unique_ptr<VPoint<T>> erase(const size_type d) const override {
+    if constexpr (D == 0)
+      return std::unique_ptr<WPoint<T, D>>();
+    else
+      return std::make_unique<WPoint<T, D - 1>>(p.erase(d));
+  }
+  std::unique_ptr<VPoint<T>> insert(const size_type d,
+                                    const T &a) const override {
+    if constexpr (D == max_ndims)
+      return std::unique_ptr<WPoint<T, D>>();
+    else
+      return std::make_unique<WPoint<T, D + 1>>(p.insert(d, a));
+  }
+
+  std::unique_ptr<VPoint<T>> reversed() const override {
+    return std::make_unique<WPoint>(p.reversed());
+  }
 
   std::unique_ptr<VPoint<T>> operator+() const override {
     return std::make_unique<WPoint>(+p);
@@ -574,16 +599,33 @@ public:
    */
   size_type size() const { return p->size(); }
 
+  /** Number of dimensions (same as number of comopnents)
+   */
+  size_type ndims() const { return p->ndims(); }
+
   /** Get a component of a Point
    */
   const T &operator[](const size_type d) const { return (*p)[d]; }
   /** Get a component of a Point
    */
   T &operator[](const size_type d) { return (*p)[d]; }
-
-  /** Number of dimensions (same as number of comopnents)
+  /** Remove a component from a point
+   *
+   * This reduces the dimension of a point by one.
    */
-  size_type ndims() const { return p->ndims(); }
+  constexpr NDPoint erase(size_type dir) const {
+    return NDPoint(p->erase(dir));
+  }
+  /** Add a component to a point
+   *
+   * This increases the dimension of a point by one.
+   */
+  constexpr NDPoint insert(size_type dir, const T &a) const {
+    return NDPoint(p->insert(dir, a));
+  }
+  /** Reverse the components of a point
+   */
+  constexpr NDPoint reversed() const { return NDPoint(p->reversed()); }
 
   friend NDPoint operator+(const NDPoint &x) { return NDPoint(+*x.p); }
   friend NDPoint operator-(const NDPoint &x) { return NDPoint(-*x.p); }

@@ -8,6 +8,8 @@
 namespace openPMD {
 namespace Regions {
 
+#define REGIONS_DEBUG 1 // 0 or 1
+
 namespace helpers {
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -111,6 +113,52 @@ constexpr int tuple_cmp(const Tuple1 &x, const Tuple2 &y) {
 template <typename Tuple1, typename Tuple2>
 constexpr bool tuple_lt(const Tuple1 &x, const Tuple2 &y) {
   return tuple_cmp(x, y) < 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+// Reduce over a std::vector, using bisection to reduce cost
+
+/** Reduce a non-empty range
+ */
+template <typename Op, typename T,
+          typename R = typename std::result_of<Op(T, T)>::type>
+T reduce1(const Op &op, std::vector<T> &xs) {
+  assert(!xs.empty());
+  for (std::size_t dist = 1; dist < xs.size(); dist *= 2)
+    for (std::size_t i = 0; i + dist < xs.size(); i += 2 * dist)
+      xs[i] = op(std::move(xs[i]), std::move(xs[i + dist]));
+  return std::move(xs[0]);
+}
+
+/** Mapreduce a range with a given neutral element
+ */
+template <typename F, typename Op, typename R, typename B, typename E>
+R mapreduce(const F &f, const Op &op, R z, const B &b, const E &e) {
+  std::vector<R> rs;
+  for (auto i = b; i != e; ++i)
+    rs.push_back(f(*i));
+  if (rs.empty())
+    return z;
+  return reduce1(op, rs);
+}
+
+/** Mapreduce a range
+ */
+template <typename F, typename Op, typename I,
+          typename T = typename std::iterator_traits<I>::value_type,
+          typename R = std::decay_t<std::result_of_t<F(T)>>>
+R mapreduce(const F &f, const Op &op, const I &b, const I &e) {
+  return mapreduce(f, op, R(), b, e);
+}
+
+/** Mapreduce a container
+ */
+template <typename F, typename Op, typename C,
+          typename T = typename C::value_type,
+          typename R = std::decay_t<std::result_of_t<F(T)>>>
+R mapreduce(const F &f, const Op &op, const C &c) {
+  return mapreduce(f, op, std::begin(c), std::end(c));
 }
 
 } // namespace helpers

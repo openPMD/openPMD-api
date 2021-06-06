@@ -353,6 +353,28 @@ template <typename P> void test_Point_float(const P &p) {
     const T a = rand();
     const T b = rand();
 
+    // remove-insert is no-op
+    if (D > 0) {
+      for (std::size_t d = 0; d < D; ++d) {
+        const auto a1 = x[d];
+        const auto x1 = x.erase(d);
+        REQUIRE(x1.ndims() == D - 1);
+        const auto x2 = x1.insert(d, a1);
+        // This conversion is fine for D > 0
+        const P x3 = *(const P *)&x2;
+        REQUIRE(eq(x3, x));
+      }
+    }
+    // insert-remove is no-op
+    for (std::size_t d = 0; d <= D; ++d) {
+      const auto x1 = x.insert(d, a);
+      REQUIRE(x1.ndims() == D + 1);
+      REQUIRE(x1[d] == a);
+      REQUIRE(eq(x1.erase(d), x));
+    }
+
+    REQUIRE(eq(x.reversed().reversed(), x));
+
     REQUIRE(eq(fmap([](auto i) { return i; }, x), x));
     REQUIRE(eq(fmap([](auto i) { return i + 1; },
                     fmap([](auto i) { return 2 * i; }, x)),

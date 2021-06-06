@@ -11,7 +11,6 @@
 using namespace openPMD::Regions;
 
 template <typename B> void test_Box(const B &b) {
-  REQUIRE(b.empty());
   const std::size_t D = b.ndims();
   using T = typename B::value_type;
   const auto p = b.lower();
@@ -20,6 +19,7 @@ template <typename B> void test_Box(const B &b) {
   const std::equal_to<B> eqb;
   const std::less<P> ltp;
   const std::less<B> ltb;
+  REQUIRE(b.empty());
 
   std::mt19937 gen;
   std::uniform_int_distribution dist0(0, 9);

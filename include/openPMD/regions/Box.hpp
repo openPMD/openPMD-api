@@ -6,6 +6,7 @@
 
 #include <array>
 #include <cstddef>
+#include <cstdlib>
 #include <functional>
 #include <iostream>
 #include <tuple>
@@ -28,6 +29,8 @@ template <typename T, std::size_t D> class Box;
 template <typename T> class Box<T, 0> {
   bool is_full;
 
+  explicit constexpr Box(bool is_full) : is_full(is_full) {}
+
 public:
   constexpr static std::size_t D = 0;
 
@@ -36,7 +39,7 @@ public:
 
   /** Create empty box
    */
-  Box() : is_full(false) {}
+  constexpr Box() : is_full(false) {}
 
   Box(const Box &) = default;
   Box(Box &&) = default;
@@ -104,14 +107,13 @@ public:
 
   // Set operations
   friend Box bounding_box(const Box &b1, const Box &b2) {
-    return b1.empty() && b2.empty() ? Box() : Box(Point<T, D>());
+    return Box(!b1.empty() || !b2.empty());
   }
 
   friend Box operator&(const Box &b1, const Box &b2) {
-    if (!b1.empty() & !b2.empty())
-      return Box(Point<T, D>());
-    return Box();
+    return Box(!b1.empty() & !b2.empty());
   }
+  Box &operator|=(const Box &b) { return *this = *this | b; }
   friend Box intersection(const Box &b1, const Box &b2) { return b1 & b2; }
 
   friend bool operator==(const Box &b, const std::vector<Box> &bs) {
@@ -161,6 +163,8 @@ public:
     return os << "(" << b.is_full << ")";
   }
 };
+
+////////////////////////////////////////////////////////////////////////////////
 
 template <typename T, std::size_t D> class Box {
   Point<T, D> lo, hi;
@@ -350,39 +354,42 @@ private:
     assert(vol == size());
     for (size_t i = 0; i < rs.size(); ++i)
       for (size_t j = i + 1; j < rs.size(); ++j)
-        assert(rs[i].isdisjoint(rs[j]));
+        assert(isdisjoint(rs[i], rs[j]));
 #endif
   }
 
 public:
-  std::vector<Box> operator-(const Box &b) const {
-    if (empty())
+  friend std::vector<Box> operator-(const Box &b1, const Box &b2) {
+    if (b1.empty())
       return std::vector<Box>{};
-    if (b.empty())
-      return std::vector<Box>{*this};
-    std::vector<Box> bs1;
-    split(b.lo, bs1);
-    std::vector<Box> bs2;
-    for (const auto &b1 : bs1)
-      b1.split(b.hi, bs2);
+    if (b2.empty())
+      return std::vector<Box>{b1};
+    std::vector<Box> rs1;
+    b1.split(b2.lo, rs1);
+    std::vector<Box> rs2;
+    for (const auto &r : rs1)
+      r.split(b2.hi, rs2);
     std::vector<Box> rs;
-    for (const auto &b2 : bs2) {
-      assert(isdisjoint(b2, b) || b2 <= b);
-      if (isdisjoint(b2, b))
-        rs.push_back(b2);
+    for (const auto &r : rs2) {
+#if REGIONS_DEBUG
+      assert(isdisjoint(r, b2) || r <= b2);
+#endif
+      if (isdisjoint(r, b2))
+        rs.push_back(r);
     }
 #if REGIONS_DEBUG
     // Postcondition
     size_type vol = 0;
     for (const auto &r : rs) {
       assert(!r.empty());
-      assert(r <= *this && !(r <= b));
+      assert(r <= b1 && !(r <= b2));
       vol += r.size();
     }
-    assert(vol >= max(size_type(0), size() - b.size()) && vol <= size());
+    using std::max;
+    assert(vol >= max(size_type(0), b1.size() - b2.size()) && vol <= b1.size());
     for (size_t i = 0; i < rs.size(); ++i)
       for (size_t j = i + 1; j < rs.size(); ++j)
-        assert(rs[i].isdisjoint(rs[j]));
+        assert(isdisjoint(rs[i], rs[j]));
 #endif
     return rs;
   }
@@ -426,7 +433,8 @@ public:
       assert((r <= b1) ^ (r <= b2));
       vol += r.size();
     }
-    assert(vol >= abs(b1.size() - b2.size()) && vol <= b1size() + b2.size());
+    using std::abs;
+    assert(vol >= abs(b1.size() - b2.size()) && vol <= b1.size() + b2.size());
     for (size_t i = 0; i < rs.size(); ++i)
       for (size_t j = i + 1; j < rs.size(); ++j)
         assert(isdisjoint(rs[i], rs[j]));
