@@ -713,6 +713,7 @@ set(openPMD_EXAMPLE_NAMES
     10_streaming_write
     10_streaming_read
     12_span_write
+    13_regions
 )
 set(openPMD_PYTHON_EXAMPLE_NAMES
     2_read_serial
@@ -769,6 +770,11 @@ if(openPMD_BUILD_TESTING)
         else()
             target_link_libraries(${testname}Tests PRIVATE CatchMain)
         endif()
+        set_target_properties(${examplename} PROPERTIES
+            CXX_STANDARD 17
+            CXX_EXTENSIONS OFF
+            CXX_STANDARD_REQUIRED ON
+        )
     endforeach()
 endif()
 
@@ -789,6 +795,11 @@ if(openPMD_BUILD_EXAMPLES)
         else()
             add_executable(${examplename} examples/${examplename}.cpp)
             target_link_libraries(${examplename} PRIVATE openPMD)
+            set_target_properties(${examplename} PROPERTIES
+                CXX_STANDARD 17
+                CXX_EXTENSIONS OFF
+                CXX_STANDARD_REQUIRED ON
+            )
         endif()
     endforeach()
 endif()
