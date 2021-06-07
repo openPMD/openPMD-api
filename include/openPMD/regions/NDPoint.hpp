@@ -170,8 +170,8 @@ public:
   WPoint &operator=(const WPoint &) = default;
   WPoint &operator=(WPoint &&) = default;
 
-  WPoint(const Point<T, D> &p) : p(p) {}
-  WPoint(Point<T, D> &&p) : p(std::move(p)) {}
+  WPoint(const Point<T, D> &p_) : p(p_) {}
+  WPoint(Point<T, D> &&p_) : p(std::move(p_)) {}
 
   std::unique_ptr<VPoint<T>> copy() const override {
     return std::make_unique<WPoint>(*this);

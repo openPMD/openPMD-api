@@ -29,7 +29,7 @@ template <typename T, std::size_t D> class Box;
 template <typename T> class Box<T, 0> {
   bool is_full;
 
-  explicit constexpr Box(bool is_full) : is_full(is_full) {}
+  explicit constexpr Box(bool is_full_) : is_full(is_full_) {}
 
 public:
   constexpr static std::size_t D = 0;
@@ -182,7 +182,7 @@ public:
 
   /** Create box from lower (inclusive) and upper (exclusive) bound
    */
-  Box(const Point<T, D> &lo, const Point<T, D> &hi) : lo(lo), hi(hi) {}
+  Box(const Point<T, D> &lo_, const Point<T, D> &hi_) : lo(lo_), hi(hi_) {}
   /** Create box holding a single point
    */
   explicit Box(const Point<T, D> &p) : lo(p), hi(p + T(1)) {}

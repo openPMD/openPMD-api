@@ -33,7 +33,7 @@ template <typename T> class Region<T, 0> {
 
   friend class Region<T, 1>;
 
-  explicit constexpr Region(bool is_full) : is_full(is_full) {}
+  explicit constexpr Region(bool is_full_) : is_full(is_full_) {}
 
 public:
   constexpr static std::size_t D = 0;
@@ -292,7 +292,7 @@ private:
     assert(upos + nactive == nboxes);
     subregions.push_back(ubnds[nboxes - 1]);
 #if REGIONS_DEBUG
-#warning "TODO: turn this into a test case"
+    // TODO: turn this into a test case
     {
       Region reg;
       for (std::size_t i = 0; i < nboxes; ++i)
@@ -326,7 +326,7 @@ public:
       res.emplace_back(Box<T, D>(Point<T, D>{pos1}, Point<T, D>{pos2}));
     }
 #if REGIONS_DEBUG
-#warning "TODO: turn this into a test case"
+    // TODO: turn this into a test case
     assert(std::is_sorted(res.begin(), res.end()));
     {
       Region reg;
@@ -719,7 +719,7 @@ public:
   Region(const std::vector<Box<T, D>> &boxes) {
     *this = region_from_boxes(boxes.begin(), boxes.end());
 #if REGIONS_DEBUG
-#warning "TODO: turn this into a test case"
+    // TODO: turn this into a test case
     {
       Region reg;
       for (const auto &box : boxes)
@@ -785,7 +785,7 @@ public:
         *this);
     assert(old_subboxes.empty());
 #if REGIONS_DEBUG
-#warning "TODO: turn this into a test case"
+    // TODO: turn this into a test case
     assert(std::is_sorted(res.begin(), res.end()));
     {
       Region reg;
