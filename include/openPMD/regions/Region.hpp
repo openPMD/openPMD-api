@@ -106,6 +106,10 @@ public:
   // Shift and scale operators
   Region operator>>(const Point<T, D> &d) const { return *this; }
   Region operator<<(const Point<T, D> &d) const { return *this; }
+  Region &operator>>=(const Point<T, D> &d) { return *this = *this >> d; }
+  Region &operator<<=(const Point<T, D> &d) { return *this = *this << d; }
+  Region operator*(const Point<T, D> &s) const { return *this; }
+  Region &operator*=(const Point<T, D> &s) { return *this = *this * s; }
   Region grown(const Point<T, D> &dlo, const Point<T, D> &dup) const {
     return *this;
   }
@@ -319,7 +323,7 @@ public:
     while (iter != end) {
       const auto pos1 = *iter++;
       const auto pos2 = *iter++;
-      res.emplace_back(Box<T, D>(Point<T, 1>{pos1}, Point<T, 1>{pos2}));
+      res.emplace_back(Box<T, D>(Point<T, D>{pos1}, Point<T, D>{pos2}));
     }
 #if REGIONS_DEBUG
 #warning "TODO: turn this into a test case"
@@ -329,6 +333,16 @@ public:
       for (const auto &b : res) {
         assert(isdisjoint(Region(b), reg));
         reg |= b;
+      }
+      if (!(reg == *this)) {
+        std::cout << "subregions=[";
+        for (const auto &sr : subregions)
+          std::cout << sr << ",";
+        std::cout << "]\n";
+        std::cout << "reg=[";
+        for (const auto &r : reg.subregions)
+          std::cout << r << ",";
+        std::cout << "]\n";
       }
       assert(reg == *this);
     }
@@ -469,65 +483,41 @@ public:
     nr.subregions.reserve(subregions.size());
     for (const auto &pos : subregions)
       nr.subregions.push_back(pos + d[0]);
+    check_invariant();
     return nr;
   }
   Region operator<<(const Point<T, D> &d) const { return *this >> -d; }
+  Region &operator>>=(const Point<T, D> &d) { return *this = *this >> d; }
+  Region &operator<<=(const Point<T, D> &d) { return *this = *this << d; }
+  Region operator*(const Point<T, D> &s) const {
+    if (s[0] == 0)
+      return empty() ? Region() : Region(Point<T, D>());
+    Region nr;
+    nr.subregions.reserve(subregions.size());
+    for (const auto &pos : subregions)
+      nr.subregions.push_back(pos * s[0]);
+    if (s[0] < 0)
+      std::reverse(nr.subregions.begin(), nr.subregions.end());
+    check_invariant();
+    return nr;
+  }
+  Region &operator*=(const Point<T, D> &s) { return *this = *this * s; }
 
 private:
   Region grown_(const Point<T, D> &dlo, const Point<T, D> &dup) const {
     // Cannot shrink
     assert(all(dlo + dup >= Point<T, D>()));
-    std::vector<T> lbnds, ubnds;
-    lbnds.reserve(subregions.size());
-    ubnds.reserve(subregions.size());
-    auto iter = subregions.begin();
-    const auto end = subregions.end();
-    while (iter != end) {
-      const auto pos0 = *iter++ - dlo[0];
-      const auto pos1 = *iter++ + dup[0];
-      lbnds.push_back(pos0);
-      ubnds.push_back(pos1);
-    }
-    Region nr;
-    nr.subregions = subregions_from_bounds(std::move(lbnds), std::move(ubnds));
-    nr.check_invariant();
-#if REGIONS_DEBUG
-#warning "TODO: turn this into a test case"
-    {
-      const std::vector<Box<T, D>> boxes(*this);
-      Region reg;
-      for (const auto &box : boxes)
-        reg |= box.grown(dlo, dup);
-      assert(nr == reg);
-    }
-#endif
-    return nr;
+    return helpers::mapreduce(
+        [&](const Box<T, D> &b) { return Region(b.grown(dlo, dup)); },
+        [](const Region &x, const Region &y) { return x | y; },
+        std::vector<Box<T, D>>(*this));
   }
   Region shrunk_(const Point<T, D> &dlo, const Point<T, D> &dup) const {
     // Cannot grow
     assert(all(dlo + dup >= Point<T, D>()));
-    Region nr;
-    auto iter = subregions.begin();
-    const auto end = subregions.end();
-    while (iter != end) {
-      const auto pos0 = *iter++ + dlo[0];
-      const auto pos1 = *iter++ - dup[0];
-      if (pos1 > pos0) {
-        nr.subregions.push_back(pos0);
-        nr.subregions.push_back(pos1);
-      }
-    }
-    nr.check_invariant();
-#if REGIONS_DEBUG
-#warning "TODO: turn this into a test case"
-    {
-      auto world = bounding_box(*this).grown(1);
-      Region reg = Region(world.grown(dup, dlo)) -
-                   (Region(world) - *this).grown(dup, dlo);
-      assert(nr == reg);
-    }
-#endif
-    return nr;
+    auto world = bounding_box(*this).grown(1);
+    return Region(world.grown(dup, dlo)) -
+           (Region(world) - *this).grown(dup, dlo);
   }
 
 public:
@@ -879,7 +869,7 @@ private:
         },
         region1);
     assert(old_decoded_subregion.empty());
-    assert(res.invariant());
+    res.check_invariant();
     return res;
   }
 
@@ -901,7 +891,7 @@ private:
         },
         region1, region2);
     assert(old_decoded_subregion.empty());
-    assert(res.invariant());
+    res.check_invariant();
     return res;
   }
 
@@ -939,16 +929,43 @@ public:
     Region nr;
     nr.subregions.reserve(subregions.size());
     const T dx = d[D - 1];
-    auto subd = d.subpoint(D - 1);
+    auto subd = d.erase(D - 1);
     for (const auto &pos_subregion : subregions) {
       const T pos = pos_subregion.first;
       const auto &subregion = pos_subregion.second;
-      nr.subregions.emplace_back(make_pair(pos + dx, subregion >> subd));
+      nr.subregions.emplace_back(std::make_pair(pos + dx, subregion >> subd));
     }
     nr.check_invariant();
     return nr;
   }
   Region operator<<(const Point<T, D> &d) const { return *this >> -d; }
+  Region &operator>>=(const Point<T, D> &d) { return *this = *this >> d; }
+  Region &operator<<=(const Point<T, D> &d) { return *this = *this << d; }
+  Region operator*(const Point<T, D> &s) const {
+    if (s[D - 1] == 0)
+      return empty() ? Region() : Region(Point<T, D>());
+    Region nr;
+    nr.subregions.reserve(subregions.size());
+    const T ds = s[D - 1];
+    auto subs = s.erase(D - 1);
+    for (const auto &pos_subregion : subregions) {
+      const T pos = pos_subregion.first;
+      const auto &subregion = pos_subregion.second;
+      nr.subregions.emplace_back(std::make_pair(pos * ds, subregion * subs));
+    }
+    if (ds < 0) {
+      std::reverse(nr.subregions.begin(), nr.subregions.end());
+      std::transform(nr.subregions.begin(), nr.subregions.end(),
+                     nr.subregions.begin(), [](const auto &pos_subregion) {
+                       const auto &pos = pos_subregion.first;
+                       const auto &subregion = pos_subregion.second;
+                       return std::make_pair(pos + 1, subregion);
+                     });
+    }
+    nr.check_invariant();
+    return nr;
+  }
+  Region &operator*=(const Point<T, D> &s) { return *this = *this * s; }
 
 private:
   Region grown_(const Point<T, D> &dlo, const Point<T, D> &dup) const {

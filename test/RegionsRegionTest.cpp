@@ -72,6 +72,40 @@ template <typename R> void test_Region(const R &r) {
     R Y = randr();
     R Z = randr();
 
+    P n = p;
+    P x = randp();
+    P y = randp();
+
+    REQUIRE(N == N);
+    REQUIRE(X == X);
+    REQUIRE((N != X) != X.empty());
+
+    REQUIRE((X >> n) == X);
+    REQUIRE((X >> x) == (X << -x));
+    REQUIRE(((X >> x) << x) == X);
+    REQUIRE(((X >> x) >> y) == (X >> (x + y)));
+
+    REQUIRE((X * abs(x)) * abs(y) == X * (abs(x) * abs(y)));
+    REQUIRE((X >> x) * y == (X * y) >> (x * y));
+
+    if (X.empty()) {
+      REQUIRE(X.grown(abs(x)).empty());
+      REQUIRE(X.shrunk(abs(x)).empty());
+    } else if (all(abs(x) == n)) {
+      REQUIRE(X.grown(abs(x)) == X);
+      REQUIRE(X.shrunk(abs(x)) == X);
+    } else {
+      REQUIRE(X.grown(abs(x)) > X);
+      REQUIRE(X.shrunk(abs(x)) < X);
+    }
+
+    REQUIRE(X.grown(abs(x)).shrunk(abs(x)) >= X);
+    REQUIRE(X.shrunk(abs(x)).grown(abs(x)) <= X);
+
+    REQUIRE((X.grown(x) >> y) == (X >> y).grown(x));
+
+    REQUIRE((X * abs(y)).grown(abs(x) * abs(y)) == X.grown(abs(x)) * abs(y));
+
     const B E = bounding_box(bounding_box(bounding_box(X), bounding_box(Y)),
                              bounding_box(Z))
                     .grown(10);
@@ -91,6 +125,12 @@ template <typename R> void test_Region(const R &r) {
 
     REQUIRE(E - (X & Y) == ((E - X) | (E - Y)));
     REQUIRE(E - (X | Y) == ((E - X) & (E - Y)));
+
+    REQUIRE((N ^ X) == X);
+    REQUIRE((X ^ N) == X);
+    REQUIRE((X ^ X) == N);
+    REQUIRE((X ^ Y) == (Y ^ X));
+    REQUIRE(((X ^ Y) ^ Z) == (X ^ (Y ^ Z)));
 
     const R IXY = X & Y;
     REQUIRE((IXY <= X && IXY <= Y) == true);
