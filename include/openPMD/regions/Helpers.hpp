@@ -68,7 +68,7 @@ template <std::size_t N> struct tuple_eq {
 };
 template <> struct tuple_eq<0> {
   template <typename Tuple1, typename Tuple2>
-  constexpr bool operator()(const Tuple1 &x, const Tuple2 &y) const {
+  constexpr bool operator()(const Tuple1 &, const Tuple2 &) const {
     return true;
   }
 };
@@ -92,7 +92,7 @@ template <std::size_t N> struct tuple_cmp {
 };
 template <> struct tuple_cmp<0> {
   template <typename Tuple1, typename Tuple2>
-  constexpr int operator()(const Tuple1 &x, const Tuple2 &y) const {
+  constexpr int operator()(const Tuple1 &, const Tuple2 &) const {
     return 0;
   }
 };

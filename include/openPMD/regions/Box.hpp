@@ -53,7 +53,7 @@ public:
   Box(const Point<T, D> &lo, const Point<T, D> &hi) : is_full(false) {}
   /** Create box holding a single point
    */
-  explicit Box(const Point<T, D> &p) : is_full(true) {}
+  explicit Box(const Point<T, D> &) : is_full(true) {}
 
   // Predicates
   size_type ndims() const { return D; }
@@ -64,22 +64,18 @@ public:
   size_type size() const { return is_full; }
 
   // Shift and scale operators
-  Box &operator>>=(const Point<T, D> &p) { return *this; }
-  Box &operator<<=(const Point<T, D> &p) { return *this; }
-  Box &operator*=(const Point<T, D> &p) { return *this; }
-  Box operator>>(const Point<T, D> &p) const { return Box(*this); }
-  Box operator<<(const Point<T, D> &p) const { return Box(*this); }
-  Box operator*(const Point<T, D> &p) const { return Box(*this); }
-  Box grown(const Point<T, D> &dlo, const Point<T, D> &dhi) const {
-    return *this;
-  }
-  Box grown(const Point<T, D> &d) const { return *this; }
-  Box grown(const T &d) const { return *this; }
-  Box shrunk(const Point<T, D> &dlo, const Point<T, D> &dhi) const {
-    return *this;
-  }
-  Box shrunk(const Point<T, D> &d) const { return *this; }
-  Box shrunk(const T &d) const { return *this; }
+  Box &operator>>=(const Point<T, D> &) { return *this; }
+  Box &operator<<=(const Point<T, D> &) { return *this; }
+  Box &operator*=(const Point<T, D> &) { return *this; }
+  Box operator>>(const Point<T, D> &) const { return Box(*this); }
+  Box operator<<(const Point<T, D> &) const { return Box(*this); }
+  Box operator*(const Point<T, D> &) const { return Box(*this); }
+  Box grown(const Point<T, D> &, const Point<T, D> &) const { return *this; }
+  Box grown(const Point<T, D> &) const { return *this; }
+  Box grown(const T &) const { return *this; }
+  Box shrunk(const Point<T, D> &, const Point<T, D> &) const { return *this; }
+  Box shrunk(const Point<T, D> &) const { return *this; }
+  Box shrunk(const T &) const { return *this; }
 
   // Comparison operators
   friend bool operator==(const Box &b1, const Box &b2) {
@@ -88,7 +84,7 @@ public:
   friend bool operator!=(const Box &b1, const Box &b2) { return !(b1 == b2); }
 
   // Set comparison operators
-  bool contains(const Point<T, D> &p) const { return !empty(); }
+  bool contains(const Point<T, D> &) const { return !empty(); }
   friend bool isdisjoint(const Box &b1, const Box &b2) {
     return b1.empty() || b2.empty();
   }
