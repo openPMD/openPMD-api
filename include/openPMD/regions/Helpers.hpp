@@ -3,7 +3,7 @@
 
 #include <array>
 #include <cstddef>
-#include <hash>
+#include <functional>
 #include <tuple>
 #include <type_traits>
 #include <vector>
