@@ -210,9 +210,9 @@ public:
   }
   operator std::vector<T>() const override { return std::vector<T>(p); }
 
-  constexpr size_type size() const override { return p.size(); }
+  /*constexpr*/ size_type size() const override { return p.size(); }
 
-  constexpr size_type ndims() const override { return p.ndims(); }
+  /*constexpr*/ size_type ndims() const override { return p.ndims(); }
 
   const T &operator[](const size_type d) const override { return p[d]; }
   T &operator[](const size_type d) override { return p[d]; }

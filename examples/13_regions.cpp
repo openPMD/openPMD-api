@@ -11,7 +11,8 @@ int main() {
   auto z = x + y;
   cout << "Points:\n"
        << "x: " << x << "\n"
-       << "y: " << y << "\n";
+       << "y: " << y << "\n"
+       << "z: " << z << "\n";
 
   // A box between these points
   Box<int, 2> b(x, y);
