@@ -3,7 +3,10 @@
 
 #include <array>
 #include <cstddef>
+#include <hash>
+#include <tuple>
 #include <type_traits>
+#include <vector>
 
 namespace openPMD {
 namespace Regions {
