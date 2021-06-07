@@ -141,7 +141,7 @@ public:
 
   /** Create a point from Pointers to first and one past the last element
    */
-  constexpr Point(const T *begin, const T *end)
+  constexpr Point(const T *begin, const T *end __attribute__((__unused__)))
       : elts((assert(begin + D == end),
               make([&](size_type d) { return begin[d]; }))) {}
   /** Create a point from an initializer list
@@ -222,29 +222,12 @@ public:
   friend constexpr Point operator-(const Point &x) {
     return fmap([](const T &a) { return -a; }, x);
   }
-  // friend constexpr Point operator~(const Point &x) {
-  //   if constexpr (std::is_same_v<T, bool>)
-  //     // Special case to avoid compiler warnings
-  //     return fmap([](const T &a) { return true; }, x);
-  //   else if constexpr (std::is_integral_v<T>)
-  //     return fmap([](const T &a) { return ~a; }, x);
-  //   std::abort();
-  // }
-  template <typename TT = T,
-            std::enable_if_t<std::is_integral_v<TT> &&
-                             !std::is_same_v<TT, bool>> * = nullptr>
   friend constexpr Point operator~(const Point &x) {
-    return fmap([](const T &a) { return ~a; }, x);
-  }
-  template <typename TT = T,
-            std::enable_if_t<std::is_same_v<TT, bool>> * = nullptr>
-  friend constexpr Point operator~(const Point &x) {
-    // Special case to avoid compiler warnings
-    return fmap([](const T &a) { return true; }, x);
-  }
-  template <typename TT = T,
-            std::enable_if_t<!std::is_integral_v<TT>> * = nullptr>
-  friend constexpr Point operator~(const Point &x) {
+    if constexpr (std::is_same_v<T, bool>)
+      // Special case to avoid compiler warnings
+      return fmap([](const T &) { return true; }, x);
+    else if constexpr (std::is_integral_v<T>)
+      return fmap([](const T &a) { return ~a; }, x);
     std::abort();
   }
   friend constexpr Point<bool, D> operator!(const Point &x) {

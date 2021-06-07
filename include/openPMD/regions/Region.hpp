@@ -663,11 +663,6 @@ public:
         return false;
       }
     }
-    // // There must be an even number of subregions
-    // if (subregions.size() % 2 != 0) {
-    //   assert(false);
-    //   return false;
-    // }
     return true;
   }
 
