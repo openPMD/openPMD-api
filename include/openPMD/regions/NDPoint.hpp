@@ -519,7 +519,7 @@ template <typename T> class NDPoint {
 
   std::unique_ptr<VPoint<T>> p;
 
-  NDPoint(std::unique_ptr<VPoint<T>> p) : p(std::move(p)) {}
+  NDPoint(std::unique_ptr<VPoint<T>> p_) : p(std::move(p_)) {}
 
 public:
   /** Component type

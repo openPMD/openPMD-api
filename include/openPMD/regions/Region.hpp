@@ -26,6 +26,9 @@ namespace Regions {
  */
 template <typename T, std::size_t D> class Region;
 
+template <typename T> class Region<T, 0>;
+template <typename T> class Region<T, 1>;
+
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename T> class Region<T, 0> {
@@ -60,7 +63,7 @@ public:
   Region &operator=(const Region &) = default;
   Region &operator=(Region &&) = default;
 
-  Region(const Point<T, D> &p) : is_full(true) {}
+  Region(const Point<T, D> &) : is_full(true) {}
   Region(const Box<T, D> &b) : is_full(!b.empty()) {}
 
   template <typename U>
@@ -104,18 +107,16 @@ public:
   }
 
   // Shift and scale operators
-  Region operator>>(const Point<T, D> &d) const { return *this; }
-  Region operator<<(const Point<T, D> &d) const { return *this; }
+  Region operator>>(const Point<T, D> &) const { return *this; }
+  Region operator<<(const Point<T, D> &) const { return *this; }
   Region &operator>>=(const Point<T, D> &d) { return *this = *this >> d; }
   Region &operator<<=(const Point<T, D> &d) { return *this = *this << d; }
-  Region operator*(const Point<T, D> &s) const { return *this; }
+  Region operator*(const Point<T, D> &) const { return *this; }
   Region &operator*=(const Point<T, D> &s) { return *this = *this * s; }
-  Region grown(const Point<T, D> &dlo, const Point<T, D> &dup) const {
-    return *this;
-  }
+  Region grown(const Point<T, D> &, const Point<T, D> &) const { return *this; }
   Region grown(const Point<T, D> &d) const { return grown(d, d); }
   Region grown(T n) const { return grown(Point<T, D>::pure(n)); }
-  Region shrunk(const Point<T, D> &dlo, const Point<T, D> &dup) const {
+  Region shrunk(const Point<T, D> &, const Point<T, D> &) const {
     return *this;
   }
   Region shrunk(const Point<T, D> &d) const { return shrunk(d, d); }
@@ -430,7 +431,7 @@ private:
           auto subregion = decoded_subregion_res ^ old_decoded_subregion;
           if (!subregion.empty())
             res.subregions.push_back(pos);
-          old_decoded_subregion = decoded_subregion_res;
+          old_decoded_subregion = std::move(decoded_subregion_res);
         },
         region1, region2);
     assert(old_decoded_subregion.empty());

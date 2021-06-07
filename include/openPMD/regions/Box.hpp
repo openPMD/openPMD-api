@@ -50,7 +50,7 @@ public:
 
   /** Create box from lower (inclusive) and upper (exclusive) bound
    */
-  Box(const Point<T, D> &lo, const Point<T, D> &hi) : is_full(false) {}
+  Box(const Point<T, D> &, const Point<T, D> &) : is_full(false) {}
   /** Create box holding a single point
    */
   explicit Box(const Point<T, D> &) : is_full(true) {}

@@ -770,12 +770,12 @@ if(openPMD_BUILD_TESTING)
         else()
             target_link_libraries(${testname}Tests PRIVATE CatchMain)
         endif()
-        set_target_properties(${examplename} PROPERTIES
-            CXX_STANDARD 17
-            CXX_EXTENSIONS OFF
-            CXX_STANDARD_REQUIRED ON
-        )
     endforeach()
+    set_target_properties(RegionsBoxTests RegionsPointTests RegionsRegionTests PROPERTIES
+        CXX_STANDARD 17
+        CXX_EXTENSIONS OFF
+        CXX_STANDARD_REQUIRED ON
+    )
 endif()
 
 if(openPMD_BUILD_CLI_TOOLS)
@@ -795,13 +795,13 @@ if(openPMD_BUILD_EXAMPLES)
         else()
             add_executable(${examplename} examples/${examplename}.cpp)
             target_link_libraries(${examplename} PRIVATE openPMD)
-            set_target_properties(${examplename} PROPERTIES
-                CXX_STANDARD 17
-                CXX_EXTENSIONS OFF
-                CXX_STANDARD_REQUIRED ON
-            )
         endif()
     endforeach()
+    set_target_properties(13_regions PROPERTIES
+        CXX_STANDARD 17
+        CXX_EXTENSIONS OFF
+        CXX_STANDARD_REQUIRED ON
+    )
 endif()
 
 

@@ -57,7 +57,7 @@ public:
    * each number
    */
   template <typename F> static constexpr void loop(const F &f) {
-    for (size_type d = 0; d < D; ++d)
+    for (std::size_t d = 0; d < D; ++d)
       f(d);
   }
   /** Create a new Point by applying a function to the natural number sequence
@@ -152,6 +152,7 @@ public:
       : Point(lst.begin(), lst.end()) {}
   /** Create a point from a C-style array
    */
+  template <std::size_t DD = D, std::enable_if_t<DD != 0> * = nullptr>
   constexpr Point(const T (&arr)[D]) : elts(&arr[0], &arr[D]) {}
   /** Create a point from a std::array
    */
@@ -505,7 +506,7 @@ public:
    */
   friend std::ostream &operator<<(std::ostream &os, const Point &x) {
     os << "[";
-    for (size_type d = 0; d < D; ++d) {
+    for (std::size_t d = 0; d < D; ++d) {
       if (d != 0)
         os << ",";
       os << x[d];
