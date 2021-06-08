@@ -407,6 +407,18 @@ template <typename P> void test_Point_float(const P &p) {
         fold([](auto i, auto j, auto k) { return i + j + k; }, T(0), x, y),
         sum(x + y)));
 
+    // Temporary tests
+    CHECK(0.0 == 0.0);
+    CHECK(1.0 == 1.0);
+    CHECK(1.0 / 0.0 == 1.0 / 0.0);
+    CHECK(-1.0 / 0.0 == -1.0 / 0.0);
+    CHECK(1.0 / 0.0 != -1.0 / 0.0);
+    CHECK(0.0 / 0.0 != 0.0 / 0.0);
+    CHECK(1.0 / 0.0 == std::numeric_limits<double>::infinity());
+    CHECK(-1.0 / 0.0 == -std::numeric_limits<double>::infinity());
+    CHECK(1.0 / 0.0 == std::numeric_limits<float>::infinity());
+    CHECK(-1.0 / 0.0 == -std::numeric_limits<float>::infinity());
+
     CHECK(sum(n) == 0);
     CHECK(sum(n + 1) == D);
     CHECK(product(n) == (D == 0 ? 1 : 0));
