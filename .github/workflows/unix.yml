@@ -17,13 +17,15 @@ jobs:
         sudo .github/workflows/dependencies/install_spack
     - name: Build
       env: {CC: clang, CXX: clang++, CXXFLAGS: -Wno-deprecated-declarations}
+      # The main openPMD code base leads to many clang-tidy warnings
+      # when C++17 is enabled. We cannot enable it yet.
       run: |
         eval $(spack env activate --sh .github/ci/spack-envs/clangtidy_nopy_ompi_h5_ad1_ad2/)
         spack install
 
         mkdir build && cd build
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
-        cmake -S .. -B . -DCMAKE_CXX_CLANG_TIDY="$(which clang-tidy);-system-headers=0" -DopenPMD_USE_INVASIVE_TESTS=ON -DopenPMD_CXX_STANDARD=17
+        cmake -S .. -B . -DCMAKE_CXX_CLANG_TIDY="$(which clang-tidy);-system-headers=0" -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build . --parallel 2 2> clang-tidy.log
         cat clang-tidy.log
         if [[ $(wc -m <clang-tidy.log) -gt 1 ]]; then exit 1; fi
