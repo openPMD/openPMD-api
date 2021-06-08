@@ -62,7 +62,6 @@ template <typename B> void test_Box(const B &box) {
     const P y = randp();
 
     const T a = rand();
-    const T b = rand();
 
     REQUIRE(N.empty());
     if (D > 0) {
@@ -76,11 +75,11 @@ template <typename B> void test_Box(const B &box) {
     REQUIRE(Z.empty() == (Z.size() == 0));
 
     if (D > 0) {
-      REQUIRE(X.empty() == all(fmap([](auto a, auto b) { return a >= b; },
+      REQUIRE(X.empty() == all(fmap([](auto lo, auto up) { return lo >= up; },
                                     X.lower(), X.upper())));
-      REQUIRE(Y.empty() == all(fmap([](auto a, auto b) { return a >= b; },
+      REQUIRE(Y.empty() == all(fmap([](auto lo, auto up) { return lo >= up; },
                                     Y.lower(), Y.upper())));
-      REQUIRE(Z.empty() == all(fmap([](auto a, auto b) { return a >= b; },
+      REQUIRE(Z.empty() == all(fmap([](auto lo, auto up) { return lo >= up; },
                                     Z.lower(), Z.upper())));
     }
 
