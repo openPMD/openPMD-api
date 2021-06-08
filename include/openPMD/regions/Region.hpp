@@ -34,7 +34,7 @@ template <typename T> class Region<T, 1>;
 template <typename T> class Region<T, 0> {
   bool is_full;
 
-  friend class Region<T, 1>;
+  template <typename, std::size_t> friend class Region;
 
   explicit constexpr Region(bool is_full_) : is_full(is_full_) {}
 

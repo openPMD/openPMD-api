@@ -153,7 +153,7 @@ public:
   /** Create a point from a C-style array
    */
   template <std::size_t DD = D, std::enable_if_t<DD != 0> * = nullptr>
-  constexpr Point(const T (&arr)[D]) : elts(&arr[0], &arr[D]) {}
+  constexpr Point(const T (&arr)[DD]) : elts(&arr[0], &arr[D]) {}
   /** Create a point from a std::array
    */
   constexpr Point(const std::array<T, D> &arr) : elts(arr) {}
