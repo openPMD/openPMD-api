@@ -57,9 +57,6 @@ template <typename P> void test_Point_bool(const P &p) {
     const P y = randp();
     const P z = randp();
 
-    const T a = rand();
-    const T b = rand();
-
     REQUIRE(eq(n, n));
     REQUIRE(eq(x, x));
     REQUIRE(!lt(n, n));
@@ -210,7 +207,7 @@ template <typename P> void test_Point_int(const P &p) {
             sum(x + y));
 
     REQUIRE(sum(n) == 0);
-    REQUIRE(sum(n + 1) == D);
+    REQUIRE(sum(n + 1) == std::ptrdiff_t(D));
     REQUIRE(product(n) == (D == 0 ? 1 : 0));
     REQUIRE(product(n + 1) == 1);
     REQUIRE(min_element(n) == (D == 0 ? std::numeric_limits<T>::max() : 0));

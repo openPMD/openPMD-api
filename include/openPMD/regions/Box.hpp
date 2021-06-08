@@ -325,7 +325,7 @@ private:
     for (int m = 0; m < (1 << D); ++m) {
       Point<T, D> newlo = lo, newhi = hi;
       bool is_inside = true;
-      for (int d = 0; d < D; ++d) {
+      for (std::size_t d = 0; d < D; ++d) {
         const bool lohi = m & (1 << d);
         if (p[d] > lo[d] && p[d] < hi[d]) {
           if (!lohi)

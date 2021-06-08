@@ -217,13 +217,14 @@ public:
   const T &operator[](const size_type d) const override { return p[d]; }
   T &operator[](const size_type d) override { return p[d]; }
 
-  std::unique_ptr<VPoint<T>> erase(const size_type d) const override {
+  std::unique_ptr<VPoint<T>> erase(const size_type d
+                                   [[maybe_unused]]) const override {
     if constexpr (D == 0)
       return std::unique_ptr<WPoint<T, D>>();
     else
       return std::make_unique<WPoint<T, D - 1>>(p.erase(d));
   }
-  std::unique_ptr<VPoint<T>> insert(const size_type d,
+  std::unique_ptr<VPoint<T>> insert(const size_type d [[maybe_unused]],
                                     const T &a) const override {
     if constexpr (D == max_ndims)
       return std::unique_ptr<WPoint<T, D>>();

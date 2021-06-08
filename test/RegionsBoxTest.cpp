@@ -10,16 +10,16 @@
 
 using namespace openPMD::Regions;
 
-template <typename B> void test_Box(const B &b) {
-  const std::size_t D = b.ndims();
+template <typename B> void test_Box(const B &box) {
+  const std::size_t D = box.ndims();
   using T = typename B::value_type;
-  const auto p = b.lower();
+  const auto p = box.lower();
   typedef std::decay_t<decltype(p)> P;
   const std::equal_to<P> eqp;
   const std::equal_to<B> eqb;
-  const std::less<P> ltp;
+  // const std::less<P> ltp;
   const std::less<B> ltb;
-  REQUIRE(b.empty());
+  REQUIRE(box.empty());
 
   std::mt19937 gen;
   std::uniform_int_distribution dist0(0, 9);
@@ -34,7 +34,7 @@ template <typename B> void test_Box(const B &b) {
         return B(p);
     }
     if (dist0(gen) == 0)
-      return b;
+      return box;
     while (1) {
       auto lo = randp();
       auto hi = randp();
@@ -46,8 +46,8 @@ template <typename B> void test_Box(const B &b) {
 
   for (int iter = 0; iter < 100; ++iter) {
 
-    B N(b);
-    REQUIRE(N.ndims() == D);
+    B N(box);
+    REQUIRE(N.ndims() == std::ptrdiff_t(D));
     REQUIRE(N.empty());
     for (std::size_t d = 0; d < D; ++d)
       REQUIRE(N.lower()[d] >= N.upper()[d]);
@@ -60,7 +60,6 @@ template <typename B> void test_Box(const B &b) {
     REQUIRE(eqp(n + n, n));
     const P x = randp();
     const P y = randp();
-    const P z = randp();
 
     const T a = rand();
     const T b = rand();
@@ -196,8 +195,8 @@ template <typename B> void test_Box(const B &b) {
       REQUIRE((U <= X || U <= Y) == true);
 
     const std::vector<B> DXY = X - Y;
-    for (const auto &D : DXY)
-      REQUIRE((D <= X || !isdisjoint(D, Y)) == true);
+    for (const auto &DD : DXY)
+      REQUIRE((DD <= X || !isdisjoint(DD, Y)) == true);
 
     const std::vector<B> SXY = X ^ Y;
     for (const auto &S : SXY)

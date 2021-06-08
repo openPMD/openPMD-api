@@ -14,11 +14,11 @@ using namespace openPMD::Regions;
 
 template <typename R> void test_Region(const R &r) {
   const std::size_t D = r.ndims();
-  using T = typename R::value_type;
+  // using T = typename R::value_type;
   const auto b = bounding_box(r);
   const auto p = b.lower();
-  typedef std::decay_t<decltype(b)> B;
-  typedef std::decay_t<decltype(p)> P;
+  using B = std::decay_t<decltype(b)>;
+  using P = std::decay_t<decltype(p)>;
   REQUIRE(r.empty());
   REQUIRE(b.empty());
 

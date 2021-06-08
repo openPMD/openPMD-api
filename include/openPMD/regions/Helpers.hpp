@@ -32,7 +32,7 @@ template <typename T> std::size_t hash_combine(std::size_t seed, const T &x) {
 template <typename T, class Tuple, std::size_t... Is, typename U>
 constexpr auto array_push(const Tuple &t, std::index_sequence<Is...>,
                           const U &x) {
-  return std::array<T, sizeof...(Is) + 1>{{std::get<Is>(t)..., {T(x)}}};
+  return std::array<T, sizeof...(Is) + 1>{{std::get<Is>(t)..., T(x)}};
 }
 
 // Append an element to a std::array
@@ -46,7 +46,7 @@ template <typename T, std::size_t N, typename F>
 constexpr std::array<T, N> construct_array(const F &f) {
   if constexpr (N == 0)
     return std::array<T, N>();
-  if constexpr (N > 0)
+  else
     return array_push<T>(construct_array<T, N - 1>(f), f(N - 1));
 }
 

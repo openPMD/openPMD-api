@@ -141,7 +141,7 @@ public:
 
   /** Create a point from Pointers to first and one past the last element
    */
-  constexpr Point(const T *begin, const T *end __attribute__((__unused__)))
+  constexpr Point(const T *begin, const T *end [[maybe_unused]])
       : elts((assert(begin + D == end),
               make([&](size_type d) { return begin[d]; }))) {}
   /** Create a point from an initializer list
