@@ -23,7 +23,7 @@ jobs:
 
         mkdir build && cd build
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
-        cmake -S .. -B . -DCMAKE_CXX_CLANG_TIDY="$(which clang-tidy);-system-headers=0" -DopenPMD_USE_INVASIVE_TESTS=ON
+        cmake -S .. -B . -DCMAKE_CXX_CLANG_TIDY="$(which clang-tidy);-system-headers=0" -DopenPMD_USE_INVASIVE_TESTS=ON -DopenPMD_CXX_STANDARD=17
         cmake --build . --parallel 2 2> clang-tidy.log
         cat clang-tidy.log
         if [[ $(wc -m <clang-tidy.log) -gt 1 ]]; then exit 1; fi
@@ -52,7 +52,7 @@ jobs:
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
         export LDFLAGS="${LDFLAGS} -fsanitize=address,undefined -shared-libsan"
         CXXFLAGS="${CXXFLAGS} -fsanitize=address,undefined -shared-libsan"
-        CXXFLAGS="${CXXFLAGS}" cmake -S .. -B . -DopenPMD_USE_MPI=ON -DopenPMD_USE_PYTHON=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_ADIOS1=ON -DopenPMD_USE_INVASIVE_TESTS=ON -DCMAKE_VERBOSE_MAKEFILE=ON
+        CXXFLAGS="${CXXFLAGS}" cmake -S .. -B . -DopenPMD_USE_MPI=ON -DopenPMD_USE_PYTHON=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_ADIOS1=ON -DopenPMD_USE_INVASIVE_TESTS=ON -DCMAKE_VERBOSE_MAKEFILE=ON -DopenPMD_CXX_STANDARD=17
         cmake --build . --parallel 2
         export ASAN_OPTIONS=detect_stack_use_after_return=1:detect_leaks=1:check_initialization_order=true:strict_init_order=true:detect_stack_use_after_scope=1:fast_unwind_on_malloc=0
         export LSAN_OPTIONS=suppressions="$SOURCEPATH/.github/ci/sanitizer/clang/Leak.supp"
@@ -79,7 +79,7 @@ jobs:
 
         mkdir build && cd build
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
-        cmake -S .. -B . -DopenPMD_USE_PYTHON=OFF -DopenPMD_USE_MPI=OFF -DopenPMD_USE_HDF5=ON -DopenPMD_USE_INVASIVE_TESTS=ON
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=OFF -DopenPMD_USE_MPI=OFF -DopenPMD_USE_HDF5=ON -DopenPMD_USE_INVASIVE_TESTS=ON -DopenPMD_CXX_STANDARD=17
         cmake --build . --parallel 2
         ctest --output-on-failure
 
@@ -103,7 +103,7 @@ jobs:
 
         mkdir build && cd build
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
-        cmake -S .. -B . -DopenPMD_USE_PYTHON=OFF -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS1=ON -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=OFF -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS1=ON -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON -DopenPMD_CXX_STANDARD=17
         cmake --build . --parallel 2
         ctest --output-on-failure
 
@@ -132,7 +132,7 @@ jobs:
 
         mkdir build && cd build
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
-        cmake -S .. -B . -DopenPMD_USE_PYTHON=OFF -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS1=OFF -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=OFF -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS1=OFF -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON -DopenPMD_CXX_STANDARD=17
         cmake --build . --parallel 2
         export OPENPMD2_ADIOS2_SCHEMA=20210209
         ctest --output-on-failure
@@ -158,7 +158,7 @@ jobs:
       run: |
         mkdir build && cd build
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
-        cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DopenPMD_USE_MPI=OFF -DopenPMD_USE_HDF5=ON -DopenPMD_USE_INVASIVE_TESTS=ON -DCMAKE_VERBOSE_MAKEFILE=ON
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DopenPMD_USE_MPI=OFF -DopenPMD_USE_HDF5=ON -DopenPMD_USE_INVASIVE_TESTS=ON -DCMAKE_VERBOSE_MAKEFILE=ON -DopenPMD_CXX_STANDARD=17
         cmake --build . --parallel 2
         ctest --output-on-failure
 
@@ -192,7 +192,7 @@ jobs:
       run: |
         mkdir build && cd build
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
-        cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON -DopenPMD_CXX_STANDARD=17
         cmake --build . --parallel 2
         ctest --output-on-failure
 
@@ -257,7 +257,7 @@ jobs:
       run: |
         mkdir build && cd build
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
-        cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_INVASIVE_TESTS=ON
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_INVASIVE_TESTS=ON -DopenPMD_CXX_STANDARD=17
         cmake --build . --parallel 2
         ctest --output-on-failure
 
@@ -278,7 +278,8 @@ jobs:
           -DCMAKE_C_COMPILER=$(which icc)    \
           -DCMAKE_CXX_COMPILER=$(which icpc) \
           -DopenPMD_USE_PYTHON=OFF           \
-          -DopenPMD_USE_MPI=OFF
+          -DopenPMD_USE_MPI=OFF              \
+          -DopenPMD_CXX_STANDARD=17
         cmake --build . --parallel 2
         ctest --output-on-failure
 
@@ -305,6 +306,7 @@ jobs:
           -DCMAKE_C_STANDARD_COMPUTED_DEFAULT="11"       \
           -DCMAKE_CXX_COMPILER_ID="Clang"                \
           -DCMAKE_CXX_COMPILER_VERSION=12.0              \
-          -DCMAKE_CXX_STANDARD_COMPUTED_DEFAULT="14"
+          -DCMAKE_CXX_STANDARD_COMPUTED_DEFAULT="17"     \
+          -DopenPMD_CXX_STANDARD=17
         cmake --build . --parallel 2
         ctest --output-on-failure
