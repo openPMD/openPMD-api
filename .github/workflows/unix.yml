@@ -73,13 +73,14 @@ jobs:
         sudo .github/workflows/dependencies/install_spack
     - name: Build
       env: {CC: clang-5.0, CXX: clang++-5.0, CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      # Clang 5 does not handle GCC 10's STL in C++17-mode
       run: |
         eval $(spack env activate --sh .github/ci/spack-envs/clang5_nopy_nompi_h5/)
         spack install
 
         mkdir build && cd build
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
-        cmake -S .. -B . -DopenPMD_USE_PYTHON=OFF -DopenPMD_USE_MPI=OFF -DopenPMD_USE_HDF5=ON -DopenPMD_USE_INVASIVE_TESTS=ON -DopenPMD_CXX_STANDARD=17
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=OFF -DopenPMD_USE_MPI=OFF -DopenPMD_USE_HDF5=ON -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build . --parallel 2
         ctest --output-on-failure
 
@@ -97,13 +98,14 @@ jobs:
         sudo .github/workflows/dependencies/install_spack
     - name: Build
       env: {CC: clang-5.0, CXX: clang++-5.0, CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      # Clang 5 does not handle GCC 10's STL in C++17-mode
       run: |
         eval $(spack env activate --sh .github/ci/spack-envs/clang5_nopy_ompi_h5_ad1_ad2_bp3/)
         spack install
 
         mkdir build && cd build
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
-        cmake -S .. -B . -DopenPMD_USE_PYTHON=OFF -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS1=ON -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON -DopenPMD_CXX_STANDARD=17
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=OFF -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS1=ON -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build . --parallel 2
         ctest --output-on-failure
 
@@ -126,13 +128,14 @@ jobs:
         sudo .github/workflows/dependencies/install_spack
     - name: Build
       env: {CC: clang-5.0, CXX: clang++-5.0, CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      # Clang 5 does not handle GCC 10's STL in C++17-mode
       run: |
         eval $(spack env activate --sh .github/ci/spack-envs/clang5_nopy_ompi_h5_ad1_ad2_bp3/)
         spack install
 
         mkdir build && cd build
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
-        cmake -S .. -B . -DopenPMD_USE_PYTHON=OFF -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS1=OFF -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON -DopenPMD_CXX_STANDARD=17
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=OFF -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS1=OFF -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build . --parallel 2
         export OPENPMD2_ADIOS2_SCHEMA=20210209
         ctest --output-on-failure
@@ -192,7 +195,7 @@ jobs:
       run: |
         mkdir build && cd build
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
-        cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON -DopenPMD_CXX_STANDARD=17
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=ON -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build . --parallel 2
         ctest --output-on-failure
 
@@ -270,6 +273,8 @@ jobs:
         sudo .github/workflows/dependencies/install_icc
     - name: Build
       env: {CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      # C++17 not properly supported (false positives for unused
+      # arguments and missing return statements with `if constexpr`)
       run: |
         set +e; source /opt/intel/oneapi/setvars.sh; set -e
         mkdir build && cd build
@@ -278,8 +283,7 @@ jobs:
           -DCMAKE_C_COMPILER=$(which icc)    \
           -DCMAKE_CXX_COMPILER=$(which icpc) \
           -DopenPMD_USE_PYTHON=OFF           \
-          -DopenPMD_USE_MPI=OFF              \
-          -DopenPMD_CXX_STANDARD=17
+          -DopenPMD_USE_MPI=OFF
         cmake --build . --parallel 2
         ctest --output-on-failure
 
