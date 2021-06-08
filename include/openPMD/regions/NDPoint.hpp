@@ -180,6 +180,9 @@ public:
   WPoint(const Point<T, D> &p_) : p(p_) {}
   WPoint(Point<T, D> &&p_) : p(std::move(p_)) {}
 
+  WPoint(const std::array<T, D> &arr) : p(arr) {}
+  WPoint(std::array<T, D> &&arr) : p(std::move(arr)) {}
+
   std::unique_ptr<VPoint<T>> copy() const override {
     return std::make_unique<WPoint>(*this);
   }
@@ -576,6 +579,19 @@ public:
     return *this;
   }
   NDPoint &operator=(NDPoint &&) = default;
+
+  template <std::size_t D>
+  NDPoint(const Point<T, D> &p_)
+      : p(std::make_unique<detail::WPoint<T, D>>(p_)) {}
+  template <std::size_t D>
+  NDPoint(Point<T, D> &&p_)
+      : p(std::make_unique<detail::WPoint<T, D>>(std::move(p_))) {}
+  template <std::size_t D>
+  NDPoint(const std::array<T, D> &arr)
+      : p(std::make_unique<detail::WPoint<T, D>>(arr)) {}
+  template <std::size_t D>
+  NDPoint(std::array<T, D> &&arr)
+      : p(std::make_unique<detail::WPoint<T, D>>(std::move(arr))) {}
 
 private:
   template <typename U>
