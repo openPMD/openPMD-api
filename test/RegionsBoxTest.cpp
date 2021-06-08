@@ -17,7 +17,6 @@ template <typename B> void test_Box(const B &box) {
   typedef std::decay_t<decltype(p)> P;
   const std::equal_to<P> eqp;
   const std::equal_to<B> eqb;
-  // const std::less<P> ltp;
   const std::less<B> ltb;
   REQUIRE(box.empty());
 
@@ -94,6 +93,14 @@ template <typename B> void test_Box(const B &box) {
       REQUIRE(!eqb(N, X));
       REQUIRE(ltb(N, X));
     }
+    if (eqb(X, Y))
+      REQUIRE(ltb(X, Y) + ltb(Y, X) == 0);
+    else
+      REQUIRE(ltb(X, Y) + ltb(Y, X) == 1);
+    if (ltb(X, Y) && ltb(Y, Z))
+      REQUIRE(ltb(X, Z));
+    if (!ltb(Y, X) && !ltb(Z, Y))
+      REQUIRE(!ltb(Z, X));
 
     REQUIRE(eqb((X >> x) << x, X));
     REQUIRE(eqb(X >> x, X << -x));

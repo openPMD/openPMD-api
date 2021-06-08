@@ -14,11 +14,13 @@ using namespace openPMD::Regions;
 
 template <typename R> void test_Region(const R &r) {
   const std::size_t D = r.ndims();
-  // using T = typename R::value_type;
+  using T = typename R::value_type;
   const auto b = bounding_box(r);
   const auto p = b.lower();
   using B = std::decay_t<decltype(b)>;
   using P = std::decay_t<decltype(p)>;
+  const std::equal_to<R> eqr;
+  const std::less<R> ltr;
   REQUIRE(r.empty());
   REQUIRE(b.empty());
 
@@ -69,6 +71,17 @@ template <typename R> void test_Region(const R &r) {
     P n = p;
     P x = randp();
     P y = randp();
+
+    REQUIRE(eqr(X, X));
+    REQUIRE(!ltr(X, X));
+    if (eqr(X, Y))
+      REQUIRE(ltr(X, Y) + ltr(Y, X) == 0);
+    else
+      REQUIRE(ltr(X, Y) + ltr(Y, X) == 1);
+    if (ltr(X, Y) && ltr(Y, Z))
+      REQUIRE(ltr(X, Z));
+    if (!ltr(Y, X) && !ltr(Z, Y))
+      REQUIRE(!ltr(Z, X));
 
     REQUIRE(N == N);
     REQUIRE(X == X);

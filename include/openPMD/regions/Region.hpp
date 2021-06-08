@@ -29,9 +29,15 @@ template <typename T, std::size_t D> class Region;
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename T> class Region<T, 0> {
+public:
+  constexpr static std::size_t D = 0;
+
+private:
   bool is_full;
 
-  friend class Region<T, 1>;
+  friend class std::equal_to<Region<T, D>>;
+  friend class std::less<Region<T, D>>;
+  friend class Region<T, D + 1>;
 
   // This should be private, but GCC 9 seems to ignore the friend
   // declaration above
@@ -40,8 +46,6 @@ public:
 
 private:
 public:
-  constexpr static std::size_t D = 0;
-
   typedef typename Point<T, D>::value_type value_type;
   typedef typename Point<T, D>::size_type size_type;
 
@@ -206,6 +210,9 @@ private:
   typedef Region<T, D - 1> Subregion; // This is essentially a bool
   typedef std::vector<T> Subregions;
   Subregions subregions;
+
+  friend class std::equal_to<Region<T, D>>;
+  friend class std::less<Region<T, D>>;
 
 public:
   typedef typename Point<T, D>::value_type value_type;
@@ -649,6 +656,9 @@ template <typename T, std::size_t D> class Region {
   typedef Region<T, D - 1> Subregion;
   typedef std::vector<std::pair<T, Subregion>> Subregions;
   Subregions subregions;
+
+  friend class std::equal_to<Region<T, D>>;
+  friend class std::less<Region<T, D>>;
 
 public:
   typedef typename Point<T, D>::value_type value_type;
@@ -1136,5 +1146,45 @@ public:
 
 } // namespace Regions
 } // namespace openPMD
+
+namespace std {
+
+template <typename T, std::size_t D>
+struct equal_to<openPMD::Regions::Region<T, D>>;
+
+template <typename T> struct equal_to<openPMD::Regions::Region<T, 0>> {
+  constexpr bool operator()(const openPMD::Regions::Region<T, 0> &x,
+                            const openPMD::Regions::Region<T, 0> &y) const {
+    return x.is_full == y.is_full;
+  }
+};
+
+template <typename T, std::size_t D>
+struct equal_to<openPMD::Regions::Region<T, D>> {
+  constexpr bool operator()(const openPMD::Regions::Region<T, D> &x,
+                            const openPMD::Regions::Region<T, D> &y) const {
+    return openPMD::Regions::helpers::vector_eq(x.subregions, y.subregions);
+  }
+};
+
+template <typename T, std::size_t D>
+struct less<openPMD::Regions::Region<T, D>>;
+
+template <typename T> struct less<openPMD::Regions::Region<T, 0>> {
+  constexpr bool operator()(const openPMD::Regions::Region<T, 0> &x,
+                            const openPMD::Regions::Region<T, 0> &y) const {
+    return x.is_full < y.is_full;
+  }
+};
+
+template <typename T, std::size_t D>
+struct less<openPMD::Regions::Region<T, D>> {
+  constexpr bool operator()(const openPMD::Regions::Region<T, D> &x,
+                            const openPMD::Regions::Region<T, D> &y) const {
+    return openPMD::Regions::helpers::vector_lt(x.subregions, y.subregions);
+  }
+};
+
+} // namespace std
 
 #endif // #ifndef REGIONS_REGION_HPP

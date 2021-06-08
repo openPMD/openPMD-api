@@ -332,6 +332,7 @@ template <typename P> void test_Point_float(const P &p) {
   const std::size_t D = p.ndims();
   using T = typename P::value_type;
   const std::equal_to<P> eq;
+  const std::less<P> lt;
 
   std::mt19937 gen;
   std::uniform_real_distribution dist(-1.0, 1.0);
@@ -351,6 +352,17 @@ template <typename P> void test_Point_float(const P &p) {
 
     const T a = rand();
     const T b = rand();
+
+    REQUIRE(eq(x, x));
+    REQUIRE(!lt(x, x));
+    if (eq(x, y))
+      REQUIRE(lt(x, y) + lt(y, x) == 0);
+    else
+      REQUIRE(lt(x, y) + lt(y, x) == 1);
+    if (lt(x, y) && lt(y, z))
+      REQUIRE(lt(x, z));
+    if (!lt(y, x) && !lt(z, y))
+      REQUIRE(!lt(z, x));
 
     // remove-insert is no-op
     if (D > 0) {

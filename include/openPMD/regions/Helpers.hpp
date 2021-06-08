@@ -121,6 +121,39 @@ constexpr bool tuple_lt(const Tuple1 &x, const Tuple2 &y) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+// Compare vectors
+
+template <typename Vector1, typename Vector2>
+bool vector_eq(const Vector1 &x, const Vector2 &y) {
+  if (x.size() != y.size())
+    return false;
+  typedef typename Vector1::value_type T1;
+  typedef typename Vector2::value_type T2;
+  typedef std::common_type_t<T1, T2> T;
+  const std::equal_to<T> eq;
+  for (std::size_t n = 0; n < x.size(); ++n)
+    if (!eq(x[n], y[n]))
+      return false;
+  return true;
+}
+
+template <typename Vector1, typename Vector2>
+bool vector_lt(const Vector1 &x, const Vector2 &y) {
+  typedef typename Vector1::value_type T1;
+  typedef typename Vector2::value_type T2;
+  typedef std::common_type_t<T1, T2> T;
+  const std::less<T> lt;
+  using std::min;
+  for (std::size_t n = 0; n < min(x.size(), y.size()); ++n)
+    if (lt(x[n], y[n]))
+      return true;
+    else if (lt(y[n], x[n]))
+      return false;
+  return x.size() < y.size();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 // Reduce over a std::vector, using bisection to reduce cost
 
 /** Reduce a non-empty range
