@@ -34,6 +34,14 @@ template <typename T> bool is_approx(const T &xs, const T &ys) {
   return m <= 100 * eps;
 }
 
+template <typename T> bool eq_helper(const T &x1, const T &x2) {
+  std::equal_to<T> eq;
+  return eq(x1, x2);
+}
+template <typename T1, typename T2> bool eq_helper(const T1 &x1, const T2 &x2) {
+  return false;
+}
+
 template <typename P> void test_Point_bool(const P &p) {
   const std::size_t D = p.ndims();
   using T = typename P::value_type;
@@ -371,9 +379,8 @@ template <typename P> void test_Point_float(const P &p) {
         const auto x1 = x.erase(d);
         REQUIRE(x1.ndims() == D - 1);
         const auto x2 = x1.insert(d, a1);
-        // This conversion is fine for D > 0
-        const P x3 = *(const P *)&x2;
-        REQUIRE(eq(x3, x));
+        REQUIRE(x2.ndims() == D);
+        REQUIRE(eq_helper(x2, x));
       }
     }
     // insert-remove is no-op
