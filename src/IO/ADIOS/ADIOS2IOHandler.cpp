@@ -2397,7 +2397,11 @@ namespace detail
              * on via JSON though.
              * Default is "1".
              */
-            m_IO.SetParameter( "StatsLevel", "0" );
+             m_IO.SetParameter( "StatsLevel", "0" );
+             auto StatLevel = auxiliary::getEnvNum( "OPENPMD_ADIOS2_STAT", 0 );
+
+             if (StatLevel > 0)
+                 m_IO.SetParameter( "StatsLevel", "1" );
         }
         if( m_engineType == "sst" && notYetConfigured( "QueueLimit" ) )
         {
