@@ -56,121 +56,121 @@ template <typename P> void test_Point_bool(const P &p) {
   for (int iter = 0; iter < 100; ++iter) {
 
     P n = p;
-    REQUIRE(n.ndims() == D);
+    CHECK(n.ndims() == D);
     for (std::size_t d = 0; d < D; ++d)
-      REQUIRE(n[d] == 0);
-    REQUIRE(n.size() == D);
+      CHECK(n[d] == 0);
+    CHECK(n.size() == D);
 
     const P x = randp();
     const P y = randp();
     const P z = randp();
 
-    REQUIRE(eq(n, n));
-    REQUIRE(eq(x, x));
-    REQUIRE(!lt(n, n));
-    REQUIRE(!lt(x, x));
+    CHECK(eq(n, n));
+    CHECK(eq(x, x));
+    CHECK(!lt(n, n));
+    CHECK(!lt(x, x));
     if (all(x == n)) {
-      REQUIRE(eq(n, x));
-      REQUIRE(!lt(n, x));
+      CHECK(eq(n, x));
+      CHECK(!lt(n, x));
     } else {
-      REQUIRE(!eq(n, x));
-      REQUIRE(lt(n, x));
+      CHECK(!eq(n, x));
+      CHECK(lt(n, x));
     }
 
-    REQUIRE(!any(n));
-    REQUIRE(all(!n));
+    CHECK(!any(n));
+    CHECK(all(!n));
 
-    REQUIRE(eq(n & x, n));
-    REQUIRE(eq(0 & x, n));
-    REQUIRE(eq(x & n, n));
-    REQUIRE(eq(x & 0, n));
+    CHECK(eq(n & x, n));
+    CHECK(eq(0 & x, n));
+    CHECK(eq(x & n, n));
+    CHECK(eq(x & 0, n));
 
-    REQUIRE(eq((!n & x), x));
-    REQUIRE(eq((T(1) & x), x));
-    REQUIRE(eq((x & !n), x));
-    REQUIRE(eq((x & T(1)), x));
+    CHECK(eq((!n & x), x));
+    CHECK(eq((T(1) & x), x));
+    CHECK(eq((x & !n), x));
+    CHECK(eq((x & T(1)), x));
 
-    REQUIRE(eq((n | x), x));
-    REQUIRE(eq((0 | x), x));
-    REQUIRE(eq((x | n), x));
-    REQUIRE(eq((x | 0), x));
+    CHECK(eq((n | x), x));
+    CHECK(eq((0 | x), x));
+    CHECK(eq((x | n), x));
+    CHECK(eq((x | 0), x));
 
-    REQUIRE(eq((!n | x), !n));
-    REQUIRE(eq((T(1) | x), !n));
-    REQUIRE(eq((x | !n), !n));
-    REQUIRE(eq((x | T(1)), !n));
+    CHECK(eq((!n | x), !n));
+    CHECK(eq((T(1) | x), !n));
+    CHECK(eq((x | !n), !n));
+    CHECK(eq((x | T(1)), !n));
 
-    REQUIRE(eq((x & y), (y & x)));
-    REQUIRE(eq((x | y), (y | x)));
+    CHECK(eq((x & y), (y & x)));
+    CHECK(eq((x | y), (y | x)));
 
-    REQUIRE(eq(((x & y) & z), (x & (y & z))));
-    REQUIRE(eq(((x | y) | z), (x | (y | z))));
+    CHECK(eq(((x & y) & z), (x & (y & z))));
+    CHECK(eq(((x | y) | z), (x | (y | z))));
 
-    REQUIRE(eq((x & (y | z)), ((y & x) | (x & z))));
-    REQUIRE(eq((x | (y & z)), ((y | x) & (x | z))));
+    CHECK(eq((x & (y | z)), ((y & x) | (x & z))));
+    CHECK(eq((x | (y & z)), ((y | x) & (x | z))));
 
-    REQUIRE(eq((x & y), !(!x | !y)));
-    REQUIRE(eq((x | y), !(!x & !y)));
+    CHECK(eq((x & y), !(!x | !y)));
+    CHECK(eq((x | y), !(!x & !y)));
 
-    REQUIRE(eq((n ^ x), x));
-    REQUIRE(eq((0 ^ x), x));
-    REQUIRE(eq((x ^ n), x));
-    REQUIRE(eq((x ^ 0), x));
+    CHECK(eq((n ^ x), x));
+    CHECK(eq((0 ^ x), x));
+    CHECK(eq((x ^ n), x));
+    CHECK(eq((x ^ 0), x));
 
-    REQUIRE(eq((!n ^ x), !x));
-    REQUIRE(eq((T(1) ^ x), !x));
-    REQUIRE(eq((x ^ !n), !x));
-    REQUIRE(eq((x ^ T(1)), !x));
+    CHECK(eq((!n ^ x), !x));
+    CHECK(eq((T(1) ^ x), !x));
+    CHECK(eq((x ^ !n), !x));
+    CHECK(eq((x ^ T(1)), !x));
 
-    REQUIRE(eq((x ^ x), n));
+    CHECK(eq((x ^ x), n));
 
-    REQUIRE(eq((x ^ y), (y ^ x)));
-    REQUIRE(eq(((x ^ y) ^ z), (x ^ (y ^ z))));
+    CHECK(eq((x ^ y), (y ^ x)));
+    CHECK(eq(((x ^ y) ^ z), (x ^ (y ^ z))));
 
-    REQUIRE(eq(!(!x), x));
+    CHECK(eq(!(!x), x));
 
-    REQUIRE(eq((n && x), n));
-    REQUIRE(eq((0 && x), n));
-    REQUIRE(eq((x && n), n));
-    REQUIRE(eq((x && 0), n));
+    CHECK(eq((n && x), n));
+    CHECK(eq((0 && x), n));
+    CHECK(eq((x && n), n));
+    CHECK(eq((x && 0), n));
 
-    REQUIRE(eq((!n && x), x));
-    REQUIRE(eq((!T(0) && x), x));
-    REQUIRE(eq((x && !n), x));
-    REQUIRE(eq((x && !T(0)), x));
+    CHECK(eq((!n && x), x));
+    CHECK(eq((!T(0) && x), x));
+    CHECK(eq((x && !n), x));
+    CHECK(eq((x && !T(0)), x));
 
-    REQUIRE(eq((n || x), x));
-    REQUIRE(eq((0 || x), x));
-    REQUIRE(eq((x || n), x));
-    REQUIRE(eq((x || 0), x));
+    CHECK(eq((n || x), x));
+    CHECK(eq((0 || x), x));
+    CHECK(eq((x || n), x));
+    CHECK(eq((x || 0), x));
 
-    REQUIRE(eq((!n || x), !n));
-    REQUIRE(eq((!T(0) || x), !n));
-    REQUIRE(eq((x || !n), !n));
-    REQUIRE(eq((x || !T(0)), !n));
+    CHECK(eq((!n || x), !n));
+    CHECK(eq((!T(0) || x), !n));
+    CHECK(eq((x || !n), !n));
+    CHECK(eq((x || !T(0)), !n));
 
-    REQUIRE(eq((x && y), (y && x)));
-    REQUIRE(eq((x || y), (y || x)));
+    CHECK(eq((x && y), (y && x)));
+    CHECK(eq((x || y), (y || x)));
 
-    REQUIRE(eq(((x && y) && z), (x && (y && z))));
-    REQUIRE(eq(((x || y) || z), (x || (y || z))));
+    CHECK(eq(((x && y) && z), (x && (y && z))));
+    CHECK(eq(((x || y) || z), (x || (y || z))));
 
-    REQUIRE(eq((x && (y || z)), ((y && x) || (x && z))));
-    REQUIRE(eq((x || (y && z)), ((y || x) && (x || z))));
+    CHECK(eq((x && (y || z)), ((y && x) || (x && z))));
+    CHECK(eq((x || (y && z)), ((y || x) && (x || z))));
 
-    REQUIRE(eq((x && y), !(!x || !y)));
-    REQUIRE(eq((x || y), !(!x && !y)));
+    CHECK(eq((x && y), !(!x || !y)));
+    CHECK(eq((x || y), !(!x && !y)));
 
     P t;
     t = x;
     t &= y;
-    REQUIRE(eq(t, (x & y)));
+    CHECK(eq(t, (x & y)));
     t = x;
     t |= y;
-    REQUIRE(eq(t, (x | y)));
+    CHECK(eq(t, (x | y)));
     t = x;
     t ^= y;
-    REQUIRE(eq(t, (x ^ y)));
+    CHECK(eq(t, (x ^ y)));
 
   } // for iter
 }
@@ -188,9 +188,9 @@ template <typename P> void test_Point_int(const P &p) {
   for (int iter = 0; iter < 100; ++iter) {
 
     P n(p);
-    REQUIRE(n.size() == D);
+    CHECK(n.size() == D);
     for (std::size_t d = 0; d < D; ++d)
-      REQUIRE(n[d] == 0);
+      CHECK(n[d] == 0);
 
     const P x = randp();
     const P y = randp();
@@ -199,139 +199,138 @@ template <typename P> void test_Point_int(const P &p) {
     const T a = rand();
     const T b = rand();
 
-    REQUIRE(eq(fmap([](auto i) { return i; }, x), x));
-    REQUIRE(eq(fmap([](auto i) { return i + 1; },
-                    fmap([](auto i) { return 2 * i; }, x)),
-               fmap([](auto i) { return 2 * i + 1; }, x)));
+    CHECK(eq(fmap([](auto i) { return i; }, x), x));
+    CHECK(eq(fmap([](auto i) { return i + 1; },
+                  fmap([](auto i) { return 2 * i; }, x)),
+             fmap([](auto i) { return 2 * i + 1; }, x)));
 
-    REQUIRE(
-        eq(fmap([](auto i, auto j) { return 2 * i + j; }, x, y), 2 * x + y));
-    REQUIRE(eq(
+    CHECK(eq(fmap([](auto i, auto j) { return 2 * i + j; }, x, y), 2 * x + y));
+    CHECK(eq(
         fmap([](auto i, auto j, auto k) { return 3 * i + 2 * j + k; }, x, y, z),
         3 * x + 2 * y + z));
 
-    REQUIRE(fold([](auto i, auto j) { return i + j; }, 0, x) == sum(x));
-    REQUIRE(fold([](auto i, auto j, auto k) { return i + j + k; }, 0, x, y) ==
-            sum(x + y));
+    CHECK(fold([](auto i, auto j) { return i + j; }, 0, x) == sum(x));
+    CHECK(fold([](auto i, auto j, auto k) { return i + j + k; }, 0, x, y) ==
+          sum(x + y));
 
-    REQUIRE(sum(n) == 0);
-    REQUIRE(sum(n + 1) == std::ptrdiff_t(D));
-    REQUIRE(product(n) == (D == 0 ? 1 : 0));
-    REQUIRE(product(n + 1) == 1);
-    REQUIRE(min_element(n) == (D == 0 ? std::numeric_limits<T>::max() : 0));
-    REQUIRE(max_element(n) == (D == 0 ? std::numeric_limits<T>::min() : 0));
-    REQUIRE(min_element(n + 1) == (D == 0 ? std::numeric_limits<T>::max() : 1));
-    REQUIRE(max_element(n + 1) == (D == 0 ? std::numeric_limits<T>::min() : 1));
+    CHECK(sum(n) == 0);
+    CHECK(sum(n + 1) == std::ptrdiff_t(D));
+    CHECK(product(n) == (D == 0 ? 1 : 0));
+    CHECK(product(n + 1) == 1);
+    CHECK(min_element(n) == (D == 0 ? std::numeric_limits<T>::max() : 0));
+    CHECK(max_element(n) == (D == 0 ? std::numeric_limits<T>::min() : 0));
+    CHECK(min_element(n + 1) == (D == 0 ? std::numeric_limits<T>::max() : 1));
+    CHECK(max_element(n + 1) == (D == 0 ? std::numeric_limits<T>::min() : 1));
 
-    REQUIRE(eq(+x, x));
-    REQUIRE(eq(n + x, x));
-    REQUIRE(eq(T(0) + x, x));
-    REQUIRE(eq(x + n, x));
-    REQUIRE(eq(x + T(0), x));
+    CHECK(eq(+x, x));
+    CHECK(eq(n + x, x));
+    CHECK(eq(T(0) + x, x));
+    CHECK(eq(x + n, x));
+    CHECK(eq(x + T(0), x));
 
-    REQUIRE(eq(x + y, y + x));
+    CHECK(eq(x + y, y + x));
 
-    REQUIRE(eq((x + y) + z, x + (y + z)));
+    CHECK(eq((x + y) + z, x + (y + z)));
 
-    REQUIRE(eq(-x, -T(1) * x));
-    REQUIRE(eq(-(-x), x));
-    REQUIRE(eq(x - x, n));
+    CHECK(eq(-x, -T(1) * x));
+    CHECK(eq(-(-x), x));
+    CHECK(eq(x - x, n));
 
-    REQUIRE(eq(a * n, n));
-    REQUIRE(eq(n * a, n));
-    REQUIRE(eq(T(0) * x, n));
-    REQUIRE(eq(x * T(0), n));
-    REQUIRE(eq(T(1) * x, x));
-    REQUIRE(eq(x * T(1), x));
+    CHECK(eq(a * n, n));
+    CHECK(eq(n * a, n));
+    CHECK(eq(T(0) * x, n));
+    CHECK(eq(x * T(0), n));
+    CHECK(eq(T(1) * x, x));
+    CHECK(eq(x * T(1), x));
 
-    REQUIRE(eq(a * x, x * a));
+    CHECK(eq(a * x, x * a));
 
-    REQUIRE(eq(a * x + b * x, (a + b) * x));
-    REQUIRE(eq(a * (x + y), a * x + a * y));
+    CHECK(eq(a * x + b * x, (a + b) * x));
+    CHECK(eq(a * (x + y), a * x + a * y));
 
-    REQUIRE(eq(x * (y + z), x * y + x * z));
+    CHECK(eq(x * (y + z), x * y + x * z));
 
     if (all(y != 0)) {
-      REQUIRE(eq(x * y / y, x));
-      REQUIRE(eq(x / y * y + x % y, x));
+      CHECK(eq(x * y / y, x));
+      CHECK(eq(x / y * y + x % y, x));
     }
 
-    REQUIRE(eq(~(~x), x));
+    CHECK(eq(~(~x), x));
 
-    REQUIRE(eq((n & x), n));
-    REQUIRE(eq((0 & x), n));
-    REQUIRE(eq((x & n), n));
-    REQUIRE(eq((x & 0), n));
+    CHECK(eq((n & x), n));
+    CHECK(eq((0 & x), n));
+    CHECK(eq((x & n), n));
+    CHECK(eq((x & 0), n));
 
-    REQUIRE(eq((~n & x), x));
-    REQUIRE(eq((~T(0) & x), x));
-    REQUIRE(eq((x & ~n), x));
-    REQUIRE(eq((x & ~T(0)), x));
+    CHECK(eq((~n & x), x));
+    CHECK(eq((~T(0) & x), x));
+    CHECK(eq((x & ~n), x));
+    CHECK(eq((x & ~T(0)), x));
 
-    REQUIRE(eq((n | x), x));
-    REQUIRE(eq((0 | x), x));
-    REQUIRE(eq((x | n), x));
-    REQUIRE(eq((x | 0), x));
+    CHECK(eq((n | x), x));
+    CHECK(eq((0 | x), x));
+    CHECK(eq((x | n), x));
+    CHECK(eq((x | 0), x));
 
-    REQUIRE(eq((~n | x), ~n));
-    REQUIRE(eq((~T(0) | x), ~n));
-    REQUIRE(eq((x | ~n), ~n));
-    REQUIRE(eq((x | ~T(0)), ~n));
+    CHECK(eq((~n | x), ~n));
+    CHECK(eq((~T(0) | x), ~n));
+    CHECK(eq((x | ~n), ~n));
+    CHECK(eq((x | ~T(0)), ~n));
 
-    REQUIRE(eq((x & y), (y & x)));
-    REQUIRE(eq((x | y), (y | x)));
+    CHECK(eq((x & y), (y & x)));
+    CHECK(eq((x | y), (y | x)));
 
-    REQUIRE(eq(((x & y) & z), (x & (y & z))));
-    REQUIRE(eq(((x | y) | z), (x | (y | z))));
+    CHECK(eq(((x & y) & z), (x & (y & z))));
+    CHECK(eq(((x | y) | z), (x | (y | z))));
 
-    REQUIRE(eq((x & (y | z)), ((y & x) | (x & z))));
-    REQUIRE(eq((x | (y & z)), ((y | x) & (x | z))));
+    CHECK(eq((x & (y | z)), ((y & x) | (x & z))));
+    CHECK(eq((x | (y & z)), ((y | x) & (x | z))));
 
-    REQUIRE(eq((x & y), ~(~x | ~y)));
-    REQUIRE(eq((x | y), ~(~x & ~y)));
+    CHECK(eq((x & y), ~(~x | ~y)));
+    CHECK(eq((x | y), ~(~x & ~y)));
 
-    REQUIRE(eq((n ^ x), x));
-    REQUIRE(eq((0 ^ x), x));
-    REQUIRE(eq((x ^ n), x));
-    REQUIRE(eq((x ^ 0), x));
+    CHECK(eq((n ^ x), x));
+    CHECK(eq((0 ^ x), x));
+    CHECK(eq((x ^ n), x));
+    CHECK(eq((x ^ 0), x));
 
-    REQUIRE(eq((~n ^ x), ~x));
-    REQUIRE(eq((~T(0) ^ x), ~x));
-    REQUIRE(eq((x ^ ~n), ~x));
-    REQUIRE(eq((x ^ ~T(0)), ~x));
+    CHECK(eq((~n ^ x), ~x));
+    CHECK(eq((~T(0) ^ x), ~x));
+    CHECK(eq((x ^ ~n), ~x));
+    CHECK(eq((x ^ ~T(0)), ~x));
 
-    REQUIRE(eq((x ^ x), n));
+    CHECK(eq((x ^ x), n));
 
-    REQUIRE(eq((x ^ y), (y ^ x)));
-    REQUIRE(eq(((x ^ y) ^ z), (x ^ (y ^ z))));
+    CHECK(eq((x ^ y), (y ^ x)));
+    CHECK(eq(((x ^ y) ^ z), (x ^ (y ^ z))));
 
     P t;
     t = x;
     t += y;
-    REQUIRE(eq(t, x + y));
+    CHECK(eq(t, x + y));
     t = x;
     t -= y;
-    REQUIRE(eq(t, x - y));
+    CHECK(eq(t, x - y));
     t = x;
     t *= y;
-    REQUIRE(eq(t, x * y));
+    CHECK(eq(t, x * y));
     if (all(y != 0)) {
       t = x;
       t /= y;
-      REQUIRE(eq(t, x / y));
+      CHECK(eq(t, x / y));
       t = x;
       t %= y;
-      REQUIRE(eq(t, x % y));
+      CHECK(eq(t, x % y));
     }
     t = x;
     t &= y;
-    REQUIRE(eq(t, (x & y)));
+    CHECK(eq(t, (x & y)));
     t = x;
     t |= y;
-    REQUIRE(eq(t, (x | y)));
+    CHECK(eq(t, (x | y)));
     t = x;
     t ^= y;
-    REQUIRE(eq(t, (x ^ y)));
+    CHECK(eq(t, (x ^ y)));
 
   } // for iter
 }
@@ -350,9 +349,9 @@ template <typename P> void test_Point_float(const P &p) {
   for (int iter = 0; iter < 100; ++iter) {
 
     P n(p);
-    REQUIRE(n.size() == D);
+    CHECK(n.size() == D);
     for (std::size_t d = 0; d < D; ++d)
-      REQUIRE(n[d] == 0);
+      CHECK(n[d] == 0);
 
     const P x = randp();
     const P y = randp();
@@ -361,119 +360,116 @@ template <typename P> void test_Point_float(const P &p) {
     const T a = rand();
     const T b = rand();
 
-    REQUIRE(eq(x, x));
-    REQUIRE(!lt(x, x));
+    CHECK(eq(x, x));
+    CHECK(!lt(x, x));
     if (eq(x, y))
-      REQUIRE(lt(x, y) + lt(y, x) == 0);
+      CHECK(lt(x, y) + lt(y, x) == 0);
     else
-      REQUIRE(lt(x, y) + lt(y, x) == 1);
+      CHECK(lt(x, y) + lt(y, x) == 1);
     if (lt(x, y) && lt(y, z))
-      REQUIRE(lt(x, z));
+      CHECK(lt(x, z));
     if (!lt(y, x) && !lt(z, y))
-      REQUIRE(!lt(z, x));
+      CHECK(!lt(z, x));
 
     // remove-insert is no-op
     if (D > 0) {
       for (std::size_t d = 0; d < D; ++d) {
         const auto a1 = x[d];
         const auto x1 = x.erase(d);
-        REQUIRE(x1.ndims() == D - 1);
+        CHECK(x1.ndims() == D - 1);
         const auto x2 = x1.insert(d, a1);
-        REQUIRE(x2.ndims() == D);
-        REQUIRE(eq_helper(x2, x));
+        CHECK(x2.ndims() == D);
+        CHECK(eq_helper(x2, x));
       }
     }
     // insert-remove is no-op
     for (std::size_t d = 0; d <= D; ++d) {
       const auto x1 = x.insert(d, a);
-      REQUIRE(x1.ndims() == D + 1);
-      REQUIRE(x1[d] == a);
-      REQUIRE(eq(x1.erase(d), x));
+      CHECK(x1.ndims() == D + 1);
+      CHECK(x1[d] == a);
+      CHECK(eq(x1.erase(d), x));
     }
 
-    REQUIRE(eq(x.reversed().reversed(), x));
+    CHECK(eq(x.reversed().reversed(), x));
 
-    REQUIRE(eq(fmap([](auto i) { return i; }, x), x));
-    REQUIRE(eq(fmap([](auto i) { return i + 1; },
-                    fmap([](auto i) { return 2 * i; }, x)),
-               fmap([](auto i) { return 2 * i + 1; }, x)));
+    CHECK(eq(fmap([](auto i) { return i; }, x), x));
+    CHECK(eq(fmap([](auto i) { return i + 1; },
+                  fmap([](auto i) { return 2 * i; }, x)),
+             fmap([](auto i) { return 2 * i + 1; }, x)));
 
-    REQUIRE(
-        eq(fmap([](auto i, auto j) { return 2 * i + j; }, x, y), 2 * x + y));
-    REQUIRE(eq(
+    CHECK(eq(fmap([](auto i, auto j) { return 2 * i + j; }, x, y), 2 * x + y));
+    CHECK(eq(
         fmap([](auto i, auto j, auto k) { return 3 * i + 2 * j + k; }, x, y, z),
         3 * x + 2 * y + z));
 
-    REQUIRE(fold([](auto i, auto j) { return i + j; }, T(0), x) == sum(x));
-    REQUIRE(is_approx(
+    CHECK(fold([](auto i, auto j) { return i + j; }, T(0), x) == sum(x));
+    CHECK(is_approx(
         fold([](auto i, auto j, auto k) { return i + j + k; }, T(0), x, y),
         sum(x + y)));
 
-    REQUIRE(sum(n) == 0);
-    REQUIRE(sum(n + 1) == D);
-    REQUIRE(product(n) == (D == 0 ? 1 : 0));
-    REQUIRE(product(n + 1) == 1);
-    // We need to allow `inf == inf`, and REQUIRE's standard
-    // comparison wouldn't, so we compare `== true` instead
-    REQUIRE((min_element(n) == (D == 0 ? T(1) / 0 : 0)) == true);
-    REQUIRE((max_element(n) == (D == 0 ? -T(1) / 0 : 0)) == true);
-    REQUIRE((min_element(n + 1) == (D == 0 ? T(1) / 0 : 1)) == true);
-    REQUIRE((max_element(n + 1) == (D == 0 ? -T(1) / 0 : 1)) == true);
+    CHECK(sum(n) == 0);
+    CHECK(sum(n + 1) == D);
+    CHECK(product(n) == (D == 0 ? 1 : 0));
+    CHECK(product(n + 1) == 1);
+    CHECK(min_element(n) == (D == 0 ? T(1) / 0 : 0));
+    CHECK(max_element(n) == (D == 0 ? -T(1) / 0 : 0));
+    CHECK(min_element(n + 1) == (D == 0 ? T(1) / 0 : 1));
+    CHECK(max_element(n + 1) == (D == 0 ? -T(1) / 0 : 1));
 
-    REQUIRE(eq(+x, x));
-    REQUIRE(eq(n + x, x));
-    REQUIRE(eq(T(0) + x, x));
-    REQUIRE(eq(x + n, x));
-    REQUIRE(eq(x + T(0), x));
+    CHECK(eq(+x, x));
+    CHECK(eq(n + x, x));
+    CHECK(eq(T(0) + x, x));
+    CHECK(eq(x + n, x));
+    CHECK(eq(x + T(0), x));
 
-    REQUIRE(eq(x + y, y + x));
+    CHECK(eq(x + y, y + x));
 
-    REQUIRE(is_approx((x + y) + z, x + (y + z)));
+    CHECK(is_approx((x + y) + z, x + (y + z)));
 
-    REQUIRE(eq(-x, -T(1) * x));
-    REQUIRE(eq(-(-x), x));
-    REQUIRE(eq(x - x, n));
+    CHECK(eq(-x, -T(1) * x));
+    CHECK(eq(-(-x), x));
+    CHECK(eq(x - x, n));
 
-    REQUIRE(eq(a * n, n));
-    REQUIRE(eq(n * a, n));
-    REQUIRE(eq(T(0) * x, n));
-    REQUIRE(eq(x * T(0), n));
-    REQUIRE(eq(T(1) * x, x));
-    REQUIRE(eq(x * T(1), x));
+    CHECK(eq(a * n, n));
+    CHECK(eq(n * a, n));
+    CHECK(eq(T(0) * x, n));
+    CHECK(eq(x * T(0), n));
+    CHECK(eq(T(1) * x, x));
+    CHECK(eq(x * T(1), x));
 
-    REQUIRE(eq(a * x, x * a));
+    CHECK(eq(a * x, x * a));
 
     if (all(x != 0)) {
-      REQUIRE(eq(x / x, n + 1));
-      REQUIRE(is_approx(1 / (1 / x), x));
-      REQUIRE(is_approx(a / x, a * (1 / x)));
+      CHECK(eq(x / x, n + 1));
+      CHECK(is_approx(1 / (1 / x), x));
+      CHECK(is_approx(a / x, a * (1 / x)));
     }
     if (a != 0) {
-      REQUIRE(is_approx(x / a, x * (1 / a)));
+      CHECK(is_approx(x / a, x * (1 / a)));
     }
 
-    REQUIRE(is_approx(a * x + b * x, (a + b) * x));
-    REQUIRE(is_approx(a * (x + y), a * x + a * y));
+    CHECK(is_approx(a * x + b * x, (a + b) * x));
+    CHECK(is_approx(a * (x + y), a * x + a * y));
 
-    REQUIRE(is_approx(x * (y + z), x * y + x * z));
+    CHECK(is_approx(x * (y + z), x * y + x * z));
 
     if (all(y != 0)) {
-      REQUIRE(is_approx(x * y / y, x));
+      CHECK(is_approx(x * y / y, x));
     }
 
     P t;
     t = x;
     t += y;
-    REQUIRE(eq(t, x + y));
+    CHECK(eq(t, x + y));
     t = x;
     t -= y;
-    REQUIRE(eq(t, x - y));
+    CHECK(eq(t, x - y));
     t = x;
     t *= y;
-    REQUIRE(eq(t, x * y));
+    CHECK(eq(t, x * y));
     t = x;
     t /= y;
-    REQUIRE(eq(t, x / y));
+    CHECK(eq(t, x / y));
 
   } // for iter
 }

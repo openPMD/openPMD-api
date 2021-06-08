@@ -20,8 +20,8 @@ template <typename R> void test_Region(const R &r) {
   using P = std::decay_t<decltype(p)>;
   const std::equal_to<R> eqr;
   const std::less<R> ltr;
-  REQUIRE(r.empty());
-  REQUIRE(b.empty());
+  CHECK(r.empty());
+  CHECK(b.empty());
 
   std::mt19937 gen;
   std::uniform_int_distribution dist0(0, 9);
@@ -62,7 +62,7 @@ template <typename R> void test_Region(const R &r) {
   for (int iter = 0; iter < 100; ++iter) {
 
     R N = r;
-    REQUIRE(N.empty());
+    CHECK(N.empty());
     R X = randr();
     R Y = randr();
     R Z = randr();
@@ -71,89 +71,88 @@ template <typename R> void test_Region(const R &r) {
     P x = randp();
     P y = randp();
 
-    REQUIRE(eqr(X, X));
-    REQUIRE(!ltr(X, X));
+    CHECK(eqr(X, X));
+    CHECK(!ltr(X, X));
     if (eqr(X, Y))
-      REQUIRE(ltr(X, Y) + ltr(Y, X) == 0);
+      CHECK(ltr(X, Y) + ltr(Y, X) == 0);
     else
-      REQUIRE(ltr(X, Y) + ltr(Y, X) == 1);
+      CHECK(ltr(X, Y) + ltr(Y, X) == 1);
     if (ltr(X, Y) && ltr(Y, Z))
-      REQUIRE(ltr(X, Z));
+      CHECK(ltr(X, Z));
     if (!ltr(Y, X) && !ltr(Z, Y))
-      REQUIRE(!ltr(Z, X));
+      CHECK(!ltr(Z, X));
 
-    REQUIRE(N == N);
-    REQUIRE(X == X);
-    REQUIRE((N != X) != X.empty());
+    CHECK(N == N);
+    CHECK(X == X);
+    CHECK((N != X) != X.empty());
 
-    REQUIRE((X >> n) == X);
-    REQUIRE((X >> x) == (X << -x));
-    REQUIRE(((X >> x) << x) == X);
-    REQUIRE(((X >> x) >> y) == (X >> (x + y)));
+    CHECK((X >> n) == X);
+    CHECK((X >> x) == (X << -x));
+    CHECK(((X >> x) << x) == X);
+    CHECK(((X >> x) >> y) == (X >> (x + y)));
 
-    REQUIRE((X * abs(x)) * abs(y) == X * (abs(x) * abs(y)));
-    REQUIRE((X >> x) * y == (X * y) >> (x * y));
+    CHECK((X * abs(x)) * abs(y) == X * (abs(x) * abs(y)));
+    CHECK((X >> x) * y == (X * y) >> (x * y));
 
     if (X.empty()) {
-      REQUIRE(X.grown(abs(x)).empty());
-      REQUIRE(X.shrunk(abs(x)).empty());
+      CHECK(X.grown(abs(x)).empty());
+      CHECK(X.shrunk(abs(x)).empty());
     } else if (all(abs(x) == n)) {
-      REQUIRE(X.grown(abs(x)) == X);
-      REQUIRE(X.shrunk(abs(x)) == X);
+      CHECK(X.grown(abs(x)) == X);
+      CHECK(X.shrunk(abs(x)) == X);
     } else {
-      REQUIRE(X.grown(abs(x)) > X);
-      REQUIRE(X.shrunk(abs(x)) < X);
+      CHECK(X.grown(abs(x)) > X);
+      CHECK(X.shrunk(abs(x)) < X);
     }
 
-    REQUIRE(X.grown(abs(x)).shrunk(abs(x)) >= X);
-    REQUIRE(X.shrunk(abs(x)).grown(abs(x)) <= X);
+    CHECK(X.grown(abs(x)).shrunk(abs(x)) >= X);
+    CHECK(X.shrunk(abs(x)).grown(abs(x)) <= X);
 
-    REQUIRE((X.grown(x) >> y) == (X >> y).grown(x));
+    CHECK((X.grown(x) >> y) == (X >> y).grown(x));
 
-    REQUIRE((X * abs(y)).grown(abs(x) * abs(y)) == X.grown(abs(x)) * abs(y));
+    CHECK((X * abs(y)).grown(abs(x) * abs(y)) == X.grown(abs(x)) * abs(y));
 
     const B E = bounding_box(bounding_box(bounding_box(X), bounding_box(Y)),
                              bounding_box(Z))
                     .grown(10);
 
-    REQUIRE((N & X) == N);
-    REQUIRE((X & N) == N);
-    REQUIRE((E & X) == X);
-    REQUIRE((X & E) == X);
-    REQUIRE((X & Y) == (Y & X));
-    REQUIRE(((X & Y) & Z) == (X & (Y & Z)));
+    CHECK((N & X) == N);
+    CHECK((X & N) == N);
+    CHECK((E & X) == X);
+    CHECK((X & E) == X);
+    CHECK((X & Y) == (Y & X));
+    CHECK(((X & Y) & Z) == (X & (Y & Z)));
 
-    REQUIRE((N | X) == X);
-    REQUIRE((E | X) == E);
-    REQUIRE((X | E) == E);
-    REQUIRE((X | Y) == (Y | X));
-    REQUIRE(((X | Y) | Z) == (X | (Y | Z)));
+    CHECK((N | X) == X);
+    CHECK((E | X) == E);
+    CHECK((X | E) == E);
+    CHECK((X | Y) == (Y | X));
+    CHECK(((X | Y) | Z) == (X | (Y | Z)));
 
-    REQUIRE(E - (X & Y) == ((E - X) | (E - Y)));
-    REQUIRE(E - (X | Y) == ((E - X) & (E - Y)));
+    CHECK(E - (X & Y) == ((E - X) | (E - Y)));
+    CHECK(E - (X | Y) == ((E - X) & (E - Y)));
 
-    REQUIRE((N ^ X) == X);
-    REQUIRE((X ^ N) == X);
-    REQUIRE((X ^ X) == N);
-    REQUIRE((X ^ Y) == (Y ^ X));
-    REQUIRE(((X ^ Y) ^ Z) == (X ^ (Y ^ Z)));
+    CHECK((N ^ X) == X);
+    CHECK((X ^ N) == X);
+    CHECK((X ^ X) == N);
+    CHECK((X ^ Y) == (Y ^ X));
+    CHECK(((X ^ Y) ^ Z) == (X ^ (Y ^ Z)));
 
     const R IXY = X & Y;
-    REQUIRE((IXY <= X && IXY <= Y) == true);
-    REQUIRE((IXY.grown(1) <= X && IXY.grown(1) <= Y) ==
-            (D == 0 || IXY.empty()));
+    CHECK((IXY <= X && IXY <= Y) == true);
+    CHECK((IXY.grown(1) <= X && IXY.grown(1) <= Y) == (D == 0 || IXY.empty()));
 
     const R UXY = X | Y;
-    REQUIRE((X <= UXY && Y <= UXY) == true);
+    CHECK((X <= UXY && Y <= UXY) == true);
 
     const R DXY = X - Y;
-    REQUIRE((DXY <= X || !isdisjoint(DXY, Y)) == true);
+    CHECK((DXY <= X || !isdisjoint(DXY, Y)) == true);
 
     const R SXY = X ^ Y;
-    REQUIRE((SXY <= UXY && isdisjoint(SXY, IXY)) == true);
+    CHECK((SXY <= UXY && isdisjoint(SXY, IXY)) == true);
 
-    REQUIRE(IXY <= UXY);
-    REQUIRE((IXY | SXY) == UXY);
+    CHECK(IXY <= UXY);
+    CHECK((IXY | SXY) == UXY);
 
   } // for iter
 }
