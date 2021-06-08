@@ -38,7 +38,7 @@ template <typename T> bool eq_helper(const T &x1, const T &x2) {
   std::equal_to<T> eq;
   return eq(x1, x2);
 }
-template <typename T1, typename T2> bool eq_helper(const T1 &x1, const T2 &x2) {
+template <typename T1, typename T2> bool eq_helper(const T1 &, const T2 &) {
   return false;
 }
 
