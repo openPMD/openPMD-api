@@ -26,18 +26,19 @@ namespace Regions {
  */
 template <typename T, std::size_t D> class Region;
 
-template <typename T> class Region<T, 0>;
-template <typename T> class Region<T, 1>;
-
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename T> class Region<T, 0> {
   bool is_full;
 
-  template <typename, std::size_t> friend class Region;
+  friend class Region<T, 1>;
 
+  // This should be private, but GCC 9 seems to ignore the friend
+  // declaration above
+public:
   explicit constexpr Region(bool is_full_) : is_full(is_full_) {}
 
+private:
 public:
   constexpr static std::size_t D = 0;
 

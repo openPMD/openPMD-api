@@ -19,12 +19,6 @@ template <typename R> void test_Region(const R &r) {
   const auto p = b.lower();
   typedef std::decay_t<decltype(b)> B;
   typedef std::decay_t<decltype(p)> P;
-  const std::equal_to<P> eqp;
-  const std::equal_to<B> eqb;
-  const std::equal_to<R> eqr;
-  const std::less<P> ltp;
-  const std::less<B> ltb;
-  const std::less<R> ltr;
   REQUIRE(r.empty());
   REQUIRE(b.empty());
 
