@@ -170,7 +170,7 @@ TEST_CASE("Region<double,1>", "[regions]") { test_Region(Region<double, 1>()); }
 TEST_CASE("Region<double,2>", "[regions]") { test_Region(Region<double, 2>()); }
 TEST_CASE("Region<double,3>", "[regions]") { test_Region(Region<double, 3>()); }
 
-#warning "TODO"
+// TODO
 #if 0
 TEST_CASE("NDRegion<std::ptrdiff_t>(0)", "[regions]") {
   test_Region(NDRegion<std::ptrdiff_t>(0));

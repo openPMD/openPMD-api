@@ -228,7 +228,7 @@ TEST_CASE("Box<double,1>", "[regions]") { test_Box(Box<double, 1>()); }
 TEST_CASE("Box<double,2>", "[regions]") { test_Box(Box<double, 2>()); }
 TEST_CASE("Box<double,3>", "[regions]") { test_Box(Box<double, 3>()); }
 
-#warning "TODO"
+// TODO
 #if 0
 TEST_CASE("NDBox<std::ptrdiff_t>(0)", "[regions]") {
   test_Box(NDBox<std::ptrdiff_t>(0));
