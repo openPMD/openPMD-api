@@ -407,33 +407,18 @@ template <typename P> void test_Point_float(const P &p) {
         fold([](auto i, auto j, auto k) { return i + j + k; }, T(0), x, y),
         sum(x + y)));
 
-    // Temporary tests
-    CHECK(0.0 == 0.0);
-    CHECK(1.0 == 1.0);
-    CHECK(1.0 / 0.0 == 1.0 / 0.0);
-    CHECK(-1.0 / 0.0 == -1.0 / 0.0);
-    CHECK(1.0 / 0.0 != -1.0 / 0.0);
-    CHECK(0.0 / 0.0 != 0.0 / 0.0);
-    CHECK(1.0 / 0.0 == std::numeric_limits<double>::infinity());
-    CHECK(-1.0 / 0.0 == -std::numeric_limits<double>::infinity());
-    CHECK(1.0 / 0.0 == std::numeric_limits<float>::infinity());
-    CHECK(-1.0 / 0.0 == -std::numeric_limits<float>::infinity());
-
-    CHECK(min_element(Point<T, 0>()) == (0 == 0 ? T(1) / 0 : 0));
-    CHECK(min_element(Point<T, 0>()) == T(1) / 0);
-    CHECK(min_element(Point<T, 0>()) == T(1) / T(0));
-    CHECK(min_element(Point<T, 0>()) ==
-          std::numeric_limits<double>::infinity());
-    CHECK(std::numeric_limits<double>::infinity() == (0 == 0 ? T(1) / 0 : 0));
-
     CHECK(sum(n) == 0);
     CHECK(sum(n + 1) == D);
     CHECK(product(n) == (D == 0 ? 1 : 0));
     CHECK(product(n + 1) == 1);
-    // TODO CHECK(min_element(n) == (D == 0 ? T(1) / 0 : 0));
-    // TODO CHECK(max_element(n) == (D == 0 ? -T(1) / 0 : 0));
-    // TODO CHECK(min_element(n + 1) == (D == 0 ? T(1) / 0 : 1));
-    // TODO CHECK(max_element(n + 1) == (D == 0 ? -T(1) / 0 : 1));
+    const T inf_zero = D == 0 ? T(1) / 0 : 0;
+    const T neg_inf_zero = D == 0 ? -T(1) / 0 : 0;
+    const T inf_one = D == 0 ? T(1) / 0 : 1;
+    const T neg_inf_one = D == 0 ? -T(1) / 0 : 1;
+    CHECK(min_element(n) == inf_zero);
+    CHECK(max_element(n) == neg_inf_zero);
+    CHECK(min_element(n + 1) == inf_one);
+    CHECK(max_element(n + 1) == neg_inf_one);
 
     CHECK(eq(+x, x));
     CHECK(eq(n + x, x));
