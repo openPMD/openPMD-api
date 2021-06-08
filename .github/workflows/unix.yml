@@ -207,13 +207,13 @@ jobs:
 #  gcc-4.8.5_py35_nompi_h5
 #  gcc-7.4.0_py_ompi_h5_ad1_ad2_coveralls
 
-  gcc5_py36_pd_dd_ompi_h5_ad1_ad2:
+  gcc7_py36_pd_dd_ompi_h5_ad1_ad2:
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
     - name: Spack Cache
       uses: actions/cache@v2
-      with: {path: /opt/spack, key: gcc5_py36_ompi_h5_ad1_ad2 }
+      with: {path: /opt/spack, key: gcc7_py36_ompi_h5_ad1_ad2 }
     - name: Install
       run: |
         sudo apt-get update
@@ -226,9 +226,9 @@ jobs:
         python3 -m pip install -U dask
         python3 -m pip install -U pyarrow
     - name: Build
-      env: {CC: gcc-5, CXX: g++-5, CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      env: {CC: gcc-7, CXX: g++-7, CXXFLAGS: -Werror -Wno-deprecated-declarations}
       run: |
-        eval $(spack env activate --sh .github/ci/spack-envs/gcc5_py36_ompi_h5_ad1_ad2/)
+        eval $(spack env activate --sh .github/ci/spack-envs/gcc7_py36_ompi_h5_ad1_ad2/)
         spack install
 
         mkdir build && cd build
