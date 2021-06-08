@@ -207,7 +207,7 @@ jobs:
 #  gcc-4.8.5_py35_nompi_h5
 #  gcc-7.4.0_py_ompi_h5_ad1_ad2_coveralls
 
-  gcc7_py36_pd_dd_ompi_h5_ad1_ad2:
+  gcc5_py36_pd_dd_ompi_h5_ad1_ad2:
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
