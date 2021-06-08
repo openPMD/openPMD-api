@@ -52,10 +52,10 @@ template <typename R> void test_Region(const R &r) {
         return R(B(p));
     }
     const int nboxes = dist0(gen) / 2;
-    R r;
+    R nr;
     for (int n = 0; n < nboxes; ++n)
-      r |= randb();
-    return r;
+      nr |= randb();
+    return nr;
   };
 
   for (int iter = 0; iter < 100; ++iter) {

@@ -140,12 +140,19 @@ public:
   virtual T product1() const = 0;
   virtual T sum1() const = 0;
 
-  virtual std::unique_ptr<VPoint> operator==(const VPoint &x) const = 0;
-  virtual std::unique_ptr<VPoint> operator!=(const VPoint &x) const = 0;
-  virtual std::unique_ptr<VPoint> operator<(const VPoint &x) const = 0;
-  virtual std::unique_ptr<VPoint> operator>(const VPoint &x) const = 0;
-  virtual std::unique_ptr<VPoint> operator<=(const VPoint &x) const = 0;
-  virtual std::unique_ptr<VPoint> operator>=(const VPoint &x) const = 0;
+  virtual std::unique_ptr<VPoint<bool>> operator==(const VPoint &x) const = 0;
+  virtual std::unique_ptr<VPoint<bool>> operator!=(const VPoint &x) const = 0;
+  virtual std::unique_ptr<VPoint<bool>> operator<(const VPoint &x) const = 0;
+  virtual std::unique_ptr<VPoint<bool>> operator>(const VPoint &x) const = 0;
+  virtual std::unique_ptr<VPoint<bool>> operator<=(const VPoint &x) const = 0;
+  virtual std::unique_ptr<VPoint<bool>> operator>=(const VPoint &x) const = 0;
+
+  virtual std::unique_ptr<VPoint<bool>> operator==(const T &a) const = 0;
+  virtual std::unique_ptr<VPoint<bool>> operator!=(const T &a) const = 0;
+  virtual std::unique_ptr<VPoint<bool>> operator<(const T &a) const = 0;
+  virtual std::unique_ptr<VPoint<bool>> operator>(const T &a) const = 0;
+  virtual std::unique_ptr<VPoint<bool>> operator<=(const T &a) const = 0;
+  virtual std::unique_ptr<VPoint<bool>> operator>=(const T &a) const = 0;
 
   virtual bool equal_to1(const VPoint &x) const = 0;
   virtual std::size_t hash1() const = 0;
@@ -450,23 +457,48 @@ public:
   T product1() const override { return product(p); }
   T sum1() const override { return sum(p); }
 
-  std::unique_ptr<VPoint<T>> operator==(const VPoint<T> &x) const override {
-    return std::make_unique<WPoint>(p == dynamic_cast<const WPoint &>(x).p);
+  std::unique_ptr<VPoint<bool>> operator==(const VPoint<T> &x) const override {
+    return std::make_unique<WPoint<bool, D>>(p ==
+                                             dynamic_cast<const WPoint &>(x).p);
   }
-  std::unique_ptr<VPoint<T>> operator!=(const VPoint<T> &x) const override {
-    return std::make_unique<WPoint>(p != dynamic_cast<const WPoint &>(x).p);
+  std::unique_ptr<VPoint<bool>> operator!=(const VPoint<T> &x) const override {
+    return std::make_unique<WPoint<bool, D>>(p !=
+                                             dynamic_cast<const WPoint &>(x).p);
   }
-  std::unique_ptr<VPoint<T>> operator<(const VPoint<T> &x) const override {
-    return std::make_unique<WPoint>(p < dynamic_cast<const WPoint &>(x).p);
+  std::unique_ptr<VPoint<bool>> operator<(const VPoint<T> &x) const override {
+    return std::make_unique<WPoint<bool, D>>(p <
+                                             dynamic_cast<const WPoint &>(x).p);
   }
-  std::unique_ptr<VPoint<T>> operator>(const VPoint<T> &x) const override {
-    return std::make_unique<WPoint>(p > dynamic_cast<const WPoint &>(x).p);
+  std::unique_ptr<VPoint<bool>> operator>(const VPoint<T> &x) const override {
+    return std::make_unique<WPoint<bool, D>>(p >
+                                             dynamic_cast<const WPoint &>(x).p);
   }
-  std::unique_ptr<VPoint<T>> operator<=(const VPoint<T> &x) const override {
-    return std::make_unique<WPoint>(p <= dynamic_cast<const WPoint &>(x).p);
+  std::unique_ptr<VPoint<bool>> operator<=(const VPoint<T> &x) const override {
+    return std::make_unique<WPoint<bool, D>>(p <=
+                                             dynamic_cast<const WPoint &>(x).p);
   }
-  std::unique_ptr<VPoint<T>> operator>=(const VPoint<T> &x) const override {
-    return std::make_unique<WPoint>(p >= dynamic_cast<const WPoint &>(x).p);
+  std::unique_ptr<VPoint<bool>> operator>=(const VPoint<T> &x) const override {
+    return std::make_unique<WPoint<bool, D>>(p >=
+                                             dynamic_cast<const WPoint &>(x).p);
+  }
+
+  std::unique_ptr<VPoint<bool>> operator==(const T &a) const override {
+    return std::make_unique<WPoint<bool, D>>(p == a);
+  }
+  std::unique_ptr<VPoint<bool>> operator!=(const T &a) const override {
+    return std::make_unique<WPoint<bool, D>>(p != a);
+  }
+  std::unique_ptr<VPoint<bool>> operator<(const T &a) const override {
+    return std::make_unique<WPoint<bool, D>>(p < a);
+  }
+  std::unique_ptr<VPoint<bool>> operator>(const T &a) const override {
+    return std::make_unique<WPoint<bool, D>>(p > a);
+  }
+  std::unique_ptr<VPoint<bool>> operator<=(const T &a) const override {
+    return std::make_unique<WPoint<bool, D>>(p <= a);
+  }
+  std::unique_ptr<VPoint<bool>> operator>=(const T &a) const override {
+    return std::make_unique<WPoint<bool, D>>(p >= a);
   }
 
   bool equal_to1(const VPoint<T> &x) const override {
@@ -844,6 +876,25 @@ public:
   }
   friend NDPoint<bool> operator>=(const NDPoint &x, const NDPoint &y) {
     return *x.p >= *y.p;
+  }
+
+  friend NDPoint<bool> operator==(const NDPoint &x, const T &b) {
+    return *x.p == b;
+  }
+  friend NDPoint<bool> operator!=(const NDPoint &x, const T &b) {
+    return *x.p != b;
+  }
+  friend NDPoint<bool> operator<(const NDPoint &x, const T &b) {
+    return *x.p < b;
+  }
+  friend NDPoint<bool> operator>(const NDPoint &x, const T &b) {
+    return *x.p > b;
+  }
+  friend NDPoint<bool> operator<=(const NDPoint &x, const T &b) {
+    return *x.p <= b;
+  }
+  friend NDPoint<bool> operator>=(const NDPoint &x, const T &b) {
+    return *x.p >= b;
   }
 
   /** Output a point

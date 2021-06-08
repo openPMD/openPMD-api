@@ -243,7 +243,7 @@ template <typename P> void test_Point_int(const P &p) {
 
     REQUIRE(eq(x * (y + z), x * y + x * z));
 
-    if (min_element(abs(y)) != 0) {
+    if (all(y != 0)) {
       REQUIRE(eq(x * y / y, x));
       REQUIRE(eq(x / y * y + x % y, x));
     }
@@ -307,12 +307,14 @@ template <typename P> void test_Point_int(const P &p) {
     t = x;
     t *= y;
     REQUIRE(eq(t, x * y));
-    t = x;
-    t /= y;
-    REQUIRE(eq(t, x / y));
-    t = x;
-    t %= y;
-    REQUIRE(eq(t, x % y));
+    if (all(y != 0)) {
+      t = x;
+      t /= y;
+      REQUIRE(eq(t, x / y));
+      t = x;
+      t %= y;
+      REQUIRE(eq(t, x % y));
+    }
     t = x;
     t &= y;
     REQUIRE(eq(t, (x & y)));
@@ -420,7 +422,7 @@ template <typename P> void test_Point_float(const P &p) {
 
     REQUIRE(eq(a * x, x * a));
 
-    if (min_element(abs(x)) != 0) {
+    if (all(x != 0)) {
       REQUIRE(eq(x / x, n + 1));
       REQUIRE(is_approx(1 / (1 / x), x));
       REQUIRE(is_approx(a / x, a * (1 / x)));
@@ -434,7 +436,7 @@ template <typename P> void test_Point_float(const P &p) {
 
     REQUIRE(is_approx(x * (y + z), x * y + x * z));
 
-    if (min_element(abs(y)) != 0) {
+    if (all(y != 0)) {
       REQUIRE(is_approx(x * y / y, x));
     }
 

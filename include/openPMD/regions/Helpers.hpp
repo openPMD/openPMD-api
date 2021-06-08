@@ -48,8 +48,6 @@ constexpr std::array<T, N> construct_array(const F &f) {
     return std::array<T, N>();
   else
     return array_push<T>(construct_array<T, N - 1>(f), f(N - 1));
-  // Unreachable statement to appease icc
-  return {};
 }
 
 ////////////////////////////////////////////////////////////////////////////////
