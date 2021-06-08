@@ -413,10 +413,12 @@ template <typename P> void test_Point_float(const P &p) {
     REQUIRE(sum(n + 1) == D);
     REQUIRE(product(n) == (D == 0 ? 1 : 0));
     REQUIRE(product(n + 1) == 1);
-    REQUIRE((min_element(n) == (D == 0 ? T(1) / 0 : 0))==true);
-    REQUIRE((max_element(n) == (D == 0 ? -T(1) / 0 : 0))==true);
-    REQUIRE((min_element(n + 1) == (D == 0 ? T(1) / 0 : 1))==true);
-    REQUIRE((max_element(n + 1) == (D == 0 ? -T(1) / 0 : 1))==true);
+    // We need to allow `inf == inf`, and REQUIRE's standard
+    // comparison wouldn't, so we compare `== true` instead
+    REQUIRE((min_element(n) == (D == 0 ? T(1) / 0 : 0)) == true);
+    REQUIRE((max_element(n) == (D == 0 ? -T(1) / 0 : 0)) == true);
+    REQUIRE((min_element(n + 1) == (D == 0 ? T(1) / 0 : 1)) == true);
+    REQUIRE((max_element(n + 1) == (D == 0 ? -T(1) / 0 : 1)) == true);
 
     REQUIRE(eq(+x, x));
     REQUIRE(eq(n + x, x));
