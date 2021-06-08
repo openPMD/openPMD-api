@@ -773,15 +773,17 @@ public:
               active1 = !lt(subbox1, subbox0);
             }
 
-            const T old_pos = iter0->second;
             if (active0 && active1 && eq(subbox0, subbox1)) {
               // The current bbox continues unchanged -- keep it
+              const T old_pos = iter0->second;
               subboxes[subbox1] = old_pos;
             } else {
-              if (active0)
+              if (active0) {
                 // The current box changed; finalize it
+                const T old_pos = iter0->second;
                 res.push_back(Box<T, D>(subbox0.lower().insert(D - 1, old_pos),
                                         subbox0.upper().insert(D - 1, pos)));
+              }
               if (active1)
                 // There is a new box; add it
                 subboxes[subbox1] = pos;
