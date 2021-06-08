@@ -14,7 +14,6 @@ using namespace openPMD::Regions;
 
 template <typename R> void test_Region(const R &r) {
   const std::size_t D = r.ndims();
-  using T = typename R::value_type;
   const auto b = bounding_box(r);
   const auto p = b.lower();
   using B = std::decay_t<decltype(b)>;
