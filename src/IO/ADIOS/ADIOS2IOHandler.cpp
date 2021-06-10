@@ -2392,16 +2392,13 @@ namespace detail
         {
             /*
              * Switch those off by default since they are expensive to compute
-             * and we don't read them anyway.
-             * No environement variable for this one, can still be switched
-             * on via JSON though.
+             * and to enable it, set the environment variable 
+             * OPENPMD_ADIOS2_STATS_LEVEL be postive (e.g. 1).
+             * Can still also be switched on via JSON though.
              * Default is "1".
              */
-             m_IO.SetParameter( "StatsLevel", "0" );
-             auto StatLevel = auxiliary::getEnvNum( "OPENPMD_ADIOS2_STAT", 0 );
-
-             if (StatLevel > 0)
-                 m_IO.SetParameter( "StatsLevel", "1" );
+             auto stats_level = auxiliary::getEnvNum( "OPENPMD_ADIOS2_STATS_LEVEL", 0 );
+             m_IO.SetParameter( "StatsLevel", std::to_string( stats_level ) );
         }
         if( m_engineType == "sst" && notYetConfigured( "QueueLimit" ) )
         {

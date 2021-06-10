@@ -52,7 +52,7 @@ environment variable                  default    description
 ``OPENPMD_ADIOS2_NUM_SUBSTREAMS``     ``0``      Number of files to be created, 0 indicates maximum number possible.
 ``OPENPMD_ADIOS2_ENGINE``             ``File``   `ADIOS2 engine <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_
 ``OPENPMD2_ADIOS2_SCHEMA``            ``0``      ADIOS2 schema version (see below)
-``OPENPMD_ADIOS2_STAT``               ``0``      decide whether stat should be processed in ADIOS2. (1=Yes, 0=No)
+``OPENPMD_ADIOS2_STATS_LEVEL``        ``0``      whether to generate statistics for variables in ADIOS2. (1=Yes, 0=No)
 ``OPENPMD_BP_BACKEND``                ``ADIOS2`` Chose preferred ``.bp`` file backend if ``ADIOS1`` and ``ADIOS2`` are available.
 ===================================== ========== ================================================================================
 
