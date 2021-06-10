@@ -48,7 +48,7 @@ We also provide a DOI that refers to all releases of openPMD-api:
 
 .. note::
 
-   [author list as above] ...
+   Axel Huebl, Franz Poeschel, Fabian Koller, and Junmin Gu.
    *"openPMD-api: C++ & Python API for Scientific I/O with openPMD"*
    `DOI:10.14278/rodare.27 <https://doi.org/10.14278/rodare.27>`_ (2018)
 

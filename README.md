@@ -373,10 +373,10 @@ The following people and institutions [contributed](https://github.com/openPMD/o
 
 * [Axel Huebl (HZDR, now LBNL)](https://github.com/ax3l):
   project lead, releases, documentation, automated CI/CD, Python bindings, Dask, installation & packaging, prior reference implementations
+* [Franz Poeschel (CASUS)](https://github.com/franzpoeschel):
+  JSON & ADIOS2 backend, data staging/streaming, reworked class design
 * [Fabian Koller (HZDR)](https://github.com/C0nsultant):
   initial library design and implementation with HDF5 & ADIOS1 backend
-* [Franz Poeschel (CASUS)](https://github.com/franzpoeschel):
-  added JSON & ADIOS2 backend, data staging/streaming
 * [Junmin Gu (LBNL)](https://github.com/guj):
   non-collective parallel I/O fixes, ADIOS improvements, benchmarks
 
