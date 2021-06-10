@@ -2393,9 +2393,9 @@ namespace detail
             /*
              * Switch those off by default since they are expensive to compute
              * and to enable it, set the environment variable 
-             * OPENPMD_ADIOS2_STATS_LEVEL be postive (e.g. 1).
+             * OPENPMD_ADIOS2_STATS_LEVEL be postive (on is documented as "1").
              * Can still also be switched on via JSON though.
-             * Default is "1".
+             * The ADIOS2 default is "1" (on).
              */
              auto stats_level = auxiliary::getEnvNum( "OPENPMD_ADIOS2_STATS_LEVEL", 0 );
              m_IO.SetParameter( "StatsLevel", std::to_string( stats_level ) );
