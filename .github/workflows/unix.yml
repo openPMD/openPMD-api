@@ -261,6 +261,40 @@ jobs:
         cmake --build . --parallel 2
         ctest --output-on-failure
 
+  conda_ompi_all:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - uses: conda-incubator/setup-miniconda@v2
+      name: Setup conda
+      with:
+        auto-update-conda: true
+        activate-environment: testing
+        auto-activate-base: false
+        channels: conda-forge,defaults
+        channel-priority: true
+    - name: Install
+      shell: bash -eo pipefail -l {0}
+      run: |
+        conda env create --file conda.yml
+    - name: Build
+      shell: bash -eo pipefail -l {0}
+      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      run: |
+        conda activate openpmd-api-dev
+
+        mkdir build && cd build
+        ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
+        cmake -S .. -B . \
+          -DopenPMD_USE_PYTHON=ON \
+          -DopenPMD_USE_MPI=ON    \
+          -DopenPMD_USE_HDF5=ON   \
+          -DopenPMD_USE_ADIOS1=ON \
+          -DopenPMD_USE_ADIOS2=ON \
+          -DopenPMD_USE_INVASIVE_TESTS=ON
+        cmake --build . --parallel 2
+        ctest --output-on-failure
+
   icc_cxxonly:
     runs-on: ubuntu-20.04
     steps:

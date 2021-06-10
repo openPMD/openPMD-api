@@ -17,6 +17,8 @@ Changes to "0.13.4"
 Features
 """"""""
 
+- Conda environment file ``conda.yaml`` added to repo #1004
+
 Bug Fixes
 """""""""
 
