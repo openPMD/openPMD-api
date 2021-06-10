@@ -20,6 +20,7 @@
  */
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
 #include "openPMD/IO/HDF5/HDF5IOHandlerImpl.hpp"
+#include "openPMD/auxiliary/Environment.hpp"
 
 #if openPMD_HAVE_HDF5
 #   include "openPMD/Datatype.hpp"
@@ -84,12 +85,31 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
     H5Tinsert(m_H5T_CLONG_DOUBLE, "r", 0, H5T_NATIVE_LDOUBLE);
     H5Tinsert(m_H5T_CLONG_DOUBLE, "i", sizeof(long double), H5T_NATIVE_LDOUBLE);
 
+    m_chunks = auxiliary::getEnvString( "OPENPMD_HDF5_CHUNKS", "auto" );
+    // JSON option can overwrite env option:
     if( config.contains( "hdf5" ) )
     {
         m_config = std::move( config[ "hdf5" ] );
-        /*
-         * @todo Apply global configuration options from the JSON config here.
-         */
+
+        // check for global dataset configs
+        if( m_config.json().contains( "dataset" ) )
+        {
+            auto datasetConfig = m_config[ "dataset" ];
+            if( datasetConfig.json().contains( "chunks" ) )
+            {
+                m_chunks = datasetConfig.json()[ "chunks" ];
+            }
+            datasetConfig.declareFullyRead();
+        }
+        if( m_chunks != "auto" && m_chunks != "none" )
+        {
+            std::cerr << "Warning: HDF5 chunking option set to an invalid "
+                         "value '" << m_chunks << "'. Reset to 'auto'."
+                      << std::endl;
+            m_chunks = "auto";
+        }
+
+        // unused params
         auto shadow = m_config.invertShadow();
         if( shadow.size() > 0 )
         {
@@ -304,12 +324,14 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         /* enable chunking on the created dataspace */
         hid_t datasetCreationProperty = H5Pcreate(H5P_DATASET_CREATE);
 
-        if( num_elements != 0u )
+        if( num_elements != 0u && m_chunks != "none" )
         {
+            //! @todo add per dataset chunk control from JSON config
+
             // get chunking dimensions
             std::vector< hsize_t > chunk_dims = getOptimalChunkDims(dims, toBytes(d));
 
-            // TODO: allow overwrite with user-provided chunk size
+            //! @todo allow overwrite with user-provided chunk size
             //for( auto const& val : parameters.chunkSize )
             //    chunk_dims.push_back(static_cast< hsize_t >(val));
 
@@ -1891,7 +1913,7 @@ HDF5IOHandler::flush()
     return m_impl->flush();
 }
 #else
-HDF5IOHandler::HDF5IOHandler(std::string path, Access at)
+HDF5IOHandler::HDF5IOHandler(std::string path, Access at, nlohmann::json /* config */)
         : AbstractIOHandler(std::move(path), at)
 {
     throw std::runtime_error("openPMD-api built without HDF5 support");

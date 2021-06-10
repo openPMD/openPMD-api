@@ -79,6 +79,7 @@ namespace openPMD
 
     private:
         auxiliary::TracingJSON m_config;
+        std::string m_chunks = "auto";
         struct File
         {
             std::string name;

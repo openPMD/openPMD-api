@@ -66,7 +66,7 @@ namespace openPMD
      * @param[in] typeSize size of each element in bytes
      * @return array for resulting chunk dimensions
      */
-    inline std::vector< hsize_t >
+    std::vector< hsize_t >
     getOptimalChunkDims( std::vector< hsize_t > const dims,
                          size_t const typeSize );
 } // namespace openPMD

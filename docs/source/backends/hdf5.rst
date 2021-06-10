@@ -26,6 +26,7 @@ environment variable                  default   description
 ===================================== ========= ====================================================================================
 ``OPENPMD_HDF5_INDEPENDENT``          ``ON``    Sets the MPI-parallel transfer mode to collective (``OFF``) or independent (``ON``).
 ``OPENPMD_HDF5_ALIGNMENT``            ``1``     Tuning parameter for parallel I/O, choose an alignment which is a multiple of the disk block size.
+``OPENPMD_HDF5_CHUNKS``               ``auto``  Defaults for ``H5Pset_chunk``: ``"auto"`` (heuristic) or ``"none"`` (no chunking).
 ``H5_COLL_API_SANITY_CHECK``          unset     Set to ``1`` to perform an ``MPI_Barrier`` inside each meta-data operation.
 ===================================== ========= ====================================================================================
 
@@ -39,6 +40,9 @@ Please refer to the `HDF5 manual, function H5Pset_dxpl_mpio <https://support.hdf
 According to the `HDF5 documentation <https://support.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm>`_:
 *For MPI IO and other parallel systems, choose an alignment which is a multiple of the disk block size.*
 On Lustre filesystems, according to the `NERSC documentation <https://www.nersc.gov/users/training/online-tutorials/introduction-to-scientific-i-o/?start=5>`_, it is advised to set this to the Lustre stripe size. In addition, ORNL Summit GPFS users are recommended to set the alignment value to 16777216(16MB).
+
+``OPENPMD_HDF5_CHUNKS`` This sets defaults for data chunking via `H5Pset_chunk <https://support.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_chunk.htm>`__.
+Chunking generally improves performance and only needs to be disabled in corner-cases, e.g. when heavily relying on independent, parallel I/O that non-collectively declares data records.
 
 ``H5_COLL_API_SANITY_CHECK``: this is a HDF5 control option for debugging parallel I/O logic (API calls).
 Debugging a parallel program with that option enabled can help to spot bugs such as collective MPI-calls that are not called by all participating MPI ranks.
