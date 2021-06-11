@@ -1248,7 +1248,9 @@ SeriesImpl::advance(
 
     if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend )
     {
-        *iteration.m_closed = oldCloseStatus;
+        // Series::flush() would normally turn a `ClosedInFrontend` into
+        // a `ClosedInBackend`. Do that manually.
+        *iteration.m_closed = Iteration::CloseStatus::ClosedInBackend;
     }
     else if(
         oldCloseStatus == Iteration::CloseStatus::ClosedInBackend &&
