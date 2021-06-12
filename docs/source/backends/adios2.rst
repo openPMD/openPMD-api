@@ -120,7 +120,7 @@ Ignore the 30GB initialization phases.
 
 * **file-based iteration encoding:** A new ADIOS2 engine is opened for each iteration and closed upon ``Iteration::close()``.
   Each iteration has its own buffer:
-  
+
 .. image:: ./memory_filebased.png
   :alt: Memory usage of file-based iteration encoding
 
