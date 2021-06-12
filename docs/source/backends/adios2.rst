@@ -130,7 +130,7 @@ Ignore the 30GB initialization phases.
   If carefully selecting the correct ``InitialBufferSize``, this is merely one single allocation held across all iterations.
   If selecting the ``InitialBufferSize`` too small, reallocations will occur.
   As usual with ``std::vector`` (which ADIOS2 uses internally), a reallocation will occupy both the old and new memory for a short time, leading to small memory spikes.
-  These memory spikes can easily lead to OOM situations, motivating that the ``InitialBufferSize`` should not be chosen too small.
+  These memory spikes can easily lead to out-of-memory (OOM) situations, motivating that the ``InitialBufferSize`` should not be chosen too small.
   Both behaviors are depicted in the following two pictures:
 
 .. image:: ./memory_variablebased.png
