@@ -735,7 +735,7 @@ public:
     {
       Region reg;
       for (const auto &box : boxes)
-        reg |= region(box);
+        reg |= Region(box);
       assert(*this == reg);
     }
 #endif
@@ -913,13 +913,16 @@ public:
     size_type total_size = 0;
     T old_pos = std::numeric_limits<T>::min(); // location of last subregion
     size_type old_subregion_size = 0; // number of points in the last subregion
-    traverse_subregions([&](const T pos, const Subregion &subregion) {
-      const size_type subregion_size = subregion.size();
-      total_size +=
-          old_subregion_size == 0 ? 0 : (pos - old_pos) * old_subregion_size;
-      old_pos = pos;
-      old_subregion_size = subregion_size;
-    });
+    traverse_subregions(
+        [&](const T pos, const Subregion &subregion) {
+          const size_type subregion_size = subregion.size();
+          total_size += old_subregion_size == 0
+                            ? 0
+                            : (pos - old_pos) * old_subregion_size;
+          old_pos = pos;
+          old_subregion_size = subregion_size;
+        },
+        *this);
     assert(old_subregion_size == 0);
     return total_size;
   }

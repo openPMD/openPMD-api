@@ -179,9 +179,11 @@ public:
 
   WPoint(const Point<T, D> &p_) : p(p_) {}
   WPoint(Point<T, D> &&p_) : p(std::move(p_)) {}
+  operator Point<T, D>() const { return p; }
 
   WPoint(const std::array<T, D> &arr) : p(arr) {}
   WPoint(std::array<T, D> &&arr) : p(std::move(arr)) {}
+  operator std::array<T, D>() const { return p; }
 
   std::unique_ptr<VPoint<T>> copy() const override {
     return std::make_unique<WPoint>(*this);
@@ -535,6 +537,26 @@ std::unique_ptr<VPoint<T>> make_VPoint(const std::size_t D) {
   }
 }
 
+template <typename T, typename F>
+std::unique_ptr<VPoint<T>> make_VPoint(const std::size_t D, const F &f) {
+  switch (D) {
+  case 0:
+    return std::make_unique<WPoint<T, 0>>(Point<T, 0>::make(f));
+  case 1:
+    return std::make_unique<WPoint<T, 1>>(Point<T, 1>::make(f));
+  case 2:
+    return std::make_unique<WPoint<T, 2>>(Point<T, 2>::make(f));
+  case 3:
+    return std::make_unique<WPoint<T, 3>>(Point<T, 3>::make(f));
+  case 4:
+    return std::make_unique<WPoint<T, 4>>(Point<T, 4>::make(f));
+  case 5:
+    return std::make_unique<WPoint<T, 5>>(Point<T, 5>::make(f));
+  default:
+    abort();
+  }
+}
+
 } // namespace detail
 
 /** A Point
@@ -586,12 +608,20 @@ public:
   template <std::size_t D>
   NDPoint(Point<T, D> &&p_)
       : p(std::make_unique<detail::WPoint<T, D>>(std::move(p_))) {}
+  template <std::size_t D> operator Point<T, D>() const {
+    return Point<T, D>(dynamic_cast<const detail::WPoint<T, D>>(&p));
+  }
+
   template <std::size_t D>
   NDPoint(const std::array<T, D> &arr)
       : p(std::make_unique<detail::WPoint<T, D>>(arr)) {}
   template <std::size_t D>
   NDPoint(std::array<T, D> &&arr)
       : p(std::make_unique<detail::WPoint<T, D>>(std::move(arr))) {}
+  template <std::size_t D> operator std::array<T, D>() const {
+    return std::array<T, D>(dynamic_cast<const detail::WPoint<T, D>>(&p));
+  }
+  NDPoint(std::initializer_list<T> lst) : NDPoint(std::vector<T>(lst)) {}
 
 private:
   template <typename U>
@@ -606,6 +636,19 @@ public:
   template <typename U>
   NDPoint(const NDPoint<U> &x)
       : p(x.p ? NDPoint(convert_vector(std::vector<U>(x))) : nullptr) {}
+
+  template <typename F> static NDPoint make(const size_type D, const F &f) {
+    return NDPoint(detail::make_VPoint<T>(D, f));
+  }
+  static NDPoint pure(const size_type D, const T &val) {
+    return make(D, [&](size_type) { return val; });
+  }
+  static NDPoint unit(const size_type D, const size_type dir) {
+    return make(D, [&](size_type d) { return d == dir; });
+  }
+  static NDPoint iota(const size_type D) {
+    return make(D, [&](size_type d) { return d; });
+  }
 
   /** Check whether a Point is valid
    *
