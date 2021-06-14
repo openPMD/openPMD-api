@@ -91,13 +91,12 @@ int main(
     MPI_Comm_size( MPI_COMM_WORLD, &size );
     const unsigned scale_up = weak_scaling ? unsigned( size ) : 1u;
 
-    // Total (in this case 4D) dataset across all MPI ranks.
+    // Total (in this case 3D) dataset across all MPI ranks.
     // Will be the same for all configured benchmarks.
     openPMD::Extent total{
         100 * scale_up,
         100,
-        100,
-        10
+        1000
     };
 
     // The blockslicer assigns to each rank its part of the dataset. The rank will
