@@ -157,8 +157,8 @@ setup(
     name='openPMD-api',
     # note PEP-440 syntax: x.y.zaN but x.y.z.devN
     version='0.14.0.dev',
-    author='Fabian Koller, Franz Poeschel, Axel Huebl',
-    author_email='f.koller@hzdr.de, f.poeschel@hzdr.de, axelhuebl@lbl.gov',
+    author='Axel Huebl, Franz Poeschel, Fabian Koller, Junmin Gu',
+    author_email='axelhuebl@lbl.gov, f.poeschel@hzdr.de',
     maintainer='Axel Huebl',
     maintainer_email='axelhuebl@lbl.gov',
     description='C++ & Python API for Scientific I/O with openPMD',
