@@ -45,12 +45,17 @@ Mesh::Mesh()
 Mesh::Geometry
 Mesh::geometry() const
 {
-    std::string ret = getAttribute("geometry").get< std::string >();
+    std::string ret = geometryString();
     if( "cartesian" == ret ) { return Geometry::cartesian; }
     else if( "thetaMode" == ret ) { return Geometry::thetaMode; }
     else if( "cylindrical" == ret ) { return Geometry::cylindrical; }
     else if( "spherical" == ret ) { return Geometry::spherical; }
     else { return Geometry::custom; }
+}
+
+std::string Mesh::geometryString() const
+{
+    return getAttribute( "geometry" ).get< std::string >();
 }
 
 Mesh&

@@ -70,9 +70,13 @@ public:
     };  //DataOrder
 
     /**
-     * @return String representing the geometry of the mesh of the mesh record.
+     * @return Enum representing the geometry of the mesh of the mesh record.
      */
     Geometry geometry() const;
+    /**
+     * @return String representing the geometry of the mesh of the mesh record.
+     */
+    std::string geometryString() const;
     /** Set the geometry of the mesh of the mesh record.
      *
      * @param   g    geometry of the mesh of the mesh record.
