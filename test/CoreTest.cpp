@@ -841,3 +841,23 @@ TEST_CASE( "no_file_ending", "[core]" )
     REQUIRE_THROWS_WITH(Series("./new_openpmd_output_%05T", Access::CREATE),
                         Catch::Equals("Unknown file format! Did you specify a file ending?"));
 }
+
+TEST_CASE( "custom_geometries", "[core]" )
+{
+    {
+        Series write( "../samples/custom_geometry.json", Access::CREATE );
+        auto E = write.iterations[ 0 ].meshes[ "E" ];
+        E.setAttribute( "geometry", "customGeometry" );
+        auto E_x = E[ "x" ];
+        E_x.resetDataset( { Datatype::INT, { 10 } } );
+        std::vector< int > sampleData( 10, 0 );
+        E_x.storeChunk( sampleData, { 0 }, { 10 } );
+    }
+    {
+        Series read( "../samples/custom_geometry.json", Access::READ_ONLY );
+        auto E = read.iterations[ 0 ].meshes[ "E" ];
+        REQUIRE(
+            E.getAttribute( "geometry" ).get< std::string >() ==
+            "customGeometry" );
+    }
+}
