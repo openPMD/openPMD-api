@@ -57,7 +57,8 @@ public:
         cartesian,
         thetaMode,
         cylindrical,
-        spherical
+        spherical,
+        custom
     };  //Geometry
 
     /** @brief Enumerated datatype for the memory layout of N-dimensional data.
@@ -78,6 +79,12 @@ public:
      * @return  Reference to modified mesh.
      */
     Mesh& setGeometry(Geometry g);
+    /** Set the geometry of the mesh of the mesh record.
+     *
+     * @param   g    geometry of the mesh of the mesh record, as string
+     * @return  Reference to modified mesh.
+     */
+    Mesh& setGeometry(std::string const& geometry);
 
     /**
      * @throw   no_such_attribute_error If Mesh::geometry is not Mesh::Geometry::thetaMode.

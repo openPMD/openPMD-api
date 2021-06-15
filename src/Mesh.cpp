@@ -50,7 +50,7 @@ Mesh::geometry() const
     else if( "thetaMode" == ret ) { return Geometry::thetaMode; }
     else if( "cylindrical" == ret ) { return Geometry::cylindrical; }
     else if( "spherical" == ret ) { return Geometry::spherical; }
-    else { throw std::runtime_error("Unknown geometry " + ret); }
+    else { return Geometry::custom; }
 }
 
 Mesh&
@@ -70,7 +70,17 @@ Mesh::setGeometry(Mesh::Geometry g)
         case Geometry::spherical:
             setAttribute("geometry", std::string("spherical"));
             break;
+        case Geometry::custom:
+            // use the std::string overload to be more specific
+            setAttribute("geometry", std::string("custom"));
+            break;
     }
+    return *this;
+}
+
+Mesh & Mesh::setGeometry( std::string const & geometry )
+{
+    setAttribute( "geometry", geometry );
     return *this;
 }
 
@@ -267,7 +277,7 @@ Mesh::read()
         else if( "spherical" == tmpGeometry )
             setGeometry(Geometry::spherical);
         else
-            throw std::runtime_error("Unknown geometry " + tmpGeometry);
+            setGeometry(tmpGeometry);
     }
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'geometry'");
@@ -391,6 +401,9 @@ openPMD::operator<<(std::ostream& os, openPMD::Mesh::Geometry const& go)
             break;
         case openPMD::Mesh::Geometry::spherical:
             os<<"spherical";
+            break;
+        case openPMD::Mesh::Geometry::custom:
+            os<<"custom";
             break;
     }
     return os;
