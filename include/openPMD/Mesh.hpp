@@ -85,7 +85,7 @@ public:
     Mesh& setGeometry(Geometry g);
     /** Set the geometry of the mesh of the mesh record.
      *
-     * @param   g    geometry of the mesh of the mesh record, as string
+     * @param   geometry    geometry of the mesh of the mesh record, as string
      * @return  Reference to modified mesh.
      */
     Mesh& setGeometry(std::string const& geometry);
