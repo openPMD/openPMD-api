@@ -92,10 +92,6 @@ function build_adios2 {
     if [ "$(uname -s)" = "Linux" ]
     then
         EVPATH_ZPL="ON"
-        # ADIOS 2.7.1 & Blosc 1.20.1/1.21.0
-        #   /usr/local/lib/libblosc.a(blosc.c.o): In function `blosc_init.part.9':
-        # blosc.c:(.text+0x43e): undefined reference to `pthread_atfork'
-        export LDFLAGS="-pthread"
     else
         # ZPL in EVPATH disabled because it does not build with older macOS
         #       https://github.com/GTkorvo/evpath/issues/47
@@ -137,7 +133,14 @@ function build_blosc {
     cd build-c-blosc
     PY_BIN=$(which python)
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
-    PATH=${CMAKE_BIN}:${PATH} cmake -DDEACTIVATE_SNAPPY=ON -DBUILD_SHARED=OFF -DBUILD_TESTS=OFF -DBUILD_BENCHMARKS=OFF -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} ../c-blosc-*
+    PATH=${CMAKE_BIN}:${PATH} cmake          \
+      -DDEACTIVATE_SNAPPY=ON                 \
+      -DBUILD_SHARED=OFF                     \
+      -DBUILD_TESTS=OFF                      \
+      -DBUILD_BENCHMARKS=OFF                 \
+      -DTHREADS_PREFER_PTHREAD_FLAG=ON       \
+      -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
+      ../c-blosc-*
     make -j${CPU_COUNT}
     make install
     cd -
