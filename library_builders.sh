@@ -110,6 +110,7 @@ function build_adios2 {
         -DADIOS2_RUN_INSTALL_TEST=OFF             \
         -DEVPATH_USE_ZPL_ENET=${EVPATH_ZPL}       \
         -DHDF5_USE_STATIC_LIBRARIES:BOOL=ON       \
+        -DCMAKE_VERBOSE_MAKEFILE=ON               \
         -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE  \
         -DCMAKE_DISABLE_FIND_PACKAGE_BISON=TRUE   \
         -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} ../ADIOS2-*
@@ -139,6 +140,7 @@ function build_blosc {
       -DBUILD_TESTS=OFF                      \
       -DBUILD_BENCHMARKS=OFF                 \
       -DTHREADS_PREFER_PTHREAD_FLAG=ON       \
+      -DCMAKE_VERBOSE_MAKEFILE=ON            \
       -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
       ../c-blosc-*
     make -j${CPU_COUNT}
