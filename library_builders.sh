@@ -56,6 +56,7 @@ function install_buildessentials {
     python -m pip install -U pip setuptools wheel
     python -m pip install -U scikit-build
     python -m pip install -U cmake
+    python -m pip install -U "patch==1.*"
 
     touch buildessentials-stamp
 }
@@ -130,6 +131,12 @@ function build_blosc {
     file c-blosc*.tar.gz
     tar -xzf c-blosc*.tar.gz
     rm c-blosc*.tar.gz
+
+    # Patch PThread Propagation
+    curl -sLo blosc-pthread.patch \
+        https://patch-diff.githubusercontent.com/raw/Blosc/c-blosc/pull/318.patch
+    python -m patch -p 1 -d c-blosc-1.21.0 blosc-pthread.patch
+
     mkdir build-c-blosc
     cd build-c-blosc
     PY_BIN=$(which python)
@@ -139,7 +146,6 @@ function build_blosc {
       -DBUILD_SHARED=OFF                     \
       -DBUILD_TESTS=OFF                      \
       -DBUILD_BENCHMARKS=OFF                 \
-      -DTHREADS_PREFER_PTHREAD_FLAG=ON       \
       -DCMAKE_VERBOSE_MAKEFILE=ON            \
       -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
       ../c-blosc-*
