@@ -56,6 +56,7 @@ function install_buildessentials {
     python -m pip install -U pip setuptools wheel
     python -m pip install -U scikit-build
     python -m pip install -U cmake
+    python -m pip install -U "patch==1.*"
 
     touch buildessentials-stamp
 }
@@ -85,6 +86,12 @@ function build_adios2 {
     file adios2*.tar.gz
     tar -xzf adios2*.tar.gz
     rm adios2*.tar.gz
+
+    # Patch PThread Propagation
+    curl -sLo adios-pthread.patch \
+        https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/2768.patch
+    python -m patch -p 1 -d ADIOS2-2.7.1 adios-pthread.patch
+
     mkdir build-ADIOS2
     cd build-ADIOS2
     PY_BIN=$(which python)
@@ -92,10 +99,6 @@ function build_adios2 {
     if [ "$(uname -s)" = "Linux" ]
     then
         EVPATH_ZPL="ON"
-        # ADIOS 2.7.1 & Blosc 1.20.1/1.21.0
-        #   /usr/local/lib/libblosc.a(blosc.c.o): In function `blosc_init.part.9':
-        # blosc.c:(.text+0x43e): undefined reference to `pthread_atfork'
-        export LDFLAGS="-pthread"
     else
         # ZPL in EVPATH disabled because it does not build with older macOS
         #       https://github.com/GTkorvo/evpath/issues/47
@@ -114,6 +117,7 @@ function build_adios2 {
         -DADIOS2_RUN_INSTALL_TEST=OFF             \
         -DEVPATH_USE_ZPL_ENET=${EVPATH_ZPL}       \
         -DHDF5_USE_STATIC_LIBRARIES:BOOL=ON       \
+        -DCMAKE_VERBOSE_MAKEFILE=ON               \
         -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE  \
         -DCMAKE_DISABLE_FIND_PACKAGE_BISON=TRUE   \
         -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} ../ADIOS2-*
@@ -133,11 +137,24 @@ function build_blosc {
     file c-blosc*.tar.gz
     tar -xzf c-blosc*.tar.gz
     rm c-blosc*.tar.gz
+
+    # Patch PThread Propagation
+    curl -sLo blosc-pthread.patch \
+        https://patch-diff.githubusercontent.com/raw/Blosc/c-blosc/pull/318.patch
+    python -m patch -p 1 -d c-blosc-1.21.0 blosc-pthread.patch
+
     mkdir build-c-blosc
     cd build-c-blosc
     PY_BIN=$(which python)
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
-    PATH=${CMAKE_BIN}:${PATH} cmake -DDEACTIVATE_SNAPPY=ON -DBUILD_SHARED=OFF -DBUILD_TESTS=OFF -DBUILD_BENCHMARKS=OFF -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} ../c-blosc-*
+    PATH=${CMAKE_BIN}:${PATH} cmake          \
+      -DDEACTIVATE_SNAPPY=ON                 \
+      -DBUILD_SHARED=OFF                     \
+      -DBUILD_TESTS=OFF                      \
+      -DBUILD_BENCHMARKS=OFF                 \
+      -DCMAKE_VERBOSE_MAKEFILE=ON            \
+      -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
+      ../c-blosc-*
     make -j${CPU_COUNT}
     make install
     cd -
