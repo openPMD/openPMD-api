@@ -86,6 +86,12 @@ function build_adios2 {
     file adios2*.tar.gz
     tar -xzf adios2*.tar.gz
     rm adios2*.tar.gz
+
+    # Patch PThread Propagation
+    curl -sLo adios-pthread.patch \
+        https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/2768.patch
+    python -m patch -p 1 -d ADIOS2-2.7.1 adios-pthread.patch
+
     mkdir build-ADIOS2
     cd build-ADIOS2
     PY_BIN=$(which python)
@@ -114,7 +120,6 @@ function build_adios2 {
         -DCMAKE_VERBOSE_MAKEFILE=ON               \
         -DCMAKE_DISABLE_FIND_PACKAGE_LibFFI=TRUE  \
         -DCMAKE_DISABLE_FIND_PACKAGE_BISON=TRUE   \
-        -DCMAKE_FIND_PACKAGE_PREFER_CONFIG=ON     \
         -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} ../ADIOS2-*
 
     make -j${CPU_COUNT}
