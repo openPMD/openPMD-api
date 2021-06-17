@@ -74,7 +74,7 @@ jobs:
       uses: suisei-cn/actions-download-file@v1
       id: setupversion
       with:
-        url: "https://gist.githubusercontent.com/ax3l/ee247f0705f918f8b4e325075230f015/raw/8357643c15b99d9048505a729c398312ddd8f152/setupversion.patch"
+        url: "https://gist.githubusercontent.com/ax3l/4db2f1744e0e28e6c013ee4e752b3cb7/raw/324bdb60894d51608a48890573654e10e1b1c3a0/setupversion.patch"
         target: src/.patch/
 
     - name: Apply Patch
