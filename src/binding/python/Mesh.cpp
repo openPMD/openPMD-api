@@ -49,7 +49,7 @@ void init_Mesh(py::module &m) {
 
         .def_property("geometry", &Mesh::geometry, py::overload_cast<Mesh::Geometry>(&Mesh::setGeometry))
         .def_property(
-            "geometry_string", &Mesh::geometryString, py::overload_cast<std::string const &>(&Mesh::setGeometry))
+            "geometry_string", &Mesh::geometryString, py::overload_cast<std::string>(&Mesh::setGeometry))
         .def_property("geometry_parameters", &Mesh::geometryParameters, &Mesh::setGeometryParameters)
         .def_property("data_order",
               [](Mesh const & mesh){ return static_cast< char >(mesh.dataOrder()); },

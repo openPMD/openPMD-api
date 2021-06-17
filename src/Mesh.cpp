@@ -83,9 +83,9 @@ Mesh::setGeometry(Mesh::Geometry g)
     return *this;
 }
 
-Mesh & Mesh::setGeometry( std::string const & geometry )
+Mesh & Mesh::setGeometry( std::string geometry )
 {
-    setAttribute( "geometry", geometry );
+    setAttribute( "geometry", std::move( geometry ) );
     return *this;
 }
 

@@ -88,7 +88,7 @@ public:
      * @param   geometry    geometry of the mesh of the mesh record, as string
      * @return  Reference to modified mesh.
      */
-    Mesh& setGeometry(std::string const& geometry);
+    Mesh& setGeometry(std::string geometry);
 
     /**
      * @throw   no_such_attribute_error If Mesh::geometry is not Mesh::Geometry::thetaMode.
