@@ -50,7 +50,7 @@ Mesh::geometry() const
     else if( "thetaMode" == ret ) { return Geometry::thetaMode; }
     else if( "cylindrical" == ret ) { return Geometry::cylindrical; }
     else if( "spherical" == ret ) { return Geometry::spherical; }
-    else { return Geometry::custom; }
+    else { return Geometry::other; }
 }
 
 std::string Mesh::geometryString() const
@@ -75,9 +75,9 @@ Mesh::setGeometry(Mesh::Geometry g)
         case Geometry::spherical:
             setAttribute("geometry", std::string("spherical"));
             break;
-        case Geometry::custom:
+        case Geometry::other:
             // use the std::string overload to be more specific
-            setAttribute("geometry", std::string("custom"));
+            setAttribute("geometry", std::string("other"));
             break;
     }
     return *this;
@@ -407,8 +407,8 @@ openPMD::operator<<(std::ostream& os, openPMD::Mesh::Geometry const& go)
         case openPMD::Mesh::Geometry::spherical:
             os<<"spherical";
             break;
-        case openPMD::Mesh::Geometry::custom:
-            os<<"custom";
+        case openPMD::Mesh::Geometry::other:
+            os<<"other";
             break;
     }
     return os;

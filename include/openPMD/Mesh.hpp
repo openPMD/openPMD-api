@@ -58,7 +58,7 @@ public:
         thetaMode,
         cylindrical,
         spherical,
-        custom
+        other
     };  //Geometry
 
     /** @brief Enumerated datatype for the memory layout of N-dimensional data.

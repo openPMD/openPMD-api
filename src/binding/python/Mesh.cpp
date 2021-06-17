@@ -83,6 +83,6 @@ void init_Mesh(py::module &m) {
         .value("thetaMode", Mesh::Geometry::thetaMode)
         .value("cylindrical", Mesh::Geometry::cylindrical)
         .value("spherical", Mesh::Geometry::spherical)
-        .value("custom", Mesh::Geometry::custom)
+        .value("other", Mesh::Geometry::other)
     ;
 }
