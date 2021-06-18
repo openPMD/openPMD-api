@@ -844,13 +844,13 @@ TEST_CASE( "no_file_ending", "[core]" )
 
 TEST_CASE( "custom_geometries", "[core]" )
 {
+    std::vector< int > sampleData( 10, 0 );
     {
         Series write( "../samples/custom_geometry.json", Access::CREATE );
         auto E = write.iterations[ 0 ].meshes[ "E" ];
         E.setAttribute( "geometry", "customGeometry" );
         auto E_x = E[ "x" ];
         E_x.resetDataset( { Datatype::INT, { 10 } } );
-        std::vector< int > sampleData( 10, 0 );
         E_x.storeChunk( sampleData, { 0 }, { 10 } );
 
         auto B = write.iterations[ 0 ].meshes[ "B" ];
