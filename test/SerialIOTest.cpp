@@ -3609,6 +3609,86 @@ TEST_CASE( "variableBasedSeries", "[serial][adios2]" )
 {
     variableBasedSeries( "../samples/variableBasedSeries.bp" );
 }
+
+void variableBasedParticleData()
+{
+    using position_t = double;
+    constexpr unsigned long length = 10ul;
+
+    {
+        // open file for writing
+        Series series =
+            Series( "../samples/variableBasedParticles.bp", Access::CREATE );
+        series.setIterationEncoding( IterationEncoding::variableBased );
+
+        Datatype datatype = determineDatatype< position_t >();
+        Extent global_extent = { length };
+        Dataset dataset = Dataset( datatype, global_extent );
+        std::shared_ptr< position_t > local_data(
+            new position_t[ length ],
+            []( position_t const * ptr ) { delete[] ptr; } );
+
+        WriteIterations iterations = series.writeIterations();
+        for( size_t i = 0; i < 10; ++i )
+        {
+            Iteration iteration = iterations[ i ];
+            Record electronPositions = iteration.particles[ "e" ][ "position" ];
+
+            std::iota(
+                local_data.get(), local_data.get() + length, i * length );
+            for( auto const & dim : { "x", "y", "z" } )
+            {
+                RecordComponent pos = electronPositions[ dim ];
+                pos.resetDataset( dataset );
+                pos.storeChunk( local_data, Offset{ 0 }, global_extent );
+            }
+            iteration.close();
+        }
+    }
+
+    {
+        // open file for reading
+        Series series =
+            Series( "../samples/variableBasedParticles.bp", Access::READ_ONLY );
+
+        for( IndexedIteration iteration : series.readIterations() )
+        {
+            Record electronPositions = iteration.particles[ "e" ][ "position" ];
+            std::array< std::shared_ptr< position_t >, 3 > loadedChunks;
+            std::array< Extent, 3 > extents;
+            std::array< std::string, 3 > const dimensions{ { "x", "y", "z" } };
+
+            for( size_t i = 0; i < 3; ++i )
+            {
+                std::string dim = dimensions[ i ];
+                RecordComponent rc = electronPositions[ dim ];
+                loadedChunks[ i ] = rc.loadChunk< position_t >(
+                    Offset( rc.getDimensionality(), 0 ), rc.getExtent() );
+                extents[ i ] = rc.getExtent();
+            }
+
+            iteration.close();
+
+            for( size_t i = 0; i < 3; ++i )
+            {
+                std::string dim = dimensions[ i ];
+                Extent const & extent = extents[ i ];
+                auto chunk = loadedChunks[ i ];
+                for( size_t j = 0; j < extent[ 0 ]; ++j )
+                {
+                    REQUIRE(
+                        chunk.get()[ j ] ==
+                        iteration.iterationIndex * length + j );
+                }
+            }
+        }
+    }
+}
+
+TEST_CASE( "variableBasedParticleData", "[serial][adios2]" )
+{
+    variableBasedParticleData();
+}
 #endif
 
 // @todo Upon switching to ADIOS2 2.7.0, test this the other way around also

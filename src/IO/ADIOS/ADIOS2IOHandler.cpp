@@ -2392,12 +2392,12 @@ namespace detail
         {
             /*
              * Switch those off by default since they are expensive to compute
-             * and we don't read them anyway.
-             * No environement variable for this one, can still be switched
-             * on via JSON though.
-             * Default is "1".
+             * and to enable it, set the JSON option "StatsLevel" or the environment
+             * variable "OPENPMD_ADIOS2_STATS_LEVEL" be positive.
+             * The ADIOS2 default was "1" (on).
              */
-            m_IO.SetParameter( "StatsLevel", "0" );
+             auto stats_level = auxiliary::getEnvNum( "OPENPMD_ADIOS2_STATS_LEVEL", 0 );
+             m_IO.SetParameter( "StatsLevel", std::to_string( stats_level ) );
         }
         if( m_engineType == "sst" && notYetConfigured( "QueueLimit" ) )
         {

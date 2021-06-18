@@ -1,0 +1,42 @@
+# This is a Conda environment file.
+#
+# Activating and installing this environment will provide all dependencies
+# that are needed for full-feature development:
+# - conda env create --file conda.yml
+# - conda activate openpmd-api-dev
+#
+# If you need more packages in that environment, e.g. jupyter, run:
+# - mamba install -y -c conda-forge jupyter jupyterlab dask-labextension
+#
+
+name: openpmd-api-dev
+channels:
+  - conda-forge
+dependencies:
+  - adios=*=mpi_openmpi_*
+  - adios2=*=mpi_openmpi_*
+#  - catch2  # shipped internally
+  - ccache
+  - curl
+  - cmake
+  - compilers
+  - dask
+  - doxygen
+  - git
+  - hdf5=*=mpi_openmpi_*
+  - mamba
+  - make
+  - mpi4py
+  - ninja
+  - numpy
+  - openmpi
+  - pandas
+  - pkg-config
+  - pip
+  - pyarrow  # for dask
+#  - pybind11  # shipped internally
+  - python>=3.6
+
+# just a note for later hackery, we could install pip packages inside the env, too:
+#  - pip:
+#    - "-r requirements.txt"

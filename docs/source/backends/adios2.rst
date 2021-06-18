@@ -52,6 +52,7 @@ environment variable                  default    description
 ``OPENPMD_ADIOS2_NUM_SUBSTREAMS``     ``0``      Number of files to be created, 0 indicates maximum number possible.
 ``OPENPMD_ADIOS2_ENGINE``             ``File``   `ADIOS2 engine <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_
 ``OPENPMD2_ADIOS2_SCHEMA``            ``0``      ADIOS2 schema version (see below)
+``OPENPMD_ADIOS2_STATS_LEVEL``        ``0``      whether to generate statistics for variables in ADIOS2. (``1``: yes, ``0``: no).
 ``OPENPMD_BP_BACKEND``                ``ADIOS2`` Chose preferred ``.bp`` file backend if ``ADIOS1`` and ``ADIOS2`` are available.
 ===================================== ========== ================================================================================
 
@@ -103,6 +104,47 @@ The new layout may be activated **for experimental purposes** in two ways:
 * Via the environment variable ``export OPENPMD2_ADIOS2_SCHEMA=20210209``.
 
 The ADIOS2 backend will automatically recognize the layout that has been used by a writer when reading a dataset.
+
+Memory usage
+------------
+
+The IO strategy in ADIOS2 is to stage all written data in a large per-process buffer.
+This buffer is drained to storage only at specific times:
+
+1. When an engine is closed.
+2. When a step is closed.
+
+The usage pattern of openPMD, especially the choice of iteration encoding influences the memory use of ADIOS2.
+The following graphs are created from a real-world application using openPMD (PIConGPU) using KDE Heaptrack.
+Ignore the 30GB initialization phases.
+
+* **file-based iteration encoding:** A new ADIOS2 engine is opened for each iteration and closed upon ``Iteration::close()``.
+  Each iteration has its own buffer:
+
+.. image:: ./memory_filebased.png
+  :alt: Memory usage of file-based iteration encoding
+
+* **variable-based iteration encoding and group-based iteration encoding with steps**:
+  One buffer is created and reused across all iterations.
+  It is drained to disk when closing a step.
+  If carefully selecting the correct ``InitialBufferSize``, this is merely one single allocation held across all iterations.
+  If selecting the ``InitialBufferSize`` too small, reallocations will occur.
+  As usual with ``std::vector`` (which ADIOS2 uses internally), a reallocation will occupy both the old and new memory for a short time, leading to small memory spikes.
+  These memory spikes can easily lead to out-of-memory (OOM) situations, motivating that the ``InitialBufferSize`` should not be chosen too small.
+  Both behaviors are depicted in the following two pictures:
+
+.. image:: ./memory_variablebased.png
+  :alt: Memory usage of variable-based iteration encoding
+
+.. image:: ./memory_variablebased_initialization.png
+  :alt: Memory usage of variable-based iteration encoding with bad ``InitialBufferSize``
+
+* **group-based iteration encoding without steps:**
+  This encoding **should be avoided** in ADIOS2.
+  No data will be written to disk before closing the ``Series``, leading to a continuous buildup of memory, and most likely to an OOM situation:
+
+.. image:: ./memory_groupbased_nosteps.png
+  :alt: Memory usage of group-based iteration without using steps
 
 Selected References
 -------------------

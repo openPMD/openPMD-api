@@ -527,6 +527,43 @@ TEST_CASE( "hzdr_adios_sample_content_test", "[parallel][adios1]" )
         return;
     }
 }
+#endif
+
+#if openPMD_HAVE_MPI
+void
+write_4D_test( std::string file_ending )
+{
+    int mpi_s{-1};
+    int mpi_r{-1};
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_s);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_r);
+    auto mpi_size = static_cast<uint64_t>(mpi_s);
+    auto mpi_rank = static_cast<uint64_t>(mpi_r);
+    std::string name = "../samples/parallel_write_4d." + file_ending;
+    Series o = Series(name, Access::CREATE, MPI_COMM_WORLD);
+
+    auto it = o.iterations[1];
+    auto E_x = it.meshes[ "E" ][ "x" ];
+
+    // every rank out of mpi_size MPI ranks contributes two writes:
+    // - sliced in first dimension (partioned by rank)
+    // - last dimension: every rank has two chunks to contribute
+    std::vector< double > data( 2 * 10 * 6 * 4, mpi_rank);
+
+    E_x.resetDataset( { Datatype::DOUBLE, { mpi_size * 2, 10, 6, 8 } } );
+    E_x.storeChunk( data, { mpi_rank * 2, 0, 0, 0 }, { 2, 10, 6, 4 } );
+    E_x.storeChunk( data, { mpi_rank * 2, 0, 0, 4 }, { 2, 10, 6, 4 } );
+
+    o.flush();
+}
+
+TEST_CASE( "write_4D_test", "[parallel]" )
+{
+    for( auto const & t : getBackends() )
+    {
+        write_4D_test( t );
+    }
+}
 
 void
 close_iteration_test( std::string file_ending )
