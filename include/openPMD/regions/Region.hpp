@@ -186,10 +186,10 @@ public:
     return region2 < region1;
   }
 
-  bool issubset(const Region &region) const { return *this <= region; }
-  bool issuperset(const Region &region) const { return *this >= region; }
-  bool is_strict_subset(const Region &region) const { return *this < region; }
-  bool is_strict_superset(const Region &region) const { return *this > region; }
+  bool is_subset_of(const Region &region) const { return *this <= region; }
+  bool is_superset_of(const Region &region) const { return *this >= region; }
+  bool is_strict_subset_of(const Region &region) const { return *this < region; }
+  bool is_strict_superset_of(const Region &region) const { return *this > region; }
 
   friend std::ostream &operator<<(std::ostream &os, const Region &region) {
     os << "{";
@@ -632,10 +632,10 @@ public:
     return region2 < region1;
   }
 
-  bool issubset(const Region &region) const { return *this <= region; }
-  bool issuperset(const Region &region) const { return *this >= region; }
-  bool is_strict_subset(const Region &region) const { return *this < region; }
-  bool is_strict_superset(const Region &region) const { return *this > region; }
+  bool is_subset_of(const Region &region) const { return *this <= region; }
+  bool is_superset_of(const Region &region) const { return *this >= region; }
+  bool is_strict_subset_of(const Region &region) const { return *this < region; }
+  bool is_strict_superset_of(const Region &region) const { return *this > region; }
 
   friend std::ostream &operator<<(std::ostream &os, const Region &region) {
     os << "{";
@@ -1131,10 +1131,10 @@ public:
     return region2 < region1;
   }
 
-  bool issubset(const Region &region) const { return *this <= region; }
-  bool issuperset(const Region &region) const { return *this >= region; }
-  bool is_strict_subset(const Region &region) const { return *this < region; }
-  bool is_strict_superset(const Region &region) const { return *this > region; }
+  bool is_subset_of(const Region &region) const { return *this <= region; }
+  bool is_superset_of(const Region &region) const { return *this >= region; }
+  bool is_strict_subset_of(const Region &region) const { return *this < region; }
+  bool is_strict_superset_of(const Region &region) const { return *this > region; }
 
   friend std::ostream &operator<<(std::ostream &os, const Region &region) {
     os << "{";

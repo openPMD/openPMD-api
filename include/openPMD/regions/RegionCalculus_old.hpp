@@ -700,10 +700,10 @@ template <typename T> struct box<T, 0> {
   bool operator>=(const box &b) const { return b <= *this; }
   bool operator<(const box &b) const { return *this <= b && *this != b; }
   bool operator>(const box &b) const { return b < *this; }
-  bool issubset(const box &b) const { return *this <= b; }
-  bool issuperset(const box &b) const { return *this >= b; }
-  bool is_strict_subset(const box &b) const { return *this < b; }
-  bool is_strict_superset(const box &b) const { return *this > b; }
+  bool is_subset_of(const box &b) const { return *this <= b; }
+  bool is_superset_of(const box &b) const { return *this >= b; }
+  bool is_strict_subset_of(const box &b) const { return *this < b; }
+  bool is_strict_superset_of(const box &b) const { return *this > b; }
 
   // Set operations
   box bounding_box(const box &b) const { return box(m_full | b.m_full); }
@@ -869,10 +869,10 @@ template <typename T, int D> struct box {
   bool operator>=(const box &b) const { return b <= *this; }
   bool operator<(const box &b) const { return *this <= b && *this != b; }
   bool operator>(const box &b) const { return b < *this; }
-  bool issubset(const box &b) const { return *this <= b; }
-  bool issuperset(const box &b) const { return *this >= b; }
-  bool is_strict_subset(const box &b) const { return *this < b; }
-  bool is_strict_superset(const box &b) const { return *this > b; }
+  bool is_subset_of(const box &b) const { return *this <= b; }
+  bool is_superset_of(const box &b) const { return *this >= b; }
+  bool is_strict_subset_of(const box &b) const { return *this < b; }
+  bool is_strict_superset_of(const box &b) const { return *this > b; }
 
   // Set operations
   box bounding_box(const box &b) const {
@@ -1287,10 +1287,10 @@ public:
     return *this <= r && size() < r.size();
   }
   bool operator>(const region &r) const { return r < *this; }
-  bool issubset(const region &r) const { return *this <= r; }
-  bool issuperset(const region &r) const { return *this >= r; }
-  bool is_strict_subset(const region &r) const { return *this < r; }
-  bool is_strict_superset(const region &r) const { return *this > r; }
+  bool is_subset_of(const region &r) const { return *this <= r; }
+  bool is_superset_of(const region &r) const { return *this >= r; }
+  bool is_strict_subset_of(const region &r) const { return *this < r; }
+  bool is_strict_superset_of(const region &r) const { return *this > r; }
   bool operator==(const region &r) const { return (*this ^ r).empty(); }
   bool operator!=(const region &r) const { return !(*this == r); }
 
@@ -1464,10 +1464,10 @@ template <typename T> struct region<T, 0> {
   bool operator>=(const region &other) const { return other <= *this; }
   bool operator<(const region &other) const { return !m_full & other.m_full; }
   bool operator>(const region &other) const { return other < *this; }
-  bool issubset(const region &other) const { return *this <= other; }
-  bool issuperset(const region &other) const { return *this >= other; }
-  bool is_strict_subset(const region &other) const { return *this < other; }
-  bool is_strict_superset(const region &other) const { return *this > other; }
+  bool is_subset_of(const region &other) const { return *this <= other; }
+  bool is_superset_of(const region &other) const { return *this >= other; }
+  bool is_strict_subset_of(const region &other) const { return *this < other; }
+  bool is_strict_superset_of(const region &other) const { return *this > other; }
   bool operator==(const region &other) const { return m_full == other.m_full; }
   bool operator!=(const region &other) const { return !(*this == other); }
 
@@ -1874,10 +1874,10 @@ public:
     return *this != other && *this <= other;
   }
   bool operator>(const region &other) const { return other < *this; }
-  bool issubset(const region &other) const { return *this <= other; }
-  bool issuperset(const region &other) const { return *this >= other; }
-  bool is_strict_subset(const region &other) const { return *this < other; }
-  bool is_strict_superset(const region &other) const { return *this > other; }
+  bool is_subset_of(const region &other) const { return *this <= other; }
+  bool is_superset_of(const region &other) const { return *this >= other; }
+  bool is_strict_subset_of(const region &other) const { return *this < other; }
+  bool is_strict_superset_of(const region &other) const { return *this > other; }
   bool operator==(const region &other) const {
     return subregions == other.subregions;
   }
@@ -2305,10 +2305,10 @@ public:
     return *this != other && *this <= other;
   }
   bool operator>(const region &other) const { return other < *this; }
-  bool issubset(const region &other) const { return *this <= other; }
-  bool issuperset(const region &other) const { return *this >= other; }
-  bool is_strict_subset(const region &other) const { return *this < other; }
-  bool is_strict_superset(const region &other) const { return *this > other; }
+  bool is_subset_of(const region &other) const { return *this <= other; }
+  bool is_superset_of(const region &other) const { return *this >= other; }
+  bool is_strict_subset_of(const region &other) const { return *this < other; }
+  bool is_strict_superset_of(const region &other) const { return *this > other; }
   bool operator==(const region &other) const {
     return subregions == other.subregions;
   }
@@ -3796,10 +3796,10 @@ template <typename T> struct dbox {
   bool operator>=(const dbox &b) const { return b <= *this; }
   bool operator<(const dbox &b) const { return *val < *b.val; }
   bool operator>(const dbox &b) const { return b < *this; }
-  bool issubset(const dbox &b) const { return *this <= b; }
-  bool issuperset(const dbox &b) const { return *this >= b; }
-  bool is_strict_subset(const dbox &b) const { return *this < b; }
-  bool is_strict_superset(const dbox &b) const { return *this > b; }
+  bool is_subset_of(const dbox &b) const { return *this <= b; }
+  bool is_superset_of(const dbox &b) const { return *this >= b; }
+  bool is_strict_subset_of(const dbox &b) const { return *this < b; }
+  bool is_strict_superset_of(const dbox &b) const { return *this > b; }
 
   // Set operations
   dbox bounding_box(const dbox &b) const {
@@ -3985,10 +3985,10 @@ template <typename T> struct dregion {
   bool operator>=(const dregion &r) const { return *val >= *r.val; }
   bool operator<(const dregion &r) const { return *val < *r.val; }
   bool operator>(const dregion &r) const { return *val > *r.val; }
-  bool issubset(const dregion &r) const { return *this <= r; }
-  bool issuperset(const dregion &r) const { return *this >= r; }
-  bool is_strict_subset(const dregion &r) const { return *this < r; }
-  bool is_strict_superset(const dregion &r) const { return *this > r; }
+  bool is_subset_of(const dregion &r) const { return *this <= r; }
+  bool is_superset_of(const dregion &r) const { return *this >= r; }
+  bool is_strict_subset_of(const dregion &r) const { return *this < r; }
+  bool is_strict_superset_of(const dregion &r) const { return *this > r; }
   bool operator==(const dregion &r) const { return *val == *r.val; }
   bool operator!=(const dregion &r) const { return *val != *r.val; }
 

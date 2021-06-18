@@ -96,10 +96,10 @@ public:
     return b1 <= b2 && b1 != b2;
   }
   friend bool operator>(const Box &b1, const Box &b2) { return b2 < b1; }
-  bool issubset(const Box &b) const { return *this <= b; }
-  bool issuperset(const Box &b) const { return *this >= b; }
-  bool is_strict_subset(const Box &b) const { return *this < b; }
-  bool is_strict_superset(const Box &b) const { return *this > b; }
+  bool is_subset_of(const Box &b) const { return *this <= b; }
+  bool is_superset_of(const Box &b) const { return *this >= b; }
+  bool is_strict_subset_of(const Box &b) const { return *this < b; }
+  bool is_strict_superset_of(const Box &b) const { return *this > b; }
 
   // Set operations
   friend Box bounding_box(const Box &b1, const Box &b2) {
@@ -261,10 +261,10 @@ public:
     return b1 <= b2 && b1 != b2;
   }
   friend bool operator>(const Box &b1, const Box &b2) { return b2 < b1; }
-  bool issubset(const Box &b) const { return *this <= b; }
-  bool issuperset(const Box &b) const { return *this >= b; }
-  bool is_strict_subset(const Box &b) const { return *this < b; }
-  bool is_strict_superset(const Box &b) const { return *this > b; }
+  bool is_subset_of(const Box &b) const { return *this <= b; }
+  bool is_superset_of(const Box &b) const { return *this >= b; }
+  bool is_strict_subset_of(const Box &b) const { return *this < b; }
+  bool is_strict_superset_of(const Box &b) const { return *this > b; }
 
   // Set operations
   friend Box bounding_box(const Box &b1, const Box &b2) {
