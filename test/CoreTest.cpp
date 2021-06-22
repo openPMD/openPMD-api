@@ -859,6 +859,13 @@ TEST_CASE( "custom_geometries", "[core]" )
         B_x.resetDataset( { Datatype::INT, { 10 } } );
         B_x.storeChunk( sampleData, { 0 }, { 10 } );
 
+        auto e_energyDensity =
+            write.iterations[ 0 ].meshes[ "e_energyDensity" ];
+        e_energyDensity.setGeometry( "customGeometry" );
+        auto e_energyDensity_x = e_energyDensity[ RecordComponent::SCALAR ];
+        e_energyDensity_x.resetDataset( { Datatype::INT, { 10 } } );
+        e_energyDensity_x.storeChunk( sampleData, { 0 }, { 10 } );
+
         auto e_chargeDensity =
             write.iterations[ 0 ].meshes[ "e_chargeDensity" ];
         e_chargeDensity.setGeometry( Mesh::Geometry::other );
@@ -879,9 +886,16 @@ TEST_CASE( "custom_geometries", "[core]" )
         auto B = read.iterations[ 0 ].meshes[ "B" ];
         REQUIRE(
             B.getAttribute( "geometry" ).get< std::string >() ==
-            "customGeometry" );
+            "other:customGeometry" );
         REQUIRE( B.geometry() == Mesh::Geometry::other );
-        REQUIRE( B.geometryString() == "customGeometry" );
+        REQUIRE( B.geometryString() == "other:customGeometry" );
+
+        auto e_energyDensity = read.iterations[ 0 ].meshes[ "e_energyDensity" ];
+        REQUIRE(
+            e_energyDensity.getAttribute( "geometry" ).get< std::string >() ==
+            "other:customGeometry" );
+        REQUIRE( e_energyDensity.geometry() == Mesh::Geometry::other );
+        REQUIRE( e_energyDensity.geometryString() == "other:customGeometry" );
 
         auto e_chargeDensity = read.iterations[ 0 ].meshes[ "e_chargeDensity" ];
         REQUIRE(

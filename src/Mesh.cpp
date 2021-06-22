@@ -24,8 +24,8 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Writable.hpp"
 
+#include <algorithm>
 #include <iostream>
-
 
 namespace openPMD
 {
@@ -85,6 +85,18 @@ Mesh::setGeometry(Mesh::Geometry g)
 
 Mesh & Mesh::setGeometry( std::string geometry )
 {
+    std::string knownGeometries[] = {
+        "cartesian", "thetaMode", "cylindrical", "spherical", "other" };
+    if( // 1. condition: geometry is not one of the known geometries
+        std::find(
+            std::begin( knownGeometries ),
+            std::end( knownGeometries ),
+            geometry ) == std::end( knownGeometries )
+        // 2. condition: prefix is not already there
+        && !auxiliary::starts_with( geometry, std::string( "other:" ) ) )
+    {
+        geometry = "other:" + geometry;
+    }
     setAttribute( "geometry", std::move( geometry ) );
     return *this;
 }
