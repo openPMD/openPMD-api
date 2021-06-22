@@ -54,11 +54,6 @@ function(openpmd_option name description default)
     set_property(CACHE openPMD_USE_${name} PROPERTY
         STRINGS "ON;TRUE;AUTO;OFF;FALSE"
     )
-    if(openPMD_HAVE_${name})
-        set(openPMD_HAVE_${name} TRUE)
-    else()
-        set(openPMD_HAVE_${name})
-    endif()
     # list of all possible options
     set(openPMD_CONFIG_OPTIONS ${openPMD_CONFIG_OPTIONS} ${name} PARENT_SCOPE)
 endfunction()
