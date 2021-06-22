@@ -1773,11 +1773,12 @@ void HDF5IOHandlerImpl::listAttributes(Writable* writable,
                       H5P_DEFAULT);
     VERIFY(node_id >= 0, "[HDF5] Internal error: Failed to open HDF5 group during attribute listing");
 
-    H5O_info_t object_info;
     herr_t status;
 #if H5_VERSION_GE(1,12,0)
-    status = H5Oget_info(node_id, &object_info, H5O_INFO_NUM_ATTRS);
+    H5O_info2_t object_info;
+    status = H5Oget_info3(node_id, &object_info, H5O_INFO_NUM_ATTRS);
 #else
+    H5O_info_t object_info;
     status = H5Oget_info(node_id, &object_info);
 #endif
     VERIFY(status == 0, "[HDF5] Internal error: Failed to get HDF5 object info for " + concrete_h5_file_position(writable) + " during attribute listing");
