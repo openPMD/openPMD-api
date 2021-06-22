@@ -69,6 +69,7 @@ void init_Mesh(py::module &m) {
         // TODO remove in future versions (deprecated)
         .def("set_unit_dimension", &Mesh::setUnitDimension)
         .def("set_geometry", py::overload_cast<Mesh::Geometry>(&Mesh::setGeometry))
+        .def("set_geometry", py::overload_cast<std::string>(&Mesh::setGeometry))
         .def("set_geometry_parameters", &Mesh::setGeometryParameters)
         .def("set_axis_labels", &Mesh::setAxisLabels)
         .def("set_grid_spacing", &Mesh::setGridSpacing<float>)

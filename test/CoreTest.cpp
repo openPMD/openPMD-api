@@ -848,7 +848,7 @@ TEST_CASE( "custom_geometries", "[core]" )
     {
         Series write( "../samples/custom_geometry.json", Access::CREATE );
         auto E = write.iterations[ 0 ].meshes[ "E" ];
-        E.setAttribute( "geometry", "customGeometry" );
+        E.setAttribute( "geometry", "other:customGeometry" );
         auto E_x = E[ "x" ];
         E_x.resetDataset( { Datatype::INT, { 10 } } );
         E_x.storeChunk( sampleData, { 0 }, { 10 } );
@@ -861,7 +861,7 @@ TEST_CASE( "custom_geometries", "[core]" )
 
         auto e_energyDensity =
             write.iterations[ 0 ].meshes[ "e_energyDensity" ];
-        e_energyDensity.setGeometry( "customGeometry" );
+        e_energyDensity.setGeometry( "other:customGeometry" );
         auto e_energyDensity_x = e_energyDensity[ RecordComponent::SCALAR ];
         e_energyDensity_x.resetDataset( { Datatype::INT, { 10 } } );
         e_energyDensity_x.storeChunk( sampleData, { 0 }, { 10 } );
@@ -879,9 +879,9 @@ TEST_CASE( "custom_geometries", "[core]" )
         auto E = read.iterations[ 0 ].meshes[ "E" ];
         REQUIRE(
             E.getAttribute( "geometry" ).get< std::string >() ==
-            "customGeometry" );
+            "other:customGeometry" );
         REQUIRE( E.geometry() == Mesh::Geometry::other );
-        REQUIRE( E.geometryString() == "customGeometry" );
+        REQUIRE( E.geometryString() == "other:customGeometry" );
 
         auto B = read.iterations[ 0 ].meshes[ "B" ];
         REQUIRE(
