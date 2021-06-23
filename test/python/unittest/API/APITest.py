@@ -1868,6 +1868,64 @@ class APITest(unittest.TestCase):
             self.assertEqual(chunk_x[i], i)
             self.assertEqual(chunk_y[i], i)
 
+    def testCustomGeometries(self):
+        DS = io.Dataset
+        DT = io.Datatype
+        sample_data = np.ones([10], dtype=np.long)
+
+        write = io.Series("../samples/custom_geometries_python.json",
+                          io.Access.create)
+        E = write.iterations[0].meshes["E"]
+        E.set_attribute("geometry", "other:customGeometry")
+        E_x = E["x"]
+        E_x.reset_dataset(DS(DT.LONG, [10]))
+        E_x[:] = sample_data
+
+        B = write.iterations[0].meshes["B"]
+        B.set_geometry("customGeometry")
+        B_x = B["x"]
+        B_x.reset_dataset(DS(DT.LONG, [10]))
+        B_x[:] = sample_data
+
+        e_energyDensity = write.iterations[0].meshes["e_energyDensity"]
+        e_energyDensity.set_geometry("other:customGeometry")
+        e_energyDensity_x = e_energyDensity[io.Mesh_Record_Component.SCALAR]
+        e_energyDensity_x.reset_dataset(DS(DT.LONG, [10]))
+        e_energyDensity_x[:] = sample_data
+
+        e_chargeDensity = write.iterations[0].meshes["e_chargeDensity"]
+        e_chargeDensity.set_geometry(io.Geometry.other)
+        e_chargeDensity_x = e_chargeDensity[io.Mesh_Record_Component.SCALAR]
+        e_chargeDensity_x.reset_dataset(DS(DT.LONG, [10]))
+        e_chargeDensity_x[:] = sample_data
+
+        del write
+
+        read = io.Series("../samples/custom_geometries_python.json",
+                         io.Access.read_only)
+
+        E = read.iterations[0].meshes["E"]
+        self.assertEqual(E.get_attribute("geometry"), "other:customGeometry")
+        self.assertEqual(E.geometry, io.Geometry.other)
+        self.assertEqual(E.geometry_string, "other:customGeometry")
+
+        B = read.iterations[0].meshes["B"]
+        self.assertEqual(B.get_attribute("geometry"), "other:customGeometry")
+        self.assertEqual(B.geometry, io.Geometry.other)
+        self.assertEqual(B.geometry_string, "other:customGeometry")
+
+        e_energyDensity = read.iterations[0].meshes["e_energyDensity"]
+        self.assertEqual(e_energyDensity.get_attribute("geometry"),
+                         "other:customGeometry")
+        self.assertEqual(e_energyDensity.geometry, io.Geometry.other)
+        self.assertEqual(e_energyDensity.geometry_string,
+                         "other:customGeometry")
+
+        e_chargeDensity = read.iterations[0].meshes["e_chargeDensity"]
+        self.assertEqual(e_chargeDensity.get_attribute("geometry"), "other")
+        self.assertEqual(e_chargeDensity.geometry, io.Geometry.other)
+        self.assertEqual(e_chargeDensity.geometry_string, "other")
+
 
 if __name__ == '__main__':
     unittest.main()

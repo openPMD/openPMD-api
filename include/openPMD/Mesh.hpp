@@ -57,7 +57,8 @@ public:
         cartesian,
         thetaMode,
         cylindrical,
-        spherical
+        spherical,
+        other
     };  //Geometry
 
     /** @brief Enumerated datatype for the memory layout of N-dimensional data.
@@ -69,15 +70,28 @@ public:
     };  //DataOrder
 
     /**
-     * @return String representing the geometry of the mesh of the mesh record.
+     * @return Enum representing the geometry of the mesh of the mesh record.
      */
     Geometry geometry() const;
+    /**
+     * @return String representing the geometry of the mesh of the mesh record.
+     */
+    std::string geometryString() const;
     /** Set the geometry of the mesh of the mesh record.
      *
      * @param   g    geometry of the mesh of the mesh record.
      * @return  Reference to modified mesh.
      */
     Mesh& setGeometry(Geometry g);
+    /** Set the geometry of the mesh of the mesh record.
+     *
+     * If the geometry is unknown to the openPMD-api, the string is prefixed
+     * with "other:" automatically unless the prefix is already present.
+     *
+     * @param   geometry    geometry of the mesh of the mesh record, as string
+     * @return  Reference to modified mesh.
+     */
+    Mesh& setGeometry(std::string geometry);
 
     /**
      * @throw   no_such_attribute_error If Mesh::geometry is not Mesh::Geometry::thetaMode.

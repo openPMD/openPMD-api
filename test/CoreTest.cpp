@@ -841,3 +841,67 @@ TEST_CASE( "no_file_ending", "[core]" )
     REQUIRE_THROWS_WITH(Series("./new_openpmd_output_%05T", Access::CREATE),
                         Catch::Equals("Unknown file format! Did you specify a file ending?"));
 }
+
+TEST_CASE( "custom_geometries", "[core]" )
+{
+    std::vector< int > sampleData( 10, 0 );
+    {
+        Series write( "../samples/custom_geometry.json", Access::CREATE );
+        auto E = write.iterations[ 0 ].meshes[ "E" ];
+        E.setAttribute( "geometry", "other:customGeometry" );
+        auto E_x = E[ "x" ];
+        E_x.resetDataset( { Datatype::INT, { 10 } } );
+        E_x.storeChunk( sampleData, { 0 }, { 10 } );
+
+        auto B = write.iterations[ 0 ].meshes[ "B" ];
+        B.setGeometry( "customGeometry" );
+        auto B_x = B[ "x" ];
+        B_x.resetDataset( { Datatype::INT, { 10 } } );
+        B_x.storeChunk( sampleData, { 0 }, { 10 } );
+
+        auto e_energyDensity =
+            write.iterations[ 0 ].meshes[ "e_energyDensity" ];
+        e_energyDensity.setGeometry( "other:customGeometry" );
+        auto e_energyDensity_x = e_energyDensity[ RecordComponent::SCALAR ];
+        e_energyDensity_x.resetDataset( { Datatype::INT, { 10 } } );
+        e_energyDensity_x.storeChunk( sampleData, { 0 }, { 10 } );
+
+        auto e_chargeDensity =
+            write.iterations[ 0 ].meshes[ "e_chargeDensity" ];
+        e_chargeDensity.setGeometry( Mesh::Geometry::other );
+        auto e_chargeDensity_x = e_chargeDensity[ MeshRecordComponent::SCALAR ];
+        e_chargeDensity_x.resetDataset( { Datatype::INT, { 10 } } );
+        e_chargeDensity_x.storeChunk( sampleData, { 0 }, { 10 } );
+    }
+
+    {
+        Series read( "../samples/custom_geometry.json", Access::READ_ONLY );
+        auto E = read.iterations[ 0 ].meshes[ "E" ];
+        REQUIRE(
+            E.getAttribute( "geometry" ).get< std::string >() ==
+            "other:customGeometry" );
+        REQUIRE( E.geometry() == Mesh::Geometry::other );
+        REQUIRE( E.geometryString() == "other:customGeometry" );
+
+        auto B = read.iterations[ 0 ].meshes[ "B" ];
+        REQUIRE(
+            B.getAttribute( "geometry" ).get< std::string >() ==
+            "other:customGeometry" );
+        REQUIRE( B.geometry() == Mesh::Geometry::other );
+        REQUIRE( B.geometryString() == "other:customGeometry" );
+
+        auto e_energyDensity = read.iterations[ 0 ].meshes[ "e_energyDensity" ];
+        REQUIRE(
+            e_energyDensity.getAttribute( "geometry" ).get< std::string >() ==
+            "other:customGeometry" );
+        REQUIRE( e_energyDensity.geometry() == Mesh::Geometry::other );
+        REQUIRE( e_energyDensity.geometryString() == "other:customGeometry" );
+
+        auto e_chargeDensity = read.iterations[ 0 ].meshes[ "e_chargeDensity" ];
+        REQUIRE(
+            e_chargeDensity.getAttribute( "geometry" ).get< std::string >() ==
+            "other" );
+        REQUIRE( e_chargeDensity.geometry() == Mesh::Geometry::other );
+        REQUIRE( e_chargeDensity.geometryString() == "other" );
+    }
+}
