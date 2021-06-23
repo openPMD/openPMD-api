@@ -2476,7 +2476,13 @@ namespace detail
                         }
                         else
                         {
-                            m_engine.get().BeginStep();
+                            if( m_engine.get().BeginStep() !=
+                                adios2::StepStatus::OK )
+                            {
+                                throw std::runtime_error(
+                                    "[ADIOS2] Unexpected step status when "
+                                    "opening file/stream.");
+                            }
                             streamStatus = StreamStatus::DuringStep;
                         }
                     }
@@ -2487,7 +2493,12 @@ namespace detail
                     break;
                 }
                 case StreamStatus::OutsideOfStep:
-                    m_engine.get().BeginStep();
+                    if( m_engine.get().BeginStep() != adios2::StepStatus::OK )
+                    {
+                        throw std::runtime_error(
+                            "[ADIOS2] Unexpected step status when "
+                            "opening file/stream.");
+                    }
                     m_impl->m_schema = layoutVersion();
                     streamStatus = StreamStatus::DuringStep;
                     break;
@@ -2505,7 +2516,7 @@ namespace detail
                     "[ADIOS2] Invalid ADIOS access mode" );
             }
 
-            if( !m_engine )
+            if( !m_engine.get() )
             {
                 throw std::runtime_error( "[ADIOS2] Failed opening Engine." );
             }
@@ -2706,13 +2717,17 @@ namespace detail
                  */
                 if( streamStatus == StreamStatus::OutsideOfStep )
                 {
-                    getEngine().BeginStep();
+                    if( m_engine.get().BeginStep() != adios2::StepStatus::OK )
+                    {
+                        throw std::runtime_error(
+                            "[ADIOS2] Trying to close a step that cannot be "
+                            "opened.");
+                    }
                 }
                 flush(
                     FlushLevel::UserFlush,
-                    []( BufferedActions &, adios2::Engine & eng ) {
-                        eng.EndStep();
-                    },
+                    []( BufferedActions &, adios2::Engine & eng )
+                    { eng.EndStep(); },
                     /* writeAttributes = */ true,
                     /* flushUnconditionally = */ true );
                 uncommittedAttributes.clear();
@@ -2749,14 +2764,18 @@ namespace detail
                 AdvanceStatus res = AdvanceStatus::OK;
                 switch( adiosStatus )
                 {
-                    case adios2::StepStatus::EndOfStream:
-                        streamStatus = StreamStatus::StreamOver;
-                        res = AdvanceStatus::OVER;
-                        break;
-                    default:
-                        streamStatus = StreamStatus::DuringStep;
-                        res = AdvanceStatus::OK;
-                        break;
+                case adios2::StepStatus::EndOfStream:
+                    streamStatus = StreamStatus::StreamOver;
+                    res = AdvanceStatus::OVER;
+                    break;
+                case adios2::StepStatus::OK:
+                    streamStatus = StreamStatus::DuringStep;
+                    res = AdvanceStatus::OK;
+                    break;
+                case adios2::StepStatus::NotReady:
+                case adios2::StepStatus::OtherError:
+                    throw std::runtime_error(
+                        "[ADIOS2] Unexpected step status." );
                 }
                 invalidateAttributesMap();
                 invalidateVariablesMap();
