@@ -68,8 +68,8 @@ openpmd_option(HDF5           "HDF5 backend (.h5 files)"                  AUTO)
 openpmd_option(ADIOS1         "ADIOS1 backend (.bp files)"                AUTO)
 openpmd_option(ADIOS2         "ADIOS2 backend (.bp files)"                AUTO)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
+openpmd_option(REGIONS        "Enable region algebra (requires C++17)"    AUTO)
 
-option(openPMD_CXX_STANDARD          "Which C++ standard to use (14 or 17)" OFF)
 option(openPMD_INSTALL               "Add installation targets"             ON)
 option(openPMD_HAVE_PKGCONFIG        "Generate a .pc file for pkg-config"   ON)
 option(openPMD_USE_INTERNAL_VARIANT  "Use internally shipped MPark.Variant" ON)
@@ -79,17 +79,6 @@ option(openPMD_USE_INTERNAL_JSON     "Use internally shipped nlohmann-json" ON)
 
 option(openPMD_USE_INVASIVE_TESTS "Enable unit tests that modify source code" OFF)
 option(openPMD_USE_VERIFY "Enable internal VERIFY (assert) macro independent of build type" ON)
-
-if(NOT openPMD_CXX_STANDARD)
-    set(openPMD_CXX_STANDARD 14)
-endif()
-if(openPMD_CXX_STANDARD STREQUAL 14)
-    set(openPMD_CXX_STD cxx_std_14)
-elseif(openPMD_CXX_STANDARD STREQUAL 17)
-    set(openPMD_CXX_STD cxx_std_17)
-else()
-    message(FATAL_ERROR "openPMD_CXX_STANDARD must be either 14 or 17; found ${openPMD_CXX_STANDARD}")
-endif()
 
 set(CMAKE_CONFIGURATION_TYPES "Release;Debug;MinSizeRel;RelWithDebInfo")
 if(NOT CMAKE_BUILD_TYPE)
@@ -408,10 +397,9 @@ add_library(openPMD::openPMD ALIAS openPMD)
 
 # properties
 target_compile_features(openPMD
-    PUBLIC ${openPMD_CXX_STD}
+    PUBLIC cxx_std_14
 )
 set_target_properties(openPMD PROPERTIES
-    CXX_STANDARD ${openPMD_CXX_STANDARD}
     CXX_EXTENSIONS OFF
     CXX_STANDARD_REQUIRED ON
     POSITION_INDEPENDENT_CODE ON
@@ -488,10 +476,10 @@ if(openPMD_HAVE_ADIOS1)
     add_library(openPMD.ADIOS1.Serial SHARED ${IO_ADIOS1_SEQUENTIAL_SOURCE})
     add_library(openPMD.ADIOS1.Parallel SHARED ${IO_ADIOS1_SOURCE})
     target_compile_features(openPMD.ADIOS1.Serial
-        PUBLIC ${openPMD_CXX_STD}
+        PUBLIC cxx_std_14
     )
     target_compile_features(openPMD.ADIOS1.Parallel
-        PUBLIC ${openPMD_CXX_STD}
+        PUBLIC cxx_std_14
     )
     target_compile_options(openPMD.ADIOS1.Serial PUBLIC ${_msvc_options})
     target_compile_options(openPMD.ADIOS1.Parallel PUBLIC ${_msvc_options})
@@ -511,7 +499,6 @@ if(openPMD_HAVE_ADIOS1)
     endif()
 
     set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
-        CXX_STANDARD ${openPMD_CXX_STANDARD}
         CXX_EXTENSIONS OFF
         CXX_STANDARD_REQUIRED ON
         POSITION_INDEPENDENT_CODE ON
@@ -539,7 +526,6 @@ if(openPMD_HAVE_ADIOS1)
 
     if(openPMD_HAVE_MPI)
         set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES
-            CXX_STANDARD ${openPMD_CXX_STANDARD}
             CXX_EXTENSIONS OFF
             CXX_STANDARD_REQUIRED ON
             POSITION_INDEPENDENT_CODE ON
@@ -764,10 +750,9 @@ if(openPMD_BUILD_TESTING)
         test/CatchRunner.cpp)  # Always MPI_Init with Serial Fallback
     add_library(CatchMain   ${_openpmd_lib_type}
         test/CatchMain.cpp)    # Serial only
-    target_compile_features(CatchRunner PUBLIC ${openPMD_CXX_STD})
-    target_compile_features(CatchMain   PUBLIC ${openPMD_CXX_STD})
+    target_compile_features(CatchRunner PUBLIC cxx_std_14)
+    target_compile_features(CatchMain   PUBLIC cxx_std_14)
     set_target_properties(CatchRunner CatchMain PROPERTIES
-        CXX_STANDARD ${openPMD_CXX_STANDARD}
         CXX_EXTENSIONS OFF
         CXX_STANDARD_REQUIRED ON
         POSITION_INDEPENDENT_CODE ON
@@ -794,9 +779,8 @@ if(openPMD_BUILD_TESTING)
         else()
             target_link_libraries(${testname}Tests PRIVATE CatchMain)
         endif()
-        target_compile_features(${testname}Tests PUBLIC ${openPMD_CXX_STD})
+        target_compile_features(${testname}Tests PUBLIC cxx_std_14)
         set_target_properties(${testname}Tests PROPERTIES
-            CXX_STANDARD ${openPMD_CXX_STANDARD}
             CXX_EXTENSIONS OFF
             CXX_STANDARD_REQUIRED ON
         )
@@ -816,9 +800,8 @@ if(openPMD_BUILD_EXAMPLES)
             if(openPMD_HAVE_MPI)
                 add_executable(${examplename} examples/${examplename}.cpp)
                 target_link_libraries(${examplename} PRIVATE openPMD)
-                target_compile_features(${examplename} PUBLIC ${openPMD_CXX_STD})
+                target_compile_features(${examplename} PUBLIC cxx_std_14)
                 set_target_properties(${examplename} PROPERTIES
-                    CXX_STANDARD ${openPMD_CXX_STANDARD}
                     CXX_EXTENSIONS OFF
                     CXX_STANDARD_REQUIRED ON
                 )
@@ -826,9 +809,8 @@ if(openPMD_BUILD_EXAMPLES)
         else()
             add_executable(${examplename} examples/${examplename}.cpp)
             target_link_libraries(${examplename} PRIVATE openPMD)
-            target_compile_features(${examplename} PUBLIC ${openPMD_CXX_STD})
+            target_compile_features(${examplename} PUBLIC cxx_std_14)
             set_target_properties(${examplename} PROPERTIES
-                CXX_STANDARD ${openPMD_CXX_STANDARD}
                 CXX_EXTENSIONS OFF
                 CXX_STANDARD_REQUIRED ON
             )
@@ -1355,7 +1337,6 @@ else()
     message("  Installation: OFF")
 endif()
 message("")
-message("  C++ standard: ${openPMD_CXX_STD}")
 message("  Build Type: ${CMAKE_BUILD_TYPE}")
 if(openPMD_BUILD_SHARED_LIBS)
     message("  Library: shared")
