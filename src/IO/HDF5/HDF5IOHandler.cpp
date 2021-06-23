@@ -97,9 +97,8 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
             auto datasetConfig = m_config[ "dataset" ];
             if( datasetConfig.json().contains( "chunks" ) )
             {
-                m_chunks = datasetConfig.json()[ "chunks" ];
+                m_chunks = datasetConfig[ "chunks" ].json().get< std::string >();
             }
-            datasetConfig.declareFullyRead();
         }
         if( m_chunks != "auto" && m_chunks != "none" )
         {
