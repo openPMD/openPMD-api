@@ -131,7 +131,11 @@ Iteration::close( bool _flush )
             auto end = begin;
             ++end;
 
-            s->flush_impl( begin, end, FlushLevel::UserFlush );
+            s->flush_impl(
+                begin,
+                end,
+                FlushLevel::UserFlush,
+                /* flushIOHandler = */ true );
         }
     }
     else
@@ -160,7 +164,8 @@ Iteration::open()
     ++end;
     // set dirty, so Series::flush will open the file
     this->dirty() = true;
-    s->flush_impl( begin, end, FlushLevel::UserFlush );
+    s->flush_impl(
+        begin, end, FlushLevel::UserFlush, /* flushIOHandler = */ true );
     this->dirty() = false;
 
     return *this;

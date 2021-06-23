@@ -349,7 +349,8 @@ OPENPMD_private:
     std::future< void > flush_impl(
         iterations_iterator begin,
         iterations_iterator end,
-        FlushLevel );
+        FlushLevel,
+        bool flushIOHandler );
     void flushFileBased( iterations_iterator begin, iterations_iterator end );
     /*
      * Group-based and variable-based iteration layouts share a lot of logic

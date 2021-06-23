@@ -351,7 +351,8 @@ SeriesImpl::flush()
     flush_impl(
         series.iterations.begin(),
         series.iterations.end(),
-        FlushLevel::UserFlush );
+        FlushLevel::UserFlush,
+        /* flushIOHandler = */ true );
 }
 
 std::unique_ptr< SeriesImpl::ParsedInput >
@@ -497,7 +498,8 @@ std::future< void >
 SeriesImpl::flush_impl(
     iterations_iterator begin,
     iterations_iterator end,
-    FlushLevel level )
+    FlushLevel level,
+    bool flushIOHandler )
 {
     IOHandler()->m_flushLevel = level;
     try
@@ -513,9 +515,17 @@ SeriesImpl::flush_impl(
                 flushGorVBased( begin, end );
                 break;
         }
-        auto res = IOHandler()->flush();
-        IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
-        return res;
+        if( flushIOHandler )
+        {
+            auto res = IOHandler()->flush();
+            IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
+            return res;
+        }
+        else
+        {
+            IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
+            return {};
+        }
     }
     catch( ... )
     {
@@ -1223,28 +1233,8 @@ SeriesImpl::advance(
         *iteration.m_closed = Iteration::CloseStatus::Open;
     }
 
-    auto oldFlushLevel = IOHandler()->m_flushLevel;
-    IOHandler()->m_flushLevel = FlushLevel::UserFlush;
-    try
-    {
-        switch( series.m_iterationEncoding )
-        {
-            using IE = IterationEncoding;
-        case IE::groupBased:
-        case IE::variableBased:
-            flushGorVBased( begin, end );
-            break;
-        case IE::fileBased:
-            flushFileBased( begin, end );
-            break;
-        }
-        IOHandler()->m_flushLevel = oldFlushLevel;
-    }
-    catch( ... )
-    {
-        IOHandler()->m_flushLevel = oldFlushLevel;
-        throw;
-    }
+    flush_impl(
+        begin, end, FlushLevel::UserFlush, /* flushIOHandler = */ false );
 
     if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend )
     {
