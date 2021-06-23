@@ -16,10 +16,14 @@ void point_example() {
   cout << "\n"
        << "Points (with dimension known at compile time):\n";
 
-  cout << "  Define two points:\n";
-  Point<int, 2> x{1, 2}, y{4, 5};
-  cout << "    x: " << x << "\n"
-       << "    y: " << y << "\n";
+  cout << "  Define a point:\n";
+  Point<int, 2> x{1, 2};
+  cout << "    x: " << x << "\n";
+
+  cout << "  Define a point from a vector:\n";
+  vector vec{4, 5};
+  Point<int, 2> y(vec);
+  cout << "    y: " << y << "\n";
 
   cout << "  Arithmetic operations:\n";
   auto z = x + 2 * y;
@@ -35,7 +39,7 @@ void point_example() {
   cout << "    p3: " << p3 << "\n";
 
   cout << "  Element-wise operations:\n";
-  using std::abs, std::max;
+  // using std::abs, std::max;
   auto mxy1 = max(abs(x), abs(y));
   // Apply arbitrary functions element-wise
   auto mxy2 = fmap([](auto a, auto b) { return max(abs(a), abs(b)); }, x, y);
@@ -59,10 +63,14 @@ void ndpoint_example() {
   cout << "\n"
        << "NDPoints (with dimension only known at run time):\n";
 
-  cout << "  Define two points:\n";
-  NDPoint<int> x{1, 2}, y{4, 5};
-  cout << "    x: " << x << "\n"
-       << "    y: " << y << "\n";
+  cout << "  Define a point:\n";
+  NDPoint<int> x{1, 2};
+  cout << "    x: " << x << "\n";
+
+  cout << "  Define a point from a vector:\n";
+  vector vec{4, 5};
+  NDPoint<int> y(vec);
+  cout << "    y: " << y << "\n";
 
   // Arithmetic operations
   cout << "  Arithmetic operations:\n";
@@ -79,7 +87,7 @@ void ndpoint_example() {
   cout << "    p3: " << p3 << "\n";
 
   cout << "  Element-wise operations:\n";
-  using std::abs, std::max;
+  // using std::abs, std::max;
   auto mxy1 = max(abs(x), abs(y));
   // Apply arbitrary functions element-wise
   auto mxy2 = fmap([](auto a, auto b) { return max(abs(a), abs(b)); }, x, y);
@@ -139,8 +147,8 @@ void box_example() {
 
   cout << "  Set tests:\n";
   cout << "    b == b1 (equality):            " << (b == b1) << "\n"
-       << "    b <= b1 (is-subset-of):        " << (b <= b1) << "\n"
-       << "    b <  b1 (is-strict-subset_of): " << (b < b1) << "\n";
+       << "    b <= b1 (is_subset_of):        " << (b <= b1) << "\n"
+       << "    b <  b1 (is_strict_subset_of): " << (b < b1) << "\n";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -197,8 +205,8 @@ void region_example() {
 
   cout << "  Set tests:\n";
   cout << "    r == r1 (equality):            " << (r == r1) << "\n"
-       << "    r <= r1 (is-subset-of):        " << (r <= r1) << "\n"
-       << "    r <  r1 (is-strict-subset_of): " << (r < r1) << "\n";
+       << "    r <= r1 (is_subset_of):        " << (r <= r1) << "\n"
+       << "    r <  r1 (is_strict_subset_of): " << (r < r1) << "\n";
 
   cout << "  Regions can be converted to a list of boxes:\n";
   cout << "    rg - r:\n";
