@@ -84,6 +84,7 @@ public:
      */
     Mesh& setGeometry(Geometry g);
     /** Set the geometry of the mesh of the mesh record.
+     *
      * If the geometry is unknown to the openPMD-api, the string is prefixed
      * with "other:" automatically unless the prefix is already present.
      *
