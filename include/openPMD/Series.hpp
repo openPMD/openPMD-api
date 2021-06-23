@@ -96,6 +96,7 @@ public:
      */
     StepStatus m_stepStatus = StepStatus::NoStep;
     bool m_parseLazily = false;
+    bool m_lastFlushSuccessful = true;
 }; // SeriesData
 
 class SeriesInternal;

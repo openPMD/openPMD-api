@@ -502,6 +502,8 @@ SeriesImpl::flush_impl(
     bool flushIOHandler )
 {
     IOHandler()->m_flushLevel = level;
+    auto & series = get();
+    series.m_lastFlushSuccessful = true;
     try
     {
         switch( iterationEncoding() )
@@ -530,6 +532,7 @@ SeriesImpl::flush_impl(
     catch( ... )
     {
         IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
+        series.m_lastFlushSuccessful = false;
         throw;
     }
 }
@@ -1421,7 +1424,10 @@ SeriesInternal::~SeriesInternal()
     // we must not throw in a destructor
     try
     {
-        flush();
+        if( get().m_lastFlushSuccessful )
+        {
+            flush();
+        }
     }
     catch( std::exception const & ex )
     {
