@@ -2516,7 +2516,7 @@ namespace detail
                     "[ADIOS2] Invalid ADIOS access mode" );
             }
 
-            if( !m_engine )
+            if( !m_engine.get() )
             {
                 throw std::runtime_error( "[ADIOS2] Failed opening Engine." );
             }
