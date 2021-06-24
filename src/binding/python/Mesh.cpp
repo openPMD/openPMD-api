@@ -47,7 +47,9 @@ void init_Mesh(py::module &m) {
             &Mesh::setUnitDimension,
             python::doc_unit_dimension)
 
-        .def_property("geometry", &Mesh::geometry, &Mesh::setGeometry)
+        .def_property("geometry", &Mesh::geometry, py::overload_cast<Mesh::Geometry>(&Mesh::setGeometry))
+        .def_property(
+            "geometry_string", &Mesh::geometryString, py::overload_cast<std::string>(&Mesh::setGeometry))
         .def_property("geometry_parameters", &Mesh::geometryParameters, &Mesh::setGeometryParameters)
         .def_property("data_order",
               [](Mesh const & mesh){ return static_cast< char >(mesh.dataOrder()); },
@@ -66,7 +68,8 @@ void init_Mesh(py::module &m) {
 
         // TODO remove in future versions (deprecated)
         .def("set_unit_dimension", &Mesh::setUnitDimension)
-        .def("set_geometry", &Mesh::setGeometry)
+        .def("set_geometry", py::overload_cast<Mesh::Geometry>(&Mesh::setGeometry))
+        .def("set_geometry", py::overload_cast<std::string>(&Mesh::setGeometry))
         .def("set_geometry_parameters", &Mesh::setGeometryParameters)
         .def("set_axis_labels", &Mesh::setAxisLabels)
         .def("set_grid_spacing", &Mesh::setGridSpacing<float>)
@@ -81,5 +84,6 @@ void init_Mesh(py::module &m) {
         .value("thetaMode", Mesh::Geometry::thetaMode)
         .value("cylindrical", Mesh::Geometry::cylindrical)
         .value("spherical", Mesh::Geometry::spherical)
+        .value("other", Mesh::Geometry::other)
     ;
 }

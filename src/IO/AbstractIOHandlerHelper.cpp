@@ -45,7 +45,8 @@ namespace openPMD
         switch( format )
         {
             case Format::HDF5:
-                return std::make_shared< ParallelHDF5IOHandler >( path, access, comm );
+                return std::make_shared< ParallelHDF5IOHandler >(
+                    path, access, comm, std::move( options ) );
             case Format::ADIOS1:
 #   if openPMD_HAVE_ADIOS1
                 return std::make_shared< ParallelADIOS1IOHandler >( path, access, comm );
@@ -80,7 +81,8 @@ namespace openPMD
         switch( format )
         {
             case Format::HDF5:
-                return std::make_shared< HDF5IOHandler >( path, access );
+                return std::make_shared< HDF5IOHandler >(
+                    path, access, std::move( options ) );
             case Format::ADIOS1:
 #if openPMD_HAVE_ADIOS1
                 return std::make_shared< ADIOS1IOHandler >( path, access );

@@ -54,11 +54,6 @@ function(openpmd_option name description default)
     set_property(CACHE openPMD_USE_${name} PROPERTY
         STRINGS "ON;TRUE;AUTO;OFF;FALSE"
     )
-    if(openPMD_HAVE_${name})
-        set(openPMD_HAVE_${name} TRUE)
-    else()
-        set(openPMD_HAVE_${name})
-    endif()
     # list of all possible options
     set(openPMD_CONFIG_OPTIONS ${openPMD_CONFIG_OPTIONS} ${name} PARENT_SCOPE)
 endfunction()
@@ -672,10 +667,17 @@ if(openPMD_HAVE_PYTHON)
         PDB_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
         COMPILE_PDB_OUTPUT_DIRECTORY ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
     )
-    add_custom_command(TARGET openPMD.py POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${openPMD_SOURCE_DIR}/src/binding/python/openpmd_api
-        ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api
+    function(copy_aux_py)
+        set(AUX_PY_SRC_DIR ${openPMD_SOURCE_DIR}/src/binding/python/openpmd_api/)
+        set(AUX_PY_DSR_DIR ${CMAKE_PYTHON_OUTPUT_DIRECTORY}/openpmd_api/)
+        foreach(src_name IN LISTS ARGN)
+            configure_file(${AUX_PY_SRC_DIR}/${src_name} ${AUX_PY_DSR_DIR}/${src_name} COPYONLY)
+        endforeach()
+    endfunction()
+    copy_aux_py(
+        __init__.py DaskArray.py DaskDataFrame.py DataFrame.py
+        ls/__init__.py   ls/__main__.py
+        pipe/__init__.py pipe/__main__.py
     )
 endif()
 
@@ -1183,15 +1185,11 @@ if(openPMD_BUILD_TESTING)
     # Python-based command line tools
     if(openPMD_BUILD_CLI_TOOLS AND openPMD_HAVE_PYTHON)
         # all tools must provide a "--help"
-        # The custom target ensures that the file is copied to the build dir
-        # anew if the source file changes (and not only if openPMD.py is rebuilt)
-        add_custom_target(openPMD.py.cliTools)
-        add_dependencies(openPMD.py openPMD.py.cliTools)
         foreach(toolname ${openPMD_PYTHON_CLI_TOOL_NAMES})
-            add_custom_command(TARGET openPMD.py.cliTools POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy
-                        ${openPMD_SOURCE_DIR}/src/cli/${toolname}.py
-                        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-${toolname}
+            configure_file(
+                ${openPMD_SOURCE_DIR}/src/cli/${toolname}.py
+                ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-${toolname}
+                COPYONLY
             )
             add_test(NAME CLI.help.${toolname}.py
                 COMMAND ${Python_EXECUTABLE}
@@ -1261,10 +1259,10 @@ if(openPMD_BUILD_TESTING)
     if(openPMD_HAVE_PYTHON AND openPMD_HAVE_HDF5)
         if(EXAMPLE_DATA_FOUND)
             foreach(examplename ${openPMD_PYTHON_EXAMPLE_NAMES})
-                add_custom_command(TARGET openPMD.py POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy
-                            ${openPMD_SOURCE_DIR}/examples/${examplename}.py
-                            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
+                configure_file(
+                    ${openPMD_SOURCE_DIR}/examples/${examplename}.py
+                    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${examplename}.py
+                    COPYONLY
                 )
                 if(openPMD_BUILD_TESTING)
                     if(${examplename} MATCHES "^.*_parallel$")

@@ -139,7 +139,7 @@ public:
      * @{
      */
     template< typename T >
-    bool setAttribute(std::string const& key, T const& value);
+    bool setAttribute(std::string const& key, T value);
     bool setAttribute(std::string const& key, char const value[]);
     /** @}
      */
@@ -357,7 +357,7 @@ public:
 //TODO explicitly instantiate Attributable::setAttribute for all T in Datatype
 template< typename T >
 inline bool
-AttributableImpl::setAttribute( std::string const & key, T const & value )
+AttributableImpl::setAttribute( std::string const & key, T value )
 {
     auto & attri = get();
     if(IOHandler() && Access::READ_ONLY == IOHandler()->m_frontendAccess )
@@ -381,7 +381,7 @@ AttributableImpl::setAttribute( std::string const & key, T const & value )
     {
         // emplace a new map element for an unknown key
         attri.m_attributes.emplace_hint(
-            it, std::make_pair(key, Attribute(value)));
+            it, std::make_pair(key, Attribute(std::move(value))));
         return false;
     }
 }

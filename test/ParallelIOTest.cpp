@@ -764,6 +764,19 @@ hipace_like_write( std::string file_ending )
     // the iterations we want to write
     std::vector< int > iterations = { 10, 30, 50, 70 };
 
+    // Parallel HDF5 + chunking does not work with independent IO pattern
+    bool const isHDF5 = file_ending == "h5";
+    std::string options = "{}";
+    if( isHDF5 )
+        options = R"(
+        {
+          "hdf5": {
+            "dataset": {
+              "chunks": "none"
+            }
+          }
+        })";
+
     // MPI communicator meta-data and file name
     int i_mpi_rank{ -1 }, i_mpi_size{ -1 };
     MPI_Comm_rank( MPI_COMM_WORLD, &i_mpi_rank );
@@ -785,7 +798,7 @@ hipace_like_write( std::string file_ending )
         [](precision d) -> precision { return std::sin( d * 2.0 * 3.1415 / 20. ); });
 
     // open a parallel series
-    Series series( name, Access::CREATE, MPI_COMM_WORLD );
+    Series series( name, Access::CREATE, MPI_COMM_WORLD, options );
     series.setIterationEncoding( IterationEncoding::groupBased );
     series.flush();
 

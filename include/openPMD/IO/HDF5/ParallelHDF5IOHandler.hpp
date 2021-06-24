@@ -23,6 +23,8 @@
 #include "openPMD/config.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
+#include <nlohmann/json.hpp>
+
 #include <future>
 #include <memory>
 #include <string>
@@ -36,9 +38,10 @@ namespace openPMD
     {
     public:
     #if openPMD_HAVE_MPI
-        ParallelHDF5IOHandler(std::string path, Access, MPI_Comm);
+        ParallelHDF5IOHandler(
+            std::string path, Access, MPI_Comm, nlohmann::json config);
     #else
-        ParallelHDF5IOHandler(std::string path, Access);
+        ParallelHDF5IOHandler(std::string path, Access, nlohmann::json config);
     #endif
         ~ParallelHDF5IOHandler() override;
 

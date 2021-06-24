@@ -38,11 +38,10 @@ namespace openPMD
 #       define VERIFY(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
 #   endif
 
-ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string path,
-                                             Access at,
-                                             MPI_Comm comm)
+ParallelHDF5IOHandler::ParallelHDF5IOHandler(
+    std::string path, Access at, MPI_Comm comm, nlohmann::json config )
         : AbstractIOHandler(std::move(path), at, comm),
-          m_impl{new ParallelHDF5IOHandlerImpl(this, comm)}
+          m_impl{new ParallelHDF5IOHandlerImpl(this, comm, std::move(config))}
 { }
 
 ParallelHDF5IOHandler::~ParallelHDF5IOHandler() = default;
@@ -53,9 +52,9 @@ ParallelHDF5IOHandler::flush()
     return m_impl->flush();
 }
 
-ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(AbstractIOHandler* handler,
-                                                     MPI_Comm comm)
-        : HDF5IOHandlerImpl{handler},
+ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
+    AbstractIOHandler* handler, MPI_Comm comm, nlohmann::json config )
+        : HDF5IOHandlerImpl{handler, std::move(config)},
           m_mpiComm{comm},
           m_mpiInfo{MPI_INFO_NULL} /* MPI 3.0+: MPI_INFO_ENV */
 {
@@ -103,14 +102,16 @@ ParallelHDF5IOHandlerImpl::~ParallelHDF5IOHandlerImpl()
 #   if openPMD_HAVE_MPI
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string path,
                                              Access at,
-                                             MPI_Comm comm)
+                                             MPI_Comm comm,
+                                             nlohmann::json /* config */)
         : AbstractIOHandler(std::move(path), at, comm)
 {
     throw std::runtime_error("openPMD-api built without HDF5 support");
 }
 #   else
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string path,
-                                             Access at)
+                                             Access at,
+                                             nlohmann::json /* config */)
         : AbstractIOHandler(std::move(path), at)
 {
     throw std::runtime_error("openPMD-api built without parallel support and without HDF5 support");

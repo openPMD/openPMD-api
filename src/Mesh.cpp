@@ -24,8 +24,8 @@
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Writable.hpp"
 
+#include <algorithm>
 #include <iostream>
-
 
 namespace openPMD
 {
@@ -45,12 +45,17 @@ Mesh::Mesh()
 Mesh::Geometry
 Mesh::geometry() const
 {
-    std::string ret = getAttribute("geometry").get< std::string >();
+    std::string ret = geometryString();
     if( "cartesian" == ret ) { return Geometry::cartesian; }
     else if( "thetaMode" == ret ) { return Geometry::thetaMode; }
     else if( "cylindrical" == ret ) { return Geometry::cylindrical; }
     else if( "spherical" == ret ) { return Geometry::spherical; }
-    else { throw std::runtime_error("Unknown geometry " + ret); }
+    else { return Geometry::other; }
+}
+
+std::string Mesh::geometryString() const
+{
+    return getAttribute( "geometry" ).get< std::string >();
 }
 
 Mesh&
@@ -70,7 +75,29 @@ Mesh::setGeometry(Mesh::Geometry g)
         case Geometry::spherical:
             setAttribute("geometry", std::string("spherical"));
             break;
+        case Geometry::other:
+            // use the std::string overload to be more specific
+            setAttribute("geometry", std::string("other"));
+            break;
     }
+    return *this;
+}
+
+Mesh & Mesh::setGeometry( std::string geometry )
+{
+    std::string knownGeometries[] = {
+        "cartesian", "thetaMode", "cylindrical", "spherical", "other" };
+    if( // 1. condition: geometry is not one of the known geometries
+        std::find(
+            std::begin( knownGeometries ),
+            std::end( knownGeometries ),
+            geometry ) == std::end( knownGeometries )
+        // 2. condition: prefix is not already there
+        && !auxiliary::starts_with( geometry, std::string( "other:" ) ) )
+    {
+        geometry = "other:" + geometry;
+    }
+    setAttribute( "geometry", std::move( geometry ) );
     return *this;
 }
 
@@ -267,7 +294,7 @@ Mesh::read()
         else if( "spherical" == tmpGeometry )
             setGeometry(Geometry::spherical);
         else
-            throw std::runtime_error("Unknown geometry " + tmpGeometry);
+            setGeometry(tmpGeometry);
     }
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'geometry'");
@@ -391,6 +418,9 @@ openPMD::operator<<(std::ostream& os, openPMD::Mesh::Geometry const& go)
             break;
         case openPMD::Mesh::Geometry::spherical:
             os<<"spherical";
+            break;
+        case openPMD::Mesh::Geometry::other:
+            os<<"other";
             break;
     }
     return os;
