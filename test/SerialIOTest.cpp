@@ -3496,9 +3496,190 @@ TEST_CASE( "variableBasedSingleIteration", "[serial][adios2]" )
     }
 }
 
+namespace epsilon
+{
+template< typename T >
+struct AreEqual
+{
+    static bool areEqual( T float1, T float2 )
+    {
+#if false
+        printf(
+            "COMPARE %1.16e ~ %1.16e: %1.16e\tEQUAL: %d\n",
+            float1,
+            float2,
+            std::abs( float1 - float2 ),
+            std::abs( float1 - float2 ) <=
+                std::numeric_limits< T >::epsilon() );
+#endif
+        return std::abs( float1 - float2 ) <=
+            std::numeric_limits< T >::epsilon();
+    }
+};
+
+template< typename T >
+struct AreEqual< std::vector< T > >
+{
+    static bool areEqual( std::vector< T > v1, std::vector< T > v2 )
+    {
+        return v1.size() == v2.size() &&
+            std::equal(
+                   v1.begin(), v1.end(), v2.begin(), AreEqual< T >::areEqual );
+    }
+};
+
+template< typename T >
+bool areEqual( T a, T b )
+{
+    return AreEqual< T >::areEqual( std::move( a ), std::move( b ) );
+}
+}
+
 #if openPMD_HAVE_ADIOS2
-void
-variableBasedSeries( std::string const & file )
+TEST_CASE( "git_adios2_sample_attribute_test", "[serial][adios2]" )
+{
+    using namespace epsilon;
+    using vecstring = std::vector< std::string >;
+    using vecdouble = std::vector< double >;
+    using arr7 = std::array< double, 7 >;
+
+    Series o;
+    try
+    {
+        o = Series(
+            "../samples/git-sample/3d-bp4/example-3d-bp4.bp",
+            Access::READ_ONLY );
+    }
+    catch( std::exception const & e ) // @todo error kind
+    {
+        std::cerr << "git sample no accessible (" << e.what() << ")\n";
+        return;
+    }
+    REQUIRE( o.openPMD() == "1.1.0" );
+    REQUIRE( o.openPMDextension() == 0 );
+    REQUIRE( o.basePath() == "/data/%T/" );
+    REQUIRE( o.meshesPath() == "fields/" );
+    REQUIRE( o.particlesPath() == "particles/" );
+    REQUIRE( o.iterationEncoding() == IterationEncoding::groupBased );
+    REQUIRE( o.iterationFormat() == "/data/%T/" );
+    REQUIRE( o.name() == "example-3d-bp4" );
+
+    REQUIRE( o.iterations.size() == 1 );
+    REQUIRE( o.iterations.count( 550 ) == 1 );
+
+    Iteration it = o.iterations[ 550 ];
+
+    REQUIRE( areEqual( it.time< double >(), 5.5000000000000000e+02 ) );
+    REQUIRE( areEqual( it.timeUnitSI(), 1.3899999999999999e-16 ) );
+    REQUIRE(
+        it.getAttribute( "particleBoundary" ).get< vecstring >() ==
+        vecstring{
+            "absorbing",
+            "absorbing",
+            "absorbing",
+            "absorbing",
+            "absorbing",
+            "absorbing" } );
+    REQUIRE(
+        it.getAttribute( "particleBoundaryParameters" ).get< vecstring >() ==
+        vecstring{
+            "without field correction",
+            "without field correction",
+            "without field correction",
+            "without field correction",
+            "without field correction",
+            "without field correction" } );
+    REQUIRE( areEqual(
+        it.getAttribute( "mue0" ).get< float >(), 5.9102661907672882e-03f ) );
+    REQUIRE( areEqual(
+        it.getAttribute( "eps0" ).get< float >(), 1.6919711303710938e+02f ) );
+    REQUIRE( areEqual( it.dt< double >(), 1. ) );
+
+    REQUIRE( it.meshes.size() == 6 );
+
+    Mesh E = it.meshes[ "E" ];
+    REQUIRE( E.geometry() == Mesh::Geometry::cartesian );
+    REQUIRE( E.dataOrder() == Mesh::DataOrder::C );
+    REQUIRE( E.axisLabels() == vecstring{ "z", "y", "x" } );
+    REQUIRE( areEqual(
+        E.gridSpacing< double >(),
+        vecdouble{
+            4.2523422241210938e+00,
+            1.0630855560302734e+00,
+            4.2523422241210938e+00 } ) );
+    REQUIRE( areEqual( E.gridGlobalOffset(), vecdouble{ 0., 0., 0. } ) );
+    REQUIRE( areEqual( E.gridUnitSI(), 4.1671151661999998e-08 ) );
+    REQUIRE( E.unitDimension() == arr7{ { 1, 1, -3, -1, 0, 0, 0 } } );
+    REQUIRE( areEqual( E.timeOffset< double >(), 0. ) );
+
+    REQUIRE( E.size() == 3 );
+    REQUIRE( E.count( "x" ) == 1 );
+    REQUIRE( E.count( "y" ) == 1 );
+    REQUIRE( E.count( "z" ) == 1 );
+
+    MeshRecordComponent E_x = E[ "x" ];
+    REQUIRE( E_x.unitSI() == 1.2262657411105051e+13 );
+    REQUIRE( E_x.position< double >() == vecdouble{ 0.5, 0., 0. } );
+    REQUIRE( E_x.getDatatype() == Datatype::FLOAT );
+    REQUIRE( E_x.getExtent() == Extent{ 64, 96, 64 } );
+    REQUIRE( E_x.getDimensionality() == 3 );
+
+    MeshRecordComponent E_y = E[ "y" ];
+    REQUIRE( E_y.unitSI() == 1.2262657411105051e+13 );
+    REQUIRE( E_y.position< double >() == vecdouble{ 0., 0.5, 0. } );
+    REQUIRE( E_y.getDatatype() == Datatype::FLOAT );
+    REQUIRE( E_y.getExtent() == Extent{ 64, 96, 64 } );
+    REQUIRE( E_y.getDimensionality() == 3 );
+
+    MeshRecordComponent E_z = E[ "z" ];
+    REQUIRE( E_z.unitSI() == 1.2262657411105051e+13 );
+    REQUIRE( E_z.position< double >() == vecdouble{ 0., 0., 0.5 } );
+    REQUIRE( E_z.getDatatype() == Datatype::FLOAT );
+    REQUIRE( E_z.getExtent() == Extent{ 64, 96, 64 } );
+    REQUIRE( E_z.getDimensionality() == 3 );
+
+    REQUIRE( it.particles.size() == 1 );
+
+    REQUIRE( it.particles.count( "e" ) == 1 );
+
+    ParticleSpecies electrons = it.particles[ "e" ];
+
+    REQUIRE( electrons.size() == 6 );
+    REQUIRE( electrons.count( "charge" ) == 1 );
+    REQUIRE( electrons.count( "mass" ) == 1 );
+    REQUIRE( electrons.count( "momentum" ) == 1 );
+    REQUIRE( electrons.count( "position" ) == 1 );
+    REQUIRE( electrons.count( "positionOffset" ) == 1 );
+    REQUIRE( electrons.count( "weighting" ) == 1 );
+
+    Record charge = electrons[ "charge" ];
+    REQUIRE( charge.unitDimension() == arr7{ { 0., 0., 1., 1., 0., 0., 0. } } );
+    REQUIRE( charge.timeOffset< double >() == 0.0 );
+
+    REQUIRE( charge.size() == 1 );
+    REQUIRE( charge.count( RecordComponent::SCALAR ) == 1 );
+
+    RecordComponent & charge_scalar = charge[ RecordComponent::SCALAR ];
+    REQUIRE( areEqual( charge_scalar.unitSI(), 1.11432e-15 ) );
+    REQUIRE( charge_scalar.getDatatype() == Datatype::DOUBLE );
+    REQUIRE( charge_scalar.getDimensionality() == 1 );
+    REQUIRE( charge_scalar.getExtent() == Extent{ 0 } );
+
+    Record & mass = electrons[ "mass" ];
+    REQUIRE( mass.unitDimension() == arr7{ { 0., 1., 0., 0., 0., 0., 0. } } );
+    REQUIRE( mass.timeOffset< double >() == 0.0 );
+
+    REQUIRE( mass.size() == 1 );
+    REQUIRE( mass.count( RecordComponent::SCALAR ) == 1 );
+
+    RecordComponent & mass_scalar = mass[ RecordComponent::SCALAR ];
+    REQUIRE( areEqual( mass_scalar.unitSI(), 6.3356338938136719e-27 ) );
+    REQUIRE( mass_scalar.getDatatype() == Datatype::DOUBLE );
+    REQUIRE( mass_scalar.getDimensionality() == 1 );
+    REQUIRE( mass_scalar.getExtent() == Extent{ 0 } );
+}
+
+void variableBasedSeries( std::string const & file )
 {
     constexpr Extent::value_type extent = 1000;
     {
