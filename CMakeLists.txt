@@ -686,7 +686,7 @@ set(openPMD_TEST_NAMES
     SerialIO
     ParallelIO
 )
-if(openPMD_CXX_STANDARD STREQUAL 17)
+if(openPMD_HAVE_REGIONS)
     list(APPEND openPMD_TEST_NAMES
         RegionsBox
         RegionsPoint
@@ -719,7 +719,7 @@ set(openPMD_EXAMPLE_NAMES
     10_streaming_read
     12_span_write
 )
-if(openPMD_CXX_STANDARD STREQUAL 17)
+if(openPMD_HAVE_REGIONS)
     list(APPEND openPMD_EXAMPLE_NAMES
         13_regions
     )
@@ -779,11 +779,13 @@ if(openPMD_BUILD_TESTING)
         else()
             target_link_libraries(${testname}Tests PRIVATE CatchMain)
         endif()
-        target_compile_features(${testname}Tests PUBLIC cxx_std_14)
-        set_target_properties(${testname}Tests PROPERTIES
-            CXX_EXTENSIONS OFF
-            CXX_STANDARD_REQUIRED ON
-        )
+        if(${testname} MATCHES "Regions.+$")
+            target_compile_features(${testname}Tests PUBLIC cxx_std_17)
+            set_target_properties(${testname}Tests PROPERTIES
+                CXX_EXTENSIONS OFF
+                CXX_STANDARD_REQUIRED ON
+            )
+        endif()
     endforeach()
 endif()
 
@@ -809,11 +811,13 @@ if(openPMD_BUILD_EXAMPLES)
         else()
             add_executable(${examplename} examples/${examplename}.cpp)
             target_link_libraries(${examplename} PRIVATE openPMD)
-            target_compile_features(${examplename} PUBLIC cxx_std_14)
-            set_target_properties(${examplename} PROPERTIES
-                CXX_EXTENSIONS OFF
-                CXX_STANDARD_REQUIRED ON
-            )
+            if(${examplename} MATCHES "13_.+$")
+                target_compile_features(${examplename} PUBLIC cxx_std_17)
+                set_target_properties(${examplename} PROPERTIES
+                    CXX_EXTENSIONS OFF
+                    CXX_STANDARD_REQUIRED ON
+                )
+            endif()
         endif()
     endforeach()
 endif()
