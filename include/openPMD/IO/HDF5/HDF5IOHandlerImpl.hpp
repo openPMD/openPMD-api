@@ -77,9 +77,14 @@ namespace openPMD
         hid_t m_H5T_CDOUBLE;
         hid_t m_H5T_CLONG_DOUBLE;
 
-    private:
+    protected:
         auxiliary::TracingJSON m_config;
+        //! dataset chunking
         std::string m_chunks = "auto";
+        //! 1: no alignment >1: alignment in bytes
+        hsize_t m_alignment = 1;
+        //! 0: all aligned, 1: no aligned, >1: threshold in bytes
+        hsize_t m_threshold = 1;
         struct File
         {
             std::string name;

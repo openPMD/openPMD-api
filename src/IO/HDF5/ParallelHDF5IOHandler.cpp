@@ -74,11 +74,6 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
     status = H5Pset_dxpl_mpio(m_datasetTransferProperty, xfer_mode);
     VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_dxpl_mpio");
 
-    auto const strByte = auxiliary::getEnvString( "OPENPMD_HDF5_ALIGNMENT", "4194304" );
-    std::stringstream sstream(strByte);
-    hsize_t bytes;
-    sstream >> bytes;
-
     /*
      * Note from https://support.hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetCache:
      * "Raw dataset chunk caching is not currently supported when using the MPI I/O
@@ -86,7 +81,7 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
      * file drivers, all calls to H5Dread and H5Dwrite will access the disk directly,
      * and H5Pset_cache will have no effect on performance."
      */
-    if( bytes > 1 )
+    if( m_alignment > 1 )
     {
         int metaCacheElements = 0;
         size_t rawCacheElements = 0;
@@ -94,7 +89,7 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
         double policy = 0.0;
         status = H5Pget_cache(m_fileAccessProperty, &metaCacheElements, &rawCacheElements, &rawCacheSize, &policy);
         VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pget_cache");
-        rawCacheSize = bytes * 4; // default: 1 MiB per dataset
+        rawCacheSize = m_alignment * 4; // default: 1 MiB per dataset
         status = H5Pset_cache(m_fileAccessProperty, metaCacheElements, rawCacheElements, rawCacheSize,
                               policy);
         VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_cache");
@@ -109,7 +104,7 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
     //status = H5Pset_buffer(where?, 64*1024*1024, nullptr, nullptr); // 64 MiB; default: 1MiB
     //VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_buffer");
 
-    if( bytes > 1 )
+    if( m_alignment > 1 )
     {
         /* File alignment - important for parallel I/O
          *
@@ -135,8 +130,7 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
          * PFS blocksize as well as transfer block sizes determined by the
          * filesystem, network and routers at play.
          */
-        hsize_t const threshold = bytes / 2; // or user-defined threshold
-        status = H5Pset_alignment(m_fileAccessProperty, threshold, bytes);
+        status = H5Pset_alignment(m_fileAccessProperty, m_threshold, m_alignment);
         VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_alignment");
 
         /* maximum size in bytes of the data sieve buffer, which is used by file
@@ -155,7 +149,7 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
          * property and the size of the dataset to allocate the sieve buffer for
          * the dataset in order to save memory usage.
          */
-        status = H5Pset_sieve_buf_size(m_fileAccessProperty, bytes); /* >=FS Blocksize*/
+        status = H5Pset_sieve_buf_size(m_fileAccessProperty, m_alignment); /* >=FS Blocksize*/
         VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_sieve_buf_size");
     }
 
@@ -172,7 +166,7 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
 
     // https://docs.nersc.gov/performance/io/knl/#direct-io-vs-buffered-io
     // ... In the case of HDF5, we saw as much as 11% speedup.
-    //status = H5Pset_fapl_direct(m_fileAccessProperty, 2048, bytes, bytes * 4);
+    //status = H5Pset_fapl_direct(m_fileAccessProperty, 2048, m_alignment, m_alignment * 4);
     //VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_fapl_direct");
 
     status = H5Pset_fapl_mpio(m_fileAccessProperty, m_mpiComm, m_mpiInfo);
