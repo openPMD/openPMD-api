@@ -802,11 +802,6 @@ if(openPMD_BUILD_EXAMPLES)
             if(openPMD_HAVE_MPI)
                 add_executable(${examplename} examples/${examplename}.cpp)
                 target_link_libraries(${examplename} PRIVATE openPMD)
-                target_compile_features(${examplename} PUBLIC cxx_std_14)
-                set_target_properties(${examplename} PROPERTIES
-                    CXX_EXTENSIONS OFF
-                    CXX_STANDARD_REQUIRED ON
-                )
             endif()
         else()
             add_executable(${examplename} examples/${examplename}.cpp)
