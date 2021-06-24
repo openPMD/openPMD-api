@@ -1,0 +1,7 @@
+{
+  "hdf5": {
+    "dataset": {
+      "chunks": "auto"
+    }
+  }
+}

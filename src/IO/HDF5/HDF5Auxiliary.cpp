@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller, Axel Huebl
+/* Copyright 2017-2021 Fabian Koller, Felix Schmitt, Axel Huebl
  *
  * This file is part of openPMD-api.
  *
@@ -30,10 +30,12 @@
 
 #   include <array>
 #   include <complex>
+#   include <map>
 #   include <stack>
 #   include <stdexcept>
 #   include <string>
 #   include <typeinfo>
+#   include <vector>
 
 #   if openPMD_USE_VERIFY
 #       define VERIFY(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error((TEXT)); }
@@ -304,6 +306,94 @@ openPMD::concrete_h5_file_position(Writable* w)
     }
 
     return auxiliary::replace_all(pos, "//", "/");
+}
+
+
+std::vector< hsize_t >
+openPMD::getOptimalChunkDims( std::vector< hsize_t > const dims,
+                     size_t const typeSize )
+{
+    auto const ndims = dims.size();
+    std::vector< hsize_t > chunk_dims( dims.size() );
+
+    // chunk sizes in KiByte
+    constexpr std::array< size_t, 7u > CHUNK_SIZES_KiB
+        {{4096u, 2048u, 1024u, 512u, 256u, 128u, 64u}};
+
+    size_t total_data_size = typeSize;
+    size_t max_chunk_size = typeSize;
+    size_t target_chunk_size = 0u;
+
+    // compute the order of dimensions (descending)
+    // large dataset dimensions should have larger chunk sizes
+    std::multimap<hsize_t, uint32_t> dims_order;
+    for (uint32_t i = 0; i < ndims; ++i)
+        dims_order.insert(std::make_pair(dims[i], i));
+
+    for (uint32_t i = 0; i < ndims; ++i)
+    {
+        // initial number of chunks per dimension
+        chunk_dims[i] = 1;
+
+        // try to make at least two chunks for each dimension
+        size_t half_dim = dims[i] / 2;
+
+        // compute sizes
+        max_chunk_size *= (half_dim > 0) ? half_dim : 1;
+        total_data_size *= dims[i];
+    }
+
+    // compute the target chunk size
+    for( auto const & chunk_size : CHUNK_SIZES_KiB )
+    {
+        target_chunk_size = chunk_size * 1024;
+        if (target_chunk_size <= max_chunk_size)
+            break;
+    }
+
+    size_t current_chunk_size = typeSize;
+    size_t last_chunk_diff = target_chunk_size;
+    std::multimap<hsize_t, uint32_t>::const_iterator current_index =
+            dims_order.begin();
+
+    while (current_chunk_size < target_chunk_size)
+    {
+        // test if increasing chunk size optimizes towards target chunk size
+        size_t chunk_diff = target_chunk_size - (current_chunk_size * 2u);
+        if (chunk_diff >= last_chunk_diff)
+            break;
+
+        // find next dimension to increase chunk size for
+        int can_increase_dim = 0;
+        for (uint32_t d = 0; d < ndims; ++d)
+        {
+            int current_dim = current_index->second;
+
+            // increasing chunk size possible
+            if (chunk_dims[current_dim] * 2 <= dims[current_dim])
+            {
+                chunk_dims[current_dim] *= 2;
+                current_chunk_size *= 2;
+                can_increase_dim = 1;
+            }
+
+            current_index++;
+            if (current_index == dims_order.end())
+                current_index = dims_order.begin();
+
+            if (can_increase_dim)
+                break;
+        }
+
+        // can not increase chunk size in any dimension
+        // we must use the current chunk sizes
+        if (!can_increase_dim)
+            break;
+
+        last_chunk_diff = chunk_diff;
+    }
+
+    return chunk_dims;
 }
 
 #endif

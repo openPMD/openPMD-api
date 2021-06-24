@@ -20,8 +20,10 @@
  */
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
 #include "openPMD/IO/HDF5/HDF5IOHandlerImpl.hpp"
+#include "openPMD/auxiliary/Environment.hpp"
 
 #if openPMD_HAVE_HDF5
+#   include "openPMD/Datatype.hpp"
 #   include "openPMD/auxiliary/Filesystem.hpp"
 #   include "openPMD/auxiliary/StringManip.hpp"
 #   include "openPMD/backend/Attribute.hpp"
@@ -50,7 +52,8 @@ namespace openPMD
 #       define VERIFY(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
 #   endif
 
-HDF5IOHandlerImpl::HDF5IOHandlerImpl(AbstractIOHandler* handler)
+HDF5IOHandlerImpl::HDF5IOHandlerImpl(
+    AbstractIOHandler* handler, nlohmann::json config)
         : AbstractIOHandlerImpl(handler),
           m_datasetTransferProperty{H5P_DEFAULT},
           m_fileAccessProperty{H5P_DEFAULT},
@@ -81,6 +84,39 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(AbstractIOHandler* handler)
     H5Tinsert(m_H5T_CDOUBLE, "i", sizeof(double), H5T_NATIVE_DOUBLE);
     H5Tinsert(m_H5T_CLONG_DOUBLE, "r", 0, H5T_NATIVE_LDOUBLE);
     H5Tinsert(m_H5T_CLONG_DOUBLE, "i", sizeof(long double), H5T_NATIVE_LDOUBLE);
+
+    m_chunks = auxiliary::getEnvString( "OPENPMD_HDF5_CHUNKS", "auto" );
+    // JSON option can overwrite env option:
+    if( config.contains( "hdf5" ) )
+    {
+        m_config = std::move( config[ "hdf5" ] );
+
+        // check for global dataset configs
+        if( m_config.json().contains( "dataset" ) )
+        {
+            auto datasetConfig = m_config[ "dataset" ];
+            if( datasetConfig.json().contains( "chunks" ) )
+            {
+                m_chunks = datasetConfig[ "chunks" ].json().get< std::string >();
+            }
+        }
+        if( m_chunks != "auto" && m_chunks != "none" )
+        {
+            std::cerr << "Warning: HDF5 chunking option set to an invalid "
+                         "value '" << m_chunks << "'. Reset to 'auto'."
+                      << std::endl;
+            m_chunks = "auto";
+        }
+
+        // unused params
+        auto shadow = m_config.invertShadow();
+        if( shadow.size() > 0 )
+        {
+            std::cerr << "Warning: parts of the JSON configuration for "
+                         "HDF5 remain unused:\n"
+                      << shadow << std::endl;
+        }
+    }
 }
 
 HDF5IOHandlerImpl::~HDF5IOHandlerImpl()
@@ -238,6 +274,25 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         if( auxiliary::ends_with(name, '/') )
             name = auxiliary::replace_last(name, "/", "");
 
+        auto config = nlohmann::json::parse( parameters.options );
+        if( config.contains( "hdf5" ) &&
+            config[ "hdf5" ].contains( "dataset" ) )
+        {
+            auxiliary::TracingJSON datasetConfig{
+                config[ "hdf5" ][ "dataset" ] };
+            /*
+             * @todo Read options from config here.
+             */
+            auto shadow = datasetConfig.invertShadow();
+            if( shadow.size() > 0 )
+            {
+                std::cerr << "Warning: parts of the JSON configuration for "
+                             "HDF5 dataset '"
+                          << name << "' remain unused:\n"
+                          << shadow << std::endl;
+            }
+        }
+
         /* Open H5Object to write into */
         auto res = getFile( writable );
         File file = res ? res.get() : getFile( writable->parent ).get();
@@ -256,21 +311,32 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         Attribute a(0);
         a.dtype = d;
         std::vector< hsize_t > dims;
-        for( auto const& val : parameters.extent )
+        std::uint64_t num_elements = 1u;
+        for( auto const& val : parameters.extent ) {
             dims.push_back(static_cast< hsize_t >(val));
+            num_elements *= val;
+        }
 
         hid_t space = H5Screate_simple(static_cast< int >(dims.size()), dims.data(), dims.data());
         VERIFY(space >= 0, "[HDF5] Internal error: Failed to create dataspace during dataset creation");
 
-        std::vector< hsize_t > chunkDims;
-        for( auto const& val : parameters.chunkSize )
-            chunkDims.push_back(static_cast< hsize_t >(val));
-
         /* enable chunking on the created dataspace */
         hid_t datasetCreationProperty = H5Pcreate(H5P_DATASET_CREATE);
-        herr_t status;
-        //status = H5Pset_chunk(datasetCreationProperty, chunkDims.size(), chunkDims.data());
-        //VERIFY(status == 0, "[HDF5] Internal error: Failed to set chunk size during dataset creation");
+
+        if( num_elements != 0u && m_chunks != "none" )
+        {
+            //! @todo add per dataset chunk control from JSON config
+
+            // get chunking dimensions
+            std::vector< hsize_t > chunk_dims = getOptimalChunkDims(dims, toBytes(d));
+
+            //! @todo allow overwrite with user-provided chunk size
+            //for( auto const& val : parameters.chunkSize )
+            //    chunk_dims.push_back(static_cast< hsize_t >(val));
+
+            herr_t status = H5Pset_chunk(datasetCreationProperty, chunk_dims.size(), chunk_dims.data());
+            VERIFY(status == 0, "[HDF5] Internal error: Failed to set chunk size during dataset creation");
+        }
 
         std::string const& compression = parameters.compression;
         if( !compression.empty() )
@@ -318,6 +384,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
                                    H5P_DEFAULT);
         VERIFY(group_id >= 0, "[HDF5] Internal error: Failed to create HDF5 group during dataset creation");
 
+        herr_t status;
         status = H5Dclose(group_id);
         VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 dataset during dataset creation");
         status = H5Tclose(datatype);
@@ -1832,9 +1899,9 @@ HDF5IOHandlerImpl::getFile( Writable * writable )
 #endif
 
 #if openPMD_HAVE_HDF5
-HDF5IOHandler::HDF5IOHandler(std::string path, Access at)
+HDF5IOHandler::HDF5IOHandler(std::string path, Access at, nlohmann::json config)
         : AbstractIOHandler(std::move(path), at),
-          m_impl{new HDF5IOHandlerImpl(this)}
+          m_impl{new HDF5IOHandlerImpl(this, std::move(config))}
 { }
 
 HDF5IOHandler::~HDF5IOHandler() = default;
@@ -1845,7 +1912,7 @@ HDF5IOHandler::flush()
     return m_impl->flush();
 }
 #else
-HDF5IOHandler::HDF5IOHandler(std::string path, Access at)
+HDF5IOHandler::HDF5IOHandler(std::string path, Access at, nlohmann::json /* config */)
         : AbstractIOHandler(std::move(path), at)
 {
     throw std::runtime_error("openPMD-api built without HDF5 support");

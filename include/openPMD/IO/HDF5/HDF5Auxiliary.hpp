@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2021 Fabian Koller, Felix Schmitt, Axel Huebl
  *
  * This file is part of openPMD-api.
  *
@@ -34,7 +34,6 @@
 
 namespace openPMD
 {
-#if openPMD_HAVE_HDF5
     struct GetH5DataType
     {
         std::unordered_map< std::string, hid_t > m_userTypes;
@@ -54,5 +53,20 @@ namespace openPMD
     std::string
     concrete_h5_file_position(Writable* w);
 
-#endif
+    /** Computes the chunk dimensions for a dataset.
+     *
+     * Chunk dimensions are selected to create chunks sizes between
+     * 64KByte and 4MB. Smaller chunk sizes are inefficient due to overhead,
+     * larger chunks do not map well to file system blocks and striding.
+     *
+     * Chunk dimensions are less or equal to dataset dimensions and do
+     * not need to be a factor of the respective dataset dimension.
+     *
+     * @param[in] dims dimensions of dataset to get chunk dims for
+     * @param[in] typeSize size of each element in bytes
+     * @return array for resulting chunk dimensions
+     */
+    std::vector< hsize_t >
+    getOptimalChunkDims( std::vector< hsize_t > const dims,
+                         size_t const typeSize );
 } // namespace openPMD

@@ -22,6 +22,8 @@
 
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
+#include <nlohmann/json.hpp>
+
 #include <future>
 #include <memory>
 #include <string>
@@ -34,7 +36,7 @@ class HDF5IOHandlerImpl;
 class HDF5IOHandler : public AbstractIOHandler
 {
 public:
-    HDF5IOHandler(std::string path, Access);
+    HDF5IOHandler(std::string path, Access, nlohmann::json config);
     ~HDF5IOHandler() override;
 
     std::string backendName() const override { return "HDF5"; }
