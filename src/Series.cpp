@@ -1225,10 +1225,12 @@ SeriesImpl::advance(
     auto end = begin;
     ++end;
     /*
-     * @todo By calling flushFileBased/GroupBased, we do not propagate tasks to
-     *       the backend yet. We will append ADVANCE and CLOSE_FILE tasks
-     *       manually. In order to avoid having them automatically appended by
-     *       the flush*Based methods, set CloseStatus to Open for now.
+     * We call flush_impl() with flushIOHandler = false, meaning that tasks are
+     * not yet propagated to the backend.
+     * We will append ADVANCE and CLOSE_FILE tasks manually and then flush the
+     * IOHandler manually.
+     * In order to avoid having those tasks automatically appended by
+     * flush_impl(), set CloseStatus to Open for now.
      */
     Iteration::CloseStatus oldCloseStatus = *iteration.m_closed;
     if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend )
