@@ -86,15 +86,19 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
      * file drivers, all calls to H5Dread and H5Dwrite will access the disk directly,
      * and H5Pset_cache will have no effect on performance."
      */
-    int metaCacheElements = 0;
-    size_t rawCacheElements = 0;
-    size_t rawCacheSize = 0;
-    double policy = 0.0;
-    status = H5Pget_cache(m_fileAccessProperty, &metaCacheElements, &rawCacheElements, &rawCacheSize, &policy);
-    VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pget_cache");
-    rawCacheSize = bytes * 4; // default: 1 MiB per dataset
-    status = H5Pset_cache(m_fileAccessProperty, metaCacheElements, rawCacheElements, rawCacheSize, policy);
-    VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_cache");
+    if( bytes > 1 )
+    {
+        int metaCacheElements = 0;
+        size_t rawCacheElements = 0;
+        size_t rawCacheSize = 0;
+        double policy = 0.0;
+        status = H5Pget_cache(m_fileAccessProperty, &metaCacheElements, &rawCacheElements, &rawCacheSize, &policy);
+        VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pget_cache");
+        rawCacheSize = bytes * 4; // default: 1 MiB per dataset
+        status = H5Pset_cache(m_fileAccessProperty, metaCacheElements, rawCacheElements, rawCacheSize,
+                              policy);
+        VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_cache");
+    }
 
     // sets the maximum size for the type conversion buffer and background
     // buffer and optionally supplies pointers to application-allocated
@@ -105,14 +109,54 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
     //status = H5Pset_buffer(where?, 64*1024*1024, nullptr, nullptr); // 64 MiB; default: 1MiB
     //VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_buffer");
 
-    if ( bytes > 1 )
+    if( bytes > 1 )
     {
-         VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_fapl_direct");
-         status = H5Pset_sieve_buf_size(m_fileAccessProperty, bytes);     /* 4MB; >=FS Blocksize*/
-         VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_sieve_buf_size");
-         hsize_t const threshold = bytes / 4;
-         status = H5Pset_alignment(m_fileAccessProperty, threshold, bytes); /* ~same */
-         VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_alignment");
+        /* File alignment - important for parallel I/O
+         *
+         * Sets the alignment properties of a file access property list so that any
+         * file object greater than or equal in size to threshold bytes will be
+         * aligned on an address which is a multiple of alignment. The addresses
+         * are relative to the end of the user block; the alignment is calculated
+         * by subtracting the user block size from the absolute file address and
+         * then adjusting the address to be a multiple of alignment.
+         *
+         * Default values for threshold and alignment are one, implying no
+         * alignment. Generally the default values will result in the best
+         * performance for single-process access to the file. For MPI IO and other
+         * parallel systems, choose an alignment which is a multiple of the disk
+         * block size.
+         *
+         * IN: Threshold value. Note that setting the threshold value to 0 (zero)
+         *     has the effect of a special case, forcing everything to be aligned.
+         * IN: Alignment value.
+         *
+         * Extra knowledge: these days, the (parallel) filesystem blocksize is
+         * not the only value of relevance. Good numbers are determined by the
+         * PFS blocksize as well as transfer block sizes determined by the
+         * filesystem, network and routers at play.
+         */
+        hsize_t const threshold = bytes / 2; // or user-defined threshold
+        status = H5Pset_alignment(m_fileAccessProperty, threshold, bytes);
+        VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_alignment");
+
+        /* maximum size in bytes of the data sieve buffer, which is used by file
+         * drivers that are capable of using data sieving. The data sieve buffer
+         * is used when performing I/O on datasets in the file. Using a buffer
+         * which is large enough to hold several pieces of the dataset being read
+         * in for hyperslab selections boosts performance by quite a bit.
+         *
+         * The default value is set to 64KB, indicating that file I/O for raw data
+         * reads and writes will occur in at least 64KB blocks. Setting the value
+         * to 0 with this API function will turn off the data sieving, even if the
+         * VFL driver attempts to use that strategy.
+         *
+         * Internally, the library checks the storage sizes of the datasets in the
+         * file. It picks the smaller one between the size from the file access
+         * property and the size of the dataset to allocate the sieve buffer for
+         * the dataset in order to save memory usage.
+         */
+        status = H5Pset_sieve_buf_size(m_fileAccessProperty, bytes); /* >=FS Blocksize*/
+        VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_sieve_buf_size");
     }
 
     // Metadata aggregation reduces the number of small data objects in the
