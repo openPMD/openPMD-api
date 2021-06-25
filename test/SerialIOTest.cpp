@@ -3536,7 +3536,7 @@ bool areEqual( T a, T b )
 }
 
 #if openPMD_HAVE_ADIOS2
-TEST_CASE( "git_adios2_sample_attribute_test", "[serial][adios2]" )
+TEST_CASE( "git_adios2_sample_test", "[serial][adios2]" )
 {
     using namespace epsilon;
     using vecstring = std::vector< std::string >;
@@ -3620,12 +3620,53 @@ TEST_CASE( "git_adios2_sample_attribute_test", "[serial][adios2]" )
     REQUIRE( E_x.getExtent() == Extent{ 64, 96, 64 } );
     REQUIRE( E_x.getDimensionality() == 3 );
 
+    float E_x_data[] = { 7.2273872792720795e-02, 7.5522020459175110e-02,
+                         8.0523371696472168e-02, 1.0555608570575714e-01,
+                         1.0703066736459732e-01, 1.0864605009555817e-01,
+                         1.2857998907566071e-01, 1.2799251079559326e-01,
+                         1.2583728134632111e-01, 7.6009519398212433e-02,
+                         7.8935280442237854e-02, 8.3348348736763000e-02,
+                         1.0741266608238220e-01, 1.0857319086790085e-01,
+                         1.0964381694793701e-01, 1.2822371721267700e-01,
+                         1.2736722826957703e-01, 1.2478115409612656e-01,
+                         8.1217460334300995e-02, 8.3575554192066193e-02,
+                         8.6966909468173981e-02, 1.0923127084970474e-01,
+                         1.0986886173486710e-01, 1.1004652082920074e-01,
+                         1.2622843682765961e-01, 1.2496086955070496e-01,
+                         1.2172128260135651e-01 };
+    auto E_x_loaded = E_x.loadChunk< float >( { 32, 32, 32 }, { 3, 3, 3 } );
+    E_x.seriesFlush();
+    for( size_t i = 0; i < 27; ++i )
+    {
+        REQUIRE( areEqual( E_x_data[ i ], E_x_loaded.get()[ i ] ) );
+    }
+
     MeshRecordComponent E_y = E[ "y" ];
     REQUIRE( E_y.unitSI() == 1.2262657411105051e+13 );
     REQUIRE( E_y.position< double >() == vecdouble{ 0., 0.5, 0. } );
     REQUIRE( E_y.getDatatype() == Datatype::FLOAT );
     REQUIRE( E_y.getExtent() == Extent{ 64, 96, 64 } );
     REQUIRE( E_y.getDimensionality() == 3 );
+    float E_y_data[] = { 2.9119401006028056e-06,  -4.1504316031932831e-03,
+                         -7.7566313557326794e-03, -7.0055266405688599e-06,
+                         -4.6010510995984077e-03, -8.2268649712204933e-03,
+                         -4.2445255530765280e-05, -4.5211883261799812e-03,
+                         -7.7390326187014580e-03, 1.1486050207167864e-03,
+                         -3.1262037809938192e-03, -6.9479043595492840e-03,
+                         -5.4344005184248090e-04, -5.1499414257705212e-03,
+                         -8.8642267510294914e-03, -2.2272428032010794e-03,
+                         -6.6048246808350086e-03, -9.7730942070484161e-03,
+                         1.2740951497107744e-03,  -2.9673313256353140e-03,
+                         -6.8249986506998539e-03, -1.8191186245530844e-03,
+                         -6.2228594906628132e-03, -9.8043894395232201e-03,
+                         -4.7707646153867245e-03, -8.8001070544123650e-03,
+                         -1.1678364127874374e-02 };
+    auto E_y_loaded = E_y.loadChunk< float >( { 32, 32, 32 }, { 3, 3, 3 } );
+    E_y.seriesFlush();
+    for( size_t i = 0; i < 27; ++i )
+    {
+        REQUIRE( areEqual( E_y_data[ i ], E_y_loaded.get()[ i ] ) );
+    }
 
     MeshRecordComponent E_z = E[ "z" ];
     REQUIRE( E_z.unitSI() == 1.2262657411105051e+13 );
@@ -3633,6 +3674,26 @@ TEST_CASE( "git_adios2_sample_attribute_test", "[serial][adios2]" )
     REQUIRE( E_z.getDatatype() == Datatype::FLOAT );
     REQUIRE( E_z.getExtent() == Extent{ 64, 96, 64 } );
     REQUIRE( E_z.getDimensionality() == 3 );
+    float E_z_data[] = { -1.4166267216205597e-01, -1.3581122457981110e-01,
+                         -1.2437300384044647e-01, -1.1825620383024216e-01,
+                         -1.1176286637783051e-01, -9.9538534879684448e-02,
+                         -7.9616926610469818e-02, -7.3201417922973633e-02,
+                         -6.1570063233375549e-02, -1.3579311966896057e-01,
+                         -1.3006231188774109e-01, -1.1882482469081879e-01,
+                         -1.1181684583425522e-01, -1.0553391277790070e-01,
+                         -9.3644127249717712e-02, -7.3323413729667664e-02,
+                         -6.7192249000072479e-02, -5.5999506264925003e-02,
+                         -1.2446234375238419e-01, -1.1893676966428757e-01,
+                         -1.0808662325143814e-01, -9.9771015346050262e-02,
+                         -9.3826226890087128e-02, -8.2568824291229248e-02,
+                         -6.1935324221849442e-02, -5.6248735636472702e-02,
+                         -4.5876540243625641e-02 };
+    auto E_z_loaded = E_z.loadChunk< float >( { 32, 32, 32 }, { 3, 3, 3 } );
+    E_z.seriesFlush();
+    for( size_t i = 0; i < 27; ++i )
+    {
+        REQUIRE( areEqual( E_z_data[ i ], E_z_loaded.get()[ i ] ) );
+    }
 
     REQUIRE( it.particles.size() == 1 );
 
@@ -3673,6 +3734,63 @@ TEST_CASE( "git_adios2_sample_attribute_test", "[serial][adios2]" )
     REQUIRE( mass_scalar.getDatatype() == Datatype::DOUBLE );
     REQUIRE( mass_scalar.getDimensionality() == 1 );
     REQUIRE( mass_scalar.getExtent() == Extent{ 0 } );
+
+    float position_x_data[] = {
+        6.4437955617904663e-01,
+        9.4767332077026367e-01,
+        2.2304397821426392e-01,
+        2.7961438894271851e-01,
+        1.4008544385433197e-02,
+        4.2263090610504150e-01,
+        5.1174026727676392e-01,
+        8.3407729864120483e-01,
+        5.8531630039215088e-01 };
+    auto position_x_loaded =
+        electrons[ "position" ][ "x" ].loadChunk< float >( { 32 }, { 9 } );
+    electrons.seriesFlush();
+    for( size_t i = 0; i < 9; ++i )
+    {
+        REQUIRE(
+            areEqual( position_x_data[ i ], position_x_loaded.get()[ i ] ) );
+    }
+
+    float position_y_data[] = {
+        8.1519651412963867e-01,
+        9.0318095684051514e-01,
+        7.2106164693832397e-01,
+        4.9899551272392273e-01,
+        3.1199228763580322e-01,
+        7.1374291181564331e-01,
+        1.4569625258445740e-02,
+        2.3529490828514099e-01,
+        8.6302649974822998e-01 };
+    auto position_y_loaded =
+        electrons[ "position" ][ "y" ].loadChunk< float >( { 32 }, { 9 } );
+    electrons.seriesFlush();
+    for( size_t i = 0; i < 9; ++i )
+    {
+        REQUIRE(
+            areEqual( position_y_data[ i ], position_y_loaded.get()[ i ] ) );
+    }
+
+    float position_z_data[] = {
+        5.4766160249710083e-01,
+        4.9213194847106934e-01,
+        7.8874737024307251e-01,
+        8.6675989627838135e-01,
+        5.3763031959533691e-01,
+        1.6927000880241394e-01,
+        8.1256645917892456e-01,
+        4.6624803543090820e-01,
+        7.8780972957611084e-01 };
+    auto position_z_loaded =
+        electrons[ "position" ][ "z" ].loadChunk< float >( { 32 }, { 9 } );
+    electrons.seriesFlush();
+    for( size_t i = 0; i < 9; ++i )
+    {
+        REQUIRE(
+            areEqual( position_z_data[ i ], position_z_loaded.get()[ i ] ) );
+    }
 }
 
 void variableBasedSeries( std::string const & file )
