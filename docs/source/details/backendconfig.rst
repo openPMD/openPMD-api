@@ -46,6 +46,11 @@ Using the Streaming API (i.e. ``SeriesImpl::readIteration()``) will do this auto
 Parsing eagerly might be very expensive for a Series with many iterations, but will avoid bugs by forgotten calls to ``Iteration::open()``.
 In complex environments, calling ``Iteration::open()`` on an already open environment does no harm (and does not incur additional runtime cost for additional ``open()`` calls).
 
+The key ``resizable`` can be passed to ``Dataset`` options.
+It if set to ``{"resizable": true}``, this declares that it shall be allowed to increased the ``Extent`` of a ``Dataset`` via ``resetDataset()`` at a later time, i.e., after it has been first declared (and potentially written).
+For HDF5, resizable Datasets come with a performance penalty.
+For JSON and ADIOS2, all datasets are resizable, independent of this option.
+
 Configuration Structure per Backend
 -----------------------------------
 

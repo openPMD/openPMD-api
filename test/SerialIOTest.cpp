@@ -3836,7 +3836,8 @@ extendDataset( std::string const & ext )
         }
         // only one iteration written anyway
         write.setIterationEncoding( IterationEncoding::variableBased );
-        Dataset ds1{ Datatype::INT, { 5, 5 } };
+
+        Dataset ds1{ Datatype::INT, { 5, 5 }, "{ \"resizable\": true }" };
         Dataset ds2{ Datatype::INT, { 10, 5 } };
 
         // array record component -> array record component
@@ -3953,7 +3954,12 @@ TEST_CASE( "extend_dataset", "[serial]" )
     extendDataset( "bp" );
 #endif
 #if openPMD_HAVE_HDF5
-    // extendDataset( "h5" );
+    // extensible datasets require chunking
+    // skip this test for if chunking is disabled
+    if( auxiliary::getEnvString( "OPENPMD_HDF5_CHUNKS", "auto" ) != "none" )
+    {
+        extendDataset("h5");
+    }
 #endif
 }
 

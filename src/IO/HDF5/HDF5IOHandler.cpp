@@ -275,13 +275,23 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
             name = auxiliary::replace_last(name, "/", "");
 
         auto config = nlohmann::json::parse( parameters.options );
+
+        // general
+        bool is_resizable_dataset = false;
+        if( config.contains( "resizable" ) )
+        {
+            is_resizable_dataset = config.at( "resizable" ).get< bool >();
+        }
+
+        // HDF5 specific
         if( config.contains( "hdf5" ) &&
             config[ "hdf5" ].contains( "dataset" ) )
         {
             auxiliary::TracingJSON datasetConfig{
                 config[ "hdf5" ][ "dataset" ] };
+
             /*
-             * @todo Read options from config here.
+             * @todo Read more options from config here.
              */
             auto shadow = datasetConfig.invertShadow();
             if( shadow.size() > 0 )
@@ -317,7 +327,11 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
             num_elements *= val;
         }
 
-        hid_t space = H5Screate_simple(static_cast< int >(dims.size()), dims.data(), dims.data());
+        std::vector< hsize_t > max_dims( dims.begin(), dims.end() );
+        if( is_resizable_dataset )
+            max_dims.assign( dims.size(), H5F_UNLIMITED );
+
+        hid_t space = H5Screate_simple(static_cast< int >(dims.size()), dims.data(), max_dims.data());
         VERIFY(space >= 0, "[HDF5] Internal error: Failed to create dataspace during dataset creation");
 
         /* enable chunking on the created dataspace */
@@ -429,8 +443,7 @@ HDF5IOHandlerImpl::extendDataset(Writable* writable,
         VERIFY(
             ndims >= 0,
             "[HDF5]: Internal error: Failed to retrieve dimensionality of "
-            "dataset "
-            "during dataset read." );
+            "dataset during dataset read." );
         hid_t propertyList = H5Dget_create_plist( dataset_id );
         std::vector< hsize_t > chunkExtent( ndims, 0 );
         int chunkDimensionality =
@@ -439,7 +452,7 @@ HDF5IOHandlerImpl::extendDataset(Writable* writable,
         {
             throw std::runtime_error(
                 "[HDF5] Cannot extend datasets unless written with chunked "
-                "layout (currently unsupported)." );
+                "layout." );
         }
     }
 
