@@ -151,10 +151,25 @@ TEST_CASE( "myPath", "[core]" )
 {
 #if openPMD_USE_INVASIVE_TESTS
     using vec_t = std::vector< std::string >;
+    auto pathOf = []( AttributableImpl & attr )
+    {
+        auto res = attr.myPath();
+#if false
+        std::cout << "Directory:\t" << res.directory << "\nSeries name:\t"
+                  << res.seriesName << "\nSeries ext:\t" << res.seriesExtension
+                  << std::endl;
+#endif
+        REQUIRE( res.directory == "../samples/" );
+        REQUIRE( res.seriesName == "myPath" );
+        REQUIRE( res.seriesExtension == ".json" );
+        REQUIRE( res.filePath() == "../samples/myPath.json" );
+        return res.openPMDGroup;
+    };
+
     Series series( "../samples/myPath.json", Access::CREATE );
-    REQUIRE( series.myPath() == vec_t{} );
+    REQUIRE( pathOf( series ) == vec_t{} );
     auto iteration = series.iterations[ 1234 ];
-    REQUIRE( iteration.myPath() == vec_t{ "iterations", "1234" } );
+    REQUIRE( pathOf( iteration ) == vec_t{ "iterations", "1234" } );
 
     auto writeSomething = []( auto & recordComponent )
     {
@@ -163,15 +178,15 @@ TEST_CASE( "myPath", "[core]" )
     };
 
     REQUIRE(
-        iteration.meshes.myPath() == vec_t{ "iterations", "1234", "meshes" } );
+        pathOf( iteration.meshes ) == vec_t{ "iterations", "1234", "meshes" } );
 
     auto scalarMesh = iteration.meshes[ "e_chargeDensity" ];
     REQUIRE(
-        scalarMesh.myPath() ==
+        pathOf( scalarMesh ) ==
         vec_t{ "iterations", "1234", "meshes", "e_chargeDensity" } );
     auto scalarMeshComponent = scalarMesh[ RecordComponent::SCALAR ];
     REQUIRE(
-        scalarMeshComponent.myPath() ==
+        pathOf( scalarMeshComponent ) ==
         vec_t{
             "iterations",
             "1234",
@@ -182,49 +197,55 @@ TEST_CASE( "myPath", "[core]" )
 
     auto vectorMesh = iteration.meshes[ "E" ];
     REQUIRE(
-        vectorMesh.myPath() == vec_t{ "iterations", "1234", "meshes", "E" } );
+        pathOf( vectorMesh ) == vec_t{ "iterations", "1234", "meshes", "E" } );
     auto vectorMeshComponent = vectorMesh[ "x" ];
     REQUIRE(
-        vectorMeshComponent.myPath() ==
+        pathOf( vectorMeshComponent ) ==
         vec_t{ "iterations", "1234", "meshes", "E", "x" } );
 
     REQUIRE(
-        iteration.particles.myPath() ==
+        pathOf( iteration.particles ) ==
         vec_t{ "iterations", "1234", "particles" } );
 
     auto speciesE = iteration.particles[ "e" ];
     REQUIRE(
-        speciesE.myPath() == vec_t{ "iterations", "1234", "particles", "e" } );
+        pathOf( speciesE ) == vec_t{ "iterations", "1234", "particles", "e" } );
 
     auto speciesPosition = speciesE[ "position" ];
     REQUIRE(
-        speciesPosition.myPath() ==
+        pathOf( speciesPosition ) ==
         vec_t{ "iterations", "1234", "particles", "e", "position" } );
 
     auto speciesPositionX = speciesPosition[ "x" ];
     REQUIRE(
-        speciesPositionX.myPath() ==
+        pathOf( speciesPositionX ) ==
         vec_t{ "iterations", "1234", "particles", "e", "position", "x" } );
     writeSomething( speciesPositionX );
 
     auto speciesWeighting = speciesE[ "weighting" ];
     REQUIRE(
-        speciesWeighting.myPath() ==
+        pathOf( speciesWeighting ) ==
         vec_t{ "iterations", "1234", "particles", "e", "weighting" } );
 
     auto speciesWeightingX = speciesWeighting[ RecordComponent::SCALAR ];
     REQUIRE(
-        speciesWeightingX.myPath() ==
-        vec_t{ "iterations", "1234", "particles", "e", "weighting", RecordComponent::SCALAR } );
+        pathOf( speciesWeightingX ) ==
+        vec_t{
+            "iterations",
+            "1234",
+            "particles",
+            "e",
+            "weighting",
+            RecordComponent::SCALAR } );
     writeSomething( speciesWeightingX );
 
     REQUIRE(
-        speciesE.particlePatches.myPath() ==
+        pathOf( speciesE.particlePatches ) ==
         vec_t{ "iterations", "1234", "particles", "e", "particlePatches" } );
 
     auto patchExtent = speciesE.particlePatches[ "extent" ];
     REQUIRE(
-        patchExtent.myPath() ==
+        pathOf( patchExtent ) ==
         vec_t{
             "iterations",
             "1234",
@@ -235,7 +256,7 @@ TEST_CASE( "myPath", "[core]" )
 
     auto patchExtentX = patchExtent[ "x" ];
     REQUIRE(
-        patchExtentX.myPath() ==
+        pathOf( patchExtentX ) ==
         vec_t{
             "iterations",
             "1234",
@@ -247,7 +268,7 @@ TEST_CASE( "myPath", "[core]" )
 
     auto patchNumParticles = speciesE.particlePatches[ "numParticles" ];
     REQUIRE(
-        patchNumParticles.myPath() ==
+        pathOf( patchNumParticles ) ==
         vec_t{
             "iterations",
             "1234",
@@ -259,7 +280,7 @@ TEST_CASE( "myPath", "[core]" )
     auto patchNumParticlesComponent =
         patchNumParticles[ RecordComponent::SCALAR ];
     REQUIRE(
-        patchNumParticlesComponent.myPath() ==
+        pathOf( patchNumParticlesComponent ) ==
         vec_t{
             "iterations",
             "1234",

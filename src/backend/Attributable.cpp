@@ -134,9 +134,14 @@ internal::SeriesInternal & AttributableImpl::retrieveSeries()
         static_cast< AttributableImpl const * >( this )->retrieveSeries() );
 }
 
-std::vector< std::string > AttributableImpl::myPath() const
+std::string Attributable::MyPath::filePath() const
 {
-    std::vector< std::string > res{};
+    return directory + seriesName + seriesExtension;
+}
+
+auto AttributableImpl::myPath() const -> MyPath
+{
+    MyPath res;
     Writable const * findSeries = &writable();
     while( findSeries->parent )
     {
@@ -149,11 +154,17 @@ std::vector< std::string > AttributableImpl::myPath() const
              it != findSeries->ownKeyWithinParent.rend();
              ++it )
         {
-            res.push_back( *it );
+            res.openPMDGroup.push_back( *it );
         }
         findSeries = findSeries->parent;
     }
-    std::reverse( res.begin(), res.end() );
+    std::reverse( res.openPMDGroup.begin(), res.openPMDGroup.end() );
+    auto const & series =
+        auxiliary::deref_dynamic_cast< internal::SeriesInternal >(
+            findSeries->attributable );
+    res.seriesName = series.name();
+    res.seriesExtension = suffix( series.m_format );
+    res.directory = IOHandler()->directory;
     return res;
 }
 

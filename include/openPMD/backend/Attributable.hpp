@@ -205,14 +205,28 @@ OPENPMD_protected:
 
     void seriesFlush( FlushLevel );
 
+    struct MyPath
+    {
+        std::string directory; // samples/git-samples/
+        std::string seriesName; // data%T
+        std::string seriesExtension; // .bp, .h5, .json, ...
+        /**
+         * A vector of openPMD group names indicating where this object
+         * may be found within its Series.
+         * Notice that RecordComponent::SCALAR is included in this list.
+         *
+         */
+        std::vector< std::string > openPMDGroup;
+
+        std::string filePath() const;
+    };
+
     /**
      * @brief The path to this object within its containing Series.
      *
-     * @return A vector of openPMD group names indicating where this object
-     *     may be found within its Series.
-     *     Notice that RecordComponent::SCALAR is included in this list.
+     * @return A struct informing about the context of this Attributable.
      */
-    std::vector< std::string > myPath() const;
+    MyPath myPath() const;
 
     void flushAttributes();
     enum ReadMode {
