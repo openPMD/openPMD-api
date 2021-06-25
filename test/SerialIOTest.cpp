@@ -3543,18 +3543,14 @@ TEST_CASE( "git_adios2_sample_attribute_test", "[serial][adios2]" )
     using vecdouble = std::vector< double >;
     using arr7 = std::array< double, 7 >;
 
-    Series o;
-    try
+    std::string const samplePath =
+        "../samples/git-sample/3d-bp4/example-3d-bp4.bp";
+    if( !auxiliary::directory_exists( samplePath ) )
     {
-        o = Series(
-            "../samples/git-sample/3d-bp4/example-3d-bp4.bp",
-            Access::READ_ONLY );
-    }
-    catch( std::exception const & e ) // @todo error kind
-    {
-        std::cerr << "git sample no accessible (" << e.what() << ")\n";
+        std::cerr << "git sample not accessible \n";
         return;
     }
+    Series o( samplePath, Access::READ_ONLY );
     REQUIRE( o.openPMD() == "1.1.0" );
     REQUIRE( o.openPMDextension() == 0 );
     REQUIRE( o.basePath() == "/data/%T/" );
