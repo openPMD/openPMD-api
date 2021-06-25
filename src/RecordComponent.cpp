@@ -194,10 +194,7 @@ RecordComponent::serialize()
         throw std::runtime_error("serialize does not work with MPI");
 
     // information to construct a new serial read-only series
-    auto const str_path = IOHandler()->directory; // samples/git-samples/
-    auto const str_name = series.name();          // data%T
-    auto const str_ext = suffix(series.m_format); // .bp, .h5, .json, ...
-    auto const filepath = str_path + str_name + str_ext;
+    MyPath myPath = this->myPath(); // my tribute to the Java gods
 
     // information to find iteration
     //auto const int it = ...; // 400
@@ -208,7 +205,7 @@ RecordComponent::serialize()
     //auto const str_rc = ...; // "x"
 
     std::cout << "+++\n";
-    std::cout << filepath << std::endl;
+    std::cout << myPath.filePath() << std::endl;
 }
 
 void
