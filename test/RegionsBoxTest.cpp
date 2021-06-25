@@ -1,4 +1,5 @@
 #include <openPMD/regions/Box.hpp>
+#include <openPMD/regions/NDBox.hpp>
 
 #include <catch2/catch.hpp>
 
@@ -28,7 +29,7 @@ template <typename B> void test_Box(const B &box) {
   const auto randb = [&]() {
     if (D == 0) {
       if (dist0(gen) < 5)
-        return B();
+        return B(p, p);
       else
         return B(p);
     }
@@ -122,11 +123,11 @@ template <typename B> void test_Box(const B &box) {
       CHECK((X.grown(x).grown(-x).empty() || X.grown(x).grown(-x) == X) ==
             true);
     CHECK(X.grown(x) == X.grown(x, x));
-    CHECK(X.grown(a) == X.grown(P::pure(a)));
+    CHECK(X.grown(a) == X.grown(fmap([&](int) { return a; }, x)));
 
     CHECK(X.shrunk(x, y) == X.grown(-x, -y));
     CHECK(X.shrunk(x) == X.shrunk(x, x));
-    CHECK(X.shrunk(a) == X.shrunk(P::pure(a)));
+    CHECK(X.shrunk(a) == X.shrunk(fmap([&](int) { return a; }, x)));
 
     CHECK(N == N);
     CHECK(X == X);
@@ -231,8 +232,6 @@ TEST_CASE("Box<double,1>", "[regions]") { test_Box(Box<double, 1>()); }
 TEST_CASE("Box<double,2>", "[regions]") { test_Box(Box<double, 2>()); }
 TEST_CASE("Box<double,3>", "[regions]") { test_Box(Box<double, 3>()); }
 
-// TODO
-#if 0
 TEST_CASE("NDBox<std::ptrdiff_t>(0)", "[regions]") {
   test_Box(NDBox<std::ptrdiff_t>(0));
 }
@@ -250,4 +249,3 @@ TEST_CASE("NDBox<double>(0)", "[regions]") { test_Box(NDBox<double>(0)); }
 TEST_CASE("NDBox<double>(1)", "[regions]") { test_Box(NDBox<double>(1)); }
 TEST_CASE("NDBox<double>(2)", "[regions]") { test_Box(NDBox<double>(2)); }
 TEST_CASE("NDBox<double>(3)", "[regions]") { test_Box(NDBox<double>(3)); }
-#endif

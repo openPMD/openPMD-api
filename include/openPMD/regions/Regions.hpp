@@ -1,10 +1,12 @@
 #ifndef REGIONS_REGIONS_HPP
 #define REGIONS_REGIONS_HPP
 
-#include "Point.hpp"
 #include "Box.hpp"
+#include "Point.hpp"
 #include "Region.hpp"
 
+#include "NDBox.hpp"
 #include "NDPoint.hpp"
+//TODO #include "NDRegion.hpp"
 
 #endif // #ifndef REGIONS_REGIONS_HPP

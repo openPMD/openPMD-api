@@ -50,6 +50,22 @@ constexpr std::array<T, N> construct_array(const F &f) {
     return array_push<T>(construct_array<T, N - 1>(f), f(N - 1));
 }
 
+// Convert a std::vector
+template <typename R, typename T>
+std::vector<R> convert_vector(const std::vector<T> &vec) {
+  std::vector<R> res(vec.size());
+  for (std::size_t i = 0; i < res.size(); ++i)
+    res[i] = vec[i];
+  return res;
+}
+template <typename R, typename T>
+std::vector<R> convert_vector(std::vector<T> &&vec) {
+  std::vector<R> res(vec.size());
+  for (std::size_t i = 0; i < res.size(); ++i)
+    res[i] = std::move(vec[i]);
+  return res;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 // Compare tuples

@@ -109,7 +109,7 @@ public:
   friend Box operator&(const Box &b1, const Box &b2) {
     return Box(!b1.empty() & !b2.empty());
   }
-  Box &operator|=(const Box &b) { return *this = *this | b; }
+  Box &operator&=(const Box &b) { return *this = *this & b; }
   friend Box intersection(const Box &b1, const Box &b2) { return b1 & b2; }
 
   friend bool operator==(const Box &b, const std::vector<Box> &bs) {
@@ -290,6 +290,7 @@ public:
 #endif
     return r;
   }
+  Box &operator&=(const Box &b) { return *this = *this & b; }
   friend Box intersection(const Box &b1, const Box &b2) { return b1 & b2; }
 
   friend bool operator==(const Box &b, const std::vector<Box> &bs) {

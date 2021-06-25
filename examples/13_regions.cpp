@@ -153,6 +153,55 @@ void box_example() {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+void ndbox_example() {
+  using namespace openPMD::Regions;
+  using namespace std;
+
+  cout << "\n"
+       << "Boxes are spanned between points (inclusive lower, exclusive upper "
+          "bound):\n";
+
+  cout << "  Define two points:\n";
+  NDPoint<int> x{1, 4}, y{2, 5};
+  cout << "  x:" << x << "\n"
+       << "  y:" << y << "\n";
+
+  cout << "  Define a box between these points:\n";
+  NDBox<int> b(x, y);
+  cout << "    b:  " << b << "   b.empty:  " << b.empty() << "\n";
+  cout << "  Define an empty box:\n";
+  NDBox<int> be(2);
+  cout << "    be: " << be << "   be.empty: " << be.empty() << "\n";
+
+  cout << "  Boxes can be shifted and scaled (e.g. to change resolution):\n";
+  NDPoint<int> offset{1, 2};
+  auto b1 = b >> offset;
+  NDPoint<int> scale{2, 2};
+  auto b2 = b * scale;
+  // Boxes can be grown and shrunk (e.g. to add ghost zones)
+  auto bg = b.grown(1);
+  auto bs = b.shrunk(1);
+  cout << "    shifted box: " << b1 << "\n"
+       << "    scaled box:  " << b2 << "\n"
+       << "    grown box:   " << bg << "\n"
+       << "    shrunk box:  " << bs << "\n";
+
+  cout << "  The bounding box containing two boxes:\n";
+  auto bb = bounding_box(b, b1);
+  cout << "    bounding box: " << bb << "\n";
+
+  cout << "  Boxes can be intersected:\n";
+  auto bi = b & b1;
+  cout << "  intersection: " << bi << "\n";
+
+  cout << "  Set tests:\n";
+  cout << "    b == b1 (equality):            " << (b == b1) << "\n"
+       << "    b <= b1 (is_subset_of):        " << (b <= b1) << "\n"
+       << "    b <  b1 (is_strict_subset_of): " << (b < b1) << "\n";
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 void region_example() {
   using namespace openPMD::Regions;
   using namespace std;
@@ -262,6 +311,7 @@ int main() {
   ndpoint_example();
 
   box_example();
+  ndbox_example();
 
   region_example();
 

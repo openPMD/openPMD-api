@@ -161,7 +161,7 @@ public:
   virtual std::ostream &output(std::ostream &os) const = 0;
 };
 
-// Helper class wrapping point<T,D>
+// Helper class wrapping Point<T,D>
 
 template <typename T, std::size_t D> class WPoint final : public VPoint<T> {
   Point<T, D> p;
@@ -609,7 +609,7 @@ public:
   NDPoint(Point<T, D> &&p_)
       : p(std::make_unique<detail::WPoint<T, D>>(std::move(p_))) {}
   template <std::size_t D> operator Point<T, D>() const {
-    return Point<T, D>(dynamic_cast<const detail::WPoint<T, D>>(&p));
+    return Point<T, D>(dynamic_cast<const detail::WPoint<T, D>&>(*p));
   }
 
   template <std::size_t D>
