@@ -905,3 +905,26 @@ TEST_CASE( "custom_geometries", "[core]" )
         REQUIRE( e_chargeDensity.geometryString() == "other" );
     }
 }
+
+TEST_CASE( "load_chunk_wrong_datatype", "[core]" )
+{
+    {
+        Series write( "../samples/some_float_value.json", Access::CREATE );
+        Dataset ds{ Datatype::FLOAT, { 10 } };
+        std::vector< float > sampleData( 10, 1234.5 );
+        auto rc =
+            write.iterations[ 0 ].meshes[ "rho" ][ RecordComponent::SCALAR ];
+        rc.resetDataset( ds );
+        rc.storeChunk( sampleData, { 0 }, { 10 } );
+        write.flush();
+    }
+    {
+        Series read( "../samples/some_float_value.json", Access::READ_ONLY );
+        REQUIRE_THROWS_WITH(
+            read.iterations[ 0 ]
+                .meshes[ "rho" ][ RecordComponent::SCALAR ]
+                .loadChunk< double >( { 0 }, { 10 } ),
+            Catch::Equals(
+                "Type conversion during chunk loading not yet implemented" ) );
+    }
+}
