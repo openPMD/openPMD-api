@@ -318,8 +318,9 @@ jobs:
         sudo .github/workflows/dependencies/install_icc
     - name: Build
       env: {CXXFLAGS: -Werror -Wno-deprecated-declarations}
-      # C++17 not properly supported (false positives for unused
-      # arguments and missing return statements with `if constexpr`)
+      # C++17 is advertised, but is not properly supported (false
+      # positives for unused arguments and missing return statements
+      # with `if constexpr`)
       run: |
         set +e; source /opt/intel/oneapi/setvars.sh; set -e
         mkdir build && cd build
@@ -329,7 +330,8 @@ jobs:
           -DCMAKE_C_COMPILER=$(which icc)    \
           -DCMAKE_CXX_COMPILER=$(which icpc) \
           -DopenPMD_USE_PYTHON=OFF           \
-          -DopenPMD_USE_MPI=OFF
+          -DopenPMD_USE_MPI=OFF              \
+          -DopenPMD_USE_REGIONS=OFF
         cmake --build . --parallel 2
         ctest --output-on-failure
 
