@@ -444,28 +444,18 @@ public:
     return fold([](bool r, const T &a) { return r || a; }, false, x);
   }
   friend constexpr T max_element(const Point &x) {
-    if constexpr (std::is_same_v<T, bool>) {
-      const T neutral = false;
-      return fold([](const T &r, const T &a) { return r || a; }, neutral, x);
-    } else {
-      using std::max;
-      const T neutral = std::is_floating_point_v<T>
-                            ? -std::numeric_limits<T>::infinity()
-                            : std::numeric_limits<T>::lowest();
-      return fold([](const T &r, const T &a) { return max(r, a); }, neutral, x);
-    }
+    using std::max;
+    const T neutral = std::is_floating_point_v<T>
+                          ? -std::numeric_limits<T>::infinity()
+                          : std::numeric_limits<T>::lowest();
+    return fold([](const T &r, const T &a) { return max(r, a); }, neutral, x);
   }
   friend constexpr T min_element(const Point &x) {
-    if constexpr (std::is_same_v<T, bool>) {
-      const T neutral = true;
-      return fold([](const T &r, const T &a) { return r && a; }, neutral, x);
-    } else {
-      using std::min;
-      const T neutral = std::is_floating_point_v<T>
-                            ? std::numeric_limits<T>::infinity()
-                            : std::numeric_limits<T>::max();
-      return fold([](const T &r, const T &a) { return min(r, a); }, neutral, x);
-    }
+    using std::min;
+    const T neutral = std::is_floating_point_v<T>
+                          ? std::numeric_limits<T>::infinity()
+                          : std::numeric_limits<T>::max();
+    return fold([](const T &r, const T &a) { return min(r, a); }, neutral, x);
   }
   friend constexpr T product(const Point &x) {
     return fold([](const T &r, const T &a) { return r * a; }, T(1), x);
