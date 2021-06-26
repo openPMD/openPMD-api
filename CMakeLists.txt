@@ -794,7 +794,7 @@ if(openPMD_BUILD_TESTING)
         else()
             target_link_libraries(${testname}Tests PRIVATE CatchMain)
         endif()
-        if(${testname} MATCHES "Regions.+$")
+        if(${testname} MATCHES "(Point)|(Box)|(Region)")
             target_compile_features(${testname}Tests PUBLIC cxx_std_17)
             set_target_properties(${testname}Tests PROPERTIES
                 CXX_EXTENSIONS OFF
