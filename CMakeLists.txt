@@ -326,6 +326,26 @@ else()
     set(openPMD_HAVE_PYTHON FALSE)
 endif()
 
+# Region algebra
+message(STATUS "*** openPMD_USE_REGIONS=${openPMD_USE_REGIONS}")
+if(openPMD_USE_REGIONS STREQUAL AUTO)
+    # Enable regions by default only when building with at least C++17
+    if ("cxx_std_17" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
+        message(STATUS "*** found C++17 support")
+        set(openPMD_HAVE_REGIONS TRUE)
+    else()
+        message(STATUS "*** found no C++17 support")
+        set(openPMD_HAVE_REGIONS FALSE)
+    endif()
+elseif(openPMD_USE_REGIONS)
+    message(STATUS "*** regions have been manually activated")
+    set(openPMD_HAVE_REGIONS TRUE)
+else()
+    message(STATUS "*** regions have been manually deactivated")
+    set(openPMD_HAVE_REGIONS FALSE)
+endif()
+message(STATUS "*** openPMD_USE_REGIONS=${openPMD_USE_REGIONS}")
+message(STATUS "*** openPMD_HAVE_REGIONS=${openPMD_HAVE_REGIONS}")
 
 # Targets #####################################################################
 #
