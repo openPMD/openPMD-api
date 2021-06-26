@@ -29,7 +29,7 @@ template <typename B> void test_Box(const B &box) {
   const auto randb = [&]() {
     if (D == 0) {
       if (dist0(gen) < 5)
-        return B(p, p);
+        return B(p, p); // empty box
       else
         return B(p);
     }

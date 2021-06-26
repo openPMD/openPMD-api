@@ -17,7 +17,7 @@ namespace detail {
 template <typename T> class VBox {
 public:
   typedef T value_type;
-  typedef std::size_t size_type;
+  typedef typename VPoint<T>::size_type size_type;
 
   virtual std::unique_ptr<VBox> copy() const = 0;
 
@@ -436,17 +436,17 @@ public:
     return intersection(*b1.b, *b2.b);
   }
 
-  friend bool operator==(const NDBox &b, const std::vector<NDBox> &bs) {
-    return *b.b == bs;
+  friend bool operator==(const NDBox &b1, const std::vector<NDBox> &bs) {
+    return *b1.b == bs;
   }
-  friend bool operator==(const std::vector<NDBox> &bs, const NDBox &b) {
-    return *b.b == bs;
+  friend bool operator==(const std::vector<NDBox> &bs, const NDBox &b2) {
+    return *b2.b == bs;
   }
-  friend bool operator!=(const NDBox &b, const std::vector<NDBox> &bs) {
-    return *b.b != bs;
+  friend bool operator!=(const NDBox &b1, const std::vector<NDBox> &bs) {
+    return *b1.b != bs;
   }
-  friend bool operator!=(const std::vector<NDBox> &bs, const NDBox &b) {
-    return *b.b != bs;
+  friend bool operator!=(const std::vector<NDBox> &bs, const NDBox &b2) {
+    return *b2.b != bs;
   }
 
   friend std::vector<NDBox> operator-(const NDBox &b1, const NDBox &b2) {

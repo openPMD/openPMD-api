@@ -7,6 +7,6 @@
 
 #include "NDBox.hpp"
 #include "NDPoint.hpp"
-//TODO #include "NDRegion.hpp"
+#include "NDRegion.hpp"
 
 #endif // #ifndef REGIONS_REGIONS_HPP

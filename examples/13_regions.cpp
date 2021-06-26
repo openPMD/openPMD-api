@@ -207,7 +207,7 @@ void region_example() {
   using namespace std;
 
   cout << "\n"
-       << "Regions consists of a set of boxes:\n";
+       << "Regions consist of a set of boxes:\n";
 
   cout << "  Define two points:\n";
   Point<int, 2> x{1, 4}, y{2, 5};
@@ -262,9 +262,8 @@ void region_example() {
   for (const auto &bx : std::vector<Box<int, 2>>(rg - r))
     cout << "      " << bx << "\n";
 
-#if !REGIONS_DEBUG
   // Don't benchmark the debug version; it uses an N^2 algorithm for self-checks
-  const int n = 1000;
+  const int n = REGIONS_DEBUG ? 10 : 1000;
   cout << "  Create a list of " << n
        << " 3d boxes and convert it to a region:\n";
   std::mt19937 gen;
@@ -301,7 +300,108 @@ void region_example() {
   cout << "    reg.size:   " << reg1.size() << "\n"
        << "    reg.nboxes: " << reg1.nboxes() << "\n"
        << "    runtime:    " << elapsed(t2, t3) << " sec\n";
-#endif
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+void ndregion_example() {
+  using namespace openPMD::Regions;
+  using namespace std;
+
+  cout << "\n"
+       << "Regions consist of a set of boxes:\n";
+
+  cout << "  Define two points:\n";
+  NDPoint<int> x{1, 4}, y{2, 5};
+  cout << "  x:" << x << "\n"
+       << "  y:" << y << "\n";
+
+  cout << "  Define a box between these points:\n";
+  NDBox<int> b(x, y);
+  cout << "  b:" << b << "\n";
+
+  cout << "  Define a region consisting of this box:\n";
+  NDRegion<int> r(b);
+  cout << "  r:  " << r << "   r.empty:  " << r.empty() << "\n";
+  cout << "  Define an empty region:\n";
+  NDRegion<int> re(2);
+  cout << "  re: " << re << "   re.empty: " << re.empty() << "\n";
+
+  cout << "  Regions can be shifted and scaled (e.g. to change resolution):\n";
+  NDPoint<int> offset{1, 2};
+  auto r1 = r >> offset;
+  NDPoint<int> scale{2, 2};
+  auto r2 = r * scale;
+  // Regions can be grown and shrunk (e.g. to add ghost zones)
+  auto rg = r.grown(1);
+  auto rs = r.shrunk(1);
+  cout << "    shifted region: " << r1 << "\n"
+       << "    scaled region:  " << r2 << "\n"
+       << "    grown region:   " << rg << "\n"
+       << "    shrunk region:  " << rs << "\n";
+
+  cout << "  The bounding box containing a region:\n";
+  auto bb = bounding_box(r);
+  cout << "    bounding box: " << bb << "\n";
+
+  cout << "  Regions can be treated as sets:\n";
+  auto ri = r & r1;
+  auto ru = r | r1;
+  auto rd = r - r1;
+  auto rx = r ^ r1;
+  cout << "    intersection:         " << ri << "\n";
+  cout << "    union:                " << ru << "\n";
+  cout << "    difference:           " << rd << "\n";
+  cout << "    symmetric difference: " << rx << "\n";
+
+  cout << "  Set tests:\n";
+  cout << "    r == r1 (equality):            " << (r == r1) << "\n"
+       << "    r <= r1 (is_subset_of):        " << (r <= r1) << "\n"
+       << "    r <  r1 (is_strict_subset_of): " << (r < r1) << "\n";
+
+  cout << "  Regions can be converted to a list of boxes:\n";
+  cout << "    rg - r:\n";
+  for (const auto &bx : std::vector<NDBox<int>>(rg - r))
+    cout << "      " << bx << "\n";
+
+  // Don't benchmark the debug version; it uses an N^2 algorithm for self-checks
+  const int n = REGIONS_DEBUG ? 10 : 1000;
+  cout << "  Create a list of " << n
+       << " 3d boxes and convert it to a region:\n";
+  std::mt19937 gen;
+  std::uniform_int_distribution dist(0, 100);
+  const auto random_point = [&]() {
+    return NDPoint<int>::make(3, [&](auto) { return dist(gen); });
+  };
+  const auto random_box = [&]() {
+    auto p1 = random_point();
+    auto p2 = random_point();
+    // Sort the points to avoid creating many empty boxes
+    return NDBox<int>(min(p1, p2), max(p1, p2));
+  };
+  using clock = std::chrono::high_resolution_clock;
+  using timestamp = std::chrono::time_point<clock>;
+  using second = std::chrono::duration<double, std::ratio<1>>;
+  const auto gettime = []() { return clock::now(); };
+  const auto elapsed = [](timestamp t0, timestamp t1) {
+    return std::chrono::duration_cast<second>(t1 - t0).count();
+  };
+  std::vector<NDBox<int>> boxlist;
+  for (int i = 0; i < n; ++i)
+    boxlist.push_back(random_box());
+  timestamp t0 = gettime();
+  NDRegion<int> reg(3, boxlist);
+  timestamp t1 = gettime();
+  cout << "    reg.size:   " << reg.size() << "\n"
+       << "    reg.nboxes: " << reg.nboxes() << "\n"
+       << "    runtime:    " << elapsed(t0, t1) << " sec\n";
+  cout << "  Grow the region by 1 point:\n";
+  timestamp t2 = gettime();
+  NDRegion<int> reg1 = reg.grown(1);
+  timestamp t3 = gettime();
+  cout << "    reg.size:   " << reg1.size() << "\n"
+       << "    reg.nboxes: " << reg1.nboxes() << "\n"
+       << "    runtime:    " << elapsed(t2, t3) << " sec\n";
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -314,6 +414,7 @@ int main() {
   ndbox_example();
 
   region_example();
+  ndregion_example();
 
   return 0;
 }

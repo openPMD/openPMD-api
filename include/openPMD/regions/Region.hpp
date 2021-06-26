@@ -167,7 +167,9 @@ public:
   }
 
   // Set comparison operators
-  bool contains(const Point<T, D> &p) const { return !isdisjoint(Region(p)); }
+  bool contains(const Point<T, D> &p) const {
+    return !isdisjoint(*this, Region(p));
+  }
   friend bool isdisjoint(const Region &region1, const Region &region2) {
     return (region1 & region2).empty();
   }
@@ -188,8 +190,12 @@ public:
 
   bool is_subset_of(const Region &region) const { return *this <= region; }
   bool is_superset_of(const Region &region) const { return *this >= region; }
-  bool is_strict_subset_of(const Region &region) const { return *this < region; }
-  bool is_strict_superset_of(const Region &region) const { return *this > region; }
+  bool is_strict_subset_of(const Region &region) const {
+    return *this < region;
+  }
+  bool is_strict_superset_of(const Region &region) const {
+    return *this > region;
+  }
 
   friend std::ostream &operator<<(std::ostream &os, const Region &region) {
     os << "{";
@@ -562,7 +568,7 @@ public:
     return grown(-dlo, -dup);
   }
   Region shrunk(const Point<T, D> &d) const { return shrunk(d, d); }
-  Region shrunk(T n) const { return shrunk(Point<T, D>(n)); }
+  Region shrunk(T n) const { return shrunk(Point<T, D>::pure(n)); }
 
   // Set operations
   friend Box<T, D> bounding_box(const Region &region) {
@@ -613,7 +619,9 @@ public:
   }
 
   // Set comparison operators
-  bool contains(const Point<T, D> &p) const { return !isdisjoint(Region(p)); }
+  bool contains(const Point<T, D> &p) const {
+    return !isdisjoint(*this, Region(p));
+  }
   friend bool isdisjoint(const Region &region1, const Region &region2) {
     return (region1 & region2).empty();
   }
@@ -634,8 +642,12 @@ public:
 
   bool is_subset_of(const Region &region) const { return *this <= region; }
   bool is_superset_of(const Region &region) const { return *this >= region; }
-  bool is_strict_subset_of(const Region &region) const { return *this < region; }
-  bool is_strict_superset_of(const Region &region) const { return *this > region; }
+  bool is_strict_subset_of(const Region &region) const {
+    return *this < region;
+  }
+  bool is_strict_superset_of(const Region &region) const {
+    return *this > region;
+  }
 
   friend std::ostream &operator<<(std::ostream &os, const Region &region) {
     os << "{";
@@ -1112,7 +1124,9 @@ public:
   }
 
   // Set comparison operators
-  bool contains(const Point<T, D> &p) const { return !isdisjoint(Region(p)); }
+  bool contains(const Point<T, D> &p) const {
+    return !isdisjoint(*this, Region(p));
+  }
   friend bool isdisjoint(const Region &region1, const Region &region2) {
     return (region1 & region2).empty();
   }
@@ -1133,8 +1147,12 @@ public:
 
   bool is_subset_of(const Region &region) const { return *this <= region; }
   bool is_superset_of(const Region &region) const { return *this >= region; }
-  bool is_strict_subset_of(const Region &region) const { return *this < region; }
-  bool is_strict_superset_of(const Region &region) const { return *this > region; }
+  bool is_strict_subset_of(const Region &region) const {
+    return *this < region;
+  }
+  bool is_strict_superset_of(const Region &region) const {
+    return *this > region;
+  }
 
   friend std::ostream &operator<<(std::ostream &os, const Region &region) {
     os << "{";

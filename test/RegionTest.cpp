@@ -1,5 +1,4 @@
-#include <openPMD/regions/Box.hpp>
-#include <openPMD/regions/Point.hpp>
+#include <openPMD/regions/NDRegion.hpp>
 #include <openPMD/regions/Region.hpp>
 
 #include <catch2/catch.hpp>
@@ -31,7 +30,7 @@ template <typename R> void test_Region(const R &r) {
   const auto randb = [&]() {
     if (D == 0) {
       if (dist0(gen) < 5)
-        return B();
+        return B(p, p); // empty box
       else
         return B(p);
     }
@@ -48,12 +47,12 @@ template <typename R> void test_Region(const R &r) {
   const auto randr = [&]() {
     if (D == 0) {
       if (dist0(gen) < 5)
-        return R();
+        return R(B(p, p)); // empty region
       else
         return R(B(p));
     }
     const int nboxes = dist0(gen) / 2;
-    R nr;
+    R nr(B(p, p)); // empty region
     for (int n = 0; n < nboxes; ++n)
       nr |= randb();
     return nr;
@@ -175,8 +174,6 @@ TEST_CASE("Region<double,1>", "[regions]") { test_Region(Region<double, 1>()); }
 TEST_CASE("Region<double,2>", "[regions]") { test_Region(Region<double, 2>()); }
 TEST_CASE("Region<double,3>", "[regions]") { test_Region(Region<double, 3>()); }
 
-// TODO
-#if 0
 TEST_CASE("NDRegion<std::ptrdiff_t>(0)", "[regions]") {
   test_Region(NDRegion<std::ptrdiff_t>(0));
 }
@@ -190,8 +187,15 @@ TEST_CASE("NDRegion<std::ptrdiff_t>(3)", "[regions]") {
   test_Region(NDRegion<std::ptrdiff_t>(3));
 }
 
-TEST_CASE("NDRegion<double>(0)", "[regions]") { test_Region(NDRegion<double>(0)); }
-TEST_CASE("NDRegion<double>(1)", "[regions]") { test_Region(NDRegion<double>(1)); }
-TEST_CASE("NDRegion<double>(2)", "[regions]") { test_Region(NDRegion<double>(2)); }
-TEST_CASE("NDRegion<double>(3)", "[regions]") { test_Region(NDRegion<double>(3)); }
-#endif
+TEST_CASE("NDRegion<double>(0)", "[regions]") {
+  test_Region(NDRegion<double>(0));
+}
+TEST_CASE("NDRegion<double>(1)", "[regions]") {
+  test_Region(NDRegion<double>(1));
+}
+TEST_CASE("NDRegion<double>(2)", "[regions]") {
+  test_Region(NDRegion<double>(2));
+}
+TEST_CASE("NDRegion<double>(3)", "[regions]") {
+  test_Region(NDRegion<double>(3));
+}

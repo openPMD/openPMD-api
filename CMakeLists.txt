@@ -703,9 +703,9 @@ set(openPMD_TEST_NAMES
 )
 if(openPMD_HAVE_REGIONS)
     list(APPEND openPMD_TEST_NAMES
-        RegionsBox
-        RegionsPoint
-        RegionsRegion
+        Box
+        Point
+        Region
     )
 endif()
 # command line tools

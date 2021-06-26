@@ -32,7 +32,7 @@ namespace detail {
 template <typename T> class VPoint {
 public:
   typedef T value_type;
-  typedef std::size_t size_type;
+  typedef std::ptrdiff_t size_type;
 
   virtual std::unique_ptr<VPoint> copy() const = 0;
 
