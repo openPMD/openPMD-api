@@ -283,45 +283,79 @@ public:
   }
   NDBox &operator=(NDBox &&) = default;
 
+  /** Create an NDBox from a Box
+   */
   template <std::size_t D>
   NDBox(const Box<T, D> &b_) : b(std::make_unique<detail::WBox<T, D>>(b_)) {}
   template <std::size_t D>
   NDBox(Box<T, D> &&b_)
       : b(std::make_unique<detail::WBox<T, D>>(std::move(b_))) {}
+  /** Convert an NDBox to a Box
+   *
+   * This only works when D == ndims().
+   */
   template <std::size_t D> operator Box<T, D>() const {
     return Box<T, D>(dynamic_cast<const detail::WBox<T, D> &>(*b));
   }
 
+  /** Create an NDBox from lower (inclusive) and upper (exclusive) bound
+   */
   NDBox(const NDPoint<T> &lo_, const NDPoint<T> &hi_)
       : b(detail::make_VBox<T>(lo_.ndims(), lo_, hi_)) {}
+  /** Create box holding a single point
+   */
   explicit NDBox(const NDPoint<T> &p) : b(detail::make_VBox<T>(p.ndims(), p)) {}
 
-  /** Check whether a box is valid
+  /** Check whether an NDBox is valid
    *
-   * A valid box knows its number of dimensions, and its components
-   * are initialized. An invalid box does not know its number of
+   * A valid NDBox knows its number of dimensions, and its components
+   * are initialized. An invalid NDBox does not know its number of
    * dimensions and holds no data, similar to a null pointer.
    *
-   * Most other member functions must not be called for invalid
-   * boxes.
+   * Most other member functions must not be called for invalid NDBox.
+   *
+   * Note that there is a difference between invalid NDBoxes and empty
+   * NDBoxes. Invalid NDBoxes are essentially invalid objects that
+   * cannot be used in a useful manner. Empty NDBoxes are fine,
+   * similar to empty arrays.
    */
   bool has_value() const { return bool(b); }
 
+  /** Number of dimensions
+   */
   size_type ndims() const { return b->ndims(); }
+  /** Whether a box is empty
+   */
   bool empty() const { return b->empty(); }
+  /** Lower bound (inclusive)
+   */
   NDPoint<T> lower() const { return b->lower(); }
+  /** Upper bound (exclusive)
+   */
   NDPoint<T> upper() const { return b->upper(); }
+  /** Shape, i.e. the "size" in each direction
+   */
   NDPoint<T> shape() const { return b->shape(); }
+  /** Size, the total number of contained points
+   */
   size_type size() const { return b->size(); }
 
+  /** Shift a box to the right (upwards). The shift can be negative, which
+   * shifts left.
+   */
   NDBox &operator>>=(const NDPoint<T> &p) {
     *b >>= p->p;
     return *this;
   }
+  /** Shift a box to the left (downwards). The shift can be negative, which
+   * shifts right.
+   */
   NDBox &operator<<=(const NDPoint<T> &p) {
     *b <<= p->p;
     return *this;
   }
+  /** Scale a box
+   */
   NDBox &operator*=(const NDPoint<T> &p) {
     *b *= p->p;
     return *this;
@@ -329,6 +363,12 @@ public:
   NDBox operator>>(const NDPoint<T> &p) const { return NDBox(*b >> p); }
   NDBox operator<<(const NDPoint<T> &p) const { return NDBox(*b << p); }
   NDBox operator*(const NDPoint<T> &p) const { return NDBox(*b * p); }
+  /** Grow a box by given amounts in each direction.
+   *
+   * The growth can be negative, which shrinks the box. If a box is
+   * shrunk too much it becomes empty. Growing an empty box always
+   * results in an empty box.
+   */
   NDBox grown(const NDPoint<T> &dlo, const NDPoint<T> &dup) const {
     return NDBox(b->grown(dlo, dup));
   }
@@ -337,9 +377,19 @@ public:
   NDBox shrunk(const NDPoint<T> &dlo, const NDPoint<T> &dup) const {
     return NDBox(b->shrunk(dlo, dup));
   }
+  /** Shrink a box by given amounts in each direction.
+   *
+   * The shrinkage can be negative, which grows the box. If a box is
+   * shrunk too much it becomes empty. Growing an empty box always
+   * results in an empty box.
+   */
   NDBox shrunk(const NDPoint<T> &d) const { return NDBox(b->shrunk(d)); }
   NDBox shrunk(const T &d) const { return NDBox(b->shrunk(d)); }
 
+  /** Compare two boxes
+   *
+   * (All empty boxes are equal.)
+   */
   friend bool operator==(const NDBox &b1, const NDBox &b2) {
     return *b1.b == *b2.b;
   }
@@ -347,37 +397,72 @@ public:
     return *b1.b != *b2.b;
   }
 
+  /** Check whether a box contains a given point
+   */
   bool contains(const NDPoint<T> &p) const { return b->contains(p); }
+  /** Check whether two boxes are disjoint, i.e. whether they have no point in
+   * common
+   */
   friend bool isdisjoint(const NDBox &b1, const NDBox &b2) {
     return b1.b->isdisjoint1(*b2.b);
   }
+  /** Check whether Box 1 is (completely) contained in Box 2
+   */
   friend bool operator<=(const NDBox &b1, const NDBox &b2) {
     return *b1.b <= *b2.b;
   }
+  /** Check whether Box 1 (completely) contains Box 2
+   */
   friend bool operator>=(const NDBox &b1, const NDBox &b2) {
     return *b1.b >= *b2.b;
   }
+  /** Check whether Box 1 is (completely) contained in Box 2, and Box
+   * 2 is larger than Box 1
+   */
   friend bool operator<(const NDBox &b1, const NDBox &b2) {
     return *b1.b < *b2.b;
   }
+  /** Check whether Box 1 (completely) contains in Box 2, and Box
+   * 1 is larger than Box 2
+   */
   friend bool operator>(const NDBox &b1, const NDBox &b2) {
     return *b1.b > *b2.b;
   }
+  /** Check whether a Box is a subset of another Box. This is equivalent to
+   * `<=`.
+   */
   bool is_subset_of(const NDBox &b2) const { return b->is_subset_of(*b2.b); }
+  /** Check whether a Box is a superset of another Box. This is equivalent to
+   * `>=`.
+   */
   bool is_superset_of(const NDBox &b2) const {
     return b->is_superset_of(*b2.b);
   }
+  /** Check whether a Box is a strict subset of another Box. This is equivalent
+   * to `<`.
+   */
   bool is_strict_subset_of(const NDBox &b2) const {
     return b->is_strict_subset_of(*b2.b);
   }
+  /** Check whether a Box is a strict superset of another Box. This is
+   * equivalent to `>`.
+   */
   bool is_strict_superset_of(const NDBox &b2) const {
     return b->is_strict_superset_of(*b2.b);
   }
 
+  /** Calculate the bounding box of two Boxes. This is the smallest Box that
+   * contains both Boxes.
+   */
   friend NDBox bounding_box(const NDBox &b1, const NDBox &b2) {
     return b1.b->bounding_box1(*b2.b);
   }
 
+  /** Calculate the intersection between two Boxes
+   *
+   * Other set operations (union, difference, symmetric difference) are not
+   * supported for Boxes; use Regions instead.
+   */
   friend NDBox operator&(const NDBox &b1, const NDBox &b2) {
     return *b1.b & *b2.b;
   }
@@ -385,11 +470,16 @@ public:
     *b &= *b2.b;
     return *this;
   }
+  /** Calculate the intersection between two Boxes
+   *
+   * Other set operations (union, difference, symmetric difference) are not
+   * supported for Boxes; use Regions instead.
+   */
   friend NDBox intersection(const NDBox &b1, const NDBox &b2) {
     return intersection(*b1.b, *b2.b);
   }
 
-  /** Output a box
+  /** Output an NDBox
    */
   friend std::ostream &operator<<(std::ostream &os, const NDBox &x) {
     if (x.b)

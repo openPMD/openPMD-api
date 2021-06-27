@@ -250,7 +250,7 @@ public:
   }
   Box grown(const Point<T, D> &d) const { return grown(d, d); }
   Box grown(const T &d) const { return grown(Point<T, D>::pure(d)); }
-  /** Grow a box by given amounts in each direction.
+  /** Shrink a box by given amounts in each direction.
    *
    * The shrinkage can be negative, which grows the box. If a box is
    * shrunk too much it becomes empty. Growing an empty box always
@@ -319,12 +319,12 @@ public:
    * `>=`.
    */
   bool is_superset_of(const Box &b) const { return *this >= b; }
-  /** Check whether a Box is a strict subset of another Box. This is equivalen
+  /** Check whether a Box is a strict subset of another Box. This is equivalent
    * to `<`.
    */
   bool is_strict_subset_of(const Box &b) const { return *this < b; }
-  /** Check whether a Box is a strict superset of another Box. This is equivalen
-   * to `>`.
+  /** Check whether a Box is a strict superset of another Box. This is
+   * equivalent to `>`.
    */
   bool is_strict_superset_of(const Box &b) const { return *this > b; }
 
