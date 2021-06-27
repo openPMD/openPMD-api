@@ -191,7 +191,7 @@ public:
   /** Number of dimensions
    */
   size_type ndims() const { return D; }
-  /** Whether a box is empty
+  /** Whether the Box is empty
    */
   bool empty() const { return any(hi <= lo); }
   /** Lower bound (inclusive)
@@ -208,7 +208,7 @@ public:
   size_type size() const { return product(shape()); }
 
   // Shift and scale operators
-  /** Shift a box to the right (upwards). The shift can be negative, which
+  /** Shift a Box to the right (upwards). The shift can be negative, which
    * shifts left.
    */
   Box &operator>>=(const Point<T, D> &p) {
@@ -216,7 +216,7 @@ public:
     hi += p;
     return *this;
   }
-  /** Shift a box to the left (downwards). The shift can be negative, which
+  /** Shift a Box to the left (downwards). The shift can be negative, which
    * shifts right.
    */
   Box &operator<<=(const Point<T, D> &p) {
@@ -224,7 +224,7 @@ public:
     hi -= p;
     return *this;
   }
-  /** Scale a box
+  /** Scale a Box
    */
   Box &operator*=(const Point<T, D> &p) {
     lo *= p;
@@ -234,9 +234,9 @@ public:
   Box operator>>(const Point<T, D> &p) const { return Box(*this) >>= p; }
   Box operator<<(const Point<T, D> &p) const { return Box(*this) <<= p; }
   Box operator*(const Point<T, D> &p) const { return Box(*this) *= p; }
-  /** Grow a box by given amounts in each direction.
+  /** Grow a Box by given amounts in each direction.
    *
-   * The growth can be negative, which shrinks the box. If a box is
+   * The growth can be negative, which shrinks the box. If a Box is
    * shrunk too much it becomes empty. Growing an empty box always
    * results in an empty box.
    */
@@ -250,9 +250,9 @@ public:
   }
   Box grown(const Point<T, D> &d) const { return grown(d, d); }
   Box grown(const T &d) const { return grown(Point<T, D>::pure(d)); }
-  /** Shrink a box by given amounts in each direction.
+  /** Shrink a Box by given amounts in each direction.
    *
-   * The shrinkage can be negative, which grows the box. If a box is
+   * The shrinkage can be negative, which grows the box. If a Box is
    * shrunk too much it becomes empty. Growing an empty box always
    * results in an empty box.
    */
@@ -277,7 +277,7 @@ public:
   friend bool operator!=(const Box &b1, const Box &b2) { return !(b1 == b2); }
 
   // Set comparison operators
-  /** Check whether a box contains a given point
+  /** Check whether a Box contains a given point
    */
   bool contains(const Point<T, D> &p) const {
     if (empty())
@@ -365,7 +365,7 @@ public:
    */
   friend Box intersection(const Box &b1, const Box &b2) { return b1 & b2; }
 
-  /** Output a box
+  /** Output a Box
    */
   friend std::ostream &operator<<(std::ostream &os, const Box &b) {
     return os << "(" << b.lo << ":" << b.hi << ")";

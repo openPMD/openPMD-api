@@ -238,12 +238,12 @@ std::unique_ptr<VBox<T>> make_VBox(const std::size_t D, const Args &...args) {
 
 } // namespace detail
 
-/** A Box
+/** A NDBox
  *
  * The dimension (number of component) of the Box is only known at
  * run-time. @see Box
  *
- * A box is described by two points, its lower bound (inclusive) and
+ * a NDBox is described by two points, its lower bound (inclusive) and
  * upper bound (exclusive). If the lower bound not less than the upper
  * bound, the box is empty. Empty boxes are fine (similar to an empty
  * array).
@@ -324,7 +324,7 @@ public:
   /** Number of dimensions
    */
   size_type ndims() const { return b->ndims(); }
-  /** Whether a box is empty
+  /** Whether the NDBox box is empty
    */
   bool empty() const { return b->empty(); }
   /** Lower bound (inclusive)
@@ -340,21 +340,21 @@ public:
    */
   size_type size() const { return b->size(); }
 
-  /** Shift a box to the right (upwards). The shift can be negative, which
+  /** Shift a NDBox to the right (upwards). The shift can be negative, which
    * shifts left.
    */
   NDBox &operator>>=(const NDPoint<T> &p) {
     *b >>= p->p;
     return *this;
   }
-  /** Shift a box to the left (downwards). The shift can be negative, which
+  /** Shift a NDBox to the left (downwards). The shift can be negative, which
    * shifts right.
    */
   NDBox &operator<<=(const NDPoint<T> &p) {
     *b <<= p->p;
     return *this;
   }
-  /** Scale a box
+  /** Scale a NDBox
    */
   NDBox &operator*=(const NDPoint<T> &p) {
     *b *= p->p;
@@ -363,9 +363,9 @@ public:
   NDBox operator>>(const NDPoint<T> &p) const { return NDBox(*b >> p); }
   NDBox operator<<(const NDPoint<T> &p) const { return NDBox(*b << p); }
   NDBox operator*(const NDPoint<T> &p) const { return NDBox(*b * p); }
-  /** Grow a box by given amounts in each direction.
+  /** Grow a NDBox by given amounts in each direction.
    *
-   * The growth can be negative, which shrinks the box. If a box is
+   * The growth can be negative, which shrinks the box. If a NDBox is
    * shrunk too much it becomes empty. Growing an empty box always
    * results in an empty box.
    */
@@ -377,9 +377,9 @@ public:
   NDBox shrunk(const NDPoint<T> &dlo, const NDPoint<T> &dup) const {
     return NDBox(b->shrunk(dlo, dup));
   }
-  /** Shrink a box by given amounts in each direction.
+  /** Shrink a NDBox by given amounts in each direction.
    *
-   * The shrinkage can be negative, which grows the box. If a box is
+   * The shrinkage can be negative, which grows the box. If a NDBox is
    * shrunk too much it becomes empty. Growing an empty box always
    * results in an empty box.
    */
@@ -397,7 +397,7 @@ public:
     return *b1.b != *b2.b;
   }
 
-  /** Check whether a box contains a given point
+  /** Check whether a NDBox contains a given point
    */
   bool contains(const NDPoint<T> &p) const { return b->contains(p); }
   /** Check whether two boxes are disjoint, i.e. whether they have no point in
@@ -428,23 +428,23 @@ public:
   friend bool operator>(const NDBox &b1, const NDBox &b2) {
     return *b1.b > *b2.b;
   }
-  /** Check whether a Box is a subset of another Box. This is equivalent to
+  /** Check whether a NDBox is a subset of another Box. This is equivalent to
    * `<=`.
    */
   bool is_subset_of(const NDBox &b2) const { return b->is_subset_of(*b2.b); }
-  /** Check whether a Box is a superset of another Box. This is equivalent to
+  /** Check whether a NDBox is a superset of another Box. This is equivalent to
    * `>=`.
    */
   bool is_superset_of(const NDBox &b2) const {
     return b->is_superset_of(*b2.b);
   }
-  /** Check whether a Box is a strict subset of another Box. This is equivalent
-   * to `<`.
+  /** Check whether a NDBox is a strict subset of another Box. This is
+   * equivalent to `<`.
    */
   bool is_strict_subset_of(const NDBox &b2) const {
     return b->is_strict_subset_of(*b2.b);
   }
-  /** Check whether a Box is a strict superset of another Box. This is
+  /** Check whether a NDBox is a strict superset of another Box. This is
    * equivalent to `>`.
    */
   bool is_strict_superset_of(const NDBox &b2) const {

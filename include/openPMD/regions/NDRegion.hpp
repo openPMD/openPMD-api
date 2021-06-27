@@ -325,13 +325,12 @@ std::unique_ptr<VRegion<T>> make_VRegion(const std::size_t D,
 
 /** A Region
  *
- * The dimension (number of component) of the Region is only known at
- * run-time. @see Region
+ * The dimension of the NDRegion is only known at run-time. @see
+ * Region
  *
- * A region is described by two points, its lower bound (inclusive) and
- * upper bound (exclusive). If the lower bound not less than the upper
- * bound, the region is empty. Empty regiones are fine (similar to an empty
- * array).
+ * A region is an arbitrarily shaped set of points. The internal
+ * representation is likely based on boxes, and is thus most efficient
+ * if the region has many axis-aligned boundaries.
  */
 template <typename T> class NDRegion {
   template <typename U> using VRegion = detail::VRegion<U>;
@@ -355,7 +354,7 @@ public:
   /** Create an invalid Region
    */
   NDRegion() : r() {}
-  /** Create a value-initialized Region with D components
+  /** Create an empty Region in D dimensions
    */
   NDRegion(const size_type D) : r(detail::make_VRegion<T>(D)) {}
 
@@ -367,12 +366,18 @@ public:
   }
   NDRegion &operator=(NDRegion &&) = default;
 
+  /** Create an NDRegion from a Region
+   */
   template <std::size_t D>
   NDRegion(const Region<T, D> &r_)
       : r(std::make_unique<detail::WRegion<T, D>>(r_)) {}
   template <std::size_t D>
   NDRegion(Region<T, D> &&r_)
       : r(std::make_unique<detail::WRegion<T, D>>(std::move(r_))) {}
+  /** Convert an NDRegion to a Region
+   *
+   * This only works when D == ndims().
+   */
   template <std::size_t D> operator Region<T, D>() const {
     return Region<T, D>(dynamic_cast<const detail::WRegion<T, D> &>(*r));
   }
@@ -391,31 +396,51 @@ public:
         dynamic_cast<const detail::WRegion<T, D> &>(*r));
   }
 
+  /** Create Region containing a single NDPoint
+   */
   NDRegion(const NDPoint<T> &p) : r(detail::make_VRegion<T>(p.ndims(), p)) {}
+  /** Create Region containina a single NDBox
+   */
   NDRegion(const NDBox<T> &b) : r(detail::make_VRegion<T>(b.ndims(), b)) {}
+  /** Create a Region from a vector of NDBoxes
+   */
   NDRegion(const size_type D, const std::vector<NDBox<T>> &boxes)
       : r(detail::make_VRegion<T>(D, boxes)) {}
   operator std::vector<NDBox<T>>() const { return std::vector<NDBox<T>>(*r); }
 
-  /** Check whether a Region is valid
+  /** Check whether an NDRegion is valid
    *
-   * A valid Region knows its number of dimensions, and its components
-   * are initialized. An invalid Region does not know its number of
+   * A valid NDRegion knows its number of dimensions, and its components
+   * are initialized. An invalid NDRegion does not know its number of
    * dimensions and holds no data, similar to a null pointer.
    *
-   * Most other member functions must not be called for invalid
-   * Regions.
+   * Most other member functions cannot not be called for invalid
+   * NDRegions.
    */
   bool has_value() const { return bool(r); }
 
+  /** Number of dimensions
+   */
   size_type ndims() const { return r->ndims(); }
+  /** Whether the Region is empty
+   */
   bool empty() const { return r->empty(); }
 
+  /** Size, the total number of contained points
+   */
   size_type size() const { return r->size(); }
 
+  /** A measure of the number of vertices defining the Region
+   */
   size_type nboxes() const { return r->nboxes(); }
 
+  /** Shift an NDRegion to the right (upwards). The shift can be negative, which
+   * shifts left.
+   */
   NDRegion operator>>(const NDPoint<T> &d) const { return NDRegion(*r >> d); }
+  /** Shift an NDRegion to the left (downwards). The shift can be negative,
+   * which shifts right.
+   */
   NDRegion operator<<(const NDPoint<T> &d) const { return NDRegion(*r << d); }
   NDRegion &operator>>=(const NDPoint<T> &d) {
     *r >>= d;
@@ -425,26 +450,44 @@ public:
     *r <<= d;
     return *this;
   }
+  /** Scale an NDRegion
+   */
   NDRegion operator*(const NDPoint<T> &d) const { return NDRegion(*r * d); }
   NDRegion &operator*=(const NDPoint<T> &d) {
     *r *= d;
     return *this;
   }
 
+  /** Grow an NDRegion by given amounts in each direction.
+   *
+   * The growth can be negative, which shrinks the NDRegion. If an NDRegion is
+   * shrunk too much it becomes empty. Growing an empty NDRegion always
+   * results in an empty NDRegion.
+   */
   NDRegion grown(const NDPoint<T> &dlo, const NDPoint<T> &dup) const {
     return NDRegion(r->grown(dlo, dup));
   }
   NDRegion grown(const NDPoint<T> &d) const { return NDRegion(r->grown(d)); }
   NDRegion grown(const T &n) const { return NDRegion(r->grown(n)); }
+  /** Shrink an NDRegion by given amounts in each direction.
+   *
+   * The shrinkage can be negative, which shrinks the NDRegion. If a Region is
+   * shrunk too much it becomes empty. Growing an empty NDRegion always
+   * results in an empty NDRegion.
+   */
   NDRegion shrunk(const NDPoint<T> &dlo, const NDPoint<T> &dup) const {
     return NDRegion(r->shrunk(dlo, dup));
   }
   NDRegion shrunk(const NDPoint<T> &d) const { return NDRegion(r->shrunk(d)); }
   NDRegion shrunk(const T &n) const { return NDRegion(r->shrunk(n)); }
 
+  /** Compare two Regions
+   */
   friend bool operator==(const NDRegion &region1, const NDRegion &region2) {
     return *region1.r == *region2.r;
   }
+  /** Compare two Regions
+   */
   friend bool operator!=(const NDRegion &region1, const NDRegion &region2) {
     return *region1.r != *region2.r;
   }
@@ -461,19 +504,30 @@ public:
     return *region2.r != box1;
   }
 
+  /** Calculate the bounding box of an NDRegion. This is the smallest NDBox that
+   * contains the NDRegion.
+   */
   friend NDBox<T> bounding_box(const NDRegion &region) {
     return region.r->bounding_box1();
   }
 
+  /** Set intersection of two NDRegions
+   */
   friend NDRegion operator&(const NDRegion &region1, const NDRegion &region2) {
     return NDRegion(*region1.r & *region2.r);
   }
+  /** Set union of two NDRegions
+   */
   friend NDRegion operator|(const NDRegion &region1, const NDRegion &region2) {
     return NDRegion(*region1.r | *region2.r);
   }
+  /** Symmetric difference of two NDRegions
+   */
   friend NDRegion operator^(const NDRegion &region1, const NDRegion &region2) {
     return NDRegion(*region1.r ^ *region2.r);
   }
+  /** Set difference of two NDRegions
+   */
   friend NDRegion operator-(const NDRegion &region1, const NDRegion &region2) {
     return NDRegion(*region1.r - *region2.r);
   }
@@ -495,53 +549,82 @@ public:
     return *this;
   }
 
+  /** Set intersection of two NDRegions
+   */
   friend NDRegion intersection(const NDRegion &region1,
                                const NDRegion &region2) {
     return NDRegion(intersection(*region1.r, *region2.r));
   }
+  /** Set union of two NDRegions
+   */
   friend NDRegion setunion(const NDRegion &region1, const NDRegion &region2) {
     return NDRegion(setunion(*region1.r, *region2.r));
   }
+  /** Symmetric difference of two NDRegions
+   */
   friend NDRegion symmetric_difference(const NDRegion &region1,
                                        const NDRegion &region2) {
     return NDRegion(symmetric_difference(*region1.r, *region2.r));
   }
+  /** Set difference of two NDRegions
+   */
   friend NDRegion difference(const NDRegion &region1, const NDRegion &region2) {
     return NDRegion(difference(*region1.r, *region2.r));
   }
 
+  /** Whether an NDRegion contains a Point
+   */
   bool contains(const NDPoint<T> &p) const { return r->contains(p); }
+  /** Whether two NDRegions are disjoint, i.e. whether they have no Point in
+   * common
+   */
   friend bool isdisjoint(const NDRegion &region1, const NDRegion &region2) {
     return region1.r->isdisjoint1(*region2.r);
   }
 
+  /** is subset of
+   */
   friend bool operator<=(const NDRegion &region1, const NDRegion &region2) {
     return *region1.r <= *region2.r;
   }
+  /** is superset of
+   */
   friend bool operator>=(const NDRegion &region1, const NDRegion &region2) {
     return *region1.r >= *region2.r;
   }
+  /** is strict subset of
+   */
   friend bool operator<(const NDRegion &region1, const NDRegion &region2) {
     return *region1.r < *region2.r;
   }
+  /** is strict superset of
+   */
   friend bool operator>(const NDRegion &region1, const NDRegion &region2) {
     return *region1.r > *region2.r;
   }
 
+  /** is subset of
+   */
   bool is_subset_of(const NDRegion &region) const {
     return r->is_subset_of(*region.r);
   }
+  /** is superset of
+   */
   bool is_superset_of(const NDRegion &region) const {
     return r->is_superset_of(*region.r);
   }
+  /** is strict subset of
+   */
   bool is_strict_subset_of(const NDRegion &region) const {
     return r->is_strict_subset_of(*region.r);
   }
+  /** is strict superset of
+   */
   bool is_strict_superset_of(const NDRegion &region) const {
     return r->is_strict_superset_of(*region.r);
   }
 
-  /** Output a region
+  /** Output an NDegion
    */
   friend std::ostream &operator<<(std::ostream &os, const NDRegion &x) {
     if (x.r)

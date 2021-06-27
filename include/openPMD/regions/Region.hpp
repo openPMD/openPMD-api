@@ -690,13 +690,16 @@ public:
     return true;
   }
 
+  /** Check invariant when in debug mode; abort the code if invariant is not
+   * met.
+   */
   void check_invariant() const {
 #if REGIONS_DEBUG
     assert(invariant());
 #endif
   }
 
-  /** Create empty region
+  /** Create empty Region
    */
   Region() = default;
 
@@ -705,7 +708,11 @@ public:
   Region &operator=(const Region &) = default;
   Region &operator=(Region &&) = default;
 
+  /** Create Region containing a single Point
+   */
   Region(const Point<T, D> &p) : Region(Box<T, D>(p)) {}
+  /** Create Region containina a single Box
+   */
   Region(const Box<T, D> &b) {
     if (b.empty())
       return;
@@ -740,6 +747,8 @@ private:
   }
 
 public:
+  /** Create a Region from a vector of Boxes
+   */
   Region(const std::vector<Box<T, D>> &boxes) {
     *this = region_from_boxes(boxes.begin(), boxes.end());
 #if REGIONS_DEBUG
@@ -754,6 +763,10 @@ public:
     check_invariant();
   }
 
+  /** Convert a Region to a vector of non-overlapping Boxes
+   *
+   * This creates a canonical, reasonably efficient representation.
+   */
   operator std::vector<Box<T, D>>() const {
     std::vector<Box<T, D>> res;
     std::map<Box<T, D - 1>, T> old_subboxes;
@@ -918,9 +931,15 @@ private:
 
 public:
   // Predicates
+  /** Number of dimensions
+   */
   size_type ndims() const { return D; }
+  /** Whether the Region is empty
+   */
   bool empty() const { return subregions.empty(); }
 
+  /** Size, the total number of contained points
+   */
   size_type size() const {
     size_type total_size = 0;
     T old_pos = std::numeric_limits<T>::min(); // location of last subregion
@@ -939,6 +958,8 @@ public:
     return total_size;
   }
 
+  /** A measure of the number of vertices defining the Region
+   */
   size_type nboxes() const {
     size_type sz = 0;
     for (const auto &pos_subregion : subregions) {
@@ -949,6 +970,9 @@ public:
   }
 
   // Shift and scale operators
+  /** Shift a Region to the right (upwards). The shift can be negative, which
+   * shifts left.
+   */
   Region operator>>(const Point<T, D> &d) const {
     Region nr;
     nr.subregions.reserve(subregions.size());
@@ -962,9 +986,14 @@ public:
     nr.check_invariant();
     return nr;
   }
+  /** Shift a Region to the left (downwards). The shift can be negative, which
+   * shifts right.
+   */
   Region operator<<(const Point<T, D> &d) const { return *this >> -d; }
   Region &operator>>=(const Point<T, D> &d) { return *this = *this >> d; }
   Region &operator<<=(const Point<T, D> &d) { return *this = *this << d; }
+  /** Scale a Region
+   */
   Region operator*(const Point<T, D> &s) const {
     if (s[D - 1] == 0)
       return empty() ? Region() : Region(Point<T, D>());
@@ -1009,6 +1038,12 @@ private:
   }
 
 public:
+  /** Grow a Region by given amounts in each direction.
+   *
+   * The growth can be negative, which shrinks the Region. If a Region is
+   * shrunk too much it becomes empty. Growing an empty Region always
+   * results in an empty Region.
+   */
   Region grown(const Point<T, D> &dlo, const Point<T, D> &dup) const {
     const Region &region0 = *this;
     const bool need_shrink = any(dlo + dup < Point<T, D>());
@@ -1037,6 +1072,12 @@ public:
   }
   Region grown(const Point<T, D> &d) const { return grown(d, d); }
   Region grown(const T &n) const { return grown(Point<T, D>::pure(n)); }
+  /** Shrink a Region by given amounts in each direction.
+   *
+   * The shrinkage can be negative, which shrinks the Region. If a Region is
+   * shrunk too much it becomes empty. Growing an empty Region always
+   * results in an empty Region.
+   */
   Region shrunk(const Point<T, D> &dlo, const Point<T, D> &dup) const {
     return grown(-dlo, -dup);
   }
@@ -1044,9 +1085,13 @@ public:
   Region shrunk(const T &n) const { return shrunk(Point<T, D>::pure(n)); }
 
   // Comparison operators
+  /** Compare two Regions
+   */
   friend bool operator==(const Region &region1, const Region &region2) {
     return region1.subregions == region2.subregions;
   }
+  /** Compare two Regions
+   */
   friend bool operator!=(const Region &region1, const Region &region2) {
     return !(region1 == region2);
   }
@@ -1064,6 +1109,9 @@ public:
   }
 
   // Set operations
+  /** Calculate the bounding box of a REgion. This is the smallest Box that
+   * contains the Region.
+   */
   friend Box<T, D> bounding_box(const Region &region) {
     if (region.empty())
       return Box<T, D>();
@@ -1081,16 +1129,22 @@ public:
     return Box<T, D>(pmin.insert(D - 1, xmin), pmax.insert(D - 1, xmax));
   }
 
+  /** Set intersection of two Regions
+   */
   friend Region operator&(const Region &region1, const Region &region2) {
     return binary_operator([](const Subregion &set1,
                               const Subregion &set2) { return set1 & set2; },
                            region1, region2);
   }
+  /** Set union of two Regions
+   */
   friend Region operator|(const Region &region1, const Region &region2) {
     return binary_operator([](const Subregion &set1,
                               const Subregion &set2) { return set1 | set2; },
                            region1, region2);
   }
+  /** Symmetric difference of two Regions
+   */
   friend Region operator^(const Region &region1, const Region &region2) {
     // TODO: If region2 is much smaller than region1, direct insertion may be
     // faster
@@ -1098,6 +1152,8 @@ public:
                               const Subregion &set2) { return set1 ^ set2; },
                            region1, region2);
   }
+  /** Set difference of two Regions
+   */
   friend Region operator-(const Region &region1, const Region &region2) {
     return binary_operator([](const Subregion &set1,
                               const Subregion &set2) { return set1 - set2; },
@@ -1109,51 +1165,82 @@ public:
   Region &operator^=(const Region &region) { return *this = *this ^ region; }
   Region &operator-=(const Region &region) { return *this = *this - region; }
 
+  /** Set intersection of two Regions
+   */
   friend Region intersection(const Region &region1, const Region &region2) {
     return region1 & region2;
   }
+  /** Set union of two Regions
+   */
   friend Region setunion(const Region &region1, const Region &region2) {
     return region1 | region2;
   }
+  /** Symmetric difference of two Regions
+   */
   friend Region symmetric_difference(const Region &region1,
                                      const Region &region2) {
     return region1 ^ region2;
   }
+  /** Set difference of two Regions
+   */
   friend Region difference(const Region &region1, const Region &region2) {
     return region1 - region2;
   }
 
   // Set comparison operators
+  /** Whether a Region contains a Point
+   */
   bool contains(const Point<T, D> &p) const {
     return !isdisjoint(*this, Region(p));
   }
+  /** Whether two Regions are disjoint, i.e. whether they have no Point in
+   * common
+   */
   friend bool isdisjoint(const Region &region1, const Region &region2) {
     return (region1 & region2).empty();
   }
 
   // Comparison operators
+  /** is subset of
+   */
   friend bool operator<=(const Region &region1, const Region &region2) {
     return (region1 - region2).empty();
   }
+  /** is superset of
+   */
   friend bool operator>=(const Region &region1, const Region &region2) {
     return region2 <= region1;
   }
+  /** is strict subset of
+   */
   friend bool operator<(const Region &region1, const Region &region2) {
     return region1 != region2 && region1 <= region2;
   }
+  /** is strict superset of
+   */
   friend bool operator>(const Region &region1, const Region &region2) {
     return region2 < region1;
   }
 
+  /** is subset of
+   */
   bool is_subset_of(const Region &region) const { return *this <= region; }
+  /** is superset of
+   */
   bool is_superset_of(const Region &region) const { return *this >= region; }
+  /** is strict subset of
+   */
   bool is_strict_subset_of(const Region &region) const {
     return *this < region;
   }
+  /** is strict superset of
+   */
   bool is_strict_superset_of(const Region &region) const {
     return *this > region;
   }
 
+  /** Output a Region
+   */
   friend std::ostream &operator<<(std::ostream &os, const Region &region) {
     os << "{";
     const std::vector<Box<T, D>> boxes(region);
