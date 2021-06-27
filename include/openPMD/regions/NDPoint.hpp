@@ -255,7 +255,10 @@ public:
     return std::make_unique<WPoint>(-p);
   }
   std::unique_ptr<VPoint<T>> operator~() const override {
-    return std::make_unique<WPoint>(~p);
+    if constexpr (std::is_integral_v<T>)
+      return std::make_unique<WPoint>(~p);
+    else
+      std::abort();
   }
   std::unique_ptr<VPoint<bool>> operator!() const override {
     return std::make_unique<WPoint<bool, D>>(!p);
@@ -274,16 +277,28 @@ public:
     return std::make_unique<WPoint>(p / dynamic_cast<const WPoint &>(x).p);
   }
   std::unique_ptr<VPoint<T>> operator%(const VPoint<T> &x) const override {
-    return std::make_unique<WPoint>(p % dynamic_cast<const WPoint &>(x).p);
+    if constexpr (std::is_integral_v<T>)
+      return std::make_unique<WPoint>(p % dynamic_cast<const WPoint &>(x).p);
+    else
+      std::abort();
   }
   std::unique_ptr<VPoint<T>> operator&(const VPoint<T> &x) const override {
-    return std::make_unique<WPoint>(p & dynamic_cast<const WPoint &>(x).p);
+    if constexpr (std::is_integral_v<T>)
+      return std::make_unique<WPoint>(p & dynamic_cast<const WPoint &>(x).p);
+    else
+      std::abort();
   }
   std::unique_ptr<VPoint<T>> operator|(const VPoint<T> &x) const override {
-    return std::make_unique<WPoint>(p | dynamic_cast<const WPoint &>(x).p);
+    if constexpr (std::is_integral_v<T>)
+      return std::make_unique<WPoint>(p | dynamic_cast<const WPoint &>(x).p);
+    else
+      std::abort();
   }
   std::unique_ptr<VPoint<T>> operator^(const VPoint<T> &x) const override {
-    return std::make_unique<WPoint>(p ^ dynamic_cast<const WPoint &>(x).p);
+    if constexpr (std::is_integral_v<T>)
+      return std::make_unique<WPoint>(p ^ dynamic_cast<const WPoint &>(x).p);
+    else
+      std::abort();
   }
   std::unique_ptr<VPoint<bool>> operator&&(const VPoint<T> &x) const override {
     return std::make_unique<WPoint<bool, D>>(p &&
@@ -307,16 +322,28 @@ public:
     return std::make_unique<WPoint>(a / p);
   }
   std::unique_ptr<VPoint<T>> left_modulus(const T &a) const override {
-    return std::make_unique<WPoint>(a % p);
+    if constexpr (std::is_integral_v<T>)
+      return std::make_unique<WPoint>(a % p);
+    else
+      std::abort();
   }
   std::unique_ptr<VPoint<T>> left_bit_and(const T &a) const override {
-    return std::make_unique<WPoint>(a & p);
+    if constexpr (std::is_integral_v<T>)
+      return std::make_unique<WPoint>(a & p);
+    else
+      std::abort();
   }
   std::unique_ptr<VPoint<T>> left_bit_or(const T &a) const override {
-    return std::make_unique<WPoint>(a | p);
+    if constexpr (std::is_integral_v<T>)
+      return std::make_unique<WPoint>(a | p);
+    else
+      std::abort();
   }
   std::unique_ptr<VPoint<T>> left_bit_xor(const T &a) const override {
-    return std::make_unique<WPoint>(a ^ p);
+    if constexpr (std::is_integral_v<T>)
+      return std::make_unique<WPoint>(a ^ p);
+    else
+      std::abort();
   }
   std::unique_ptr<VPoint<bool>> left_logical_and(const T &a) const override {
     return std::make_unique<WPoint<bool, D>>(a && p);
@@ -338,16 +365,28 @@ public:
     return std::make_unique<WPoint>(p / b);
   }
   std::unique_ptr<VPoint<T>> operator%(const T &b) const override {
-    return std::make_unique<WPoint>(p % b);
+    if constexpr (std::is_integral_v<T>)
+      return std::make_unique<WPoint>(p % b);
+    else
+      std::abort();
   }
   std::unique_ptr<VPoint<T>> operator&(const T &b) const override {
-    return std::make_unique<WPoint>(p & b);
+    if constexpr (std::is_integral_v<T>)
+      return std::make_unique<WPoint>(p & b);
+    else
+      std::abort();
   }
   std::unique_ptr<VPoint<T>> operator|(const T &b) const override {
-    return std::make_unique<WPoint>(p | b);
+    if constexpr (std::is_integral_v<T>)
+      return std::make_unique<WPoint>(p | b);
+    else
+      std::abort();
   }
   std::unique_ptr<VPoint<T>> operator^(const T &b) const override {
-    return std::make_unique<WPoint>(p ^ b);
+    if constexpr (std::is_integral_v<T>)
+      return std::make_unique<WPoint>(p ^ b);
+    else
+      std::abort();
   }
   std::unique_ptr<VPoint<bool>> operator&&(const T &b) const override {
     return std::make_unique<WPoint<bool, D>>(p && b);
@@ -373,20 +412,36 @@ public:
     return *this;
   }
   VPoint<T> &operator%=(const VPoint<T> &x) override {
-    p %= dynamic_cast<const WPoint &>(x).p;
-    return *this;
+    if constexpr (std::is_integral_v<T>) {
+      p %= dynamic_cast<const WPoint &>(x).p;
+      return *this;
+    } else {
+      std::abort();
+    }
   }
   VPoint<T> &operator&=(const VPoint<T> &x) override {
-    p &= dynamic_cast<const WPoint &>(x).p;
-    return *this;
+    if constexpr (std::is_integral_v<T>) {
+      p &= dynamic_cast<const WPoint &>(x).p;
+      return *this;
+    } else {
+      std::abort();
+    }
   }
   VPoint<T> &operator|=(const VPoint<T> &x) override {
-    p |= dynamic_cast<const WPoint &>(x).p;
-    return *this;
+    if constexpr (std::is_integral_v<T>) {
+      p |= dynamic_cast<const WPoint &>(x).p;
+      return *this;
+    } else {
+      std::abort();
+    }
   }
   VPoint<T> &operator^=(const VPoint<T> &x) override {
-    p ^= dynamic_cast<const WPoint &>(x).p;
-    return *this;
+    if constexpr (std::is_integral_v<T>) {
+      p ^= dynamic_cast<const WPoint &>(x).p;
+      return *this;
+    } else {
+      std::abort();
+    }
   }
 
   VPoint<T> &operator+=(const T &b) override {
@@ -406,20 +461,36 @@ public:
     return *this;
   }
   VPoint<T> &operator%=(const T &b) override {
-    p %= b;
-    return *this;
+    if constexpr (std::is_integral_v<T>) {
+      p %= b;
+      return *this;
+    } else {
+      std::abort();
+    }
   }
   VPoint<T> &operator&=(const T &b) override {
-    p &= b;
-    return *this;
+    if constexpr (std::is_integral_v<T>) {
+      p &= b;
+      return *this;
+    } else {
+      std::abort();
+    }
   }
   VPoint<T> &operator|=(const T &b) override {
-    p |= b;
-    return *this;
+    if constexpr (std::is_integral_v<T>) {
+      p |= b;
+      return *this;
+    } else {
+      std::abort();
+    }
   }
   VPoint<T> &operator^=(const T &b) override {
-    p ^= b;
-    return *this;
+    if constexpr (std::is_integral_v<T>) {
+      p ^= b;
+      return *this;
+    } else {
+      std::abort();
+    }
   }
 
   std::unique_ptr<VPoint<T>> abs1() const override {
@@ -602,25 +673,41 @@ public:
   }
   NDPoint &operator=(NDPoint &&) = default;
 
+  /** Create an NDPoint from a Point
+   */
   template <std::size_t D>
   NDPoint(const Point<T, D> &p_)
       : p(std::make_unique<detail::WPoint<T, D>>(p_)) {}
   template <std::size_t D>
   NDPoint(Point<T, D> &&p_)
       : p(std::make_unique<detail::WPoint<T, D>>(std::move(p_))) {}
+  /** Convert an NDPoint to a Point
+   *
+   * This only works when D == ndims().
+   */
   template <std::size_t D> operator Point<T, D>() const {
-    return Point<T, D>(dynamic_cast<const detail::WPoint<T, D>&>(*p));
+    return Point<T, D>(dynamic_cast<const detail::WPoint<T, D> &>(*p));
   }
 
+  /** Create an NDPoint from a std::array
+   */
   template <std::size_t D>
   NDPoint(const std::array<T, D> &arr)
       : p(std::make_unique<detail::WPoint<T, D>>(arr)) {}
   template <std::size_t D>
   NDPoint(std::array<T, D> &&arr)
       : p(std::make_unique<detail::WPoint<T, D>>(std::move(arr))) {}
+  /** Convert an NDPoint to a std::array
+   *
+   * This only works when D == ndims().
+   */
   template <std::size_t D> operator std::array<T, D>() const {
     return std::array<T, D>(dynamic_cast<const detail::WPoint<T, D>>(&p));
   }
+  /** Create an NDPoint from an initializer list
+   *
+   * Example: NDPoint<int>{1, 2}
+   */
   NDPoint(std::initializer_list<T> lst) : NDPoint(std::vector<T>(lst)) {}
 
 private:
@@ -637,30 +724,51 @@ public:
   NDPoint(const NDPoint<U> &x)
       : p(x.p ? NDPoint(convert_vector(std::vector<U>(x))) : nullptr) {}
 
+  /** Create an NDPoint from a generating function
+   *
+   * Example: NDPoint<int>::make(3, [](int i) { return i+1; })
+   * Result: NDPoint<int>{1, 2, 3}
+   */
   template <typename F> static NDPoint make(const size_type D, const F &f) {
     return NDPoint(detail::make_VPoint<T>(D, f));
   }
+  /** Create an NDPoint with each component set to the same value `a`
+   */
   static NDPoint pure(const size_type D, const T &val) {
     return make(D, [&](size_type) { return val; });
   }
+  /** Create a unit NDPoint, where component dir is one, and all other
+   * components are zero
+   */
   static NDPoint unit(const size_type D, const size_type dir) {
     return make(D, [&](size_type d) { return d == dir; });
   }
+  /** Create an NDPoint with components set to the natural number
+   * sequence [0, ..., D-1]
+   */
   static NDPoint iota(const size_type D) {
     return make(D, [&](size_type d) { return d; });
   }
 
-  /** Check whether a Point is valid
+  /** Check whether an NDPoint is valid
    *
-   * A valid Point knows its number of dimensions, and its components
-   * are initialized. An invalid Point does not know its number of
-   * dimensions and holds no data, similar to a null Pointer.
+   * A valid NDPoint knows its number of dimensions, and its
+   * components are initialized. An invalid NDPoint does not know its
+   * number of dimensions and holds no data, similar to a null
+   * Pointer.
    *
-   * Most other member functions must not be called for invalid
-   * Points.
+   * Most other member functions cannot be called for invalid
+   * NDPoints.
    */
   bool has_value() const { return bool(p); }
 
+  /** Map a function over all components of one or several Points
+   *
+   * Example:
+   *   NDPoint<int> pi, pj;
+   *   NDPoint<int> pk = fmap([](auto i, auto j) { return i+j; }, pi, pj);
+   * This calculates the component-wise sum of pi and pj, i.e. pi + pj .
+   */
   template <typename F> friend NDPoint fmap(const F &f, const NDPoint &x) {
     return NDPoint(x.p->fmap1(f));
   }
@@ -673,6 +781,14 @@ public:
                       const NDPoint &z) {
     return NDPoint(x.p->fmap1(f, *y.p, *z.p));
   }
+  /** Reduce over all components of one or several NDPoints
+   *
+   * Example:
+   *   NDPoint<int> p;
+   *   int s = fold([](auto r, auto i) { return r+i; }, 0, p);
+   * This calculates the sum of all components ("horizonal sum") of p,
+   * same as sum(p).
+   */
   template <typename Op>
   friend T fold(const Op &op, const T &r, const NDPoint &x) {
     return x.p->fold1(op, r);
@@ -682,9 +798,13 @@ public:
     return x.p->fold1(op, r, *y.p);
   }
 
+  /** Create an NDPoint from a std::vector
+   */
   NDPoint(const std::vector<T> &vec) : NDPoint(vec.size()) {
     p->set_from_vector(vec);
   }
+  /** Convert an NDPoint to a std::vector
+   */
   operator std::vector<T>() const { return std::vector<T>(p); }
 
   /** Number of comopnents (same as number of dimensions)
@@ -719,40 +839,80 @@ public:
    */
   constexpr NDPoint reversed() const { return NDPoint(p->reversed()); }
 
+  /** Apply unary plus operator element-wise
+   */
   friend NDPoint operator+(const NDPoint &x) { return NDPoint(+*x.p); }
+  /** Element-wise negate
+   */
   friend NDPoint operator-(const NDPoint &x) { return NDPoint(-*x.p); }
-  friend NDPoint operator~(const NDPoint &x) { return NDPoint(~*x.p); }
+  /** Element-wise bitwise not
+   */
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
+  friend NDPoint operator~(const NDPoint &x) {
+    return NDPoint(~*x.p);
+  }
+  /** Element-wise logical not
+   */
   friend NDPoint<bool> operator!(const NDPoint &x) {
     return NDPoint<bool>(!*x.p);
   }
 
+  /** Add element-wise
+   */
   friend NDPoint operator+(const NDPoint &x, const NDPoint &y) {
     return NDPoint(*x.p + *y.p);
   }
+  /** Subtract element-wise
+   */
   friend NDPoint operator-(const NDPoint &x, const NDPoint &y) {
     return NDPoint(*x.p - *y.p);
   }
+  /** Multiply element-wise
+   */
   friend NDPoint operator*(const NDPoint &x, const NDPoint &y) {
     return NDPoint(*x.p * *y.p);
   }
+  /** Divide element-wise
+   */
   friend NDPoint operator/(const NDPoint &x, const NDPoint &y) {
     return NDPoint(*x.p / *y.p);
   }
+  /** Element-wise modulo
+   */
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend NDPoint operator%(const NDPoint &x, const NDPoint &y) {
     return NDPoint(*x.p % *y.p);
   }
+  /** Element-wise bitwise and
+   */
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend NDPoint operator&(const NDPoint &x, const NDPoint &y) {
     return NDPoint(*x.p & *y.p);
   }
+  /** Element-wise bitwise or
+   */
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend NDPoint operator|(const NDPoint &x, const NDPoint &y) {
     return NDPoint(*x.p | *y.p);
   }
+  /** Element-wise bitwise exclusive or
+   */
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend NDPoint operator^(const NDPoint &x, const NDPoint &y) {
     return NDPoint(*x.p ^ *y.p);
   }
+  /** Element-wise logical and
+   */
   friend NDPoint<bool> operator&&(const NDPoint &x, const NDPoint &y) {
     return NDPoint(*x.p && *y.p);
   }
+  /** Element-wise logical or
+   */
   friend NDPoint<bool> operator||(const NDPoint &x, const NDPoint &y) {
     return NDPoint(*x.p || *y.p);
   }
@@ -769,15 +929,23 @@ public:
   friend NDPoint operator/(const T &a, const NDPoint &y) {
     return NDPoint(y.p->left_divides(a));
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend NDPoint operator%(const T &a, const NDPoint &y) {
     return NDPoint(y.p->left_modulus(a));
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend NDPoint operator&(const T &a, const NDPoint &y) {
     return NDPoint(y.p->left_bit_and(a));
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend NDPoint operator|(const T &a, const NDPoint &y) {
     return NDPoint(y.p->left_bit_or(a));
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend NDPoint operator^(const T &a, const NDPoint &y) {
     return NDPoint(y.p->left_bit_xor(a));
   }
@@ -800,15 +968,23 @@ public:
   friend NDPoint operator/(const NDPoint &x, const T &b) {
     return NDPoint(*x.p / b);
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend NDPoint operator%(const NDPoint &x, const T &b) {
     return NDPoint(*x.p % b);
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend NDPoint operator&(const NDPoint &x, const T &b) {
     return NDPoint(*x.p & b);
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend NDPoint operator|(const NDPoint &x, const T &b) {
     return NDPoint(*x.p | b);
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend NDPoint operator^(const NDPoint &x, const T &b) {
     return NDPoint(*x.p ^ b);
   }
@@ -835,18 +1011,26 @@ public:
     *p /= *x.p;
     return *this;
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   NDPoint &operator%=(const NDPoint &x) {
     *p %= *x.p;
     return *this;
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   NDPoint &operator&=(const NDPoint &x) {
     *p &= *x.p;
     return *this;
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   NDPoint &operator|=(const NDPoint &x) {
     *p |= *x.p;
     return *this;
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   NDPoint &operator^=(const NDPoint &x) {
     *p ^= *x.p;
     return *this;
@@ -868,35 +1052,55 @@ public:
     *p /= a;
     return *this;
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   NDPoint &operator%=(const T &a) {
     *p %= a;
     return *this;
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   NDPoint &operator&=(const T &a) {
     *p &= a;
     return *this;
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   NDPoint &operator|=(const T &a) {
     *p |= a;
     return *this;
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   NDPoint &operator^=(const T &a) {
     *p ^= a;
     return *this;
   }
 
+  /** Element-wise absolute value
+   */
   friend NDPoint abs(const NDPoint &x) { return x.p->abs1(); }
+  /** Element-wise absolute value
+   */
   friend NDPoint fabs(const NDPoint &x) { return x.p->fabs1(); }
 
+  /** Element-wise maximum of two points
+   */
   friend NDPoint fmax(const NDPoint &x, const NDPoint &y) {
     return x.p->fmax1(*y.p);
   }
+  /** Element-wise minimum of two points
+   */
   friend NDPoint fmin(const NDPoint &x, const NDPoint &y) {
     return x.p->fmin1(*y.p);
   }
+  /** Element-wise maximum of two points
+   */
   friend NDPoint max(const NDPoint &x, const NDPoint &y) {
     return x.p->max1(*y.p);
   }
+  /** Element-wise minimum of two points
+   */
   friend NDPoint min(const NDPoint &x, const NDPoint &y) {
     return x.p->min1(*y.p);
   }
@@ -911,28 +1115,52 @@ public:
   friend NDPoint max(const NDPoint &x, const T &b) { return x.p->max1(b); }
   friend NDPoint min(const NDPoint &x, const T &b) { return x.p->min1(b); }
 
+  /** Return true if all elements are true
+   */
   friend T all(const NDPoint &x) { return x.p->all1(); }
+  /** Return true if any element is true
+   */
   friend T any(const NDPoint &x) { return x.p->any1(); }
+  /** Return maximum element
+   */
   friend T max_element(const NDPoint &x) { return x.p->max_element1(); }
+  /** Return minimum element
+   */
   friend T min_element(const NDPoint &x) { return x.p->min_element1(); }
+  /** Product of all elements
+   */
   friend T product(const NDPoint &x) { return x.p->product1(); }
+  /** Sum of all elements
+   */
   friend T sum(const NDPoint &x) { return x.p->sum1(); }
 
+  /** Pointwise comparison
+   */
   friend NDPoint<bool> operator==(const NDPoint &x, const NDPoint &y) {
     return *x.p == *y.p;
   }
+  /** Pointwise comparison
+   */
   friend NDPoint<bool> operator!=(const NDPoint &x, const NDPoint &y) {
     return *x.p != *y.p;
   }
+  /** Pointwise comparison
+   */
   friend NDPoint<bool> operator<(const NDPoint &x, const NDPoint &y) {
     return *x.p < *y.p;
   }
+  /** Pointwise comparison
+   */
   friend NDPoint<bool> operator>(const NDPoint &x, const NDPoint &y) {
     return *x.p > *y.p;
   }
+  /** Pointwise comparison
+   */
   friend NDPoint<bool> operator<=(const NDPoint &x, const NDPoint &y) {
     return *x.p <= *y.p;
   }
+  /** Pointwise comparison
+   */
   friend NDPoint<bool> operator>=(const NDPoint &x, const NDPoint &y) {
     return *x.p >= *y.p;
   }
@@ -956,7 +1184,7 @@ public:
     return *x.p >= b;
   }
 
-  /** Output a point
+  /** Output an NDoint
    */
   friend std::ostream &operator<<(std::ostream &os, const NDPoint &x) {
     if (x.p)
@@ -972,6 +1200,8 @@ public:
 
 namespace std {
 
+/** Specialization of `equal_to` for NDPoint
+ */
 template <typename T> struct equal_to<openPMD::Regions::NDPoint<T>> {
   constexpr bool operator()(const openPMD::Regions::NDPoint<T> &x,
                             const openPMD::Regions::NDPoint<T> &y) const {
@@ -983,6 +1213,8 @@ template <typename T> struct equal_to<openPMD::Regions::NDPoint<T>> {
   }
 };
 
+/** Specialization of `hash` for NDPoint
+ */
 template <typename T> struct hash<openPMD::Regions::NDPoint<T>> {
   constexpr size_t operator()(const openPMD::Regions::NDPoint<T> &x) const {
     if (!x.has_value())
@@ -991,6 +1223,8 @@ template <typename T> struct hash<openPMD::Regions::NDPoint<T>> {
   }
 };
 
+/** Specialization of `less` for NDPoint
+ */
 template <typename T> struct less<openPMD::Regions::NDPoint<T>> {
   constexpr bool operator()(const openPMD::Regions::NDPoint<T> &x,
                             const openPMD::Regions::NDPoint<T> &y) const {

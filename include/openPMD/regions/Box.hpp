@@ -188,24 +188,44 @@ public:
   explicit Box(const Point<T, D> &p) : lo(p), hi(p + T(1)) {}
 
   // Predicates
+  /** Number of dimensions
+   */
   size_type ndims() const { return D; }
+  /** Whether a box is empty
+   */
   bool empty() const { return any(hi <= lo); }
+  /** Lower bound (inclusive)
+   */
   Point<T, D> lower() const { return lo; }
+  /** Upper bound (exclusive)
+   */
   Point<T, D> upper() const { return hi; }
+  /** Shape, i.e. the "size" in each direction
+   */
   Point<T, D> shape() const { return max(hi - lo, T(0)); }
+  /** Size, the total number of contained points
+   */
   size_type size() const { return product(shape()); }
 
   // Shift and scale operators
+  /** Shift a box to the right (upwards). The shift can be negative, which
+   * shifts left.
+   */
   Box &operator>>=(const Point<T, D> &p) {
     lo += p;
     hi += p;
     return *this;
   }
+  /** Shift a box to the left (downwards). The shift can be negative, which
+   * shifts right.
+   */
   Box &operator<<=(const Point<T, D> &p) {
     lo -= p;
     hi -= p;
     return *this;
   }
+  /** Scale a box
+   */
   Box &operator*=(const Point<T, D> &p) {
     lo *= p;
     hi *= p;
@@ -214,6 +234,12 @@ public:
   Box operator>>(const Point<T, D> &p) const { return Box(*this) >>= p; }
   Box operator<<(const Point<T, D> &p) const { return Box(*this) <<= p; }
   Box operator*(const Point<T, D> &p) const { return Box(*this) *= p; }
+  /** Grow a box by given amounts in each direction.
+   *
+   * The growth can be negative, which shrinks the box. If a box is
+   * shrunk too much it becomes empty. Growing an empty box always
+   * results in an empty box.
+   */
   Box grown(const Point<T, D> &dlo, const Point<T, D> &dup) const {
     if (empty())
       return Box();
@@ -224,6 +250,12 @@ public:
   }
   Box grown(const Point<T, D> &d) const { return grown(d, d); }
   Box grown(const T &d) const { return grown(Point<T, D>::pure(d)); }
+  /** Grow a box by given amounts in each direction.
+   *
+   * The shrinkage can be negative, which grows the box. If a box is
+   * shrunk too much it becomes empty. Growing an empty box always
+   * results in an empty box.
+   */
   Box shrunk(const Point<T, D> &dlo, const Point<T, D> &dup) const {
     return grown(-dlo, -dup);
   }
@@ -231,6 +263,10 @@ public:
   Box shrunk(const T &d) const { return shrunk(Point<T, D>::pure(d)); }
 
   // Comparison operators
+  /** Compare two boxes
+   *
+   * (All empty boxes are equal.)
+   */
   friend bool operator==(const Box &b1, const Box &b2) {
     if (b1.empty() && b2.empty())
       return true;
@@ -241,14 +277,21 @@ public:
   friend bool operator!=(const Box &b1, const Box &b2) { return !(b1 == b2); }
 
   // Set comparison operators
+  /** Check whether a box contains a given point
+   */
   bool contains(const Point<T, D> &p) const {
     if (empty())
       return false;
     return all(p >= lo && p < hi);
   }
+  /** Check whether two boxes are disjoint, i.e. whether they have no point in
+   * common
+   */
   friend bool isdisjoint(const Box &b1, const Box &b2) {
     return (b1 & b2).empty();
   }
+  /** Check whether Box 1 is (completely) contained in Box 2
+   */
   friend bool operator<=(const Box &b1, const Box &b2) {
     if (b1.empty())
       return true;
@@ -256,17 +299,39 @@ public:
       return false;
     return all(b1.lo >= b2.lo && b1.hi <= b2.hi);
   }
+  /** Check whether Box 1 (completely) contains Box 2
+   */
   friend bool operator>=(const Box &b1, const Box &b2) { return b2 <= b1; }
+  /** Check whether Box 1 is (completely) contained in Box 2, and Box
+   * 2 is larger than Box 1
+   */
   friend bool operator<(const Box &b1, const Box &b2) {
     return b1 <= b2 && b1 != b2;
   }
+  /** Check whether Box 1 (completely) contains in Box 2, and Box
+   * 1 is larger than Box 2
+   */
   friend bool operator>(const Box &b1, const Box &b2) { return b2 < b1; }
+  /** Check whether a Box is a subset of another Box. This is equivalen to `<=`.
+   */
   bool is_subset_of(const Box &b) const { return *this <= b; }
+  /** Check whether a Box is a superset of another Box. This is equivalen to
+   * `>=`.
+   */
   bool is_superset_of(const Box &b) const { return *this >= b; }
+  /** Check whether a Box is a strict subset of another Box. This is equivalen
+   * to `<`.
+   */
   bool is_strict_subset_of(const Box &b) const { return *this < b; }
+  /** Check whether a Box is a strict superset of another Box. This is equivalen
+   * to `>`.
+   */
   bool is_strict_superset_of(const Box &b) const { return *this > b; }
 
   // Set operations
+  /** Calculate the bounding box of two Boxes. This is the smallest Box that
+   * contains both Boxes.
+   */
   friend Box bounding_box(const Box &b1, const Box &b2) {
     if (b1.empty())
       return b2;
@@ -290,9 +355,22 @@ public:
 #endif
     return r;
   }
+  /** Calculate the intersection between two Boxes
+   *
+   * Other set operations (union, difference, symmetric difference) are not
+   * supported for Boxes; use Regions instead.
+   */
   Box &operator&=(const Box &b) { return *this = *this & b; }
+  /** Calculate the intersection between two Boxes
+   */
   friend Box intersection(const Box &b1, const Box &b2) { return b1 & b2; }
 
+#if 0
+  /** Check whether a Box is equal to the union of a set of other, disjoint
+   * boxes
+   *
+   * The other boxes must be disjoint; this is not checked.
+   */
   friend bool operator==(const Box &b, const std::vector<Box> &bs) {
     // This assumes that the elements of bs are disjoint
     size_type sz = 0;
@@ -441,6 +519,7 @@ public:
   friend std::vector<Box> symmetric_difference(const Box &b1, const Box &b2) {
     return b1 ^ b2;
   }
+#endif
 
   /** Output a box
    */

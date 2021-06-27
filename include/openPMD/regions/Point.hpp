@@ -67,7 +67,7 @@ public:
     return helpers::construct_array<T, D>(f);
   }
 
-  /** Create a point with each component set to the same value a
+  /** Create a Point with each component set to the same value `a`
    */
   static constexpr Point pure(const T &a) {
     return make([&](size_type) { return a; });
@@ -80,7 +80,7 @@ public:
     return make([&](size_type d) { return d == dir; });
   }
 
-  /** Create a point with components set to the natural number
+  /** Create a Point with components set to the natural number
    * sequence [0, ..., D-1]
    */
   static constexpr Point iota() {
@@ -133,31 +133,31 @@ public:
     return r;
   }
 
-  /** Create a point from a point with different component type
+  /** Create a Point from a Point with different component type
    */
   template <typename U>
   constexpr Point(const Point<U, D> &x)
       : elts(fmap([](const U &a) { return T(a); }, x)) {}
 
-  /** Create a point from Pointers to first and one past the last element
+  /** Create a Point from Pointers to first and one past the last element
    */
   constexpr Point(const T *begin, const T *end [[maybe_unused]])
       : elts((assert(begin + D == end),
               make([&](size_type d) { return begin[d]; }))) {}
-  /** Create a point from an initializer list
+  /** Create a Point from an initializer list
    *
    * Example: Point<int,3>{1,2,3}
    */
   constexpr Point(std::initializer_list<T> lst)
       : Point(lst.begin(), lst.end()) {}
-  /** Create a point from a C-style array
+  /** Create a Point from a C-style array
    */
   template <std::size_t DD = D, std::enable_if_t<DD != 0> * = nullptr>
   constexpr Point(const T (&arr)[DD]) : elts(&arr[0], &arr[D]) {}
-  /** Create a point from a std::array
+  /** Create a Point from a std::array
    */
   constexpr Point(const std::array<T, D> &arr) : elts(arr) {}
-  /** Create a point from a std::vector
+  /** Create a Point from a std::vector
    */
   template <typename TT = T,
             std::enable_if_t<!std::is_same_v<TT, bool>> * = nullptr>
@@ -167,10 +167,10 @@ public:
       : Point((assert(vec.size() == D),
                make([&](size_type d) { return vec[d]; }))) {}
 
-  /** Convert a point to a std::array
+  /** Convert a Point to a std::array
    */
   constexpr operator std::array<T, D>() const { return elts; }
-  /** Convert a point to a std::vector
+  /** Convert a Point to a std::vector
    */
   explicit constexpr operator std::vector<T>() const {
     return std::vector<T>(elts.begin(), elts.end());
@@ -184,25 +184,25 @@ public:
    */
   constexpr size_type ndims() const { return D; }
 
-  /** Get a component of a point
+  /** Get a component of a Point
    */
   constexpr const T &operator[](const size_type d) const { return elts[d]; }
-  /** Get a component of a point
+  /** Get a component of a Point
    */
   constexpr T &operator[](const size_type d) { return elts[d]; }
 
-  /** Remove a component from a point
+  /** Remove a component from a Point
    *
-   * This reduces the dimension of a point by one.
+   * This reduces the dimension of a Point by one.
    */
   constexpr Point<T, (D > 0 ? D - 1 : 0)> erase(size_type dir) const {
     assert(dir >= 0 && dir < D);
     return Point<T, (D > 0 ? D - 1 : 0)>::make(
         [&](size_type d) { return d < dir ? (*this)[d] : (*this)[d + 1]; });
   }
-  /** Add a component to a point
+  /** Add a component to a Point
    *
-   * This increases the dimension of a point by one.
+   * This increases the dimension of a Point by one.
    */
   constexpr Point<T, D + 1> insert(size_type dir, const T &a) const {
     assert(dir >= 0 && dir <= D);
@@ -211,65 +211,94 @@ public:
     });
   }
 
-  /** Reverse the components of a point
+  /** Reverse the components of a Point
    */
   constexpr Point reversed() const {
     return Point::make([&](size_type d) { return (*this)[D - 1 - d]; });
   }
 
+  /** Apply unary plus operator element-wise
+   */
   friend constexpr Point operator+(const Point &x) {
     return fmap([](const T &a) { return +a; }, x);
   }
+  /** Element-wise negate
+   */
   friend constexpr Point operator-(const Point &x) {
     return fmap([](const T &a) { return -a; }, x);
   }
+  /** Element-wise bitwise not
+   */
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend constexpr Point operator~(const Point &x) {
     if constexpr (std::is_same_v<T, bool>)
       // Special case to avoid compiler warnings
       return fmap([](const T &) { return true; }, x);
-    else if constexpr (std::is_integral_v<T>)
+    else
       return fmap([](const T &a) { return ~a; }, x);
-    std::abort();
   }
+  /** Element-wise logical not
+   */
   friend constexpr Point<bool, D> operator!(const Point &x) {
     return fmap([](const T &a) { return !a; }, x);
   }
 
+  /** Add element-wise
+   */
   friend constexpr Point operator+(const Point &x, const Point &y) {
     return fmap([](const T &a, const T &b) { return a + b; }, x, y);
   }
+  /** Subtract element-wise
+   */
   friend constexpr Point operator-(const Point &x, const Point &y) {
     return fmap([](const T &a, const T &b) { return a - b; }, x, y);
   }
+  /** Multiply element-wise
+   */
   friend constexpr Point operator*(const Point &x, const Point &y) {
     return fmap([](const T &a, const T &b) { return a * b; }, x, y);
   }
+  /** Divide element-wise
+   */
   friend constexpr Point operator/(const Point &x, const Point &y) {
     return fmap([](const T &a, const T &b) { return a / b; }, x, y);
   }
+  /** Element-wise modulo
+   */
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend constexpr Point operator%(const Point &x, const Point &y) {
-    if constexpr (std::is_integral_v<T>)
-      return fmap([](const T &a, const T &b) { return a % b; }, x, y);
-    std::abort();
+    return fmap([](const T &a, const T &b) { return a % b; }, x, y);
   }
+  /** Element-wise bitwise and
+   */
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend constexpr Point operator&(const Point &x, const Point &y) {
-    if constexpr (std::is_integral_v<T>)
-      return fmap([](const T &a, const T &b) { return a & b; }, x, y);
-    std::abort();
+    return fmap([](const T &a, const T &b) { return a & b; }, x, y);
   }
+  /** Element-wise bitwise or
+   */
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend constexpr Point operator|(const Point &x, const Point &y) {
-    if constexpr (std::is_integral_v<T>)
-      return fmap([](const T &a, const T &b) { return a | b; }, x, y);
-    std::abort();
+    return fmap([](const T &a, const T &b) { return a | b; }, x, y);
   }
+  /** Element-wise bitwise exclusive or
+   */
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend constexpr Point operator^(const Point &x, const Point &y) {
-    if constexpr (std::is_integral_v<T>)
-      return fmap([](const T &a, const T &b) { return a ^ b; }, x, y);
-    std::abort();
+    return fmap([](const T &a, const T &b) { return a ^ b; }, x, y);
   }
+  /** Element-wise logical and
+   */
   friend constexpr Point<bool, D> operator&&(const Point &x, const Point &y) {
     return fmap([](const T &a, const T &b) { return a && b; }, x, y);
   }
+  /** Element-wise logical or
+   */
   friend constexpr Point<bool, D> operator||(const Point &x, const Point &y) {
     return fmap([](const T &a, const T &b) { return a || b; }, x, y);
   }
@@ -286,25 +315,25 @@ public:
   friend constexpr Point operator/(const T &a, const Point &y) {
     return fmap([&](const T &b) { return a / b; }, y);
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend constexpr Point operator%(const T &a, const Point &y) {
-    if constexpr (std::is_integral_v<T>)
-      return fmap([&](const T &b) { return a % b; }, y);
-    std::abort();
+    return fmap([&](const T &b) { return a % b; }, y);
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend constexpr Point operator&(const T &a, const Point &y) {
-    if constexpr (std::is_integral_v<T>)
-      return fmap([&](const T &b) { return a & b; }, y);
-    std::abort();
+    return fmap([&](const T &b) { return a & b; }, y);
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend constexpr Point operator|(const T &a, const Point &y) {
-    if constexpr (std::is_integral_v<T>)
-      return fmap([&](const T &b) { return a | b; }, y);
-    std::abort();
+    return fmap([&](const T &b) { return a | b; }, y);
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend constexpr Point operator^(const T &a, const Point &y) {
-    if constexpr (std::is_integral_v<T>)
-      return fmap([&](const T &b) { return a ^ b; }, y);
-    std::abort();
+    return fmap([&](const T &b) { return a ^ b; }, y);
   }
   friend constexpr Point<bool, D> operator&&(const T &a, const Point &y) {
     return fmap([&](const T &b) { return a && b; }, y);
@@ -325,25 +354,25 @@ public:
   friend constexpr Point operator/(const Point &x, const T &b) {
     return fmap([&](const T &a) { return a / b; }, x);
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend constexpr Point operator%(const Point &x, const T &b) {
-    if constexpr (std::is_integral_v<T>)
-      return fmap([&](const T &a) { return a % b; }, x);
-    std::abort();
+    return fmap([&](const T &a) { return a % b; }, x);
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend constexpr Point operator&(const Point &x, const T &b) {
-    if constexpr (std::is_integral_v<T>)
-      return fmap([&](const T &a) { return a & b; }, x);
-    std::abort();
+    return fmap([&](const T &a) { return a & b; }, x);
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend constexpr Point operator|(const Point &x, const T &b) {
-    if constexpr (std::is_integral_v<T>)
-      return fmap([&](const T &a) { return a | b; }, x);
-    std::abort();
+    return fmap([&](const T &a) { return a | b; }, x);
   }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
   friend constexpr Point operator^(const Point &x, const T &b) {
-    if constexpr (std::is_integral_v<T>)
-      return fmap([&](const T &a) { return a ^ b; }, x);
-    std::abort();
+    return fmap([&](const T &a) { return a ^ b; }, x);
   }
   friend constexpr Point<bool, D> operator&&(const Point &x, const T &b) {
     return fmap([&](const T &a) { return a && b; }, x);
@@ -356,20 +385,54 @@ public:
   constexpr Point &operator-=(const Point &x) { return *this = *this - x; }
   constexpr Point &operator*=(const Point &x) { return *this = *this * x; }
   constexpr Point &operator/=(const Point &x) { return *this = *this / x; }
-  constexpr Point &operator%=(const Point &x) { return *this = *this % x; }
-  constexpr Point &operator&=(const Point &x) { return *this = *this & x; }
-  constexpr Point &operator|=(const Point &x) { return *this = *this | x; }
-  constexpr Point &operator^=(const Point &x) { return *this = *this ^ x; }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
+  constexpr Point &operator%=(const Point &x) {
+    return *this = *this % x;
+  }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
+  constexpr Point &operator&=(const Point &x) {
+    return *this = *this & x;
+  }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
+  constexpr Point &operator|=(const Point &x) {
+    return *this = *this | x;
+  }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
+  constexpr Point &operator^=(const Point &x) {
+    return *this = *this ^ x;
+  }
 
   constexpr Point &operator+=(const T &a) { return *this = *this + a; }
   constexpr Point &operator-=(const T &a) { return *this = *this - a; }
   constexpr Point &operator*=(const T &a) { return *this = *this * a; }
   constexpr Point &operator/=(const T &a) { return *this = *this / a; }
-  constexpr Point &operator%=(const T &a) { return *this = *this % a; }
-  constexpr Point &operator&=(const T &a) { return *this = *this & a; }
-  constexpr Point &operator|=(const T &a) { return *this = *this | a; }
-  constexpr Point &operator^=(const T &a) { return *this = *this ^ a; }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
+  constexpr Point &operator%=(const T &a) {
+    return *this = *this % a;
+  }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
+  constexpr Point &operator&=(const T &a) {
+    return *this = *this & a;
+  }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
+  constexpr Point &operator|=(const T &a) {
+    return *this = *this | a;
+  }
+  template <typename TT = T,
+            std::enable_if_t<std::is_integral_v<TT>> * = nullptr>
+  constexpr Point &operator^=(const T &a) {
+    return *this = *this ^ a;
+  }
 
+  /** Element-wise absolute value
+   */
   friend constexpr Point abs(const Point &x) {
     using std::abs;
     return fmap(
@@ -381,23 +444,33 @@ public:
         },
         x);
   }
+  /** Element-wise absolute value
+   */
   friend constexpr Point fabs(const Point &x) {
     using std::fabs;
     return fmap([&](const T &a) { return fabs(a); }, x);
   }
 
+  /** Element-wise maximum of two points
+   */
   friend constexpr Point fmax(const Point &x, const Point &y) {
     using std::fmax;
     return fmap([](const T &a, const T &b) { return fmax(a, b); }, x, y);
   }
+  /** Element-wise minimum of two points
+   */
   friend constexpr Point fmin(const Point &x, const Point &y) {
     using std::fmin;
     return fmap([](const T &a, const T &b) { return fmin(a, b); }, x, y);
   }
+  /** Element-wise maximum of two points
+   */
   friend constexpr Point max(const Point &x, const Point &y) {
     using std::max;
     return fmap([](const T &a, const T &b) { return max(a, b); }, x, y);
   }
+  /** Element-wise minimum of two points
+   */
   friend constexpr Point min(const Point &x, const Point &y) {
     using std::min;
     return fmap([](const T &a, const T &b) { return min(a, b); }, x, y);
@@ -437,12 +510,18 @@ public:
     return fmap([&](const T &a) { return min(a, b); }, x);
   }
 
+  /** Return true if all elements are true
+   */
   friend constexpr bool all(const Point &x) {
     return fold([](bool r, const T &a) { return r && a; }, true, x);
   }
+  /** Return true if any element is true
+   */
   friend constexpr bool any(const Point &x) {
     return fold([](bool r, const T &a) { return r || a; }, false, x);
   }
+  /** Return maximum element
+   */
   friend constexpr T max_element(const Point &x) {
     using std::max;
     const T neutral = std::is_floating_point_v<T>
@@ -450,6 +529,8 @@ public:
                           : std::numeric_limits<T>::lowest();
     return fold([](const T &r, const T &a) { return max(r, a); }, neutral, x);
   }
+  /** Return minimum element
+   */
   friend constexpr T min_element(const Point &x) {
     using std::min;
     const T neutral = std::is_floating_point_v<T>
@@ -457,28 +538,44 @@ public:
                           : std::numeric_limits<T>::max();
     return fold([](const T &r, const T &a) { return min(r, a); }, neutral, x);
   }
+  /** Product of all elements
+   */
   friend constexpr T product(const Point &x) {
     return fold([](const T &r, const T &a) { return r * a; }, T(1), x);
   }
+  /** Sum of all elements
+   */
   friend constexpr T sum(const Point &x) {
     return fold([](const T &r, const T &a) { return r + a; }, T(0), x);
   }
 
+  /** Pointwise comparison
+   */
   friend constexpr Point<bool, D> operator==(const Point &x, const Point &y) {
     return fmap([](const T &a, const T &b) { return a == b; }, x, y);
   }
+  /** Pointwise comparison
+   */
   friend constexpr Point<bool, D> operator!=(const Point &x, const Point &y) {
     return fmap([](const T &a, const T &b) { return a != b; }, x, y);
   }
+  /** Pointwise comparison
+   */
   friend constexpr Point<bool, D> operator<(const Point &x, const Point &y) {
     return fmap([](const T &a, const T &b) { return a < b; }, x, y);
   }
+  /** Pointwise comparison
+   */
   friend constexpr Point<bool, D> operator>(const Point &x, const Point &y) {
     return fmap([](const T &a, const T &b) { return a > b; }, x, y);
   }
+  /** Pointwise comparison
+   */
   friend constexpr Point<bool, D> operator<=(const Point &x, const Point &y) {
     return fmap([](const T &a, const T &b) { return a <= b; }, x, y);
   }
+  /** Pointwise comparison
+   */
   friend constexpr Point<bool, D> operator>=(const Point &x, const Point &y) {
     return fmap([](const T &a, const T &b) { return a >= b; }, x, y);
   }
@@ -502,7 +599,7 @@ public:
     return fmap([&](const T &a) { return a >= b; }, x);
   }
 
-  /** Output a point
+  /** Output a Point
    */
   friend std::ostream &operator<<(std::ostream &os, const Point &x) {
     os << "[";
@@ -521,6 +618,8 @@ public:
 
 namespace std {
 
+/** Specialization of `equal_to` for Point
+ */
 template <typename T, std::size_t D>
 struct equal_to<openPMD::Regions::Point<T, D>> {
   constexpr bool operator()(const openPMD::Regions::Point<T, D> &x,
@@ -530,6 +629,8 @@ struct equal_to<openPMD::Regions::Point<T, D>> {
   }
 };
 
+/** Specialization of `hash` for Point
+ */
 template <typename T, std::size_t D>
 struct hash<openPMD::Regions::Point<T, D>> {
   constexpr size_t operator()(const openPMD::Regions::Point<T, D> &x) const {
@@ -542,6 +643,8 @@ struct hash<openPMD::Regions::Point<T, D>> {
   }
 };
 
+/** Specialization of `less` for Point
+ */
 template <typename T, std::size_t D>
 struct less<openPMD::Regions::Point<T, D>> {
   constexpr bool operator()(const openPMD::Regions::Point<T, D> &x,
