@@ -1,0 +1,10 @@
+style = "yas"
+indent = 4
+margin = 132
+always_for_in = true
+whitespace_ops_in_indices = true
+whitespace_typedefs = false
+remove_extra_newlines = true
+import_to_using = true
+pipe_to_function_call = true
+short_to_long_function_def = true

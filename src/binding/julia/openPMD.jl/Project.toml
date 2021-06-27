@@ -1,0 +1,14 @@
+name = "openPMD"
+uuid = "e4c73209-6c8c-4213-807b-38d671e094ab"
+authors = ["Erik Schnetter <schnetter@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+CxxWrap = "1f15a43c-97ca-5a2a-ae31-89f07a497df4"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[compat]
+CxxWrap = "0.11.2"
+StaticArrays = "1.2.4"
+julia = "1.4"
