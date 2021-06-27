@@ -9,8 +9,8 @@ void define_julia_Dataset(jlcxx::Module &mod) {
   type.constructor<Datatype, Extent, const std::string &>();
   type.constructor<Extent>();
 
-  type.method("extend!", &Dataset::extend);
-  type.method("set_chunk_size!", &Dataset::setChunkSize);
+  type.method("extend1!", &Dataset::extend);
+  type.method("set_chunk_size1!", &Dataset::setChunkSize);
   type.method("set_compression!", &Dataset::setCompression);
   type.method("set_custom_transform!", &Dataset::setCustomTransform);
   type.method("extent1", [](const Dataset &d) { return d.extent; });

@@ -10,9 +10,11 @@
 #include <jlcxx/tuple.hpp>
 #include <jlcxx/type_conversion.hpp>
 
+#include <algorithm>
 #include <array>
 #include <complex>
 #include <map>
+#include <memory>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -92,6 +94,25 @@ std::vector<std::tuple<T, U>> map_to_vector_tuple(const std::map<T, U> &m) {
   return vp;
 }
 
+template <typename T> std::shared_ptr<T> capture_vector(std::vector<T> vec) {
+  if constexpr (std::is_same_v<T, bool>) {
+    // Copy the vector, because std::vector<bool> is special
+    T *dataptr = new T[vec.size()];
+    std::shared_ptr<T> ptr(dataptr, std::default_delete<T[]>());
+    std::copy(vec.begin(), vec.end(), dataptr);
+    return ptr;
+  } else {
+    // Capture the vector
+    T *dataptr = vec.data();
+    std::shared_ptr<T> ptr(dataptr, [vec = std::move(vec)](T *p) {
+      /* We moved the vector into the anonymous function, and thus it will be
+       * destructed when the anonymous function is destructed. There is no need
+       * to call a destructor manually. */
+    });
+    return ptr;
+  }
+}
+
 template <typename T, std::size_t N>
 void add_array_type(jlcxx::Module &mod, const std::string &name) {
   mod.add_type<std::array<T, N>>(name)
@@ -142,6 +163,12 @@ void define_julia_Iteration(jlcxx::Module &mod);
 void define_julia_Mesh(jlcxx::Module &mod);
 void define_julia_MeshRecordComponent(jlcxx::Module &mod);
 void define_julia_RecordComponent(jlcxx::Module &mod);
+void define_julia_RecordComponent_load_chunk(jlcxx::Module &mod,
+    jlcxx::TypeWrapper<RecordComponent> &type);
+void define_julia_RecordComponent_make_constant(jlcxx::Module &mod,
+    jlcxx::TypeWrapper<RecordComponent> &type);
+void define_julia_RecordComponent_store_chunk(jlcxx::Module &mod,
+    jlcxx::TypeWrapper<RecordComponent> &type);
 void define_julia_Series(jlcxx::Module &mod);
 void define_julia_UnitDimension(jlcxx::Module &mod);
 void define_julia_WriteIterations(jlcxx::Module &mod);

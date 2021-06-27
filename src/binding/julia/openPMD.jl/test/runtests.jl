@@ -20,6 +20,11 @@ const iters = write_iterations(series)
 const iter = get!(iters, 0)
 const mesh = get!(meshes(iter), "my_first_mesh")
 const comp = get!(mesh, "my_first_record")
+set_position!(comp, (0.0, 0.0))
+const dsetT = Int
+const ext = (2, 3)
+const dset = Dataset(dsetT, ext)
+reset_dataset!(comp, dset)
 
 include("Attribute.jl")
 include("Attributable.jl")

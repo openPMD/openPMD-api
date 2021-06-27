@@ -618,6 +618,9 @@ if(openPMD_HAVE_JlCxx)
         src/binding/julia/Mesh.cpp
         src/binding/julia/MeshRecordComponent.cpp
         src/binding/julia/RecordComponent.cpp
+        src/binding/julia/RecordComponent_load_chunk.cpp
+        src/binding/julia/RecordComponent_make_constant.cpp
+        src/binding/julia/RecordComponent_store_chunk.cpp
         src/binding/julia/Series.cpp
         src/binding/julia/UnitDimension.cpp
         src/binding/julia/WriteIterations.cpp

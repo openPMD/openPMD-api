@@ -20,6 +20,8 @@ __init__() = @initcxx
 # - remove all the `Bool(...)` wrappers; they are not needed
 #
 # - put enum values into a namespace
+#
+# - do we really need different names to call templated functions? probably not, at least not for constructors.
 
 ################################################################################
 

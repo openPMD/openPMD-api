@@ -27,7 +27,7 @@ export reset_dataset!
 @doc """
     ndims(comp::RecordComponent)
 """ Base.ndims
-@cxxdereference Base.ndims(comp::RecordComponent) = Int(get_dimensionality(comp))
+@cxxdereference Base.ndims(comp::RecordComponent) = Int(get_dimensionality1(comp))
 
 @doc """
     size(comp::RecordComponent)
@@ -60,7 +60,7 @@ export make_empty
 # TODO: load_chunk
 
 @doc """
-    store_chunk(comp::RecordComponent, data::AbstractArray, offset, extent)
+    store_chunk(comp::RecordComponent, data::AbstractArray, offset::Offset, extent::Extent)
 """ store_chunk
 export store_chunk
 # Object lifetime management for store_chunk: Ideally, we would ensure
@@ -70,13 +70,12 @@ export store_chunk
 # copies the data, which also needs to be avoided.
 for (otype, jtype) in julia_types
     @eval begin
-        @cxxdereference function store_chunk(comp::RecordComponent, data::AbstractArray{$jtype}, offset::AbstractVector,
-                                             extent::AbstractVector)
-            @assert ndims(offset) == ndims(extent) == ndims(comp)
+        @cxxdereference function store_chunk(comp::RecordComponent, data::AbstractArray{$jtype}, offset::Offset, extent::Extent)
+            # @assert length(offset) == length(extent) == ndims(comp)
             @assert all(extent .>= 0)
-            @assert length(data) == product(extent)
-            return $(Symbol("store_chunk_copy1_", type_symbols[otype]))(comp, wrap_vector(reshape(value, :)), wrap_vector(offset),
-                                                                        wrap_vector(extent))
+            @assert length(data) == prod(extent)
+            return $(Symbol("store_chunk_copy1_", type_symbols[otype]))(comp, wrap_vector(reshape(data, :)), wrap_offset(offset),
+                                                                        wrap_extent(extent))
         end
     end
 end
