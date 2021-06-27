@@ -65,20 +65,6 @@ public:
   virtual VBox &operator&=(const VBox &b) = 0;
   virtual std::unique_ptr<VBox> intersection1(const VBox &b2) const = 0;
 
-#if 0
-  virtual bool operator==(const std::vector<NDBox<T>> &bs) const = 0;
-  virtual bool operator!=(const std::vector<NDBox<T>> &bs) const = 0;
-
-  virtual std::vector<NDBox<T>> operator-(const VBox &b2) const = 0;
-  virtual std::vector<NDBox<T>> difference1(const VBox &b2) const = 0;
-
-  virtual std::vector<NDBox<T>> operator|(const VBox &b2) const = 0;
-  virtual std::vector<NDBox<T>> setunion1(const VBox &b2) const = 0;
-
-  virtual std::vector<NDBox<T>> operator^(const VBox &b2) const = 0;
-  virtual std::vector<NDBox<T>> symmetric_difference1(const VBox &b2) const = 0;
-#endif
-
   virtual bool equal_to1(const VBox &x) const = 0;
   virtual std::size_t hash1() const = 0;
   virtual bool less1(const VBox &x) const = 0;
@@ -218,43 +204,6 @@ public:
     return std::make_unique<WBox>(
         intersection(b, dynamic_cast<const WBox &>(b2).b));
   }
-
-#if 0
-  bool operator==(const std::vector<NDBox<T>> &bs) const override {
-    return b == helpers::convert_vector<Box<T, D>>(bs);
-  }
-  bool operator!=(const std::vector<NDBox<T>> &bs) const override {
-    return b != helpers::convert_vector<Box<T, D>>(bs);
-  }
-
-  std::vector<NDBox<T>> operator-(const VBox<T> &b2) const override {
-    return helpers::convert_vector<NDBox<T>>(b -
-                                             dynamic_cast<const WBox &>(b2).b);
-  }
-  std::vector<NDBox<T>> difference1(const VBox<T> &b2) const override {
-    return helpers::convert_vector<NDBox<T>>(
-        difference(b, dynamic_cast<const WBox &>(b2).b));
-  }
-
-  std::vector<NDBox<T>> operator|(const VBox<T> &b2) const override {
-    return helpers::convert_vector<NDBox<T>>(b |
-                                             dynamic_cast<const WBox &>(b2).b);
-  }
-  std::vector<NDBox<T>> setunion1(const VBox<T> &b2) const override {
-    return helpers::convert_vector<NDBox<T>>(
-        setunion(b, dynamic_cast<const WBox &>(b2).b));
-  }
-
-  std::vector<NDBox<T>> operator^(const VBox<T> &b2) const override {
-    return helpers::convert_vector<NDBox<T>>(b ^
-                                             dynamic_cast<const WBox &>(b2).b);
-  }
-  std::vector<NDBox<T>>
-  symmetric_difference1(const VBox<T> &b2) const override {
-    return helpers::convert_vector<NDBox<T>>(
-        symmetric_difference(b, dynamic_cast<const WBox &>(b2).b));
-  }
-#endif
 
   bool equal_to1(const VBox<T> &x) const override {
     return std::equal_to<Box<T, D>>()(b, dynamic_cast<const WBox &>(x).b);
@@ -439,44 +388,6 @@ public:
   friend NDBox intersection(const NDBox &b1, const NDBox &b2) {
     return intersection(*b1.b, *b2.b);
   }
-
-#if 0
-  friend bool operator==(const NDBox &b1, const std::vector<NDBox> &bs) {
-    return *b1.b == bs;
-  }
-  friend bool operator==(const std::vector<NDBox> &bs, const NDBox &b2) {
-    return *b2.b == bs;
-  }
-  friend bool operator!=(const NDBox &b1, const std::vector<NDBox> &bs) {
-    return *b1.b != bs;
-  }
-  friend bool operator!=(const std::vector<NDBox> &bs, const NDBox &b2) {
-    return *b2.b != bs;
-  }
-
-  friend std::vector<NDBox> operator-(const NDBox &b1, const NDBox &b2) {
-
-    return *b1.b - *b2.b;
-  }
-  friend std::vector<NDBox> difference(const NDBox &b1, const NDBox &b2) {
-    return difference(*b1.b, *b2.b);
-  }
-
-  friend std::vector<NDBox> operator|(const NDBox &b1, const NDBox &b2) {
-    return *b1.b | *b2.b;
-  }
-  friend std::vector<NDBox> setunion(const NDBox &b1, const NDBox &b2) {
-    return setunion(*b1.b, *b2.b);
-  }
-
-  friend std::vector<NDBox> operator^(const NDBox &b1, const NDBox &b2) {
-    return *b1.b ^ *b2.b;
-  }
-  friend std::vector<NDBox> symmetric_difference(const NDBox &b1,
-                                                 const NDBox &b2) {
-    return symmetric_difference(*b1.b, *b2.b);
-  }
-#endif
 
   /** Output a box
    */

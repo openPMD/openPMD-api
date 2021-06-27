@@ -182,34 +182,9 @@ template <typename B> void test_Box(const B &box) {
     CHECK((X & Y) == (Y & X));
     CHECK(((X & Y) & Z) == (X & (Y & Z)));
 
-    CHECK((N | X) == X);
-    CHECK((E | X) == E);
-    CHECK((X | E) == E);
-    // CHECK((X | Y) == (Y | X));
-    // CHECK(((X | Y) | Z) == (X | (Y | Z)));
-
-    // CHECK(E - (X & Y) == ((E - X) | (E - Y)));
-    // CHECK(E - (X | Y) == ((E - X) & (E - Y)));
-
     const B IXY = X & Y;
     CHECK((IXY <= X && IXY <= Y) == true);
     CHECK((IXY.grown(1) <= X && IXY.grown(1) <= Y) == (D == 0 || IXY.empty()));
-
-    const std::vector<B> UXY = X | Y;
-    for (const auto &U : UXY)
-      CHECK((U <= X || U <= Y) == true);
-
-    const std::vector<B> DXY = X - Y;
-    for (const auto &DD : DXY)
-      CHECK((DD <= X || !isdisjoint(DD, Y)) == true);
-
-    const std::vector<B> SXY = X ^ Y;
-    for (const auto &S : SXY)
-      CHECK(((S <= X || S <= Y) && isdisjoint(S, IXY)) == true);
-
-    // CHECK(IXY <= UXY);
-    // CHECK(isdisjoint(IXY, SXY));
-    // CHECK((IXY | SXY) == UXY);
 
   } // for iter
 }
