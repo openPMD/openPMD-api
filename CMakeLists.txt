@@ -628,11 +628,6 @@ if(openPMD_HAVE_JlCxx)
         src/binding/julia/version.cpp
     )
     target_compile_features(openPMD_jl PUBLIC cxx_std_17)
-    # # On macOS, not all C++17 features are enabled by `cxx_std_17`:
-    # # Older platforms (<10.14) do not have `std::variant`. We thus
-    # # select C++14 so that openPMD's header files enable respective
-    # # work-arounds.
-    # target_compile_features(openPMD_jl PUBLIC cxx_std_14)
     set_target_properties(openPMD_jl PROPERTIES
         CXX_EXTENSIONS OFF
         CXX_STANDARD_REQUIRED ON

@@ -20,7 +20,7 @@
  */
 #pragma once
 
-#if __cplusplus >= 201703L
+#if __cplusplus >= 201703L && !(defined __APPLE__ && defined __clang__)
 #   include <variant> // IWYU pragma: export
 namespace variantSrc = std;
 #else
