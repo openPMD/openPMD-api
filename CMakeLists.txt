@@ -627,6 +627,7 @@ if(openPMD_HAVE_JlCxx)
         src/binding/julia/openPMD.cpp
         src/binding/julia/version.cpp
     )
+    target_compile_features(openPMD_jl PUBLIC cxx_std_17)
     target_link_libraries(openPMD_jl PRIVATE openPMD JlCxx::cxxwrap_julia JlCxx::cxxwrap_julia_stl)
 endif()
 
