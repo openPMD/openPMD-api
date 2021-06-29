@@ -961,6 +961,10 @@ if(openPMD_INSTALL)
         endforeach()
     endif()
 
+    if(openPMD_HAVE_JlCxx)
+        list(APPEND openPMD_INSTALL_TARGET_NAMES openPMD_jl)
+    endif()
+
     install(TARGETS ${openPMD_INSTALL_TARGET_NAMES}
         EXPORT openPMDTargets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
