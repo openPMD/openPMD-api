@@ -907,6 +907,76 @@ class APITest(unittest.TestCase):
                 ]
             )
 
+    def testPickle(self):
+        """ test pickling of any attributable, especially record components."""
+        import pickle
+
+        # Get series.
+        series = self.__series
+        i = series.iterations[400]
+
+        # Get a mesh.
+        E = i.meshes["E"]
+        self.assertIsInstance(E, io.Mesh)
+        E_x = E["x"]
+        self.assertIsInstance(E, io.Mesh_Record_Component)
+
+        # Get a particle species.
+        electrons = i.particles["electrons"]
+        self.assertIsInstance(electrons, io.ParticleSpecies)
+        pos_y = electrons["position"]["y"]
+        w = electrons["weighting"][io.Record_Component.SCALAR]
+
+        # Pickle
+        pickled_E_x = pickle.dumps(E_x)
+        pickled_pos_y = pickle.dumps(pos_y)
+        pickled_w = pickle.dumps(w)
+        print(f"This is my pickled object:\n{pickled_E_x}\n")
+
+        E_x = None
+        del E_x
+
+        unpickled_E_x = pickle.loads(pickled_E_x)  # Unpickling the object
+        E_x = unpickled_E_x
+        print(
+            f"This is a_dict of the unpickled object:\n{unpickled_E_x.position}\n")
+        return
+
+        # get particle data
+        if found_numpy:
+            np.testing.assert_allclose(E.unit_dimension,
+                                       [1., 1., -3., -1., 0., 0., 0.])
+            np.testing.assert_allclose(E_x.position,
+                                       [0.5, 0., 0.])
+        self.assertAlmostEqual(E_x.unit_SI, 1.0)
+
+        self.assertSequenceEqual(shape, [26, 26, 201])
+        if found_numpy:
+            self.assertEqual(E_x.dtype, np.float64)
+
+        offset = [1, 1, 1]
+        extent = [2, 2, 1]
+
+        if found_numpy:
+            chunk_data = E_x.load_chunk(offset, extent)
+            E.series_flush()
+            self.assertSequenceEqual(chunk_data.shape, extent)
+
+            self.assertEqual(chunk_data.dtype, np.float64)
+            np.testing.assert_allclose(
+                chunk_data,
+                [
+                    [
+                        [6.26273197e7],
+                        [2.70402498e8]
+                    ],
+                    [
+                        [-1.89238617e8],
+                        [-1.66413019e8]
+                    ]
+                ]
+            )
+
     def testLoadSeries(self):
         """ Test loading an openPMD series from hdf5."""
 

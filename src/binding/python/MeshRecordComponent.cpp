@@ -23,6 +23,7 @@
 
 #include "openPMD/backend/MeshRecordComponent.hpp"
 #include "openPMD/RecordComponent.hpp"
+#include "openPMD/Series.hpp"
 
 #include <string>
 
@@ -51,6 +52,41 @@ void init_MeshRecordComponent(py::module &m) {
             &MeshRecordComponent::position<long double>,
             &MeshRecordComponent::setPosition<long double>,
             "Relative position of the component on an element (node/cell/voxel) of the mesh")
+
+        .def(py::pickle(
+            [](const MeshRecordComponent &a) { // __getstate__
+                // Return a tuple that fully encodes the state of the object
+                Attributable::MyPath const myPath = a.myPath();
+                std::cout << myPath.filePath() << std::endl;
+                for( auto const & s : myPath.openPMDGroup )
+                    std::cout << s << std::endl;
+                return py::make_tuple(myPath.filePath(), myPath.openPMDGroup);
+            },
+            [](py::tuple t) { // __setstate__
+                if (t.size() != 2)
+                    throw std::runtime_error("Invalid state!");
+
+                std::string const filename = t[0].cast< std::string >();
+                std::vector< std::string > const openPMDGroup =
+                        t[1].cast< std::vector< std::string > >();
+
+                // Create a new openPMD Series and keep it alive forevaaa
+                // TODO: how much of a hack is that, heh? :D omg.
+                static auto series = openPMD::Series(
+                        filename,
+                        Access::READ_ONLY
+                );
+
+                std::cout << "+++++\n";
+                for( auto const & s : openPMDGroup )
+                    std::cout << s << std::endl;
+                uint64_t const n_it = std::stoull(openPMDGroup.at(1));
+
+                // careful: we now need to keep the series alive
+                return series.iterations[n_it].meshes[openPMDGroup.at(3)][openPMDGroup.at(4)];
+            }
+        ))
+    //*/
 
     ;
 }

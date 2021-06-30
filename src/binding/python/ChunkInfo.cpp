@@ -56,6 +56,22 @@ void init_Chunk(py::module &m) {
         .def_readwrite("offset",   &WrittenChunkInfo::offset   )
         .def_readwrite("extent",   &WrittenChunkInfo::extent   )
         .def_readwrite("source_id", &WrittenChunkInfo::sourceID )
+
+        .def(py::pickle(
+            [](const WrittenChunkInfo &w) { // __getstate__
+                return py::make_tuple(w.offset, w.extent, w.sourceID);
+            },
+            [](py::tuple t) { // __setstate__
+                if (t.size() != 3)
+                    throw std::runtime_error("Invalid state!");
+
+                auto const offset = t[0].cast< Offset >();
+                auto const extent = t[1].cast< Extent >();
+                auto const sourceID = t[2].cast< decltype(WrittenChunkInfo::sourceID) >();
+
+                return WrittenChunkInfo(offset, extent, sourceID);
+            }
+        ))
     ;
 }
 

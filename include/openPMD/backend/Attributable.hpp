@@ -198,13 +198,7 @@ public:
      */
     void seriesFlush();
 
-OPENPMD_protected:
-
-    internal::SeriesInternal const & retrieveSeries() const;
-    internal::SeriesInternal & retrieveSeries();
-
-    void seriesFlush( FlushLevel );
-
+    /** todo */
     struct MyPath
     {
         std::string directory; // samples/git-samples/
@@ -214,9 +208,8 @@ OPENPMD_protected:
          * A vector of openPMD group names indicating where this object
          * may be found within its Series.
          * Notice that RecordComponent::SCALAR is included in this list.
-         *
          */
-        std::vector< std::string > openPMDGroup;
+        std::vector< std::string > openPMDGroup; //! \todo rename
 
         std::string filePath() const;
     };
@@ -227,6 +220,13 @@ OPENPMD_protected:
      * @return A struct informing about the context of this Attributable.
      */
     MyPath myPath() const;
+
+OPENPMD_protected:
+
+    internal::SeriesInternal const & retrieveSeries() const;
+    internal::SeriesInternal & retrieveSeries();
+
+    void seriesFlush( FlushLevel );
 
     void flushAttributes();
     enum ReadMode {
@@ -345,7 +345,7 @@ OPENPMD_protected:
 private:
     /**
      * @brief Link with parent.
-     * 
+     *
      * @param w The Writable representing the parent.
      */
     virtual void linkHierarchy(Writable& w);
