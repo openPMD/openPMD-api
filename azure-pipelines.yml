@@ -513,6 +513,8 @@ jobs:
       pypy3 -m openpmd_api.ls --help
 #      openpmd-ls --help # not in PATH
 
+# currently broken due to work-around adding a C flag:
+# https://github.com/Homebrew/homebrew-core/issues/80465
 - job: macOS_pip_pypi_mpich
   displayName: macOS pip from PyPI w/ MPICH
   pool:
