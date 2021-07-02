@@ -157,9 +157,19 @@ target_link_libraries(openPMD::thirdparty::nlohmann_json
 
 
 # external library: HDF5 (optional)
+#   note: in the new hdf5-cmake.config files, major releases like
+#         1.8, 1.10 and 1.12 are not marked compatible versions
+#   We could use CMake 3.19.0+ version ranges, but:
+#     - this issues a Wdev warning with FindHDF5.cmake
+#     - does not work at least with HDF5 1.10:
+#       Could not find a configuration file for package "HDF5" that is compatible
+#         with requested version range "1.8.13...1.12".
+#         The following configuration files were considered but not accepted:
+#         ../share/cmake/hdf5/hdf5-config.cmake, version: 1.10.7
+#     - thus, we do our own HDF5_VERSION check...
 if(openPMD_USE_HDF5 STREQUAL AUTO)
     set(HDF5_PREFER_PARALLEL ${openPMD_HAVE_MPI})
-    find_package(HDF5 1.8.13 COMPONENTS C)
+    find_package(HDF5 COMPONENTS C)
     if(HDF5_FOUND)
         set(openPMD_HAVE_HDF5 TRUE)
     else()
@@ -167,36 +177,44 @@ if(openPMD_USE_HDF5 STREQUAL AUTO)
     endif()
 elseif(openPMD_USE_HDF5)
     set(HDF5_PREFER_PARALLEL ${openPMD_HAVE_MPI})
-    find_package(HDF5 1.8.13 REQUIRED COMPONENTS C)
+    find_package(HDF5 REQUIRED COMPONENTS C)
     set(openPMD_HAVE_HDF5 TRUE)
 else()
     set(openPMD_HAVE_HDF5 FALSE)
 endif()
 
-# we imply support for parallel I/O if MPI variant is ON
-if(openPMD_HAVE_MPI AND openPMD_HAVE_HDF5 AND NOT HDF5_IS_PARALLEL)
+# HDF5 checks
+string(CONCAT openPMD_HDF5_STATUS "")
+# version: lower limit
+if(openPMD_HAVE_HDF5 AND HDF5_VERSION VERSION_LESS 1.8.13)
     string(CONCAT openPMD_HDF5_STATUS
-        "Found MPI but only serial version of HDF5. Either set "
-        "openPMD_USE_MPI=OFF to disable MPI or set openPMD_USE_HDF5=OFF "
-        "to disable HDF5 or provide a parallel install of HDF5.\n"
-        "If you manually installed a parallel version of HDF5 in "
-        "a non-default path, add its installation prefix to the "
-        "environment variable CMAKE_PREFIX_PATH to find it: "
-        "https://cmake.org/cmake/help/latest/envvar/CMAKE_PREFIX_PATH.html")
-    if(openPMD_USE_HDF5 STREQUAL AUTO)
-        message(WARNING "${openPMD_HDF5_STATUS}")
-        set(openPMD_HAVE_HDF5 FALSE)
-    elseif(openPMD_USE_HDF5)
-        message(FATAL_ERROR "${openPMD_HDF5_STATUS}")
-    endif()
+        "Found HDF5 version ${HDF5_VERSION} is too old. At least "
+        "version 1.8.13 is required.\n")
 endif()
-# HDF5 includes mpi.h in the public header H5public.h if HDF5_IS_PARALLEL
-if(openPMD_HAVE_HDF5 AND HDF5_IS_PARALLEL AND NOT openPMD_HAVE_MPI)
+# we imply support for parallel I/O if MPI variant is ON
+if(openPMD_HAVE_MPI AND openPMD_HAVE_HDF5
+    AND NOT HDF5_IS_PARALLEL      # FindHDF5.cmake
+    AND NOT HDF5_ENABLE_PARALLEL  # hdf5-config.cmake
+)
+    string(CONCAT openPMD_HDF5_STATUS
+            "Found MPI but only serial version of HDF5. Either set "
+            "openPMD_USE_MPI=OFF to disable MPI or set openPMD_USE_HDF5=OFF "
+            "to disable HDF5 or provide a parallel install of HDF5.\n")
+endif()
+# HDF5 includes mpi.h in the public header H5public.h if parallel
+if(openPMD_HAVE_HDF5 AND
+   (HDF5_IS_PARALLEL OR HDF5_ENABLE_PARALLEL)
+   AND NOT openPMD_HAVE_MPI)
     string(CONCAT openPMD_HDF5_STATUS
         "Found only parallel version of HDF5 but no MPI. Either set "
         "openPMD_USE_MPI=ON to force using MPI or set openPMD_USE_HDF5=OFF "
-        "to disable HDF5 or provide a serial install of HDF5.\n"
-        "If you manually installed a serial version of HDF5 in "
+        "to disable HDF5 or provide a serial install of HDF5.\n")
+endif()
+
+if(openPMD_HDF5_STATUS)
+    string(CONCAT openPMD_HDF5_STATUS
+        ${openPMD_HDF5_STATUS}
+        "If you manually installed a version of HDF5 in "
         "a non-default path, add its installation prefix to the "
         "environment variable CMAKE_PREFIX_PATH to find it: "
         "https://cmake.org/cmake/help/latest/envvar/CMAKE_PREFIX_PATH.html")
