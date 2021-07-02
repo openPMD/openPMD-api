@@ -3503,7 +3503,7 @@ struct AreEqual
 {
     static bool areEqual( T float1, T float2 )
     {
-#if false
+#if 0
         printf(
             "COMPARE %1.16e ~ %1.16e: %1.16e\tEQUAL: %d\n",
             float1,
@@ -3547,7 +3547,8 @@ TEST_CASE( "git_adios2_sample_test", "[serial][adios2]" )
         "../samples/git-sample/3d-bp4/example-3d-bp4.bp";
     if( !auxiliary::directory_exists( samplePath ) )
     {
-        std::cerr << "git sample not accessible \n";
+        std::cerr << "git sample '"
+                  << samplePath << "' not accessible \n";
         return;
     }
     Series o( samplePath, Access::READ_ONLY );
@@ -3565,26 +3566,14 @@ TEST_CASE( "git_adios2_sample_test", "[serial][adios2]" )
 
     Iteration it = o.iterations[ 550 ];
 
-    REQUIRE( areEqual( it.time< double >(), 5.5000000000000000e+02 ) );
-    REQUIRE( areEqual( it.timeUnitSI(), 1.3899999999999999e-16 ) );
+    REQUIRE( areEqual( it.time< double >(), 5.5e+02 ) );
+    REQUIRE( areEqual( it.timeUnitSI(), 1.39e-16 ) );
     REQUIRE(
         it.getAttribute( "particleBoundary" ).get< vecstring >() ==
-        vecstring{
-            "absorbing",
-            "absorbing",
-            "absorbing",
-            "absorbing",
-            "absorbing",
-            "absorbing" } );
+        vecstring(6, "absorbing" ));
     REQUIRE(
         it.getAttribute( "particleBoundaryParameters" ).get< vecstring >() ==
-        vecstring{
-            "without field correction",
-            "without field correction",
-            "without field correction",
-            "without field correction",
-            "without field correction",
-            "without field correction" } );
+        vecstring(6, "without field correction" ));
     REQUIRE( areEqual(
         it.getAttribute( "mue0" ).get< float >(), 5.9102661907672882e-03f ) );
     REQUIRE( areEqual(
