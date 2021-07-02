@@ -351,7 +351,8 @@ SeriesImpl::flush()
     flush_impl(
         series.iterations.begin(),
         series.iterations.end(),
-        FlushLevel::UserFlush );
+        FlushLevel::UserFlush,
+        /* flushIOHandler = */ true );
 }
 
 std::unique_ptr< SeriesImpl::ParsedInput >
@@ -497,9 +498,12 @@ std::future< void >
 SeriesImpl::flush_impl(
     iterations_iterator begin,
     iterations_iterator end,
-    FlushLevel level )
+    FlushLevel level,
+    bool flushIOHandler )
 {
     IOHandler()->m_flushLevel = level;
+    auto & series = get();
+    series.m_lastFlushSuccessful = true;
     try
     {
         switch( iterationEncoding() )
@@ -513,13 +517,22 @@ SeriesImpl::flush_impl(
                 flushGorVBased( begin, end );
                 break;
         }
-        auto res = IOHandler()->flush();
-        IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
-        return res;
+        if( flushIOHandler )
+        {
+            auto res = IOHandler()->flush();
+            IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
+            return res;
+        }
+        else
+        {
+            IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
+            return {};
+        }
     }
     catch( ... )
     {
         IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
+        series.m_lastFlushSuccessful = false;
         throw;
     }
 }
@@ -1212,10 +1225,12 @@ SeriesImpl::advance(
     auto end = begin;
     ++end;
     /*
-     * @todo By calling flushFileBased/GroupBased, we do not propagate tasks to
-     *       the backend yet. We will append ADVANCE and CLOSE_FILE tasks
-     *       manually. In order to avoid having them automatically appended by
-     *       the flush*Based methods, set CloseStatus to Open for now.
+     * We call flush_impl() with flushIOHandler = false, meaning that tasks are
+     * not yet propagated to the backend.
+     * We will append ADVANCE and CLOSE_FILE tasks manually and then flush the
+     * IOHandler manually.
+     * In order to avoid having those tasks automatically appended by
+     * flush_impl(), set CloseStatus to Open for now.
      */
     Iteration::CloseStatus oldCloseStatus = *iteration.m_closed;
     if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend )
@@ -1223,28 +1238,8 @@ SeriesImpl::advance(
         *iteration.m_closed = Iteration::CloseStatus::Open;
     }
 
-    auto oldFlushLevel = IOHandler()->m_flushLevel;
-    IOHandler()->m_flushLevel = FlushLevel::UserFlush;
-    try
-    {
-        switch( series.m_iterationEncoding )
-        {
-            using IE = IterationEncoding;
-        case IE::groupBased:
-        case IE::variableBased:
-            flushGorVBased( begin, end );
-            break;
-        case IE::fileBased:
-            flushFileBased( begin, end );
-            break;
-        }
-        IOHandler()->m_flushLevel = oldFlushLevel;
-    }
-    catch( ... )
-    {
-        IOHandler()->m_flushLevel = oldFlushLevel;
-        throw;
-    }
+    flush_impl(
+        begin, end, FlushLevel::UserFlush, /* flushIOHandler = */ false );
 
     if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend )
     {
@@ -1431,7 +1426,18 @@ SeriesInternal::~SeriesInternal()
     // we must not throw in a destructor
     try
     {
-        flush();
+        /*
+         * Scenario: A user calls `Series::flush()` but does not check for thrown
+         * exceptions. The exception will propagate further up, usually thereby
+         * popping the stack frame that holds the `Series` object.
+         * `Series::~Series()` will run. This check avoids that the `Series` is
+         * needlessly flushed a second time. Otherwise, error messages can get
+         * very confusing.
+         */
+        if( get().m_lastFlushSuccessful )
+        {
+            flush();
+        }
     }
     catch( std::exception const & ex )
     {
