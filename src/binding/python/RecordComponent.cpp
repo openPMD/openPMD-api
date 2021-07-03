@@ -28,6 +28,7 @@
 #include "openPMD/binding/python/Numpy.hpp"
 #include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/binding/python/Pickle.hpp"
 
 #include <algorithm>
 #include <complex>
@@ -38,6 +39,7 @@
 #include <string>
 #include <tuple>
 #include <type_traits>
+#include <vector>
 
 namespace py = pybind11;
 using namespace openPMD;
@@ -705,7 +707,8 @@ void init_RecordComponent(py::module &m) {
             }
         );
 
-    py::class_<RecordComponent, BaseRecordComponent>(m, "Record_Component")
+    py::class_<RecordComponent, BaseRecordComponent> cl(m, "Record_Component");
+    cl
         .def("__repr__",
             [](RecordComponent const & rc) {
                 return "<openPMD.Record_Component of dimensionality '" + std::to_string(rc.getDimensionality()) + "'>";
@@ -997,43 +1000,14 @@ void init_RecordComponent(py::module &m) {
 
         // TODO remove in future versions (deprecated)
         .def("set_unit_SI", &RecordComponent::setUnitSI) // deprecated
-
-        ///*
-        .def(py::pickle(
-                [](const RecordComponent &a) { // __getstate__
-                    // Return a tuple that fully encodes the state of the object
-                    Attributable::MyPath const myPath = a.myPath();
-                    std::cout << myPath.filePath() << std::endl;
-                    for( auto const & s : myPath.openPMDGroup )
-                        std::cout << s << std::endl;
-                    return py::make_tuple(myPath.filePath(), myPath.openPMDGroup);
-                },
-                [](py::tuple t) { // __setstate__
-                    if (t.size() != 2)
-                        throw std::runtime_error("Invalid state!");
-
-                    std::string const filename = t[0].cast< std::string >();
-                    std::vector< std::string > const openPMDGroup =
-                            t[1].cast< std::vector< std::string > >();
-
-                    // Create a new openPMD Series and keep it alive forevaaa
-                    // TODO: how much of a hack is that, heh? :D omg.
-                    static auto series = openPMD::Series(
-                            filename,
-                            Access::READ_ONLY
-                    );
-
-                    std::cout << "+++++\n";
-                    for( auto const & s : openPMDGroup )
-                        std::cout << s << std::endl;
-                    uint64_t const n_it = std::stoull(openPMDGroup.at(1));
-
-                    // careful: we now need to keep the series alive
-                    return series.iterations[n_it].particles[openPMDGroup.at(3)][openPMDGroup.at(4)][openPMDGroup.at(5)];
-                }
-        ))
-        //*/
     ;
+    add_pickle(
+        cl,
+        [](openPMD::Series & series, std::vector< std::string > const & group ) {
+            uint64_t const n_it = std::stoull(group.at(1));
+            return series.iterations[n_it].particles[group.at(3)][group.at(4)][group.at(5)];
+        }
+    );
 
     py::enum_<RecordComponent::Allocation>(m, "Allocation")
         .value("USER", RecordComponent::Allocation::USER)

@@ -154,11 +154,11 @@ auto AttributableImpl::myPath() const -> MyPath
              it != findSeries->ownKeyWithinParent.rend();
              ++it )
         {
-            res.openPMDGroup.push_back( *it );
+            res.group.push_back(*it );
         }
         findSeries = findSeries->parent;
     }
-    std::reverse( res.openPMDGroup.begin(), res.openPMDGroup.end() );
+    std::reverse(res.group.begin(), res.group.end() );
     auto const & series =
         auxiliary::deref_dynamic_cast< internal::SeriesInternal >(
             findSeries->attributable );

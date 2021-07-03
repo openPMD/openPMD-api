@@ -198,19 +198,27 @@ public:
      */
     void seriesFlush();
 
-    /** todo */
+    /** String serialization to describe an Attributable
+     *
+     * This object contains the Series data path as well as the openPMD object
+     * names to find an Attributable. This can be used to re-open a Series
+     * and re-constructing an Attributable, e.g. on a remote context/node.
+     */
     struct MyPath
     {
-        std::string directory; // samples/git-samples/
-        std::string seriesName; // data%T
-        std::string seriesExtension; // .bp, .h5, .json, ...
-        /**
-         * A vector of openPMD group names indicating where this object
-         * may be found within its Series.
-         * Notice that RecordComponent::SCALAR is included in this list.
+        std::string directory;       //! e.g., samples/git-samples/
+        std::string seriesName;      //! e.g., data%T
+        std::string seriesExtension; //! e.g., .bp, .h5, .json, ...
+        /** A vector of openPMD object names
+         *
+         * Indicates where this Attributable may be found within its Series.
+         * Prefixed by the accessed object, e.g.,
+         *   "iterations", "100", "meshes", "E", "x"
+         * Notice that RecordComponent::SCALAR is included in this list, too.
          */
-        std::vector< std::string > openPMDGroup; //! \todo rename
+        std::vector< std::string > group;
 
+        /** Reconstructs a path that can be passed to a Series constructor */
         std::string filePath() const;
     };
 

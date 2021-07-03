@@ -24,7 +24,6 @@
 #include "openPMD/binding/python/Numpy.hpp"
 #include "openPMD/binding/python/Variant.hpp"
 #include "openPMD/DatatypeHelpers.hpp"
-#include "openPMD/Series.hpp"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl_bind.h>
@@ -466,41 +465,6 @@ void init_Attributable(py::module &m) {
         .def_property("comment", &Attributable::comment, &Attributable::setComment)
         // TODO remove in future versions (deprecated)
         .def("set_comment", &Attributable::setComment)
-
-        // pickle support:
-        //   .. note: this serializes back in an Attributable with an anonymous series
-        //            associated with it, which is destructed when... yeah when...
-        ///*
-        .def(py::pickle(
-            [](const Attributable &a) { // __getstate__
-                // Return a tuple that fully encodes the state of the object
-                Attributable::MyPath const myPath = a.myPath();
-                return py::make_tuple(myPath.filePath(), myPath.openPMDGroup);
-            },
-            [](py::tuple t) { // __setstate__
-                if (t.size() != 2)
-                    throw std::runtime_error("Invalid state!");
-
-                std::string const filename = t[0].cast< std::string >();
-                std::vector< std::string > const openPMDGroup =
-                    t[1].cast< std::vector< std::string > >();
-
-                // Create a new C++ instance
-                auto series = openPMD::Series(
-                    filename,
-                Access::READ_ONLY
-                );
-
-                //Attributable a(t[0].cast<std::string>());
-                //Attributable a;
-
-                // Assign any additional state
-                //p.setExtra(t[1].cast<int>());
-
-                return series;
-            }
-        ))
-        //*/
     ;
 
     py::bind_vector< PyAttributeKeys >(

@@ -179,36 +179,6 @@ RecordComponent::empty() const
 }
 
 void
-RecordComponent::serialize()
-{
-    // verify: read-only
-    if( IOHandler()->m_frontendAccess != Access::READ_ONLY )
-        throw std::runtime_error("serialize only works on read-only access");
-    //if( IOHandler()->m_backendAccess != Access::READ_ONLY )
-    // as well??
-
-    // verify: no MPI
-    auto & series = this->retrieveSeries();
-    auto const str_backend = series.backend(); // HDF5, ADIOS2, ...
-    if( str_backend.find( "MPI" ) != std::string::npos )
-        throw std::runtime_error("serialize does not work with MPI");
-
-    // information to construct a new serial read-only series
-    MyPath myPath = this->myPath(); // my tribute to the Java gods
-
-    // information to find iteration
-    //auto const int it = ...; // 400
-    // information to fid mesh/particle
-    // if particle: find species name
-    // information to find record & component
-    //auto const str_r = ...;  // "E"
-    //auto const str_rc = ...; // "x"
-
-    std::cout << "+++\n";
-    std::cout << myPath.filePath() << std::endl;
-}
-
-void
 RecordComponent::flush(std::string const& name)
 {
     if( IOHandler()->m_flushLevel == FlushLevel::SkeletonOnly )

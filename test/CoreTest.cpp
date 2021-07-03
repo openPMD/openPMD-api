@@ -163,7 +163,7 @@ TEST_CASE( "myPath", "[core]" )
         REQUIRE( res.seriesName == "myPath" );
         REQUIRE( res.seriesExtension == ".json" );
         REQUIRE( res.filePath() == "../samples/myPath.json" );
-        return res.openPMDGroup;
+        return res.group;
     };
 
     Series series( "../samples/myPath.json", Access::CREATE );

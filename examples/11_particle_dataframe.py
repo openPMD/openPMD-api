@@ -23,6 +23,7 @@ try:
 except ImportError:
     print("dask NOT found. Install dask to run the 2nd example.")
 
+# This "if" is important for distributed dask runs
 if __name__ == "__main__":
     s = io.Series("../samples/git-sample/data%T.h5", io.Access.read_only)
     electrons = s.iterations[400].particles["electrons"]
@@ -36,10 +37,11 @@ if __name__ == "__main__":
     df = electrons.to_df(np.s_[:100])
     print(df)
 
-
     # Particles
-    print("++++++ found_dask:", found_dask)
     if found_dask:
+        # the default schedulers are local/threaded, not requiring much.
+        # But multi-node, "distributed" and local "processes" need object
+        # pickle capabilities, so we test this here:
         dask.config.set(scheduler='processes')
 
         df = electrons.to_dask()

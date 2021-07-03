@@ -262,8 +262,6 @@ OPENPMD_protected:
     // to the backend
     std::shared_ptr< bool > m_hasBeenExtended =
         std::make_shared< bool >( false );
-public:
-    void serialize();
 
 private:
     void flush(std::string const&);

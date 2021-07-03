@@ -25,15 +25,18 @@
 #include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/MeshRecordComponent.hpp"
 #include "openPMD/binding/python/UnitDimension.hpp"
+#include "openPMD/binding/python/Pickle.hpp"
 
 #include <string>
+#include <vector>
 
 namespace py = pybind11;
 using namespace openPMD;
 
 
 void init_Mesh(py::module &m) {
-    py::class_<Mesh, BaseRecord<MeshRecordComponent> >(m, "Mesh")
+    py::class_<Mesh, BaseRecord<MeshRecordComponent> > cl(m, "Mesh");
+    cl
         .def(py::init<Mesh const &>())
 
         .def("__repr__",
@@ -78,6 +81,13 @@ void init_Mesh(py::module &m) {
         .def("set_grid_global_offset", &Mesh::setGridGlobalOffset)
         .def("set_grid_unit_SI", &Mesh::setGridUnitSI)
     ;
+    add_pickle(
+        cl,
+        [](openPMD::Series & series, std::vector< std::string > const & group ) {
+            uint64_t const n_it = std::stoull(group.at(1));
+            return series.iterations[n_it].meshes[group.at(3)];
+        }
+    );
 
     py::enum_<Mesh::Geometry>(m, "Geometry")
         .value("cartesian", Mesh::Geometry::cartesian)

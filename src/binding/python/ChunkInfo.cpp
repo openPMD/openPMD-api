@@ -23,6 +23,7 @@
 
 #include "openPMD/ChunkInfo.hpp"
 
+#include <exception>
 #include <string>
 
 namespace py = pybind11;
@@ -58,10 +59,14 @@ void init_Chunk(py::module &m) {
         .def_readwrite("source_id", &WrittenChunkInfo::sourceID )
 
         .def(py::pickle(
-            [](const WrittenChunkInfo &w) { // __getstate__
+            // __getstate__
+            [](const WrittenChunkInfo &w) {
                 return py::make_tuple(w.offset, w.extent, w.sourceID);
             },
-            [](py::tuple t) { // __setstate__
+
+            // __setstate__
+            [](py::tuple t) {
+                // our state tuple has exactly three values
                 if (t.size() != 3)
                     throw std::runtime_error("Invalid state!");
 
