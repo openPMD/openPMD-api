@@ -10,7 +10,7 @@ void define_julia_WriteIterations(jlcxx::Module &mod) {
   using mapped_type = typename iterations_t::mapped_type;
 
   auto type = mod.add_type<WriteIterations>("WriteIterations");
-  type.method("get1!",
+  type.method("getindex1!",
               [](WriteIterations &w, const key_type &k) -> Iteration & {
                 return w[k];
               });

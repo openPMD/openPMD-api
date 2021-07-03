@@ -104,11 +104,12 @@ template <typename T> std::shared_ptr<T> capture_vector(std::vector<T> vec) {
   } else {
     // Capture the vector
     T *dataptr = vec.data();
-    std::shared_ptr<T> ptr(dataptr, [vec = std::move(vec)](T *p) {
-      /* We moved the vector into the anonymous function, and thus it will be
-       * destructed when the anonymous function is destructed. There is no need
-       * to call a destructor manually. */
-    });
+    auto deleter = [vec = std::move(vec)](T *) {
+      // We moved the vector into the anonymous function, and thus it will be
+      // destructed when the anonymous function is destructed. There is no need
+      // to call a destructor manually.
+    };
+    std::shared_ptr<T> ptr(dataptr, std::move(deleter));
     return ptr;
   }
 }
@@ -163,12 +164,12 @@ void define_julia_Iteration(jlcxx::Module &mod);
 void define_julia_Mesh(jlcxx::Module &mod);
 void define_julia_MeshRecordComponent(jlcxx::Module &mod);
 void define_julia_RecordComponent(jlcxx::Module &mod);
-void define_julia_RecordComponent_load_chunk(jlcxx::Module &mod,
-    jlcxx::TypeWrapper<RecordComponent> &type);
-void define_julia_RecordComponent_make_constant(jlcxx::Module &mod,
-    jlcxx::TypeWrapper<RecordComponent> &type);
-void define_julia_RecordComponent_store_chunk(jlcxx::Module &mod,
-    jlcxx::TypeWrapper<RecordComponent> &type);
+void define_julia_RecordComponent_load_chunk(
+    jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type);
+void define_julia_RecordComponent_make_constant(
+    jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type);
+void define_julia_RecordComponent_store_chunk(
+    jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type);
 void define_julia_Series(jlcxx::Module &mod);
 void define_julia_UnitDimension(jlcxx::Module &mod);
 void define_julia_WriteIterations(jlcxx::Module &mod);
