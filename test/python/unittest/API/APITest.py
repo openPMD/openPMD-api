@@ -907,6 +907,135 @@ class APITest(unittest.TestCase):
                 ]
             )
 
+    def testPickle(self):
+        """ test pickling of any attributable, especially record components."""
+        import pickle
+
+        # Get series.
+        series = self.__series
+        i = series.iterations[400]
+
+        # Get a mesh.
+        E = i.meshes["E"]
+        self.assertIsInstance(E, io.Mesh)
+        E_x = E["x"]
+        self.assertIsInstance(E_x, io.Mesh_Record_Component)
+
+        # Get a particle species.
+        electrons = i.particles["electrons"]
+        self.assertIsInstance(electrons, io.ParticleSpecies)
+        momentum = electrons["momentum"]
+        pos = electrons["position"]
+        pos_y = electrons["position"]["y"]
+        w = electrons["weighting"][io.Record_Component.SCALAR]
+
+        # some original data
+        data_pos_y_org = pos["y"][()]
+        series.flush()
+
+        # Pickle
+        pickled_E = pickle.dumps(E)
+        pickled_E_x = pickle.dumps(E_x)
+        pickled_electrons = pickle.dumps(electrons)
+        pickled_momentum = pickle.dumps(momentum)
+        pickled_pos = pickle.dumps(pos)
+        pickled_pos_y = pickle.dumps(pos_y)
+        pickled_w = pickle.dumps(w)
+        print(f"This is my pickled object:\n{pickled_E_x}\n")
+
+        del E
+        del E_x
+        del electrons
+        del momentum
+        del pos
+        del pos_y
+        del w
+        del series
+
+        # Unpickling the object
+        E = pickle.loads(pickled_E)
+        E_x = pickle.loads(pickled_E_x)
+        electrons = pickle.loads(pickled_electrons)
+        momentum = pickle.loads(pickled_momentum)
+        pos = pickle.loads(pickled_pos)
+        pos_y = pickle.loads(pickled_pos_y)
+        w = pickle.loads(pickled_w)
+        print(
+            f"This is E_x.position of the unpickled object:\n{E_x.position}\n")
+
+        self.assertIsInstance(E, io.Mesh)
+        self.assertIsInstance(E_x, io.Mesh_Record_Component)
+        self.assertIsInstance(electrons, io.ParticleSpecies)
+        self.assertIsInstance(momentum, io.Record)
+        self.assertIsInstance(pos, io.Record)
+        self.assertIsInstance(pos_y, io.Record_Component)
+        self.assertIsInstance(w, io.Record_Component)
+
+        data_indir = E["x"][()]
+        E.series_flush()
+        data = E_x[()]
+        E_x.series_flush()
+        # print(data)
+
+        data_pos_y_indir1 = pos["y"][()]
+        pos.series_flush()
+        data_pos_y_indir2 = electrons["position"]["y"][()]
+        electrons.series_flush()
+        data_pos_y = pos_y[()]
+        pos_y.series_flush()
+        data_w = w[()]
+        w.series_flush()
+        # print(data_pos_y)
+        # print(data_w)
+
+        np.testing.assert_almost_equal(data_w[0], 396000.0)
+
+        # get particle data
+        if found_numpy:
+            np.testing.assert_allclose(E.unit_dimension,
+                                       [1., 1., -3., -1., 0., 0., 0.])
+            np.testing.assert_allclose(E_x.position,
+                                       [0.5, 0., 0.])
+            # indirectly accessed record component after pickle
+            np.testing.assert_allclose(data_indir,
+                                       data)
+            # indirectly accessed record component after pickle
+            np.testing.assert_allclose(data_pos_y_indir1,
+                                       data_pos_y)
+            np.testing.assert_allclose(data_pos_y_indir2,
+                                       data_pos_y)
+            # original data access vs. pickled access
+            np.testing.assert_allclose(data_pos_y_org,
+                                       data_pos_y)
+        self.assertAlmostEqual(E_x.unit_SI, 1.0)
+
+        self.assertSequenceEqual(E_x.shape, [26, 26, 201])
+        if found_numpy:
+            self.assertEqual(E_x.dtype, np.float64)
+
+        offset = [1, 1, 1]
+        extent = [2, 2, 1]
+
+        if found_numpy:
+            chunk_data = E_x.load_chunk(offset, extent)
+            E_x.series_flush()
+            self.assertSequenceEqual(chunk_data.shape, extent)
+
+            self.assertEqual(chunk_data.dtype, np.float64)
+            np.testing.assert_allclose(
+                chunk_data,
+                [
+                    [
+                        [6.26273197e7],
+                        [2.70402498e8]
+                    ],
+                    [
+                        [-1.89238617e8],
+                        [-1.66413019e8]
+                    ]
+                ]
+            )
+
     def testLoadSeries(self):
         """ Test loading an openPMD series from hdf5."""
 
