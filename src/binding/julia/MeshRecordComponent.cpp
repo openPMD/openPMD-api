@@ -11,7 +11,7 @@ template <> struct SuperType<MeshRecordComponent> {
 
 void define_julia_MeshRecordComponent(jlcxx::Module &mod) {
   auto type = mod.add_type<MeshRecordComponent>(
-      "MeshRecordComponent", jlcxx::julia_base_type<RecordComponent>());
+      "MeshRecordComponent1", jlcxx::julia_base_type<RecordComponent>());
 
   type.method("position1", &MeshRecordComponent::position<double>);
   type.method("set_position1!", &MeshRecordComponent::setPosition<double>);
