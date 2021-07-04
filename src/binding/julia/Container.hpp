@@ -41,10 +41,10 @@ void define_julia_Container(jlcxx::Module &mod) {
     type.method("empty1", &ContainerT::empty);
     type.method("length1", &ContainerT::size);
     type.method("empty1!", &ContainerT::clear);
+    // type.method("getindex1",
+    //             static_cast<mapped_type &(ContainerT::*)(const key_type &)>(
+    //                 &ContainerT::at));
     type.method("getindex1",
-                static_cast<mapped_type &(ContainerT::*)(const key_type &)>(
-                    &ContainerT::at));
-    type.method("get1!",
                 [](ContainerT &cont, const key_type &key) -> mapped_type & {
                   return cont[key];
                 });
