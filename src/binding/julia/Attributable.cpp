@@ -6,7 +6,7 @@ void define_julia_Attributable(jlcxx::Module &mod) {
   auto type = mod.add_type<Attributable>("Attributable");
 
 #define USE_TYPE(NAME, ENUM, TYPE)                                             \
-  type.method("set_attribute1!", &Attributable::setAttribute<TYPE>);
+  type.method("set_attribute1_" NAME "!", &Attributable::setAttribute<TYPE>);
   { FORALL_OPENPMD_TYPES }
 #undef USE_TYPE
 
