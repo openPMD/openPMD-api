@@ -75,7 +75,7 @@ void define_julia_Series(jlcxx::Module &mod) {
                 [](Series &series) -> Container<Iteration, uint64_t> & {
                   return series.iterations;
                 });
-    type.method("read_iterations", &Series::readIterations);
+    //TODO type.method("read_iterations", &Series::readIterations);
     type.method("write_iterations", &Series::writeIterations);
   }
 }
