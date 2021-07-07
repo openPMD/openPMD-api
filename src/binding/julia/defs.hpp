@@ -31,6 +31,7 @@ template <typename T> using array7 = std::array<T, 7>;
 //   #undef USE_TYPE
 //
 // We disable `long double` since Julia does not support this type
+// We disable `long double` since Julia does not support this type
 #define FORALL_OPENPMD_TYPES                                                   \
   USE_TYPE("CHAR", Datatype::CHAR, char)                                       \
   USE_TYPE("UCHAR", Datatype::UCHAR, unsigned char)                            \
@@ -72,6 +73,28 @@ template <typename T> using array7 = std::array<T, 7>;
   /* USE_TYPE("VEC_CLONG_DOUBLE", Datatype::VEC_CLONG_DOUBLE,                  \
    * std::vector<std::complex<long double>>) */                                \
   USE_TYPE("VEC_STRING", Datatype::VEC_STRING, std::vector<std::string>)       \
+  USE_TYPE("ARR_DBL_7", Datatype::ARR_DBL_7, array7<double>)                   \
+  USE_TYPE("BOOL", Datatype::BOOL, bool)
+
+#define FORALL_SCALAR_OPENPMD_TYPES                                            \
+  USE_TYPE("CHAR", Datatype::CHAR, char)                                       \
+  USE_TYPE("UCHAR", Datatype::UCHAR, unsigned char)                            \
+  USE_TYPE("SHORT", Datatype::SHORT, short)                                    \
+  USE_TYPE("INT", Datatype::INT, int)                                          \
+  USE_TYPE("LONG", Datatype::LONG, long)                                       \
+  USE_TYPE("LONGLONG", Datatype::LONGLONG, long long)                          \
+  USE_TYPE("USHORT", Datatype::USHORT, unsigned short)                         \
+  USE_TYPE("UINT", Datatype::UINT, unsigned int)                               \
+  USE_TYPE("ULONG", Datatype::ULONG, unsigned long)                            \
+  USE_TYPE("ULONGLONG", Datatype::ULONGLONG, unsigned long long)               \
+  USE_TYPE("FLOAT", Datatype::FLOAT, float)                                    \
+  USE_TYPE("DOUBLE", Datatype::DOUBLE, double)                                 \
+  /* USE_TYPE("LONG_DOUBLE", Datatype::LONG_DOUBLE, long double) */            \
+  USE_TYPE("CFLOAT", Datatype::CFLOAT, std::complex<float>)                    \
+  USE_TYPE("CDOUBLE", Datatype::CDOUBLE, std::complex<double>)                 \
+  /* USE_TYPE("CLONG_DOUBLE", Datatype::CLONG_DOUBLE, std::complex<long        \
+   * double>) */                                                               \
+  USE_TYPE("STRING", Datatype::STRING, std::string)                            \
   USE_TYPE("ARR_DBL_7", Datatype::ARR_DBL_7, array7<double>)                   \
   USE_TYPE("BOOL", Datatype::BOOL, bool)
 
@@ -176,11 +199,17 @@ void define_julia_Iteration(jlcxx::Module &mod);
 void define_julia_Mesh(jlcxx::Module &mod);
 void define_julia_MeshRecordComponent(jlcxx::Module &mod);
 void define_julia_RecordComponent(jlcxx::Module &mod);
+void define_julia_RecordComponent_copy_chunk(
+    jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type);
 void define_julia_RecordComponent_load_chunk(
+    jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type);
+void define_julia_RecordComponent_load_chunk_buffer(
     jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type);
 void define_julia_RecordComponent_make_constant(
     jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type);
 void define_julia_RecordComponent_store_chunk(
+    jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type);
+void define_julia_RecordComponent_store_chunk_copy(
     jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type);
 void define_julia_Series(jlcxx::Module &mod);
 void define_julia_UnitDimension(jlcxx::Module &mod);
