@@ -4297,3 +4297,54 @@ TEST_CASE( "deferred_parsing", "[serial]" )
         deferred_parsing( t );
     }
 }
+
+// @todo merge this back with the chaotic_stream test of PR #949
+// (bug noticed while working on that branch)
+void no_explicit_flush( std::string filename )
+{
+    std::vector< uint64_t > sampleData{ 5, 9, 1, 3, 4, 6, 7, 8, 2, 0 };
+    std::string jsonConfig = R"(
+{
+    "adios2": {
+        "schema": 20210209,
+        "engine": {
+            "type": "bp4",
+            "usesteps": true
+        }
+    }
+})";
+
+    {
+        Series series( filename, Access::CREATE, jsonConfig );
+        for( uint64_t currentIteration = 0; currentIteration < 10;
+             ++currentIteration )
+        {
+            auto dataset =
+                series.writeIterations()[ currentIteration ]
+                    .meshes[ "iterationOrder" ][ MeshRecordComponent::SCALAR ];
+            dataset.resetDataset( { determineDatatype< uint64_t >(), { 10 } } );
+            dataset.storeChunk( sampleData, { 0 }, { 10 } );
+            // series.writeIterations()[ currentIteration ].close();
+        }
+    }
+
+    {
+        Series series( filename, Access::READ_ONLY );
+        size_t index = 0;
+        for( auto iteration : series.readIterations() )
+        {
+            REQUIRE( iteration.iterationIndex == index );
+            ++index;
+        }
+        REQUIRE( index == 10 );
+    }
+}
+
+TEST_CASE( "no_explicit_flush", "[serial]" )
+{
+    for( auto const & t : testedFileExtensions() )
+    {
+        no_explicit_flush( "../samples/chaotic_stream_filebased_%T." + t );
+        no_explicit_flush( "../samples/chaotic_stream." + t );
+    }
+}
