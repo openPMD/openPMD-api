@@ -639,6 +639,7 @@ if(openPMD_HAVE_JlCxx)
         src/binding/julia/RecordComponent.cpp
         src/binding/julia/RecordComponent_copy_chunk.cpp
         src/binding/julia/RecordComponent_load_chunk.cpp
+        src/binding/julia/RecordComponent_load_chunk_alloc.cpp
         src/binding/julia/RecordComponent_load_chunk_buffer.cpp
         src/binding/julia/RecordComponent_make_constant.cpp
         src/binding/julia/RecordComponent_store_chunk.cpp
@@ -647,6 +648,7 @@ if(openPMD_HAVE_JlCxx)
         src/binding/julia/UnitDimension.cpp
         src/binding/julia/WriteIterations.cpp
         src/binding/julia/openPMD.cpp
+        src/binding/julia/shared_ptr.cpp
         src/binding/julia/version.cpp
     )
     target_compile_features(openPMD_jl PUBLIC cxx_std_17)

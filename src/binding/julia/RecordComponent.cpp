@@ -40,6 +40,7 @@ void define_julia_RecordComponent(jlcxx::Module &mod) {
   type.method("empty1", &RecordComponent::empty);
   define_julia_RecordComponent_copy_chunk(mod, type);
   define_julia_RecordComponent_load_chunk(mod, type);
+  define_julia_RecordComponent_load_chunk_alloc(mod, type);
   define_julia_RecordComponent_load_chunk_buffer(mod, type);
   define_julia_RecordComponent_store_chunk(mod, type);
   define_julia_RecordComponent_store_chunk_copy(mod, type);

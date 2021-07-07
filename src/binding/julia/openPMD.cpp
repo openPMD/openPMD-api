@@ -10,6 +10,8 @@ JLCXX_MODULE define_julia_module(jlcxx::Module &mod) {
   add_array_type<double, 7>(mod, "array_double_7");
   add_pair_type<std::string, bool>(mod, "pair_string_bool");
 
+  define_julia_shared_ptr(mod);
+
   // The order of these calls matters. Julia types need to be defined before
   // they are used.
 

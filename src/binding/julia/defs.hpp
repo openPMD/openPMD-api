@@ -117,6 +117,11 @@ std::vector<std::tuple<T, U>> map_to_vector_tuple(const std::map<T, U> &m) {
   return vp;
 }
 
+template <typename T> std::shared_ptr<T> create_aliasing_shared_ptr(T *ptr) {
+  auto null_deleter = [](T *) {};
+  return std::shared_ptr<T>(ptr, null_deleter);
+}
+
 template <typename T>
 std::shared_ptr<T> capture_vector_as_buffer(std::vector<T> &vec) {
   if constexpr (std::is_same_v<T, bool>) {
@@ -203,6 +208,8 @@ void define_julia_RecordComponent_copy_chunk(
     jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type);
 void define_julia_RecordComponent_load_chunk(
     jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type);
+void define_julia_RecordComponent_load_chunk_alloc(
+    jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type);
 void define_julia_RecordComponent_load_chunk_buffer(
     jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type);
 void define_julia_RecordComponent_make_constant(
@@ -215,6 +222,7 @@ void define_julia_Series(jlcxx::Module &mod);
 void define_julia_UnitDimension(jlcxx::Module &mod);
 void define_julia_ReadIterations(jlcxx::Module &mod);
 void define_julia_WriteIterations(jlcxx::Module &mod);
+void define_julia_shared_ptr(jlcxx::Module &mod);
 void define_julia_version(jlcxx::Module &mod);
 
 #endif // #ifndef DEFS_HPP
