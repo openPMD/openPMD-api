@@ -70,9 +70,12 @@ void define_julia_Series(jlcxx::Module &mod) {
     type.constructor<const std::string &, Access, const std::string &>();
     type.constructor<const std::string &, Access>();
 
-    type.method("isvalid1", [](const Series &s) { return bool(s); });
-    // TODO: iterations
-    // TODO: readIterations
+    type.method("isvalid1", [](const Series &series) { return bool(series); });
+    type.method("iterations",
+                [](Series &series) -> Container<Iteration, uint64_t> & {
+                  return series.iterations;
+                });
+    type.method("read_iterations", &Series::readIterations);
     type.method("write_iterations", &Series::writeIterations);
   }
 }

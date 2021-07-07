@@ -94,6 +94,18 @@ std::vector<std::tuple<T, U>> map_to_vector_tuple(const std::map<T, U> &m) {
   return vp;
 }
 
+template <typename T>
+std::shared_ptr<T> capture_vector_as_buffer(std::vector<T> &vec) {
+  if constexpr (std::is_same_v<T, bool>) {
+    // We cannot handle std::vector<bool> because it is special
+    std::abort();
+  } else {
+    auto deleter = [](T *) { /* do not delete anything */ };
+    std::shared_ptr<T> ptr(vec.data(), std::move(deleter));
+    return ptr;
+  }
+}
+
 template <typename T> std::shared_ptr<T> capture_vector(std::vector<T> vec) {
   if constexpr (std::is_same_v<T, bool>) {
     // Copy the vector, because std::vector<bool> is special
@@ -172,6 +184,7 @@ void define_julia_RecordComponent_store_chunk(
     jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type);
 void define_julia_Series(jlcxx::Module &mod);
 void define_julia_UnitDimension(jlcxx::Module &mod);
+void define_julia_ReadIterations(jlcxx::Module &mod);
 void define_julia_WriteIterations(jlcxx::Module &mod);
 void define_julia_version(jlcxx::Module &mod);
 
