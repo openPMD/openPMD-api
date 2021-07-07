@@ -15,18 +15,18 @@ void define_julia_Mesh(jlcxx::Module &mod) {
   mod.add_bits<Mesh::Geometry>("Geometry", jlcxx::julia_type("CppEnum"));
   jlcxx::stl::apply_stl<Mesh::Geometry>(mod);
 
-  mod.set_const("cartesian", Mesh::Geometry::cartesian);
-  mod.set_const("theta_mode", Mesh::Geometry::thetaMode);
-  mod.set_const("cylindrical", Mesh::Geometry::cylindrical);
-  mod.set_const("spherical", Mesh::Geometry::spherical);
-  mod.set_const("other", Mesh::Geometry::other);
+  mod.set_const("GEOMETRY_cartesian", Mesh::Geometry::cartesian);
+  mod.set_const("GEOMETRY_theta_mode", Mesh::Geometry::thetaMode);
+  mod.set_const("GEOMETRY_cylindrical", Mesh::Geometry::cylindrical);
+  mod.set_const("GEOMETRY_spherical", Mesh::Geometry::spherical);
+  mod.set_const("GEOMETRY_other", Mesh::Geometry::other);
 
   // Mesh::DataOrder
   mod.add_bits<Mesh::DataOrder>("DataOrder", jlcxx::julia_type("CppEnum"));
   jlcxx::stl::apply_stl<Mesh::DataOrder>(mod);
 
-  mod.set_const("C", Mesh::DataOrder::C);
-  mod.set_const("F", Mesh::DataOrder::F);
+  mod.set_const("DATAORDER_C", Mesh::DataOrder::C);
+  mod.set_const("DATAORDER_F", Mesh::DataOrder::F);
 
   // Mesh
   auto type = mod.add_type<Mesh>(

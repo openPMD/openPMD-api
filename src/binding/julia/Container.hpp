@@ -38,39 +38,39 @@ void define_julia_Container(jlcxx::Module &mod) {
 
     type.template constructor<const ContainerT &>();
 
-    type.method("empty1", &ContainerT::empty);
-    type.method("length1", &ContainerT::size);
-    type.method("empty1!", &ContainerT::clear);
-    // type.method("getindex1",
+    type.method("cxx_empty", &ContainerT::empty);
+    type.method("cxx_length", &ContainerT::size);
+    type.method("cxx_empty!", &ContainerT::clear);
+    // type.method("cxx_getindex",
     //             static_cast<mapped_type &(ContainerT::*)(const key_type &)>(
     //                 &ContainerT::at));
-    type.method("getindex1",
+    type.method("cxx_getindex",
                 [](ContainerT &cont, const key_type &key) -> mapped_type & {
                   return cont[key];
                 });
-    type.method("setindex1!",
+    type.method("cxx_setindex!",
                 [](ContainerT &cont, const mapped_type &value,
                    const key_type &key) { return cont[key] = value; });
-    type.method("count1", &ContainerT::count);
-    type.method("contains1", &ContainerT::contains);
-    type.method("delete1!",
+    type.method("cxx_count", &ContainerT::count);
+    type.method("cxx_contains", &ContainerT::contains);
+    type.method("cxx_delete!",
                 static_cast<size_type (ContainerT::*)(const key_type &)>(
                     &ContainerT::erase));
-    type.method("keys1", [](const ContainerT &cont) {
+    type.method("cxx_keys", [](const ContainerT &cont) {
       std::vector<key_type> res;
       res.reserve(cont.size());
       for (auto iter = cont.begin(); iter != cont.end(); ++iter)
         res.push_back(iter->first);
       return res;
     });
-    // type.method("values1", [](const ContainerT &cont) {
+    // type.method("cxx_values", [](const ContainerT &cont) {
     //   std::vector<mapped_type *> res;
     //   res.reserve(cont.size());
     //   for (auto iter = cont.begin(); iter != cont.end(); ++iter)
     //     res.push_back(&iter->second);
     //   return res;
     // });
-    // type.method("collect1", [](const ContainerT &cont) {
+    // type.method("cxx_collect", [](const ContainerT &cont) {
     //   std::vector<std::pair<key_type, mapped_type *>> res;
     //   res.reserve(cont.size());
     //   for (auto iter = cont.begin(); iter != cont.end(); ++iter)
