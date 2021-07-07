@@ -47,7 +47,8 @@ namespace openPMD
         series.flush_impl(
                 series.iterations.begin(),
                 series.iterations.end(),
-                level
+                level,
+                /* flushIOHandler = */ true
         );
     }
 

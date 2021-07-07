@@ -1,14 +1,20 @@
 New-item -ItemType directory -Name samples\git-sample\thetaMode\
+New-item -ItemType directory -Name samples\git-sample\3d-bp4\
 Invoke-WebRequest https://github.com/openPMD/openPMD-example-datasets/raw/draft/example-3d.tar.gz -OutFile example-3d.tar.gz
 Invoke-WebRequest https://github.com/openPMD/openPMD-example-datasets/raw/draft/example-thetaMode.tar.gz -OutFile example-thetaMode.tar.gz
+Invoke-WebRequest https://github.com/openPMD/openPMD-example-datasets/raw/draft/example-3d-bp4.tar.gz -OutFile example-3d-bp4.tar.gz
 7z.exe x -r example-3d.tar.gz
 7z.exe x -r example-3d.tar
 7z.exe x -r example-thetaMode.tar.gz
 7z.exe x -r example-thetaMode.tar
+7z.exe x -r example-3d-bp4.tar.gz
+7z.exe x -r example-3d-bp4.tar
 Move-Item -Path example-3d\hdf5\* samples\git-sample\
-Move-Item -Path example-thetaMode\hdf5\* samples\git-sample\thetaMode/
+Move-Item -Path example-thetaMode\hdf5\* samples\git-sample\thetaMode\
+Move-Item -Path example-3d-bp4\* samples\git-sample\3d-bp4\
 Remove-Item -Recurse -Force example-3d*
 Remove-Item -Recurse -Force example-thetaMode*
+Remove-Item -Recurse -Force example-3d-bp4*
 
 # Ref.: https://github.com/yt-project/yt/pull/1645
 New-item -ItemType directory -Name samples\issue-sample\
