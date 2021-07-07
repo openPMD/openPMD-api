@@ -45,11 +45,7 @@ namespace openPMD
     {
         auto & series = AttributableImpl( attributable ).retrieveSeries();
         series.flush_impl(
-                series.iterations.begin(),
-                series.iterations.end(),
-                level,
-                /* flushIOHandler = */ true
-        );
+            series.iterations.begin(), series.iterations.end(), level );
     }
 
 } // openPMD
