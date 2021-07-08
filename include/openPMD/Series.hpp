@@ -117,6 +117,7 @@ class SeriesImpl : public AttributableImpl
     friend class SeriesIterator;
     friend class internal::SeriesInternal;
     friend class Series;
+    friend class WriteIterations;
 
 protected:
     // Should not be called publicly, only by implementing classes

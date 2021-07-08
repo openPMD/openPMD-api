@@ -108,6 +108,7 @@ class AttributableImpl
     friend class Series;
     friend class SeriesImpl;
     friend class Writable;
+    friend class WriteIterations;
 
 protected:
     internal::AttributableData * m_attri = nullptr;
