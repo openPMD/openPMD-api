@@ -26,7 +26,7 @@ void define_julia_Container(jlcxx::Module &mod) {
   if (!julia_Container_type)
     julia_Container_type = std::make_unique<julia_Container_type_t>(
         mod.add_type<jlcxx::Parametric<jlcxx::TypeVar<1>, jlcxx::TypeVar<2>>>(
-            "Container", jlcxx::julia_base_type<Attributable>()));
+            "CXX_Container", jlcxx::julia_base_type<Attributable>()));
 
   julia_Container_type->apply<Container<Eltype, Keytype>>([](auto type) {
     using ContainerT = typename decltype(type)::type;

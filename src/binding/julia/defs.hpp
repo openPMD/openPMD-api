@@ -204,19 +204,11 @@ void define_julia_Iteration(jlcxx::Module &mod);
 void define_julia_Mesh(jlcxx::Module &mod);
 void define_julia_MeshRecordComponent(jlcxx::Module &mod);
 void define_julia_RecordComponent(jlcxx::Module &mod);
-void define_julia_RecordComponent_copy_chunk(
-    jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type);
 void define_julia_RecordComponent_load_chunk(
-    jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type);
-void define_julia_RecordComponent_load_chunk_alloc(
-    jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type);
-void define_julia_RecordComponent_load_chunk_buffer(
     jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type);
 void define_julia_RecordComponent_make_constant(
     jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type);
 void define_julia_RecordComponent_store_chunk(
-    jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type);
-void define_julia_RecordComponent_store_chunk_copy(
     jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type);
 void define_julia_Series(jlcxx::Module &mod);
 void define_julia_UnitDimension(jlcxx::Module &mod);
