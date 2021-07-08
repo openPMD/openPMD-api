@@ -25,4 +25,4 @@ You can also add images such as screenshots :-)
  - name and version of Python implementation: [e.g. `python3 --version`]
 
 **Additional context**
-Any addition info that might help us, e.g. did you try to use a certain language binding (C++/Python?) or did you try to use a specific variant (MPI-parallel?) or backend (HDF5? ADIOS1?)?
+Any addition info that might help us, e.g. did you try to use a certain language binding (C++/Python?) or did you try to use a specific variant (MPI-parallel?) or backend (HDF5? ADIOS2?)?
