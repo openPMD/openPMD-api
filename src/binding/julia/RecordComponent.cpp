@@ -28,8 +28,8 @@ void define_julia_RecordComponent(jlcxx::Module &mod) {
   auto type = mod.add_type<RecordComponent>(
       "CXX_RecordComponent", jlcxx::julia_base_type<BaseRecordComponent>());
 
-  type.method("set_unit_SI!", &RecordComponent::setUnitSI);
-  type.method("reset_dataset!", &RecordComponent::resetDataset);
+  type.method("cxx_set_unit_SI!", &RecordComponent::setUnitSI);
+  type.method("cxx_reset_dataset!", &RecordComponent::resetDataset);
   type.method("cxx_get_dimensionality", &RecordComponent::getDimensionality);
   type.method("cxx_get_extent", &RecordComponent::getExtent);
   define_julia_RecordComponent_make_constant(mod, type);

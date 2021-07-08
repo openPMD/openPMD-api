@@ -30,43 +30,46 @@ void define_julia_Mesh(jlcxx::Module &mod) {
 
   // Mesh
   auto type = mod.add_type<Mesh>(
-      "Mesh",
+      "CXX_Mesh",
       // We don't wrap BaseRecord<T> for simplicity. We thus need to declare
       // Container<MeshRecordComponent> as our supertype.
       jlcxx::julia_base_type<Container<MeshRecordComponent>>());
 
   // These two functions come from our superclass
   // BaseRecord<MeshRecordComponent>. We declare them as if they were our own.
-  type.method("unit_dimension", &Mesh::unitDimension);
-  type.method("isscalar", &Mesh::scalar);
+  type.method("cxx_unit_dimension", &Mesh::unitDimension);
+  type.method("cxx_isscalar", &Mesh::scalar);
 
-  type.method("geometry", &Mesh::geometry);
-  type.method("set_geometry!", static_cast<Mesh &(Mesh::*)(Mesh::Geometry g)>(
-                                   &Mesh::setGeometry));
-  type.method("geometry_parameters", &Mesh::geometryParameters);
-  type.method("set_geometry_parameters!", &Mesh::setGeometryParameters);
-  type.method("data_order", &Mesh::dataOrder);
-  type.method("set_data_order!", &Mesh::setDataOrder);
-  type.method("axis_labels", &Mesh::axisLabels);
-  type.method("set_axis_labels1!", &Mesh::setAxisLabels);
-  type.method("grid_spacing", &Mesh::gridSpacing<double>);
-  type.method("set_grid_spacing1!", &Mesh::setGridSpacing<double>);
-  type.method("grid_global_offset", &Mesh::gridGlobalOffset);
-  type.method("set_grid_global_offset1!", &Mesh::setGridGlobalOffset);
-  type.method("grid_unit_SI", &Mesh::gridUnitSI);
-  type.method("set_grid_unit_SI!", &Mesh::setGridUnitSI);
-  type.method("set_unit_dimension1!", [](Mesh &mesh,
-                                         const array7<double> &unitDimension) {
-    return mesh.setUnitDimension(std::map<UnitDimension, double>{
-        {UnitDimension::L, unitDimension[uint8_t(UnitDimension::L)]},
-        {UnitDimension::M, unitDimension[uint8_t(UnitDimension::M)]},
-        {UnitDimension::T, unitDimension[uint8_t(UnitDimension::T)]},
-        {UnitDimension::I, unitDimension[uint8_t(UnitDimension::I)]},
-        {UnitDimension::theta, unitDimension[uint8_t(UnitDimension::theta)]},
-        {UnitDimension::N, unitDimension[uint8_t(UnitDimension::N)]},
-        {UnitDimension::J, unitDimension[uint8_t(UnitDimension::J)]},
-    });
-  });
-  type.method("time_offset", &Mesh::timeOffset<double>);
-  type.method("set_time_offset!", &Mesh::setTimeOffset<double>);
+  type.method("cxx_geometry", &Mesh::geometry);
+  type.method(
+      "cxx_set_geometry!",
+      static_cast<Mesh &(Mesh::*)(Mesh::Geometry g)>(&Mesh::setGeometry));
+  type.method("cxx_geometry_parameters", &Mesh::geometryParameters);
+  type.method("cxx_set_geometry_parameters!", &Mesh::setGeometryParameters);
+  type.method("cxx_data_order", &Mesh::dataOrder);
+  type.method("cxx_set_data_order!", &Mesh::setDataOrder);
+  type.method("cxx_axis_labels", &Mesh::axisLabels);
+  type.method("cxx_set_axis_labels!", &Mesh::setAxisLabels);
+  type.method("cxx_grid_spacing", &Mesh::gridSpacing<double>);
+  type.method("cxx_set_grid_spacing!", &Mesh::setGridSpacing<double>);
+  type.method("cxx_grid_global_offset", &Mesh::gridGlobalOffset);
+  type.method("cxx_set_grid_global_offset!", &Mesh::setGridGlobalOffset);
+  type.method("cxx_grid_unit_SI", &Mesh::gridUnitSI);
+  type.method("cxx_set_grid_unit_SI!", &Mesh::setGridUnitSI);
+  type.method(
+      "cxx_set_unit_dimension!",
+      [](Mesh &mesh, const array7<double> &unitDimension) {
+        return mesh.setUnitDimension(std::map<UnitDimension, double>{
+            {UnitDimension::L, unitDimension[uint8_t(UnitDimension::L)]},
+            {UnitDimension::M, unitDimension[uint8_t(UnitDimension::M)]},
+            {UnitDimension::T, unitDimension[uint8_t(UnitDimension::T)]},
+            {UnitDimension::I, unitDimension[uint8_t(UnitDimension::I)]},
+            {UnitDimension::theta,
+             unitDimension[uint8_t(UnitDimension::theta)]},
+            {UnitDimension::N, unitDimension[uint8_t(UnitDimension::N)]},
+            {UnitDimension::J, unitDimension[uint8_t(UnitDimension::J)]},
+        });
+      });
+  type.method("cxx_time_offset", &Mesh::timeOffset<double>);
+  type.method("cxx_set_time_offset!", &Mesh::setTimeOffset<double>);
 }

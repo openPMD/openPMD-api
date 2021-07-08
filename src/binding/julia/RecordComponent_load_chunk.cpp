@@ -5,7 +5,7 @@
 void define_julia_RecordComponent_load_chunk(
     jlcxx::Module &mod, jlcxx::TypeWrapper<RecordComponent> &type) {
 #define USE_TYPE(NAME, ENUM, TYPE)                                             \
-  type.method("load_chunk1_" NAME,                                             \
+  type.method("cxx_load_chunk_" NAME,                                          \
               static_cast<void (RecordComponent::*)(std::shared_ptr<TYPE>,     \
                                                     Offset, Extent)>(          \
                   &RecordComponent::loadChunk<TYPE>));
