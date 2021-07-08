@@ -23,15 +23,19 @@
 
 #include "openPMD/backend/MeshRecordComponent.hpp"
 #include "openPMD/RecordComponent.hpp"
+#include "openPMD/Series.hpp"
+#include "openPMD/binding/python/Pickle.hpp"
 
 #include <string>
+#include <vector>
 
 namespace py = pybind11;
 using namespace openPMD;
 
 
 void init_MeshRecordComponent(py::module &m) {
-    py::class_<MeshRecordComponent, RecordComponent>(m, "Mesh_Record_Component")
+    py::class_<MeshRecordComponent, RecordComponent> cl(m, "Mesh_Record_Component");
+    cl
         .def("__repr__",
             [](MeshRecordComponent const & rc) {
                 return "<openPMD.Mesh_Record_Component of dimensionality '"
@@ -51,6 +55,12 @@ void init_MeshRecordComponent(py::module &m) {
             &MeshRecordComponent::position<long double>,
             &MeshRecordComponent::setPosition<long double>,
             "Relative position of the component on an element (node/cell/voxel) of the mesh")
-
     ;
+    add_pickle(
+        cl,
+        [](openPMD::Series & series, std::vector< std::string > const & group ) {
+            uint64_t const n_it = std::stoull(group.at(1));
+            return series.iterations[n_it].meshes[group.at(3)][group.at(4)];
+        }
+    );
 }

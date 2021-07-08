@@ -38,14 +38,14 @@ A clear and concise description of what you expected to happen.
 
 **Software Environment**
  - version of openPMD-api: [X.Y.Z-abc]
- - installed openPMD-api via: [conda-forge, spack, pip, from source, module system, ...]
+ - installed openPMD-api via: [conda-forge, spack, pip, brew, yggdrasil, from source, module system, ...]
  - operating system: [name and version]
  - machine: [Are you running on a public cluster? It's likely we compute on it as well!]
- - name and version of Python implementation: [e.g. CPython 3.8]
+ - name and version of Python implementation: [e.g. CPython 3.9]
  - version of HDF5: [e.g. 1.12.0]
  - version of ADIOS1: [e.g. 1.13.1]
- - version of ADIOS2: [e.g. 2.6.0]
- - name and version of MPI: [e.g. OpenMPI 3.1.5]
+ - version of ADIOS2: [e.g. 2.7.1]
+ - name and version of MPI: [e.g. OpenMPI 4.1.1]
 
 **Additional context**
 Add any other context about the problem here.

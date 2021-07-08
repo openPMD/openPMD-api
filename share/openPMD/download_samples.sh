@@ -2,14 +2,18 @@
 #
 
 mkdir -p samples/git-sample/thetaMode
+mkdir -p samples/git-sample/3d-bp4
 curl -sOL https://github.com/openPMD/openPMD-example-datasets/raw/draft/example-3d.tar.gz
 curl -sOL https://github.com/openPMD/openPMD-example-datasets/raw/draft/example-thetaMode.tar.gz
+curl -sOL https://github.com/openPMD/openPMD-example-datasets/raw/draft/example-3d-bp4.tar.gz
 tar -xzf example-3d.tar.gz
 tar -xzf example-thetaMode.tar.gz
+tar -xzf example-3d-bp4.tar.gz
 mv example-3d/hdf5/* samples/git-sample/
 mv example-thetaMode/hdf5/* samples/git-sample/thetaMode/
+mv example-3d-bp4/* samples/git-sample/3d-bp4
 chmod 777 samples/
-rm -rf example-3d.* example-3d example-thetaMode.* example-thetaMode
+rm -rf example-3d.* example-3d example-thetaMode.* example-thetaMode example-3d-bp4 example-3d-bp4.*
 
 # Ref.: https://github.com/yt-project/yt/pull/1645
 mkdir -p samples/issue-sample/

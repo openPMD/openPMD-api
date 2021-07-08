@@ -2717,7 +2717,7 @@ namespace detail
                  */
                 if( streamStatus == StreamStatus::OutsideOfStep )
                 {
-                    if( m_engine.get().BeginStep() != adios2::StepStatus::OK )
+                    if( getEngine().BeginStep() != adios2::StepStatus::OK )
                     {
                         throw std::runtime_error(
                             "[ADIOS2] Trying to close a step that cannot be "

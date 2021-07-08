@@ -27,6 +27,8 @@
 #include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/binding/python/Numpy.hpp"
 #include "openPMD/DatatypeHelpers.hpp"
+#include "openPMD/Series.hpp"
+#include "openPMD/binding/python/Pickle.hpp"
 
 #include <algorithm>
 #include <complex>
@@ -37,6 +39,7 @@
 #include <string>
 #include <tuple>
 #include <type_traits>
+#include <vector>
 
 namespace py = pybind11;
 using namespace openPMD;
@@ -704,7 +707,8 @@ void init_RecordComponent(py::module &m) {
             }
         );
 
-    py::class_<RecordComponent, BaseRecordComponent>(m, "Record_Component")
+    py::class_<RecordComponent, BaseRecordComponent> cl(m, "Record_Component");
+    cl
         .def("__repr__",
             [](RecordComponent const & rc) {
                 return "<openPMD.Record_Component of dimensionality '" + std::to_string(rc.getDimensionality()) + "'>";
@@ -997,6 +1001,13 @@ void init_RecordComponent(py::module &m) {
         // TODO remove in future versions (deprecated)
         .def("set_unit_SI", &RecordComponent::setUnitSI) // deprecated
     ;
+    add_pickle(
+        cl,
+        [](openPMD::Series & series, std::vector< std::string > const & group ) {
+            uint64_t const n_it = std::stoull(group.at(1));
+            return series.iterations[n_it].particles[group.at(3)][group.at(4)][group.at(5)];
+        }
+    );
 
     py::enum_<RecordComponent::Allocation>(m, "Allocation")
         .value("USER", RecordComponent::Allocation::USER)

@@ -137,8 +137,8 @@ jobs:
         sudo apt-get install clang-5.0 gfortran libopenmpi-dev python3
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-5.0, CXX: clang++-5.0, CXXFLAGS: -Werror -Wno-deprecated-declarations}
       # Clang 5 does not handle GCC 10's STL in C++17-mode
+      env: {CC: clang-5.0, CXX: clang++-5.0, CXXFLAGS: -Werror -Wno-deprecated-declarations, OPENPMD2_ADIOS2_SCHEMA: 20210209}
       run: |
         eval $(spack env activate --sh .github/ci/spack-envs/clang5_nopy_ompi_h5_ad1_ad2_bp3/)
         spack install
@@ -147,7 +147,6 @@ jobs:
         ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
         cmake -S .. -B . -DCMAKE_BUILD_TYPE=RelWithDebInfo -DopenPMD_USE_PYTHON=OFF -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS1=OFF -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_REGIONS=OFF -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build . --parallel 2
-        export OPENPMD2_ADIOS2_SCHEMA=20210209
         ctest --output-on-failure
 
 # TODO
@@ -175,10 +174,33 @@ jobs:
         cmake --build . --parallel 2
         ctest --output-on-failure
 
+  clang8_py38_mpich_h5_ad1_ad2_newLayout:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Spack Cache
+      uses: actions/cache@v2
+      with: {path: /opt/spack, key: clang8_py38_mpich_h5_ad1_ad2_newLayout }
+    - name: Install
+      run: |
+        sudo apt-get update
+        sudo apt-get install clang-8 gfortran libmpich-dev python3
+        sudo .github/workflows/dependencies/install_spack
+    - name: Build
+      env: {CC: clang-8, CXX: clang++-8, CXXFLAGS: -Werror -Wno-deprecated-declarations, OPENPMD2_ADIOS2_SCHEMA: 20210209}
+      run: |
+        eval $(spack env activate --sh .github/ci/spack-envs/clang8_py38_mpich_h5_ad1_ad2/)
+        spack install
+
+        mkdir build && cd build
+        ../share/openPMD/download_samples.sh && chmod u-w samples/git-sample/*.h5
+        cmake -S .. -B . -DopenPMD_USE_PYTHON=OFF -DopenPMD_USE_MPI=ON -DopenPMD_USE_HDF5=ON -DopenPMD_USE_ADIOS1=ON -DopenPMD_USE_ADIOS2=ON -DopenPMD_USE_INVASIVE_TESTS=ON
+        cmake --build . --parallel 2
+        ctest --output-on-failure
+
 # TODO
-#  clang7_py37_ompi_h5_ad2_asan_ubsan_static
-#  clang8_py38_mpich_h5_ad1_ad2_h5coll
 #  clang10_py38_ompi_h5_1-10-6_ad1_ad2_release
+#  ..._h5coll with OPENPMD_HDF5_INDEPENDENT: OFF
 
 #  appleclang9_py37_nompi_h5_ad1
 #  appleclang10_py37_h5_ad2_libcpp

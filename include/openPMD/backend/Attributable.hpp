@@ -108,6 +108,7 @@ class AttributableImpl
     friend class Series;
     friend class SeriesImpl;
     friend class Writable;
+    friend class WriteIterations;
 
 protected:
     internal::AttributableData * m_attri = nullptr;
@@ -198,21 +199,43 @@ public:
      */
     void seriesFlush();
 
+    /** String serialization to describe an Attributable
+     *
+     * This object contains the Series data path as well as the openPMD object
+     * names to find an Attributable. This can be used to re-open a Series
+     * and re-constructing an Attributable, e.g. on a remote context/node.
+     */
+    struct MyPath
+    {
+        std::string directory;       //! e.g., samples/git-samples/
+        std::string seriesName;      //! e.g., data%T
+        std::string seriesExtension; //! e.g., .bp, .h5, .json, ...
+        /** A vector of openPMD object names
+         *
+         * Indicates where this Attributable may be found within its Series.
+         * Prefixed by the accessed object, e.g.,
+         *   "iterations", "100", "meshes", "E", "x"
+         * Notice that RecordComponent::SCALAR is included in this list, too.
+         */
+        std::vector< std::string > group;
+
+        /** Reconstructs a path that can be passed to a Series constructor */
+        std::string filePath() const;
+    };
+
+    /**
+     * @brief The path to this object within its containing Series.
+     *
+     * @return A struct informing about the context of this Attributable.
+     */
+    MyPath myPath() const;
+
 OPENPMD_protected:
 
     internal::SeriesInternal const & retrieveSeries() const;
     internal::SeriesInternal & retrieveSeries();
 
     void seriesFlush( FlushLevel );
-
-    /**
-     * @brief The path to this object within its containing Series.
-     *
-     * @return A vector of openPMD group names indicating where this object
-     *     may be found within its Series.
-     *     Notice that RecordComponent::SCALAR is included in this list.
-     */
-    std::vector< std::string > myPath() const;
 
     void flushAttributes();
     enum ReadMode {
@@ -331,7 +354,7 @@ OPENPMD_protected:
 private:
     /**
      * @brief Link with parent.
-     * 
+     *
      * @param w The Writable representing the parent.
      */
     virtual void linkHierarchy(Writable& w);
