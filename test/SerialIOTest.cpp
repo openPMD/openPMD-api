@@ -2402,6 +2402,35 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
     }
 }
 
+TEST_CASE( "git_hdf5_early_chunk_query", "[serial][hdf5]" )
+{
+    try
+    {
+        Series s = Series(
+            "../samples/git-sample/data%T.h5",
+            Access::READ_ONLY
+        );
+
+        auto electrons = s.iterations[400].particles["electrons"];
+
+        for( auto & r : electrons )
+        {
+            std::cout << r.first << ": ";
+            for( auto & r_c : r.second )
+            {
+                std::cout << r_c.first << "\n";
+                if( !r_c.second.constant() )
+                    auto chunks = r_c.second.availableChunks();
+            }
+        }
+
+    } catch (no_such_file_error& e)
+    {
+        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+        return;
+    }
+}
+
 TEST_CASE( "git_hdf5_sample_read_thetaMode", "[serial][hdf5][thetaMode]" )
 {
     try
