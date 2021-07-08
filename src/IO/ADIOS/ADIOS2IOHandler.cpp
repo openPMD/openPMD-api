@@ -159,7 +159,7 @@ ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
 }
 
 auxiliary::Option< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > >
-ADIOS2IOHandlerImpl::getOperators( auxiliary::TracingJSON cfg )
+ADIOS2IOHandlerImpl::getOperators( json::TracingJSON cfg )
 {
     using ret_t = auxiliary::Option< std::vector< ParameterizedOperator > >;
     std::vector< ParameterizedOperator > res;
@@ -353,9 +353,10 @@ void ADIOS2IOHandlerImpl::createDataset(
 
         std::vector< ParameterizedOperator > operators;
         nlohmann::json options = nlohmann::json::parse( parameters.options );
+        json::lowerCase( options );
         if( options.contains( "adios2" ) )
         {
-            auxiliary::TracingJSON datasetConfig( options[ "adios2" ] );
+            json::TracingJSON datasetConfig( options[ "adios2" ] );
             auto datasetOperators = getOperators( datasetConfig );
 
             operators = datasetOperators ? std::move( datasetOperators.get() )
@@ -1080,7 +1081,7 @@ ADIOS2IOHandlerImpl::adios2AccessMode( std::string const & fullPath )
     }
 }
 
-auxiliary::TracingJSON ADIOS2IOHandlerImpl::nullvalue = nlohmann::json();
+json::TracingJSON ADIOS2IOHandlerImpl::nullvalue = nlohmann::json();
 
 std::string
 ADIOS2IOHandlerImpl::filePositionToString(

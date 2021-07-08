@@ -19,20 +19,24 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "openPMD/auxiliary/JSON.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
 
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
+#include <algorithm>
 #include <cctype> // std::isspace
 #include <fstream>
+#include <iostream> // std::cerr
+#include <map>
 #include <sstream>
+#include <utility> // std::forward
 #include <vector>
 
 namespace openPMD
 {
-namespace auxiliary
+namespace json
 {
     TracingJSON::TracingJSON() : TracingJSON( nlohmann::json() )
     {
@@ -47,24 +51,20 @@ namespace auxiliary
     {
     }
 
-    nlohmann::json const &
-    TracingJSON::getShadow()
+    nlohmann::json const & TracingJSON::getShadow() const
     {
         return *m_positionInShadow;
     }
 
-    nlohmann::json
-    TracingJSON::invertShadow()
+    nlohmann::json TracingJSON::invertShadow() const
     {
         nlohmann::json inverted = *m_positionInOriginal;
         invertShadow( inverted, *m_positionInShadow );
         return inverted;
     }
 
-    void
-    TracingJSON::invertShadow(
-        nlohmann::json & result,
-        nlohmann::json const & shadow )
+    void TracingJSON::invertShadow(
+        nlohmann::json & result, nlohmann::json const & shadow ) const
     {
         if( !shadow.is_object() )
         {
@@ -123,7 +123,7 @@ namespace auxiliary
     {
         std::string trimmed = auxiliary::trim(
             unparsed, []( char c ) { return std::isspace( c ); } );
-        if( trimmed.at( 0 ) == '@' )
+        if( !trimmed.empty() && trimmed.at( 0 ) == '@' )
         {
             trimmed = trimmed.substr( 1 );
             trimmed = auxiliary::trim(
@@ -138,44 +138,164 @@ namespace auxiliary
     }
 
     nlohmann::json
-    parseOptions( std::string const & options )
+    parseOptions( std::string const & options, bool considerFiles )
     {
-        auto filename = extractFilename( options );
-        if( filename.has_value() )
+        if( considerFiles )
         {
-            std::fstream handle;
-            handle.open( filename.get(), std::ios_base::in );
-            nlohmann::json res;
-            handle >> res;
-            if( !handle.good() )
+            auto filename = extractFilename( options );
+            if( filename.has_value() )
             {
-                throw std::runtime_error(
-                    "Failed reading JSON config from file " + filename.get() +
-                    "." );
+                std::fstream handle;
+                handle.open( filename.get(), std::ios_base::in );
+                nlohmann::json res;
+                handle >> res;
+                if( !handle.good() )
+                {
+                    throw std::runtime_error(
+                        "Failed reading JSON config from file " +
+                        filename.get() + "." );
+                }
+                lowerCase( res );
+                return res;
             }
-            return res;
         }
-        else
-        {
-            return nlohmann::json::parse( options );
-        }
+        auto res = nlohmann::json::parse( options );
+        lowerCase( res );
+        return res;
     }
 
 #if openPMD_HAVE_MPI
-    nlohmann::json
-    parseOptions( std::string const & options, MPI_Comm comm )
+    nlohmann::json parseOptions(
+        std::string const & options, MPI_Comm comm, bool considerFiles )
     {
-        auto filename = extractFilename( options );
-        if( filename.has_value() )
+        if( considerFiles )
         {
-            return nlohmann::json::parse(
-                auxiliary::collective_file_read( filename.get(), comm ) );
+            auto filename = extractFilename( options );
+            if( filename.has_value() )
+            {
+                auto res = nlohmann::json::parse(
+                    auxiliary::collective_file_read( filename.get(), comm ) );
+                lowerCase( res );
+                return res;
+            }
         }
-        else
-        {
-            return nlohmann::json::parse( options );
-        }
+        auto res = nlohmann::json::parse( options );
+        lowerCase( res );
+        return res;
     }
 #endif
-} // namespace auxiliary
+
+    static nlohmann::json &
+    lowerCase( nlohmann::json & json, std::vector< std::string > & currentPath )
+    {
+        if( json.is_object() )
+        {
+            auto & val = json.get_ref< nlohmann::json::object_t & >();
+            // somekey -> SomeKey
+            std::map< std::string, std::string > originalKeys;
+            for( auto & pair : val )
+            {
+                std::string lower =
+                    auxiliary::lowerCase( std::string( pair.first ) );
+                auto findEntry = originalKeys.find( lower );
+                if( findEntry != originalKeys.end() )
+                {
+                    // double entry found
+                    std::vector< std::string > copyCurrentPath{ currentPath };
+                    copyCurrentPath.push_back( lower );
+                    throw error::BackendConfigSchema(
+                        std::move( copyCurrentPath ),
+                        "JSON config: duplicate keys." );
+                }
+                originalKeys.emplace_hint(
+                    findEntry, std::move( lower ), pair.first );
+            }
+
+            nlohmann::json::object_t newObject;
+            for( auto & pair : originalKeys )
+            {
+                newObject[ pair.first ] = std::move( val[ pair.second ] );
+            }
+            val = newObject;
+
+            // now recursively
+            for( auto & pair : val )
+            {
+                currentPath.push_back( pair.first );
+                lowerCase( pair.second, currentPath );
+                currentPath.pop_back();
+            }
+        }
+        else if( json.is_array() )
+        {
+            for( auto & val : json )
+            {
+                lowerCase( val );
+            }
+        }
+        return json;
+    }
+
+    nlohmann::json & lowerCase( nlohmann::json & json )
+    {
+        std::vector< std::string > currentPath;
+        // that's as deep as our config currently goes, +1 for good measure
+        currentPath.reserve( 6 );
+        return lowerCase( json, currentPath );
+    }
+
+    auxiliary::Option< std::string >
+    asStringDynamic( nlohmann::json const & value )
+    {
+        if( value.is_string() )
+        {
+            return value.get< std::string >();
+        }
+        else if( value.is_number_integer() )
+        {
+            return std::to_string( value.get< long long >() );
+        }
+        else if( value.is_number_float() )
+        {
+            return std::to_string( value.get< long double >() );
+        }
+        else if( value.is_boolean() )
+        {
+            return std::string( value.get< bool >() ? "1" : "0" );
+        }
+        return auxiliary::Option< std::string >{};
+    }
+
+    auxiliary::Option< std::string >
+    asLowerCaseStringDynamic( nlohmann::json const & value )
+    {
+        auto maybeString = asStringDynamic( value );
+        if( maybeString.has_value() )
+        {
+            auxiliary::lowerCase( maybeString.get() );
+        }
+        return maybeString;
+    }
+
+    std::vector< std::string > backendKeys{
+        "adios1", "adios2", "json", "hdf5" };
+
+    void warnGlobalUnusedOptions( TracingJSON const & config )
+    {
+        auto shadow = config.invertShadow();
+        // The backends are supposed to deal with this
+        // Only global options here
+        for( auto const & backendKey : json::backendKeys )
+        {
+            shadow.erase( backendKey );
+        }
+        if( shadow.size() > 0 )
+        {
+            std::cerr
+                << "[Series] The following parts of the global JSON config "
+                   "remains unused:\n"
+                << shadow.dump() << std::endl;
+        }
+    }
+} // namespace json
 } // namespace openPMD

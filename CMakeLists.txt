@@ -857,6 +857,9 @@ if(openPMD_BUILD_TESTING)
         else()
             target_link_libraries(${testname}Tests PRIVATE CatchMain)
         endif()
+
+        target_include_directories(${testname}Tests SYSTEM PRIVATE
+            $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
     endforeach()
 endif()
 

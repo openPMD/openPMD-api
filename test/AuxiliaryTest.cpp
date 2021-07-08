@@ -9,6 +9,7 @@
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
@@ -42,6 +43,116 @@ struct TestHelper : public Attributable
 } // test
 } // openPMD
 
+TEST_CASE( "json_parsing", "[auxiliary]" )
+{
+    std::string wrongValue = R"END(
+{
+  "ADIOS2": {
+    "duplicate key": 1243,
+    "DUPLICATE KEY": 234
+  }
+})END";
+    REQUIRE_THROWS_WITH(
+        json::parseOptions( wrongValue, false ),
+        error::BackendConfigSchema(
+            { "adios2", "duplicate key" }, "JSON config: duplicate keys." )
+            .what() );
+    std::string same1 = R"(
+{
+  "ADIOS2": {
+    "type": "nullcore",
+    "engine": {
+      "type": "bp4",
+      "usesteps": true
+    }
+  }
+})";
+    std::string same2 = R"(
+{
+  "adios2": {
+    "type": "nullcore",
+    "ENGINE": {
+      "type": "bp4",
+      "usesteps": true
+    }
+  }
+})";
+    std::string different = R"(
+{
+  "adios2": {
+    "type": "NULLCORE",
+    "ENGINE": {
+      "type": "bp4",
+      "usesteps": true
+    }
+  }
+})";
+    REQUIRE(
+        json::parseOptions( same1, false ).dump() ==
+        json::parseOptions( same2, false ).dump() );
+    // Only keys should be transformed to lower case, values must stay the same
+    REQUIRE(
+        json::parseOptions( same1, false ).dump() !=
+        json::parseOptions( different, false ).dump() );
+
+    std::string upper = R"END(
+{
+  "ADIOS2": {
+    "ENGINE": {
+      "TYPE": "BP3",
+      "UNUSED": "PARAMETER",
+      "PARAMETERS": {
+        "BUFFERGROWTHFACTOR": "2.0",
+        "PROFILE": "ON"
+      }
+    },
+    "UNUSED": "AS WELL",
+    "DATASET": {
+      "OPERATORS": [
+        {
+          "TYPE": "BLOSC",
+          "PARAMETERS": {
+              "CLEVEL": "1",
+              "DOSHUFFLE": "BLOSC_BITSHUFFLE"
+          }
+        }
+      ]
+    }
+  }
+}
+)END";
+    std::string lower = R"END(
+{
+  "adios2": {
+    "engine": {
+      "type": "BP3",
+      "unused": "PARAMETER",
+      "parameters": {
+        "buffergrowthfactor": "2.0",
+        "profile": "ON"
+      }
+    },
+    "unused": "AS WELL",
+    "dataset": {
+      "operators": [
+        {
+          "type": "BLOSC",
+          "parameters": {
+              "clevel": "1",
+              "doshuffle": "BLOSC_BITSHUFFLE"
+          }
+        }
+      ]
+    }
+  }
+}
+)END";
+    nlohmann::json jsonUpper = nlohmann::json::parse( upper );
+    nlohmann::json jsonLower = nlohmann::json::parse( lower );
+    REQUIRE( jsonUpper.dump() != jsonLower.dump() );
+    json::lowerCase( jsonUpper );
+    REQUIRE( jsonUpper.dump() == jsonLower.dump() );
+}
 
 TEST_CASE( "optional", "[auxiliary]" ) {
     using namespace auxiliary;

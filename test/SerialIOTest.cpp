@@ -3547,7 +3547,7 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
 {
     std::string useSteps = R"(
     {
-        "adios2": {
+        "ADIOS2": {
             "engine": {
                 "type": "bp4",
                 "usesteps": true
@@ -3559,7 +3559,7 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
     {
         "adios2": {
             "type": "nullcore",
-            "engine": {
+            "ENGINE": {
                 "type": "bp4",
                 "usesteps": true
             }
@@ -3571,7 +3571,7 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
         "adios2": {
             "engine": {
                 "type": "bp4",
-                "usesteps": false
+                "UseSteps": false
             }
         }
     }

@@ -20,7 +20,7 @@
  */
 #include "openPMD/auxiliary/Date.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
-#include "openPMD/auxiliary/JSON.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
@@ -1531,7 +1531,8 @@ Series::Series(
 {
     Attributable::setData( m_series );
     iterations = m_series->iterations;
-    nlohmann::json optionsJson = auxiliary::parseOptions( options, comm );
+    nlohmann::json optionsJson = json::parseOptions(
+        options, comm, /* considerFiles = */ true );
     parseJsonOptions( get(), optionsJson );
     auto input = parseInput( filepath );
     auto handler = createIOHandler(
@@ -1547,7 +1548,8 @@ Series::Series(
 {
     Attributable::setData( m_series );
     iterations = m_series->iterations;
-    nlohmann::json optionsJson = auxiliary::parseOptions( options );
+    nlohmann::json optionsJson =
+        json::parseOptions( options, /* considerFiles = */ true );
     parseJsonOptions( get(), optionsJson );
     auto input = parseInput( filepath );
     auto handler = createIOHandler(

@@ -23,6 +23,9 @@
 
 #include "openPMD/config.hpp"
 
+#include "openPMD/Error.hpp"
+#include "openPMD/auxiliary/Option.hpp"
+
 #include <nlohmann/json.hpp>
 
 #if openPMD_HAVE_MPI
@@ -34,7 +37,7 @@
 
 namespace openPMD
 {
-namespace auxiliary
+namespace json
 {
     /**
      * @brief Extend nlohmann::json with tracing of which keys have been
@@ -75,8 +78,7 @@ namespace auxiliary
          *
          * @return nlohmann::json const&
          */
-        nlohmann::json const &
-        getShadow();
+        nlohmann::json const & getShadow() const;
 
         /**
          * @brief Invert the "shadow", i.e. a copy of the original JSON value
@@ -84,12 +86,14 @@ namespace auxiliary
          *
          * @return nlohmann::json
          */
-        nlohmann::json
-        invertShadow();
+        nlohmann::json invertShadow() const;
 
         /**
          * @brief Declare all keys of the current object read.
          *
+         * Rationale: This class does not (yet) trace array types (or anything
+         * contained in an array). Use this call to explicitly declare
+         * an array as read.
          */
         void
         declareFullyRead();
@@ -126,8 +130,8 @@ namespace auxiliary
         nlohmann::json * m_positionInShadow;
         bool m_trace = true;
 
-        void
-        invertShadow( nlohmann::json & result, nlohmann::json const & shadow );
+        void invertShadow(
+            nlohmann::json & result, nlohmann::json const & shadow ) const;
 
         TracingJSON(
             std::shared_ptr< nlohmann::json > originalJSON,
@@ -165,17 +169,31 @@ namespace auxiliary
      * If yes, return the file content, if not just parse options directly.
      *
      * @param options as a parsed JSON object.
+     * @param considerFiles If yes, check if `options` refers to a file and read
+     *        from there.
      */
-    nlohmann::json parseOptions( std::string const & options );
+    nlohmann::json
+    parseOptions( std::string const & options, bool considerFiles );
 
 #if openPMD_HAVE_MPI
 
     /**
      * Parallel version of parseOptions(). MPI-collective.
      */
-    nlohmann::json parseOptions( std::string const & options, MPI_Comm comm );
+    nlohmann::json parseOptions(
+        std::string const & options, MPI_Comm comm, bool considerFiles );
 
 #endif
 
-} // namespace auxiliary
+    nlohmann::json & lowerCase( nlohmann::json & );
+
+    auxiliary::Option< std::string > asStringDynamic( nlohmann::json const & );
+
+    auxiliary::Option< std::string >
+    asLowerCaseStringDynamic( nlohmann::json const & );
+
+    extern std::vector< std::string > backendKeys;
+
+    void warnGlobalUnusedOptions( TracingJSON const & config );
+} // namespace json
 } // namespace openPMD

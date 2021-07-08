@@ -295,6 +295,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
             name = auxiliary::replace_last(name, "/", "");
 
         auto config = nlohmann::json::parse( parameters.options );
+        json::lowerCase( config );
 
         // general
         bool is_resizable_dataset = false;
@@ -307,7 +308,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         if( config.contains( "hdf5" ) &&
             config[ "hdf5" ].contains( "dataset" ) )
         {
-            auxiliary::TracingJSON datasetConfig{
+            json::TracingJSON datasetConfig{
                 config[ "hdf5" ][ "dataset" ] };
 
             /*
