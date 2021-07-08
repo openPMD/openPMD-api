@@ -17,6 +17,7 @@ JLCXX_MODULE define_julia_module(jlcxx::Module &mod) {
 
   // Stand-alone classes
   define_julia_Access(mod);
+  define_julia_ChunkInfo(mod);
   define_julia_Datatype(mod);
   define_julia_Format(mod);
   define_julia_UnitDimension(mod);

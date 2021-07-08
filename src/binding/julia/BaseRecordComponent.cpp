@@ -10,7 +10,6 @@ template <> struct SuperType<BaseRecordComponent> {
 } // namespace jlcxx
 
 void define_julia_BaseRecordComponent(jlcxx::Module &mod) {
-
   auto type = mod.add_type<BaseRecordComponent>(
       "CXX_BaseRecordComponent", jlcxx::julia_base_type<Attributable>());
 
@@ -18,5 +17,5 @@ void define_julia_BaseRecordComponent(jlcxx::Module &mod) {
   type.method("cxx_reset_datatype!", &BaseRecordComponent::resetDatatype);
   type.method("cxx_get_datatype", &BaseRecordComponent::getDatatype);
   type.method("cxx_isconstant", &BaseRecordComponent::constant);
-  // TODO: availableChunks
+  type.method("cxx_available_chunks", &BaseRecordComponent::availableChunks);
 }

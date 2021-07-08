@@ -628,6 +628,7 @@ if(openPMD_HAVE_JlCxx)
         src/binding/julia/Attributable.cpp
         src/binding/julia/Attribute.cpp
         src/binding/julia/BaseRecordComponent.cpp
+        src/binding/julia/ChunkInfo.cpp
         src/binding/julia/Container.cpp
         src/binding/julia/Dataset.cpp
         src/binding/julia/Datatype.cpp

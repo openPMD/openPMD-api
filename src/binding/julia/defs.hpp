@@ -195,6 +195,7 @@ void define_julia_Access(jlcxx::Module &mod);
 void define_julia_Attributable(jlcxx::Module &mod);
 void define_julia_Attribute(jlcxx::Module &mod);
 void define_julia_BaseRecordComponent(jlcxx::Module &mod);
+void define_julia_ChunkInfo(jlcxx::Module &mod);
 template <typename Eltype, typename Keytype = std::string>
 void define_julia_Container(jlcxx::Module &mod);
 void define_julia_Dataset(jlcxx::Module &mod);
