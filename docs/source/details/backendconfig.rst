@@ -54,6 +54,8 @@ For JSON and ADIOS2, all datasets are resizable, independent of this option.
 Configuration Structure per Backend
 -----------------------------------
 
+.. _backendconfig-adios2:
+
 ADIOS2
 ^^^^^^
 
@@ -78,6 +80,8 @@ Explanation of the single keys:
 
 Any setting specified under ``adios2.dataset`` is applicable globally as well as on a per-dataset level.
 Any setting under ``adios2.engine`` is applicable globally only.
+
+.. _backendconfig-hdf5:
 
 HDF5
 ^^^^
