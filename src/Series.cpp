@@ -351,8 +351,7 @@ SeriesImpl::flush()
     flush_impl(
         series.iterations.begin(),
         series.iterations.end(),
-        FlushLevel::UserFlush,
-        /* flushIOHandler = */ true );
+        FlushLevel::UserFlush );
 }
 
 std::unique_ptr< SeriesImpl::ParsedInput >

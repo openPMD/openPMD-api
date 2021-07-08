@@ -362,7 +362,7 @@ OPENPMD_private:
         iterations_iterator begin,
         iterations_iterator end,
         FlushLevel level,
-        bool flushIOHandler );
+        bool flushIOHandler = true );
     void flushFileBased( iterations_iterator begin, iterations_iterator end );
     /*
      * Group-based and variable-based iteration layouts share a lot of logic
