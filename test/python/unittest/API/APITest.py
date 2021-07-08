@@ -1863,7 +1863,7 @@ class APITest(unittest.TestCase):
                             [2, 0])
 
     def loadToTemporaryStore(self, r_E_x):
-        if found_numpy:
+        if found_numpy and False:
             data = np.zeros((2, 3,), dtype=np.dtype("int"))
             r_E_x.load_chunk(data, [0, 0], [2, 3])
             data2 = np.zeros((2, 3,), dtype=np.dtype("int"))
