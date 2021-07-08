@@ -142,7 +142,7 @@ Mesh::setAxisLabels(std::vector< std::string > const & als)
     return *this;
 }
 
-template< typename T >
+template< typename T, typename >
 Mesh&
 Mesh::setGridSpacing(std::vector< T > const & gs)
 {
@@ -201,7 +201,7 @@ Mesh::setUnitDimension(std::map< UnitDimension, double > const& udim)
     return *this;
 }
 
-template< typename T >
+template< typename T, typename >
 Mesh&
 Mesh::setTimeOffset(T to)
 {
