@@ -27,4 +27,4 @@ Have you already installed openPMD-api?
 If so, please tell us which *version* of openPMD-api your question is about:
 
  - version of openPMD-api: [X.Y.Z-abc]
- - installed openPMD-api via: [conda-forge, spack, pip, from source, module system, ...]
+ - installed openPMD-api via: [conda-forge, spack, pip, brew, yggdrasil, from source, module system, ...]

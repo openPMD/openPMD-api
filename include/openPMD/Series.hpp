@@ -117,6 +117,7 @@ class SeriesImpl : public AttributableImpl
     friend class SeriesIterator;
     friend class internal::SeriesInternal;
     friend class Series;
+    friend class WriteIterations;
 
 protected:
     // Should not be called publicly, only by implementing classes
@@ -362,7 +363,7 @@ OPENPMD_private:
         iterations_iterator begin,
         iterations_iterator end,
         FlushLevel level,
-        bool flushIOHandler );
+        bool flushIOHandler = true );
     void flushFileBased( iterations_iterator begin, iterations_iterator end );
     /*
      * Group-based and variable-based iteration layouts share a lot of logic

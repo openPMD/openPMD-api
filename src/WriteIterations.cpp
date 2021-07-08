@@ -32,7 +32,8 @@ WriteIterations::SharedResources::SharedResources( iterations_t _iterations )
 
 WriteIterations::SharedResources::~SharedResources()
 {
-    if( currentlyOpen.has_value() )
+    if( currentlyOpen.has_value() &&
+        iterations.retrieveSeries().get().m_lastFlushSuccessful )
     {
         auto lastIterationIndex = currentlyOpen.get();
         auto & lastIteration = iterations.at( lastIterationIndex );
