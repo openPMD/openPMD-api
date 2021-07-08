@@ -4344,7 +4344,7 @@ TEST_CASE( "no_explicit_flush", "[serial]" )
 {
     for( auto const & t : testedFileExtensions() )
     {
-        no_explicit_flush( "../samples/chaotic_stream_filebased_%T." + t );
-        no_explicit_flush( "../samples/chaotic_stream." + t );
+        no_explicit_flush( "../samples/no_explicit_flush_filebased_%T." + t );
+        no_explicit_flush( "../samples/no_explicit_flush." + t );
     }
 }
