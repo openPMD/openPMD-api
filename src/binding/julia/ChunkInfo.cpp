@@ -16,7 +16,7 @@ void define_julia_ChunkInfo(jlcxx::Module &mod) {
   chunkInfo.method("cxx_extent",
                    [](const ChunkInfo &chunkInfo) { return chunkInfo.extent; });
 
-  auto writtenChunkInfo = mod.add_type<ChunkInfo>(
+  auto writtenChunkInfo = mod.add_type<WrittenChunkInfo>(
       "CXX_WrittenChunkInfo", jlcxx::julia_base_type<ChunkInfo>());
   writtenChunkInfo.constructor<>();
   writtenChunkInfo.constructor<Offset, Extent>();
