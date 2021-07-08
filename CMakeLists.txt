@@ -127,19 +127,39 @@ option(openPMD_BUILD_EXAMPLES  "Build the examples" ${BUILD_EXAMPLES})
 # Dependencies ################################################################
 #
 # external library: MPI (optional)
+# Implementation quirks for BullMPI, Clang+MPI and Brew's MPICH
+#   definitely w/o MPI::MPI_C:
+#     brew's MPICH with C-flag work-arounds - errors AppleClang for CXX targets
+#     https://github.com/Homebrew/homebrew-core/issues/80465
+#     https://lists.mpich.org/pipermail/discuss/2020-January/005863.html
+#   sometimes needed MPI::MPI_C in the past:
+#     Clang+MPI: Potentially needed MPI::MPI_C targets in the past
+#                (exact MPI flavor & Clang version lost)
+#     BullMPI: PUBLIC dependency to MPI::MPI_CXX is missing in MPI::MPI_C target
+set(openPMD_MPI_LINK_C_DEFAULT OFF)
+option(openPMD_MPI_LINK_C  "Also link the MPI C targets" ${openPMD_MPI_LINK_C_DEFAULT})
+mark_as_advanced(openPMD_MPI_LINK_C)
+set(openPMD_MPI_NEED_COMPONENTS CXX)
+set(openPMD_MPI_TARGETS MPI::MPI_CXX)
+if(openPMD_MPI_LINK_C)
+    set(openPMD_MPI_NEED_COMPONENTS C ${openPMD_MPI_NEED_COMPONENTS})
+    set(openPMD_MPI_TARGETS MPI::MPI_C ${openPMD_MPI_TARGETS})
+endif()
+
 if(openPMD_USE_MPI STREQUAL AUTO)
-    find_package(MPI)
+    find_package(MPI COMPONENTS ${openPMD_MPI_NEED_COMPONENTS})
     if(MPI_FOUND)
         set(openPMD_HAVE_MPI TRUE)
     else()
         set(openPMD_HAVE_MPI FALSE)
     endif()
 elseif(openPMD_USE_MPI)
-    find_package(MPI REQUIRED)
+    find_package(MPI REQUIRED COMPONENTS ${openPMD_MPI_NEED_COMPONENTS})
     set(openPMD_HAVE_MPI TRUE)
 else()
     set(openPMD_HAVE_MPI FALSE)
 endif()
+
 
 # external library: nlohmann-json (required)
 if(openPMD_USE_INTERNAL_JSON)
@@ -466,9 +486,7 @@ if(openPMD_BUILD_TESTING)
 endif()
 
 if(openPMD_HAVE_MPI)
-    # MPI targets: CMake 3.9+
-    # note: often the PUBLIC dependency to CXX is missing in C targets...
-    target_link_libraries(openPMD PUBLIC MPI::MPI_C MPI::MPI_CXX)
+    target_link_libraries(openPMD PUBLIC ${openPMD_MPI_TARGETS})
 endif()
 
 # JSON Backend and User-Facing Runtime Options
@@ -504,7 +522,7 @@ if(openPMD_HAVE_ADIOS1)
         ${openPMD_SOURCE_DIR}/include ${openPMD_BINARY_DIR}/include)
 
     if(openPMD_HAVE_MPI)
-        target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC MPI::MPI_C MPI::MPI_CXX)
+        target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC ${openPMD_MPI_TARGETS})
         target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_HAVE_MPI=1)
     else()
         target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_HAVE_MPI=0)
@@ -770,7 +788,7 @@ if(openPMD_BUILD_TESTING)
     target_link_libraries(CatchRunner PUBLIC openPMD::thirdparty::Catch2)
     target_link_libraries(CatchMain   PUBLIC openPMD::thirdparty::Catch2)
     if(openPMD_HAVE_MPI)
-        target_link_libraries(CatchRunner PUBLIC MPI::MPI_C MPI::MPI_CXX)
+        target_link_libraries(CatchRunner PUBLIC ${openPMD_MPI_TARGETS})
         target_compile_definitions(CatchRunner PUBLIC openPMD_HAVE_MPI=1)
     endif()
 
