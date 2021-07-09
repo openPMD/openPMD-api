@@ -27,6 +27,7 @@
 #include <array>
 #include <ostream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 
@@ -142,7 +143,8 @@ public:
      * @param   gridSpacing     vector containing N (T) elements, where N is the number of dimensions in the simulation.
      * @return  Reference to modified mesh.
      */
-    template< typename T >
+    template< typename T,
+              typename = std::enable_if_t<std::is_floating_point< T >::value> >
     Mesh& setGridSpacing(std::vector< T > const & gridSpacing);
 
     /**
@@ -188,7 +190,8 @@ public:
      * @param   timeOffset  Offset between the time at which this record is defined and the Iteration::time attribute of the Series::basePath level.
      * @return  Reference to modified mesh.
      */
-    template< typename T >
+    template< typename T,
+              typename = std::enable_if_t<std::is_floating_point< T >::value> >
     Mesh& setTimeOffset(T timeOffset);
 
 private:
