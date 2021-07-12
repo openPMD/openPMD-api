@@ -74,9 +74,9 @@ namespace impl {
 template <std::size_t N> struct tuple_eq {
   template <typename Tuple1, typename Tuple2>
   constexpr bool operator()(const Tuple1 &x, const Tuple2 &y) const {
-    typedef std::tuple_element_t<N - 1, Tuple1> T1;
-    typedef std::tuple_element_t<N - 1, Tuple2> T2;
-    typedef std::common_type_t<T1, T2> T;
+    using T1 = std::tuple_element_t<N - 1, Tuple1>;
+    using T2 = std::tuple_element_t<N - 1, Tuple2>;
+    using T = std::common_type_t<T1, T2>;
     const std::equal_to<T> eq;
     return tuple_eq<N - 1>()(x, y) &&
            eq(std::get<N - 1>(x), std::get<N - 1>(y));
@@ -92,9 +92,9 @@ template <> struct tuple_eq<0> {
 template <std::size_t N> struct tuple_cmp {
   template <typename Tuple1, typename Tuple2>
   constexpr int operator()(const Tuple1 &x, const Tuple2 &y) const {
-    typedef std::tuple_element_t<N - 1, Tuple1> T1;
-    typedef std::tuple_element_t<N - 1, Tuple2> T2;
-    typedef std::common_type_t<T1, T2> T;
+    using T1 = std::tuple_element_t<N - 1, Tuple1>;
+    using T2 = std::tuple_element_t<N - 1, Tuple2>;
+    using T = std::common_type_t<T1, T2>;
     const int cmp = tuple_cmp<N - 1>()(x, y);
     if (cmp != 0)
       return cmp;
@@ -142,9 +142,9 @@ template <typename Vector1, typename Vector2>
 bool vector_eq(const Vector1 &x, const Vector2 &y) {
   if (x.size() != y.size())
     return false;
-  typedef typename Vector1::value_type T1;
-  typedef typename Vector2::value_type T2;
-  typedef std::common_type_t<T1, T2> T;
+  using T1 = typename Vector1::value_type;
+  using T2 = typename Vector2::value_type;
+  using T = std::common_type_t<T1, T2>;
   const std::equal_to<T> eq;
   for (std::size_t n = 0; n < x.size(); ++n)
     if (!eq(x[n], y[n]))
@@ -154,9 +154,9 @@ bool vector_eq(const Vector1 &x, const Vector2 &y) {
 
 template <typename Vector1, typename Vector2>
 bool vector_lt(const Vector1 &x, const Vector2 &y) {
-  typedef typename Vector1::value_type T1;
-  typedef typename Vector2::value_type T2;
-  typedef std::common_type_t<T1, T2> T;
+  using T1 = typename Vector1::value_type;
+  using T2 = typename Vector2::value_type;
+  using T = std::common_type_t<T1, T2>;
   const std::less<T> lt;
   using std::min;
   for (std::size_t n = 0; n < min(x.size(), y.size()); ++n)

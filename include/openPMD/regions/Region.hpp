@@ -45,8 +45,8 @@ public:
 
 private:
 public:
-  typedef typename Point<T, D>::value_type value_type;
-  typedef typename Point<T, D>::size_type size_type;
+  using value_type = typename Point<T, D>::value_type;
+  using size_type = typename Point<T, D>::size_type;
 
   /** Invariant
    */
@@ -212,16 +212,16 @@ public:
   constexpr static std::size_t D = 1;
 
 private:
-  typedef Region<T, D - 1> Subregion; // This is essentially a bool
-  typedef std::vector<T> Subregions;
+  using Subregion = Region<T, D - 1>; // This is essentially a bool
+  using Subregions = std::vector<T>;
   Subregions subregions;
 
   friend class std::equal_to<Region<T, D>>;
   friend class std::less<Region<T, D>>;
 
 public:
-  typedef typename Point<T, D>::value_type value_type;
-  typedef typename Point<T, D>::size_type size_type;
+  using value_type = typename Point<T, D>::value_type;
+  using size_type = typename Point<T, D>::size_type;
 
   /** Invariant
    */
@@ -664,16 +664,16 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename T, std::size_t D> class Region {
-  typedef Region<T, D - 1> Subregion;
-  typedef std::vector<std::pair<T, Subregion>> Subregions;
+  using Subregion = Region<T, D - 1>;
+  using Subregions = std::vector<std::pair<T, Subregion>>;
   Subregions subregions;
 
   friend class std::equal_to<Region<T, D>>;
   friend class std::less<Region<T, D>>;
 
 public:
-  typedef typename Point<T, D>::value_type value_type;
-  typedef typename Point<T, D>::size_type size_type;
+  using value_type = typename Point<T, D>::value_type;
+  using size_type = typename Point<T, D>::size_type;
 
   /** Invariant
    */

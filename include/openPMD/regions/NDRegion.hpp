@@ -16,8 +16,8 @@ namespace detail {
 
 template <typename T> class VRegion {
 public:
-  typedef T value_type;
-  typedef typename VPoint<T>::size_type size_type;
+  using value_type = T;
+  using size_type = typename VPoint<T>::size_type;
 
   virtual std::unique_ptr<VRegion> copy() const = 0;
 
@@ -345,10 +345,10 @@ template <typename T> class NDRegion {
 public:
   /** Component type
    */
-  typedef typename VRegion<T>::value_type value_type;
+  using value_type = typename VRegion<T>::value_type;
   /** Return type of Region::size()
    */
-  typedef typename VRegion<T>::size_type size_type;
+  using size_type = typename VRegion<T>::size_type;
 
   /** Create an invalid Region
    */

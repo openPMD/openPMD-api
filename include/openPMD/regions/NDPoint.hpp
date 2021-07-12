@@ -30,8 +30,8 @@ namespace detail {
 
 template <typename T> class VPoint {
 public:
-  typedef T value_type;
-  typedef std::ptrdiff_t size_type;
+  using value_type = T;
+  using size_type = std::ptrdiff_t;
 
   virtual std::unique_ptr<VPoint> copy() const = 0;
 
@@ -652,10 +652,10 @@ template <typename T> class NDPoint {
 public:
   /** Component type
    */
-  typedef typename VPoint<T>::value_type value_type;
+  using value_type = typename VPoint<T>::value_type;
   /** Return type of Point::size()
    */
-  typedef typename VPoint<T>::size_type size_type;
+  using size_type = typename VPoint<T>::size_type;
 
   /** Create an invalid Point
    */

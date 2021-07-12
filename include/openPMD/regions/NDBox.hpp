@@ -15,8 +15,8 @@ namespace detail {
 
 template <typename T> class VBox {
 public:
-  typedef T value_type;
-  typedef typename VPoint<T>::size_type size_type;
+  using value_type = T;
+  using size_type = typename VPoint<T>::size_type;
 
   virtual std::unique_ptr<VBox> copy() const = 0;
 
@@ -262,10 +262,10 @@ template <typename T> class NDBox {
 public:
   /** Component type
    */
-  typedef typename VBox<T>::value_type value_type;
+  using value_type = typename VBox<T>::value_type;
   /** Return type of Box::size()
    */
-  typedef typename VBox<T>::size_type size_type;
+  using size_type = typename VBox<T>::size_type;
 
   /** Create an invalid Box
    */

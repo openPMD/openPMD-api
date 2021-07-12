@@ -36,10 +36,10 @@ template <typename T, std::size_t D> class Point {
 public:
   /** Component type
    */
-  typedef T value_type;
+  using value_type = T;
   /** Return type of Point::size()
    */
-  typedef std::ptrdiff_t size_type;
+  using size_type = std::ptrdiff_t;
 
   /** Create a value-initialized Point
    *

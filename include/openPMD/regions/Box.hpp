@@ -33,8 +33,8 @@ template <typename T> class Box<T, 0> {
 public:
   constexpr static std::size_t D = 0;
 
-  typedef typename Point<T, D>::value_type value_type;
-  typedef typename Point<T, D>::size_type size_type;
+  using value_type = typename Point<T, D>::value_type;
+  using size_type = typename Point<T, D>::size_type;
 
   /** Create empty box
    */
@@ -165,8 +165,8 @@ template <typename T, std::size_t D> class Box {
   Point<T, D> lo, hi;
 
 public:
-  typedef typename Point<T, D>::value_type value_type;
-  typedef typename Point<T, D>::size_type size_type;
+  using value_type = typename Point<T, D>::value_type;
+  using size_type = typename Point<T, D>::size_type;
 
   /** Create empty box
    */
