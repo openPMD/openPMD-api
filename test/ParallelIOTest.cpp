@@ -566,6 +566,40 @@ TEST_CASE( "write_4D_test", "[parallel]" )
 }
 
 void
+write_makeconst_some( std::string file_ending )
+{
+    int mpi_s{-1};
+    int mpi_r{-1};
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_s);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_r);
+    auto mpi_size = static_cast<uint64_t>(mpi_s);
+    auto mpi_rank = static_cast<uint64_t>(mpi_r);
+    std::string name = "../samples/write_makeconst_some." + file_ending;
+    std::cout << name << std::endl;
+    Series o = Series(name, Access::CREATE, MPI_COMM_WORLD);
+
+    auto it = o.iterations[1];
+    // I would have expected we need this, since the first call that writes
+    // data below (makeConstant) is not executed in MPI collective manner
+    //it.open();
+    auto E_x = it.meshes[ "E" ][ "x" ];
+
+    E_x.resetDataset( { Datatype::DOUBLE, { mpi_size * 2, 10, 6, 8 } } );
+
+    // HDF5 Attribute writes are unfortunately collective
+    if( mpi_rank != 0u && file_ending != "h5" )
+        E_x.makeConstant( 42 );
+}
+
+TEST_CASE( "write_makeconst_some", "[parallel]" )
+{
+    for( auto const & t : getBackends() )
+    {
+        write_makeconst_some( t );
+    }
+}
+
+void
 close_iteration_test( std::string file_ending )
 {
     int i_mpi_rank{ -1 }, i_mpi_size{ -1 };

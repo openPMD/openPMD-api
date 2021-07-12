@@ -629,7 +629,7 @@ namespace detail {
         Datatype m_dt = BasicDatatypeHelper<T>{}.m_dt;
     };
 
-    template<typename T, long n>
+    template<typename T, std::size_t n>
     struct BasicDatatypeHelper<std::array<T, n>> {
         Datatype m_dt = BasicDatatypeHelper<T>{}.m_dt;
     };
