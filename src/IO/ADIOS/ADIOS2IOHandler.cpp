@@ -1214,7 +1214,7 @@ ADIOS2IOHandlerImpl::verifyDataset( Offset const & offset,
             << "[ADIOS2] Trying to access a dataset with wrong type (trying to "
                "access dataset with type "
             << determineDatatype< T >() << ", but has type "
-            << detail::fromADIOS2Type( actualType ) << ")";
+            << detail::fromADIOS2Type( actualType, false ) << ")";
         VERIFY_ALWAYS( requiredType == actualType, errorMessage.str() );
     }
     adios2::Variable< T > var = IO.InquireVariable< T >( varName );
