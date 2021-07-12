@@ -63,7 +63,7 @@ openpmd_option(HDF5           "HDF5 backend (.h5 files)"                  AUTO)
 openpmd_option(ADIOS1         "ADIOS1 backend (.bp files)"                AUTO)
 openpmd_option(ADIOS2         "ADIOS2 backend (.bp files)"                AUTO)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
-openpmd_option(REGIONS        "Enable region algebra (requires C++17)"    AUTO)
+openpmd_option(REGIONS        "Enable region algebra (requires C++17)"    OFF)
 
 option(openPMD_INSTALL               "Add installation targets"             ON)
 option(openPMD_HAVE_PKGCONFIG        "Generate a .pc file for pkg-config"   ON)
