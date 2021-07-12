@@ -1,5 +1,4 @@
-#ifndef REGIONS_BOX_HPP
-#define REGIONS_BOX_HPP
+#pragma once
 
 #include "Helpers.hpp"
 #include "Point.hpp"
@@ -433,5 +432,3 @@ template <typename T, std::size_t D> struct less<openPMD::Regions::Box<T, D>> {
 };
 
 } // namespace std
-
-#endif // #ifndef REGIONS_BOX_HPP

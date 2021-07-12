@@ -1,5 +1,4 @@
-#ifndef REGIONS_REGION_HPP
-#define REGIONS_REGION_HPP
+#pragma once
 
 #include "Box.hpp"
 #include "Helpers.hpp"
@@ -1296,5 +1295,3 @@ struct less<openPMD::Regions::Region<T, D>> {
 };
 
 } // namespace std
-
-#endif // #ifndef REGIONS_REGION_HPP

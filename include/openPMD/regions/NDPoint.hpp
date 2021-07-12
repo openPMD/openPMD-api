@@ -1,5 +1,4 @@
-#ifndef REGIONS_NDPOINT_HPP
-#define REGIONS_NDPOINT_HPP
+#pragma once
 
 #include "Helpers.hpp"
 #include "Point.hpp"
@@ -1237,5 +1236,3 @@ template <typename T> struct less<openPMD::Regions::NDPoint<T>> {
 };
 
 } // namespace std
-
-#endif // #ifndef REGIONS_NDPOINT_HPP

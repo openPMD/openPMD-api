@@ -1,5 +1,4 @@
-#ifndef REGIONS_POINT_HPP
-#define REGIONS_POINT_HPP
+#pragma once
 
 #include "Helpers.hpp"
 
@@ -655,5 +654,3 @@ struct less<openPMD::Regions::Point<T, D>> {
 };
 
 } // namespace std
-
-#endif // #ifndef REGIONS_POINT_HPP

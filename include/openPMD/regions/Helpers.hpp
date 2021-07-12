@@ -1,5 +1,4 @@
-#ifndef REGIONS_HELPERS_HPP
-#define REGIONS_HELPERS_HPP
+#pragma once
 
 #include <array>
 #include <cassert>
@@ -218,5 +217,3 @@ R mapreduce(const F &f, const Op &op, const C &c) {
 
 } // namespace Regions
 } // namespace openPMD
-
-#endif // #ifndef REGIONS_HELPERS_HPP

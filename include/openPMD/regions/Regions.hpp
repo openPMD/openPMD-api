@@ -1,5 +1,4 @@
-#ifndef REGIONS_REGIONS_HPP
-#define REGIONS_REGIONS_HPP
+#pragma once
 
 #include "Box.hpp"
 #include "Point.hpp"
@@ -8,5 +7,3 @@
 #include "NDBox.hpp"
 #include "NDPoint.hpp"
 #include "NDRegion.hpp"
-
-#endif // #ifndef REGIONS_REGIONS_HPP

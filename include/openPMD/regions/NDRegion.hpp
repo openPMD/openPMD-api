@@ -1,5 +1,4 @@
-#ifndef REGIONS_NDREGION_HPP
-#define REGIONS_NDREGION_HPP
+#pragma once
 
 #include "Helpers.hpp"
 #include "NDBox.hpp"
@@ -663,5 +662,3 @@ template <typename T> struct less<openPMD::Regions::NDRegion<T>> {
 };
 
 } // namespace std
-
-#endif // #ifndef REGIONS_NDREGION_HPP
