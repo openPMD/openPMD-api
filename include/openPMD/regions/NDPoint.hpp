@@ -31,7 +31,7 @@ namespace detail {
 template <typename T> class VPoint {
 public:
   using value_type = T;
-  using size_type = std::ptrdiff_t;
+  using size_type = std::size_t;
 
   virtual std::unique_ptr<VPoint> copy() const = 0;
 

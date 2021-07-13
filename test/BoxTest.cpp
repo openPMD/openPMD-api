@@ -47,7 +47,7 @@ template <typename B> void test_Box(const B &box) {
   for (int iter = 0; iter < 100; ++iter) {
 
     B N(box);
-    CHECK(N.ndims() == std::ptrdiff_t(D));
+    CHECK(N.ndims() == D);
     CHECK(N.empty());
     for (std::size_t d = 0; d < D; ++d)
       CHECK(N.lower()[d] >= N.upper()[d]);

@@ -56,10 +56,10 @@ template <typename P> void test_Point_bool(const P &p) {
   for (int iter = 0; iter < 100; ++iter) {
 
     P n = p;
-    CHECK(n.ndims() == std::ptrdiff_t(D));
+    CHECK(n.ndims() == D);
     for (std::size_t d = 0; d < D; ++d)
       CHECK(n[d] == 0);
-    CHECK(n.size() == std::ptrdiff_t(D));
+    CHECK(n.size() == D);
 
     const P x = randp();
     const P y = randp();
@@ -188,7 +188,7 @@ template <typename P> void test_Point_int(const P &p) {
   for (int iter = 0; iter < 100; ++iter) {
 
     P n(p);
-    CHECK(n.size() == std::ptrdiff_t(D));
+    CHECK(n.size() == D);
     for (std::size_t d = 0; d < D; ++d)
       CHECK(n[d] == 0);
 
@@ -214,7 +214,7 @@ template <typename P> void test_Point_int(const P &p) {
           sum(x + y));
 
     CHECK(sum(n) == 0);
-    CHECK(sum(n + 1) == std::ptrdiff_t(D));
+    CHECK(sum(n + 1) == T(D));
     CHECK(product(n) == (D == 0 ? 1 : 0));
     CHECK(product(n + 1) == 1);
     CHECK(min_element(n) == (D == 0 ? std::numeric_limits<T>::max() : 0));
@@ -349,7 +349,7 @@ template <typename P> void test_Point_float(const P &p) {
   for (int iter = 0; iter < 100; ++iter) {
 
     P n(p);
-    CHECK(n.size() == std::ptrdiff_t(D));
+    CHECK(n.size() == D);
     for (std::size_t d = 0; d < D; ++d)
       CHECK(n[d] == 0);
 
@@ -376,16 +376,16 @@ template <typename P> void test_Point_float(const P &p) {
       for (std::size_t d = 0; d < D; ++d) {
         const auto a1 = x[d];
         const auto x1 = x.erase(d);
-        CHECK(x1.ndims() == std::ptrdiff_t(D) - 1);
+        CHECK(x1.ndims() == D - 1);
         const auto x2 = x1.insert(d, a1);
-        CHECK(x2.ndims() == std::ptrdiff_t(D));
+        CHECK(x2.ndims() == D);
         CHECK(eq_helper(x2, x));
       }
     }
     // insert-remove is no-op
     for (std::size_t d = 0; d <= D; ++d) {
       const auto x1 = x.insert(d, a);
-      CHECK(x1.ndims() == std::ptrdiff_t(D) + 1);
+      CHECK(x1.ndims() == D + 1);
       CHECK(x1[d] == a);
       CHECK(eq(x1.erase(d), x));
     }
