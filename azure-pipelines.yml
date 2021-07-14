@@ -476,6 +476,8 @@ jobs:
   - script: |
       brew update || true
       brew install pypy3
+      brew install openblas
+      export OPENBLAS="$(brew --prefix openblas)"
       pypy3 -m pip install -U pip --user
       pypy3 -m pip install openpmd-api --user
   - script: |
@@ -491,6 +493,8 @@ jobs:
   - script: |
       brew update || true
       brew install pypy3
+      brew install openblas
+      export OPENBLAS="$(brew --prefix openblas)"
       pypy3 -m pip install -U pip setuptools wheel cmake --user
       pypy3 -m pip install openpmd-api --no-binary openpmd-api --user
   - script: |
@@ -506,6 +510,8 @@ jobs:
   - script: |
       brew update || true
       brew install pypy3
+      brew install openblas
+      export OPENBLAS="$(brew --prefix openblas)"
       pypy3 -m pip install -U pip setuptools wheel cmake --user
       pypy3 -m pip install git+https://github.com/openPMD/openPMD-api.git@dev --user
   - script: |
