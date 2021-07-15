@@ -385,6 +385,13 @@ OPENPMD_private:
     void readGorVBased( bool init = true );
     void readBase();
     std::string iterationFilename( uint64_t i );
+
+    enum class IterationOpened : bool
+    {
+        HasBeenOpened,
+        RemainsClosed
+    };
+    IterationOpened openIterationIfDirty( uint64_t index, Iteration iteration );
     void openIteration( uint64_t index, Iteration iteration );
 
     /**
