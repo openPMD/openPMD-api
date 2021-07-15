@@ -599,18 +599,6 @@ SeriesImpl::flushFileBased( iterations_iterator begin, iterations_iterator end )
 
             flushAttributes();
 
-            switch( *it->second.m_closed )
-            {
-                using CL = Iteration::CloseStatus;
-            case CL::Open:
-            case CL::ClosedTemporarily:
-                *it->second.m_closed = CL::Open;
-                break;
-            default:
-                // keep it
-                break;
-            }
-
             if( *it->second.m_closed ==
                 Iteration::CloseStatus::ClosedInFrontend )
             {
