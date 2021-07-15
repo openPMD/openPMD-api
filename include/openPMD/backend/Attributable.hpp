@@ -47,9 +47,10 @@ namespace traits
 } // traits
 class AbstractFilePosition;
 class AttributableImpl;
+class Iteration;
 namespace internal
 {
-class SeriesInternal;
+    class SeriesInternal;
 }
 
 class no_such_attribute_error : public std::runtime_error
@@ -234,6 +235,9 @@ OPENPMD_protected:
 
     internal::SeriesInternal const & retrieveSeries() const;
     internal::SeriesInternal & retrieveSeries();
+
+    Iteration const & containingIteration() const;
+    Iteration & containingIteration();
 
     void seriesFlush( FlushLevel );
 

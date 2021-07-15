@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/backend/Attributable.hpp"
+#include "openPMD/Iteration.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
@@ -132,6 +133,52 @@ internal::SeriesInternal & AttributableImpl::retrieveSeries()
 {
     return const_cast< internal::SeriesInternal & >(
         static_cast< AttributableImpl const * >( this )->retrieveSeries() );
+}
+
+Iteration const & AttributableImpl::containingIteration() const
+{
+    std::vector< Writable const * > searchQueue;
+    searchQueue.reserve( 7 );
+    Writable const * findSeries = &writable();
+    while( findSeries )
+    {
+        searchQueue.push_back( findSeries );
+        // we don't need to push the last Writable since it's the Series anyway
+        findSeries = findSeries->parent;
+    }
+    // End of the queue:
+    // Iteration -> Series.iterations -> Series
+    if( searchQueue.size() < 3 )
+    {
+        throw std::runtime_error(
+            "containingIteration(): Must be called for an object contained in "
+            "an iteration." );
+    }
+    auto end = searchQueue.rbegin();
+    internal::AttributableData const * attr = ( *( end + 2 ) )->attributable;
+    /*
+     * We now know the unique instance of Attributable that corresponds with
+     * the iteration.
+     * Since the class Iteration itself still follows the old class design,
+     * we will have to take a detour via Series.
+     */
+    auto & series = auxiliary::deref_dynamic_cast< internal::SeriesInternal >(
+        ( *searchQueue.rbegin() )->attributable );
+    for( auto const & pair : series.iterations )
+    {
+        if( &pair.second.get() == attr )
+        {
+            return pair.second;
+        }
+    }
+    throw std::runtime_error(
+        "Containing iteration not found in containing Series." );
+}
+
+Iteration & AttributableImpl::containingIteration()
+{
+    return const_cast< Iteration & >(
+        static_cast< Iteration const * >( this )->containingIteration() );
 }
 
 std::string Attributable::MyPath::filePath() const
