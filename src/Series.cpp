@@ -1245,6 +1245,10 @@ SeriesImpl::advance(
 auto SeriesImpl::openIterationIfDirty( uint64_t index, Iteration iteration )
     -> IterationOpened
 {
+    /*
+     * Check side conditions on accessing iterations, and if they are fulfilled,
+     * forward function params to openIteration().
+     */
     if( *iteration.m_closed == Iteration::CloseStatus::ParseAccessDeferred )
     {
         return IterationOpened::RemainsClosed;
@@ -1291,6 +1295,8 @@ auto SeriesImpl::openIterationIfDirty( uint64_t index, Iteration iteration )
     case IE::groupBased:
     case IE::variableBased:
         // open unconditionally
+        // this makes groupBased encoding safer for parallel usage
+        // (variable-based encoding runs in lockstep anyway)
         // openIteration() will update the close status
         openIteration( index, iteration );
         return IterationOpened::HasBeenOpened;
@@ -1317,6 +1323,13 @@ void SeriesImpl::openIteration( uint64_t index, Iteration iteration )
         break;
     }
 
+    /*
+     * There's only something to do in filebased encoding in READ_ONLY mode.
+     * @todo What about READ_WRITE and CREATE mode in filebased encoding?
+     *     Currently handled by flushFileBased(), should we put that here too?
+     * Use two nested switches anyway to ensure compiler warnings upon adding
+     * values to the enums.
+     */
     switch( IOHandler()->m_frontendAccess )
     {
     case Access::READ_ONLY:
