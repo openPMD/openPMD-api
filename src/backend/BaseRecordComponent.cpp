@@ -64,17 +64,10 @@ BaseRecordComponent::availableChunks()
         Offset offset( m_dataset->extent.size(), 0 );
         return ChunkTable{ { std::move( offset ), m_dataset->extent } };
     }
-
-    // set dirty, so Series::flush will open the file if needed
-    this->dirty() = true;
-    this->seriesFlush();
-    this->dirty() = false;
-
     Parameter< Operation::AVAILABLE_CHUNKS > param;
     IOTask task( this, param );
     IOHandler()->enqueue( task );
     IOHandler()->flush();
-
     return std::move( *param.chunks );
 }
 } // namespace openPMD
