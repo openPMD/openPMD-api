@@ -8,15 +8,14 @@ Parallel benchmark 8
 
 Build based on the helper functions in the :ref:`benchmark utilities <utilities-benchmark>`, this benchmark executes a simple parallel read-write test.
 
-In particular, this test case writes and reads a 4D array of type ``uint64_t``, sliced 1D along the first dimension.
+In particular, this test case writes and reads a 3D array of type ``uint64_t``, sliced 1D along the first dimension.
 
 .. code-block:: cpp
 
    openPMD::Extent total{
        100 * scale_up, // sliced along this axis over MPI ranks
        100,
-       100,
-       10
+       1000
    };
 
 The benchmark writes 10 iterations, meaning that in the strong-scaling case, always around 3/4 GB of data are produced.
