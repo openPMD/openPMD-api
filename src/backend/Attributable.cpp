@@ -178,7 +178,8 @@ Iteration const & AttributableImpl::containingIteration() const
 Iteration & AttributableImpl::containingIteration()
 {
     return const_cast< Iteration & >(
-        static_cast< Iteration const * >( this )->containingIteration() );
+        static_cast< AttributableImpl const * >( this )
+            ->containingIteration() );
 }
 
 std::string Attributable::MyPath::filePath() const
