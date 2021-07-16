@@ -1306,6 +1306,7 @@ auto SeriesImpl::openIterationIfDirty( uint64_t index, Iteration iteration )
 
 void SeriesImpl::openIteration( uint64_t index, Iteration iteration )
 {
+    auto oldStatus = *iteration.m_closed;
     switch( *iteration.m_closed )
     {
         using CL = Iteration::CloseStatus;
@@ -1324,19 +1325,32 @@ void SeriesImpl::openIteration( uint64_t index, Iteration iteration )
     }
 
     /*
-     * There's only something to do in filebased encoding in READ_ONLY mode.
-     * @todo What about READ_WRITE and CREATE mode in filebased encoding?
-     *     Currently handled by flushFileBased(), should we put that here too?
+     * There's only something to do in filebased encoding in READ_ONLY and
+     * READ_WRITE modes.
      * Use two nested switches anyway to ensure compiler warnings upon adding
      * values to the enums.
      */
-    switch( IOHandler()->m_frontendAccess )
+    switch( iterationEncoding() )
     {
-    case Access::READ_ONLY:
-        switch( iterationEncoding() )
+        using IE = IterationEncoding;
+    case IE::fileBased: {
+        switch( IOHandler()->m_frontendAccess )
         {
-            using IE = IterationEncoding;
-        case IE::fileBased: {
+        case Access::READ_ONLY:
+        case Access::READ_WRITE: {
+            /*
+             * The iteration is marked written() as soon as its file has been
+             * either created or opened.
+             * If the iteration has not been created yet, it cannot be opened.
+             * In that case, it is not written() and its old close status was
+             * not ParseAccessDeferred.
+             */
+            if( !iteration.written() &&
+                oldStatus != Iteration::CloseStatus::ParseAccessDeferred )
+            {
+                // nothing to do, file will be opened by writing routines
+                break;
+            }
             auto & series = get();
             // open the iteration's file again
             Parameter< Operation::OPEN_FILE > fOpen;
@@ -1355,25 +1369,14 @@ void SeriesImpl::openIteration( uint64_t index, Iteration iteration )
             IOHandler()->enqueue( IOTask( &iteration, pOpen ) );
             break;
         }
-        case IE::groupBased:
-        case IE::variableBased:
-            // nothing to do, no opening necessary in those modes
-            break;
-        }
-        break;
-    case Access::CREATE:
-    case Access::READ_WRITE:
-        switch( iterationEncoding() )
-        {
-            using IE = IterationEncoding;
-        case IE::fileBased:
+        case Access::CREATE:
             // nothing to do, file will be opened by writing routines
             break;
-        case IE::groupBased:
-        case IE::variableBased:
-            // nothing to do, no opening necessary in those modes
-            break;
         }
+    }
+    case IE::groupBased:
+    case IE::variableBased:
+        // nothing to do, no opening necessary in those modes
         break;
     }
 }

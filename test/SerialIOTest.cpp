@@ -4279,10 +4279,12 @@ TEST_CASE( "extend_dataset", "[serial]" )
 
 void deferred_parsing( std::string const & extension )
 {
+    if( auxiliary::directory_exists( "../samples/lazy_parsing" ) )
+        auxiliary::remove_directory( "../samples/lazy_parsing" );
     std::string const basename = "../samples/lazy_parsing/lazy_parsing_";
     // create a single iteration
     {
-        Series series( basename + "%T." + extension, Access::CREATE );
+        Series series( basename + "%06T." + extension, Access::CREATE );
         std::vector< float > buffer( 20 );
         std::iota( buffer.begin(), buffer.end(), 0.f );
         auto dataset = series.iterations[ 1000 ].meshes[ "E" ][ "x" ];
@@ -4295,20 +4297,69 @@ void deferred_parsing( std::string const & extension )
     {
         for( size_t i = 0; i < 1000; i += 100 )
         {
+            std::string infix = std::to_string( i );
+            std::string padding;
+            for( size_t j = 0; j < 6 - infix.size(); ++j )
+            {
+                padding += "0";
+            }
+            infix = padding + infix;
             std::ofstream file;
-            file.open( basename + std::to_string( i ) + "." + extension );
+            file.open( basename + infix + "." + extension );
             file.close();
         }
     }
     {
         Series series(
-            basename + "%T." + extension,
+            basename + "%06T." + extension,
             Access::READ_ONLY,
             "{\"defer_iteration_parsing\": true}" );
         auto dataset = series.iterations[ 1000 ]
             .open()
             .meshes[ "E" ][ "x" ]
             .loadChunk< float >( { 0 }, { 20 } );
+        series.flush();
+        for( size_t i = 0; i < 20; ++i )
+        {
+            REQUIRE(
+                std::abs( dataset.get()[ i ] - float( i ) ) <=
+                std::numeric_limits< float >::epsilon() );
+        }
+    }
+    {
+        Series series(
+            basename + "%06T." + extension,
+            Access::READ_WRITE,
+            "{\"defer_iteration_parsing\": true}" );
+        auto dataset = series.iterations[ 1000 ]
+                           .open()
+                           .meshes[ "E" ][ "x" ]
+                           .loadChunk< float >( { 0 }, { 20 } );
+        series.flush();
+        for( size_t i = 0; i < 20; ++i )
+        {
+            REQUIRE(
+                std::abs( dataset.get()[ i ] - float( i ) ) <=
+                std::numeric_limits< float >::epsilon() );
+        }
+
+        // create a new iteration
+        std::vector< float > buffer( 20 );
+        std::iota( buffer.begin(), buffer.end(), 0.f );
+        auto writeDataset = series.iterations[ 1001 ].meshes[ "E" ][ "x" ];
+        writeDataset.resetDataset( { Datatype::FLOAT, { 20 } } );
+        writeDataset.storeChunk( buffer, { 0 }, { 20 } );
+        series.flush();
+    }
+    {
+        Series series(
+            basename + "%06T." + extension,
+            Access::READ_ONLY,
+            "{\"defer_iteration_parsing\": true}" );
+        auto dataset = series.iterations[ 1001 ]
+                           .open()
+                           .meshes[ "E" ][ "x" ]
+                           .loadChunk< float >( { 0 }, { 20 } );
         series.flush();
         for( size_t i = 0; i < 20; ++i )
         {
