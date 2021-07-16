@@ -25,6 +25,7 @@ The reading end of the streaming API is activated through use of ``Series::readI
 The returned object of type ``ReadIterations`` can be used in a C++11 range-based for loop to iterate over objects of type ``IndexedIteration``.
 This class extends the ``Iteration`` class with a field ``IndexedIteration::iterationIndex``, denoting this iteration's index.
 
+Iterations are implicitly opened by the Streaming API and ``Iteration::open()`` needs not be called explicitly.
 Users are encouraged to explicitly ``.close()`` the iteration after reading from it.
 Closing the iteration will flush all pending operations on that iteration.
 If an iteration is not closed until the beginning of the next iteration, it will be closed automatically.
@@ -42,6 +43,7 @@ The reading end of the streaming API is activated through use of ``Series.read_i
 The returned object of type ``ReadIterations`` can be used in a Python range-based for loop to iterate over objects of type ``IndexedIteration``.
 This class extends the ``Iteration`` class with a field ``IndexedIteration.iteration_index``, denoting this iteration's index.
 
+Iterations are implicitly opened by the Streaming API and ``Iteration.open()`` needs not be called explicitly.
 Users are encouraged to explicitly ``.close()`` the iteration after reading from it.
 Closing the iteration will flush all pending operations on that iteration.
 If an iteration is not closed until the beginning of the next iteration, it will be closed automatically.
