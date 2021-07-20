@@ -1050,7 +1050,7 @@ if(openPMD_BUILD_TESTING)
                            "to add example files to samples/git-sample/ directory!")
         else()
             message(STATUS "Note: run\n"
-                           "    . ${openPMD_SOURCE_DIR}/share/openPMD/download_samples.sh\n"
+                           "    ${openPMD_SOURCE_DIR}/share/openPMD/download_samples.sh\n"
                            "to add example files to samples/git-sample/ directory!")
         endif()
     endif()
