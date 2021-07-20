@@ -12,9 +12,9 @@ cd ${bdir}
 mkdir -p samples/git-sample/thetaMode
 mkdir -p samples/git-sample/3d-bp4
 
-curl -sOL https://github.com/openPMD/openPMD-example-datasets/raw/72545c4d6bcca2c258bffd2eabe38679b2507c80/example-3d.tar.gz
-curl -sOL https://github.com/openPMD/openPMD-example-datasets/raw/72545c4d6bcca2c258bffd2eabe38679b2507c80/example-thetaMode.tar.gz
-curl -sOL https://github.com/openPMD/openPMD-example-datasets/raw/72545c4d6bcca2c258bffd2eabe38679b2507c80/example-3d-bp4.tar.gz
+curl -sOL https://github.com/openPMD/openPMD-example-datasets/raw/f3b73e43511db96217a153dc3ab3cb2e8f81f7db/example-3d.tar.gz
+curl -sOL https://github.com/openPMD/openPMD-example-datasets/raw/f3b73e43511db96217a153dc3ab3cb2e8f81f7db/example-thetaMode.tar.gz
+curl -sOL https://github.com/openPMD/openPMD-example-datasets/raw/f3b73e43511db96217a153dc3ab3cb2e8f81f7db/example-3d-bp4.tar.gz
 tar -xzf example-3d.tar.gz
 tar -xzf example-thetaMode.tar.gz
 tar -xzf example-3d-bp4.tar.gz

@@ -10,9 +10,9 @@ cd $bdir
 New-item -ItemType directory -Name samples\git-sample\thetaMode\
 New-item -ItemType directory -Name samples\git-sample\3d-bp4\
 
-Invoke-WebRequest https://github.com/openPMD/openPMD-example-datasets/raw/72545c4d6bcca2c258bffd2eabe38679b2507c80/example-3d.tar.gz -OutFile example-3d.tar.gz
-Invoke-WebRequest https://github.com/openPMD/openPMD-example-datasets/raw/72545c4d6bcca2c258bffd2eabe38679b2507c80/example-thetaMode.tar.gz -OutFile example-thetaMode.tar.gz
-Invoke-WebRequest https://github.com/openPMD/openPMD-example-datasets/raw/72545c4d6bcca2c258bffd2eabe38679b2507c80/example-3d-bp4.tar.gz -OutFile example-3d-bp4.tar.gz
+Invoke-WebRequest https://github.com/openPMD/openPMD-example-datasets/raw/f3b73e43511db96217a153dc3ab3cb2e8f81f7db/example-3d.tar.gz -OutFile example-3d.tar.gz
+Invoke-WebRequest https://github.com/openPMD/openPMD-example-datasets/raw/f3b73e43511db96217a153dc3ab3cb2e8f81f7db/example-thetaMode.tar.gz -OutFile example-thetaMode.tar.gz
+Invoke-WebRequest https://github.com/openPMD/openPMD-example-datasets/raw/f3b73e43511db96217a153dc3ab3cb2e8f81f7db/example-3d-bp4.tar.gz -OutFile example-3d-bp4.tar.gz
 7z.exe x -r example-3d.tar.gz
 7z.exe x -r example-3d.tar
 7z.exe x -r example-thetaMode.tar.gz

@@ -3575,12 +3575,22 @@ TEST_CASE( "git_adios2_sample_test", "[serial][adios2]" )
         it.getAttribute( "particleBoundaryParameters" ).get< vecstring >() ==
         vecstring(6, "without field correction" ));
     REQUIRE( areEqual(
-        it.getAttribute( "mue0" ).get< float >(), 5.9102661907672882e-03f ) );
+        it.getAttribute( "mue0" ).get< float >(), 2.1550322708208114e-04f ) );
     REQUIRE( areEqual(
-        it.getAttribute( "eps0" ).get< float >(), 1.6919711303710938e+02f ) );
+        it.getAttribute( "eps0" ).get< float >(), 4.6403017578125000e+03f ) );
     REQUIRE( areEqual( it.dt< double >(), 1. ) );
 
-    REQUIRE( it.meshes.size() == 6 );
+    REQUIRE( it.meshes.size() == 9 );
+    REQUIRE( it.meshes.count( "E" ) == 1 );
+    REQUIRE( it.meshes.count( "B" ) == 1 );
+    REQUIRE( it.meshes.count( "e_all_chargeDensity" ) == 1 );
+    REQUIRE( it.meshes.count( "e_all_energyDensity" ) == 1 );
+    REQUIRE( it.meshes.count( "e_all_particleMomentumComponent" ) == 1 );
+    REQUIRE( it.meshes.count( "i_all_chargeDensity" ) == 1 );
+    REQUIRE( it.meshes.count( "i_all_energyDensity" ) == 1 );
+    REQUIRE( it.meshes.count( "i_all_particleMomentumComponent" ) == 1 );
+    // internal PIConGPU restarting information:
+    REQUIRE( it.meshes.count( "picongpu_idProvider" ) == 1 );
 
     Mesh E = it.meshes[ "E" ];
     REQUIRE( E.geometry() == Mesh::Geometry::cartesian );
@@ -3589,11 +3599,11 @@ TEST_CASE( "git_adios2_sample_test", "[serial][adios2]" )
     REQUIRE( areEqual(
         E.gridSpacing< double >(),
         vecdouble{
-            4.2523422241210938e+00,
-            1.0630855560302734e+00,
-            4.2523422241210938e+00 } ) );
+            1.7416797876358032e+00,
+            1.7416797876358032e+00,
+            1.7416797876358032e+00 } ) );
     REQUIRE( areEqual( E.gridGlobalOffset(), vecdouble{ 0., 0., 0. } ) );
-    REQUIRE( areEqual( E.gridUnitSI(), 4.1671151661999998e-08 ) );
+    REQUIRE( areEqual( E.gridUnitSI(), 5.3662849982000001e-08 ) );
     REQUIRE( E.unitDimension() == arr7{ { 1, 1, -3, -1, 0, 0, 0 } } );
     REQUIRE( areEqual( E.timeOffset< double >(), 0. ) );
 
@@ -3603,27 +3613,27 @@ TEST_CASE( "git_adios2_sample_test", "[serial][adios2]" )
     REQUIRE( E.count( "z" ) == 1 );
 
     MeshRecordComponent E_x = E[ "x" ];
-    REQUIRE( E_x.unitSI() == 1.2262657411105051e+13 );
+    REQUIRE( E_x.unitSI() == 9.5223987717519668e+12 );
     REQUIRE( E_x.position< double >() == vecdouble{ 0.5, 0., 0. } );
     REQUIRE( E_x.getDatatype() == Datatype::FLOAT );
-    REQUIRE( E_x.getExtent() == Extent{ 64, 96, 64 } );
+    REQUIRE( E_x.getExtent() == Extent{ 32, 96, 64 } );
     REQUIRE( E_x.getDimensionality() == 3 );
 
-    float E_x_data[] = { 7.2273872792720795e-02, 7.5522020459175110e-02,
-                         8.0523371696472168e-02, 1.0555608570575714e-01,
-                         1.0703066736459732e-01, 1.0864605009555817e-01,
-                         1.2857998907566071e-01, 1.2799251079559326e-01,
-                         1.2583728134632111e-01, 7.6009519398212433e-02,
-                         7.8935280442237854e-02, 8.3348348736763000e-02,
-                         1.0741266608238220e-01, 1.0857319086790085e-01,
-                         1.0964381694793701e-01, 1.2822371721267700e-01,
-                         1.2736722826957703e-01, 1.2478115409612656e-01,
-                         8.1217460334300995e-02, 8.3575554192066193e-02,
-                         8.6966909468173981e-02, 1.0923127084970474e-01,
-                         1.0986886173486710e-01, 1.1004652082920074e-01,
-                         1.2622843682765961e-01, 1.2496086955070496e-01,
-                         1.2172128260135651e-01 };
-    auto E_x_loaded = E_x.loadChunk< float >( { 32, 32, 32 }, { 3, 3, 3 } );
+    float E_x_data[] = { -5.4223355837166309e-03, -5.5848993360996246e-03,
+                         -5.7896804064512253e-03, -5.5147800594568253e-03,
+                         -5.6304289028048515e-03, -5.8255749754607677e-03,
+                         -5.5910930968821049e-03, -5.7385643012821674e-03,
+                         -5.8903801254928112e-03, -5.3768581710755825e-03,
+                         -5.5543538182973862e-03, -5.7734064757823944e-03,
+                         -5.4399720393121243e-03, -5.5731507018208504e-03,
+                         -5.7369144633412361e-03, -5.5461097508668900e-03,
+                         -5.6645260192453861e-03, -5.8231339789927006e-03,
+                         -5.4240114986896515e-03, -5.5798939429223537e-03,
+                         -5.7610240764915943e-03, -5.4240110330283642e-03,
+                         -5.5275037884712219e-03, -5.7047260925173759e-03,
+                         -5.5050505325198174e-03, -5.6199040263891220e-03,
+                         -5.7577718980610371e-03 };
+    auto E_x_loaded = E_x.loadChunk< float >( { 16, 32, 32 }, { 3, 3, 3 } );
     E_x.seriesFlush();
     for( size_t i = 0; i < 27; ++i )
     {
@@ -3631,26 +3641,26 @@ TEST_CASE( "git_adios2_sample_test", "[serial][adios2]" )
     }
 
     MeshRecordComponent E_y = E[ "y" ];
-    REQUIRE( E_y.unitSI() == 1.2262657411105051e+13 );
+    REQUIRE( E_y.unitSI() == 9.5223987717519668e+12 );
     REQUIRE( E_y.position< double >() == vecdouble{ 0., 0.5, 0. } );
     REQUIRE( E_y.getDatatype() == Datatype::FLOAT );
-    REQUIRE( E_y.getExtent() == Extent{ 64, 96, 64 } );
+    REQUIRE( E_y.getExtent() == Extent{ 32, 96, 64 } );
     REQUIRE( E_y.getDimensionality() == 3 );
-    float E_y_data[] = { 2.9119401006028056e-06,  -4.1504316031932831e-03,
-                         -7.7566313557326794e-03, -7.0055266405688599e-06,
-                         -4.6010510995984077e-03, -8.2268649712204933e-03,
-                         -4.2445255530765280e-05, -4.5211883261799812e-03,
-                         -7.7390326187014580e-03, 1.1486050207167864e-03,
-                         -3.1262037809938192e-03, -6.9479043595492840e-03,
-                         -5.4344005184248090e-04, -5.1499414257705212e-03,
-                         -8.8642267510294914e-03, -2.2272428032010794e-03,
-                         -6.6048246808350086e-03, -9.7730942070484161e-03,
-                         1.2740951497107744e-03,  -2.9673313256353140e-03,
-                         -6.8249986506998539e-03, -1.8191186245530844e-03,
-                         -6.2228594906628132e-03, -9.8043894395232201e-03,
-                         -4.7707646153867245e-03, -8.8001070544123650e-03,
-                         -1.1678364127874374e-02 };
-    auto E_y_loaded = E_y.loadChunk< float >( { 32, 32, 32 }, { 3, 3, 3 } );
+    float E_y_data[] = { 1.9600236555561423e-04,  1.9210868049412966e-04,
+                         1.1112097854493186e-04,  9.0100722445640713e-05,
+                         1.2735779455397278e-04,  1.2597699242178351e-04,
+                         -4.5422813855111599e-05, 2.8805377951357514e-05,
+                         8.3214777987450361e-05,  1.3271786156110466e-04,
+                         1.0011527047026902e-04,  5.8875859394902363e-05,
+                         2.5147232008748688e-05,  7.1912618295755237e-05,
+                         6.2157545471563935e-05,  -8.6973857833072543e-05,
+                         -8.1858233897946775e-06, -2.2509128029923886e-05,
+                         6.0511985793709755e-05,  4.9726430006558076e-05,
+                         -1.7196462067659013e-05, -3.0460794732789509e-05,
+                         5.9892886383750010e-06,  -1.4382616200236953e-06,
+                         -1.3747414050158113e-04, -8.0163808888755739e-05,
+                         -3.5486038541421294e-05 };
+    auto E_y_loaded = E_y.loadChunk< float >( { 16, 32, 32 }, { 3, 3, 3 } );
     E_y.seriesFlush();
     for( size_t i = 0; i < 27; ++i )
     {
@@ -3658,35 +3668,36 @@ TEST_CASE( "git_adios2_sample_test", "[serial][adios2]" )
     }
 
     MeshRecordComponent E_z = E[ "z" ];
-    REQUIRE( E_z.unitSI() == 1.2262657411105051e+13 );
+    REQUIRE( E_z.unitSI() == 9.5223987717519668e+12 );
     REQUIRE( E_z.position< double >() == vecdouble{ 0., 0., 0.5 } );
     REQUIRE( E_z.getDatatype() == Datatype::FLOAT );
-    REQUIRE( E_z.getExtent() == Extent{ 64, 96, 64 } );
+    REQUIRE( E_z.getExtent() == Extent{ 32, 96, 64 } );
     REQUIRE( E_z.getDimensionality() == 3 );
-    float E_z_data[] = { -1.4166267216205597e-01, -1.3581122457981110e-01,
-                         -1.2437300384044647e-01, -1.1825620383024216e-01,
-                         -1.1176286637783051e-01, -9.9538534879684448e-02,
-                         -7.9616926610469818e-02, -7.3201417922973633e-02,
-                         -6.1570063233375549e-02, -1.3579311966896057e-01,
-                         -1.3006231188774109e-01, -1.1882482469081879e-01,
-                         -1.1181684583425522e-01, -1.0553391277790070e-01,
-                         -9.3644127249717712e-02, -7.3323413729667664e-02,
-                         -6.7192249000072479e-02, -5.5999506264925003e-02,
-                         -1.2446234375238419e-01, -1.1893676966428757e-01,
-                         -1.0808662325143814e-01, -9.9771015346050262e-02,
-                         -9.3826226890087128e-02, -8.2568824291229248e-02,
-                         -6.1935324221849442e-02, -5.6248735636472702e-02,
-                         -4.5876540243625641e-02 };
-    auto E_z_loaded = E_z.loadChunk< float >( { 32, 32, 32 }, { 3, 3, 3 } );
+    float E_z_data[] = { -1.3665637234225869e-03, -1.3941071229055524e-03,
+                         -1.4618652639910579e-03, -1.4528072206303477e-03,
+                         -1.4355779858306050e-03, -1.4925430295988917e-03,
+                         -1.6604729462414980e-03, -1.5911811497062445e-03,
+                         -1.6420837491750717e-03, -1.1975304223597050e-03,
+                         -1.2183464132249355e-03, -1.3470118865370750e-03,
+                         -1.2645993847399950e-03, -1.2775690993294120e-03,
+                         -1.3621025718748569e-03, -1.4198675053194165e-03,
+                         -1.3927087420597672e-03, -1.3995743356645107e-03,
+                         -9.9509279243648052e-04, -1.0950352298095822e-03,
+                         -1.2131386902183294e-03, -1.0829739039763808e-03,
+                         -1.1384176323190331e-03, -1.2189601548016071e-03,
+                         -1.2028686469420791e-03, -1.1917919619008899e-03,
+                         -1.2309787562116981e-03 };
+    auto E_z_loaded = E_z.loadChunk< float >( { 16, 32, 32 }, { 3, 3, 3 } );
     E_z.seriesFlush();
     for( size_t i = 0; i < 27; ++i )
     {
         REQUIRE( areEqual( E_z_data[ i ], E_z_loaded.get()[ i ] ) );
     }
 
-    REQUIRE( it.particles.size() == 1 );
+    REQUIRE( it.particles.size() == 2 );
 
     REQUIRE( it.particles.count( "e" ) == 1 );
+    REQUIRE( it.particles.count( "i" ) == 1 );
 
     ParticleSpecies electrons = it.particles[ "e" ];
 
@@ -3706,10 +3717,12 @@ TEST_CASE( "git_adios2_sample_test", "[serial][adios2]" )
     REQUIRE( charge.count( RecordComponent::SCALAR ) == 1 );
 
     RecordComponent & charge_scalar = charge[ RecordComponent::SCALAR ];
-    REQUIRE( areEqual( charge_scalar.unitSI(), 1.11432e-15 ) );
+    REQUIRE( areEqual( charge_scalar.unitSI(), 5.2323446053125002e-17 ) );
     REQUIRE( charge_scalar.getDatatype() == Datatype::DOUBLE );
     REQUIRE( charge_scalar.getDimensionality() == 1 );
-    REQUIRE( charge_scalar.getExtent() == Extent{ 0 } );
+    REQUIRE( charge_scalar.getExtent() == Extent{ 96781 } );
+    double const charge_value = -3.0620612669736147e-3;
+    REQUIRE( charge_scalar.getAttribute("value").get< double >() == charge_value );
 
     Record & mass = electrons[ "mass" ];
     REQUIRE( mass.unitDimension() == arr7{ { 0., 1., 0., 0., 0., 0., 0. } } );
@@ -3719,40 +3732,48 @@ TEST_CASE( "git_adios2_sample_test", "[serial][adios2]" )
     REQUIRE( mass.count( RecordComponent::SCALAR ) == 1 );
 
     RecordComponent & mass_scalar = mass[ RecordComponent::SCALAR ];
-    REQUIRE( areEqual( mass_scalar.unitSI(), 6.3356338938136719e-27 ) );
+    REQUIRE( areEqual( mass_scalar.unitSI(), 2.9749182215581054e-28 ) );
     REQUIRE( mass_scalar.getDatatype() == Datatype::DOUBLE );
     REQUIRE( mass_scalar.getDimensionality() == 1 );
-    REQUIRE( mass_scalar.getExtent() == Extent{ 0 } );
+    REQUIRE( mass_scalar.getExtent() == Extent{ 96781 } );
+    double const mass_value = 3.0620612669736147e-3;
+    REQUIRE( mass_scalar.getAttribute("value").get< double >() == mass_value );
 
     float position_x_data[] = {
-        6.4437955617904663e-01,
-        9.4767332077026367e-01,
-        2.2304397821426392e-01,
-        2.7961438894271851e-01,
-        1.4008544385433197e-02,
-        4.2263090610504150e-01,
-        5.1174026727676392e-01,
-        8.3407729864120483e-01,
-        5.8531630039215088e-01 };
+        5.4244494438171387e-01,
+        8.4322524070739746e-01,
+        4.7133469581604004e-01,
+        6.3491880893707275e-01,
+        9.5489001274108887e-01,
+        3.0412188172340393e-01,
+        5.9818041324615479e-01,
+        8.8785779476165771e-01,
+        4.2273962497711182e-01 };
     auto position_x_loaded =
         electrons[ "position" ][ "x" ].loadChunk< float >( { 32 }, { 9 } );
+    auto charge_loaded =
+        charge_scalar.loadChunk< double >( { 32 }, { 9 } );
+    auto mass_loaded =
+        mass_scalar.loadChunk< double >( { 32 }, { 9 } );
     electrons.seriesFlush();
     for( size_t i = 0; i < 9; ++i )
     {
         REQUIRE(
             areEqual( position_x_data[ i ], position_x_loaded.get()[ i ] ) );
+        REQUIRE( areEqual( charge_value, charge_loaded.get()[ i ] ) );
+        REQUIRE( areEqual( mass_value, mass_loaded.get()[ i ] ) );
     }
 
     float position_y_data[] = {
-        8.1519651412963867e-01,
-        9.0318095684051514e-01,
-        7.2106164693832397e-01,
-        4.9899551272392273e-01,
-        3.1199228763580322e-01,
-        7.1374291181564331e-01,
-        1.4569625258445740e-02,
-        2.3529490828514099e-01,
-        8.6302649974822998e-01 };
+        3.8391970098018646e-02,
+        7.0238715410232544e-01,
+        5.0294065475463867e-01,
+        6.7421793937683105e-01,
+        2.3211851716041565e-01,
+        2.6738378405570984e-01,
+        8.2502347230911255e-01,
+        9.2121642827987671e-01,
+        9.0402549505233765e-01 };
     auto position_y_loaded =
         electrons[ "position" ][ "y" ].loadChunk< float >( { 32 }, { 9 } );
     electrons.seriesFlush();
@@ -3763,15 +3784,15 @@ TEST_CASE( "git_adios2_sample_test", "[serial][adios2]" )
     }
 
     float position_z_data[] = {
-        5.4766160249710083e-01,
-        4.9213194847106934e-01,
-        7.8874737024307251e-01,
-        8.6675989627838135e-01,
-        5.3763031959533691e-01,
-        1.6927000880241394e-01,
-        8.1256645917892456e-01,
-        4.6624803543090820e-01,
-        7.8780972957611084e-01 };
+        4.3061500787734985e-01,
+        7.9804927110671997e-01,
+        3.8822534680366516e-01,
+        8.4099531173706055e-01,
+        6.3664638996124268e-01,
+        7.4185878038406372e-01,
+        4.5986607670783997e-01,
+        2.2350004315376282e-01,
+        5.4723143577575684e-01 };
     auto position_z_loaded =
         electrons[ "position" ][ "z" ].loadChunk< float >( { 32 }, { 9 } );
     electrons.seriesFlush();
