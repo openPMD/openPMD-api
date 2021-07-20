@@ -236,8 +236,16 @@ OPENPMD_protected:
     internal::SeriesInternal const & retrieveSeries() const;
     internal::SeriesInternal & retrieveSeries();
 
+    /** Returns the corresponding Iteration
+     *
+     * Return the openPMD::iteration that this Attributable is contained in.
+     * This walks up the linked parents until it finds the Iteration object.
+     * Throws an error otherwise, e.g., for Series objects.
+     * @{
+     */
     Iteration const & containingIteration() const;
     Iteration & containingIteration();
+    /** @} */
 
     void seriesFlush( FlushLevel );
 

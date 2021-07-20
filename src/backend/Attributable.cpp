@@ -156,6 +156,8 @@ Iteration const & AttributableImpl::containingIteration() const
     }
     auto end = searchQueue.rbegin();
     internal::AttributableData const * attr = ( *( end + 2 ) )->attributable;
+    if( attr == nullptr )
+        throw std::runtime_error( "containingIteration(): attributable must not be a nullptr." );
     /*
      * We now know the unique instance of Attributable that corresponds with
      * the iteration.
