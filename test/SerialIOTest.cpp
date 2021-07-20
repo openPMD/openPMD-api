@@ -3721,6 +3721,8 @@ TEST_CASE( "git_adios2_sample_test", "[serial][adios2]" )
     REQUIRE( charge_scalar.getDatatype() == Datatype::DOUBLE );
     REQUIRE( charge_scalar.getDimensionality() == 1 );
     REQUIRE( charge_scalar.getExtent() == Extent{ 96781 } );
+    double const charge_value = -3.0620612669736147e-3;
+    REQUIRE( charge_scalar.getAttribute("value").get< double >() == charge_value );
 
     Record & mass = electrons[ "mass" ];
     REQUIRE( mass.unitDimension() == arr7{ { 0., 1., 0., 0., 0., 0., 0. } } );
@@ -3734,6 +3736,8 @@ TEST_CASE( "git_adios2_sample_test", "[serial][adios2]" )
     REQUIRE( mass_scalar.getDatatype() == Datatype::DOUBLE );
     REQUIRE( mass_scalar.getDimensionality() == 1 );
     REQUIRE( mass_scalar.getExtent() == Extent{ 96781 } );
+    double const mass_value = 3.0620612669736147e-3;
+    REQUIRE( mass_scalar.getAttribute("value").get< double >() == mass_value );
 
     float position_x_data[] = {
         5.4244494438171387e-01,
@@ -3747,11 +3751,17 @@ TEST_CASE( "git_adios2_sample_test", "[serial][adios2]" )
         4.2273962497711182e-01 };
     auto position_x_loaded =
         electrons[ "position" ][ "x" ].loadChunk< float >( { 32 }, { 9 } );
+    auto charge_loaded =
+        charge_scalar.loadChunk< double >( { 32 }, { 9 } );
+    auto mass_loaded =
+        mass_scalar.loadChunk< double >( { 32 }, { 9 } );
     electrons.seriesFlush();
     for( size_t i = 0; i < 9; ++i )
     {
         REQUIRE(
             areEqual( position_x_data[ i ], position_x_loaded.get()[ i ] ) );
+        REQUIRE( areEqual( charge_value, charge_loaded.get()[ i ] ) );
+        REQUIRE( areEqual( mass_value, mass_loaded.get()[ i ] ) );
     }
 
     float position_y_data[] = {
