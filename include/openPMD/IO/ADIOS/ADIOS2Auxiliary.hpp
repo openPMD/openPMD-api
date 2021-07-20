@@ -75,9 +75,10 @@ namespace detail
     /**
      * @brief Convert ADIOS2 datatype to openPMD type.
      * @param dt
+     * @param verbose If false, don't print warnings.
      * @return
      */
-    Datatype fromADIOS2Type( std::string const & dt );
+    Datatype fromADIOS2Type( std::string const & dt, bool verbose = true );
 
     enum class VariableOrAttribute : unsigned char
     {
