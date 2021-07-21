@@ -62,6 +62,7 @@ openpmd_option(MPI            "Parallel, Multi-Node I/O for clusters"     AUTO)
 openpmd_option(HDF5           "HDF5 backend (.h5 files)"                  AUTO)
 openpmd_option(ADIOS1         "ADIOS1 backend (.bp files)"                AUTO)
 openpmd_option(ADIOS2         "ADIOS2 backend (.bp files)"                AUTO)
+openpmd_option(JULIA          "Enable Julia bindings"                     AUTO)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
 
 option(openPMD_INSTALL               "Add installation targets"             ON)
@@ -320,6 +321,34 @@ else()
 endif()
 
 # TODO: Check if ADIOS2 is parallel when openPMD_HAVE_MPI is ON
+
+# External library: libcxxwrap-julia
+if(openPMD_USE_JULIA STREQUAL AUTO)
+    find_package(JlCxx 0.8.3)
+    if(JlCxx_FOUND)
+        set(openPMD_HAVE_JlCxx TRUE)
+    else()
+        set(openPMD_HAVE_JlCxx FALSE)
+    endif()
+    if(JULIA_FOUND)
+        set(openPMD_HAVE_JULIA TRUE)
+    else()
+        set(openPMD_HAVE_JULIA FALSE)
+    endif()
+elseif(openPMD_USE_JULIA)
+    find_package(JlCxx 0.8.3 REQUIRED)
+    set(openPMD_HAVE_JULIA TRUE)
+    set(openPMD_HAVE_JlCxx TRUE)
+else()
+    set(openPMD_HAVE_JULIA FALSE)
+    set(openPMD_HAVE_JlCxx FALSE)
+endif()
+if(openPMD_HAVE_JlCxx)
+    get_target_property(JlCxx_location JlCxx::cxxwrap_julia LOCATION)
+    get_filename_component(JlCxx_location ${JlCxx_location} DIRECTORY)
+    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib;${JlCxx_location}")
+    message(STATUS "Found JlCxx version ${JlCxx_VERSION} at ${JlCxx_location}")
+endif()
 
 # external library: pybind11 (optional)
 set(_PY_DEV_MODULE Development.Module)
@@ -613,6 +642,41 @@ if(openPMD_USE_VERIFY)
     target_compile_definitions(openPMD PRIVATE openPMD_USE_VERIFY=1)
 else()
     target_compile_definitions(openPMD PRIVATE openPMD_USE_VERIFY=0)
+endif()
+
+# Julia bindings
+if(openPMD_HAVE_JlCxx)
+    add_library(openPMD_jl SHARED
+        src/binding/julia/Access.cpp
+        src/binding/julia/Attributable.cpp
+        src/binding/julia/Attribute.cpp
+        src/binding/julia/BaseRecordComponent.cpp
+        src/binding/julia/ChunkInfo.cpp
+        src/binding/julia/Container.cpp
+        src/binding/julia/Dataset.cpp
+        src/binding/julia/Datatype.cpp
+        src/binding/julia/Format.cpp
+        src/binding/julia/Iteration.cpp
+        src/binding/julia/Mesh.cpp
+        src/binding/julia/MeshRecordComponent.cpp
+        src/binding/julia/ReadIterations.cpp
+        src/binding/julia/RecordComponent.cpp
+        src/binding/julia/RecordComponent_load_chunk.cpp
+        src/binding/julia/RecordComponent_make_constant.cpp
+        src/binding/julia/RecordComponent_store_chunk.cpp
+        src/binding/julia/Series.cpp
+        src/binding/julia/UnitDimension.cpp
+        src/binding/julia/WriteIterations.cpp
+        src/binding/julia/openPMD.cpp
+        src/binding/julia/shared_ptr.cpp
+        src/binding/julia/version.cpp
+    )
+    target_compile_features(openPMD_jl PUBLIC cxx_std_17)
+    set_target_properties(openPMD_jl PROPERTIES
+        CXX_EXTENSIONS OFF
+        CXX_STANDARD_REQUIRED ON
+    )
+    target_link_libraries(openPMD_jl PRIVATE openPMD JlCxx::cxxwrap_julia JlCxx::cxxwrap_julia_stl)
 endif()
 
 # python bindings
@@ -939,6 +1003,10 @@ if(openPMD_INSTALL)
         foreach(toolname ${openPMD_CLI_TOOL_NAMES})
             list(APPEND openPMD_INSTALL_TARGET_NAMES openpmd-${toolname})
         endforeach()
+    endif()
+
+    if(openPMD_HAVE_JlCxx)
+        list(APPEND openPMD_INSTALL_TARGET_NAMES openPMD_jl)
     endif()
 
     install(TARGETS ${openPMD_INSTALL_TARGET_NAMES}
