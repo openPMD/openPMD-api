@@ -584,7 +584,6 @@ HDF5IOHandlerImpl::closeFile(
         throw std::runtime_error(
             "[HDF5] Trying to close a file that is not "
             "present in the backend" );
-        return;
     }
     File file = optionalFile.get();
     H5Fclose( file.id );
