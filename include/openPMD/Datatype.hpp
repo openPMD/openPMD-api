@@ -235,7 +235,6 @@ toBytes( Datatype d )
         // case DT::SCHAR:
         // case DT::VEC_SCHAR:
         //     return sizeof(signed char);
-        //     break;
         case DT::SHORT:
         case DT::VEC_SHORT:
             return sizeof(short);
@@ -270,19 +269,15 @@ toBytes( Datatype d )
         case DT::LONG_DOUBLE:
         case DT::VEC_LONG_DOUBLE:
             return sizeof(long double);
-            break;
         case DT::CFLOAT:
         case DT::VEC_CFLOAT:
             return sizeof(float) * 2;
-            break;
         case DT::CDOUBLE:
         case DT::VEC_CDOUBLE:
             return sizeof(double) * 2;
-            break;
         case DT::CLONG_DOUBLE:
         case DT::VEC_CLONG_DOUBLE:
             return sizeof(long double) * 2;
-            break;
         case DT::BOOL:
             return sizeof(bool);
         case DT::DATATYPE:
@@ -360,10 +355,8 @@ isFloatingPoint( Datatype d )
         case DT::VEC_LONG_DOUBLE:
         // note: complex floats are not std::is_floating_point
             return true;
-            break;
         default:
             return false;
-            break;
     }
 }
 
