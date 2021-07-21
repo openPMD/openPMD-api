@@ -173,7 +173,10 @@ TEST_CASE( "adios2_char_portability", "[serial][adios2]" )
 
 void
 write_and_read_many_iterations( std::string const & ext ) {
-    constexpr unsigned int nIterations = 200; // original: 1000
+    // the idea here is to trigger the maximum allowed number of file handles,
+    // e.g., the upper limit in "ulimit -n" (default: often 1024). Once this
+    // is reached, files should be closed automatically for open iterations
+    unsigned int nIterations = auxiliary::getEnvNum( "OPENPMD_TEST_NFILES_MAX", 1030 );
     std::string filename = "../samples/many_iterations/many_iterations_%T." + ext;
 
     std::vector<float> data(10);
