@@ -173,7 +173,7 @@ TEST_CASE( "adios2_char_portability", "[serial][adios2]" )
 
 void
 write_and_read_many_iterations( std::string const & ext ) {
-    constexpr unsigned int nIterations = 1000;
+    constexpr unsigned int nIterations = 200; // original: 1000
     std::string filename = "../samples/many_iterations/many_iterations_%T." + ext;
 
     std::vector<float> data(10);
@@ -500,7 +500,7 @@ close_and_copy_attributable_test( std::string file_ending )
             []( position_t const * ptr ) { delete[] ptr; } );
 
     std::unique_ptr< Iteration > iteration_ptr;
-    for( size_t i = 0; i < 100; ++i )
+    for( size_t i = 0; i < 100; i+=10 )
     {
         if( iteration_ptr )
         {
@@ -1601,8 +1601,8 @@ void sample_write_thetaMode(std::string file_ending)
 
     unsigned int const num_modes = 4u;
     unsigned int const num_fields = 1u + (num_modes-1u) * 2u; // the first mode is purely real
-    unsigned int const N_r = 40;
-    unsigned int const N_z = 128;
+    unsigned int const N_r = 20;
+    unsigned int const N_z = 64;
 
     std::shared_ptr< float >  E_r_data(new  float[num_fields*N_r*N_z], [](float const *p){ delete[] p; });
     std::shared_ptr< double > E_t_data(new double[num_fields*N_r*N_z], [](double const *p){ delete[] p; });
