@@ -948,6 +948,29 @@ void init_RecordComponent(py::module &m) {
             py::arg_v("offset", Offset(1,  0u), "np.zeros(Record_Component.shape)"),
             py::arg_v("extent", Extent(1, -1u), "Record_Component.shape")
         )
+        /*
+        .def("load_chunk", [](RecordComponent & r, py::array & a, Offset const & offset_in, Extent const & extent_in) {
+             // default arguments
+             //   offset = {0u}: expand to right dim {0u, 0u, ...}
+             Offset offset = offset_in;
+             if( offset_in.size() == 1u && offset_in.at(0) == 0u && a.ndim() > 1u )
+                 offset = Offset(a.ndim(), 0u);
+
+             //   extent = {-1u}: take full size
+             Extent extent(a.ndim(), 1u);
+             if( extent_in.size() == 1u && extent_in.at(0) == -1u )
+                 for( auto d = 0; d < a.ndim(); ++d )
+                     extent.at(d) = a.shape()[d];
+             else
+                 extent = extent_in;
+
+             load_chunk(r, a, offset, extent);
+         },
+            py::arg("array"),
+            py::arg_v("offset", Offset(1,  0u), "np.zeros_like(array)"),
+            py::arg_v("extent", Extent(1, -1u), "array.shape")
+        )
+        */
 
         // deprecated: pass-through C++ API
         .def("store_chunk", [](RecordComponent & r, py::array & a, Offset const & offset_in, Extent const & extent_in) {
