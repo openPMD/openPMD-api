@@ -277,15 +277,15 @@ private:
 
     std::vector< ParameterizedOperator > defaultOperators;
 
-    auxiliary::TracingJSON m_config;
-    static auxiliary::TracingJSON nullvalue;
+    json::TracingJSON m_config;
+    static json::TracingJSON nullvalue;
 
     void
     init( nlohmann::json config );
 
     template< typename Key >
-    auxiliary::TracingJSON
-    config( Key && key, auxiliary::TracingJSON & cfg )
+    json::TracingJSON
+    config( Key && key, json::TracingJSON & cfg )
     {
         if( cfg.json().is_object() && cfg.json().contains( key ) )
         {
@@ -298,7 +298,7 @@ private:
     }
 
     template< typename Key >
-    auxiliary::TracingJSON
+    json::TracingJSON
     config( Key && key )
     {
         return config< Key >( std::forward< Key >( key ), m_config );
@@ -312,7 +312,7 @@ private:
      * operators have been configured
      */
     auxiliary::Option< std::vector< ParameterizedOperator > >
-    getOperators( auxiliary::TracingJSON config );
+    getOperators( json::TracingJSON config );
 
     // use m_config
     auxiliary::Option< std::vector< ParameterizedOperator > >

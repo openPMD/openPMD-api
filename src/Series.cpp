@@ -1412,7 +1412,7 @@ SeriesInternal::SeriesInternal(
           static_cast< internal::SeriesData * >( this ),
           static_cast< internal::AttributableData * >( this ) }
 {
-    nlohmann::json optionsJson = auxiliary::parseOptions( options, comm );
+    nlohmann::json optionsJson = json::parseOptions( options, comm );
     parseJsonOptions( *this, optionsJson );
     auto input = parseInput( filepath );
     auto handler = createIOHandler(
@@ -1427,7 +1427,7 @@ SeriesInternal::SeriesInternal(
           static_cast< internal::SeriesData * >( this ),
           static_cast< internal::AttributableData * >( this ) }
 {
-    nlohmann::json optionsJson = auxiliary::parseOptions( options );
+    nlohmann::json optionsJson = json::parseOptions( options );
     parseJsonOptions( *this, optionsJson );
     auto input = parseInput( filepath );
     auto handler = createIOHandler(

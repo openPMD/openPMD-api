@@ -5,17 +5,20 @@
 #endif
 #include "openPMD/openPMD.hpp"
 
+#include "openPMD/auxiliary/JSON.hpp"
+
 #include <catch2/catch.hpp>
+#include <nlohmann/json.hpp>
 
 #include <algorithm>
-#include <string>
-#include <vector>
 #include <array>
 #include <complex>
 #include <cstddef>
 #include <cstdint>
-#include <sstream>
 #include <iostream>
+#include <sstream>
+#include <string>
+#include <vector>
 
 using namespace openPMD;
 
@@ -32,6 +35,67 @@ TEST_CASE( "versions_test", "[core]" )
 
     auto const featureVariants = getVariants( );
     REQUIRE(featureVariants.at("json") == true);
+}
+
+TEST_CASE( "json_capitalization", "[core]" )
+{
+    std::string upper = R"END(
+{
+  "ADIOS2": {
+    "ENGINE": {
+      "TYPE": "BP3",
+      "UNUSED": "PARAMETER",
+      "PARAMETERS": {
+        "BUFFERGROWTHFACTOR": "2.0",
+        "PROFILE": "ON"
+      }
+    },
+    "UNUSED": "AS WELL",
+    "DATASET": {
+      "OPERATORS": [
+        {
+          "TYPE": "BLOSC",
+          "PARAMETERS": {
+              "CLEVEL": "1",
+              "DOSHUFFLE": "BLOSC_BITSHUFFLE"
+          }
+        }
+      ]
+    }
+  }
+}
+)END";
+    std::string lower = R"END(
+{
+  "adios2": {
+    "engine": {
+      "type": "BP3",
+      "unused": "PARAMETER",
+      "parameters": {
+        "buffergrowthfactor": "2.0",
+        "profile": "ON"
+      }
+    },
+    "unused": "AS WELL",
+    "dataset": {
+      "operators": [
+        {
+          "type": "BLOSC",
+          "parameters": {
+              "clevel": "1",
+              "doshuffle": "BLOSC_BITSHUFFLE"
+          }
+        }
+      ]
+    }
+  }
+}
+)END";
+    nlohmann::json jsonUpper = nlohmann::json::parse( upper );
+    nlohmann::json jsonLower = nlohmann::json::parse( lower );
+    REQUIRE( jsonUpper.dump() != jsonLower.dump() );
+    json::lowerCase( jsonUpper );
+    REQUIRE( jsonUpper.dump() == jsonLower.dump() );
 }
 
 TEST_CASE( "attribute_dtype_test", "[core]" )

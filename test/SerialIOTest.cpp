@@ -3137,7 +3137,7 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
       "type": "bp3",
       "unused": "parameter",
       "parameters": {
-        "BufferGrowthFactor": "2.0",
+        "BufferGrowthFactor": 2,
         "Profile": "On"
       }
     },
@@ -3163,7 +3163,7 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
       "type": "bp4",
       "unused": "parameter",
       "parameters": {
-        "BufferGrowthFactor": "2.0",
+        "BufferGrowthFactor": 2.0,
         "Profile": "On"
       }
     },
@@ -3173,7 +3173,7 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
         {
           "type": "blosc",
           "parameters": {
-              "clevel": "1",
+              "clevel": 1,
               "doshuffle": "BLOSC_BITSHUFFLE"
           }
         }
@@ -3218,7 +3218,7 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
         {
           "type": "blosc",
           "parameters": {
-              "clevel": "3",
+              "clevel": 3,
               "doshuffle": "BLOSC_BITSHUFFLE"
           }
         }
@@ -3363,7 +3363,7 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
 {
     std::string useSteps = R"(
     {
-        "adios2": {
+        "ADIOS2": {
             "engine": {
                 "type": "bp4",
                 "usesteps": true
@@ -3375,7 +3375,7 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
     {
         "adios2": {
             "type": "nullcore",
-            "engine": {
+            "ENGINE": {
                 "type": "bp4",
                 "usesteps": true
             }
@@ -3387,7 +3387,7 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
         "adios2": {
             "engine": {
                 "type": "bp4",
-                "usesteps": false
+                "UseSteps": false
             }
         }
     }

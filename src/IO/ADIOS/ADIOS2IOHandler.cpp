@@ -140,12 +140,8 @@ ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
             if( !engineTypeConfig.is_null() )
             {
                 // convert to string
-                m_engineType = engineTypeConfig;
-                std::transform(
-                    m_engineType.begin(),
-                    m_engineType.end(),
-                    m_engineType.begin(),
-                    []( unsigned char c ) { return std::tolower( c ); } );
+                m_engineType =
+                    json::asLowerCaseStringDynamic( engineTypeConfig );
             }
         }
         auto operators = getOperators();
@@ -159,7 +155,7 @@ ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
 }
 
 auxiliary::Option< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > >
-ADIOS2IOHandlerImpl::getOperators( auxiliary::TracingJSON cfg )
+ADIOS2IOHandlerImpl::getOperators( json::TracingJSON cfg )
 {
     using ret_t = auxiliary::Option< std::vector< ParameterizedOperator > >;
     std::vector< ParameterizedOperator > res;
@@ -189,7 +185,7 @@ ADIOS2IOHandlerImpl::getOperators( auxiliary::TracingJSON cfg )
                  ++paramIterator )
             {
                 adiosParams[ paramIterator.key() ] =
-                    paramIterator.value().get< std::string >();
+                    json::asStringDynamic( paramIterator.value() );
             }
         }
         auxiliary::Option< adios2::Operator > adiosOperator =
@@ -348,9 +344,10 @@ void ADIOS2IOHandlerImpl::createDataset(
 
         std::vector< ParameterizedOperator > operators;
         nlohmann::json options = nlohmann::json::parse( parameters.options );
+        json::lowerCase( options );
         if( options.contains( "adios2" ) )
         {
-            auxiliary::TracingJSON datasetConfig( options[ "adios2" ] );
+            json::TracingJSON datasetConfig( options[ "adios2" ] );
             auto datasetOperators = getOperators( datasetConfig );
 
             operators = datasetOperators ? std::move( datasetOperators.get() )
@@ -1072,7 +1069,7 @@ ADIOS2IOHandlerImpl::adios2AccessMode( std::string const & fullPath )
     }
 }
 
-auxiliary::TracingJSON ADIOS2IOHandlerImpl::nullvalue = nlohmann::json();
+json::TracingJSON ADIOS2IOHandlerImpl::nullvalue = nlohmann::json();
 
 std::string
 ADIOS2IOHandlerImpl::filePositionToString(
@@ -2320,7 +2317,8 @@ namespace detail
                 for( auto it = params.json().begin(); it != params.json().end();
                      it++ )
                 {
-                    m_IO.SetParameter( it.key(), it.value() );
+                    m_IO.SetParameter(
+                        it.key(), json::asStringDynamic( it.value() ) );
                     alreadyConfigured.emplace( it.key() );
                 }
             }

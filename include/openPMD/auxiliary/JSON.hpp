@@ -34,7 +34,7 @@
 
 namespace openPMD
 {
-namespace auxiliary
+namespace json
 {
     /**
      * @brief Extend nlohmann::json with tracing of which keys have been
@@ -90,6 +90,9 @@ namespace auxiliary
         /**
          * @brief Declare all keys of the current object read.
          *
+         * Rationale: This class does not (yet) trace array types (or anything
+         * contained in an array). Use this call to explicitly declare
+         * an array as read.
          */
         void
         declareFullyRead();
@@ -177,5 +180,10 @@ namespace auxiliary
 
 #endif
 
-} // namespace auxiliary
+    nlohmann::json & lowerCase( nlohmann::json & );
+
+    std::string asStringDynamic( nlohmann::json const & );
+
+    std::string asLowerCaseStringDynamic( nlohmann::json const & );
+} // namespace json
 } // namespace openPMD

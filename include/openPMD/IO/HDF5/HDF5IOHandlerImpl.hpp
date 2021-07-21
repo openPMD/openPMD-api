@@ -78,7 +78,7 @@ namespace openPMD
         hid_t m_H5T_CLONG_DOUBLE;
 
     private:
-        auxiliary::TracingJSON m_config;
+        json::TracingJSON m_config;
         std::string m_chunks = "auto";
         struct File
         {

@@ -97,7 +97,8 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
             auto datasetConfig = m_config[ "dataset" ];
             if( datasetConfig.json().contains( "chunks" ) )
             {
-                m_chunks = datasetConfig[ "chunks" ].json().get< std::string >();
+                m_chunks = json::asLowerCaseStringDynamic(
+                    datasetConfig[ "chunks" ].json() );
             }
         }
         if( m_chunks != "auto" && m_chunks != "none" )
@@ -275,6 +276,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
             name = auxiliary::replace_last(name, "/", "");
 
         auto config = nlohmann::json::parse( parameters.options );
+        json::lowerCase( config );
 
         // general
         bool is_resizable_dataset = false;
@@ -287,7 +289,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         if( config.contains( "hdf5" ) &&
             config[ "hdf5" ].contains( "dataset" ) )
         {
-            auxiliary::TracingJSON datasetConfig{
+            json::TracingJSON datasetConfig{
                 config[ "hdf5" ][ "dataset" ] };
 
             /*
