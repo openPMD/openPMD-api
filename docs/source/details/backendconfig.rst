@@ -94,11 +94,16 @@ A full configuration of the HDF5 backend:
 All keys found under ``hdf5.dataset`` are applicable globally (future: as well as per dataset).
 Explanation of the single keys:
 
-* ``adios2.dataset.chunks``: This key contains options for data chunking via `H5Pset_chunk <https://support.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_chunk.htm>`__.
+* ``hdf5.dataset.chunks``: This key contains options for data chunking via `H5Pset_chunk <https://support.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_chunk.htm>`__.
   The default is ``"auto"`` for a heuristic.
   ``"none"`` can be used to disable chunking.
   Chunking generally improves performance and only needs to be disabled in corner-cases, e.g. when heavily relying on independent, parallel I/O that non-collectively declares data records.
 
+* ``hdf5.alignment``: This key contains options for file alignment via `H5Pset_alignment <https://support.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_alignment.htm>`__ and cache sizes.
+  The contained keys are ``"size"`` as a string in bytes and ``"threshold"``, also as a string in bytes.
+  The default values are set by the environment variable ``OPENPMD_HDF5_ALIGNMENT`` unless overwritten here.
+  If only ``"size"`` is provided, the ``"threshold"`` will be set to ``"0"`` automatically (align all values).
+  Values of ``"1``" for both options equals no alignment.
 
 Other backends
 ^^^^^^^^^^^^^^

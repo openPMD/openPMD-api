@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Fabian Koller
+/* Copyright 2017-2021 Fabian Koller, Axel Huebl, Junmin Gu
  *
  * This file is part of openPMD-api.
  *
@@ -72,16 +72,103 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
 
     herr_t status;
     status = H5Pset_dxpl_mpio(m_datasetTransferProperty, xfer_mode);
+    VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_dxpl_mpio");
 
-    auto const strByte = auxiliary::getEnvString( "OPENPMD_HDF5_ALIGNMENT", "1" );
-    std::stringstream sstream(strByte);
-    hsize_t bytes;
-    sstream >> bytes;
+    /*
+     * Note from https://support.hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetCache:
+     * "Raw dataset chunk caching is not currently supported when using the MPI I/O
+     * and MPI POSIX file drivers in read/write mode [...]. When using one of these
+     * file drivers, all calls to H5Dread and H5Dwrite will access the disk directly,
+     * and H5Pset_cache will have no effect on performance."
+     */
+    if( m_alignment > 1 )
+    {
+        int metaCacheElements = 0;
+        size_t rawCacheElements = 0;
+        size_t rawCacheSize = 0;
+        double policy = 0.0;
+        status = H5Pget_cache(m_fileAccessProperty, &metaCacheElements, &rawCacheElements, &rawCacheSize, &policy);
+        VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pget_cache");
+        rawCacheSize = m_alignment * 4; // default: 1 MiB per dataset
+        status = H5Pset_cache(m_fileAccessProperty, metaCacheElements, rawCacheElements, rawCacheSize,
+                              policy);
+        VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_cache");
+    }
 
-    if ( bytes > 1 )
-         H5Pset_alignment(m_fileAccessProperty, 0, bytes);
+    // sets the maximum size for the type conversion buffer and background
+    // buffer and optionally supplies pointers to application-allocated
+    // buffers. If the buffer size is smaller than the entire amount of data
+    // being transferred between the application and the file, and a type
+    // conversion buffer or background buffer is required, then strip mining
+    // will be used.
+    //status = H5Pset_buffer(where?, 64*1024*1024, nullptr, nullptr); // 64 MiB; default: 1MiB
+    //VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_buffer");
 
-    VERIFY(status >= 0, "[HDF5] Internal error: Failed to set HDF5 dataset transfer property");
+    if( m_alignment > 1 )
+    {
+        /* File alignment - important for parallel I/O
+         *
+         * Sets the alignment properties of a file access property list so that any
+         * file object greater than or equal in size to threshold bytes will be
+         * aligned on an address which is a multiple of alignment. The addresses
+         * are relative to the end of the user block; the alignment is calculated
+         * by subtracting the user block size from the absolute file address and
+         * then adjusting the address to be a multiple of alignment.
+         *
+         * Default values for threshold and alignment are one, implying no
+         * alignment. Generally the default values will result in the best
+         * performance for single-process access to the file. For MPI IO and other
+         * parallel systems, choose an alignment which is a multiple of the disk
+         * block size.
+         *
+         * IN: Threshold value. Note that setting the threshold value to 0 (zero)
+         *     has the effect of a special case, forcing everything to be aligned.
+         * IN: Alignment value.
+         *
+         * Extra knowledge: these days, the (parallel) filesystem blocksize is
+         * not the only value of relevance. Good numbers are determined by the
+         * PFS blocksize as well as transfer block sizes determined by the
+         * filesystem, network and routers at play.
+         */
+        status = H5Pset_alignment(m_fileAccessProperty, m_threshold, m_alignment);
+        VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_alignment");
+
+        /* maximum size in bytes of the data sieve buffer, which is used by file
+         * drivers that are capable of using data sieving. The data sieve buffer
+         * is used when performing I/O on datasets in the file. Using a buffer
+         * which is large enough to hold several pieces of the dataset being read
+         * in for hyperslab selections boosts performance by quite a bit.
+         *
+         * The default value is set to 64KB, indicating that file I/O for raw data
+         * reads and writes will occur in at least 64KB blocks. Setting the value
+         * to 0 with this API function will turn off the data sieving, even if the
+         * VFL driver attempts to use that strategy.
+         *
+         * Internally, the library checks the storage sizes of the datasets in the
+         * file. It picks the smaller one between the size from the file access
+         * property and the size of the dataset to allocate the sieve buffer for
+         * the dataset in order to save memory usage.
+         */
+        status = H5Pset_sieve_buf_size(m_fileAccessProperty, m_alignment); /* >=FS Blocksize*/
+        VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_sieve_buf_size");
+    }
+
+    // Metadata aggregation reduces the number of small data objects in the
+    // file that would otherwise be required for metadata. The aggregated
+    // block of metadata is usually written in a single write action and
+    // always in a contiguous block, potentially significantly improving
+    // library and application performance.
+    hsize_t const meta_block_size = 20480; // 20KiB; default: 2048 (2KiB)
+    status = H5Pset_meta_block_size(m_fileAccessProperty, meta_block_size);
+    VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_meta_block_size");
+
+    // more meta data knobs: H5Pset_cache, H5Pset_chunk_cache
+
+    // https://docs.nersc.gov/performance/io/knl/#direct-io-vs-buffered-io
+    // ... In the case of HDF5, we saw as much as 11% speedup.
+    //status = H5Pset_fapl_direct(m_fileAccessProperty, 2048, m_alignment, m_alignment * 4);
+    //VERIFY(status >= 0, "[HDF5] Internal error: Failed to set H5Pset_fapl_direct");
+
     status = H5Pset_fapl_mpio(m_fileAccessProperty, m_mpiComm, m_mpiInfo);
     VERIFY(status >= 0, "[HDF5] Internal error: Failed to set HDF5 file access property");
 }

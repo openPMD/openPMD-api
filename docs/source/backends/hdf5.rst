@@ -21,14 +21,14 @@ Backend-Specific Controls
 
 The following environment variables control HDF5 I/O behavior at runtime.
 
-===================================== ========= ====================================================================================
-environment variable                  default   description
-===================================== ========= ====================================================================================
-``OPENPMD_HDF5_INDEPENDENT``          ``ON``    Sets the MPI-parallel transfer mode to collective (``OFF``) or independent (``ON``).
-``OPENPMD_HDF5_ALIGNMENT``            ``1``     Tuning parameter for parallel I/O, choose an alignment which is a multiple of the disk block size.
-``OPENPMD_HDF5_CHUNKS``               ``auto``  Defaults for ``H5Pset_chunk``: ``"auto"`` (heuristic) or ``"none"`` (no chunking).
-``H5_COLL_API_SANITY_CHECK``          unset     Set to ``1`` to perform an ``MPI_Barrier`` inside each meta-data operation.
-===================================== ========= ====================================================================================
+===================================== =========== ====================================================================================
+environment variable                  default     description
+===================================== =========== ====================================================================================
+``OPENPMD_HDF5_INDEPENDENT``          ``ON``      Sets the MPI-parallel transfer mode to collective (``OFF``) or independent (``ON``).
+``OPENPMD_HDF5_ALIGNMENT``            ``4194304`` Tuning parameter for parallel I/O, choose an alignment which is a multiple of the disk block size.
+``OPENPMD_HDF5_CHUNKS``               ``auto``    Defaults for ``H5Pset_chunk``: ``"auto"`` (heuristic) or ``"none"`` (no chunking).
+``H5_COLL_API_SANITY_CHECK``          unset       Set to ``1`` to perform an ``MPI_Barrier`` inside each meta-data operation.
+===================================== =========== ====================================================================================
 
 ``OPENPMD_HDF5_INDEPENDENT``: by default, we implement MPI-parallel data ``storeChunk`` (write) and ``loadChunk`` (read) calls as `none-collective MPI operations <https://www.mpi-forum.org/docs/mpi-2.2/mpi22-report/node87.htm#Node87>`_.
 Attribute writes are always collective in parallel HDF5.
@@ -53,6 +53,8 @@ Selected References
 -------------------
 
 * GitHub issue `#554 <https://github.com/openPMD/openPMD-api/pull/554>`_
+
+* GitHub libSplash issue `#108 <https://github.com/ComputationalRadiationPhysics/libSplash/issues/108>`_
 
 * Axel Huebl, Rene Widera, Felix Schmitt, Alexander Matthes, Norbert Podhorszki, Jong Youl Choi, Scott Klasky, and Michael Bussmann.
   *On the Scalability of Data Reduction Techniques in Current and Upcoming HPC Systems from an Application Perspective,*

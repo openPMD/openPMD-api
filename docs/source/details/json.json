@@ -2,6 +2,10 @@
   "hdf5": {
     "dataset": {
       "chunks": "auto"
+    },
+    "alignment": {
+      "size": "4194304",
+      "threshold": "0"
     }
   }
 }
