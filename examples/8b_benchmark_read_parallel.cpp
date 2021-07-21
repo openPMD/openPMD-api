@@ -63,6 +63,7 @@ public:
     m_Name = "/proc/self/status";
     Display(tag);
 #else
+    (void)tag;
     m_Name = "";
 #endif
   }
