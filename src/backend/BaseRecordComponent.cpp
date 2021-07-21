@@ -19,7 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/backend/BaseRecordComponent.hpp"
-
+#include "openPMD/Iteration.hpp"
 
 namespace openPMD
 {
@@ -64,6 +64,7 @@ BaseRecordComponent::availableChunks()
         Offset offset( m_dataset->extent.size(), 0 );
         return ChunkTable{ { std::move( offset ), m_dataset->extent } };
     }
+    containingIteration().open();
     Parameter< Operation::AVAILABLE_CHUNKS > param;
     IOTask task( this, param );
     IOHandler()->enqueue( task );

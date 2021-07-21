@@ -547,42 +547,20 @@ SeriesImpl::flushFileBased( iterations_iterator begin, iterations_iterator end )
     if( IOHandler()->m_frontendAccess == Access::READ_ONLY )
         for( auto it = begin; it != end; ++it )
         {
-            if( *it->second.m_closed
-                == Iteration::CloseStatus::ParseAccessDeferred )
+            switch( openIterationIfDirty( it->first, it->second ) )
             {
+                using IO = IterationOpened;
+            case IO::RemainsClosed:
                 continue;
-            }
-            bool const dirtyRecursive = it->second.dirtyRecursive();
-            if( *it->second.m_closed
-                == Iteration::CloseStatus::ClosedInBackend )
-            {
-                // file corresponding with the iteration has previously been
-                // closed and fully flushed
-                // verify that there have been no further accesses
-                if( dirtyRecursive )
-                {
-                    throw std::runtime_error(
-                        "[Series] Detected illegal access to iteration that "
-                        "has been closed previously." );
-                }
-                continue;
-            }
-            /*
-             * Opening a file is expensive, so let's do it only if necessary.
-             * Necessary if:
-             * 1. The iteration itself has been changed somewhere.
-             * 2. Or the Series has been changed globally in a manner that
-             *    requires adapting all iterations.
-             */
-            if( dirtyRecursive || this->dirty() )
-            {
-                // openIteration() will update the close status
-                openIteration( it->first, it->second );
-                it->second.flush();
+            case IO::HasBeenOpened:
+                // continue below
+                break;
             }
 
-            if( *it->second.m_closed
-                == Iteration::CloseStatus::ClosedInFrontend )
+            it->second.flush();
+
+            if( *it->second.m_closed ==
+                Iteration::CloseStatus::ClosedInFrontend )
             {
                 Parameter< Operation::CLOSE_FILE > fClose;
                 IOHandler()->enqueue(
@@ -596,69 +574,30 @@ SeriesImpl::flushFileBased( iterations_iterator begin, iterations_iterator end )
         bool allDirty = dirty();
         for( auto it = begin; it != end; ++it )
         {
-            if( *it->second.m_closed
-                == Iteration::CloseStatus::ParseAccessDeferred )
+            switch( openIterationIfDirty( it->first, it->second ) )
             {
+                using IO = IterationOpened;
+            case IO::RemainsClosed:
                 continue;
-            }
-            bool const dirtyRecursive = it->second.dirtyRecursive();
-            if( *it->second.m_closed
-                == Iteration::CloseStatus::ClosedInBackend )
-            {
-                // file corresponding with the iteration has previously been
-                // closed and fully flushed
-                // verify that there have been no further accesses
-                if (!it->second.written())
-                {
-                    throw std::runtime_error(
-                        "[Series] Closed iteration has not been written. This "
-                        "is an internal error." );
-                }
-                if( dirtyRecursive )
-                {
-                    throw std::runtime_error(
-                        "[Series] Detected illegal access to iteration that "
-                        "has been closed previously." );
-                }
-                continue;
+            case IO::HasBeenOpened:
+                // continue below
+                break;
             }
 
-            /*
-             * Opening a file is expensive, so let's do it only if necessary.
-             * Necessary if:
-             * 1. The iteration itself has been changed somewhere.
-             * 2. Or the Series has been changed globally in a manner that
-             *    requires adapting all iterations.
+            /* as there is only one series,
+             * emulate the file belonging to each iteration as not yet written
              */
-            if( dirtyRecursive || this->dirty() )
-            {
-                /* as there is only one series,
-                * emulate the file belonging to each iteration as not yet written
-                */
-                written() = false;
-                series.iterations.written() = false;
+            written() = false;
+            series.iterations.written() = false;
 
-                dirty() |= it->second.dirty();
-                std::string filename = iterationFilename( it->first );
-                it->second.flushFileBased(filename, it->first);
+            dirty() |= it->second.dirty();
+            std::string filename = iterationFilename( it->first );
+            it->second.flushFileBased( filename, it->first );
 
-                series.iterations.flush(
-                    auxiliary::replace_first(basePath(), "%T/", ""));
+            series.iterations.flush(
+                auxiliary::replace_first( basePath(), "%T/", "" ) );
 
-                flushAttributes();
-
-                switch( *it->second.m_closed )
-                {
-                    using CL = Iteration::CloseStatus;
-                    case CL::Open:
-                    case CL::ClosedTemporarily:
-                        *it->second.m_closed = CL::Open;
-                        break;
-                    default:
-                        // keep it
-                        break;
-                }
-            }
+            flushAttributes();
 
             if( *it->second.m_closed ==
                 Iteration::CloseStatus::ClosedInFrontend )
@@ -686,28 +625,19 @@ SeriesImpl::flushGorVBased( iterations_iterator begin, iterations_iterator end )
     if( IOHandler()->m_frontendAccess == Access::READ_ONLY )
         for( auto it = begin; it != end; ++it )
         {
-            if( *it->second.m_closed
-                == Iteration::CloseStatus::ParseAccessDeferred )
+            switch( openIterationIfDirty( it->first, it->second ) )
             {
+                using IO = IterationOpened;
+            case IO::RemainsClosed:
                 continue;
+            case IO::HasBeenOpened:
+                // continue below
+                break;
             }
-            if( *it->second.m_closed ==
-                Iteration::CloseStatus::ClosedInBackend )
-            {
-                // file corresponding with the iteration has previously been
-                // closed and fully flushed
-                // verify that there have been no further accesses
-                if( it->second.dirtyRecursive() )
-                {
-                    throw std::runtime_error(
-                        "[Series] Illegal access to iteration " +
-                        std::to_string( it->first ) +
-                        " that has been closed previously." );
-                }
-                continue;
-            }
+
             it->second.flush();
-            if( *it->second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
+            if( *it->second.m_closed ==
+                Iteration::CloseStatus::ClosedInFrontend )
             {
                 // the iteration has no dedicated file in group-based mode
                 *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
@@ -728,31 +658,14 @@ SeriesImpl::flushGorVBased( iterations_iterator begin, iterations_iterator end )
 
         for( auto it = begin; it != end; ++it )
         {
-            if( *it->second.m_closed
-                == Iteration::CloseStatus::ParseAccessDeferred )
+            switch( openIterationIfDirty( it->first, it->second ) )
             {
+                using IO = IterationOpened;
+            case IO::RemainsClosed:
                 continue;
-            }
-            if( *it->second.m_closed ==
-                Iteration::CloseStatus::ClosedInBackend )
-            {
-                // file corresponding with the iteration has previously been
-                // closed and fully flushed
-                // verify that there have been no further accesses
-                if (!it->second.written())
-                {
-                    throw std::runtime_error(
-                        "[Series] Closed iteration has not been written. This "
-                        "is an internal error." );
-                }
-                if( it->second.dirtyRecursive() )
-                {
-                    throw std::runtime_error(
-                        "[Series] Illegal access to iteration " +
-                        std::to_string( it->first ) +
-                        " that has been closed previously." );
-                }
-                continue;
+            case IO::HasBeenOpened:
+                // continue below
+                break;
             }
             if( !it->second.written() )
             {
@@ -1329,41 +1242,143 @@ SeriesImpl::advance(
     return *param.status;
 }
 
-void
-SeriesImpl::openIteration( uint64_t index, Iteration iteration )
+auto SeriesImpl::openIterationIfDirty( uint64_t index, Iteration iteration )
+    -> IterationOpened
 {
-    auto & series = get();
-    // open the iteration's file again
-    Parameter< Operation::OPEN_FILE > fOpen;
-    fOpen.encoding = iterationEncoding();
-    fOpen.name = iterationFilename( index );
-    IOHandler()->enqueue( IOTask( this, fOpen ) );
-
-    /* open base path */
-    Parameter< Operation::OPEN_PATH > pOpen;
-    pOpen.path = auxiliary::replace_first( basePath(), "%T/", "" );
-    IOHandler()->enqueue( IOTask( &series.iterations, pOpen ) );
-    /* open iteration path */
-    pOpen.path = iterationEncoding() == IterationEncoding::variableBased
-        ? ""
-        : std::to_string( index );
-    IOHandler()->enqueue( IOTask( &iteration, pOpen ) );
-    switch( *iteration.m_closed )
+    /*
+     * Check side conditions on accessing iterations, and if they are fulfilled,
+     * forward function params to openIteration().
+     */
+    if( *iteration.m_closed == Iteration::CloseStatus::ParseAccessDeferred )
     {
-        using CL = Iteration::CloseStatus;
-        case CL::ClosedInBackend:
+        return IterationOpened::RemainsClosed;
+    }
+    bool const dirtyRecursive = iteration.dirtyRecursive();
+    if( *iteration.m_closed == Iteration::CloseStatus::ClosedInBackend )
+    {
+        // file corresponding with the iteration has previously been
+        // closed and fully flushed
+        // verify that there have been no further accesses
+        if( !iteration.written() )
+        {
+            throw std::runtime_error(
+                "[Series] Closed iteration has not been written. This "
+                "is an internal error." );
+        }
+        if( dirtyRecursive )
+        {
             throw std::runtime_error(
                 "[Series] Detected illegal access to iteration that "
                 "has been closed previously." );
-        case CL::ParseAccessDeferred:
-        case CL::Open:
-        case CL::ClosedTemporarily:
-            *iteration.m_closed = CL::Open;
-            break;
-        case CL::ClosedInFrontend:
-            // just keep it like it is
+        }
+        return IterationOpened::RemainsClosed;
+    }
+
+    switch( iterationEncoding() )
+    {
+        using IE = IterationEncoding;
+    case IE::fileBased:
+        /*
+         * Opening a file is expensive, so let's do it only if necessary.
+         * Necessary if:
+         * 1. The iteration itself has been changed somewhere.
+         * 2. Or the Series has been changed globally in a manner that
+         *    requires adapting all iterations.
+         */
+        if( dirtyRecursive || this->dirty() )
+        {
+            // openIteration() will update the close status
+            openIteration( index, iteration );
+            return IterationOpened::HasBeenOpened;
+        }
+        break;
+    case IE::groupBased:
+    case IE::variableBased:
+        // open unconditionally
+        // this makes groupBased encoding safer for parallel usage
+        // (variable-based encoding runs in lockstep anyway)
+        // openIteration() will update the close status
+        openIteration( index, iteration );
+        return IterationOpened::HasBeenOpened;
+    }
+    return IterationOpened::RemainsClosed;
+}
+
+void SeriesImpl::openIteration( uint64_t index, Iteration iteration )
+{
+    auto oldStatus = *iteration.m_closed;
+    switch( *iteration.m_closed )
+    {
+        using CL = Iteration::CloseStatus;
+    case CL::ClosedInBackend:
+        throw std::runtime_error(
+            "[Series] Detected illegal access to iteration that "
+            "has been closed previously." );
+    case CL::ParseAccessDeferred:
+    case CL::Open:
+    case CL::ClosedTemporarily:
+        *iteration.m_closed = CL::Open;
+        break;
+    case CL::ClosedInFrontend:
+        // just keep it like it is
+        break;
+    }
+
+    /*
+     * There's only something to do in filebased encoding in READ_ONLY and
+     * READ_WRITE modes.
+     * Use two nested switches anyway to ensure compiler warnings upon adding
+     * values to the enums.
+     */
+    switch( iterationEncoding() )
+    {
+        using IE = IterationEncoding;
+    case IE::fileBased: {
+        switch( IOHandler()->m_frontendAccess )
+        {
+        case Access::READ_ONLY:
+        case Access::READ_WRITE: {
+            /*
+             * The iteration is marked written() as soon as its file has been
+             * either created or opened.
+             * If the iteration has not been created yet, it cannot be opened.
+             * In that case, it is not written() and its old close status was
+             * not ParseAccessDeferred.
+             */
+            if( !iteration.written() &&
+                oldStatus != Iteration::CloseStatus::ParseAccessDeferred )
+            {
+                // nothing to do, file will be opened by writing routines
+                break;
+            }
+            auto & series = get();
+            // open the iteration's file again
+            Parameter< Operation::OPEN_FILE > fOpen;
+            fOpen.encoding = iterationEncoding();
+            fOpen.name = iterationFilename( index );
+            IOHandler()->enqueue( IOTask( this, fOpen ) );
+
+            /* open base path */
+            Parameter< Operation::OPEN_PATH > pOpen;
+            pOpen.path = auxiliary::replace_first( basePath(), "%T/", "" );
+            IOHandler()->enqueue( IOTask( &series.iterations, pOpen ) );
+            /* open iteration path */
+            pOpen.path = iterationEncoding() == IterationEncoding::variableBased
+                ? ""
+                : std::to_string( index );
+            IOHandler()->enqueue( IOTask( &iteration, pOpen ) );
             break;
         }
+        case Access::CREATE:
+            // nothing to do, file will be opened by writing routines
+            break;
+        }
+    }
+    case IE::groupBased:
+    case IE::variableBased:
+        // nothing to do, no opening necessary in those modes
+        break;
+    }
 }
 
 namespace

@@ -385,6 +385,25 @@ OPENPMD_private:
     void readGorVBased( bool init = true );
     void readBase();
     std::string iterationFilename( uint64_t i );
+
+    enum class IterationOpened : bool
+    {
+        HasBeenOpened,
+        RemainsClosed
+    };
+    /*
+     * For use by flushFileBased, flushGorVBased
+     * Open an iteration, but only if necessary.
+     * Only open if the iteration is dirty and if it is not in deferred
+     * parse state.
+     */
+    IterationOpened openIterationIfDirty( uint64_t index, Iteration iteration );
+    /*
+     * Open an iteration. Ensures that the iteration's m_closed status
+     * is set properly and that any files pertaining to the iteration
+     * is opened.
+     * Does not create files when called in CREATE mode.
+     */
     void openIteration( uint64_t index, Iteration iteration );
 
     /**

@@ -118,6 +118,9 @@ public:
      * operation is flush-ed. In parallel contexts where it is know that such a
      * first access needs to be run non-collectively, one can explicitly open
      * an iteration through this collective call.
+     * Also necessary when using defer_iteration_parsing.
+     * The Streaming API (i.e. Series::readIterations()) will call this method
+     * implicitly and users need not call it.
      *
      * @return Reference to iteration.
      */
