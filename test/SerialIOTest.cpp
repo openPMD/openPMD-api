@@ -1887,6 +1887,39 @@ void optional_paths_110_test(const std::string & backend)
     }
 }
 
+void git_early_chunk_query(
+    std::string const filename,
+    std::string const species,
+    int const step
+)
+{
+    try
+    {
+        Series s = Series(
+            filename,
+            Access::READ_ONLY
+        );
+
+        auto electrons = s.iterations[step].particles[species];
+
+        for( auto & r : electrons )
+        {
+            std::cout << r.first << ": ";
+            for( auto & r_c : r.second )
+            {
+                std::cout << r_c.first << "\n";
+                auto chunks = r_c.second.availableChunks();
+                std::cout << "no. of chunks: " << chunks.size() << std::endl;
+            }
+        }
+
+    } catch (no_such_file_error& e)
+    {
+        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
+        return;
+    }
+}
+
 #if openPMD_HAVE_HDF5
 TEST_CASE( "empty_alternate_fbpic", "[serial][hdf5]" )
 {
@@ -2407,31 +2440,7 @@ TEST_CASE( "git_hdf5_sample_fileBased_read_test", "[serial][hdf5]" )
 
 TEST_CASE( "git_hdf5_early_chunk_query", "[serial][hdf5]" )
 {
-    try
-    {
-        Series s = Series(
-            "../samples/git-sample/data%T.h5",
-            Access::READ_ONLY
-        );
-
-        auto electrons = s.iterations[400].particles["electrons"];
-
-        for( auto & r : electrons )
-        {
-            std::cout << r.first << ": ";
-            for( auto & r_c : r.second )
-            {
-                std::cout << r_c.first << "\n";
-                if( !r_c.second.constant() )
-                    auto chunks = r_c.second.availableChunks();
-            }
-        }
-
-    } catch (no_such_file_error& e)
-    {
-        std::cerr << "git sample not accessible. (" << e.what() << ")\n";
-        return;
-    }
+    git_early_chunk_query("../samples/git-sample/data%T.h5", "electrons", 400);
 }
 
 TEST_CASE( "git_hdf5_sample_read_thetaMode", "[serial][hdf5][thetaMode]" )
@@ -3126,6 +3135,11 @@ TEST_CASE( "no_serial_adios1", "[serial][adios]")
 #endif
 
 #if openPMD_HAVE_ADIOS2
+TEST_CASE( "git_adios2_early_chunk_query", "[serial][adios2]" )
+{
+    git_early_chunk_query("../samples/git-sample/3d-bp4/example-3d-bp4_%T.bp", "e", 600);
+}
+
 TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
 {
     if( auxiliary::getEnvString( "OPENPMD_BP_BACKEND", "NOT_SET" ) == "ADIOS1" )
