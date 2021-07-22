@@ -5,11 +5,14 @@ Changelog
 
 0.14.0
 ------
-**Date:** TBA
+**Date:** 2021-07-29
 
-...
+Resize, Dask, openpmd-pipe and new ADIOS2 Iteration Encoding
 
-...
+This release adds support for resizable data sets.
+For data-processing, support for Dask (parallel) and Pandas (serial) are added and lazy reader parsing of iterations is now supported.
+ADIOS2 adds an experimental variable-based iteration encoding.
+An openPMD Series can now be flushed from non-``Series`` objects and write buffers can be requested upfront to avoid unnecessary data copies in some situations.
 
 Changes to "0.13.4"
 ^^^^^^^^^^^^^^^^^^^
@@ -17,20 +20,116 @@ Changes to "0.13.4"
 Features
 """"""""
 
+- Resizable datasets #829 #1020 #1060 #1063
+- lazy parsing of iterations #938
+- Expose internal buffers to writers #901
+- ``seriesFlush``: Attributable, Writable, Mesh & ParticleSpecies #924 #925
+- ADIOS2:
+
+  - Implement new ``variableBased`` iteration encoding #813 #855 #926 #941 #1008
+  - Set a default ``QueueLimit`` of 2 in the ADIOS2/SST engine #971
+  - Add environment control: ``OPENPMD_ADIOS2_STATS_LEVEL`` #1003
 - Conda environment file ``conda.yaml`` added to repo #1004
+- CMake: Expose Python LTO Control #980
+- HDF5:
+
+  - HDF5 1.12.0 fallback APIs: no wrappers and more portable #1012
+  - Empiric for optimal chunk size #916
+- Python:
+
+  - ``ParticleSpecies``: Read to ``pandas.DataFrame`` #923
+  - ``ParticleSpecies``: Read to ``dask.dataframe`` #935 #951 #956 #958 #959 #1033
+  - Dask: Array #952
+  - ``pyproject.toml``: build-backend #932
+- Tools: add ``openpmd-pipe.py`` command line tool #904 #1062 #1069
+- Support for custom geometries #1011
+- Default constructors for ``Series`` and ``SeriesIterator`` #955
+- Make ``WriteIterations::key_type`` public #999
+- ``ParticleSpecies`` & ``RecordComponent`` serialize #963
 
 Bug Fixes
 """""""""
+
+- ADIOS2:
+
+  - ``bp4_steps`` test: actually use ``NullCore`` engine #933
+  - Always check the return status of ``IO::Open()`` and ``Engine::BeginStep()`` in ADIOS2 #1017 #1023
+  - More obvious error message if datatype cannot be found #1036
+  - Don't implicitly open files #1045
+  - fix C++17 compilation #1067
+- HDF5:
+
+  - Support Parallel HDF5 built w/ CMake #1027
+  - ``HDF5Auxiliary``: Check String Sizes #979
+- Tests:
+
+  - Check for existence of the correct files in ``ParallelIOtests`` #944
+  - FBPIC example filename #950
+  - ``CoreTest``: Lambda outside unevaluated context #1057
+- ``availableChunks``: improve open logic for early chunk reads #1035 #1045
+- CMake:
+
+  - custom copy for dependent files #1016
+  - library type control #930
+- Fix detection of ``loadChunk()`` calls with wrong type #1022
+- Don't flush ``Series`` a second time after throwing an error #1018
+- Use ``Series::writeIterations()`` without explicit flushing #1030
+- ``Mesh``: ``enable_if`` only floating point APIs #1042
+- ``Datatype``: Fix ``std::array`` template #1040
+- PkgConfig w/ external variant #1050
+- warnings: Unused params and unreachable code #1053 #1055
 
 Other
 """""
 
 - ADIOS2: require version 2.7.0+ #927
+- Catch2: 2.13.4+ #940
 - pybind11: require version 2.6.2+ #977
+- CI:
+
+  - Update & NVHPC #1052
+  - ICC/ICPC & ICX/ICPX #870
+  - Reintroduce Clang Sanitizer #947
+  - Brew Update #970
+  - Source Tools Update #978
+  - Use specific commit for downloaded samples #1049
+  - ``SerialIOTest``: fix CI hang in sanitizer #1054 #1056
 - CMake:
 
-  - Expose Python LTO Control #980
   - Require only C-in-CXX MPI component #710
+  - Unused setter in ``openpmd_option`` #1015
+- Docs:
+
+  - describe high-level concepts #997
+  - meaning of ``Writable::written()`` #946
+  - ``Iteration::close``/``flush`` fix typo #988
+  - ``makeConstant`` & parallel HDF5 #1041
+  - ADIOS2 memory usage for various encoding schemes #1009
+  - ``dev``-branch centered development #928
+  - limit docutils to 0.16, Sphinx to <4.0 #976
+  - Sphinx: rsvg converter for LaTeX #1001
+  - Update GitHub issue templates #1034
+  - Add ``CITATION.cff`` #1070
+  - Benchmark 8b: "pack" parameter #1066
+  - Move quoted lines from ``IOTasks`` #1061
+  - describe iteration encodings #1064
+  - describe regexes for showing only attributes or datasets in new ADIOS2 schema #1068
+- Tests & Examples:
+
+  - ADIOS2 SST tests: start reader a second after the writer #981
+  - ADIOS2 Git sample #1019 #1051
+  - Parallel Benchmark (8): 4D is now 3D #1010 #1047
+- ``RecordComponent``: Remove unimplemented scaling #954
+- MSVC: Proper ``__cplusplus`` macro #919
+- Make ``switchType`` more comfortable to use #931
+- Split ``Series`` into an internal and an external class #886 #936 #1031 #1065
+- Series: ``fileBased`` more consequently throws ``no_such_file_error`` #1059
+- Retrieve paths of objects in the openPMD hierarchy #966
+- Remove duplicate function declarations #998
+- License Header: Update 2021 #922
+- Add Dependabot #929
+- Update author order for 0.14.0+ #1005
+- Download samples: optional directory #1039
 
 
 0.13.4
