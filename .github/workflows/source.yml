@@ -1,4 +1,4 @@
-name: source
+name: 📜 Source
 
 on: [push, pull_request]
 
