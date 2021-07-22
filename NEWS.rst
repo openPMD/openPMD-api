@@ -7,7 +7,10 @@ Upgrade Guide
 ------
 
 ADIOS 2.7.0 is now the minimally supported version for ADIOS2 support.
+Catch2 2.13.4 is now the minimally supported version for tests.
 pybind11 2.6.2 is now the minimally supported version for Python support.
+
+In ``RecordComponent::loadChunk``, the optional last argument ``targetUnitSI`` was removed as it has not been implemented yet and had thus no function.
 
 
 0.13.0
