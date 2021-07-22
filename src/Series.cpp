@@ -757,7 +757,7 @@ SeriesImpl::readFileBased( )
         /* Frontend access type might change during SeriesImpl::read() to allow parameter modification.
          * Backend access type stays unchanged for the lifetime of a Series. */
         if(IOHandler()->m_backendAccess == Access::READ_ONLY  )
-            throw std::runtime_error("No matching iterations found: " + name());
+            throw no_such_file_error("No matching iterations found: " + name());
         else
             std::cerr << "No matching iterations found: " << name() << std::endl;
     }
