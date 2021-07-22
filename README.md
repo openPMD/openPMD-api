@@ -410,6 +410,8 @@ Further thanks go to improvements and contributions from:
   Dask dataframe support
 * [John Kirkham (NVIDIA)](https://github.com/jakirkham):
   Dask guidance & reviews
+* [Erik Schnetter (PITP)](https://github.com/eschnett):
+  C++ API bug fixes
 
 ### Grants
 
