@@ -71,7 +71,7 @@ int main()
     x = { 5.,  6.,  7. };
     y = {-7., -8., -9. };
     offset.at(0) += dataset.extent.at(0);
-    dataset.extent.at(0) += x.size();
+    dataset = Dataset( { dataset.extent.at(0) + x.size() } );
 
     rc_x.resetDataset( dataset );
     rc_y.resetDataset( dataset );

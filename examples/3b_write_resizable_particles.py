@@ -43,11 +43,14 @@ if __name__ == "__main__":
     rc_xo.make_constant(0.0)
     rc_yo.make_constant(0.0)
 
+    # after this call, the provided data buffers can be used again or deleted
+    series.flush()
+
     # extend and append more particles
     x = np.array([5., 6., 7.], dtype=np.double)
     y = np.array([-7., -8., -9.], dtype=np.double)
     offset += dataset.extent[0]
-    dataset.extend([dataset.extent[0] + x.shape[0]])
+    dataset = io.Dataset([dataset.extent[0] + x.shape[0]])
 
     rc_x.reset_dataset(dataset)
     rc_y.reset_dataset(dataset)
