@@ -384,7 +384,14 @@ private:
      */
     ADIOS2FilePosition::GD groupOrDataset( Writable * );
 
-    detail::BufferedActions & getFileData( InvalidatableFile file );
+    enum class IfFileNotOpen : bool
+    {
+        OpenImplicitly,
+        ThrowError
+    };
+
+    detail::BufferedActions &
+    getFileData( InvalidatableFile file, IfFileNotOpen );
 
     void dropFileData( InvalidatableFile file );
 

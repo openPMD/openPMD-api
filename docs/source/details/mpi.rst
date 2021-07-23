@@ -29,6 +29,7 @@ Functionality                Behavior           Description
 ``::makeConstant`` [3]_      *backend-specific* declare, write
 ``::storeChunk`` [1]_        independent        write
 ``::loadChunk``              independent        read
+``::availableChunks`` [4]_   collective         read, immediate result
 ============================ ================== ===========================
 
 .. [1] Individual backends, i.e. :ref:`parallel HDF5 <backends-hdf5>`, will only support independent operations if the default, non-collective (aka independent) behavior is kept.
@@ -42,6 +43,7 @@ Functionality                Behavior           Description
        Note that openPMD represents constant record components with attributes, thus inheriting this for ``::makeConstant``.
 
 .. [4] We usually open iterations delayed on first access. This first access is usually the ``flush()`` call after a ``storeChunk``/``loadChunk`` operation. If the first access is non-collective, an explicit, collective ``Iteration::open()`` can be used to have the files already open.
+Alternatively, iterations might be accessed for the first time by immediate operations such as ``::availableChunks()``.
 
 .. tip::
 
