@@ -109,9 +109,9 @@ class SeriesInternal;
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series
  */
-class SeriesInterface : public AttributableImpl
+class SeriesInterface : public AttributableInterface
 {
-    friend class AttributableImpl;
+    friend class AttributableInterface;
     friend class Iteration;
     friend class Writable;
     friend class SeriesIterator;
@@ -458,7 +458,7 @@ public:
         std::string const & filepath,
         Access at,
         std::string const & options = "{}" );
-    // @todo make AttributableImpl<>::linkHierarchy non-virtual
+    // @todo make AttributableInterface<>::linkHierarchy non-virtual
     virtual ~SeriesInternal();
 };
 } // namespace internal

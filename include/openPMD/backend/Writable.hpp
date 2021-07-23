@@ -64,7 +64,7 @@ class AttributableData;
 class Writable final
 {
     friend class internal::AttributableData;
-    friend class AttributableImpl;
+    friend class AttributableInterface;
     template< typename T_elem >
     friend class BaseRecord;
     template<

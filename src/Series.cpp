@@ -92,7 +92,7 @@ struct SeriesInterface::ParsedInput
 
 SeriesInterface::SeriesInterface(
     internal::SeriesData * series, internal::AttributableData * attri )
-    : AttributableImpl{ attri }
+    : AttributableInterface{ attri }
     , m_series{ series }
 {
 }
@@ -1482,7 +1482,7 @@ Series::Series(
           filepath, at, comm, options ) }
     , iterations{ m_series->iterations }
 {
-    AttributableImpl::m_attri =
+    AttributableInterface::m_attri =
         static_cast< internal::AttributableData * >( m_series.get() );
     SeriesInterface::m_series = m_series.get();
 }
@@ -1497,7 +1497,7 @@ Series::Series(
           filepath, at, options ) }
     , iterations{ m_series->iterations }
 {
-    AttributableImpl::m_attri =
+    AttributableInterface::m_attri =
         static_cast< internal::AttributableData * >( m_series.get() );
     SeriesInterface::m_series = m_series.get();
 }

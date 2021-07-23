@@ -43,7 +43,7 @@ namespace openPMD
     void
     Writable::seriesFlush( FlushLevel level )
     {
-        auto & series = AttributableImpl( attributable ).retrieveSeries();
+        auto & series = AttributableInterface( attributable ).retrieveSeries();
         series.flush_impl(
             series.iterations.begin(), series.iterations.end(), level );
     }

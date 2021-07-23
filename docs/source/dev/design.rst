@@ -132,11 +132,11 @@ Other classes within our object model of the openPMD hierarchy are planned to fo
 The class hierarchy of ``Attributable`` follows a similar design, with some differences due to its nature as a mixin class that is not instantiated directly:
 
 * ``AttributableData`` serves the same purpose as ``SeriesData``.
-* ``AttributableImpl`` serves the same purpose as ``SeriesData``.
-* Equivalents to ``SeriesInternal`` and ``Series`` do not exist since a combination of ``AttributableData`` and ``AttributableImpl`` is added as a mixin to other classes.
-  As a common base class exposed to user code, ``AttributableImpl`` is aliased as ``Attributable``.
-* For classes not yet following the PIMPL-based design, ``LegacyAttributable`` wraps around a shared pointer to ``AttributableData`` and derives from ``AttributableImpl``.
+* ``AttributableInterface`` serves the same purpose as ``SeriesData``.
+* Equivalents to ``SeriesInternal`` and ``Series`` do not exist since a combination of ``AttributableData`` and ``AttributableInterface`` is added as a mixin to other classes.
+  As a common base class exposed to user code, ``AttributableInterface`` is aliased as ``Attributable``.
+* For classes not yet following the PIMPL-based design, ``LegacyAttributable`` wraps around a shared pointer to ``AttributableData`` and derives from ``AttributableInterface``.
   The ``Attributable`` mixin can be added to those classes by deriving from ``LegacyAttributable``.
-* The ``Attributable`` mixin is added to ``Series`` by deriving ``SeriesData`` from ``AttributableData`` and ``SeriesInterface`` from ``AttributableImpl``.
+* The ``Attributable`` mixin is added to ``Series`` by deriving ``SeriesData`` from ``AttributableData`` and ``SeriesInterface`` from ``AttributableInterface``.
 
 ``Series`` as root of every hierarchy, supporting ``groupBased`` and ``fileBased`` transparently ...

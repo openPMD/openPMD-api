@@ -152,7 +152,7 @@ TEST_CASE( "myPath", "[core]" )
 {
 #if openPMD_USE_INVASIVE_TESTS
     using vec_t = std::vector< std::string >;
-    auto pathOf = []( AttributableImpl & attr )
+    auto pathOf = []( AttributableInterface & attr )
     {
         auto res = attr.myPath();
 #if false

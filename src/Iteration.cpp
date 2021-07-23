@@ -671,7 +671,7 @@ Iteration::dirtyRecursive() const
 void
 Iteration::linkHierarchy(Writable& w)
 {
-    AttributableImpl::linkHierarchy(w);
+    AttributableInterface::linkHierarchy(w);
     meshes.linkHierarchy(this->writable());
     particles.linkHierarchy(this->writable());
 }
