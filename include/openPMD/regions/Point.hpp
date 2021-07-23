@@ -39,7 +39,7 @@ public:
   using value_type = T;
   /** Return type of Point::size()
    */
-  using size_type = std::ptrdiff_t;
+  using size_type = std::size_t;
 
   /** Create a value-initialized Point
    *
