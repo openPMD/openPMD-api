@@ -75,7 +75,7 @@ OPENPMDAPI_EXPORT_ENUM_CLASS(Operation)
 
     ADVANCE,
     AVAILABLE_CHUNKS //!< Query chunks that can be loaded in a dataset
-}; // Operation
+}; // note: if you change the enum members here, please update docs/source/dev/design.rst
 
 struct OPENPMDAPI_EXPORT AbstractParameter
 {
