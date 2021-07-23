@@ -75,6 +75,11 @@ To run:
 then the file generated are:  ../samples/8a_parallel_3Db_*
 
 
+Optional input parameter: pack
+
+Often a processor will write out a few miniBlocks. Using the example above, if writer side uses 1024 processors, each processor will handle 16 blocks from the 32x32x16 grid. The selection of this 16 blocks can be from 1x1x16, or 2x2x4, etc. To specify which, the associated parameter used will be "pack=1 1 16" or "pack=2 2 4". Without specifing this parameter, an default will be applied.  This parameter does not expected to impact the performance of writing, it will likely make a difference for certain reading patterns if the underlying storage is using subfiles. 
+
+
 Reading
 ^^^^^^^
 
