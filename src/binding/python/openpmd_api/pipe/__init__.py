@@ -193,10 +193,24 @@ class pipe:
             raise RuntimeError(
                 "Internal error: Trying to copy mismatching types")
         attribute_dtypes = src.attribute_dtypes
+        # The following attributes are written automatically by openPMD-api
+        # and should not be manually overwritten here
+        ignored_attributes = {
+            io.Series:
+            ["basePath", "iterationEncoding", "iterationFormat", "openPMD"],
+            io.Iteration: ["snapshot"]
+        }
         for key in src.attributes:
-            attr = src.get_attribute(key)
-            attr_type = attribute_dtypes[key]
-            dest.set_attribute(key, attr, attr_type)
+            ignore_this_attribute = False
+            for openpmd_group, to_ignore_list in ignored_attributes.items():
+                if isinstance(src, openpmd_group):
+                    for to_ignore in to_ignore_list:
+                        if key == to_ignore:
+                            ignore_this_attribute = True
+            if not ignore_this_attribute:
+                attr = src.get_attribute(key)
+                attr_type = attribute_dtypes[key]
+                dest.set_attribute(key, attr, attr_type)
         container_types = [
             io.Mesh_Container, io.Particle_Container, io.ParticleSpecies,
             io.Record, io.Mesh, io.Particle_Patches, io.Patch_Record

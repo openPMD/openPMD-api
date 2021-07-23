@@ -1234,11 +1234,11 @@ if(openPMD_BUILD_TESTING)
                         ${MPI_TEST_EXE} ${Python_EXECUTABLE}                       \
                             ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
                             --infile ../samples/git-sample/thetaMode/data%T.h5     \
-                            --outfile ../samples/git-sample/thetaMode/data%T.bp && \
+                            --outfile ../samples/git-sample/thetaMode/data.bp &&   \
                                                                                    \
                         ${Python_EXECUTABLE}                                       \
                             ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
-                            --infile ../samples/git-sample/thetaMode/data%T.bp     \
+                            --infile ../samples/git-sample/thetaMode/data.bp       \
                             --outfile ../samples/git-sample/thetaMode/data%T.json  \
                         "
                     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
