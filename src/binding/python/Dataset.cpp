@@ -36,6 +36,7 @@ void init_Dataset(py::module &m) {
         .def(py::init<Datatype, Extent>(),
             py::arg("dtype"), py::arg("extent")
         )
+        .def(py::init<Extent>(), py::arg("extent"))
         .def(py::init( [](py::dtype dt, Extent e) {
             auto const d = dtype_from_numpy( dt );
             return new Dataset{d, e};
