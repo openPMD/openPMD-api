@@ -112,7 +112,7 @@ class Container : public LegacyAttributable
     friend class Iteration;
     friend class ParticleSpecies;
     friend class internal::SeriesData;
-    friend class SeriesImpl;
+    friend class SeriesInterface;
     friend class Series;
 
 protected:

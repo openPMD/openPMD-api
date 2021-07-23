@@ -116,15 +116,15 @@ This serves to separate data from implementation, demonstrated by the class hier
 * ``SeriesData`` contains all actual data members of ``Series``, representing the resources shared between instances.
   Its copy/move constructors/assignment operators are deleted, thus pinning it at one memory location.
   It has no implementation.
-* ``SeriesImpl`` defines the interface of ``Series``.
+* ``SeriesInterface`` defines the interface of ``Series``.
   Its only data member is a pointer to its associated instance of ``SeriesData``.
   Its purpose is to serve as a parent class for any class that implements the ``Series`` interface.
-  The implementing class should deal with resource management for the instance of ``SeriesData``, ``SeriesImpl`` itself performs no resource management for the data and will assume that the pointer points at a valid instance.
+  The implementing class should deal with resource management for the instance of ``SeriesData``, ``SeriesInterface`` itself performs no resource management for the data and will assume that the pointer points at a valid instance.
   (This PIMPL-based design allows us to avoid a similar template-heavy design based on CRTP.)
-* ``SeriesInternal`` is the class created by inheriting directly from ``SeriesData`` and ``SeriesImpl``.
+* ``SeriesInternal`` is the class created by inheriting directly from ``SeriesData`` and ``SeriesInterface``.
   It is intended for internal usage, pinned at a memory location just like ``SeriesData``, but carrying an implementation.
   Its constructor and destructor define the setup and tear-down of shared resources for ``Series``.
-* ``Series`` is a wrapper around a shared pointer to ``SeriesInternal`` and also derives from ``SeriesImpl``.
+* ``Series`` is a wrapper around a shared pointer to ``SeriesInternal`` and also derives from ``SeriesInterface``.
   It implements handle semantics, serving as interface to users.
 
 Other classes within our object model of the openPMD hierarchy are planned to follow in this design.
@@ -137,6 +137,6 @@ The class hierarchy of ``Attributable`` follows a similar design, with some diff
   As a common base class exposed to user code, ``AttributableImpl`` is aliased as ``Attributable``.
 * For classes not yet following the PIMPL-based design, ``LegacyAttributable`` wraps around a shared pointer to ``AttributableData`` and derives from ``AttributableImpl``.
   The ``Attributable`` mixin can be added to those classes by deriving from ``LegacyAttributable``.
-* The ``Attributable`` mixin is added to ``Series`` by deriving ``SeriesData`` from ``AttributableData`` and ``SeriesImpl`` from ``AttributableImpl``.
+* The ``Attributable`` mixin is added to ``Series`` by deriving ``SeriesData`` from ``AttributableData`` and ``SeriesInterface`` from ``AttributableImpl``.
 
 ``Series`` as root of every hierarchy, supporting ``groupBased`` and ``fileBased`` transparently ...

@@ -79,7 +79,7 @@ namespace
     matcher(std::string const &prefix, int padding, std::string const &postfix, Format f);
 } // namespace [anonymous]
 
-struct SeriesImpl::ParsedInput
+struct SeriesInterface::ParsedInput
 {
     std::string path;
     std::string name;
@@ -90,7 +90,7 @@ struct SeriesImpl::ParsedInput
     int filenamePadding;
 };  //ParsedInput
 
-SeriesImpl::SeriesImpl(
+SeriesInterface::SeriesInterface(
     internal::SeriesData * series, internal::AttributableData * attri )
     : AttributableImpl{ attri }
     , m_series{ series }
@@ -98,39 +98,39 @@ SeriesImpl::SeriesImpl(
 }
 
 std::string
-SeriesImpl::openPMD() const
+SeriesInterface::openPMD() const
 {
     return getAttribute("openPMD").get< std::string >();
 }
 
-SeriesImpl&
-SeriesImpl::setOpenPMD(std::string const& o)
+SeriesInterface&
+SeriesInterface::setOpenPMD(std::string const& o)
 {
     setAttribute("openPMD", o);
     return *this;
 }
 
 uint32_t
-SeriesImpl::openPMDextension() const
+SeriesInterface::openPMDextension() const
 {
     return getAttribute("openPMDextension").get< uint32_t >();
 }
 
-SeriesImpl&
-SeriesImpl::setOpenPMDextension(uint32_t oe)
+SeriesInterface&
+SeriesInterface::setOpenPMDextension(uint32_t oe)
 {
     setAttribute("openPMDextension", oe);
     return *this;
 }
 
 std::string
-SeriesImpl::basePath() const
+SeriesInterface::basePath() const
 {
     return getAttribute("basePath").get< std::string >();
 }
 
-SeriesImpl&
-SeriesImpl::setBasePath(std::string const& bp)
+SeriesInterface&
+SeriesInterface::setBasePath(std::string const& bp)
 {
     std::string version = openPMD();
     if( version == "1.0.0" || version == "1.0.1" || version == "1.1.0" )
@@ -141,13 +141,13 @@ SeriesImpl::setBasePath(std::string const& bp)
 }
 
 std::string
-SeriesImpl::meshesPath() const
+SeriesInterface::meshesPath() const
 {
     return getAttribute("meshesPath").get< std::string >();
 }
 
-SeriesImpl&
-SeriesImpl::setMeshesPath(std::string const& mp)
+SeriesInterface&
+SeriesInterface::setMeshesPath(std::string const& mp)
 {
     auto & series = get();
     if( std::any_of(series.iterations.begin(), series.iterations.end(),
@@ -163,13 +163,13 @@ SeriesImpl::setMeshesPath(std::string const& mp)
 }
 
 std::string
-SeriesImpl::particlesPath() const
+SeriesInterface::particlesPath() const
 {
     return getAttribute("particlesPath").get< std::string >();
 }
 
-SeriesImpl&
-SeriesImpl::setParticlesPath(std::string const& pp)
+SeriesInterface&
+SeriesInterface::setParticlesPath(std::string const& pp)
 {
     auto & series = get();
     if( std::any_of(series.iterations.begin(), series.iterations.end(),
@@ -185,26 +185,26 @@ SeriesImpl::setParticlesPath(std::string const& pp)
 }
 
 std::string
-SeriesImpl::author() const
+SeriesInterface::author() const
 {
     return getAttribute("author").get< std::string >();
 }
 
-SeriesImpl&
-SeriesImpl::setAuthor(std::string const& a)
+SeriesInterface&
+SeriesInterface::setAuthor(std::string const& a)
 {
     setAttribute("author", a);
     return *this;
 }
 
 std::string
-SeriesImpl::software() const
+SeriesInterface::software() const
 {
     return getAttribute("software").get< std::string >();
 }
 
-SeriesImpl&
-SeriesImpl::setSoftware( std::string const& newName, std::string const& newVersion )
+SeriesInterface&
+SeriesInterface::setSoftware( std::string const& newName, std::string const& newVersion )
 {
     setAttribute( "software", newName );
     setAttribute( "softwareVersion", newVersion );
@@ -212,65 +212,65 @@ SeriesImpl::setSoftware( std::string const& newName, std::string const& newVersi
 }
 
 std::string
-SeriesImpl::softwareVersion() const
+SeriesInterface::softwareVersion() const
 {
     return getAttribute("softwareVersion").get< std::string >();
 }
 
-SeriesImpl&
-SeriesImpl::setSoftwareVersion(std::string const& sv)
+SeriesInterface&
+SeriesInterface::setSoftwareVersion(std::string const& sv)
 {
     setAttribute("softwareVersion", sv);
     return *this;
 }
 
 std::string
-SeriesImpl::date() const
+SeriesInterface::date() const
 {
     return getAttribute("date").get< std::string >();
 }
 
-SeriesImpl&
-SeriesImpl::setDate(std::string const& d)
+SeriesInterface&
+SeriesInterface::setDate(std::string const& d)
 {
     setAttribute("date", d);
     return *this;
 }
 
 std::string
-SeriesImpl::softwareDependencies() const
+SeriesInterface::softwareDependencies() const
 {
     return getAttribute("softwareDependencies").get< std::string >();
 }
 
-SeriesImpl&
-SeriesImpl::setSoftwareDependencies(std::string const &newSoftwareDependencies)
+SeriesInterface&
+SeriesInterface::setSoftwareDependencies(std::string const &newSoftwareDependencies)
 {
     setAttribute("softwareDependencies", newSoftwareDependencies);
     return *this;
 }
 
 std::string
-SeriesImpl::machine() const
+SeriesInterface::machine() const
 {
     return getAttribute("machine").get< std::string >();
 }
 
-SeriesImpl&
-SeriesImpl::setMachine(std::string const &newMachine)
+SeriesInterface&
+SeriesInterface::setMachine(std::string const &newMachine)
 {
     setAttribute("machine", newMachine);
     return *this;
 }
 
 IterationEncoding
-SeriesImpl::iterationEncoding() const
+SeriesInterface::iterationEncoding() const
 {
     return get().m_iterationEncoding;
 }
 
-SeriesImpl&
-SeriesImpl::setIterationEncoding(IterationEncoding ie)
+SeriesInterface&
+SeriesInterface::setIterationEncoding(IterationEncoding ie)
 {
     auto & series = get();
     if( written() )
@@ -297,13 +297,13 @@ SeriesImpl::setIterationEncoding(IterationEncoding ie)
 }
 
 std::string
-SeriesImpl::iterationFormat() const
+SeriesInterface::iterationFormat() const
 {
     return getAttribute("iterationFormat").get< std::string >();
 }
 
-SeriesImpl&
-SeriesImpl::setIterationFormat(std::string const& i)
+SeriesInterface&
+SeriesInterface::setIterationFormat(std::string const& i)
 {
     if( written() )
         throw std::runtime_error("A files iterationFormat can not (yet) be changed after it has been written.");
@@ -318,13 +318,13 @@ SeriesImpl::setIterationFormat(std::string const& i)
 }
 
 std::string
-SeriesImpl::name() const
+SeriesInterface::name() const
 {
     return get().m_name;
 }
 
-SeriesImpl&
-SeriesImpl::setName(std::string const& n)
+SeriesInterface&
+SeriesInterface::setName(std::string const& n)
 {
     auto & series = get();
     if( written() )
@@ -339,13 +339,13 @@ SeriesImpl::setName(std::string const& n)
 }
 
 std::string
-SeriesImpl::backend() const
+SeriesInterface::backend() const
 {
     return IOHandler()->backendName();
 }
 
 void
-SeriesImpl::flush()
+SeriesInterface::flush()
 {
     auto & series = get();
     flush_impl(
@@ -354,10 +354,10 @@ SeriesImpl::flush()
         FlushLevel::UserFlush );
 }
 
-std::unique_ptr< SeriesImpl::ParsedInput >
-SeriesImpl::parseInput(std::string filepath)
+std::unique_ptr< SeriesInterface::ParsedInput >
+SeriesInterface::parseInput(std::string filepath)
 {
-    std::unique_ptr< SeriesImpl::ParsedInput > input{new SeriesImpl::ParsedInput};
+    std::unique_ptr< SeriesInterface::ParsedInput > input{new SeriesInterface::ParsedInput};
 
 #ifdef _WIN32
     if( auxiliary::contains(filepath, '/') )
@@ -418,9 +418,9 @@ SeriesImpl::parseInput(std::string filepath)
     return input;
 }
 
-void SeriesImpl::init(
+void SeriesInterface::init(
     std::shared_ptr< AbstractIOHandler > ioHandler,
-    std::unique_ptr< SeriesImpl::ParsedInput > input )
+    std::unique_ptr< SeriesInterface::ParsedInput > input )
 {
     auto & series = get();
     writable().IOHandler = ioHandler;
@@ -469,7 +469,7 @@ void SeriesImpl::init(
 }
 
 void
-SeriesImpl::initDefaults( IterationEncoding ie )
+SeriesInterface::initDefaults( IterationEncoding ie )
 {
     if( !containsAttribute("openPMD"))
         setOpenPMD( getStandard() );
@@ -494,7 +494,7 @@ SeriesImpl::initDefaults( IterationEncoding ie )
 }
 
 std::future< void >
-SeriesImpl::flush_impl(
+SeriesInterface::flush_impl(
     iterations_iterator begin,
     iterations_iterator end,
     FlushLevel level,
@@ -537,7 +537,7 @@ SeriesImpl::flush_impl(
 }
 
 void
-SeriesImpl::flushFileBased( iterations_iterator begin, iterations_iterator end )
+SeriesInterface::flushFileBased( iterations_iterator begin, iterations_iterator end )
 {
     auto & series = get();
     if( end == begin )
@@ -619,7 +619,7 @@ SeriesImpl::flushFileBased( iterations_iterator begin, iterations_iterator end )
 }
 
 void
-SeriesImpl::flushGorVBased( iterations_iterator begin, iterations_iterator end )
+SeriesInterface::flushGorVBased( iterations_iterator begin, iterations_iterator end )
 {
     auto & series = get();
     if( IOHandler()->m_frontendAccess == Access::READ_ONLY )
@@ -697,7 +697,7 @@ SeriesImpl::flushGorVBased( iterations_iterator begin, iterations_iterator end )
 }
 
 void
-SeriesImpl::flushMeshesPath()
+SeriesInterface::flushMeshesPath()
 {
     Parameter< Operation::WRITE_ATT > aWrite;
     aWrite.name = "meshesPath";
@@ -708,7 +708,7 @@ SeriesImpl::flushMeshesPath()
 }
 
 void
-SeriesImpl::flushParticlesPath()
+SeriesInterface::flushParticlesPath()
 {
     Parameter< Operation::WRITE_ATT > aWrite;
     aWrite.name = "particlesPath";
@@ -719,7 +719,7 @@ SeriesImpl::flushParticlesPath()
 }
 
 void
-SeriesImpl::readFileBased( )
+SeriesInterface::readFileBased( )
 {
     auto & series = get();
     Parameter< Operation::OPEN_FILE > fOpen;
@@ -754,7 +754,7 @@ SeriesImpl::readFileBased( )
 
     if( series.iterations.empty() )
     {
-        /* Frontend access type might change during SeriesImpl::read() to allow parameter modification.
+        /* Frontend access type might change during SeriesInterface::read() to allow parameter modification.
          * Backend access type stays unchanged for the lifetime of a Series. */
         if(IOHandler()->m_backendAccess == Access::READ_ONLY  )
             throw no_such_file_error("No matching iterations found: " + name());
@@ -794,14 +794,14 @@ SeriesImpl::readFileBased( )
     if( paddings.size() == 1u )
         series.m_filenamePadding = *paddings.begin();
 
-    /* Frontend access type might change during SeriesImpl::read() to allow parameter modification.
+    /* Frontend access type might change during SeriesInterface::read() to allow parameter modification.
      * Backend access type stays unchanged for the lifetime of a Series. */
     if( paddings.size() > 1u && IOHandler()->m_backendAccess == Access::READ_WRITE )
         throw std::runtime_error("Cannot write to a series with inconsistent iteration padding. "
                                  "Please specify '%0<N>T' or open as read-only.");
 }
 
-void SeriesImpl::readOneIterationFileBased( std::string const & filePath )
+void SeriesInterface::readOneIterationFileBased( std::string const & filePath )
 {
     auto & series = get();
 
@@ -881,7 +881,7 @@ void SeriesImpl::readOneIterationFileBased( std::string const & filePath )
 }
 
 void
-SeriesImpl::readGorVBased( bool do_init )
+SeriesInterface::readGorVBased( bool do_init )
 {
     auto & series = get();
     Parameter< Operation::OPEN_FILE > fOpen;
@@ -1020,7 +1020,7 @@ SeriesImpl::readGorVBased( bool do_init )
 }
 
 void
-SeriesImpl::readBase()
+SeriesInterface::readBase()
 {
     auto & series = get();
     using DT = Datatype;
@@ -1096,7 +1096,7 @@ SeriesImpl::readBase()
 }
 
 std::string
-SeriesImpl::iterationFilename( uint64_t i )
+SeriesInterface::iterationFilename( uint64_t i )
 {
     auto & series = get();
     if( series.m_overrideFilebasedFilename.has_value() )
@@ -1110,8 +1110,8 @@ SeriesImpl::iterationFilename( uint64_t i )
            + series.m_filenamePostfix;
 }
 
-SeriesImpl::iterations_iterator
-SeriesImpl::indexOf( Iteration const & iteration )
+SeriesInterface::iterations_iterator
+SeriesInterface::indexOf( Iteration const & iteration )
 {
     auto & series = get();
     for( auto it = series.iterations.begin(); it != series.iterations.end();
@@ -1127,7 +1127,7 @@ SeriesImpl::indexOf( Iteration const & iteration )
 }
 
 AdvanceStatus
-SeriesImpl::advance(
+SeriesInterface::advance(
     AdvanceMode mode,
     internal::AttributableData & file,
     iterations_iterator begin,
@@ -1224,7 +1224,7 @@ SeriesImpl::advance(
         }
     }
 
-    // We cannot call SeriesImpl::flush now, since the IO handler is still filled
+    // We cannot call SeriesInterface::flush now, since the IO handler is still filled
     // from calling flush(Group|File)based, but has not been emptied yet
     // Do that manually
     IOHandler()->m_flushLevel = FlushLevel::UserFlush;
@@ -1242,7 +1242,7 @@ SeriesImpl::advance(
     return *param.status;
 }
 
-auto SeriesImpl::openIterationIfDirty( uint64_t index, Iteration iteration )
+auto SeriesInterface::openIterationIfDirty( uint64_t index, Iteration iteration )
     -> IterationOpened
 {
     /*
@@ -1304,7 +1304,7 @@ auto SeriesImpl::openIterationIfDirty( uint64_t index, Iteration iteration )
     return IterationOpened::RemainsClosed;
 }
 
-void SeriesImpl::openIteration( uint64_t index, Iteration iteration )
+void SeriesInterface::openIteration( uint64_t index, Iteration iteration )
 {
     auto oldStatus = *iteration.m_closed;
     switch( *iteration.m_closed )
@@ -1408,7 +1408,7 @@ SeriesInternal::SeriesInternal(
     Access at,
     MPI_Comm comm,
     std::string const & options )
-    : SeriesImpl{
+    : SeriesInterface{
           static_cast< internal::SeriesData * >( this ),
           static_cast< internal::AttributableData * >( this ) }
 {
@@ -1423,7 +1423,7 @@ SeriesInternal::SeriesInternal(
 
 SeriesInternal::SeriesInternal(
     std::string const & filepath, Access at, std::string const & options )
-    : SeriesImpl{
+    : SeriesInterface{
           static_cast< internal::SeriesData * >( this ),
           static_cast< internal::AttributableData * >( this ) }
 {
@@ -1467,7 +1467,7 @@ SeriesInternal::~SeriesInternal()
 }
 } // namespace internal
 
-Series::Series() : SeriesImpl{ nullptr, nullptr }, iterations{}
+Series::Series() : SeriesInterface{ nullptr, nullptr }, iterations{}
 {
 }
 
@@ -1477,14 +1477,14 @@ Series::Series(
     Access at,
     MPI_Comm comm,
     std::string const & options )
-    : SeriesImpl{ nullptr, nullptr }
+    : SeriesInterface{ nullptr, nullptr }
     , m_series{ std::make_shared< internal::SeriesInternal >(
           filepath, at, comm, options ) }
     , iterations{ m_series->iterations }
 {
     AttributableImpl::m_attri =
         static_cast< internal::AttributableData * >( m_series.get() );
-    SeriesImpl::m_series = m_series.get();
+    SeriesInterface::m_series = m_series.get();
 }
 #endif
 
@@ -1492,14 +1492,14 @@ Series::Series(
     std::string const & filepath,
     Access at,
     std::string const & options)
-    : SeriesImpl{ nullptr, nullptr }
+    : SeriesInterface{ nullptr, nullptr }
     , m_series{ std::make_shared< internal::SeriesInternal >(
           filepath, at, options ) }
     , iterations{ m_series->iterations }
 {
     AttributableImpl::m_attri =
         static_cast< internal::AttributableData * >( m_series.get() );
-    SeriesImpl::m_series = m_series.get();
+    SeriesInterface::m_series = m_series.get();
 }
 
 Series::operator bool() const

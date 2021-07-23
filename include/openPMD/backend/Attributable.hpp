@@ -107,7 +107,7 @@ class AttributableImpl
     friend struct traits::GenerationPolicy;
     friend class Iteration;
     friend class Series;
-    friend class SeriesImpl;
+    friend class SeriesInterface;
     friend class Writable;
     friend class WriteIterations;
 

@@ -44,7 +44,7 @@ class Iteration : public LegacyAttributable
             typename T_container
     >
     friend class Container;
-    friend class SeriesImpl;
+    friend class SeriesInterface;
     friend class WriteIterations;
     friend class SeriesIterator;
 
