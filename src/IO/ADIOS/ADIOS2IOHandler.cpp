@@ -1302,9 +1302,9 @@ namespace detail
          */
         using rep = AttributeTypes< bool >::rep;
         if
-#    if __cplusplus > 201402L
+#if __cplusplus >= 201703L
             constexpr
-#    endif
+#endif
             ( std::is_same< T, rep >::value )
         {
             std::string metaAttr =
