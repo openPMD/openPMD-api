@@ -64,7 +64,7 @@ class AttributableData;
 class Writable final
 {
     friend class internal::AttributableData;
-    friend class AttributableImpl;
+    friend class AttributableInterface;
     template< typename T_elem >
     friend class BaseRecord;
     template<
@@ -76,7 +76,7 @@ class Writable final
     friend class Iteration;
     friend class Mesh;
     friend class ParticleSpecies;
-    friend class SeriesImpl;
+    friend class SeriesInterface;
     friend class Record;
     friend class ADIOS1IOHandlerImpl;
     friend class ParallelADIOS1IOHandlerImpl;

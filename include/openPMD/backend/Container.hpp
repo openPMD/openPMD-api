@@ -106,13 +106,13 @@ template<
 class Container : public LegacyAttributable
 {
     static_assert(
-        std::is_base_of< AttributableImpl, T >::value,
+        std::is_base_of< AttributableInterface, T >::value,
         "Type of container element must be derived from Writable");
 
     friend class Iteration;
     friend class ParticleSpecies;
     friend class internal::SeriesData;
-    friend class SeriesImpl;
+    friend class SeriesInterface;
     friend class Series;
 
 protected:
