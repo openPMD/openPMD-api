@@ -139,4 +139,4 @@ The class hierarchy of ``Attributable`` follows a similar design, with some diff
   The ``Attributable`` mixin can be added to those classes by deriving from ``LegacyAttributable``.
 * The ``Attributable`` mixin is added to ``Series`` by deriving ``SeriesData`` from ``AttributableData`` and ``SeriesInterface`` from ``AttributableInterface``.
 
-``Series`` as root of every hierarchy, supporting ``groupBased`` and ``fileBased`` transparently ...
+The ``Series`` class is the entry point to the openPMD-api. An instance of this class always represents an entire series (of iterations), regardless of how this series is modeled in storage or transport (e.g. as multiple files, as a stream, as variables containing multiple snapshots of a dataset or as one file containing all iterations at once).
