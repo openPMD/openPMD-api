@@ -57,7 +57,7 @@ The method ``Series::setIterationEncoding()`` (C++) or ``Series.set_iteration_en
   No iteration-specific groups are created and the corresponding layer is dropped from the openPMD hierarchy.
   In backends that do not support this feature, a series created with this encoding can only contain one iteration.
 
-Alternative spellings: groupbased, variablebased, filebased, group_based, variable_based, file_based
+Spellings for constants in the C++ (``IterationEncoding``) and Python (``Iteration_Encoding``) API: ``groupBased``, ``variableBased``, ``fileBased``, ``group_based``, ``group_based``, ``variable_based``
 
 Attributes
 ----------
