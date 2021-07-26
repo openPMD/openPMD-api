@@ -10,6 +10,7 @@ License: LGPLv3+
 """
 from .. import openpmd_api_cxx as io
 import argparse
+import os  # os.path.basename
 import sys  # sys.stderr.write
 
 # MPI is an optional dependency
@@ -28,8 +29,11 @@ class FallbackMPICommunicator:
         self.rank = 0
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="""
+def parse_args(program_name):
+    parser = argparse.ArgumentParser(
+        # we need this for line breaks
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="""
 openPMD Pipe.
 
 This tool connects an openPMD-based data source with an openPMD-based data sink
@@ -39,7 +43,14 @@ or multiplexing the data path in streaming setups.
 Parallelization with MPI is optionally possible and is done automatically
 as soon as the mpi4py package is found and this tool is called in an MPI
 context. In that case, each dataset will be equally sliced along the dimension
-with the largest extent.""")
+with the largest extent.
+
+Examples:
+    {0} --infile simData.h5 simData_%T.bp
+    {0} --infile simData.sst --inconfig @streamConfig.json simData_%T.bp
+    {0} --infile uncompressed.bp \\
+        --outfile compressed.bp --outconfig @compressionConfig.json
+""".format(os.path.basename(program_name)))
 
     parser.add_argument('--infile', type=str, help='In file')
     parser.add_argument('--outfile', type=str, help='Out file')
@@ -299,7 +310,7 @@ class pipe:
 
 
 def main():
-    args = parse_args()
+    args = parse_args(sys.argv[0])
     if not args.infile or not args.outfile:
         print("Please specify parameters --infile and --outfile.")
         sys.exit(1)
