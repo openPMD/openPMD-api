@@ -106,7 +106,8 @@ The new layout may be activated **for experimental purposes** in two ways:
 The ADIOS2 backend will automatically recognize the layout that has been used by a writer when reading a dataset.
 
 .. tip::
-   This schema does not use ADIOS2 attributes any more, making the ``bpls -a`` and ``bpls -A`` switches useless for openPMD datasets.
+
+   This schema does not use ADIOS2 attributes anymore, thus ``bpls -a`` and ``bpls -A`` attribute switches do not show openPMD attributes.
    Their functionality can be emulated via regexes:
 
    * Print datasets and attributes: Default behavior
