@@ -47,7 +47,8 @@ with the largest extent.
 
 Examples:
     {0} --infile simData.h5 simData_%T.bp
-    {0} --infile simData.sst --inconfig @streamConfig.json simData_%T.bp
+    {0} --infile simData.sst --inconfig @streamConfig.json \\
+        --outfile simData_%T.bp
     {0} --infile uncompressed.bp \\
         --outfile compressed.bp --outconfig @compressionConfig.json
 """.format(os.path.basename(program_name)))
