@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>openPMD-api: /tmp/tmp.CnYw1X80QE/openPMD-api/include/openPMD/IO/AbstractIOHandler.hpp Source File</title>
+<title>openPMD-api: /tmp/tmp.iS0xscHoW7/openPMD-api/include/openPMD/IO/AbstractIOHandler.hpp Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -69,7 +69,7 @@ $(function() {
 <div class="title">AbstractIOHandler.hpp</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/* Copyright 2017-2020 Fabian Koller, Axel Huebl</span></div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/* Copyright 2017-2021 Fabian Koller, Axel Huebl</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"> *</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * This file is part of openPMD-api.</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> *</span></div>
@@ -127,50 +127,62 @@ $(function() {
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    <span class="keyword">virtual</span> ~<a class="code" href="classopen_p_m_d_1_1unsupported__data__error.html">unsupported_data_error</a>() { }</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;};</div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
-<div class="line"><a name="l00068"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_abstract_i_o_handler.html">   68</a></span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_abstract_i_o_handler.html">AbstractIOHandler</a></div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;{</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="preprocessor">#if openPMD_HAVE_MPI</span></div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_abstract_i_o_handler.html">AbstractIOHandler</a>(std::string path, <a class="code" href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1e">Access</a> at, MPI_Comm)</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;        : directory{std::move(path)},</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;          m_backendAccess{at},</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;          m_frontendAccess{at}</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    { }</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_abstract_i_o_handler.html">AbstractIOHandler</a>(std::string path, <a class="code" href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1e">Access</a> at)</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;        : directory{std::move(path)},</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;          m_backendAccess{at},</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;          m_frontendAccess{at}</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    { }</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    <span class="keyword">virtual</span> ~<a class="code" href="classopen_p_m_d_1_1_abstract_i_o_handler.html">AbstractIOHandler</a>() = <span class="keywordflow">default</span>;</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
-<div class="line"><a name="l00089"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_abstract_i_o_handler.html#af0b10be5de462efba3e4b22e43a48dc8">   89</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classopen_p_m_d_1_1_abstract_i_o_handler.html#af0b10be5de462efba3e4b22e43a48dc8">enqueue</a>(<a class="code" href="classopen_p_m_d_1_1_i_o_task.html">IOTask</a> <span class="keyword">const</span>&amp; iotask)</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    {</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;        m_work.push(iotask);</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    }</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160; </div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <span class="keyword">virtual</span> std::future&lt; void &gt; <a class="code" href="classopen_p_m_d_1_1_abstract_i_o_handler.html#a01a69dc408cc40dab0af0ab3bb0a75d8">flush</a>() = 0;</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    <span class="keyword">virtual</span> std::string <a class="code" href="classopen_p_m_d_1_1_abstract_i_o_handler.html#addb91193aced4116efddc155bc2e5091">backendName</a>() <span class="keyword">const</span> = 0;</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160; </div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    std::string <span class="keyword">const</span> directory;</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1e">Access</a> <span class="keyword">const</span> m_backendAccess;</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1e">Access</a> <span class="keyword">const</span> m_frontendAccess;</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    std::queue&lt; IOTask &gt; m_work;</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;}; <span class="comment">// AbstractIOHandler</span></div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160; </div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;} <span class="comment">// namespace openPMD</span></div>
+<div class="line"><a name="l00063"></a><span class="lineno"><a class="line" href="namespaceopen_p_m_d.html#a677be01ff3fa0d48536a70114771d065">   63</a></span>&#160;<span class="keyword">enum class</span> <a class="code" href="namespaceopen_p_m_d.html#a677be01ff3fa0d48536a70114771d065">FlushLevel</a> : unsigned char</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;{</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#a677be01ff3fa0d48536a70114771d065aff6f10e7003655cf3a02b528b4993a3d">UserFlush</a>,</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#a677be01ff3fa0d48536a70114771d065ada1e0af0851f992af15f8837cb34b087">InternalFlush</a>,</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#a677be01ff3fa0d48536a70114771d065a2614fd85a8ca09a58c13f4d6a61c6188">SkeletonOnly</a></div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;};</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160; </div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160; </div>
+<div class="line"><a name="l00098"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_abstract_i_o_handler.html">   98</a></span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_abstract_i_o_handler.html">AbstractIOHandler</a></div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;{</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;<span class="preprocessor">#if openPMD_HAVE_MPI</span></div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_abstract_i_o_handler.html">AbstractIOHandler</a>(std::string path, <a class="code" href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1e">Access</a> at, MPI_Comm)</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;        : directory{std::move(path)},</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;          m_backendAccess{at},</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;          m_frontendAccess{at}</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    { }</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_abstract_i_o_handler.html">AbstractIOHandler</a>(std::string path, <a class="code" href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1e">Access</a> at)</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;        : directory{std::move(path)},</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;          m_backendAccess{at},</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;          m_frontendAccess{at}</div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    { }</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    <span class="keyword">virtual</span> ~<a class="code" href="classopen_p_m_d_1_1_abstract_i_o_handler.html">AbstractIOHandler</a>() = <span class="keywordflow">default</span>;</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160; </div>
+<div class="line"><a name="l00119"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_abstract_i_o_handler.html#af0b10be5de462efba3e4b22e43a48dc8">  119</a></span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classopen_p_m_d_1_1_abstract_i_o_handler.html#af0b10be5de462efba3e4b22e43a48dc8">enqueue</a>(<a class="code" href="classopen_p_m_d_1_1_i_o_task.html">IOTask</a> <span class="keyword">const</span>&amp; iotask)</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    {</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;        m_work.push(iotask);</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    }</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160; </div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    <span class="keyword">virtual</span> std::future&lt; void &gt; <a class="code" href="classopen_p_m_d_1_1_abstract_i_o_handler.html#a01a69dc408cc40dab0af0ab3bb0a75d8">flush</a>() = 0;</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160; </div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    <span class="keyword">virtual</span> std::string <a class="code" href="classopen_p_m_d_1_1_abstract_i_o_handler.html#addb91193aced4116efddc155bc2e5091">backendName</a>() <span class="keyword">const</span> = 0;</div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160; </div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    std::string <span class="keyword">const</span> directory;</div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1e">Access</a> <span class="keyword">const</span> m_backendAccess;</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1e">Access</a> <span class="keyword">const</span> m_frontendAccess;</div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    std::queue&lt; IOTask &gt; m_work;</div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#a677be01ff3fa0d48536a70114771d065">FlushLevel</a> m_flushLevel = <a class="code" href="namespaceopen_p_m_d.html#a677be01ff3fa0d48536a70114771d065ada1e0af0851f992af15f8837cb34b087">FlushLevel::InternalFlush</a>;</div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;}; <span class="comment">// AbstractIOHandler</span></div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160; </div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;} <span class="comment">// namespace openPMD</span></div>
 </div><!-- fragment --></div><!-- contents -->
-<div class="ttc" id="aclassopen_p_m_d_1_1_abstract_i_o_handler_html"><div class="ttname"><a href="classopen_p_m_d_1_1_abstract_i_o_handler.html">openPMD::AbstractIOHandler</a></div><div class="ttdoc">Interface for communicating between logical and physically persistent data.</div><div class="ttdef"><b>Definition:</b> AbstractIOHandler.hpp:68</div></div>
+<div class="ttc" id="anamespaceopen_p_m_d_html_a677be01ff3fa0d48536a70114771d065aff6f10e7003655cf3a02b528b4993a3d"><div class="ttname"><a href="namespaceopen_p_m_d.html#a677be01ff3fa0d48536a70114771d065aff6f10e7003655cf3a02b528b4993a3d">openPMD::FlushLevel::UserFlush</a></div><div class="ttdeci">@ UserFlush</div><div class="ttdoc">Flush operation that was triggered by user code.</div></div>
+<div class="ttc" id="anamespaceopen_p_m_d_html_a677be01ff3fa0d48536a70114771d065ada1e0af0851f992af15f8837cb34b087"><div class="ttname"><a href="namespaceopen_p_m_d.html#a677be01ff3fa0d48536a70114771d065ada1e0af0851f992af15f8837cb34b087">openPMD::FlushLevel::InternalFlush</a></div><div class="ttdeci">@ InternalFlush</div><div class="ttdoc">Default mode, used when flushes are triggered internally, e.g.</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_abstract_i_o_handler_html"><div class="ttname"><a href="classopen_p_m_d_1_1_abstract_i_o_handler.html">openPMD::AbstractIOHandler</a></div><div class="ttdoc">Interface for communicating between logical and physically persistent data.</div><div class="ttdef"><b>Definition:</b> AbstractIOHandler.hpp:98</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_abstract_i_o_handler_html_a01a69dc408cc40dab0af0ab3bb0a75d8"><div class="ttname"><a href="classopen_p_m_d_1_1_abstract_i_o_handler.html#a01a69dc408cc40dab0af0ab3bb0a75d8">openPMD::AbstractIOHandler::flush</a></div><div class="ttdeci">virtual std::future&lt; void &gt; flush()=0</div><div class="ttdoc">Process operations in queue according to FIFO.</div></div>
 <div class="ttc" id="anamespaceopen_p_m_d_html"><div class="ttname"><a href="namespaceopen_p_m_d.html">openPMD</a></div><div class="ttdoc">Public definitions of openPMD-api.</div><div class="ttdef"><b>Definition:</b> Date.cpp:29</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_abstract_i_o_handler_html_addb91193aced4116efddc155bc2e5091"><div class="ttname"><a href="classopen_p_m_d_1_1_abstract_i_o_handler.html#addb91193aced4116efddc155bc2e5091">openPMD::AbstractIOHandler::backendName</a></div><div class="ttdeci">virtual std::string backendName() const =0</div><div class="ttdoc">The currently used backend.</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_i_o_task_html"><div class="ttname"><a href="classopen_p_m_d_1_1_i_o_task.html">openPMD::IOTask</a></div><div class="ttdoc">Self-contained description of a single IO operation.</div><div class="ttdef"><b>Definition:</b> IOTask.hpp:550</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_i_o_task_html"><div class="ttname"><a href="classopen_p_m_d_1_1_i_o_task.html">openPMD::IOTask</a></div><div class="ttdoc">Self-contained description of a single IO operation.</div><div class="ttdef"><b>Definition:</b> IOTask.hpp:590</div></div>
+<div class="ttc" id="anamespaceopen_p_m_d_html_a677be01ff3fa0d48536a70114771d065a2614fd85a8ca09a58c13f4d6a61c6188"><div class="ttname"><a href="namespaceopen_p_m_d.html#a677be01ff3fa0d48536a70114771d065a2614fd85a8ca09a58c13f4d6a61c6188">openPMD::FlushLevel::SkeletonOnly</a></div><div class="ttdeci">@ SkeletonOnly</div><div class="ttdoc">Restricted mode, ensures to set up the openPMD hierarchy (as far as defined so far) in the backend.</div></div>
 <div class="ttc" id="anamespaceopen_p_m_d_html_a132624db0c6ac134d7a6084ab6d07e1e"><div class="ttname"><a href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1e">openPMD::Access</a></div><div class="ttdeci">Access</div><div class="ttdoc">File access mode to use during IO.</div><div class="ttdef"><b>Definition:</b> Access.hpp:28</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_abstract_i_o_handler_html_af0b10be5de462efba3e4b22e43a48dc8"><div class="ttname"><a href="classopen_p_m_d_1_1_abstract_i_o_handler.html#af0b10be5de462efba3e4b22e43a48dc8">openPMD::AbstractIOHandler::enqueue</a></div><div class="ttdeci">virtual void enqueue(IOTask const &amp;iotask)</div><div class="ttdoc">Add provided task to queue according to FIFO.</div><div class="ttdef"><b>Definition:</b> AbstractIOHandler.hpp:89</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_abstract_i_o_handler_html_af0b10be5de462efba3e4b22e43a48dc8"><div class="ttname"><a href="classopen_p_m_d_1_1_abstract_i_o_handler.html#af0b10be5de462efba3e4b22e43a48dc8">openPMD::AbstractIOHandler::enqueue</a></div><div class="ttdeci">virtual void enqueue(IOTask const &amp;iotask)</div><div class="ttdoc">Add provided task to queue according to FIFO.</div><div class="ttdef"><b>Definition:</b> AbstractIOHandler.hpp:119</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1unsupported__data__error_html"><div class="ttname"><a href="classopen_p_m_d_1_1unsupported__data__error.html">openPMD::unsupported_data_error</a></div><div class="ttdef"><b>Definition:</b> AbstractIOHandler.hpp:50</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1no__such__file__error_html"><div class="ttname"><a href="classopen_p_m_d_1_1no__such__file__error.html">openPMD::no_such_file_error</a></div><div class="ttdef"><b>Definition:</b> AbstractIOHandler.hpp:41</div></div>
+<div class="ttc" id="anamespaceopen_p_m_d_html_a677be01ff3fa0d48536a70114771d065"><div class="ttname"><a href="namespaceopen_p_m_d.html#a677be01ff3fa0d48536a70114771d065">openPMD::FlushLevel</a></div><div class="ttdeci">FlushLevel</div><div class="ttdoc">Determine what items should be flushed upon Series::flush()</div><div class="ttdef"><b>Definition:</b> AbstractIOHandler.hpp:63</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated by &#160;<a href="http://www.doxygen.org/index.html">

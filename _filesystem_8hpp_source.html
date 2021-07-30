@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>openPMD-api: /tmp/tmp.CnYw1X80QE/openPMD-api/include/openPMD/auxiliary/Filesystem.hpp Source File</title>
+<title>openPMD-api: /tmp/tmp.iS0xscHoW7/openPMD-api/include/openPMD/auxiliary/Filesystem.hpp Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -69,7 +69,7 @@ $(function() {
 <div class="title">Filesystem.hpp</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/* Copyright 2018-2020 Fabian Koller</span></div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/* Copyright 2018-2021 Fabian Koller</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"> *</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * This file is part of openPMD-api.</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> *</span></div>
@@ -94,35 +94,48 @@ $(function() {
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &lt;string&gt;</span></div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;vector&gt;</span></div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespaceopen_p_m_d.html">openPMD</a></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;{</div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="keyword">namespace </span>auxiliary</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;{</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor">#ifdef _WIN32</span></div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="keyword">static</span> constexpr <span class="keywordtype">char</span> <span class="keyword">const</span> directory_separator = <span class="charliteral">&#39;\\&#39;</span>;</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="keyword">static</span> constexpr <span class="keywordtype">char</span> <span class="keyword">const</span> directory_separator = <span class="charliteral">&#39;/&#39;</span>;</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keywordtype">bool</span></div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;directory_exists(std::string <span class="keyword">const</span>&amp; path);</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="keywordtype">bool</span></div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;file_exists(std::string <span class="keyword">const</span>&amp; path);</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;std::vector&lt; std::string &gt;</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;list_directory(std::string <span class="keyword">const</span>&amp; path );</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="keywordtype">bool</span></div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;create_directories(std::string <span class="keyword">const</span>&amp; path);</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="keywordtype">bool</span></div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;remove_directory(std::string <span class="keyword">const</span>&amp; path);</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;<span class="keywordtype">bool</span></div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;remove_file(std::string <span class="keyword">const</span>&amp; path);</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;} <span class="comment">// auxiliary</span></div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;} <span class="comment">// openPMD</span></div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#include &quot;openPMD/config.hpp&quot;</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#if openPMD_HAVE_MPI</span></div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor">#    include &lt;mpi.h&gt;</span></div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespaceopen_p_m_d.html">openPMD</a></div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;{</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="keyword">namespace </span>auxiliary</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;{</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor">#ifdef _WIN32</span></div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="keyword">static</span> constexpr <span class="keywordtype">char</span> <span class="keyword">const</span> directory_separator = <span class="charliteral">&#39;\\&#39;</span>;</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="keyword">static</span> constexpr <span class="keywordtype">char</span> <span class="keyword">const</span> directory_separator = <span class="charliteral">&#39;/&#39;</span>;</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keywordtype">bool</span></div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;directory_exists(std::string <span class="keyword">const</span>&amp; path);</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="keywordtype">bool</span></div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;file_exists(std::string <span class="keyword">const</span>&amp; path);</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;std::vector&lt; std::string &gt;</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;list_directory(std::string <span class="keyword">const</span>&amp; path );</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="keywordtype">bool</span></div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;create_directories(std::string <span class="keyword">const</span>&amp; path);</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160; </div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="keywordtype">bool</span></div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;remove_directory(std::string <span class="keyword">const</span>&amp; path);</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160; </div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;<span class="keywordtype">bool</span></div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;remove_file(std::string <span class="keyword">const</span>&amp; path);</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160; </div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;<span class="preprocessor">#if openPMD_HAVE_MPI</span></div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160; </div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;std::string</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;collective_file_read( std::string <span class="keyword">const</span> &amp; path, MPI_Comm );</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160; </div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;} <span class="comment">// namespace auxiliary</span></div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;} <span class="comment">// namespace openPMD</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="anamespaceopen_p_m_d_html"><div class="ttname"><a href="namespaceopen_p_m_d.html">openPMD</a></div><div class="ttdoc">Public definitions of openPMD-api.</div><div class="ttdef"><b>Definition:</b> Date.cpp:29</div></div>
 <!-- start footer part -->

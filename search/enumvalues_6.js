@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['read_5fonly_734',['READ_ONLY',['../namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1ea47c7e7cb36a953a8c47e02000036bb44',1,'openPMD']]],
-  ['read_5fwrite_735',['READ_WRITE',['../namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1eaa7b843fb734e3b3fea8e5f902d3f4144',1,'openPMD']]]
+  ['n_865',['N',['../namespaceopen_p_m_d.html#a5bd35872ff3aaacc1ec2700443d89c40a8d9c307cb7f3c4a32822a51922d1ceaa',1,'openPMD']]]
 ];

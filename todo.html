@@ -67,15 +67,23 @@ $(function() {
 <div class="contents">
 <div class="textblock"><dl class="reflist">
 <dt>Member <a class="el" href="classopen_p_m_d_1_1_base_record.html#adcd24ca5844d3c22f8b4b16f08cdaf77">openPMD::BaseRecord&lt; T_elem &gt;::unitDimension</a>  () const</dt>
-<dd><a class="anchor" id="_todo000001"></a>add also, as soon as added in <a class="el" href="classopen_p_m_d_1_1_container.html" title="Map-like container that enforces openPMD requirements and handles IO.">Container</a>:  </dd>
+<dd><a class="anchor" id="_todo000003"></a>add also, as soon as added in <a class="el" href="classopen_p_m_d_1_1_container.html" title="Map-like container that enforces openPMD requirements and handles IO.">Container</a>:  </dd>
 <dt>Member <a class="el" href="classopen_p_m_d_1_1_container.html#a6ba62f6386e740a66f0ba01906defd94">openPMD::Container&lt; T, T_key, T_container &gt;::emplace</a>  (Args &amp;&amp;... args) -&gt; decltype(InternalContainer().emplace(std::forward&lt; Args &gt;(args)...))</dt>
-<dd><a class="anchor" id="_todo000003"></a>add also:  </dd>
+<dd><a class="anchor" id="_todo000005"></a>add also:  </dd>
 <dt>Member <a class="el" href="classopen_p_m_d_1_1_container.html#ac78e0b2c727b468dec63cb2be275bc13">openPMD::Container&lt; T, T_key, T_container &gt;::erase</a>  (iterator res)</dt>
-<dd><a class="anchor" id="_todo000002"></a>why does const_iterator not work compile with pybind11?  </dd>
+<dd><a class="anchor" id="_todo000004"></a>why does const_iterator not work compile with pybind11?  </dd>
+<dt>Member <a class="el" href="structopen_p_m_d_1_1detail_1_1_buffered_actions.html#a213582600af57d4b302717f583e37de9">openPMD::detail::BufferedActions::m_attributeReads</a>  </dt>
+<dd><a class="anchor" id="_todo000008"></a>This one is unnecessary, in the new schema, attribute reads do not need to be deferred, but can happen instantly without performance penalty, once preloadAttributes has been filled. </dd>
+<dt>Member <a class="el" href="classopen_p_m_d_1_1_h_d_f5_i_o_handler_impl.html#a04d8af7e377f4defd01cc82ed3d08969">openPMD::HDF5IOHandlerImpl::createDataset</a>  (<a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file.">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter_3_01_operation_1_1_c_r_e_a_t_e___d_a_t_a_s_e_t_01_4.html">Parameter&lt; Operation::CREATE_DATASET &gt;</a> const &amp;) override</dt>
+<dd><p class="startdd"><a class="anchor" id="_todo000001"></a>add per dataset chunk control from JSON config </p>
+<p class="enddd"><a class="anchor" id="_todo000002"></a>allow overwrite with user-provided chunk size  </p>
+</dd>
 <dt>Class <a class="el" href="classopen_p_m_d_1_1_patch_record_component.html">openPMD::PatchRecordComponent</a>  </dt>
-<dd><a class="anchor" id="_todo000004"></a>add support for constant patch record components  </dd>
+<dd><a class="anchor" id="_todo000006"></a>add support for constant patch record components  </dd>
 <dt>Member <a class="el" href="classopen_p_m_d_1_1_patch_record_component.html#a572a6541fe56834fcd8277d55b0545a6">openPMD::PatchRecordComponent::load</a>  (std::shared_ptr&lt; T &gt;)</dt>
-<dd><a class="anchor" id="_todo000005"></a>add support for constant patch record components </dd>
+<dd><a class="anchor" id="_todo000007"></a>add support for constant patch record components  </dd>
+<dt>Member <a class="el" href="classopen_p_m_d_1_1_record_component.html#a8a7e98e865659b6623651e7372cb2ae4">openPMD::RecordComponent::m_name</a>  </dt>
+<dd><a class="anchor" id="_todo000010"></a>Merge functionality with ownKeyInParent? </dd>
 </dl>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->

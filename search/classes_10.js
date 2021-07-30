@@ -1,11 +1,11 @@
 var searchData=
 [
-  ['timer_516',['Timer',['../classopen_p_m_d_1_1benchmark_1_1_timer.html',1,'openPMD::benchmark']]],
-  ['todatatype_517',['ToDatatype',['../structopen_p_m_d_1_1detail_1_1_to_datatype.html',1,'openPMD::detail']]],
-  ['todatatypehelper_518',['ToDatatypeHelper',['../structopen_p_m_d_1_1detail_1_1_to_datatype_helper.html',1,'openPMD::detail']]],
-  ['todatatypehelper_3c_20bool_20_3e_519',['ToDatatypeHelper&lt; bool &gt;',['../structopen_p_m_d_1_1detail_1_1_to_datatype_helper_3_01bool_01_4.html',1,'openPMD::detail']]],
-  ['todatatypehelper_3c_20std_3a_3aarray_3c_20t_2c_20n_20_3e_20_3e_520',['ToDatatypeHelper&lt; std::array&lt; T, n &gt; &gt;',['../structopen_p_m_d_1_1detail_1_1_to_datatype_helper_3_01std_1_1array_3_01_t_00_01n_01_4_01_4.html',1,'openPMD::detail']]],
-  ['todatatypehelper_3c_20std_3a_3avector_3c_20t_20_3e_20_3e_521',['ToDatatypeHelper&lt; std::vector&lt; T &gt; &gt;',['../structopen_p_m_d_1_1detail_1_1_to_datatype_helper_3_01std_1_1vector_3_01_t_01_4_01_4.html',1,'openPMD::detail']]],
-  ['tracingjson_522',['TracingJSON',['../classopen_p_m_d_1_1auxiliary_1_1_tracing_j_s_o_n.html',1,'openPMD::auxiliary']]],
-  ['type_5fcaster_3c_20variantsrc_3a_3avariant_3c_20ts_2e_2e_2e_20_3e_20_3e_523',['type_caster&lt; variantSrc::variant&lt; Ts... &gt; &gt;',['../structpybind11_1_1detail_1_1type__caster_3_01variant_src_1_1variant_3_01_ts_8_8_8_01_4_01_4.html',1,'pybind11::detail']]]
+  ['series_597',['Series',['../classopen_p_m_d_1_1_series.html',1,'openPMD']]],
+  ['seriesdata_598',['SeriesData',['../classopen_p_m_d_1_1internal_1_1_series_data.html',1,'openPMD::internal']]],
+  ['seriesinterface_599',['SeriesInterface',['../classopen_p_m_d_1_1_series_interface.html',1,'openPMD']]],
+  ['seriesinternal_600',['SeriesInternal',['../classopen_p_m_d_1_1internal_1_1_series_internal.html',1,'openPMD::internal']]],
+  ['seriesiterator_601',['SeriesIterator',['../classopen_p_m_d_1_1_series_iterator.html',1,'openPMD']]],
+  ['setattributefromobject_602',['SetAttributeFromObject',['../struct_set_attribute_from_object.html',1,'']]],
+  ['simpledatasetfillerprovider_603',['SimpleDatasetFillerProvider',['../classopen_p_m_d_1_1_simple_dataset_filler_provider.html',1,'openPMD']]],
+  ['span_604',['Span',['../classopen_p_m_d_1_1_span.html',1,'openPMD']]]
 ];

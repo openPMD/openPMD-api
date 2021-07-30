@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>openPMD-api: /tmp/tmp.CnYw1X80QE/openPMD-api/include/openPMD/Dataset.hpp Source File</title>
+<title>openPMD-api: /tmp/tmp.iS0xscHoW7/openPMD-api/include/openPMD/Dataset.hpp Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -69,7 +69,7 @@ $(function() {
 <div class="title">Dataset.hpp</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/* Copyright 2017-2020 Fabian Koller</span></div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/* Copyright 2017-2021 Fabian Koller, Franz Poeschel, Axel Huebl</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"> *</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * This file is part of openPMD-api.</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> *</span></div>
@@ -111,26 +111,28 @@ $(function() {
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_dataset.html">Dataset</a>(<a class="code" href="namespaceopen_p_m_d.html#ac04f58bb14b584a3685793e5b29ccd00">Datatype</a>, Extent, std::string <a class="code" href="classopen_p_m_d_1_1_dataset.html#adc7009864784dad073844f79b1e53067">options</a> = <span class="stringliteral">&quot;{}&quot;</span>);</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_dataset.html">Dataset</a>&amp; extend(Extent newExtent);</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_dataset.html">Dataset</a>&amp; setChunkSize(Extent <span class="keyword">const</span>&amp;);</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_dataset.html">Dataset</a>&amp; setCompression(std::string <span class="keyword">const</span>&amp;, uint8_t <span class="keyword">const</span>);</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_dataset.html">Dataset</a>&amp; setCustomTransform(std::string <span class="keyword">const</span>&amp;);</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; </div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    Extent extent;</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#ac04f58bb14b584a3685793e5b29ccd00">Datatype</a> dtype;</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    uint8_t rank;</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    Extent chunkSize;</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    std::string compression;</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    std::string transform;</div>
-<div class="line"><a name="l00054"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_dataset.html#adc7009864784dad073844f79b1e53067">   54</a></span>&#160;    std::string <a class="code" href="classopen_p_m_d_1_1_dataset.html#adc7009864784dad073844f79b1e53067">options</a> = <span class="stringliteral">&quot;{}&quot;</span>; </div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;};</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;} <span class="comment">// namespace openPMD</span></div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_dataset.html">Dataset</a>( Extent );</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_dataset.html">Dataset</a>&amp; extend(Extent newExtent);</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_dataset.html">Dataset</a>&amp; setChunkSize(Extent <span class="keyword">const</span>&amp;);</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_dataset.html">Dataset</a>&amp; setCompression(std::string <span class="keyword">const</span>&amp;, uint8_t <span class="keyword">const</span>);</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_dataset.html">Dataset</a>&amp; setCustomTransform(std::string <span class="keyword">const</span>&amp;);</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    Extent extent;</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#ac04f58bb14b584a3685793e5b29ccd00">Datatype</a> dtype;</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    uint8_t rank;</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    Extent chunkSize;</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    std::string compression;</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    std::string transform;</div>
+<div class="line"><a name="l00062"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_dataset.html#adc7009864784dad073844f79b1e53067">   62</a></span>&#160;    std::string <a class="code" href="classopen_p_m_d_1_1_dataset.html#adc7009864784dad073844f79b1e53067">options</a> = <span class="stringliteral">&quot;{}&quot;</span>; </div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;};</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;} <span class="comment">// namespace openPMD</span></div>
 </div><!-- fragment --></div><!-- contents -->
-<div class="ttc" id="anamespaceopen_p_m_d_html_ac04f58bb14b584a3685793e5b29ccd00"><div class="ttname"><a href="namespaceopen_p_m_d.html#ac04f58bb14b584a3685793e5b29ccd00">openPMD::Datatype</a></div><div class="ttdeci">Datatype</div><div class="ttdoc">Concrete datatype of an object available at runtime.</div><div class="ttdef"><b>Definition:</b> Datatype.hpp:42</div></div>
+<div class="ttc" id="anamespaceopen_p_m_d_html_ac04f58bb14b584a3685793e5b29ccd00"><div class="ttname"><a href="namespaceopen_p_m_d.html#ac04f58bb14b584a3685793e5b29ccd00">openPMD::Datatype</a></div><div class="ttdeci">Datatype</div><div class="ttdoc">Concrete datatype of an object available at runtime.</div><div class="ttdef"><b>Definition:</b> Datatype.hpp:45</div></div>
 <div class="ttc" id="anamespaceopen_p_m_d_html"><div class="ttname"><a href="namespaceopen_p_m_d.html">openPMD</a></div><div class="ttdoc">Public definitions of openPMD-api.</div><div class="ttdef"><b>Definition:</b> Date.cpp:29</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_record_component_html"><div class="ttname"><a href="classopen_p_m_d_1_1_record_component.html">openPMD::RecordComponent</a></div><div class="ttdef"><b>Definition:</b> RecordComponent.hpp:78</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_record_component_html"><div class="ttname"><a href="classopen_p_m_d_1_1_record_component.html">openPMD::RecordComponent</a></div><div class="ttdef"><b>Definition:</b> RecordComponent.hpp:81</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_dataset_html"><div class="ttname"><a href="classopen_p_m_d_1_1_dataset.html">openPMD::Dataset</a></div><div class="ttdef"><b>Definition:</b> Dataset.hpp:36</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_dataset_html_adc7009864784dad073844f79b1e53067"><div class="ttname"><a href="classopen_p_m_d_1_1_dataset.html#adc7009864784dad073844f79b1e53067">openPMD::Dataset::options</a></div><div class="ttdeci">std::string options</div><div class="ttdoc">backend-dependent JSON configuration</div><div class="ttdef"><b>Definition:</b> Dataset.hpp:54</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_dataset_html_adc7009864784dad073844f79b1e53067"><div class="ttname"><a href="classopen_p_m_d_1_1_dataset.html#adc7009864784dad073844f79b1e53067">openPMD::Dataset::options</a></div><div class="ttdeci">std::string options</div><div class="ttdoc">backend-dependent JSON configuration</div><div class="ttdef"><b>Definition:</b> Dataset.hpp:62</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated by &#160;<a href="http://www.doxygen.org/index.html">

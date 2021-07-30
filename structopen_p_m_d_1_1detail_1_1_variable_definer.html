@@ -67,26 +67,114 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="structopen_p_m_d_1_1detail_1_1_variable_definer-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">openPMD::detail::VariableDefiner Struct Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
+<div class="dynheader">
+Collaboration diagram for openPMD::detail::VariableDefiner:</div>
+<div class="dyncontent">
+<div class="center"><img src="structopen_p_m_d_1_1detail_1_1_variable_definer__coll__graph.png" border="0" usemap="#open_p_m_d_1_1detail_1_1_variable_definer_coll__map" alt="Collaboration graph"/></div>
+<map name="open_p_m_d_1_1detail_1_1_variable_definer_coll__map" id="open_p_m_d_1_1detail_1_1_variable_definer_coll__map">
+<area shape="rect" title=" " alt="" coords="5,185,196,227"/>
+<area shape="rect" title="STL class." alt="" coords="57,96,144,123"/>
+<area shape="rect" title="STL class." alt="" coords="31,5,170,47"/>
+</map>
+<center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:af1ee1a63b2b73c99640db67f65a38b0a"><td class="memTemplParams" colspan="2"><a id="af1ee1a63b2b73c99640db67f65a38b0a"></a>
-template&lt;typename T , typename... Params&gt; </td></tr>
-<tr class="memitem:af1ee1a63b2b73c99640db67f65a38b0a"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>operator()</b> (Params &amp;&amp;... params)</td></tr>
-<tr class="separator:af1ee1a63b2b73c99640db67f65a38b0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af5439c9bca82b9b7244334c81272607e"><td class="memTemplParams" colspan="2"><a id="af5439c9bca82b9b7244334c81272607e"></a>
-template&lt;int n, typename... Params&gt; </td></tr>
-<tr class="memitem:af5439c9bca82b9b7244334c81272607e"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>operator()</b> (Params &amp;&amp;...)</td></tr>
-<tr class="separator:af5439c9bca82b9b7244334c81272607e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a859095ce937976455715f500639815c2"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:a859095ce937976455715f500639815c2"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structopen_p_m_d_1_1detail_1_1_variable_definer.html#a859095ce937976455715f500639815c2">operator()</a> (adios2::IO &amp;IO, std::string const &amp;name, std::vector&lt; ADIOS2IOHandlerImpl::ParameterizedOperator &gt; const &amp;compressions, adios2::Dims const &amp;shape=adios2::Dims(), adios2::Dims const &amp;start=adios2::Dims(), adios2::Dims const &amp;count=adios2::Dims(), bool const constantDims=false)</td></tr>
+<tr class="memdesc:a859095ce937976455715f500639815c2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Define a Variable of type T within the passed IO.  <a href="structopen_p_m_d_1_1detail_1_1_variable_definer.html#a859095ce937976455715f500639815c2">More...</a><br /></td></tr>
+<tr class="separator:a859095ce937976455715f500639815c2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Attributes</h2></td></tr>
+<tr class="memitem:a05e133310b2d58fb8fbc34d02a555b06"><td class="memItemLeft" align="right" valign="top"><a id="a05e133310b2d58fb8fbc34d02a555b06"></a>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><b>errorMsg</b> = &quot;ADIOS2: defineVariable()&quot;</td></tr>
+<tr class="separator:a05e133310b2d58fb8fbc34d02a555b06"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a859095ce937976455715f500639815c2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a859095ce937976455715f500639815c2">&#9670;&nbsp;</a></span>operator()()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname">void openPMD::detail::VariableDefiner::operator() </td>
+          <td>(</td>
+          <td class="paramtype">adios2::IO &amp;&#160;</td>
+          <td class="paramname"><em>IO</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string const &amp;&#160;</td>
+          <td class="paramname"><em>name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::vector&lt; ADIOS2IOHandlerImpl::ParameterizedOperator &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>compressions</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">adios2::Dims const &amp;&#160;</td>
+          <td class="paramname"><em>shape</em> = <code>adios2::Dims()</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">adios2::Dims const &amp;&#160;</td>
+          <td class="paramname"><em>start</em> = <code>adios2::Dims()</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">adios2::Dims const &amp;&#160;</td>
+          <td class="paramname"><em>count</em> = <code>adios2::Dims()</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool const&#160;</td>
+          <td class="paramname"><em>constantDims</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Define a Variable of type T within the passed IO. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">IO</td><td>The adios2::IO object within which to define the variable. The variable can later be retrieved from the IO using the passed name. </td></tr>
+    <tr><td class="paramname">name</td><td>As in adios2::IO::DefineVariable </td></tr>
+    <tr><td class="paramname">compressions</td><td>ADIOS2 operators, including an arbitrary number of parameters, to be added to the variable upon definition. </td></tr>
+    <tr><td class="paramname">shape</td><td>As in adios2::IO::DefineVariable </td></tr>
+    <tr><td class="paramname">start</td><td>As in adios2::IO::DefineVariable </td></tr>
+    <tr><td class="paramname">count</td><td>As in adios2::IO::DefineVariable </td></tr>
+    <tr><td class="paramname">constantDims</td><td>As in adios2::IO::DefineVariable </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <hr/>The documentation for this struct was generated from the following files:<ul>
-<li>/tmp/tmp.CnYw1X80QE/openPMD-api/include/openPMD/IO/ADIOS/<a class="el" href="_a_d_i_o_s2_i_o_handler_8hpp_source.html">ADIOS2IOHandler.hpp</a></li>
-<li>/tmp/tmp.CnYw1X80QE/openPMD-api/src/IO/ADIOS/ADIOS2IOHandler.cpp</li>
+<li>/tmp/tmp.iS0xscHoW7/openPMD-api/include/openPMD/IO/ADIOS/<a class="el" href="_a_d_i_o_s2_i_o_handler_8hpp_source.html">ADIOS2IOHandler.hpp</a></li>
+<li>/tmp/tmp.iS0xscHoW7/openPMD-api/src/IO/ADIOS/ADIOS2IOHandler.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

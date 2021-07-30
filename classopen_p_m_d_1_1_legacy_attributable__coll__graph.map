@@ -1,0 +1,7 @@
+<map id="openPMD::LegacyAttributable" name="openPMD::LegacyAttributable">
+<area shape="rect" id="node1" title=" " alt="" coords="935,35,1149,61"/>
+<area shape="rect" id="node2" href="$classopen_p_m_d_1_1_attributable_interface.html" title="Layer to manage storage of attributes associated with file objects." alt="" coords="528,5,755,32"/>
+<area shape="rect" id="node3" href="$classopen_p_m_d_1_1internal_1_1_attributable_data.html" title=" " alt="" coords="277,27,428,69"/>
+<area shape="rect" id="node5" title=" " alt="" coords="536,57,747,98"/>
+<area shape="rect" id="node4" href="$classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file." alt="" coords="5,35,152,61"/>
+</map>

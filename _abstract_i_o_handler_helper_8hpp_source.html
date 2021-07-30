@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>openPMD-api: /tmp/tmp.CnYw1X80QE/openPMD-api/include/openPMD/IO/AbstractIOHandlerHelper.hpp Source File</title>
+<title>openPMD-api: /tmp/tmp.iS0xscHoW7/openPMD-api/include/openPMD/IO/AbstractIOHandlerHelper.hpp Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -69,7 +69,7 @@ $(function() {
 <div class="title">AbstractIOHandlerHelper.hpp</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/* Copyright 2017-2020 Fabian Koller</span></div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/* Copyright 2017-2021 Fabian Koller</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"> *</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * This file is part of openPMD-api.</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> *</span></div>
@@ -91,33 +91,41 @@ $(function() {
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment"> */</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#pragma once</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &quot;openPMD/config.hpp&quot;</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &quot;openPMD/IO/AbstractIOHandler.hpp&quot;</span></div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &quot;openPMD/config.hpp&quot;</span></div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &quot;openPMD/IO/AbstractIOHandler.hpp&quot;</span></div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespaceopen_p_m_d.html">openPMD</a></div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;{</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor">#if openPMD_HAVE_MPI</span></div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;std::shared_ptr&lt; AbstractIOHandler &gt;</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<a class="code" href="namespaceopen_p_m_d.html#aa62b5cae38d067d42a91bb9e9123978e">createIOHandler</a>(</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    std::string path,</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1e">Access</a> access,</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#a7dc2b05c997920a65ff9297e52f3286d">Format</a> format,</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    MPI_Comm comm,</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    std::string <span class="keyword">const</span> &amp; options = <span class="stringliteral">&quot;{}&quot;</span> );</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;std::shared_ptr&lt; AbstractIOHandler &gt;</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<a class="code" href="namespaceopen_p_m_d.html#aa62b5cae38d067d42a91bb9e9123978e">createIOHandler</a>(</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    std::string path,</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1e">Access</a> access,</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#a7dc2b05c997920a65ff9297e52f3286d">Format</a> format,</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    std::string <span class="keyword">const</span> &amp; options = <span class="stringliteral">&quot;{}&quot;</span> );</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;} <span class="comment">// namespace openPMD</span></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keyword">template</span>&lt; <span class="keyword">typename</span> JSON &gt;</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;std::shared_ptr&lt; AbstractIOHandler &gt;</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;createIOHandler(</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    std::string path,</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1e">Access</a> access,</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#a7dc2b05c997920a65ff9297e52f3286d">Format</a> format,</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    MPI_Comm comm,</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    JSON options );</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="keyword">template</span>&lt; <span class="keyword">typename</span> JSON &gt;</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;std::shared_ptr&lt; AbstractIOHandler &gt;</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;createIOHandler(</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    std::string path,</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1e">Access</a> access,</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#a7dc2b05c997920a65ff9297e52f3286d">Format</a> format,</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    JSON options = JSON() );</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="comment">// version without configuration to use in AuxiliaryTest</span></div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;std::shared_ptr&lt; AbstractIOHandler &gt;</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;createIOHandler(</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    std::string path,</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1e">Access</a> access,</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#a7dc2b05c997920a65ff9297e52f3286d">Format</a> format );</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;} <span class="comment">// namespace openPMD</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="anamespaceopen_p_m_d_html_a7dc2b05c997920a65ff9297e52f3286d"><div class="ttname"><a href="namespaceopen_p_m_d.html#a7dc2b05c997920a65ff9297e52f3286d">openPMD::Format</a></div><div class="ttdeci">Format</div><div class="ttdoc">File format to use during IO.</div><div class="ttdef"><b>Definition:</b> Format.hpp:30</div></div>
-<div class="ttc" id="anamespaceopen_p_m_d_html_aa62b5cae38d067d42a91bb9e9123978e"><div class="ttname"><a href="namespaceopen_p_m_d.html#aa62b5cae38d067d42a91bb9e9123978e">openPMD::createIOHandler</a></div><div class="ttdeci">std::shared_ptr&lt; AbstractIOHandler &gt; createIOHandler(std::string path, Access access, Format format, MPI_Comm comm, std::string const &amp;options)</div><div class="ttdoc">Construct an appropriate specific IOHandler for the desired IO mode that may be MPI-aware.</div><div class="ttdef"><b>Definition:</b> AbstractIOHandlerHelper.cpp:36</div></div>
 <div class="ttc" id="anamespaceopen_p_m_d_html"><div class="ttname"><a href="namespaceopen_p_m_d.html">openPMD</a></div><div class="ttdoc">Public definitions of openPMD-api.</div><div class="ttdef"><b>Definition:</b> Date.cpp:29</div></div>
 <div class="ttc" id="anamespaceopen_p_m_d_html_a132624db0c6ac134d7a6084ab6d07e1e"><div class="ttname"><a href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1e">openPMD::Access</a></div><div class="ttdeci">Access</div><div class="ttdoc">File access mode to use during IO.</div><div class="ttdef"><b>Definition:</b> Access.hpp:28</div></div>
 <!-- start footer part -->

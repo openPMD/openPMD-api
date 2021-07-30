@@ -66,7 +66,6 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="structopen_p_m_d_1_1detail_1_1_attribute_types-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -74,31 +73,28 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
-Public Types</h2></td></tr>
-<tr class="memitem:a6cd4e7ec8b9d7a95fe554f45c641f981"><td class="memItemLeft" align="right" valign="top"><a id="a6cd4e7ec8b9d7a95fe554f45c641f981"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>Attr</b> = adios2::Attribute&lt; T &gt;</td></tr>
-<tr class="separator:a6cd4e7ec8b9d7a95fe554f45c641f981"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1abbad80af7afd1cd65084580f4f4a71"><td class="memItemLeft" align="right" valign="top"><a id="a1abbad80af7afd1cd65084580f4f4a71"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>BasicType</b> = T</td></tr>
-<tr class="separator:a1abbad80af7afd1cd65084580f4f4a71"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a49cbc619c2e405419ec2820c54ff2a2e"><td class="memItemLeft" align="right" valign="top"><a id="a49cbc619c2e405419ec2820c54ff2a2e"></a>
-static Attr&#160;</td><td class="memItemRight" valign="bottom"><b>createAttribute</b> (adios2::IO &amp;IO, std::string name, BasicType value)</td></tr>
-<tr class="separator:a49cbc619c2e405419ec2820c54ff2a2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2c24500ccd8217e4f5259501701b4eb3"><td class="memItemLeft" align="right" valign="top"><a id="a2c24500ccd8217e4f5259501701b4eb3"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>readAttribute</b> (adios2::IO &amp;IO, std::string name, std::shared_ptr&lt; Attribute::resource &gt; resource)</td></tr>
-<tr class="separator:a2c24500ccd8217e4f5259501701b4eb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae90e016e8fcafc87aaa30936ef862981"><td class="memItemLeft" align="right" valign="top"><a id="ae90e016e8fcafc87aaa30936ef862981"></a>
-static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structopen_p_m_d_1_1detail_1_1_attribute_types.html#ae90e016e8fcafc87aaa30936ef862981">attributeUnchanged</a> (adios2::IO &amp;IO, std::string name, BasicType val)</td></tr>
-<tr class="memdesc:ae90e016e8fcafc87aaa30936ef862981"><td class="mdescLeft">&#160;</td><td class="mdescRight">Is the attribute given by parameters name and val already defined exactly in that way within the given IO? <br /></td></tr>
-<tr class="separator:ae90e016e8fcafc87aaa30936ef862981"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ace7c39ce32c3456224cc03085dc41ce2"><td class="memItemLeft" align="right" valign="top"><a id="ace7c39ce32c3456224cc03085dc41ce2"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>oldCreateAttribute</b> (adios2::IO &amp;IO, std::string name, T value)</td></tr>
+<tr class="separator:ace7c39ce32c3456224cc03085dc41ce2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a695729f98a4e337727eb78c656ae8322"><td class="memItemLeft" align="right" valign="top"><a id="a695729f98a4e337727eb78c656ae8322"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>oldReadAttribute</b> (adios2::IO &amp;IO, std::string name, std::shared_ptr&lt; Attribute::resource &gt; resource)</td></tr>
+<tr class="separator:a695729f98a4e337727eb78c656ae8322"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac1e27e5f612efc35211d7bcf38435b97"><td class="memItemLeft" align="right" valign="top"><a id="ac1e27e5f612efc35211d7bcf38435b97"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>createAttribute</b> (adios2::IO &amp;IO, adios2::Engine &amp;engine, <a class="el" href="structopen_p_m_d_1_1detail_1_1_buffered_attribute_write.html">detail::BufferedAttributeWrite</a> &amp;params, T value)</td></tr>
+<tr class="separator:ac1e27e5f612efc35211d7bcf38435b97"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae98ed2d3d08aaa1eec59e54f68845384"><td class="memItemLeft" align="right" valign="top"><a id="ae98ed2d3d08aaa1eec59e54f68845384"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>readAttribute</b> (<a class="el" href="classopen_p_m_d_1_1detail_1_1_preload_adios_attributes.html">detail::PreloadAdiosAttributes</a> const &amp;, std::string name, std::shared_ptr&lt; Attribute::resource &gt; resource)</td></tr>
+<tr class="separator:ae98ed2d3d08aaa1eec59e54f68845384"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a09e24fdf795501f811183b3dd92739d8"><td class="memItemLeft" align="right" valign="top"><a id="a09e24fdf795501f811183b3dd92739d8"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structopen_p_m_d_1_1detail_1_1_attribute_types.html#a09e24fdf795501f811183b3dd92739d8">attributeUnchanged</a> (adios2::IO &amp;IO, std::string name, T val)</td></tr>
+<tr class="memdesc:a09e24fdf795501f811183b3dd92739d8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Is the attribute given by parameters name and val already defined exactly in that way within the given IO? <br /></td></tr>
+<tr class="separator:a09e24fdf795501f811183b3dd92739d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this struct was generated from the following files:<ul>
-<li>/tmp/tmp.CnYw1X80QE/openPMD-api/include/openPMD/IO/ADIOS/<a class="el" href="_a_d_i_o_s2_i_o_handler_8hpp_source.html">ADIOS2IOHandler.hpp</a></li>
-<li>/tmp/tmp.CnYw1X80QE/openPMD-api/src/IO/ADIOS/ADIOS2IOHandler.cpp</li>
+<li>/tmp/tmp.iS0xscHoW7/openPMD-api/include/openPMD/IO/ADIOS/<a class="el" href="_a_d_i_o_s2_i_o_handler_8hpp_source.html">ADIOS2IOHandler.hpp</a></li>
+<li>/tmp/tmp.iS0xscHoW7/openPMD-api/src/IO/ADIOS/ADIOS2IOHandler.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

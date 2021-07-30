@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>openPMD-api: /tmp/tmp.CnYw1X80QE/openPMD-api/include/openPMD/backend/Writable.hpp Source File</title>
+<title>openPMD-api: /tmp/tmp.iS0xscHoW7/openPMD-api/include/openPMD/backend/Writable.hpp Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -69,7 +69,7 @@ $(function() {
 <div class="title">Writable.hpp</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/* Copyright 2017-2020 Fabian Koller</span></div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/* Copyright 2017-2021 Fabian Koller</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"> *</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * This file is part of openPMD-api.</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> *</span></div>
@@ -91,86 +91,117 @@ $(function() {
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="comment"> */</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#pragma once</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &lt;string&gt;</span></div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="comment">// expose private and protected members for invasive testing</span></div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#ifndef OPENPMD_private</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#   define OPENPMD_private private</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespaceopen_p_m_d.html">openPMD</a></div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;{</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="keyword">namespace </span>test</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;{</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="keyword">struct </span>TestHelper;</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;} <span class="comment">// namespace test</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="keyword">class </span>AbstractFilePosition;</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="keyword">class </span>AbstractIOHandler;</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keyword">class </span>Attributable;</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keyword">struct </span>ADIOS2FilePosition;</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> FilePositionType&gt;</div>
-<div class="line"><a name="l00043"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html">   43</a></span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html">AbstractIOHandlerImplCommon</a>;</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
-<div class="line"><a name="l00055"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_writable.html">   55</a></span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a> final</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;{</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_attributable.html">Attributable</a>;</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    <span class="keyword">template</span>&lt; <span class="keyword">typename</span> T_elem &gt;</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_base_record.html">BaseRecord</a>;</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keyword">template</span>&lt;</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;            <span class="keyword">typename</span> <a class="code" href="namespaceopen_p_m_d.html#a5bd35872ff3aaacc1ec2700443d89c40ab9ece18c950afbfa6b0fdbfa4ff731d3">T</a>,</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;            <span class="keyword">typename</span> T_key,</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;            <span class="keyword">typename</span> T_container</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    &gt;</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_container.html">Container</a>;</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_iteration.html">Iteration</a>;</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_mesh.html">Mesh</a>;</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_particle_species.html">ParticleSpecies</a>;</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_series.html">Series</a>;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_record.html">Record</a>;</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html">ADIOS1IOHandlerImpl</a>;</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_parallel_a_d_i_o_s1_i_o_handler_impl.html">ParallelADIOS1IOHandlerImpl</a>;</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_a_d_i_o_s2_i_o_handler_impl.html">ADIOS2IOHandlerImpl</a>;</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_h_d_f5_i_o_handler_impl.html">HDF5IOHandlerImpl</a>;</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_parallel_h_d_f5_i_o_handler_impl.html">ParallelHDF5IOHandlerImpl</a>;</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html">AbstractIOHandlerImplCommon</a>&lt;<a class="code" href="structopen_p_m_d_1_1_a_d_i_o_s2_file_position.html">ADIOS2FilePosition</a>&gt;;</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_j_s_o_n_i_o_handler_impl.html">JSONIOHandlerImpl</a>;</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <span class="keyword">friend</span> <span class="keyword">struct </span>test::TestHelper;</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <span class="keyword">friend</span> std::string concrete_h5_file_position(<a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a>*);</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    <span class="keyword">friend</span> std::string concrete_bp1_file_position(<a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a>*);</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a>(<a class="code" href="classopen_p_m_d_1_1_attributable.html">Attributable</a>* = <span class="keyword">nullptr</span>);</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    ~<a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a>() = <span class="keywordflow">default</span>;</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160; </div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;OPENPMD_private:</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    std::shared_ptr&lt; AbstractFilePosition &gt; abstractFilePosition;</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    std::shared_ptr&lt; AbstractIOHandler &gt; IOHandler;</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_attributable.html">Attributable</a>* attributable;</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a>* parent;</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    <span class="keywordtype">bool</span> dirty;</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <span class="keywordtype">bool</span> written;</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;};</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;} <span class="comment">// namespace openPMD</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &quot;openPMD/IO/AbstractIOHandler.hpp&quot;</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; </div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;string&gt;</span></div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#include &lt;vector&gt;</span></div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="comment">// expose private and protected members for invasive testing</span></div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor">#ifndef OPENPMD_private</span></div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="preprocessor">#   define OPENPMD_private private</span></div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespaceopen_p_m_d.html">openPMD</a></div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;{</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="keyword">namespace </span>test</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;{</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="keyword">struct </span>TestHelper;</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;} <span class="comment">// namespace test</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keyword">class </span>AbstractFilePosition;</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="keyword">class </span>AbstractIOHandler;</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keyword">struct </span>ADIOS2FilePosition;</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> FilePositionType&gt;</div>
+<div class="line"><a name="l00045"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html">   45</a></span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html">AbstractIOHandlerImplCommon</a>;</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="keyword">template</span>&lt;<span class="keyword">typename</span>&gt;</div>
+<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_span.html">   47</a></span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_span.html">Span</a>;</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="keyword">namespace </span>internal</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;{</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="keyword">class </span>AttributableData;</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;}</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
+<div class="line"><a name="l00064"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_writable.html">   64</a></span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a> final</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;{</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">internal::AttributableData</a>;</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">AttributableInterface</a>;</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <span class="keyword">template</span>&lt; <span class="keyword">typename</span> T_elem &gt;</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_base_record.html">BaseRecord</a>;</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keyword">template</span>&lt;</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;            <span class="keyword">typename</span> <a class="code" href="namespaceopen_p_m_d.html#a5bd35872ff3aaacc1ec2700443d89c40ab9ece18c950afbfa6b0fdbfa4ff731d3">T</a>,</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;            <span class="keyword">typename</span> T_key,</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;            <span class="keyword">typename</span> T_container</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    &gt;</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_container.html">Container</a>;</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_iteration.html">Iteration</a>;</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_mesh.html">Mesh</a>;</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_particle_species.html">ParticleSpecies</a>;</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_series_interface.html">SeriesInterface</a>;</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_record.html">Record</a>;</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html">ADIOS1IOHandlerImpl</a>;</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_parallel_a_d_i_o_s1_i_o_handler_impl.html">ParallelADIOS1IOHandlerImpl</a>;</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_a_d_i_o_s2_i_o_handler_impl.html">ADIOS2IOHandlerImpl</a>;</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_h_d_f5_i_o_handler_impl.html">HDF5IOHandlerImpl</a>;</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_parallel_h_d_f5_i_o_handler_impl.html">ParallelHDF5IOHandlerImpl</a>;</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html">AbstractIOHandlerImplCommon</a>&lt;<a class="code" href="structopen_p_m_d_1_1_a_d_i_o_s2_file_position.html">ADIOS2FilePosition</a>&gt;;</div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_j_s_o_n_i_o_handler_impl.html">JSONIOHandlerImpl</a>;</div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    <span class="keyword">friend</span> <span class="keyword">struct </span>test::TestHelper;</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    <span class="keyword">friend</span> std::string concrete_h5_file_position(<a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a>*);</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    <span class="keyword">friend</span> std::string concrete_bp1_file_position(<a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a>*);</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    <span class="keyword">template</span>&lt;<span class="keyword">typename</span>&gt;</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_span.html">Span</a>;</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160; </div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a>( <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">internal::AttributableData</a> * );</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160; </div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    ~<a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a>() = <span class="keywordflow">default</span>;</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160; </div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a>( <a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a> <span class="keyword">const</span> &amp; other ) = <span class="keyword">delete</span>;</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a>( <a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a> &amp;&amp; other ) = <span class="keyword">delete</span>;</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a> &amp; operator=( <a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a> <span class="keyword">const</span> &amp; other ) = <span class="keyword">delete</span>;</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a> &amp; operator=( <a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a> &amp;&amp; other ) = <span class="keyword">delete</span>;</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160; </div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classopen_p_m_d_1_1_writable.html#afe9bd199b89da6cc7a0ebd6f1f3058f2">seriesFlush</a>();</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160; </div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;OPENPMD_private:</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classopen_p_m_d_1_1_writable.html#afe9bd199b89da6cc7a0ebd6f1f3058f2">seriesFlush</a>( <a class="code" href="namespaceopen_p_m_d.html#a677be01ff3fa0d48536a70114771d065">FlushLevel</a> );</div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    <span class="comment">/*</span></div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;<span class="comment">     * These members need to be shared pointers since distinct instances of</span></div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;<span class="comment">     * Writable may share them.</span></div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;<span class="comment">     */</span></div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    std::shared_ptr&lt; AbstractFilePosition &gt; abstractFilePosition;</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    std::shared_ptr&lt; AbstractIOHandler &gt; IOHandler;</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">internal::AttributableData</a>* attributable;</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a>* parent;</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    <span class="keywordtype">bool</span> dirty;</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    std::vector&lt; std::string &gt; ownKeyWithinParent;</div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;    <span class="keywordtype">bool</span> written;</div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;};</div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;} <span class="comment">// namespace openPMD</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassopen_p_m_d_1_1_particle_species_html"><div class="ttname"><a href="classopen_p_m_d_1_1_particle_species.html">openPMD::ParticleSpecies</a></div><div class="ttdef"><b>Definition:</b> ParticleSpecies.hpp:34</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_writable_html"><div class="ttname"><a href="classopen_p_m_d_1_1_writable.html">openPMD::Writable</a></div><div class="ttdoc">Layer to mirror structure of logical data and persistent data in file.</div><div class="ttdef"><b>Definition:</b> Writable.hpp:55</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_abstract_i_o_handler_impl_common_html"><div class="ttname"><a href="classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html">openPMD::AbstractIOHandlerImplCommon</a></div><div class="ttdef"><b>Definition:</b> Writable.hpp:43</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_writable_html"><div class="ttname"><a href="classopen_p_m_d_1_1_writable.html">openPMD::Writable</a></div><div class="ttdoc">Layer to mirror structure of logical data and persistent data in file.</div><div class="ttdef"><b>Definition:</b> Writable.hpp:64</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1internal_1_1_attributable_data_html"><div class="ttname"><a href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">openPMD::internal::AttributableData</a></div><div class="ttdef"><b>Definition:</b> Attributable.hpp:67</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_abstract_i_o_handler_impl_common_html"><div class="ttname"><a href="classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html">openPMD::AbstractIOHandlerImplCommon</a></div><div class="ttdef"><b>Definition:</b> Writable.hpp:45</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_base_record_html"><div class="ttname"><a href="classopen_p_m_d_1_1_base_record.html">openPMD::BaseRecord</a></div><div class="ttdef"><b>Definition:</b> BaseRecord.hpp:36</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_attributable_html"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable.html">openPMD::Attributable</a></div><div class="ttdoc">Layer to manage storage of attributes associated with file objects.</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:65</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_mesh_html"><div class="ttname"><a href="classopen_p_m_d_1_1_mesh.html">openPMD::Mesh</a></div><div class="ttdoc">Container for N-dimensional, homogeneous Records.</div><div class="ttdef"><b>Definition:</b> Mesh.hpp:39</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_mesh_html"><div class="ttname"><a href="classopen_p_m_d_1_1_mesh.html">openPMD::Mesh</a></div><div class="ttdoc">Container for N-dimensional, homogeneous Records.</div><div class="ttdef"><b>Definition:</b> Mesh.hpp:40</div></div>
 <div class="ttc" id="anamespaceopen_p_m_d_html_a5bd35872ff3aaacc1ec2700443d89c40ab9ece18c950afbfa6b0fdbfa4ff731d3"><div class="ttname"><a href="namespaceopen_p_m_d.html#a5bd35872ff3aaacc1ec2700443d89c40ab9ece18c950afbfa6b0fdbfa4ff731d3">openPMD::UnitDimension::T</a></div><div class="ttdeci">@ T</div><div class="ttdoc">time</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_j_s_o_n_i_o_handler_impl_html"><div class="ttname"><a href="classopen_p_m_d_1_1_j_s_o_n_i_o_handler_impl.html">openPMD::JSONIOHandlerImpl</a></div><div class="ttdef"><b>Definition:</b> JSONIOHandlerImpl.hpp:163</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_series_html"><div class="ttname"><a href="classopen_p_m_d_1_1_series.html">openPMD::Series</a></div><div class="ttdoc">Root level of the openPMD hierarchy.</div><div class="ttdef"><b>Definition:</b> Series.hpp:64</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_h_d_f5_i_o_handler_impl_html"><div class="ttname"><a href="classopen_p_m_d_1_1_h_d_f5_i_o_handler_impl.html">openPMD::HDF5IOHandlerImpl</a></div><div class="ttdef"><b>Definition:</b> HDF5IOHandlerImpl.hpp:38</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_iteration_html"><div class="ttname"><a href="classopen_p_m_d_1_1_iteration.html">openPMD::Iteration</a></div><div class="ttdoc">Logical compilation of data from one snapshot (e.g.</div><div class="ttdef"><b>Definition:</b> Iteration.hpp:38</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_a_d_i_o_s2_i_o_handler_impl_html"><div class="ttname"><a href="classopen_p_m_d_1_1_a_d_i_o_s2_i_o_handler_impl.html">openPMD::ADIOS2IOHandlerImpl</a></div><div class="ttdef"><b>Definition:</b> ADIOS2IOHandler.hpp:78</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_h_d_f5_i_o_handler_impl_html"><div class="ttname"><a href="classopen_p_m_d_1_1_h_d_f5_i_o_handler_impl.html">openPMD::HDF5IOHandlerImpl</a></div><div class="ttdef"><b>Definition:</b> HDF5IOHandlerImpl.hpp:39</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_series_interface_html"><div class="ttname"><a href="classopen_p_m_d_1_1_series_interface.html">openPMD::SeriesInterface</a></div><div class="ttdoc">Implementation for the root level of the openPMD hierarchy.</div><div class="ttdef"><b>Definition:</b> Series.hpp:112</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_iteration_html"><div class="ttname"><a href="classopen_p_m_d_1_1_iteration.html">openPMD::Iteration</a></div><div class="ttdoc">Logical compilation of data from one snapshot (e.g.</div><div class="ttdef"><b>Definition:</b> Iteration.hpp:39</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_a_d_i_o_s2_i_o_handler_impl_html"><div class="ttname"><a href="classopen_p_m_d_1_1_a_d_i_o_s2_i_o_handler_impl.html">openPMD::ADIOS2IOHandlerImpl</a></div><div class="ttdef"><b>Definition:</b> ADIOS2IOHandler.hpp:105</div></div>
 <div class="ttc" id="anamespaceopen_p_m_d_html"><div class="ttname"><a href="namespaceopen_p_m_d.html">openPMD</a></div><div class="ttdoc">Public definitions of openPMD-api.</div><div class="ttdef"><b>Definition:</b> Date.cpp:29</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_record_html"><div class="ttname"><a href="classopen_p_m_d_1_1_record.html">openPMD::Record</a></div><div class="ttdef"><b>Definition:</b> Record.hpp:33</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_container_html"><div class="ttname"><a href="classopen_p_m_d_1_1_container.html">openPMD::Container</a></div><div class="ttdoc">Map-like container that enforces openPMD requirements and handles IO.</div><div class="ttdef"><b>Definition:</b> Container.hpp:70</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_parallel_h_d_f5_i_o_handler_impl_html"><div class="ttname"><a href="classopen_p_m_d_1_1_parallel_h_d_f5_i_o_handler_impl.html">openPMD::ParallelHDF5IOHandlerImpl</a></div><div class="ttdef"><b>Definition:</b> ParallelHDF5IOHandlerImpl.hpp:47</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_container_html"><div class="ttname"><a href="classopen_p_m_d_1_1_container.html">openPMD::Container</a></div><div class="ttdoc">Map-like container that enforces openPMD requirements and handles IO.</div><div class="ttdef"><b>Definition:</b> Container.hpp:106</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_span_html"><div class="ttname"><a href="classopen_p_m_d_1_1_span.html">openPMD::Span</a></div><div class="ttdoc">Subset of C++20 std::span class template.</div><div class="ttdef"><b>Definition:</b> Writable.hpp:47</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html">openPMD::AttributableInterface</a></div><div class="ttdoc">Layer to manage storage of attributes associated with file objects.</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:93</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_writable_html_afe9bd199b89da6cc7a0ebd6f1f3058f2"><div class="ttname"><a href="classopen_p_m_d_1_1_writable.html#afe9bd199b89da6cc7a0ebd6f1f3058f2">openPMD::Writable::seriesFlush</a></div><div class="ttdeci">void seriesFlush()</div><div class="ttdoc">Flush the corresponding Series object.</div><div class="ttdef"><b>Definition:</b> Writable.cpp:38</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_parallel_h_d_f5_i_o_handler_impl_html"><div class="ttname"><a href="classopen_p_m_d_1_1_parallel_h_d_f5_i_o_handler_impl.html">openPMD::ParallelHDF5IOHandlerImpl</a></div><div class="ttdef"><b>Definition:</b> ParallelHDF5IOHandlerImpl.hpp:49</div></div>
+<div class="ttc" id="anamespaceopen_p_m_d_html_a677be01ff3fa0d48536a70114771d065"><div class="ttname"><a href="namespaceopen_p_m_d.html#a677be01ff3fa0d48536a70114771d065">openPMD::FlushLevel</a></div><div class="ttdeci">FlushLevel</div><div class="ttdoc">Determine what items should be flushed upon Series::flush()</div><div class="ttdef"><b>Definition:</b> AbstractIOHandler.hpp:63</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl_html"><div class="ttname"><a href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html">openPMD::ADIOS1IOHandlerImpl</a></div><div class="ttdef"><b>Definition:</b> ADIOS1IOHandlerImpl.hpp:44</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_parallel_a_d_i_o_s1_i_o_handler_impl_html"><div class="ttname"><a href="classopen_p_m_d_1_1_parallel_a_d_i_o_s1_i_o_handler_impl.html">openPMD::ParallelADIOS1IOHandlerImpl</a></div><div class="ttdef"><b>Definition:</b> ParallelADIOS1IOHandlerImpl.hpp:101</div></div>
 <div class="ttc" id="astructopen_p_m_d_1_1_a_d_i_o_s2_file_position_html"><div class="ttname"><a href="structopen_p_m_d_1_1_a_d_i_o_s2_file_position.html">openPMD::ADIOS2FilePosition</a></div><div class="ttdef"><b>Definition:</b> ADIOS2FilePosition.hpp:31</div></div>

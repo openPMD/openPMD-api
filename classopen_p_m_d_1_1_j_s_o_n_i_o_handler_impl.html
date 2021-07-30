@@ -178,6 +178,9 @@ std::future&lt; void &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>
 <tr class="memitem:a7c23693917e2cb75976e6ea6c947d85f inherit pub_methods_classopen_p_m_d_1_1_abstract_i_o_handler_impl"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a7c23693917e2cb75976e6ea6c947d85f">closePath</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::CLOSE_PATH &gt; const &amp;)</td></tr>
 <tr class="memdesc:a7c23693917e2cb75976e6ea6c947d85f inherit pub_methods_classopen_p_m_d_1_1_abstract_i_o_handler_impl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Close an <a class="el" href="namespaceopen_p_m_d.html" title="Public definitions of openPMD-api.">openPMD</a> group.  <a href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a7c23693917e2cb75976e6ea6c947d85f">More...</a><br /></td></tr>
 <tr class="separator:a7c23693917e2cb75976e6ea6c947d85f inherit pub_methods_classopen_p_m_d_1_1_abstract_i_o_handler_impl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f11e01e5a2f92c5c533ba0b03072df6 inherit pub_methods_classopen_p_m_d_1_1_abstract_i_o_handler_impl"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a3f11e01e5a2f92c5c533ba0b03072df6">getBufferView</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::GET_BUFFER_VIEW &gt; &amp;parameters)</td></tr>
+<tr class="memdesc:a3f11e01e5a2f92c5c533ba0b03072df6 inherit pub_methods_classopen_p_m_d_1_1_abstract_i_o_handler_impl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a view into a dataset buffer that can be filled by a user.  <a href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a3f11e01e5a2f92c5c533ba0b03072df6">More...</a><br /></td></tr>
+<tr class="separator:a3f11e01e5a2f92c5c533ba0b03072df6 inherit pub_methods_classopen_p_m_d_1_1_abstract_i_o_handler_impl"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
@@ -837,7 +840,7 @@ Additional Inherited Members</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Open all contained groups in a path, possibly recursively. </p>
-<p>The operation should overwrite existing file positions, even when the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file.">Writable</a> was already marked written. The path parameters.path may contain multiple levels (e.g. first/second/third/). This path should be relative (i.e. it should not start with a slash "/"). The Writables file position should correspond to the complete opened path (i.e. first/second/third/ should be assigned to the Writables file position). The <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file.">Writable</a> should be marked written when the operation completes successfully. </p>
+<p>The operation should overwrite existing file positions, even when the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file.">Writable</a> was already marked written. The path parameters.path may contain multiple levels (e.g. first/second/third/). This path should be relative (i.e. it should not start with a slash "/"). The number of levels may be zero, i.e. parameters.path may be an empty string. The Writables file position should correspond to the complete opened path (i.e. first/second/third/ should be assigned to the Writables file position). The <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file.">Writable</a> should be marked written when the operation completes successfully. </p>
 
 <p>Implements <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#af1b85b4bf85435804def41a2b335c952">openPMD::AbstractIOHandlerImpl</a>.</p>
 
@@ -1008,8 +1011,8 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>/tmp/tmp.CnYw1X80QE/openPMD-api/include/openPMD/IO/JSON/<a class="el" href="_j_s_o_n_i_o_handler_impl_8hpp_source.html">JSONIOHandlerImpl.hpp</a></li>
-<li>/tmp/tmp.CnYw1X80QE/openPMD-api/src/IO/JSON/JSONIOHandlerImpl.cpp</li>
+<li>/tmp/tmp.iS0xscHoW7/openPMD-api/include/openPMD/IO/JSON/<a class="el" href="_j_s_o_n_i_o_handler_impl_8hpp_source.html">JSONIOHandlerImpl.hpp</a></li>
+<li>/tmp/tmp.iS0xscHoW7/openPMD-api/src/IO/JSON/JSONIOHandlerImpl.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

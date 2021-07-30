@@ -106,9 +106,9 @@ Collaboration diagram for openPMD::HDF5IOHandlerImpl:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a1a8ce494f08b8823dfce788ac8780968"><td class="memItemLeft" align="right" valign="top"><a id="a1a8ce494f08b8823dfce788ac8780968"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>HDF5IOHandlerImpl</b> (<a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler.html">AbstractIOHandler</a> *)</td></tr>
-<tr class="separator:a1a8ce494f08b8823dfce788ac8780968"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5aff3d9e55941473e19bd14686039716"><td class="memItemLeft" align="right" valign="top"><a id="a5aff3d9e55941473e19bd14686039716"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>HDF5IOHandlerImpl</b> (<a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler.html">AbstractIOHandler</a> *, nlohmann::json config)</td></tr>
+<tr class="separator:a5aff3d9e55941473e19bd14686039716"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a71f2ce49e93622a6f848451d66e630a9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_h_d_f5_i_o_handler_impl.html#a71f2ce49e93622a6f848451d66e630a9">createFile</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::CREATE_FILE &gt; const &amp;) override</td></tr>
 <tr class="memdesc:a71f2ce49e93622a6f848451d66e630a9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new file in physical storage, possibly overriding an existing file.  <a href="classopen_p_m_d_1_1_h_d_f5_i_o_handler_impl.html#a71f2ce49e93622a6f848451d66e630a9">More...</a><br /></td></tr>
 <tr class="separator:a71f2ce49e93622a6f848451d66e630a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -182,6 +182,9 @@ virtual std::future&lt; void &gt;&#160;</td><td class="memItemRight" valign="bot
 <tr class="memitem:a7c23693917e2cb75976e6ea6c947d85f inherit pub_methods_classopen_p_m_d_1_1_abstract_i_o_handler_impl"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a7c23693917e2cb75976e6ea6c947d85f">closePath</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::CLOSE_PATH &gt; const &amp;)</td></tr>
 <tr class="memdesc:a7c23693917e2cb75976e6ea6c947d85f inherit pub_methods_classopen_p_m_d_1_1_abstract_i_o_handler_impl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Close an <a class="el" href="namespaceopen_p_m_d.html" title="Public definitions of openPMD-api.">openPMD</a> group.  <a href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a7c23693917e2cb75976e6ea6c947d85f">More...</a><br /></td></tr>
 <tr class="separator:a7c23693917e2cb75976e6ea6c947d85f inherit pub_methods_classopen_p_m_d_1_1_abstract_i_o_handler_impl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f11e01e5a2f92c5c533ba0b03072df6 inherit pub_methods_classopen_p_m_d_1_1_abstract_i_o_handler_impl"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a3f11e01e5a2f92c5c533ba0b03072df6">getBufferView</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::GET_BUFFER_VIEW &gt; &amp;parameters)</td></tr>
+<tr class="memdesc:a3f11e01e5a2f92c5c533ba0b03072df6 inherit pub_methods_classopen_p_m_d_1_1_abstract_i_o_handler_impl"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a view into a dataset buffer that can be filled by a user.  <a href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a3f11e01e5a2f92c5c533ba0b03072df6">More...</a><br /></td></tr>
+<tr class="separator:a3f11e01e5a2f92c5c533ba0b03072df6 inherit pub_methods_classopen_p_m_d_1_1_abstract_i_o_handler_impl"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -336,6 +339,8 @@ hid_t&#160;</td><td class="memItemRight" valign="bottom"><b>m_H5T_CLONG_DOUBLE</
 
 <p>Create a new dataset of given type, extent and storage properties. </p>
 <p>The operation should fail if m_handler-&gt;m_frontendAccess is <a class="el" href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1ea47c7e7cb36a953a8c47e02000036bb44" title="open series as read-only, fails if series is not found">Access::READ_ONLY</a>. The path may contain multiple levels (e.g. group/dataset). The new dataset should have the name parameters.name. This name should not start or end with a slash ("/"). The new dataset should be of datatype parameters.dtype. The new dataset should have an extent of parameters.extent. If possible, the new dataset should be extensible. If possible, the new dataset should be divided into chunks with size parameters.chunkSize. If possible, the new dataset should be compressed according to parameters.compression. This may be format-specific. If possible, the new dataset should be transformed accoring to parameters.transform. This may be format-specific. The Writables file position should correspond to the newly created dataset. The <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file.">Writable</a> should be marked written when the operation completes successfully. </p>
+<dl class="todo"><dt><b><a class="el" href="todo.html#_todo000001">Todo:</a></b></dt><dd>add per dataset chunk control from JSON config </dd></dl>
+<dl class="todo"><dt><b><a class="el" href="todo.html#_todo000002">Todo:</a></b></dt><dd>allow overwrite with user-provided chunk size </dd></dl>
 
 <p>Implements <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a71531a8a7d4efeb210a4c58e0fd1ea2e">openPMD::AbstractIOHandlerImpl</a>.</p>
 
@@ -868,7 +873,7 @@ hid_t&#160;</td><td class="memItemRight" valign="bottom"><b>m_H5T_CLONG_DOUBLE</
 </div><div class="memdoc">
 
 <p>Open all contained groups in a path, possibly recursively. </p>
-<p>The operation should overwrite existing file positions, even when the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file.">Writable</a> was already marked written. The path parameters.path may contain multiple levels (e.g. first/second/third/). This path should be relative (i.e. it should not start with a slash "/"). The Writables file position should correspond to the complete opened path (i.e. first/second/third/ should be assigned to the Writables file position). The <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file.">Writable</a> should be marked written when the operation completes successfully. </p>
+<p>The operation should overwrite existing file positions, even when the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file.">Writable</a> was already marked written. The path parameters.path may contain multiple levels (e.g. first/second/third/). This path should be relative (i.e. it should not start with a slash "/"). The number of levels may be zero, i.e. parameters.path may be an empty string. The Writables file position should correspond to the complete opened path (i.e. first/second/third/ should be assigned to the Writables file position). The <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file.">Writable</a> should be marked written when the operation completes successfully. </p>
 
 <p>Implements <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#af1b85b4bf85435804def41a2b335c952">openPMD::AbstractIOHandlerImpl</a>.</p>
 
@@ -1039,8 +1044,8 @@ hid_t&#160;</td><td class="memItemRight" valign="bottom"><b>m_H5T_CLONG_DOUBLE</
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>/tmp/tmp.CnYw1X80QE/openPMD-api/include/openPMD/IO/HDF5/<a class="el" href="_h_d_f5_i_o_handler_impl_8hpp_source.html">HDF5IOHandlerImpl.hpp</a></li>
-<li>/tmp/tmp.CnYw1X80QE/openPMD-api/src/IO/HDF5/HDF5IOHandler.cpp</li>
+<li>/tmp/tmp.iS0xscHoW7/openPMD-api/include/openPMD/IO/HDF5/<a class="el" href="_h_d_f5_i_o_handler_impl_8hpp_source.html">HDF5IOHandlerImpl.hpp</a></li>
+<li>/tmp/tmp.iS0xscHoW7/openPMD-api/src/IO/HDF5/HDF5IOHandler.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

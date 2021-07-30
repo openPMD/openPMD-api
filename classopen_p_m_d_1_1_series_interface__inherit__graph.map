@@ -1,0 +1,6 @@
+<map id="openPMD::SeriesInterface" name="openPMD::SeriesInterface">
+<area shape="rect" id="node1" title="Implementation for the root level of the openPMD hierarchy." alt="" coords="68,80,259,107"/>
+<area shape="rect" id="node3" href="$classopen_p_m_d_1_1internal_1_1_series_internal.html" title=" " alt="" coords="5,155,156,196"/>
+<area shape="rect" id="node4" href="$classopen_p_m_d_1_1_series.html" title="Root level of the openPMD hierarchy." alt="" coords="180,162,312,189"/>
+<area shape="rect" id="node2" href="$classopen_p_m_d_1_1_attributable_interface.html" title="Layer to manage storage of attributes associated with file objects." alt="" coords="50,5,277,32"/>
+</map>

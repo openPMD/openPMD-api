@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>openPMD-api: /tmp/tmp.CnYw1X80QE/openPMD-api/include/openPMD/backend/BaseRecordComponent.hpp Source File</title>
+<title>openPMD-api: /tmp/tmp.iS0xscHoW7/openPMD-api/include/openPMD/backend/BaseRecordComponent.hpp Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -69,7 +69,7 @@ $(function() {
 <div class="title">BaseRecordComponent.hpp</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/* Copyright 2017-2020 Fabian Koller</span></div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/* Copyright 2017-2021 Fabian Koller</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"> *</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * This file is part of openPMD-api.</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> *</span></div>
@@ -102,7 +102,7 @@ $(function() {
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespaceopen_p_m_d.html">openPMD</a></div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;{</div>
-<div class="line"><a name="l00034"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_base_record_component.html">   34</a></span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_base_record_component.html">BaseRecordComponent</a> : <span class="keyword">public</span> <a class="code" href="classopen_p_m_d_1_1_attributable.html">Attributable</a></div>
+<div class="line"><a name="l00034"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_base_record_component.html">   34</a></span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_base_record_component.html">BaseRecordComponent</a> : <span class="keyword">public</span> <a class="code" href="classopen_p_m_d_1_1_legacy_attributable.html">LegacyAttributable</a></div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;{</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    <span class="keyword">template</span>&lt;</div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;        <span class="keyword">typename</span> <a class="code" href="namespaceopen_p_m_d.html#a5bd35872ff3aaacc1ec2700443d89c40ab9ece18c950afbfa6b0fdbfa4ff731d3">T</a>,</div>
@@ -113,7 +113,7 @@ $(function() {
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_container.html">Container</a>;</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    ~<a class="code" href="classopen_p_m_d_1_1_base_record_component.html">BaseRecordComponent</a>() <span class="keyword">override</span> = <span class="keywordflow">default</span>;</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    ~<a class="code" href="classopen_p_m_d_1_1_base_record_component.html">BaseRecordComponent</a>() = <span class="keywordflow">default</span>;</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="keywordtype">double</span> unitSI() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
@@ -155,11 +155,11 @@ $(function() {
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;} <span class="comment">// namespace detail</span></div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;} <span class="comment">// namespace openPMD</span></div>
 </div><!-- fragment --></div><!-- contents -->
-<div class="ttc" id="anamespaceopen_p_m_d_html_ac04f58bb14b584a3685793e5b29ccd00"><div class="ttname"><a href="namespaceopen_p_m_d.html#ac04f58bb14b584a3685793e5b29ccd00">openPMD::Datatype</a></div><div class="ttdeci">Datatype</div><div class="ttdoc">Concrete datatype of an object available at runtime.</div><div class="ttdef"><b>Definition:</b> Datatype.hpp:42</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_attributable_html"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable.html">openPMD::Attributable</a></div><div class="ttdoc">Layer to manage storage of attributes associated with file objects.</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:65</div></div>
+<div class="ttc" id="anamespaceopen_p_m_d_html_ac04f58bb14b584a3685793e5b29ccd00"><div class="ttname"><a href="namespaceopen_p_m_d.html#ac04f58bb14b584a3685793e5b29ccd00">openPMD::Datatype</a></div><div class="ttdeci">Datatype</div><div class="ttdoc">Concrete datatype of an object available at runtime.</div><div class="ttdef"><b>Definition:</b> Datatype.hpp:45</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_legacy_attributable_html"><div class="ttname"><a href="classopen_p_m_d_1_1_legacy_attributable.html">openPMD::LegacyAttributable</a></div><div class="ttdef"><b>Definition:</b> Attributable.hpp:379</div></div>
 <div class="ttc" id="anamespaceopen_p_m_d_html_a5bd35872ff3aaacc1ec2700443d89c40ab9ece18c950afbfa6b0fdbfa4ff731d3"><div class="ttname"><a href="namespaceopen_p_m_d.html#a5bd35872ff3aaacc1ec2700443d89c40ab9ece18c950afbfa6b0fdbfa4ff731d3">openPMD::UnitDimension::T</a></div><div class="ttdeci">@ T</div><div class="ttdoc">time</div></div>
 <div class="ttc" id="anamespaceopen_p_m_d_html"><div class="ttname"><a href="namespaceopen_p_m_d.html">openPMD</a></div><div class="ttdoc">Public definitions of openPMD-api.</div><div class="ttdef"><b>Definition:</b> Date.cpp:29</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_container_html"><div class="ttname"><a href="classopen_p_m_d_1_1_container.html">openPMD::Container</a></div><div class="ttdoc">Map-like container that enforces openPMD requirements and handles IO.</div><div class="ttdef"><b>Definition:</b> Container.hpp:70</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_container_html"><div class="ttname"><a href="classopen_p_m_d_1_1_container.html">openPMD::Container</a></div><div class="ttdoc">Map-like container that enforces openPMD requirements and handles IO.</div><div class="ttdef"><b>Definition:</b> Container.hpp:106</div></div>
 <div class="ttc" id="astructopen_p_m_d_1_1detail_1_1_default_value_html"><div class="ttname"><a href="structopen_p_m_d_1_1detail_1_1_default_value.html">openPMD::detail::DefaultValue</a></div><div class="ttdoc">Functor template to be used in combination with switchType::operator() to set a default value for con...</div><div class="ttdef"><b>Definition:</b> BaseRecordComponent.hpp:99</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_base_record_component_html"><div class="ttname"><a href="classopen_p_m_d_1_1_base_record_component.html">openPMD::BaseRecordComponent</a></div><div class="ttdef"><b>Definition:</b> BaseRecordComponent.hpp:34</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_base_record_component_html_a5253b84070b41889aef7df04afeb28b6"><div class="ttname"><a href="classopen_p_m_d_1_1_base_record_component.html#a5253b84070b41889aef7df04afeb28b6">openPMD::BaseRecordComponent::availableChunks</a></div><div class="ttdeci">ChunkTable availableChunks()</div><div class="ttdoc">Get data chunks that are available to be loaded from the backend.</div><div class="ttdef"><b>Definition:</b> BaseRecordComponent.cpp:60</div></div>

@@ -157,6 +157,9 @@ virtual std::future&lt; void &gt;&#160;</td><td class="memItemRight" valign="bot
 <tr class="memitem:a64a29cc773e10f51ada54dd0128f87d8"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a64a29cc773e10f51ada54dd0128f87d8">writeDataset</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::WRITE_DATASET &gt; const &amp;)=0</td></tr>
 <tr class="memdesc:a64a29cc773e10f51ada54dd0128f87d8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Write a chunk of data into an existing dataset.  <a href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a64a29cc773e10f51ada54dd0128f87d8">More...</a><br /></td></tr>
 <tr class="separator:a64a29cc773e10f51ada54dd0128f87d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f11e01e5a2f92c5c533ba0b03072df6"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a3f11e01e5a2f92c5c533ba0b03072df6">getBufferView</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::GET_BUFFER_VIEW &gt; &amp;parameters)</td></tr>
+<tr class="memdesc:a3f11e01e5a2f92c5c533ba0b03072df6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a view into a dataset buffer that can be filled by a user.  <a href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#a3f11e01e5a2f92c5c533ba0b03072df6">More...</a><br /></td></tr>
+<tr class="separator:a3f11e01e5a2f92c5c533ba0b03072df6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac895fcbc53b2aea756559f7143e42b9b"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#ac895fcbc53b2aea756559f7143e42b9b">writeAttribute</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *, <a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::WRITE_ATT &gt; const &amp;)=0</td></tr>
 <tr class="memdesc:ac895fcbc53b2aea756559f7143e42b9b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a single attribute and fill the value, possibly overwriting an existing attribute.  <a href="classopen_p_m_d_1_1_abstract_i_o_handler_impl.html#ac895fcbc53b2aea756559f7143e42b9b">More...</a><br /></td></tr>
 <tr class="separator:ac895fcbc53b2aea756559f7143e42b9b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -674,6 +677,49 @@ Public Attributes</h2></td></tr>
 
 </div>
 </div>
+<a id="a3f11e01e5a2f92c5c533ba0b03072df6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3f11e01e5a2f92c5c533ba0b03072df6">&#9670;&nbsp;</a></span>getBufferView()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void openPMD::AbstractIOHandlerImpl::getBufferView </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structopen_p_m_d_1_1_parameter.html">Parameter</a>&lt; Operation::GET_BUFFER_VIEW &gt; &amp;&#160;</td>
+          <td class="paramname"><em>parameters</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get a view into a dataset buffer that can be filled by a user. </p>
+<p>The operation should fail if m_handler-&gt;m_frontendAccess is <a class="el" href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1ea47c7e7cb36a953a8c47e02000036bb44" title="open series as read-only, fails if series is not found">Access::READ_ONLY</a>. The dataset should be associated with the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file.">Writable</a>. The operation should fail if the dataset does not exist. The operation should fail if the chunk extent parameters.extent is not smaller or equals in every dimension. The operation should fail if chunk positions parameters.offset+parameters.extent do not reside inside the dataset. The dataset should match the dataype parameters.dtype. The buffer should be stored as a cast-to-char pointer to a flattened version of the backend buffer in parameters.out-&gt;ptr. The chunk is stored row-major. The buffer's content should be written to storage not before the next call to <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler.html#a01a69dc408cc40dab0af0ab3bb0a75d8" title="Process operations in queue according to FIFO.">AbstractIOHandler::flush</a> where AbstractIOHandler::m_flushLevel == <a class="el" href="namespaceopen_p_m_d.html#a677be01ff3fa0d48536a70114771d065ada1e0af0851f992af15f8837cb34b087" title="Default mode, used when flushes are triggered internally, e.g.">FlushLevel::InternalFlush</a>. The precise time of data consumption is defined by the backend:</p><ul>
+<li>Data written to the returned buffer should be consumed not earlier than the next call to <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler.html#a01a69dc408cc40dab0af0ab3bb0a75d8" title="Process operations in queue according to FIFO.">AbstractIOHandler::flush</a> where AbstractIOHandler::m_flushLevel == <a class="el" href="namespaceopen_p_m_d.html#a677be01ff3fa0d48536a70114771d065ada1e0af0851f992af15f8837cb34b087" title="Default mode, used when flushes are triggered internally, e.g.">FlushLevel::InternalFlush</a>.</li>
+<li>Data should be consumed not later than the next Operation::ADVANCE task where parameter.mode == AdvanceMode::ENDSTEP.</li>
+</ul>
+<p>This <a class="el" href="classopen_p_m_d_1_1_i_o_task.html" title="Self-contained description of a single IO operation.">IOTask</a> is optional and should either (1) not be implemented by a backend at all or (2) be implemented as indicated above and set parameters.out-&gt;backendManagedBuffer = true. </p>
+
+</div>
+</div>
 <a id="a4ebaa1891bf8502801ca9ec7cbb7b427"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4ebaa1891bf8502801ca9ec7cbb7b427">&#9670;&nbsp;</a></span>listAttributes()</h2>
 
@@ -914,7 +960,7 @@ Public Attributes</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Open all contained groups in a path, possibly recursively. </p>
-<p>The operation should overwrite existing file positions, even when the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file.">Writable</a> was already marked written. The path parameters.path may contain multiple levels (e.g. first/second/third/). This path should be relative (i.e. it should not start with a slash "/"). The Writables file position should correspond to the complete opened path (i.e. first/second/third/ should be assigned to the Writables file position). The <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file.">Writable</a> should be marked written when the operation completes successfully. </p>
+<p>The operation should overwrite existing file positions, even when the <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file.">Writable</a> was already marked written. The path parameters.path may contain multiple levels (e.g. first/second/third/). This path should be relative (i.e. it should not start with a slash "/"). The number of levels may be zero, i.e. parameters.path may be an empty string. The Writables file position should correspond to the complete opened path (i.e. first/second/third/ should be assigned to the Writables file position). The <a class="el" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file.">Writable</a> should be marked written when the operation completes successfully. </p>
 
 <p>Implemented in <a class="el" href="classopen_p_m_d_1_1_j_s_o_n_i_o_handler_impl.html#a2cacb15fb7ddec2b58ab95da0077340f">openPMD::JSONIOHandlerImpl</a>, <a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s1_i_o_handler_impl.html#a02f4eaa396e166ef6e0eb36e238d676c">openPMD::ADIOS1IOHandlerImpl</a>, and <a class="el" href="classopen_p_m_d_1_1_h_d_f5_i_o_handler_impl.html#ae4287cc3b54abfff713b5b26879a5eaf">openPMD::HDF5IOHandlerImpl</a>.</p>
 
@@ -1085,7 +1131,7 @@ Public Attributes</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>/tmp/tmp.CnYw1X80QE/openPMD-api/include/openPMD/IO/<a class="el" href="_abstract_i_o_handler_impl_8hpp_source.html">AbstractIOHandlerImpl.hpp</a></li>
+<li>/tmp/tmp.iS0xscHoW7/openPMD-api/include/openPMD/IO/<a class="el" href="_abstract_i_o_handler_impl_8hpp_source.html">AbstractIOHandlerImpl.hpp</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

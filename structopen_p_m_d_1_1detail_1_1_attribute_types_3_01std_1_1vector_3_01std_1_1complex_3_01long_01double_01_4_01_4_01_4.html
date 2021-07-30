@@ -66,7 +66,6 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="structopen_p_m_d_1_1detail_1_1_attribute_types_3_01std_1_1vector_3_01std_1_1complex_3_01long_01double_01_4_01_4_01_4-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -74,29 +73,26 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
-Public Types</h2></td></tr>
-<tr class="memitem:a0f8cf42ccaeb7a759abffdc1ccb9ba6e"><td class="memItemLeft" align="right" valign="top"><a id="a0f8cf42ccaeb7a759abffdc1ccb9ba6e"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>Attr</b> = adios2::Attribute&lt; std::complex&lt; double &gt; &gt;</td></tr>
-<tr class="separator:a0f8cf42ccaeb7a759abffdc1ccb9ba6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af91cb35cba650adff89ce5ad477684b4"><td class="memItemLeft" align="right" valign="top"><a id="af91cb35cba650adff89ce5ad477684b4"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>BasicType</b> = double</td></tr>
-<tr class="separator:af91cb35cba650adff89ce5ad477684b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a195cc2a0cd48e4b49868bb56064ed7d3"><td class="memItemLeft" align="right" valign="top"><a id="a195cc2a0cd48e4b49868bb56064ed7d3"></a>
-static Attr&#160;</td><td class="memItemRight" valign="bottom"><b>createAttribute</b> (adios2::IO &amp;, std::string, const std::vector&lt; std::complex&lt; long double &gt; &gt; &amp;)</td></tr>
-<tr class="separator:a195cc2a0cd48e4b49868bb56064ed7d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af0b5888f51c09c7b3a32409d8ac9e9f4"><td class="memItemLeft" align="right" valign="top"><a id="af0b5888f51c09c7b3a32409d8ac9e9f4"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>readAttribute</b> (adios2::IO &amp;, std::string, std::shared_ptr&lt; Attribute::resource &gt;)</td></tr>
-<tr class="separator:af0b5888f51c09c7b3a32409d8ac9e9f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5b84d9cd738c7f7111ca334cae04d037"><td class="memItemLeft" align="right" valign="top"><a id="a5b84d9cd738c7f7111ca334cae04d037"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>oldCreateAttribute</b> (adios2::IO &amp;, std::string, const std::vector&lt; std::complex&lt; long double &gt; &gt; &amp;)</td></tr>
+<tr class="separator:a5b84d9cd738c7f7111ca334cae04d037"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae00a4ab6a7d0828e1022f910aa3c5102"><td class="memItemLeft" align="right" valign="top"><a id="ae00a4ab6a7d0828e1022f910aa3c5102"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>oldReadAttribute</b> (adios2::IO &amp;, std::string, std::shared_ptr&lt; Attribute::resource &gt;)</td></tr>
+<tr class="separator:ae00a4ab6a7d0828e1022f910aa3c5102"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5dfbc4c80ecb61d8915154324ad62fcd"><td class="memItemLeft" align="right" valign="top"><a id="a5dfbc4c80ecb61d8915154324ad62fcd"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>createAttribute</b> (adios2::IO &amp;, adios2::Engine &amp;, <a class="el" href="structopen_p_m_d_1_1detail_1_1_buffered_attribute_write.html">detail::BufferedAttributeWrite</a> &amp;, const std::vector&lt; std::complex&lt; long double &gt; &gt; &amp;)</td></tr>
+<tr class="separator:a5dfbc4c80ecb61d8915154324ad62fcd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a032b7c73a5c3276886b0355a942468c0"><td class="memItemLeft" align="right" valign="top"><a id="a032b7c73a5c3276886b0355a942468c0"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>readAttribute</b> (<a class="el" href="classopen_p_m_d_1_1detail_1_1_preload_adios_attributes.html">detail::PreloadAdiosAttributes</a> const &amp;, std::string, std::shared_ptr&lt; Attribute::resource &gt;)</td></tr>
+<tr class="separator:a032b7c73a5c3276886b0355a942468c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8016c53cd6d238c987a9afecca55aaac"><td class="memItemLeft" align="right" valign="top"><a id="a8016c53cd6d238c987a9afecca55aaac"></a>
 static bool&#160;</td><td class="memItemRight" valign="bottom"><b>attributeUnchanged</b> (adios2::IO &amp;, std::string, std::vector&lt; std::complex&lt; long double &gt; &gt;)</td></tr>
 <tr class="separator:a8016c53cd6d238c987a9afecca55aaac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>/tmp/tmp.CnYw1X80QE/openPMD-api/include/openPMD/IO/ADIOS/<a class="el" href="_a_d_i_o_s2_i_o_handler_8hpp_source.html">ADIOS2IOHandler.hpp</a></li>
+<li>/tmp/tmp.iS0xscHoW7/openPMD-api/include/openPMD/IO/ADIOS/<a class="el" href="_a_d_i_o_s2_i_o_handler_8hpp_source.html">ADIOS2IOHandler.hpp</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

@@ -1,5 +1,6 @@
 <map id="openPMD::ParticlePatches" name="openPMD::ParticlePatches">
-<area shape="rect" id="node1" title=" " alt="" coords="5,169,197,196"/>
-<area shape="rect" id="node2" href="$classopen_p_m_d_1_1_container.html" title=" " alt="" coords="24,80,179,121"/>
-<area shape="rect" id="node3" href="$classopen_p_m_d_1_1_attributable.html" title="Layer to manage storage of attributes associated with file objects." alt="" coords="17,5,186,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="23,244,215,271"/>
+<area shape="rect" id="node2" href="$classopen_p_m_d_1_1_container.html" title=" " alt="" coords="41,155,196,196"/>
+<area shape="rect" id="node3" href="$classopen_p_m_d_1_1_legacy_attributable.html" title=" " alt="" coords="11,80,226,107"/>
+<area shape="rect" id="node4" href="$classopen_p_m_d_1_1_attributable_interface.html" title="Layer to manage storage of attributes associated with file objects." alt="" coords="5,5,232,32"/>
 </map>

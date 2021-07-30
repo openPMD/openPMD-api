@@ -100,9 +100,9 @@ Collaboration diagram for openPMD::HDF5IOHandler:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a455df0b375c8f59ca7052a522f8e014f"><td class="memItemLeft" align="right" valign="top"><a id="a455df0b375c8f59ca7052a522f8e014f"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>HDF5IOHandler</b> (std::string path, <a class="el" href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1e">Access</a>)</td></tr>
-<tr class="separator:a455df0b375c8f59ca7052a522f8e014f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a15c1f8498dc706c836a850a3da538364"><td class="memItemLeft" align="right" valign="top"><a id="a15c1f8498dc706c836a850a3da538364"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>HDF5IOHandler</b> (std::string path, <a class="el" href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1e">Access</a>, nlohmann::json config)</td></tr>
+<tr class="separator:a15c1f8498dc706c836a850a3da538364"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a11c766b900ea397d86cd6cabec64e33c"><td class="memItemLeft" align="right" valign="top"><a id="a11c766b900ea397d86cd6cabec64e33c"></a>
 std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_h_d_f5_i_o_handler.html#a11c766b900ea397d86cd6cabec64e33c">backendName</a> () const override</td></tr>
 <tr class="memdesc:a11c766b900ea397d86cd6cabec64e33c"><td class="mdescLeft">&#160;</td><td class="mdescRight">The currently used backend. <br /></td></tr>
@@ -136,6 +136,9 @@ const <a class="el" href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d0
 <tr class="memitem:aba8aaa903360e0c4b058cc69c62a41b8 inherit pub_attribs_classopen_p_m_d_1_1_abstract_i_o_handler"><td class="memItemLeft" align="right" valign="top"><a id="aba8aaa903360e0c4b058cc69c62a41b8"></a>
 std::queue&lt; <a class="el" href="classopen_p_m_d_1_1_i_o_task.html">IOTask</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>m_work</b></td></tr>
 <tr class="separator:aba8aaa903360e0c4b058cc69c62a41b8 inherit pub_attribs_classopen_p_m_d_1_1_abstract_i_o_handler"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab236a5dd6918a0e82e5a6557e89f5cda inherit pub_attribs_classopen_p_m_d_1_1_abstract_i_o_handler"><td class="memItemLeft" align="right" valign="top"><a id="ab236a5dd6918a0e82e5a6557e89f5cda"></a>
+<a class="el" href="namespaceopen_p_m_d.html#a677be01ff3fa0d48536a70114771d065">FlushLevel</a>&#160;</td><td class="memItemRight" valign="bottom"><b>m_flushLevel</b> = <a class="el" href="namespaceopen_p_m_d.html#a677be01ff3fa0d48536a70114771d065ada1e0af0851f992af15f8837cb34b087">FlushLevel::InternalFlush</a></td></tr>
+<tr class="separator:ab236a5dd6918a0e82e5a6557e89f5cda inherit pub_attribs_classopen_p_m_d_1_1_abstract_i_o_handler"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a id="a8cb4f6b094c58b8909c0a74d56558c40"></a>
@@ -169,8 +172,8 @@ std::queue&lt; <a class="el" href="classopen_p_m_d_1_1_i_o_task.html">IOTask</a>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>/tmp/tmp.CnYw1X80QE/openPMD-api/include/openPMD/IO/HDF5/<a class="el" href="_h_d_f5_i_o_handler_8hpp_source.html">HDF5IOHandler.hpp</a></li>
-<li>/tmp/tmp.CnYw1X80QE/openPMD-api/src/IO/HDF5/HDF5IOHandler.cpp</li>
+<li>/tmp/tmp.iS0xscHoW7/openPMD-api/include/openPMD/IO/HDF5/<a class="el" href="_h_d_f5_i_o_handler_8hpp_source.html">HDF5IOHandler.hpp</a></li>
+<li>/tmp/tmp.iS0xscHoW7/openPMD-api/src/IO/HDF5/HDF5IOHandler.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

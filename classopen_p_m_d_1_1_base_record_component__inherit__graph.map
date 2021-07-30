@@ -1,7 +1,8 @@
 <map id="openPMD::BaseRecordComponent" name="openPMD::BaseRecordComponent">
-<area shape="rect" id="node1" title=" " alt="" coords="134,80,378,107"/>
-<area shape="rect" id="node3" href="$classopen_p_m_d_1_1_patch_record_component.html" title=" " alt="" coords="5,155,253,181"/>
-<area shape="rect" id="node4" href="$classopen_p_m_d_1_1_record_component.html" title=" " alt="" coords="277,155,489,181"/>
-<area shape="rect" id="node2" href="$classopen_p_m_d_1_1_attributable.html" title="Layer to manage storage of attributes associated with file objects." alt="" coords="171,5,341,32"/>
-<area shape="rect" id="node5" href="$classopen_p_m_d_1_1_mesh_record_component.html" title=" " alt="" coords="259,229,506,256"/>
+<area shape="rect" id="node1" title=" " alt="" coords="134,155,378,181"/>
+<area shape="rect" id="node4" href="$classopen_p_m_d_1_1_patch_record_component.html" title=" " alt="" coords="5,229,253,256"/>
+<area shape="rect" id="node5" href="$classopen_p_m_d_1_1_record_component.html" title=" " alt="" coords="277,229,489,256"/>
+<area shape="rect" id="node2" href="$classopen_p_m_d_1_1_legacy_attributable.html" title=" " alt="" coords="149,80,363,107"/>
+<area shape="rect" id="node3" href="$classopen_p_m_d_1_1_attributable_interface.html" title="Layer to manage storage of attributes associated with file objects." alt="" coords="143,5,369,32"/>
+<area shape="rect" id="node6" href="$classopen_p_m_d_1_1_mesh_record_component.html" title=" " alt="" coords="259,304,506,331"/>
 </map>

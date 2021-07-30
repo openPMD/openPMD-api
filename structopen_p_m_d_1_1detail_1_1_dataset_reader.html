@@ -78,17 +78,17 @@ Collaboration diagram for openPMD::detail::DatasetReader:</div>
 <div class="dyncontent">
 <div class="center"><img src="structopen_p_m_d_1_1detail_1_1_dataset_reader__coll__graph.png" border="0" usemap="#open_p_m_d_1_1detail_1_1_dataset_reader_coll__map" alt="Collaboration graph"/></div>
 <map name="open_p_m_d_1_1detail_1_1_dataset_reader_coll__map" id="open_p_m_d_1_1detail_1_1_dataset_reader_coll__map">
-<area shape="rect" title=" " alt="" coords="2259,53,2447,94"/>
-<area shape="rect" href="classopen_p_m_d_1_1_a_d_i_o_s2_i_o_handler_impl.html" title=" " alt="" coords="1923,60,2157,87"/>
-<area shape="rect" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html" title=" " alt="" coords="1611,53,1873,94"/>
-<area shape="rect" title=" " alt="" coords="1277,89,1506,130"/>
-<area shape="rect" href="structopen_p_m_d_1_1_invalidatable_file.html" title="Wrapper around a shared pointer to:" alt="" coords="963,76,1161,103"/>
-<area shape="rect" title=" " alt="" coords="1275,8,1508,64"/>
-<area shape="rect" title=" " alt="" coords="639,69,855,110"/>
-<area shape="rect" href="structopen_p_m_d_1_1_invalidatable_file_1_1_file_state.html" title=" " alt="" coords="369,69,568,110"/>
-<area shape="rect" title="STL class." alt="" coords="193,76,280,103"/>
-<area shape="rect" title="STL class." alt="" coords="5,69,144,110"/>
-<area shape="rect" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file." alt="" coords="989,5,1135,32"/>
+<area shape="rect" title=" " alt="" coords="2259,25,2447,66"/>
+<area shape="rect" href="classopen_p_m_d_1_1_a_d_i_o_s2_i_o_handler_impl.html" title=" " alt="" coords="1923,59,2157,85"/>
+<area shape="rect" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html" title=" " alt="" coords="1611,58,1873,99"/>
+<area shape="rect" title=" " alt="" coords="1277,58,1506,99"/>
+<area shape="rect" href="structopen_p_m_d_1_1_invalidatable_file.html" title="Wrapper around a shared pointer to:" alt="" coords="963,65,1161,92"/>
+<area shape="rect" title=" " alt="" coords="1275,124,1508,180"/>
+<area shape="rect" title=" " alt="" coords="639,58,855,99"/>
+<area shape="rect" href="structopen_p_m_d_1_1_invalidatable_file_1_1_file_state.html" title=" " alt="" coords="369,58,568,99"/>
+<area shape="rect" title="STL class." alt="" coords="193,36,280,63"/>
+<area shape="rect" title="STL class." alt="" coords="5,29,144,70"/>
+<area shape="rect" href="classopen_p_m_d_1_1_writable.html" title="Layer to mirror structure of logical data and persistent data in file." alt="" coords="989,156,1135,183"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -101,20 +101,19 @@ Public Member Functions</h2></td></tr>
 template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a23877fdb4cb26a3dc339b3b79cd921f2"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>operator()</b> (<a class="el" href="structopen_p_m_d_1_1detail_1_1_buffered_get.html">BufferedGet</a> &amp;bp, adios2::IO &amp;IO, adios2::Engine &amp;engine, std::string const &amp;fileName)</td></tr>
 <tr class="separator:a23877fdb4cb26a3dc339b3b79cd921f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab501805b9ec18a4d0ad795264edc214d"><td class="memTemplParams" colspan="2"><a id="ab501805b9ec18a4d0ad795264edc214d"></a>
-template&lt;int T, typename... Params&gt; </td></tr>
-<tr class="memitem:ab501805b9ec18a4d0ad795264edc214d"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><b>operator()</b> (Params &amp;&amp;...)</td></tr>
-<tr class="separator:ab501805b9ec18a4d0ad795264edc214d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:a81fb0631beec2fbe12ca5e0237503417"><td class="memItemLeft" align="right" valign="top"><a id="a81fb0631beec2fbe12ca5e0237503417"></a>
 <a class="el" href="classopen_p_m_d_1_1_a_d_i_o_s2_i_o_handler_impl.html">openPMD::ADIOS2IOHandlerImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>m_impl</b></td></tr>
 <tr class="separator:a81fb0631beec2fbe12ca5e0237503417"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6a628c1ee1e4ebbcad4ef5999b749b9c"><td class="memItemLeft" align="right" valign="top"><a id="a6a628c1ee1e4ebbcad4ef5999b749b9c"></a>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><b>errorMsg</b> = &quot;ADIOS2: readDataset()&quot;</td></tr>
+<tr class="separator:a6a628c1ee1e4ebbcad4ef5999b749b9c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this struct was generated from the following files:<ul>
-<li>/tmp/tmp.CnYw1X80QE/openPMD-api/include/openPMD/IO/ADIOS/<a class="el" href="_a_d_i_o_s2_i_o_handler_8hpp_source.html">ADIOS2IOHandler.hpp</a></li>
-<li>/tmp/tmp.CnYw1X80QE/openPMD-api/src/IO/ADIOS/ADIOS2IOHandler.cpp</li>
+<li>/tmp/tmp.iS0xscHoW7/openPMD-api/include/openPMD/IO/ADIOS/<a class="el" href="_a_d_i_o_s2_i_o_handler_8hpp_source.html">ADIOS2IOHandler.hpp</a></li>
+<li>/tmp/tmp.iS0xscHoW7/openPMD-api/src/IO/ADIOS/ADIOS2IOHandler.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

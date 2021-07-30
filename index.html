@@ -129,15 +129,15 @@ Dependencies</h1>
 </ul>
 <p>Shipped internally in <code>share/openPMD/thirdParty/</code>:</p><ul>
 <li><a href="https://github.com/mpark/variant">MPark.Variant</a> 1.4.0+ (<a href="https://github.com/mpark/variant/blob/master/LICENSE.md">BSL-1.0</a>)</li>
-<li><a href="https://github.com/catchorg/Catch2">Catch2</a> 2.6.1+ (<a href="https://github.com/catchorg/Catch2/blob/master/LICENSE.txt">BSL-1.0</a>)</li>
-<li><a href="https://github.com/pybind/pybind11">pybind11</a> 2.6.1+ (<a href="https://github.com/pybind/pybind11/blob/master/LICENSE">new BSD</a>)</li>
+<li><a href="https://github.com/catchorg/Catch2">Catch2</a> 2.13.4+ (<a href="https://github.com/catchorg/Catch2/blob/master/LICENSE.txt">BSL-1.0</a>)</li>
+<li><a href="https://github.com/pybind/pybind11">pybind11</a> 2.6.2+ (<a href="https://github.com/pybind/pybind11/blob/master/LICENSE">new BSD</a>)</li>
 <li><a href="https://github.com/nlohmann/json">NLohmann-JSON</a> 3.9.1+ (<a href="https://github.com/nlohmann/json/blob/develop/LICENSE.MIT">MIT</a>)</li>
 </ul>
 <p>I/O backends:</p><ul>
 <li><a href="https://en.wikipedia.org/wiki/JSON">JSON</a></li>
 <li><a href="https://support.hdfgroup.org/HDF5">HDF5</a> 1.8.13+ (optional)</li>
 <li><a href="https://www.olcf.ornl.gov/center-projects/adios">ADIOS1</a> 1.13.1+ (optional)</li>
-<li><a href="https://github.com/ornladios/ADIOS2">ADIOS2</a> 2.6.0+ (optional)</li>
+<li><a href="https://github.com/ornladios/ADIOS2">ADIOS2</a> 2.7.0+ (optional)</li>
 </ul>
 <p>while those can be built either with or without:</p><ul>
 <li>MPI 2.1+, e.g. OpenMPI 1.6.5+ or MPICH2</li>
@@ -145,9 +145,11 @@ Dependencies</h1>
 <p>Optional language bindings:</p><ul>
 <li>Python:<ul>
 <li>Python 3.6 - 3.9</li>
-<li>pybind11 2.6.1+</li>
+<li>pybind11 2.6.2+</li>
 <li>numpy 1.15+</li>
-<li>mpi4py 2.1+</li>
+<li>mpi4py 2.1+ (optional, for MPI)</li>
+<li>pandas 1.0+ (optional, for dataframes)</li>
+<li>dask 2021+ (optional, for dask dataframes)</li>
 </ul>
 </li>
 </ul>
@@ -190,6 +192,9 @@ Installation</h1>
 <div class="line"> </div>
 <div class="line"># optional:                                                                   --user</div>
 <div class="line">openPMD_USE_MPI=ON python3 -m pip install openpmd-api --no-binary openpmd-api</div>
+</div><!-- fragment --><p>For some exotic architectures and compilers, you might need to disable a compiler feature called <a href="https://en.wikipedia.org/wiki/Interprocedural_optimization">link-time/interprocedural optimization</a> if you encounter linking problems: </p><div class="fragment"><div class="line">export CMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF</div>
+<div class="line"># optional:                                                --user</div>
+<div class="line">python3 -m pip install openpmd-api --no-binary openpmd-api</div>
 </div><!-- fragment --><h2><a class="anchor" id="autotoc_md10"></a>
 From Source</h2>
 <p><a href="https://cmake.org"><img src="https://img.shields.io/badge/use_case-development-brightgreen" alt="Source Use Case" class="inline"/></a></p>
@@ -248,15 +253,25 @@ From Source</h2>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_VARIANT</code> </td><td class="markdownTableBodyNone"><b>ON</b>/OFF </td><td class="markdownTableBodyNone">MPark.Variant </td><td class="markdownTableBodyNone">1.4.0+  </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_CATCH</code> </td><td class="markdownTableBodyNone"><b>ON</b>/OFF </td><td class="markdownTableBodyNone">Catch2 </td><td class="markdownTableBodyNone">2.6.1+  </td></tr>
+<td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_CATCH</code> </td><td class="markdownTableBodyNone"><b>ON</b>/OFF </td><td class="markdownTableBodyNone">Catch2 </td><td class="markdownTableBodyNone">2.13.4+  </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_PYBIND11</code> </td><td class="markdownTableBodyNone"><b>ON</b>/OFF </td><td class="markdownTableBodyNone">pybind11 </td><td class="markdownTableBodyNone">2.6.1+  </td></tr>
+<td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_PYBIND11</code> </td><td class="markdownTableBodyNone"><b>ON</b>/OFF </td><td class="markdownTableBodyNone">pybind11 </td><td class="markdownTableBodyNone">2.6.2+  </td></tr>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><code>openPMD_USE_INTERNAL_JSON</code> </td><td class="markdownTableBodyNone"><b>ON</b>/OFF </td><td class="markdownTableBodyNone">NLohmann-JSON </td><td class="markdownTableBodyNone">3.9.1+  </td></tr>
 </table>
 <p>By default, this will build as a shared library (<code>libopenPMD.[so|dylib|dll]</code>) and installs also its headers. In order to build a static library, append <code>-DBUILD_SHARED_LIBS=OFF</code> to the <code>cmake</code> command. You can only build a static or a shared library at a time.</p>
 <p>By default, the <code>Release</code> version is built. In order to build with debug symbols, pass <code>-DCMAKE_BUILD_TYPE=Debug</code> to your <code>cmake</code> command.</p>
-<p>By default, tests, examples and command line tools are built. In order to skip building those, pass <code>-DBUILD_TESTING=OFF</code>, <code>-DBUILD_EXAMPLES=OFF</code>, or <code>-DBUILD_CLI_TOOLS=OFF</code> to your <code>cmake</code> command.</p>
+<p>By default, tests, examples and command line tools are built. In order to skip building those, pass <code>OFF</code> to these <code>cmake</code> options:</p>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadNone">CMake Option </th><th class="markdownTableHeadNone">Values </th><th class="markdownTableHeadNone">Description  </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone"><code>openPMD_BUILD_TESTING</code> </td><td class="markdownTableBodyNone"><b>ON</b>/OFF </td><td class="markdownTableBodyNone">Build tests  </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone"><code>openPMD_BUILD_EXAMPLES</code> </td><td class="markdownTableBodyNone"><b>ON</b>/OFF </td><td class="markdownTableBodyNone">Build examples  </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone"><code>openPMD_BUILD_CLI_TOOLS</code> </td><td class="markdownTableBodyNone"><b>ON</b>/OFF </td><td class="markdownTableBodyNone">Build command-line tools  </td></tr>
+</table>
 <h1><a class="anchor" id="autotoc_md11"></a>
 Linking to your project</h1>
 <p>The install will contain header files and libraries in the path set with <code>-DCMAKE_INSTALL_PREFIX</code>.</p>
@@ -277,10 +292,11 @@ CMake</h2>
 <div class="line">target_link_libraries(YourTarget PRIVATE openPMD::openPMD)</div>
 </div><!-- fragment --><p>For development workflows, you can even automatically download and build openPMD-api from within a depending CMake project. Just replace the <code>add_subdirectory</code> call with: </p><div class="fragment"><div class="line">include(FetchContent)</div>
 <div class="line">set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)</div>
-<div class="line">set(BUILD_CLI_TOOLS OFF)</div>
-<div class="line">set(BUILD_EXAMPLES OFF)</div>
-<div class="line">set(BUILD_TESTING OFF)</div>
-<div class="line">set(openPMD_INSTALL ${BUILD_SHARED_LIBS})  # e.g. only install if used as shared library</div>
+<div class="line">set(openPMD_BUILD_CLI_TOOLS OFF)</div>
+<div class="line">set(openPMD_BUILD_EXAMPLES OFF)</div>
+<div class="line">set(openPMD_BUILD_TESTING OFF)</div>
+<div class="line"># set(openPMD_BUILD_SHARED_LIBS OFF)  # precedence over BUILD_SHARED_LIBS if needed; or:</div>
+<div class="line">set(openPMD_INSTALL ${BUILD_SHARED_LIBS})  # only install if used as shared a library</div>
 <div class="line">set(openPMD_USE_PYTHON OFF)</div>
 <div class="line">FetchContent_Declare(openPMD</div>
 <div class="line">  GIT_REPOSITORY &quot;https://github.com/openPMD/openPMD-api.git&quot;</div>
@@ -309,9 +325,9 @@ Manually</h2>
 Author Contributions</h1>
 <p>openPMD-api is developed by many people. It was initially started by the <a href="https://hzdr.de/crp">Computational Radiation Physics Group</a> at <a href="https://www.hzdr.de/">HZDR</a> as successor to <a href="https://github.com/ComputationalRadiationPhysics/libSplash/">libSplash</a>, generalizing the <a href="https://arxiv.org/abs/1706.00522">successful HDF5 &amp; ADIOS1 implementations</a> in <a href="https://github.com/ComputationalRadiationPhysics/picongpu">PIConGPU</a>. The following people and institutions <a href="https://github.com/openPMD/openPMD-api/graphs/contributors">contributed</a> to openPMD-api:</p>
 <ul>
-<li><a href="https://github.com/ax3l">Axel Huebl (HZDR, now LBNL)</a>: project lead, releases, documentation, automated CI/CD, Python bindings, installation &amp; packaging, prior reference implementations</li>
+<li><a href="https://github.com/ax3l">Axel Huebl (HZDR, now LBNL)</a>: project lead, releases, documentation, automated CI/CD, Python bindings, Dask, installation &amp; packaging, prior reference implementations</li>
+<li><a href="https://github.com/franzpoeschel">Franz Poeschel (CASUS)</a>: JSON &amp; ADIOS2 backend, data staging/streaming, reworked class design</li>
 <li><a href="https://github.com/C0nsultant">Fabian Koller (HZDR)</a>: initial library design and implementation with HDF5 &amp; ADIOS1 backend</li>
-<li><a href="https://github.com/franzpoeschel">Franz Poeschel (CASUS)</a>: added JSON &amp; ADIOS2 backend, data staging/streaming</li>
 <li><a href="https://github.com/guj">Junmin Gu (LBNL)</a>: non-collective parallel I/O fixes, ADIOS improvements, benchmarks</li>
 </ul>
 <p>Further thanks go to improvements and contributions from:</p>
@@ -328,6 +344,9 @@ Author Contributions</h1>
 <li><a href="https://github.com/KseniaBastrakova">Kseniia Bastrakova (HZDR)</a>: compatibility testing</li>
 <li><a href="https://github.com/PrometheusPi">Richard Pausch (HZDR)</a>: compatibility testing, documentation improvements</li>
 <li><a href="https://github.com/pordyna">Paweł Ordyna (HZDR)</a>: report on NVCC warnings</li>
+<li><a href="https://github.com/dmitry-ganyushin">Dmitry Ganyushin (ORNL)</a>: Dask prototyping &amp; ADIOS2 benchmarking</li>
+<li><a href="https://github.com/jakirkham">John Kirkham (NVIDIA)</a>: Dask guidance &amp; reviews</li>
+<li><a href="https://github.com/eschnett">Erik Schnetter (PITP)</a>: C++ API bug fixes</li>
 </ul>
 <h2><a class="anchor" id="autotoc_md15"></a>
 Grants</h2>
@@ -349,7 +368,7 @@ Transitive Contributions</h2>
 </div></div><!-- PageDoc -->
 </div><!-- contents -->
 <div class="ttc" id="anamespaceopen_p_m_d_html_a132624db0c6ac134d7a6084ab6d07e1ea47c7e7cb36a953a8c47e02000036bb44"><div class="ttname"><a href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1ea47c7e7cb36a953a8c47e02000036bb44">openPMD::Access::READ_ONLY</a></div><div class="ttdeci">@ READ_ONLY</div><div class="ttdoc">open series as read-only, fails if series is not found</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_series_html"><div class="ttname"><a href="classopen_p_m_d_1_1_series.html">openPMD::Series</a></div><div class="ttdoc">Root level of the openPMD hierarchy.</div><div class="ttdef"><b>Definition:</b> Series.hpp:64</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_series_html"><div class="ttname"><a href="classopen_p_m_d_1_1_series.html">openPMD::Series</a></div><div class="ttdoc">Root level of the openPMD hierarchy.</div><div class="ttdef"><b>Definition:</b> Series.hpp:476</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated by &#160;<a href="http://www.doxygen.org/index.html">
