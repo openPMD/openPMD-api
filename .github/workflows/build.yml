@@ -54,7 +54,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
         path: 'src'
-        ref: '0.13.4'
+        ref: '0.14.0'
 
     - uses: actions/checkout@v2
       with:
@@ -70,18 +70,18 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel
         python -m pip install cibuildwheel==2.0.0a2
 
-    - name: Download Patch 1/1
-      uses: suisei-cn/actions-download-file@v1
-      id: setupversion
-      with:
-        url: "https://gist.githubusercontent.com/ax3l/4db2f1744e0e28e6c013ee4e752b3cb7/raw/324bdb60894d51608a48890573654e10e1b1c3a0/setupversion.patch"
-        target: src/.patch/
+#    - name: Download Patch 1/1
+#      uses: suisei-cn/actions-download-file@v1
+#      id: setupversion
+#      with:
+#        url: "https://gist.githubusercontent.com/ax3l/4db2f1744e0e28e6c013ee4e752b3cb7/raw/324bdb60894d51608a48890573654e10e1b1c3a0/setupversion.patch"
+#        target: src/.patch/
 
-    - name: Apply Patch
-      run: |
-        python -m pip install "patch==1.*"
-        cd src
-        python -m patch .patch/setupversion.patch
+#    - name: Apply Patch
+#      run: |
+#        python -m pip install "patch==1.*"
+#        cd src
+#        python -m patch .patch/setupversion.patch
 
     - name: Build wheel
       env:
