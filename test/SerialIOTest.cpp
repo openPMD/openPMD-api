@@ -487,6 +487,69 @@ TEST_CASE( "close_iteration_test", "[serial]" )
 }
 
 void
+close_iteration_interleaved_test( std::string file_ending )
+{
+    std::string name = "../samples/close_iterations_interleaved_%T." + file_ending;
+
+    std::vector<int> data{2, 4, 6, 8};
+    {
+        Series write(name, Access::CREATE);
+
+        // interleaved write pattern
+        Iteration it1 = write.iterations[ 1 ];
+        auto E_x = it1.meshes[ "E" ][ "x" ];
+        E_x.resetDataset( { Datatype::INT, { 2, 2 } } );
+        E_x.storeChunk( data, { 0, 0 }, { 1, 2 } );
+        E_x.seriesFlush();
+
+        Iteration it2 = write.iterations[ 2 ];
+        E_x = it2.meshes[ "E" ][ "x" ];
+        E_x.resetDataset( { Datatype::INT, { 2, 2 } } );
+        E_x.storeChunk( data, { 0, 0 }, { 1, 2 } );
+        E_x.seriesFlush();
+
+        E_x = it1.meshes[ "E" ][ "x" ];
+        E_x.storeChunk( data, { 1, 0 }, { 1, 1 } );
+        E_x.seriesFlush();
+
+        E_x = it2.meshes[ "E" ][ "x" ];
+        E_x.storeChunk( data, { 1, 0 }, { 1, 1 } );
+        E_x.seriesFlush();
+
+        // now we start a third iteration
+        Iteration it3 = write.iterations[ 3 ];
+        E_x = it3.meshes[ "E" ][ "x" ];
+        E_x.resetDataset( { Datatype::INT, { 2, 2 } } );
+        E_x.storeChunk( data, { 0, 0 }, { 1, 2 } );
+        E_x.seriesFlush();
+
+        // let's finish writing to 1 and 2
+        E_x = it1.meshes[ "E" ][ "x" ];
+        E_x.storeChunk( data, { 1, 1 }, { 1, 1 } );
+        E_x.seriesFlush();
+        it1.close();
+
+        E_x = it2.meshes[ "E" ][ "x" ];
+        E_x.storeChunk( data, { 1, 1 }, { 1, 1 } );
+        E_x.seriesFlush();
+        it2.close();
+
+        E_x = it3.meshes[ "E" ][ "x" ];
+        E_x.storeChunk( data, { 1, 0 }, { 1, 2 } );
+        E_x.seriesFlush();
+        it3.close();
+    }
+}
+
+TEST_CASE( "close_iteration_interleaved_test", "[serial]" )
+{
+    for( auto const & t : testedFileExtensions() )
+    {
+        close_iteration_interleaved_test( t );
+    }
+}
+
+void
 close_and_copy_attributable_test( std::string file_ending )
 {
     using position_t = double;
