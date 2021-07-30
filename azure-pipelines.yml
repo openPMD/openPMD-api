@@ -531,7 +531,7 @@ jobs:
       brew install mpich
       export MPI_HOME=/usr/local
       python3 -m pip install -U pip setuptools wheel cmake --user
-      openPMD_USE_MPI=ON python3 -m pip install openpmd-api --no-binary openpmd-api --user
+      openPMD_USE_MPI=ON python3 -m pip install -v openpmd-api --no-binary openpmd-api --user
   - script: |
       python3 -c "import openpmd_api as api; print(api.variants)"
       python3 -m openpmd_api.ls --help
