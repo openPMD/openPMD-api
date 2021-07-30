@@ -3,6 +3,27 @@
 Changelog
 =========
 
+0.15.0
+------
+**Date:** TBA
+
+[Title]
+
+[Summary]
+
+Changes to "0.14.0"
+^^^^^^^^^^^^^^^^^^^
+
+Features
+""""""""
+
+Bug Fixes
+"""""""""
+
+Other
+"""""
+
+
 0.14.0
 ------
 **Date:** 2021-07-29
