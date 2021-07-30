@@ -9,7 +9,7 @@ Copyright 2021 openPMD contributors
 Authors: Franz Poeschel
 License: LGPLv3+
 """
-import openpmd_api.pipe as pipe
+import openpmd_api.pipe.__main__ as pipe
 import sys
 
 if __name__ == "__main__":

@@ -156,13 +156,8 @@ Iteration::open()
     internal::SeriesInternal * s = &retrieveSeries();
     // figure out my iteration number
     auto begin = s->indexOf( *this );
-    auto end = begin;
-    ++end;
-    // set dirty, so Series::flush will open the file
-    this->dirty() = true;
-    s->flush_impl( begin, end, FlushLevel::UserFlush );
-    this->dirty() = false;
-
+    s->openIteration( begin->first, *this );
+    IOHandler()->flush();
     return *this;
 }
 
@@ -676,7 +671,7 @@ Iteration::dirtyRecursive() const
 void
 Iteration::linkHierarchy(Writable& w)
 {
-    AttributableImpl::linkHierarchy(w);
+    AttributableInterface::linkHierarchy(w);
     meshes.linkHierarchy(this->writable());
     particles.linkHierarchy(this->writable());
 }

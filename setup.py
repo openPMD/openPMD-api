@@ -156,7 +156,7 @@ with open('./requirements.txt') as f:
 setup(
     name='openPMD-api',
     # note PEP-440 syntax: x.y.zaN but x.y.z.devN
-    version='0.14.0.dev',
+    version='0.14.0',
     author='Axel Huebl, Franz Poeschel, Fabian Koller, Junmin Gu',
     author_email='axelhuebl@lbl.gov, f.poeschel@hzdr.de',
     maintainer='Axel Huebl',
@@ -184,7 +184,8 @@ setup(
     # see: src/bindings/python/cli
     entry_points={
         'console_scripts': [
-            'openpmd-ls = openpmd_api.ls.__main__:main'
+            'openpmd-ls = openpmd_api.ls.__main__:main',
+            'openpmd-pipe = openpmd_api.pipe.__main__:main'
         ]
     },
     # we would like to use this mechanism, but pip / setuptools do not

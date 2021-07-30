@@ -485,6 +485,7 @@ target_include_directories(openPMD PUBLIC
 # C++11 std::variant (C++17 stdlib preview)
 # TODO not needed with C++17 compiler
 add_library(openPMD::thirdparty::mpark_variant INTERFACE IMPORTED)
+set(openPMD_PC_EXTRA_INCLUDE "")
 if(openPMD_USE_INTERNAL_VARIANT)
     target_include_directories(openPMD::thirdparty::mpark_variant SYSTEM INTERFACE
         $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include>
@@ -494,6 +495,10 @@ else()
     find_package(mpark_variant 1.3.0 REQUIRED) # TODO: we want 1.4.1+
     target_link_libraries(openPMD::thirdparty::mpark_variant
         INTERFACE mpark_variant)
+    get_target_property(EXTERNAL_MPARK_INCLUDE mpark_variant INTERFACE_INCLUDE_DIRECTORIES)
+    if(openPMD_HAVE_PKGCONFIG AND EXTERNAL_MPARK_INCLUDE)
+        set(openPMD_PC_EXTRA_INCLUDE "-I${EXTERNAL_MPARK_INCLUDE}")
+    endif()
     message(STATUS "MPark.Variant: Found version '${mpark_variant_VERSION}'")
 endif()
 target_link_libraries(openPMD PUBLIC openPMD::thirdparty::mpark_variant)
@@ -802,6 +807,7 @@ set(openPMD_EXAMPLE_NAMES
     2a_read_thetaMode_serial
     3_write_serial
     3a_write_thetaMode_serial
+    3b_write_resizable_particles
     4_read_parallel
     5_write_parallel
     6_dump_filebased_series
@@ -818,6 +824,7 @@ set(openPMD_PYTHON_EXAMPLE_NAMES
     2a_read_thetaMode_serial
     3_write_serial
     3a_write_thetaMode_serial
+    3b_write_resizable_particles
     4_read_parallel
     5_write_parallel
     7_extended_write_serial
@@ -1113,7 +1120,7 @@ if(openPMD_BUILD_TESTING)
                            "to add example files to samples/git-sample/ directory!")
         else()
             message(STATUS "Note: run\n"
-                           "    . ${openPMD_SOURCE_DIR}/share/openPMD/download_samples.sh\n"
+                           "    ${openPMD_SOURCE_DIR}/share/openPMD/download_samples.sh\n"
                            "to add example files to samples/git-sample/ directory!")
         endif()
     endif()
@@ -1297,11 +1304,11 @@ if(openPMD_BUILD_TESTING)
                         ${MPI_TEST_EXE} ${Python_EXECUTABLE}                       \
                             ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
                             --infile ../samples/git-sample/thetaMode/data%T.h5     \
-                            --outfile ../samples/git-sample/thetaMode/data%T.bp && \
+                            --outfile ../samples/git-sample/thetaMode/data.bp &&   \
                                                                                    \
                         ${Python_EXECUTABLE}                                       \
                             ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/openpmd-pipe         \
-                            --infile ../samples/git-sample/thetaMode/data%T.bp     \
+                            --infile ../samples/git-sample/thetaMode/data.bp       \
                             --outfile ../samples/git-sample/thetaMode/data%T.json  \
                         "
                     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}

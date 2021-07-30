@@ -75,8 +75,7 @@ namespace detail
         return "";
     }
 
-    Datatype
-    fromADIOS2Type( std::string const & dt )
+    Datatype fromADIOS2Type( std::string const & dt, bool verbose )
     {
         static std::map< std::string, Datatype > map{
             { "string", Datatype::STRING },
@@ -113,8 +112,13 @@ namespace detail
         }
         else
         {
-            std::cerr << "[ADIOS2] Warning: Encountered unknown ADIOS2 datatype,"
-                         " defaulting to UNDEFINED." << std::endl;
+            if( verbose )
+            {
+                std::cerr
+                    << "[ADIOS2] Warning: Encountered unknown ADIOS2 datatype,"
+                       " defaulting to UNDEFINED."
+                    << std::endl;
+            }
             return Datatype::UNDEFINED;
         }
     }

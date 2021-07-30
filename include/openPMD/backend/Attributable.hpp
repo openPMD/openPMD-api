@@ -46,10 +46,11 @@ namespace traits
     struct GenerationPolicy;
 } // traits
 class AbstractFilePosition;
-class AttributableImpl;
+class AttributableInterface;
+class Iteration;
 namespace internal
 {
-class SeriesInternal;
+    class SeriesInternal;
 }
 
 class no_such_attribute_error : public std::runtime_error
@@ -65,7 +66,7 @@ namespace internal
 {
 class AttributableData
 {
-    friend class openPMD::AttributableImpl;
+    friend class openPMD::AttributableInterface;
 
 public:
     AttributableData();
@@ -89,11 +90,11 @@ private:
  * Mandatory and user-defined Attributes and their data for every object in the
  * openPMD hierarchy are stored and managed through this class.
  */
-class AttributableImpl
+class AttributableInterface
 {
     // @todo remove unnecessary friend (wew that sounds bitter)
     using A_MAP = std::map< std::string, Attribute >;
-    friend Writable* getWritable(AttributableImpl*);
+    friend Writable* getWritable(AttributableInterface*);
     template< typename T_elem >
     friend class BaseRecord;
     template<
@@ -106,7 +107,7 @@ class AttributableImpl
     friend struct traits::GenerationPolicy;
     friend class Iteration;
     friend class Series;
-    friend class SeriesImpl;
+    friend class SeriesInterface;
     friend class Writable;
     friend class WriteIterations;
 
@@ -114,16 +115,16 @@ protected:
     internal::AttributableData * m_attri = nullptr;
 
     // Should not be called publicly, only by implementing classes
-    AttributableImpl( internal::AttributableData * );
+    AttributableInterface( internal::AttributableData * );
     template< typename T >
-    AttributableImpl( T * attri )
-        : AttributableImpl{
+    AttributableInterface( T * attri )
+        : AttributableInterface{
               static_cast< internal::AttributableData * >( attri ) }
     {
     }
 
 public:
-    virtual ~AttributableImpl() = default;
+    virtual ~AttributableInterface() = default;
 
     /** Populate Attribute of provided name with provided value.
      *
@@ -188,7 +189,7 @@ public:
      * @param   comment String value to be stored as a comment.
      * @return  Reference to modified Attributable.
      */
-    AttributableImpl& setComment(std::string const& comment);
+    AttributableInterface& setComment(std::string const& comment);
 
     /** Flush the corresponding Series object
      *
@@ -234,6 +235,17 @@ OPENPMD_protected:
 
     internal::SeriesInternal const & retrieveSeries() const;
     internal::SeriesInternal & retrieveSeries();
+
+    /** Returns the corresponding Iteration
+     *
+     * Return the openPMD::iteration that this Attributable is contained in.
+     * This walks up the linked parents until it finds the Iteration object.
+     * Throws an error otherwise, e.g., for Series objects.
+     * @{
+     */
+    Iteration const & containingIteration() const;
+    Iteration & containingIteration();
+    /** @} */
 
     void seriesFlush( FlushLevel );
 
@@ -327,7 +339,7 @@ OPENPMD_protected:
         else
         {
             throw std::runtime_error(
-                "[AttributableImpl] "
+                "[AttributableInterface] "
                 "Cannot use default-constructed Attributable." );
         }
     }
@@ -341,7 +353,7 @@ OPENPMD_protected:
         else
         {
             throw std::runtime_error(
-                "[AttributableImpl] "
+                "[AttributableInterface] "
                 "Cannot use default-constructed Attributable." );
         }
     }
@@ -358,29 +370,29 @@ private:
      * @param w The Writable representing the parent.
      */
     virtual void linkHierarchy(Writable& w);
-}; // AttributableImpl
+}; // AttributableInterface
 
 // Alias this as Attributable since this is a public abstract parent class
 // for most of the classes in our object model of the openPMD hierarchy
-using Attributable = AttributableImpl;
+using Attributable = AttributableInterface;
 
-class LegacyAttributable : public AttributableImpl
+class LegacyAttributable : public AttributableInterface
 {
 protected:
     std::shared_ptr< internal::AttributableData > m_attributableData =
         std::make_shared< internal::AttributableData >();
 
 public:
-    LegacyAttributable() : AttributableImpl{ nullptr }
+    LegacyAttributable() : AttributableInterface{ nullptr }
     {
-        AttributableImpl::m_attri = m_attributableData.get();
+        AttributableInterface::m_attri = m_attributableData.get();
     }
 };
 
 //TODO explicitly instantiate Attributable::setAttribute for all T in Datatype
 template< typename T >
 inline bool
-AttributableImpl::setAttribute( std::string const & key, T value )
+AttributableInterface::setAttribute( std::string const & key, T value )
 {
     auto & attri = get();
     if(IOHandler() && Access::READ_ONLY == IOHandler()->m_frontendAccess )
@@ -409,13 +421,13 @@ AttributableImpl::setAttribute( std::string const & key, T value )
     }
 }
 inline bool
-AttributableImpl::setAttribute( std::string const & key, char const value[] )
+AttributableInterface::setAttribute( std::string const & key, char const value[] )
 {
     return this->setAttribute(key, std::string(value));
 }
 
 template< typename T >
-inline T AttributableImpl::readFloatingpoint( std::string const & key ) const
+inline T AttributableInterface::readFloatingpoint( std::string const & key ) const
 {
     static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
 
@@ -424,7 +436,7 @@ inline T AttributableImpl::readFloatingpoint( std::string const & key ) const
 
 template< typename T >
 inline std::vector< T >
-AttributableImpl::readVectorFloatingpoint( std::string const & key ) const
+AttributableInterface::readVectorFloatingpoint( std::string const & key ) const
 {
     static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
 

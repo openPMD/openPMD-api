@@ -11,4 +11,4 @@ URL: https://openpmd-api.readthedocs.io
 
 Libs: -L${libdir} -lopenPMD @openPMD_PC_PUBLIC_LIBS@
 Libs.private: -L${libdir} @openPMD_PC_PRIVATE_LIBS@
-Cflags: -I${includedir} @openPMD_PC_PUBLIC_DEFINES@
+Cflags: -I${includedir} @openPMD_PC_EXTRA_INCLUDE@ @openPMD_PC_PUBLIC_DEFINES@

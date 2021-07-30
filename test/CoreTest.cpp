@@ -22,7 +22,8 @@ using namespace openPMD;
 TEST_CASE( "versions_test", "[core]" )
 {
     auto const apiVersion = getVersion( );
-    REQUIRE(2u == std::count_if(apiVersion.begin(), apiVersion.end(), []( char const c ){ return c == '.';}));
+    auto const is_dot = []( char const c ){ return c == '.'; };
+    REQUIRE(2u == std::count_if(apiVersion.begin(), apiVersion.end(), is_dot));
 
     auto const standard = getStandard( );
     REQUIRE(standard == "1.1.0");
@@ -151,7 +152,7 @@ TEST_CASE( "myPath", "[core]" )
 {
 #if openPMD_USE_INVASIVE_TESTS
     using vec_t = std::vector< std::string >;
-    auto pathOf = []( AttributableImpl & attr )
+    auto pathOf = []( AttributableInterface & attr )
     {
         auto res = attr.myPath();
 #if false

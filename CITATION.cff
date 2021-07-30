@@ -1,0 +1,45 @@
+cff-version: 1.1.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: Huebl
+  given-names: Axel
+  affiliation: Lawrence Berkeley National Laboratory
+  orcid: https://orcid.org/0000-0003-1943-7141
+  email: axelhuebl@lbl.gov
+- family-names: Poeschel
+  affiliation: Center for Advanced Systems Understanding (CASUS)
+  given-names: Franz
+  orcid: https://orcid.org/0000-0001-7042-5088
+- family-names: Koller
+  given-names: Fabian
+  affiliation: Helmholtz-Zentrum Dresden-Rossendorf
+  orcid: https://orcid.org/0000-0001-8704-1769
+- family-names: Gu
+  given-names: Junmin
+  affiliation: Lawrence Berkeley National Laboratory
+  orcid: https://orcid.org/0000-0002-1521-8534
+contact:
+- family-names: Huebl
+  given-names: Axel
+  affiliation: Lawrence Berkeley National Laboratory
+  orcid: https://orcid.org/0000-0003-1943-7141
+  email: axelhuebl@lbl.gov
+title: "openPMD-api: C++ & Python API for Scientific I/O with openPMD"
+version: 0.14.0
+repository-code: https://github.com/openPMD/openPMD-api
+doi: 10.14278/rodare.27
+license: LGPL-3.0-or-later
+date-released: 2018-06-07
+keywords:
+- research
+- hpc
+- opendata
+- cpp14
+- mpi
+- python3
+- hdf5
+- file-handling
+- openscience
+- meta-data
+- adios
+- openpmd 

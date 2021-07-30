@@ -38,11 +38,11 @@
 
 namespace openPMD
 {
-class AttributableImpl;
+class AttributableInterface;
 class Writable;
 
 Writable*
-getWritable(AttributableImpl*);
+getWritable(AttributableInterface*);
 
 /** Type of IO operation between logical and persistent data.
  */
@@ -75,7 +75,7 @@ OPENPMDAPI_EXPORT_ENUM_CLASS(Operation)
 
     ADVANCE,
     AVAILABLE_CHUNKS //!< Query chunks that can be loaded in a dataset
-}; // Operation
+}; // note: if you change the enum members here, please update docs/source/dev/design.rst
 
 struct OPENPMDAPI_EXPORT AbstractParameter
 {
@@ -605,7 +605,7 @@ public:
     { }
 
     template< Operation op >
-    explicit IOTask(AttributableImpl* a,
+    explicit IOTask(AttributableInterface* a,
            Parameter< op > const & p)
             : writable{getWritable(a)},
               operation{op},

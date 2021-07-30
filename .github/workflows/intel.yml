@@ -1,0 +1,48 @@
+name: 🐧 Intel
+
+on: [push, pull_request]
+
+jobs:
+  icc_cxxonly:
+    name: ICC C++ only
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install
+      run: |
+        sudo .github/workflows/dependencies/install_icc
+    - name: Build
+      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      run: |
+        set +e; source /opt/intel/oneapi/setvars.sh; set -e
+        share/openPMD/download_samples.sh build
+        chmod u-w build/samples/git-sample/*.h5
+        cmake -S . -B build \
+          -DCMAKE_C_COMPILER=$(which icc)    \
+          -DCMAKE_CXX_COMPILER=$(which icpc) \
+          -DopenPMD_USE_PYTHON=OFF           \
+          -DopenPMD_USE_MPI=OFF
+        cmake --build build --parallel 2
+        ctest --test-dir build --output-on-failure
+
+  icx_cxxonly:
+    name: ICX C++ only
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install
+      run: |
+        sudo .github/workflows/dependencies/install_icx
+    - name: Build
+      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      run: |
+        set +e; source /opt/intel/oneapi/setvars.sh; set -e
+        share/openPMD/download_samples.sh build
+        chmod u-w build/samples/git-sample/*.h5
+        cmake -S . -B build \
+          -DCMAKE_C_COMPILER=$(which icx)    \
+          -DCMAKE_CXX_COMPILER=$(which icpx) \
+          -DopenPMD_USE_PYTHON=OFF           \
+          -DopenPMD_USE_MPI=OFF
+        cmake --build build --parallel 2
+        ctest --test-dir build --output-on-failure

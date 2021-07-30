@@ -1,0 +1,1 @@
+../../../examples/3b_write_resizable_particles.cpp

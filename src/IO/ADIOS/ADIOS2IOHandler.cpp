@@ -292,7 +292,8 @@ void ADIOS2IOHandlerImpl::createFile(
         m_iterationEncoding = parameters.encoding;
         associateWithFile( writable, shared_name );
         this->m_dirty.emplace( shared_name );
-        getFileData( shared_name ).m_mode = adios2::Mode::Write; // WORKAROUND
+        getFileData( shared_name, IfFileNotOpen::OpenImplicitly ).m_mode =
+            adios2::Mode::Write; // WORKAROUND
         // ADIOS2 does not yet implement ReadWrite Mode
 
         writable->written = true;
@@ -384,7 +385,7 @@ void ADIOS2IOHandlerImpl::createDataset(
         // cast from openPMD::Extent to adios2::Dims
         adios2::Dims const shape( parameters.extent.begin(), parameters.extent.end() );
 
-        auto & fileData = getFileData( file );
+        auto & fileData = getFileData( file, IfFileNotOpen::ThrowError );
         switchAdios2VariableType(
             parameters.dtype,
             detail::VariableDefiner(),
@@ -440,7 +441,7 @@ ADIOS2IOHandlerImpl::extendDataset(
     setAndGetFilePosition( writable );
     auto file = refreshFileFromParent( writable );
     std::string name = nameOfVariable( writable );
-    auto & filedata = getFileData( file );
+    auto & filedata = getFileData( file, IfFileNotOpen::ThrowError );
     static detail::DatasetExtender de;
     Datatype dt = detail::fromADIOS2Type( filedata.m_IO.VariableType( name ) );
     switchAdios2VariableType( dt, de, filedata.m_IO, name, parameters.extent );
@@ -474,7 +475,7 @@ ADIOS2IOHandlerImpl::openFile(
     m_iterationEncoding = parameters.encoding;
     // enforce opening the file
     // lazy opening is deathly in parallel situations
-    getFileData( file );
+    getFileData( file, IfFileNotOpen::OpenImplicitly );
 }
 
 void
@@ -535,8 +536,9 @@ void ADIOS2IOHandlerImpl::openDataset(
     pos->gd = ADIOS2FilePosition::GD::DATASET;
     auto file = refreshFileFromParent( writable );
     auto varName = nameOfVariable( writable );
-    *parameters.dtype = detail::fromADIOS2Type(
-        getFileData( file ).m_IO.VariableType( varName ) );
+    *parameters.dtype =
+        detail::fromADIOS2Type( getFileData( file, IfFileNotOpen::ThrowError )
+                                    .m_IO.VariableType( varName ) );
     switchAdios2VariableType(
         *parameters.dtype,
         detail::DatasetOpener( this ),
@@ -582,7 +584,8 @@ void ADIOS2IOHandlerImpl::writeDataset(
                    "[ADIOS2] Cannot write data in read-only mode." );
     setAndGetFilePosition( writable );
     auto file = refreshFileFromParent( writable );
-    detail::BufferedActions & ba = getFileData( file );
+    detail::BufferedActions & ba =
+        getFileData( file, IfFileNotOpen::ThrowError );
     detail::BufferedPut bp;
     bp.name = nameOfVariable( writable );
     bp.param = parameters;
@@ -614,7 +617,7 @@ void ADIOS2IOHandlerImpl::writeAttribute(
             auto fullName = nameOfAttribute( writable, parameters.name );
             auto prefix = filePositionToString( pos );
 
-            auto & filedata = getFileData( file );
+            auto & filedata = getFileData( file, IfFileNotOpen::ThrowError );
             filedata.invalidateAttributesMap();
             m_dirty.emplace( std::move( file ) );
 
@@ -635,7 +638,8 @@ void ADIOS2IOHandlerImpl::readDataset(
 {
     setAndGetFilePosition( writable );
     auto file = refreshFileFromParent( writable );
-    detail::BufferedActions & ba = getFileData( file );
+    detail::BufferedActions & ba =
+        getFileData( file, IfFileNotOpen::ThrowError );
     detail::BufferedGet bg;
     bg.name = nameOfVariable( writable );
     bg.param = parameters;
@@ -706,7 +710,8 @@ ADIOS2IOHandlerImpl::getBufferView(
     }
     setAndGetFilePosition( writable );
     auto file = refreshFileFromParent( writable );
-    detail::BufferedActions &ba = getFileData( file );
+    detail::BufferedActions & ba =
+        getFileData( file, IfFileNotOpen::ThrowError );
     if( parameters.update )
     {
         detail::I_UpdateSpan &updater =
@@ -744,7 +749,8 @@ ADIOS2IOHandlerImpl::readAttribute(
 {
     auto file = refreshFileFromParent( writable );
     auto pos = setAndGetFilePosition( writable );
-    detail::BufferedActions & ba = getFileData( file );
+    detail::BufferedActions & ba =
+        getFileData( file, IfFileNotOpen::ThrowError );
     switch( attributeLayout() )
     {
         using AL = AttributeLayout;
@@ -788,7 +794,7 @@ void ADIOS2IOHandlerImpl::listPaths(
      * since ADIOS does not have a concept of paths, restore them
      * from variables and attributes.
      */
-    auto & fileData = getFileData( file );
+    auto & fileData = getFileData( file, IfFileNotOpen::ThrowError );
     fileData.requireActiveStep();
 
     std::unordered_set< std::string > subdirs;
@@ -907,7 +913,7 @@ void ADIOS2IOHandlerImpl::listDatasets(
      * from variables and attributes.
      */
 
-    auto & fileData = getFileData( file );
+    auto & fileData = getFileData( file, IfFileNotOpen::ThrowError );
     fileData.requireActiveStep();
 
     std::unordered_set< std::string > subdirs;
@@ -953,7 +959,7 @@ void ADIOS2IOHandlerImpl::listAttributes(
     {
         attributePrefix = "";
     }
-    auto & ba = getFileData( file );
+    auto & ba = getFileData( file, IfFileNotOpen::ThrowError );
     ba.requireActiveStep(); // make sure that the attributes are present
 
     std::vector< std::string > attrs;
@@ -989,7 +995,7 @@ ADIOS2IOHandlerImpl::advance(
     Parameter< Operation::ADVANCE > & parameters )
 {
     auto file = m_files[ writable ];
-    auto & ba = getFileData( file );
+    auto & ba = getFileData( file, IfFileNotOpen::ThrowError );
     *parameters.status = ba.advance( parameters.mode );
 }
 
@@ -1007,7 +1013,7 @@ ADIOS2IOHandlerImpl::closePath(
         return;
     }
     auto file = refreshFileFromParent( writable );
-    auto & fileData = getFileData( file );
+    auto & fileData = getFileData( file, IfFileNotOpen::ThrowError );
     if( !fileData.optimizeAttributesStreaming )
     {
         return;
@@ -1033,9 +1039,10 @@ ADIOS2IOHandlerImpl::availableChunks(
 {
     setAndGetFilePosition( writable );
     auto file = refreshFileFromParent( writable );
-    detail::BufferedActions & ba = getFileData( file );
+    detail::BufferedActions & ba =
+        getFileData( file, IfFileNotOpen::ThrowError );
     std::string varName = nameOfVariable( writable );
-    auto engine = ba.getEngine( ); // make sure that data are present
+    auto engine = ba.getEngine(); // make sure that data are present
     auto datatype = detail::fromADIOS2Type( ba.m_IO.VariableType( varName ) );
     static detail::RetrieveBlocksInfo rbi;
     switchAdios2VariableType(
@@ -1170,19 +1177,30 @@ ADIOS2IOHandlerImpl::groupOrDataset( Writable * writable )
 }
 
 detail::BufferedActions &
-ADIOS2IOHandlerImpl::getFileData( InvalidatableFile file )
+ADIOS2IOHandlerImpl::getFileData( InvalidatableFile file, IfFileNotOpen flag )
 {
-    VERIFY_ALWAYS( file.valid( ),
-                   "[ADIOS2] Cannot retrieve file data for a file that has "
-                   "been overwritten or deleted." )
+    VERIFY_ALWAYS(
+        file.valid(),
+        "[ADIOS2] Cannot retrieve file data for a file that has "
+        "been overwritten or deleted." )
     auto it = m_fileData.find( file );
-    if ( it == m_fileData.end( ) )
+    if( it == m_fileData.end() )
     {
-        return *m_fileData
-                    .emplace( std::move( file ),
-                              std::make_unique< detail::BufferedActions >(
-                                  *this, file) )
-                    .first->second;
+        switch( flag )
+        {
+        case IfFileNotOpen::OpenImplicitly: {
+
+            auto res = m_fileData.emplace(
+                std::move( file ),
+                std::make_unique< detail::BufferedActions >( *this, file ) );
+            return *res.first->second;
+        }
+        case IfFileNotOpen::ThrowError:
+            throw std::runtime_error(
+                "[ADIOS2] Requested file has not been opened yet: " +
+                ( file.fileState ? file.fileState->name
+                                 : "Unknown file name" ) );
+        }
     }
     else
     {
@@ -1209,10 +1227,13 @@ ADIOS2IOHandlerImpl::verifyDataset( Offset const & offset,
     {
         auto requiredType = adios2::GetType< T >( );
         auto actualType = IO.VariableType( varName );
-        VERIFY_ALWAYS( requiredType == actualType,
-                       "[ADIOS2] Trying to access a dataset with wrong type (trying to "
-                       "access dataset with type " +
-                           requiredType + ", but has type " + actualType + ")" )
+        std::stringstream errorMessage;
+        errorMessage
+            << "[ADIOS2] Trying to access a dataset with wrong type (trying to "
+               "access dataset with type "
+            << determineDatatype< T >() << ", but has type "
+            << detail::fromADIOS2Type( actualType, false ) << ")";
+        VERIFY_ALWAYS( requiredType == actualType, errorMessage.str() );
     }
     adios2::Variable< T > var = IO.InquireVariable< T >( varName );
     VERIFY_ALWAYS( var.operator bool( ),
@@ -1281,9 +1302,9 @@ namespace detail
          */
         using rep = AttributeTypes< bool >::rep;
         if
-#    if __cplusplus > 201402L
+#if __cplusplus >= 201703L
             constexpr
-#    endif
+#endif
             ( std::is_same< T, rep >::value )
         {
             std::string metaAttr =
@@ -1392,7 +1413,8 @@ namespace detail
         auto fullName = impl->nameOfAttribute( writable, parameters.name );
         auto prefix = impl->filePositionToString( pos );
 
-        auto & filedata = impl->getFileData( file );
+        auto & filedata = impl->getFileData(
+            file, ADIOS2IOHandlerImpl::IfFileNotOpen::ThrowError );
         filedata.invalidateAttributesMap();
         adios2::IO IO = filedata.m_IO;
         impl->m_dirty.emplace( std::move( file ) );
@@ -1473,11 +1495,12 @@ namespace detail
     operator( )( InvalidatableFile file, const std::string & varName,
                  Parameter< Operation::OPEN_DATASET > & parameters )
     {
-        auto & fileData = m_impl->getFileData( file );
+        auto & fileData = m_impl->getFileData(
+            file, ADIOS2IOHandlerImpl::IfFileNotOpen::ThrowError );
         fileData.requireActiveStep();
         auto & IO = fileData.m_IO;
         adios2::Variable< T > var = IO.InquireVariable< T >( varName );
-        if ( !var )
+        if( !var )
         {
             throw std::runtime_error(
                 "[ADIOS2] Failed retrieving ADIOS2 Variable with name '" + varName +

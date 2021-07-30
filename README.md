@@ -407,9 +407,11 @@ Further thanks go to improvements and contributions from:
 * [Paweł Ordyna (HZDR)](https://github.com/pordyna):
   report on NVCC warnings
 * [Dmitry Ganyushin (ORNL)](https://github.com/dmitry-ganyushin):
-  Dask dataframe support
+  Dask prototyping & ADIOS2 benchmarking
 * [John Kirkham (NVIDIA)](https://github.com/jakirkham):
   Dask guidance & reviews
+* [Erik Schnetter (PITP)](https://github.com/eschnett):
+  C++ API bug fixes
 
 ### Grants
 

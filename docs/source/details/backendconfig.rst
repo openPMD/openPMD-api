@@ -42,7 +42,7 @@ Especially when a Series has many iterations, this can be a costly operation and
 
 When parsing non-eagerly, each iteration needs to be explicitly opened with ``Iteration::open()`` before accessing.
 (Notice that ``Iteration::open()`` is generally recommended to be used in parallel contexts to avoid parallel file accessing hazards).
-Using the Streaming API (i.e. ``SeriesImpl::readIteration()``) will do this automatically.
+Using the Streaming API (i.e. ``SeriesInterface::readIteration()``) will do this automatically.
 Parsing eagerly might be very expensive for a Series with many iterations, but will avoid bugs by forgotten calls to ``Iteration::open()``.
 In complex environments, calling ``Iteration::open()`` on an already open environment does no harm (and does not incur additional runtime cost for additional ``open()`` calls).
 
@@ -53,6 +53,8 @@ For JSON and ADIOS2, all datasets are resizable, independent of this option.
 
 Configuration Structure per Backend
 -----------------------------------
+
+.. _backendconfig-adios2:
 
 ADIOS2
 ^^^^^^
@@ -78,6 +80,8 @@ Explanation of the single keys:
 
 Any setting specified under ``adios2.dataset`` is applicable globally as well as on a per-dataset level.
 Any setting under ``adios2.engine`` is applicable globally only.
+
+.. _backendconfig-hdf5:
 
 HDF5
 ^^^^

@@ -102,6 +102,12 @@
             "affiliation": "NVIDIA",
             "name": "Kirkham, John",
             "type": "Other"
+        },
+        {
+            "affiliation": "Perimeter Institute for Theoretical Physics",
+            "name": "Schnetter, Erik",
+            "orcid": "0000-0002-4518-9017",
+            "type": "Other"
         }
     ],
     "title": "C++ & Python API for Scientific I/O with openPMD",
