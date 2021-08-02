@@ -299,6 +299,9 @@ void ADIOS2IOHandlerImpl::createFile(
         writable->written = true;
         writable->abstractFilePosition =
             std::make_shared< ADIOS2FilePosition >( );
+        // enforce opening the file
+        // lazy opening is deathly in parallel situations
+        getFileData( shared_name, IfFileNotOpen::OpenImplicitly );
     }
 }
 
