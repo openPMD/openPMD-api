@@ -78,11 +78,15 @@ protected:
     /**
      * Get the writable's containing file.
      * @param writable The writable whose containing file to figure out.
+     * @param preferParentFile If true, the file is set to the parent's file if
+     *     present. Otherwise, the parent file is only considered if no own file
+     *     is defined.
      * @return The containing file of the writable. If its parent is associated
      * with another file, update the writable to match its parent and return
      * the refreshed file.
      */
-    InvalidatableFile refreshFileFromParent( Writable * writable );
+    InvalidatableFile
+    refreshFileFromParent( Writable * writable, bool preferParentFile );
 
     /**
      * Figure out the file position of the writable.
@@ -195,26 +199,40 @@ std::string AbstractIOHandlerImplCommon< FilePositionType >::fullPath(
     }
 }
 
-
-template < typename FilePositionType >
+template< typename FilePositionType >
 InvalidatableFile
 AbstractIOHandlerImplCommon< FilePositionType >::refreshFileFromParent(
-    Writable * writable )
+    Writable * writable, bool preferParentFile )
 {
-    if ( writable->parent )
-    {
+    auto getFileFromParent = [ writable, this ]() {
         auto file = m_files.find( writable->parent )->second;
         associateWithFile( writable, file );
         return file;
+    };
+    if( preferParentFile && writable->parent )
+    {
+        return getFileFromParent();
     }
     else
     {
-        return m_files.find( writable )->second;
+        auto it = m_files.find( writable );
+        if( it != m_files.end() )
+        {
+            return m_files.find( writable )->second;
+        }
+        else if( writable->parent )
+        {
+            return getFileFromParent();
+        }
+        else
+        {
+            throw std::runtime_error(
+                "Internal error: Root object must be opened explicitly." );
+        }
     }
 }
 
-
-template < typename FilePositionType >
+template< typename FilePositionType >
 std::shared_ptr< FilePositionType >
 AbstractIOHandlerImplCommon< FilePositionType >::setAndGetFilePosition(
     Writable * writable, bool write )

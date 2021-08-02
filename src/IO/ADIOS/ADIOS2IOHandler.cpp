@@ -310,7 +310,7 @@ void ADIOS2IOHandlerImpl::createPath(
     const Parameter< Operation::CREATE_PATH > & parameters )
 {
     std::string path;
-    refreshFileFromParent( writable );
+    refreshFileFromParent( writable, /* preferParentFile = */ true );
 
     /* Sanitize path */
     if ( !auxiliary::starts_with( parameters.path, '/' ) )
@@ -345,7 +345,8 @@ void ADIOS2IOHandlerImpl::createDataset(
         /* Sanitize name */
         std::string name = auxiliary::removeSlashes( parameters.name );
 
-        auto const file = refreshFileFromParent( writable );
+        auto const file =
+            refreshFileFromParent( writable, /* preferParentFile = */ false );
         auto filePos = setAndGetFilePosition( writable, name );
         filePos->gd = ADIOS2FilePosition::GD::DATASET;
         auto const varName = nameOfVariable( writable );
@@ -442,7 +443,8 @@ ADIOS2IOHandlerImpl::extendDataset(
         m_handler->m_backendAccess != Access::READ_ONLY,
         "[ADIOS2] Cannot extend datasets in read-only mode." );
     setAndGetFilePosition( writable );
-    auto file = refreshFileFromParent( writable );
+    auto file =
+        refreshFileFromParent( writable, /* preferParentFile = */ false );
     std::string name = nameOfVariable( writable );
     auto & filedata = getFileData( file, IfFileNotOpen::ThrowError );
     static detail::DatasetExtender de;
@@ -514,7 +516,7 @@ void ADIOS2IOHandlerImpl::openPath(
     Writable * writable, const Parameter< Operation::OPEN_PATH > & parameters )
 {
     /* Sanitize path */
-    refreshFileFromParent( writable );
+    refreshFileFromParent( writable, /* preferParentFile = */ true );
     std::string prefix =
         filePositionToString( setAndGetFilePosition( writable->parent ) );
     std::string suffix = auxiliary::removeSlashes( parameters.path );
@@ -534,10 +536,11 @@ void ADIOS2IOHandlerImpl::openDataset(
     Writable * writable, Parameter< Operation::OPEN_DATASET > & parameters )
 {
     auto name = auxiliary::removeSlashes( parameters.name );
-    writable->abstractFilePosition.reset( );
+    writable->abstractFilePosition.reset();
     auto pos = setAndGetFilePosition( writable, name );
     pos->gd = ADIOS2FilePosition::GD::DATASET;
-    auto file = refreshFileFromParent( writable );
+    auto file =
+        refreshFileFromParent( writable, /* preferParentFile = */ false );
     auto varName = nameOfVariable( writable );
     *parameters.dtype =
         detail::fromADIOS2Type( getFileData( file, IfFileNotOpen::ThrowError )
@@ -583,10 +586,12 @@ void ADIOS2IOHandlerImpl::writeDataset(
     Writable * writable,
     const Parameter< Operation::WRITE_DATASET > & parameters )
 {
-    VERIFY_ALWAYS( m_handler->m_backendAccess != Access::READ_ONLY,
-                   "[ADIOS2] Cannot write data in read-only mode." );
+    VERIFY_ALWAYS(
+        m_handler->m_backendAccess != Access::READ_ONLY,
+        "[ADIOS2] Cannot write data in read-only mode." );
     setAndGetFilePosition( writable );
-    auto file = refreshFileFromParent( writable );
+    auto file =
+        refreshFileFromParent( writable, /* preferParentFile = */ false );
     detail::BufferedActions & ba =
         getFileData( file, IfFileNotOpen::ThrowError );
     detail::BufferedPut bp;
@@ -610,13 +615,13 @@ void ADIOS2IOHandlerImpl::writeAttribute(
                 writable,
                 parameters );
             break;
-        case AttributeLayout::ByAdiosVariables:
-        {
+        case AttributeLayout::ByAdiosVariables: {
             VERIFY_ALWAYS(
                 m_handler->m_backendAccess != Access::READ_ONLY,
                 "[ADIOS2] Cannot write attribute in read-only mode." );
             auto pos = setAndGetFilePosition( writable );
-            auto file = refreshFileFromParent( writable );
+            auto file = refreshFileFromParent(
+                writable, /* preferParentFile = */ false );
             auto fullName = nameOfAttribute( writable, parameters.name );
             auto prefix = filePositionToString( pos );
 
@@ -640,7 +645,8 @@ void ADIOS2IOHandlerImpl::readDataset(
     Writable * writable, Parameter< Operation::READ_DATASET > & parameters )
 {
     setAndGetFilePosition( writable );
-    auto file = refreshFileFromParent( writable );
+    auto file =
+        refreshFileFromParent( writable, /* preferParentFile = */ false );
     detail::BufferedActions & ba =
         getFileData( file, IfFileNotOpen::ThrowError );
     detail::BufferedGet bg;
@@ -712,7 +718,7 @@ ADIOS2IOHandlerImpl::getBufferView(
         return;
     }
     setAndGetFilePosition( writable );
-    auto file = refreshFileFromParent( writable );
+    auto file = refreshFileFromParent( writable, /* preferParentFile = */ false );
     detail::BufferedActions & ba =
         getFileData( file, IfFileNotOpen::ThrowError );
     if( parameters.update )
@@ -745,12 +751,10 @@ void *UpdateSpan< T >::update()
 }
 } // namespace detail
 
-void
-ADIOS2IOHandlerImpl::readAttribute(
-    Writable * writable,
-    Parameter< Operation::READ_ATT > & parameters )
+void ADIOS2IOHandlerImpl::readAttribute(
+    Writable * writable, Parameter< Operation::READ_ATT > & parameters )
 {
-    auto file = refreshFileFromParent( writable );
+    auto file = refreshFileFromParent( writable, /* preferParentFile = */ false );
     auto pos = setAndGetFilePosition( writable );
     detail::BufferedActions & ba =
         getFileData( file, IfFileNotOpen::ThrowError );
@@ -784,8 +788,10 @@ void ADIOS2IOHandlerImpl::listPaths(
 {
     VERIFY_ALWAYS(
         writable->written,
-        "[ADIOS2] Internal error: Writable not marked written during path listing" );
-    auto file = refreshFileFromParent( writable );
+        "[ADIOS2] Internal error: Writable not marked written during path "
+        "listing" );
+    auto file =
+        refreshFileFromParent( writable, /* preferParentFile = */ false );
     auto pos = setAndGetFilePosition( writable );
     std::string myName = filePositionToString( pos );
     if ( !auxiliary::ends_with( myName, '/' ) )
@@ -901,8 +907,9 @@ void ADIOS2IOHandlerImpl::listDatasets(
 {
     VERIFY_ALWAYS(
         writable->written,
-        "[ADIOS2] Internal error: Writable not marked written during path listing" );
-    auto file = refreshFileFromParent( writable );
+        "[ADIOS2] Internal error: Writable not marked written during path "
+        "listing" );
+    auto file = refreshFileFromParent( writable, /* preferParentFile = */ false );
     auto pos = setAndGetFilePosition( writable );
     // adios2::Engine & engine = getEngine( file );
     std::string myName = filePositionToString( pos );
@@ -952,10 +959,11 @@ void ADIOS2IOHandlerImpl::listDatasets(
 void ADIOS2IOHandlerImpl::listAttributes(
     Writable * writable, Parameter< Operation::LIST_ATTS > & parameters )
 {
-    VERIFY_ALWAYS( writable->written,
-                   "[ADIOS2] Internal error: Writable not marked "
-                   "written during attribute writing" );
-    auto file = refreshFileFromParent( writable );
+    VERIFY_ALWAYS(
+        writable->written,
+        "[ADIOS2] Internal error: Writable not marked "
+        "written during attribute writing" );
+    auto file = refreshFileFromParent( writable, /* preferParentFile = */ false );
     auto pos = setAndGetFilePosition( writable );
     auto attributePrefix = filePositionToString( pos );
     if ( attributePrefix == "/" )
@@ -1015,7 +1023,7 @@ ADIOS2IOHandlerImpl::closePath(
         // nothing to do
         return;
     }
-    auto file = refreshFileFromParent( writable );
+    auto file = refreshFileFromParent( writable, /* preferParentFile = */ false );
     auto & fileData = getFileData( file, IfFileNotOpen::ThrowError );
     if( !fileData.optimizeAttributesStreaming )
     {
@@ -1035,13 +1043,11 @@ ADIOS2IOHandlerImpl::closePath(
     }
 }
 
-void
-ADIOS2IOHandlerImpl::availableChunks(
-    Writable * writable,
-    Parameter< Operation::AVAILABLE_CHUNKS > & parameters )
+void ADIOS2IOHandlerImpl::availableChunks(
+    Writable * writable, Parameter< Operation::AVAILABLE_CHUNKS > & parameters )
 {
     setAndGetFilePosition( writable );
-    auto file = refreshFileFromParent( writable );
+    auto file = refreshFileFromParent( writable, /* preferParentFile = */ false );
     detail::BufferedActions & ba =
         getFileData( file, IfFileNotOpen::ThrowError );
     std::string varName = nameOfVariable( writable );
@@ -1402,17 +1408,16 @@ namespace detail
     }
 
     template< typename T >
-    void
-    OldAttributeWriter::operator()(
+    void OldAttributeWriter::operator()(
         ADIOS2IOHandlerImpl * impl,
         Writable * writable,
         const Parameter< Operation::WRITE_ATT > & parameters )
     {
-        VERIFY_ALWAYS( impl->m_handler->m_backendAccess !=
-                           Access::READ_ONLY,
-                       "[ADIOS2] Cannot write attribute in read-only mode." );
+        VERIFY_ALWAYS(
+            impl->m_handler->m_backendAccess != Access::READ_ONLY,
+            "[ADIOS2] Cannot write attribute in read-only mode." );
         auto pos = impl->setAndGetFilePosition( writable );
-        auto file = impl->refreshFileFromParent( writable );
+        auto file = impl->refreshFileFromParent( writable, /* preferParentFile = */ false );
         auto fullName = impl->nameOfAttribute( writable, parameters.name );
         auto prefix = impl->filePositionToString( pos );
 
