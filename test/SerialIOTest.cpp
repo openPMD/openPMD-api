@@ -487,13 +487,23 @@ TEST_CASE( "close_iteration_test", "[serial]" )
 }
 
 void
-close_iteration_interleaved_test( std::string file_ending )
+close_iteration_interleaved_test( std::string const file_ending,
+                                  IterationEncoding const it_encoding )
 {
-    std::string name = "../samples/close_iterations_interleaved_%T." + file_ending;
+    std::string name = "../samples/close_iterations_interleaved_";
+    if( it_encoding == IterationEncoding::fileBased )
+        name.append( "f_%T" );
+    else if( it_encoding == IterationEncoding::groupBased )
+        name.append( "g" );
+    else if( it_encoding == IterationEncoding::variableBased )
+        name.append( "v" );
+    name.append( "." ).append( file_ending );
+    std::cout << name << std::endl;
 
     std::vector<int> data{2, 4, 6, 8};
     {
-        Series write(name, Access::CREATE);
+        Series write( name, Access::CREATE );
+        write.setIterationEncoding( it_encoding );
 
         // interleaved write pattern
         Iteration it1 = write.iterations[ 1 ];
@@ -543,9 +553,24 @@ close_iteration_interleaved_test( std::string file_ending )
 
 TEST_CASE( "close_iteration_interleaved_test", "[serial]" )
 {
+    bool const bp_prefer_adios1 =
+        ( auxiliary::getEnvString( "OPENPMD_BP_BACKEND", "NOT_SET" ) == "ADIOS1" );
+
     for( auto const & t : testedFileExtensions() )
     {
-        close_iteration_interleaved_test( t );
+        //! @FIXME ADIOS1 bugs with Iteration::close()
+        if( bp_prefer_adios1 )
+            continue;
+
+        close_iteration_interleaved_test( t, IterationEncoding::fileBased );
+        close_iteration_interleaved_test( t, IterationEncoding::groupBased );
+
+        // run this test for ADIOS2 & JSON only
+        if( t == "h5" )
+            continue;
+        if( t == "bp" && bp_prefer_adios1 )
+            continue;
+        close_iteration_interleaved_test( t, IterationEncoding::variableBased );
     }
 }
 
