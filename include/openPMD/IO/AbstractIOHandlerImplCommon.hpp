@@ -80,7 +80,7 @@ protected:
      * @param writable The writable whose containing file to figure out.
      * @param preferParentFile If true, the file is set to the parent's file if
      *     present. Otherwise, the parent file is only considered if no own file
-     *     is defined.
+     *     is defined. This is usually needed when switching between iterations when opening paths.
      * @return The containing file of the writable. If its parent is associated
      * with another file, update the writable to match its parent and return
      * the refreshed file.
