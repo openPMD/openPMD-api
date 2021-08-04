@@ -521,9 +521,9 @@ if(openPMD_HAVE_ADIOS1)
     target_link_libraries(openPMD.ADIOS1.Serial PUBLIC openPMD::thirdparty::mpark_variant)
     target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC openPMD::thirdparty::mpark_variant)
 
-    target_include_directories(openPMD.ADIOS1.Serial SYSTEM PRIVATE
+    target_include_directories(openPMD.ADIOS1.Serial PRIVATE
         ${openPMD_SOURCE_DIR}/include ${openPMD_BINARY_DIR}/include)
-    target_include_directories(openPMD.ADIOS1.Parallel SYSTEM PRIVATE
+    target_include_directories(openPMD.ADIOS1.Parallel PRIVATE
         ${openPMD_SOURCE_DIR}/include ${openPMD_BINARY_DIR}/include)
 
     if(openPMD_HAVE_MPI)
