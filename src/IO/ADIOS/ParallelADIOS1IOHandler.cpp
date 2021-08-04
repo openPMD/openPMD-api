@@ -26,8 +26,10 @@
 #   include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #   include "openPMD/auxiliary/Memory.hpp"
 #   include "openPMD/auxiliary/StringManip.hpp"
+#   include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #   include "openPMD/IO/ADIOS/ADIOS1Auxiliary.hpp"
 #   include "openPMD/IO/ADIOS/ADIOS1FilePosition.hpp"
+#   include "openPMD/IO/IOTask.hpp"
 #   include <adios.h>
 #   include <cstring>
 #   include <map>
