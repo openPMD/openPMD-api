@@ -26,14 +26,13 @@
 #include "openPMD/ChunkInfo.hpp"
 #include "openPMD/Dataset.hpp"
 #include "openPMD/IterationEncoding.hpp"
+#include "openPMD/Streaming.hpp"
 
 #include <memory>
 #include <map>
 #include <string>
 #include <utility>
 #include <vector>
-
-#include "openPMD/Streaming.hpp"
 
 
 namespace openPMD
