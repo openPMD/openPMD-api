@@ -487,6 +487,94 @@ TEST_CASE( "close_iteration_test", "[serial]" )
 }
 
 void
+close_iteration_interleaved_test( std::string const file_ending,
+                                  IterationEncoding const it_encoding )
+{
+    std::string name = "../samples/close_iterations_interleaved_";
+    if( it_encoding == IterationEncoding::fileBased )
+        name.append( "f_%T" );
+    else if( it_encoding == IterationEncoding::groupBased )
+        name.append( "g" );
+    else if( it_encoding == IterationEncoding::variableBased )
+        name.append( "v" );
+    name.append( "." ).append( file_ending );
+    std::cout << name << std::endl;
+
+    std::vector<int> data{2, 4, 6, 8};
+    {
+        Series write( name, Access::CREATE );
+        write.setIterationEncoding( it_encoding );
+
+        // interleaved write pattern
+        Iteration it1 = write.iterations[ 1 ];
+        auto E_x = it1.meshes[ "E" ][ "x" ];
+        E_x.resetDataset( { Datatype::INT, { 2, 2 } } );
+        E_x.storeChunk( data, { 0, 0 }, { 1, 2 } );
+        E_x.seriesFlush();
+
+        Iteration it2 = write.iterations[ 2 ];
+        E_x = it2.meshes[ "E" ][ "x" ];
+        E_x.resetDataset( { Datatype::INT, { 2, 2 } } );
+        E_x.storeChunk( data, { 0, 0 }, { 1, 2 } );
+        E_x.seriesFlush();
+
+        E_x = it1.meshes[ "E" ][ "x" ];
+        E_x.storeChunk( data, { 1, 0 }, { 1, 1 } );
+        E_x.seriesFlush();
+
+        E_x = it2.meshes[ "E" ][ "x" ];
+        E_x.storeChunk( data, { 1, 0 }, { 1, 1 } );
+        E_x.seriesFlush();
+
+        // now we start a third iteration
+        Iteration it3 = write.iterations[ 3 ];
+        E_x = it3.meshes[ "E" ][ "x" ];
+        E_x.resetDataset( { Datatype::INT, { 2, 2 } } );
+        E_x.storeChunk( data, { 0, 0 }, { 1, 2 } );
+        E_x.seriesFlush();
+
+        // let's finish writing to 1 and 2
+        E_x = it1.meshes[ "E" ][ "x" ];
+        E_x.storeChunk( data, { 1, 1 }, { 1, 1 } );
+        E_x.seriesFlush();
+        it1.close();
+
+        E_x = it2.meshes[ "E" ][ "x" ];
+        E_x.storeChunk( data, { 1, 1 }, { 1, 1 } );
+        E_x.seriesFlush();
+        it2.close();
+
+        E_x = it3.meshes[ "E" ][ "x" ];
+        E_x.storeChunk( data, { 1, 0 }, { 1, 2 } );
+        E_x.seriesFlush();
+        it3.close();
+    }
+}
+
+TEST_CASE( "close_iteration_interleaved_test", "[serial]" )
+{
+    bool const bp_prefer_adios1 =
+        ( auxiliary::getEnvString( "OPENPMD_BP_BACKEND", "NOT_SET" ) == "ADIOS1" );
+
+    for( auto const & t : testedFileExtensions() )
+    {
+        //! @FIXME ADIOS1 bugs with Iteration::close()
+        if( bp_prefer_adios1 )
+            continue;
+
+        close_iteration_interleaved_test( t, IterationEncoding::fileBased );
+        close_iteration_interleaved_test( t, IterationEncoding::groupBased );
+
+        // run this test for ADIOS2 & JSON only
+        if( t == "h5" )
+            continue;
+        if( t == "bp" && bp_prefer_adios1 )
+            continue;
+        close_iteration_interleaved_test( t, IterationEncoding::variableBased );
+    }
+}
+
+void
 close_and_copy_attributable_test( std::string file_ending )
 {
     using position_t = double;
