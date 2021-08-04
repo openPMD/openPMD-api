@@ -44,7 +44,7 @@ class Series;
  * not possible once it has been closed.
  *
  */
-class WriteIterations : private Container< Iteration, uint64_t >
+class WriteIterations
 {
     friend class Series;
 
@@ -73,7 +73,7 @@ private:
     std::shared_ptr< SharedResources > shared;
 
 public:
-    mapped_type & operator[]( key_type const & key ) override;
-    mapped_type & operator[]( key_type && key ) override;
+    mapped_type & operator[]( key_type const & key );
+    mapped_type & operator[]( key_type && key );
 };
 } // namespace openPMD
