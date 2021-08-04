@@ -3,6 +3,25 @@
 Changelog
 =========
 
+0.14.1
+------
+**Date:** 2021-08-04
+
+ADIOS2 Close Regressions & ADIOS1 Build
+
+Fix a regression with file handling for ADIOS2 when using explicit close logic, especially with interleaved writes to multiple iterations.
+Also fix an issue with ADIOS1 builds that potentially picked up headers from older, installed openPMD-api versions.
+
+Changes to "0.14.0"
+^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- ADIOS2: interleaved writes of iterations with close #1073
+- CMake: ADIOS1 includes w/o ``SYSTEM`` #1076
+
+
 0.14.0
 ------
 **Date:** 2021-07-29
