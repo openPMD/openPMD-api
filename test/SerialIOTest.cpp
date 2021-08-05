@@ -558,10 +558,6 @@ TEST_CASE( "close_iteration_interleaved_test", "[serial]" )
 
     for( auto const & t : testedFileExtensions() )
     {
-        //! @FIXME ADIOS1 bugs with Iteration::close()
-        if( bp_prefer_adios1 )
-            continue;
-
         close_iteration_interleaved_test( t, IterationEncoding::fileBased );
         close_iteration_interleaved_test( t, IterationEncoding::groupBased );
 
