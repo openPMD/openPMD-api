@@ -19,6 +19,18 @@ if(POLICY CMP0074)
 endif()
 
 
+# No in-Source builds #########################################################
+#
+# In-source builds clutter up the source directory and lead to mistakes with
+# generated includes
+if(openPMD_SOURCE_DIR STREQUAL openPMD_BINARY_DIR)
+  message(FATAL_ERROR "In-source builds are not possible. "
+          "Please remove the CMakeFiles/ directory and CMakeCache.txt file. "
+          "Then run CMake in a temporary build directory. "
+          "Learn more: https://hsf-training.github.io/hsf-training-cmake-webpage/02-building/index.html")
+endif()
+
+
 # Project structure ###########################################################
 #
 # temporary build directories
