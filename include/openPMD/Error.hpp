@@ -50,5 +50,17 @@ namespace error
         OperationUnsupportedInBackend(
             std::string backend_in, std::string what );
     };
+
+    /**
+     * @brief The API was used in an illegal way.
+     *
+     * Example: File-based iteration encoding is selected without specifying an
+     *     expansion pattern.
+     */
+    class WrongAPIUsage : public Error
+    {
+    public:
+        WrongAPIUsage( std::string what );
+    };
 }
 }

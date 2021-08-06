@@ -18,15 +18,16 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include "openPMD/auxiliary/Date.hpp"
-#include "openPMD/auxiliary/Filesystem.hpp"
-#include "openPMD/auxiliary/JSON.hpp"
-#include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/Series.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 #include "openPMD/IO/Format.hpp"
 #include "openPMD/ReadIterations.hpp"
-#include "openPMD/Series.hpp"
+#include "openPMD/auxiliary/Date.hpp"
+#include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/JSON.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/version.hpp"
 
 #include <exception>
@@ -280,8 +281,11 @@ SeriesInterface::setIterationEncoding(IterationEncoding ie)
     switch( ie )
     {
         case IterationEncoding::fileBased:
-            setIterationFormat(series.m_name);
-            setAttribute("iterationEncoding", std::string("fileBased"));
+            setIterationFormat( series.m_name );
+            setAttribute( "iterationEncoding", std::string( "fileBased" ) );
+            // This checks that the name contains the expansion pattern
+            // (e.g. %T) and parses it
+            setName( series.m_name );
             break;
         case IterationEncoding::groupBased:
             setIterationFormat(BASEPATH);
@@ -330,8 +334,22 @@ SeriesInterface::setName(std::string const& n)
     if( written() )
         throw std::runtime_error("A files name can not (yet) be changed after it has been written.");
 
-    if( series.m_iterationEncoding == IterationEncoding::fileBased && !auxiliary::contains(series.m_name, "%T") )
-            throw std::runtime_error("For fileBased formats the iteration regex %T must be included in the file name");
+    if( series.m_iterationEncoding == IterationEncoding::fileBased )
+    {
+
+        // Just put any filename extension now and ignore it
+        // We only care for the prefix, postfix and padding
+        auto input = parseInput( n + ".json" );
+        if( input->iterationEncoding != IterationEncoding::fileBased )
+        {
+            throw error::WrongAPIUsage(
+                "For fileBased formats the iteration expansion pattern %T must "
+                "be included in the file name" );
+        }
+        series.m_filenamePrefix = input->filenamePrefix;
+        series.m_filenamePostfix = input->filenamePostfix;
+        series.m_filenamePadding = input->filenamePadding;
+    }
 
     series.m_name = n;
     dirty() = true;

@@ -84,7 +84,7 @@ public:
     std::string m_name;
     std::string m_filenamePrefix;
     std::string m_filenamePostfix;
-    int m_filenamePadding;
+    int m_filenamePadding = 0;
     IterationEncoding m_iterationEncoding{};
     Format m_format;
     /**
