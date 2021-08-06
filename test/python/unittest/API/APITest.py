@@ -1997,6 +1997,13 @@ class APITest(unittest.TestCase):
             self.assertEqual(chunk_x[i], i)
             self.assertEqual(chunk_y[i], i)
 
+    def testError(self):
+        if 'test_throw' in io.__dict__:
+            with self.assertRaises(io.ErrorOperationUnsupportedInBackend):
+                io.test_throw("test description")
+            with self.assertRaises(io.Error):
+                io.test_throw("test description")
+
     def testCustomGeometries(self):
         DS = io.Dataset
         DT = io.Datatype

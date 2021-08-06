@@ -630,6 +630,7 @@ if(openPMD_HAVE_PYTHON)
         src/binding/python/Container.cpp
         src/binding/python/Dataset.cpp
         src/binding/python/Datatype.cpp
+        src/binding/python/Error.cpp
         src/binding/python/Helper.cpp
         src/binding/python/Iteration.cpp
         src/binding/python/IterationEncoding.cpp
