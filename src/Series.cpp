@@ -88,7 +88,7 @@ struct SeriesInterface::ParsedInput
     IterationEncoding iterationEncoding;
     std::string filenamePrefix;
     std::string filenamePostfix;
-    int filenamePadding;
+    int filenamePadding = -1;
 };  //ParsedInput
 
 SeriesInterface::SeriesInterface(
@@ -285,7 +285,16 @@ SeriesInterface::setIterationEncoding(IterationEncoding ie)
             setAttribute( "iterationEncoding", std::string( "fileBased" ) );
             // This checks that the name contains the expansion pattern
             // (e.g. %T) and parses it
-            setName( series.m_name );
+            if( series.m_filenamePadding < 0 )
+            {
+                if( not reparseExpansionPattern( series.m_name ) )
+                {
+                    throw error::WrongAPIUsage(
+                        "For fileBased formats the iteration expansion pattern "
+                        "%T must "
+                        "be included in the file name" );
+                }
+            }
             break;
         case IterationEncoding::groupBased:
             setIterationFormat(BASEPATH);
@@ -336,19 +345,25 @@ SeriesInterface::setName(std::string const& n)
 
     if( series.m_iterationEncoding == IterationEncoding::fileBased )
     {
-
-        // Just put any filename extension now and ignore it
-        // We only care for the prefix, postfix and padding
-        auto input = parseInput( n + ".json" );
-        if( input->iterationEncoding != IterationEncoding::fileBased )
+        // Setting a new name should not alter file names in filebased iteration
+        // encoding
+        // Just make sure that an expansion pattern is active
+        // Our filename parser expects an extension, so just add any and ignore
+        // the result for that
+        if( hasExpansionPattern( n + ".json" ) )
+        {
+            reparseExpansionPattern( n + ".json" );
+        }
+        else if( series.m_filenamePadding < 0 )
         {
             throw error::WrongAPIUsage(
                 "For fileBased formats the iteration expansion pattern %T must "
                 "be included in the file name" );
         }
-        series.m_filenamePrefix = input->filenamePrefix;
-        series.m_filenamePostfix = input->filenamePostfix;
-        series.m_filenamePadding = input->filenamePadding;
+        else
+        {
+            // no-op, keep the old pattern and set the new name
+        }
     }
 
     series.m_name = n;
@@ -434,6 +449,27 @@ SeriesInterface::parseInput(std::string filepath)
     input->name = cleanFilename(input->name, input->format);
 
     return input;
+}
+
+bool SeriesInterface::hasExpansionPattern( std::string filenameWithExtension )
+{
+    auto input = parseInput( std::move( filenameWithExtension ) );
+    return input->iterationEncoding == IterationEncoding::fileBased;
+}
+
+bool SeriesInterface::reparseExpansionPattern(
+    std::string filenameWithExtension )
+{
+    auto input = parseInput( std::move( filenameWithExtension ) );
+    if( input->iterationEncoding != IterationEncoding::fileBased )
+    {
+        return false;
+    }
+    auto & series = get();
+    series.m_filenamePrefix = input->filenamePrefix;
+    series.m_filenamePostfix = input->filenamePostfix;
+    series.m_filenamePadding = input->filenamePadding;
+    return true;
 }
 
 void SeriesInterface::init(

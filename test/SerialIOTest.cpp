@@ -4583,9 +4583,20 @@ TEST_CASE( "late_setting_of_iterationencoding", "[serial]" )
     }
     {
         ::openPMD::Series series = ::openPMD::Series(
-            "../samples/asdf_%T.json", ::openPMD::Access::CREATE );
+            "../samples/asdf_%T.json",
+            ::openPMD::Access::CREATE );
         series.iterations[ 10 ];
-        series.setName( "change_name_%T" );
+        series.setName(
+            "change_name_%T" );
+        series.flush();
+    }
+    {
+        ::openPMD::Series series = ::openPMD::Series(
+            "../samples/change_name_keep_filename_%T.json",
+            ::openPMD::Access::CREATE );
+        series.iterations[ 10 ];
+        series.setName(
+            "expansion_pattern_was_specified_previously_filename_will_stay" );
         series.flush();
     }
     {
@@ -4597,7 +4608,10 @@ TEST_CASE( "late_setting_of_iterationencoding", "[serial]" )
         series.flush();
     }
 
-    REQUIRE( auxiliary::file_exists( "../samples/change_name_10.json" ) );
+    REQUIRE( auxiliary::file_exists(
+        "../samples/change_name_10.json" ) );
+    REQUIRE( auxiliary::file_exists(
+        "../samples/change_name_keep_filename_10.json" ) );
     REQUIRE( auxiliary::file_exists(
         "../samples/change_name_and_encoding_10.json" ) );
 }
