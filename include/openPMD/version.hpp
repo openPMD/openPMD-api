@@ -28,9 +28,9 @@
  * @{
  */
 #define OPENPMDAPI_VERSION_MAJOR 0
-#define OPENPMDAPI_VERSION_MINOR 14
+#define OPENPMDAPI_VERSION_MINOR 15
 #define OPENPMDAPI_VERSION_PATCH 0
-#define OPENPMDAPI_VERSION_LABEL ""
+#define OPENPMDAPI_VERSION_LABEL "dev"
 /** @} */
 
 /** maximum supported version of the openPMD standard (read & write, compile-time)

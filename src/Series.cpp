@@ -1334,45 +1334,39 @@ void SeriesInterface::openIteration( uint64_t index, Iteration iteration )
     {
         using IE = IterationEncoding;
     case IE::fileBased: {
-        switch( IOHandler()->m_frontendAccess )
+        /*
+         * The iteration is marked written() as soon as its file has been
+         * either created or opened.
+         * If the iteration has not been created yet, it cannot be opened.
+         * In that case, it is not written() and its old close status was
+         * not ParseAccessDeferred.
+         * Similarly, in Create mode, the iteration must first be created
+         * before it is possible to open it.
+         */
+        if( !iteration.written() &&
+            ( IOHandler()->m_frontendAccess == Access::CREATE ||
+              oldStatus != Iteration::CloseStatus::ParseAccessDeferred ) )
         {
-        case Access::READ_ONLY:
-        case Access::READ_WRITE: {
-            /*
-             * The iteration is marked written() as soon as its file has been
-             * either created or opened.
-             * If the iteration has not been created yet, it cannot be opened.
-             * In that case, it is not written() and its old close status was
-             * not ParseAccessDeferred.
-             */
-            if( !iteration.written() &&
-                oldStatus != Iteration::CloseStatus::ParseAccessDeferred )
-            {
-                // nothing to do, file will be opened by writing routines
-                break;
-            }
-            auto & series = get();
-            // open the iteration's file again
-            Parameter< Operation::OPEN_FILE > fOpen;
-            fOpen.encoding = iterationEncoding();
-            fOpen.name = iterationFilename( index );
-            IOHandler()->enqueue( IOTask( this, fOpen ) );
-
-            /* open base path */
-            Parameter< Operation::OPEN_PATH > pOpen;
-            pOpen.path = auxiliary::replace_first( basePath(), "%T/", "" );
-            IOHandler()->enqueue( IOTask( &series.iterations, pOpen ) );
-            /* open iteration path */
-            pOpen.path = iterationEncoding() == IterationEncoding::variableBased
-                ? ""
-                : std::to_string( index );
-            IOHandler()->enqueue( IOTask( &iteration, pOpen ) );
-            break;
-        }
-        case Access::CREATE:
             // nothing to do, file will be opened by writing routines
             break;
         }
+        auto & series = get();
+        // open the iteration's file again
+        Parameter< Operation::OPEN_FILE > fOpen;
+        fOpen.encoding = iterationEncoding();
+        fOpen.name = iterationFilename( index );
+        IOHandler()->enqueue( IOTask( this, fOpen ) );
+
+        /* open base path */
+        Parameter< Operation::OPEN_PATH > pOpen;
+        pOpen.path = auxiliary::replace_first( basePath(), "%T/", "" );
+        IOHandler()->enqueue( IOTask( &series.iterations, pOpen ) );
+        /* open iteration path */
+        pOpen.path = iterationEncoding() == IterationEncoding::variableBased
+            ? ""
+            : std::to_string( index );
+        IOHandler()->enqueue( IOTask( &iteration, pOpen ) );
+        break;
     }
     case IE::groupBased:
     case IE::variableBased:
