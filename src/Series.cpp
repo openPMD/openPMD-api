@@ -287,7 +287,7 @@ SeriesInterface::setIterationEncoding(IterationEncoding ie)
             // (e.g. %T) and parses it
             if( series.m_filenamePadding < 0 )
             {
-                if( not reparseExpansionPattern( series.m_name ) )
+                if( !reparseExpansionPattern( series.m_name ) )
                 {
                     throw error::WrongAPIUsage(
                         "For fileBased formats the iteration expansion pattern "
