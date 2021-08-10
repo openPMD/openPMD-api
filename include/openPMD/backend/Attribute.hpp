@@ -138,6 +138,93 @@ struct DoConvert<std::vector< T >, std::vector< U >, false>
     }
 };
 
+// conversion cast: turn a single value into a 1-element vector
+template< typename T, typename U >
+struct DoConvert<T, std::vector< U >, false>
+{
+    static constexpr bool convertible = std::is_convertible<T, U>::value;
+
+    template< typename PV, typename UU = U >
+    auto operator()( PV pv )
+    -> typename std::enable_if< convertible, std::vector< UU > >::type
+    {
+        std::vector< U > u;
+        u.reserve( 1 );
+        u.push_back( *pv );
+        return u;
+    }
+
+    template< typename PV, typename UU = U >
+    auto operator()( PV )
+    -> typename std::enable_if< !convertible, std::vector< UU > >::type
+    {
+        throw std::runtime_error(
+            "getCast: no scalar to vector conversion possible.");
+    }
+};
+
+// conversion cast: array to vector
+// if a backend reports a std::array<> for something where the frontend expects
+// a vector
+template< typename T, typename U, size_t n >
+struct DoConvert<std::array< T, n > , std::vector< U >, false>
+{
+    static constexpr bool convertible = std::is_convertible<T, U>::value;
+
+    template< typename PV, typename UU = U >
+    auto operator()( PV pv )
+    -> typename std::enable_if< convertible, std::vector< UU > >::type
+    {
+        std::vector< U > u;
+        u.reserve( n );
+        std::copy( pv->begin(), pv->end(), std::back_inserter(u) );
+        return u;
+    }
+
+    template< typename PV, typename UU = U >
+    auto operator()( PV )
+    -> typename std::enable_if< !convertible, std::vector< UU > >::type
+    {
+        throw std::runtime_error(
+            "getCast: no array to vector conversion possible.");
+    }
+};
+
+// conversion cast: vector to array
+// if a backend reports a std::vector<> for something where the frontend expects
+// an array
+template< typename T, typename U, size_t n >
+struct DoConvert<std::vector< T > , std::array< U, n >, false>
+{
+    static constexpr bool convertible = std::is_convertible<T, U>::value;
+
+    template< typename PV, typename UU = U >
+    auto operator()( PV pv )
+    -> typename std::enable_if< convertible, std::array< UU, n > >::type
+    {
+        std::array< U, n > u;
+        if( n != pv->size() )
+        {
+            throw std::runtime_error(
+                "getCast: no vector to array conversion possible "
+                "(wrong requested array size).");
+        }
+        for( size_t i = 0; i < n; ++i )
+        {
+            u[ i ] = ( *pv )[ i ];
+        }
+        return u;
+    }
+
+    template< typename PV, typename UU = U >
+    auto operator()( PV )
+    -> typename std::enable_if< !convertible, std::array< UU, n > >::type
+    {
+        throw std::runtime_error(
+            "getCast: no vector to array conversion possible.");
+    }
+};
+
 /** Retrieve a stored specific Attribute and cast if convertible.
  *
  * @throw   std::runtime_error if stored object is not static castable to U.
