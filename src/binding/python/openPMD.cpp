@@ -40,6 +40,7 @@ void init_Chunk(py::module &m);
 void init_Container(py::module &);
 void init_Dataset(py::module &);
 void init_Datatype(py::module &);
+void init_Error(py::module &);
 void init_Helper(py::module &);
 void init_Iteration(py::module &);
 void init_IterationEncoding(py::module &);
@@ -90,6 +91,7 @@ PYBIND11_MODULE(openpmd_api_cxx, m) {
     init_Attributable(m);
     init_Chunk(m);
     init_Container(m);
+    init_Error(m);
     init_BaseRecord(m);
     init_Dataset(m);
     init_Datatype(m);
