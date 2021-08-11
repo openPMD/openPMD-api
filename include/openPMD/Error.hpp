@@ -24,7 +24,13 @@ protected:
     }
 
 public:
-    virtual const char * what() const noexcept final;
+    virtual const char * what() const noexcept;
+
+    Error( Error const & ) = default;
+    Error( Error && ) = default;
+
+    Error & operator=( Error const & ) = default;
+    Error & operator=( Error && ) = default;
 
     virtual ~Error() noexcept = default;
 };
