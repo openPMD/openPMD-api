@@ -343,9 +343,8 @@ RecordComponent::readBase()
 
         // uint64_t check
         Datatype const attrDtype = *aRead.dtype;
-        if( isSame( attrDtype, determineDatatype< uint64_t >() ) )
-            e.push_back( a.get< uint64_t >() );
-        else if( isSame( attrDtype, determineDatatype< std::vector< uint64_t > >() ) )
+        if( isSame( attrDtype, determineDatatype< std::vector< uint64_t > >() )
+            || isSame( attrDtype, determineDatatype< uint64_t >() ) )
             for( auto const& val : a.get< std::vector< uint64_t > >() )
                 e.push_back( val );
         else
