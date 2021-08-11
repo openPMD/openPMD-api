@@ -235,7 +235,7 @@ getCast( Attribute const & a )
 {
     auto v = a.getResource();
 
-    // icpc does not like variantSrc::visit
+    // icpc 2021.3.0 does not like variantSrc::visit (with mpark-variant)
     // we use variantSrc::visit for the other compilers to avoid having an
     // endless list of if-then-else
     // also, once we switch to C++17, we might throw this out in
