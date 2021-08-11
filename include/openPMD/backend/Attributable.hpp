@@ -31,6 +31,7 @@
 #include <vector>
 #include <string>
 #include <cstddef>
+#include <type_traits>
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_protected
@@ -394,6 +395,17 @@ template< typename T >
 inline bool
 AttributableInterface::setAttribute( std::string const & key, T value )
 {
+#if __cplusplus >= 201703L
+    // verify strings are not empty (backend restriction, e.g., HDF5)
+    if constexpr( std::is_same< T, std::string >::value )
+    {
+        if( value.empty() )
+            throw std::runtime_error(
+                "[setAttribute] Value for string attribute '" + key +
+                "' must not be empty!" );
+    }
+#endif
+
     auto & attri = get();
     if(IOHandler() && Access::READ_ONLY == IOHandler()->m_frontendAccess )
     {
@@ -420,6 +432,7 @@ AttributableInterface::setAttribute( std::string const & key, T value )
         return false;
     }
 }
+
 inline bool
 AttributableInterface::setAttribute( std::string const & key, char const value[] )
 {
