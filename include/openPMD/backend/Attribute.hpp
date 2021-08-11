@@ -148,7 +148,7 @@ struct DoConvert<T, std::vector< U >, false>
     {
         std::vector< U > u;
         u.reserve( 1 );
-        u.push_back( *pv );
+        u.push_back( static_cast< U >( *pv ) );
         return u;
     }
 
@@ -209,7 +209,7 @@ struct DoConvert<std::vector< T >, std::array< U, n >, false>
         }
         for( size_t i = 0; i < n; ++i )
         {
-            u[ i ] = ( *pv )[ i ];
+            u[ i ] = static_cast< U >( ( *pv )[ i ] );
         }
         return u;
     }
