@@ -240,7 +240,7 @@ getCast( Attribute const & a )
     // endless list of if-then-else
     // also, once we switch to C++17, we might throw this out in
     // favor of a hopefully working std::visit
-#ifdef __INTEL_COMPILER
+#if defined(__ICC) || defined(__INTEL_COMPILER)
     if(auto pvalue_c = variantSrc::get_if< char >( &v ) )
         return DoConvert<char, U>{}(pvalue_c);
     else if(auto pvalue_uc = variantSrc::get_if< unsigned char >( &v ) )
