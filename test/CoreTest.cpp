@@ -985,7 +985,7 @@ TEST_CASE( "DoConvert_single_value_to_vector", "[core]" )
             std::vector< signed char >{ 'x' } );
     }
     {
-        std::array< double, 7 > array{ 0, 1, 2, 3, 4, 5, 6 };
+        std::array< double, 7 > array{{ 0, 1, 2, 3, 4, 5, 6 }};
         Attribute attr{ array };
 
         // the following conversions should be possible
@@ -1001,8 +1001,8 @@ TEST_CASE( "DoConvert_single_value_to_vector", "[core]" )
     }
     {
         std::vector< double > vector{ 0, 1, 2, 3, 4, 5, 6 };
-        std::array< double, 7 > arraydouble{ 0, 1, 2, 3, 4, 5, 6 };
-        std::array< int, 7 > arrayint{ 0, 1, 2, 3, 4, 5, 6 };
+        std::array< double, 7 > arraydouble{{ 0, 1, 2, 3, 4, 5, 6 }};
+        std::array< int, 7 > arrayint{{ 0, 1, 2, 3, 4, 5, 6 }};
         Attribute attr{ vector };
 
         // the following conversions should be possible
