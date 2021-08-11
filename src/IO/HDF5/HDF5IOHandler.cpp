@@ -1479,18 +1479,19 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
         {
             if( H5Tis_variable_str(attr_type) )
             {
-                char* c = nullptr;
+                // refs.:
+                // https://github.com/HDFGroup/hdf5/blob/hdf5-1_12_0/tools/src/h5dump/h5dump_xml.c
+                hsize_t size = H5Tget_size(attr_type); // not yet the actual string length
+                std::vector< char > vc(size); // byte buffer to vlen strings
                 status = H5Aread(attr_id,
                                  attr_type,
-                                 c);
-                VERIFY(status == 0,
-                    "[HDF5] Internal error: Failed to read attribute " + attr_name +
-                    " at " + concrete_h5_file_position(writable));
-                a = Attribute(auxiliary::strip(std::string(c), {'\0'}));
-                status = H5Dvlen_reclaim(attr_type,
-                                         attr_space,
-                                         H5P_DEFAULT,
-                                         c);
+                                 vc.data());
+                auto c_str = *((char**)vc.data()); // get actual string out
+                a = Attribute(std::string(c_str));
+                // free dynamically allocated vlen memory from H5Aread
+                H5Dvlen_reclaim(attr_type, attr_space, H5P_DEFAULT, vc.data());
+                // 1.12+:
+                //H5Treclaim(attr_type, attr_space, H5P_DEFAULT, vc.data());
             } else
             {
                 hsize_t size = H5Tget_size(attr_type);
