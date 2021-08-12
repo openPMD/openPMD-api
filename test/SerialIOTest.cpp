@@ -24,6 +24,7 @@
 #include <list>
 #include <memory>
 #include <numeric>
+#include <stdexcept>
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -1780,6 +1781,10 @@ void bool_test(const std::string & backend)
 {
     {
         Series o = Series("../samples/serial_bool." + backend, Access::CREATE);
+
+#if __cplusplus >= 201703L
+        REQUIRE_THROWS_AS(o.setAuthor(""), std::runtime_error);
+#endif
 
         o.setAttribute("Bool attribute (true)", true);
         o.setAttribute("Bool attribute (false)", false);
