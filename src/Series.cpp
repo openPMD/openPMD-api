@@ -18,16 +18,16 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include "openPMD/Series.hpp"
-#include "openPMD/Error.hpp"
-#include "openPMD/IO/AbstractIOHandler.hpp"
-#include "openPMD/IO/AbstractIOHandlerHelper.hpp"
-#include "openPMD/IO/Format.hpp"
-#include "openPMD/ReadIterations.hpp"
 #include "openPMD/auxiliary/Date.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/AbstractIOHandlerHelper.hpp"
+#include "openPMD/IO/Format.hpp"
+#include "openPMD/Error.hpp"
+#include "openPMD/ReadIterations.hpp"
+#include "openPMD/Series.hpp"
 #include "openPMD/version.hpp"
 
 #include <exception>
@@ -345,9 +345,8 @@ SeriesInterface::setName(std::string const& n)
 
     if( series.m_iterationEncoding == IterationEncoding::fileBased )
     {
-        // Setting a new name should not alter file names in filebased iteration
-        // encoding
-        // Just make sure that an expansion pattern is active
+        // If the filename specifies an expansion pattern, set it.
+        // If not, check if one is already active.
         // Our filename parser expects an extension, so just add any and ignore
         // the result for that
         if( hasExpansionPattern( n + ".json" ) )
