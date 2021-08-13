@@ -688,14 +688,14 @@ TEST_CASE( "structure_test", "[core]" )
 
 TEST_CASE( "wrapper_test", "[core]" )
 {
-    Series o = Series("./new_openpmd_output.json", Access::CREATE);
+    Series o = Series("./new_openpmd_output_%T.json", Access::CREATE);
 
     o.setOpenPMDextension(42);
     o.setIterationEncoding(IterationEncoding::fileBased);
     Series copy = o;
     REQUIRE(copy.openPMDextension() == 42);
     REQUIRE(copy.iterationEncoding() == IterationEncoding::fileBased);
-    REQUIRE(copy.name() == "new_openpmd_output");
+    REQUIRE(copy.name() == "new_openpmd_output_%T");
     copy.setOpenPMD("1.2.0");
     copy.setIterationEncoding(IterationEncoding::groupBased);
     copy.setName("other_name");

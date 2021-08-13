@@ -4566,3 +4566,52 @@ TEST_CASE( "no_explicit_flush", "[serial]" )
         no_explicit_flush( "../samples/no_explicit_flush." + t );
     }
 }
+
+TEST_CASE( "late_setting_of_iterationencoding", "[serial]" )
+{
+    {
+        ::openPMD::Series series = ::openPMD::Series(
+            "../samples/error.json", ::openPMD::Access::CREATE );
+        series.iterations[ 10 ];
+        REQUIRE_THROWS_WITH(
+            series.setIterationEncoding(
+                ::openPMD::IterationEncoding::fileBased ),
+            Catch::Equals( "Wrong API usage: For fileBased formats the "
+                           "iteration expansion pattern %T must "
+                           "be included in the file name" ) );
+        series.flush();
+    }
+    {
+        ::openPMD::Series series = ::openPMD::Series(
+            "../samples/asdf_%T.json",
+            ::openPMD::Access::CREATE );
+        series.iterations[ 10 ];
+        series.setName(
+            "change_name_%T" );
+        series.flush();
+    }
+    {
+        ::openPMD::Series series = ::openPMD::Series(
+            "../samples/change_name_keep_filename_%T.json",
+            ::openPMD::Access::CREATE );
+        series.iterations[ 10 ];
+        series.setName(
+            "expansion_pattern_was_specified_previously_filename_will_stay" );
+        series.flush();
+    }
+    {
+        ::openPMD::Series series = ::openPMD::Series(
+            "../samples/asdf.json", ::openPMD::Access::CREATE );
+        series.iterations[ 10 ];
+        series.setName( "change_name_and_encoding_%T" );
+        series.setIterationEncoding( IterationEncoding::fileBased );
+        series.flush();
+    }
+
+    REQUIRE( auxiliary::file_exists(
+        "../samples/change_name_10.json" ) );
+    REQUIRE( auxiliary::file_exists(
+        "../samples/change_name_keep_filename_10.json" ) );
+    REQUIRE( auxiliary::file_exists(
+        "../samples/change_name_and_encoding_10.json" ) );
+}

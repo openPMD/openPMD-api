@@ -25,6 +25,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 #include "openPMD/IO/Format.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/ReadIterations.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/version.hpp"
@@ -87,7 +88,7 @@ struct SeriesInterface::ParsedInput
     IterationEncoding iterationEncoding;
     std::string filenamePrefix;
     std::string filenamePostfix;
-    int filenamePadding;
+    int filenamePadding = -1;
 };  //ParsedInput
 
 SeriesInterface::SeriesInterface(
@@ -280,8 +281,20 @@ SeriesInterface::setIterationEncoding(IterationEncoding ie)
     switch( ie )
     {
         case IterationEncoding::fileBased:
-            setIterationFormat(series.m_name);
-            setAttribute("iterationEncoding", std::string("fileBased"));
+            setIterationFormat( series.m_name );
+            setAttribute( "iterationEncoding", std::string( "fileBased" ) );
+            // This checks that the name contains the expansion pattern
+            // (e.g. %T) and parses it
+            if( series.m_filenamePadding < 0 )
+            {
+                if( !reparseExpansionPattern( series.m_name ) )
+                {
+                    throw error::WrongAPIUsage(
+                        "For fileBased formats the iteration expansion pattern "
+                        "%T must "
+                        "be included in the file name" );
+                }
+            }
             break;
         case IterationEncoding::groupBased:
             setIterationFormat(BASEPATH);
@@ -330,8 +343,27 @@ SeriesInterface::setName(std::string const& n)
     if( written() )
         throw std::runtime_error("A files name can not (yet) be changed after it has been written.");
 
-    if( series.m_iterationEncoding == IterationEncoding::fileBased && !auxiliary::contains(series.m_name, "%T") )
-            throw std::runtime_error("For fileBased formats the iteration regex %T must be included in the file name");
+    if( series.m_iterationEncoding == IterationEncoding::fileBased )
+    {
+        // If the filename specifies an expansion pattern, set it.
+        // If not, check if one is already active.
+        // Our filename parser expects an extension, so just add any and ignore
+        // the result for that
+        if( hasExpansionPattern( n + ".json" ) )
+        {
+            reparseExpansionPattern( n + ".json" );
+        }
+        else if( series.m_filenamePadding < 0 )
+        {
+            throw error::WrongAPIUsage(
+                "For fileBased formats the iteration expansion pattern %T must "
+                "be included in the file name" );
+        }
+        else
+        {
+            // no-op, keep the old pattern and set the new name
+        }
+    }
 
     series.m_name = n;
     dirty() = true;
@@ -416,6 +448,27 @@ SeriesInterface::parseInput(std::string filepath)
     input->name = cleanFilename(input->name, input->format);
 
     return input;
+}
+
+bool SeriesInterface::hasExpansionPattern( std::string filenameWithExtension )
+{
+    auto input = parseInput( std::move( filenameWithExtension ) );
+    return input->iterationEncoding == IterationEncoding::fileBased;
+}
+
+bool SeriesInterface::reparseExpansionPattern(
+    std::string filenameWithExtension )
+{
+    auto input = parseInput( std::move( filenameWithExtension ) );
+    if( input->iterationEncoding != IterationEncoding::fileBased )
+    {
+        return false;
+    }
+    auto & series = get();
+    series.m_filenamePrefix = input->filenamePrefix;
+    series.m_filenamePostfix = input->filenamePostfix;
+    series.m_filenamePadding = input->filenamePadding;
+    return true;
 }
 
 void SeriesInterface::init(

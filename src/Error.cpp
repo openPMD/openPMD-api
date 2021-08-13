@@ -15,5 +15,10 @@ namespace error
         , backend{ std::move( backend_in ) }
     {
     }
+
+    WrongAPIUsage::WrongAPIUsage( std::string what )
+        : Error( "Wrong API usage: " + what )
+    {
+    }
 }
 }
