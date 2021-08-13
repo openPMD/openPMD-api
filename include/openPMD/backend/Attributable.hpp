@@ -31,6 +31,7 @@
 #include <vector>
 #include <string>
 #include <cstddef>
+#include <type_traits>
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_protected
@@ -83,7 +84,28 @@ public:
 private:
     A_MAP m_attributes;
 };
+
+/** Verify values of attributes in the frontend
+ *
+ * verify string attributes are not empty (backend restriction, e.g., HDF5)
+ */
+template< typename T >
+inline void
+attr_value_check( std::string const /* key */, T /* value */ )
+{
 }
+
+template< >
+inline void
+attr_value_check( std::string const key, std::string const value )
+{
+    if( value.empty() )
+        throw std::runtime_error(
+                "[setAttribute] Value for string attribute '" + key +
+                "' must not be empty!" );
+}
+
+} // namespace internal
 
 /** @brief Layer to manage storage of attributes associated with file objects.
  *
@@ -394,6 +416,8 @@ template< typename T >
 inline bool
 AttributableInterface::setAttribute( std::string const & key, T value )
 {
+    internal::attr_value_check( key, value );
+
     auto & attri = get();
     if(IOHandler() && Access::READ_ONLY == IOHandler()->m_frontendAccess )
     {
@@ -420,6 +444,7 @@ AttributableInterface::setAttribute( std::string const & key, T value )
         return false;
     }
 }
+
 inline bool
 AttributableInterface::setAttribute( std::string const & key, char const value[] )
 {
