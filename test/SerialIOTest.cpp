@@ -24,6 +24,7 @@
 #include <list>
 #include <memory>
 #include <numeric>
+#include <stdexcept>
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -1785,6 +1786,7 @@ void bool_test(const std::string & backend)
     {
         Series o = Series("../samples/serial_bool." + backend, Access::CREATE);
 
+        REQUIRE_THROWS_AS(o.setAuthor(""), std::runtime_error);
         o.setAttribute("Bool attribute (true)", true);
         o.setAttribute("Bool attribute (false)", false);
     }
