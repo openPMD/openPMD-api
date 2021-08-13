@@ -227,9 +227,7 @@ TEST_CASE( "hdf5_write_test", "[parallel][hdf5]" )
     auto mpi_rank = static_cast<uint64_t>(mpi_r);
     Series o = Series("../samples/parallel_write.h5", Access::CREATE, MPI_COMM_WORLD);
 
-#if __cplusplus >= 201703L
     REQUIRE_THROWS_AS(o.setAuthor(""), std::runtime_error);
-#endif
     o.setAuthor("Parallel HDF5");
     ParticleSpecies& e = o.iterations[1].particles["e"];
 

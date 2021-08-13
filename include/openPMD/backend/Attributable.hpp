@@ -84,7 +84,28 @@ public:
 private:
     A_MAP m_attributes;
 };
+
+/** Verify values of attributes in the frontend
+ *
+ * verify string attributes are not empty (backend restriction, e.g., HDF5)
+ */
+template< typename T >
+inline void
+attr_value_check( std::string const /* key */, T /* value */ )
+{
 }
+
+template< >
+inline void
+attr_value_check( std::string const key, std::string const value )
+{
+    if( value.empty() )
+        throw std::runtime_error(
+                "[setAttribute] Value for string attribute '" + key +
+                "' must not be empty!" );
+}
+
+} // namespace internal
 
 /** @brief Layer to manage storage of attributes associated with file objects.
  *
@@ -395,16 +416,7 @@ template< typename T >
 inline bool
 AttributableInterface::setAttribute( std::string const & key, T value )
 {
-#if __cplusplus >= 201703L
-    // verify strings are not empty (backend restriction, e.g., HDF5)
-    if constexpr( std::is_same< T, std::string >::value )
-    {
-        if( value.empty() )
-            throw std::runtime_error(
-                "[setAttribute] Value for string attribute '" + key +
-                "' must not be empty!" );
-    }
-#endif
+    internal::attr_value_check( key, value );
 
     auto & attri = get();
     if(IOHandler() && Access::READ_ONLY == IOHandler()->m_frontendAccess )
