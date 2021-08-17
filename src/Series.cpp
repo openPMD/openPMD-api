@@ -1022,13 +1022,15 @@ SeriesInterface::readGorVBased( bool do_init )
 
     auto readSingleIteration =
         [&series, &pOpen, this]
-        (uint64_t index, std::string path, bool guardClosed )
+        (uint64_t index, std::string path, bool guardAgainstRereading )
     {
         if( series.iterations.contains( index ) )
         {
             // maybe re-read
             auto & i = series.iterations.at( index );
-            if( guardClosed && i.closedByWriter() )
+            // i.written(): the iteration has already been parsed
+            // reparsing is not needed
+            if( guardAgainstRereading && i.written() )
             {
                 return;
             }
