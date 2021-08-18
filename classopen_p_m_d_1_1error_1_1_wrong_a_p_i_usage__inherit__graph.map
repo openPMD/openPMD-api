@@ -1,0 +1,5 @@
+<map id="openPMD::error::WrongAPIUsage" name="openPMD::error::WrongAPIUsage">
+<area shape="rect" id="node1" title="The API was used in an illegal way." alt="" coords="5,155,240,181"/>
+<area shape="rect" id="node2" href="$classopen_p_m_d_1_1_error.html" title="Base class for all openPMD&#45;specific error types." alt="" coords="61,80,184,107"/>
+<area shape="rect" id="node3" title="STL class." alt="" coords="65,5,180,32"/>
+</map>

@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.17"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>openPMD-api: /tmp/tmp.iS0xscHoW7/openPMD-api/include/openPMD/backend/Attributable.hpp Source File</title>
+<title>openPMD-api: /tmp/tmp.7iNmvGSbic/openPMD-api/include/openPMD/backend/Attributable.hpp Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -102,327 +102,348 @@ $(function() {
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="preprocessor">#include &lt;vector&gt;</span></div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="preprocessor">#include &lt;string&gt;</span></div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="preprocessor">#include &lt;cstddef&gt;</span></div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="comment">// expose private and protected members for invasive testing</span></div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor">#ifndef OPENPMD_protected</span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#   define OPENPMD_protected protected</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#include &lt;type_traits&gt;</span></div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="comment">// expose private and protected members for invasive testing</span></div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#ifndef OPENPMD_protected</span></div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#   define OPENPMD_protected protected</span></div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespaceopen_p_m_d.html">openPMD</a></div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;{</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keyword">namespace </span>traits</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;{</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keyword">template</span>&lt; <span class="keyword">typename</span> T &gt;</div>
-<div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="structopen_p_m_d_1_1traits_1_1_generation_policy.html">   46</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structopen_p_m_d_1_1traits_1_1_generation_policy.html">GenerationPolicy</a>;</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;} <span class="comment">// traits</span></div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_abstract_file_position.html">AbstractFilePosition</a>;</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">AttributableInterface</a>;</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_iteration.html">Iteration</a>;</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="keyword">namespace </span>internal</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;{</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    <span class="keyword">class </span>SeriesInternal;</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;}</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
-<div class="line"><a name="l00056"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1no__such__attribute__error.html">   56</a></span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1no__such__attribute__error.html">no_such_attribute_error</a> : <span class="keyword">public</span> std::runtime_error</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;{</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <a class="code" href="classopen_p_m_d_1_1no__such__attribute__error.html">no_such_attribute_error</a>(std::string <span class="keyword">const</span>&amp; what_arg)</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;            : std::runtime_error(what_arg)</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    { }</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    <span class="keyword">virtual</span> ~<a class="code" href="classopen_p_m_d_1_1no__such__attribute__error.html">no_such_attribute_error</a>() { }</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;};</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; </div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="keyword">namespace </span>internal</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;{</div>
-<div class="line"><a name="l00067"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">   67</a></span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a></div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;{</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">openPMD::AttributableInterface</a>;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a>();</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a>( <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a> <span class="keyword">const</span> &amp; ) = <span class="keyword">delete</span>;</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a>( <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a> &amp;&amp; ) = <span class="keyword">delete</span>;</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <span class="keyword">virtual</span> ~<a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a>() = <span class="keywordflow">default</span>;</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160; </div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a> &amp; operator=( <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a> <span class="keyword">const</span> &amp; ) = <span class="keyword">delete</span>;</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a> &amp; operator=( <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a> &amp;&amp; ) = <span class="keyword">delete</span>;</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160; </div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    <span class="keyword">using</span> A_MAP = std::map&lt; std::string, Attribute &gt;;</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a> m_writable;</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160; </div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;    A_MAP m_attributes;</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;};</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;}</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespaceopen_p_m_d.html">openPMD</a></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;{</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="keyword">namespace </span>traits</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;{</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="keyword">template</span>&lt; <span class="keyword">typename</span> T &gt;</div>
+<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="structopen_p_m_d_1_1traits_1_1_generation_policy.html">   47</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structopen_p_m_d_1_1traits_1_1_generation_policy.html">GenerationPolicy</a>;</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;} <span class="comment">// traits</span></div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_abstract_file_position.html">AbstractFilePosition</a>;</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">AttributableInterface</a>;</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_iteration.html">Iteration</a>;</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="keyword">namespace </span>internal</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;{</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    <span class="keyword">class </span>SeriesInternal;</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;}</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
+<div class="line"><a name="l00057"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1no__such__attribute__error.html">   57</a></span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1no__such__attribute__error.html">no_such_attribute_error</a> : <span class="keyword">public</span> std::runtime_error</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;{</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <a class="code" href="classopen_p_m_d_1_1no__such__attribute__error.html">no_such_attribute_error</a>(std::string <span class="keyword">const</span>&amp; what_arg)</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;            : std::runtime_error(what_arg)</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    { }</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <span class="keyword">virtual</span> ~<a class="code" href="classopen_p_m_d_1_1no__such__attribute__error.html">no_such_attribute_error</a>() { }</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;};</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="keyword">namespace </span>internal</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;{</div>
+<div class="line"><a name="l00068"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">   68</a></span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a></div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;{</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">openPMD::AttributableInterface</a>;</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a>();</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a>( <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a> <span class="keyword">const</span> &amp; ) = <span class="keyword">delete</span>;</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a>( <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a> &amp;&amp; ) = <span class="keyword">delete</span>;</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <span class="keyword">virtual</span> ~<a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a>() = <span class="keywordflow">default</span>;</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a> &amp; operator=( <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a> <span class="keyword">const</span> &amp; ) = <span class="keyword">delete</span>;</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a> &amp; operator=( <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">AttributableData</a> &amp;&amp; ) = <span class="keyword">delete</span>;</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160; </div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    <span class="keyword">using</span> A_MAP = std::map&lt; std::string, Attribute &gt;;</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a> m_writable;</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160; </div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    A_MAP m_attributes;</div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;};</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160; </div>
-<div class="line"><a name="l00093"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_attributable_interface.html">   93</a></span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">AttributableInterface</a></div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;{</div>
-<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    <span class="comment">// @todo remove unnecessary friend (wew that sounds bitter)</span></div>
-<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <span class="keyword">using</span> A_MAP = std::map&lt; std::string, Attribute &gt;;</div>
-<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    <span class="keyword">friend</span> <a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a>* getWritable(<a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">AttributableInterface</a>*);</div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <span class="keyword">template</span>&lt; <span class="keyword">typename</span> T_elem &gt;</div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_base_record.html">BaseRecord</a>;</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <span class="keyword">template</span>&lt;</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;        <span class="keyword">typename</span> <a class="code" href="namespaceopen_p_m_d.html#a5bd35872ff3aaacc1ec2700443d89c40ab9ece18c950afbfa6b0fdbfa4ff731d3">T</a>,</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;        <span class="keyword">typename</span> T_key,</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;        <span class="keyword">typename</span> T_container</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    &gt;</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_container.html">Container</a>;</div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    <span class="keyword">template</span>&lt; <span class="keyword">typename</span> T &gt;</div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    <span class="keyword">friend</span> <span class="keyword">struct </span><a class="code" href="structopen_p_m_d_1_1traits_1_1_generation_policy.html">traits::GenerationPolicy</a>;</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_iteration.html">Iteration</a>;</div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_series.html">Series</a>;</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_series_interface.html">SeriesInterface</a>;</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a>;</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_write_iterations.html">WriteIterations</a>;</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160; </div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;<span class="keyword">protected</span>:</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">internal::AttributableData</a> * m_attri = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160; </div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    <span class="comment">// Should not be called publicly, only by implementing classes</span></div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">AttributableInterface</a>( <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">internal::AttributableData</a> * );</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    <span class="keyword">template</span>&lt; <span class="keyword">typename</span> T &gt;</div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">AttributableInterface</a>( <a class="code" href="namespaceopen_p_m_d.html#a5bd35872ff3aaacc1ec2700443d89c40ab9ece18c950afbfa6b0fdbfa4ff731d3">T</a> * attri )</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;        : <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">AttributableInterface</a>{</div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;              <span class="keyword">static_cast&lt;</span> <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">internal::AttributableData</a> * <span class="keyword">&gt;</span>( attri ) }</div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    {</div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    }</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160; </div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    <span class="keyword">virtual</span> ~<a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">AttributableInterface</a>() = <span class="keywordflow">default</span>;</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160; </div>
-<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;    <span class="keyword">template</span>&lt; <span class="keyword">typename</span> T &gt;</div>
-<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a49e4f67781fa01095512e6203faaef63">setAttribute</a>(std::string <span class="keyword">const</span>&amp; key, <a class="code" href="namespaceopen_p_m_d.html#a5bd35872ff3aaacc1ec2700443d89c40ab9ece18c950afbfa6b0fdbfa4ff731d3">T</a> value);</div>
-<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a49e4f67781fa01095512e6203faaef63">setAttribute</a>(std::string <span class="keyword">const</span>&amp; key, <span class="keywordtype">char</span> <span class="keyword">const</span> value[]);</div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_attribute.html">Attribute</a> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a08f5ccbc57061d9bf4983478d86088ec">getAttribute</a>(std::string <span class="keyword">const</span>&amp; key) <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160; </div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a78b98f9b1c7b0a1d3394f8bd96c3b8ca">deleteAttribute</a>(std::string <span class="keyword">const</span>&amp; key);</div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160; </div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;    std::vector&lt; std::string &gt; <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#abb3e076d5a5f6a2526153572b830c6a6">attributes</a>() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;    <span class="keywordtype">size_t</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#ae73e05ffb924bd34595fd3675928fc84">numAttributes</a>() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#abdb1a1dcbae377b584ff2d1057e70443">containsAttribute</a>(std::string <span class="keyword">const</span>&amp; key) <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160; </div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;    std::string <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#ac3da3229e3cc064532fda7488b7cb606">comment</a>() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">AttributableInterface</a>&amp; <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a761e698d81160cd7ed8b63c5d9fb5661">setComment</a>(std::string <span class="keyword">const</span>&amp; <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#ac3da3229e3cc064532fda7488b7cb606">comment</a>);</div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160; </div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a24c20cd692f006670de770b8d410e315">seriesFlush</a>();</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="keyword">template</span>&lt; <span class="keyword">typename</span> T &gt;</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;attr_value_check( std::string <span class="keyword">const</span> <span class="comment">/* key */</span>, T <span class="comment">/* value */</span> )</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;{</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;}</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160; </div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;<span class="keyword">template</span>&lt; &gt;</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">void</span></div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;attr_value_check( std::string <span class="keyword">const</span> key, std::string <span class="keyword">const</span> value )</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;{</div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    <span class="keywordflow">if</span>( value.empty() )</div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;        <span class="keywordflow">throw</span> std::runtime_error(</div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;                <span class="stringliteral">&quot;[setAttribute] Value for string attribute &#39;&quot;</span> + key +</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;                <span class="stringliteral">&quot;&#39; must not be empty!&quot;</span> );</div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;}</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160; </div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;} <span class="comment">// namespace internal</span></div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160; </div>
+<div class="line"><a name="l00115"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_attributable_interface.html">  115</a></span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">AttributableInterface</a></div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;{</div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    <span class="comment">// @todo remove unnecessary friend (wew that sounds bitter)</span></div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;    <span class="keyword">using</span> A_MAP = std::map&lt; std::string, Attribute &gt;;</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    <span class="keyword">friend</span> <a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a>* getWritable(<a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">AttributableInterface</a>*);</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    <span class="keyword">template</span>&lt; <span class="keyword">typename</span> T_elem &gt;</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_base_record.html">BaseRecord</a>;</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    <span class="keyword">template</span>&lt;</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;        <span class="keyword">typename</span> <a class="code" href="namespaceopen_p_m_d.html#a5bd35872ff3aaacc1ec2700443d89c40ab9ece18c950afbfa6b0fdbfa4ff731d3">T</a>,</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;        <span class="keyword">typename</span> T_key,</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;        <span class="keyword">typename</span> T_container</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    &gt;</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_container.html">Container</a>;</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    <span class="keyword">template</span>&lt; <span class="keyword">typename</span> T &gt;</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    <span class="keyword">friend</span> <span class="keyword">struct </span><a class="code" href="structopen_p_m_d_1_1traits_1_1_generation_policy.html">traits::GenerationPolicy</a>;</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_iteration.html">Iteration</a>;</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_series.html">Series</a>;</div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_series_interface.html">SeriesInterface</a>;</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_writable.html">Writable</a>;</div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_write_iterations.html">WriteIterations</a>;</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160; </div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;<span class="keyword">protected</span>:</div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">internal::AttributableData</a> * m_attri = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160; </div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;    <span class="comment">// Should not be called publicly, only by implementing classes</span></div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">AttributableInterface</a>( <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">internal::AttributableData</a> * );</div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;    <span class="keyword">template</span>&lt; <span class="keyword">typename</span> T &gt;</div>
+<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">AttributableInterface</a>( <a class="code" href="namespaceopen_p_m_d.html#a5bd35872ff3aaacc1ec2700443d89c40ab9ece18c950afbfa6b0fdbfa4ff731d3">T</a> * attri )</div>
+<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;        : <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">AttributableInterface</a>{</div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;              <span class="keyword">static_cast&lt;</span> <a class="code" href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">internal::AttributableData</a> * <span class="keyword">&gt;</span>( attri ) }</div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;    {</div>
+<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;    }</div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160; </div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;    <span class="keyword">virtual</span> ~<a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">AttributableInterface</a>() = <span class="keywordflow">default</span>;</div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160; </div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;    <span class="keyword">template</span>&lt; <span class="keyword">typename</span> T &gt;</div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a49e4f67781fa01095512e6203faaef63">setAttribute</a>(std::string <span class="keyword">const</span>&amp; key, <a class="code" href="namespaceopen_p_m_d.html#a5bd35872ff3aaacc1ec2700443d89c40ab9ece18c950afbfa6b0fdbfa4ff731d3">T</a> value);</div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a49e4f67781fa01095512e6203faaef63">setAttribute</a>(std::string <span class="keyword">const</span>&amp; key, <span class="keywordtype">char</span> <span class="keyword">const</span> value[]);</div>
+<div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_attribute.html">Attribute</a> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a08f5ccbc57061d9bf4983478d86088ec">getAttribute</a>(std::string <span class="keyword">const</span>&amp; key) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160; </div>
+<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a78b98f9b1c7b0a1d3394f8bd96c3b8ca">deleteAttribute</a>(std::string <span class="keyword">const</span>&amp; key);</div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160; </div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;    std::vector&lt; std::string &gt; <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#abb3e076d5a5f6a2526153572b830c6a6">attributes</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    <span class="keywordtype">size_t</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#ae73e05ffb924bd34595fd3675928fc84">numAttributes</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#abdb1a1dcbae377b584ff2d1057e70443">containsAttribute</a>(std::string <span class="keyword">const</span>&amp; key) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160; </div>
-<div class="line"><a name="l00209"></a><span class="lineno"><a class="line" href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html">  209</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html">MyPath</a></div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;    {</div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;        std::string directory;       </div>
-<div class="line"><a name="l00212"></a><span class="lineno"><a class="line" href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html#a7fa71a2486faff1e827786e9e828a8ea">  212</a></span>&#160;        std::string <a class="code" href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html#a7fa71a2486faff1e827786e9e828a8ea">seriesName</a>;      </div>
-<div class="line"><a name="l00213"></a><span class="lineno"><a class="line" href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html#abbfb2a684af1d79bfc6373c743c4676d">  213</a></span>&#160;        std::string <a class="code" href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html#abbfb2a684af1d79bfc6373c743c4676d">seriesExtension</a>; </div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160; </div>
-<div class="line"><a name="l00221"></a><span class="lineno"><a class="line" href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html#a6598f6c01e2004fbd927f3c88880ae15">  221</a></span>&#160;        std::vector&lt; std::string &gt; <a class="code" href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html#a6598f6c01e2004fbd927f3c88880ae15">group</a>;</div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160; </div>
-<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;        std::string <a class="code" href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html#a21021d065d35c6da3c8a101dc3c33a8e">filePath</a>() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;    };</div>
-<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160; </div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    <a class="code" href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html">MyPath</a> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a3c2071946c1227ab04cf88d47a08bedc">myPath</a>() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160; </div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;OPENPMD_protected:</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160; </div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;    <a class="code" href="classopen_p_m_d_1_1internal_1_1_series_internal.html">internal::SeriesInternal</a> <span class="keyword">const</span> &amp; retrieveSeries() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;    <a class="code" href="classopen_p_m_d_1_1internal_1_1_series_internal.html">internal::SeriesInternal</a> &amp; retrieveSeries();</div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160; </div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_iteration.html">Iteration</a> <span class="keyword">const</span> &amp; <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a1942d72489568f2d89dbc0b53376d0d2">containingIteration</a>() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_iteration.html">Iteration</a> &amp; <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a1942d72489568f2d89dbc0b53376d0d2">containingIteration</a>();</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a24c20cd692f006670de770b8d410e315">seriesFlush</a>( <a class="code" href="namespaceopen_p_m_d.html#a677be01ff3fa0d48536a70114771d065">FlushLevel</a> );</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160; </div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;    <span class="keywordtype">void</span> flushAttributes();</div>
-<div class="line"><a name="l00253"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0">  253</a></span>&#160;    <span class="keyword">enum</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0">ReadMode</a> {</div>
-<div class="line"><a name="l00258"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0ae24ce4cace6f08d23d6a8af5f94c2e94">  258</a></span>&#160;        <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0ae24ce4cace6f08d23d6a8af5f94c2e94">IgnoreExisting</a>,</div>
-<div class="line"><a name="l00263"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0a22900bafa481a94e0f81bcd252e263d8">  263</a></span>&#160;        <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0a22900bafa481a94e0f81bcd252e263d8">OverrideExisting</a>,</div>
-<div class="line"><a name="l00268"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0a0a23ec25927b6d9f69e2cfc67a5fc399">  268</a></span>&#160;        <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0a0a23ec25927b6d9f69e2cfc67a5fc399">FullyReread</a></div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;    };</div>
-<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;    <span class="keywordtype">void</span> readAttributes( <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0">ReadMode</a> );</div>
-<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160; </div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;    <span class="keyword">template</span>&lt; <span class="keyword">typename</span> T &gt;</div>
-<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#a5bd35872ff3aaacc1ec2700443d89c40ab9ece18c950afbfa6b0fdbfa4ff731d3">T</a> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a4bc9fd02cde4943f542ef1bd6813c800">readFloatingpoint</a>(std::string <span class="keyword">const</span>&amp; key) <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;    <span class="keyword">template</span>&lt; <span class="keyword">typename</span> T &gt;</div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;    std::vector&lt; T &gt; <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#ac5d87a5773d54b0260645507e3b261c4">readVectorFloatingpoint</a>(std::string <span class="keyword">const</span>&amp; key) <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160; </div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;    <span class="comment">/* views into the resources held by m_writable</span></div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;<span class="comment">     * purely for convenience so code that uses these does not have to go through m_writable-&gt; */</span></div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_abstract_i_o_handler.html">AbstractIOHandler</a> * IOHandler()</div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;    {</div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;        <span class="keywordflow">return</span> m_attri-&gt;m_writable.IOHandler.get();</div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;    }</div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;    AbstractIOHandler <span class="keyword">const</span> * IOHandler()<span class="keyword"> const</span></div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;        <span class="keywordflow">return</span> m_attri-&gt;m_writable.IOHandler.get();</div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;    }</div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;    Writable *&amp; parent()</div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;    {</div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;        <span class="keywordflow">return</span> m_attri-&gt;m_writable.parent;</div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;    }</div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;    Writable <span class="keyword">const</span> * parent()<span class="keyword"> const</span></div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;        <span class="keywordflow">return</span> m_attri-&gt;m_writable.parent;</div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;    }</div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;    Writable &amp; writable()</div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;    {</div>
-<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;        <span class="keywordflow">return</span> m_attri-&gt;m_writable;</div>
-<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;    }</div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;    Writable <span class="keyword">const</span> &amp; writable()<span class="keyword"> const</span></div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;        <span class="keywordflow">return</span> m_attri-&gt;m_writable;</div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;    }</div>
-<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160; </div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    <span class="keyword">inline</span></div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;    internal::AttributableData &amp; get()</div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    {</div>
-<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;        <span class="keywordflow">if</span>( m_attri )</div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;        {</div>
-<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;            <span class="keywordflow">return</span> *m_attri;</div>
-<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;        }</div>
-<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;        <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;        {</div>
-<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;            <span class="keywordflow">throw</span> std::runtime_error(</div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;                <span class="stringliteral">&quot;[AttributableInterface] &quot;</span></div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;                <span class="stringliteral">&quot;Cannot use default-constructed Attributable.&quot;</span> );</div>
-<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;        }</div>
-<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;    }</div>
-<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;    <span class="keyword">inline</span></div>
-<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;    internal::AttributableData <span class="keyword">const</span> &amp; get()<span class="keyword"> const</span></div>
-<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;        <span class="keywordflow">if</span>( m_attri )</div>
-<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;        {</div>
-<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;            <span class="keywordflow">return</span> *m_attri;</div>
-<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;        }</div>
-<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;        <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;        {</div>
-<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;            <span class="keywordflow">throw</span> std::runtime_error(</div>
-<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;                <span class="stringliteral">&quot;[AttributableInterface] &quot;</span></div>
-<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;                <span class="stringliteral">&quot;Cannot use default-constructed Attributable.&quot;</span> );</div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;        }</div>
-<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;    }</div>
-<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160; </div>
-<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;    <span class="keywordtype">bool</span> dirty()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> writable().dirty; }</div>
-<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;    <span class="keywordtype">bool</span>&amp; dirty() { <span class="keywordflow">return</span> writable().dirty; }</div>
-<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;    <span class="keywordtype">bool</span> written()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> writable().written; }</div>
-<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;    <span class="keywordtype">bool</span>&amp; written() { <span class="keywordflow">return</span> writable().written; }</div>
-<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160; </div>
-<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> linkHierarchy(Writable&amp; w);</div>
-<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;}; <span class="comment">// AttributableInterface</span></div>
-<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160; </div>
-<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;<span class="comment">// Alias this as Attributable since this is a public abstract parent class</span></div>
-<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;<span class="comment">// for most of the classes in our object model of the openPMD hierarchy</span></div>
-<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;<span class="keyword">using</span> Attributable = AttributableInterface;</div>
-<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160; </div>
-<div class="line"><a name="l00379"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_legacy_attributable.html">  379</a></span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_legacy_attributable.html">LegacyAttributable</a> : <span class="keyword">public</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">AttributableInterface</a></div>
-<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;{</div>
-<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;<span class="keyword">protected</span>:</div>
-<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;    std::shared_ptr&lt; internal::AttributableData &gt; m_attributableData =</div>
-<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;        std::make_shared&lt; internal::AttributableData &gt;();</div>
-<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160; </div>
-<div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_legacy_attributable.html">LegacyAttributable</a>() : <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">AttributableInterface</a>{ <span class="keyword">nullptr</span> }</div>
-<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;    {</div>
-<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;        AttributableInterface::m_attri = m_attributableData.get();</div>
-<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;    }</div>
-<div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;};</div>
-<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160; </div>
-<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;<span class="comment">//TODO explicitly instantiate Attributable::setAttribute for all T in Datatype</span></div>
-<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;<span class="keyword">template</span>&lt; <span class="keyword">typename</span> T &gt;</div>
-<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">bool</span></div>
-<div class="line"><a name="l00395"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_attributable_interface.html#a49e4f67781fa01095512e6203faaef63">  395</a></span>&#160;<a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a49e4f67781fa01095512e6203faaef63">AttributableInterface::setAttribute</a>( std::string <span class="keyword">const</span> &amp; key, T value )</div>
-<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;{</div>
-<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;    <span class="keyword">auto</span> &amp; attri = get();</div>
-<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;    <span class="keywordflow">if</span>(IOHandler() &amp;&amp; <a class="code" href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1ea47c7e7cb36a953a8c47e02000036bb44">Access::READ_ONLY</a> == IOHandler()-&gt;m_frontendAccess )</div>
-<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;    {</div>
-<div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;        <a class="code" href="classopen_p_m_d_1_1auxiliary_1_1_out_of_range_msg.html">auxiliary::OutOfRangeMsg</a> <span class="keyword">const</span> out_of_range_msg(</div>
-<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;            <span class="stringliteral">&quot;Attribute&quot;</span>,</div>
-<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;            <span class="stringliteral">&quot;can not be set (read-only).&quot;</span></div>
-<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;        );</div>
-<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;        <span class="keywordflow">throw</span> <a class="code" href="classopen_p_m_d_1_1no__such__attribute__error.html">no_such_attribute_error</a>(out_of_range_msg(key));</div>
-<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;    }</div>
+<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    std::string <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#ac3da3229e3cc064532fda7488b7cb606">comment</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">AttributableInterface</a>&amp; <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a761e698d81160cd7ed8b63c5d9fb5661">setComment</a>(std::string <span class="keyword">const</span>&amp; <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#ac3da3229e3cc064532fda7488b7cb606">comment</a>);</div>
+<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160; </div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a24c20cd692f006670de770b8d410e315">seriesFlush</a>();</div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160; </div>
+<div class="line"><a name="l00231"></a><span class="lineno"><a class="line" href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html">  231</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html">MyPath</a></div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    {</div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        std::string directory;       </div>
+<div class="line"><a name="l00234"></a><span class="lineno"><a class="line" href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html#a7fa71a2486faff1e827786e9e828a8ea">  234</a></span>&#160;        std::string <a class="code" href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html#a7fa71a2486faff1e827786e9e828a8ea">seriesName</a>;      </div>
+<div class="line"><a name="l00235"></a><span class="lineno"><a class="line" href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html#abbfb2a684af1d79bfc6373c743c4676d">  235</a></span>&#160;        std::string <a class="code" href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html#abbfb2a684af1d79bfc6373c743c4676d">seriesExtension</a>; </div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160; </div>
+<div class="line"><a name="l00243"></a><span class="lineno"><a class="line" href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html#a6598f6c01e2004fbd927f3c88880ae15">  243</a></span>&#160;        std::vector&lt; std::string &gt; <a class="code" href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html#a6598f6c01e2004fbd927f3c88880ae15">group</a>;</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160; </div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;        std::string <a class="code" href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html#a21021d065d35c6da3c8a101dc3c33a8e">filePath</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;    };</div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160; </div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    <a class="code" href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html">MyPath</a> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a3c2071946c1227ab04cf88d47a08bedc">myPath</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160; </div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;OPENPMD_protected:</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160; </div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;    <a class="code" href="classopen_p_m_d_1_1internal_1_1_series_internal.html">internal::SeriesInternal</a> <span class="keyword">const</span> &amp; retrieveSeries() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;    <a class="code" href="classopen_p_m_d_1_1internal_1_1_series_internal.html">internal::SeriesInternal</a> &amp; retrieveSeries();</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160; </div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_iteration.html">Iteration</a> <span class="keyword">const</span> &amp; <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a1942d72489568f2d89dbc0b53376d0d2">containingIteration</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_iteration.html">Iteration</a> &amp; <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a1942d72489568f2d89dbc0b53376d0d2">containingIteration</a>();</div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;    <span class="keywordtype">void</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a24c20cd692f006670de770b8d410e315">seriesFlush</a>( <a class="code" href="namespaceopen_p_m_d.html#a677be01ff3fa0d48536a70114771d065">FlushLevel</a> );</div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160; </div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;    <span class="keywordtype">void</span> flushAttributes();</div>
+<div class="line"><a name="l00275"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0">  275</a></span>&#160;    <span class="keyword">enum</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0">ReadMode</a> {</div>
+<div class="line"><a name="l00280"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0ae24ce4cace6f08d23d6a8af5f94c2e94">  280</a></span>&#160;        <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0ae24ce4cace6f08d23d6a8af5f94c2e94">IgnoreExisting</a>,</div>
+<div class="line"><a name="l00285"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0a22900bafa481a94e0f81bcd252e263d8">  285</a></span>&#160;        <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0a22900bafa481a94e0f81bcd252e263d8">OverrideExisting</a>,</div>
+<div class="line"><a name="l00290"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0a0a23ec25927b6d9f69e2cfc67a5fc399">  290</a></span>&#160;        <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0a0a23ec25927b6d9f69e2cfc67a5fc399">FullyReread</a></div>
+<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;    };</div>
+<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;    <span class="keywordtype">void</span> readAttributes( <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0">ReadMode</a> );</div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160; </div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;    <span class="keyword">template</span>&lt; <span class="keyword">typename</span> T &gt;</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;    <a class="code" href="namespaceopen_p_m_d.html#a5bd35872ff3aaacc1ec2700443d89c40ab9ece18c950afbfa6b0fdbfa4ff731d3">T</a> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a4bc9fd02cde4943f542ef1bd6813c800">readFloatingpoint</a>(std::string <span class="keyword">const</span>&amp; key) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;    <span class="keyword">template</span>&lt; <span class="keyword">typename</span> T &gt;</div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;    std::vector&lt; T &gt; <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#ac5d87a5773d54b0260645507e3b261c4">readVectorFloatingpoint</a>(std::string <span class="keyword">const</span>&amp; key) <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160; </div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;    <span class="comment">/* views into the resources held by m_writable</span></div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;<span class="comment">     * purely for convenience so code that uses these does not have to go through m_writable-&gt; */</span></div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_abstract_i_o_handler.html">AbstractIOHandler</a> * IOHandler()</div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;    {</div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;        <span class="keywordflow">return</span> m_attri-&gt;m_writable.IOHandler.get();</div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    }</div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;    AbstractIOHandler <span class="keyword">const</span> * IOHandler()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;<span class="keyword">    </span>{</div>
+<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;        <span class="keywordflow">return</span> m_attri-&gt;m_writable.IOHandler.get();</div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    }</div>
+<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;    Writable *&amp; parent()</div>
+<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;    {</div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;        <span class="keywordflow">return</span> m_attri-&gt;m_writable.parent;</div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;    }</div>
+<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;    Writable <span class="keyword">const</span> * parent()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;<span class="keyword">    </span>{</div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;        <span class="keywordflow">return</span> m_attri-&gt;m_writable.parent;</div>
+<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;    }</div>
+<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;    Writable &amp; writable()</div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;    {</div>
+<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;        <span class="keywordflow">return</span> m_attri-&gt;m_writable;</div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;    }</div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;    Writable <span class="keyword">const</span> &amp; writable()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;<span class="keyword">    </span>{</div>
+<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;        <span class="keywordflow">return</span> m_attri-&gt;m_writable;</div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;    }</div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160; </div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;    <span class="keyword">inline</span></div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;    internal::AttributableData &amp; get()</div>
+<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;    {</div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;        <span class="keywordflow">if</span>( m_attri )</div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;        {</div>
+<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;            <span class="keywordflow">return</span> *m_attri;</div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;        }</div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;        <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;        {</div>
+<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;            <span class="keywordflow">throw</span> std::runtime_error(</div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;                <span class="stringliteral">&quot;[AttributableInterface] &quot;</span></div>
+<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;                <span class="stringliteral">&quot;Cannot use default-constructed Attributable.&quot;</span> );</div>
+<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;        }</div>
+<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;    }</div>
+<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;    <span class="keyword">inline</span></div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;    internal::AttributableData <span class="keyword">const</span> &amp; get()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;<span class="keyword">    </span>{</div>
+<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;        <span class="keywordflow">if</span>( m_attri )</div>
+<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;        {</div>
+<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;            <span class="keywordflow">return</span> *m_attri;</div>
+<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;        }</div>
+<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;        <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;        {</div>
+<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;            <span class="keywordflow">throw</span> std::runtime_error(</div>
+<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;                <span class="stringliteral">&quot;[AttributableInterface] &quot;</span></div>
+<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;                <span class="stringliteral">&quot;Cannot use default-constructed Attributable.&quot;</span> );</div>
+<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;        }</div>
+<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;    }</div>
+<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160; </div>
+<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;    <span class="keywordtype">bool</span> dirty()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> writable().dirty; }</div>
+<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;    <span class="keywordtype">bool</span>&amp; dirty() { <span class="keywordflow">return</span> writable().dirty; }</div>
+<div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;    <span class="keywordtype">bool</span> written()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> writable().written; }</div>
+<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;    <span class="keywordtype">bool</span>&amp; written() { <span class="keywordflow">return</span> writable().written; }</div>
+<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160; </div>
+<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> linkHierarchy(Writable&amp; w);</div>
+<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;}; <span class="comment">// AttributableInterface</span></div>
+<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160; </div>
+<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;<span class="comment">// Alias this as Attributable since this is a public abstract parent class</span></div>
+<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;<span class="comment">// for most of the classes in our object model of the openPMD hierarchy</span></div>
+<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;<span class="keyword">using</span> Attributable = AttributableInterface;</div>
+<div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160; </div>
+<div class="line"><a name="l00401"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_legacy_attributable.html">  401</a></span>&#160;<span class="keyword">class </span><a class="code" href="classopen_p_m_d_1_1_legacy_attributable.html">LegacyAttributable</a> : <span class="keyword">public</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">AttributableInterface</a></div>
+<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;{</div>
+<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;<span class="keyword">protected</span>:</div>
+<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;    std::shared_ptr&lt; internal::AttributableData &gt; m_attributableData =</div>
+<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;        std::make_shared&lt; internal::AttributableData &gt;();</div>
 <div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160; </div>
-<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;    dirty() = <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;    <span class="keyword">auto</span> it = attri.m_attributes.lower_bound(key);</div>
-<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;    <span class="keywordflow">if</span>( it != attri.m_attributes.end()</div>
-<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;        &amp;&amp; !attri.m_attributes.key_comp()(key, it-&gt;first) )</div>
-<div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;    {</div>
-<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;        <span class="comment">// key already exists in map, just replace the value</span></div>
-<div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;        it-&gt;second = <a class="code" href="classopen_p_m_d_1_1_attribute.html">Attribute</a>(value);</div>
-<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;    } <span class="keywordflow">else</span></div>
-<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;    {</div>
-<div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;        <span class="comment">// emplace a new map element for an unknown key</span></div>
-<div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;        attri.m_attributes.emplace_hint(</div>
-<div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;            it, std::make_pair(key, <a class="code" href="classopen_p_m_d_1_1_attribute.html">Attribute</a>(std::move(value))));</div>
-<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;    }</div>
-<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;}</div>
-<div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">bool</span></div>
-<div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;<a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a49e4f67781fa01095512e6203faaef63">AttributableInterface::setAttribute</a>( std::string <span class="keyword">const</span> &amp; key, <span class="keywordtype">char</span> <span class="keyword">const</span> value[] )</div>
-<div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;{</div>
-<div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;    <span class="keywordflow">return</span> this-&gt;<a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a49e4f67781fa01095512e6203faaef63">setAttribute</a>(key, std::string(value));</div>
-<div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;}</div>
-<div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160; </div>
-<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;<span class="keyword">template</span>&lt; <span class="keyword">typename</span> T &gt;</div>
-<div class="line"><a name="l00430"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_attributable_interface.html#a4bc9fd02cde4943f542ef1bd6813c800">  430</a></span>&#160;<span class="keyword">inline</span> <a class="code" href="namespaceopen_p_m_d.html#a5bd35872ff3aaacc1ec2700443d89c40ab9ece18c950afbfa6b0fdbfa4ff731d3">T</a> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a4bc9fd02cde4943f542ef1bd6813c800">AttributableInterface::readFloatingpoint</a>( std::string <span class="keyword">const</span> &amp; key )<span class="keyword"> const</span></div>
-<div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;<span class="keyword"></span>{</div>
-<div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;    static_assert(std::is_floating_point&lt; T &gt;::value, <span class="stringliteral">&quot;Type of attribute must be floating point&quot;</span>);</div>
-<div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160; </div>
-<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a08f5ccbc57061d9bf4983478d86088ec">getAttribute</a>(key).<a class="code" href="classopen_p_m_d_1_1_attribute.html#a9a73ac10fe6cd9c30639e1480ef5b66c">get</a>&lt; <a class="code" href="namespaceopen_p_m_d.html#a5bd35872ff3aaacc1ec2700443d89c40ab9ece18c950afbfa6b0fdbfa4ff731d3">T</a> &gt;();</div>
-<div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;}</div>
-<div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160; </div>
-<div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;<span class="keyword">template</span>&lt; <span class="keyword">typename</span> T &gt;</div>
-<div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;<span class="keyword">inline</span> std::vector&lt; T &gt;</div>
-<div class="line"><a name="l00439"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_attributable_interface.html#ac5d87a5773d54b0260645507e3b261c4">  439</a></span>&#160;<a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#ac5d87a5773d54b0260645507e3b261c4">AttributableInterface::readVectorFloatingpoint</a>( std::string <span class="keyword">const</span> &amp; key )<span class="keyword"> const</span></div>
-<div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;<span class="keyword"></span>{</div>
-<div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;    static_assert(std::is_floating_point&lt; T &gt;::value, <span class="stringliteral">&quot;Type of attribute must be floating point&quot;</span>);</div>
-<div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160; </div>
-<div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a08f5ccbc57061d9bf4983478d86088ec">getAttribute</a>(key).<a class="code" href="classopen_p_m_d_1_1_attribute.html#a9a73ac10fe6cd9c30639e1480ef5b66c">get</a>&lt; std::vector&lt; T &gt; &gt;();</div>
-<div class="line"><a name="l00444"></a><span class="lineno">  444</span>&#160;}</div>
-<div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160;} <span class="comment">// namespace openPMD</span></div>
+<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;    <a class="code" href="classopen_p_m_d_1_1_legacy_attributable.html">LegacyAttributable</a>() : <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html">AttributableInterface</a>{ <span class="keyword">nullptr</span> }</div>
+<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;    {</div>
+<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;        AttributableInterface::m_attri = m_attributableData.get();</div>
+<div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;    }</div>
+<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;};</div>
+<div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160; </div>
+<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;<span class="comment">//TODO explicitly instantiate Attributable::setAttribute for all T in Datatype</span></div>
+<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;<span class="keyword">template</span>&lt; <span class="keyword">typename</span> T &gt;</div>
+<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">bool</span></div>
+<div class="line"><a name="l00417"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_attributable_interface.html#a49e4f67781fa01095512e6203faaef63">  417</a></span>&#160;<a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a49e4f67781fa01095512e6203faaef63">AttributableInterface::setAttribute</a>( std::string <span class="keyword">const</span> &amp; key, T value )</div>
+<div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;{</div>
+<div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;    internal::attr_value_check( key, value );</div>
+<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160; </div>
+<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;    <span class="keyword">auto</span> &amp; attri = get();</div>
+<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;    <span class="keywordflow">if</span>(IOHandler() &amp;&amp; <a class="code" href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1ea47c7e7cb36a953a8c47e02000036bb44">Access::READ_ONLY</a> == IOHandler()-&gt;m_frontendAccess )</div>
+<div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;    {</div>
+<div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;        <a class="code" href="classopen_p_m_d_1_1auxiliary_1_1_out_of_range_msg.html">auxiliary::OutOfRangeMsg</a> <span class="keyword">const</span> out_of_range_msg(</div>
+<div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;            <span class="stringliteral">&quot;Attribute&quot;</span>,</div>
+<div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;            <span class="stringliteral">&quot;can not be set (read-only).&quot;</span></div>
+<div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;        );</div>
+<div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;        <span class="keywordflow">throw</span> <a class="code" href="classopen_p_m_d_1_1no__such__attribute__error.html">no_such_attribute_error</a>(out_of_range_msg(key));</div>
+<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;    }</div>
+<div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160; </div>
+<div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;    dirty() = <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;    <span class="keyword">auto</span> it = attri.m_attributes.lower_bound(key);</div>
+<div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;    <span class="keywordflow">if</span>( it != attri.m_attributes.end()</div>
+<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;        &amp;&amp; !attri.m_attributes.key_comp()(key, it-&gt;first) )</div>
+<div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;    {</div>
+<div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;        <span class="comment">// key already exists in map, just replace the value</span></div>
+<div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;        it-&gt;second = <a class="code" href="classopen_p_m_d_1_1_attribute.html">Attribute</a>(value);</div>
+<div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;    } <span class="keywordflow">else</span></div>
+<div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;    {</div>
+<div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;        <span class="comment">// emplace a new map element for an unknown key</span></div>
+<div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;        attri.m_attributes.emplace_hint(</div>
+<div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160;            it, std::make_pair(key, <a class="code" href="classopen_p_m_d_1_1_attribute.html">Attribute</a>(std::move(value))));</div>
+<div class="line"><a name="l00444"></a><span class="lineno">  444</span>&#160;        <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160;    }</div>
+<div class="line"><a name="l00446"></a><span class="lineno">  446</span>&#160;}</div>
+<div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160; </div>
+<div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160;<span class="keyword">inline</span> <span class="keywordtype">bool</span></div>
+<div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;<a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a49e4f67781fa01095512e6203faaef63">AttributableInterface::setAttribute</a>( std::string <span class="keyword">const</span> &amp; key, <span class="keywordtype">char</span> <span class="keyword">const</span> value[] )</div>
+<div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;{</div>
+<div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;    <span class="keywordflow">return</span> this-&gt;<a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a49e4f67781fa01095512e6203faaef63">setAttribute</a>(key, std::string(value));</div>
+<div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;}</div>
+<div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160; </div>
+<div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;<span class="keyword">template</span>&lt; <span class="keyword">typename</span> T &gt;</div>
+<div class="line"><a name="l00455"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_attributable_interface.html#a4bc9fd02cde4943f542ef1bd6813c800">  455</a></span>&#160;<span class="keyword">inline</span> <a class="code" href="namespaceopen_p_m_d.html#a5bd35872ff3aaacc1ec2700443d89c40ab9ece18c950afbfa6b0fdbfa4ff731d3">T</a> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a4bc9fd02cde4943f542ef1bd6813c800">AttributableInterface::readFloatingpoint</a>( std::string <span class="keyword">const</span> &amp; key )<span class="keyword"> const</span></div>
+<div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;<span class="keyword"></span>{</div>
+<div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;    static_assert(std::is_floating_point&lt; T &gt;::value, <span class="stringliteral">&quot;Type of attribute must be floating point&quot;</span>);</div>
+<div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160; </div>
+<div class="line"><a name="l00459"></a><span class="lineno">  459</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a08f5ccbc57061d9bf4983478d86088ec">getAttribute</a>(key).<a class="code" href="classopen_p_m_d_1_1_attribute.html#a9a73ac10fe6cd9c30639e1480ef5b66c">get</a>&lt; <a class="code" href="namespaceopen_p_m_d.html#a5bd35872ff3aaacc1ec2700443d89c40ab9ece18c950afbfa6b0fdbfa4ff731d3">T</a> &gt;();</div>
+<div class="line"><a name="l00460"></a><span class="lineno">  460</span>&#160;}</div>
+<div class="line"><a name="l00461"></a><span class="lineno">  461</span>&#160; </div>
+<div class="line"><a name="l00462"></a><span class="lineno">  462</span>&#160;<span class="keyword">template</span>&lt; <span class="keyword">typename</span> T &gt;</div>
+<div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;<span class="keyword">inline</span> std::vector&lt; T &gt;</div>
+<div class="line"><a name="l00464"></a><span class="lineno"><a class="line" href="classopen_p_m_d_1_1_attributable_interface.html#ac5d87a5773d54b0260645507e3b261c4">  464</a></span>&#160;<a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#ac5d87a5773d54b0260645507e3b261c4">AttributableInterface::readVectorFloatingpoint</a>( std::string <span class="keyword">const</span> &amp; key )<span class="keyword"> const</span></div>
+<div class="line"><a name="l00465"></a><span class="lineno">  465</span>&#160;<span class="keyword"></span>{</div>
+<div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;    static_assert(std::is_floating_point&lt; T &gt;::value, <span class="stringliteral">&quot;Type of attribute must be floating point&quot;</span>);</div>
+<div class="line"><a name="l00467"></a><span class="lineno">  467</span>&#160; </div>
+<div class="line"><a name="l00468"></a><span class="lineno">  468</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="classopen_p_m_d_1_1_attributable_interface.html#a08f5ccbc57061d9bf4983478d86088ec">getAttribute</a>(key).<a class="code" href="classopen_p_m_d_1_1_attribute.html#a9a73ac10fe6cd9c30639e1480ef5b66c">get</a>&lt; std::vector&lt; T &gt; &gt;();</div>
+<div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160;}</div>
+<div class="line"><a name="l00470"></a><span class="lineno">  470</span>&#160;} <span class="comment">// namespace openPMD</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="anamespaceopen_p_m_d_html_a132624db0c6ac134d7a6084ab6d07e1ea47c7e7cb36a953a8c47e02000036bb44"><div class="ttname"><a href="namespaceopen_p_m_d.html#a132624db0c6ac134d7a6084ab6d07e1ea47c7e7cb36a953a8c47e02000036bb44">openPMD::Access::READ_ONLY</a></div><div class="ttdeci">@ READ_ONLY</div><div class="ttdoc">open series as read-only, fails if series is not found</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_a3c2071946c1227ab04cf88d47a08bedc"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#a3c2071946c1227ab04cf88d47a08bedc">openPMD::AttributableInterface::myPath</a></div><div class="ttdeci">MyPath myPath() const</div><div class="ttdoc">The path to this object within its containing Series.</div><div class="ttdef"><b>Definition:</b> Attributable.cpp:192</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_ab21cb7de7acde55c709083f3724b35e0a22900bafa481a94e0f81bcd252e263d8"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0a22900bafa481a94e0f81bcd252e263d8">openPMD::AttributableInterface::OverrideExisting</a></div><div class="ttdeci">@ OverrideExisting</div><div class="ttdoc">Read all the attributes that the backend has to offer and override if it has been read previously.</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:263</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_ab21cb7de7acde55c709083f3724b35e0a22900bafa481a94e0f81bcd252e263d8"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0a22900bafa481a94e0f81bcd252e263d8">openPMD::AttributableInterface::OverrideExisting</a></div><div class="ttdeci">@ OverrideExisting</div><div class="ttdoc">Read all the attributes that the backend has to offer and override if it has been read previously.</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:285</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_writable_html"><div class="ttname"><a href="classopen_p_m_d_1_1_writable.html">openPMD::Writable</a></div><div class="ttdoc">Layer to mirror structure of logical data and persistent data in file.</div><div class="ttdef"><b>Definition:</b> Writable.hpp:64</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_ab21cb7de7acde55c709083f3724b35e0a0a23ec25927b6d9f69e2cfc67a5fc399"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0a0a23ec25927b6d9f69e2cfc67a5fc399">openPMD::AttributableInterface::FullyReread</a></div><div class="ttdeci">@ FullyReread</div><div class="ttdoc">Remove all attributes that have been read previously and read everything that the backend currently h...</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:268</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_a49e4f67781fa01095512e6203faaef63"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#a49e4f67781fa01095512e6203faaef63">openPMD::AttributableInterface::setAttribute</a></div><div class="ttdeci">bool setAttribute(std::string const &amp;key, T value)</div><div class="ttdoc">Populate Attribute of provided name with provided value.</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:395</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1internal_1_1_attributable_data_html"><div class="ttname"><a href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">openPMD::internal::AttributableData</a></div><div class="ttdef"><b>Definition:</b> Attributable.hpp:67</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_ab21cb7de7acde55c709083f3724b35e0a0a23ec25927b6d9f69e2cfc67a5fc399"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0a0a23ec25927b6d9f69e2cfc67a5fc399">openPMD::AttributableInterface::FullyReread</a></div><div class="ttdeci">@ FullyReread</div><div class="ttdoc">Remove all attributes that have been read previously and read everything that the backend currently h...</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:290</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_a49e4f67781fa01095512e6203faaef63"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#a49e4f67781fa01095512e6203faaef63">openPMD::AttributableInterface::setAttribute</a></div><div class="ttdeci">bool setAttribute(std::string const &amp;key, T value)</div><div class="ttdoc">Populate Attribute of provided name with provided value.</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:417</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1internal_1_1_attributable_data_html"><div class="ttname"><a href="classopen_p_m_d_1_1internal_1_1_attributable_data.html">openPMD::internal::AttributableData</a></div><div class="ttdef"><b>Definition:</b> Attributable.hpp:68</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_base_record_html"><div class="ttname"><a href="classopen_p_m_d_1_1_base_record.html">openPMD::BaseRecord</a></div><div class="ttdef"><b>Definition:</b> BaseRecord.hpp:36</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_legacy_attributable_html"><div class="ttname"><a href="classopen_p_m_d_1_1_legacy_attributable.html">openPMD::LegacyAttributable</a></div><div class="ttdef"><b>Definition:</b> Attributable.hpp:379</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_legacy_attributable_html"><div class="ttname"><a href="classopen_p_m_d_1_1_legacy_attributable.html">openPMD::LegacyAttributable</a></div><div class="ttdef"><b>Definition:</b> Attributable.hpp:401</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_a1942d72489568f2d89dbc0b53376d0d2"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#a1942d72489568f2d89dbc0b53376d0d2">openPMD::AttributableInterface::containingIteration</a></div><div class="ttdeci">const Iteration &amp; containingIteration() const</div><div class="ttdoc">Returns the corresponding Iteration.</div><div class="ttdef"><b>Definition:</b> Attributable.cpp:138</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_a78b98f9b1c7b0a1d3394f8bd96c3b8ca"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#a78b98f9b1c7b0a1d3394f8bd96c3b8ca">openPMD::AttributableInterface::deleteAttribute</a></div><div class="ttdeci">bool deleteAttribute(std::string const &amp;key)</div><div class="ttdoc">Remove Attribute of provided value both logically and physically.</div><div class="ttdef"><b>Definition:</b> Attributable.cpp:58</div></div>
-<div class="ttc" id="astructopen_p_m_d_1_1_attributable_interface_1_1_my_path_html"><div class="ttname"><a href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html">openPMD::AttributableInterface::MyPath</a></div><div class="ttdoc">String serialization to describe an Attributable.</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:209</div></div>
+<div class="ttc" id="astructopen_p_m_d_1_1_attributable_interface_1_1_my_path_html"><div class="ttname"><a href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html">openPMD::AttributableInterface::MyPath</a></div><div class="ttdoc">String serialization to describe an Attributable.</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:231</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_abstract_file_position_html"><div class="ttname"><a href="classopen_p_m_d_1_1_abstract_file_position.html">openPMD::AbstractFilePosition</a></div><div class="ttdef"><b>Definition:</b> AbstractFilePosition.hpp:26</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_a24c20cd692f006670de770b8d410e315"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#a24c20cd692f006670de770b8d410e315">openPMD::AttributableInterface::seriesFlush</a></div><div class="ttdeci">void seriesFlush()</div><div class="ttdoc">Flush the corresponding Series object.</div><div class="ttdef"><b>Definition:</b> Attributable.cpp:116</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_attribute_html"><div class="ttname"><a href="classopen_p_m_d_1_1_attribute.html">openPMD::Attribute</a></div><div class="ttdoc">Varidic datatype supporting at least all formats for attributes specified in the openPMD standard.</div><div class="ttdef"><b>Definition:</b> Attribute.hpp:50</div></div>
 <div class="ttc" id="anamespaceopen_p_m_d_html_a5bd35872ff3aaacc1ec2700443d89c40ab9ece18c950afbfa6b0fdbfa4ff731d3"><div class="ttname"><a href="namespaceopen_p_m_d.html#a5bd35872ff3aaacc1ec2700443d89c40ab9ece18c950afbfa6b0fdbfa4ff731d3">openPMD::UnitDimension::T</a></div><div class="ttdeci">@ T</div><div class="ttdoc">time</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_write_iterations_html"><div class="ttname"><a href="classopen_p_m_d_1_1_write_iterations.html">openPMD::WriteIterations</a></div><div class="ttdoc">Writing side of the streaming API.</div><div class="ttdef"><b>Definition:</b> WriteIterations.hpp:47</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1internal_1_1_series_internal_html"><div class="ttname"><a href="classopen_p_m_d_1_1internal_1_1_series_internal.html">openPMD::internal::SeriesInternal</a></div><div class="ttdef"><b>Definition:</b> Series.hpp:441</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1internal_1_1_series_internal_html"><div class="ttname"><a href="classopen_p_m_d_1_1internal_1_1_series_internal.html">openPMD::internal::SeriesInternal</a></div><div class="ttdef"><b>Definition:</b> Series.hpp:443</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_abstract_i_o_handler_html"><div class="ttname"><a href="classopen_p_m_d_1_1_abstract_i_o_handler.html">openPMD::AbstractIOHandler</a></div><div class="ttdoc">Interface for communicating between logical and physically persistent data.</div><div class="ttdef"><b>Definition:</b> AbstractIOHandler.hpp:98</div></div>
-<div class="ttc" id="astructopen_p_m_d_1_1_attributable_interface_1_1_my_path_html_a7fa71a2486faff1e827786e9e828a8ea"><div class="ttname"><a href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html#a7fa71a2486faff1e827786e9e828a8ea">openPMD::AttributableInterface::MyPath::seriesName</a></div><div class="ttdeci">std::string seriesName</div><div class="ttdoc">e.g., samples/git-samples/</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:212</div></div>
+<div class="ttc" id="astructopen_p_m_d_1_1_attributable_interface_1_1_my_path_html_a7fa71a2486faff1e827786e9e828a8ea"><div class="ttname"><a href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html#a7fa71a2486faff1e827786e9e828a8ea">openPMD::AttributableInterface::MyPath::seriesName</a></div><div class="ttdeci">std::string seriesName</div><div class="ttdoc">e.g., samples/git-samples/</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:234</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_abb3e076d5a5f6a2526153572b830c6a6"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#abb3e076d5a5f6a2526153572b830c6a6">openPMD::AttributableInterface::attributes</a></div><div class="ttdeci">std::vector&lt; std::string &gt; attributes() const</div><div class="ttdoc">List all currently stored Attributes' keys.</div><div class="ttdef"><b>Definition:</b> Attributable.cpp:78</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_series_html"><div class="ttname"><a href="classopen_p_m_d_1_1_series.html">openPMD::Series</a></div><div class="ttdoc">Root level of the openPMD hierarchy.</div><div class="ttdef"><b>Definition:</b> Series.hpp:476</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_series_html"><div class="ttname"><a href="classopen_p_m_d_1_1_series.html">openPMD::Series</a></div><div class="ttdoc">Root level of the openPMD hierarchy.</div><div class="ttdef"><b>Definition:</b> Series.hpp:478</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1auxiliary_1_1_out_of_range_msg_html"><div class="ttname"><a href="classopen_p_m_d_1_1auxiliary_1_1_out_of_range_msg.html">openPMD::auxiliary::OutOfRangeMsg</a></div><div class="ttdoc">Return an error string for read-only access.</div><div class="ttdef"><b>Definition:</b> OutOfRangeMsg.hpp:37</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_abdb1a1dcbae377b584ff2d1057e70443"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#abdb1a1dcbae377b584ff2d1057e70443">openPMD::AttributableInterface::containsAttribute</a></div><div class="ttdeci">bool containsAttribute(std::string const &amp;key) const</div><div class="ttdoc">Check whether am Attribute with a given key exists.</div><div class="ttdef"><b>Definition:</b> Attributable.cpp:96</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_series_interface_html"><div class="ttname"><a href="classopen_p_m_d_1_1_series_interface.html">openPMD::SeriesInterface</a></div><div class="ttdoc">Implementation for the root level of the openPMD hierarchy.</div><div class="ttdef"><b>Definition:</b> Series.hpp:112</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_iteration_html"><div class="ttname"><a href="classopen_p_m_d_1_1_iteration.html">openPMD::Iteration</a></div><div class="ttdoc">Logical compilation of data from one snapshot (e.g.</div><div class="ttdef"><b>Definition:</b> Iteration.hpp:39</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_ac3da3229e3cc064532fda7488b7cb606"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#ac3da3229e3cc064532fda7488b7cb606">openPMD::AttributableInterface::comment</a></div><div class="ttdeci">std::string comment() const</div><div class="ttdoc">Retrieve a user-supplied comment associated with the object.</div><div class="ttdef"><b>Definition:</b> Attributable.cpp:103</div></div>
-<div class="ttc" id="astructopen_p_m_d_1_1_attributable_interface_1_1_my_path_html_a6598f6c01e2004fbd927f3c88880ae15"><div class="ttname"><a href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html#a6598f6c01e2004fbd927f3c88880ae15">openPMD::AttributableInterface::MyPath::group</a></div><div class="ttdeci">std::vector&lt; std::string &gt; group</div><div class="ttdoc">e.g., .bp, .h5, .json, ...</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:221</div></div>
+<div class="ttc" id="astructopen_p_m_d_1_1_attributable_interface_1_1_my_path_html_a6598f6c01e2004fbd927f3c88880ae15"><div class="ttname"><a href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html#a6598f6c01e2004fbd927f3c88880ae15">openPMD::AttributableInterface::MyPath::group</a></div><div class="ttdeci">std::vector&lt; std::string &gt; group</div><div class="ttdoc">e.g., .bp, .h5, .json, ...</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:243</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_a08f5ccbc57061d9bf4983478d86088ec"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#a08f5ccbc57061d9bf4983478d86088ec">openPMD::AttributableInterface::getAttribute</a></div><div class="ttdeci">Attribute getAttribute(std::string const &amp;key) const</div><div class="ttdoc">Retrieve value of Attribute stored with provided key.</div><div class="ttdef"><b>Definition:</b> Attributable.cpp:47</div></div>
 <div class="ttc" id="anamespaceopen_p_m_d_html"><div class="ttname"><a href="namespaceopen_p_m_d.html">openPMD</a></div><div class="ttdoc">Public definitions of openPMD-api.</div><div class="ttdef"><b>Definition:</b> Date.cpp:29</div></div>
 <div class="ttc" id="astructopen_p_m_d_1_1_attributable_interface_1_1_my_path_html_a21021d065d35c6da3c8a101dc3c33a8e"><div class="ttname"><a href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html#a21021d065d35c6da3c8a101dc3c33a8e">openPMD::AttributableInterface::MyPath::filePath</a></div><div class="ttdeci">std::string filePath() const</div><div class="ttdoc">Reconstructs a path that can be passed to a Series constructor.</div><div class="ttdef"><b>Definition:</b> Attributable.cpp:187</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_a4bc9fd02cde4943f542ef1bd6813c800"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#a4bc9fd02cde4943f542ef1bd6813c800">openPMD::AttributableInterface::readFloatingpoint</a></div><div class="ttdeci">T readFloatingpoint(std::string const &amp;key) const</div><div class="ttdoc">Retrieve the value of a floating point Attribute of user-defined precision with ensured type-safety.</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:430</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_a4bc9fd02cde4943f542ef1bd6813c800"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#a4bc9fd02cde4943f542ef1bd6813c800">openPMD::AttributableInterface::readFloatingpoint</a></div><div class="ttdeci">T readFloatingpoint(std::string const &amp;key) const</div><div class="ttdoc">Retrieve the value of a floating point Attribute of user-defined precision with ensured type-safety.</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:455</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_container_html"><div class="ttname"><a href="classopen_p_m_d_1_1_container.html">openPMD::Container</a></div><div class="ttdoc">Map-like container that enforces openPMD requirements and handles IO.</div><div class="ttdef"><b>Definition:</b> Container.hpp:106</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_attribute_html_a9a73ac10fe6cd9c30639e1480ef5b66c"><div class="ttname"><a href="classopen_p_m_d_1_1_attribute.html#a9a73ac10fe6cd9c30639e1480ef5b66c">openPMD::Attribute::get</a></div><div class="ttdeci">U get() const</div><div class="ttdoc">Retrieve a stored specific Attribute and cast if convertible.</div><div class="ttdef"><b>Definition:</b> Attribute.hpp:232</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1no__such__attribute__error_html"><div class="ttname"><a href="classopen_p_m_d_1_1no__such__attribute__error.html">openPMD::no_such_attribute_error</a></div><div class="ttdef"><b>Definition:</b> Attributable.hpp:56</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html">openPMD::AttributableInterface</a></div><div class="ttdoc">Layer to manage storage of attributes associated with file objects.</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:93</div></div>
-<div class="ttc" id="astructopen_p_m_d_1_1traits_1_1_generation_policy_html"><div class="ttname"><a href="structopen_p_m_d_1_1traits_1_1_generation_policy.html">openPMD::traits::GenerationPolicy</a></div><div class="ttdoc">Container Element Creation Policy.</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:46</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_attribute_html_a9a73ac10fe6cd9c30639e1480ef5b66c"><div class="ttname"><a href="classopen_p_m_d_1_1_attribute.html#a9a73ac10fe6cd9c30639e1480ef5b66c">openPMD::Attribute::get</a></div><div class="ttdeci">U get() const</div><div class="ttdoc">Retrieve a stored specific Attribute and cast if convertible.</div><div class="ttdef"><b>Definition:</b> Attribute.hpp:332</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1no__such__attribute__error_html"><div class="ttname"><a href="classopen_p_m_d_1_1no__such__attribute__error.html">openPMD::no_such_attribute_error</a></div><div class="ttdef"><b>Definition:</b> Attributable.hpp:57</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html">openPMD::AttributableInterface</a></div><div class="ttdoc">Layer to manage storage of attributes associated with file objects.</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:115</div></div>
+<div class="ttc" id="astructopen_p_m_d_1_1traits_1_1_generation_policy_html"><div class="ttname"><a href="structopen_p_m_d_1_1traits_1_1_generation_policy.html">openPMD::traits::GenerationPolicy</a></div><div class="ttdoc">Container Element Creation Policy.</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:47</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_a761e698d81160cd7ed8b63c5d9fb5661"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#a761e698d81160cd7ed8b63c5d9fb5661">openPMD::AttributableInterface::setComment</a></div><div class="ttdeci">AttributableInterface &amp; setComment(std::string const &amp;comment)</div><div class="ttdoc">Populate Attribute corresponding to a comment with the user-supplied comment.</div><div class="ttdef"><b>Definition:</b> Attributable.cpp:109</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_ab21cb7de7acde55c709083f3724b35e0ae24ce4cace6f08d23d6a8af5f94c2e94"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0ae24ce4cace6f08d23d6a8af5f94c2e94">openPMD::AttributableInterface::IgnoreExisting</a></div><div class="ttdeci">@ IgnoreExisting</div><div class="ttdoc">Don't read an attribute from the backend if it has been previously read.</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:258</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_ab21cb7de7acde55c709083f3724b35e0"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0">openPMD::AttributableInterface::ReadMode</a></div><div class="ttdeci">ReadMode</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:253</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_ab21cb7de7acde55c709083f3724b35e0ae24ce4cace6f08d23d6a8af5f94c2e94"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0ae24ce4cace6f08d23d6a8af5f94c2e94">openPMD::AttributableInterface::IgnoreExisting</a></div><div class="ttdeci">@ IgnoreExisting</div><div class="ttdoc">Don't read an attribute from the backend if it has been previously read.</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:280</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_ab21cb7de7acde55c709083f3724b35e0"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#ab21cb7de7acde55c709083f3724b35e0">openPMD::AttributableInterface::ReadMode</a></div><div class="ttdeci">ReadMode</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:275</div></div>
 <div class="ttc" id="anamespaceopen_p_m_d_html_a677be01ff3fa0d48536a70114771d065"><div class="ttname"><a href="namespaceopen_p_m_d.html#a677be01ff3fa0d48536a70114771d065">openPMD::FlushLevel</a></div><div class="ttdeci">FlushLevel</div><div class="ttdoc">Determine what items should be flushed upon Series::flush()</div><div class="ttdef"><b>Definition:</b> AbstractIOHandler.hpp:63</div></div>
-<div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_ac5d87a5773d54b0260645507e3b261c4"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#ac5d87a5773d54b0260645507e3b261c4">openPMD::AttributableInterface::readVectorFloatingpoint</a></div><div class="ttdeci">std::vector&lt; T &gt; readVectorFloatingpoint(std::string const &amp;key) const</div><div class="ttdoc">Retrieve a vector of values of a floating point Attributes of user-defined precision with ensured typ...</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:439</div></div>
-<div class="ttc" id="astructopen_p_m_d_1_1_attributable_interface_1_1_my_path_html_abbfb2a684af1d79bfc6373c743c4676d"><div class="ttname"><a href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html#abbfb2a684af1d79bfc6373c743c4676d">openPMD::AttributableInterface::MyPath::seriesExtension</a></div><div class="ttdeci">std::string seriesExtension</div><div class="ttdoc">e.g., dataT</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:213</div></div>
+<div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_ac5d87a5773d54b0260645507e3b261c4"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#ac5d87a5773d54b0260645507e3b261c4">openPMD::AttributableInterface::readVectorFloatingpoint</a></div><div class="ttdeci">std::vector&lt; T &gt; readVectorFloatingpoint(std::string const &amp;key) const</div><div class="ttdoc">Retrieve a vector of values of a floating point Attributes of user-defined precision with ensured typ...</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:464</div></div>
+<div class="ttc" id="astructopen_p_m_d_1_1_attributable_interface_1_1_my_path_html_abbfb2a684af1d79bfc6373c743c4676d"><div class="ttname"><a href="structopen_p_m_d_1_1_attributable_interface_1_1_my_path.html#abbfb2a684af1d79bfc6373c743c4676d">openPMD::AttributableInterface::MyPath::seriesExtension</a></div><div class="ttdeci">std::string seriesExtension</div><div class="ttdoc">e.g., dataT</div><div class="ttdef"><b>Definition:</b> Attributable.hpp:235</div></div>
 <div class="ttc" id="aclassopen_p_m_d_1_1_attributable_interface_html_ae73e05ffb924bd34595fd3675928fc84"><div class="ttname"><a href="classopen_p_m_d_1_1_attributable_interface.html#ae73e05ffb924bd34595fd3675928fc84">openPMD::AttributableInterface::numAttributes</a></div><div class="ttdeci">size_t numAttributes() const</div><div class="ttdoc">Count all currently stored Attributes.</div><div class="ttdef"><b>Definition:</b> Attributable.cpp:90</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

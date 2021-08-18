@@ -1,0 +1,5 @@
+<map id="openPMD::error::OperationUnsupportedInBackend" name="openPMD::error::OperationUnsupportedInBackend">
+<area shape="rect" id="node1" title="An operation was requested that is not supported in a specific backend." alt="" coords="5,155,200,196"/>
+<area shape="rect" id="node2" href="$classopen_p_m_d_1_1_error.html" title="Base class for all openPMD&#45;specific error types." alt="" coords="41,80,164,107"/>
+<area shape="rect" id="node3" title="STL class." alt="" coords="45,5,160,32"/>
+</map>

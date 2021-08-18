@@ -119,9 +119,9 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>associateWithFile</b>
 <tr class="memitem:ad57f6fe355e83461c29ec131f7db3aaa"><td class="memItemLeft" align="right" valign="top"><a id="ad57f6fe355e83461c29ec131f7db3aaa"></a>
 std::string&#160;</td><td class="memItemRight" valign="bottom"><b>fullPath</b> (std::string)</td></tr>
 <tr class="separator:ad57f6fe355e83461c29ec131f7db3aaa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a195703b408df7cd7f110ef6a0d65ffd4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structopen_p_m_d_1_1_invalidatable_file.html">InvalidatableFile</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html#a195703b408df7cd7f110ef6a0d65ffd4">refreshFileFromParent</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *writable)</td></tr>
-<tr class="memdesc:a195703b408df7cd7f110ef6a0d65ffd4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the writable's containing file.  <a href="classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html#a195703b408df7cd7f110ef6a0d65ffd4">More...</a><br /></td></tr>
-<tr class="separator:a195703b408df7cd7f110ef6a0d65ffd4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a554e2de38efafe287bec5f6a0eb45378"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structopen_p_m_d_1_1_invalidatable_file.html">InvalidatableFile</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html#a554e2de38efafe287bec5f6a0eb45378">refreshFileFromParent</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *writable, bool preferParentFile)</td></tr>
+<tr class="memdesc:a554e2de38efafe287bec5f6a0eb45378"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the writable's containing file.  <a href="classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html#a554e2de38efafe287bec5f6a0eb45378">More...</a><br /></td></tr>
+<tr class="separator:a554e2de38efafe287bec5f6a0eb45378"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad1cfcf10db0d34f295c77cb291d0f77a"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; FilePositionType &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html#ad1cfcf10db0d34f295c77cb291d0f77a">setAndGetFilePosition</a> (<a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *writable, bool write=true)</td></tr>
 <tr class="memdesc:ad1cfcf10db0d34f295c77cb291d0f77a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Figure out the file position of the writable.  <a href="classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html#ad1cfcf10db0d34f295c77cb291d0f77a">More...</a><br /></td></tr>
 <tr class="separator:ad1cfcf10db0d34f295c77cb291d0f77a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -241,8 +241,8 @@ template&lt;typename FilePositionType &gt; </div>
 
 </div>
 </div>
-<a id="a195703b408df7cd7f110ef6a0d65ffd4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a195703b408df7cd7f110ef6a0d65ffd4">&#9670;&nbsp;</a></span>refreshFileFromParent()</h2>
+<a id="a554e2de38efafe287bec5f6a0eb45378"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a554e2de38efafe287bec5f6a0eb45378">&#9670;&nbsp;</a></span>refreshFileFromParent()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -256,8 +256,18 @@ template&lt;typename FilePositionType &gt; </div>
           <td class="memname"><a class="el" href="structopen_p_m_d_1_1_invalidatable_file.html">InvalidatableFile</a> <a class="el" href="classopen_p_m_d_1_1_abstract_i_o_handler_impl_common.html">openPMD::AbstractIOHandlerImplCommon</a>&lt; FilePositionType &gt;::refreshFileFromParent </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classopen_p_m_d_1_1_writable.html">Writable</a> *&#160;</td>
-          <td class="paramname"><em>writable</em></td><td>)</td>
+          <td class="paramname"><em>writable</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>preferParentFile</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -271,6 +281,7 @@ template&lt;typename FilePositionType &gt; </div>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">writable</td><td>The writable whose containing file to figure out. </td></tr>
+    <tr><td class="paramname">preferParentFile</td><td>If true, the file is set to the parent's file if present. Otherwise, the parent file is only considered if no own file is defined. This is usually needed when switching between iterations when opening paths. </td></tr>
   </table>
   </dd>
 </dl>
@@ -375,8 +386,8 @@ template&lt;typename FilePositionType &gt; </div>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>/tmp/tmp.iS0xscHoW7/openPMD-api/include/openPMD/backend/<a class="el" href="_writable_8hpp_source.html">Writable.hpp</a></li>
-<li>/tmp/tmp.iS0xscHoW7/openPMD-api/include/openPMD/IO/<a class="el" href="_abstract_i_o_handler_impl_common_8hpp_source.html">AbstractIOHandlerImplCommon.hpp</a></li>
+<li>/tmp/tmp.7iNmvGSbic/openPMD-api/include/openPMD/backend/<a class="el" href="_writable_8hpp_source.html">Writable.hpp</a></li>
+<li>/tmp/tmp.7iNmvGSbic/openPMD-api/include/openPMD/IO/<a class="el" href="_abstract_i_o_handler_impl_common_8hpp_source.html">AbstractIOHandlerImplCommon.hpp</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

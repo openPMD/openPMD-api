@@ -1,0 +1,6 @@
+<map id="openPMD::Error" name="openPMD::Error">
+<area shape="rect" id="node1" title="Base class for all openPMD&#45;specific error types." alt="" coords="160,80,283,107"/>
+<area shape="rect" id="node3" href="$classopen_p_m_d_1_1error_1_1_operation_unsupported_in_backend.html" title="An operation was requested that is not supported in a specific backend." alt="" coords="5,155,200,196"/>
+<area shape="rect" id="node4" href="$classopen_p_m_d_1_1error_1_1_wrong_a_p_i_usage.html" title="The API was used in an illegal way." alt="" coords="224,162,459,189"/>
+<area shape="rect" id="node2" title="STL class." alt="" coords="164,5,279,32"/>
+</map>

@@ -1,3 +1,10 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structopen_p_m_d_1_1_invalidatable_file.html" title="Wrapper around a shared pointer to:" alt="" coords="5,5,204,32"/>
+<area shape="rect" id="node1" title="STL class." alt="" coords="5,133,120,159"/>
+<area shape="rect" id="node2" href="$classopen_p_m_d_1_1_error.html" title="Base class for all openPMD&#45;specific error types." alt="" coords="176,71,299,98"/>
+<area shape="rect" id="node5" title="STL class." alt="" coords="168,162,307,189"/>
+<area shape="rect" id="node3" href="$classopen_p_m_d_1_1error_1_1_operation_unsupported_in_backend.html" title="An operation was requested that is not supported in a specific backend." alt="" coords="375,5,569,47"/>
+<area shape="rect" id="node4" href="$classopen_p_m_d_1_1error_1_1_wrong_a_p_i_usage.html" title="The API was used in an illegal way." alt="" coords="355,71,589,98"/>
+<area shape="rect" id="node6" href="$classopen_p_m_d_1_1no__such__attribute__error.html" title=" " alt="" coords="368,123,576,164"/>
+<area shape="rect" id="node7" href="$classopen_p_m_d_1_1no__such__file__error.html" title=" " alt="" coords="385,188,559,229"/>
+<area shape="rect" id="node8" href="$classopen_p_m_d_1_1unsupported__data__error.html" title=" " alt="" coords="385,253,559,295"/>
 </map>
