@@ -3,6 +3,32 @@
 Changelog
 =========
 
+0.14.2
+------
+**Date:** 2021-08-17
+
+Various Reader Fixes
+
+This releases fixes regressions in reads, closing files properly, avoiding inefficient parsing and allowing more permissive casts in attribute reads.
+(Inofficial) support for HDF5 vlen string reads has been fixed.
+
+Changes to "0.14.1"
+^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- do not forget to close files #1083
+- reading of vector attributes with only one contained value #1085
+- do not read iterations if they have already been parsed #1089
+- HDF5: fix string vlen attribute reads #1084
+
+Other
+"""""
+
+- ``setAttribute``: reject empty strings #1087
+
+
 0.14.1
 ------
 **Date:** 2021-08-04
