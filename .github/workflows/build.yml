@@ -54,7 +54,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
         path: 'src'
-        ref: '0.14.1'
+        ref: '0.14.2'
 
     - uses: actions/checkout@v2
       with:
@@ -68,7 +68,7 @@ jobs:
     - name: Install cibuildwheel
       run: |
         python -m pip install --upgrade pip setuptools wheel
-        python -m pip install cibuildwheel==2.0.0a2
+        python -m pip install cibuildwheel==2.0.1
 
 #    - name: Download Patch 1/1
 #      uses: suisei-cn/actions-download-file@v1
