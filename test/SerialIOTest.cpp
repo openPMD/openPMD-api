@@ -24,6 +24,7 @@
 #include <list>
 #include <memory>
 #include <numeric>
+#include <stdexcept>
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -89,7 +90,7 @@ TEST_CASE( "adios2_char_portability", "[serial][adios2]" )
         writeAttribute( "/openPMD", std::string( "1.1.0" ) );
         writeAttribute( "/openPMDextension", uint32_t( 0 ) );
         writeAttribute( "/software", std::string( "openPMD-api" ) );
-        writeAttribute( "/softwareVersion", std::string( "0.14.1-dev" ) );
+        writeAttribute( "/softwareVersion", std::string( "0.14.2" ) );
 
         IO.DefineAttribute< uint64_t >(
             "__openPMD_internal/openPMD2_adios2_schema", 20210209 );
@@ -171,11 +172,17 @@ TEST_CASE( "adios2_char_portability", "[serial][adios2]" )
 }
 #endif
 
-void
-write_and_read_many_iterations( std::string const & ext ) {
+void write_and_read_many_iterations(
+    std::string const & ext, bool intermittentFlushes )
+{
     // the idea here is to trigger the maximum allowed number of file handles,
     // e.g., the upper limit in "ulimit -n" (default: often 1024). Once this
     // is reached, files should be closed automatically for open iterations
+
+    // By flushing the series before closing an iteration, we ensure that the
+    // iteration is not dirty before closing
+    // Our flushing logic must not forget to close even if the iteration is
+    // otherwise untouched and needs not be flushed.
     unsigned int nIterations = auxiliary::getEnvNum( "OPENPMD_TEST_NFILES_MAX", 1030 );
     std::string filename = "../samples/many_iterations/many_iterations_%T." + ext;
 
@@ -189,8 +196,12 @@ write_and_read_many_iterations( std::string const & ext ) {
             // std::cout << "Putting iteration " << i << std::endl;
             Iteration it = write.iterations[i];
             auto E_x = it.meshes["E"]["x"];
-            E_x.resetDataset(ds);
-            E_x.storeChunk(data, {0}, {10});
+            E_x.resetDataset( ds );
+            E_x.storeChunk( data, { 0 }, { 10 } );
+            if( intermittentFlushes )
+            {
+                write.flush();
+            }
             it.close();
         }
         // ~Series intentionally not yet called
@@ -201,8 +212,12 @@ write_and_read_many_iterations( std::string const & ext ) {
             iteration.second.open();
             // std::cout << "Reading iteration " << iteration.first <<
             // std::endl;
-            auto E_x = iteration.second.meshes["E"]["x"];
-            auto chunk = E_x.loadChunk<float>({0}, {10});
+            auto E_x = iteration.second.meshes[ "E" ][ "x" ];
+            auto chunk = E_x.loadChunk< float >( { 0 }, { 10 } );
+            if( intermittentFlushes )
+            {
+                read.flush();
+            }
             iteration.second.close();
 
             auto array = chunk.get();
@@ -218,11 +233,13 @@ write_and_read_many_iterations( std::string const & ext ) {
 
 TEST_CASE( "write_and_read_many_iterations", "[serial]" )
 {
+    bool intermittentFlushes = false;
     if( auxiliary::directory_exists( "../samples/many_iterations" ) )
         auxiliary::remove_directory( "../samples/many_iterations" );
     for( auto const & t : testedFileExtensions() )
     {
-        write_and_read_many_iterations( t );
+        write_and_read_many_iterations( t, intermittentFlushes );
+        intermittentFlushes = !intermittentFlushes;
     }
 }
 
@@ -1769,6 +1786,7 @@ void bool_test(const std::string & backend)
     {
         Series o = Series("../samples/serial_bool." + backend, Access::CREATE);
 
+        REQUIRE_THROWS_AS(o.setAuthor(""), std::runtime_error);
         o.setAttribute("Bool attribute (true)", true);
         o.setAttribute("Bool attribute (false)", false);
     }

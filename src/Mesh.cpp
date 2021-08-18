@@ -318,10 +318,8 @@ Mesh::read()
     aRead.name = "axisLabels";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush();
-    if( *aRead.dtype == DT::VEC_STRING )
+    if( *aRead.dtype == DT::VEC_STRING || *aRead.dtype == DT::STRING)
         setAxisLabels(Attribute(*aRead.resource).get< std::vector< std::string > >());
-    else if( *aRead.dtype == DT::STRING )
-        setAxisLabels({Attribute(*aRead.resource).get< std::string >()});
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'axisLabels'");
 
@@ -329,24 +327,18 @@ Mesh::read()
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush();
     Attribute a = Attribute(*aRead.resource);
-    if( *aRead.dtype == DT::VEC_FLOAT )
+    if( *aRead.dtype == DT::VEC_FLOAT || *aRead.dtype == DT::FLOAT )
         setGridSpacing(a.get< std::vector< float > >());
-    else if( *aRead.dtype == DT::FLOAT )
-        setGridSpacing(std::vector< float >({a.get< float >()}));
-    else if( *aRead.dtype == DT::VEC_DOUBLE )
+    else if( *aRead.dtype == DT::VEC_DOUBLE || *aRead.dtype == DT::DOUBLE )
         setGridSpacing(a.get< std::vector< double > >());
-    else if( *aRead.dtype == DT::DOUBLE )
-        setGridSpacing(std::vector< double >({a.get< double >()}));
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'gridSpacing'");
 
     aRead.name = "gridGlobalOffset";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush();
-    if( *aRead.dtype == DT::VEC_DOUBLE )
+    if( *aRead.dtype == DT::VEC_DOUBLE || *aRead.dtype == DT::DOUBLE )
         setGridGlobalOffset(Attribute(*aRead.resource).get< std::vector< double > >());
-    else if( *aRead.dtype == DT::DOUBLE )
-        setGridGlobalOffset({Attribute(*aRead.resource).get< double >()});
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'gridGlobalOffset'");
 
