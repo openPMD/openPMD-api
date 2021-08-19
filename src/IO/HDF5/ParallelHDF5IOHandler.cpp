@@ -40,7 +40,7 @@ namespace openPMD
 #   endif
 
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(
-    std::string path, Access at, MPI_Comm comm, nlohmann::json config )
+    std::string path, Access at, MPI_Comm comm, json::TracingJSON config )
         : AbstractIOHandler(std::move(path), at, comm),
           m_impl{new ParallelHDF5IOHandlerImpl(this, comm, std::move(config))}
 { }
@@ -54,7 +54,7 @@ ParallelHDF5IOHandler::flush()
 }
 
 ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
-    AbstractIOHandler* handler, MPI_Comm comm, nlohmann::json config )
+    AbstractIOHandler* handler, MPI_Comm comm, json::TracingJSON config )
         : HDF5IOHandlerImpl{handler, std::move(config)},
           m_mpiComm{comm},
           m_mpiInfo{MPI_INFO_NULL} /* MPI 3.0+: MPI_INFO_ENV */

@@ -39,7 +39,7 @@ namespace openPMD
     class HDF5IOHandlerImpl : public AbstractIOHandlerImpl
     {
     public:
-        HDF5IOHandlerImpl(AbstractIOHandler*, nlohmann::json config);
+        HDF5IOHandlerImpl(AbstractIOHandler*, json::TracingJSON config);
         ~HDF5IOHandlerImpl() override;
 
         void createFile(Writable*, Parameter< Operation::CREATE_FILE > const&) override;

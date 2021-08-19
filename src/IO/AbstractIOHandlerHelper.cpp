@@ -34,12 +34,12 @@ namespace openPMD
 #if openPMD_HAVE_MPI
     template<>
     std::shared_ptr< AbstractIOHandler >
-    createIOHandler< nlohmann::json >(
+    createIOHandler< json::TracingJSON >(
         std::string path,
         Access access,
         Format format,
         MPI_Comm comm,
-        nlohmann::json options )
+        json::TracingJSON options )
     {
         (void) options;
         switch( format )
@@ -71,11 +71,11 @@ namespace openPMD
 
     template<>
     std::shared_ptr< AbstractIOHandler >
-    createIOHandler< nlohmann::json >(
+    createIOHandler< json::TracingJSON >(
         std::string path,
         Access access,
         Format format,
-        nlohmann::json options )
+        json::TracingJSON options )
     {
         (void) options;
         switch( format )
@@ -112,6 +112,9 @@ namespace openPMD
     createIOHandler( std::string path, Access access, Format format )
     {
         return createIOHandler(
-            std::move( path ), access, format, nlohmann::json::object() );
+            std::move( path ),
+            access,
+            format,
+            json::TracingJSON( nlohmann::json::object() ));
     }
 } // namespace openPMD

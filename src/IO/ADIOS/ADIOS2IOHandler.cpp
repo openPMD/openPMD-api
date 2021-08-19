@@ -67,7 +67,7 @@ namespace openPMD
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     AbstractIOHandler * handler,
     MPI_Comm communicator,
-    nlohmann::json cfg,
+    json::TracingJSON cfg,
     std::string engineType )
     : AbstractIOHandlerImplCommon( handler )
     , m_ADIOS{ communicator, ADIOS2_DEBUG_MODE }
@@ -80,7 +80,7 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
 
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     AbstractIOHandler * handler,
-    nlohmann::json cfg,
+    json::TracingJSON cfg,
     std::string engineType )
     : AbstractIOHandlerImplCommon( handler )
     , m_ADIOS{ ADIOS2_DEBUG_MODE }
@@ -120,11 +120,11 @@ ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
 }
 
 void
-ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
+ADIOS2IOHandlerImpl::init( json::TracingJSON cfg )
 {
-    if( cfg.contains( "adios2" ) )
+    if( cfg.json().contains( "adios2" ) )
     {
-        m_config = std::move( cfg[ "adios2" ] );
+        m_config = cfg[ "adios2" ];
 
         if( m_config.json().contains( "schema" ) )
         {
@@ -2915,7 +2915,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     openPMD::Access at,
     MPI_Comm comm,
-    nlohmann::json options,
+    json::TracingJSON options,
     std::string engineType )
     : AbstractIOHandler( std::move( path ), at, comm )
     , m_impl{ this, comm, std::move( options ), std::move( engineType ) }
@@ -2927,7 +2927,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     Access at,
-    nlohmann::json options,
+    json::TracingJSON options,
     std::string engineType )
     : AbstractIOHandler( std::move( path ), at )
     , m_impl{ this, std::move( options ), std::move( engineType ) }
@@ -2947,7 +2947,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     Access at,
     MPI_Comm comm,
-    nlohmann::json,
+    json::TracingJSON,
     std::string )
     : AbstractIOHandler( std::move( path ), at, comm )
 {
@@ -2958,7 +2958,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     Access at,
-    nlohmann::json,
+    json::TracingJSON,
     std::string )
     : AbstractIOHandler( std::move( path ), at )
 {

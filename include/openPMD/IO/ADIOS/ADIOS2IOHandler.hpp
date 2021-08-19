@@ -130,14 +130,14 @@ public:
     ADIOS2IOHandlerImpl(
         AbstractIOHandler *,
         MPI_Comm,
-        nlohmann::json config,
+        json::TracingJSON config,
         std::string engineType );
 
 #endif // openPMD_HAVE_MPI
 
     explicit ADIOS2IOHandlerImpl(
         AbstractIOHandler *,
-        nlohmann::json config,
+        json::TracingJSON config,
         std::string engineType );
 
 
@@ -281,7 +281,7 @@ private:
     static json::TracingJSON nullvalue;
 
     void
-    init( nlohmann::json config );
+    init( json::TracingJSON config );
 
     template< typename Key >
     json::TracingJSON
@@ -1398,7 +1398,7 @@ public:
         std::string path,
         Access,
         MPI_Comm,
-        nlohmann::json options,
+        json::TracingJSON options,
         std::string engineType );
 
 #endif
@@ -1406,7 +1406,7 @@ public:
     ADIOS2IOHandler(
         std::string path,
         Access,
-        nlohmann::json options,
+        json::TracingJSON options,
         std::string engineType );
 
     std::string backendName() const override { return "ADIOS2"; }

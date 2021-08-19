@@ -21,9 +21,8 @@
 #pragma once
 
 #include "openPMD/config.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
-
-#include <nlohmann/json.hpp>
 
 #include <future>
 #include <memory>
@@ -39,7 +38,7 @@ namespace openPMD
     public:
     #if openPMD_HAVE_MPI
         ParallelHDF5IOHandler(
-            std::string path, Access, MPI_Comm, nlohmann::json config);
+            std::string path, Access, MPI_Comm, json::TracingJSON config);
     #else
         ParallelHDF5IOHandler(std::string path, Access, nlohmann::json config);
     #endif

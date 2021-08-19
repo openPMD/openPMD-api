@@ -1458,21 +1458,32 @@ void Series::openIteration( uint64_t index, Iteration iteration )
 
 namespace
 {
-template< typename T >
-void getJsonOption(
-    nlohmann::json const & config, std::string const & key, T & dest )
-{
-    if( config.contains( key ) )
+    template< typename From, typename Dest = From >
+    void getJsonOption(
+        json::TracingJSON & config, std::string const & key, Dest & dest )
     {
-        dest = config.at( key ).get< T >();
+        if( config.json().contains( key ) )
+        {
+            dest = config[ key ].json().get< From >();
+        }
     }
-}
 
-void parseJsonOptions(
-    internal::SeriesData & series, nlohmann::json const & options )
-{
-    getJsonOption( options, "defer_iteration_parsing", series.m_parseLazily );
-}
+    template< typename Dest = std::string >
+    void getJsonOptionLowerCase(
+        json::TracingJSON & config, std::string const & key, Dest & dest )
+    {
+        if( config.json().contains( key ) )
+        {
+            dest = json::asLowerCaseStringDynamic( config[ key ].json() );
+        }
+    }
+
+    void parseJsonOptions(
+        internal::SeriesData & series, json::TracingJSON & options )
+    {
+        getJsonOption< bool >(
+            options, "defer_iteration_parsing", series.m_parseLazily );
+    }
 }
 
 namespace internal
@@ -1531,7 +1542,7 @@ Series::Series(
 {
     Attributable::setData( m_series );
     iterations = m_series->iterations;
-    nlohmann::json optionsJson = json::parseOptions(
+    json::TracingJSON optionsJson = json::parseOptions(
         options, comm, /* considerFiles = */ true );
     parseJsonOptions( get(), optionsJson );
     auto input = parseInput( filepath );
@@ -1548,8 +1559,8 @@ Series::Series(
 {
     Attributable::setData( m_series );
     iterations = m_series->iterations;
-    nlohmann::json optionsJson =
-        json::parseOptions( options, /* considerFiles = */ true );
+    json::TracingJSON optionsJson = json::parseOptions(
+        options, /* considerFiles = */ true );
     parseJsonOptions( get(), optionsJson );
     auto input = parseInput( filepath );
     auto handler = createIOHandler(

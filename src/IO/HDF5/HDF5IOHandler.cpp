@@ -53,7 +53,7 @@ namespace openPMD
 #   endif
 
 HDF5IOHandlerImpl::HDF5IOHandlerImpl(
-    AbstractIOHandler* handler, nlohmann::json config)
+    AbstractIOHandler* handler, json::TracingJSON config)
         : AbstractIOHandlerImpl(handler),
           m_datasetTransferProperty{H5P_DEFAULT},
           m_fileAccessProperty{H5P_DEFAULT},
@@ -87,9 +87,9 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
 
     m_chunks = auxiliary::getEnvString( "OPENPMD_HDF5_CHUNKS", "auto" );
     // JSON option can overwrite env option:
-    if( config.contains( "hdf5" ) )
+    if( config.json().contains( "hdf5" ) )
     {
-        m_config = std::move( config[ "hdf5" ] );
+        m_config = config[ "hdf5" ];
 
         // check for global dataset configs
         if( m_config.json().contains( "dataset" ) )
@@ -2019,7 +2019,7 @@ HDF5IOHandlerImpl::getFile( Writable * writable )
 #endif
 
 #if openPMD_HAVE_HDF5
-HDF5IOHandler::HDF5IOHandler(std::string path, Access at, nlohmann::json config)
+HDF5IOHandler::HDF5IOHandler(std::string path, Access at, json::TracingJSON config)
         : AbstractIOHandler(std::move(path), at),
           m_impl{new HDF5IOHandlerImpl(this, std::move(config))}
 { }
@@ -2032,7 +2032,7 @@ HDF5IOHandler::flush()
     return m_impl->flush();
 }
 #else
-HDF5IOHandler::HDF5IOHandler(std::string path, Access at, nlohmann::json /* config */)
+HDF5IOHandler::HDF5IOHandler(std::string path, Access at, json::TracingJSON /* config */)
         : AbstractIOHandler(std::move(path), at)
 {
     throw std::runtime_error("openPMD-api built without HDF5 support");
