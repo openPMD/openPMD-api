@@ -25,6 +25,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 #include "openPMD/IO/Format.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/ReadIterations.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/version.hpp"
@@ -87,7 +88,7 @@ struct SeriesInterface::ParsedInput
     IterationEncoding iterationEncoding;
     std::string filenamePrefix;
     std::string filenamePostfix;
-    int filenamePadding;
+    int filenamePadding = -1;
 };  //ParsedInput
 
 SeriesInterface::SeriesInterface(
@@ -280,8 +281,20 @@ SeriesInterface::setIterationEncoding(IterationEncoding ie)
     switch( ie )
     {
         case IterationEncoding::fileBased:
-            setIterationFormat(series.m_name);
-            setAttribute("iterationEncoding", std::string("fileBased"));
+            setIterationFormat( series.m_name );
+            setAttribute( "iterationEncoding", std::string( "fileBased" ) );
+            // This checks that the name contains the expansion pattern
+            // (e.g. %T) and parses it
+            if( series.m_filenamePadding < 0 )
+            {
+                if( !reparseExpansionPattern( series.m_name ) )
+                {
+                    throw error::WrongAPIUsage(
+                        "For fileBased formats the iteration expansion pattern "
+                        "%T must "
+                        "be included in the file name" );
+                }
+            }
             break;
         case IterationEncoding::groupBased:
             setIterationFormat(BASEPATH);
@@ -330,8 +343,27 @@ SeriesInterface::setName(std::string const& n)
     if( written() )
         throw std::runtime_error("A files name can not (yet) be changed after it has been written.");
 
-    if( series.m_iterationEncoding == IterationEncoding::fileBased && !auxiliary::contains(series.m_name, "%T") )
-            throw std::runtime_error("For fileBased formats the iteration regex %T must be included in the file name");
+    if( series.m_iterationEncoding == IterationEncoding::fileBased )
+    {
+        // If the filename specifies an expansion pattern, set it.
+        // If not, check if one is already active.
+        // Our filename parser expects an extension, so just add any and ignore
+        // the result for that
+        if( hasExpansionPattern( n + ".json" ) )
+        {
+            reparseExpansionPattern( n + ".json" );
+        }
+        else if( series.m_filenamePadding < 0 )
+        {
+            throw error::WrongAPIUsage(
+                "For fileBased formats the iteration expansion pattern %T must "
+                "be included in the file name" );
+        }
+        else
+        {
+            // no-op, keep the old pattern and set the new name
+        }
+    }
 
     series.m_name = n;
     dirty() = true;
@@ -416,6 +448,27 @@ SeriesInterface::parseInput(std::string filepath)
     input->name = cleanFilename(input->name, input->format);
 
     return input;
+}
+
+bool SeriesInterface::hasExpansionPattern( std::string filenameWithExtension )
+{
+    auto input = parseInput( std::move( filenameWithExtension ) );
+    return input->iterationEncoding == IterationEncoding::fileBased;
+}
+
+bool SeriesInterface::reparseExpansionPattern(
+    std::string filenameWithExtension )
+{
+    auto input = parseInput( std::move( filenameWithExtension ) );
+    if( input->iterationEncoding != IterationEncoding::fileBased )
+    {
+        return false;
+    }
+    auto & series = get();
+    series.m_filenamePrefix = input->filenamePrefix;
+    series.m_filenamePostfix = input->filenamePostfix;
+    series.m_filenamePadding = input->filenamePadding;
+    return true;
 }
 
 void SeriesInterface::init(
@@ -547,18 +600,18 @@ SeriesInterface::flushFileBased( iterations_iterator begin, iterations_iterator 
     if( IOHandler()->m_frontendAccess == Access::READ_ONLY )
         for( auto it = begin; it != end; ++it )
         {
+            // Phase 1
             switch( openIterationIfDirty( it->first, it->second ) )
             {
                 using IO = IterationOpened;
-            case IO::RemainsClosed:
-                continue;
             case IO::HasBeenOpened:
-                // continue below
+                it->second.flush();
+                break;
+            case IO::RemainsClosed:
                 break;
             }
 
-            it->second.flush();
-
+            // Phase 2
             if( *it->second.m_closed ==
                 Iteration::CloseStatus::ClosedInFrontend )
             {
@@ -567,6 +620,8 @@ SeriesInterface::flushFileBased( iterations_iterator begin, iterations_iterator 
                     IOTask( &it->second, std::move( fClose ) ) );
                 *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
             }
+
+            // Phase 3
             IOHandler()->flush();
         }
     else
@@ -574,31 +629,33 @@ SeriesInterface::flushFileBased( iterations_iterator begin, iterations_iterator 
         bool allDirty = dirty();
         for( auto it = begin; it != end; ++it )
         {
+            // Phase 1
             switch( openIterationIfDirty( it->first, it->second ) )
             {
                 using IO = IterationOpened;
+            case IO::HasBeenOpened: {
+                /* as there is only one series,
+                 * emulate the file belonging to each iteration as not yet
+                 * written
+                 */
+                written() = false;
+                series.iterations.written() = false;
+
+                dirty() |= it->second.dirty();
+                std::string filename = iterationFilename( it->first );
+                it->second.flushFileBased( filename, it->first );
+
+                series.iterations.flush(
+                    auxiliary::replace_first( basePath(), "%T/", "" ) );
+
+                flushAttributes();
+                break;
+            }
             case IO::RemainsClosed:
-                continue;
-            case IO::HasBeenOpened:
-                // continue below
                 break;
             }
 
-            /* as there is only one series,
-             * emulate the file belonging to each iteration as not yet written
-             */
-            written() = false;
-            series.iterations.written() = false;
-
-            dirty() |= it->second.dirty();
-            std::string filename = iterationFilename( it->first );
-            it->second.flushFileBased( filename, it->first );
-
-            series.iterations.flush(
-                auxiliary::replace_first( basePath(), "%T/", "" ) );
-
-            flushAttributes();
-
+            // Phase 2
             if( *it->second.m_closed ==
                 Iteration::CloseStatus::ClosedInFrontend )
             {
@@ -608,6 +665,7 @@ SeriesInterface::flushFileBased( iterations_iterator begin, iterations_iterator 
                 *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
             }
 
+            // Phase 3
             IOHandler()->flush();
 
             /* reset the dirty bit for every iteration (i.e. file)
@@ -625,23 +683,26 @@ SeriesInterface::flushGorVBased( iterations_iterator begin, iterations_iterator 
     if( IOHandler()->m_frontendAccess == Access::READ_ONLY )
         for( auto it = begin; it != end; ++it )
         {
+            // Phase 1
             switch( openIterationIfDirty( it->first, it->second ) )
             {
                 using IO = IterationOpened;
-            case IO::RemainsClosed:
-                continue;
             case IO::HasBeenOpened:
-                // continue below
+                it->second.flush();
+                break;
+            case IO::RemainsClosed:
                 break;
             }
 
-            it->second.flush();
+            // Phase 2
             if( *it->second.m_closed ==
                 Iteration::CloseStatus::ClosedInFrontend )
             {
                 // the iteration has no dedicated file in group-based mode
                 *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
             }
+
+            // Phase 3
             IOHandler()->flush();
         }
     else
@@ -654,26 +715,23 @@ SeriesInterface::flushGorVBased( iterations_iterator begin, iterations_iterator 
             IOHandler()->enqueue(IOTask(this, fCreate));
         }
 
-        series.iterations.flush(auxiliary::replace_first(basePath(), "%T/", ""));
+        series.iterations.flush(
+            auxiliary::replace_first( basePath(), "%T/", "" ) );
 
         for( auto it = begin; it != end; ++it )
         {
+            // Phase 1
             switch( openIterationIfDirty( it->first, it->second ) )
             {
                 using IO = IterationOpened;
-            case IO::RemainsClosed:
-                continue;
             case IO::HasBeenOpened:
-                // continue below
-                break;
-            }
-            if( !it->second.written() )
-            {
-                it->second.parent() = getWritable( &series.iterations );
-            }
-            switch( iterationEncoding() )
-            {
-                using IE = IterationEncoding;
+                if( !it->second.written() )
+                {
+                    it->second.parent() = getWritable( &series.iterations );
+                }
+                switch( iterationEncoding() )
+                {
+                    using IE = IterationEncoding;
                 case IE::groupBased:
                     it->second.flushGroupBased( it->first );
                     break;
@@ -683,8 +741,15 @@ SeriesInterface::flushGorVBased( iterations_iterator begin, iterations_iterator 
                 default:
                     throw std::runtime_error(
                         "[Series] Internal control flow error" );
+                }
+                break;
+            case IO::RemainsClosed:
+                break;
             }
-            if( *it->second.m_closed == Iteration::CloseStatus::ClosedInFrontend )
+
+            // Phase 2
+            if( *it->second.m_closed ==
+                Iteration::CloseStatus::ClosedInFrontend )
             {
                 // the iteration has no dedicated file in group-based mode
                 *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
@@ -957,13 +1022,15 @@ SeriesInterface::readGorVBased( bool do_init )
 
     auto readSingleIteration =
         [&series, &pOpen, this]
-        (uint64_t index, std::string path, bool guardClosed )
+        (uint64_t index, std::string path, bool guardAgainstRereading )
     {
         if( series.iterations.contains( index ) )
         {
             // maybe re-read
             auto & i = series.iterations.at( index );
-            if( guardClosed && i.closedByWriter() )
+            // i.written(): the iteration has already been parsed
+            // reparsing is not needed
+            if( guardAgainstRereading && i.written() )
             {
                 return;
             }

@@ -84,7 +84,7 @@ public:
     std::string m_name;
     std::string m_filenamePrefix;
     std::string m_filenamePostfix;
-    int m_filenamePadding;
+    int m_filenamePadding = -1;
     IterationEncoding m_iterationEncoding{};
     Format m_format;
     /**
@@ -346,6 +346,8 @@ OPENPMD_private:
         }    }
 
     std::unique_ptr< ParsedInput > parseInput(std::string);
+    bool hasExpansionPattern( std::string filenameWithExtension );
+    bool reparseExpansionPattern( std::string filenameWithExtension );
     void init(std::shared_ptr< AbstractIOHandler >, std::unique_ptr< ParsedInput >);
     void initDefaults( IterationEncoding );
     /**

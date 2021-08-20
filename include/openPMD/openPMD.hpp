@@ -27,6 +27,7 @@ namespace openPMD {}
 // IWYU pragma: begin_exports
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Datatype.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Iteration.hpp"
 #include "openPMD/Mesh.hpp"

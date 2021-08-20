@@ -688,14 +688,14 @@ TEST_CASE( "structure_test", "[core]" )
 
 TEST_CASE( "wrapper_test", "[core]" )
 {
-    Series o = Series("./new_openpmd_output.json", Access::CREATE);
+    Series o = Series("./new_openpmd_output_%T.json", Access::CREATE);
 
     o.setOpenPMDextension(42);
     o.setIterationEncoding(IterationEncoding::fileBased);
     Series copy = o;
     REQUIRE(copy.openPMDextension() == 42);
     REQUIRE(copy.iterationEncoding() == IterationEncoding::fileBased);
-    REQUIRE(copy.name() == "new_openpmd_output");
+    REQUIRE(copy.name() == "new_openpmd_output_%T");
     copy.setOpenPMD("1.2.0");
     copy.setIterationEncoding(IterationEncoding::groupBased);
     copy.setName("other_name");
@@ -948,5 +948,75 @@ TEST_CASE( "load_chunk_wrong_datatype", "[core]" )
                 .loadChunk< double >( { 0 }, { 10 } ),
             Catch::Equals(
                 "Type conversion during chunk loading not yet implemented" ) );
+    }
+}
+
+TEST_CASE( "DoConvert_single_value_to_vector", "[core]" )
+{
+#if openPMD_HAVE_ADIOS2
+    {
+        Series write( "../samples/writeSingleMesh.bp", Access::CREATE );
+        auto E_x = write.iterations[ 0 ].meshes[ "E" ][ "x" ];
+        E_x.resetDataset( { Datatype::INT, { 10 } } );
+        E_x.makeConstant( 10 );
+    }
+    {
+        Series read( "../samples/writeSingleMesh.bp", Access::READ_ONLY );
+        auto E = read.iterations[ 0 ].meshes[ "E" ];
+        REQUIRE( E.axisLabels() == std::vector< std::string >{ "x" } );
+    }
+#endif
+    {
+        char val = 'x';
+        Attribute attr{ val };
+
+        // the following conversions should be possible
+        REQUIRE( attr.get< char >() == 'x' ); // no conversion
+        REQUIRE( attr.get< unsigned char >() == 'x' );
+        REQUIRE( attr.get< signed char >() == 'x' );
+        // all the previous ones, but make them single-element vectors now
+        REQUIRE(
+            attr.get< std::vector< char > >() == std::vector< char >{ 'x' } );
+        REQUIRE(
+            attr.get< std::vector< unsigned char > >() ==
+            std::vector< unsigned char >{ 'x' } );
+        REQUIRE(
+            attr.get< std::vector< signed char > >() ==
+            std::vector< signed char >{ 'x' } );
+    }
+    {
+        std::array< double, 7 > array{{ 0, 1, 2, 3, 4, 5, 6 }};
+        Attribute attr{ array };
+
+        // the following conversions should be possible
+        REQUIRE( attr.get< std::array< double, 7 > >() == array );
+        // we don't need array-to-array conversions,
+        // so array< int, 7 > cannot be loaded here
+        REQUIRE(
+            attr.get< std::vector< double > >() ==
+            std::vector< double >{ 0, 1, 2, 3, 4, 5, 6 } );
+        REQUIRE(
+            attr.get< std::vector< int > >() ==
+            std::vector< int >{ 0, 1, 2, 3, 4, 5, 6 } );
+    }
+    {
+        std::vector< double > vector{ 0, 1, 2, 3, 4, 5, 6 };
+        std::array< double, 7 > arraydouble{{ 0, 1, 2, 3, 4, 5, 6 }};
+        std::array< int, 7 > arrayint{{ 0, 1, 2, 3, 4, 5, 6 }};
+        Attribute attr{ vector };
+
+        // the following conversions should be possible
+        REQUIRE( attr.get< std::array< double, 7 > >() == arraydouble );
+        REQUIRE( attr.get< std::array< int, 7 > >() == arrayint );
+        REQUIRE_THROWS_WITH(
+            ( attr.get< std::array< int, 8 > >() ),
+            Catch::Equals( "getCast: no vector to array conversion possible "
+                           "(wrong requested array size)." ) );
+        REQUIRE(
+            attr.get< std::vector< double > >() ==
+            std::vector< double >{ 0, 1, 2, 3, 4, 5, 6 } );
+        REQUIRE(
+            attr.get< std::vector< int > >() ==
+            std::vector< int >{ 0, 1, 2, 3, 4, 5, 6 } );
     }
 }

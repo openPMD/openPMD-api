@@ -19,6 +19,18 @@ if(POLICY CMP0074)
 endif()
 
 
+# No in-Source builds #########################################################
+#
+# In-source builds clutter up the source directory and lead to mistakes with
+# generated includes
+if(openPMD_SOURCE_DIR STREQUAL openPMD_BINARY_DIR)
+  message(FATAL_ERROR "In-source builds are not possible. "
+          "Please remove the CMakeFiles/ directory and CMakeCache.txt file. "
+          "Then run CMake in a temporary build directory. "
+          "Learn more: https://hsf-training.github.io/hsf-training-cmake-webpage/02-building/index.html")
+endif()
+
+
 # Project structure ###########################################################
 #
 # temporary build directories
@@ -400,6 +412,7 @@ set(CORE_SOURCE
         src/ChunkInfo.cpp
         src/Dataset.cpp
         src/Datatype.cpp
+        src/Error.cpp
         src/Format.cpp
         src/Iteration.cpp
         src/IterationEncoding.cpp
@@ -439,10 +452,12 @@ set(IO_SOURCE
         src/IO/ADIOS/ADIOS2PreloadAttributes.cpp
         src/IO/InvalidatableFile.cpp)
 set(IO_ADIOS1_SEQUENTIAL_SOURCE
+        src/Error.cpp
         src/auxiliary/Filesystem.cpp
         src/ChunkInfo.cpp
         src/IO/ADIOS/ADIOS1IOHandler.cpp)
 set(IO_ADIOS1_SOURCE
+        src/Error.cpp
         src/auxiliary/Filesystem.cpp
         src/ChunkInfo.cpp
         src/IO/ADIOS/ParallelADIOS1IOHandler.cpp)
@@ -691,6 +706,7 @@ if(openPMD_HAVE_PYTHON)
         src/binding/python/Container.cpp
         src/binding/python/Dataset.cpp
         src/binding/python/Datatype.cpp
+        src/binding/python/Error.cpp
         src/binding/python/Helper.cpp
         src/binding/python/Iteration.cpp
         src/binding/python/IterationEncoding.cpp
