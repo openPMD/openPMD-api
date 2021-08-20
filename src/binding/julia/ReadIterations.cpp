@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-void define_julia_ReadIterations(jlcxx::Module &mod) {
+void define_julia_ReadIterations(jlcxx::Module & /*mod*/) {
   // TODO auto type = mod.add_type<ReadIterations>("ReadIterations");
   // TODO: SeriesIterator
   // TODO: begin, end
