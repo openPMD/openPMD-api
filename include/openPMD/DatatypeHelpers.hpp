@@ -28,13 +28,6 @@
 
 namespace openPMD
 {
-
-#if defined( _MSC_VER ) && !defined( __INTEL_COMPILER ) && !defined( __clang__ )
-#define OPENPMD_TEMPLATE_OPERATOR operator
-#else
-#define OPENPMD_TEMPLATE_OPERATOR template operator
-#endif
-
 namespace detail
 {
 // std::void_t is C++17
@@ -56,7 +49,7 @@ struct HasErrorMessageMember
 template< typename T >
 struct HasErrorMessageMember<
     T,
-    void_t< decltype( std::string( std::declval< T >().errorMsg ) ) > >
+    void_t< decltype( std::string( T::errorMsg ) ) > >
 {
     static constexpr bool value = true;
 };
@@ -81,14 +74,14 @@ template<
     typename... Args >
 struct CallUndefinedDatatype
 {
-    static ReturnType call( Action action, Args &&... )
+    static ReturnType call( Args &&... )
     {
         static_assert(
             HasErrorMessageMember< Action >::value,
             "[switchType] Action needs either an errorMsg member of type "
             "std::string or operator()<unsigned>() overloads." );
         throw std::runtime_error(
-            "[" + std::string( action.errorMsg ) + "] Unknown Datatype." );
+            "[" + std::string( Action::errorMsg ) + "] Unknown Datatype." );
     }
 };
 
@@ -102,10 +95,9 @@ struct CallUndefinedDatatype<
     typename std::enable_if< !HasErrorMessageMember< Action >::value >::type,
     Args... >
 {
-    static ReturnType call( Action action, Args &&... args )
+    static ReturnType call( Args &&... args )
     {
-        return action.OPENPMD_TEMPLATE_OPERATOR()< n >(
-            std::forward< Args >( args )... );
+        return Action::template call< n >( std::forward< Args >( args )... );
     }
 };
 }
@@ -113,163 +105,145 @@ struct CallUndefinedDatatype<
 /**
  * Generalizes switching over an openPMD datatype.
  *
- * Will call the functor passed
- * to it using the C++ internal datatype corresponding to the openPMD datatype
- * as template parameter for the templated <operator()>().
+ * Will call the function template found at Action::call< T >(), instantiating T
+ * with the C++ internal datatype corresponding to the openPMD datatype.
  *
- * @tparam ReturnType The functor's return type.
- * @tparam Action The functor's type.
- * @tparam Args The functors argument types.
+ * @tparam ReturnType The function template's return type.
+ * @tparam Action The struct containing the function template.
+ * @tparam Args The function template's argument types.
  * @param dt The openPMD datatype.
- * @param action The functor.
- * @param args The functor's arguments.
- * @return The return value of the functor, when calling its <operator()>() with
- * the passed arguments and the template parameter type corresponding to the
- * openPMD type.
+ * @param args The function template's arguments.
+ * @return Passes on the result of invoking the function template with the given
+ *     arguments and with the template parameter specified by dt.
  */
 template< typename Action, typename... Args >
-auto switchType( Datatype dt, Action action, Args &&... args ) -> decltype(
-    action.OPENPMD_TEMPLATE_OPERATOR() < char >
-    ( std::forward< Args >( args )... ) )
+auto switchType( Datatype dt, Args &&... args )
+    -> decltype( Action::template call< char >(
+        std::forward< Args >( args )... ) )
 {
-    using ReturnType = decltype(
-        action.OPENPMD_TEMPLATE_OPERATOR() < char >
-        ( std::forward< Args >( args )... ) );
+    using ReturnType = decltype( Action::template call< char >(
+        std::forward< Args >( args )... ) );
     switch( dt )
     {
     case Datatype::CHAR:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< char >(
-            std::forward< Args >( args )... );
+        return Action::template call< char >( std::forward< Args >( args )... );
     case Datatype::UCHAR:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned char >(
+        return Action::template call< unsigned char >(
             std::forward< Args >( args )... );
     case Datatype::SHORT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< short >(
+        return Action::template call< short >(
             std::forward< Args >( args )... );
     case Datatype::INT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< int >(
-            std::forward< Args >( args )... );
+        return Action::template call< int >( std::forward< Args >( args )... );
     case Datatype::LONG:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< long >(
-            std::forward< Args >( args )... );
+        return Action::template call< long >( std::forward< Args >( args )... );
     case Datatype::LONGLONG:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< long long >(
+        return Action::template call< long long >(
             std::forward< Args >( args )... );
     case Datatype::USHORT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned short >(
+        return Action::template call< unsigned short >(
             std::forward< Args >( args )... );
     case Datatype::UINT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned int >(
+        return Action::template call< unsigned int >(
             std::forward< Args >( args )... );
     case Datatype::ULONG:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned long >(
+        return Action::template call< unsigned long >(
             std::forward< Args >( args )... );
     case Datatype::ULONGLONG:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned long long >(
+        return Action::template call< unsigned long long >(
             std::forward< Args >( args )... );
     case Datatype::FLOAT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< float >(
+        return Action::template call< float >(
             std::forward< Args >( args )... );
     case Datatype::DOUBLE:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< double >(
+        return Action::template call< double >(
             std::forward< Args >( args )... );
     case Datatype::LONG_DOUBLE:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< long double >(
+        return Action::template call< long double >(
             std::forward< Args >( args )... );
     case Datatype::CFLOAT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< std::complex< float > >(
+        return Action::template call< std::complex< float > >(
             std::forward< Args >( args )... );
     case Datatype::CDOUBLE:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< std::complex< double > >(
+        return Action::template call< std::complex< double > >(
             std::forward< Args >( args )... );
     case Datatype::CLONG_DOUBLE:
-        return action
-            .OPENPMD_TEMPLATE_OPERATOR()< std::complex< long double > >(
-                std::forward< Args >( args )... );
+        return Action::template call< std::complex< long double > >(
+            std::forward< Args >( args )... );
     case Datatype::STRING:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< std::string >(
+        return Action::template call< std::string >(
             std::forward< Args >( args )... );
     case Datatype::VEC_CHAR:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< std::vector< char > >(
+        return Action::template call< std::vector< char > >(
             std::forward< Args >( args )... );
     case Datatype::VEC_SHORT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< std::vector< short > >(
+        return Action::template call< std::vector< short > >(
             std::forward< Args >( args )... );
     case Datatype::VEC_INT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< std::vector< int > >(
+        return Action::template call< std::vector< int > >(
             std::forward< Args >( args )... );
     case Datatype::VEC_LONG:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< std::vector< long > >(
+        return Action::template call< std::vector< long > >(
             std::forward< Args >( args )... );
     case Datatype::VEC_LONGLONG:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< std::vector< long long > >(
+        return Action::template call< std::vector< long long > >(
             std::forward< Args >( args )... );
     case Datatype::VEC_UCHAR:
-        return action
-            .OPENPMD_TEMPLATE_OPERATOR()< std::vector< unsigned char > >(
-                std::forward< Args >( args )... );
+        return Action::template call< std::vector< unsigned char > >(
+            std::forward< Args >( args )... );
     case Datatype::VEC_USHORT:
-        return action
-            .OPENPMD_TEMPLATE_OPERATOR()< std::vector< unsigned short > >(
-                std::forward< Args >( args )... );
+        return Action::template call< std::vector< unsigned short > >(
+            std::forward< Args >( args )... );
     case Datatype::VEC_UINT:
-        return action
-            .OPENPMD_TEMPLATE_OPERATOR()< std::vector< unsigned int > >(
-                std::forward< Args >( args )... );
+        return Action::template call< std::vector< unsigned int > >(
+            std::forward< Args >( args )... );
     case Datatype::VEC_ULONG:
-        return action
-            .OPENPMD_TEMPLATE_OPERATOR()< std::vector< unsigned long > >(
-                std::forward< Args >( args )... );
+        return Action::template call< std::vector< unsigned long > >(
+            std::forward< Args >( args )... );
     case Datatype::VEC_ULONGLONG:
-        return action
-            .OPENPMD_TEMPLATE_OPERATOR()< std::vector< unsigned long long > >(
-                std::forward< Args >( args )... );
+        return Action::template call< std::vector< unsigned long long > >(
+            std::forward< Args >( args )... );
     case Datatype::VEC_FLOAT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< std::vector< float > >(
+        return Action::template call< std::vector< float > >(
             std::forward< Args >( args )... );
     case Datatype::VEC_DOUBLE:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< std::vector< double > >(
+        return Action::template call< std::vector< double > >(
             std::forward< Args >( args )... );
     case Datatype::VEC_LONG_DOUBLE:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< std::vector< long double > >(
+        return Action::template call< std::vector< long double > >(
             std::forward< Args >( args )... );
     case Datatype::VEC_CFLOAT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()<
-            std::vector< std::complex< float > > >(
+        return Action::template call< std::vector< std::complex< float > > >(
             std::forward< Args >( args )... );
     case Datatype::VEC_CDOUBLE:
-        return action.OPENPMD_TEMPLATE_OPERATOR()<
-            std::vector< std::complex< double > > >(
+        return Action::template call< std::vector< std::complex< double > > >(
             std::forward< Args >( args )... );
     case Datatype::VEC_CLONG_DOUBLE:
-        return action.OPENPMD_TEMPLATE_OPERATOR()<
+        return Action::template call<
             std::vector< std::complex< long double > > >(
             std::forward< Args >( args )... );
     case Datatype::VEC_STRING:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< std::vector< std::string > >(
+        return Action::template call< std::vector< std::string > >(
             std::forward< Args >( args )... );
     case Datatype::ARR_DBL_7:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< std::array< double, 7 > >(
+        return Action::template call< std::array< double, 7 > >(
             std::forward< Args >( args )... );
     case Datatype::BOOL:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< bool >(
-            std::forward< Args >( args )... );
+        return Action::template call< bool >( std::forward< Args >( args )... );
     case Datatype::DATATYPE:
         return detail::CallUndefinedDatatype<
             HIGHEST_DATATYPE,
             ReturnType,
             Action,
             void,
-            Args &&... >::
-            call( std::move( action ), std::forward< Args >( args )... );
+            Args &&... >::call( std::forward< Args >( args )... );
     case Datatype::UNDEFINED:
         return detail::CallUndefinedDatatype<
             LOWEST_DATATYPE,
             ReturnType,
             Action,
             void,
-            Args &&... >::
-            call( std::move( action ), std::forward< Args >( args )... );
+            Args &&... >::call( std::forward< Args >( args )... );
     default:
         throw std::runtime_error(
             "Internal error: Encountered unknown datatype (switchType) ->" +
@@ -280,108 +254,95 @@ auto switchType( Datatype dt, Action action, Args &&... args ) -> decltype(
 /**
  * Generalizes switching over an openPMD datatype.
  *
- * Will call the functor passed
- * to it using the C++ internal datatype corresponding to the openPMD datatype
- * as template parameter for the templated <operator()>().
+ * Will call the function template found at Action::call< T >(), instantiating T
+ * with the C++ internal datatype corresponding to the openPMD datatype.
  * Ignores vector and array types.
  *
- * @tparam ReturnType The functor's return type.
- * @tparam Action The functor's type.
- * @tparam Args The functors argument types.
+ * @tparam ReturnType The function template's return type.
+ * @tparam Action The struct containing the function template.
+ * @tparam Args The function template's argument types.
  * @param dt The openPMD datatype.
- * @param action The functor.
- * @param args The functor's arguments.
- * @return The return value of the functor, when calling its <operator()>() with
- * the passed arguments and the template parameter type corresponding to the
- * openPMD type.
+ * @param args The function template's arguments.
+ * @return Passes on the result of invoking the function template with the given
+ *     arguments and with the template parameter specified by dt.
  */
 template< typename Action, typename... Args >
-auto switchNonVectorType( Datatype dt, Action action, Args &&... args )
-    -> decltype(
-        action.OPENPMD_TEMPLATE_OPERATOR() < char >
-        ( std::forward< Args >( args )... ) )
+auto switchNonVectorType( Datatype dt, Args &&... args )
+    -> decltype( Action::template call< char >(
+        std::forward< Args >( args )... ) )
 {
-    using ReturnType = decltype(
-        action.OPENPMD_TEMPLATE_OPERATOR() < char >
-        ( std::forward< Args >( args )... ) );
+    using ReturnType = decltype( Action::template call< char >(
+        std::forward< Args >( args )... ) );
     switch( dt )
     {
     case Datatype::CHAR:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< char >(
-            std::forward< Args >( args )... );
+        return Action::template call< char >( std::forward< Args >( args )... );
     case Datatype::UCHAR:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned char >(
+        return Action::template call< unsigned char >(
             std::forward< Args >( args )... );
     case Datatype::SHORT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< short >(
+        return Action::template call< short >(
             std::forward< Args >( args )... );
     case Datatype::INT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< int >(
-            std::forward< Args >( args )... );
+        return Action::template call< int >( std::forward< Args >( args )... );
     case Datatype::LONG:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< long >(
-            std::forward< Args >( args )... );
+        return Action::template call< long >( std::forward< Args >( args )... );
     case Datatype::LONGLONG:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< long long >(
+        return Action::template call< long long >(
             std::forward< Args >( args )... );
     case Datatype::USHORT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned short >(
+        return Action::template call< unsigned short >(
             std::forward< Args >( args )... );
     case Datatype::UINT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned int >(
+        return Action::template call< unsigned int >(
             std::forward< Args >( args )... );
     case Datatype::ULONG:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned long >(
+        return Action::template call< unsigned long >(
             std::forward< Args >( args )... );
     case Datatype::ULONGLONG:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< unsigned long long >(
+        return Action::template call< unsigned long long >(
             std::forward< Args >( args )... );
     case Datatype::FLOAT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< float >(
+        return Action::template call< float >(
             std::forward< Args >( args )... );
     case Datatype::DOUBLE:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< double >(
+        return Action::template call< double >(
             std::forward< Args >( args )... );
     case Datatype::LONG_DOUBLE:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< long double >(
+        return Action::template call< long double >(
             std::forward< Args >( args )... );
     case Datatype::CFLOAT:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< std::complex< float > >(
+        return Action::template call< std::complex< float > >(
             std::forward< Args >( args )... );
     case Datatype::CDOUBLE:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< std::complex< double > >(
+        return Action::template call< std::complex< double > >(
             std::forward< Args >( args )... );
     case Datatype::CLONG_DOUBLE:
-        return action
-            .OPENPMD_TEMPLATE_OPERATOR()< std::complex< long double > >(
-                std::forward< Args >( args )... );
+        return Action::template call< std::complex< long double > >(
+            std::forward< Args >( args )... );
     case Datatype::STRING:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< std::string >(
+        return Action::template call< std::string >(
             std::forward< Args >( args )... );
     case Datatype::BOOL:
-        return action.OPENPMD_TEMPLATE_OPERATOR()< bool >(
-            std::forward< Args >( args )... );
+        return Action::template call< bool >( std::forward< Args >( args )... );
     case Datatype::DATATYPE:
         return detail::CallUndefinedDatatype<
             HIGHEST_DATATYPE,
             ReturnType,
             Action,
             void,
-            Args &&... >::
-            call( std::move( action ), std::forward< Args >( args )... );
+            Args &&... >::call( std::forward< Args >( args )... );
     case Datatype::UNDEFINED:
         return detail::CallUndefinedDatatype<
             LOWEST_DATATYPE,
             ReturnType,
             Action,
             void,
-            Args &&... >::
-            call( std::move( action ), std::forward< Args >( args )... );
+            Args &&... >::call( std::forward< Args >( args )... );
     default:
         throw std::runtime_error(
             "Internal error: Encountered unknown datatype (switchType) ->" +
             std::to_string( static_cast< int >( dt ) ) );
     }
 }
-#undef OPENPMD_TEMPLATE_OPERATOR
 }

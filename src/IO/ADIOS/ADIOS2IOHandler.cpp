@@ -390,13 +390,8 @@ void ADIOS2IOHandlerImpl::createDataset(
         adios2::Dims const shape( parameters.extent.begin(), parameters.extent.end() );
 
         auto & fileData = getFileData( file, IfFileNotOpen::ThrowError );
-        switchAdios2VariableType(
-            parameters.dtype,
-            detail::VariableDefiner(),
-            fileData.m_IO,
-            varName,
-            operators,
-            shape );
+        switchAdios2VariableType< detail::VariableDefiner >(
+            parameters.dtype, fileData.m_IO, varName, operators, shape );
         fileData.invalidateVariablesMap();
         writable->written = true;
         m_dirty.emplace( file );
@@ -408,8 +403,7 @@ namespace detail
     struct DatasetExtender
     {
         template< typename T, typename... Args >
-        void
-        operator()(
+        static void call(
             adios2::IO & IO,
             std::string const & variable,
             Extent const & newShape )
@@ -430,7 +424,7 @@ namespace detail
             var.SetShape( dims );
         }
 
-        std::string errorMsg = "ADIOS2: extendDataset()";
+        static constexpr char const * errorMsg = "ADIOS2: extendDataset()";
     };
 } // namespace detail
 
@@ -447,9 +441,9 @@ ADIOS2IOHandlerImpl::extendDataset(
         refreshFileFromParent( writable, /* preferParentFile = */ false );
     std::string name = nameOfVariable( writable );
     auto & filedata = getFileData( file, IfFileNotOpen::ThrowError );
-    static detail::DatasetExtender de;
     Datatype dt = detail::fromADIOS2Type( filedata.m_IO.VariableType( name ) );
-    switchAdios2VariableType( dt, de, filedata.m_IO, name, parameters.extent );
+    switchAdios2VariableType< detail::DatasetExtender >(
+        dt, filedata.m_IO, name, parameters.extent );
 }
 
 void
@@ -545,9 +539,9 @@ void ADIOS2IOHandlerImpl::openDataset(
     *parameters.dtype =
         detail::fromADIOS2Type( getFileData( file, IfFileNotOpen::ThrowError )
                                     .m_IO.VariableType( varName ) );
-    switchAdios2VariableType(
+    switchAdios2VariableType< detail::DatasetOpener >(
         *parameters.dtype,
-        detail::DatasetOpener( this ),
+        this,
         file,
         varName,
         parameters );
@@ -608,9 +602,8 @@ void ADIOS2IOHandlerImpl::writeAttribute(
     switch( attributeLayout() )
     {
         case AttributeLayout::ByAdiosAttributes:
-            switchType(
+            switchType< detail::OldAttributeWriter >(
                 parameters.dtype,
-                detail::OldAttributeWriter(),
                 this,
                 writable,
                 parameters );
@@ -661,7 +654,7 @@ namespace detail
 struct GetSpan
 {
     template< typename T, typename... Args >
-    void operator()(
+    static void call(
         ADIOS2IOHandlerImpl * impl,
         Parameter< Operation::GET_BUFFER_VIEW > & params,
         detail::BufferedActions & ba,
@@ -702,7 +695,7 @@ struct GetSpan
             ba.m_updateSpans.end(), nextIndex, std::move( updateSpan ) );
     }
 
-    std::string errorMsg = "ADIOS2: getBufferView()";
+    static constexpr char const * errorMsg = "ADIOS2: getBufferView()";
 };
 } // namespace detail
 
@@ -730,9 +723,9 @@ ADIOS2IOHandlerImpl::getBufferView(
     }
     else
     {
-        static detail::GetSpan gs;
         std::string name = nameOfVariable( writable );
-        switchAdios2VariableType( parameters.dtype, gs, this, parameters, ba, name );
+        switchAdios2VariableType< detail::GetSpan >(
+            parameters.dtype, this, parameters, ba, name );
     }
 }
 
@@ -1053,9 +1046,8 @@ void ADIOS2IOHandlerImpl::availableChunks(
     std::string varName = nameOfVariable( writable );
     auto engine = ba.getEngine(); // make sure that data are present
     auto datatype = detail::fromADIOS2Type( ba.m_IO.VariableType( varName ) );
-    static detail::RetrieveBlocksInfo rbi;
-    switchAdios2VariableType(
-        datatype, rbi, parameters, ba.m_IO, engine, varName );
+    switchAdios2VariableType< detail::RetrieveBlocksInfo >(
+        datatype, parameters, ba.m_IO, engine, varName );
 }
 
 adios2::Mode
@@ -1274,18 +1266,15 @@ ADIOS2IOHandlerImpl::verifyDataset( Offset const & offset,
 
 namespace detail
 {
-    DatasetReader::DatasetReader( openPMD::ADIOS2IOHandlerImpl * impl )
-    : m_impl{impl}
+    template< typename T >
+    void DatasetReader::call(
+        ADIOS2IOHandlerImpl * impl,
+        detail::BufferedGet & bp,
+        adios2::IO & IO,
+        adios2::Engine & engine,
+        std::string const & fileName )
     {
-    }
-
-    template < typename T>
-    void
-    DatasetReader::operator( )( detail::BufferedGet & bp, adios2::IO & IO,
-                                     adios2::Engine & engine,
-                                     std::string const & fileName )
-    {
-        adios2::Variable< T > var = m_impl->verifyDataset< T >(
+        adios2::Variable< T > var = impl->verifyDataset< T >(
             bp.param.offset, bp.param.extent, IO, bp.name );
         if ( !var )
         {
@@ -1299,7 +1288,7 @@ namespace detail
 
     template< typename T >
     Datatype
-    OldAttributeReader::operator()(
+    OldAttributeReader::call(
         adios2::IO & IO,
         std::string name,
         std::shared_ptr< Attribute::resource > resource )
@@ -1345,7 +1334,7 @@ namespace detail
 
     template< int n, typename... Params >
     Datatype
-    OldAttributeReader::operator()( Params &&... )
+    OldAttributeReader::call( Params &&... )
     {
         throw std::runtime_error(
             "[ADIOS2] Internal error: Unknown datatype while "
@@ -1353,8 +1342,7 @@ namespace detail
     }
 
     template< typename T >
-    Datatype
-    AttributeReader::operator()(
+    Datatype AttributeReader::call(
         adios2::IO & IO,
         detail::PreloadAdiosAttributes const & preloadedAttributes,
         std::string name,
@@ -1401,14 +1389,14 @@ namespace detail
     }
 
     template < int n, typename... Params >
-    Datatype AttributeReader::operator( )( Params &&... )
+    Datatype AttributeReader::call( Params &&... )
     {
         throw std::runtime_error( "[ADIOS2] Internal error: Unknown datatype while "
                                   "trying to read an attribute." );
     }
 
     template< typename T >
-    void OldAttributeWriter::operator()(
+    void OldAttributeWriter::call(
         ADIOS2IOHandlerImpl * impl,
         Writable * writable,
         const Parameter< Operation::WRITE_ATT > & parameters )
@@ -1467,7 +1455,7 @@ namespace detail
 
     template< int n, typename... Params >
     void
-    OldAttributeWriter::operator()( Params &&... )
+    OldAttributeWriter::call( Params &&... )
     {
         throw std::runtime_error(
             "[ADIOS2] Internal error: Unknown datatype while "
@@ -1475,10 +1463,8 @@ namespace detail
     }
 
     template< typename T >
-    void
-    AttributeWriter::operator()(
-        detail::BufferedAttributeWrite & params,
-        BufferedActions & fileData )
+    void AttributeWriter::call(
+        detail::BufferedAttributeWrite & params, BufferedActions & fileData )
     {
         AttributeTypes< T >::createAttribute(
             fileData.m_IO,
@@ -1487,23 +1473,21 @@ namespace detail
             variantSrc::get< T >( params.resource ) );
     }
 
-    template < int n, typename... Params >
-    void AttributeWriter::operator( )( Params &&... )
+    template< int n, typename... Params >
+    void AttributeWriter::call( Params &&... )
     {
         throw std::runtime_error( "[ADIOS2] Internal error: Unknown datatype while "
                                   "trying to write an attribute." );
     }
 
-    DatasetOpener::DatasetOpener( ADIOS2IOHandlerImpl * impl ) : m_impl{impl}
+    template< typename T >
+    void DatasetOpener::call(
+        ADIOS2IOHandlerImpl * impl,
+        InvalidatableFile file,
+        const std::string & varName,
+        Parameter< Operation::OPEN_DATASET > & parameters )
     {
-    }
-
-    template < typename T >
-    void DatasetOpener::
-    operator( )( InvalidatableFile file, const std::string & varName,
-                 Parameter< Operation::OPEN_DATASET > & parameters )
-    {
-        auto & fileData = m_impl->getFileData(
+        auto & fileData = impl->getFileData(
             file, ADIOS2IOHandlerImpl::IfFileNotOpen::ThrowError );
         fileData.requireActiveStep();
         auto & IO = fileData.m_IO;
@@ -1522,35 +1506,33 @@ namespace detail
         std::copy( shape.begin(), shape.end(), std::back_inserter(*parameters.extent) );
     }
 
-    WriteDataset::WriteDataset( ADIOS2IOHandlerImpl * handlerImpl )
-    : m_handlerImpl{handlerImpl}
+    template< typename T >
+    void WriteDataset::call(
+        ADIOS2IOHandlerImpl * impl,
+        detail::BufferedPut & bp,
+        adios2::IO & IO,
+        adios2::Engine & engine )
     {
-    }
+        VERIFY_ALWAYS(
+            impl->m_handler->m_backendAccess != Access::READ_ONLY,
+            "[ADIOS2] Cannot write data in read-only mode." );
 
-    template < typename T >
-    void WriteDataset::operator( )( detail::BufferedPut & bp, adios2::IO & IO,
-                                    adios2::Engine & engine )
-    {
-        VERIFY_ALWAYS( m_handlerImpl->m_handler->m_backendAccess !=
-                           Access::READ_ONLY,
-                       "[ADIOS2] Cannot write data in read-only mode." );
+        auto ptr = std::static_pointer_cast< const T >( bp.param.data ).get();
 
-        auto ptr = std::static_pointer_cast< const T >( bp.param.data ).get( );
-
-        adios2::Variable< T > var = m_handlerImpl->verifyDataset< T >(
+        adios2::Variable< T > var = impl->verifyDataset< T >(
             bp.param.offset, bp.param.extent, IO, bp.name );
 
         engine.Put( var, ptr );
     }
 
     template < int n, typename... Params >
-    void WriteDataset::operator( )( Params &&... )
+    void WriteDataset::call( Params &&... )
     {
         throw std::runtime_error( "[ADIOS2] WRITE_DATASET: Invalid datatype." );
     }
 
-    template < typename T >
-    void VariableDefiner::operator( )(
+    template< typename T >
+    void VariableDefiner::call(
         adios2::IO & IO,
         std::string const & name,
         std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > const &
@@ -1595,7 +1577,7 @@ namespace detail
     }
 
     template < typename T >
-    void RetrieveBlocksInfo::operator( )(
+    void RetrieveBlocksInfo::call(
             Parameter< Operation::AVAILABLE_CHUNKS > & params,
             adios2::IO & IO,
             adios2::Engine & engine,
@@ -1623,17 +1605,14 @@ namespace detail
     }
 
     template < int n, typename... Args >
-    void RetrieveBlocksInfo::operator( )( Args&&... )
+    void RetrieveBlocksInfo::call( Args&&... )
     {
         // variable has not been found, so we don't fill in any blocks
     }
 
     template< typename T >
-    void
-    AttributeTypes< T >::oldCreateAttribute(
-        adios2::IO & IO,
-        std::string name,
-        const T value )
+    void AttributeTypes< T >::oldCreateAttribute(
+        adios2::IO & IO, std::string name, const T value )
     {
         auto attr = IO.DefineAttribute( name, value );
         if( !attr )
@@ -2112,9 +2091,9 @@ namespace detail
 
     void BufferedGet::run( BufferedActions & ba )
     {
-        switchAdios2VariableType(
+        switchAdios2VariableType< detail::DatasetReader >(
             param.dtype,
-            ba.m_readDataset,
+            ba.m_impl,
             *this,
             ba.m_IO,
             ba.getEngine(),
@@ -2124,8 +2103,8 @@ namespace detail
     void
     BufferedPut::run( BufferedActions & ba )
     {
-        switchAdios2VariableType(
-            param.dtype, ba.m_writeDataset, *this, ba.m_IO, ba.getEngine() );
+        switchAdios2VariableType< detail::WriteDataset >(
+            param.dtype, ba.m_impl, *this, ba.m_IO, ba.getEngine() );
     }
 
     void
@@ -2140,8 +2119,8 @@ namespace detail
                 ") not found in backend." );
         }
 
-        Datatype ret = switchType(
-            type, detail::OldAttributeReader{}, ba.m_IO, name, param.resource );
+        Datatype ret = switchType< detail::OldAttributeReader >(
+            type, ba.m_IO, name, param.resource );
         *param.dtype = ret;
     }
 
@@ -2161,9 +2140,8 @@ namespace detail
                 ") not found in backend." );
         }
 
-        Datatype ret = switchType(
+        Datatype ret = switchType< detail::AttributeReader >(
             type,
-            detail::AttributeReader{},
             ba.m_IO,
             ba.preloadAttributes,
             name,
@@ -2174,7 +2152,7 @@ namespace detail
     void
     BufferedAttributeWrite::run( BufferedActions & fileData )
     {
-        switchType( dtype, detail::AttributeWriter(), *this, fileData );
+        switchType< detail::AttributeWriter >( dtype, *this, fileData );
     }
 
     BufferedActions::BufferedActions(
@@ -2184,9 +2162,6 @@ namespace detail
         , m_ADIOS( impl.m_ADIOS )
         , m_IO( impl.m_ADIOS.DeclareIO( m_IOName ) )
         , m_mode( impl.adios2AccessMode( m_file ) )
-        , m_writeDataset( &impl )
-        , m_readDataset( &impl )
-        , m_attributeReader()
         , m_impl( &impl )
         , m_engineType( impl.m_engineType )
     {

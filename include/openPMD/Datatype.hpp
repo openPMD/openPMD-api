@@ -629,10 +629,10 @@ namespace detail {
 
     struct BasicDatatype {
         template <typename T>
-        Datatype operator()();
+        static Datatype call();
 
         template <int n>
-        Datatype operator()();
+        static Datatype call();
     };
 }
 

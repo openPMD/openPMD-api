@@ -109,13 +109,13 @@ namespace detail
 struct MakeEmpty
 {
     template< typename T >
-    RecordComponent& operator()( RecordComponent & rc, uint8_t dimensions )
+    static RecordComponent& call( RecordComponent & rc, uint8_t dimensions )
     {
         return rc.makeEmpty< T >( dimensions );
     }
 
     template< unsigned int N >
-    RecordComponent& operator()( RecordComponent &, uint8_t )
+    static RecordComponent& call( RecordComponent &, uint8_t )
     {
         throw std::runtime_error(
             "RecordComponent::makeEmpty: Unknown datatype." );
@@ -126,8 +126,7 @@ struct MakeEmpty
 RecordComponent&
 RecordComponent::makeEmpty( Datatype dt, uint8_t dimensions )
 {
-    static detail::MakeEmpty me;
-    return switchType( dt, me, *this, dimensions );
+    return switchType< detail::MakeEmpty >( dt, *this, dimensions );
 }
 
 RecordComponent&
@@ -166,8 +165,8 @@ RecordComponent::makeEmpty( Dataset d )
     dirty() = true;
     if( !written() )
     {
-        static detail::DefaultValue< RecordComponent > dv;
-        switchType( m_dataset->dtype, dv, *this );
+        switchType< detail::DefaultValue< RecordComponent > >(
+            m_dataset->dtype, *this );
     }
     return *this;
 }
