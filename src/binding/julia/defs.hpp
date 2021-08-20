@@ -17,6 +17,7 @@
 #include <memory>
 #include <string>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -32,7 +33,6 @@ template <typename T> using array7 = std::array<T, 7>;
  *   #undef USE_TYPE
  */
 
-// We disable `long double` since Julia does not support this type
 // We disable `long double` since Julia does not support this type
 #define FORALL_OPENPMD_TYPES(MACRO)                                            \
   MACRO("CHAR", Datatype::CHAR, char)                                          \
@@ -98,6 +98,71 @@ template <typename T> using array7 = std::array<T, 7>;
   MACRO("STRING", Datatype::STRING, std::string)                               \
   MACRO("ARR_DBL_7", Datatype::ARR_DBL_7, array7<double>)                      \
   MACRO("BOOL", Datatype::BOOL, bool)
+
+// This C++ version is a bit more tedious to use than the macro version above
+template <typename F, typename... Args>
+void forall_openPMD_types(const F &f, Args &&...args) {
+  f("CHAR", Datatype::CHAR, char{}, std::forward<Args>(args)...);
+  f("UCHAR", Datatype::UCHAR, (unsigned char){}, std::forward<Args>(args)...);
+  f("SHORT", Datatype::SHORT, short{}, std::forward<Args>(args)...);
+  f("INT", Datatype::INT, int{}, std::forward<Args>(args)...);
+  f("LONG", Datatype::LONG, long{}, std::forward<Args>(args)...);
+  f("LONGLONG", Datatype::LONGLONG, (long long){}, std::forward<Args>(args)...);
+  f("USHORT", Datatype::USHORT, (unsigned short){},
+    std::forward<Args>(args)...);
+  f("UINT", Datatype::UINT, (unsigned int){}, std::forward<Args>(args)...);
+  f("ULONG", Datatype::ULONG, (unsigned long){}, std::forward<Args>(args)...);
+  f("ULONGLONG", Datatype::ULONGLONG, (unsigned long long){},
+    std::forward<Args>(args)...);
+  f("FLOAT", Datatype::FLOAT, float{}, std::forward<Args>(args)...);
+  f("DOUBLE", Datatype::DOUBLE, double{}, std::forward<Args>(args)...);
+  // f("LONG_DOUBLE", Datatype::LONG_DOUBLE, (long double){},
+  // std::forward<Args>(args)...);
+  f("CFLOAT", Datatype::CFLOAT, std::complex<float>{},
+    std::forward<Args>(args)...);
+  f("CDOUBLE", Datatype::CDOUBLE, std::complex<double>{},
+    std::forward<Args>(args)...);
+  // f("CLONG_DOUBLE", Datatype::CLONG_DOUBLE, std::complex<long double>{},
+  // std::forward<Args>(args)...);
+  f("STRING", Datatype::STRING, std::string{}, std::forward<Args>(args)...);
+  f("VEC_CHAR", Datatype::VEC_CHAR, std::vector<char>{},
+    std::forward<Args>(args)...);
+  f("VEC_UCHAR", Datatype::VEC_UCHAR, std::vector<unsigned char>{},
+    std::forward<Args>(args)...);
+  f("VEC_SHORT", Datatype::VEC_SHORT, std::vector<short>{},
+    std::forward<Args>(args)...);
+  f("VEC_INT", Datatype::VEC_INT, std::vector<int>{},
+    std::forward<Args>(args)...);
+  f("VEC_LONG", Datatype::VEC_LONG, std::vector<long>{},
+    std::forward<Args>(args)...);
+  f("VEC_LONGLONG", Datatype::VEC_LONGLONG, std::vector<long long>{},
+    std::forward<Args>(args)...);
+  f("VEC_USHORT", Datatype::VEC_USHORT, std::vector<unsigned short>{},
+    std::forward<Args>(args)...);
+  f("VEC_UINT", Datatype::VEC_UINT, std::vector<unsigned int>{},
+    std::forward<Args>(args)...);
+  f("VEC_ULONG", Datatype::VEC_ULONG, std::vector<unsigned long>{},
+    std::forward<Args>(args)...);
+  f("VEC_ULONGLONG", Datatype::VEC_ULONGLONG, std::vector<unsigned long long>{},
+    std::forward<Args>(args)...);
+  f("VEC_FLOAT", Datatype::VEC_FLOAT, std::vector<float>{},
+    std::forward<Args>(args)...);
+  f("VEC_DOUBLE", Datatype::VEC_DOUBLE, std::vector<double>{},
+    std::forward<Args>(args)...);
+  // f("VEC_LONG_DOUBLE", Datatype::VEC_LONG_DOUBLE, std::vector<long double>{},
+  // std::forward<Args>(args)...);
+  f("VEC_CFLOAT", Datatype::VEC_CFLOAT, std::vector<std::complex<float>>{},
+    std::forward<Args>(args)...);
+  f("VEC_CDOUBLE", Datatype::VEC_CDOUBLE, std::vector<std::complex<double>>{},
+    std::forward<Args>(args)...);
+  // f("VEC_CLONG_DOUBLE", Datatype::VEC_CLONG_DOUBLE,
+  // std::vector<std::complex<long double>>{}, std::forward<Args>(args)...);
+  f("VEC_STRING", Datatype::VEC_STRING, std::vector<std::string>{},
+    std::forward<Args>(args)...);
+  f("ARR_DBL_7", Datatype::ARR_DBL_7, array7<double>{},
+    std::forward<Args>(args)...);
+  f("BOOL", Datatype::BOOL, bool{}, std::forward<Args>(args)...);
+}
 
 namespace {
 template <typename T, typename U>
