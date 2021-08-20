@@ -18,6 +18,6 @@ void define_julia_MeshRecordComponent(jlcxx::Module &mod) {
 #define USE_TYPE(NAME, ENUM, TYPE)                                             \
   type.method("cxx_make_constant_" NAME,                                       \
               &MeshRecordComponent::makeConstant<TYPE>);
-  { FORALL_OPENPMD_TYPES }
+  { FORALL_OPENPMD_TYPES(USE_TYPE) }
 #undef USE_TYPE
 }

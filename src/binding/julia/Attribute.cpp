@@ -9,6 +9,6 @@ void define_julia_Attribute(jlcxx::Module &mod) {
 
 #define USE_TYPE(NAME, ENUM, TYPE)                                             \
   type.method("cxx_get_" NAME, &Attribute::get<TYPE>);
-  { FORALL_OPENPMD_TYPES }
+  { FORALL_OPENPMD_TYPES(USE_TYPE) }
 #undef USE_TYPE
 }
