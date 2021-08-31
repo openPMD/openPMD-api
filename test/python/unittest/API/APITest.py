@@ -578,7 +578,12 @@ class APITest(unittest.TestCase):
             io.Access.create
         )
 
-        ms = series.iterations[0].meshes
+        it = series.iterations[0]
+
+        it.time = np.single(1.23)
+        it.dt = np.longdouble(1.2)
+
+        ms = it.meshes
         SCALAR = io.Mesh_Record_Component.SCALAR
         DS = io.Dataset
 
@@ -610,7 +615,15 @@ class APITest(unittest.TestCase):
             io.Access.read_only
         )
 
-        ms = series.iterations[0].meshes
+        it = series.iterations[0]
+
+        np.testing.assert_almost_equal(it.time, 1.23)
+        np.testing.assert_almost_equal(it.dt, 1.2)
+        # TODO
+        # self.assertTrue(it.time.dtype == np.dtype('single'))
+        # self.assertTrue(it.dt.dtype == np.dtype('longdouble'))
+
+        ms = it.meshes
         o = [1, 2, 3]
         e = [1, 1, 1]
 
