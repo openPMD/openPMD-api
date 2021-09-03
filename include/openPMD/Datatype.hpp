@@ -71,8 +71,6 @@ enum class Datatype : int
 
     BOOL,
 
-    DATATYPE = HIGHEST_DATATYPE,
-
     UNDEFINED
 }; // Datatype
 
@@ -280,7 +278,6 @@ toBytes( Datatype d )
             return sizeof(long double) * 2;
         case DT::BOOL:
             return sizeof(bool);
-        case DT::DATATYPE:
         case DT::UNDEFINED:
         default:
             throw std::runtime_error("toBytes: Invalid datatype!");

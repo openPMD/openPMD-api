@@ -230,13 +230,6 @@ auto switchType( Datatype dt, Args &&... args )
             std::forward< Args >( args )... );
     case Datatype::BOOL:
         return Action::template call< bool >( std::forward< Args >( args )... );
-    case Datatype::DATATYPE:
-        return detail::CallUndefinedDatatype<
-            HIGHEST_DATATYPE,
-            ReturnType,
-            Action,
-            void,
-            Args &&... >::call( std::forward< Args >( args )... );
     case Datatype::UNDEFINED:
         return detail::CallUndefinedDatatype<
             LOWEST_DATATYPE,
@@ -325,13 +318,6 @@ auto switchNonVectorType( Datatype dt, Args &&... args )
             std::forward< Args >( args )... );
     case Datatype::BOOL:
         return Action::template call< bool >( std::forward< Args >( args )... );
-    case Datatype::DATATYPE:
-        return detail::CallUndefinedDatatype<
-            HIGHEST_DATATYPE,
-            ReturnType,
-            Action,
-            void,
-            Args &&... >::call( std::forward< Args >( args )... );
     case Datatype::UNDEFINED:
         return detail::CallUndefinedDatatype<
             LOWEST_DATATYPE,

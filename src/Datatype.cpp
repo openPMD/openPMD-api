@@ -153,9 +153,6 @@ operator<<(std::ostream& os, openPMD::Datatype const & d)
         case DT::BOOL:
             os << "BOOL";
             break;
-        case DT::DATATYPE:
-            os << "DATATYPE";
-            break;
         case DT::UNDEFINED:
             os << "UNDEFINED";
             break;
@@ -315,10 +312,6 @@ operator<<(std::ostream& os, openPMD::Datatype const & d)
                 Datatype::BOOL
             },
             {
-                "DATATYPE",
-                Datatype::DATATYPE
-            },
-            {
                 "UNDEFINED",
                 Datatype::UNDEFINED
             }
@@ -380,7 +373,6 @@ operator<<(std::ostream& os, openPMD::Datatype const & d)
            Datatype::VEC_STRING,
            Datatype::ARR_DBL_7,
            Datatype::BOOL,
-           Datatype::DATATYPE,
            Datatype::UNDEFINED
    };
 
@@ -396,8 +388,7 @@ operator<<(std::ostream& os, openPMD::Datatype const & d)
             std::map<Datatype, Datatype> res;
             for (Datatype d: openPMD_Datatypes) {
                 if (d == Datatype::ARR_DBL_7
-                        || d == Datatype::UNDEFINED
-                        || d == Datatype::DATATYPE)
+                        || d == Datatype::UNDEFINED)
                     continue;
                 Datatype basic = basicDatatype(d);
                 if (basic == d)

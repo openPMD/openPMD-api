@@ -98,7 +98,6 @@ CommonADIOS1IOHandlerImpl::flush_attribute(int64_t group, std::string const& nam
             nelems = 7;
             break;
         case DT::UNDEFINED:
-        case DT::DATATYPE:
             throw std::runtime_error("[ADIOS1] Unknown Attribute datatype (ADIOS1 Attribute flush)");
         default:
             nelems = 1;
@@ -351,7 +350,6 @@ CommonADIOS1IOHandlerImpl::flush_attribute(int64_t group, std::string const& nam
             break;
         }
         case DT::UNDEFINED:
-        case DT::DATATYPE:
             throw std::runtime_error("[ADIOS1] Unknown Attribute datatype (ADIOS1 Attribute flush)");
         default:
             throw std::runtime_error("[ADIOS1] Datatype not implemented in ADIOS IO");
@@ -1005,8 +1003,6 @@ CommonADIOS1IOHandlerImpl::readDataset(Writable* writable,
             break;
         case DT::UNDEFINED:
             throw std::runtime_error("[ADIOS1] Unknown Attribute datatype (ADIOS1 Dataset read)");
-        case DT::DATATYPE:
-            throw std::runtime_error("[ADIOS1] Meta-Datatype leaked into IO");
         default:
             throw std::runtime_error("[ADIOS1] Datatype not implemented in ADIOS1 IO");
     }
