@@ -268,8 +268,7 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::CREATE_DATASET > : public Abstrac
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(),
         name(p.name), extent(p.extent), dtype(p.dtype),
-        chunkSize(p.chunkSize), compression(p.compression),
-        transform(p.transform), options(p.options) {}
+        options(p.options) {}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -281,9 +280,6 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::CREATE_DATASET > : public Abstrac
     std::string name = "";
     Extent extent = {};
     Datatype dtype = Datatype::UNDEFINED;
-    Extent chunkSize = {};
-    std::string compression = "";
-    std::string transform = "";
     std::string options = "{}";
 };
 

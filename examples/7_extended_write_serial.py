@@ -102,8 +102,27 @@ if __name__ == "__main__":
     # component this describes the datatype and shape of data as it should be
     # written to disk
     d = Dataset(partial_mesh.dtype, extent=[2, 5])
-    d.set_compression("zlib", 9)
-    d.set_custom_transform("blosc:compressor=zlib,shuffle=bit,lvl=1;nometa")
+    dataset_config = """
+{
+  "adios1": {
+    "dataset": {
+      "transform": "blosc:compressor=zlib,shuffle=bit,lvl=1;nometa"
+    }
+  },
+  "adios2": {
+    "dataset": {
+      "operators": [
+        {
+          "type": "zlib",
+          "parameters": {
+            "clevel": 9
+          }
+        }
+      ]
+    }
+  }
+}"""
+    d.options = dataset_config
     mesh["x"].reset_dataset(d)
 
     electrons = cur_it.particles["electrons"]

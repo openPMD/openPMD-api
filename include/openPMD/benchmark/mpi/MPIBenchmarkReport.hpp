@@ -53,8 +53,6 @@ namespace openPMD
         std::map<
             std::tuple<
                 int, // rank
-                std::string, // compression
-                uint8_t, // compression level
                 std::string, // extension
                 int, // thread size
                 Datatype,
@@ -81,8 +79,6 @@ namespace openPMD
          * Add results for a certain compression strategy and level.
          *
          * @param rootThread The MPI rank which will collect the data.
-         * @param compression Compression strategy.
-         * @param level Compression level
          * @param extension The openPMD filename extension.
          * @param threadSize The MPI size.
          * @param dt The openPMD datatype.
@@ -91,8 +87,6 @@ namespace openPMD
          */
         void addReport(
             int rootThread,
-            std::string compression,
-            uint8_t level,
             std::string extension,
             int threadSize,
             Datatype dt,
@@ -106,8 +100,6 @@ namespace openPMD
         /** Retrieve the time measured for a certain compression strategy.
          *
          * @param rank Which MPI rank's duration results to retrieve.
-         * @param compression Compression strategy.
-         * @param level Compression level
          * @param extension The openPMD filename extension.
          * @param threadSize The MPI size.
          * @param dt The openPMD datatype.
@@ -119,8 +111,6 @@ namespace openPMD
             Duration
         > getReport(
             int rank,
-            std::string compression,
-            uint8_t level,
             std::string extension,
             int threadSize,
             Datatype dt,
@@ -244,8 +234,6 @@ namespace openPMD
     template< typename Duration >
     void MPIBenchmarkReport< Duration >::addReport(
         int rootThread,
-        std::string compression,
-        uint8_t level,
         std::string extension,
         int threadSize,
         Datatype dt,
@@ -316,8 +304,6 @@ namespace openPMD
                     .emplace(
                         std::make_tuple(
                             i,
-                            compression,
-                            level,
                             extension,
                             threadSize,
                             dt,
@@ -348,8 +334,6 @@ namespace openPMD
         Duration
     > MPIBenchmarkReport< Duration >::getReport(
         int rank,
-        std::string compression,
-        uint8_t level,
         std::string extension,
         int threadSize,
         Datatype dt,
@@ -362,8 +346,6 @@ namespace openPMD
                 .find(
                     std::make_tuple(
                         rank,
-                        compression,
-                        level,
                         extension,
                         threadSize,
                         dt,

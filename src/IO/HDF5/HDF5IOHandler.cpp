@@ -386,7 +386,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
             VERIFY(status == 0, "[HDF5] Internal error: Failed to set chunk size during dataset creation");
         }
 
-        std::string const& compression = parameters.compression;
+        std::string const& compression = ""; // @todo read from JSON
         if( !compression.empty() )
           std::cerr << "[HDF5] Compression not yet implemented in HDF5 backend."
                     << std::endl;
@@ -409,11 +409,6 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
                           << std::endl;
         }
          */
-
-        std::string const& transform = parameters.transform;
-        if( !transform.empty() )
-            std::cerr << "[HDF5] Custom transform not yet implemented in HDF5 backend."
-                      << std::endl;
 
         GetH5DataType getH5DataType({
             { typeid(bool).name(), m_H5T_BOOL_ENUM },

@@ -148,10 +148,10 @@ int main(
     // * The number of iterations. Effectively, the benchmark will be repeated for this many
     //   times.
 #if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
-    benchmark.addConfiguration("", 0, "bp", dt, 10);
+    benchmark.addConfiguration("bp", dt, 10);
 #endif
 #if openPMD_HAVE_HDF5
-    benchmark.addConfiguration("", 0, "h5", dt, 10);
+    benchmark.addConfiguration("h5", dt, 10);
 #endif
 
     // Execute all previously configured benchmarks. Will return a MPIBenchmarkReport object

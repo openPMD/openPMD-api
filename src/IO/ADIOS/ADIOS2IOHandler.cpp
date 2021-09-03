@@ -376,17 +376,6 @@ void ADIOS2IOHandlerImpl::createDataset(
             operators = defaultOperators;
         }
 
-        if( !parameters.compression.empty() )
-        {
-            auxiliary::Option< adios2::Operator > adiosOperator =
-                getCompressionOperator( parameters.compression );
-            if( adiosOperator )
-            {
-                operators.push_back( ParameterizedOperator{
-                    adiosOperator.get(), adios2::Params() } );
-            }
-        }
-
         // cast from openPMD::Extent to adios2::Dims
         adios2::Dims const shape( parameters.extent.begin(), parameters.extent.end() );
 
