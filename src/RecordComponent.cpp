@@ -22,6 +22,7 @@
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Dataset.hpp"
 #include "openPMD/DatatypeHelpers.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/IO/Format.hpp"
 
@@ -69,6 +70,12 @@ RecordComponent::resetDataset( Dataset d )
                 "Cannot change the datatype of a dataset." );
         }
         *m_hasBeenExtended = true;
+    }
+
+    if( d.dtype == Datatype::UNDEFINED )
+    {
+        throw error::WrongAPIUsage(
+            "[RecordComponent] Must set specific datatype." );
     }
     // if( d.extent.empty() )
     //    throw std::runtime_error("Dataset extent must be at least 1D.");
