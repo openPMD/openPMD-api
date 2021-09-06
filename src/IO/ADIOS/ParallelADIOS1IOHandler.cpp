@@ -22,17 +22,12 @@
 #include "openPMD/IO/ADIOS/ParallelADIOS1IOHandlerImpl.hpp"
 
 #if openPMD_HAVE_MPI && openPMD_HAVE_ADIOS1
-#   include "openPMD/auxiliary/Filesystem.hpp"
-#   include "openPMD/auxiliary/DerefDynamicCast.hpp"
-#   include "openPMD/auxiliary/Memory.hpp"
-#   include "openPMD/auxiliary/StringManip.hpp"
-#   include "openPMD/IO/AbstractIOHandlerImpl.hpp"
-#   include "openPMD/IO/ADIOS/ADIOS1Auxiliary.hpp"
-#   include "openPMD/IO/ADIOS/ADIOS1FilePosition.hpp"
 #   include "openPMD/IO/IOTask.hpp"
 #   include <adios.h>
 #   include <cstring>
+#   include <iostream>
 #   include <map>
+#   include <memory>
 #   include <string>
 #endif
 
@@ -47,7 +42,7 @@ namespace openPMD
 
 ParallelADIOS1IOHandlerImpl::ParallelADIOS1IOHandlerImpl(AbstractIOHandler* handler,
                                                          MPI_Comm comm)
-        : AbstractIOHandlerImpl{handler},
+        : Base_t{handler},
           m_mpiInfo{MPI_INFO_NULL}
 {
     int status = MPI_SUCCESS;
@@ -347,17 +342,6 @@ ParallelADIOS1IOHandlerImpl::initialize_group(std::string const &name)
     VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to select ADIOS method");
     return group;
 }
-
-} // namespace openPMD
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-#define CommonADIOS1IOHandlerImpl ParallelADIOS1IOHandlerImpl
-#include "CommonADIOS1IOHandler.cpp"
-#undef CommonADIOS1IOHandlerImpl
-#endif
-
-namespace openPMD
-{
 
 #else
 #   if openPMD_HAVE_MPI

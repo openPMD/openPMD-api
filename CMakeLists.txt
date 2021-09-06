@@ -426,11 +426,13 @@ set(IO_ADIOS1_SEQUENTIAL_SOURCE
         src/Error.cpp
         src/auxiliary/Filesystem.cpp
         src/ChunkInfo.cpp
+        src/IO/ADIOS/CommonADIOS1IOHandler.cpp
         src/IO/ADIOS/ADIOS1IOHandler.cpp)
 set(IO_ADIOS1_SOURCE
         src/Error.cpp
         src/auxiliary/Filesystem.cpp
         src/ChunkInfo.cpp
+        src/IO/ADIOS/CommonADIOS1IOHandler.cpp
         src/IO/ADIOS/ParallelADIOS1IOHandler.cpp)
 
 # library

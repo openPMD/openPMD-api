@@ -18,32 +18,55 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
+
+#include "openPMD/IO/ADIOS/CommonADIOS1IOHandler.hpp"
+
+#if openPMD_HAVE_ADIOS1
+
+#include "openPMD/IO/ADIOS/ADIOS1IOHandlerImpl.hpp"
+#include "openPMD/IO/ADIOS/ParallelADIOS1IOHandlerImpl.hpp"
+
+#include <adios.h>
 #include <algorithm>
 #include <complex>
-#include <tuple>
+#include <cstring>
+#include <iostream>
+#include <map>
+#include <memory>
 #include <string>
+#include <string>
+#include <tuple>
 
 namespace openPMD
 {
 
+#if openPMD_USE_VERIFY
+#    define VERIFY(CONDITION, TEXT) { if(!(CONDITION)) throw std::runtime_error((TEXT)); }
+#else
+#    define VERIFY(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
+#endif
+
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::close(int64_t fd)
+CommonADIOS1IOHandlerImpl< ChildClass >::close(int64_t fd)
 {
     int status;
     status = adios_close(fd);
     VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to close ADIOS file (open_write)");
 }
 
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::close(ADIOS_FILE* f)
+CommonADIOS1IOHandlerImpl< ChildClass >::close(ADIOS_FILE* f)
 {
     int status;
     status = adios_read_close(f);
     VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to close ADIOS file (open_read)");
 }
 
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::flush_attribute(int64_t group, std::string const& name, Attribute const& att)
+CommonADIOS1IOHandlerImpl< ChildClass >::flush_attribute(int64_t group, std::string const& name, Attribute const& att)
 {
     auto dtype = att.dtype;
     // https://github.com/ComputationalRadiationPhysics/picongpu/pull/1756
@@ -376,8 +399,9 @@ CommonADIOS1IOHandlerImpl::flush_attribute(int64_t group, std::string const& nam
     }
 }
 
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::createFile(Writable* writable,
+CommonADIOS1IOHandlerImpl< ChildClass >::createFile(Writable* writable,
                                 Parameter< Operation::CREATE_FILE > const& parameters)
 {
     if( m_handler->m_backendAccess == Access::READ_ONLY )
@@ -410,8 +434,9 @@ CommonADIOS1IOHandlerImpl::createFile(Writable* writable,
     }
 }
 
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::createPath(Writable* writable,
+CommonADIOS1IOHandlerImpl< ChildClass >::createPath(Writable* writable,
                                 Parameter< Operation::CREATE_PATH > const& parameters)
 {
     if( m_handler->m_backendAccess == Access::READ_ONLY )
@@ -443,8 +468,9 @@ CommonADIOS1IOHandlerImpl::createPath(Writable* writable,
     }
 }
 
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::createDataset(Writable* writable,
+CommonADIOS1IOHandlerImpl< ChildClass >::createDataset(Writable* writable,
                                    Parameter< Operation::CREATE_DATASET > const& parameters)
 {
     if( m_handler->m_backendAccess == Access::READ_ONLY )
@@ -513,15 +539,17 @@ CommonADIOS1IOHandlerImpl::createDataset(Writable* writable,
     }
 }
 
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::extendDataset(Writable*,
+CommonADIOS1IOHandlerImpl< ChildClass >::extendDataset(Writable*,
                                    Parameter< Operation::EXTEND_DATASET > const&)
 {
     throw std::runtime_error("[ADIOS1] Dataset extension not implemented in ADIOS backend");
 }
 
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::openFile(Writable* writable,
+CommonADIOS1IOHandlerImpl< ChildClass >::openFile(Writable* writable,
                               Parameter< Operation::OPEN_FILE > const& parameters)
 {
     if( !auxiliary::directory_exists(m_handler->directory) )
@@ -557,11 +585,12 @@ CommonADIOS1IOHandlerImpl::openFile(Writable* writable,
     }
 
     if( m_groups.find(filePath) == m_groups.end() )
-        m_groups[filePath] = initialize_group(name);
+        m_groups[filePath] =
+            static_cast< ChildClass * >( this )->initialize_group(name);
 
     if( m_openReadFileHandles.find(filePath) == m_openReadFileHandles.end() )
     {
-        ADIOS_FILE* f = open_read(name);
+        ADIOS_FILE* f = static_cast< ChildClass * >( this )->open_read(name);
         m_openReadFileHandles[filePath] = f;
     }
 
@@ -572,8 +601,9 @@ CommonADIOS1IOHandlerImpl::openFile(Writable* writable,
     m_existsOnDisk[filePath] = true;
 }
 
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::closeFile(
+CommonADIOS1IOHandlerImpl< ChildClass >::closeFile(
     Writable * writable,
     Parameter< Operation::CLOSE_FILE > const & )
 {
@@ -631,8 +661,9 @@ CommonADIOS1IOHandlerImpl::closeFile(
     m_filePaths.erase( myFile );
 }
 
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::availableChunks(
+CommonADIOS1IOHandlerImpl< ChildClass >::availableChunks(
     Writable * writable,
     Parameter< Operation::AVAILABLE_CHUNKS > & params )
 {
@@ -672,8 +703,9 @@ CommonADIOS1IOHandlerImpl::availableChunks(
     adios_free_varinfo( varinfo );
 }
 
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::openPath(
+CommonADIOS1IOHandlerImpl< ChildClass >::openPath(
     Writable * writable,
     Parameter< Operation::OPEN_PATH > const & parameters )
 {
@@ -695,8 +727,9 @@ CommonADIOS1IOHandlerImpl::openPath(
     m_filePaths[writable] = res->second;
 }
 
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::openDataset(Writable* writable,
+CommonADIOS1IOHandlerImpl< ChildClass >::openDataset(Writable* writable,
                                  Parameter< Operation::OPEN_DATASET >& parameters)
 {
     ADIOS_FILE *f;
@@ -849,8 +882,9 @@ CommonADIOS1IOHandlerImpl::openDataset(Writable* writable,
     m_filePaths[writable] = res->second;
 }
 
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::deleteFile(Writable* writable,
+CommonADIOS1IOHandlerImpl< ChildClass >::deleteFile(Writable* writable,
                                 Parameter< Operation::DELETE_FILE > const& parameters)
 {
     if( m_handler->m_backendAccess == Access::READ_ONLY )
@@ -886,28 +920,32 @@ CommonADIOS1IOHandlerImpl::deleteFile(Writable* writable,
     }
 }
 
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::deletePath(Writable*,
+CommonADIOS1IOHandlerImpl< ChildClass >::deletePath(Writable*,
                                 Parameter< Operation::DELETE_PATH > const&)
 {
     throw std::runtime_error("[ADIOS1] Path deletion not implemented in ADIOS backend");
 }
 
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::deleteDataset(Writable*,
+CommonADIOS1IOHandlerImpl< ChildClass >::deleteDataset(Writable*,
                                    Parameter< Operation::DELETE_DATASET > const&)
 {
     throw std::runtime_error("[ADIOS1] Dataset deletion not implemented in ADIOS backend");
 }
 
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::deleteAttribute(Writable*,
+CommonADIOS1IOHandlerImpl< ChildClass >::deleteAttribute(Writable*,
                                      Parameter< Operation::DELETE_ATT > const&)
 {
     throw std::runtime_error("[ADIOS1] Attribute deletion not implemented in ADIOS backend");
 }
 
-int64_t CommonADIOS1IOHandlerImpl::GetFileHandle(Writable* writable)
+template< typename ChildClass >
+int64_t CommonADIOS1IOHandlerImpl< ChildClass >::GetFileHandle(Writable* writable)
 {
     auto res = m_filePaths.find(writable);
     if( res == m_filePaths.end() )
@@ -917,17 +955,20 @@ int64_t CommonADIOS1IOHandlerImpl::GetFileHandle(Writable* writable)
     if( m_openWriteFileHandles.find(res->second) == m_openWriteFileHandles.end() )
     {
         std::string  name  = *(res->second);
-        m_groups[m_filePaths[writable]] = initialize_group(name);
+        m_groups[m_filePaths[writable]] =
+            static_cast< ChildClass * >( this )->initialize_group(name);
 
-        fd = open_write(writable);
+        fd = static_cast< ChildClass * >( this )->open_write(writable);
         m_openWriteFileHandles[res->second] = fd;
     } else
         fd = m_openWriteFileHandles.at(res->second);
 
     return fd;
 }
+
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::writeDataset(Writable* writable,
+CommonADIOS1IOHandlerImpl< ChildClass >::writeDataset(Writable* writable,
                                   Parameter< Operation::WRITE_DATASET > const& parameters)
 {
     if( m_handler->m_backendAccess == Access::READ_ONLY )
@@ -958,8 +999,9 @@ CommonADIOS1IOHandlerImpl::writeDataset(Writable* writable,
     VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to write ADIOS variable during Dataset writing");
 }
 
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
+CommonADIOS1IOHandlerImpl< ChildClass >::writeAttribute(Writable* writable,
                                     Parameter< Operation::WRITE_ATT > const& parameters)
 {
     if( m_handler->m_backendAccess == Access::READ_ONLY )
@@ -982,8 +1024,9 @@ CommonADIOS1IOHandlerImpl::writeAttribute(Writable* writable,
     attributes.emplace(name, parameters.resource);
 }
 
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::readDataset(Writable* writable,
+CommonADIOS1IOHandlerImpl< ChildClass >::readDataset(Writable* writable,
                                  Parameter< Operation::READ_DATASET >& parameters)
 {
     switch( parameters.dtype )
@@ -1041,8 +1084,9 @@ CommonADIOS1IOHandlerImpl::readDataset(Writable* writable,
     m_scheduledReads[f].push_back(sel);
 }
 
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
+CommonADIOS1IOHandlerImpl< ChildClass >::readAttribute(Writable* writable,
                                    Parameter< Operation::READ_ATT >& parameters)
 {
     if( !writable->written )
@@ -1513,8 +1557,9 @@ CommonADIOS1IOHandlerImpl::readAttribute(Writable* writable,
     *parameters.resource = a.getResource();
 }
 
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::listPaths(Writable* writable,
+CommonADIOS1IOHandlerImpl< ChildClass >::listPaths(Writable* writable,
                                Parameter< Operation::LIST_PATHS >& parameters)
 {
     if( !writable->written )
@@ -1571,8 +1616,9 @@ CommonADIOS1IOHandlerImpl::listPaths(Writable* writable,
     *parameters.paths = std::vector< std::string >(paths.begin(), paths.end());
 }
 
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::listDatasets(Writable* writable,
+CommonADIOS1IOHandlerImpl< ChildClass >::listDatasets(Writable* writable,
                                   Parameter< Operation::LIST_DATASETS >& parameters)
 {
     if( !writable->written )
@@ -1603,8 +1649,9 @@ CommonADIOS1IOHandlerImpl::listDatasets(Writable* writable,
     *parameters.datasets = std::vector< std::string >(paths.begin(), paths.end());
 }
 
+template< typename ChildClass >
 void
-CommonADIOS1IOHandlerImpl::listAttributes(Writable* writable,
+CommonADIOS1IOHandlerImpl< ChildClass >::listAttributes(Writable* writable,
                                     Parameter< Operation::LIST_ATTS >& parameters)
 {
     if( !writable->written )
@@ -1656,4 +1703,9 @@ CommonADIOS1IOHandlerImpl::listAttributes(Writable* writable,
     }
 }
 
-} // namespace openPMD
+template class CommonADIOS1IOHandlerImpl< ADIOS1IOHandlerImpl >;
+#if openPMD_HAVE_MPI
+template class CommonADIOS1IOHandlerImpl< ParallelADIOS1IOHandlerImpl >;
+#endif // opepnPMD_HAVE_MPI
+#endif // openPMD_HAVE_ADIOS1
+}
