@@ -23,6 +23,8 @@
 #include <tuple>
 #include <string>
 
+namespace openPMD
+{
 
 void
 CommonADIOS1IOHandlerImpl::close(int64_t fd)
@@ -1653,3 +1655,5 @@ CommonADIOS1IOHandlerImpl::listAttributes(Writable* writable,
         *parameters.attributes = std::vector< std::string >(attributes.begin(), attributes.end());
     }
 }
+
+} // namespace openPMD

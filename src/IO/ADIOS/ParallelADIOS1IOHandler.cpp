@@ -348,11 +348,16 @@ ParallelADIOS1IOHandlerImpl::initialize_group(std::string const &name)
     return group;
 }
 
+} // namespace openPMD
+
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 #define CommonADIOS1IOHandlerImpl ParallelADIOS1IOHandlerImpl
 #include "CommonADIOS1IOHandler.cpp"
 #undef CommonADIOS1IOHandlerImpl
 #endif
+
+namespace openPMD
+{
 
 #else
 #   if openPMD_HAVE_MPI
