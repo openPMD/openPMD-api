@@ -37,14 +37,11 @@
 namespace openPMD
 {
 
-constexpr int LOWEST_DATATYPE = 0;
-constexpr int HIGHEST_DATATYPE = 1000;
-
 /** Concrete datatype of an object available at runtime.
  */
 enum class Datatype : int
 {
-    CHAR = LOWEST_DATATYPE, UCHAR, // SCHAR,
+    CHAR, UCHAR, // SCHAR,
     SHORT, INT, LONG, LONGLONG,
     USHORT, UINT, ULONG, ULONGLONG,
     FLOAT, DOUBLE, LONG_DOUBLE,

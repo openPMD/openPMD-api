@@ -191,7 +191,7 @@ auto switchAdios2AttributeType( Datatype dt, Args &&... args )
             std::forward< Args >( args )... );
     case Datatype::UNDEFINED:
         return detail::CallUndefinedDatatype<
-            LOWEST_DATATYPE,
+            0,
             ReturnType,
             Action,
             void,
@@ -278,7 +278,7 @@ auto switchAdios2VariableType( Datatype dt, Args &&... args )
     //             std::forward< Args >( args )... );
     case Datatype::UNDEFINED:
         return detail::CallUndefinedDatatype<
-            LOWEST_DATATYPE,
+            0,
             ReturnType,
             Action,
             void,

@@ -232,7 +232,7 @@ auto switchType( Datatype dt, Args &&... args )
         return Action::template call< bool >( std::forward< Args >( args )... );
     case Datatype::UNDEFINED:
         return detail::CallUndefinedDatatype<
-            LOWEST_DATATYPE,
+            0,
             ReturnType,
             Action,
             void,
@@ -320,7 +320,7 @@ auto switchNonVectorType( Datatype dt, Args &&... args )
         return Action::template call< bool >( std::forward< Args >( args )... );
     case Datatype::UNDEFINED:
         return detail::CallUndefinedDatatype<
-            LOWEST_DATATYPE,
+            0,
             ReturnType,
             Action,
             void,
