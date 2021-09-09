@@ -202,6 +202,15 @@ RecordComponent::flush(std::string const& name)
         }
     } else
     {
+        /*
+         * This catches when a user forgets to use resetDataset.
+         */
+        if( m_dataset->dtype == Datatype::UNDEFINED )
+        {
+            throw error::WrongAPIUsage(
+                "[RecordComponent] Must set specific datatype (Use "
+                "resetDataset call)." );
+        }
         if( !written() )
         {
             if( constant() )
