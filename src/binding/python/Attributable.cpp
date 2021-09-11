@@ -262,10 +262,10 @@ bool setAttributeFromBufferInfo(
 
 struct SetAttributeFromObject
 {
-    std::string errorMsg = "Attributable.set_attribute()";
+    static constexpr char const * errorMsg = "Attributable.set_attribute()";
 
     template< typename RequestedType >
-    bool operator()(
+    static bool call(
         Attributable & attr,
         std::string const& key,
         py::object& obj )
@@ -284,7 +284,7 @@ struct SetAttributeFromObject
 };
 
 template<>
-bool SetAttributeFromObject::operator()< double >(
+bool SetAttributeFromObject::call< double >(
     Attributable & attr, std::string const & key, py::object & obj )
 {
     if( std::string( py::str( obj.get_type() ) ) == "<class 'list'>" )
@@ -310,14 +310,14 @@ bool SetAttributeFromObject::operator()< double >(
 }
 
 template<>
-bool SetAttributeFromObject::operator()< bool >(
+bool SetAttributeFromObject::call< bool >(
     Attributable & attr, std::string const & key, py::object & obj )
 {
     return attr.setAttribute< bool >( key, obj.cast< bool >() );
 }
 
 template<>
-bool SetAttributeFromObject::operator()< char >(
+bool SetAttributeFromObject::call< char >(
     Attributable & attr, std::string const & key, py::object & obj )
 {
     if( std::string( py::str( obj.get_type() ) ) == "<class 'list'>" )
@@ -352,8 +352,8 @@ bool setAttributeFromObject(
     pybind11::dtype datatype )
 {
     Datatype requestedDatatype = dtype_from_numpy( datatype );
-    static SetAttributeFromObject safo;
-    return switchNonVectorType( requestedDatatype, safo, attr, key, obj );
+    return switchNonVectorType< SetAttributeFromObject >(
+        requestedDatatype, attr, key, obj );
 }
 
 void init_Attributable(py::module &m) {

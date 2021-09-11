@@ -387,7 +387,7 @@ operator<<(std::ostream& os, openPMD::Datatype const & d)
 
     Datatype basicDatatype( Datatype dt )
     {
-        return switchType( dt, detail::BasicDatatype{} );
+        return switchType< detail::BasicDatatype >( dt );
     }
 
     Datatype toVectorType( Datatype dt )
@@ -420,7 +420,7 @@ operator<<(std::ostream& os, openPMD::Datatype const & d)
 
     namespace detail {
         template< typename T >
-        Datatype BasicDatatype::operator()()
+        Datatype BasicDatatype::call()
         {
             static auto res = BasicDatatypeHelper<T>{}.m_dt;
             return res;
@@ -428,7 +428,7 @@ operator<<(std::ostream& os, openPMD::Datatype const & d)
 
 
         template< int n >
-        Datatype BasicDatatype::operator()()
+        Datatype BasicDatatype::call()
         {
             throw std::runtime_error( "basicDatatype: received unknown datatype." );
         }

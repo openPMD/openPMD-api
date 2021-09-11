@@ -236,17 +236,13 @@ namespace openPMD
             );
 
             template< typename T >
-            void operator()(
+            static void call(
+                BenchmarkExecution< Clock > &,
                 MPIBenchmarkReport< typename Clock::duration > & report,
                 int rootThread = 0
             );
 
-
-            template< int n >
-            void operator()(
-                MPIBenchmarkReport< typename Clock::duration > &,
-                int
-            );
+            static constexpr char const * errorMsg = "BenchmarkExecution";
         };
     };
 
@@ -274,7 +270,7 @@ namespace openPMD
         }
         for( Datatype dt: datatypes )
         {
-            switchType(
+            switchType< BenchmarkExecution< Clock > >(
                 dt,
                 exec,
                 res,
@@ -511,18 +507,19 @@ namespace openPMD
     template< typename Clock >
     template< typename T >
     void
-    MPIBenchmark< DatasetFillerProvider >::BenchmarkExecution< Clock >::operator()(
+    MPIBenchmark< DatasetFillerProvider >::BenchmarkExecution< Clock >::call(
+        BenchmarkExecution< Clock > & exec,
         MPIBenchmarkReport< typename Clock::duration > & report,
         int rootThread
     )
     {
         Datatype dt = determineDatatype< T >( );
         auto dsf = std::dynamic_pointer_cast< DatasetFiller< T>>(
-            m_benchmark->m_dfp
+            exec.m_benchmark->m_dfp
                 .template operator(
                 )< T >( )
         );
-        for( auto const & config: m_benchmark->m_configurations )
+        for( auto const & config: exec.m_benchmark->m_configurations )
         {
             std::string compression;
             uint8_t compressionLevel;
@@ -544,7 +541,7 @@ namespace openPMD
                 continue;
             }
 
-            auto localCuboid = m_benchmark->slice( size );
+            auto localCuboid = exec.m_benchmark->slice( size );
 
             extentT blockSize = 1;
             for( auto ext: localCuboid.second )
@@ -553,7 +550,7 @@ namespace openPMD
             }
             dsf->setNumberOfItems( blockSize );
 
-            auto writeTime = writeBenchmark< T >(
+            auto writeTime = exec.writeBenchmark< T >(
                 compression,
                 compressionLevel,
                 localCuboid.first,
@@ -562,7 +559,7 @@ namespace openPMD
                 dsf,
                 iterations
             );
-            auto readTime = readBenchmark< T >(
+            auto readTime = exec.readBenchmark< T >(
                 localCuboid.first,
                 localCuboid.second,
                 backend,
@@ -584,20 +581,6 @@ namespace openPMD
 
         }
     }
-
-
-    template< typename DatasetFillerProvider >
-    template< typename Clock >
-    template< int n >
-    void
-    MPIBenchmark< DatasetFillerProvider >::BenchmarkExecution< Clock >::operator()(
-        MPIBenchmarkReport< typename Clock::duration > &,
-        int
-    )
-    {
-        throw std::runtime_error( "Unknown/unsupported datatype requested to be benchmarked." );
-    }
-
 }
 
 #endif
