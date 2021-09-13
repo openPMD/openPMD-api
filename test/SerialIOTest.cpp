@@ -3685,7 +3685,7 @@ variableBasedSingleIteration( std::string const & file )
         Series writeSeries(
             file,
             Access::CREATE,
-            "{\"iteration_encoding\": \"variable_based\"}" );
+            R"({"iteration_encoding": "variable_based"})" );
         REQUIRE(
             writeSeries.iterationEncoding() ==
             IterationEncoding::variableBased );
@@ -4378,7 +4378,7 @@ extendDataset( std::string const & ext )
         Dataset ds1{
             Datatype::INT,
             { 5, 5 },
-            "{ \"resizable\": true, \"resizeble\": \"typo\" }" };
+            R"({ "resizable": true, "resizeble": "typo" })" };
         Dataset ds2{ Datatype::INT, { 10, 5 } };
 
         // array record component -> array record component

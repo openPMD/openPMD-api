@@ -876,7 +876,7 @@ TEST_CASE( "no_file_ending", "[core]" )
         Series(
             "../samples/no_extension_specified",
             Access::CREATE,
-            "{\"backend\": \"json\"}" );
+            R"({"backend": "json"})" );
     }
     REQUIRE(
         auxiliary::file_exists( "../samples/no_extension_specified.json" ) );
@@ -885,7 +885,7 @@ TEST_CASE( "no_file_ending", "[core]" )
 TEST_CASE( "backend_via_json", "[core]" )
 {
     std::string encodingVariableBased =
-        "{\"backend\": \"json\", \"iteration_encoding\": \"variable_based\"}";
+        R"({"backend": "json", "iteration_encoding": "variable_based"})";
     {
         Series series(
             "../samples/optionsViaJson",
@@ -910,7 +910,7 @@ TEST_CASE( "backend_via_json", "[core]" )
         Series series(
             "../samples/optionsViaJsonOverwritesAutomaticDetection.sst",
             Access::CREATE,
-            "{\"adios2\": {\"engine\": {\"type\": \"bp4\"}}}" );
+            R"({"adios2": {"engine": {"type": "bp4"}}})" );
     }
     REQUIRE( auxiliary::directory_exists(
         "../samples/optionsViaJsonOverwritesAutomaticDetection.bp" ) );
@@ -922,7 +922,7 @@ TEST_CASE( "backend_via_json", "[core]" )
         Series series(
             "../samples/optionsPreferJsonOverEnvVar.bp",
             Access::CREATE,
-            "{\"backend\": \"ADIOS2\"}" );
+            R"({"backend": "ADIOS2"})" );
         REQUIRE( series.backend() == "ADIOS2" );
     }
     // unset again
@@ -932,7 +932,7 @@ TEST_CASE( "backend_via_json", "[core]" )
 #endif
 #endif
     std::string encodingFileBased =
-        "{\"backend\": \"json\", \"iteration_encoding\": \"file_based\"}";
+        R"({"backend": "json", "iteration_encoding": "file_based"})";
     {
         /*
          * Should we add JSON options to set the filebased expansion pattern?
@@ -948,7 +948,7 @@ TEST_CASE( "backend_via_json", "[core]" )
             error::WrongAPIUsage );
     }
     std::string encodingGroupBased =
-        "{\"backend\": \"json\", \"iteration_encoding\": \"group_based\"}";
+        R"({"backend": "json", "iteration_encoding": "group_based"})";
     {
         Series series(
             "../samples/optionsViaJsonPseudoFilebased%T.json",
