@@ -3316,6 +3316,10 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
     }
     std::string writeConfigBP3 = R"END(
 {
+  "unused": "global parameter",
+  "hdf5": {
+    "unused": "hdf5 parameter please dont warn"
+  },
   "adios2": {
     "engine": {
       "type": "bp3",
@@ -3678,8 +3682,13 @@ variableBasedSingleIteration( std::string const & file )
 {
     constexpr Extent::value_type extent = 1000;
     {
-        Series writeSeries( file, Access::CREATE );
-        writeSeries.setIterationEncoding( IterationEncoding::variableBased );
+        Series writeSeries(
+            file,
+            Access::CREATE,
+            "{\"iteration_encoding\": \"variable_based\"}" );
+        REQUIRE(
+            writeSeries.iterationEncoding() ==
+            IterationEncoding::variableBased );
         auto iterations = writeSeries.writeIterations();
         auto iteration = writeSeries.iterations[ 0 ];
         auto E_x = iteration.meshes[ "E" ][ "x" ];

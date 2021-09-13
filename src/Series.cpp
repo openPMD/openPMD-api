@@ -1474,15 +1474,75 @@ namespace
     {
         if( config.json().contains( key ) )
         {
-            dest = json::asLowerCaseStringDynamic( config[ key ].json() );
+            auto maybeString =
+                json::asLowerCaseStringDynamic( config[ key ].json() );
+            if( maybeString.has_value() )
+            {
+                dest = std::move( maybeString.get() );
+            }
+            else
+            {
+                throw error::BackendConfigSchema(
+                    { key }, "Must be convertible to string type." );
+            }
         }
     }
+}
 
-    void parseJsonOptions(
-        internal::SeriesData & series, json::TracingJSON & options )
+template< typename TracingJSON >
+void Series::parseJsonOptions(
+    TracingJSON & options, ParsedInput & input )
+{
+    auto & series = get();
+    getJsonOption< bool >(
+        options, "defer_iteration_parsing", series.m_parseLazily );
+    // backend key
     {
-        getJsonOption< bool >(
-            options, "defer_iteration_parsing", series.m_parseLazily );
+        std::map< std::string, Format > const backendDescriptors{
+            { "hdf5", Format::HDF5 },
+            { "adios1", Format::ADIOS1 },
+            { "adios2", Format::ADIOS2 },
+            { "json", Format::JSON } };
+        std::string backend;
+        getJsonOptionLowerCase( options, "backend", backend );
+        if( !backend.empty() )
+        {
+            auto it = backendDescriptors.find( backend );
+            if( it != backendDescriptors.end() )
+            {
+                input.format = it->second;
+            }
+            else
+            {
+                throw error::BackendConfigSchema(
+                    { "backend" }, "Unknown backend specified: " + backend );
+            }
+        }
+    }
+    // iteration_encoding key
+    {
+        std::map< std::string, IterationEncoding > const ieDescriptors{
+            { "file_based", IterationEncoding::fileBased },
+            { "group_based", IterationEncoding::groupBased },
+            { "variable_based", IterationEncoding::variableBased } };
+        std::string iterationEncoding;
+        getJsonOptionLowerCase(
+            options, "iteration_encoding", iterationEncoding );
+        if( !iterationEncoding.empty() )
+        {
+            auto it = ieDescriptors.find( iterationEncoding );
+            if( it != ieDescriptors.end() )
+            {
+                input.iterationEncoding = it->second;
+            }
+            else
+            {
+                throw error::BackendConfigSchema(
+                    { "iteration_encoding" },
+                    "Unknown iteration encoding specified: " +
+                        iterationEncoding );
+            }
+        }
     }
 }
 
@@ -1544,11 +1604,12 @@ Series::Series(
     iterations = m_series->iterations;
     json::TracingJSON optionsJson = json::parseOptions(
         options, comm, /* considerFiles = */ true );
-    parseJsonOptions( get(), optionsJson );
     auto input = parseInput( filepath );
+    parseJsonOptions( optionsJson, *input );
     auto handler = createIOHandler(
-        input->path, at, input->format, comm, std::move( optionsJson ) );
+        input->path, at, input->format, comm, optionsJson );
     init( handler, std::move( input ) );
+    json::warnGlobalUnusedOptions( optionsJson );
 }
 #endif
 
@@ -1561,11 +1622,12 @@ Series::Series(
     iterations = m_series->iterations;
     json::TracingJSON optionsJson = json::parseOptions(
         options, /* considerFiles = */ true );
-    parseJsonOptions( get(), optionsJson );
     auto input = parseInput( filepath );
+    parseJsonOptions( optionsJson, *input );
     auto handler = createIOHandler(
-        input->path, at, input->format, std::move( optionsJson ) );
+        input->path, at, input->format, optionsJson );
     init( handler, std::move( input ) );
+    json::warnGlobalUnusedOptions( optionsJson );
 }
 
 Series::operator bool() const

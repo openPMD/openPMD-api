@@ -408,6 +408,9 @@ OPENPMD_private:
         }    }
 
     std::unique_ptr< ParsedInput > parseInput(std::string);
+    // template parameter so we don't have to include the JSON lib here
+    template< typename TracingJSON >
+    void parseJsonOptions( TracingJSON & options, ParsedInput & );
     bool hasExpansionPattern( std::string filenameWithExtension );
     bool reparseExpansionPattern( std::string filenameWithExtension );
     void init(std::shared_ptr< AbstractIOHandler >, std::unique_ptr< ParsedInput >);

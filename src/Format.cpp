@@ -59,9 +59,8 @@ namespace openPMD {
             return Format::ADIOS2_SSC;
         if (auxiliary::ends_with(filename, ".json"))
             return Format::JSON;
-        if (std::string::npos != filename.find('.') /* extension is provided */ )
-            throw std::runtime_error("Unknown file format. Did you append a valid filename extension?");
 
+        // Format might still be specified via JSON
         return Format::DUMMY;
     }
 

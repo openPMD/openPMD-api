@@ -5,17 +5,23 @@
 #endif
 #include "openPMD/openPMD.hpp"
 
+#include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/JSON.hpp"
+
 #include <catch2/catch.hpp>
+#include <nlohmann/json.hpp>
 
 #include <algorithm>
-#include <string>
-#include <vector>
 #include <array>
 #include <complex>
 #include <cstddef>
 #include <cstdint>
-#include <sstream>
 #include <iostream>
+#include <sstream>
+// cstdlib does not have setenv
+#include <stdlib.h> // NOLINT(modernize-deprecated-headers)
+#include <string>
+#include <vector>
 
 using namespace openPMD;
 
@@ -866,6 +872,92 @@ TEST_CASE( "no_file_ending", "[core]" )
                         Catch::Equals("Unknown file format! Did you specify a file ending?"));
     REQUIRE_THROWS_WITH(Series("./new_openpmd_output_%05T", Access::CREATE),
                         Catch::Equals("Unknown file format! Did you specify a file ending?"));
+    {
+        Series(
+            "../samples/no_extension_specified",
+            Access::CREATE,
+            "{\"backend\": \"json\"}" );
+    }
+    REQUIRE(
+        auxiliary::file_exists( "../samples/no_extension_specified.json" ) );
+}
+
+TEST_CASE( "backend_via_json", "[core]" )
+{
+    std::string encodingVariableBased =
+        "{\"backend\": \"json\", \"iteration_encoding\": \"variable_based\"}";
+    {
+        Series series(
+            "../samples/optionsViaJson",
+            Access::CREATE,
+            encodingVariableBased );
+        REQUIRE( series.backend() == "JSON" );
+        REQUIRE(
+            series.iterationEncoding() == IterationEncoding::variableBased );
+    }
+#if openPMD_HAVE_ADIOS2
+    {
+        Series series(
+            "../samples/optionsViaJson.bp",
+            Access::CREATE,
+            encodingVariableBased );
+        REQUIRE( series.backend() == "JSON" );
+        REQUIRE(
+            series.iterationEncoding() == IterationEncoding::variableBased );
+    }
+
+    {
+        Series series(
+            "../samples/optionsViaJsonOverwritesAutomaticDetection.sst",
+            Access::CREATE,
+            "{\"adios2\": {\"engine\": {\"type\": \"bp4\"}}}" );
+    }
+    REQUIRE( auxiliary::directory_exists(
+        "../samples/optionsViaJsonOverwritesAutomaticDetection.bp" ) );
+
+#if openPMD_HAVE_ADIOS1
+    setenv( "OPENPMD_BP_BACKEND", "ADIOS1", 1 );
+    {
+        // JSON option should overwrite environment variable
+        Series series(
+            "../samples/optionsPreferJsonOverEnvVar.bp",
+            Access::CREATE,
+            "{\"backend\": \"ADIOS2\"}" );
+        REQUIRE( series.backend() == "ADIOS2" );
+    }
+    // unset again
+    unsetenv( "OPENPMD_BP_BACKEND" );
+    REQUIRE( auxiliary::directory_exists(
+        "../samples/optionsPreferJsonOverEnvVar.bp" ) );
+#endif
+#endif
+    std::string encodingFileBased =
+        "{\"backend\": \"json\", \"iteration_encoding\": \"file_based\"}";
+    {
+        /*
+         * Should we add JSON options to set the filebased expansion pattern?
+         * For now, let's require setting that as part of the filename.
+         */
+        REQUIRE_THROWS_AS(
+            [ & ]() {
+                Series series(
+                    "../samples/optionsViaJson",
+                    Access::CREATE,
+                    encodingFileBased );
+            }(),
+            error::WrongAPIUsage );
+    }
+    std::string encodingGroupBased =
+        "{\"backend\": \"json\", \"iteration_encoding\": \"group_based\"}";
+    {
+        Series series(
+            "../samples/optionsViaJsonPseudoFilebased%T.json",
+            Access::CREATE,
+            encodingGroupBased );
+        REQUIRE( series.iterationEncoding() == IterationEncoding::groupBased );
+    }
+    REQUIRE( auxiliary::file_exists(
+        "../samples/optionsViaJsonPseudoFilebased%T.json" ) );
 }
 
 TEST_CASE( "custom_geometries", "[core]" )
