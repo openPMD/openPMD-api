@@ -209,7 +209,6 @@ namespace openPMD
             case DT::BOOL:
                 return pybind11::dtype("bool"); // also "?"
                 break;
-            case DT::DATATYPE:
             case DT::UNDEFINED:
             default:
                 throw std::runtime_error("dtype_to_numpy: Invalid Datatype '{...}'!"); // _s.format(dt)

@@ -37,14 +37,11 @@
 namespace openPMD
 {
 
-constexpr int LOWEST_DATATYPE = 0;
-constexpr int HIGHEST_DATATYPE = 1000;
-
 /** Concrete datatype of an object available at runtime.
  */
 enum class Datatype : int
 {
-    CHAR = LOWEST_DATATYPE, UCHAR, // SCHAR,
+    CHAR, UCHAR, // SCHAR,
     SHORT, INT, LONG, LONGLONG,
     USHORT, UINT, ULONG, ULONGLONG,
     FLOAT, DOUBLE, LONG_DOUBLE,
@@ -70,8 +67,6 @@ enum class Datatype : int
     ARR_DBL_7,
 
     BOOL,
-
-    DATATYPE = HIGHEST_DATATYPE,
 
     UNDEFINED
 }; // Datatype
@@ -280,7 +275,6 @@ toBytes( Datatype d )
             return sizeof(long double) * 2;
         case DT::BOOL:
             return sizeof(bool);
-        case DT::DATATYPE:
         case DT::UNDEFINED:
         default:
             throw std::runtime_error("toBytes: Invalid datatype!");

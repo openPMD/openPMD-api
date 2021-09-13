@@ -189,16 +189,9 @@ auto switchAdios2AttributeType( Datatype dt, Args &&... args )
     case Datatype::STRING:
         return Action::template call< std::string >(
             std::forward< Args >( args )... );
-    case Datatype::DATATYPE:
-        return detail::CallUndefinedDatatype<
-            HIGHEST_DATATYPE,
-            ReturnType,
-            Action,
-            void,
-            Args &&... >::call( std::forward< Args >( args )... );
     case Datatype::UNDEFINED:
         return detail::CallUndefinedDatatype<
-            LOWEST_DATATYPE,
+            0,
             ReturnType,
             Action,
             void,
@@ -283,16 +276,9 @@ auto switchAdios2VariableType( Datatype dt, Args &&... args )
     //     return action
     //         .OPENPMD_TEMPLATE_OPERATOR()< std::complex< long double > >(
     //             std::forward< Args >( args )... );
-    case Datatype::DATATYPE:
-        return detail::CallUndefinedDatatype<
-            HIGHEST_DATATYPE,
-            ReturnType,
-            Action,
-            void,
-            Args &&... >::call( std::forward< Args >( args )... );
     case Datatype::UNDEFINED:
         return detail::CallUndefinedDatatype<
-            LOWEST_DATATYPE,
+            0,
             ReturnType,
             Action,
             void,
