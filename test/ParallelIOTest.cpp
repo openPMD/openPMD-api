@@ -804,11 +804,15 @@ hipace_like_write( std::string file_ending )
     bool const isHDF5 = file_ending == "h5";
     std::string options = "{}";
     if( isHDF5 )
+        /*
+         * some keys and values capitalized randomly to check whether
+         * capitalization-insensitivity is working.
+         */
         options = R"(
         {
-          "hdf5": {
+          "HDF5": {
             "dataset": {
-              "chunks": "none"
+              "chunks": "NONE"
             }
           }
         })";

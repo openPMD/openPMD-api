@@ -281,6 +281,16 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::CREATE_DATASET > : public Abstrac
     Extent extent = {};
     Datatype dtype = Datatype::UNDEFINED;
     std::string options = "{}";
+
+    // template parameter so we don't have to include the JSON lib here
+    // this function is useful for the createDataset() methods in,
+    // IOHandlerImpl's, so putting that here is the simplest way to make it
+    // available for them
+    template< typename TracingJSON >
+    static void warnUnusedParameters(
+        TracingJSON &,
+        std::string const & currentBackendName,
+        std::string const & warningMessage );
 };
 
 template<>

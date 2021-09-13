@@ -150,7 +150,7 @@ ParallelHDF5IOHandlerImpl::~ParallelHDF5IOHandlerImpl()
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string path,
                                              Access at,
                                              MPI_Comm comm,
-                                             nlohmann::json /* config */)
+                                             json::TracingJSON /* config */)
         : AbstractIOHandler(std::move(path), at, comm)
 {
     throw std::runtime_error("openPMD-api built without HDF5 support");
@@ -158,7 +158,7 @@ ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string path,
 #   else
 ParallelHDF5IOHandler::ParallelHDF5IOHandler(std::string path,
                                              Access at,
-                                             nlohmann::json /* config */)
+                                             json::TracingJSON /* config */)
         : AbstractIOHandler(std::move(path), at)
 {
     throw std::runtime_error("openPMD-api built without parallel support and without HDF5 support");

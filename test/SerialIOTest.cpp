@@ -3321,7 +3321,7 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
       "type": "bp3",
       "unused": "parameter",
       "parameters": {
-        "BufferGrowthFactor": "2.0",
+        "BufferGrowthFactor": 2,
         "Profile": "On"
       }
     },
@@ -3347,7 +3347,7 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
       "type": "bp4",
       "unused": "parameter",
       "parameters": {
-        "BufferGrowthFactor": "2.0",
+        "BufferGrowthFactor": 2.0,
         "Profile": "On"
       }
     },
@@ -3357,7 +3357,7 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
         {
           "type": "blosc",
           "parameters": {
-              "clevel": "1",
+              "clevel": 1,
               "doshuffle": "BLOSC_BITSHUFFLE"
           }
         }
@@ -3394,6 +3394,8 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
 )END";
     std::string datasetConfig = R"END(
 {
+  "resizable": true,
+  "asdf": "asdf",
   "adios2": {
     "unused": "dataset parameter",
     "dataset": {
@@ -3402,12 +3404,15 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
         {
           "type": "blosc",
           "parameters": {
-              "clevel": "3",
-              "doshuffle": "BLOSC_BITSHUFFLE"
+            "clevel": 3,
+            "doshuffle": "BLOSC_BITSHUFFLE"
           }
         }
       ]
     }
+  },
+  "hdf5": {
+    "this": "should not warn"
   }
 }
 )END";
@@ -4361,7 +4366,10 @@ extendDataset( std::string const & ext )
         // only one iteration written anyway
         write.setIterationEncoding( IterationEncoding::variableBased );
 
-        Dataset ds1{ Datatype::INT, { 5, 5 }, "{ \"resizable\": true }" };
+        Dataset ds1{
+            Datatype::INT,
+            { 5, 5 },
+            "{ \"resizable\": true, \"resizeble\": \"typo\" }" };
         Dataset ds2{ Datatype::INT, { 10, 5 } };
 
         // array record component -> array record component

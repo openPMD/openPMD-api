@@ -24,6 +24,7 @@
 
 #if openPMD_HAVE_HDF5
 #   include "openPMD/Datatype.hpp"
+#   include "openPMD/Error.hpp"
 #   include "openPMD/auxiliary/Filesystem.hpp"
 #   include "openPMD/auxiliary/StringManip.hpp"
 #   include "openPMD/backend/Attribute.hpp"
@@ -97,7 +98,18 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
             auto datasetConfig = m_config[ "dataset" ];
             if( datasetConfig.json().contains( "chunks" ) )
             {
-                m_chunks = datasetConfig[ "chunks" ].json().get< std::string >();
+                auto maybeChunks = json::asLowerCaseStringDynamic(
+                    datasetConfig[ "chunks" ].json() );
+                if( maybeChunks.has_value() )
+                {
+                    m_chunks = std::move( maybeChunks.get() );
+                }
+                else
+                {
+                    throw error::BackendConfigSchema(
+                        {"hdf5", "dataset", "chunks"},
+                        "Must be convertible to string type." );
+                }
             }
         }
         if( m_chunks != "auto" && m_chunks != "none" )
@@ -294,19 +306,19 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         if( auxiliary::ends_with(name, '/') )
             name = auxiliary::replace_last(name, "/", "");
 
-        auto config = nlohmann::json::parse( parameters.options );
-        json::lowerCase( config );
+        json::TracingJSON config = json::parseOptions(
+            parameters.options, /* considerFiles = */ false );
 
         // general
         bool is_resizable_dataset = false;
-        if( config.contains( "resizable" ) )
+        if( config.json().contains( "resizable" ) )
         {
-            is_resizable_dataset = config.at( "resizable" ).get< bool >();
+            is_resizable_dataset = config[ "resizable" ].json().get< bool >();
         }
 
         // HDF5 specific
-        if( config.contains( "hdf5" ) &&
-            config[ "hdf5" ].contains( "dataset" ) )
+        if( config.json().contains( "hdf5" ) &&
+            config[ "hdf5" ].json().contains( "dataset" ) )
         {
             json::TracingJSON datasetConfig{
                 config[ "hdf5" ][ "dataset" ] };
@@ -314,15 +326,13 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
             /*
              * @todo Read more options from config here.
              */
-            auto shadow = datasetConfig.invertShadow();
-            if( shadow.size() > 0 )
-            {
-                std::cerr << "Warning: parts of the JSON configuration for "
-                             "HDF5 dataset '"
-                          << name << "' remain unused:\n"
-                          << shadow << std::endl;
-            }
+            ( void )datasetConfig;
         }
+        parameters.warnUnusedParameters(
+            config,
+            "hdf5",
+            "Warning: parts of the JSON configuration for HDF5 dataset '" +
+                name + "' remain unused:\n" );
 
         hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
 #if H5_VERSION_GE(1,10,0) && openPMD_HAVE_MPI

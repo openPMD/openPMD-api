@@ -22,6 +22,7 @@
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 
 #include "openPMD/Datatype.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
@@ -140,12 +141,18 @@ ADIOS2IOHandlerImpl::init( json::TracingJSON cfg )
             if( !engineTypeConfig.is_null() )
             {
                 // convert to string
-                m_engineType = engineTypeConfig;
-                std::transform(
-                    m_engineType.begin(),
-                    m_engineType.end(),
-                    m_engineType.begin(),
-                    []( unsigned char c ) { return std::tolower( c ); } );
+                auto maybeEngine =
+                    json::asLowerCaseStringDynamic( engineTypeConfig );
+                if( maybeEngine.has_value() )
+                {
+                    m_engineType = std::move( maybeEngine.get() );
+                }
+                else
+                {
+                    throw error::BackendConfigSchema(
+                        {"adios2", "engine", "type"},
+                        "Must be convertible to string type." );
+                }
             }
         }
         auto operators = getOperators();
@@ -188,8 +195,22 @@ ADIOS2IOHandlerImpl::getOperators( json::TracingJSON cfg )
                  paramIterator != params.end();
                  ++paramIterator )
             {
-                adiosParams[ paramIterator.key() ] =
-                    paramIterator.value().get< std::string >();
+                auto maybeString =
+                    json::asStringDynamic( paramIterator.value() );
+                if( maybeString.has_value() )
+                {
+                    adiosParams[ paramIterator.key() ] =
+                        std::move( maybeString.get() );
+                }
+                else
+                {
+                    throw error::BackendConfigSchema(
+                        { "adios2",
+                          "dataset",
+                          "operators",
+                          paramIterator.key() },
+                        "Must be convertible to string type." );
+                }
             }
         }
         auxiliary::Option< adios2::Operator > adiosOperator =
@@ -352,29 +373,25 @@ void ADIOS2IOHandlerImpl::createDataset(
         auto const varName = nameOfVariable( writable );
 
         std::vector< ParameterizedOperator > operators;
-        nlohmann::json options = nlohmann::json::parse( parameters.options );
-        json::lowerCase( options );
-        if( options.contains( "adios2" ) )
+        json::TracingJSON options = json::parseOptions(
+            parameters.options, /* considerFiles = */ false );
+        if( options.json().contains( "adios2" ) )
         {
             json::TracingJSON datasetConfig( options[ "adios2" ] );
             auto datasetOperators = getOperators( datasetConfig );
 
             operators = datasetOperators ? std::move( datasetOperators.get() )
                                          : defaultOperators;
-
-            auto shadow = datasetConfig.invertShadow();
-            if( shadow.size() > 0 )
-            {
-                std::cerr << "Warning: parts of the JSON configuration for "
-                             "ADIOS2 dataset '"
-                          << varName << "' remain unused:\n"
-                          << shadow << std::endl;
-            }
         }
         else
         {
             operators = defaultOperators;
         }
+        parameters.warnUnusedParameters(
+            options,
+            "adios2",
+            "Warning: parts of the JSON configuration for ADIOS2 dataset '" +
+                varName + "' remain unused:\n" );
 
         // cast from openPMD::Extent to adios2::Dims
         adios2::Dims const shape( parameters.extent.begin(), parameters.extent.end() );
@@ -2315,7 +2332,18 @@ namespace detail
                 for( auto it = params.json().begin(); it != params.json().end();
                      it++ )
                 {
-                    m_IO.SetParameter( it.key(), it.value() );
+                    auto maybeString = json::asStringDynamic( it.value() );
+                    if( maybeString.has_value() )
+                    {
+                        m_IO.SetParameter(
+                            it.key(), std::move( maybeString.get() ) );
+                    }
+                    else
+                    {
+                        throw error::BackendConfigSchema(
+                            {"adios2", "engine", "parameters", it.key() },
+                            "Must be convertible to string type." );
+                    }
                     alreadyConfigured.emplace( it.key() );
                 }
             }
