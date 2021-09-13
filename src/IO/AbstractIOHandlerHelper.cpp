@@ -49,7 +49,8 @@ namespace openPMD
                     path, access, comm, std::move( options ) );
             case Format::ADIOS1:
 #   if openPMD_HAVE_ADIOS1
-                return std::make_shared< ParallelADIOS1IOHandler >( path, access, comm );
+                return std::make_shared< ParallelADIOS1IOHandler >(
+                    path, access, std::move( options ), comm );
 #   else
                 throw std::runtime_error("openPMD-api built without ADIOS1 support");
 #   endif
@@ -85,7 +86,8 @@ namespace openPMD
                     path, access, std::move( options ) );
             case Format::ADIOS1:
 #if openPMD_HAVE_ADIOS1
-                return std::make_shared< ADIOS1IOHandler >( path, access );
+                return std::make_shared< ADIOS1IOHandler >(
+                    path, access, std::move( options ) );
 #else
                 throw std::runtime_error("openPMD-api built without ADIOS1 support");
 #endif

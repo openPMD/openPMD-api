@@ -22,6 +22,7 @@
 
 #include "openPMD/config.hpp"
 #include "openPMD/auxiliary/Export.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
 #include <future>
@@ -42,7 +43,7 @@ namespace openPMD
         friend class ADIOS1IOHandlerImpl;
 
     public:
-        ADIOS1IOHandler(std::string path, Access);
+        ADIOS1IOHandler(std::string path, Access, json::TracingJSON );
         ~ADIOS1IOHandler() override;
 
         std::string backendName() const override { return "ADIOS1"; }
@@ -61,7 +62,7 @@ namespace openPMD
         friend class ADIOS1IOHandlerImpl;
 
     public:
-        ADIOS1IOHandler(std::string path, Access);
+        ADIOS1IOHandler(std::string path, Access, json::TracingJSON );
         ~ADIOS1IOHandler() override;
 
         std::string backendName() const override { return "DUMMY_ADIOS1"; }

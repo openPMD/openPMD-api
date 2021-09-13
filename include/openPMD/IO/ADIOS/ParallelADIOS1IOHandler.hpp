@@ -22,6 +22,7 @@
 
 #include "openPMD/config.hpp"
 #include "openPMD/auxiliary/Export.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 
 #include <future>
@@ -42,9 +43,9 @@ namespace openPMD
 
     public:
 #   if openPMD_HAVE_MPI
-        ParallelADIOS1IOHandler(std::string path, Access, MPI_Comm);
+        ParallelADIOS1IOHandler(std::string path, Access, json::TracingJSON , MPI_Comm);
 #   else
-        ParallelADIOS1IOHandler(std::string path, Access);
+        ParallelADIOS1IOHandler(std::string path, Access, json::TracingJSON);
 #   endif
         ~ParallelADIOS1IOHandler() override;
 

@@ -581,6 +581,11 @@ if(openPMD_HAVE_ADIOS1)
         target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_HAVE_MPI=0)
     endif()
 
+    target_include_directories(openPMD.ADIOS1.Serial SYSTEM PRIVATE
+        $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
+    target_include_directories(openPMD.ADIOS1.Parallel SYSTEM PRIVATE
+        $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
+
     set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
         POSITION_INDEPENDENT_CODE ON
         CXX_VISIBILITY_PRESET hidden
