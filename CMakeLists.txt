@@ -811,6 +811,11 @@ if(openPMD_BUILD_TESTING)
         else()
             target_link_libraries(${testname}Tests PRIVATE CatchMain)
         endif()
+
+        set_target_properties(${testname}Tests PROPERTIES
+            CXX_EXTENSIONS OFF
+            CXX_STANDARD_REQUIRED ON
+        )
     endforeach()
 endif()
 
@@ -818,6 +823,10 @@ if(openPMD_BUILD_CLI_TOOLS)
     foreach(toolname ${openPMD_CLI_TOOL_NAMES})
         add_executable(openpmd-${toolname} src/cli/${toolname}.cpp)
         target_link_libraries(openpmd-${toolname} PRIVATE openPMD)
+        set_target_properties(openpmd-${toolname} PROPERTIES
+            CXX_EXTENSIONS OFF
+            CXX_STANDARD_REQUIRED ON
+        )
     endforeach()
 endif()
 
@@ -827,10 +836,18 @@ if(openPMD_BUILD_EXAMPLES)
             if(openPMD_HAVE_MPI)
                 add_executable(${examplename} examples/${examplename}.cpp)
                 target_link_libraries(${examplename} PRIVATE openPMD)
+                set_target_properties(${examplename} PROPERTIES
+                    CXX_EXTENSIONS OFF
+                    CXX_STANDARD_REQUIRED ON
+                )
             endif()
         else()
             add_executable(${examplename} examples/${examplename}.cpp)
             target_link_libraries(${examplename} PRIVATE openPMD)
+            set_target_properties(${examplename} PROPERTIES
+                CXX_EXTENSIONS OFF
+                CXX_STANDARD_REQUIRED ON
+            )
         endif()
     endforeach()
 endif()
