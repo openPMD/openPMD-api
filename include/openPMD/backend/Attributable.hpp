@@ -434,7 +434,8 @@ AttributableInterface::setAttribute( std::string const & key, T value )
         && !attri.m_attributes.key_comp()(key, it->first) )
     {
         // key already exists in map, just replace the value
-        it->second = Attribute(value);
+        Attribute::resource val(value);
+        it->second = Attribute(std::move(val));
         return true;
     } else
     {
