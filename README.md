@@ -232,7 +232,7 @@ cd openPMD-api-build
 # for options append:
 #   -DopenPMD_USE_...=...
 # e.g. for python support add:
-#   -DopenPMD_USE_PYTHON=ON
+#   -DopenPMD_USE_PYTHON=ON -DPython_EXECUTABLE=$(which python3)
 cmake ../openPMD-api
 
 cmake --build .
