@@ -105,6 +105,7 @@ attr_value_check( std::string const key, std::string const value )
                 "' must not be empty!" );
 }
 
+template< typename > class BaseRecordData;
 } // namespace internal
 
 /** @brief Layer to manage storage of attributes associated with file objects.
@@ -119,6 +120,10 @@ class AttributableInterface
     friend Writable* getWritable(AttributableInterface*);
     template< typename T_elem >
     friend class BaseRecord;
+    template< typename T_elem >
+    friend class BaseRecordInterface;
+    template< typename >
+    friend class internal::BaseRecordData;
     template<
         typename T,
         typename T_key,
@@ -352,6 +357,12 @@ OPENPMD_protected:
     }
 
     inline
+    void setData( internal::AttributableData * attri )
+    {
+        m_attri = attri;
+    }
+
+    inline
     internal::AttributableData & get()
     {
         if( m_attri )
@@ -407,7 +418,7 @@ protected:
 public:
     LegacyAttributable() : AttributableInterface{ nullptr }
     {
-        AttributableInterface::m_attri = m_attributableData.get();
+        AttributableInterface::setData( m_attributableData.get() );
     }
 };
 

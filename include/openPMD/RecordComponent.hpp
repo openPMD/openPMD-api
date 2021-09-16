@@ -78,6 +78,40 @@ struct IsContiguousContainer< std::array< T_Value, N > >
 template< typename T >
 class DynamicMemoryView;
 
+class RecordComponent;
+
+namespace internal
+{
+    class RecordComponentData : public BaseRecordComponentData
+    {
+        friend class openPMD::RecordComponent;
+
+        RecordComponentData();
+
+        RecordComponentData( RecordComponentData const & ) = delete;
+        RecordComponentData( RecordComponentData && ) = delete;
+
+        RecordComponentData & operator=( RecordComponentData const & ) = delete;
+        RecordComponentData & operator=( RecordComponentData && ) = delete;
+
+        std::queue< IOTask > m_chunks;
+        Attribute m_constantValue{ -1 };
+        /**
+         * The same std::string that the parent class would pass as parameter to
+         * RecordComponent::flush().
+         * This is stored only upon RecordComponent::flush() if
+         * AbstractIOHandler::flushLevel is set to FlushLevel::SkeletonOnly
+         * (for use by the Span<T>-based overload of RecordComponent::storeChunk()).
+         * @todo Merge functionality with ownKeyInParent?
+         */
+        std::string m_name;
+        bool m_isEmpty = false;
+        // User has extended the dataset, but the EXTEND task must yet be
+        // flushed to the backend
+        bool m_hasBeenExtended = false;
+    };
+}
+
 class RecordComponent : public BaseRecordComponent
 {
     template<
@@ -90,10 +124,14 @@ class RecordComponent : public BaseRecordComponent
     friend class ParticleSpecies;
     template< typename T_elem >
     friend class BaseRecord;
+    template< typename T_elem >
+    friend class BaseRecordInterface;
     friend class Record;
     friend class Mesh;
     template< typename >
     friend class DynamicMemoryView;
+    friend class internal::RecordComponentData;
+    friend class MeshRecordComponent;
 
 public:
     enum class Allocation
@@ -248,21 +286,6 @@ public:
 
     static constexpr char const * const SCALAR = "\vScalar";
 
-    virtual ~RecordComponent() = default;
-
-OPENPMD_protected:
-    RecordComponent();
-
-    void readBase();
-
-    std::shared_ptr< std::queue< IOTask > > m_chunks;
-    std::shared_ptr< Attribute > m_constantValue;
-    std::shared_ptr< bool > m_isEmpty = std::make_shared< bool >( false );
-    // User has extended the dataset, but the EXTEND task must yet be flushed
-    // to the backend
-    std::shared_ptr< bool > m_hasBeenExtended =
-        std::make_shared< bool >( false );
-
 private:
     void flush(std::string const&);
     virtual void read();
@@ -285,19 +308,34 @@ private:
      */
     bool dirtyRecursive() const;
 
-protected:
+    std::shared_ptr< internal::RecordComponentData > m_recordComponentData{
+        new internal::RecordComponentData() };
 
-    /**
-     * The same std::string that the parent class would pass as parameter to
-     * RecordComponent::flush().
-     * This is stored only upon RecordComponent::flush() if
-     * AbstractIOHandler::flushLevel is set to FlushLevel::SkeletonOnly
-     * (for use by the Span<T>-based overload of RecordComponent::storeChunk()).
-     * @todo Merge functionality with ownKeyInParent?
-     */
-    std::shared_ptr< std::string > m_name = std::make_shared< std::string >();
+    RecordComponent();
 
+OPENPMD_protected:
+    RecordComponent( std::shared_ptr< internal::RecordComponentData > );
+
+    inline internal::RecordComponentData const & get() const
+    {
+        return *m_recordComponentData;
+    }
+
+    inline internal::RecordComponentData & get()
+    {
+        return const_cast< internal::RecordComponentData & >(
+            static_cast< RecordComponent const * >( this )->get() );
+    }
+
+    inline void setData( std::shared_ptr< internal::RecordComponentData > data )
+    {
+        m_recordComponentData = std::move( data );
+        BaseRecordComponent::setData( m_recordComponentData );
+    }
+
+    void readBase();
 }; // RecordComponent
+
 } // namespace openPMD
 
 #include "RecordComponent.tpp"

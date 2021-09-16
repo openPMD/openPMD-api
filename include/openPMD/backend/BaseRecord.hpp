@@ -32,11 +32,65 @@
 namespace openPMD
 {
 
+template< typename > class BaseRecord;
+
+namespace internal
+{
+    template< typename T_elem >
+    class BaseRecordData : public ContainerData< T_elem >
+    {
+        template< typename > friend class openPMD::BaseRecord;
+
+    protected:
+        bool m_containsScalar = false;
+
+    public:
+        BaseRecordData();
+
+        BaseRecordData( BaseRecordData const & ) = delete;
+        BaseRecordData( BaseRecordData && ) = delete;
+
+        BaseRecordData & operator=( BaseRecordData const & ) = delete;
+        BaseRecordData & operator=( BaseRecordData && ) = delete;
+    };
+}
+
 template< typename T_elem >
 class BaseRecord : public Container< T_elem >
 {
     friend class Iteration;
     friend class ParticleSpecies;
+    friend class PatchRecord;
+    friend class Record;
+
+    friend class Mesh;
+    friend class ParticleSpecies;
+
+    std::shared_ptr< internal::BaseRecordData< T_elem > > m_baseRecordData{
+        new internal::BaseRecordData< T_elem >() };
+
+    inline internal::BaseRecordData< T_elem > & get()
+    {
+        return const_cast< internal::BaseRecordData< T_elem > & >(
+            static_cast< BaseRecord const * >( this )->get() );
+    }
+
+    inline internal::BaseRecordData< T_elem > const & get() const
+    {
+        return *m_baseRecordData;
+    }
+
+    BaseRecord();
+
+protected:
+
+    BaseRecord( std::shared_ptr< internal::BaseRecordData< T_elem > > );
+
+    inline void setData( internal::BaseRecordData< T_elem > * data )
+    {
+        m_baseRecordData = std::move( data );
+        Container< T_elem >::setData( m_baseRecordData );
+    }
 
 public:
     using key_type = typename Container< T_elem >::key_type;
@@ -52,8 +106,6 @@ public:
     using iterator = typename Container< T_elem >::iterator;
     using const_iterator = typename Container< T_elem >::const_iterator;
 
-    BaseRecord(BaseRecord const& b);
-    BaseRecord& operator=(BaseRecord const& b);
     virtual ~BaseRecord() = default;
 
     mapped_type& operator[](key_type const& key) override;
@@ -88,10 +140,8 @@ public:
     bool scalar() const;
 
 protected:
-    BaseRecord();
+    BaseRecord( internal::BaseRecordData< T_elem > * );
     void readBase();
-
-    std::shared_ptr< bool > m_containsScalar;
 
 private:
     void flush(std::string const&) final;
@@ -111,32 +161,37 @@ private:
 }; // BaseRecord
 
 
-template< typename T_elem >
-BaseRecord< T_elem >::BaseRecord(BaseRecord const& b)
-        : Container< T_elem >(b),
-          m_containsScalar{b.m_containsScalar}
-{ }
+// implementation
 
-template< typename T_elem >
-BaseRecord< T_elem >& BaseRecord< T_elem >::operator=(openPMD::BaseRecord<T_elem> const& b) {
-    Container< T_elem >::operator=( b );
-    m_containsScalar = b.m_containsScalar;
-    return *this;
-}
-
-template< typename T_elem >
-BaseRecord< T_elem >::BaseRecord()
-        : Container< T_elem >(),
-          m_containsScalar{std::make_shared< bool >(false)}
+namespace internal
 {
-    this->setAttribute("unitDimension",
-                       std::array< double, 7 >{{0., 0., 0., 0., 0., 0., 0.}});
-}
-
+    template< typename T_elem >
+    BaseRecordData< T_elem >::BaseRecordData()
+    {
+        AttributableInterface impl{ this };
+        impl.setAttribute(
+            "unitDimension",
+            std::array< double, 7 >{ { 0., 0., 0., 0., 0., 0., 0. } } );
+    }
+} // namespace internal
 
 template< typename T_elem >
-inline typename BaseRecord< T_elem >::mapped_type&
-BaseRecord< T_elem >::operator[](key_type const& key)
+BaseRecord< T_elem >::BaseRecord() : Container< T_elem >{ nullptr }
+{
+    Container< T_elem >::setData( m_baseRecordData );
+}
+
+template< typename T_elem >
+BaseRecord< T_elem >::BaseRecord(
+    std::shared_ptr< internal::BaseRecordData< T_elem > > data )
+    : Container< T_elem >{ data }
+    , m_baseRecordData{ std::move( data ) }
+{
+}
+
+template< typename T_elem >
+inline typename BaseRecord< T_elem >::mapped_type &
+BaseRecord< T_elem >::operator[]( key_type const & key )
 {
     auto it = this->find(key);
     if( it != this->end() )
@@ -151,7 +206,7 @@ BaseRecord< T_elem >::operator[](key_type const& key)
         mapped_type& ret = Container< T_elem >::operator[](key);
         if( keyScalar )
         {
-            *m_containsScalar = true;
+            get().m_containsScalar = true;
             ret.parent() = this->parent();
         }
         return ret;
@@ -175,7 +230,7 @@ BaseRecord< T_elem >::operator[](key_type&& key)
         mapped_type& ret = Container< T_elem >::operator[](std::move(key));
         if( keyScalar )
         {
-            *m_containsScalar = true;
+            get().m_containsScalar = true;
             ret.parent() = this->parent();
         }
         return ret;
@@ -207,7 +262,7 @@ BaseRecord< T_elem >::erase(key_type const& key)
     {
         this->written() = false;
         this->writable().abstractFilePosition.reset();
-        *this->m_containsScalar = false;
+        this->get().m_containsScalar = false;
     }
     return res;
 }
@@ -237,7 +292,7 @@ BaseRecord< T_elem >::erase(iterator res)
     {
         this->written() = false;
         this->writable().abstractFilePosition.reset();
-        *this->m_containsScalar = false;
+        this->get().m_containsScalar = false;
     }
     return ret;
 }
@@ -253,7 +308,7 @@ template< typename T_elem >
 inline bool
 BaseRecord< T_elem >::scalar() const
 {
-    return *m_containsScalar;
+    return get().m_containsScalar;
 }
 
 template< typename T_elem >

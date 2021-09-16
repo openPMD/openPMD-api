@@ -67,6 +67,8 @@ class Writable final
     friend class AttributableInterface;
     template< typename T_elem >
     friend class BaseRecord;
+    template< typename T_elem >
+    friend class BaseRecordInterface;
     template<
             typename T,
             typename T_key,

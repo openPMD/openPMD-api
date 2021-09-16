@@ -35,34 +35,30 @@ BaseRecordComponent::resetDatatype(Datatype d)
     if( written() )
         throw std::runtime_error("A Records Datatype can not (yet) be changed after it has been written.");
 
-    m_dataset->dtype = d;
+    get().m_dataset.dtype = d;
     return *this;
 }
-
-BaseRecordComponent::BaseRecordComponent()
-        : m_dataset{std::make_shared< Dataset >(Dataset(Datatype::UNDEFINED, {}))},
-          m_isConstant{std::make_shared< bool >(false)}
-{ }
 
 Datatype
 BaseRecordComponent::getDatatype() const
 {
-    return m_dataset->dtype;
+    return get().m_dataset.dtype;
 }
 
 bool
 BaseRecordComponent::constant() const
 {
-    return *m_isConstant;
+    return get().m_isConstant;
 }
 
 ChunkTable
 BaseRecordComponent::availableChunks()
 {
-    if( m_isConstant && *m_isConstant )
+    auto & rc = get();
+    if( rc.m_isConstant )
     {
-        Offset offset( m_dataset->extent.size(), 0 );
-        return ChunkTable{ { std::move( offset ), m_dataset->extent } };
+        Offset offset( rc.m_dataset.extent.size(), 0 );
+        return ChunkTable{ { std::move( offset ), rc.m_dataset.extent } };
     }
     containingIteration().open();
     Parameter< Operation::AVAILABLE_CHUNKS > param;
@@ -70,5 +66,17 @@ BaseRecordComponent::availableChunks()
     IOHandler()->enqueue( task );
     IOHandler()->flush();
     return std::move( *param.chunks );
+}
+
+BaseRecordComponent::BaseRecordComponent(
+    std::shared_ptr< internal::BaseRecordComponentData > data)
+    : AttributableInterface{ data.get() }
+    , m_baseRecordComponentData{ std::move( data ) }
+{}
+
+BaseRecordComponent::BaseRecordComponent()
+    : AttributableInterface{ nullptr }
+{
+    AttributableInterface::setData( m_baseRecordComponentData.get() );
 }
 } // namespace openPMD

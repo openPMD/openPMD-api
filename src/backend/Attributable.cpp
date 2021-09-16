@@ -39,8 +39,8 @@ AttributableData::AttributableData() : m_writable{ this }
 }
 
 AttributableInterface::AttributableInterface( internal::AttributableData * attri )
-    : m_attri{ attri }
 {
+    setData( attri );
 }
 
 Attribute

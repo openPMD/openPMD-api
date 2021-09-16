@@ -473,7 +473,7 @@ void Iteration::read_impl( std::string const & groupPath )
                 mrc.parent() = m.parent();
                 IOHandler()->enqueue(IOTask(&mrc, pOpen));
                 IOHandler()->flush();
-                *mrc.m_isConstant = true;
+                mrc.get().m_isConstant = true;
             }
             m.read();
         }

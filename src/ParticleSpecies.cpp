@@ -75,7 +75,7 @@ ParticleSpecies::read()
                 rc.parent() = r.parent();
                 IOHandler()->enqueue(IOTask(&rc, pOpen));
                 IOHandler()->flush();
-                *rc.m_isConstant = true;
+                rc.get().m_isConstant = true;
             }
             r.read();
         }
@@ -83,7 +83,7 @@ ParticleSpecies::read()
 
     if( !hasParticlePatches )
     {
-        auto & container = *particlePatches.m_container;
+        auto & container = particlePatches.container();
         container.erase( "numParticles" );
         container.erase( "numParticlesOffset" );
     }

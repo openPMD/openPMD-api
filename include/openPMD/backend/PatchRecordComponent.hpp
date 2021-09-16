@@ -36,22 +36,42 @@
 namespace openPMD
 {
 
+class PatchRecordComponent;
+class PatchRecordComponent;
+namespace internal
+{
+    class PatchRecordComponentData : public BaseRecordComponentData
+    {
+        friend class openPMD::PatchRecordComponent;
+        friend class openPMD::PatchRecordComponent;
+
+        std::queue< IOTask > m_chunks;
+
+        PatchRecordComponentData( PatchRecordComponentData const & ) = delete;
+        PatchRecordComponentData( PatchRecordComponentData && ) = delete;
+
+        PatchRecordComponentData & operator=(
+            PatchRecordComponentData const & ) = delete;
+        PatchRecordComponentData & operator=(
+            PatchRecordComponentData && ) = delete;
+
+    protected:
+        PatchRecordComponentData();
+    };
+}
+
 /**
  * @todo add support for constant patch record components
  */
 class PatchRecordComponent : public BaseRecordComponent
 {
-    template<
-        typename T,
-        typename T_key,
-        typename T_container
-    >
-    friend
-    class Container;
-
+    template< typename T, typename T_key, typename T_container >
+    friend class Container;
     template< typename > friend class BaseRecord;
     friend class ParticlePatches;
     friend class PatchRecord;
+    friend class ParticleSpecies;
+    friend class internal::PatchRecordComponentData;
 
 public:
     PatchRecordComponent& setUnitSI(double);
@@ -63,18 +83,17 @@ public:
 
     template< typename T >
     std::shared_ptr< T > load();
+
     template< typename T >
     void load(std::shared_ptr< T >);
+
     template< typename T >
     void store(uint64_t idx, T);
 
 OPENPMD_private:
-    PatchRecordComponent();
 
     void flush(std::string const&);
     void read();
-
-    std::shared_ptr< std::queue< IOTask > > m_chunks;
 
     /**
      * @brief Check recursively whether this RecordComponent is dirty.
@@ -86,6 +105,35 @@ OPENPMD_private:
      */
     bool
     dirtyRecursive() const;
+
+    std::shared_ptr< internal::PatchRecordComponentData >
+        m_patchRecordComponentData{
+            new internal::PatchRecordComponentData() };
+
+    PatchRecordComponent();
+
+protected:
+    PatchRecordComponent(
+        std::shared_ptr< internal::PatchRecordComponentData > );
+
+    inline internal::PatchRecordComponentData const & get() const
+    {
+        return *m_patchRecordComponentData;
+    }
+
+    inline internal::PatchRecordComponentData & get()
+    {
+        return const_cast< internal::PatchRecordComponentData & >(
+            static_cast< PatchRecordComponent const * >( this )
+                ->get() );
+    }
+
+    inline void setData(
+            std::shared_ptr< internal::PatchRecordComponentData > data )
+    {
+        m_patchRecordComponentData = std::move( data );
+        BaseRecordComponent::setData( m_patchRecordComponentData );
+    }
 }; // PatchRecordComponent
 
 template< typename T >
@@ -118,7 +166,8 @@ PatchRecordComponent::load(std::shared_ptr< T > data)
     dRead.extent = {numPoints};
     dRead.dtype = getDatatype();
     dRead.data = std::static_pointer_cast< void >(data);
-    m_chunks->push(IOTask(this, dRead));
+    auto & rc = get();
+    rc.m_chunks.push(IOTask(this, dRead));
 }
 
 template< typename T >
@@ -147,6 +196,7 @@ PatchRecordComponent::store(uint64_t idx, T data)
     dWrite.extent = {1};
     dWrite.dtype = dtype;
     dWrite.data = std::make_shared< T >(data);
-    m_chunks->push(IOTask(this, dWrite));
+    auto & rc = get();
+    rc.m_chunks.push(IOTask(this, dWrite));
 }
 } // namespace openPMD

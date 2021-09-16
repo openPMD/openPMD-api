@@ -33,8 +33,10 @@ RecordComponent::makeConstant(T value)
     if( written() )
         throw std::runtime_error("A recordComponent can not (yet) be made constant after it has been written.");
 
-    *m_constantValue = Attribute(value);
-    *m_isConstant = true;
+    auto & rc = get();
+
+    rc.m_constantValue = Attribute(value);
+    rc.m_isConstant = true;
     return *this;
 }
 
@@ -133,13 +135,14 @@ inline void RecordComponent::loadChunk(
     if( !data )
         throw std::runtime_error("Unallocated pointer passed during chunk loading.");
 
+    auto & rc = get();
     if( constant() )
     {
         uint64_t numPoints = 1u;
         for( auto const& dimensionSize : extent )
             numPoints *= dimensionSize;
 
-        T value = m_constantValue->get< T >();
+        T value = rc.m_constantValue.get< T >();
 
         T* raw_ptr = data.get();
         std::fill(raw_ptr, raw_ptr + numPoints, value);
@@ -150,7 +153,7 @@ inline void RecordComponent::loadChunk(
         dRead.extent = extent;
         dRead.dtype = getDatatype();
         dRead.data = std::static_pointer_cast< void >(data);
-        m_chunks->push(IOTask(this, dRead));
+        rc.m_chunks.push(IOTask(this, dRead));
     }
 }
 
@@ -201,7 +204,8 @@ RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
     dWrite.dtype = dtype;
     /* std::static_pointer_cast correctly reference-counts the pointer */
     dWrite.data = std::static_pointer_cast< void const >(data);
-    m_chunks->push(IOTask(this, dWrite));
+    auto & rc = get();
+    rc.m_chunks.push(IOTask(this, dWrite));
 }
 
 template< typename T_ContiguousContainer >
@@ -289,14 +293,15 @@ RecordComponent::storeChunk( Offset o, Extent e, F && createBuffer )
      */
     if( !written() )
     {
+        auto & rc = get();
         Parameter< Operation::CREATE_DATASET > dCreate;
-        dCreate.name = *m_name;
+        dCreate.name = rc.m_name;
         dCreate.extent = getExtent();
         dCreate.dtype = getDatatype();
-        dCreate.chunkSize = m_dataset->chunkSize;
-        dCreate.compression = m_dataset->compression;
-        dCreate.transform = m_dataset->transform;
-        dCreate.options = m_dataset->options;
+        dCreate.chunkSize = rc.m_dataset.chunkSize;
+        dCreate.compression = rc.m_dataset.compression;
+        dCreate.transform = rc.m_dataset.transform;
+        dCreate.options = rc.m_dataset.options;
         IOHandler()->enqueue(IOTask(this, dCreate));
     }
     Parameter< Operation::GET_BUFFER_VIEW > getBufferView;
