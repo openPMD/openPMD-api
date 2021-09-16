@@ -77,6 +77,7 @@ openpmd_option(ADIOS2         "ADIOS2 backend (.bp files)"                AUTO)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
 
 option(openPMD_INSTALL               "Add installation targets"             ON)
+option(openPMD_INSTALL_RPATH         "Add RPATHs to installed binaries"     ON)
 option(openPMD_HAVE_PKGCONFIG        "Generate a .pc file for pkg-config"   ON)
 option(openPMD_USE_INTERNAL_VARIANT  "Use internally shipped MPark.Variant" ON)
 option(openPMD_USE_INTERNAL_CATCH    "Use internally shipped Catch2"        ON)
@@ -963,6 +964,33 @@ if(openPMD_INSTALL)
         endforeach()
     endif()
 
+    if(openPMD_INSTALL_RPATH)
+        set(openPMD_INSTALL_RPATH_TARGET_NAMES ${openPMD_INSTALL_TARGET_NAMES})
+        if(openPMD_HAVE_PYTHON)
+            list(APPEND openPMD_INSTALL_RPATH_TARGET_NAMES openPMD.py)
+        endif()
+        if(NOT DEFINED CMAKE_INSTALL_RPATH)
+            if(APPLE)
+                set_target_properties(${openPMD_INSTALL_RPATH_TARGET_NAMES} PROPERTIES
+                    INSTALL_RPATH "@loader_path"
+                )
+            elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
+                set_target_properties(${openPMD_INSTALL_RPATH_TARGET_NAMES} PROPERTIES
+                    INSTALL_RPATH "$ORIGIN"
+                )
+            endif()
+            # Windows: has no RPath concept, all interdependent `.dll`s must be in
+            #          %PATH% or in the same dir as the calling executable
+        endif()
+
+        if(NOT DEFINED CMAKE_INSTALL_RPATH_USE_LINK_PATH)
+            # those are appended AFTER the paths in INSTALL_RPATH
+            set_target_properties(${openPMD_INSTALL_RPATH_TARGET_NAMES} PROPERTIES
+                INSTALL_RPATH_USE_LINK_PATH ON
+            )
+        endif()
+    endif()
+
     install(TARGETS ${openPMD_INSTALL_TARGET_NAMES}
         EXPORT openPMDTargets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -1355,6 +1383,7 @@ message("  C++ Compiler: ${CMAKE_CXX_COMPILER_ID} "
 message("    ${CMAKE_CXX_COMPILER}")
 message("")
 if(openPMD_INSTALL)
+    message("  Install with RPATHs: ${openPMD_INSTALL_RPATH}")
     message("  Installation prefix: ${CMAKE_INSTALL_PREFIX}")
     message("        bin: ${CMAKE_INSTALL_BINDIR}")
     message("        lib: ${CMAKE_INSTALL_LIBDIR}")
