@@ -9,7 +9,6 @@ void define_julia_Datatype(jlcxx::Module &mod) {
 #define USE_TYPE(NAME, ENUM, TYPE) mod.set_const(NAME, ENUM);
   { FORALL_OPENPMD_TYPES(USE_TYPE) }
 #undef USE_TYPE
-  mod.set_const("DATATYPE", Datatype::DATATYPE);
   mod.set_const("UNDEFINED", Datatype::UNDEFINED);
 
   mod.set_const("openPMD_datatypes", openPMD_Datatypes);
