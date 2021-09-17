@@ -59,6 +59,7 @@ namespace traits
 namespace internal
 {
 class SeriesData;
+template< typename > class EraseStaleEntries;
 }
 
 namespace detail
@@ -114,6 +115,7 @@ class Container : public LegacyAttributable
     friend class internal::SeriesData;
     friend class SeriesInterface;
     friend class Series;
+    template< typename > friend class internal::EraseStaleEntries;
 
 protected:
     using InternalContainer = T_container;
@@ -325,7 +327,10 @@ OPENPMD_protected:
     }
 
     std::shared_ptr< InternalContainer > m_container;
+};
 
+namespace internal
+{
     /**
      * This class wraps a Container and forwards operator[]() and at() to it.
      * It remembers the keys used for accessing. Upon going out of scope, all
@@ -333,9 +338,15 @@ OPENPMD_protected:
      * Note that the container is stored by non-owning reference, thus
      * requiring that the original Container stay in scope while using this
      * class.
+     * Container_t can be instantiated either by a reference or value type.
      */
+    template< typename Container_t >
     class EraseStaleEntries
     {
+        using BareContainer_t =
+            typename std::remove_reference< Container_t >::type;
+        using key_type = typename BareContainer_t::key_type;
+        using mapped_type = typename BareContainer_t::mapped_type;
         std::set< key_type > m_accessedKeys;
         /*
          * Note: Putting a copy here leads to weird bugs due to destructors
@@ -344,13 +355,23 @@ OPENPMD_protected:
          * Container class template
          * (https://github.com/openPMD/openPMD-api/pull/886)
          */
-        Container & m_originalContainer;
+        Container_t m_originalContainer;
 
     public:
-        explicit EraseStaleEntries( Container & container_in )
+        explicit EraseStaleEntries(
+            Container_t & container_in )
             : m_originalContainer( container_in )
         {
         }
+
+        explicit EraseStaleEntries(
+            BareContainer_t && container_in )
+            : m_originalContainer( std::move( container_in ) )
+        {
+        }
+
+        EraseStaleEntries( EraseStaleEntries && ) = default;
+        EraseStaleEntries & operator=( EraseStaleEntries && ) = default;
 
         template< typename K >
         mapped_type & operator[]( K && k )
@@ -369,7 +390,7 @@ OPENPMD_protected:
         ~EraseStaleEntries()
         {
             auto & map = *m_originalContainer.m_container;
-            using iterator_t = typename InternalContainer::const_iterator;
+            using iterator_t = typename BareContainer_t::const_iterator;
             std::vector< iterator_t > deleteMe;
             deleteMe.reserve( map.size() - m_accessedKeys.size() );
             for( iterator_t it = map.begin(); it != map.end(); ++it )
@@ -386,11 +407,5 @@ OPENPMD_protected:
             }
         }
     };
-
-    EraseStaleEntries eraseStaleEntries()
-    {
-        return EraseStaleEntries( *this );
-    }
-};
-
+} // internal
 } // openPMD

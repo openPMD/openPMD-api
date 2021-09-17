@@ -447,7 +447,7 @@ void Iteration::read_impl( std::string const & groupPath )
 
         meshes.readAttributes( ReadMode::FullyReread );
 
-        auto map = meshes.eraseStaleEntries();
+        internal::EraseStaleEntries< decltype( meshes ) > map{ meshes };
 
         /* obtain all non-scalar meshes */
         IOHandler()->enqueue(IOTask(&meshes, pList));
@@ -517,7 +517,7 @@ void Iteration::read_impl( std::string const & groupPath )
         IOHandler()->enqueue(IOTask(&particles, pList));
         IOHandler()->flush();
 
-        auto map = particles.eraseStaleEntries();
+        internal::EraseStaleEntries< decltype( particles ) > map{ particles };
         for( auto const& species_name : *pList.paths )
         {
             ParticleSpecies& p = map[species_name];

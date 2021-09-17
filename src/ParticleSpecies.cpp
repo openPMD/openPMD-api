@@ -42,7 +42,7 @@ ParticleSpecies::read()
     IOHandler()->enqueue(IOTask(this, pList));
     IOHandler()->flush();
 
-    auto map = eraseStaleEntries();
+    internal::EraseStaleEntries< ParticleSpecies & > map{ *this };
 
     Parameter< Operation::OPEN_PATH > pOpen;
     Parameter< Operation::LIST_ATTS > aList;
@@ -70,7 +70,7 @@ ParticleSpecies::read()
             auto shape = std::find(att_begin, att_end, "shape");
             if( value != att_end && shape != att_end )
             {
-                auto scalarMap = r.eraseStaleEntries();
+                internal::EraseStaleEntries< Record & > scalarMap( r );
                 RecordComponent& rc = scalarMap[RecordComponent::SCALAR];
                 rc.parent() = r.parent();
                 IOHandler()->enqueue(IOTask(&rc, pOpen));
@@ -101,7 +101,7 @@ ParticleSpecies::read()
             dOpen.name = record_name;
             IOHandler()->enqueue(IOTask(&r, dOpen));
             IOHandler()->flush();
-            auto scalarMap = r.eraseStaleEntries();
+            internal::EraseStaleEntries< Record & > scalarMap( r );
             RecordComponent& rc = scalarMap[RecordComponent::SCALAR];
             rc.parent() = r.parent();
             IOHandler()->enqueue(IOTask(&rc, dOpen));

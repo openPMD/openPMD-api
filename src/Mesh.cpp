@@ -274,7 +274,7 @@ Mesh::flush_impl(std::string const& name)
 void
 Mesh::read()
 {
-    auto map = eraseStaleEntries();
+    internal::EraseStaleEntries< Mesh & > map{ *this };
 
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
