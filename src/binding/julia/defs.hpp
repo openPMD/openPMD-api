@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <array>
 #include <complex>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <string>
@@ -22,6 +23,13 @@
 #include <vector>
 
 using namespace openPMD;
+
+template <std::size_t I> struct sized_uint;
+template <> struct sized_uint<1> { using type = std::uint8_t; };
+template <> struct sized_uint<2> { using type = std::uint16_t; };
+template <> struct sized_uint<4> { using type = std::uint32_t; };
+template <> struct sized_uint<8> { using type = std::uint64_t; };
+template <std::size_t I> using sized_uint_t = typename sized_uint<I>::type;
 
 template <typename T> using array7 = std::array<T, 7>;
 

@@ -69,9 +69,15 @@ void define_julia_Series(jlcxx::Module &mod) {
 
     type.constructor<>();
 #if openPMD_HAVE_MPI
-    type.constructor<const std::string &, Access, MPI_Comm,
-                     const std::string &>();
-    type.constructor<const std::string &, Access, MPI_Comm>();
+    type.method("cxx_Series", [](const std::string &filepath, Access at,
+                                 sized_uint_t<sizeof(MPI_Comm)> comm,
+                                 const std::string &options) {
+      return Series(filepath, at, *(const MPI_Comm *)&comm, options);
+    });
+    type.method("cxx_Series", [](const std::string &filepath, Access at,
+                                 sized_uint_t<sizeof(MPI_Comm)> comm) {
+      return Series(filepath, at, *(const MPI_Comm *)&comm);
+    });
 #endif
     type.constructor<const std::string &, Access, const std::string &>();
     type.constructor<const std::string &, Access>();
