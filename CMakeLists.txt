@@ -348,14 +348,7 @@ endif()
 # TODO: Check if ADIOS2 is parallel when openPMD_HAVE_MPI is ON
 
 # External library: libcxxwrap-julia
-if(openPMD_USE_Julia STREQUAL AUTO)
-    find_package(JlCxx 0.8.3)
-    if(Julia_FOUND)
-        set(openPMD_HAVE_Julia TRUE)
-    else()
-        set(openPMD_HAVE_Julia FALSE)
-    endif()
-elseif(openPMD_USE_Julia)
+if(openPMD_USE_Julia)
     find_package(JlCxx 0.8.3 REQUIRED)
     set(openPMD_HAVE_Julia TRUE)
 else()
