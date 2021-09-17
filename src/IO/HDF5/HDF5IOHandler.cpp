@@ -86,11 +86,37 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
     H5Tinsert(m_H5T_CLONG_DOUBLE, "i", sizeof(long double), H5T_NATIVE_LDOUBLE);
 
     m_chunks = auxiliary::getEnvString( "OPENPMD_HDF5_CHUNKS", "auto" );
+    {
+        auto const strByte = auxiliary::getEnvString("OPENPMD_HDF5_ALIGNMENT", "4194304");
+        std::stringstream sstream(strByte);
+        sstream >> m_alignment;
+    }
+
     // JSON option can overwrite env option:
     if( config.contains( "hdf5" ) )
     {
         m_config = std::move( config[ "hdf5" ] );
 
+        // check for global configs
+        if( m_config.json().contains( "alignment" ) )
+        {
+            auto alignmentConfig = m_config[ "alignment" ];
+            if( alignmentConfig.json().contains( "size" ) )
+            {
+                auto const strAlignment = alignmentConfig[ "size" ].json().get< std::string >();
+                std::stringstream sstream(strAlignment);
+                sstream >> m_alignment;
+            }
+            if( alignmentConfig.json().contains( "threshold" ) )
+            {
+                auto const strThreshold = alignmentConfig[ "threshold" ].json().get< std::string >();
+                std::stringstream sstream(strThreshold);
+                sstream >> m_threshold;
+            }
+            // align all (no threshold) if only alignment is set
+            if( m_alignment > 1 && m_threshold == 1 )
+                m_threshold = 0;
+        }
         // check for global dataset configs
         if( m_config.json().contains( "dataset" ) )
         {
