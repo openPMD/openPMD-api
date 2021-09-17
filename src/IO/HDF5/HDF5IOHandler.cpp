@@ -962,8 +962,6 @@ HDF5IOHandlerImpl::writeDataset(Writable* writable,
             break;
         case DT::UNDEFINED:
             throw std::runtime_error("[HDF5] Undefined Attribute datatype");
-        case DT::DATATYPE:
-            throw std::runtime_error("[HDF5] Meta-Datatype leaked into IO");
         default:
             throw std::runtime_error("[HDF5] Datatype not implemented in HDF5 IO");
     }
@@ -1234,8 +1232,6 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
             break;
         }
         case DT::UNDEFINED:
-        case DT::DATATYPE:
-            throw std::runtime_error("[HDF5] Unknown Attribute datatype (HDF5 Attribute write)");
         default:
             throw std::runtime_error("[HDF5] Datatype not implemented in HDF5 IO");
     }
@@ -1310,8 +1306,6 @@ HDF5IOHandlerImpl::readDataset(Writable* writable,
             break;
         case DT::UNDEFINED:
             throw std::runtime_error("[HDF5] Unknown Attribute datatype (HDF5 Dataset read)");
-        case DT::DATATYPE:
-            throw std::runtime_error("[HDF5] Meta-Datatype leaked into IO");
         default:
             throw std::runtime_error("[HDF5] Datatype not implemented in HDF5 IO");
     }

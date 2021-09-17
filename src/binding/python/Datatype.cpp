@@ -60,7 +60,6 @@ void init_Datatype(py::module &m) {
         .value("VEC_STRING", Datatype::VEC_STRING)
         .value("ARR_DBL_7", Datatype::ARR_DBL_7)
         .value("BOOL", Datatype::BOOL)
-        .value("DATATYPE", Datatype::DATATYPE)
         .value("UNDEFINED", Datatype::UNDEFINED)
     ;
 

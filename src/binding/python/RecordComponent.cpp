@@ -387,8 +387,8 @@ namespace
 struct GetCurrentView
 {
     template< typename T >
-    pybind11::memoryview
-    operator()( PythonDynamicMemoryView const & dynamicView )
+    static pybind11::memoryview
+    call( PythonDynamicMemoryView const & dynamicView )
     {
         auto span = static_cast< DynamicMemoryView< T > * >(
             dynamicView.m_dynamicView.get() )->currentBuffer();
@@ -399,12 +399,12 @@ struct GetCurrentView
             /* readonly = */ false );
     }
 
-    std::string errorMsg = "DynamicMemoryView";
+    static constexpr char const * errorMsg = "DynamicMemoryView";
 };
 
 template<>
 pybind11::memoryview
-GetCurrentView::operator()< std::string >( PythonDynamicMemoryView const & )
+GetCurrentView::call< std::string >( PythonDynamicMemoryView const & )
 {
     throw std::runtime_error( "[DynamicMemoryView] Only PODs allowed." );
 }
@@ -412,8 +412,7 @@ GetCurrentView::operator()< std::string >( PythonDynamicMemoryView const & )
 
 pybind11::memoryview PythonDynamicMemoryView::currentView() const
 {
-    static GetCurrentView const cv;
-    return switchNonVectorType( m_datatype, cv, *this );
+    return switchNonVectorType< GetCurrentView >( m_datatype, *this );
 }
 
 namespace
@@ -421,7 +420,7 @@ namespace
 struct StoreChunkSpan
 {
     template< typename T >
-    PythonDynamicMemoryView operator()(
+    static PythonDynamicMemoryView call(
         RecordComponent & r, Offset const & offset, Extent const & extent )
     {
         DynamicMemoryView< T > dynamicView =
@@ -445,11 +444,11 @@ struct StoreChunkSpan
             py::array::ShapeContainer( std::move( strides ) ) );
     }
 
-    std::string errorMsg = "RecordComponent.store_chunk()";
+    static constexpr char const * errorMsg = "RecordComponent.store_chunk()";
 };
 
 template<>
-PythonDynamicMemoryView StoreChunkSpan::operator()< std::string >(
+PythonDynamicMemoryView StoreChunkSpan::call< std::string >(
     RecordComponent &, Offset const &, Extent const & )
 {
     throw std::runtime_error(
@@ -475,8 +474,8 @@ inline PythonDynamicMemoryView store_chunk_span(
         std::begin( shape ),
         [ &maskIt ]( std::uint64_t ) { return !*( maskIt++ ); } );
 
-    static StoreChunkSpan scs;
-    return switchNonVectorType( r.getDatatype(), scs, r, offset, extent );
+    return switchNonVectorType< StoreChunkSpan >(
+        r.getDatatype(), r, offset, extent );
 }
 
 inline PythonDynamicMemoryView

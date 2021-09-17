@@ -78,6 +78,7 @@ openpmd_option(Julia          "Enable Julia bindings"                     OFF)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
 
 option(openPMD_INSTALL               "Add installation targets"             ON)
+option(openPMD_INSTALL_RPATH         "Add RPATHs to installed binaries"     ON)
 option(openPMD_HAVE_PKGCONFIG        "Generate a .pc file for pkg-config"   ON)
 option(openPMD_USE_INTERNAL_VARIANT  "Use internally shipped MPark.Variant" ON)
 option(openPMD_USE_INTERNAL_CATCH    "Use internally shipped Catch2"        ON)
@@ -135,6 +136,18 @@ if(NOT DEFINED BUILD_EXAMPLES)
 endif()
 option(openPMD_BUILD_CLI_TOOLS "Build the command line tools" ${BUILD_CLI_TOOLS})
 option(openPMD_BUILD_EXAMPLES  "Build the examples" ${BUILD_EXAMPLES})
+
+
+# Helper Functions ############################################################
+#
+# C++ standard: requirements for a target
+function(openpmd_cxx_required target)
+    target_compile_features(${target} PUBLIC cxx_std_14)
+    set_target_properties(${target} PROPERTIES
+        CXX_EXTENSIONS OFF
+        CXX_STANDARD_REQUIRED ON
+    )
+endfunction()
 
 
 # Dependencies ################################################################
@@ -448,11 +461,13 @@ set(IO_ADIOS1_SEQUENTIAL_SOURCE
         src/Error.cpp
         src/auxiliary/Filesystem.cpp
         src/ChunkInfo.cpp
+        src/IO/ADIOS/CommonADIOS1IOHandler.cpp
         src/IO/ADIOS/ADIOS1IOHandler.cpp)
 set(IO_ADIOS1_SOURCE
         src/Error.cpp
         src/auxiliary/Filesystem.cpp
         src/ChunkInfo.cpp
+        src/IO/ADIOS/CommonADIOS1IOHandler.cpp
         src/IO/ADIOS/ParallelADIOS1IOHandler.cpp)
 
 # library
@@ -465,12 +480,8 @@ add_library(openPMD ${_openpmd_lib_type} ${CORE_SOURCE} ${IO_SOURCE})
 add_library(openPMD::openPMD ALIAS openPMD)
 
 # properties
-target_compile_features(openPMD
-    PUBLIC cxx_std_14
-)
+openpmd_cxx_required(openPMD)
 set_target_properties(openPMD PROPERTIES
-    CXX_EXTENSIONS OFF
-    CXX_STANDARD_REQUIRED ON
     POSITION_INDEPENDENT_CODE ON
     WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
@@ -547,12 +558,8 @@ endif()
 if(openPMD_HAVE_ADIOS1)
     add_library(openPMD.ADIOS1.Serial SHARED ${IO_ADIOS1_SEQUENTIAL_SOURCE})
     add_library(openPMD.ADIOS1.Parallel SHARED ${IO_ADIOS1_SOURCE})
-    target_compile_features(openPMD.ADIOS1.Serial
-        PUBLIC cxx_std_14
-    )
-    target_compile_features(openPMD.ADIOS1.Parallel
-        PUBLIC cxx_std_14
-    )
+    openpmd_cxx_required(openPMD.ADIOS1.Serial)
+    openpmd_cxx_required(openPMD.ADIOS1.Parallel)
     target_compile_options(openPMD.ADIOS1.Serial PUBLIC ${_msvc_options})
     target_compile_options(openPMD.ADIOS1.Parallel PUBLIC ${_msvc_options})
     target_link_libraries(openPMD.ADIOS1.Serial PUBLIC openPMD::thirdparty::mpark_variant)
@@ -571,8 +578,6 @@ if(openPMD_HAVE_ADIOS1)
     endif()
 
     set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
-        CXX_EXTENSIONS OFF
-        CXX_STANDARD_REQUIRED ON
         POSITION_INDEPENDENT_CODE ON
         CXX_VISIBILITY_PRESET hidden
         VISIBILITY_INLINES_HIDDEN ON
@@ -598,8 +603,6 @@ if(openPMD_HAVE_ADIOS1)
 
     if(openPMD_HAVE_MPI)
         set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES
-            CXX_EXTENSIONS OFF
-            CXX_STANDARD_REQUIRED ON
             POSITION_INDEPENDENT_CODE ON
             CXX_VISIBILITY_PRESET hidden
             VISIBILITY_INLINES_HIDDEN 1
@@ -855,11 +858,9 @@ if(openPMD_BUILD_TESTING)
         test/CatchRunner.cpp)  # Always MPI_Init with Serial Fallback
     add_library(CatchMain   ${_openpmd_lib_type}
         test/CatchMain.cpp)    # Serial only
-    target_compile_features(CatchRunner PUBLIC cxx_std_14)
-    target_compile_features(CatchMain   PUBLIC cxx_std_14)
+    openpmd_cxx_required(CatchRunner)
+    openpmd_cxx_required(CatchMain)
     set_target_properties(CatchRunner CatchMain PROPERTIES
-        CXX_EXTENSIONS OFF
-        CXX_STANDARD_REQUIRED ON
         POSITION_INDEPENDENT_CODE ON
         WINDOWS_EXPORT_ALL_SYMBOLS ON
     )
@@ -874,6 +875,7 @@ if(openPMD_BUILD_TESTING)
 
     foreach(testname ${openPMD_TEST_NAMES})
         add_executable(${testname}Tests test/${testname}Test.cpp)
+        openpmd_cxx_required(${testname}Tests)
 
         if(openPMD_USE_INVASIVE_TESTS)
             target_compile_definitions(${testname}Tests PRIVATE openPMD_USE_INVASIVE_TESTS=1)
@@ -890,6 +892,7 @@ endif()
 if(openPMD_BUILD_CLI_TOOLS)
     foreach(toolname ${openPMD_CLI_TOOL_NAMES})
         add_executable(openpmd-${toolname} src/cli/${toolname}.cpp)
+        openpmd_cxx_required(openpmd-${toolname})
         target_link_libraries(openpmd-${toolname} PRIVATE openPMD)
     endforeach()
 endif()
@@ -899,10 +902,12 @@ if(openPMD_BUILD_EXAMPLES)
         if(${examplename} MATCHES ".+parallel$")
             if(openPMD_HAVE_MPI)
                 add_executable(${examplename} examples/${examplename}.cpp)
+                openpmd_cxx_required(${examplename})
                 target_link_libraries(${examplename} PRIVATE openPMD)
             endif()
         else()
             add_executable(${examplename} examples/${examplename}.cpp)
+            openpmd_cxx_required(${examplename})
             target_link_libraries(${examplename} PRIVATE openPMD)
         endif()
     endforeach()
@@ -1018,6 +1023,33 @@ if(openPMD_INSTALL)
 
     if(openPMD_HAVE_Julia)
         list(APPEND openPMD_INSTALL_TARGET_NAMES openPMD.jl)
+    endif()
+
+    if(openPMD_INSTALL_RPATH)
+        set(openPMD_INSTALL_RPATH_TARGET_NAMES ${openPMD_INSTALL_TARGET_NAMES})
+        if(openPMD_HAVE_PYTHON)
+            list(APPEND openPMD_INSTALL_RPATH_TARGET_NAMES openPMD.py)
+        endif()
+        if(NOT DEFINED CMAKE_INSTALL_RPATH)
+            if(APPLE)
+                set_target_properties(${openPMD_INSTALL_RPATH_TARGET_NAMES} PROPERTIES
+                    INSTALL_RPATH "@loader_path"
+                )
+            elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
+                set_target_properties(${openPMD_INSTALL_RPATH_TARGET_NAMES} PROPERTIES
+                    INSTALL_RPATH "$ORIGIN"
+                )
+            endif()
+            # Windows: has no RPath concept, all interdependent `.dll`s must be in
+            #          %PATH% or in the same dir as the calling executable
+        endif()
+
+        if(NOT DEFINED CMAKE_INSTALL_RPATH_USE_LINK_PATH)
+            # those are appended AFTER the paths in INSTALL_RPATH
+            set_target_properties(${openPMD_INSTALL_RPATH_TARGET_NAMES} PROPERTIES
+                INSTALL_RPATH_USE_LINK_PATH ON
+            )
+        endif()
     endif()
 
     install(TARGETS ${openPMD_INSTALL_TARGET_NAMES}
@@ -1412,6 +1444,7 @@ message("  C++ Compiler: ${CMAKE_CXX_COMPILER_ID} "
 message("    ${CMAKE_CXX_COMPILER}")
 message("")
 if(openPMD_INSTALL)
+    message("  Install with RPATHs: ${openPMD_INSTALL_RPATH}")
     message("  Installation prefix: ${CMAKE_INSTALL_PREFIX}")
     message("        bin: ${CMAKE_INSTALL_BINDIR}")
     message("        lib: ${CMAKE_INSTALL_LIBDIR}")

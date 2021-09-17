@@ -125,7 +125,7 @@ namespace detail
 
     template< typename T >
     Extent
-    AttributeInfo::operator()(
+    AttributeInfo::call(
         adios2::IO & IO,
         std::string const & attributeName,
         VariableOrAttribute voa )
@@ -166,7 +166,7 @@ namespace detail
 
     template< int n, typename... Params >
     Extent
-    AttributeInfo::operator()( Params &&... )
+    AttributeInfo::call( Params &&... )
     {
         return { 0 };
     }
@@ -200,10 +200,9 @@ namespace detail
         }
         else
         {
-            static AttributeInfo ai;
             Datatype basicType = fromADIOS2Type( type );
-            Extent shape = switchAdios2AttributeType(
-                basicType, ai, IO, attributeName, voa );
+            Extent shape = switchAdios2AttributeType< AttributeInfo >(
+                basicType, IO, attributeName, voa );
 
             switch( voa )
             {

@@ -153,9 +153,6 @@ operator<<(std::ostream& os, openPMD::Datatype const & d)
         case DT::BOOL:
             os << "BOOL";
             break;
-        case DT::DATATYPE:
-            os << "DATATYPE";
-            break;
         case DT::UNDEFINED:
             os << "UNDEFINED";
             break;
@@ -315,10 +312,6 @@ operator<<(std::ostream& os, openPMD::Datatype const & d)
                 Datatype::BOOL
             },
             {
-                "DATATYPE",
-                Datatype::DATATYPE
-            },
-            {
                 "UNDEFINED",
                 Datatype::UNDEFINED
             }
@@ -380,14 +373,13 @@ operator<<(std::ostream& os, openPMD::Datatype const & d)
            Datatype::VEC_STRING,
            Datatype::ARR_DBL_7,
            Datatype::BOOL,
-           Datatype::DATATYPE,
            Datatype::UNDEFINED
    };
 
 
     Datatype basicDatatype( Datatype dt )
     {
-        return switchType( dt, detail::BasicDatatype{} );
+        return switchType< detail::BasicDatatype >( dt );
     }
 
     Datatype toVectorType( Datatype dt )
@@ -396,8 +388,7 @@ operator<<(std::ostream& os, openPMD::Datatype const & d)
             std::map<Datatype, Datatype> res;
             for (Datatype d: openPMD_Datatypes) {
                 if (d == Datatype::ARR_DBL_7
-                        || d == Datatype::UNDEFINED
-                        || d == Datatype::DATATYPE)
+                        || d == Datatype::UNDEFINED)
                     continue;
                 Datatype basic = basicDatatype(d);
                 if (basic == d)
@@ -420,7 +411,7 @@ operator<<(std::ostream& os, openPMD::Datatype const & d)
 
     namespace detail {
         template< typename T >
-        Datatype BasicDatatype::operator()()
+        Datatype BasicDatatype::call()
         {
             static auto res = BasicDatatypeHelper<T>{}.m_dt;
             return res;
@@ -428,7 +419,7 @@ operator<<(std::ostream& os, openPMD::Datatype const & d)
 
 
         template< int n >
-        Datatype BasicDatatype::operator()()
+        Datatype BasicDatatype::call()
         {
             throw std::runtime_error( "basicDatatype: received unknown datatype." );
         }

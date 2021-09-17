@@ -434,103 +434,88 @@ namespace detail
 
     struct DatasetReader
     {
-        openPMD::ADIOS2IOHandlerImpl * m_impl;
+        template< typename T >
+        static void call(
+            ADIOS2IOHandlerImpl * impl,
+            BufferedGet & bp,
+            adios2::IO & IO,
+            adios2::Engine & engine,
+            std::string const & fileName );
 
-
-        explicit DatasetReader( openPMD::ADIOS2IOHandlerImpl * impl );
-
-
-        template < typename T >
-        void operator( )( BufferedGet & bp, adios2::IO & IO,
-                          adios2::Engine & engine,
-                          std::string const & fileName );
-
-        std::string errorMsg = "ADIOS2: readDataset()";
+        static constexpr char const * errorMsg = "ADIOS2: readDataset()";
     };
 
     struct OldAttributeReader
     {
         template< typename T >
-        Datatype
-        operator()(
+        static Datatype call(
             adios2::IO & IO,
             std::string name,
             std::shared_ptr< Attribute::resource > resource );
 
         template< int n, typename... Params >
-        Datatype
-        operator()( Params &&... );
+        static Datatype call( Params &&... );
     };
 
     struct OldAttributeWriter
     {
         template< typename T >
-        void
-        operator()(
+        static void call(
             ADIOS2IOHandlerImpl * impl,
             Writable * writable,
             const Parameter< Operation::WRITE_ATT > & parameters );
 
-
         template< int n, typename... Params >
-        void
-        operator()( Params &&... );
+        static void call( Params &&... );
     };
 
     struct AttributeReader
     {
         template< typename T >
-        Datatype
-        operator()(
+        static Datatype call(
             adios2::IO & IO,
             detail::PreloadAdiosAttributes const & preloadedAttributes,
             std::string name,
             std::shared_ptr< Attribute::resource > resource );
 
-        template < int n, typename... Params >
-        Datatype operator( )( Params &&... );
+        template< int n, typename... Params >
+        static Datatype call( Params &&... );
     };
 
     struct AttributeWriter
     {
-        template < typename T >
-        void
-        operator()(
+        template< typename T >
+        static void call(
             detail::BufferedAttributeWrite & params,
             BufferedActions & fileData );
 
-
-        template < int n, typename... Params > void operator( )( Params &&... );
+        template< int n, typename... Params >
+        static void call( Params &&... );
     };
 
     struct DatasetOpener
     {
-        ADIOS2IOHandlerImpl * m_impl;
+        template< typename T >
+        static void call(
+            ADIOS2IOHandlerImpl * impl,
+            InvalidatableFile,
+            const std::string & varName,
+            Parameter< Operation::OPEN_DATASET > & parameters );
 
-        explicit DatasetOpener( ADIOS2IOHandlerImpl * impl );
-
-
-        template < typename T >
-        void operator( )( InvalidatableFile, const std::string & varName,
-                          Parameter< Operation::OPEN_DATASET > & parameters );
-
-
-        std::string errorMsg = "ADIOS2: openDataset()";
+        static constexpr char const * errorMsg = "ADIOS2: openDataset()";
     };
 
     struct WriteDataset
     {
-        ADIOS2IOHandlerImpl * m_handlerImpl;
+        template< typename T >
+        static void call(
+            ADIOS2IOHandlerImpl * impl,
+            BufferedPut & bp,
+            adios2::IO & IO,
+            adios2::Engine & engine );
 
-
-        WriteDataset( ADIOS2IOHandlerImpl * handlerImpl );
-
-
-        template < typename T >
-        void operator( )( BufferedPut & bp, adios2::IO & IO,
-                          adios2::Engine & engine );
-
-        template < int n, typename... Params > void operator( )( Params &&... );
+        template< int n, typename... Params >
+        static void call( Params &&... );
     };
 
     struct VariableDefiner
@@ -550,8 +535,8 @@ namespace detail
          * @param count As in adios2::IO::DefineVariable
          * @param constantDims As in adios2::IO::DefineVariable
          */
-        template < typename T >
-        void operator( )(
+        template< typename T >
+        static void call(
             adios2::IO & IO,
             std::string const & name,
             std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > const &
@@ -561,20 +546,20 @@ namespace detail
             adios2::Dims const & count = adios2::Dims(),
             bool const constantDims = false );
 
-        std::string errorMsg = "ADIOS2: defineVariable()";
+        static constexpr char const * errorMsg = "ADIOS2: defineVariable()";
     };
 
     struct RetrieveBlocksInfo
     {
-        template < typename T >
-        void operator( )(
+        template< typename T >
+        static void call(
             Parameter< Operation::AVAILABLE_CHUNKS > & params,
             adios2::IO & IO,
             adios2::Engine & engine,
             std::string const & varName );
 
         template < int n, typename... Params >
-        void operator( )( Params &&... );
+        static void call( Params &&... );
     };
 
     // Helper structs to help distinguish valid attribute/variable
@@ -1047,6 +1032,9 @@ namespace detail
      */
     struct BufferedActions
     {
+        friend struct BufferedGet;
+        friend struct BufferedPut;
+
         BufferedActions( BufferedActions const & ) = delete;
 
         /**
@@ -1117,9 +1105,6 @@ namespace detail
          * This map is cleared upon flush points.
          */
         std::map< unsigned, std::unique_ptr< I_UpdateSpan > > m_updateSpans;
-        detail::WriteDataset const m_writeDataset;
-        detail::DatasetReader const m_readDataset;
-        detail::AttributeReader const m_attributeReader;
         PreloadAdiosAttributes preloadAttributes;
 
         /*
