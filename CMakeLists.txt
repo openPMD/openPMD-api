@@ -654,7 +654,7 @@ endif()
 
 # Julia bindings
 if(openPMD_HAVE_Julia)
-    add_library(openPMD_jl SHARED
+    add_library(openPMD.jl SHARED
         src/binding/julia/Access.cpp
         src/binding/julia/Attributable.cpp
         src/binding/julia/Attribute.cpp
@@ -679,12 +679,12 @@ if(openPMD_HAVE_Julia)
         src/binding/julia/shared_ptr.cpp
         src/binding/julia/version.cpp
     )
-    target_compile_features(openPMD_jl PUBLIC cxx_std_17)
-    set_target_properties(openPMD_jl PROPERTIES
+    target_compile_features(openPMD.jl PUBLIC cxx_std_17)
+    set_target_properties(openPMD.jl PROPERTIES
         CXX_EXTENSIONS OFF
         CXX_STANDARD_REQUIRED ON
     )
-    target_link_libraries(openPMD_jl PRIVATE openPMD JlCxx::cxxwrap_julia JlCxx::cxxwrap_julia_stl)
+    target_link_libraries(openPMD.jl PRIVATE openPMD JlCxx::cxxwrap_julia JlCxx::cxxwrap_julia_stl)
 endif()
 
 # python bindings
@@ -1017,7 +1017,7 @@ if(openPMD_INSTALL)
     endif()
 
     if(openPMD_HAVE_Julia)
-        list(APPEND openPMD_INSTALL_TARGET_NAMES openPMD_jl)
+        list(APPEND openPMD_INSTALL_TARGET_NAMES openPMD.jl)
     endif()
 
     install(TARGETS ${openPMD_INSTALL_TARGET_NAMES}
