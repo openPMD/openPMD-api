@@ -22,12 +22,6 @@ jobs:
         brew install julia || true
         brew install python || true
         set -e
-        # # Install Julia
-        # wget https://julialang-s3.julialang.org/bin/mac/x64/1.6/julia-1.6.2-mac64.dmg
-        # sudo hdiutil attach julia-1.6.2-mac64.dmg
-        # sudo cp -fr /Volumes/Julia-1.6.2/Julia-1.6.app /Applications
-        # sudo hdiutil detach /Volumes/Julia-1.6.2
-        # rm julia-1.6.2-mac64.dmg
         # Install libcxxwrap-julia
         wget https://github.com/JuliaInterop/libcxxwrap-julia/archive/refs/tags/v0.8.3.tar.gz
         tar xzf v0.8.3.tar.gz

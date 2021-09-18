@@ -216,15 +216,30 @@ jobs:
         sudo apt-get update
         sudo apt-get install g++ libopenmpi-dev libhdf5-openmpi-dev libadios-dev python3 python3-numpy python3-mpi4py python3-pandas
 #       TODO ADIOS1 (.pc file broken?) ADIOS2
+        # Install Julia
+        wget https://julialang-s3.julialang.org/bin/linux/x64/1.6/julia-1.6.2-linux-x86_64.tar.gz
+        tar -xz -C /usr/local -f julia-1.6.2-linux-x86_64.tar.gz
+        rm julia-1.6.2-linux-x86_64.tar.gz
+        # Install libcxxwrap-julia
+        wget https://github.com/JuliaInterop/libcxxwrap-julia/archive/refs/tags/v0.8.3.tar.gz
+        tar xzf v0.8.3.tar.gz
+        rm -rf v0.8.3.tar.gz
+        cd libcxxwrap-julia-0.8.3
+        cmake -S . -B build -DJulia_EXECUTABLE=/usr/local/julia-1.6.2/bin/julia
+        cmake --build build --parallel 2
+        cmake --install build
+        cd ..
+        rm -rf libcxxwrap-julia-0.8.3
     - name: Build
       env: {CXXFLAGS: -Werror -Wno-deprecated-declarations, PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig}
       run: |
         share/openPMD/download_samples.sh build
         chmod u-w build/samples/git-sample/*.h5
         cmake -S . -B build \
-          -DopenPMD_USE_PYTHON=ON \
-          -DopenPMD_USE_MPI=ON    \
           -DopenPMD_USE_HDF5=ON   \
+          -DopenPMD_USE_Julia=ON \
+          -DopenPMD_USE_MPI=ON    \
+          -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON
         cmake --build build --parallel 2
         ctest --test-dir build --output-on-failure
