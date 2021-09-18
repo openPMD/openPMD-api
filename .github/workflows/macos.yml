@@ -39,7 +39,7 @@ jobs:
         cd ..
         rm -rf libcxxwrap-julia-0.8.3
     - name: Build
-      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations, MACOSX_DEPLOYMENT_TARGET: 10.9}
+      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations, MACOSX_DEPLOYMENT_TARGET: 10.12}
       # C++11 & 14 support in macOS 10.9+
       # C++17 support in macOS 10.13+/10.14+
       #   https://cibuildwheel.readthedocs.io/en/stable/cpp_standards/#macos-and-deployment-target-versions
