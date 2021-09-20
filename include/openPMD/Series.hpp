@@ -474,8 +474,11 @@ public:
  *
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series
+ *
+ * This class must be final since there are member methods that copy *this.
+ * In a derived instance, that would lead to object slicing.
  */
-class Series : public SeriesInterface
+class Series final : public SeriesInterface
 {
 private:
     std::shared_ptr< internal::SeriesInternal > m_series;
