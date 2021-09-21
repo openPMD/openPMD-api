@@ -36,7 +36,7 @@ For a consistent user interface, backends shall follow the following rules:
 Backend-independent JSON configuration
 --------------------------------------
 
-The key ``defer_iteration_parsing`` can be used to optimize the process of opening an openPMD Series.
+The key ``defer_iteration_parsing`` can be used to optimize the process of opening an openPMD Series (deferred/lazy parsing).
 By default, a Series is parsed eagerly, i.e. opening a Series implies reading all available iterations.
 Especially when a Series has many iterations, this can be a costly operation and users may wish to defer parsing of iterations to a later point adding ``{"defer_iteration_parsing": true}`` to their JSON configuration.
 
