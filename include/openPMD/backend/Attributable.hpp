@@ -434,7 +434,12 @@ AttributableInterface::setAttribute( std::string const & key, T value )
         && !attri.m_attributes.key_comp()(key, it->first) )
     {
         // key already exists in map, just replace the value
-        it->second = Attribute(value);
+
+        // note: due to a C++17 issue with NVCC 11.0.2 we write the
+        //       T value to variant conversion explicitly
+        //       https://github.com/openPMD/openPMD-api/pull/1103
+        //it->second = Attribute(std::move(value));
+        it->second = Attribute(Attribute::resource(std::move(value)));
         return true;
     } else
     {
