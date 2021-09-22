@@ -21,14 +21,15 @@ Backend-Specific Controls
 
 The following environment variables control HDF5 I/O behavior at runtime.
 
-===================================== ========= ====================================================================================
-environment variable                  default   description
-===================================== ========= ====================================================================================
+===================================== ========= ===========================================================================================================
+Environment variable                  Default   Description
+===================================== ========= ===========================================================================================================
 ``OPENPMD_HDF5_INDEPENDENT``          ``ON``    Sets the MPI-parallel transfer mode to collective (``OFF``) or independent (``ON``).
 ``OPENPMD_HDF5_ALIGNMENT``            ``1``     Tuning parameter for parallel I/O, choose an alignment which is a multiple of the disk block size.
 ``OPENPMD_HDF5_CHUNKS``               ``auto``  Defaults for ``H5Pset_chunk``: ``"auto"`` (heuristic) or ``"none"`` (no chunking).
-``H5_COLL_API_SANITY_CHECK``          unset     Set to ``1`` to perform an ``MPI_Barrier`` inside each meta-data operation.
-===================================== ========= ====================================================================================
+``H5_COLL_API_SANITY_CHECK``          unset     Debug: Set to ``1`` to perform an ``MPI_Barrier`` inside each meta-data operation.
+``HDF5_USE_FILE_LOCKING``             ``TRUE``  Work-around: Set to ``FALSE`` in case you are on an HPC or network file system that hang in open for reads.
+===================================== ========= ===========================================================================================================
 
 ``OPENPMD_HDF5_INDEPENDENT``: by default, we implement MPI-parallel data ``storeChunk`` (write) and ``loadChunk`` (read) calls as `none-collective MPI operations <https://www.mpi-forum.org/docs/mpi-2.2/mpi22-report/node87.htm#Node87>`_.
 Attribute writes are always collective in parallel HDF5.
@@ -47,6 +48,13 @@ Chunking generally improves performance and only needs to be disabled in corner-
 ``H5_COLL_API_SANITY_CHECK``: this is a HDF5 control option for debugging parallel I/O logic (API calls).
 Debugging a parallel program with that option enabled can help to spot bugs such as collective MPI-calls that are not called by all participating MPI ranks.
 Do not use in production, this will slow parallel I/O operations down.
+
+``HDF5_USE_FILE_LOCKING``: this is a HDF5 1.10.1+ control option that disables HDF5 internal file locking operations (see `HDF5 1.10.1 release notes <https://support.hdfgroup.org/ftp/HDF5/releases/ReleaseFiles/hdf5-1.10.1-RELEASE.txt>`__).
+This mechanism is mainly used to ensure that a file that is still being written to cannot (yet) be opened by either a reader or another writer.
+On some HPC and Jupyter systems, parallel/network file systems like GPFS are mounted in a way that interferes with this internal, HDF5 access consistency check.
+As a result, read-only operations like ``h5ls some_file.h5`` or openPMD ``Series`` open can hang indefinitely.
+If you are sure that the file was written completely and is closed by the writer, e.g., because a simulation finished that created HDF5 outputs, then you can set this environment variable to ``FALSE`` to work-around the problem.
+You should also report this problem to your system support, so they can fix the file system mount options or disable locking by default in the provided HDF5 installation.
 
 
 Selected References
