@@ -29,6 +29,7 @@ Environment variable                  Default   Description
 ``OPENPMD_HDF5_CHUNKS``               ``auto``  Defaults for ``H5Pset_chunk``: ``"auto"`` (heuristic) or ``"none"`` (no chunking).
 ``H5_COLL_API_SANITY_CHECK``          unset     Debug: Set to ``1`` to perform an ``MPI_Barrier`` inside each meta-data operation.
 ``HDF5_USE_FILE_LOCKING``             ``TRUE``  Work-around: Set to ``FALSE`` in case you are on an HPC or network file system that hang in open for reads.
+``OMPI_MCA_io``                       unset     Work-around: Disable OpenMPI's I/O implementation for older releases by setting this to ``^ompio``.
 ===================================== ========= ===========================================================================================================
 
 ``OPENPMD_HDF5_INDEPENDENT``: by default, we implement MPI-parallel data ``storeChunk`` (write) and ``loadChunk`` (read) calls as `none-collective MPI operations <https://www.mpi-forum.org/docs/mpi-2.2/mpi22-report/node87.htm#Node87>`_.
@@ -55,6 +56,13 @@ On some HPC and Jupyter systems, parallel/network file systems like GPFS are mou
 As a result, read-only operations like ``h5ls some_file.h5`` or openPMD ``Series`` open can hang indefinitely.
 If you are sure that the file was written completely and is closed by the writer, e.g., because a simulation finished that created HDF5 outputs, then you can set this environment variable to ``FALSE`` to work-around the problem.
 You should also report this problem to your system support, so they can fix the file system mount options or disable locking by default in the provided HDF5 installation.
+
+``OMPI_MCA_io``: this is an OpenMPI control variable.
+OpenMPI implements its own MPI-I/O implementation backend *OMPIO*, starting with `OpenMPI 2.x <https://www.open-mpi.org/faq/?category=ompio>`__ .
+This backend is known to cause problems in older releases that might still be in use on some systems.
+Specifically, `we found and reported a silent data corruption issue <https://github.com/open-mpi/ompi/issues/6285>`__ that was fixed only in `OpenMPI versions 3.0.4, 3.1.4, 4.0.1 <https://github.com/openPMD/openPMD-api/issues/446>`__ and newer.
+There are also problems in OMPIO with writes larger than 2GB, which have only been fixed in `OpenMPI version 3.0.5, 3.1.5, 4.0.3 <https://github.com/openPMD/openPMD-api/issues/446#issuecomment-558418957>`__ and newer.
+Using ``export OMPI_MCA_io=^ompio`` before ``mpiexec``/``mpirun``/``srun``/``jsrun`` will disable OMPIO and instead fall back to the older *ROMIO* MPI-I/O backend in OpenMPI.
 
 
 Selected References
