@@ -14,6 +14,7 @@ jobs:
 
   appleclang12_py_mpi_h5_ad2:
     runs-on: macos-latest
+    if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
     - name: Install

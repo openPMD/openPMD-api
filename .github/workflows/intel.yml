@@ -10,6 +10,7 @@ jobs:
   icc_cxxonly:
     name: ICC C++ only
     runs-on: ubuntu-20.04
+    if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
     - name: Install
@@ -32,6 +33,7 @@ jobs:
   icx_cxxonly:
     name: ICX C++ only
     runs-on: ubuntu-20.04
+    if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
     - name: Install
