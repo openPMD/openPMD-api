@@ -2,6 +2,10 @@ name: 🍏 macOS
 
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.head_ref }}-macos
+  cancel-in-progress: true
+
 jobs:
 # TODO: (old Travis-CI coverage)
 #  appleclang9_py37_nompi_h5_ad1

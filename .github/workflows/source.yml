@@ -2,6 +2,10 @@ name: 📜 Source
 
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.head_ref }}-source
+  cancel-in-progress: true
+
 jobs:
   style:
     runs-on: ubuntu-20.04

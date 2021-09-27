@@ -2,6 +2,10 @@ name: 🐧 Nvidia
 
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.head_ref }}-nvidia
+  cancel-in-progress: true
+
 jobs:
   tests-cuda11:
     name: CTK@11.2

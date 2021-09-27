@@ -2,6 +2,10 @@ name: 🐧 Tooling
 
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.head_ref }}-tooling
+  cancel-in-progress: true
+
 jobs:
   clangtidy10_nopy_ompi_h5_ad1_ad2:
     name: clang-tidy w/o py
