@@ -70,13 +70,13 @@ BaseRecordComponent::availableChunks()
 
 BaseRecordComponent::BaseRecordComponent(
     std::shared_ptr< internal::BaseRecordComponentData > data)
-    : AttributableInterface{ data.get() }
+    : Attributable{ data }
     , m_baseRecordComponentData{ std::move( data ) }
 {}
 
 BaseRecordComponent::BaseRecordComponent()
-    : AttributableInterface{ nullptr }
+    : Attributable{ nullptr }
 {
-    AttributableInterface::setData( m_baseRecordComponentData.get() );
+    Attributable::setData( m_baseRecordComponentData );
 }
 } // namespace openPMD

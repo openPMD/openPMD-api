@@ -35,17 +35,11 @@
 
 namespace openPMD
 {
-
-class PatchRecordComponent;
-class PatchRecordComponent;
 namespace internal
 {
     class PatchRecordComponentData : public BaseRecordComponentData
     {
-        friend class openPMD::PatchRecordComponent;
-        friend class openPMD::PatchRecordComponent;
-
-    OPENPMD_private:
+    public:
 
         std::queue< IOTask > m_chunks;
 
@@ -57,7 +51,6 @@ namespace internal
         PatchRecordComponentData & operator=(
             PatchRecordComponentData && ) = delete;
 
-    protected:
         PatchRecordComponentData();
     };
 }

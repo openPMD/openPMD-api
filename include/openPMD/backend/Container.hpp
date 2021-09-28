@@ -124,17 +124,17 @@ template<
     typename T,
     typename T_key = std::string,
     typename T_container = std::map< T_key, T > >
-class Container : public AttributableInterface
+class Container : public Attributable
 {
     static_assert(
-        std::is_base_of< AttributableInterface, T >::value,
+        std::is_base_of< Attributable, T >::value,
         "Type of container element must be derived from Writable");
 
     friend class Iteration;
     friend class ParticleSpecies;
     friend class ParticlePatches;
     friend class internal::SeriesData;
-    friend class SeriesInterface;
+    friend class Series;
     friend class Series;
     template< typename > friend class internal::EraseStaleEntries;
 
@@ -148,7 +148,7 @@ protected:
     inline void setData( std::shared_ptr< ContainerData > containerData )
     {
         m_containerData = std::move( containerData );
-        AttributableInterface::setData( m_containerData.get() );
+        Attributable::setData( m_containerData );
     }
 
     inline InternalContainer const & container() const
@@ -342,7 +342,7 @@ public:
 
 OPENPMD_protected:
     Container( std::shared_ptr< ContainerData > containerData )
-        : AttributableInterface{ containerData.get() }
+        : Attributable{ containerData }
         , m_containerData{ std::move( containerData ) }
     {
     }
@@ -368,9 +368,9 @@ OPENPMD_protected:
     }
 
 OPENPMD_private:
-    Container() : AttributableInterface{ nullptr }
+    Container() : Attributable{ nullptr }
     {
-        AttributableInterface::setData( m_containerData.get() );
+        Attributable::setData( m_containerData );
     }
 };
 

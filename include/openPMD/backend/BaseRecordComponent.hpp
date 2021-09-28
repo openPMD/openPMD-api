@@ -32,31 +32,11 @@
 
 namespace openPMD
 {
-class BaseRecordComponent;
-class Iteration;
-class Mesh;
-class ParticleSpecies;
-class PatchRecordComponent;
-class PatchRecordComponentInterface;
-class Record;
-class RecordComponent;
-class RecordComponentInterface;
-
 namespace internal
 {
     class BaseRecordComponentData : public AttributableData
     {
-        friend class openPMD::BaseRecordComponent;
-        friend class openPMD::Iteration;
-        friend class openPMD::Mesh;
-        friend class openPMD::ParticleSpecies;
-        friend class openPMD::PatchRecordComponent;
-        friend class openPMD::PatchRecordComponentInterface;
-        friend class openPMD::Record;
-        friend class openPMD::RecordComponent;
-        friend class openPMD::RecordComponentInterface;
-
-
+    public:
         Dataset m_dataset{ Datatype::UNDEFINED, {} };
         bool m_isConstant = false;
 
@@ -68,12 +48,11 @@ namespace internal
         BaseRecordComponentData & operator=(
             BaseRecordComponentData && ) = delete;
 
-    protected:
         BaseRecordComponentData() = default;
     };
 }
 
-class BaseRecordComponent : public AttributableInterface
+class BaseRecordComponent : public Attributable
 {
     template<
         typename T,
@@ -140,7 +119,7 @@ protected:
         std::shared_ptr< internal::BaseRecordComponentData > data )
     {
         m_baseRecordComponentData = std::move( data );
-        AttributableInterface::setData( m_baseRecordComponentData.get() );
+        Attributable::setData( m_baseRecordComponentData );
     }
 
     BaseRecordComponent( std::shared_ptr< internal::BaseRecordComponentData > );

@@ -84,8 +84,7 @@ namespace internal
 {
     class RecordComponentData : public BaseRecordComponentData
     {
-        friend class openPMD::RecordComponent;
-
+    public:
         RecordComponentData();
 
         RecordComponentData( RecordComponentData const & ) = delete;
@@ -93,8 +92,6 @@ namespace internal
 
         RecordComponentData & operator=( RecordComponentData const & ) = delete;
         RecordComponentData & operator=( RecordComponentData && ) = delete;
-
-    OPENPMD_private:
 
         std::queue< IOTask > m_chunks;
         Attribute m_constantValue{ -1 };

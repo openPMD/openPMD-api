@@ -31,20 +31,14 @@
 
 namespace openPMD
 {
-
-template< typename > class BaseRecord;
-
 namespace internal
 {
     template< typename T_elem >
     class BaseRecordData : public ContainerData< T_elem >
     {
-        template< typename > friend class openPMD::BaseRecord;
-
-    protected:
+    public:
         bool m_containsScalar = false;
 
-    public:
         BaseRecordData();
 
         BaseRecordData( BaseRecordData const & ) = delete;
@@ -168,7 +162,7 @@ namespace internal
     template< typename T_elem >
     BaseRecordData< T_elem >::BaseRecordData()
     {
-        AttributableInterface impl{ this };
+        Attributable impl{ { this, []( auto const * ){} } };
         impl.setAttribute(
             "unitDimension",
             std::array< double, 7 >{ { 0., 0., 0., 0., 0., 0., 0. } } );

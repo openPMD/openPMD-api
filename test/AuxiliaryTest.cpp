@@ -32,7 +32,7 @@ namespace openPMD
 {
 namespace test
 {
-struct TestHelper : public LegacyAttributable
+struct TestHelper : public Attributable
 {
     TestHelper()
     {
@@ -302,7 +302,7 @@ TEST_CASE( "container_access_test", "[auxiliary]" )
 
 TEST_CASE( "attributable_default_test", "[auxiliary]" )
 {
-    LegacyAttributable a;
+    Attributable a;
 
     REQUIRE(a.numAttributes() == 0);
 }
