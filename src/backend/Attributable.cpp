@@ -166,7 +166,7 @@ Iteration const & Attributable::containingIteration() const
         ( *searchQueue.rbegin() )->attributable );
     for( auto const & pair : series.iterations )
     {
-        if( &pair.second.get() == attr )
+        if( &static_cast< Attributable const & >( pair.second ).get() == attr )
         {
             return pair.second;
         }

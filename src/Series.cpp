@@ -606,13 +606,13 @@ Series::flushFileBased( iterations_iterator begin, iterations_iterator end )
             }
 
             // Phase 2
-            if( *it->second.m_closed ==
-                Iteration::CloseStatus::ClosedInFrontend )
+            if( it->second.get().m_closed ==
+                internal::CloseStatus::ClosedInFrontend )
             {
                 Parameter< Operation::CLOSE_FILE > fClose;
                 IOHandler()->enqueue(
                     IOTask( &it->second, std::move( fClose ) ) );
-                *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                it->second.get().m_closed = internal::CloseStatus::ClosedInBackend;
             }
 
             // Phase 3
@@ -650,13 +650,13 @@ Series::flushFileBased( iterations_iterator begin, iterations_iterator end )
             }
 
             // Phase 2
-            if( *it->second.m_closed ==
-                Iteration::CloseStatus::ClosedInFrontend )
+            if( it->second.get().m_closed ==
+                internal::CloseStatus::ClosedInFrontend )
             {
                 Parameter< Operation::CLOSE_FILE > fClose;
                 IOHandler()->enqueue(
                     IOTask( &it->second, std::move( fClose ) ) );
-                *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                it->second.get().m_closed = internal::CloseStatus::ClosedInBackend;
             }
 
             // Phase 3
@@ -689,11 +689,11 @@ Series::flushGorVBased( iterations_iterator begin, iterations_iterator end )
             }
 
             // Phase 2
-            if( *it->second.m_closed ==
-                Iteration::CloseStatus::ClosedInFrontend )
+            if( it->second.get().m_closed ==
+                internal::CloseStatus::ClosedInFrontend )
             {
                 // the iteration has no dedicated file in group-based mode
-                *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                it->second.get().m_closed = internal::CloseStatus::ClosedInBackend;
             }
 
             // Phase 3
@@ -742,11 +742,11 @@ Series::flushGorVBased( iterations_iterator begin, iterations_iterator end )
             }
 
             // Phase 2
-            if( *it->second.m_closed ==
-                Iteration::CloseStatus::ClosedInFrontend )
+            if( it->second.get().m_closed ==
+                internal::CloseStatus::ClosedInFrontend )
             {
                 // the iteration has no dedicated file in group-based mode
-                *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                it->second.get().m_closed = internal::CloseStatus::ClosedInBackend;
             }
         }
 
@@ -827,14 +827,14 @@ Series::readFileBased( )
         Parameter< Operation::CLOSE_FILE > fClose;
         iteration.IOHandler()->enqueue( IOTask( &iteration, fClose ) );
         iteration.IOHandler()->flush();
-        *iteration.m_closed = Iteration::CloseStatus::ClosedTemporarily;
+        iteration.get().m_closed = internal::CloseStatus::ClosedTemporarily;
     };
     if( series.m_parseLazily )
     {
         for( auto & iteration : series.iterations )
         {
-            *iteration.second.m_closed =
-                Iteration::CloseStatus::ParseAccessDeferred;
+            iteration.second.get().m_closed =
+                internal::CloseStatus::ParseAccessDeferred;
         }
         // open the last iteration, just to parse Series attributes
         auto getLastIteration = series.iterations.end();
@@ -1028,7 +1028,7 @@ Series::readGorVBased( bool do_init )
             {
                 return;
             }
-            if( *i.m_closed != Iteration::CloseStatus::ParseAccessDeferred )
+            if( i.get().m_closed != internal::CloseStatus::ParseAccessDeferred )
             {
                 pOpen.path = path;
                 IOHandler()->enqueue( IOTask( &i, pOpen ) );
@@ -1043,11 +1043,11 @@ Series::readGorVBased( bool do_init )
             if( !series.m_parseLazily )
             {
                 i.runDeferredParseAccess();
-                *i.m_closed = Iteration::CloseStatus::Open;
+                i.get().m_closed = internal::CloseStatus::Open;
             }
             else
             {
-                *i.m_closed = Iteration::CloseStatus::ParseAccessDeferred;
+                i.get().m_closed = internal::CloseStatus::ParseAccessDeferred;
             }
         }
     };
@@ -1205,23 +1205,24 @@ Series::advance(
      * In order to avoid having those tasks automatically appended by
      * flush_impl(), set CloseStatus to Open for now.
      */
-    Iteration::CloseStatus oldCloseStatus = *iteration.m_closed;
-    if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend )
+    auto & itData = iteration.get();
+    internal::CloseStatus oldCloseStatus = itData.m_closed;
+    if( oldCloseStatus == internal::CloseStatus::ClosedInFrontend )
     {
-        *iteration.m_closed = Iteration::CloseStatus::Open;
+        itData.m_closed = internal::CloseStatus::Open;
     }
 
     flush_impl(
         begin, end, FlushLevel::UserFlush, /* flushIOHandler = */ false );
 
-    if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend )
+    if( oldCloseStatus == internal::CloseStatus::ClosedInFrontend )
     {
         // Series::flush() would normally turn a `ClosedInFrontend` into
         // a `ClosedInBackend`. Do that manually.
-        *iteration.m_closed = Iteration::CloseStatus::ClosedInBackend;
+        itData.m_closed = internal::CloseStatus::ClosedInBackend;
     }
     else if(
-        oldCloseStatus == Iteration::CloseStatus::ClosedInBackend &&
+        oldCloseStatus == internal::CloseStatus::ClosedInBackend &&
         series.m_iterationEncoding == IterationEncoding::fileBased )
     {
         /*
@@ -1233,7 +1234,7 @@ Series::advance(
     }
 
     Parameter< Operation::ADVANCE > param;
-    if( *iteration.m_closed == Iteration::CloseStatus::ClosedTemporarily &&
+    if( itData.m_closed == internal::CloseStatus::ClosedTemporarily &&
         series.m_iterationEncoding == IterationEncoding::fileBased )
     {
         /*
@@ -1251,7 +1252,7 @@ Series::advance(
     }
 
 
-    if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend &&
+    if( oldCloseStatus == internal::CloseStatus::ClosedInFrontend &&
         mode == AdvanceMode::ENDSTEP )
     {
         using IE = IterationEncoding;
@@ -1259,14 +1260,14 @@ Series::advance(
         {
             case IE::fileBased:
             {
-                if( *iteration.m_closed !=
-                    Iteration::CloseStatus::ClosedTemporarily )
+                if( itData.m_closed !=
+                    internal::CloseStatus::ClosedTemporarily )
                 {
                     Parameter< Operation::CLOSE_FILE > fClose;
                     IOHandler()->enqueue(
                         IOTask( &iteration, std::move( fClose ) ) );
                 }
-                *iteration.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                itData.m_closed = internal::CloseStatus::ClosedInBackend;
                 break;
             }
             case IE::groupBased:
@@ -1277,7 +1278,7 @@ Series::advance(
                 // In group-based iteration layout, files are
                 // not closed on a per-iteration basis
                 // We will treat it as such nonetheless
-                *iteration.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                itData.m_closed = internal::CloseStatus::ClosedInBackend;
                 break;
             }
             case IE::variableBased: // no action necessary
@@ -1310,12 +1311,12 @@ auto Series::openIterationIfDirty( uint64_t index, Iteration iteration )
      * Check side conditions on accessing iterations, and if they are fulfilled,
      * forward function params to openIteration().
      */
-    if( *iteration.m_closed == Iteration::CloseStatus::ParseAccessDeferred )
+    if( iteration.get().m_closed == internal::CloseStatus::ParseAccessDeferred )
     {
         return IterationOpened::RemainsClosed;
     }
     bool const dirtyRecursive = iteration.dirtyRecursive();
-    if( *iteration.m_closed == Iteration::CloseStatus::ClosedInBackend )
+    if( iteration.get().m_closed == internal::CloseStatus::ClosedInBackend )
     {
         // file corresponding with the iteration has previously been
         // closed and fully flushed
@@ -1367,10 +1368,10 @@ auto Series::openIterationIfDirty( uint64_t index, Iteration iteration )
 
 void Series::openIteration( uint64_t index, Iteration iteration )
 {
-    auto oldStatus = *iteration.m_closed;
-    switch( *iteration.m_closed )
+    auto oldStatus = iteration.get().m_closed;
+    switch( oldStatus )
     {
-        using CL = Iteration::CloseStatus;
+        using CL = internal::CloseStatus;
     case CL::ClosedInBackend:
         throw std::runtime_error(
             "[Series] Detected illegal access to iteration that "
@@ -1378,7 +1379,7 @@ void Series::openIteration( uint64_t index, Iteration iteration )
     case CL::ParseAccessDeferred:
     case CL::Open:
     case CL::ClosedTemporarily:
-        *iteration.m_closed = CL::Open;
+        iteration.get().m_closed = CL::Open;
         break;
     case CL::ClosedInFrontend:
         // just keep it like it is
@@ -1406,7 +1407,7 @@ void Series::openIteration( uint64_t index, Iteration iteration )
          */
         if( !iteration.written() &&
             ( IOHandler()->m_frontendAccess == Access::CREATE ||
-              oldStatus != Iteration::CloseStatus::ParseAccessDeferred ) )
+              oldStatus != internal::CloseStatus::ParseAccessDeferred ) )
         {
             // nothing to do, file will be opened by writing routines
             break;

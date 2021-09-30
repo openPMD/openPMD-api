@@ -33,10 +33,12 @@
 
 namespace openPMD
 {
-Iteration::Iteration()
-        : meshes{Container< Mesh >()},
-          particles{Container< ParticleSpecies >()}
+using internal::CloseStatus;
+using internal::DeferredParseAccess;
+
+Iteration::Iteration() : Attributable{ nullptr }
 {
+    Attributable::setData( m_iterationData );
     setTime(static_cast< double >(0));
     setDt(static_cast< double >(1));
     setTimeUnitSI(1);
@@ -82,25 +84,26 @@ using iterator_t = Container< Iteration, uint64_t >::iterator;
 Iteration &
 Iteration::close( bool _flush )
 {
+    auto & it = get();
     StepStatus flag = getStepStatus();
     // update close status
-    switch( *m_closed )
+    switch( it.m_closed )
     {
         case CloseStatus::Open:
         case CloseStatus::ClosedInFrontend:
-            *m_closed = CloseStatus::ClosedInFrontend;
+            it.m_closed = CloseStatus::ClosedInFrontend;
             break;
         case CloseStatus::ClosedTemporarily:
             // should we bother to reopen?
             if( dirtyRecursive() )
             {
                 // let's reopen
-                *m_closed = CloseStatus::ClosedInFrontend;
+                it.m_closed = CloseStatus::ClosedInFrontend;
             }
             else
             {
                 // don't reopen
-                *m_closed = CloseStatus::ClosedInBackend;
+                it.m_closed = CloseStatus::ClosedInBackend;
             }
             break;
         case CloseStatus::ParseAccessDeferred:
@@ -143,9 +146,10 @@ Iteration::close( bool _flush )
 Iteration &
 Iteration::open()
 {
-    if( *m_closed == CloseStatus::ParseAccessDeferred )
+    auto & it = get();
+    if( it.m_closed == CloseStatus::ParseAccessDeferred )
     {
-        *m_closed = CloseStatus::Open;
+        it.m_closed = CloseStatus::Open;
     }
     runDeferredParseAccess();
     Series s = retrieveSeries();
@@ -159,7 +163,7 @@ Iteration::open()
 bool
 Iteration::closed() const
 {
-    switch( *m_closed )
+    switch( get().m_closed )
     {
         case CloseStatus::ParseAccessDeferred:
         case CloseStatus::Open:
@@ -318,17 +322,18 @@ Iteration::flush()
 
 void Iteration::deferParseAccess( DeferredParseAccess dr )
 {
-    *m_deferredParseAccess =
+    get().m_deferredParseAccess =
         auxiliary::makeOption< DeferredParseAccess >( std::move( dr ) );
 }
 
 void Iteration::read()
 {
-    if( !m_deferredParseAccess->has_value() )
+    auto & it = get();
+    if( !it.m_deferredParseAccess.has_value() )
     {
         return;
     }
-    auto const & deferred = m_deferredParseAccess->get();
+    auto const & deferred = it.m_deferredParseAccess.get();
     if( deferred.fileBased )
     {
         readFileBased( deferred.filename, deferred.path );
@@ -338,12 +343,12 @@ void Iteration::read()
         readGorVBased( deferred.path );
     }
     // reset this thing
-    *m_deferredParseAccess = auxiliary::Option< DeferredParseAccess >();
+    it.m_deferredParseAccess = auxiliary::Option< DeferredParseAccess >();
 }
 
 void Iteration::reread( std::string const & path )
 {
-    if( m_deferredParseAccess->has_value() )
+    if( get().m_deferredParseAccess.has_value() )
     {
         throw std::runtime_error(
             "[Iteration] Internal control flow error: Trying to reread an "
@@ -609,7 +614,7 @@ Iteration::getStepStatus()
     {
         using IE = IterationEncoding;
         case IE::fileBased:
-            return *this->m_stepStatus;
+            return get().m_stepStatus;
         case IE::groupBased:
         case IE::variableBased:
             return s.get().m_stepStatus;
@@ -626,7 +631,7 @@ Iteration::setStepStatus( StepStatus status )
     {
         using IE = IterationEncoding;
         case IE::fileBased:
-            *this->m_stepStatus = status;
+            get().m_stepStatus = status;
             break;
         case IE::groupBased:
         case IE::variableBased:

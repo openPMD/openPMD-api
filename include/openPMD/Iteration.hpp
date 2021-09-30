@@ -32,11 +32,78 @@
 
 namespace openPMD
 {
+namespace internal
+{
+    /**
+     * @brief Whether an iteration has been closed yet.
+     *
+     */
+    enum class CloseStatus
+    {
+        ParseAccessDeferred, //!< The reader has not yet parsed this iteration
+        Open,             //!< Iteration has not been closed
+        ClosedInFrontend, /*!< Iteration has been closed, but task has not yet
+                               been propagated to the backend */
+        ClosedInBackend, /*!< Iteration has been closed and task has been
+                              propagated to the backend */
+        ClosedTemporarily /*!< Iteration has been closed internally and may
+                               be reopened later */
+    };
+
+    struct DeferredParseAccess
+    {
+        /**
+         * The group path within /data containing this iteration.
+         * Example: "1" for iteration 1, "" in variable-based iteration
+         * encoding.
+         */
+        std::string path;
+        /**
+         * The iteration index as accessed by the user in series.iterations[i]
+         */
+        uint64_t iteration = 0;
+        /**
+         * If this iteration is part of a Series with file-based layout.
+         * (Group- and variable-based parsing shares the same code logic.)
+         */
+        bool fileBased = false;
+        /**
+         * If fileBased == true, the file name (without file path) of the file
+         * containing this iteration.
+         */
+        std::string filename;
+    };
+
+    class IterationData : public AttributableData
+    {
+    public:
+       /*
+        * An iteration may be logically closed in the frontend,
+        * but not necessarily yet in the backend.
+        * Will be propagated to the backend upon next flush.
+        * Store the current status.
+        * Once an iteration has been closed, no further flushes shall be performed.
+        * If flushing a closed file, the old file may otherwise be overwritten.
+        */
+        CloseStatus m_closed = CloseStatus::Open;
+
+        /**
+         * Whether a step is currently active for this iteration.
+         * Used for file-based iteration layout, see Series.hpp for
+         * group-based layout.
+         * Access via stepStatus() method to automatically select the correct
+         * one among both flags.
+         */
+        StepStatus m_stepStatus = StepStatus::NoStep;
+
+        auxiliary::Option< DeferredParseAccess > m_deferredParseAccess{};
+    };
+}
 /** @brief  Logical compilation of data from one snapshot (e.g. a single simulation cycle).
  *
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#required-attributes-for-the-basepath
  */
-class Iteration : public LegacyAttributable
+class Iteration : public Attributable
 {
     template<
             typename T,
@@ -151,42 +218,32 @@ public:
     bool
     closedByWriter() const;
 
-    Container< Mesh > meshes;
-    Container< ParticleSpecies > particles; //particleSpecies?
+    Container< Mesh > meshes{};
+    Container< ParticleSpecies > particles{}; //particleSpecies?
 
     virtual ~Iteration() = default;
 private:
     Iteration();
 
-    struct DeferredParseAccess
+    std::shared_ptr< internal::IterationData > m_iterationData{
+        new internal::IterationData };
+
+    inline internal::IterationData const & get() const
     {
-        /**
-         * The group path within /data containing this iteration.
-         * Example: "1" for iteration 1, "" in variable-based iteration
-         * encoding.
-         */
-        std::string path;
-        /**
-         * The iteration index as accessed by the user in series.iterations[i]
-         */
-        uint64_t iteration = 0;
-        /**
-         * If this iteration is part of a Series with file-based layout.
-         * (Group- and variable-based parsing shares the same code logic.)
-         */
-        bool fileBased = false;
-        /**
-         * If fileBased == true, the file name (without file path) of the file
-         * containing this iteration.
-         */
-        std::string filename;
-    };
+        return *m_iterationData;
+    }
+
+    inline internal::IterationData & get()
+    {
+        return const_cast< internal::IterationData & >(
+            static_cast< Iteration const * >( this )->get() );
+    }
 
     void flushFileBased(std::string const&, uint64_t);
     void flushGroupBased(uint64_t);
     void flushVariableBased(uint64_t);
     void flush();
-    void deferParseAccess( DeferredParseAccess );
+    void deferParseAccess( internal::DeferredParseAccess );
     /*
      * Control flow for read(), readFileBased(), readGroupBased() and
      * read_impl():
@@ -199,7 +256,7 @@ private:
      * allow for those different control flows.
      * Finally, read_impl() is called which contains the common parsing
      * logic for an iteration.
-     * 
+     *
      * reread() reads again an Iteration that has been previously read.
      * Calling it on an Iteration not yet parsed is an error.
      *
@@ -210,47 +267,7 @@ private:
     void readGorVBased( std::string const & groupPath );
     void read_impl( std::string const & groupPath );
 
-    /**
-     * @brief Whether an iteration has been closed yet.
-     *
-     */
-    enum class CloseStatus
-    {
-        ParseAccessDeferred, //!< The reader has not yet parsed this iteration
-        Open,             //!< Iteration has not been closed
-        ClosedInFrontend, /*!< Iteration has been closed, but task has not yet
-                               been propagated to the backend */
-        ClosedInBackend, /*!< Iteration has been closed and task has been
-                              propagated to the backend */
-        ClosedTemporarily /*!< Iteration has been closed internally and may
-                               be reopened later */
-    };
 
-    /*
-     * An iteration may be logically closed in the frontend,
-     * but not necessarily yet in the backend.
-     * Will be propagated to the backend upon next flush.
-     * Store the current status.
-     * Once an iteration has been closed, no further flushes shall be performed.
-     * If flushing a closed file, the old file may otherwise be overwritten.
-     */
-    std::shared_ptr< CloseStatus > m_closed =
-        std::make_shared< CloseStatus >( CloseStatus::Open );
-
-    /**
-     * Whether a step is currently active for this iteration.
-     * Used for file-based iteration layout, see Series.hpp for
-     * group-based layout.
-     * Access via stepStatus() method to automatically select the correct
-     * one among both flags.
-     */
-    std::shared_ptr< StepStatus > m_stepStatus =
-        std::make_shared< StepStatus >( StepStatus::NoStep );
-
-    std::shared_ptr< auxiliary::Option< DeferredParseAccess > >
-        m_deferredParseAccess =
-            std::make_shared< auxiliary::Option< DeferredParseAccess > >(
-                auxiliary::Option< DeferredParseAccess >() );
 
     /**
      * @brief Begin an IO step on the IO file (or file-like object)
@@ -306,7 +323,7 @@ private:
 
     /**
      * @brief Link with parent.
-     * 
+     *
      * @param w The Writable representing the parent.
      */
     virtual void linkHierarchy(Writable& w);
@@ -314,7 +331,7 @@ private:
     /**
      * @brief Access an iteration in read mode that has potentially not been
      *      parsed yet.
-     * 
+     *
      */
     void runDeferredParseAccess();
 };  // Iteration
