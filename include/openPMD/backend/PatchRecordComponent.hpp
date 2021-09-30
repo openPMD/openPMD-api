@@ -45,6 +45,8 @@ namespace internal
         friend class openPMD::PatchRecordComponent;
         friend class openPMD::PatchRecordComponent;
 
+    OPENPMD_private:
+
         std::queue< IOTask > m_chunks;
 
         PatchRecordComponentData( PatchRecordComponentData const & ) = delete;
@@ -112,7 +114,7 @@ OPENPMD_private:
 
     PatchRecordComponent();
 
-protected:
+OPENPMD_protected:
     PatchRecordComponent(
         std::shared_ptr< internal::PatchRecordComponentData > );
 

@@ -367,7 +367,7 @@ OPENPMD_protected:
         flushAttributes();
     }
 
-private:
+OPENPMD_private:
     Container() : AttributableInterface{ nullptr }
     {
         AttributableInterface::setData( m_containerData.get() );
