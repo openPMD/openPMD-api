@@ -380,8 +380,6 @@ private:
     virtual void linkHierarchy(Writable& w);
 }; // Attributable
 
-using LegacyAttributable = Attributable;
-
 //TODO explicitly instantiate Attributable::setAttribute for all T in Datatype
 template< typename T >
 inline bool
