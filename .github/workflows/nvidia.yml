@@ -3,7 +3,7 @@ name: 🐧 Nvidia
 on: [push, pull_request]
 
 concurrency:
-  group: ${{ github.head_ref }}-nvidia
+  group: ${{ github.ref }}-${{ github.head_ref }}-nvidia
   cancel-in-progress: true
 
 jobs:

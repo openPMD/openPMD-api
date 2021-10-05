@@ -3,7 +3,7 @@ name: 🐧 Tooling
 on: [push, pull_request]
 
 concurrency:
-  group: ${{ github.head_ref }}-tooling
+  group: ${{ github.ref }}-${{ github.head_ref }}-tooling
   cancel-in-progress: true
 
 jobs:

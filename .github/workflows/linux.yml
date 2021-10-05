@@ -3,7 +3,7 @@ name: 🐧 Linux
 on: [push, pull_request]
 
 concurrency:
-  group: ${{ github.head_ref }}-linux
+  group: ${{ github.ref }}-${{ github.head_ref }}-linux
   cancel-in-progress: true
 
 jobs:
