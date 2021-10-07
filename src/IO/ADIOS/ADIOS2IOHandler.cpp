@@ -2231,7 +2231,7 @@ namespace detail
             "sst", "insitumpi", "inline", "staging", "nullcore", "ssc"
         };
         static std::set< std::string > fileEngines = {
-            "bp4", "bp3", "hdf5", "file"
+            "bp5", "bp4", "bp3", "hdf5", "file"
         };
 
         // step/variable-based iteration encoding requires the new schema
@@ -2392,6 +2392,24 @@ namespace detail
                 m_IO.SetParameter(
                     "SubStreams", std::to_string( num_substreams ) );
             }
+
+            // BP5 parameters
+            auto numAgg = auxiliary::getEnvNum( "OPENPMD_ADIOS2_BP5_NumAgg", 0 );
+            auto numSubFiles = auxiliary::getEnvNum( "OPENPMD_ADIOS2_BP5_NumSubFiles", 0 );
+            auto AggTypeStr  = auxiliary::getEnvString( "OPENPMD_ADIOS2_BP5_TypeAgg", "" );
+            auto MaxShmMB  = auxiliary::getEnvNum( "OPENPMD_ADIOS2_BP5_MaxShmMB", 0 );
+            auto BufferChunkMB = auxiliary::getEnvNum( "OPENPMD_ADIOS2_BP5_BufferChunkMB", 0 );
+
+            if ( numAgg > 0 )
+                m_IO.SetParameter( "NumAggregators", std::to_string( numAgg ) );
+            if ( numSubFiles > 0 )
+                m_IO.SetParameter( "NumSubFiles", std::to_string( numSubFiles) );
+            if ( AggTypeStr.size() > 0 )
+                m_IO.SetParameter( "AggregationType", AggTypeStr );
+            if ( BufferChunkMB > 0 )
+                m_IO.SetParameter( "BufferChunkSize", std::to_string( (uint64_t)BufferChunkMB * (uint64_t) 1048576 ) );
+            if ( MaxShmMB > 0 )
+                m_IO.SetParameter( "MaxShmSize", std::to_string( (uint64_t)MaxShmMB * (uint64_t)1048576 ) );
         }
 #    endif
         if( notYetConfigured( "StatsLevel" ) )
