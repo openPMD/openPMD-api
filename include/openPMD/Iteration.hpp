@@ -180,6 +180,11 @@ private:
          * containing this iteration.
          */
         std::string filename;
+
+        /**
+         * Zero-padding for iteration key
+         */
+        int filePadding = 0;
     };
 
     void flushFileBased(std::string const&, uint64_t);
