@@ -58,7 +58,7 @@ environment variable                  default    description
 ``OPENPMD_ADIOS2_BP5_MaxShmMB``       ``0``      ADIOS2 BP5 engine: applies when using TwoLevelShm aggregation
 ``OPENPMD_ADIOS2_BP5_NumSubFiles``    ``0``      ADIOS2 BP5 engine: num of subfiles
 ``OPENPMD_ADIOS2_BP5_NumAgg``         ``0``      ADIOS2 BP5 engine: num of aggregators
-``OPENPMD_ADIOS2_BP5_TypeAgg``        ``0``      ADIOS2 BP5 engine: aggregation type. (EveryoneWrites, EveryoneWritesSerial, TwoLevelShm)
+``OPENPMD_ADIOS2_BP5_TypeAgg``        ````       ADIOS2 BP5 engine: aggregation type. (EveryoneWrites, EveryoneWritesSerial, TwoLevelShm)
 ===================================== ========== ================================================================================
 
 Please refer to the `ADIOS2 documentation <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_ for details on I/O tuning.
