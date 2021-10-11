@@ -2400,15 +2400,15 @@ namespace detail
             auto MaxShmMB  = auxiliary::getEnvNum( "OPENPMD_ADIOS2_BP5_MaxShmMB", 0 );
             auto BufferChunkMB = auxiliary::getEnvNum( "OPENPMD_ADIOS2_BP5_BufferChunkMB", 0 );
 
-            if ( numAgg > 0 )
+            if ( notYetConfigured( "NumAggregators" ) && ( numAgg > 0 ) )
                 m_IO.SetParameter( "NumAggregators", std::to_string( numAgg ) );
-            if ( numSubFiles > 0 )
+            if ( notYetConfigured(" NumSubFiles" ) && ( numSubFiles > 0 ) )
                 m_IO.SetParameter( "NumSubFiles", std::to_string( numSubFiles) );
-            if ( AggTypeStr.size() > 0 )
+            if ( notYetConfigured( "AggregationType" ) && ( AggTypeStr.size() > 0 ) )
                 m_IO.SetParameter( "AggregationType", AggTypeStr );
-            if ( BufferChunkMB > 0 )
+            if ( notYetConfigured( "BufferChunkSize" ) && ( BufferChunkMB > 0 ) )
                 m_IO.SetParameter( "BufferChunkSize", std::to_string( (uint64_t)BufferChunkMB * (uint64_t) 1048576 ) );
-            if ( MaxShmMB > 0 )
+            if ( notYetConfigured( "MaxShmSize" ) && ( MaxShmMB > 0 ) )
                 m_IO.SetParameter( "MaxShmSize", std::to_string( (uint64_t)MaxShmMB * (uint64_t)1048576 ) );
         }
 #    endif
