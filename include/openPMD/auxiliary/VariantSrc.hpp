@@ -20,7 +20,15 @@
  */
 #pragma once
 
-#if __cplusplus >= 201703L
+/*
+ * For now, always use the backported variant.
+ * Reason: If openPMD-api is built with C++14 and user code is built with C++17,
+ * both must use the same variant implementation because we cannot guarantee
+ * binary compatibility between both.
+ * So, variantSrc must always refer to the lowest common denominator, which is
+ * currently <mpark/variant.hpp>
+ */
+#if false // __cplusplus >= 201703L
 #   include <variant> // IWYU pragma: export
 namespace variantSrc = std;
 #else
