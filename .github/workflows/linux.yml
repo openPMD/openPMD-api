@@ -2,9 +2,14 @@ name: 🐧 Linux
 
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.ref }}-${{ github.head_ref }}-linux
+  cancel-in-progress: true
+
 jobs:
   clang5_nopy_nompi_h5:
     runs-on: ubuntu-18.04
+    if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
     - name: Spack Cache
@@ -33,6 +38,7 @@ jobs:
 
   clang5_nopy_ompi_h5_ad1_ad2_bp3:
     runs-on: ubuntu-18.04
+    if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
     - name: Spack Cache
@@ -68,6 +74,7 @@ jobs:
 
   clang5_nopy_ompi_h5_ad2_newLayout:
     runs-on: ubuntu-18.04
+    if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
     - name: Spack Cache
@@ -101,6 +108,7 @@ jobs:
 
   clang10_py38_nompi_h5_ad1_ad2_libcpp:
     runs-on: ubuntu-20.04
+    if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
     - name: Install
@@ -128,6 +136,7 @@ jobs:
 
   clang8_py38_mpich_h5_ad1_ad2_newLayout:
     runs-on: ubuntu-20.04
+    if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
     - name: Spack Cache
@@ -173,6 +182,7 @@ jobs:
 
   gcc5_py36_pd_dd_ompi_h5_ad1_ad2:
     runs-on: ubuntu-18.04
+    if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
     - name: Spack Cache
@@ -209,6 +219,7 @@ jobs:
 
   gcc9_py38_pd_nompi_h5_ad1_ad2_libcpp:
     runs-on: ubuntu-20.04
+    if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
     - name: Install
@@ -231,6 +242,7 @@ jobs:
 
   conda_ompi_all:
     runs-on: ubuntu-20.04
+    if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
     - uses: conda-incubator/setup-miniconda@v2
