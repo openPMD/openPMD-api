@@ -2344,7 +2344,8 @@ namespace detail
                             {"adios2", "engine", "parameters", it.key() },
                             "Must be convertible to string type." );
                     }
-                    alreadyConfigured.emplace( it.key() );
+                    alreadyConfigured.emplace(
+                        auxiliary::lowerCase( std::string( it.key() ) ) );
                 }
             }
             auto _useAdiosSteps =
@@ -2371,8 +2372,9 @@ namespace detail
                       << shadow << std::endl;
         }
         auto notYetConfigured =
-            [&alreadyConfigured]( std::string const & param ) {
-                auto it = alreadyConfigured.find( param );
+            [ &alreadyConfigured ]( std::string const & param ) {
+                auto it = alreadyConfigured.find(
+                    auxiliary::lowerCase( std::string( param ) ) );
                 return it == alreadyConfigured.end();
             };
 
