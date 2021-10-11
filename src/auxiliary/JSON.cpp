@@ -185,12 +185,14 @@ namespace json
     }
 #endif
 
-    static nlohmann::json &
-    lowerCase( nlohmann::json & json, std::vector< std::string > & currentPath )
+    template< typename F >
+    static nlohmann::json & lowerCase(
+        nlohmann::json & json,
+        std::vector< std::string > & currentPath,
+        F const & ignoreCurrentPath )
     {
-        if( json.is_object() )
-        {
-            auto & val = json.get_ref< nlohmann::json::object_t & >();
+        auto transFormCurrentObject = [ &currentPath ](
+                                          nlohmann::json::object_t & val ) {
             // somekey -> SomeKey
             std::map< std::string, std::string > originalKeys;
             for( auto & pair : val )
@@ -217,12 +219,25 @@ namespace json
                 newObject[ pair.first ] = std::move( val[ pair.second ] );
             }
             val = newObject;
+        };
+
+        if( json.is_object() )
+        {
+            auto & val = json.get_ref< nlohmann::json::object_t & >();
+
+            if( !ignoreCurrentPath( currentPath ) )
+            {
+                transFormCurrentObject( val );
+            }
 
             // now recursively
             for( auto & pair : val )
             {
-                currentPath.push_back( pair.first );
-                lowerCase( pair.second, currentPath );
+                // ensure that the path consists only of lowercase strings,
+                // even if ignoreCurrentPath() was true
+                currentPath.push_back(
+                    auxiliary::lowerCase( std::string( pair.first ) ) );
+                lowerCase( pair.second, currentPath, ignoreCurrentPath );
                 currentPath.pop_back();
             }
         }
@@ -230,7 +245,9 @@ namespace json
         {
             for( auto & val : json )
             {
-                lowerCase( val );
+                currentPath.emplace_back( "\vnum" );
+                lowerCase( val, currentPath, ignoreCurrentPath );
+                currentPath.pop_back();
             }
         }
         return json;
@@ -240,8 +257,25 @@ namespace json
     {
         std::vector< std::string > currentPath;
         // that's as deep as our config currently goes, +1 for good measure
-        currentPath.reserve( 6 );
-        return lowerCase( json, currentPath );
+        currentPath.reserve( 7 );
+        return lowerCase(
+            json, currentPath, []( std::vector< std::string > const & path ) {
+                std::vector< std::string > const ignoredPaths[] = {
+                    { "adios2", "engine", "parameters" },
+                    { "adios2",
+                      "dataset",
+                      "operators",
+                      "\vnum",
+                      "parameters" } };
+                for( auto const & ignored : ignoredPaths )
+                {
+                    if( ignored == path )
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            } );
     }
 
     auxiliary::Option< std::string >

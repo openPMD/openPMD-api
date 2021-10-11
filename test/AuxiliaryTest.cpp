@@ -95,6 +95,7 @@ TEST_CASE( "json_parsing", "[auxiliary]" )
         json::parseOptions( same1, false ).dump() !=
         json::parseOptions( different, false ).dump() );
 
+    // Keys forwarded to ADIOS2 should remain untouched
     std::string upper = R"END(
 {
   "ADIOS2": {
@@ -128,8 +129,8 @@ TEST_CASE( "json_parsing", "[auxiliary]" )
       "type": "BP3",
       "unused": "PARAMETER",
       "parameters": {
-        "buffergrowthfactor": "2.0",
-        "profile": "ON"
+        "BUFFERGROWTHFACTOR": "2.0",
+        "PROFILE": "ON"
       }
     },
     "unused": "AS WELL",
@@ -138,8 +139,8 @@ TEST_CASE( "json_parsing", "[auxiliary]" )
         {
           "type": "BLOSC",
           "parameters": {
-              "clevel": "1",
-              "doshuffle": "BLOSC_BITSHUFFLE"
+              "CLEVEL": "1",
+              "DOSHUFFLE": "BLOSC_BITSHUFFLE"
           }
         }
       ]
