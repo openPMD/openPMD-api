@@ -2402,7 +2402,7 @@ namespace detail
 
             if ( notYetConfigured( "NumAggregators" ) && ( numAgg > 0 ) )
                 m_IO.SetParameter( "NumAggregators", std::to_string( numAgg ) );
-            if ( notYetConfigured(" NumSubFiles" ) && ( numSubFiles > 0 ) )
+            if ( notYetConfigured( "NumSubFiles" ) && ( numSubFiles > 0 ) )
                 m_IO.SetParameter( "NumSubFiles", std::to_string( numSubFiles) );
             if ( notYetConfigured( "AggregationType" ) && ( AggTypeStr.size() > 0 ) )
                 m_IO.SetParameter( "AggregationType", AggTypeStr );
