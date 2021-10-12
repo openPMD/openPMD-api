@@ -216,7 +216,7 @@ ADIOS2IOHandlerImpl::fileSuffix() const
     // SST engine adds its suffix unconditionally
     // so we don't add it
     static std::map< std::string, std::string > endings{
-        { "sst", "" }, { "staging", "" }, { "bp4", ".bp" },
+        { "sst", "" }, { "staging", "" }, { "bp4", ".bp" }, { "bp5", ".bp" },
         { "bp3", ".bp" },  { "file", ".bp" },     { "hdf5", ".h5" },
         { "nullcore", ".nullcore" }, { "ssc", ".ssc" }
     };
