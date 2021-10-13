@@ -84,6 +84,7 @@ void define_julia_Series(jlcxx::Module &mod) {
 
     type.method("cxx_isvalid",
                 [](const Series &series) { return bool(series); });
+    type.method("cxx_close", &Series::close);
     type.method("cxx_iterations",
                 [](Series &series) -> Container<Iteration, uint64_t> & {
                   return series.iterations;
