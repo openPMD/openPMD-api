@@ -1528,6 +1528,15 @@ SeriesInternal::~SeriesInternal()
 }
 } // namespace internal
 
+Series::Series( std::shared_ptr< internal::SeriesInternal > series_in )
+    : SeriesInterface{
+        series_in.get(),
+        static_cast< internal::AttributableData * >( series_in.get() ) }
+    , m_series{ std::move( series_in ) }
+    , iterations{ m_series->iterations }
+{
+}
+
 Series::Series() : SeriesInterface{ nullptr, nullptr }, iterations{}
 {
 }
@@ -1575,7 +1584,9 @@ void Series::close()
 
 ReadIterations Series::readIterations()
 {
-    return { *this };
+    // Use private constructor instead of copy constructor to avoid
+    // object slicing
+    return { this->m_series };
 }
 
 WriteIterations

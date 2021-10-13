@@ -2,10 +2,15 @@ name: 🐧 Tooling
 
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.ref }}-${{ github.head_ref }}-tooling
+  cancel-in-progress: true
+
 jobs:
   clangtidy10_nopy_ompi_h5_ad1_ad2:
     name: clang-tidy w/o py
     runs-on: ubuntu-20.04
+    if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
     - name: Spack Cache
@@ -34,6 +39,7 @@ jobs:
   clangsanitizer10_py38_ompi_h5_ad1_ad2:
     name: Clang ASAN UBSAN
     runs-on: ubuntu-20.04
+    if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
     - name: Spack Cache

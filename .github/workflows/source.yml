@@ -2,6 +2,10 @@ name: 📜 Source
 
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.ref }}-${{ github.head_ref }}-source
+  cancel-in-progress: true
+
 jobs:
   style:
     runs-on: ubuntu-20.04
@@ -20,6 +24,7 @@ jobs:
 
   static-analysis:
     runs-on: ubuntu-20.04
+    if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
     - name: pyflakes
@@ -42,6 +47,7 @@ jobs:
 
   urls:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
     - name: urls-checker

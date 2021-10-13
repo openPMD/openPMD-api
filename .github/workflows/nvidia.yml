@@ -2,10 +2,15 @@ name: 🐧 Nvidia
 
 on: [push, pull_request]
 
+concurrency:
+  group: ${{ github.ref }}-${{ github.head_ref }}-nvidia
+  cancel-in-progress: true
+
 jobs:
   tests-cuda11:
     name: CTK@11.2
     runs-on: ubuntu-20.04
+    if: github.event.pull_request.draft == false
     env: {CXX: nvcc, CXXFLAGS: "--forward-unknown-to-host-compiler -Xcompiler -Werror -Wno-deprecated-declarations"}
     steps:
     - uses: actions/checkout@v2
@@ -30,6 +35,7 @@ jobs:
   tests-nvhpc21-5-nvcc:
     name: NVHPC@21.5
     runs-on: ubuntu-20.04
+    if: github.event.pull_request.draft == false
     # Catch warnings:
     #   line 4314: error: variable "<unnamed>::autoRegistrar73" was declared but never referenced
     # env: {CXXFLAGS: "-Werror -Wno-deprecated-declarations"}
