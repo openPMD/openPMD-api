@@ -1568,6 +1568,11 @@ Series::operator bool() const
     return m_series.operator bool();
 }
 
+void Series::close()
+{
+    m_series = nullptr;
+}
+
 ReadIterations Series::readIterations()
 {
     return { *this };

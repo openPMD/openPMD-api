@@ -518,6 +518,14 @@ public:
     operator bool() const;
 
     /**
+     * @brief Close the Series object, and put it into the unusable state.
+     *
+     * Closes the Series object, flushing all state, and puts it into
+     * the default-constructed state.
+     */
+    void close();
+
+    /**
      * @brief Entry point to the reading end of the streaming API.
      *
      * Creates and returns an instance of the ReadIterations class which can
