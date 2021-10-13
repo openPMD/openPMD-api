@@ -128,6 +128,7 @@ public:
     //MemoryProfiler (rank, tag);
     }
     ~Timer() {
+        MPI_Barrier(MPI_COMM_WORLD);
         std::string tt = "~"+m_Tag;
         //MemoryProfiler (m_Rank, tt.c_str());
         m_End = std::chrono::system_clock::now();
@@ -188,9 +189,13 @@ std::vector<std::string> getBackends() {
 #if openPMD_HAVE_ADIOS2
     if( auxiliary::getEnvString( "OPENPMD_BP_BACKEND", "NOT_SET" ) != "ADIOS1" )
         res.emplace_back(".bp");
+    if( auxiliary::getEnvString( "OPENPMD_BENCHMARK_USE_BACKEND", "NOT_SET" ) == "ADIOS" )
+        return res;
 #endif
 
 #if openPMD_HAVE_HDF5
+    if( auxiliary::getEnvString( "OPENPMD_BENCHMARK_USE_BACKEND", "NOT_SET" ) == "HDF5" )
+        res.clear();
     res.emplace_back(".h5");
 #endif
     return res;
@@ -211,30 +216,22 @@ public:
    * Run the read tests
    * assumes both GroupBased and fileBased series of this prefix exist.
    * @ param prefix       file prefix
+   *                      e.g. abc.bp (for group/variable based encoding)
+   *                           abc    (for file based encoding)
    *
    */
   void run(const std::string& prefix)
   {
-    { // file based
-      std::ostringstream s;
-      s <<prefix<<"_%07T"<<m_Backend;
-
-      std::string filename = s.str();
-
-      read(filename);
-    }
-
-    return; // not doing group based..yet
-    /*
-    { // group based
-      std::ostringstream s;
-      s <<prefix<<m_Backend;
-
-      std::string filename = s.str();
-
-      read(filename);
-    }
-    */
+      if (prefix.find(m_Backend) == std::string::npos) {
+          // file based
+          std::ostringstream s;
+          s <<prefix<<"_%07T"<<m_Backend;
+          std::string filename = s.str();
+          read(filename);
+      } else {
+          // group or variable based
+          read(prefix);
+      }
   } // run
 
 
@@ -245,7 +242,7 @@ public:
    *
    */
   void
-  read(std::string& filename)
+  read(const std::string& filename)
   {
     try {
       std::string tag = "Reading: "+filename ;
@@ -258,10 +255,10 @@ public:
          std::cout<<"\n\t Num Iterations in " << filename<<" : " << numIterations<<std::endl;
       {
          int counter = 1;
-         for ( auto const& i : series.iterations )
+         for ( auto i : series.readIterations() )
          {
            if ( (1 == counter) || (numIterations == counter) )
-               readStep(series, i.first);
+               readStep(series, i, counter - 1);
            counter ++;
          }
        }
@@ -389,6 +386,7 @@ public:
     bool atCenter      = ( (m_Pattern % 10 == 0) || (fractionOnDim == 1) );
     bool atTopLeft     = ( (m_Pattern % 10 == 1) && (fractionOnDim > 1) );
     bool atBottomRight = ( (m_Pattern % 10 == 2) && (fractionOnDim > 1) );
+    bool overlay       = ( (m_Pattern % 10 == 3) && (fractionOnDim > 1) );
 
     bool rankZeroOnly  = ( alongDim == 4);
     bool diagnalBlocks = ( alongDim > meshExtent.size() ) && !rankZeroOnly;
@@ -404,6 +402,8 @@ public:
         s <<" topleft ";
       else if (atBottomRight)
         s <<" bottomRight ";
+      else if (overlay)
+        s << " near center ";
     } else if ( diagnalBlocks )
       s <<" blockStyle = diagnal";
     else
@@ -423,12 +423,14 @@ public:
 
         if ( rankZeroOnly )
         {
-            if ( atCenter )
+            if ( atTopLeft )
                  off[i] = 0; // top corner
-            else if ( atTopLeft )
+            else if ( atBottomRight )
                  off[i] = (meshExtent[i]-blob); // bottom corner
-            else if (atBottomRight)
+            else if (atCenter)
                  off[i] = (fractionOnDim/2) * blob; // middle corner
+            else if (overlay)
+                 off[i] = (fractionOnDim/2) * blob - blob/3; // near middle corner
         }
         else
         {
@@ -630,11 +632,12 @@ public:
    *
    */
   void
-  readStep( Series& series, int ts )
+  readStep( Series& series, IndexedIteration& iter,  int ts )
   {
     std::string comp_name = openPMD::MeshRecordComponent::SCALAR;
 
-    MeshRecordComponent rho = series.iterations[ts].meshes["rho"][comp_name];
+    //MeshRecordComponent rho = series.iterations[ts].meshes["rho"][comp_name];
+    MeshRecordComponent rho = iter.meshes["rho"][comp_name];
 
     Extent meshExtent = rho.getExtent();
 
@@ -646,20 +649,29 @@ public:
          std::cout<<"]"<<std::endl;
       }
 
-    sliceMe(series, rho);
-    block(series, rho);
-    fullscan(series, rho);
+    std::vector<int> currPatterns;
+    if (m_Pattern  > 0)
+        currPatterns.push_back(m_Pattern);
+    else
+        currPatterns.insert(currPatterns.end(), { 1, 5, 15, 25, 55, 65, 75, 442, 443 });
 
-    sliceField(series, ts);
+    for(int i : currPatterns) {
+        m_Pattern = i;
+        sliceMe(series, rho);
+        block(series, rho);
+        fullscan(series, rho);
 
-    // read particles
-    if ( m_Pattern == 7 )
-      {
-         openPMD::ParticleSpecies electrons =
-         series.iterations[ts].particles["ion"];
-         RecordComponent charge = electrons["charge"][RecordComponent::SCALAR];
-         sliceParticles(series, charge);
-      }
+        sliceField(series, ts);
+
+        // read particles
+        if ( m_Pattern == 7 )
+            {
+                openPMD::ParticleSpecies electrons =
+                    series.iterations[ts].particles["ion"];
+                RecordComponent charge = electrons["charge"][RecordComponent::SCALAR];
+                sliceParticles(series, charge);
+            }
+    }
   }
 
   /*
