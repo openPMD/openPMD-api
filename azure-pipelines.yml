@@ -235,7 +235,7 @@ jobs:
       spack compiler find
       spack install -v --fail-fast openpmd-api %gcc@9.3.0
 
-      spack load -r openpmd-api
+      spack load openpmd-api
       wget https://gist.githubusercontent.com/ax3l/b2399f2e8923def6a5e55f8bd4e5384c/raw/89ed4101559c917bc7d857f9427682e3f5d40024/CMakeLists.txt
       wget -O main.cpp https://raw.githubusercontent.com/openPMD/openPMD-api/dev/examples/3_write_serial.cpp
       cmake -S . -B build
@@ -265,7 +265,7 @@ jobs:
       spack compiler find
       spack install -v --fail-fast openpmd-api -mpi %gcc@9.3.0 ^adios2~fortran
 
-      spack load -r openpmd-api
+      spack load openpmd-api
       wget https://gist.githubusercontent.com/ax3l/b2399f2e8923def6a5e55f8bd4e5384c/raw/89ed4101559c917bc7d857f9427682e3f5d40024/CMakeLists.txt
       wget -O main.cpp https://raw.githubusercontent.com/openPMD/openPMD-api/dev/examples/3_write_serial.cpp
       cmake -S . -B build
@@ -288,7 +288,7 @@ jobs:
       spack compiler find
       spack install -v --fail-fast openpmd-api -mpi %gcc@9.3.0 ^adios2@master
 
-      spack load -r openpmd-api
+      spack load openpmd-api
       wget https://gist.githubusercontent.com/ax3l/b2399f2e8923def6a5e55f8bd4e5384c/raw/89ed4101559c917bc7d857f9427682e3f5d40024/CMakeLists.txt
       wget -O main.cpp https://raw.githubusercontent.com/openPMD/openPMD-api/dev/examples/3_write_serial.cpp
       cmake -S . -B build
@@ -315,7 +315,7 @@ jobs:
       . spack/share/spack/setup-env.sh
       spack install -v --fail-fast openpmd-api +python +adios1 +adios2 %gcc@9.3.0
 
-      spack load -r openpmd-api
+      spack load openpmd-api
       wget https://gist.githubusercontent.com/ax3l/b2399f2e8923def6a5e55f8bd4e5384c/raw/89ed4101559c917bc7d857f9427682e3f5d40024/CMakeLists.txt
       wget -O main.cpp https://raw.githubusercontent.com/openPMD/openPMD-api/dev/examples/3_write_serial.cpp
       cmake -S . -B build
@@ -706,7 +706,7 @@ jobs:
       . spack/share/spack/setup-env.sh
       spack compiler find
       spack install -v --fail-fast openpmd-api@develop -mpi ^adios2~fortran
-      spack load -r openpmd-api
+      spack load openpmd-api
       wget https://gist.githubusercontent.com/ax3l/b2399f2e8923def6a5e55f8bd4e5384c/raw/89ed4101559c917bc7d857f9427682e3f5d40024/CMakeLists.txt
       wget -O main.cpp https://raw.githubusercontent.com/openPMD/openPMD-api/dev/examples/3_write_serial.cpp
       cmake -S . -B build
@@ -728,7 +728,7 @@ jobs:
       . spack/share/spack/setup-env.sh
       spack compiler find
       spack install -v --fail-fast openpmd-api +python +adios1
-      spack load -r openpmd-api
+      spack load openpmd-api
       python -c "from mpi4py import MPI; import openpmd_api as api; print(api.variants)"
       python -m openpmd_api.ls --help
       openpmd-ls --help
