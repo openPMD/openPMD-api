@@ -1,32 +1,18 @@
 environment:
   matrix:
-    - TARGET_ARCH: x86
-      CONDA_PY: 36
-      CONDA_INSTALL_LOCN: C:\\Miniconda36
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-      platform: x86
-      SHARED: ON
-
     - TARGET_ARCH: x64
-      CONDA_PY: 37
+      CONDA_PY: 3.7
       CONDA_INSTALL_LOCN: C:\\Miniconda37-x64
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       platform: x64
-      SHARED: ON
+      SHARED: OFF
 
     - TARGET_ARCH: x86
-      CONDA_PY: 37
+      CONDA_PY: 3.7
       CONDA_INSTALL_LOCN: C:\\Miniconda37
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       platform: x86
       SHARED: ON
-
-    - TARGET_ARCH: x64
-      CONDA_PY: 36
-      CONDA_INSTALL_LOCN: C:\\Miniconda36-x64
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
-      platform: x64
-      SHARED: OFF
 
 configuration:
 #  - Debug
@@ -91,7 +77,6 @@ install:
 
   # Add path, activate `conda` and update conda.
   - cmd: call %CONDA_INSTALL_LOCN%\Scripts\activate.bat
-  - cmd: conda update --yes --quiet conda
 
   - cmd: set PYTHONUNBUFFERED=1
 
@@ -101,9 +86,9 @@ install:
   - cmd: conda config --append channels conda-forge
 
   # Configure the VM.
-  - cmd: conda install -n root --quiet --yes numpy>=1.15 cmake hdf5
-  # ADIOS2 build only for 64bit Windows and Python 3.6+
-  - cmd: if "%TARGET_ARCH%"=="x64" if %CONDA_PY% GEQ 36 conda install -n root --quiet --yes adios2
+  - cmd: conda install -n root --quiet --yes numpy cmake hdf5 python=%CONDA_PY%
+  # ADIOS2 build only for 64bit Windows
+  - cmd: if "%TARGET_ARCH%"=="x64" conda install -n root --quiet --yes adios2 python=%CONDA_PY%
 
 before_build:
   - cmd: cd C:\projects\openpmd-api
@@ -121,12 +106,12 @@ before_build:
 #  - cmd: if "%TARGET_ARCH%"=="x64" "C:\Program Files (x86)\Microsoft Visual Studio 15.9\VC\vcvarsall.bat" amd64
 
   # CMake configure
-  - cmd: cmake -G "%OPENPMD_CMAKE_GENERATOR%" -DCMAKE_BUILD_TYPE=%CONFIGURATION% -DBUILD_SHARED_LIBS=%SHARED% -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX="%CONDA_INSTALL_LOCN%" -DCMAKE_INSTALL_BINDIR="Library\bin" ".."
+  - cmd: cmake -G "%OPENPMD_CMAKE_GENERATOR%" -DCMAKE_BUILD_TYPE=%CONFIGURATION% -DBUILD_SHARED_LIBS=%SHARED% -DBUILD_TESTING=ON -DopenPMD_USE_PYTHON=ON -DPython_EXECUTABLE="%CONDA_INSTALL_LOCN%\python.exe" -DCMAKE_INSTALL_PREFIX="%CONDA_INSTALL_LOCN%" -DCMAKE_INSTALL_BINDIR="Library\bin" ".."
 
 build_script:
-  - cmd: cmake --build . --config %CONFIGURATION%
+  - cmd: cmake --build . --config %CONFIGURATION% -j 2
   - cmd: cmake --build . --config %CONFIGURATION% --target install
 
 test_script:
   - cmd: ctest -V -C %CONFIGURATION%
-  - cmd: python -c "import openpmd_api; print(openpmd_api.__version__); print(openpmd_api.variants)"
+  - cmd: call %CONDA_INSTALL_LOCN%\python.exe -c "import openpmd_api; print(openpmd_api.__version__); print(openpmd_api.variants)"
