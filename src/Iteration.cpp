@@ -82,11 +82,6 @@ using iterator_t = Container< Iteration, uint64_t >::iterator;
 Iteration &
 Iteration::close( bool _flush )
 {
-    using bool_type = unsigned char;
-    if( this->IOHandler()->m_frontendAccess != Access::READ_ONLY )
-    {
-        setAttribute< bool_type >( "closed", 1u );
-    }
     StepStatus flag = getStepStatus();
     // update close status
     switch( *m_closed )
@@ -391,6 +386,8 @@ void Iteration::read_impl( std::string const & groupPath )
         setDt(Attribute(*aRead.resource).get< float >());
     else if( *aRead.dtype == DT::DOUBLE )
         setDt(Attribute(*aRead.resource).get< double >());
+    else if( *aRead.dtype == DT::LONG_DOUBLE )
+        setDt(Attribute(*aRead.resource).get< long double >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'dt'");
 
@@ -401,6 +398,8 @@ void Iteration::read_impl( std::string const & groupPath )
         setTime(Attribute(*aRead.resource).get< float >());
     else if( *aRead.dtype == DT::DOUBLE )
         setTime(Attribute(*aRead.resource).get< double >());
+    else if( *aRead.dtype == DT::LONG_DOUBLE )
+        setTime(Attribute(*aRead.resource).get< long double >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'time'");
 

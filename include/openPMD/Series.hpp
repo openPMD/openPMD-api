@@ -480,6 +480,9 @@ class Series : public SeriesInterface
 private:
     std::shared_ptr< internal::SeriesInternal > m_series;
 
+    // constructor from private parts
+    Series( std::shared_ptr< internal::SeriesInternal > );
+
 public:
     explicit Series();
 

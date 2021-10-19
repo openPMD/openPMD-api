@@ -118,8 +118,6 @@ openPMD::GetH5DataType::operator()(Attribute const &att)
         }
         case DT::BOOL:
             return H5Tcopy( m_userTypes.at( typeid(bool).name() ) );
-        case DT::DATATYPE:
-            throw std::runtime_error("[HDF5] Meta-Datatype leaked into IO");
         case DT::UNDEFINED:
             throw std::runtime_error("[HDF5] Unknown Attribute datatype (HDF5 datatype)");
         default:

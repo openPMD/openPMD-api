@@ -435,7 +435,6 @@ AttributableInterface::readAttributes( ReadMode mode )
             case DT::BOOL:
                 setAttribute(att, a.get< bool >());
                 break;
-            case DT::DATATYPE:
             case DT::UNDEFINED:
                 throw std::runtime_error("Invalid Attribute datatype during read");
         }

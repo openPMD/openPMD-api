@@ -194,8 +194,6 @@ getBP1DataType(Datatype dtype)
             return adios_string;
         case DT::VEC_STRING:
             return adios_string_array;
-        case DT::DATATYPE:
-            throw std::runtime_error("Meta-Datatype leaked into IO");
         case DT::UNDEFINED:
             throw std::runtime_error("Unknown Attribute datatype (ADIOS datatype)");
         default:

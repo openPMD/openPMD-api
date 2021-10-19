@@ -22,6 +22,7 @@
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Dataset.hpp"
 #include "openPMD/DatatypeHelpers.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/Series.hpp"
 #include "openPMD/IO/Format.hpp"
 
@@ -70,6 +71,12 @@ RecordComponent::resetDataset( Dataset d )
         }
         *m_hasBeenExtended = true;
     }
+
+    if( d.dtype == Datatype::UNDEFINED )
+    {
+        throw error::WrongAPIUsage(
+            "[RecordComponent] Must set specific datatype." );
+    }
     // if( d.extent.empty() )
     //    throw std::runtime_error("Dataset extent must be at least 1D.");
     if( std::any_of(
@@ -109,13 +116,13 @@ namespace detail
 struct MakeEmpty
 {
     template< typename T >
-    RecordComponent& operator()( RecordComponent & rc, uint8_t dimensions )
+    static RecordComponent& call( RecordComponent & rc, uint8_t dimensions )
     {
         return rc.makeEmpty< T >( dimensions );
     }
 
     template< unsigned int N >
-    RecordComponent& operator()( RecordComponent &, uint8_t )
+    static RecordComponent& call( RecordComponent &, uint8_t )
     {
         throw std::runtime_error(
             "RecordComponent::makeEmpty: Unknown datatype." );
@@ -126,8 +133,7 @@ struct MakeEmpty
 RecordComponent&
 RecordComponent::makeEmpty( Datatype dt, uint8_t dimensions )
 {
-    static detail::MakeEmpty me;
-    return switchType( dt, me, *this, dimensions );
+    return switchType< detail::MakeEmpty >( dt, *this, dimensions );
 }
 
 RecordComponent&
@@ -166,8 +172,8 @@ RecordComponent::makeEmpty( Dataset d )
     dirty() = true;
     if( !written() )
     {
-        static detail::DefaultValue< RecordComponent > dv;
-        switchType( m_dataset->dtype, dv, *this );
+        switchType< detail::DefaultValue< RecordComponent > >(
+            m_dataset->dtype, *this );
     }
     return *this;
 }
@@ -195,6 +201,15 @@ RecordComponent::flush(std::string const& name)
         }
     } else
     {
+        /*
+         * This catches when a user forgets to use resetDataset.
+         */
+        if( m_dataset->dtype == Datatype::UNDEFINED )
+        {
+            throw error::WrongAPIUsage(
+                "[RecordComponent] Must set specific datatype (Use "
+                "resetDataset call)." );
+        }
         if( !written() )
         {
             if( constant() )

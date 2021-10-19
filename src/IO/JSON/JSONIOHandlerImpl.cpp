@@ -895,14 +895,7 @@ namespace openPMD
             j
         );
 
-
-        DatasetWriter dw;
-        switchType(
-            parameters.dtype,
-            dw,
-            j,
-            parameters
-        );
+        switchType< DatasetWriter >( parameters.dtype, j, parameters );
 
         writable->written = true;
         putJsonContents( file );
@@ -931,13 +924,8 @@ namespace openPMD
                 nlohmann::json::object( );
         }
         nlohmann::json value;
-        AttributeWriter aw;
-        switchType(
-            parameter.dtype,
-            aw,
-            value,
-            parameter.resource
-        );
+        switchType< AttributeWriter >(
+            parameter.dtype, value, parameter.resource );
         ( *jsonVal )[filePosition->id]["attributes"][parameter.name] = {
             {
                 "datatype",
@@ -968,13 +956,8 @@ namespace openPMD
 
         try
         {
-            DatasetReader dr;
-            switchType(
-                parameters.dtype,
-                dr,
-                j["data"],
-                parameters
-            );
+            switchType< DatasetReader >(
+                parameters.dtype, j[ "data" ], parameters );
         } catch( json::basic_json::type_error & )
         {
             throw std::runtime_error( "[JSON] The given path does not contain a valid dataset." );
@@ -1007,13 +990,8 @@ namespace openPMD
         {
             *parameters.dtype =
                 Datatype( stringToDatatype( j["datatype"].get< std::string >( ) ) );
-            AttributeReader ar;
-            switchType(
-                *parameters.dtype,
-                ar,
-                j["value"],
-                parameters
-            );
+            switchType< AttributeReader >(
+                *parameters.dtype, j[ "value" ], parameters );
         } catch( json::type_error & )
         {
             throw std::runtime_error( "[JSON] The given location does not contain a properly formatted attribute" );
@@ -1653,7 +1631,7 @@ namespace openPMD
 
 
     template< typename T >
-    void JSONIOHandlerImpl::DatasetWriter::operator()(
+    void JSONIOHandlerImpl::DatasetWriter::call(
         nlohmann::json & json,
         const Parameter< Operation::WRITE_DATASET > & parameters
     )
@@ -1678,7 +1656,7 @@ namespace openPMD
 
 
     template< typename T >
-    void JSONIOHandlerImpl::DatasetReader::operator()(
+    void JSONIOHandlerImpl::DatasetReader::call(
         nlohmann::json & json,
         Parameter< Operation::READ_DATASET > & parameters
     )
@@ -1705,7 +1683,7 @@ namespace openPMD
 
 
     template< typename T >
-    void JSONIOHandlerImpl::AttributeWriter::operator()(
+    void JSONIOHandlerImpl::AttributeWriter::call(
         nlohmann::json & value,
         Attribute::resource const & resource
     )
@@ -1716,7 +1694,7 @@ namespace openPMD
 
 
     template< typename T >
-    void JSONIOHandlerImpl::AttributeReader::operator()(
+    void JSONIOHandlerImpl::AttributeReader::call(
         nlohmann::json & json,
         Parameter< Operation::READ_ATT > & parameters
     )
