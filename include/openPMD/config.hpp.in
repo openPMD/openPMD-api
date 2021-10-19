@@ -20,6 +20,10 @@
  */
 #pragma once
 
+#ifndef openPMD_HAS_CXX17
+#   cmakedefine01 openPMD_HAS_CXX17
+#endif
+
 #ifndef openPMD_HAVE_MPI
 #   cmakedefine01 openPMD_HAVE_MPI
 #endif

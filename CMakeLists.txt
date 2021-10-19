@@ -453,26 +453,36 @@ target_include_directories(openPMD PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 
+# is this a C++17 compile? If yes, skip MPark.Variant
+try_compile(openPMD_HAS_CXX17
+    ${openPMD_BINARY_DIR}/try_variant
+    ${openPMD_SOURCE_DIR}/cmake/try_variant.cpp
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
+)
+message(STATUS "<variant> supported (C++17 or newer): ${openPMD_HAS_CXX17}")
+
 # C++11 std::variant (C++17 stdlib preview)
-# TODO not needed with C++17 compiler
-add_library(openPMD::thirdparty::mpark_variant INTERFACE IMPORTED)
-set(openPMD_PC_EXTRA_INCLUDE "")
-if(openPMD_USE_INTERNAL_VARIANT)
-    target_include_directories(openPMD::thirdparty::mpark_variant SYSTEM INTERFACE
-        $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include>
-    )
-    message(STATUS "MPark.Variant: Using INTERNAL version '1.4.0'")
-else()
-    find_package(mpark_variant 1.3.0 REQUIRED) # TODO: we want 1.4.1+
-    target_link_libraries(openPMD::thirdparty::mpark_variant
-        INTERFACE mpark_variant)
-    get_target_property(EXTERNAL_MPARK_INCLUDE mpark_variant INTERFACE_INCLUDE_DIRECTORIES)
-    if(openPMD_HAVE_PKGCONFIG AND EXTERNAL_MPARK_INCLUDE)
-        set(openPMD_PC_EXTRA_INCLUDE "-I${EXTERNAL_MPARK_INCLUDE}")
+if(NOT openPMD_HAS_CXX17)
+    add_library(openPMD::thirdparty::mpark_variant INTERFACE IMPORTED)
+    set(openPMD_PC_EXTRA_INCLUDE "")
+    if(openPMD_USE_INTERNAL_VARIANT)
+        target_include_directories(openPMD::thirdparty::mpark_variant SYSTEM INTERFACE
+            $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include>
+        )
+        message(STATUS "MPark.Variant: Using INTERNAL version '1.4.0'")
+    else()
+        find_package(mpark_variant 1.3.0 REQUIRED) # TODO: we want 1.4.1+
+        target_link_libraries(openPMD::thirdparty::mpark_variant
+            INTERFACE mpark_variant)
+        get_target_property(EXTERNAL_MPARK_INCLUDE mpark_variant INTERFACE_INCLUDE_DIRECTORIES)
+        if(openPMD_HAVE_PKGCONFIG AND EXTERNAL_MPARK_INCLUDE)
+            set(openPMD_PC_EXTRA_INCLUDE "-I${EXTERNAL_MPARK_INCLUDE}")
+        endif()
+        message(STATUS "MPark.Variant: Found version '${mpark_variant_VERSION}'")
     endif()
-    message(STATUS "MPark.Variant: Found version '${mpark_variant_VERSION}'")
+    target_link_libraries(openPMD PUBLIC openPMD::thirdparty::mpark_variant)
 endif()
-target_link_libraries(openPMD PUBLIC openPMD::thirdparty::mpark_variant)
 
 # Catch2 for unit tests
 if(openPMD_BUILD_TESTING)
@@ -518,8 +528,10 @@ if(openPMD_HAVE_ADIOS1)
     )
     target_compile_options(openPMD.ADIOS1.Serial PUBLIC ${_msvc_options})
     target_compile_options(openPMD.ADIOS1.Parallel PUBLIC ${_msvc_options})
-    target_link_libraries(openPMD.ADIOS1.Serial PUBLIC openPMD::thirdparty::mpark_variant)
-    target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC openPMD::thirdparty::mpark_variant)
+    if(NOT openPMD_HAS_CXX17)
+        target_link_libraries(openPMD.ADIOS1.Serial PUBLIC openPMD::thirdparty::mpark_variant)
+        target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC openPMD::thirdparty::mpark_variant)
+    endif()
 
     target_include_directories(openPMD.ADIOS1.Serial PRIVATE
         ${openPMD_SOURCE_DIR}/include ${openPMD_BINARY_DIR}/include)
@@ -1000,7 +1012,7 @@ if(openPMD_INSTALL)
     )
     # install third-party libraries
     # TODO not needed with C++17 compiler
-    if(openPMD_USE_INTERNAL_VARIANT)
+    if(NOT openPMD_HAS_CXX17 AND openPMD_USE_INTERNAL_VARIANT)
         install(DIRECTORY "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include/mpark"
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
         )
@@ -1362,7 +1374,11 @@ if(openPMD_INSTALL)
     endif()
     message("")
     message("  Additionally, install following third party libraries:")
-    message("    MPark.Variant: ${openPMD_USE_INTERNAL_VARIANT}")
+    if(openPMD_HAS_CXX17)
+        message("    MPark.Variant: OFF")
+    else()
+        message("    MPark.Variant: ${openPMD_USE_INTERNAL_VARIANT}")
+    endif()
 else()
     message("  Installation: OFF")
 endif()
