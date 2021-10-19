@@ -60,6 +60,37 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
 {
     m_datasetTransferProperty = H5Pcreate(H5P_DATASET_XFER);
     m_fileAccessProperty = H5Pcreate(H5P_FILE_ACCESS);
+    m_fileCreateProperty = H5Pcreate(H5P_FILE_CREATE);
+
+    auto const hdf5_spaced_allocation = auxiliary::getEnvString( "OPENPMD_HDF5_PAGED_ALLOCATION", "ON" );
+    if( hdf5_spaced_allocation == "ON" ) {
+        auto const strPageSize = auxiliary::getEnvString( "OPENPMD_HDF5_PAGED_ALLOCATION_SIZE", "33554432" );
+        std::stringstream tstream(strPageSize);
+        hsize_t page_size;
+        tstream >> page_size;
+
+        H5Pset_file_space_strategy(m_fileCreateProperty, H5F_FSPACE_STRATEGY_PAGE, 0, (hsize_t)0);
+        H5Pset_file_space_page_size(m_fileCreateProperty, page_size);
+    }
+
+    auto const hdf5_defer_metadata = auxiliary::getEnvString( "OPENPMD_HDF5_DEFER_METADATA", "ON" );
+    if( hdf5_defer_metadata == "ON" ) {
+        auto const strMetaSize = auxiliary::getEnvString( "OPENPMD_HDF5_DEFER_METADATA_SIZE", "33554432" );
+        std::stringstream tstream(strMetaSize);
+        hsize_t meta_size;
+        tstream >> meta_size;
+
+        H5AC_cache_config_t cache_config;
+        cache_config.version = H5AC__CURR_CACHE_CONFIG_VERSION;
+        H5Pget_mdc_config(m_fileAccessProperty, &cache_config);
+        cache_config.set_initial_size = 1;
+        cache_config.initial_size = meta_size;
+        cache_config.evictions_enabled = 0;
+        cache_config.incr_mode = H5C_incr__off;
+        cache_config.flash_incr_mode = H5C_flash_incr__off;
+        cache_config.decr_mode = H5C_decr__off;
+        H5Pset_mdc_config(m_fileAccessProperty, &cache_config);
+    }
 
     H5FD_mpio_xfer_t xfer_mode = H5FD_MPIO_COLLECTIVE;
     auto const hdf5_collective = auxiliary::getEnvString( "OPENPMD_HDF5_INDEPENDENT", "ON" );
@@ -73,13 +104,33 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
     herr_t status;
     status = H5Pset_dxpl_mpio(m_datasetTransferProperty, xfer_mode);
 
+    hbool_t collective_metadata = 0;
+    auto const hdf5_collective_metadata = auxiliary::getEnvString( "OPENPMD_HDF5_COLLECTIVE_METADATA", "OFF" );
+    if( hdf5_collective_metadata == "ON" )
+        collective_metadata = 1;
+    else
+    {
+        VERIFY(hdf5_collective_metadata == "OFF", "[HDF5] Internal error: OPENPMD_HDF5_COLLECTIVE_METADATA property must be either ON or OFF");
+    }
+
+    status = H5Pset_all_coll_metadata_ops(m_fileAccessProperty, collective_metadata);
+    VERIFY(status >= 0, "[HDF5] Internal error: Failed to set metadata read HDF5 file access property");
+
+    status = H5Pset_coll_metadata_write(m_fileAccessProperty, collective_metadata);
+    VERIFY(status >= 0, "[HDF5] Internal error: Failed to set metadata write HDF5 file access property");
+    
     auto const strByte = auxiliary::getEnvString( "OPENPMD_HDF5_ALIGNMENT", "1" );
     std::stringstream sstream(strByte);
     hsize_t bytes;
     sstream >> bytes;
 
+    auto const strThreshold = auxiliary::getEnvString( "OPENPMD_HDF5_THRESHOLD", "0" );
+    std::stringstream tstream(strThreshold);
+    hsize_t threshold;
+    tstream >> threshold;
+
     if ( bytes > 1 )
-         H5Pset_alignment(m_fileAccessProperty, 0, bytes);
+         H5Pset_alignment(m_fileAccessProperty, threshold, bytes);
 
     VERIFY(status >= 0, "[HDF5] Internal error: Failed to set HDF5 dataset transfer property");
     status = H5Pset_fapl_mpio(m_fileAccessProperty, m_mpiComm, m_mpiInfo);
