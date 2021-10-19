@@ -57,6 +57,7 @@ namespace openPMD {}
 #include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/auxiliary/OutOfRangeMsg.hpp"
 #include "openPMD/auxiliary/ShareRaw.hpp"
+#include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 
 #include "openPMD/helper/list_series.hpp"
