@@ -1823,7 +1823,7 @@ HDF5IOHandlerImpl::listPaths(Writable* writable,
     hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
     if( m_hdf5_collective_metadata )
     {
-        H5Pset_all_coll_metadata_ops(gapl, true);    
+        H5Pset_all_coll_metadata_ops(gapl, true);
     }
 
     hid_t node_id = H5Gopen(file.id,
