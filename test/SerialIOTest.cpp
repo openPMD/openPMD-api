@@ -4421,7 +4421,7 @@ void deferred_parsing( std::string const & extension )
 {
     if( auxiliary::directory_exists( "../samples/lazy_parsing" ) )
         auxiliary::remove_directory( "../samples/lazy_parsing" );
-    std::string const basename = "../samples/lazy_parsing/lazy_parsing_";
+    std::string basename = "../samples/lazy_parsing/lazy_parsing_";
     // create a single iteration
     {
         Series series( basename + "%06T." + extension, Access::CREATE );
@@ -4506,6 +4506,47 @@ void deferred_parsing( std::string const & extension )
             REQUIRE(
                 std::abs( dataset.get()[ i ] - float( i ) ) <=
                 std::numeric_limits< float >::epsilon() );
+        }
+    }
+
+    basename += "groupbased";
+
+    {
+        Series series( basename + "." + extension, Access::CREATE );
+        std::vector< float > buffer( 20 );
+        std::iota( buffer.begin(), buffer.end(), 0.f );
+        for( unsigned i = 0; i < 10; ++i )
+        {
+            auto dataset = series.iterations[ i ].meshes[ "E" ][ "x" ];
+            dataset.resetDataset( { Datatype::FLOAT, { 20 } } );
+            dataset.storeChunk( buffer, { 0 }, { 20 } );
+        }
+        series.iterations[ 9 ].setAttribute(
+            "time", "this is deliberately wrong" );
+        series.flush();
+    }
+
+    {
+        Series series(
+            basename + "." + extension,
+            Access::READ_ONLY,
+            "{\"defer_iteration_parsing\": true}" );
+        for( auto iteration : series.readIterations() )
+        {
+            auto dataset = iteration.meshes[ "E" ][ "x" ].loadChunk< float >(
+                { 0 }, { 20 } );
+            iteration.close();
+            for( size_t i = 0; i < 20; ++i )
+            {
+                REQUIRE(
+                    std::abs( dataset.get()[ i ] - float( i ) ) <=
+                    std::numeric_limits< float >::epsilon() );
+            }
+            if( iteration.iterationIndex == 8 )
+            {
+                // reading up until iteration 8 should work
+                break;
+            }
         }
     }
 }

@@ -82,11 +82,6 @@ using iterator_t = Container< Iteration, uint64_t >::iterator;
 Iteration &
 Iteration::close( bool _flush )
 {
-    using bool_type = unsigned char;
-    if( this->IOHandler()->m_frontendAccess != Access::READ_ONLY )
-    {
-        setAttribute< bool_type >( "closed", 1u );
-    }
     StepStatus flag = getStepStatus();
     // update close status
     switch( *m_closed )

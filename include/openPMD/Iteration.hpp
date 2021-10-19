@@ -147,6 +147,7 @@ public:
      * @return Whether the iteration has been explicitly closed (yet) by the
      *         writer.
      */
+    [[deprecated( "This attribute is no longer set by the openPMD-api." )]]
     bool
     closedByWriter() const;
 
