@@ -1,4 +1,4 @@
-/* Copyright 2020-2021 Axel Huebl
+/* Copyright 2021 Axel Huebl
  *
  * This file is part of openPMD-api.
  *
@@ -20,16 +20,32 @@
  */
 #pragma once
 
-#include "openPMD/config.hpp"
-
-#if openPMD_HAS_CXX17
+#include <cassert>
+#include <iostream>
+#if __cplusplus >= 201703L
 #   include <variant> // IWYU pragma: export
-namespace variantSrc = std;
 #else
-    // see: https://github.com/mpark/variant/pull/76
-#   if defined(__EXCEPTIONS)
-#      define MPARK_EXCEPTIONS
-#   endif
-#   include <mpark/variant.hpp> // IWYU pragma: export
-namespace variantSrc = mpark;
+#   error "Not a C++17 implementation"
 #endif
+
+
+int main()
+{
+    std::variant< int, float > v;
+    v = 42;
+    int i = std::get< int >(v);
+    assert(42 == i);
+    assert(42 == std::get< 0 >(v));
+
+    try
+    {
+      std::get< float >(v);
+    }
+    catch( std::bad_variant_access const & ex )
+    {
+        std::cout << ex.what() << std::endl;
+    }
+
+    v = 13.2f;
+    assert(13.2f == std::get<0>(v));
+}
