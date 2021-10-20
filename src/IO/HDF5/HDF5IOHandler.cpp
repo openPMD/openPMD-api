@@ -1880,7 +1880,7 @@ HDF5IOHandlerImpl::listPaths(Writable* writable,
 
     status = H5Gclose(node_id);
     VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 group " + concrete_h5_file_position(writable) + " during path listing");
-    status = H5Pclose(gapl);    
+    status = H5Pclose(gapl);
     VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 property during path listing");
 }
 
