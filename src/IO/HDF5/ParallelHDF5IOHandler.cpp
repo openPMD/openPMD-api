@@ -27,6 +27,7 @@
 #endif
 
 #include <iostream>
+#include <sstream>
 
 
 namespace openPMD
@@ -105,9 +106,9 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
     status = H5Pset_dxpl_mpio(m_datasetTransferProperty, xfer_mode);
 
     hbool_t collective_metadata = 0;
-    auto const hdf5_collective_metadata = auxiliary::getEnvString( "OPENPMD_HDF5_COLLECTIVE_METADATA", "OFF" );
-    if( hdf5_collective_metadata == "ON" )
-        collective_metadata = 1;
+    auto const hdf5_collective_metadata = auxiliary::getEnvString( "OPENPMD_HDF5_COLLECTIVE_METADATA", "ON" );
+    if( hdf5_collective_metadata == "OFF" )
+        collective_metadata = 0;
     else
     {
         VERIFY(hdf5_collective_metadata == "OFF", "[HDF5] Internal error: OPENPMD_HDF5_COLLECTIVE_METADATA property must be either ON or OFF");

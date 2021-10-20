@@ -236,6 +236,10 @@ if(openPMD_HAVE_HDF5 AND HDF5_VERSION VERSION_LESS 1.8.13)
         "Found HDF5 version ${HDF5_VERSION} is too old. At least "
         "version 1.8.13 is required.\n")
 endif()
+# check for collective metadata support
+if(openPMD_HAVE_HDF5 AND HDF5_VERSION VERSION_GREATER 1.10.8)
+    set(openPMD_HAVE_COLLECTIVE_METADATA TRUE)
+endif()
 # we imply support for parallel I/O if MPI variant is ON
 if(openPMD_HAVE_MPI AND openPMD_HAVE_HDF5
     AND NOT HDF5_IS_PARALLEL      # FindHDF5.cmake
