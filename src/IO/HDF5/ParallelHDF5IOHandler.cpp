@@ -109,10 +109,6 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
     auto const hdf5_collective_metadata = auxiliary::getEnvString( "OPENPMD_HDF5_COLLECTIVE_METADATA", "ON" );
     if( hdf5_collective_metadata == "OFF" )
         collective_metadata = 0;
-    else
-    {
-        VERIFY(hdf5_collective_metadata == "OFF", "[HDF5] Internal error: OPENPMD_HDF5_COLLECTIVE_METADATA property must be either ON or OFF");
-    }
 
     status = H5Pset_all_coll_metadata_ops(m_fileAccessProperty, collective_metadata);
     VERIFY(status >= 0, "[HDF5] Internal error: Failed to set metadata read HDF5 file access property");
