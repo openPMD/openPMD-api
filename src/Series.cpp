@@ -285,7 +285,7 @@ SeriesInterface::setIterationEncoding(IterationEncoding ie)
             setAttribute( "iterationEncoding", std::string( "fileBased" ) );
             // This checks that the name contains the expansion pattern
             // (e.g. %T) and parses it
-            if( series.m_filenamePadding.empty() )
+            if( series.m_filenamePadding < 0 )
             {
                 if( !reparseExpansionPattern( series.m_name ) )
                 {
@@ -353,7 +353,7 @@ SeriesInterface::setName(std::string const& n)
         {
             reparseExpansionPattern( n + ".json" );
         }
-        else if( series.m_filenamePadding.empty() )
+        else if( series.m_filenamePadding < 0 )
         {
             throw error::WrongAPIUsage(
                 "For fileBased formats the iteration expansion pattern %T must "
@@ -467,7 +467,7 @@ bool SeriesInterface::reparseExpansionPattern(
     auto & series = get();
     series.m_filenamePrefix = input->filenamePrefix;
     series.m_filenamePostfix = input->filenamePostfix;
-    //series.m_filenamePadding = input->filenamePadding;
+    series.m_filenamePadding = input->filenamePadding;
     return true;
 }
 
@@ -486,7 +486,7 @@ void SeriesInterface::init(
 
     series.m_filenamePrefix = input->filenamePrefix;
     series.m_filenamePostfix = input->filenamePostfix;
-    //series.m_filenamePadding = input->filenamePadding;
+    series.m_filenamePadding = input->filenamePadding;
 
     if(IOHandler()->m_frontendAccess == Access::READ_ONLY || IOHandler()->m_frontendAccess == Access::READ_WRITE )
     {
@@ -795,7 +795,7 @@ SeriesInterface::readFileBased( )
         throw no_such_file_error("Supplied directory is not valid: " + IOHandler()->directory);
 
     auto isPartOfSeries = matcher(
-        series.m_filenamePrefix, 0,
+        series.m_filenamePrefix, series.m_filenamePadding,
         series.m_filenamePostfix, series.m_format);
     bool isContained;
     int padding;
@@ -811,12 +811,9 @@ SeriesInterface::readFileBased( )
                 std::to_string( iterationIndex ),
                 iterationIndex,
                 true,
-                entry,
-                padding } );
-            // TODO skip if the padding is exactly the number of chars in an iteration?
+                entry } );
+            // TODO skip if the padding is exact the number of chars in an iteration?
             paddings.insert(padding);
-            series.m_filenamePadding[iterationIndex] = padding;
-            std::cout << "entry=" << entry << " " << padding << std::endl;
         }
     }
 
@@ -859,6 +856,9 @@ SeriesInterface::readFileBased( )
         }
     }
 
+    if( paddings.size() == 1u )
+        series.m_filenamePadding = *paddings.begin();
+
     /* Frontend access type might change during SeriesInterface::read() to allow parameter modification.
      * Backend access type stays unchanged for the lifetime of a Series. */
     if( paddings.size() > 1u && IOHandler()->m_backendAccess == Access::READ_WRITE )
@@ -869,8 +869,6 @@ SeriesInterface::readFileBased( )
 void SeriesInterface::readOneIterationFileBased( std::string const & filePath )
 {
     auto & series = get();
-
-    std::cout << "readOneIterationFileBased=" << filePath << std::endl;
 
     Parameter< Operation::OPEN_FILE > fOpen;
     Parameter< Operation::READ_ATT > aRead;
@@ -1047,7 +1045,7 @@ SeriesInterface::readGorVBased( bool do_init )
         {
             // parse for the first time, resp. delay the parsing process
             Iteration & i = series.iterations[ index ];
-            i.deferParseAccess( { path, index, false, "", 0 } );
+            i.deferParseAccess( { path, index, false, "" } );
             if( !series.m_parseLazily )
             {
                 i.runDeferredParseAccess();
@@ -1173,8 +1171,7 @@ SeriesInterface::iterationFilename( uint64_t i )
         return series.m_overrideFilebasedFilename.get();
     }
     std::stringstream iteration( "" );
-    int filenamePadding = series.m_filenamePadding.at(i);
-    iteration << std::setw( filenamePadding )
+    iteration << std::setw( series.m_filenamePadding )
               << std::setfill( '0' ) << i;
     return series.m_filenamePrefix + iteration.str()
            + series.m_filenamePostfix;
@@ -1629,58 +1626,32 @@ namespace
 
     std::function<Match(std::string const &)>
     matcher(std::string const &prefix, int padding, std::string const &postfix, Format f) {
-        switch (f) {
-            case Format::HDF5: {
-                std::string nameReg = "^" + prefix + "([[:digit:]]";
-                if (padding != 0)
-                    nameReg += "{" + std::to_string(padding) + "}";
-                else
-                    nameReg += "+";
-                nameReg += +")" + postfix + ".h5$";
-                return buildMatcher(nameReg);
-            }
-            case Format::ADIOS1:
-            case Format::ADIOS2: {
-                std::string nameReg = "^" + prefix + "([[:digit:]]";
-                if (padding != 0)
-                    nameReg += "{" + std::to_string(padding) + "}";
-                else
-                    nameReg += "+";
-                nameReg += +")" + postfix + ".bp$";
-                return buildMatcher(nameReg);
-            }
-            case Format::ADIOS2_SST:
-            {
-                std::string nameReg = "^" + prefix + "([[:digit:]]";
-                if( padding != 0 )
-                    nameReg += "{" + std::to_string(padding) + "}";
-                else
-                    nameReg += "+";
-                nameReg += + ")" + postfix + ".sst$";
-                return buildMatcher(nameReg);
-            }
-            case Format::ADIOS2_SSC:
-            {
-                std::string nameReg = "^" + prefix + "([[:digit:]]";
-                if( padding != 0 )
-                    nameReg += "{" + std::to_string(padding) + "}";
-                else
-                    nameReg += "+";
-                nameReg += + ")" + postfix + ".ssc$";
-                return buildMatcher(nameReg);
-            }
-            case Format::JSON: {
-                std::string nameReg = "^" + prefix + "([[:digit:]]";
-                if (padding != 0)
-                    nameReg += "{" + std::to_string(padding) + "}";
-                else
-                    nameReg += "+";
-                nameReg += +")" + postfix + ".json$";
-                return buildMatcher(nameReg);
-            }
-            default:
-                return [](std::string const &) -> Match { return {false, 0, 0}; };
+        std::string filenameSuffix = suffix( f );
+        if( filenameSuffix.empty() )
+        {
+            return [](std::string const &) -> Match { return {false, 0, 0}; };
         }
+
+        std::string nameReg = "^" + prefix;
+        if (padding != 0)
+        {
+            // The part after the question mark:
+            // The number must be at least `padding` digits long
+            // The part before the question mark:
+            // It may be longer than that only if the first digit is not zero
+            // The outer pair of parentheses is for later extraction of the
+            // iteration number via std::stoull(regexMatches[1])
+            nameReg += "(([1-9][[:digit:]]*)?([[:digit:]]";
+            nameReg += "{" + std::to_string(padding) + "}))";
+        }
+        else
+        {
+            // No padding specified, any number of digits is ok.
+            nameReg += "([[:digit:]]";
+            nameReg += "+)";
+        }
+        nameReg += postfix + filenameSuffix + "$";
+        return buildMatcher(nameReg);
     }
 } // namespace [anonymous]
 } // namespace openPMD

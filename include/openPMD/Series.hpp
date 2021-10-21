@@ -41,7 +41,7 @@
 #   include <mpi.h>
 #endif
 
-#include <unordered_map>
+#include <map>
 #include <string>
 
 // expose private and protected members for invasive testing
@@ -84,8 +84,7 @@ public:
     std::string m_name;
     std::string m_filenamePrefix;
     std::string m_filenamePostfix;
-    //! key: iteration, value: zero-padding
-    std::unordered_map<uint64_t, int> m_filenamePadding;
+    int m_filenamePadding = -1;
     IterationEncoding m_iterationEncoding{};
     Format m_format;
     /**
