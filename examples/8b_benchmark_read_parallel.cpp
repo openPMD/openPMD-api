@@ -229,7 +229,7 @@ public:
           std::string filename = s.str();
           read(filename);
       } else {
-          // group or variable based
+          // group or variable based, or filebased with fullname
           read(prefix);
       }
   } // run
@@ -248,6 +248,9 @@ public:
       std::string tag = "Reading: "+filename ;
       Timer kk(tag, m_MPIRank);
       Series series = Series(filename, Access::READ_ONLY, MPI_COMM_WORLD);
+
+      if ( 0 == m_MPIRank )
+         std::cout<<"  "<<series.iterationEncoding()<<std::endl;
 
       int numIterations = series.iterations.size();
 
@@ -611,7 +614,7 @@ public:
     Extent ext(meshExtent.size(),1);
 
     std::ostringstream s;
-    s<<" Eletrict Field slice: ";
+    s<<" Electric Field slice: ";
     if (!getSlice(meshExtent, whichDim, rankZeroOnly, off, ext, s))
       return;
 
@@ -737,6 +740,7 @@ main( int argc, char *argv[] )
       return 0;
     }
 
+    { 
     Timer g( "  Main  ", input.m_MPIRank );
 
     std::string prefix = argv[1];
@@ -771,7 +775,7 @@ main( int argc, char *argv[] )
          input.m_Backend = which;
          input.run(prefix);
       }
-
+    } // Timer g
     MPI_Finalize();
 
     return 0;
