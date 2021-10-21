@@ -75,6 +75,7 @@ openpmd_option(HDF5           "HDF5 backend (.h5 files)"                  AUTO)
 openpmd_option(ADIOS1         "ADIOS1 backend (.bp files)"                AUTO)
 openpmd_option(ADIOS2         "ADIOS2 backend (.bp files)"                AUTO)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
+openpmd_option(REGIONS        "Enable region algebra (requires C++17)"    OFF)
 
 option(openPMD_INSTALL               "Add installation targets"             ON)
 option(openPMD_INSTALL_RPATH         "Add RPATHs to installed binaries"     ON)
@@ -388,6 +389,19 @@ else()
     set(openPMD_HAVE_PYTHON FALSE)
 endif()
 
+# Region algebra
+if(openPMD_USE_REGIONS STREQUAL AUTO)
+    # Enable regions by default only when building with at least C++17
+    if ("cxx_std_17" IN_LIST CMAKE_CXX_COMPILE_FEATURES)
+        set(openPMD_HAVE_REGIONS TRUE)
+    else()
+        message(FATAL_ERROR "openPMD_USE_REGIONS requested, but C++17 not supported by platform")
+    endif()
+elseif(openPMD_USE_REGIONS)
+    set(openPMD_HAVE_REGIONS TRUE)
+else()
+    set(openPMD_HAVE_REGIONS FALSE)
+endif()
 
 # Targets #####################################################################
 #
@@ -759,6 +773,13 @@ set(openPMD_TEST_NAMES
     SerialIO
     ParallelIO
 )
+if(openPMD_HAVE_REGIONS)
+    list(APPEND openPMD_TEST_NAMES
+        Box
+        Point
+        Region
+    )
+endif()
 # command line tools
 set(openPMD_CLI_TOOL_NAMES
     ls
@@ -786,6 +807,11 @@ set(openPMD_EXAMPLE_NAMES
     10_streaming_read
     12_span_write
 )
+if(openPMD_HAVE_REGIONS)
+    list(APPEND openPMD_EXAMPLE_NAMES
+        13_regions
+    )
+endif()
 set(openPMD_PYTHON_EXAMPLE_NAMES
     2_read_serial
     2a_read_thetaMode_serial
@@ -841,6 +867,13 @@ if(openPMD_BUILD_TESTING)
         else()
             target_link_libraries(${testname}Tests PRIVATE CatchMain)
         endif()
+        if(${testname} MATCHES "(Point)|(Box)|(Region)")
+            target_compile_features(${testname}Tests PUBLIC cxx_std_17)
+            set_target_properties(${testname}Tests PROPERTIES
+                CXX_EXTENSIONS OFF
+                CXX_STANDARD_REQUIRED ON
+            )
+        endif()
     endforeach()
 endif()
 
@@ -864,6 +897,13 @@ if(openPMD_BUILD_EXAMPLES)
             add_executable(${examplename} examples/${examplename}.cpp)
             openpmd_cxx_required(${examplename})
             target_link_libraries(${examplename} PRIVATE openPMD)
+            if(${examplename} MATCHES "13_.+$")
+                target_compile_features(${examplename} PUBLIC cxx_std_17)
+                set_target_properties(${examplename} PROPERTIES
+                    CXX_EXTENSIONS OFF
+                    CXX_STANDARD_REQUIRED ON
+                )
+            endif()
         endif()
     endforeach()
 endif()
