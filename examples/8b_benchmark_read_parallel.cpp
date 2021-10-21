@@ -249,13 +249,13 @@ public:
       Timer kk(tag, m_MPIRank);
       Series series = Series(filename, Access::READ_ONLY, MPI_COMM_WORLD);
 
-      if ( 0 == m_MPIRank )
-         std::cout<<"  "<<series.iterationEncoding()<<std::endl;
-
       int numIterations = series.iterations.size();
 
       if ( 0 == m_MPIRank )
-         std::cout<<"\n\t Num Iterations in " << filename<<" : " << numIterations<<std::endl;
+      {
+         std::cout<<"\t"<<series.iterationEncoding()<<std::endl;
+         std::cout<<"\tNum Iterations in " << filename<<" : " << numIterations<<std::endl;
+      }
       {
          int counter = 1;
          for ( auto i : series.readIterations() )
@@ -264,7 +264,9 @@ public:
                readStep(series, i, counter - 1);
            counter ++;
          }
-       }
+         if ( 0 == m_MPIRank )
+            std::cout<<"\tTotal Num iterations read: "<<(counter - 1)<<std::endl<<std::endl;
+      }
     } catch (std::exception& ex)
       {}
   }
