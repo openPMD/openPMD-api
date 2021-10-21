@@ -374,9 +374,11 @@ TEST_CASE( "available_chunks_test", "[parallel][adios]" )
 {
     available_chunks_test( "bp" );
 }
+#endif
 
+#if openPMD_HAVE_ADIOS2 && openPMD_HAVE_MPI
 void
-extendDataset( std::string const & ext )
+extendDataset( std::string const & ext, std::string const & jsonConfig )
 {
     std::string filename = "../samples/parallelExtendDataset." + ext;
     int r_mpi_rank{ -1 }, r_mpi_size{ -1 };
@@ -389,7 +391,7 @@ extendDataset( std::string const & ext )
     std::iota( data1.begin(), data1.end(), 0 );
     std::iota( data2.begin(), data2.end(), 25 );
     {
-        Series write( filename, Access::CREATE, MPI_COMM_WORLD );
+        Series write( filename, Access::CREATE, MPI_COMM_WORLD, jsonConfig );
         if( ext == "bp" && write.backend() != "ADIOS2" )
         {
             // dataset resizing unsupported in ADIOS1
@@ -413,7 +415,7 @@ extendDataset( std::string const & ext )
     MPI_Barrier( MPI_COMM_WORLD );
 
     {
-        Series read( filename, Access::READ_ONLY );
+        Series read( filename, Access::READ_ONLY, jsonConfig );
         auto E_x = read.iterations[ 0 ].meshes[ "E" ][ "x" ];
         REQUIRE( E_x.getExtent() == Extent{ mpi_size, 50 } );
         auto chunk = E_x.loadChunk< int >( { 0, 0 }, { mpi_size, 50 } );
@@ -430,7 +432,7 @@ extendDataset( std::string const & ext )
 
 TEST_CASE( "extend_dataset", "[parallel]" )
 {
-    extendDataset( "bp" );
+    extendDataset( "bp", R"({"backend": "adios2"})" );
 }
 #endif
 
