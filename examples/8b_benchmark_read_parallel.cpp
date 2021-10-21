@@ -742,7 +742,7 @@ main( int argc, char *argv[] )
       return 0;
     }
 
-    { 
+    {
     Timer g( "  Main  ", input.m_MPIRank );
 
     std::string prefix = argv[1];
