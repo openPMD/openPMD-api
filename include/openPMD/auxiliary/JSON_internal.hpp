@@ -195,5 +195,8 @@ namespace json
     extern std::vector< std::string > backendKeys;
 
     void warnGlobalUnusedOptions( TracingJSON const & config );
+
+    nlohmann::json &
+    merge( nlohmann::json & defaultVal, nlohmann::json const & overwrite );
 } // namespace json
 } // namespace openPMD

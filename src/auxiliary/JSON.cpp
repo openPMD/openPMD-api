@@ -19,6 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 
 #include "openPMD/auxiliary/Filesystem.hpp"
@@ -330,6 +331,52 @@ namespace json
                    "remains unused:\n"
                 << shadow.dump() << std::endl;
         }
+    }
+
+    nlohmann::json &
+    merge( nlohmann::json & defaultVal, nlohmann::json const & overwrite )
+    {
+        if( defaultVal.is_object() && overwrite.is_object() )
+        {
+            std::vector< std::string > prunedKeys;
+            for( auto it = overwrite.begin(); it != overwrite.end(); ++it )
+            {
+                auto & valueInDefault = defaultVal[ it.key() ];
+                merge( valueInDefault, it.value() );
+                if( valueInDefault.is_null() )
+                {
+                    prunedKeys.emplace_back( it.key() );
+                }
+            }
+            for( auto const & key : prunedKeys )
+            {
+                defaultVal.erase( key );
+            }
+        }
+        else
+        {
+            /*
+             * Anything else, just overwrite.
+             * Note: There's no clear generic way to merge arrays:
+             * Should we concatenate? Or should we merge at the same indices?
+             * From the user side, this means:
+             * An application can specify a number of default compression
+             * operators, e.g. in adios2.dataset.operators, but a user can
+             * overwrite the operators. Neither appending nor pointwise update
+             * are quite useful here.
+             */
+            defaultVal = overwrite;
+        }
+        return defaultVal;
+    }
+
+    std::string merge(
+        std::string const & defaultValue,
+        std::string const & overwrite )
+    {
+        auto res = parseOptions( defaultValue, /* considerFiles = */ false );
+        merge( res, parseOptions( overwrite, /* considerFiles = */ false ) );
+        return res.dump();
     }
 } // namespace json
 } // namespace openPMD

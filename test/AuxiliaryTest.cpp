@@ -3,19 +3,20 @@
 #   define OPENPMD_private public
 #   define OPENPMD_protected public
 #endif
-#include "openPMD/config.hpp"
-#include "openPMD/backend/Writable.hpp"
-#include "openPMD/backend/Attributable.hpp"
-#include "openPMD/backend/Container.hpp"
+#include "openPMD/Dataset.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/AbstractIOHandlerHelper.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/JSON.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
-#include "openPMD/IO/AbstractIOHandler.hpp"
-#include "openPMD/IO/AbstractIOHandlerHelper.hpp"
-#include "openPMD/Dataset.hpp"
+#include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/Container.hpp"
+#include "openPMD/backend/Writable.hpp"
+#include "openPMD/config.hpp"
 
 #include <catch2/catch.hpp>
 
@@ -153,6 +154,60 @@ TEST_CASE( "json_parsing", "[auxiliary]" )
     REQUIRE( jsonUpper.dump() != jsonLower.dump() );
     json::lowerCase( jsonUpper );
     REQUIRE( jsonUpper.dump() == jsonLower.dump() );
+}
+
+TEST_CASE( "json_merging", "auxiliary" )
+{
+    std::string defaultVal = R"END(
+{
+  "mergeRecursively": {
+    "changed": 43,
+    "unchanged": true,
+    "delete_me": "adsf"
+  },
+  "dontmergearrays": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "delete_me": [345,2345,36]
+}
+)END";
+
+    std::string overwrite = R"END(
+{
+  "mergeRecursively": {
+    "changed": "new value",
+    "newValue": "44",
+    "delete_me": null
+  },
+  "dontmergearrays": [
+    5,
+    6,
+    7
+  ],
+  "delete_me": null
+}
+)END";
+
+    std::string expect = R"END(
+{
+  "mergeRecursively": {
+    "changed": "new value",
+    "unchanged": true,
+    "newValue": "44"
+  },
+  "dontmergearrays": [
+    5,
+    6,
+    7
+  ]
+})END";
+    REQUIRE(
+        json::merge( defaultVal, overwrite ) ==
+        json::parseOptions( expect, false ).dump() );
 }
 
 TEST_CASE( "optional", "[auxiliary]" ) {
