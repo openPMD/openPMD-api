@@ -110,11 +110,13 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
     if( hdf5_collective_metadata == "OFF" )
         collective_metadata = 0;
 
+#if H5_VERSION_GE(1,10,0)
     status = H5Pset_all_coll_metadata_ops(m_fileAccessProperty, collective_metadata);
     VERIFY(status >= 0, "[HDF5] Internal error: Failed to set metadata read HDF5 file access property");
 
     status = H5Pset_coll_metadata_write(m_fileAccessProperty, collective_metadata);
     VERIFY(status >= 0, "[HDF5] Internal error: Failed to set metadata write HDF5 file access property");
+#endif
 
     auto const strByte = auxiliary::getEnvString( "OPENPMD_HDF5_ALIGNMENT", "1" );
     std::stringstream sstream(strByte);

@@ -58,7 +58,7 @@ Chunking generally improves performance and only needs to be disabled in corner-
 
 ``OPENPMD_HDF5_COLLECTIVE_METADATA``: this is an option to enable collective MPI calls for HDF5 metadata operations via `H5Pset_all_coll_metadata_ops <https://support.hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetAllCollMetadataOps>`__ and `H5Pset_coll_metadata_write <https://support.hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetCollMetadataWrite>`__.
 By default, this optimization is enabled as it has proven to provide performance improvements.
-This option is only available from HDF5 1.10.8 onwards. For previous version it will fallback to independent MPI calls.
+This option is only available from HDF5 1.10.0 onwards. For previous version it will fallback to independent MPI calls.
 
 ``OPENPMD_HDF5_PAGED_ALLOCATION``: this option enables paged allocation for HDF5 operations via `H5Pset_file_space_strategy <https://support.hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetFileSpaceStrategy>`__.
 The page size can be controlled by the ``OPENPMD_HDF5_PAGED_ALLOCATION_SIZE`` option.

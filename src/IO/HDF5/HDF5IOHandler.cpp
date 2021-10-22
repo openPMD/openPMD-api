@@ -118,13 +118,13 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
         }
     }
 
-    #if openPMD_HAVE_COLLECTIVE_METADATA
+#if H5_VERSION_GE(1,10,0)
     auto const hdf5_collective_metadata = auxiliary::getEnvString( "OPENPMD_HDF5_COLLECTIVE_METADATA", "ON" );
     if( hdf5_collective_metadata == "ON" )
         m_hdf5_collective_metadata = 1;
     else
         m_hdf5_collective_metadata = 0;
-    #endif
+#endif
 }
 
 HDF5IOHandlerImpl::~HDF5IOHandlerImpl()
@@ -211,12 +211,12 @@ HDF5IOHandlerImpl::createPath(Writable* writable,
         throw std::runtime_error("[HDF5] Creating a path in a file opened as read only is not possible.");
 
     hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
-    #if openPMD_HAVE_COLLECTIVE_METADATA
+#if H5_VERSION_GE(1,10,0)
     if( m_hdf5_collective_metadata )
     {
         H5Pset_all_coll_metadata_ops(gapl, true);
     }
-    #endif
+#endif
 
     herr_t status;
 
@@ -324,12 +324,12 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         }
 
         hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
-        #if openPMD_HAVE_COLLECTIVE_METADATA
+#if H5_VERSION_GE(1,10,0)
         if( m_hdf5_collective_metadata )
         {
             H5Pset_all_coll_metadata_ops(gapl, true);
         }
-        #endif
+#endif
 
         /* Open H5Object to write into */
         auto res = getFile( writable );
@@ -632,12 +632,12 @@ HDF5IOHandlerImpl::openPath(
     hid_t node_id, path_id;
 
     hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
-    #if openPMD_HAVE_COLLECTIVE_METADATA
+#if H5_VERSION_GE(1,10,0)
     if( m_hdf5_collective_metadata )
     {
         H5Pset_all_coll_metadata_ops(gapl, true);
     }
-    #endif
+#endif
 
     node_id = H5Gopen(file.id,
                       concrete_h5_file_position(writable->parent).c_str(),
@@ -683,12 +683,12 @@ HDF5IOHandlerImpl::openDataset(Writable* writable,
     hid_t node_id, dataset_id;
 
     hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
-    #if openPMD_HAVE_COLLECTIVE_METADATA
+#if H5_VERSION_GE(1,10,0)
     if( m_hdf5_collective_metadata )
     {
         H5Pset_all_coll_metadata_ops(gapl, true);
     }
-    #endif
+#endif
 
     node_id = H5Gopen(file.id,
                       concrete_h5_file_position(writable->parent).c_str(),
@@ -1041,12 +1041,12 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
     hid_t node_id, attribute_id;
 
     hid_t fapl = H5Pcreate(H5P_LINK_ACCESS);
-    #if openPMD_HAVE_COLLECTIVE_METADATA
+#if H5_VERSION_GE(1,10,0)
     if( m_hdf5_collective_metadata )
     {
         H5Pset_all_coll_metadata_ops(fapl, true);
     }
-    #endif
+#endif
 
     node_id = H5Oopen(file.id,
                       concrete_h5_file_position(writable).c_str(),
@@ -1412,12 +1412,12 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
     herr_t status;
 
     hid_t fapl = H5Pcreate(H5P_LINK_ACCESS);
-    #if openPMD_HAVE_COLLECTIVE_METADATA
+#if H5_VERSION_GE(1,10,0)
     if( m_hdf5_collective_metadata )
     {
         H5Pset_all_coll_metadata_ops(fapl, true);
     }
-    #endif
+#endif
 
     obj_id = H5Oopen(file.id,
                      concrete_h5_file_position(writable).c_str(),
@@ -1850,12 +1850,12 @@ HDF5IOHandlerImpl::listPaths(Writable* writable,
         File file = res ? res.get() : getFile( writable->parent ).get();
 
     hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
-    #if openPMD_HAVE_COLLECTIVE_METADATA
+#if H5_VERSION_GE(1,10,0)
     if( m_hdf5_collective_metadata )
     {
         H5Pset_all_coll_metadata_ops(gapl, true);
     }
-    #endif
+#endif
 
     hid_t node_id = H5Gopen(file.id,
                             concrete_h5_file_position(writable).c_str(),
@@ -1895,12 +1895,12 @@ HDF5IOHandlerImpl::listDatasets(Writable* writable,
         File file = res ? res.get() : getFile( writable->parent ).get();
 
     hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
-    #if openPMD_HAVE_COLLECTIVE_METADATA
+#if H5_VERSION_GE(1,10,0)
     if( m_hdf5_collective_metadata )
     {
         H5Pset_all_coll_metadata_ops(gapl, true);
     }
-    #endif
+#endif
 
     hid_t node_id = H5Gopen(file.id,
                             concrete_h5_file_position(writable).c_str(),
@@ -1940,12 +1940,12 @@ void HDF5IOHandlerImpl::listAttributes(Writable* writable,
     hid_t node_id;
 
     hid_t fapl = H5Pcreate(H5P_LINK_ACCESS);
-    #if openPMD_HAVE_COLLECTIVE_METADATA
+#if H5_VERSION_GE(1,10,0)
     if( m_hdf5_collective_metadata )
     {
         H5Pset_all_coll_metadata_ops(fapl, true);
     }
-    #endif
+#endif
 
     node_id = H5Oopen(file.id,
                       concrete_h5_file_position(writable).c_str(),
