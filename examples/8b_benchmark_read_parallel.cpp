@@ -261,7 +261,7 @@ public:
          int counter = 1;
          for ( auto i : series.readIterations() )
          {
-	   if ( counter % 5 == 1 )
+           if ( counter % 5 == 1 )
                readStep(series, i, counter - 1);
            counter ++;
          }
@@ -669,7 +669,7 @@ public:
 
         sliceField(series, iter);
 
-	sliceParticles(series, iter);
+        sliceParticles(series, iter);
     }
     if (currPatterns.size() > 1)
       m_Pattern = 0;
@@ -688,13 +688,12 @@ public:
     if ( m_Pattern != 7 )
       return;
 
-
     if ( 0 == iter.particles.size() )
-      {
-	if ( 0 == m_MPIRank )
-	  std::cerr<<" No Particles found. Skipping particle slicing. "<<std::endl;
-	return;
-      }
+    {
+       if ( 0 == m_MPIRank )
+            std::cerr<<" No Particles found. Skipping particle slicing. "<<std::endl;
+       return;
+    }
 
     openPMD::ParticleSpecies p = iter.particles.begin()->second;
     RecordComponent idVal = p["id"][RecordComponent::SCALAR];
