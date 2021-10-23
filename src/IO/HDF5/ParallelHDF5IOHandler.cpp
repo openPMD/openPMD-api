@@ -105,16 +105,11 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
     herr_t status;
     status = H5Pset_dxpl_mpio(m_datasetTransferProperty, xfer_mode);
 
-    hbool_t collective_metadata = 0;
-    auto const hdf5_collective_metadata = auxiliary::getEnvString( "OPENPMD_HDF5_COLLECTIVE_METADATA", "ON" );
-    if( hdf5_collective_metadata == "OFF" )
-        collective_metadata = 0;
-
 #if H5_VERSION_GE(1,10,0)
-    status = H5Pset_all_coll_metadata_ops(m_fileAccessProperty, collective_metadata);
+    status = H5Pset_all_coll_metadata_ops(m_fileAccessProperty, m_hdf5_collective_metadata);
     VERIFY(status >= 0, "[HDF5] Internal error: Failed to set metadata read HDF5 file access property");
 
-    status = H5Pset_coll_metadata_write(m_fileAccessProperty, collective_metadata);
+    status = H5Pset_coll_metadata_write(m_fileAccessProperty, m_hdf5_collective_metadata);
     VERIFY(status >= 0, "[HDF5] Internal error: Failed to set metadata write HDF5 file access property");
 #endif
 
