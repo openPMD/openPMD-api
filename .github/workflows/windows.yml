@@ -1,0 +1,57 @@
+name: 🪟 Windows
+
+on: [push, pull_request]
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.head_ref }}-windows
+  cancel-in-progress: true
+
+jobs:
+  build_win_msvc:
+    name: MSVC w/o MPI
+    runs-on: windows-latest
+    if: github.event.pull_request.draft == false
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build & Install
+      run: |
+        python3.exe -m pip install --upgrade pip
+        python3.exe -m pip install --upgrade numpy
+
+        pwsh "share\openPMD\download_samples.ps1" build
+        cmake -S . -B build               `
+              -DCMAKE_BUILD_TYPE=Debug    `
+              -DopenPMD_USE_MPI=OFF
+        cmake --build build --config Debug --parallel 2
+        cmake --build build --config Debug --target install
+
+# add before install, and fix Python path:
+# ctest --test-dir build -C Debug --output-on-failure
+
+
+  build_win_clang:
+    name: Clang w/o MPI
+    runs-on: windows-2019
+    if: github.event.pull_request.draft == false
+    steps:
+    - uses: actions/checkout@v2
+    - uses: seanmiddleditch/gha-setup-ninja@master
+    - name: Build & Install
+      shell: cmd
+      run: |
+        python3.exe -m pip install --upgrade pip
+        python3.exe -m pip install --upgrade numpy
+
+        call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\vc\Auxiliary\build\vcvarsall.bat" x64
+        pwsh "share\openPMD\download_samples.ps1" build
+        cmake -S . -B build   ^
+              -G "Ninja"      ^
+              -DCMAKE_C_COMPILER=clang-cl   ^
+              -DCMAKE_CXX_COMPILER=clang-cl ^
+              -DCMAKE_BUILD_TYPE=Release    ^
+              -DopenPMD_USE_MPI=OFF
+        cmake --build build --config Release --parallel 2
+        cmake --build build --config Debug --target install
+
+# add before install, and fix Python path:
+# ctest --test-dir build -C Debug --output-on-failure
