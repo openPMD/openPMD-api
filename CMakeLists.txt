@@ -1245,7 +1245,8 @@ if(openPMD_BUILD_TESTING)
         endforeach()
 
         # openpmd-pipe (python) test
-        if( openPMD_HAVE_HDF5
+        if( NOT WIN32
+            AND openPMD_HAVE_HDF5
             AND (openPMD_HAVE_ADIOS2 OR openPMD_HAVE_ADIOS1)
             AND EXAMPLE_DATA_FOUND
         )
