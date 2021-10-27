@@ -87,7 +87,13 @@ The options are: a file prefix, and a read pattern
 
 
 For example, if the files are in the format of ``/path/8a_parallel_3Db_%07T.bp``
-the input will be: ``/path/8a_parallel_3Db <options>``
+the input can be simply: ``/path/8a_parallel_3Db <options>``
+
+otherwise, please use the full name of the file.
+
+While openPMD-api supports more than one file types, this benchmark intents to read just one type.
+By default, ADIOS2 file is assumed. If it is not the desired file type, one can hint with an environment variable, e.g.
+``export OPENPMD_BENCHMARK_USE_BACKEND=HDF5``
 
 The Read options intent to measure overall processing time in the following categories:
 
