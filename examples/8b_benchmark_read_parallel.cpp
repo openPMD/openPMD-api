@@ -225,7 +225,7 @@ public:
       if (prefix.find(m_Backend) == std::string::npos) {
           // file based, default to %07T
           std::ostringstream s;
-          s <<prefix<<"_%07T"<<m_Backend;
+          s << prefix << "_%07T" << m_Backend;
           std::string filename = s.str();
           read(filename);
       } else {
