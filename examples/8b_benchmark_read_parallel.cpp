@@ -582,7 +582,6 @@ public:
    */
   void
   sliceField(Series& series, IndexedIteration& iter)
-  //sliceField( Series& series, int ts )
   {
     if ( m_Pattern >= 100 )
       return;
