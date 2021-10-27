@@ -514,7 +514,7 @@ public:
       }
 
     std::ostringstream so, sc;
-    so <<"  Rank: "<<m_MPIRank<<" offset [ "; sc<<" count[ ";
+    so << "  Rank: " << m_MPIRank << " offset [ "; sc << " count[ ";
     for ( unsigned int i=0; i<meshExtent.size(); i++ )
       {
         so <<off[i]<<" ";
