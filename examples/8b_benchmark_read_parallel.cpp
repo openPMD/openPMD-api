@@ -517,7 +517,7 @@ public:
     so << "  Rank: " << m_MPIRank << " offset [ "; sc << " count[ ";
     for ( unsigned int i=0; i<meshExtent.size(); i++ )
       {
-        so <<off[i]<<" ";
+        so << off[i] << " ";
         sc <<ext[i]<<" ";
       }
     so <<"]"; sc<<"]";
