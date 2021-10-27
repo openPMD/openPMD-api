@@ -690,7 +690,7 @@ public:
     if ( 0 == iter.particles.size() )
     {
        if ( 0 == m_MPIRank )
-            std::cerr<<" No Particles found. Skipping particle slicing. "<<std::endl;
+            std::cerr << " No Particles found. Skipping particle slicing. " << std::endl;
        return;
     }
 
