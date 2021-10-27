@@ -412,6 +412,8 @@ Further thanks go to improvements and contributions from:
   Dask guidance & reviews
 * [Erik Schnetter (PITP)](https://github.com/eschnett):
   C++ API bug fixes
+* [Jean Luca Bez (LBNL)](https://github.com/jeanbez):
+  HDF5 performance tuning
 
 ### Grants
 
