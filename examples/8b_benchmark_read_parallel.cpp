@@ -639,7 +639,7 @@ public:
    *
    */
   void
-  readStep( Series& series, IndexedIteration& iter,  int ts )
+  readStep( Series& series, IndexedIteration& iter, int ts )
   {
     std::string comp_name = openPMD::MeshRecordComponent::SCALAR;
 
