@@ -464,7 +464,7 @@ public:
         auto slice_data = rho.loadChunk<double>(off, ext);
         series.flush();
 
-        std::cout<<"  Rank: "<<m_MPIRank;
+        std::cout << "  Rank: " << m_MPIRank;
 
         prettyLambda(off,ext);
       }
