@@ -655,7 +655,7 @@ public:
       }
 
     std::vector<int> currPatterns;
-    if (m_Pattern  > 0)
+    if (m_Pattern > 0)
       currPatterns.push_back(m_Pattern);
     else
       currPatterns.insert(currPatterns.end(), { 1, 5, 15, 25, 55, 65, 75, 440, 441, 442, 443, 7 });
