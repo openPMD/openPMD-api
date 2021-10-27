@@ -128,6 +128,7 @@ public:
     //MemoryProfiler (rank, tag);
     }
     ~Timer() {
+        MPI_Barrier(MPI_COMM_WORLD);
         std::string tt = "~"+m_Tag;
         //MemoryProfiler (m_Rank, tt.c_str());
         m_End = std::chrono::system_clock::now();
@@ -188,9 +189,13 @@ std::vector<std::string> getBackends() {
 #if openPMD_HAVE_ADIOS2
     if( auxiliary::getEnvString( "OPENPMD_BP_BACKEND", "NOT_SET" ) != "ADIOS1" )
         res.emplace_back(".bp");
+    if( auxiliary::getEnvString( "OPENPMD_BENCHMARK_USE_BACKEND", "NOT_SET" ) == "ADIOS" )
+        return res;
 #endif
 
 #if openPMD_HAVE_HDF5
+    if( auxiliary::getEnvString( "OPENPMD_BENCHMARK_USE_BACKEND", "NOT_SET" ) == "HDF5" )
+        res.clear();
     res.emplace_back(".h5");
 #endif
     return res;
@@ -211,30 +216,22 @@ public:
    * Run the read tests
    * assumes both GroupBased and fileBased series of this prefix exist.
    * @ param prefix       file prefix
+   *                      e.g. abc.bp (for group/variable based encoding)
+   *                           abc    (for file based encoding)
    *
    */
   void run(const std::string& prefix)
   {
-    { // file based
-      std::ostringstream s;
-      s <<prefix<<"_%07T"<<m_Backend;
-
-      std::string filename = s.str();
-
-      read(filename);
-    }
-
-    return; // not doing group based..yet
-    /*
-    { // group based
-      std::ostringstream s;
-      s <<prefix<<m_Backend;
-
-      std::string filename = s.str();
-
-      read(filename);
-    }
-    */
+      if (prefix.find(m_Backend) == std::string::npos) {
+          // file based, default to %07T
+          std::ostringstream s;
+          s << prefix << "_%07T" << m_Backend;
+          std::string filename = s.str();
+          read(filename);
+      } else {
+          // group or variable based, or filebased with fullname
+          read(prefix);
+      }
   } // run
 
 
@@ -245,7 +242,7 @@ public:
    *
    */
   void
-  read(std::string& filename)
+  read(const std::string& filename)
   {
     try {
       std::string tag = "Reading: "+filename ;
@@ -255,16 +252,22 @@ public:
       int numIterations = series.iterations.size();
 
       if ( 0 == m_MPIRank )
-         std::cout<<"\n\t Num Iterations in " << filename<<" : " << numIterations<<std::endl;
+      {
+         std::cout << "  "<<series.iterationEncoding() << std::endl;
+         std::cout << "  Num Iterations in " << filename << " : " << numIterations << std::endl << std::endl;
+      }
+
       {
          int counter = 1;
-         for ( auto const& i : series.iterations )
+         for ( auto i : series.readIterations() )
          {
-           if ( (1 == counter) || (numIterations == counter) )
-               readStep(series, i.first);
+           if ( counter % 5 == 1 )
+               readStep(series, i, counter - 1);
            counter ++;
          }
-       }
+         if ( 0 == m_MPIRank )
+            std::cout << "  Total Num iterations read: " << (counter - 1) << std::endl << std::endl;
+      }
     } catch (std::exception& ex)
       {}
   }
@@ -389,6 +392,7 @@ public:
     bool atCenter      = ( (m_Pattern % 10 == 0) || (fractionOnDim == 1) );
     bool atTopLeft     = ( (m_Pattern % 10 == 1) && (fractionOnDim > 1) );
     bool atBottomRight = ( (m_Pattern % 10 == 2) && (fractionOnDim > 1) );
+    bool overlay       = ( (m_Pattern % 10 == 3) && (fractionOnDim > 1) );
 
     bool rankZeroOnly  = ( alongDim == 4);
     bool diagnalBlocks = ( alongDim > meshExtent.size() ) && !rankZeroOnly;
@@ -404,6 +408,8 @@ public:
         s <<" topleft ";
       else if (atBottomRight)
         s <<" bottomRight ";
+      else if (overlay)
+        s << " near center ";
     } else if ( diagnalBlocks )
       s <<" blockStyle = diagnal";
     else
@@ -423,12 +429,14 @@ public:
 
         if ( rankZeroOnly )
         {
-            if ( atCenter )
+            if ( atTopLeft )
                  off[i] = 0; // top corner
-            else if ( atTopLeft )
+            else if ( atBottomRight )
                  off[i] = (meshExtent[i]-blob); // bottom corner
-            else if (atBottomRight)
+            else if (atCenter)
                  off[i] = (fractionOnDim/2) * blob; // middle corner
+            else if (overlay)
+                 off[i] = (fractionOnDim/2) * blob - blob/3; // near middle corner
         }
         else
         {
@@ -456,7 +464,7 @@ public:
         auto slice_data = rho.loadChunk<double>(off, ext);
         series.flush();
 
-        std::cout<<"Rank: "<<m_MPIRank;
+        std::cout << "  Rank: " << m_MPIRank;
 
         prettyLambda(off,ext);
       }
@@ -506,10 +514,10 @@ public:
       }
 
     std::ostringstream so, sc;
-    so <<"Rank: "<<m_MPIRank<<" offset [ "; sc<<" count[ ";
+    so << "  Rank: " << m_MPIRank << " offset [ "; sc << " count[ ";
     for ( unsigned int i=0; i<meshExtent.size(); i++ )
       {
-        so <<off[i]<<" ";
+        so << off[i] << " ";
         sc <<ext[i]<<" ";
       }
     so <<"]"; sc<<"]";
@@ -573,7 +581,7 @@ public:
    * @param series     openPMD series
    */
   void
-  sliceField( Series& series, int ts )
+  sliceField(Series& series, IndexedIteration& iter)
   {
     if ( m_Pattern >= 100 )
       return;
@@ -592,7 +600,7 @@ public:
       return;
     whichDim -= 5;
 
-    MeshRecordComponent bx = series.iterations[ts].meshes["B"]["x"];
+    MeshRecordComponent bx = iter.meshes["B"]["x"];
     Extent meshExtent = bx.getExtent();
 
     if ( bx.getExtent().size() != 3) {
@@ -601,15 +609,15 @@ public:
         return;
       }
 
-    MeshRecordComponent by = series.iterations[ts].meshes["B"]["y"];
-    MeshRecordComponent bz = series.iterations[ts].meshes["B"]["z"];
+    MeshRecordComponent by = iter.meshes["B"]["y"];
+    MeshRecordComponent bz = iter.meshes["B"]["z"];
 
 
     Offset off(meshExtent.size(),0);
     Extent ext(meshExtent.size(),1);
 
     std::ostringstream s;
-    s<<" Eletrict Field slice: ";
+    s<<" Electric Field slice: ";
     if (!getSlice(meshExtent, whichDim, rankZeroOnly, off, ext, s))
       return;
 
@@ -626,52 +634,70 @@ public:
    * Read an iteration step, mesh & particles
    *
    * @param Series        openPMD series
+   * @param iter          iteration (actual iteration step may not equal to ts)
    * @param ts            timestep
    *
    */
   void
-  readStep( Series& series, int ts )
+  readStep( Series& series, IndexedIteration& iter, int ts )
   {
     std::string comp_name = openPMD::MeshRecordComponent::SCALAR;
 
-    MeshRecordComponent rho = series.iterations[ts].meshes["rho"][comp_name];
-
+    MeshRecordComponent rho = iter.meshes["rho"][comp_name];
     Extent meshExtent = rho.getExtent();
 
     if ( 0 == m_MPIRank )
       {
-         std::cout<<"... rho meshExtent : ts="<<ts<<" [";
+         std::cout << "===> rho meshExtent : ts=" << ts << " [";
          for (unsigned long i : meshExtent)
               std::cout<<i<<" ";
          std::cout<<"]"<<std::endl;
       }
 
-    sliceMe(series, rho);
-    block(series, rho);
-    fullscan(series, rho);
+    std::vector<int> currPatterns;
+    if (m_Pattern > 0)
+      currPatterns.push_back(m_Pattern);
+    else
+      currPatterns.insert(currPatterns.end(), { 1, 5, 15, 25, 55, 65, 75, 440, 441, 442, 443, 7 });
 
-    sliceField(series, ts);
+    for(int i : currPatterns) {
+        m_Pattern = i;
+        sliceMe(series, rho);
+        block(series, rho);
+        fullscan(series, rho);
 
-    // read particles
-    if ( m_Pattern == 7 )
-      {
-         openPMD::ParticleSpecies electrons =
-         series.iterations[ts].particles["ion"];
-         RecordComponent charge = electrons["charge"][RecordComponent::SCALAR];
-         sliceParticles(series, charge);
-      }
+        sliceField(series, iter);
+
+        sliceParticles(series, iter);
+    }
+    if (currPatterns.size() > 1)
+      m_Pattern = 0;
   }
 
   /*
-   * Read a slice of particles
+   * Read a slice of id of the first particle
    *
    * @param series      openPMD Series
-   * @param charge      Particle record
+   * @param iter        current iteration
    *
    */
-  void sliceParticles(Series& series, RecordComponent& charge)
+  void sliceParticles(Series& series, IndexedIteration& iter)
   {
-    Extent pExtent = charge.getExtent();
+    // read id of the first particle found
+    if ( m_Pattern != 7 )
+      return;
+
+    if ( 0 == iter.particles.size() )
+    {
+       if ( 0 == m_MPIRank )
+            std::cerr << " No Particles found. Skipping particle slicing. " << std::endl;
+       return;
+    }
+
+    openPMD::ParticleSpecies p = iter.particles.begin()->second;
+    RecordComponent idVal = p["id"][RecordComponent::SCALAR];
+
+    Extent pExtent = idVal.getExtent();
 
     auto blob = pExtent[0]/(10*m_MPISize);
     if (0 == blob)
@@ -689,7 +715,7 @@ public:
 
     Offset colOff = {m_MPIRank*blob};
     Extent colExt = {blob};
-    auto col_data = charge.loadChunk<double>(colOff, colExt);
+    auto col_data = idVal.loadChunk<uint64_t>(colOff, colExt);
     series.flush();
   }
 
@@ -725,6 +751,7 @@ main( int argc, char *argv[] )
       return 0;
     }
 
+    {
     Timer g( "  Main  ", input.m_MPIRank );
 
     std::string prefix = argv[1];
@@ -759,7 +786,7 @@ main( int argc, char *argv[] )
          input.m_Backend = which;
          input.run(prefix);
       }
-
+    } // Timer g
     MPI_Finalize();
 
     return 0;
