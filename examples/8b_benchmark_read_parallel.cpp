@@ -266,7 +266,7 @@ public:
            counter ++;
          }
          if ( 0 == m_MPIRank )
-            std::cout<<"  Total Num iterations read: "<<(counter - 1)<<std::endl<<std::endl;
+            std::cout << "  Total Num iterations read: " << (counter - 1) << std::endl << std::endl;
       }
     } catch (std::exception& ex)
       {}
