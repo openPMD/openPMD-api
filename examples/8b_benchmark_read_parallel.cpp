@@ -253,8 +253,8 @@ public:
 
       if ( 0 == m_MPIRank )
       {
-         std::cout<<"  "<<series.iterationEncoding()<<std::endl;
-         std::cout<<"  Num Iterations in " << filename<<" : " << numIterations<<std::endl<<std::endl;
+         std::cout << "  "<<series.iterationEncoding() << std::endl;
+         std::cout << "  Num Iterations in " << filename << " : " << numIterations << std::endl << std::endl;
       }
 
       {
