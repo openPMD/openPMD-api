@@ -696,7 +696,6 @@ public:
 
     openPMD::ParticleSpecies p = iter.particles.begin()->second;
     RecordComponent idVal = p["id"][RecordComponent::SCALAR];
-    //sliceParticles(series, val);
 
     Extent pExtent = idVal.getExtent();
 
