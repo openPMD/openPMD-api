@@ -70,6 +70,9 @@ namespace openPMD
 
         hid_t m_datasetTransferProperty;
         hid_t m_fileAccessProperty;
+        hid_t m_fileCreateProperty;
+
+        hbool_t m_hdf5_collective_metadata = 1;
 
         // h5py compatible types for bool and complex
         hid_t m_H5T_BOOL_ENUM;
