@@ -648,7 +648,7 @@ public:
 
     if ( 0 == m_MPIRank )
       {
-         std::cout<<"===> rho meshExtent : ts="<<ts<<" [";
+         std::cout << "===> rho meshExtent : ts=" << ts << " [";
          for (unsigned long i : meshExtent)
               std::cout<<i<<" ";
          std::cout<<"]"<<std::endl;
