@@ -63,6 +63,7 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
     m_fileAccessProperty = H5Pcreate(H5P_FILE_ACCESS);
     m_fileCreateProperty = H5Pcreate(H5P_FILE_CREATE);
 
+#if H5_VERSION_GE(1,10,1)
     auto const hdf5_spaced_allocation = auxiliary::getEnvString( "OPENPMD_HDF5_PAGED_ALLOCATION", "ON" );
     if( hdf5_spaced_allocation == "ON" ) {
         auto const strPageSize = auxiliary::getEnvString( "OPENPMD_HDF5_PAGED_ALLOCATION_SIZE", "33554432" );
@@ -70,11 +71,10 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
         hsize_t page_size;
         tstream >> page_size;
 
-#if H5_VERSION_GE(1,10,1)
         H5Pset_file_space_strategy(m_fileCreateProperty, H5F_FSPACE_STRATEGY_PAGE, 0, (hsize_t)0);
         H5Pset_file_space_page_size(m_fileCreateProperty, page_size);
-#endif
     }
+#endif
 
     auto const hdf5_defer_metadata = auxiliary::getEnvString( "OPENPMD_HDF5_DEFER_METADATA", "ON" );
     if( hdf5_defer_metadata == "ON" ) {
