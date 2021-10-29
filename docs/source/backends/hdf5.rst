@@ -91,6 +91,17 @@ There are also problems in OMPIO with writes larger than 2GB, which have only be
 Using ``export OMPI_MCA_io=^ompio`` before ``mpiexec``/``mpirun``/``srun``/``jsrun`` will disable OMPIO and instead fall back to the older *ROMIO* MPI-I/O backend in OpenMPI.
 
 
+Known Issues
+------------
+
+.. warning::
+
+   Jul 23th, 2021 (`HDFFV-11260 <https://jira.hdfgroup.org/browse/HDFFV-11260>`__):
+   Collective HDF5 metadata reads became broken in 1.10.5.
+   Consider using 1.10.4 if you plan to enable the collective HDF5 metadata operations optimization in openPMD (``OPENPMD_HDF5_COLLECTIVE_METADATA=ON``).
+   Enabling this feature with a newer version will make HDF5 fall back to the individual metadata operations.
+   HDF5 plans to fix the issue in the upcoming 1.10.8+ and 1.12.2+ releases, but visit the issue tracker above to see the status of the bug fix.
+
 Selected References
 -------------------
 
