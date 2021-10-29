@@ -96,8 +96,8 @@ Known Issues
 
 .. warning::
 
-   Jul 23th, 2021 (`HDFFV-11260 <https://jira.hdfgroup.org/browse/HDFFV-11260>`):
-   Collective HDF5 metadata reads became broken in 1.10.5. Consider using 1.10.4 if you plan to enable the collective HDF5 metadata operations optimization in OpenPMD (``OPENPMD_HDF5_COLLECTIVE_METADATA=ON``). Enabling this feature with a newer version will make HDF5 fall back to the individual metadata operations.
+   Jul 23th, 2021 (`HDFFV-11260 <https://jira.hdfgroup.org/browse/HDFFV-11260>`__):
+   Collective HDF5 metadata reads became broken in 1.10.5. Consider using 1.10.4 if you plan to enable the collective HDF5 metadata operations optimization in openPMD (``OPENPMD_HDF5_COLLECTIVE_METADATA=ON``). Enabling this feature with a newer version will make HDF5 fall back to the individual metadata operations.
 
 Selected References
 -------------------
