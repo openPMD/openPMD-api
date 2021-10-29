@@ -70,8 +70,10 @@ ParallelHDF5IOHandlerImpl::ParallelHDF5IOHandlerImpl(
         hsize_t page_size;
         tstream >> page_size;
 
+#if H5_VERSION_GE(1,10,1)
         H5Pset_file_space_strategy(m_fileCreateProperty, H5F_FSPACE_STRATEGY_PAGE, 0, (hsize_t)0);
         H5Pset_file_space_page_size(m_fileCreateProperty, page_size);
+#endif
     }
 
     auto const hdf5_defer_metadata = auxiliary::getEnvString( "OPENPMD_HDF5_DEFER_METADATA", "ON" );
