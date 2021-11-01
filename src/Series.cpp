@@ -30,6 +30,7 @@
 #include "openPMD/Series.hpp"
 #include "openPMD/version.hpp"
 
+#include <cctype>
 #include <exception>
 #include <iomanip>
 #include <iostream>
@@ -76,8 +77,12 @@ namespace
      *          bool is True if file could be of type f and matches the iterationEncoding. False otherwise.
      *          int is the amount of padding present in the iteration number %T. Is 0 if bool is False.
      */
-    std::function<Match(std::string const &)>
-    matcher(std::string const &prefix, int padding, std::string const &postfix, Format f);
+    std::function<Match(std::string const &)> matcher(
+        std::string const &prefix,
+        int padding,
+        std::string const &postfix,
+        Format f,
+        std::string const &fullPattern);
 } // namespace [anonymous]
 
 struct SeriesInterface::ParsedInput
@@ -796,7 +801,7 @@ SeriesInterface::readFileBased( )
 
     auto isPartOfSeries = matcher(
         series.m_filenamePrefix, series.m_filenamePadding,
-        series.m_filenamePostfix, series.m_format);
+        series.m_filenamePostfix, series.m_format, series.m_name);
     bool isContained;
     int padding;
     uint64_t iterationIndex;
@@ -1624,12 +1629,29 @@ namespace
         };
     }
 
-    std::function<Match(std::string const &)>
-    matcher(std::string const &prefix, int padding, std::string const &postfix, Format f) {
+    std::function<Match(std::string const &)> matcher(
+        std::string const &prefix,
+        int padding,
+        std::string const &postfix,
+        Format f,
+        std::string const &fullPattern)
+    {
         std::string filenameSuffix = suffix( f );
         if( filenameSuffix.empty() )
         {
             return [](std::string const &) -> Match { return {false, 0, 0}; };
+        }
+
+        if( !prefix.empty() && std::isdigit(static_cast< unsigned char >(*prefix.rbegin())) )
+        {
+            std::cerr << R"END(
+[Warning] In file-based iteration encoding, it is strongly recommended to avoid
+digits as the last characters of the filename prefix. For instance, a robust
+pattern is to prepend the expansion pattern of the filename with an underscore
+'_'.
+Example: 'data_%T.json' or 'simOutput_%06T.h5'
+Given file pattern: ')END"
+                        << fullPattern << "'" << std::endl;
         }
 
         std::string nameReg = "^" + prefix;
