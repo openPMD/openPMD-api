@@ -155,6 +155,24 @@ Ignore the 30GB initialization phases.
 .. image:: ./memory_groupbased_nosteps.png
   :alt: Memory usage of group-based iteration without using steps
 
+
+Known Issues
+------------
+
+.. warning::
+
+   Nov 1st, 2021 (`ADIOS2 2887 <https://github.com/ornladios/ADIOS2/issues/2887>`__):
+   The fabric selection in ADIOS2 has was designed for libfabric 1.6.
+   With newer versions of libfabric, the following workaround is needed to guide the selection of a functional fabric for RDMA support:
+
+   The following environment variables can be set as work-arounds on Cray systems, when working with ADIOS2 SST:
+
+   .. code-block:: bash
+
+      export FABRIC_IFACE=mlx5_0   # ADIOS SST: select interface (1 NIC on Summit)
+      export FI_OFI_RXM_USE_SRX=1  # libfabric: use shared receive context from MSG provider
+
+
 Selected References
 -------------------
 
