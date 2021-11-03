@@ -1736,7 +1736,7 @@ void fileBased_write_test(const std::string & backend)
         REQUIRE(s.iterations[5].time< double >() == 5.0);
         REQUIRE(s.iterations[10].time< double >() == 10.0);
         REQUIRE(s.iterations[123456].time< double >() ==
-            static_cast<double>(123456));
+            static_cast< double >(123456));
     }
 
     {
