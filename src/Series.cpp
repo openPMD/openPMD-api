@@ -1618,15 +1618,19 @@ namespace
     }
 
     std::function<Match(std::string const &)>
-    buildMatcher(std::string const &regexPattern) {
+    buildMatcher(std::string const &regexPattern, int padding) {
         std::regex pattern(regexPattern);
 
-        return [pattern](std::string const &filename) -> Match {
+        return [pattern, padding](std::string const &filename) -> Match {
             std::smatch regexMatches;
             bool match = std::regex_match(filename, regexMatches, pattern);
-            int padding = match ? regexMatches[1].length() : 0;
-            return {match, padding, match ? std::stoull(regexMatches[1]) : 0};
-        };
+            int processedPadding = padding != 0
+                ? padding
+                : ( match ? regexMatches[ 1 ].length() : 0 );
+            return {
+                match,
+                processedPadding,
+                match ? std::stoull( regexMatches[ 1 ] ) : 0 };        };
     }
 
     std::function<Match(std::string const &)> matcher(
@@ -1673,7 +1677,7 @@ Given file pattern: ')END"
             nameReg += "+)";
         }
         nameReg += postfix + filenameSuffix + "$";
-        return buildMatcher(nameReg);
+        return buildMatcher(nameReg, padding);
     }
 } // namespace [anonymous]
 } // namespace openPMD
