@@ -167,7 +167,7 @@ Known Issues
 .. warning::
 
    Nov 1st, 2021 (`ADIOS2 2887 <https://github.com/ornladios/ADIOS2/issues/2887>`__):
-   The fabric selection in ADIOS2 has been rewritten for libfabric 1.6.
+   The fabric selection in ADIOS2 has was designed for libfabric 1.6.
    With newer versions of libfabric, the following workaround is needed to guide the selection of a functional fabric for RDMA support:
 
    The following environment variables can be set as work-arounds on Cray systems, when working with ADIOS2 SST:
