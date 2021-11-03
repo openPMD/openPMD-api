@@ -1570,7 +1570,7 @@ void fileBased_write_test(const std::string & backend)
         REQUIRE(o.iterations.count(5) == 1);
 
 #if openPMD_USE_INVASIVE_TESTS
-        REQUIRE(o.get().m_filenamePadding == 8);
+        REQUIRE(o.get().m_filenamePadding == 3);
 #endif
 
         REQUIRE(o.basePath() == "/data/%T/");
@@ -1666,7 +1666,13 @@ void fileBased_write_test(const std::string & backend)
     {
         Series o = Series("../samples/subdir/serial_fileBased_write%01T." + backend, Access::READ_WRITE);
 
-        REQUIRE(o.iterations.empty());
+        REQUIRE(o.iterations.size() == 1);
+        /*
+         * 123456 has no padding, it's just a very long number.
+         * So even when opening the series with a padding of 1,
+         * that iteration will be opened.
+         */
+        REQUIRE(o.iterations.count(123456) == 1);
 
         auto& it = o.iterations[10];
         ParticleSpecies& e = it.particles["e"];
@@ -1678,7 +1684,7 @@ void fileBased_write_test(const std::string & backend)
         fileBased_add_EDpic(e, 42);
         it.setTime(static_cast< double >(10));
 
-        REQUIRE(o.iterations.size() == 1);
+        REQUIRE(o.iterations.size() == 2);
     }
     REQUIRE((auxiliary::file_exists("../samples/subdir/serial_fileBased_write10." + backend)
         || auxiliary::directory_exists("../samples/subdir/serial_fileBased_write10." + backend)));
@@ -1707,10 +1713,10 @@ void fileBased_write_test(const std::string & backend)
     // read back with fixed padding
     {
         Series s = Series("../samples/subdir/serial_fileBased_write%03T." + backend, Access::READ_ONLY);
-        REQUIRE(s.iterations.size() == 6);
+        REQUIRE(s.iterations.size() == 7);
         REQUIRE(s.iterations.contains(4));
         REQUIRE(!s.iterations.contains(10));
-        REQUIRE(!s.iterations.contains(123456));
+        REQUIRE(s.iterations.contains(123456));
 
         REQUIRE(s.iterations[3].time< double >() == 3.0);
         REQUIRE(s.iterations[4].time< double >() == 4.0);
@@ -1729,7 +1735,8 @@ void fileBased_write_test(const std::string & backend)
         REQUIRE(s.iterations[4].time< double >() == 4.0);
         REQUIRE(s.iterations[5].time< double >() == 5.0);
         REQUIRE(s.iterations[10].time< double >() == 10.0);
-        REQUIRE(s.iterations[123456].time< double >() == 0.0);
+        REQUIRE(s.iterations[123456].time< double >() ==
+            static_cast<double>(123456));
     }
 
     {
