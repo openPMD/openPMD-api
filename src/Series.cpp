@@ -81,8 +81,7 @@ namespace
         std::string const &prefix,
         int padding,
         std::string const &postfix,
-        Format f,
-        std::string const &fullPattern);
+        Format f);
 } // namespace [anonymous]
 
 struct SeriesInterface::ParsedInput
@@ -493,6 +492,21 @@ void SeriesInterface::init(
     series.m_filenamePostfix = input->filenamePostfix;
     series.m_filenamePadding = input->filenamePadding;
 
+    if( series.m_iterationEncoding == IterationEncoding::fileBased &&
+        !series.m_filenamePrefix.empty() &&
+        std::isdigit( static_cast< unsigned char >(
+            *series.m_filenamePrefix.rbegin() ) ) )
+    {
+        std::cerr << R"END(
+[Warning] In file-based iteration encoding, it is strongly recommended to avoid
+digits as the last characters of the filename prefix.
+For instance, a robust pattern is to prepend the expansion pattern
+of the filename with an underscore '_'.
+Example: 'data_%T.json' or 'simOutput_%06T.h5'
+Given file pattern: ')END"
+                  << series.m_name << "'" << std::endl;
+    }
+
     if(IOHandler()->m_frontendAccess == Access::READ_ONLY || IOHandler()->m_frontendAccess == Access::READ_WRITE )
     {
         /* Allow creation of values in Containers and setting of Attributes
@@ -801,7 +815,7 @@ SeriesInterface::readFileBased( )
 
     auto isPartOfSeries = matcher(
         series.m_filenamePrefix, series.m_filenamePadding,
-        series.m_filenamePostfix, series.m_format, series.m_name);
+        series.m_filenamePostfix, series.m_format);
     bool isContained;
     int padding;
     uint64_t iterationIndex;
@@ -1637,25 +1651,12 @@ namespace
         std::string const &prefix,
         int padding,
         std::string const &postfix,
-        Format f,
-        std::string const &fullPattern)
+        Format f)
     {
         std::string filenameSuffix = suffix( f );
         if( filenameSuffix.empty() )
         {
             return [](std::string const &) -> Match { return {false, 0, 0}; };
-        }
-
-        if( !prefix.empty() && std::isdigit(static_cast< unsigned char >(*prefix.rbegin())) )
-        {
-            std::cerr << R"END(
-[Warning] In file-based iteration encoding, it is strongly recommended to avoid
-digits as the last characters of the filename prefix. For instance, a robust
-pattern is to prepend the expansion pattern of the filename with an underscore
-'_'.
-Example: 'data_%T.json' or 'simOutput_%06T.h5'
-Given file pattern: ')END"
-                        << fullPattern << "'" << std::endl;
         }
 
         std::string nameReg = "^" + prefix;
