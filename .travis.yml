@@ -6,7 +6,7 @@ branches:
 
 env:
   global:
-    - OPENPMD_GIT_REF="0.14.2"
+    - OPENPMD_GIT_REF="0.14.3"
 
     - CIBW_PROJECT_REQUIRES_PYTHON=">=3.6"
     # Install dependencies on Linux and OSX
