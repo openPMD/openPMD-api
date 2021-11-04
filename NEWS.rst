@@ -3,6 +3,12 @@
 Upgrade Guide
 =============
 
+0.15.0
+------
+
+Python 3.10 is now supported.
+
+
 0.14.0
 ------
 
