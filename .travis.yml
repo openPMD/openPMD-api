@@ -71,7 +71,7 @@ jobs:
 install:
   - git clone --branch ${OPENPMD_GIT_REF} --depth 1 https://github.com/openPMD/openPMD-api.git src
   - cp library_builders.sh src/.github/
-  - python3 -m pip install cibuildwheel==2.0.1
+  - python3 -m pip install git+https://github.com/ax3l/cibuildwheel.git@fix-ppc64leNetworkTravis
   # twine & cryptography: see
   #   https://github.com/scikit-build/cmake-python-distributions/blob/4730aeee240917303f293dffc89a8d8d5a4787c4/requirements-deploy.txt
   #   https://github.com/pyca/cryptography/issues/6086
