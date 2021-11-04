@@ -1167,6 +1167,16 @@ void dtype_test( const std::string & backend )
         {
             s.setAttribute("vecULongLong", std::vector< unsigned long long >({65531u, 65529u}));
         }
+
+        // long double grid spacing
+        // should be possible to parse without error upon opening
+        // the series for reading
+        {
+            auto E = s.iterations[ 0 ].meshes[ "E" ];
+            E.setGridSpacing( std::vector< long double >{ 1.0, 1.0 } );
+            auto E_x = E[ "x" ];
+            E_x.makeEmpty< double >( 1 );
+        }
     }
 
     Series s = Series("../samples/dtype_test." + backend, Access::READ_ONLY);
