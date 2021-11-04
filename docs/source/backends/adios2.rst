@@ -25,7 +25,7 @@ In order to activate steps, it is imperative to use the :ref:`Streaming API <usa
 
 ADIOS2 release 2.6.0 contained a bug (fixed in ADIOS 2.7.0, see `PR #2348 <https://github.com/ornladios/ADIOS2/pull/2348>`_) that disallows random-accessing steps in file-based engines.
 With this ADIOS2 release, files written with steps may only be read using the streaming API.
-In order to keep compatibility with older codes reading ADIOS2 files, step-based processing must currently be opted in to via use of the :ref:`JSON parameter<backendconfig>` ``adios2.engine.usesteps = true`` when using a file-based engine such as BP3 or BP4.
+In order to keep compatibility with older codes reading ADIOS2 files, step-based processing must currently be opted in to via use of the :ref:`JSON parameter<backendconfig>` ``adios2.engine.usesteps = true`` when using a file-based engine such as BP3 or BP4 (usesteps).
 
 Upon reading a file, the ADIOS2 backend will automatically recognize whether it has been written with or without steps, ignoring the JSON option mentioned above.
 Steps are mandatory for streaming-based engines and trying to switch them off will result in a runtime error.
@@ -154,6 +154,24 @@ Ignore the 30GB initialization phases.
 
 .. image:: ./memory_groupbased_nosteps.png
   :alt: Memory usage of group-based iteration without using steps
+
+
+Known Issues
+------------
+
+.. warning::
+
+   Nov 1st, 2021 (`ADIOS2 2887 <https://github.com/ornladios/ADIOS2/issues/2887>`__):
+   The fabric selection in ADIOS2 has was designed for libfabric 1.6.
+   With newer versions of libfabric, the following workaround is needed to guide the selection of a functional fabric for RDMA support:
+
+   The following environment variables can be set as work-arounds on Cray systems, when working with ADIOS2 SST:
+
+   .. code-block:: bash
+
+      export FABRIC_IFACE=mlx5_0   # ADIOS SST: select interface (1 NIC on Summit)
+      export FI_OFI_RXM_USE_SRX=1  # libfabric: use shared receive context from MSG provider
+
 
 Selected References
 -------------------

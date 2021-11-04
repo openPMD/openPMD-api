@@ -36,7 +36,7 @@ For a consistent user interface, backends shall follow the following rules:
 Backend-independent JSON configuration
 --------------------------------------
 
-The key ``defer_iteration_parsing`` can be used to optimize the process of opening an openPMD Series.
+The key ``defer_iteration_parsing`` can be used to optimize the process of opening an openPMD Series (deferred/lazy parsing).
 By default, a Series is parsed eagerly, i.e. opening a Series implies reading all available iterations.
 Especially when a Series has many iterations, this can be a costly operation and users may wish to defer parsing of iterations to a later point adding ``{"defer_iteration_parsing": true}`` to their JSON configuration.
 
@@ -71,7 +71,7 @@ Explanation of the single keys:
   Please refer to the `official ADIOS2 documentation <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_ for a list of available engines.
 * ``adios2.engine.parameters``: An associative array of string-formatted engine parameters, passed directly through to ``adios2::IO::SetParameters``.
   Please refer to the official ADIOS2 documentation for the allowable engine parameters.
-* ``adios2.engine.usesteps``: Described more closely in the documentation for the :ref:`ADIOS2 backend<backends-adios2>`.
+* ``adios2.engine.usesteps``: Described more closely in the documentation for the :ref:`ADIOS2 backend<backends-adios2>` (usesteps).
 * ``adios2.dataset.operators``: This key contains a list of ADIOS2 `operators <https://adios2.readthedocs.io/en/latest/components/components.html#operator>`_, used to enable compression or dataset transformations.
   Each object in the list has two keys:
 

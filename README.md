@@ -148,7 +148,7 @@ Choose *one* of the install methods below to get started:
 ```bash
 # optional:               +python +adios1 -adios2 -hdf5 -mpi
 spack install openpmd-api
-spack load -r openpmd-api
+spack load openpmd-api
 ```
 
 ### [Conda](https://conda.io)
@@ -232,7 +232,7 @@ cd openPMD-api-build
 # for options append:
 #   -DopenPMD_USE_...=...
 # e.g. for python support add:
-#   -DopenPMD_USE_PYTHON=ON
+#   -DopenPMD_USE_PYTHON=ON -DPython_EXECUTABLE=$(which python3)
 cmake ../openPMD-api
 
 cmake --build .
@@ -412,6 +412,8 @@ Further thanks go to improvements and contributions from:
   Dask guidance & reviews
 * [Erik Schnetter (PITP)](https://github.com/eschnett):
   C++ API bug fixes
+* [Jean Luca Bez (LBNL)](https://github.com/jeanbez):
+  HDF5 performance tuning
 
 ### Grants
 

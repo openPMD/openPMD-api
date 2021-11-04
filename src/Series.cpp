@@ -29,6 +29,7 @@
 #include "openPMD/Series.hpp"
 #include "openPMD/version.hpp"
 
+#include <cctype>
 #include <exception>
 #include <iomanip>
 #include <iostream>
@@ -75,8 +76,11 @@ namespace
      *          bool is True if file could be of type f and matches the iterationEncoding. False otherwise.
      *          int is the amount of padding present in the iteration number %T. Is 0 if bool is False.
      */
-    std::function<Match(std::string const &)>
-    matcher(std::string const &prefix, int padding, std::string const &postfix, Format f);
+    std::function<Match(std::string const &)> matcher(
+        std::string const &prefix,
+        int padding,
+        std::string const &postfix,
+        Format f);
 } // namespace [anonymous]
 
 struct SeriesInterface::ParsedInput
@@ -434,6 +438,21 @@ void SeriesInterface::init(
     series.m_filenamePrefix = input->filenamePrefix;
     series.m_filenamePostfix = input->filenamePostfix;
     series.m_filenamePadding = input->filenamePadding;
+
+    if( series.m_iterationEncoding == IterationEncoding::fileBased &&
+        !series.m_filenamePrefix.empty() &&
+        std::isdigit( static_cast< unsigned char >(
+            *series.m_filenamePrefix.rbegin() ) ) )
+    {
+        std::cerr << R"END(
+[Warning] In file-based iteration encoding, it is strongly recommended to avoid
+digits as the last characters of the filename prefix.
+For instance, a robust pattern is to prepend the expansion pattern
+of the filename with an underscore '_'.
+Example: 'data_%T.json' or 'simOutput_%06T.h5'
+Given file pattern: ')END"
+                  << series.m_name << "'" << std::endl;
+    }
 
     if(IOHandler()->m_frontendAccess == Access::READ_ONLY || IOHandler()->m_frontendAccess == Access::READ_WRITE )
     {
@@ -1475,6 +1494,15 @@ SeriesInternal::~SeriesInternal()
 }
 } // namespace internal
 
+Series::Series( std::shared_ptr< internal::SeriesInternal > series_in )
+    : SeriesInterface{
+        series_in.get(),
+        static_cast< internal::AttributableData * >( series_in.get() ) }
+    , m_series{ std::move( series_in ) }
+    , iterations{ m_series->iterations }
+{
+}
+
 Series::Series() : SeriesInterface{ nullptr, nullptr }, iterations{}
 {
 }
@@ -1517,7 +1545,9 @@ Series::operator bool() const
 
 ReadIterations Series::readIterations()
 {
-    return { *this };
+    // Use private constructor instead of copy constructor to avoid
+    // object slicing
+    return { this->m_series };
 }
 
 WriteIterations
@@ -1549,71 +1579,53 @@ namespace
     }
 
     std::function<Match(std::string const &)>
-    buildMatcher(std::string const &regexPattern) {
+    buildMatcher(std::string const &regexPattern, int padding) {
         std::regex pattern(regexPattern);
 
-        return [pattern](std::string const &filename) -> Match {
+        return [pattern, padding](std::string const &filename) -> Match {
             std::smatch regexMatches;
             bool match = std::regex_match(filename, regexMatches, pattern);
-            int padding = match ? regexMatches[1].length() : 0;
-            return {match, padding, match ? std::stoull(regexMatches[1]) : 0};
-        };
+            int processedPadding = padding != 0
+                ? padding
+                : ( match ? regexMatches[ 1 ].length() : 0 );
+            return {
+                match,
+                processedPadding,
+                match ? std::stoull( regexMatches[ 1 ] ) : 0 };        };
     }
 
-    std::function<Match(std::string const &)>
-    matcher(std::string const &prefix, int padding, std::string const &postfix, Format f) {
-        switch (f) {
-            case Format::HDF5: {
-                std::string nameReg = "^" + prefix + "([[:digit:]]";
-                if (padding != 0)
-                    nameReg += "{" + std::to_string(padding) + "}";
-                else
-                    nameReg += "+";
-                nameReg += +")" + postfix + ".h5$";
-                return buildMatcher(nameReg);
-            }
-            case Format::ADIOS1:
-            case Format::ADIOS2: {
-                std::string nameReg = "^" + prefix + "([[:digit:]]";
-                if (padding != 0)
-                    nameReg += "{" + std::to_string(padding) + "}";
-                else
-                    nameReg += "+";
-                nameReg += +")" + postfix + ".bp$";
-                return buildMatcher(nameReg);
-            }
-            case Format::ADIOS2_SST:
-            {
-                std::string nameReg = "^" + prefix + "([[:digit:]]";
-                if( padding != 0 )
-                    nameReg += "{" + std::to_string(padding) + "}";
-                else
-                    nameReg += "+";
-                nameReg += + ")" + postfix + ".sst$";
-                return buildMatcher(nameReg);
-            }
-            case Format::ADIOS2_SSC:
-            {
-                std::string nameReg = "^" + prefix + "([[:digit:]]";
-                if( padding != 0 )
-                    nameReg += "{" + std::to_string(padding) + "}";
-                else
-                    nameReg += "+";
-                nameReg += + ")" + postfix + ".ssc$";
-                return buildMatcher(nameReg);
-            }
-            case Format::JSON: {
-                std::string nameReg = "^" + prefix + "([[:digit:]]";
-                if (padding != 0)
-                    nameReg += "{" + std::to_string(padding) + "}";
-                else
-                    nameReg += "+";
-                nameReg += +")" + postfix + ".json$";
-                return buildMatcher(nameReg);
-            }
-            default:
-                return [](std::string const &) -> Match { return {false, 0, 0}; };
+    std::function<Match(std::string const &)> matcher(
+        std::string const &prefix,
+        int padding,
+        std::string const &postfix,
+        Format f)
+    {
+        std::string filenameSuffix = suffix( f );
+        if( filenameSuffix.empty() )
+        {
+            return [](std::string const &) -> Match { return {false, 0, 0}; };
         }
+
+        std::string nameReg = "^" + prefix;
+        if (padding != 0)
+        {
+            // The part after the question mark:
+            // The number must be at least `padding` digits long
+            // The part before the question mark:
+            // It may be longer than that only if the first digit is not zero
+            // The outer pair of parentheses is for later extraction of the
+            // iteration number via std::stoull(regexMatches[1])
+            nameReg += "(([1-9][[:digit:]]*)?([[:digit:]]";
+            nameReg += "{" + std::to_string(padding) + "}))";
+        }
+        else
+        {
+            // No padding specified, any number of digits is ok.
+            nameReg += "([[:digit:]]";
+            nameReg += "+)";
+        }
+        nameReg += postfix + filenameSuffix + "$";
+        return buildMatcher(nameReg, padding);
     }
 } // namespace [anonymous]
 } // namespace openPMD

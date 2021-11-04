@@ -90,7 +90,7 @@ TEST_CASE( "adios2_char_portability", "[serial][adios2]" )
         writeAttribute( "/openPMD", std::string( "1.1.0" ) );
         writeAttribute( "/openPMDextension", uint32_t( 0 ) );
         writeAttribute( "/software", std::string( "openPMD-api" ) );
-        writeAttribute( "/softwareVersion", std::string( "0.14.2" ) );
+        writeAttribute( "/softwareVersion", std::string( "0.14.3" ) );
 
         IO.DefineAttribute< uint64_t >(
             "__openPMD_internal/openPMD2_adios2_schema", 20210209 );
@@ -1481,7 +1481,7 @@ void fileBased_write_test(const std::string & backend)
         auxiliary::remove_directory("../samples/subdir");
 
     {
-        Series o = Series("../samples/subdir/serial_fileBased_write%08T." + backend, Access::CREATE);
+        Series o = Series("../samples/subdir/serial_fileBased_write%03T." + backend, Access::CREATE);
 
         ParticleSpecies& e_1 = o.iterations[1].particles["e"];
 
@@ -1556,12 +1556,12 @@ void fileBased_write_test(const std::string & backend)
         o.flush();
         o.iterations[5].setTime(static_cast< double >(5));
     }
-    REQUIRE((auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000001." + backend)
-        || auxiliary::directory_exists("../samples/subdir/serial_fileBased_write00000001." + backend)));
-    REQUIRE((auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000002." + backend)
-        || auxiliary::directory_exists("../samples/subdir/serial_fileBased_write00000002." + backend)));
-    REQUIRE((auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000003." + backend)
-        || auxiliary::directory_exists("../samples/subdir/serial_fileBased_write00000003." + backend)));
+    REQUIRE((auxiliary::file_exists("../samples/subdir/serial_fileBased_write001." + backend)
+        || auxiliary::directory_exists("../samples/subdir/serial_fileBased_write001." + backend)));
+    REQUIRE((auxiliary::file_exists("../samples/subdir/serial_fileBased_write002." + backend)
+        || auxiliary::directory_exists("../samples/subdir/serial_fileBased_write002." + backend)));
+    REQUIRE((auxiliary::file_exists("../samples/subdir/serial_fileBased_write003." + backend)
+        || auxiliary::directory_exists("../samples/subdir/serial_fileBased_write003." + backend)));
 
     {
         Series o = Series("../samples/subdir/serial_fileBased_write%T." + backend, Access::READ_ONLY);
@@ -1574,12 +1574,12 @@ void fileBased_write_test(const std::string & backend)
         REQUIRE(o.iterations.count(5) == 1);
 
 #if openPMD_USE_INVASIVE_TESTS
-        REQUIRE(o.get().m_filenamePadding == 8);
+        REQUIRE(o.get().m_filenamePadding == 3);
 #endif
 
         REQUIRE(o.basePath() == "/data/%T/");
         REQUIRE(o.iterationEncoding() == IterationEncoding::fileBased);
-        REQUIRE(o.iterationFormat() == "serial_fileBased_write%08T");
+        REQUIRE(o.iterationFormat() == "serial_fileBased_write%03T");
         REQUIRE(o.openPMD() == "1.1.0");
         REQUIRE(o.openPMDextension() == 1u);
         REQUIRE(o.particlesPath() == "particles/");
@@ -1646,15 +1646,37 @@ void fileBased_write_test(const std::string & backend)
         o.iterations[ 6 ]
             .particles[ "e" ][ "position" ][ "x" ]
             .makeConstant< double >( 1.0 );
-    }
-    REQUIRE((auxiliary::file_exists("../samples/subdir/serial_fileBased_write00000004." + backend)
-        || auxiliary::directory_exists("../samples/subdir/serial_fileBased_write00000004." + backend)));
 
-    // additional iteration with different iteration padding but similar content
+        // additional iteration with over-running iteration padding but similar content
+        //                  padding:    000
+        uint64_t const overlong_it = 123456;
+        o.iterations[ overlong_it ];
+        // write something to trigger opening of the file
+        o.iterations[ overlong_it ].particles[ "e" ][ "position" ][ "x" ].resetDataset(
+                { Datatype::DOUBLE, { 12 } } );
+        o.iterations[ overlong_it ]
+                .particles[ "e" ][ "position" ][ "x" ]
+                .makeConstant< double >( 1.0 );
+
+        o.iterations[ overlong_it ].setTime(static_cast< double >(overlong_it));
+        REQUIRE(o.iterations.size() == 7);
+    }
+    REQUIRE((auxiliary::file_exists("../samples/subdir/serial_fileBased_write004." + backend)
+        || auxiliary::directory_exists("../samples/subdir/serial_fileBased_write004." + backend)));
+    REQUIRE((auxiliary::file_exists("../samples/subdir/serial_fileBased_write123456." + backend)
+        || auxiliary::directory_exists("../samples/subdir/serial_fileBased_write123456." + backend)));
+
+    // additional iteration with shorter iteration padding but similar content
     {
         Series o = Series("../samples/subdir/serial_fileBased_write%01T." + backend, Access::READ_WRITE);
 
-        REQUIRE(o.iterations.empty());
+        REQUIRE(o.iterations.size() == 1);
+        /*
+         * 123456 has no padding, it's just a very long number.
+         * So even when opening the series with a padding of 1,
+         * that iteration will be opened.
+         */
+        REQUIRE(o.iterations.count(123456) == 1);
 
         auto& it = o.iterations[10];
         ParticleSpecies& e = it.particles["e"];
@@ -1664,8 +1686,9 @@ void fileBased_write_test(const std::string & backend)
         e["positionOffset"]["x"].makeConstant(1.23);
 
         fileBased_add_EDpic(e, 42);
+        it.setTime(static_cast< double >(10));
 
-        REQUIRE(o.iterations.size() == 1);
+        REQUIRE(o.iterations.size() == 2);
     }
     REQUIRE((auxiliary::file_exists("../samples/subdir/serial_fileBased_write10." + backend)
         || auxiliary::directory_exists("../samples/subdir/serial_fileBased_write10." + backend)));
@@ -1673,23 +1696,55 @@ void fileBased_write_test(const std::string & backend)
     // read back with auto-detection and non-fixed padding
     {
         Series s = Series("../samples/subdir/serial_fileBased_write%T." + backend, Access::READ_ONLY);
-        REQUIRE(s.iterations.size() == 7);
+        REQUIRE(s.iterations.size() == 8);
+        REQUIRE(s.iterations.contains(4));
+        REQUIRE(s.iterations.contains(10));
+        REQUIRE(s.iterations.contains(123456));
+
+        REQUIRE(s.iterations[3].time< double >() == 3.0);
+        REQUIRE(s.iterations[4].time< double >() == 4.0);
+        REQUIRE(s.iterations[5].time< double >() == 5.0);
+        REQUIRE(s.iterations[10].time< double >() == 10.0);
+        REQUIRE(s.iterations[123456].time< double >() == double(123456));
     }
 
-    // write with auto-detection and in-consistent padding
+    // write with auto-detection and in-consistent padding from step 10
     {
         REQUIRE_THROWS_WITH(Series("../samples/subdir/serial_fileBased_write%T." + backend, Access::READ_WRITE),
             Catch::Equals("Cannot write to a series with inconsistent iteration padding. Please specify '%0<N>T' or open as read-only."));
     }
 
-    // read back with auto-detection and fixed padding
+    // read back with fixed padding
     {
-        Series s = Series("../samples/subdir/serial_fileBased_write%08T." + backend, Access::READ_ONLY);
-        REQUIRE(s.iterations.size() == 6);
+        Series s = Series("../samples/subdir/serial_fileBased_write%03T." + backend, Access::READ_ONLY);
+        REQUIRE(s.iterations.size() == 7);
+        REQUIRE(s.iterations.contains(4));
+        REQUIRE(!s.iterations.contains(10));
+        REQUIRE(s.iterations.contains(123456));
+
+        REQUIRE(s.iterations[3].time< double >() == 3.0);
+        REQUIRE(s.iterations[4].time< double >() == 4.0);
+        REQUIRE(s.iterations[5].time< double >() == 5.0);
+    }
+
+    // read back with auto-detection (allow relaxed/overflow padding)
+    {
+        Series s = Series("../samples/subdir/serial_fileBased_write%T." + backend, Access::READ_ONLY);
+        REQUIRE(s.iterations.size() == 8);
+        REQUIRE(s.iterations.contains(4));
+        REQUIRE(s.iterations.contains(10));
+        REQUIRE(s.iterations.contains(123456));
+
+        REQUIRE(s.iterations[3].time< double >() == 3.0);
+        REQUIRE(s.iterations[4].time< double >() == 4.0);
+        REQUIRE(s.iterations[5].time< double >() == 5.0);
+        REQUIRE(s.iterations[10].time< double >() == 10.0);
+        REQUIRE(s.iterations[123456].time< double >() ==
+            static_cast< double >(123456));
     }
 
     {
-        Series list{ "../samples/subdir/serial_fileBased_write%08T." + backend, Access::READ_ONLY };
+        Series list{ "../samples/subdir/serial_fileBased_write%03T." + backend, Access::READ_ONLY };
         helper::listSeries( list );
     }
 }

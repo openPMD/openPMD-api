@@ -5,6 +5,49 @@ Changelog
 
 0.14.2
 ------
+**Date:** 2021-11-03
+
+Read Bugs, C++17 Mixing and HDF5 Performance
+
+This release makes reads more robust by fixing small API, file-based parsing and test bugs.
+Building the library in C++14 and using it in C++17 will not result in incompatible ABIs anymore.
+HDF5 1.10.1+ performance was improved significantly.
+
+Changes to "0.14.2"
+^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- read:
+
+  - allow inconsistent zero pads #1118
+  - time/dt also in long double #1096
+- test 8b - bench read parallel:
+
+  - support variable encoding #1131
+  - block located at top left corner was mistaken to read a block in the center #1131
+- CI (AppVeyor): Python executable #1127
+- C++17 mixing: remember ``<variant>`` implementation #1128
+- support NVCC + C++17 #1103
+- avoid object slicing when deriving from ``Series`` class #1107
+- executables: ``CXX_STANDARD``/``EXTENSIONS`` #1102
+
+Other
+"""""
+
+- HDF5 I/O optimizations #1129 #1132 #1133
+- libfabric 1.6+: Document SST Work-Arounds #1134
+- OpenMPI: Document ``OMPI_MCA_io`` Control #1114
+- HDF5: Document ``HDF5_USE_FILE_LOCKING`` #1106
+- Lazy parsing: Make findable in docs and use in ``openpmd-ls`` #1111
+- Docs: More Locations ``-DPython_EXECUTABLE`` #1104
+- Spack: No More ``load -r`` #1125
+- ``openPMD.hpp``: include auxiliary ``StringManip`` #1124
+
+
+0.14.2
+------
 **Date:** 2021-08-17
 
 Various Reader Fixes

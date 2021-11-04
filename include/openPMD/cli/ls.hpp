@@ -98,7 +98,8 @@ namespace ls
         try {
             auto s = Series(
                 argv[1],
-                Access::READ_ONLY
+                Access::READ_ONLY,
+                R"({"defer_iteration_parsing": true})"
             );
 
             helper::listSeries(s, true, std::cout);
