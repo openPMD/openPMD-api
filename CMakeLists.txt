@@ -796,6 +796,8 @@ set(openPMD_PYTHON_EXAMPLE_NAMES
     5_write_parallel
     7_extended_write_serial
     9_particle_write_serial
+    10_streaming_write
+    10_streaming_read
     11_particle_dataframe
     12_span_write
 )
@@ -1331,6 +1333,26 @@ if(openPMD_BUILD_TESTING)
         endif()
     endif()
 
+    function(configure_python_test testname)
+        if(WIN32)
+            string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BASEDIR ${openPMD_BINARY_DIR})
+            string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+            string(REPLACE ";" "\\;" WIN_PATH "$ENV{PATH}")
+            string(REPLACE ";" "\\;" WIN_PYTHONPATH "$ENV{PYTHONPATH}")
+            set_property(TEST ${testname}
+                PROPERTY ENVIRONMENT
+                    "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
+                    "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${CMAKE_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
+            )
+        else()
+            set_tests_properties(${testname}
+                PROPERTIES ENVIRONMENT
+                    "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
+            )
+        endif()
+    endfunction()
+
+
     # Python Examples
     # Current examples all use HDF5, elaborate if other backends are used
     if(openPMD_HAVE_PYTHON AND openPMD_HAVE_HDF5)
@@ -1342,7 +1364,10 @@ if(openPMD_BUILD_TESTING)
                     COPYONLY
                 )
                 if(openPMD_BUILD_TESTING)
-                    if(${examplename} MATCHES "^.*_parallel$")
+                    if(${examplename} MATCHES "^10.*$")
+                        # streaming examples are done separately
+                        continue()
+                    elseif(${examplename} MATCHES "^.*_parallel$")
                         if(openPMD_HAVE_MPI AND MPI4PY_RETURN EQUAL 0)
                             # see https://mpi4py.readthedocs.io/en/stable/mpi4py.run.html
                             add_test(NAME Example.py.${examplename}
@@ -1361,24 +1386,15 @@ if(openPMD_BUILD_TESTING)
                                 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
                         )
                     endif()
-                    if(WIN32)
-                        string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BASEDIR ${openPMD_BINARY_DIR})
-                        string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-                        string(REPLACE ";" "\\;" WIN_PATH "$ENV{PATH}")
-                        string(REPLACE ";" "\\;" WIN_PYTHONPATH "$ENV{PYTHONPATH}")
-                        set_property(TEST Example.py.${examplename}
-                            PROPERTY ENVIRONMENT
-                                "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
-                                "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${CMAKE_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
-                        )
-                    else()
-                        set_tests_properties(Example.py.${examplename}
-                            PROPERTIES ENVIRONMENT
-                                "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
-                        )
-                    endif()
+                    configure_python_test(Example.py.${examplename})
                 endif()
             endforeach()
+            if(openPMD_HAVE_ADIOS2 AND openPMD_BUILD_TESTING AND NOT WIN32)
+                add_test(NAME Asynchronous.10_streaming.py
+                        COMMAND sh -c "${Python_EXECUTABLE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/10_streaming_write.py & sleep 1; ${Python_EXECUTABLE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/10_streaming_read.py"
+                        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+                configure_python_test(Asynchronous.10_streaming.py)
+            endif()
         endif()
     endif()
 endif()
