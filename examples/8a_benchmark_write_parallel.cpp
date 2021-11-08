@@ -1291,8 +1291,3 @@ bool ThreeDimPattern::setLayOut(int step)  {
 
     return true;
 }
-
-
-
-
-
