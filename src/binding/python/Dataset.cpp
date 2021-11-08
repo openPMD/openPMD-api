@@ -74,4 +74,3 @@ void init_Dataset(py::module &m) {
         .def_readwrite("options", &Dataset::options)
     ;
 }
-

@@ -354,7 +354,7 @@ OPENPMD_private:
      * @brief Internal call for flushing a Series.
      *
      * Any flushing of the Series will pass through this call.
-     * 
+     *
      * @param begin Start of the range of iterations to flush.
      * @param end End of the range of iterations to flush.
      * @param level Flush level, as documented in AbstractIOHandler.hpp.

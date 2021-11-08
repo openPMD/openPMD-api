@@ -91,8 +91,8 @@ namespace openPMD
         std::unordered_map< int64_t, std::unordered_map< std::string, Attribute > > m_attributeWrites;
         /**
          * Call this function to get adios file id for a Writable. Will create one if does not exist
-         * @return  returns an adios file id. 
-         */	  
+         * @return  returns an adios file id.
+         */
         int64_t GetFileHandle(Writable*);
     }; // ParallelADIOS1IOHandlerImpl
 } // openPMD

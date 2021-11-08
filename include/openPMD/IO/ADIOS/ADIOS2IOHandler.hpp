@@ -1290,7 +1290,7 @@ namespace detail
              * are initialized with the OutsideOfStep state).
              * A step should only be opened if an explicit ADVANCE task arrives
              * at the backend.
-             * 
+             *
              * @todo If the streaming API is used on files, parsing the whole
              *       Series up front is unnecessary work.
              *       Our frontend does not yet allow to distinguish whether

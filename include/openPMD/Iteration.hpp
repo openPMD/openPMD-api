@@ -199,7 +199,7 @@ private:
      * allow for those different control flows.
      * Finally, read_impl() is called which contains the common parsing
      * logic for an iteration.
-     * 
+     *
      * reread() reads again an Iteration that has been previously read.
      * Calling it on an Iteration not yet parsed is an error.
      *
@@ -306,7 +306,7 @@ private:
 
     /**
      * @brief Link with parent.
-     * 
+     *
      * @param w The Writable representing the parent.
      */
     virtual void linkHierarchy(Writable& w);
@@ -314,7 +314,7 @@ private:
     /**
      * @brief Access an iteration in read mode that has potentially not been
      *      parsed yet.
-     * 
+     *
      */
     void runDeferredParseAccess();
 };  // Iteration
