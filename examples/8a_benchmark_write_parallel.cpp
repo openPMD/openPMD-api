@@ -339,6 +339,8 @@ public:
   unsigned long  m_XFactor = 0; // if not overwritten, use m_MPISize
   unsigned long  m_YFactor = 8;
   unsigned long  m_ZFactor = 8;
+
+  std::string m_Prefix = "../samples";
 }; // class TestInput
 
 
@@ -387,6 +389,11 @@ void parse(TestInput& input, std::string line)
     return;
   }
 
+  if ( vec[0].compare("prefix") == 0 ) {
+    input.m_Prefix = vec[1];
+    return;
+  }
+
   // now vec[1] is N-dim integers
   std::vector<unsigned long> numbers;
   std::istringstream tmp(vec[1]);
@@ -395,7 +402,7 @@ void parse(TestInput& input, std::string line)
 
   if ( (numbers.size() == 0) || ((numbers.size() - input.m_Dim) != 0) ) {
     if ( input.m_MPIRank == 0 )
-      std::cout<<vec[1]<<" Expecting "<<input.m_Dim<<" dimensions. But given input is"<<numbers.size()<<std::endl;
+      std::cout<<vec[1]<<" Expecting "<<input.m_Dim<<" dimensions. But given input is "<<numbers.size()<<std::endl;
     return;
   }
 
@@ -568,7 +575,7 @@ void AbstractPattern::run()
 
     { // file based
       std::ostringstream s;
-      s << "../samples/8a_parallel_"<<m_GlobalMesh.size()<<"D"<<balance<<"_%07T"<<m_Input.m_Backend;
+      s << m_Input.m_Prefix << "/8a_parallel_"<<m_GlobalMesh.size()<<"D"<<balance<<"_%07T"<<m_Input.m_Backend;
 
       std::string filename = s.str();
 
@@ -589,7 +596,7 @@ void AbstractPattern::run()
 #ifdef NEVER // runs into error for ADIOS. so temporarily disabled
     { // group based
       std::ostringstream s;
-      s << "../samples/8a_parallel_"<<m_GlobalMesh.size()<<"D"<<balance<<m_Input.m_Backend;
+      s << m_Input.m_Prefix << "/8a_parallel_"<<m_GlobalMesh.size()<<"D"<<balance<<m_Input.m_Backend;
       std::string filename = s.str();
 
       {
