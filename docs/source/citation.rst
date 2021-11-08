@@ -90,4 +90,3 @@ Python
          .format(io.__version__))
    print("openPMD-api backend variants: {}"
          .format(io.variants))
-
