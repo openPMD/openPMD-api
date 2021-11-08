@@ -27,4 +27,3 @@ sudo apt-get install -y \
     cuda-minimal-build-11-2
 
 sudo ln -s cuda-11.2 /usr/local/cuda
-
