@@ -24,6 +24,7 @@ repos:
       args: [--markdown-linebreak-ext=md]
     - id: end-of-file-fixer
     - id: mixed-line-ending
+    - id: check-json
     - id: check-toml
     - id: check-yaml
     - id: check-added-large-files
