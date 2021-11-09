@@ -240,6 +240,32 @@ jobs:
         cmake --build build --parallel 2
         ctest --test-dir build --output-on-failure
 
+  musllinux_py10:
+    runs-on: ubuntu-20.04
+    if: github.event.pull_request.draft == false
+    container:
+      image: quay.io/pypa/musllinux_1_1_x86_64
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install
+      run: |
+        apk update
+        apk add hdf5-dev
+        python3.10 -m pip install numpy
+    - name: Build
+      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      run: |
+        share/openPMD/download_samples.sh build
+        chmod u-w build/samples/git-sample/*.h5
+        cmake -S . -B build \
+          -DopenPMD_USE_PYTHON=ON \
+          -DopenPMD_USE_MPI=OFF   \
+          -DopenPMD_USE_HDF5=ON   \
+          -DopenPMD_USE_INVASIVE_TESTS=ON \
+          -DPython_EXECUTABLE=$(which python3.10)
+        cmake --build build --parallel 2
+        ctest --test-dir build --output-on-failure
+
   conda_ompi_all:
     runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
