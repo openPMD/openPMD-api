@@ -34,8 +34,8 @@ if __name__ == "__main__":
     # create a series and specify some global metadata
     # change the file extension to .json, .h5 or .bp for regular file writing
     series = io.Series("simData.sst", io.Access_Type.create, config)
-    series.set_author("Franz")
-    series.set_software("python snippet")
+    series.set_author("Franz Poeschel <f.poeschel@hzdr.de>")
+    series.set_software("openPMD-api-python-examples")
 
     # now, write a number of iterations (or: snapshots, time steps)
     for i in range(10):
@@ -65,7 +65,7 @@ if __name__ == "__main__":
                                dtype=np.dtype("double"))
         for dim in ["x", "y", "z"]:
             pos = electronPositions[dim]
-            pos.reset_dataset(io.Dataset(np.dtype("double"), [length]))
+            pos.reset_dataset(io.Dataset(local_data.dtype, [length]))
             pos[()] = local_data
 
         # optionally: flush now to clear buffers
