@@ -30,6 +30,12 @@ jobs:
           # currently used because Travis' ppc64le docker has network hangs
           - os: ubuntu-20.04
             arch: "ppc64le"
+            env:
+              CIBW_BUILD: "cp36-* cp37-*"
+          - os: ubuntu-20.04
+            arch: "ppc64le"
+            env:
+              CIBW_BUILD: "cp38-* cp39-*"
 
           # builds faster on Travis-CI:
           # blocked by https://github.com/GTkorvo/dill/issues/15
