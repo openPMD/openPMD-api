@@ -41,11 +41,11 @@ if __name__ == "__main__":
     for i in range(10):
         # Use `series.write_iterations()` instead of `series.iterations`
         # for streaming support (while still retaining file-writing support).
-        # Direct access to `series.iterations` is only necessary for random-access
-        # of iterations. By using `series.write_iterations()`, the openPMD-api
-        # will adhere to streaming semantics while writing. In particular, this
-        # means that only one iteration can be written at a time and
-        # an iteration can no longer be modified after closing it.
+        # Direct access to `series.iterations` is only necessary for
+        # random-access of iterations. By using `series.write_iterations()`,
+        # the openPMD-api will adhere to streaming semantics while writing.
+        # In particular, this means that only one iteration can be written at a
+        # time and an iteration can no longer be modified after closing it.
         iteration = series.write_iterations()[i]
 
         #######################
