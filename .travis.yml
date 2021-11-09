@@ -41,18 +41,20 @@ jobs:
         - CIBW_SKIP="cp38-* cp39-* cp36-* cp37-*"
 
     # perform a linux PPC64LE build
-    - services: docker
-      arch: ppc64le
-      dist: focal
-      env:
-        - CIBW_BUILD="*_ppc64le"
-        - CIBW_SKIP="cp38-* cp39-*"
-    - services: docker
-      arch: ppc64le
-      dist: focal
-      env:
-        - CIBW_BUILD="*_ppc64le"
-        - CIBW_SKIP="cp36-* cp37-*"
+    # currently emulated on GH Actions because Travis' ppc64le docker
+    # has network hangs
+    #- services: docker
+    #  arch: ppc64le
+    #  dist: focal
+    #  env:
+    #    - CIBW_BUILD="*_ppc64le"
+    #    - CIBW_SKIP="cp38-* cp39-*"
+    #- services: docker
+    #  arch: ppc64le
+    #  dist: focal
+    #  env:
+    #    - CIBW_BUILD="*_ppc64le"
+    #    - CIBW_SKIP="cp36-* cp37-*"
 
     # perform a linux S390X build
     # blocked by https://github.com/GTkorvo/dill/issues/15
