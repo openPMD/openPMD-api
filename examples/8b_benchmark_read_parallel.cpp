@@ -253,6 +253,7 @@ public:
 
       if ( 0 == m_MPIRank )
       {
+         std::cout << "  "<<series.iterationEncoding() << std::endl;
          std::cout << "  Num Iterations in " << filename << " : " << numIterations << std::endl << std::endl;
       }
 
@@ -779,7 +780,7 @@ main( int argc, char *argv[] )
         else
           std::cout << "For pattern 'f' you should provide the dimension as well: fx, fy, or fz" << std::endl;
       } else {
-        std::cout << "Unknown pattern. Available options are: m, sx, sy, sz, fx, fy, fz" << std::endl;
+        input.m_Pattern = atoi(argv[2]);
       }
     }
 

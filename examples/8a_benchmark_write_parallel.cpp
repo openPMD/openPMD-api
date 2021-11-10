@@ -389,7 +389,7 @@ void parse(TestInput& input, std::string line)
     return;
   }
 
-  if ( vec[0].compare("prefix") == 0 ) {
+  if ( vec[0].compare("fileLocation") == 0 ) {
     input.m_Prefix = vec[1];
     return;
   }
