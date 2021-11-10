@@ -340,6 +340,7 @@ public:
   unsigned long  m_YFactor = 8;
   unsigned long  m_ZFactor = 8;
 
+  //! prefix for the output directory
   std::string m_Prefix = "../samples";
 }; // class TestInput
 
