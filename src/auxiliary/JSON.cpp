@@ -26,6 +26,8 @@
 #include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
+#include <toml.hpp>
+
 #include <algorithm>
 #include <cctype> // std::isspace
 #include <fstream>
@@ -136,6 +138,78 @@ namespace json
             return auxiliary::Option< std::string >{};
         }
     }
+
+    nlohmann::json tomlToJson(
+        toml::value const & val, std::vector< std::string > & currentPath );
+
+    nlohmann::json tomlToJson(
+        toml::value const & val, std::vector< std::string > & currentPath )
+    {
+        if( val.is_boolean() )
+        {
+            return val.as_boolean();
+        }
+        else if( val.is_integer() )
+        {
+            return val.as_integer();
+        }
+        else if( val.is_floating() )
+        {
+            return val.as_floating();
+        }
+        else if( val.is_string() )
+        {
+            return std::string( val.as_string() );
+        }
+        else if(
+            val.is_offset_datetime() || val.is_local_datetime() ||
+            val.is_local_date() || val.is_local_time() )
+        {
+            throw error::BackendConfigSchema(
+                currentPath, "Cannot convert date/time type to JSON." );
+        }
+        else if( val.is_array() )
+        {
+            auto const & arr = val.as_array();
+            nlohmann::json result = nlohmann::json::array();
+            for( size_t i = 0; i < arr.size(); ++i )
+            {
+                currentPath.push_back( std::to_string( i ) );
+                result[ i ] = tomlToJson( arr[ i ], currentPath );
+                currentPath.pop_back();
+            }
+            return result;
+        }
+        else if( val.is_table() )
+        {
+            auto const & tab = val.as_table();
+            nlohmann::json result = nlohmann::json::object();
+            for( auto const & pair : tab )
+            {
+                currentPath.push_back( pair.first );
+                result[ pair.first ] = tomlToJson( pair.second, currentPath );
+                currentPath.pop_back();
+            }
+            return result;
+        }
+        else if( val.is_uninitialized() )
+        {
+            return nlohmann::json(); // null
+        }
+
+        throw error::BackendConfigSchema(
+            currentPath,
+            "Unexpected datatype in TOML configuration. This is probably a "
+            "bug." );
+    }
+
+    nlohmann::json tomlToJson( toml::value const & val )
+    {
+        std::vector< std::string > currentPath;
+        // that's as deep as our config currently goes, +1 for good measure
+        currentPath.reserve( 7 );
+        return tomlToJson( val, currentPath );
+    }
     }
 
     nlohmann::json
@@ -149,7 +223,16 @@ namespace json
                 std::fstream handle;
                 handle.open( filename.get(), std::ios_base::in );
                 nlohmann::json res;
-                handle >> res;
+                if( auxiliary::ends_with( filename.get(), ".toml" ) )
+                {
+                    toml::value tomlVal = toml::parse( handle, filename.get() );
+                    res = tomlToJson( tomlVal );
+                }
+                else
+                {
+                    // default: JSON
+                    handle >> res;
+                }
                 if( !handle.good() )
                 {
                     throw std::runtime_error(
@@ -174,8 +257,19 @@ namespace json
             auto filename = extractFilename( options );
             if( filename.has_value() )
             {
-                auto res = nlohmann::json::parse(
-                    auxiliary::collective_file_read( filename.get(), comm ) );
+                nlohmann::json res;
+                std::string fileContent =
+                    auxiliary::collective_file_read( filename.get(), comm );
+                if( auxiliary::ends_with( filename.get(), ".toml" ) )
+                {
+                    std::istringstream istream( fileContent.c_str() );
+                    res = tomlToJson( toml::parse( istream, filename.get() ) );
+                }
+                else
+                {
+                    // default:: JSON
+                    res = nlohmann::json::parse( fileContent );
+                }
                 lowerCase( res );
                 return res;
             }
