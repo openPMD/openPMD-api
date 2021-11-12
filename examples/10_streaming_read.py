@@ -1,27 +1,13 @@
 #!/usr/bin/env python
+import json
 import openpmd_api as io
 import sys
 
 # pass-through for ADIOS2 engine parameters
 # https://adios2.readthedocs.io/en/latest/engines/engines.html
-config = """
-{
-  "adios2": {
-    "engine": {
-      "parameters": {
-        "Threads": "4"
-      }
-    },
-    "dataset": {
-      "operators": [
-        {
-          "type": "bzip2"
-        }
-      ]
-    }
-  }
-}
-"""
+config = {'adios2': {'engine': {}, 'dataset': {}}}
+config['adios2']['engine'] = {'parameters': {'Threads': '4'}}
+config['adios2']['dataset'] = {'operators': [{'type': 'bzip2'}]}
 
 if __name__ == "__main__":
     # this block is for our CI, SST engine is not present on all systems
@@ -30,7 +16,8 @@ if __name__ == "__main__":
         print("SST engine not available in ADIOS2.")
         sys.exit(0)
 
-    series = io.Series("simData.sst", io.Access_Type.read_only, config)
+    series = io.Series("simData.sst", io.Access_Type.read_only,
+                       json.dumps(config))
 
     # Read all available iterations and print electron position data.
     # Use `series.read_iterations()` instead of `series.iterations`
