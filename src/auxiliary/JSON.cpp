@@ -212,6 +212,35 @@ namespace json
     }
     }
 
+    namespace
+    {
+        nlohmann::json parseInlineOptions( std::string const & options )
+        {
+            std::string trimmed = auxiliary::trim(
+                options, []( char c ) { return std::isspace( c ); } );
+            nlohmann::json res;
+            if( trimmed.empty() )
+            {
+                return res;
+            }
+            if( trimmed.at( 0 ) == '{' )
+            {
+                res = nlohmann::json::parse( options );
+            }
+            else
+            {
+                std::istringstream istream(
+                    options.c_str(),
+                    std::ios_base::binary | std::ios_base::in );
+                toml::value tomlVal =
+                    toml::parse( istream, "[inline TOML specification]" );
+                res = tomlToJson( tomlVal );
+            }
+            lowerCase( res );
+            return res;
+        }
+    }
+
     nlohmann::json
     parseOptions( std::string const & options, bool considerFiles )
     {
@@ -244,9 +273,7 @@ namespace json
                 return res;
             }
         }
-        auto res = nlohmann::json::parse( options );
-        lowerCase( res );
-        return res;
+        return parseInlineOptions( options );
     }
 
 #if openPMD_HAVE_MPI
@@ -277,9 +304,7 @@ namespace json
                 return res;
             }
         }
-        auto res = nlohmann::json::parse( options );
-        lowerCase( res );
-        return res;
+        return parseInlineOptions( options );
     }
 #endif
 

@@ -1003,20 +1003,11 @@ adios2_streaming( bool variableBasedLayout )
          */
         using namespace std::chrono_literals;
         std::this_thread::sleep_for( 1s );
-        std::string options = R"(
-        {
-          "adios2": {
-            "engine": {
-              "type": "SST"
-            }
-          }
-        }
-        )";
 
         Series readSeries(
             "../samples/adios2_stream.sst",
             Access::READ_ONLY,
-            "{\"defer_iteration_parsing\": true}" );
+            "defer_iteration_parsing = true" ); // inline TOML
 
         size_t last_iteration_index = 0;
         for( auto iteration : readSeries.readIterations() )

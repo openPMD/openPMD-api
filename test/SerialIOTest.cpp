@@ -3531,30 +3531,24 @@ parameters.doshuffle = "BLOSC_BITSHUFFLE"
      * >  "asdf":"asdf"}
      */
 
-    // @todo how to write this in TOML?
     std::string datasetConfig = R"END(
-{
-  "resizable": true,
-  "asdf": "asdf",
-  "adios2": {
-    "unused": "dataset parameter",
-    "dataset": {
-      "unused": "too",
-      "operators": [
-        {
-          "type": "blosc",
-          "parameters": {
-            "clevel": 3,
-            "doshuffle": "BLOSC_BITSHUFFLE"
-          }
-        }
-      ]
-    }
-  },
-  "hdf5": {
-    "this": "should not warn"
-  }
-}
+resizable = true
+asdf = "asdf"
+
+[adios2]
+unused = "dataset parameter"
+
+[adios2.dataset]
+unused = "too"
+
+[[adios2.dataset.operators]]
+type = "blosc"
+[adios2.dataset.operators.parameters]
+clevel = 3
+doshuffle = "BLOSC_BITSHUFFLE"
+
+[hdf5]
+this = "should not warn"
 )END";
     auto const write = [ &datasetConfig ](
                            std::string const & filename,
@@ -3721,14 +3715,10 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
     }
     )";
     std::string dontUseSteps = R"(
-    {
-        "adios2": {
-            "engine": {
-                "type": "bp4",
-                "UseSteps": false
-            }
-        }
-    }
+        # let's use TOML for this one
+        [adios2.engine]
+        type = "bp4"
+        UseSteps = false
     )";
     // sing the yes no song
     bp4_steps( "../samples/bp4steps_yes_yes.bp", useSteps, useSteps );
