@@ -1108,7 +1108,9 @@ doshuffle = "BLOSC_BITSHUFFLE"
         if( rank == 0 )
         {
             std::fstream file;
-            file.open( "../samples/write_config.toml", std::ios_base::out );
+            file.open(
+                "../samples/write_config.toml",
+                std::ios_base::out | std::ios_base::binary );
             file << config;
             file.flush();
         }

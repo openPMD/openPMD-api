@@ -221,7 +221,8 @@ namespace json
             if( filename.has_value() )
             {
                 std::fstream handle;
-                handle.open( filename.get(), std::ios_base::in );
+                handle.open(
+                    filename.get(), std::ios_base::binary | std::ios_base::in );
                 nlohmann::json res;
                 if( auxiliary::ends_with( filename.get(), ".toml" ) )
                 {
@@ -262,7 +263,9 @@ namespace json
                     auxiliary::collective_file_read( filename.get(), comm );
                 if( auxiliary::ends_with( filename.get(), ".toml" ) )
                 {
-                    std::istringstream istream( fileContent.c_str() );
+                    std::istringstream istream(
+                        fileContent.c_str(),
+                        std::ios_base::binary | std::ios_base::in );
                     res = tomlToJson( toml::parse( istream, filename.get() ) );
                 }
                 else

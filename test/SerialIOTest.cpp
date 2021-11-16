@@ -3560,7 +3560,9 @@ parameters.doshuffle = "BLOSC_BITSHUFFLE"
                            std::string const & filename,
                            std::string const & config ) {
         std::fstream file;
-        file.open( "../samples/write_config.toml", std::ios_base::out );
+        file.open(
+            "../samples/write_config.toml",
+            std::ios_base::out | std::ios::binary );
         file << config;
         file.flush();
         openPMD::Series series(
