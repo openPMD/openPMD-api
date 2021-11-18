@@ -50,12 +50,12 @@ TEST_CASE( "json_parsing", "[auxiliary]" )
   }
 })";
     REQUIRE(
-        json::parseOptions( same1, false ).dump() ==
-        json::parseOptions( same2, false ).dump() );
+        json::parseOptions( same1, false ).config.dump() ==
+        json::parseOptions( same2, false ).config.dump() );
     // Only keys should be transformed to lower case, values must stay the same
     REQUIRE(
-        json::parseOptions( same1, false ).dump() !=
-        json::parseOptions( different, false ).dump() );
+        json::parseOptions( same1, false ).config.dump() !=
+        json::parseOptions( different, false ).config.dump() );
 
     // Keys forwarded to ADIOS2 should remain untouched
     std::string upper = R"END(
@@ -168,7 +168,7 @@ TEST_CASE( "json_merging", "auxiliary" )
 })END";
     REQUIRE(
         json::merge( defaultVal, overwrite ) ==
-        json::parseOptions( expect, false ).dump() );
+        json::parseOptions( expect, false ).config.dump() );
 }
 
 TEST_CASE( "optional", "[auxiliary]" ) {

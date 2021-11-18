@@ -27,6 +27,7 @@
 #include "openPMD/auxiliary/Option.hpp"
 
 #include <nlohmann/json.hpp>
+#include <toml.hpp>
 
 #if openPMD_HAVE_MPI
 #   include <mpi.h>
@@ -39,6 +40,17 @@ namespace openPMD
 {
 namespace json
 {
+    enum class SupportedLanguages
+    {
+        JSON, TOML
+    };
+
+    struct ParsedConfig
+    {
+        nlohmann::json config;
+        SupportedLanguages originallySpecifiedAs{ SupportedLanguages::JSON };
+    };
+
     /**
      * @brief Extend nlohmann::json with tracing of which keys have been
      * accessed by operator[]().
@@ -56,7 +68,8 @@ namespace json
     {
     public:
         TracingJSON();
-        TracingJSON( nlohmann::json );
+        TracingJSON( nlohmann::json, SupportedLanguages );
+        TracingJSON( ParsedConfig );
 
         /**
          * @brief Access the underlying JSON value
@@ -97,6 +110,8 @@ namespace json
          */
         void
         declareFullyRead();
+
+        SupportedLanguages originallySpecifiedAs{ SupportedLanguages::JSON };
 
     private:
         /**
@@ -163,6 +178,9 @@ namespace json
             traceFurther );
     }
 
+    nlohmann::json tomlToJson( toml::value const & val );
+    toml::value jsonToToml( nlohmann::json const & val );
+
     /**
      * Check if options points to a file (indicated by an '@' for the first
      * non-whitespace character).
@@ -172,7 +190,7 @@ namespace json
      * @param considerFiles If yes, check if `options` refers to a file and read
      *        from there.
      */
-    nlohmann::json
+    ParsedConfig
     parseOptions( std::string const & options, bool considerFiles );
 
 #if openPMD_HAVE_MPI
@@ -180,7 +198,7 @@ namespace json
     /**
      * Parallel version of parseOptions(). MPI-collective.
      */
-    nlohmann::json parseOptions(
+    ParsedConfig parseOptions(
         std::string const & options, MPI_Comm comm, bool considerFiles );
 
 #endif

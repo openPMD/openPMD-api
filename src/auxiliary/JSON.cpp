@@ -41,16 +41,27 @@ namespace openPMD
 {
 namespace json
 {
-    TracingJSON::TracingJSON() : TracingJSON( nlohmann::json() )
+    TracingJSON::TracingJSON()
+        : TracingJSON( ParsedConfig{} )
     {
     }
 
-    TracingJSON::TracingJSON( nlohmann::json originalJSON )
-        : m_originalJSON(
-              std::make_shared< nlohmann::json >( std::move( originalJSON ) ) ),
-          m_shadow( std::make_shared< nlohmann::json >() ),
-          m_positionInOriginal( &*m_originalJSON ),
-          m_positionInShadow( &*m_shadow )
+    TracingJSON::TracingJSON(
+        nlohmann::json originalJSON,
+        SupportedLanguages originallySpecifiedAs_in )
+        : originallySpecifiedAs( originallySpecifiedAs_in )
+        , m_originalJSON(
+              std::make_shared< nlohmann::json >( std::move( originalJSON ) ) )
+        , m_shadow( std::make_shared< nlohmann::json >() )
+        , m_positionInOriginal( &*m_originalJSON )
+        , m_positionInShadow( &*m_shadow )
+    {
+    }
+
+    TracingJSON::TracingJSON( ParsedConfig parsedConfig )
+        : TracingJSON{
+              std::move( parsedConfig.config ),
+              parsedConfig.originallySpecifiedAs }
     {
     }
 
@@ -202,6 +213,7 @@ namespace json
             "Unexpected datatype in TOML configuration. This is probably a "
             "bug." );
     }
+    }
 
     nlohmann::json tomlToJson( toml::value const & val )
     {
@@ -210,22 +222,22 @@ namespace json
         currentPath.reserve( 7 );
         return tomlToJson( val, currentPath );
     }
-    }
 
     namespace
     {
-        nlohmann::json parseInlineOptions( std::string const & options )
+        ParsedConfig parseInlineOptions( std::string const & options )
         {
             std::string trimmed = auxiliary::trim(
                 options, []( char c ) { return std::isspace( c ); } );
-            nlohmann::json res;
+            ParsedConfig res;
             if( trimmed.empty() )
             {
                 return res;
             }
             if( trimmed.at( 0 ) == '{' )
             {
-                res = nlohmann::json::parse( options );
+                res.config = nlohmann::json::parse( options );
+                res.originallySpecifiedAs = SupportedLanguages::JSON;
             }
             else
             {
@@ -234,14 +246,15 @@ namespace json
                     std::ios_base::binary | std::ios_base::in );
                 toml::value tomlVal =
                     toml::parse( istream, "[inline TOML specification]" );
-                res = tomlToJson( tomlVal );
+                res.config = json::tomlToJson( tomlVal );
+                res.originallySpecifiedAs = SupportedLanguages::TOML;
             }
-            lowerCase( res );
+            lowerCase( res.config );
             return res;
         }
     }
 
-    nlohmann::json
+    ParsedConfig
     parseOptions( std::string const & options, bool considerFiles )
     {
         if( considerFiles )
@@ -252,16 +265,18 @@ namespace json
                 std::fstream handle;
                 handle.open(
                     filename.get(), std::ios_base::binary | std::ios_base::in );
-                nlohmann::json res;
+                ParsedConfig res;
                 if( auxiliary::ends_with( filename.get(), ".toml" ) )
                 {
                     toml::value tomlVal = toml::parse( handle, filename.get() );
-                    res = tomlToJson( tomlVal );
+                    res.config = tomlToJson( tomlVal );
+                    res.originallySpecifiedAs = SupportedLanguages::TOML;
                 }
                 else
                 {
                     // default: JSON
-                    handle >> res;
+                    handle >> res.config;
+                    res.originallySpecifiedAs = SupportedLanguages::JSON;
                 }
                 if( !handle.good() )
                 {
@@ -269,7 +284,7 @@ namespace json
                         "Failed reading JSON config from file " +
                         filename.get() + "." );
                 }
-                lowerCase( res );
+                lowerCase( res.config );
                 return res;
             }
         }
@@ -277,7 +292,7 @@ namespace json
     }
 
 #if openPMD_HAVE_MPI
-    nlohmann::json parseOptions(
+    ParsedConfig parseOptions(
         std::string const & options, MPI_Comm comm, bool considerFiles )
     {
         if( considerFiles )
@@ -285,7 +300,7 @@ namespace json
             auto filename = extractFilename( options );
             if( filename.has_value() )
             {
-                nlohmann::json res;
+                ParsedConfig res;
                 std::string fileContent =
                     auxiliary::collective_file_read( filename.get(), comm );
                 if( auxiliary::ends_with( filename.get(), ".toml" ) )
@@ -293,14 +308,17 @@ namespace json
                     std::istringstream istream(
                         fileContent.c_str(),
                         std::ios_base::binary | std::ios_base::in );
-                    res = tomlToJson( toml::parse( istream, filename.get() ) );
+                    res.config =
+                        tomlToJson( toml::parse( istream, filename.get() ) );
+                    res.originallySpecifiedAs = SupportedLanguages::TOML;
                 }
                 else
                 {
                     // default:: JSON
-                    res = nlohmann::json::parse( fileContent );
+                    res.config = nlohmann::json::parse( fileContent );
+                    res.originallySpecifiedAs = SupportedLanguages::JSON;
                 }
-                lowerCase( res );
+                lowerCase( res.config );
                 return res;
             }
         }
@@ -495,12 +513,14 @@ namespace json
         return defaultVal;
     }
 
-    std::string merge(
-        std::string const & defaultValue,
-        std::string const & overwrite )
+    std::string
+    merge( std::string const & defaultValue, std::string const & overwrite )
     {
-        auto res = parseOptions( defaultValue, /* considerFiles = */ false );
-        merge( res, parseOptions( overwrite, /* considerFiles = */ false ) );
+        auto res =
+            parseOptions( defaultValue, /* considerFiles = */ false ).config;
+        merge(
+            res,
+            parseOptions( overwrite, /* considerFiles = */ false ).config );
         return res.dump();
     }
 } // namespace json
