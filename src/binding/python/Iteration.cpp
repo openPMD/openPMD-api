@@ -35,7 +35,7 @@ void init_Iteration(py::module &m) {
 
         .def("__repr__",
             [](Iteration const & it) {
-                return "<openPMD.Iteration of at t = '" + std::to_string(it.template time<double>() * it.timeUnitSI()) + " s'>";
+                return "<openPMD.Iteration at t = '" + std::to_string(it.template time<double>() * it.timeUnitSI()) + " s'>";
             }
         )
 
