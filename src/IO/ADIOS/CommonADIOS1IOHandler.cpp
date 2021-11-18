@@ -561,14 +561,11 @@ CommonADIOS1IOHandlerImpl< ChildClass >::createDataset(Writable* writable,
                     transform = maybeTransform.get();
                 }
 
-                auto shadow = options.invertShadow();
-                if( shadow.size() > 0 )
-                {
-                    std::cerr << "Warning: parts of the JSON configuration for "
-                                "ADIOS1 dataset '"
-                            << name << "' remain unused:\n"
-                            << shadow << std::endl;
-                }
+                parameters.warnUnusedParameters(
+                    options,
+                    "ADIOS1",
+                    "Warning: parts of the backend configuration for "
+                    "ADIOS1 dataset '" + name + "' remain unused:\n" );
             }
         }
         // Fallback: global option
@@ -1769,9 +1766,22 @@ void CommonADIOS1IOHandlerImpl< ChildClass >::initJson(
     auto shadow = config.invertShadow();
     if( shadow.size() > 0 )
     {
-        std::cerr << "Warning: parts of the JSON configuration for ADIOS1 "
-                        "remain unused:\n"
-                    << shadow << std::endl;
+        switch( config.originallySpecifiedAs )
+        {
+        case json::SupportedLanguages::JSON:
+            std::cerr << "Warning: parts of the JSON configuration for ADIOS1 "
+                         "remain unused:\n"
+                      << shadow << std::endl;
+            break;
+        case json::SupportedLanguages::TOML:
+        {
+            auto asToml = json::jsonToToml( shadow );
+            std::cerr << "Warning: parts of the JSON configuration for ADIOS1 "
+                         "remain unused:\n"
+                      << asToml << std::endl;
+            break;
+        }
+        }
     }
 }
 

@@ -122,8 +122,10 @@ namespace json
         std::shared_ptr< nlohmann::json > shadow,
         nlohmann::json * positionInOriginal,
         nlohmann::json * positionInShadow,
+        SupportedLanguages originallySpecifiedAs_in,
         bool trace )
-        : m_originalJSON( std::move( originalJSON ) ),
+        : originallySpecifiedAs( originallySpecifiedAs_in ),
+          m_originalJSON( std::move( originalJSON ) ),
           m_shadow( std::move( shadow ) ),
           m_positionInOriginal( positionInOriginal ),
           m_positionInShadow( positionInShadow ),
@@ -213,6 +215,58 @@ namespace json
             "Unexpected datatype in TOML configuration. This is probably a "
             "bug." );
     }
+
+    toml::value jsonToToml(
+        nlohmann::json const & val, std::vector< std::string > & currentPath );
+
+    toml::value jsonToToml(
+        nlohmann::json const & val, std::vector< std::string > & currentPath )
+    {
+        switch( val.type() )
+        {
+        case nlohmann::json::value_t::null:
+            return toml::value();
+        case nlohmann::json::value_t::object: {
+            toml::value::table_type res;
+            for( auto pair = val.begin(); pair != val.end(); ++pair )
+            {
+                currentPath.push_back( pair.key() );
+                res[ pair.key() ] = jsonToToml( pair.value(), currentPath );
+                currentPath.pop_back();
+            }
+            return toml::value( std::move( res ) );
+        }
+        case nlohmann::json::value_t::array: {
+            toml::value::array_type res;
+            res.reserve( val.size() );
+            size_t index = 0;
+            for( auto const & entry : val )
+            {
+                currentPath.push_back( std::to_string( index ) );
+                res.emplace_back( jsonToToml( entry, currentPath ) );
+                currentPath.pop_back();
+            }
+            return toml::value( std::move( res ) );
+        }
+        case nlohmann::json::value_t::string:
+            return val.get< std::string >();
+        case nlohmann::json::value_t::boolean:
+            return val.get< bool >();
+        case nlohmann::json::value_t::number_integer:
+            return val.get< nlohmann::json::number_integer_t >();
+        case nlohmann::json::value_t::number_unsigned:
+            return val.get< nlohmann::json::number_unsigned_t >();
+        case nlohmann::json::value_t::number_float:
+            return val.get< nlohmann::json::number_float_t >();
+        case nlohmann::json::value_t::binary:
+            return val.get< nlohmann::json::binary_t >();
+        case nlohmann::json::value_t::discarded:
+            throw error::BackendConfigSchema(
+                currentPath,
+                "Internal JSON parser datatype leaked into JSON value." );
+        }
+        throw std::runtime_error( "Unreachable!" );
+    }
     }
 
     nlohmann::json tomlToJson( toml::value const & val )
@@ -221,6 +275,14 @@ namespace json
         // that's as deep as our config currently goes, +1 for good measure
         currentPath.reserve( 7 );
         return tomlToJson( val, currentPath );
+    }
+
+    toml::value jsonToToml( nlohmann::json const & val )
+    {
+        std::vector< std::string > currentPath;
+        // that's as deep as our config currently goes, +1 for good measure
+        currentPath.reserve( 7 );
+        return jsonToToml( val, currentPath );
     }
 
     namespace
@@ -469,10 +531,22 @@ namespace json
         }
         if( shadow.size() > 0 )
         {
-            std::cerr
-                << "[Series] The following parts of the global JSON config "
-                   "remains unused:\n"
-                << shadow.dump() << std::endl;
+            switch( config.originallySpecifiedAs )
+            {
+            case SupportedLanguages::JSON:
+                std::cerr
+                    << "[Series] The following parts of the global JSON config "
+                       "remains unused:\n"
+                    << shadow.dump() << std::endl;
+                break;
+            case SupportedLanguages::TOML: {
+                auto asToml = jsonToToml( shadow );
+                std::cerr
+                    << "[Series] The following parts of the global TOML config "
+                       "remains unused:\n"
+                    << asToml << std::endl;
+            }
+            }
         }
     }
 

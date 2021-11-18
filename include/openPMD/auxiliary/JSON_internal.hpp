@@ -153,6 +153,7 @@ namespace json
             std::shared_ptr< nlohmann::json > shadow,
             nlohmann::json * positionInOriginal,
             nlohmann::json * positionInShadow,
+            SupportedLanguages originallySpecifiedAs,
             bool trace );
     };
 
@@ -175,6 +176,7 @@ namespace json
             m_shadow,
             newPositionInOriginal,
             newPositionInShadow,
+            originallySpecifiedAs,
             traceFurther );
     }
 
