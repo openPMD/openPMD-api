@@ -21,6 +21,7 @@ The following libraries are shipped internally in ``share/openPMD/thirdParty/`` 
 * `Catch2 <https://github.com/catchorg/Catch2>`_ 2.13.4+ (`BSL-1.0 <https://github.com/catchorg/Catch2/blob/master/LICENSE.txt>`__)
 * `pybind11 <https://github.com/pybind/pybind11>`_ 2.6.2+ (`new BSD <https://github.com/pybind/pybind11/blob/master/LICENSE>`_)
 * `NLohmann-JSON <https://github.com/nlohmann/json>`_ 3.9.1+ (`MIT <https://github.com/nlohmann/json/blob/develop/LICENSE.MIT>`_)
+* `toml11 <https://github.com/ToruNiina/toml11>`_ 3.7.0+ (`MIT <https://github.com/ToruNiina/toml11/blob/master/LICENSE>`_)
 
 Optional: I/O backends
 ----------------------
