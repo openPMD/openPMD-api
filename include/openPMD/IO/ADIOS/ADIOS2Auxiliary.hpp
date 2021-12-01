@@ -104,6 +104,9 @@ namespace detail
      * @param IO The IO within which to retrieve the attribute.
      * @param attributeName The full ADIOS name of the attribute.
      * @param verbose If true, print a warning if not finding the attribute.
+     * @param voa This function is used by the old and new ADIOS2 schema alike.
+     *            The old one uses ADIOS2 attributes, the new one uses
+     *            ADIOS2 variables.
      * @return The openPMD datatype corresponding to the type of the attribute.
      *         UNDEFINED if attribute is not found.
      */
@@ -112,7 +115,7 @@ namespace detail
         adios2::IO & IO,
         std::string const & attributeName,
         bool verbose,
-        VariableOrAttribute = VariableOrAttribute::Attribute );
+        VariableOrAttribute voa = VariableOrAttribute::Attribute );
 } // namespace detail
 
 /**
