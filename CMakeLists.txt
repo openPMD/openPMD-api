@@ -83,6 +83,7 @@ option(openPMD_USE_INTERNAL_VARIANT  "Use internally shipped MPark.Variant" ON)
 option(openPMD_USE_INTERNAL_CATCH    "Use internally shipped Catch2"        ON)
 option(openPMD_USE_INTERNAL_PYBIND11 "Use internally shipped pybind11"      ON)
 option(openPMD_USE_INTERNAL_JSON     "Use internally shipped nlohmann-json" ON)
+option(openPMD_USE_INTERNAL_TOML11   "Use internally shipped toml11"        ON)
 
 option(openPMD_USE_INVASIVE_TESTS "Enable unit tests that modify source code" OFF)
 option(openPMD_USE_VERIFY "Enable internal VERIFY (assert) macro independent of build type" ON)
@@ -199,6 +200,18 @@ endif()
 add_library(openPMD::thirdparty::nlohmann_json INTERFACE IMPORTED)
 target_link_libraries(openPMD::thirdparty::nlohmann_json
     INTERFACE nlohmann_json::nlohmann_json)
+
+# external library: toml11
+if(openPMD_USE_INTERNAL_TOML11)
+    add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/toml11")
+    message(STATUS "toml11: Using INTERNAL version '3.7.0'")
+else()
+    find_package(toml11 3.7.0 CONFIG REQUIRED)
+    message(STATUS "toml11: Found version '${toml11_VERSION}'")
+endif()
+add_library(openPMD::thirdparty::toml11 INTERFACE IMPORTED)
+target_link_libraries(openPMD::thirdparty::toml11
+    INTERFACE toml11::toml11)
 
 
 # external library: HDF5 (optional)
@@ -533,7 +546,8 @@ endif()
 # JSON Backend and User-Facing Runtime Options
 #target_link_libraries(openPMD PRIVATE openPMD::thirdparty::nlohmann_json)
 target_include_directories(openPMD SYSTEM PRIVATE
-    $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
+    $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:openPMD::thirdparty::toml11,INTERFACE_INCLUDE_DIRECTORIES>)
 
 # HDF5 Backend
 if(openPMD_HAVE_HDF5)

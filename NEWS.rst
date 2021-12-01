@@ -7,6 +7,7 @@ Upgrade Guide
 ------
 
 Python 3.10 is now supported.
+openPMD-api now depends on `toml11 <https://github.com/ToruNiina/toml11>`__ 3.7.0+.
 
 
 0.14.0

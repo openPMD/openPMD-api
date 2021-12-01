@@ -17,6 +17,10 @@ Changes to "0.14.0"
 Features
 """"""""
 
+- CMake
+
+  - include internally shipped toml11 v3.7.0 #1148
+
 Bug Fixes
 """""""""
 

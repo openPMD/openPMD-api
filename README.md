@@ -107,6 +107,7 @@ Shipped internally in `share/openPMD/thirdParty/`:
 * [Catch2](https://github.com/catchorg/Catch2) 2.13.4+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
 * [pybind11](https://github.com/pybind/pybind11) 2.6.2+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
 * [NLohmann-JSON](https://github.com/nlohmann/json) 3.9.1+ ([MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT))
+* [toml11](https://github.com/ToruNiina/toml11) 3.7.0+ ([MIT](https://github.com/ToruNiina/toml11/blob/master/LICENSE))
 
 I/O backends:
 * [JSON](https://en.wikipedia.org/wiki/JSON)
@@ -272,6 +273,7 @@ The following options allow to switch to external installs:
 | `openPMD_USE_INTERNAL_CATCH`    | **ON**/OFF | Catch2        | 2.13.4+ |
 | `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.6.2+ |
 | `openPMD_USE_INTERNAL_JSON`     | **ON**/OFF | NLohmann-JSON |  3.9.1+ |
+| `openPMD_USE_INTERNAL_TOML11`   | **ON**/OFF | toml11        |  3.7.0+ |
 
 By default, this will build as a shared library (`libopenPMD.[so|dylib|dll]`) and installs also its headers.
 In order to build a static library, append `-DBUILD_SHARED_LIBS=OFF` to the `cmake` command.
@@ -432,6 +434,7 @@ openPMD-api stands on the shoulders of giants and we are grateful for the follow
 * [Catch2](https://github.com/catchorg/Catch2) by [Phil Nash](https://github.com/philsquared), [Martin Hořeňovský](https://github.com/horenmar) and [contributors](https://github.com/catchorg/Catch2/graphs/contributors)
 * HDF5 by [the HDF group](https://www.hdfgroup.org) and community
 * [json](https://github.com/nlohmann/json) by [Niels Lohmann](https://github.com/nlohmann) and [contributors](https://github.com/nlohmann/json/graphs/contributors)
+* [toml11](https://github.com/ToruNiina/toml11) by [Toru Niina](https://github.com/ToruNiina) and [contributors](https://github.com/ToruNiina/toml11#Contributors)
 * [pybind11](https://github.com/pybind/pybind11) by [Wenzel Jakob (EPFL)](https://github.com/wjakob) and [contributors](https://github.com/pybind/pybind11/graphs/contributors)
 * all contributors to the evolution of modern C++ and early library preview developers, e.g. [Michael Park (Facebook)](https://github.com/mpark)
 * the [CMake build system](https://cmake.org) and [contributors](https://github.com/Kitware/CMake/blob/master/Copyright.txt)
