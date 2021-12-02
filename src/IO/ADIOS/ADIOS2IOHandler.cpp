@@ -1560,6 +1560,8 @@ namespace detail
             {
                 var.SetSelection( { start, count } );
             }
+            // don't add compression operators multiple times
+            return;
         }
 
         if( !var )
