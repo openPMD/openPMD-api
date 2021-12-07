@@ -133,6 +133,14 @@ ADIOS2IOHandlerImpl::init( json::TracingJSON cfg )
                 m_config[ "schema" ].json().get< ADIOS2Schema::schema_t >();
         }
 
+        if( m_config.json().contains( "use_span_based_put" ) )
+        {
+            m_useSpanBasedPutByDefault =
+                m_config[ "use_span_based_put" ].json().get< bool >()
+                ? UseSpan::Yes
+                : UseSpan::No;
+        }
+
         auto engineConfig = config( ADIOS2Defaults::str_engine );
         if( !engineConfig.json().is_null() )
         {
@@ -704,6 +712,22 @@ struct GetSpan
 
     static constexpr char const * errorMsg = "ADIOS2: getBufferView()";
 };
+
+struct HasOperators
+{
+    template< typename T >
+    static bool call( std::string const & name, adios2::IO & IO )
+    {
+        adios2::Variable< T > variable = IO.InquireVariable< T >( name );
+        if( !variable )
+        {
+            return false;
+        }
+        return !variable.Operations().empty();
+    }
+
+    static constexpr char const * errorMsg = "ADIOS2: getBufferView()";
+};
 } // namespace detail
 
 void
@@ -721,6 +745,25 @@ ADIOS2IOHandlerImpl::getBufferView(
     auto file = refreshFileFromParent( writable, /* preferParentFile = */ false );
     detail::BufferedActions & ba =
         getFileData( file, IfFileNotOpen::ThrowError );
+
+    std::string name = nameOfVariable( writable );
+    switch( m_useSpanBasedPutByDefault )
+    {
+    case UseSpan::No:
+        parameters.out->backendManagedBuffer = false;
+        return;
+    case UseSpan::Auto:
+        if( switchAdios2VariableType< detail::HasOperators >(
+                parameters.dtype, name, ba.m_IO ) )
+        {
+            parameters.out->backendManagedBuffer = false;
+            return;
+        }
+        break;
+    case UseSpan::Yes:
+        break;
+    }
+
     if( parameters.update )
     {
         detail::I_UpdateSpan &updater =
@@ -730,7 +773,6 @@ ADIOS2IOHandlerImpl::getBufferView(
     }
     else
     {
-        std::string name = nameOfVariable( writable );
         switchAdios2VariableType< detail::GetSpan >(
             parameters.dtype, this, parameters, ba, name );
     }
