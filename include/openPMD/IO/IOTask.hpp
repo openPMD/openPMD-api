@@ -424,6 +424,15 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::GET_BUFFER_VIEW > : public Abstra
         offset(p.offset), extent(p.extent), dtype(p.dtype), update(p.update),
         out(p.out)
     {}
+    Parameter & operator=(Parameter const & p)
+    {
+        offset = p.offset;
+        extent = p.extent;
+        dtype = p.dtype;
+        update = p.update;
+        out = p.out;
+        return *this;
+    }
 
     std::unique_ptr< AbstractParameter >
     clone() const override
