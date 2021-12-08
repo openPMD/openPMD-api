@@ -4237,7 +4237,13 @@ iterate_nonstreaming_series(
             std::vector< int > data( extent, i );
             E_x.storeChunk( data, { 0, 0 }, { 1, extent } );
             bool taskSupportedByBackend = true;
-            DynamicMemoryView< int > memoryView = E_x.storeChunk< int >(
+            DynamicMemoryView< int > memoryView;
+            {
+                auto currentBuffer = memoryView.currentBuffer();
+                REQUIRE( currentBuffer.data() == nullptr );
+                REQUIRE( currentBuffer.size() == 0 );
+            }
+            memoryView = E_x.storeChunk< int >(
                 { 1, 0 },
                 { 1, extent },
                 /*

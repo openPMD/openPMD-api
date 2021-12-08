@@ -101,7 +101,7 @@ class DynamicMemoryView
 private:
     using param_t = Parameter< Operation::GET_BUFFER_VIEW >;
     param_t m_param;
-    size_t m_size;
+    size_t m_size = 0;
     RecordComponent m_recordComponent;
 
     DynamicMemoryView(
@@ -114,6 +114,8 @@ private:
     }
 
 public:
+    explicit DynamicMemoryView() = default;
+
     /**
      * @brief Acquire the underlying buffer at its current position in memory.
      */
