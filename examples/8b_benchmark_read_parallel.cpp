@@ -268,8 +268,12 @@ public:
          if ( 0 == m_MPIRank )
             std::cout << "  Total Num iterations read: " << (counter - 1) << std::endl << std::endl;
       }
-    } catch (std::exception& ex)
-      {}
+    } catch (std::exception& ex) {
+        if ( 0 == m_MPIRank )
+        {
+           std::cerr << ex.what() << std::endl;
+        }
+    }
   }
 
 
@@ -756,32 +760,30 @@ main( int argc, char *argv[] )
 
     std::string prefix = argv[1];
 
-    if (argc >= 3) {
-      std::string types = argv[2];
+    std::string types = argv[2];
 
-      if ( types[0] == 'm' ) {
-       input.m_Pattern = 1;
-      } else if ( types[0] == 's' ) {
-        if ( types[1] == 'x')
-          input.m_Pattern = 5;
-        else if ( types[1] == 'y')
-          input.m_Pattern = 15;
-        else if ( types[1] == 'z')
-          input.m_Pattern = 25;
-        else
-          std::cout << "For pattern 's' you should provide the dimension as well: sx, sy, or sz" << std::endl;
-      } else if ( types[0] == 'f' ) {
-        if ( types[1] == 'x')
-          input.m_Pattern = 55;
-        else if ( types[1] == 'y')
-          input.m_Pattern = 65;
-        else if ( types[1] == 'z')
-          input.m_Pattern = 75;
-        else
-          std::cout << "For pattern 'f' you should provide the dimension as well: fx, fy, or fz" << std::endl;
-      } else {
-        input.m_Pattern = atoi(argv[2]);
-      }
+    if ( types[0] == 'm' ) {
+     input.m_Pattern = 1;
+    } else if ( types[0] == 's' ) {
+      if ( types[1] == 'x')
+        input.m_Pattern = 5;
+      else if ( types[1] == 'y')
+        input.m_Pattern = 15;
+      else if ( types[1] == 'z')
+        input.m_Pattern = 25;
+      else
+        std::cout << "For pattern 's' you should provide the dimension as well: sx, sy, or sz" << std::endl;
+    } else if ( types[0] == 'f' ) {
+      if ( types[1] == 'x')
+        input.m_Pattern = 55;
+      else if ( types[1] == 'y')
+        input.m_Pattern = 65;
+      else if ( types[1] == 'z')
+        input.m_Pattern = 75;
+      else
+        std::cout << "For pattern 'f' you should provide the dimension as well: fx, fy, or fz" << std::endl;
+    } else {
+      input.m_Pattern = atoi(argv[2]);
     }
 
     auto backends = getBackends();
