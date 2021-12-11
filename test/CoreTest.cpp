@@ -37,7 +37,11 @@ TEST_CASE( "versions_test", "[core]" )
 
 TEST_CASE( "attribute_dtype_test", "[core]" )
 {
-    Attribute a = Attribute(static_cast< char >(' '));
+    // note: due to a C++17 issue with ICC 19.1.2 we write the
+    //       T value to variant conversion explicitly
+    //       https://github.com/openPMD/openPMD-api/pull/...
+    // Attribute a = Attribute(static_cast< char >(' '));
+    Attribute a = Attribute(static_cast<Attribute::resource>(static_cast< char >(' ')));
     REQUIRE(Datatype::CHAR == a.dtype);
     a = Attribute(static_cast< unsigned char >(' '));
     REQUIRE(Datatype::UCHAR == a.dtype);
