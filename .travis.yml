@@ -26,19 +26,19 @@ jobs:
       dist: focal
       env:
         - CIBW_BUILD="*_aarch64"
-        - CIBW_SKIP="cp38-* cp39-* pp36-* pp37-*"
+        - CIBW_SKIP="cp38-* cp39-* pp36-* pp37-* cp310-* *-musllinux_*"
     - services: docker
       arch: arm64
       dist: focal
       env:
         - CIBW_BUILD="*_aarch64"
-        - CIBW_SKIP="cp36-* cp37-* pp36-* pp37-*"
+        - CIBW_SKIP="cp36-* cp37-* pp36-* pp37-* cp310-* *-musllinux_*"
     - services: docker
       arch: arm64
       dist: focal
       env:
         - CIBW_BUILD="*_aarch64"
-        - CIBW_SKIP="cp38-* cp39-* cp36-* cp37-*"
+        - CIBW_SKIP="cp38-* cp39-* cp36-* cp37-* cp310-* *-musllinux_*"
 
     # perform a linux PPC64LE build
     - services: docker
