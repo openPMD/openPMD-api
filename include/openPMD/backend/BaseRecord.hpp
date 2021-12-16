@@ -56,9 +56,7 @@ class BaseRecord : public Container< T_elem >
     friend class ParticleSpecies;
     friend class PatchRecord;
     friend class Record;
-
     friend class Mesh;
-    friend class ParticleSpecies;
 
     std::shared_ptr< internal::BaseRecordData< T_elem > > m_baseRecordData{
         new internal::BaseRecordData< T_elem >() };
