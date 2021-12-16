@@ -3360,7 +3360,7 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
 {
   "unused": "global parameter",
   "hdf5": {
-    "unused": "hdf5 parameter please dont warn"
+    "unused": "hdf5 parameter please do not warn"
   },
   "adios2": {
     "engine": {
@@ -3438,6 +3438,21 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
   }
 }
 )END";
+    /*
+     * Notes on the upcoming dataset JSON configuration:
+     * * The resizable key is needed by some backends (HDF5) so the backend can
+     *   create a dataset that can later be resized.
+     * * The asdf key should lead to a warning about unused parameters.
+     * * Inside the hdf5 configuration, there are unused keys ("this").
+     *   However, since this configuration is used by the ADIOS2 backend, there
+     *   will be no warning for it.
+     *
+     * In the end, this config should lead to a warning similar to:
+     * > Warning: parts of the JSON configuration for ADIOS2 dataset
+     * > '/data/0/meshes/E/y' remain unused:
+     * > {"adios2":{"dataset":{"unused":"too"},"unused":"dataset parameter"},
+     * >  "asdf":"asdf"}
+     */
     std::string datasetConfig = R"END(
 {
   "resizable": true,
@@ -4177,12 +4192,12 @@ void variableBasedSeries( std::string const & file )
     testRead( "{\"defer_iteration_parsing\": false}" );
 }
 
+#if openPMD_HAVE_ADIOS2
 TEST_CASE( "variableBasedSeries", "[serial][adios2]" )
 {
-#if openPMD_HAVE_ADIOS2
     variableBasedSeries( "../samples/variableBasedSeries.bp" );
-#endif
 }
+#endif
 
 void variableBasedParticleData()
 {

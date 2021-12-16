@@ -38,6 +38,7 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <utility>
 
 
 namespace openPMD
@@ -1458,6 +1459,10 @@ void Series::openIteration( uint64_t index, Iteration iteration )
 
 namespace
 {
+    /**
+     * Look up if the specified key is contained in the JSON dataset.
+     * If yes, read it into the specified location.
+     */
     template< typename From, typename Dest = From >
     void getJsonOption(
         json::TracingJSON & config, std::string const & key, Dest & dest )
@@ -1468,6 +1473,11 @@ namespace
         }
     }
 
+    /**
+     * Like getJsonOption(), but for string types.
+     * Numbers and booleans are converted to their string representation.
+     * The string is converted to lower case.
+     */
     template< typename Dest = std::string >
     void getJsonOptionLowerCase(
         json::TracingJSON & config, std::string const & key, Dest & dest )

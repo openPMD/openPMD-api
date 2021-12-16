@@ -185,17 +185,50 @@ namespace json
 
 #endif
 
+    /**
+     * Recursively transform all keys in a JSON dataset to lower case.
+     * String values are unaffected.
+     * JSON objects at the following openPMD-defined locations are not affected:
+     * * adios2.engine.parameters
+     * * adios2.dataset.operators.<number>.parameters
+     * This helps us forward configurations from these locations to ADIOS2
+     * "as-is".
+     */
     nlohmann::json & lowerCase( nlohmann::json & );
 
+    /**
+     * Read a JSON literal as a string.
+     * If the literal is a number, convert that number to its string
+     * representation.
+     * If it is a bool, convert it to either "0" or "1".
+     * If it is not a literal, return an empty option.
+     */
     auxiliary::Option< std::string > asStringDynamic( nlohmann::json const & );
 
+    /**
+     * Like asStringDynamic(), but convert the string to lowercase afterwards.
+     */
     auxiliary::Option< std::string >
     asLowerCaseStringDynamic( nlohmann::json const & );
 
+    /**
+     * Vector containing the lower-case keys to the single backends'
+     * configurations.
+     */
     extern std::vector< std::string > backendKeys;
 
+    /**
+     * Function that can be called after reading all global options from the
+     * JSON configuration (i.e. all the options that are not handled by the
+     * single backends).
+     * If any unread value persists, a warning is printed to stderr.
+     */
     void warnGlobalUnusedOptions( TracingJSON const & config );
 
+    /**
+     * Like merge() as defined in JSON.hpp, but this overload works directly
+     * on nlohmann::json values.
+     */
     nlohmann::json &
     merge( nlohmann::json & defaultVal, nlohmann::json const & overwrite );
 } // namespace json

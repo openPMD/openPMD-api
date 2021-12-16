@@ -266,6 +266,9 @@ namespace json
                     { "adios2",
                       "dataset",
                       "operators",
+                      /*
+                       * We use "\vnum" to indicate "any array index".
+                       */
                       "\vnum",
                       "parameters" } };
                 for( auto const & ignored : ignoredPaths )
