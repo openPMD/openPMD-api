@@ -9,7 +9,6 @@
 #include "openPMD/auxiliary/JSON.hpp"
 
 #include <catch2/catch.hpp>
-#include <nlohmann/json.hpp>
 
 #include <algorithm>
 #include <array>

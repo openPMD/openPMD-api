@@ -777,6 +777,7 @@ set(openPMD_TEST_NAMES
     Auxiliary
     SerialIO
     ParallelIO
+    JSON
 )
 # command line tools
 set(openPMD_CLI_TOOL_NAMES
@@ -863,8 +864,10 @@ if(openPMD_BUILD_TESTING)
             target_link_libraries(${testname}Tests PRIVATE CatchMain)
         endif()
 
-        target_include_directories(${testname}Tests SYSTEM PRIVATE
-            $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
+        if(${testname} STREQUAL JSON)
+            target_include_directories(${testname}Tests SYSTEM PRIVATE
+                $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
+        endif()
     endforeach()
 endif()
 
