@@ -26,33 +26,46 @@ jobs:
       dist: focal
       env:
         - CIBW_BUILD="*_aarch64"
-        - CIBW_SKIP="cp38-* cp39-* pp36-* pp37-*"
+        - CIBW_SKIP="cp38-* cp39-* pp36-* pp37-* cp310-* *-musllinux_*"
     - services: docker
       arch: arm64
       dist: focal
       env:
         - CIBW_BUILD="*_aarch64"
-        - CIBW_SKIP="cp36-* cp37-* pp36-* pp37-*"
+        - CIBW_SKIP="cp36-* cp37-* pp36-* pp37-* cp310-* *-musllinux_*"
     - services: docker
       arch: arm64
       dist: focal
       env:
         - CIBW_BUILD="*_aarch64"
-        - CIBW_SKIP="cp38-* cp39-* cp36-* cp37-*"
+        - CIBW_SKIP="cp38-* cp39-* cp36-* cp37-* cp310-* *-musllinux_*"
 
     # perform a linux PPC64LE build
     - services: docker
       arch: ppc64le
       dist: focal
       env:
-        - CIBW_BUILD="*_ppc64le"
-        - CIBW_SKIP="cp38-* cp39-*"
+        - CIBW_BUILD="cp36-manylinux_ppc64le"
     - services: docker
       arch: ppc64le
       dist: focal
       env:
-        - CIBW_BUILD="*_ppc64le"
-        - CIBW_SKIP="cp36-* cp37-*"
+        - CIBW_BUILD="cp37-manylinux_ppc64le"
+    - services: docker
+      arch: ppc64le
+      dist: focal
+      env:
+        - CIBW_BUILD="cp38-manylinux_ppc64le"
+    - services: docker
+      arch: ppc64le
+      dist: focal
+      env:
+        - CIBW_BUILD="cp39-manylinux_ppc64le"
+#    - services: docker
+#      arch: ppc64le
+#      dist: focal
+#      env:
+#        - CIBW_BUILD="cp310-manylinux_ppc64le"
 
     # perform a linux S390X build
     # blocked by https://github.com/GTkorvo/dill/issues/15
@@ -71,7 +84,7 @@ jobs:
 install:
   - git clone --branch ${OPENPMD_GIT_REF} --depth 1 https://github.com/openPMD/openPMD-api.git src
   - cp library_builders.sh src/.github/
-  - python3 -m pip install cibuildwheel==2.0.1
+  - python3 -m pip install git+https://github.com/ax3l/cibuildwheel.git@fix-ppc64leNetworkTravis
   # twine & cryptography: see
   #   https://github.com/scikit-build/cmake-python-distributions/blob/4730aeee240917303f293dffc89a8d8d5a4787c4/requirements-deploy.txt
   #   https://github.com/pyca/cryptography/issues/6086

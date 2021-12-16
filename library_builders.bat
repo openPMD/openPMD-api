@@ -127,7 +127,7 @@ exit /b 0
     -DBUILD_TESTING=OFF         ^
     -DBUILD_UTILITIES=OFF       ^
     -DZFP_WITH_OPENMP=OFF
-    
+
   if errorlevel 1 exit 1
 
   cmake --build build-zfp --parallel %CPU_COUNT%
