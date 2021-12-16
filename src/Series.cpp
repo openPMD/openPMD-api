@@ -84,7 +84,7 @@ namespace
         Format f);
 } // namespace [anonymous]
 
-struct SeriesInterface::ParsedInput
+struct Series::ParsedInput
 {
     std::string path;
     std::string name;
@@ -95,47 +95,40 @@ struct SeriesInterface::ParsedInput
     int filenamePadding = -1;
 };  //ParsedInput
 
-SeriesInterface::SeriesInterface(
-    internal::SeriesData * series, internal::AttributableData * attri )
-    : AttributableInterface{ attri }
-    , m_series{ series }
-{
-}
-
 std::string
-SeriesInterface::openPMD() const
+Series::openPMD() const
 {
     return getAttribute("openPMD").get< std::string >();
 }
 
-SeriesInterface&
-SeriesInterface::setOpenPMD(std::string const& o)
+Series&
+Series::setOpenPMD(std::string const& o)
 {
     setAttribute("openPMD", o);
     return *this;
 }
 
 uint32_t
-SeriesInterface::openPMDextension() const
+Series::openPMDextension() const
 {
     return getAttribute("openPMDextension").get< uint32_t >();
 }
 
-SeriesInterface&
-SeriesInterface::setOpenPMDextension(uint32_t oe)
+Series&
+Series::setOpenPMDextension(uint32_t oe)
 {
     setAttribute("openPMDextension", oe);
     return *this;
 }
 
 std::string
-SeriesInterface::basePath() const
+Series::basePath() const
 {
     return getAttribute("basePath").get< std::string >();
 }
 
-SeriesInterface&
-SeriesInterface::setBasePath(std::string const& bp)
+Series&
+Series::setBasePath(std::string const& bp)
 {
     std::string version = openPMD();
     if( version == "1.0.0" || version == "1.0.1" || version == "1.1.0" )
@@ -146,13 +139,13 @@ SeriesInterface::setBasePath(std::string const& bp)
 }
 
 std::string
-SeriesInterface::meshesPath() const
+Series::meshesPath() const
 {
     return getAttribute("meshesPath").get< std::string >();
 }
 
-SeriesInterface&
-SeriesInterface::setMeshesPath(std::string const& mp)
+Series&
+Series::setMeshesPath(std::string const& mp)
 {
     auto & series = get();
     if( std::any_of(series.iterations.begin(), series.iterations.end(),
@@ -168,13 +161,13 @@ SeriesInterface::setMeshesPath(std::string const& mp)
 }
 
 std::string
-SeriesInterface::particlesPath() const
+Series::particlesPath() const
 {
     return getAttribute("particlesPath").get< std::string >();
 }
 
-SeriesInterface&
-SeriesInterface::setParticlesPath(std::string const& pp)
+Series&
+Series::setParticlesPath(std::string const& pp)
 {
     auto & series = get();
     if( std::any_of(series.iterations.begin(), series.iterations.end(),
@@ -190,26 +183,26 @@ SeriesInterface::setParticlesPath(std::string const& pp)
 }
 
 std::string
-SeriesInterface::author() const
+Series::author() const
 {
     return getAttribute("author").get< std::string >();
 }
 
-SeriesInterface&
-SeriesInterface::setAuthor(std::string const& a)
+Series&
+Series::setAuthor(std::string const& a)
 {
     setAttribute("author", a);
     return *this;
 }
 
 std::string
-SeriesInterface::software() const
+Series::software() const
 {
     return getAttribute("software").get< std::string >();
 }
 
-SeriesInterface&
-SeriesInterface::setSoftware( std::string const& newName, std::string const& newVersion )
+Series&
+Series::setSoftware( std::string const& newName, std::string const& newVersion )
 {
     setAttribute( "software", newName );
     setAttribute( "softwareVersion", newVersion );
@@ -217,65 +210,65 @@ SeriesInterface::setSoftware( std::string const& newName, std::string const& new
 }
 
 std::string
-SeriesInterface::softwareVersion() const
+Series::softwareVersion() const
 {
     return getAttribute("softwareVersion").get< std::string >();
 }
 
-SeriesInterface&
-SeriesInterface::setSoftwareVersion(std::string const& sv)
+Series&
+Series::setSoftwareVersion(std::string const& sv)
 {
     setAttribute("softwareVersion", sv);
     return *this;
 }
 
 std::string
-SeriesInterface::date() const
+Series::date() const
 {
     return getAttribute("date").get< std::string >();
 }
 
-SeriesInterface&
-SeriesInterface::setDate(std::string const& d)
+Series&
+Series::setDate(std::string const& d)
 {
     setAttribute("date", d);
     return *this;
 }
 
 std::string
-SeriesInterface::softwareDependencies() const
+Series::softwareDependencies() const
 {
     return getAttribute("softwareDependencies").get< std::string >();
 }
 
-SeriesInterface&
-SeriesInterface::setSoftwareDependencies(std::string const &newSoftwareDependencies)
+Series&
+Series::setSoftwareDependencies(std::string const &newSoftwareDependencies)
 {
     setAttribute("softwareDependencies", newSoftwareDependencies);
     return *this;
 }
 
 std::string
-SeriesInterface::machine() const
+Series::machine() const
 {
     return getAttribute("machine").get< std::string >();
 }
 
-SeriesInterface&
-SeriesInterface::setMachine(std::string const &newMachine)
+Series&
+Series::setMachine(std::string const &newMachine)
 {
     setAttribute("machine", newMachine);
     return *this;
 }
 
 IterationEncoding
-SeriesInterface::iterationEncoding() const
+Series::iterationEncoding() const
 {
     return get().m_iterationEncoding;
 }
 
-SeriesInterface&
-SeriesInterface::setIterationEncoding(IterationEncoding ie)
+Series&
+Series::setIterationEncoding(IterationEncoding ie)
 {
     auto & series = get();
     if( written() )
@@ -314,13 +307,13 @@ SeriesInterface::setIterationEncoding(IterationEncoding ie)
 }
 
 std::string
-SeriesInterface::iterationFormat() const
+Series::iterationFormat() const
 {
     return getAttribute("iterationFormat").get< std::string >();
 }
 
-SeriesInterface&
-SeriesInterface::setIterationFormat(std::string const& i)
+Series&
+Series::setIterationFormat(std::string const& i)
 {
     if( written() )
         throw std::runtime_error("A files iterationFormat can not (yet) be changed after it has been written.");
@@ -335,13 +328,13 @@ SeriesInterface::setIterationFormat(std::string const& i)
 }
 
 std::string
-SeriesInterface::name() const
+Series::name() const
 {
     return get().m_name;
 }
 
-SeriesInterface&
-SeriesInterface::setName(std::string const& n)
+Series&
+Series::setName(std::string const& n)
 {
     auto & series = get();
     if( written() )
@@ -375,13 +368,13 @@ SeriesInterface::setName(std::string const& n)
 }
 
 std::string
-SeriesInterface::backend() const
+Series::backend() const
 {
     return IOHandler()->backendName();
 }
 
 void
-SeriesInterface::flush()
+Series::flush()
 {
     auto & series = get();
     flush_impl(
@@ -390,10 +383,10 @@ SeriesInterface::flush()
         FlushLevel::UserFlush );
 }
 
-std::unique_ptr< SeriesInterface::ParsedInput >
-SeriesInterface::parseInput(std::string filepath)
+std::unique_ptr< Series::ParsedInput >
+Series::parseInput(std::string filepath)
 {
-    std::unique_ptr< SeriesInterface::ParsedInput > input{new SeriesInterface::ParsedInput};
+    std::unique_ptr< Series::ParsedInput > input{new Series::ParsedInput};
 
 #ifdef _WIN32
     if( auxiliary::contains(filepath, '/') )
@@ -454,13 +447,13 @@ SeriesInterface::parseInput(std::string filepath)
     return input;
 }
 
-bool SeriesInterface::hasExpansionPattern( std::string filenameWithExtension )
+bool Series::hasExpansionPattern( std::string filenameWithExtension )
 {
     auto input = parseInput( std::move( filenameWithExtension ) );
     return input->iterationEncoding == IterationEncoding::fileBased;
 }
 
-bool SeriesInterface::reparseExpansionPattern(
+bool Series::reparseExpansionPattern(
     std::string filenameWithExtension )
 {
     auto input = parseInput( std::move( filenameWithExtension ) );
@@ -475,9 +468,9 @@ bool SeriesInterface::reparseExpansionPattern(
     return true;
 }
 
-void SeriesInterface::init(
+void Series::init(
     std::shared_ptr< AbstractIOHandler > ioHandler,
-    std::unique_ptr< SeriesInterface::ParsedInput > input )
+    std::unique_ptr< Series::ParsedInput > input )
 {
     auto & series = get();
     writable().IOHandler = ioHandler;
@@ -538,10 +531,11 @@ Given file pattern: ')END"
         initDefaults( input->iterationEncoding );
         setIterationEncoding(input->iterationEncoding);
     }
+    series.m_lastFlushSuccessful = true;
 }
 
 void
-SeriesInterface::initDefaults( IterationEncoding ie )
+Series::initDefaults( IterationEncoding ie )
 {
     if( !containsAttribute("openPMD"))
         setOpenPMD( getStandard() );
@@ -566,7 +560,7 @@ SeriesInterface::initDefaults( IterationEncoding ie )
 }
 
 std::future< void >
-SeriesInterface::flush_impl(
+Series::flush_impl(
     iterations_iterator begin,
     iterations_iterator end,
     FlushLevel level,
@@ -609,7 +603,7 @@ SeriesInterface::flush_impl(
 }
 
 void
-SeriesInterface::flushFileBased( iterations_iterator begin, iterations_iterator end )
+Series::flushFileBased( iterations_iterator begin, iterations_iterator end )
 {
     auto & series = get();
     if( end == begin )
@@ -631,13 +625,13 @@ SeriesInterface::flushFileBased( iterations_iterator begin, iterations_iterator 
             }
 
             // Phase 2
-            if( *it->second.m_closed ==
-                Iteration::CloseStatus::ClosedInFrontend )
+            if( it->second.get().m_closed ==
+                internal::CloseStatus::ClosedInFrontend )
             {
                 Parameter< Operation::CLOSE_FILE > fClose;
                 IOHandler()->enqueue(
                     IOTask( &it->second, std::move( fClose ) ) );
-                *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                it->second.get().m_closed = internal::CloseStatus::ClosedInBackend;
             }
 
             // Phase 3
@@ -675,13 +669,13 @@ SeriesInterface::flushFileBased( iterations_iterator begin, iterations_iterator 
             }
 
             // Phase 2
-            if( *it->second.m_closed ==
-                Iteration::CloseStatus::ClosedInFrontend )
+            if( it->second.get().m_closed ==
+                internal::CloseStatus::ClosedInFrontend )
             {
                 Parameter< Operation::CLOSE_FILE > fClose;
                 IOHandler()->enqueue(
                     IOTask( &it->second, std::move( fClose ) ) );
-                *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                it->second.get().m_closed = internal::CloseStatus::ClosedInBackend;
             }
 
             // Phase 3
@@ -696,7 +690,7 @@ SeriesInterface::flushFileBased( iterations_iterator begin, iterations_iterator 
 }
 
 void
-SeriesInterface::flushGorVBased( iterations_iterator begin, iterations_iterator end )
+Series::flushGorVBased( iterations_iterator begin, iterations_iterator end )
 {
     auto & series = get();
     if( IOHandler()->m_frontendAccess == Access::READ_ONLY )
@@ -714,11 +708,11 @@ SeriesInterface::flushGorVBased( iterations_iterator begin, iterations_iterator 
             }
 
             // Phase 2
-            if( *it->second.m_closed ==
-                Iteration::CloseStatus::ClosedInFrontend )
+            if( it->second.get().m_closed ==
+                internal::CloseStatus::ClosedInFrontend )
             {
                 // the iteration has no dedicated file in group-based mode
-                *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                it->second.get().m_closed = internal::CloseStatus::ClosedInBackend;
             }
 
             // Phase 3
@@ -767,11 +761,11 @@ SeriesInterface::flushGorVBased( iterations_iterator begin, iterations_iterator 
             }
 
             // Phase 2
-            if( *it->second.m_closed ==
-                Iteration::CloseStatus::ClosedInFrontend )
+            if( it->second.get().m_closed ==
+                internal::CloseStatus::ClosedInFrontend )
             {
                 // the iteration has no dedicated file in group-based mode
-                *it->second.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                it->second.get().m_closed = internal::CloseStatus::ClosedInBackend;
             }
         }
 
@@ -781,7 +775,7 @@ SeriesInterface::flushGorVBased( iterations_iterator begin, iterations_iterator 
 }
 
 void
-SeriesInterface::flushMeshesPath()
+Series::flushMeshesPath()
 {
     Parameter< Operation::WRITE_ATT > aWrite;
     aWrite.name = "meshesPath";
@@ -792,7 +786,7 @@ SeriesInterface::flushMeshesPath()
 }
 
 void
-SeriesInterface::flushParticlesPath()
+Series::flushParticlesPath()
 {
     Parameter< Operation::WRITE_ATT > aWrite;
     aWrite.name = "particlesPath";
@@ -803,7 +797,7 @@ SeriesInterface::flushParticlesPath()
 }
 
 void
-SeriesInterface::readFileBased( )
+Series::readFileBased( )
 {
     auto & series = get();
     Parameter< Operation::OPEN_FILE > fOpen;
@@ -838,7 +832,7 @@ SeriesInterface::readFileBased( )
 
     if( series.iterations.empty() )
     {
-        /* Frontend access type might change during SeriesInterface::read() to allow parameter modification.
+        /* Frontend access type might change during Series::read() to allow parameter modification.
          * Backend access type stays unchanged for the lifetime of a Series. */
         if(IOHandler()->m_backendAccess == Access::READ_ONLY  )
             throw no_such_file_error("No matching iterations found: " + name());
@@ -852,14 +846,14 @@ SeriesInterface::readFileBased( )
         Parameter< Operation::CLOSE_FILE > fClose;
         iteration.IOHandler()->enqueue( IOTask( &iteration, fClose ) );
         iteration.IOHandler()->flush();
-        *iteration.m_closed = Iteration::CloseStatus::ClosedTemporarily;
+        iteration.get().m_closed = internal::CloseStatus::ClosedTemporarily;
     };
     if( series.m_parseLazily )
     {
         for( auto & iteration : series.iterations )
         {
-            *iteration.second.m_closed =
-                Iteration::CloseStatus::ParseAccessDeferred;
+            iteration.second.get().m_closed =
+                internal::CloseStatus::ParseAccessDeferred;
         }
         // open the last iteration, just to parse Series attributes
         auto getLastIteration = series.iterations.end();
@@ -878,14 +872,14 @@ SeriesInterface::readFileBased( )
     if( paddings.size() == 1u )
         series.m_filenamePadding = *paddings.begin();
 
-    /* Frontend access type might change during SeriesInterface::read() to allow parameter modification.
+    /* Frontend access type might change during Series::read() to allow parameter modification.
      * Backend access type stays unchanged for the lifetime of a Series. */
     if( paddings.size() > 1u && IOHandler()->m_backendAccess == Access::READ_WRITE )
         throw std::runtime_error("Cannot write to a series with inconsistent iteration padding. "
                                  "Please specify '%0<N>T' or open as read-only.");
 }
 
-void SeriesInterface::readOneIterationFileBased( std::string const & filePath )
+void Series::readOneIterationFileBased( std::string const & filePath )
 {
     auto & series = get();
 
@@ -965,7 +959,7 @@ void SeriesInterface::readOneIterationFileBased( std::string const & filePath )
 }
 
 void
-SeriesInterface::readGorVBased( bool do_init )
+Series::readGorVBased( bool do_init )
 {
     auto & series = get();
     Parameter< Operation::OPEN_FILE > fOpen;
@@ -1053,7 +1047,7 @@ SeriesInterface::readGorVBased( bool do_init )
             {
                 return;
             }
-            if( *i.m_closed != Iteration::CloseStatus::ParseAccessDeferred )
+            if( i.get().m_closed != internal::CloseStatus::ParseAccessDeferred )
             {
                 pOpen.path = path;
                 IOHandler()->enqueue( IOTask( &i, pOpen ) );
@@ -1068,11 +1062,11 @@ SeriesInterface::readGorVBased( bool do_init )
             if( !series.m_parseLazily )
             {
                 i.runDeferredParseAccess();
-                *i.m_closed = Iteration::CloseStatus::Open;
+                i.get().m_closed = internal::CloseStatus::Open;
             }
             else
             {
-                *i.m_closed = Iteration::CloseStatus::ParseAccessDeferred;
+                i.get().m_closed = internal::CloseStatus::ParseAccessDeferred;
             }
         }
     };
@@ -1106,7 +1100,7 @@ SeriesInterface::readGorVBased( bool do_init )
 }
 
 void
-SeriesInterface::readBase()
+Series::readBase()
 {
     auto & series = get();
     using DT = Datatype;
@@ -1182,7 +1176,7 @@ SeriesInterface::readBase()
 }
 
 std::string
-SeriesInterface::iterationFilename( uint64_t i )
+Series::iterationFilename( uint64_t i )
 {
     auto & series = get();
     if( series.m_overrideFilebasedFilename.has_value() )
@@ -1196,8 +1190,8 @@ SeriesInterface::iterationFilename( uint64_t i )
            + series.m_filenamePostfix;
 }
 
-SeriesInterface::iterations_iterator
-SeriesInterface::indexOf( Iteration const & iteration )
+Series::iterations_iterator
+Series::indexOf( Iteration const & iteration )
 {
     auto & series = get();
     for( auto it = series.iterations.begin(); it != series.iterations.end();
@@ -1213,7 +1207,7 @@ SeriesInterface::indexOf( Iteration const & iteration )
 }
 
 AdvanceStatus
-SeriesInterface::advance(
+Series::advance(
     AdvanceMode mode,
     internal::AttributableData & file,
     iterations_iterator begin,
@@ -1230,23 +1224,24 @@ SeriesInterface::advance(
      * In order to avoid having those tasks automatically appended by
      * flush_impl(), set CloseStatus to Open for now.
      */
-    Iteration::CloseStatus oldCloseStatus = *iteration.m_closed;
-    if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend )
+    auto & itData = iteration.get();
+    internal::CloseStatus oldCloseStatus = itData.m_closed;
+    if( oldCloseStatus == internal::CloseStatus::ClosedInFrontend )
     {
-        *iteration.m_closed = Iteration::CloseStatus::Open;
+        itData.m_closed = internal::CloseStatus::Open;
     }
 
     flush_impl(
         begin, end, FlushLevel::UserFlush, /* flushIOHandler = */ false );
 
-    if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend )
+    if( oldCloseStatus == internal::CloseStatus::ClosedInFrontend )
     {
         // Series::flush() would normally turn a `ClosedInFrontend` into
         // a `ClosedInBackend`. Do that manually.
-        *iteration.m_closed = Iteration::CloseStatus::ClosedInBackend;
+        itData.m_closed = internal::CloseStatus::ClosedInBackend;
     }
     else if(
-        oldCloseStatus == Iteration::CloseStatus::ClosedInBackend &&
+        oldCloseStatus == internal::CloseStatus::ClosedInBackend &&
         series.m_iterationEncoding == IterationEncoding::fileBased )
     {
         /*
@@ -1258,7 +1253,7 @@ SeriesInterface::advance(
     }
 
     Parameter< Operation::ADVANCE > param;
-    if( *iteration.m_closed == Iteration::CloseStatus::ClosedTemporarily &&
+    if( itData.m_closed == internal::CloseStatus::ClosedTemporarily &&
         series.m_iterationEncoding == IterationEncoding::fileBased )
     {
         /*
@@ -1276,7 +1271,7 @@ SeriesInterface::advance(
     }
 
 
-    if( oldCloseStatus == Iteration::CloseStatus::ClosedInFrontend &&
+    if( oldCloseStatus == internal::CloseStatus::ClosedInFrontend &&
         mode == AdvanceMode::ENDSTEP )
     {
         using IE = IterationEncoding;
@@ -1284,14 +1279,14 @@ SeriesInterface::advance(
         {
             case IE::fileBased:
             {
-                if( *iteration.m_closed !=
-                    Iteration::CloseStatus::ClosedTemporarily )
+                if( itData.m_closed !=
+                    internal::CloseStatus::ClosedTemporarily )
                 {
                     Parameter< Operation::CLOSE_FILE > fClose;
                     IOHandler()->enqueue(
                         IOTask( &iteration, std::move( fClose ) ) );
                 }
-                *iteration.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                itData.m_closed = internal::CloseStatus::ClosedInBackend;
                 break;
             }
             case IE::groupBased:
@@ -1302,7 +1297,7 @@ SeriesInterface::advance(
                 // In group-based iteration layout, files are
                 // not closed on a per-iteration basis
                 // We will treat it as such nonetheless
-                *iteration.m_closed = Iteration::CloseStatus::ClosedInBackend;
+                itData.m_closed = internal::CloseStatus::ClosedInBackend;
                 break;
             }
             case IE::variableBased: // no action necessary
@@ -1310,7 +1305,7 @@ SeriesInterface::advance(
         }
     }
 
-    // We cannot call SeriesInterface::flush now, since the IO handler is still filled
+    // We cannot call Series::flush now, since the IO handler is still filled
     // from calling flush(Group|File)based, but has not been emptied yet
     // Do that manually
     IOHandler()->m_flushLevel = FlushLevel::UserFlush;
@@ -1328,19 +1323,19 @@ SeriesInterface::advance(
     return *param.status;
 }
 
-auto SeriesInterface::openIterationIfDirty( uint64_t index, Iteration iteration )
+auto Series::openIterationIfDirty( uint64_t index, Iteration iteration )
     -> IterationOpened
 {
     /*
      * Check side conditions on accessing iterations, and if they are fulfilled,
      * forward function params to openIteration().
      */
-    if( *iteration.m_closed == Iteration::CloseStatus::ParseAccessDeferred )
+    if( iteration.get().m_closed == internal::CloseStatus::ParseAccessDeferred )
     {
         return IterationOpened::RemainsClosed;
     }
     bool const dirtyRecursive = iteration.dirtyRecursive();
-    if( *iteration.m_closed == Iteration::CloseStatus::ClosedInBackend )
+    if( iteration.get().m_closed == internal::CloseStatus::ClosedInBackend )
     {
         // file corresponding with the iteration has previously been
         // closed and fully flushed
@@ -1390,12 +1385,12 @@ auto SeriesInterface::openIterationIfDirty( uint64_t index, Iteration iteration 
     return IterationOpened::RemainsClosed;
 }
 
-void SeriesInterface::openIteration( uint64_t index, Iteration iteration )
+void Series::openIteration( uint64_t index, Iteration iteration )
 {
-    auto oldStatus = *iteration.m_closed;
-    switch( *iteration.m_closed )
+    auto oldStatus = iteration.get().m_closed;
+    switch( oldStatus )
     {
-        using CL = Iteration::CloseStatus;
+        using CL = internal::CloseStatus;
     case CL::ClosedInBackend:
         throw std::runtime_error(
             "[Series] Detected illegal access to iteration that "
@@ -1403,7 +1398,7 @@ void SeriesInterface::openIteration( uint64_t index, Iteration iteration )
     case CL::ParseAccessDeferred:
     case CL::Open:
     case CL::ClosedTemporarily:
-        *iteration.m_closed = CL::Open;
+        iteration.get().m_closed = CL::Open;
         break;
     case CL::ClosedInFrontend:
         // just keep it like it is
@@ -1431,7 +1426,7 @@ void SeriesInterface::openIteration( uint64_t index, Iteration iteration )
          */
         if( !iteration.written() &&
             ( IOHandler()->m_frontendAccess == Access::CREATE ||
-              oldStatus != Iteration::CloseStatus::ParseAccessDeferred ) )
+              oldStatus != internal::CloseStatus::ParseAccessDeferred ) )
         {
             // nothing to do, file will be opened by writing routines
             break;
@@ -1482,47 +1477,13 @@ void parseJsonOptions(
 
 namespace internal
 {
-#if openPMD_HAVE_MPI
-SeriesInternal::SeriesInternal(
-    std::string const & filepath,
-    Access at,
-    MPI_Comm comm,
-    std::string const & options )
-    : SeriesInterface{
-          static_cast< internal::SeriesData * >( this ),
-          static_cast< internal::AttributableData * >( this ) }
-{
-    nlohmann::json optionsJson = auxiliary::parseOptions( options, comm );
-    parseJsonOptions( *this, optionsJson );
-    auto input = parseInput( filepath );
-    auto handler = createIOHandler(
-        input->path, at, input->format, comm, std::move( optionsJson ) );
-    init( handler, std::move( input ) );
-}
-#endif
-
-SeriesInternal::SeriesInternal(
-    std::string const & filepath, Access at, std::string const & options )
-    : SeriesInterface{
-          static_cast< internal::SeriesData * >( this ),
-          static_cast< internal::AttributableData * >( this ) }
-{
-    nlohmann::json optionsJson = auxiliary::parseOptions( options );
-    parseJsonOptions( *this, optionsJson );
-    auto input = parseInput( filepath );
-    auto handler = createIOHandler(
-        input->path, at, input->format, std::move( optionsJson ) );
-    init( handler, std::move( input ) );
-}
-
-SeriesInternal::~SeriesInternal()
+SeriesData::~SeriesData()
 {
     // we must not throw in a destructor
     try
     {
-        auto & series = get();
         // WriteIterations gets the first shot at flushing
-        series.m_writeIterations = auxiliary::Option< WriteIterations >();
+        this->m_writeIterations = auxiliary::Option< WriteIterations >();
         /*
          * Scenario: A user calls `Series::flush()` but does not check for
          * thrown exceptions. The exception will propagate further up, usually
@@ -1531,9 +1492,10 @@ SeriesInternal::~SeriesInternal()
          * needlessly flushed a second time. Otherwise, error messages can get
          * very confusing.
          */
-        if( get().m_lastFlushSuccessful )
+        if( this->m_lastFlushSuccessful )
         {
-            flush();
+            Series impl{ { this, []( auto const * ){} } };
+            impl.flush();
         }
     }
     catch( std::exception const & ex )
@@ -1547,17 +1509,15 @@ SeriesInternal::~SeriesInternal()
 }
 } // namespace internal
 
-Series::Series( std::shared_ptr< internal::SeriesInternal > series_in )
-    : SeriesInterface{
-        series_in.get(),
-        static_cast< internal::AttributableData * >( series_in.get() ) }
-    , m_series{ std::move( series_in ) }
-    , iterations{ m_series->iterations }
+Series::Series() : Attributable{ nullptr }, iterations{}
 {
 }
 
-Series::Series() : SeriesInterface{ nullptr, nullptr }, iterations{}
+Series::Series( std::shared_ptr< internal::SeriesData > data )
+    : Attributable{ data }
+    , m_series{ std::move( data ) }
 {
+    iterations = m_series->iterations;
 }
 
 #if openPMD_HAVE_MPI
@@ -1566,29 +1526,33 @@ Series::Series(
     Access at,
     MPI_Comm comm,
     std::string const & options )
-    : SeriesInterface{ nullptr, nullptr }
-    , m_series{ std::make_shared< internal::SeriesInternal >(
-          filepath, at, comm, options ) }
-    , iterations{ m_series->iterations }
+    : Attributable{ nullptr }
+    , m_series{ new internal::SeriesData }
 {
-    AttributableInterface::m_attri =
-        static_cast< internal::AttributableData * >( m_series.get() );
-    SeriesInterface::m_series = m_series.get();
+    Attributable::setData( m_series );
+    iterations = m_series->iterations;
+    nlohmann::json optionsJson = auxiliary::parseOptions( options, comm );
+    parseJsonOptions( get(), optionsJson );
+    auto input = parseInput( filepath );
+    auto handler = createIOHandler(
+        input->path, at, input->format, comm, std::move( optionsJson ) );
+    init( handler, std::move( input ) );
 }
 #endif
 
 Series::Series(
-    std::string const & filepath,
-    Access at,
-    std::string const & options)
-    : SeriesInterface{ nullptr, nullptr }
-    , m_series{ std::make_shared< internal::SeriesInternal >(
-          filepath, at, options ) }
-    , iterations{ m_series->iterations }
+    std::string const & filepath, Access at, std::string const & options )
+    : Attributable{ nullptr }
+    , m_series{ new internal::SeriesData }
 {
-    AttributableInterface::m_attri =
-        static_cast< internal::AttributableData * >( m_series.get() );
-    SeriesInterface::m_series = m_series.get();
+    Attributable::setData( m_series );
+    iterations = m_series->iterations;
+    nlohmann::json optionsJson = auxiliary::parseOptions( options );
+    parseJsonOptions( get(), optionsJson );
+    auto input = parseInput( filepath );
+    auto handler = createIOHandler(
+        input->path, at, input->format, std::move( optionsJson ) );
+    init( handler, std::move( input ) );
 }
 
 Series::operator bool() const

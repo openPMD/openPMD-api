@@ -274,7 +274,7 @@ Mesh::flush_impl(std::string const& name)
 void
 Mesh::read()
 {
-    auto map = eraseStaleEntries();
+    internal::EraseStaleEntries< Mesh & > map{ *this };
 
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
@@ -368,7 +368,7 @@ Mesh::read()
             MeshRecordComponent& rc = map[ component ];
             pOpen.path = component;
             IOHandler()->enqueue(IOTask(&rc, pOpen));
-            *rc.m_isConstant = true;
+            rc.get().m_isConstant = true;
             rc.read();
         }
 

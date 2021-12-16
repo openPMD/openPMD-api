@@ -33,10 +33,12 @@
 
 namespace openPMD
 {
-Iteration::Iteration()
-        : meshes{Container< Mesh >()},
-          particles{Container< ParticleSpecies >()}
+using internal::CloseStatus;
+using internal::DeferredParseAccess;
+
+Iteration::Iteration() : Attributable{ nullptr }
 {
+    Attributable::setData( m_iterationData );
     setTime(static_cast< double >(0));
     setDt(static_cast< double >(1));
     setTimeUnitSI(1);
@@ -82,25 +84,26 @@ using iterator_t = Container< Iteration, uint64_t >::iterator;
 Iteration &
 Iteration::close( bool _flush )
 {
+    auto & it = get();
     StepStatus flag = getStepStatus();
     // update close status
-    switch( *m_closed )
+    switch( it.m_closed )
     {
         case CloseStatus::Open:
         case CloseStatus::ClosedInFrontend:
-            *m_closed = CloseStatus::ClosedInFrontend;
+            it.m_closed = CloseStatus::ClosedInFrontend;
             break;
         case CloseStatus::ClosedTemporarily:
             // should we bother to reopen?
             if( dirtyRecursive() )
             {
                 // let's reopen
-                *m_closed = CloseStatus::ClosedInFrontend;
+                it.m_closed = CloseStatus::ClosedInFrontend;
             }
             else
             {
                 // don't reopen
-                *m_closed = CloseStatus::ClosedInBackend;
+                it.m_closed = CloseStatus::ClosedInBackend;
             }
             break;
         case CloseStatus::ParseAccessDeferred:
@@ -120,13 +123,13 @@ Iteration::close( bool _flush )
         else
         {
             // flush things manually
-            internal::SeriesInternal * s = &retrieveSeries();
+            Series s = retrieveSeries();
             // figure out my iteration number
-            auto begin = s->indexOf( *this );
+            auto begin = s.indexOf( *this );
             auto end = begin;
             ++end;
 
-            s->flush_impl( begin, end, FlushLevel::UserFlush );
+            s.flush_impl( begin, end, FlushLevel::UserFlush );
         }
     }
     else
@@ -143,15 +146,16 @@ Iteration::close( bool _flush )
 Iteration &
 Iteration::open()
 {
-    if( *m_closed == CloseStatus::ParseAccessDeferred )
+    auto & it = get();
+    if( it.m_closed == CloseStatus::ParseAccessDeferred )
     {
-        *m_closed = CloseStatus::Open;
+        it.m_closed = CloseStatus::Open;
     }
     runDeferredParseAccess();
-    internal::SeriesInternal * s = &retrieveSeries();
+    Series s = retrieveSeries();
     // figure out my iteration number
-    auto begin = s->indexOf( *this );
-    s->openIteration( begin->first, *this );
+    auto begin = s.indexOf( *this );
+    s.openIteration( begin->first, *this );
     IOHandler()->flush();
     return *this;
 }
@@ -159,7 +163,7 @@ Iteration::open()
 bool
 Iteration::closed() const
 {
-    switch( *m_closed )
+    switch( get().m_closed )
     {
         case CloseStatus::ParseAccessDeferred:
         case CloseStatus::Open:
@@ -196,21 +200,19 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
 {
     /* Find the root point [Series] of this file,
      * meshesPath and particlesPath are stored there */
-    internal::SeriesInternal * s = &retrieveSeries();
-    if( s == nullptr )
-        throw std::runtime_error("[Iteration::flushFileBased] Series* is a nullptr");
+    Series s = retrieveSeries();
 
     if( !written() )
     {
         /* create file */
         Parameter< Operation::CREATE_FILE > fCreate;
         fCreate.name = filename;
-        IOHandler()->enqueue(IOTask(s, fCreate));
+        IOHandler()->enqueue(IOTask(&s.writable(), fCreate));
 
         /* create basePath */
         Parameter< Operation::CREATE_PATH > pCreate;
-        pCreate.path = auxiliary::replace_first(s->basePath(), "%T/", "");
-        IOHandler()->enqueue(IOTask(&s->iterations, pCreate));
+        pCreate.path = auxiliary::replace_first(s.basePath(), "%T/", "");
+        IOHandler()->enqueue(IOTask(&s.iterations, pCreate));
 
         /* create iteration path */
         pCreate.path = std::to_string(i);
@@ -224,7 +226,7 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
             Parameter< Operation::OPEN_FILE > fOpen;
             fOpen.name = filename;
             fOpen.encoding = IterationEncoding::fileBased;
-            IOHandler()->enqueue(IOTask(s, fOpen));
+            IOHandler()->enqueue(IOTask(&s.writable(), fOpen));
             flush();
 
             return;
@@ -232,7 +234,7 @@ Iteration::flushFileBased(std::string const& filename, uint64_t i)
 
         // operations for read/read-write mode
         /* open file */
-        s->openIteration( i, *this );
+        s.openIteration( i, *this );
     }
 
     flush();
@@ -280,16 +282,16 @@ Iteration::flush()
     {
         /* Find the root point [Series] of this file,
          * meshesPath and particlesPath are stored there */
-        internal::SeriesInternal * s = &retrieveSeries();
+        Series s = retrieveSeries();
 
-        if( !meshes.empty() || s->containsAttribute("meshesPath") )
+        if( !meshes.empty() || s.containsAttribute("meshesPath") )
         {
-            if( !s->containsAttribute("meshesPath") )
+            if( !s.containsAttribute("meshesPath") )
             {
-                s->setMeshesPath("meshes/");
-                s->flushMeshesPath();
+                s.setMeshesPath("meshes/");
+                s.flushMeshesPath();
             }
-            meshes.flush(s->meshesPath());
+            meshes.flush(s.meshesPath());
             for( auto& m : meshes )
                 m.second.flush(m.first);
         }
@@ -298,14 +300,14 @@ Iteration::flush()
             meshes.dirty() = false;
         }
 
-        if( !particles.empty() || s->containsAttribute("particlesPath") )
+        if( !particles.empty() || s.containsAttribute("particlesPath") )
         {
-            if( !s->containsAttribute("particlesPath") )
+            if( !s.containsAttribute("particlesPath") )
             {
-                s->setParticlesPath("particles/");
-                s->flushParticlesPath();
+                s.setParticlesPath("particles/");
+                s.flushParticlesPath();
             }
-            particles.flush(s->particlesPath());
+            particles.flush(s.particlesPath());
             for( auto& species : particles )
                 species.second.flush(species.first);
         }
@@ -320,17 +322,18 @@ Iteration::flush()
 
 void Iteration::deferParseAccess( DeferredParseAccess dr )
 {
-    *m_deferredParseAccess =
+    get().m_deferredParseAccess =
         auxiliary::makeOption< DeferredParseAccess >( std::move( dr ) );
 }
 
 void Iteration::read()
 {
-    if( !m_deferredParseAccess->has_value() )
+    auto & it = get();
+    if( !it.m_deferredParseAccess.has_value() )
     {
         return;
     }
-    auto const & deferred = m_deferredParseAccess->get();
+    auto const & deferred = it.m_deferredParseAccess.get();
     if( deferred.fileBased )
     {
         readFileBased( deferred.filename, deferred.path );
@@ -340,12 +343,12 @@ void Iteration::read()
         readGorVBased( deferred.path );
     }
     // reset this thing
-    *m_deferredParseAccess = auxiliary::Option< DeferredParseAccess >();
+    it.m_deferredParseAccess = auxiliary::Option< DeferredParseAccess >();
 }
 
 void Iteration::reread( std::string const & path )
 {
-    if( m_deferredParseAccess->has_value() )
+    if( get().m_deferredParseAccess.has_value() )
     {
         throw std::runtime_error(
             "[Iteration] Internal control flow error: Trying to reread an "
@@ -357,7 +360,7 @@ void Iteration::reread( std::string const & path )
 void Iteration::readFileBased(
     std::string filePath, std::string const & groupPath )
 {
-    auto & series = retrieveSeries();
+    auto series = retrieveSeries();
 
     series.readOneIterationFileBased( filePath );
 
@@ -413,10 +416,10 @@ void Iteration::read_impl( std::string const & groupPath )
 
     /* Find the root point [Series] of this file,
      * meshesPath and particlesPath are stored there */
-    internal::SeriesInternal * s = &retrieveSeries();
+    Series s = retrieveSeries();
 
     Parameter< Operation::LIST_PATHS > pList;
-    std::string version = s->openPMD();
+    std::string version = s.openPMD();
     bool hasMeshes = false;
     bool hasParticles = false;
     if( version == "1.0.0" || version == "1.0.1" )
@@ -426,28 +429,28 @@ void Iteration::read_impl( std::string const & groupPath )
         hasMeshes = std::count(
             pList.paths->begin(),
             pList.paths->end(),
-            auxiliary::replace_last(s->meshesPath(), "/", "")
+            auxiliary::replace_last(s.meshesPath(), "/", "")
         ) == 1;
         hasParticles = std::count(
             pList.paths->begin(),
             pList.paths->end(),
-            auxiliary::replace_last(s->particlesPath(), "/", "")
+            auxiliary::replace_last(s.particlesPath(), "/", "")
         ) == 1;
         pList.paths->clear();
     } else
     {
-        hasMeshes = s->containsAttribute("meshesPath");
-        hasParticles = s->containsAttribute("particlesPath");
+        hasMeshes = s.containsAttribute("meshesPath");
+        hasParticles = s.containsAttribute("particlesPath");
     }
 
     if( hasMeshes )
     {
-        pOpen.path = s->meshesPath();
+        pOpen.path = s.meshesPath();
         IOHandler()->enqueue(IOTask(&meshes, pOpen));
 
         meshes.readAttributes( ReadMode::FullyReread );
 
-        auto map = meshes.eraseStaleEntries();
+        internal::EraseStaleEntries< decltype( meshes ) > map{ meshes };
 
         /* obtain all non-scalar meshes */
         IOHandler()->enqueue(IOTask(&meshes, pList));
@@ -473,7 +476,7 @@ void Iteration::read_impl( std::string const & groupPath )
                 mrc.parent() = m.parent();
                 IOHandler()->enqueue(IOTask(&mrc, pOpen));
                 IOHandler()->flush();
-                *mrc.m_isConstant = true;
+                mrc.get().m_isConstant = true;
             }
             m.read();
         }
@@ -507,7 +510,7 @@ void Iteration::read_impl( std::string const & groupPath )
 
     if( hasParticles )
     {
-        pOpen.path = s->particlesPath();
+        pOpen.path = s.particlesPath();
         IOHandler()->enqueue(IOTask(&particles, pOpen));
 
         particles.readAttributes( ReadMode::FullyReread );
@@ -517,7 +520,7 @@ void Iteration::read_impl( std::string const & groupPath )
         IOHandler()->enqueue(IOTask(&particles, pList));
         IOHandler()->flush();
 
-        auto map = particles.eraseStaleEntries();
+        internal::EraseStaleEntries< decltype( particles ) > map{ particles };
         for( auto const& species_name : *pList.paths )
         {
             ParticleSpecies& p = map[species_name];
@@ -539,18 +542,18 @@ AdvanceStatus
 Iteration::beginStep()
 {
     using IE = IterationEncoding;
-    auto & series = retrieveSeries();
+    auto series = retrieveSeries();
     // Initialize file with this to quiet warnings
     // The following switch is comprehensive
     internal::AttributableData * file = nullptr;
     switch( series.iterationEncoding() )
     {
         case IE::fileBased:
-            file = m_attributableData.get();
+            file = &Attributable::get();
             break;
         case IE::groupBased:
         case IE::variableBased:
-            file = &series;
+            file = &series.get();
             break;
     }
     AdvanceStatus status = series.advance(
@@ -584,18 +587,18 @@ void
 Iteration::endStep()
 {
     using IE = IterationEncoding;
-    auto & series = retrieveSeries();
+    auto series = retrieveSeries();
     // Initialize file with this to quiet warnings
     // The following switch is comprehensive
     internal::AttributableData * file = nullptr;
     switch( series.iterationEncoding() )
     {
         case IE::fileBased:
-            file = m_attributableData.get();
+            file = &Attributable::get();
             break;
         case IE::groupBased:
         case IE::variableBased:
-            file = &series;
+            file = &series.get();
             break;
     }
     // @todo filebased check
@@ -606,15 +609,15 @@ Iteration::endStep()
 StepStatus
 Iteration::getStepStatus()
 {
-    internal::SeriesInternal * s = &retrieveSeries();
-    switch( s->iterationEncoding() )
+    Series s = retrieveSeries();
+    switch( s.iterationEncoding() )
     {
         using IE = IterationEncoding;
         case IE::fileBased:
-            return *this->m_stepStatus;
+            return get().m_stepStatus;
         case IE::groupBased:
         case IE::variableBased:
-            return s->m_stepStatus;
+            return s.get().m_stepStatus;
         default:
             throw std::runtime_error( "[Iteration] unreachable" );
     }
@@ -623,16 +626,16 @@ Iteration::getStepStatus()
 void
 Iteration::setStepStatus( StepStatus status )
 {
-    internal::SeriesInternal * s = &retrieveSeries();
-    switch( s->iterationEncoding() )
+    Series s = retrieveSeries();
+    switch( s.iterationEncoding() )
     {
         using IE = IterationEncoding;
         case IE::fileBased:
-            *this->m_stepStatus = status;
+            get().m_stepStatus = status;
             break;
         case IE::groupBased:
         case IE::variableBased:
-            s->m_stepStatus = status;
+            s.get().m_stepStatus = status;
             break;
         default:
             throw std::runtime_error( "[Iteration] unreachable" );
@@ -670,7 +673,7 @@ Iteration::dirtyRecursive() const
 void
 Iteration::linkHierarchy(Writable& w)
 {
-    AttributableInterface::linkHierarchy(w);
+    Attributable::linkHierarchy(w);
     meshes.linkHierarchy(this->writable());
     particles.linkHierarchy(this->writable());
 }

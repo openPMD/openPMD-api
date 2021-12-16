@@ -54,7 +54,7 @@ namespace openPMD
 {
 class ReadIterations;
 class Series;
-class SeriesInterface;
+class Series;
 
 namespace internal
 {
@@ -69,13 +69,13 @@ class SeriesData : public AttributableData
 public:
     explicit SeriesData() = default;
 
+    virtual ~SeriesData();
+
     SeriesData( SeriesData const & ) = delete;
     SeriesData( SeriesData && ) = delete;
 
     SeriesData & operator=( SeriesData const & ) = delete;
     SeriesData & operator=( SeriesData && ) = delete;
-
-    virtual ~SeriesData() = default;
 
     Container< Iteration, uint64_t > iterations{};
 
@@ -96,7 +96,8 @@ public:
      */
     StepStatus m_stepStatus = StepStatus::NoStep;
     bool m_parseLazily = false;
-    bool m_lastFlushSuccessful = true;
+    // only set this true after successful construction
+    bool m_lastFlushSuccessful = false;
 }; // SeriesData
 
 class SeriesInternal;
@@ -109,21 +110,56 @@ class SeriesInternal;
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file
  * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series
  */
-class SeriesInterface : public AttributableInterface
+class Series : public Attributable
 {
-    friend class AttributableInterface;
+    friend class Attributable;
     friend class Iteration;
     friend class Writable;
     friend class SeriesIterator;
-    friend class internal::SeriesInternal;
-    friend class Series;
+    friend class internal::SeriesData;
     friend class WriteIterations;
 
 protected:
     // Should not be called publicly, only by implementing classes
-    SeriesInterface( internal::SeriesData *, internal::AttributableData * );
+    Series( std::shared_ptr< internal::SeriesData > );
 
 public:
+    explicit Series();
+
+#if openPMD_HAVE_MPI
+    Series(
+        std::string const & filepath,
+        Access at,
+        MPI_Comm comm,
+        std::string const & options = "{}" );
+#endif
+
+    /**
+     * @brief Construct a new Series
+     *
+     * @param filepath The backend will be determined by the filepath extension.
+     * @param at Access mode.
+     * @param options Advanced backend configuration via JSON.
+     *      May be specified as a JSON-formatted string directly, or as a path
+     *      to a JSON textfile, prepended by an at sign '@'.
+     */
+    Series(
+        std::string const & filepath,
+        Access at,
+        std::string const & options = "{}" );
+
+    virtual ~Series() = default;
+
+    Container< Iteration, uint64_t > iterations;
+
+    /**
+     * @brief Is this a usable Series object?
+     *
+     * @return true If a Series has been opened for reading and/or writing.
+     * @return false If the object has been default-constructed.
+     */
+    operator bool() const;
+
     /**
      * @return  String representing the current enforced version of the <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file">openPMD standard</A>.
      */
@@ -133,7 +169,7 @@ public:
      * @param   openPMD   String <CODE>MAJOR.MINOR.REVISION</CODE> of the desired version of the openPMD standard.
      * @return  Reference to modified series.
      */
-    SeriesInterface& setOpenPMD(std::string const& openPMD);
+    Series& setOpenPMD(std::string const& openPMD);
 
     /**
      * @return  32-bit mask of applied extensions to the <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file">openPMD standard</A>.
@@ -144,7 +180,7 @@ public:
      * @param   openPMDextension  Unsigned 32-bit integer used as a bit-mask of applied extensions.
      * @return  Reference to modified series.
      */
-    SeriesInterface& setOpenPMDextension(uint32_t openPMDextension);
+    Series& setOpenPMDextension(uint32_t openPMDextension);
 
     /**
      * @return  String representing the common prefix for all data sets and sub-groups of a specific iteration.
@@ -155,7 +191,7 @@ public:
      * @param   basePath    String of the common prefix for all data sets and sub-groups of a specific iteration.
      * @return  Reference to modified series.
      */
-    SeriesInterface& setBasePath(std::string const& basePath);
+    Series& setBasePath(std::string const& basePath);
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
@@ -167,7 +203,7 @@ public:
      * @param   meshesPath  String of the path to <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#mesh-based-records">mesh records</A>, relative(!) to <CODE>basePath</CODE>.
      * @return  Reference to modified series.
      */
-    SeriesInterface& setMeshesPath(std::string const& meshesPath);
+    Series& setMeshesPath(std::string const& meshesPath);
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
@@ -179,7 +215,7 @@ public:
      * @param   particlesPath   String of the path to groups for each <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#particle-records">particle species</A>, relative(!) to <CODE>basePath</CODE>.
      * @return  Reference to modified series.
      */
-    SeriesInterface& setParticlesPath(std::string const& particlesPath);
+    Series& setParticlesPath(std::string const& particlesPath);
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
@@ -191,7 +227,7 @@ public:
      * @param   author  String indicating author and contact for the information in the file.
      * @return  Reference to modified series.
      */
-    SeriesInterface& setAuthor(std::string const& author);
+    Series& setAuthor(std::string const& author);
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
@@ -204,7 +240,7 @@ public:
      * @param   newVersion String indicating the version of the software/code/simulation that created the file.
      * @return  Reference to modified series.
      */
-    SeriesInterface& setSoftware(std::string const& newName, std::string const& newVersion = std::string("unspecified"));
+    Series& setSoftware(std::string const& newName, std::string const& newVersion = std::string("unspecified"));
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
@@ -219,7 +255,7 @@ public:
      * @return  Reference to modified series.
      */
     [[deprecated("Set the version with the second argument of setSoftware()")]]
-    SeriesInterface& setSoftwareVersion(std::string const& softwareVersion);
+    Series& setSoftwareVersion(std::string const& softwareVersion);
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
@@ -231,7 +267,7 @@ public:
      * @param   date    String indicating the date of creation.
      * @return  Reference to modified series.
      */
-    SeriesInterface& setDate(std::string const& date);
+    Series& setDate(std::string const& date);
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
@@ -243,7 +279,7 @@ public:
      * @param   newSoftwareDependencies String indicating dependencies of software that were used to create the file (semicolon-separated list if needed).
      * @return  Reference to modified series.
      */
-    SeriesInterface& setSoftwareDependencies(std::string const& newSoftwareDependencies);
+    Series& setSoftwareDependencies(std::string const& newSoftwareDependencies);
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
@@ -255,7 +291,7 @@ public:
      * @param   newMachine String indicating the machine or relevant hardware that created the file (semicolon-separated list if needed)..
      * @return  Reference to modified series.
      */
-    SeriesInterface& setMachine(std::string const& newMachine);
+    Series& setMachine(std::string const& newMachine);
 
     /**
      * @return  Current encoding style for multiple iterations in this series.
@@ -269,7 +305,7 @@ public:
      * @param   iterationEncoding   Desired <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series">encoding style</A> for multiple iterations in this series.
      * @return  Reference to modified series.
      */
-    SeriesInterface& setIterationEncoding(IterationEncoding iterationEncoding);
+    Series& setIterationEncoding(IterationEncoding iterationEncoding);
 
     /**
      * @return  String describing a <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series">pattern</A> describing how to access single iterations in the raw file.
@@ -285,7 +321,7 @@ public:
      *                          The format depends on the selected iterationEncoding method.
      * @return  Reference to modified series.
      */
-    SeriesInterface& setIterationFormat(std::string const& iterationFormat);
+    Series& setIterationFormat(std::string const& iterationFormat);
 
     /**
      * @return String of a pattern for file names.
@@ -297,7 +333,7 @@ public:
      * @param   name    String of the pattern for file names. Must include iteration regex <CODE>\%T</CODE> for fileBased data.
      * @return  Reference to modified series.
      */
-    SeriesInterface& setName(std::string const& name);
+    Series& setName(std::string const& name);
 
     /** The currently used backend
      *
@@ -311,6 +347,32 @@ public:
      */
     void flush();
 
+    /**
+     * @brief Entry point to the reading end of the streaming API.
+     *
+     * Creates and returns an instance of the ReadIterations class which can
+     * be used for iterating over the openPMD iterations in a C++11-style for
+     * loop.
+     * Look for the ReadIterations class for further documentation.
+     *
+     * @return ReadIterations
+     */
+    ReadIterations readIterations();
+
+    /**
+     * @brief Entry point to the writing end of the streaming API.
+     *
+     * Creates and returns an instance of the WriteIterations class which is a
+     * restricted container of iterations which takes care of
+     * streaming semantics.
+     * The created object is stored as member of the Series object, hence this
+     * method may be called as many times as a user wishes.
+     * Look for the WriteIterations class for further documentation.
+     *
+     * @return WriteIterations
+     */
+    WriteIterations writeIterations();
+
 OPENPMD_private:
     static constexpr char const * const BASEPATH = "/data/%T/";
 
@@ -318,7 +380,7 @@ OPENPMD_private:
     using iterations_t = decltype(internal::SeriesData::iterations);
     using iterations_iterator = iterations_t::iterator;
 
-    internal::SeriesData * m_series = nullptr;
+    std::shared_ptr< internal::SeriesData > m_series = nullptr;
 
     inline internal::SeriesData & get()
     {
@@ -436,118 +498,9 @@ OPENPMD_private:
         internal::AttributableData & file,
         iterations_iterator it,
         Iteration & iteration );
-}; // SeriesInterface
-
-namespace internal
-{
-class SeriesInternal : public SeriesData, public SeriesInterface
-{
-    friend struct SeriesShared;
-    friend class openPMD::Iteration;
-    friend class openPMD::Series;
-    friend class openPMD::Writable;
-
-public:
-#if openPMD_HAVE_MPI
-    SeriesInternal(
-        std::string const & filepath,
-        Access at,
-        MPI_Comm comm,
-        std::string const & options = "{}" );
-#endif
-
-    SeriesInternal(
-        std::string const & filepath,
-        Access at,
-        std::string const & options = "{}" );
-    // @todo make AttributableInterface<>::linkHierarchy non-virtual
-    virtual ~SeriesInternal();
-};
-} // namespace internal
-
-/** @brief  Root level of the openPMD hierarchy.
- *
- * Entry point and common link between all iterations of particle and mesh data.
- *
- * An instance can be created either directly via the given constructors or via
- * the SeriesBuilder class.
- *
- * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file
- * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series
- */
-class Series : public SeriesInterface
-{
-private:
-    std::shared_ptr< internal::SeriesInternal > m_series;
-
-    // constructor from private parts
-    Series( std::shared_ptr< internal::SeriesInternal > );
-
-public:
-    explicit Series();
-
-#if openPMD_HAVE_MPI
-    Series(
-        std::string const & filepath,
-        Access at,
-        MPI_Comm comm,
-        std::string const & options = "{}" );
-#endif
-
-    /**
-     * @brief Construct a new Series
-     *
-     * @param filepath The backend will be determined by the filepath extension.
-     * @param at Access mode.
-     * @param options Advanced backend configuration via JSON.
-     *      May be specified as a JSON-formatted string directly, or as a path
-     *      to a JSON textfile, prepended by an at sign '@'.
-     */
-    Series(
-        std::string const & filepath,
-        Access at,
-        std::string const & options = "{}" );
-
-    virtual ~Series() = default;
-
-    Container< Iteration, uint64_t > iterations;
-
-    /**
-     * @brief Is this a usable Series object?
-     *
-     * @return true If a Series has been opened for reading and/or writing.
-     * @return false If the object has been default-constructed.
-     */
-    operator bool() const;
-
-    /**
-     * @brief Entry point to the reading end of the streaming API.
-     *
-     * Creates and returns an instance of the ReadIterations class which can
-     * be used for iterating over the openPMD iterations in a C++11-style for
-     * loop.
-     * Look for the ReadIterations class for further documentation.
-     *
-     * @return ReadIterations
-     */
-    ReadIterations readIterations();
-
-    /**
-     * @brief Entry point to the writing end of the streaming API.
-     *
-     * Creates and returns an instance of the WriteIterations class which is a
-     * restricted container of iterations which takes care of
-     * streaming semantics.
-     * The created object is stored as member of the Series object, hence this
-     * method may be called as many times as a user wishes.
-     * Look for the WriteIterations class for further documentation.
-     *
-     * @return WriteIterations
-     */
-    WriteIterations writeIterations();
-};
+}; // Series
 } // namespace openPMD
 
 // Make sure that this one is always included if Series.hpp is included,
-// otherwise SeriesInterface::readIterations() cannot be used
+// otherwise Series::readIterations() cannot be used
 #include "openPMD/ReadIterations.hpp"

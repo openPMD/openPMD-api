@@ -156,7 +156,7 @@ TEST_CASE( "myPath", "[core]" )
 {
 #if openPMD_USE_INVASIVE_TESTS
     using vec_t = std::vector< std::string >;
-    auto pathOf = []( AttributableInterface & attr )
+    auto pathOf = []( Attributable & attr )
     {
         auto res = attr.myPath();
 #if false
@@ -752,8 +752,8 @@ TEST_CASE( "wrapper_test", "[core]" )
     o.flush();
     REQUIRE(all_data.get()[0] == value);
 #if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(o.iterations[4].meshes["E"]["y"].m_chunks->empty());
-    REQUIRE(mrc2.m_chunks->empty());
+    REQUIRE(o.iterations[4].meshes["E"]["y"].get().m_chunks.empty());
+    REQUIRE(mrc2.get().m_chunks.empty());
 #endif
 
     MeshRecordComponent mrc3 = o.iterations[5].meshes["E"]["y"];
@@ -764,13 +764,13 @@ TEST_CASE( "wrapper_test", "[core]" )
     std::shared_ptr< double > storeData = std::make_shared< double >(44);
     o.iterations[5].meshes["E"]["y"].storeChunk(storeData, {0}, {1});
 #if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(o.iterations[5].meshes["E"]["y"].m_chunks->size() == 1);
-    REQUIRE(mrc3.m_chunks->size() == 1);
+    REQUIRE(o.iterations[5].meshes["E"]["y"].get().m_chunks.size() == 1);
+    REQUIRE(mrc3.get().m_chunks.size() == 1);
 #endif
     o.flush();
 #if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(o.iterations[5].meshes["E"]["y"].m_chunks->empty());
-    REQUIRE(mrc3.m_chunks->empty());
+    REQUIRE(o.iterations[5].meshes["E"]["y"].get().m_chunks.empty());
+    REQUIRE(mrc3.get().m_chunks.empty());
 #endif
 
     o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].resetDataset(Dataset(determineDatatype< uint64_t >(), {4}));
@@ -786,13 +786,13 @@ TEST_CASE( "wrapper_test", "[core]" )
     size_t idx = 0;
     uint64_t val = 10;
 #if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].m_chunks->empty());
-    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].m_chunks->empty());
+    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].get().m_chunks.empty());
+    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].get().m_chunks.empty());
 #endif
     pp["numParticles"][RecordComponent::SCALAR].store(idx, val);
 #if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 1);
-    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 1);
+    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].get().m_chunks.size() == 1);
+    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].get().m_chunks.size() == 1);
 #endif
     std::stringstream u64str;
     u64str << determineDatatype<uint64_t>();
@@ -800,13 +800,13 @@ TEST_CASE( "wrapper_test", "[core]" )
                         Catch::Equals("Datatypes of patch data (DOUBLE) and dataset (" + u64str.str() + ") do not match."));
     o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].store(idx+1, val+1);
 #if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 2);
-    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 2);
+    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].get().m_chunks.size() == 2);
+    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].get().m_chunks.size() == 2);
 #endif
     o.flush();
 #if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].m_chunks->empty());
-    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].m_chunks->empty());
+    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].get().m_chunks.empty());
+    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].get().m_chunks.empty());
 #endif
 }
 
@@ -830,7 +830,7 @@ TEST_CASE( "use_count_test", "[core]" )
     o.iterations[6].particles["electrons"]["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
     pprc.resetDataset(Dataset(determineDatatype<uint64_t>(), {4}));
     pprc.store(0, static_cast< uint64_t >(1));
-    REQUIRE(static_cast< Parameter< Operation::WRITE_DATASET >* >(pprc.m_chunks->front().parameter.get())->data.use_count() == 1);
+    REQUIRE(static_cast< Parameter< Operation::WRITE_DATASET >* >(pprc.get().m_chunks.front().parameter.get())->data.use_count() == 1);
 #endif
 }
 

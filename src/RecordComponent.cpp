@@ -36,17 +36,32 @@
 
 namespace openPMD
 {
+namespace internal
+{
+    RecordComponentData::RecordComponentData()
+    {
+        RecordComponent impl{ std::shared_ptr< RecordComponentData >{
+            this, []( auto const * ) {} } };
+        impl.setUnitSI(1);
+        impl.resetDataset(Dataset(Datatype::CHAR, {1}));
+    }
+}
+
+RecordComponent::RecordComponent() : BaseRecordComponent{ nullptr }
+{
+    BaseRecordComponent::setData( m_recordComponentData );
+}
+
+RecordComponent::RecordComponent(
+    std::shared_ptr< internal::RecordComponentData > data )
+    : BaseRecordComponent{ data }
+    , m_recordComponentData{ std::move( data ) }
+{
+}
+
 // We need to instantiate this somewhere otherwise there might be linker issues
 // despite this thing actually being constepxr
 constexpr char const * const RecordComponent::SCALAR;
-
-RecordComponent::RecordComponent()
-        : m_chunks{std::make_shared< std::queue< IOTask > >()},
-          m_constantValue{std::make_shared< Attribute >(-1)}
-{
-    setUnitSI(1);
-    resetDataset(Dataset(Datatype::CHAR, {1}));
-}
 
 RecordComponent&
 RecordComponent::setUnitSI(double usi)
@@ -58,18 +73,19 @@ RecordComponent::setUnitSI(double usi)
 RecordComponent &
 RecordComponent::resetDataset( Dataset d )
 {
+    auto & rc = get();
     if( written() )
     {
         if( d.dtype == Datatype::UNDEFINED )
         {
-            d.dtype = m_dataset->dtype;
+            d.dtype = rc.m_dataset.dtype;
         }
-        else if( d.dtype != m_dataset->dtype )
+        else if( d.dtype != rc.m_dataset.dtype )
         {
             throw std::runtime_error(
                 "Cannot change the datatype of a dataset." );
         }
-        *m_hasBeenExtended = true;
+        rc.m_hasBeenExtended = true;
     }
 
     if( d.dtype == Datatype::UNDEFINED )
@@ -85,14 +101,14 @@ RecordComponent::resetDataset( Dataset d )
             []( Extent::value_type const & i ) { return i == 0u; } ) )
         return makeEmpty( std::move( d ) );
 
-    *m_isEmpty = false;
+    rc.m_isEmpty = false;
     if( written() )
     {
-        m_dataset->extend( std::move( d.extent ) );
+        rc.m_dataset.extend( std::move( d.extent ) );
     }
     else
     {
-        *m_dataset = std::move( d );
+        rc.m_dataset = std::move( d );
     }
 
     dirty() = true;
@@ -102,13 +118,13 @@ RecordComponent::resetDataset( Dataset d )
 uint8_t
 RecordComponent::getDimensionality() const
 {
-    return m_dataset->rank;
+    return get().m_dataset.rank;
 }
 
 Extent
 RecordComponent::getExtent() const
 {
-    return m_dataset->extent;
+    return get().m_dataset.extent;
 }
 
 namespace detail
@@ -116,7 +132,8 @@ namespace detail
 struct MakeEmpty
 {
     template< typename T >
-    static RecordComponent& call( RecordComponent & rc, uint8_t dimensions )
+    static RecordComponent& call(
+        RecordComponent & rc, uint8_t dimensions )
     {
         return rc.makeEmpty< T >( dimensions );
     }
@@ -139,6 +156,7 @@ RecordComponent::makeEmpty( Datatype dt, uint8_t dimensions )
 RecordComponent&
 RecordComponent::makeEmpty( Dataset d )
 {
+    auto & rc = get();
     if( written() )
     {
         if( !constant() )
@@ -150,30 +168,30 @@ RecordComponent::makeEmpty( Dataset d )
         }
         if( d.dtype == Datatype::UNDEFINED )
         {
-            d.dtype = m_dataset->dtype;
+            d.dtype = rc.m_dataset.dtype;
         }
-        else if( d.dtype != m_dataset->dtype )
+        else if( d.dtype != rc.m_dataset.dtype )
         {
             throw std::runtime_error(
                 "Cannot change the datatype of a dataset." );
         }
-        m_dataset->extend( std::move( d.extent ) );
-        *m_hasBeenExtended = true;
+        rc.m_dataset.extend( std::move( d.extent ) );
+        rc.m_hasBeenExtended = true;
     }
     else
     {
-        *m_dataset = std::move( d );
+        rc.m_dataset = std::move( d );
     }
 
-    if( m_dataset->extent.size() == 0 )
+    if( rc.m_dataset.extent.size() == 0 )
         throw std::runtime_error( "Dataset extent must be at least 1D." );
 
-    *m_isEmpty = true;
+    rc.m_isEmpty = true;
     dirty() = true;
     if( !written() )
     {
         switchType< detail::DefaultValue< RecordComponent > >(
-            m_dataset->dtype, *this );
+            rc.m_dataset.dtype, *this );
     }
     return *this;
 }
@@ -181,30 +199,31 @@ RecordComponent::makeEmpty( Dataset d )
 bool
 RecordComponent::empty() const
 {
-    return *m_isEmpty;
+    return get().m_isEmpty;
 }
 
 void
 RecordComponent::flush(std::string const& name)
 {
+    auto & rc = get();
     if( IOHandler()->m_flushLevel == FlushLevel::SkeletonOnly )
     {
-        *this->m_name = name;
+        rc.m_name = name;
         return;
     }
     if(IOHandler()->m_frontendAccess == Access::READ_ONLY )
     {
-        while( !m_chunks->empty() )
+        while( !rc.m_chunks.empty() )
         {
-            IOHandler()->enqueue(m_chunks->front());
-            m_chunks->pop();
+            IOHandler()->enqueue(rc.m_chunks.front());
+            rc.m_chunks.pop();
         }
     } else
     {
         /*
          * This catches when a user forgets to use resetDataset.
          */
-        if( m_dataset->dtype == Datatype::UNDEFINED )
+        if( rc.m_dataset.dtype == Datatype::UNDEFINED )
         {
             throw error::WrongAPIUsage(
                 "[RecordComponent] Must set specific datatype (Use "
@@ -219,8 +238,8 @@ RecordComponent::flush(std::string const& name)
                 IOHandler()->enqueue(IOTask(this, pCreate));
                 Parameter< Operation::WRITE_ATT > aWrite;
                 aWrite.name = "value";
-                aWrite.dtype = m_constantValue->dtype;
-                aWrite.resource = m_constantValue->getResource();
+                aWrite.dtype = rc.m_constantValue.dtype;
+                aWrite.resource = rc.m_constantValue.getResource();
                 IOHandler()->enqueue(IOTask(this, aWrite));
                 aWrite.name = "shape";
                 // note: due to a C++17 issue with ICC 19.1.2 we write the
@@ -237,15 +256,15 @@ RecordComponent::flush(std::string const& name)
                 dCreate.name = name;
                 dCreate.extent = getExtent();
                 dCreate.dtype = getDatatype();
-                dCreate.chunkSize = m_dataset->chunkSize;
-                dCreate.compression = m_dataset->compression;
-                dCreate.transform = m_dataset->transform;
-                dCreate.options = m_dataset->options;
+                dCreate.chunkSize = rc.m_dataset.chunkSize;
+                dCreate.compression = rc.m_dataset.compression;
+                dCreate.transform = rc.m_dataset.transform;
+                dCreate.options = rc.m_dataset.options;
                 IOHandler()->enqueue(IOTask(this, dCreate));
             }
         }
 
-        if( *m_hasBeenExtended )
+        if( rc.m_hasBeenExtended )
         {
             if( constant() )
             {
@@ -259,16 +278,16 @@ RecordComponent::flush(std::string const& name)
             else
             {
                 Parameter< Operation::EXTEND_DATASET > pExtend;
-                pExtend.extent = m_dataset->extent;
+                pExtend.extent = rc.m_dataset.extent;
                 IOHandler()->enqueue( IOTask( this, std::move( pExtend ) ) );
-                *m_hasBeenExtended = false;
+                rc.m_hasBeenExtended = false;
             }
         }
 
-        while( !m_chunks->empty() )
+        while( !rc.m_chunks.empty() )
         {
-            IOHandler()->enqueue(m_chunks->front());
-            m_chunks->pop();
+            IOHandler()->enqueue(rc.m_chunks.front());
+            rc.m_chunks.pop();
         }
 
         flushAttributes();
@@ -285,6 +304,7 @@ void
 RecordComponent::readBase()
 {
     using DT = Datatype;
+    //auto & rc = get();
     Parameter< Operation::READ_ATT > aRead;
 
     if( constant() && !empty() )
@@ -400,6 +420,6 @@ RecordComponent::dirtyRecursive() const
     {
         return true;
     }
-    return !m_chunks->empty();
+    return !get().m_chunks.empty();
 }
 } // namespace openPMD

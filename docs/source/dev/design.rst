@@ -110,33 +110,23 @@ all meta-data access stores in the ``Attributable`` part of an object and follow
 (future work: use `CRTP <https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern>`_)
 
 openPMD frontend classes are designed as handles that user code may copy an arbitrary amount of times, all copies sharing common resources.
-In an undergoing effort, we are moving to a PIMPL-based pattern to make this design more explicit.
+The internal shared state of such handles is stored as a single ``shared_ptr``.
 This serves to separate data from implementation, demonstrated by the class hierarchy of ``Series``:
 
 * ``SeriesData`` contains all actual data members of ``Series``, representing the resources shared between instances.
   Its copy/move constructors/assignment operators are deleted, thus pinning it at one memory location.
   It has no implementation.
-* ``SeriesInterface`` defines the interface of ``Series``.
-  Its only data member is a pointer to its associated instance of ``SeriesData``.
-  Its purpose is to serve as a parent class for any class that implements the ``Series`` interface.
-  The implementing class should deal with resource management for the instance of ``SeriesData``, ``SeriesInterface`` itself performs no resource management for the data and will assume that the pointer points at a valid instance.
-  (This PIMPL-based design allows us to avoid a similar template-heavy design based on CRTP.)
-* ``SeriesInternal`` is the class created by inheriting directly from ``SeriesData`` and ``SeriesInterface``.
-  It is intended for internal usage, pinned at a memory location just like ``SeriesData``, but carrying an implementation.
-  Its constructor and destructor define the setup and tear-down of shared resources for ``Series``.
-* ``Series`` is a wrapper around a shared pointer to ``SeriesInternal`` and also derives from ``SeriesInterface``.
-  It implements handle semantics, serving as interface to users.
-
-Other classes within our object model of the openPMD hierarchy are planned to follow in this design.
+* ``Series`` defines the interface of the class and is used by client code.
+  Its only data member is a shared pointer to its associated instance of ``SeriesData``.
+  (This pointer-based design allows us to avoid a similar template-heavy design based on CRTP.)
+* A non-owning instance of the ``Series`` class can be constructed on the fly from a ``SeriesData`` object by passing a ``shared_ptr`` with no-op destructor when constructing the ``Series``.
+  Care must be taken to not expose such an object to users as the type system does not distinguish between an owning and a non-owning ``Series`` object.
+* Frontend classes that define the openPMD group hierarchy follow this same design (except for some few that do not define data members).
+  These classes all inherit from ``Attributable``.
+  Their shared state inherits from ``AttributableData``.
+  A downside of this design is that the ``shared_ptr`` pointing to the internal state is redundantly stored for each level in the class hierarchy, ``static_cast``-ed to the corresponding level.
+  All these pointers reference the same internal object.
 
 The class hierarchy of ``Attributable`` follows a similar design, with some differences due to its nature as a mixin class that is not instantiated directly:
-
-* ``AttributableData`` serves the same purpose as ``SeriesData``.
-* ``AttributableInterface`` serves the same purpose as ``SeriesData``.
-* Equivalents to ``SeriesInternal`` and ``Series`` do not exist since a combination of ``AttributableData`` and ``AttributableInterface`` is added as a mixin to other classes.
-  As a common base class exposed to user code, ``AttributableInterface`` is aliased as ``Attributable``.
-* For classes not yet following the PIMPL-based design, ``LegacyAttributable`` wraps around a shared pointer to ``AttributableData`` and derives from ``AttributableInterface``.
-  The ``Attributable`` mixin can be added to those classes by deriving from ``LegacyAttributable``.
-* The ``Attributable`` mixin is added to ``Series`` by deriving ``SeriesData`` from ``AttributableData`` and ``SeriesInterface`` from ``AttributableInterface``.
 
 The ``Series`` class is the entry point to the openPMD-api. An instance of this class always represents an entire series (of iterations), regardless of how this series is modeled in storage or transport (e.g. as multiple files, as a stream, as variables containing multiple snapshots of a dataset or as one file containing all iterations at once).
