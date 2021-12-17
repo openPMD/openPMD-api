@@ -896,6 +896,10 @@ TEST_CASE( "backend_via_json", "[core]" )
     }
 #if openPMD_HAVE_ADIOS2
     {
+        /*
+         * JSON backend should be chosen even if ending .bp is given
+         * {"backend": "json"} overwrites automatic detection
+         */
         Series series(
             "../samples/optionsViaJson.bp",
             Access::CREATE,
@@ -906,6 +910,9 @@ TEST_CASE( "backend_via_json", "[core]" )
     }
 
     {
+        /*
+         * BP4 engine should be selected even if ending .sst is given
+         */
         Series series(
             "../samples/optionsViaJsonOverwritesAutomaticDetection.sst",
             Access::CREATE,
@@ -917,7 +924,11 @@ TEST_CASE( "backend_via_json", "[core]" )
 #if openPMD_HAVE_ADIOS1
     setenv( "OPENPMD_BP_BACKEND", "ADIOS1", 1 );
     {
-        // JSON option should overwrite environment variable
+        /*
+         * ADIOS2 backend should be selected even if OPENPMD_BP_BACKEND is set
+         * as ADIOS1
+         * JSON config overwrites environment variables
+         */
         Series series(
             "../samples/optionsPreferJsonOverEnvVar.bp",
             Access::CREATE,
@@ -934,8 +945,8 @@ TEST_CASE( "backend_via_json", "[core]" )
         R"({"backend": "json", "iteration_encoding": "file_based"})";
     {
         /*
-         * Should we add JSON options to set the filebased expansion pattern?
-         * For now, let's require setting that as part of the filename.
+         * File-based iteration encoding can only be chosen if an expansion
+         * pattern is detected in the filename.
          */
         REQUIRE_THROWS_AS(
             [ & ]() {
@@ -946,9 +957,24 @@ TEST_CASE( "backend_via_json", "[core]" )
             }(),
             error::WrongAPIUsage );
     }
+    {
+        /*
+         * … but specifying both the pattern and the option in JSON should work.
+         */
+        Series series(
+            "../samples/optionsViaJson%06T",
+            Access::CREATE,
+            encodingFileBased );
+        series.iterations[1456];
+    }
     std::string encodingGroupBased =
         R"({"backend": "json", "iteration_encoding": "group_based"})";
     {
+        /*
+         * … and if a pattern is detected, but the JSON config says to use
+         * an iteration encoding that is not file-based, the pattern should
+         * be ignored.
+         */
         Series series(
             "../samples/optionsViaJsonPseudoFilebased%T.json",
             Access::CREATE,
