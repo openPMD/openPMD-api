@@ -41,6 +41,9 @@ namespace internal
     {
     public:
 
+        /**
+         * Chunk reading/writing requests on the contained dataset.
+         */
         std::queue< IOTask > m_chunks;
 
         PatchRecordComponentData( PatchRecordComponentData const & ) = delete;

@@ -96,6 +96,10 @@ namespace internal
          */
         StepStatus m_stepStatus = StepStatus::NoStep;
 
+        /**
+         * Information on a parsing request that has not yet been executed.
+         * Otherwise empty.
+         */
         auxiliary::Option< DeferredParseAccess > m_deferredParseAccess{};
     };
 }

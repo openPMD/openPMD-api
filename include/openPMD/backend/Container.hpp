@@ -71,6 +71,9 @@ namespace internal
     public:
         using InternalContainer = T_container;
 
+        /**
+         * The wrapped container holding all the actual data, e.g. std::map.
+         */
         InternalContainer m_container;
 
         ContainerData() = default;

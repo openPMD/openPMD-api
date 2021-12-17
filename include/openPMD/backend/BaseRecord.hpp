@@ -37,6 +37,12 @@ namespace internal
     class BaseRecordData : public ContainerData< T_elem >
     {
     public:
+        /**
+         * True if this Record contains a scalar record component.
+         * If so, then that record component is the only component contained,
+         * and the last hierarchical layer is skipped (i.e. only one OPEN_PATH
+         * task for Record and RecordComponent).
+         */
         bool m_containsScalar = false;
 
         BaseRecordData();

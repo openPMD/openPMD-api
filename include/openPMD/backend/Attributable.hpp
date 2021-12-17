@@ -76,9 +76,17 @@ public:
     AttributableData & operator=( AttributableData && ) = delete;
 
     using A_MAP = std::map< std::string, Attribute >;
+    /**
+     * The Writable associated with this Attributable.
+     * There is a one-to-one relation between Attributable and Writable objects,
+     * Writable captures the part that backends can see.
+     */
     Writable m_writable;
 
 private:
+    /**
+     * The attributes defined by this Attributable.
+     */
     A_MAP m_attributes;
 };
 
