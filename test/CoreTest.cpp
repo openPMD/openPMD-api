@@ -959,7 +959,7 @@ TEST_CASE( "backend_via_json", "[core]" )
     }
     {
         /*
-         * … but specifying both the pattern and the option in JSON should work.
+         * ... but specifying both the pattern and the option in JSON should work.
          */
         Series series(
             "../samples/optionsViaJson%06T",
@@ -971,7 +971,7 @@ TEST_CASE( "backend_via_json", "[core]" )
         R"({"backend": "json", "iteration_encoding": "group_based"})";
     {
         /*
-         * … and if a pattern is detected, but the JSON config says to use
+         * ... and if a pattern is detected, but the JSON config says to use
          * an iteration encoding that is not file-based, the pattern should
          * be ignored.
          */
