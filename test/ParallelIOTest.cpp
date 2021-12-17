@@ -390,7 +390,7 @@ extendDataset( std::string const & ext )
     std::iota( data2.begin(), data2.end(), 25 );
     {
         Series write( filename, Access::CREATE, MPI_COMM_WORLD );
-        if( ext == "bp" && write.backend() != "ADIOS2" )
+        if( ext == "bp" && write.backend() != "MPI_ADIOS2" )
         {
             // dataset resizing unsupported in ADIOS1
             return;
