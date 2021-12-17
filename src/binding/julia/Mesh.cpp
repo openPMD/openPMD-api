@@ -58,7 +58,7 @@ void define_julia_Mesh(jlcxx::Module &mod) {
   type.method("cxx_set_grid_unit_SI!", &Mesh::setGridUnitSI);
   type.method(
       "cxx_set_unit_dimension!",
-      [](Mesh &mesh, const array7<double> &unitDimension) {
+      [](Mesh &mesh, const array_double_7 &unitDimension) {
         return mesh.setUnitDimension(std::map<UnitDimension, double>{
             {UnitDimension::L, unitDimension[uint8_t(UnitDimension::L)]},
             {UnitDimension::M, unitDimension[uint8_t(UnitDimension::M)]},

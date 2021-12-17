@@ -2,6 +2,14 @@
 
 #include "defs.hpp"
 
+#if openPMD_HAVE_MPI
+#include <mpi.h>
+
+namespace jlcxx {
+template <> struct IsMirroredType<MPI_Comm> : std::false_type {};
+} // namespace jlcxx
+#endif
+
 // Define supertype relationships
 namespace jlcxx {
 template <> struct SuperType<SeriesInterface> { typedef Attributable type; };

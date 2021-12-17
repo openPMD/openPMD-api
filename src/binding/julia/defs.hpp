@@ -31,7 +31,7 @@ template <> struct sized_uint<4> { using type = std::uint32_t; };
 template <> struct sized_uint<8> { using type = std::uint64_t; };
 template <std::size_t I> using sized_uint_t = typename sized_uint<I>::type;
 
-template <typename T> using array7 = std::array<T, 7>;
+using array_double_7 = std::array<double, 7>;
 
 /*
  * Generate code fo all openPMD types. Use is e.g. as follows:
@@ -82,7 +82,7 @@ template <typename T> using array7 = std::array<T, 7>;
   /* MACRO("VEC_CLONG_DOUBLE", Datatype::VEC_CLONG_DOUBLE,                     \
    * std::vector<std::complex<long double>>) */                                \
   MACRO("VEC_STRING", Datatype::VEC_STRING, std::vector<std::string>)          \
-  MACRO("ARR_DBL_7", Datatype::ARR_DBL_7, array7<double>)                      \
+  MACRO("ARR_DBL_7", Datatype::ARR_DBL_7, array_double_7)                      \
   MACRO("BOOL", Datatype::BOOL, bool)
 
 #define FORALL_SCALAR_OPENPMD_TYPES(MACRO)                                     \
@@ -104,72 +104,79 @@ template <typename T> using array7 = std::array<T, 7>;
   /* MACRO("CLONG_DOUBLE", Datatype::CLONG_DOUBLE, std::complex<long           \
    * double>) */                                                               \
   MACRO("STRING", Datatype::STRING, std::string)                               \
-  MACRO("ARR_DBL_7", Datatype::ARR_DBL_7, array7<double>)                      \
+  MACRO("ARR_DBL_7", Datatype::ARR_DBL_7, array_double_7)                      \
   MACRO("BOOL", Datatype::BOOL, bool)
 
 // This C++ version is a bit more tedious to use than the macro version above
+template <typename T> T typeval() { return T{}; }
 template <typename F, typename... Args>
 void forall_openPMD_types(const F &f, Args &&...args) {
-  f("CHAR", Datatype::CHAR, char{}, std::forward<Args>(args)...);
-  f("UCHAR", Datatype::UCHAR, (unsigned char){}, std::forward<Args>(args)...);
-  f("SHORT", Datatype::SHORT, short{}, std::forward<Args>(args)...);
-  f("INT", Datatype::INT, int{}, std::forward<Args>(args)...);
-  f("LONG", Datatype::LONG, long{}, std::forward<Args>(args)...);
-  f("LONGLONG", Datatype::LONGLONG, (long long){}, std::forward<Args>(args)...);
-  f("USHORT", Datatype::USHORT, (unsigned short){},
+  f("CHAR", Datatype::CHAR, typeval<char>(), std::forward<Args>(args)...);
+  f("UCHAR", Datatype::UCHAR, typeval<unsigned char>(),
     std::forward<Args>(args)...);
-  f("UINT", Datatype::UINT, (unsigned int){}, std::forward<Args>(args)...);
-  f("ULONG", Datatype::ULONG, (unsigned long){}, std::forward<Args>(args)...);
-  f("ULONGLONG", Datatype::ULONGLONG, (unsigned long long){},
+  f("SHORT", Datatype::SHORT, typeval<short>(), std::forward<Args>(args)...);
+  f("INT", Datatype::INT, typeval<int>(), std::forward<Args>(args)...);
+  f("LONG", Datatype::LONG, typeval<long>(), std::forward<Args>(args)...);
+  f("LONGLONG", Datatype::LONGLONG, typeval<long long>(),
     std::forward<Args>(args)...);
-  f("FLOAT", Datatype::FLOAT, float{}, std::forward<Args>(args)...);
-  f("DOUBLE", Datatype::DOUBLE, double{}, std::forward<Args>(args)...);
-  // f("LONG_DOUBLE", Datatype::LONG_DOUBLE, (long double){},
+  f("USHORT", Datatype::USHORT, typeval<unsigned short>(),
+    std::forward<Args>(args)...);
+  f("UINT", Datatype::UINT, typeval<unsigned int>(),
+    std::forward<Args>(args)...);
+  f("ULONG", Datatype::ULONG, typeval<unsigned long>(),
+    std::forward<Args>(args)...);
+  f("ULONGLONG", Datatype::ULONGLONG, typeval<unsigned long long>(),
+    std::forward<Args>(args)...);
+  f("FLOAT", Datatype::FLOAT, typeval<float>(), std::forward<Args>(args)...);
+  f("DOUBLE", Datatype::DOUBLE, typeval<double>(), std::forward<Args>(args)...);
+  // f("LONG_DOUBLE", Datatype::LONG_DOUBLE, typeval<long double>(),
   // std::forward<Args>(args)...);
-  f("CFLOAT", Datatype::CFLOAT, std::complex<float>{},
+  f("CFLOAT", Datatype::CFLOAT, typeval<std::complex<float>>(),
     std::forward<Args>(args)...);
-  f("CDOUBLE", Datatype::CDOUBLE, std::complex<double>{},
+  f("CDOUBLE", Datatype::CDOUBLE, typeval<std::complex<double>>(),
     std::forward<Args>(args)...);
-  // f("CLONG_DOUBLE", Datatype::CLONG_DOUBLE, std::complex<long double>{},
-  // std::forward<Args>(args)...);
-  f("STRING", Datatype::STRING, std::string{}, std::forward<Args>(args)...);
-  f("VEC_CHAR", Datatype::VEC_CHAR, std::vector<char>{},
+  // f("CLONG_DOUBLE", Datatype::CLONG_DOUBLE, typeval<std::complex<long
+  // double>>(), std::forward<Args>(args)...);
+  f("STRING", Datatype::STRING, typeval<std::string>(),
     std::forward<Args>(args)...);
-  f("VEC_UCHAR", Datatype::VEC_UCHAR, std::vector<unsigned char>{},
+  f("VEC_CHAR", Datatype::VEC_CHAR, typeval<std::vector<char>>(),
     std::forward<Args>(args)...);
-  f("VEC_SHORT", Datatype::VEC_SHORT, std::vector<short>{},
+  f("VEC_UCHAR", Datatype::VEC_UCHAR, typeval<std::vector<unsigned char>>(),
     std::forward<Args>(args)...);
-  f("VEC_INT", Datatype::VEC_INT, std::vector<int>{},
+  f("VEC_SHORT", Datatype::VEC_SHORT, typeval<std::vector<short>>(),
     std::forward<Args>(args)...);
-  f("VEC_LONG", Datatype::VEC_LONG, std::vector<long>{},
+  f("VEC_INT", Datatype::VEC_INT, typeval<std::vector<int>>(),
     std::forward<Args>(args)...);
-  f("VEC_LONGLONG", Datatype::VEC_LONGLONG, std::vector<long long>{},
+  f("VEC_LONG", Datatype::VEC_LONG, typeval<std::vector<long>>(),
     std::forward<Args>(args)...);
-  f("VEC_USHORT", Datatype::VEC_USHORT, std::vector<unsigned short>{},
+  f("VEC_LONGLONG", Datatype::VEC_LONGLONG, typeval<std::vector<long long>>(),
     std::forward<Args>(args)...);
-  f("VEC_UINT", Datatype::VEC_UINT, std::vector<unsigned int>{},
+  f("VEC_USHORT", Datatype::VEC_USHORT, typeval<std::vector<unsigned short>>(),
     std::forward<Args>(args)...);
-  f("VEC_ULONG", Datatype::VEC_ULONG, std::vector<unsigned long>{},
+  f("VEC_UINT", Datatype::VEC_UINT, typeval<std::vector<unsigned int>>(),
     std::forward<Args>(args)...);
-  f("VEC_ULONGLONG", Datatype::VEC_ULONGLONG, std::vector<unsigned long long>{},
+  f("VEC_ULONG", Datatype::VEC_ULONG, typeval<std::vector<unsigned long>>(),
     std::forward<Args>(args)...);
-  f("VEC_FLOAT", Datatype::VEC_FLOAT, std::vector<float>{},
+  f("VEC_ULONGLONG", Datatype::VEC_ULONGLONG,
+    typeval<std::vector<unsigned long long>>(), std::forward<Args>(args)...);
+  f("VEC_FLOAT", Datatype::VEC_FLOAT, typeval<std::vector<float>>(),
     std::forward<Args>(args)...);
-  f("VEC_DOUBLE", Datatype::VEC_DOUBLE, std::vector<double>{},
+  f("VEC_DOUBLE", Datatype::VEC_DOUBLE, typeval<std::vector<double>>(),
     std::forward<Args>(args)...);
-  // f("VEC_LONG_DOUBLE", Datatype::VEC_LONG_DOUBLE, std::vector<long double>{},
-  // std::forward<Args>(args)...);
-  f("VEC_CFLOAT", Datatype::VEC_CFLOAT, std::vector<std::complex<float>>{},
-    std::forward<Args>(args)...);
-  f("VEC_CDOUBLE", Datatype::VEC_CDOUBLE, std::vector<std::complex<double>>{},
-    std::forward<Args>(args)...);
+  // f("VEC_LONG_DOUBLE", Datatype::VEC_LONG_DOUBLE, typeval<std::vector<long
+  // double>>(), std::forward<Args>(args)...);
+  f("VEC_CFLOAT", Datatype::VEC_CFLOAT,
+    typeval<std::vector<std::complex<float>>>(), std::forward<Args>(args)...);
+  f("VEC_CDOUBLE", Datatype::VEC_CDOUBLE,
+    typeval<std::vector<std::complex<double>>>(), std::forward<Args>(args)...);
   // f("VEC_CLONG_DOUBLE", Datatype::VEC_CLONG_DOUBLE,
-  // std::vector<std::complex<long double>>{}, std::forward<Args>(args)...);
-  f("VEC_STRING", Datatype::VEC_STRING, std::vector<std::string>{},
+  // typeval<std::vector<std::complex<long double>>>(),
+  // std::forward<Args>(args)...);
+  f("VEC_STRING", Datatype::VEC_STRING, typeval<std::vector<std::string>>(),
     std::forward<Args>(args)...);
-  f("ARR_DBL_7", Datatype::ARR_DBL_7, array7<double>{},
+  f("ARR_DBL_7", Datatype::ARR_DBL_7, typeval<array_double_7>(),
     std::forward<Args>(args)...);
-  f("BOOL", Datatype::BOOL, bool{}, std::forward<Args>(args)...);
+  f("BOOL", Datatype::BOOL, typeval<bool>(), std::forward<Args>(args)...);
 }
 
 namespace {
@@ -261,7 +268,7 @@ void add_pair_type(jlcxx::Module &mod, const std::string &name) {
 } // namespace
 
 namespace jlcxx {
-template <> struct IsMirroredType<std::array<double, 7>> : std::false_type {};
+template <> struct IsMirroredType<array_double_7> : std::false_type {};
 } // namespace jlcxx
 
 // We use one function per header file
