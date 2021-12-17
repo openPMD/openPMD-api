@@ -71,6 +71,9 @@ namespace internal
     public:
         using InternalContainer = T_container;
 
+        /**
+         * The wrapped container holding all the actual data, e.g. std::map.
+         */
         InternalContainer m_container;
 
         ContainerData() = default;
@@ -158,8 +161,7 @@ protected:
 
     inline InternalContainer & container()
     {
-        return const_cast< InternalContainer & >(
-            static_cast< Container const * >( this )->container() );
+        return m_containerData->m_container;
     }
 
 public:

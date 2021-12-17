@@ -79,13 +79,52 @@ public:
 
     Container< Iteration, uint64_t > iterations{};
 
+    /**
+     * For each instance of Series, there is only one instance
+     * of WriteIterations, stored in this Option.
+     * This ensures that Series::writeIteration() always returns
+     * the same instance.
+     */
     auxiliary::Option< WriteIterations > m_writeIterations;
+    /**
+     * Needed if reading a single iteration of a file-based series.
+     * Users may specify the concrete filename of one iteration instead of the
+     * file-based expansion pattern.
+     * In that case, the filename must not be constructed from prefix, infix and
+     * suffix as usual in file-based iteration encoding.
+     * Instead, the user-specified filename should be used directly.
+     * Store that filename in the following Option to indicate this situation.
+     */
     auxiliary::Option< std::string > m_overrideFilebasedFilename;
+    /**
+     * Name of the iteration without filename suffix.
+     * In case of file-based iteration encoding, with expansion pattern.
+     * E.g.: simData.bp      -> simData
+     *       simData_%06T.h5 -> simData_%06T
+     */
     std::string m_name;
+    /**
+     * Filename leading up to the expansion pattern.
+     * Only used for file-based iteration encoding.
+     */
     std::string m_filenamePrefix;
+    /**
+     * Filename after the expansion pattern without filename extension.
+     */
     std::string m_filenamePostfix;
+    /**
+     * The padding in file-based iteration encoding.
+     * 0 if no padding is given (%T pattern).
+     * -1 if no expansion pattern has been parsed.
+     */
     int m_filenamePadding = -1;
+    /**
+     * The iteration encoding used in this series.
+     */
     IterationEncoding m_iterationEncoding{};
+    /**
+     * Detected IO format (backend).
+     */
     Format m_format;
     /**
      *  Whether a step is currently active for this iteration.
@@ -95,8 +134,17 @@ public:
      * one among both flags.
      */
     StepStatus m_stepStatus = StepStatus::NoStep;
+    /**
+     * True if a user opts into lazy parsing.
+     */
     bool m_parseLazily = false;
-    // only set this true after successful construction
+    /**
+     * This is to avoid that the destructor tries flushing again if an error
+     * happened. Otherwise, this would lead to confusing error messages.
+     * Initialized as false, set to true after successful construction.
+     * If flushing results in an error, set this back to false.
+     * The destructor will only attempt flushing again if this is true.
+     */
     bool m_lastFlushSuccessful = false;
 }; // SeriesData
 

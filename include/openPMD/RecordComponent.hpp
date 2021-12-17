@@ -93,7 +93,14 @@ namespace internal
         RecordComponentData & operator=( RecordComponentData const & ) = delete;
         RecordComponentData & operator=( RecordComponentData && ) = delete;
 
+        /**
+         * Chunk reading/writing requests on the contained dataset.
+         */
         std::queue< IOTask > m_chunks;
+        /**
+         * Stores the value for constant record components.
+         * Ignored otherwise.
+         */
         Attribute m_constantValue{ -1 };
         /**
          * The same std::string that the parent class would pass as parameter to
@@ -104,9 +111,17 @@ namespace internal
          * @todo Merge functionality with ownKeyInParent?
          */
         std::string m_name;
+        /**
+         * True if this component is an empty dataset, i.e. its extent is zero
+         * in at least one dimension.
+         * Treated by the openPMD-api as a special case of constant record
+         * components.
+         */
         bool m_isEmpty = false;
-        // User has extended the dataset, but the EXTEND task must yet be
-        // flushed to the backend
+        /**
+         * User has extended the dataset, but the EXTEND task must yet be
+         * flushed to the backend
+         */
         bool m_hasBeenExtended = false;
     };
 }
@@ -322,8 +337,7 @@ OPENPMD_protected:
 
     inline internal::RecordComponentData & get()
     {
-        return const_cast< internal::RecordComponentData & >(
-            static_cast< RecordComponent const * >( this )->get() );
+        return *m_recordComponentData;
     }
 
     inline void setData( std::shared_ptr< internal::RecordComponentData > data )

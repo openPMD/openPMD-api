@@ -37,7 +37,16 @@ namespace internal
     class BaseRecordComponentData : public AttributableData
     {
     public:
+        /**
+         * The type and extent of the dataset defined by this component.
+         */
         Dataset m_dataset{ Datatype::UNDEFINED, {} };
+        /**
+         * True if this is defined as a constant record component as specified
+         * in the openPMD standard.
+         * If yes, then no heavy-weight dataset is created and the dataset is
+         * instead defined via light-weight attributes.
+         */
         bool m_isConstant = false;
 
         BaseRecordComponentData( BaseRecordComponentData const & ) = delete;
@@ -111,8 +120,7 @@ protected:
 
     inline internal::BaseRecordComponentData & get()
     {
-        return const_cast< internal::BaseRecordComponentData & >(
-            static_cast< BaseRecordComponent const * >( this )->get() );
+        return *m_baseRecordComponentData;
     }
 
     inline void setData(

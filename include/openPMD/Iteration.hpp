@@ -96,6 +96,10 @@ namespace internal
          */
         StepStatus m_stepStatus = StepStatus::NoStep;
 
+        /**
+         * Information on a parsing request that has not yet been executed.
+         * Otherwise empty.
+         */
         auxiliary::Option< DeferredParseAccess > m_deferredParseAccess{};
     };
 }
@@ -235,8 +239,7 @@ private:
 
     inline internal::IterationData & get()
     {
-        return const_cast< internal::IterationData & >(
-            static_cast< Iteration const * >( this )->get() );
+        return *m_iterationData;
     }
 
     void flushFileBased(std::string const&, uint64_t);
