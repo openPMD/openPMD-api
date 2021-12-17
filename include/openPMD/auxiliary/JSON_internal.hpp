@@ -189,8 +189,8 @@ namespace json
      * Recursively transform all keys in a JSON dataset to lower case.
      * String values are unaffected.
      * JSON objects at the following openPMD-defined locations are not affected:
-     * * adios2.engine.parameters
-     * * adios2.dataset.operators.<number>.parameters
+     * * `adios2.engine.parameters`
+     * * `adios2.dataset.operators.<number>.parameters`
      * This helps us forward configurations from these locations to ADIOS2
      * "as-is".
      */
