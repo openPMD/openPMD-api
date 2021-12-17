@@ -120,8 +120,7 @@ protected:
 
     inline internal::BaseRecordComponentData & get()
     {
-        return const_cast< internal::BaseRecordComponentData & >(
-            static_cast< BaseRecordComponent const * >( this )->get() );
+        return *m_baseRecordComponentData;
     }
 
     inline void setData(

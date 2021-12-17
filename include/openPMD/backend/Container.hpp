@@ -161,8 +161,7 @@ protected:
 
     inline InternalContainer & container()
     {
-        return const_cast< InternalContainer & >(
-            static_cast< Container const * >( this )->container() );
+        return m_containerData->m_container;
     }
 
 public:

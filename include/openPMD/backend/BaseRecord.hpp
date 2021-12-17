@@ -71,8 +71,7 @@ class BaseRecord : public Container< T_elem >
 
     inline internal::BaseRecordData< T_elem > & get()
     {
-        return const_cast< internal::BaseRecordData< T_elem > & >(
-            static_cast< BaseRecord const * >( this )->get() );
+        return *m_baseRecordData;
     }
 
     inline internal::BaseRecordData< T_elem > const & get() const

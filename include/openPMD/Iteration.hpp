@@ -239,8 +239,7 @@ private:
 
     inline internal::IterationData & get()
     {
-        return const_cast< internal::IterationData & >(
-            static_cast< Iteration const * >( this )->get() );
+        return *m_iterationData;
     }
 
     void flushFileBased(std::string const&, uint64_t);

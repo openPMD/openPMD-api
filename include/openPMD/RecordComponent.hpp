@@ -337,8 +337,7 @@ OPENPMD_protected:
 
     inline internal::RecordComponentData & get()
     {
-        return const_cast< internal::RecordComponentData & >(
-            static_cast< RecordComponent const * >( this )->get() );
+        return *m_recordComponentData;
     }
 
     inline void setData( std::shared_ptr< internal::RecordComponentData > data )

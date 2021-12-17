@@ -121,9 +121,7 @@ OPENPMD_protected:
 
     inline internal::PatchRecordComponentData & get()
     {
-        return const_cast< internal::PatchRecordComponentData & >(
-            static_cast< PatchRecordComponent const * >( this )
-                ->get() );
+        return *m_patchRecordComponentData;
     }
 
     inline void setData(
