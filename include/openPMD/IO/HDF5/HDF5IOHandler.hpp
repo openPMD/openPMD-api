@@ -20,9 +20,8 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
-
-#include <nlohmann/json.hpp>
 
 #include <future>
 #include <memory>
@@ -36,7 +35,7 @@ class HDF5IOHandlerImpl;
 class HDF5IOHandler : public AbstractIOHandler
 {
 public:
-    HDF5IOHandler(std::string path, Access, nlohmann::json config);
+    HDF5IOHandler(std::string path, Access, json::TracingJSON config);
     ~HDF5IOHandler() override;
 
     std::string backendName() const override { return "HDF5"; }

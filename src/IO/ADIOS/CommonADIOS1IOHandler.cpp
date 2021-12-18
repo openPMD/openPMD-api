@@ -23,6 +23,8 @@
 
 #if openPMD_HAVE_ADIOS1
 
+#include "openPMD/auxiliary/JSON_internal.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/ADIOS1IOHandlerImpl.hpp"
 #include "openPMD/IO/ADIOS/ParallelADIOS1IOHandlerImpl.hpp"
 
@@ -466,6 +468,33 @@ CommonADIOS1IOHandlerImpl< ChildClass >::createPath(Writable* writable,
     }
 }
 
+static auxiliary::Option< std::string > datasetTransform(
+    json::TracingJSON config )
+{
+    using ret_t = auxiliary::Option< std::string >;
+    if( !config.json().contains( "dataset" ) )
+    {
+        return ret_t{};
+    }
+    config = config[ "dataset" ];
+    if( !config.json().contains( "transform" ) )
+    {
+        return ret_t{};
+    }
+    config = config[ "transform" ];
+    auto maybeRes = json::asStringDynamic( config.json() );
+    if( maybeRes.has_value() )
+    {
+        return std::move( maybeRes.get() );
+    }
+    else
+    {
+        throw error::BackendConfigSchema(
+            { "adios1", "dataset", "transform" },
+            "Key must convertible to type string." );
+    }
+}
+
 template< typename ChildClass >
 void
 CommonADIOS1IOHandlerImpl< ChildClass >::createDataset(Writable* writable,
@@ -519,14 +548,35 @@ CommonADIOS1IOHandlerImpl< ChildClass >::createDataset(Writable* writable,
                               chunkOffsetParam.c_str());
         VERIFY(id != 0, "[ADIOS1] Internal error: Failed to define ADIOS variable during Dataset creation");
 
-        if( !parameters.compression.empty() )
-            std::cerr << "Custom compression not compatible with ADIOS1 backend. Use transform instead."
-                      << std::endl;
+        std::string transform = "";
+        {
+            json::TracingJSON options = json::parseOptions(
+                parameters.options, /* considerFiles = */ false );
+            auto maybeTransform = datasetTransform( options );
+            if( maybeTransform.has_value() )
+            {
+                transform = maybeTransform.get();
+            }
 
-        if( !parameters.transform.empty() )
+            auto shadow = options.invertShadow();
+            if( shadow.size() > 0 )
+            {
+                std::cerr << "Warning: parts of the JSON configuration for "
+                             "ADIOS1 dataset '"
+                          << name << "' remain unused:\n"
+                          << shadow << std::endl;
+            }
+        }
+        // Fallback: global option
+        if( transform.empty() )
+        {
+            transform = m_defaultTransform;
+        }
+
+        if( !transform.empty() )
         {
             int status;
-            status = adios_set_transform(id, parameters.transform.c_str());
+            status = adios_set_transform(id, transform.c_str());
             VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to set ADIOS transform during Dataset cretaion");
         }
 
@@ -1696,6 +1746,21 @@ CommonADIOS1IOHandlerImpl< ChildClass >::listAttributes(Writable* writable,
             }
         }
         *parameters.attributes = std::vector< std::string >(attributes.begin(), attributes.end());
+    }
+}
+
+template< typename ChildClass >
+void CommonADIOS1IOHandlerImpl< ChildClass >::initJson(
+    json::TracingJSON config )
+{
+    if( !config.json().contains( "adios1" ) )
+    {
+        return;
+    }
+    auto maybeTransform = datasetTransform( config[ "adios1" ] );
+    if( maybeTransform.has_value() )
+    {
+        m_defaultTransform = std::move( maybeTransform.get() );
     }
 }
 

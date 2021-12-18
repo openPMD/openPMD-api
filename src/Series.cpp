@@ -20,7 +20,7 @@
  */
 #include "openPMD/auxiliary/Date.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
-#include "openPMD/auxiliary/JSON.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerHelper.hpp"
@@ -38,6 +38,7 @@
 #include <set>
 #include <string>
 #include <tuple>
+#include <utility>
 
 
 namespace openPMD
@@ -1458,21 +1459,110 @@ void Series::openIteration( uint64_t index, Iteration iteration )
 
 namespace
 {
-template< typename T >
-void getJsonOption(
-    nlohmann::json const & config, std::string const & key, T & dest )
-{
-    if( config.contains( key ) )
+    /**
+     * Look up if the specified key is contained in the JSON dataset.
+     * If yes, read it into the specified location.
+     */
+    template< typename From, typename Dest = From >
+    void getJsonOption(
+        json::TracingJSON & config, std::string const & key, Dest & dest )
     {
-        dest = config.at( key ).get< T >();
+        if( config.json().contains( key ) )
+        {
+            dest = config[ key ].json().get< From >();
+        }
+    }
+
+    /**
+     * Like getJsonOption(), but for string types.
+     * Numbers and booleans are converted to their string representation.
+     * The string is converted to lower case.
+     */
+    template< typename Dest = std::string >
+    void getJsonOptionLowerCase(
+        json::TracingJSON & config, std::string const & key, Dest & dest )
+    {
+        if( config.json().contains( key ) )
+        {
+            auto maybeString =
+                json::asLowerCaseStringDynamic( config[ key ].json() );
+            if( maybeString.has_value() )
+            {
+                dest = std::move( maybeString.get() );
+            }
+            else
+            {
+                throw error::BackendConfigSchema(
+                    { key }, "Must be convertible to string type." );
+            }
+        }
     }
 }
 
-void parseJsonOptions(
-    internal::SeriesData & series, nlohmann::json const & options )
+template< typename TracingJSON >
+void Series::parseJsonOptions(
+    TracingJSON & options, ParsedInput & input )
 {
-    getJsonOption( options, "defer_iteration_parsing", series.m_parseLazily );
-}
+    auto & series = get();
+    getJsonOption< bool >(
+        options, "defer_iteration_parsing", series.m_parseLazily );
+    // backend key
+    {
+        std::map< std::string, Format > const backendDescriptors{
+            { "hdf5", Format::HDF5 },
+            { "adios1", Format::ADIOS1 },
+            { "adios2", Format::ADIOS2 },
+            { "json", Format::JSON } };
+        std::string backend;
+        getJsonOptionLowerCase( options, "backend", backend );
+        if( !backend.empty() )
+        {
+            auto it = backendDescriptors.find( backend );
+            if( it != backendDescriptors.end() )
+            {
+                if( input.format != Format::DUMMY &&
+                    suffix( input.format ) != suffix( it->second ) )
+                {
+                    std::cerr << "[Warning] Supplied filename extension '"
+                              << suffix( input.format )
+                              << "' contradicts the backend specified via the "
+                                 "'backend' key. Will go on with backend "
+                              << it->first << "." << std::endl;
+                }
+                input.format = it->second;
+            }
+            else
+            {
+                throw error::BackendConfigSchema(
+                    { "backend" }, "Unknown backend specified: " + backend );
+            }
+        }
+    }
+    // iteration_encoding key
+    {
+        std::map< std::string, IterationEncoding > const ieDescriptors{
+            { "file_based", IterationEncoding::fileBased },
+            { "group_based", IterationEncoding::groupBased },
+            { "variable_based", IterationEncoding::variableBased } };
+        std::string iterationEncoding;
+        getJsonOptionLowerCase(
+            options, "iteration_encoding", iterationEncoding );
+        if( !iterationEncoding.empty() )
+        {
+            auto it = ieDescriptors.find( iterationEncoding );
+            if( it != ieDescriptors.end() )
+            {
+                input.iterationEncoding = it->second;
+            }
+            else
+            {
+                throw error::BackendConfigSchema(
+                    { "iteration_encoding" },
+                    "Unknown iteration encoding specified: " +
+                        iterationEncoding );
+            }
+        }
+    }
 }
 
 namespace internal
@@ -1531,12 +1621,14 @@ Series::Series(
 {
     Attributable::setData( m_series );
     iterations = m_series->iterations;
-    nlohmann::json optionsJson = auxiliary::parseOptions( options, comm );
-    parseJsonOptions( get(), optionsJson );
+    json::TracingJSON optionsJson = json::parseOptions(
+        options, comm, /* considerFiles = */ true );
     auto input = parseInput( filepath );
+    parseJsonOptions( optionsJson, *input );
     auto handler = createIOHandler(
-        input->path, at, input->format, comm, std::move( optionsJson ) );
+        input->path, at, input->format, comm, optionsJson );
     init( handler, std::move( input ) );
+    json::warnGlobalUnusedOptions( optionsJson );
 }
 #endif
 
@@ -1547,12 +1639,14 @@ Series::Series(
 {
     Attributable::setData( m_series );
     iterations = m_series->iterations;
-    nlohmann::json optionsJson = auxiliary::parseOptions( options );
-    parseJsonOptions( get(), optionsJson );
+    json::TracingJSON optionsJson = json::parseOptions(
+        options, /* considerFiles = */ true );
     auto input = parseInput( filepath );
+    parseJsonOptions( optionsJson, *input );
     auto handler = createIOHandler(
-        input->path, at, input->format, std::move( optionsJson ) );
+        input->path, at, input->format, optionsJson );
     init( handler, std::move( input ) );
+    json::warnGlobalUnusedOptions( optionsJson );
 }
 
 Series::operator bool() const

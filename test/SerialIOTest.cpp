@@ -32,6 +32,42 @@
 
 using namespace openPMD;
 
+struct BackendSelection
+{
+    std::string backendName;
+    std::string extension;
+
+    inline std::string jsonBaseConfig() const
+    {
+        return R"({"backend": ")" + backendName + "\"}";
+    }
+};
+
+std::vector< BackendSelection > testedBackends()
+{
+    auto variants = getVariants();
+    std::map< std::string, std::string > extensions{
+        { "json", "json" },
+        { "adios1", "bp1" },
+        { "adios2", "bp" },
+        { "hdf5", "h5" } };
+    std::vector< BackendSelection > res;
+    for( auto const & pair : variants )
+    {
+        if( pair.second )
+        {
+            auto lookup = extensions.find( pair.first );
+            if( lookup != extensions.end() )
+            {
+                std::string extension = lookup->second;
+                res.push_back(
+                    { std::move( pair.first ), std::move( extension ) } );
+            }
+        }
+    }
+    return res;
+}
+
 std::vector< std::string > testedFileExtensions()
 {
     auto allExtensions = getFileExtensions();
@@ -2057,14 +2093,16 @@ void optional_paths_110_test(const std::string & backend)
 void git_early_chunk_query(
     std::string const filename,
     std::string const species,
-    int const step
+    int const step,
+    std::string const & jsonConfig = "{}"
 )
 {
     try
     {
         Series s = Series(
             filename,
-            Access::READ_ONLY
+            Access::READ_ONLY,
+            jsonConfig
         );
 
         auto electrons = s.iterations[step].particles[species];
@@ -3304,7 +3342,11 @@ TEST_CASE( "no_serial_adios1", "[serial][adios]")
 #if openPMD_HAVE_ADIOS2
 TEST_CASE( "git_adios2_early_chunk_query", "[serial][adios2]" )
 {
-    git_early_chunk_query("../samples/git-sample/3d-bp4/example-3d-bp4_%T.bp", "e", 600);
+    git_early_chunk_query(
+        "../samples/git-sample/3d-bp4/example-3d-bp4_%T.bp",
+        "e",
+        600,
+        R"({"backend": "adios2"})" );
 }
 
 TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
@@ -3316,12 +3358,16 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
     }
     std::string writeConfigBP3 = R"END(
 {
+  "unused": "global parameter",
+  "hdf5": {
+    "unused": "hdf5 parameter please do not warn"
+  },
   "adios2": {
     "engine": {
       "type": "bp3",
       "unused": "parameter",
       "parameters": {
-        "BufferGrowthFactor": "2.0",
+        "BufferGrowthFactor": 2,
         "Profile": "On"
       }
     },
@@ -3347,7 +3393,7 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
       "type": "bp4",
       "unused": "parameter",
       "parameters": {
-        "BufferGrowthFactor": "2.0",
+        "BufferGrowthFactor": 2.0,
         "Profile": "On"
       }
     },
@@ -3357,7 +3403,7 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
         {
           "type": "blosc",
           "parameters": {
-              "clevel": "1",
+              "clevel": 1,
               "doshuffle": "BLOSC_BITSHUFFLE"
           }
         }
@@ -3392,8 +3438,25 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
   }
 }
 )END";
+    /*
+     * Notes on the upcoming dataset JSON configuration:
+     * * The resizable key is needed by some backends (HDF5) so the backend can
+     *   create a dataset that can later be resized.
+     * * The asdf key should lead to a warning about unused parameters.
+     * * Inside the hdf5 configuration, there are unused keys ("this").
+     *   However, since this configuration is used by the ADIOS2 backend, there
+     *   will be no warning for it.
+     *
+     * In the end, this config should lead to a warning similar to:
+     * > Warning: parts of the JSON configuration for ADIOS2 dataset
+     * > '/data/0/meshes/E/y' remain unused:
+     * > {"adios2":{"dataset":{"unused":"too"},"unused":"dataset parameter"},
+     * >  "asdf":"asdf"}
+     */
     std::string datasetConfig = R"END(
 {
+  "resizable": true,
+  "asdf": "asdf",
   "adios2": {
     "unused": "dataset parameter",
     "dataset": {
@@ -3402,12 +3465,15 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
         {
           "type": "blosc",
           "parameters": {
-              "clevel": "3",
-              "doshuffle": "BLOSC_BITSHUFFLE"
+            "clevel": 3,
+            "doshuffle": "BLOSC_BITSHUFFLE"
           }
         }
       ]
     }
+  },
+  "hdf5": {
+    "this": "should not warn"
   }
 }
 )END";
@@ -3547,7 +3613,7 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
 {
     std::string useSteps = R"(
     {
-        "adios2": {
+        "ADIOS2": {
             "engine": {
                 "type": "bp4",
                 "usesteps": true
@@ -3559,7 +3625,7 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
     {
         "adios2": {
             "type": "nullcore",
-            "engine": {
+            "ENGINE": {
                 "type": "bp4",
                 "usesteps": true
             }
@@ -3571,7 +3637,7 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
         "adios2": {
             "engine": {
                 "type": "bp4",
-                "usesteps": false
+                "UseSteps": false
             }
         }
     }
@@ -3673,8 +3739,13 @@ variableBasedSingleIteration( std::string const & file )
 {
     constexpr Extent::value_type extent = 1000;
     {
-        Series writeSeries( file, Access::CREATE );
-        writeSeries.setIterationEncoding( IterationEncoding::variableBased );
+        Series writeSeries(
+            file,
+            Access::CREATE,
+            R"({"iteration_encoding": "variable_based"})" );
+        REQUIRE(
+            writeSeries.iterationEncoding() ==
+            IterationEncoding::variableBased );
         auto iterations = writeSeries.writeIterations();
         auto iteration = writeSeries.iterations[ 0 ];
         auto E_x = iteration.meshes[ "E" ][ "x" ];
@@ -3764,7 +3835,7 @@ TEST_CASE( "git_adios2_sample_test", "[serial][adios2]" )
                   << samplePath << "' not accessible \n";
         return;
     }
-    Series o( samplePath, Access::READ_ONLY );
+    Series o( samplePath, Access::READ_ONLY, R"({"backend": "adios2"})" );
     REQUIRE( o.openPMD() == "1.1.0" );
     REQUIRE( o.openPMDextension() == 0 );
     REQUIRE( o.basePath() == "/data/%T/" );
@@ -4018,16 +4089,13 @@ TEST_CASE( "git_adios2_sample_test", "[serial][adios2]" )
 
 void variableBasedSeries( std::string const & file )
 {
+    std::string selectADIOS2 = R"({"backend": "adios2"})";
     constexpr Extent::value_type extent = 1000;
     {
-        Series writeSeries( file, Access::CREATE );
+        Series writeSeries( file, Access::CREATE, selectADIOS2 );
         writeSeries.setIterationEncoding( IterationEncoding::variableBased );
         REQUIRE(
             writeSeries.iterationEncoding() == IterationEncoding::variableBased );
-        if( writeSeries.backend() == "ADIOS1" )
-        {
-            return;
-        }
         auto iterations = writeSeries.writeIterations();
         for( size_t i = 0; i < 10; ++i )
         {
@@ -4065,9 +4133,10 @@ void variableBasedSeries( std::string const & file )
 
     REQUIRE( auxiliary::directory_exists( file ) );
 
-    auto testRead = [ &file, &extent ]( std::string const & jsonConfig )
-    {
-        Series readSeries( file, Access::READ_ONLY, jsonConfig );
+    auto testRead = [ &file, &extent, &selectADIOS2 ](
+                        std::string const & jsonConfig ) {
+        Series readSeries(
+            file, Access::READ_ONLY, json::merge( selectADIOS2, jsonConfig ) );
 
         size_t last_iteration_index = 0;
         for( auto iteration : readSeries.readIterations() )
@@ -4123,10 +4192,12 @@ void variableBasedSeries( std::string const & file )
     testRead( "{\"defer_iteration_parsing\": false}" );
 }
 
+#if openPMD_HAVE_ADIOS2
 TEST_CASE( "variableBasedSeries", "[serial][adios2]" )
 {
     variableBasedSeries( "../samples/variableBasedSeries.bp" );
 }
+#endif
 
 void variableBasedParticleData()
 {
@@ -4210,19 +4281,14 @@ TEST_CASE( "variableBasedParticleData", "[serial][adios2]" )
 #endif
 
 // @todo Upon switching to ADIOS2 2.7.0, test this the other way around also
-void
-iterate_nonstreaming_series(
-    std::string const & file, bool variableBasedLayout )
+void iterate_nonstreaming_series(
+    std::string const & file, bool variableBasedLayout, std::string jsonConfig )
 {
     constexpr size_t extent = 100;
     {
-        Series writeSeries( file, Access::CREATE );
+        Series writeSeries( file, Access::CREATE, jsonConfig );
         if( variableBasedLayout )
         {
-            if( writeSeries.backend() != "ADIOS2" )
-            {
-                return;
-            }
             writeSeries.setIterationEncoding(
                 IterationEncoding::variableBased );
         }
@@ -4296,7 +4362,10 @@ iterate_nonstreaming_series(
         }
     }
 
-    Series readSeries( file, Access::READ_ONLY, "{\"defer_iteration_parsing\": true}" );
+    Series readSeries(
+        file,
+        Access::READ_ONLY,
+        json::merge( jsonConfig, R"({"defer_iteration_parsing": true})" ) );
 
     size_t last_iteration_index = 0;
     // conventionally written Series must be readable with streaming-aware API!
@@ -4332,19 +4401,28 @@ iterate_nonstreaming_series(
 
 TEST_CASE( "iterate_nonstreaming_series", "[serial][adios2]" )
 {
-    for( auto const & t : testedFileExtensions() )
+    for( auto const & backend : testedBackends() )
     {
         iterate_nonstreaming_series(
-            "../samples/iterate_nonstreaming_series_filebased_%T." + t, false );
+            "../samples/iterate_nonstreaming_series_filebased_%T." +
+                backend.extension,
+            false,
+            backend.jsonBaseConfig() );
         iterate_nonstreaming_series(
-            "../samples/iterate_nonstreaming_series_groupbased." + t, false );
-        iterate_nonstreaming_series(
-            "../samples/iterate_nonstreaming_series_variablebased." + t, true );
+            "../samples/iterate_nonstreaming_series_groupbased." +
+                backend.extension,
+            false,
+            backend.jsonBaseConfig() );
     }
+#if openPMD_HAVE_ADIOS2
+    iterate_nonstreaming_series(
+        "../samples/iterate_nonstreaming_series_variablebased.bp",
+        true,
+        R"({"backend": "adios2"})" );
+#endif
 }
 
-void
-extendDataset( std::string const & ext )
+void extendDataset( std::string const & ext, std::string const & jsonConfig )
 {
     std::string filename = "../samples/extendDataset." + ext;
     std::vector< int > data1( 25 );
@@ -4352,16 +4430,14 @@ extendDataset( std::string const & ext )
     std::iota( data1.begin(), data1.end(), 0 );
     std::iota( data2.begin(), data2.end(), 25 );
     {
-        Series write( filename, Access::CREATE );
-        if( ext == "bp" && write.backend() != "ADIOS2" )
-        {
-            // dataset resizing unsupported in ADIOS1
-            return;
-        }
+        Series write( filename, Access::CREATE, jsonConfig );
         // only one iteration written anyway
         write.setIterationEncoding( IterationEncoding::variableBased );
 
-        Dataset ds1{ Datatype::INT, { 5, 5 }, "{ \"resizable\": true }" };
+        Dataset ds1{
+            Datatype::INT,
+            { 5, 5 },
+            R"({ "resizable": true, "resizeble": "typo" })" };
         Dataset ds2{ Datatype::INT, { 10, 5 } };
 
         // array record component -> array record component
@@ -4443,7 +4519,7 @@ extendDataset( std::string const & ext )
     }
 
     {
-        Series read( filename, Access::READ_ONLY );
+        Series read( filename, Access::READ_ONLY, jsonConfig );
         auto E_x = read.iterations[ 0 ].meshes[ "E" ][ "x" ];
         REQUIRE( E_x.getExtent() == Extent{ 10, 5 } );
         auto chunk = E_x.loadChunk< int >( { 0, 0 }, { 10, 5 } );
@@ -4473,20 +4549,19 @@ extendDataset( std::string const & ext )
 
 TEST_CASE( "extend_dataset", "[serial]" )
 {
-    extendDataset( "json" );
+    extendDataset( "json", R"({"backend": "json"})" );
 #if openPMD_HAVE_ADIOS2
-    extendDataset( "bp" );
+    extendDataset( "bp", R"({"backend": "adios2"})" );
 #endif
 #if openPMD_HAVE_HDF5
     // extensible datasets require chunking
     // skip this test for if chunking is disabled
     if( auxiliary::getEnvString( "OPENPMD_HDF5_CHUNKS", "auto" ) != "none" )
     {
-        extendDataset("h5");
+        extendDataset( "h5", R"({"backend": "hdf5"})" );
     }
 #endif
 }
-
 
 void deferred_parsing( std::string const & extension )
 {

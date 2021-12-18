@@ -138,7 +138,6 @@ class Container : public Attributable
     friend class ParticlePatches;
     friend class internal::SeriesData;
     friend class Series;
-    friend class Series;
     template< typename > friend class internal::EraseStaleEntries;
 
 protected:

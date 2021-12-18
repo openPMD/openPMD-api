@@ -24,7 +24,7 @@
 #if openPMD_HAVE_HDF5
 #   include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 
-#   include "openPMD/auxiliary/JSON.hpp"
+#   include "openPMD/auxiliary/JSON_internal.hpp"
 #   include "openPMD/auxiliary/Option.hpp"
 
 #   include <hdf5.h>
@@ -39,7 +39,7 @@ namespace openPMD
     class HDF5IOHandlerImpl : public AbstractIOHandlerImpl
     {
     public:
-        HDF5IOHandlerImpl(AbstractIOHandler*, nlohmann::json config);
+        HDF5IOHandlerImpl(AbstractIOHandler*, json::TracingJSON config);
         ~HDF5IOHandlerImpl() override;
 
         void createFile(Writable*, Parameter< Operation::CREATE_FILE > const&) override;
@@ -81,7 +81,7 @@ namespace openPMD
         hid_t m_H5T_CLONG_DOUBLE;
 
     private:
-        auxiliary::TracingJSON m_config;
+        json::TracingJSON m_config;
         std::string m_chunks = "auto";
         struct File
         {

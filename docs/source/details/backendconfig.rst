@@ -14,7 +14,18 @@ The fundamental structure of this JSON configuration string is given as follows:
 
 This structure allows keeping one configuration string for several backends at once, with the concrete backend configuration being chosen upon choosing the backend itself.
 
-The configuration is read in a case-sensitive manner.
+Options that can be configured via JSON are often also accessible via other means, e.g. environment variables.
+The following list specifies the priority of these means, beginning with the lowest priority:
+
+1. Default values
+2. Automatically detected options, e.g. the backend being detected by inspection of the file extension
+3. Environment variables
+4. JSON configuration. For JSON, a dataset-specific configuration overwrites a global, Series-wide configuration.
+5. Explicit API calls such as ``setIterationEncoding()``
+
+The configuration is read in a case-insensitive manner, keys as well as values.
+An exception to this are string values which are forwarded to other libraries such as ADIOS1 and ADIOS2.
+Those are read "as-is" and interpreted by the backend library.
 Generally, keys of the configuration are *lower case*.
 Parameters that are directly passed through to an external library and not interpreted within openPMD API (e.g. ``adios2.engine.parameters``) are unaffected by this and follow the respective library's conventions.
 
@@ -35,6 +46,11 @@ For a consistent user interface, backends shall follow the following rules:
 
 Backend-independent JSON configuration
 --------------------------------------
+
+The openPMD backend can be chosen via the JSON key ``backend`` which recognizes the alternatives ``["hdf5", "adios1", "adios2", "json"]``.
+
+The iteration encoding can be chosen via the JSON key ``iteration_encoding`` which recognizes the alternatives ``["file_based", "group_based", "variable_based"]``.
+Note that for file-based iteration encoding, specification of the expansion pattern in the file name (e.g. ``data_%T.json``) remains mandatory.
 
 The key ``defer_iteration_parsing`` can be used to optimize the process of opening an openPMD Series (deferred/lazy parsing).
 By default, a Series is parsed eagerly, i.e. opening a Series implies reading all available iterations.
@@ -99,6 +115,17 @@ Explanation of the single keys:
   The default is ``"auto"`` for a heuristic.
   ``"none"`` can be used to disable chunking.
   Chunking generally improves performance and only needs to be disabled in corner-cases, e.g. when heavily relying on independent, parallel I/O that non-collectively declares data records.
+
+ADIOS1
+^^^^^^
+
+ADIOS1 allows configuring custom dataset transforms via JSON:
+
+.. literalinclude:: adios1.json
+   :language: json
+
+This configuration can be passed globally (i.e. for the ``Series`` object) to apply for all datasets.
+Alternatively, it can also be passed for single ``Dataset`` objects to only apply for single datasets.
 
 
 Other backends

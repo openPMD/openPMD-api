@@ -92,8 +92,27 @@ main()
         // this describes the datatype and shape of data as it should be written to disk
         io::Datatype dtype = io::determineDatatype(partial_mesh);
         auto d = io::Dataset(dtype, io::Extent{2, 5});
-        d.setCompression("zlib", 9);
-        d.setCustomTransform("blosc:compressor=zlib,shuffle=bit,lvl=1;nometa");
+        std::string datasetConfig = R"END(
+{
+  "adios1": {
+    "dataset": {
+      "transform": "blosc:compressor=zlib,shuffle=bit,lvl=1;nometa"
+    }
+  },
+  "adios2": {
+    "dataset": {
+      "operators": [
+        {
+          "type": "zlib",
+          "parameters": {
+            "clevel": 9
+          }
+        }
+      ]
+    }
+  }
+})END";
+        d.options = datasetConfig;
         mesh["x"].resetDataset(d);
 
         io::ParticleSpecies electrons = cur_it.particles["electrons"];

@@ -21,12 +21,12 @@
 #pragma once
 
 #include <algorithm>
+#include <cassert>
+#include <cctype> // std::tolower
 #include <iterator>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <cassert>
-
 
 namespace openPMD
 {
@@ -261,5 +261,13 @@ removeSlashes( std::string s )
     return s;
 }
 
+template< typename S >
+S && lowerCase( S && s )
+{
+    std::transform( s.begin(), s.end(), s.begin(), []( unsigned char c ) {
+        return std::tolower( c );
+    } );
+    return std::forward< S >( s );
+}
 } // auxiliary
 } // openPMD

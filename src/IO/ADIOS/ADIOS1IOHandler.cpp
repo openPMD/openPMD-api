@@ -43,9 +43,11 @@ namespace openPMD
 #       define VERIFY(CONDITION, TEXT) do{ (void)sizeof(CONDITION); } while( 0 )
 #   endif
 
-ADIOS1IOHandlerImpl::ADIOS1IOHandlerImpl(AbstractIOHandler* handler)
+ADIOS1IOHandlerImpl::ADIOS1IOHandlerImpl(AbstractIOHandler* handler, json::TracingJSON json)
         : Base_t(handler)
-{ }
+{
+    initJson( std::move( json ) );
+}
 
 ADIOS1IOHandlerImpl::~ADIOS1IOHandlerImpl()
 {
@@ -220,9 +222,9 @@ ADIOS1IOHandlerImpl::init()
 #endif
 
 #if openPMD_HAVE_ADIOS1
-ADIOS1IOHandler::ADIOS1IOHandler(std::string path, Access at)
+ADIOS1IOHandler::ADIOS1IOHandler(std::string path, Access at, json::TracingJSON json)
         : AbstractIOHandler(std::move(path), at),
-          m_impl{new ADIOS1IOHandlerImpl(this)}
+          m_impl{new ADIOS1IOHandlerImpl(this, std::move(json))}
 {
     m_impl->init();
 }
@@ -317,7 +319,7 @@ ADIOS1IOHandlerImpl::initialize_group(std::string const &name)
 }
 
 #else
-ADIOS1IOHandler::ADIOS1IOHandler(std::string path, Access at)
+ADIOS1IOHandler::ADIOS1IOHandler(std::string path, Access at, json::TracingJSON)
         : AbstractIOHandler(std::move(path), at)
 {
     throw std::runtime_error("openPMD-api built without ADIOS1 support");

@@ -139,7 +139,6 @@ class Attributable
     friend struct traits::GenerationPolicy;
     friend class Iteration;
     friend class Series;
-    friend class Series;
     friend class Writable;
     friend class WriteIterations;
 

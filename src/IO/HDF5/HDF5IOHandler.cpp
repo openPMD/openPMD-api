@@ -24,6 +24,7 @@
 
 #if openPMD_HAVE_HDF5
 #   include "openPMD/Datatype.hpp"
+#   include "openPMD/Error.hpp"
 #   include "openPMD/auxiliary/Filesystem.hpp"
 #   include "openPMD/auxiliary/StringManip.hpp"
 #   include "openPMD/backend/Attribute.hpp"
@@ -53,7 +54,7 @@ namespace openPMD
 #   endif
 
 HDF5IOHandlerImpl::HDF5IOHandlerImpl(
-    AbstractIOHandler* handler, nlohmann::json config)
+    AbstractIOHandler* handler, json::TracingJSON config)
         : AbstractIOHandlerImpl(handler),
           m_datasetTransferProperty{H5P_DEFAULT},
           m_fileAccessProperty{H5P_DEFAULT},
@@ -87,9 +88,9 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
 
     m_chunks = auxiliary::getEnvString( "OPENPMD_HDF5_CHUNKS", "auto" );
     // JSON option can overwrite env option:
-    if( config.contains( "hdf5" ) )
+    if( config.json().contains( "hdf5" ) )
     {
-        m_config = std::move( config[ "hdf5" ] );
+        m_config = config[ "hdf5" ];
 
         // check for global dataset configs
         if( m_config.json().contains( "dataset" ) )
@@ -97,7 +98,18 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
             auto datasetConfig = m_config[ "dataset" ];
             if( datasetConfig.json().contains( "chunks" ) )
             {
-                m_chunks = datasetConfig[ "chunks" ].json().get< std::string >();
+                auto maybeChunks = json::asLowerCaseStringDynamic(
+                    datasetConfig[ "chunks" ].json() );
+                if( maybeChunks.has_value() )
+                {
+                    m_chunks = std::move( maybeChunks.get() );
+                }
+                else
+                {
+                    throw error::BackendConfigSchema(
+                        {"hdf5", "dataset", "chunks"},
+                        "Must be convertible to string type." );
+                }
             }
         }
         if( m_chunks != "auto" && m_chunks != "none" )
@@ -294,34 +306,33 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         if( auxiliary::ends_with(name, '/') )
             name = auxiliary::replace_last(name, "/", "");
 
-        auto config = nlohmann::json::parse( parameters.options );
+        json::TracingJSON config = json::parseOptions(
+            parameters.options, /* considerFiles = */ false );
 
         // general
         bool is_resizable_dataset = false;
-        if( config.contains( "resizable" ) )
+        if( config.json().contains( "resizable" ) )
         {
-            is_resizable_dataset = config.at( "resizable" ).get< bool >();
+            is_resizable_dataset = config[ "resizable" ].json().get< bool >();
         }
 
         // HDF5 specific
-        if( config.contains( "hdf5" ) &&
-            config[ "hdf5" ].contains( "dataset" ) )
+        if( config.json().contains( "hdf5" ) &&
+            config[ "hdf5" ].json().contains( "dataset" ) )
         {
-            auxiliary::TracingJSON datasetConfig{
+            json::TracingJSON datasetConfig{
                 config[ "hdf5" ][ "dataset" ] };
 
             /*
              * @todo Read more options from config here.
              */
-            auto shadow = datasetConfig.invertShadow();
-            if( shadow.size() > 0 )
-            {
-                std::cerr << "Warning: parts of the JSON configuration for "
-                             "HDF5 dataset '"
-                          << name << "' remain unused:\n"
-                          << shadow << std::endl;
-            }
+            ( void )datasetConfig;
         }
+        parameters.warnUnusedParameters(
+            config,
+            "hdf5",
+            "Warning: parts of the JSON configuration for HDF5 dataset '" +
+                name + "' remain unused:\n" );
 
         hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
 #if H5_VERSION_GE(1,10,0) && openPMD_HAVE_MPI
@@ -385,7 +396,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
             VERIFY(status == 0, "[HDF5] Internal error: Failed to set chunk size during dataset creation");
         }
 
-        std::string const& compression = parameters.compression;
+        std::string const& compression = ""; // @todo read from JSON
         if( !compression.empty() )
           std::cerr << "[HDF5] Compression not yet implemented in HDF5 backend."
                     << std::endl;
@@ -408,11 +419,6 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
                           << std::endl;
         }
          */
-
-        std::string const& transform = parameters.transform;
-        if( !transform.empty() )
-            std::cerr << "[HDF5] Custom transform not yet implemented in HDF5 backend."
-                      << std::endl;
 
         GetH5DataType getH5DataType({
             { typeid(bool).name(), m_H5T_BOOL_ENUM },
@@ -2018,7 +2024,7 @@ HDF5IOHandlerImpl::getFile( Writable * writable )
 #endif
 
 #if openPMD_HAVE_HDF5
-HDF5IOHandler::HDF5IOHandler(std::string path, Access at, nlohmann::json config)
+HDF5IOHandler::HDF5IOHandler(std::string path, Access at, json::TracingJSON config)
         : AbstractIOHandler(std::move(path), at),
           m_impl{new HDF5IOHandlerImpl(this, std::move(config))}
 { }
@@ -2031,7 +2037,7 @@ HDF5IOHandler::flush()
     return m_impl->flush();
 }
 #else
-HDF5IOHandler::HDF5IOHandler(std::string path, Access at, nlohmann::json /* config */)
+HDF5IOHandler::HDF5IOHandler(std::string path, Access at, json::TracingJSON /* config */)
         : AbstractIOHandler(std::move(path), at)
 {
     throw std::runtime_error("openPMD-api built without HDF5 support");

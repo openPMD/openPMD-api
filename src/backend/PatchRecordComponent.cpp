@@ -102,9 +102,6 @@ PatchRecordComponent::flush(std::string const& name)
             dCreate.name = name;
             dCreate.extent = getExtent();
             dCreate.dtype = getDatatype();
-            dCreate.chunkSize = getExtent();
-            dCreate.compression = rc.m_dataset.compression;
-            dCreate.transform = rc.m_dataset.transform;
             dCreate.options = rc.m_dataset.options;
             IOHandler()->enqueue(IOTask(this, dCreate));
         }

@@ -581,6 +581,11 @@ if(openPMD_HAVE_ADIOS1)
         target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_HAVE_MPI=0)
     endif()
 
+    target_include_directories(openPMD.ADIOS1.Serial SYSTEM PRIVATE
+        $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
+    target_include_directories(openPMD.ADIOS1.Parallel SYSTEM PRIVATE
+        $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
+
     set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
         POSITION_INDEPENDENT_CODE ON
         CXX_VISIBILITY_PRESET hidden
@@ -772,6 +777,7 @@ set(openPMD_TEST_NAMES
     Auxiliary
     SerialIO
     ParallelIO
+    JSON
 )
 # command line tools
 set(openPMD_CLI_TOOL_NAMES
@@ -856,6 +862,11 @@ if(openPMD_BUILD_TESTING)
             target_link_libraries(${testname}Tests PRIVATE CatchRunner)
         else()
             target_link_libraries(${testname}Tests PRIVATE CatchMain)
+        endif()
+
+        if(${testname} STREQUAL JSON)
+            target_include_directories(${testname}Tests SYSTEM PRIVATE
+                $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
         endif()
     endforeach()
 endif()

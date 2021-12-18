@@ -5,17 +5,22 @@
 #endif
 #include "openPMD/openPMD.hpp"
 
+#include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/JSON.hpp"
+
 #include <catch2/catch.hpp>
 
 #include <algorithm>
-#include <string>
-#include <vector>
 #include <array>
 #include <complex>
 #include <cstddef>
 #include <cstdint>
-#include <sstream>
 #include <iostream>
+#include <sstream>
+// cstdlib does not have setenv
+#include <stdlib.h> // NOLINT(modernize-deprecated-headers)
+#include <string>
+#include <vector>
 
 using namespace openPMD;
 
@@ -866,6 +871,118 @@ TEST_CASE( "no_file_ending", "[core]" )
                         Catch::Equals("Unknown file format! Did you specify a file ending?"));
     REQUIRE_THROWS_WITH(Series("./new_openpmd_output_%05T", Access::CREATE),
                         Catch::Equals("Unknown file format! Did you specify a file ending?"));
+    {
+        Series(
+            "../samples/no_extension_specified",
+            Access::CREATE,
+            R"({"backend": "json"})" );
+    }
+    REQUIRE(
+        auxiliary::file_exists( "../samples/no_extension_specified.json" ) );
+}
+
+TEST_CASE( "backend_via_json", "[core]" )
+{
+    std::string encodingVariableBased =
+        R"({"backend": "json", "iteration_encoding": "variable_based"})";
+    {
+        Series series(
+            "../samples/optionsViaJson",
+            Access::CREATE,
+            encodingVariableBased );
+        REQUIRE( series.backend() == "JSON" );
+        REQUIRE(
+            series.iterationEncoding() == IterationEncoding::variableBased );
+    }
+#if openPMD_HAVE_ADIOS2
+    {
+        /*
+         * JSON backend should be chosen even if ending .bp is given
+         * {"backend": "json"} overwrites automatic detection
+         */
+        Series series(
+            "../samples/optionsViaJson.bp",
+            Access::CREATE,
+            encodingVariableBased );
+        REQUIRE( series.backend() == "JSON" );
+        REQUIRE(
+            series.iterationEncoding() == IterationEncoding::variableBased );
+    }
+
+    {
+        /*
+         * BP4 engine should be selected even if ending .sst is given
+         */
+        Series series(
+            "../samples/optionsViaJsonOverwritesAutomaticDetection.sst",
+            Access::CREATE,
+            R"({"adios2": {"engine": {"type": "bp4"}}})" );
+    }
+    REQUIRE( auxiliary::directory_exists(
+        "../samples/optionsViaJsonOverwritesAutomaticDetection.bp" ) );
+
+#if openPMD_HAVE_ADIOS1
+    setenv( "OPENPMD_BP_BACKEND", "ADIOS1", 1 );
+    {
+        /*
+         * ADIOS2 backend should be selected even if OPENPMD_BP_BACKEND is set
+         * as ADIOS1
+         * JSON config overwrites environment variables
+         */
+        Series series(
+            "../samples/optionsPreferJsonOverEnvVar.bp",
+            Access::CREATE,
+            R"({"backend": "ADIOS2"})" );
+        REQUIRE( series.backend() == "ADIOS2" );
+    }
+    // unset again
+    unsetenv( "OPENPMD_BP_BACKEND" );
+    REQUIRE( auxiliary::directory_exists(
+        "../samples/optionsPreferJsonOverEnvVar.bp" ) );
+#endif
+#endif
+    std::string encodingFileBased =
+        R"({"backend": "json", "iteration_encoding": "file_based"})";
+    {
+        /*
+         * File-based iteration encoding can only be chosen if an expansion
+         * pattern is detected in the filename.
+         */
+        REQUIRE_THROWS_AS(
+            [ & ]() {
+                Series series(
+                    "../samples/optionsViaJson",
+                    Access::CREATE,
+                    encodingFileBased );
+            }(),
+            error::WrongAPIUsage );
+    }
+    {
+        /*
+         * ... but specifying both the pattern and the option in JSON should work.
+         */
+        Series series(
+            "../samples/optionsViaJson%06T",
+            Access::CREATE,
+            encodingFileBased );
+        series.iterations[1456];
+    }
+    std::string encodingGroupBased =
+        R"({"backend": "json", "iteration_encoding": "group_based"})";
+    {
+        /*
+         * ... and if a pattern is detected, but the JSON config says to use
+         * an iteration encoding that is not file-based, the pattern should
+         * be ignored.
+         */
+        Series series(
+            "../samples/optionsViaJsonPseudoFilebased%T.json",
+            Access::CREATE,
+            encodingGroupBased );
+        REQUIRE( series.iterationEncoding() == IterationEncoding::groupBased );
+    }
+    REQUIRE( auxiliary::file_exists(
+        "../samples/optionsViaJsonPseudoFilebased%T.json" ) );
 }
 
 TEST_CASE( "custom_geometries", "[core]" )

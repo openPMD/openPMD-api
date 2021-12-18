@@ -22,6 +22,7 @@
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 
 #include "openPMD/Datatype.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
@@ -67,7 +68,7 @@ namespace openPMD
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     AbstractIOHandler * handler,
     MPI_Comm communicator,
-    nlohmann::json cfg,
+    json::TracingJSON cfg,
     std::string engineType )
     : AbstractIOHandlerImplCommon( handler )
     , m_ADIOS{ communicator, ADIOS2_DEBUG_MODE }
@@ -80,7 +81,7 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
 
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     AbstractIOHandler * handler,
-    nlohmann::json cfg,
+    json::TracingJSON cfg,
     std::string engineType )
     : AbstractIOHandlerImplCommon( handler )
     , m_ADIOS{ ADIOS2_DEBUG_MODE }
@@ -120,11 +121,11 @@ ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
 }
 
 void
-ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
+ADIOS2IOHandlerImpl::init( json::TracingJSON cfg )
 {
-    if( cfg.contains( "adios2" ) )
+    if( cfg.json().contains( "adios2" ) )
     {
-        m_config = std::move( cfg[ "adios2" ] );
+        m_config = cfg[ "adios2" ];
 
         if( m_config.json().contains( "schema" ) )
         {
@@ -140,12 +141,18 @@ ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
             if( !engineTypeConfig.is_null() )
             {
                 // convert to string
-                m_engineType = engineTypeConfig;
-                std::transform(
-                    m_engineType.begin(),
-                    m_engineType.end(),
-                    m_engineType.begin(),
-                    []( unsigned char c ) { return std::tolower( c ); } );
+                auto maybeEngine =
+                    json::asLowerCaseStringDynamic( engineTypeConfig );
+                if( maybeEngine.has_value() )
+                {
+                    m_engineType = std::move( maybeEngine.get() );
+                }
+                else
+                {
+                    throw error::BackendConfigSchema(
+                        {"adios2", "engine", "type"},
+                        "Must be convertible to string type." );
+                }
             }
         }
         auto operators = getOperators();
@@ -159,7 +166,7 @@ ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
 }
 
 auxiliary::Option< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > >
-ADIOS2IOHandlerImpl::getOperators( auxiliary::TracingJSON cfg )
+ADIOS2IOHandlerImpl::getOperators( json::TracingJSON cfg )
 {
     using ret_t = auxiliary::Option< std::vector< ParameterizedOperator > >;
     std::vector< ParameterizedOperator > res;
@@ -188,8 +195,22 @@ ADIOS2IOHandlerImpl::getOperators( auxiliary::TracingJSON cfg )
                  paramIterator != params.end();
                  ++paramIterator )
             {
-                adiosParams[ paramIterator.key() ] =
-                    paramIterator.value().get< std::string >();
+                auto maybeString =
+                    json::asStringDynamic( paramIterator.value() );
+                if( maybeString.has_value() )
+                {
+                    adiosParams[ paramIterator.key() ] =
+                        std::move( maybeString.get() );
+                }
+                else
+                {
+                    throw error::BackendConfigSchema(
+                        { "adios2",
+                          "dataset",
+                          "operators",
+                          paramIterator.key() },
+                        "Must be convertible to string type." );
+                }
             }
         }
         auxiliary::Option< adios2::Operator > adiosOperator =
@@ -352,39 +373,25 @@ void ADIOS2IOHandlerImpl::createDataset(
         auto const varName = nameOfVariable( writable );
 
         std::vector< ParameterizedOperator > operators;
-        nlohmann::json options = nlohmann::json::parse( parameters.options );
-        if( options.contains( "adios2" ) )
+        json::TracingJSON options = json::parseOptions(
+            parameters.options, /* considerFiles = */ false );
+        if( options.json().contains( "adios2" ) )
         {
-            auxiliary::TracingJSON datasetConfig( options[ "adios2" ] );
+            json::TracingJSON datasetConfig( options[ "adios2" ] );
             auto datasetOperators = getOperators( datasetConfig );
 
             operators = datasetOperators ? std::move( datasetOperators.get() )
                                          : defaultOperators;
-
-            auto shadow = datasetConfig.invertShadow();
-            if( shadow.size() > 0 )
-            {
-                std::cerr << "Warning: parts of the JSON configuration for "
-                             "ADIOS2 dataset '"
-                          << varName << "' remain unused:\n"
-                          << shadow << std::endl;
-            }
         }
         else
         {
             operators = defaultOperators;
         }
-
-        if( !parameters.compression.empty() )
-        {
-            auxiliary::Option< adios2::Operator > adiosOperator =
-                getCompressionOperator( parameters.compression );
-            if( adiosOperator )
-            {
-                operators.push_back( ParameterizedOperator{
-                    adiosOperator.get(), adios2::Params() } );
-            }
-        }
+        parameters.warnUnusedParameters(
+            options,
+            "adios2",
+            "Warning: parts of the JSON configuration for ADIOS2 dataset '" +
+                varName + "' remain unused:\n" );
 
         // cast from openPMD::Extent to adios2::Dims
         adios2::Dims const shape( parameters.extent.begin(), parameters.extent.end() );
@@ -1080,7 +1087,7 @@ ADIOS2IOHandlerImpl::adios2AccessMode( std::string const & fullPath )
     }
 }
 
-auxiliary::TracingJSON ADIOS2IOHandlerImpl::nullvalue = nlohmann::json();
+json::TracingJSON ADIOS2IOHandlerImpl::nullvalue = nlohmann::json();
 
 std::string
 ADIOS2IOHandlerImpl::filePositionToString(
@@ -2325,8 +2332,20 @@ namespace detail
                 for( auto it = params.json().begin(); it != params.json().end();
                      it++ )
                 {
-                    m_IO.SetParameter( it.key(), it.value() );
-                    alreadyConfigured.emplace( it.key() );
+                    auto maybeString = json::asStringDynamic( it.value() );
+                    if( maybeString.has_value() )
+                    {
+                        m_IO.SetParameter(
+                            it.key(), std::move( maybeString.get() ) );
+                    }
+                    else
+                    {
+                        throw error::BackendConfigSchema(
+                            {"adios2", "engine", "parameters", it.key() },
+                            "Must be convertible to string type." );
+                    }
+                    alreadyConfigured.emplace(
+                        auxiliary::lowerCase( std::string( it.key() ) ) );
                 }
             }
             auto _useAdiosSteps =
@@ -2353,8 +2372,9 @@ namespace detail
                       << shadow << std::endl;
         }
         auto notYetConfigured =
-            [&alreadyConfigured]( std::string const & param ) {
-                auto it = alreadyConfigured.find( param );
+            [ &alreadyConfigured ]( std::string const & param ) {
+                auto it = alreadyConfigured.find(
+                    auxiliary::lowerCase( std::string( param ) ) );
                 return it == alreadyConfigured.end();
             };
 
@@ -2914,7 +2934,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     openPMD::Access at,
     MPI_Comm comm,
-    nlohmann::json options,
+    json::TracingJSON options,
     std::string engineType )
     : AbstractIOHandler( std::move( path ), at, comm )
     , m_impl{ this, comm, std::move( options ), std::move( engineType ) }
@@ -2926,7 +2946,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     Access at,
-    nlohmann::json options,
+    json::TracingJSON options,
     std::string engineType )
     : AbstractIOHandler( std::move( path ), at )
     , m_impl{ this, std::move( options ), std::move( engineType ) }
@@ -2946,7 +2966,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     Access at,
     MPI_Comm comm,
-    nlohmann::json,
+    json::TracingJSON,
     std::string )
     : AbstractIOHandler( std::move( path ), at, comm )
 {
@@ -2957,7 +2977,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     Access at,
-    nlohmann::json,
+    json::TracingJSON,
     std::string )
     : AbstractIOHandler( std::move( path ), at )
 {

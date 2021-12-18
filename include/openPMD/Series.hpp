@@ -456,6 +456,17 @@ OPENPMD_private:
         }    }
 
     std::unique_ptr< ParsedInput > parseInput(std::string);
+    /**
+     * @brief Parse non-backend-specific configuration in JSON config.
+     *
+     * Currently this parses the keys defer_iteration_parsing, backend and
+     * iteration_encoding.
+     *
+     * @tparam TracingJSON template parameter so we don't have
+     *         to include the JSON lib here
+     */
+    template< typename TracingJSON >
+    void parseJsonOptions( TracingJSON & options, ParsedInput & );
     bool hasExpansionPattern( std::string filenameWithExtension );
     bool reparseExpansionPattern( std::string filenameWithExtension );
     void init(std::shared_ptr< AbstractIOHandler >, std::unique_ptr< ParsedInput >);

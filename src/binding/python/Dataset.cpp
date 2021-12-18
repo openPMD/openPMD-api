@@ -61,12 +61,6 @@ void init_Dataset(py::module &m) {
 
         .def_readonly("extent", &Dataset::extent)
         .def("extend", &Dataset::extend)
-        .def_readonly("chunk_size", &Dataset::chunkSize)
-        .def("set_chunk_size", &Dataset::setChunkSize)
-        .def_readonly("compression", &Dataset::compression)
-        .def("set_compression", &Dataset::setCompression)
-        .def_readonly("transform", &Dataset::transform)
-        .def("set_custom_transform", &Dataset::setCustomTransform)
         .def_readonly("rank", &Dataset::rank)
         .def_property_readonly("dtype", [](const Dataset &d) {
             return dtype_to_numpy( d.dtype );
