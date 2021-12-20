@@ -18,8 +18,15 @@ function install_buildessentials {
         rm -rf /usr/local/Cellar/hdf5
     fi
 
-    # static libc, tar tool
-    if [ "$(uname -s)" = "Linux" ]
+    # musllinux: Alpine Linux
+    #   pip, tar tool, cmath
+    APK_FOUND=$(which apk >/dev/null && { echo 0; } || { echo 1; })
+    if [ $APK_FOUND -eq 0 ]; then
+        apk add py3-pip tar
+
+    # manylinux: RHEL/Centos based
+    #   static libc, tar tool, CMake dependencies
+    elif [ "$(uname -s)" = "Linux" ]
     then
         yum check-update -y || true
         yum -y install    \
@@ -43,20 +50,17 @@ function install_buildessentials {
           cd ..
           rm cmake-*.tar.gz
         fi
-    fi
 
-    # avoid picking up a static libpthread in adios1 or blosc
-    # (also: those libs lack -fPIC)
-    if [ "$(uname -s)" = "Linux" ]
-    then
+        # manylinux: avoid picking up a static libpthread in adios1 or blosc
+        # (also: those libs lack -fPIC)
         rm -f /usr/lib/libpthread.a   /usr/lib/libm.a   /usr/lib/librt.a
         rm -f /usr/lib64/libpthread.a /usr/lib64/libm.a /usr/lib64/librt.a
     fi
 
-    python -m pip install -U pip setuptools wheel
-    python -m pip install -U scikit-build
-    python -m pip install -U cmake
-    python -m pip install -U "patch==1.*"
+    python3 -m pip install -U pip setuptools wheel
+    python3 -m pip install -U scikit-build
+    python3 -m pip install -U cmake
+    python3 -m pip install -U "patch==1.*"
 
     touch buildessentials-stamp
 }
@@ -90,11 +94,11 @@ function build_adios2 {
     # Patch PThread Propagation
     curl -sLo adios-pthread.patch \
         https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/2768.patch
-    python -m patch -p 1 -d ADIOS2-2.7.1 adios-pthread.patch
+    python3 -m patch -p 1 -d ADIOS2-2.7.1 adios-pthread.patch
 
     mkdir build-ADIOS2
     cd build-ADIOS2
-    PY_BIN=$(which python)
+    PY_BIN=$(which python3)
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
     if [ "$(uname -s)" = "Linux" ]
     then
@@ -141,11 +145,11 @@ function build_blosc {
     # Patch PThread Propagation
     curl -sLo blosc-pthread.patch \
         https://patch-diff.githubusercontent.com/raw/Blosc/c-blosc/pull/318.patch
-    python -m patch -p 1 -d c-blosc-1.21.0 blosc-pthread.patch
+    python3 -m patch -p 1 -d c-blosc-1.21.0 blosc-pthread.patch
 
     mkdir build-c-blosc
     cd build-c-blosc
-    PY_BIN=$(which python)
+    PY_BIN=$(which python3)
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
     PATH=${CMAKE_BIN}:${PATH} cmake          \
       -DDEACTIVATE_SNAPPY=ON                 \
@@ -170,11 +174,17 @@ function build_zfp {
     file zfp*.tar.gz
     tar -xzf zfp*.tar.gz
     rm zfp*.tar.gz
+
     mkdir build-zfp
     cd build-zfp
-    PY_BIN=$(which python)
+    PY_BIN=$(which python3)
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
-    PATH=${CMAKE_BIN}:${PATH} cmake -DBUILD_SHARED_LIBS=OFF -DZFP_WITH_OPENMP=OFF -DBUILD_TESTING=OFF -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} ../zfp-*
+    PATH=${CMAKE_BIN}:${PATH} cmake          \
+      -DBUILD_SHARED_LIBS=OFF                \
+      -DZFP_WITH_OPENMP=OFF                  \
+      -DBUILD_TESTING=OFF                    \
+      -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX} \
+      ../zfp-*
     make -j${CPU_COUNT}
     make install
     cd -
