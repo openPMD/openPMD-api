@@ -236,6 +236,15 @@ private:
     std::string m_engineType;
     ADIOS2Schema::schema_t m_schema = ADIOS2Schema::schema_0000_00_00;
 
+    enum class UseSpan : char
+    {
+        Yes,
+        No,
+        Auto
+    };
+
+    UseSpan m_useSpanBasedPutByDefault = UseSpan::Auto;
+
     enum class AttributeLayout : char
     {
         ByAdiosAttributes,
