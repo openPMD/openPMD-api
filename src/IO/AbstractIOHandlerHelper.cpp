@@ -27,19 +27,19 @@
 #include "openPMD/IO/HDF5/HDF5IOHandler.hpp"
 #include "openPMD/IO/HDF5/ParallelHDF5IOHandler.hpp"
 #include "openPMD/IO/JSON/JSONIOHandler.hpp"
-#include "openPMD/auxiliary/JSON.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
 
 namespace openPMD
 {
 #if openPMD_HAVE_MPI
     template<>
     std::shared_ptr< AbstractIOHandler >
-    createIOHandler< nlohmann::json >(
+    createIOHandler< json::TracingJSON >(
         std::string path,
         Access access,
         Format format,
         MPI_Comm comm,
-        nlohmann::json options )
+        json::TracingJSON options )
     {
         (void) options;
         switch( format )
@@ -49,7 +49,8 @@ namespace openPMD
                     path, access, comm, std::move( options ) );
             case Format::ADIOS1:
 #   if openPMD_HAVE_ADIOS1
-                return std::make_shared< ParallelADIOS1IOHandler >( path, access, comm );
+                return std::make_shared< ParallelADIOS1IOHandler >(
+                    path, access, std::move( options ), comm );
 #   else
                 throw std::runtime_error("openPMD-api built without ADIOS1 support");
 #   endif
@@ -71,11 +72,11 @@ namespace openPMD
 
     template<>
     std::shared_ptr< AbstractIOHandler >
-    createIOHandler< nlohmann::json >(
+    createIOHandler< json::TracingJSON >(
         std::string path,
         Access access,
         Format format,
-        nlohmann::json options )
+        json::TracingJSON options )
     {
         (void) options;
         switch( format )
@@ -85,7 +86,8 @@ namespace openPMD
                     path, access, std::move( options ) );
             case Format::ADIOS1:
 #if openPMD_HAVE_ADIOS1
-                return std::make_shared< ADIOS1IOHandler >( path, access );
+                return std::make_shared< ADIOS1IOHandler >(
+                    path, access, std::move( options ) );
 #else
                 throw std::runtime_error("openPMD-api built without ADIOS1 support");
 #endif
@@ -112,6 +114,9 @@ namespace openPMD
     createIOHandler( std::string path, Access access, Format format )
     {
         return createIOHandler(
-            std::move( path ), access, format, nlohmann::json::object() );
+            std::move( path ),
+            access,
+            format,
+            json::TracingJSON( nlohmann::json::object() ));
     }
 } // namespace openPMD

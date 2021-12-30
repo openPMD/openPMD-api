@@ -3,6 +3,17 @@
 Upgrade Guide
 =============
 
+0.15.0
+------
+
+Python 3.10 is now supported.
+openPMD-api now depends on `toml11 <https://github.com/ToruNiina/toml11>`__ 3.7.0+.
+
+The following backend-specific members of the ``Dataset`` class have been removed: ``Dataset::setChunkSize()``, ``Dataset::setCompression()``, ``Dataset::setCustomTransform()``, ``Dataset::chunkSize``, ``Dataset::compression``, ``Dataset::transform``.
+They are replaced by backend-specific options in the JSON-based backend configuration.
+This can be passed in ``Dataset::options``.
+
+
 0.14.0
 ------
 

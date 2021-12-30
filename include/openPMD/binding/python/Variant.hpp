@@ -47,4 +47,3 @@ namespace detail {
 } // namespace detail
 } // namespace pybind11
 #endif
-

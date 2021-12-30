@@ -5,6 +5,8 @@ Param(
 )
 
 $orgdir = $(Get-Location | Foreach-Object { $_.Path })
+
+$null = New-Item -Type Directory -Force $bdir
 cd $bdir
 
 New-item -ItemType directory -Name samples\git-sample\thetaMode\

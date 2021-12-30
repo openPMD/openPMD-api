@@ -84,6 +84,7 @@ option(openPMD_USE_INTERNAL_VARIANT  "Use internally shipped MPark.Variant" ON)
 option(openPMD_USE_INTERNAL_CATCH    "Use internally shipped Catch2"        ON)
 option(openPMD_USE_INTERNAL_PYBIND11 "Use internally shipped pybind11"      ON)
 option(openPMD_USE_INTERNAL_JSON     "Use internally shipped nlohmann-json" ON)
+option(openPMD_USE_INTERNAL_TOML11   "Use internally shipped toml11"        ON)
 
 option(openPMD_USE_INVASIVE_TESTS "Enable unit tests that modify source code" OFF)
 option(openPMD_USE_VERIFY "Enable internal VERIFY (assert) macro independent of build type" ON)
@@ -200,6 +201,18 @@ endif()
 add_library(openPMD::thirdparty::nlohmann_json INTERFACE IMPORTED)
 target_link_libraries(openPMD::thirdparty::nlohmann_json
     INTERFACE nlohmann_json::nlohmann_json)
+
+# external library: toml11
+if(openPMD_USE_INTERNAL_TOML11)
+    add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/toml11")
+    message(STATUS "toml11: Using INTERNAL version '3.7.0'")
+else()
+    find_package(toml11 3.7.0 CONFIG REQUIRED)
+    message(STATUS "toml11: Found version '${toml11_VERSION}'")
+endif()
+add_library(openPMD::thirdparty::toml11 INTERFACE IMPORTED)
+target_link_libraries(openPMD::thirdparty::toml11
+    INTERFACE toml11::toml11)
 
 
 # external library: HDF5 (optional)
@@ -494,26 +507,36 @@ target_include_directories(openPMD PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 
+# is this a C++17 compile? If yes, skip MPark.Variant
+try_compile(openPMD_HAS_CXX17
+    ${openPMD_BINARY_DIR}/try_variant
+    ${openPMD_SOURCE_DIR}/cmake/try_variant.cpp
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
+)
+message(STATUS "<variant> supported (C++17 or newer): ${openPMD_HAS_CXX17}")
+
 # C++11 std::variant (C++17 stdlib preview)
-# TODO not needed with C++17 compiler
-add_library(openPMD::thirdparty::mpark_variant INTERFACE IMPORTED)
-set(openPMD_PC_EXTRA_INCLUDE "")
-if(openPMD_USE_INTERNAL_VARIANT)
-    target_include_directories(openPMD::thirdparty::mpark_variant SYSTEM INTERFACE
-        $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include>
-    )
-    message(STATUS "MPark.Variant: Using INTERNAL version '1.4.0'")
-else()
-    find_package(mpark_variant 1.3.0 REQUIRED) # TODO: we want 1.4.1+
-    target_link_libraries(openPMD::thirdparty::mpark_variant
-        INTERFACE mpark_variant)
-    get_target_property(EXTERNAL_MPARK_INCLUDE mpark_variant INTERFACE_INCLUDE_DIRECTORIES)
-    if(openPMD_HAVE_PKGCONFIG AND EXTERNAL_MPARK_INCLUDE)
-        set(openPMD_PC_EXTRA_INCLUDE "-I${EXTERNAL_MPARK_INCLUDE}")
+if(NOT openPMD_HAS_CXX17)
+    add_library(openPMD::thirdparty::mpark_variant INTERFACE IMPORTED)
+    set(openPMD_PC_EXTRA_INCLUDE "")
+    if(openPMD_USE_INTERNAL_VARIANT)
+        target_include_directories(openPMD::thirdparty::mpark_variant SYSTEM INTERFACE
+            $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include>
+        )
+        message(STATUS "MPark.Variant: Using INTERNAL version '1.4.0'")
+    else()
+        find_package(mpark_variant 1.3.0 REQUIRED) # TODO: we want 1.4.1+
+        target_link_libraries(openPMD::thirdparty::mpark_variant
+            INTERFACE mpark_variant)
+        get_target_property(EXTERNAL_MPARK_INCLUDE mpark_variant INTERFACE_INCLUDE_DIRECTORIES)
+        if(openPMD_HAVE_PKGCONFIG AND EXTERNAL_MPARK_INCLUDE)
+            set(openPMD_PC_EXTRA_INCLUDE "-I${EXTERNAL_MPARK_INCLUDE}")
+        endif()
+        message(STATUS "MPark.Variant: Found version '${mpark_variant_VERSION}'")
     endif()
-    message(STATUS "MPark.Variant: Found version '${mpark_variant_VERSION}'")
+    target_link_libraries(openPMD PUBLIC openPMD::thirdparty::mpark_variant)
 endif()
-target_link_libraries(openPMD PUBLIC openPMD::thirdparty::mpark_variant)
 
 # Catch2 for unit tests
 if(openPMD_BUILD_TESTING)
@@ -538,7 +561,8 @@ endif()
 # JSON Backend and User-Facing Runtime Options
 #target_link_libraries(openPMD PRIVATE openPMD::thirdparty::nlohmann_json)
 target_include_directories(openPMD SYSTEM PRIVATE
-    $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
+    $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:openPMD::thirdparty::toml11,INTERFACE_INCLUDE_DIRECTORIES>)
 
 # HDF5 Backend
 if(openPMD_HAVE_HDF5)
@@ -555,8 +579,10 @@ if(openPMD_HAVE_ADIOS1)
     openpmd_cxx_required(openPMD.ADIOS1.Parallel)
     target_compile_options(openPMD.ADIOS1.Serial PUBLIC ${_msvc_options})
     target_compile_options(openPMD.ADIOS1.Parallel PUBLIC ${_msvc_options})
-    target_link_libraries(openPMD.ADIOS1.Serial PUBLIC openPMD::thirdparty::mpark_variant)
-    target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC openPMD::thirdparty::mpark_variant)
+    if(NOT openPMD_HAS_CXX17)
+        target_link_libraries(openPMD.ADIOS1.Serial PUBLIC openPMD::thirdparty::mpark_variant)
+        target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC openPMD::thirdparty::mpark_variant)
+    endif()
 
     target_include_directories(openPMD.ADIOS1.Serial PRIVATE
         ${openPMD_SOURCE_DIR}/include ${openPMD_BINARY_DIR}/include)
@@ -569,6 +595,11 @@ if(openPMD_HAVE_ADIOS1)
     else()
         target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_HAVE_MPI=0)
     endif()
+
+    target_include_directories(openPMD.ADIOS1.Serial SYSTEM PRIVATE
+        $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
+    target_include_directories(openPMD.ADIOS1.Parallel SYSTEM PRIVATE
+        $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
 
     set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
         POSITION_INDEPENDENT_CODE ON
@@ -796,6 +827,7 @@ set(openPMD_TEST_NAMES
     Auxiliary
     SerialIO
     ParallelIO
+    JSON
 )
 # command line tools
 set(openPMD_CLI_TOOL_NAMES
@@ -834,6 +866,8 @@ set(openPMD_PYTHON_EXAMPLE_NAMES
     5_write_parallel
     7_extended_write_serial
     9_particle_write_serial
+    10_streaming_write
+    10_streaming_read
     11_particle_dataframe
     12_span_write
 )
@@ -878,6 +912,11 @@ if(openPMD_BUILD_TESTING)
             target_link_libraries(${testname}Tests PRIVATE CatchRunner)
         else()
             target_link_libraries(${testname}Tests PRIVATE CatchMain)
+        endif()
+
+        if(${testname} STREQUAL JSON)
+            target_include_directories(${testname}Tests SYSTEM PRIVATE
+                $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
         endif()
     endforeach()
 endif()
@@ -1085,7 +1124,7 @@ if(openPMD_INSTALL)
     )
     # install third-party libraries
     # TODO not needed with C++17 compiler
-    if(openPMD_USE_INTERNAL_VARIANT)
+    if(NOT openPMD_HAS_CXX17 AND openPMD_USE_INTERNAL_VARIANT)
         install(DIRECTORY "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include/mpark"
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
         )
@@ -1318,7 +1357,8 @@ if(openPMD_BUILD_TESTING)
         endforeach()
 
         # openpmd-pipe (python) test
-        if( openPMD_HAVE_HDF5
+        if( NOT WIN32
+            AND openPMD_HAVE_HDF5
             AND (openPMD_HAVE_ADIOS2 OR openPMD_HAVE_ADIOS1)
             AND EXAMPLE_DATA_FOUND
         )
@@ -1372,6 +1412,26 @@ if(openPMD_BUILD_TESTING)
         endif()
     endif()
 
+    function(configure_python_test testname)
+        if(WIN32)
+            string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BASEDIR ${openPMD_BINARY_DIR})
+            string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+            string(REPLACE ";" "\\;" WIN_PATH "$ENV{PATH}")
+            string(REPLACE ";" "\\;" WIN_PYTHONPATH "$ENV{PYTHONPATH}")
+            set_property(TEST ${testname}
+                PROPERTY ENVIRONMENT
+                    "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
+                    "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${CMAKE_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
+            )
+        else()
+            set_tests_properties(${testname}
+                PROPERTIES ENVIRONMENT
+                    "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
+            )
+        endif()
+    endfunction()
+
+
     # Python Examples
     # Current examples all use HDF5, elaborate if other backends are used
     if(openPMD_HAVE_PYTHON AND openPMD_HAVE_HDF5)
@@ -1383,7 +1443,10 @@ if(openPMD_BUILD_TESTING)
                     COPYONLY
                 )
                 if(openPMD_BUILD_TESTING)
-                    if(${examplename} MATCHES "^.*_parallel$")
+                    if(${examplename} MATCHES "^10.*$")
+                        # streaming examples are done separately
+                        continue()
+                    elseif(${examplename} MATCHES "^.*_parallel$")
                         if(openPMD_HAVE_MPI AND MPI4PY_RETURN EQUAL 0)
                             # see https://mpi4py.readthedocs.io/en/stable/mpi4py.run.html
                             add_test(NAME Example.py.${examplename}
@@ -1402,24 +1465,15 @@ if(openPMD_BUILD_TESTING)
                                 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
                         )
                     endif()
-                    if(WIN32)
-                        string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BASEDIR ${openPMD_BINARY_DIR})
-                        string(REGEX REPLACE "/" "\\\\" WIN_BUILD_BINDIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-                        string(REPLACE ";" "\\;" WIN_PATH "$ENV{PATH}")
-                        string(REPLACE ";" "\\;" WIN_PYTHONPATH "$ENV{PYTHONPATH}")
-                        set_property(TEST Example.py.${examplename}
-                            PROPERTY ENVIRONMENT
-                                "PATH=${WIN_BUILD_BINDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PATH}\n"
-                                "PYTHONPATH=${WIN_BUILD_BASEDIR}\\${CMAKE_INSTALL_PYTHONDIR}\\${CMAKE_BUILD_TYPE}\;${WIN_PYTHONPATH}"
-                        )
-                    else()
-                        set_tests_properties(Example.py.${examplename}
-                            PROPERTIES ENVIRONMENT
-                                "PYTHONPATH=${openPMD_BINARY_DIR}/${CMAKE_INSTALL_PYTHONDIR}:$ENV{PYTHONPATH}"
-                        )
-                    endif()
+                    configure_python_test(Example.py.${examplename})
                 endif()
             endforeach()
+            if(openPMD_HAVE_ADIOS2 AND openPMD_BUILD_TESTING AND NOT WIN32)
+                add_test(NAME Asynchronous.10_streaming.py
+                        COMMAND sh -c "${Python_EXECUTABLE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/10_streaming_write.py & sleep 1; ${Python_EXECUTABLE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/10_streaming_read.py"
+                        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+                configure_python_test(Asynchronous.10_streaming.py)
+            endif()
         endif()
     endif()
 endif()
@@ -1448,7 +1502,11 @@ if(openPMD_INSTALL)
     endif()
     message("")
     message("  Additionally, install following third party libraries:")
-    message("    MPark.Variant: ${openPMD_USE_INTERNAL_VARIANT}")
+    if(openPMD_HAS_CXX17)
+        message("    MPark.Variant: OFF")
+    else()
+        message("    MPark.Variant: ${openPMD_USE_INTERNAL_VARIANT}")
+    endif()
 else()
     message("  Installation: OFF")
 endif()

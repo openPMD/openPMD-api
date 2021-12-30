@@ -27,6 +27,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
@@ -89,11 +90,15 @@ namespace openPMD
         std::unordered_map< std::shared_ptr< std::string >, ADIOS_FILE* > m_openReadFileHandles;
         std::unordered_map< ADIOS_FILE*, std::vector< ADIOS_SELECTION* > > m_scheduledReads;
         std::unordered_map< int64_t, std::unordered_map< std::string, Attribute > > m_attributeWrites;
+        // config options
+        std::string m_defaultTransform;
         /**
          * Call this function to get adios file id for a Writable. Will create one if does not exist
-         * @return  returns an adios file id. 
-         */	  
+         * @return  returns an adios file id.
+         */
         int64_t GetFileHandle(Writable*);
+
+        void initJson( json::TracingJSON );
     }; // ParallelADIOS1IOHandlerImpl
 } // openPMD
 

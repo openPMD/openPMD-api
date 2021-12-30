@@ -14,7 +14,18 @@ The fundamental structure of this JSON configuration string is given as follows:
 
 This structure allows keeping one configuration string for several backends at once, with the concrete backend configuration being chosen upon choosing the backend itself.
 
-The configuration is read in a case-sensitive manner.
+Options that can be configured via JSON are often also accessible via other means, e.g. environment variables.
+The following list specifies the priority of these means, beginning with the lowest priority:
+
+1. Default values
+2. Automatically detected options, e.g. the backend being detected by inspection of the file extension
+3. Environment variables
+4. JSON configuration. For JSON, a dataset-specific configuration overwrites a global, Series-wide configuration.
+5. Explicit API calls such as ``setIterationEncoding()``
+
+The configuration is read in a case-insensitive manner, keys as well as values.
+An exception to this are string values which are forwarded to other libraries such as ADIOS1 and ADIOS2.
+Those are read "as-is" and interpreted by the backend library.
 Generally, keys of the configuration are *lower case*.
 Parameters that are directly passed through to an external library and not interpreted within openPMD API (e.g. ``adios2.engine.parameters``) are unaffected by this and follow the respective library's conventions.
 
@@ -35,6 +46,11 @@ For a consistent user interface, backends shall follow the following rules:
 
 Backend-independent JSON configuration
 --------------------------------------
+
+The openPMD backend can be chosen via the JSON key ``backend`` which recognizes the alternatives ``["hdf5", "adios1", "adios2", "json"]``.
+
+The iteration encoding can be chosen via the JSON key ``iteration_encoding`` which recognizes the alternatives ``["file_based", "group_based", "variable_based"]``.
+Note that for file-based iteration encoding, specification of the expansion pattern in the file name (e.g. ``data_%T.json``) remains mandatory.
 
 The key ``defer_iteration_parsing`` can be used to optimize the process of opening an openPMD Series (deferred/lazy parsing).
 By default, a Series is parsed eagerly, i.e. opening a Series implies reading all available iterations.
@@ -70,13 +86,19 @@ Explanation of the single keys:
 * ``adios2.engine.type``: A string that is passed directly to ``adios2::IO:::SetEngine`` for choosing the ADIOS2 engine to be used.
   Please refer to the `official ADIOS2 documentation <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_ for a list of available engines.
 * ``adios2.engine.parameters``: An associative array of string-formatted engine parameters, passed directly through to ``adios2::IO::SetParameters``.
-  Please refer to the official ADIOS2 documentation for the allowable engine parameters.
+  Please refer to the `official ADIOS2 documentation <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_ for the available engine parameters.
+  The openPMD-api does not interpret these values and instead simply forwards them to ADIOS2.
 * ``adios2.engine.usesteps``: Described more closely in the documentation for the :ref:`ADIOS2 backend<backends-adios2>` (usesteps).
 * ``adios2.dataset.operators``: This key contains a list of ADIOS2 `operators <https://adios2.readthedocs.io/en/latest/components/components.html#operator>`_, used to enable compression or dataset transformations.
   Each object in the list has two keys:
 
   * ``type`` supported ADIOS operator type, e.g. zfp, sz
   * ``parameters`` is an associative map of string parameters for the operator (e.g. compression levels)
+* ``adios2.use_span_based_put``: The openPMD-api exposes the `span-based Put() API <https://adios2.readthedocs.io/en/latest/components/components.html#put-modes-and-memory-contracts>`_ of ADIOS2 via an overload of ``RecordComponent::storeChunk()``.
+  This API is incompatible with compression operators as described above.
+  The openPMD-api will automatically use a fallback implementation for the span-based Put() API if any operator is added to a dataset.
+  This workaround is enabled on a per-dataset level.
+  The workaround can be completely deactivated by specifying ``{"adios2": {"use_span_based_put": true}}`` or it can alternatively be activated indiscriminately for all datasets by specifying ``{"adios2": {"use_span_based_put": false}}``.
 
 Any setting specified under ``adios2.dataset`` is applicable globally as well as on a per-dataset level.
 Any setting under ``adios2.engine`` is applicable globally only.
@@ -98,6 +120,17 @@ Explanation of the single keys:
   The default is ``"auto"`` for a heuristic.
   ``"none"`` can be used to disable chunking.
   Chunking generally improves performance and only needs to be disabled in corner-cases, e.g. when heavily relying on independent, parallel I/O that non-collectively declares data records.
+
+ADIOS1
+^^^^^^
+
+ADIOS1 allows configuring custom dataset transforms via JSON:
+
+.. literalinclude:: adios1.json
+   :language: json
+
+This configuration can be passed globally (i.e. for the ``Series`` object) to apply for all datasets.
+Alternatively, it can also be passed for single ``Dataset`` objects to only apply for single datasets.
 
 
 Other backends

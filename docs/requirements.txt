@@ -1,14 +1,14 @@
-sphinx_rtd_theme>=0.3.1
-recommonmark
-sphinx<4.0
+breathe>=4.5,<4.15
 # docutils 0.17 breaks HTML tags & RTD theme
 # https://github.com/sphinx-doc/sphinx/issues/9001
 docutils<=0.16
-breathe>=4.5,<4.15
-sphinxcontrib.programoutput
-sphinxcontrib-svg2pdfconverter
-pygments
 # generate plots
 matplotlib
-scipy
 numpy>=1.15
+pygments
+recommonmark
+scipy
+sphinx<4.0
+sphinx_rtd_theme>=0.3.1
+sphinxcontrib-svg2pdfconverter
+sphinxcontrib.programoutput

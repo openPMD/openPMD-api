@@ -5,17 +5,22 @@
 #endif
 #include "openPMD/openPMD.hpp"
 
+#include "openPMD/auxiliary/Filesystem.hpp"
+#include "openPMD/auxiliary/JSON.hpp"
+
 #include <catch2/catch.hpp>
 
 #include <algorithm>
-#include <string>
-#include <vector>
 #include <array>
 #include <complex>
 #include <cstddef>
 #include <cstdint>
-#include <sstream>
 #include <iostream>
+#include <sstream>
+// cstdlib does not have setenv
+#include <stdlib.h> // NOLINT(modernize-deprecated-headers)
+#include <string>
+#include <vector>
 
 using namespace openPMD;
 
@@ -37,7 +42,11 @@ TEST_CASE( "versions_test", "[core]" )
 
 TEST_CASE( "attribute_dtype_test", "[core]" )
 {
-    Attribute a = Attribute(static_cast< char >(' '));
+    // note: due to a C++17 issue with ICC 19.1.2 we write the
+    //       T value to variant conversion explicitly
+    //       https://github.com/openPMD/openPMD-api/pull/...
+    // Attribute a = Attribute(static_cast< char >(' '));
+    Attribute a = Attribute(static_cast<Attribute::resource>(static_cast< char >(' ')));
     REQUIRE(Datatype::CHAR == a.dtype);
     a = Attribute(static_cast< unsigned char >(' '));
     REQUIRE(Datatype::UCHAR == a.dtype);
@@ -152,7 +161,7 @@ TEST_CASE( "myPath", "[core]" )
 {
 #if openPMD_USE_INVASIVE_TESTS
     using vec_t = std::vector< std::string >;
-    auto pathOf = []( AttributableInterface & attr )
+    auto pathOf = []( Attributable & attr )
     {
         auto res = attr.myPath();
 #if false
@@ -748,8 +757,8 @@ TEST_CASE( "wrapper_test", "[core]" )
     o.flush();
     REQUIRE(all_data.get()[0] == value);
 #if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(o.iterations[4].meshes["E"]["y"].m_chunks->empty());
-    REQUIRE(mrc2.m_chunks->empty());
+    REQUIRE(o.iterations[4].meshes["E"]["y"].get().m_chunks.empty());
+    REQUIRE(mrc2.get().m_chunks.empty());
 #endif
 
     MeshRecordComponent mrc3 = o.iterations[5].meshes["E"]["y"];
@@ -760,13 +769,13 @@ TEST_CASE( "wrapper_test", "[core]" )
     std::shared_ptr< double > storeData = std::make_shared< double >(44);
     o.iterations[5].meshes["E"]["y"].storeChunk(storeData, {0}, {1});
 #if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(o.iterations[5].meshes["E"]["y"].m_chunks->size() == 1);
-    REQUIRE(mrc3.m_chunks->size() == 1);
+    REQUIRE(o.iterations[5].meshes["E"]["y"].get().m_chunks.size() == 1);
+    REQUIRE(mrc3.get().m_chunks.size() == 1);
 #endif
     o.flush();
 #if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(o.iterations[5].meshes["E"]["y"].m_chunks->empty());
-    REQUIRE(mrc3.m_chunks->empty());
+    REQUIRE(o.iterations[5].meshes["E"]["y"].get().m_chunks.empty());
+    REQUIRE(mrc3.get().m_chunks.empty());
 #endif
 
     o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].resetDataset(Dataset(determineDatatype< uint64_t >(), {4}));
@@ -782,13 +791,13 @@ TEST_CASE( "wrapper_test", "[core]" )
     size_t idx = 0;
     uint64_t val = 10;
 #if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].m_chunks->empty());
-    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].m_chunks->empty());
+    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].get().m_chunks.empty());
+    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].get().m_chunks.empty());
 #endif
     pp["numParticles"][RecordComponent::SCALAR].store(idx, val);
 #if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 1);
-    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 1);
+    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].get().m_chunks.size() == 1);
+    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].get().m_chunks.size() == 1);
 #endif
     std::stringstream u64str;
     u64str << determineDatatype<uint64_t>();
@@ -796,13 +805,13 @@ TEST_CASE( "wrapper_test", "[core]" )
                         Catch::Equals("Datatypes of patch data (DOUBLE) and dataset (" + u64str.str() + ") do not match."));
     o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].store(idx+1, val+1);
 #if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 2);
-    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].m_chunks->size() == 2);
+    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].get().m_chunks.size() == 2);
+    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].get().m_chunks.size() == 2);
 #endif
     o.flush();
 #if openPMD_USE_INVASIVE_TESTS
-    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].m_chunks->empty());
-    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].m_chunks->empty());
+    REQUIRE(o.iterations[6].particles["electrons"].particlePatches["numParticles"][RecordComponent::SCALAR].get().m_chunks.empty());
+    REQUIRE(pp["numParticles"][RecordComponent::SCALAR].get().m_chunks.empty());
 #endif
 }
 
@@ -826,7 +835,7 @@ TEST_CASE( "use_count_test", "[core]" )
     o.iterations[6].particles["electrons"]["positionOffset"][RecordComponent::SCALAR].resetDataset(dset);
     pprc.resetDataset(Dataset(determineDatatype<uint64_t>(), {4}));
     pprc.store(0, static_cast< uint64_t >(1));
-    REQUIRE(static_cast< Parameter< Operation::WRITE_DATASET >* >(pprc.m_chunks->front().parameter.get())->data.use_count() == 1);
+    REQUIRE(static_cast< Parameter< Operation::WRITE_DATASET >* >(pprc.get().m_chunks.front().parameter.get())->data.use_count() == 1);
 #endif
 }
 
@@ -862,6 +871,118 @@ TEST_CASE( "no_file_ending", "[core]" )
                         Catch::Equals("Unknown file format! Did you specify a file ending?"));
     REQUIRE_THROWS_WITH(Series("./new_openpmd_output_%05T", Access::CREATE),
                         Catch::Equals("Unknown file format! Did you specify a file ending?"));
+    {
+        Series(
+            "../samples/no_extension_specified",
+            Access::CREATE,
+            R"({"backend": "json"})" );
+    }
+    REQUIRE(
+        auxiliary::file_exists( "../samples/no_extension_specified.json" ) );
+}
+
+TEST_CASE( "backend_via_json", "[core]" )
+{
+    std::string encodingVariableBased =
+        R"({"backend": "json", "iteration_encoding": "variable_based"})";
+    {
+        Series series(
+            "../samples/optionsViaJson",
+            Access::CREATE,
+            encodingVariableBased );
+        REQUIRE( series.backend() == "JSON" );
+        REQUIRE(
+            series.iterationEncoding() == IterationEncoding::variableBased );
+    }
+#if openPMD_HAVE_ADIOS2
+    {
+        /*
+         * JSON backend should be chosen even if ending .bp is given
+         * {"backend": "json"} overwrites automatic detection
+         */
+        Series series(
+            "../samples/optionsViaJson.bp",
+            Access::CREATE,
+            encodingVariableBased );
+        REQUIRE( series.backend() == "JSON" );
+        REQUIRE(
+            series.iterationEncoding() == IterationEncoding::variableBased );
+    }
+
+    {
+        /*
+         * BP4 engine should be selected even if ending .sst is given
+         */
+        Series series(
+            "../samples/optionsViaJsonOverwritesAutomaticDetection.sst",
+            Access::CREATE,
+            R"({"adios2": {"engine": {"type": "bp4"}}})" );
+    }
+    REQUIRE( auxiliary::directory_exists(
+        "../samples/optionsViaJsonOverwritesAutomaticDetection.bp" ) );
+
+#if openPMD_HAVE_ADIOS1
+    setenv( "OPENPMD_BP_BACKEND", "ADIOS1", 1 );
+    {
+        /*
+         * ADIOS2 backend should be selected even if OPENPMD_BP_BACKEND is set
+         * as ADIOS1
+         * JSON config overwrites environment variables
+         */
+        Series series(
+            "../samples/optionsPreferJsonOverEnvVar.bp",
+            Access::CREATE,
+            R"({"backend": "ADIOS2"})" );
+        REQUIRE( series.backend() == "ADIOS2" );
+    }
+    // unset again
+    unsetenv( "OPENPMD_BP_BACKEND" );
+    REQUIRE( auxiliary::directory_exists(
+        "../samples/optionsPreferJsonOverEnvVar.bp" ) );
+#endif
+#endif
+    std::string encodingFileBased =
+        R"({"backend": "json", "iteration_encoding": "file_based"})";
+    {
+        /*
+         * File-based iteration encoding can only be chosen if an expansion
+         * pattern is detected in the filename.
+         */
+        REQUIRE_THROWS_AS(
+            [ & ]() {
+                Series series(
+                    "../samples/optionsViaJson",
+                    Access::CREATE,
+                    encodingFileBased );
+            }(),
+            error::WrongAPIUsage );
+    }
+    {
+        /*
+         * ... but specifying both the pattern and the option in JSON should work.
+         */
+        Series series(
+            "../samples/optionsViaJson%06T",
+            Access::CREATE,
+            encodingFileBased );
+        series.iterations[1456];
+    }
+    std::string encodingGroupBased =
+        R"({"backend": "json", "iteration_encoding": "group_based"})";
+    {
+        /*
+         * ... and if a pattern is detected, but the JSON config says to use
+         * an iteration encoding that is not file-based, the pattern should
+         * be ignored.
+         */
+        Series series(
+            "../samples/optionsViaJsonPseudoFilebased%T.json",
+            Access::CREATE,
+            encodingGroupBased );
+        REQUIRE( series.iterationEncoding() == IterationEncoding::groupBased );
+    }
+    REQUIRE( auxiliary::file_exists(
+        "../samples/optionsViaJsonPseudoFilebased%T.json" ) );
 }
 
 TEST_CASE( "custom_geometries", "[core]" )

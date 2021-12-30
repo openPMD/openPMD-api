@@ -41,6 +41,7 @@ namespace openPMD
 #   endif
 
 ParallelADIOS1IOHandlerImpl::ParallelADIOS1IOHandlerImpl(AbstractIOHandler* handler,
+                                                         json::TracingJSON json,
                                                          MPI_Comm comm)
         : Base_t{handler},
           m_mpiInfo{MPI_INFO_NULL}
@@ -48,6 +49,7 @@ ParallelADIOS1IOHandlerImpl::ParallelADIOS1IOHandlerImpl(AbstractIOHandler* hand
     int status = MPI_SUCCESS;
     status = MPI_Comm_dup(comm, &m_mpiComm);
     VERIFY(status == MPI_SUCCESS, "[ADIOS1] Internal error: Failed to duplicate MPI communicator");
+    initJson( std::move( json ) );
 }
 
 ParallelADIOS1IOHandlerImpl::~ParallelADIOS1IOHandlerImpl()
@@ -240,9 +242,10 @@ ParallelADIOS1IOHandlerImpl::init()
 
 ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string path,
                                                  Access at,
+                                                 json::TracingJSON json,
                                                  MPI_Comm comm)
         : AbstractIOHandler(std::move(path), at, comm),
-          m_impl{new ParallelADIOS1IOHandlerImpl(this, comm)}
+          m_impl{new ParallelADIOS1IOHandlerImpl(this, std::move(json), comm)}
 {
     m_impl->init();
 }
@@ -347,6 +350,7 @@ ParallelADIOS1IOHandlerImpl::initialize_group(std::string const &name)
 #   if openPMD_HAVE_MPI
 ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string path,
                                                  Access at,
+                                                 json::TracingJSON,
                                                  MPI_Comm comm)
         : AbstractIOHandler(std::move(path), at, comm)
 {
@@ -354,7 +358,8 @@ ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string path,
 }
 #   else
 ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string path,
-                                                 Access at)
+                                                 Access at,
+                                                 json::TracingJSON)
         : AbstractIOHandler(std::move(path), at)
 {
     throw std::runtime_error("openPMD-api built without parallel ADIOS1 support");

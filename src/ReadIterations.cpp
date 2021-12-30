@@ -49,8 +49,8 @@ SeriesIterator::SeriesIterator( Series series )
              * Use case: See Python ApiTest testListSeries:
              * Call listSeries twice.
              */
-            if( *it->second.m_closed !=
-                Iteration::CloseStatus::ClosedInBackend )
+            if( it->second.get().m_closed !=
+                internal::CloseStatus::ClosedInBackend )
             {
                 it->second.open();
             }
@@ -136,7 +136,7 @@ SeriesIterator & SeriesIterator::operator++()
         return *this;
     }
     m_currentIteration = it->first;
-    if( *it->second.m_closed != Iteration::CloseStatus::ClosedInBackend )
+    if( it->second.get().m_closed != internal::CloseStatus::ClosedInBackend )
     {
         it->second.open();
     }

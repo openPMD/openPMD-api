@@ -36,7 +36,7 @@ A package for openPMD-api is available via the `Spack <https://spack.io>`_ packa
 
    # optional:               +python +adios1 -adios2 -hdf5 -mpi
    spack install openpmd-api
-   spack load -r openpmd-api
+   spack load openpmd-api
 
 .. _install-conda:
 

@@ -129,4 +129,3 @@ PYBIND11_MODULE(openpmd_api_cxx, m) {
     // TODO allow to query runtime versions of all dependencies
     //      (also needed in C++ frontend)
 }
-

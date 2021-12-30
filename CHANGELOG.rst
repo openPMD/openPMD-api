@@ -17,11 +17,103 @@ Changes to "0.14.0"
 Features
 """"""""
 
+- CMake
+
+  - include internally shipped toml11 v3.7.0 #1148
+
 Bug Fixes
 """""""""
 
 Other
 """""
+
+
+0.14.3
+------
+**Date:** 2021-11-03
+
+Read Bugs, C++17 Mixing and HDF5 Performance
+
+This release makes reads more robust by fixing small API, file-based parsing and test bugs.
+Building the library in C++14 and using it in C++17 will not result in incompatible ABIs anymore.
+HDF5 1.10.1+ performance was improved significantly.
+
+Changes to "0.14.2"
+^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- read:
+
+  - allow inconsistent zero pads #1118
+  - time/dt also in long double #1096
+- test 8b - bench read parallel:
+
+  - support variable encoding #1131
+  - block located at top left corner was mistaken to read a block in the center #1131
+- CI (AppVeyor): Python executable #1127
+- C++17 mixing: remember ``<variant>`` implementation #1128
+- support NVCC + C++17 #1103
+- avoid object slicing when deriving from ``Series`` class #1107
+- executables: ``CXX_STANDARD``/``EXTENSIONS`` #1102
+
+Other
+"""""
+
+- HDF5 I/O optimizations #1129 #1132 #1133
+- libfabric 1.6+: Document SST Work-Arounds #1134
+- OpenMPI: Document ``OMPI_MCA_io`` Control #1114
+- HDF5: Document ``HDF5_USE_FILE_LOCKING`` #1106
+- Lazy parsing: Make findable in docs and use in ``openpmd-ls`` #1111
+- Docs: More Locations ``-DPython_EXECUTABLE`` #1104
+- Spack: No More ``load -r`` #1125
+- ``openPMD.hpp``: include auxiliary ``StringManip`` #1124
+
+
+0.14.2
+------
+**Date:** 2021-08-17
+
+Various Reader Fixes
+
+This releases fixes regressions in reads, closing files properly, avoiding inefficient parsing and allowing more permissive casts in attribute reads.
+(Inofficial) support for HDF5 vlen string reads has been fixed.
+
+Changes to "0.14.1"
+^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- do not forget to close files #1083
+- reading of vector attributes with only one contained value #1085
+- do not read iterations if they have already been parsed #1089
+- HDF5: fix string vlen attribute reads #1084
+
+Other
+"""""
+
+- ``setAttribute``: reject empty strings #1087
+
+
+0.14.1
+------
+**Date:** 2021-08-04
+
+ADIOS2 Close Regressions & ADIOS1 Build
+
+Fix a regression with file handling for ADIOS2 when using explicit close logic, especially with interleaved writes to multiple iterations.
+Also fix an issue with ADIOS1 builds that potentially picked up headers from older, installed openPMD-api versions.
+
+Changes to "0.14.0"
+^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- ADIOS2: interleaved writes of iterations with close #1073
+- CMake: ADIOS1 includes w/o ``SYSTEM`` #1076
 
 
 0.14.0

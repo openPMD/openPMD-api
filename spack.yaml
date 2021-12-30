@@ -16,3 +16,4 @@ spack:
   - py-numpy
   - py-pandas
   - py-dask
+  - py-pre-commit

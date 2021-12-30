@@ -22,6 +22,7 @@
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 
 #include "openPMD/Datatype.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2IOHandler.hpp"
 #include "openPMD/auxiliary/Environment.hpp"
@@ -67,7 +68,7 @@ namespace openPMD
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     AbstractIOHandler * handler,
     MPI_Comm communicator,
-    nlohmann::json cfg,
+    json::TracingJSON cfg,
     std::string engineType )
     : AbstractIOHandlerImplCommon( handler )
     , m_ADIOS{ communicator, ADIOS2_DEBUG_MODE }
@@ -80,7 +81,7 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
 
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     AbstractIOHandler * handler,
-    nlohmann::json cfg,
+    json::TracingJSON cfg,
     std::string engineType )
     : AbstractIOHandlerImplCommon( handler )
     , m_ADIOS{ ADIOS2_DEBUG_MODE }
@@ -120,16 +121,24 @@ ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
 }
 
 void
-ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
+ADIOS2IOHandlerImpl::init( json::TracingJSON cfg )
 {
-    if( cfg.contains( "adios2" ) )
+    if( cfg.json().contains( "adios2" ) )
     {
-        m_config = std::move( cfg[ "adios2" ] );
+        m_config = cfg[ "adios2" ];
 
         if( m_config.json().contains( "schema" ) )
         {
             m_schema =
                 m_config[ "schema" ].json().get< ADIOS2Schema::schema_t >();
+        }
+
+        if( m_config.json().contains( "use_span_based_put" ) )
+        {
+            m_useSpanBasedPutByDefault =
+                m_config[ "use_span_based_put" ].json().get< bool >()
+                ? UseSpan::Yes
+                : UseSpan::No;
         }
 
         auto engineConfig = config( ADIOS2Defaults::str_engine );
@@ -140,12 +149,18 @@ ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
             if( !engineTypeConfig.is_null() )
             {
                 // convert to string
-                m_engineType = engineTypeConfig;
-                std::transform(
-                    m_engineType.begin(),
-                    m_engineType.end(),
-                    m_engineType.begin(),
-                    []( unsigned char c ) { return std::tolower( c ); } );
+                auto maybeEngine =
+                    json::asLowerCaseStringDynamic( engineTypeConfig );
+                if( maybeEngine.has_value() )
+                {
+                    m_engineType = std::move( maybeEngine.get() );
+                }
+                else
+                {
+                    throw error::BackendConfigSchema(
+                        {"adios2", "engine", "type"},
+                        "Must be convertible to string type." );
+                }
             }
         }
         auto operators = getOperators();
@@ -159,7 +174,7 @@ ADIOS2IOHandlerImpl::init( nlohmann::json cfg )
 }
 
 auxiliary::Option< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > >
-ADIOS2IOHandlerImpl::getOperators( auxiliary::TracingJSON cfg )
+ADIOS2IOHandlerImpl::getOperators( json::TracingJSON cfg )
 {
     using ret_t = auxiliary::Option< std::vector< ParameterizedOperator > >;
     std::vector< ParameterizedOperator > res;
@@ -188,8 +203,22 @@ ADIOS2IOHandlerImpl::getOperators( auxiliary::TracingJSON cfg )
                  paramIterator != params.end();
                  ++paramIterator )
             {
-                adiosParams[ paramIterator.key() ] =
-                    paramIterator.value().get< std::string >();
+                auto maybeString =
+                    json::asStringDynamic( paramIterator.value() );
+                if( maybeString.has_value() )
+                {
+                    adiosParams[ paramIterator.key() ] =
+                        std::move( maybeString.get() );
+                }
+                else
+                {
+                    throw error::BackendConfigSchema(
+                        { "adios2",
+                          "dataset",
+                          "operators",
+                          paramIterator.key() },
+                        "Must be convertible to string type." );
+                }
             }
         }
         auxiliary::Option< adios2::Operator > adiosOperator =
@@ -216,7 +245,7 @@ ADIOS2IOHandlerImpl::fileSuffix() const
     // SST engine adds its suffix unconditionally
     // so we don't add it
     static std::map< std::string, std::string > endings{
-        { "sst", "" }, { "staging", "" }, { "bp4", ".bp" },
+        { "sst", "" }, { "staging", "" }, { "bp4", ".bp" }, { "bp5", ".bp" },
         { "bp3", ".bp" },  { "file", ".bp" },     { "hdf5", ".h5" },
         { "nullcore", ".nullcore" }, { "ssc", ".ssc" }
     };
@@ -352,39 +381,25 @@ void ADIOS2IOHandlerImpl::createDataset(
         auto const varName = nameOfVariable( writable );
 
         std::vector< ParameterizedOperator > operators;
-        nlohmann::json options = nlohmann::json::parse( parameters.options );
-        if( options.contains( "adios2" ) )
+        json::TracingJSON options = json::parseOptions(
+            parameters.options, /* considerFiles = */ false );
+        if( options.json().contains( "adios2" ) )
         {
-            auxiliary::TracingJSON datasetConfig( options[ "adios2" ] );
+            json::TracingJSON datasetConfig( options[ "adios2" ] );
             auto datasetOperators = getOperators( datasetConfig );
 
             operators = datasetOperators ? std::move( datasetOperators.get() )
                                          : defaultOperators;
-
-            auto shadow = datasetConfig.invertShadow();
-            if( shadow.size() > 0 )
-            {
-                std::cerr << "Warning: parts of the JSON configuration for "
-                             "ADIOS2 dataset '"
-                          << varName << "' remain unused:\n"
-                          << shadow << std::endl;
-            }
         }
         else
         {
             operators = defaultOperators;
         }
-
-        if( !parameters.compression.empty() )
-        {
-            auxiliary::Option< adios2::Operator > adiosOperator =
-                getCompressionOperator( parameters.compression );
-            if( adiosOperator )
-            {
-                operators.push_back( ParameterizedOperator{
-                    adiosOperator.get(), adios2::Params() } );
-            }
-        }
+        parameters.warnUnusedParameters(
+            options,
+            "adios2",
+            "Warning: parts of the JSON configuration for ADIOS2 dataset '" +
+                varName + "' remain unused:\n" );
 
         // cast from openPMD::Extent to adios2::Dims
         adios2::Dims const shape( parameters.extent.begin(), parameters.extent.end() );
@@ -697,6 +712,22 @@ struct GetSpan
 
     static constexpr char const * errorMsg = "ADIOS2: getBufferView()";
 };
+
+struct HasOperators
+{
+    template< typename T >
+    static bool call( std::string const & name, adios2::IO & IO )
+    {
+        adios2::Variable< T > variable = IO.InquireVariable< T >( name );
+        if( !variable )
+        {
+            return false;
+        }
+        return !variable.Operations().empty();
+    }
+
+    static constexpr char const * errorMsg = "ADIOS2: getBufferView()";
+};
 } // namespace detail
 
 void
@@ -714,6 +745,25 @@ ADIOS2IOHandlerImpl::getBufferView(
     auto file = refreshFileFromParent( writable, /* preferParentFile = */ false );
     detail::BufferedActions & ba =
         getFileData( file, IfFileNotOpen::ThrowError );
+
+    std::string name = nameOfVariable( writable );
+    switch( m_useSpanBasedPutByDefault )
+    {
+    case UseSpan::No:
+        parameters.out->backendManagedBuffer = false;
+        return;
+    case UseSpan::Auto:
+        if( switchAdios2VariableType< detail::HasOperators >(
+                parameters.dtype, name, ba.m_IO ) )
+        {
+            parameters.out->backendManagedBuffer = false;
+            return;
+        }
+        break;
+    case UseSpan::Yes:
+        break;
+    }
+
     if( parameters.update )
     {
         detail::I_UpdateSpan &updater =
@@ -723,7 +773,6 @@ ADIOS2IOHandlerImpl::getBufferView(
     }
     else
     {
-        std::string name = nameOfVariable( writable );
         switchAdios2VariableType< detail::GetSpan >(
             parameters.dtype, this, parameters, ba, name );
     }
@@ -1080,7 +1129,7 @@ ADIOS2IOHandlerImpl::adios2AccessMode( std::string const & fullPath )
     }
 }
 
-auxiliary::TracingJSON ADIOS2IOHandlerImpl::nullvalue = nlohmann::json();
+json::TracingJSON ADIOS2IOHandlerImpl::nullvalue = nlohmann::json();
 
 std::string
 ADIOS2IOHandlerImpl::filePositionToString(
@@ -1560,6 +1609,8 @@ namespace detail
             {
                 var.SetSelection( { start, count } );
             }
+            // don't add compression operators multiple times
+            return;
         }
 
         if( !var )
@@ -2231,7 +2282,7 @@ namespace detail
             "sst", "insitumpi", "inline", "staging", "nullcore", "ssc"
         };
         static std::set< std::string > fileEngines = {
-            "bp4", "bp3", "hdf5", "file"
+            "bp5", "bp4", "bp3", "hdf5", "file"
         };
 
         // step/variable-based iteration encoding requires the new schema
@@ -2323,8 +2374,20 @@ namespace detail
                 for( auto it = params.json().begin(); it != params.json().end();
                      it++ )
                 {
-                    m_IO.SetParameter( it.key(), it.value() );
-                    alreadyConfigured.emplace( it.key() );
+                    auto maybeString = json::asStringDynamic( it.value() );
+                    if( maybeString.has_value() )
+                    {
+                        m_IO.SetParameter(
+                            it.key(), std::move( maybeString.get() ) );
+                    }
+                    else
+                    {
+                        throw error::BackendConfigSchema(
+                            {"adios2", "engine", "parameters", it.key() },
+                            "Must be convertible to string type." );
+                    }
+                    alreadyConfigured.emplace(
+                        auxiliary::lowerCase( std::string( it.key() ) ) );
                 }
             }
             auto _useAdiosSteps =
@@ -2351,8 +2414,9 @@ namespace detail
                       << shadow << std::endl;
         }
         auto notYetConfigured =
-            [&alreadyConfigured]( std::string const & param ) {
-                auto it = alreadyConfigured.find( param );
+            [ &alreadyConfigured ]( std::string const & param ) {
+                auto it = alreadyConfigured.find(
+                    auxiliary::lowerCase( std::string( param ) ) );
                 return it == alreadyConfigured.end();
             };
 
@@ -2392,6 +2456,24 @@ namespace detail
                 m_IO.SetParameter(
                     "SubStreams", std::to_string( num_substreams ) );
             }
+
+            // BP5 parameters
+            auto numAgg = auxiliary::getEnvNum( "OPENPMD_ADIOS2_BP5_NumAgg", 0 );
+            auto numSubFiles = auxiliary::getEnvNum( "OPENPMD_ADIOS2_BP5_NumSubFiles", 0 );
+            auto AggTypeStr  = auxiliary::getEnvString( "OPENPMD_ADIOS2_BP5_TypeAgg", "" );
+            auto MaxShmMB  = auxiliary::getEnvNum( "OPENPMD_ADIOS2_BP5_MaxShmMB", 0 );
+            auto BufferChunkMB = auxiliary::getEnvNum( "OPENPMD_ADIOS2_BP5_BufferChunkMB", 0 );
+
+            if ( notYetConfigured( "NumAggregators" ) && ( numAgg > 0 ) )
+                m_IO.SetParameter( "NumAggregators", std::to_string( numAgg ) );
+            if ( notYetConfigured( "NumSubFiles" ) && ( numSubFiles > 0 ) )
+                m_IO.SetParameter( "NumSubFiles", std::to_string( numSubFiles) );
+            if ( notYetConfigured( "AggregationType" ) && ( AggTypeStr.size() > 0 ) )
+                m_IO.SetParameter( "AggregationType", AggTypeStr );
+            if ( notYetConfigured( "BufferChunkSize" ) && ( BufferChunkMB > 0 ) )
+                m_IO.SetParameter( "BufferChunkSize", std::to_string( (uint64_t)BufferChunkMB * (uint64_t) 1048576 ) );
+            if ( notYetConfigured( "MaxShmSize" ) && ( MaxShmMB > 0 ) )
+                m_IO.SetParameter( "MaxShmSize", std::to_string( (uint64_t)MaxShmMB * (uint64_t)1048576 ) );
         }
 #    endif
         if( notYetConfigured( "StatsLevel" ) )
@@ -2894,7 +2976,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     openPMD::Access at,
     MPI_Comm comm,
-    nlohmann::json options,
+    json::TracingJSON options,
     std::string engineType )
     : AbstractIOHandler( std::move( path ), at, comm )
     , m_impl{ this, comm, std::move( options ), std::move( engineType ) }
@@ -2906,7 +2988,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     Access at,
-    nlohmann::json options,
+    json::TracingJSON options,
     std::string engineType )
     : AbstractIOHandler( std::move( path ), at )
     , m_impl{ this, std::move( options ), std::move( engineType ) }
@@ -2926,7 +3008,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     Access at,
     MPI_Comm comm,
-    nlohmann::json,
+    json::TracingJSON,
     std::string )
     : AbstractIOHandler( std::move( path ), at, comm )
 {
@@ -2937,7 +3019,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     Access at,
-    nlohmann::json,
+    json::TracingJSON,
     std::string )
     : AbstractIOHandler( std::move( path ), at )
 {

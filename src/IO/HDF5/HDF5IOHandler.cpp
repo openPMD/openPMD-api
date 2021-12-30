@@ -24,6 +24,7 @@
 
 #if openPMD_HAVE_HDF5
 #   include "openPMD/Datatype.hpp"
+#   include "openPMD/Error.hpp"
 #   include "openPMD/auxiliary/Filesystem.hpp"
 #   include "openPMD/auxiliary/StringManip.hpp"
 #   include "openPMD/backend/Attribute.hpp"
@@ -53,7 +54,7 @@ namespace openPMD
 #   endif
 
 HDF5IOHandlerImpl::HDF5IOHandlerImpl(
-    AbstractIOHandler* handler, nlohmann::json config)
+    AbstractIOHandler* handler, json::TracingJSON config)
         : AbstractIOHandlerImpl(handler),
           m_datasetTransferProperty{H5P_DEFAULT},
           m_fileAccessProperty{H5P_DEFAULT},
@@ -87,9 +88,9 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
 
     m_chunks = auxiliary::getEnvString( "OPENPMD_HDF5_CHUNKS", "auto" );
     // JSON option can overwrite env option:
-    if( config.contains( "hdf5" ) )
+    if( config.json().contains( "hdf5" ) )
     {
-        m_config = std::move( config[ "hdf5" ] );
+        m_config = config[ "hdf5" ];
 
         // check for global dataset configs
         if( m_config.json().contains( "dataset" ) )
@@ -97,7 +98,18 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
             auto datasetConfig = m_config[ "dataset" ];
             if( datasetConfig.json().contains( "chunks" ) )
             {
-                m_chunks = datasetConfig[ "chunks" ].json().get< std::string >();
+                auto maybeChunks = json::asLowerCaseStringDynamic(
+                    datasetConfig[ "chunks" ].json() );
+                if( maybeChunks.has_value() )
+                {
+                    m_chunks = std::move( maybeChunks.get() );
+                }
+                else
+                {
+                    throw error::BackendConfigSchema(
+                        {"hdf5", "dataset", "chunks"},
+                        "Must be convertible to string type." );
+                }
             }
         }
         if( m_chunks != "auto" && m_chunks != "none" )
@@ -117,6 +129,14 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
                       << shadow << std::endl;
         }
     }
+
+#if H5_VERSION_GE(1,10,0) && openPMD_HAVE_MPI
+    auto const hdf5_collective_metadata = auxiliary::getEnvString( "OPENPMD_HDF5_COLLECTIVE_METADATA", "ON" );
+    if( hdf5_collective_metadata == "ON" )
+        m_hdf5_collective_metadata = 1;
+    else
+        m_hdf5_collective_metadata = 0;
+#endif
 }
 
 HDF5IOHandlerImpl::~HDF5IOHandlerImpl()
@@ -202,6 +222,16 @@ HDF5IOHandlerImpl::createPath(Writable* writable,
     if( m_handler->m_backendAccess == Access::READ_ONLY )
         throw std::runtime_error("[HDF5] Creating a path in a file opened as read only is not possible.");
 
+    hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
+#if H5_VERSION_GE(1,10,0) && openPMD_HAVE_MPI
+    if( m_hdf5_collective_metadata )
+    {
+        H5Pset_all_coll_metadata_ops(gapl, true);
+    }
+#endif
+
+    herr_t status;
+
     if( !writable->written )
     {
         /* Sanitize path */
@@ -220,7 +250,7 @@ HDF5IOHandlerImpl::createPath(Writable* writable,
         File file = getFile( position ).get();
         hid_t node_id = H5Gopen(file.id,
                                 concrete_h5_file_position(position).c_str(),
-                                H5P_DEFAULT);
+                                gapl);
         VERIFY(node_id >= 0, "[HDF5] Internal error: Failed to open HDF5 group during path creation");
 
         /* Create the path in the file */
@@ -243,7 +273,6 @@ HDF5IOHandlerImpl::createPath(Writable* writable,
         }
 
         /* Close the groups */
-        herr_t status;
         while( !groups.empty() )
         {
             status = H5Gclose(groups.top());
@@ -256,6 +285,9 @@ HDF5IOHandlerImpl::createPath(Writable* writable,
 
         m_fileNames[writable] = file.name;
     }
+
+    status = H5Pclose(gapl);
+    VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 property during path creation");
 }
 
 void
@@ -274,41 +306,48 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         if( auxiliary::ends_with(name, '/') )
             name = auxiliary::replace_last(name, "/", "");
 
-        auto config = nlohmann::json::parse( parameters.options );
+        json::TracingJSON config = json::parseOptions(
+            parameters.options, /* considerFiles = */ false );
 
         // general
         bool is_resizable_dataset = false;
-        if( config.contains( "resizable" ) )
+        if( config.json().contains( "resizable" ) )
         {
-            is_resizable_dataset = config.at( "resizable" ).get< bool >();
+            is_resizable_dataset = config[ "resizable" ].json().get< bool >();
         }
 
         // HDF5 specific
-        if( config.contains( "hdf5" ) &&
-            config[ "hdf5" ].contains( "dataset" ) )
+        if( config.json().contains( "hdf5" ) &&
+            config[ "hdf5" ].json().contains( "dataset" ) )
         {
-            auxiliary::TracingJSON datasetConfig{
+            json::TracingJSON datasetConfig{
                 config[ "hdf5" ][ "dataset" ] };
 
             /*
              * @todo Read more options from config here.
              */
-            auto shadow = datasetConfig.invertShadow();
-            if( shadow.size() > 0 )
-            {
-                std::cerr << "Warning: parts of the JSON configuration for "
-                             "HDF5 dataset '"
-                          << name << "' remain unused:\n"
-                          << shadow << std::endl;
-            }
+            ( void )datasetConfig;
         }
+        parameters.warnUnusedParameters(
+            config,
+            "hdf5",
+            "Warning: parts of the JSON configuration for HDF5 dataset '" +
+                name + "' remain unused:\n" );
+
+        hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
+#if H5_VERSION_GE(1,10,0) && openPMD_HAVE_MPI
+        if( m_hdf5_collective_metadata )
+        {
+            H5Pset_all_coll_metadata_ops(gapl, true);
+        }
+#endif
 
         /* Open H5Object to write into */
         auto res = getFile( writable );
         File file = res ? res.get() : getFile( writable->parent ).get();
         hid_t node_id = H5Gopen(file.id,
                                 concrete_h5_file_position(writable).c_str(),
-                                H5P_DEFAULT);
+                    gapl);
         VERIFY(node_id >= 0, "[HDF5] Internal error: Failed to open HDF5 group during dataset creation");
 
         Datatype d = parameters.dtype;
@@ -318,7 +357,12 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
             std::cerr << "[HDF5] Datatype::UNDEFINED caught during dataset creation (serial HDF5)" << std::endl;
             d = Datatype::BOOL;
         }
-        Attribute a(0);
+
+        // note: due to a C++17 issue with ICC 19.1.2 we write the
+        //       T value to variant conversion explicitly
+        //       https://github.com/openPMD/openPMD-api/pull/...
+        // Attribute a(0);
+        Attribute a(static_cast<Attribute::resource>(0));
         a.dtype = d;
         std::vector< hsize_t > dims;
         std::uint64_t num_elements = 1u;
@@ -352,7 +396,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
             VERIFY(status == 0, "[HDF5] Internal error: Failed to set chunk size during dataset creation");
         }
 
-        std::string const& compression = parameters.compression;
+        std::string const& compression = ""; // @todo read from JSON
         if( !compression.empty() )
           std::cerr << "[HDF5] Compression not yet implemented in HDF5 backend."
                     << std::endl;
@@ -375,11 +419,6 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
                           << std::endl;
         }
          */
-
-        std::string const& transform = parameters.transform;
-        if( !transform.empty() )
-            std::cerr << "[HDF5] Custom transform not yet implemented in HDF5 backend."
-                      << std::endl;
 
         GetH5DataType getH5DataType({
             { typeid(bool).name(), m_H5T_BOOL_ENUM },
@@ -409,6 +448,8 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 dataset space during dataset creation");
         status = H5Gclose(node_id);
         VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 group during dataset creation");
+        status = H5Pclose(gapl);
+        VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 property during dataset creation");
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared< HDF5FilePosition >(name);
@@ -600,9 +641,18 @@ HDF5IOHandlerImpl::openPath(
 {
     File file = getFile(writable->parent).get();
     hid_t node_id, path_id;
+
+    hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
+#if H5_VERSION_GE(1,10,0) && openPMD_HAVE_MPI
+    if( m_hdf5_collective_metadata )
+    {
+        H5Pset_all_coll_metadata_ops(gapl, true);
+    }
+#endif
+
     node_id = H5Gopen(file.id,
                       concrete_h5_file_position(writable->parent).c_str(),
-                      H5P_DEFAULT);
+                      gapl);
     VERIFY(node_id >= 0, "[HDF5] Internal error: Failed to open HDF5 group during path opening");
 
     /* Sanitize path */
@@ -615,7 +665,7 @@ HDF5IOHandlerImpl::openPath(
             path += '/';
         path_id = H5Gopen(node_id,
                         path.c_str(),
-                        H5P_DEFAULT);
+                        gapl);
         VERIFY(path_id >= 0, "[HDF5] Internal error: Failed to open HDF5 group during path opening");
 
         herr_t status;
@@ -626,6 +676,8 @@ HDF5IOHandlerImpl::openPath(
     herr_t status;
     status = H5Gclose(node_id);
     VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 group during path opening");
+    status = H5Pclose(gapl);
+    VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 property during path opening");
 
     writable->written = true;
     writable->abstractFilePosition = std::make_shared< HDF5FilePosition >(path);
@@ -640,9 +692,18 @@ HDF5IOHandlerImpl::openDataset(Writable* writable,
 {
     File file = getFile( writable->parent ).get();
     hid_t node_id, dataset_id;
+
+    hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
+#if H5_VERSION_GE(1,10,0) && openPMD_HAVE_MPI
+    if( m_hdf5_collective_metadata )
+    {
+        H5Pset_all_coll_metadata_ops(gapl, true);
+    }
+#endif
+
     node_id = H5Gopen(file.id,
                       concrete_h5_file_position(writable->parent).c_str(),
-                      H5P_DEFAULT);
+                      gapl);
     VERIFY(node_id >= 0, "[HDF5] Internal error: Failed to open HDF5 group during dataset opening");
 
     /* Sanitize name */
@@ -731,6 +792,8 @@ HDF5IOHandlerImpl::openDataset(Writable* writable,
     VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 dataset during dataset opening");
     status = H5Gclose(node_id);
     VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 group during dataset opening");
+    status = H5Pclose(gapl);
+    VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 property during dataset opening");
 
     writable->written = true;
     writable->abstractFilePosition = std::make_shared< HDF5FilePosition >(name);
@@ -987,9 +1050,18 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
     auto res = getFile( writable );
         File file = res ? res.get() : getFile( writable->parent ).get();
     hid_t node_id, attribute_id;
+
+    hid_t fapl = H5Pcreate(H5P_LINK_ACCESS);
+#if H5_VERSION_GE(1,10,0) && openPMD_HAVE_MPI
+    if( m_hdf5_collective_metadata )
+    {
+        H5Pset_all_coll_metadata_ops(fapl, true);
+    }
+#endif
+
     node_id = H5Oopen(file.id,
                       concrete_h5_file_position(writable).c_str(),
-                      H5P_DEFAULT);
+                      fapl);
     VERIFY(node_id >= 0, "[HDF5] Internal error: Failed to open HDF5 object during attribute write");
     Attribute const att(parameters.resource);
     Datatype dtype = parameters.dtype;
@@ -1244,6 +1316,8 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
     VERIFY(status == 0, "[HDF5] Internal error: Failed to close attribute " + name + " at " + concrete_h5_file_position(writable) + " during attribute write");
     status = H5Oclose(node_id);
     VERIFY(status == 0, "[HDF5] Internal error: Failed to close " + concrete_h5_file_position(writable) + " during attribute write");
+    status = H5Pclose(fapl);
+    VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 property during attribute write");
 
     m_fileNames[writable] = file.name;
 }
@@ -1347,9 +1421,18 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
 
     hid_t obj_id, attr_id;
     herr_t status;
+
+    hid_t fapl = H5Pcreate(H5P_LINK_ACCESS);
+#if H5_VERSION_GE(1,10,0) && openPMD_HAVE_MPI
+    if( m_hdf5_collective_metadata )
+    {
+        H5Pset_all_coll_metadata_ops(fapl, true);
+    }
+#endif
+
     obj_id = H5Oopen(file.id,
                      concrete_h5_file_position(writable).c_str(),
-                     H5P_DEFAULT);
+                     fapl);
     VERIFY(obj_id >= 0, std::string("[HDF5] Internal error: Failed to open HDF5 object '") +
         concrete_h5_file_position(writable).c_str() + "' during attribute read");
     std::string const & attr_name = parameters.name;
@@ -1763,6 +1846,8 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
     VERIFY(status == 0, "[HDF5] Internal error: Failed to close attribute " + attr_name + " at " + concrete_h5_file_position(writable) + " during attribute read");
     status = H5Oclose(obj_id);
     VERIFY(status == 0, "[HDF5] Internal error: Failed to close " + concrete_h5_file_position(writable) + " during attribute read");
+    status = H5Pclose(fapl);
+    VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 attribute during attribute read");
 }
 
 void
@@ -1774,9 +1859,18 @@ HDF5IOHandlerImpl::listPaths(Writable* writable,
 
     auto res = getFile( writable );
         File file = res ? res.get() : getFile( writable->parent ).get();
+
+    hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
+#if H5_VERSION_GE(1,10,0) && openPMD_HAVE_MPI
+    if( m_hdf5_collective_metadata )
+    {
+        H5Pset_all_coll_metadata_ops(gapl, true);
+    }
+#endif
+
     hid_t node_id = H5Gopen(file.id,
                             concrete_h5_file_position(writable).c_str(),
-                            H5P_DEFAULT);
+                gapl);
     VERIFY(node_id >= 0, "[HDF5] Internal error: Failed to open HDF5 group during path listing");
 
     H5G_info_t group_info;
@@ -1797,6 +1891,8 @@ HDF5IOHandlerImpl::listPaths(Writable* writable,
 
     status = H5Gclose(node_id);
     VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 group " + concrete_h5_file_position(writable) + " during path listing");
+    status = H5Pclose(gapl);
+    VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 property during path listing");
 }
 
 void
@@ -1808,9 +1904,18 @@ HDF5IOHandlerImpl::listDatasets(Writable* writable,
 
     auto res = getFile( writable );
         File file = res ? res.get() : getFile( writable->parent ).get();
+
+    hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
+#if H5_VERSION_GE(1,10,0) && openPMD_HAVE_MPI
+    if( m_hdf5_collective_metadata )
+    {
+        H5Pset_all_coll_metadata_ops(gapl, true);
+    }
+#endif
+
     hid_t node_id = H5Gopen(file.id,
                             concrete_h5_file_position(writable).c_str(),
-                            H5P_DEFAULT);
+                gapl);
     VERIFY(node_id >= 0, "[HDF5] Internal error: Failed to open HDF5 group during dataset listing");
 
     H5G_info_t group_info;
@@ -1831,6 +1936,8 @@ HDF5IOHandlerImpl::listDatasets(Writable* writable,
 
     status = H5Gclose(node_id);
     VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 group " + concrete_h5_file_position(writable) + " during dataset listing");
+    status = H5Pclose(gapl);
+    VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 property during dataset listing");
 }
 
 void HDF5IOHandlerImpl::listAttributes(Writable* writable,
@@ -1842,9 +1949,18 @@ void HDF5IOHandlerImpl::listAttributes(Writable* writable,
     auto res = getFile( writable );
         File file = res ? res.get() : getFile( writable->parent ).get();
     hid_t node_id;
+
+    hid_t fapl = H5Pcreate(H5P_LINK_ACCESS);
+#if H5_VERSION_GE(1,10,0) && openPMD_HAVE_MPI
+    if( m_hdf5_collective_metadata )
+    {
+        H5Pset_all_coll_metadata_ops(fapl, true);
+    }
+#endif
+
     node_id = H5Oopen(file.id,
                       concrete_h5_file_position(writable).c_str(),
-                      H5P_DEFAULT);
+                      fapl);
     VERIFY(node_id >= 0, "[HDF5] Internal error: Failed to open HDF5 group during attribute listing");
 
     herr_t status;
@@ -1882,6 +1998,8 @@ void HDF5IOHandlerImpl::listAttributes(Writable* writable,
 
     status = H5Oclose(node_id);
     VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 object during attribute listing");
+    status = H5Pclose(fapl);
+    VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 property during dataset listing");
 }
 
 auxiliary::Option< HDF5IOHandlerImpl::File >
@@ -1906,7 +2024,7 @@ HDF5IOHandlerImpl::getFile( Writable * writable )
 #endif
 
 #if openPMD_HAVE_HDF5
-HDF5IOHandler::HDF5IOHandler(std::string path, Access at, nlohmann::json config)
+HDF5IOHandler::HDF5IOHandler(std::string path, Access at, json::TracingJSON config)
         : AbstractIOHandler(std::move(path), at),
           m_impl{new HDF5IOHandlerImpl(this, std::move(config))}
 { }
@@ -1919,7 +2037,7 @@ HDF5IOHandler::flush()
     return m_impl->flush();
 }
 #else
-HDF5IOHandler::HDF5IOHandler(std::string path, Access at, nlohmann::json /* config */)
+HDF5IOHandler::HDF5IOHandler(std::string path, Access at, json::TracingJSON /* config */)
         : AbstractIOHandler(std::move(path), at)
 {
     throw std::runtime_error("openPMD-api built without HDF5 support");

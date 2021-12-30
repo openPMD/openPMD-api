@@ -38,13 +38,16 @@ AttributableData::AttributableData() : m_writable{ this }
 }
 }
 
-AttributableInterface::AttributableInterface( internal::AttributableData * attri )
-    : m_attri{ attri }
+Attributable::Attributable() = default;
+
+Attributable::Attributable(
+    std::shared_ptr< internal::AttributableData > attri )
+    : m_attri{ std::move( attri ) }
 {
 }
 
 Attribute
-AttributableInterface::getAttribute(std::string const& key) const
+Attributable::getAttribute(std::string const& key) const
 {
     auto & attri = get();
     auto it = attri.m_attributes.find(key);
@@ -55,7 +58,7 @@ AttributableInterface::getAttribute(std::string const& key) const
 }
 
 bool
-AttributableInterface::deleteAttribute(std::string const& key)
+Attributable::deleteAttribute(std::string const& key)
 {
     auto & attri = get();
     if(Access::READ_ONLY == IOHandler()->m_frontendAccess )
@@ -75,7 +78,7 @@ AttributableInterface::deleteAttribute(std::string const& key)
 }
 
 std::vector< std::string >
-AttributableInterface::attributes() const
+Attributable::attributes() const
 {
     auto & attri = get();
     std::vector< std::string > ret;
@@ -87,55 +90,50 @@ AttributableInterface::attributes() const
 }
 
 size_t
-AttributableInterface::numAttributes() const
+Attributable::numAttributes() const
 {
     return get().m_attributes.size();
 }
 
 bool
-AttributableInterface::containsAttribute(std::string const &key) const
+Attributable::containsAttribute(std::string const &key) const
 {
     auto & attri = get();
     return attri.m_attributes.find(key) != attri.m_attributes.end();
 }
 
 std::string
-AttributableInterface::comment() const
+Attributable::comment() const
 {
     return getAttribute("comment").get< std::string >();
 }
 
-AttributableInterface&
-AttributableInterface::setComment(std::string const& c)
+Attributable&
+Attributable::setComment(std::string const& c)
 {
     setAttribute("comment", c);
     return *this;
 }
 
 void
-AttributableInterface::seriesFlush()
+Attributable::seriesFlush()
 {
     writable().seriesFlush();
 }
 
-internal::SeriesInternal const & AttributableInterface::retrieveSeries() const
+Series Attributable::retrieveSeries() const
 {
     Writable const * findSeries = &writable();
     while( findSeries->parent )
     {
         findSeries = findSeries->parent;
     }
-    return auxiliary::deref_dynamic_cast< internal::SeriesInternal >(
+    auto seriesData = &auxiliary::deref_dynamic_cast< internal::SeriesData >(
         findSeries->attributable );
+    return Series{ { seriesData, []( auto const * ){} } };
 }
 
-internal::SeriesInternal & AttributableInterface::retrieveSeries()
-{
-    return const_cast< internal::SeriesInternal & >(
-        static_cast< AttributableInterface const * >( this )->retrieveSeries() );
-}
-
-Iteration const & AttributableInterface::containingIteration() const
+Iteration const & Attributable::containingIteration() const
 {
     std::vector< Writable const * > searchQueue;
     searchQueue.reserve( 7 );
@@ -164,11 +162,11 @@ Iteration const & AttributableInterface::containingIteration() const
      * Since the class Iteration itself still follows the old class design,
      * we will have to take a detour via Series.
      */
-    auto & series = auxiliary::deref_dynamic_cast< internal::SeriesInternal >(
+    auto & series = auxiliary::deref_dynamic_cast< internal::SeriesData >(
         ( *searchQueue.rbegin() )->attributable );
     for( auto const & pair : series.iterations )
     {
-        if( &pair.second.get() == attr )
+        if( &static_cast< Attributable const & >( pair.second ).get() == attr )
         {
             return pair.second;
         }
@@ -177,10 +175,10 @@ Iteration const & AttributableInterface::containingIteration() const
         "Containing iteration not found in containing Series." );
 }
 
-Iteration & AttributableInterface::containingIteration()
+Iteration & Attributable::containingIteration()
 {
     return const_cast< Iteration & >(
-        static_cast< AttributableInterface const * >( this )
+        static_cast< Attributable const * >( this )
             ->containingIteration() );
 }
 
@@ -189,7 +187,7 @@ std::string Attributable::MyPath::filePath() const
     return directory + seriesName + seriesExtension;
 }
 
-auto AttributableInterface::myPath() const -> MyPath
+auto Attributable::myPath() const -> MyPath
 {
     MyPath res;
     Writable const * findSeries = &writable();
@@ -209,23 +207,24 @@ auto AttributableInterface::myPath() const -> MyPath
         findSeries = findSeries->parent;
     }
     std::reverse(res.group.begin(), res.group.end() );
-    auto const & series =
-        auxiliary::deref_dynamic_cast< internal::SeriesInternal >(
+    auto & seriesData =
+        auxiliary::deref_dynamic_cast< internal::SeriesData >(
             findSeries->attributable );
+    Series series{ { &seriesData, []( auto const * ) {} } };
     res.seriesName = series.name();
-    res.seriesExtension = suffix( series.m_format );
+    res.seriesExtension = suffix( seriesData.m_format );
     res.directory = IOHandler()->directory;
     return res;
 }
 
 void
-AttributableInterface::seriesFlush( FlushLevel level )
+Attributable::seriesFlush( FlushLevel level )
 {
     writable().seriesFlush( level );
 }
 
 void
-AttributableInterface::flushAttributes()
+Attributable::flushAttributes()
 {
     if( IOHandler()->m_flushLevel == FlushLevel::SkeletonOnly )
     {
@@ -247,7 +246,7 @@ AttributableInterface::flushAttributes()
 }
 
 void
-AttributableInterface::readAttributes( ReadMode mode )
+Attributable::readAttributes( ReadMode mode )
 {
     auto & attri = get();
     Parameter< Operation::LIST_ATTS > aList;
@@ -444,7 +443,7 @@ AttributableInterface::readAttributes( ReadMode mode )
 }
 
 void
-AttributableInterface::linkHierarchy(Writable& w)
+Attributable::linkHierarchy(Writable& w)
 {
     auto handler = w.IOHandler;
     writable().IOHandler = handler;

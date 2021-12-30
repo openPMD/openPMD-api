@@ -19,12 +19,47 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 #include "openPMD/IO/IOTask.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/backend/Attributable.hpp"
+
+#include <iostream> // std::cerr
 
 
 namespace openPMD
 {
 Writable*
-getWritable(AttributableInterface* a)
+getWritable(Attributable* a)
 { return &a->writable(); }
+
+template<>
+void Parameter< Operation::CREATE_DATASET >::warnUnusedParameters<
+    json::TracingJSON >(
+    json::TracingJSON & config,
+    std::string const & currentBackendName,
+    std::string const & warningMessage )
+{
+    /*
+     * Fake-read non-backend-specific options. Some backends don't read those
+     * and we don't want to have warnings for them.
+     */
+    for( std::string const & key : { "resizable" } )
+    {
+        config[ key ];
+    }
+
+    auto shadow = config.invertShadow();
+    // The backends are supposed to deal with this
+    // Only global options here
+    for( auto const & backendKey : json::backendKeys )
+    {
+        if( backendKey != currentBackendName )
+        {
+            shadow.erase( backendKey );
+        }
+    }
+    if( shadow.size() > 0 )
+    {
+        std::cerr << warningMessage << shadow.dump() << std::endl;
+    }
+}
 } // openPMD

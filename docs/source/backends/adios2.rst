@@ -54,6 +54,11 @@ environment variable                  default    description
 ``OPENPMD2_ADIOS2_SCHEMA``            ``0``      ADIOS2 schema version (see below)
 ``OPENPMD_ADIOS2_STATS_LEVEL``        ``0``      whether to generate statistics for variables in ADIOS2. (``1``: yes, ``0``: no).
 ``OPENPMD_BP_BACKEND``                ``ADIOS2`` Chose preferred ``.bp`` file backend if ``ADIOS1`` and ``ADIOS2`` are available.
+``OPENPMD_ADIOS2_BP5_BufferChunkMB``  ``0``      ADIOS2 BP5 engine: applies when using either EveryoneWrites or EveryoneWritesSerial aggregation
+``OPENPMD_ADIOS2_BP5_MaxShmMB``       ``0``      ADIOS2 BP5 engine: applies when using TwoLevelShm aggregation
+``OPENPMD_ADIOS2_BP5_NumSubFiles``    ``0``      ADIOS2 BP5 engine: num of subfiles
+``OPENPMD_ADIOS2_BP5_NumAgg``         ``0``      ADIOS2 BP5 engine: num of aggregators
+``OPENPMD_ADIOS2_BP5_TypeAgg``        *empty*    ADIOS2 BP5 engine: aggregation type. (EveryoneWrites, EveryoneWritesSerial, TwoLevelShm)
 ===================================== ========== ================================================================================
 
 Please refer to the `ADIOS2 documentation <https://adios2.readthedocs.io/en/latest/engines/engines.html>`_ for details on I/O tuning.
@@ -154,6 +159,24 @@ Ignore the 30GB initialization phases.
 
 .. image:: ./memory_groupbased_nosteps.png
   :alt: Memory usage of group-based iteration without using steps
+
+
+Known Issues
+------------
+
+.. warning::
+
+   Nov 1st, 2021 (`ADIOS2 2887 <https://github.com/ornladios/ADIOS2/issues/2887>`__):
+   The fabric selection in ADIOS2 has was designed for libfabric 1.6.
+   With newer versions of libfabric, the following workaround is needed to guide the selection of a functional fabric for RDMA support:
+
+   The following environment variables can be set as work-arounds on Cray systems, when working with ADIOS2 SST:
+
+   .. code-block:: bash
+
+      export FABRIC_IFACE=mlx5_0   # ADIOS SST: select interface (1 NIC on Summit)
+      export FI_OFI_RXM_USE_SRX=1  # libfabric: use shared receive context from MSG provider
+
 
 Selected References
 -------------------

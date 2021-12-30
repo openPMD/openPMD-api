@@ -22,6 +22,7 @@
 
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/Dataset.hpp"
+#include "openPMD/Error.hpp"
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_protected
@@ -31,7 +32,36 @@
 
 namespace openPMD
 {
-class BaseRecordComponent : public LegacyAttributable
+namespace internal
+{
+    class BaseRecordComponentData : public AttributableData
+    {
+    public:
+        /**
+         * The type and extent of the dataset defined by this component.
+         */
+        Dataset m_dataset{ Datatype::UNDEFINED, {} };
+        /**
+         * True if this is defined as a constant record component as specified
+         * in the openPMD standard.
+         * If yes, then no heavy-weight dataset is created and the dataset is
+         * instead defined via light-weight attributes.
+         */
+        bool m_isConstant = false;
+
+        BaseRecordComponentData( BaseRecordComponentData const & ) = delete;
+        BaseRecordComponentData( BaseRecordComponentData && ) = delete;
+
+        BaseRecordComponentData & operator=(
+            BaseRecordComponentData const & ) = delete;
+        BaseRecordComponentData & operator=(
+            BaseRecordComponentData && ) = delete;
+
+        BaseRecordComponentData() = default;
+    };
+}
+
+class BaseRecordComponent : public Attributable
 {
     template<
         typename T,
@@ -42,8 +72,6 @@ class BaseRecordComponent : public LegacyAttributable
     class Container;
 
 public:
-    ~BaseRecordComponent() = default;
-
     double unitSI() const;
 
     BaseRecordComponent& resetDatatype(Datatype);
@@ -79,10 +107,33 @@ public:
     ChunkTable
     availableChunks();
 
-    OPENPMD_protected : BaseRecordComponent();
+protected:
 
-    std::shared_ptr< Dataset > m_dataset;
-    std::shared_ptr< bool > m_isConstant;
+    std::shared_ptr< internal::BaseRecordComponentData >
+        m_baseRecordComponentData{
+            new internal::BaseRecordComponentData() };
+
+    inline internal::BaseRecordComponentData const & get() const
+    {
+        return *m_baseRecordComponentData;
+    }
+
+    inline internal::BaseRecordComponentData & get()
+    {
+        return *m_baseRecordComponentData;
+    }
+
+    inline void setData(
+        std::shared_ptr< internal::BaseRecordComponentData > data )
+    {
+        m_baseRecordComponentData = std::move( data );
+        Attributable::setData( m_baseRecordComponentData );
+    }
+
+    BaseRecordComponent( std::shared_ptr< internal::BaseRecordComponentData > );
+
+private:
+    BaseRecordComponent();
 }; // BaseRecordComponent
 
 namespace detail

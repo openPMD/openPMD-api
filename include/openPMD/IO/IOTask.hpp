@@ -37,11 +37,11 @@
 
 namespace openPMD
 {
-class AttributableInterface;
+class Attributable;
 class Writable;
 
 Writable*
-getWritable(AttributableInterface*);
+getWritable(Attributable*);
 
 /** Type of IO operation between logical and persistent data.
  */
@@ -268,8 +268,7 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::CREATE_DATASET > : public Abstrac
     Parameter() = default;
     Parameter(Parameter const & p) : AbstractParameter(),
         name(p.name), extent(p.extent), dtype(p.dtype),
-        chunkSize(p.chunkSize), compression(p.compression),
-        transform(p.transform), options(p.options) {}
+        options(p.options) {}
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -281,10 +280,19 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::CREATE_DATASET > : public Abstrac
     std::string name = "";
     Extent extent = {};
     Datatype dtype = Datatype::UNDEFINED;
-    Extent chunkSize = {};
-    std::string compression = "";
-    std::string transform = "";
     std::string options = "{}";
+
+    /** Warn about unused JSON paramters
+     *
+     * Template parameter so we don't have to include the JSON lib here.
+     * This function is useful for the createDataset() methods in,
+     * IOHandlerImpl's, so putting that here is the simplest way to make it
+     * available for them. */
+    template< typename TracingJSON >
+    static void warnUnusedParameters(
+        TracingJSON &,
+        std::string const & currentBackendName,
+        std::string const & warningMessage );
 };
 
 template<>
@@ -424,6 +432,15 @@ struct OPENPMDAPI_EXPORT Parameter< Operation::GET_BUFFER_VIEW > : public Abstra
         offset(p.offset), extent(p.extent), dtype(p.dtype), update(p.update),
         out(p.out)
     {}
+    Parameter & operator=(Parameter const & p)
+    {
+        offset = p.offset;
+        extent = p.extent;
+        dtype = p.dtype;
+        update = p.update;
+        out = p.out;
+        return *this;
+    }
 
     std::unique_ptr< AbstractParameter >
     clone() const override
@@ -604,7 +621,7 @@ public:
     { }
 
     template< Operation op >
-    explicit IOTask(AttributableInterface* a,
+    explicit IOTask(Attributable* a,
            Parameter< op > const & p)
             : writable{getWritable(a)},
               operation{op},

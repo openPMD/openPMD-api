@@ -141,7 +141,7 @@ packages:
 
   # speed up builds of dependencies
   ncurses:
-    variants: ~termlib          
+    variants: ~termlib
   gettext:
     variants: ~curses ~libxml2 ~git ~tar ~bzip2 ~xz
   py-numpy:

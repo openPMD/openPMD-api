@@ -5,7 +5,7 @@ labels: install
 ---
 
 **Performed steps**
-The following steps 
+The following steps
 
 ```commandline
 ...

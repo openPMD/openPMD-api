@@ -1,5 +1,7 @@
 #include "openPMD/Error.hpp"
 
+#include <sstream>
+
 namespace openPMD
 {
 const char * Error::what() const noexcept
@@ -18,6 +20,32 @@ namespace error
 
     WrongAPIUsage::WrongAPIUsage( std::string what )
         : Error( "Wrong API usage: " + what )
+    {
+    }
+
+    static std::string concatVector(
+        std::vector< std::string > const & vec,
+        std::string const & intersperse = "." )
+    {
+        if( vec.empty() )
+        {
+            return "";
+        }
+        std::stringstream res;
+        res << vec[ 0 ];
+        for( size_t i = 1; i < vec.size(); ++i )
+        {
+            res << intersperse << vec[ i ];
+        }
+        return res.str();
+    }
+
+    BackendConfigSchema::BackendConfigSchema(
+        std::vector< std::string > errorLocation_in, std::string what )
+        : Error(
+              "Wrong JSON schema at index '" +
+              concatVector( errorLocation_in ) + "': " + std::move( what ) )
+        , errorLocation( std::move( errorLocation_in ) )
     {
     }
 }

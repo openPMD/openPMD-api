@@ -28,7 +28,7 @@
 #include "openPMD/IO/ADIOS/ADIOS2PreloadAttributes.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
-#include "openPMD/auxiliary/JSON.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/config.hpp"
@@ -130,14 +130,14 @@ public:
     ADIOS2IOHandlerImpl(
         AbstractIOHandler *,
         MPI_Comm,
-        nlohmann::json config,
+        json::TracingJSON config,
         std::string engineType );
 
 #endif // openPMD_HAVE_MPI
 
     explicit ADIOS2IOHandlerImpl(
         AbstractIOHandler *,
-        nlohmann::json config,
+        json::TracingJSON config,
         std::string engineType );
 
 
@@ -236,6 +236,15 @@ private:
     std::string m_engineType;
     ADIOS2Schema::schema_t m_schema = ADIOS2Schema::schema_0000_00_00;
 
+    enum class UseSpan : char
+    {
+        Yes,
+        No,
+        Auto
+    };
+
+    UseSpan m_useSpanBasedPutByDefault = UseSpan::Auto;
+
     enum class AttributeLayout : char
     {
         ByAdiosAttributes,
@@ -277,15 +286,15 @@ private:
 
     std::vector< ParameterizedOperator > defaultOperators;
 
-    auxiliary::TracingJSON m_config;
-    static auxiliary::TracingJSON nullvalue;
+    json::TracingJSON m_config;
+    static json::TracingJSON nullvalue;
 
     void
-    init( nlohmann::json config );
+    init( json::TracingJSON config );
 
     template< typename Key >
-    auxiliary::TracingJSON
-    config( Key && key, auxiliary::TracingJSON & cfg )
+    json::TracingJSON
+    config( Key && key, json::TracingJSON & cfg )
     {
         if( cfg.json().is_object() && cfg.json().contains( key ) )
         {
@@ -298,7 +307,7 @@ private:
     }
 
     template< typename Key >
-    auxiliary::TracingJSON
+    json::TracingJSON
     config( Key && key )
     {
         return config< Key >( std::forward< Key >( key ), m_config );
@@ -312,7 +321,7 @@ private:
      * operators have been configured
      */
     auxiliary::Option< std::vector< ParameterizedOperator > >
-    getOperators( auxiliary::TracingJSON config );
+    getOperators( json::TracingJSON config );
 
     // use m_config
     auxiliary::Option< std::vector< ParameterizedOperator > >
@@ -1290,7 +1299,7 @@ namespace detail
              * are initialized with the OutsideOfStep state).
              * A step should only be opened if an explicit ADVANCE task arrives
              * at the backend.
-             * 
+             *
              * @todo If the streaming API is used on files, parsing the whole
              *       Series up front is unnecessary work.
              *       Our frontend does not yet allow to distinguish whether
@@ -1398,7 +1407,7 @@ public:
         std::string path,
         Access,
         MPI_Comm,
-        nlohmann::json options,
+        json::TracingJSON options,
         std::string engineType );
 
 #endif
@@ -1406,7 +1415,7 @@ public:
     ADIOS2IOHandler(
         std::string path,
         Access,
-        nlohmann::json options,
+        json::TracingJSON options,
         std::string engineType );
 
     std::string backendName() const override { return "ADIOS2"; }

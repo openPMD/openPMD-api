@@ -94,8 +94,7 @@ namespace openPMD
         );
 
         /**
-         * @param compression Compression string, leave empty to disable commpression.
-         * @param compressionLevel Compression level.
+         * @param jsonConfig Backend-specific configuration.
          * @param backend Backend to use, specified by filename extension (eg "bp" or "h5").
          * @param dt Type of data to write and read.
          * @param iterations The number of iterations to write and read for each
@@ -104,8 +103,7 @@ namespace openPMD
          * @param threadSize Number of threads to use.
          */
         void addConfiguration(
-            std::string compression,
-            uint8_t compressionLevel,
+            std::string jsonConfig,
             std::string backend,
             Datatype dt,
             typename decltype( Series::iterations )::key_type iterations,
@@ -115,8 +113,7 @@ namespace openPMD
         /**
          * Version of addConfiguration() that automatically sets the number of used
          * threads to the MPI size.
-         * @param compression Compression string, leave empty to disable commpression.
-         * @param compressionLevel Compression level.
+         * @param jsonConfig Backend-specific configuration.
          * @param backend Backend to use, specified by filename extension (eg "bp" or "h5").
          * @param dt Type of data to write and read.
          * @param iterations The number of iterations to write and read for each
@@ -124,8 +121,7 @@ namespace openPMD
          * iteration, so it should create sufficient data for one iteration.
          */
         void addConfiguration(
-            std::string compression,
-            uint8_t compressionLevel,
+            std::string jsonConfig,
             std::string backend,
             Datatype dt,
             typename decltype( Series::iterations)::key_type iterations
@@ -152,7 +148,6 @@ namespace openPMD
         std::vector<
             std::tuple<
                 std::string,
-                uint8_t,
                 std::string,
                 int,
                 Datatype,
@@ -161,8 +156,7 @@ namespace openPMD
 
         enum Config
         {
-            COMPRESSION = 0,
-            COMPRESSION_LEVEL,
+            JSON_CONFIG = 0,
             BACKEND,
             NRANKS,
             DTYPE,
@@ -194,8 +188,7 @@ namespace openPMD
         /**
          * Execute a single read benchmark.
          * @tparam T Type of the dataset to write.
-         * @param compression Compression to use.
-         * @param level Compression level to use.
+         * @param jsonConfig Backend-specific config.
          * @param offset Local offset of the chunk to write.
          * @param extent Local extent of the chunk to write.
          * @param extension File extension to control the openPMD backend.
@@ -207,8 +200,7 @@ namespace openPMD
                 typename T
             >
             typename Clock::duration writeBenchmark(
-                std::string const & compression,
-                uint8_t level,
+                std::string const & jsonConfig,
                 Offset & offset,
                 Extent & extent,
                 std::string const & extension,
@@ -331,8 +323,7 @@ namespace openPMD
 
     template< typename DatasetFillerProvider >
     void MPIBenchmark< DatasetFillerProvider >::addConfiguration(
-        std::string compression,
-        uint8_t compressionLevel,
+        std::string jsonConfig,
         std::string backend,
         Datatype dt,
         typename decltype( Series::iterations)::key_type iterations,
@@ -341,8 +332,7 @@ namespace openPMD
     {
         this->m_configurations
             .emplace_back(
-                compression,
-                compressionLevel,
+                std::move( jsonConfig ),
                 backend,
                 threadSize,
                 dt,
@@ -353,8 +343,7 @@ namespace openPMD
 
     template< typename DatasetFillerProvider >
     void MPIBenchmark< DatasetFillerProvider >::addConfiguration(
-        std::string compression,
-        uint8_t compressionLevel,
+        std::string jsonConfig,
         std::string backend,
         Datatype dt,
         typename decltype( Series::iterations)::key_type iterations
@@ -366,8 +355,7 @@ namespace openPMD
             &size
         );
         addConfiguration(
-            compression,
-            compressionLevel,
+            std::move( jsonConfig ),
             backend,
             dt,
             iterations,
@@ -389,8 +377,7 @@ namespace openPMD
     template< typename T >
     typename Clock::duration
     MPIBenchmark< DatasetFillerProvider >::BenchmarkExecution< Clock >::writeBenchmark(
-        std::string const & compression,
-        uint8_t level,
+        std::string const & jsonConfig,
         Offset & offset,
         Extent & extent,
         std::string const & extension,
@@ -405,7 +392,8 @@ namespace openPMD
         Series series = Series(
             m_benchmark->m_basePath + "." + extension,
             Access::CREATE,
-            m_benchmark->communicator
+            m_benchmark->communicator,
+            jsonConfig
         );
 
         for( typename decltype( Series::iterations)::key_type i = 0;
@@ -424,13 +412,6 @@ namespace openPMD
                 datatype,
                 m_benchmark->totalExtent
             );
-            if( !compression.empty( ) )
-            {
-                dataset.setCompression(
-                    compression,
-                    level
-                );
-            }
 
             id.resetDataset( dataset );
 
@@ -521,15 +502,13 @@ namespace openPMD
         );
         for( auto const & config: exec.m_benchmark->m_configurations )
         {
-            std::string compression;
-            uint8_t compressionLevel;
+            std::string jsonConfig;
             std::string backend;
             int size;
             Datatype dt2;
             typename decltype( Series::iterations)::key_type iterations;
             std::tie(
-                compression,
-                compressionLevel,
+                jsonConfig,
                 backend,
                 size,
                 dt2,
@@ -551,8 +530,7 @@ namespace openPMD
             dsf->setNumberOfItems( blockSize );
 
             auto writeTime = exec.writeBenchmark< T >(
-                compression,
-                compressionLevel,
+                jsonConfig,
                 localCuboid.first,
                 localCuboid.second,
                 backend,
@@ -567,8 +545,7 @@ namespace openPMD
             );
             report.addReport(
                 rootThread,
-                compression,
-                compressionLevel,
+                jsonConfig,
                 backend,
                 size,
                 dt2,

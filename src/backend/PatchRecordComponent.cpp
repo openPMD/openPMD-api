@@ -26,6 +26,15 @@
 
 namespace openPMD
 {
+namespace internal
+{
+    PatchRecordComponentData::PatchRecordComponentData()
+    {
+        PatchRecordComponent impl{ { this, []( auto const * ){} } };
+        impl.setUnitSI( 1 );
+    }
+}
+
 PatchRecordComponent&
 PatchRecordComponent::setUnitSI(double usi)
 {
@@ -44,7 +53,7 @@ PatchRecordComponent::resetDataset(Dataset d)
                     [](Extent::value_type const& i) { return i == 0u; }) )
         throw std::runtime_error("Dataset extent must not be zero in any dimension.");
 
-    *m_dataset = d;
+    get().m_dataset = d;
     dirty() = true;
     return *this;
 }
@@ -58,24 +67,32 @@ PatchRecordComponent::getDimensionality() const
 Extent
 PatchRecordComponent::getExtent() const
 {
-    return m_dataset->extent;
+    return get().m_dataset.extent;
 }
 
 PatchRecordComponent::PatchRecordComponent()
-    : m_chunks{std::make_shared< std::queue< IOTask > >()}
+    : BaseRecordComponent{ nullptr }
 {
-    setUnitSI(1);
+    BaseRecordComponent::setData( m_patchRecordComponentData );
+}
+
+PatchRecordComponent::PatchRecordComponent(
+    std::shared_ptr< internal::PatchRecordComponentData > data )
+    : BaseRecordComponent{ data }
+    , m_patchRecordComponentData{ std::move( data ) }
+{
 }
 
 void
 PatchRecordComponent::flush(std::string const& name)
 {
+    auto & rc = get();
     if(IOHandler()->m_frontendAccess == Access::READ_ONLY )
     {
-        while( !m_chunks->empty() )
+        while( !rc.m_chunks.empty() )
         {
-            IOHandler()->enqueue(m_chunks->front());
-            m_chunks->pop();
+            IOHandler()->enqueue(rc.m_chunks.front());
+            rc.m_chunks.pop();
         }
     } else
     {
@@ -85,17 +102,14 @@ PatchRecordComponent::flush(std::string const& name)
             dCreate.name = name;
             dCreate.extent = getExtent();
             dCreate.dtype = getDatatype();
-            dCreate.chunkSize = getExtent();
-            dCreate.compression = m_dataset->compression;
-            dCreate.transform = m_dataset->transform;
-            dCreate.options = m_dataset->options;
+            dCreate.options = rc.m_dataset.options;
             IOHandler()->enqueue(IOTask(this, dCreate));
         }
 
-        while( !m_chunks->empty() )
+        while( !rc.m_chunks.empty() )
         {
-            IOHandler()->enqueue(m_chunks->front());
-            m_chunks->pop();
+            IOHandler()->enqueue(rc.m_chunks.front());
+            rc.m_chunks.pop();
         }
 
         flushAttributes();
@@ -125,6 +139,7 @@ PatchRecordComponent::dirtyRecursive() const
     {
         return true;
     }
-    return !m_chunks->empty();
+    auto & rc = get();
+    return !rc.m_chunks.empty();
 }
 } // openPMD

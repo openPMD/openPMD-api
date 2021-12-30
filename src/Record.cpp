@@ -112,7 +112,7 @@ Record::read()
             RecordComponent& rc = (*this)[component];
             pOpen.path = component;
             IOHandler()->enqueue(IOTask(&rc, pOpen));
-            *rc.m_isConstant = true;
+            rc.get().m_isConstant = true;
             rc.read();
         }
 

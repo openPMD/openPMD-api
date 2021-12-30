@@ -3,6 +3,7 @@
 #include <exception>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace openPMD
 {
@@ -61,6 +62,14 @@ namespace error
     {
     public:
         WrongAPIUsage( std::string what );
+    };
+
+    class BackendConfigSchema : public Error
+    {
+    public:
+        std::vector< std::string > errorLocation;
+
+        BackendConfigSchema( std::vector< std::string >, std::string what );
     };
 }
 }

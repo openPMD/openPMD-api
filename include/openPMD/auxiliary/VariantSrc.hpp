@@ -1,4 +1,4 @@
-/* Copyright 2002-2021 Axel Huebl
+/* Copyright 2020-2021 Axel Huebl
  *
  * This file is part of openPMD-api.
  *
@@ -20,7 +20,9 @@
  */
 #pragma once
 
-#if __cplusplus >= 201703L && !(defined __APPLE__ && defined __clang__)
+#include "openPMD/config.hpp"
+
+#if openPMD_HAS_CXX17
 #   include <variant> // IWYU pragma: export
 namespace variantSrc = std;
 #else

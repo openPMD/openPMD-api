@@ -86,4 +86,3 @@ when picking the JSON backend:
 
 .. literalinclude:: json_example.json
    :language: json
-

@@ -274,7 +274,7 @@ Mesh::flush_impl(std::string const& name)
 void
 Mesh::read()
 {
-    auto map = eraseStaleEntries();
+    internal::EraseStaleEntries< Mesh & > map{ *this };
 
     using DT = Datatype;
     Parameter< Operation::READ_ATT > aRead;
@@ -331,6 +331,8 @@ Mesh::read()
         setGridSpacing(a.get< std::vector< float > >());
     else if( *aRead.dtype == DT::VEC_DOUBLE || *aRead.dtype == DT::DOUBLE )
         setGridSpacing(a.get< std::vector< double > >());
+    else if( *aRead.dtype == DT::VEC_LONG_DOUBLE || *aRead.dtype == DT::LONG_DOUBLE )
+        setGridSpacing(a.get< std::vector< long double > >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'gridSpacing'");
 
@@ -366,7 +368,7 @@ Mesh::read()
             MeshRecordComponent& rc = map[ component ];
             pOpen.path = component;
             IOHandler()->enqueue(IOTask(&rc, pOpen));
-            *rc.m_isConstant = true;
+            rc.get().m_isConstant = true;
             rc.read();
         }
 

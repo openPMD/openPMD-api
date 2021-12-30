@@ -12,6 +12,8 @@ void init_Error( py::module & m )
         m, "ErrorOperationUnsupportedInBackend", baseError );
     py::register_exception< error::WrongAPIUsage >(
         m, "ErrorWrongAPIUsage", baseError );
+    py::register_exception< error::BackendConfigSchema >(
+        m, "ErrorBackendConfigSchema", baseError );
 
 #ifndef NDEBUG
     m.def( "test_throw", []( std::string description ) {

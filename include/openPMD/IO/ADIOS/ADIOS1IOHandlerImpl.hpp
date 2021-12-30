@@ -46,7 +46,7 @@ namespace openPMD
     private:
         using Base_t = CommonADIOS1IOHandlerImpl< ADIOS1IOHandlerImpl >;
     public:
-        ADIOS1IOHandlerImpl(AbstractIOHandler*);
+        ADIOS1IOHandlerImpl(AbstractIOHandler*, json::TracingJSON);
         virtual ~ADIOS1IOHandlerImpl();
 
         virtual void init();

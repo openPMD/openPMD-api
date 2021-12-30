@@ -107,6 +107,7 @@ Shipped internally in `share/openPMD/thirdParty/`:
 * [Catch2](https://github.com/catchorg/Catch2) 2.13.4+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
 * [pybind11](https://github.com/pybind/pybind11) 2.6.2+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
 * [NLohmann-JSON](https://github.com/nlohmann/json) 3.9.1+ ([MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT))
+* [toml11](https://github.com/ToruNiina/toml11) 3.7.0+ ([MIT](https://github.com/ToruNiina/toml11/blob/master/LICENSE))
 
 I/O backends:
 * [JSON](https://en.wikipedia.org/wiki/JSON)
@@ -119,7 +120,7 @@ while those can be built either with or without:
 
 Optional language bindings:
 * Python:
-  * Python 3.6 - 3.9
+  * Python 3.6 - 3.10
   * pybind11 2.6.2+
   * numpy 1.15+
   * mpi4py 2.1+ (optional, for MPI)
@@ -148,7 +149,7 @@ Choose *one* of the install methods below to get started:
 ```bash
 # optional:               +python +adios1 -adios2 -hdf5 -mpi
 spack install openpmd-api
-spack load -r openpmd-api
+spack load openpmd-api
 ```
 
 ### [Conda](https://conda.io)
@@ -272,6 +273,7 @@ The following options allow to switch to external installs:
 | `openPMD_USE_INTERNAL_CATCH`    | **ON**/OFF | Catch2        | 2.13.4+ |
 | `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.6.2+ |
 | `openPMD_USE_INTERNAL_JSON`     | **ON**/OFF | NLohmann-JSON |  3.9.1+ |
+| `openPMD_USE_INTERNAL_TOML11`   | **ON**/OFF | toml11        |  3.7.0+ |
 
 By default, this will build as a shared library (`libopenPMD.[so|dylib|dll]`) and installs also its headers.
 In order to build a static library, append `-DBUILD_SHARED_LIBS=OFF` to the `cmake` command.
@@ -413,6 +415,8 @@ Further thanks go to improvements and contributions from:
   Dask guidance & reviews
 * [Erik Schnetter (PITP)](https://github.com/eschnett):
   C++ API bug fixes
+* [Jean Luca Bez (LBNL)](https://github.com/jeanbez):
+  HDF5 performance tuning
 
 ### Grants
 
@@ -430,9 +434,9 @@ openPMD-api stands on the shoulders of giants and we are grateful for the follow
 * [Catch2](https://github.com/catchorg/Catch2) by [Phil Nash](https://github.com/philsquared), [Martin Hořeňovský](https://github.com/horenmar) and [contributors](https://github.com/catchorg/Catch2/graphs/contributors)
 * HDF5 by [the HDF group](https://www.hdfgroup.org) and community
 * [json](https://github.com/nlohmann/json) by [Niels Lohmann](https://github.com/nlohmann) and [contributors](https://github.com/nlohmann/json/graphs/contributors)
+* [toml11](https://github.com/ToruNiina/toml11) by [Toru Niina](https://github.com/ToruNiina) and [contributors](https://github.com/ToruNiina/toml11#Contributors)
 * [pybind11](https://github.com/pybind/pybind11) by [Wenzel Jakob (EPFL)](https://github.com/wjakob) and [contributors](https://github.com/pybind/pybind11/graphs/contributors)
 * all contributors to the evolution of modern C++ and early library preview developers, e.g. [Michael Park (Facebook)](https://github.com/mpark)
 * the [CMake build system](https://cmake.org) and [contributors](https://github.com/Kitware/CMake/blob/master/Copyright.txt)
 * packaging support by the [conda-forge](https://conda-forge.org), [PyPI](https://pypi.org) and [Spack](https://spack.io) communities, among others
 * the [openPMD-standard](https://github.com/openPMD/openPMD-standard) by [Axel Huebl (HZDR, now LBNL)](https://github.com/ax3l) and [contributors](https://github.com/openPMD/openPMD-standard/blob/latest/AUTHORS.md)
-
