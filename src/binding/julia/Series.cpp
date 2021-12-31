@@ -27,11 +27,12 @@ void define_julia_Series(jlcxx::Module &mod) {
   type.method("cxx_Series", [](const std::string &filepath, Access at,
                                sized_uint_t<sizeof(MPI_Comm)> comm,
                                const std::string &options) {
-    return Series(filepath, at, *(const MPI_Comm *)&comm, options);
+    return Series(filepath, at, *(const MPI_Comm *)(const void *)&comm,
+                  options);
   });
   type.method("cxx_Series", [](const std::string &filepath, Access at,
                                sized_uint_t<sizeof(MPI_Comm)> comm) {
-    return Series(filepath, at, *(const MPI_Comm *)&comm);
+    return Series(filepath, at, *(const MPI_Comm *)(const void *)&comm);
   });
 #endif
   type.constructor<const std::string &, Access, const std::string &>();
@@ -53,11 +54,13 @@ void define_julia_Series(jlcxx::Module &mod) {
   type.method("cxx_set_author!", &Series::setAuthor);
   type.method("cxx_software", &Series::software);
   type.method("cxx_set_software!",
-              static_cast<Series &(Series::*)(std::string const &,
-                                              std::string const &)>(
+              static_cast<Series &(Series::*)(const std::string &,
+                                              const std::string &)>(
                   &Series::setSoftware));
-  type.method("cxx_set_software!", (Series & (Series::*)(std::string const &))(
-                                       &Series::setSoftware));
+  type.method("cxx_set_software!",
+              [](Series &series, const std::string &newName) -> Series & {
+                return series.setSoftware(newName);
+              });
   type.method("cxx_software_version", &Series::softwareVersion);
   // type.method("set_software_version!",
   // &Series::setSoftwareVersion);
