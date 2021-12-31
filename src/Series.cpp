@@ -1654,11 +1654,6 @@ Series::operator bool() const
     return m_series.operator bool();
 }
 
-void Series::close()
-{
-    m_series = nullptr;
-}
-
 ReadIterations Series::readIterations()
 {
     // Use private constructor instead of copy constructor to avoid
