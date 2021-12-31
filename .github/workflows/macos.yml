@@ -28,15 +28,20 @@ jobs:
         brew install python || true
         set -e
         # Install libcxxwrap-julia
-        wget https://github.com/JuliaInterop/libcxxwrap-julia/archive/refs/tags/v0.8.3.tar.gz
-        tar xzf v0.8.3.tar.gz
-        rm -rf v0.8.3.tar.gz
-        cd libcxxwrap-julia-0.8.3
+        # wget https://github.com/JuliaInterop/libcxxwrap-julia/archive/refs/tags/v0.8.3.tar.gz
+        # tar xzf v0.8.3.tar.gz
+        # rm -rf v0.8.3.tar.gz
+        # cd libcxxwrap-julia-0.8.3
+        wget https://github.com/JuliaInterop/libcxxwrap-julia.git/tarball/37743e11cda7363a17840fe2353ff78a7e964a2c
+        tar xzf 37743e11cda7363a17840fe2353ff78a7e964a2c
+        rm -rf 37743e11cda7363a17840fe2353ff78a7e964a2c
+        cd JuliaInterop-libcxxwrap-julia-37743e1
         cmake -S . -B build
         cmake --build build --parallel 2
         cmake --install build
         cd ..
-        rm -rf libcxxwrap-julia-0.8.3
+        # rm -rf libcxxwrap-julia-0.8.3
+        rm -rf JuliaInterop-libcxxwrap-julia-37743e1
     - name: Build
       env: {CXXFLAGS: -Werror -Wno-deprecated-declarations, MACOSX_DEPLOYMENT_TARGET: 10.12}
       # C++11 & 14 support in macOS 10.9+
