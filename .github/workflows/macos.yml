@@ -32,7 +32,7 @@ jobs:
         # tar xzf v0.8.3.tar.gz
         # rm -rf v0.8.3.tar.gz
         # cd libcxxwrap-julia-0.8.3
-        wget https://github.com/JuliaInterop/libcxxwrap-julia.git/tarball/37743e11cda7363a17840fe2353ff78a7e964a2c
+        wget https://github.com/JuliaInterop/libcxxwrap-julia/tarball/37743e11cda7363a17840fe2353ff78a7e964a2c
         tar xzf 37743e11cda7363a17840fe2353ff78a7e964a2c
         rm -rf 37743e11cda7363a17840fe2353ff78a7e964a2c
         cd JuliaInterop-libcxxwrap-julia-37743e1
