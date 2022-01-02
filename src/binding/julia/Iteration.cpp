@@ -23,7 +23,6 @@ void define_julia_Iteration(jlcxx::Module &mod) {
               static_cast<Iteration &(Iteration::*)(bool)>(&Iteration::close));
   type.method("cxx_open", &Iteration::open);
   type.method("cxx_closed", &Iteration::closed);
-  type.method("cxx_closed_by_writer", &Iteration::closedByWriter);
   type.method("cxx_meshes",
               [](Iteration &iter) -> Container<Mesh> & { return iter.meshes; });
   // TODO: particles
