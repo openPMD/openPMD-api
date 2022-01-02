@@ -2,6 +2,8 @@
 
 #include "defs.hpp"
 
+#include <cstring>
+
 #if openPMD_HAVE_MPI
 #include <mpi.h>
 
@@ -25,13 +27,19 @@ void define_julia_Series(jlcxx::Module &mod) {
   type.constructor<>();
 #if openPMD_HAVE_MPI
   type.method("cxx_Series", [](const std::string &filepath, Access at,
-                               sized_uint_t<sizeof(MPI_Comm)> comm,
+                               sized_uint_t<sizeof(MPI_Comm)> ucomm,
                                const std::string &options) {
-    return Series(filepath, at, reinterpret_cast<MPI_Comm>(comm), options);
+    MPI_Comm comm;
+    static_assert(sizeof ucomm == sizeof comm, "");
+    memcpy(&comm, &ucomm, sizeof comm);
+    return Series(filepath, at, comm, options);
   });
   type.method("cxx_Series", [](const std::string &filepath, Access at,
-                               sized_uint_t<sizeof(MPI_Comm)> comm) {
-    return Series(filepath, at, reinterpret_cast<MPI_Comm>(comm));
+                               sized_uint_t<sizeof(MPI_Comm)> ucomm) {
+    MPI_Comm comm;
+    static_assert(sizeof ucomm == sizeof comm, "");
+    memcpy(&comm, &ucomm, sizeof comm);
+    return Series(filepath, at, comm);
   });
 #endif
   type.constructor<const std::string &, Access, const std::string &>();
@@ -81,7 +89,6 @@ void define_julia_Series(jlcxx::Module &mod) {
   type.method("cxx_backend", &Series::backend);
   type.method("cxx_flush", &Series::flush);
 
-  // TODO type.method("cxx_close", &Series::close);
   type.method("cxx_iterations",
               [](Series &series) -> Container<Iteration, uint64_t> & {
                 return series.iterations;
