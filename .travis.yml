@@ -39,6 +39,18 @@ jobs:
       env:
         - CIBW_BUILD="*_aarch64"
         - CIBW_SKIP="cp38-* cp39-* cp36-* cp37-* cp310-* *-musllinux_*"
+    - services: docker
+      arch: arm64
+      dist: focal
+      env:
+        - CIBW_BUILD="*-musllinux_aarch64"
+        - CIBW_SKIP="cp38-* cp39-* cp310-*"
+    - services: docker
+      arch: arm64
+      dist: focal
+      env:
+        - CIBW_BUILD="*-musllinux_aarch64"
+        - CIBW_SKIP="cp36-* cp37-* cp310-*"
 
     # perform a linux PPC64LE build
     - services: docker
@@ -66,6 +78,31 @@ jobs:
 #      dist: focal
 #      env:
 #        - CIBW_BUILD="cp310-manylinux_ppc64le"
+    - services: docker
+      arch: ppc64le
+      dist: focal
+      env:
+        - CIBW_BUILD="cp36-musllinux_ppc64le"
+    - services: docker
+      arch: ppc64le
+      dist: focal
+      env:
+        - CIBW_BUILD="cp37-musllinux_ppc64le"
+    - services: docker
+      arch: ppc64le
+      dist: focal
+      env:
+        - CIBW_BUILD="cp38-musllinux_ppc64le"
+    - services: docker
+      arch: ppc64le
+      dist: focal
+      env:
+        - CIBW_BUILD="cp39-musllinux_ppc64le"
+#    - services: docker
+#      arch: ppc64le
+#      dist: focal
+#      env:
+#        - CIBW_BUILD="cp310-musllinux_ppc64le"
 
     # perform a linux S390X build
     # blocked by https://github.com/GTkorvo/dill/issues/15
