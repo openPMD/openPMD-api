@@ -3339,6 +3339,72 @@ TEST_CASE( "no_serial_adios1", "[serial][adios]")
 }
 #endif
 
+#if openPMD_HAVE_ADIOS1
+TEST_CASE( "serial_adios1_json_config", "[serial][adios1]" )
+{
+    std::string globalConfig = R"END(
+{
+  "backend": "adios1",
+  "adios1": {
+    "dataset": {
+      "transform": "blosc:compressor=zlib,shuffle=bit,lvl=1;nometa"
+    }
+  }
+})END";
+    std::string localConfig = R"END(
+{
+  "adios1": {
+    "dataset": {
+      "transform": "blosc:compressor=zlib,shuffle=bit,lvl=5;nometa"
+    }
+  }
+})END";
+
+    try
+    {
+        Series write(
+            "../samples/adios1_dataset_transform.bp",
+            Access::CREATE,
+            globalConfig );
+        auto meshes = write.writeIterations()[ 0 ].meshes;
+
+        auto defaultConfiguredMesh =
+            meshes[ "defaultConfigured" ][ RecordComponent::SCALAR ];
+        auto overridenTransformMesh =
+            meshes[ "overridenConfig" ][ RecordComponent::SCALAR ];
+
+        Dataset ds{ Datatype::INT, { 10 } };
+
+        defaultConfiguredMesh.resetDataset( ds );
+
+        ds.options = localConfig;
+        overridenTransformMesh.resetDataset( ds );
+
+        std::vector< int > data( 10, 2345 );
+
+        defaultConfiguredMesh.storeChunk( data, { 0 }, { 10 } );
+        overridenTransformMesh.storeChunk( data, { 0 }, { 10 } );
+
+        write.flush();
+    }
+    catch( std::runtime_error const & e )
+    {
+        if( std::string( e.what() ) ==
+            "[ADIOS1] Internal error: Failed to set ADIOS transform during "
+            "Dataset creation" )
+        {
+            std::cerr
+                << "Skipping serial_adios1_json_config test since the ADIOS1 "
+                   "installation does not support blosc compression.";
+        }
+        else
+        {
+            throw;
+        }
+    }
+}
+#endif
+
 #if openPMD_HAVE_ADIOS2
 TEST_CASE( "git_adios2_early_chunk_query", "[serial][adios2]" )
 {

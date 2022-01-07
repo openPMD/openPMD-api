@@ -552,19 +552,23 @@ CommonADIOS1IOHandlerImpl< ChildClass >::createDataset(Writable* writable,
         {
             json::TracingJSON options = json::parseOptions(
                 parameters.options, /* considerFiles = */ false );
-            auto maybeTransform = datasetTransform( options );
-            if( maybeTransform.has_value() )
+            if( options.json().contains( "adios1" ) )
             {
-                transform = maybeTransform.get();
-            }
+                options = options["adios1"];
+                auto maybeTransform = datasetTransform( options );
+                if( maybeTransform.has_value() )
+                {
+                    transform = maybeTransform.get();
+                }
 
-            auto shadow = options.invertShadow();
-            if( shadow.size() > 0 )
-            {
-                std::cerr << "Warning: parts of the JSON configuration for "
-                             "ADIOS1 dataset '"
-                          << name << "' remain unused:\n"
-                          << shadow << std::endl;
+                auto shadow = options.invertShadow();
+                if( shadow.size() > 0 )
+                {
+                    std::cerr << "Warning: parts of the JSON configuration for "
+                                "ADIOS1 dataset '"
+                            << name << "' remain unused:\n"
+                            << shadow << std::endl;
+                }
             }
         }
         // Fallback: global option
@@ -577,7 +581,7 @@ CommonADIOS1IOHandlerImpl< ChildClass >::createDataset(Writable* writable,
         {
             int status;
             status = adios_set_transform(id, transform.c_str());
-            VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to set ADIOS transform during Dataset cretaion");
+            VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to set ADIOS transform during Dataset creation");
         }
 
         writable->written = true;
@@ -1761,6 +1765,13 @@ void CommonADIOS1IOHandlerImpl< ChildClass >::initJson(
     if( maybeTransform.has_value() )
     {
         m_defaultTransform = std::move( maybeTransform.get() );
+    }
+    auto shadow = config.invertShadow();
+    if( shadow.size() > 0 )
+    {
+        std::cerr << "Warning: parts of the JSON configuration for ADIOS1 "
+                        "remain unused:\n"
+                    << shadow << std::endl;
     }
 }
 
