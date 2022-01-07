@@ -807,6 +807,7 @@ set(openPMD_EXAMPLE_NAMES
     10_streaming_write
     10_streaming_read
     12_span_write
+    13_write_dynamic_configuration
 )
 set(openPMD_PYTHON_EXAMPLE_NAMES
     2_read_serial
@@ -822,6 +823,7 @@ set(openPMD_PYTHON_EXAMPLE_NAMES
     10_streaming_read
     11_particle_dataframe
     12_span_write
+    13_write_dynamic_configuration
 )
 
 if(openPMD_USE_INVASIVE_TESTS)
