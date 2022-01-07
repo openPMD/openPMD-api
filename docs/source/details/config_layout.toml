@@ -1,0 +1,11 @@
+[adios1]
+# put ADIOS config here
+
+[adios2]
+# put ADIOS2 config here
+
+[hdf5]
+# put HDF5 config here
+
+[json]
+# put JSON config here

@@ -1,16 +1,21 @@
 .. _backendconfig:
 
-JSON configuration
+JSON/TOML configuration
 ==================
 
 While the openPMD API intends to be a backend-*independent* implementation of the openPMD standard, it is sometimes useful to pass configuration parameters to the specific backend in use.
-:ref:`For each backend <backends-overview>`, configuration options can be passed via a JSON-formatted string or via environment variables.
-A JSON option always takes precedence over an environment variable.
+:ref:`For each backend <backends-overview>`, configuration options can be passed via a JSON- or TOML-formatted string or via environment variables.
+A JSON/TOML option always takes precedence over an environment variable.
 
 The fundamental structure of this JSON configuration string is given as follows:
 
 .. literalinclude:: config_layout.json
    :language: json
+
+Every JSON configuration can alternatively be given by its TOML equivalent:
+
+.. literalinclude:: config_layout.toml
+   :language: toml
 
 This structure allows keeping one configuration string for several backends at once, with the concrete backend configuration being chosen upon choosing the backend itself.
 
@@ -20,41 +25,62 @@ The following list specifies the priority of these means, beginning with the low
 1. Default values
 2. Automatically detected options, e.g. the backend being detected by inspection of the file extension
 3. Environment variables
-4. JSON configuration. For JSON, a dataset-specific configuration overwrites a global, Series-wide configuration.
+4. JSON/TOML configuration. For JSON/TOML, a dataset-specific configuration overwrites a global, Series-wide configuration.
 5. Explicit API calls such as ``setIterationEncoding()``
 
 The configuration is read in a case-insensitive manner, keys as well as values.
 An exception to this are string values which are forwarded to other libraries such as ADIOS1 and ADIOS2.
 Those are read "as-is" and interpreted by the backend library.
-Generally, keys of the configuration are *lower case*.
 Parameters that are directly passed through to an external library and not interpreted within openPMD API (e.g. ``adios2.engine.parameters``) are unaffected by this and follow the respective library's conventions.
 
 The configuration string may refer to the complete ``openPMD::Series`` or may additionally be specified per ``openPMD::Dataset``, passed in the respective constructors.
 This reflects the fact that certain backend-specific parameters may refer to the whole Series (such as storage engines and their parameters) and others refer to actual datasets (such as compression).
 
-A JSON configuration may either be specified as a regular string that can be parsed as a JSON object, or in the constructor of ``openPMD::Series`` alternatively as a path to a JSON-formatted text file.
-In the latter case, the file path must be prepended by an at-sign ``@``.
+A JSON/TOML configuration may either be specified as an inline string that can be parsed as a JSON/TOML object, or  alternatively as a path to a JSON/TOML-formatted text file (only in the constructor of ``openPMD::Series``):
+
+* File paths are distinguished by prepending them with an at-sign ``@``.
+  JSON and TOML are then distinguished by the filename extension ``.json`` or ``.toml``.
+  If no extension can be uniquely identified, JSON is assumed as default.
+* If no at-sign ``@`` is given, an inline string is assumed.
+  If the first non-blank character of the string is a ``{``, it will be parsed as a JSON value.
+  Otherwise, it is parsed as a TOML value.
 
 For a consistent user interface, backends shall follow the following rules:
 
 * The configuration structures for the Series and for each dataset should be defined equivalently.
-* Any setting referring to single datasets should also be applicable globally, affecting all datasets.
+* Any setting referring to single datasets should also be applicable globally, affecting all datasets (specifying a default).
 * If a setting is defined globally, but also for a concrete dataset, the dataset-specific setting should override the global one.
 * If a setting is passed to a dataset that only makes sense globally (such as the storage engine), the setting should be ignored except for printing a warning.
   Backends should define clearly which keys are applicable to datasets and which are not.
+* All dataset-specific options should be passed inside the ``dataset`` object, e.g.:
+
+  .. code-block:: json
+
+    {
+      "adios2": {
+        "dataset": {
+          "put dataset options": "here"
+        }
+      }
+    }
+
+  .. code-block:: toml
+
+    [adios2.dataset]
+    # put dataset options here
 
 
 Backend-independent JSON configuration
 --------------------------------------
 
-The openPMD backend can be chosen via the JSON key ``backend`` which recognizes the alternatives ``["hdf5", "adios1", "adios2", "json"]``.
+The openPMD backend can be chosen via the JSON/TOML key ``backend`` which recognizes the alternatives ``["hdf5", "adios1", "adios2", "json"]``.
 
-The iteration encoding can be chosen via the JSON key ``iteration_encoding`` which recognizes the alternatives ``["file_based", "group_based", "variable_based"]``.
+The iteration encoding can be chosen via the JSON/TOML key ``iteration_encoding`` which recognizes the alternatives ``["file_based", "group_based", "variable_based"]``.
 Note that for file-based iteration encoding, specification of the expansion pattern in the file name (e.g. ``data_%T.json``) remains mandatory.
 
 The key ``defer_iteration_parsing`` can be used to optimize the process of opening an openPMD Series (deferred/lazy parsing).
 By default, a Series is parsed eagerly, i.e. opening a Series implies reading all available iterations.
-Especially when a Series has many iterations, this can be a costly operation and users may wish to defer parsing of iterations to a later point adding ``{"defer_iteration_parsing": true}`` to their JSON configuration.
+Especially when a Series has many iterations, this can be a costly operation and users may wish to defer parsing of iterations to a later point adding ``{"defer_iteration_parsing": true}`` to their JSON/TOML configuration.
 
 When parsing non-eagerly, each iteration needs to be explicitly opened with ``Iteration::open()`` before accessing.
 (Notice that ``Iteration::open()`` is generally recommended to be used in parallel contexts to avoid parallel file accessing hazards).
@@ -79,6 +105,9 @@ A full configuration of the ADIOS2 backend:
 
 .. literalinclude:: adios2.json
    :language: json
+
+.. literalinclude:: adios2.toml
+   :language: toml
 
 All keys found under ``adios2.dataset`` are applicable globally as well as per dataset, keys found under ``adios2.engine`` only globally.
 Explanation of the single keys:
@@ -124,10 +153,13 @@ Explanation of the single keys:
 ADIOS1
 ^^^^^^
 
-ADIOS1 allows configuring custom dataset transforms via JSON:
+ADIOS1 allows configuring custom dataset transforms via JSON/TOML:
 
 .. literalinclude:: adios1.json
    :language: json
+
+.. literalinclude:: adios1.toml
+   :language: toml
 
 This configuration can be passed globally (i.e. for the ``Series`` object) to apply for all datasets.
 Alternatively, it can also be passed for single ``Dataset`` objects to only apply for single datasets.
