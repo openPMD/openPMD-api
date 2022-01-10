@@ -8,10 +8,30 @@
 using std::cout;
 using namespace openPMD;
 
+bool hasAdios2()
+{
+    auto variants = getVariants();
+    auto iterator = variants.find( "adios2" );
+    return iterator != variants.end() && iterator->second;
+}
+
 int main()
 {
-    using position_t = double;
+    if( !hasAdios2() )
+    {
+        // Example configuration below selects the ADIOS2 backend
+        return 0;
+    }
 
+    using position_t = double;
+    /*
+     * This example demonstrates how to use JSON/TOML-based dynamic
+     * configuration for openPMD.
+     * The following configuration is passed to the constructor of the Series
+     * class and specifies the defaults to used for that Series.
+     * This configuration can later be overridden as needed on a per-dataset
+     * level.
+     */
     std::string const defaults = R"END(
 # This configuration is TOML-based
 # JSON can be used alternatively, the openPMD-api will automatically detect

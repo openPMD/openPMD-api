@@ -2,7 +2,18 @@
 import json
 import openpmd_api as io
 import numpy as np
-import sys
+
+
+def hasAdios2():
+    return 'adios2' in io.variants and io.variants['adios2']
+
+
+# This example demonstrates how to use JSON/TOML-based dynamic
+# configuration for openPMD.
+# The following configuration is passed to the constructor of the Series
+# class and specifies the defaults to used for that Series.
+# This configuration can later be overridden as needed on a per-dataset
+# level.
 
 defaults = """
 # This configuration is TOML-based
@@ -43,7 +54,12 @@ parameters.clevel = 5
 chunks = "auto"
 """
 
-if __name__ == "__main__":
+
+def main():
+    if not hasAdios2():
+        # Example configuration below selects the ADIOS2 backend
+        return
+
     # create a series and specify some global metadata
     # change the file extension to .json, .h5 or .bp for regular file writing
     series = io.Series("../samples/dynamicConfig.bp", io.Access_Type.create,
@@ -133,3 +149,7 @@ if __name__ == "__main__":
         # If not closing an iteration explicitly, it will be implicitly closed
         # upon creating the next iteration.
         iteration.close()
+
+
+if __name__ == "__main__":
+    main()
