@@ -12,7 +12,7 @@ spack:
     all:
       target: ['x86_64']
       variants: ~mpi ~fortran
-      compiler: [clang@5.0.0]
+      compiler: [clang@6.0.0]
 
   compilers:
   - compiler:
@@ -22,11 +22,11 @@ spack:
       modules: []
       operating_system: ubuntu18.04
       paths:
-        cc: /usr/lib/llvm-5.0/bin/clang
-        cxx: /usr/lib/llvm-5.0/bin/clang++
+        cc: /usr/lib/llvm-6.0/bin/clang
+        cxx: /usr/lib/llvm-6.0/bin/clang++
         f77: null
         fc: null
-      spec: clang@5.0.0
+      spec: clang@6.0.0
       target: x86_64
 
   config:

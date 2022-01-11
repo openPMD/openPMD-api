@@ -39,9 +39,7 @@ spack:
     all:
       target: ['x86_64']
       variants: ~fortran
-      providers:
-        mpi: [openmpi]
-      compiler: [clang@5.0.0]
+      compiler: [gcc@7.0.0]
 
   compilers:
   - compiler:
@@ -51,11 +49,11 @@ spack:
       modules: []
       operating_system: ubuntu18.04
       paths:
-        cc: /usr/lib/llvm-5.0/bin/clang
-        cxx: /usr/lib/llvm-5.0/bin/clang++
+        cc: /usr/bin/gcc-7
+        cxx: /usr/bin/g++-7
         f77: /usr/bin/gfortran
         fc: /usr/bin/gfortran
-      spec: clang@5.0.0
+      spec: gcc@7.0.0
       target: x86_64
 
   config:
