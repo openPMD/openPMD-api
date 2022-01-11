@@ -8,7 +8,7 @@ concurrency:
 
 jobs:
   clang6_nopy_nompi_h5:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
@@ -37,7 +37,7 @@ jobs:
         ctest --test-dir build --output-on-failure
 
   clang6_nopy_ompi_h5_ad1_ad2_bp3:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
@@ -73,7 +73,7 @@ jobs:
         ctest --test-dir build --output-on-failure
 
   clang6_nopy_ompi_h5_ad2_newLayout:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2

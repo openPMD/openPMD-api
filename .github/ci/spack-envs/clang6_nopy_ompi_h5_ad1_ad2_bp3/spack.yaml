@@ -49,7 +49,7 @@ spack:
       extra_rpaths: []
       flags: {}
       modules: []
-      operating_system: ubuntu18.04
+      operating_system: ubuntu20.04
       paths:
         cc: /usr/lib/llvm-6.0/bin/clang
         cxx: /usr/lib/llvm-6.0/bin/clang++
