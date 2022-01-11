@@ -18,6 +18,13 @@ if(POLICY CMP0074)
     cmake_policy(SET CMP0074 NEW)
 endif()
 
+# We use simple syntax in cmake_dependent_option, so we are compatible with the
+# extended syntax in CMake 3.22+
+# https://cmake.org/cmake/help/v3.22/policy/CMP0127.html
+if(POLICY CMP0127)
+    cmake_policy(SET CMP0127 NEW)
+endif()
+
 
 # Project structure ###########################################################
 #
