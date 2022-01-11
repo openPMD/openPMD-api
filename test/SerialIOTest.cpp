@@ -3339,6 +3339,102 @@ TEST_CASE( "no_serial_adios1", "[serial][adios]")
 }
 #endif
 
+#if openPMD_HAVE_ADIOS1
+TEST_CASE( "serial_adios1_json_config", "[serial][adios1]" )
+{
+    std::string globalConfig = R"END(
+{
+  "backend": "adios1",
+  "adios1": {
+    "dataset": {
+      "transform": "deliberately use a wrong configuration..."
+    }
+  }
+})END";
+
+    std::string globalConfigWithoutCompression = R"END(
+{
+  "backend": "adios1"
+})END";
+
+    std::string localConfig = R"END(
+{
+  "adios1": {
+    "dataset": {
+      "transform": "...so we can check for the resulting errors"
+    }
+  }
+})END";
+
+    auto test1 = [ & ]() {
+        Series write(
+            "../samples/adios1_dataset_transform.bp",
+            Access::CREATE,
+            globalConfig );
+        auto meshes = write.writeIterations()[ 0 ].meshes;
+
+        auto defaultConfiguredMesh =
+            meshes[ "defaultConfigured" ][ RecordComponent::SCALAR ];
+
+        Dataset ds{ Datatype::INT, { 10 } };
+
+        defaultConfiguredMesh.resetDataset( ds );
+
+        std::vector< int > data( 10, 2345 );
+        defaultConfiguredMesh.storeChunk( data, { 0 }, { 10 } );
+
+        write.flush();
+    };
+    REQUIRE_THROWS_WITH(
+        test1(),
+        Catch::Equals( "[ADIOS1] Internal error: Failed to set ADIOS transform "
+                       "during Dataset creation" ) );
+
+    auto test2 = [ & ]() {
+        Series write(
+            "../samples/adios1_dataset_transform.bp",
+            Access::CREATE,
+            globalConfig );
+        auto meshes = write.writeIterations()[ 0 ].meshes;
+        auto overridenTransformMesh =
+            meshes[ "overridenConfig" ][ RecordComponent::SCALAR ];
+
+        Dataset ds{ Datatype::INT, { 10 } };
+        ds.options = localConfig;
+        overridenTransformMesh.resetDataset( ds );
+
+        std::vector< int > data( 10, 2345 );
+        overridenTransformMesh.storeChunk( data, { 0 }, { 10 } );
+
+        write.flush();
+    };
+    REQUIRE_THROWS_WITH(
+        test2(),
+        Catch::Equals( "[ADIOS1] Internal error: Failed to set ADIOS transform "
+                       "during Dataset creation" ) );
+
+    auto test3 = [ & ]() {
+        // use no dataset transform at all
+        Series write(
+            "../samples/adios1_dataset_transform.bp",
+            Access::CREATE,
+            globalConfigWithoutCompression );
+        auto meshes = write.writeIterations()[ 0 ].meshes;
+        auto defaultConfiguredMesh =
+            meshes[ "defaultConfigured" ][ RecordComponent::SCALAR ];
+
+        Dataset ds{ Datatype::INT, { 10 } };
+        defaultConfiguredMesh.resetDataset( ds );
+
+        std::vector< int > data( 10, 2345 );
+        defaultConfiguredMesh.storeChunk( data, { 0 }, { 10 } );
+
+        write.flush();
+    };
+    test3(); // should run without exception
+}
+#endif
+
 #if openPMD_HAVE_ADIOS2
 TEST_CASE( "git_adios2_early_chunk_query", "[serial][adios2]" )
 {
