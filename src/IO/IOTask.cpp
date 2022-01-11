@@ -59,7 +59,18 @@ void Parameter< Operation::CREATE_DATASET >::warnUnusedParameters<
     }
     if( shadow.size() > 0 )
     {
-        std::cerr << warningMessage << shadow.dump() << std::endl;
+        switch( config.originallySpecifiedAs )
+        {
+        case json::SupportedLanguages::JSON:
+            std::cerr << warningMessage << shadow.dump() << std::endl;
+            break;
+        case json::SupportedLanguages::TOML:
+        {
+            auto asToml = json::jsonToToml( shadow );
+            std::cerr << warningMessage << asToml << std::endl;
+            break;
+        }
+        }
     }
 }
 } // openPMD

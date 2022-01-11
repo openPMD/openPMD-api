@@ -582,9 +582,11 @@ if(openPMD_HAVE_ADIOS1)
     endif()
 
     target_include_directories(openPMD.ADIOS1.Serial SYSTEM PRIVATE
-        $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
+        $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
+        $<TARGET_PROPERTY:openPMD::thirdparty::toml11,INTERFACE_INCLUDE_DIRECTORIES>)
     target_include_directories(openPMD.ADIOS1.Parallel SYSTEM PRIVATE
-        $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
+        $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
+        $<TARGET_PROPERTY:openPMD::thirdparty::toml11,INTERFACE_INCLUDE_DIRECTORIES>)
 
     set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
         POSITION_INDEPENDENT_CODE ON
@@ -805,6 +807,7 @@ set(openPMD_EXAMPLE_NAMES
     10_streaming_write
     10_streaming_read
     12_span_write
+    13_write_dynamic_configuration
 )
 set(openPMD_PYTHON_EXAMPLE_NAMES
     2_read_serial
@@ -820,6 +823,7 @@ set(openPMD_PYTHON_EXAMPLE_NAMES
     10_streaming_read
     11_particle_dataframe
     12_span_write
+    13_write_dynamic_configuration
 )
 
 if(openPMD_USE_INVASIVE_TESTS)
@@ -866,7 +870,8 @@ if(openPMD_BUILD_TESTING)
 
         if(${testname} STREQUAL JSON)
             target_include_directories(${testname}Tests SYSTEM PRIVATE
-                $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>)
+                $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
+                $<TARGET_PROPERTY:openPMD::thirdparty::toml11,INTERFACE_INCLUDE_DIRECTORIES>)
         endif()
     endforeach()
 endif()

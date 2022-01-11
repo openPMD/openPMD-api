@@ -3445,7 +3445,7 @@ TEST_CASE( "git_adios2_early_chunk_query", "[serial][adios2]" )
         R"({"backend": "adios2"})" );
 }
 
-TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
+TEST_CASE( "serial_adios2_backend_config", "[serial][adios2]" )
 {
     if( auxiliary::getEnvString( "OPENPMD_BP_BACKEND", "NOT_SET" ) == "ADIOS1" )
     {
@@ -3453,86 +3453,67 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
         return;
     }
     std::string writeConfigBP3 = R"END(
-{
-  "unused": "global parameter",
-  "hdf5": {
-    "unused": "hdf5 parameter please do not warn"
-  },
-  "adios2": {
-    "engine": {
-      "type": "bp3",
-      "unused": "parameter",
-      "parameters": {
-        "BufferGrowthFactor": 2,
-        "Profile": "On"
-      }
-    },
-    "unused": "as well",
-    "dataset": {
-      "operators": [
-        {
-          "type": "blosc",
-          "parameters": {
-              "clevel": "1",
-              "doshuffle": "BLOSC_BITSHUFFLE"
-          }
-        }
-      ]
-    }
-  }
-}
+unused = "global parameter"
+
+[hdf5]
+unused = "hdf5 parameter please do not warn"
+
+[adios2]
+unused = "parameter"
+
+[adios2.engine]
+type = "bp3"
+unused = "as well"
+
+[adios2.engine.parameters]
+BufferGrowthFactor = 2
+Profile = "On"
+
+# double brackets, because the operators are a list
+[[adios2.dataset.operators]]
+type = "blosc"
+# It's possible to give parameters inline
+parameters.clevel = "1"
+parameters.doshuffle = "BLOSC_BITSHUFFLE"
 )END";
+
     std::string writeConfigBP4 = R"END(
-{
-  "adios2": {
-    "engine": {
-      "type": "bp4",
-      "unused": "parameter",
-      "parameters": {
-        "BufferGrowthFactor": 2.0,
-        "Profile": "On"
-      }
-    },
-    "unused": "as well",
-    "dataset": {
-      "operators": [
-        {
-          "type": "blosc",
-          "parameters": {
-              "clevel": 1,
-              "doshuffle": "BLOSC_BITSHUFFLE"
-          }
-        }
-      ]
-    }
-  }
-}
+[adios2]
+unused = "parameter"
+
+[adios2.engine]
+type = "bp4"
+unused = "as well"
+
+[adios2.engine.parameters]
+BufferGrowthFactor = 2.0
+Profile = "On"
+
+[[adios2.dataset.operators]]
+type = "blosc"
+
+# even inside double brackets, we can go on with single brackets
+[adios2.dataset.operators.parameters]
+clevel = 1
+doshuffle = "BLOSC_BITSHUFFLE"
 )END";
+
     std::string writeConfigNull = R"END(
-{
-  "adios2": {
-    "engine": {
-      "type": "nullcore",
-      "unused": "parameter",
-      "parameters": {
-        "BufferGrowthFactor": "2.0",
-        "Profile": "On"
-      }
-    },
-    "unused": "as well",
-    "dataset": {
-      "operators": [
-        {
-          "type": "blosc",
-          "parameters": {
-              "clevel": "1",
-              "doshuffle": "BLOSC_BITSHUFFLE"
-          }
-        }
-      ]
-    }
-  }
-}
+[adios2]
+unused = "parameter"
+
+[adios2.engine]
+type = "nullcore"
+unused = "as well"
+
+[adios2.engine.parameters]
+BufferGrowthFactor = "2.0"
+Profile = "On"
+
+[[adios2.dataset.operators]]
+type = "blosc"
+parameters.clevel = "1"
+parameters.doshuffle = "BLOSC_BITSHUFFLE"
 )END";
     /*
      * Notes on the upcoming dataset JSON configuration:
@@ -3549,34 +3530,39 @@ TEST_CASE( "serial_adios2_json_config", "[serial][adios2]" )
      * > {"adios2":{"dataset":{"unused":"too"},"unused":"dataset parameter"},
      * >  "asdf":"asdf"}
      */
+
     std::string datasetConfig = R"END(
-{
-  "resizable": true,
-  "asdf": "asdf",
-  "adios2": {
-    "unused": "dataset parameter",
-    "dataset": {
-      "unused": "too",
-      "operators": [
-        {
-          "type": "blosc",
-          "parameters": {
-            "clevel": 3,
-            "doshuffle": "BLOSC_BITSHUFFLE"
-          }
-        }
-      ]
-    }
-  },
-  "hdf5": {
-    "this": "should not warn"
-  }
-}
+resizable = true
+asdf = "asdf"
+
+[adios2]
+unused = "dataset parameter"
+
+[adios2.dataset]
+unused = "too"
+
+[[adios2.dataset.operators]]
+type = "blosc"
+[adios2.dataset.operators.parameters]
+clevel = 3
+doshuffle = "BLOSC_BITSHUFFLE"
+
+[hdf5]
+this = "should not warn"
 )END";
     auto const write = [ &datasetConfig ](
                            std::string const & filename,
                            std::string const & config ) {
-        openPMD::Series series( filename, openPMD::Access::CREATE, config );
+        std::fstream file;
+        file.open(
+            "../samples/write_config.toml",
+            std::ios_base::out | std::ios::binary );
+        file << config;
+        file.flush();
+        openPMD::Series series(
+            filename,
+            openPMD::Access::CREATE,
+            "@../samples/write_config.toml  " );
         auto E_x = series.iterations[ 0 ].meshes[ "E" ][ "x" ];
         openPMD::Dataset ds( openPMD::Datatype::INT, { 1000 } );
         E_x.resetDataset( ds );
@@ -3729,14 +3715,10 @@ TEST_CASE( "bp4_steps", "[serial][adios2]" )
     }
     )";
     std::string dontUseSteps = R"(
-    {
-        "adios2": {
-            "engine": {
-                "type": "bp4",
-                "UseSteps": false
-            }
-        }
-    }
+        # let's use TOML for this one
+        [adios2.engine]
+        type = "bp4"
+        UseSteps = false
     )";
     // sing the yes no song
     bp4_steps( "../samples/bp4steps_yes_yes.bp", useSteps, useSteps );

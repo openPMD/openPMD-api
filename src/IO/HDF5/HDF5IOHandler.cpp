@@ -124,9 +124,22 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
         auto shadow = m_config.invertShadow();
         if( shadow.size() > 0 )
         {
-            std::cerr << "Warning: parts of the JSON configuration for "
-                         "HDF5 remain unused:\n"
-                      << shadow << std::endl;
+            switch( m_config.originallySpecifiedAs )
+            {
+            case json::SupportedLanguages::JSON:
+                std::cerr << "Warning: parts of the backend configuration for "
+                            "HDF5 remain unused:\n"
+                        << shadow << std::endl;
+                break;
+            case json::SupportedLanguages::TOML:
+            {
+                auto asToml = json::jsonToToml( shadow );
+                std::cerr << "Warning: parts of the backend configuration for "
+                            "HDF5 remain unused:\n"
+                        << asToml << std::endl;
+                break;
+            }
+            }
         }
     }
 
@@ -331,7 +344,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         parameters.warnUnusedParameters(
             config,
             "hdf5",
-            "Warning: parts of the JSON configuration for HDF5 dataset '" +
+            "Warning: parts of the backend configuration for HDF5 dataset '" +
                 name + "' remain unused:\n" );
 
         hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);

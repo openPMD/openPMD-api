@@ -398,7 +398,7 @@ void ADIOS2IOHandlerImpl::createDataset(
         parameters.warnUnusedParameters(
             options,
             "adios2",
-            "Warning: parts of the JSON configuration for ADIOS2 dataset '" +
+            "Warning: parts of the backend configuration for ADIOS2 dataset '" +
                 varName + "' remain unused:\n" );
 
         // cast from openPMD::Extent to adios2::Dims
@@ -1129,7 +1129,8 @@ ADIOS2IOHandlerImpl::adios2AccessMode( std::string const & fullPath )
     }
 }
 
-json::TracingJSON ADIOS2IOHandlerImpl::nullvalue = nlohmann::json();
+json::TracingJSON ADIOS2IOHandlerImpl::nullvalue = {
+    nlohmann::json(), json::SupportedLanguages::JSON };
 
 std::string
 ADIOS2IOHandlerImpl::filePositionToString(
@@ -2409,9 +2410,22 @@ namespace detail
         auto shadow = impl.m_config.invertShadow();
         if( shadow.size() > 0 )
         {
-            std::cerr << "Warning: parts of the JSON configuration for ADIOS2 "
-                         "remain unused:\n"
-                      << shadow << std::endl;
+            switch( impl.m_config.originallySpecifiedAs )
+            {
+            case json::SupportedLanguages::JSON:
+                std::cerr << "Warning: parts of the backend configuration for "
+                            "ADIOS2 remain unused:\n"
+                        << shadow << std::endl;
+                break;
+            case json::SupportedLanguages::TOML:
+            {
+                auto asToml = json::jsonToToml( shadow );
+                std::cerr << "Warning: parts of the backend configuration for "
+                            "ADIOS2 remain unused:\n"
+                        << asToml << std::endl;
+                break;
+            }
+            }
         }
         auto notYetConfigured =
             [ &alreadyConfigured ]( std::string const & param ) {

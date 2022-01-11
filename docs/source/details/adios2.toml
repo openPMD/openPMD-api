@@ -1,0 +1,24 @@
+[adios2.engine]
+type = "sst"
+
+[adios2.engine.parameters]
+BufferGrowthFactor = "2.0"
+QueueLimit = "2"
+
+# use double brackets to indicate lists
+[[adios2.dataset.operators]]
+type = "blosc"
+
+# specify parameters for the current operator
+[adios2.dataset.operators.parameters]
+clevel = "1"
+doshuffle = "BLOSC_BITSHUFFLE"
+
+# use double brackets a second time to indicate a further entry
+[[adios2.dataset.operators]]
+# specify a second operator here
+type = "some other operator"
+
+# the parameters dictionary can also be specified in-line
+parameters.clevel = "1"
+parameters.doshuffle = "BLOSC_BITSHUFFLE"

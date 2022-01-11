@@ -43,7 +43,7 @@ namespace error
     BackendConfigSchema::BackendConfigSchema(
         std::vector< std::string > errorLocation_in, std::string what )
         : Error(
-              "Wrong JSON schema at index '" +
+              "Wrong JSON/TOML schema at index '" +
               concatVector( errorLocation_in ) + "': " + std::move( what ) )
         , errorLocation( std::move( errorLocation_in ) )
     {
