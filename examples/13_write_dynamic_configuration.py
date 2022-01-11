@@ -4,10 +4,6 @@ import openpmd_api as io
 import numpy as np
 
 
-def hasAdios2():
-    return 'adios2' in io.variants and io.variants['adios2']
-
-
 # This example demonstrates how to use JSON/TOML-based dynamic
 # configuration for openPMD.
 # The following configuration is passed to the constructor of the Series
@@ -56,7 +52,7 @@ chunks = "auto"
 
 
 def main():
-    if not hasAdios2():
+    if not io.variants['adios2']:
         # Example configuration below selects the ADIOS2 backend
         return
 

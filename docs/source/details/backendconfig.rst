@@ -1,7 +1,7 @@
 .. _backendconfig:
 
 JSON/TOML configuration
-==================
+=======================
 
 While the openPMD API intends to be a backend-*independent* implementation of the openPMD standard, it is sometimes useful to pass configuration parameters to the specific backend in use.
 :ref:`For each backend <backends-overview>`, configuration options can be passed via a JSON- or TOML-formatted string or via environment variables.

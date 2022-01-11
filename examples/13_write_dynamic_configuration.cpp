@@ -8,16 +8,10 @@
 using std::cout;
 using namespace openPMD;
 
-bool hasAdios2()
-{
-    auto variants = getVariants();
-    auto iterator = variants.find( "adios2" );
-    return iterator != variants.end() && iterator->second;
-}
 
 int main()
 {
-    if( !hasAdios2() )
+    if( !getVariants()["adios2"] )
     {
         // Example configuration below selects the ADIOS2 backend
         return 0;
