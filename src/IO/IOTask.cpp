@@ -73,4 +73,87 @@ void Parameter< Operation::CREATE_DATASET >::warnUnusedParameters<
         }
     }
 }
+
+namespace internal
+{
+    std::string
+    operationAsString( Operation op )
+    {
+        switch( op )
+        {
+        case Operation::CREATE_FILE:
+            return "CREATE_FILE";
+            break;
+        case Operation::OPEN_FILE:
+            return "OPEN_FILE";
+            break;
+        case Operation::CLOSE_FILE:
+            return "CLOSE_FILE";
+            break;
+        case Operation::DELETE_FILE:
+            return "DELETE_FILE";
+            break;
+        case Operation::CREATE_PATH:
+            return "CREATE_PATH";
+            break;
+        case Operation::CLOSE_PATH:
+            return "CLOSE_PATH";
+            break;
+        case Operation::OPEN_PATH:
+            return "OPEN_PATH";
+            break;
+        case Operation::DELETE_PATH:
+            return "DELETE_PATH";
+            break;
+        case Operation::LIST_PATHS:
+            return "LIST_PATHS";
+            break;
+        case Operation::CREATE_DATASET:
+            return "CREATE_DATASET";
+            break;
+        case Operation::EXTEND_DATASET:
+            return "EXTEND_DATASET";
+            break;
+        case Operation::OPEN_DATASET:
+            return "OPEN_DATASET";
+            break;
+        case Operation::DELETE_DATASET:
+            return "DELETE_DATASET";
+            break;
+        case Operation::WRITE_DATASET:
+            return "WRITE_DATASET";
+            break;
+        case Operation::READ_DATASET:
+            return "READ_DATASET";
+            break;
+        case Operation::LIST_DATASETS:
+            return "LIST_DATASETS";
+            break;
+        case Operation::GET_BUFFER_VIEW:
+            return "GET_BUFFER_VIEW";
+            break;
+        case Operation::DELETE_ATT:
+            return "DELETE_ATT";
+            break;
+        case Operation::WRITE_ATT:
+            return "WRITE_ATT";
+            break;
+        case Operation::READ_ATT:
+            return "READ_ATT";
+            break;
+        case Operation::LIST_ATTS:
+            return "LIST_ATTS";
+            break;
+        case Operation::ADVANCE:
+            return "ADVANCE";
+            break;
+        case Operation::AVAILABLE_CHUNKS:
+            return "AVAILABLE_CHUNKS";
+            break;
+        default:
+            return "unknown";
+            break;
+        }
+    }
+}
 } // openPMD
