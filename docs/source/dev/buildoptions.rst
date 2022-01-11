@@ -68,7 +68,6 @@ The following options allow to switch to external installs of dependencies:
 ================================= =========== ======== ============= ========
 CMake Option                      Values      Installs Library       Version
 ================================= =========== ======== ============= ========
-``openPMD_USE_INTERNAL_VARIANT``  **ON**/OFF  Yes      MPark.Variant   1.4.0+
 ``openPMD_USE_INTERNAL_CATCH``    **ON**/OFF  No       Catch2         2.13.4+
 ``openPMD_USE_INTERNAL_PYBIND11`` **ON**/OFF  No       pybind11        2.6.2+
 ``openPMD_USE_INTERNAL_JSON``     **ON**/OFF  No       NLohmann-JSON   3.9.1+

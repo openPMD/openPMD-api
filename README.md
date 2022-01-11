@@ -103,7 +103,6 @@ Required:
 * C++14 capable compiler, e.g. g++ 5.0+, clang 5.0+, VS 2017+
 
 Shipped internally in `share/openPMD/thirdParty/`:
-* [MPark.Variant](https://github.com/mpark/variant) 1.4.0+ ([BSL-1.0](https://github.com/mpark/variant/blob/master/LICENSE.md))
 * [Catch2](https://github.com/catchorg/Catch2) 2.13.4+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
 * [pybind11](https://github.com/pybind/pybind11) 2.6.2+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
 * [NLohmann-JSON](https://github.com/nlohmann/json) 3.9.1+ ([MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT))
@@ -269,7 +268,6 @@ The following options allow to switch to external installs:
 
 | CMake Option                    | Values     | Library       | Version |
 |---------------------------------|------------|---------------|---------|
-| `openPMD_USE_INTERNAL_VARIANT`  | **ON**/OFF | MPark.Variant |  1.4.0+ |
 | `openPMD_USE_INTERNAL_CATCH`    | **ON**/OFF | Catch2        | 2.13.4+ |
 | `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.6.2+ |
 | `openPMD_USE_INTERNAL_JSON`     | **ON**/OFF | NLohmann-JSON |  3.9.1+ |

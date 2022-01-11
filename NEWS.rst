@@ -6,6 +6,9 @@ Upgrade Guide
 0.15.0
 ------
 
+Building openPMD-api now requires a compiler that supports C++17 or newer.
+``MPark.Variant`` is not a dependency anymore (kudos and thanks for the great time!).
+
 Python 3.10 is now supported.
 openPMD-api now depends on `toml11 <https://github.com/ToruNiina/toml11>`__ 3.7.0+.
 
