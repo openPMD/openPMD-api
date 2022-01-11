@@ -25,6 +25,7 @@
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 
 #include <future>
+#include <iostream>
 
 
 namespace openPMD
@@ -123,8 +124,14 @@ public:
                         availableChunks(i.writable, deref_dynamic_cast< Parameter< O::AVAILABLE_CHUNKS > >(i.parameter.get()));
                         break;
                 }
-            } catch (unsupported_data_error&)
+            } catch (...)
             {
+                std::cerr
+                    << "[AbstractIOHandlerImpl] IO Task "
+                    << internal::operationAsString( i.operation )
+                    << " failed with exception. Removing task"
+                    << " from IO queue and passing on the exception."
+                    << std::endl;
                 (*m_handler).m_work.pop();
                 throw;
             }

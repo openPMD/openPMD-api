@@ -4213,6 +4213,176 @@ TEST_CASE( "variableBasedParticleData", "[serial][adios2]" )
 }
 #endif
 
+#if openPMD_HAVE_ADIOS2
+#ifdef ADIOS2_HAVE_BZIP2
+TEST_CASE( "automatically_deactivate_span", "[serial][adios2]" )
+{
+    // automatically (de)activate span-based storeChunking
+    {
+        Series write( "../samples/span_based.bp", Access::CREATE );
+        auto E_uncompressed = write.iterations[ 0 ].meshes[ "E" ][ "x" ];
+        auto E_compressed = write.iterations[ 0 ].meshes[ "E" ][ "y" ];
+
+        Dataset ds{ Datatype::INT, { 10 } };
+
+        E_uncompressed.resetDataset( ds );
+
+        std::string compression = R"END(
+{
+  "adios2": {
+    "dataset": {
+      "operators": [
+        {
+          "type": "bzip2"
+        }
+      ]
+    }
+  }
+})END";
+
+        ds.options = compression;
+        E_compressed.resetDataset( ds );
+
+        bool spanWorkaround = false;
+        E_uncompressed.storeChunk< int >(
+            { 0 }, { 10 }, [ &spanWorkaround ]( size_t size ) {
+                spanWorkaround = true;
+                return std::shared_ptr< int >(
+                    new int[ size ]{}, []( auto * ptr ) { delete[] ptr; } );
+            } );
+
+        REQUIRE( !spanWorkaround );
+
+        E_compressed.storeChunk< int >(
+            { 0 }, { 10 }, [ &spanWorkaround ]( size_t size ) {
+                spanWorkaround = true;
+                return std::shared_ptr< int >(
+                    new int[ size ]{}, []( auto * ptr ) { delete[] ptr; } );
+            } );
+
+        REQUIRE( spanWorkaround );
+    }
+
+    // enable span-based API indiscriminately
+    {
+        std::string enable = R"END(
+{
+  "adios2": {
+    "use_span_based_put": true
+  }
+})END";
+        Series write( "../samples/span_based.bp", Access::CREATE, enable );
+        auto E_uncompressed = write.iterations[ 0 ].meshes[ "E" ][ "x" ];
+        auto E_compressed = write.iterations[ 0 ].meshes[ "E" ][ "y" ];
+
+        Dataset ds{ Datatype::INT, { 10 } };
+
+        E_uncompressed.resetDataset( ds );
+
+        std::string compression = R"END(
+{
+  "adios2": {
+    "dataset": {
+      "operators": [
+        {
+          "type": "bzip2"
+        }
+      ]
+    }
+  }
+})END";
+
+        ds.options = compression;
+        E_compressed.resetDataset( ds );
+
+        bool spanWorkaround = false;
+        E_uncompressed.storeChunk< int >(
+            { 0 }, { 10 }, [ &spanWorkaround ]( size_t size ) {
+                spanWorkaround = true;
+                return std::shared_ptr< int >(
+                    new int[ size ]{}, []( auto * ptr ) { delete[] ptr; } );
+            } );
+
+        REQUIRE( !spanWorkaround );
+
+        try
+        {
+            E_compressed.storeChunk< int >(
+                { 0 }, { 10 }, [ &spanWorkaround ]( size_t size ) {
+                    spanWorkaround = true;
+                    return std::shared_ptr< int >(
+                        new int[ size ]{}, []( auto * ptr ) { delete[] ptr; } );
+                } );
+        }
+        catch( std::invalid_argument const & e )
+        {
+            /*
+            * Using the span-based API in combination with compression is
+            * unsupported in ADIOS2.
+            * In newer versions of ADIOS2, an error is thrown.
+            */
+            std::cerr << "Ignoring expected error: " << e.what() << std::endl;
+        }
+
+        REQUIRE( !spanWorkaround );
+    }
+
+    // disable span-based API indiscriminately
+    {
+        std::string disable = R"END(
+{
+  "adios2": {
+    "use_span_based_put": false
+  }
+})END";
+        Series write( "../samples/span_based.bp", Access::CREATE, disable );
+        auto E_uncompressed = write.iterations[ 0 ].meshes[ "E" ][ "x" ];
+        auto E_compressed = write.iterations[ 0 ].meshes[ "E" ][ "y" ];
+
+        Dataset ds{ Datatype::INT, { 10 } };
+
+        E_uncompressed.resetDataset( ds );
+
+        std::string compression = R"END(
+{
+  "adios2": {
+    "dataset": {
+      "operators": [
+        {
+          "type": "bzip2"
+        }
+      ]
+    }
+  }
+})END";
+
+        ds.options = compression;
+        E_compressed.resetDataset( ds );
+
+        bool spanWorkaround = false;
+        E_uncompressed.storeChunk< int >(
+            { 0 }, { 10 }, [ &spanWorkaround ]( size_t size ) {
+                spanWorkaround = true;
+                return std::shared_ptr< int >(
+                    new int[ size ]{}, []( auto * ptr ) { delete[] ptr; } );
+            } );
+
+        REQUIRE( spanWorkaround );
+
+        spanWorkaround = false;
+        E_compressed.storeChunk< int >(
+            { 0 }, { 10 }, [ &spanWorkaround ]( size_t size ) {
+                spanWorkaround = true;
+                return std::shared_ptr< int >(
+                    new int[ size ]{}, []( auto * ptr ) { delete[] ptr; } );
+            } );
+
+        REQUIRE( spanWorkaround );
+    }
+}
+#endif
+#endif
+
 // @todo Upon switching to ADIOS2 2.7.0, test this the other way around also
 void
 iterate_nonstreaming_series(

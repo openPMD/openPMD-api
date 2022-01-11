@@ -1125,11 +1125,21 @@ ADIOS2IOHandlerImpl::getCompressionOperator( std::string const & compression )
         try {
             res = m_ADIOS.DefineOperator( compression, compression );
         }
-        catch ( std::invalid_argument const & )
+        catch ( std::invalid_argument const & e )
         {
             std::cerr << "Warning: ADIOS2 backend does not support compression "
                          "method "
                       << compression << ". Continuing without compression."
+                      << "\nOriginal error: " << e.what()
+                      << std::endl;
+            return auxiliary::Option< adios2::Operator >();
+        }
+        catch(std::string const & s)
+        {
+            std::cerr << "Warning: ADIOS2 backend does not support compression "
+                         "method "
+                      << compression << ". Continuing without compression."
+                      << "\nOriginal error: " << s
                       << std::endl;
             return auxiliary::Option< adios2::Operator >();
         }
