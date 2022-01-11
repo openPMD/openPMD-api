@@ -7,6 +7,8 @@ project(openPMD VERSION 0.15.0) # LANGUAGES CXX
 # the openPMD "markup"/"schema" standard version
 set(openPMD_STANDARD_VERSION 1.1.0)
 
+include(${openPMD_SOURCE_DIR}/cmake/openPMDFunctions.cmake)
+
 list(APPEND CMAKE_MODULE_PATH "${openPMD_SOURCE_DIR}/share/openPMD/cmake")
 
 
@@ -86,7 +88,6 @@ openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
 option(openPMD_INSTALL               "Add installation targets"             ON)
 option(openPMD_INSTALL_RPATH         "Add RPATHs to installed binaries"     ON)
 option(openPMD_HAVE_PKGCONFIG        "Generate a .pc file for pkg-config"   ON)
-option(openPMD_USE_INTERNAL_VARIANT  "Use internally shipped MPark.Variant" ON)
 option(openPMD_USE_INTERNAL_CATCH    "Use internally shipped Catch2"        ON)
 option(openPMD_USE_INTERNAL_PYBIND11 "Use internally shipped pybind11"      ON)
 option(openPMD_USE_INTERNAL_JSON     "Use internally shipped nlohmann-json" ON)
@@ -149,7 +150,7 @@ option(openPMD_BUILD_EXAMPLES  "Build the examples" ${BUILD_EXAMPLES})
 #
 # C++ standard: requirements for a target
 function(openpmd_cxx_required target)
-    target_compile_features(${target} PUBLIC cxx_std_14)
+    target_compile_features(${target} PUBLIC cxx_std_17)
     set_target_properties(${target} PROPERTIES
         CXX_EXTENSIONS OFF
         CXX_STANDARD_REQUIRED ON
@@ -499,37 +500,6 @@ target_include_directories(openPMD PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 
-# is this a C++17 compile? If yes, skip MPark.Variant
-try_compile(openPMD_HAS_CXX17
-    ${openPMD_BINARY_DIR}/try_variant
-    ${openPMD_SOURCE_DIR}/cmake/try_variant.cpp
-    CXX_STANDARD_REQUIRED ON
-    CXX_EXTENSIONS OFF
-)
-message(STATUS "<variant> supported (C++17 or newer): ${openPMD_HAS_CXX17}")
-
-# C++11 std::variant (C++17 stdlib preview)
-if(NOT openPMD_HAS_CXX17)
-    add_library(openPMD::thirdparty::mpark_variant INTERFACE IMPORTED)
-    set(openPMD_PC_EXTRA_INCLUDE "")
-    if(openPMD_USE_INTERNAL_VARIANT)
-        target_include_directories(openPMD::thirdparty::mpark_variant SYSTEM INTERFACE
-            $<BUILD_INTERFACE:${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include>
-        )
-        message(STATUS "MPark.Variant: Using INTERNAL version '1.4.0'")
-    else()
-        find_package(mpark_variant 1.3.0 REQUIRED) # TODO: we want 1.4.1+
-        target_link_libraries(openPMD::thirdparty::mpark_variant
-            INTERFACE mpark_variant)
-        get_target_property(EXTERNAL_MPARK_INCLUDE mpark_variant INTERFACE_INCLUDE_DIRECTORIES)
-        if(openPMD_HAVE_PKGCONFIG AND EXTERNAL_MPARK_INCLUDE)
-            set(openPMD_PC_EXTRA_INCLUDE "-I${EXTERNAL_MPARK_INCLUDE}")
-        endif()
-        message(STATUS "MPark.Variant: Found version '${mpark_variant_VERSION}'")
-    endif()
-    target_link_libraries(openPMD PUBLIC openPMD::thirdparty::mpark_variant)
-endif()
-
 # Catch2 for unit tests
 if(openPMD_BUILD_TESTING)
     add_library(openPMD::thirdparty::Catch2 INTERFACE IMPORTED)
@@ -571,10 +541,6 @@ if(openPMD_HAVE_ADIOS1)
     openpmd_cxx_required(openPMD.ADIOS1.Parallel)
     target_compile_options(openPMD.ADIOS1.Serial PUBLIC ${_msvc_options})
     target_compile_options(openPMD.ADIOS1.Parallel PUBLIC ${_msvc_options})
-    if(NOT openPMD_HAS_CXX17)
-        target_link_libraries(openPMD.ADIOS1.Serial PUBLIC openPMD::thirdparty::mpark_variant)
-        target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC openPMD::thirdparty::mpark_variant)
-    endif()
 
     target_include_directories(openPMD.ADIOS1.Serial PRIVATE
         ${openPMD_SOURCE_DIR}/include ${openPMD_BINARY_DIR}/include)
@@ -1078,13 +1044,6 @@ if(openPMD_INSTALL)
         FILES ${openPMD_BINARY_DIR}/include/openPMD/config.hpp
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/openPMD
     )
-    # install third-party libraries
-    # TODO not needed with C++17 compiler
-    if(NOT openPMD_HAS_CXX17 AND openPMD_USE_INTERNAL_VARIANT)
-        install(DIRECTORY "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/variant/include/mpark"
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-        )
-    endif()
 
     # CMake package file for find_package(openPMD::openPMD) in depending projects
     install(EXPORT openPMDTargets
@@ -1437,54 +1396,4 @@ endif()
 
 # Status Message for Build Options ############################################
 #
-message("")
-message("openPMD build configuration:")
-message("  library Version: ${openPMD_VERSION}")
-message("  openPMD Standard: ${openPMD_STANDARD_VERSION}")
-message("  C++ Compiler: ${CMAKE_CXX_COMPILER_ID} "
-                        "${CMAKE_CXX_COMPILER_VERSION} "
-                        "${CMAKE_CXX_COMPILER_WRAPPER}")
-message("    ${CMAKE_CXX_COMPILER}")
-message("")
-if(openPMD_INSTALL)
-    message("  Install with RPATHs: ${openPMD_INSTALL_RPATH}")
-    message("  Installation prefix: ${CMAKE_INSTALL_PREFIX}")
-    message("        bin: ${CMAKE_INSTALL_BINDIR}")
-    message("        lib: ${CMAKE_INSTALL_LIBDIR}")
-    message("    include: ${CMAKE_INSTALL_INCLUDEDIR}")
-    message("      cmake: ${CMAKE_INSTALL_CMAKEDIR}")
-    if(openPMD_HAVE_PYTHON)
-        message("     python: ${CMAKE_INSTALL_PYTHONDIR}")
-    endif()
-    message("")
-    message("  Additionally, install following third party libraries:")
-    if(openPMD_HAS_CXX17)
-        message("    MPark.Variant: OFF")
-    else()
-        message("    MPark.Variant: ${openPMD_USE_INTERNAL_VARIANT}")
-    endif()
-else()
-    message("  Installation: OFF")
-endif()
-message("")
-message("  Build Type: ${CMAKE_BUILD_TYPE}")
-if(openPMD_BUILD_SHARED_LIBS)
-    message("  Library: shared")
-else()
-    message("  Library: static")
-endif()
-message("  CLI Tools: ${openPMD_BUILD_CLI_TOOLS}")
-message("  Examples: ${openPMD_BUILD_EXAMPLES}")
-message("  Testing: ${openPMD_BUILD_TESTING}")
-message("  Invasive Tests: ${openPMD_USE_INVASIVE_TESTS}")
-message("  Internal VERIFY: ${openPMD_USE_VERIFY}")
-message("  Build Options:")
-
-foreach(opt IN LISTS openPMD_CONFIG_OPTIONS)
-  if(${openPMD_HAVE_${opt}})
-    message("    ${opt}: ON")
-  else()
-    message("    ${opt}: OFF")
-  endif()
-endforeach()
-message("")
+openpmd_print_summary()
