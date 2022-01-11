@@ -21,7 +21,6 @@
 #pragma once
 
 #include "openPMD/Datatype.hpp"
-#include "openPMD/binding/python/Variant.hpp"
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>

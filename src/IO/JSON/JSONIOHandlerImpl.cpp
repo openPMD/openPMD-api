@@ -1689,7 +1689,7 @@ namespace openPMD
     )
     {
         CppToJSON< T > ctj;
-        value = ctj( variantSrc::get< T >( resource ) );
+        value = ctj( std::get< T >( resource ) );
     }
 
 

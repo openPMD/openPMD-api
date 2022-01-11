@@ -21,10 +21,9 @@
 
 #pragma once
 
-#include "VariantSrc.hpp"
-
 #include <utility> // std::forward, std::move
 #include <type_traits>
+#include <variant> // IWYU pragma: export
 
 
 namespace openPMD
@@ -39,14 +38,14 @@ namespace auxiliary
     } // namespace detail
 
     /**
-     * @brief Simple Option type based on variantSrc::variant.
+     * @brief Simple Option type based on std::variant.
      *
      * @tparam T Type that can be optionally stored in an Optional object.
      */
     template< typename T >
     class Option
     {
-        using data_t = variantSrc::variant< T, detail::Empty >;
+        using data_t = std::variant< T, detail::Empty >;
         data_t m_data;
 
     public:
@@ -146,7 +145,7 @@ namespace auxiliary
         T const &
         get() const
         {
-            return variantSrc::template get< T >( m_data );
+            return std::template get< T >( m_data );
         }
 
         /**
@@ -158,7 +157,7 @@ namespace auxiliary
         T &
         get()
         {
-            return variantSrc::template get< T >( m_data );
+            return std::template get< T >( m_data );
         }
     };
 

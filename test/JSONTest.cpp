@@ -3,6 +3,9 @@
 
 #include <catch2/catch.hpp>
 
+#include <variant>
+
+
 using namespace openPMD;
 
 TEST_CASE( "json_parsing", "[auxiliary]" )
@@ -176,8 +179,8 @@ TEST_CASE( "optional", "[auxiliary]" ) {
 
     Option<int> opt;
 
-    REQUIRE_THROWS_AS(opt.get(), variantSrc::bad_variant_access);
-    REQUIRE_THROWS_AS(opt.get() = 42, variantSrc::bad_variant_access);
+    REQUIRE_THROWS_AS(opt.get(), std::bad_variant_access);
+    REQUIRE_THROWS_AS(opt.get() = 42, std::bad_variant_access);
     REQUIRE(!opt);
     REQUIRE(!opt.has_value());
 

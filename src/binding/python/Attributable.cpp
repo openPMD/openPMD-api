@@ -22,7 +22,6 @@
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/binding/python/Numpy.hpp"
-#include "openPMD/binding/python/Variant.hpp"
 #include "openPMD/DatatypeHelpers.hpp"
 
 #include <pybind11/pybind11.h>
