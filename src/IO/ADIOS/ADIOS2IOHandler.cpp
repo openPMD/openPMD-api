@@ -1359,11 +1359,7 @@ namespace detail
          * that would otherwise be lost. Check whether this has been done.
          */
         using rep = AttributeTypes< bool >::rep;
-        if
-#if __cplusplus >= 201703L
-            constexpr
-#endif
-            ( std::is_same< T, rep >::value )
+        if constexpr( std::is_same< T, rep >::value )
         {
             std::string metaAttr =
                 ADIOS2Defaults::str_isBooleanOldLayout + name;
@@ -1414,11 +1410,7 @@ namespace detail
          * that would otherwise be lost. Check whether this has been done.
          */
         using rep = AttributeTypes<bool>::rep;
-        if
-#if __cplusplus >= 201703L
-        constexpr
-#endif
-        ( std::is_same< T, rep >::value )
+        if constexpr( std::is_same< T, rep >::value )
         {
             std::string metaAttr =
                 ADIOS2Defaults::str_isBooleanNewLayout + name;
