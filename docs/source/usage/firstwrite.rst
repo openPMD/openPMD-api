@@ -9,7 +9,7 @@ Step-by-step: how to write scientific data with openPMD-api?
 
    <style>
    @media screen and (min-width: 60em) {
-       /* C++14 and Python code samples side-by-side  */
+       /* C++17 and Python code samples side-by-side  */
        #first-write > .section > .section:nth-of-type(2n+1) {
            float: left;
            width: 48%;
@@ -20,8 +20,8 @@ Step-by-step: how to write scientific data with openPMD-api?
            display: table;
            clear: both;
        }
-       /* only show first C++14 and Python Headline */
-       #first-write > .section > .section:not(#c-14):not(#python) > h3 {
+       /* only show first C++17 and Python Headline */
+       #first-write > .section > .section:not(#c-17):not(#python) > h3 {
            display: none;
        }
    }
@@ -47,7 +47,7 @@ Include / Import
 
 After successful :ref:`installation <install>`, you can start using openPMD-api as follows:
 
-C++14
+C++17
 ^^^^^
 
 .. code-block:: cpp
@@ -78,7 +78,7 @@ Write into a new openPMD series in ``myOutput/data_<00...N>.h5``.
 Further file formats than ``.h5`` (`HDF5 <https://hdfgroup.org>`_) are supported:
 ``.bp`` (`ADIOS1 <https://www.olcf.ornl.gov/center-projects/adios/>`_/`ADIOS2 <https://csmd.ornl.gov/software/adios2>`_) or ``.json`` (`JSON <https://en.wikipedia.org/wiki/JSON#Example>`_).
 
-C++14
+C++17
 ^^^^^
 
 .. code-block:: cpp
@@ -102,7 +102,7 @@ Iteration
 
 Grouping by an arbitrary, positive integer number ``<N>`` in a series:
 
-C++14
+C++17
 ^^^^^
 
 .. code-block:: cpp
@@ -122,7 +122,7 @@ Attributes
 Everything in openPMD can be extended and user-annotated.
 Let us try this by writing some meta data:
 
-C++14
+C++17
 ^^^^^
 
 .. code-block:: cpp
@@ -155,7 +155,7 @@ Data
 Let's prepare some data that we want to write.
 For example, a magnetic field slice :math:`\vec B(i, j)` in two spatial dimensions with three components :math:`(B_x, B_y, B_z)^\intercal` of which the :math:`B_y` component shall be constant for all :math:`(i, j)` indices.
 
-C++14
+C++17
 ^^^^^
 
 .. code-block:: cpp
@@ -195,7 +195,7 @@ Record
 An openPMD record can be either structured (mesh) or unstructured (particles).
 We prepared a vector field in 2D above, which is a mesh:
 
-C++14
+C++17
 ^^^^^
 
 .. code-block:: cpp
@@ -244,7 +244,7 @@ Independent of the absolute unit system, a magnetic field has the `physical dime
 Ouch, our magnetic field was measured in `cgs units <https://en.wikipedia.org/wiki/Gaussian_units>`_!
 Quick, let's also store the conversion factor 10\ :sup:`-4` from `Gauss <https://en.wikipedia.org/wiki/Gauss_(unit)>`_ (cgs) to `Tesla <https://en.wikipedia.org/wiki/Tesla_(unit)>`_ (SI).
 
-C++14
+C++17
 ^^^^^
 
 .. code-block:: cpp
@@ -291,7 +291,7 @@ We can write record components partially and in parallel or at once.
 Writing very small data one by one is is a performance killer for I/O.
 Therefore, we register all data to be written first and then flush it out collectively.
 
-C++14
+C++17
 ^^^^^
 
 .. code-block:: cpp
@@ -330,7 +330,7 @@ We now flush the registered data chunks to the I/O backend.
 Flushing several chunks at once allows to increase I/O performance significantly.
 After that, the variables ``x_data`` and ``y_data`` can be used again.
 
-C++14
+C++17
 ^^^^^
 
 .. code-block:: cpp
@@ -349,7 +349,7 @@ Close
 
 Finally, the Series is fully closed (and newly registered data or attributes since the last ``.flush()`` is written) when its destructor is called.
 
-C++14
+C++17
 ^^^^^
 
 .. code-block:: cpp

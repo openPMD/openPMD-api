@@ -10,7 +10,7 @@ Required
 --------
 
 * CMake 3.15.0+
-* C++14 capable compiler, e.g. g++ 5.0+, clang 5.0+, VS 2017+
+* C++17 capable compiler, e.g., g++ 7+, clang 6+, MSVC 19.15+, icpc 19+, icpx
 
 Shipped internally
 ------------------
