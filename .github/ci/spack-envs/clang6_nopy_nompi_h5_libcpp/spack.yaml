@@ -22,7 +22,7 @@ spack:
         cxxflags: -stdlib=libc++
         ldflags: -stdlib=libc++
       modules: []
-      operating_system: ubuntu20.04
+      operating_system: ubuntu18.04
       paths:
         cc: /usr/lib/llvm-6.0/bin/clang
         cxx: /usr/lib/llvm-6.0/bin/clang++
