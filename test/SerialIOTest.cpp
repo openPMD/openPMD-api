@@ -37,7 +37,7 @@ struct BackendSelection
     std::string backendName;
     std::string extension;
 
-    inline std::string jsonBaseConfig() const
+    [[nodiscard]] inline std::string jsonBaseConfig() const
     {
         return R"({"backend": ")" + backendName + "\"}";
     }

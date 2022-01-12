@@ -37,9 +37,7 @@
 #include <utility> // std::forward
 #include <vector>
 
-namespace openPMD
-{
-namespace json
+namespace openPMD::json
 {
     TracingJSON::TracingJSON()
         : TracingJSON( ParsedConfig{} )
@@ -597,5 +595,4 @@ namespace json
             parseOptions( overwrite, /* considerFiles = */ false ).config );
         return res.dump();
     }
-} // namespace json
 } // namespace openPMD

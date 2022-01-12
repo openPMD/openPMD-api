@@ -26,9 +26,7 @@
 #include <sstream>
 
 
-namespace openPMD
-{
-namespace auxiliary
+namespace openPMD::auxiliary
 {
     std::string getDateString( std::string const & format )
     {
@@ -48,5 +46,4 @@ namespace auxiliary
 
         return dateString.str();
     }
-} // namespace auxiliary
 } // namespace openPMD

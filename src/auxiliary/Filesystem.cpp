@@ -36,9 +36,7 @@
 #include <system_error>
 
 
-namespace openPMD
-{
-namespace auxiliary
+namespace openPMD::auxiliary
 {
 bool
 directory_exists(std::string const& path)
@@ -257,5 +255,4 @@ collective_file_read( std::string const & path, MPI_Comm comm )
 
 #endif
 
-} // namespace auxiliary
 } // namespace openPMD

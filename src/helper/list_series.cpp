@@ -31,9 +31,7 @@
 #include <string>
 
 
-namespace openPMD
-{
-namespace helper
+namespace openPMD::helper
 {
     std::ostream &
     listSeries(
@@ -122,5 +120,4 @@ namespace helper
 
         return out;
     }
-} // helper
 } // openPMD
