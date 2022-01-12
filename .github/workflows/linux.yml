@@ -7,23 +7,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  clang6_nopy_nompi_h5:
+  clang6_nopy_nompi_h5_libcpp:
     runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
     - name: Spack Cache
       uses: actions/cache@v2
-      with: {path: /opt/spack, key: clang6_nopy_nompi_h5 }
+      with: {path: /opt/spack, key: clang6_nopy_nompi_h5_libcpp }
     - name: Install
       run: |
         sudo apt-get update
         sudo apt-get install clang-6.0
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -stdlib=libc++ -Werror -Wno-deprecated-declarations}
       run: |
-        eval $(spack env activate --sh .github/ci/spack-envs/clang6_nopy_nompi_h5/)
+        eval $(spack env activate --sh .github/ci/spack-envs/clang6_nopy_nompi_h5_libcpp/)
         spack install
 
         share/openPMD/download_samples.sh build
@@ -32,27 +32,28 @@ jobs:
           -DopenPMD_USE_PYTHON=OFF \
           -DopenPMD_USE_MPI=OFF    \
           -DopenPMD_USE_HDF5=ON    \
-          -DopenPMD_USE_INVASIVE_TESTS=ON
+          -DopenPMD_USE_INVASIVE_TESTS=ON \
+          -DCMAKE_VERBOSE_MAKEFILE=ON
         cmake --build build --parallel 2
         ctest --test-dir build --output-on-failure
 
-  clang6_nopy_ompi_h5_ad1_ad2_bp3:
+  clang6_nopy_ompi_h5_ad1_ad2_bp3_libcpp:
     runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
     - name: Spack Cache
       uses: actions/cache@v2
-      with: {path: /opt/spack, key: clang6_nopy_ompi_h5_ad1_ad2_bp3 }
+      with: {path: /opt/spack, key: clang6_nopy_ompi_h5_ad1_ad2_bp3_libcpp }
     - name: Install
       run: |
         sudo apt-get update
         sudo apt-get install clang-6.0 gfortran libopenmpi-dev python3
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -stdlib=libc++ -Werror -Wno-deprecated-declarations}
       run: |
-        eval $(spack env activate --sh .github/ci/spack-envs/clang6_nopy_ompi_h5_ad1_ad2_bp3/)
+        eval $(spack env activate --sh .github/ci/spack-envs/clang6_nopy_ompi_h5_ad1_ad2_bp3_libcpp/)
         spack install
 
         share/openPMD/download_samples.sh build
@@ -63,7 +64,8 @@ jobs:
           -DopenPMD_USE_HDF5=ON    \
           -DopenPMD_USE_ADIOS1=ON  \
           -DopenPMD_USE_ADIOS2=ON  \
-          -DopenPMD_USE_INVASIVE_TESTS=ON
+          -DopenPMD_USE_INVASIVE_TESTS=ON \
+          -DCMAKE_VERBOSE_MAKEFILE=ON
         cmake --build build --parallel 2
         ctest --test-dir build --output-on-failure
 
@@ -72,23 +74,23 @@ jobs:
         export OPENPMD_BP_BACKEND=ADIOS1
         ctest --test-dir build --output-on-failure
 
-  clang6_nopy_ompi_h5_ad2_newLayout:
+  clang6_nopy_ompi_h5_ad2_newLayout_libcpp:
     runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
     - name: Spack Cache
       uses: actions/cache@v2
-      with: {path: /opt/spack, key: clang6_nopy_ompi_h5_ad1_ad2_bp3 }
+      with: {path: /opt/spack, key: clang6_nopy_ompi_h5_ad1_ad2_bp3_libcpp }
     - name: Install
       run: |
         sudo apt-get update
         sudo apt-get install clang-6.0 gfortran libopenmpi-dev python3
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -Werror -Wno-deprecated-declarations, OPENPMD2_ADIOS2_SCHEMA: 20210209}
+      env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -stdlib=libc++ -Werror -Wno-deprecated-declarations, OPENPMD2_ADIOS2_SCHEMA: 20210209}
       run: |
-        eval $(spack env activate --sh .github/ci/spack-envs/clang6_nopy_ompi_h5_ad1_ad2_bp3/)
+        eval $(spack env activate --sh .github/ci/spack-envs/clang6_nopy_ompi_h5_ad1_ad2_bp3_libcpp/)
         spack install
 
         share/openPMD/download_samples.sh build
@@ -99,12 +101,13 @@ jobs:
           -DopenPMD_USE_HDF5=ON    \
           -DopenPMD_USE_ADIOS1=OFF \
           -DopenPMD_USE_ADIOS2=ON  \
-          -DopenPMD_USE_INVASIVE_TESTS=ON
+          -DopenPMD_USE_INVASIVE_TESTS=ON \
+          -DCMAKE_VERBOSE_MAKEFILE=ON
         cmake --build build --parallel 2
         ctest --test-dir build --output-on-failure
 
 # TODO
-#  clang6_py36_nompi_h5_ad1_ad2_libcpp
+#  clang7_py36_nompi_h5_ad1_ad2_libstdc++
 
   clang12_py38_nompi_h5_ad1_ad2:
     runs-on: ubuntu-20.04

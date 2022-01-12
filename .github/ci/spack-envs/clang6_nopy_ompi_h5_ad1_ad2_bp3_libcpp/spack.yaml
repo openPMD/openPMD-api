@@ -47,7 +47,9 @@ spack:
   - compiler:
       environment: {}
       extra_rpaths: []
-      flags: {}
+      flags:
+        cxxflags: -stdlib=libc++
+        ldflags: -stdlib=libc++
       modules: []
       operating_system: ubuntu20.04
       paths:
