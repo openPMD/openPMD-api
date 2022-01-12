@@ -18,7 +18,7 @@ jobs:
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install clang-6.0
+        sudo apt-get install clang-6.0 libc++-7-dev
         sudo .github/workflows/dependencies/install_spack
     - name: Build
       env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -stdlib=libc++ -Werror -Wno-deprecated-declarations}
@@ -48,7 +48,7 @@ jobs:
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install clang-6.0 gfortran libopenmpi-dev python3
+        sudo apt-get install clang-6.0 libc++-7-dev gfortran libopenmpi-dev python3
         sudo .github/workflows/dependencies/install_spack
     - name: Build
       env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -stdlib=libc++ -Werror -Wno-deprecated-declarations}
@@ -74,23 +74,23 @@ jobs:
         export OPENPMD_BP_BACKEND=ADIOS1
         ctest --test-dir build --output-on-failure
 
-  clang6_nopy_ompi_h5_ad2_newLayout_libcpp:
+  clang7_nopy_ompi_h5_ad1_ad2_newLayout:
     runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
     - uses: actions/checkout@v2
     - name: Spack Cache
       uses: actions/cache@v2
-      with: {path: /opt/spack, key: clang6_nopy_ompi_h5_ad1_ad2_bp3_libcpp }
+      with: {path: /opt/spack, key: clang7_nopy_ompi_h5_ad1_ad2 }
     - name: Install
       run: |
         sudo apt-get update
-        sudo apt-get install clang-6.0 gfortran libopenmpi-dev python3
+        sudo apt-get install clang-7 gfortran libopenmpi-dev python3
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -stdlib=libc++ -Werror -Wno-deprecated-declarations, OPENPMD2_ADIOS2_SCHEMA: 20210209}
+      env: {CC: clang-7, CXX: clang++-7, CXXFLAGS: -Werror -Wno-deprecated-declarations, OPENPMD2_ADIOS2_SCHEMA: 20210209}
       run: |
-        eval $(spack env activate --sh .github/ci/spack-envs/clang6_nopy_ompi_h5_ad1_ad2_bp3_libcpp/)
+        eval $(spack env activate --sh .github/ci/spack-envs/clang7_nopy_ompi_h5_ad1_ad2/)
         spack install
 
         share/openPMD/download_samples.sh build
