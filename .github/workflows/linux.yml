@@ -131,7 +131,7 @@ jobs:
           -DopenPMD_USE_PYTHON=ON \
           -DopenPMD_USE_MPI=OFF   \
           -DopenPMD_USE_HDF5=ON   \
-          -DopenPMD_USE_ADIOS1=OFF \
+          -DopenPMD_USE_ADIOS1=ON \
           -DopenPMD_USE_ADIOS2=ON \
           -DopenPMD_USE_INVASIVE_TESTS=ON \
           -DCMAKE_VERBOSE_MAKEFILE=ON
