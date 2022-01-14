@@ -21,7 +21,10 @@ jobs:
         sudo apt-get install clang-6.0 libc++-dev libc++abi-dev
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -stdlib=libc++ -Werror -Wno-deprecated-declarations}
+      env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -stdlib=libc++ -Werror -Wno-deprecated-declarations -Wno-ignored-attributes -Wno-unused-const-variable}
+        # -Wno-ignored-attributes -Wno-unused-const-variable: clang-6 has a
+        #   false positive on src/auxiliary/Filesystem.cpp
+        #   [[maybe_unused]] MPI_Datatype const MPI_Types< unsigned >::value = MPI_UNSIGNED;
       run: |
         eval $(spack env activate --sh .github/ci/spack-envs/clang6_nopy_nompi_h5_libcpp/)
         spack install
@@ -51,7 +54,10 @@ jobs:
         sudo apt-get install clang-6.0 libc++-dev libc++abi-dev gfortran libopenmpi-dev python3
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -stdlib=libc++ -Werror -Wno-deprecated-declarations}
+      env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -stdlib=libc++ -Werror -Wno-deprecated-declarations -Wno-ignored-attributes -Wno-unused-const-variable}
+        # -Wno-ignored-attributes -Wno-unused-const-variable: clang-6 has a
+        #   false positive on src/auxiliary/Filesystem.cpp
+        #   [[maybe_unused]] MPI_Datatype const MPI_Types< unsigned >::value = MPI_UNSIGNED;
       run: |
         eval $(spack env activate --sh .github/ci/spack-envs/clang6_nopy_ompi_h5_ad1_ad2_bp3_libcpp/)
         spack install
