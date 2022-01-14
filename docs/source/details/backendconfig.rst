@@ -145,7 +145,7 @@ A full configuration of the HDF5 backend:
 All keys found under ``hdf5.dataset`` are applicable globally (future: as well as per dataset).
 Explanation of the single keys:
 
-* ``adios2.dataset.chunks``: This key contains options for data chunking via `H5Pset_chunk <https://support.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_chunk.htm>`__.
+* ``hdf5.dataset.chunks``: This key contains options for data chunking via `H5Pset_chunk <https://support.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_chunk.htm>`__.
   The default is ``"auto"`` for a heuristic.
   ``"none"`` can be used to disable chunking.
   Chunking generally improves performance and only needs to be disabled in corner-cases, e.g. when heavily relying on independent, parallel I/O that non-collectively declares data records.
