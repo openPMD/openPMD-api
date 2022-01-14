@@ -581,13 +581,6 @@ if(openPMD_HAVE_ADIOS1)
     target_include_directories(openPMD.ADIOS1.Parallel PRIVATE
         ${openPMD_SOURCE_DIR}/include ${openPMD_BINARY_DIR}/include)
 
-    if(openPMD_HAVE_MPI)
-        target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC ${openPMD_MPI_TARGETS})
-        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_HAVE_MPI=1)
-    else()
-        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_HAVE_MPI=0)
-    endif()
-
     target_include_directories(openPMD.ADIOS1.Serial SYSTEM PRIVATE
         $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
         $<TARGET_PROPERTY:openPMD::thirdparty::toml11,INTERFACE_INCLUDE_DIRECTORIES>)
@@ -617,7 +610,7 @@ if(openPMD_HAVE_ADIOS1)
     target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE "${ADIOS_DEFINITIONS_SEQUENTIAL}")
     target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE openPMD_HAVE_ADIOS1=1)
     target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE openPMD_HAVE_MPI=0)
-    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE _NOMPI=1)
+    target_compile_definitions(openPMD.ADIOS1.Serial PRIVATE _NOMPI)  # ADIOS header
 
     if(openPMD_HAVE_MPI)
         set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES
@@ -638,10 +631,16 @@ if(openPMD_HAVE_ADIOS1)
         foreach(adlib ${ADIOS_LIBRARIES})
             target_link_libraries(openPMD.ADIOS1.Parallel PRIVATE ${adlib})
         endforeach()
+        target_link_libraries(openPMD.ADIOS1.Parallel PUBLIC ${openPMD_MPI_TARGETS})
 
         target_include_directories(openPMD.ADIOS1.Parallel SYSTEM PRIVATE ${ADIOS_INCLUDE_DIRS})
         target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE "${ADIOS_DEFINITIONS}")
         target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_HAVE_ADIOS1=1)
+        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_HAVE_MPI=1)
+    else()
+        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_HAVE_ADIOS1=0)
+        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE openPMD_HAVE_MPI=0)
+        target_compile_definitions(openPMD.ADIOS1.Parallel PRIVATE _NOMPI)  # ADIOS header
     endif()
 
     # Runtime parameter and API status checks ("asserts")

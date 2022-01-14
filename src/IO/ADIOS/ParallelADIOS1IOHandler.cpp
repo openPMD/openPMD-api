@@ -346,7 +346,7 @@ ParallelADIOS1IOHandlerImpl::initialize_group(std::string const &name)
     return group;
 }
 
-#else
+#else // openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
 #   if openPMD_HAVE_MPI
 ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string path,
                                                  Access at,
@@ -364,7 +364,7 @@ ParallelADIOS1IOHandler::ParallelADIOS1IOHandler(std::string path,
 {
     throw std::runtime_error("openPMD-api built without parallel ADIOS1 support");
 }
-#   endif
+#   endif // openPMD_HAVE_MPI
 
 ParallelADIOS1IOHandler::~ParallelADIOS1IOHandler() = default;
 
@@ -374,9 +374,11 @@ ParallelADIOS1IOHandler::flush()
     return std::future< void >();
 }
 
+#if openPMD_HAVE_ADIOS1
 void
 ParallelADIOS1IOHandler::enqueue(IOTask const&)
 {
 }
-#endif
-} // openPMD
+#endif // openPMD_HAVE_ADIOS1
+#endif // openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
+} // namespace openPMD
