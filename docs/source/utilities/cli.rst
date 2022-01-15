@@ -19,9 +19,9 @@ The syntax of the command line tool is printed via:
 
 With some ``pip``-based python installations, you might have to run this as a module:
 
-.. code-block:: python3
+.. code-block:: bash
 
-   python -m openpmd_api.ls --help
+   python3 -m openpmd_api.ls --help
 
 ``openpmd-pipe``
 ----------------
@@ -48,4 +48,4 @@ With some ``pip``-based python installations, you might have to run this as a mo
 
 .. code-block:: bash
 
-   python -m openpmd_api.pipe --help
+   python3 -m openpmd_api.pipe --help
