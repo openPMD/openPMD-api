@@ -1,12 +1,12 @@
-import os
-import re
-import sys
-import platform
-import subprocess
-
-from setuptools import setup, Extension
-from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
+import os
+import platform
+import re
+import subprocess
+import sys
+
+from setuptools import Extension, setup
+from setuptools.command.build_ext import build_ext
 
 
 class CMakeExtension(Extension):

@@ -6,11 +6,11 @@ Copyright 2018-2021 openPMD contributors
 Authors: Axel Huebl, Fabian Koller
 License: LGPLv3+
 """
-from openpmd_api import Series, Access, Dataset, Mesh_Record_Component, \
-    Unit_Dimension
 import json
-import numpy as np
 
+import numpy as np
+from openpmd_api import (Access, Dataset, Mesh_Record_Component, Series,
+                         Unit_Dimension)
 
 SCALAR = Mesh_Record_Component.SCALAR
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import json
-import openpmd_api as io
-import numpy as np
 
+import numpy as np
+import openpmd_api as io
 
 # This example demonstrates how to use JSON/TOML-based dynamic
 # configuration for openPMD.
