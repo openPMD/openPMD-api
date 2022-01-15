@@ -95,9 +95,7 @@ Python
 
 .. code-block:: python3
 
-   series = io.Series(
-       "data%T.h5",
-       io.Access.read_only)
+   series = io.Series("data%T.h5", io.Access.read_only)
 
 Iteration
 ---------
@@ -142,12 +140,10 @@ Python
 
 .. code-block:: python3
 
-   print("openPMD version: ",
-         series.openPMD)
+   print("openPMD version: ", series.openPMD)
 
    if series.contains_attribute("author"):
-       print("Author: ",
-             series.author)
+       print("Author: ", series.author)
 
 Record
 ------
@@ -328,10 +324,7 @@ Python
 
    extent = E_x.shape
 
-   print(
-       "First values in E_x "
-       "of shape: ",
-       extent)
+   print("First values in E_x " "of shape: ", extent)
 
 
    print(x_data[0, 0, :5])

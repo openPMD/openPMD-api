@@ -6,21 +6,24 @@ Authors: Axel Huebl, Dmitry Ganyushin, John Kirkham
 License: LGPLv3+
 """
 import numpy as np
+
 try:
     import dask.dataframe as dd
     from dask.delayed import delayed
+
     found_dask = True
 except ImportError:
     found_dask = False
 try:
     import pandas  # noqa
+
     found_pandas = True
 except ImportError:
     found_pandas = False
 
 
 def read_chunk_to_df(species, chunk):
-    stride = np.s_[chunk.offset[0]:chunk.offset[0]+chunk.extent[0]]
+    stride = np.s_[chunk.offset[0] : chunk.offset[0] + chunk.extent[0]]
     return species.to_df(stride)
 
 
@@ -51,11 +54,9 @@ def particles_to_daskdataframe(particle_species):
     dask.dataframe : the central dataframe object created here
     """
     if not found_dask:
-        raise ImportError("dask NOT found. Install dask for Dask DataFrame "
-                          "support.")
+        raise ImportError("dask NOT found. Install dask for Dask DataFrame " "support.")
     if not found_pandas:  # catch this early: before delayed functions
-        raise ImportError("pandas NOT found. Install pandas for DataFrame "
-                          "support.")
+        raise ImportError("pandas NOT found. Install pandas for DataFrame " "support.")
 
     # get optimal chunks: query first non-constant record component and
     #                     assume the same chunking applies for all of them
@@ -80,9 +81,7 @@ def particles_to_daskdataframe(particle_species):
                 break
 
     # merge DataFrames
-    dfs = [
-        delayed(read_chunk_to_df)(particle_species, chunk) for chunk in chunks
-    ]
+    dfs = [delayed(read_chunk_to_df)(particle_species, chunk) for chunk in chunks]
     df = dd.from_delayed(dfs)
 
     return df

@@ -10,10 +10,8 @@ import openpmd_api as io
 
 
 if __name__ == "__main__":
-    series = io.Series("../samples/git-sample/data%T.h5",
-                       io.Access.read_only)
-    print("Read a Series with openPMD standard version %s" %
-          series.openPMD)
+    series = io.Series("../samples/git-sample/data%T.h5", io.Access.read_only)
+    print("Read a Series with openPMD standard version %s" % series.openPMD)
 
     print("The Series contains {0} iterations:".format(len(series.iterations)))
     for i in series.iterations:
@@ -25,8 +23,7 @@ if __name__ == "__main__":
     for m in i.meshes:
         print("\t {0}".format(m))
     print("")
-    print("Iteration 100 contains {0} particle species:".format(
-        len(i.particles)))
+    print("Iteration 100 contains {0} particle species:".format(len(i.particles)))
     for ps in i.particles:
         print("\t {0}".format(ps))
         print("With records:")
@@ -37,22 +34,19 @@ if __name__ == "__main__":
     electrons = i.particles["electrons"]
     charge = electrons["charge"][io.Mesh_Record_Component.SCALAR]
     series.flush()
-    print("And the first electron particle has a charge {}"
-          .format(charge[0]))
+    print("And the first electron particle has a charge {}".format(charge[0]))
     print("")
 
     E_x = i.meshes["E"]["x"]
     shape = E_x.shape
 
-    print("Field E.x has shape {0} and datatype {1}".format(
-          shape, E_x.dtype))
+    print("Field E.x has shape {0} and datatype {1}".format(shape, E_x.dtype))
 
     chunk_data = E_x[1:3, 1:3, 1:2]
     # print("Queued the loading of a single chunk from disk, "
     #       "ready to execute")
     series.flush()
-    print("Chunk has been read from disk\n"
-          "Read chunk contains:")
+    print("Chunk has been read from disk\n" "Read chunk contains:")
     print(chunk_data)
     # for row in range(2):
     #     for col in range(2):

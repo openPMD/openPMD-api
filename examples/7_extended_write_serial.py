@@ -6,8 +6,7 @@ Copyright 2018-2021 openPMD contributors
 Authors: Axel Huebl, Fabian Koller
 License: LGPLv3+
 """
-from openpmd_api import Series, Access, Dataset, Mesh_Record_Component, \
-    Unit_Dimension
+from openpmd_api import Series, Access, Dataset, Mesh_Record_Component, Unit_Dimension
 import json
 import numpy as np
 
@@ -17,10 +16,7 @@ SCALAR = Mesh_Record_Component.SCALAR
 
 if __name__ == "__main__":
     # open file for writing
-    f = Series(
-        "working/directory/2D_simData_py.h5",
-        Access.create
-    )
+    f = Series("working/directory/2D_simData_py.h5", Access.create)
 
     # all required openPMD attributes will be set to reasonable default values
     # (all ones, all zeros, empty strings,...)
@@ -33,7 +29,7 @@ if __name__ == "__main__":
     f.set_attribute(
         "custom_attribute_name",
         "This attribute is manually added and can contain about any datatype "
-        "you would want"
+        "you would want",
     )
     # note that removing attributes required by the standard typically makes
     # the file unusable for post-processing
@@ -51,15 +47,17 @@ if __name__ == "__main__":
 
     # this is a reference to an iteration
     reference = f.iterations[1]
-    reference.comment = "Modifications to a reference will always be visible" \
-                        " in the output"
+    reference.comment = (
+        "Modifications to a reference will always be visible" " in the output"
+    )
     del reference
 
     # alternatively, a copy may be created and later re-assigned to
     # f.iterations[1]
     copy = f.iterations[1]  # TODO .copy()
-    copy.comment = "Modifications to copies will only take effect after you " \
-                   "reassign the copy"
+    copy.comment = (
+        "Modifications to copies will only take effect after you " "reassign the copy"
+    )
     f.iterations[1] = copy
     del copy
 
@@ -71,7 +69,9 @@ if __name__ == "__main__":
     # https://github.com/openPMD/openPMD-standard/blob/upcoming-1.0.1/STANDARD.md#scalar-vector-and-tensor-records
     # Meshes are specialized records
     cur_it.meshes["generic_2D_field"].unit_dimension = {
-        Unit_Dimension.L: -3, Unit_Dimension.M: 1}
+        Unit_Dimension.L: -3,
+        Unit_Dimension.M: 1,
+    }
 
     # as this is a reference, it modifies the original resource
     lowRez = cur_it.meshes["generic_2D_field"]
@@ -85,12 +85,12 @@ if __name__ == "__main__":
     # particles are handled very similar
     electrons = cur_it.particles["electrons"]
     electrons.set_attribute(
-        "NoteWorthyParticleSpeciesProperty",
-        "Observing this species was a blast.")
+        "NoteWorthyParticleSpeciesProperty", "Observing this species was a blast."
+    )
     electrons["displacement"].unit_dimension = {Unit_Dimension.M: 1}
-    electrons["displacement"]["x"].unit_SI = 1.e-6
+    electrons["displacement"]["x"].unit_SI = 1.0e-6
     del electrons["displacement"]
-    electrons["weighting"][SCALAR].make_constant(1.e-5)
+    electrons["weighting"][SCALAR].make_constant(1.0e-5)
 
     mesh = cur_it.meshes["lowRez_2D_field"]
     mesh.axis_labels = ["x", "y"]
@@ -105,20 +105,11 @@ if __name__ == "__main__":
     d = Dataset(partial_mesh.dtype, extent=[2, 5])
     dataset_config = {
         "adios1": {
-            "dataset": {
-                "transform": "blosc:compressor=zlib,shuffle=bit,lvl=1;nometa"
-            }
+            "dataset": {"transform": "blosc:compressor=zlib,shuffle=bit,lvl=1;nometa"}
         },
         "adios2": {
-            "dataset": {
-                "operators": [{
-                    "type": "zlib",
-                    "parameters": {
-                        "clevel": 9
-                    }
-                }]
-            }
-        }
+            "dataset": {"operators": [{"type": "zlib", "parameters": {"clevel": 9}}]}
+        },
     }
     d.options = json.dumps(dataset_config)
     mesh["x"].reset_dataset(d)
@@ -136,15 +127,12 @@ if __name__ == "__main__":
 
     dset = Dataset(np.dtype("uint64"), extent=[2])
     electrons.particle_patches["numParticles"][SCALAR].reset_dataset(dset)
-    electrons.particle_patches["numParticlesOffset"][SCALAR]. \
-        reset_dataset(dset)
+    electrons.particle_patches["numParticlesOffset"][SCALAR].reset_dataset(dset)
 
     dset = Dataset(partial_particlePos.dtype, extent=[2])
-    electrons.particle_patches["offset"].unit_dimension = \
-        {Unit_Dimension.L: 1}
+    electrons.particle_patches["offset"].unit_dimension = {Unit_Dimension.L: 1}
     electrons.particle_patches["offset"]["x"].reset_dataset(dset)
-    electrons.particle_patches["extent"].unit_dimension = \
-        {Unit_Dimension.L: 1}
+    electrons.particle_patches["extent"].unit_dimension = {Unit_Dimension.L: 1}
     electrons.particle_patches["extent"]["x"].reset_dataset(dset)
 
     # at any point in time you may decide to dump already created output to
@@ -154,10 +142,7 @@ if __name__ == "__main__":
 
     # chunked writing of the final dataset at a time is supported
     # this loop writes one row at a time
-    mesh_x = np.array([
-        [1,  3,  5,  7,  9],
-        [11, 13, 15, 17, 19]
-    ])
+    mesh_x = np.array([[1, 3, 5, 7, 9], [11, 13, 15, 17, 19]])
     particle_position = np.array([0.1, 0.2, 0.3, 0.4], dtype=np.float32)
     particle_position_offset = [0, 1, 2, 3]
     for i in [0, 1]:
@@ -172,10 +157,10 @@ if __name__ == "__main__":
         # resource is returned to the caller
 
         for idx in [0, 1]:
-            partial_particlePos[idx] = particle_position[idx + 2*i]
-            partial_particleOff[idx] = particle_position_offset[idx + 2*i]
+            partial_particlePos[idx] = particle_position[idx + 2 * i]
+            partial_particleOff[idx] = particle_position_offset[idx + 2 * i]
 
-        numParticlesOffset = 2*i
+        numParticlesOffset = 2 * i
         numParticles = 2
 
         o = numParticlesOffset
@@ -184,20 +169,25 @@ if __name__ == "__main__":
         electrons["positionOffset"]["x"][o:u] = partial_particleOff
 
         electrons.particle_patches["numParticles"][SCALAR].store(
-            i, np.array([numParticles], dtype=np.uint64))
+            i, np.array([numParticles], dtype=np.uint64)
+        )
         electrons.particle_patches["numParticlesOffset"][SCALAR].store(
-            i, np.array([numParticlesOffset], dtype=np.uint64))
+            i, np.array([numParticlesOffset], dtype=np.uint64)
+        )
 
         electrons.particle_patches["offset"]["x"].store(
-            i,
-            np.array([particle_position[numParticlesOffset]],
-                     dtype=np.float32))
+            i, np.array([particle_position[numParticlesOffset]], dtype=np.float32)
+        )
         electrons.particle_patches["extent"]["x"].store(
             i,
-            np.array([
-                particle_position[numParticlesOffset + numParticles - 1] -
-                particle_position[numParticlesOffset]
-            ], dtype=np.float32))
+            np.array(
+                [
+                    particle_position[numParticlesOffset + numParticles - 1]
+                    - particle_position[numParticlesOffset]
+                ],
+                dtype=np.float32,
+            ),
+        )
 
     mesh["y"].reset_dataset(d)
     mesh["y"].unit_SI = 4

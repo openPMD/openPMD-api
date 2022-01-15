@@ -7,8 +7,10 @@ License: LGPLv3+
 """
 import math
 import numpy as np
+
 try:
     import pandas as pd
+
     found_pandas = True
 except ImportError:
     found_pandas = False
@@ -45,8 +47,7 @@ def particles_to_dataframe(particle_species, slice=None):
     pandas.DataFrame : the central dataframe object created here
     """
     if not found_pandas:
-        raise ImportError("pandas NOT found. Install pandas for DataFrame "
-                          "support.")
+        raise ImportError("pandas NOT found. Install pandas for DataFrame " "support.")
     if slice is None:
         slice = np.s_[()]
 
@@ -61,7 +62,6 @@ def particles_to_dataframe(particle_species, slice=None):
             columns[column_name] = rc[slice]
             particle_species.series_flush()
             if not math.isclose(1.0, rc.unit_SI):
-                columns[column_name] = np.multiply(
-                    columns[column_name], rc.unit_SI)
+                columns[column_name] = np.multiply(columns[column_name], rc.unit_SI)
 
     return pd.DataFrame(columns)
