@@ -925,23 +925,22 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
         #                     /usr/lib/llvm-6.0/lib/clang/6.0.0/lib/linux/libclang_rt.ubsan_minimal-x86_64.so
         # at runtime when used with symbol-hidden code (e.g. pybind11 module)
 
-        #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Wshadow -Woverloaded-virtual -Wextra-semi -Wunreachable-code")
+        set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -Wshadow -Woverloaded-virtual -Wextra-semi -Wunreachable-code ${CMAKE_CXX_FLAGS}")
     elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w3 -wd193,383,1572")
+        set(CMAKE_CXX_FLAGS "-w3 -wd193,383,1572 ${CMAKE_CXX_FLAGS}")
     elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Wshadow -Woverloaded-virtual -Wunreachable-code")
+        set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -Wshadow -Woverloaded-virtual -Wunreachable-code ${CMAKE_CXX_FLAGS}")
     elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         # Warning C4503: "decorated name length exceeded, name was truncated"
         # Symbols longer than 4096 chars are truncated (and hashed instead)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4503")
+        set(CMAKE_CXX_FLAGS "-wd4503 ${CMAKE_CXX_FLAGS}")
         # Warning C4244: "conversion from 'X' to 'Y', possible loss of data"
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4244")
+        set(CMAKE_CXX_FLAGS "-wd4244 ${CMAKE_CXX_FLAGS}")
         # Yes, you should build against the same C++ runtime and with same
         # configuration (Debug/Release). MSVC does inconvenient choices for their
         # developers, so be it. (Our Windows-users use conda-forge builds, which
         # are consistent.)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4251")
+        set(CMAKE_CXX_FLAGS "-wd4251 ${CMAKE_CXX_FLAGS}")
     endif()
 endif()
 
