@@ -126,7 +126,5 @@ Python
 
    import openpmd_api as io
 
-   print("openPMD-api: {}"
-         .format(io.__version__))
-   print("openPMD-api backend variants: {}"
-         .format(io.variants))
+   print("openPMD-api: {}".format(io.__version__))
+   print("openPMD-api backend variants: {}".format(io.variants))

@@ -93,9 +93,7 @@ Python
 
 .. code-block:: python3
 
-   series = io.Series(
-       "myOutput/data_%05T.h5",
-       io.Access.create)
+   series = io.Series("myOutput/data_%05T.h5", io.Access.create)
 
 Iteration
 ---------
@@ -141,13 +139,10 @@ Python
 
 .. code-block:: python3
 
-   series.author = \
-       "Axel Huebl <axelhuebl@lbl.gov>"
+   series.author = "Axel Huebl <axelhuebl@lbl.gov>"
    series.machine = "Hall Probe 5000, Model 3"
-   series.set_attribute(
-       "dinner", "Pizza and Coke")
-   i.set_attribute(
-       "vacuum", True)
+   series.set_attribute("dinner", "Pizza and Coke")
+   i.set_attribute("vacuum", True)
 
 Data
 ----
@@ -178,16 +173,12 @@ Python
 
 .. code-block:: python3
 
-   x_data = np.arange(
-       150 * 300,
-       dtype=np.float
-   ).reshape(150, 300)
+   x_data = np.arange(150 * 300, dtype=np.float).reshape(150, 300)
 
 
+   y_data = 4.0
 
-   y_data = 4.
-
-   z_data = x_data.copy() - 8000.
+   z_data = x_data.copy() - 8000.0
 
 Record
 ------
@@ -228,9 +219,7 @@ Python
    B_y = B["y"]
    B_z = B["z"]
 
-   dataset = io.Dataset(
-       x_data.dtype,
-       x_data.shape)
+   dataset = io.Dataset(x_data.dtype, x_data.shape)
    B_x.reset_dataset(dataset)
    B_y.reset_dataset(dataset)
    B_z.reset_dataset(dataset)
@@ -268,15 +257,15 @@ Python
 
    # unit system agnostic dimension
    B.unit_dimension = {
-       io.Unit_Dimension.M:  1,
+       io.Unit_Dimension.M: 1,
        io.Unit_Dimension.I: -1,
-       io.Unit_Dimension.T: -2
+       io.Unit_Dimension.T: -2,
    }
 
    # conversion to SI
-   B_x.unit_SI = 1.e-4
-   B_y.unit_SI = 1.e-4
-   B_z.unit_SI = 1.e-4
+   B_x.unit_SI = 1.0e-4
+   B_y.unit_SI = 1.0e-4
+   B_z.unit_SI = 1.0e-4
 
 .. tip::
 
@@ -314,7 +303,6 @@ Python
 
 
    B_z.store_chunk(z_data)
-
 
 
    B_y.make_constant(y_data)

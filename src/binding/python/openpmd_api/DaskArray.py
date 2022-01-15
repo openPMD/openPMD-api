@@ -7,8 +7,10 @@ License: LGPLv3+
 """
 import math
 import numpy as np
+
 try:
     from dask.array import from_array
+
     found_dask = True
 except ImportError:
     found_dask = False
@@ -79,8 +81,7 @@ def record_component_to_daskarray(record_component):
     dask.array : the (potentially distributed) array object created here
     """
     if not found_dask:
-        raise ImportError("dask NOT found. Install dask for Dask DataFrame "
-                          "support.")
+        raise ImportError("dask NOT found. Install dask for Dask DataFrame " "support.")
 
     # get optimal chunks
     chunks = record_component.available_chunks()

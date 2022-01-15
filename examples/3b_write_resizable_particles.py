@@ -13,15 +13,14 @@ import numpy as np
 if __name__ == "__main__":
     # open file for writing
     series = io.Series(
-        "../samples/3b_write_resizable_particles_py.h5",
-        io.Access.create
+        "../samples/3b_write_resizable_particles_py.h5", io.Access.create
     )
 
     electrons = series.iterations[0].particles["electrons"]
 
     # our initial data to write
-    x = np.array([0., 1., 2., 3., 4.], dtype=np.double)
-    y = np.array([-2., -3., -4., -5., -6.], dtype=np.double)
+    x = np.array([0.0, 1.0, 2.0, 3.0, 4.0], dtype=np.double)
+    y = np.array([-2.0, -3.0, -4.0, -5.0, -6.0], dtype=np.double)
 
     # both x and y the same type, otherwise we use two distinct datasets
     dataset = io.Dataset(x.dtype, x.shape, '{ "resizable": true }')
@@ -47,8 +46,8 @@ if __name__ == "__main__":
     series.flush()
 
     # extend and append more particles
-    x = np.array([5., 6., 7.], dtype=np.double)
-    y = np.array([-7., -8., -9.], dtype=np.double)
+    x = np.array([5.0, 6.0, 7.0], dtype=np.double)
+    y = np.array([-7.0, -8.0, -9.0], dtype=np.double)
     offset += dataset.extent[0]
     dataset = io.Dataset([dataset.extent[0] + x.shape[0]])
 

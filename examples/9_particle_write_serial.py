@@ -6,8 +6,7 @@ Copyright 2019-2021 openPMD contributors
 Authors: Axel Huebl
 License: LGPLv3+
 """
-from openpmd_api import Series, Access, Dataset, Mesh_Record_Component, \
-    Unit_Dimension
+from openpmd_api import Series, Access, Dataset, Mesh_Record_Component, Unit_Dimension
 import numpy as np
 
 
@@ -16,10 +15,7 @@ SCALAR = Mesh_Record_Component.SCALAR
 
 if __name__ == "__main__":
     # open file for writing
-    f = Series(
-        "../samples/7_particle_write_serial_py.h5",
-        Access.create
-    )
+    f = Series("../samples/7_particle_write_serial_py.h5", Access.create)
 
     # all required openPMD attributes will be set to reasonable default values
     # (all ones, all zeros, empty strings,...)
@@ -33,19 +29,19 @@ if __name__ == "__main__":
     # particles
     electrons = cur_it.particles["electrons"]
     electrons.set_attribute(
-        "Electrons... the necessary evil for ion acceleration! ",
-        "Just kidding.")
+        "Electrons... the necessary evil for ion acceleration! ", "Just kidding."
+    )
 
     # let's set a weird user-defined record this time
     electrons["displacement"].unit_dimension = {Unit_Dimension.M: 1}
-    electrons["displacement"][SCALAR].unit_SI = 1.e-6
+    electrons["displacement"][SCALAR].unit_SI = 1.0e-6
     dset = Dataset(np.dtype("float64"), extent=[2])
     electrons["displacement"][SCALAR].reset_dataset(dset)
     electrons["displacement"][SCALAR].make_constant(42.43)
     # don't like it anymore? remove it with:
     # del electrons["displacement"]
 
-    electrons["weighting"][SCALAR].make_constant(1.e-5)
+    electrons["weighting"][SCALAR].make_constant(1.0e-5)
 
     particlePos_x = np.random.rand(234).astype(np.float32)
     particlePos_y = np.random.rand(234).astype(np.float32)

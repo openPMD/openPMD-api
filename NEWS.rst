@@ -43,9 +43,9 @@ The old setter function (``set_data_order``) and read-only property (``data_orde
 
    series = io.Series("data%T.h5", io.Access.read_only)
    rho = series.iterations[0].meshes["rho"]
-   rho.data_order = 'C'  # or 'F'
+   rho.data_order = "C"  # or 'F'
 
-   print(rho.data_order == 'C')  # True
+   print(rho.data_order == "C")  # True
 
 Note: we recommend using ``'C'`` order since version 2 of the openPMD-standard will simplify this option to ``'C'``, too.
 For Fortran-ordered indices, please just invert the attributes ``axis_labels``, ``grid_spacing`` and ``grid_global_offset`` accordingly.
@@ -163,7 +163,13 @@ The new order allows to make use of defaults in many cases in order reduce compl
    electrons["position"]["x"].reset_dataset(d)
 
    # old code
-   electrons["position"]["x"].store_chunk([0, ], particlePos_x.shape, particlePos_x)
+   electrons["position"]["x"].store_chunk(
+       [
+           0,
+       ],
+       particlePos_x.shape,
+       particlePos_x,
+   )
 
    # new code
    electrons["position"]["x"].store_chunk(particlePos_x)
