@@ -6,8 +6,8 @@ Authors: Axel Huebl, Carsten Fortmann-Grote
 License: LGPLv3+
 """
 
-import unittest
 import sys
+import unittest
 
 # Import suites to run.
 from API.APITest import APITest
