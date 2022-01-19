@@ -3,7 +3,57 @@
 Changelog
 =========
 
-0.14.2
+0.14.4
+------
+**Date:** 2022-01-21
+
+Increased Compatibility & Python Install Bug
+
+This release fixes various read/parsing bugs and increases compatibility with upcoming versions of ADIOS and old releases of Intel ``icpc``.
+An installation issue for pip-based installs from source in the last release was fixed and Python 3.10 support added.
+Various documentation and installation warnings have been fixed.
+
+Changes to "0.14.3"
+^^^^^^^^^^^^^^^^^^^
+
+Bug Fixes
+"""""""""
+
+- ADIOS2:
+
+  - automatically deactivate ``span`` based ``Put`` API when operators are present #1155
+  - solve incompatibilities w/ post-``2.7.1`` ``master``-branch #1166
+- ICC 19.1.2: C++17 work-arounds (``variant``) #1157
+- Don't apply compression operators multiple times in variable-based iteration encoding #1152
+- Reading/parsing:
+
+  - remove invalid records from data structures entirely #1150
+  - fix grid spacing with type long double #1137
+- Python:
+
+  - fix ``Iteration`` ``__repr__`` typo #1149
+  - add ``cmake/`` to ``MANIFEST.in`` #1140
+
+Other
+"""""
+
+- add simple ``.pre-commit-config.yaml``
+- Python:
+
+  - support Python 3.10 #1139
+- CMake:
+
+  - warning flags first in ``CXXFLAGS`` #1172
+  - add policy CMP0127 (v3.22+) #1165
+- Docs:
+
+  - fix CLI highlighting #1171
+  - update citation & add BibTeX #1168
+  - fix HDF5 JSON File #1169
+  - minor warnings #1170
+
+
+0.14.3
 ------
 **Date:** 2021-11-03
 
