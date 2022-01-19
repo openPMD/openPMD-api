@@ -4409,7 +4409,6 @@ TEST_CASE( "automatically_deactivate_span", "[serial][adios2]" )
     }
 
     // enable span-based API indiscriminately
-    try
     {
         std::string enable = R"END(
 {
@@ -4451,24 +4450,26 @@ TEST_CASE( "automatically_deactivate_span", "[serial][adios2]" )
 
         REQUIRE( !spanWorkaround );
 
-        E_compressed.storeChunk< int >(
-            { 0 }, { 10 }, [ &spanWorkaround ]( size_t size ) {
-                spanWorkaround = true;
-                return std::shared_ptr< int >(
-                    new int[ size ]{}, []( auto * ptr ) { delete[] ptr; } );
-            } );
+        try
+        {
+            E_compressed.storeChunk< int >(
+                { 0 }, { 10 }, [ &spanWorkaround ]( size_t size ) {
+                    spanWorkaround = true;
+                    return std::shared_ptr< int >(
+                        new int[ size ]{}, []( auto * ptr ) { delete[] ptr; } );
+                } );
+        }
+        catch( std::invalid_argument const & e )
+        {
+            /*
+            * Using the span-based API in combination with compression is
+            * unsupported in ADIOS2.
+            * In newer versions of ADIOS2, an error is thrown.
+            */
+            std::cerr << "Ignoring expected error: " << e.what() << std::endl;
+        }
 
         REQUIRE( !spanWorkaround );
-    }
-    catch( std::exception const & e )
-    {
-        /*
-         * Using the span-based API in combination with compression is
-         * unsupported in ADIOS2.
-         * Currently, this is silently ignored, but in future there might be
-         * an error of some sort.
-         */
-        std::cerr << "Ignoring expected error: " << e.what() << std::endl;
     }
 
     // disable span-based API indiscriminately
@@ -4513,6 +4514,7 @@ TEST_CASE( "automatically_deactivate_span", "[serial][adios2]" )
 
         REQUIRE( spanWorkaround );
 
+        spanWorkaround = false;
         E_compressed.storeChunk< int >(
             { 0 }, { 10 }, [ &spanWorkaround ]( size_t size ) {
                 spanWorkaround = true;
