@@ -7,7 +7,7 @@ In the following section we explain how to contribute to this documentation.
 
 If you are reading the HTML version on http://openPMD-api.readthedocs.io and want to improve or correct existing pages, check the "Edit on GitHub" link on the right upper corner of each document.
 
-Alternatively, go to `docs/source` in our source code and follow the directory structure of `reStructuredText`_ (``.rst``) files there.
+Alternatively, go to ``docs/source`` in our source code and follow the directory structure of `reStructuredText`_ (``.rst``) files there.
 For intrusive changes, like structural changes to chapters, please open an issue to discuss them beforehand.
 
 .. _reStructuredText: http://www.sphinx-doc.org/en/stable/rest.html
