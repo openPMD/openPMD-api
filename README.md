@@ -100,7 +100,7 @@ Our manual shows full [read & write examples](https://openpmd-api.readthedocs.io
 
 Required:
 * CMake 3.15.0+
-* C++17 capable compiler, e.g., g++ 7+, clang 6+, MSVC 19.15+, icpc 19+, icpx
+* C++17 capable compiler, e.g., g++ 7+, clang 7+, MSVC 19.15+, icpc 19+, icpx
 
 Shipped internally in `share/openPMD/thirdParty/`:
 * [Catch2](https://github.com/catchorg/Catch2) 2.13.4+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
