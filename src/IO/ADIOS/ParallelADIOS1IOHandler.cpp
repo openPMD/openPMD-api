@@ -133,8 +133,14 @@ ParallelADIOS1IOHandlerImpl::flush()
                 default:
                     VERIFY(false, "[ADIOS1] Internal error: Wrong operation in ADIOS setup queue");
             }
-        } catch (unsupported_data_error& e)
+        } catch (...)
         {
+            std::cerr
+                << "[AbstractIOHandlerImpl] IO Task "
+                << internal::operationAsString( i.operation )
+                << " failed with exception. Removing task"
+                << " from IO queue and passing on the exception."
+                << std::endl;
             handler->m_setup.pop();
             throw;
         }
@@ -204,9 +210,15 @@ ParallelADIOS1IOHandlerImpl::flush()
                 default:
                     VERIFY(false, "[ADIOS1] Internal error: Wrong operation in ADIOS work queue");
             }
-        } catch (unsupported_data_error& e)
+        } catch (...)
         {
-            handler->m_work.pop();
+            std::cerr
+                << "[AbstractIOHandlerImpl] IO Task "
+                << internal::operationAsString( i.operation )
+                << " failed with exception. Removing task"
+                << " from IO queue and passing on the exception."
+                << std::endl;
+            m_handler->m_work.pop();
             throw;
         }
         handler->m_work.pop();
