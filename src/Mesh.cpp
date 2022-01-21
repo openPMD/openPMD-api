@@ -331,6 +331,8 @@ Mesh::read()
         setGridSpacing(a.get< std::vector< float > >());
     else if( *aRead.dtype == DT::VEC_DOUBLE || *aRead.dtype == DT::DOUBLE )
         setGridSpacing(a.get< std::vector< double > >());
+    else if( *aRead.dtype == DT::VEC_LONG_DOUBLE || *aRead.dtype == DT::LONG_DOUBLE )
+        setGridSpacing(a.get< std::vector< long double > >());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'gridSpacing'");
 

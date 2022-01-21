@@ -77,6 +77,11 @@ Explanation of the single keys:
 
   * ``type`` supported ADIOS operator type, e.g. zfp, sz
   * ``parameters`` is an associative map of string parameters for the operator (e.g. compression levels)
+* ``adios2.use_span_based_put``: The openPMD-api exposes the `span-based Put() API <https://adios2.readthedocs.io/en/latest/components/components.html#put-modes-and-memory-contracts>`_ of ADIOS2 via an overload of ``RecordComponent::storeChunk()``.
+  This API is incompatible with compression operators as described above.
+  The openPMD-api will automatically use a fallback implementation for the span-based Put() API if any operator is added to a dataset.
+  This workaround is enabled on a per-dataset level.
+  The workaround can be completely deactivated by specifying ``{"adios2": {"use_span_based_put": true}}`` or it can alternatively be activated indiscriminately for all datasets by specifying ``{"adios2": {"use_span_based_put": false}}``.
 
 Any setting specified under ``adios2.dataset`` is applicable globally as well as on a per-dataset level.
 Any setting under ``adios2.engine`` is applicable globally only.
@@ -94,7 +99,7 @@ A full configuration of the HDF5 backend:
 All keys found under ``hdf5.dataset`` are applicable globally (future: as well as per dataset).
 Explanation of the single keys:
 
-* ``adios2.dataset.chunks``: This key contains options for data chunking via `H5Pset_chunk <https://support.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_chunk.htm>`__.
+* ``hdf5.dataset.chunks``: This key contains options for data chunking via `H5Pset_chunk <https://support.hdfgroup.org/HDF5/doc/RM/H5P/H5Pset_chunk.htm>`__.
   The default is ``"auto"`` for a heuristic.
   ``"none"`` can be used to disable chunking.
   Chunking generally improves performance and only needs to be disabled in corner-cases, e.g. when heavily relying on independent, parallel I/O that non-collectively declares data records.

@@ -43,7 +43,7 @@ Functionality                Behavior           Description
        Note that openPMD represents constant record components with attributes, thus inheriting this for ``::makeConstant``.
 
 .. [4] We usually open iterations delayed on first access. This first access is usually the ``flush()`` call after a ``storeChunk``/``loadChunk`` operation. If the first access is non-collective, an explicit, collective ``Iteration::open()`` can be used to have the files already open.
-Alternatively, iterations might be accessed for the first time by immediate operations such as ``::availableChunks()``.
+       Alternatively, iterations might be accessed for the first time by immediate operations such as ``::availableChunks()``.
 
 .. tip::
 

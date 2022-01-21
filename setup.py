@@ -156,7 +156,7 @@ with open('./requirements.txt') as f:
 setup(
     name='openPMD-api',
     # note PEP-440 syntax: x.y.zaN but x.y.z.devN
-    version='0.14.3',
+    version='0.14.4',
     author='Axel Huebl, Franz Poeschel, Fabian Koller, Junmin Gu',
     author_email='axelhuebl@lbl.gov, f.poeschel@hzdr.de',
     maintainer='Axel Huebl',
@@ -178,7 +178,7 @@ setup(
     cmdclass=dict(build_ext=CMakeBuild),
     # scripts=['openpmd-ls'],
     zip_safe=False,
-    python_requires='>=3.6, <3.10',
+    python_requires='>=3.6, <3.11',
     # tests_require=['pytest'],
     install_requires=install_requires,
     # see: src/bindings/python/cli
@@ -211,6 +211,7 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         ('License :: OSI Approved :: '
          'GNU Lesser General Public License v3 or later (LGPLv3+)'),
     ],

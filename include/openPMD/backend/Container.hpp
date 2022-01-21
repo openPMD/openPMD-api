@@ -366,6 +366,17 @@ OPENPMD_protected:
             return m_originalContainer.at( std::forward< K >( k ) );
         }
 
+        /**
+         * Remove key from the list of accessed keys.
+         * If the key is not accessed after this again, it will be deleted along
+         * with all other unaccessed keys upon destruction.
+         */
+        template< typename K >
+        void forget( K && k )
+        {
+            m_accessedKeys.erase( std::forward< K >( k ) );
+        }
+
         ~EraseStaleEntries()
         {
             auto & map = *m_originalContainer.m_container;

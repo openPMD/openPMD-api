@@ -5,8 +5,8 @@ FROM       quay.io/pypa/manylinux2010_x86_64 as build-env
 # FROM       quay.io/pypa/manylinux1_x86_64 as build-env
 ENV        DEBIAN_FRONTEND noninteractive
 
-# Python 3.6-3.9 via "36m 37m 38 39"
-ARG        PY_VERSIONS="36m 37m 38 39"
+# Python 3.6-3.10 via "36m 37m 38 39 310"
+ARG        PY_VERSIONS="36m 37m 38 39 310"
 
 # static libs need relocatable symbols for linking to shared python lib
 ENV        CFLAGS="-fPIC ${CFLAGS}"
@@ -186,6 +186,21 @@ RUN        python3.9 --version \
            && python3.9 -m pip install openPMD_api-*-cp39-cp39-manylinux2010_x86_64.whl
 RUN        python3.9 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
 RUN        python3.9 -m openpmd_api.ls --help
+RUN        openpmd-ls --help
+
+# test in fresh env: Debian:Bullseye + Python 3.10
+FROM       debian:bullseye
+ENV        DEBIAN_FRONTEND noninteractive
+COPY --from=build-env /wheelhouse/openPMD_api-*-cp310-cp310-manylinux2010_x86_64.whl .
+RUN        apt-get update \
+           && apt-get install -y --no-install-recommends python3.10 python3-distutils ca-certificates curl \
+           && rm -rf /var/lib/apt/lists/*
+RUN        python3.10 --version \
+           && curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py \
+           && python3.10 get-pip.py \
+           && python3.10 -m pip install openPMD_api-*-cp310-cp310-manylinux2010_x86_64.whl
+RUN        python3.10 -c "import openpmd_api as io; print(io.__version__); print(io.variants)"
+RUN        python3.10 -m openpmd_api.ls --help
 RUN        openpmd-ls --help
 
 

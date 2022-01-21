@@ -118,6 +118,7 @@ ParticleSpecies::read()
             while( ! IOHandler()->m_work.empty() )
                 IOHandler()->m_work.pop();
 
+            map.forget( record_name );
             //(*this)[record_name].erase(RecordComponent::SCALAR);
             //this->erase(record_name);
         }

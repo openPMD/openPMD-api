@@ -2,7 +2,7 @@
 #
 cmake_minimum_required(VERSION 3.15.0)
 
-project(openPMD VERSION 0.14.3) # LANGUAGES CXX
+project(openPMD VERSION 0.14.4) # LANGUAGES CXX
 
 # the openPMD "markup"/"schema" standard version
 set(openPMD_STANDARD_VERSION 1.1.0)
@@ -16,6 +16,13 @@ list(APPEND CMAKE_MODULE_PATH "${openPMD_SOURCE_DIR}/share/openPMD/cmake")
 #   https://cmake.org/cmake/help/v3.12/policy/CMP0074.html
 if(POLICY CMP0074)
     cmake_policy(SET CMP0074 NEW)
+endif()
+
+# We use simple syntax in cmake_dependent_option, so we are compatible with the
+# extended syntax in CMake 3.22+
+# https://cmake.org/cmake/help/v3.22/policy/CMP0127.html
+if(POLICY CMP0127)
+    cmake_policy(SET CMP0127 NEW)
 endif()
 
 
@@ -883,23 +890,22 @@ if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
         #                     /usr/lib/llvm-6.0/lib/clang/6.0.0/lib/linux/libclang_rt.ubsan_minimal-x86_64.so
         # at runtime when used with symbol-hidden code (e.g. pybind11 module)
 
-        #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Weverything")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Wshadow -Woverloaded-virtual -Wextra-semi -Wunreachable-code")
+        set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -Wshadow -Woverloaded-virtual -Wextra-semi -Wunreachable-code ${CMAKE_CXX_FLAGS}")
     elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w3 -wd193,383,1572")
+        set(CMAKE_CXX_FLAGS "-w3 -wd193,383,1572 ${CMAKE_CXX_FLAGS}")
     elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -Wshadow -Woverloaded-virtual -Wunreachable-code")
+        set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -Wshadow -Woverloaded-virtual -Wunreachable-code ${CMAKE_CXX_FLAGS}")
     elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
         # Warning C4503: "decorated name length exceeded, name was truncated"
         # Symbols longer than 4096 chars are truncated (and hashed instead)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4503")
+        set(CMAKE_CXX_FLAGS "-wd4503 ${CMAKE_CXX_FLAGS}")
         # Warning C4244: "conversion from 'X' to 'Y', possible loss of data"
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4244")
+        set(CMAKE_CXX_FLAGS "-wd4244 ${CMAKE_CXX_FLAGS}")
         # Yes, you should build against the same C++ runtime and with same
         # configuration (Debug/Release). MSVC does inconvenient choices for their
         # developers, so be it. (Our Windows-users use conda-forge builds, which
         # are consistent.)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd4251")
+        set(CMAKE_CXX_FLAGS "-wd4251 ${CMAKE_CXX_FLAGS}")
     endif()
 endif()
 
