@@ -1,0 +1,27 @@
+# To use:
+#
+#     pre-commit run -a
+#
+# Or:
+#
+#     pre-commit install  # (runs every time you commit in git)
+#
+# To update this file:
+#
+#     pre-commit autoupdate
+#
+# See https://pre-commit.com for more information
+
+# Do not check/format anything from third parties
+exclude: '^share/openPMD/thirdParty'
+
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.1.0
+    hooks:
+    - id: mixed-line-ending
+    - id: check-json
+    - id: check-toml
+    - id: check-yaml
+    - id: check-added-large-files
