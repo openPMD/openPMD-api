@@ -1877,6 +1877,12 @@ class APITest(unittest.TestCase):
                             [2, 0])
 
     def loadToTemporaryStore(self, r_E_x):
+        if found_numpy and False:
+            data = np.zeros((2, 3,), dtype=np.dtype("int"))
+            r_E_x.load_chunk(data, [0, 0], [2, 3])
+            data2 = np.zeros((2, 3,), dtype=np.dtype("int"))
+            r_E_x.load_chunk(data2)
+
         # not catching the return value shall not result in a use-after-free:
         r_E_x.load_chunk()
         # we keep a reference on the data until we are done flush()ing
@@ -1913,6 +1919,10 @@ class APITest(unittest.TestCase):
         self.loadToTemporaryStore(r_E_x)
         gc.collect()  # trigger removal of temporary data to check its copied
 
+        if found_numpy:
+            r_d_inmem = np.zeros((2, 3,), dtype=np.dtype("int"))
+            r_E_x.load_chunk(r_d_inmem)
+
         read.flush()
 
         if found_numpy:
@@ -1920,6 +1930,10 @@ class APITest(unittest.TestCase):
                 r_d[:3, :],
                 np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]],
                          dtype=np.dtype("int"))
+            )
+            np.testing.assert_allclose(
+                r_d_inmem,
+                np.array([[1, 2, 3], [4, 5, 6]], dtype=np.dtype("int"))
             )
 
     def testWriteFromTemporary(self):
