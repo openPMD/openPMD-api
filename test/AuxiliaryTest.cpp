@@ -9,7 +9,6 @@
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
-#include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
@@ -39,33 +38,6 @@ struct TestHelper : public Attributable
     }
 };
 } // openPMD
-
-
-TEST_CASE( "optional", "[auxiliary]" ) {
-    using namespace auxiliary;
-
-    Option<int> opt;
-
-    REQUIRE_THROWS_AS(opt.get(), std::bad_variant_access);
-    REQUIRE_THROWS_AS(opt.get() = 42, std::bad_variant_access);
-    REQUIRE(!opt);
-    REQUIRE(!opt.has_value());
-
-    opt = 43;
-    REQUIRE(opt);
-    REQUIRE(opt.has_value());
-    REQUIRE(opt.get() == 43);
-
-    Option<int> opt2{ opt };
-    REQUIRE(opt2);
-    REQUIRE(opt2.has_value());
-    REQUIRE(opt2.get() == 43);
-
-    Option<int> opt3 = makeOption( 3 );
-    REQUIRE(opt3);
-    REQUIRE(opt3.has_value());
-    REQUIRE(opt3.get() == 3);
-}
 
 
 TEST_CASE( "deref_cast_test", "[auxiliary]" ) {

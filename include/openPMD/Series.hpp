@@ -30,7 +30,6 @@
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Streaming.hpp"
 #include "openPMD/WriteIterations.hpp"
-#include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
@@ -42,6 +41,7 @@
 #endif
 
 #include <map>
+#include <optional>
 #include <string>
 
 // expose private and protected members for invasive testing
@@ -85,7 +85,7 @@ public:
      * This ensures that Series::writeIteration() always returns
      * the same instance.
      */
-    auxiliary::Option< WriteIterations > m_writeIterations;
+    std::optional< WriteIterations > m_writeIterations;
     /**
      * Needed if reading a single iteration of a file-based series.
      * Users may specify the concrete filename of one iteration instead of the
@@ -95,7 +95,7 @@ public:
      * Instead, the user-specified filename should be used directly.
      * Store that filename in the following Option to indicate this situation.
      */
-    auxiliary::Option< std::string > m_overrideFilebasedFilename;
+    std::optional< std::string > m_overrideFilebasedFilename;
     /**
      * Name of the iteration without filename suffix.
      * In case of file-based iteration encoding, with expansion pattern.

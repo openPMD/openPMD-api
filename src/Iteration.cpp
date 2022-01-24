@@ -323,7 +323,7 @@ Iteration::flush()
 void Iteration::deferParseAccess( DeferredParseAccess dr )
 {
     get().m_deferredParseAccess =
-        auxiliary::makeOption< DeferredParseAccess >( std::move( dr ) );
+        std::make_optional< DeferredParseAccess >( std::move( dr ) );
 }
 
 void Iteration::read()
@@ -333,7 +333,7 @@ void Iteration::read()
     {
         return;
     }
-    auto const & deferred = it.m_deferredParseAccess.get();
+    auto const & deferred = it.m_deferredParseAccess.value();
     if( deferred.fileBased )
     {
         readFileBased( deferred.filename, deferred.path );
@@ -343,7 +343,7 @@ void Iteration::read()
         readGorVBased( deferred.path );
     }
     // reset this thing
-    it.m_deferredParseAccess = auxiliary::Option< DeferredParseAccess >();
+    it.m_deferredParseAccess = std::optional< DeferredParseAccess >();
 }
 
 void Iteration::reread( std::string const & path )

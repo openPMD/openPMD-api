@@ -1182,7 +1182,7 @@ Series::iterationFilename( uint64_t i )
     auto & series = get();
     if( series.m_overrideFilebasedFilename.has_value() )
     {
-        return series.m_overrideFilebasedFilename.get();
+        return series.m_overrideFilebasedFilename.value();
     }
     std::stringstream iteration( "" );
     iteration << std::setw( series.m_filenamePadding )
@@ -1488,7 +1488,7 @@ namespace
                 json::asLowerCaseStringDynamic( config[ key ].json() );
             if( maybeString.has_value() )
             {
-                dest = std::move( maybeString.get() );
+                dest = std::move( maybeString.value() );
             }
             else
             {
@@ -1573,7 +1573,7 @@ SeriesData::~SeriesData()
     try
     {
         // WriteIterations gets the first shot at flushing
-        this->m_writeIterations = auxiliary::Option< WriteIterations >();
+        this->m_writeIterations = std::optional< WriteIterations >();
         /*
          * Scenario: A user calls `Series::flush()` but does not check for
          * thrown exceptions. The exception will propagate further up, usually
@@ -1669,7 +1669,7 @@ Series::writeIterations()
     {
         series.m_writeIterations = WriteIterations( this->iterations );
     }
-    return series.m_writeIterations.get();
+    return series.m_writeIterations.value();
 }
 
 namespace

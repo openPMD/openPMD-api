@@ -35,6 +35,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string>
 #include <tuple>
@@ -468,10 +469,10 @@ CommonADIOS1IOHandlerImpl< ChildClass >::createPath(Writable* writable,
     }
 }
 
-static auxiliary::Option< std::string > datasetTransform(
+static std::optional< std::string > datasetTransform(
     json::TracingJSON config )
 {
-    using ret_t = auxiliary::Option< std::string >;
+    using ret_t = std::optional< std::string >;
     if( !config.json().contains( "dataset" ) )
     {
         return ret_t{};
@@ -485,7 +486,7 @@ static auxiliary::Option< std::string > datasetTransform(
     auto maybeRes = json::asStringDynamic( config.json() );
     if( maybeRes.has_value() )
     {
-        return std::move( maybeRes.get() );
+        return std::move( maybeRes.value() );
     }
     else
     {
@@ -558,7 +559,7 @@ CommonADIOS1IOHandlerImpl< ChildClass >::createDataset(Writable* writable,
                 auto maybeTransform = datasetTransform( options );
                 if( maybeTransform.has_value() )
                 {
-                    transform = maybeTransform.get();
+                    transform = maybeTransform.value();
                 }
 
                 parameters.warnUnusedParameters(
@@ -1761,7 +1762,7 @@ void CommonADIOS1IOHandlerImpl< ChildClass >::initJson(
     auto maybeTransform = datasetTransform( config[ "adios1" ] );
     if( maybeTransform.has_value() )
     {
-        m_defaultTransform = std::move( maybeTransform.get() );
+        m_defaultTransform = std::move( maybeTransform.value() );
     }
     auto shadow = config.invertShadow();
     if( shadow.size() > 0 )

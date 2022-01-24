@@ -21,7 +21,6 @@
 
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
-#include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/Datatype.hpp"
@@ -30,6 +29,7 @@
 
 #include <exception>
 #include <iostream>
+#include <optional>
 
 
 namespace openPMD
@@ -436,7 +436,7 @@ namespace openPMD
          * Check whether two chunks can be merged to form a large one
          * and optionally return that larger chunk
          */
-        auxiliary::Option< WrittenChunkInfo >
+        std::optional< WrittenChunkInfo >
         mergeChunks(
             WrittenChunkInfo const & chunk1,
             WrittenChunkInfo const & chunk2 )
@@ -490,10 +490,10 @@ namespace openPMD
                 Offset offset( c1->offset );
                 Extent extent( c1->extent );
                 extent[ dim ] += c2->extent[ dim ];
-                return auxiliary::makeOption(
+                return std::make_optional(
                     WrittenChunkInfo( offset, extent ) );
             }
-            return auxiliary::Option< WrittenChunkInfo >();
+            return std::optional< WrittenChunkInfo >();
         }
 
         /*
@@ -518,7 +518,7 @@ namespace openPMD
                     {
                         for( auto j = i + 1; j < table.end(); ++j )
                         {
-                            auxiliary::Option< WrittenChunkInfo > merged =
+                            std::optional< WrittenChunkInfo > merged =
                                 mergeChunks( *i, *j );
                             if( merged )
                             {
@@ -527,7 +527,7 @@ namespace openPMD
                                 table.erase( j );
                                 table.erase( i );
                                 table.emplace_back(
-                                    std::move( merged.get() ) );
+                                    std::move( merged.value() ) );
                                 return true;
                             }
                         }

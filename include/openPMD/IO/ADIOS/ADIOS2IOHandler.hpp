@@ -29,7 +29,6 @@
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
-#include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/config.hpp"
 #include "openPMD/IterationEncoding.hpp"
@@ -47,6 +46,7 @@
 #include <future>
 #include <iostream>
 #include <memory> // shared_ptr
+#include <optional>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -320,11 +320,11 @@ private:
      * @return first parameter: the operators, second parameters: whether
      * operators have been configured
      */
-    auxiliary::Option< std::vector< ParameterizedOperator > >
+    std::optional< std::vector< ParameterizedOperator > >
     getOperators( json::TracingJSON config );
 
     // use m_config
-    auxiliary::Option< std::vector< ParameterizedOperator > >
+    std::optional< std::vector< ParameterizedOperator > >
     getOperators();
 
     std::string
@@ -367,7 +367,7 @@ private:
 
     // Helper methods.
 
-    auxiliary::Option< adios2::Operator >
+    std::optional< adios2::Operator >
     getCompressionOperator( std::string const & compression );
 
     /*
@@ -1227,7 +1227,7 @@ namespace detail
 
     private:
         ADIOS2IOHandlerImpl * m_impl;
-        auxiliary::Option< adios2::Engine > m_engine; //! ADIOS engine
+        std::optional< adios2::Engine > m_engine; //! ADIOS engine
         /**
          * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
          */
@@ -1343,8 +1343,8 @@ namespace detail
          * the map that would be returned by a call to
          * IO::Available(Attributes|Variables).
          */
-        auxiliary::Option< AttributeMap_t > m_availableAttributes;
-        auxiliary::Option< AttributeMap_t > m_availableVariables;
+        std::optional< AttributeMap_t > m_availableAttributes;
+        std::optional< AttributeMap_t > m_availableVariables;
 
         /*
          * finalize() will set this true to avoid running twice.
