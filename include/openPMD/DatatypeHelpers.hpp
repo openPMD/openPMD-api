@@ -63,41 +63,27 @@ struct HasErrorMessageMember<
  * @tparam n As in switchType().
  * @tparam ReturnType As in switchType().
  * @tparam Action As in switchType().
- * @tparam Placeholder For SFINAE, set to void.
  * @tparam Args As in switchType().
  */
 template<
     int n,
     typename ReturnType,
     typename Action,
-    typename Placeholder,
     typename... Args >
 struct CallUndefinedDatatype
 {
-    static ReturnType call( Args &&... )
-    {
-        static_assert(
-            HasErrorMessageMember< Action >::value,
-            "[switchType] Action needs either an errorMsg member of type "
-            "std::string or operator()<unsigned>() overloads." );
-        throw std::runtime_error(
-            "[" + std::string( Action::errorMsg ) + "] Unknown Datatype." );
-    }
-};
-
-template< int n, typename ReturnType, typename Action, typename... Args >
-struct CallUndefinedDatatype<
-    n,
-    ReturnType,
-    Action,
-    // Enable this, if no error message member is found.
-    // action.template operator()<n>() will be called instead
-    typename std::enable_if< !HasErrorMessageMember< Action >::value >::type,
-    Args... >
-{
     static ReturnType call( Args &&... args )
     {
-        return Action::template call< n >( std::forward< Args >( args )... );
+        if constexpr( HasErrorMessageMember< Action >::value )
+        {
+            throw std::runtime_error(
+                "[" + std::string( Action::errorMsg ) + "] Unknown Datatype." );
+        }
+        else
+        {
+            return Action::template call< n >( std::forward< Args >( args )... );
+        }
+        throw std::runtime_error( "Unreachable!" );
     }
 };
 }
@@ -235,7 +221,6 @@ auto switchType( Datatype dt, Args &&... args )
             0,
             ReturnType,
             Action,
-            void,
             Args &&... >::call( std::forward< Args >( args )... );
     default:
         throw std::runtime_error(
@@ -323,7 +308,6 @@ auto switchNonVectorType( Datatype dt, Args &&... args )
             0,
             ReturnType,
             Action,
-            void,
             Args &&... >::call( std::forward< Args >( args )... );
     default:
         throw std::runtime_error(

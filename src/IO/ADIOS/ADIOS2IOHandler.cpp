@@ -1359,8 +1359,17 @@ namespace detail
          * that would otherwise be lost. Check whether this has been done.
          */
         using rep = AttributeTypes< bool >::rep;
+
         if constexpr( std::is_same< T, rep >::value )
         {
+            auto attr = IO.InquireAttribute< rep >( name );
+            if ( !attr )
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Internal error: Failed reading attribute '" + name +
+                    "'." );
+            }
+
             std::string metaAttr =
                 ADIOS2Defaults::str_isBooleanOldLayout + name;
             /*
@@ -1373,18 +1382,68 @@ namespace detail
                 IO,
                 ADIOS2Defaults::str_isBooleanOldLayout + name,
                 /* verbose = */ false );
+
+
             if( type == determineDatatype< rep >() )
             {
-                auto attr = IO.InquireAttribute< rep >( metaAttr );
-                if( attr.Data().size() == 1 && attr.Data()[ 0 ] == 1 )
+                auto meta = IO.InquireAttribute< rep >( metaAttr );
+                if( meta.Data().size() == 1 && meta.Data()[ 0 ] == 1 )
                 {
-                    AttributeTypes< bool >::oldReadAttribute(
-                        IO, name, resource );
+                    *resource = bool_repr::fromRep( attr.Data()[ 0 ] );
                     return determineDatatype< bool >();
                 }
             }
+            *resource = attr.Data()[ 0 ];
         }
-        AttributeTypes< T >::oldReadAttribute( IO, name, resource );
+        else if constexpr( IsUnsupportedComplex_v< T > )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex "
+                "attribute types" );
+        }
+        else if constexpr( IsVector_v< T > )
+        {
+            auto attr = IO.InquireAttribute< typename T::value_type >( name );
+            if ( !attr )
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Internal error: Failed reading attribute '" + name + "'." );
+            }
+            *resource = attr.Data();
+        }
+        else if constexpr( IsArray_v< T > )
+        {
+            auto attr = IO.InquireAttribute< typename T::value_type >( name );
+            if ( !attr )
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Internal error: Failed reading attribute '" + name + "'." );
+            }
+            auto data = attr.Data( );
+            T res;
+            for ( size_t i = 0; i < data.size(); i++ )
+            {
+                res[i] = data[i];
+            }
+            *resource = res;
+        }
+        else if constexpr( std::is_same_v< T, bool > )
+        {
+            throw std::runtime_error(
+                "Observed boolean attribute. ADIOS2 does not have these?" );
+        }
+        else
+        {
+            auto attr = IO.InquireAttribute< T >( name );
+            if ( !attr )
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Internal error: Failed reading attribute '" + name +
+                    "'." );
+            }
+            *resource = attr.Data()[ 0 ];
+        }
+
         return determineDatatype< T >();
     }
 
@@ -1501,8 +1560,57 @@ namespace detail
             filedata.uncommittedAttributes.emplace( fullName );
         }
 
-        AttributeTypes< T >::oldCreateAttribute(
-            IO, fullName, std::get< T >( parameters.resource ) );
+        auto & value = std::get< T >( parameters.resource );
+
+        if constexpr( IsUnsupportedComplex_v< T > )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex "
+                "attribute types" );
+        }
+        else if constexpr( IsVector_v< T > )
+        {
+            auto attr = IO.DefineAttribute( fullName, value.data(), value.size() );
+            if( !attr )
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Internal error: Failed defining attribute '" + fullName +
+                    "'." );
+            }
+        }
+        else if constexpr( IsArray_v< T > )
+        {
+            auto attr = IO.DefineAttribute( fullName, value.data(), value.size() );
+            if( !attr )
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Internal error: Failed defining attribute '" + fullName +
+                    "'." );
+            }
+        }
+        else if constexpr( std::is_same_v< T, bool > )
+        {
+            IO.DefineAttribute< bool_representation >(
+                ADIOS2Defaults::str_isBooleanOldLayout + fullName, 1 );
+            auto representation = bool_repr::toRep( value );
+            auto attr = IO.DefineAttribute( fullName, representation );
+            if( !attr )
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Internal error: Failed defining attribute '" + fullName +
+                    "'." );
+            }
+        }
+        else
+        {
+            auto attr = IO.DefineAttribute( fullName, value );
+            if( !attr )
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Internal error: Failed defining attribute '" + fullName +
+                    "'." );
+            }
+        }
     }
 
     template< int n, typename... Params >
@@ -1665,36 +1773,6 @@ namespace detail
     }
 
     template< typename T >
-    void AttributeTypes< T >::oldCreateAttribute(
-        adios2::IO & IO, std::string name, const T value )
-    {
-        auto attr = IO.DefineAttribute( name, value );
-        if( !attr )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed defining attribute '" + name +
-                "'." );
-        }
-    }
-
-    template< typename T >
-    void
-    AttributeTypes< T >::oldReadAttribute(
-        adios2::IO & IO,
-        std::string name,
-        std::shared_ptr< Attribute::resource > resource )
-    {
-        auto attr = IO.InquireAttribute< T >( name );
-        if ( !attr )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed reading attribute '" + name +
-                "'." );
-        }
-        *resource = attr.Data()[ 0 ];
-    }
-
-    template< typename T >
     void
     AttributeTypes< T >::createAttribute(
         adios2::IO & IO,
@@ -1736,38 +1814,6 @@ namespace detail
                 std::to_string( attr.shape.size() ) + "D: " + name );
         }
         *resource = *attr.data;
-    }
-
-    template< typename T >
-    void
-    AttributeTypes< std::vector< T > >::oldCreateAttribute(
-        adios2::IO & IO,
-        std::string name,
-        const std::vector< T > & value )
-    {
-        auto attr = IO.DefineAttribute( name, value.data(), value.size() );
-        if( !attr )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed defining attribute '" + name +
-                "'." );
-        }
-    }
-
-    template< typename T >
-    void
-    AttributeTypes< std::vector< T > >::oldReadAttribute(
-        adios2::IO & IO,
-        std::string name,
-        std::shared_ptr< Attribute::resource > resource )
-    {
-        auto attr = IO.InquireAttribute< T >( name );
-        if ( !attr )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed reading attribute '" + name + "'." );
-        }
-        *resource = attr.Data();
     }
 
     template < typename T >
@@ -1812,37 +1858,6 @@ namespace detail
         std::vector< T > res( attr.shape[ 0 ] );
         std::copy_n( attr.data, attr.shape[ 0 ], res.data() );
         *resource = std::move( res );
-    }
-
-    void
-    AttributeTypes< std::vector< std::string > >::oldCreateAttribute(
-        adios2::IO & IO,
-        std::string name,
-        const std::vector< std::string > & value )
-    {
-        auto attr = IO.DefineAttribute( name, value.data(), value.size() );
-        if( !attr )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed defining attribute '" + name +
-                "'." );
-        }
-    }
-
-    void
-    AttributeTypes< std::vector< std::string > >::oldReadAttribute(
-        adios2::IO & IO,
-        std::string name,
-        std::shared_ptr< Attribute::resource > resource )
-    {
-        auto attr = IO.InquireAttribute< std::string >( name );
-        if ( !attr )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed reading attribute '" + name +
-                "'." );
-        }
-        *resource = attr.Data();
     }
 
     void
@@ -2002,44 +2017,6 @@ namespace detail
 
     template< typename T, size_t n >
     void
-    AttributeTypes< std::array< T, n > >::oldCreateAttribute(
-        adios2::IO & IO,
-        std::string name,
-        const std::array< T, n > & value )
-    {
-        auto attr = IO.DefineAttribute( name, value.data(), n );
-        if( !attr )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed defining attribute '" + name +
-                "'." );
-        }
-    }
-
-    template< typename T, size_t n >
-    void
-    AttributeTypes< std::array< T, n > >::oldReadAttribute(
-        adios2::IO & IO,
-        std::string name,
-        std::shared_ptr< Attribute::resource > resource )
-    {
-        auto attr = IO.InquireAttribute< T >( name );
-        if ( !attr )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed reading attribute '" + name + "'." );
-        }
-        auto data = attr.Data( );
-        std::array< T, n > res;
-        for ( size_t i = 0; i < n; i++ )
-        {
-            res[i] = data[i];
-        }
-        *resource = res;
-    }
-
-    template< typename T, size_t n >
-    void
     AttributeTypes< std::array< T, n > >::createAttribute(
         adios2::IO & IO,
         adios2::Engine & engine,
@@ -2081,35 +2058,6 @@ namespace detail
         std::copy_n( attr.data, n, res.data() );
         *resource = std::move( res );
     }
-
-    void
-    AttributeTypes< bool >::oldCreateAttribute(
-        adios2::IO & IO,
-        std::string name,
-        const bool value )
-    {
-        IO.DefineAttribute< bool_representation >(
-            ADIOS2Defaults::str_isBooleanOldLayout + name, 1 );
-        AttributeTypes< bool_representation >::oldCreateAttribute(
-            IO, name, toRep( value ) );
-    }
-
-    void
-    AttributeTypes< bool >::oldReadAttribute(
-        adios2::IO & IO,
-        std::string name,
-        std::shared_ptr< Attribute::resource > resource )
-    {
-        auto attr = IO.InquireAttribute< rep >( name );
-        if ( !attr )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed reading attribute '" + name +
-                "'." );
-        }
-        *resource = fromRep( attr.Data()[ 0 ] );
-    }
-
 
     void
     AttributeTypes< bool >::createAttribute(
