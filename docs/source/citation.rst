@@ -98,7 +98,7 @@ Dependent Software
 The good way to control complex software environments is to install software through a :ref:`package manager (see installation) <install>`.
 Furthermore, openPMD-api provides functionality to simplify the documentation of its version and enabled backends:
 
-C++14
+C++17
 ^^^^^
 
 .. code-block:: cpp

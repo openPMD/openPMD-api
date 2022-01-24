@@ -23,7 +23,6 @@
 #include "openPMD/auxiliary/JSON_internal.hpp"
 
 #include "openPMD/auxiliary/Filesystem.hpp"
-#include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 
 #include <toml.hpp>
@@ -33,13 +32,12 @@
 #include <fstream>
 #include <iostream> // std::cerr
 #include <map>
+#include <optional>
 #include <sstream>
 #include <utility> // std::forward
 #include <vector>
 
-namespace openPMD
-{
-namespace json
+namespace openPMD::json
 {
     TracingJSON::TracingJSON()
         : TracingJSON( ParsedConfig{} )
@@ -134,7 +132,7 @@ namespace json
     }
 
     namespace {
-    auxiliary::Option< std::string >
+    std::optional< std::string >
     extractFilename( std::string const & unparsed )
     {
         std::string trimmed = auxiliary::trim(
@@ -144,11 +142,11 @@ namespace json
             trimmed = trimmed.substr( 1 );
             trimmed = auxiliary::trim(
                 trimmed, []( char c ) { return std::isspace( c ); } );
-            return auxiliary::makeOption( trimmed );
+            return std::make_optional( trimmed );
         }
         else
         {
-            return auxiliary::Option< std::string >{};
+            return std::optional< std::string >{};
         }
     }
 
@@ -326,11 +324,11 @@ namespace json
             {
                 std::fstream handle;
                 handle.open(
-                    filename.get(), std::ios_base::binary | std::ios_base::in );
+                    filename.value(), std::ios_base::binary | std::ios_base::in );
                 ParsedConfig res;
-                if( auxiliary::ends_with( filename.get(), ".toml" ) )
+                if( auxiliary::ends_with( filename.value(), ".toml" ) )
                 {
-                    toml::value tomlVal = toml::parse( handle, filename.get() );
+                    toml::value tomlVal = toml::parse( handle, filename.value() );
                     res.config = tomlToJson( tomlVal );
                     res.originallySpecifiedAs = SupportedLanguages::TOML;
                 }
@@ -344,7 +342,7 @@ namespace json
                 {
                     throw std::runtime_error(
                         "Failed reading JSON config from file " +
-                        filename.get() + "." );
+                        filename.value() + "." );
                 }
                 lowerCase( res.config );
                 return res;
@@ -364,14 +362,14 @@ namespace json
             {
                 ParsedConfig res;
                 std::string fileContent =
-                    auxiliary::collective_file_read( filename.get(), comm );
-                if( auxiliary::ends_with( filename.get(), ".toml" ) )
+                    auxiliary::collective_file_read( filename.value(), comm );
+                if( auxiliary::ends_with( filename.value(), ".toml" ) )
                 {
                     std::istringstream istream(
                         fileContent.c_str(),
                         std::ios_base::binary | std::ios_base::in );
                     res.config =
-                        tomlToJson( toml::parse( istream, filename.get() ) );
+                        tomlToJson( toml::parse( istream, filename.value() ) );
                     res.originallySpecifiedAs = SupportedLanguages::TOML;
                 }
                 else
@@ -484,7 +482,7 @@ namespace json
             } );
     }
 
-    auxiliary::Option< std::string >
+    std::optional< std::string >
     asStringDynamic( nlohmann::json const & value )
     {
         if( value.is_string() )
@@ -503,16 +501,16 @@ namespace json
         {
             return std::string( value.get< bool >() ? "1" : "0" );
         }
-        return auxiliary::Option< std::string >{};
+        return std::optional< std::string >{};
     }
 
-    auxiliary::Option< std::string >
+    std::optional< std::string >
     asLowerCaseStringDynamic( nlohmann::json const & value )
     {
         auto maybeString = asStringDynamic( value );
         if( maybeString.has_value() )
         {
-            auxiliary::lowerCase( maybeString.get() );
+            auxiliary::lowerCase( maybeString.value() );
         }
         return maybeString;
     }
@@ -597,5 +595,4 @@ namespace json
             parseOptions( overwrite, /* considerFiles = */ false ).config );
         return res.dump();
     }
-} // namespace json
 } // namespace openPMD

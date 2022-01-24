@@ -26,9 +26,7 @@
 
 #include <iostream>
 
-namespace openPMD
-{
-namespace detail
+namespace openPMD::detail
 {
     template< typename T >
     std::string
@@ -258,6 +256,5 @@ namespace detail
             throw std::runtime_error( "Unreachable!" );
         }
     }
-} // namespace detail
-} // namespace openPMD
+} // namespace openPMD::detail
 #endif

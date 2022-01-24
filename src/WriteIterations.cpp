@@ -35,7 +35,7 @@ WriteIterations::SharedResources::~SharedResources()
     if( currentlyOpen.has_value() &&
         iterations.retrieveSeries().get().m_lastFlushSuccessful )
     {
-        auto lastIterationIndex = currentlyOpen.get();
+        auto lastIterationIndex = currentlyOpen.value();
         auto & lastIteration = iterations.at( lastIterationIndex );
         if( !lastIteration.closed() )
         {
@@ -60,7 +60,7 @@ WriteIterations::mapped_type & WriteIterations::operator[]( key_type && key )
 {
     if( shared->currentlyOpen.has_value() )
     {
-        auto lastIterationIndex = shared->currentlyOpen.get();
+        auto lastIterationIndex = shared->currentlyOpen.value();
         auto & lastIteration = shared->iterations.at( lastIterationIndex );
         if( lastIterationIndex != key && !lastIteration.closed() )
         {

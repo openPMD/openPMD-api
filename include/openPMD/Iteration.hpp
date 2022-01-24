@@ -20,7 +20,6 @@
  */
 #pragma once
 
-#include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
@@ -28,6 +27,8 @@
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/Streaming.hpp"
+
+#include <optional>
 
 
 namespace openPMD
@@ -100,7 +101,7 @@ namespace internal
          * Information on a parsing request that has not yet been executed.
          * Otherwise empty.
          */
-        auxiliary::Option< DeferredParseAccess > m_deferredParseAccess{};
+        std::optional< DeferredParseAccess > m_deferredParseAccess{};
     };
 }
 /** @brief  Logical compilation of data from one snapshot (e.g. a single simulation cycle).

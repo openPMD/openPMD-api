@@ -298,7 +298,7 @@ public:
    * m_Seg can be set from input
    * exception is when h5 collective mode is on. m_Seg=1
    */
-  unsigned int GetSeg() const
+  [[nodiscard]] unsigned int GetSeg() const
   {
     if (m_Backend == ".h5")
         if (auxiliary::getEnvString( "OPENPMD_HDF5_INDEPENDENT", "ON" ) != "ON")

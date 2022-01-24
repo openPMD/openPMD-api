@@ -24,10 +24,11 @@
 #include "openPMD/config.hpp"
 
 #include "openPMD/Error.hpp"
-#include "openPMD/auxiliary/Option.hpp"
 
 #include <nlohmann/json.hpp>
 #include <toml.hpp>
+
+#include <optional>
 
 #if openPMD_HAVE_MPI
 #   include <mpi.h>
@@ -223,12 +224,12 @@ namespace json
      * If it is a bool, convert it to either "0" or "1".
      * If it is not a literal, return an empty option.
      */
-    auxiliary::Option< std::string > asStringDynamic( nlohmann::json const & );
+    std::optional< std::string > asStringDynamic( nlohmann::json const & );
 
     /**
      * Like asStringDynamic(), but convert the string to lowercase afterwards.
      */
-    auxiliary::Option< std::string >
+    std::optional< std::string >
     asLowerCaseStringDynamic( nlohmann::json const & );
 
     /**

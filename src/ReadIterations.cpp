@@ -96,7 +96,7 @@ SeriesIterator & SeriesIterator::operator++()
         *this = end();
         return *this;
     }
-    Series & series = m_series.get();
+    Series & series = m_series.value();
     auto & iterations = series.iterations;
     auto & currentIteration = iterations[ m_currentIteration ];
     if( !currentIteration.closed() )
@@ -163,7 +163,7 @@ SeriesIterator & SeriesIterator::operator++()
 IndexedIteration SeriesIterator::operator*()
 {
     return IndexedIteration(
-        m_series.get().iterations[ m_currentIteration ], m_currentIteration );
+        m_series.value().iterations[ m_currentIteration ], m_currentIteration );
 }
 
 bool SeriesIterator::operator==( SeriesIterator const & other ) const

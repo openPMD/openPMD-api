@@ -27,10 +27,11 @@ jobs:
         brew install python || true
         set -e
     - name: Build
-      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations, MACOSX_DEPLOYMENT_TARGET: 10.9}
+      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations -DTOML11_DISABLE_STD_FILESYSTEM, MACOSX_DEPLOYMENT_TARGET: 10.13}
       # C++11 & 14 support in macOS 10.9+
       # C++17 support in macOS 10.13+/10.14+
       #   https://cibuildwheel.readthedocs.io/en/stable/cpp_standards/#macos-and-deployment-target-versions
+      # std::filesystem needs macOS 10.15
       run: |
         share/openPMD/download_samples.sh build
         chmod u-w build/samples/git-sample/*.h5

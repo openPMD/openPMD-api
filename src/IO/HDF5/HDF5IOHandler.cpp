@@ -102,7 +102,7 @@ HDF5IOHandlerImpl::HDF5IOHandlerImpl(
                     datasetConfig[ "chunks" ].json() );
                 if( maybeChunks.has_value() )
                 {
-                    m_chunks = std::move( maybeChunks.get() );
+                    m_chunks = std::move( maybeChunks.value() );
                 }
                 else
                 {
@@ -260,7 +260,7 @@ HDF5IOHandlerImpl::createPath(Writable* writable,
             position = writable->parent;
         else
             position = writable; /* root does not have a parent but might still have to be written */
-        File file = getFile( position ).get();
+        File file = getFile( position ).value();
         hid_t node_id = H5Gopen(file.id,
                                 concrete_h5_file_position(position).c_str(),
                                 gapl);
@@ -357,7 +357,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
 
         /* Open H5Object to write into */
         auto res = getFile( writable );
-        File file = res ? res.get() : getFile( writable->parent ).get();
+        File file = res ? res.value() : getFile( writable->parent ).value();
         hid_t node_id = H5Gopen(file.id,
                                 concrete_h5_file_position(writable).c_str(),
                     gapl);
@@ -484,7 +484,7 @@ HDF5IOHandlerImpl::extendDataset(Writable* writable,
     auto res = getFile( writable );
     if( !res )
         res = getFile( writable->parent );
-    hid_t dataset_id = H5Dopen(res.get().id,
+    hid_t dataset_id = H5Dopen(res.value().id,
                          concrete_h5_file_position(writable).c_str(),
                          H5P_DEFAULT);
     VERIFY(dataset_id >= 0, "[HDF5] Internal error: Failed to open HDF5 dataset during dataset extension");
@@ -639,7 +639,7 @@ HDF5IOHandlerImpl::closeFile(
             "[HDF5] Trying to close a file that is not "
             "present in the backend" );
     }
-    File file = optionalFile.get();
+    File file = optionalFile.value();
     H5Fclose( file.id );
     m_openFileIDs.erase( file.id );
     m_fileNames.erase( writable );
@@ -652,7 +652,7 @@ HDF5IOHandlerImpl::openPath(
     Writable * writable,
     Parameter< Operation::OPEN_PATH > const & parameters )
 {
-    File file = getFile(writable->parent).get();
+    File file = getFile(writable->parent).value();
     hid_t node_id, path_id;
 
     hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
@@ -703,7 +703,7 @@ void
 HDF5IOHandlerImpl::openDataset(Writable* writable,
                                Parameter< Operation::OPEN_DATASET > & parameters)
 {
-    File file = getFile( writable->parent ).get();
+    File file = getFile( writable->parent ).value();
     hid_t node_id, dataset_id;
 
     hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
@@ -823,7 +823,7 @@ HDF5IOHandlerImpl::deleteFile(Writable* writable,
 
     if( writable->written )
     {
-        hid_t file_id = getFile( writable ).get().id;
+        hid_t file_id = getFile( writable ).value().id;
         herr_t status = H5Fclose(file_id);
         VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 file during file deletion");
 
@@ -866,7 +866,7 @@ HDF5IOHandlerImpl::deletePath(Writable* writable,
          *            Work around this by deleting from the parent
          */
         auto res = getFile( writable );
-        File file = res ? res.get() : getFile( writable->parent ).get();
+        File file = res ? res.value() : getFile( writable->parent ).value();
         hid_t node_id = H5Gopen(file.id,
                                 concrete_h5_file_position(writable->parent).c_str(),
                                 H5P_DEFAULT);
@@ -909,7 +909,7 @@ HDF5IOHandlerImpl::deleteDataset(Writable* writable,
          *            Work around this by deleting from the parent
          */
         auto res = getFile( writable );
-        File file = res ? res.get() : getFile( writable->parent ).get();
+        File file = res ? res.value() : getFile( writable->parent ).value();
         hid_t node_id = H5Gopen(file.id,
                                 concrete_h5_file_position(writable->parent).c_str(),
                                 H5P_DEFAULT);
@@ -944,7 +944,7 @@ HDF5IOHandlerImpl::deleteAttribute(Writable* writable,
 
         /* Open H5Object to delete in */
         auto res = getFile( writable );
-        File file = res ? res.get() : getFile( writable->parent ).get();
+        File file = res ? res.value() : getFile( writable->parent ).value();
         hid_t node_id = H5Oopen(file.id,
                                 concrete_h5_file_position(writable).c_str(),
                                 H5P_DEFAULT);
@@ -967,7 +967,7 @@ HDF5IOHandlerImpl::writeDataset(Writable* writable,
         throw std::runtime_error("[HDF5] Writing into a dataset in a file opened as read only is not possible.");
 
     auto res = getFile( writable );
-        File file = res ? res.get() : getFile( writable->parent ).get();
+        File file = res ? res.value() : getFile( writable->parent ).value();
 
     hid_t dataset_id, filespace, memspace;
     herr_t status;
@@ -1061,7 +1061,7 @@ HDF5IOHandlerImpl::writeAttribute(Writable* writable,
         throw std::runtime_error("[HDF5] Writing an attribute in a file opened as read only is not possible.");
 
     auto res = getFile( writable );
-        File file = res ? res.get() : getFile( writable->parent ).get();
+        File file = res ? res.value() : getFile( writable->parent ).value();
     hid_t node_id, attribute_id;
 
     hid_t fapl = H5Pcreate(H5P_LINK_ACCESS);
@@ -1340,7 +1340,7 @@ HDF5IOHandlerImpl::readDataset(Writable* writable,
                                Parameter< Operation::READ_DATASET > & parameters)
 {
     auto res = getFile( writable );
-        File file = res ? res.get() : getFile( writable->parent ).get();
+        File file = res ? res.value() : getFile( writable->parent ).value();
     hid_t dataset_id, memspace, filespace;
     herr_t status;
     dataset_id = H5Dopen(file.id,
@@ -1430,7 +1430,7 @@ HDF5IOHandlerImpl::readAttribute(Writable* writable,
         throw std::runtime_error("[HDF5] Internal error: Writable not marked written during attribute read");
 
     auto res = getFile( writable );
-        File file = res ? res.get() : getFile( writable->parent ).get();
+        File file = res ? res.value() : getFile( writable->parent ).value();
 
     hid_t obj_id, attr_id;
     herr_t status;
@@ -1871,7 +1871,7 @@ HDF5IOHandlerImpl::listPaths(Writable* writable,
         throw std::runtime_error("[HDF5] Internal error: Writable not marked written during path listing");
 
     auto res = getFile( writable );
-        File file = res ? res.get() : getFile( writable->parent ).get();
+        File file = res ? res.value() : getFile( writable->parent ).value();
 
     hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
 #if H5_VERSION_GE(1,10,0) && openPMD_HAVE_MPI
@@ -1916,7 +1916,7 @@ HDF5IOHandlerImpl::listDatasets(Writable* writable,
         throw std::runtime_error("[HDF5] Internal error: Writable not marked written during dataset listing");
 
     auto res = getFile( writable );
-        File file = res ? res.get() : getFile( writable->parent ).get();
+        File file = res ? res.value() : getFile( writable->parent ).value();
 
     hid_t gapl = H5Pcreate(H5P_GROUP_ACCESS);
 #if H5_VERSION_GE(1,10,0) && openPMD_HAVE_MPI
@@ -1960,7 +1960,7 @@ void HDF5IOHandlerImpl::listAttributes(Writable* writable,
         throw std::runtime_error("[HDF5] Internal error: Writable not marked written during attribute listing");
 
     auto res = getFile( writable );
-        File file = res ? res.get() : getFile( writable->parent ).get();
+        File file = res ? res.value() : getFile( writable->parent ).value();
     hid_t node_id;
 
     hid_t fapl = H5Pcreate(H5P_LINK_ACCESS);
@@ -2015,24 +2015,23 @@ void HDF5IOHandlerImpl::listAttributes(Writable* writable,
     VERIFY(status == 0, "[HDF5] Internal error: Failed to close HDF5 property during dataset listing");
 }
 
-auxiliary::Option< HDF5IOHandlerImpl::File >
+std::optional< HDF5IOHandlerImpl::File >
 HDF5IOHandlerImpl::getFile( Writable * writable )
 {
-    using namespace auxiliary;
     auto it = m_fileNames.find( writable );
     if( it == m_fileNames.end() )
     {
-        return Option< File >();
+        return std::optional< File >();
     }
     auto it2 = m_fileNamesWithID.find( it->second );
     if( it2 == m_fileNamesWithID.end() )
     {
-        return Option< File >();
+        return std::optional< File >();
     }
     File res;
     res.name = it->second;
     res.id = it2->second;
-    return makeOption( std::move( res ) );
+    return std::make_optional( std::move( res ) );
 }
 #endif
 

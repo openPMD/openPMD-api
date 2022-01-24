@@ -25,9 +25,9 @@
 #   include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 
 #   include "openPMD/auxiliary/JSON_internal.hpp"
-#   include "openPMD/auxiliary/Option.hpp"
 
 #   include <hdf5.h>
+#   include <optional>
 #   include <unordered_map>
 #   include <unordered_set>
 #endif
@@ -88,7 +88,7 @@ namespace openPMD
             std::string name;
             hid_t id;
         };
-        auxiliary::Option< File > getFile( Writable * );
+        std::optional< File > getFile( Writable * );
     }; // HDF5IOHandlerImpl
 #else
     class HDF5IOHandlerImpl

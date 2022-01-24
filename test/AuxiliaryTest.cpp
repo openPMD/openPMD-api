@@ -9,7 +9,6 @@
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/auxiliary/DerefDynamicCast.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
-#include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/auxiliary/Variant.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
@@ -24,13 +23,12 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <variant>
 
 using namespace openPMD;
 
 
-namespace openPMD
-{
-namespace test
+namespace openPMD::test
 {
 struct TestHelper : public Attributable
 {
@@ -39,35 +37,7 @@ struct TestHelper : public Attributable
         writable().IOHandler = createIOHandler(".", Access::CREATE, Format::JSON);
     }
 };
-} // test
 } // openPMD
-
-
-TEST_CASE( "optional", "[auxiliary]" ) {
-    using namespace auxiliary;
-
-    Option<int> opt;
-
-    REQUIRE_THROWS_AS(opt.get(), variantSrc::bad_variant_access);
-    REQUIRE_THROWS_AS(opt.get() = 42, variantSrc::bad_variant_access);
-    REQUIRE(!opt);
-    REQUIRE(!opt.has_value());
-
-    opt = 43;
-    REQUIRE(opt);
-    REQUIRE(opt.has_value());
-    REQUIRE(opt.get() == 43);
-
-    Option<int> opt2{ opt };
-    REQUIRE(opt2);
-    REQUIRE(opt2.has_value());
-    REQUIRE(opt2.get() == 43);
-
-    Option<int> opt3 = makeOption( 3 );
-    REQUIRE(opt3);
-    REQUIRE(opt3.has_value());
-    REQUIRE(opt3.get() == 3);
-}
 
 
 TEST_CASE( "deref_cast_test", "[auxiliary]" ) {
@@ -141,9 +111,7 @@ TEST_CASE( "string_test", "[auxiliary]" )
     REQUIRE("1,2" == join({"1", "2"}, ","));
 }
 
-namespace openPMD
-{
-namespace test
+namespace openPMD::test
 {
 struct S : public TestHelper
 {
@@ -151,7 +119,6 @@ struct S : public TestHelper
         : TestHelper()
     { }
 };
-} // test
 } // openPMD
 
 TEST_CASE( "container_default_test", "[auxiliary]")
@@ -167,9 +134,7 @@ TEST_CASE( "container_default_test", "[auxiliary]")
 #endif
 }
 
-namespace openPMD
-{
-namespace test
+namespace openPMD::test
 {
 struct structure : public TestHelper
 {
@@ -181,10 +146,9 @@ struct structure : public TestHelper
     int int_ = 42;
     float float_ = 3.14f;
 
-    std::string text() const { return variantSrc::get< std::string >(getAttribute("text").getResource()); }
+    [[nodiscard]] std::string text() const { return std::get< std::string >(getAttribute("text").getResource()); }
     structure& setText(std::string newText) { setAttribute("text", newText); return *this; }
 };
-} // test
 } // openPMD
 
 TEST_CASE( "container_retrieve_test", "[auxiliary]" )
@@ -246,9 +210,7 @@ TEST_CASE( "container_retrieve_test", "[auxiliary]" )
 #endif
 }
 
-namespace openPMD
-{
-namespace test
+namespace openPMD::test
 {
 struct Widget : public TestHelper
 {
@@ -260,7 +222,6 @@ struct Widget : public TestHelper
         : TestHelper()
     { }
 };
-} // test
 } // openPMD
 
 TEST_CASE( "container_access_test", "[auxiliary]" )
@@ -307,9 +268,7 @@ TEST_CASE( "attributable_default_test", "[auxiliary]" )
     REQUIRE(a.numAttributes() == 0);
 }
 
-namespace openPMD
-{
-namespace test
+namespace openPMD::test
 {
 struct AttributedWidget : public TestHelper
 {
@@ -322,7 +281,6 @@ struct AttributedWidget : public TestHelper
         return getAttribute(key).getResource();
     }
 };
-} // test
 } // openPMD
 
 TEST_CASE( "attributable_access_test", "[auxiliary]" )
@@ -332,17 +290,17 @@ TEST_CASE( "attributable_access_test", "[auxiliary]" )
 
     a.setAttribute("key", std::string("value"));
     REQUIRE(a.numAttributes() == 1);
-    REQUIRE(variantSrc::get< std::string >(a.get("key")) == "value");
+    REQUIRE(std::get< std::string >(a.get("key")) == "value");
 
     a.setAttribute("key", std::string("newValue"));
     REQUIRE(a.numAttributes() == 1);
-    REQUIRE(variantSrc::get< std::string >(a.get("key")) == "newValue");
+    REQUIRE(std::get< std::string >(a.get("key")) == "newValue");
 
     using array_t = std::array< double, 7 >;
     array_t arr{{1, 2, 3, 4, 5, 6, 7}};
     a.setAttribute("array", arr);
     REQUIRE(a.numAttributes() == 2);
-    REQUIRE(variantSrc::get< array_t >(a.get("array")) == arr);
+    REQUIRE(std::get< array_t >(a.get("array")) == arr);
     REQUIRE(a.deleteAttribute("nonExistentKey") == false);
     REQUIRE(a.numAttributes() == 2);
     REQUIRE(a.deleteAttribute("key") == true);
@@ -355,9 +313,7 @@ TEST_CASE( "attributable_access_test", "[auxiliary]" )
     REQUIRE(a.numAttributes() == 1);
 }
 
-namespace openPMD
-{
-namespace test
+namespace openPMD::test
 {
 struct Dotty : public TestHelper
 {
@@ -369,14 +325,13 @@ struct Dotty : public TestHelper
         setAtt3("3");
     }
 
-    int att1() const { return variantSrc::get< int >(getAttribute("att1").getResource()); }
-    double att2() const { return variantSrc::get< double >(getAttribute("att2").getResource()); }
-    std::string att3() const { return variantSrc::get< std::string >(getAttribute("att3").getResource()); }
+    [[nodiscard]] int att1() const { return std::get< int >(getAttribute("att1").getResource()); }
+    [[nodiscard]] double att2() const { return std::get< double >(getAttribute("att2").getResource()); }
+    [[nodiscard]] std::string att3() const { return std::get< std::string >(getAttribute("att3").getResource()); }
     Dotty& setAtt1(int i) { setAttribute("att1", i); return *this; }
     Dotty& setAtt2(double d) { setAttribute("att2", d); return *this; }
     Dotty& setAtt3(std::string s) { setAttribute("att3", s); return *this; }
 };
-} // test
 } // openPMD
 
 TEST_CASE( "dot_test", "[auxiliary]" )

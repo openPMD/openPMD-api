@@ -374,7 +374,7 @@ struct PythonDynamicMemoryView
     {
     }
 
-    pybind11::memoryview currentView() const;
+    [[nodiscard]] pybind11::memoryview currentView() const;
 
     std::shared_ptr< void > m_dynamicView;
     ShapeContainer m_arrayShape;

@@ -197,7 +197,6 @@ auto switchAdios2AttributeType( Datatype dt, Args &&... args )
             0,
             ReturnType,
             Action,
-            void,
             Args &&... >::call( std::forward< Args >( args )... );
     default:
         throw std::runtime_error(
@@ -284,7 +283,6 @@ auto switchAdios2VariableType( Datatype dt, Args &&... args )
             0,
             ReturnType,
             Action,
-            void,
             Args &&... >::
             call( std::forward< Args >( args )... );
     default:
