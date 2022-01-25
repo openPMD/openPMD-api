@@ -230,7 +230,7 @@ jobs:
         cmake --build build --parallel 2
         ctest --test-dir build --output-on-failure
 
-  gcc9_py38_pd_nompi_h5_ad1_ad2_libcpp:
+  gcc9_py38_pd_nompi_h5_ad1_ad2_libcpp_julia:
     runs-on: ubuntu-20.04
     if: github.event.pull_request.draft == false
     steps:
@@ -244,16 +244,12 @@ jobs:
         wget https://julialang-s3.julialang.org/bin/linux/x64/1.6/julia-1.6.5-linux-x86_64.tar.gz
         sudo tar -xz -C /usr/local -f julia-1.6.5-linux-x86_64.tar.gz
         rm julia-1.6.5-linux-x86_64.tar.gz
+        # Install cmake-easyinstall
+        sudo curl -L -o /usr/local/bin/cmake-easyinstall https://git.io/JvLxY
+        sudo chmod a+x /usr/local/bin/cmake-easyinstall
+        export CEI_SUDO="sudo"
         # Install libcxxwrap-julia
-        wget https://github.com/JuliaInterop/libcxxwrap-julia/archive/refs/tags/v0.8.3.tar.gz
-        tar xzf v0.8.3.tar.gz
-        rm -rf v0.8.3.tar.gz
-        cd libcxxwrap-julia-0.8.3
-        cmake -S . -B build -DJulia_EXECUTABLE=/usr/local/julia-1.6.5/bin/julia
-        cmake --build build --parallel 2
-        sudo cmake --install build
-        cd ..
-        rm -rf libcxxwrap-julia-0.8.3
+        cmake-easyinstall git+https://github.com/JuliaInterop/libcxxwrap-julia.git@v0.9.0 -DJulia_EXECUTABLE=/usr/local/julia-1.6.5/bin/julia
     - name: Build
       env: {CXXFLAGS: -Werror -Wno-deprecated-declarations, PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig}
       run: |
