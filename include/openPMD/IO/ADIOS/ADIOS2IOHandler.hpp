@@ -441,32 +441,6 @@ namespace detail
 {
     // Helper structs for calls to the switchType function
 
-    template< typename > struct IsVector
-    {
-        static constexpr bool value = false;
-    };
-
-    template< typename T > struct IsVector< std::vector< T > >
-    {
-        static constexpr bool value = true;
-    };
-
-    template< typename T >
-    inline constexpr bool IsVector_v = IsVector< T >::value;
-
-    template< typename > struct IsArray
-    {
-        static constexpr bool value = false;
-    };
-
-    template< typename T, size_t n > struct IsArray< std::array< T, n > >
-    {
-        static constexpr bool value = true;
-    };
-
-    template< typename T >
-    inline constexpr bool IsArray_v = IsArray< T >::value;
-
     template< typename T >
     inline constexpr bool IsUnsupportedComplex_v =
         std::is_same_v< T, std::complex< long double > > ||
