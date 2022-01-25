@@ -35,6 +35,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string>
 #include <tuple>
@@ -468,10 +469,10 @@ CommonADIOS1IOHandlerImpl< ChildClass >::createPath(Writable* writable,
     }
 }
 
-static auxiliary::Option< std::string > datasetTransform(
+static std::optional< std::string > datasetTransform(
     json::TracingJSON config )
 {
-    using ret_t = auxiliary::Option< std::string >;
+    using ret_t = std::optional< std::string >;
     if( !config.json().contains( "dataset" ) )
     {
         return ret_t{};
@@ -485,7 +486,7 @@ static auxiliary::Option< std::string > datasetTransform(
     auto maybeRes = json::asStringDynamic( config.json() );
     if( maybeRes.has_value() )
     {
-        return std::move( maybeRes.get() );
+        return std::move( maybeRes.value() );
     }
     else
     {
@@ -552,19 +553,20 @@ CommonADIOS1IOHandlerImpl< ChildClass >::createDataset(Writable* writable,
         {
             json::TracingJSON options = json::parseOptions(
                 parameters.options, /* considerFiles = */ false );
-            auto maybeTransform = datasetTransform( options );
-            if( maybeTransform.has_value() )
+            if( options.json().contains( "adios1" ) )
             {
-                transform = maybeTransform.get();
-            }
+                options = options["adios1"];
+                auto maybeTransform = datasetTransform( options );
+                if( maybeTransform.has_value() )
+                {
+                    transform = maybeTransform.value();
+                }
 
-            auto shadow = options.invertShadow();
-            if( shadow.size() > 0 )
-            {
-                std::cerr << "Warning: parts of the JSON configuration for "
-                             "ADIOS1 dataset '"
-                          << name << "' remain unused:\n"
-                          << shadow << std::endl;
+                parameters.warnUnusedParameters(
+                    options,
+                    "ADIOS1",
+                    "Warning: parts of the backend configuration for "
+                    "ADIOS1 dataset '" + name + "' remain unused:\n" );
             }
         }
         // Fallback: global option
@@ -577,7 +579,7 @@ CommonADIOS1IOHandlerImpl< ChildClass >::createDataset(Writable* writable,
         {
             int status;
             status = adios_set_transform(id, transform.c_str());
-            VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to set ADIOS transform during Dataset cretaion");
+            VERIFY(status == err_no_error, "[ADIOS1] Internal error: Failed to set ADIOS transform during Dataset creation");
         }
 
         writable->written = true;
@@ -1760,13 +1762,34 @@ void CommonADIOS1IOHandlerImpl< ChildClass >::initJson(
     auto maybeTransform = datasetTransform( config[ "adios1" ] );
     if( maybeTransform.has_value() )
     {
-        m_defaultTransform = std::move( maybeTransform.get() );
+        m_defaultTransform = std::move( maybeTransform.value() );
+    }
+    auto shadow = config.invertShadow();
+    if( shadow.size() > 0 )
+    {
+        switch( config.originallySpecifiedAs )
+        {
+        case json::SupportedLanguages::JSON:
+            std::cerr << "Warning: parts of the JSON configuration for ADIOS1 "
+                         "remain unused:\n"
+                      << shadow << std::endl;
+            break;
+        case json::SupportedLanguages::TOML:
+        {
+            auto asToml = json::jsonToToml( shadow );
+            std::cerr << "Warning: parts of the JSON configuration for ADIOS1 "
+                         "remain unused:\n"
+                      << asToml << std::endl;
+            break;
+        }
+        }
     }
 }
 
 template class CommonADIOS1IOHandlerImpl< ADIOS1IOHandlerImpl >;
 #if openPMD_HAVE_MPI
 template class CommonADIOS1IOHandlerImpl< ParallelADIOS1IOHandlerImpl >;
-#endif // opepnPMD_HAVE_MPI
+#endif // openPMD_HAVE_MPI
+
+} // namespace openPMD
 #endif // openPMD_HAVE_ADIOS1
-}

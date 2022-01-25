@@ -29,7 +29,6 @@
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
-#include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/config.hpp"
 #include "openPMD/IterationEncoding.hpp"
@@ -47,6 +46,7 @@
 #include <future>
 #include <iostream>
 #include <memory> // shared_ptr
+#include <optional>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -320,11 +320,11 @@ private:
      * @return first parameter: the operators, second parameters: whether
      * operators have been configured
      */
-    auxiliary::Option< std::vector< ParameterizedOperator > >
+    std::optional< std::vector< ParameterizedOperator > >
     getOperators( json::TracingJSON config );
 
     // use m_config
-    auxiliary::Option< std::vector< ParameterizedOperator > >
+    std::optional< std::vector< ParameterizedOperator > >
     getOperators();
 
     std::string
@@ -367,7 +367,7 @@ private:
 
     // Helper methods.
 
-    auxiliary::Option< adios2::Operator >
+    std::optional< adios2::Operator >
     getCompressionOperator( std::string const & compression );
 
     /*
@@ -440,6 +440,37 @@ namespace ADIOS2Defaults
 namespace detail
 {
     // Helper structs for calls to the switchType function
+
+    template< typename > struct IsVector
+    {
+        static constexpr bool value = false;
+    };
+
+    template< typename T > struct IsVector< std::vector< T > >
+    {
+        static constexpr bool value = true;
+    };
+
+    template< typename T >
+    inline constexpr bool IsVector_v = IsVector< T >::value;
+
+    template< typename > struct IsArray
+    {
+        static constexpr bool value = false;
+    };
+
+    template< typename T, size_t n > struct IsArray< std::array< T, n > >
+    {
+        static constexpr bool value = true;
+    };
+
+    template< typename T >
+    inline constexpr bool IsArray_v = IsArray< T >::value;
+
+    template< typename T >
+    inline constexpr bool IsUnsupportedComplex_v =
+        std::is_same_v< T, std::complex< long double > > ||
+        std::is_same_v< T, std::vector< std::complex< long double > > >;
 
     struct DatasetReader
     {
@@ -583,18 +614,6 @@ namespace detail
     struct AttributeTypes
     {
         static void
-        oldCreateAttribute(
-            adios2::IO & IO,
-            std::string name,
-            T value );
-
-        static void
-        oldReadAttribute(
-            adios2::IO & IO,
-            std::string name,
-            std::shared_ptr< Attribute::resource > resource );
-
-        static void
         createAttribute(
             adios2::IO & IO,
             adios2::Engine & engine,
@@ -631,26 +650,6 @@ namespace detail
     template< > struct AttributeTypes< std::complex< long double > >
     {
         static void
-        oldCreateAttribute(
-            adios2::IO &,
-            std::string,
-            std::complex< long double > )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: no support for long double complex attribute types" );
-        }
-
-        static void
-        oldReadAttribute(
-            adios2::IO &,
-            std::string,
-            std::shared_ptr< Attribute::resource > )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: no support for long double complex attribute types" );
-        }
-
-        static void
         createAttribute(
             adios2::IO &,
             adios2::Engine &,
@@ -682,26 +681,6 @@ namespace detail
 
     template< > struct AttributeTypes< std::vector< std::complex< long double > > >
     {
-        static void
-        oldCreateAttribute(
-            adios2::IO &,
-            std::string,
-            const std::vector< std::complex< long double > > & )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: no support for long double complex vector attribute types" );
-        }
-
-        static void
-        oldReadAttribute(
-            adios2::IO &,
-            std::string,
-            std::shared_ptr< Attribute::resource > )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: no support for long double complex vector attribute types" );
-        }
-
         static void
         createAttribute(
             adios2::IO &,
@@ -736,18 +715,6 @@ namespace detail
 
     template < typename T > struct AttributeTypes< std::vector< T > >
     {
-        static void
-        oldCreateAttribute(
-            adios2::IO & IO,
-            std::string name,
-            const std::vector< T > & value );
-
-        static void
-        oldReadAttribute(
-            adios2::IO & IO,
-            std::string name,
-            std::shared_ptr< Attribute::resource > resource );
-
         static void
         createAttribute(
             adios2::IO & IO,
@@ -792,18 +759,6 @@ namespace detail
     struct AttributeTypes< std::vector< std::string > >
     {
         static void
-        oldCreateAttribute(
-            adios2::IO & IO,
-            std::string name,
-            const std::vector< std::string > & value );
-
-        static void
-        oldReadAttribute(
-            adios2::IO & IO,
-            std::string name,
-            std::shared_ptr< Attribute::resource > resource );
-
-        static void
         createAttribute(
             adios2::IO & IO,
             adios2::Engine & engine,
@@ -847,18 +802,6 @@ namespace detail
     struct AttributeTypes< std::array< T, n > >
     {
         static void
-        oldCreateAttribute(
-            adios2::IO & IO,
-            std::string name,
-            const std::array< T, n > & value );
-
-        static void
-        oldReadAttribute(
-            adios2::IO & IO,
-            std::string name,
-            std::shared_ptr< Attribute::resource > resource );
-
-        static void
         createAttribute(
             adios2::IO & IO,
             adios2::Engine & engine,
@@ -898,18 +841,36 @@ namespace detail
         }
     };
 
+    namespace bool_repr
+    {
+        using rep = detail::bool_representation;
+
+        static constexpr rep toRep( bool b )
+        {
+            return b ? 1U : 0U;
+        }
+
+
+        static constexpr bool fromRep( rep r )
+        {
+            return r != 0;
+        }
+    }
+
     template <> struct AttributeTypes< bool >
     {
         using rep = detail::bool_representation;
 
-        static void
-        oldCreateAttribute( adios2::IO & IO, std::string name, bool value );
+        static constexpr rep toRep( bool b )
+        {
+            return b ? 1U : 0U;
+        }
 
-        static void
-        oldReadAttribute(
-            adios2::IO & IO,
-            std::string name,
-            std::shared_ptr< Attribute::resource > resource );
+
+        static constexpr bool fromRep( rep r )
+        {
+            return r != 0;
+        }
 
         static void
         createAttribute(
@@ -925,16 +886,6 @@ namespace detail
             std::shared_ptr< Attribute::resource > resource );
 
 
-        static constexpr rep toRep( bool b )
-        {
-            return b ? 1U : 0U;
-        }
-
-
-        static constexpr bool fromRep( rep r )
-        {
-            return r != 0;
-        }
 
         static bool
         attributeUnchanged( adios2::IO & IO, std::string name, bool val )
@@ -1227,7 +1178,7 @@ namespace detail
 
     private:
         ADIOS2IOHandlerImpl * m_impl;
-        auxiliary::Option< adios2::Engine > m_engine; //! ADIOS engine
+        std::optional< adios2::Engine > m_engine; //! ADIOS engine
         /**
          * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
          */
@@ -1343,8 +1294,8 @@ namespace detail
          * the map that would be returned by a call to
          * IO::Available(Attributes|Variables).
          */
-        auxiliary::Option< AttributeMap_t > m_availableAttributes;
-        auxiliary::Option< AttributeMap_t > m_availableVariables;
+        std::optional< AttributeMap_t > m_availableAttributes;
+        std::optional< AttributeMap_t > m_availableVariables;
 
         /*
          * finalize() will set this true to avoid running twice.

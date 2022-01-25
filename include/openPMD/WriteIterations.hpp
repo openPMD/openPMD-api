@@ -21,8 +21,9 @@
 #pragma once
 
 #include "openPMD/Iteration.hpp"
-#include "openPMD/auxiliary/Option.hpp"
 #include "openPMD/backend/Container.hpp"
+
+#include <optional>
 
 
 namespace openPMD
@@ -61,7 +62,7 @@ private:
     struct SharedResources
     {
         iterations_t iterations;
-        auxiliary::Option< uint64_t > currentlyOpen;
+        std::optional< uint64_t > currentlyOpen;
 
         SharedResources( iterations_t );
         ~SharedResources();

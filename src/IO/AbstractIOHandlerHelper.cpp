@@ -117,6 +117,6 @@ namespace openPMD
             std::move( path ),
             access,
             format,
-            json::TracingJSON( nlohmann::json::object() ));
+            json::TracingJSON( json::ParsedConfig{} ));
     }
 } // namespace openPMD

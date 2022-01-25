@@ -3,6 +3,9 @@
 
 #include <catch2/catch.hpp>
 
+#include <variant>
+
+
 using namespace openPMD;
 
 TEST_CASE( "json_parsing", "[auxiliary]" )
@@ -50,12 +53,12 @@ TEST_CASE( "json_parsing", "[auxiliary]" )
   }
 })";
     REQUIRE(
-        json::parseOptions( same1, false ).dump() ==
-        json::parseOptions( same2, false ).dump() );
+        json::parseOptions( same1, false ).config.dump() ==
+        json::parseOptions( same2, false ).config.dump() );
     // Only keys should be transformed to lower case, values must stay the same
     REQUIRE(
-        json::parseOptions( same1, false ).dump() !=
-        json::parseOptions( different, false ).dump() );
+        json::parseOptions( same1, false ).config.dump() !=
+        json::parseOptions( different, false ).config.dump() );
 
     // Keys forwarded to ADIOS2 should remain untouched
     std::string upper = R"END(
@@ -168,31 +171,5 @@ TEST_CASE( "json_merging", "auxiliary" )
 })END";
     REQUIRE(
         json::merge( defaultVal, overwrite ) ==
-        json::parseOptions( expect, false ).dump() );
-}
-
-TEST_CASE( "optional", "[auxiliary]" ) {
-    using namespace auxiliary;
-
-    Option<int> opt;
-
-    REQUIRE_THROWS_AS(opt.get(), variantSrc::bad_variant_access);
-    REQUIRE_THROWS_AS(opt.get() = 42, variantSrc::bad_variant_access);
-    REQUIRE(!opt);
-    REQUIRE(!opt.has_value());
-
-    opt = 43;
-    REQUIRE(opt);
-    REQUIRE(opt.has_value());
-    REQUIRE(opt.get() == 43);
-
-    Option<int> opt2{ opt };
-    REQUIRE(opt2);
-    REQUIRE(opt2.has_value());
-    REQUIRE(opt2.get() == 43);
-
-    Option<int> opt3 = makeOption( 3 );
-    REQUIRE(opt3);
-    REQUIRE(opt3.has_value());
-    REQUIRE(opt3.get() == 3);
+        json::parseOptions( expect, false ).config.dump() );
 }

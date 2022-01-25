@@ -20,10 +20,9 @@
  */
 #pragma once
 
-#include "VariantSrc.hpp"
-
 #include <cstddef>
 #include <type_traits>
+#include <variant> // IWYU pragma: export
 
 
 namespace openPMD
@@ -41,7 +40,7 @@ class Variant
     static_assert(std::is_enum< T_DTYPES >::value, "Datatypes to Variant must be supplied as enum.");
 
 public:
-    using resource = variantSrc::variant< T ... >;
+    using resource = std::variant< T ... >;
     /** Construct a lightweight wrapper around a generic object that indicates
      * the concrete datatype of the specific object stored.
      *
@@ -63,7 +62,7 @@ public:
     template< typename U >
     U get() const
     {
-        return variantSrc::get< U >(m_data);
+        return std::get< U >(m_data);
     }
 
     /** Retrieve the stored generic object.

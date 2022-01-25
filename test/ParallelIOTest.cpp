@@ -1003,20 +1003,11 @@ adios2_streaming( bool variableBasedLayout )
          */
         using namespace std::chrono_literals;
         std::this_thread::sleep_for( 1s );
-        std::string options = R"(
-        {
-          "adios2": {
-            "engine": {
-              "type": "SST"
-            }
-          }
-        }
-        )";
 
         Series readSeries(
             "../samples/adios2_stream.sst",
             Access::READ_ONLY,
-            "{\"defer_iteration_parsing\": true}" );
+            "defer_iteration_parsing = true" ); // inline TOML
 
         size_t last_iteration_index = 0;
         for( auto iteration : readSeries.readIterations() )
@@ -1064,62 +1055,62 @@ TEST_CASE( "parallel_adios2_json_config", "[parallel][adios2]" )
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 
     std::string writeConfigBP3 = R"END(
-{
-  "adios2": {
-    "engine": {
-      "type": "bp3",
-      "unused": "parameter",
-      "parameters": {
-        "BufferGrowthFactor": "2.0",
-        "Profile": "On"
-      }
-    },
-    "unused": "as well",
-    "dataset": {
-      "operators": [
-        {
-          "type": "blosc",
-          "parameters": {
-              "clevel": "1",
-              "doshuffle": "BLOSC_BITSHUFFLE"
-          }
-        }
-      ]
-    }
-  }
-}
+[adios2]
+unused = "parameter"
+
+[adios2.engine]
+type = "bp3"
+unused = "as well"
+
+[adios2.engine.parameters]
+BufferGrowthFactor = "2.0"
+Profile = "On"
+
+[[adios2.dataset.operators]]
+type = "blosc"
+
+[adios2.dataset.operators.parameters]
+clevel = "1"
+doshuffle = "BLOSC_BITSHUFFLE"
 )END";
+
     std::string writeConfigBP4 = R"END(
-{
-  "adios2": {
-    "engine": {
-      "type": "bp4",
-      "unused": "parameter",
-      "parameters": {
-        "BufferGrowthFactor": "2.0",
-        "Profile": "On"
-      }
-    },
-    "unused": "as well",
-    "dataset": {
-      "operators": [
-        {
-          "type": "blosc",
-          "parameters": {
-              "clevel": "1",
-              "doshuffle": "BLOSC_BITSHUFFLE"
-          }
-        }
-      ]
-    }
-  }
-}
+[adios2]
+unused = "parameter"
+
+[adios2.engine]
+type = "bp4"
+unused = "as well"
+
+[adios2.engine.parameters]
+BufferGrowthFactor = "2.0"
+Profile = "On"
+
+[[adios2.dataset.operators]]
+type = "blosc"
+
+[adios2.dataset.operators.parameters]
+clevel = 1
+doshuffle = "BLOSC_BITSHUFFLE"
 )END";
     auto const write = [ size, rank ](
                            std::string const & filename,
                            std::string const & config ) {
+        if( rank == 0 )
+        {
+            std::fstream file;
+            file.open(
+                "../samples/write_config.toml",
+                std::ios_base::out | std::ios_base::binary );
+            file << config;
+            file.flush();
+        }
+        MPI_Barrier( MPI_COMM_WORLD );
         openPMD::Series series(
-            filename, openPMD::Access::CREATE, MPI_COMM_WORLD, config );
+            filename,
+            openPMD::Access::CREATE,
+            MPI_COMM_WORLD,
+            "@../samples/write_config.toml" );
         auto E_x = series.iterations[ 0 ].meshes[ "E" ][ "x" ];
         openPMD::Dataset ds(
             openPMD::Datatype::INT, { unsigned( size ), 1000 } );

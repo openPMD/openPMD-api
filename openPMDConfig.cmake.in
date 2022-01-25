@@ -11,15 +11,6 @@ endif()
 # locate the installed FindADIOS.cmake module for ADIOS1
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/Modules")
 
-# required dependency: mpark-variant
-add_library(openPMD::thirdparty::mpark_variant INTERFACE IMPORTED)
-set(openPMD_USE_INTERNAL_VARIANT @openPMD_USE_INTERNAL_VARIANT@)
-if(NOT openPMD_USE_INTERNAL_VARIANT)
-    find_dependency(mpark_variant)
-    target_link_libraries(openPMD::thirdparty::mpark_variant
-        INTERFACE mpark_variant)
-endif()
-
 # optional dependencies
 set(openPMD_HAVE_MPI @openPMD_HAVE_MPI@)
 if(openPMD_HAVE_MPI)

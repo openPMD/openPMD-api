@@ -235,97 +235,12 @@ getCast( Attribute const & a )
 {
     auto v = a.getResource();
 
-    // icpc 2021.3.0 does not like variantSrc::visit (with mpark-variant)
-    // we use variantSrc::visit for the other compilers to avoid having an
-    // endless list of if-then-else
-    // also, once we switch to C++17, we might throw this out in
-    // favor of a hopefully working std::visit
-#if defined(__ICC) || defined(__INTEL_COMPILER)
-    if(auto pvalue_c = variantSrc::get_if< char >( &v ) )
-        return DoConvert<char, U>{}(pvalue_c);
-    else if(auto pvalue_uc = variantSrc::get_if< unsigned char >( &v ) )
-        return DoConvert<unsigned char, U>{}(pvalue_uc);
-    else if(auto pvalue_s = variantSrc::get_if< short >( &v ) )
-        return DoConvert<short, U>{}(pvalue_s);
-    else if(auto pvalue_i = variantSrc::get_if< int >( &v ) )
-        return DoConvert<int, U>{}(pvalue_i);
-    else if(auto pvalue_l = variantSrc::get_if< long >( &v ) )
-        return DoConvert<long, U>{}(pvalue_l);
-    else if(auto pvalue_ll = variantSrc::get_if< long long >( &v ) )
-        return DoConvert<long long, U>{}(pvalue_ll);
-    else if(auto pvalue_us = variantSrc::get_if< unsigned short >( &v ) )
-        return DoConvert<unsigned short, U>{}(pvalue_us);
-    else if(auto pvalue_ui = variantSrc::get_if< unsigned int >( &v ) )
-        return DoConvert<unsigned int, U>{}(pvalue_ui);
-    else if(auto pvalue_ul = variantSrc::get_if< unsigned long >( &v ) )
-        return DoConvert<unsigned long, U>{}(pvalue_ul);
-    else if(auto pvalue_ull = variantSrc::get_if< unsigned long long >( &v ) )
-        return DoConvert<unsigned long long, U>{}(pvalue_ull);
-    else if(auto pvalue_f = variantSrc::get_if< float >( &v ) )
-        return DoConvert<float, U>{}(pvalue_f);
-    else if(auto pvalue_d = variantSrc::get_if< double >( &v ) )
-        return DoConvert<double, U>{}(pvalue_d);
-    else if(auto pvalue_ld = variantSrc::get_if< long double >( &v ) )
-        return DoConvert<long double, U>{}(pvalue_ld);
-    else if(auto pvalue_cf = variantSrc::get_if< std::complex< float > >( &v ) )
-        return DoConvert<std::complex< float >, U>{}(pvalue_cf);
-    else if(auto pvalue_cd = variantSrc::get_if< std::complex< double > >( &v ) )
-        return DoConvert<std::complex< double >, U>{}(pvalue_cd);
-    else if(auto pvalue_cld = variantSrc::get_if< std::complex< long double > >( &v ) )
-        return DoConvert<std::complex< long double >, U>{}(pvalue_cld);
-    else if(auto pvalue_str = variantSrc::get_if< std::string >( &v ) )
-        return DoConvert<std::string, U>{}(pvalue_str);
-    // vector
-    else if(auto pvalue_vc = variantSrc::get_if< std::vector< char > >( &v ) )
-        return DoConvert<std::vector< char >, U>{}(pvalue_vc);
-    else if(auto pvalue_vuc = variantSrc::get_if< std::vector< unsigned char > >( &v ) )
-        return DoConvert<std::vector< unsigned char >, U>{}(pvalue_vuc);
-    else if(auto pvalue_vs = variantSrc::get_if< std::vector< short > >( &v ) )
-        return DoConvert<std::vector< short >, U>{}(pvalue_vs);
-    else if(auto pvalue_vi = variantSrc::get_if< std::vector< int > >( &v ) )
-        return DoConvert<std::vector< int >, U>{}(pvalue_vi);
-    else if(auto pvalue_vl = variantSrc::get_if< std::vector< long > >( &v ) )
-        return DoConvert<std::vector< long >, U>{}(pvalue_vl);
-    else if(auto pvalue_vll = variantSrc::get_if< std::vector< long long > >( &v ) )
-        return DoConvert<std::vector< long long >, U>{}(pvalue_vll);
-    else if(auto pvalue_vus = variantSrc::get_if< std::vector< unsigned short > >( &v ) )
-        return DoConvert<std::vector< unsigned short >, U>{}(pvalue_vus);
-    else if(auto pvalue_vui = variantSrc::get_if< std::vector< unsigned int > >( &v ) )
-        return DoConvert<std::vector< unsigned int >, U>{}(pvalue_vui);
-    else if(auto pvalue_vul = variantSrc::get_if< std::vector< unsigned long > >( &v ) )
-        return DoConvert<std::vector< unsigned long >, U>{}(pvalue_vul);
-    else if(auto pvalue_vull = variantSrc::get_if< std::vector< unsigned long long > >( &v ) )
-        return DoConvert<std::vector< unsigned long long >, U>{}(pvalue_vull);
-    else if(auto pvalue_vf = variantSrc::get_if< std::vector< float > >( &v ) )
-        return DoConvert<std::vector< float >, U>{}(pvalue_vf);
-    else if(auto pvalue_vd = variantSrc::get_if< std::vector< double > >( &v ) )
-        return DoConvert<std::vector< double >, U>{}(pvalue_vd);
-    else if(auto pvalue_vld = variantSrc::get_if< std::vector< long double > >( &v ) )
-        return DoConvert<std::vector< long double >, U>{}(pvalue_vld);
-    else if(auto pvalue_vcf = variantSrc::get_if< std::vector< std::complex< float > > >( &v ) )
-        return DoConvert<std::vector< std::complex< float > >, U>{}(pvalue_vcf);
-    else if(auto pvalue_vcd = variantSrc::get_if< std::vector< std::complex< double > > >( &v ) )
-        return DoConvert<std::vector< std::complex< double > >, U>{}(pvalue_vcd);
-    else if(auto pvalue_vcld = variantSrc::get_if< std::vector< std::complex< long double > > >( &v ) )
-        return DoConvert<std::vector< std::complex< long double > >, U>{}(pvalue_vcld);
-    else if(auto pvalue_vstr = variantSrc::get_if< std::vector< std::string > >( &v ) )
-        return DoConvert<std::vector< std::string >, U>{}(pvalue_vstr);
-    // extra
-    else if(auto pvalue_vad = variantSrc::get_if< std::array< double, 7 > >( &v ) )
-        return DoConvert<std::array< double, 7 >, U>{}(pvalue_vad);
-    else if(auto pvalue_b = variantSrc::get_if< bool >( &v ) )
-        return DoConvert<bool, U>{}(pvalue_b);
-    else
-        throw std::runtime_error("getCast: unknown Datatype.");
-
-#else
-    return variantSrc::visit(
+    return std::visit(
         []( auto && containedValue ) -> U {
             using containedType = std::decay_t< decltype( containedValue ) >;
             return DoConvert< containedType, U >{}( &containedValue );
         },
         v );
-#endif
 }
 
 template< typename U >

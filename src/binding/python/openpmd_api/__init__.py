@@ -1,9 +1,8 @@
 from . import openpmd_api_cxx as cxx
-from .openpmd_api_cxx import *  # noqa
-from .DataFrame import particles_to_dataframe
-from .DaskDataFrame import particles_to_daskdataframe
 from .DaskArray import record_component_to_daskarray
-
+from .DaskDataFrame import particles_to_daskdataframe
+from .DataFrame import particles_to_dataframe
+from .openpmd_api_cxx import *  # noqa
 
 __version__ = cxx.__version__
 __doc__ = cxx.__doc__

@@ -153,7 +153,7 @@ ADIOS2IOHandlerImpl::init( json::TracingJSON cfg )
                     json::asLowerCaseStringDynamic( engineTypeConfig );
                 if( maybeEngine.has_value() )
                 {
-                    m_engineType = std::move( maybeEngine.get() );
+                    m_engineType = std::move( maybeEngine.value() );
                 }
                 else
                 {
@@ -166,17 +166,17 @@ ADIOS2IOHandlerImpl::init( json::TracingJSON cfg )
         auto operators = getOperators();
         if( operators )
         {
-            defaultOperators = std::move( operators.get() );
+            defaultOperators = std::move( operators.value() );
         }
     }
     // environment-variable based configuration
     m_schema = auxiliary::getEnvNum( "OPENPMD2_ADIOS2_SCHEMA", m_schema );
 }
 
-auxiliary::Option< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > >
+std::optional< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > >
 ADIOS2IOHandlerImpl::getOperators( json::TracingJSON cfg )
 {
-    using ret_t = auxiliary::Option< std::vector< ParameterizedOperator > >;
+    using ret_t = std::optional< std::vector< ParameterizedOperator > >;
     std::vector< ParameterizedOperator > res;
     if( !cfg.json().contains( "dataset" ) )
     {
@@ -208,7 +208,7 @@ ADIOS2IOHandlerImpl::getOperators( json::TracingJSON cfg )
                 if( maybeString.has_value() )
                 {
                     adiosParams[ paramIterator.key() ] =
-                        std::move( maybeString.get() );
+                        std::move( maybeString.value() );
                 }
                 else
                 {
@@ -221,19 +221,19 @@ ADIOS2IOHandlerImpl::getOperators( json::TracingJSON cfg )
                 }
             }
         }
-        auxiliary::Option< adios2::Operator > adiosOperator =
+        std::optional< adios2::Operator > adiosOperator =
             getCompressionOperator( type );
         if( adiosOperator )
         {
             res.emplace_back( ParameterizedOperator{
-                adiosOperator.get(), std::move( adiosParams ) } );
+                adiosOperator.value(), std::move( adiosParams ) } );
         }
     }
     _operators.declareFullyRead();
-    return auxiliary::makeOption( std::move( res ) );
+    return std::make_optional( std::move( res ) );
 }
 
-auxiliary::Option< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > >
+std::optional< std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > >
 ADIOS2IOHandlerImpl::getOperators()
 {
     return getOperators( m_config );
@@ -388,7 +388,7 @@ void ADIOS2IOHandlerImpl::createDataset(
             json::TracingJSON datasetConfig( options[ "adios2" ] );
             auto datasetOperators = getOperators( datasetConfig );
 
-            operators = datasetOperators ? std::move( datasetOperators.get() )
+            operators = datasetOperators ? std::move( datasetOperators.value() )
                                          : defaultOperators;
         }
         else
@@ -398,7 +398,7 @@ void ADIOS2IOHandlerImpl::createDataset(
         parameters.warnUnusedParameters(
             options,
             "adios2",
-            "Warning: parts of the JSON configuration for ADIOS2 dataset '" +
+            "Warning: parts of the backend configuration for ADIOS2 dataset '" +
                 varName + "' remain unused:\n" );
 
         // cast from openPMD::Extent to adios2::Dims
@@ -1129,7 +1129,8 @@ ADIOS2IOHandlerImpl::adios2AccessMode( std::string const & fullPath )
     }
 }
 
-json::TracingJSON ADIOS2IOHandlerImpl::nullvalue = nlohmann::json();
+json::TracingJSON ADIOS2IOHandlerImpl::nullvalue = {
+    nlohmann::json(), json::SupportedLanguages::JSON };
 
 std::string
 ADIOS2IOHandlerImpl::filePositionToString(
@@ -1156,7 +1157,7 @@ std::shared_ptr< ADIOS2FilePosition > ADIOS2IOHandlerImpl::extendFilePosition(
                                                    oldPos->gd );
 }
 
-auxiliary::Option< adios2::Operator >
+std::optional< adios2::Operator >
 ADIOS2IOHandlerImpl::getCompressionOperator( std::string const & compression )
 {
     adios2::Operator res;
@@ -1166,13 +1167,23 @@ ADIOS2IOHandlerImpl::getCompressionOperator( std::string const & compression )
         try {
             res = m_ADIOS.DefineOperator( compression, compression );
         }
-        catch ( std::invalid_argument const & )
+        catch ( std::invalid_argument const & e )
         {
             std::cerr << "Warning: ADIOS2 backend does not support compression "
                          "method "
                       << compression << ". Continuing without compression."
+                      << "\nOriginal error: " << e.what()
                       << std::endl;
-            return auxiliary::Option< adios2::Operator >();
+            return std::optional< adios2::Operator >();
+        }
+        catch(std::string const & s)
+        {
+            std::cerr << "Warning: ADIOS2 backend does not support compression "
+                         "method "
+                      << compression << ". Continuing without compression."
+                      << "\nOriginal error: " << s
+                      << std::endl;
+            return std::optional< adios2::Operator >();
         }
         m_operators.emplace( compression, res );
     }
@@ -1180,7 +1191,7 @@ ADIOS2IOHandlerImpl::getCompressionOperator( std::string const & compression )
     {
         res = it->second;
     }
-    return auxiliary::makeOption( adios2::Operator( res ) );
+    return std::make_optional( adios2::Operator( res ) );
 }
 
 std::string
@@ -1348,12 +1359,17 @@ namespace detail
          * that would otherwise be lost. Check whether this has been done.
          */
         using rep = AttributeTypes< bool >::rep;
-        if
-#if __cplusplus >= 201703L
-            constexpr
-#endif
-            ( std::is_same< T, rep >::value )
+
+        if constexpr( std::is_same< T, rep >::value )
         {
+            auto attr = IO.InquireAttribute< rep >( name );
+            if ( !attr )
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Internal error: Failed reading attribute '" + name +
+                    "'." );
+            }
+
             std::string metaAttr =
                 ADIOS2Defaults::str_isBooleanOldLayout + name;
             /*
@@ -1366,18 +1382,68 @@ namespace detail
                 IO,
                 ADIOS2Defaults::str_isBooleanOldLayout + name,
                 /* verbose = */ false );
+
+
             if( type == determineDatatype< rep >() )
             {
-                auto attr = IO.InquireAttribute< rep >( metaAttr );
-                if( attr.Data().size() == 1 && attr.Data()[ 0 ] == 1 )
+                auto meta = IO.InquireAttribute< rep >( metaAttr );
+                if( meta.Data().size() == 1 && meta.Data()[ 0 ] == 1 )
                 {
-                    AttributeTypes< bool >::oldReadAttribute(
-                        IO, name, resource );
+                    *resource = bool_repr::fromRep( attr.Data()[ 0 ] );
                     return determineDatatype< bool >();
                 }
             }
+            *resource = attr.Data()[ 0 ];
         }
-        AttributeTypes< T >::oldReadAttribute( IO, name, resource );
+        else if constexpr( IsUnsupportedComplex_v< T > )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex "
+                "attribute types" );
+        }
+        else if constexpr( IsVector_v< T > )
+        {
+            auto attr = IO.InquireAttribute< typename T::value_type >( name );
+            if ( !attr )
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Internal error: Failed reading attribute '" + name + "'." );
+            }
+            *resource = attr.Data();
+        }
+        else if constexpr( IsArray_v< T > )
+        {
+            auto attr = IO.InquireAttribute< typename T::value_type >( name );
+            if ( !attr )
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Internal error: Failed reading attribute '" + name + "'." );
+            }
+            auto data = attr.Data( );
+            T res;
+            for ( size_t i = 0; i < data.size(); i++ )
+            {
+                res[i] = data[i];
+            }
+            *resource = res;
+        }
+        else if constexpr( std::is_same_v< T, bool > )
+        {
+            throw std::runtime_error(
+                "Observed boolean attribute. ADIOS2 does not have these?" );
+        }
+        else
+        {
+            auto attr = IO.InquireAttribute< T >( name );
+            if ( !attr )
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Internal error: Failed reading attribute '" + name +
+                    "'." );
+            }
+            *resource = attr.Data()[ 0 ];
+        }
+
         return determineDatatype< T >();
     }
 
@@ -1403,11 +1469,7 @@ namespace detail
          * that would otherwise be lost. Check whether this has been done.
          */
         using rep = AttributeTypes<bool>::rep;
-        if
-#if __cplusplus >= 201703L
-        constexpr
-#endif
-        ( std::is_same< T, rep >::value )
+        if constexpr( std::is_same< T, rep >::value )
         {
             std::string metaAttr =
                 ADIOS2Defaults::str_isBooleanNewLayout + name;
@@ -1477,7 +1539,7 @@ namespace detail
             if( AttributeTypes< T >::attributeUnchanged(
                     IO,
                     fullName,
-                    variantSrc::get< T >( parameters.resource ) ) )
+                    std::get< T >( parameters.resource ) ) )
             {
                 return;
             }
@@ -1498,8 +1560,57 @@ namespace detail
             filedata.uncommittedAttributes.emplace( fullName );
         }
 
-        AttributeTypes< T >::oldCreateAttribute(
-            IO, fullName, variantSrc::get< T >( parameters.resource ) );
+        auto & value = std::get< T >( parameters.resource );
+
+        if constexpr( IsUnsupportedComplex_v< T > )
+        {
+            throw std::runtime_error(
+                "[ADIOS2] Internal error: no support for long double complex "
+                "attribute types" );
+        }
+        else if constexpr( IsVector_v< T > )
+        {
+            auto attr = IO.DefineAttribute( fullName, value.data(), value.size() );
+            if( !attr )
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Internal error: Failed defining attribute '" + fullName +
+                    "'." );
+            }
+        }
+        else if constexpr( IsArray_v< T > )
+        {
+            auto attr = IO.DefineAttribute( fullName, value.data(), value.size() );
+            if( !attr )
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Internal error: Failed defining attribute '" + fullName +
+                    "'." );
+            }
+        }
+        else if constexpr( std::is_same_v< T, bool > )
+        {
+            IO.DefineAttribute< bool_representation >(
+                ADIOS2Defaults::str_isBooleanOldLayout + fullName, 1 );
+            auto representation = bool_repr::toRep( value );
+            auto attr = IO.DefineAttribute( fullName, representation );
+            if( !attr )
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Internal error: Failed defining attribute '" + fullName +
+                    "'." );
+            }
+        }
+        else
+        {
+            auto attr = IO.DefineAttribute( fullName, value );
+            if( !attr )
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Internal error: Failed defining attribute '" + fullName +
+                    "'." );
+            }
+        }
     }
 
     template< int n, typename... Params >
@@ -1519,7 +1630,7 @@ namespace detail
             fileData.m_IO,
             fileData.requireActiveStep(),
             params,
-            variantSrc::get< T >( params.resource ) );
+            std::get< T >( params.resource ) );
     }
 
     template< int n, typename... Params >
@@ -1662,36 +1773,6 @@ namespace detail
     }
 
     template< typename T >
-    void AttributeTypes< T >::oldCreateAttribute(
-        adios2::IO & IO, std::string name, const T value )
-    {
-        auto attr = IO.DefineAttribute( name, value );
-        if( !attr )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed defining attribute '" + name +
-                "'." );
-        }
-    }
-
-    template< typename T >
-    void
-    AttributeTypes< T >::oldReadAttribute(
-        adios2::IO & IO,
-        std::string name,
-        std::shared_ptr< Attribute::resource > resource )
-    {
-        auto attr = IO.InquireAttribute< T >( name );
-        if ( !attr )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed reading attribute '" + name +
-                "'." );
-        }
-        *resource = attr.Data()[ 0 ];
-    }
-
-    template< typename T >
     void
     AttributeTypes< T >::createAttribute(
         adios2::IO & IO,
@@ -1733,38 +1814,6 @@ namespace detail
                 std::to_string( attr.shape.size() ) + "D: " + name );
         }
         *resource = *attr.data;
-    }
-
-    template< typename T >
-    void
-    AttributeTypes< std::vector< T > >::oldCreateAttribute(
-        adios2::IO & IO,
-        std::string name,
-        const std::vector< T > & value )
-    {
-        auto attr = IO.DefineAttribute( name, value.data(), value.size() );
-        if( !attr )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed defining attribute '" + name +
-                "'." );
-        }
-    }
-
-    template< typename T >
-    void
-    AttributeTypes< std::vector< T > >::oldReadAttribute(
-        adios2::IO & IO,
-        std::string name,
-        std::shared_ptr< Attribute::resource > resource )
-    {
-        auto attr = IO.InquireAttribute< T >( name );
-        if ( !attr )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed reading attribute '" + name + "'." );
-        }
-        *resource = attr.Data();
     }
 
     template < typename T >
@@ -1809,37 +1858,6 @@ namespace detail
         std::vector< T > res( attr.shape[ 0 ] );
         std::copy_n( attr.data, attr.shape[ 0 ], res.data() );
         *resource = std::move( res );
-    }
-
-    void
-    AttributeTypes< std::vector< std::string > >::oldCreateAttribute(
-        adios2::IO & IO,
-        std::string name,
-        const std::vector< std::string > & value )
-    {
-        auto attr = IO.DefineAttribute( name, value.data(), value.size() );
-        if( !attr )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed defining attribute '" + name +
-                "'." );
-        }
-    }
-
-    void
-    AttributeTypes< std::vector< std::string > >::oldReadAttribute(
-        adios2::IO & IO,
-        std::string name,
-        std::shared_ptr< Attribute::resource > resource )
-    {
-        auto attr = IO.InquireAttribute< std::string >( name );
-        if ( !attr )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed reading attribute '" + name +
-                "'." );
-        }
-        *resource = attr.Data();
     }
 
     void
@@ -1999,44 +2017,6 @@ namespace detail
 
     template< typename T, size_t n >
     void
-    AttributeTypes< std::array< T, n > >::oldCreateAttribute(
-        adios2::IO & IO,
-        std::string name,
-        const std::array< T, n > & value )
-    {
-        auto attr = IO.DefineAttribute( name, value.data(), n );
-        if( !attr )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed defining attribute '" + name +
-                "'." );
-        }
-    }
-
-    template< typename T, size_t n >
-    void
-    AttributeTypes< std::array< T, n > >::oldReadAttribute(
-        adios2::IO & IO,
-        std::string name,
-        std::shared_ptr< Attribute::resource > resource )
-    {
-        auto attr = IO.InquireAttribute< T >( name );
-        if ( !attr )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed reading attribute '" + name + "'." );
-        }
-        auto data = attr.Data( );
-        std::array< T, n > res;
-        for ( size_t i = 0; i < n; i++ )
-        {
-            res[i] = data[i];
-        }
-        *resource = res;
-    }
-
-    template< typename T, size_t n >
-    void
     AttributeTypes< std::array< T, n > >::createAttribute(
         adios2::IO & IO,
         adios2::Engine & engine,
@@ -2078,35 +2058,6 @@ namespace detail
         std::copy_n( attr.data, n, res.data() );
         *resource = std::move( res );
     }
-
-    void
-    AttributeTypes< bool >::oldCreateAttribute(
-        adios2::IO & IO,
-        std::string name,
-        const bool value )
-    {
-        IO.DefineAttribute< bool_representation >(
-            ADIOS2Defaults::str_isBooleanOldLayout + name, 1 );
-        AttributeTypes< bool_representation >::oldCreateAttribute(
-            IO, name, toRep( value ) );
-    }
-
-    void
-    AttributeTypes< bool >::oldReadAttribute(
-        adios2::IO & IO,
-        std::string name,
-        std::shared_ptr< Attribute::resource > resource )
-    {
-        auto attr = IO.InquireAttribute< rep >( name );
-        if ( !attr )
-        {
-            throw std::runtime_error(
-                "[ADIOS2] Internal error: Failed reading attribute '" + name +
-                "'." );
-        }
-        *resource = fromRep( attr.Data()[ 0 ] );
-    }
-
 
     void
     AttributeTypes< bool >::createAttribute(
@@ -2259,7 +2210,7 @@ namespace detail
         }
         if( m_engine )
         {
-            auto & engine = m_engine.get();
+            auto & engine = m_engine.value();
             // might have been closed previously
             if( engine )
             {
@@ -2378,7 +2329,7 @@ namespace detail
                     if( maybeString.has_value() )
                     {
                         m_IO.SetParameter(
-                            it.key(), std::move( maybeString.get() ) );
+                            it.key(), std::move( maybeString.value() ) );
                     }
                     else
                     {
@@ -2409,9 +2360,22 @@ namespace detail
         auto shadow = impl.m_config.invertShadow();
         if( shadow.size() > 0 )
         {
-            std::cerr << "Warning: parts of the JSON configuration for ADIOS2 "
-                         "remain unused:\n"
-                      << shadow << std::endl;
+            switch( impl.m_config.originallySpecifiedAs )
+            {
+            case json::SupportedLanguages::JSON:
+                std::cerr << "Warning: parts of the backend configuration for "
+                            "ADIOS2 remain unused:\n"
+                        << shadow << std::endl;
+                break;
+            case json::SupportedLanguages::TOML:
+            {
+                auto asToml = json::jsonToToml( shadow );
+                std::cerr << "Warning: parts of the backend configuration for "
+                            "ADIOS2 remain unused:\n"
+                        << asToml << std::endl;
+                break;
+            }
+            }
         }
         auto notYetConfigured =
             [ &alreadyConfigured ]( std::string const & param ) {
@@ -2526,12 +2490,12 @@ namespace detail
                 // the streaming API was used.
                 m_IO.DefineAttribute< ADIOS2Schema::schema_t >(
                     ADIOS2Defaults::str_adios2Schema, m_impl->m_schema );
-                m_engine = auxiliary::makeOption(
+                m_engine = std::make_optional(
                     adios2::Engine( m_IO.Open( m_file, m_mode ) ) );
                 break;
             }
             case adios2::Mode::Read: {
-                m_engine = auxiliary::makeOption(
+                m_engine = std::make_optional(
                     adios2::Engine( m_IO.Open( m_file, m_mode ) ) );
                 // decide attribute layout
                 // in streaming mode, this needs to be done after opening
@@ -2564,7 +2528,7 @@ namespace detail
                         }
                         else
                         {
-                            if( m_engine.get().BeginStep() !=
+                            if( m_engine.value().BeginStep() !=
                                 adios2::StepStatus::OK )
                             {
                                 throw std::runtime_error(
@@ -2581,7 +2545,7 @@ namespace detail
                     break;
                 }
                 case StreamStatus::OutsideOfStep:
-                    if( m_engine.get().BeginStep() != adios2::StepStatus::OK )
+                    if( m_engine.value().BeginStep() != adios2::StepStatus::OK )
                     {
                         throw std::runtime_error(
                             "[ADIOS2] Unexpected step status when "
@@ -2595,7 +2559,7 @@ namespace detail
                 }
                 if( attributeLayout() == AttributeLayout::ByAdiosVariables )
                 {
-                    preloadAttributes.preloadAttributes( m_IO, m_engine.get() );
+                    preloadAttributes.preloadAttributes( m_IO, m_engine.value() );
                 }
                 break;
             }
@@ -2604,12 +2568,12 @@ namespace detail
                     "[ADIOS2] Invalid ADIOS access mode" );
             }
 
-            if( !m_engine.get() )
+            if( !m_engine.value() )
             {
                 throw std::runtime_error( "[ADIOS2] Failed opening Engine." );
             }
         }
-        return m_engine.get();
+        return m_engine.value();
     }
 
     adios2::Engine & BufferedActions::requireActiveStep( )
@@ -2621,7 +2585,7 @@ namespace detail
             if( m_mode == adios2::Mode::Read &&
                 attributeLayout() == AttributeLayout::ByAdiosVariables )
             {
-                preloadAttributes.preloadAttributes( m_IO, m_engine.get() );
+                preloadAttributes.preloadAttributes( m_IO, m_engine.value() );
             }
             streamStatus = StreamStatus::DuringStep;
         }
@@ -2846,7 +2810,7 @@ namespace detail
                         attributeLayout() == AttributeLayout::ByAdiosVariables )
                     {
                         preloadAttributes.preloadAttributes(
-                            m_IO, m_engine.get() );
+                            m_IO, m_engine.value() );
                     }
                 }
                 AdvanceStatus res = AdvanceStatus::OK;
@@ -2929,7 +2893,7 @@ namespace detail
     void
     BufferedActions::invalidateAttributesMap()
     {
-        m_availableAttributes = auxiliary::Option< AttributeMap_t >();
+        m_availableAttributes = std::optional< AttributeMap_t >();
     }
 
     BufferedActions::AttributeMap_t const &
@@ -2937,20 +2901,20 @@ namespace detail
     {
         if( m_availableAttributes )
         {
-            return m_availableAttributes.get();
+            return m_availableAttributes.value();
         }
         else
         {
             m_availableAttributes =
-                auxiliary::makeOption( m_IO.AvailableAttributes() );
-            return m_availableAttributes.get();
+                std::make_optional( m_IO.AvailableAttributes() );
+            return m_availableAttributes.value();
         }
     }
 
     void
     BufferedActions::invalidateVariablesMap()
     {
-        m_availableVariables = auxiliary::Option< AttributeMap_t >();
+        m_availableVariables = std::optional< AttributeMap_t >();
     }
 
     BufferedActions::AttributeMap_t const &
@@ -2958,13 +2922,13 @@ namespace detail
     {
         if( m_availableVariables )
         {
-            return m_availableVariables.get();
+            return m_availableVariables.value();
         }
         else
         {
             m_availableVariables =
-                auxiliary::makeOption( m_IO.AvailableVariables() );
-            return m_availableVariables.get();
+                std::make_optional( m_IO.AvailableVariables() );
+            return m_availableVariables.value();
         }
     }
 

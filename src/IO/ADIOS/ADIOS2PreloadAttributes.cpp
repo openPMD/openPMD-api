@@ -34,9 +34,7 @@
 #include <numeric>
 #include <type_traits>
 
-namespace openPMD
-{
-namespace detail
+namespace openPMD::detail
 {
     namespace
     {
@@ -288,7 +286,6 @@ namespace detail
         }
         return it->second.dt;
     }
-} // namespace detail
-} // namespace openPMD
+} // namespace openPMD::detail
 
 #endif // openPMD_HAVE_ADIOS2

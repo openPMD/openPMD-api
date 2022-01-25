@@ -6,13 +6,14 @@ Authors: Axel Huebl, Carsten Fortmann-Grote
 License: LGPLv3+
 """
 
-import openpmd_api as io
-
+import ctypes
 import gc
 import os
 import shutil
 import unittest
-import ctypes
+
+import openpmd_api as io
+
 try:
     import numpy as np
     found_numpy = True

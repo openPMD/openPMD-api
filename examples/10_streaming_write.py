@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 import json
-import openpmd_api as io
-import numpy as np
 import sys
+
+import numpy as np
+import openpmd_api as io
 
 # pass-through for ADIOS2 engine parameters
 # https://adios2.readthedocs.io/en/latest/engines/engines.html

@@ -76,6 +76,15 @@ OPENPMDAPI_EXPORT_ENUM_CLASS(Operation)
     AVAILABLE_CHUNKS //!< Query chunks that can be loaded in a dataset
 }; // note: if you change the enum members here, please update docs/source/dev/design.rst
 
+namespace internal
+{
+    /*
+     * The returned strings are compile-time constants, so no worries about
+     * pointer validity.
+     */
+    std::string operationAsString( Operation );
+}
+
 struct OPENPMDAPI_EXPORT AbstractParameter
 {
     virtual ~AbstractParameter() = default;

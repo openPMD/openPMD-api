@@ -33,9 +33,9 @@ Writing & reading through those backends and their associated files is supported
 
 ### C++
 
-[![C++14][api-cpp]](https://isocpp.org/) ![C++14 API: Beta][dev-beta]
+[![C++17][api-cpp]](https://isocpp.org/) ![C++17 API: Beta][dev-beta]
 
-[api-cpp]: https://img.shields.io/badge/language-C%2B%2B14-yellowgreen "C++14 API"
+[api-cpp]: https://img.shields.io/badge/language-C%2B%2B17-yellowgreen "C++17 API"
 [dev-beta]: https://img.shields.io/badge/phase-beta-yellowgreen "Status: Beta"
 
 ```cpp
@@ -46,18 +46,18 @@ Writing & reading through those backends and their associated files is supported
 
 auto s = openPMD::Series("samples/git-sample/data%T.h5", openPMD::Access::READ_ONLY);
 
-for( auto const& i : s.iterations ) {
-    std::cout << "Iteration: " << i.first << "\n";
+for( auto const [step, it] : s.iterations ) {
+    std::cout << "Iteration: " << step << "\n";
 
-    for( auto const& m : i.second.meshes ) {
-        std::cout << "  Mesh '" << m.first << "' attributes:\n";
-        for( auto const& val : m.second.attributes() )
+    for( auto const [name, mesh] : it.meshes ) {
+        std::cout << "  Mesh '" << name << "' attributes:\n";
+        for( auto const& val : mesh.attributes() )
             std::cout << "    " << val << '\n';
     }
 
-    for( auto const& p : i.second.particles ) {
-        std::cout << "  Particle species '" << p.first << "' attributes:\n";
-        for( auto const& val : p.second.attributes() )
+    for( auto const [name, species] : it.particles ) {
+        std::cout << "  Particle species '" << name << "' attributes:\n";
+        for( auto const& val : species.attributes() )
             std::cout << "    " << val << '\n';
     }
 }
@@ -100,10 +100,9 @@ Our manual shows full [read & write examples](https://openpmd-api.readthedocs.io
 
 Required:
 * CMake 3.15.0+
-* C++14 capable compiler, e.g. g++ 5.0+, clang 5.0+, VS 2017+
+* C++17 capable compiler, e.g., g++ 7+, clang 7+, MSVC 19.15+, icpc 19+, icpx
 
 Shipped internally in `share/openPMD/thirdParty/`:
-* [MPark.Variant](https://github.com/mpark/variant) 1.4.0+ ([BSL-1.0](https://github.com/mpark/variant/blob/master/LICENSE.md))
 * [Catch2](https://github.com/catchorg/Catch2) 2.13.4+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
 * [pybind11](https://github.com/pybind/pybind11) 2.6.2+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
 * [NLohmann-JSON](https://github.com/nlohmann/json) 3.9.1+ ([MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT))
@@ -269,7 +268,6 @@ The following options allow to switch to external installs:
 
 | CMake Option                    | Values     | Library       | Version |
 |---------------------------------|------------|---------------|---------|
-| `openPMD_USE_INTERNAL_VARIANT`  | **ON**/OFF | MPark.Variant |  1.4.0+ |
 | `openPMD_USE_INTERNAL_CATCH`    | **ON**/OFF | Catch2        | 2.13.4+ |
 | `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.6.2+ |
 | `openPMD_USE_INTERNAL_JSON`     | **ON**/OFF | NLohmann-JSON |  3.9.1+ |

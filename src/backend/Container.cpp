@@ -22,9 +22,7 @@
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/RecordComponent.hpp"
 
-namespace openPMD
-{
-namespace detail
+namespace openPMD::detail
 {
 template<>
 std::vector< std::string > keyAsString< std::string const & >(
@@ -56,6 +54,5 @@ std::vector< std::string > keyAsString< std::string >(
     {
         return { std::move( key ) };
     }
-}
 }
 }

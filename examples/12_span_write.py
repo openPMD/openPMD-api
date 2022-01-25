@@ -1,5 +1,5 @@
-import openpmd_api as io
 import numpy as np
+import openpmd_api as io
 
 
 def span_write(filename):
