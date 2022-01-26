@@ -79,6 +79,19 @@ public:
     Attribute(resource r) : Variant(std::move(r))
     { }
 
+    /**
+     * Compiler bug: NVCCC release 11.1, V11.1.105:
+     * > no instance of constructor "openPMD::Attribute::Attribute"
+     * > matches the argument list
+     * > argument types are: (int)
+     *
+     * Fix by explicitly instantiating resource
+     */
+    template< typename T >
+    Attribute( T && val ) : Variant( resource( std::forward< T >( val ) ) )
+    {
+    }
+
     /** Retrieve a stored specific Attribute and cast if convertible.
      *
      * @note This performs a static_cast and might introduce precision loss if
