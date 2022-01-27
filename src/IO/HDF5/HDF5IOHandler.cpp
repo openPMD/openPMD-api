@@ -371,11 +371,7 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
             d = Datatype::BOOL;
         }
 
-        // note: due to a C++17 issue with ICC 19.1.2 we write the
-        //       T value to variant conversion explicitly
-        //       https://github.com/openPMD/openPMD-api/pull/...
-        // Attribute a(0);
-        Attribute a(static_cast<Attribute::resource>(0));
+        Attribute a(0);
         a.dtype = d;
         std::vector< hsize_t > dims;
         std::uint64_t num_elements = 1u;

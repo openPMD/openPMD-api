@@ -242,11 +242,7 @@ RecordComponent::flush(std::string const& name)
                 aWrite.resource = rc.m_constantValue.getResource();
                 IOHandler()->enqueue(IOTask(this, aWrite));
                 aWrite.name = "shape";
-                // note: due to a C++17 issue with ICC 19.1.2 we write the
-                //       T value to variant conversion explicitly
-                //       https://github.com/openPMD/openPMD-api/pull/...
-                // Attribute a(getExtent());
-                Attribute a(static_cast<Attribute::resource>(getExtent()));
+                Attribute a(getExtent());
                 aWrite.dtype = a.dtype;
                 aWrite.resource = a.getResource();
                 IOHandler()->enqueue(IOTask(this, aWrite));
