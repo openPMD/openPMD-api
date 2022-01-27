@@ -28,6 +28,7 @@
 #include "openPMD/auxiliary/Environment.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
+#include "openPMD/auxiliary/TypeTraits.hpp"
 
 #include <algorithm>
 #include <cctype> // std::tolower
@@ -1401,7 +1402,7 @@ namespace detail
                 "[ADIOS2] Internal error: no support for long double complex "
                 "attribute types" );
         }
-        else if constexpr( IsVector_v< T > )
+        else if constexpr( auxiliary::IsVector_v< T > )
         {
             auto attr = IO.InquireAttribute< typename T::value_type >( name );
             if ( !attr )
@@ -1411,7 +1412,7 @@ namespace detail
             }
             *resource = attr.Data();
         }
-        else if constexpr( IsArray_v< T > )
+        else if constexpr( auxiliary::IsArray_v< T > )
         {
             auto attr = IO.InquireAttribute< typename T::value_type >( name );
             if ( !attr )
@@ -1568,7 +1569,7 @@ namespace detail
                 "[ADIOS2] Internal error: no support for long double complex "
                 "attribute types" );
         }
-        else if constexpr( IsVector_v< T > )
+        else if constexpr( auxiliary::IsVector_v< T > )
         {
             auto attr = IO.DefineAttribute( fullName, value.data(), value.size() );
             if( !attr )
@@ -1578,7 +1579,7 @@ namespace detail
                     "'." );
             }
         }
-        else if constexpr( IsArray_v< T > )
+        else if constexpr( auxiliary::IsArray_v< T > )
         {
             auto attr = IO.DefineAttribute( fullName, value.data(), value.size() );
             if( !attr )
