@@ -249,7 +249,6 @@ jobs:
 #      echo '#include <openPMD/openPMD.hpp>' > main.cu
 #      echo 'int main(){ return 0; }' >> main.cu
 #      cat main.cu
-#      nvcc --Werror all-warnings -std=c++14 main.cu
 #      nvcc --Werror all-warnings -std=c++17 main.cu
 
 - job: linux_spack_nompi
@@ -346,8 +345,8 @@ jobs:
       openpmd-ls --help
 
 # source ----------------------------------------------------------------------
-- job: linux_source_cuda10_0
-  displayName: Ubuntu dev source w/ CUDA 10.0.130
+- job: linux_source_cuda11_0
+  displayName: Ubuntu dev source w/ CUDA 11.0.3
   pool:
     vmImage: ubuntu-18.04
   steps:
@@ -357,7 +356,7 @@ jobs:
       sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
       sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
       sudo apt-get update
-      sudo apt-get install -y cmake cuda-10-0 g++ libhdf5-dev libadios-dev
+      sudo apt-get install -y cmake cuda g++ libhdf5-dev libadios-dev
       curl -L -o cmake-easyinstall https://git.io/JvLxY
       chmod a+x cmake-easyinstall
       ./cmake-easyinstall --prefix=$HOME/sw/openPMD-api git+https://github.com/openPMD/openPMD-api.git
@@ -365,23 +364,20 @@ jobs:
       echo 'int main(){ return 0; }' >> main.cu
       cat main.cu
       export PATH=/usr/local/cuda/bin:$PATH
-      nvcc -std=c++14 -I$HOME/sw/openPMD-api/include main.cu
-#      nvcc -std=c++17 -I$HOME/sw/openPMD-api/include main.cu
-# CUDA 10.2+:
-#     nvcc --Werror all-warnings -std c++14 main.cu
+      nvcc --Werror all-warnings -std=c++17 -I$HOME/sw/openPMD-api/include main.cu
+#     nvcc --Werror all-warnings -std=c++20 -I$HOME/sw/openPMD-api/include main.cu
 # cudatoolkit-dev: conda install has permission problems creating some symlinks
-# nvidia-cuda-toolkit 9.1.85: nvcc eats all memory & segfaults
 
-- job: linux_source_cuda10_2
-  displayName: Ubuntu dev source w/ CUDA 10.2.89 w/ OpenMPI
+- job: linux_source_cuda11_6
+  displayName: Ubuntu dev source w/ CUDA 11.6.0 w/ OpenMPI
   pool:
-    vmImage: ubuntu-18.04
+    vmImage: ubuntu-20.04
   steps:
   - script: |
-      wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
-      sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
-      sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
-      sudo add-apt-repository "deb http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
+      wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin
+      sudo mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600
+      sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub
+      sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /"
       sudo apt-get update
       sudo apt-get install -y cmake cuda g++ libhdf5-openmpi-dev libopenmpi-dev
       curl -L -o cmake-easyinstall https://git.io/JvLxY
@@ -391,8 +387,8 @@ jobs:
       echo 'int main(){ return 0; }' >> main.cu
       cat main.cu
       export PATH=/usr/local/cuda/bin:$PATH
-      nvcc -std=c++14 --Werror all-warnings -I$HOME/sw/openPMD-api/include -Xcompiler "$(mpic++ -showme:compile)" main.cu
-#      nvcc -std=c++17 --Werror all-warnings -I$HOME/sw/openPMD-api/include -Xcompiler "$(mpic++ -showme:compile)" main.cu
+      nvcc -std=c++17 --Werror all-warnings -I$HOME/sw/openPMD-api/include -Xcompiler "$(mpic++ -showme:compile)" main.cu
+#     nvcc -std=c++20 --Werror all-warnings -I$HOME/sw/openPMD-api/include -Xcompiler "$(mpic++ -showme:compile)" main.cu
 # Ubuntu Disco (19.04) and later: libadios-openmpi-dev
 
 - job: linux_source_oneAPI_icc
@@ -421,8 +417,8 @@ jobs:
       echo 'int main(){ return 0; }' >> main.cpp
       cat main.cpp
       export PATH=/usr/local/cuda/bin:$PATH
-      icc -std=c++14 -I$HOME/sw/openPMD-api/include main.cpp
       icc -std=c++17 -I$HOME/sw/openPMD-api/include main.cpp
+      icc -std=c++20 -I$HOME/sw/openPMD-api/include main.cpp
 # Ref.: https://github.com/rscohn2/oneapi-ci
 
 
