@@ -81,10 +81,11 @@ public:
     { }
 
     /**
-     * Compiler bug: NVCCC release 11.1, V11.1.105:
+     * Compiler bug: CUDA (nvcc) releases 11.0.3 (v11.0.221), 11.1 (v11.1.105):
      * > no instance of constructor "openPMD::Attribute::Attribute"
      * > matches the argument list
      * > argument types are: (int)
+     * Same with ICC 19.1.2 (both use EDG compiler frontends).
      *
      * Fix by explicitly instantiating resource
      */
