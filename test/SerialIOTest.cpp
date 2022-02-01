@@ -3592,6 +3592,16 @@ this = "should not warn"
     "engine": {
       "type": "bp3",
       "unused": "parameter"
+    },
+    "dataset": {
+      "operators": [
+        {
+          "type": "blosc",
+          "parameters": {
+            "nthreads": 8
+          }
+        }
+      ]
     }
   }
 }
@@ -3602,6 +3612,16 @@ this = "should not warn"
     "engine": {
       "type": "bp4",
       "unused": "parameter"
+    },
+    "dataset": {
+      "operators": [
+        {
+          "type": "blosc",
+          "parameters": {
+            "nthreads": 8
+          }
+        }
+      ]
     }
   }
 }
