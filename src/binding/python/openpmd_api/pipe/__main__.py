@@ -15,10 +15,18 @@ import sys  # sys.stderr.write
 from .. import openpmd_api_cxx as io
 
 # MPI is an optional dependency
-try:
-    from mpi4py import MPI
-    HAVE_MPI = True
-except ImportError:
+if io.variants['mpi']:
+    try:
+        from mpi4py import MPI
+        HAVE_MPI = True
+    except (ImportError, ModuleNotFoundError):
+        print("""
+openPMD-api was built with support for MPI,
+but mpi4py Python package was not found.
+Will continue in serial mode.""",
+              file=sys.stderr)
+        HAVE_MPI = False
+else:
     HAVE_MPI = False
 
 debug = False
