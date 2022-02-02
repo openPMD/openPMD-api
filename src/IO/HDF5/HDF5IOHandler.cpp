@@ -390,6 +390,8 @@ HDF5IOHandlerImpl::createDataset(Writable* writable,
         /* enable chunking on the created dataspace */
         hid_t datasetCreationProperty = H5Pcreate(H5P_DATASET_CREATE);
 
+        H5Pset_fill_time(datasetCreationProperty, H5D_FILL_TIME_NEVER);
+
         if( num_elements != 0u && m_chunks != "none" )
         {
             //! @todo add per dataset chunk control from JSON config
