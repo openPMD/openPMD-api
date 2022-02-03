@@ -3598,7 +3598,7 @@ this = "should not warn"
         {
           "type": "blosc",
           "parameters": {
-            "nthreads": 8
+            "nthreads": 2
           }
         }
       ]
@@ -3618,7 +3618,7 @@ this = "should not warn"
         {
           "type": "blosc",
           "parameters": {
-            "nthreads": 8
+            "nthreads": 2
           }
         }
       ]
