@@ -787,7 +787,7 @@ main( int argc, char *argv[] )
     }
 
     auto backends = getBackends();
-    for ( auto which: backends )
+    for ( const auto& which: backends )
       {
          input.m_Backend = which;
          input.run(prefix);
