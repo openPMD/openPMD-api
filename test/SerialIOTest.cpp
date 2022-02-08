@@ -4986,7 +4986,7 @@ void no_explicit_flush( std::string filename )
     {
         Series series( filename, Access::READ_ONLY );
         size_t index = 0;
-        for( auto iteration : series.readIterations() )
+        for( const auto& iteration : series.readIterations() )
         {
             REQUIRE( iteration.iterationIndex == index );
             ++index;
