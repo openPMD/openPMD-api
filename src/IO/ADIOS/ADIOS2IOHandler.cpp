@@ -1660,6 +1660,14 @@ namespace detail
                 "' from file " + *file + "." );
         }
 
+        // Operators in reading needed e.g. for setting decompression threads
+        for( auto const & operation : impl->defaultOperators )
+        {
+            if( operation.op )
+            {
+                var.AddOperation( operation.op, operation.params );
+            }
+        }
         // cast from adios2::Dims to openPMD::Extent
         auto const shape = var.Shape();
         parameters.extent->clear();
