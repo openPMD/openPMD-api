@@ -1786,9 +1786,10 @@ void CommonADIOS1IOHandlerImpl< ChildClass >::initJson(
     }
 }
 
-template class CommonADIOS1IOHandlerImpl< ADIOS1IOHandlerImpl >;
 #if openPMD_HAVE_MPI
 template class CommonADIOS1IOHandlerImpl< ParallelADIOS1IOHandlerImpl >;
+#else
+template class CommonADIOS1IOHandlerImpl< ADIOS1IOHandlerImpl >;
 #endif // openPMD_HAVE_MPI
 
 } // namespace openPMD

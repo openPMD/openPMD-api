@@ -459,15 +459,19 @@ set(IO_SOURCE
 set(IO_ADIOS1_SEQUENTIAL_SOURCE
         src/Error.cpp
         src/auxiliary/Filesystem.cpp
+        src/auxiliary/JSON.cpp
         src/ChunkInfo.cpp
         src/IO/ADIOS/CommonADIOS1IOHandler.cpp
-        src/IO/ADIOS/ADIOS1IOHandler.cpp)
+        src/IO/ADIOS/ADIOS1IOHandler.cpp
+        src/IO/IOTask.cpp)
 set(IO_ADIOS1_SOURCE
         src/Error.cpp
         src/auxiliary/Filesystem.cpp
+        src/auxiliary/JSON.cpp
         src/ChunkInfo.cpp
         src/IO/ADIOS/CommonADIOS1IOHandler.cpp
-        src/IO/ADIOS/ParallelADIOS1IOHandler.cpp)
+        src/IO/ADIOS/ParallelADIOS1IOHandler.cpp
+        src/IO/IOTask.cpp)
 
 # library
 if(openPMD_BUILD_SHARED_LIBS)
@@ -554,15 +558,41 @@ if(openPMD_HAVE_ADIOS1)
         $<TARGET_PROPERTY:openPMD::thirdparty::nlohmann_json,INTERFACE_INCLUDE_DIRECTORIES>
         $<TARGET_PROPERTY:openPMD::thirdparty::toml11,INTERFACE_INCLUDE_DIRECTORIES>)
 
+    # Strip all symbols from wrapped library objects, so we can link parallel
+    # and serial ADIOS1 (with MPI mock/stubs) at the same time.
+    include(CheckLinkerFlag)
+    # Vanilla Clang, g++, etc., e.g., on conda-forge
+    set(_GNU_LINKSTRIP "LINKER:SHELL:--exclude-libs,ALL")
+    set(_LLVM_LINKSTRIP "LINKER:SHELL:--exclude-libs=ALL")
+    set(_LD64_LINKSTRIP "LINKER:SHELL:-unexported_symbol,_*")  # cctools
+    set(_LD64_LINKSTRIP "LINKER:-s")  # cctools/ld: strip all unexported
+    check_linker_flag(CXX "${_GNU_LINKSTRIP}" SUPP_GNU_LINKSTRIP)
+    check_linker_flag(CXX "${_LLVM_LINKSTRIP}" SUPP_LLVM_LINKSTRIP)
+    check_linker_flag(CXX "${_LD64_LINKSTRIP}" SUPP_LD64_LINKSTRIP)
+
     set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
         POSITION_INDEPENDENT_CODE ON
         CXX_VISIBILITY_PRESET hidden
         VISIBILITY_INLINES_HIDDEN ON
     )
     if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-        set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
-            LINK_FLAGS "-Wl,--exclude-libs,ALL")
+        if(SUPP_GNU_LINKSTRIP)
+            target_link_options(openPMD.ADIOS1.Serial PRIVATE "${_GNU_LINKSTRIP}")
+        elseif(SUPP_LLVM_LINKSTRIP)
+            target_link_options(openPMD.ADIOS1.Serial PRIVATE "${_LLVM_LINKSTRIP}")
+        elseif(SUPP_LD64_LINKSTRIP)
+            target_link_options(openPMD.ADIOS1.Serial PRIVATE "${_LD64_LINKSTRIP}")
+        else()
+            message(WARNING "Cannot strip serial ADIOS1 MPI mock")
+        endif()
     elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
+        if(SUPP_GNU_LINKSTRIP)
+            target_link_options(openPMD.ADIOS1.Serial PRIVATE "${_GNU_LINKSTRIP}")
+        elseif(SUPP_LLVM_LINKSTRIP)
+            target_link_options(openPMD.ADIOS1.Serial PRIVATE "${_LLVM_LINKSTRIP}")
+        elseif(SUPP_LD64_LINKSTRIP)
+            target_link_options(openPMD.ADIOS1.Serial PRIVATE "${_LD64_LINKSTRIP}")
+        endif()
         set_target_properties(openPMD.ADIOS1.Serial PROPERTIES
             XCODE_ATTRIBUTE_STRIP_STYLE "non-global"
             XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING "YES"
@@ -585,9 +615,23 @@ if(openPMD_HAVE_ADIOS1)
             VISIBILITY_INLINES_HIDDEN 1
         )
         if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
-            set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES
-                LINK_FLAGS "-Wl,--exclude-libs,ALL")
+            if(SUPP_GNU_LINKSTRIP)
+                target_link_options(openPMD.ADIOS1.Parallel PRIVATE "${_GNU_LINKSTRIP}")
+            elseif(SUPP_LLVM_LINKSTRIP)
+                target_link_options(openPMD.ADIOS1.Parallel PRIVATE "${_LLVM_LINKSTRIP}")
+            elseif(SUPP_LD64_LINKSTRIP)
+                target_link_options(openPMD.ADIOS1.Parallel PRIVATE "${_LD64_LINKSTRIP}")
+            else()
+                message(WARNING "Cannot strip serial ADIOS1 MPI mock")
+            endif()
         elseif("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
+            if(SUPP_GNU_LINKSTRIP)
+                target_link_options(openPMD.ADIOS1.Parallel PRIVATE "${_GNU_LINKSTRIP}")
+            elseif(SUPP_LLVM_LINKSTRIP)
+                target_link_options(openPMD.ADIOS1.Parallel PRIVATE "${_LLVM_LINKSTRIP}")
+            elseif(SUPP_LD64_LINKSTRIP)
+                target_link_options(openPMD.ADIOS1.Parallel PRIVATE "${_LD64_LINKSTRIP}")
+            endif()
             set_target_properties(openPMD.ADIOS1.Parallel PROPERTIES
                 XCODE_ATTRIBUTE_STRIP_STYLE "non-global"
                 XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING "YES"
