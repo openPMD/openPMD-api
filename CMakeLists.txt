@@ -681,7 +681,12 @@ if(openPMD_HAVE_PYTHON)
     endif()
     unset(_USE_PY_LTO)
 
-    pybind11_extension(openPMD.py)
+    if(EMSCRIPTEN)
+        set_target_properties(openPMD.py PROPERTIES
+            PREFIX "")
+    else()
+        pybind11_extension(openPMD.py)
+    endif()
     pybind11_strip(openPMD.py)
 
     set_target_properties(openPMD.py PROPERTIES CXX_VISIBILITY_PRESET "hidden"
