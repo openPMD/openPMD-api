@@ -115,6 +115,8 @@ For some exotic architectures and compilers, you might need to disable a compile
    # optional:                                                --user
    python3 -m pip install openpmd-api --no-binary openpmd-api
 
+Additional CMake options can be passed via individual environment variables, which need to be prefixed with ``openPMD_CMAKE_``.
+
 .. _install-cmake:
 
 .. only:: html
