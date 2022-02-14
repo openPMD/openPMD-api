@@ -212,6 +212,8 @@ export CMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF
 python3 -m pip install openpmd-api --no-binary openpmd-api
 ```
 
+Additional CMake options can be passed via individual environment variables, which need to be prefixed with `openPMD_CMAKE_`.
+
 ### From Source
 
 [![Source Use Case](https://img.shields.io/badge/use_case-development-brightgreen)](https://cmake.org)
