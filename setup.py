@@ -79,6 +79,8 @@ class CMakeBuild(build_ext):
             #   just as well win32 & cygwin (although Windows has no RPaths)
             cmake_args.append('-DCMAKE_INSTALL_RPATH=$ORIGIN')
 
+        cmake_args += extra_cmake_args
+
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
 
@@ -138,6 +140,16 @@ BUILD_EXAMPLES = os.environ.get('openPMD_BUILD_EXAMPLES',
                                 BUILD_EXAMPLES)
 CMAKE_INTERPROCEDURAL_OPTIMIZATION = os.environ.get(
     'CMAKE_INTERPROCEDURAL_OPTIMIZATION', None)
+
+# extra CMake arguments
+extra_cmake_args = []
+for k, v in os.environ.items():
+    extra_cmake_args_prefix = "openPMD_CMAKE_"
+    if k.startswith(extra_cmake_args_prefix) and \
+       len(k) > len(extra_cmake_args_prefix):
+        extra_cmake_args.append("-D{0}={1}".format(
+            k[len(extra_cmake_args_prefix):],
+            v))
 
 # https://cmake.org/cmake/help/v3.0/command/if.html
 if openPMD_USE_MPI.upper() in ['1', 'ON', 'TRUE', 'YES']:
