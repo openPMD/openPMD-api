@@ -4,7 +4,7 @@
 
 namespace openPMD
 {
-const char * Error::what() const noexcept
+const char *Error::what() const noexcept
 {
     return m_what.c_str();
 }
@@ -12,41 +12,38 @@ const char * Error::what() const noexcept
 namespace error
 {
     OperationUnsupportedInBackend::OperationUnsupportedInBackend(
-        std::string backend_in, std::string what )
-        : Error( "Operation unsupported in " + backend_in + ": " + what )
-        , backend{ std::move( backend_in ) }
-    {
-    }
+        std::string backend_in, std::string what)
+        : Error("Operation unsupported in " + backend_in + ": " + what)
+        , backend{std::move(backend_in)}
+    {}
 
-    WrongAPIUsage::WrongAPIUsage( std::string what )
-        : Error( "Wrong API usage: " + what )
-    {
-    }
+    WrongAPIUsage::WrongAPIUsage(std::string what)
+        : Error("Wrong API usage: " + what)
+    {}
 
     static std::string concatVector(
-        std::vector< std::string > const & vec,
-        std::string const & intersperse = "." )
+        std::vector<std::string> const &vec,
+        std::string const &intersperse = ".")
     {
-        if( vec.empty() )
+        if (vec.empty())
         {
             return "";
         }
         std::stringstream res;
-        res << vec[ 0 ];
-        for( size_t i = 1; i < vec.size(); ++i )
+        res << vec[0];
+        for (size_t i = 1; i < vec.size(); ++i)
         {
-            res << intersperse << vec[ i ];
+            res << intersperse << vec[i];
         }
         return res.str();
     }
 
     BackendConfigSchema::BackendConfigSchema(
-        std::vector< std::string > errorLocation_in, std::string what )
+        std::vector<std::string> errorLocation_in, std::string what)
         : Error(
               "Wrong JSON/TOML schema at index '" +
-              concatVector( errorLocation_in ) + "': " + std::move( what ) )
-        , errorLocation( std::move( errorLocation_in ) )
-    {
-    }
-}
-}
+              concatVector(errorLocation_in) + "': " + std::move(what))
+        , errorLocation(std::move(errorLocation_in))
+    {}
+} // namespace error
+} // namespace openPMD

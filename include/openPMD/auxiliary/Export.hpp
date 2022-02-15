@@ -21,20 +21,22 @@
 #pragma once
 
 #ifndef OPENPMDAPI_EXPORT
-#   ifdef _MSC_VER
-#       define OPENPMDAPI_EXPORT __declspec( dllexport )
-#   elif defined(__NVCC__)
-#       define OPENPMDAPI_EXPORT
-#   else
-#       define OPENPMDAPI_EXPORT __attribute__((visibility("default")))
-#   endif
+#ifdef _MSC_VER
+#define OPENPMDAPI_EXPORT __declspec(dllexport)
+#elif defined(__NVCC__)
+#define OPENPMDAPI_EXPORT
+#else
+#define OPENPMDAPI_EXPORT __attribute__((visibility("default")))
+#endif
 #endif
 
 #ifndef OPENPMDAPI_EXPORT_ENUM_CLASS
-#   if defined(__GNUC__) && (__GNUC__ < 6) && !defined(__clang__) && !defined(__INTEL_COMPILER)
-        // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=43407
-#       define OPENPMDAPI_EXPORT_ENUM_CLASS(ECNAME) enum class ECNAME : OPENPMDAPI_EXPORT unsigned int
-#   else
-#       define OPENPMDAPI_EXPORT_ENUM_CLASS(ECNAME) enum class OPENPMDAPI_EXPORT ECNAME
-#   endif
+#if defined(__GNUC__) && (__GNUC__ < 6) && !defined(__clang__) &&              \
+    !defined(__INTEL_COMPILER)
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=43407
+#define OPENPMDAPI_EXPORT_ENUM_CLASS(ECNAME)                                   \
+    enum class ECNAME : OPENPMDAPI_EXPORT unsigned int
+#else
+#define OPENPMDAPI_EXPORT_ENUM_CLASS(ECNAME) enum class OPENPMDAPI_EXPORT ECNAME
+#endif
 #endif

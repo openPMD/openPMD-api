@@ -21,23 +21,23 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/backend/PatchRecord.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
-#include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/binding/python/UnitDimension.hpp"
 
 namespace py = pybind11;
 using namespace openPMD;
 
-
-void init_PatchRecord(py::module &m) {
-    py::class_<PatchRecord, BaseRecord< PatchRecordComponent > >(m, "Patch_Record")
-        .def_property("unit_dimension",
-                      &PatchRecord::unitDimension,
-                      &PatchRecord::setUnitDimension,
-                      python::doc_unit_dimension)
+void init_PatchRecord(py::module &m)
+{
+    py::class_<PatchRecord, BaseRecord<PatchRecordComponent>>(m, "Patch_Record")
+        .def_property(
+            "unit_dimension",
+            &PatchRecord::unitDimension,
+            &PatchRecord::setUnitDimension,
+            python::doc_unit_dimension)
 
         // TODO remove in future versions (deprecated)
-        .def("set_unit_dimension", &PatchRecord::setUnitDimension)
-    ;
+        .def("set_unit_dimension", &PatchRecord::setUnitDimension);
 }

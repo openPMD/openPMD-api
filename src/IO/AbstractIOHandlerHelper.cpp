@@ -32,91 +32,86 @@
 namespace openPMD
 {
 #if openPMD_HAVE_MPI
-    template<>
-    std::shared_ptr< AbstractIOHandler >
-    createIOHandler< json::TracingJSON >(
-        std::string path,
-        Access access,
-        Format format,
-        MPI_Comm comm,
-        json::TracingJSON options )
+template <>
+std::shared_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
+    std::string path,
+    Access access,
+    Format format,
+    MPI_Comm comm,
+    json::TracingJSON options)
+{
+    (void)options;
+    switch (format)
     {
-        (void) options;
-        switch( format )
-        {
-            case Format::HDF5:
-                return std::make_shared< ParallelHDF5IOHandler >(
-                    path, access, comm, std::move( options ) );
-            case Format::ADIOS1:
-#   if openPMD_HAVE_ADIOS1
-                return std::make_shared< ParallelADIOS1IOHandler >(
-                    path, access, std::move( options ), comm );
-#   else
-                throw std::runtime_error("openPMD-api built without ADIOS1 support");
-#   endif
-            case Format::ADIOS2:
-                return std::make_shared< ADIOS2IOHandler >(
-                    path, access, comm, std::move( options ), "bp4" );
-            case Format::ADIOS2_SST:
-                return std::make_shared< ADIOS2IOHandler >(
-                    path, access, comm, std::move( options ), "sst" );
-            case Format::ADIOS2_SSC:
-                return std::make_shared< ADIOS2IOHandler >(
-                    path, access, comm, std::move( options ), "ssc" );
-            default:
-                throw std::runtime_error(
-                    "Unknown file format! Did you specify a file ending?" );
-        }
+    case Format::HDF5:
+        return std::make_shared<ParallelHDF5IOHandler>(
+            path, access, comm, std::move(options));
+    case Format::ADIOS1:
+#if openPMD_HAVE_ADIOS1
+        return std::make_shared<ParallelADIOS1IOHandler>(
+            path, access, std::move(options), comm);
+#else
+        throw std::runtime_error("openPMD-api built without ADIOS1 support");
+#endif
+    case Format::ADIOS2:
+        return std::make_shared<ADIOS2IOHandler>(
+            path, access, comm, std::move(options), "bp4");
+    case Format::ADIOS2_SST:
+        return std::make_shared<ADIOS2IOHandler>(
+            path, access, comm, std::move(options), "sst");
+    case Format::ADIOS2_SSC:
+        return std::make_shared<ADIOS2IOHandler>(
+            path, access, comm, std::move(options), "ssc");
+    default:
+        throw std::runtime_error(
+            "Unknown file format! Did you specify a file ending?");
     }
+}
 #endif
 
-    template<>
-    std::shared_ptr< AbstractIOHandler >
-    createIOHandler< json::TracingJSON >(
-        std::string path,
-        Access access,
-        Format format,
-        json::TracingJSON options )
+template <>
+std::shared_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
+    std::string path, Access access, Format format, json::TracingJSON options)
+{
+    (void)options;
+    switch (format)
     {
-        (void) options;
-        switch( format )
-        {
-            case Format::HDF5:
-                return std::make_shared< HDF5IOHandler >(
-                    path, access, std::move( options ) );
-            case Format::ADIOS1:
+    case Format::HDF5:
+        return std::make_shared<HDF5IOHandler>(
+            path, access, std::move(options));
+    case Format::ADIOS1:
 #if openPMD_HAVE_ADIOS1
-                return std::make_shared< ADIOS1IOHandler >(
-                    path, access, std::move( options ) );
+        return std::make_shared<ADIOS1IOHandler>(
+            path, access, std::move(options));
 #else
-                throw std::runtime_error("openPMD-api built without ADIOS1 support");
+        throw std::runtime_error("openPMD-api built without ADIOS1 support");
 #endif
 #if openPMD_HAVE_ADIOS2
-            case Format::ADIOS2:
-                return std::make_shared< ADIOS2IOHandler >(
-                    path, access, std::move( options ), "bp4" );
-            case Format::ADIOS2_SST:
-                return std::make_shared< ADIOS2IOHandler >(
-                    path, access, std::move( options ), "sst" );
-            case Format::ADIOS2_SSC:
-                return std::make_shared< ADIOS2IOHandler >(
-                    path, access, std::move( options ), "ssc" );
+    case Format::ADIOS2:
+        return std::make_shared<ADIOS2IOHandler>(
+            path, access, std::move(options), "bp4");
+    case Format::ADIOS2_SST:
+        return std::make_shared<ADIOS2IOHandler>(
+            path, access, std::move(options), "sst");
+    case Format::ADIOS2_SSC:
+        return std::make_shared<ADIOS2IOHandler>(
+            path, access, std::move(options), "ssc");
 #endif // openPMD_HAVE_ADIOS2
-            case Format::JSON:
-                return std::make_shared< JSONIOHandler >( path, access );
-            default:
-                throw std::runtime_error(
-                    "Unknown file format! Did you specify a file ending?" );
-        }
+    case Format::JSON:
+        return std::make_shared<JSONIOHandler>(path, access);
+    default:
+        throw std::runtime_error(
+            "Unknown file format! Did you specify a file ending?");
     }
+}
 
-    std::shared_ptr< AbstractIOHandler >
-    createIOHandler( std::string path, Access access, Format format )
-    {
-        return createIOHandler(
-            std::move( path ),
-            access,
-            format,
-            json::TracingJSON( json::ParsedConfig{} ));
-    }
+std::shared_ptr<AbstractIOHandler>
+createIOHandler(std::string path, Access access, Format format)
+{
+    return createIOHandler(
+        std::move(path),
+        access,
+        format,
+        json::TracingJSON(json::ParsedConfig{}));
+}
 } // namespace openPMD

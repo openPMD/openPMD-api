@@ -20,21 +20,20 @@
  */
 #pragma once
 
-#include "openPMD/backend/Container.hpp"
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/UnitDimension.hpp"
+#include "openPMD/backend/Container.hpp"
 
 #include <array>
-#include <string>
 #include <stdexcept>
-
+#include <string>
 
 namespace openPMD
 {
 namespace internal
 {
-    template< typename T_elem >
-    class BaseRecordData : public ContainerData< T_elem >
+    template <typename T_elem>
+    class BaseRecordData : public ContainerData<T_elem>
     {
     public:
         /**
@@ -47,16 +46,16 @@ namespace internal
 
         BaseRecordData();
 
-        BaseRecordData( BaseRecordData const & ) = delete;
-        BaseRecordData( BaseRecordData && ) = delete;
+        BaseRecordData(BaseRecordData const &) = delete;
+        BaseRecordData(BaseRecordData &&) = delete;
 
-        BaseRecordData & operator=( BaseRecordData const & ) = delete;
-        BaseRecordData & operator=( BaseRecordData && ) = delete;
+        BaseRecordData &operator=(BaseRecordData const &) = delete;
+        BaseRecordData &operator=(BaseRecordData &&) = delete;
     };
-}
+} // namespace internal
 
-template< typename T_elem >
-class BaseRecord : public Container< T_elem >
+template <typename T_elem>
+class BaseRecord : public Container<T_elem>
 {
     friend class Iteration;
     friend class ParticleSpecies;
@@ -64,15 +63,15 @@ class BaseRecord : public Container< T_elem >
     friend class Record;
     friend class Mesh;
 
-    std::shared_ptr< internal::BaseRecordData< T_elem > > m_baseRecordData{
-        new internal::BaseRecordData< T_elem >() };
+    std::shared_ptr<internal::BaseRecordData<T_elem>> m_baseRecordData{
+        new internal::BaseRecordData<T_elem>()};
 
-    inline internal::BaseRecordData< T_elem > & get()
+    inline internal::BaseRecordData<T_elem> &get()
     {
         return *m_baseRecordData;
     }
 
-    inline internal::BaseRecordData< T_elem > const & get() const
+    inline internal::BaseRecordData<T_elem> const &get() const
     {
         return *m_baseRecordData;
     }
@@ -80,34 +79,33 @@ class BaseRecord : public Container< T_elem >
     BaseRecord();
 
 protected:
+    BaseRecord(std::shared_ptr<internal::BaseRecordData<T_elem>>);
 
-    BaseRecord( std::shared_ptr< internal::BaseRecordData< T_elem > > );
-
-    inline void setData( internal::BaseRecordData< T_elem > * data )
+    inline void setData(internal::BaseRecordData<T_elem> *data)
     {
-        m_baseRecordData = std::move( data );
-        Container< T_elem >::setData( m_baseRecordData );
+        m_baseRecordData = std::move(data);
+        Container<T_elem>::setData(m_baseRecordData);
     }
 
 public:
-    using key_type = typename Container< T_elem >::key_type;
-    using mapped_type = typename Container< T_elem >::mapped_type;
-    using value_type = typename Container< T_elem >::value_type;
-    using size_type = typename Container< T_elem >::size_type;
-    using difference_type = typename Container< T_elem >::difference_type;
-    using allocator_type = typename Container< T_elem >::allocator_type;
-    using reference = typename Container< T_elem >::reference;
-    using const_reference = typename Container< T_elem >::const_reference;
-    using pointer = typename Container< T_elem >::pointer;
-    using const_pointer = typename Container< T_elem >::const_pointer;
-    using iterator = typename Container< T_elem >::iterator;
-    using const_iterator = typename Container< T_elem >::const_iterator;
+    using key_type = typename Container<T_elem>::key_type;
+    using mapped_type = typename Container<T_elem>::mapped_type;
+    using value_type = typename Container<T_elem>::value_type;
+    using size_type = typename Container<T_elem>::size_type;
+    using difference_type = typename Container<T_elem>::difference_type;
+    using allocator_type = typename Container<T_elem>::allocator_type;
+    using reference = typename Container<T_elem>::reference;
+    using const_reference = typename Container<T_elem>::const_reference;
+    using pointer = typename Container<T_elem>::pointer;
+    using const_pointer = typename Container<T_elem>::const_pointer;
+    using iterator = typename Container<T_elem>::iterator;
+    using const_iterator = typename Container<T_elem>::const_iterator;
 
     virtual ~BaseRecord() = default;
 
-    mapped_type& operator[](key_type const& key) override;
-    mapped_type& operator[](key_type&& key) override;
-    size_type erase(key_type const& key) override;
+    mapped_type &operator[](key_type const &key) override;
+    mapped_type &operator[](key_type &&key) override;
+    size_type erase(key_type const &key) override;
     iterator erase(iterator res) override;
     //! @todo add also, as soon as added in Container:
     // iterator erase(const_iterator first, const_iterator last) override;
@@ -123,12 +121,14 @@ public:
      * (ISQ).
      *
      * @see https://en.wikipedia.org/wiki/Dimensional_analysis
-     * @see https://en.wikipedia.org/wiki/International_System_of_Quantities#Base_quantities
-     * @see https://github.com/openPMD/openPMD-standard/blob/1.1.0/STANDARD.md#required-for-each-record
+     * @see
+     * https://en.wikipedia.org/wiki/International_System_of_Quantities#Base_quantities
+     * @see
+     * https://github.com/openPMD/openPMD-standard/blob/1.1.0/STANDARD.md#required-for-each-record
      *
      * @return powers of the 7 base measures in the order specified above
      */
-    std::array< double, 7 > unitDimension() const;
+    std::array<double, 7> unitDimension() const;
 
     /** Returns true if this record only contains a single component
      *
@@ -137,12 +137,12 @@ public:
     bool scalar() const;
 
 protected:
-    BaseRecord( internal::BaseRecordData< T_elem > * );
+    BaseRecord(internal::BaseRecordData<T_elem> *);
     void readBase();
 
 private:
-    void flush(std::string const&) final;
-    virtual void flush_impl(std::string const&) = 0;
+    void flush(std::string const &) final;
+    virtual void flush_impl(std::string const &) = 0;
     virtual void read() = 0;
 
     /**
@@ -153,55 +153,53 @@ private:
      * @return true If dirty.
      * @return false Otherwise.
      */
-    bool
-    dirtyRecursive() const;
+    bool dirtyRecursive() const;
 }; // BaseRecord
-
 
 // implementation
 
 namespace internal
 {
-    template< typename T_elem >
-    BaseRecordData< T_elem >::BaseRecordData()
+    template <typename T_elem>
+    BaseRecordData<T_elem>::BaseRecordData()
     {
-        Attributable impl{ { this, []( auto const * ){} } };
+        Attributable impl{{this, [](auto const *) {}}};
         impl.setAttribute(
             "unitDimension",
-            std::array< double, 7 >{ { 0., 0., 0., 0., 0., 0., 0. } } );
+            std::array<double, 7>{{0., 0., 0., 0., 0., 0., 0.}});
     }
 } // namespace internal
 
-template< typename T_elem >
-BaseRecord< T_elem >::BaseRecord() : Container< T_elem >{ nullptr }
+template <typename T_elem>
+BaseRecord<T_elem>::BaseRecord() : Container<T_elem>{nullptr}
 {
-    Container< T_elem >::setData( m_baseRecordData );
+    Container<T_elem>::setData(m_baseRecordData);
 }
 
-template< typename T_elem >
-BaseRecord< T_elem >::BaseRecord(
-    std::shared_ptr< internal::BaseRecordData< T_elem > > data )
-    : Container< T_elem >{ data }
-    , m_baseRecordData{ std::move( data ) }
-{
-}
+template <typename T_elem>
+BaseRecord<T_elem>::BaseRecord(
+    std::shared_ptr<internal::BaseRecordData<T_elem>> data)
+    : Container<T_elem>{data}, m_baseRecordData{std::move(data)}
+{}
 
-template< typename T_elem >
-inline typename BaseRecord< T_elem >::mapped_type &
-BaseRecord< T_elem >::operator[]( key_type const & key )
+template <typename T_elem>
+inline typename BaseRecord<T_elem>::mapped_type &
+BaseRecord<T_elem>::operator[](key_type const &key)
 {
     auto it = this->find(key);
-    if( it != this->end() )
+    if (it != this->end())
         return it->second;
     else
     {
         bool const keyScalar = (key == RecordComponent::SCALAR);
-        if( (keyScalar && !Container< T_elem >::empty() && !scalar()) || (scalar() && !keyScalar) )
-            throw std::runtime_error("A scalar component can not be contained at "
-                                     "the same time as one or more regular components.");
+        if ((keyScalar && !Container<T_elem>::empty() && !scalar()) ||
+            (scalar() && !keyScalar))
+            throw std::runtime_error(
+                "A scalar component can not be contained at "
+                "the same time as one or more regular components.");
 
-        mapped_type& ret = Container< T_elem >::operator[](key);
-        if( keyScalar )
+        mapped_type &ret = Container<T_elem>::operator[](key);
+        if (keyScalar)
         {
             get().m_containsScalar = true;
             ret.parent() = this->parent();
@@ -210,22 +208,24 @@ BaseRecord< T_elem >::operator[]( key_type const & key )
     }
 }
 
-template< typename T_elem >
-inline typename BaseRecord< T_elem >::mapped_type&
-BaseRecord< T_elem >::operator[](key_type&& key)
+template <typename T_elem>
+inline typename BaseRecord<T_elem>::mapped_type &
+BaseRecord<T_elem>::operator[](key_type &&key)
 {
     auto it = this->find(key);
-    if( it != this->end() )
+    if (it != this->end())
         return it->second;
     else
     {
         bool const keyScalar = (key == RecordComponent::SCALAR);
-        if( (keyScalar && !Container< T_elem >::empty() && !scalar()) || (scalar() && !keyScalar) )
-            throw std::runtime_error("A scalar component can not be contained at "
-                                     "the same time as one or more regular components.");
+        if ((keyScalar && !Container<T_elem>::empty() && !scalar()) ||
+            (scalar() && !keyScalar))
+            throw std::runtime_error(
+                "A scalar component can not be contained at "
+                "the same time as one or more regular components.");
 
-        mapped_type& ret = Container< T_elem >::operator[](std::move(key));
-        if( keyScalar )
+        mapped_type &ret = Container<T_elem>::operator[](std::move(key));
+        if (keyScalar)
         {
             get().m_containsScalar = true;
             ret.parent() = this->parent();
@@ -234,28 +234,28 @@ BaseRecord< T_elem >::operator[](key_type&& key)
     }
 }
 
-template< typename T_elem >
-inline typename BaseRecord< T_elem >::size_type
-BaseRecord< T_elem >::erase(key_type const& key)
+template <typename T_elem>
+inline typename BaseRecord<T_elem>::size_type
+BaseRecord<T_elem>::erase(key_type const &key)
 {
     bool const keyScalar = (key == RecordComponent::SCALAR);
     size_type res;
-    if( !keyScalar || (keyScalar && this->at(key).constant()) )
-        res = Container< T_elem >::erase(key);
+    if (!keyScalar || (keyScalar && this->at(key).constant()))
+        res = Container<T_elem>::erase(key);
     else
     {
-        mapped_type& rc = this->find(RecordComponent::SCALAR)->second;
-        if( rc.written() )
+        mapped_type &rc = this->find(RecordComponent::SCALAR)->second;
+        if (rc.written())
         {
-            Parameter< Operation::DELETE_DATASET > dDelete;
+            Parameter<Operation::DELETE_DATASET> dDelete;
             dDelete.name = ".";
             this->IOHandler()->enqueue(IOTask(&rc, dDelete));
             this->IOHandler()->flush();
         }
-        res = Container< T_elem >::erase(key);
+        res = Container<T_elem>::erase(key);
     }
 
-    if( keyScalar )
+    if (keyScalar)
     {
         this->written() = false;
         this->writable().abstractFilePosition.reset();
@@ -264,28 +264,28 @@ BaseRecord< T_elem >::erase(key_type const& key)
     return res;
 }
 
-template< typename T_elem >
-inline typename BaseRecord< T_elem >::iterator
-BaseRecord< T_elem >::erase(iterator res)
+template <typename T_elem>
+inline typename BaseRecord<T_elem>::iterator
+BaseRecord<T_elem>::erase(iterator res)
 {
     bool const keyScalar = (res->first == RecordComponent::SCALAR);
     iterator ret;
-    if( !keyScalar || (keyScalar && this->at(res->first).constant()) )
-        ret = Container< T_elem >::erase(res);
+    if (!keyScalar || (keyScalar && this->at(res->first).constant()))
+        ret = Container<T_elem>::erase(res);
     else
     {
-        mapped_type& rc = this->find(RecordComponent::SCALAR)->second;
-        if( rc.written() )
+        mapped_type &rc = this->find(RecordComponent::SCALAR)->second;
+        if (rc.written())
         {
-            Parameter< Operation::DELETE_DATASET > dDelete;
+            Parameter<Operation::DELETE_DATASET> dDelete;
             dDelete.name = ".";
             this->IOHandler()->enqueue(IOTask(&rc, dDelete));
             this->IOHandler()->flush();
         }
-        ret = Container< T_elem >::erase(res);
+        ret = Container<T_elem>::erase(res);
     }
 
-    if( keyScalar )
+    if (keyScalar)
     {
         this->written() = false;
         this->writable().abstractFilePosition.reset();
@@ -294,82 +294,88 @@ BaseRecord< T_elem >::erase(iterator res)
     return ret;
 }
 
-template< typename T_elem >
-inline std::array< double, 7 >
-BaseRecord< T_elem >::unitDimension() const
+template <typename T_elem>
+inline std::array<double, 7> BaseRecord<T_elem>::unitDimension() const
 {
-    return this->getAttribute("unitDimension").template get< std::array< double, 7 > >();
+    return this->getAttribute("unitDimension")
+        .template get<std::array<double, 7>>();
 }
 
-template< typename T_elem >
-inline bool
-BaseRecord< T_elem >::scalar() const
+template <typename T_elem>
+inline bool BaseRecord<T_elem>::scalar() const
 {
     return get().m_containsScalar;
 }
 
-template< typename T_elem >
-inline void
-BaseRecord< T_elem >::readBase()
+template <typename T_elem>
+inline void BaseRecord<T_elem>::readBase()
 {
     using DT = Datatype;
-    Parameter< Operation::READ_ATT > aRead;
+    Parameter<Operation::READ_ATT> aRead;
 
     aRead.name = "unitDimension";
     this->IOHandler()->enqueue(IOTask(this, aRead));
     this->IOHandler()->flush();
-    if( *aRead.dtype == DT::ARR_DBL_7 )
-        this->setAttribute("unitDimension", Attribute(*aRead.resource).template get< std::array< double, 7 > >());
-    else if( *aRead.dtype == DT::VEC_DOUBLE )
+    if (*aRead.dtype == DT::ARR_DBL_7)
+        this->setAttribute(
+            "unitDimension",
+            Attribute(*aRead.resource).template get<std::array<double, 7>>());
+    else if (*aRead.dtype == DT::VEC_DOUBLE)
     {
-        auto vec = Attribute(*aRead.resource).template get< std::vector< double > >();
-        if( vec.size() == 7 )
+        auto vec =
+            Attribute(*aRead.resource).template get<std::vector<double>>();
+        if (vec.size() == 7)
         {
-            std::array< double, 7 > arr;
-            std::copy(vec.begin(),
-                      vec.end(),
-                      arr.begin());
+            std::array<double, 7> arr;
+            std::copy(vec.begin(), vec.end(), arr.begin());
             this->setAttribute("unitDimension", arr);
-        } else
-            throw std::runtime_error("Unexpected Attribute datatype for 'unitDimension'");
+        }
+        else
+            throw std::runtime_error(
+                "Unexpected Attribute datatype for 'unitDimension'");
     }
     else
-        throw std::runtime_error("Unexpected Attribute datatype for 'unitDimension'");
+        throw std::runtime_error(
+            "Unexpected Attribute datatype for 'unitDimension'");
 
     aRead.name = "timeOffset";
     this->IOHandler()->enqueue(IOTask(this, aRead));
     this->IOHandler()->flush();
-    if( *aRead.dtype == DT::FLOAT )
-        this->setAttribute("timeOffset", Attribute(*aRead.resource).template get< float >());
-    else if( *aRead.dtype == DT::DOUBLE )
-        this->setAttribute("timeOffset", Attribute(*aRead.resource).template get< double >());
+    if (*aRead.dtype == DT::FLOAT)
+        this->setAttribute(
+            "timeOffset", Attribute(*aRead.resource).template get<float>());
+    else if (*aRead.dtype == DT::DOUBLE)
+        this->setAttribute(
+            "timeOffset", Attribute(*aRead.resource).template get<double>());
     else
-        throw std::runtime_error("Unexpected Attribute datatype for 'timeOffset'");
+        throw std::runtime_error(
+            "Unexpected Attribute datatype for 'timeOffset'");
 }
 
-template< typename T_elem >
-inline void
-BaseRecord< T_elem >::flush(std::string const& name)
+template <typename T_elem>
+inline void BaseRecord<T_elem>::flush(std::string const &name)
 {
-    if( !this->written() && this->empty() )
-        throw std::runtime_error("A Record can not be written without any contained RecordComponents: " + name);
+    if (!this->written() && this->empty())
+        throw std::runtime_error(
+            "A Record can not be written without any contained "
+            "RecordComponents: " +
+            name);
 
     this->flush_impl(name);
     // flush_impl must take care to correctly set the dirty() flag so this
     // method doesn't do it
 }
 
-template< typename T_elem >
-inline bool
-BaseRecord< T_elem >::dirtyRecursive() const
+template <typename T_elem>
+inline bool BaseRecord<T_elem>::dirtyRecursive() const
 {
-    if( this->dirty() )
+    if (this->dirty())
     {
         return true;
     }
-    for( auto const & pair : *this )
+    for (auto const &pair : *this)
     {
-        if( pair.second.dirtyRecursive() )
+        if (pair.second.dirtyRecursive())
         {
             return true;
         }

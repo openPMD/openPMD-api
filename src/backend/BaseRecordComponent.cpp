@@ -23,60 +23,55 @@
 
 namespace openPMD
 {
-double
-BaseRecordComponent::unitSI() const
+double BaseRecordComponent::unitSI() const
 {
-    return getAttribute("unitSI").get< double >();
+    return getAttribute("unitSI").get<double>();
 }
 
-BaseRecordComponent&
-BaseRecordComponent::resetDatatype(Datatype d)
+BaseRecordComponent &BaseRecordComponent::resetDatatype(Datatype d)
 {
-    if( written() )
-        throw std::runtime_error("A Records Datatype can not (yet) be changed after it has been written.");
+    if (written())
+        throw std::runtime_error(
+            "A Records Datatype can not (yet) be changed after it has been "
+            "written.");
 
     get().m_dataset.dtype = d;
     return *this;
 }
 
-Datatype
-BaseRecordComponent::getDatatype() const
+Datatype BaseRecordComponent::getDatatype() const
 {
     return get().m_dataset.dtype;
 }
 
-bool
-BaseRecordComponent::constant() const
+bool BaseRecordComponent::constant() const
 {
     return get().m_isConstant;
 }
 
-ChunkTable
-BaseRecordComponent::availableChunks()
+ChunkTable BaseRecordComponent::availableChunks()
 {
-    auto & rc = get();
-    if( rc.m_isConstant )
+    auto &rc = get();
+    if (rc.m_isConstant)
     {
-        Offset offset( rc.m_dataset.extent.size(), 0 );
-        return ChunkTable{ { std::move( offset ), rc.m_dataset.extent } };
+        Offset offset(rc.m_dataset.extent.size(), 0);
+        return ChunkTable{{std::move(offset), rc.m_dataset.extent}};
     }
     containingIteration().open();
-    Parameter< Operation::AVAILABLE_CHUNKS > param;
-    IOTask task( this, param );
-    IOHandler()->enqueue( task );
+    Parameter<Operation::AVAILABLE_CHUNKS> param;
+    IOTask task(this, param);
+    IOHandler()->enqueue(task);
     IOHandler()->flush();
-    return std::move( *param.chunks );
+    return std::move(*param.chunks);
 }
 
 BaseRecordComponent::BaseRecordComponent(
-    std::shared_ptr< internal::BaseRecordComponentData > data)
-    : Attributable{ data }
-    , m_baseRecordComponentData{ std::move( data ) }
+    std::shared_ptr<internal::BaseRecordComponentData> data)
+    : Attributable{data}, m_baseRecordComponentData{std::move(data)}
 {}
 
-BaseRecordComponent::BaseRecordComponent()
-    : Attributable{ nullptr }
+BaseRecordComponent::BaseRecordComponent() : Attributable{nullptr}
 {
-    Attributable::setData( m_baseRecordComponentData );
+    Attributable::setData(m_baseRecordComponentData);
 }
 } // namespace openPMD

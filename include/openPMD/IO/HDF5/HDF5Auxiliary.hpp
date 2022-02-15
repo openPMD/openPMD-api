@@ -20,9 +20,9 @@
  */
 #pragma once
 
-#include "openPMD/config.hpp"
 #include "openPMD/backend/Attribute.hpp"
 #include "openPMD/backend/Writable.hpp"
+#include "openPMD/config.hpp"
 
 #include <hdf5.h>
 
@@ -31,42 +31,36 @@
 #include <unordered_map>
 #include <utility>
 
-
 namespace openPMD
 {
-    struct GetH5DataType
-    {
-        std::unordered_map< std::string, hid_t > m_userTypes;
+struct GetH5DataType
+{
+    std::unordered_map<std::string, hid_t> m_userTypes;
 
-        GetH5DataType( std::unordered_map< std::string, hid_t > userTypes )
-        : m_userTypes{ std::move(userTypes) }
-        {
-        }
+    GetH5DataType(std::unordered_map<std::string, hid_t> userTypes)
+        : m_userTypes{std::move(userTypes)}
+    {}
 
-        hid_t
-        operator()(Attribute const &att);
-    };
+    hid_t operator()(Attribute const &att);
+};
 
-    hid_t
-    getH5DataSpace(Attribute const& att);
+hid_t getH5DataSpace(Attribute const &att);
 
-    std::string
-    concrete_h5_file_position(Writable* w);
+std::string concrete_h5_file_position(Writable *w);
 
-    /** Computes the chunk dimensions for a dataset.
-     *
-     * Chunk dimensions are selected to create chunks sizes between
-     * 64KByte and 4MB. Smaller chunk sizes are inefficient due to overhead,
-     * larger chunks do not map well to file system blocks and striding.
-     *
-     * Chunk dimensions are less or equal to dataset dimensions and do
-     * not need to be a factor of the respective dataset dimension.
-     *
-     * @param[in] dims dimensions of dataset to get chunk dims for
-     * @param[in] typeSize size of each element in bytes
-     * @return array for resulting chunk dimensions
-     */
-    std::vector< hsize_t >
-    getOptimalChunkDims( std::vector< hsize_t > const dims,
-                         size_t const typeSize );
+/** Computes the chunk dimensions for a dataset.
+ *
+ * Chunk dimensions are selected to create chunks sizes between
+ * 64KByte and 4MB. Smaller chunk sizes are inefficient due to overhead,
+ * larger chunks do not map well to file system blocks and striding.
+ *
+ * Chunk dimensions are less or equal to dataset dimensions and do
+ * not need to be a factor of the respective dataset dimension.
+ *
+ * @param[in] dims dimensions of dataset to get chunk dims for
+ * @param[in] typeSize size of each element in bytes
+ * @return array for resulting chunk dimensions
+ */
+std::vector<hsize_t>
+getOptimalChunkDims(std::vector<hsize_t> const dims, size_t const typeSize);
 } // namespace openPMD

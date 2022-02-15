@@ -24,18 +24,12 @@
 
 #include <vector>
 
-
 namespace openPMD
 {
 class MeshRecordComponent : public RecordComponent
 {
-    template<
-            typename T,
-            typename T_key,
-            typename T_container
-    >
-    friend
-    class Container;
+    template <typename T, typename T_key, typename T_container>
+    friend class Container;
 
     friend class Mesh;
 
@@ -52,8 +46,8 @@ public:
      *
      * @return relative position within range of [0.0:1.0)
      */
-    template< typename T >
-    std::vector< T > position() const;
+    template <typename T>
+    std::vector<T> position() const;
 
     /** Position on an element
      *
@@ -61,8 +55,8 @@ public:
      *
      * @param[in] pos relative position in range [0.0:1.0)
      */
-    template< typename T >
-    MeshRecordComponent& setPosition(std::vector< T > pos);
+    template <typename T>
+    MeshRecordComponent &setPosition(std::vector<T> pos);
 
     /** Create a dataset with regular extent and constant value
      *
@@ -74,19 +68,18 @@ public:
      * @tparam T type of the stored value
      * @return A reference to this RecordComponent.
      */
-    template< typename T >
-    MeshRecordComponent& makeConstant(T);
+    template <typename T>
+    MeshRecordComponent &makeConstant(T);
 };
 
+template <typename T>
+std::vector<T> MeshRecordComponent::position() const
+{
+    return readVectorFloatingpoint<T>("position");
+}
 
-template< typename T >
-std::vector< T >
-MeshRecordComponent::position() const
-{ return readVectorFloatingpoint< T >("position"); }
-
-template< typename T >
-inline MeshRecordComponent&
-MeshRecordComponent::makeConstant(T value)
+template <typename T>
+inline MeshRecordComponent &MeshRecordComponent::makeConstant(T value)
 {
     RecordComponent::makeConstant(value);
     return *this;

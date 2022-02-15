@@ -22,9 +22,8 @@
 
 #include "openPMD/Series.hpp"
 
-#include <ostream>
 #include <iostream>
-
+#include <ostream>
 
 namespace openPMD
 {
@@ -35,13 +34,12 @@ namespace helper
      * @param series a openPMD data path as in Series::Series
      * @param longer write more information
      * @param out    an output stream to write textual information to
-     * @return reference to out as output stream, e.g. to pass the stream on via `operator<<`
+     * @return reference to out as output stream, e.g. to pass the stream on via
+     * `operator<<`
      */
-    std::ostream &
-    listSeries(
-        Series & series,
+    std::ostream &listSeries(
+        Series &series,
         bool const longer = false,
-        std::ostream & out = std::cout
-    );
-} // helper
-} // openPMD
+        std::ostream &out = std::cout);
+} // namespace helper
+} // namespace openPMD

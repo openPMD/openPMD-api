@@ -28,23 +28,19 @@
 #include <string>
 #include <vector>
 
-
-std::map< std::string, bool >
-openPMD::getVariants( )
+std::map<std::string, bool> openPMD::getVariants()
 {
-    return std::map< std::string, bool >{
-            {"mpi", bool(openPMD_HAVE_MPI)},
-            {"json", true},
-            {"hdf5", bool(openPMD_HAVE_HDF5)},
-            {"adios1", bool(openPMD_HAVE_ADIOS1)},
-            {"adios2", bool(openPMD_HAVE_ADIOS2)}
-    };
+    return std::map<std::string, bool>{
+        {"mpi", bool(openPMD_HAVE_MPI)},
+        {"json", true},
+        {"hdf5", bool(openPMD_HAVE_HDF5)},
+        {"adios1", bool(openPMD_HAVE_ADIOS1)},
+        {"adios2", bool(openPMD_HAVE_ADIOS2)}};
 }
 
-std::vector< std::string >
-openPMD::getFileExtensions()
+std::vector<std::string> openPMD::getFileExtensions()
 {
-    std::vector< std::string > fext;
+    std::vector<std::string> fext;
     fext.emplace_back("json");
 #if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
     fext.emplace_back("bp");

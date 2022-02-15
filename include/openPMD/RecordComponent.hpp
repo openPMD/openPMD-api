@@ -20,62 +20,58 @@
  */
 #pragma once
 
-#include "openPMD/backend/BaseRecordComponent.hpp"
-#include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/Dataset.hpp"
+#include "openPMD/auxiliary/ShareRaw.hpp"
+#include "openPMD/backend/BaseRecordComponent.hpp"
 
+#include <array>
 #include <cmath>
-#include <memory>
 #include <limits>
+#include <memory>
 #include <queue>
-#include <string>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 #include <type_traits>
 #include <vector>
-#include <array>
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_protected
-#   define OPENPMD_protected protected:
+#define OPENPMD_protected protected:
 #endif
-
 
 namespace openPMD
 {
 namespace traits
 {
-/** Emulate in the C++17 concept ContiguousContainer
- *
- * Users can implement this trait for a type to signal it can be used as
- * contiguous container.
- *
- * See:
- *   https://en.cppreference.com/w/cpp/named_req/ContiguousContainer
- */
-template< typename T >
-struct IsContiguousContainer
-{
-    static constexpr bool value = false;
-};
+    /** Emulate in the C++17 concept ContiguousContainer
+     *
+     * Users can implement this trait for a type to signal it can be used as
+     * contiguous container.
+     *
+     * See:
+     *   https://en.cppreference.com/w/cpp/named_req/ContiguousContainer
+     */
+    template <typename T>
+    struct IsContiguousContainer
+    {
+        static constexpr bool value = false;
+    };
 
-template< typename T_Value >
-struct IsContiguousContainer< std::vector< T_Value > >
-{
-    static constexpr bool value = true;
-};
+    template <typename T_Value>
+    struct IsContiguousContainer<std::vector<T_Value>>
+    {
+        static constexpr bool value = true;
+    };
 
-template<
-    typename T_Value,
-    std::size_t N
->
-struct IsContiguousContainer< std::array< T_Value, N > >
-{
-    static constexpr bool value = true;
-};
+    template <typename T_Value, std::size_t N>
+    struct IsContiguousContainer<std::array<T_Value, N>>
+    {
+        static constexpr bool value = true;
+    };
 } // namespace traits
 
-template< typename T >
+template <typename T>
 class DynamicMemoryView;
 
 class RecordComponent;
@@ -87,27 +83,28 @@ namespace internal
     public:
         RecordComponentData();
 
-        RecordComponentData( RecordComponentData const & ) = delete;
-        RecordComponentData( RecordComponentData && ) = delete;
+        RecordComponentData(RecordComponentData const &) = delete;
+        RecordComponentData(RecordComponentData &&) = delete;
 
-        RecordComponentData & operator=( RecordComponentData const & ) = delete;
-        RecordComponentData & operator=( RecordComponentData && ) = delete;
+        RecordComponentData &operator=(RecordComponentData const &) = delete;
+        RecordComponentData &operator=(RecordComponentData &&) = delete;
 
         /**
          * Chunk reading/writing requests on the contained dataset.
          */
-        std::queue< IOTask > m_chunks;
+        std::queue<IOTask> m_chunks;
         /**
          * Stores the value for constant record components.
          * Ignored otherwise.
          */
-        Attribute m_constantValue{ -1 };
+        Attribute m_constantValue{-1};
         /**
          * The same std::string that the parent class would pass as parameter to
          * RecordComponent::flush().
          * This is stored only upon RecordComponent::flush() if
          * AbstractIOHandler::flushLevel is set to FlushLevel::SkeletonOnly
-         * (for use by the Span<T>-based overload of RecordComponent::storeChunk()).
+         * (for use by the Span<T>-based overload of
+         * RecordComponent::storeChunk()).
          * @todo Merge functionality with ownKeyInParent?
          */
         std::string m_name;
@@ -124,25 +121,21 @@ namespace internal
          */
         bool m_hasBeenExtended = false;
     };
-}
+} // namespace internal
 
 class RecordComponent : public BaseRecordComponent
 {
-    template<
-            typename T,
-            typename T_key,
-            typename T_container
-    >
+    template <typename T, typename T_key, typename T_container>
     friend class Container;
     friend class Iteration;
     friend class ParticleSpecies;
-    template< typename T_elem >
+    template <typename T_elem>
     friend class BaseRecord;
-    template< typename T_elem >
+    template <typename T_elem>
     friend class BaseRecordInterface;
     friend class Record;
     friend class Mesh;
-    template< typename >
+    template <typename>
     friend class DynamicMemoryView;
     friend class internal::RecordComponentData;
     friend class MeshRecordComponent;
@@ -155,7 +148,7 @@ public:
         AUTO
     }; // Allocation
 
-    RecordComponent& setUnitSI(double);
+    RecordComponent &setUnitSI(double);
 
     /**
      * @brief Declare the dataset's type and extent.
@@ -176,7 +169,7 @@ public:
      *
      * @return RecordComponent&
      */
-    RecordComponent & resetDataset( Dataset );
+    RecordComponent &resetDataset(Dataset);
 
     uint8_t getDimensionality() const;
     Extent getExtent() const;
@@ -189,8 +182,8 @@ public:
      * @tparam T type of the stored value
      * @return A reference to this RecordComponent.
      */
-    template< typename T >
-    RecordComponent& makeConstant(T);
+    template <typename T>
+    RecordComponent &makeConstant(T);
 
     /** Create a dataset with zero extent in each dimension.
      *
@@ -200,8 +193,8 @@ public:
      *                   zero.
      * @return A reference to this RecordComponent.
      */
-    template< typename T >
-    RecordComponent& makeEmpty( uint8_t dimensions );
+    template <typename T>
+    RecordComponent &makeEmpty(uint8_t dimensions);
 
     /**
      * @brief Non-template overload of RecordComponent::makeEmpty().
@@ -211,7 +204,7 @@ public:
      * @param dimensions The dimensionality of the dataset.
      * @return RecordComponent&
      */
-    RecordComponent& makeEmpty( Datatype dt, uint8_t dimensions );
+    RecordComponent &makeEmpty(Datatype dt, uint8_t dimensions);
 
     /** Returns true if this is an empty record component
      *
@@ -229,33 +222,28 @@ public:
      * If offset is non-zero and extent is {-1u} the leftover extent in the
      * record component will be selected.
      */
-    template< typename T >
-    std::shared_ptr< T > loadChunk(
-        Offset = { 0u },
-        Extent = { -1u } );
+    template <typename T>
+    std::shared_ptr<T> loadChunk(Offset = {0u}, Extent = {-1u});
 
     /** Load a chunk of data into pre-allocated memory
      *
-     * shared_ptr for data must be pre-allocated, contiguous and large enough for extent
+     * shared_ptr for data must be pre-allocated, contiguous and large enough
+     * for extent
      *
      * Set offset to {0u} and extent to {-1u} for full selection.
      *
      * If offset is non-zero and extent is {-1u} the leftover extent in the
      * record component will be selected.
      */
-    template< typename T >
-    void loadChunk(
-        std::shared_ptr< T >,
-        Offset,
-        Extent );
+    template <typename T>
+    void loadChunk(std::shared_ptr<T>, Offset, Extent);
 
-    template< typename T >
-    void storeChunk(std::shared_ptr< T >, Offset, Extent);
+    template <typename T>
+    void storeChunk(std::shared_ptr<T>, Offset, Extent);
 
-    template< typename T_ContiguousContainer >
+    template <typename T_ContiguousContainer>
     typename std::enable_if<
-        traits::IsContiguousContainer< T_ContiguousContainer >::value
-    >::type
+        traits::IsContiguousContainer<T_ContiguousContainer>::value>::type
     storeChunk(T_ContiguousContainer &, Offset = {0u}, Extent = {-1u});
 
     /**
@@ -288,20 +276,20 @@ public:
      *
      * @return View into a buffer that can be filled with data.
      */
-    template< typename T, typename F >
-    DynamicMemoryView< T > storeChunk( Offset, Extent, F && createBuffer );
+    template <typename T, typename F>
+    DynamicMemoryView<T> storeChunk(Offset, Extent, F &&createBuffer);
 
     /**
      * Overload of span-based storeChunk() that uses operator new() to create
      * a buffer.
      */
-    template< typename T >
-    DynamicMemoryView< T > storeChunk( Offset, Extent );
+    template <typename T>
+    DynamicMemoryView<T> storeChunk(Offset, Extent);
 
-    static constexpr char const * const SCALAR = "\vScalar";
+    static constexpr char const *const SCALAR = "\vScalar";
 
 private:
-    void flush(std::string const&);
+    void flush(std::string const &);
     virtual void read();
 
     /**
@@ -310,7 +298,7 @@ private:
      * @param d The dataset description. Must have nonzero dimensions.
      * @return Reference to this RecordComponent instance.
      */
-    RecordComponent& makeEmpty( Dataset d );
+    RecordComponent &makeEmpty(Dataset d);
 
     /**
      * @brief Check recursively whether this RecordComponent is dirty.
@@ -322,31 +310,31 @@ private:
      */
     bool dirtyRecursive() const;
 
-    std::shared_ptr< internal::RecordComponentData > m_recordComponentData{
-        new internal::RecordComponentData() };
+    std::shared_ptr<internal::RecordComponentData> m_recordComponentData{
+        new internal::RecordComponentData()};
 
     RecordComponent();
 
-// clang-format off
+    // clang-format off
 OPENPMD_protected
-// clang-format on
+    // clang-format on
 
-    RecordComponent( std::shared_ptr< internal::RecordComponentData > );
+    RecordComponent(std::shared_ptr<internal::RecordComponentData>);
 
-    inline internal::RecordComponentData const & get() const
+    inline internal::RecordComponentData const &get() const
     {
         return *m_recordComponentData;
     }
 
-    inline internal::RecordComponentData & get()
+    inline internal::RecordComponentData &get()
     {
         return *m_recordComponentData;
     }
 
-    inline void setData( std::shared_ptr< internal::RecordComponentData > data )
+    inline void setData(std::shared_ptr<internal::RecordComponentData> data)
     {
-        m_recordComponentData = std::move( data );
-        BaseRecordComponent::setData( m_recordComponentData );
+        m_recordComponentData = std::move(data);
+        BaseRecordComponent::setData(m_recordComponentData);
     }
 
     void readBase();

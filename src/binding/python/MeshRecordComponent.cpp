@@ -21,9 +21,9 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "openPMD/backend/MeshRecordComponent.hpp"
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Series.hpp"
+#include "openPMD/backend/MeshRecordComponent.hpp"
 #include "openPMD/binding/python/Pickle.hpp"
 
 #include <string>
@@ -32,35 +32,38 @@
 namespace py = pybind11;
 using namespace openPMD;
 
+void init_MeshRecordComponent(py::module &m)
+{
+    py::class_<MeshRecordComponent, RecordComponent> cl(
+        m, "Mesh_Record_Component");
+    cl.def(
+          "__repr__",
+          [](MeshRecordComponent const &rc) {
+              return "<openPMD.Mesh_Record_Component of dimensionality '" +
+                  std::to_string(rc.getDimensionality()) + "'>";
+          })
 
-void init_MeshRecordComponent(py::module &m) {
-    py::class_<MeshRecordComponent, RecordComponent> cl(m, "Mesh_Record_Component");
-    cl
-        .def("__repr__",
-            [](MeshRecordComponent const & rc) {
-                return "<openPMD.Mesh_Record_Component of dimensionality '"
-                + std::to_string(rc.getDimensionality()) + "'>";
-            }
-        )
-
-        .def_property("position",
+        .def_property(
+            "position",
             &MeshRecordComponent::position<float>,
             &MeshRecordComponent::setPosition<float>,
-            "Relative position of the component on an element (node/cell/voxel) of the mesh")
-        .def_property("position",
+            "Relative position of the component on an element "
+            "(node/cell/voxel) of the mesh")
+        .def_property(
+            "position",
             &MeshRecordComponent::position<double>,
             &MeshRecordComponent::setPosition<double>,
-            "Relative position of the component on an element (node/cell/voxel) of the mesh")
-        .def_property("position",
+            "Relative position of the component on an element "
+            "(node/cell/voxel) of the mesh")
+        .def_property(
+            "position",
             &MeshRecordComponent::position<long double>,
             &MeshRecordComponent::setPosition<long double>,
-            "Relative position of the component on an element (node/cell/voxel) of the mesh")
-    ;
+            "Relative position of the component on an element "
+            "(node/cell/voxel) of the mesh");
     add_pickle(
-        cl,
-        [](openPMD::Series & series, std::vector< std::string > const & group ) {
+        cl, [](openPMD::Series &series, std::vector<std::string> const &group) {
             uint64_t const n_it = std::stoull(group.at(1));
             return series.iterations[n_it].meshes[group.at(3)][group.at(4)];
-        }
-    );
+        });
 }

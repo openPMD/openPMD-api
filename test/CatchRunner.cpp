@@ -2,7 +2,7 @@
 #include <catch2/catch.hpp>
 
 #if openPMD_HAVE_MPI
-#   include <mpi.h>
+#include <mpi.h>
 
 int main(int argc, char *argv[])
 {
@@ -12,9 +12,9 @@ int main(int argc, char *argv[])
     int result = 0;
     {
         // Indicates a command line parsing
-        result = session.applyCommandLine( argc, argv );
+        result = session.applyCommandLine(argc, argv);
         // RT tests
-        if( result == 0 )
+        if (result == 0)
             result = session.run();
     }
     MPI_Finalize();
@@ -27,9 +27,9 @@ int main(int argc, char *argv[])
     int result = 0;
     {
         // Indicates a command line parsing
-        result = session.applyCommandLine( argc, argv );
+        result = session.applyCommandLine(argc, argv);
         // RT tests
-        if( result == 0 )
+        if (result == 0)
             result = session.run();
     }
     return result;

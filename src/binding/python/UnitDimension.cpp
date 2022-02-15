@@ -26,8 +26,8 @@
 namespace py = pybind11;
 using namespace openPMD;
 
-
-void init_UnitDimension(py::module &m) {
+void init_UnitDimension(py::module &m)
+{
     py::enum_<UnitDimension>(m, "Unit_Dimension")
         .value("L", UnitDimension::L)
         .value("M", UnitDimension::M)
@@ -35,6 +35,5 @@ void init_UnitDimension(py::module &m) {
         .value("I", UnitDimension::I)
         .value("theta", UnitDimension::theta)
         .value("N", UnitDimension::N)
-        .value("J", UnitDimension::J)
-    ;
+        .value("J", UnitDimension::J);
 }

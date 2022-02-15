@@ -26,11 +26,10 @@
 namespace py = pybind11;
 using namespace openPMD;
 
-
-void init_Access(py::module &m) {
+void init_Access(py::module &m)
+{
     py::enum_<Access>(m, "Access")
         .value("read_only", Access::READ_ONLY)
         .value("read_write", Access::READ_WRITE)
-        .value("create", Access::CREATE)
-    ;
+        .value("create", Access::CREATE);
 }

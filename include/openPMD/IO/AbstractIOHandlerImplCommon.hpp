@@ -21,7 +21,6 @@
 
 #pragma once
 
-
 #include "openPMD/IO/AbstractFilePosition.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
@@ -32,26 +31,24 @@
 #include <unordered_map>
 #include <unordered_set>
 
-
-
 namespace openPMD
 {
-template < typename FilePositionType = AbstractFilePosition >
+template <typename FilePositionType = AbstractFilePosition>
 class AbstractIOHandlerImplCommon : public AbstractIOHandlerImpl
 {
     // friend struct detail::BufferedActions;
 public:
-    explicit AbstractIOHandlerImplCommon( AbstractIOHandler * handler );
+    explicit AbstractIOHandlerImplCommon(AbstractIOHandler *handler);
 
-    ~AbstractIOHandlerImplCommon( ) override;
+    ~AbstractIOHandlerImplCommon() override;
 
 protected:
     /**
      * map each Writable to its associated file contains only the filename,
      * without the OS path
      */
-    std::unordered_map< Writable *, InvalidatableFile > m_files;
-    std::unordered_set< InvalidatableFile > m_dirty;
+    std::unordered_map<Writable *, InvalidatableFile> m_files;
+    std::unordered_set<InvalidatableFile> m_dirty;
 
     enum PossiblyExisting
     {
@@ -60,33 +57,35 @@ protected:
         PE_NewlyCreated,
     };
 
-    std::tuple< InvalidatableFile,
-                std::unordered_map< Writable *, InvalidatableFile >::iterator,
-                bool
-    > getPossiblyExisting( std::string file );
+    std::tuple<
+        InvalidatableFile,
+        std::unordered_map<Writable *, InvalidatableFile>::iterator,
+        bool>
+    getPossiblyExisting(std::string file);
 
-    void associateWithFile( Writable * writable, InvalidatableFile file );
+    void associateWithFile(Writable *writable, InvalidatableFile file);
 
     /**
      *
      * @return Full OS path of the file.
      */
-    std::string fullPath( InvalidatableFile );
+    std::string fullPath(InvalidatableFile);
 
-    std::string fullPath( std::string );
+    std::string fullPath(std::string);
 
     /**
      * Get the writable's containing file.
      * @param writable The writable whose containing file to figure out.
      * @param preferParentFile If true, the file is set to the parent's file if
      *     present. Otherwise, the parent file is only considered if no own file
-     *     is defined. This is usually needed when switching between iterations when opening paths.
+     *     is defined. This is usually needed when switching between iterations
+     * when opening paths.
      * @return The containing file of the writable. If its parent is associated
      * with another file, update the writable to match its parent and return
      * the refreshed file.
      */
     InvalidatableFile
-    refreshFileFromParent( Writable * writable, bool preferParentFile );
+    refreshFileFromParent(Writable *writable, bool preferParentFile);
 
     /**
      * Figure out the file position of the writable.
@@ -95,8 +94,8 @@ protected:
      * @param write Whether to refresh the writable's file position.
      * @return The current file position.
      */
-    std::shared_ptr< FilePositionType >
-    setAndGetFilePosition( Writable * writable, bool write = true );
+    std::shared_ptr<FilePositionType>
+    setAndGetFilePosition(Writable *writable, bool write = true);
 
     /**
      * Figure out the file position of the writable and extend it.
@@ -104,54 +103,53 @@ protected:
      * @param extend The extension string.
      * @return The current file position.
      */
-    virtual std::shared_ptr< FilePositionType >
-    setAndGetFilePosition( Writable * writable, std::string extend );
+    virtual std::shared_ptr<FilePositionType>
+    setAndGetFilePosition(Writable *writable, std::string extend);
 
     /**
      * @return A string representation of the file position.
      */
     virtual std::string
-        filePositionToString( std::shared_ptr< FilePositionType > ) = 0;
+        filePositionToString(std::shared_ptr<FilePositionType>) = 0;
 
     /**
      * @return A new file position that is extended with the given string.
      */
-    virtual std::shared_ptr< FilePositionType >
-    extendFilePosition( std::shared_ptr< FilePositionType > const &,
-                        std::string ) = 0;
+    virtual std::shared_ptr<FilePositionType> extendFilePosition(
+        std::shared_ptr<FilePositionType> const &, std::string) = 0;
 };
 
-template < typename FilePositionType >
-AbstractIOHandlerImplCommon< FilePositionType >::AbstractIOHandlerImplCommon(
-    AbstractIOHandler * handler )
-: AbstractIOHandlerImpl{handler}
-{
-}
+template <typename FilePositionType>
+AbstractIOHandlerImplCommon<FilePositionType>::AbstractIOHandlerImplCommon(
+    AbstractIOHandler *handler)
+    : AbstractIOHandlerImpl{handler}
+{}
 
+template <typename FilePositionType>
+AbstractIOHandlerImplCommon<FilePositionType>::~AbstractIOHandlerImplCommon() =
+    default;
 
-template < typename FilePositionType >
-AbstractIOHandlerImplCommon<
-    FilePositionType >::~AbstractIOHandlerImplCommon( ) = default;
-
-
-template < typename FilePositionType >
-std::tuple< InvalidatableFile,
-            std::unordered_map< Writable *, InvalidatableFile >::iterator,
-            bool >
-AbstractIOHandlerImplCommon< FilePositionType >::getPossiblyExisting(
-    std::string file )
+template <typename FilePositionType>
+std::tuple<
+    InvalidatableFile,
+    std::unordered_map<Writable *, InvalidatableFile>::iterator,
+    bool>
+AbstractIOHandlerImplCommon<FilePositionType>::getPossiblyExisting(
+    std::string file)
 {
 
     auto it = std::find_if(
-        m_files.begin( ), m_files.end( ),
-        [file]( std::unordered_map<
-                Writable *, InvalidatableFile >::value_type const & entry ) {
-            return *entry.second == file && entry.second.valid( );
-        } );
+        m_files.begin(),
+        m_files.end(),
+        [file](
+            std::unordered_map<Writable *, InvalidatableFile>::value_type const
+                &entry) {
+            return *entry.second == file && entry.second.valid();
+        });
 
     bool newlyCreated;
     InvalidatableFile name;
-    if ( it == m_files.end( ) )
+    if (it == m_files.end())
     {
         name = file;
         newlyCreated = true;
@@ -163,33 +161,30 @@ AbstractIOHandlerImplCommon< FilePositionType >::getPossiblyExisting(
     }
     return std::tuple<
         InvalidatableFile,
-        std::unordered_map< Writable *, InvalidatableFile >::iterator, bool >(
-        std::move( name ), it, newlyCreated );
+        std::unordered_map<Writable *, InvalidatableFile>::iterator,
+        bool>(std::move(name), it, newlyCreated);
 }
 
-
-template < typename FilePositionType >
-void AbstractIOHandlerImplCommon< FilePositionType >::associateWithFile(
-    Writable * writable, InvalidatableFile file )
+template <typename FilePositionType>
+void AbstractIOHandlerImplCommon<FilePositionType>::associateWithFile(
+    Writable *writable, InvalidatableFile file)
 {
     // make sure to overwrite
-    m_files[writable] = std::move( file );
+    m_files[writable] = std::move(file);
 }
 
-
-template < typename FilePositionType >
-std::string AbstractIOHandlerImplCommon< FilePositionType >::fullPath(
-    InvalidatableFile fileName )
+template <typename FilePositionType>
+std::string AbstractIOHandlerImplCommon<FilePositionType>::fullPath(
+    InvalidatableFile fileName)
 {
-    return fullPath( *fileName );
+    return fullPath(*fileName);
 }
 
-
-template < typename FilePositionType >
-std::string AbstractIOHandlerImplCommon< FilePositionType >::fullPath(
-    std::string fileName )
+template <typename FilePositionType>
+std::string
+AbstractIOHandlerImplCommon<FilePositionType>::fullPath(std::string fileName)
 {
-    if ( auxiliary::ends_with( m_handler->directory, "/" ) )
+    if (auxiliary::ends_with(m_handler->directory, "/"))
     {
         return m_handler->directory + fileName;
     }
@@ -199,77 +194,76 @@ std::string AbstractIOHandlerImplCommon< FilePositionType >::fullPath(
     }
 }
 
-template< typename FilePositionType >
+template <typename FilePositionType>
 InvalidatableFile
-AbstractIOHandlerImplCommon< FilePositionType >::refreshFileFromParent(
-    Writable * writable, bool preferParentFile )
+AbstractIOHandlerImplCommon<FilePositionType>::refreshFileFromParent(
+    Writable *writable, bool preferParentFile)
 {
-    auto getFileFromParent = [ writable, this ]() {
-        auto file = m_files.find( writable->parent )->second;
-        associateWithFile( writable, file );
+    auto getFileFromParent = [writable, this]() {
+        auto file = m_files.find(writable->parent)->second;
+        associateWithFile(writable, file);
         return file;
     };
-    if( preferParentFile && writable->parent )
+    if (preferParentFile && writable->parent)
     {
         return getFileFromParent();
     }
     else
     {
-        auto it = m_files.find( writable );
-        if( it != m_files.end() )
+        auto it = m_files.find(writable);
+        if (it != m_files.end())
         {
-            return m_files.find( writable )->second;
+            return m_files.find(writable)->second;
         }
-        else if( writable->parent )
+        else if (writable->parent)
         {
             return getFileFromParent();
         }
         else
         {
             throw std::runtime_error(
-                "Internal error: Root object must be opened explicitly." );
+                "Internal error: Root object must be opened explicitly.");
         }
     }
 }
 
-template< typename FilePositionType >
-std::shared_ptr< FilePositionType >
-AbstractIOHandlerImplCommon< FilePositionType >::setAndGetFilePosition(
-    Writable * writable, bool write )
+template <typename FilePositionType>
+std::shared_ptr<FilePositionType>
+AbstractIOHandlerImplCommon<FilePositionType>::setAndGetFilePosition(
+    Writable *writable, bool write)
 {
-    std::shared_ptr< AbstractFilePosition > res;
+    std::shared_ptr<AbstractFilePosition> res;
 
-    if ( writable->abstractFilePosition )
+    if (writable->abstractFilePosition)
     {
         res = writable->abstractFilePosition;
     }
-    else if ( writable->parent )
+    else if (writable->parent)
     {
         res = writable->parent->abstractFilePosition;
     }
     else
     { // we are root
-        res = std::make_shared< FilePositionType >( );
+        res = std::make_shared<FilePositionType>();
     }
-    if ( write )
+    if (write)
     {
         writable->abstractFilePosition = res;
     }
-    return std::dynamic_pointer_cast< FilePositionType >( res );
+    return std::dynamic_pointer_cast<FilePositionType>(res);
 }
 
-
-template < typename FilePositionType >
-std::shared_ptr< FilePositionType >
-AbstractIOHandlerImplCommon< FilePositionType >::setAndGetFilePosition(
-    Writable * writable, std::string extend )
+template <typename FilePositionType>
+std::shared_ptr<FilePositionType>
+AbstractIOHandlerImplCommon<FilePositionType>::setAndGetFilePosition(
+    Writable *writable, std::string extend)
 {
-    if ( !auxiliary::starts_with( extend, '/' ) )
+    if (!auxiliary::starts_with(extend, '/'))
     {
         extend = "/" + extend;
     }
-    auto oldPos = setAndGetFilePosition( writable, false );
-    auto res = extendFilePosition( oldPos, extend );
+    auto oldPos = setAndGetFilePosition(writable, false);
+    auto res = extendFilePosition(oldPos, extend);
 
     writable->abstractFilePosition = res;
     return res;

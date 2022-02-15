@@ -29,34 +29,34 @@ namespace openPMD::auxiliary
 {
 namespace detail
 {
-    template< typename >
+    template <typename>
     struct IsVector
     {
         static constexpr bool value = false;
     };
 
-    template< typename T >
-    struct IsVector< std::vector< T > >
+    template <typename T>
+    struct IsVector<std::vector<T>>
     {
         static constexpr bool value = true;
     };
 
-    template< typename >
+    template <typename>
     struct IsArray
     {
         static constexpr bool value = false;
     };
 
-    template< typename T, size_t n >
-    struct IsArray< std::array< T, n > >
+    template <typename T, size_t n>
+    struct IsArray<std::array<T, n>>
     {
         static constexpr bool value = true;
     };
-}
+} // namespace detail
 
-template< typename T >
-inline constexpr bool IsVector_v = detail::IsVector< T >::value;
+template <typename T>
+inline constexpr bool IsVector_v = detail::IsVector<T>::value;
 
-template< typename T >
-inline constexpr bool IsArray_v = detail::IsArray< T >::value;
-}
+template <typename T>
+inline constexpr bool IsArray_v = detail::IsArray<T>::value;
+} // namespace openPMD::auxiliary

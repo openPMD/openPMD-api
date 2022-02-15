@@ -22,23 +22,23 @@
 #include <pybind11/stl.h>
 
 #include "openPMD/ParticlePatches.hpp"
-#include "openPMD/backend/PatchRecord.hpp"
 #include "openPMD/backend/Container.hpp"
+#include "openPMD/backend/PatchRecord.hpp"
 
 #include <string>
 
 namespace py = pybind11;
 using namespace openPMD;
 
+void init_ParticlePatches(py::module &m)
+{
+    py::class_<ParticlePatches, Container<PatchRecord>>(m, "Particle_Patches")
+        .def(
+            "__repr__",
+            [](ParticlePatches const &pp) {
+                return "<openPMD.Particle_Patches of size '" +
+                    std::to_string(pp.numPatches()) + "'>";
+            })
 
-void init_ParticlePatches(py::module &m) {
-    py::class_<ParticlePatches, Container< PatchRecord > >(m, "Particle_Patches")
-        .def("__repr__",
-            [](ParticlePatches const & pp) {
-                return "<openPMD.Particle_Patches of size '" + std::to_string(pp.numPatches()) + "'>";
-            }
-        )
-
-        .def_property_readonly("num_patches", &ParticlePatches::numPatches)
-    ;
+        .def_property_readonly("num_patches", &ParticlePatches::numPatches);
 }

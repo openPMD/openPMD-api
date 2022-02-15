@@ -20,52 +20,52 @@
  */
 #pragma once
 
-#include "openPMD/config.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
-#include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/config.hpp"
 
 #if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
-#   include "openPMD/IO/ADIOS/CommonADIOS1IOHandler.hpp"
+#include "openPMD/IO/ADIOS/CommonADIOS1IOHandler.hpp"
 #endif
 
 #include <future>
 #include <memory>
 #include <string>
 #if openPMD_HAVE_ADIOS1
-#   include <unordered_map>
-#   include <unordered_set>
+#include <unordered_map>
+#include <unordered_set>
 #endif
-
 
 namespace openPMD
 {
 #if openPMD_HAVE_ADIOS1 && openPMD_HAVE_MPI
-    class OPENPMDAPI_EXPORT ParallelADIOS1IOHandlerImpl
-        : public CommonADIOS1IOHandlerImpl< ParallelADIOS1IOHandlerImpl >
-    {
-    private:
-        using Base_t = CommonADIOS1IOHandlerImpl< ParallelADIOS1IOHandlerImpl >;
-    public:
-        ParallelADIOS1IOHandlerImpl(AbstractIOHandler*, json::TracingJSON, MPI_Comm);
-        virtual ~ParallelADIOS1IOHandlerImpl();
+class OPENPMDAPI_EXPORT ParallelADIOS1IOHandlerImpl
+    : public CommonADIOS1IOHandlerImpl<ParallelADIOS1IOHandlerImpl>
+{
+private:
+    using Base_t = CommonADIOS1IOHandlerImpl<ParallelADIOS1IOHandlerImpl>;
 
-        virtual void init();
+public:
+    ParallelADIOS1IOHandlerImpl(
+        AbstractIOHandler *, json::TracingJSON, MPI_Comm);
+    virtual ~ParallelADIOS1IOHandlerImpl();
 
-        std::future< void > flush() override;
+    virtual void init();
 
-        virtual int64_t open_write(Writable *);
-        virtual ADIOS_FILE* open_read(std::string const & name);
-        int64_t initialize_group(std::string const& name);
+    std::future<void> flush() override;
 
-    protected:
-        MPI_Comm m_mpiComm;
-        MPI_Info m_mpiInfo;
-    }; // ParallelADIOS1IOHandlerImpl
+    virtual int64_t open_write(Writable *);
+    virtual ADIOS_FILE *open_read(std::string const &name);
+    int64_t initialize_group(std::string const &name);
+
+protected:
+    MPI_Comm m_mpiComm;
+    MPI_Info m_mpiInfo;
+}; // ParallelADIOS1IOHandlerImpl
 #else
-    class OPENPMDAPI_EXPORT ParallelADIOS1IOHandlerImpl
-    {
-    }; // ParallelADIOS1IOHandlerImpl
+class OPENPMDAPI_EXPORT ParallelADIOS1IOHandlerImpl
+{}; // ParallelADIOS1IOHandlerImpl
 #endif
 
-} // openPMD
+} // namespace openPMD

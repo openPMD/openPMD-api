@@ -20,35 +20,37 @@
  */
 #pragma once
 
-#include "openPMD/config.hpp"
-#include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
+#include "openPMD/config.hpp"
 
 #include <future>
 #include <memory>
 #include <string>
 
-
 namespace openPMD
 {
-    class ParallelHDF5IOHandlerImpl;
+class ParallelHDF5IOHandlerImpl;
 
-    class ParallelHDF5IOHandler : public AbstractIOHandler
+class ParallelHDF5IOHandler : public AbstractIOHandler
+{
+public:
+#if openPMD_HAVE_MPI
+    ParallelHDF5IOHandler(
+        std::string path, Access, MPI_Comm, json::TracingJSON config);
+#else
+    ParallelHDF5IOHandler(std::string path, Access, json::TracingJSON config);
+#endif
+    ~ParallelHDF5IOHandler() override;
+
+    std::string backendName() const override
     {
-    public:
-    #if openPMD_HAVE_MPI
-        ParallelHDF5IOHandler(
-            std::string path, Access, MPI_Comm, json::TracingJSON config);
-    #else
-        ParallelHDF5IOHandler(std::string path, Access, json::TracingJSON config);
-    #endif
-        ~ParallelHDF5IOHandler() override;
+        return "MPI_HDF5";
+    }
 
-        std::string backendName() const override { return "MPI_HDF5"; }
+    std::future<void> flush() override;
 
-        std::future< void > flush() override;
-
-    private:
-        std::unique_ptr< ParallelHDF5IOHandlerImpl > m_impl;
-    }; // ParallelHDF5IOHandler
-} // openPMD
+private:
+    std::unique_ptr<ParallelHDF5IOHandlerImpl> m_impl;
+}; // ParallelHDF5IOHandler
+} // namespace openPMD

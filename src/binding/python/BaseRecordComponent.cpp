@@ -18,12 +18,12 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/Datatype.hpp"
+#include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/binding/python/Numpy.hpp"
 
 #include <sstream>
@@ -31,25 +31,24 @@
 namespace py = pybind11;
 using namespace openPMD;
 
-
-void init_BaseRecordComponent(py::module &m) {
+void init_BaseRecordComponent(py::module &m)
+{
     py::class_<BaseRecordComponent, Attributable>(m, "Base_Record_Component")
-        .def("__repr__",
-            [](BaseRecordComponent const & brc) {
+        .def(
+            "__repr__",
+            [](BaseRecordComponent const &brc) {
                 std::stringstream ss;
                 ss << "<openPMD.Base_Record_Component of '";
                 ss << brc.getDatatype() << "'>";
                 return ss.str();
-            }
-        )
+            })
 
         .def("reset_datatype", &BaseRecordComponent::resetDatatype)
         .def("available_chunks", &BaseRecordComponent::availableChunks)
 
         .def_property_readonly("unit_SI", &BaseRecordComponent::unitSI)
         .def_property_readonly("constant", &BaseRecordComponent::constant)
-        .def_property_readonly("dtype", [](BaseRecordComponent & brc) {
-            return dtype_to_numpy( brc.getDatatype() );
-        })
-    ;
+        .def_property_readonly("dtype", [](BaseRecordComponent &brc) {
+            return dtype_to_numpy(brc.getDatatype());
+        });
 }
