@@ -792,6 +792,7 @@ set(openPMD_PYTHON_EXAMPLE_NAMES
     3_write_serial
     3a_write_thetaMode_serial
     3b_write_resizable_particles
+    3c_write_particle_beam
     4_read_parallel
     5_write_parallel
     7_extended_write_serial
