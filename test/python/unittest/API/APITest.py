@@ -1905,7 +1905,7 @@ class APITest(unittest.TestCase):
         )
 
         r_E_x = read.iterations[0].meshes["E"]["x"]
-        if read.backend == 'ADIOS2':
+        if read.backend == 'ADIOS2' or read.backend == 'ADIOS1':
             self.assertEqual(len(r_E_x.available_chunks()), 3)
         else:
             self.assertEqual(len(r_E_x.available_chunks()), 1)
