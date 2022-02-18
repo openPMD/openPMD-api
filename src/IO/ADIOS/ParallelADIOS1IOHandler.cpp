@@ -316,7 +316,7 @@ std::future<void> ParallelADIOS1IOHandlerImpl::flush()
             "dataset reading");
 
         for (auto &sel : file.second)
-            adios_selection_delete(sel);
+            adios_selection_delete(sel.selection);
     }
     m_scheduledReads.clear();
 
