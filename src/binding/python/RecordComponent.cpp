@@ -775,8 +775,14 @@ void init_RecordComponent(py::module &m)
                 py::ssize_t numElements = 1;
                 if (buf.ndim > 0)
                 {
+                    std::cout << "Buffer has dimensionality: " << buf.ndim
+                              << std::endl;
                     for (auto d = 0; d < buf.ndim; ++d)
+                    {
+                        std::cout << "Extent of dimensionality " << d << ": "
+                                  << buf.shape.at(d) << std::endl;
                         numElements *= buf.shape.at(d);
+                    }
                 }
 
                 // Numpy: Handling of arrays and scalars
@@ -867,7 +873,8 @@ void init_RecordComponent(py::module &m)
                 {
                     throw std::runtime_error(
                         "make_constant: "
-                        "Only scalar values supported!");
+                        "Only scalar values supported! (found " +
+                        std::to_string(numElements) + "values)");
                 }
             },
             py::arg("value"))

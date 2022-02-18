@@ -29,6 +29,7 @@
 #include <complex>
 #include <cstdint>
 #include <iterator>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -229,3 +230,40 @@ U Attribute::get() const
 }
 
 } // namespace openPMD
+
+namespace std
+{
+inline string to_string(openPMD::Attribute const &attr)
+{
+    return std::visit(
+        [](auto const &val) {
+            using Val_t = remove_cv_t<remove_reference_t<decltype(val)> >;
+
+            std::stringstream os;
+            if constexpr (
+                openPMD::auxiliary::IsVector_v<Val_t> ||
+                openPMD::auxiliary::IsArray_v<Val_t>)
+            {
+                if (val.empty())
+                {
+                    os << "[]";
+                }
+                else
+                {
+                    os << "[" << val[0];
+                    for (size_t i = 1; i < val.size(); ++i)
+                    {
+                        os << ", " << val[i];
+                    }
+                    os << "]";
+                }
+            }
+            else
+            {
+                os << val;
+            }
+            return os.str();
+        },
+        attr.getResource());
+}
+} // namespace std
