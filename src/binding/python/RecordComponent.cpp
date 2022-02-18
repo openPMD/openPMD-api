@@ -953,7 +953,7 @@ void init_RecordComponent(py::module &m) {
             // default arguments
             //   offset = {0u}: expand to right dim {0u, 0u, ...}
             Offset offset = offset_in;
-            if( offset_in.size() == 1u && offset_in.at(0) == 0u && a.ndim() > 1u )
+            if( offset_in.size() == 1u && offset_in.at(0) == 0u && a.ndim() > 1 )
                 offset = Offset(a.ndim(), 0u);
 
             //   extent = {-1u}: take full size
