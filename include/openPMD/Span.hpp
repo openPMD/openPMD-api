@@ -33,37 +33,34 @@ namespace openPMD
  * Any existing member behaves equivalently to those documented here:
  * https://en.cppreference.com/w/cpp/container/span
  */
-template< typename T >
-class Span
+template <typename T> class Span
 {
-    template< typename >
-    friend class DynamicMemoryView;
+    template <typename> friend class DynamicMemoryView;
 
 private:
-    T * m_ptr;
+    T *m_ptr;
     size_t m_size;
 
-    Span( T * ptr, size_t size ) : m_ptr( ptr ), m_size( size )
-    {
-    }
+    Span(T *ptr, size_t size) : m_ptr(ptr), m_size(size)
+    {}
 
 public:
     using iterator = T *;
-    using reverse_iterator = std::reverse_iterator< iterator >;
+    using reverse_iterator = std::reverse_iterator<iterator>;
 
     size_t size() const
     {
         return m_size;
     }
 
-    inline T * data() const
+    inline T *data() const
     {
         return m_ptr;
     }
 
-    inline T & operator[]( size_t i ) const
+    inline T &operator[](size_t i) const
     {
-        return data()[ i ];
+        return data()[i];
     }
 
     inline iterator begin() const
@@ -77,11 +74,11 @@ public:
     inline reverse_iterator rbegin() const
     {
         // std::reverse_iterator does the -1 thing automatically
-        return reverse_iterator{ data() + size() };
+        return reverse_iterator{data() + size()};
     }
     inline reverse_iterator rend() const
     {
-        return reverse_iterator{ data() };
+        return reverse_iterator{data()};
     }
 };
 
@@ -93,22 +90,21 @@ public:
  *      Hence, the concrete pointer needs to be acquired right before writing
  *      to it. Otherwise, a use after free might occur.
  */
-template< typename T >
-class DynamicMemoryView
+template <typename T> class DynamicMemoryView
 {
     friend class RecordComponent;
 
 private:
-    using param_t = Parameter< Operation::GET_BUFFER_VIEW >;
+    using param_t = Parameter<Operation::GET_BUFFER_VIEW>;
     param_t m_param;
     size_t m_size = 0;
     RecordComponent m_recordComponent;
 
     DynamicMemoryView(
-        param_t param, size_t size, RecordComponent recordComponent )
-        : m_param( std::move( param ) )
-        , m_size( size )
-        , m_recordComponent( std::move( recordComponent ) )
+        param_t param, size_t size, RecordComponent recordComponent)
+        : m_param(std::move(param))
+        , m_size(size)
+        , m_recordComponent(std::move(recordComponent))
     {
         m_param.update = true;
     }
@@ -119,16 +115,16 @@ public:
     /**
      * @brief Acquire the underlying buffer at its current position in memory.
      */
-    Span< T > currentBuffer()
+    Span<T> currentBuffer()
     {
-        if( m_param.out->backendManagedBuffer )
+        if (m_param.out->backendManagedBuffer)
         {
             // might need to update
             m_recordComponent.IOHandler()->enqueue(
-                IOTask( &m_recordComponent, m_param ) );
+                IOTask(&m_recordComponent, m_param));
             m_recordComponent.IOHandler()->flush();
         }
-        return Span< T >{ static_cast< T * >( m_param.out->ptr ), m_size };
+        return Span<T>{static_cast<T *>(m_param.out->ptr), m_size};
     }
 };
-}
+} // namespace openPMD

@@ -22,16 +22,17 @@
 
 #include <string>
 
-
 namespace openPMD
 {
 namespace auxiliary
 {
     /** Return the current datetime as string
      *
-     * @param format time format string, @see http://www.cplusplus.com/reference/ctime/strftime/
+     * @param format time format string, @see
+     * http://www.cplusplus.com/reference/ctime/strftime/
      * @return std::string with formatted date
      */
-    std::string getDateString( std::string const & format = std::string( "%F %T %z" ) );
+    std::string
+    getDateString(std::string const &format = std::string("%F %T %z"));
 } // namespace auxiliary
 } // namespace openPMD

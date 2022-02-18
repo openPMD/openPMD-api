@@ -23,25 +23,24 @@
 #include "openPMD/backend/Container.hpp"
 #include "openPMD/backend/PatchRecord.hpp"
 
-#include <vector>
 #include <cstddef>
-
+#include <vector>
 
 namespace openPMD
 {
-    class ParticlePatches : public Container< PatchRecord >
-    {
-        friend class ParticleSpecies;
-        friend class Container< ParticlePatches >;
-        friend class Container< PatchRecord >;
+class ParticlePatches : public Container<PatchRecord>
+{
+    friend class ParticleSpecies;
+    friend class Container<ParticlePatches>;
+    friend class Container<PatchRecord>;
 
-    public:
-        size_t numPatches() const;
-        ~ParticlePatches() override = default;
+public:
+    size_t numPatches() const;
+    ~ParticlePatches() override = default;
 
-    private:
-        ParticlePatches() = default;
-        void read();
-    }; // ParticlePatches
+private:
+    ParticlePatches() = default;
+    void read();
+}; // ParticlePatches
 
 } // namespace openPMD

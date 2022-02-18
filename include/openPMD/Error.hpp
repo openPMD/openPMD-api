@@ -20,18 +20,17 @@ private:
     std::string m_what;
 
 protected:
-    Error( std::string what ) : m_what( what )
-    {
-    }
+    Error(std::string what) : m_what(what)
+    {}
 
 public:
-    virtual const char * what() const noexcept;
+    virtual const char *what() const noexcept;
 
-    Error( Error const & ) = default;
-    Error( Error && ) = default;
+    Error(Error const &) = default;
+    Error(Error &&) = default;
 
-    Error & operator=( Error const & ) = default;
-    Error & operator=( Error && ) = default;
+    Error &operator=(Error const &) = default;
+    Error &operator=(Error &&) = default;
 
     virtual ~Error() noexcept = default;
 };
@@ -48,8 +47,7 @@ namespace error
     {
     public:
         std::string backend;
-        OperationUnsupportedInBackend(
-            std::string backend_in, std::string what );
+        OperationUnsupportedInBackend(std::string backend_in, std::string what);
     };
 
     /**
@@ -61,15 +59,15 @@ namespace error
     class WrongAPIUsage : public Error
     {
     public:
-        WrongAPIUsage( std::string what );
+        WrongAPIUsage(std::string what);
     };
 
     class BackendConfigSchema : public Error
     {
     public:
-        std::vector< std::string > errorLocation;
+        std::vector<std::string> errorLocation;
 
-        BackendConfigSchema( std::vector< std::string >, std::string what );
+        BackendConfigSchema(std::vector<std::string>, std::string what);
     };
-}
-}
+} // namespace error
+} // namespace openPMD

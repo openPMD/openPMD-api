@@ -20,15 +20,14 @@
  */
 #pragma once
 
-#include "openPMD/backend/Attributable.hpp"
 #include "openPMD/Dataset.hpp"
 #include "openPMD/Error.hpp"
+#include "openPMD/backend/Attributable.hpp"
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_protected
-#   define OPENPMD_protected protected:
+#define OPENPMD_protected protected:
 #endif
-
 
 namespace openPMD
 {
@@ -40,7 +39,7 @@ namespace internal
         /**
          * The type and extent of the dataset defined by this component.
          */
-        Dataset m_dataset{ Datatype::UNDEFINED, {} };
+        Dataset m_dataset{Datatype::UNDEFINED, {}};
         /**
          * True if this is defined as a constant record component as specified
          * in the openPMD standard.
@@ -49,32 +48,26 @@ namespace internal
          */
         bool m_isConstant = false;
 
-        BaseRecordComponentData( BaseRecordComponentData const & ) = delete;
-        BaseRecordComponentData( BaseRecordComponentData && ) = delete;
+        BaseRecordComponentData(BaseRecordComponentData const &) = delete;
+        BaseRecordComponentData(BaseRecordComponentData &&) = delete;
 
-        BaseRecordComponentData & operator=(
-            BaseRecordComponentData const & ) = delete;
-        BaseRecordComponentData & operator=(
-            BaseRecordComponentData && ) = delete;
+        BaseRecordComponentData &
+        operator=(BaseRecordComponentData const &) = delete;
+        BaseRecordComponentData &operator=(BaseRecordComponentData &&) = delete;
 
         BaseRecordComponentData() = default;
     };
-}
+} // namespace internal
 
 class BaseRecordComponent : public Attributable
 {
-    template<
-        typename T,
-        typename T_key,
-        typename T_container
-    >
-    friend
-    class Container;
+    template <typename T, typename T_key, typename T_container>
+    friend class Container;
 
 public:
     double unitSI() const;
 
-    BaseRecordComponent& resetDatatype(Datatype);
+    BaseRecordComponent &resetDatatype(Datatype);
 
     Datatype getDatatype() const;
 
@@ -104,33 +97,29 @@ public:
      * may additionally wish to use to store user-defined, backend-independent
      * chunking information on particle datasets.
      */
-    ChunkTable
-    availableChunks();
+    ChunkTable availableChunks();
 
 protected:
+    std::shared_ptr<internal::BaseRecordComponentData>
+        m_baseRecordComponentData{new internal::BaseRecordComponentData()};
 
-    std::shared_ptr< internal::BaseRecordComponentData >
-        m_baseRecordComponentData{
-            new internal::BaseRecordComponentData() };
-
-    inline internal::BaseRecordComponentData const & get() const
+    inline internal::BaseRecordComponentData const &get() const
     {
         return *m_baseRecordComponentData;
     }
 
-    inline internal::BaseRecordComponentData & get()
+    inline internal::BaseRecordComponentData &get()
     {
         return *m_baseRecordComponentData;
     }
 
-    inline void setData(
-        std::shared_ptr< internal::BaseRecordComponentData > data )
+    inline void setData(std::shared_ptr<internal::BaseRecordComponentData> data)
     {
-        m_baseRecordComponentData = std::move( data );
-        Attributable::setData( m_baseRecordComponentData );
+        m_baseRecordComponentData = std::move(data);
+        Attributable::setData(m_baseRecordComponentData);
     }
 
-    BaseRecordComponent( std::shared_ptr< internal::BaseRecordComponentData > );
+    BaseRecordComponent(std::shared_ptr<internal::BaseRecordComponentData>);
 
 private:
     BaseRecordComponent();
@@ -138,29 +127,26 @@ private:
 
 namespace detail
 {
-/**
- * Functor template to be used in combination with switchType::operator()
- * to set a default value for constant record components via the
- * respective type's default constructor.
- * Used to implement empty datasets in subclasses of BaseRecordComponent
- * (currently RecordComponent).
- * @param T_RecordComponent
- */
-template< typename T_RecordComponent >
-struct DefaultValue
-{
-    template< typename T >
-    static void call( T_RecordComponent & rc )
+    /**
+     * Functor template to be used in combination with switchType::operator()
+     * to set a default value for constant record components via the
+     * respective type's default constructor.
+     * Used to implement empty datasets in subclasses of BaseRecordComponent
+     * (currently RecordComponent).
+     * @param T_RecordComponent
+     */
+    template <typename T_RecordComponent> struct DefaultValue
     {
-        rc.makeConstant( T() );
-    }
+        template <typename T> static void call(T_RecordComponent &rc)
+        {
+            rc.makeConstant(T());
+        }
 
-    template< unsigned n, typename... Args >
-    static void call( Args &&... )
-    {
-        throw std::runtime_error(
-            "makeEmpty: Datatype not supported by openPMD." );
-    }
-};
+        template <unsigned n, typename... Args> static void call(Args &&...)
+        {
+            throw std::runtime_error(
+                "makeEmpty: Datatype not supported by openPMD.");
+        }
+    };
 } // namespace detail
 } // namespace openPMD

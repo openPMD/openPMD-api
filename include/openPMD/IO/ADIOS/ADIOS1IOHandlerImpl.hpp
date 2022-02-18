@@ -20,46 +20,45 @@
  */
 #pragma once
 
-#include "openPMD/config.hpp"
-#include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/auxiliary/Export.hpp"
+#include "openPMD/config.hpp"
 
 #if openPMD_HAVE_ADIOS1
-#   include "openPMD/IO/ADIOS/CommonADIOS1IOHandler.hpp"
+#include "openPMD/IO/ADIOS/CommonADIOS1IOHandler.hpp"
 #endif
 
 #include <future>
 #include <memory>
 #include <string>
 #if openPMD_HAVE_ADIOS1
-#   include <unordered_map>
-#   include <unordered_set>
+#include <unordered_map>
+#include <unordered_set>
 #endif
-
 
 namespace openPMD
 {
 #if openPMD_HAVE_ADIOS1
-    class OPENPMDAPI_EXPORT ADIOS1IOHandlerImpl
-        : public CommonADIOS1IOHandlerImpl< ADIOS1IOHandlerImpl >
-    {
-    private:
-        using Base_t = CommonADIOS1IOHandlerImpl< ADIOS1IOHandlerImpl >;
-    public:
-        ADIOS1IOHandlerImpl(AbstractIOHandler*, json::TracingJSON);
-        virtual ~ADIOS1IOHandlerImpl();
+class OPENPMDAPI_EXPORT ADIOS1IOHandlerImpl
+    : public CommonADIOS1IOHandlerImpl<ADIOS1IOHandlerImpl>
+{
+private:
+    using Base_t = CommonADIOS1IOHandlerImpl<ADIOS1IOHandlerImpl>;
 
-        virtual void init();
+public:
+    ADIOS1IOHandlerImpl(AbstractIOHandler *, json::TracingJSON);
+    virtual ~ADIOS1IOHandlerImpl();
 
-        std::future< void > flush() override;
+    virtual void init();
 
-        virtual int64_t open_write(Writable *);
-        virtual ADIOS_FILE* open_read(std::string const & name);
-        int64_t initialize_group(std::string const& name);
-    }; // ADIOS1IOHandlerImpl
+    std::future<void> flush() override;
+
+    virtual int64_t open_write(Writable *);
+    virtual ADIOS_FILE *open_read(std::string const &name);
+    int64_t initialize_group(std::string const &name);
+}; // ADIOS1IOHandlerImpl
 #else
-    class OPENPMDAPI_EXPORT ADIOS1IOHandlerImpl
-    {
-    }; // ADIOS1IOHandlerImpl
+class OPENPMDAPI_EXPORT ADIOS1IOHandlerImpl
+{}; // ADIOS1IOHandlerImpl
 #endif
-} // openPMD
+} // namespace openPMD

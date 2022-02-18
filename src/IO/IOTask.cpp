@@ -24,49 +24,48 @@
 
 #include <iostream> // std::cerr
 
-
 namespace openPMD
 {
-Writable*
-getWritable(Attributable* a)
-{ return &a->writable(); }
+Writable *getWritable(Attributable *a)
+{
+    return &a->writable();
+}
 
-template<>
-void Parameter< Operation::CREATE_DATASET >::warnUnusedParameters<
-    json::TracingJSON >(
-    json::TracingJSON & config,
-    std::string const & currentBackendName,
-    std::string const & warningMessage )
+template <>
+void Parameter<Operation::CREATE_DATASET>::warnUnusedParameters<
+    json::TracingJSON>(
+    json::TracingJSON &config,
+    std::string const &currentBackendName,
+    std::string const &warningMessage)
 {
     /*
      * Fake-read non-backend-specific options. Some backends don't read those
      * and we don't want to have warnings for them.
      */
-    for( std::string const & key : { "resizable" } )
+    for (std::string const &key : {"resizable"})
     {
-        config[ key ];
+        config[key];
     }
 
     auto shadow = config.invertShadow();
     // The backends are supposed to deal with this
     // Only global options here
-    for( auto const & backendKey : json::backendKeys )
+    for (auto const &backendKey : json::backendKeys)
     {
-        if( backendKey != currentBackendName )
+        if (backendKey != currentBackendName)
         {
-            shadow.erase( backendKey );
+            shadow.erase(backendKey);
         }
     }
-    if( shadow.size() > 0 )
+    if (shadow.size() > 0)
     {
-        switch( config.originallySpecifiedAs )
+        switch (config.originallySpecifiedAs)
         {
         case json::SupportedLanguages::JSON:
             std::cerr << warningMessage << shadow.dump() << std::endl;
             break;
-        case json::SupportedLanguages::TOML:
-        {
-            auto asToml = json::jsonToToml( shadow );
+        case json::SupportedLanguages::TOML: {
+            auto asToml = json::jsonToToml(shadow);
             std::cerr << warningMessage << asToml << std::endl;
             break;
         }
@@ -76,10 +75,9 @@ void Parameter< Operation::CREATE_DATASET >::warnUnusedParameters<
 
 namespace internal
 {
-    std::string
-    operationAsString( Operation op )
+    std::string operationAsString(Operation op)
     {
-        switch( op )
+        switch (op)
         {
         case Operation::CREATE_FILE:
             return "CREATE_FILE";
@@ -155,5 +153,5 @@ namespace internal
             break;
         }
     }
-}
-} // openPMD
+} // namespace internal
+} // namespace openPMD

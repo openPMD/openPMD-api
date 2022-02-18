@@ -22,78 +22,89 @@
 
 #include "openPMD/config.hpp"
 #if openPMD_HAVE_HDF5
-#   include "openPMD/IO/AbstractIOHandlerImpl.hpp"
+#include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 
-#   include "openPMD/auxiliary/JSON_internal.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
 
-#   include <hdf5.h>
-#   include <optional>
-#   include <unordered_map>
-#   include <unordered_set>
+#include <hdf5.h>
+#include <optional>
+#include <unordered_map>
+#include <unordered_set>
 #endif
-
 
 namespace openPMD
 {
 #if openPMD_HAVE_HDF5
-    class HDF5IOHandlerImpl : public AbstractIOHandlerImpl
+class HDF5IOHandlerImpl : public AbstractIOHandlerImpl
+{
+public:
+    HDF5IOHandlerImpl(AbstractIOHandler *, json::TracingJSON config);
+    ~HDF5IOHandlerImpl() override;
+
+    void
+    createFile(Writable *, Parameter<Operation::CREATE_FILE> const &) override;
+    void
+    createPath(Writable *, Parameter<Operation::CREATE_PATH> const &) override;
+    void createDataset(
+        Writable *, Parameter<Operation::CREATE_DATASET> const &) override;
+    void extendDataset(
+        Writable *, Parameter<Operation::EXTEND_DATASET> const &) override;
+    void availableChunks(
+        Writable *, Parameter<Operation::AVAILABLE_CHUNKS> &) override;
+    void openFile(Writable *, Parameter<Operation::OPEN_FILE> const &) override;
+    void
+    closeFile(Writable *, Parameter<Operation::CLOSE_FILE> const &) override;
+    void openPath(Writable *, Parameter<Operation::OPEN_PATH> const &) override;
+    void openDataset(Writable *, Parameter<Operation::OPEN_DATASET> &) override;
+    void
+    deleteFile(Writable *, Parameter<Operation::DELETE_FILE> const &) override;
+    void
+    deletePath(Writable *, Parameter<Operation::DELETE_PATH> const &) override;
+    void deleteDataset(
+        Writable *, Parameter<Operation::DELETE_DATASET> const &) override;
+    void deleteAttribute(
+        Writable *, Parameter<Operation::DELETE_ATT> const &) override;
+    void writeDataset(
+        Writable *, Parameter<Operation::WRITE_DATASET> const &) override;
+    void writeAttribute(
+        Writable *, Parameter<Operation::WRITE_ATT> const &) override;
+    void readDataset(Writable *, Parameter<Operation::READ_DATASET> &) override;
+    void readAttribute(Writable *, Parameter<Operation::READ_ATT> &) override;
+    void listPaths(Writable *, Parameter<Operation::LIST_PATHS> &) override;
+    void
+    listDatasets(Writable *, Parameter<Operation::LIST_DATASETS> &) override;
+    void listAttributes(Writable *, Parameter<Operation::LIST_ATTS> &) override;
+
+    std::unordered_map<Writable *, std::string> m_fileNames;
+    std::unordered_map<std::string, hid_t> m_fileNamesWithID;
+
+    std::unordered_set<hid_t> m_openFileIDs;
+
+    hid_t m_datasetTransferProperty;
+    hid_t m_fileAccessProperty;
+    hid_t m_fileCreateProperty;
+
+    hbool_t m_hdf5_collective_metadata = 1;
+
+    // h5py compatible types for bool and complex
+    hid_t m_H5T_BOOL_ENUM;
+    hid_t m_H5T_CFLOAT;
+    hid_t m_H5T_CDOUBLE;
+    hid_t m_H5T_CLONG_DOUBLE;
+
+private:
+    json::TracingJSON m_config;
+    std::string m_chunks = "auto";
+    struct File
     {
-    public:
-        HDF5IOHandlerImpl(AbstractIOHandler*, json::TracingJSON config);
-        ~HDF5IOHandlerImpl() override;
-
-        void createFile(Writable*, Parameter< Operation::CREATE_FILE > const&) override;
-        void createPath(Writable*, Parameter< Operation::CREATE_PATH > const&) override;
-        void createDataset(Writable*, Parameter< Operation::CREATE_DATASET > const&) override;
-        void extendDataset(Writable*, Parameter< Operation::EXTEND_DATASET > const&) override;
-        void availableChunks(Writable *, Parameter< Operation::AVAILABLE_CHUNKS > &) override;
-        void openFile(Writable*, Parameter< Operation::OPEN_FILE > const&) override;
-        void closeFile(Writable*, Parameter< Operation::CLOSE_FILE > const&) override;
-        void openPath(Writable*, Parameter< Operation::OPEN_PATH > const&) override;
-        void openDataset(Writable*, Parameter< Operation::OPEN_DATASET > &) override;
-        void deleteFile(Writable*, Parameter< Operation::DELETE_FILE > const&) override;
-        void deletePath(Writable*, Parameter< Operation::DELETE_PATH > const&) override;
-        void deleteDataset(Writable*, Parameter< Operation::DELETE_DATASET > const&) override;
-        void deleteAttribute(Writable*, Parameter< Operation::DELETE_ATT > const&) override;
-        void writeDataset(Writable*, Parameter< Operation::WRITE_DATASET > const&) override;
-        void writeAttribute(Writable*, Parameter< Operation::WRITE_ATT > const&) override;
-        void readDataset(Writable*, Parameter< Operation::READ_DATASET > &) override;
-        void readAttribute(Writable*, Parameter< Operation::READ_ATT > &) override;
-        void listPaths(Writable*, Parameter< Operation::LIST_PATHS > &) override;
-        void listDatasets(Writable*, Parameter< Operation::LIST_DATASETS > &) override;
-        void listAttributes(Writable*, Parameter< Operation::LIST_ATTS > &) override;
-
-        std::unordered_map< Writable*, std::string > m_fileNames;
-        std::unordered_map< std::string,  hid_t > m_fileNamesWithID;
-
-        std::unordered_set< hid_t > m_openFileIDs;
-
-        hid_t m_datasetTransferProperty;
-        hid_t m_fileAccessProperty;
-        hid_t m_fileCreateProperty;
-
-        hbool_t m_hdf5_collective_metadata = 1;
-
-        // h5py compatible types for bool and complex
-        hid_t m_H5T_BOOL_ENUM;
-        hid_t m_H5T_CFLOAT;
-        hid_t m_H5T_CDOUBLE;
-        hid_t m_H5T_CLONG_DOUBLE;
-
-    private:
-        json::TracingJSON m_config;
-        std::string m_chunks = "auto";
-        struct File
-        {
-            std::string name;
-            hid_t id;
-        };
-        std::optional< File > getFile( Writable * );
-    }; // HDF5IOHandlerImpl
+        std::string name;
+        hid_t id;
+    };
+    std::optional<File> getFile(Writable *);
+}; // HDF5IOHandlerImpl
 #else
-    class HDF5IOHandlerImpl
-    {
-    }; // HDF5IOHandlerImpl
+class HDF5IOHandlerImpl
+{}; // HDF5IOHandlerImpl
 #endif
 
-} // openPMD
+} // namespace openPMD

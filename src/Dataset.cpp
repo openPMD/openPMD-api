@@ -20,33 +20,33 @@
  */
 #include "openPMD/Dataset.hpp"
 
-#include <iostream>
 #include <cstddef>
-
+#include <iostream>
 
 namespace openPMD
 {
 Dataset::Dataset(Datatype d, Extent e, std::string options_in)
-        : extent{e},
-          dtype{d},
-          rank{static_cast<uint8_t>(e.size())},
-          options{std::move(options_in)}
-{ }
+    : extent{e}
+    , dtype{d}
+    , rank{static_cast<uint8_t>(e.size())}
+    , options{std::move(options_in)}
+{}
 
-Dataset::Dataset( Extent e ) : Dataset( Datatype::UNDEFINED, std::move( e ) )
-{
-}
+Dataset::Dataset(Extent e) : Dataset(Datatype::UNDEFINED, std::move(e))
+{}
 
-Dataset &
-Dataset::extend( Extent newExtents )
+Dataset &Dataset::extend(Extent newExtents)
 {
-    if( newExtents.size() != rank )
-        throw std::runtime_error("Dimensionality of extended Dataset must match the original dimensionality");
-    for( size_t i = 0; i < newExtents.size(); ++i )
-        if( newExtents[i] < extent[i] )
-            throw std::runtime_error("New Extent must be equal or greater than previous Extent");
+    if (newExtents.size() != rank)
+        throw std::runtime_error(
+            "Dimensionality of extended Dataset must match the original "
+            "dimensionality");
+    for (size_t i = 0; i < newExtents.size(); ++i)
+        if (newExtents[i] < extent[i])
+            throw std::runtime_error(
+                "New Extent must be equal or greater than previous Extent");
 
     extent = newExtents;
     return *this;
 }
-} // openPMD
+} // namespace openPMD

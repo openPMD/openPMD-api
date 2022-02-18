@@ -18,11 +18,10 @@
  * and the GNU Lesser General Public License along with openPMD-api.
  * If not, see <http://www.gnu.org/licenses/>.
  */
-#include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
+#include "openPMD/auxiliary/Memory.hpp"
 
 #include <algorithm>
-
 
 namespace openPMD
 {
@@ -30,75 +29,73 @@ namespace internal
 {
     PatchRecordComponentData::PatchRecordComponentData()
     {
-        PatchRecordComponent impl{ { this, []( auto const * ){} } };
-        impl.setUnitSI( 1 );
+        PatchRecordComponent impl{{this, [](auto const *) {}}};
+        impl.setUnitSI(1);
     }
-}
+} // namespace internal
 
-PatchRecordComponent&
-PatchRecordComponent::setUnitSI(double usi)
+PatchRecordComponent &PatchRecordComponent::setUnitSI(double usi)
 {
     setAttribute("unitSI", usi);
     return *this;
 }
 
-PatchRecordComponent&
-PatchRecordComponent::resetDataset(Dataset d)
+PatchRecordComponent &PatchRecordComponent::resetDataset(Dataset d)
 {
-    if( written() )
-        throw std::runtime_error("A Records Dataset can not (yet) be changed after it has been written.");
-    if( d.extent.empty() )
-      throw std::runtime_error("Dataset extent must be at least 1D.");
-    if( std::any_of(d.extent.begin(), d.extent.end(),
-                    [](Extent::value_type const& i) { return i == 0u; }) )
-        throw std::runtime_error("Dataset extent must not be zero in any dimension.");
+    if (written())
+        throw std::runtime_error(
+            "A Records Dataset can not (yet) be changed after it has been "
+            "written.");
+    if (d.extent.empty())
+        throw std::runtime_error("Dataset extent must be at least 1D.");
+    if (std::any_of(
+            d.extent.begin(), d.extent.end(), [](Extent::value_type const &i) {
+                return i == 0u;
+            }))
+        throw std::runtime_error(
+            "Dataset extent must not be zero in any dimension.");
 
     get().m_dataset = d;
     dirty() = true;
     return *this;
 }
 
-uint8_t
-PatchRecordComponent::getDimensionality() const
+uint8_t PatchRecordComponent::getDimensionality() const
 {
     return 1;
 }
 
-Extent
-PatchRecordComponent::getExtent() const
+Extent PatchRecordComponent::getExtent() const
 {
     return get().m_dataset.extent;
 }
 
-PatchRecordComponent::PatchRecordComponent()
-    : BaseRecordComponent{ nullptr }
+PatchRecordComponent::PatchRecordComponent() : BaseRecordComponent{nullptr}
 {
-    BaseRecordComponent::setData( m_patchRecordComponentData );
+    BaseRecordComponent::setData(m_patchRecordComponentData);
 }
 
 PatchRecordComponent::PatchRecordComponent(
-    std::shared_ptr< internal::PatchRecordComponentData > data )
-    : BaseRecordComponent{ data }
-    , m_patchRecordComponentData{ std::move( data ) }
-{
-}
+    std::shared_ptr<internal::PatchRecordComponentData> data)
+    : BaseRecordComponent{data}, m_patchRecordComponentData{std::move(data)}
+{}
 
-void
-PatchRecordComponent::flush(std::string const& name)
+void PatchRecordComponent::flush(std::string const &name)
 {
-    auto & rc = get();
-    if(IOHandler()->m_frontendAccess == Access::READ_ONLY )
+    auto &rc = get();
+    if (IOHandler()->m_frontendAccess == Access::READ_ONLY)
     {
-        while( !rc.m_chunks.empty() )
+        while (!rc.m_chunks.empty())
         {
             IOHandler()->enqueue(rc.m_chunks.front());
             rc.m_chunks.pop();
         }
-    } else
+    }
+    else
     {
-        if( !written() )
+        if (!written())
         {
-            Parameter< Operation::CREATE_DATASET > dCreate;
+            Parameter<Operation::CREATE_DATASET> dCreate;
             dCreate.name = name;
             dCreate.extent = getExtent();
             dCreate.dtype = getDatatype();
@@ -106,7 +103,7 @@ PatchRecordComponent::flush(std::string const& name)
             IOHandler()->enqueue(IOTask(this, dCreate));
         }
 
-        while( !rc.m_chunks.empty() )
+        while (!rc.m_chunks.empty())
         {
             IOHandler()->enqueue(rc.m_chunks.front());
             rc.m_chunks.pop();
@@ -116,30 +113,28 @@ PatchRecordComponent::flush(std::string const& name)
     }
 }
 
-void
-PatchRecordComponent::read()
+void PatchRecordComponent::read()
 {
-    Parameter< Operation::READ_ATT > aRead;
+    Parameter<Operation::READ_ATT> aRead;
 
     aRead.name = "unitSI";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush();
-    if( *aRead.dtype == Datatype::DOUBLE )
-        setUnitSI(Attribute(*aRead.resource).get< double >());
+    if (*aRead.dtype == Datatype::DOUBLE)
+        setUnitSI(Attribute(*aRead.resource).get<double>());
     else
         throw std::runtime_error("Unexpected Attribute datatype for 'unitSI'");
 
-    readAttributes( ReadMode::FullyReread ); // this will set dirty() = false
+    readAttributes(ReadMode::FullyReread); // this will set dirty() = false
 }
 
-bool
-PatchRecordComponent::dirtyRecursive() const
+bool PatchRecordComponent::dirtyRecursive() const
 {
-    if( this->dirty() )
+    if (this->dirty())
     {
         return true;
     }
-    auto & rc = get();
+    auto &rc = get();
     return !rc.m_chunks.empty();
 }
-} // openPMD
+} // namespace openPMD

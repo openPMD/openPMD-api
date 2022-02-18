@@ -20,9 +20,6 @@
  */
 #pragma once
 
-#include "openPMD/config.hpp"
-#include "openPMD/backend/Attributable.hpp"
-#include "openPMD/backend/Container.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/Access.hpp"
 #include "openPMD/IO/Format.hpp"
@@ -37,7 +34,7 @@
 #include "openPMD/version.hpp"
 
 #if openPMD_HAVE_MPI
-#   include <mpi.h>
+#include <mpi.h>
 #endif
 
 #include <map>
@@ -46,9 +43,8 @@
 
 // expose private and protected members for invasive testing
 #ifndef OPENPMD_private
-#   define OPENPMD_private private:
+#define OPENPMD_private private:
 #endif
-
 
 namespace openPMD
 {
@@ -58,105 +54,107 @@ class Series;
 
 namespace internal
 {
-/**
- * @brief Data members for Series. Pinned at one memory location.
- *
- * (Not movable or copyable)
- *
- */
-class SeriesData : public AttributableData
-{
-public:
-    explicit SeriesData() = default;
+    /**
+     * @brief Data members for Series. Pinned at one memory location.
+     *
+     * (Not movable or copyable)
+     *
+     */
+    class SeriesData : public AttributableData
+    {
+    public:
+        explicit SeriesData() = default;
 
-    virtual ~SeriesData();
+        virtual ~SeriesData();
 
-    SeriesData( SeriesData const & ) = delete;
-    SeriesData( SeriesData && ) = delete;
+        SeriesData(SeriesData const &) = delete;
+        SeriesData(SeriesData &&) = delete;
 
-    SeriesData & operator=( SeriesData const & ) = delete;
-    SeriesData & operator=( SeriesData && ) = delete;
+        SeriesData &operator=(SeriesData const &) = delete;
+        SeriesData &operator=(SeriesData &&) = delete;
 
-    Container< Iteration, uint64_t > iterations{};
+        Container<Iteration, uint64_t> iterations{};
 
-    /**
-     * For each instance of Series, there is only one instance
-     * of WriteIterations, stored in this Option.
-     * This ensures that Series::writeIteration() always returns
-     * the same instance.
-     */
-    std::optional< WriteIterations > m_writeIterations;
-    /**
-     * Needed if reading a single iteration of a file-based series.
-     * Users may specify the concrete filename of one iteration instead of the
-     * file-based expansion pattern.
-     * In that case, the filename must not be constructed from prefix, infix and
-     * suffix as usual in file-based iteration encoding.
-     * Instead, the user-specified filename should be used directly.
-     * Store that filename in the following Option to indicate this situation.
-     */
-    std::optional< std::string > m_overrideFilebasedFilename;
-    /**
-     * Name of the iteration without filename suffix.
-     * In case of file-based iteration encoding, with expansion pattern.
-     * E.g.: simData.bp      -> simData
-     *       simData_%06T.h5 -> simData_%06T
-     */
-    std::string m_name;
-    /**
-     * Filename leading up to the expansion pattern.
-     * Only used for file-based iteration encoding.
-     */
-    std::string m_filenamePrefix;
-    /**
-     * Filename after the expansion pattern without filename extension.
-     */
-    std::string m_filenamePostfix;
-    /**
-     * The padding in file-based iteration encoding.
-     * 0 if no padding is given (%T pattern).
-     * -1 if no expansion pattern has been parsed.
-     */
-    int m_filenamePadding = -1;
-    /**
-     * The iteration encoding used in this series.
-     */
-    IterationEncoding m_iterationEncoding{};
-    /**
-     * Detected IO format (backend).
-     */
-    Format m_format;
-    /**
-     *  Whether a step is currently active for this iteration.
-     * Used for group-based iteration layout, see SeriesData.hpp for
-     * iteration-based layout.
-     * Access via stepStatus() method to automatically select the correct
-     * one among both flags.
-     */
-    StepStatus m_stepStatus = StepStatus::NoStep;
-    /**
-     * True if a user opts into lazy parsing.
-     */
-    bool m_parseLazily = false;
-    /**
-     * This is to avoid that the destructor tries flushing again if an error
-     * happened. Otherwise, this would lead to confusing error messages.
-     * Initialized as false, set to true after successful construction.
-     * If flushing results in an error, set this back to false.
-     * The destructor will only attempt flushing again if this is true.
-     */
-    bool m_lastFlushSuccessful = false;
-}; // SeriesData
+        /**
+         * For each instance of Series, there is only one instance
+         * of WriteIterations, stored in this Option.
+         * This ensures that Series::writeIteration() always returns
+         * the same instance.
+         */
+        std::optional<WriteIterations> m_writeIterations;
+        /**
+         * Needed if reading a single iteration of a file-based series.
+         * Users may specify the concrete filename of one iteration instead of
+         * the file-based expansion pattern. In that case, the filename must not
+         * be constructed from prefix, infix and suffix as usual in file-based
+         * iteration encoding. Instead, the user-specified filename should be
+         * used directly. Store that filename in the following Option to
+         * indicate this situation.
+         */
+        std::optional<std::string> m_overrideFilebasedFilename;
+        /**
+         * Name of the iteration without filename suffix.
+         * In case of file-based iteration encoding, with expansion pattern.
+         * E.g.: simData.bp      -> simData
+         *       simData_%06T.h5 -> simData_%06T
+         */
+        std::string m_name;
+        /**
+         * Filename leading up to the expansion pattern.
+         * Only used for file-based iteration encoding.
+         */
+        std::string m_filenamePrefix;
+        /**
+         * Filename after the expansion pattern without filename extension.
+         */
+        std::string m_filenamePostfix;
+        /**
+         * The padding in file-based iteration encoding.
+         * 0 if no padding is given (%T pattern).
+         * -1 if no expansion pattern has been parsed.
+         */
+        int m_filenamePadding = -1;
+        /**
+         * The iteration encoding used in this series.
+         */
+        IterationEncoding m_iterationEncoding{};
+        /**
+         * Detected IO format (backend).
+         */
+        Format m_format;
+        /**
+         *  Whether a step is currently active for this iteration.
+         * Used for group-based iteration layout, see SeriesData.hpp for
+         * iteration-based layout.
+         * Access via stepStatus() method to automatically select the correct
+         * one among both flags.
+         */
+        StepStatus m_stepStatus = StepStatus::NoStep;
+        /**
+         * True if a user opts into lazy parsing.
+         */
+        bool m_parseLazily = false;
+        /**
+         * This is to avoid that the destructor tries flushing again if an error
+         * happened. Otherwise, this would lead to confusing error messages.
+         * Initialized as false, set to true after successful construction.
+         * If flushing results in an error, set this back to false.
+         * The destructor will only attempt flushing again if this is true.
+         */
+        bool m_lastFlushSuccessful = false;
+    }; // SeriesData
 
-class SeriesInternal;
+    class SeriesInternal;
 } // namespace internal
 
 /** @brief  Implementation for the root level of the openPMD hierarchy.
  *
  * Entry point and common link between all iterations of particle and mesh data.
  *
- * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file
- * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series
+ * @see
+ * https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file
+ * @see
+ * https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series
  */
 class Series : public Attributable
 {
@@ -169,17 +167,17 @@ class Series : public Attributable
 
 protected:
     // Should not be called publicly, only by implementing classes
-    Series( std::shared_ptr< internal::SeriesData > );
+    Series(std::shared_ptr<internal::SeriesData>);
 
 public:
     explicit Series();
 
 #if openPMD_HAVE_MPI
     Series(
-        std::string const & filepath,
+        std::string const &filepath,
         Access at,
         MPI_Comm comm,
-        std::string const & options = "{}" );
+        std::string const &options = "{}");
 #endif
 
     /**
@@ -192,13 +190,13 @@ public:
      *      to a JSON textfile, prepended by an at sign '@'.
      */
     Series(
-        std::string const & filepath,
+        std::string const &filepath,
         Access at,
-        std::string const & options = "{}" );
+        std::string const &options = "{}");
 
     virtual ~Series() = default;
 
-    Container< Iteration, uint64_t > iterations;
+    Container<Iteration, uint64_t> iterations;
 
     /**
      * @brief Is this a usable Series object?
@@ -209,101 +207,135 @@ public:
     operator bool() const;
 
     /**
-     * @return  String representing the current enforced version of the <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file">openPMD standard</A>.
+     * @return  String representing the current enforced version of the <A
+     * HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file">openPMD
+     * standard</A>.
      */
     std::string openPMD() const;
-    /** Set the version of the enforced <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file">openPMD standard</A>.
+    /** Set the version of the enforced <A
+     * HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file">openPMD
+     * standard</A>.
      *
-     * @param   openPMD   String <CODE>MAJOR.MINOR.REVISION</CODE> of the desired version of the openPMD standard.
+     * @param   openPMD   String <CODE>MAJOR.MINOR.REVISION</CODE> of the
+     * desired version of the openPMD standard.
      * @return  Reference to modified series.
      */
-    Series& setOpenPMD(std::string const& openPMD);
+    Series &setOpenPMD(std::string const &openPMD);
 
     /**
-     * @return  32-bit mask of applied extensions to the <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file">openPMD standard</A>.
+     * @return  32-bit mask of applied extensions to the <A
+     * HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file">openPMD
+     * standard</A>.
      */
     uint32_t openPMDextension() const;
-    /** Set a 32-bit mask of applied extensions to the <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file">openPMD standard</A>.
+    /** Set a 32-bit mask of applied extensions to the <A
+     * HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#hierarchy-of-the-data-file">openPMD
+     * standard</A>.
      *
-     * @param   openPMDextension  Unsigned 32-bit integer used as a bit-mask of applied extensions.
+     * @param   openPMDextension  Unsigned 32-bit integer used as a bit-mask of
+     * applied extensions.
      * @return  Reference to modified series.
      */
-    Series& setOpenPMDextension(uint32_t openPMDextension);
+    Series &setOpenPMDextension(uint32_t openPMDextension);
 
     /**
-     * @return  String representing the common prefix for all data sets and sub-groups of a specific iteration.
+     * @return  String representing the common prefix for all data sets and
+     * sub-groups of a specific iteration.
      */
     std::string basePath() const;
-    /** Set the common prefix for all data sets and sub-groups of a specific iteration.
+    /** Set the common prefix for all data sets and sub-groups of a specific
+     * iteration.
      *
-     * @param   basePath    String of the common prefix for all data sets and sub-groups of a specific iteration.
+     * @param   basePath    String of the common prefix for all data sets and
+     * sub-groups of a specific iteration.
      * @return  Reference to modified series.
      */
-    Series& setBasePath(std::string const& basePath);
+    Series &setBasePath(std::string const &basePath);
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
-     * @return  String representing the path to mesh records, relative(!) to <CODE>basePath</CODE>.
+     * @return  String representing the path to mesh records, relative(!) to
+     * <CODE>basePath</CODE>.
      */
     std::string meshesPath() const;
-    /** Set the path to <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#mesh-based-records">mesh records</A>, relative(!) to <CODE>basePath</CODE>.
+    /** Set the path to <A
+     * HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#mesh-based-records">mesh
+     * records</A>, relative(!) to <CODE>basePath</CODE>.
      *
-     * @param   meshesPath  String of the path to <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#mesh-based-records">mesh records</A>, relative(!) to <CODE>basePath</CODE>.
+     * @param   meshesPath  String of the path to <A
+     * HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#mesh-based-records">mesh
+     * records</A>, relative(!) to <CODE>basePath</CODE>.
      * @return  Reference to modified series.
      */
-    Series& setMeshesPath(std::string const& meshesPath);
+    Series &setMeshesPath(std::string const &meshesPath);
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
-     * @return  String representing the path to particle species, relative(!) to <CODE>basePath</CODE>.
+     * @return  String representing the path to particle species, relative(!) to
+     * <CODE>basePath</CODE>.
      */
     std::string particlesPath() const;
-    /** Set the path to groups for each <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#particle-records">particle species</A>, relative(!) to <CODE>basePath</CODE>.
+    /** Set the path to groups for each <A
+     * HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#particle-records">particle
+     * species</A>, relative(!) to <CODE>basePath</CODE>.
      *
-     * @param   particlesPath   String of the path to groups for each <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#particle-records">particle species</A>, relative(!) to <CODE>basePath</CODE>.
+     * @param   particlesPath   String of the path to groups for each <A
+     * HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#particle-records">particle
+     * species</A>, relative(!) to <CODE>basePath</CODE>.
      * @return  Reference to modified series.
      */
-    Series& setParticlesPath(std::string const& particlesPath);
+    Series &setParticlesPath(std::string const &particlesPath);
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
-     * @return  String indicating author and contact for the information in the file.
+     * @return  String indicating author and contact for the information in the
+     * file.
      */
     std::string author() const;
     /** Indicate the author and contact for the information in the file.
      *
-     * @param   author  String indicating author and contact for the information in the file.
+     * @param   author  String indicating author and contact for the information
+     * in the file.
      * @return  Reference to modified series.
      */
-    Series& setAuthor(std::string const& author);
+    Series &setAuthor(std::string const &author);
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
-     * @return  String indicating the software/code/simulation that created the file;
+     * @return  String indicating the software/code/simulation that created the
+     * file;
      */
     std::string software() const;
     /** Indicate the software/code/simulation that created the file.
      *
-     * @param   newName    String indicating the software/code/simulation that created the file.
-     * @param   newVersion String indicating the version of the software/code/simulation that created the file.
+     * @param   newName    String indicating the software/code/simulation that
+     * created the file.
+     * @param   newVersion String indicating the version of the
+     * software/code/simulation that created the file.
      * @return  Reference to modified series.
      */
-    Series& setSoftware(std::string const& newName, std::string const& newVersion = std::string("unspecified"));
+    Series &setSoftware(
+        std::string const &newName,
+        std::string const &newVersion = std::string("unspecified"));
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
-     * @return  String indicating the version of the software/code/simulation that created the file.
+     * @return  String indicating the version of the software/code/simulation
+     * that created the file.
      */
     std::string softwareVersion() const;
-    /** Indicate the version of the software/code/simulation that created the file.
+    /** Indicate the version of the software/code/simulation that created the
+     * file.
      *
      * @deprecated Set the version with the second argument of setSoftware()
      *
-     * @param   softwareVersion String indicating the version of the software/code/simulation that created the file.
+     * @param   softwareVersion String indicating the version of the
+     * software/code/simulation that created the file.
      * @return  Reference to modified series.
      */
-    [[deprecated("Set the version with the second argument of setSoftware()")]]
-    Series& setSoftwareVersion(std::string const& softwareVersion);
+    [[deprecated(
+        "Set the version with the second argument of setSoftware()")]] Series &
+    setSoftwareVersion(std::string const &softwareVersion);
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
@@ -315,61 +347,78 @@ public:
      * @param   date    String indicating the date of creation.
      * @return  Reference to modified series.
      */
-    Series& setDate(std::string const& date);
+    Series &setDate(std::string const &date);
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
-     * @return  String indicating dependencies of software that were used to create the file.
+     * @return  String indicating dependencies of software that were used to
+     * create the file.
      */
     std::string softwareDependencies() const;
     /** Indicate dependencies of software that were used to create the file.
      *
-     * @param   newSoftwareDependencies String indicating dependencies of software that were used to create the file (semicolon-separated list if needed).
+     * @param   newSoftwareDependencies String indicating dependencies of
+     * software that were used to create the file (semicolon-separated list if
+     * needed).
      * @return  Reference to modified series.
      */
-    Series& setSoftwareDependencies(std::string const& newSoftwareDependencies);
+    Series &setSoftwareDependencies(std::string const &newSoftwareDependencies);
 
     /**
      * @throw   no_such_attribute_error If optional attribute is not present.
-     * @return  String indicating the machine or relevant hardware that created the file.
+     * @return  String indicating the machine or relevant hardware that created
+     * the file.
      */
     std::string machine() const;
     /** Indicate the machine or relevant hardware that created the file.
      *
-     * @param   newMachine String indicating the machine or relevant hardware that created the file (semicolon-separated list if needed)..
+     * @param   newMachine String indicating the machine or relevant hardware
+     * that created the file (semicolon-separated list if needed)..
      * @return  Reference to modified series.
      */
-    Series& setMachine(std::string const& newMachine);
+    Series &setMachine(std::string const &newMachine);
 
     /**
      * @return  Current encoding style for multiple iterations in this series.
      */
     IterationEncoding iterationEncoding() const;
-    /** Set the <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series">encoding style</A> for multiple iterations in this series.
-     * A preview on the <A HREF="https://github.com/openPMD/openPMD-standard/pull/250">openPMD 2.0 variable-based iteration encoding</A> can be activated with this call.
-     * Making full use of the variable-based iteration encoding requires (1) explicit support by the backend (available only in ADIOS2) and (2) use of the openPMD streaming API.
-     * In other backends and without the streaming API, only one iteration/snapshot may be written in the variable-based encoding, making this encoding a good choice for single-snapshot data dumps.
+    /** Set the <A
+     * HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series">encoding
+     * style</A> for multiple iterations in this series. A preview on the <A
+     * HREF="https://github.com/openPMD/openPMD-standard/pull/250">openPMD 2.0
+     * variable-based iteration encoding</A> can be activated with this call.
+     * Making full use of the variable-based iteration encoding requires (1)
+     * explicit support by the backend (available only in ADIOS2) and (2) use of
+     * the openPMD streaming API. In other backends and without the streaming
+     * API, only one iteration/snapshot may be written in the variable-based
+     * encoding, making this encoding a good choice for single-snapshot data
+     * dumps.
      *
-     * @param   iterationEncoding   Desired <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series">encoding style</A> for multiple iterations in this series.
+     * @param   iterationEncoding   Desired <A
+     * HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series">encoding
+     * style</A> for multiple iterations in this series.
      * @return  Reference to modified series.
      */
-    Series& setIterationEncoding(IterationEncoding iterationEncoding);
+    Series &setIterationEncoding(IterationEncoding iterationEncoding);
 
     /**
-     * @return  String describing a <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series">pattern</A> describing how to access single iterations in the raw file.
+     * @return  String describing a <A
+     * HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series">pattern</A>
+     * describing how to access single iterations in the raw file.
      */
     std::string iterationFormat() const;
-    /** Set a <A HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series">pattern</A> describing how to access single iterations in the raw file.
+    /** Set a <A
+     * HREF="https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series">pattern</A>
+     * describing how to access single iterations in the raw file.
      *
-     * @param   iterationFormat String with the iteration regex <CODE>\%T</CODE> defining either
-     *                          the series of files (fileBased)
-     *                          or the series of groups within a single file (groupBased)
-     *                          that allows to extract the iteration from it.
-     *                          For fileBased formats the iteration must be included in the file name.
-     *                          The format depends on the selected iterationEncoding method.
+     * @param   iterationFormat String with the iteration regex <CODE>\%T</CODE>
+     * defining either the series of files (fileBased) or the series of groups
+     * within a single file (groupBased) that allows to extract the iteration
+     * from it. For fileBased formats the iteration must be included in the file
+     * name. The format depends on the selected iterationEncoding method.
      * @return  Reference to modified series.
      */
-    Series& setIterationFormat(std::string const& iterationFormat);
+    Series &setIterationFormat(std::string const &iterationFormat);
 
     /**
      * @return String of a pattern for file names.
@@ -378,10 +427,11 @@ public:
 
     /** Set the pattern for file names.
      *
-     * @param   name    String of the pattern for file names. Must include iteration regex <CODE>\%T</CODE> for fileBased data.
+     * @param   name    String of the pattern for file names. Must include
+     * iteration regex <CODE>\%T</CODE> for fileBased data.
      * @return  Reference to modified series.
      */
-    Series& setName(std::string const& name);
+    Series &setName(std::string const &name);
 
     /** The currently used backend
      *
@@ -421,44 +471,45 @@ public:
      */
     WriteIterations writeIterations();
 
-// clang-format off
+    // clang-format off
 OPENPMD_private
-// clang-format on
+    // clang-format on
 
-    static constexpr char const * const BASEPATH = "/data/%T/";
+    static constexpr char const *const BASEPATH = "/data/%T/";
 
     struct ParsedInput;
     using iterations_t = decltype(internal::SeriesData::iterations);
     using iterations_iterator = iterations_t::iterator;
 
-    std::shared_ptr< internal::SeriesData > m_series = nullptr;
+    std::shared_ptr<internal::SeriesData> m_series = nullptr;
 
-    inline internal::SeriesData & get()
+    inline internal::SeriesData &get()
     {
-        if( m_series )
+        if (m_series)
         {
             return *m_series;
         }
         else
         {
             throw std::runtime_error(
-                "[Series] Cannot use default-constructed Series." );
+                "[Series] Cannot use default-constructed Series.");
         }
     }
 
-    inline internal::SeriesData const & get() const
+    inline internal::SeriesData const &get() const
     {
-        if( m_series )
+        if (m_series)
         {
             return *m_series;
         }
         else
         {
             throw std::runtime_error(
-                "[Series] Cannot use default-constructed Series." );
-        }    }
+                "[Series] Cannot use default-constructed Series.");
+        }
+    }
 
-    std::unique_ptr< ParsedInput > parseInput(std::string);
+    std::unique_ptr<ParsedInput> parseInput(std::string);
     /**
      * @brief Parse non-backend-specific configuration in JSON config.
      *
@@ -468,12 +519,12 @@ OPENPMD_private
      * @tparam TracingJSON template parameter so we don't have
      *         to include the JSON lib here
      */
-    template< typename TracingJSON >
-    void parseJsonOptions( TracingJSON & options, ParsedInput & );
-    bool hasExpansionPattern( std::string filenameWithExtension );
-    bool reparseExpansionPattern( std::string filenameWithExtension );
-    void init(std::shared_ptr< AbstractIOHandler >, std::unique_ptr< ParsedInput >);
-    void initDefaults( IterationEncoding );
+    template <typename TracingJSON>
+    void parseJsonOptions(TracingJSON &options, ParsedInput &);
+    bool hasExpansionPattern(std::string filenameWithExtension);
+    bool reparseExpansionPattern(std::string filenameWithExtension);
+    void init(std::shared_ptr<AbstractIOHandler>, std::unique_ptr<ParsedInput>);
+    void initDefaults(IterationEncoding);
     /**
      * @brief Internal call for flushing a Series.
      *
@@ -485,12 +536,12 @@ OPENPMD_private
      * @param flushIOHandler Tasks will always be enqueued to the backend.
      *     If this flag is true, tasks will be flushed to the backend.
      */
-    std::future< void > flush_impl(
+    std::future<void> flush_impl(
         iterations_iterator begin,
         iterations_iterator end,
         FlushLevel level,
-        bool flushIOHandler = true );
-    void flushFileBased( iterations_iterator begin, iterations_iterator end );
+        bool flushIOHandler = true);
+    void flushFileBased(iterations_iterator begin, iterations_iterator end);
     /*
      * Group-based and variable-based iteration layouts share a lot of logic
      * (realistically, the variable-based iteration layout only throws out
@@ -498,19 +549,19 @@ OPENPMD_private
      * As a convention, methods that deal with both layouts are called
      * .*GorVBased, short for .*GroupOrVariableBased
      */
-    void flushGorVBased( iterations_iterator begin, iterations_iterator end );
+    void flushGorVBased(iterations_iterator begin, iterations_iterator end);
     void flushMeshesPath();
     void flushParticlesPath();
-    void readFileBased( );
-    void readOneIterationFileBased( std::string const & filePath );
+    void readFileBased();
+    void readOneIterationFileBased(std::string const &filePath);
     /**
      * Note on re-parsing of a Series:
      * If init == false, the parsing process will seek for new
      * Iterations/Records/Record Components etc.
      */
-    void readGorVBased( bool init = true );
+    void readGorVBased(bool init = true);
     void readBase();
-    std::string iterationFilename( uint64_t i );
+    std::string iterationFilename(uint64_t i);
 
     enum class IterationOpened : bool
     {
@@ -523,21 +574,20 @@ OPENPMD_private
      * Only open if the iteration is dirty and if it is not in deferred
      * parse state.
      */
-    IterationOpened openIterationIfDirty( uint64_t index, Iteration iteration );
+    IterationOpened openIterationIfDirty(uint64_t index, Iteration iteration);
     /*
      * Open an iteration. Ensures that the iteration's m_closed status
      * is set properly and that any files pertaining to the iteration
      * is opened.
      * Does not create files when called in CREATE mode.
      */
-    void openIteration( uint64_t index, Iteration iteration );
+    void openIteration(uint64_t index, Iteration iteration);
 
     /**
      * Find the given iteration in Series::iterations and return an iterator
      * into Series::iterations at that place.
      */
-    iterations_iterator
-    indexOf( Iteration const & );
+    iterations_iterator indexOf(Iteration const &);
 
     /**
      * @brief In step-based IO mode, begin or end an IO step for the given
@@ -554,12 +604,11 @@ OPENPMD_private
      * @param iteration The actual Iteration object.
      * @return AdvanceStatus
      */
-    AdvanceStatus
-    advance(
+    AdvanceStatus advance(
         AdvanceMode mode,
-        internal::AttributableData & file,
+        internal::AttributableData &file,
         iterations_iterator it,
-        Iteration & iteration );
+        Iteration &iteration);
 }; // Series
 } // namespace openPMD
 

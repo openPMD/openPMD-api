@@ -23,16 +23,16 @@
 
 #include "openPMD/config.hpp"
 #if openPMD_HAVE_ADIOS2
-# include "openPMD/Dataset.hpp"
-# include "openPMD/Datatype.hpp"
-# include "openPMD/DatatypeHelpers.hpp"
+#include "openPMD/Dataset.hpp"
+#include "openPMD/Datatype.hpp"
+#include "openPMD/DatatypeHelpers.hpp"
 
-# include <adios2.h>
+#include <adios2.h>
 
-# include <complex>
-# include <stdexcept>
-# include <utility>
-# include <vector>
+#include <complex>
+#include <stdexcept>
+#include <utility>
+#include <vector>
 
 namespace openPMD
 {
@@ -43,33 +43,31 @@ namespace detail
     // we represent booleans as unsigned chars
     using bool_representation = unsigned char;
 
-    template < typename T > struct ToDatatypeHelper
+    template <typename T> struct ToDatatypeHelper
     {
-        static std::string type( );
+        static std::string type();
     };
 
-    template < typename T > struct ToDatatypeHelper< std::vector< T > >
+    template <typename T> struct ToDatatypeHelper<std::vector<T> >
     {
-        static std::string type( );
+        static std::string type();
     };
 
-    template < typename T, size_t n >
-    struct ToDatatypeHelper< std::array< T, n > >
+    template <typename T, size_t n> struct ToDatatypeHelper<std::array<T, n> >
     {
-        static std::string type( );
+        static std::string type();
     };
 
-    template <> struct ToDatatypeHelper< bool >
+    template <> struct ToDatatypeHelper<bool>
     {
-        static std::string type( );
+        static std::string type();
     };
 
     struct ToDatatype
     {
-        template < typename T > std::string operator( )( );
+        template <typename T> std::string operator()();
 
-
-        template < int n > std::string operator( )( );
+        template <int n> std::string operator()();
     };
 
     /**
@@ -78,7 +76,7 @@ namespace detail
      * @param verbose If false, don't print warnings.
      * @return
      */
-    Datatype fromADIOS2Type( std::string const & dt, bool verbose = true );
+    Datatype fromADIOS2Type(std::string const &dt, bool verbose = true);
 
     enum class VariableOrAttribute : unsigned char
     {
@@ -88,14 +86,13 @@ namespace detail
 
     struct AttributeInfo
     {
-        template< typename T >
+        template <typename T>
         static Extent call(
             adios2::IO &,
-            std::string const & attributeName,
-            VariableOrAttribute );
+            std::string const &attributeName,
+            VariableOrAttribute);
 
-        template < int n, typename... Params >
-        static Extent call( Params &&... );
+        template <int n, typename... Params> static Extent call(Params &&...);
     };
 
     /**
@@ -110,12 +107,11 @@ namespace detail
      * @return The openPMD datatype corresponding to the type of the attribute.
      *         UNDEFINED if attribute is not found.
      */
-    Datatype
-    attributeInfo(
-        adios2::IO & IO,
-        std::string const & attributeName,
+    Datatype attributeInfo(
+        adios2::IO &IO,
+        std::string const &attributeName,
         bool verbose,
-        VariableOrAttribute voa = VariableOrAttribute::Attribute );
+        VariableOrAttribute voa = VariableOrAttribute::Attribute);
 } // namespace detail
 
 /**
@@ -133,75 +129,65 @@ namespace detail
  * @return Passes on the result of invoking the function template with the given
  *     arguments and with the template parameter specified by dt.
  */
-template< typename Action, typename... Args >
-auto switchAdios2AttributeType( Datatype dt, Args &&... args )
-    -> decltype( Action::template call< char >(
-        std::forward< Args >( args )... ) )
+template <typename Action, typename... Args>
+auto switchAdios2AttributeType(Datatype dt, Args &&...args)
+    -> decltype(Action::template call<char>(std::forward<Args>(args)...))
 {
-    using ReturnType = decltype( Action::template call< char >(
-        std::forward< Args >( args )... ) );
-    switch( dt )
+    using ReturnType =
+        decltype(Action::template call<char>(std::forward<Args>(args)...));
+    switch (dt)
     {
     case Datatype::CHAR:
-        return Action::template call< char >( std::forward< Args >( args )... );
+        return Action::template call<char>(std::forward<Args>(args)...);
     case Datatype::UCHAR:
-        return Action::template call< unsigned char >(
-            std::forward< Args >( args )... );
+        return Action::template call<unsigned char>(
+            std::forward<Args>(args)...);
     case Datatype::SHORT:
-        return Action::template call< short >(
-            std::forward< Args >( args )... );
+        return Action::template call<short>(std::forward<Args>(args)...);
     case Datatype::INT:
-        return Action::template call< int >( std::forward< Args >( args )... );
+        return Action::template call<int>(std::forward<Args>(args)...);
     case Datatype::LONG:
-        return Action::template call< long >( std::forward< Args >( args )... );
+        return Action::template call<long>(std::forward<Args>(args)...);
     case Datatype::LONGLONG:
-        return Action::template call< long long >(
-            std::forward< Args >( args )... );
+        return Action::template call<long long>(std::forward<Args>(args)...);
     case Datatype::USHORT:
-        return Action::template call< unsigned short >(
-            std::forward< Args >( args )... );
+        return Action::template call<unsigned short>(
+            std::forward<Args>(args)...);
     case Datatype::UINT:
-        return Action::template call< unsigned int >(
-            std::forward< Args >( args )... );
+        return Action::template call<unsigned int>(std::forward<Args>(args)...);
     case Datatype::ULONG:
-        return Action::template call< unsigned long >(
-            std::forward< Args >( args )... );
+        return Action::template call<unsigned long>(
+            std::forward<Args>(args)...);
     case Datatype::ULONGLONG:
-        return Action::template call< unsigned long long >(
-            std::forward< Args >( args )... );
+        return Action::template call<unsigned long long>(
+            std::forward<Args>(args)...);
     case Datatype::FLOAT:
-        return Action::template call< float >(
-            std::forward< Args >( args )... );
+        return Action::template call<float>(std::forward<Args>(args)...);
     case Datatype::DOUBLE:
-        return Action::template call< double >(
-            std::forward< Args >( args )... );
+        return Action::template call<double>(std::forward<Args>(args)...);
     case Datatype::LONG_DOUBLE:
-        return Action::template call< long double >(
-            std::forward< Args >( args )... );
+        return Action::template call<long double>(std::forward<Args>(args)...);
     case Datatype::CFLOAT:
-        return Action::template call< std::complex< float > >(
-            std::forward< Args >( args )... );
+        return Action::template call<std::complex<float> >(
+            std::forward<Args>(args)...);
     case Datatype::CDOUBLE:
-        return Action::template call< std::complex< double > >(
-            std::forward< Args >( args )... );
+        return Action::template call<std::complex<double> >(
+            std::forward<Args>(args)...);
     // missing std::complex< long double > type in ADIOS2 v2.6.0
     // case Datatype::CLONG_DOUBLE:
     //     return action
     //         .OPENPMD_TEMPLATE_OPERATOR()< std::complex< long double > >(
     //             std::forward< Args >( args )... );
     case Datatype::STRING:
-        return Action::template call< std::string >(
-            std::forward< Args >( args )... );
+        return Action::template call<std::string>(std::forward<Args>(args)...);
     case Datatype::UNDEFINED:
-        return detail::CallUndefinedDatatype<
-            0,
-            ReturnType,
-            Action,
-            Args &&... >::call( std::forward< Args >( args )... );
+        return detail::
+            CallUndefinedDatatype<0, ReturnType, Action, Args &&...>::call(
+                std::forward<Args>(args)...);
     default:
         throw std::runtime_error(
             "Internal error: Encountered unknown datatype (switchType) ->" +
-            std::to_string( static_cast< int >( dt ) ) );
+            std::to_string(static_cast<int>(dt)));
     }
 }
 
@@ -221,74 +207,63 @@ auto switchAdios2AttributeType( Datatype dt, Args &&... args )
  * @return Passes on the result of invoking the function template with the given
  *     arguments and with the template parameter specified by dt.
  */
-template< typename Action, typename... Args >
-auto switchAdios2VariableType( Datatype dt, Args &&... args )
-    -> decltype(
-        Action::template call < char >
-        ( std::forward< Args >( args )... ) )
+template <typename Action, typename... Args>
+auto switchAdios2VariableType(Datatype dt, Args &&...args)
+    -> decltype(Action::template call<char>(std::forward<Args>(args)...))
 {
-    using ReturnType = decltype( Action::template call< char >(
-        std::forward< Args >( args )... ) );
-    switch( dt )
+    using ReturnType =
+        decltype(Action::template call<char>(std::forward<Args>(args)...));
+    switch (dt)
     {
     case Datatype::CHAR:
-        return Action::template call< char >( std::forward< Args >( args )... );
+        return Action::template call<char>(std::forward<Args>(args)...);
     case Datatype::UCHAR:
-        return Action::template call< unsigned char >(
-            std::forward< Args >( args )... );
+        return Action::template call<unsigned char>(
+            std::forward<Args>(args)...);
     case Datatype::SHORT:
-        return Action::template call< short >(
-            std::forward< Args >( args )... );
+        return Action::template call<short>(std::forward<Args>(args)...);
     case Datatype::INT:
-        return Action::template call< int >( std::forward< Args >( args )... );
+        return Action::template call<int>(std::forward<Args>(args)...);
     case Datatype::LONG:
-        return Action::template call< long >( std::forward< Args >( args )... );
+        return Action::template call<long>(std::forward<Args>(args)...);
     case Datatype::LONGLONG:
-        return Action::template call< long long >(
-            std::forward< Args >( args )... );
+        return Action::template call<long long>(std::forward<Args>(args)...);
     case Datatype::USHORT:
-        return Action::template call< unsigned short >(
-            std::forward< Args >( args )... );
+        return Action::template call<unsigned short>(
+            std::forward<Args>(args)...);
     case Datatype::UINT:
-        return Action::template call< unsigned int >(
-            std::forward< Args >( args )... );
+        return Action::template call<unsigned int>(std::forward<Args>(args)...);
     case Datatype::ULONG:
-        return Action::template call< unsigned long >(
-            std::forward< Args >( args )... );
+        return Action::template call<unsigned long>(
+            std::forward<Args>(args)...);
     case Datatype::ULONGLONG:
-        return Action::template call< unsigned long long >(
-            std::forward< Args >( args )... );
+        return Action::template call<unsigned long long>(
+            std::forward<Args>(args)...);
     case Datatype::FLOAT:
-        return Action::template call< float >(
-            std::forward< Args >( args )... );
+        return Action::template call<float>(std::forward<Args>(args)...);
     case Datatype::DOUBLE:
-        return Action::template call< double >(
-            std::forward< Args >( args )... );
+        return Action::template call<double>(std::forward<Args>(args)...);
     case Datatype::LONG_DOUBLE:
-        return Action::template call< long double >(
-            std::forward< Args >( args )... );
+        return Action::template call<long double>(std::forward<Args>(args)...);
     case Datatype::CFLOAT:
-        return Action::template call< std::complex< float > >(
-            std::forward< Args >( args )... );
+        return Action::template call<std::complex<float> >(
+            std::forward<Args>(args)...);
     case Datatype::CDOUBLE:
-        return Action::template call< std::complex< double > >(
-            std::forward< Args >( args )... );
+        return Action::template call<std::complex<double> >(
+            std::forward<Args>(args)...);
     // missing std::complex< long double > type in ADIOS2 v2.6.0
     // case Datatype::CLONG_DOUBLE:
     //     return action
     //         .OPENPMD_TEMPLATE_OPERATOR()< std::complex< long double > >(
     //             std::forward< Args >( args )... );
     case Datatype::UNDEFINED:
-        return detail::CallUndefinedDatatype<
-            0,
-            ReturnType,
-            Action,
-            Args &&... >::
-            call( std::forward< Args >( args )... );
+        return detail::
+            CallUndefinedDatatype<0, ReturnType, Action, Args &&...>::call(
+                std::forward<Args>(args)...);
     default:
         throw std::runtime_error(
             "Internal error: Encountered unknown datatype (switchType) ->" +
-            std::to_string( static_cast< int >( dt ) ) );
+            std::to_string(static_cast<int>(dt)));
     }
 }
 } // namespace openPMD

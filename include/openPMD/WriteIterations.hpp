@@ -25,7 +25,6 @@
 
 #include <optional>
 
-
 namespace openPMD
 {
 class Series;
@@ -50,7 +49,7 @@ class WriteIterations
     friend class Series;
 
 private:
-    using iterations_t = Container< Iteration, uint64_t >;
+    using iterations_t = Container<Iteration, uint64_t>;
 
 public:
     using key_type = typename iterations_t::key_type;
@@ -62,19 +61,19 @@ private:
     struct SharedResources
     {
         iterations_t iterations;
-        std::optional< uint64_t > currentlyOpen;
+        std::optional<uint64_t> currentlyOpen;
 
-        SharedResources( iterations_t );
+        SharedResources(iterations_t);
         ~SharedResources();
     };
 
-    WriteIterations( iterations_t );
+    WriteIterations(iterations_t);
     explicit WriteIterations() = default;
     //! Index of the last opened iteration
-    std::shared_ptr< SharedResources > shared;
+    std::shared_ptr<SharedResources> shared;
 
 public:
-    mapped_type & operator[]( key_type const & key );
-    mapped_type & operator[]( key_type && key );
+    mapped_type &operator[](key_type const &key);
+    mapped_type &operator[](key_type &&key);
 };
 } // namespace openPMD

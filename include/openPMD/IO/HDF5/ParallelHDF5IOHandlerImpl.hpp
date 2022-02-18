@@ -20,34 +20,32 @@
  */
 #pragma once
 
-#include "openPMD/config.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
+#include "openPMD/config.hpp"
 
 #if openPMD_HAVE_MPI
-#   include <mpi.h>
-#   if openPMD_HAVE_HDF5
-#       include "openPMD/IO/HDF5/HDF5IOHandlerImpl.hpp"
-#       include "openPMD/auxiliary/JSON_internal.hpp"
-#   endif
+#include <mpi.h>
+#if openPMD_HAVE_HDF5
+#include "openPMD/IO/HDF5/HDF5IOHandlerImpl.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
 #endif
-
+#endif
 
 namespace openPMD
 {
 #if openPMD_HAVE_HDF5 && openPMD_HAVE_MPI
-    class ParallelHDF5IOHandlerImpl : public HDF5IOHandlerImpl
-    {
-    public:
-        ParallelHDF5IOHandlerImpl(
-            AbstractIOHandler*, MPI_Comm, json::TracingJSON config);
-        ~ParallelHDF5IOHandlerImpl() override;
+class ParallelHDF5IOHandlerImpl : public HDF5IOHandlerImpl
+{
+public:
+    ParallelHDF5IOHandlerImpl(
+        AbstractIOHandler *, MPI_Comm, json::TracingJSON config);
+    ~ParallelHDF5IOHandlerImpl() override;
 
-        MPI_Comm m_mpiComm;
-        MPI_Info m_mpiInfo;
-    }; // ParallelHDF5IOHandlerImpl
+    MPI_Comm m_mpiComm;
+    MPI_Info m_mpiInfo;
+}; // ParallelHDF5IOHandlerImpl
 #else
-    class ParallelHDF5IOHandlerImpl
-    {
-    }; // ParallelHDF5IOHandlerImpl
+class ParallelHDF5IOHandlerImpl
+{}; // ParallelHDF5IOHandlerImpl
 #endif
-} // openPMD
+} // namespace openPMD

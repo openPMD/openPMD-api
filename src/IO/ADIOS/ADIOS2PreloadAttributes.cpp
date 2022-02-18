@@ -36,256 +36,244 @@
 
 namespace openPMD::detail
 {
-    namespace
+namespace
+{
+    struct GetAlignment
     {
-        struct GetAlignment
+        template <typename T> static constexpr size_t call()
         {
-            template< typename T >
-            static constexpr size_t call()
-            {
-                return alignof(T);
-            }
-
-            template< unsigned long, typename... Args >
-            static constexpr size_t call( Args &&... )
-            {
-                return alignof(std::max_align_t);
-            }
-        };
-
-        struct GetSize
-        {
-            template< typename T >
-            static constexpr size_t call()
-            {
-                return sizeof(T);
-            }
-
-            template< unsigned long, typename... Args >
-            static constexpr size_t call( Args &&... )
-            {
-                return 0;
-            }
-        };
-
-        struct ScheduleLoad
-        {
-            template< typename T >
-            static void call(
-                adios2::IO & IO,
-                adios2::Engine & engine,
-                std::string const & name,
-                char * buffer,
-                PreloadAdiosAttributes::AttributeLocation & location )
-            {
-                adios2::Variable< T > var = IO.InquireVariable< T >( name );
-                if( !var )
-                {
-                    throw std::runtime_error(
-                        "[ADIOS2] Variable not found: " + name );
-                }
-                adios2::Dims const & shape = location.shape;
-                adios2::Dims offset( shape.size(), 0 );
-                if( shape.size() > 0 )
-                {
-                    var.SetSelection( { offset, shape } );
-                }
-                T * dest = reinterpret_cast< T * >( buffer );
-                size_t numItems = 1;
-                for( auto extent : shape )
-                {
-                    numItems *= extent;
-                }
-                /*
-                 * MSVC does not like placement new of arrays, so we do it
-                 * in a loop instead.
-                 * https://developercommunity.visualstudio.com/t/c-placement-new-is-incorrectly-compiled/206439
-                 */
-                for( size_t i = 0; i < numItems; ++i )
-                {
-                    new( dest + i ) T();
-                }
-                location.destroy = buffer;
-                engine.Get( var, dest, adios2::Mode::Deferred );
-            }
-
-            static constexpr char const * errorMsg = "ADIOS2";
-        };
-
-        struct VariableShape
-        {
-            template< typename T >
-            static adios2::Dims
-            call( adios2::IO & IO, std::string const & name )
-            {
-                auto var = IO.InquireVariable< T >( name );
-                if( !var )
-                {
-                    throw std::runtime_error(
-                        "[ADIOS2] Variable not found: " + name );
-                }
-                return var.Shape();
-            }
-
-            template< unsigned long n, typename... Args >
-            static adios2::Dims call( Args &&... )
-            {
-                return {};
-            }
-        };
-
-        struct AttributeLocationDestroy
-        {
-            template< typename T >
-            static void call( char *ptr, size_t numItems )
-            {
-                T *destroy = reinterpret_cast< T * >( ptr );
-                for( size_t i = 0; i < numItems; ++i )
-                {
-                    destroy[ i ].~T();
-                }
-            }
-
-            template< unsigned long n, typename... Args >
-            static void call( Args &&... )
-            {
-            }
-        };
-    } // namespace
-
-    using AttributeLocation = PreloadAdiosAttributes::AttributeLocation;
-
-    AttributeLocation::AttributeLocation(
-        adios2::Dims shape_in, size_t offset_in, Datatype dt_in )
-        : shape( std::move( shape_in ) ), offset( offset_in ), dt( dt_in )
-    {
-    }
-
-    AttributeLocation::AttributeLocation( AttributeLocation && other )
-        : shape{ std::move( other.shape ) }
-        , offset{ std::move( other.offset ) }
-        , dt{ std::move( other.dt ) }
-        , destroy{ std::move( other.destroy ) }
-    {
-        other.destroy = nullptr;
-    }
-
-    AttributeLocation &
-    AttributeLocation::operator=( AttributeLocation && other )
-    {
-        this->shape = std::move( other.shape );
-        this->offset = std::move( other.offset );
-        this->dt = std::move( other.dt );
-        this->destroy = std::move( other.destroy );
-        other.destroy = nullptr;
-        return *this;
-    }
-
-    PreloadAdiosAttributes::AttributeLocation::~AttributeLocation()
-    {
-        /*
-         * If the object has been moved from, this may be empty.
-         * Or else, if no custom destructor has been emplaced.
-         */
-        if( destroy )
-        {
-            size_t length = 1;
-            for( auto ext : shape )
-            {
-                length *= ext;
-            }
-            switchAdios2AttributeType< AttributeLocationDestroy >(
-                dt, destroy, length );
-        }
-    }
-
-    void
-    PreloadAdiosAttributes::preloadAttributes(
-        adios2::IO & IO,
-        adios2::Engine & engine )
-    {
-        m_offsets.clear();
-        std::map< Datatype, std::vector< std::string > > attributesByType;
-        auto addAttribute =
-            [ &attributesByType ]( Datatype dt, std::string name ) {
-                constexpr size_t reserve = 10;
-                auto it = attributesByType.find( dt );
-                if( it == attributesByType.end() )
-                {
-                    it = attributesByType.emplace_hint(
-                        it, dt, std::vector< std::string >() );
-                    it->second.reserve( reserve );
-                }
-                it->second.push_back( std::move( name ) );
-            };
-        // PHASE 1: collect names of available attributes by ADIOS datatype
-        for( auto & variable : IO.AvailableVariables() )
-        {
-            if( auxiliary::ends_with( variable.first, "/__data__" ) )
-            {
-                continue;
-            }
-            // this will give us basic types only, no fancy vectors or similar
-            Datatype dt = fromADIOS2Type( IO.VariableType( variable.first ) );
-            addAttribute( dt, std::move( variable.first ) );
+            return alignof(T);
         }
 
-        // PHASE 2: get offsets for attributes in buffer
-        std::map< Datatype, size_t > offsets;
-        size_t currentOffset = 0;
-        for( auto & pair : attributesByType )
+        template <unsigned long, typename... Args>
+        static constexpr size_t call(Args &&...)
         {
-            size_t alignment = switchAdios2AttributeType< GetAlignment >(
-                pair.first );
-            size_t size = switchAdios2AttributeType< GetSize >( pair.first );
-            // go to next offset with valid alignment
-            size_t modulus = currentOffset % alignment;
-            if( modulus > 0 )
+            return alignof(std::max_align_t);
+        }
+    };
+
+    struct GetSize
+    {
+        template <typename T> static constexpr size_t call()
+        {
+            return sizeof(T);
+        }
+
+        template <unsigned long, typename... Args>
+        static constexpr size_t call(Args &&...)
+        {
+            return 0;
+        }
+    };
+
+    struct ScheduleLoad
+    {
+        template <typename T>
+        static void call(
+            adios2::IO &IO,
+            adios2::Engine &engine,
+            std::string const &name,
+            char *buffer,
+            PreloadAdiosAttributes::AttributeLocation &location)
+        {
+            adios2::Variable<T> var = IO.InquireVariable<T>(name);
+            if (!var)
             {
-                currentOffset += alignment - modulus;
+                throw std::runtime_error(
+                    "[ADIOS2] Variable not found: " + name);
             }
-            for( std::string & name : pair.second )
+            adios2::Dims const &shape = location.shape;
+            adios2::Dims offset(shape.size(), 0);
+            if (shape.size() > 0)
             {
-                adios2::Dims shape = switchAdios2AttributeType< VariableShape >(
-                    pair.first, IO, name );
-                size_t elements = 1;
-                for( auto extent : shape )
-                {
-                    elements *= extent;
-                }
-                m_offsets.emplace(
-                    std::piecewise_construct,
-                    std::forward_as_tuple( std::move( name ) ),
-                    std::forward_as_tuple(
-                        std::move( shape ), currentOffset, pair.first ) );
-                currentOffset += elements * size;
+                var.SetSelection({offset, shape});
+            }
+            T *dest = reinterpret_cast<T *>(buffer);
+            size_t numItems = 1;
+            for (auto extent : shape)
+            {
+                numItems *= extent;
+            }
+            /*
+             * MSVC does not like placement new of arrays, so we do it
+             * in a loop instead.
+             * https://developercommunity.visualstudio.com/t/c-placement-new-is-incorrectly-compiled/206439
+             */
+            for (size_t i = 0; i < numItems; ++i)
+            {
+                new (dest + i) T();
+            }
+            location.destroy = buffer;
+            engine.Get(var, dest, adios2::Mode::Deferred);
+        }
+
+        static constexpr char const *errorMsg = "ADIOS2";
+    };
+
+    struct VariableShape
+    {
+        template <typename T>
+        static adios2::Dims call(adios2::IO &IO, std::string const &name)
+        {
+            auto var = IO.InquireVariable<T>(name);
+            if (!var)
+            {
+                throw std::runtime_error(
+                    "[ADIOS2] Variable not found: " + name);
+            }
+            return var.Shape();
+        }
+
+        template <unsigned long n, typename... Args>
+        static adios2::Dims call(Args &&...)
+        {
+            return {};
+        }
+    };
+
+    struct AttributeLocationDestroy
+    {
+        template <typename T> static void call(char *ptr, size_t numItems)
+        {
+            T *destroy = reinterpret_cast<T *>(ptr);
+            for (size_t i = 0; i < numItems; ++i)
+            {
+                destroy[i].~T();
             }
         }
-        // now, currentOffset is the number of bytes that we need to allocate
-        // PHASE 3: allocate new buffer and schedule loads
-        m_rawBuffer.resize( currentOffset );
-        for( auto & pair : m_offsets )
+
+        template <unsigned long n, typename... Args>
+        static void call(Args &&...)
+        {}
+    };
+} // namespace
+
+using AttributeLocation = PreloadAdiosAttributes::AttributeLocation;
+
+AttributeLocation::AttributeLocation(
+    adios2::Dims shape_in, size_t offset_in, Datatype dt_in)
+    : shape(std::move(shape_in)), offset(offset_in), dt(dt_in)
+{}
+
+AttributeLocation::AttributeLocation(AttributeLocation &&other)
+    : shape{std::move(other.shape)}
+    , offset{std::move(other.offset)}
+    , dt{std::move(other.dt)}
+    , destroy{std::move(other.destroy)}
+{
+    other.destroy = nullptr;
+}
+
+AttributeLocation &AttributeLocation::operator=(AttributeLocation &&other)
+{
+    this->shape = std::move(other.shape);
+    this->offset = std::move(other.offset);
+    this->dt = std::move(other.dt);
+    this->destroy = std::move(other.destroy);
+    other.destroy = nullptr;
+    return *this;
+}
+
+PreloadAdiosAttributes::AttributeLocation::~AttributeLocation()
+{
+    /*
+     * If the object has been moved from, this may be empty.
+     * Or else, if no custom destructor has been emplaced.
+     */
+    if (destroy)
+    {
+        size_t length = 1;
+        for (auto ext : shape)
         {
-            switchAdios2AttributeType< ScheduleLoad >(
-                pair.second.dt,
-                IO,
-                engine,
-                pair.first,
-                &m_rawBuffer[ pair.second.offset ],
-                pair.second );
+            length *= ext;
         }
+        switchAdios2AttributeType<AttributeLocationDestroy>(
+            dt, destroy, length);
+    }
+}
+
+void PreloadAdiosAttributes::preloadAttributes(
+    adios2::IO &IO, adios2::Engine &engine)
+{
+    m_offsets.clear();
+    std::map<Datatype, std::vector<std::string> > attributesByType;
+    auto addAttribute = [&attributesByType](Datatype dt, std::string name) {
+        constexpr size_t reserve = 10;
+        auto it = attributesByType.find(dt);
+        if (it == attributesByType.end())
+        {
+            it = attributesByType.emplace_hint(
+                it, dt, std::vector<std::string>());
+            it->second.reserve(reserve);
+        }
+        it->second.push_back(std::move(name));
+    };
+    // PHASE 1: collect names of available attributes by ADIOS datatype
+    for (auto &variable : IO.AvailableVariables())
+    {
+        if (auxiliary::ends_with(variable.first, "/__data__"))
+        {
+            continue;
+        }
+        // this will give us basic types only, no fancy vectors or similar
+        Datatype dt = fromADIOS2Type(IO.VariableType(variable.first));
+        addAttribute(dt, std::move(variable.first));
     }
 
-    Datatype
-    PreloadAdiosAttributes::attributeType( std::string const & name ) const
+    // PHASE 2: get offsets for attributes in buffer
+    std::map<Datatype, size_t> offsets;
+    size_t currentOffset = 0;
+    for (auto &pair : attributesByType)
     {
-        auto it = m_offsets.find( name );
-        if( it == m_offsets.end() )
+        size_t alignment = switchAdios2AttributeType<GetAlignment>(pair.first);
+        size_t size = switchAdios2AttributeType<GetSize>(pair.first);
+        // go to next offset with valid alignment
+        size_t modulus = currentOffset % alignment;
+        if (modulus > 0)
         {
-            return Datatype::UNDEFINED;
+            currentOffset += alignment - modulus;
         }
-        return it->second.dt;
+        for (std::string &name : pair.second)
+        {
+            adios2::Dims shape =
+                switchAdios2AttributeType<VariableShape>(pair.first, IO, name);
+            size_t elements = 1;
+            for (auto extent : shape)
+            {
+                elements *= extent;
+            }
+            m_offsets.emplace(
+                std::piecewise_construct,
+                std::forward_as_tuple(std::move(name)),
+                std::forward_as_tuple(
+                    std::move(shape), currentOffset, pair.first));
+            currentOffset += elements * size;
+        }
     }
+    // now, currentOffset is the number of bytes that we need to allocate
+    // PHASE 3: allocate new buffer and schedule loads
+    m_rawBuffer.resize(currentOffset);
+    for (auto &pair : m_offsets)
+    {
+        switchAdios2AttributeType<ScheduleLoad>(
+            pair.second.dt,
+            IO,
+            engine,
+            pair.first,
+            &m_rawBuffer[pair.second.offset],
+            pair.second);
+    }
+}
+
+Datatype PreloadAdiosAttributes::attributeType(std::string const &name) const
+{
+    auto it = m_offsets.find(name);
+    if (it == m_offsets.end())
+    {
+        return Datatype::UNDEFINED;
+    }
+    return it->second.dt;
+}
 } // namespace openPMD::detail
 
 #endif // openPMD_HAVE_ADIOS2

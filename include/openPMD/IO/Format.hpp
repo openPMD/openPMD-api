@@ -22,33 +22,32 @@
 
 #include <string>
 
-
 namespace openPMD
 {
-    /** File format to use during IO.
-     */
-    enum class Format
-    {
-        HDF5,
-        ADIOS1,
-        ADIOS2,
-        ADIOS2_SST,
-        ADIOS2_SSC,
-        JSON,
-        DUMMY
-    };
+/** File format to use during IO.
+ */
+enum class Format
+{
+    HDF5,
+    ADIOS1,
+    ADIOS2,
+    ADIOS2_SST,
+    ADIOS2_SSC,
+    JSON,
+    DUMMY
+};
 
-    /** Determine the storage format of a Series from the used filename extension.
-     *
-     * @param   filename    string containing the filename.
-     * @return  Format that best fits the filename extension.
-     */
-    Format determineFormat(std::string const& filename);
+/** Determine the storage format of a Series from the used filename extension.
+ *
+ * @param   filename    string containing the filename.
+ * @return  Format that best fits the filename extension.
+ */
+Format determineFormat(std::string const &filename);
 
-    /** Determine the default filename suffix for a given storage format.
-     *
-     * @param   f   File format to determine suffix for.
-     * @return  String containing the default filename suffix
-     */
-    std::string suffix(Format f);
-} // openPMD
+/** Determine the default filename suffix for a given storage format.
+ *
+ * @param   f   File format to determine suffix for.
+ * @return  String containing the default filename suffix
+ */
+std::string suffix(Format f);
+} // namespace openPMD
