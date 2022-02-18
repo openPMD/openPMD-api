@@ -61,16 +61,12 @@ repos:
 #    files: (\.cmake|CMakeLists.txt)(.in)?$
 
 # C++ formatting
-# clang-format
-- repo: local
+# clang-format v12
+#   to run manually, use .github/workflows/clang-format/clang-format.sh
+- repo: https://github.com/pre-commit/mirrors-clang-format
+  rev: v12.0.1
   hooks:
   - id: clang-format
-    name: clang-format
-    description: Clang-format our code base
-    files: '^(include|src|test|examples)/.*\.(hpp|cpp|hpp\.in)$'
-    language: conda
-    entry: bash .github/workflows/clang-format/clang-format.sh
-    additional_dependencies: [-c, conda-forge, clang-format-12]
 
 # Autoremoves unused Python imports
 - repo: https://github.com/hadialqattan/pycln
