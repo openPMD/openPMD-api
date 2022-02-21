@@ -28,7 +28,8 @@ enum class Access
 {
     READ_ONLY, //!< open series as read-only, fails if series is not found
     READ_WRITE, //!< open existing series as writable
-    CREATE //!< create new series and truncate existing (files)
+    CREATE, //!< create new series and truncate existing (files)
+    APPEND //!< write new iterations to an existing series without reading
 }; // Access
 
 // deprecated name (used prior to 0.12.0)
