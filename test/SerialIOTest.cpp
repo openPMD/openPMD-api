@@ -5734,40 +5734,48 @@ TEST_CASE("varying_zero_pattern", "[serial]")
     }
 }
 
-void append_mode(std::string const &extension)
+void append_mode(
+    std::string const &extension,
+    bool variableBased,
+    std::string jsonConfig = "{}")
 {
-    std::string jsonConfig = R"END(
-{
-    "adios2":
-    {
-        "schema": 20210209,
-        "engine":
-        {
-            "usesteps" : true
-        }
-    }
-})END";
-    auto writeSomeIterations = [](WriteIterations &&writeIterations,
-                                  std::vector<uint64_t> indices) {
+
+    std::string filename = (variableBased ? "../samples/append_variablebased."
+                                          : "../samples/append_groupbased.") +
+        extension;
+    std::vector<int> data(10, 0);
+    auto writeSomeIterations = [&data](
+                                   WriteIterations &&writeIterations,
+                                   std::vector<uint64_t> indices) {
         for (auto index : indices)
         {
             auto it = writeIterations[index];
             auto dataset = it.meshes["E"]["x"];
-            dataset.resetDataset({Datatype::INT, {1}});
-            dataset.makeConstant<int>(0);
+            dataset.resetDataset({Datatype::INT, {10}});
+            dataset.storeChunk(data, {0}, {10});
             // test that it works without closing too
             it.close();
         }
     };
     {
-        Series write(
-            "../samples/append." + extension, Access::CREATE, jsonConfig);
+        Series write(filename, Access::CREATE, jsonConfig);
+        if (variableBased)
+        {
+            if (write.backend() != "ADIOS2")
+            {
+                return;
+            }
+            write.setIterationEncoding(IterationEncoding::variableBased);
+        }
         writeSomeIterations(
             write.writeIterations(), std::vector<uint64_t>{0, 1});
     }
     {
-        Series write(
-            "../samples/append." + extension, Access::APPEND, jsonConfig);
+        Series write(filename, Access::APPEND, jsonConfig);
+        if (variableBased)
+        {
+            write.setIterationEncoding(IterationEncoding::variableBased);
+        }
         if (write.backend() == "ADIOS1")
         {
             REQUIRE_THROWS_AS(
@@ -5781,8 +5789,11 @@ void append_mode(std::string const &extension)
         write.flush();
     }
     {
-        Series write(
-            "../samples/append." + extension, Access::APPEND, jsonConfig);
+        Series write(filename, Access::APPEND, jsonConfig);
+        if (variableBased)
+        {
+            write.setIterationEncoding(IterationEncoding::variableBased);
+        }
         if (write.backend() == "ADIOS1")
         {
             REQUIRE_THROWS_AS(
@@ -5796,8 +5807,23 @@ void append_mode(std::string const &extension)
         write.flush();
     }
     {
-        Series read("../samples/append." + extension, Access::READ_ONLY);
-        REQUIRE(read.iterations.size() == 5);
+        Series read(filename, Access::READ_ONLY);
+        if (variableBased)
+        {
+            // in variable-based encodings, iterations are not parsed ahead of
+            // time but as they go
+            unsigned counter = 0;
+            for (auto iteration : read.readIterations())
+            {
+                REQUIRE(iteration.iterationIndex == counter);
+                ++counter;
+            }
+            REQUIRE(counter == 5);
+        }
+        else
+        {
+            REQUIRE(read.iterations.size() == 5);
+        }
         /*
          * Roadmap: for now, reading this should work by ignoring the last
          * duplicate iteration.
@@ -5813,7 +5839,43 @@ TEST_CASE("append_mode", "[serial]")
 {
     for (auto const &t : testedFileExtensions())
     {
-        append_mode(t);
+        if (t == "h5")
+        {
+            continue;
+        }
+        if (t == "bp")
+        {
+            std::string jsonConfigOld = R"END(
+{
+    "adios2":
+    {
+        "schema": 0,
+        "engine":
+        {
+            "usesteps" : true
+        }
+    }
+})END";
+            std::string jsonConfigNew = R"END(
+{
+    "adios2":
+    {
+        "schema": 20210209,
+        "engine":
+        {
+            "usesteps" : true
+        }
+    }
+})END";
+            append_mode(t, false, jsonConfigOld);
+            append_mode(t, false, jsonConfigNew);
+            append_mode(t, true, jsonConfigOld);
+            append_mode(t, true, jsonConfigNew);
+        }
+        else
+        {
+            append_mode(t, false);
+        }
     }
 }
 
