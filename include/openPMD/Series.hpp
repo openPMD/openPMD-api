@@ -37,8 +37,10 @@
 #include <mpi.h>
 #endif
 
+#include <cstdint>
 #include <map>
 #include <optional>
+#include <set>
 #include <string>
 
 // expose private and protected members for invasive testing
@@ -82,6 +84,12 @@ namespace internal
          * the same instance.
          */
         std::optional<WriteIterations> m_writeIterations;
+        /**
+         * For writing: Remember which iterations have been written in the
+         * currently active output step. Use this later when writing the
+         * snapshot attribute.
+         */
+        std::set<uint64_t> m_currentlyActiveIterations;
         /**
          * Needed if reading a single iteration of a file-based series.
          * Users may specify the concrete filename of one iteration instead of
@@ -627,6 +635,14 @@ OPENPMD_private
         internal::AttributableData &file,
         iterations_iterator it,
         Iteration &iteration);
+
+    /**
+     * @brief Called at the end of an IO step to store the iterations defined
+     *        in the IO step to the snapshot attribute.
+     *
+     * @param doFlush If true, flush the IO handler.
+     */
+    void flushStep(bool doFlush);
 }; // Series
 } // namespace openPMD
 

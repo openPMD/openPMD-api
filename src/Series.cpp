@@ -732,10 +732,15 @@ void Series::flushFileBased(
             switch (openIterationIfDirty(it->first, it->second))
             {
                 using IO = IterationOpened;
-            case IO::HasBeenOpened:
-                it->second.flush(flushParams);
-                break;
             case IO::RemainsClosed:
+                // we might need to proceed further if the close status is
+                // ClosedInFrontend
+                // hence no continue here
+                // otherwise, we might forget to close files physically
+                break;
+            case IO::HasBeenOpened:
+                // continue below
+                it->second.flush(flushParams);
                 break;
             }
 
@@ -769,13 +774,21 @@ void Series::flushFileBased(
             case IO::HasBeenOpened: {
                 /* as there is only one series,
                  * emulate the file belonging to each iteration as not yet
-                 * written
+                 * written, even if the iteration itself is already written
+                 * (to ensure that the Series gets reassociated with the
+                 * current iteration)
                  */
                 written() = false;
                 series.iterations.written() = false;
 
                 dirty() |= it->second.dirty();
                 std::string filename = iterationFilename(it->first);
+
+                if(!it->second.written())
+                {
+                    series.m_currentlyActiveIterations.emplace(it->first);
+                }
+
                 it->second.flushFileBased(filename, it->first, flushParams);
 
                 series.iterations.flush(
@@ -831,10 +844,14 @@ void Series::flushGorVBased(
             switch (openIterationIfDirty(it->first, it->second))
             {
                 using IO = IterationOpened;
-            case IO::HasBeenOpened:
-                it->second.flush(flushParams);
-                break;
             case IO::RemainsClosed:
+                // we might need to proceed further if the close status is
+                // ClosedInFrontend
+                // hence no continue here
+                break;
+            case IO::HasBeenOpened:
+                // continue below
+                it->second.flush(flushParams);
                 break;
             }
 
@@ -895,6 +912,7 @@ void Series::flushGorVBased(
                 if (!it->second.written())
                 {
                     it->second.parent() = getWritable(&series.iterations);
+                    series.m_currentlyActiveIterations.emplace(it->first);
                 }
                 switch (iterationEncoding())
                 {
@@ -1458,7 +1476,13 @@ AdvanceStatus Series::advance(
          * opening an iteration's file by beginning a step on it.
          * So, return now.
          */
+        iteration.get().m_closed = internal::CloseStatus::ClosedInBackend;
         return AdvanceStatus::OK;
+    }
+
+    if (mode == AdvanceMode::ENDSTEP)
+    {
+        flushStep(/* doFlush = */ false);
     }
 
     Parameter<Operation::ADVANCE> param;
@@ -1515,6 +1539,32 @@ AdvanceStatus Series::advance(
     IOHandler()->flush(flushParams);
 
     return *param.status;
+}
+
+void Series::flushStep(bool doFlush)
+{
+    auto &series = get();
+    if (!series.m_currentlyActiveIterations.empty())
+    {
+        /*
+         * Warning: changing attribute extents over time (probably) unsupported
+         * by this so far.
+         * Not (yet) needed as there is no way to pack several iterations within
+         * one IO step.
+         */
+        Parameter<Operation::WRITE_ATT> wAttr;
+        wAttr.changesOverSteps = true;
+        wAttr.name = "snapshot";
+        wAttr.resource = std::vector<unsigned long long>{
+            series.m_currentlyActiveIterations.begin(),
+            series.m_currentlyActiveIterations.end()};
+        wAttr.dtype = Datatype::VEC_ULONGLONG;
+        IOHandler()->enqueue(IOTask(&series.iterations, wAttr));
+        if (doFlush)
+        {
+            IOHandler()->flush(internal::defaultFlushParams);
+        }
+    }
 }
 
 auto Series::openIterationIfDirty(uint64_t index, Iteration iteration)
@@ -1795,6 +1845,7 @@ namespace internal
             {
                 Series impl{{this, [](auto const *) {}}};
                 impl.flush();
+                impl.flushStep(/* doFlush = */ true);
             }
             if (m_writeIterations.has_value())
             {

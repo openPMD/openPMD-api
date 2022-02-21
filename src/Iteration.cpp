@@ -282,6 +282,13 @@ void Iteration::flushVariableBased(
         Parameter<Operation::OPEN_PATH> pOpen;
         pOpen.path = "";
         IOHandler()->enqueue(IOTask(this, pOpen));
+        /*
+         * In v-based encoding, the snapshot attribute must always be written,
+         * so don't set the `changesOverSteps` flag of the IOTask here.
+         * Reason: Even in backends that don't support changing attributes,
+         * variable-based iteration encoding can be used to write one single
+         * iteration. Then, this attribute determines which iteration it is.
+         */
         this->setAttribute("snapshot", i);
     }
 
