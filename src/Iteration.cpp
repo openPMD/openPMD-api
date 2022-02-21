@@ -573,49 +573,92 @@ void Iteration::read_impl(std::string const &groupPath)
     readAttributes(ReadMode::FullyReread);
 }
 
-AdvanceStatus Iteration::beginStep(bool reread)
+auto Iteration::beginStep(bool reread) -> BeginStepStatus
 {
-    using IE = IterationEncoding;
+    BeginStepStatus res;
     auto series = retrieveSeries();
+    return beginStep({*this}, series, reread);
+}
+
+auto Iteration::beginStep(
+    std::optional<Iteration> thisObject, Series &series, bool reread)
+    -> BeginStepStatus
+{
+    BeginStepStatus res;
+    using IE = IterationEncoding;
     // Initialize file with this to quiet warnings
     // The following switch is comprehensive
     internal::AttributableData *file = nullptr;
     switch (series.iterationEncoding())
     {
     case IE::fileBased:
-        file = &Attributable::get();
+        if (thisObject.has_value())
+        {
+            file = &static_cast<Attributable &>(*thisObject).get();
+        }
+        else
+        {
+            throw error::Internal(
+                "Advancing a step in file-based iteration encoding is "
+                "iteration-specific.");
+        }
         break;
     case IE::groupBased:
     case IE::variableBased:
         file = &series.get();
         break;
     }
-    AdvanceStatus status = series.advance(
-        AdvanceMode::BEGINSTEP, *file, series.indexOf(*this), *this);
-    if (status != AdvanceStatus::OK)
+
+    AdvanceStatus status;
+    if (thisObject.has_value())
     {
-        return status;
+        status = series.advance(
+            AdvanceMode::BEGINSTEP,
+            *file,
+            series.indexOf(*thisObject),
+            *thisObject);
+    }
+    else
+    {
+        status = series.advance(AdvanceMode::BEGINSTEP);
+    }
+
+    switch (status)
+    {
+    case AdvanceStatus::OVER:
+        res.stepStatus = status;
+        return res;
+    case AdvanceStatus::OK:
+    case AdvanceStatus::RANDOMACCESS:
+        break;
     }
 
     // re-read -> new datasets might be available
-    if (reread &&
+    auto IOHandl = series.IOHandler();
+    if (reread && status != AdvanceStatus::RANDOMACCESS &&
         (series.iterationEncoding() == IE::groupBased ||
          series.iterationEncoding() == IE::variableBased) &&
-        (this->IOHandler()->m_frontendAccess == Access::READ_ONLY ||
-         this->IOHandler()->m_frontendAccess == Access::READ_WRITE))
+        (IOHandl->m_frontendAccess == Access::READ_ONLY ||
+         IOHandl->m_frontendAccess == Access::READ_WRITE))
     {
-        switch (IOHandler()->m_frontendAccess)
+        switch (IOHandl->m_frontendAccess)
         {
         case Access::READ_ONLY:
         case Access::READ_WRITE: {
             bool previous = series.iterations.written();
             series.iterations.written() = false;
-            auto oldType = this->IOHandler()->m_frontendAccess;
-            auto newType =
-                const_cast<Access *>(&this->IOHandler()->m_frontendAccess);
-            *newType = Access::READ_WRITE;
-            series.readGorVBased(false);
-            *newType = oldType;
+            auto oldStatus = IOHandl->m_seriesStatus;
+            IOHandl->m_seriesStatus = internal::SeriesStatus::Parsing;
+            try
+            {
+                res.iterationsInOpenedStep = series.readGorVBased(false);
+            }
+            catch (...)
+            {
+                IOHandl->m_seriesStatus = oldStatus;
+                throw;
+            }
+            IOHandl->m_seriesStatus = oldStatus;
             series.iterations.written() = previous;
             break;
         }
@@ -626,7 +669,8 @@ AdvanceStatus Iteration::beginStep(bool reread)
         }
     }
 
-    return status;
+    res.stepStatus = status;
+    return res;
 }
 
 void Iteration::endStep()
@@ -648,6 +692,7 @@ void Iteration::endStep()
     }
     // @todo filebased check
     series.advance(AdvanceMode::ENDSTEP, *file, series.indexOf(*this), *this);
+    series.get().m_currentlyActiveIterations.clear();
 }
 
 StepStatus Iteration::getStepStatus()
@@ -731,9 +776,8 @@ void Iteration::runDeferredParseAccess()
         }
         auto const &deferred = it.m_deferredParseAccess.value();
 
-        auto oldAccess = IOHandler()->m_frontendAccess;
-        auto newAccess = const_cast<Access *>(&IOHandler()->m_frontendAccess);
-        *newAccess = Access::READ_WRITE;
+        auto oldStatus = IOHandler()->m_seriesStatus;
+        IOHandler()->m_seriesStatus = internal::SeriesStatus::Parsing;
         try
         {
             if (deferred.fileBased)
@@ -750,12 +794,12 @@ void Iteration::runDeferredParseAccess()
         {
             // reset this thing
             it.m_deferredParseAccess = std::optional<DeferredParseAccess>();
-            *newAccess = oldAccess;
+            IOHandler()->m_seriesStatus = oldStatus;
             throw;
         }
         // reset this thing
         it.m_deferredParseAccess = std::optional<DeferredParseAccess>();
-        *newAccess = oldAccess;
+        IOHandler()->m_seriesStatus = oldStatus;
         break;
     }
     case Access::CREATE:

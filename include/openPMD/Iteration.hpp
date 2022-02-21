@@ -28,7 +28,10 @@
 #include "openPMD/backend/Attributable.hpp"
 #include "openPMD/backend/Container.hpp"
 
+#include <cstdint>
+#include <deque>
 #include <optional>
+#include <tuple>
 
 namespace openPMD
 {
@@ -283,13 +286,56 @@ private:
     void read_impl(std::string const &groupPath);
 
     /**
+     * Status after beginning an IO step. Currently includes:
+     * * The advance status (OK, OVER, RANDOMACCESS)
+     * * The opened iterations, in case the snapshot attribute is found
+     */
+    struct BeginStepStatus
+    {
+        using AvailableIterations_t = std::optional<std::deque<uint64_t> >;
+
+        AdvanceStatus stepStatus{};
+        /*
+         * If the iteration attribute `snapshot` is present, the value of that
+         * attribute. Otherwise empty.
+         */
+        AvailableIterations_t iterationsInOpenedStep;
+
+        /*
+         * Most of the time, the AdvanceStatus part of this struct is what we
+         * need, so let's make it easy to access.
+         */
+        inline operator AdvanceStatus() const
+        {
+            return stepStatus;
+        }
+
+        /*
+         * Support for std::tie()
+         */
+        inline operator std::tuple<AdvanceStatus &, AvailableIterations_t &>()
+        {
+            return std::tuple<AdvanceStatus &, AvailableIterations_t &>{
+                stepStatus, iterationsInOpenedStep};
+        }
+    };
+
+    /**
      * @brief Begin an IO step on the IO file (or file-like object)
      *        containing this iteration. In case of group-based iteration
      *        layout, this will be the complete Series.
      *
-     * @return AdvanceStatus
+     * @return BeginStepStatus
      */
-    AdvanceStatus beginStep(bool reread);
+    BeginStepStatus beginStep(bool reread);
+
+    /*
+     * Iteration-independent variant for beginStep().
+     * Useful in group-based iteration encoding where the Iteration will only
+     * be known after opening the step.
+     */
+    static BeginStepStatus
+    beginStep(std::optional<Iteration> thisObject, Series &series, bool reread);
 
     /**
      * @brief End an IO step on the IO file (or file-like object)

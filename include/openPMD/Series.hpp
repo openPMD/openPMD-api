@@ -38,6 +38,7 @@
 #endif
 
 #include <cstdint>
+#include <deque>
 #include <map>
 #include <optional>
 #include <set>
@@ -584,8 +585,10 @@ OPENPMD_private
      * Note on re-parsing of a Series:
      * If init == false, the parsing process will seek for new
      * Iterations/Records/Record Components etc.
+     * If series.iterations contains the attribute `snapshot`, returns its
+     * value.
      */
-    void readGorVBased(bool init = true);
+    std::optional<std::deque<uint64_t> > readGorVBased(bool init = true);
     void readBase();
     std::string iterationFilename(uint64_t i);
 
@@ -636,6 +639,8 @@ OPENPMD_private
         iterations_iterator it,
         Iteration &iteration);
 
+    AdvanceStatus advance(AdvanceMode mode);
+
     /**
      * @brief Called at the end of an IO step to store the iterations defined
      *        in the IO step to the snapshot attribute.
@@ -643,6 +648,12 @@ OPENPMD_private
      * @param doFlush If true, flush the IO handler.
      */
     void flushStep(bool doFlush);
+
+    /*
+     * Returns the current content of the /data/snapshot attribute.
+     * (We could also add this to the public API some time)
+     */
+    std::optional<std::vector<uint64_t> > currentSnapshot() const;
 }; // Series
 } // namespace openPMD
 
