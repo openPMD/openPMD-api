@@ -45,5 +45,9 @@ namespace error
               concatVector(errorLocation_in) + "': " + std::move(what))
         , errorLocation(std::move(errorLocation_in))
     {}
+
+    Internal::Internal(std::string const &what)
+        : Error("Internal error: " + what + "\nThis is a bug. Please report.")
+    {}
 } // namespace error
 } // namespace openPMD

@@ -69,5 +69,17 @@ namespace error
 
         BackendConfigSchema(std::vector<std::string>, std::string what);
     };
+
+    /**
+     * @brief Internal errors that should not happen. Please report.
+     *
+     * Example: A nullpointer is observed somewhere.
+     */
+
+    class Internal : public Error
+    {
+    public:
+        Internal(std::string const &what);
+    };
 } // namespace error
 } // namespace openPMD
