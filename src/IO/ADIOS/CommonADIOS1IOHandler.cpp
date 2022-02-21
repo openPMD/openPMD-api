@@ -20,6 +20,7 @@
  */
 
 #include "openPMD/IO/ADIOS/CommonADIOS1IOHandler.hpp"
+#include "openPMD/Error.hpp"
 
 #if openPMD_HAVE_ADIOS1
 
@@ -405,6 +406,15 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::createFile(
         std::string name = m_handler->directory + parameters.name;
         if (!auxiliary::ends_with(name, ".bp"))
             name += ".bp";
+
+        if (m_handler->m_backendAccess == Access::APPEND &&
+            auxiliary::file_exists(name))
+        {
+            throw error::OperationUnsupportedInBackend(
+                "ADIOS1",
+                "Appending to existing file on disk (use Access::CREATE to "
+                "overwrite)");
+        }
 
         writable->written = true;
         writable->abstractFilePosition =

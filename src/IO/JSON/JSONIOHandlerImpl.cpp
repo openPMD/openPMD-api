@@ -117,7 +117,7 @@ void JSONIOHandlerImpl::createFile(
             file.invalidate();
         }
 
-        std::string const dir(m_handler->directory);
+        std::string const &dir(m_handler->directory);
         if (!auxiliary::directory_exists(dir))
         {
             auto success = auxiliary::create_directories(dir);
@@ -126,8 +126,14 @@ void JSONIOHandlerImpl::createFile(
 
         associateWithFile(writable, shared_name);
         this->m_dirty.emplace(shared_name);
-        // make sure to overwrite!
-        this->m_jsonVals[shared_name] = std::make_shared<nlohmann::json>();
+
+        if (m_handler->m_backendAccess != Access::APPEND)
+        {
+            // make sure to overwrite!
+            this->m_jsonVals[shared_name] = std::make_shared<nlohmann::json>();
+        }
+        // else: the JSON value is not available in m_jsonVals and will be
+        // read from the file later on before overwriting
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared<JSONFilePosition>();
@@ -910,6 +916,14 @@ JSONIOHandlerImpl::getFilehandle(File fileName, Access access)
     {
     case Access::CREATE:
     case Access::READ_WRITE:
+    case Access::APPEND:
+        /*
+         * Always truncate when writing, we alway write entire JSON
+         * datasets, never partial ones.
+         * Within the JSON backend, APPEND and READ_WRITE mode are
+         * equivalent, but the openPMD frontend exposes no reading
+         * functionality in APPEND mode.
+         */
         fs->open(path, std::ios_base::out | std::ios_base::trunc);
         break;
     case Access::READ_ONLY:

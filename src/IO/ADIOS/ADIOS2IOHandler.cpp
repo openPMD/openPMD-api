@@ -315,9 +315,6 @@ void ADIOS2IOHandlerImpl::createFile(
         m_iterationEncoding = parameters.encoding;
         associateWithFile(writable, shared_name);
         this->m_dirty.emplace(shared_name);
-        getFileData(shared_name, IfFileNotOpen::OpenImplicitly).m_mode =
-            adios2::Mode::Write; // WORKAROUND
-        // ADIOS2 does not yet implement ReadWrite Mode
 
         writable->written = true;
         writable->abstractFilePosition = std::make_shared<ADIOS2FilePosition>();
@@ -1074,21 +1071,16 @@ adios2::Mode ADIOS2IOHandlerImpl::adios2AccessMode(std::string const &fullPath)
         if (auxiliary::directory_exists(fullPath) ||
             auxiliary::file_exists(fullPath))
         {
-            std::cerr << "ADIOS2 does currently not yet implement ReadWrite "
-                         "(Append) mode. "
-                      << "Replacing with Read mode." << std::endl;
             return adios2::Mode::Read;
         }
         else
         {
-            std::cerr << "ADIOS2 does currently not yet implement ReadWrite "
-                         "(Append) mode. "
-                      << "Replacing with Write mode." << std::endl;
             return adios2::Mode::Write;
         }
-    default:
-        return adios2::Mode::Undefined;
+    case Access::APPEND:
+        return adios2::Mode::Append;
     }
+    throw std::runtime_error("Unreachable!");
 }
 
 json::TracingJSON ADIOS2IOHandlerImpl::nullvalue = {
@@ -2235,6 +2227,7 @@ namespace detail
                         delayOpeningTheFirstStep = true;
                         break;
                     case adios2::Mode::Write:
+                    case adios2::Mode::Append:
                         /*
                          * File engines, write mode:
                          * Default for old layout is no steps.
@@ -2442,6 +2435,7 @@ namespace detail
         {
             switch (m_mode)
             {
+            case adios2::Mode::Append:
             case adios2::Mode::Write: {
                 // usesSteps attribute only written upon ::advance()
                 // this makes sure that the attribute is only put in case
@@ -2686,17 +2680,14 @@ namespace detail
                 switch (ba.m_mode)
                 {
                 case adios2::Mode::Write:
+                case adios2::Mode::Append:
                     eng.PerformPuts();
                     break;
                 case adios2::Mode::Read:
                     eng.PerformGets();
                     break;
-                case adios2::Mode::Append:
-                    // TODO order?
-                    eng.PerformGets();
-                    eng.PerformPuts();
-                    break;
                 default:
+                    throw error::Internal("[ADIOS2] Unexpected access mode.");
                     break;
                 }
             },

@@ -237,13 +237,40 @@ void HDF5IOHandlerImpl::createFile(
         std::string name = m_handler->directory + parameters.name;
         if (!auxiliary::ends_with(name, ".h5"))
             name += ".h5";
-        unsigned flags;
-        if (m_handler->m_backendAccess == Access::CREATE)
+        unsigned flags{};
+        switch (m_handler->m_backendAccess)
+        {
+        case Access::CREATE:
             flags = H5F_ACC_TRUNC;
-        else
+            break;
+        case Access::APPEND:
+            if (auxiliary::file_exists(name))
+            {
+                flags = H5F_ACC_RDWR;
+            }
+            else
+            {
+                flags = H5F_ACC_TRUNC;
+            }
+            break;
+        case Access::READ_WRITE:
             flags = H5F_ACC_EXCL;
-        hid_t id =
-            H5Fcreate(name.c_str(), flags, H5P_DEFAULT, m_fileAccessProperty);
+            break;
+        case Access::READ_ONLY:
+            // condition has been checked above
+            throw std::runtime_error("Control flow error");
+        }
+
+        hid_t id{};
+        if (flags == H5F_ACC_RDWR)
+        {
+            id = H5Fopen(name.c_str(), flags, m_fileAccessProperty);
+        }
+        else
+        {
+            id = H5Fcreate(
+                name.c_str(), flags, H5P_DEFAULT, m_fileAccessProperty);
+        }
         VERIFY(id >= 0, "[HDF5] Internal error: Failed to create HDF5 file");
 
         writable->written = true;
@@ -702,7 +729,14 @@ void HDF5IOHandlerImpl::openFile(
     Access at = m_handler->m_backendAccess;
     if (at == Access::READ_ONLY)
         flags = H5F_ACC_RDONLY;
-    else if (at == Access::READ_WRITE || at == Access::CREATE)
+    /*
+     * Within the HDF5 backend, APPEND and READ_WRITE mode are
+     * equivalent, but the openPMD frontend exposes no reading
+     * functionality in APPEND mode.
+     */
+    else if (
+        at == Access::READ_WRITE || at == Access::CREATE ||
+        at == Access::APPEND)
         flags = H5F_ACC_RDWR;
     else
         throw std::runtime_error("[HDF5] Unknown file Access");
