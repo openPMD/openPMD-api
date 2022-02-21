@@ -1917,24 +1917,7 @@ inline void fileBased_write_test(const std::string &backend)
         REQUIRE(o.iterations[5].time<double>() == 5.0);
     }
 
-    if (backend == "bp")
     {
-        // Append + filebased iteration encoding works for all backends
-        Series o = Series(
-            "../samples/subdir/serial_fileBased_write%T." + backend,
-            Access::APPEND);
-        // Append mode does not support reading anything that already exists
-        REQUIRE(o.iterations.size() == 0);
-        // write something to trigger opening of the file
-        o.iterations[6].particles["e"]["position"]["x"].resetDataset(
-            {Datatype::DOUBLE, {10}});
-        o.iterations[6].particles["e"]["position"]["x"].makeConstant<double>(
-            1.0);
-    }
-    else
-    {
-        // @todo enable a workflow for ADIOS2 where only either reading from or
-        // writing to an iteration works
         // extend existing series with new step and auto-detection of iteration
         // padding
         Series o = Series(
@@ -2026,16 +2009,13 @@ inline void fileBased_write_test(const std::string &backend)
     }
 
     // write with auto-detection and in-consistent padding from step 10
-    if (backend != "bp")
-    {
-        REQUIRE_THROWS_WITH(
-            Series(
-                "../samples/subdir/serial_fileBased_write%T." + backend,
-                Access::READ_WRITE),
-            Catch::Equals(
-                "Cannot write to a series with inconsistent iteration padding. "
-                "Please specify '%0<N>T' or open as read-only."));
-    }
+    REQUIRE_THROWS_WITH(
+        Series(
+            "../samples/subdir/serial_fileBased_write%T." + backend,
+            Access::READ_WRITE),
+        Catch::Equals(
+            "Cannot write to a series with inconsistent iteration padding. "
+            "Please specify '%0<N>T' or open as read-only."));
 
     // read back with fixed padding
     {
