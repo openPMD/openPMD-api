@@ -5954,3 +5954,97 @@ TEST_CASE("append_mode_filebased", "[serial]")
         append_mode_filebased(t);
     }
 }
+
+void groupbased_read_write(std::string const &ext)
+{
+    int data = 0;
+    Dataset ds(Datatype::INT, {1});
+    std::string filename = "../samples/groupbased_read_write." + ext;
+
+    {
+        Series write(filename, Access::CREATE);
+        auto E_x = write.iterations[0].meshes["E"]["x"];
+        auto E_y = write.iterations[0].meshes["E"]["y"];
+        E_x.resetDataset(ds);
+        E_y.resetDataset(ds);
+        E_x.storeChunk(shareRaw(&data), {0}, {1});
+        E_y.storeChunk(shareRaw(&data), {0}, {1});
+
+        E_x.setAttribute("updated_in_run", 0);
+        E_y.setAttribute("updated_in_run", 0);
+    }
+
+    {
+        Series write(filename, Access::READ_WRITE);
+        // create a new iteration
+        auto E_x = write.iterations[1].meshes["E"]["x"];
+        E_x.resetDataset(ds);
+
+        // overwrite old dataset
+        auto E_y = write.iterations[0].meshes["E"]["y"];
+
+        data = 1;
+
+        E_x.storeChunk(shareRaw(&data), {0}, {1});
+        E_y.storeChunk(shareRaw(&data), {0}, {1});
+
+        E_x.setAttribute("updated_in_run", 1);
+        E_y.setAttribute("updated_in_run", 1);
+    }
+
+    {
+        Series read(filename, Access::READ_ONLY);
+        auto E_x_0_fromRun0 = read.iterations[0].meshes["E"]["x"];
+        auto E_x_1_fromRun1 = read.iterations[1].meshes["E"]["x"];
+        auto E_y_0_fromRun1 = read.iterations[0].meshes["E"]["y"];
+
+        REQUIRE(E_x_0_fromRun0.getAttribute("updated_in_run").get<int>() == 0);
+        REQUIRE(E_x_1_fromRun1.getAttribute("updated_in_run").get<int>() == 1);
+        REQUIRE(E_y_0_fromRun1.getAttribute("updated_in_run").get<int>() == 1);
+
+        auto chunk_E_x_0_fromRun0 = E_x_0_fromRun0.loadChunk<int>({0}, {1});
+        auto chunk_E_x_1_fromRun1 = E_x_1_fromRun1.loadChunk<int>({0}, {1});
+        auto chunk_E_y_0_fromRun1 = E_y_0_fromRun1.loadChunk<int>({0}, {1});
+
+        read.flush();
+
+        REQUIRE(*chunk_E_x_0_fromRun0 == 0);
+        REQUIRE(*chunk_E_x_1_fromRun1 == 1);
+        REQUIRE(*chunk_E_y_0_fromRun1 == 1);
+    }
+
+    // check that truncation works correctly
+    {
+        Series write(filename, Access::CREATE);
+        // create a new iteration
+        auto E_x = write.iterations[2].meshes["E"]["x"];
+        E_x.resetDataset(ds);
+
+        data = 2;
+
+        E_x.storeChunk(shareRaw(&data), {0}, {1});
+        E_x.setAttribute("updated_in_run", 2);
+    }
+
+    {
+        Series read(filename, Access::READ_ONLY);
+        REQUIRE(read.iterations.size() == 1);
+        REQUIRE(read.iterations.count(2) == 1);
+    }
+}
+
+TEST_CASE("groupbased_read_write", "[serial]")
+{
+    constexpr char const *supportsGroupbasedRW[] = {"h5", "json"};
+    for (auto const &t : testedFileExtensions())
+    {
+        for (auto const supported : supportsGroupbasedRW)
+        {
+            if (t == supported)
+            {
+                groupbased_read_write(t);
+                break;
+            }
+        }
+    }
+}
