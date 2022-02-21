@@ -26,6 +26,9 @@
 
 #if openPMD_HAVE_MPI
 #include <mpi.h>
+
+#include <string>
+#include <vector>
 #endif
 
 #include <type_traits>
@@ -64,5 +67,20 @@ namespace
     }
 } // namespace
 
+struct StringMatrix
+{
+    std::vector<char> char_buffer;
+    size_t line_length = 0;
+    size_t num_lines = 0;
+};
+
+StringMatrix collectStringsAsMatrixTo(
+    MPI_Comm communicator, int destRank, std::string const &thisRankString);
+
+std::vector<std::string> collectStringsTo(
+    MPI_Comm communicator, int destRank, std::string const &thisRankString);
+
+std::vector<std::string> distributeStringsToAllRanks(
+    MPI_Comm communicator, std::string const &thisRankString);
 #endif
 } // namespace openPMD::auxiliary
