@@ -460,6 +460,7 @@ set(CORE_SOURCE
         src/auxiliary/Date.cpp
         src/auxiliary/Filesystem.cpp
         src/auxiliary/JSON.cpp
+        src/auxiliary/Mpi.cpp
         src/backend/Attributable.cpp
         src/backend/BaseRecordComponent.cpp
         src/backend/MeshRecordComponent.cpp
