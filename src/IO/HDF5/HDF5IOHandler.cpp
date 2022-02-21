@@ -436,6 +436,46 @@ void HDF5IOHandlerImpl::createDataset(
             "[HDF5] Internal error: Failed to open HDF5 group during dataset "
             "creation");
 
+        if (m_handler->m_backendAccess == Access::APPEND)
+        {
+            // The dataset might already exist in the file from a previous run
+            // We delete it, otherwise we could not create it again with
+            // possibly different parameters.
+            // This is inefficient, as only the link to the dataset will be
+            // removed, but not the actual dataset
+            // But such is life if overwriting an iteration in Append mode
+            H5G_info_t group_info;
+            herr_t status = H5Gget_info(node_id, &group_info);
+            VERIFY(
+                status == 0,
+                "[HDF5] Internal error: Failed to get HDF5 group info for " +
+                    concrete_h5_file_position(writable) +
+                    " during dataset creation");
+            for (hsize_t i = 0; i < group_info.nlinks; ++i)
+            {
+                if (H5G_DATASET != H5Gget_objtype_by_idx(node_id, i))
+                {
+                    continue;
+                }
+                ssize_t name_length =
+                    H5Gget_objname_by_idx(node_id, i, nullptr, 0);
+                std::vector<char> charbuffer(name_length + 1);
+                H5Gget_objname_by_idx(
+                    node_id, i, charbuffer.data(), name_length + 1);
+                if (std::strncmp(
+                        name.c_str(), charbuffer.data(), name_length + 1) != 0)
+                {
+                    continue;
+                }
+                status = H5Ldelete(node_id, name.c_str(), H5P_DEFAULT);
+                VERIFY(
+                    status == 0,
+                    "[HDF5] Internal error: Failed to delete old dataset from "
+                    "group for overwriting.");
+                break;
+            }
+        }
+
         Datatype d = parameters.dtype;
         if (d == Datatype::UNDEFINED)
         {

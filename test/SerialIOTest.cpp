@@ -5839,10 +5839,6 @@ TEST_CASE("append_mode", "[serial]")
 {
     for (auto const &t : testedFileExtensions())
     {
-        if (t == "h5")
-        {
-            continue;
-        }
         if (t == "bp")
         {
             std::string jsonConfigOld = R"END(
