@@ -4901,8 +4901,10 @@ void serial_iterator(std::string const &file)
     Series readSeries(file, Access::READ_ONLY);
 
     size_t last_iteration_index = 0;
+    size_t numberOfIterations = 0;
     for (auto iteration : readSeries.readIterations())
     {
+        ++numberOfIterations;
         auto E_x = iteration.meshes["E"]["x"];
         REQUIRE(E_x.getDimensionality() == 1);
         REQUIRE(E_x.getExtent()[0] == extent);
@@ -4915,6 +4917,7 @@ void serial_iterator(std::string const &file)
         last_iteration_index = iteration.iterationIndex;
     }
     REQUIRE(last_iteration_index == 9);
+    REQUIRE(numberOfIterations == 10);
 }
 
 TEST_CASE("serial_iterator", "[serial][adios2]")
@@ -6178,11 +6181,12 @@ TEST_CASE("deferred_parsing", "[serial]")
     }
 }
 
-// @todo merge this back with the chaotic_stream test of PR #949
-// (bug noticed while working on that branch)
-void no_explicit_flush(std::string filename)
+void chaotic_stream(std::string filename, bool variableBased)
 {
-    std::vector<uint64_t> sampleData{5, 9, 1, 3, 4, 6, 7, 8, 2, 0};
+    /*
+     * We will write iterations in the following order.
+     */
+    std::vector<uint64_t> iterations{5, 9, 1, 3, 4, 6, 7, 8, 2, 0};
     std::string jsonConfig = R"(
 {
     "adios2": {
@@ -6193,16 +6197,31 @@ void no_explicit_flush(std::string filename)
     }
 })";
 
+    bool weirdOrderWhenReading{};
+
     {
         Series series(filename, Access::CREATE, jsonConfig);
-        for (uint64_t currentIteration = 0; currentIteration < 10;
-             ++currentIteration)
+        /*
+         * When using ADIOS2 steps, iterations are read not by logical order
+         * (iteration index), but by order of writing.
+         */
+        weirdOrderWhenReading = series.backend() == "ADIOS2" &&
+            series.iterationEncoding() != IterationEncoding::fileBased;
+        if (variableBased)
+        {
+            if (series.backend() != "ADIOS2")
+            {
+                return;
+            }
+            series.setIterationEncoding(IterationEncoding::variableBased);
+        }
+        for (auto currentIteration : iterations)
         {
             auto dataset =
                 series.writeIterations()[currentIteration]
                     .meshes["iterationOrder"][MeshRecordComponent::SCALAR];
             dataset.resetDataset({determineDatatype<uint64_t>(), {10}});
-            dataset.storeChunk(sampleData, {0}, {10});
+            dataset.storeChunk(iterations, {0}, {10});
             // series.writeIterations()[ currentIteration ].close();
         }
     }
@@ -6212,19 +6231,27 @@ void no_explicit_flush(std::string filename)
         size_t index = 0;
         for (const auto &iteration : series.readIterations())
         {
-            REQUIRE(iteration.iterationIndex == index);
+            if (weirdOrderWhenReading)
+            {
+                REQUIRE(iteration.iterationIndex == iterations[index]);
+            }
+            else
+            {
+                REQUIRE(iteration.iterationIndex == index);
+            }
             ++index;
         }
-        REQUIRE(index == 10);
+        REQUIRE(index == iterations.size());
     }
 }
 
-TEST_CASE("no_explicit_flush", "[serial]")
+TEST_CASE("chaotic_stream", "[serial]")
 {
     for (auto const &t : testedFileExtensions())
     {
-        no_explicit_flush("../samples/no_explicit_flush_filebased_%T." + t);
-        no_explicit_flush("../samples/no_explicit_flush." + t);
+        chaotic_stream("../samples/chaotic_stream_filebased_%T." + t, false);
+        chaotic_stream("../samples/chaotic_stream." + t, false);
+        chaotic_stream("../samples/chaotic_stream_vbased." + t, true);
     }
 }
 
@@ -6405,7 +6432,25 @@ void append_mode(
         }
 
         writeSomeIterations(
-            write.writeIterations(), std::vector<uint64_t>{4, 3});
+            write.writeIterations(), std::vector<uint64_t>{4, 3, 10});
+        write.flush();
+    }
+    {
+        Series write(filename, Access::APPEND, jsonConfig);
+        if (variableBased)
+        {
+            write.setIterationEncoding(IterationEncoding::variableBased);
+        }
+        if (write.backend() == "ADIOS1")
+        {
+            REQUIRE_THROWS_AS(
+                write.flush(), error::OperationUnsupportedInBackend);
+            // destructor will be noisy now
+            return;
+        }
+
+        writeSomeIterations(
+            write.writeIterations(), std::vector<uint64_t>{7, 1, 11});
         write.flush();
     }
     {
@@ -6415,27 +6460,28 @@ void append_mode(
             // in variable-based encodings, iterations are not parsed ahead of
             // time but as they go
             unsigned counter = 0;
+            uint64_t iterationOrder[] = {0, 1, 2, 3, 4, 10, 7, 11};
             for (auto const &iteration : read.readIterations())
             {
-                REQUIRE(iteration.iterationIndex == counter);
+                REQUIRE(iteration.iterationIndex == iterationOrder[counter]);
                 ++counter;
             }
-            REQUIRE(counter == 5);
+            REQUIRE(counter == 8);
             // Cannot do listSeries here because the Series is already drained
             REQUIRE_THROWS_AS(helper::listSeries(read), error::WrongAPIUsage);
         }
         else
         {
-            REQUIRE(read.iterations.size() == 5);
+            REQUIRE(read.iterations.size() == 8);
+            /*
+             * Roadmap: for now, reading this should work by ignoring the last
+             * duplicate iteration.
+             * After merging https://github.com/openPMD/openPMD-api/pull/949, we
+             * should see both instances when reading.
+             * Final goal: Read only the last instance.
+             */
+            helper::listSeries(read);
         }
-        /*
-         * Roadmap: for now, reading this should work by ignoring the last
-         * duplicate iteration.
-         * After merging https://github.com/openPMD/openPMD-api/pull/949, we
-         * should see both instances when reading.
-         * Final goal: Read only the last instance.
-         */
-        helper::listSeries(read);
     }
 #if 100000000 * ADIOS2_VERSION_MAJOR + 1000000 * ADIOS2_VERSION_MINOR +        \
         10000 * ADIOS2_VERSION_PATCH + 100 * ADIOS2_VERSION_TWEAK >=           \
