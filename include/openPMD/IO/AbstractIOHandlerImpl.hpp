@@ -266,14 +266,17 @@ public:
      * file.
      *
      * The operation should fail if m_handler->m_frontendAccess is
-     * Access::READ_ONLY. The new file should be located in
-     * m_handler->directory. The new file should have the filename
-     * parameters.name. The filename should include the correct corresponding
-     * filename extension. Any existing file should be overwritten if
-     * m_handler->m_frontendAccess is Access::CREATE. The Writables file
-     * position should correspond to the root group "/" of the hierarchy. The
-     * Writable should be marked written when the operation completes
-     * successfully.
+     * Access::READ_ONLY. If m_handler->m_frontendAccess is Access::APPEND, a
+     * possibly existing file should not be overwritten. Instead, written
+     * updates should then either occur in-place or in form of new IO steps.
+     * Support for reading is not necessary in Append mode.
+     * The new file should be located in m_handler->directory.
+     * The new file should have the filename parameters.name.
+     * The filename should include the correct corresponding filename extension.
+     * Any existing file should be overwritten if m_handler->m_frontendAccess is
+     * Access::CREATE. The Writables file position should correspond to the root
+     * group "/" of the hierarchy. The Writable should be marked written when
+     * the operation completes successfully.
      */
     virtual void
     createFile(Writable *, Parameter<Operation::CREATE_FILE> const &) = 0;
