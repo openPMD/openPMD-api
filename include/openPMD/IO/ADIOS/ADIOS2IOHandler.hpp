@@ -1155,13 +1155,6 @@ namespace detail
          */
         void invalidateVariablesMap();
 
-    private:
-        ADIOS2IOHandlerImpl *m_impl;
-        std::optional<adios2::Engine> m_engine; //! ADIOS engine
-        /**
-         * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
-         */
-        std::string m_engineType;
         /*
          * streamStatus is NoStream for file-based ADIOS engines.
          * This is relevant for the method BufferedActions::requireActiveStep,
@@ -1252,6 +1245,14 @@ namespace detail
             Undecided
         };
         StreamStatus streamStatus = StreamStatus::OutsideOfStep;
+
+    private:
+        ADIOS2IOHandlerImpl *m_impl;
+        std::optional<adios2::Engine> m_engine; //! ADIOS engine
+        /**
+         * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
+         */
+        std::string m_engineType;
 
         /**
          * See documentation for StreamStatus::Parsing.

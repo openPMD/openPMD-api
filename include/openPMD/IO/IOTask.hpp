@@ -537,6 +537,7 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::WRITE_ATT>
         : AbstractParameter()
         , name(p.name)
         , dtype(p.dtype)
+        , changesOverSteps(p.changesOverSteps)
         , resource(p.resource)
     {}
 
@@ -548,6 +549,13 @@ struct OPENPMDAPI_EXPORT Parameter<Operation::WRITE_ATT>
 
     std::string name = "";
     Datatype dtype = Datatype::UNDEFINED;
+    /*
+     * If true, this attribute changes across IO steps.
+     * It should only be written in backends that support IO steps,
+     * otherwise writing should be skipped.
+     * The frontend is responsible for handling both situations.
+     */
+    bool changesOverSteps = false;
     Attribute::resource resource;
 };
 

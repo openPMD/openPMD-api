@@ -797,6 +797,11 @@ void JSONIOHandlerImpl::writeDataset(
 void JSONIOHandlerImpl::writeAttribute(
     Writable *writable, Parameter<Operation::WRITE_ATT> const &parameter)
 {
+    if (parameter.changesOverSteps)
+    {
+        // cannot do this
+        return;
+    }
     if (m_handler->m_backendAccess == Access::READ_ONLY)
     {
         throw std::runtime_error(
