@@ -75,7 +75,6 @@ namespace error
      *
      * Example: A nullpointer is observed somewhere.
      */
-
     class Internal : public Error
     {
     public:
