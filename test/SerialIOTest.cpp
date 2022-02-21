@@ -5758,8 +5758,11 @@ void append_mode(
         }
         if (write.backend() == "ADIOS1")
         {
-            REQUIRE_THROWS_AS(
-                write.flush(), error::OperationUnsupportedInBackend);
+            REQUIRE_THROWS_WITH(
+                write.flush(),
+                Catch::Equals(
+                    "Operation unsupported in ADIOS1: Appending to existing "
+                    "file on disk (use Access::CREATE to overwrite)"));
             // destructor will be noisy now
             return;
         }
@@ -5776,8 +5779,11 @@ void append_mode(
         }
         if (write.backend() == "ADIOS1")
         {
-            REQUIRE_THROWS_AS(
-                write.flush(), error::OperationUnsupportedInBackend);
+            REQUIRE_THROWS_WITH(
+                write.flush(),
+                Catch::Equals(
+                    "Operation unsupported in ADIOS1: Appending to existing "
+                    "file on disk (use Access::CREATE to overwrite)"));
             // destructor will be noisy now
             return;
         }
@@ -5793,7 +5799,7 @@ void append_mode(
             // in variable-based encodings, iterations are not parsed ahead of
             // time but as they go
             unsigned counter = 0;
-            for (auto iteration : read.readIterations())
+            for (auto const &iteration : read.readIterations())
             {
                 REQUIRE(iteration.iterationIndex == counter);
                 ++counter;
