@@ -87,6 +87,24 @@ enum class FlushLevel : unsigned char
     SkeletonOnly
 };
 
+namespace internal
+{
+    /**
+     * Parameters recursively passed through the openPMD hierarchy when
+     * flushing.
+     *
+     */
+    struct FlushParams
+    {
+        FlushLevel flushLevel = FlushLevel::InternalFlush;
+    };
+
+    /*
+     * To be used for reading
+     */
+    constexpr FlushParams defaultFlushParams{};
+} // namespace internal
+
 /** Interface for communicating between logical and physically persistent data.
  *
  * Input and output operations are channeled through a task queue that is
@@ -123,7 +141,7 @@ public:
      * @return  Future indicating the completion state of the operation for
      * backends that decide to implement this operation asynchronously.
      */
-    virtual std::future<void> flush() = 0;
+    virtual std::future<void> flush(internal::FlushParams const &) = 0;
 
     /** The currently used backend */
     virtual std::string backendName() const = 0;
@@ -132,7 +150,6 @@ public:
     Access const m_backendAccess;
     Access const m_frontendAccess;
     std::queue<IOTask> m_work;
-    FlushLevel m_flushLevel = FlushLevel::InternalFlush;
 }; // AbstractIOHandler
 
 } // namespace openPMD

@@ -51,7 +51,7 @@ public:
 
     virtual void init();
 
-    std::future<void> flush() override;
+    std::future<void> flush();
 
     virtual int64_t open_write(Writable *);
     virtual ADIOS_FILE *open_read(std::string const &name);

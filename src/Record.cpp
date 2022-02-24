@@ -43,12 +43,13 @@ Record &Record::setUnitDimension(std::map<UnitDimension, double> const &udim)
     return *this;
 }
 
-void Record::flush_impl(std::string const &name)
+void Record::flush_impl(
+    std::string const &name, internal::FlushParams const &flushParams)
 {
     if (IOHandler()->m_frontendAccess == Access::READ_ONLY)
     {
         for (auto &comp : *this)
-            comp.second.flush(comp.first);
+            comp.second.flush(comp.first, flushParams);
     }
     else
     {
@@ -58,8 +59,8 @@ void Record::flush_impl(std::string const &name)
             {
                 RecordComponent &rc = at(RecordComponent::SCALAR);
                 rc.parent() = parent();
-                rc.flush(name);
-                IOHandler()->flush();
+                rc.flush(name, flushParams);
+                IOHandler()->flush(flushParams);
                 writable().abstractFilePosition =
                     rc.writable().abstractFilePosition;
                 written() = true;
@@ -78,7 +79,7 @@ void Record::flush_impl(std::string const &name)
         {
             for (auto &comp : *this)
             {
-                comp.second.flush(name);
+                comp.second.flush(name, flushParams);
                 writable().abstractFilePosition =
                     comp.second.writable().abstractFilePosition;
             }
@@ -86,10 +87,10 @@ void Record::flush_impl(std::string const &name)
         else
         {
             for (auto &comp : *this)
-                comp.second.flush(comp.first);
+                comp.second.flush(comp.first, flushParams);
         }
 
-        flushAttributes();
+        flushAttributes(flushParams);
     }
 }
 
@@ -104,7 +105,7 @@ void Record::read()
     {
         Parameter<Operation::LIST_PATHS> pList;
         IOHandler()->enqueue(IOTask(this, pList));
-        IOHandler()->flush();
+        IOHandler()->flush(internal::defaultFlushParams);
 
         Parameter<Operation::OPEN_PATH> pOpen;
         for (auto const &component : *pList.paths)
@@ -118,7 +119,7 @@ void Record::read()
 
         Parameter<Operation::LIST_DATASETS> dList;
         IOHandler()->enqueue(IOTask(this, dList));
-        IOHandler()->flush();
+        IOHandler()->flush(internal::defaultFlushParams);
 
         Parameter<Operation::OPEN_DATASET> dOpen;
         for (auto const &component : *dList.datasets)
@@ -126,7 +127,7 @@ void Record::read()
             RecordComponent &rc = (*this)[component];
             dOpen.name = component;
             IOHandler()->enqueue(IOTask(&rc, dOpen));
-            IOHandler()->flush();
+            IOHandler()->flush(internal::defaultFlushParams);
             rc.written() = false;
             rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
             rc.written() = true;

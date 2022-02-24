@@ -377,7 +377,7 @@ void Series::flush()
     flush_impl(
         series.iterations.begin(),
         series.iterations.end(),
-        FlushLevel::UserFlush);
+        {FlushLevel::UserFlush});
 }
 
 std::unique_ptr<Series::ParsedInput> Series::parseInput(std::string filepath)
@@ -564,10 +564,9 @@ void Series::initDefaults(IterationEncoding ie)
 std::future<void> Series::flush_impl(
     iterations_iterator begin,
     iterations_iterator end,
-    FlushLevel level,
+    internal::FlushParams flushParams,
     bool flushIOHandler)
 {
-    IOHandler()->m_flushLevel = level;
     auto &series = get();
     series.m_lastFlushSuccessful = true;
     try
@@ -576,34 +575,33 @@ std::future<void> Series::flush_impl(
         {
             using IE = IterationEncoding;
         case IE::fileBased:
-            flushFileBased(begin, end);
+            flushFileBased(begin, end, flushParams);
             break;
         case IE::groupBased:
         case IE::variableBased:
-            flushGorVBased(begin, end);
+            flushGorVBased(begin, end, flushParams);
             break;
         }
         if (flushIOHandler)
         {
-            auto res = IOHandler()->flush();
-            IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
-            return res;
+            return IOHandler()->flush(flushParams);
         }
         else
         {
-            IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
             return {};
         }
     }
     catch (...)
     {
-        IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
         series.m_lastFlushSuccessful = false;
         throw;
     }
 }
 
-void Series::flushFileBased(iterations_iterator begin, iterations_iterator end)
+void Series::flushFileBased(
+    iterations_iterator begin,
+    iterations_iterator end,
+    internal::FlushParams flushParams)
 {
     auto &series = get();
     if (end == begin)
@@ -618,7 +616,7 @@ void Series::flushFileBased(iterations_iterator begin, iterations_iterator end)
             {
                 using IO = IterationOpened;
             case IO::HasBeenOpened:
-                it->second.flush();
+                it->second.flush(flushParams);
                 break;
             case IO::RemainsClosed:
                 break;
@@ -635,7 +633,7 @@ void Series::flushFileBased(iterations_iterator begin, iterations_iterator end)
             }
 
             // Phase 3
-            IOHandler()->flush();
+            IOHandler()->flush(flushParams);
         }
     else
     {
@@ -656,12 +654,13 @@ void Series::flushFileBased(iterations_iterator begin, iterations_iterator end)
 
                 dirty() |= it->second.dirty();
                 std::string filename = iterationFilename(it->first);
-                it->second.flushFileBased(filename, it->first);
+                it->second.flushFileBased(filename, it->first, flushParams);
 
                 series.iterations.flush(
-                    auxiliary::replace_first(basePath(), "%T/", ""));
+                    auxiliary::replace_first(basePath(), "%T/", ""),
+                    flushParams);
 
-                flushAttributes();
+                flushAttributes(flushParams);
                 break;
             }
             case IO::RemainsClosed:
@@ -679,7 +678,7 @@ void Series::flushFileBased(iterations_iterator begin, iterations_iterator end)
             }
 
             // Phase 3
-            IOHandler()->flush();
+            IOHandler()->flush(flushParams);
 
             /* reset the dirty bit for every iteration (i.e. file)
              * otherwise only the first iteration will have updates attributes
@@ -690,7 +689,10 @@ void Series::flushFileBased(iterations_iterator begin, iterations_iterator end)
     }
 }
 
-void Series::flushGorVBased(iterations_iterator begin, iterations_iterator end)
+void Series::flushGorVBased(
+    iterations_iterator begin,
+    iterations_iterator end,
+    internal::FlushParams flushParams)
 {
     auto &series = get();
     if (IOHandler()->m_frontendAccess == Access::READ_ONLY)
@@ -701,7 +703,7 @@ void Series::flushGorVBased(iterations_iterator begin, iterations_iterator end)
             {
                 using IO = IterationOpened;
             case IO::HasBeenOpened:
-                it->second.flush();
+                it->second.flush(flushParams);
                 break;
             case IO::RemainsClosed:
                 break;
@@ -717,7 +719,7 @@ void Series::flushGorVBased(iterations_iterator begin, iterations_iterator end)
             }
 
             // Phase 3
-            IOHandler()->flush();
+            IOHandler()->flush(flushParams);
         }
     else
     {
@@ -730,7 +732,7 @@ void Series::flushGorVBased(iterations_iterator begin, iterations_iterator end)
         }
 
         series.iterations.flush(
-            auxiliary::replace_first(basePath(), "%T/", ""));
+            auxiliary::replace_first(basePath(), "%T/", ""), flushParams);
 
         for (auto it = begin; it != end; ++it)
         {
@@ -747,10 +749,10 @@ void Series::flushGorVBased(iterations_iterator begin, iterations_iterator end)
                 {
                     using IE = IterationEncoding;
                 case IE::groupBased:
-                    it->second.flushGroupBased(it->first);
+                    it->second.flushGroupBased(it->first, flushParams);
                     break;
                 case IE::variableBased:
-                    it->second.flushVariableBased(it->first);
+                    it->second.flushVariableBased(it->first, flushParams);
                     break;
                 default:
                     throw std::runtime_error(
@@ -771,8 +773,8 @@ void Series::flushGorVBased(iterations_iterator begin, iterations_iterator end)
             }
         }
 
-        flushAttributes();
-        IOHandler()->flush();
+        flushAttributes(flushParams);
+        IOHandler()->flush(flushParams);
     }
 }
 
@@ -846,7 +848,7 @@ void Series::readFileBased()
         iteration.runDeferredParseAccess();
         Parameter<Operation::CLOSE_FILE> fClose;
         iteration.IOHandler()->enqueue(IOTask(&iteration, fClose));
-        iteration.IOHandler()->flush();
+        iteration.IOHandler()->flush(internal::defaultFlushParams);
         iteration.get().m_closed = internal::CloseStatus::ClosedTemporarily;
     };
     if (series.m_parseLazily)
@@ -892,7 +894,7 @@ void Series::readOneIterationFileBased(std::string const &filePath)
 
     fOpen.name = filePath;
     IOHandler()->enqueue(IOTask(this, fOpen));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     series.iterations.parent() = getWritable(this);
 
     readBase();
@@ -900,7 +902,7 @@ void Series::readOneIterationFileBased(std::string const &filePath)
     using DT = Datatype;
     aRead.name = "iterationEncoding";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::STRING)
     {
         std::string encoding = Attribute(*aRead.resource).get<std::string>();
@@ -937,7 +939,7 @@ void Series::readOneIterationFileBased(std::string const &filePath)
 
     aRead.name = "iterationFormat";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::STRING)
     {
         written() = false;
@@ -967,7 +969,7 @@ void Series::readGorVBased(bool do_init)
     fOpen.name = series.m_name;
     fOpen.encoding = iterationEncoding();
     IOHandler()->enqueue(IOTask(this, fOpen));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
 
     if (do_init)
     {
@@ -977,7 +979,7 @@ void Series::readGorVBased(bool do_init)
         Parameter<Operation::READ_ATT> aRead;
         aRead.name = "iterationEncoding";
         IOHandler()->enqueue(IOTask(this, aRead));
-        IOHandler()->flush();
+        IOHandler()->flush(internal::defaultFlushParams);
         if (*aRead.dtype == DT::STRING)
         {
             std::string encoding =
@@ -1011,7 +1013,7 @@ void Series::readGorVBased(bool do_init)
 
         aRead.name = "iterationFormat";
         IOHandler()->enqueue(IOTask(this, aRead));
-        IOHandler()->flush();
+        IOHandler()->flush(internal::defaultFlushParams);
         if (*aRead.dtype == DT::STRING)
         {
             written() = false;
@@ -1039,7 +1041,7 @@ void Series::readGorVBased(bool do_init)
     /* obtain all paths inside the basepath (i.e. all iterations) */
     Parameter<Operation::LIST_PATHS> pList;
     IOHandler()->enqueue(IOTask(&series.iterations, pList));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
 
     auto readSingleIteration = [&series, &pOpen, this](
                                    uint64_t index,
@@ -1112,7 +1114,7 @@ void Series::readBase()
 
     aRead.name = "openPMD";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::STRING)
         setOpenPMD(Attribute(*aRead.resource).get<std::string>());
     else
@@ -1120,7 +1122,7 @@ void Series::readBase()
 
     aRead.name = "openPMDextension";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == determineDatatype<uint32_t>())
         setOpenPMDextension(Attribute(*aRead.resource).get<uint32_t>());
     else
@@ -1129,7 +1131,7 @@ void Series::readBase()
 
     aRead.name = "basePath";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::STRING)
         setAttribute("basePath", Attribute(*aRead.resource).get<std::string>());
     else
@@ -1138,14 +1140,14 @@ void Series::readBase()
 
     Parameter<Operation::LIST_ATTS> aList;
     IOHandler()->enqueue(IOTask(this, aList));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     if (std::count(
             aList.attributes->begin(), aList.attributes->end(), "meshesPath") ==
         1)
     {
         aRead.name = "meshesPath";
         IOHandler()->enqueue(IOTask(this, aRead));
-        IOHandler()->flush();
+        IOHandler()->flush(internal::defaultFlushParams);
         if (*aRead.dtype == DT::STRING)
         {
             /* allow setting the meshes path after completed IO */
@@ -1169,7 +1171,7 @@ void Series::readBase()
     {
         aRead.name = "particlesPath";
         IOHandler()->enqueue(IOTask(this, aRead));
-        IOHandler()->flush();
+        IOHandler()->flush(internal::defaultFlushParams);
         if (*aRead.dtype == DT::STRING)
         {
             /* allow setting the meshes path after completed IO */
@@ -1220,6 +1222,7 @@ AdvanceStatus Series::advance(
     iterations_iterator begin,
     Iteration &iteration)
 {
+    constexpr internal::FlushParams flushParams = {FlushLevel::UserFlush};
     auto &series = get();
     auto end = begin;
     ++end;
@@ -1238,7 +1241,8 @@ AdvanceStatus Series::advance(
         itData.m_closed = internal::CloseStatus::Open;
     }
 
-    flush_impl(begin, end, FlushLevel::UserFlush, /* flushIOHandler = */ false);
+    // @todo really collective?
+    flush_impl(begin, end, flushParams, /* flushIOHandler = */ false);
 
     if (oldCloseStatus == internal::CloseStatus::ClosedInFrontend)
     {
@@ -1309,17 +1313,7 @@ AdvanceStatus Series::advance(
     // We cannot call Series::flush now, since the IO handler is still filled
     // from calling flush(Group|File)based, but has not been emptied yet
     // Do that manually
-    IOHandler()->m_flushLevel = FlushLevel::UserFlush;
-    try
-    {
-        IOHandler()->flush();
-    }
-    catch (...)
-    {
-        IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
-        throw;
-    }
-    IOHandler()->m_flushLevel = FlushLevel::InternalFlush;
+    IOHandler()->flush(flushParams);
 
     return *param.status;
 }

@@ -38,7 +38,7 @@ public:
         return "JSON";
     }
 
-    std::future<void> flush() override;
+    std::future<void> flush(internal::FlushParams const &) override;
 
 private:
     JSONIOHandlerImpl m_impl;

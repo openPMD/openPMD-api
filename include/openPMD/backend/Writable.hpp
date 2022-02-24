@@ -114,7 +114,7 @@ public:
 OPENPMD_private
     // clang-format on
 
-    void seriesFlush(FlushLevel);
+    void seriesFlush(internal::FlushParams);
     /*
      * These members need to be shared pointers since distinct instances of
      * Writable may share them.
