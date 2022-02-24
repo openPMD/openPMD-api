@@ -53,7 +53,8 @@ namespace openPMD
  * that can be dynamically casted to a
  * std::shared_ptr<openPMD::DatasetFiller<T>>.
  */
-template <typename DatasetFillerProvider> class MPIBenchmark
+template <typename DatasetFillerProvider>
+class MPIBenchmark
 {
 
 public:
@@ -165,7 +166,8 @@ private:
      *
      * @tparam Clock Clock type to use.
      */
-    template <typename Clock> struct BenchmarkExecution
+    template <typename Clock>
+    struct BenchmarkExecution
     {
         MPIBenchmark<DatasetFillerProvider> *m_benchmark;
 

@@ -61,17 +61,20 @@ class ADIOS2IOHandler;
 
 namespace detail
 {
-    template <typename, typename> struct DatasetHelper;
+    template <typename, typename>
+    struct DatasetHelper;
     struct GetSpan;
     struct DatasetReader;
     struct AttributeReader;
     struct AttributeWriter;
     struct OldAttributeReader;
     struct OldAttributeWriter;
-    template <typename> struct AttributeTypes;
+    template <typename>
+    struct AttributeTypes;
     struct DatasetOpener;
     struct VariableDefiner;
-    template <typename> struct DatasetTypes;
+    template <typename>
+    struct DatasetTypes;
     struct WriteDataset;
     struct BufferedActions;
     struct BufferedPut;
@@ -103,17 +106,20 @@ using SupportedSchema = ADIOS2Schema::SupportedSchema;
 class ADIOS2IOHandlerImpl
     : public AbstractIOHandlerImplCommon<ADIOS2FilePosition>
 {
-    template <typename, typename> friend struct detail::DatasetHelper;
+    template <typename, typename>
+    friend struct detail::DatasetHelper;
     friend struct detail::GetSpan;
     friend struct detail::DatasetReader;
     friend struct detail::AttributeReader;
     friend struct detail::AttributeWriter;
     friend struct detail::OldAttributeReader;
     friend struct detail::OldAttributeWriter;
-    template <typename> friend struct detail::AttributeTypes;
+    template <typename>
+    friend struct detail::AttributeTypes;
     friend struct detail::DatasetOpener;
     friend struct detail::VariableDefiner;
-    template <typename> friend struct detail::DatasetTypes;
+    template <typename>
+    friend struct detail::DatasetTypes;
     friend struct detail::WriteDataset;
     friend struct detail::BufferedActions;
     friend struct detail::BufferedAttributeRead;
@@ -286,7 +292,8 @@ private:
         }
     }
 
-    template <typename Key> json::TracingJSON config(Key &&key)
+    template <typename Key>
+    json::TracingJSON config(Key &&key)
     {
         return config<Key>(std::forward<Key>(key), m_config);
     }
@@ -445,7 +452,8 @@ namespace detail
             std::string name,
             std::shared_ptr<Attribute::resource> resource);
 
-        template <int n, typename... Params> static Datatype call(Params &&...);
+        template <int n, typename... Params>
+        static Datatype call(Params &&...);
     };
 
     struct OldAttributeWriter
@@ -456,7 +464,8 @@ namespace detail
             Writable *writable,
             const Parameter<Operation::WRITE_ATT> &parameters);
 
-        template <int n, typename... Params> static void call(Params &&...);
+        template <int n, typename... Params>
+        static void call(Params &&...);
     };
 
     struct AttributeReader
@@ -468,7 +477,8 @@ namespace detail
             std::string name,
             std::shared_ptr<Attribute::resource> resource);
 
-        template <int n, typename... Params> static Datatype call(Params &&...);
+        template <int n, typename... Params>
+        static Datatype call(Params &&...);
     };
 
     struct AttributeWriter
@@ -477,7 +487,8 @@ namespace detail
         static void
         call(detail::BufferedAttributeWrite &params, BufferedActions &fileData);
 
-        template <int n, typename... Params> static void call(Params &&...);
+        template <int n, typename... Params>
+        static void call(Params &&...);
     };
 
     struct DatasetOpener
@@ -501,7 +512,8 @@ namespace detail
             adios2::IO &IO,
             adios2::Engine &engine);
 
-        template <int n, typename... Params> static void call(Params &&...);
+        template <int n, typename... Params>
+        static void call(Params &&...);
     };
 
     struct VariableDefiner
@@ -544,7 +556,8 @@ namespace detail
             adios2::Engine &engine,
             std::string const &varName);
 
-        template <int n, typename... Params> static void call(Params &&...);
+        template <int n, typename... Params>
+        static void call(Params &&...);
     };
 
     // Helper structs to help distinguish valid attribute/variable
@@ -555,7 +568,8 @@ namespace detail
      * for vector and array types, as well as the boolean
      * type (which is not natively supported by ADIOS).
      */
-    template <typename T> struct AttributeTypes
+    template <typename T>
+    struct AttributeTypes
     {
         static void createAttribute(
             adios2::IO &IO,
@@ -588,7 +602,8 @@ namespace detail
         }
     };
 
-    template <> struct AttributeTypes<std::complex<long double> >
+    template <>
+    struct AttributeTypes<std::complex<long double> >
     {
         static void createAttribute(
             adios2::IO &,
@@ -620,7 +635,8 @@ namespace detail
         }
     };
 
-    template <> struct AttributeTypes<std::vector<std::complex<long double> > >
+    template <>
+    struct AttributeTypes<std::vector<std::complex<long double> > >
     {
         static void createAttribute(
             adios2::IO &,
@@ -652,7 +668,8 @@ namespace detail
         }
     };
 
-    template <typename T> struct AttributeTypes<std::vector<T> >
+    template <typename T>
+    struct AttributeTypes<std::vector<T> >
     {
         static void createAttribute(
             adios2::IO &IO,
@@ -689,7 +706,8 @@ namespace detail
         }
     };
 
-    template <> struct AttributeTypes<std::vector<std::string> >
+    template <>
+    struct AttributeTypes<std::vector<std::string> >
     {
         static void createAttribute(
             adios2::IO &IO,
@@ -726,7 +744,8 @@ namespace detail
         }
     };
 
-    template <typename T, size_t n> struct AttributeTypes<std::array<T, n> >
+    template <typename T, size_t n>
+    struct AttributeTypes<std::array<T, n> >
     {
         static void createAttribute(
             adios2::IO &IO,
@@ -778,7 +797,8 @@ namespace detail
         }
     } // namespace bool_repr
 
-    template <> struct AttributeTypes<bool>
+    template <>
+    struct AttributeTypes<bool>
     {
         using rep = detail::bool_representation;
 
@@ -889,7 +909,8 @@ namespace detail
         virtual ~I_UpdateSpan() = default;
     };
 
-    template <typename T> struct UpdateSpan : I_UpdateSpan
+    template <typename T>
+    struct UpdateSpan : I_UpdateSpan
     {
         adios2::detail::Span<T> span;
 
@@ -1014,9 +1035,11 @@ namespace detail
         adios2::Engine &getEngine();
         adios2::Engine &requireActiveStep();
 
-        template <typename BA> void enqueue(BA &&ba);
+        template <typename BA>
+        void enqueue(BA &&ba);
 
-        template <typename BA> void enqueue(BA &&ba, decltype(m_buffer) &);
+        template <typename BA>
+        void enqueue(BA &&ba, decltype(m_buffer) &);
 
         /**
          * Flush deferred IO actions.

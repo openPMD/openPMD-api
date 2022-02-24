@@ -42,7 +42,8 @@ namespace openPMD
 {
 namespace traits
 {
-    template <typename T> struct GenerationPolicy;
+    template <typename T>
+    struct GenerationPolicy;
 } // namespace traits
 class AbstractFilePosition;
 class Attributable;
@@ -106,7 +107,8 @@ namespace internal
                 "' must not be empty!");
     }
 
-    template <typename> class BaseRecordData;
+    template <typename>
+    class BaseRecordData;
 } // namespace internal
 
 /** @brief Layer to manage storage of attributes associated with file objects.
@@ -119,12 +121,16 @@ class Attributable
     // @todo remove unnecessary friend (wew that sounds bitter)
     using A_MAP = std::map<std::string, Attribute>;
     friend Writable *getWritable(Attributable *);
-    template <typename T_elem> friend class BaseRecord;
-    template <typename T_elem> friend class BaseRecordInterface;
-    template <typename> friend class internal::BaseRecordData;
+    template <typename T_elem>
+    friend class BaseRecord;
+    template <typename T_elem>
+    friend class BaseRecordInterface;
+    template <typename>
+    friend class internal::BaseRecordData;
     template <typename T, typename T_key, typename T_container>
     friend class Container;
-    template <typename T> friend struct traits::GenerationPolicy;
+    template <typename T>
+    friend struct traits::GenerationPolicy;
     friend class Iteration;
     friend class Series;
     friend class Writable;
@@ -156,7 +162,8 @@ public:
      *
      * @{
      */
-    template <typename T> bool setAttribute(std::string const &key, T value);
+    template <typename T>
+    bool setAttribute(std::string const &key, T value);
     bool setAttribute(std::string const &key, char const value[]);
     /** @}
      */
@@ -309,7 +316,8 @@ OPENPMD_protected
      * value for.
      * @return  Value of stored Attribute as supplied floating point type.
      */
-    template <typename T> T readFloatingpoint(std::string const &key) const;
+    template <typename T>
+    T readFloatingpoint(std::string const &key) const;
     /** Retrieve a vector of values of a floating point Attributes of
      * user-defined precision with ensured type-safety.
      *

@@ -4358,7 +4358,8 @@ TEST_CASE("variableBasedSingleIteration", "[serial][adios2]")
 
 namespace epsilon
 {
-template <typename T> struct AreEqual
+template <typename T>
+struct AreEqual
 {
     static bool areEqual(T float1, T float2)
     {
@@ -4375,7 +4376,8 @@ template <typename T> struct AreEqual
     }
 };
 
-template <typename T> struct AreEqual<std::vector<T> >
+template <typename T>
+struct AreEqual<std::vector<T> >
 {
     static bool areEqual(std::vector<T> v1, std::vector<T> v2)
     {
@@ -4384,7 +4386,8 @@ template <typename T> struct AreEqual<std::vector<T> >
     }
 };
 
-template <typename T> bool areEqual(T a, T b)
+template <typename T>
+bool areEqual(T a, T b)
 {
     return AreEqual<T>::areEqual(std::move(a), std::move(b));
 }

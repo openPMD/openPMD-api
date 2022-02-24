@@ -40,7 +40,8 @@ namespace
 {
     struct GetAlignment
     {
-        template <typename T> static constexpr size_t call()
+        template <typename T>
+        static constexpr size_t call()
         {
             return alignof(T);
         }
@@ -54,7 +55,8 @@ namespace
 
     struct GetSize
     {
-        template <typename T> static constexpr size_t call()
+        template <typename T>
+        static constexpr size_t call()
         {
             return sizeof(T);
         }
@@ -133,7 +135,8 @@ namespace
 
     struct AttributeLocationDestroy
     {
-        template <typename T> static void call(char *ptr, size_t numItems)
+        template <typename T>
+        static void call(char *ptr, size_t numItems)
         {
             T *destroy = reinterpret_cast<T *>(ptr);
             for (size_t i = 0; i < numItems; ++i)

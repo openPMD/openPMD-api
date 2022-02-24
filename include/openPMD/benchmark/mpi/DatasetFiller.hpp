@@ -31,7 +31,8 @@ namespace openPMD
  * An abstract class to create one iteration of data per thread.
  * @tparam T The type of data to produce.
  */
-template <typename T> class DatasetFiller
+template <typename T>
+class DatasetFiller
 {
 protected:
     Extent::value_type m_numberOfItems;
@@ -65,7 +66,8 @@ DatasetFiller<T>::DatasetFiller(Extent::value_type numberOfItems)
     : m_numberOfItems(numberOfItems)
 {}
 
-template <typename DF> class SimpleDatasetFillerProvider
+template <typename DF>
+class SimpleDatasetFillerProvider
 {
 public:
     using resultType = typename DF::resultType;
@@ -73,7 +75,8 @@ public:
 private:
     std::shared_ptr<DF> m_df;
 
-    template <typename T, typename Dummy = void> struct Helper
+    template <typename T, typename Dummy = void>
+    struct Helper
     {
         std::shared_ptr<DatasetFiller<T>> operator()(std::shared_ptr<DF> &)
         {
@@ -83,7 +86,8 @@ private:
         }
     };
 
-    template <typename Dummy> struct Helper<resultType, Dummy>
+    template <typename Dummy>
+    struct Helper<resultType, Dummy>
     {
         std::shared_ptr<DatasetFiller<resultType>>
         operator()(std::shared_ptr<DF> &df)
@@ -97,7 +101,8 @@ public:
         : m_df{std::make_shared<DF>(std::move(df))}
     {}
 
-    template <typename T> std::shared_ptr<DatasetFiller<T>> operator()()
+    template <typename T>
+    std::shared_ptr<DatasetFiller<T>> operator()()
     {
         Helper<T> h;
         return h(m_df);

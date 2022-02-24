@@ -40,8 +40,10 @@ namespace test
 class AbstractFilePosition;
 class AbstractIOHandler;
 struct ADIOS2FilePosition;
-template <typename FilePositionType> class AbstractIOHandlerImplCommon;
-template <typename> class Span;
+template <typename FilePositionType>
+class AbstractIOHandlerImplCommon;
+template <typename>
+class Span;
 
 namespace internal
 {
@@ -62,8 +64,10 @@ class Writable final
 {
     friend class internal::AttributableData;
     friend class Attributable;
-    template <typename T_elem> friend class BaseRecord;
-    template <typename T_elem> friend class BaseRecordInterface;
+    template <typename T_elem>
+    friend class BaseRecord;
+    template <typename T_elem>
+    friend class BaseRecordInterface;
     template <typename T, typename T_key, typename T_container>
     friend class Container;
     friend class Iteration;
@@ -71,7 +75,8 @@ class Writable final
     friend class ParticleSpecies;
     friend class Series;
     friend class Record;
-    template <typename> friend class CommonADIOS1IOHandlerImpl;
+    template <typename>
+    friend class CommonADIOS1IOHandlerImpl;
     friend class ADIOS1IOHandlerImpl;
     friend class ParallelADIOS1IOHandlerImpl;
     friend class ADIOS2IOHandlerImpl;
@@ -82,7 +87,8 @@ class Writable final
     friend struct test::TestHelper;
     friend std::string concrete_h5_file_position(Writable *);
     friend std::string concrete_bp1_file_position(Writable *);
-    template <typename> friend class Span;
+    template <typename>
+    friend class Span;
 
 private:
     Writable(internal::AttributableData *);

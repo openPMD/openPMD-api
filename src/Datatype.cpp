@@ -266,13 +266,15 @@ Datatype toVectorType(Datatype dt)
 
 namespace detail
 {
-    template <typename T> Datatype BasicDatatype::call()
+    template <typename T>
+    Datatype BasicDatatype::call()
     {
         static auto res = BasicDatatypeHelper<T>{}.m_dt;
         return res;
     }
 
-    template <int n> Datatype BasicDatatype::call()
+    template <int n>
+    Datatype BasicDatatype::call()
     {
         throw std::runtime_error("basicDatatype: received unknown datatype.");
     }

@@ -33,9 +33,11 @@ namespace openPMD
  * Any existing member behaves equivalently to those documented here:
  * https://en.cppreference.com/w/cpp/container/span
  */
-template <typename T> class Span
+template <typename T>
+class Span
 {
-    template <typename> friend class DynamicMemoryView;
+    template <typename>
+    friend class DynamicMemoryView;
 
 private:
     T *m_ptr;
@@ -90,7 +92,8 @@ public:
  *      Hence, the concrete pointer needs to be acquired right before writing
  *      to it. Otherwise, a use after free might occur.
  */
-template <typename T> class DynamicMemoryView
+template <typename T>
+class DynamicMemoryView
 {
     friend class RecordComponent;
 

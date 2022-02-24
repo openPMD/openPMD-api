@@ -141,7 +141,8 @@ public:
      * @return  vector of T representing the spacing of the grid points along
      * each dimension (in the units of the simulation).
      */
-    template <typename T> std::vector<T> gridSpacing() const;
+    template <typename T>
+    std::vector<T> gridSpacing() const;
     /** Set the spacing of the grid points along each dimension (in the units of
      * the simulation).
      *
@@ -206,7 +207,8 @@ public:
      * @return  Offset between the time at which this record is defined and the
      * Iteration::time attribute of the Series::basePath level.
      */
-    template <typename T> T timeOffset() const;
+    template <typename T>
+    T timeOffset() const;
     /** Set the offset between the time at which this record is defined and the
      * Iteration::time attribute of the Series::basePath level.
      *
@@ -230,12 +232,14 @@ private:
     void read() override;
 }; // Mesh
 
-template <typename T> inline std::vector<T> Mesh::gridSpacing() const
+template <typename T>
+inline std::vector<T> Mesh::gridSpacing() const
 {
     return readVectorFloatingpoint<T>("gridSpacing");
 }
 
-template <typename T> inline T Mesh::timeOffset() const
+template <typename T>
+inline T Mesh::timeOffset() const
 {
     return readFloatingpoint<T>("timeOffset");
 }

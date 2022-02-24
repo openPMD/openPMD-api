@@ -112,7 +112,8 @@ struct decay_equiv
 template <typename T, typename U>
 constexpr bool decay_equiv_v = decay_equiv<T, U>::value;
 
-template <typename T> inline constexpr Datatype determineDatatype()
+template <typename T>
+inline constexpr Datatype determineDatatype()
 {
     using DT = Datatype;
     if (decay_equiv<T, char>::value)
@@ -589,7 +590,8 @@ inline bool isComplexFloatingPoint(Datatype d)
  * @tparam T type to test
  * @return true if floating point, otherwise false
  */
-template <typename T> inline bool isFloatingPoint()
+template <typename T>
+inline bool isFloatingPoint()
 {
     Datatype dtype = determineDatatype<T>();
 
@@ -603,7 +605,8 @@ template <typename T> inline bool isFloatingPoint()
  * @tparam T type to test
  * @return true if complex floating point, otherwise false
  */
-template <typename T> inline bool isComplexFloatingPoint()
+template <typename T>
+inline bool isComplexFloatingPoint()
 {
     Datatype dtype = determineDatatype<T>();
 
@@ -655,7 +658,8 @@ inline std::tuple<bool, bool> isInteger(Datatype d)
  * @tparam T type to test
  * @return std::tuple<bool, bool> with isInteger and isSigned result
  */
-template <typename T> inline std::tuple<bool, bool> isInteger()
+template <typename T>
+inline std::tuple<bool, bool> isInteger()
 {
     Datatype dtype = determineDatatype<T>();
 
@@ -668,7 +672,8 @@ template <typename T> inline std::tuple<bool, bool> isInteger()
  * @param d Datatype to compare
  * @return true if both types are floating point and same bitness, else false
  */
-template <typename T_FP> inline bool isSameFloatingPoint(Datatype d)
+template <typename T_FP>
+inline bool isSameFloatingPoint(Datatype d)
 {
     // template
     bool tt_is_fp = isFloatingPoint<T_FP>();
@@ -689,7 +694,8 @@ template <typename T_FP> inline bool isSameFloatingPoint(Datatype d)
  * @return true if both types are complex floating point and same bitness, else
  * false
  */
-template <typename T_CFP> inline bool isSameComplexFloatingPoint(Datatype d)
+template <typename T_CFP>
+inline bool isSameComplexFloatingPoint(Datatype d)
 {
     // template
     bool tt_is_cfp = isComplexFloatingPoint<T_CFP>();
@@ -711,7 +717,8 @@ template <typename T_CFP> inline bool isSameComplexFloatingPoint(Datatype d)
  * @return true if both types are integers, same signed and same bitness, else
  * false
  */
-template <typename T_Int> inline bool isSameInteger(Datatype d)
+template <typename T_Int>
+inline bool isSameInteger(Datatype d)
 {
     // template
     bool tt_is_int, tt_is_sig;
@@ -771,12 +778,14 @@ inline bool isSame(openPMD::Datatype const d, openPMD::Datatype const e)
 
 namespace detail
 {
-    template <typename T> struct BasicDatatypeHelper
+    template <typename T>
+    struct BasicDatatypeHelper
     {
         Datatype m_dt = determineDatatype<T>();
     };
 
-    template <typename T> struct BasicDatatypeHelper<std::vector<T>>
+    template <typename T>
+    struct BasicDatatypeHelper<std::vector<T>>
     {
         Datatype m_dt = BasicDatatypeHelper<T>{}.m_dt;
     };
@@ -789,9 +798,11 @@ namespace detail
 
     struct BasicDatatype
     {
-        template <typename T> static Datatype call();
+        template <typename T>
+        static Datatype call();
 
-        template <int n> static Datatype call();
+        template <int n>
+        static Datatype call();
     };
 } // namespace detail
 

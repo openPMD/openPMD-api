@@ -42,8 +42,10 @@ public:
 
     Record &setUnitDimension(std::map<UnitDimension, double> const &);
 
-    template <typename T> T timeOffset() const;
-    template <typename T> Record &setTimeOffset(T);
+    template <typename T>
+    T timeOffset() const;
+    template <typename T>
+    Record &setTimeOffset(T);
 
 private:
     Record();
@@ -52,12 +54,14 @@ private:
     void read() override;
 }; // Record
 
-template <typename T> inline T Record::timeOffset() const
+template <typename T>
+inline T Record::timeOffset() const
 {
     return readFloatingpoint<T>("timeOffset");
 }
 
-template <typename T> inline Record &Record::setTimeOffset(T to)
+template <typename T>
+inline Record &Record::setTimeOffset(T to)
 {
     static_assert(
         std::is_floating_point<T>::value,

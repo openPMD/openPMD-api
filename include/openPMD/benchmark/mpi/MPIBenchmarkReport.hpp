@@ -40,7 +40,8 @@ namespace openPMD
  * <openPMD/benchmark/mpi/MPIBenchmark>.
  * @tparam Duration Datatype to be used for storing a time interval.
  */
-template <typename Duration> struct MPIBenchmarkReport
+template <typename Duration>
+struct MPIBenchmarkReport
 {
     MPI_Comm communicator;
 
@@ -110,54 +111,67 @@ template <typename Duration> struct MPIBenchmarkReport
         typename decltype(Series::iterations)::key_type iterations);
 
 private:
-    template <typename D, typename Dummy = D> struct MPIDatatype
+    template <typename D, typename Dummy = D>
+    struct MPIDatatype
     {};
 
-    template <typename Dummy> struct MPIDatatype<char, Dummy>
+    template <typename Dummy>
+    struct MPIDatatype<char, Dummy>
     {
         MPI_Datatype dt = MPI_CHAR;
     };
-    template <typename Dummy> struct MPIDatatype<unsigned char, Dummy>
+    template <typename Dummy>
+    struct MPIDatatype<unsigned char, Dummy>
     {
         MPI_Datatype dt = MPI_UNSIGNED_CHAR;
     };
-    template <typename Dummy> struct MPIDatatype<short, Dummy>
+    template <typename Dummy>
+    struct MPIDatatype<short, Dummy>
     {
         MPI_Datatype dt = MPI_SHORT;
     };
-    template <typename Dummy> struct MPIDatatype<int, Dummy>
+    template <typename Dummy>
+    struct MPIDatatype<int, Dummy>
     {
         MPI_Datatype dt = MPI_INT;
     };
-    template <typename Dummy> struct MPIDatatype<long, Dummy>
+    template <typename Dummy>
+    struct MPIDatatype<long, Dummy>
     {
         MPI_Datatype dt = MPI_LONG;
     };
-    template <typename Dummy> struct MPIDatatype<float, Dummy>
+    template <typename Dummy>
+    struct MPIDatatype<float, Dummy>
     {
         MPI_Datatype dt = MPI_FLOAT;
     };
-    template <typename Dummy> struct MPIDatatype<double, Dummy>
+    template <typename Dummy>
+    struct MPIDatatype<double, Dummy>
     {
         MPI_Datatype dt = MPI_DOUBLE;
     };
-    template <typename Dummy> struct MPIDatatype<unsigned short, Dummy>
+    template <typename Dummy>
+    struct MPIDatatype<unsigned short, Dummy>
     {
         MPI_Datatype dt = MPI_UNSIGNED_SHORT;
     };
-    template <typename Dummy> struct MPIDatatype<unsigned int, Dummy>
+    template <typename Dummy>
+    struct MPIDatatype<unsigned int, Dummy>
     {
         MPI_Datatype dt = MPI_UNSIGNED;
     };
-    template <typename Dummy> struct MPIDatatype<unsigned long, Dummy>
+    template <typename Dummy>
+    struct MPIDatatype<unsigned long, Dummy>
     {
         MPI_Datatype dt = MPI_UNSIGNED_LONG;
     };
-    template <typename Dummy> struct MPIDatatype<long double, Dummy>
+    template <typename Dummy>
+    struct MPIDatatype<long double, Dummy>
     {
         MPI_Datatype dt = MPI_LONG_DOUBLE;
     };
-    template <typename Dummy> struct MPIDatatype<long long, Dummy>
+    template <typename Dummy>
+    struct MPIDatatype<long long, Dummy>
     {
         MPI_Datatype dt = MPI_LONG_LONG_INT;
     };

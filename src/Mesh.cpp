@@ -196,7 +196,8 @@ Mesh &Mesh::setUnitDimension(std::map<UnitDimension, double> const &udim)
     return *this;
 }
 
-template <typename T, typename> Mesh &Mesh::setTimeOffset(T to)
+template <typename T, typename>
+Mesh &Mesh::setTimeOffset(T to)
 {
     static_assert(
         std::is_floating_point<T>::value,

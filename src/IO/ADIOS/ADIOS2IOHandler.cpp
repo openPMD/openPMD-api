@@ -750,7 +750,8 @@ namespace detail
         : span(std::move(span_in))
     {}
 
-    template <typename T> void *UpdateSpan<T>::update()
+    template <typename T>
+    void *UpdateSpan<T>::update()
     {
         return span.data();
     }
@@ -1640,7 +1641,8 @@ namespace detail
         engine.Put(var, ptr);
     }
 
-    template <int n, typename... Params> void WriteDataset::call(Params &&...)
+    template <int n, typename... Params>
+    void WriteDataset::call(Params &&...)
     {
         throw std::runtime_error("[ADIOS2] WRITE_DATASET: Invalid datatype.");
     }
@@ -1720,7 +1722,8 @@ namespace detail
         }
     }
 
-    template <int n, typename... Args> void RetrieveBlocksInfo::call(Args &&...)
+    template <int n, typename... Args>
+    void RetrieveBlocksInfo::call(Args &&...)
     {
         // variable has not been found, so we don't fill in any blocks
     }
@@ -2520,7 +2523,8 @@ namespace detail
         return eng;
     }
 
-    template <typename BA> void BufferedActions::enqueue(BA &&ba)
+    template <typename BA>
+    void BufferedActions::enqueue(BA &&ba)
     {
         enqueue<BA>(std::forward<BA>(ba), m_buffer);
     }

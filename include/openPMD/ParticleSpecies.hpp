@@ -58,9 +58,11 @@ private:
 
 namespace traits
 {
-    template <> struct GenerationPolicy<ParticleSpecies>
+    template <>
+    struct GenerationPolicy<ParticleSpecies>
     {
-        template <typename T> void operator()(T &ret)
+        template <typename T>
+        void operator()(T &ret)
         {
             ret.particlePatches.linkHierarchy(ret.writable());
 

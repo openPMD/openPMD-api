@@ -74,7 +74,8 @@ struct InvalidatableFile
 
 namespace std
 {
-template <> struct hash<openPMD::InvalidatableFile>
+template <>
+struct hash<openPMD::InvalidatableFile>
 {
     using argument_type = openPMD::InvalidatableFile;
     using result_type = std::size_t;

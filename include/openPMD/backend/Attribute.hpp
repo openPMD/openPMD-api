@@ -115,10 +115,12 @@ public:
      * @tparam  U   Type of the object to be casted to.
      * @return  Copy of the retrieved object, casted to type U.
      */
-    template <typename U> U get() const;
+    template <typename U>
+    U get() const;
 };
 
-template <typename T, typename U> auto doConvert(T *pv) -> U
+template <typename T, typename U>
+auto doConvert(T *pv) -> U
 {
     if constexpr (std::is_convertible_v<T, U>)
     {
@@ -207,7 +209,8 @@ template <typename T, typename U> auto doConvert(T *pv) -> U
  * @tparam  U   Type of the object to be casted to.
  * @return  Copy of the retrieved object, casted to type U.
  */
-template <typename U> inline U getCast(Attribute const &a)
+template <typename U>
+inline U getCast(Attribute const &a)
 {
     auto v = a.getResource();
 
@@ -219,7 +222,8 @@ template <typename U> inline U getCast(Attribute const &a)
         v);
 }
 
-template <typename U> U Attribute::get() const
+template <typename U>
+U Attribute::get() const
 {
     return getCast<U>(Variant::getResource());
 }

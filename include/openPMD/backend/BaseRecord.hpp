@@ -54,7 +54,8 @@ namespace internal
     };
 } // namespace internal
 
-template <typename T_elem> class BaseRecord : public Container<T_elem>
+template <typename T_elem>
+class BaseRecord : public Container<T_elem>
 {
     friend class Iteration;
     friend class ParticleSpecies;
@@ -159,7 +160,8 @@ private:
 
 namespace internal
 {
-    template <typename T_elem> BaseRecordData<T_elem>::BaseRecordData()
+    template <typename T_elem>
+    BaseRecordData<T_elem>::BaseRecordData()
     {
         Attributable impl{{this, [](auto const *) {}}};
         impl.setAttribute(
@@ -299,12 +301,14 @@ inline std::array<double, 7> BaseRecord<T_elem>::unitDimension() const
         .template get<std::array<double, 7> >();
 }
 
-template <typename T_elem> inline bool BaseRecord<T_elem>::scalar() const
+template <typename T_elem>
+inline bool BaseRecord<T_elem>::scalar() const
 {
     return get().m_containsScalar;
 }
 
-template <typename T_elem> inline void BaseRecord<T_elem>::readBase()
+template <typename T_elem>
+inline void BaseRecord<T_elem>::readBase()
 {
     using DT = Datatype;
     Parameter<Operation::READ_ATT> aRead;

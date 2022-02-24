@@ -41,7 +41,8 @@ namespace detail
      *
      * @tparam T Underlying attribute data type.
      */
-    template <typename T> struct AttributeWithShape
+    template <typename T>
+    struct AttributeWithShape
     {
         adios2::Dims shape;
         T const *data;

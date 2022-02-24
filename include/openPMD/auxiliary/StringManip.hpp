@@ -173,7 +173,8 @@ namespace auxiliary
         return s;
     }
 
-    template <typename F> std::string trim(std::string const &s, F &&to_remove)
+    template <typename F>
+    std::string trim(std::string const &s, F &&to_remove)
     {
         auto begin = s.begin();
         for (; begin != s.end(); ++begin)
@@ -233,7 +234,8 @@ namespace auxiliary
         return s;
     }
 
-    template <typename S> S &&lowerCase(S &&s)
+    template <typename S>
+    S &&lowerCase(S &&s)
     {
         std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) {
             return std::tolower(c);

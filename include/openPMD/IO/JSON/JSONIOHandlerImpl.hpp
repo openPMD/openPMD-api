@@ -119,7 +119,8 @@ struct File
 
 namespace std
 {
-template <> struct hash<openPMD::File>
+template <>
+struct hash<openPMD::File>
 {
     typedef openPMD::File argument_type;
     typedef std::size_t result_type;
@@ -131,12 +132,14 @@ template <> struct hash<openPMD::File>
 };
 
 // std::complex handling
-template <class T> void to_json(nlohmann::json &j, const std::complex<T> &p)
+template <class T>
+void to_json(nlohmann::json &j, const std::complex<T> &p)
 {
     j = nlohmann::json{p.real(), p.imag()};
 }
 
-template <class T> void from_json(const nlohmann::json &j, std::complex<T> &p)
+template <class T>
+void from_json(const nlohmann::json &j, std::complex<T> &p)
 {
     p.real(j.at(0));
     p.imag(j.at(1));
@@ -271,7 +274,8 @@ private:
     // remove single '/' in the beginning and end of a string
     static std::string removeSlashes(std::string);
 
-    template <typename KeyT> static bool hasKey(nlohmann::json &, KeyT &&key);
+    template <typename KeyT>
+    static bool hasKey(nlohmann::json &, KeyT &&key);
 
     // make sure that the given path exists in proper form in
     // the passed json value
@@ -362,32 +366,38 @@ private:
         static constexpr char const *errorMsg = "JSON: writeAttribute";
     };
 
-    template <typename T> struct CppToJSON
+    template <typename T>
+    struct CppToJSON
     {
         nlohmann::json operator()(T const &);
     };
 
-    template <typename T> struct CppToJSON<std::vector<T>>
+    template <typename T>
+    struct CppToJSON<std::vector<T>>
     {
         nlohmann::json operator()(std::vector<T> const &);
     };
 
-    template <typename T, int n> struct CppToJSON<std::array<T, n>>
+    template <typename T, int n>
+    struct CppToJSON<std::array<T, n>>
     {
         nlohmann::json operator()(std::array<T, n> const &);
     };
 
-    template <typename T, typename Enable = T> struct JsonToCpp
+    template <typename T, typename Enable = T>
+    struct JsonToCpp
     {
         T operator()(nlohmann::json const &);
     };
 
-    template <typename T> struct JsonToCpp<std::vector<T>>
+    template <typename T>
+    struct JsonToCpp<std::vector<T>>
     {
         std::vector<T> operator()(nlohmann::json const &);
     };
 
-    template <typename T, int n> struct JsonToCpp<std::array<T, n>>
+    template <typename T, int n>
+    struct JsonToCpp<std::array<T, n>>
     {
         std::array<T, n> operator()(nlohmann::json const &);
     };

@@ -43,31 +43,37 @@ namespace detail
     // we represent booleans as unsigned chars
     using bool_representation = unsigned char;
 
-    template <typename T> struct ToDatatypeHelper
+    template <typename T>
+    struct ToDatatypeHelper
     {
         static std::string type();
     };
 
-    template <typename T> struct ToDatatypeHelper<std::vector<T> >
+    template <typename T>
+    struct ToDatatypeHelper<std::vector<T> >
     {
         static std::string type();
     };
 
-    template <typename T, size_t n> struct ToDatatypeHelper<std::array<T, n> >
+    template <typename T, size_t n>
+    struct ToDatatypeHelper<std::array<T, n> >
     {
         static std::string type();
     };
 
-    template <> struct ToDatatypeHelper<bool>
+    template <>
+    struct ToDatatypeHelper<bool>
     {
         static std::string type();
     };
 
     struct ToDatatype
     {
-        template <typename T> std::string operator()();
+        template <typename T>
+        std::string operator()();
 
-        template <int n> std::string operator()();
+        template <int n>
+        std::string operator()();
     };
 
     /**
@@ -92,7 +98,8 @@ namespace detail
             std::string const &attributeName,
             VariableOrAttribute);
 
-        template <int n, typename... Params> static Extent call(Params &&...);
+        template <int n, typename... Params>
+        static Extent call(Params &&...);
     };
 
     /**

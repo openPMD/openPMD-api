@@ -52,7 +52,8 @@ namespace traits
      * See:
      *   https://en.cppreference.com/w/cpp/named_req/ContiguousContainer
      */
-    template <typename T> struct IsContiguousContainer
+    template <typename T>
+    struct IsContiguousContainer
     {
         static constexpr bool value = false;
     };
@@ -70,7 +71,8 @@ namespace traits
     };
 } // namespace traits
 
-template <typename T> class DynamicMemoryView;
+template <typename T>
+class DynamicMemoryView;
 
 class RecordComponent;
 
@@ -127,11 +129,14 @@ class RecordComponent : public BaseRecordComponent
     friend class Container;
     friend class Iteration;
     friend class ParticleSpecies;
-    template <typename T_elem> friend class BaseRecord;
-    template <typename T_elem> friend class BaseRecordInterface;
+    template <typename T_elem>
+    friend class BaseRecord;
+    template <typename T_elem>
+    friend class BaseRecordInterface;
     friend class Record;
     friend class Mesh;
-    template <typename> friend class DynamicMemoryView;
+    template <typename>
+    friend class DynamicMemoryView;
     friend class internal::RecordComponentData;
     friend class MeshRecordComponent;
 
@@ -177,7 +182,8 @@ public:
      * @tparam T type of the stored value
      * @return A reference to this RecordComponent.
      */
-    template <typename T> RecordComponent &makeConstant(T);
+    template <typename T>
+    RecordComponent &makeConstant(T);
 
     /** Create a dataset with zero extent in each dimension.
      *
@@ -187,7 +193,8 @@ public:
      *                   zero.
      * @return A reference to this RecordComponent.
      */
-    template <typename T> RecordComponent &makeEmpty(uint8_t dimensions);
+    template <typename T>
+    RecordComponent &makeEmpty(uint8_t dimensions);
 
     /**
      * @brief Non-template overload of RecordComponent::makeEmpty().
@@ -228,9 +235,11 @@ public:
      * If offset is non-zero and extent is {-1u} the leftover extent in the
      * record component will be selected.
      */
-    template <typename T> void loadChunk(std::shared_ptr<T>, Offset, Extent);
+    template <typename T>
+    void loadChunk(std::shared_ptr<T>, Offset, Extent);
 
-    template <typename T> void storeChunk(std::shared_ptr<T>, Offset, Extent);
+    template <typename T>
+    void storeChunk(std::shared_ptr<T>, Offset, Extent);
 
     template <typename T_ContiguousContainer>
     typename std::enable_if<
@@ -274,7 +283,8 @@ public:
      * Overload of span-based storeChunk() that uses operator new() to create
      * a buffer.
      */
-    template <typename T> DynamicMemoryView<T> storeChunk(Offset, Extent);
+    template <typename T>
+    DynamicMemoryView<T> storeChunk(Offset, Extent);
 
     static constexpr char const *const SCALAR = "\vScalar";
 

@@ -83,7 +83,8 @@ namespace json
             return *m_positionInOriginal;
         }
 
-        template <typename Key> TracingJSON operator[](Key &&key);
+        template <typename Key>
+        TracingJSON operator[](Key &&key);
 
         /**
          * @brief Get the "shadow", i.e. a copy of the original JSON value
@@ -156,7 +157,8 @@ namespace json
             bool trace);
     };
 
-    template <typename Key> TracingJSON TracingJSON::operator[](Key &&key)
+    template <typename Key>
+    TracingJSON TracingJSON::operator[](Key &&key)
     {
         nlohmann::json *newPositionInOriginal =
             &m_positionInOriginal->operator[](key);

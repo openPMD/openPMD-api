@@ -63,7 +63,8 @@ class PatchRecordComponent : public BaseRecordComponent
 {
     template <typename T, typename T_key, typename T_container>
     friend class Container;
-    template <typename> friend class BaseRecord;
+    template <typename>
+    friend class BaseRecord;
     friend class ParticlePatches;
     friend class PatchRecord;
     friend class ParticleSpecies;
@@ -77,11 +78,14 @@ public:
     uint8_t getDimensionality() const;
     Extent getExtent() const;
 
-    template <typename T> std::shared_ptr<T> load();
+    template <typename T>
+    std::shared_ptr<T> load();
 
-    template <typename T> void load(std::shared_ptr<T>);
+    template <typename T>
+    void load(std::shared_ptr<T>);
 
-    template <typename T> void store(uint64_t idx, T);
+    template <typename T>
+    void store(uint64_t idx, T);
 
     // clang-format off
 OPENPMD_private
@@ -129,7 +133,8 @@ OPENPMD_protected
     }
 }; // PatchRecordComponent
 
-template <typename T> inline std::shared_ptr<T> PatchRecordComponent::load()
+template <typename T>
+inline std::shared_ptr<T> PatchRecordComponent::load()
 {
     uint64_t numPoints = getExtent()[0];
     auto newData =

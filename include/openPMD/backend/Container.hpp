@@ -46,9 +46,11 @@ namespace traits
      * insert() of a new element. The passed parameter is an iterator to the
      * newly added element.
      */
-    template <typename U> struct GenerationPolicy
+    template <typename U>
+    struct GenerationPolicy
     {
-        template <typename T> void operator()(T &)
+        template <typename T>
+        void operator()(T &)
         {}
     };
 } // namespace traits
@@ -56,7 +58,8 @@ namespace traits
 namespace internal
 {
     class SeriesData;
-    template <typename> class EraseStaleEntries;
+    template <typename>
+    class EraseStaleEntries;
 
     template <
         typename T,
@@ -136,7 +139,8 @@ class Container : public Attributable
     friend class ParticlePatches;
     friend class internal::SeriesData;
     friend class Series;
-    template <typename> friend class internal::EraseStaleEntries;
+    template <typename>
+    friend class internal::EraseStaleEntries;
 
 protected:
     using ContainerData = internal::ContainerData<T, T_key, T_container>;
@@ -229,7 +233,8 @@ public:
     {
         return container().insert(value);
     }
-    template <class P> std::pair<iterator, bool> insert(P &&value)
+    template <class P>
+    std::pair<iterator, bool> insert(P &&value)
     {
         return container().insert(value);
     }
@@ -237,11 +242,13 @@ public:
     {
         return container().insert(hint, value);
     }
-    template <class P> iterator insert(const_iterator hint, P &&value)
+    template <class P>
+    iterator insert(const_iterator hint, P &&value)
     {
         return container().insert(hint, value);
     }
-    template <class InputIt> void insert(InputIt first, InputIt last)
+    template <class InputIt>
+    void insert(InputIt first, InputIt last)
     {
         container().insert(first, last);
     }
@@ -462,7 +469,8 @@ namespace internal
      * class.
      * Container_t can be instantiated either by a reference or value type.
      */
-    template <typename Container_t> class EraseStaleEntries
+    template <typename Container_t>
+    class EraseStaleEntries
     {
         using BareContainer_t =
             typename std::remove_reference<Container_t>::type;
@@ -490,13 +498,15 @@ namespace internal
         EraseStaleEntries(EraseStaleEntries &&) = default;
         EraseStaleEntries &operator=(EraseStaleEntries &&) = default;
 
-        template <typename K> mapped_type &operator[](K &&k)
+        template <typename K>
+        mapped_type &operator[](K &&k)
         {
             m_accessedKeys.insert(k); // copy
             return m_originalContainer[std::forward<K>(k)];
         }
 
-        template <typename K> mapped_type &at(K &&k)
+        template <typename K>
+        mapped_type &at(K &&k)
         {
             m_accessedKeys.insert(k); // copy
             return m_originalContainer.at(std::forward<K>(k));
@@ -507,7 +517,8 @@ namespace internal
          * If the key is not accessed after this again, it will be deleted along
          * with all other unaccessed keys upon destruction.
          */
-        template <typename K> void forget(K &&k)
+        template <typename K>
+        void forget(K &&k)
         {
             m_accessedKeys.erase(std::forward<K>(k));
         }

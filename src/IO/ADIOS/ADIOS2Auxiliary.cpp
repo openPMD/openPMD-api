@@ -28,12 +28,14 @@
 
 namespace openPMD::detail
 {
-template <typename T> std::string ToDatatypeHelper<T>::type()
+template <typename T>
+std::string ToDatatypeHelper<T>::type()
 {
     return adios2::GetType<T>();
 }
 
-template <typename T> std::string ToDatatypeHelper<std::vector<T> >::type()
+template <typename T>
+std::string ToDatatypeHelper<std::vector<T> >::type()
 {
     return
 
@@ -53,12 +55,14 @@ std::string ToDatatypeHelper<bool>::type()
     return ToDatatypeHelper<bool_representation>::type();
 }
 
-template <typename T> std::string ToDatatype::operator()()
+template <typename T>
+std::string ToDatatype::operator()()
 {
     return ToDatatypeHelper<T>::type();
 }
 
-template <int n> std::string ToDatatype::operator()()
+template <int n>
+std::string ToDatatype::operator()()
 {
     return "";
 }
@@ -148,7 +152,8 @@ Extent AttributeInfo::call(
     }
 }
 
-template <int n, typename... Params> Extent AttributeInfo::call(Params &&...)
+template <int n, typename... Params>
+Extent AttributeInfo::call(Params &&...)
 {
     return {0};
 }

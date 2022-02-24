@@ -45,7 +45,8 @@ Iteration::Iteration() : Attributable{nullptr}
     particles.writable().ownKeyWithinParent = {"particles"};
 }
 
-template <typename T> Iteration &Iteration::setTime(T newTime)
+template <typename T>
+Iteration &Iteration::setTime(T newTime)
 {
     static_assert(
         std::is_floating_point<T>::value,
@@ -55,7 +56,8 @@ template <typename T> Iteration &Iteration::setTime(T newTime)
     return *this;
 }
 
-template <typename T> Iteration &Iteration::setDt(T newDt)
+template <typename T>
+Iteration &Iteration::setDt(T newDt)
 {
     static_assert(
         std::is_floating_point<T>::value,

@@ -135,14 +135,17 @@ namespace detail
      * (currently RecordComponent).
      * @param T_RecordComponent
      */
-    template <typename T_RecordComponent> struct DefaultValue
+    template <typename T_RecordComponent>
+    struct DefaultValue
     {
-        template <typename T> static void call(T_RecordComponent &rc)
+        template <typename T>
+        static void call(T_RecordComponent &rc)
         {
             rc.makeConstant(T());
         }
 
-        template <unsigned n, typename... Args> static void call(Args &&...)
+        template <unsigned n, typename... Args>
+        static void call(Args &&...)
         {
             throw std::runtime_error(
                 "makeEmpty: Datatype not supported by openPMD.");

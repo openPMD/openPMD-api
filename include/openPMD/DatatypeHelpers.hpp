@@ -31,7 +31,8 @@ namespace openPMD
 namespace detail
 {
     // std::void_t is C++17
-    template <typename> using void_t = void;
+    template <typename>
+    using void_t = void;
 
     /*
      * Check whether class T has a member "errorMsg" convertible
@@ -39,7 +40,8 @@ namespace detail
      * Used to give helpful compile-time error messages with static_assert
      * down in CallUndefinedDatatype.
      */
-    template <typename T, typename = void> struct HasErrorMessageMember
+    template <typename T, typename = void>
+    struct HasErrorMessageMember
     {
         static constexpr bool value = false;
     };

@@ -41,12 +41,14 @@ namespace openPMD
  *          and flushes to the users side without an indication via
  *          reference counting.
  */
-template <typename T> std::shared_ptr<T> shareRaw(T *x)
+template <typename T>
+std::shared_ptr<T> shareRaw(T *x)
 {
     return std::shared_ptr<T>(x, [](T *) {});
 }
 
-template <typename T> std::shared_ptr<T const> shareRaw(T const *x)
+template <typename T>
+std::shared_ptr<T const> shareRaw(T const *x)
 {
     return std::shared_ptr<T const>(x, [](T const *) {});
 }

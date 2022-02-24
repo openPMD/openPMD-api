@@ -35,7 +35,8 @@ namespace auxiliary
      * @tparam T        Varaidic template argument list of datatypes to be
      * stored.
      */
-    template <class T_DTYPES, typename... T> class Variant
+    template <class T_DTYPES, typename... T>
+    class Variant
     {
         static_assert(
             std::is_enum<T_DTYPES>::value,
@@ -60,7 +61,8 @@ namespace auxiliary
          * @tparam  U   Type of the object to be retrieved.
          * @return  Copy of the retrieved object of type U.
          */
-        template <typename U> U get() const
+        template <typename U>
+        U get() const
         {
             return std::get<U>(m_data);
         }

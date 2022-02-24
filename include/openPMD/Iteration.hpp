@@ -127,7 +127,8 @@ public:
      * double).
      * @return  Global reference time for this iteration.
      */
-    template <typename T> T time() const;
+    template <typename T>
+    T time() const;
     /** Set the global reference time for this iteration.
      *
      * @tparam  T       Floating point type of user-selected precision (e.g.
@@ -135,14 +136,16 @@ public:
      * @param   newTime Global reference time for this iteration.
      * @return  Reference to modified iteration.
      */
-    template <typename T> Iteration &setTime(T newTime);
+    template <typename T>
+    Iteration &setTime(T newTime);
 
     /**
      * @tparam  T   Floating point type of user-selected precision (e.g. float,
      * double).
      * @return  Time step used to reach this iteration.
      */
-    template <typename T> T dt() const;
+    template <typename T>
+    T dt() const;
     /** Set the time step used to reach this iteration.
      *
      * @tparam  T     Floating point type of user-selected precision (e.g.
@@ -150,7 +153,8 @@ public:
      * @param   newDt Time step used to reach this iteration.
      * @return  Reference to modified iteration.
      */
-    template <typename T> Iteration &setDt(T newDt);
+    template <typename T>
+    Iteration &setDt(T newDt);
 
     /**
      * @return Conversion factor to convert time and dt to seconds.
@@ -335,7 +339,8 @@ extern template double Iteration::time<double>() const;
 
 extern template long double Iteration::time<long double>() const;
 
-template <typename T> inline T Iteration::time() const
+template <typename T>
+inline T Iteration::time() const
 {
     return this->readFloatingpoint<T>("time");
 }
@@ -346,7 +351,8 @@ extern template double Iteration::dt<double>() const;
 
 extern template long double Iteration::dt<long double>() const;
 
-template <typename T> inline T Iteration::dt() const
+template <typename T>
+inline T Iteration::dt() const
 {
     return this->readFloatingpoint<T>("dt");
 }

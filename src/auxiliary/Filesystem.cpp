@@ -177,19 +177,23 @@ bool remove_file(std::string const &path)
 
 namespace
 {
-    template <typename> struct MPI_Types;
+    template <typename>
+    struct MPI_Types;
 
-    template <> struct MPI_Types<unsigned long>
+    template <>
+    struct MPI_Types<unsigned long>
     {
         static MPI_Datatype const value;
     };
 
-    template <> struct MPI_Types<unsigned long long>
+    template <>
+    struct MPI_Types<unsigned long long>
     {
         static MPI_Datatype const value;
     };
 
-    template <> struct MPI_Types<unsigned>
+    template <>
+    struct MPI_Types<unsigned>
     {
         static MPI_Datatype const value;
     };
