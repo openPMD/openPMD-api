@@ -211,7 +211,19 @@ target_link_libraries(openPMD::thirdparty::nlohmann_json
 
 # external library: toml11
 if(openPMD_USE_INTERNAL_TOML11)
-    add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/toml11")
+    # EXCLUDE_FROM_ALL ensures that toml11 is not part of
+    # make install.
+    # The library is header-only and linking it against
+    # PIConGPU targets is sufficient.
+    # It needs not be part of any build or install targets
+    # explicitly.
+    add_subdirectory(
+        "${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/toml11"
+        EXCLUDE_FROM_ALL)
+    mark_as_advanced(
+        toml11_BUILD_TEST
+        toml11_TEST_WITH_ASAN
+        toml11_TEST_WITH_UBSAN)
     message(STATUS "toml11: Using INTERNAL version '3.7.0'")
 else()
     find_package(toml11 3.7.0 CONFIG REQUIRED)
