@@ -219,7 +219,8 @@ class AbstractPattern
 {
 public:
     AbstractPattern(const TestInput &input);
-    inline  openPMD::Iteration GetIteration (Series& series, int const iteration) const;
+    inline openPMD::Iteration
+    GetIteration(Series &series, int const iteration) const;
 
     virtual bool setLayOut(int step) = 0;
     unsigned long
@@ -354,8 +355,8 @@ public:
     int m_Steps = 1; //!< num of iterations
     std::string m_Backend = ".bp"; //!< I/O backend by file ending
     bool m_Unbalance = false; //! load is different among processors
-    openPMD::IterationEncoding m_Encoding = openPMD::IterationEncoding::variableBased;
-
+    openPMD::IterationEncoding m_Encoding =
+        openPMD::IterationEncoding::variableBased;
 
     int m_Ratio = 1; //! particle:mesh ratio
     unsigned long m_XFactor = 0; // if not overwritten, use m_MPISize
@@ -397,13 +398,14 @@ void parse(TestInput &input, std::string line)
         return;
     }
 
-   if ( vec[0].compare("encoding") == 0 ) {
-     if ( vec[1].compare("f") == 0 )
-       input.m_Encoding = openPMD::IterationEncoding::fileBased;
-     else if ( vec[1].compare("g") == 0 )
-       input.m_Encoding = openPMD::IterationEncoding::groupBased;
-     return;
-   }
+    if (vec[0].compare("encoding") == 0)
+    {
+        if (vec[1].compare("f") == 0)
+            input.m_Encoding = openPMD::IterationEncoding::fileBased;
+        else if (vec[1].compare("g") == 0)
+            input.m_Encoding = openPMD::IterationEncoding::groupBased;
+        return;
+    }
 
     if (vec[0].compare("ratio") == 0)
     {
@@ -640,7 +642,7 @@ void AbstractPattern::run()
         std::string filename = s.str();
 
         {
-	    std::string tag = "Writing filebased: "+filename ;
+            std::string tag = "Writing filebased: " + filename;
             Timer kk(tag.c_str(), m_Input.m_MPIRank);
 
             for (int step = 1; step <= m_Input.m_Steps; step++)
@@ -648,7 +650,7 @@ void AbstractPattern::run()
                 setLayOut(step);
                 Series series =
                     Series(filename, Access::CREATE, MPI_COMM_WORLD);
-		series.setIterationEncoding(m_Input.m_Encoding);
+                series.setIterationEncoding(m_Input.m_Encoding);
                 series.setMeshesPath("fields");
                 store(series, step);
             }
@@ -662,7 +664,7 @@ void AbstractPattern::run()
         std::string filename = s.str();
 
         {
-	    std::string tag = "Writing a single file:" + filename;
+            std::string tag = "Writing a single file:" + filename;
             Timer kk(tag.c_str(), m_Input.m_MPIRank);
 
             Series series = Series(filename, Access::CREATE, MPI_COMM_WORLD);
@@ -699,11 +701,10 @@ void AbstractPattern::store(Series &series, int step)
     std::string scalar = openPMD::MeshRecordComponent::SCALAR;
     storeMesh(series, step, field_rho, scalar);
 
-    ParticleSpecies& currSpecies = GetIteration(series, step).particles["ion"];
+    ParticleSpecies &currSpecies = GetIteration(series, step).particles["ion"];
     storeParticles(currSpecies, step);
 
     GetIteration(series, step).close();
-
 }
 
 /*
@@ -721,7 +722,8 @@ void AbstractPattern::storeMesh(
     const std::string &fieldName,
     const std::string &compName)
 {
-    MeshRecordComponent compA = GetIteration(series, step).meshes[fieldName][compName];
+    MeshRecordComponent compA =
+        GetIteration(series, step).meshes[fieldName][compName];
     Datatype datatype = determineDatatype<double>();
     Dataset dataset = Dataset(datatype, m_GlobalMesh);
 
@@ -1142,15 +1144,19 @@ unsigned int AbstractPattern::getNumBlocks()
     return m_InRankMeshLayout.size();
 }
 
-inline  openPMD::Iteration AbstractPattern::GetIteration (Series& series, int const iteration) const 
+inline openPMD::Iteration
+AbstractPattern::GetIteration(Series &series, int const iteration) const
 {
-      if (m_Input.m_Encoding == openPMD::IterationEncoding::variableBased) {
-          return series.writeIterations()[iteration];
-      } else {
-          return series.iterations[iteration];
-      }
+    if (m_Input.m_Encoding == openPMD::IterationEncoding::variableBased)
+    {
+        return series.writeIterations()[iteration];
+    }
+    else
+    {
+        return series.iterations[iteration];
+    }
 }
-    
+
 /*
  * Returns nth mesh extent
  * @param n:      nth block in this rank
