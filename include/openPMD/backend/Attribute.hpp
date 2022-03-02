@@ -132,7 +132,7 @@ auto doConvert(T *pv) -> U
                           typename T::value_type,
                           typename U::value_type>)
         {
-            U res;
+            U res{};
             res.reserve(pv->size());
             std::copy(pv->begin(), pv->end(), std::back_inserter(res));
             return res;
@@ -149,7 +149,7 @@ auto doConvert(T *pv) -> U
                           typename T::value_type,
                           typename U::value_type>)
         {
-            U res;
+            U res{};
             res.reserve(pv->size());
             std::copy(pv->begin(), pv->end(), std::back_inserter(res));
             return res;
@@ -167,7 +167,7 @@ auto doConvert(T *pv) -> U
                           typename T::value_type,
                           typename U::value_type>)
         {
-            U res;
+            U res{};
             if (res.size() != pv->size())
             {
                 throw std::runtime_error(
@@ -189,7 +189,7 @@ auto doConvert(T *pv) -> U
     {
         if constexpr (std::is_convertible_v<T, typename U::value_type>)
         {
-            U res;
+            U res{};
             res.reserve(1);
             res.push_back(static_cast<typename U::value_type>(*pv));
             return res;
