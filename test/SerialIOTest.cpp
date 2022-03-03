@@ -5145,6 +5145,21 @@ TEST_CASE("iterate_nonstreaming_series", "[serial][adios2]")
                 backend.extension,
             false,
             backend.jsonBaseConfig());
+        if (backend.extension == "bp")
+        {
+            iterate_nonstreaming_series(
+                "../samples/iterate_nonstreaming_series_filebased_bp5_%T." +
+                    backend.extension,
+                false,
+                json::merge(
+                    backend.jsonBaseConfig(), "adios2.engine = \"bp5\""));
+            iterate_nonstreaming_series(
+                "../samples/iterate_nonstreaming_series_groupbased_bp5." +
+                    backend.extension,
+                false,
+                json::merge(
+                    backend.jsonBaseConfig(), "adios2.engine = \"bp5\""));
+        }
     }
 #if openPMD_HAVE_ADIOS2
     iterate_nonstreaming_series(

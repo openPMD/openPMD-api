@@ -703,7 +703,7 @@ void ADIOS2IOHandlerImpl::getBufferView(
     Writable *writable, Parameter<Operation::GET_BUFFER_VIEW> &parameters)
 {
     // @todo check access mode
-    if (m_engineType != "bp4")
+    if (m_engineType != "bp4" && m_engineType != "bp5")
     {
         parameters.out->backendManagedBuffer = false;
         return;
