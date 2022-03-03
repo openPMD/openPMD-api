@@ -1296,3 +1296,108 @@ TEST_CASE("DoConvert_single_value_to_vector", "[core]")
             std::vector<int>{0, 1, 2, 3, 4, 5, 6});
     }
 }
+
+TEST_CASE("unavailable_backend", "[core]")
+{
+#if !openPMD_HAVE_ADIOS1
+    {
+        auto fail = []() {
+            Series("unavailable.bp", Access::CREATE, "backend = \"ADIOS1\"");
+        };
+        REQUIRE_THROWS_WITH(
+            fail(),
+            "Wrong API usage: openPMD-api built without support for backend "
+            "'ADIOS1'.");
+    }
+#endif
+#if !openPMD_HAVE_ADIOS2
+    {
+        auto fail = []() {
+            Series("unavailable.bp", Access::CREATE, "backend = \"ADIOS2\"");
+        };
+        REQUIRE_THROWS_WITH(
+            fail(),
+            "Wrong API usage: openPMD-api built without support for backend "
+            "'ADIOS2'.");
+    }
+#endif
+#if !openPMD_HAVE_ADIOS1 && !openPMD_HAVE_ADIOS2
+    {
+        auto fail = []() { Series("unavailable.bp", Access::CREATE); };
+        REQUIRE_THROWS_WITH(
+            fail(),
+            "Wrong API usage: openPMD-api built without support for backend "
+            "'ADIOS2'.");
+    }
+#endif
+#if !openPMD_HAVE_HDF5
+    {
+        auto fail = []() {
+            Series("unavailable.h5", Access::CREATE, "backend = \"HDF5\"");
+        };
+        REQUIRE_THROWS_WITH(
+            fail(),
+            "Wrong API usage: openPMD-api built without support for backend "
+            "'HDF5'.");
+    }
+#endif
+
+#if openPMD_HAVE_MPI
+#if !openPMD_HAVE_ADIOS1
+    {
+        auto fail = []() {
+            Series(
+                "unavailable.bp",
+                Access::CREATE,
+                MPI_COMM_WORLD,
+                "backend = \"ADIOS1\"");
+        };
+        REQUIRE_THROWS_WITH(
+            fail(),
+            "Wrong API usage: openPMD-api built without support for backend "
+            "'ADIOS1'.");
+    }
+#endif
+#if !openPMD_HAVE_ADIOS2
+    {
+        auto fail = []() {
+            Series(
+                "unavailable.bp",
+                Access::CREATE,
+                MPI_COMM_WORLD,
+                "backend = \"ADIOS2\"");
+        };
+        REQUIRE_THROWS_WITH(
+            fail(),
+            "Wrong API usage: openPMD-api built without support for backend "
+            "'ADIOS2'.");
+    }
+#endif
+#if !openPMD_HAVE_ADIOS1 && !openPMD_HAVE_ADIOS2
+    {
+        auto fail = []() {
+            Series("unavailable.bp", Access::CREATE, MPI_COMM_WORLD);
+        };
+        REQUIRE_THROWS_WITH(
+            fail(),
+            "Wrong API usage: openPMD-api built without support for backend "
+            "'ADIOS2'.");
+    }
+#endif
+#if !openPMD_HAVE_HDF5
+    {
+        auto fail = []() {
+            Series(
+                "unavailable.h5",
+                Access::CREATE,
+                MPI_COMM_WORLD,
+                "backend = \"HDF5\"");
+        };
+        REQUIRE_THROWS_WITH(
+            fail(),
+            "Wrong API usage: openPMD-api built without support for backend "
+            "'HDF5'.");
+    }
+#endif
+#endif
+}
