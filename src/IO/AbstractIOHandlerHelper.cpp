@@ -53,6 +53,7 @@ namespace
                 "backend '" +
                 backendName + "'.");
         }
+        throw "Unreachable";
     }
 } // namespace
 
