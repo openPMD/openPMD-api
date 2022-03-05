@@ -687,7 +687,9 @@ if(openPMD_HAVE_PYTHON)
     else()
         pybind11_extension(openPMD.py)
     endif()
-    pybind11_strip(openPMD.py)
+    if(NOT MSVC AND NOT ${CMAKE_BUILD_TYPE} MATCHES Debug|RelWithDebInfo)
+        pybind11_strip(openPMD.py)
+    endif()
 
     set_target_properties(openPMD.py PROPERTIES CXX_VISIBILITY_PRESET "hidden"
                                                 CUDA_VISIBILITY_PRESET "hidden")
