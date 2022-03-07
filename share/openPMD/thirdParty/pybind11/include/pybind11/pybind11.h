@@ -10,11 +10,10 @@
 
 #pragma once
 
-/*
- * https://github.com/microsoft/onnxruntime/issues/9735#issuecomment-970718821
- * The following block patches an MSVC bug.
+/* https://github.com/microsoft/onnxruntime/issues/9735#issuecomment-970718821
+ * The following block patches MSVC debug builds:
+ * Include Python header, disable linking to pythonX_d.lib on Windows in debug mode.
  */
-
 #if defined(_MSC_VER)
 #    if (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION < 4)
 #        define HAVE_ROUND 1
