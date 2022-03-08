@@ -2,6 +2,10 @@
 #
 cmake_minimum_required(VERSION 3.15.0)
 
+# macOS 10.14 is required for certain C++17 features.
+# (This variable needs to be set before calling `project`.)
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING "Minimum OS X deployment version")
+
 project(openPMD VERSION 0.15.0) # LANGUAGES CXX
 
 # the openPMD "markup"/"schema" standard version
