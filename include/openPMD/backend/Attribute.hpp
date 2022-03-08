@@ -122,6 +122,7 @@ public:
 template <typename T, typename U>
 auto doConvert(T *pv) -> U
 {
+    (void)pv;
     if constexpr (std::is_convertible_v<T, U>)
     {
         return static_cast<U>(*pv);
@@ -199,7 +200,6 @@ auto doConvert(T *pv) -> U
             "getCast: no scalar to vector conversion possible.");
     }
 
-    (void)pv;
     throw std::runtime_error("getCast: no cast possible.");
 }
 
