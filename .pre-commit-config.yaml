@@ -47,7 +47,7 @@ repos:
 
 # Changes tabs to spaces
 - repo: https://github.com/Lucas-C/pre-commit-hooks
-  rev: v1.1.10
+  rev: v1.1.13
   hooks:
   - id: remove-tabs
 
@@ -61,11 +61,16 @@ repos:
 #    files: (\.cmake|CMakeLists.txt)(.in)?$
 
 # C++ formatting
-# clang-format
+# clang-format v12
+#   to run manually, use .github/workflows/clang-format/clang-format.sh
+- repo: https://github.com/pre-commit/mirrors-clang-format
+  rev: v13.0.1
+  hooks:
+  - id: clang-format
 
 # Autoremoves unused Python imports
 - repo: https://github.com/hadialqattan/pycln
-  rev: v1.1.0
+  rev: v1.2.4
   hooks:
   - id: pycln
     name: pycln (python)

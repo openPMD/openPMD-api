@@ -35,6 +35,7 @@ Parameters that are directly passed through to an external library and not inter
 
 The configuration string may refer to the complete ``openPMD::Series`` or may additionally be specified per ``openPMD::Dataset``, passed in the respective constructors.
 This reflects the fact that certain backend-specific parameters may refer to the whole Series (such as storage engines and their parameters) and others refer to actual datasets (such as compression).
+Dataset-specific configurations are (currently) only available during dataset creation, but not when reading datasets.
 
 A JSON/TOML configuration may either be specified as an inline string that can be parsed as a JSON/TOML object, or  alternatively as a path to a JSON/TOML-formatted text file (only in the constructor of ``openPMD::Series``):
 
@@ -128,6 +129,29 @@ Explanation of the single keys:
   The openPMD-api will automatically use a fallback implementation for the span-based Put() API if any operator is added to a dataset.
   This workaround is enabled on a per-dataset level.
   The workaround can be completely deactivated by specifying ``{"adios2": {"use_span_based_put": true}}`` or it can alternatively be activated indiscriminately for all datasets by specifying ``{"adios2": {"use_span_based_put": false}}``.
+
+Operations specified inside ``adios2.dataset.operators`` will be applied to ADIOS2 datasets in writing as well as in reading.
+Beginning with ADIOS2 2.8.0, this can be used to specify decompressor settings:
+
+.. code-block:: json
+
+  {
+    "adios2": {
+      "dataset": {
+        "operators": [
+          {
+            "type": "blosc",
+            "parameters": {
+              "nthreads": 2
+            }
+          }
+        ]
+      }
+    }
+  }
+
+In older ADIOS2 versions, this specification will be without effect in read mode.
+Dataset-specific configurations are (currently) only possible when creating datasets, not when reading.
 
 Any setting specified under ``adios2.dataset`` is applicable globally as well as on a per-dataset level.
 Any setting under ``adios2.engine`` is applicable globally only.

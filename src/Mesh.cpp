@@ -36,225 +36,217 @@ Mesh::Mesh()
     setGeometry(Geometry::cartesian);
     setDataOrder(DataOrder::C);
 
-    setAxisLabels({"x"});   //empty strings are not allowed in HDF5
-    setGridSpacing(std::vector< double >{1});
+    setAxisLabels({"x"}); // empty strings are not allowed in HDF5
+    setGridSpacing(std::vector<double>{1});
     setGridGlobalOffset({0});
     setGridUnitSI(1);
 }
 
-Mesh::Geometry
-Mesh::geometry() const
+Mesh::Geometry Mesh::geometry() const
 {
     std::string ret = geometryString();
-    if( "cartesian" == ret ) { return Geometry::cartesian; }
-    else if( "thetaMode" == ret ) { return Geometry::thetaMode; }
-    else if( "cylindrical" == ret ) { return Geometry::cylindrical; }
-    else if( "spherical" == ret ) { return Geometry::spherical; }
-    else { return Geometry::other; }
+    if ("cartesian" == ret)
+    {
+        return Geometry::cartesian;
+    }
+    else if ("thetaMode" == ret)
+    {
+        return Geometry::thetaMode;
+    }
+    else if ("cylindrical" == ret)
+    {
+        return Geometry::cylindrical;
+    }
+    else if ("spherical" == ret)
+    {
+        return Geometry::spherical;
+    }
+    else
+    {
+        return Geometry::other;
+    }
 }
 
 std::string Mesh::geometryString() const
 {
-    return getAttribute( "geometry" ).get< std::string >();
+    return getAttribute("geometry").get<std::string>();
 }
 
-Mesh&
-Mesh::setGeometry(Mesh::Geometry g)
+Mesh &Mesh::setGeometry(Mesh::Geometry g)
 {
-    switch( g )
+    switch (g)
     {
-        case Geometry::cartesian:
-            setAttribute("geometry", std::string("cartesian"));
-            break;
-        case Geometry::thetaMode:
-            setAttribute("geometry", std::string("thetaMode"));
-            break;
-        case Geometry::cylindrical:
-            setAttribute("geometry", std::string("cylindrical"));
-            break;
-        case Geometry::spherical:
-            setAttribute("geometry", std::string("spherical"));
-            break;
-        case Geometry::other:
-            // use the std::string overload to be more specific
-            setAttribute("geometry", std::string("other"));
-            break;
+    case Geometry::cartesian:
+        setAttribute("geometry", std::string("cartesian"));
+        break;
+    case Geometry::thetaMode:
+        setAttribute("geometry", std::string("thetaMode"));
+        break;
+    case Geometry::cylindrical:
+        setAttribute("geometry", std::string("cylindrical"));
+        break;
+    case Geometry::spherical:
+        setAttribute("geometry", std::string("spherical"));
+        break;
+    case Geometry::other:
+        // use the std::string overload to be more specific
+        setAttribute("geometry", std::string("other"));
+        break;
     }
     return *this;
 }
 
-Mesh & Mesh::setGeometry( std::string geometry )
+Mesh &Mesh::setGeometry(std::string geometry)
 {
     std::string knownGeometries[] = {
-        "cartesian", "thetaMode", "cylindrical", "spherical", "other" };
-    if( // 1. condition: geometry is not one of the known geometries
+        "cartesian", "thetaMode", "cylindrical", "spherical", "other"};
+    if ( // 1. condition: geometry is not one of the known geometries
         std::find(
-            std::begin( knownGeometries ),
-            std::end( knownGeometries ),
-            geometry ) == std::end( knownGeometries )
+            std::begin(knownGeometries), std::end(knownGeometries), geometry) ==
+            std::end(knownGeometries)
         // 2. condition: prefix is not already there
-        && !auxiliary::starts_with( geometry, std::string( "other:" ) ) )
+        && !auxiliary::starts_with(geometry, std::string("other:")))
     {
         geometry = "other:" + geometry;
     }
-    setAttribute( "geometry", std::move( geometry ) );
+    setAttribute("geometry", std::move(geometry));
     return *this;
 }
 
-std::string
-Mesh::geometryParameters() const
+std::string Mesh::geometryParameters() const
 {
-    return getAttribute("geometryParameters").get< std::string >();
+    return getAttribute("geometryParameters").get<std::string>();
 }
 
-Mesh&
-Mesh::setGeometryParameters(std::string const& gp)
+Mesh &Mesh::setGeometryParameters(std::string const &gp)
 {
     setAttribute("geometryParameters", gp);
     return *this;
 }
 
-Mesh::DataOrder
-Mesh::dataOrder() const
+Mesh::DataOrder Mesh::dataOrder() const
 {
-    return Mesh::DataOrder(getAttribute("dataOrder").get< std::string >().c_str()[0]);
+    return Mesh::DataOrder(
+        getAttribute("dataOrder").get<std::string>().c_str()[0]);
 }
 
-Mesh&
-Mesh::setDataOrder(Mesh::DataOrder dor)
+Mesh &Mesh::setDataOrder(Mesh::DataOrder dor)
 {
-    setAttribute(
-        "dataOrder",
-        std::string(1u, static_cast<char>(dor)));
+    setAttribute("dataOrder", std::string(1u, static_cast<char>(dor)));
     return *this;
 }
 
-std::vector< std::string >
-Mesh::axisLabels() const
+std::vector<std::string> Mesh::axisLabels() const
 {
-    return getAttribute("axisLabels").get< std::vector< std::string > >();
+    return getAttribute("axisLabels").get<std::vector<std::string> >();
 }
 
-Mesh&
-Mesh::setAxisLabels(std::vector< std::string > const & als)
+Mesh &Mesh::setAxisLabels(std::vector<std::string> const &als)
 {
     setAttribute("axisLabels", als);
     return *this;
 }
 
-template< typename T, typename >
-Mesh&
-Mesh::setGridSpacing(std::vector< T > const & gs)
+template <typename T, typename>
+Mesh &Mesh::setGridSpacing(std::vector<T> const &gs)
 {
-    static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
+    static_assert(
+        std::is_floating_point<T>::value,
+        "Type of attribute must be floating point");
 
     setAttribute("gridSpacing", gs);
     return *this;
 }
 
-template
-Mesh&
-Mesh::setGridSpacing(std::vector< float > const & gs);
-template
-Mesh&
-Mesh::setGridSpacing(std::vector< double > const & gs);
-template
-Mesh&
-Mesh::setGridSpacing(std::vector< long double > const & gs);
+template Mesh &Mesh::setGridSpacing(std::vector<float> const &gs);
+template Mesh &Mesh::setGridSpacing(std::vector<double> const &gs);
+template Mesh &Mesh::setGridSpacing(std::vector<long double> const &gs);
 
-std::vector< double >
-Mesh::gridGlobalOffset() const
+std::vector<double> Mesh::gridGlobalOffset() const
 {
-    return getAttribute("gridGlobalOffset").get< std::vector< double> >();
+    return getAttribute("gridGlobalOffset").get<std::vector<double> >();
 }
 
-Mesh&
-Mesh::setGridGlobalOffset(std::vector< double > const & ggo)
+Mesh &Mesh::setGridGlobalOffset(std::vector<double> const &ggo)
 {
     setAttribute("gridGlobalOffset", ggo);
     return *this;
 }
 
-double
-Mesh::gridUnitSI() const
+double Mesh::gridUnitSI() const
 {
-    return getAttribute("gridUnitSI").get< double >();
+    return getAttribute("gridUnitSI").get<double>();
 }
 
-Mesh&
-Mesh::setGridUnitSI(double gusi)
+Mesh &Mesh::setGridUnitSI(double gusi)
 {
     setAttribute("gridUnitSI", gusi);
     return *this;
 }
 
-Mesh&
-Mesh::setUnitDimension(std::map< UnitDimension, double > const& udim)
+Mesh &Mesh::setUnitDimension(std::map<UnitDimension, double> const &udim)
 {
-    if( !udim.empty() )
+    if (!udim.empty())
     {
-        std::array< double, 7 > tmpUnitDimension = this->unitDimension();
-        for( auto const& entry : udim )
+        std::array<double, 7> tmpUnitDimension = this->unitDimension();
+        for (auto const &entry : udim)
             tmpUnitDimension[static_cast<uint8_t>(entry.first)] = entry.second;
         setAttribute("unitDimension", tmpUnitDimension);
     }
     return *this;
 }
 
-template< typename T, typename >
-Mesh&
-Mesh::setTimeOffset(T to)
+template <typename T, typename>
+Mesh &Mesh::setTimeOffset(T to)
 {
-    static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
+    static_assert(
+        std::is_floating_point<T>::value,
+        "Type of attribute must be floating point");
 
     setAttribute("timeOffset", to);
     return *this;
 }
 
-template
-Mesh&
-Mesh::setTimeOffset( long double );
+template Mesh &Mesh::setTimeOffset(long double);
 
-template
-Mesh&
-Mesh::setTimeOffset( double );
+template Mesh &Mesh::setTimeOffset(double);
 
-template
-Mesh&
-Mesh::setTimeOffset( float );
+template Mesh &Mesh::setTimeOffset(float);
 
-void
-Mesh::flush_impl(std::string const& name)
+void Mesh::flush_impl(std::string const &name)
 {
-    if(IOHandler()->m_frontendAccess == Access::READ_ONLY )
+    if (IOHandler()->m_frontendAccess == Access::READ_ONLY)
     {
-        for( auto& comp : *this )
+        for (auto &comp : *this)
             comp.second.flush(comp.first);
-    } else
+    }
+    else
     {
-        if( !written() )
+        if (!written())
         {
-            if( scalar() )
+            if (scalar())
             {
-                MeshRecordComponent& mrc = at(RecordComponent::SCALAR);
+                MeshRecordComponent &mrc = at(RecordComponent::SCALAR);
                 mrc.parent() = parent();
                 mrc.flush(name);
                 IOHandler()->flush();
-                writable().abstractFilePosition = mrc.writable().abstractFilePosition;
+                writable().abstractFilePosition =
+                    mrc.writable().abstractFilePosition;
                 written() = true;
-            } else
+            }
+            else
             {
-                Parameter< Operation::CREATE_PATH > pCreate;
+                Parameter<Operation::CREATE_PATH> pCreate;
                 pCreate.path = name;
                 IOHandler()->enqueue(IOTask(this, pCreate));
-                for( auto& comp : *this )
+                for (auto &comp : *this)
                     comp.second.parent() = &this->writable();
             }
         }
 
-        if( scalar() )
+        if (scalar())
         {
-            for( auto& comp : *this )
+            for (auto &comp : *this)
             {
                 comp.second.flush(name);
                 writable().abstractFilePosition =
@@ -263,7 +255,7 @@ Mesh::flush_impl(std::string const& name)
         }
         else
         {
-            for( auto& comp : *this )
+            for (auto &comp : *this)
                 comp.second.flush(comp.first);
         }
 
@@ -271,115 +263,127 @@ Mesh::flush_impl(std::string const& name)
     }
 }
 
-void
-Mesh::read()
+void Mesh::read()
 {
-    internal::EraseStaleEntries< Mesh & > map{ *this };
+    internal::EraseStaleEntries<Mesh &> map{*this};
 
     using DT = Datatype;
-    Parameter< Operation::READ_ATT > aRead;
+    Parameter<Operation::READ_ATT> aRead;
 
     aRead.name = "geometry";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush();
-    if( *aRead.dtype == DT::STRING )
+    if (*aRead.dtype == DT::STRING)
     {
-        std::string tmpGeometry = Attribute(*aRead.resource).get< std::string >();
-        if( "cartesian" == tmpGeometry )
+        std::string tmpGeometry = Attribute(*aRead.resource).get<std::string>();
+        if ("cartesian" == tmpGeometry)
             setGeometry(Geometry::cartesian);
-        else if( "thetaMode" == tmpGeometry )
+        else if ("thetaMode" == tmpGeometry)
             setGeometry(Geometry::thetaMode);
-        else if( "cylindrical" == tmpGeometry )
+        else if ("cylindrical" == tmpGeometry)
             setGeometry(Geometry::cylindrical);
-        else if( "spherical" == tmpGeometry )
+        else if ("spherical" == tmpGeometry)
             setGeometry(Geometry::spherical);
         else
             setGeometry(tmpGeometry);
     }
     else
-        throw std::runtime_error("Unexpected Attribute datatype for 'geometry'");
+        throw std::runtime_error(
+            "Unexpected Attribute datatype for 'geometry'");
 
     aRead.name = "dataOrder";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush();
-    if( *aRead.dtype == DT::CHAR )
-        setDataOrder(static_cast<DataOrder>(Attribute(*aRead.resource).get< char >()));
-    else if( *aRead.dtype == DT::STRING )
+    if (*aRead.dtype == DT::CHAR)
+        setDataOrder(
+            static_cast<DataOrder>(Attribute(*aRead.resource).get<char>()));
+    else if (*aRead.dtype == DT::STRING)
     {
-        std::string tmpDataOrder = Attribute(*aRead.resource).get< std::string >();
-        if( tmpDataOrder.size() == 1 )
+        std::string tmpDataOrder =
+            Attribute(*aRead.resource).get<std::string>();
+        if (tmpDataOrder.size() == 1)
             setDataOrder(static_cast<DataOrder>(tmpDataOrder[0]));
         else
-            throw std::runtime_error("Unexpected Attribute value for 'dataOrder': " + tmpDataOrder);
+            throw std::runtime_error(
+                "Unexpected Attribute value for 'dataOrder': " + tmpDataOrder);
     }
     else
-        throw std::runtime_error("Unexpected Attribute datatype for 'dataOrder'");
+        throw std::runtime_error(
+            "Unexpected Attribute datatype for 'dataOrder'");
 
     aRead.name = "axisLabels";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush();
-    if( *aRead.dtype == DT::VEC_STRING || *aRead.dtype == DT::STRING)
-        setAxisLabels(Attribute(*aRead.resource).get< std::vector< std::string > >());
+    if (*aRead.dtype == DT::VEC_STRING || *aRead.dtype == DT::STRING)
+        setAxisLabels(
+            Attribute(*aRead.resource).get<std::vector<std::string> >());
     else
-        throw std::runtime_error("Unexpected Attribute datatype for 'axisLabels'");
+        throw std::runtime_error(
+            "Unexpected Attribute datatype for 'axisLabels'");
 
     aRead.name = "gridSpacing";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush();
     Attribute a = Attribute(*aRead.resource);
-    if( *aRead.dtype == DT::VEC_FLOAT || *aRead.dtype == DT::FLOAT )
-        setGridSpacing(a.get< std::vector< float > >());
-    else if( *aRead.dtype == DT::VEC_DOUBLE || *aRead.dtype == DT::DOUBLE )
-        setGridSpacing(a.get< std::vector< double > >());
-    else if( *aRead.dtype == DT::VEC_LONG_DOUBLE || *aRead.dtype == DT::LONG_DOUBLE )
-        setGridSpacing(a.get< std::vector< long double > >());
+    if (*aRead.dtype == DT::VEC_FLOAT || *aRead.dtype == DT::FLOAT)
+        setGridSpacing(a.get<std::vector<float> >());
+    else if (*aRead.dtype == DT::VEC_DOUBLE || *aRead.dtype == DT::DOUBLE)
+        setGridSpacing(a.get<std::vector<double> >());
+    else if (
+        *aRead.dtype == DT::VEC_LONG_DOUBLE || *aRead.dtype == DT::LONG_DOUBLE)
+        setGridSpacing(a.get<std::vector<long double> >());
     else
-        throw std::runtime_error("Unexpected Attribute datatype for 'gridSpacing'");
+        throw std::runtime_error(
+            "Unexpected Attribute datatype for 'gridSpacing'");
 
     aRead.name = "gridGlobalOffset";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush();
-    if( *aRead.dtype == DT::VEC_DOUBLE || *aRead.dtype == DT::DOUBLE )
-        setGridGlobalOffset(Attribute(*aRead.resource).get< std::vector< double > >());
+    if (*aRead.dtype == DT::VEC_DOUBLE || *aRead.dtype == DT::DOUBLE)
+        setGridGlobalOffset(
+            Attribute(*aRead.resource).get<std::vector<double> >());
     else
-        throw std::runtime_error("Unexpected Attribute datatype for 'gridGlobalOffset'");
+        throw std::runtime_error(
+            "Unexpected Attribute datatype for 'gridGlobalOffset'");
 
     aRead.name = "gridUnitSI";
     IOHandler()->enqueue(IOTask(this, aRead));
     IOHandler()->flush();
-    if( *aRead.dtype == DT::DOUBLE )
-        setGridUnitSI(Attribute(*aRead.resource).get< double >());
+    if (*aRead.dtype == DT::DOUBLE)
+        setGridUnitSI(Attribute(*aRead.resource).get<double>());
     else
-        throw std::runtime_error("Unexpected Attribute datatype for 'gridUnitSI'");
+        throw std::runtime_error(
+            "Unexpected Attribute datatype for 'gridUnitSI'");
 
-    if( scalar() )
+    if (scalar())
     {
         /* using operator[] will incorrectly update parent */
         map.at(MeshRecordComponent::SCALAR).read();
-    } else
+    }
+    else
     {
-        Parameter< Operation::LIST_PATHS > pList;
+        Parameter<Operation::LIST_PATHS> pList;
         IOHandler()->enqueue(IOTask(this, pList));
         IOHandler()->flush();
 
-        Parameter< Operation::OPEN_PATH > pOpen;
-        for( auto const& component : *pList.paths )
+        Parameter<Operation::OPEN_PATH> pOpen;
+        for (auto const &component : *pList.paths)
         {
-            MeshRecordComponent& rc = map[ component ];
+            MeshRecordComponent &rc = map[component];
             pOpen.path = component;
             IOHandler()->enqueue(IOTask(&rc, pOpen));
             rc.get().m_isConstant = true;
             rc.read();
         }
 
-        Parameter< Operation::LIST_DATASETS > dList;
+        Parameter<Operation::LIST_DATASETS> dList;
         IOHandler()->enqueue(IOTask(this, dList));
         IOHandler()->flush();
 
-        Parameter< Operation::OPEN_DATASET > dOpen;
-        for( auto const& component : *dList.datasets )
+        Parameter<Operation::OPEN_DATASET> dOpen;
+        for (auto const &component : *dList.datasets)
         {
-            MeshRecordComponent & rc = map[ component ];
+            MeshRecordComponent &rc = map[component];
             dOpen.name = component;
             IOHandler()->enqueue(IOTask(&rc, dOpen));
             IOHandler()->flush();
@@ -392,45 +396,45 @@ Mesh::read()
 
     readBase();
 
-    readAttributes( ReadMode::FullyReread );
+    readAttributes(ReadMode::FullyReread);
 }
-} // openPMD
+} // namespace openPMD
 
-std::ostream&
-openPMD::operator<<(std::ostream& os, openPMD::Mesh::Geometry const& go)
+std::ostream &
+openPMD::operator<<(std::ostream &os, openPMD::Mesh::Geometry const &go)
 {
-    switch( go )
+    switch (go)
     {
-        case openPMD::Mesh::Geometry::cartesian:
-            os<<"cartesian";
-            break;
-        case openPMD::Mesh::Geometry::thetaMode:
-            os<<"thetaMode";
-            break;
-        case openPMD::Mesh::Geometry::cylindrical:
-            os<<"cylindrical";
-            break;
-        case openPMD::Mesh::Geometry::spherical:
-            os<<"spherical";
-            break;
-        case openPMD::Mesh::Geometry::other:
-            os<<"other";
-            break;
+    case openPMD::Mesh::Geometry::cartesian:
+        os << "cartesian";
+        break;
+    case openPMD::Mesh::Geometry::thetaMode:
+        os << "thetaMode";
+        break;
+    case openPMD::Mesh::Geometry::cylindrical:
+        os << "cylindrical";
+        break;
+    case openPMD::Mesh::Geometry::spherical:
+        os << "spherical";
+        break;
+    case openPMD::Mesh::Geometry::other:
+        os << "other";
+        break;
     }
     return os;
 }
 
-std::ostream&
-openPMD::operator<<(std::ostream& os, openPMD::Mesh::DataOrder const& dor)
+std::ostream &
+openPMD::operator<<(std::ostream &os, openPMD::Mesh::DataOrder const &dor)
 {
-    switch( dor )
+    switch (dor)
     {
-        case openPMD::Mesh::DataOrder::C:
-            os<<'C';
-            break;
-        case openPMD::Mesh::DataOrder::F:
-            os<<'F';
-            break;
+    case openPMD::Mesh::DataOrder::C:
+        os << 'C';
+        break;
+    case openPMD::Mesh::DataOrder::F:
+        os << 'F';
+        break;
     }
     return os;
 }

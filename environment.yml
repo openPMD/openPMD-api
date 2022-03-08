@@ -1,0 +1,7 @@
+# I am a conda environment, used for our pre-commit hooks
+name: openPMD-api-dev
+channels:
+  - conda-forge
+dependencies:
+  - clang-format-12=12.0.1
+  - bash=5

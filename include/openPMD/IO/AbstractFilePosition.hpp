@@ -20,7 +20,6 @@
  */
 #pragma once
 
-
 namespace openPMD
 {
 class AbstractFilePosition
@@ -28,4 +27,4 @@ class AbstractFilePosition
 public:
     virtual ~AbstractFilePosition() = default;
 }; // AbstractFilePosition
-} // openPMD
+} // namespace openPMD

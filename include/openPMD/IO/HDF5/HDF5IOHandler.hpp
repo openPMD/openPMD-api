@@ -20,13 +20,12 @@
  */
 #pragma once
 
-#include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/auxiliary/JSON_internal.hpp"
 
 #include <future>
 #include <memory>
 #include <string>
-
 
 namespace openPMD
 {
@@ -38,11 +37,14 @@ public:
     HDF5IOHandler(std::string path, Access, json::TracingJSON config);
     ~HDF5IOHandler() override;
 
-    std::string backendName() const override { return "HDF5"; }
+    std::string backendName() const override
+    {
+        return "HDF5";
+    }
 
-    std::future< void > flush() override;
+    std::future<void> flush() override;
 
 private:
-    std::unique_ptr< HDF5IOHandlerImpl > m_impl;
+    std::unique_ptr<HDF5IOHandlerImpl> m_impl;
 }; // HDF5IOHandler
-} // openPMD
+} // namespace openPMD

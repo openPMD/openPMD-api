@@ -20,56 +20,53 @@
  */
 #pragma once
 
-#include <memory>
-#include <vector>
 #include <array>
+#include <memory>
 #include <type_traits>
-
+#include <vector>
 
 namespace openPMD
 {
-    //! @{
-    /** Share ownership with a raw pointer
-     *
-     * Helper function to share load/store data ownership
-     * unprotected and without reference counting with a
-     * raw pointer or stdlib container (that implements a
-     * contiguous data storage).
-     *
-     * @warning this is a helper function to bypass the shared-pointer
-     *          API for storing data behind raw pointers. Using it puts
-     *          the responsibility of buffer-consistency between stores
-     *          and flushes to the users side without an indication via
-     *          reference counting.
-     */
-    template< typename T >
-    std::shared_ptr< T >
-    shareRaw( T * x )
-    {
-        return std::shared_ptr< T >( x, [](T *){} );
-    }
+//! @{
+/** Share ownership with a raw pointer
+ *
+ * Helper function to share load/store data ownership
+ * unprotected and without reference counting with a
+ * raw pointer or stdlib container (that implements a
+ * contiguous data storage).
+ *
+ * @warning this is a helper function to bypass the shared-pointer
+ *          API for storing data behind raw pointers. Using it puts
+ *          the responsibility of buffer-consistency between stores
+ *          and flushes to the users side without an indication via
+ *          reference counting.
+ */
+template <typename T>
+std::shared_ptr<T> shareRaw(T *x)
+{
+    return std::shared_ptr<T>(x, [](T *) {});
+}
 
-    template< typename T >
-    std::shared_ptr< T const >
-    shareRaw( T const * x )
-    {
-        return std::shared_ptr< T const >( x, [](T const *){} );
-    }
+template <typename T>
+std::shared_ptr<T const> shareRaw(T const *x)
+{
+    return std::shared_ptr<T const>(x, [](T const *) {});
+}
 
-    template< typename T >
-    auto
-    shareRaw( T & c ) -> std::shared_ptr< typename std::remove_pointer< decltype( c.data() ) >::type >
-    {
-        using value_type = typename std::remove_pointer< decltype( c.data() ) >::type;
-        return std::shared_ptr< value_type >( c.data(), [](value_type *){} );
-    }
+template <typename T>
+auto shareRaw(T &c)
+    -> std::shared_ptr<typename std::remove_pointer<decltype(c.data())>::type>
+{
+    using value_type = typename std::remove_pointer<decltype(c.data())>::type;
+    return std::shared_ptr<value_type>(c.data(), [](value_type *) {});
+}
 
-    template< typename T >
-    auto
-    shareRaw( T const & c ) -> std::shared_ptr< typename std::remove_pointer< decltype( c.data() ) >::type >
-    {
-        using value_type = typename std::remove_pointer< decltype( c.data() ) >::type;
-        return std::shared_ptr< value_type >( c.data(), [](value_type *){} );
-    }
-    //! @}
-} // openPMD
+template <typename T>
+auto shareRaw(T const &c)
+    -> std::shared_ptr<typename std::remove_pointer<decltype(c.data())>::type>
+{
+    using value_type = typename std::remove_pointer<decltype(c.data())>::type;
+    return std::shared_ptr<value_type>(c.data(), [](value_type *) {});
+}
+//! @}
+} // namespace openPMD

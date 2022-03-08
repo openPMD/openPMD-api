@@ -22,10 +22,10 @@
 
 #include <exception>
 
-
 namespace openPMD
 {
-namespace auxiliary {
+namespace auxiliary
+{
     /** Returns a value reference stored in a dynamically casted pointer
      *
      * Safe version of *dynamic_cast< New_Type* >( some_ptr ); This function
@@ -35,12 +35,13 @@ namespace auxiliary {
      * @tparam New_Type new type to cast to
      * @tparam Old_Type old type to cast from
      * @param[in] ptr and input pointer type
-     * @return value reference of a dereferenced, dynamically casted ptr to New_Type*
+     * @return value reference of a dereferenced, dynamically casted ptr to
+     * New_Type*
      */
-    template<typename New_Type, typename Old_Type>
-    inline New_Type &
-    deref_dynamic_cast(Old_Type *ptr) {
-        auto const tmp_ptr = dynamic_cast< New_Type * >( ptr );
+    template <typename New_Type, typename Old_Type>
+    inline New_Type &deref_dynamic_cast(Old_Type *ptr)
+    {
+        auto const tmp_ptr = dynamic_cast<New_Type *>(ptr);
         if (tmp_ptr == nullptr)
             throw std::runtime_error("Dynamic cast returned a nullptr!");
         return *tmp_ptr;

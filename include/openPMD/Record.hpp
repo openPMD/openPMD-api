@@ -20,54 +20,54 @@
  */
 #pragma once
 
-#include "openPMD/backend/BaseRecord.hpp"
 #include "openPMD/RecordComponent.hpp"
+#include "openPMD/backend/BaseRecord.hpp"
 
 #include <map>
-#include <type_traits>
 #include <string>
-
+#include <type_traits>
 
 namespace openPMD
 {
-class Record : public BaseRecord< RecordComponent >
+class Record : public BaseRecord<RecordComponent>
 {
-    friend class Container< Record >;
+    friend class Container<Record>;
     friend class Iteration;
     friend class ParticleSpecies;
 
 public:
-    Record(Record const&) = default;
-    Record& operator=(Record const&) = default;
+    Record(Record const &) = default;
+    Record &operator=(Record const &) = default;
     ~Record() override = default;
 
-    Record& setUnitDimension(std::map< UnitDimension, double > const&);
+    Record &setUnitDimension(std::map<UnitDimension, double> const &);
 
-    template< typename T >
+    template <typename T>
     T timeOffset() const;
-    template< typename T >
-    Record& setTimeOffset(T);
+    template <typename T>
+    Record &setTimeOffset(T);
 
 private:
     Record();
 
-    void flush_impl(std::string const&) override;
+    void flush_impl(std::string const &) override;
     void read() override;
-};  //Record
+}; // Record
 
-
-template< typename T >
-inline T
-Record::timeOffset() const
-{ return readFloatingpoint< T >("timeOffset"); }
-
-template< typename T >
-inline Record&
-Record::setTimeOffset(T to)
+template <typename T>
+inline T Record::timeOffset() const
 {
-    static_assert(std::is_floating_point< T >::value, "Type of attribute must be floating point");
+    return readFloatingpoint<T>("timeOffset");
+}
+
+template <typename T>
+inline Record &Record::setTimeOffset(T to)
+{
+    static_assert(
+        std::is_floating_point<T>::value,
+        "Type of attribute must be floating point");
 
     setAttribute("timeOffset", to);
     return *this;
 }
-} // openPMD
+} // namespace openPMD

@@ -22,21 +22,20 @@
 
 #include <cstdint>
 
-
 namespace openPMD
 {
-    /** Physical dimension of a record
-     *
-     * Dimensional base quantities of the international system of quantities
-     */
-    enum class UnitDimension : uint8_t
-    {
-        L = 0, //!< length
-        M,     //!< mass
-        T,     //!< time
-        I,     //!< electric current
-        theta, //!< thermodynamic temperature
-        N,     //!< amount of substance
-        J      //!< luminous intensity
-    };
+/** Physical dimension of a record
+ *
+ * Dimensional base quantities of the international system of quantities
+ */
+enum class UnitDimension : uint8_t
+{
+    L = 0, //!< length
+    M, //!< mass
+    T, //!< time
+    I, //!< electric current
+    theta, //!< thermodynamic temperature
+    N, //!< amount of substance
+    J //!< luminous intensity
+};
 } // namespace openPMD

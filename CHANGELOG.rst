@@ -17,9 +17,8 @@ Changes to "0.14.0"
 Features
 """"""""
 
-- CMake
-
-  - include internally shipped toml11 v3.7.0 #1148
+- include internally shipped toml11 v3.7.0 #1148
+- pybind11: require version 2.9.1+ #1220
 
 Bug Fixes
 """""""""

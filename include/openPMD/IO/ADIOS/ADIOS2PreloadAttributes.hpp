@@ -41,11 +41,11 @@ namespace detail
      *
      * @tparam T Underlying attribute data type.
      */
-    template< typename T >
+    template <typename T>
     struct AttributeWithShape
     {
         adios2::Dims shape;
-        T const * data;
+        T const *data;
     };
 
     /**
@@ -76,14 +76,14 @@ namespace detail
             char *destroy = nullptr;
 
             AttributeLocation() = delete;
-            AttributeLocation( adios2::Dims shape, size_t offset, Datatype dt );
+            AttributeLocation(adios2::Dims shape, size_t offset, Datatype dt);
 
-            AttributeLocation( AttributeLocation const & other ) = delete;
+            AttributeLocation(AttributeLocation const &other) = delete;
             AttributeLocation &
-            operator=( AttributeLocation const & other ) = delete;
+            operator=(AttributeLocation const &other) = delete;
 
-            AttributeLocation( AttributeLocation && other );
-            AttributeLocation & operator=( AttributeLocation && other );
+            AttributeLocation(AttributeLocation &&other);
+            AttributeLocation &operator=(AttributeLocation &&other);
 
             ~AttributeLocation();
         };
@@ -97,18 +97,18 @@ namespace detail
          * ::operator new(std::size_t)
          * https://en.cppreference.com/w/cpp/memory/allocator/allocate
          */
-        std::vector< char > m_rawBuffer;
-        std::map< std::string, AttributeLocation > m_offsets;
+        std::vector<char> m_rawBuffer;
+        std::map<std::string, AttributeLocation> m_offsets;
 
     public:
         explicit PreloadAdiosAttributes() = default;
-        PreloadAdiosAttributes( PreloadAdiosAttributes const & other ) = delete;
+        PreloadAdiosAttributes(PreloadAdiosAttributes const &other) = delete;
         PreloadAdiosAttributes &
-        operator=( PreloadAdiosAttributes const & other ) = delete;
+        operator=(PreloadAdiosAttributes const &other) = delete;
 
-        PreloadAdiosAttributes( PreloadAdiosAttributes && other ) = default;
+        PreloadAdiosAttributes(PreloadAdiosAttributes &&other) = default;
         PreloadAdiosAttributes &
-        operator=( PreloadAdiosAttributes && other ) = default;
+        operator=(PreloadAdiosAttributes &&other) = default;
 
         /**
          * @brief Schedule attributes for preloading.
@@ -120,8 +120,7 @@ namespace detail
          * @param IO
          * @param engine
          */
-        void
-        preloadAttributes( adios2::IO & IO, adios2::Engine & engine );
+        void preloadAttributes(adios2::IO &IO, adios2::Engine &engine);
 
         /**
          * @brief Get an attribute that has been buffered previously.
@@ -133,43 +132,42 @@ namespace detail
          *      the attribute's shape. Valid only until any non-const member
          *      of PreloadAdiosAttributes is called.
          */
-        template< typename T >
-        AttributeWithShape< T > getAttribute( std::string const & name ) const;
+        template <typename T>
+        AttributeWithShape<T> getAttribute(std::string const &name) const;
 
-        Datatype attributeType( std::string const & name ) const;
+        Datatype attributeType(std::string const &name) const;
     };
 
-    template< typename T >
-    AttributeWithShape< T >
-    PreloadAdiosAttributes::getAttribute( std::string const & name ) const
+    template <typename T>
+    AttributeWithShape<T>
+    PreloadAdiosAttributes::getAttribute(std::string const &name) const
     {
-        auto it = m_offsets.find( name );
-        if( it == m_offsets.end() )
+        auto it = m_offsets.find(name);
+        if (it == m_offsets.end())
         {
             throw std::runtime_error(
-                "[ADIOS2] Requested attribute not found: " + name );
+                "[ADIOS2] Requested attribute not found: " + name);
         }
-        AttributeLocation const & location = it->second;
-        Datatype determinedDatatype = determineDatatype< T >();
-        if( std::is_same< T, signed char >::value )
+        AttributeLocation const &location = it->second;
+        Datatype determinedDatatype = determineDatatype<T>();
+        if (std::is_same<T, signed char>::value)
         {
             // workaround: we use Datatype::CHAR to represent ADIOS2 signed char
             // (ADIOS2 does not have chars with unspecified signed-ness
             // anyway)
             determinedDatatype = Datatype::CHAR;
         }
-        if( location.dt != determinedDatatype )
+        if (location.dt != determinedDatatype)
         {
             std::stringstream errorMsg;
             errorMsg << "[ADIOS2] Wrong datatype for attribute: " << name
                      << "(location.dt=" << location.dt
-                     << ", T=" << determineDatatype< T >() << ")";
-            throw std::runtime_error( errorMsg.str() );
+                     << ", T=" << determineDatatype<T>() << ")";
+            throw std::runtime_error(errorMsg.str());
         }
-        AttributeWithShape< T > res;
+        AttributeWithShape<T> res;
         res.shape = location.shape;
-        res.data =
-            reinterpret_cast< T const * >( &m_rawBuffer[ location.offset ] );
+        res.data = reinterpret_cast<T const *>(&m_rawBuffer[location.offset]);
         return res;
     }
 } // namespace detail

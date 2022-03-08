@@ -5,10 +5,9 @@
 
 #include <variant>
 
-
 using namespace openPMD;
 
-TEST_CASE( "json_parsing", "[auxiliary]" )
+TEST_CASE("json_parsing", "[auxiliary]")
 {
     std::string wrongValue = R"END(
 {
@@ -18,10 +17,10 @@ TEST_CASE( "json_parsing", "[auxiliary]" )
   }
 })END";
     REQUIRE_THROWS_WITH(
-        json::parseOptions( wrongValue, false ),
+        json::parseOptions(wrongValue, false),
         error::BackendConfigSchema(
-            { "adios2", "duplicate key" }, "JSON config: duplicate keys." )
-            .what() );
+            {"adios2", "duplicate key"}, "JSON config: duplicate keys.")
+            .what());
     std::string same1 = R"(
 {
   "ADIOS2": {
@@ -53,12 +52,12 @@ TEST_CASE( "json_parsing", "[auxiliary]" )
   }
 })";
     REQUIRE(
-        json::parseOptions( same1, false ).config.dump() ==
-        json::parseOptions( same2, false ).config.dump() );
+        json::parseOptions(same1, false).config.dump() ==
+        json::parseOptions(same2, false).config.dump());
     // Only keys should be transformed to lower case, values must stay the same
     REQUIRE(
-        json::parseOptions( same1, false ).config.dump() !=
-        json::parseOptions( different, false ).config.dump() );
+        json::parseOptions(same1, false).config.dump() !=
+        json::parseOptions(different, false).config.dump());
 
     // Keys forwarded to ADIOS2 should remain untouched
     std::string upper = R"END(
@@ -113,14 +112,14 @@ TEST_CASE( "json_parsing", "[auxiliary]" )
   }
 }
 )END";
-    nlohmann::json jsonUpper = nlohmann::json::parse( upper );
-    nlohmann::json jsonLower = nlohmann::json::parse( lower );
-    REQUIRE( jsonUpper.dump() != jsonLower.dump() );
-    json::lowerCase( jsonUpper );
-    REQUIRE( jsonUpper.dump() == jsonLower.dump() );
+    nlohmann::json jsonUpper = nlohmann::json::parse(upper);
+    nlohmann::json jsonLower = nlohmann::json::parse(lower);
+    REQUIRE(jsonUpper.dump() != jsonLower.dump());
+    json::lowerCase(jsonUpper);
+    REQUIRE(jsonUpper.dump() == jsonLower.dump());
 }
 
-TEST_CASE( "json_merging", "auxiliary" )
+TEST_CASE("json_merging", "auxiliary")
 {
     std::string defaultVal = R"END(
 {
@@ -170,6 +169,6 @@ TEST_CASE( "json_merging", "auxiliary" )
   ]
 })END";
     REQUIRE(
-        json::merge( defaultVal, overwrite ) ==
-        json::parseOptions( expect, false ).config.dump() );
+        json::merge(defaultVal, overwrite) ==
+        json::parseOptions(expect, false).config.dump());
 }

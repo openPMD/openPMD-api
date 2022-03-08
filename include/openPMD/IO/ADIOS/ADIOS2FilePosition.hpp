@@ -20,50 +20,35 @@
  */
 #pragma once
 
-
 #include "openPMD/IO/AbstractFilePosition.hpp"
 #include <string>
 #include <utility>
 
-
 namespace openPMD
 {
-    struct ADIOS2FilePosition :
-        public AbstractFilePosition
+struct ADIOS2FilePosition : public AbstractFilePosition
+{
+    enum class GD
     {
-        enum class GD
-        {
-            GROUP,
-            DATASET
-        };
+        GROUP,
+        DATASET
+    };
 
+    ADIOS2FilePosition(std::string s, GD groupOrDataset)
+        : location{std::move(s)}, gd{groupOrDataset}
+    {}
 
-        ADIOS2FilePosition(
-            std::string s,
-            GD groupOrDataset
-        ) :
-            location { std::move( s ) },
-            gd { groupOrDataset }
-        {}
+    explicit ADIOS2FilePosition(GD groupOrDataset)
+        : ADIOS2FilePosition{"/", groupOrDataset}
+    {}
 
+    ADIOS2FilePosition() : ADIOS2FilePosition{GD::GROUP}
+    {}
 
-        explicit ADIOS2FilePosition( GD groupOrDataset ) :
-            ADIOS2FilePosition {
-                "/",
-                groupOrDataset
-            }
-        {}
-
-
-        ADIOS2FilePosition( ) :
-            ADIOS2FilePosition{ GD::GROUP }
-        {}
-
-
-        /**
-         * Convention: Starts with slash '/', ends without.
-         */
-        std::string location;
-        GD gd;
-    }; // ADIOS2FilePosition
-} // openPMD
+    /**
+     * Convention: Starts with slash '/', ends without.
+     */
+    std::string location;
+    GD gd;
+}; // ADIOS2FilePosition
+} // namespace openPMD

@@ -27,7 +27,7 @@ See [the openPMD standard](https://github.com/openPMD/openPMD-standard) for deta
 
 This library provides a reference API for openPMD data handling.
 Since openPMD is a schema (or markup) on top of portable, hierarchical file formats, this library implements various backends such as HDF5, ADIOS1, ADIOS2 and JSON.
-Writing & reading through those backends and their associated files is supported for serial and [MPI-parallel](https://www.mpi-forum.org/docs/) workflows.
+Writing & reading through those backends and their associated files are supported for serial and [MPI-parallel](https://www.mpi-forum.org/docs/) workflows.
 
 ## Usage
 
@@ -104,7 +104,7 @@ Required:
 
 Shipped internally in `share/openPMD/thirdParty/`:
 * [Catch2](https://github.com/catchorg/Catch2) 2.13.4+ ([BSL-1.0](https://github.com/catchorg/Catch2/blob/master/LICENSE.txt))
-* [pybind11](https://github.com/pybind/pybind11) 2.6.2+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
+* [pybind11](https://github.com/pybind/pybind11) 2.9.1+ ([new BSD](https://github.com/pybind/pybind11/blob/master/LICENSE))
 * [NLohmann-JSON](https://github.com/nlohmann/json) 3.9.1+ ([MIT](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT))
 * [toml11](https://github.com/ToruNiina/toml11) 3.7.0+ ([MIT](https://github.com/ToruNiina/toml11/blob/master/LICENSE))
 
@@ -120,7 +120,7 @@ while those can be built either with or without:
 Optional language bindings:
 * Python:
   * Python 3.6 - 3.10
-  * pybind11 2.6.2+
+  * pybind11 2.9.1+
   * numpy 1.15+
   * mpi4py 2.1+ (optional, for MPI)
   * pandas 1.0+ (optional, for dataframes)
@@ -212,6 +212,8 @@ export CMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF
 python3 -m pip install openpmd-api --no-binary openpmd-api
 ```
 
+Additional CMake options can be passed via individual environment variables, which need to be prefixed with `openPMD_CMAKE_`.
+
 ### From Source
 
 [![Source Use Case](https://img.shields.io/badge/use_case-development-brightgreen)](https://cmake.org)
@@ -269,7 +271,7 @@ The following options allow to switch to external installs:
 | CMake Option                    | Values     | Library       | Version |
 |---------------------------------|------------|---------------|---------|
 | `openPMD_USE_INTERNAL_CATCH`    | **ON**/OFF | Catch2        | 2.13.4+ |
-| `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.6.2+ |
+| `openPMD_USE_INTERNAL_PYBIND11` | **ON**/OFF | pybind11      |  2.9.1+ |
 | `openPMD_USE_INTERNAL_JSON`     | **ON**/OFF | NLohmann-JSON |  3.9.1+ |
 | `openPMD_USE_INTERNAL_TOML11`   | **ON**/OFF | toml11        |  3.7.0+ |
 

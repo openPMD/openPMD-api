@@ -5,31 +5,31 @@
 #include <numeric> // std::iota
 #include <vector>
 
-void span_write( std::string const & filename )
+void span_write(std::string const &filename)
 {
     using namespace openPMD;
     using position_t = double;
     // open file for writing
-    Series series = Series( filename, Access::CREATE );
+    Series series = Series(filename, Access::CREATE);
 
-    Datatype datatype = determineDatatype< position_t >();
+    Datatype datatype = determineDatatype<position_t>();
     constexpr unsigned long length = 10ul;
-    Extent extent = { length };
-    Dataset dataset = Dataset( datatype, extent );
+    Extent extent = {length};
+    Dataset dataset = Dataset(datatype, extent);
 
-    std::vector< position_t > fallbackBuffer;
+    std::vector<position_t> fallbackBuffer;
 
     WriteIterations iterations = series.writeIterations();
-    for( size_t i = 0; i < 10; ++i )
+    for (size_t i = 0; i < 10; ++i)
     {
-        Iteration iteration = iterations[ i ];
-        Record electronPositions = iteration.particles[ "e" ][ "position" ];
+        Iteration iteration = iterations[i];
+        Record electronPositions = iteration.particles["e"]["position"];
 
         size_t j = 0;
-        for( auto const & dim : { "x", "y", "z" } )
+        for (auto const &dim : {"x", "y", "z"})
         {
-            RecordComponent pos = electronPositions[ dim ];
-            pos.resetDataset( dataset );
+            RecordComponent pos = electronPositions[dim];
+            pos.resetDataset(dataset);
             /*
              * This demonstrates the storeChunk() strategy (to be) used in
              * PIConGPU:
@@ -45,16 +45,15 @@ void span_write( std::string const & filename )
              * flushed in each iteration to make the buffer reusable.
              */
             bool fallbackBufferIsUsed = false;
-            auto dynamicMemoryView = pos.storeChunk< position_t >(
-                Offset{ 0 },
+            auto dynamicMemoryView = pos.storeChunk<position_t>(
+                Offset{0},
                 extent,
-                [ &fallbackBuffer, &fallbackBufferIsUsed ]( size_t size )
-                {
+                [&fallbackBuffer, &fallbackBufferIsUsed](size_t size) {
                     fallbackBufferIsUsed = true;
-                    fallbackBuffer.resize( size );
-                    return std::shared_ptr< position_t >(
-                        fallbackBuffer.data(), []( auto const * ) {} );
-                } );
+                    fallbackBuffer.resize(size);
+                    return std::shared_ptr<position_t>(
+                        fallbackBuffer.data(), [](auto const *) {});
+                });
 
             /*
              * ADIOS2 might reallocate its internal buffers when writing
@@ -63,21 +62,21 @@ void span_write( std::string const & filename )
              * directly before writing.
              */
             auto span = dynamicMemoryView.currentBuffer();
-            if( ( i + j ) % 2 == 0 )
+            if ((i + j) % 2 == 0)
             {
                 std::iota(
                     span.begin(),
                     span.end(),
-                    position_t( 3 * i * length + j * length ) );
+                    position_t(3 * i * length + j * length));
             }
             else
             {
                 std::iota(
                     span.rbegin(),
                     span.rend(),
-                    position_t( 3 * i * length + j * length ) );
+                    position_t(3 * i * length + j * length));
             }
-            if( fallbackBufferIsUsed )
+            if (fallbackBufferIsUsed)
             {
                 iteration.seriesFlush();
             }
@@ -89,12 +88,12 @@ void span_write( std::string const & filename )
 
 int main()
 {
-    for( auto const & ext : openPMD::getFileExtensions() )
+    for (auto const &ext : openPMD::getFileExtensions())
     {
-        if( ext == "sst" || ext == "ssc" )
+        if (ext == "sst" || ext == "ssc")
         {
             continue;
         }
-        span_write( "../samples/span_write." + ext );
+        span_write("../samples/span_write." + ext);
     }
 }

@@ -20,57 +20,62 @@
  */
 #pragma once
 
-#include "openPMD/config.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/auxiliary/Export.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
-#include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/config.hpp"
 
 #include <future>
 #include <memory>
 #include <string>
 #if openPMD_HAVE_ADIOS1
-#   include <queue>
+#include <queue>
 #endif
-
 
 namespace openPMD
 {
-    class OPENPMDAPI_EXPORT ADIOS1IOHandlerImpl;
+class OPENPMDAPI_EXPORT ADIOS1IOHandlerImpl;
 
 #if openPMD_HAVE_ADIOS1
-    class OPENPMDAPI_EXPORT ADIOS1IOHandler : public AbstractIOHandler
+class OPENPMDAPI_EXPORT ADIOS1IOHandler : public AbstractIOHandler
+{
+    friend class ADIOS1IOHandlerImpl;
+
+public:
+    ADIOS1IOHandler(std::string path, Access, json::TracingJSON);
+    ~ADIOS1IOHandler() override;
+
+    std::string backendName() const override
     {
-        friend class ADIOS1IOHandlerImpl;
+        return "ADIOS1";
+    }
 
-    public:
-        ADIOS1IOHandler(std::string path, Access, json::TracingJSON );
-        ~ADIOS1IOHandler() override;
+    std::future<void> flush() override;
 
-        std::string backendName() const override { return "ADIOS1"; }
+    void enqueue(IOTask const &) override;
 
-        std::future< void > flush() override;
-
-        void enqueue(IOTask const&) override;
-
-    private:
-        std::queue< IOTask > m_setup;
-        std::unique_ptr< ADIOS1IOHandlerImpl > m_impl;
-    }; // ADIOS1IOHandler
+private:
+    std::queue<IOTask> m_setup;
+    std::unique_ptr<ADIOS1IOHandlerImpl> m_impl;
+}; // ADIOS1IOHandler
 #else
-    class OPENPMDAPI_EXPORT ADIOS1IOHandler : public AbstractIOHandler
+class OPENPMDAPI_EXPORT ADIOS1IOHandler : public AbstractIOHandler
+{
+    friend class ADIOS1IOHandlerImpl;
+
+public:
+    ADIOS1IOHandler(std::string path, Access, json::TracingJSON);
+    ~ADIOS1IOHandler() override;
+
+    std::string backendName() const override
     {
-        friend class ADIOS1IOHandlerImpl;
+        return "DUMMY_ADIOS1";
+    }
 
-    public:
-        ADIOS1IOHandler(std::string path, Access, json::TracingJSON );
-        ~ADIOS1IOHandler() override;
+    std::future<void> flush() override;
 
-        std::string backendName() const override { return "DUMMY_ADIOS1"; }
-
-        std::future< void > flush() override;
-
-    private:
-        std::unique_ptr< ADIOS1IOHandlerImpl > m_impl;
-    }; // ADIOS1IOHandler
+private:
+    std::unique_ptr<ADIOS1IOHandlerImpl> m_impl;
+}; // ADIOS1IOHandler
 #endif
-} // openPMD
+} // namespace openPMD

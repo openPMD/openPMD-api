@@ -20,24 +20,24 @@
  */
 #pragma once
 
-#include "openPMD/IO/AbstractIOHandler.hpp"
-#include "openPMD/IO/AbstractIOHandlerImpl.hpp"
-#include "openPMD/IO/AbstractIOHandlerImplCommon.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2Auxiliary.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2FilePosition.hpp"
 #include "openPMD/IO/ADIOS/ADIOS2PreloadAttributes.hpp"
+#include "openPMD/IO/AbstractIOHandler.hpp"
+#include "openPMD/IO/AbstractIOHandlerImpl.hpp"
+#include "openPMD/IO/AbstractIOHandlerImplCommon.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
+#include "openPMD/IterationEncoding.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
 #include "openPMD/backend/Writable.hpp"
 #include "openPMD/config.hpp"
-#include "openPMD/IterationEncoding.hpp"
 
 #if openPMD_HAVE_ADIOS2
-#    include <adios2.h>
+#include <adios2.h>
 #endif
 #if openPMD_HAVE_MPI
-#   include <mpi.h>
+#include <mpi.h>
 #endif
 #include <nlohmann/json.hpp>
 
@@ -53,7 +53,6 @@
 #include <utility> // pair
 #include <vector>
 
-
 namespace openPMD
 {
 #if openPMD_HAVE_ADIOS2
@@ -62,17 +61,20 @@ class ADIOS2IOHandler;
 
 namespace detail
 {
-    template < typename, typename > struct DatasetHelper;
+    template <typename, typename>
+    struct DatasetHelper;
     struct GetSpan;
     struct DatasetReader;
     struct AttributeReader;
     struct AttributeWriter;
     struct OldAttributeReader;
     struct OldAttributeWriter;
-    template < typename > struct AttributeTypes;
+    template <typename>
+    struct AttributeTypes;
     struct DatasetOpener;
     struct VariableDefiner;
-    template < typename > struct DatasetTypes;
+    template <typename>
+    struct DatasetTypes;
     struct WriteDataset;
     struct BufferedActions;
     struct BufferedPut;
@@ -80,7 +82,6 @@ namespace detail
     struct BufferedAttributeRead;
     struct BufferedAttributeWrite;
 } // namespace detail
-
 
 namespace ADIOS2Schema
 {
@@ -99,129 +100,116 @@ namespace ADIOS2Schema
         s_0000_00_00,
         s_2021_02_09
     };
-}
+} // namespace ADIOS2Schema
 using SupportedSchema = ADIOS2Schema::SupportedSchema;
 
 class ADIOS2IOHandlerImpl
-: public AbstractIOHandlerImplCommon< ADIOS2FilePosition >
+    : public AbstractIOHandlerImplCommon<ADIOS2FilePosition>
 {
-    template < typename, typename > friend struct detail::DatasetHelper;
+    template <typename, typename>
+    friend struct detail::DatasetHelper;
     friend struct detail::GetSpan;
     friend struct detail::DatasetReader;
     friend struct detail::AttributeReader;
     friend struct detail::AttributeWriter;
     friend struct detail::OldAttributeReader;
     friend struct detail::OldAttributeWriter;
-    template < typename > friend struct detail::AttributeTypes;
+    template <typename>
+    friend struct detail::AttributeTypes;
     friend struct detail::DatasetOpener;
     friend struct detail::VariableDefiner;
-    template < typename > friend struct detail::DatasetTypes;
+    template <typename>
+    friend struct detail::DatasetTypes;
     friend struct detail::WriteDataset;
     friend struct detail::BufferedActions;
     friend struct detail::BufferedAttributeRead;
 
     static constexpr bool ADIOS2_DEBUG_MODE = false;
 
-
 public:
-
 #if openPMD_HAVE_MPI
 
     ADIOS2IOHandlerImpl(
         AbstractIOHandler *,
         MPI_Comm,
         json::TracingJSON config,
-        std::string engineType );
+        std::string engineType);
 
 #endif // openPMD_HAVE_MPI
 
     explicit ADIOS2IOHandlerImpl(
-        AbstractIOHandler *,
-        json::TracingJSON config,
-        std::string engineType );
-
+        AbstractIOHandler *, json::TracingJSON config, std::string engineType);
 
     ~ADIOS2IOHandlerImpl() override;
 
-    std::future< void > flush( ) override;
-
-    void createFile( Writable *,
-                     Parameter< Operation::CREATE_FILE > const & ) override;
-
-    void createPath( Writable *,
-                     Parameter< Operation::CREATE_PATH > const & ) override;
+    std::future<void> flush() override;
 
     void
-    createDataset( Writable *,
-                   Parameter< Operation::CREATE_DATASET > const & ) override;
+    createFile(Writable *, Parameter<Operation::CREATE_FILE> const &) override;
 
     void
-    extendDataset( Writable *,
-                   Parameter< Operation::EXTEND_DATASET > const & ) override;
+    createPath(Writable *, Parameter<Operation::CREATE_PATH> const &) override;
 
-    void openFile( Writable *,
-                   Parameter< Operation::OPEN_FILE > const & ) override;
+    void createDataset(
+        Writable *, Parameter<Operation::CREATE_DATASET> const &) override;
 
-    void closeFile( Writable *,
-                    Parameter< Operation::CLOSE_FILE > const & ) override;
+    void extendDataset(
+        Writable *, Parameter<Operation::EXTEND_DATASET> const &) override;
 
-    void openPath( Writable *,
-                   Parameter< Operation::OPEN_PATH > const & ) override;
-
-    void closePath( Writable *,
-                    Parameter< Operation::CLOSE_PATH > const & ) override;
-
-    void openDataset( Writable *,
-                      Parameter< Operation::OPEN_DATASET > & ) override;
-
-    void deleteFile( Writable *,
-                     Parameter< Operation::DELETE_FILE > const & ) override;
-
-    void deletePath( Writable *,
-                     Parameter< Operation::DELETE_PATH > const & ) override;
+    void openFile(Writable *, Parameter<Operation::OPEN_FILE> const &) override;
 
     void
-    deleteDataset( Writable *,
-                   Parameter< Operation::DELETE_DATASET > const & ) override;
+    closeFile(Writable *, Parameter<Operation::CLOSE_FILE> const &) override;
 
-    void deleteAttribute( Writable *,
-                          Parameter< Operation::DELETE_ATT > const & ) override;
-
-    void writeDataset( Writable *,
-                       Parameter< Operation::WRITE_DATASET > const & ) override;
-
-    void writeAttribute( Writable *,
-                         Parameter< Operation::WRITE_ATT > const & ) override;
-
-    void readDataset( Writable *,
-                      Parameter< Operation::READ_DATASET > & ) override;
-
-    void getBufferView( Writable *,
-                      Parameter< Operation::GET_BUFFER_VIEW > & ) override;
-
-    void readAttribute( Writable *,
-                        Parameter< Operation::READ_ATT > & ) override;
-
-    void listPaths( Writable *, Parameter< Operation::LIST_PATHS > & ) override;
-
-    void listDatasets( Writable *,
-                       Parameter< Operation::LIST_DATASETS > & ) override;
+    void openPath(Writable *, Parameter<Operation::OPEN_PATH> const &) override;
 
     void
-    listAttributes( Writable *,
-                    Parameter< Operation::LIST_ATTS > & parameters ) override;
+    closePath(Writable *, Parameter<Operation::CLOSE_PATH> const &) override;
+
+    void openDataset(Writable *, Parameter<Operation::OPEN_DATASET> &) override;
 
     void
-    advance( Writable*, Parameter< Operation::ADVANCE > & ) override;
+    deleteFile(Writable *, Parameter<Operation::DELETE_FILE> const &) override;
 
     void
-    availableChunks( Writable*,
-                     Parameter< Operation::AVAILABLE_CHUNKS > &) override;
+    deletePath(Writable *, Parameter<Operation::DELETE_PATH> const &) override;
+
+    void deleteDataset(
+        Writable *, Parameter<Operation::DELETE_DATASET> const &) override;
+
+    void deleteAttribute(
+        Writable *, Parameter<Operation::DELETE_ATT> const &) override;
+
+    void writeDataset(
+        Writable *, Parameter<Operation::WRITE_DATASET> const &) override;
+
+    void writeAttribute(
+        Writable *, Parameter<Operation::WRITE_ATT> const &) override;
+
+    void readDataset(Writable *, Parameter<Operation::READ_DATASET> &) override;
+
+    void
+    getBufferView(Writable *, Parameter<Operation::GET_BUFFER_VIEW> &) override;
+
+    void readAttribute(Writable *, Parameter<Operation::READ_ATT> &) override;
+
+    void listPaths(Writable *, Parameter<Operation::LIST_PATHS> &) override;
+
+    void
+    listDatasets(Writable *, Parameter<Operation::LIST_DATASETS> &) override;
+
+    void listAttributes(
+        Writable *, Parameter<Operation::LIST_ATTS> &parameters) override;
+
+    void advance(Writable *, Parameter<Operation::ADVANCE> &) override;
+
+    void availableChunks(
+        Writable *, Parameter<Operation::AVAILABLE_CHUNKS> &) override;
     /**
      * @brief The ADIOS2 access type to chose for Engines opened
      * within this instance.
      */
-    adios2::Mode adios2AccessMode( std::string const & fullPath );
+    adios2::Mode adios2AccessMode(std::string const &fullPath);
 
 private:
     adios2::ADIOS m_ADIOS;
@@ -253,7 +241,7 @@ private:
 
     inline SupportedSchema schema() const
     {
-        switch( m_schema )
+        switch (m_schema)
         {
         case ADIOS2Schema::schema_0000_00_00:
             return SupportedSchema::s_0000_00_00;
@@ -262,20 +250,20 @@ private:
         default:
             throw std::runtime_error(
                 "[ADIOS2] Encountered unsupported schema version: " +
-                std::to_string( m_schema ) );
+                std::to_string(m_schema));
         }
     }
 
     inline AttributeLayout attributeLayout() const
     {
-        switch( schema() )
+        switch (schema())
         {
         case SupportedSchema::s_0000_00_00:
             return AttributeLayout::ByAdiosAttributes;
         case SupportedSchema::s_2021_02_09:
             return AttributeLayout::ByAdiosVariables;
         }
-        throw std::runtime_error( "Unreachable!" );
+        throw std::runtime_error("Unreachable!");
     }
 
     struct ParameterizedOperator
@@ -284,21 +272,19 @@ private:
         adios2::Params params;
     };
 
-    std::vector< ParameterizedOperator > defaultOperators;
+    std::vector<ParameterizedOperator> defaultOperators;
 
     json::TracingJSON m_config;
     static json::TracingJSON nullvalue;
 
-    void
-    init( json::TracingJSON config );
+    void init(json::TracingJSON config);
 
-    template< typename Key >
-    json::TracingJSON
-    config( Key && key, json::TracingJSON & cfg )
+    template <typename Key>
+    json::TracingJSON config(Key &&key, json::TracingJSON &cfg)
     {
-        if( cfg.json().is_object() && cfg.json().contains( key ) )
+        if (cfg.json().is_object() && cfg.json().contains(key))
         {
-            return cfg[ key ];
+            return cfg[key];
         }
         else
         {
@@ -306,11 +292,10 @@ private:
         }
     }
 
-    template< typename Key >
-    json::TracingJSON
-    config( Key && key )
+    template <typename Key>
+    json::TracingJSON config(Key &&key)
     {
-        return config< Key >( std::forward< Key >( key ), m_config );
+        return config<Key>(std::forward<Key>(key), m_config);
     }
 
     /**
@@ -320,15 +305,13 @@ private:
      * @return first parameter: the operators, second parameters: whether
      * operators have been configured
      */
-    std::optional< std::vector< ParameterizedOperator > >
-    getOperators( json::TracingJSON config );
+    std::optional<std::vector<ParameterizedOperator> >
+    getOperators(json::TracingJSON config);
 
     // use m_config
-    std::optional< std::vector< ParameterizedOperator > >
-    getOperators();
+    std::optional<std::vector<ParameterizedOperator> > getOperators();
 
-    std::string
-    fileSuffix() const;
+    std::string fileSuffix() const;
 
     /*
      * We need to give names to IO objects. These names are irrelevant
@@ -350,31 +333,32 @@ private:
      * IO and Engine object.
      * Not to be accessed directly, use getFileData().
      */
-    std::unordered_map< InvalidatableFile,
-                        std::unique_ptr< detail::BufferedActions >
-    > m_fileData;
+    std::unordered_map<
+        InvalidatableFile,
+        std::unique_ptr<detail::BufferedActions> >
+        m_fileData;
 
-    std::map< std::string, adios2::Operator > m_operators;
+    std::map<std::string, adios2::Operator> m_operators;
 
     // Overrides from AbstractIOHandlerImplCommon.
 
     std::string
-        filePositionToString( std::shared_ptr< ADIOS2FilePosition > ) override;
+        filePositionToString(std::shared_ptr<ADIOS2FilePosition>) override;
 
-    std::shared_ptr< ADIOS2FilePosition >
-    extendFilePosition( std::shared_ptr< ADIOS2FilePosition > const & pos,
-                        std::string extend ) override;
+    std::shared_ptr<ADIOS2FilePosition> extendFilePosition(
+        std::shared_ptr<ADIOS2FilePosition> const &pos,
+        std::string extend) override;
 
     // Helper methods.
 
-    std::optional< adios2::Operator >
-    getCompressionOperator( std::string const & compression );
+    std::optional<adios2::Operator>
+    getCompressionOperator(std::string const &compression);
 
     /*
      * The name of the ADIOS2 variable associated with this Writable.
      * To be used for Writables that represent a dataset.
      */
-    std::string nameOfVariable( Writable * writable );
+    std::string nameOfVariable(Writable *writable);
 
     /**
      * @brief nameOfAttribute
@@ -385,13 +369,13 @@ private:
      * (possibly the empty string, representing no variable)
      * and the actual name.
      */
-    std::string nameOfAttribute( Writable * writable, std::string attribute );
+    std::string nameOfAttribute(Writable *writable, std::string attribute);
 
     /*
      * Figure out whether the Writable corresponds with a
      * group or a dataset.
      */
-    ADIOS2FilePosition::GD groupOrDataset( Writable * );
+    ADIOS2FilePosition::GD groupOrDataset(Writable *);
 
     enum class IfFileNotOpen : bool
     {
@@ -399,10 +383,9 @@ private:
         ThrowError
     };
 
-    detail::BufferedActions &
-    getFileData( InvalidatableFile file, IfFileNotOpen );
+    detail::BufferedActions &getFileData(InvalidatableFile file, IfFileNotOpen);
 
-    void dropFileData( InvalidatableFile file );
+    void dropFileData(InvalidatableFile file);
 
     /*
      * Prepare a variable that already exists for an IO
@@ -412,10 +395,12 @@ private:
      * (3) setting the offset and extent (ADIOS lingo: start
      *     and count)
      */
-    template < typename T >
-    adios2::Variable< T > verifyDataset( Offset const & offset,
-                                         Extent const & extent, adios2::IO & IO,
-                                         std::string const & var );
+    template <typename T>
+    adios2::Variable<T> verifyDataset(
+        Offset const &offset,
+        Extent const &extent,
+        adios2::IO &IO,
+        std::string const &var);
 }; // ADIOS2IOHandlerImpl
 
 /*
@@ -424,7 +409,7 @@ private:
  */
 namespace ADIOS2Defaults
 {
-    using const_str = char const * const;
+    using const_str = char const *const;
     constexpr const_str str_engine = "engine";
     constexpr const_str str_type = "type";
     constexpr const_str str_params = "parameters";
@@ -441,121 +426,94 @@ namespace detail
 {
     // Helper structs for calls to the switchType function
 
-    template< typename > struct IsVector
-    {
-        static constexpr bool value = false;
-    };
-
-    template< typename T > struct IsVector< std::vector< T > >
-    {
-        static constexpr bool value = true;
-    };
-
-    template< typename T >
-    inline constexpr bool IsVector_v = IsVector< T >::value;
-
-    template< typename > struct IsArray
-    {
-        static constexpr bool value = false;
-    };
-
-    template< typename T, size_t n > struct IsArray< std::array< T, n > >
-    {
-        static constexpr bool value = true;
-    };
-
-    template< typename T >
-    inline constexpr bool IsArray_v = IsArray< T >::value;
-
-    template< typename T >
+    template <typename T>
     inline constexpr bool IsUnsupportedComplex_v =
-        std::is_same_v< T, std::complex< long double > > ||
-        std::is_same_v< T, std::vector< std::complex< long double > > >;
+        std::is_same_v<T, std::complex<long double> > ||
+        std::is_same_v<T, std::vector<std::complex<long double> > >;
 
     struct DatasetReader
     {
-        template< typename T >
+        template <typename T>
         static void call(
-            ADIOS2IOHandlerImpl * impl,
-            BufferedGet & bp,
-            adios2::IO & IO,
-            adios2::Engine & engine,
-            std::string const & fileName );
+            ADIOS2IOHandlerImpl *impl,
+            BufferedGet &bp,
+            adios2::IO &IO,
+            adios2::Engine &engine,
+            std::string const &fileName);
 
-        static constexpr char const * errorMsg = "ADIOS2: readDataset()";
+        static constexpr char const *errorMsg = "ADIOS2: readDataset()";
     };
 
     struct OldAttributeReader
     {
-        template< typename T >
+        template <typename T>
         static Datatype call(
-            adios2::IO & IO,
+            adios2::IO &IO,
             std::string name,
-            std::shared_ptr< Attribute::resource > resource );
+            std::shared_ptr<Attribute::resource> resource);
 
-        template< int n, typename... Params >
-        static Datatype call( Params &&... );
+        template <int n, typename... Params>
+        static Datatype call(Params &&...);
     };
 
     struct OldAttributeWriter
     {
-        template< typename T >
+        template <typename T>
         static void call(
-            ADIOS2IOHandlerImpl * impl,
-            Writable * writable,
-            const Parameter< Operation::WRITE_ATT > & parameters );
+            ADIOS2IOHandlerImpl *impl,
+            Writable *writable,
+            const Parameter<Operation::WRITE_ATT> &parameters);
 
-        template< int n, typename... Params >
-        static void call( Params &&... );
+        template <int n, typename... Params>
+        static void call(Params &&...);
     };
 
     struct AttributeReader
     {
-        template< typename T >
+        template <typename T>
         static Datatype call(
-            adios2::IO & IO,
-            detail::PreloadAdiosAttributes const & preloadedAttributes,
+            adios2::IO &IO,
+            detail::PreloadAdiosAttributes const &preloadedAttributes,
             std::string name,
-            std::shared_ptr< Attribute::resource > resource );
+            std::shared_ptr<Attribute::resource> resource);
 
-        template< int n, typename... Params >
-        static Datatype call( Params &&... );
+        template <int n, typename... Params>
+        static Datatype call(Params &&...);
     };
 
     struct AttributeWriter
     {
-        template< typename T >
-        static void call(
-            detail::BufferedAttributeWrite & params,
-            BufferedActions & fileData );
+        template <typename T>
+        static void
+        call(detail::BufferedAttributeWrite &params, BufferedActions &fileData);
 
-        template< int n, typename... Params >
-        static void call( Params &&... );
+        template <int n, typename... Params>
+        static void call(Params &&...);
     };
 
     struct DatasetOpener
     {
-        template< typename T >
+        template <typename T>
         static void call(
-            ADIOS2IOHandlerImpl * impl,
+            ADIOS2IOHandlerImpl *impl,
             InvalidatableFile,
-            const std::string & varName,
-            Parameter< Operation::OPEN_DATASET > & parameters );
+            const std::string &varName,
+            Parameter<Operation::OPEN_DATASET> &parameters);
 
-        static constexpr char const * errorMsg = "ADIOS2: openDataset()";
+        static constexpr char const *errorMsg = "ADIOS2: openDataset()";
     };
 
     struct WriteDataset
     {
-        template< typename T >
+        template <typename T>
         static void call(
-            ADIOS2IOHandlerImpl * impl,
-            BufferedPut & bp,
-            adios2::IO & IO,
-            adios2::Engine & engine );
+            ADIOS2IOHandlerImpl *impl,
+            BufferedPut &bp,
+            adios2::IO &IO,
+            adios2::Engine &engine);
 
-        template< int n, typename... Params >
-        static void call( Params &&... );
+        template <int n, typename... Params>
+        static void call(Params &&...);
     };
 
     struct VariableDefiner
@@ -575,31 +533,31 @@ namespace detail
          * @param count As in adios2::IO::DefineVariable
          * @param constantDims As in adios2::IO::DefineVariable
          */
-        template< typename T >
+        template <typename T>
         static void call(
-            adios2::IO & IO,
-            std::string const & name,
-            std::vector< ADIOS2IOHandlerImpl::ParameterizedOperator > const &
-                compressions,
-            adios2::Dims const & shape = adios2::Dims(),
-            adios2::Dims const & start = adios2::Dims(),
-            adios2::Dims const & count = adios2::Dims(),
-            bool const constantDims = false );
+            adios2::IO &IO,
+            std::string const &name,
+            std::vector<ADIOS2IOHandlerImpl::ParameterizedOperator> const
+                &compressions,
+            adios2::Dims const &shape = adios2::Dims(),
+            adios2::Dims const &start = adios2::Dims(),
+            adios2::Dims const &count = adios2::Dims(),
+            bool const constantDims = false);
 
-        static constexpr char const * errorMsg = "ADIOS2: defineVariable()";
+        static constexpr char const *errorMsg = "ADIOS2: defineVariable()";
     };
 
     struct RetrieveBlocksInfo
     {
-        template< typename T >
+        template <typename T>
         static void call(
-            Parameter< Operation::AVAILABLE_CHUNKS > & params,
-            adios2::IO & IO,
-            adios2::Engine & engine,
-            std::string const & varName );
+            Parameter<Operation::AVAILABLE_CHUNKS> &params,
+            adios2::IO &IO,
+            adios2::Engine &engine,
+            std::string const &varName);
 
-        template < int n, typename... Params >
-        static void call( Params &&... );
+        template <int n, typename... Params>
+        static void call(Params &&...);
     };
 
     // Helper structs to help distinguish valid attribute/variable
@@ -610,143 +568,136 @@ namespace detail
      * for vector and array types, as well as the boolean
      * type (which is not natively supported by ADIOS).
      */
-    template< typename T >
+    template <typename T>
     struct AttributeTypes
     {
-        static void
-        createAttribute(
-            adios2::IO & IO,
-            adios2::Engine & engine,
-            detail::BufferedAttributeWrite & params,
-            T value );
+        static void createAttribute(
+            adios2::IO &IO,
+            adios2::Engine &engine,
+            detail::BufferedAttributeWrite &params,
+            T value);
 
-        static void
-        readAttribute(
+        static void readAttribute(
             detail::PreloadAdiosAttributes const &,
             std::string name,
-            std::shared_ptr< Attribute::resource > resource );
+            std::shared_ptr<Attribute::resource> resource);
 
         /**
          * @brief Is the attribute given by parameters name and val already
          *        defined exactly in that way within the given IO?
          */
-        static bool
-        attributeUnchanged( adios2::IO & IO, std::string name, T val )
+        static bool attributeUnchanged(adios2::IO &IO, std::string name, T val)
         {
-            auto attr = IO.InquireAttribute< T >( name );
-            if( !attr )
+            auto attr = IO.InquireAttribute<T>(name);
+            if (!attr)
             {
                 return false;
             }
-            std::vector< T > data = attr.Data();
-            if( data.size() != 1 )
+            std::vector<T> data = attr.Data();
+            if (data.size() != 1)
             {
                 return false;
             }
-            return data[ 0 ] == val;
+            return data[0] == val;
         }
     };
 
-    template< > struct AttributeTypes< std::complex< long double > >
+    template <>
+    struct AttributeTypes<std::complex<long double> >
     {
-        static void
-        createAttribute(
+        static void createAttribute(
             adios2::IO &,
             adios2::Engine &,
             detail::BufferedAttributeWrite &,
-            std::complex< long double > )
+            std::complex<long double>)
         {
             throw std::runtime_error(
-                "[ADIOS2] Internal error: no support for long double complex attribute types" );
+                "[ADIOS2] Internal error: no support for long double complex "
+                "attribute types");
         }
 
-        static void
-        readAttribute(
+        static void readAttribute(
             detail::PreloadAdiosAttributes const &,
             std::string,
-            std::shared_ptr< Attribute::resource > )
+            std::shared_ptr<Attribute::resource>)
         {
             throw std::runtime_error(
-                "[ADIOS2] Internal error: no support for long double complex attribute types" );
+                "[ADIOS2] Internal error: no support for long double complex "
+                "attribute types");
         }
 
         static bool
-        attributeUnchanged(
-            adios2::IO &, std::string, std::complex< long double > )
+        attributeUnchanged(adios2::IO &, std::string, std::complex<long double>)
         {
             throw std::runtime_error(
-                "[ADIOS2] Internal error: no support for long double complex attribute types" );
+                "[ADIOS2] Internal error: no support for long double complex "
+                "attribute types");
         }
     };
 
-    template< > struct AttributeTypes< std::vector< std::complex< long double > > >
+    template <>
+    struct AttributeTypes<std::vector<std::complex<long double> > >
     {
-        static void
-        createAttribute(
+        static void createAttribute(
             adios2::IO &,
             adios2::Engine &,
             detail::BufferedAttributeWrite &,
-            const std::vector< std::complex< long double > > & )
+            const std::vector<std::complex<long double> > &)
         {
             throw std::runtime_error(
-                "[ADIOS2] Internal error: no support for long double complex vector attribute types" );
+                "[ADIOS2] Internal error: no support for long double complex "
+                "vector attribute types");
         }
 
-        static void
-        readAttribute(
+        static void readAttribute(
             detail::PreloadAdiosAttributes const &,
             std::string,
-            std::shared_ptr< Attribute::resource > )
+            std::shared_ptr<Attribute::resource>)
         {
             throw std::runtime_error(
-                "[ADIOS2] Internal error: no support for long double complex vector attribute types" );
+                "[ADIOS2] Internal error: no support for long double complex "
+                "vector attribute types");
         }
 
-        static bool
-        attributeUnchanged(
-            adios2::IO &,
-            std::string,
-            std::vector< std::complex< long double > > )
+        static bool attributeUnchanged(
+            adios2::IO &, std::string, std::vector<std::complex<long double> >)
         {
             throw std::runtime_error(
-                "[ADIOS2] Internal error: no support for long double complex vector attribute types" );
+                "[ADIOS2] Internal error: no support for long double complex "
+                "vector attribute types");
         }
     };
 
-    template < typename T > struct AttributeTypes< std::vector< T > >
+    template <typename T>
+    struct AttributeTypes<std::vector<T> >
     {
-        static void
-        createAttribute(
-            adios2::IO & IO,
-            adios2::Engine & engine,
-            detail::BufferedAttributeWrite & params,
-            const std::vector< T > & value );
+        static void createAttribute(
+            adios2::IO &IO,
+            adios2::Engine &engine,
+            detail::BufferedAttributeWrite &params,
+            const std::vector<T> &value);
 
-        static void
-        readAttribute(
+        static void readAttribute(
             detail::PreloadAdiosAttributes const &,
             std::string name,
-            std::shared_ptr< Attribute::resource > resource );
+            std::shared_ptr<Attribute::resource> resource);
 
         static bool
-        attributeUnchanged(
-            adios2::IO & IO,
-            std::string name,
-            std::vector< T > val )
+        attributeUnchanged(adios2::IO &IO, std::string name, std::vector<T> val)
         {
-            auto attr = IO.InquireAttribute< T >( name );
-            if( !attr )
+            auto attr = IO.InquireAttribute<T>(name);
+            if (!attr)
             {
                 return false;
             }
-            std::vector< T > data = attr.Data();
-            if( data.size() != val.size() )
+            std::vector<T> data = attr.Data();
+            if (data.size() != val.size())
             {
                 return false;
             }
-            for( size_t i = 0; i < val.size(); ++i )
+            for (size_t i = 0; i < val.size(); ++i)
             {
-                if( data[ i ] != val[ i ] )
+                if (data[i] != val[i])
                 {
                     return false;
                 }
@@ -755,41 +706,36 @@ namespace detail
         }
     };
 
-    template<>
-    struct AttributeTypes< std::vector< std::string > >
+    template <>
+    struct AttributeTypes<std::vector<std::string> >
     {
-        static void
-        createAttribute(
-            adios2::IO & IO,
-            adios2::Engine & engine,
-            detail::BufferedAttributeWrite & params,
-            const std::vector< std::string > & vec );
+        static void createAttribute(
+            adios2::IO &IO,
+            adios2::Engine &engine,
+            detail::BufferedAttributeWrite &params,
+            const std::vector<std::string> &vec);
 
-        static void
-        readAttribute(
+        static void readAttribute(
             detail::PreloadAdiosAttributes const &,
             std::string name,
-            std::shared_ptr< Attribute::resource > resource );
+            std::shared_ptr<Attribute::resource> resource);
 
-        static bool
-        attributeUnchanged(
-            adios2::IO & IO,
-            std::string name,
-            std::vector< std::string > val )
+        static bool attributeUnchanged(
+            adios2::IO &IO, std::string name, std::vector<std::string> val)
         {
-            auto attr = IO.InquireAttribute< std::string >( name );
-            if( !attr )
+            auto attr = IO.InquireAttribute<std::string>(name);
+            if (!attr)
             {
                 return false;
             }
-            std::vector< std::string > data = attr.Data();
-            if( data.size() != val.size() )
+            std::vector<std::string> data = attr.Data();
+            if (data.size() != val.size())
             {
                 return false;
             }
-            for( size_t i = 0; i < val.size(); ++i )
+            for (size_t i = 0; i < val.size(); ++i)
             {
-                if( data[ i ] != val[ i ] )
+                if (data[i] != val[i])
                 {
                     return false;
                 }
@@ -798,41 +744,36 @@ namespace detail
         }
     };
 
-    template < typename T, size_t n >
-    struct AttributeTypes< std::array< T, n > >
+    template <typename T, size_t n>
+    struct AttributeTypes<std::array<T, n> >
     {
-        static void
-        createAttribute(
-            adios2::IO & IO,
-            adios2::Engine & engine,
-            detail::BufferedAttributeWrite & params,
-            const std::array< T, n > & value );
+        static void createAttribute(
+            adios2::IO &IO,
+            adios2::Engine &engine,
+            detail::BufferedAttributeWrite &params,
+            const std::array<T, n> &value);
 
-        static void
-        readAttribute(
+        static void readAttribute(
             detail::PreloadAdiosAttributes const &,
             std::string name,
-            std::shared_ptr< Attribute::resource > resource );
+            std::shared_ptr<Attribute::resource> resource);
 
-        static bool
-        attributeUnchanged(
-            adios2::IO & IO,
-            std::string name,
-            std::array< T, n > val )
+        static bool attributeUnchanged(
+            adios2::IO &IO, std::string name, std::array<T, n> val)
         {
-            auto attr = IO.InquireAttribute< T >( name );
-            if( !attr )
+            auto attr = IO.InquireAttribute<T>(name);
+            if (!attr)
             {
                 return false;
             }
-            std::vector< T > data = attr.Data();
-            if( data.size() != n )
+            std::vector<T> data = attr.Data();
+            if (data.size() != n)
             {
                 return false;
             }
-            for( size_t i = 0; i < n; ++i )
+            for (size_t i = 0; i < n; ++i)
             {
-                if( data[ i ] != val[ i ] )
+                if (data[i] != val[i])
                 {
                     return false;
                 }
@@ -845,67 +786,61 @@ namespace detail
     {
         using rep = detail::bool_representation;
 
-        static constexpr rep toRep( bool b )
+        static constexpr rep toRep(bool b)
         {
             return b ? 1U : 0U;
         }
 
-
-        static constexpr bool fromRep( rep r )
+        static constexpr bool fromRep(rep r)
         {
             return r != 0;
         }
-    }
+    } // namespace bool_repr
 
-    template <> struct AttributeTypes< bool >
+    template <>
+    struct AttributeTypes<bool>
     {
         using rep = detail::bool_representation;
 
-        static constexpr rep toRep( bool b )
+        static constexpr rep toRep(bool b)
         {
             return b ? 1U : 0U;
         }
 
-
-        static constexpr bool fromRep( rep r )
+        static constexpr bool fromRep(rep r)
         {
             return r != 0;
         }
 
-        static void
-        createAttribute(
-            adios2::IO & IO,
-            adios2::Engine & engine,
-            detail::BufferedAttributeWrite & params,
-            bool value );
+        static void createAttribute(
+            adios2::IO &IO,
+            adios2::Engine &engine,
+            detail::BufferedAttributeWrite &params,
+            bool value);
 
-        static void
-        readAttribute(
+        static void readAttribute(
             detail::PreloadAdiosAttributes const &,
             std::string name,
-            std::shared_ptr< Attribute::resource > resource );
-
-
+            std::shared_ptr<Attribute::resource> resource);
 
         static bool
-        attributeUnchanged( adios2::IO & IO, std::string name, bool val )
+        attributeUnchanged(adios2::IO &IO, std::string name, bool val)
         {
-            auto attr = IO.InquireAttribute< rep >( name );
-            if( !attr )
+            auto attr = IO.InquireAttribute<rep>(name);
+            if (!attr)
             {
                 return false;
             }
-            std::vector< rep > data = attr.Data();
-            if( data.size() != 1 )
+            std::vector<rep> data = attr.Data();
+            if (data.size() != 1)
             {
                 return false;
             }
-            return data[ 0 ] == toRep( val );
+            return data[0] == toRep(val);
         }
     };
 
     // Other datatypes used in the ADIOS2IOHandler implementation
-
 
     struct BufferedActions;
 
@@ -914,49 +849,48 @@ namespace detail
      */
     struct BufferedAction
     {
-        explicit BufferedAction( ) = default;
-        virtual ~BufferedAction( ) = default;
+        explicit BufferedAction() = default;
+        virtual ~BufferedAction() = default;
 
-        BufferedAction( BufferedAction const & other ) = delete;
-        BufferedAction( BufferedAction && other ) = default;
+        BufferedAction(BufferedAction const &other) = delete;
+        BufferedAction(BufferedAction &&other) = default;
 
-        BufferedAction & operator=( BufferedAction const & other ) = delete;
-        BufferedAction & operator=( BufferedAction && other ) = default;
+        BufferedAction &operator=(BufferedAction const &other) = delete;
+        BufferedAction &operator=(BufferedAction &&other) = default;
 
-        virtual void run( BufferedActions & ) = 0;
+        virtual void run(BufferedActions &) = 0;
     };
 
     struct BufferedGet : BufferedAction
     {
         std::string name;
-        Parameter< Operation::READ_DATASET > param;
+        Parameter<Operation::READ_DATASET> param;
 
-        void run( BufferedActions & ) override;
+        void run(BufferedActions &) override;
     };
 
     struct BufferedPut : BufferedAction
     {
         std::string name;
-        Parameter< Operation::WRITE_DATASET > param;
+        Parameter<Operation::WRITE_DATASET> param;
 
-        void run( BufferedActions & ) override;
+        void run(BufferedActions &) override;
     };
 
     struct OldBufferedAttributeRead : BufferedAction
     {
-        Parameter< Operation::READ_ATT > param;
+        Parameter<Operation::READ_ATT> param;
         std::string name;
 
-        void run( BufferedActions & ) override;
+        void run(BufferedActions &) override;
     };
 
     struct BufferedAttributeRead
     {
-        Parameter< Operation::READ_ATT > param;
+        Parameter<Operation::READ_ATT> param;
         std::string name;
 
-        void
-        run( BufferedActions & );
+        void run(BufferedActions &);
     };
 
     struct BufferedAttributeWrite : BufferedAction
@@ -964,9 +898,9 @@ namespace detail
         std::string name;
         Datatype dtype;
         Attribute::resource resource;
-        std::vector< char > bufferForVecString;
+        std::vector<char> bufferForVecString;
 
-        void run( BufferedActions & ) override;
+        void run(BufferedActions &) override;
     };
 
     struct I_UpdateSpan
@@ -975,12 +909,12 @@ namespace detail
         virtual ~I_UpdateSpan() = default;
     };
 
-    template< typename T >
+    template <typename T>
     struct UpdateSpan : I_UpdateSpan
     {
-        adios2::detail::Span< T > span;
+        adios2::detail::Span<T> span;
 
-        UpdateSpan( adios2::detail::Span< T > );
+        UpdateSpan(adios2::detail::Span<T>);
 
         void *update() override;
     };
@@ -995,7 +929,7 @@ namespace detail
         friend struct BufferedGet;
         friend struct BufferedPut;
 
-        BufferedActions( BufferedActions const & ) = delete;
+        BufferedActions(BufferedActions const &) = delete;
 
         /**
          * The full path to the file created on disk, including the
@@ -1024,13 +958,13 @@ namespace detail
          * IO.
          */
         std::string const m_IOName;
-        adios2::ADIOS & m_ADIOS;
+        adios2::ADIOS &m_ADIOS;
         adios2::IO m_IO;
         /**
          * The default queue for deferred actions.
          * Drained upon BufferedActions::flush().
          */
-        std::vector< std::unique_ptr< BufferedAction > > m_buffer;
+        std::vector<std::unique_ptr<BufferedAction> > m_buffer;
         /**
          * Buffer for attributes to be written in the new (variable-based)
          * attribute layout.
@@ -1041,20 +975,20 @@ namespace detail
          * write commands.
          * The queue is drained only when closing a step / the engine.
          */
-        std::map< std::string, BufferedAttributeWrite > m_attributeWrites;
+        std::map<std::string, BufferedAttributeWrite> m_attributeWrites;
         /**
          * @todo This one is unnecessary, in the new schema, attribute reads do
          * not need to be deferred, but can happen instantly without performance
          * penalty, once preloadAttributes has been filled.
          */
-        std::vector< BufferedAttributeRead > m_attributeReads;
+        std::vector<BufferedAttributeRead> m_attributeReads;
         /**
          * This contains deferred actions that have already been enqueued into
          * ADIOS2, but not yet performed in ADIOS2.
          * We must store them somewhere until the next PerformPuts/Gets, EndStep
          * or Close in ADIOS2 to avoid use after free conditions.
          */
-        std::vector< std::unique_ptr< BufferedAction > > m_alreadyEnqueued;
+        std::vector<std::unique_ptr<BufferedAction> > m_alreadyEnqueued;
         adios2::Mode m_mode;
         /**
          * The base pointer of an ADIOS2 span might change after reallocations.
@@ -1064,7 +998,7 @@ namespace detail
          * retrieval of the updated base pointer.
          * This map is cleared upon flush points.
          */
-        std::map< unsigned, std::unique_ptr< I_UpdateSpan > > m_updateSpans;
+        std::map<unsigned, std::unique_ptr<I_UpdateSpan> > m_updateSpans;
         PreloadAdiosAttributes preloadAttributes;
 
         /*
@@ -1072,7 +1006,7 @@ namespace detail
          * written has been closed.
          * A committed attribute cannot be modified.
          */
-        std::set< std::string > uncommittedAttributes;
+        std::set<std::string> uncommittedAttributes;
 
         /*
          * The openPMD API will generally create new attributes for each
@@ -1086,25 +1020,26 @@ namespace detail
          */
         bool optimizeAttributesStreaming = false;
 
-        using AttributeMap_t = std::map< std::string, adios2::Params >;
+        using AttributeMap_t = std::map<std::string, adios2::Params>;
 
-        BufferedActions( ADIOS2IOHandlerImpl & impl, InvalidatableFile file );
+        BufferedActions(ADIOS2IOHandlerImpl &impl, InvalidatableFile file);
 
-        ~BufferedActions( );
+        ~BufferedActions();
 
         /**
          * Implementation of destructor, will only run once.
          *
          */
-        void
-        finalize();
+        void finalize();
 
-        adios2::Engine & getEngine( );
-        adios2::Engine & requireActiveStep( );
+        adios2::Engine &getEngine();
+        adios2::Engine &requireActiveStep();
 
-        template < typename BA > void enqueue( BA && ba );
+        template <typename BA>
+        void enqueue(BA &&ba);
 
-        template < typename BA > void enqueue( BA && ba, decltype( m_buffer ) & );
+        template <typename BA>
+        void enqueue(BA &&ba, decltype(m_buffer) &);
 
         /**
          * Flush deferred IO actions.
@@ -1122,21 +1057,19 @@ namespace detail
          * @param flushUnconditionally Whether to run the functor even if no
          *     deferred IO tasks had been queued.
          */
-        template< typename F >
-        void
-        flush(
+        template <typename F>
+        void flush(
             FlushLevel level,
-            F && performPutsGets,
+            F &&performPutsGets,
             bool writeAttributes,
-            bool flushUnconditionally );
+            bool flushUnconditionally);
 
         /**
          * Overload of flush() that uses adios2::Engine::Perform(Puts|Gets)
          * and does not flush unconditionally.
          *
          */
-        void
-        flush( FlushLevel, bool writeAttributes = false );
+        void flush(FlushLevel, bool writeAttributes = false);
 
         /**
          * @brief Begin or end an ADIOS step.
@@ -1144,41 +1077,36 @@ namespace detail
          * @param mode Whether to begin or end a step.
          * @return AdvanceStatus
          */
-        AdvanceStatus
-        advance( AdvanceMode mode );
+        AdvanceStatus advance(AdvanceMode mode);
 
         /*
          * Delete all buffered actions without running them.
          */
-        void drop( );
+        void drop();
 
-        AttributeMap_t const &
-        availableAttributes();
+        AttributeMap_t const &availableAttributes();
 
-        std::vector< std::string >
-        availableAttributesPrefixed( std::string const & prefix );
-
-        /*
-         * See description below.
-         */
-        void
-        invalidateAttributesMap();
-
-        AttributeMap_t const &
-        availableVariables();
-
-        std::vector< std::string >
-        availableVariablesPrefixed( std::string const & prefix );
+        std::vector<std::string>
+        availableAttributesPrefixed(std::string const &prefix);
 
         /*
          * See description below.
          */
-        void
-        invalidateVariablesMap();
+        void invalidateAttributesMap();
+
+        AttributeMap_t const &availableVariables();
+
+        std::vector<std::string>
+        availableVariablesPrefixed(std::string const &prefix);
+
+        /*
+         * See description below.
+         */
+        void invalidateVariablesMap();
 
     private:
-        ADIOS2IOHandlerImpl * m_impl;
-        std::optional< adios2::Engine > m_engine; //! ADIOS engine
+        ADIOS2IOHandlerImpl *m_impl;
+        std::optional<adios2::Engine> m_engine; //! ADIOS engine
         /**
          * The ADIOS2 engine type, to be passed to adios2::IO::SetEngine
          */
@@ -1294,8 +1222,8 @@ namespace detail
          * the map that would be returned by a call to
          * IO::Available(Attributes|Variables).
          */
-        std::optional< AttributeMap_t > m_availableAttributes;
-        std::optional< AttributeMap_t > m_availableVariables;
+        std::optional<AttributeMap_t> m_availableAttributes;
+        std::optional<AttributeMap_t> m_availableVariables;
 
         /*
          * finalize() will set this true to avoid running twice.
@@ -1307,8 +1235,7 @@ namespace detail
             return m_impl->schema();
         }
 
-        void
-        configure_IO( ADIOS2IOHandlerImpl & impl );
+        void configure_IO(ADIOS2IOHandlerImpl &impl);
 
         using AttributeLayout = ADIOS2IOHandlerImpl::AttributeLayout;
         inline AttributeLayout attributeLayout() const
@@ -1320,31 +1247,31 @@ namespace detail
 } // namespace detail
 #endif // openPMD_HAVE_ADIOS2
 
-
 class ADIOS2IOHandler : public AbstractIOHandler
 {
 #if openPMD_HAVE_ADIOS2
 
-friend class ADIOS2IOHandlerImpl;
+    friend class ADIOS2IOHandlerImpl;
 
 private:
     ADIOS2IOHandlerImpl m_impl;
 
 public:
-    ~ADIOS2IOHandler( ) override
+    ~ADIOS2IOHandler() override
     {
         // we must not throw in a destructor
         try
         {
-            this->flush( );
+            this->flush();
         }
-        catch( std::exception const & ex )
+        catch (std::exception const &ex)
         {
-            std::cerr << "[~ADIOS2IOHandler] An error occurred: " << ex.what() << std::endl;
+            std::cerr << "[~ADIOS2IOHandler] An error occurred: " << ex.what()
+                      << std::endl;
         }
-        catch( ... )
+        catch (...)
         {
-             std::cerr << "[~ADIOS2IOHandler] An error occurred." << std::endl;
+            std::cerr << "[~ADIOS2IOHandler] An error occurred." << std::endl;
         }
     }
 
@@ -1359,7 +1286,7 @@ public:
         Access,
         MPI_Comm,
         json::TracingJSON options,
-        std::string engineType );
+        std::string engineType);
 
 #endif
 
@@ -1367,10 +1294,13 @@ public:
         std::string path,
         Access,
         json::TracingJSON options,
-        std::string engineType );
+        std::string engineType);
 
-    std::string backendName() const override { return "ADIOS2"; }
+    std::string backendName() const override
+    {
+        return "ADIOS2";
+    }
 
-    std::future< void > flush( ) override;
+    std::future<void> flush() override;
 }; // ADIOS2IOHandler
 } // namespace openPMD

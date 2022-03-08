@@ -20,16 +20,15 @@
  */
 #pragma once
 
-#include "openPMD/auxiliary/Variant.hpp"
-#include "openPMD/backend/Attributable.hpp"
-#include "openPMD/backend/Container.hpp"
 #include "openPMD/IterationEncoding.hpp"
 #include "openPMD/Mesh.hpp"
 #include "openPMD/ParticleSpecies.hpp"
 #include "openPMD/Streaming.hpp"
+#include "openPMD/auxiliary/Variant.hpp"
+#include "openPMD/backend/Attributable.hpp"
+#include "openPMD/backend/Container.hpp"
 
 #include <optional>
-
 
 namespace openPMD
 {
@@ -42,7 +41,7 @@ namespace internal
     enum class CloseStatus
     {
         ParseAccessDeferred, //!< The reader has not yet parsed this iteration
-        Open,             //!< Iteration has not been closed
+        Open, //!< Iteration has not been closed
         ClosedInFrontend, /*!< Iteration has been closed, but task has not yet
                                been propagated to the backend */
         ClosedInBackend, /*!< Iteration has been closed and task has been
@@ -78,14 +77,15 @@ namespace internal
     class IterationData : public AttributableData
     {
     public:
-       /*
-        * An iteration may be logically closed in the frontend,
-        * but not necessarily yet in the backend.
-        * Will be propagated to the backend upon next flush.
-        * Store the current status.
-        * Once an iteration has been closed, no further flushes shall be performed.
-        * If flushing a closed file, the old file may otherwise be overwritten.
-        */
+        /*
+         * An iteration may be logically closed in the frontend,
+         * but not necessarily yet in the backend.
+         * Will be propagated to the backend upon next flush.
+         * Store the current status.
+         * Once an iteration has been closed, no further flushes shall be
+         * performed. If flushing a closed file, the old file may otherwise be
+         * overwritten.
+         */
         CloseStatus m_closed = CloseStatus::Open;
 
         /**
@@ -101,58 +101,60 @@ namespace internal
          * Information on a parsing request that has not yet been executed.
          * Otherwise empty.
          */
-        std::optional< DeferredParseAccess > m_deferredParseAccess{};
+        std::optional<DeferredParseAccess> m_deferredParseAccess{};
     };
-}
-/** @brief  Logical compilation of data from one snapshot (e.g. a single simulation cycle).
+} // namespace internal
+/** @brief  Logical compilation of data from one snapshot (e.g. a single
+ * simulation cycle).
  *
- * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#required-attributes-for-the-basepath
+ * @see
+ * https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#required-attributes-for-the-basepath
  */
 class Iteration : public Attributable
 {
-    template<
-            typename T,
-            typename T_key,
-            typename T_container
-    >
+    template <typename T, typename T_key, typename T_container>
     friend class Container;
     friend class Series;
     friend class WriteIterations;
     friend class SeriesIterator;
 
 public:
-    Iteration( Iteration const & ) = default;
-    Iteration & operator=( Iteration const & ) = default;
+    Iteration(Iteration const &) = default;
+    Iteration &operator=(Iteration const &) = default;
 
     /**
-     * @tparam  T   Floating point type of user-selected precision (e.g. float, double).
+     * @tparam  T   Floating point type of user-selected precision (e.g. float,
+     * double).
      * @return  Global reference time for this iteration.
      */
-    template< typename T >
+    template <typename T>
     T time() const;
     /** Set the global reference time for this iteration.
      *
-     * @tparam  T       Floating point type of user-selected precision (e.g. float, double).
+     * @tparam  T       Floating point type of user-selected precision (e.g.
+     * float, double).
      * @param   newTime Global reference time for this iteration.
      * @return  Reference to modified iteration.
      */
-    template< typename T >
-    Iteration& setTime(T newTime);
+    template <typename T>
+    Iteration &setTime(T newTime);
 
     /**
-     * @tparam  T   Floating point type of user-selected precision (e.g. float, double).
+     * @tparam  T   Floating point type of user-selected precision (e.g. float,
+     * double).
      * @return  Time step used to reach this iteration.
      */
-    template< typename T >
+    template <typename T>
     T dt() const;
     /** Set the time step used to reach this iteration.
      *
-     * @tparam  T     Floating point type of user-selected precision (e.g. float, double).
+     * @tparam  T     Floating point type of user-selected precision (e.g.
+     * float, double).
      * @param   newDt Time step used to reach this iteration.
      * @return  Reference to modified iteration.
      */
-    template< typename T >
-    Iteration& setDt(T newDt);
+    template <typename T>
+    Iteration &setDt(T newDt);
 
     /**
      * @return Conversion factor to convert time and dt to seconds.
@@ -163,7 +165,7 @@ public:
      * @param  newTimeUnitSI new value for timeUnitSI
      * @return Reference to modified iteration.
      */
-    Iteration& setTimeUnitSI(double newTimeUnitSI);
+    Iteration &setTimeUnitSI(double newTimeUnitSI);
 
     /** Close an iteration
      *
@@ -180,8 +182,7 @@ public:
      * API. Currently, disallowing to reopen closed iterations satisfies
      * the requirements of the streaming API.
      */
-    Iteration &
-    close( bool flush = true );
+    Iteration &close(bool flush = true);
 
     /** Open an iteration
      *
@@ -196,8 +197,7 @@ public:
      *
      * @return Reference to iteration.
      */
-    Iteration &
-    open();
+    Iteration &open();
 
     /**
      * @brief Has the iteration been closed?
@@ -205,8 +205,7 @@ public:
      *
      * @return Whether the iteration has been closed.
      */
-    bool
-    closed() const;
+    bool closed() const;
 
     /**
      * @brief Has the iteration been closed by the writer?
@@ -219,35 +218,35 @@ public:
      * @return Whether the iteration has been explicitly closed (yet) by the
      *         writer.
      */
-    [[deprecated( "This attribute is no longer set by the openPMD-api." )]]
-    bool
+    [[deprecated("This attribute is no longer set by the openPMD-api.")]] bool
     closedByWriter() const;
 
-    Container< Mesh > meshes{};
-    Container< ParticleSpecies > particles{}; //particleSpecies?
+    Container<Mesh> meshes{};
+    Container<ParticleSpecies> particles{}; // particleSpecies?
 
     virtual ~Iteration() = default;
+
 private:
     Iteration();
 
-    std::shared_ptr< internal::IterationData > m_iterationData{
-        new internal::IterationData };
+    std::shared_ptr<internal::IterationData> m_iterationData{
+        new internal::IterationData};
 
-    inline internal::IterationData const & get() const
+    inline internal::IterationData const &get() const
     {
         return *m_iterationData;
     }
 
-    inline internal::IterationData & get()
+    inline internal::IterationData &get()
     {
         return *m_iterationData;
     }
 
-    void flushFileBased(std::string const&, uint64_t);
+    void flushFileBased(std::string const &, uint64_t);
     void flushGroupBased(uint64_t);
     void flushVariableBased(uint64_t);
     void flush();
-    void deferParseAccess( internal::DeferredParseAccess );
+    void deferParseAccess(internal::DeferredParseAccess);
     /*
      * Control flow for read(), readFileBased(), readGroupBased() and
      * read_impl():
@@ -266,12 +265,10 @@ private:
      *
      */
     void read();
-    void reread( std::string const & path );
-    void readFileBased( std::string filePath, std::string const & groupPath );
-    void readGorVBased( std::string const & groupPath );
-    void read_impl( std::string const & groupPath );
-
-
+    void reread(std::string const &path);
+    void readFileBased(std::string filePath, std::string const &groupPath);
+    void readGorVBased(std::string const &groupPath);
+    void read_impl(std::string const &groupPath);
 
     /**
      * @brief Begin an IO step on the IO file (or file-like object)
@@ -280,8 +277,7 @@ private:
      *
      * @return AdvanceStatus
      */
-    AdvanceStatus
-    beginStep();
+    AdvanceStatus beginStep();
 
     /**
      * @brief End an IO step on the IO file (or file-like object)
@@ -290,8 +286,7 @@ private:
      *
      * @return AdvanceStatus
      */
-    void
-    endStep();
+    void endStep();
 
     /**
      * @brief Is a step currently active for this iteration?
@@ -301,8 +296,7 @@ private:
      * in case of file-based iteration layout, it is local (member of this very
      * object).
      */
-    StepStatus
-    getStepStatus();
+    StepStatus getStepStatus();
 
     /**
      * @brief Set step activity status for this iteration.
@@ -312,7 +306,7 @@ private:
      * in case of file-based iteration layout, it is set locally (member of
      * this very object).
      */
-    void setStepStatus( StepStatus );
+    void setStepStatus(StepStatus);
 
     /*
      * @brief Check recursively whether this Iteration is dirty.
@@ -322,15 +316,14 @@ private:
      * @return true If dirty.
      * @return false Otherwise.
      */
-    bool
-    dirtyRecursive() const;
+    bool dirtyRecursive() const;
 
     /**
      * @brief Link with parent.
      *
      * @param w The Writable representing the parent.
      */
-    virtual void linkHierarchy(Writable& w);
+    virtual void linkHierarchy(Writable &w);
 
     /**
      * @brief Access an iteration in read mode that has potentially not been
@@ -338,40 +331,29 @@ private:
      *
      */
     void runDeferredParseAccess();
-};  // Iteration
+}; // Iteration
 
-extern template
-float
-Iteration::time< float >() const;
+extern template float Iteration::time<float>() const;
 
-extern template
-double
-Iteration::time< double >() const;
+extern template double Iteration::time<double>() const;
 
-extern template
-long double
-Iteration::time< long double >() const;
+extern template long double Iteration::time<long double>() const;
 
-template< typename T >
-inline T
-Iteration::time() const
-{ return this->readFloatingpoint< T >("time"); }
+template <typename T>
+inline T Iteration::time() const
+{
+    return this->readFloatingpoint<T>("time");
+}
 
+extern template float Iteration::dt<float>() const;
 
-extern template
-float
-Iteration::dt< float >() const;
+extern template double Iteration::dt<double>() const;
 
-extern template
-double
-Iteration::dt< double >() const;
+extern template long double Iteration::dt<long double>() const;
 
-extern template
-long double
-Iteration::dt< long double >() const;
-
-template< typename T >
-inline T
-Iteration::dt() const
-{ return this->readFloatingpoint< T >("dt"); }
-} // openPMD
+template <typename T>
+inline T Iteration::dt() const
+{
+    return this->readFloatingpoint<T>("dt");
+}
+} // namespace openPMD

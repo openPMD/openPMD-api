@@ -24,35 +24,35 @@
 
 namespace openPMD::detail
 {
-template<>
-std::vector< std::string > keyAsString< std::string const & >(
-    std::string const & key, std::vector< std::string > const & parentKey )
+template <>
+std::vector<std::string> keyAsString<std::string const &>(
+    std::string const &key, std::vector<std::string> const &parentKey)
 {
-    if( key == RecordComponent::SCALAR )
+    if (key == RecordComponent::SCALAR)
     {
         auto ret = parentKey;
-        ret.emplace_back( RecordComponent::SCALAR );
+        ret.emplace_back(RecordComponent::SCALAR);
         return ret;
     }
     else
     {
-        return { key };
+        return {key};
     }
 }
 
-template<>
-std::vector< std::string > keyAsString< std::string >(
-    std::string && key, std::vector< std::string > const & parentKey )
+template <>
+std::vector<std::string> keyAsString<std::string>(
+    std::string &&key, std::vector<std::string> const &parentKey)
 {
-    if( key == RecordComponent::SCALAR )
+    if (key == RecordComponent::SCALAR)
     {
         auto ret = parentKey;
-        ret.emplace_back( RecordComponent::SCALAR );
+        ret.emplace_back(RecordComponent::SCALAR);
         return ret;
     }
     else
     {
-        return { std::move( key ) };
+        return {std::move(key)};
     }
 }
-}
+} // namespace openPMD::detail

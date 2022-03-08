@@ -22,19 +22,20 @@
 
 #include <ostream>
 
-
 namespace openPMD
 {
 /** Encoding scheme of an Iterations Series'.
  *
- * @see https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series
+ * @see
+ * https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series
  */
 enum class IterationEncoding
 {
-    fileBased, groupBased, variableBased
+    fileBased,
+    groupBased,
+    variableBased
 };
 
-std::ostream&
-operator<<(std::ostream&, openPMD::IterationEncoding const&);
+std::ostream &operator<<(std::ostream &, openPMD::IterationEncoding const &);
 
-} // openPMD
+} // namespace openPMD

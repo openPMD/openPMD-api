@@ -8,10 +8,9 @@
 using std::cout;
 using namespace openPMD;
 
-
 int main()
 {
-    if( !getVariants()["adios2"] )
+    if (!getVariants()["adios2"])
     {
         // Example configuration below selects the ADIOS2 backend
         return 0;
@@ -67,28 +66,27 @@ chunks = "auto"
 
     // open file for writing
     Series series =
-        Series( "../samples/dynamicConfig.bp", Access::CREATE, defaults );
+        Series("../samples/dynamicConfig.bp", Access::CREATE, defaults);
 
-    Datatype datatype = determineDatatype< position_t >();
+    Datatype datatype = determineDatatype<position_t>();
     constexpr unsigned long length = 10ul;
-    Extent global_extent = { length };
-    Dataset dataset = Dataset( datatype, global_extent );
-    std::shared_ptr< position_t > local_data(
-        new position_t[ length ],
-        []( position_t const * ptr ) { delete[] ptr; } );
+    Extent global_extent = {length};
+    Dataset dataset = Dataset(datatype, global_extent);
+    std::shared_ptr<position_t> local_data(
+        new position_t[length], [](position_t const *ptr) { delete[] ptr; });
 
     WriteIterations iterations = series.writeIterations();
-    for( size_t i = 0; i < 100; ++i )
+    for (size_t i = 0; i < 100; ++i)
     {
-        Iteration iteration = iterations[ i ];
-        Record electronPositions = iteration.particles[ "e" ][ "position" ];
+        Iteration iteration = iterations[i];
+        Record electronPositions = iteration.particles["e"]["position"];
 
-        std::iota( local_data.get(), local_data.get() + length, i * length );
-        for( auto const & dim : { "x", "y", "z" } )
+        std::iota(local_data.get(), local_data.get() + length, i * length);
+        for (auto const &dim : {"x", "y", "z"})
         {
-            RecordComponent pos = electronPositions[ dim ];
-            pos.resetDataset( dataset );
-            pos.storeChunk( local_data, Offset{ 0 }, global_extent );
+            RecordComponent pos = electronPositions[dim];
+            pos.resetDataset(dataset);
+            pos.storeChunk(local_data, Offset{0}, global_extent);
         }
 
         /*
@@ -118,14 +116,14 @@ chunks = "auto"
     }
   }
 })END";
-        Dataset differentlyCompressedDataset{ Datatype::INT, { 10 } };
+        Dataset differentlyCompressedDataset{Datatype::INT, {10}};
         differentlyCompressedDataset.options = differentCompressionSettings;
 
-        auto someMesh = iteration.meshes[ "differentCompressionSettings" ]
-                                        [ RecordComponent::SCALAR ];
-        someMesh.resetDataset( differentlyCompressedDataset );
-        std::vector< int > dataVec( 10, i );
-        someMesh.storeChunk( dataVec, { 0 }, { 10 } );
+        auto someMesh = iteration.meshes["differentCompressionSettings"]
+                                        [RecordComponent::SCALAR];
+        someMesh.resetDataset(differentlyCompressedDataset);
+        std::vector<int> dataVec(10, i);
+        someMesh.storeChunk(dataVec, {0}, {10});
 
         iteration.close();
     }

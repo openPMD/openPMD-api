@@ -36,24 +36,22 @@ class IndexedIteration : public Iteration
     friend class SeriesIterator;
 
 public:
-    using iterations_t = decltype( internal::SeriesData::iterations );
+    using iterations_t = decltype(internal::SeriesData::iterations);
     using index_t = iterations_t::key_type;
     index_t const iterationIndex;
 
 private:
-    template< typename Iteration_t >
-    IndexedIteration( Iteration_t && it, index_t index )
-        : Iteration( std::forward< Iteration_t >( it ) )
-        , iterationIndex( index )
-    {
-    }
+    template <typename Iteration_t>
+    IndexedIteration(Iteration_t &&it, index_t index)
+        : Iteration(std::forward<Iteration_t>(it)), iterationIndex(index)
+    {}
 };
 
 class SeriesIterator
 {
     using iteration_index_t = IndexedIteration::index_t;
 
-    using maybe_series_t = std::optional< Series >;
+    using maybe_series_t = std::optional<Series>;
 
     maybe_series_t m_series;
     iteration_index_t m_currentIteration = 0;
@@ -62,15 +60,15 @@ public:
     //! construct the end() iterator
     explicit SeriesIterator();
 
-    SeriesIterator( Series );
+    SeriesIterator(Series);
 
-    SeriesIterator & operator++();
+    SeriesIterator &operator++();
 
     IndexedIteration operator*();
 
-    bool operator==( SeriesIterator const & other ) const;
+    bool operator==(SeriesIterator const &other) const;
 
-    bool operator!=( SeriesIterator const & other ) const;
+    bool operator!=(SeriesIterator const &other) const;
 
     static SeriesIterator end();
 };
@@ -96,12 +94,12 @@ class ReadIterations
     friend class Series;
 
 private:
-    using iterations_t = decltype( internal::SeriesData::iterations );
+    using iterations_t = decltype(internal::SeriesData::iterations);
     using iterator_t = SeriesIterator;
 
     Series m_series;
 
-    ReadIterations( Series );
+    ReadIterations(Series);
 
 public:
     iterator_t begin();

@@ -33,23 +33,17 @@
 namespace py = pybind11;
 using namespace openPMD;
 
+void init_ParticleSpecies(py::module &m)
+{
+    py::class_<ParticleSpecies, Container<Record> > cl(m, "ParticleSpecies");
+    cl.def(
+          "__repr__",
+          [](ParticleSpecies const &) { return "<openPMD.ParticleSpecies>"; })
 
-void init_ParticleSpecies(py::module &m) {
-    py::class_<ParticleSpecies, Container< Record > > cl(m, "ParticleSpecies");
-    cl
-        .def("__repr__",
-            [](ParticleSpecies const &) {
-                return "<openPMD.ParticleSpecies>";
-            }
-        )
-
-        .def_readwrite("particle_patches", &ParticleSpecies::particlePatches)
-    ;
+        .def_readwrite("particle_patches", &ParticleSpecies::particlePatches);
     add_pickle(
-        cl,
-        [](openPMD::Series & series, std::vector< std::string > const & group ) {
+        cl, [](openPMD::Series &series, std::vector<std::string> const &group) {
             uint64_t const n_it = std::stoull(group.at(1));
             return series.iterations[n_it].particles[group.at(3)];
-        }
-    );
+        });
 }

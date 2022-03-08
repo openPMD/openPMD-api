@@ -20,31 +20,30 @@
  */
 #include <openPMD/openPMD.hpp>
 
+#include <cstddef>
 #include <iostream>
 #include <memory>
-#include <cstddef>
-
 
 using std::cout;
 using namespace openPMD;
 
 int main()
 {
-    Series series = Series(
-        "../samples/git-sample/thetaMode/data%T.h5",
-        Access::READ_ONLY
-    );
+    Series series =
+        Series("../samples/git-sample/thetaMode/data%T.h5", Access::READ_ONLY);
 
     Iteration i = series.iterations[500];
     MeshRecordComponent E_z_modes = i.meshes["E"]["z"];
-    Extent extent = E_z_modes.getExtent();  // (modal components, r, z)
+    Extent extent = E_z_modes.getExtent(); // (modal components, r, z)
 
     // read E_z in all modes
     auto E_z_raw = E_z_modes.loadChunk<double>();
     // read E_z in mode_0 (one scalar field)
-    auto E_z_m0 = E_z_modes.loadChunk<double>(Offset{0, 0, 0}, Extent{1, extent[1], extent[2]});
+    auto E_z_m0 = E_z_modes.loadChunk<double>(
+        Offset{0, 0, 0}, Extent{1, extent[1], extent[2]});
     // read E_z in mode_1 (two fields; skip mode_0 with one scalar field)
-    auto E_z_m1 = E_z_modes.loadChunk<double>(Offset{1, 0, 0}, Extent{2, extent[1], extent[2]});
+    auto E_z_m1 = E_z_modes.loadChunk<double>(
+        Offset{1, 0, 0}, Extent{2, extent[1], extent[2]});
     series.flush();
 
     // all this is still mode-decomposed data, not too useful for users
@@ -54,8 +53,8 @@ int main()
     //   user change frequency: time ~= component >> theta >> selected modes
     // thetaMode::ToCylindrical toCylindrical("all");
     // thetaMode::ToCylindricalSlice toCylindricalSlice(1.5708, "all")
-    // reconstruction to 2D slice in cylindrical coordinates (r, z) for a fixed theta
-    // E_z_90deg = toCylindricalSlice(E_z_modes).loadChunk<double>();
+    // reconstruction to 2D slice in cylindrical coordinates (r, z) for a fixed
+    // theta E_z_90deg = toCylindricalSlice(E_z_modes).loadChunk<double>();
     // E_r_90deg = toCylindricalSlice(i.meshes["E"]["r"]).loadChunk<double>();
     // E_t_90deg = toCylindricalSlice(i.meshes["E"]["t"]).loadChunk<double>();
     // reconstruction to 3D cylindrical coordinates (r, t, z)
@@ -64,9 +63,10 @@ int main()
 
     // reconstruction to 3D and 2D cartesian: E_x, E_y, E_z
     // thetaMode::ToCylindrical toCartesian({'x': 1.e-6, 'y': 1.e-6}, "all");
-    // ...               toCartesianSliceYZ({'x': 1.e-6, 'y': 1.e-6}, 'x', 0., "all");  // and absolute slice position
-    // E_z_xyz = toCartesian(E_z_modes).loadChunk<double>();         # (x, y, z)
-    // E_z_yz  = toCartesianSliceYZ(E_z_modes).loadChunk<double>();  # (y, z)
+    // ...               toCartesianSliceYZ({'x': 1.e-6, 'y': 1.e-6}, 'x', 0.,
+    // "all");  // and absolute slice position E_z_xyz =
+    // toCartesian(E_z_modes).loadChunk<double>();         # (x, y, z) E_z_yz  =
+    // toCartesianSliceYZ(E_z_modes).loadChunk<double>();  # (y, z)
     // series.flush();
 
     /* The files in 'series' are still open until the object is destroyed, on

@@ -56,8 +56,7 @@ namespace json
      * @param overwrite
      * @return std::string
      */
-    std::string merge(
-        std::string const & defaultValue,
-        std::string const & overwrite );
-}
-}
+    std::string
+    merge(std::string const &defaultValue, std::string const &overwrite);
+} // namespace json
+} // namespace openPMD

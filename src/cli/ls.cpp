@@ -24,14 +24,11 @@
 #include <string>
 #include <vector>
 
-
-int main(
-    int argc,
-    char * argv[]
-)
+int main(int argc, char *argv[])
 {
-    std::vector< std::string > str_argv;
-    for( int i = 0; i < argc; ++i ) str_argv.emplace_back(argv[i]);
+    std::vector<std::string> str_argv;
+    for (int i = 0; i < argc; ++i)
+        str_argv.emplace_back(argv[i]);
 
-    return openPMD::cli::ls::run( str_argv );
+    return openPMD::cli::ls::run(str_argv);
 }
