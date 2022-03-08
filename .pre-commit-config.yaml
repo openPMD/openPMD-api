@@ -27,6 +27,7 @@ repos:
     - id: check-json
     - id: check-toml
     - id: check-yaml
+      args: [--allow-multiple-documents]
     - id: check-added-large-files
     - id: requirements-txt-fixer
 #  - id: fix-encoding-pragma
@@ -61,7 +62,7 @@ repos:
 #    files: (\.cmake|CMakeLists.txt)(.in)?$
 
 # C++ formatting
-# clang-format v12
+# clang-format v13
 #   to run manually, use .github/workflows/clang-format/clang-format.sh
 - repo: https://github.com/pre-commit/mirrors-clang-format
   rev: v13.0.1

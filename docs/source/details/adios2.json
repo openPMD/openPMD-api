@@ -12,8 +12,8 @@
         {
           "type": "blosc",
           "parameters": {
-              "clevel": "1",
-              "doshuffle": "BLOSC_BITSHUFFLE"
+            "clevel": "1",
+            "doshuffle": "BLOSC_BITSHUFFLE"
           }
         }
       ]

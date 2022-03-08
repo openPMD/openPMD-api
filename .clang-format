@@ -1,3 +1,4 @@
+---
 Language:  Cpp
 
 BasedOnStyle:  LLVM
@@ -64,3 +65,8 @@ SpacesInParentheses: false
 SpacesInSquareBrackets: false
 Standard: Auto
 StatementMacros: ["OPENPMD_private", "OPENPMD_protected"]
+
+---
+Language: Json
+BasedOnStyle: llvm
+...
