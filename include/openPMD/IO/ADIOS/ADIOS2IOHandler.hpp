@@ -1075,9 +1075,15 @@ namespace detail
          * @brief Begin or end an ADIOS step.
          *
          * @param mode Whether to begin or end a step.
+         * @param calledExplicitly True if called due to a public API call.
+         *     False if called from requireActiveStep.
+         *     Some engines (BP5) require that every interaction happens within
+         *     an active step, meaning that we need to call advance()
+         *     implicitly at times. When doing that, do not tag the dataset
+         *     with __openPMD_internal/useSteps (yet).
          * @return AdvanceStatus
          */
-        AdvanceStatus advance(AdvanceMode mode);
+        AdvanceStatus advance(AdvanceMode mode, bool calledExplicitly);
 
         /*
          * Delete all buffered actions without running them.
@@ -1201,7 +1207,6 @@ namespace detail
             Undecided
         };
         StreamStatus streamStatus = StreamStatus::OutsideOfStep;
-        adios2::StepStatus m_lastStepStatus = adios2::StepStatus::OK;
 
         /**
          * See documentation for StreamStatus::Parsing.

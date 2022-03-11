@@ -605,6 +605,7 @@ void ADIOS2IOHandlerImpl::writeAttribute(
         auto prefix = filePositionToString(pos);
 
         auto &filedata = getFileData(file, IfFileNotOpen::ThrowError);
+        filedata.requireActiveStep();
         filedata.invalidateAttributesMap();
         m_dirty.emplace(std::move(file));
 
@@ -703,7 +704,13 @@ void ADIOS2IOHandlerImpl::getBufferView(
     Writable *writable, Parameter<Operation::GET_BUFFER_VIEW> &parameters)
 {
     // @todo check access mode
-    if (m_engineType != "bp4" && m_engineType != "bp5")
+    std::string optInEngines[] = {"bp4", "bp5", "file", "filestream"};
+    if (std::none_of(
+            begin(optInEngines),
+            end(optInEngines),
+            [this](std::string const &engine) {
+                return engine == this->m_engineType;
+            }))
     {
         parameters.out->backendManagedBuffer = false;
         return;
@@ -764,6 +771,7 @@ void ADIOS2IOHandlerImpl::readAttribute(
     auto file = refreshFileFromParent(writable, /* preferParentFile = */ false);
     auto pos = setAndGetFilePosition(writable);
     detail::BufferedActions &ba = getFileData(file, IfFileNotOpen::ThrowError);
+    ba.requireActiveStep();
     switch (attributeLayout())
     {
         using AL = AttributeLayout;
@@ -1006,7 +1014,8 @@ void ADIOS2IOHandlerImpl::advance(
 {
     auto file = m_files[writable];
     auto &ba = getFileData(file, IfFileNotOpen::ThrowError);
-    *parameters.status = ba.advance(parameters.mode);
+    *parameters.status =
+        ba.advance(parameters.mode, /* calledExplicitly = */ true);
 }
 
 void ADIOS2IOHandlerImpl::closePath(
@@ -1470,6 +1479,7 @@ namespace detail
 
         auto &filedata = impl->getFileData(
             file, ADIOS2IOHandlerImpl::IfFileNotOpen::ThrowError);
+        filedata.requireActiveStep();
         filedata.invalidateAttributesMap();
         adios2::IO IO = filedata.m_IO;
         impl->m_dirty.emplace(std::move(file));
@@ -2161,9 +2171,18 @@ namespace detail
     {
         (void)impl;
         static std::set<std::string> streamingEngines = {
-            "sst", "insitumpi", "inline", "staging", "nullcore", "ssc"};
+            "sst",
+            "insitumpi",
+            "inline",
+            "staging",
+            "nullcore",
+            "ssc",
+            "filestream",
+            "bp5"};
+        // diskStreamingEngines is a subset of streamingEngines
+        static std::set<std::string> diskStreamingEngines{"bp5", "filestream"};
         static std::set<std::string> fileEngines = {
-            "bp5", "bp4", "bp3", "hdf5", "file"};
+            "bp4", "bp3", "hdf5", "file"};
 
         // step/variable-based iteration encoding requires the new schema
         if (m_impl->m_iterationEncoding == IterationEncoding::variableBased)
@@ -2189,7 +2208,14 @@ namespace detail
             {
                 isStreaming = true;
                 optimizeAttributesStreaming =
-                    schema() == SupportedSchema::s_0000_00_00;
+                    // Optimizing attributes in streaming mode is not needed in
+                    // the variable-based ADIOS2 schema
+                    schema() == SupportedSchema::s_0000_00_00 &&
+                    // Also, it should only be done when truly streaming, not
+                    // when using a disk-based engine that behaves like a
+                    // streaming engine (otherwise attributes might vanish)
+                    diskStreamingEngines.find(m_engineType) ==
+                        diskStreamingEngines.end();
                 streamStatus = StreamStatus::OutsideOfStep;
             }
             else
@@ -2206,7 +2232,6 @@ namespace detail
                          * file being read.
                          */
                         streamStatus = StreamStatus::Undecided;
-                        // @todo no?? should be default in both modes
                         delayOpeningTheFirstStep = true;
                         break;
                     case adios2::Mode::Write:
@@ -2511,9 +2536,22 @@ namespace detail
     adios2::Engine &BufferedActions::requireActiveStep()
     {
         adios2::Engine &eng = getEngine();
+        /*
+         * If streamStatus is Parsing, do NOT open the step.
+         */
         if (streamStatus == StreamStatus::OutsideOfStep)
         {
-            m_lastStepStatus = eng.BeginStep();
+            switch (
+                advance(AdvanceMode::BEGINSTEP, /* calledExplicitly = */ false))
+            {
+            case AdvanceStatus::OVER:
+                throw std::runtime_error(
+                    "[ADIOS2] Operation requires active step but no step is "
+                    "left.");
+            case AdvanceStatus::OK:
+                // pass
+                break;
+            }
             if (m_mode == adios2::Mode::Read &&
                 attributeLayout() == AttributeLayout::ByAdiosVariables)
             {
@@ -2665,7 +2703,8 @@ namespace detail
             /* flushUnconditionally = */ false);
     }
 
-    AdvanceStatus BufferedActions::advance(AdvanceMode mode)
+    AdvanceStatus
+    BufferedActions::advance(AdvanceMode mode, bool calledExplicitly)
     {
         if (streamStatus == StreamStatus::Undecided)
         {
@@ -2681,8 +2720,20 @@ namespace detail
             return AdvanceStatus::OK;
         }
 
-        m_IO.DefineAttribute<bool_representation>(
-            ADIOS2Defaults::str_usesstepsAttribute, 1);
+        /*
+         * If advance() is called implicitly (by requireActiveStep()), the
+         * Series is not necessarily using steps (logically).
+         * But in some ADIOS2 engines, at least one step must be opened
+         * (physically) to do anything.
+         * The usessteps tag should only be set when the Series is *logically*
+         * using steps.
+         */
+        if (calledExplicitly)
+        {
+            m_IO.DefineAttribute<bool_representation>(
+                ADIOS2Defaults::str_usesstepsAttribute, 1);
+        }
+
         switch (mode)
         {
         case AdvanceMode::ENDSTEP: {
@@ -2715,27 +2766,21 @@ namespace detail
             return AdvanceStatus::OK;
         }
         case AdvanceMode::BEGINSTEP: {
-            adios2::StepStatus adiosStatus = m_lastStepStatus;
+            adios2::StepStatus adiosStatus{};
 
-            // Step might have been opened implicitly already
-            // by requireActiveStep()
-            // In that case, streamStatus is DuringStep and Adios
-            // return status is stored in m_lastStepStatus
             if (streamStatus != StreamStatus::DuringStep)
             {
-                flush(
-                    FlushLevel::UserFlush,
-                    [&adiosStatus](BufferedActions &, adios2::Engine &engine) {
-                        adiosStatus = engine.BeginStep();
-                    },
-                    /* writeAttributes = */ false,
-                    /* flushUnconditionally = */ true);
+                adiosStatus = getEngine().BeginStep();
                 if (adiosStatus == adios2::StepStatus::OK &&
                     m_mode == adios2::Mode::Read &&
                     attributeLayout() == AttributeLayout::ByAdiosVariables)
                 {
                     preloadAttributes.preloadAttributes(m_IO, m_engine.value());
                 }
+            }
+            else
+            {
+                adiosStatus = adios2::StepStatus::OK;
             }
             AdvanceStatus res = AdvanceStatus::OK;
             switch (adiosStatus)

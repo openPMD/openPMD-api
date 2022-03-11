@@ -5145,6 +5145,10 @@ TEST_CASE("iterate_nonstreaming_series", "[serial][adios2]")
                 backend.extension,
             false,
             backend.jsonBaseConfig());
+#if openPMD_HAVE_ADIOS2 &&                                                     \
+    ADIOS2_VERSION_MAJOR * 1000000000 + ADIOS2_VERSION_MINOR * 100000000 +     \
+            ADIOS2_VERSION_PATCH * 1000000 + ADIOS2_VERSION_TWEAK >=           \
+        2701001223
         if (backend.extension == "bp")
         {
             iterate_nonstreaming_series(
@@ -5160,6 +5164,7 @@ TEST_CASE("iterate_nonstreaming_series", "[serial][adios2]")
                 json::merge(
                     backend.jsonBaseConfig(), "adios2.engine = \"bp5\""));
         }
+#endif
     }
 #if openPMD_HAVE_ADIOS2
     iterate_nonstreaming_series(
