@@ -330,7 +330,7 @@ ADIOS1IOHandler::ADIOS1IOHandler(
 
 ADIOS1IOHandler::~ADIOS1IOHandler() = default;
 
-std::future<void> ADIOS1IOHandler::flush()
+std::future<void> ADIOS1IOHandler::flush(internal::FlushParams const &)
 {
     return m_impl->flush();
 }
@@ -431,7 +431,7 @@ ADIOS1IOHandler::ADIOS1IOHandler(std::string path, Access at, json::TracingJSON)
 
 ADIOS1IOHandler::~ADIOS1IOHandler() = default;
 
-std::future<void> ADIOS1IOHandler::flush()
+std::future<void> ADIOS1IOHandler::flush(internal::FlushParams const &)
 {
     return std::future<void>();
 }

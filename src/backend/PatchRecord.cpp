@@ -36,19 +36,21 @@ PatchRecord::setUnitDimension(std::map<UnitDimension, double> const &udim)
     return *this;
 }
 
-void PatchRecord::flush_impl(std::string const &path)
+void PatchRecord::flush_impl(
+    std::string const &path, internal::FlushParams const &flushParams)
 {
     if (this->find(RecordComponent::SCALAR) == this->end())
     {
         if (IOHandler()->m_frontendAccess != Access::READ_ONLY)
             Container<PatchRecordComponent>::flush(
-                path); // warning (clang-tidy-10): bugprone-parent-virtual-call
+                path, flushParams); // warning (clang-tidy-10):
+                                    // bugprone-parent-virtual-call
         for (auto &comp : *this)
-            comp.second.flush(comp.first);
+            comp.second.flush(comp.first, flushParams);
     }
     else
-        this->operator[](RecordComponent::SCALAR).flush(path);
-    if (IOHandler()->m_flushLevel == FlushLevel::UserFlush)
+        this->operator[](RecordComponent::SCALAR).flush(path, flushParams);
+    if (flushParams.flushLevel == FlushLevel::UserFlush)
     {
         this->dirty() = false;
     }
@@ -59,7 +61,7 @@ void PatchRecord::read()
     Parameter<Operation::READ_ATT> aRead;
     aRead.name = "unitDimension";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
 
     if (*aRead.dtype == Datatype::ARR_DBL_7 ||
         *aRead.dtype == Datatype::VEC_DOUBLE)
@@ -72,7 +74,7 @@ void PatchRecord::read()
 
     Parameter<Operation::LIST_DATASETS> dList;
     IOHandler()->enqueue(IOTask(this, dList));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
 
     Parameter<Operation::OPEN_DATASET> dOpen;
     for (auto const &component_name : *dList.datasets)
@@ -80,7 +82,7 @@ void PatchRecord::read()
         PatchRecordComponent &prc = (*this)[component_name];
         dOpen.name = component_name;
         IOHandler()->enqueue(IOTask(&prc, dOpen));
-        IOHandler()->flush();
+        IOHandler()->flush(internal::defaultFlushParams);
         /* allow all attributes to be set */
         prc.written() = false;
         prc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));

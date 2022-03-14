@@ -388,7 +388,7 @@ public:
             Parameter<Operation::DELETE_PATH> pDelete;
             pDelete.path = ".";
             IOHandler()->enqueue(IOTask(&res->second, pDelete));
-            IOHandler()->flush();
+            IOHandler()->flush(internal::defaultFlushParams);
         }
         return container().erase(key);
     }
@@ -405,7 +405,7 @@ public:
             Parameter<Operation::DELETE_PATH> pDelete;
             pDelete.path = ".";
             IOHandler()->enqueue(IOTask(&res->second, pDelete));
-            IOHandler()->flush();
+            IOHandler()->flush(internal::defaultFlushParams);
         }
         return container().erase(res);
     }
@@ -436,7 +436,8 @@ OPENPMD_protected
         container().clear();
     }
 
-    virtual void flush(std::string const &path)
+    virtual void
+    flush(std::string const &path, internal::FlushParams const &flushParams)
     {
         if (!written())
         {
@@ -445,7 +446,7 @@ OPENPMD_protected
             IOHandler()->enqueue(IOTask(this, pCreate));
         }
 
-        flushAttributes();
+        flushAttributes(flushParams);
     }
 
     // clang-format off

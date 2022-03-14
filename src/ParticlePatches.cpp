@@ -35,7 +35,7 @@ void ParticlePatches::read()
 {
     Parameter<Operation::LIST_PATHS> pList;
     IOHandler()->enqueue(IOTask(this, pList));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
 
     Parameter<Operation::OPEN_PATH> pOpen;
     for (auto const &record_name : *pList.paths)
@@ -48,7 +48,7 @@ void ParticlePatches::read()
 
     Parameter<Operation::LIST_DATASETS> dList;
     IOHandler()->enqueue(IOTask(this, dList));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
 
     Parameter<Operation::OPEN_DATASET> dOpen;
     for (auto const &component_name : *dList.datasets)
@@ -65,7 +65,7 @@ void ParticlePatches::read()
         dOpen.name = component_name;
         IOHandler()->enqueue(IOTask(&pr, dOpen));
         IOHandler()->enqueue(IOTask(&prc, dOpen));
-        IOHandler()->flush();
+        IOHandler()->flush(internal::defaultFlushParams);
 
         if (determineDatatype<uint64_t>() != *dOpen.dtype)
             throw std::runtime_error(

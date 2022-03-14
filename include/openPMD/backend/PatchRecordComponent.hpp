@@ -91,7 +91,7 @@ public:
 OPENPMD_private
     // clang-format on
 
-    void flush(std::string const &);
+    void flush(std::string const &, internal::FlushParams const &);
     void read();
 
     /**

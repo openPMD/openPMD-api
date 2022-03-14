@@ -43,7 +43,7 @@ private:
     ParticleSpecies();
 
     void read();
-    void flush(std::string const &) override;
+    void flush(std::string const &, internal::FlushParams const &) override;
 
     /**
      * @brief Check recursively whether this ParticleSpecies is dirty.

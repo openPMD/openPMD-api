@@ -35,15 +35,15 @@ Writable::Writable(internal::AttributableData *a)
 
 void Writable::seriesFlush()
 {
-    seriesFlush(FlushLevel::UserFlush);
+    seriesFlush({FlushLevel::UserFlush});
 }
 
-void Writable::seriesFlush(FlushLevel level)
+void Writable::seriesFlush(internal::FlushParams flushParams)
 {
     auto series =
         Attributable({attributable, [](auto const *) {}}).retrieveSeries();
     series.flush_impl(
-        series.iterations.begin(), series.iterations.end(), level);
+        series.iterations.begin(), series.iterations.end(), flushParams);
 }
 
 } // namespace openPMD

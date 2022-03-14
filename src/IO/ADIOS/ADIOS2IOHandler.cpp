@@ -253,7 +253,8 @@ std::string ADIOS2IOHandlerImpl::fileSuffix() const
     }
 }
 
-std::future<void> ADIOS2IOHandlerImpl::flush()
+std::future<void>
+ADIOS2IOHandlerImpl::flush(internal::FlushParams const &flushParams)
 {
     auto res = AbstractIOHandlerImpl::flush();
     for (auto &p : m_fileData)
@@ -261,7 +262,7 @@ std::future<void> ADIOS2IOHandlerImpl::flush()
         if (m_dirty.find(p.first) != m_dirty.end())
         {
             p.second->flush(
-                m_handler->m_flushLevel, /* writeAttributes = */ false);
+                flushParams.flushLevel, /* writeAttributes = */ false);
         }
         else
         {
@@ -2869,9 +2870,10 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     , m_impl{this, std::move(options), std::move(engineType)}
 {}
 
-std::future<void> ADIOS2IOHandler::flush()
+std::future<void>
+ADIOS2IOHandler::flush(internal::FlushParams const &flushParams)
 {
-    return m_impl.flush();
+    return m_impl.flush(flushParams);
 }
 
 #else // openPMD_HAVE_ADIOS2
@@ -2889,7 +2891,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     : AbstractIOHandler(std::move(path), at)
 {}
 
-std::future<void> ADIOS2IOHandler::flush()
+std::future<void> ADIOS2IOHandler::flush(internal::FlushParams const &)
 {
     return std::future<void>();
 }

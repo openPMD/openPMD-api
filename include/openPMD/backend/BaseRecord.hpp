@@ -141,8 +141,9 @@ protected:
     void readBase();
 
 private:
-    void flush(std::string const &) final;
-    virtual void flush_impl(std::string const &) = 0;
+    void flush(std::string const &, internal::FlushParams const &) final;
+    virtual void
+    flush_impl(std::string const &, internal::FlushParams const &) = 0;
     virtual void read() = 0;
 
     /**
@@ -250,7 +251,7 @@ BaseRecord<T_elem>::erase(key_type const &key)
             Parameter<Operation::DELETE_DATASET> dDelete;
             dDelete.name = ".";
             this->IOHandler()->enqueue(IOTask(&rc, dDelete));
-            this->IOHandler()->flush();
+            this->IOHandler()->flush(internal::defaultFlushParams);
         }
         res = Container<T_elem>::erase(key);
     }
@@ -280,7 +281,7 @@ BaseRecord<T_elem>::erase(iterator res)
             Parameter<Operation::DELETE_DATASET> dDelete;
             dDelete.name = ".";
             this->IOHandler()->enqueue(IOTask(&rc, dDelete));
-            this->IOHandler()->flush();
+            this->IOHandler()->flush(internal::defaultFlushParams);
         }
         ret = Container<T_elem>::erase(res);
     }
@@ -315,7 +316,7 @@ inline void BaseRecord<T_elem>::readBase()
 
     aRead.name = "unitDimension";
     this->IOHandler()->enqueue(IOTask(this, aRead));
-    this->IOHandler()->flush();
+    this->IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::ARR_DBL_7)
         this->setAttribute(
             "unitDimension",
@@ -340,7 +341,7 @@ inline void BaseRecord<T_elem>::readBase()
 
     aRead.name = "timeOffset";
     this->IOHandler()->enqueue(IOTask(this, aRead));
-    this->IOHandler()->flush();
+    this->IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::FLOAT)
         this->setAttribute(
             "timeOffset", Attribute(*aRead.resource).template get<float>());
@@ -353,7 +354,8 @@ inline void BaseRecord<T_elem>::readBase()
 }
 
 template <typename T_elem>
-inline void BaseRecord<T_elem>::flush(std::string const &name)
+inline void BaseRecord<T_elem>::flush(
+    std::string const &name, internal::FlushParams const &flushParams)
 {
     if (!this->written() && this->empty())
         throw std::runtime_error(
@@ -361,7 +363,7 @@ inline void BaseRecord<T_elem>::flush(std::string const &name)
             "RecordComponents: " +
             name);
 
-    this->flush_impl(name);
+    this->flush_impl(name, flushParams);
     // flush_impl must take care to correctly set the dirty() flag so this
     // method doesn't do it
 }

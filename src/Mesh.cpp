@@ -213,12 +213,13 @@ template Mesh &Mesh::setTimeOffset(double);
 
 template Mesh &Mesh::setTimeOffset(float);
 
-void Mesh::flush_impl(std::string const &name)
+void Mesh::flush_impl(
+    std::string const &name, internal::FlushParams const &flushParams)
 {
     if (IOHandler()->m_frontendAccess == Access::READ_ONLY)
     {
         for (auto &comp : *this)
-            comp.second.flush(comp.first);
+            comp.second.flush(comp.first, flushParams);
     }
     else
     {
@@ -228,8 +229,8 @@ void Mesh::flush_impl(std::string const &name)
             {
                 MeshRecordComponent &mrc = at(RecordComponent::SCALAR);
                 mrc.parent() = parent();
-                mrc.flush(name);
-                IOHandler()->flush();
+                mrc.flush(name, flushParams);
+                IOHandler()->flush(flushParams);
                 writable().abstractFilePosition =
                     mrc.writable().abstractFilePosition;
                 written() = true;
@@ -248,7 +249,7 @@ void Mesh::flush_impl(std::string const &name)
         {
             for (auto &comp : *this)
             {
-                comp.second.flush(name);
+                comp.second.flush(name, flushParams);
                 writable().abstractFilePosition =
                     comp.second.writable().abstractFilePosition;
             }
@@ -256,10 +257,10 @@ void Mesh::flush_impl(std::string const &name)
         else
         {
             for (auto &comp : *this)
-                comp.second.flush(comp.first);
+                comp.second.flush(comp.first, flushParams);
         }
 
-        flushAttributes();
+        flushAttributes(flushParams);
     }
 }
 
@@ -272,7 +273,7 @@ void Mesh::read()
 
     aRead.name = "geometry";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::STRING)
     {
         std::string tmpGeometry = Attribute(*aRead.resource).get<std::string>();
@@ -293,7 +294,7 @@ void Mesh::read()
 
     aRead.name = "dataOrder";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::CHAR)
         setDataOrder(
             static_cast<DataOrder>(Attribute(*aRead.resource).get<char>()));
@@ -313,7 +314,7 @@ void Mesh::read()
 
     aRead.name = "axisLabels";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::VEC_STRING || *aRead.dtype == DT::STRING)
         setAxisLabels(
             Attribute(*aRead.resource).get<std::vector<std::string> >());
@@ -323,7 +324,7 @@ void Mesh::read()
 
     aRead.name = "gridSpacing";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     Attribute a = Attribute(*aRead.resource);
     if (*aRead.dtype == DT::VEC_FLOAT || *aRead.dtype == DT::FLOAT)
         setGridSpacing(a.get<std::vector<float> >());
@@ -338,7 +339,7 @@ void Mesh::read()
 
     aRead.name = "gridGlobalOffset";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::VEC_DOUBLE || *aRead.dtype == DT::DOUBLE)
         setGridGlobalOffset(
             Attribute(*aRead.resource).get<std::vector<double> >());
@@ -348,7 +349,7 @@ void Mesh::read()
 
     aRead.name = "gridUnitSI";
     IOHandler()->enqueue(IOTask(this, aRead));
-    IOHandler()->flush();
+    IOHandler()->flush(internal::defaultFlushParams);
     if (*aRead.dtype == DT::DOUBLE)
         setGridUnitSI(Attribute(*aRead.resource).get<double>());
     else
@@ -364,7 +365,7 @@ void Mesh::read()
     {
         Parameter<Operation::LIST_PATHS> pList;
         IOHandler()->enqueue(IOTask(this, pList));
-        IOHandler()->flush();
+        IOHandler()->flush(internal::defaultFlushParams);
 
         Parameter<Operation::OPEN_PATH> pOpen;
         for (auto const &component : *pList.paths)
@@ -378,7 +379,7 @@ void Mesh::read()
 
         Parameter<Operation::LIST_DATASETS> dList;
         IOHandler()->enqueue(IOTask(this, dList));
-        IOHandler()->flush();
+        IOHandler()->flush(internal::defaultFlushParams);
 
         Parameter<Operation::OPEN_DATASET> dOpen;
         for (auto const &component : *dList.datasets)
@@ -386,7 +387,7 @@ void Mesh::read()
             MeshRecordComponent &rc = map[component];
             dOpen.name = component;
             IOHandler()->enqueue(IOTask(&rc, dOpen));
-            IOHandler()->flush();
+            IOHandler()->flush(internal::defaultFlushParams);
             rc.written() = false;
             rc.resetDataset(Dataset(*dOpen.dtype, *dOpen.extent));
             rc.written() = true;

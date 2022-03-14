@@ -289,7 +289,7 @@ public:
     static constexpr char const *const SCALAR = "\vScalar";
 
 private:
-    void flush(std::string const &);
+    void flush(std::string const &, internal::FlushParams const &);
     virtual void read();
 
     /**
