@@ -275,6 +275,12 @@ inline constexpr Datatype determineDatatype()
 }
 
 template <typename T>
+inline constexpr Datatype determineDatatype(T const *)
+{
+    return determineDatatype<T>();
+}
+
+template <typename T>
 inline constexpr Datatype determineDatatype(std::shared_ptr<T>)
 {
     using DT = Datatype;

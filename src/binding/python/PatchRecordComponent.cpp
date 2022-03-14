@@ -22,7 +22,6 @@
 #include <pybind11/stl.h>
 
 #include "openPMD/DatatypeHelpers.hpp"
-#include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/backend/PatchRecordComponent.hpp"
 #include "openPMD/binding/python/Numpy.hpp"
@@ -37,7 +36,7 @@ struct Prc_Load
     template <typename T>
     static void call(PatchRecordComponent &prc, py::array &a)
     {
-        prc.load<T>(shareRaw((T *)a.mutable_data()));
+        prc.loadRaw<T>((T *)a.mutable_data());
     }
 
     static constexpr char const *errorMsg = "Datatype not known in 'load'!";

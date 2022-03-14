@@ -25,7 +25,6 @@
 #include "openPMD/DatatypeHelpers.hpp"
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Series.hpp"
-#include "openPMD/auxiliary/ShareRaw.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 #include "openPMD/binding/python/Numpy.hpp"
 #include "openPMD/binding/python/Pickle.hpp"

@@ -42,18 +42,29 @@ namespace openPMD
  *          reference counting.
  */
 template <typename T>
-std::shared_ptr<T> shareRaw(T *x)
+[[deprecated(
+    "For storing/loading data via raw pointers use "
+    "storeChunkRaw<>()/loadChunkRaw<>()")]] //
+std::shared_ptr<T>
+shareRaw(T *x)
 {
     return std::shared_ptr<T>(x, [](T *) {});
 }
 
 template <typename T>
-std::shared_ptr<T const> shareRaw(T const *x)
+[[deprecated(
+    "For storing/loading data via raw pointers use "
+    "storeChunkRaw<>()/loadChunkRaw<>()")]] //
+std::shared_ptr<T const>
+shareRaw(T const *x)
 {
     return std::shared_ptr<T const>(x, [](T const *) {});
 }
 
 template <typename T>
+[[deprecated(
+    "For storing/loading data via raw pointers use "
+    "storeChunkRaw<>()/loadChunkRaw<>()")]] //
 auto shareRaw(T &c)
     -> std::shared_ptr<typename std::remove_pointer<decltype(c.data())>::type>
 {
@@ -62,6 +73,9 @@ auto shareRaw(T &c)
 }
 
 template <typename T>
+[[deprecated(
+    "For storing/loading data via raw pointers use "
+    "storeChunkRaw<>()/loadChunkRaw<>()")]] //
 auto shareRaw(T const &c)
     -> std::shared_ptr<typename std::remove_pointer<decltype(c.data())>::type>
 {

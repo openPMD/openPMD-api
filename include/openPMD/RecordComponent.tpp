@@ -23,6 +23,7 @@
 
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Span.hpp"
+#include "openPMD/auxiliary/TypeTraits.hpp"
 
 namespace openPMD
 {
@@ -157,6 +158,15 @@ inline void RecordComponent::loadChunk(
     }
 }
 
+template <typename T>
+inline void RecordComponent::loadChunkRaw(T *ptr, Offset offset, Extent extent)
+{
+    loadChunk(
+        std::shared_ptr<T>{ptr, [](auto const *) {}},
+        std::move(offset),
+        std::move(extent));
+}
+
 template< typename T >
 inline void
 RecordComponent::storeChunk(std::shared_ptr<T> data, Offset o, Extent e)
@@ -218,11 +228,19 @@ RecordComponent::storeChunk(std::shared_ptr<T[]> data, Offset o, Extent e)
         std::move(e));
 }
 
+template <typename T>
+void RecordComponent::storeChunkRaw(T *ptr, Offset offset, Extent extent)
+{
+    storeChunk(
+        std::shared_ptr<T>{ptr, [](auto const *) {}},
+        std::move(offset),
+        std::move(extent));
+}
+
 template< typename T_ContiguousContainer >
 inline typename std::enable_if<
-    traits::IsContiguousContainer< T_ContiguousContainer >::value
->::type
-RecordComponent::storeChunk(T_ContiguousContainer & data, Offset o, Extent e)
+    auxiliary::IsContiguousContainer_v<T_ContiguousContainer> >::type
+RecordComponent::storeChunk(T_ContiguousContainer &data, Offset o, Extent e)
 {
     uint8_t dim = getDimensionality();
 
@@ -241,7 +259,11 @@ RecordComponent::storeChunk(T_ContiguousContainer & data, Offset o, Extent e)
     else
         extent = e;
 
-    storeChunk(shareRaw(data), offset, extent);
+    using value_type = typename T_ContiguousContainer::value_type;
+    storeChunk(
+        std::shared_ptr<value_type>{data.data(), [](auto const *) {}},
+        offset,
+        extent);
 }
 
 template< typename T, typename F >

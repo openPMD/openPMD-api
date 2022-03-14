@@ -858,7 +858,7 @@ void file_based_write_read(std::string file_ending)
 
             Offset chunk_offset = {0, local_Nz * mpi_rank};
             Extent chunk_extent = {global_Nx, local_Nz};
-            E_x.storeChunk(io::shareRaw(E_x_data), chunk_offset, chunk_extent);
+            E_x.storeChunk(E_x_data, chunk_offset, chunk_extent);
             series.flush();
         }
     }

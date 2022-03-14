@@ -22,6 +22,7 @@
 
 #include "openPMD/Dataset.hpp"
 #include "openPMD/auxiliary/ShareRaw.hpp"
+#include "openPMD/auxiliary/TypeTraits.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 
 #include <array>
@@ -42,34 +43,6 @@
 
 namespace openPMD
 {
-namespace traits
-{
-    /** Emulate in the C++17 concept ContiguousContainer
-     *
-     * Users can implement this trait for a type to signal it can be used as
-     * contiguous container.
-     *
-     * See:
-     *   https://en.cppreference.com/w/cpp/named_req/ContiguousContainer
-     */
-    template <typename T>
-    struct IsContiguousContainer
-    {
-        static constexpr bool value = false;
-    };
-
-    template <typename T_Value>
-    struct IsContiguousContainer<std::vector<T_Value> >
-    {
-        static constexpr bool value = true;
-    };
-
-    template <typename T_Value, std::size_t N>
-    struct IsContiguousContainer<std::array<T_Value, N> >
-    {
-        static constexpr bool value = true;
-    };
-} // namespace traits
 
 template <typename T>
 class DynamicMemoryView;
@@ -239,14 +212,20 @@ public:
     void loadChunk(std::shared_ptr<T>, Offset, Extent);
 
     template <typename T>
+    void loadChunkRaw(T *, Offset, Extent);
+
+    template <typename T>
     void storeChunk(std::shared_ptr<T>, Offset, Extent);
 
     template <typename T>
     void storeChunk(std::shared_ptr<T[]>, Offset, Extent);
 
+    template <typename T>
+    void storeChunkRaw(T *, Offset, Extent);
+
     template <typename T_ContiguousContainer>
     typename std::enable_if<
-        traits::IsContiguousContainer<T_ContiguousContainer>::value>::type
+        auxiliary::IsContiguousContainer_v<T_ContiguousContainer>>::type
     storeChunk(T_ContiguousContainer &, Offset = {0u}, Extent = {-1u});
 
     /**

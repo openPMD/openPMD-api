@@ -85,6 +85,9 @@ public:
     void load(std::shared_ptr<T>);
 
     template <typename T>
+    void loadRaw(T *);
+
+    template <typename T>
     void store(uint64_t idx, T);
 
     // clang-format off
@@ -167,6 +170,14 @@ inline void PatchRecordComponent::load(std::shared_ptr<T> data)
     dRead.data = std::static_pointer_cast<void>(data);
     auto &rc = get();
     rc.m_chunks.push(IOTask(this, dRead));
+}
+
+template <typename T>
+inline void PatchRecordComponent::loadRaw(T *data)
+{
+    // @todo maybe use an internal shareraw version to avoid overlooking
+    // this instance in future
+    load<T>(std::shared_ptr<T>{data, [](auto const *) {}});
 }
 
 template <typename T>
