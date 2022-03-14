@@ -211,10 +211,11 @@ target_link_libraries(openPMD::thirdparty::nlohmann_json
 
 # external library: toml11
 if(openPMD_USE_INTERNAL_TOML11)
+    set(toml11_INSTALL OFF CACHE INTERNAL "")
     add_subdirectory("${openPMD_SOURCE_DIR}/share/openPMD/thirdParty/toml11")
-    message(STATUS "toml11: Using INTERNAL version '3.7.0'")
+    message(STATUS "toml11: Using INTERNAL version '3.7.1'")
 else()
-    find_package(toml11 3.7.0 CONFIG REQUIRED)
+    find_package(toml11 3.7.1 CONFIG REQUIRED)
     message(STATUS "toml11: Found version '${toml11_VERSION}'")
 endif()
 add_library(openPMD::thirdparty::toml11 INTERFACE IMPORTED)
