@@ -2,6 +2,7 @@
 // Distributed under the MIT License.
 #ifndef TOML11_SERIALIZER_HPP
 #define TOML11_SERIALIZER_HPP
+#include <cmath>
 #include <cstdio>
 
 #include <limits>
@@ -28,6 +29,11 @@ template<typename charT, typename traits, typename Alloc>
 std::basic_string<charT, traits, Alloc>
 format_key(const std::basic_string<charT, traits, Alloc>& k)
 {
+    if(k.empty())
+    {
+        return std::string("\"\"");
+    }
+
     // check the key can be a bare (unquoted) key
     detail::location loc(k, std::vector<char>(k.begin(), k.end()));
     detail::lex_unquoted_key::invoke(loc);
@@ -60,9 +66,12 @@ template<typename charT, typename traits, typename Alloc>
 std::basic_string<charT, traits, Alloc>
 format_keys(const std::vector<std::basic_string<charT, traits, Alloc>>& keys)
 {
-    std::basic_string<charT, traits, Alloc> serialized;
-    if(keys.empty()) {return serialized;}
+    if(keys.empty())
+    {
+        return std::string("\"\"");
+    }
 
+    std::basic_string<charT, traits, Alloc> serialized;
     for(const auto& ky : keys)
     {
         serialized += format_key(ky);
@@ -115,6 +124,29 @@ struct serializer
     }
     std::string operator()(const floating_type f) const
     {
+        if(std::isnan(f))
+        {
+            if(std::signbit(f))
+            {
+                return std::string("-nan");
+            }
+            else
+            {
+                return std::string("nan");
+            }
+        }
+        else if(!std::isfinite(f))
+        {
+            if(std::signbit(f))
+            {
+                return std::string("-inf");
+            }
+            else
+            {
+                return std::string("inf");
+            }
+        }
+
         const auto fmt = "%.*g";
         const auto bsz = std::snprintf(nullptr, 0, fmt, this->float_prec_, f);
         // +1 for null character(\0)
@@ -146,8 +178,9 @@ struct serializer
     {
         if(s.kind == string_t::basic)
         {
-            if(std::find(s.str.cbegin(), s.str.cend(), '\n') != s.str.cend() ||
-               std::find(s.str.cbegin(), s.str.cend(), '\"') != s.str.cend())
+            if((std::find(s.str.cbegin(), s.str.cend(), '\n') != s.str.cend() ||
+                std::find(s.str.cbegin(), s.str.cend(), '\"') != s.str.cend()) &&
+               this->width_ != (std::numeric_limits<std::size_t>::max)())
             {
                 // if linefeed or double-quote is contained,
                 // make it multiline basic string.
@@ -309,7 +342,17 @@ struct serializer
                 continue;
             }
             std::string next_elem;
-            next_elem += toml::visit(*this, item);
+            if(item.is_table())
+            {
+                serializer ser(*this);
+                ser.can_be_inlined_ = true;
+                ser.width_ = (std::numeric_limits<std::size_t>::max)();
+                next_elem += toml::visit(ser, item);
+            }
+            else
+            {
+                next_elem += toml::visit(*this, item);
+            }
 
             // comma before newline.
             if(!next_elem.empty() && next_elem.back() == '\n') {next_elem.pop_back();}
@@ -398,7 +441,19 @@ struct serializer
                 case '\f': {retval += "\\f";  break;}
                 case '\n': {retval += "\\n";  break;}
                 case '\r': {retval += "\\r";  break;}
-                default  : {retval += c;      break;}
+                default  :
+                {
+                    if((0x00 <= c && c <= 0x08) || (0x0A <= c && c <= 0x1F) || c == 0x7F)
+                    {
+                        retval += "\\u00";
+                        retval += char(48 + (c / 16));
+                        retval += char((c % 16 < 10 ? 48 : 55) + (c % 16));
+                    }
+                    else
+                    {
+                        retval += c;
+                    }
+                }
             }
         }
         return retval;
@@ -432,7 +487,21 @@ struct serializer
                     }
                     break;
                 }
-                default: {retval += *i; break;}
+                default  :
+                {
+                    const auto c = *i;
+                    if((0x00 <= c && c <= 0x08) || (0x0A <= c && c <= 0x1F) || c == 0x7F)
+                    {
+                        retval += "\\u00";
+                        retval += char(48 + (c / 16));
+                        retval += char((c % 16 < 10 ? 48 : 55) + (c % 16));
+                    }
+                    else
+                    {
+                        retval += c;
+                    }
+                }
+
             }
         }
         // Only 1 or 2 consecutive `"`s are allowed in multiline basic string.
@@ -764,7 +833,7 @@ format(const basic_value<C, M, V>& v, std::size_t w = 80u,
             oss << v.comments();
             oss << '\n'; // to split the file comment from the first element
         }
-        const auto serialized = visit(serializer<value_type>(w, fprec, no_comment, false), v);
+        const auto serialized = visit(serializer<value_type>(w, fprec, false, no_comment), v);
         oss << serialized;
         return oss.str();
     }
@@ -785,7 +854,7 @@ template<typename charT, typename traits>
 std::basic_ostream<charT, traits>&
 nocomment(std::basic_ostream<charT, traits>& os)
 {
-    // by default, it is zero. and by defalut, it shows comments.
+    // by default, it is zero. and by default, it shows comments.
     os.iword(detail::comment_index(os)) = 1;
     return os;
 }
@@ -794,7 +863,7 @@ template<typename charT, typename traits>
 std::basic_ostream<charT, traits>&
 showcomment(std::basic_ostream<charT, traits>& os)
 {
-    // by default, it is zero. and by defalut, it shows comments.
+    // by default, it is zero. and by default, it shows comments.
     os.iword(detail::comment_index(os)) = 0;
     return os;
 }
@@ -811,7 +880,7 @@ operator<<(std::basic_ostream<charT, traits>& os, const basic_value<C, M, V>& v)
     const int  fprec = static_cast<int>(os.precision());
     os.width(0);
 
-    // by defualt, iword is initialized byl 0. And by default, toml11 outputs
+    // by default, iword is initialized by 0. And by default, toml11 outputs
     // comments. So `0` means showcomment. 1 means nocommnet.
     const bool no_comment = (1 == os.iword(detail::comment_index(os)));
 
