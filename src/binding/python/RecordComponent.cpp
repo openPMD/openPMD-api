@@ -539,53 +539,51 @@ void load_chunk(
         }
     }
 
+    auto load_data =
+        [&r, &buffer, &buffer_info, &offset, &extent](auto cxxtype) {
+            using CXXType = decltype(cxxtype);
+            buffer.inc_ref();
+            // buffer_info.inc_ref();
+            void *data = buffer_info.ptr;
+            std::shared_ptr<CXXType> shared(
+                (CXXType *)data, [buffer](CXXType *) { buffer.dec_ref(); });
+            r.loadChunk(std::move(shared), offset, extent);
+        };
+
     if (r.getDatatype() == Datatype::CHAR)
-        r.loadChunk<char>(shareRaw((char *)buffer_info.ptr), offset, extent);
+        load_data((char)0);
     else if (r.getDatatype() == Datatype::UCHAR)
-        r.loadChunk<unsigned char>(
-            shareRaw((unsigned char *)buffer_info.ptr), offset, extent);
+        load_data((unsigned char)0);
     else if (r.getDatatype() == Datatype::SHORT)
-        r.loadChunk<short>(shareRaw((short *)buffer_info.ptr), offset, extent);
+        load_data((short)0);
     else if (r.getDatatype() == Datatype::INT)
-        r.loadChunk<int>(shareRaw((int *)buffer_info.ptr), offset, extent);
+        load_data((int)0);
     else if (r.getDatatype() == Datatype::LONG)
-        r.loadChunk<long>(shareRaw((long *)buffer_info.ptr), offset, extent);
+        load_data((long)0);
     else if (r.getDatatype() == Datatype::LONGLONG)
-        r.loadChunk<long long>(
-            shareRaw((long long *)buffer_info.ptr), offset, extent);
+        load_data((long long)0);
     else if (r.getDatatype() == Datatype::USHORT)
-        r.loadChunk<unsigned short>(
-            shareRaw((unsigned short *)buffer_info.ptr), offset, extent);
+        load_data((unsigned short)0);
     else if (r.getDatatype() == Datatype::UINT)
-        r.loadChunk<unsigned int>(
-            shareRaw((unsigned int *)buffer_info.ptr), offset, extent);
+        load_data((unsigned int)0);
     else if (r.getDatatype() == Datatype::ULONG)
-        r.loadChunk<unsigned long>(
-            shareRaw((unsigned long *)buffer_info.ptr), offset, extent);
+        load_data((unsigned long)0);
     else if (r.getDatatype() == Datatype::ULONGLONG)
-        r.loadChunk<unsigned long long>(
-            shareRaw((unsigned long long *)buffer_info.ptr), offset, extent);
+        load_data((unsigned long long)0);
     else if (r.getDatatype() == Datatype::LONG_DOUBLE)
-        r.loadChunk<long double>(
-            shareRaw((long double *)buffer_info.ptr), offset, extent);
+        load_data((long double)0);
     else if (r.getDatatype() == Datatype::DOUBLE)
-        r.loadChunk<double>(
-            shareRaw((double *)buffer_info.ptr), offset, extent);
+        load_data((double)0);
     else if (r.getDatatype() == Datatype::FLOAT)
-        r.loadChunk<float>(shareRaw((float *)buffer_info.ptr), offset, extent);
+        load_data((float)0);
     else if (r.getDatatype() == Datatype::CLONG_DOUBLE)
-        r.loadChunk<std::complex<long double>>(
-            shareRaw((std::complex<long double> *)buffer_info.ptr),
-            offset,
-            extent);
+        load_data((std::complex<long double>)0);
     else if (r.getDatatype() == Datatype::CDOUBLE)
-        r.loadChunk<std::complex<double>>(
-            shareRaw((std::complex<double> *)buffer_info.ptr), offset, extent);
+        load_data((std::complex<double>)0);
     else if (r.getDatatype() == Datatype::CFLOAT)
-        r.loadChunk<std::complex<float>>(
-            shareRaw((std::complex<float> *)buffer_info.ptr), offset, extent);
+        load_data((std::complex<float>)0);
     else if (r.getDatatype() == Datatype::BOOL)
-        r.loadChunk<bool>(shareRaw((bool *)buffer_info.ptr), offset, extent);
+        load_data((bool)0);
     else
         throw std::runtime_error(
             std::string("Datatype not known in 'loadChunk'!"));
@@ -777,8 +775,14 @@ void init_RecordComponent(py::module &m)
                 py::ssize_t numElements = 1;
                 if (buf.ndim > 0)
                 {
+                    std::cout << "Buffer has dimensionality: " << buf.ndim
+                              << std::endl;
                     for (auto d = 0; d < buf.ndim; ++d)
+                    {
+                        std::cout << "Extent of dimensionality " << d << ": "
+                                  << buf.shape.at(d) << std::endl;
                         numElements *= buf.shape.at(d);
+                    }
                 }
 
                 // Numpy: Handling of arrays and scalars
@@ -869,7 +873,8 @@ void init_RecordComponent(py::module &m)
                 {
                     throw std::runtime_error(
                         "make_constant: "
-                        "Only scalar values supported!");
+                        "Only scalar values supported! (found " +
+                        std::to_string(numElements) + "values)");
                 }
             },
             py::arg("value"))

@@ -462,6 +462,9 @@ void init_Attributable(py::module &m)
             "get_attribute",
             [](Attributable &attr, std::string const &key) {
                 auto v = attr.getAttribute(key);
+                std::cout << "Attribute '" << key << "' has type: " << v.dtype
+                          << std::endl
+                          << " and value: " << std::to_string(v) << std::endl;
                 return v.getResource();
                 // TODO instead of returning lists, return all arrays (ndim > 0)
                 // as numpy arrays?
