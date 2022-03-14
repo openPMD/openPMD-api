@@ -499,8 +499,10 @@ void Attributable::readAttributes(ReadMode mode)
                 internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::VEC_CLONG_DOUBLE:
-            setAttribute(
-                att, a.get<std::vector<std::complex<long double> > >());
+            setAttributeImpl(
+                att,
+                a.get<std::vector<std::complex<long double> > >(),
+                internal::SetAttributeMode::WhileReadingAttributes);
             break;
         case DT::VEC_STRING:
             setAttributeImpl(
