@@ -7,6 +7,6 @@ else
     # received no arguments, find files on our own
     find include/ src/ test/ examples/ \
             -regextype egrep \
-            -type f -regex '.*\.(hpp|cpp|hpp\.in)$' \
+            -type f -regex '.*\.(c|cpp|cxx|h|hpp|tpp)(\.in)?$' \
         | xargs clang-format-13 -i
 fi

@@ -68,6 +68,8 @@ repos:
   rev: v13.0.1
   hooks:
   - id: clang-format
+    types: [file]
+    files: '.*\.(c|cpp|cxx|h|hpp|tpp)(\.in)?$'
 
 # Autoremoves unused Python imports
 - repo: https://github.com/hadialqattan/pycln
