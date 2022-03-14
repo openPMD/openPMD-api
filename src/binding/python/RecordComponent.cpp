@@ -539,6 +539,10 @@ void load_chunk(
         }
     }
 
+    // here, we increase a reference on the user-passed data so that
+    // temporary and lost-scope variables stay alive until we flush
+    // note: this does not yet prevent the user, as in C++, to build
+    //       a race condition by manipulating the data they passed
     auto load_data =
         [&r, &buffer, &buffer_info, &offset, &extent](auto cxxtype) {
             using CXXType = decltype(cxxtype);
