@@ -447,7 +447,8 @@ Attributable::setAttribute(std::string const &key, char const value[])
         key, value, internal::SetAttributeMode::FromPublicAPICall);
 }
 
-// TODO explicitly instantiate Attributable::setAttribute for all T in Datatype
+// note: we explicitly instantiate Attributable::setAttributeImpl for all T in
+// Datatype in Attributable.cpp
 template <typename T>
 inline bool Attributable::setAttributeImpl(
     std::string const &key,
