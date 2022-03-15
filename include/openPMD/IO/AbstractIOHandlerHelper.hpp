@@ -35,6 +35,8 @@ namespace openPMD
  * @param   access      Access mode describing desired operations and
  permissions of the desired handler.
  * @param   format      Format describing the IO backend of the desired handler.
+ * @param   originalExtension The filename extension as it was originally
+ *                            specified by the user.
  * @param   comm        MPI communicator used for IO.
  * @param   options     JSON-formatted option string, to be interpreted by
  *                      the backend.
@@ -47,6 +49,7 @@ std::shared_ptr<AbstractIOHandler> createIOHandler(
     std::string path,
     Access access,
     Format format,
+    std::string originalExtension,
     MPI_Comm comm,
     JSON options);
 #endif
@@ -58,6 +61,8 @@ std::shared_ptr<AbstractIOHandler> createIOHandler(
  * @param   access      Access describing desired operations and permissions
  * of the desired handler.
  * @param   format      Format describing the IO backend of the desired handler.
+ * @param   originalExtension The filename extension as it was originally
+ *                            specified by the user.
  * @param   options     JSON-formatted option string, to be interpreted by
  *                      the backend.
  * @tparam  JSON        Substitute for nlohmann::json. Templated to avoid
@@ -66,9 +71,16 @@ std::shared_ptr<AbstractIOHandler> createIOHandler(
  */
 template <typename JSON>
 std::shared_ptr<AbstractIOHandler> createIOHandler(
-    std::string path, Access access, Format format, JSON options = JSON());
+    std::string path,
+    Access access,
+    Format format,
+    std::string originalExtension,
+    JSON options = JSON());
 
 // version without configuration to use in AuxiliaryTest
-std::shared_ptr<AbstractIOHandler>
-createIOHandler(std::string path, Access access, Format format);
+std::shared_ptr<AbstractIOHandler> createIOHandler(
+    std::string path,
+    Access access,
+    Format format,
+    std::string originalExtension);
 } // namespace openPMD

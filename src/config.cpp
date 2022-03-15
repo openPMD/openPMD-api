@@ -45,6 +45,13 @@ std::vector<std::string> openPMD::getFileExtensions()
 #if openPMD_HAVE_ADIOS1 || openPMD_HAVE_ADIOS2
     fext.emplace_back("bp");
 #endif
+#if openPMD_HAVE_ADIOS2
+    // BP4 is always available in ADIOS2
+    fext.emplace_back("bp4");
+#endif
+#ifdef ADIOS2_HAVE_BP5
+    fext.emplace_back("bp5");
+#endif
 #ifdef ADIOS2_HAVE_SST
     fext.emplace_back("sst");
 #endif

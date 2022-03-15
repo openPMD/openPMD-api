@@ -44,6 +44,18 @@ namespace openPMD
 {
 namespace
 {
+    struct CleanedFilename
+    {
+        std::string body;
+        std::string extension;
+
+        std::tuple<std::string, std::string> decompose() &&
+        {
+            return std::tuple<std::string, std::string>{
+                std::move(body), std::move(extension)};
+        }
+    };
+
     /** Remove the filename extension of a given storage format.
      *
      * @param   filename    String containing the filename, possibly with
@@ -51,7 +63,8 @@ namespace
      * @param   f           File format to remove filename extension for.
      * @return  String containing the filename without filename extension.
      */
-    std::string cleanFilename(std::string const &filename, Format f);
+    CleanedFilename cleanFilename(
+        std::string const &filename, std::string const &filenameExtension);
 
     /** Compound return type for regex matching of filenames */
     struct Match
@@ -77,7 +90,7 @@ namespace
      * zero, any amount of padding is matched.
      * @param   postfix     String containing tail (i.e. after %T) of desired
      * filename without filename extension.
-     * @param   f           File format to check backend applicability for.
+     * @param   filenameExtension Filename extension to match against
      * @return  Functor returning tuple of bool and int.
      *          bool is True if file could be of type f and matches the
      * iterationEncoding. False otherwise. int is the amount of padding present
@@ -87,7 +100,7 @@ namespace
         std::string const &prefix,
         int padding,
         std::string const &postfix,
-        Format f);
+        std::string const &extension);
 } // namespace
 
 struct Series::ParsedInput
@@ -98,6 +111,7 @@ struct Series::ParsedInput
     IterationEncoding iterationEncoding;
     std::string filenamePrefix;
     std::string filenamePostfix;
+    std::string filenameExtension;
     int filenamePadding = -1;
 }; // ParsedInput
 
@@ -443,9 +457,10 @@ std::unique_ptr<Series::ParsedInput> Series::parseInput(std::string filepath)
             "Can not determine iterationFormat from filename " + input->name);
 
     input->filenamePostfix =
-        cleanFilename(input->filenamePostfix, input->format);
+        cleanFilename(input->filenamePostfix, suffix(input->format)).body;
 
-    input->name = cleanFilename(input->name, input->format);
+    std::tie(input->name, input->filenameExtension) =
+        cleanFilename(input->name, suffix(input->format)).decompose();
 
     return input;
 }
@@ -536,6 +551,7 @@ void Series::init(
     series.m_filenamePrefix = input->filenamePrefix;
     series.m_filenamePostfix = input->filenamePostfix;
     series.m_filenamePadding = input->filenamePadding;
+    series.m_filenameExtension = input->filenameExtension;
 
     if (series.m_iterationEncoding == IterationEncoding::fileBased &&
         !series.m_filenamePrefix.empty() &&
@@ -599,7 +615,7 @@ Given file pattern: ')END"
                 series.m_filenamePrefix,
                 series.m_filenamePadding,
                 series.m_filenamePostfix,
-                series.m_format),
+                series.m_filenameExtension),
             IOHandler()->directory);
         switch (padding)
         {
@@ -922,7 +938,7 @@ void Series::readFileBased()
         series.m_filenamePrefix,
         series.m_filenamePadding,
         series.m_filenamePostfix,
-        series.m_format);
+        series.m_filenameExtension);
 
     int padding = autoDetectPadding(
         std::move(isPartOfSeries),
@@ -930,7 +946,11 @@ void Series::readFileBased()
         // foreach found file with `filename` and `index`:
         [&series](uint64_t index, std::string const &filename) {
             Iteration &i = series.iterations[index];
-            i.deferParseAccess({std::to_string(index), index, true, filename});
+            i.deferParseAccess(
+                {std::to_string(index),
+                 index,
+                 true,
+                 cleanFilename(filename, series.m_filenameExtension).body});
         });
 
     if (series.iterations.empty())
@@ -1652,7 +1672,7 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
         std::map<std::string, Format> const backendDescriptors{
             {"hdf5", Format::HDF5},
             {"adios1", Format::ADIOS1},
-            {"adios2", Format::ADIOS2},
+            {"adios2", Format::ADIOS2_BP},
             {"json", Format::JSON}};
         std::string backend;
         getJsonOptionLowerCase(options, "backend", backend);
@@ -1661,7 +1681,20 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
             auto it = backendDescriptors.find(backend);
             if (it != backendDescriptors.end())
             {
-                if (input.format != Format::DUMMY &&
+                if (backend == "adios2" &&
+                    (input.format == Format::ADIOS2_BP4 ||
+                     input.format == Format::ADIOS2_BP5 ||
+                     input.format == Format::ADIOS2_SST ||
+                     input.format == Format::ADIOS2_SSC ||
+                     input.format == Format::ADIOS2_BP))
+                {
+                    // backend = "adios2" should work as a catch-all for all
+                    // different engines, using BP is just the default
+                    // If the file ending was more explicit, keep it.
+                    // -> Nothing to do
+                }
+                else if (
+                    input.format != Format::DUMMY &&
                     suffix(input.format) != suffix(it->second))
                 {
                     std::cerr << "[Warning] Supplied filename extension '"
@@ -1669,8 +1702,12 @@ void Series::parseJsonOptions(TracingJSON &options, ParsedInput &input)
                               << "' contradicts the backend specified via the "
                                  "'backend' key. Will go on with backend "
                               << it->first << "." << std::endl;
+                    input.format = it->second;
                 }
-                input.format = it->second;
+                else
+                {
+                    input.format = it->second;
+                }
             }
             else
             {
@@ -1768,8 +1805,13 @@ Series::Series(
         json::parseOptions(options, comm, /* considerFiles = */ true);
     auto input = parseInput(filepath);
     parseJsonOptions(optionsJson, *input);
-    auto handler =
-        createIOHandler(input->path, at, input->format, comm, optionsJson);
+    auto handler = createIOHandler(
+        input->path,
+        at,
+        input->format,
+        input->filenameExtension,
+        comm,
+        optionsJson);
     init(handler, std::move(input));
     json::warnGlobalUnusedOptions(optionsJson);
 }
@@ -1785,7 +1827,8 @@ Series::Series(
         json::parseOptions(options, /* considerFiles = */ true);
     auto input = parseInput(filepath);
     parseJsonOptions(optionsJson, *input);
-    auto handler = createIOHandler(input->path, at, input->format, optionsJson);
+    auto handler = createIOHandler(
+        input->path, at, input->format, input->filenameExtension, optionsJson);
     init(handler, std::move(input));
     json::warnGlobalUnusedOptions(optionsJson);
 }
@@ -1814,19 +1857,18 @@ WriteIterations Series::writeIterations()
 
 namespace
 {
-    std::string cleanFilename(std::string const &filename, Format f)
+    CleanedFilename cleanFilename(
+        std::string const &filename, std::string const &filenameExtension)
     {
-        switch (f)
+        std::string postfix =
+            auxiliary::replace_last(filename, filenameExtension, "");
+        if (postfix == filename)
         {
-        case Format::HDF5:
-        case Format::ADIOS1:
-        case Format::ADIOS2:
-        case Format::ADIOS2_SST:
-        case Format::ADIOS2_SSC:
-        case Format::JSON:
-            return auxiliary::replace_last(filename, suffix(f), "");
-        default:
-            return filename;
+            return {postfix, ""};
+        }
+        else
+        {
+            return {postfix, filenameExtension};
         }
     }
 
@@ -1851,14 +1893,8 @@ namespace
         std::string const &prefix,
         int padding,
         std::string const &postfix,
-        Format f)
+        std::string const &filenameSuffix)
     {
-        std::string filenameSuffix = suffix(f);
-        if (filenameSuffix.empty())
-        {
-            return [](std::string const &) -> Match { return {false, 0, 0}; };
-        }
-
         std::string nameReg = "^" + prefix;
         if (padding != 0)
         {

@@ -63,6 +63,7 @@ std::shared_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
     std::string path,
     Access access,
     Format format,
+    std::string /* filenameExtension */,
     MPI_Comm comm,
     json::TracingJSON options)
 {
@@ -75,9 +76,11 @@ std::shared_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
     case Format::ADIOS1:
         return constructIOHandler<ParallelADIOS1IOHandler, openPMD_HAVE_ADIOS1>(
             "ADIOS1", path, access, std::move(options), comm);
-    case Format::ADIOS2:
+    case Format::ADIOS2_BP:
+    case Format::ADIOS2_BP4:
+    case Format::ADIOS2_BP5:
         return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
-            "ADIOS2", path, access, comm, std::move(options), "bp4");
+            "ADIOS2", path, access, comm, std::move(options), "file");
     case Format::ADIOS2_SST:
         return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
             "ADIOS2", path, access, comm, std::move(options), "sst");
@@ -93,7 +96,11 @@ std::shared_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
 
 template <>
 std::shared_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
-    std::string path, Access access, Format format, json::TracingJSON options)
+    std::string path,
+    Access access,
+    Format format,
+    std::string /* filenameExtension */,
+    json::TracingJSON options)
 {
     (void)options;
     switch (format)
@@ -104,9 +111,11 @@ std::shared_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
     case Format::ADIOS1:
         return constructIOHandler<ADIOS1IOHandler, openPMD_HAVE_ADIOS1>(
             "ADIOS1", path, access, std::move(options));
-    case Format::ADIOS2:
+    case Format::ADIOS2_BP:
+    case Format::ADIOS2_BP4:
+    case Format::ADIOS2_BP5:
         return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
-            "ADIOS2", path, access, std::move(options), "bp4");
+            "ADIOS2", path, access, std::move(options), "file");
     case Format::ADIOS2_SST:
         return constructIOHandler<ADIOS2IOHandler, openPMD_HAVE_ADIOS2>(
             "ADIOS2", path, access, std::move(options), "sst");
@@ -122,13 +131,17 @@ std::shared_ptr<AbstractIOHandler> createIOHandler<json::TracingJSON>(
     }
 }
 
-std::shared_ptr<AbstractIOHandler>
-createIOHandler(std::string path, Access access, Format format)
+std::shared_ptr<AbstractIOHandler> createIOHandler(
+    std::string path,
+    Access access,
+    Format format,
+    std::string originalExtension)
 {
     return createIOHandler(
         std::move(path),
         access,
         format,
+        std::move(originalExtension),
         json::TracingJSON(json::ParsedConfig{}));
 }
 } // namespace openPMD
