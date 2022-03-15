@@ -199,8 +199,10 @@ auto doConvert(T *pv) -> U
         throw std::runtime_error(
             "getCast: no scalar to vector conversion possible.");
     }
-
-    throw std::runtime_error("getCast: no cast possible.");
+    else
+    {
+        throw std::runtime_error("getCast: no cast possible.");
+    }
 }
 
 /** Retrieve a stored specific Attribute and cast if convertible.
