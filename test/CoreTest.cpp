@@ -1074,12 +1074,24 @@ TEST_CASE("backend_via_json", "[core]")
          * BP4 engine should be selected even if ending .sst is given
          */
         Series series(
-            "../samples/optionsViaJsonOverwritesAutomaticDetection.sst",
+            "../samples/optionsViaJsonOverwritesAutomaticDetectionFile.sst",
+            Access::CREATE,
+            R"({"adios2": {"engine": {"type": "file"}}})");
+    }
+    REQUIRE(auxiliary::directory_exists(
+        "../samples/optionsViaJsonOverwritesAutomaticDetectionFile.sst"));
+
+    {
+        /*
+         * BP4 engine should be selected even if ending .sst is given
+         */
+        Series series(
+            "../samples/optionsViaJsonOverwritesAutomaticDetectionBp4.sst",
             Access::CREATE,
             R"({"adios2": {"engine": {"type": "bp4"}}})");
     }
     REQUIRE(auxiliary::directory_exists(
-        "../samples/optionsViaJsonOverwritesAutomaticDetection.bp"));
+        "../samples/optionsViaJsonOverwritesAutomaticDetectionBp4.sst"));
 
 #if openPMD_HAVE_ADIOS1
     setenv("OPENPMD_BP_BACKEND", "ADIOS1", 1);
