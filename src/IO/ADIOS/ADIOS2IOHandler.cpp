@@ -69,10 +69,12 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     AbstractIOHandler *handler,
     MPI_Comm communicator,
     json::TracingJSON cfg,
-    std::string engineType)
+    std::string engineType,
+    std::string specifiedExtension)
     : AbstractIOHandlerImplCommon(handler)
     , m_ADIOS{communicator}
     , m_engineType(std::move(engineType))
+    , m_userSpecifiedExtension{std::move(specifiedExtension)}
 {
     init(std::move(cfg));
 }
@@ -80,10 +82,14 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
 #endif // openPMD_HAVE_MPI
 
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
-    AbstractIOHandler *handler, json::TracingJSON cfg, std::string engineType)
+    AbstractIOHandler *handler,
+    json::TracingJSON cfg,
+    std::string engineType,
+    std::string specifiedExtension)
     : AbstractIOHandlerImplCommon(handler)
     , m_ADIOS{}
     , m_engineType(std::move(engineType))
+    , m_userSpecifiedExtension(std::move(specifiedExtension))
 {
     init(std::move(cfg));
 }
@@ -228,28 +234,85 @@ ADIOS2IOHandlerImpl::getOperators()
     return getOperators(m_config);
 }
 
+using AcceptedEndingsForEngine = std::map<std::string, std::string>;
+
 std::string ADIOS2IOHandlerImpl::fileSuffix() const
 {
     // SST engine adds its suffix unconditionally
     // so we don't add it
-    static std::map<std::string, std::string> endings{
-        {"sst", ""},
-        {"staging", ""},
-        {"bp4", ".bp"},
-        {"bp5", ".bp"},
-        {"bp3", ".bp"},
-        {"file", ".bp"},
-        {"hdf5", ".h5"},
-        {"nullcore", ".nullcore"},
-        {"ssc", ".ssc"}};
-    auto it = endings.find(m_engineType);
-    if (it != endings.end())
+    static std::map<std::string, AcceptedEndingsForEngine> const endings{
+        {"sst", {{"", ""}, {".sst", ""}}},
+        {"staging", {{"", ""}, {".sst", ""}}},
+        {"filestream", {{".bp", ".bp"}, {".bp4", ".bp4"}, {".bp5", ".bp5"}}},
+        {"bp4", {{".bp4", ".bp4"}, {".bp", ".bp"}}},
+        {"bp5", {{".bp5", ".bp5"}, {".bp", ".bp"}}},
+        {"bp3", {{".bp", ".bp"}}},
+        {"file", {{".bp", ".bp"}, {".bp4", ".bp4"}, {".bp5", ".bp5"}}},
+        {"hdf5", {{".h5", ".h5"}}},
+        {"nullcore", {{".nullcore", ".nullcore"}, {".bp", ".bp"}}},
+        {"ssc", {{".ssc", ".ssc"}}}};
+
+    if (auto engine = endings.find(m_engineType); engine != endings.end())
     {
-        return it->second;
+        auto const &acceptedEndings = engine->second;
+        if (auto ending = acceptedEndings.find(m_userSpecifiedExtension);
+            ending != acceptedEndings.end())
+        {
+            if ((m_engineType == "file" || m_engineType == "filestream") &&
+                (m_userSpecifiedExtension == ".bp3" ||
+                 m_userSpecifiedExtension == ".bp4" ||
+                 m_userSpecifiedExtension == ".bp5"))
+            {
+                std::cerr
+                    << "[ADIOS2] Explicit ending '" << m_userSpecifiedExtension
+                    << "' was specified in combination with generic file "
+                       "engine '"
+                    << m_engineType
+                    << "'. ADIOS2 will pick a default file ending "
+                       "independent of specified suffix. (E.g. 'simData.bp5' "
+                       "might actually be written as a BP4 dataset.)"
+                    << std::endl;
+            }
+            return ending->second;
+        }
+        else if (m_userSpecifiedExtension.empty())
+        {
+            std::cerr << "[ADIOS2] No file ending specified. Will not add one."
+                      << std::endl;
+            if (m_engineType == "bp3")
+            {
+                std::cerr
+                    << "Note that the ADIOS2 BP3 engine will add its "
+                       "ending '.bp' if not specified (e.g. 'simData.bp3' "
+                       "will appear on disk as 'simData.bp3.bp')."
+                    << std::endl;
+            }
+            return "";
+        }
+        else
+        {
+            std::cerr << "[ADIOS2] Specified ending '"
+                      << m_userSpecifiedExtension
+                      << "' does not match the selected engine '"
+                      << m_engineType
+                      << "'. Will use the specified ending anyway."
+                      << std::endl;
+            if (m_engineType == "bp3")
+            {
+                std::cerr
+                    << "Note that the ADIOS2 BP3 engine will add its "
+                       "ending '.bp' if not specified (e.g. 'simData.bp3' "
+                       "will appear on disk as 'simData.bp3.bp')."
+                    << std::endl;
+            }
+            return m_userSpecifiedExtension;
+        }
     }
     else
     {
-        return ".adios2";
+        throw error::WrongAPIUsage(
+            "[ADIOS2] Specified engine '" + m_engineType +
+            "' is not supported by ADIOS2 backend.");
     }
 }
 
@@ -386,12 +449,7 @@ void ADIOS2IOHandlerImpl::createFile(
 
     if (!writable->written)
     {
-        std::string name = parameters.name;
-        std::string suffix(fileSuffix());
-        if (!auxiliary::ends_with(name, suffix))
-        {
-            name += suffix;
-        }
+        std::string name = parameters.name + fileSuffix();
 
         auto res_pair = getPossiblyExisting(name);
         InvalidatableFile shared_name = InvalidatableFile(name);
@@ -561,12 +619,7 @@ void ADIOS2IOHandlerImpl::openFile(
             m_handler->directory);
     }
 
-    std::string name = parameters.name;
-    std::string suffix(fileSuffix());
-    if (!auxiliary::ends_with(name, suffix))
-    {
-        name += suffix;
-    }
+    std::string name = parameters.name + fileSuffix();
 
     auto file = std::get<PE_InvalidatableFile>(getPossiblyExisting(name));
 
@@ -2366,8 +2419,8 @@ namespace detail
                 {
                     throw std::runtime_error(
                         "[ADIOS2IOHandler] Unknown engine type. Please choose "
-                        "one out of "
-                        "[sst, staging, bp4, bp3, hdf5, file, null]");
+                        "one out of [sst, staging, bp4, bp3, hdf5, file, "
+                        "filestream, null]");
                     // not listing unsupported engines
                 }
             }
@@ -3058,9 +3111,15 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     openPMD::Access at,
     MPI_Comm comm,
     json::TracingJSON options,
-    std::string engineType)
+    std::string engineType,
+    std::string specifiedExtension)
     : AbstractIOHandler(std::move(path), at, comm)
-    , m_impl{this, comm, std::move(options), std::move(engineType)}
+    , m_impl{
+          this,
+          comm,
+          std::move(options),
+          std::move(engineType),
+          std::move(specifiedExtension)}
 {}
 
 #endif
@@ -3069,9 +3128,14 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     std::string path,
     Access at,
     json::TracingJSON options,
-    std::string engineType)
+    std::string engineType,
+    std::string specifiedExtension)
     : AbstractIOHandler(std::move(path), at)
-    , m_impl{this, std::move(options), std::move(engineType)}
+    , m_impl{
+          this,
+          std::move(options),
+          std::move(engineType),
+          std::move(specifiedExtension)}
 {}
 
 std::future<void>
@@ -3084,14 +3148,19 @@ ADIOS2IOHandler::flush(internal::ParsedFlushParams &flushParams)
 
 #if openPMD_HAVE_MPI
 ADIOS2IOHandler::ADIOS2IOHandler(
-    std::string path, Access at, MPI_Comm comm, json::TracingJSON, std::string)
+    std::string path,
+    Access at,
+    MPI_Comm comm,
+    json::TracingJSON,
+    std::string,
+    std::string)
     : AbstractIOHandler(std::move(path), at, comm)
 {}
 
 #endif // openPMD_HAVE_MPI
 
 ADIOS2IOHandler::ADIOS2IOHandler(
-    std::string path, Access at, json::TracingJSON, std::string)
+    std::string path, Access at, json::TracingJSON, std::string, std::string)
     : AbstractIOHandler(std::move(path), at)
 {}
 
