@@ -1302,7 +1302,8 @@ TEST_CASE("unavailable_backend", "[core]")
 #if !openPMD_HAVE_ADIOS1
     {
         auto fail = []() {
-            Series("unavailable.bp", Access::CREATE, R"({"backend": "ADIOS1"})");
+            Series(
+                "unavailable.bp", Access::CREATE, R"({"backend": "ADIOS1"})");
         };
         REQUIRE_THROWS_WITH(
             fail(),
@@ -1313,7 +1314,8 @@ TEST_CASE("unavailable_backend", "[core]")
 #if !openPMD_HAVE_ADIOS2
     {
         auto fail = []() {
-            Series("unavailable.bp", Access::CREATE, R"({"backend": "ADIOS2"})");
+            Series(
+                "unavailable.bp", Access::CREATE, R"({"backend": "ADIOS2"})");
         };
         REQUIRE_THROWS_WITH(
             fail(),
