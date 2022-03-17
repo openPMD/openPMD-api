@@ -138,8 +138,10 @@ auto doConvert(T *pv) -> U
             std::copy(pv->begin(), pv->end(), std::back_inserter(res));
             return res;
         }
-
-        throw std::runtime_error("getCast: no vector cast possible.");
+        else
+        {
+            throw std::runtime_error("getCast: no vector cast possible.");
+        }
     }
     // conversion cast: array to vector
     // if a backend reports a std::array<> for something where
@@ -155,9 +157,11 @@ auto doConvert(T *pv) -> U
             std::copy(pv->begin(), pv->end(), std::back_inserter(res));
             return res;
         }
-
-        throw std::runtime_error(
-            "getCast: no array to vector conversion possible.");
+        else
+        {
+            throw std::runtime_error(
+                "getCast: no array to vector conversion possible.");
+        }
     }
     // conversion cast: vector to array
     // if a backend reports a std::vector<> for something where
@@ -181,9 +185,11 @@ auto doConvert(T *pv) -> U
             }
             return res;
         }
-
-        throw std::runtime_error(
-            "getCast: no vector to array conversion possible.");
+        else
+        {
+            throw std::runtime_error(
+                "getCast: no vector to array conversion possible.");
+        }
     }
     // conversion cast: turn a single value into a 1-element vector
     else if constexpr (auxiliary::IsVector_v<U>)
@@ -195,14 +201,26 @@ auto doConvert(T *pv) -> U
             res.push_back(static_cast<typename U::value_type>(*pv));
             return res;
         }
-
-        throw std::runtime_error(
-            "getCast: no scalar to vector conversion possible.");
+        else
+        {
+            throw std::runtime_error(
+                "getCast: no scalar to vector conversion possible.");
+        }
     }
     else
     {
         throw std::runtime_error("getCast: no cast possible.");
     }
+#if defined(__INTEL_COMPILER)
+/*
+ * ICPC has trouble with if constexpr, thinking that return statements are
+ * missing afterwards. Deactivate the warning.
+ * Note that putting a statement here will not help to fix this since it will
+ * then complain about unreachable code.
+ * https://community.intel.com/t5/Intel-C-Compiler/quot-if-constexpr-quot-and-quot-missing-return-statement-quot-in/td-p/1154551
+ */
+#pragma warning(disable : 1011)
+#endif
 }
 
 /** Retrieve a stored specific Attribute and cast if convertible.
