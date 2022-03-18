@@ -147,6 +147,14 @@ function build_blosc {
         https://patch-diff.githubusercontent.com/raw/Blosc/c-blosc/pull/318.patch
     python3 -m patch -p 1 -d c-blosc-1.21.0 blosc-pthread.patch
 
+    # SSE2 support
+    #   https://github.com/Blosc/c-blosc/issues/334
+    DEACTIVATE_SSE2=OFF
+    if [[ "$CMAKE_OSX_ARCHITECTURES" == *"arm64"* ]]; then
+      # error: SSE2 is not supported by the target architecture/platform and/or this compiler.
+      DEACTIVATE_SSE2=ON
+    fi
+
     mkdir build-c-blosc
     cd build-c-blosc
     PY_BIN=$(which python3)
