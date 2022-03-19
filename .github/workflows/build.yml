@@ -52,7 +52,7 @@ jobs:
             env:
               CMAKE_OSX_ARCHITECTURES: "arm64"
               MACOSX_DEPLOYMENT_TARGET: 11.0
-          - os: macos-10.15
+          - os: macos-11
             arch: "universal2"
             env:
               CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
