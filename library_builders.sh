@@ -150,7 +150,7 @@ function build_blosc {
     # SSE2 support
     #   https://github.com/Blosc/c-blosc/issues/334
     DEACTIVATE_SSE2=OFF
-    if [[ "$CMAKE_OSX_ARCHITECTURES" == *"arm64"* ]]; then
+    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == *"arm64"* ]]; then
       # error: SSE2 is not supported by the target architecture/platform and/or this compiler.
       DEACTIVATE_SSE2=ON
     fi
@@ -161,6 +161,7 @@ function build_blosc {
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
     PATH=${CMAKE_BIN}:${PATH} cmake          \
       -DDEACTIVATE_SNAPPY=ON                 \
+      -DDEACTIVATE_SSE2=${DEACTIVATE_SSE2}   \
       -DBUILD_SHARED=OFF                     \
       -DBUILD_TESTS=OFF                      \
       -DBUILD_BENCHMARKS=OFF                 \
