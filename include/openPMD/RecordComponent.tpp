@@ -23,6 +23,7 @@
 
 #include "openPMD/RecordComponent.hpp"
 #include "openPMD/Span.hpp"
+#include "openPMD/auxiliary/ShareRawInternal.hpp"
 #include "openPMD/auxiliary/TypeTraits.hpp"
 
 namespace openPMD
@@ -162,7 +163,7 @@ template <typename T>
 inline void RecordComponent::loadChunkRaw(T *ptr, Offset offset, Extent extent)
 {
     loadChunk(
-        std::shared_ptr<T>{ptr, [](auto const *) {}},
+        auxiliary::shareRaw(ptr),
         std::move(offset),
         std::move(extent));
 }
@@ -232,7 +233,7 @@ template <typename T>
 void RecordComponent::storeChunkRaw(T *ptr, Offset offset, Extent extent)
 {
     storeChunk(
-        std::shared_ptr<T>{ptr, [](auto const *) {}},
+        auxiliary::shareRaw(ptr),
         std::move(offset),
         std::move(extent));
 }
@@ -259,9 +260,8 @@ RecordComponent::storeChunk(T_ContiguousContainer &data, Offset o, Extent e)
     else
         extent = e;
 
-    using value_type = typename T_ContiguousContainer::value_type;
     storeChunk(
-        std::shared_ptr<value_type>{data.data(), [](auto const *) {}},
+        auxiliary::shareRaw(data.data()),
         offset,
         extent);
 }

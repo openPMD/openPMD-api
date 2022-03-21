@@ -20,6 +20,7 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/ShareRawInternal.hpp"
 #include "openPMD/backend/BaseRecordComponent.hpp"
 
 #include <sstream>
@@ -175,9 +176,7 @@ inline void PatchRecordComponent::load(std::shared_ptr<T> data)
 template <typename T>
 inline void PatchRecordComponent::loadRaw(T *data)
 {
-    // @todo maybe use an internal shareraw version to avoid overlooking
-    // this instance in future
-    load<T>(std::shared_ptr<T>{data, [](auto const *) {}});
+    load<T>(auxiliary::shareRaw(data));
 }
 
 template <typename T>
