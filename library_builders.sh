@@ -96,6 +96,11 @@ function build_adios2 {
         https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/2768.patch
     python3 -m patch -p 1 -d ADIOS2-2.7.1 adios-pthread.patch
 
+    # DILL macOS universal2 binary
+    curl -sLo dill-universal.patch \
+        https://patch-diff.githubusercontent.com/raw/ornladios/ADIOS2/pull/3118.patch
+    python3 -m patch -p 1 -d ADIOS2-2.7.1 dill-universal.patch
+
     mkdir build-ADIOS2
     cd build-ADIOS2
     PY_BIN=$(which python3)
