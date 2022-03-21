@@ -9,13 +9,18 @@ CPU_COUNT="${CPU_COUNT:-2}"
 function install_buildessentials {
     if [ -e buildessentials-stamp ]; then return; fi
 
-    # Cleanup:
-    #   - Travis-CI macOS ships a pre-installed HDF5
     if [ "$(uname -s)" = "Darwin" ]
     then
+        # Cleanup:
+        #   - Travis-CI macOS ships a pre-installed HDF5
         brew unlink hdf5 || true
         brew uninstall --ignore-dependencies hdf5 || true
         rm -rf /usr/local/Cellar/hdf5
+
+        # we need Rosetta2 to configure cross-compiles for HDF5
+        if [[ "${CMAKE_OSX_ARCHITECTURES-}" == *"arm64"* ]]; then
+            softwareupdate --install-rosetta --agree-to-license
+        fi
     fi
 
     # musllinux: Alpine Linux
