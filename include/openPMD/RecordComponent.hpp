@@ -238,7 +238,7 @@ public:
      *               extent in the record component will be selected.
      */
     template <typename T>
-    void loadChunkRaw(T * data, Offset offset, Extent extent);
+    void loadChunkRaw(T *data, Offset offset, Extent extent);
 
     /** Store a chunk of data from a chunk of memory.
      *
