@@ -226,6 +226,11 @@ function build_hdf5 {
     tar -xzf hdf5*.tar.gz
     rm hdf5*.tar.gz
 
+    CMAKE_CROSSCOMPILING_EMULATOR=""
+    if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
+        CMAKE_CROSSCOMPILING_EMULATOR="arch -x86_64"
+    fi
+
     PY_BIN=$(which python3)
     CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
     PATH=${CMAKE_BIN}:${PATH} cmake          \
@@ -239,6 +244,7 @@ function build_hdf5 {
       -DHDF5_BUILD_TOOLS=OFF                 \
       -DHDF5_BUILD_UTILS=OFF                 \
       -DHDF5_INSTALL_CMAKE_DIR=share/cmake/hdf5 \
+      -DCMAKE_CROSSCOMPILING_EMULATOR="${CMAKE_CROSSCOMPILING_EMULATOR}" \
       -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX}
     cmake --build build-hdf5 -j ${CPU_COUNT}
     cmake --build build-hdf5 --target install
