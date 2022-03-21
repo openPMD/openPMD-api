@@ -398,11 +398,11 @@ void parse(TestInput &input, std::string line)
         return;
     }
 
-    if (vec[0].compare("encoding") == 0)
+    if (vec.at(0).compare("encoding") == 0)
     {
-        if (vec[1].compare("f") == 0)
+        if (vec.at(1).compare("f") == 0)
             input.m_Encoding = openPMD::IterationEncoding::fileBased;
-        else if (vec[1].compare("g") == 0)
+        else if (vec.at(1).compare("g") == 0)
             input.m_Encoding = openPMD::IterationEncoding::groupBased;
         return;
     }
