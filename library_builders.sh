@@ -79,6 +79,10 @@ function build_adios1 {
     make install
     cd -
 
+    # note: for universal binaries on macOS
+    #   https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary
+    #lipo -create -output universal_app x86_app arm_app
+
     touch adios1-stamp
 }
 
@@ -214,11 +218,23 @@ function build_hdf5 {
     file hdf5*.tar.gz
     tar -xzf hdf5*.tar.gz
     rm hdf5*.tar.gz
-    cd hdf5-*
-    ./configure --disable-parallel --disable-shared --enable-static --prefix ${BUILD_PREFIX}
-    make -j${CPU_COUNT}
-    make install
-    cd -
+
+    PY_BIN=$(which python3)
+    CMAKE_BIN="$(${PY_BIN} -m pip show cmake 2>/dev/null | grep Location | cut -d' ' -f2)/cmake/data/bin/"
+    PATH=${CMAKE_BIN}:${PATH} cmake          \
+      -S hdf5-*                              \
+      -B build-hdf5                          \
+      -DBUILD_TESTING=OFF                    \
+      -DBUILD_SHARED_LIBS=OFF                \
+      -DBUILD_STATIC_LIBS=ON                 \
+      -DHDF5_BUILD_EXAMPLES=OFF              \
+      -DHDF5_BUILD_FORTRAN=OFF               \
+      -DHDF5_BUILD_TOOLS=OFF                 \
+      -DHDF5_BUILD_UTILS=OFF                 \
+      -DHDF5_INSTALL_CMAKE_DIR=share/cmake/hdf5 \
+      -DCMAKE_INSTALL_PREFIX=${BUILD_PREFIX}
+    cmake --build build-hdf5 -j ${CPU_COUNT}
+    cmake --build build-hdf5 --target install
 
     touch hdf5-stamp
 }
@@ -231,5 +247,8 @@ install_buildessentials
 build_blosc
 build_zfp
 build_hdf5
-build_adios1
+# skip for macOS universal builds
+if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64;x86_64" ]]; then
+    build_adios1
+fi
 build_adios2
