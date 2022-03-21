@@ -51,11 +51,16 @@ jobs:
             arch: "arm64"
             env:
               CMAKE_OSX_ARCHITECTURES: "arm64"
+              CMAKE_APPLE_SILICON_PROCESSOR: "x86_64"
               MACOSX_DEPLOYMENT_TARGET: 11.0
+          # Needs extra treatment of all librarys that are not CMake controlled
+          # the dependencies:
+          #   https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary
           - os: macos-11
             arch: "universal2"
             env:
               CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+              CMAKE_APPLE_SILICON_PROCESSOR: "x86_64"
               MACOSX_DEPLOYMENT_TARGET: 11.0
 
     steps:
@@ -118,6 +123,7 @@ jobs:
         # arm64 Python interpreters are built with 11.0
         MACOSX_DEPLOYMENT_TARGET: "${{ matrix.env.MACOSX_DEPLOYMENT_TARGET }}"
         CMAKE_OSX_ARCHITECTURES: "${{ matrix.env.CMAKE_OSX_ARCHITECTURES }}"
+        CMAKE_APPLE_SILICON_PROCESSOR: "${{ matrix.env.CMAKE_APPLE_SILICON_PROCESSOR }}"
         # Show a bit more output (pip -v)
         CIBW_BUILD_VERBOSITY: 1
       run: |
