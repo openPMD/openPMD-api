@@ -49,15 +49,13 @@ namespace openPMD::auxiliary
  *          reference counting.
  */
 template <typename T>
-std::shared_ptr<T>
-shareRaw(T *x)
+std::shared_ptr<T> shareRaw(T *x)
 {
     return std::shared_ptr<T>(x, [](T *) {});
 }
 
 template <typename T>
-std::shared_ptr<T const>
-shareRaw(T const *x)
+std::shared_ptr<T const> shareRaw(T const *x)
 {
     return std::shared_ptr<T const>(x, [](T const *) {});
 }
@@ -78,4 +76,4 @@ auto shareRaw(T const &c)
     return std::shared_ptr<value_type>(c.data(), [](value_type *) {});
 }
 //! @}
-} // namespace openPMD
+} // namespace openPMD::auxiliary
