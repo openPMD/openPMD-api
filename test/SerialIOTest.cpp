@@ -5174,6 +5174,105 @@ TEST_CASE("iterate_nonstreaming_series", "[serial][adios2]")
 #endif
 }
 
+#if openPMD_HAVE_ADIOS2 &&                                                     \
+    ADIOS2_VERSION_MAJOR * 1000000000 + ADIOS2_VERSION_MINOR * 100000000 +     \
+            ADIOS2_VERSION_PATCH * 1000000 + ADIOS2_VERSION_TWEAK >=           \
+        2701001223
+void adios2_bp5_no_steps(bool usesteps)
+{
+    std::string const config = R"END(
+{
+    "adios2":
+    {
+        "new_attribute_layout": true,
+        "schema": 20210209
+    }
+})END";
+    {
+        adios2::ADIOS adios;
+        auto IO = adios.DeclareIO("IO");
+        IO.SetEngine("bp5");
+        auto engine =
+            IO.Open("../samples/bp5_no_steps.bp", adios2::Mode::Write);
+        if (usesteps)
+        {
+            engine.BeginStep();
+        }
+
+        // write default openPMD attributes
+        auto writeAttribute = [&IO](std::string const &name, auto value) {
+            IO.DefineAttribute(name, value);
+        };
+        IO.DefineAttribute("/basePath", std::string("/data/%T/"));
+        IO.DefineAttribute("/date", std::string("2021-02-22 11:14:00 +0000"));
+        IO.DefineAttribute("/iterationEncoding", std::string("groupBased"));
+        IO.DefineAttribute("/iterationFormat", std::string("/data/%T/"));
+        IO.DefineAttribute("/meshesPath", std::string("meshes/"));
+        IO.DefineAttribute("/openPMD", std::string("1.1.0"));
+        IO.DefineAttribute("/openPMDextension", uint32_t(0));
+        IO.DefineAttribute("/software", std::string("openPMD-api"));
+        IO.DefineAttribute("/softwareVersion", std::string("0.15.0-dev"));
+
+        IO.DefineAttribute("/data/0/dt", double(1));
+        IO.DefineAttribute(
+            "/data/0/meshes/theta/axisLabels",
+            std::vector<std::string>{"x"}.data(),
+            1);
+        IO.DefineAttribute("/data/0/meshes/theta/dataOrder", std::string("C"));
+        IO.DefineAttribute(
+            "/data/0/meshes/theta/geometry", std::string("cartesian"));
+        IO.DefineAttribute("/data/0/meshes/theta/gridGlobalOffset", double(0));
+        IO.DefineAttribute("/data/0/meshes/theta/gridSpacing", double(1));
+        IO.DefineAttribute("/data/0/meshes/theta/gridUnitSI", double(1));
+        IO.DefineAttribute("/data/0/meshes/theta/position", double(0));
+        IO.DefineAttribute("/data/0/meshes/theta/timeOffset", double(0));
+        IO.DefineAttribute(
+            "/data/0/meshes/theta/unitDimension",
+            std::vector<double>(7, 0).data(),
+            7);
+        IO.DefineAttribute("/data/0/meshes/theta/unitSI", double(1));
+        IO.DefineAttribute("/data/0/time", double(0));
+        IO.DefineAttribute("/data/0/timeUnitSI", double(1));
+
+        IO.DefineAttribute<uint64_t>(
+            "__openPMD_internal/openPMD2_adios2_schema", 0);
+        IO.DefineAttribute<unsigned char>("__openPMD_internal/useSteps", 0);
+
+        std::vector<int> data{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+        engine.Put(
+            IO.DefineVariable<int>("/data/0/meshes/theta", {10}, {0}, {10}),
+            data.data());
+
+        if (usesteps)
+        {
+            engine.EndStep();
+        }
+        engine.Close();
+    }
+
+    {
+        Series read(
+            "../samples/bp5_no_steps.bp",
+            Access::READ_ONLY,
+            "adios2.engine.type = \"bp5\"");
+        auto data = read.iterations[0]
+                        .meshes["theta"][RecordComponent::SCALAR]
+                        .loadChunk<int>({0}, {10});
+        read.flush();
+        for (size_t i = 0; i < 10; ++i)
+        {
+            REQUIRE(data.get()[i] == int(i));
+        }
+    }
+}
+
+TEST_CASE("adios2_bp5_no_steps", "[serial][adios2]")
+{
+    adios2_bp5_no_steps(/* usesteps = */ false);
+    adios2_bp5_no_steps(/* usesteps = */ true);
+}
+#endif
+
 void extendDataset(std::string const &ext, std::string const &jsonConfig)
 {
     std::string filename = "../samples/extendDataset." + ext;
