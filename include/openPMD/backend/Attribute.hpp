@@ -220,8 +220,11 @@ auto doConvert(T *pv) -> U
  * https://community.intel.com/t5/Intel-C-Compiler/quot-if-constexpr-quot-and-quot-missing-return-statement-quot-in/td-p/1154551
  */
 #pragma warning(disable : 1011)
-#endif
 }
+#pragma warning(default : 1011)
+#else
+}
+#endif
 
 /** Retrieve a stored specific Attribute and cast if convertible.
  *
