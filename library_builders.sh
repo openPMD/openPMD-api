@@ -16,6 +16,11 @@ function install_buildessentials {
         brew unlink hdf5 || true
         brew uninstall --ignore-dependencies hdf5 || true
         rm -rf /usr/local/Cellar/hdf5
+
+        # we need qemu to configure cross-compiles for HDF5
+        if [[ "${CMAKE_OSX_ARCHITECTURES-}" == *"arm64"* ]]; then
+            brew install qemu || true
+        fi
     fi
 
     # musllinux: Alpine Linux
@@ -228,7 +233,7 @@ function build_hdf5 {
 
     CMAKE_CROSSCOMPILING_EMULATOR=""
     if [[ "${CMAKE_OSX_ARCHITECTURES-}" == "arm64" ]]; then
-        CMAKE_CROSSCOMPILING_EMULATOR="arch -x86_64"
+        CMAKE_CROSSCOMPILING_EMULATOR="qemu-system-aarch64;-M;virt"
     fi
 
     PY_BIN=$(which python3)
