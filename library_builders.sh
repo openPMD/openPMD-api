@@ -16,11 +16,6 @@ function install_buildessentials {
         brew unlink hdf5 || true
         brew uninstall --ignore-dependencies hdf5 || true
         rm -rf /usr/local/Cellar/hdf5
-
-        # we need Rosetta2 to configure cross-compiles for HDF5
-        if [[ "${CMAKE_OSX_ARCHITECTURES-}" == *"arm64"* ]]; then
-            softwareupdate --install-rosetta --agree-to-license
-        fi
     fi
 
     # musllinux: Alpine Linux
