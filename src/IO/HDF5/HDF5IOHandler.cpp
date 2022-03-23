@@ -31,6 +31,8 @@
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
 #include "openPMD/backend/Attribute.hpp"
+
+#include <hdf5.h>
 #endif
 
 #include <complex>
