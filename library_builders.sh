@@ -19,7 +19,16 @@ function install_buildessentials {
 
         # we need qemu to configure cross-compiles for HDF5
         if [[ "${CMAKE_OSX_ARCHITECTURES-}" == *"arm64"* ]]; then
-            brew install qemu || true
+            brew install qemu libvirt || true
+
+            # TODO: patch libvirt?
+            #https://raw.githubusercontent.com/yoonsikp/vm_configs/master/libvirt.rb
+
+            # https://www.naut.ca/blog/2021/12/09/arm64-vm-on-macos-with-libvirt-qemu/
+            echo 'security_driver = "none"' >> /opt/homebrew/etc/libvirt/qemu.conf
+            echo "dynamic_ownership = 0" >> /opt/homebrew/etc/libvirt/qemu.conf
+            echo "remember_owner = 0" >> /opt/homebrew/etc/libvirt/qemu.conf
+            brew services start libvirt || true
         fi
     fi
 
