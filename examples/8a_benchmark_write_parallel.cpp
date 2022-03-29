@@ -406,7 +406,7 @@ void parse(TestInput &input, std::string line)
             input.m_Encoding = openPMD::IterationEncoding::groupBased;
 #if openPMD_HAVE_ADIOS2
         // BP5 must be matched with a stream engine.
-        if (auxillary::getEnvString("OPENPMD_ADIOS2_ENGINE", "BP4") == "BP5")
+        if (auxiliary::getEnvString("OPENPMD_ADIOS2_ENGINE", "BP4") == "BP5")
             input.m_Encoding = openPMD::IterationEncoding::variableBased;
 #endif
 
