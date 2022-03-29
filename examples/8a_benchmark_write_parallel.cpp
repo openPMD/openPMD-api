@@ -404,6 +404,12 @@ void parse(TestInput &input, std::string line)
             input.m_Encoding = openPMD::IterationEncoding::fileBased;
         else if (vec.at(1).compare("g") == 0)
             input.m_Encoding = openPMD::IterationEncoding::groupBased;
+#if openPMD_HAVE_ADIOS2
+        // BP5 must be matched with a stream engine.
+        if (auxillary.getEnvString("OPENPMD_ADIOS2_ENGINE", "BP4") == "BP5")
+          input.m_Encoding = openPMD::IterationEncoding::variableBased;
+#endif
+
         return;
     }
 
@@ -1147,14 +1153,8 @@ unsigned int AbstractPattern::getNumBlocks()
 inline openPMD::Iteration
 AbstractPattern::GetIteration(Series &series, int const iteration) const
 {
-    if (m_Input.m_Encoding == openPMD::IterationEncoding::variableBased)
-    {
-        return series.writeIterations()[iteration];
-    }
-    else
-    {
-        return series.iterations[iteration];
-    }
+    // writeIterations work for file/group based iterations too
+    return series.writeIterations()[iteration];
 }
 
 /*
