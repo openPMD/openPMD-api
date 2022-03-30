@@ -705,7 +705,8 @@ void AbstractPattern::store(Series &series, int step)
     std::string scalar = openPMD::MeshRecordComponent::SCALAR;
     storeMesh(series, step, field_rho, scalar);
 
-    ParticleSpecies &currSpecies = series.writeIterations()[step].particles["ion"];
+    ParticleSpecies &currSpecies =
+        series.writeIterations()[step].particles["ion"];
     storeParticles(currSpecies, step);
 
     series.writeIterations()[step].close();
