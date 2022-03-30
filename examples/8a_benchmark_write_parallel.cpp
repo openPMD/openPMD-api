@@ -219,8 +219,6 @@ class AbstractPattern
 {
 public:
     AbstractPattern(const TestInput &input);
-    inline openPMD::Iteration
-    GetIteration(Series &series, int const iteration) const;
 
     virtual bool setLayOut(int step) = 0;
     unsigned long
@@ -707,10 +705,10 @@ void AbstractPattern::store(Series &series, int step)
     std::string scalar = openPMD::MeshRecordComponent::SCALAR;
     storeMesh(series, step, field_rho, scalar);
 
-    ParticleSpecies &currSpecies = GetIteration(series, step).particles["ion"];
+    ParticleSpecies &currSpecies = series.writeIterations()[step].particles["ion"];
     storeParticles(currSpecies, step);
 
-    GetIteration(series, step).close();
+    series.writeIterations()[step].close();
 }
 
 /*
@@ -729,7 +727,7 @@ void AbstractPattern::storeMesh(
     const std::string &compName)
 {
     MeshRecordComponent compA =
-        GetIteration(series, step).meshes[fieldName][compName];
+        series.writeIterations()[step].meshes[fieldName][compName];
     Datatype datatype = determineDatatype<double>();
     Dataset dataset = Dataset(datatype, m_GlobalMesh);
 
@@ -1148,13 +1146,6 @@ bool TwoDimPattern::setLayOut(int step)
 unsigned int AbstractPattern::getNumBlocks()
 {
     return m_InRankMeshLayout.size();
-}
-
-inline openPMD::Iteration
-AbstractPattern::GetIteration(Series &series, int const iteration) const
-{
-    // writeIterations work for file/group based iterations too
-    return series.writeIterations()[iteration];
 }
 
 /*
