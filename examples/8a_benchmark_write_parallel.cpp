@@ -41,7 +41,6 @@
 #include <cuda_runtime.h>
 #endif
 
-
 using std::cout;
 using namespace openPMD;
 
@@ -170,7 +169,8 @@ private:
 };
 
 /**     createDataCPU
- *      generate a shared ptr of given size  with given type & default value on CPU
+ *      generate a shared ptr of given size  with given type & default value on
+ * CPU
  *
  * @param T             data type
  * @param size          data size
@@ -200,13 +200,15 @@ template <typename T>
 std::shared_ptr<T>
 createDataGPU(const unsigned long &size, const T &val, const T &increment)
 {
-    auto myCudaMalloc = [](size_t mySize) { void* ptr;
-                                            cudaMalloc((void**)&ptr, mySize);
-                                            return ptr; };
-    auto deleter      = [](T* ptr) { cudaFree(ptr); };
-    auto E = std::shared_ptr<T>{(T*)myCudaMalloc(size * sizeof(T)), deleter};
+    auto myCudaMalloc = [](size_t mySize) {
+        void *ptr;
+        cudaMalloc((void **)&ptr, mySize);
+        return ptr;
+    };
+    auto deleter = [](T *ptr) { cudaFree(ptr); };
+    auto E = std::shared_ptr<T>{(T *)myCudaMalloc(size * sizeof(T)), deleter};
 
-    T* data = new T[size];
+    T *data = new T[size];
     for (unsigned long i = 0ul; i < size; i++)
     {
         if (increment != 0)
@@ -218,7 +220,6 @@ createDataGPU(const unsigned long &size, const T &val, const T &increment)
     return E;
 }
 #endif
-
 
 template <typename T>
 std::shared_ptr<T>
