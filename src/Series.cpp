@@ -1046,7 +1046,8 @@ void Series::readGorVBased(bool do_init)
     auto readSingleIteration = [&series, &pOpen, this](
                                    uint64_t index,
                                    std::string path,
-                                   bool guardAgainstRereading) {
+                                   bool guardAgainstRereading,
+                                   bool beginStep) {
         if (series.iterations.contains(index))
         {
             // maybe re-read
@@ -1068,7 +1069,7 @@ void Series::readGorVBased(bool do_init)
         {
             // parse for the first time, resp. delay the parsing process
             Iteration &i = series.iterations[index];
-            i.deferParseAccess({path, index, false, ""});
+            i.deferParseAccess({path, index, false, "", beginStep});
             if (!series.m_parseLazily)
             {
                 i.runDeferredParseAccess();
@@ -1091,7 +1092,12 @@ void Series::readGorVBased(bool do_init)
         for (auto const &it : *pList.paths)
         {
             uint64_t index = std::stoull(it);
-            readSingleIteration(index, it, true);
+            /*
+             * For now: parse a Series in RandomAccess mode.
+             * (beginStep = false)
+             * A streaming read mode might come in a future API addition.
+             */
+            readSingleIteration(index, it, true, false);
         }
         break;
     case IterationEncoding::variableBased: {
@@ -1100,7 +1106,11 @@ void Series::readGorVBased(bool do_init)
         {
             index = series.iterations.getAttribute("snapshot").get<uint64_t>();
         }
-        readSingleIteration(index, "", false);
+        /*
+         * Variable-based iteration encoding relies on steps, so parsing must
+         * happen after opening the first step.
+         */
+        readSingleIteration(index, "", false, true);
         break;
     }
     }
@@ -1241,8 +1251,24 @@ AdvanceStatus Series::advance(
         itData.m_closed = internal::CloseStatus::Open;
     }
 
-    // @todo really collective?
-    flush_impl(begin, end, flushParams, /* flushIOHandler = */ false);
+    switch (mode)
+    {
+    case AdvanceMode::ENDSTEP:
+        flush_impl(begin, end, flushParams, /* flushIOHandler = */ false);
+        break;
+    case AdvanceMode::BEGINSTEP:
+        /*
+         * When beginning a step, there is nothing to flush yet.
+         * Data is not written in between steps.
+         * So only make sure that files are accessed.
+         */
+        flush_impl(
+            begin,
+            end,
+            {FlushLevel::CreateOrOpenFiles},
+            /* flushIOHandler = */ false);
+        break;
+    }
 
     if (oldCloseStatus == internal::CloseStatus::ClosedInFrontend)
     {

@@ -148,13 +148,12 @@ Iteration &Iteration::open()
     if (it.m_closed == CloseStatus::ParseAccessDeferred)
     {
         it.m_closed = CloseStatus::Open;
+        runDeferredParseAccess();
     }
-    runDeferredParseAccess();
     Series s = retrieveSeries();
     // figure out my iteration number
     auto begin = s.indexOf(*this);
     s.openIteration(begin->first, *this);
-    // @todo, maybe collective here
     IOHandler()->flush(internal::defaultFlushParams);
     return *this;
 }
@@ -238,7 +237,10 @@ void Iteration::flushFileBased(
         s.openIteration(i, *this);
     }
 
-    flush(flushParams);
+    if (flushParams.flushLevel != FlushLevel::CreateOrOpenFiles)
+    {
+        flush(flushParams);
+    }
 }
 
 void Iteration::flushGroupBased(
@@ -252,7 +254,10 @@ void Iteration::flushGroupBased(
         IOHandler()->enqueue(IOTask(this, pCreate));
     }
 
-    flush(flushParams);
+    if (flushParams.flushLevel != FlushLevel::CreateOrOpenFiles)
+    {
+        flush(flushParams);
+    }
 }
 
 void Iteration::flushVariableBased(
@@ -267,7 +272,10 @@ void Iteration::flushVariableBased(
         this->setAttribute("snapshot", i);
     }
 
-    flush(flushParams);
+    if (flushParams.flushLevel != FlushLevel::CreateOrOpenFiles)
+    {
+        flush(flushParams);
+    }
 }
 
 void Iteration::flush(internal::FlushParams const &flushParams)
@@ -327,26 +335,6 @@ void Iteration::deferParseAccess(DeferredParseAccess dr)
         std::make_optional<DeferredParseAccess>(std::move(dr));
 }
 
-void Iteration::read()
-{
-    auto &it = get();
-    if (!it.m_deferredParseAccess.has_value())
-    {
-        return;
-    }
-    auto const &deferred = it.m_deferredParseAccess.value();
-    if (deferred.fileBased)
-    {
-        readFileBased(deferred.filename, deferred.path);
-    }
-    else
-    {
-        readGorVBased(deferred.path);
-    }
-    // reset this thing
-    it.m_deferredParseAccess = std::optional<DeferredParseAccess>();
-}
-
 void Iteration::reread(std::string const &path)
 {
     if (get().m_deferredParseAccess.has_value())
@@ -359,8 +347,15 @@ void Iteration::reread(std::string const &path)
 }
 
 void Iteration::readFileBased(
-    std::string filePath, std::string const &groupPath)
+    std::string filePath, std::string const &groupPath, bool doBeginStep)
 {
+    if (doBeginStep)
+    {
+        /*
+         * beginStep() must take care to open files
+         */
+        beginStep(/* reread = */ false);
+    }
     auto series = retrieveSeries();
 
     series.readOneIterationFileBased(filePath);
@@ -368,9 +363,15 @@ void Iteration::readFileBased(
     read_impl(groupPath);
 }
 
-void Iteration::readGorVBased(std::string const &groupPath)
+void Iteration::readGorVBased(std::string const &groupPath, bool doBeginStep)
 {
-
+    if (doBeginStep)
+    {
+        /*
+         * beginStep() must take care to open files
+         */
+        beginStep(/* reread = */ false);
+    }
     read_impl(groupPath);
 }
 
@@ -540,7 +541,7 @@ void Iteration::read_impl(std::string const &groupPath)
     readAttributes(ReadMode::FullyReread);
 }
 
-AdvanceStatus Iteration::beginStep()
+AdvanceStatus Iteration::beginStep(bool reread)
 {
     using IE = IterationEncoding;
     auto series = retrieveSeries();
@@ -565,7 +566,8 @@ AdvanceStatus Iteration::beginStep()
     }
 
     // re-read -> new datasets might be available
-    if ((series.iterationEncoding() == IE::groupBased ||
+    if (reread &&
+        (series.iterationEncoding() == IE::groupBased ||
          series.iterationEncoding() == IE::variableBased) &&
         (this->IOHandler()->m_frontendAccess == Access::READ_ONLY ||
          this->IOHandler()->m_frontendAccess == Access::READ_WRITE))
@@ -679,18 +681,37 @@ void Iteration::runDeferredParseAccess()
     {
         return;
     }
+
+    auto &it = get();
+    if (!it.m_deferredParseAccess.has_value())
+    {
+        return;
+    }
+    auto const &deferred = it.m_deferredParseAccess.value();
+
     auto oldAccess = IOHandler()->m_frontendAccess;
     auto newAccess = const_cast<Access *>(&IOHandler()->m_frontendAccess);
     *newAccess = Access::READ_WRITE;
     try
     {
-        read();
+        if (deferred.fileBased)
+        {
+            readFileBased(deferred.filename, deferred.path, deferred.beginStep);
+        }
+        else
+        {
+            readGorVBased(deferred.path, deferred.beginStep);
+        }
     }
     catch (...)
     {
+        // reset this thing
+        it.m_deferredParseAccess = std::optional<DeferredParseAccess>();
         *newAccess = oldAccess;
         throw;
     }
+    // reset this thing
+    it.m_deferredParseAccess = std::optional<DeferredParseAccess>();
     *newAccess = oldAccess;
 }
 

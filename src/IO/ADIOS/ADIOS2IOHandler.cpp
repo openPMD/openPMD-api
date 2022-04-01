@@ -2652,6 +2652,7 @@ namespace detail
 
         case FlushLevel::InternalFlush:
         case FlushLevel::SkeletonOnly:
+        case FlushLevel::CreateOrOpenFiles:
             /*
              * Tasks have been given to ADIOS2, but we don't flush them
              * yet. So, move everything to m_alreadyEnqueued to avoid

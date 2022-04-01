@@ -84,7 +84,11 @@ enum class FlushLevel : unsigned char
      * CREATE_DATASET tasks.
      * Attributes may or may not be flushed yet.
      */
-    SkeletonOnly
+    SkeletonOnly,
+    /**
+     * Only creates/opens files, nothing more
+     */
+    CreateOrOpenFiles
 };
 
 namespace internal
