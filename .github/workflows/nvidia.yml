@@ -27,8 +27,8 @@ jobs:
         cmake --build build --parallel 2
         ctest --test-dir build --output-on-failure
 
-  tests-nvhpc21-5-nvcc:
-    name: NVHPC@21.5
+  tests-nvhpc21-11-nvcc:
+    name: NVHPC@21.11
     runs-on: ubuntu-20.04
     # Catch warnings:
     #   line 4314: error: variable "<unnamed>::autoRegistrar73" was declared but never referenced
@@ -36,11 +36,11 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Dependencies
-      run: .github/workflows/dependencies/install_nvhpc21-5.sh
+      run: .github/workflows/dependencies/install_nvhpc21-11.sh
     - name: Build & Install
       run: |
         source /etc/profile.d/modules.sh
-        module load /opt/nvidia/hpc_sdk/modulefiles/nvhpc/21.5
+        module load /opt/nvidia/hpc_sdk/modulefiles/nvhpc/21.11
 
         which nvcc || echo "nvcc not in PATH!"
         which nvc++ || echo "nvc++ not in PATH!"
