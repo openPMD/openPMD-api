@@ -85,6 +85,9 @@ Without specifying this parameter, a default will be applied.
 This parameter does not expected to impact the performance of writing, it will likely make a difference for certain reading patterns if the underlying storage is using subfiles.
 
 
+Optional input parameter: encoding
+The supported iteration encodings are either f(ile), g(roup), v(ariable). By default, we use variable encoding.
+
 Reading
 ^^^^^^^
 
