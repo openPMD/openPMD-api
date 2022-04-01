@@ -36,6 +36,12 @@
 #include <adios2.h>
 #endif
 
+#if openPMD_HAVE_CUDA
+#include <cuda.h>
+#include <cuda_runtime.h>
+#endif
+
+
 using std::cout;
 using namespace openPMD;
 
@@ -163,8 +169,8 @@ private:
     int m_Rank = 0;
 };
 
-/**     createData
- *      generate a shared ptr of given size  with given type & default value
+/**     createDataCPU
+ *      generate a shared ptr of given size  with given type & default value on CPU
  *
  * @param T             data type
  * @param size          data size
@@ -175,19 +181,54 @@ private:
 
 template <typename T>
 std::shared_ptr<T>
-createData(const unsigned long &size, const T &val, const T &increment)
+createDataCPU(const unsigned long &size, const T &val, const T &increment)
 {
     auto E = std::shared_ptr<T>{new T[size], [](T *d) { delete[] d; }};
 
     for (unsigned long i = 0ul; i < size; i++)
     {
         if (increment != 0)
-            // E.get()[i] = val+i;
             E.get()[i] = val + i * increment;
         else
             E.get()[i] = val;
     }
     return E;
+}
+
+#if openPMD_HAVE_CUDA
+template <typename T>
+std::shared_ptr<T>
+createDataGPU(const unsigned long &size, const T &val, const T &increment)
+{
+    auto myCudaMalloc = [](size_t mySize) { void* ptr;
+                                            cudaMalloc((void**)&ptr, mySize);
+                                            return ptr; };
+    auto deleter      = [](T* ptr) { cudaFree(ptr); };
+    auto E = std::shared_ptr<T>{(T*)myCudaMalloc(size * sizeof(T)), deleter};
+
+    T* data = new T[size];
+    for (unsigned long i = 0ul; i < size; i++)
+    {
+        if (increment != 0)
+            data[i] = val + i * increment;
+        else
+            data[i] = val;
+    }
+    cudaMemcpy(E.get(), data, size * sizeof(T), cudaMemcpyHostToDevice);
+    return E;
+}
+#endif
+
+
+template <typename T>
+std::shared_ptr<T>
+createData(const unsigned long &size, const T &val, const T &increment)
+{
+#if openPMD_HAVE_CUDA
+    return createDataGPU(size, val, increment);
+#else
+    return createDataCPU(size, val, increment);
+#endif
 }
 
 /** Find supported backends
