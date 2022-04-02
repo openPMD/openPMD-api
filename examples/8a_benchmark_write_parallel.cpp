@@ -36,7 +36,7 @@
 #include <adios2.h>
 #endif
 
-#if openPMD_HAVE_CUDA
+#if openPMD_HAVE_CUDA_TESTS
 #include <cuda.h>
 #include <cuda_runtime.h>
 #endif
@@ -169,8 +169,7 @@ private:
 };
 
 /**     createDataCPU
- *      generate a shared ptr of given size  with given type & default value on
- * CPU
+ *      generate a shared ptr of given size  with given type & default value on CPU
  *
  * @param T             data type
  * @param size          data size
@@ -195,7 +194,7 @@ createDataCPU(const unsigned long &size, const T &val, const T &increment)
     return E;
 }
 
-#if openPMD_HAVE_CUDA
+#if openPMD_HAVE_CUDA_TESTS
 template <typename T>
 std::shared_ptr<T>
 createDataGPU(const unsigned long &size, const T &val, const T &increment)
@@ -225,7 +224,7 @@ template <typename T>
 std::shared_ptr<T>
 createData(const unsigned long &size, const T &val, const T &increment)
 {
-#if openPMD_HAVE_CUDA
+#if openPMD_HAVE_CUDA_TESTS
     return createDataGPU(size, val, increment);
 #else
     return createDataCPU(size, val, increment);
@@ -824,8 +823,6 @@ void AbstractPattern::storeParticles(ParticleSpecies &currSpecies, int &step)
     {
         unsigned long offset = 0, count = 0;
         getNthParticleExtent(n, offset, count);
-        // std::cout<<m_Input.m_MPIRank<<"... got p: "<<offset<<",
-        // "<<count<<std::endl;
         if (count > 0)
         {
             auto ids = createData<uint64_t>(count, offset, 1);
