@@ -169,7 +169,8 @@ private:
 };
 
 /**     createDataCPU
- *      generate a shared ptr of given size  with given type & default value on CPU
+ *      generate a shared ptr of given size  with given type & default value on
+ * CPU
  *
  * @param T             data type
  * @param size          data size
