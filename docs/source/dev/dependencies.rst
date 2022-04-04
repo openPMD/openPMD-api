@@ -46,6 +46,8 @@ Optional: language bindings
   * pandas 1.0+ (optional, for dataframes)
   * dask 2021+ (optional, for dask dataframes)
 
+* CUDA C++ (optional, currently used only in tests)
+
 Quick Install with Spack
 ------------------------
 

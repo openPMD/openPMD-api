@@ -84,7 +84,6 @@ openpmd_option(HDF5           "HDF5 backend (.h5 files)"                  AUTO)
 openpmd_option(ADIOS1         "ADIOS1 backend (.bp files)"                AUTO)
 openpmd_option(ADIOS2         "ADIOS2 backend (.bp files)"                AUTO)
 openpmd_option(PYTHON         "Enable Python bindings"                    AUTO)
-openpmd_option(CUDA_TESTS     "Use CUDA in tests"                         OFF)
 
 option(openPMD_INSTALL               "Add installation targets"             ON)
 option(openPMD_INSTALL_RPATH         "Add RPATHs to installed binaries"     ON)
@@ -145,6 +144,7 @@ if(NOT DEFINED BUILD_EXAMPLES)
 endif()
 option(openPMD_BUILD_CLI_TOOLS "Build the command line tools" ${BUILD_CLI_TOOLS})
 option(openPMD_BUILD_EXAMPLES  "Build the examples" ${BUILD_EXAMPLES})
+openpmd_option(CUDA_EXAMPLES   "Use CUDA in examples" OFF)
 
 
 # Helper Functions ############################################################
@@ -223,6 +223,21 @@ add_library(openPMD::thirdparty::toml11 INTERFACE IMPORTED)
 target_link_libraries(openPMD::thirdparty::toml11
     INTERFACE toml11::toml11)
 
+
+# external: CUDA (optional)
+if(openPMD_BUILD_EXAMPLES)  # currently only used in examples
+    if(openPMD_USE_CUDA_EXAMPLES STREQUAL AUTO)
+       find_package(CUDAToolkit)
+    elseif(openPMD_USE_CUDA_EXAMPLES)
+       find_package(CUDAToolkit REQUIRED)
+    endif()
+endif()
+if(CUDAToolkit_FOUND)
+    enable_language(CUDA)
+    set(openPMD_HAVE_CUDA_EXAMPLES TRUE)
+else()
+    set(openPMD_HAVE_CUDA_EXAMPLES FALSE)
+endif()
 
 # external library: HDF5 (optional)
 #   note: in the new hdf5-cmake.config files, major releases like
@@ -866,23 +881,13 @@ if(openPMD_BUILD_CLI_TOOLS)
 endif()
 
 if(openPMD_BUILD_EXAMPLES)
-    if(openPMD_USE_CUDA_TESTS STREQUAL AUTO)
-       find_package(CUDAToolkit)
-    elseif(openPMD_USE_CUDA_TESTS)
-       find_package(CUDAToolkit REQUIRED)
-    endif()
-    if(CUDAToolkit_FOUND)
-       set(openPMD_HAVE_CUDA_TESTS TRUE) ## so summary can print correctly
-    endif()
-
     foreach(examplename ${openPMD_EXAMPLE_NAMES})
         if(${examplename} MATCHES ".+parallel$")
             if(openPMD_HAVE_MPI)
                 add_executable(${examplename} examples/${examplename}.cpp)
-                if (openPMD_HAVE_CUDA_TESTS)
-                   enable_language(CUDA)
+                if (openPMD_HAVE_CUDA_EXAMPLES)
                    set_source_files_properties(examples/${examplename}.cpp PROPERTIES
-                       LANGUAGE CUDA )
+                       LANGUAGE CUDA)
                    target_compile_features(${examplename} PUBLIC cuda_std_17)
                    set_target_properties(${examplename} PROPERTIES
                        CUDA_SEPARABLE_COMPILATION ON
