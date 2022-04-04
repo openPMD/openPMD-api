@@ -881,11 +881,13 @@ if(openPMD_BUILD_EXAMPLES)
                 add_executable(${examplename} examples/${examplename}.cpp)
                 if (openPMD_HAVE_CUDA_TESTS)
                    enable_language(CUDA)
-                   set_source_files_properties(examples/${examplename}.cpp PROPERTIES LANGUAGE CUDA )
+                   set_source_files_properties(examples/${examplename}.cpp PROPERTIES
+                       LANGUAGE CUDA )
                    target_compile_features(${examplename} PUBLIC cuda_std_17)
-                   set_target_properties(${examplename} PROPERTIES CUDA_SEPARABLE_COMPILATION ON
-                                                        CUDA_EXTENSIONS OFF
-                                                        CUDA_STANDARD_REQUIRED ON)
+                   set_target_properties(${examplename} PROPERTIES
+                       CUDA_SEPARABLE_COMPILATION ON
+                       CUDA_EXTENSIONS OFF
+                       CUDA_STANDARD_REQUIRED ON)
                    target_link_libraries(${examplename} PRIVATE openPMD)
                 else()
                    openpmd_cxx_required(${examplename})
