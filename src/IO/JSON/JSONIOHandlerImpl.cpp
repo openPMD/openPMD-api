@@ -22,6 +22,7 @@
 #include "openPMD/IO/JSON/JSONIOHandlerImpl.hpp"
 #include "openPMD/Datatype.hpp"
 #include "openPMD/DatatypeHelpers.hpp"
+#include "openPMD/Error.hpp"
 #include "openPMD/auxiliary/Filesystem.hpp"
 #include "openPMD/auxiliary/Memory.hpp"
 #include "openPMD/auxiliary/StringManip.hpp"
@@ -857,11 +858,15 @@ void JSONIOHandlerImpl::readAttribute(
     auto &jsonLoc = obtainJsonContents(writable)["attributes"];
     setAndGetFilePosition(writable);
     std::string error_msg("[JSON] No such attribute '");
-    error_msg.append(name)
-        .append("' in the given location '")
-        .append(jsonLoc.dump())
-        .append("'.");
-    VERIFY_ALWAYS(hasKey(jsonLoc, name), error_msg)
+    if (!hasKey(jsonLoc, name))
+    {
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::NotFound,
+            "JSON",
+            "Tried looking up attribute '" + name +
+                "' in object: " + jsonLoc.dump());
+    }
     auto &j = jsonLoc[name];
     try
     {
@@ -871,9 +876,12 @@ void JSONIOHandlerImpl::readAttribute(
     }
     catch (json::type_error &)
     {
-        throw std::runtime_error(
-            "[JSON] The given location does not contain a properly formatted "
-            "attribute");
+        throw error::ReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            "JSON",
+            "No properly formatted attribute with name '" + name +
+                "' found in object: " + jsonLoc.dump());
     }
 }
 
