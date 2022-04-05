@@ -20,11 +20,10 @@
  */
 
 #include "openPMD/IO/ADIOS/CommonADIOS1IOHandler.hpp"
-#include "openPMD/Error.hpp"
+#include "openPMD/ThrowError.hpp"
 
 #if openPMD_HAVE_ADIOS1
 
-#include "openPMD/Error.hpp"
 #include "openPMD/IO/ADIOS/ADIOS1IOHandlerImpl.hpp"
 #include "openPMD/IO/ADIOS/ParallelADIOS1IOHandlerImpl.hpp"
 #include "openPMD/auxiliary/JSON_internal.hpp"
@@ -425,7 +424,7 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::createFile(
         if (m_handler->m_backendAccess == Access::APPEND &&
             auxiliary::file_exists(name))
         {
-            throw error::OperationUnsupportedInBackend(
+            error::throwOperationUnsupportedInBackend(
                 "ADIOS1",
                 "Appending to existing file on disk (use Access::CREATE to "
                 "overwrite)");
@@ -515,7 +514,7 @@ static std::optional<std::string> datasetTransform(json::TracingJSON config)
     }
     else
     {
-        throw error::BackendConfigSchema(
+        error::throwBackendConfigSchema(
             {"adios1", "dataset", "transform"},
             "Key must convertible to type string.");
     }
@@ -1248,15 +1247,22 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::readAttribute(
 
     int status;
     status = adios_get_attr(f, attrname.c_str(), &datatype, &size, &data);
-    VERIFY(
-        status == 0,
-        "[ADIOS1] Internal error: Failed to get ADIOS1 attribute during "
-        "attribute read");
-    VERIFY(
-        datatype != adios_unknown,
-        "[ADIOS1] Internal error: Read unknown ADIOS1 datatype during "
-        "attribute read");
-    VERIFY(size != 0, "[ADIOS1] Internal error: ADIOS1 read 0-size attribute");
+    if (status != 0)
+    {
+        error::throwReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::NotFound,
+            "ADIOS1",
+            attrname);
+    }
+    if (datatype == adios_unknown)
+    {
+        error::throwReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            "ADIOS1",
+            "Unknown datatype: " + attrname);
+    }
 
     // size is returned in number of allocated bytes
     // note the ill-named fixed-byte adios_... types
@@ -1307,9 +1313,11 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::readAttribute(
         break;
 
     default:
-        throw unsupported_data_error(
-            "[ADIOS1] readAttribute: Unsupported ADIOS1 attribute datatype '" +
-            std::to_string(datatype) + "' in size check");
+        error::throwReadError(
+            error::AffectedObject::Attribute,
+            error::Reason::UnexpectedContent,
+            "ADIOS1",
+            "Unsupported datatype: " + attrname);
     }
 
     Datatype dtype;
@@ -1345,9 +1353,12 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::readAttribute(
                 a = Attribute(*reinterpret_cast<long long *>(data));
             }
             else
-                throw unsupported_data_error(
-                    "[ADIOS1] No native equivalent for Datatype adios_short "
-                    "found.");
+                error::throwReadError(
+                    error::AffectedObject::Attribute,
+                    error::Reason::Other,
+                    "ADIOS1",
+                    "No native equivalent found for type adios_short: " +
+                        attrname);
             break;
         case adios_integer:
             if (sizeof(short) == 4u)
@@ -1371,9 +1382,12 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::readAttribute(
                 a = Attribute(*reinterpret_cast<long long *>(data));
             }
             else
-                throw unsupported_data_error(
-                    "[ADIOS1] No native equivalent for Datatype adios_integer "
-                    "found.");
+                error::throwReadError(
+                    error::AffectedObject::Attribute,
+                    error::Reason::Other,
+                    "ADIOS1",
+                    "No native equivalent found for type adios_integer: " +
+                        attrname);
             break;
         case adios_long:
             if (sizeof(short) == 8u)
@@ -1397,9 +1411,12 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::readAttribute(
                 a = Attribute(*reinterpret_cast<long long *>(data));
             }
             else
-                throw unsupported_data_error(
-                    "[ADIOS1] No native equivalent for Datatype adios_long "
-                    "found.");
+                error::throwReadError(
+                    error::AffectedObject::Attribute,
+                    error::Reason::Other,
+                    "ADIOS1",
+                    "No native equivalent found for type adios_long: " +
+                        attrname);
             break;
         case adios_unsigned_byte:
             dtype = DT::UCHAR;
@@ -1427,9 +1444,13 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::readAttribute(
                 a = Attribute(*reinterpret_cast<unsigned long long *>(data));
             }
             else
-                throw unsupported_data_error(
-                    "[ADIOS1] No native equivalent for Datatype "
-                    "adios_unsigned_short found.");
+                error::throwReadError(
+                    error::AffectedObject::Attribute,
+                    error::Reason::Other,
+                    "ADIOS1",
+                    "No native equivalent found for type "
+                    "adios_unsigned_short: " +
+                        attrname);
             break;
         case adios_unsigned_integer:
             if (sizeof(unsigned short) == 4u)
@@ -1453,9 +1474,13 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::readAttribute(
                 a = Attribute(*reinterpret_cast<unsigned long long *>(data));
             }
             else
-                throw unsupported_data_error(
-                    "[ADIOS1] No native equivalent for Datatype "
-                    "adios_unsigned_integer found.");
+                error::throwReadError(
+                    error::AffectedObject::Attribute,
+                    error::Reason::Other,
+                    "ADIOS1",
+                    "No native equivalent found for type "
+                    "adios_unsigned_integer: " +
+                        attrname);
             break;
         case adios_unsigned_long:
             if (sizeof(unsigned short) == 8u)
@@ -1479,9 +1504,13 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::readAttribute(
                 a = Attribute(*reinterpret_cast<unsigned long long *>(data));
             }
             else
-                throw unsupported_data_error(
-                    "[ADIOS1] No native equivalent for Datatype "
-                    "adios_unsigned_long found.");
+                error::throwReadError(
+                    error::AffectedObject::Attribute,
+                    error::Reason::Other,
+                    "ADIOS1",
+                    "No native equivalent found for type "
+                    "adios_unsigned_long: " +
+                        attrname);
             break;
         case adios_real:
             dtype = DT::FLOAT;
@@ -1527,10 +1556,13 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::readAttribute(
             break;
         }
         default:
-            throw unsupported_data_error(
-                "[ADIOS1] readAttribute: Unsupported ADIOS1 attribute datatype "
-                "'" +
-                std::to_string(datatype) + "' in scalar branch");
+            error::throwReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::Other,
+                "ADIOS1",
+                "Unsupported ADIOS1 attribute datatype '" +
+                    std::to_string(datatype) +
+                    "' in scalar branch: " + attrname);
         }
     }
     else
@@ -1565,9 +1597,12 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::readAttribute(
                     readVectorAttributeInternal<long long>(data, size),
                     DT::VEC_LONGLONG);
             else
-                throw unsupported_data_error(
-                    "[ADIOS1] No native equivalent for Datatype adios_short "
-                    "found.");
+                error::throwReadError(
+                    error::AffectedObject::Attribute,
+                    error::Reason::Other,
+                    "ADIOS1",
+                    "No native equivalent found for type adios_short: " +
+                        attrname);
             break;
         }
         case adios_integer: {
@@ -1587,9 +1622,12 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::readAttribute(
                     readVectorAttributeInternal<long long>(data, size),
                     DT::VEC_LONGLONG);
             else
-                throw unsupported_data_error(
-                    "[ADIOS1] No native equivalent for Datatype adios_integer "
-                    "found.");
+                error::throwReadError(
+                    error::AffectedObject::Attribute,
+                    error::Reason::Other,
+                    "ADIOS1",
+                    "No native equivalent found for type adios_integer: " +
+                        attrname);
             break;
         }
         case adios_long: {
@@ -1609,9 +1647,12 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::readAttribute(
                     readVectorAttributeInternal<long long>(data, size),
                     DT::VEC_LONGLONG);
             else
-                throw unsupported_data_error(
-                    "[ADIOS1] No native equivalent for Datatype adios_long "
-                    "found.");
+                error::throwReadError(
+                    error::AffectedObject::Attribute,
+                    error::Reason::Other,
+                    "ADIOS1",
+                    "No native equivalent found for type adios_long: " +
+                        attrname);
             break;
         }
         case adios_unsigned_byte: {
@@ -1642,9 +1683,13 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::readAttribute(
                     readVectorAttributeInternal<unsigned long long>(data, size),
                     DT::VEC_ULONGLONG);
             else
-                throw unsupported_data_error(
-                    "[ADIOS1] No native equivalent for Datatype "
-                    "adios_unsigned_short found.");
+                error::throwReadError(
+                    error::AffectedObject::Attribute,
+                    error::Reason::Other,
+                    "ADIOS1",
+                    "No native equivalent found for type "
+                    "adios_unsigned_short: " +
+                        attrname);
             break;
         }
         case adios_unsigned_integer: {
@@ -1665,9 +1710,13 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::readAttribute(
                     readVectorAttributeInternal<unsigned long long>(data, size),
                     DT::VEC_ULONGLONG);
             else
-                throw unsupported_data_error(
-                    "[ADIOS1] No native equivalent for Datatype "
-                    "adios_unsigned_integer found.");
+                error::throwReadError(
+                    error::AffectedObject::Attribute,
+                    error::Reason::Other,
+                    "ADIOS1",
+                    "No native equivalent found for type "
+                    "adios_unsigned_integer: " +
+                        attrname);
             break;
         }
         case adios_unsigned_long: {
@@ -1688,9 +1737,13 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::readAttribute(
                     readVectorAttributeInternal<unsigned long long>(data, size),
                     DT::VEC_ULONGLONG);
             else
-                throw unsupported_data_error(
-                    "[ADIOS1] No native equivalent for Datatype "
-                    "adios_unsigned_long found.");
+                error::throwReadError(
+                    error::AffectedObject::Attribute,
+                    error::Reason::Other,
+                    "ADIOS1",
+                    "No native equivalent found for type "
+                    "adios_unsigned_long: " +
+                        attrname);
             break;
         }
         case adios_real: {
@@ -1750,10 +1803,13 @@ void CommonADIOS1IOHandlerImpl<ChildClass>::readAttribute(
         }
 
         default:
-            throw unsupported_data_error(
-                "[ADIOS1] readAttribute: Unsupported ADIOS1 attribute datatype "
-                "'" +
-                std::to_string(datatype) + "' in vector branch");
+            error::throwReadError(
+                error::AffectedObject::Attribute,
+                error::Reason::Other,
+                "ADIOS1",
+                "Unsupported ADIOS1 attribute datatype '" +
+                    std::to_string(datatype) +
+                    "' in vector branch: " + attrname);
         }
     }
 
