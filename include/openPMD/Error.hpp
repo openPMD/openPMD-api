@@ -1,6 +1,7 @@
 #pragma once
 
 #include <exception>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -79,6 +80,50 @@ namespace error
     {
     public:
         Internal(std::string const &what);
+    };
+
+    enum class AffectedObject
+    {
+        Attribute,
+        Dataset,
+        Group,
+        Other
+    };
+
+    enum class Reason
+    {
+        NotFound,
+        CannotRead,
+        UnexpectedContent,
+        Other
+    };
+
+    /*
+     * Read error concerning a specific object.
+     */
+    class ReadError : public Error
+    {
+    public:
+        AffectedObject affectedObject;
+        Reason reason;
+        // If empty, then the error is thrown by the frontend
+        std::optional<std::string> backend;
+        std::string description; // object path, further details, ...
+
+        ReadError(
+            AffectedObject,
+            Reason,
+            std::optional<std::string> backend_in,
+            std::string description_in);
+    };
+
+    /*
+     * Inrecoverable parse error from the frontend.
+     */
+    class ParseError : public Error
+    {
+    public:
+        ParseError(std::string what);
     };
 } // namespace error
 } // namespace openPMD

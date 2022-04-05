@@ -52,5 +52,61 @@ namespace error
               "\nThis is a bug. Please report at ' "
               "https://github.com/openPMD/openPMD-api/issues'.")
     {}
+
+    namespace
+    {
+        std::string asString(AffectedObject obj)
+        {
+            switch (obj)
+            {
+                using AO = AffectedObject;
+            case AO::Attribute:
+                return "Attribute";
+            case AO::Dataset:
+                return "Dataset";
+            case AO::Group:
+                return "Group";
+            case AO::Other:
+                return "Other";
+            }
+            return "Unreachable";
+        }
+        std::string asString(Reason obj)
+        {
+            switch (obj)
+            {
+                using Re = Reason;
+            case Re::NotFound:
+                return "NotFound";
+            case Re::CannotRead:
+                return "CannotRead";
+            case Re::UnexpectedContent:
+                return "UnexpectedContent";
+            case Re::Other:
+                return "Other";
+            }
+            return "Unreachable";
+        }
+    } // namespace
+
+    ReadError::ReadError(
+        AffectedObject affectedObject_in,
+        Reason reason_in,
+        std::optional<std::string> backend_in,
+        std::string description_in)
+        : Error(
+              (backend_in ? ("Read Error in backend " + *backend_in)
+                          : "Read Error in frontend ") +
+              "\nObject type:\t" + asString(affectedObject_in) +
+              "\nError type:\t" + asString(reason_in) +
+              "\nFurther description:\t" + description_in)
+        , affectedObject(affectedObject_in)
+        , reason(reason_in)
+        , backend(std::move(backend_in))
+        , description(std::move(description_in))
+    {}
+
+    ParseError::ParseError(std::string what) : Error("Parse Error: " + what)
+    {}
 } // namespace error
 } // namespace openPMD
