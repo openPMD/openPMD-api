@@ -39,7 +39,7 @@ int main()
     std::vector<double> y{-2., -3., -4., -5., -6.};
 
     // both x and y the same type, otherwise we use two distinct datasets
-    Datatype dtype = determineDatatype(x.data());
+    Datatype dtype = determineDatatypeContiguous(x);
     Extent size = {x.size()};
     auto dataset = Dataset(dtype, size, "{ \"resizable\": true }");
 

@@ -20,6 +20,8 @@
  */
 #pragma once
 
+#include "openPMD/auxiliary/TypeTraits.hpp"
+
 #include <array>
 #include <climits>
 #include <complex>
@@ -275,169 +277,32 @@ inline constexpr Datatype determineDatatype()
 }
 
 template <typename T>
-inline constexpr Datatype determineDatatype(T const *)
+inline constexpr Datatype determineDatatype(std::shared_ptr<T>)
 {
     return determineDatatype<T>();
 }
 
 template <typename T>
-inline constexpr Datatype determineDatatype(std::shared_ptr<T>)
+inline constexpr Datatype determineDatatypeRaw(T const *)
 {
-    using DT = Datatype;
-    if (decay_equiv<T, char>::value)
+    return determineDatatype<T>();
+}
+
+template <typename T_ContiguousContainer>
+inline constexpr Datatype determineDatatypeContiguous(T_ContiguousContainer &&)
+{
+    using T_ContiguousContainer_stripped =
+        std::remove_reference_t<T_ContiguousContainer>;
+    if constexpr (auxiliary::IsContiguousContainer_v<
+                      T_ContiguousContainer_stripped>)
     {
-        return DT::CHAR;
-    }
-    else if (decay_equiv<T, unsigned char>::value)
-    {
-        return DT::UCHAR;
-    }
-    else if (decay_equiv<T, signed char>::value)
-    {
-        return DT::SCHAR;
-    }
-    else if (decay_equiv<T, short>::value)
-    {
-        return DT::SHORT;
-    }
-    else if (decay_equiv<T, int>::value)
-    {
-        return DT::INT;
-    }
-    else if (decay_equiv<T, long>::value)
-    {
-        return DT::LONG;
-    }
-    else if (decay_equiv<T, long long>::value)
-    {
-        return DT::LONGLONG;
-    }
-    else if (decay_equiv<T, unsigned short>::value)
-    {
-        return DT::USHORT;
-    }
-    else if (decay_equiv<T, unsigned int>::value)
-    {
-        return DT::UINT;
-    }
-    else if (decay_equiv<T, unsigned long>::value)
-    {
-        return DT::ULONG;
-    }
-    else if (decay_equiv<T, unsigned long long>::value)
-    {
-        return DT::ULONGLONG;
-    }
-    else if (decay_equiv<T, float>::value)
-    {
-        return DT::FLOAT;
-    }
-    else if (decay_equiv<T, double>::value)
-    {
-        return DT::DOUBLE;
-    }
-    else if (decay_equiv<T, long double>::value)
-    {
-        return DT::LONG_DOUBLE;
-    }
-    else if (decay_equiv<T, std::complex<float>>::value)
-    {
-        return DT::CFLOAT;
-    }
-    else if (decay_equiv<T, std::complex<double>>::value)
-    {
-        return DT::CDOUBLE;
-    }
-    else if (decay_equiv<T, std::complex<long double>>::value)
-    {
-        return DT::CLONG_DOUBLE;
-    }
-    else if (decay_equiv<T, std::string>::value)
-    {
-        return DT::STRING;
-    }
-    else if (decay_equiv<T, std::vector<char>>::value)
-    {
-        return DT::VEC_CHAR;
-    }
-    else if (decay_equiv<T, std::vector<short>>::value)
-    {
-        return DT::VEC_SHORT;
-    }
-    else if (decay_equiv<T, std::vector<int>>::value)
-    {
-        return DT::VEC_INT;
-    }
-    else if (decay_equiv<T, std::vector<long>>::value)
-    {
-        return DT::VEC_LONG;
-    }
-    else if (decay_equiv<T, std::vector<long long>>::value)
-    {
-        return DT::VEC_LONGLONG;
-    }
-    else if (decay_equiv<T, std::vector<unsigned char>>::value)
-    {
-        return DT::VEC_UCHAR;
-    }
-    else if (decay_equiv<T, std::vector<signed char>>::value)
-    {
-        return DT::VEC_SCHAR;
-    }
-    else if (decay_equiv<T, std::vector<unsigned short>>::value)
-    {
-        return DT::VEC_USHORT;
-    }
-    else if (decay_equiv<T, std::vector<unsigned int>>::value)
-    {
-        return DT::VEC_UINT;
-    }
-    else if (decay_equiv<T, std::vector<unsigned long>>::value)
-    {
-        return DT::VEC_ULONG;
-    }
-    else if (decay_equiv<T, std::vector<unsigned long long>>::value)
-    {
-        return DT::VEC_ULONGLONG;
-    }
-    else if (decay_equiv<T, std::vector<float>>::value)
-    {
-        return DT::VEC_FLOAT;
-    }
-    else if (decay_equiv<T, std::vector<double>>::value)
-    {
-        return DT::VEC_DOUBLE;
-    }
-    else if (decay_equiv<T, std::vector<long double>>::value)
-    {
-        return DT::VEC_LONG_DOUBLE;
-    }
-    else if (decay_equiv<T, std::vector<std::complex<float>>>::value)
-    {
-        return DT::VEC_CFLOAT;
-    }
-    else if (decay_equiv<T, std::vector<std::complex<double>>>::value)
-    {
-        return DT::VEC_CDOUBLE;
-    }
-    else if (decay_equiv<T, std::vector<std::complex<long double>>>::value)
-    {
-        return DT::VEC_CLONG_DOUBLE;
-    }
-    else if (decay_equiv<T, std::vector<std::string>>::value)
-    {
-        return DT::VEC_STRING;
-    }
-    else if (decay_equiv<T, std::array<double, 7>>::value)
-    {
-        return DT::ARR_DBL_7;
-    }
-    else if (decay_equiv<T, bool>::value)
-    {
-        return DT::BOOL;
+        return determineDatatype<
+            typename T_ContiguousContainer_stripped::value_type>();
     }
     else
-        return DT::UNDEFINED;
+    {
+        return Datatype::UNDEFINED;
+    }
 }
 
 /** Return number of bytes representing a Datatype
