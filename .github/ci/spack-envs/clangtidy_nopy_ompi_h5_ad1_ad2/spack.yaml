@@ -18,26 +18,26 @@ spack:
       variants: ~zfp ~sz ~png ~dataman ~python ~fortran ~ssc ~shared ~bzip2
     cmake:
       externals:
-      - spec: "cmake"
+      - spec: cmake@3.23.0
         prefix: /usr
       buildable: False
     openmpi:
       externals:
-      - spec: "openmpi"
+      - spec: openmpi@2.1.1
         prefix: /usr
       buildable: False
     perl:
       externals:
-      - spec: "perl"
+      - spec: perl@5.26.1
         prefix: /usr
       buildable: False
     python:
       externals:
-      - spec: "python"
+      - spec: python@3.8.0
         prefix: /usr
       buildable: False
     all:
-      target: ['x86_64']
+      target: [x86_64]
       variants: ~fortran
       providers:
         mpi: [openmpi]
@@ -60,3 +60,6 @@ spack:
 
   config:
     build_jobs: 2
+
+  mirrors:
+    E4S: https://cache.e4s.io
