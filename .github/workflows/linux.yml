@@ -46,6 +46,10 @@ jobs:
     - name: Build
       env: {CC: clang-5.0, CXX: clang++-5.0, CXXFLAGS: -Werror -Wno-deprecated-declarations}
       run: |
+        cmake --version
+        mpiexec --version
+        perl --version
+        python --version
         eval $(spack env activate --sh .github/ci/spack-envs/clang5_nopy_ompi_h5_ad1_ad2_bp3/)
         spack install
 
@@ -141,6 +145,10 @@ jobs:
     - name: Build
       env: {CC: clang-8, CXX: clang++-8, CXXFLAGS: -Werror -Wno-deprecated-declarations, OPENPMD2_ADIOS2_SCHEMA: 20210209}
       run: |
+        cmake --version
+        mpiexec --version
+        perl --version
+        python --version
         eval $(spack env activate --sh .github/ci/spack-envs/clang8_py38_mpich_h5_ad1_ad2/)
         spack install
 
