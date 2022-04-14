@@ -158,6 +158,15 @@ function(openpmd_cxx_required target)
     )
 endfunction()
 
+# CUDA C++ standard: requirements for a target
+function(openpmd_cuda_required target)
+   target_compile_features(${target} PUBLIC cuda_std_17)
+   set_target_properties(${target} PROPERTIES
+       CUDA_SEPARABLE_COMPILATION ON
+       CUDA_EXTENSIONS OFF
+       CUDA_STANDARD_REQUIRED ON)
+endfunction()
+
 
 # Dependencies ################################################################
 #
@@ -882,28 +891,20 @@ endif()
 
 if(openPMD_BUILD_EXAMPLES)
     foreach(examplename ${openPMD_EXAMPLE_NAMES})
-        if(${examplename} MATCHES ".+parallel$")
-            if(openPMD_HAVE_MPI)
-                add_executable(${examplename} examples/${examplename}.cpp)
-                if (openPMD_HAVE_CUDA_EXAMPLES)
-                   set_source_files_properties(examples/${examplename}.cpp PROPERTIES
-                       LANGUAGE CUDA)
-                   target_compile_features(${examplename} PUBLIC cuda_std_17)
-                   set_target_properties(${examplename} PROPERTIES
-                       CUDA_SEPARABLE_COMPILATION ON
-                       CUDA_EXTENSIONS OFF
-                       CUDA_STANDARD_REQUIRED ON)
-                   target_link_libraries(${examplename} PRIVATE openPMD)
-                else()
-                   openpmd_cxx_required(${examplename})
-                   target_link_libraries(${examplename} PRIVATE openPMD)
-                endif()
-            endif()
-        else()
-            add_executable(${examplename} examples/${examplename}.cpp)
-            openpmd_cxx_required(${examplename})
-            target_link_libraries(${examplename} PRIVATE openPMD)
+        if(${examplename} MATCHES ".+parallel$" AND NOT openPMD_HAVE_MPI)
+            # skip parallel test
+            continue()
         endif()
+
+        add_executable(${examplename} examples/${examplename}.cpp)
+        if (openPMD_HAVE_CUDA_EXAMPLES)
+           set_source_files_properties(examples/${examplename}.cpp
+               PROPERTIES LANGUAGE CUDA)
+           openpmd_cuda_required(${examplename})
+        else()
+           openpmd_cxx_required(${examplename})
+        endif()
+        target_link_libraries(${examplename} PRIVATE openPMD)
     endforeach()
 endif()
 
