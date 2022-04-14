@@ -36,7 +36,7 @@
 #include <adios2.h>
 #endif
 
-#if openPMD_HAVE_CUDA_TESTS
+#if openPMD_HAVE_CUDA_EXAMPLES
 #include <cuda.h>
 #include <cuda_runtime.h>
 #endif
@@ -195,7 +195,7 @@ createDataCPU(const unsigned long &size, const T &val, const T &increment)
     return E;
 }
 
-#if openPMD_HAVE_CUDA_TESTS
+#if openPMD_HAVE_CUDA_EXAMPLES
 template <typename T>
 std::shared_ptr<T>
 createDataGPU(const unsigned long &size, const T &val, const T &increment)
@@ -225,7 +225,7 @@ template <typename T>
 std::shared_ptr<T>
 createData(const unsigned long &size, const T &val, const T &increment)
 {
-#if openPMD_HAVE_CUDA_TESTS
+#if openPMD_HAVE_CUDA_EXAMPLES
     return createDataGPU(size, val, increment);
 #else
     return createDataCPU(size, val, increment);
