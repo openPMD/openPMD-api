@@ -23,6 +23,8 @@
 
 #include "openPMD/Iteration.hpp"
 
+#include <ios>
+#include <sstream>
 #include <string>
 
 namespace py = pybind11;
@@ -36,10 +38,10 @@ void init_Iteration(py::module &m)
         .def(
             "__repr__",
             [](Iteration const &it) {
-                return "<openPMD.Iteration at t = '" +
-                    std::to_string(
-                           it.template time<double>() * it.timeUnitSI()) +
-                    " s'>";
+                std::stringstream ss;
+                ss << "<openPMD.Iteration at t = '" << std::scientific
+                   << it.template time<double>() * it.timeUnitSI() << " s'>";
+                return ss.str();
             })
 
         .def_property(
