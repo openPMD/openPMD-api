@@ -125,6 +125,7 @@ Optional language bindings:
   * mpi4py 2.1+ (optional, for MPI)
   * pandas 1.0+ (optional, for dataframes)
   * dask 2021+ (optional, for dask dataframes)
+* CUDA C++ (optional, currently used only in tests)
 
 ## Installation
 
@@ -285,11 +286,12 @@ In order to build with debug symbols, pass `-DCMAKE_BUILD_TYPE=Debug` to your `c
 By default, tests, examples and command line tools are built.
 In order to skip building those, pass ``OFF`` to these ``cmake`` options:
 
-| CMake Option              | Values     | Description              |
-|---------------------------|------------|--------------------------|
-| `openPMD_BUILD_TESTING`   | **ON**/OFF | Build tests              |
-| `openPMD_BUILD_EXAMPLES`  | **ON**/OFF | Build examples           |
-| `openPMD_BUILD_CLI_TOOLS` | **ON**/OFF | Build command-line tools |
+| CMake Option                  | Values     | Description              |
+|-------------------------------|------------|--------------------------|
+| `openPMD_BUILD_TESTING`       | **ON**/OFF | Build tests              |
+| `openPMD_BUILD_EXAMPLES`      | **ON**/OFF | Build examples           |
+| `openPMD_BUILD_CLI_TOOLS`     | **ON**/OFF | Build command-line tools |
+| `openPMD_USE_CUDA_EXAMPLES`   | ON/**OFF** | Use CUDA in examples     |
 
 ## Linking to your project
 

@@ -144,6 +144,7 @@ if(NOT DEFINED BUILD_EXAMPLES)
 endif()
 option(openPMD_BUILD_CLI_TOOLS "Build the command line tools" ${BUILD_CLI_TOOLS})
 option(openPMD_BUILD_EXAMPLES  "Build the examples" ${BUILD_EXAMPLES})
+openpmd_option(CUDA_EXAMPLES   "Use CUDA in examples" OFF)
 
 
 # Helper Functions ############################################################
@@ -155,6 +156,15 @@ function(openpmd_cxx_required target)
         CXX_EXTENSIONS OFF
         CXX_STANDARD_REQUIRED ON
     )
+endfunction()
+
+# CUDA C++ standard: requirements for a target
+function(openpmd_cuda_required target)
+   target_compile_features(${target} PUBLIC cuda_std_17)
+   set_target_properties(${target} PROPERTIES
+       CUDA_SEPARABLE_COMPILATION ON
+       CUDA_EXTENSIONS OFF
+       CUDA_STANDARD_REQUIRED ON)
 endfunction()
 
 
@@ -222,6 +232,21 @@ add_library(openPMD::thirdparty::toml11 INTERFACE IMPORTED)
 target_link_libraries(openPMD::thirdparty::toml11
     INTERFACE toml11::toml11)
 
+
+# external: CUDA (optional)
+if(openPMD_BUILD_EXAMPLES)  # currently only used in examples
+    if(openPMD_USE_CUDA_EXAMPLES STREQUAL AUTO)
+       find_package(CUDAToolkit)
+    elseif(openPMD_USE_CUDA_EXAMPLES)
+       find_package(CUDAToolkit REQUIRED)
+    endif()
+endif()
+if(CUDAToolkit_FOUND)
+    enable_language(CUDA)
+    set(openPMD_HAVE_CUDA_EXAMPLES TRUE)
+else()
+    set(openPMD_HAVE_CUDA_EXAMPLES FALSE)
+endif()
 
 # external library: HDF5 (optional)
 #   note: in the new hdf5-cmake.config files, major releases like
@@ -866,17 +891,20 @@ endif()
 
 if(openPMD_BUILD_EXAMPLES)
     foreach(examplename ${openPMD_EXAMPLE_NAMES})
-        if(${examplename} MATCHES ".+parallel$")
-            if(openPMD_HAVE_MPI)
-                add_executable(${examplename} examples/${examplename}.cpp)
-                openpmd_cxx_required(${examplename})
-                target_link_libraries(${examplename} PRIVATE openPMD)
-            endif()
-        else()
-            add_executable(${examplename} examples/${examplename}.cpp)
-            openpmd_cxx_required(${examplename})
-            target_link_libraries(${examplename} PRIVATE openPMD)
+        if(${examplename} MATCHES ".+parallel$" AND NOT openPMD_HAVE_MPI)
+            # skip parallel test
+            continue()
         endif()
+
+        add_executable(${examplename} examples/${examplename}.cpp)
+        if (openPMD_HAVE_CUDA_EXAMPLES)
+           set_source_files_properties(examples/${examplename}.cpp
+               PROPERTIES LANGUAGE CUDA)
+           openpmd_cuda_required(${examplename})
+        else()
+           openpmd_cxx_required(${examplename})
+        endif()
+        target_link_libraries(${examplename} PRIVATE openPMD)
     endforeach()
 endif()
 

@@ -81,10 +81,11 @@ Tests, Examples and Command Line Tools
 By default, tests, examples and command line tools are built.
 In order to skip building those, pass ``OFF`` to these ``cmake`` options:
 
-============================== =============== ==================================================
-CMake Option                   Values          Description
-============================== =============== ==================================================
-``openPMD_BUILD_TESTING``      **ON**/OFF      Build tests
-``openPMD_BUILD_EXAMPLES``     **ON**/OFF      Build examples
-``openPMD_BUILD_CLI_TOOLS``    **ON**/OFF      Build command-line tools
-============================== =============== ==================================================
+=============================== =============== ==================================================
+CMake Option                    Values          Description
+=============================== =============== ==================================================
+``openPMD_BUILD_TESTING``       **ON**/OFF      Build tests
+``openPMD_BUILD_EXAMPLES``      **ON**/OFF      Build examples
+``openPMD_BUILD_CLI_TOOLS``     **ON**/OFF      Build command-line tools
+``openPMD_USE_CUDA_EXAMPLES``   ON/**OFF**      Use CUDA in examples
+=============================== =============== ==================================================
