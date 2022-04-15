@@ -122,6 +122,7 @@ public:
 template <typename T, typename U>
 auto doConvert(T *pv) -> U
 {
+    (void)pv;
     if constexpr (std::is_convertible_v<T, U>)
     {
         return static_cast<U>(*pv);
@@ -132,13 +133,15 @@ auto doConvert(T *pv) -> U
                           typename T::value_type,
                           typename U::value_type>)
         {
-            U res;
+            U res{};
             res.reserve(pv->size());
             std::copy(pv->begin(), pv->end(), std::back_inserter(res));
             return res;
         }
-
-        throw std::runtime_error("getCast: no vector cast possible.");
+        else
+        {
+            throw std::runtime_error("getCast: no vector cast possible.");
+        }
     }
     // conversion cast: array to vector
     // if a backend reports a std::array<> for something where
@@ -149,14 +152,16 @@ auto doConvert(T *pv) -> U
                           typename T::value_type,
                           typename U::value_type>)
         {
-            U res;
+            U res{};
             res.reserve(pv->size());
             std::copy(pv->begin(), pv->end(), std::back_inserter(res));
             return res;
         }
-
-        throw std::runtime_error(
-            "getCast: no array to vector conversion possible.");
+        else
+        {
+            throw std::runtime_error(
+                "getCast: no array to vector conversion possible.");
+        }
     }
     // conversion cast: vector to array
     // if a backend reports a std::vector<> for something where
@@ -167,7 +172,7 @@ auto doConvert(T *pv) -> U
                           typename T::value_type,
                           typename U::value_type>)
         {
-            U res;
+            U res{};
             if (res.size() != pv->size())
             {
                 throw std::runtime_error(
@@ -180,28 +185,46 @@ auto doConvert(T *pv) -> U
             }
             return res;
         }
-
-        throw std::runtime_error(
-            "getCast: no vector to array conversion possible.");
+        else
+        {
+            throw std::runtime_error(
+                "getCast: no vector to array conversion possible.");
+        }
     }
     // conversion cast: turn a single value into a 1-element vector
     else if constexpr (auxiliary::IsVector_v<U>)
     {
         if constexpr (std::is_convertible_v<T, typename U::value_type>)
         {
-            U res;
+            U res{};
             res.reserve(1);
             res.push_back(static_cast<typename U::value_type>(*pv));
             return res;
         }
-
-        throw std::runtime_error(
-            "getCast: no scalar to vector conversion possible.");
+        else
+        {
+            throw std::runtime_error(
+                "getCast: no scalar to vector conversion possible.");
+        }
     }
-
-    (void)pv;
-    throw std::runtime_error("getCast: no cast possible.");
+    else
+    {
+        throw std::runtime_error("getCast: no cast possible.");
+    }
+#if defined(__INTEL_COMPILER)
+/*
+ * ICPC has trouble with if constexpr, thinking that return statements are
+ * missing afterwards. Deactivate the warning.
+ * Note that putting a statement here will not help to fix this since it will
+ * then complain about unreachable code.
+ * https://community.intel.com/t5/Intel-C-Compiler/quot-if-constexpr-quot-and-quot-missing-return-statement-quot-in/td-p/1154551
+ */
+#pragma warning(disable : 1011)
 }
+#pragma warning(default : 1011)
+#else
+}
+#endif
 
 /** Retrieve a stored specific Attribute and cast if convertible.
  *
