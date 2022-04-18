@@ -65,13 +65,13 @@ repos:
 # clang-format v13
 #   to run manually, use .github/workflows/clang-format/clang-format.sh
 - repo: https://github.com/pre-commit/mirrors-clang-format
-  rev: v13.0.1
+  rev: v14.0.1
   hooks:
   - id: clang-format
 
 # Autoremoves unused Python imports
 - repo: https://github.com/hadialqattan/pycln
-  rev: v1.2.5
+  rev: v1.3.1
   hooks:
   - id: pycln
     name: pycln (python)
