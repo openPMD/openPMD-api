@@ -5213,9 +5213,6 @@ void adios2_bp5_no_steps(bool usesteps)
         }
 
         // write default openPMD attributes
-        auto writeAttribute = [&IO](std::string const &name, auto value) {
-            IO.DefineAttribute(name, value);
-        };
         IO.DefineAttribute("/basePath", std::string("/data/%T/"));
         IO.DefineAttribute("/date", std::string("2021-02-22 11:14:00 +0000"));
         IO.DefineAttribute("/iterationEncoding", std::string("groupBased"));
