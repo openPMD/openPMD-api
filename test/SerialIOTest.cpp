@@ -5659,3 +5659,47 @@ TEST_CASE("late_setting_of_iterationencoding", "[serial]")
     REQUIRE(
         auxiliary::file_exists("../samples/change_name_and_encoding_10.json"));
 }
+
+void varying_pattern(std::string const file_ending)
+{
+    {
+        std::string filename = "../samples/varying_pattern_%06T." + file_ending;
+        ::openPMD::Series series =
+            ::openPMD::Series(filename, ::openPMD::Access::CREATE);
+
+        for (auto i : {0, 8000, 10000, 100000, 2000000})
+        {
+            auto it = series.iterations[i];
+            it.setAttribute("my_step", i);
+        }
+        series.flush();
+    }
+    {
+        std::string filename = "../samples/varying_pattern_%T." + file_ending;
+        ::openPMD::Series series =
+            ::openPMD::Series(filename, ::openPMD::Access::READ_ONLY);
+
+        REQUIRE(series.iterations.size() == 5);
+        for (auto const [step, it] : series.iterations)
+        {
+            std::cout << "Iteration: " << step << "\n";
+            REQUIRE(it.getAttribute("my_step").get<int>() == int(step));
+        }
+
+        helper::listSeries(series, true, std::cout);
+
+        for (auto i : {0, 8000, 10000, 100000, 2000000})
+        {
+            auto it = series.iterations[i];
+            REQUIRE(it.getAttribute("my_step").get<int>() == i);
+        }
+    }
+}
+
+TEST_CASE("varying_zero_pattern", "[serial]")
+{
+    for (auto const &t : testedFileExtensions())
+    {
+        varying_pattern(t);
+    }
+}
