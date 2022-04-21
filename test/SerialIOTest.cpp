@@ -5269,3 +5269,49 @@ TEST_CASE("no_explicit_flush", "[serial]")
         no_explicit_flush("../samples/no_explicit_flush." + t);
     }
 }
+
+void varying_pattern(std::string const file_ending)
+{
+    {
+        std::string filename = "../samples/varying_pattern_%06T." + file_ending;
+        ::openPMD::Series series =
+            ::openPMD::Series(filename, ::openPMD::Access::CREATE);
+
+        for (auto i : {0, 8000, 10000, 100000, 2000000})
+        {
+            auto it = series.iterations[i];
+            it.setAttribute("my_step", i);
+        }
+        series.flush();
+    }
+    {
+        std::string filename = "../samples/varying_pattern_%T." + file_ending;
+        ::openPMD::Series series =
+            ::openPMD::Series(filename, ::openPMD::Access::READ_ONLY);
+
+        REQUIRE(series.iterations.size() == 5);
+        for (auto const &i : series.iterations)
+        {
+            auto const &step = i.first;
+            auto const &it = i.second;
+            std::cout << "Iteration: " << step << "\n";
+            REQUIRE(it.getAttribute("my_step").get<int>() == int(step));
+        }
+
+        helper::listSeries(series, true, std::cout);
+
+        for (auto i : {0, 8000, 10000, 100000, 2000000})
+        {
+            auto it = series.iterations[i];
+            REQUIRE(it.getAttribute("my_step").get<int>() == i);
+        }
+    }
+}
+
+TEST_CASE("varying_zero_pattern", "[serial]")
+{
+    for (auto const &t : testedFileExtensions())
+    {
+        varying_pattern(t);
+    }
+}
