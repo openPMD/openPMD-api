@@ -920,7 +920,7 @@ JSONIOHandlerImpl::getFilehandle(File fileName, Access access)
         fs->open(path, std::ios_base::in);
         break;
     }
-    VERIFY(fs->good(), "[JSON] Failed opening a file");
+    VERIFY(fs->good(), "[JSON] Failed opening a file '" + path + "'");
     return fs;
 }
 
