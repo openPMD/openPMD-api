@@ -360,6 +360,8 @@ void Iteration::readFileBased(
     auto &series = retrieveSeries();
 
     series.readOneIterationFileBased(filePath);
+    *m_overrideFilebasedFilename =
+        auxiliary::makeOption<std::string>(std::move(filePath));
 
     read_impl(groupPath);
 }

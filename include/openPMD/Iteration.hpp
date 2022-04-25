@@ -249,6 +249,11 @@ private:
             std::make_shared<auxiliary::Option<DeferredParseAccess> >(
                 auxiliary::Option<DeferredParseAccess>());
 
+    std::shared_ptr<auxiliary::Option<std::string> >
+        m_overrideFilebasedFilename =
+            std::make_shared<auxiliary::Option<std::string> >(
+                auxiliary::Option<std::string>());
+
     /**
      * @brief Begin an IO step on the IO file (or file-like object)
      *        containing this iteration. In case of group-based iteration

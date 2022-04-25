@@ -35,6 +35,7 @@
 #include <iostream>
 #include <regex>
 #include <set>
+#include <sstream>
 #include <string>
 #include <tuple>
 
@@ -1142,14 +1143,34 @@ void SeriesInterface::readBase()
 
 std::string SeriesInterface::iterationFilename(uint64_t i)
 {
+    /*
+     * The filename might have been overridden at the Series level or at the
+     * Iteration level. See the struct members' documentation for the reasons.
+     */
     auto &series = get();
+    auto iteration = series.iterations.find(i);
     if (series.m_overrideFilebasedFilename.has_value())
     {
         return series.m_overrideFilebasedFilename.get();
     }
-    std::stringstream iteration("");
-    iteration << std::setw(series.m_filenamePadding) << std::setfill('0') << i;
-    return series.m_filenamePrefix + iteration.str() + series.m_filenamePostfix;
+    else if (
+        iteration != series.iterations.end() &&
+        iteration->second.m_overrideFilebasedFilename->has_value())
+    {
+        return iteration->second.m_overrideFilebasedFilename->get();
+    }
+    else
+    {
+        /*
+         * If no filename has been explicitly stored, we use the filename
+         * pattern to compute it.
+         */
+        std::stringstream iterationNr("");
+        iterationNr << std::setw(series.m_filenamePadding) << std::setfill('0')
+                    << i;
+        return series.m_filenamePrefix + iterationNr.str() +
+            series.m_filenamePostfix;
+    }
 }
 
 SeriesInterface::iterations_iterator
