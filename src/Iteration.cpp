@@ -364,6 +364,7 @@ void Iteration::readFileBased(
     auto series = retrieveSeries();
 
     series.readOneIterationFileBased(filePath);
+    get().m_overrideFilebasedFilename = filePath;
 
     read_impl(groupPath);
 }
