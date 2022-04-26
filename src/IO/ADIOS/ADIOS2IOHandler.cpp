@@ -124,6 +124,14 @@ ADIOS2IOHandlerImpl::~ADIOS2IOHandlerImpl()
 
 void ADIOS2IOHandlerImpl::init(json::TracingJSON cfg)
 {
+    // allow overriding through environment variable
+    m_engineType =
+        auxiliary::getEnvString("OPENPMD_ADIOS2_ENGINE", m_engineType);
+    std::transform(
+        m_engineType.begin(),
+        m_engineType.end(),
+        m_engineType.begin(),
+        [](unsigned char c) { return std::tolower(c); });
     if (cfg.json().contains("adios2"))
     {
         m_config = cfg["adios2"];
@@ -152,6 +160,7 @@ void ADIOS2IOHandlerImpl::init(json::TracingJSON cfg)
                     json::asLowerCaseStringDynamic(engineTypeConfig);
                 if (maybeEngine.has_value())
                 {
+                    // override engine type by JSON/TOML configuration
                     m_engineType = std::move(maybeEngine.value());
                 }
                 else
@@ -2352,15 +2361,6 @@ namespace detail
         // set engine type
         bool isStreaming = false;
         {
-            // allow overriding through environment variable
-            m_engineType =
-                auxiliary::getEnvString("OPENPMD_ADIOS2_ENGINE", m_engineType);
-            std::transform(
-                m_engineType.begin(),
-                m_engineType.end(),
-                m_engineType.begin(),
-                [](unsigned char c) { return std::tolower(c); });
-            impl.m_engineType = this->m_engineType;
             m_IO.SetEngine(m_engineType);
             auto it = streamingEngines.find(m_engineType);
             if (it != streamingEngines.end())
