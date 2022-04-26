@@ -24,13 +24,7 @@
 
 namespace openPMD
 {
-Writable::Writable(internal::AttributableData *a)
-    : abstractFilePosition{nullptr}
-    , IOHandler{nullptr}
-    , attributable{a}
-    , parent{nullptr}
-    , dirty{true}
-    , written{false}
+Writable::Writable(internal::AttributableData *a) : attributable{a}
 {}
 
 void Writable::seriesFlush()
