@@ -5680,7 +5680,7 @@ void varying_pattern(std::string const file_ending)
             ::openPMD::Series(filename, ::openPMD::Access::READ_ONLY);
 
         REQUIRE(series.iterations.size() == 5);
-        for (auto const [step, it] : series.iterations)
+        for (auto const &[step, it] : series.iterations)
         {
             std::cout << "Iteration: " << step << "\n";
             REQUIRE(it.getAttribute("my_step").get<int>() == int(step));
