@@ -46,16 +46,16 @@ Writing & reading through those backends and their associated files are supporte
 
 auto s = openPMD::Series("samples/git-sample/data%T.h5", openPMD::Access::READ_ONLY);
 
-for( auto const [step, it] : s.iterations ) {
+for( auto const & [step, it] : s.iterations ) {
     std::cout << "Iteration: " << step << "\n";
 
-    for( auto const [name, mesh] : it.meshes ) {
+    for( auto const & [name, mesh] : it.meshes ) {
         std::cout << "  Mesh '" << name << "' attributes:\n";
         for( auto const& val : mesh.attributes() )
             std::cout << "    " << val << '\n';
     }
 
-    for( auto const [name, species] : it.particles ) {
+    for( auto const & [name, species] : it.particles ) {
         std::cout << "  Particle species '" << name << "' attributes:\n";
         for( auto const& val : species.attributes() )
             std::cout << "    " << val << '\n';
