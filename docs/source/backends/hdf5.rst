@@ -97,8 +97,8 @@ Known Issues
 .. warning::
 
    Jul 23th, 2021 (`HDFFV-11260 <https://jira.hdfgroup.org/browse/HDFFV-11260>`__):
-   Collective HDF5 metadata reads (``OPENPMD_HDF5_COLLECTIVE_METADATA=ON``) broke in 1.10.5, falling back to the individual metadata operations.
-   HDF5 releases 1.10.4 and earlier are not affected; versions 1.10.9+, 1.12.2+ and 1.13.1 fixed the issue.
+   Collective HDF5 metadata reads (``OPENPMD_HDF5_COLLECTIVE_METADATA=ON``) broke in 1.10.5, falling back to individual metadata operations.
+   HDF5 releases 1.10.4 and earlier are not affected; versions 1.10.9+, 1.12.2+ and 1.13.1+ fixed the issue.
 
 
 Selected References
