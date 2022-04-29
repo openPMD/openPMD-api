@@ -417,7 +417,7 @@ TEST_CASE("multiple_series_handles_test", "[serial]")
     /*
      * clang also understands these pragmas.
      */
-#if defined(__GNUC_MINOR__) || defined(__clang__)
+#if defined(__GNUC__MINOR__) || defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
@@ -466,7 +466,7 @@ TEST_CASE("multiple_series_handles_test", "[serial]")
 #if defined(__INTEL_COMPILER)
 #pragma warning(disable : 2282)
 #endif
-#if defined(__GNUC_MINOR__) || defined(__clang__)
+#if defined(__GNUC__MINOR__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
 }
