@@ -102,6 +102,14 @@ namespace internal
          * Otherwise empty.
          */
         std::optional<DeferredParseAccess> m_deferredParseAccess{};
+
+        /**
+         * Upon reading a file, set this field to the used file name.
+         * In inconsistent iteration paddings, we must remember the name of the
+         * file since it cannot be reconstructed from the filename pattern
+         * alone.
+         */
+        std::optional<std::string> m_overrideFilebasedFilename{};
     };
 } // namespace internal
 /** @brief  Logical compilation of data from one snapshot (e.g. a single
