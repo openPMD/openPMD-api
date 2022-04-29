@@ -61,11 +61,9 @@ public:
  * @brief Determine what items should be flushed upon Series::flush()
  *
  */
-#ifdef __NVCOMPILER_MAJOR__
+// do not write `enum class FlushLevel : unsigned char` here since NVHPC
+// does not compile it correctly
 enum class FlushLevel
-#else
-enum class FlushLevel : unsigned char
-#endif
 {
     /**
      * Flush operation that was triggered by user code.
