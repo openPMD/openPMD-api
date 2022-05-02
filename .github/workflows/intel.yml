@@ -17,7 +17,7 @@ jobs:
       run: |
         sudo .github/workflows/dependencies/install_icc
     - name: Build
-      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      env: {CXXFLAGS: -Werror}
       run: |
         set +e; source /opt/intel/oneapi/setvars.sh; set -e
         share/openPMD/download_samples.sh build
@@ -40,7 +40,7 @@ jobs:
       run: |
         sudo .github/workflows/dependencies/install_icx
     - name: Build
-      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      env: {CXXFLAGS: -Werror}
       run: |
         set +e; source /opt/intel/oneapi/setvars.sh; set -e
         share/openPMD/download_samples.sh build

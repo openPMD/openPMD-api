@@ -21,7 +21,7 @@ jobs:
         sudo apt-get install clang-6.0 libc++-dev libc++abi-dev
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -stdlib=libc++ -Werror -Wno-deprecated-declarations -Wno-ignored-attributes -Wno-unused-const-variable}
+      env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -stdlib=libc++ -Werror -Wno-ignored-attributes -Wno-unused-const-variable}
         # -Wno-ignored-attributes -Wno-unused-const-variable: clang-6 has a
         #   false positive on src/auxiliary/Filesystem.cpp
         #   [[maybe_unused]] MPI_Datatype const MPI_Types< unsigned >::value = MPI_UNSIGNED;
@@ -54,7 +54,7 @@ jobs:
         sudo apt-get install clang-6.0 libc++-dev libc++abi-dev gfortran libopenmpi-dev python3
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -stdlib=libc++ -Werror -Wno-deprecated-declarations -Wno-ignored-attributes -Wno-unused-const-variable}
+      env: {CC: clang-6.0, CXX: clang++-6.0, CXXFLAGS: -stdlib=libc++ -Werror -Wno-ignored-attributes -Wno-unused-const-variable}
         # -Wno-ignored-attributes -Wno-unused-const-variable: clang-6 has a
         #   false positive on src/auxiliary/Filesystem.cpp
         #   [[maybe_unused]] MPI_Datatype const MPI_Types< unsigned >::value = MPI_UNSIGNED;
@@ -98,7 +98,7 @@ jobs:
         sudo apt-get install clang-7 gfortran libopenmpi-dev python3
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-7, CXX: clang++-7, CXXFLAGS: -Werror -Wno-deprecated-declarations, OPENPMD2_ADIOS2_SCHEMA: 20210209}
+      env: {CC: clang-7, CXX: clang++-7, CXXFLAGS: -Werror, OPENPMD2_ADIOS2_SCHEMA: 20210209}
       run: |
         eval $(spack env activate --sh .github/ci/spack-envs/clang7_nopy_ompi_h5_ad1_ad2/)
         spack install
@@ -133,7 +133,7 @@ jobs:
         sudo apt-get install clang-12 libhdf5-dev python3 python3-pip python3-numpy python3-pandas
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-12, CXX: clang++-12, CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      env: {CC: clang-12, CXX: clang++-12, CXXFLAGS: -Werror}
       run: |
         eval $(spack env activate --sh .github/ci/spack-envs/clang12_py38_nompi_h5_ad1_ad2/)
         spack install
@@ -165,7 +165,7 @@ jobs:
         sudo apt-get install clang-8 gfortran libmpich-dev python3
         sudo .github/workflows/dependencies/install_spack
     - name: Build
-      env: {CC: clang-8, CXX: clang++-8, CXXFLAGS: -Werror -Wno-deprecated-declarations, OPENPMD2_ADIOS2_SCHEMA: 20210209}
+      env: {CC: clang-8, CXX: clang++-8, CXXFLAGS: -Werror, OPENPMD2_ADIOS2_SCHEMA: 20210209}
       run: |
         cmake --version
         mpiexec --version
@@ -221,7 +221,7 @@ jobs:
         python3 -m pip install -U dask
         python3 -m pip install -U pyarrow
     - name: Build
-      env: {CC: gcc-7, CXX: g++-7, CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      env: {CC: gcc-7, CXX: g++-7, CXXFLAGS: -Werror}
       run: |
         eval $(spack env activate --sh .github/ci/spack-envs/gcc7_py36_ompi_h5_ad1_ad2/)
         spack install
@@ -249,7 +249,7 @@ jobs:
         sudo apt-get install g++ libopenmpi-dev libhdf5-openmpi-dev libadios-dev python3 python3-numpy python3-mpi4py python3-pandas
 #       TODO ADIOS1 (.pc file broken?) ADIOS2
     - name: Build
-      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations, PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig}
+      env: {CXXFLAGS: -Werror, PKG_CONFIG_PATH: /usr/lib/x86_64-linux-gnu/pkgconfig}
       run: |
         share/openPMD/download_samples.sh build
         chmod u-w build/samples/git-sample/*.h5
@@ -274,7 +274,7 @@ jobs:
         apk add hdf5-dev
         python3.10 -m pip install numpy
     - name: Build
-      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      env: {CXXFLAGS: -Werror}
       run: |
         share/openPMD/download_samples.sh build
         chmod u-w build/samples/git-sample/*.h5
@@ -307,7 +307,7 @@ jobs:
         mamba env create --file conda.yml
     - name: Build
       shell: bash -eo pipefail -l {0}
-      env: {CXXFLAGS: -Werror -Wno-deprecated-declarations}
+      env: {CXXFLAGS: -Werror}
       run: |
         source activate openpmd-api-dev
 
