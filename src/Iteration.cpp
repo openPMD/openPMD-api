@@ -743,6 +743,7 @@ void Iteration::runDeferredParseAccess()
             // reset this thing
             it.m_deferredParseAccess = std::optional<DeferredParseAccess>();
             *newAccess = oldAccess;
+            throw;
         }
         // reset this thing
         it.m_deferredParseAccess = std::optional<DeferredParseAccess>();
