@@ -156,6 +156,12 @@ std::future<void> ParallelADIOS1IOHandlerImpl::flush()
                     deref_dynamic_cast<Parameter<O::OPEN_FILE> >(
                         i.parameter.get()));
                 break;
+            case O::KEEP_SYNCHRONOUS:
+                keepSynchronous(
+                    i.writable,
+                    deref_dynamic_cast<Parameter<O::KEEP_SYNCHRONOUS> >(
+                        i.parameter.get()));
+                break;
             default:
                 VERIFY(
                     false,
@@ -364,6 +370,7 @@ void ParallelADIOS1IOHandler::enqueue(IOTask const &i)
     case Operation::CREATE_DATASET:
     case Operation::OPEN_FILE:
     case Operation::WRITE_ATT:
+    case Operation::KEEP_SYNCHRONOUS:
         m_setup.push(i);
         return;
     default:

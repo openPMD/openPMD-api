@@ -190,6 +190,12 @@ public:
                         deref_dynamic_cast<Parameter<O::AVAILABLE_CHUNKS> >(
                             i.parameter.get()));
                     break;
+                case O::KEEP_SYNCHRONOUS:
+                    keepSynchronous(
+                        i.writable,
+                        deref_dynamic_cast<Parameter<O::KEEP_SYNCHRONOUS> >(
+                            i.parameter.get()));
+                    break;
                 }
             }
             catch (...)
@@ -522,6 +528,9 @@ public:
      */
     virtual void
     listAttributes(Writable *, Parameter<Operation::LIST_ATTS> &) = 0;
+
+    void
+    keepSynchronous(Writable *, Parameter<Operation::KEEP_SYNCHRONOUS> param);
 
     AbstractIOHandler *m_handler;
 }; // AbstractIOHandlerImpl

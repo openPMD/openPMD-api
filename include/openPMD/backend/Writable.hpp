@@ -75,6 +75,7 @@ class Writable final
     friend class ParticleSpecies;
     friend class Series;
     friend class Record;
+    friend class AbstractIOHandlerImpl;
     template <typename>
     friend class CommonADIOS1IOHandlerImpl;
     friend class ADIOS1IOHandlerImpl;

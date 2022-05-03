@@ -60,10 +60,9 @@ void Record::flush_impl(
                 RecordComponent &rc = at(RecordComponent::SCALAR);
                 rc.parent() = parent();
                 rc.flush(name, flushParams);
-                IOHandler()->flush(flushParams);
-                writable().abstractFilePosition =
-                    rc.writable().abstractFilePosition;
-                written() = true;
+                Parameter<Operation::KEEP_SYNCHRONOUS> pSynchronize;
+                pSynchronize.otherWritable = &rc.writable();
+                IOHandler()->enqueue(IOTask(this, pSynchronize));
             }
             else
             {
