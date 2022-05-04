@@ -42,7 +42,7 @@ void Parameter<Operation::CREATE_DATASET>::warnUnusedParameters<
      * Fake-read non-backend-specific options. Some backends don't read those
      * and we don't want to have warnings for them.
      */
-    for (std::string const &key : {"resizable"})
+    for (char const *key : {"resizable"})
     {
         config[key];
     }
