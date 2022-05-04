@@ -72,6 +72,7 @@ namespace internal
          * containing this iteration.
          */
         std::string filename;
+        bool beginStep = false;
     };
 
     class IterationData : public AttributableData
@@ -257,14 +258,16 @@ private:
     void flush(internal::FlushParams const &);
     void deferParseAccess(internal::DeferredParseAccess);
     /*
-     * Control flow for read(), readFileBased(), readGroupBased() and
-     * read_impl():
-     * read() is called as the entry point. File-based and group-based
+     * Control flow for runDeferredParseAccess(), readFileBased(),
+     * readGroupBased() and read_impl():
+     * runDeferredParseAccess() is called as the entry point.
+     * File-based and group-based
      * iteration layouts need to be parsed slightly differently:
      * In file-based iteration layout, each iteration's file also contains
      * attributes for the /data group. In group-based layout, those have
      * already been parsed during opening of the Series.
-     * Hence, read() will call either readFileBased() or readGroupBased() to
+     * Hence, runDeferredParseAccess() will call either readFileBased() or
+     * readGroupBased() to
      * allow for those different control flows.
      * Finally, read_impl() is called which contains the common parsing
      * logic for an iteration.
@@ -273,10 +276,10 @@ private:
      * Calling it on an Iteration not yet parsed is an error.
      *
      */
-    void read();
     void reread(std::string const &path);
-    void readFileBased(std::string filePath, std::string const &groupPath);
-    void readGorVBased(std::string const &groupPath);
+    void readFileBased(
+        std::string filePath, std::string const &groupPath, bool beginStep);
+    void readGorVBased(std::string const &groupPath, bool beginStep);
     void read_impl(std::string const &groupPath);
 
     /**
@@ -286,7 +289,7 @@ private:
      *
      * @return AdvanceStatus
      */
-    AdvanceStatus beginStep();
+    AdvanceStatus beginStep(bool reread);
 
     /**
      * @brief End an IO step on the IO file (or file-like object)

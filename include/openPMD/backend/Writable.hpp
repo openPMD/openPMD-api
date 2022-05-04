@@ -119,11 +119,11 @@ OPENPMD_private
      * These members need to be shared pointers since distinct instances of
      * Writable may share them.
      */
-    std::shared_ptr<AbstractFilePosition> abstractFilePosition;
-    std::shared_ptr<AbstractIOHandler> IOHandler;
-    internal::AttributableData *attributable;
-    Writable *parent;
-    bool dirty;
+    std::shared_ptr<AbstractFilePosition> abstractFilePosition = nullptr;
+    std::shared_ptr<AbstractIOHandler> IOHandler = nullptr;
+    internal::AttributableData *attributable = nullptr;
+    Writable *parent = nullptr;
+    bool dirty = true;
     /**
      * If parent is not null, then this is a vector of keys such that:
      * &(*parent)[key_1]...[key_n] == this
@@ -146,6 +146,6 @@ OPENPMD_private
      * Writable and its meaning within the current dataset.
      *
      */
-    bool written;
+    bool written = false;
 };
 } // namespace openPMD

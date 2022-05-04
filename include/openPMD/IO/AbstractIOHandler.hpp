@@ -61,7 +61,9 @@ public:
  * @brief Determine what items should be flushed upon Series::flush()
  *
  */
-enum class FlushLevel : unsigned char
+// do not write `enum class FlushLevel : unsigned char` here since NVHPC
+// does not compile it correctly
+enum class FlushLevel
 {
     /**
      * Flush operation that was triggered by user code.
@@ -84,7 +86,11 @@ enum class FlushLevel : unsigned char
      * CREATE_DATASET tasks.
      * Attributes may or may not be flushed yet.
      */
-    SkeletonOnly
+    SkeletonOnly,
+    /**
+     * Only creates/opens files, nothing more
+     */
+    CreateOrOpenFiles
 };
 
 namespace internal

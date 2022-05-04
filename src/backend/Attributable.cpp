@@ -213,9 +213,15 @@ void Attributable::seriesFlush(internal::FlushParams flushParams)
 
 void Attributable::flushAttributes(internal::FlushParams const &flushParams)
 {
-    if (flushParams.flushLevel == FlushLevel::SkeletonOnly)
+    switch (flushParams.flushLevel)
     {
+    case FlushLevel::SkeletonOnly:
+    case FlushLevel::CreateOrOpenFiles:
         return;
+    case FlushLevel::InternalFlush:
+    case FlushLevel::UserFlush:
+        // pass
+        break;
     }
     if (dirty())
     {
