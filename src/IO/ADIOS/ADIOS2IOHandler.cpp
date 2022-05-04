@@ -69,7 +69,7 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     nlohmann::json cfg,
     std::string engineType)
     : AbstractIOHandlerImplCommon(handler)
-    , m_ADIOS{communicator, ADIOS2_DEBUG_MODE}
+    , m_ADIOS{communicator}
     , m_engineType(std::move(engineType))
 {
     init(std::move(cfg));
@@ -80,7 +80,7 @@ ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
 ADIOS2IOHandlerImpl::ADIOS2IOHandlerImpl(
     AbstractIOHandler *handler, nlohmann::json cfg, std::string engineType)
     : AbstractIOHandlerImplCommon(handler)
-    , m_ADIOS{ADIOS2_DEBUG_MODE}
+    , m_ADIOS{}
     , m_engineType(std::move(engineType))
 {
     init(std::move(cfg));
