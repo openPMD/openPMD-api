@@ -529,6 +529,11 @@ public:
     virtual void
     listAttributes(Writable *, Parameter<Operation::LIST_ATTS> &) = 0;
 
+    /** Treat the current Writable as equivalent to that in the parameter object
+     *
+     * Using the default implementation (which copies the abstractFilePath
+     * into the current writable) should be enough for all backends.
+     */
     void
     keepSynchronous(Writable *, Parameter<Operation::KEEP_SYNCHRONOUS> param);
 
