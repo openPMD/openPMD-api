@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Franz Poeschel
+/* Copyright 2022 Franz Poeschel
  *
  * This file is part of openPMD-api.
  *
@@ -19,28 +19,13 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "openPMD/IO/FlushParametersInternal.hpp"
 
-#include "openPMD/IO/AbstractIOHandler.hpp"
-#include "openPMD/IO/JSON/JSONIOHandlerImpl.hpp"
-
-namespace openPMD
+namespace openPMD::internal
 {
-class JSONIOHandler : public AbstractIOHandler
-{
-public:
-    JSONIOHandler(std::string path, Access at);
-
-    ~JSONIOHandler() override;
-
-    std::string backendName() const override
-    {
-        return "JSON";
-    }
-
-    std::future<void> flush(internal::ParsedFlushParams &) override;
-
-private:
-    JSONIOHandlerImpl m_impl;
-};
-} // namespace openPMD
+ParsedFlushParams::ParsedFlushParams(FlushParams const &flushParams)
+    : flushLevel(flushParams.flushLevel)
+    , backendConfig(json::parseOptions(
+          flushParams.backendConfig, /* considerFiles = */ false))
+{}
+} // namespace openPMD::internal

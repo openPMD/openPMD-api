@@ -26,6 +26,7 @@
 #include "openPMD/IO/AbstractIOHandler.hpp"
 #include "openPMD/IO/AbstractIOHandlerImpl.hpp"
 #include "openPMD/IO/AbstractIOHandlerImplCommon.hpp"
+#include "openPMD/IO/FlushParametersInternal.hpp"
 #include "openPMD/IO/IOTask.hpp"
 #include "openPMD/IO/InvalidatableFile.hpp"
 #include "openPMD/IterationEncoding.hpp"
@@ -140,7 +141,7 @@ public:
 
     ~ADIOS2IOHandlerImpl() override;
 
-    std::future<void> flush(internal::FlushParams const &);
+    std::future<void> flush(internal::ParsedFlushParams &);
 
     void
     createFile(Writable *, Parameter<Operation::CREATE_FILE> const &) override;
@@ -1039,10 +1040,21 @@ namespace detail
         template <typename BA>
         void enqueue(BA &&ba, decltype(m_buffer) &);
 
+        struct ADIOS2FlushParams
+        {
+            /*
+             * Only execute performPutsGets if UserFlush.
+             */
+            FlushLevel level;
+
+            ADIOS2FlushParams(FlushLevel level_in) : level(level_in)
+            {}
+        };
+
         /**
          * Flush deferred IO actions.
          *
-         * @param level Flush Level. Only execute performPutsGets if UserFlush.
+         * @param flushParams Flush level and target.
          * @param performPutsGets A functor that takes as parameters (1) *this
          *     and (2) the ADIOS2 engine.
          *     Its task is to ensure that ADIOS2 performs Put/Get operations.
@@ -1057,7 +1069,7 @@ namespace detail
          */
         template <typename F>
         void flush(
-            FlushLevel level,
+            ADIOS2FlushParams flushParams,
             F &&performPutsGets,
             bool writeAttributes,
             bool flushUnconditionally);
@@ -1067,7 +1079,7 @@ namespace detail
          * and does not flush unconditionally.
          *
          */
-        void flush(FlushLevel, bool writeAttributes = false);
+        void flush(ADIOS2FlushParams, bool writeAttributes = false);
 
         /**
          * @brief Begin or end an ADIOS step.
@@ -1265,7 +1277,8 @@ public:
         // we must not throw in a destructor
         try
         {
-            this->flush(internal::defaultFlushParams);
+            auto params = internal::defaultParsedFlushParams;
+            this->flush(params);
         }
         catch (std::exception const &ex)
         {
@@ -1304,6 +1317,6 @@ public:
         return "ADIOS2";
     }
 
-    std::future<void> flush(internal::FlushParams const &) override;
+    std::future<void> flush(internal::ParsedFlushParams &) override;
 }; // ADIOS2IOHandler
 } // namespace openPMD

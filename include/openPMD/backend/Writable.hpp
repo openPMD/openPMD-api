@@ -109,7 +109,7 @@ public:
      * an object that has no parent, which is the Series object, and flush()-es
      * it.
      */
-    void seriesFlush();
+    void seriesFlush(std::string backendConfig = "{}");
 
     // clang-format off
 OPENPMD_private

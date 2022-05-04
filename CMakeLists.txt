@@ -469,10 +469,12 @@ set(CORE_SOURCE
         src/benchmark/mpi/OneDimensionalBlockSlicer.cpp
         src/helper/list_series.cpp)
 set(IO_SOURCE
+        src/IO/AbstractIOHandler.cpp
         src/IO/AbstractIOHandlerImpl.cpp
         src/IO/AbstractIOHandlerHelper.cpp
         src/IO/DummyIOHandler.cpp
         src/IO/IOTask.cpp
+        src/IO/FlushParams.cpp
         src/IO/HDF5/HDF5IOHandler.cpp
         src/IO/HDF5/ParallelHDF5IOHandler.cpp
         src/IO/HDF5/HDF5Auxiliary.cpp

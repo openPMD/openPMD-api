@@ -103,12 +103,24 @@ namespace internal
     struct FlushParams
     {
         FlushLevel flushLevel = FlushLevel::InternalFlush;
+        std::string backendConfig = "{}";
+
+        explicit FlushParams()
+        {}
+        FlushParams(FlushLevel flushLevel_in) : flushLevel(flushLevel_in)
+        {}
+        FlushParams(FlushLevel flushLevel_in, std::string backendConfig_in)
+            : flushLevel(flushLevel_in)
+            , backendConfig{std::move(backendConfig_in)}
+        {}
     };
 
     /*
      * To be used for reading
      */
-    constexpr FlushParams defaultFlushParams{};
+    FlushParams const defaultFlushParams{};
+
+    struct ParsedFlushParams;
 } // namespace internal
 
 /** Interface for communicating between logical and physically persistent data.
@@ -164,7 +176,14 @@ public:
      * @return  Future indicating the completion state of the operation for
      * backends that decide to implement this operation asynchronously.
      */
-    virtual std::future<void> flush(internal::FlushParams const &) = 0;
+    std::future<void> flush(internal::FlushParams const &);
+
+    /** Process operations in queue according to FIFO.
+     *
+     * @return  Future indicating the completion state of the operation for
+     * backends that decide to implement this operation asynchronously.
+     */
+    virtual std::future<void> flush(internal::ParsedFlushParams &) = 0;
 
     /** The currently used backend */
     virtual std::string backendName() const = 0;

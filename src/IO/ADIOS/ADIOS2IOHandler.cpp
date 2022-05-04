@@ -254,15 +254,17 @@ std::string ADIOS2IOHandlerImpl::fileSuffix() const
 }
 
 std::future<void>
-ADIOS2IOHandlerImpl::flush(internal::FlushParams const &flushParams)
+ADIOS2IOHandlerImpl::flush(internal::ParsedFlushParams &flushParams)
 {
     auto res = AbstractIOHandlerImpl::flush();
+
+    detail::BufferedActions::ADIOS2FlushParams adios2FlushParams{
+        flushParams.flushLevel};
     for (auto &p : m_fileData)
     {
         if (m_dirty.find(p.first) != m_dirty.end())
         {
-            p.second->flush(
-                flushParams.flushLevel, /* writeAttributes = */ false);
+            p.second->flush(adios2FlushParams, /* writeAttributes = */ false);
         }
         else
         {
@@ -2581,11 +2583,12 @@ namespace detail
 
     template <typename F>
     void BufferedActions::flush(
-        FlushLevel level,
+        ADIOS2FlushParams flushParams,
         F &&performPutGets,
         bool writeAttributes,
         bool flushUnconditionally)
     {
+        auto level = flushParams.level;
         if (streamStatus == StreamStatus::StreamOver)
         {
             if (flushUnconditionally)
@@ -2681,10 +2684,11 @@ namespace detail
         }
     }
 
-    void BufferedActions::flush(FlushLevel level, bool writeAttributes)
+    void
+    BufferedActions::flush(ADIOS2FlushParams flushParams, bool writeAttributes)
     {
         flush(
-            level,
+            flushParams,
             [](BufferedActions &ba, adios2::Engine &eng) {
                 switch (ba.m_mode)
                 {
@@ -2717,7 +2721,7 @@ namespace detail
         {
             m_IO.DefineAttribute<bool_representation>(
                 ADIOS2Defaults::str_usesstepsAttribute, 0);
-            flush(FlushLevel::UserFlush, /* writeAttributes = */ false);
+            flush({FlushLevel::UserFlush}, /* writeAttributes = */ false);
             return AdvanceStatus::OK;
         }
 
@@ -2757,7 +2761,7 @@ namespace detail
                 }
             }
             flush(
-                FlushLevel::UserFlush,
+                {FlushLevel::UserFlush},
                 [](BufferedActions &, adios2::Engine &eng) { eng.EndStep(); },
                 /* writeAttributes = */ true,
                 /* flushUnconditionally = */ true);
@@ -2917,7 +2921,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
 {}
 
 std::future<void>
-ADIOS2IOHandler::flush(internal::FlushParams const &flushParams)
+ADIOS2IOHandler::flush(internal::ParsedFlushParams &flushParams)
 {
     return m_impl.flush(flushParams);
 }
@@ -2937,7 +2941,7 @@ ADIOS2IOHandler::ADIOS2IOHandler(
     : AbstractIOHandler(std::move(path), at)
 {}
 
-std::future<void> ADIOS2IOHandler::flush(internal::FlushParams const &)
+std::future<void> ADIOS2IOHandler::flush(internal::ParsedFlushParams &)
 {
     return std::future<void>();
 }

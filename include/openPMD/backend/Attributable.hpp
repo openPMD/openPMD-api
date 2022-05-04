@@ -238,8 +238,13 @@ public:
      * of parents. This method will walk up the parent list until it reaches
      * an object that has no parent, which is the Series object, and flush()-es
      * it.
+     *
+     * @param backendConfig Further backend-specific instructions on how to
+     *                      implement this flush call.
+     *                      Must be provided in-line, configuration is not read
+     *                      from files.
      */
-    void seriesFlush();
+    void seriesFlush(std::string backendConfig = "{}");
 
     /** String serialization to describe an Attributable
      *
